@@ -1,44 +1,40 @@
-# chromium
-- [简介](#简介)
-- [目录](#目录)
-- [使用说明](#使用说明)
-- [相关仓](#相关仓)
+# Chromium
 ## 简介
 ### 内容介绍
-1. Chromium是由Google主导开发的网页浏览器，以BSD许可证等多重自由版权发行并开放源代码，是Google的Chrome浏览器背后的引擎，其目的是为了创建一个安全、稳定和快速的通用浏览器。
-2. OpenHarmony nweb基于Chromium构建。
+1. Chromium是由Google主导开发的网页浏览器引擎，以BSD许可证等多重自由版权发行并开放源代码，是Google的Chrome浏览器背后的引擎，其目的是为了创建一个安全、稳定和快速的通用浏览器。
+2. OpenHarmony nweb是OpenHarmony web组件的Native引擎，其基于CEF开源项目构建。
 ### 软件架构
 软件架构说明
 ![](figures/Web-architecture_ZH.png "web软件架构图")
 * webview组件：OpenHarmony的UI组件。
-* nweb：基于CEF构建的OpenHarmony web组件的Native引擎。
+* nweb：基于CEF构建的OpenHarmony Web组件的Native引擎，主要构建Web组件浏览器内核的部分能力。
 * CEF：CEF全称Chromium Embedded Framework，是一个基于Google Chromium 的开源项目。
-* Chromium： Chromium是一个由Google主导开发的网页浏览器，以BSD许可证等多重自由版权发行并开放源代码。
 ## 使用说明
 1. 下载代码
-   
+    ```
     repo init -u https://gitee.com/openharmony-sig/manifest -b master -m chromium.xml --no-repo-verify
-    
     repo sync -c
-
     repo forall -c 'git lfs pull'
-
+    ```
 2. 编译
    
-    编译同时构建未签名Hap包：./build.sh  -t w -A rk3568
-
-    仅编译so库：./build.sh -A rk3568
-
+    编译同时构建未签名Hap包：
+	```
+	./build.sh  -t w -A rk3568
+    ```
+    仅编译so库：
+	```
+	./build.sh -A rk3568
+    ```
     ***如若找不到sdk压缩包，可以下载大文件***
-    
+    ```
     cd src
-    
     git lfs pull
-    
+    ```
 3. 签名
-   
-   执行./sign.sh
-
+    ```
+    执行./sign.sh
+    ```
 4. 调试方法
 
     方法一：替换so库
@@ -63,11 +59,11 @@
     hdc shell "rm /data/* -rf"
     hdc shell reboot
     ```
-5. 所有chromium仓对应目录映射关系
+5. 所有Chromium仓对应目录映射关系
 
     https://gitee.com/openharmony-sig/manifest/blob/master/chromium.xml
 
-6. 上库流程推荐
+6. 上库指导
 
     6.1 将chromium_src 仓 fork到自己的私仓
 

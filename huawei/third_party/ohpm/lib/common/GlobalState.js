@@ -1,0 +1,1 @@
+"use strict";Object.defineProperty(exports,"__esModule",{value:!0}),exports.GlobalState=exports.CommandType=void 0,function(e){e.INSTALL="install",e.UNINSTALL="uninstall",e.UPDATE="update"}(exports.CommandType||(exports.CommandType={})),exports.GlobalState={command:""};

@@ -1,0 +1,36 @@
+### 仓库配置，支持配置多个地址，使用英文逗号分割
+registry=https://repo.harmonyos.com/ohpm/
+## 支持配置含有group的仓库，优先匹配
+#@group1:registry=
+#@group2:registry=
+
+### 代理配置
+#no_proxy=
+#http_proxy=
+#https_proxy=
+
+### 证书校验配置
+## 是否校验https仓库的证书，取值：true|false, default: true, 为true时需要配置ca_files证书路径
+strict_ssl=true
+#ca_files=
+
+### 发布配置
+## 因为registry支持配置多仓，所以此处需明确指定发布仓
+publish_registry=https://repo.harmonyos.com/ohpm/
+## 用户发布三方库的发布id，从云端个人中心获取
+#publish_id=
+## 用户私钥文件路径，公钥需在云端进行配置
+#key_path=
+
+### 缓存路径, 默认在用户目录下的.ohpm/cache
+#cache=
+
+### 日志级别, 取值：debug|info|warn|error, default: info
+log_level=info
+
+### 网络请求超时时间, 单位ms, 默认为60s
+fetch_timeout=60000
+
+
+
+

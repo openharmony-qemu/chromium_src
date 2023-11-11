@@ -1,0 +1,222 @@
+/*
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef OHOS_NWEB_SRC_NWEB_INPUTMETHOD_HANDLER_H_
+#define OHOS_NWEB_SRC_NWEB_INPUTMETHOD_HANDLER_H_
+#include <chrono>
+#include <condition_variable>
+#include <unordered_map>
+#include "imf_adapter.h"
+
+#include "cef_delegate/nweb_inputmethod_client.h"
+
+namespace OHOS::NWeb {
+class NWebInputMethodHandler : public NWebInputMethodClient {
+ public:
+  enum class ReattachType {
+    FROM_ONFOCUS,
+    FROM_CONTINUE,
+  };
+  NWebInputMethodHandler();
+  ~NWebInputMethodHandler();
+  NWebInputMethodHandler(const NWebInputMethodHandler&) = delete;
+  NWebInputMethodHandler& operator=(const NWebInputMethodHandler&) = delete;
+
+  void Attach(CefRefPtr<CefBrowser> browser, bool show_keyboard, cef_text_input_mode_t input_mode) override;
+  void ShowTextInput() override;
+  void HideTextInput(uint32_t nwebId = 0, HideTextinputType hideType = HideTextinputType::FROM_KERNEL) override;
+  void OnTextSelectionChanged(CefRefPtr<CefBrowser> browser,
+                              const CefString& selected_text,
+                              const CefRange& selected_range) override;
+  void OnCursorUpdate(const CefRect& rect) override;
+  void OnSelectionChanged(CefRefPtr<CefBrowser> browser,
+                          const CefString& text,
+                          const CefRange& selected_range) override;
+  void SetFocusStatus(bool focus_status) override;
+  void OnEditableChanged(CefRefPtr<CefBrowser> browser,
+                         bool is_editable_node) override;
+
+  bool Reattach(uint32_t nwebId, ReattachType type);
+  void SetIMEStatus(bool status);
+  void InsertText(const std::u16string& text);
+  void DeleteBackward(int32_t length);
+  void DeleteForward(int32_t length);
+  void SendEnterKeyEvent();
+  void MoveCursor(const IMFAdapterDirection direction);
+  void SetScreenOffSet(double x, double y);
+  void SetVirtualDeviceRatio(float device_pixel_ratio);
+  int32_t GetTextIndexAtCursor();
+  std::u16string GetLeftTextOfCursor(int32_t number);
+  std::u16string GetRightTextOfCursor(int32_t number);
+
+ private:
+  void SetIMEStatusOnUI(bool status);
+  void InsertTextHandlerOnUI(const std::u16string& text);
+  void DeleteBackwardHandlerOnUI(int32_t length);
+  void DeleteForwardHandlerOnUI(int32_t length);
+  bool IsCorrectParam(int32_t number, int32_t& selectBegin, int32_t& selectEnd);
+  bool ResetTextSelectiondata();
+  IMFAdapterCursorInfo GetCursorInfo();
+
+  static uint32_t lastAttachNWebId_;
+  uint32_t nweb_id_ = 0;
+  CefRefPtr<CefBrowser> browser_;
+  bool ime_shown_ = false;
+  bool ime_text_composing_ = false;
+  std::u16string selected_text_;
+  std::u16string composing_text_;
+  std::u16string whole_text_;
+  int selected_from_;
+  int selected_to_;
+  CefRect focus_rect_;
+  double offset_x_ = 0;
+  double offset_y_ = 0;
+  float device_pixel_ratio_;
+  bool focus_status_ = false;
+  bool focus_rect_status_ = false;
+  std::unique_ptr<IMFAdapter> inputmethod_adapter_ = nullptr;
+  std::shared_ptr<IMFTextListenerAdapter> inputmethod_listener_ = nullptr;
+  bool isAttached_ = false;
+  bool show_keyboard_ = false;
+  bool is_editable_node_ = false;
+  bool isNeedReattachOncontinue_ = false;
+  IMFAdapterTextInputType input_mode_ = IMFAdapterTextInputType::TEXT;
+  std::chrono::high_resolution_clock::time_point lastCloseInputMethodTime_;
+  bool isNeedReattachOnfocus_ = false;
+
+  int textCursorReady_ = 0;
+  std::mutex textCursorMutex_;
+  std::condition_variable textCursorCv_;
+  bool is_need_notify_all_ = false;
+  int32_t text_cursor_length_ = 0;
+
+  IMPLEMENT_REFCOUNTING(NWebInputMethodHandler);
+};
+
+enum ScanKeyCode {
+  ESCAPE_SCAN_CODE = 0x009,
+  DIGIT1_SCAN_CODE = 0x00A,
+  DIGIT2_SCAN_CODE = 0x00B,
+  DIGIT3_SCAN_CODE = 0x00C,
+  DIGIT4_SCAN_CODE = 0x00D,
+  DIGIT5_SCAN_CODE = 0x00E,
+  DIGIT6_SCAN_CODE = 0x00F,
+  DIGIT7_SCAN_CODE = 0x010,
+  DIGIT8_SCAN_CODE = 0x011,
+  DIGIT9_SCAN_CODE = 0x012,
+  DIGIT0_SCAN_CODE = 0x013,
+  MINUS_SCAN_CODE = 0x014,
+  EQUAL_SCAN_CODE = 0x015,
+  BACKSPACE_SCAN_CODE = 0x016,
+  TAB_SCAN_CODE = 0x0017,
+  KEYQ_SCAN_CODE = 0x0018,
+  KEYW_SCAN_CODE = 0x0019,
+  KEYE_SCAN_CODE = 0x001A,
+  KEYR_SCAN_CODE = 0x001B,
+  KEYT_SCAN_CODE = 0x001C,
+  KEYY_SCAN_CODE = 0x001D,
+  KEYU_SCAN_CODE = 0x001E,
+  KEYI_SCAN_CODE = 0x001F,
+  KEYO_SCAN_CODE = 0x0020,
+  KEYP_SCAN_CODE = 0x0021,
+  BRACKETLEFT_SCAN_CODE = 0x0022,
+  BRACKETRIGHT_SCAN_CODE = 0x0023,
+  ENTER_SCAN_CODE = 0x0024,
+  CONTROLLEFT_SCAN_CODE = 0x0025,
+  KEYA_SCAN_CODE = 0x0026,
+  KEYS_SCAN_CODE = 0x0027,
+  KEYD_SCAN_CODE = 0x0028,
+  KEYF_SCAN_CODE = 0x0029,
+  KEYG_SCAN_CODE = 0x002A,
+  KEYH_SCAN_CODE = 0x002B,
+  KEYJ_SCAN_CODE = 0x002C,
+  KEYK_SCAN_CODE = 0x002D,
+  KEYL_SCAN_CODE = 0x002E,
+  SEMICOLON_SCAN_CODE = 0x002F,
+  QUOTE_SCAN_CODE = 0x0030,
+  BACKQUOTE_SCAN_CODE = 0x0031,
+  SHIFTLEFT_SCAN_CODE = 0x0032,
+  BACKSLASH_SCAN_CODE = 0x0033,
+  KEYZ_SCAN_CODE = 0x0034,
+  KEYX_SCAN_CODE = 0x0035,
+  KEYC_SCAN_CODE = 0x0036,
+  KEYV_SCAN_CODE = 0x0037,
+  KEYB_SCAN_CODE = 0x0038,
+  KEYN_SCAN_CODE = 0x0039,
+  KEYM_SCAN_CODE = 0x003A,
+  COMMA_SCAN_CODE = 0x003B,
+  PERIOD_SCAN_CODE = 0x003C,
+  SLASH_SCAN_CODE = 0x003D,
+  SHIFTRIGHT_SCAN_CODE = 0x003E,
+  NUMPADMULTIPLY_SCAN_CODE = 0x003F,
+  ALTLEFT_SCAN_CODE = 0x0040,
+  SPACE_SCAN_CODE = 0x0041,
+  CAPSLOCK_SCAN_CODE = 0x0042,
+  F1_SCAN_CODE = 0x0043,
+  F2_SCAN_CODE = 0x0044,
+  F3_SCAN_CODE = 0x0045,
+  F4_SCAN_CODE = 0x0046,
+  F5_SCAN_CODE = 0x0047,
+  F6_SCAN_CODE = 0x0048,
+  F7_SCAN_CODE = 0x0049,
+  F8_SCAN_CODE = 0x004A,
+  F9_SCAN_CODE = 0x004B,
+  F10_SCAN_CODE = 0x004C,
+  NUMLOCK_SCAN_CODE = 0x004D,
+  SCROLLLOCK_SCAN_CODE = 0x004E,
+  NUMPAD7_SCAN_CODE = 0x004F,
+  NUMPAD8_SCAN_CODE = 0x0050,
+  NUMPAD9_SCAN_CODE = 0x0051,
+  NUMPADSUBTRACT_SCAN_CODE = 0x0052,
+  NUMPAD4_SCAN_CODE = 0x0053,
+  NUMPAD5_SCAN_CODE = 0x0054,
+  NUMPAD6_SCAN_CODE = 0x0055,
+  NUMPADADD_SCAN_CODE = 0x0056,
+  NUMPAD1_SCAN_CODE = 0x0057,
+  NUMPAD2_SCAN_CODE = 0x0058,
+  NUMPAD3_SCAN_CODE = 0x0059,
+  NUMPAD0_SCAN_CODE = 0x005A,
+  NUMPADDECIMAL_SCAN_CODE = 0x005B,
+  INTLBACKSLASH_SCAN_CODE = 0x005E,
+  F11_SCAN_CODE = 0x005F,
+  F12_SCAN_CODE = 0x0060,
+  INTLRO_SCAN_CODE = 0x0061,
+  CONVERT_SCAN_CODE = 0x0064,
+  KANAMODE_SCAN_CODE = 0x0065,
+  NONCONVERT_SCAN_CODE = 0x0066,
+  NUMPADENTER_SCAN_CODE = 0x0068,
+  CONTROLRIGHT_SCAN_CODE = 0x0069,
+  NUMPADDIVIDE_SCAN_CODE = 0x006A,
+  PRINTSCREEN_SCAN_CODE = 0x006B,
+  ALTRIGHT_SCAN_CODE = 0x006C,
+  HOME_SCAN_CODE = 0x006E,
+  UP_SCAN_CODE = 0x006F,
+  PAGE_UP_SCAN_CODE = 0x0070,
+  LEFT_SCAN_CODE = 0x0071,
+  RIGHT_SCAN_CODE = 0x0072,
+  END_SCAN_CODE = 0x0073,
+  DOWN_SCAN_CODE = 0x0074,
+  PAGE_DOWN_SCAN_CODE = 0x0075,
+  INSERT_SCAN_CODE = 0x0076,
+  DELETE_SCAN_CODE = 0x0077,
+  NUMPADEQUAL_SCAN_CODE = 0x007D,
+  PAUSE_SCAN_CODE = 0x007F,
+  NUMPADCOMMA_SCAN_CODE = 0x0081,
+  METALEFT_SCAN_CODE = 0x0085,
+  METARIGHT_SCAN_CODE = 0x0086,
+};
+}  // namespace OHOS::NWeb
+
+#endif  // OHOS_NWEB_SRC_NWEB_INPUTMETHOD_HANDLER_H_

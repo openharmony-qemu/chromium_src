@@ -1,0 +1,6 @@
+UNKNOWN focusable
+++UNKNOWN hidden
+++++UNKNOWN
+++++++LINK focusable label='normal link' actions='{DEFAULT}'
+++++++++STATIC_TEXT label='normal link'
+++++++++++UNKNOWN label='normal link'

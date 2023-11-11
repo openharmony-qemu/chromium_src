@@ -1,0 +1,16 @@
+{   "name": "OHOS_ENABLE_DRAG_DROP",
+    "owner": "",
+    "desc": "drag and drop",
+    "effect":"main gn blink_core other",
+    "genCommandline": "default",
+    "dependence": "",
+    "default": "true"
+},
+{   "name": "OHOS_NWEB_EX",
+    "owner": "",
+    "desc": "config isolation for origin code",
+    "effect":"main gn blink_core other",
+    "genCommandline": "default",
+    "dependence": "",
+    "default": "true"
+}

@@ -1,21 +1,97 @@
-# ![Logo](chrome/app/theme/chromium/product_logo_64.png) Chromium
+# Chromium
 
-Chromium is an open-source browser project that aims to build a safer, faster,
-and more stable way for all users to experience the web.
+## Introduction
+Chromium is an open-source web browser principally developed by Google and from which Google Chrome draws its source code. It is released under the BSD license and other permissive open-source licenses, aiming to build a safer, faster, and more stable way to experience the Internet.
 
-The project's web site is https://www.chromium.org.
+OpenHarmony nweb is built on Chromium.
 
-To check out the source code locally, don't use `git clone`! Instead,
-follow [the instructions on how to get the code](docs/get_the_code.md).
+## Software Architecture
+Below is the software architecture.
 
-Documentation in the source is rooted in [docs/README.md](docs/README.md).
+![](figures/Web-architecture.png "Web software architecture")
 
-Learn how to [Get Around the Chromium Source Code Directory Structure
-](https://www.chromium.org/developers/how-tos/getting-around-the-chrome-source-code).
+* webview: UI component in OpenHarmony.
+* nweb: native engine of the OpenHarmony web component, which is built based on the Chromium Embedded Framework (CEF).
+* CEF: short for Chromium Embedded Framework, an open-source project based on Google Chromium.
+* Chromium: an open-source web browser principally developed by Google and released under the BSD license and other permissive open-source licenses.
+## How to Use
+1. Fork the **chromium_src** repository to your own repository (remote repository).
+   
+   > **NOTE**
+   >
+   > There are many Chromium repositories, you can find the directory mappings in the [chromium.xml](https://gitee.com/openharmony-sig/manifest/blob/master/chromium.xml) file. The **chromium_src** repository here is an example.
+   
+2. Download the full code.
 
-For historical reasons, there are some small top level directories. Now the
-guidance is that new top level directories are for product (e.g. Chrome,
-Android WebView, Ash). Even if these products have multiple executables, the
-code should be in subdirectories of the product.
+    repo init -u https://gitee.com/openharmony-sig/manifest -b 4.0-Release -m chromium.xml --no-repo-verify
 
-If you found a bug, please file it at https://crbug.com/new.
+    repo sync -c
+
+    repo forall -c 'git lfs pull'
+
+3. Build the code.
+
+    To build an unsigned HAP file, run **./build.sh -A -without-nweb-ex rk3568**
+
+    ***If you cannot find the SDK package, download the large file.***
+
+    cd src
+
+    git lfs pull
+
+4. Sign the HAP file.
+
+   Run **./sign.sh** to sign the HAP file.
+
+5. Debug the code.
+
+    - Method 1: replacing the .so libraries
+
+      After the build is complete, find the . so libraries in the **out** directory and push them to the device.
+      
+      ```
+      hdc shell "mount -o remount,rw /"
+      hdc file send libnweb_render.so /data/app/el1/bundle/public/com.ohos.nweb/libs/arm
+      hdc file send libweb_engine.so /data/app/el1/bundle/public/com.ohos.nweb/libs/arm
+      pause
+      hdc shell reboot
+      pause
+      ```
+      
+    - Method 2: replacing the HAP file
+
+      After the build is complete, find **NWeb-rk3568.hap** in the **out** directory and push it to the device.
+
+      ```
+      hdc shell "mount -o remount,rw /"
+      hdc file send NWeb-rk3568.hap /system/app/com.ohos.nweb/NWeb.hap
+      hdc shell "rm /data/* -rf"
+      hdc shell reboot
+      ```
+
+6. Add the code to the staging area.
+
+    Run the **git add** command to add the modified files to the staging area.
+
+7. Check the status of the workspace and staging area.
+
+    Run the **git status** command to check whether your modifications are stored in the staging area. Run the **git log** command to view historical project information.
+
+8. Commit the content in the workspace or staging area to the local repository.
+
+    Run the **git commit -sm** command to commit the modified files. Note that **-s** must be included, and you must sign DCO first. Otherwise, a DCO error will be reported when the PR is submitted.
+
+    To sign DCO, visit **https://dco.openharmony.cn/sign-dco**.
+
+9. Push the code to the remote repository.
+
+    Example: git push https://gitee.com/[giteeUserName]/chromium_src
+
+10. Create a PR.
+
+    If joint build is involved, create an issue and bind the issue to all the involved PRs.
+
+11. Comment on "start build" under the PR.
+
+12. Contact the committer to merge the PR.
+

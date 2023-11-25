@@ -65,6 +65,7 @@
 #include "libcef/browser/predictors/loading_predictor.h"
 #include "libcef/browser/predictors/loading_predictor_config.h"
 #include "libcef/browser/predictors/loading_predictor_factory.h"
+#include "libcef/browser/predictors/predictor_database.h"
 
 namespace {
 uint32_t g_nweb_count = 0;
@@ -1651,26 +1652,39 @@ void NWebImpl::ResumeDownloadStatic(
 
 extern "C" OHOS_NWEB_EXPORT void PrepareForPageLoad(std::string url,
                                                     bool preconnectable,
-                                                    int32_t num_sockets) {
-  if (g_nweb_count != 0) {
-    for (const auto& cef_browser_context : CefBrowserContext::GetAll()) {
-      content::BrowserContext* browser_context =
-          cef_browser_context->AsBrowserContext();
-      if (!browser_context) {
-        LOG(ERROR) << "PrepareForPageLoad null browser_context";
-        return;
-      }
-      ohos_predictors::LoadingPredictor* loading_predictor =
-          ohos_predictors::LoadingPredictorFactory::GetForBrowserContext(
-              browser_context);
-      if (loading_predictor) {
-        loading_predictor->num_sockets_ = (int)num_sockets;
-        loading_predictor->PrepareForPageLoad(
-            GURL(url), ohos_predictors::HintOrigin::OMNIBOX, preconnectable);
-      }
-    }
-  } else {
-    WVLOG_I("nweb hadn't initiated try to prepare for page load later");
+						    int32_t num_sockets) {
+  predictor::PreconnectUrlInfo preconnectUrlInfo;
+  preconnectUrlInfo.url = url;
+  preconnectUrlInfo.num_sockets = num_sockets;
+  preconnectUrlInfo.is_preconnectable = preconnectable;
+  predictor::PredictorDatabase::preconnect_url_info_list.emplace_back(preconnectUrlInfo);
+
+  std::vector<CefBrowserContext*> browser_context_all =
+      CefBrowserContext::GetAll();
+  if (browser_context_all.size() == 0) {
+    return;
+  }
+
+  CefBrowserContext* context = browser_context_all[0];
+  content::BrowserContext* browser_context = context->AsBrowserContext();
+  if (!browser_context) {
+    WVLOG_E("PrepareForPageLoad null browser_context");
+    return;
+  }
+
+  ohos_predictors::LoadingPredictor* loading_predictor =
+      ohos_predictors::LoadingPredictorFactory::GetForBrowserContext(
+          browser_context);
+  if (!loading_predictor) {
+    return;
+  }
+
+  std::vector<predictor::PreconnectUrlInfo> preconnect_url_infos =
+      std::move(predictor::PredictorDatabase::preconnect_url_info_list);
+  for(auto& preconnect_url_info : preconnect_url_infos) {
+    loading_predictor->PrepareForPageLoad(
+      GURL(preconnect_url_info.url), ohos_predictors::HintOrigin::OMNIBOX, preconnect_url_info.is_preconnectable, 
+      preconnect_url_info.num_sockets);
   }
 }
 

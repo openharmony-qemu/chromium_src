@@ -65,6 +65,10 @@ extern const base::Feature kEnforceFullDelegation;
 // GPay app and the browser for dynamic updates on shipping and payment data.
 extern const base::Feature kGPayAppDynamicUpdate;
 
+// If enabled, the payment method manifest fetch for Payment Handler must go via
+// a Link header with rel="payment-method-manifest".
+extern const base::Feature kPaymentHandlerRequireLinkHeader;
+
 }  // namespace features
 }  // namespace payments
 

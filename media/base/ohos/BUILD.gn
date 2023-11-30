@@ -1,0 +1,35 @@
+# Copyright 2022 The Huawei Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+if (is_ohos) {
+  import("//build/config/ohos/config.gni")
+  source_set("ohos") {
+    visibility = [
+      "//media",
+      "//media/filters",
+    ]
+
+    sources = [
+      "ohos_media_player_bridge.cc",
+      "ohos_media_player_bridge.h",
+      "ohos_media_player_callback.cc",
+      "ohos_media_player_callback.h",
+      "ohos_media_player_listener.cc",
+      "ohos_media_player_listener.h",
+    ]
+    configs += [ "//media:subcomponent_config" ]
+
+    if (product_name == "rk3568") {
+      defines = [ "RK3568" ]
+    }
+
+    deps = [
+      "//media/base",
+      "//url",
+    ]
+    libs = [ "nweb_ohos_adapter.z" ]
+    include_dirs = ohos_src_includes
+    lib_dirs = ohos_libs_dir
+  }
+}

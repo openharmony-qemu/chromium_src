@@ -129,10 +129,6 @@ class NWebImpl : public NWeb {
   void UnregisterArkJSfunction(
       const std::string& object_name,
       const std::vector<std::string>& method_list) override;
-  void CallH5Function(int32_t routing_id,
-                      int32_t h5_object_id,
-                      const std::string h5_method_name,
-                      const std::vector<std::shared_ptr<NWebValue>>& args) override;
   void SetNWebJavaScriptResultCallBack(
       std::shared_ptr<NWebJavaScriptResultCallBack> callback) override;
   void OnFocus(const FocusReason& focusReason = FocusReason::FOCUS_DEFAULT) const override;

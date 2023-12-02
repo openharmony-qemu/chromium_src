@@ -987,16 +987,6 @@ void NWebImpl::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
   return nweb_delegate_->JavaScriptOnDocumentStart(scriptItems);
 }
 
-void NWebImpl::CallH5Function(int32_t routing_id,
-                              int32_t h5_object_id,
-                              const std::string h5_method_name,
-                              const std::vector<std::shared_ptr<NWebValue>>& args) {
-  if (nweb_delegate_ == nullptr) {
-    return;
-  }
-  nweb_delegate_->CallH5Function(routing_id, h5_object_id, h5_method_name, args);
-}
-
 void NWebImpl::SetNWebJavaScriptResultCallBack(
     std::shared_ptr<NWebJavaScriptResultCallBack> callback) {
   if (nweb_delegate_ == nullptr) {
@@ -1622,7 +1612,6 @@ extern "C" OHOS_NWEB_EXPORT void CreateNWeb(const NWebCreateInfo& create_info,
           create_info.init_args.is_enhance_surface);
   nweb = std::make_shared<NWebImpl>(nweb_id);
   if (nweb == nullptr) {
-    WVLOG_E("fail to create nweb instance");
     return;
   }
 

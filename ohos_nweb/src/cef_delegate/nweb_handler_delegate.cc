@@ -50,7 +50,6 @@
 #include "nweb_url_resource_request_impl.h"
 #include "nweb_url_resource_response.h"
 #include "nweb_value_callback.h"
-#include "nweb_value_convert.h"
 
 #include "ohos_adapter_helper.h"
 #include "ohos_nweb/src/capi/nweb_download_delegate_callback.h"
@@ -2040,6 +2039,156 @@ const std::vector<std::string> NWebHandlerDelegate::GetVisitedHistory() {
   return std::vector<std::string>();
 }
 
+std::shared_ptr<NWebValue> AddNWebValueCef(CefRefPtr<CefValue> argument) {
+  if (!argument) {
+    LOG(INFO) << "AddNWebValueCef: argument is null";
+    return std::make_shared<NWebValue>();
+  }
+
+  switch (argument->GetType()) {
+    case CefValueType::VTYPE_INT:
+      return std::make_shared<NWebValue>(argument->GetInt());
+    case CefValueType::VTYPE_DOUBLE:
+      return std::make_shared<NWebValue>(argument->GetDouble());
+    case CefValueType::VTYPE_BOOL:
+      return std::make_shared<NWebValue>(argument->GetBool());
+    case CefValueType::VTYPE_STRING:
+      return std::make_shared<NWebValue>(argument->GetString().ToString());
+    case CefValueType::VTYPE_LIST: {
+      size_t length = argument->GetList()->GetSize();
+      std::vector<NWebValue> vec;
+      for (size_t i = 0; i < length; ++i) {
+        vec.push_back(*AddNWebValueCef(argument->GetList()->GetValue(i)));
+      }
+      return std::make_shared<NWebValue>(vec);
+    }
+    case CefValueType::VTYPE_DICTIONARY: {
+      std::map<std::string, NWebValue> map;
+      auto dict = argument->GetDictionary();
+      CefDictionaryValue::KeyList keys;
+      dict->GetKeys(keys);
+      for (auto& key : keys) {
+        auto val = dict->GetValue(key);
+        map[key.ToString()] = *AddNWebValueCef(val);
+      }
+      return std::make_shared<NWebValue>(map);
+    }
+    case CefValueType::VTYPE_BINARY: {
+      auto size = argument->GetBinary()->GetSize();
+      auto buff = std::make_unique<char[]>(size);
+      argument->GetBinary()->GetData(buff.get(), size, 0);
+      return std::make_shared<NWebValue>(buff.get(), size);
+    }
+    case CefValueType::VTYPE_INVALID:
+      return std::make_shared<NWebValue>();
+    default:
+      LOG(INFO) << "AddNWebValueCef: not support value";
+      break;
+  }
+  return std::make_shared<NWebValue>();
+}
+
+std::vector<std::shared_ptr<NWebValue>> ParseCefValueTONWebValue(
+    CefRefPtr<CefListValue> args,
+    int size) {
+  std::vector<std::shared_ptr<NWebValue>> value_vector;
+  for (int i = 0; i < size; i++) {
+    CefRefPtr<CefValue> argument = args->GetValue(i);
+    value_vector.push_back(AddNWebValueCef(argument));
+  }
+  return value_vector;
+}
+
+CefValueType TranslateCefType(NWebValue::Type type) {
+  switch (type) {
+    case NWebValue::Type::INTEGER:
+      return CefValueType::VTYPE_INT;
+    case NWebValue::Type::DOUBLE: {
+      return CefValueType::VTYPE_DOUBLE;
+    }
+    case NWebValue::Type::BOOLEAN:
+      return CefValueType::VTYPE_BOOL;
+    case NWebValue::Type::STRING:
+      return CefValueType::VTYPE_STRING;
+    case NWebValue::Type::DICTIONARY:
+      return CefValueType::VTYPE_DICTIONARY;
+    case NWebValue::Type::LIST:
+      return CefValueType::VTYPE_LIST;
+    case NWebValue::Type::NONE:
+      return CefValueType::VTYPE_INVALID;
+    case NWebValue::Type::BINARY:
+      return CefValueType::VTYPE_BINARY;
+    default:
+      return CefValueType::VTYPE_INVALID;
+  }
+}
+
+CefRefPtr<CefValue> ParseNWebValueToValueHelper(
+    std::shared_ptr<NWebValue> value) {
+  if (!value) {
+    LOG(ERROR) << "ParseNWebValueToValueHelper: value is null";
+    return CefValue::Create();
+  }
+  CefRefPtr<CefValue> cefValue = CefValue::Create();
+  NWebValue::Type type = value->GetType();
+  switch (type) {
+    case NWebValue::Type::INTEGER:
+      cefValue->SetInt(value->GetInt());
+      return cefValue;
+    case NWebValue::Type::DOUBLE: {
+      cefValue->SetDouble(value->GetDouble());
+      return cefValue;
+    }
+    case NWebValue::Type::BOOLEAN:
+      cefValue->SetBool(value->GetBoolean());
+      return cefValue;
+    case NWebValue::Type::STRING:
+      cefValue->SetString(value->GetString());
+      return cefValue;
+    case NWebValue::Type::LIST: {
+      size_t length = value->GetListValueSize();
+      auto cefList = CefListValue::Create();
+      for (size_t i = 0; i < length; i++) {
+        auto nPtr = std::make_shared<NWebValue>(value->GetListValue(i));
+        auto cefVal = ParseNWebValueToValueHelper(nPtr);
+        cefList->SetValue(i, cefVal);
+      }
+      cefValue->SetList(cefList);
+      return cefValue;
+    }
+    case NWebValue::Type::DICTIONARY: {
+      auto dict = value->GetDictionaryValue();
+      auto cefDict = CefDictionaryValue::Create();
+      for (auto& item : dict) {
+        auto nPtr = std::make_shared<NWebValue>(item.second);
+        auto cefVal = ParseNWebValueToValueHelper(nPtr);
+        cefDict->SetValue(CefString(item.first), cefVal.get());
+      }
+      cefValue->SetDictionary(cefDict);
+      return cefValue;
+    }
+    case NWebValue::Type::BINARY: {
+      auto size = value->GetBinaryValueSize();
+      auto buff = value->GetBinaryValue();
+      auto cefDict = CefBinaryValue::Create(buff, size);
+      cefValue->SetBinary(cefDict);
+      return cefValue;
+    }
+    case NWebValue::Type::NONE:
+      break;
+    default:
+      LOG(ERROR) << "ParseNWebValueToValueHelper: not support value type";
+      break;
+  }
+  return cefValue;
+}
+
+CefRefPtr<CefListValue> ParseNWebValueToValue(std::shared_ptr<NWebValue> value,
+                                              CefRefPtr<CefListValue> result) {
+  result->SetValue(0, ParseNWebValueToValueHelper(value));
+  return result;
+}
+
 int NWebHandlerDelegate::NotifyJavaScriptResult(CefRefPtr<CefListValue> args,
                                                 const CefString& method,
                                                 const CefString& object_name,
@@ -2070,7 +2219,7 @@ bool NWebHandlerDelegate::HasJavaScriptObjectMethods(
     int32_t object_id,
     const CefString& method_name) {
   if (!nweb_javascript_callback_) {
-    LOG(ERROR) << "NWebHandlerDelegate::HasJavaScriptObjectMethods "
+    LOG(ERROR) << "NWebHandlerDelegate::GetJavaScriptObjectMethods "
                   "nweb_javascript_callback_ is null";
     return false;
   }

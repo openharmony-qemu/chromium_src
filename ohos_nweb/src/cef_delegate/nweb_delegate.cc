@@ -24,7 +24,6 @@
 #include "nweb_handler_delegate.h"
 #include "nweb_history_list_impl.h"
 #include "nweb_render_handler.h"
-#include "nweb_value_convert.h"
 
 #include "base/command_line.h"
 #include "base/strings/utf_string_conversions.h"
@@ -1514,26 +1513,6 @@ void NWebDelegate::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
       scriptRules.push_back(cefRule);
     }
     GetBrowser()->GetHost()->JavaScriptOnDocumentStart(script, scriptRules);
-  }
-}
-
-void NWebDelegate::CallH5Function(int32_t routing_id,
-                    int32_t h5_object_id,
-                    const std::string h5_method_name,
-                    const std::vector<std::shared_ptr<NWebValue>>& args) const {
-  if (!GetBrowser()) {
-    return;
-  }
-
-  std::vector<CefRefPtr<CefValue>> cef_args;
-  for (auto& item : args) {
-    cef_args.push_back(ParseNWebValueToValueHelper(item));
-  }
-
-  CefString name(h5_method_name);
-  if (GetBrowser()->GetHost()) {
-    GetBrowser()->GetHost()->CallH5Function(routing_id, h5_object_id, name,
-                                            cef_args);
   }
 }
 

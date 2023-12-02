@@ -31,8 +31,6 @@
 #include "nweb_web_message.h"
 
 namespace OHOS::NWeb {
-class NWebValue;
-
 enum class DelegateDragAction {
   DRAG_START = 0,
   DRAG_ENTER,
@@ -175,10 +173,6 @@ class NWebDelegateInterface
       const std::string& object_name,
       const std::vector<std::string>& method_list) const = 0;
   virtual void JavaScriptOnDocumentStart(const ScriptItems& ScriptItems) = 0;
-  virtual void CallH5Function(int32_t routing_id,
-                              int32_t h5_object_id,
-                              const std::string h5_method_name,
-                              const std::vector<std::shared_ptr<NWebValue>>& args) const = 0;
   virtual void RegisterNWebJavaScriptCallBack(
       std::shared_ptr<NWebJavaScriptResultCallBack> callback) = 0;
   virtual bool OnFocus(const FocusReason& focusReason = FocusReason::FOCUS_DEFAULT) const = 0;

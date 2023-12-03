@@ -138,8 +138,14 @@ const base::Feature kDefaultEnableGpuRasterization{
 };
 
 // Enables the use of out of process rasterization for canvas.
-const base::Feature kCanvasOopRasterization{"CanvasOopRasterization",
-                                            base::FEATURE_DISABLED_BY_DEFAULT};
+const base::Feature kCanvasOopRasterization {
+  "CanvasOopRasterization",
+#if BUILDFLAG(IS_OHOS)
+      base::FEATURE_ENABLED_BY_DEFAULT
+#else
+      base::FEATURE_DISABLED_BY_DEFAULT
+#endif
+};
 
 // Enables the use of ANGLE validation for non-WebGL contexts.
 const base::Feature kDefaultEnableANGLEValidation{

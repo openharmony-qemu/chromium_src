@@ -19,8 +19,22 @@ ClipboardOhosReadData::ClipboardOhosReadData(PasteRecordList& record_list)
     : record_list_(record_list) {
   is_in_app_ = OhosAdapterHelper::GetInstance().GetPasteBoard().IsLocalPaste();
   token_id_ = OhosAdapterHelper::GetInstance().GetPasteBoard().GetTokenId();
-  html_ = record_list_[0]->GetHtmlText();
-  text_ = record_list_[0]->GetPlainText();
+  std::string htmlString;
+  std::string textString;
+
+  for (auto& recordList : record_list_) {
+    if (!recordList) {
+      continue;
+    }
+    if (recordList->GetHtmlText()) {
+      htmlString.append(*(recordList->GetHtmlText()));
+    }
+    if (recordList->GetPlainText()) {
+      textString.append(*(recordList->GetPlainText()));
+    }
+  }
+  html_ = std::make_shared<std::string>(htmlString.c_str());
+  text_ = std::make_shared<std::string>(textString.c_str());
 }
 
 std::shared_ptr<std::string> ClipboardOhosReadData::ReadHtml() {

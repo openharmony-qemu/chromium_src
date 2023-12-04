@@ -201,6 +201,9 @@ class CC_EXPORT LayerTreeSettings {
 
   // Whether it is a LayerTree for ui.
   bool is_layer_tree_for_ui = false;
+#ifdef OHOS_NWEB_EX
+  bool enable_delete_unused_resource_delay = false;
+#endif
 };
 
 class CC_EXPORT LayerListSettings : public LayerTreeSettings {

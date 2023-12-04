@@ -3936,6 +3936,10 @@ bool LayerTreeHostImpl::InitializeFrameSink(
       &resource_provider_, context_provider, GetTaskRunner(),
       ResourcePool::kDefaultExpirationDelay,
       settings_.disallow_non_exact_resource_reuse);
+#ifdef OHOS_NWEB_EX
+  resource_pool_->EnableDeleteUnusedResourcesDelay(
+      settings_.enable_delete_unused_resource_delay);
+#endif
 
   auto* context = layer_tree_frame_sink_->worker_context_provider();
   if (context) {

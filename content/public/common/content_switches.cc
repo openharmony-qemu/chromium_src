@@ -1011,6 +1011,11 @@ const char kOhosCustomScheme[] = "ohos-custom-scheme";
 const char kOhosHanceSurface[] = "ohos-enhance-surface";
 const char kOhosEnableDrDc[] = "ohos-enable-drdc";
 const char kOhosDisableTouchEvent[] = "disable-touch-event-register";
+const char kOhosDeviceType[] = "ohos-device-type";
+const char kOhosMobileDevice[] = "mobile";
+const char kOhosTabletDevice[] = "tablet";
+const char kOhos2IN1Device[] = "2IN1";
+const char kOhosUnkownDevice[] = "unkown";
 #endif
 
 #if BUILDFLAG(IS_WIN)

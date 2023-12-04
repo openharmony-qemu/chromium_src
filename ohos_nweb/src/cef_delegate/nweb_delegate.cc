@@ -1157,7 +1157,7 @@ void NWebDelegate::InitializeCef(std::string url,
 #ifdef OHOS_NWEB_EX
   if (base::CommandLine::ForCurrentProcess()) {
     base::CommandLine::ForCurrentProcess()->AppendSwitchASCII(
-        ::switches::kOhosDeviceType,FromProductDeviceType(deviceType));
+        ::switches::kOhosDeviceType, FromProductDeviceType(deviceType));
   }
 #endif
 

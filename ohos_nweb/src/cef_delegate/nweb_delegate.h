@@ -1,0 +1,361 @@
+/*
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef NWEB_DELEGATE_H
+#define NWEB_DELEGATE_H
+
+#include <condition_variable>
+#include <set>
+#include <string>
+#include "capi/nweb_app_client_extension_callback.h"
+#include "cef/include/cef_command_line.h"
+#include "nweb_application.h"
+#include "nweb_delegate_interface.h"
+#include "nweb_display_listener.h"
+#include "nweb_errors.h"
+#include "nweb_event_handler.h"
+#include "nweb_handler.h"
+#include "nweb_handler_delegate.h"
+#include "nweb_inputmethod_client.h"
+#include "nweb_render_handler.h"
+#include "ohos_adapter_helper.h"
+
+#if defined(OHOS_EX_DOWNLOAD)
+#include <memory>
+#include "capi/nweb_download_delegate_callback.h"
+#endif  //  OHOS_EX_DOWNLOAD
+
+namespace OHOS::NWeb {
+class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
+ public:
+  NWebDelegate(int argc, const char* argv[]);
+  ~NWebDelegate();
+#if defined(OHOS_EX_DOWNLOAD)
+  bool Init(bool is_enhance_surface,
+            void* window,
+            bool popup,
+            uint32_t nweb_id);
+#else
+  bool Init(bool is_enhance_surface, void* window, bool popup);
+#endif  //  OHOS_EX_DOWNLOAD
+
+  bool IsReady() override;
+  void OnDestroy(bool is_close_all) override;
+  void RegisterWebAppClientExtensionListener(
+      std::shared_ptr<NWebAppClientExtensionCallback>
+          web_app_client_extension_listener) override;
+  void RegisterDownLoadListener(
+      std::shared_ptr<NWebDownloadCallback> downloadListener) override;
+  void RegisterReleaseSurfaceListener(
+      std::shared_ptr<NWebReleaseSurfaceCallback> releaseSurfaceListener)
+      override;
+#if defined(OHOS_EX_DOWNLOAD)
+  void RegisterWebDownloadDelegateListener(
+      std::shared_ptr<NWebDownloadDelegateCallback> downloadDelegateListener)
+      override;
+  void StartDownload(const char* url) override;
+  void ResumeDownload(std::shared_ptr<NWebDownloadItem> web_download) override;
+#endif  //  OHOS_EX_DOWNLOAD
+  void RegisterNWebHandler(std::shared_ptr<NWebHandler> handler) override;
+  void RegisterRenderCb(
+      std::function<void(const char*)> render_update_cb) override;
+
+  void SetInputMethodClient(CefRefPtr<NWebInputMethodClient> client) override;
+
+  void Resize(uint32_t width,
+              uint32_t height,
+              bool isKeyboard = false) override;
+  void OnTouchPress(int32_t id, double x, double y, bool from_overlay) override;
+  void OnTouchRelease(int32_t id,
+                      double x,
+                      double y,
+                      bool from_overlay) override;
+  void OnTouchMove(int32_t id, double x, double y, bool from_overlay) override;
+  void OnTouchCancel() override;
+  bool SendKeyEvent(int32_t keyCode, int32_t keyAction) override;
+  void SendMouseWheelEvent(double x,
+                           double y,
+                           double deltaX,
+                           double deltaY) override;
+  void SendMouseEvent(int x, int y, int button, int action, int count) override;
+  void NotifyScreenInfoChanged(RotationType rotation,
+                               OrientationType orientation) override;
+
+  int Load(const std::string& url) override;
+  bool IsNavigatebackwardAllowed() const override;
+  bool IsNavigateForwardAllowed() const override;
+  bool CanNavigateBackOrForward(int num_steps) const override;
+  void NavigateBack() const override;
+  void NavigateForward() const override;
+  void NavigateBackOrForward(int32_t step) const override;
+  void DeleteNavigateHistory() override;
+  void ClearSslCache() override;
+  void ClearClientAuthenticationCache() override;
+  void Reload() const override;
+  void ReloadOriginalUrl() const override;
+  int Zoom(float zoomFactor) const override;
+  int ZoomIn() const override;
+  int ZoomOut() const override;
+  void Stop() const override;
+  void ExecuteJavaScript(const std::string& code) const override;
+  void PutBackgroundColor(int color) const override;
+  void InitialScale(float scale) const override;
+  void OnPause() override;
+  void OnContinue() override;
+  void OnOccluded() override;
+  void OnUnoccluded() override;
+  void SetEnableLowerFrameRate(bool enabled) override;
+  std::shared_ptr<NWebPreference> GetPreference() const override;
+  std::string Title() override;
+  HitTestResult GetHitTestResult() const override;
+  int PageLoadProgress() override;
+  float Scale() override;
+  int Load(std::string& url,
+           std::map<std::string, std::string> additionalHttpHeaders) override;
+  int LoadWithDataAndBaseUrl(const std::string& baseUrl,
+                             const std::string& data,
+                             const std::string& mimeType,
+                             const std::string& encoding,
+                             const std::string& historyUrl) override;
+  int LoadWithData(const std::string& data,
+                   const std::string& mimeType,
+                   const std::string& encoding) override;
+  int ContentHeight() override;
+  void RegisterArkJSfunction(
+      const std::string& object_name,
+      const std::vector<std::string>& method_list) const override;
+
+  void UnregisterArkJSfunction(
+      const std::string& object_name,
+      const std::vector<std::string>& method_list) const override;
+
+  void RegisterNWebJavaScriptCallBack(
+      std::shared_ptr<NWebJavaScriptResultCallBack> callback) override;
+  bool OnFocus(const FocusReason& focusReason =
+                   FocusReason::FOCUS_DEFAULT) const override;
+  void OnBlur() const override;
+
+  void RegisterFindListener(
+      std::shared_ptr<NWebFindCallback> find_listener) override;
+  void FindAllAsync(const std::string& search_string) const override;
+  void ClearMatches() const override;
+  void FindNext(const bool forward) const override;
+  std::string GetUrl() const override;
+  const std::string GetOriginalUrl() override;
+  bool GetFavicon(const void** data,
+                  size_t& width,
+                  size_t& height,
+                  ImageColorType& colorType,
+                  ImageAlphaType& alphaType) override;
+  void PutNetworkAvailable(bool available) override;
+
+  bool SetZoomInFactor(float factor);
+  bool SetZoomOutFactor(float factor);
+
+#if defined(OHOS_MSGPORT)
+  void ExecuteJavaScript(
+      const std::string& code,
+      std::shared_ptr<NWebValueCallback<std::shared_ptr<NWebMessage>>> callback,
+      bool extention) const override;
+  void CreateWebMessagePorts(std::vector<std::string>& ports) override;
+  void PostWebMessage(std::string& message,
+                      std::vector<std::string>& ports,
+                      std::string& targetUri) override;
+  void ClosePort(std::string& port_handle) override;
+  void PostPortMessage(std::string& port_handle,
+                       std::shared_ptr<NWebMessage> data) override;
+  void SetPortMessageCallback(
+      std::string& port_handle,
+      std::shared_ptr<NWebValueCallback<std::shared_ptr<NWebMessage>>> callback)
+      override;
+#endif  // defined(OHOS_MSGPORT)
+
+#if defined(REPORT_SYS_EVENT)
+  void SetNWebId(uint32_t nwebId) override;
+#endif
+
+  void StoreWebArchive(
+      const std::string& base_name,
+      bool auto_name,
+      std::shared_ptr<NWebValueCallback<std::string>> callback) const override;
+  void SetBrowserUserAgentString(const std::string& user_agent) override;
+  void SendDragEvent(const DelegateDragEvent& dragEvent) const override;
+#ifdef OHOS_I18N
+  void UpdateLocale(const std::string& language,
+                    const std::string& region) override;
+#endif  // #ifdef OHOS_I18N
+  CefRefPtr<CefClient> GetCefClient() const override {
+    return handler_delegate_;
+  }
+#ifdef OHOS_DRAG_DROP
+  std::string GetAppTempDir() const override {
+    return ohos_temp_dir_;
+  }
+  void InitAppTempDir();
+  std::shared_ptr<NWebDragData> GetOrCreateDragData() override;
+  void ClearDragData() const;
+  std::string ohos_temp_dir_;
+#endif  // OHOS_DRAG_DROP
+  void GetImages(std::shared_ptr<NWebValueCallback<bool>> callback) override;
+  void RemoveCache(bool include_disk_files) override;
+
+#ifdef OHOS_NAVIGATION
+  std::shared_ptr<NWebHistoryList> GetHistoryList() override;
+  WebState SerializeWebState() override;
+  bool RestoreWebState(WebState state) override;
+#endif
+
+#if defined(OHOS_NWEB_EX)
+  void UnRegisterWebAppClientExtensionListener() override;
+#endif  // defined(OHOS_NWEB_EX)
+
+#if defined(OHOS_MEDIA_MUTE_AUDIO)
+  void SetAudioMuted(bool muted) override;
+#endif  // defined(OHOS_MEDIA_MUTE_AUDIO)
+
+#if defined(OHOS_MEDIA_POLICY)
+  void SetAudioResumeInterval(int32_t resumeInterval) override;
+  void SetAudioExclusive(bool audioExclusive) override;
+#endif  // defined(OHOS_MEDIA_POLICY)
+
+#if defined(OHOS_NO_STATE_PREFETCH)
+  void PrefetchPage(
+      std::string& url,
+      std::map<std::string, std::string> additionalHttpHeaders) override;
+#endif  // defined(OHOS_NO_STATE_PREFETCH)
+
+#ifdef OHOS_PAGE_UP_DOWN
+  void PageUp(bool top) override;
+  void PageDown(bool bottom) override;
+#endif  // #ifdef OHOS_PAGE_UP_DOWN
+
+#if defined(OHOS_INPUT_EVENTS)
+  void SetNWebDelegateInterface(
+      std::shared_ptr<NWebDelegateInterface> client) override;
+  void ScrollTo(float x, float y) override;
+  void ScrollBy(float delta_x, float delta_y) override;
+  void SlideScroll(float vx, float vy) override;
+#endif  // defined(OHOS_INPUT_EVENTS)
+
+#ifdef OHOS_EX_PASSWORD
+  void SetSavePasswordAutomatically(bool enable) override;
+  bool GetSavePasswordAutomatically() override;
+  void SetSavePassword(bool enable) override;
+  bool GetSavePassword() override;
+  void SaveOrUpdatePassword(bool is_udpate) override;
+  void PasswordSuggestionSelected(int list_index) const override;
+#endif
+#if defined(OHOS_EX_FORCE_ZOOM)
+  void SetForceEnableZoom(bool forceEnableZoom) override;
+  bool GetForceEnableZoom() override;
+#endif
+#if defined(OHOS_EX_FREE_COPY)
+  void SelectAndCopy() override;
+  bool ShouldShowFreeCopy() override;
+#endif
+#if defined(OHOS_COMPOSITE_RENDER)
+  void SetShouldFrameSubmissionBeforeDraw(bool should) override;
+#endif  // defined(OHOS_COMPOSITE_RENDER)
+
+#if defined(OHOS_MULTI_WINDOW)
+  void NotifyPopupWindowResult(bool result) override;
+#endif  // defined(OHOS_MULTI_WINDOW)
+#ifdef OHOS_CA
+  bool GetCertChainDerData(std::vector<std::string>& certChainData,
+                           bool isSingleCert) override;
+#endif
+
+#ifdef OHOS_EX_BLANK_TARGET_POPUP_INTERCEPT
+  void SetEnableBlankTargetPopupIntercept(bool enableBlankTargetPopup) override;
+#endif
+
+#if defined(OHOS_PRINT)
+  void SetToken(void* token) override;
+#endif // defined(OHOS_PRINT)
+
+#ifdef OHOS_SCREEN_ROTATION
+  void SetVirtualPixelRatio(float ratio) override;
+#endif // defined(OHOS_SCREEN_ROTATION)
+ public:
+  int argc_;
+  const char** argv_;
+
+ private:
+  void RunMessageLoop();
+
+#if defined(OHOS_EX_DOWNLOAD)
+  void InitializeCef(std::string url,
+                     bool is_enhance_surface,
+                     void* window,
+                     bool popup,
+                     uint32_t nweb_id);
+#else
+  void InitializeCef(std::string url,
+                     bool is_enhance_surface,
+                     void* window,
+                     bool popup);
+#endif  //  OHOS_EX_DOWNLOAD
+  const CefRefPtr<CefBrowser> GetBrowser() const;
+  void RequestVisitedHistory();
+  bool HasBackgroundColorWithInit(int32_t& backgroundColor);
+#if defined(OHOS_API_INIT_WEB_ENGINE)
+  void OnContextInitializeComplete(const std::string& url, void* windows);
+#endif  // defined(OHOS_API_INIT_WEB_ENGINE)
+#if defined(OHOS_MSGPORT)
+  void ConvertNWebMsgToCefValue(std::shared_ptr<NWebMessage> data,
+                                CefRefPtr<CefValue> message);
+#endif  // defined(OHOS_MSGPORT)
+#ifdef OHOS_CA
+  bool GetCertChainDerDataInner(CefRefPtr<CefX509Certificate> cert,
+                                std::vector<std::string>& certChainData,
+                                bool isSingleCert);
+#endif
+ private:
+  float zoom_in_factor_ = 1.25f;
+  float zoom_out_factor_ = 0.8f;
+  float default_virtual_pixel_ratio_ = 2.0;
+  float intial_scale_ = 0;
+  bool has_requested_visited_history = false;
+  CefRefPtr<NWebApplication> nweb_app_ = nullptr;
+  CefRefPtr<NWebHandlerDelegate> handler_delegate_ = nullptr;
+  CefRefPtr<NWebRenderHandler> render_handler_ = nullptr;
+  std::shared_ptr<NWebEventHandler> event_handler_ = nullptr;
+  std::shared_ptr<NWebPreferenceDelegate> preference_delegate_ = nullptr;
+  std::shared_ptr<NWebFindDelegate> find_delegate_ = nullptr;
+  std::unique_ptr<OHOS::NWeb::DisplayManagerAdapter> display_manager_adapter_ =
+      nullptr;
+  std::shared_ptr<OHOS::NWeb::DisplayScreenListener> display_listener_ =
+      nullptr;
+  // Members only accessed on the main thread.
+  bool hidden_ = false;
+  bool occluded_ = false;
+  bool is_ready_ = false;
+#if defined(OHOS_COMPOSITE_RENDER) || defined(OHOS_PAGE_UP_DOWN)
+  uint32_t width_ = 0;
+  uint32_t height_ = 0;
+#endif  // defined(OHOS_COMPOSITE_RENDER)
+
+#if defined(REPORT_SYS_EVENT)
+  uint32_t nweb_id_;
+#endif
+
+  bool is_enhance_surface_ = false;
+#if defined(OHOS_INPUT_EVENTS)
+  bool is_onPause_ = false;
+  static std::set<uint32_t> focus_nweb_id_;
+#endif  // defined(OHOS_INPUT_EVENTS)
+};
+}  // namespace OHOS::NWeb
+#endif

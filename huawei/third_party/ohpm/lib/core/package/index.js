@@ -1,0 +1,1 @@
+"use strict";Object.defineProperty(exports,"__esModule",{value:!0}),exports.init=exports.updatePackageJson=void 0;var e=require("./packageJson");Object.defineProperty(exports,"updatePackageJson",{enumerable:!0,get:function(){return e.updatePackageJson}});var t=require("./init");Object.defineProperty(exports,"init",{enumerable:!0,get:function(){return t.init}});

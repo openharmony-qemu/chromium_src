@@ -1,0 +1,48 @@
+# Copyright 2022 The Huawei Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+# Logic separated out from config.gni so that it can be used by compiler.gni
+# without introducing a circular dependency.
+
+assert(is_ohos)
+
+if (current_cpu == "x86") {
+  ohos_app_abi = "x86"
+} else if (current_cpu == "arm") {
+  import("//build/config/arm.gni")
+  if (arm_version < 7) {
+    ohos_app_abi = "armeabi"
+  } else {
+    ohos_app_abi = "armeabi-v7a"
+  }
+} else if (current_cpu == "x64") {
+  ohos_app_abi = "x86_64"
+} else if (current_cpu == "arm64") {
+  ohos_app_abi = "arm64-v8a"
+} else {
+  assert(false, "Unknown ABI: " + current_cpu)
+}
+
+if (target_cpu == "arm64" || target_cpu == "x64") {
+  ohos_64bit_target_cpu = true
+} else if (target_cpu == "arm" || target_cpu == "x86") {
+  ohos_64bit_target_cpu = false
+} else {
+  assert(false, "Unknown target CPU: $target_cpu")
+}
+
+# Intentionally do not define ohos_app_secondary_abi_cpu and
+# ohos_app_secondary_abi for 32-bit target_cpu, since they are not used.
+if (target_cpu == "arm64") {
+  ohos_secondary_abi_cpu = "arm"
+  ohos_app_secondary_abi = "armeabi-v7a"
+} else if (target_cpu == "x64") {
+  ohos_secondary_abi_cpu = "x86"
+  ohos_app_secondary_abi = "x86"
+}
+
+if (defined(ohos_secondary_abi_cpu)) {
+  ohos_secondary_abi_cpu =
+      "//build/toolchain/ohos:ohos_clang_${ohos_secondary_abi_cpu}"
+}

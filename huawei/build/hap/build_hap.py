@@ -11,6 +11,7 @@ sys.path.append(
     os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, os.pardir,
                  "build", "android", "gyp"))
 from util import build_utils
+import action_helpers # build_utils adds //build to sys.path.
 
 
 class HapProject:
@@ -41,7 +42,9 @@ class HapProject:
       os.makedirs(dir_name)
 
   def WriteDepfile(self, depfile):
-    build_utils.WriteDepfile(depfile, self.output, ['build.ninja'])
+    action_helpers.write_depfile(depfile,
+                                 os.path.relpath(self.output,
+                                                 self.root), ['build.ninja'])
     pass
 
   def OverrideProjectFiles(self, src_dir, libs, resources):

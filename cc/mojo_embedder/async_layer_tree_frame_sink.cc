@@ -114,10 +114,10 @@ bool AsyncLayerTreeFrameSink::BindToClient(LayerTreeFrameSinkClient* client) {
 
 #if BUILDFLAG(IS_OHOS)
   std::vector<int32_t> thread_ids;
-  thread_ids.push_back(base::PlatformThread::CurrentId());
+  thread_ids.push_back(base::PlatformThread::CurrentRealId());
   bool is_created = true;
   compositor_frame_sink_ptr_->ReportKeyThreadIds(
-      thread_ids, base::GetCurrentProcId(), is_created);
+      thread_ids, base::GetCurrentRealPid(), is_created);
 #endif
 
   return true;

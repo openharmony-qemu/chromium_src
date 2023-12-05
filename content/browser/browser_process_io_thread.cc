@@ -52,8 +52,8 @@ BrowserProcessIOThread::~BrowserProcessIOThread() {
 #if BUILDFLAG(IS_OHOS)
   using namespace OHOS::NWeb;
   ResSchedClientAdapter::ReportKeyThread(
-    ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentProcId(),
-    GetThreadId(), ResSchedRoleAdapter::USER_INTERACT);
+    ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentRealPid(),
+    GetThreadRealId(), ResSchedRoleAdapter::USER_INTERACT);
 #endif
   Stop();
 }
@@ -112,8 +112,8 @@ void BrowserProcessIOThread::Run(base::RunLoop* run_loop) {
 #if BUILDFLAG(IS_OHOS)
   using namespace OHOS::NWeb;
   ResSchedClientAdapter::ReportKeyThread(
-    ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(),
-    GetThreadId(), ResSchedRoleAdapter::USER_INTERACT);
+    ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentRealPid(),
+    GetThreadRealId(), ResSchedRoleAdapter::USER_INTERACT);
 #endif
 
   IOThreadRun(run_loop);

@@ -60,12 +60,22 @@ PlatformThreadId SimpleThread::tid() {
   return tid_;
 }
 
+#if BUILDFLAG(IS_OHOS)
+PlatformThreadId SimpleThread::RealTid() {
+  DCHECK(HasBeenStarted());
+  return realTid_;
+}
+#endif
+
 bool SimpleThread::HasBeenStarted() {
   return event_.IsSignaled();
 }
 
 void SimpleThread::ThreadMain() {
   tid_ = PlatformThread::CurrentId();
+#if BUILDFLAG(IS_OHOS)
+  realTid_ = PlatformThread::CurrentRealId();
+#endif
   PlatformThread::SetName(name_);
 
   // We've initialized our new thread, signal that we're done to Start().

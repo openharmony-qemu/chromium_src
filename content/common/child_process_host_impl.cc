@@ -367,8 +367,13 @@ void ChildProcessHostImpl::OnChannelConnected(int32_t peer_pid) {
   // TODO(crbug.com/616980): Remove the peer_pid argument altogether from
   // IPC::Listener::OnChannelConnected.
   const base::Process& peer_process = GetPeerProcess();
+#if BUILDFLAG(IS_OHOS)
+  base::ProcessId pid =
+      peer_process.IsValid() ? peer_process.Pid() : base::GetCurrentRealPid();
+#else
   base::ProcessId pid =
       peer_process.IsValid() ? peer_process.Pid() : base::GetCurrentProcId();
+#endif
   opening_channel_ = false;
   delegate_->OnChannelConnected(pid);
   for (auto& filter : filters_)

@@ -173,9 +173,9 @@ void ChildProcess::ReportIoThreadStatus(bool is_created) {
   // Otherwise, report key thread info to the browser process firstly.
   if (main_thread_->IsInBrowserProcess()) {
     ResSchedClientAdapter::ReportKeyThread(
-      status, base::GetCurrentProcId(), io_thread_.GetThreadId(), ResSchedRoleAdapter::USER_INTERACT);
+      status, base::GetCurrentRealPid(), io_thread_.GetThreadRealId(), ResSchedRoleAdapter::USER_INTERACT);
   } else {
-    main_thread_->ReportKeyThread(static_cast<int32_t>(status), base::GetCurrentProcId(), io_thread_.GetThreadId());
+    main_thread_->ReportKeyThread(static_cast<int32_t>(status), base::GetCurrentRealPid(), io_thread_.GetThreadRealId());
   }
 }
 

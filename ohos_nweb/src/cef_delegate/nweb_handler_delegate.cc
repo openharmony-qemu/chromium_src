@@ -914,11 +914,16 @@ void NWebHandlerDelegate::OnHttpError(CefRefPtr<CefRequest> request,
         std::make_shared<NWebUrlResourceRequestImpl>(
             request->GetMethod().ToString(), request_headers,
             request->GetURL().ToString(), has_user_gesture, is_main_frame);
+    
     std::string data;
+    CefResponse::HeaderMap cef_response_headers;
+    request->GetHeaderMap(cef_response_headers);
+    std::map<std::string, std::string> response_headers;
+    ConvertMapToHeaderMap(cef_response_headers, response_headers);
     std::shared_ptr<NWebUrlResourceResponse> web_response =
         std::make_shared<NWebUrlResourceResponse>(
             response->GetMimeType(), response->GetCharset(),
-            response->GetStatus(), response->GetStatusText(), request_headers,
+            response->GetStatus(), response->GetStatusText(), response_headers,
             data);
     nweb_handler_->OnHttpError(web_request, web_response);
   }

@@ -82,6 +82,9 @@
 #if BUILDFLAG(IS_ANDROID)
 #define STAT_STRUCT struct stat
 #define FSTAT_FUNC fstat
+#elif BUILDFLAG(IS_OHOS) && defined(__ARM_EABI__)
+#define STAT_STRUCT struct kernel_stat64
+#define FSTAT_FUNC sys_fstat64
 #else
 #define STAT_STRUCT struct kernel_stat
 #define FSTAT_FUNC sys_fstat

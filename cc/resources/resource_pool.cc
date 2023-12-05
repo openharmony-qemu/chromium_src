@@ -563,7 +563,7 @@ void ResourcePool::EvictResourcesNotUsedSince(base::TimeTicks time_limit) {
     if (unused_resources_.back()->last_usage() > time_limit)
       return;
 
-#ifdef OHOS_NWED_EX
+#ifdef OHOS_NWEB_EX
     if (delete_unused_resources_delay_enabled_ &&
         unused_resources_.size() <= kUnusedResourcesToKeep &&
         unused_resources_.back()->last_usage() + kDefaultExpirationDelay >
@@ -683,7 +683,7 @@ void ResourcePool::PoolResource::OnMemoryDump(
   }
 }
 
-#ifdef OHOS_NWED_EX
+#ifdef OHOS_NWEB_EX
  void ResourcePool::EnableDeleteUnusedResourcesDelay(bool enable) {
    delete_unused_resources_delay_enabled_ = enable;
  }

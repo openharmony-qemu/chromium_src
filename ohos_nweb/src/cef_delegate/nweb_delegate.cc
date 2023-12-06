@@ -1543,6 +1543,20 @@ void NWebDelegate::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
   }
 }
 
+void NWebDelegate::JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) {
+  GetBrowser()->GetHost()->RemoveJavaScriptOnDocumentEnd();
+  for (auto item: scriptItems) {
+    CefString script = item.first;
+    std::vector<CefString> scriptRules;
+    for (std::string rule : item.second) {
+      CefString cefRule;
+      cefRule.FromString(rule);
+      scriptRules.push_back(cefRule);
+    }
+    GetBrowser()->GetHost()->JavaScriptOnDocumentEnd(script, scriptRules);
+  }
+}
+
 void NWebDelegate::RegisterNWebJavaScriptCallBack(
     std::shared_ptr<NWebJavaScriptResultCallBack> callback) {
   if (handler_delegate_ == nullptr) {

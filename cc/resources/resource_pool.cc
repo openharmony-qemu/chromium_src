@@ -72,7 +72,7 @@ bool ResourceMeetsSizeRequirements(const gfx::Size& requested_size,
 
 constexpr base::TimeDelta ResourcePool::kDefaultExpirationDelay;
 constexpr base::TimeDelta ResourcePool::kDefaultMaxFlushDelay;
-#ifdef OHOS_NWEB_EX
+#ifdef OHOS_NWEB_EX                     kDefaultMaxExpirationDelay
 constexpr base::TimeDelta ResourcePool::kDefaultMaxExpirationDelay;
 constexpr size_t ResourcePool::kUnusedResourcesToKeep;
 #endif
@@ -566,7 +566,7 @@ void ResourcePool::EvictResourcesNotUsedSince(base::TimeTicks time_limit) {
 #ifdef OHOS_NWEB_EX
     if (delete_unused_resources_delay_enabled_ &&
         unused_resources_.size() <= kUnusedResourcesToKeep &&
-        unused_resources_.back()->last_usage() + kDefaultExpirationDelay >
+        unused_resources_.back()->last_usage() + kDefaultMaxExpirationDelay >
             time_limit) {
       return;
     }

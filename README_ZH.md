@@ -1,8 +1,5 @@
 # Chromium
 ## 简介
-### 内容介绍
-1. Chromium是由Google主导开发的网页浏览器引擎，以BSD许可证等多重自由版权发行并开放源代码，是Google的Chrome浏览器背后的引擎，其目的是为了创建一个安全、稳定和快速的通用浏览器。
-2. OpenHarmony nweb是OpenHarmony web组件的Native引擎，其基于CEF开源项目构建。
 ### 软件架构
 软件架构说明
 ![](figures/Web-architecture_ZH.png "web软件架构图")
@@ -19,12 +16,23 @@
 2. 编译
    
     编译同时构建未签名Hap包：
+	
+	形态：rk3568
 	```
 	./build.sh  -t w -A rk3568
     ```
     仅编译so库：
 	```
 	./build.sh -A rk3568
+    ```
+	
+	形态：rk3568_64
+	```
+	./build.sh  -t w -A rk3568_64
+    ```
+    仅编译so库：
+	```
+	./build.sh -A rk3568_64
     ```
     ***如若找不到sdk压缩包，可以下载大文件***
     ```
@@ -51,7 +59,7 @@
 
     方法二：替换hap包
     
-    编译完成后，在out目录下找到NWeb-rk3568.hap, 将它推送到设备中。
+    编译完成后，在out目录下找到NWeb-rk3568.hap或者NWeb-rk3568_64.hap, 将它推送到设备中。
 
     ```
     hdc shell "mount -o remount,rw /"

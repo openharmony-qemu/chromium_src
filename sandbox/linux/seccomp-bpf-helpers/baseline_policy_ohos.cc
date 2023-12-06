@@ -4,9 +4,7 @@
 #include "sandbox/linux/bpf_dsl/bpf_dsl.h"
 #include "sandbox/linux/system_headers/linux_syscalls.h"
 #include "sandbox/linux/seccomp-bpf-helpers/sigsys_handlers.h"
-#if defined(__x86_64__)
-#include <asm/prctl.h>
-#endif
+
 
 using sandbox::bpf_dsl::AllOf;
 using sandbox::bpf_dsl::Allow;

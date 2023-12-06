@@ -72,7 +72,7 @@ bool ResourceMeetsSizeRequirements(const gfx::Size& requested_size,
 
 constexpr base::TimeDelta ResourcePool::kDefaultExpirationDelay;
 constexpr base::TimeDelta ResourcePool::kDefaultMaxFlushDelay;
-#ifdef OHOS_NWEB_EX                     kDefaultMaxExpirationDelay
+#ifdef OHOS_NWEB_EX
 constexpr base::TimeDelta ResourcePool::kDefaultMaxExpirationDelay;
 constexpr size_t ResourcePool::kUnusedResourcesToKeep;
 #endif

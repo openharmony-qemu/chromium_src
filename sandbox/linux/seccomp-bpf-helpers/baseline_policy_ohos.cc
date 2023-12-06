@@ -4,7 +4,9 @@
 #include "sandbox/linux/bpf_dsl/bpf_dsl.h"
 #include "sandbox/linux/system_headers/linux_syscalls.h"
 #include "sandbox/linux/seccomp-bpf-helpers/sigsys_handlers.h"
-
+#if defined(__x86_64__)
+#include <asm/prctl.h>
+#endif
 
 using sandbox::bpf_dsl::AllOf;
 using sandbox::bpf_dsl::Allow;
@@ -29,7 +31,7 @@ namespace sandbox {
 
 namespace {
 
-#if !defined(__i386__)
+#if !defined(__i386__) || defined(__x86_64__)
 // Restricts the arguments to sys_socket() to AF_UNIX. Returns a BoolExpr that
 // evaluates to true if the syscall should be allowed.
 BoolExpr RestrictSocketArguments(const Arg<int>& domain,
@@ -55,7 +57,7 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
     bool override_and_trap = false;
 
     switch (sysno) {
-#if defined(__arm__) || defined(__aarch64__)
+#if defined(__arm__) || defined(__aarch64__) || defined(__x86_64__)
     case __NR_fdatasync:
     case __NR_fsync:
     case __NR_ftruncate:
@@ -174,7 +176,7 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
     case __NR_fcntl64:
     case __NR_access:
 #endif
-#if defined(__aarch64__)
+#if defined(__aarch64__) || defined(__x86_64__)
     case __NR_getrlimit:
     case __NR_newfstatat:
     case __NR_fstatfs:
@@ -185,7 +187,7 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
     break;
     }
 
-#if defined(__arm__) || defined(__aarch64__)
+#if defined(__arm__) || defined(__aarch64__) || defined(__x86_64__)
     if (sysno == __NR_socket) {
         const Arg<int> domain(0);
         const Arg<int> type(1);
@@ -213,7 +215,7 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
 #endif
 
     switch(sysno) {
-#if defined(__arm__) || defined(__aarch64__)
+#if defined(__arm__) || defined(__aarch64__) || defined(__x86_64__)
     case __NR_setrlimit:
     case __NR_sched_get_priority_max:
     case __NR_sched_get_priority_min:

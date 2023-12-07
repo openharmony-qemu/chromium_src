@@ -43,7 +43,7 @@ AudioThreadImpl::AudioThreadImpl()
 #if BUILDFLAG(IS_OHOS)
   OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(
       OHOS::NWeb::ResSchedStatusAdapter::THREAD_CREATED,
-      base::GetCurrentProcId(), thread_.GetThreadId(),
+      base::GetCurrentRealPid(), thread_.GetThreadRealId(),
       OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_AUDIO);
 #endif
 
@@ -69,7 +69,7 @@ void AudioThreadImpl::Stop() {
 #if BUILDFLAG(IS_OHOS)
   OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(
       OHOS::NWeb::ResSchedStatusAdapter::THREAD_DESTROYED,
-      base::GetCurrentProcId(), thread_.GetThreadId(),
+      base::GetCurrentRealPid(), thread_.GetThreadRealId(),
       OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_AUDIO);
 #endif
 

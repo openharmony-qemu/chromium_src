@@ -262,7 +262,7 @@ void CategorizedWorkerPool::Shutdown() {
 std::set<int32_t> CategorizedWorkerPool::GetTidOfAllWorker() {
   std::set<int32_t> tidSet {};
   for (const auto& thread : threads_) {
-    tidSet.insert(thread->tid());
+    tidSet.insert(thread->RealTid());
   }
   return tidSet;
 }

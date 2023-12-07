@@ -50,7 +50,7 @@ AudioRendererMixer::~AudioRendererMixer() {
 #if BUILDFLAG(IS_OHOS)
   OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
       OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_STOP,
-      base::GetCurrentProcId(), tid_);
+      base::GetCurrentRealPid(), tid_);
 #endif
 
   // Ensure that all mixer inputs have removed themselves prior to destruction.
@@ -69,7 +69,7 @@ void AudioRendererMixer::AddMixerInput(const AudioParameters& input_params,
 #if BUILDFLAG(IS_OHOS)
     OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
         OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_START,
-        base::GetCurrentProcId(), tid_);
+        base::GetCurrentRealPid(), tid_);
 #endif
   }
 
@@ -145,7 +145,11 @@ int AudioRendererMixer::Render(base::TimeDelta delay,
   // sink to avoid wasting resources when media elements are present but remain
   // in the pause state.
   const base::TimeTicks now = base::TimeTicks::Now();
+#if BUILDFLAG(IS_OHOS)
+  tid_ = base::PlatformThread::CurrentRealId();
+#else
   tid_ = base::PlatformThread::CurrentId();
+#endif
   if (!aggregate_converter_.empty()) {
     last_play_time_ = now;
   } else if (now - last_play_time_ >= pause_delay_ && playing_) {
@@ -153,7 +157,7 @@ int AudioRendererMixer::Render(base::TimeDelta delay,
     LOG(DEBUG) << "AudioRendererMixer::Render Time to pause the sink to avoid wasting resources";
     OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
         OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_STOP,
-        base::GetCurrentProcId(), tid_);
+        base::GetCurrentRealPid(), tid_);
 #endif
     audio_sink_->Pause();
     playing_ = false;

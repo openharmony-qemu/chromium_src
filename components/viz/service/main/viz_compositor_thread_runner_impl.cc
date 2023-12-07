@@ -95,8 +95,8 @@ std::unique_ptr<VizCompositorThreadType> CreateAndStartCompositorThread() {
       FROM_HERE,
       base::BindOnce(
           base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread),
-          ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(),
-          thread->GetThreadId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
+          ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentRealPid(),
+          thread->GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
 #endif
 
   // Setup tracing sampler profiler as early as possible.
@@ -126,8 +126,8 @@ VizCompositorThreadRunnerImpl::~VizCompositorThreadRunnerImpl() {
       FROM_HERE,
       base::BindOnce(
           base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread),
-          ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentProcId(),
-          thread_->GetThreadId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
+          ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentRealPid(),
+          thread_->GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
 #endif
 }
 

@@ -561,8 +561,8 @@ void CreateInProcessNetworkService(
 #if BUILDFLAG(IS_OHOS)
   using namespace OHOS::NWeb;
   ResSchedClientAdapter::ReportKeyThread(
-    ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(),
-    GetNetworkServiceDedicatedThread().GetThreadId(),
+    ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentRealPid(),
+    GetNetworkServiceDedicatedThread().GetThreadRealId(),
     ResSchedRoleAdapter::USER_INTERACT);
 #endif
   } else {

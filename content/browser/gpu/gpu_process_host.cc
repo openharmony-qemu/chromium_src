@@ -768,7 +768,7 @@ GpuProcessHost::~GpuProcessHost() {
   if (in_process_gpu_thread_)
     OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(
         OHOS::NWeb::ResSchedStatusAdapter::THREAD_DESTROYED,
-        base::GetCurrentProcId(), in_process_gpu_thread_->GetThreadId(),
+        base::GetCurrentRealPid(), in_process_gpu_thread_->GetThreadRealId(),
         OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_DISPLAY);
 #endif
 
@@ -921,7 +921,7 @@ bool GpuProcessHost::Init() {
 #if BUILDFLAG(IS_OHOS)
     OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(
         OHOS::NWeb::ResSchedStatusAdapter::THREAD_CREATED,
-        base::GetCurrentProcId(), in_process_gpu_thread_->GetThreadId(),
+        base::GetCurrentRealPid(), in_process_gpu_thread_->GetThreadRealId(),
         OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_DISPLAY);
 #endif
   } else if (!LaunchGpuProcess()) {

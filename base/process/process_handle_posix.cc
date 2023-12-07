@@ -12,6 +12,12 @@ ProcessId GetCurrentProcId() {
   return getpid();
 }
 
+#if BUILDFLAG(IS_OHOS)
+ProcessId GetCurrentRealPid() {
+  return getprocpid();
+}
+#endif
+
 ProcessHandle GetCurrentProcessHandle() {
   return GetCurrentProcId();
 }

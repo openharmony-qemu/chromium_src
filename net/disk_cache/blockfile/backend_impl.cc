@@ -127,8 +127,8 @@ class CacheThread : public base::Thread {
 #if BUILDFLAG(IS_OHOS)
   using namespace OHOS::NWeb;
   ResSchedClientAdapter::ReportKeyThread(
-    ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(),
-    GetThreadId(), ResSchedRoleAdapter::USER_INTERACT);
+    ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentRealPid(),
+    GetThreadRealId(), ResSchedRoleAdapter::USER_INTERACT);
 #endif
   }
 
@@ -138,8 +138,8 @@ class CacheThread : public base::Thread {
 #if BUILDFLAG(IS_OHOS)
   using namespace OHOS::NWeb;
   ResSchedClientAdapter::ReportKeyThread(
-    ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentProcId(),
-    GetThreadId(), ResSchedRoleAdapter::USER_INTERACT);
+    ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentRealPid(),
+    GetThreadRealId(), ResSchedRoleAdapter::USER_INTERACT);
 #endif
     Stop();
   }

@@ -1637,7 +1637,7 @@ scoped_refptr<gpu::GpuChannelHost> RenderThreadImpl::EstablishGpuChannelSync() {
   auto tidSet = categorized_worker_pool_->GetTidOfAllWorker();
   auto host = child_process_host();
   for (auto tid : tidSet) {
-    host->ReportKeyThread(static_cast<int32_t>(ResSchedStatusAdapter::THREAD_CREATED), base::GetCurrentProcId(),
+    host->ReportKeyThread(static_cast<int32_t>(ResSchedStatusAdapter::THREAD_CREATED), base::GetCurrentRealPid(),
       tid, static_cast<int32_t>(ResSchedRoleAdapter::IMPORTANT_DISPLAY));
   }
 #endif

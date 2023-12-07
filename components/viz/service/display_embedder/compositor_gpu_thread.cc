@@ -102,8 +102,8 @@ CompositorGpuThread::~CompositorGpuThread() {
       FROM_HERE,
       base::BindOnce(
           base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread),
-          ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentProcId(),
-          GetThreadId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
+          ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentRealPid(),
+          GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
 #endif
   base::Thread::Stop();
 }
@@ -124,8 +124,8 @@ bool CompositorGpuThread::Initialize() {
       FROM_HERE,
       base::BindOnce(
           base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread),
-          ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(),
-          GetThreadId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
+          ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentRealPid(),
+          GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
 #endif
   return init_succeeded_;
 }

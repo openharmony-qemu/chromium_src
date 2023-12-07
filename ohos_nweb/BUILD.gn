@@ -136,6 +136,11 @@ component("cef_nweb") {
     "src/sysevent/event_reporter.h",
   ]
 
+  sources += [
+    "src/cef_delegate/nweb_value_convert.cc",
+    "src/cef_delegate/nweb_value_convert.h",
+  ]
+
   deps = [
     "//base:base",
     "//content/public/common",

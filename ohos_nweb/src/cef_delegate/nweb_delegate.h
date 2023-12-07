@@ -160,6 +160,11 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       const std::vector<std::string>& method_list) const override;
   void JavaScriptOnDocumentStart(const ScriptItems& scriptItems) override;
 
+  void CallH5Function(int32_t routing_id,
+                      int32_t h5_object_id,
+                      const std::string h5_method_name,
+                      const std::vector<std::shared_ptr<NWebValue>>& args) const override;
+
   void RegisterNWebJavaScriptCallBack(
       std::shared_ptr<NWebJavaScriptResultCallBack> callback) override;
   bool OnFocus(const FocusReason& focusReason = FocusReason::FOCUS_DEFAULT) const override;

@@ -1340,6 +1340,11 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   // include pendings frames. See bug: http://crbug.com/1087806
   int SendToAllFramesIncludingPending(IPC::Message* message);
 
+#if BUILDFLAG(IS_OHOS)
+  RenderFrameHost* GetTargetFramesIncludingPending(
+      int routing_id);
+#endif
+
   // These are the content internal equivalents of
   // |WebContents::ForEachRenderFrameHost| whose comment can be referred to
   // for details. Content internals can also access speculative

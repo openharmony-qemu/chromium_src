@@ -37,6 +37,7 @@
 
 namespace OHOS::NWeb {
 class NWebHandler;
+class NWebValue;
 
 /**
  * @brief Describes how pixel bits encoder color data.
@@ -921,6 +922,19 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      * @return true if the discarded window reload success, otherwise false.
      */
     virtual bool Restore() = 0;
+
+    /**
+     * CallH5Function
+     *
+     * @param routing_id       int32_t: the h5 frmae routing id
+     * @param h5_object_id     int32_t: the h5 side object id
+     * @param h5_method_name   string:  the h5 side object method name
+     * @param args             vector<shared_ptr<NWebValue>>: the call args
+     */
+    virtual void CallH5Function(int32_t routing_id,
+                                int32_t h5_object_id,
+                                const std::string h5_method_name,
+                                const std::vector<std::shared_ptr<NWebValue>>& args) = 0;
 };
 }  // namespace OHOS::NWeb
 

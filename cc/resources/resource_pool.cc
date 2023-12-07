@@ -72,6 +72,10 @@ bool ResourceMeetsSizeRequirements(const gfx::Size& requested_size,
 
 constexpr base::TimeDelta ResourcePool::kDefaultExpirationDelay;
 constexpr base::TimeDelta ResourcePool::kDefaultMaxFlushDelay;
+#ifdef OHOS_NWEB_EX
+constexpr base::TimeDelta ResourcePool::kDefaultMaxExpirationDelay;
+constexpr size_t ResourcePool::kUnusedResourcesToKeep;
+#endif
 
 void ResourcePool::GpuBacking::InitOverlayCandidateAndTextureTarget(
     const viz::ResourceFormat format,
@@ -517,9 +521,8 @@ void ResourcePool::ScheduleEvictExpiredResourcesIn(
 void ResourcePool::EvictExpiredResources() {
   evict_expired_resources_pending_ = false;
   base::TimeTicks current_time = clock_->NowTicks();
-
-  EvictResourcesNotUsedSince(current_time - resource_expiration_delay_);
-
+  base::TimeTicks time_limit = current_time - resource_expiration_delay_;
+  EvictResourcesNotUsedSince(time_limit);
   if (unused_resources_.empty() ||
       flush_evicted_resources_deadline_ <= current_time) {
     // If nothing is evictable, we have deleted one (and possibly more)
@@ -532,10 +535,22 @@ void ResourcePool::EvictExpiredResources() {
     // If we still have evictable resources, schedule a call to
     // EvictExpiredResources for either (a) the time when the LRU buffer expires
     // or (b) the deadline to explicitly flush previously evicted resources.
-    ScheduleEvictExpiredResourcesIn(
+    base::TimeDelta schedule_evict_expired_resources_time =
         std::min(GetUsageTimeForLRUResource() + resource_expiration_delay_,
                  flush_evicted_resources_deadline_) -
-        current_time);
+        current_time;
+#ifdef OHOS_NWEB_EX
+    if (delete_unused_resources_delay_enabled_) {
+      base::TimeDelta flush_evicted_resources_delay =
+                  unused_resources_.back()->last_usage() < time_limit
+              ? kDefaultExpirationDelay
+              : base::Seconds(0);
+      schedule_evict_expired_resources_time =
+          std::max(schedule_evict_expired_resources_time,
+                   flush_evicted_resources_delay);
+    }
+#endif
+    ScheduleEvictExpiredResourcesIn(schedule_evict_expired_resources_time);
   }
 }
 
@@ -547,6 +562,15 @@ void ResourcePool::EvictResourcesNotUsedSince(base::TimeTicks time_limit) {
     // delays in freeing expired resources.
     if (unused_resources_.back()->last_usage() > time_limit)
       return;
+
+#ifdef OHOS_NWEB_EX
+    if (delete_unused_resources_delay_enabled_ &&
+        unused_resources_.size() <= kUnusedResourcesToKeep &&
+        unused_resources_.back()->last_usage() + kDefaultMaxExpirationDelay >
+            time_limit) {
+      return;
+    }
+#endif
 
     DeleteResource(PopBack(&unused_resources_));
   }
@@ -658,5 +682,11 @@ void ResourcePool::PoolResource::OnMemoryDump(
     dump->AddScalar("free_size", MemoryAllocatorDump::kUnitsBytes, total_bytes);
   }
 }
+
+#ifdef OHOS_NWEB_EX
+ void ResourcePool::EnableDeleteUnusedResourcesDelay(bool enable) {
+   delete_unused_resources_delay_enabled_ = enable;
+ }
+#endif
 
 }  // namespace cc

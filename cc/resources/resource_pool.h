@@ -55,7 +55,11 @@ class CC_EXPORT ResourcePool : public base::trace_event::MemoryDumpProvider {
   static constexpr base::TimeDelta kDefaultExpirationDelay = base::Seconds(5);
   // Max delay before an evicted resource is flushed.
   static constexpr base::TimeDelta kDefaultMaxFlushDelay = base::Seconds(1);
-
+#ifdef OHOS_NWEB_EX
+  static constexpr base::TimeDelta kDefaultMaxExpirationDelay =
+      base::Seconds(60);
+  static constexpr size_t kUnusedResourcesToKeep = 12;
+#endif
   // A base class to hold ownership of gpu backed PoolResources. Allows the
   // client to define destruction semantics.
   class GpuBacking {
@@ -421,6 +425,13 @@ class CC_EXPORT ResourcePool : public base::trace_event::MemoryDumpProvider {
   base::TimeTicks flush_evicted_resources_deadline_;
 
   raw_ptr<const base::TickClock> clock_;
+#ifdef OHOS_NWEB_EX
+ public:
+  void EnableDeleteUnusedResourcesDelay(bool enable);
+
+ private:
+  bool delete_unused_resources_delay_enabled_ = false;
+#endif
 
   base::WeakPtrFactory<ResourcePool> weak_ptr_factory_{this};
 };

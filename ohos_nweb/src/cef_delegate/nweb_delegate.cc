@@ -50,6 +50,22 @@ static const float richtextDisplayRatio = 1.0;
 namespace OHOS::NWeb {
 #ifdef OHOS_NWEB_EX
 static const double kZoomLevelToFactorRatio = 1.2;
+
+namespace {
+
+std::string FromProductDeviceType(OHOS::NWeb::ProductDeviceType deviceType) {
+  switch (deviceType) {
+    case OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_TABLET:
+      return ::switches::kOhosTabletDevice;
+    case OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_2IN1:
+      return ::switches::kOhos2IN1Device;
+    case OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE:
+      return ::switches::kOhosMobileDevice;
+    default:
+      return ::switches::kOhosUnkownDevice;
+  }
+}
+}
 #endif
 
 void ConvertCefValueToNWebMessage(CefRefPtr<CefValue> src, std::shared_ptr<NWebMessage> dst) {
@@ -1137,6 +1153,13 @@ void NWebDelegate::InitializeCef(std::string url,
       deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_TABLET ||
       deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_2IN1;
   settings.persist_session_cookies = !is_pc_device;
+
+#ifdef OHOS_NWEB_EX
+  if (base::CommandLine::ForCurrentProcess()) {
+    base::CommandLine::ForCurrentProcess()->AppendSwitchASCII(
+        ::switches::kOhosDeviceType, FromProductDeviceType(deviceType));
+  }
+#endif
 
 #if !defined(CEF_USE_SANDBOX)
   settings.no_sandbox = true;

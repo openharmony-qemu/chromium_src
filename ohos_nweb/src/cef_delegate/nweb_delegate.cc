@@ -303,17 +303,18 @@ void NWebDelegate::InitAppTempDir() {
   ohos_temp_dir_ = "/data/storage/el2/base/haps/entry/temp";
 }
 
-bool NWebDelegate::InitRichtextIdentifier() {
+void NWebDelegate::InitRichtextIdentifier() {
   for (int i = 0; i < argc_; i++) {
     if (argv_[i] == nullptr) {
       continue;
     }
 
     if (!strncmp(argv_[i], "--init-richtext-data=", strlen("--init-richtext-data="))) {
-      return true;
+      const char* value = argv_[i] + strlen("--init-richtext-data=");
+      richtext_data_str_ = value;
+      LOG(INFO) << "richtext InitRichtextIdentifier data" << richtext_data_str_.c_str();
     }
   }
-  return false;
 }
 
 bool NWebDelegate::Init(bool is_enhance_surface,
@@ -328,6 +329,7 @@ bool NWebDelegate::Init(bool is_enhance_surface,
   }
 
   InitAppTempDir();
+  InitRichtextIdentifier();
 
   find_delegate_ = std::make_shared<NWebFindDelegate>();
   is_enhance_surface_ = is_enhance_surface;
@@ -366,7 +368,7 @@ bool NWebDelegate::Init(bool is_enhance_surface,
       display_manager_adapter_->GetDefaultDisplay();
   if (display != nullptr) {
     NotifyScreenInfoChanged(display->GetRotation(), display->GetOrientation());
-    if (InitRichtextIdentifier()) {
+    if (!richtext_data_str_.empty()) {
       // Created a richtext component
       SetVirtualPixelRatio(richtextDisplayRatio);
     } else {
@@ -676,7 +678,7 @@ void NWebDelegate::NotifyScreenInfoChanged(RotationType rotation,
       return;
     }
     double display_ratio = 0.0;
-    if (InitRichtextIdentifier()) {
+    if (!richtext_data_str_.empty()) {
       // Created a richtext component
       display_ratio = richtextDisplayRatio;
     } else {

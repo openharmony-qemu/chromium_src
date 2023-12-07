@@ -298,7 +298,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
     NWebAccessibilityNodeInfo& nodeInfo) const;
   bool PopulateAccessibilityNodeInfo(const content::BrowserAccessibilityOHOS* node,
                                      NWebAccessibilityNodeInfo& nodeInfo) const;
-  bool InitRichtextIdentifier();
+  void InitRichtextIdentifier();
 
  private:
   std::string ohos_temp_dir_;
@@ -330,6 +330,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   bool is_onPause_ = false;
   static std::set<uint32_t> focus_nweb_id_;
   bool is_discarded_ = false;
+  std::string richtext_data_str_ = "";
 };
 }  // namespace OHOS::NWeb
 #endif

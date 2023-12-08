@@ -356,24 +356,22 @@ void OHOSMediaPlayerBridge::OnBufferAvailable(
     return;
   }
 
-  int32_t coded_height;
-  int32_t coded_width;
+  int32_t coded_height = buffer->GetHeight();
+  int32_t coded_width = buffer->GetStride();
 
   // video frame height must be 32*N
   const int step_height = 32;
-  // argb format video frame should divided by 4
+  // argb format video frame stride should divided by 4
   const int argb_stride_step = 4;
-  if (buffer->GetHeight() % step_height == 0) {
-    coded_height = buffer->GetHeight();
-  } else {
-    coded_height = (buffer->GetHeight() / step_height + 1) * step_height;
-  }
+
   if (buffer->GetFormat() ==
       OHOS::NWeb::PixelFormatAdapter::PIXEL_FMT_RGBA_8888) {
-    coded_width = buffer->GetStride() / argb_stride_step;
-  } else {
-    coded_width = buffer->GetStride();
+    coded_width /= argb_stride_step;
+    coded_height = buffer->GetHeight();
+  } else if (buffer->GetHeight() % step_height == 0) {
+    coded_height = (buffer->GetHeight() / step_height + 1) * step_height;
   }
+
 #if defined(RK3568)
   if (!is_hls_) {
     coded_width = buffer->GetWidth();

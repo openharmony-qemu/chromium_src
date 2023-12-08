@@ -40,3 +40,6 @@ certificate verifier. For instance, a certificate chain the OS deemed valid
 could ultimately be rejected by `CertVerifyProc` since it independently
 checks the chain for CRLSet revocation, use of weak keys, Baseline Requirements
 validity, name constraints, weak signature algorithms, and more.
+
+NOTICE:
+Some files in this folder (there is a high probability that the file name contails OH) are compiled by OpenHarmony open-source authors based on the Chromium open-source framework. Some processes refer to the Chromium source code.

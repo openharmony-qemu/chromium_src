@@ -1,3 +1,6 @@
+// Copyright (c) 2021 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 #ifndef SANDBOX_LINUX_SECCOMP_BPF_HELPERS_BASELINE_POLICY_OHOS_H_
 #define SANDBOX_LINUX_SECCOMP_BPF_HELPERS_BASELINE_POLICY_OHOS_H_
 

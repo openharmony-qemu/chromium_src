@@ -1,3 +1,6 @@
+// Copyright (c) 2021 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 #include "sandbox/linux/seccomp-bpf-helpers/baseline_policy_ohos.h"
 #include "sandbox/linux/seccomp-bpf-helpers/syscall_parameters_restrictions.h"
 #include <sys/socket.h>

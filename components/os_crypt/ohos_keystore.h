@@ -1,12 +1,6 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2018-2022. All rights reserved.
- * Waterloo Cyber Security Center
- *
- * Creation Date: February 28th, 2018
- * Creator : Stefany Allaire (s84078948)
- * Location : Waterloo CSC
- */
-
+// Copyright (c) 2022 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 #ifndef COMPONENTS_OS_CRYPT_HUAWEI_KEYSTORE_H_
 #define COMPONENTS_OS_CRYPT_HUAWEI_KEYSTORE_H_
 

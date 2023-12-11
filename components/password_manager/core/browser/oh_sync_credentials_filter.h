@@ -1,8 +1,6 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2019-2022. All rights reserved.
- * Created by lin on 19-1-16.
- */
-
+// Copyright (c) 2022 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 #ifndef COMPONENTS_PASSWORD_MANAGER_CORE_BROWSER_OH_SYNC_CREDENTIALS_FILTER_H_
 #define COMPONENTS_PASSWORD_MANAGER_CORE_BROWSER_OH_SYNC_CREDENTIALS_FILTER_H_
 

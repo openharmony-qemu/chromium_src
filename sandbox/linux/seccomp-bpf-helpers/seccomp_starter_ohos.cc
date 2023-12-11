@@ -1,3 +1,6 @@
+// Copyright (c) 2021 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 #include "sandbox/linux/seccomp-bpf-helpers/seccomp_starter_ohos.h"
 #include <signal.h>
 #include "base/logging.h"

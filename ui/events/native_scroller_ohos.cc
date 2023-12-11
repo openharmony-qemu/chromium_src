@@ -1,3 +1,6 @@
+// Copyright (c) 2021 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 #include "ui/events/native_scroller_ohos.h"
 #include <cmath>
 #include "base/logging.h"

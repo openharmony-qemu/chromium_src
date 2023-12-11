@@ -79,3 +79,6 @@ synthetic microbenchmarks that measure performance in various scenarios:
 Regressions in these benchmarks can generally by caused by 1) operating system
 changes, 2) compiler version or flag changes or 3) changes in //base code
 itself.
+
+NOTICE:
+Some files in this folder (there is a high probability that the file name contails OH) are compiled by OpenHarmony open-source authors based on the Chromium open-source framework. Some processes refer to the Chromium source code.

@@ -1,3 +1,6 @@
+// Copyright (c) 2021 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 #include "components/viz/service/frame_sinks/external_begin_frame_source_ohos.h"
 #include <cstdint>
 #include <memory>

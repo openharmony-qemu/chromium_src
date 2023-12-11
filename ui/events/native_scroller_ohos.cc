@@ -1,6 +1,7 @@
 #include "ui/events/native_scroller_ohos.h"
 #include <cmath>
 #include "base/logging.h"
+#include "ui/events/gesture_detection/gesture_configuration.h"
 
 namespace ui {
 namespace {
@@ -8,7 +9,7 @@ constexpr float kDefaultFriction = 0.6f;
 constexpr float kFrictionScale = -4.2f;
 constexpr float kDefaultThreshold = 0.75f;
 constexpr float kDefaultMultiplier = 60.0f;
-constexpr float kThresholdForFlingEnd = 0.001f;
+constexpr float kThresholdForFlingEnd = 1.0f;
 constexpr double Epsilon = 0.001f;
 constexpr double kFriction = kDefaultFriction * kFrictionScale;
 
@@ -43,8 +44,9 @@ void NativeScrollerOhos::Fling(float start_x,
     init_velocity_y_ = std::abs(velocity_y);
     init_y_ = start_y;
 
+    float pixel_ratio = ui::GestureConfiguration::GetInstance()->virtual_pixel_ratio();
     value_threshold_ = kDefaultThreshold;
-    velocity_threshold_ = value_threshold_ * kDefaultMultiplier;
+    velocity_threshold_ = NearZero(pixel_ratio) ? (value_threshold_ * kDefaultMultiplier) : ((value_threshold_ * kDefaultMultiplier) / pixel_ratio);
 
     float diff_time = 0;
     if (NearZero(init_velocity_y_)) {
@@ -83,7 +85,7 @@ bool NativeScrollerOhos::ComputeScrollOffset(base::TimeTicks time,
 
 bool NativeScrollerOhos::ShouldAbortAnimation() {
     return std::abs(curr_y_ - final_y_) < kThresholdForFlingEnd || 
-           std::abs(curr_y_ - last_y_) <= kThresholdForFlingEnd;
+           std::abs(curr_velocity_y_) <= velocity_threshold_;
 }
 
 double NativeScrollerOhos::GetPosition(float offsetTime /*second*/) {

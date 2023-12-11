@@ -38,6 +38,7 @@
 #include "nweb_find_delegate.h"
 #include "nweb_preference_delegate.h"
 #include "url/gurl.h"
+#include "ui/events/gesture_detection/gesture_configuration.h"
 
 #ifdef OHOS_NWEB_EX
 #include <cmath>
@@ -709,6 +710,7 @@ void NWebDelegate::SetVirtualPixelRatio(float ratio) {
   if (browser != nullptr && browser->GetHost() != nullptr) {
     browser->GetHost()->SetVirtualPixelRatio(ratio);
   }
+  ui::GestureConfiguration::GetInstance()->set_virtual_pixel_ratio(default_virtual_pixel_ratio_);
 }
 
 std::shared_ptr<NWebPreference> NWebDelegate::GetPreference() const {

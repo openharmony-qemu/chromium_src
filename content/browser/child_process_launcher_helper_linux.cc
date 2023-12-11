@@ -141,9 +141,9 @@ ChildProcessLauncherHelper::LaunchProcessOnLauncherThread(
       process.process = base::Process();
     } else {
       process.process = base::Process(render_pid);
+      OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(OHOS::NWeb::ResSchedStatusAdapter::THREAD_CREATED,
+        render_pid, render_pid, OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_DISPLAY);
     }
-    OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(OHOS::NWeb::ResSchedStatusAdapter::THREAD_CREATED,
-      render_pid, render_pid, OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_DISPLAY);
   }
 #else
   process.process = base::LaunchProcess(*command_line(), options);

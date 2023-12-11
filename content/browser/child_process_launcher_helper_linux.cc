@@ -27,6 +27,10 @@
 #include "content/public/common/zygote/zygote_handle.h"
 #include "sandbox/policy/linux/sandbox_linux.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "res_sched_client_adapter.h"
+#endif
+
 namespace content {
 namespace internal {
 
@@ -138,6 +142,8 @@ ChildProcessLauncherHelper::LaunchProcessOnLauncherThread(
     } else {
       process.process = base::Process(render_pid);
     }
+    OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(OHOS::NWeb::ResSchedStatusAdapter::THREAD_CREATED,
+      render_pid, render_pid, OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_DISPLAY);
   }
 #else
   process.process = base::LaunchProcess(*command_line(), options);

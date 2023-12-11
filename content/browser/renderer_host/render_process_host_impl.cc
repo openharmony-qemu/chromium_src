@@ -3712,12 +3712,6 @@ void RenderProcessHostImpl::OnChannelConnected(int32_t peer_pid) {
       peer_pid, child_process_.get());
 #endif
 
-#if BUILDFLAG(IS_OHOS)
-  OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(
-      OHOS::NWeb::ResSchedStatusAdapter::THREAD_CREATED, peer_pid, peer_pid,
-      OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_DISPLAY);
-#endif
-
   if (IsReady()) {
     DCHECK(!sent_render_process_ready_);
     sent_render_process_ready_ = true;

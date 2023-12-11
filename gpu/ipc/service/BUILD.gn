@@ -144,8 +144,11 @@ component("service") {
     ]
     libs += [ "android" ]
   }
-  if (is_linux || is_chromeos || is_ohos) {
+  if (is_linux || is_chromeos) {
     sources += [ "image_transport_surface_linux.cc" ]
+  }
+  if (is_ohos) {
+    sources += [ "image_transport_surface_ohos.cc" ]
   }
   if (use_ozone) {
     sources += [

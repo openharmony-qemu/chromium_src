@@ -111,6 +111,8 @@ base::ProcessId GetSelfPID() {
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 #if BUILDFLAG(IS_NACL)
   return -1;
+#elif BUILDFLAG(IS_OHOS)
+  return base::GetCurrentRealPid();
 #else
   return base::GetCurrentProcId();
 #endif  // BUILDFLAG(IS_NACL)

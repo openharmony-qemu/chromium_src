@@ -51,5 +51,8 @@ const char kChromeUIWebRTCInternalsHost[] = "webrtc-internals";
 const char kUnreachableWebDataURL[] = "chrome-error://chromewebdata/";
 
 const char kBlockedURL[] = "about:blank#blocked";
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+const char kArkWebUIScheme[] = "arkweb";
+#endif
 
 }  // namespace content

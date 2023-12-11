@@ -409,9 +409,9 @@ SuperPageSnapshot::SuperPageSnapshot(uintptr_t super_page) {
   using SlotSpan = SlotSpanMetadata<ThreadSafe>;
 
   auto* extent_entry = PartitionSuperPageToExtent<ThreadSafe>(super_page);
-
+  
   ::partition_alloc::internal::ScopedGuard lock(extent_entry->root->lock_);
-
+  
   const size_t nonempty_slot_spans =
       extent_entry->number_of_nonempty_slot_spans;
   if (!nonempty_slot_spans) {
@@ -1019,11 +1019,7 @@ void UnmarkInCardTable(uintptr_t slot_start,
 
   const auto bitmap_iterator = [&](uintptr_t slot_start) {
     SlotSpan* current_slot_span = SlotSpan::FromSlotStart(slot_start);
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-    auto* entry = PartitionFreelistEntry::EmplaceAndInitNull(slot_start, current_slot_span->bucket->random_cookie);
-#else
     auto* entry = PartitionFreelistEntry::EmplaceAndInitNull(slot_start);
-#endif
 
     if (current_slot_span != previous_slot_span) {
       // We started scanning a new slot span. Flush the accumulated freelist to
@@ -1039,11 +1035,7 @@ void UnmarkInCardTable(uintptr_t slot_start,
     }
 
     if (freelist_tail) {
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-      freelist_tail->SetNext(entry, current_slot_span->bucket->random_cookie);
-#else
       freelist_tail->SetNext(entry);
-#endif
     }
     freelist_tail = entry;
     ++freelist_entries;

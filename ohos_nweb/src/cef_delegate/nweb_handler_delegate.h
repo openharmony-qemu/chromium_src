@@ -34,7 +34,7 @@
 #include <functional>
 #include <list>
 #include <mutex>
-#include <set>
+#include <unordered_set>
 #include <string>
 #include "capi/nweb_app_client_extension_callback.h"
 #include "nweb_download_callback.h"
@@ -144,7 +144,17 @@ class NWebHandlerDelegate : public CefClient,
   int NotifyJavaScriptResult(CefRefPtr<CefListValue> args,
                              const CefString& method,
                              const CefString& object_name,
-                             CefRefPtr<CefListValue> result) override;
+                             CefRefPtr<CefListValue> result,
+                             int32_t routing_id,
+                             int32_t object_id) override;
+  bool HasJavaScriptObjectMethods(int32_t object_id,
+                                  const CefString& method_name) override;
+  void GetJavaScriptObjectMethods(
+      int32_t object_id,
+      CefRefPtr<CefValue> returned_method_names) override;
+  void RemoveJavaScriptObjectHolder(int32_t holder, int32_t object_id) override;
+  void RemoveTransientJavaScriptObject() override;
+
   CefRefPtr<CefFindHandler> GetFindHandler() override;
   CefRefPtr<CefKeyboardHandler> GetKeyboardHandler() override;
   CefRefPtr<CefFormHandler> GetFormHandler() override;
@@ -345,6 +355,8 @@ class NWebHandlerDelegate : public CefClient,
   void OnScaleChanged(CefRefPtr<CefBrowser> browser,
                       float old_page_scale_factor,
                       float new_page_scale_factor) override;
+  void OnContentsBrowserZoomChange(double zoom_factor,
+                                   bool can_show_bubble) override;
 #if defined(OHOS_INPUT_EVENTS)
   bool OnCursorChange(CefRefPtr<CefBrowser> browser,
                       CefCursorHandle cursor,
@@ -527,6 +539,18 @@ class NWebHandlerDelegate : public CefClient,
   void NotifyPopupWindowResult(bool result);
 #endif  // defined(OHOS_MULTI_WINDOW)
 
+  // #if defined(OHOS_EX_TOPCONTROLS)
+  void OnTopControlsChanged(float top_controls_offset,
+                            float top_content_offset) override;
+  int OnGetTopControlsHeight() override;
+  bool DoBrowserControlsShrinkRendererSize() override;
+  // #endif
+
+  // save ark js function for window.open
+  void SavaArkJSFunctionForPopup(const std::string& object_name,
+                                 const std::vector<std::string>& method_list,
+                                 const int32_t object_id);
+
  private:
   void CopyImageToClipboard(CefRefPtr<CefImage> image);
   // List of existing browser windows. Only accessed on the CEF UI thread.
@@ -580,6 +604,7 @@ class NWebHandlerDelegate : public CefClient,
 
 #if defined(OHOS_NWEB_EX)
   bool on_load_start_notified_ = false;
+  float top_content_offset_ = 0;
 #endif  // OHOS_NWEB_EX
 #ifdef OHOS_PAGE_UP_DOWN
   float scale_ = 100.0;
@@ -590,6 +615,11 @@ class NWebHandlerDelegate : public CefClient,
 #if BUILDFLAG(IS_OHOS)
   std::vector<uint64_t> edited_forms_id_;
 #endif
+
+  // js property name and object id
+  using MethodPair = std::pair<std::string, std::unordered_set<std::string>>;
+  using ObjectMethodMap = std::map<int32_t, MethodPair>;
+  ObjectMethodMap javascript_method_map_;
 };
 }  // namespace OHOS::NWeb
 

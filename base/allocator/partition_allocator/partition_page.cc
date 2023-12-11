@@ -24,6 +24,8 @@
 #include "base/allocator/partition_allocator/reservation_offset_table.h"
 #include "base/allocator/partition_allocator/tagging.h"
 
+uintptr_t g_freelist_cookie = 0;
+
 namespace partition_alloc::internal {
 
 namespace {
@@ -187,10 +189,17 @@ void SlotSpanMetadata<thread_safe>::FreeSlowPath(size_t number_of_freed) {
     // chances of it being filled up again. The old current slot span will be
     // the next slot span.
     PA_DCHECK(!next_slot_span);
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+    SlotSpanMetadata<thread_safe>* real_head = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)(bucket->active_slot_spans_head));
+    if (PA_LIKELY(real_head != get_sentinel_slot_span()))
+      next_slot_span = real_head;
+    bucket->active_slot_spans_head = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)this);
+#else
     if (PA_LIKELY(bucket->active_slot_spans_head != get_sentinel_slot_span())) {
       next_slot_span = bucket->active_slot_spans_head;
     }
     bucket->active_slot_spans_head = this;
+#endif
     PA_CHECK(bucket->num_full_slot_spans);  // Underflow.
     --bucket->num_full_slot_spans;
   }
@@ -202,19 +211,20 @@ void SlotSpanMetadata<thread_safe>::FreeSlowPath(size_t number_of_freed) {
       return;
     }
 #if BUILDFLAG(PA_DCHECK_IS_ON)
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-    freelist_head->CheckFreeList(bucket->slot_size, bucket->random_cookie);
-#else
     freelist_head->CheckFreeList(bucket->slot_size);
-#endif
 #endif
     // If it's the current active slot span, change it. We bounce the slot span
     // to the empty list as a force towards defragmentation.
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+    if (PA_LIKELY(this == (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)(bucket->active_slot_spans_head))))
+      bucket->SetNewActiveSlotSpan();
+    PA_DCHECK((SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)(bucket->active_slot_spans_head)) != this);
+#else
     if (PA_LIKELY(this == bucket->active_slot_spans_head)) {
       bucket->SetNewActiveSlotSpan();
     }
     PA_DCHECK(bucket->active_slot_spans_head != this);
-
+#endif
     if (CanStoreRawSize()) {
       SetRawSize(0);
     }
@@ -285,11 +295,7 @@ void SlotSpanMetadata<thread_safe>::SortFreelist() {
   size_t num_free_slots = 0;
   size_t slot_size = bucket->slot_size;
   for (PartitionFreelistEntry* head = freelist_head; head;
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-       head = head->GetNext(slot_size, this->bucket->random_cookie)) {
-#else
        head = head->GetNext(slot_size)) {
-#endif
     ++num_free_slots;
     size_t offset_in_slot_span = SlotStartPtr2Addr(head) - slot_span_start;
     size_t slot_number = bucket->GetSlotNumber(offset_in_slot_span);
@@ -307,19 +313,12 @@ void SlotSpanMetadata<thread_safe>::SortFreelist() {
          slot_number++) {
       if (free_slots[slot_number]) {
         uintptr_t slot_start = slot_span_start + (slot_size * slot_number);
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-        auto* entry = PartitionFreelistEntry::EmplaceAndInitNull(slot_start, this->bucket->random_cookie);
-#else
         auto* entry = PartitionFreelistEntry::EmplaceAndInitNull(slot_start);
-#endif
+
         if (!head) {
           head = entry;
         } else {
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-          back->SetNext(entry, this->bucket->random_cookie);
-#else
           back->SetNext(entry);
-#endif
         }
 
         back = entry;

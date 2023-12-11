@@ -23,7 +23,7 @@
 #include "ui/events/keycodes/keyboard_codes_posix.h"
 
 namespace OHOS::NWeb {
-enum MouseAction { PRESS = 1, RELEASE = 2, MOVE = 3, HOVER_EXIT = 9 };
+enum MouseAction { PRESS = 1, RELEASE = 2, MOVE = 3, HOVER_ENTER = 6,HOVER_EXIT = 9 };
 
 class NWebInputDelegate {
  public:
@@ -43,6 +43,9 @@ class NWebInputDelegate {
   }
   static inline bool IsMouseMove(int action) {
     return action == MouseAction::MOVE;
+  }
+  static inline bool IsMouseEnter(int action) {
+    return action == HOVER_ENTER;
   }
   static inline bool IsMouseLeave(int action) { return action == HOVER_EXIT; }
   void SetMouseWheelRatio(float ratio) { mouseWheelRatio_ = ratio; }

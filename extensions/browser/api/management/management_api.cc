@@ -615,6 +615,9 @@ ExtensionFunction::ResponseAction ManagementUninstallFunctionBase::Uninstall(
   if (show_confirm_dialog && !user_gesture())
     return RespondNow(Error(keys::kGestureNeededForUninstallError));
 
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  show_confirm_dialog = false;
+#endif
   if (show_confirm_dialog) {
     // We show the programmatic uninstall ui for extensions uninstalling
     // other extensions.

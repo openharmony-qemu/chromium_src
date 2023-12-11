@@ -477,8 +477,10 @@ struct NetworkContextParams {
 
   // Binds to the cookie manager associated with this network context, which
   // should only be handed out to trusted processes.
-  [EnableIf=is_android]
+  // #ifdef OHOS_COOKIE
+  [EnableIf=is_android_or_ohos_cookie]
   pending_receiver<CookieManager>? cookie_manager;
+  // #endif
 
   // Whether to enable Domain Reliability.
   bool enable_domain_reliability = false;

@@ -61,13 +61,13 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void RegisterReleaseSurfaceListener(
       std::shared_ptr<NWebReleaseSurfaceCallback> releaseSurfaceListener)
       override;
-#if defined(OHOS_EX_DOWNLOAD)
+
   void RegisterWebDownloadDelegateListener(
       std::shared_ptr<NWebDownloadDelegateCallback> downloadDelegateListener)
       override;
   void StartDownload(const char* url) override;
   void ResumeDownload(std::shared_ptr<NWebDownloadItem> web_download) override;
-#endif  //  OHOS_EX_DOWNLOAD
+
   void RegisterNWebHandler(std::shared_ptr<NWebHandler> handler) override;
   void RegisterRenderCb(
       std::function<void(const char*)> render_update_cb) override;
@@ -133,13 +133,24 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
                    const std::string& mimeType,
                    const std::string& encoding) override;
   int ContentHeight() override;
-  void RegisterArkJSfunction(
-      const std::string& object_name,
-      const std::vector<std::string>& method_list) const override;
+  void RegisterArkJSfunction(const std::string& object_name,
+                             const std::vector<std::string>& method_list,
+                             const int32_t object_id) const override;
 
   void UnregisterArkJSfunction(
       const std::string& object_name,
       const std::vector<std::string>& method_list) const override;
+
+  void JavaScriptOnDocumentStart(const ScriptItems& scriptItems) override;
+
+  bool Discard() override;
+  bool Restore() override;
+
+  void CallH5Function(
+      int32_t routing_id,
+      int32_t h5_object_id,
+      const std::string h5_method_name,
+      const std::vector<std::shared_ptr<NWebValue>>& args) const override;
 
   void RegisterNWebJavaScriptCallBack(
       std::shared_ptr<NWebJavaScriptResultCallBack> callback) override;
@@ -236,6 +247,11 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       std::map<std::string, std::string> additionalHttpHeaders) override;
 #endif  // defined(OHOS_NO_STATE_PREFETCH)
 
+#if defined(OHOS_INPUT_EVENTS)
+  void SetVirtualKeyBoardArg(int32_t width, int32_t height, double keyboard) override;
+  bool ShouldVirtualKeyboardOverlay() override;
+#endif
+
 #ifdef OHOS_PAGE_UP_DOWN
   void PageUp(bool top) override;
   void PageDown(bool bottom) override;
@@ -267,6 +283,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #endif
 #if defined(OHOS_COMPOSITE_RENDER)
   void SetShouldFrameSubmissionBeforeDraw(bool should) override;
+  void SetDrawRect(int32_t x, int32_t y, int32_t width, int32_t height) override;
+  void SetDrawMode(int32_t mode) override;
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 
 #if defined(OHOS_MULTI_WINDOW)
@@ -281,13 +299,30 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void SetEnableBlankTargetPopupIntercept(bool enableBlankTargetPopup) override;
 #endif
 
+#ifdef OHOS_EX_TOPCONTROLS
+  void UpdateBrowserControlsState(int constraints,
+                                  int current,
+                                  bool animate) const override;
+  void UpdateBrowserControlsHeight(int height, bool animate) override;
+#endif
+
 #if defined(OHOS_PRINT)
   void SetToken(void* token) override;
+  void* CreateWebPrintDocumentAdapter(const std::string& jobName) override;
 #endif // defined(OHOS_PRINT)
 
 #ifdef OHOS_SCREEN_ROTATION
   void SetVirtualPixelRatio(float ratio) override;
 #endif // defined(OHOS_SCREEN_ROTATION)
+
+#ifdef OHOS_POST_URL
+  int PostUrl(const std::string& url, std::vector<char>& postData) override;
+#endif // defined(OHOS_POST_URL)
+#ifdef OHOS_EX_GET_ZOOM_LEVEL
+ void SetBrowserZoomLevel(double zoom_factor) override;
+ double GetBrowserZoomLevel() override;
+#endif
+
  public:
   int argc_;
   const char** argv_;
@@ -310,6 +345,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   const CefRefPtr<CefBrowser> GetBrowser() const;
   void RequestVisitedHistory();
   bool HasBackgroundColorWithInit(int32_t& backgroundColor);
+  void InitRichtextIdentifier();
 #if defined(OHOS_API_INIT_WEB_ENGINE)
   void OnContextInitializeComplete(const std::string& url, void* windows);
 #endif  // defined(OHOS_API_INIT_WEB_ENGINE)
@@ -341,7 +377,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   // Members only accessed on the main thread.
   bool hidden_ = false;
   bool occluded_ = false;
-  bool is_ready_ = false;
+  bool is_popup_ready_ = false;
 #if defined(OHOS_COMPOSITE_RENDER) || defined(OHOS_PAGE_UP_DOWN)
   uint32_t width_ = 0;
   uint32_t height_ = 0;
@@ -356,6 +392,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   bool is_onPause_ = false;
   static std::set<uint32_t> focus_nweb_id_;
 #endif  // defined(OHOS_INPUT_EVENTS)
+  bool is_discarded_ = false;
+  std::string richtext_data_str_ = "";
 };
 }  // namespace OHOS::NWeb
 #endif

@@ -498,6 +498,11 @@ class BASE_EXPORT FilePath {
   // otherwise
   bool IsDataShareUri() const;
 #endif
+
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  static bool IsDataShareUrl(const StringType& url);
+#endif
+
   // NOTE: When adding a new public method, consider adding it to
   // file_path_fuzzer.cc as well.
 

@@ -126,6 +126,7 @@
   X("navigation")                                                        \
   X("net")                                                               \
   X("netlog")                                                            \
+  X("NWebImpl")                                                          \
   X("offline_pages")                                                     \
   X("omnibox")                                                           \
   X("oobe")                                                              \

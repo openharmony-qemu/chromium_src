@@ -80,7 +80,7 @@ class EarlyFeatureAccessTracker {
  private:
   void Fail(const Feature* feature) {
     // TODO(crbug.com/1358639): Enable this check on all platforms.
-#if !BUILDFLAG(IS_IOS) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS)
+#if !BUILDFLAG(IS_IOS) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS) && !defined(OHOS_COOKIE)
 #if !BUILDFLAG(IS_NACL)
     // Create a crash key with the name of the feature accessed too early, to
     // facilitate crash triage.

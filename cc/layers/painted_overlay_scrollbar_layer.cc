@@ -171,6 +171,9 @@ bool PaintedOverlayScrollbarLayer::PaintThumbIfNeeded() {
 }
 
 bool PaintedOverlayScrollbarLayer::PaintTickmarks() {
+#if BUILDFLAG(IS_OHOS)
+  return false;
+#else
   if (!scrollbar_.Read(*this)->HasTickmarks()) {
     if (!track_resource_.Read(*this)) {
       return false;
@@ -201,6 +204,7 @@ bool PaintedOverlayScrollbarLayer::PaintTickmarks() {
 
   SetNeedsPushProperties();
   return true;
+#endif
 }
 
 ScrollbarLayerBase::ScrollbarLayerType

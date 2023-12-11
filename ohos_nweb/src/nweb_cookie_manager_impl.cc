@@ -17,6 +17,10 @@
 #include "nweb_cookie_manager_delegate.h"
 #include "nweb_hilog.h"
 
+#if defined(OHOS_COOKIE)
+#include "nweb_impl.h"
+#endif // defined(OHOS_COOKIE)
+
 using namespace OHOS::NWeb;
 
 extern "C" OHOS_NWEB_EXPORT NWebCookieManager* GetCookieManager() {
@@ -35,6 +39,10 @@ NWebCookieManagerImpl::NWebCookieManagerImpl() {
 #if defined(USE_CEF)
   delegate_ = std::make_shared<NWebCookieManagerDelegate>();
 #endif
+#if defined(OHOS_COOKIE)
+  NWebInitArgs init_args;
+  (void)NWebImpl::InitializeICUStatic(init_args);
+#endif // defined(OHOS_COOKIE)
 }
 
 bool NWebCookieManagerImpl::IsAcceptCookieAllowed() const {
@@ -73,6 +81,15 @@ bool NWebCookieManagerImpl::IsFileURLSchemeCookiesAllowed() const {
 void NWebCookieManagerImpl::PutAcceptFileURLSchemeCookiesEnabled(bool allow) {
   if (delegate_ != nullptr) {
     delegate_->PutAcceptFileURLSchemeCookiesEnabled(allow);
+  }
+}
+
+void NWebCookieManagerImpl::ConfigCookie(
+    const std::string& url,
+    const std::string& value,
+    std::shared_ptr<NWebValueCallback<long>> callback) {
+  if (delegate_ != nullptr) {
+    delegate_->ConfigCookie(url, value, callback);
   }
 }
 

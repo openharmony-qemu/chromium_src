@@ -926,7 +926,12 @@ void FrameTree::NodeLoadingStateChanged(
                                          LoadingState::NONE);
   delegate_->LoadingStateChanged(new_frame_tree_loading_state);
   if (previous_frame_tree_loading_state == LoadingState::NONE) {
+#ifdef OHOS_EX_TOPCONTROLS
+    delegate_->DidStartLoading(&node, new_frame_tree_loading_state ==
+                                          LoadingState::LOADING_UI_REQUESTED);
+#else
     delegate_->DidStartLoading(&node);
+#endif
   } else if (new_frame_tree_loading_state == LoadingState::NONE) {
     delegate_->DidStopLoading();
   }

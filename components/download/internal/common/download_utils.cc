@@ -624,6 +624,9 @@ ResumeMode GetDownloadResumeMode(const GURL& url,
 
     case DOWNLOAD_INTERRUPT_REASON_NETWORK_FAILED:
 #if defined(OHOS_EX_DOWNLOAD)
+      if (restart_required) {
+        user_action_required = true;
+      }
       // Auto resume if network failed.
       break;
 #endif

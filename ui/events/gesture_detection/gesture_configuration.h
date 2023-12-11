@@ -187,6 +187,9 @@ class GESTURE_DETECTION_EXPORT GestureConfiguration {
     velocity_tracker_strategy_ = val;
   }
 
+  void set_virtual_pixel_ratio(float ratio) { virtual_pixel_ratio_ = ratio; }
+  float virtual_pixel_ratio() const { return virtual_pixel_ratio_; }
+
  protected:
   GestureConfiguration();
   virtual ~GestureConfiguration();
@@ -289,6 +292,7 @@ class GESTURE_DETECTION_EXPORT GestureConfiguration {
   bool two_finger_tap_enabled_ = false;
   VelocityTracker::Strategy velocity_tracker_strategy_ =
       VelocityTracker::Strategy::STRATEGY_DEFAULT;
+  float virtual_pixel_ratio_;
 };
 
 }  // namespace ui

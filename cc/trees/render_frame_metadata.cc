@@ -41,6 +41,7 @@ bool RenderFrameMetadata::operator==(const RenderFrameMetadata& other) const {
          current_surface_visual_update_duration ==
              other.current_surface_visual_update_duration &&
 #if BUILDFLAG(IS_OHOS)
+         scrollable_viewport_size == other.scrollable_viewport_size &&
          root_layer_size == other.root_layer_size &&
 #endif
 #if BUILDFLAG(IS_ANDROID)

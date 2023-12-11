@@ -112,7 +112,7 @@ struct RenderFrameMetadata {
   [EnableIf=is_android]
   bool root_overflow_y_hidden;
 
-  [EnableIf=is_android]
+  [EnableIf=is_android_or_ohos]
   gfx.mojom.SizeF scrollable_viewport_size;
 
   [EnableIf=is_android_or_ohos]

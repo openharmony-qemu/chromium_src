@@ -563,10 +563,10 @@ NetworkContext::NetworkContext(
   sct_auditing_handler()->SetMode(params_->sct_auditing_mode);
 #endif  // BUILDFLAG(IS_CT_SUPPORTED)
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || defined(OHOS_COOKIE)
   if (params_->cookie_manager)
     GetCookieManager(std::move(params_->cookie_manager));
-#endif  // BUILDFLAG(IS_ANDROID)
+#endif  // BUILDFLAG(IS_ANDROID) || defined(OHOS_COOKIE)
 
   CreateURLLoaderFactoryForCertNetFetcher(
       std::move(url_loader_factory_for_cert_net_fetcher_receiver));

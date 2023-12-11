@@ -283,7 +283,10 @@ class PrintRenderFrameHelper
   void SnapshotForContentAnalysis(
       SnapshotForContentAnalysisCallback callback) override;
 #endif  // BUILDFLAG(ENABLE_PRINT_CONTENT_ANALYSIS)
-
+#if defined(OHOS_PRINT)
+  void DidDispatchPrintEvent(bool isBefore) override;
+  void ApplicationPrintRequestedPages() override;
+#endif  // OHOS_PRINT
   // Get |page_size| and |content_area| information from
   // |page_layout_in_points|.
   void GetPageSizeAndContentAreaFromPageLayout(

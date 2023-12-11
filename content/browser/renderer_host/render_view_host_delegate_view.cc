@@ -15,7 +15,11 @@ content::RenderViewHostDelegateView::GetOverscrollRefreshHandler() const {
 }
 #endif
 
+#ifdef OHOS_EX_TOPCONTROLS
+int RenderViewHostDelegateView::GetTopControlsHeight() {
+#else
 int RenderViewHostDelegateView::GetTopControlsHeight() const {
+#endif
   return 0;
 }
 

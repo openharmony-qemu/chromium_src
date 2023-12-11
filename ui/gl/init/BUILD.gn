@@ -43,7 +43,7 @@ component("init") {
   if (is_ohos) {
     sources += [
       "gl_factory_ohos.cc",
-      "gl_factory_ohos.h",
+      "gl_initializer_ohos.cc",
     ]
   }
 
@@ -73,8 +73,6 @@ component("init") {
     sources += [
       "gl_display_egl_util_ozone.cc",
       "gl_display_egl_util_ozone.h",
-      "gl_factory_ozone.cc",
-      "gl_initializer_ozone.cc",
       "ozone_util.h",
     ]
 

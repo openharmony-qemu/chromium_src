@@ -14,8 +14,8 @@
  */
 
 #include "cef/include/cef_download_item.h"
-#include "ohos_nweb/src/capi/nweb_download_item_state.h"
 #include "ohos_nweb/src/nweb_hilog.h"
+#include "ohos_nweb/src/capi/nweb_c_api.h"
 
 #ifndef OHOS_NWEB_SRC_NWEB_DOWNLOAD_ITEM_H_
 #define OHOS_NWEB_SRC_NWEB_DOWNLOAD_ITEM_H_

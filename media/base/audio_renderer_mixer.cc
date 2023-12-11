@@ -48,9 +48,9 @@ AudioRendererMixer::~AudioRendererMixer() {
   // AudioRendererSink must be stopped before mixer is destructed.
   audio_sink_->Stop();
 #if BUILDFLAG(IS_OHOS)
-  // OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
-  //     OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_STOP,
-  //     base::GetCurrentProcId(), tid_);
+  OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
+      OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_STOP,
+      base::GetCurrentProcId(), tid_);
 #endif
 
   // Ensure that all mixer inputs have removed themselves prior to destruction.
@@ -67,9 +67,9 @@ void AudioRendererMixer::AddMixerInput(const AudioParameters& input_params,
     last_play_time_ = base::TimeTicks::Now();
     audio_sink_->Play();
 #if BUILDFLAG(IS_OHOS)
-    // OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
-    //     OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_START,
-    //     base::GetCurrentProcId(), tid_);
+    OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
+        OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_START,
+        base::GetCurrentProcId(), tid_);
 #endif
   }
 
@@ -157,9 +157,9 @@ int AudioRendererMixer::Render(base::TimeDelta delay,
     audio_sink_->Pause();
     playing_ = false;
 #if BUILDFLAG(IS_OHOS)
-    // OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
-    //     OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_STOP,
-    //     base::GetCurrentProcId(), tid_);
+    OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
+        OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_STOP,
+        base::GetCurrentProcId(), tid_);
 #endif
   }
 

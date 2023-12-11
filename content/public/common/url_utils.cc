@@ -28,7 +28,11 @@ bool HasWebUIScheme(const GURL& url) {
 bool HasWebUIOrigin(const url::Origin& origin) {
   return origin.scheme() == content::kChromeUIScheme ||
          origin.scheme() == content::kChromeUIUntrustedScheme ||
-         origin.scheme() == content::kChromeDevToolsScheme;
+         origin.scheme() == content::kChromeDevToolsScheme
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+         || origin.scheme() == content::kArkWebUIScheme
+#endif
+      ;
 }
 
 bool IsSavableURL(const GURL& url) {

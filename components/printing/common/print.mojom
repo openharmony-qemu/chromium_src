@@ -354,6 +354,12 @@ interface PrintRenderFrame {
   [EnableIf=enable_print_content_analysis]
   SnapshotForContentAnalysis()
       => (DidPrintDocumentParams? params);
+
+  [EnableIf=is_ohos]
+  DidDispatchPrintEvent(bool isBefore);
+ 
+  [EnableIf=is_ohos]
+  ApplicationPrintRequestedPages();
 };
 
 // Browser process interface exposed to the renderer to handle the general

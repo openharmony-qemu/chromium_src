@@ -30,6 +30,8 @@
 #include "nweb_web_message.h"
 
 namespace OHOS::NWeb {
+class NWebValue;
+
 enum class DelegateDragAction {
   DRAG_START = 0,
   DRAG_ENTER,
@@ -68,14 +70,12 @@ class NWebDelegateInterface
           web_app_client_extension_listener) = 0;
   virtual void SetInputMethodClient(
       CefRefPtr<NWebInputMethodClient> client) = 0;
-#if defined(OHOS_EX_DOWNLOAD)
   virtual void RegisterWebDownloadDelegateListener(
       std::shared_ptr<NWebDownloadDelegateCallback>
           downloadDelegateListener) = 0;
   virtual void StartDownload(const char *url) = 0;
   virtual void
   ResumeDownload(std::shared_ptr<NWebDownloadItem> web_download) = 0;
-#endif  //  OHOS_EX_DOWNLOAD
 
 #if defined(OHOS_INPUT_EVENTS)
   virtual void SetNWebDelegateInterface(
@@ -98,6 +98,12 @@ class NWebDelegateInterface
   virtual void SelectAndCopy() = 0;
   virtual bool ShouldShowFreeCopy() = 0;
 #endif  // OHOS_EX_FREE_COPY
+
+#ifdef OHOS_EX_GET_ZOOM_LEVEL
+  virtual void SetBrowserZoomLevel(double zoom_factor) = 0;
+  virtual double GetBrowserZoomLevel() = 0;
+#endif
+
   /* event interface */
   virtual void Resize(uint32_t width, uint32_t height, bool isKeyboard = false) = 0;
   virtual void OnTouchPress(int32_t id,
@@ -169,10 +175,19 @@ class NWebDelegateInterface
   virtual int ContentHeight() = 0;
   virtual void RegisterArkJSfunction(
       const std::string& object_name,
-      const std::vector<std::string>& method_list) const = 0;
+      const std::vector<std::string>& method_list,
+      const int32_t object_id) const = 0;
   virtual void UnregisterArkJSfunction(
       const std::string& object_name,
       const std::vector<std::string>& method_list) const = 0;
+  virtual void JavaScriptOnDocumentStart(const ScriptItems& ScriptItems) = 0;
+  virtual void CallH5Function(
+      int32_t routing_id,
+      int32_t h5_object_id,
+      const std::string h5_method_name,
+      const std::vector<std::shared_ptr<NWebValue>>& args) const = 0;
+  virtual bool Discard() = 0;
+  virtual bool Restore() = 0;
   virtual void RegisterNWebJavaScriptCallBack(
       std::shared_ptr<NWebJavaScriptResultCallBack> callback) = 0;
   virtual bool OnFocus(const FocusReason& focusReason = FocusReason::FOCUS_DEFAULT) const = 0;
@@ -264,6 +279,8 @@ class NWebDelegateInterface
 
 #if defined(OHOS_COMPOSITE_RENDER)
   virtual void SetShouldFrameSubmissionBeforeDraw(bool should) = 0;
+  virtual void SetDrawRect(int32_t x, int32_t y, int32_t width, int32_t height) = 0;
+  virtual void SetDrawMode(int32_t mode) = 0;
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 
 #if defined(OHOS_MEDIA_POLICY)
@@ -292,11 +309,28 @@ class NWebDelegateInterface
 
 #if defined(OHOS_PRINT)
   virtual void SetToken(void* token) = 0;
+  virtual void* CreateWebPrintDocumentAdapter(const std::string& jobName) = 0;
 #endif // defined(OHOS_PRINT)
 
 #ifdef OHOS_SCREEN_ROTATION
   virtual void SetVirtualPixelRatio(float ratio) = 0;
 #endif // defined(OHOS_SCREEN_ROTATION)
+
+#ifdef OHOS_EX_TOPCONTROLS
+  virtual void UpdateBrowserControlsState(int constraints,
+                                          int current,
+                                          bool animate) const = 0;
+  virtual void UpdateBrowserControlsHeight(int height, bool animate) = 0;
+#endif
+
+#ifdef OHOS_POST_URL
+  virtual int PostUrl(const std::string& url, std::vector<char>& postData) = 0;
+#endif
+
+#if defined(OHOS_INPUT_EVENTS)
+  virtual void SetVirtualKeyBoardArg(int32_t width, int32_t height, double keyboard) = 0;
+  virtual bool ShouldVirtualKeyboardOverlay() = 0;
+#endif
 };
 }  // namespace OHOS::NWeb
 

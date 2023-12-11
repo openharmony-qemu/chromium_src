@@ -21,6 +21,10 @@
 namespace base {
 
 bool ParseAssetsOHOS(FilePath* result) {
+  if (!base::CommandLine::ForCurrentProcess()) {
+    LOG(ERROR) << "CommandLine not init";
+    return false;
+  }
   auto bundle_path = base::CommandLine::ForCurrentProcess()->
     GetSwitchValueASCII(switches::kBundleInstallationDir);
   if (bundle_path.empty()) {
@@ -65,8 +69,12 @@ bool PathProviderOHOS(int key, FilePath* result) {
       NOTIMPLEMENTED();
       return false;
     case base::DIR_CACHE:
+    #ifdef OHOS_COOKIE
+      *result = FilePath("/data/storage/el2/base/cache/web");
+    #else
       // set to /data/local directory for W|X permission.
       *result = FilePath("/data/local");
+    #endif // #ifdef OHOS_COOKIE
       return true;
     case base::DIR_ASSETS:
       // resource file packed to system images

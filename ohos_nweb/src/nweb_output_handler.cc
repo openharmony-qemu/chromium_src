@@ -269,9 +269,9 @@ void NWebOutputHandler::BmpDumpHelper::RgbaToRgb(char* buf,
     if (i % 4 == 3) {
       // check alpha value, if 0, set related color to white
       if (buf[i] == 0) {
-        *(p_rgb - 3) = 255;
-        *(p_rgb - 2) = 255;
-        *(p_rgb - 1) = 255;
+        *(unsigned char*)(p_rgb - 3) = 255;
+        *(unsigned char*)(p_rgb - 2) = 255;
+        *(unsigned char*)(p_rgb - 1) = 255;
       }
       continue;
     }

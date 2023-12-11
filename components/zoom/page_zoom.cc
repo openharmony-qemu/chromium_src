@@ -53,7 +53,7 @@ std::vector<double> PresetZoomValues(PageZoomValueType value_type,
   return zoom_values;
 }
 
-}  // namespace anonymous
+}  // namespace
 
 namespace zoom {
 

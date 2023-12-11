@@ -256,6 +256,9 @@ template("build_webui") {
       out_folder = preprocess_dir
       in_files = invoker.css_files
       minify = optimize
+      if (defined(ohos_arkweb_extensions) && ohos_arkweb_extensions) {
+        arkweb_as_default_scheme = true
+      }
     }
   }
 

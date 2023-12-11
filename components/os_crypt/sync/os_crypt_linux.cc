@@ -387,6 +387,11 @@ crypto::SymmetricKey* OSCryptImpl::GetPasswordV10() {
 crypto::SymmetricKey* OSCryptImpl::GetPasswordV11() {
   base::AutoLock auto_lock(OSCryptImpl::GetLock());
   if (!is_password_v11_cached_) {
+#if defined(OHOS_COOKIE)
+    if (!config_) {
+      return nullptr;
+    }
+#endif // defined(OHOS_COOKIE)
     std::unique_ptr<KeyStorageLinux> key_storage =
         std::move(storage_provider_factory_).Run();
     if (key_storage) {

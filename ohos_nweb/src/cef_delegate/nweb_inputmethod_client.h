@@ -46,6 +46,7 @@ class NWebInputMethodClient : public virtual CefBaseRefCounted {
   virtual void SetFocusStatus(bool focus_status) = 0;
   virtual void OnEditableChanged(CefRefPtr<CefBrowser> browser,
                                  bool is_editable_node) = 0;
+  virtual bool GetIsEditableNode() = 0;
 };
 }  // namespace OHOS::NWeb
 

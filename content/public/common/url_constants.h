@@ -61,7 +61,9 @@ CONTENT_EXPORT extern const char kUnreachableWebDataURL[];
 // Special URL used to rewrite URLs coming from untrusted processes, when the
 // source process is not allowed access to the initially requested URL.
 CONTENT_EXPORT extern const char kBlockedURL[];
-
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+CONTENT_EXPORT extern const char kArkWebUIScheme[];
+#endif
 }  // namespace content
 
 #endif  // CONTENT_PUBLIC_COMMON_URL_CONSTANTS_H_

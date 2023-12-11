@@ -1099,7 +1099,12 @@ PartitionRoot<thread_safe>::AllocFromBucket(Bucket* bucket,
                                             bool* is_already_zeroed) {
   PA_DCHECK((slot_span_alignment >= internal::PartitionPageSize()) &&
             internal::base::bits::IsPowerOfTwo(slot_span_alignment));
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+  SlotSpan* slot_span = (SlotSpan*)EncodeBucket((void*)bucket->active_slot_spans_head);
+#else
   SlotSpan* slot_span = bucket->active_slot_spans_head;
+#endif
+
   // There always must be a slot span on the active list (could be a sentinel).
   PA_DCHECK(slot_span);
   // Check that it isn't marked full, which could only be true if the span was
@@ -1575,7 +1580,13 @@ PA_ALWAYS_INLINE PartitionRoot<thread_safe>*
 PartitionRoot<thread_safe>::FromSlotSpan(SlotSpan* slot_span) {
   auto* extent_entry = reinterpret_cast<SuperPageExtentEntry*>(
       reinterpret_cast<uintptr_t>(slot_span) & internal::SystemPageBaseMask());
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+  PartitionRoot* real_root = (PartitionRoot*)EncodeRoot((void*)(extent_entry->root));
+  return real_root;
+#else
   return extent_entry->root;
+#endif
+
 }
 
 template <bool thread_safe>
@@ -1584,7 +1595,12 @@ PartitionRoot<thread_safe>::FromFirstSuperPage(uintptr_t super_page) {
   PA_DCHECK(internal::IsReservationStart(super_page));
   auto* extent_entry =
       internal::PartitionSuperPageToExtent<thread_safe>(super_page);
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+  PartitionRoot* root = (PartitionRoot*)EncodeRoot((void*)(extent_entry->root));
+  #else
   PartitionRoot* root = extent_entry->root;
+#endif
+
   PA_DCHECK(root->inverted_self == ~reinterpret_cast<uintptr_t>(root));
   return root;
 }

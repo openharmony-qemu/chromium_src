@@ -188,6 +188,10 @@ void OHOSAudioOutputStream::Refresh() {
   isRefreshing_ = false;
 }
 
+bool OHOSAudioOutputStream::GetAudioExclusive() {
+  return audioExclusive_;
+}
+
 void OHOSAudioOutputStream::SetInterruptMode(bool audioExclusive) {
   LOG(INFO) << "OHOSAudioOutputStream::SetInterruptMode audioExclusive: "
             << audioExclusive;
@@ -197,6 +201,7 @@ void OHOSAudioOutputStream::SetInterruptMode(bool audioExclusive) {
     return;
   }
   audio_renderer_->SetInterruptMode(audioExclusive);
+  audioExclusive_ = audioExclusive;
 }
 
 // This stream is always used with sub second buffer sizes, where it's
@@ -297,8 +302,8 @@ void OHOSAudioOutputStream::Prepare(
   if (mediaSession && !mediaSession->activeAudioStream_.empty()) {
     for (auto stream = mediaSession->activeAudioStream_.begin();
          stream != mediaSession->activeAudioStream_.end();) {
-      LOG(INFO)
-          << "OHOSAudioOutputStream::Prepare refresh other active streams";
+      LOG(INFO) << "OHOSAudioOutputStream::Prepare maybe refresh other active "
+                   "streams";
       if (!(*stream)) {
         LOG(ERROR)
             << "OHOSAudioOutputStream::Prepare the active stream is null";
@@ -307,6 +312,12 @@ void OHOSAudioOutputStream::Prepare(
       }
       (*stream)->SetInterruptMode(false);
       (*stream)->Refresh();
+      if ((*stream)->GetAudioExclusive()) {
+        LOG(INFO) << "OHOSAudioOutputStream::Prepare should refresh other "
+                     "active streams";
+        (*stream)->SetInterruptMode(false);
+        (*stream)->Refresh();
+      }
       ++stream;
     }
     LOG(ERROR) << "OHOSAudioOutputStream::Prepare setInterruptMode";

@@ -411,7 +411,9 @@ void FindRequestManager::StopFinding(StopFindAction action) {
         // TODO(dcheng): Use typemapping or use the Mojo enum directly.
         static_cast<blink::mojom::StopFindAction>(action));
   });
-
+#if BUILDFLAG(IS_OHOS)
+  delayed_find_task_.Cancel();
+#endif
   current_session_id_ = kInvalidId;
 #if BUILDFLAG(IS_ANDROID)
   // It is important that these pending replies are cleared whenever a find

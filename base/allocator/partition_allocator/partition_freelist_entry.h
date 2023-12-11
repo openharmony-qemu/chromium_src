@@ -25,6 +25,16 @@
 #include "base/allocator/partition_allocator/reverse_bytes.h"
 #endif  // !defined(ARCH_CPU_BIG_ENDIAN)
 
+extern uintptr_t g_freelist_cookie;
+
+#define UINT32_BIT 32
+PA_ALWAYS_INLINE static uintptr_t GetRandomValue()
+{
+    uint64_t high = partition_alloc::internal::RandomValue();
+    uint64_t low = partition_alloc::internal::RandomValue();
+    return (uintptr_t)((high << UINT32_BIT) | low);
+}
+
 namespace partition_alloc::internal {
 
 namespace {
@@ -41,18 +51,6 @@ class PartitionFreelistEntry;
 
 class EncodedPartitionFreelistEntryPtr {
  private:
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-  PA_ALWAYS_INLINE constexpr explicit EncodedPartitionFreelistEntryPtr(
-      std::nullptr_t, uintptr_t random_cookie)
-      : encoded_(Transform(0, 0)) {}
-  PA_ALWAYS_INLINE explicit EncodedPartitionFreelistEntryPtr(void* ptr, uintptr_t random_cookie)
-      // The encoded pointer stays MTE-tagged.
-      : encoded_(Transform(reinterpret_cast<uintptr_t>(ptr), random_cookie)) {}
-
-  PA_ALWAYS_INLINE PartitionFreelistEntry* Decode(uintptr_t random_cookie) const {
-    return reinterpret_cast<PartitionFreelistEntry*>(Transform(encoded_, random_cookie));
-  }
-#else
   PA_ALWAYS_INLINE constexpr explicit EncodedPartitionFreelistEntryPtr(
       std::nullptr_t)
       : encoded_(Transform(0)) {}
@@ -63,7 +61,7 @@ class EncodedPartitionFreelistEntryPtr {
   PA_ALWAYS_INLINE PartitionFreelistEntry* Decode() const {
     return reinterpret_cast<PartitionFreelistEntry*>(Transform(encoded_));
   }
-#endif
+
   PA_ALWAYS_INLINE constexpr uintptr_t Inverted() const { return ~encoded_; }
 
   PA_ALWAYS_INLINE constexpr void Override(uintptr_t encoded) {
@@ -74,11 +72,7 @@ class EncodedPartitionFreelistEntryPtr {
 
   // Transform() works the same in both directions, so can be used for
   // encoding and decoding.
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-  PA_ALWAYS_INLINE static constexpr uintptr_t Transform(uintptr_t address, uintptr_t random_cookie) {
-#else
   PA_ALWAYS_INLINE static constexpr uintptr_t Transform(uintptr_t address) {
-#endif
     // We use bswap on little endian as a fast transformation for two reasons:
     // 1) On 64 bit architectures, the pointer is very unlikely to be a
     //    canonical address. Therefore, if an object is freed and its vtable is
@@ -88,13 +82,12 @@ class EncodedPartitionFreelistEntryPtr {
     //    corrupt a freelist pointer, partial pointer overwrite attacks are
     //    thwarted.
     // For big endian, similar guarantees are arrived at with a negation.
-
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-    if (address == 0) {
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+    if (address == 0)
       return 0;
-    }
-
-    return address ^ random_cookie;
+    if (g_freelist_cookie == 0)
+      g_freelist_cookie = GetRandomValue();
+    return (address ^ g_freelist_cookie);
 #else
 #if defined(ARCH_CPU_BIG_ENDIAN)
     uintptr_t transformed = ~address;
@@ -115,26 +108,16 @@ class EncodedPartitionFreelistEntryPtr {
 // the rationale and mechanism, respectively.
 class PartitionFreelistEntry {
  private:
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-  constexpr explicit PartitionFreelistEntry(std::nullptr_t, uintptr_t random_cookie)
-      : encoded_next_(EncodedPartitionFreelistEntryPtr(nullptr, random_cookie))
-#else
   constexpr explicit PartitionFreelistEntry(std::nullptr_t)
       : encoded_next_(EncodedPartitionFreelistEntryPtr(nullptr))
-#endif
 #if PA_CONFIG(HAS_FREELIST_SHADOW_ENTRY)
         ,
         shadow_(encoded_next_.Inverted())
 #endif
   {
   }
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-  explicit PartitionFreelistEntry(PartitionFreelistEntry* next, uintptr_t random_cookie)
-      : encoded_next_(EncodedPartitionFreelistEntryPtr(next, random_cookie))
-#else
   explicit PartitionFreelistEntry(PartitionFreelistEntry* next)
       : encoded_next_(EncodedPartitionFreelistEntryPtr(next))
-#endif
 #if PA_CONFIG(HAS_FREELIST_SHADOW_ENTRY)
         ,
         shadow_(encoded_next_.Inverted())
@@ -142,13 +125,8 @@ class PartitionFreelistEntry {
   {
   }
   // For testing only.
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-  PartitionFreelistEntry(void* next, bool make_shadow_match, uintptr_t random_cookie)
-      : encoded_next_(EncodedPartitionFreelistEntryPtr(next, random_cookie))
-#else
   PartitionFreelistEntry(void* next, bool make_shadow_match)
       : encoded_next_(EncodedPartitionFreelistEntryPtr(next))
-#endif
 #if PA_CONFIG(HAS_FREELIST_SHADOW_ENTRY)
         ,
         shadow_(make_shadow_match ? encoded_next_.Inverted() : 12345)
@@ -161,18 +139,6 @@ class PartitionFreelistEntry {
 
   // Emplaces the freelist entry at the beginning of the given slot span, and
   // initializes it as null-terminated.
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-  PA_ALWAYS_INLINE static PartitionFreelistEntry* EmplaceAndInitNull(
-      void* slot_start_tagged, uintptr_t random_cookie) {
-    // |slot_start_tagged| is MTE-tagged.
-    auto* entry = new (slot_start_tagged) PartitionFreelistEntry(nullptr, random_cookie);
-    return entry;
-  }
-  PA_ALWAYS_INLINE static PartitionFreelistEntry* EmplaceAndInitNull(
-      uintptr_t slot_start, uintptr_t random_cookie) {
-    return EmplaceAndInitNull(SlotStartAddr2Ptr(slot_start), random_cookie);
-  }
-#else
   PA_ALWAYS_INLINE static PartitionFreelistEntry* EmplaceAndInitNull(
       void* slot_start_tagged) {
     // |slot_start_tagged| is MTE-tagged.
@@ -183,26 +149,18 @@ class PartitionFreelistEntry {
       uintptr_t slot_start) {
     return EmplaceAndInitNull(SlotStartAddr2Ptr(slot_start));
   }
-#endif
+
   // Emplaces the freelist entry at the beginning of the given slot span, and
   // initializes it with the given |next| pointer, but encoded.
   //
   // This freelist is built for the purpose of thread-cache. This means that we
   // can't perform a check that this and the next pointer belong to the same
   // super page, as thread-cache spans may chain slots across super pages.
-
   PA_ALWAYS_INLINE static PartitionFreelistEntry* EmplaceAndInitForThreadCache(
       uintptr_t slot_start,
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-      PartitionFreelistEntry* next,
-      uintptr_t random_cookie) {
-    auto* entry =
-        new (SlotStartAddr2Ptr(slot_start)) PartitionFreelistEntry(next, random_cookie);
-#else
       PartitionFreelistEntry* next) {
     auto* entry =
         new (SlotStartAddr2Ptr(slot_start)) PartitionFreelistEntry(next);
-#endif
     return entry;
   }
 
@@ -213,71 +171,37 @@ class PartitionFreelistEntry {
   // if the shadow matches the next pointer properly or is trash.
   PA_ALWAYS_INLINE static void EmplaceAndInitForTest(uintptr_t slot_start,
                                                      void* next,
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-                                                     bool make_shadow_match,
-                                                     uintptr_t random_cookie) {
+                                                     bool make_shadow_match) {
     new (SlotStartAddr2Ptr(slot_start))
-        PartitionFreelistEntry(next, make_shadow_match, random_cookie);
-#else
-                                                   bool make_shadow_match) {
-  new (SlotStartAddr2Ptr(slot_start))
-      PartitionFreelistEntry(next, make_shadow_match);
-#endif
+        PartitionFreelistEntry(next, make_shadow_match);
   }
 
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-  void CorruptNextForTesting(uintptr_t v, uintptr_t random_cookie) {
-    // We just need a value that can never be a valid pointer here.
-    encoded_next_.Override(EncodedPartitionFreelistEntryPtr::Transform(v, random_cookie));
-#else
   void CorruptNextForTesting(uintptr_t v) {
     // We just need a value that can never be a valid pointer here.
     encoded_next_.Override(EncodedPartitionFreelistEntryPtr::Transform(v));
-#endif
   }
 
   // Puts |extra| on the stack before crashing in case of memory
   // corruption. Meant to be used to report the failed allocation size.
   template <bool crash_on_corruption>
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-  PA_ALWAYS_INLINE PartitionFreelistEntry* GetNextForThreadCache(
-      size_t extra, uintptr_t random_cookie) const;
-  PA_ALWAYS_INLINE PartitionFreelistEntry* GetNext(size_t extra, uintptr_t random_cookie) const;
-#else
   PA_ALWAYS_INLINE PartitionFreelistEntry* GetNextForThreadCache(
       size_t extra) const;
   PA_ALWAYS_INLINE PartitionFreelistEntry* GetNext(size_t extra) const;
-#endif
 
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-  PA_NOINLINE void CheckFreeList(size_t extra, uintptr_t random_cookie) const {
-    for (auto* entry = this; entry; entry = entry->GetNext(extra, random_cookie)) {
-#else
   PA_NOINLINE void CheckFreeList(size_t extra) const {
     for (auto* entry = this; entry; entry = entry->GetNext(extra)) {
-#endif
       // |GetNext()| checks freelist integrity.
     }
   }
 
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-  PA_NOINLINE void CheckFreeListForThreadCache(size_t extra, uintptr_t random_cookie) const {
-    for (auto* entry = this; entry;
-         entry = entry->GetNextForThreadCache<true>(extra, random_cookie)) {
-#else
   PA_NOINLINE void CheckFreeListForThreadCache(size_t extra) const {
     for (auto* entry = this; entry;
          entry = entry->GetNextForThreadCache<true>(extra)) {
-#endif
       // |GetNextForThreadCache()| checks freelist integrity.
     }
   }
 
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-  PA_ALWAYS_INLINE void SetNext(PartitionFreelistEntry* entry, uintptr_t random_cookie) {
-#else
   PA_ALWAYS_INLINE void SetNext(PartitionFreelistEntry* entry) {
-#endif
     // SetNext() is either called on the freelist head, when provisioning new
     // slots, or when GetNext() has been called before, no need to pass the
     // size.
@@ -292,11 +216,7 @@ class PartitionFreelistEntry {
     }
 #endif  // BUILDFLAG(PA_DCHECK_IS_ON)
 
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-    encoded_next_ = EncodedPartitionFreelistEntryPtr(entry, random_cookie);
-#else
     encoded_next_ = EncodedPartitionFreelistEntryPtr(entry);
-#endif
 #if PA_CONFIG(HAS_FREELIST_SHADOW_ENTRY)
     shadow_ = encoded_next_.Inverted();
 #endif
@@ -321,11 +241,7 @@ class PartitionFreelistEntry {
   template <bool crash_on_corruption>
   PA_ALWAYS_INLINE PartitionFreelistEntry* GetNextInternal(
       size_t extra,
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-      bool for_thread_cache, uintptr_t random_cookie) const;
-#else
       bool for_thread_cache) const;
-#endif
 
   PA_ALWAYS_INLINE static bool IsSane(const PartitionFreelistEntry* here,
                                       const PartitionFreelistEntry* next,
@@ -397,22 +313,14 @@ static_assert(kSmallestUsedBucket >=
 template <bool crash_on_corruption>
 PA_ALWAYS_INLINE PartitionFreelistEntry*
 PartitionFreelistEntry::GetNextInternal(size_t extra,
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-                                        bool for_thread_cache,
-                                        uintptr_t random_cookie) const {
-#else
                                         bool for_thread_cache) const {
-#endif
   // GetNext() can be called on discarded memory, in which case |encoded_next_|
   // is 0, and none of the checks apply. Don't prefetch nullptr either.
   if (IsEncodedNextPtrZero()) {
     return nullptr;
   }
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-  auto* ret = encoded_next_.Decode(random_cookie);
-#else
+
   auto* ret = encoded_next_.Decode();
-#endif
   // We rely on constant propagation to remove the branches coming from
   // |for_thread_cache|, since the argument is always a compile-time constant.
   if (PA_UNLIKELY(!IsSane(this, ret, for_thread_cache))) {
@@ -443,15 +351,6 @@ PartitionFreelistEntry::GetNextInternal(size_t extra,
 
 template <bool crash_on_corruption>
 PA_ALWAYS_INLINE PartitionFreelistEntry*
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-PartitionFreelistEntry::GetNextForThreadCache(size_t extra, uintptr_t random_cookie) const {
-  return GetNextInternal<crash_on_corruption>(extra, true, random_cookie);
-}
-
-PA_ALWAYS_INLINE PartitionFreelistEntry* PartitionFreelistEntry::GetNext(
-    size_t extra, uintptr_t random_cookie) const {
-  return GetNextInternal<true>(extra, false, random_cookie);
-#else
 PartitionFreelistEntry::GetNextForThreadCache(size_t extra) const {
   return GetNextInternal<crash_on_corruption>(extra, true);
 }
@@ -459,7 +358,6 @@ PartitionFreelistEntry::GetNextForThreadCache(size_t extra) const {
 PA_ALWAYS_INLINE PartitionFreelistEntry* PartitionFreelistEntry::GetNext(
     size_t extra) const {
   return GetNextInternal<true>(extra, false);
-#endif
 }
 
 }  // namespace partition_alloc::internal

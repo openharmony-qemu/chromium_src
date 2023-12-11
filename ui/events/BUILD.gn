@@ -117,6 +117,8 @@ component("events_base") {
     "keycodes/keyboard_codes.h",
     "mobile_scroller.cc",
     "mobile_scroller.h",
+    "native_scroller_ohos.cc",
+    "native_scroller_ohos.h",
     "pointer_details.cc",
     "pointer_details.h",
   ]

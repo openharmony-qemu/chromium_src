@@ -38,7 +38,7 @@
 #if BUILDFLAG(USE_STARSCAN)
 #include "base/allocator/partition_allocator/starscan/pcscan.h"
 #endif
-
+uintptr_t g_bucket_cookie = 0;
 namespace partition_alloc::internal {
 
 namespace {
@@ -355,7 +355,12 @@ SlotSpanMetadata<thread_safe>* PartitionDirectMap(
 
     auto* super_page_extent =
         PartitionSuperPageToExtent<thread_safe>(reservation_start);
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+    super_page_extent->root = (PartitionRoot<thread_safe>*)EncodeRoot((void*)root);
+#else
     super_page_extent->root = root;
+#endif
+
     // The new structures are all located inside a fresh system page so they
     // will all be zeroed out. These DCHECKs are for documentation and to assert
     // our expectations of the kernel.
@@ -442,11 +447,7 @@ SlotSpanMetadata<thread_safe>* PartitionDirectMap(
       return nullptr;
     }
 
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-    auto* next_entry = PartitionFreelistEntry::EmplaceAndInitNull(slot_start, metadata->bucket.random_cookie);
-#else
     auto* next_entry = PartitionFreelistEntry::EmplaceAndInitNull(slot_start);
-#endif
     page->slot_span_metadata.SetFreelistHead(next_entry);
 
     map_extent = &metadata->direct_map_extent;
@@ -600,19 +601,17 @@ uint8_t ComputeSystemPagesPerSlotSpan(size_t slot_size,
   return ComputeSystemPagesPerSlotSpanInternal(slot_size);
 }
 
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-uint64_t GenerateRandomCookie()
-{
-  return RandomValue();
-}
-#endif
-
 template <bool thread_safe>
 void PartitionBucket<thread_safe>::Init(uint32_t new_slot_size) {
   slot_size = new_slot_size;
   slot_size_reciprocal = kReciprocalMask / new_slot_size + 1;
   active_slot_spans_head =
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+      (SlotSpanMetadata<thread_safe>* )EncodeBucket((void*)SlotSpanMetadata<thread_safe>::get_sentinel_slot_span_non_const());
+#else
       SlotSpanMetadata<thread_safe>::get_sentinel_slot_span_non_const();
+#endif
+
   empty_slot_spans_head = nullptr;
   decommitted_slot_spans_head = nullptr;
   num_full_slot_spans = 0;
@@ -625,10 +624,6 @@ void PartitionBucket<thread_safe>::Init(uint32_t new_slot_size) {
       ;
   num_system_pages_per_slot_span =
       ComputeSystemPagesPerSlotSpan(slot_size, prefer_smaller_slot_spans);
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-  random_cookie = GenerateRandomCookie();
-#endif
-
 }
 
 template <bool thread_safe>
@@ -847,7 +842,12 @@ PA_ALWAYS_INLINE uintptr_t PartitionBucket<thread_safe>::InitializeSuperPage(
   auto* latest_extent = PartitionSuperPageToExtent<thread_safe>(super_page);
   // By storing the root in every extent metadata object, we have a fast way
   // to go from a pointer within the partition to the root object.
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+  latest_extent->root = (PartitionRoot<thread_safe>*)EncodeRoot((void*)root);
+#else
   latest_extent->root = root;
+#endif
+
   // Most new extents will be part of a larger extent, and these two fields
   // are unused, but we initialize them to 0 so that we get a clear signal
   // in case they are accidentally used.
@@ -1037,25 +1037,14 @@ PartitionBucket<thread_safe>::ProvisionMoreSlotsAndAllocOne(
       next_slot_ptr = reinterpret_cast<void*>(next_slot);
     }
 #endif
-
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-    auto* entry = PartitionFreelistEntry::EmplaceAndInitNull(next_slot_ptr, random_cookie);
-#else
     auto* entry = PartitionFreelistEntry::EmplaceAndInitNull(next_slot_ptr);
-#endif
-
     if (!slot_span->get_freelist_head()) {
       PA_DCHECK(!prev_entry);
       PA_DCHECK(!free_list_entries_added);
       slot_span->SetFreelistHead(entry);
     } else {
       PA_DCHECK(free_list_entries_added);
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-      prev_entry->SetNext(entry, random_cookie);
-#else
       prev_entry->SetNext(entry);
-#endif
-
     }
 #if BUILDFLAG(USE_FREESLOT_BITMAP)
     FreeSlotBitmapMarkSlotAsFree(next_slot);
@@ -1082,11 +1071,7 @@ PartitionBucket<thread_safe>::ProvisionMoreSlotsAndAllocOne(
   // is large), meaning that |slot_span->freelist_head| can be nullptr.
   if (slot_span->get_freelist_head()) {
     PA_DCHECK(free_list_entries_added);
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-    slot_span->get_freelist_head()->CheckFreeList(slot_size, random_cookie);
-#else
     slot_span->get_freelist_head()->CheckFreeList(slot_size);
-#endif
   }
 #endif
 
@@ -1098,7 +1083,11 @@ PartitionBucket<thread_safe>::ProvisionMoreSlotsAndAllocOne(
 
 template <bool thread_safe>
 bool PartitionBucket<thread_safe>::SetNewActiveSlotSpan() {
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+  SlotSpanMetadata<thread_safe>* slot_span = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)active_slot_spans_head);
+#else
   SlotSpanMetadata<thread_safe>* slot_span = active_slot_spans_head;
+#endif
   if (slot_span == SlotSpanMetadata<thread_safe>::get_sentinel_slot_span()) {
     return false;
   }
@@ -1141,9 +1130,17 @@ bool PartitionBucket<thread_safe>::SetNewActiveSlotSpan() {
   for (; slot_span; slot_span = next_slot_span) {
     next_slot_span = slot_span->next_slot_span;
     PA_DCHECK(slot_span->bucket == this);
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+    SlotSpanMetadata<thread_safe>* real_empty =
+        (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)empty_slot_spans_head);
+    SlotSpanMetadata<thread_safe>* real_decommitted =
+        (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)decommitted_slot_spans_head);
+    PA_DCHECK(slot_span != real_empty);
+    PA_DCHECK(slot_span != real_decommitted);
+#else
     PA_DCHECK(slot_span != empty_slot_spans_head);
     PA_DCHECK(slot_span != decommitted_slot_spans_head);
-
+#endif
     if (slot_span->is_active()) {
       // Has provisioned slots.
       if (slot_span->get_freelist_head()) {
@@ -1161,11 +1158,21 @@ bool PartitionBucket<thread_safe>::SetNewActiveSlotSpan() {
         slot_span->next_slot_span = nullptr;
       }
     } else if (slot_span->is_empty()) {
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+      slot_span->next_slot_span = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)empty_slot_spans_head);
+      empty_slot_spans_head = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)slot_span);
+#else
       slot_span->next_slot_span = empty_slot_spans_head;
       empty_slot_spans_head = slot_span;
+#endif
     } else if (PA_LIKELY(slot_span->is_decommitted())) {
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+      slot_span->next_slot_span = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)decommitted_slot_spans_head);
+      decommitted_slot_spans_head = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)slot_span);
+#else
       slot_span->next_slot_span = decommitted_slot_spans_head;
       decommitted_slot_spans_head = slot_span;
+#endif
     } else {
       PA_DCHECK(slot_span->is_full());
       // Move this slot span... nowhere, and also mark it as full. We need it
@@ -1193,15 +1200,29 @@ bool PartitionBucket<thread_safe>::SetNewActiveSlotSpan() {
       slot_span->next_slot_span = to_provision_head;
       to_provision_tail->next_slot_span = next;
     }
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+    active_slot_spans_head = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)slot_span);
+#else
     active_slot_spans_head = slot_span;
+#endif
   } else if (to_provision_head) {
     usable_active_list_head = true;
     // Need to provision new slots.
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+    active_slot_spans_head = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)to_provision_head);
+#else
     active_slot_spans_head = to_provision_head;
+#endif
+
   } else {
     // Active list is now empty.
     active_slot_spans_head =
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+        (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)SlotSpanMetadata<thread_safe>::get_sentinel_slot_span_non_const());
+#else
         SlotSpanMetadata<thread_safe>::get_sentinel_slot_span_non_const();
+#endif
+
   }
 
   return usable_active_list_head;
@@ -1209,7 +1230,11 @@ bool PartitionBucket<thread_safe>::SetNewActiveSlotSpan() {
 
 template <bool thread_safe>
 void PartitionBucket<thread_safe>::MaintainActiveList() {
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+  SlotSpanMetadata<thread_safe>* slot_span = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)active_slot_spans_head);
+#else
   SlotSpanMetadata<thread_safe>* slot_span = active_slot_spans_head;
+#endif
   if (slot_span == SlotSpanMetadata<thread_safe>::get_sentinel_slot_span()) {
     return;
   }
@@ -1235,11 +1260,21 @@ void PartitionBucket<thread_safe>::MaintainActiveList() {
       // For the empty and decommitted lists, LIFO ordering makes sense (since
       // it would lead to reusing memory which has been touched relatively
       // recently, which only matters for committed spans though).
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+      slot_span->next_slot_span = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)empty_slot_spans_head);
+      empty_slot_spans_head = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)slot_span);
+#else
       slot_span->next_slot_span = empty_slot_spans_head;
       empty_slot_spans_head = slot_span;
+#endif
     } else if (slot_span->is_decommitted()) {
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+      slot_span->next_slot_span = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)decommitted_slot_spans_head);
+      decommitted_slot_spans_head = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)slot_span);
+#else
       slot_span->next_slot_span = decommitted_slot_spans_head;
       decommitted_slot_spans_head = slot_span;
+#endif
     } else {
       // Full slot spans are not tracked, just accounted for.
       PA_DCHECK(slot_span->is_full());
@@ -1254,12 +1289,22 @@ void PartitionBucket<thread_safe>::MaintainActiveList() {
     new_active_slot_spans_head =
         SlotSpanMetadata<thread_safe>::get_sentinel_slot_span_non_const();
   }
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+  active_slot_spans_head = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)new_active_slot_spans_head);
+#else
   active_slot_spans_head = new_active_slot_spans_head;
+#endif
 }
 
 template <bool thread_safe>
 void PartitionBucket<thread_safe>::SortSlotSpanFreelists() {
+
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+  SlotSpanMetadata<thread_safe>* real_head = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)active_slot_spans_head);
+  for (auto* slot_span = real_head; slot_span;
+#else
   for (auto* slot_span = active_slot_spans_head; slot_span;
+#endif
        slot_span = slot_span->next_slot_span) {
     // No need to sort the freelist if it's already sorted. Note that if the
     // freelist is sorted, this means that it didn't change at all since the
@@ -1317,7 +1362,12 @@ void PartitionBucket<thread_safe>::SortActiveSlotSpans() {
   size_t index = 0;
   SlotSpanMetadata<thread_safe>* overflow_spans_start = nullptr;
 
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+  SlotSpanMetadata<thread_safe>* real_head = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)active_slot_spans_head);
+  for (auto* slot_span = real_head; slot_span;
+#else
   for (auto* slot_span = active_slot_spans_head; slot_span;
+#endif
        slot_span = slot_span->next_slot_span) {
     if (index < kMaxSlotSpansToSort) {
       active_spans_array[index++] = slot_span;
@@ -1349,8 +1399,11 @@ void PartitionBucket<thread_safe>::SortActiveSlotSpans() {
   // such an allocation.
   std::sort(active_spans_array, active_spans_array + index, CompareSlotSpans);
 
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+  active_slot_spans_head = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)overflow_spans_start);
+#else
   active_slot_spans_head = overflow_spans_start;
-
+#endif
   // Reverse order, since we insert at the head of the list.
   for (int i = index - 1; i >= 0; i--) {
     if (active_spans_array[i] ==
@@ -1358,9 +1411,15 @@ void PartitionBucket<thread_safe>::SortActiveSlotSpans() {
       // The sentinel is const, don't try to write to it.
       PA_DCHECK(active_slot_spans_head == nullptr);
     } else {
-      active_spans_array[i]->next_slot_span = active_slot_spans_head;
-    }
-    active_slot_spans_head = active_spans_array[i];
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+    active_spans_array[i]->next_slot_span = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)active_slot_spans_head);
+  }
+  active_slot_spans_head = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)active_spans_array[i]);
+#else
+    active_spans_array[i]->next_slot_span = active_slot_spans_head;
+  }
+  active_slot_spans_head = active_spans_array[i];
+#endif
   }
 }
 
@@ -1378,7 +1437,13 @@ uintptr_t PartitionBucket<thread_safe>::SlowPathAlloc(
   // when a higher-order alignment is requested, in which case the freelist
   // logic is bypassed and we go directly for slot span allocation.
   bool allocate_aligned_slot_span = slot_span_alignment > PartitionPageSize();
+
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+  SlotSpanMetadata<thread_safe>* real_head = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)active_slot_spans_head);
+  PA_DCHECK(!real_head->get_freelist_head() ||
+#else
   PA_DCHECK(!active_slot_spans_head->get_freelist_head() ||
+#endif
             allocate_aligned_slot_span);
 
   SlotSpanMetadata<thread_safe>* new_slot_span = nullptr;
@@ -1401,7 +1466,11 @@ uintptr_t PartitionBucket<thread_safe>::SlowPathAlloc(
   if (PA_UNLIKELY(is_direct_mapped())) {
     PA_DCHECK(raw_size > kMaxBucketed);
     PA_DCHECK(this == &root->sentinel_bucket);
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+    PA_DCHECK(real_head ==
+#else
     PA_DCHECK(active_slot_spans_head ==
+#endif
               SlotSpanMetadata<thread_safe>::get_sentinel_slot_span());
 
     // No fast path for direct-mapped allocations.
@@ -1418,7 +1487,11 @@ uintptr_t PartitionBucket<thread_safe>::SlowPathAlloc(
     *is_already_zeroed = true;
   } else if (PA_LIKELY(!allocate_aligned_slot_span && SetNewActiveSlotSpan())) {
     // First, did we find an active slot span in the active list?
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+    new_slot_span = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)active_slot_spans_head);
+#else
     new_slot_span = active_slot_spans_head;
+#endif
     PA_DCHECK(new_slot_span->is_active());
   } else if (PA_LIKELY(!allocate_aligned_slot_span &&
                        (empty_slot_spans_head != nullptr ||
@@ -1426,10 +1499,20 @@ uintptr_t PartitionBucket<thread_safe>::SlowPathAlloc(
     // Second, look in our lists of empty and decommitted slot spans.
     // Check empty slot spans first, which are preferred, but beware that an
     // empty slot span might have been decommitted.
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+    SlotSpanMetadata<thread_safe>* real_empty = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)empty_slot_spans_head);
+    while (PA_LIKELY((new_slot_span = real_empty) != nullptr)) {
+#else
     while (PA_LIKELY((new_slot_span = empty_slot_spans_head) != nullptr)) {
+#endif
       PA_DCHECK(new_slot_span->bucket == this);
       PA_DCHECK(new_slot_span->is_empty() || new_slot_span->is_decommitted());
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+      empty_slot_spans_head = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)(new_slot_span->next_slot_span));
+      real_empty = new_slot_span->next_slot_span;
+#else
       empty_slot_spans_head = new_slot_span->next_slot_span;
+#endif
       // Accept the empty slot span unless it got decommitted.
       if (new_slot_span->get_freelist_head()) {
         new_slot_span->next_slot_span = nullptr;
@@ -1445,8 +1528,13 @@ uintptr_t PartitionBucket<thread_safe>::SlowPathAlloc(
         break;
       }
       PA_DCHECK(new_slot_span->is_decommitted());
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+      new_slot_span->next_slot_span = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)decommitted_slot_spans_head);
+      decommitted_slot_spans_head = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)new_slot_span);
+#else
       new_slot_span->next_slot_span = decommitted_slot_spans_head;
       decommitted_slot_spans_head = new_slot_span;
+#endif
     }
     if (PA_UNLIKELY(!new_slot_span) &&
         PA_LIKELY(decommitted_slot_spans_head != nullptr)) {
@@ -1455,11 +1543,18 @@ uintptr_t PartitionBucket<thread_safe>::SlowPathAlloc(
         return 0;
       }
 
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+      new_slot_span = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)decommitted_slot_spans_head);
+#else
       new_slot_span = decommitted_slot_spans_head;
+#endif
       PA_DCHECK(new_slot_span->bucket == this);
       PA_DCHECK(new_slot_span->is_decommitted());
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+      decommitted_slot_spans_head = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)(new_slot_span->next_slot_span));
+#else
       decommitted_slot_spans_head = new_slot_span->next_slot_span;
-
+#endif
       // If lazy commit is enabled, pages will be recommitted when provisioning
       // slots, in ProvisionMoreSlotsAndAllocOne(), not here.
       if (!kUseLazyCommit) {
@@ -1495,7 +1590,12 @@ uintptr_t PartitionBucket<thread_safe>::SlowPathAlloc(
 
   // Bail if we had a memory allocation failure.
   if (PA_UNLIKELY(!new_slot_span)) {
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+    real_head = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)active_slot_spans_head);
+    PA_DCHECK(real_head ==
+#else
     PA_DCHECK(active_slot_spans_head ==
+#endif
               SlotSpanMetadata<thread_safe>::get_sentinel_slot_span());
     if (flags & AllocFlags::kReturnNull) {
       return 0;
@@ -1507,7 +1607,11 @@ uintptr_t PartitionBucket<thread_safe>::SlowPathAlloc(
   }
 
   PA_DCHECK(new_bucket != &root->sentinel_bucket);
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+  new_bucket->active_slot_spans_head = (SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)new_slot_span);
+#else
   new_bucket->active_slot_spans_head = new_slot_span;
+#endif
   if (new_slot_span->CanStoreRawSize()) {
     new_slot_span->SetRawSize(raw_size);
   }

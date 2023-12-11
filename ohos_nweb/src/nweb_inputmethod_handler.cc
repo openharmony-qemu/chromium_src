@@ -629,6 +629,11 @@ void NWebInputMethodHandler::OnEditableChanged(CefRefPtr<CefBrowser> browser,
   is_editable_node_ = is_editable_node;
 }
 
+bool NWebInputMethodHandler::GetIsEditableNode() {
+  LOG(INFO) << "NWebInputMethodHandler is_editable_node_ = " << is_editable_node_;
+  return is_editable_node_;
+}
+
 int32_t NWebInputMethodHandler::GetTextIndexAtCursor() {
   std::unique_lock<std::mutex> lock(textCursorMutex_);
   bool istextCursorReady = textCursorCv_.wait_for(

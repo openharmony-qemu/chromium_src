@@ -29,6 +29,8 @@
 #include "base/allocator/partition_allocator/tagging.h"
 #include "build/build_config.h"
 
+uintptr_t g_root_cookie;
+
 #if PA_CONFIG(ENABLE_MAC11_MALLOC_SIZE_HACK) && BUILDFLAG(IS_APPLE)
 #include "base/allocator/partition_allocator/partition_alloc_base/mac/mac_util.h"
 #endif  // PA_CONFIG(ENABLE_MAC11_MALLOC_SIZE_HACK) && BUILDFLAG(IS_APPLE)
@@ -424,11 +426,7 @@ static size_t PartitionPurgeSlotSpan(
       last_slot = slot_number;
     }
 #endif
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-    entry = entry->GetNext(slot_size, slot_span->bucket->random_cookie);
-#else
     entry = entry->GetNext(slot_size);
-#endif
   }
 
   // If the slot(s) at the end of the slot span are not in used, we can truncate
@@ -484,20 +482,12 @@ static size_t PartitionPurgeSlotSpan(
         }
 
         auto* entry = PartitionFreelistEntry::EmplaceAndInitNull(
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-            slot_span_start + (slot_size * slot_index), slot_span->bucket->random_cookie);
-#else
             slot_span_start + (slot_size * slot_index));
-#endif
         if (!head) {
           head = entry;
           back = entry;
         } else {
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-          back->SetNext(entry, slot_span->bucket->random_cookie);
-#else
           back->SetNext(entry);
-#endif
           back = entry;
         }
         num_new_entries++;
@@ -517,7 +507,6 @@ static size_t PartitionPurgeSlotSpan(
 
       // Discard the memory.
       ScopedSyscallTimer timer{root};
-
       DiscardSystemPages(begin_addr, unprovisioned_bytes);
     }
   }
@@ -589,10 +578,20 @@ static size_t PartitionPurgeSlotSpan(
 template <bool thread_safe>
 static void PartitionPurgeBucket(
     internal::PartitionBucket<thread_safe>* bucket) {
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+  internal::SlotSpanMetadata<thread_safe>* real_head =
+    (internal::SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)(bucket->active_slot_spans_head));
+  if (real_head !=
+#else
   if (bucket->active_slot_spans_head !=
+#endif
       internal::SlotSpanMetadata<thread_safe>::get_sentinel_slot_span()) {
     for (internal::SlotSpanMetadata<thread_safe>* slot_span =
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+             real_head;
+#else
              bucket->active_slot_spans_head;
+#endif
          slot_span; slot_span = slot_span->next_slot_span) {
       PA_DCHECK(
           slot_span !=
@@ -648,7 +647,14 @@ static void PartitionDumpBucketStats(
   // internal::SlotSpanMetadata::get_sentinel_slot_span()), the bucket might
   // still need to be reported if it has a list of empty, decommitted or full
   // slot spans.
+
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+  internal::SlotSpanMetadata<thread_safe>* real_head =
+      (internal::SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)(bucket->active_slot_spans_head));
+  if (real_head ==
+#else
   if (bucket->active_slot_spans_head ==
+#endif
           internal::SlotSpanMetadata<thread_safe>::get_sentinel_slot_span() &&
       !bucket->empty_slot_spans_head && !bucket->decommitted_slot_spans_head &&
       !bucket->num_full_slot_spans) {
@@ -670,22 +676,39 @@ static void PartitionDumpBucketStats(
       bucket->num_full_slot_spans * stats_out->allocated_slot_span_size;
 
   for (internal::SlotSpanMetadata<thread_safe>* slot_span =
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+           (internal::SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)(bucket->empty_slot_spans_head));
+#else
            bucket->empty_slot_spans_head;
+#endif
        slot_span; slot_span = slot_span->next_slot_span) {
     PA_DCHECK(slot_span->is_empty() || slot_span->is_decommitted());
     PartitionDumpSlotSpanStats(stats_out, slot_span);
   }
   for (internal::SlotSpanMetadata<thread_safe>* slot_span =
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+           (internal::SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)(bucket->decommitted_slot_spans_head));
+#else
            bucket->decommitted_slot_spans_head;
+#endif
        slot_span; slot_span = slot_span->next_slot_span) {
     PA_DCHECK(slot_span->is_decommitted());
     PartitionDumpSlotSpanStats(stats_out, slot_span);
   }
 
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+  real_head = (internal::SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)(bucket->active_slot_spans_head));
+  if (real_head !=
+#else
   if (bucket->active_slot_spans_head !=
+#endif
       internal::SlotSpanMetadata<thread_safe>::get_sentinel_slot_span()) {
     for (internal::SlotSpanMetadata<thread_safe>* slot_span =
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+             real_head;
+#else
              bucket->active_slot_spans_head;
+#endif
          slot_span; slot_span = slot_span->next_slot_span) {
       PA_DCHECK(
           slot_span !=
@@ -979,8 +1002,11 @@ void PartitionRoot<thread_safe>::Init(PartitionOptions opts) {
     // logic to find a new active slot span.
     memset(&sentinel_bucket, 0, sizeof(sentinel_bucket));
     sentinel_bucket.active_slot_spans_head =
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+        (SlotSpan*)EncodeBucket((void*)SlotSpan::get_sentinel_slot_span_non_const());
+#else
         SlotSpan::get_sentinel_slot_span_non_const();
-
+#endif
     // This is a "magic" value so we can test if a root pointer is valid.
     inverted_self = ~reinterpret_cast<uintptr_t>(this);
 
@@ -1568,10 +1594,20 @@ void PartitionRoot<thread_safe>::ResetForTesting(bool allow_leaks) {
   if (!allow_leaks) {
     unsigned num_allocated_slots = 0;
     for (Bucket& bucket : buckets) {
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+      internal::SlotSpanMetadata<thread_safe>* real_head =
+          (internal::SlotSpanMetadata<thread_safe>*)EncodeBucket((void*)(bucket->active_slot_spans_head));
+      if (real_head !=
+#else
       if (bucket.active_slot_spans_head !=
+#endif
           internal::SlotSpanMetadata<thread_safe>::get_sentinel_slot_span()) {
         for (internal::SlotSpanMetadata<thread_safe>* slot_span =
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+                 real_head;
+#else
                  bucket.active_slot_spans_head;
+#endif
              slot_span; slot_span = slot_span->next_slot_span) {
           num_allocated_slots += slot_span->num_allocated_slots;
         }
@@ -1600,7 +1636,11 @@ void PartitionRoot<thread_safe>::ResetForTesting(bool allow_leaks) {
 
   for (Bucket& bucket : buckets) {
     bucket.active_slot_spans_head =
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
+        (SlotSpan*)EncodeBucket((void*)SlotSpan::get_sentinel_slot_span_non_const());
+#else
         SlotSpan::get_sentinel_slot_span_non_const();
+#endif
     bucket.empty_slot_spans_head = nullptr;
     bucket.decommitted_slot_spans_head = nullptr;
     bucket.num_full_slot_spans = 0;

@@ -42,6 +42,11 @@
 #include "base/android/content_uri_utils.h"
 #endif
 
+#ifdef OHOS_HAP_DECOMPRESSED
+#include <locale>
+#include <codecvt>
+#endif
+
 using base::UTF16ToUTF8;
 
 namespace content {
@@ -625,6 +630,18 @@ const std::u16string& NavigationEntryImpl::GetTitleForDisplay() {
     if (base::MaybeGetFileDisplayName(base::FilePath(GetURL().spec()),
                                       &file_display_name)) {
       title = file_display_name;
+    }
+  }
+#endif
+
+#ifdef OHOS_HAP_DECOMPRESSED
+if (GetURL().SchemeIs(url::kResourcesScheme)) {
+    std::string fileName = GetURL().ExtractFileName();
+    if (fileName == "") {
+      title = u"";
+    } else {
+      std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;
+      title = converter.from_bytes(fileName);
     }
   }
 #endif

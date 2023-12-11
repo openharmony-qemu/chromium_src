@@ -19,6 +19,7 @@
 #include "nweb_application.h"
 #include "nweb_handler_delegate.h"
 #include "nweb_render_handler.h"
+#include "nweb_value_convert.h"
 
 #include "base/command_line.h"
 #include "base/strings/utf_string_conversions.h"
@@ -43,16 +44,27 @@
 #if defined(OHOS_NO_STATE_PREFETCH)
 #include "base/strings/stringprintf.h"
 #endif  // defined(OHOS_NO_STATE_PREFETCH)
-#if defined(OHOS_EX_DOWNLOAD)
+
 #include "cef/include/internal/cef_string_types.h"
 #include "content/public/common/content_switches.h"
 #include "nweb_download_handler_delegate.h"
 #include "nweb_find_delegate.h"
 #include "nweb_preference_delegate.h"
 #include "url/gurl.h"
-#endif  //  OHOS_EX_DOWNLOAD
+#include "ui/events/gesture_detection/gesture_configuration.h"
+
+#ifdef OHOS_EX_GET_ZOOM_LEVEL
+#include <cmath>
+#endif
+
+namespace {
+static const float richtextDisplayRatio = 1.0;
+}
 
 namespace OHOS::NWeb {
+#ifdef OHOS_EX_GET_ZOOM_LEVEL
+static const double kZoomLevelToFactorRatio = 1.2;
+#endif
 
 #if defined(OHOS_MSGPORT)
 void ConvertCefValueToNWebMessage(CefRefPtr<CefValue> src,
@@ -303,6 +315,20 @@ bool NWebDelegate::HasBackgroundColorWithInit(int32_t& backgroundColor) {
   return false;
 }
 
+void NWebDelegate::InitRichtextIdentifier() {
+  for (int i = 0; i < argc_; i++) {
+    if (argv_[i] == nullptr) {
+      continue;
+    }
+ 
+    if (!strncmp(argv_[i], "--init-richtext-data=", strlen("--init-richtext-data="))) {
+      const char* value = argv_[i] + strlen("--init-richtext-data=");
+      richtext_data_str_ = value;
+      LOG(INFO) << "richtext InitRichtextIdentifier data" << richtext_data_str_.c_str();
+    }
+  }
+}
+
 #if defined(OHOS_EX_DOWNLOAD)
 bool NWebDelegate::Init(bool is_enhance_surface,
                         void* window,
@@ -320,6 +346,7 @@ bool NWebDelegate::Init(bool is_enhance_surface, void* window, bool popup) {
 #ifdef OHOS_DRAG_DROP
   InitAppTempDir();
 #endif
+InitRichtextIdentifier();
 
   find_delegate_ = std::make_shared<NWebFindDelegate>();
   is_enhance_surface_ = is_enhance_surface;
@@ -361,7 +388,12 @@ bool NWebDelegate::Init(bool is_enhance_surface, void* window, bool popup) {
       display_manager_adapter_->GetDefaultDisplay();
   if (display != nullptr) {
     NotifyScreenInfoChanged(display->GetRotation(), display->GetOrientation());
-    SetVirtualPixelRatio(display->GetVirtualPixelRatio());
+    if (!richtext_data_str_.empty()) {
+      // Created a richtext component
+      SetVirtualPixelRatio(richtextDisplayRatio);
+    } else {
+      SetVirtualPixelRatio(display->GetVirtualPixelRatio());
+    }
   }
 
   return true;
@@ -410,7 +442,6 @@ void NWebDelegate::RegisterFindListener(
   find_delegate_->SetListener(find_listener);
 }
 
-#if defined(OHOS_EX_DOWNLOAD)
 void NWebDelegate::RegisterWebDownloadDelegateListener(
     std::shared_ptr<NWebDownloadDelegateCallback> downloadDelegateListener) {
   if (handler_delegate_ == nullptr) {
@@ -452,7 +483,6 @@ void NWebDelegate::ResumeDownload(
         web_download->last_modified, web_download->received_slices);
   }
 }
-#endif  //  OHOS_EX_DOWNLOAD
 
 void NWebDelegate::FindAllAsync(const std::string& search_string) const {
   if (find_delegate_ == nullptr) {
@@ -653,7 +683,13 @@ void NWebDelegate::NotifyScreenInfoChanged(RotationType rotation,
       LOG(ERROR) << "Get display failed";
       return;
     }
-    double display_ratio = display->GetVirtualPixelRatio();
+    double display_ratio = 0.0;
+    if (!richtext_data_str_.empty()) {
+      // Created a richtext component
+      display_ratio = richtextDisplayRatio;
+    } else {
+      display_ratio = display->GetVirtualPixelRatio();
+    }
     if (display_ratio <= 0) {
       LOG(ERROR) << "Invalid display_ratio, display_ratio = " << display_ratio;
       return;
@@ -681,6 +717,7 @@ void NWebDelegate::SetVirtualPixelRatio(float ratio) {
   if (browser != nullptr && browser->GetHost() != nullptr) {
     browser->GetHost()->SetVirtualPixelRatio(ratio);
   }
+  ui::GestureConfiguration::GetInstance()->set_virtual_pixel_ratio(default_virtual_pixel_ratio_);
 }
 
 std::shared_ptr<NWebPreference> NWebDelegate::GetPreference() const {
@@ -705,6 +742,28 @@ int NWebDelegate::Load(const std::string& url) {
   RequestVisitedHistory();
   return NWEB_OK;
 }
+
+#ifdef OHOS_POST_URL
+int NWebDelegate::PostUrl(const std::string& url, std::vector<char>& postData) {
+  GURL gurl = GURL(url);
+  if (gurl.is_empty() || !gurl.is_valid()) {
+    GURL gurlWithHttp = GURL("https://" + url);
+    if (!gurlWithHttp.is_valid()) {
+      return NWEB_INVALID_URL;
+    }
+  }
+  LOG(DEBUG) << "NWebDelegate::PostUrl url=" << url;
+  auto browser = GetBrowser();
+  if (browser == nullptr) {
+    LOG(ERROR) << "NWebDelegate::PostUrl browser is nullptr";
+    return NWEB_ERR;
+  }
+  browser->GetMainFrame()->PostURL(CefString(url), postData);
+  RequestVisitedHistory();
+  return NWEB_OK;
+}
+#endif // defined(OHOS_POST_URL)
+
 
 bool NWebDelegate::IsNavigatebackwardAllowed() const {
   LOG(DEBUG) << "NWebDelegate::IsNavigatebackwardAllowed";
@@ -1079,7 +1138,7 @@ void NWebDelegate::InitializeCef(std::string url,
     handler_delegate_ = NWebHandlerDelegate::Create(
         preference_delegate_, render_handler_, event_handler_, find_delegate_,
         is_enhance_surface, window);
-    is_ready_ = true;
+    is_popup_ready_ = true;
     return;
   }
   handler_delegate_ = NWebHandlerDelegate::Create(
@@ -1414,7 +1473,7 @@ const CefRefPtr<CefBrowser> NWebDelegate::GetBrowser() const {
 }
 
 bool NWebDelegate::IsReady() {
-  return is_ready_ || GetBrowser() != nullptr;
+  return is_popup_ready_ || GetBrowser() != nullptr;
 }
 
 void NWebDelegate::RequestVisitedHistory() {
@@ -1443,13 +1502,32 @@ int NWebDelegate::ContentHeight() {
 
 void NWebDelegate::RegisterArkJSfunction(
     const std::string& object_name,
-    const std::vector<std::string>& method_list) const {
-  LOG(DEBUG) << "RegisterArkJSfunction name : " << object_name.c_str();
+    const std::vector<std::string>& method_list,
+    const int32_t object_id) const {
+  LOG(INFO) << "RegisterArkJSfunction name : " << object_name.c_str();
   std::vector<CefString> method_vector;
   for (std::string method : method_list) {
     method_vector.push_back(method);
   }
-  GetBrowser()->GetHost()->RegisterArkJSfunction(object_name, method_vector);
+
+  if (is_popup_ready_) {
+    if (handler_delegate_) {
+      LOG(INFO) << "NWebDelegate::RegisterArkJSfunction popup case, the "
+                   "object_name is "
+                << object_name.c_str();
+      handler_delegate_->SavaArkJSFunctionForPopup(object_name, method_list,
+                                                   object_id);
+    }
+    return;
+  } else if (!GetBrowser()) {
+    LOG(ERROR) << "NWebDelegate::RegisterArkJSfunction fail due to "
+                  "GetBrowser() return null, the object_name is "
+               << object_name.c_str();
+    return;
+  } else {
+    GetBrowser()->GetHost()->RegisterArkJSfunction(object_name, method_vector,
+                                                   object_id);
+  }
 }
 
 void NWebDelegate::UnregisterArkJSfunction(
@@ -1460,7 +1538,52 @@ void NWebDelegate::UnregisterArkJSfunction(
   for (std::string method : method_list) {
     method_vector.push_back(method);
   }
+
+  if (!GetBrowser()) {
+    LOG(ERROR) << "NWebDelegate::UnregisterArkJSfunction fail due to "
+                  "GetBrowser() return null, the object_name is "
+               << object_name.c_str();
+    return;
+  }
+
   GetBrowser()->GetHost()->UnregisterArkJSfunction(object_name, method_vector);
+}
+
+void NWebDelegate::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
+  GetBrowser()->GetHost()->RemoveJavaScriptOnDocumentStart();
+  for (auto item: scriptItems) {
+    CefString script = item.first;
+    std::vector<CefString> scriptRules;
+    for (std::string rule : item.second) {
+      CefString cefRule;
+      cefRule.FromString(rule);
+      scriptRules.push_back(cefRule);
+    }
+    GetBrowser()->GetHost()->JavaScriptOnDocumentStart(script, scriptRules);
+  }
+}
+
+void NWebDelegate::CallH5Function(
+    int32_t routing_id,
+    int32_t h5_object_id,
+    const std::string h5_method_name,
+    const std::vector<std::shared_ptr<NWebValue>>& args) const {
+  if (!GetBrowser()) {
+    LOG(ERROR) << "NWebDelegate::CallH5Function fail due to "
+                  "GetBrowser() return null";
+    return;
+  }
+
+  std::vector<CefRefPtr<CefValue>> cef_args;
+  for (auto& item : args) {
+    cef_args.push_back(ParseNWebValueToValueHelper(item));
+  }
+
+  CefString name(h5_method_name);
+  if (GetBrowser()->GetHost()) {
+    GetBrowser()->GetHost()->CallH5Function(routing_id, h5_object_id, name,
+                                            cef_args);
+  }
 }
 
 void NWebDelegate::RegisterNWebJavaScriptCallBack(
@@ -1807,6 +1930,18 @@ void NWebDelegate::SetShouldFrameSubmissionBeforeDraw(bool should) {
     GetBrowser()->GetHost()->SetShouldFrameSubmissionBeforeDraw(should);
   }
 }
+
+void NWebDelegate::SetDrawRect(int32_t x, int32_t y, int32_t width, int32_t height) {
+  if (GetBrowser().get()) {
+    GetBrowser()->GetHost()->SetDrawRect(x, y, width, height);
+  }
+}
+
+void NWebDelegate::SetDrawMode(int32_t mode) {
+  if (GetBrowser().get()) {
+    GetBrowser()->GetHost()->SetDrawMode(mode);
+  }
+}
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 
 #if defined(OHOS_EX_FORCE_ZOOM)
@@ -1820,6 +1955,21 @@ void NWebDelegate::SetForceEnableZoom(bool forceEnableZoom) {
 bool NWebDelegate::GetForceEnableZoom() {
   if (GetBrowser().get()) {
     return GetBrowser()->GetForceEnableZoom();
+  }
+  return false;
+}
+#endif
+
+#if defined(OHOS_INPUT_EVENTS)
+void NWebDelegate::SetVirtualKeyBoardArg(int32_t width, int32_t height, double keyboard) {
+  if (GetBrowser().get()) {
+    GetBrowser()->GetHost()->SetVirtualKeyBoardArg(width, height, keyboard);
+  }
+}
+ 
+bool NWebDelegate::ShouldVirtualKeyboardOverlay() {
+  if (GetBrowser().get()) {
+    return GetBrowser()->GetHost()->ShouldVirtualKeyboardOverlay();
   }
   return false;
 }
@@ -1942,6 +2092,23 @@ bool NWebDelegate::GetCertChainDerDataInner(
 }
 #endif
 
+#ifdef OHOS_EX_TOPCONTROLS
+void NWebDelegate::UpdateBrowserControlsState(int constraints,
+                                              int current,
+                                              bool animate) const {
+  if (GetBrowser().get()) {
+    GetBrowser()->UpdateBrowserControlsState(constraints, current, animate);
+  }
+}
+
+void NWebDelegate::UpdateBrowserControlsHeight(int height, bool animate) {
+  if (GetBrowser().get()) {
+    GetBrowser()->UpdateBrowserControlsHeight(height, animate);
+  }
+}
+
+#endif
+
 #if defined(OHOS_PRINT)
 void NWebDelegate::SetToken(void* token) {
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
@@ -1950,6 +2117,18 @@ void NWebDelegate::SetToken(void* token) {
   }
 
   GetBrowser()->GetHost()->SetToken(token);
+}
+
+void* NWebDelegate::CreateWebPrintDocumentAdapter(const std::string& jobName) {
+  LOG(DEBUG) << "Create Web print document adapter jobName = " << jobName;
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "CreateWebPrintDocumentAdapter can not get browser";
+    return nullptr;
+  }
+
+  void* webPrintDocumentAdapter = nullptr;
+  GetBrowser()->GetHost()->CreateWebPrintDocumentAdapter(CefString(jobName), &webPrintDocumentAdapter);
+  return webPrintDocumentAdapter;
 }
 #endif // defined(OHOS_PRINT)
 
@@ -2030,4 +2209,61 @@ void NWebDelegate::SetEnableBlankTargetPopupIntercept(
   }
 }
 #endif
+
+bool NWebDelegate::Discard() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "NWebDelegate::Discard failed, browser is nullptr";
+    return false;
+  }
+
+  if (is_discarded_) {
+    LOG(ERROR) << "NWebDelegate::Discard failed, the webview window was discarded before";
+    return false;
+  }
+
+  is_discarded_ = GetBrowser()->GetHost()->Discard();
+  LOG(DEBUG) << "NWebDelegate::Discard is_discarded_: " << is_discarded_;
+  return is_discarded_;
+}
+
+bool NWebDelegate::Restore() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "NWebDelegate::Restore failed, browser is nullptr";
+    return false;
+  }
+
+  if (!is_discarded_) {
+    LOG(ERROR) << "NWebDelegate::Restore failed, the webview window was not discarded before";
+    return false;
+  }
+
+  bool is_restored = GetBrowser()->GetHost()->Restore();
+  is_discarded_ = !is_restored;
+  LOG(DEBUG) << "NWebDelegate::Restore is_restored: " << is_restored;
+  return is_restored;
+}
+
+#ifdef OHOS_EX_GET_ZOOM_LEVEL
+void NWebDelegate::SetBrowserZoomLevel(double zoom_factor) {
+  LOG(DEBUG) << "NWebDelegate::SetBrowserZoomLevel: " << zoom_factor;
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "SetBrowserZoomLevel can not get browser";
+    return;
+  }
+
+  GetBrowser()->GetHost()->SetBrowserZoomLevel(zoom_factor);
+}
+
+double NWebDelegate::GetBrowserZoomLevel() {
+  LOG(DEBUG) << "NWebDelegate::GetBrowserZoomLevel.";
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "GetBrowserZoomLevel can not get browser";
+    return 1.0;
+  }
+
+  return std::pow(kZoomLevelToFactorRatio,
+                  GetBrowser()->GetHost()->GetZoomLevel());
+}
+#endif
+
 }  // namespace OHOS::NWeb

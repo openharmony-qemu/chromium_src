@@ -363,8 +363,8 @@ void CreateInProcessNetworkService(
 #if BUILDFLAG(IS_OHOS)
     using namespace OHOS::NWeb;
     ResSchedClientAdapter::ReportKeyThread(
-        ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(),
-        GetNetworkServiceDedicatedThread().GetThreadId(),
+        ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentRealPid(),
+        GetNetworkServiceDedicatedThread().GetThreadRealId(),
         ResSchedRoleAdapter::USER_INTERACT);
 #endif
   } else {
@@ -940,7 +940,7 @@ void CreateNetworkContextInNetworkService(
   GrantSandboxAccessOnThreadPool(
       std::move(params),
       base::BindOnce(&CreateNetworkContextInternal, std::move(context)));
-#endif  // BUILDFLAG(IS_ANDROID)
+#endif  // BUILDFLAG(IS_ANDROID) || defined(OHOS_COOKIE)
 }
 
 }  // namespace content

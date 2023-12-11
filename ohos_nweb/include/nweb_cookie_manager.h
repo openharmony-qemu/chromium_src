@@ -139,6 +139,17 @@ public:
      * @param callback a callback to be executed when all cookies has removed.
      */
     virtual void DeleteCookieEntirely(std::shared_ptr<NWebValueCallback<bool>> callback) = 0;
+
+    /**
+     * @brief Configs a single cookie (key-value pair) for the given URL.
+     *
+     * @param url the URL for which the cookie is to be set.
+     * @param value the cookie as a string, using the format of the 'Set-Cookie' HTTP response header.
+     * @param callback a callback to be executed when the cookie has been set.
+     */
+    virtual void ConfigCookie(const std::string& url,
+                              const std::string& value,
+                              std::shared_ptr<NWebValueCallback<long>> callback) = 0;
 };
 }
 

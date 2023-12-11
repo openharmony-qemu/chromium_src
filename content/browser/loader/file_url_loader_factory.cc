@@ -10,6 +10,9 @@
 #include <vector>
 
 #include "base/command_line.h"
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+#include "base/datashare_uri_utils.h"
+#endif
 #include "base/files/file.h"
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
@@ -904,8 +907,19 @@ class FileURLLoader : public network::mojom::URLLoader {
     if (observer)
       observer->OnStart();
 
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+    std::unique_ptr<mojo::FileDataSource> file_data_source;
+    if (path.IsDataShareUri()) {
+      file_data_source = std::make_unique<mojo::FileDataSource>(
+          base::OpenDatashareUriForRead(path));
+    } else {
+      file_data_source = std::make_unique<mojo::FileDataSource>(
+          base::File(path, base::File::FLAG_OPEN | base::File::FLAG_READ));
+    }
+#else
     auto file_data_source = std::make_unique<mojo::FileDataSource>(
         base::File(path, base::File::FLAG_OPEN | base::File::FLAG_READ));
+#endif
     mojo::DataPipeProducer::DataSource* data_source = file_data_source.get();
 
     std::vector<char> initial_read_buffer(net::kMaxBytesToSniff);

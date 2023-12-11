@@ -18,6 +18,11 @@
 #include "ui/gfx/geometry/transform.h"
 #include "ui/gfx/geometry/vector2d_f.h"
 
+#ifdef OHOS_EX_TOPCONTROLS
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
+
 namespace cc {
 namespace {
 // These constants were chosen empirically for their visually pleasant behavior.
@@ -206,6 +211,14 @@ void BrowserControlsOffsetManager::UpdateBrowserControlsState(
   else
     client_->SetCurrentBrowserControlsShownRatio(final_top_shown_ratio,
                                                  final_bottom_shown_ratio);
+
+#ifdef OHOS_EX_TOPCONTROLS
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kForBrowser) &&
+      !animate) {
+    client_->SetupScrollBy();
+  }
+#endif
 }
 
 BrowserControlsState BrowserControlsOffsetManager::PullConstraintForMainThread(

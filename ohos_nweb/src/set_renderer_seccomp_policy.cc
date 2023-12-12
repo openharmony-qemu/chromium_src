@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 extern "C" OHOS_NWEB_EXPORT bool SetRendererSeccompPolicy() {
+#if defined(__arm__) || defined(__aarch64__)
     sandbox::SeccompStarterOhos starter;
 
     starter.set_policy(std::make_unique<sandbox::BaselinePolicyOhos>());
@@ -16,4 +17,7 @@ extern "C" OHOS_NWEB_EXPORT bool SetRendererSeccompPolicy() {
         return true;
     }
     return false;
+#else
+    return true;
+#endif
 }

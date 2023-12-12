@@ -36,7 +36,7 @@ group("sandbox") {
   if (is_android) {
     public_deps += [ ":seccomp_starter_android" ]
   }
-  if (is_ohos) {
+  if (is_ohos && current_cpu != "x64") {
     public_deps += [ ":seccomp_starter_ohos" ]
   }
 }
@@ -256,7 +256,7 @@ component("seccomp_bpf") {
     ]
   }
 
-  if (is_ohos) {
+  if (is_ohos && current_cpu != "x64") {
     sources += [
       "seccomp-bpf-helpers/baseline_policy_ohos.cc",
       "seccomp-bpf-helpers/baseline_policy_ohos.h",
@@ -264,7 +264,7 @@ component("seccomp_bpf") {
   }
 }
 
-if (is_ohos) {
+if (is_ohos && current_cpu != "x64") {
   component("seccomp_starter_ohos") {
     sources = [
       "seccomp-bpf-helpers/seccomp_starter_ohos.cc",

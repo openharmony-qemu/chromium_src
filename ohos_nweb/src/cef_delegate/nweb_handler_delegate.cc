@@ -513,6 +513,10 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
             << browser->IsPopup();
   CEF_REQUIRE_UI_THREAD();
 
+  if (browser && browser->GetHost() && window_id_ != 0 && nweb_id_ != 0) {
+      browser->GetHost()->SetWindowId(window_id_, nweb_id_);
+  }
+
 #if defined(OHOS_MULTI_WINDOW)
   if (!main_browser_ && browser->IsPopup()) {
     main_browser_ = browser;

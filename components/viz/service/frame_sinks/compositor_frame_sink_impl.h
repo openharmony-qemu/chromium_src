@@ -21,6 +21,10 @@
 #include "services/viz/public/mojom/compositing/compositor_frame_sink.mojom.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/process/process_handle.h"
+#endif
+
 namespace viz {
 
 class FrameSinkManagerImpl;
@@ -65,6 +69,12 @@ class CompositorFrameSinkImpl : public mojom::CompositorFrameSink {
   void BindLayerContext(mojom::PendingLayerContextPtr context) override;
 #if BUILDFLAG(IS_ANDROID)
   void SetThreadIds(const std::vector<int32_t>& thread_ids) override;
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+  void ReportKeyThreadIds(const std::vector<int32_t>& thread_ids,
+                          int32_t process_id,
+                          bool is_created) override;
 #endif
 
  private:

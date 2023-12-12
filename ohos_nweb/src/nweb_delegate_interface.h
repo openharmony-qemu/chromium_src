@@ -302,6 +302,8 @@ class NWebDelegateInterface
                                    bool isSingleCert) = 0;
 #endif
 
+  virtual void SetWindowId(uint32_t window_id);
+
 #ifdef OHOS_EX_BLANK_TARGET_POPUP_INTERCEPT
   virtual void SetEnableBlankTargetPopupIntercept(
       bool enableBlankTargetPopup) = 0;

@@ -517,6 +517,8 @@ class NWebHandlerDelegate : public CefClient,
   void SetNWebId(uint32_t nwebId);
   uint32_t GetNWebId();
 #endif
+  void SetWindowId(uint32_t window_id) { window_id_ = window_id; }
+
   void SetFavicon(const void* icon_data,
                   size_t width,
                   size_t height,

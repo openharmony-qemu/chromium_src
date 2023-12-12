@@ -131,6 +131,10 @@ class ChildThreadImpl : public IPC::Listener, virtual public ChildThread {
   // process (or this thread object, in single-process mode).
   void DisconnectChildProcessHost();
 
+#if BUILDFLAG(IS_OHOS)
+  void ReportKeyThread(int32_t status, int32_t process_id, int32_t thread_id);
+#endif
+
   virtual void RunServiceDeprecated(const std::string& service_name,
                                     mojo::ScopedMessagePipeHandle service_pipe);
 

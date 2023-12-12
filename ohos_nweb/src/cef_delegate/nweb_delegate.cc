@@ -884,6 +884,19 @@ void NWebDelegate::SetBrowserUserAgentString(const std::string& user_agent) {
   }
 }
 
+void NWebDelegate::SetWindowId(uint32_t window_id) {
+  if (handler_delegate_) {
+    handler_delegate_->SetWindowId(window_id);
+  }
+
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "SetWindowId failed, can not get browser";
+    return;
+  }
+
+  GetBrowser()->GetHost()->SetWindowId(window_id, nweb_id_);
+}
+
 void NWebDelegate::StoreWebArchive(
     const std::string& base_name,
     bool auto_name,

@@ -23,6 +23,7 @@
 #include "content/public/browser/browser_thread.h"
 #include "libcef/browser/thread_util.h"
 #include "ohos_adapter_helper.h"
+#include "res_sched_client_adapter.h"
 #include "ui/events/keycodes/keyboard_codes_posix.h"
 
 namespace OHOS::NWeb {
@@ -432,6 +433,11 @@ void NWebInputMethodHandler::InsertTextHandlerOnUI(const std::u16string& text) {
   composing_text_.append(text);
   browser_->GetHost()->ImeCommitText(composing_text_,
                                      CefRange(UINT32_MAX, UINT32_MAX), 0);
+
+  if (text.length() > 1) {
+    ResSchedClientAdapter::ReportScene(
+      ResSchedStatusAdapter::WEB_SCENE_ENTER, ResSchedSceneAdapter::CLICK);
+  }
 
   // no selection
   ime_text_composing_ = false;

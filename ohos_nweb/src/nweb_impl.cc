@@ -33,12 +33,13 @@
 
 #include "base/trace_event/common/trace_event_common.h"
 #include "base/trace_event/trace_event.h"
+#include "cef_delegate/nweb_download_handler_delegate.h"
 #include "nweb_delegate_adapter.h"
 #include "nweb_export.h"
 #include "nweb_handler.h"
 #include "nweb_hilog.h"
 #include "ohos_adapter_helper.h"
-#include "cef_delegate/nweb_download_handler_delegate.h"
+#include "res_sched_client_adapter.h"
 
 #if defined(REPORT_SYS_EVENT)
 #include "event_reporter.h"
@@ -324,9 +325,12 @@ NWebImpl* NWebImpl::FromID(int32_t nweb_id) {
   return nullptr;
 }
 
-NWebImpl::NWebImpl(uint32_t id) : nweb_id_(id) {}
+NWebImpl::NWebImpl(uint32_t id) : nweb_id_(id) {
+  ResSchedClientAdapter::ReportNWebInit(ResSchedStatusAdapter::WEB_SCENE_ENTER, nweb_id_);
+}
 
 NWebImpl::~NWebImpl() {
+  ResSchedClientAdapter::ReportNWebInit(ResSchedStatusAdapter::WEB_SCENE_EXIT, nweb_id_);
   ReportLossFrame::GetInstance()->Reset();
   ReportLossFrame::GetInstance()->SetScrollState(ScrollMode::STOP);
   g_nweb_map.Get().erase(nweb_id_);
@@ -596,6 +600,8 @@ void NWebImpl::OnTouchPress(int32_t id, double x, double y, bool from_overlay) {
     return;
   }
 
+  ResSchedClientAdapter::ReportScene(
+    ResSchedStatusAdapter::WEB_SCENE_ENTER, ResSchedSceneAdapter::CLICK, nweb_id_);
   input_handler_->OnTouchPress(id, x, y, from_overlay);
 }
 
@@ -647,6 +653,9 @@ void NWebImpl::SendMouseWheelEvent(double x,
     return;
   }
 
+  ResSchedClientAdapter::ReportScene(
+    ResSchedStatusAdapter::WEB_SCENE_ENTER, ResSchedSceneAdapter::SLIDE);
+
 #if defined(OHOS_PERFORMANCE_INC_FREQ)
   OHOS::NWeb::OhosAdapterHelper::GetInstance()
       .CreateSocPerfClientAdapter()
@@ -658,6 +667,11 @@ void NWebImpl::SendMouseWheelEvent(double x,
 void NWebImpl::SendMouseEvent(int x, int y, int button, int action, int count) {
   if (input_handler_ == nullptr) {
     return;
+  }
+
+  if (action == MouseAction::PRESS) {
+    ResSchedClientAdapter::ReportScene(
+      ResSchedStatusAdapter::WEB_SCENE_ENTER, ResSchedSceneAdapter::CLICK, nweb_id_);
   }
   input_handler_->SendMouseEvent(x, y, button, action, count);
 }
@@ -671,6 +685,9 @@ int NWebImpl::Load(const std::string& url) const {
     WVLOG_E("nweb size is invalid, stop Load");
     return NWEB_ERR;
   }
+
+  ResSchedClientAdapter::ReportScene(
+    ResSchedStatusAdapter::WEB_SCENE_ENTER, ResSchedSceneAdapter::LOAD_URL, nweb_id_);
 
 #if defined(OHOS_PERFORMANCE_INC_FREQ)
   OHOS::NWeb::OhosAdapterHelper::GetInstance()
@@ -1426,12 +1443,11 @@ void NWebImpl::OnWebviewShow() const {
 
 #if BUILDFLAG(IS_OHOS)
 void NWebImpl::SetWindowId(uint32_t window_id) {
-  // todo(ohos):need imp by y00471801 (commit:56d6a0)
-  // if (nweb_delegate_ == nullptr) {
-  //   WVLOG_E("SetWindowId nweb delegate is null");
-  //   return;
-  // }
-  // nweb_delegate_->SetWindowId(window_id);
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("SetWindowId nweb delegate is null");
+    return;
+  }
+  nweb_delegate_->SetWindowId(window_id);
 }
 
 void NWebImpl::SetToken(void* token) {

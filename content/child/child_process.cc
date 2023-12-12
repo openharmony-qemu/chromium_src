@@ -32,6 +32,10 @@
 #include "base/test/clang_profiling.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "res_sched_client_adapter.h"
+#endif
+
 namespace content {
 
 namespace {
@@ -150,6 +154,10 @@ ChildProcess::~ChildProcess() {
   shutdown_event_.Signal();
 
   if (main_thread_) {  // null in unittests.
+#if BUILDFLAG(IS_OHOS)
+    ReportIoThreadStatus(false);
+#endif
+
     main_thread_->Shutdown();
     if (main_thread_->ShouldBeDestroyed()) {
       main_thread_.reset();
@@ -176,12 +184,37 @@ ChildProcess::~ChildProcess() {
 #endif
 }
 
+#if BUILDFLAG(IS_OHOS)
+void ChildProcess::ReportIoThreadStatus(bool is_created) {
+  if (!main_thread_) {
+    return;
+  }
+
+  using namespace OHOS::NWeb;
+  ResSchedStatusAdapter status = is_created ?
+    ResSchedStatusAdapter::THREAD_CREATED : ResSchedStatusAdapter::THREAD_DESTROYED;
+  
+  // If this thread is in browser process, then report key thread info to RSS directly.
+  // Otherwise, report key thread info to the browser process firstly.
+  if (main_thread_->IsInBrowserProcess()) {
+    ResSchedClientAdapter::ReportKeyThread(
+      status, base::GetCurrentRealPid(), io_thread_.GetThreadRealId(), ResSchedRoleAdapter::USER_INTERACT);
+  } else {
+    main_thread_->ReportKeyThread(static_cast<int32_t>(status), base::GetCurrentRealPid(), io_thread_.GetThreadRealId());
+  }
+}
+#endif
+
 ChildThreadImpl* ChildProcess::main_thread() {
   return main_thread_.get();
 }
 
 void ChildProcess::set_main_thread(ChildThreadImpl* thread) {
   main_thread_.reset(thread);
+
+#if BUILDFLAG(IS_OHOS)
+  ReportIoThreadStatus(true);
+#endif
 }
 
 void ChildProcess::AddRefProcess() {

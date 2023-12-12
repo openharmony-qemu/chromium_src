@@ -26,6 +26,7 @@
 
 #include "ohos_adapter_helper.h"
 #include "content/public/common/content_switches.h"
+#include "res_sched_client_adapter.h"
 #ifdef OHOS_DRAG_DROP
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
@@ -265,6 +266,9 @@ void NWebRenderHandler::OnScrollOffsetChanged(CefRefPtr<CefBrowser> browser,
   if (auto handler = handler_.lock()) {
     handler->OnScroll(x, y);
   }
+
+  ResSchedClientAdapter::ReportScene(
+    ResSchedStatusAdapter::WEB_SCENE_ENTER, ResSchedSceneAdapter::SLIDE);
 }
 
 int NWebRenderHandler::ContentHeight() {

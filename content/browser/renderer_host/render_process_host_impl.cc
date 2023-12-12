@@ -215,6 +215,10 @@
 #include "third_party/blink/public/mojom/android_font_lookup/android_font_lookup.mojom.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "res_sched_client_adapter.h"
+#endif
+
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 #include <sys/resource.h>
 
@@ -1352,6 +1356,14 @@ class RenderProcessHostImpl::IOThreadHostImpl : public mojom::ChildProcessHost {
         FROM_HERE, base::BindOnce(&IOThreadHostImpl::BindHostReceiverOnUIThread,
                                   weak_host_, std::move(receiver)));
   }
+
+#if BUILDFLAG(IS_OHOS)
+  void ReportKeyThread(int32_t status, int32_t process_id, int32_t thread_id, int32_t role) override {
+    using namespace OHOS::NWeb;
+    ResSchedClientAdapter::ReportKeyThread(
+      static_cast<ResSchedStatusAdapter>(status), process_id, thread_id, static_cast<ResSchedRoleAdapter>(role));
+  }
+#endif
 
   static void BindHostReceiverOnUIThread(
       base::WeakPtr<RenderProcessHostImpl> weak_host,
@@ -4866,6 +4878,13 @@ void RenderProcessHostImpl::ProcessDied(
   // It should not be possible for a process death notification to come in
   // while we are dying.
   DCHECK(!deleting_soon_);
+
+#if BUILDFLAG(IS_OHOS)
+  base::ProcessId process_id = GetProcess().Pid();
+  OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(
+      OHOS::NWeb::ResSchedStatusAdapter::THREAD_DESTROYED, process_id, process_id,
+      OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+#endif
 
   child_process_launcher_.reset();
   is_dead_ = true;

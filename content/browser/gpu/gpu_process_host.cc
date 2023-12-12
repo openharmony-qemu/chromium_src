@@ -103,6 +103,10 @@
 #include "ui/gfx/win/rendering_window_manager.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "res_sched_client_adapter.h"
+#endif
+
 #if BUILDFLAG(IS_OZONE)
 #include "ui/ozone/public/gpu_platform_support_host.h"
 #include "ui/ozone/public/ozone_platform.h"
@@ -745,6 +749,14 @@ GpuProcessHost::~GpuProcessHost() {
   }
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+  if (in_process_gpu_thread_)
+    OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(
+        OHOS::NWeb::ResSchedStatusAdapter::THREAD_DESTROYED,
+        base::GetCurrentRealPid(), in_process_gpu_thread_->GetThreadRealId(),
+        OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+#endif
+
   // This is only called on the IO thread so no race against the constructor
   // for another GpuProcessHost.
   if (g_gpu_process_hosts[kind_] == this)
@@ -888,6 +900,13 @@ bool GpuProcessHost::Init() {
 #endif
     options.thread_type = base::ThreadType::kCompositing;
     in_process_gpu_thread_->StartWithOptions(std::move(options));
+
+#if BUILDFLAG(IS_OHOS)
+    OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(
+        OHOS::NWeb::ResSchedStatusAdapter::THREAD_CREATED,
+        base::GetCurrentRealPid(), in_process_gpu_thread_->GetThreadRealId(),
+        OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+#endif
   } else if (!LaunchGpuProcess()) {
     return false;
   }

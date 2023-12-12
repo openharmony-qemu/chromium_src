@@ -35,6 +35,11 @@ interface ChildProcessHost {
   // Whether or not the interface type encapsulated by |receiver| is supported
   // depends on the process type and potentially on the Content embedder.
   BindHostReceiver(mojo_base.mojom.GenericPendingReceiver receiver);
+
+  // Report the key threads in render process. This is used on OHOS to
+  // dynamic resource scheduling.
+  [EnableIf=is_ohos]
+  ReportKeyThread(int32 status, int32 process_id, int32 thread_id, int32 role);
 };
 
 // A control interface the browser uses to drive the behavior of all types of

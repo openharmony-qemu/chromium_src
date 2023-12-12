@@ -332,6 +332,11 @@ void ChildProcessHostImpl::BindHostReceiver(
   delegate_->BindHostReceiver(std::move(receiver));
 }
 
+#if BUILDFLAG(IS_OHOS)
+  void ChildProcessHostImpl::ReportKeyThread(
+    int32_t status, int32_t process_id, int32_t thread_id, int32_t role) {}
+#endif
+
 bool ChildProcessHostImpl::OnMessageReceived(const IPC::Message& msg) {
 #if BUILDFLAG(IPC_MESSAGE_LOG_ENABLED)
   IPC::Logging* logger = IPC::Logging::GetInstance();

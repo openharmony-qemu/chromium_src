@@ -507,9 +507,6 @@ ThreadCache::ThreadCache(PartitionRoot<>* root)
                                std::memory_order_relaxed);
 
     tcache_bucket->slot_size = root_bucket.slot_size;
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-    tcache_bucket->random_cookie = root_bucket.random_cookie;
-#endif
     // Invalid bucket.
     if (!root_bucket.is_valid()) {
       // Explicitly set this, as size computations iterate over all buckets.
@@ -667,20 +664,12 @@ void ThreadCache::ClearBucketHelper(Bucket& bucket, size_t limit) {
   //    thread, we don't want the thread to be blocked while holding the lock,
   //    causing a priority inversion.
   if constexpr (crash_on_corruption) {
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-    bucket.freelist_head->CheckFreeListForThreadCache(bucket.slot_size, bucket.random_cookie);
-#else
     bucket.freelist_head->CheckFreeListForThreadCache(bucket.slot_size);
-#endif
   }
 
   uint8_t count_before = bucket.count;
   if (limit == 0) {
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-    FreeAfter<crash_on_corruption>(bucket.freelist_head, bucket.slot_size, bucket.random_cookie);
-#else
     FreeAfter<crash_on_corruption>(bucket.freelist_head, bucket.slot_size);
-#endif
     bucket.freelist_head = nullptr;
   } else {
     // Free the *end* of the list, not the head, since the head contains the
@@ -688,24 +677,13 @@ void ThreadCache::ClearBucketHelper(Bucket& bucket, size_t limit) {
     auto* head = bucket.freelist_head;
     size_t items = 1;  // Cannot free the freelist head.
     while (items < limit) {
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-      head = head->GetNextForThreadCache<crash_on_corruption>(bucket.slot_size, bucket.random_cookie);
-#else
       head = head->GetNextForThreadCache<crash_on_corruption>(bucket.slot_size);
-#endif
       items++;
     }
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-    FreeAfter<crash_on_corruption>(
-        head->GetNextForThreadCache<crash_on_corruption>(bucket.slot_size, bucket.random_cookie),
-        bucket.slot_size, bucket.random_cookie);
-    head->SetNext(nullptr, 0);
-#else
     FreeAfter<crash_on_corruption>(
         head->GetNextForThreadCache<crash_on_corruption>(bucket.slot_size),
         bucket.slot_size);
     head->SetNext(nullptr);
-#endif
   }
   bucket.count = limit;
   uint8_t count_after = bucket.count;
@@ -717,24 +695,15 @@ void ThreadCache::ClearBucketHelper(Bucket& bucket, size_t limit) {
 }
 
 template <bool crash_on_corruption>
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-void ThreadCache::FreeAfter(internal::PartitionFreelistEntry* head,
-                            size_t slot_size, uintptr_t random_cookie) {
-#else
 void ThreadCache::FreeAfter(internal::PartitionFreelistEntry* head,
                             size_t slot_size) {
-#endif
   // Acquire the lock once. Deallocation from the same bucket are likely to be
   // hitting the same cache lines in the central allocator, and lock
   // acquisitions can be expensive.
   internal::ScopedGuard guard(root_->lock_);
   while (head) {
     uintptr_t slot_start = internal::SlotStartPtr2Addr(head);
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-    head = head->GetNextForThreadCache<crash_on_corruption>(slot_size, random_cookie);
-#else
     head = head->GetNextForThreadCache<crash_on_corruption>(slot_size);
-#endif
     root_->RawFreeLocked(slot_start);
   }
 }

@@ -543,6 +543,9 @@ class NoStatePrefetchManager : public content::RenderProcessHostObserver,
   std::vector<std::unique_ptr<NoStatePrefetchManagerObserver>> observers_;
 
   base::WeakPtrFactory<NoStatePrefetchManager> weak_factory_{this};
+#if BUILDFLAG(IS_OHOS)
+  std::set<GURL> oh_prefetch_urls;
+#endif
 };
 
 }  // namespace prerender

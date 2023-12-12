@@ -100,10 +100,17 @@ void FrameNodeImpl::SetHadUserEdits() {
 
 #if BUILDFLAG(IS_OHOS)
 void FrameNodeImpl::OnFormEditingStateChanged(uint64_t form_id, bool did_submit) {
-  content::GlobalRenderFrameHostId global_frame_routing_id = render_frame_host_proxy().global_frame_routing_id();
-  content::WebContents* web_contents = content::WebContentsImpl::FromRenderFrameHostID(global_frame_routing_id);
-  if (web_contents) {
-    web_contents->OnFormEditingStateChanged(form_id, did_submit);
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE, base::BindOnce(&FrameNodeImpl::OnFormEditingStateChanged,
+                                  weak_this_, form_id, did_submit));
+  } else {
+    LOG(INFO) << "FrameNodeImpl::OnFormEditingStateChanged id: " << form_id << "did submit: " << did_submit;
+    content::GlobalRenderFrameHostId global_frame_routing_id = render_frame_host_proxy().global_frame_routing_id();
+    content::WebContents* web_contents = content::WebContentsImpl::FromRenderFrameHostID(global_frame_routing_id);
+    if (web_contents) {
+      web_contents->OnFormEditingStateChanged(form_id, did_submit);
+    }
   }
 }
 #endif

@@ -253,6 +253,10 @@ void NWebRenderHandler::OnRootLayerChanged(CefRefPtr<CefBrowser> browser,
                                            int width) {
   content_height_ = height;
   content_width_ = width;
+  if (auto handler = handler_.lock()) {
+    handler->OnRootLayerChanged(width * screen_info_.display_ratio,
+                                height * screen_info_.display_ratio);
+  }
 }
 
 void NWebRenderHandler::OnScrollOffsetChanged(CefRefPtr<CefBrowser> browser,
@@ -532,8 +536,15 @@ void NWebRenderHandler::OnOverScrollFlingVelocity(CefRefPtr<CefBrowser> browser,
                                                   const float x,
                                                   const float y,
                                                   bool is_fling) {
+  double display_ratio = 1.0;
+  if (screen_info_.display_ratio > 0) {
+    display_ratio = screen_info_.display_ratio;
+  }
   if (auto handler = handler_.lock()) {
-    handler->OnOverScrollFlingVelocity(x, y, is_fling);
+    // Value multiplied by virtual pixel ratio.
+    handler->OnOverScrollFlingVelocity(x * screen_info_.display_ratio,
+                                       y * screen_info_.display_ratio,
+                                       is_fling);
   }
 }
 
@@ -548,6 +559,25 @@ void NWebRenderHandler::OnScrollState(CefRefPtr<CefBrowser> browser,
   if (auto handler = handler_.lock()) {
     handler->OnScrollState(scroll_state);
   }
+}
+
+bool NWebRenderHandler::FilterScrollEvent(CefRefPtr<CefBrowser> browser,
+                                          const float x,
+                                          const float y,
+                                          const float fling_x,
+                                          const float fling_y) {
+  double display_ratio = 1.0;
+  if (screen_info_.display_ratio > 0) {
+    display_ratio = screen_info_.display_ratio;
+  }
+  if (auto handler = handler_.lock()) {
+    // Value multiplied by virtual pixel ratio.
+    return handler->FilterScrollEvent(x * screen_info_.display_ratio,
+                                      y * screen_info_.display_ratio,
+                                      fling_x * screen_info_.display_ratio,
+                                      fling_y * screen_info_.display_ratio);
+  }
+  return false;
 }
 #endif
 }  // namespace OHOS::NWeb

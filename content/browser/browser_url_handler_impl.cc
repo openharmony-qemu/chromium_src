@@ -28,15 +28,19 @@ static bool HandleViewSource(GURL* url, BrowserContext* browser_context) {
     // Bug 26129: limit view-source to view the content and not any
     // other kind of 'active' url scheme like 'javascript' or 'data'.
     static const char* const default_allowed_sub_schemes[] = {
-      url::kHttpScheme,      
-      url::kHttpsScheme,    
+      url::kHttpScheme,
+      url::kHttpsScheme,
       kChromeUIScheme,
       url::kFileScheme,
 #ifdef OHOS_HAP_DECOMPRESSED
-      url::kFileSystemScheme, 
+      url::kFileSystemScheme,
       url::kResourcesScheme
 #else
       url::kFileSystemScheme
+#endif
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+      ,
+      kArkWebUIScheme
 #endif
     };
 

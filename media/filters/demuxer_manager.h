@@ -125,10 +125,10 @@ class MEDIA_EXPORT DemuxerManager {
 
   void OnPipelineError(PipelineStatus error);
   void SetLoadedUrl(GURL url);
-#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   void PopulateHlsHistograms(bool cryptographic_url);
   PipelineStatus SelectHlsFallbackMechanism(bool cryptographic_url);
-#endif  // BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID)
+#endif  // BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   void DisallowFallback();
 
   // Methods that help manage demuxers

@@ -449,6 +449,10 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   }
 #endif
 
+#ifdef OHOS_EX_TOPCONTROLS
+  void UpdateBrowserControlsHeight(int height, bool animate) override;
+#endif
+
   void UpdateTitleForEntry(NavigationEntry* entry,
                            const std::u16string& title) override;
   SiteInstanceImpl* GetSiteInstance() override;
@@ -1112,6 +1116,10 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 
   void LoadingStateChanged(LoadingState new_state) override;
   void DidStartLoading(FrameTreeNode* frame_tree_node) override;
+#ifdef OHOS_EX_TOPCONTROLS
+  void DidStartLoading(FrameTreeNode* frame_tree_node,
+                       bool should_show_loading_ui) override;
+#endif
   void DidStopLoading() override;
   bool IsHidden() override;
   int GetOuterDelegateFrameTreeNodeId() override;
@@ -1362,7 +1370,9 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   // A render view-originated drag has ended. Informs the render view host and
   // WebContentsDelegate.
   void SystemDragEnded(RenderWidgetHost* source_rwh);
-
+#if BUILDFLAG(IS_OHOS)
+  RenderFrameHost* GetTargetFramesIncludingPending(int routing_id);
+#endif
   // These are the content internal equivalents of
   // |WebContents::ForEachRenderFrameHost| whose comment can be referred to
   // for details. Content internals can also access speculative
@@ -2448,7 +2458,7 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 
   VisibleTimeRequestTrigger visible_time_request_trigger_;
 
-#if defined(OHOS_EX_UA)
+#if defined(OHOS_USERAGENT) || defined(OHOS_EX_UA)
   std::string user_agent_{""};
 #endif  // OHOS_EX_UA
 #if defined(OHOS_EX_PASSWORD)
@@ -2467,6 +2477,12 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 #ifdef OHOS_EX_BLANK_TARGET_POPUP_INTERCEPT
   bool enable_blank_target_popup_intercept_ = true;
 #endif
+
+#ifdef OHOS_EX_TOPCONTROLS
+  cc::BrowserControlsState browser_controls_state_ =
+      cc::BrowserControlsState::kBoth;
+#endif
+
   // Stores the information whether last navigation was prerender activation for
   // DevTools. Set when a prerender activation completes, and cleared when
   // either DevTools is opened and consults this value or when a non-prerendered

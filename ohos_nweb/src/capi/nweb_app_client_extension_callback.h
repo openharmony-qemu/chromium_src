@@ -39,6 +39,14 @@ struct NWebAppClientExtensionCallback {
                                       std::vector<std::string> labels,
                                       std::vector<std::string> sublabels,
                                       int nweb_id);
+  int (*OnGetTopControlsHeight)(int nweb_id);
+  void (*OnTopControlsChanged)(float top_controls_offset,
+                               float top_content_offset,
+                               int nweb_id);
+
+  void (*ContentsBrowserZoomChange)(double zoom_factor,
+                                    bool can_show_bubble,
+                                    int nweb_id);
 };
 
 #endif  // OHOS_NWEB_SRC_NWEB_APP_CLIENT_EXTENSION_CALLBACK_H_

@@ -231,17 +231,10 @@ HeadlessSurfaceFactory::~HeadlessSurfaceFactory() = default;
 
 std::vector<gl::GLImplementationParts>
 HeadlessSurfaceFactory::GetAllowedGLImplementations() {
-#if BUILDFLAG(IS_OHOS)
-  return std::vector<gl::GLImplementationParts>{
-      gl::GLImplementationParts(gl::kGLImplementationEGLGLES2),
-      gl::GLImplementationParts(gl::kGLImplementationEGLANGLE),
-  };
-#else
   return std::vector<gl::GLImplementationParts>{
       gl::GLImplementationParts(gl::kGLImplementationEGLANGLE),
       gl::GLImplementationParts(gl::kGLImplementationEGLGLES2),
   };
-#endif
 }
 
 GLOzone* HeadlessSurfaceFactory::GetGLOzone(

@@ -29,9 +29,39 @@ namespace OHOS::NWeb {
         virtual ~NWebJavaScriptResultCallBack() = default;
 
         virtual std::shared_ptr<NWebValue> GetJavaScriptResult(
-                std::vector<std::shared_ptr<NWebValue>> args,
-                const std::string &method,
-                const std::string &object_name) = 0;
+            std::vector<std::shared_ptr<NWebValue>> args,
+            const std::string& method,
+            const std::string& object_name,
+            int32_t routing_id,
+            int32_t object_id) = 0;
+
+        /* HasJavaScriptObjectMethods
+         *
+         * @param object_id: means the JavaScript object id
+         * @param object_id: means the method name
+         */
+        virtual bool HasJavaScriptObjectMethods(
+            int32_t object_id,
+            const std::string& method_name) = 0;
+
+        /* GetJavaScriptObjectMethods
+         *
+         * @param object_id: means the JavaScript object id
+         */
+        virtual std::shared_ptr<NWebValue> GetJavaScriptObjectMethods(
+            int32_t object_id) = 0;
+
+        /* RemoveJavaScriptObjectHolder
+         *
+         * @param holder: means the JavaScript object is holded by
+         * it(routing_id)
+         * @param object_id: means the JavaScript object id
+         */
+        virtual void RemoveJavaScriptObjectHolder(int32_t holder,
+                                                  int32_t object_id) = 0;
+
+        // Remove Transient JavaScript Object
+        virtual void RemoveTransientJavaScriptObject() = 0;
     };
 }
 #endif

@@ -181,6 +181,7 @@ def main(argv):
       for (url, dir) in mappings:
         path_mappings[url].append(os.path.join('./', dir))
         path_mappings['chrome:' + url].append(os.path.join('./', dir))
+        path_mappings['arkweb:' + url].append(os.path.join('./', dir))
 
   if args.path_mappings is not None:
     for m in args.path_mappings:

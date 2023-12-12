@@ -817,6 +817,7 @@ void GpuInit::InitializeInProcess(base::CommandLine* command_line,
 #else
 void GpuInit::InitializeInProcess(base::CommandLine* command_line,
                                   const GpuPreferences& gpu_preferences) {
+  TRACE_EVENT0("startup", "GpuInit::InitializeInProcess");
   gpu_preferences_ = gpu_preferences;
   init_successful_ = true;
 #if BUILDFLAG(IS_OZONE)

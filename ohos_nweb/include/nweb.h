@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,6 +21,8 @@
 #include <memory>
 #include <string>
 
+#include "nweb_accessibility_event_callback.h"
+#include "nweb_accessibility_node_info.h"
 #include "nweb_download_callback.h"
 #include "nweb_drag_data.h"
 #include "nweb_export.h"
@@ -35,6 +37,7 @@
 
 namespace OHOS::NWeb {
 class NWebHandler;
+class NWebValue;
 
 /**
  * @brief Describes how pixel bits encoder color data.
@@ -132,6 +135,7 @@ enum class NestedScrollMode : int32_t {
     PARALLEL = 3,
 };
 
+using ScriptItems = std::map<std::string, std::vector<std::string>>;
 using WebState = std::shared_ptr<std::vector<uint8_t>>;
 using SetKeepScreenOn = std::function<void(bool)>;
 
@@ -158,8 +162,8 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
     virtual void OnTouchCancel() = 0;
     virtual void OnNavigateBack() = 0;
     virtual bool SendKeyEvent(int32_t keyCode, int32_t keyAction) = 0;
-    virtual void SendMouseWheelEvent(double x, double y, double deltaX, double deltaY);
-    virtual void SendMouseEvent(int x, int y, int button, int action, int count);
+    virtual void SendMouseWheelEvent(double x, double y, double deltaX, double deltaY) = 0;
+    virtual void SendMouseEvent(int x, int y, int button, int action, int count) = 0;
 
     /**
      * Loads the given URL.
@@ -311,6 +315,23 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
             std::shared_ptr<NWebDownloadCallback> downloadListener) = 0;
 
     /**
+     * Set the NWebAccessibilityEventCallback that will receive accessibility event.
+     * This will replace the current handler.
+     *
+     * @param accessibilityEventListener NWebDownloadCallback.
+     */
+    virtual void PutAccessibilityEventCallback(
+        std::shared_ptr<NWebAccessibilityEventCallback> accessibilityEventListener) = 0;
+
+     /**
+     * Set the accessibility id generator that will generate accessibility id for accessibility nodes in the web.
+     * This will replace the current handler.
+     *
+     * @param accessibilityIdGenerator Accessibility id generator.
+     */
+    virtual void PutAccessibilityIdGenerator(std::function<int32_t()> accessibilityIdGenerator) = 0;
+
+    /**
      * Set the NWebHandler that will receive various notifications and
      * requests. This will replace the current handler.
      *
@@ -412,8 +433,8 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      * @param method_list vector<String>: vector list ,method list
      */
     virtual void RegisterArkJSfunction(
-            const std::string& object_name,
-            const std::vector<std::string>& method_list) = 0;
+        const std::string& object_name,
+        const std::vector<std::string>& method_list) = 0;
 
     /**
      * UnregisterArkJSfunction
@@ -782,6 +803,139 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      * Set enable lower the frame rate.
      */
     virtual void SetEnableLowerFrameRate(bool enabled) const = 0;
+
+    /**
+     * Set the property values for width, height, and keyboard height.
+     */
+    virtual void SetVirtualKeyBoardArg(int32_t width, int32_t height, double keyboard) = 0;
+
+    /**
+     * Set the virtual keyboard to override the web status.
+     */
+    virtual bool ShouldVirtualKeyboardOverlay() = 0;
+
+    /**
+     * Set draw rect.
+     *
+    */
+    virtual void SetDrawRect(int32_t x, int32_t y, int32_t width, int32_t height) = 0;
+
+    /**
+     * Set draw mode.
+     *
+    */
+    virtual void SetDrawMode(int32_t mode) = 0;
+
+    /**
+     * Create web print document adapter.
+     *
+    */
+    virtual void* CreateWebPrintDocumentAdapter(const std::string& jobName) = 0;
+
+    /**
+     * Loads the URL with postData using "POST" method into this WebView.
+     * If url is not a network URL, it will be loaded with loadUrl(String) instead.
+     *
+     * @param url String: the URL of the resource to load This value cannot be null.
+     * @param postData the data will be passed to "POST" request,
+     * whilch must be "application/x-www-form-urlencoded" encoded.
+     *
+     * @return title string for the current page.
+     */
+    virtual int PostUrl(const std::string& url, std::vector<char>& postData) = 0;
+
+    /**
+     * Inject the JavaScript before WebView load the DOM tree.
+     */
+    virtual void JavaScriptOnDocumentStart(const ScriptItems& scriptItems) = 0;
+
+        /**
+     * Execute an accessibility action on an accessibility node in the browser.
+     * @param accessibilityId The id of the accessibility node.
+     * @param action The action to be performed on the accessibility node.
+     */
+    virtual void ExecuteAction(int32_t accessibilityId, uint32_t action) const = 0;
+
+    /**
+     * Get the information of the focused accessibility node on the given accessibility node in the browser.
+     * @param accessibilityId Indicate the accessibility id of the parent node of the focused accessibility node.
+     * @param isAccessibilityFocus Indicate whether the focused accessibility node is accessibility focused or input
+     * focused.
+     * @param nodeInfo The obtained information of the accessibility node.
+     * @return true if get accessibility node info successfully, otherwise false.
+     */
+    virtual bool GetFocusedAccessibilityNodeInfo(
+        int32_t accessibilityId, bool isAccessibilityFocus, OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const = 0;
+
+    /**
+     * Get the information of the accessibility node by its accessibility id in the browser.
+     * @param accessibilityId The accessibility id of the accessibility node.
+     * @param nodeInfo The obtained information of the accessibility node.
+     * @return true if get accessibility node info successfully, otherwise false.
+     */
+    virtual bool GetAccessibilityNodeInfoById(
+        int32_t accessibilityId, OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const = 0;
+
+    /**
+     * Get the information of the accessibility node by focus move in the browser.
+     * @param accessibilityId The accessibility id of the original accessibility node.
+     * @param direction The focus move direction of the original accessibility node.
+     * @param nodeInfo The obtained information of the accessibility node.
+     * @return true if get accessibility node info successfully, otherwise false.
+     */
+    virtual bool GetAccessibilityNodeInfoByFocusMove(
+        int32_t accessibilityId, int32_t direction, OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const = 0;
+
+    /**
+     * Set the accessibility state in the browser.
+     * @param state Indicate whether the accessibility state is enabled or disabled.
+     */
+    virtual void SetAccessibilityState(bool state) = 0;
+
+    /**
+     * RegisterArkJSfunctionExt
+     *
+     * @param object_name  String: objector name
+     * @param method_list vector<String>: vector list ,method list
+     * @param object_id int32_t: object id
+     */
+    virtual void RegisterArkJSfunctionExt(
+        const std::string& object_name,
+        const std::vector<std::string>& method_list,
+        const int32_t object_id) = 0;
+
+     /**
+     * Get whether need soft keyboard.
+     *
+     * @return true if need soft keyboard, otherwise false.
+     */
+    virtual bool NeedSoftKeyboard() const = 0;
+
+    /**
+     * Discard the webview window.
+     * @return true if the discarding success, otherwise false.
+     */
+    virtual bool Discard() = 0;
+
+    /**
+     * Reload the webview window that has been discarded before.
+     * @return true if the discarded window reload success, otherwise false.
+     */
+    virtual bool Restore() = 0;
+
+    /**
+     * CallH5Function
+     *
+     * @param routing_id       int32_t: the h5 frmae routing id
+     * @param h5_object_id     int32_t: the h5 side object id
+     * @param h5_method_name   string:  the h5 side object method name
+     * @param args             vector<shared_ptr<NWebValue>>: the call args
+     */
+    virtual void CallH5Function(
+        int32_t routing_id,
+        int32_t h5_object_id,
+        const std::string h5_method_name,
+        const std::vector<std::shared_ptr<NWebValue>>& args) = 0;
 };
 }  // namespace OHOS::NWeb
 

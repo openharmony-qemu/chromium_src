@@ -485,7 +485,11 @@ InterfaceEndpointClient::InterfaceEndpointClient(
 }
 
 InterfaceEndpointClient::~InterfaceEndpointClient() {
+#if defined(OHOS_BUGFIX_CRASH)
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+#else
   CHECK(sequence_checker_.CalledOnValidSequence());
+#endif
   if (controller_)
     handle_.group_controller()->DetachEndpointClient(handle_);
 }

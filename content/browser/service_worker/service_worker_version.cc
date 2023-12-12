@@ -548,6 +548,10 @@ void ServiceWorkerVersion::StartWorker(ServiceWorkerMetrics::EventType purpose,
     return;
   }
 
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  LOG(INFO) << "Try to start service worker...";
+#endif
+
   // Ensure the live registration during starting worker so that the worker can
   // get associated with it in
   // ServiceWorkerHost::CompleteStartWorkerPreparation.

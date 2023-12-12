@@ -2,6 +2,7 @@
 #include "base/report_loss_frame.h"
 #include <chrono>
 #include "ohos_nweb/src/sysevent/event_reporter.h"
+#include "base/task/thread_pool.h"
 
 constexpr int JANK_STATS_VER = 1;
 
@@ -41,7 +42,11 @@ void ReportLossFrame::Report() {
   }
   int64_t now = GetCurrentTimestampMS();
   int duration = now - start_time_for_scroll_;
-  ReportJankStats(start_time_for_scroll_, duration, jank_stats_, JANK_STATS_VER);
+  base::ThreadPool::PostTask(
+    FROM_HERE,
+    {base::TaskPriority::LOWEST},
+    base::BindOnce(&ReportJankStats, start_time_for_scroll_, duration, jank_stats_, JANK_STATS_VER)
+  );
   Reset();
 }
 

@@ -135,6 +135,11 @@ component("cef_nweb") {
     "src/sysevent/event_reporter.h",
   ]
 
+  sources += [
+    "src/cef_delegate/nweb_value_convert.cc",
+    "src/cef_delegate/nweb_value_convert.h",
+  ]
+
   #ifdef OHOS_HTML_SELECT
   if (defined(ohos_html_select) && ohos_html_select) {
     sources += [
@@ -179,7 +184,9 @@ component("cef_nweb") {
   if (defined(ohos_nweb_ex) && ohos_nweb_ex) {
     deps += [ "//ohos_nweb_ex/overrides/ohos_nweb" ]
   } else {
-    sources += [ "src/cef_delegate/nweb_delegate_ohos.cc" ]
+    sources += [
+      "src/cef_delegate/nweb_delegate_ohos.cc",
+    ]
   }
 }
 
@@ -254,6 +261,12 @@ component("nweb_sources") {
     "src/nweb_web_storage_impl.h",
   ]
 
+  if (!defined(ohos_nweb_ex) || !ohos_nweb_ex) {
+    sources += [
+      "src/download/web_downloader.cc"
+    ]
+  }
+
   deps = [
     ":cef_nweb",
     ":nweb_hilog",
@@ -302,11 +315,15 @@ shared_library("libnweb_render") {
   include_dirs = [ "include" ]
   include_dirs += ohos_src_includes
 
-  sources = [ "src/nweb_render_main.cc" ]
+  sources = [
+    "src/nweb_render_main.cc",
+    "src/set_renderer_seccomp_policy.cc",
+  ]
 
   deps = [
     ":nweb_hilog",
     "//cef:libcef_dll_wrapper",
     "//cef:libweb_engine",
+    "//sandbox:sandbox",
   ]
 }

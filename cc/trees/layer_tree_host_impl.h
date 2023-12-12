@@ -926,6 +926,10 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
 
   std::string GetHungCommitDebugInfo() const;
 
+#ifdef OHOS_EX_TOPCONTROLS
+  void SetupScrollBy() override;
+#endif
+
  protected:
   LayerTreeHostImpl(
       const LayerTreeSettings& settings,

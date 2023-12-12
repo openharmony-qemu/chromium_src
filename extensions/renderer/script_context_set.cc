@@ -276,7 +276,11 @@ Feature::Context ScriptContextSet::ClassifyJavaScriptContext(
   if (!url.is_valid())
     return Feature::UNSPECIFIED_CONTEXT;
 
-  if (url.SchemeIs(content::kChromeUIScheme))
+  if (url.SchemeIs(content::kChromeUIScheme)
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+      || url.SchemeIs(content::kArkWebUIScheme)
+#endif
+  )
     return Feature::WEBUI_CONTEXT;
 
   if (url.SchemeIs(content::kChromeUIUntrustedScheme))

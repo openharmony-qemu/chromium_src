@@ -1111,12 +1111,7 @@ TEST_P(PartitionAllocThreadCacheTest, ClearFromTail) {
     auto* head = tcache->buckets_[index].freelist_head;
     while (head) {
       head =
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
-          head->GetNextForThreadCache<true>(tcache->buckets_[index].slot_size,
-              tcache->buckets_[index].random_cookie);
-#else
           head->GetNextForThreadCache<true>(tcache->buckets_[index].slot_size);
-#endif
       count++;
     }
     return count;
@@ -1225,10 +1220,10 @@ TEST_P(PartitionAllocThreadCacheTest, TryPurgeMultipleCorrupted) {
   auto* medium_bucket = root()->buckets + SizeToIndex(kMediumSize);
 
   auto* curr = medium_bucket->active_slot_spans_head->get_freelist_head();
-  curr = curr->GetNextForThreadCache<true>(kMediumSize, medium_bucket->random_cookie);
+  curr = curr->GetNextForThreadCache<true>(kMediumSize);
   curr->CorruptNextForTesting(0x12345678);
   tcache->TryPurge();
-  curr->SetNext(nullptr, 0);
+  curr->SetNext(nullptr);
   root()->Free(ptr);
 }
 

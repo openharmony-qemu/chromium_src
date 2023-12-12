@@ -140,6 +140,10 @@ class GaiaConfig;
 class WebEngineBrowserMainParts;
 class ScopedAllowBlockingForProfile;
 
+#if defined(OHOS_COOKIE)
+class CefCookieManagerImpl;
+#endif // defined(OHOS_COOKIE)
+
 namespace base {
 class File;
 class FilePath;
@@ -825,6 +829,9 @@ class BASE_EXPORT
   friend class android_webview::
       AwFormDatabaseService;  // http://crbug.com/904431
   friend class android_webview::CookieManager;
+#if defined(OHOS_COOKIE)
+  friend class ::CefCookieManagerImpl;
+#endif // defined(OHOS_COOKIE)
   friend class android_webview::VizCompositorThreadRunnerWebView;
   friend class audio::OutputDevice;
   friend class base::FileDescriptorWatcher;

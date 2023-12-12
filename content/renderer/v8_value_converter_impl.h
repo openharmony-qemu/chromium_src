@@ -24,6 +24,7 @@ class CONTENT_EXPORT V8ValueConverterImpl : public V8ValueConverter {
   void SetDateAllowed(bool val) override;
   void SetRegExpAllowed(bool val) override;
   void SetFunctionAllowed(bool val) override;
+  void SetPromiseAllowed(bool val) override;
   void SetStripNullFromObjects(bool val) override;
   void SetConvertNegativeZeroToInt(bool val) override;
   void SetStrategy(Strategy* strategy) override;
@@ -69,6 +70,14 @@ class CONTENT_EXPORT V8ValueConverterImpl : public V8ValueConverter {
                                             FromV8ValueState* state,
                                             v8::Isolate* isolate) const;
 
+#if BUILDFLAG(IS_OHOS)
+  std::unique_ptr<base::Value> FromV8Object(v8::Local<v8::Object> object,
+                                            FromV8ValueState* state,
+                                            v8::Isolate* isolate,
+                                            bool is_function,
+                                            bool is_promise) const;
+#endif
+
   // If true, we will convert Date JavaScript objects to doubles.
   bool date_allowed_;
 
@@ -77,6 +86,11 @@ class CONTENT_EXPORT V8ValueConverterImpl : public V8ValueConverter {
 
   // If true, we will convert Function JavaScript objects to dictionaries.
   bool function_allowed_;
+
+#if BUILDFLAG(IS_OHOS)
+  // If true, we will convert promise JavaScript objects to dictionaries.ls
+  bool promise_allowed_;
+#endif
 
   // If true, undefined and null values are ignored when converting v8 objects
   // into Values.

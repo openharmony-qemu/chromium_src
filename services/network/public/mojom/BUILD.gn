@@ -1346,6 +1346,12 @@ mojom("mojom") {
 
   enabled_features = []
 
+  #ifdef OHOS_COOKIE
+  if (is_android || (defined(ohos_cookie) && ohos_cookie)) {
+    enabled_features += [ "is_android_or_ohos_cookie" ]
+  }
+  #endif
+
   # TODO(crbug/598073): When moving the service implementation to
   # //services/network, add the correct values for export_class_attribute /
   # export_define / export_header here. Context in https://crrev.com/2225673002.

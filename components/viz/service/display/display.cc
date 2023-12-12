@@ -72,6 +72,7 @@
 namespace viz {
 
 namespace {
+const int MAX_SURFACE_SIZE = 8000;
 
 const DrawQuad::Material kNonSplittableMaterials[] = {
     // Exclude debug quads from quad splitting
@@ -446,6 +447,14 @@ void Display::SetVisible(bool visible) {
 void Display::Resize(const gfx::Size& size) {
   disable_swap_until_resize_ = false;
 
+  gfx::Size newSize = size;
+  if (newSize.width() > MAX_SURFACE_SIZE) {
+    newSize.set_width(MAX_SURFACE_SIZE);
+  }
+  if (newSize.height() > MAX_SURFACE_SIZE) {
+    newSize.set_height(MAX_SURFACE_SIZE);
+  }
+  LOG(INFO) << "Display::Resize newSize = " << newSize.ToString();
   if (size == current_surface_size_)
     return;
 
@@ -456,7 +465,7 @@ void Display::Resize(const gfx::Size& size) {
   TRACE_EVENT0("viz", "Display::Resize");
 
   swapped_since_resize_ = false;
-  current_surface_size_ = size;
+  current_surface_size_ = newSize;
 
   damage_tracker_->DisplayResized();
 }
@@ -495,6 +504,25 @@ void Display::DisableSwapUntilResize(
 #if defined(OHOS_COMPOSITE_RENDER)
 void Display::SetShouldFrameSubmissionBeforeDraw(bool should) {
   scheduler_->SetShouldFrameSubmissionBeforeDraw(should);
+}
+
+void Display::SetDrawRect(const gfx::Rect& new_rect)
+{
+  if ((draw_rect_ == new_rect) || (draw_mode_ == 0)) {
+    LOG(ERROR) << "draw_mode =" << draw_mode_;
+    return;
+  }
+  TRACE_EVENT1("viz", "Display::SetDrawRect", "new_rect", new_rect.ToString());
+  draw_rect_ = new_rect;
+  current_surface_size_ = draw_rect_.size();
+  scheduler_->SetNeedsOneBeginFrame(true);
+  LOG(INFO) << "SetDrawRect new_rect=" << new_rect.ToString();
+}
+
+void Display::SetDrawMode(const int32_t mode)
+{
+  LOG(INFO) << "SetDrawMode mode=" << mode;
+  draw_mode_ = mode;
 }
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 
@@ -839,6 +867,23 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
       cc::MathUtil::MapEnclosedRectWith2dAxisAlignedTransform(
           display_transform, gfx::Rect(current_surface_size_))
           .size();
+#if BUILDFLAG(IS_OHOS)
+  if (draw_mode_ || (settings_.auto_resize_output_surface &&
+      last_render_pass.output_rect.size() != current_surface_size &&
+      last_render_pass.damage_rect == last_render_pass.output_rect &&
+      !current_surface_size.IsEmpty())) {
+      LOG(INFO) << "resize_output_surface = " << current_surface_size.ToString();
+      LOG(INFO) << "output_rect = " <<  last_render_pass.output_rect.ToString();
+    // Resize the |output_rect| to the |current_surface_size| so that we won't
+    // skip the draw and so that the GL swap won't stretch the output.
+    last_render_pass.output_rect.set_size(current_surface_size);
+    last_render_pass.output_rect.set_y(draw_rect_.y());
+    last_render_pass.output_rect.set_x(draw_rect_.x());
+    last_render_pass.damage_rect = last_render_pass.output_rect;
+    frame.surface_damage_rect_list_.push_back(last_render_pass.damage_rect);
+    LOG(INFO) << "output_rect modify = " <<  last_render_pass.output_rect.ToString();
+  }
+#else
   if (settings_.auto_resize_output_surface &&
       last_render_pass.output_rect.size() != current_surface_size &&
       last_render_pass.damage_rect == last_render_pass.output_rect &&
@@ -849,6 +894,7 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
     last_render_pass.damage_rect = last_render_pass.output_rect;
     frame.surface_damage_rect_list_.push_back(last_render_pass.damage_rect);
   }
+#endif
   surface_size = last_render_pass.output_rect.size();
   have_damage = !last_render_pass.damage_rect.size().IsEmpty();
 

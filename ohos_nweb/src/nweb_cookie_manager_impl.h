@@ -49,6 +49,9 @@ class NWebCookieManagerImpl : public NWebCookieManager {
       std::shared_ptr<NWebValueCallback<bool>> callback) override;
   void DeleteCookieEntirely(
       std::shared_ptr<NWebValueCallback<bool>> callback) override;
+  void ConfigCookie(const std::string& url,
+                    const std::string& value,
+                    std::shared_ptr<NWebValueCallback<long>> callback) override;
 
  private:
   std::shared_ptr<NWebCookieManagerDelegateInterface> delegate_;

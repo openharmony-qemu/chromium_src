@@ -268,6 +268,14 @@ PlatformThreadId PlatformThread::CurrentId() {
 #endif
 }
 
+#if BUILDFLAG(IS_OHOS)
+PlatformThreadId PlatformThread::CurrentRealId() {
+  // - getproctid() is fast, since its return value is cached in pthread (in the
+  //   thread control block of pthread). See gettid.c in bionic.
+  return getproctid();
+}
+#endif
+
 // static
 PlatformThreadRef PlatformThread::CurrentRef() {
   return PlatformThreadRef(pthread_self());

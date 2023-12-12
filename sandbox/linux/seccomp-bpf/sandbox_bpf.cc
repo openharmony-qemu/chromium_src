@@ -254,7 +254,10 @@ void SandboxBPF::InstallFilter(bool must_sync_threads, bool enable_ibpb) {
   // necessary or SECCOMP_FILTER_FLAG_SPEC_ALLOW is supported, then the kernel
   // has the seccomp system call. Otherwise, fall back on prctl, which requires
   // the process to be single-threaded.
-  unsigned int seccomp_filter_flags = 0;
+  // SECCOMP_FILTER_FLAG_LOG can be used. When the return value is
+  // SECCOMP_RET_TRAP, related audit logs are generated in the kernel, and
+  // auxiliary debugging information is added.
+  unsigned int seccomp_filter_flags = SECCOMP_FILTER_FLAG_LOG;
   if (must_sync_threads) {
     seccomp_filter_flags |= SECCOMP_FILTER_FLAG_TSYNC;
 #if BUILDFLAG(DISABLE_SECCOMP_SSBD)

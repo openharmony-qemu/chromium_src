@@ -279,6 +279,17 @@ void RootCompositorFrameSinkImpl::SetShouldFrameSubmissionBeforeDraw(
   if (callback)
     std::move(callback).Run();
 }
+
+void RootCompositorFrameSinkImpl::SetDrawRect(const gfx::Rect& new_rect)
+{
+   display_->SetDrawRect(new_rect);
+}
+
+void RootCompositorFrameSinkImpl::SetDrawMode(int32_t mode)
+{
+   LOG(INFO) << "ootCompositorFrameSinkImpl::SetDrawMode";
+   display_->SetDrawMode(mode);
+}
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 
 void RootCompositorFrameSinkImpl::Resize(const gfx::Size& size) {

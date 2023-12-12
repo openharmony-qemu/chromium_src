@@ -58,6 +58,7 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   void Close() override;
   void SetInterruptMode(bool audioExclusive);
   void Refresh();
+  bool GetAudioExclusive();
 
  private:
   ~OHOSAudioOutputStream() override;
@@ -127,6 +128,8 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   bool isRefreshing_ = false;
 
   bool isCommunication_ = false;
+
+  bool audioExclusive_ = false;
 
   scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_;
 };

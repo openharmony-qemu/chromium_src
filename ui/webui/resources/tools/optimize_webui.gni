@@ -66,9 +66,10 @@ template("optimize_webui") {
     }
 
     external_paths += [
+      "arkweb://resources/polymer/v3_0/|$polymer_path",
+      "arkweb://resources/|$resources_path",
       "chrome://resources/polymer/v3_0/|$polymer_path",
       "chrome://resources/|$resources_path",
-
       # Scheme relative versions to work with chrome-untrusted://
       "//resources/polymer/v3_0/|$polymer_path",
       "//resources/|$resources_path",

@@ -338,7 +338,15 @@ class WebUIURLLoaderFactory : public network::SelfDeletingURLLoaderFactory {
       return;
     }
 
-    if (request.url.scheme() != scheme_) {
+    if (request.url.scheme() != scheme_
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+        // TODO: If chrome:// -> arkweb:// replaced completely, remove it
+        &&
+
+        request.url.scheme() != kChromeUIScheme &&
+        request.url.scheme() != kArkWebUIScheme
+#endif
+    ) {
       DVLOG(1) << "Bad scheme: " << request.url.scheme();
       SCOPED_CRASH_KEY_STRING32("WebUI", "actual_scheme", request.url.scheme());
       SCOPED_CRASH_KEY_STRING32("WebUI", "expected_scheme", scheme_);

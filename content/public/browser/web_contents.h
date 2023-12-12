@@ -665,6 +665,10 @@ class WebContents : public PageNavigator,
   virtual bool GetEnableBlankTargetPopupIntercept() = 0;
 #endif
 
+#ifdef OHOS_EX_TOPCONTROLS
+  virtual void UpdateBrowserControlsHeight(int, bool) = 0;
+#endif
+
   // Saves the given title to the navigation entry and does associated work. It
   // will update history and the view with the new title, and also synthesize
   // titles for file URLs that have none. Thus |entry| must have a URL set.

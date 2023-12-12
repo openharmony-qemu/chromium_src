@@ -19,6 +19,7 @@
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "base/location.h"
+#include "base/logging.h"
 #include "base/memory/ptr_util.h"
 #include "base/memory/raw_ptr.h"
 #include "base/metrics/field_trial.h"
@@ -275,6 +276,11 @@ NoStatePrefetchManager::StartOhPrefetchingFromOmnibox(
     const gfx::Size& size,
     PreloadingAttempt* attempt,
     const std::string& extra_headers) {
+#if BUILDFLAG(IS_OHOS)
+  if (!url.is_empty() && url.is_valid()) {
+    oh_prefetch_urls.insert(url);
+  }
+#endif
   return StartPrefetchingWithPreconnectFallback(
       ORIGIN_OMNIBOX, url, content::Referrer(), absl::nullopt, gfx::Rect(size),
       session_storage_namespace, attempt ? attempt->GetWeakPtr() : nullptr,
@@ -716,6 +722,20 @@ NoStatePrefetchManager::StartPrefetchingWithPreconnectFallback(
   if (content::RenderProcessHost::ShouldTryToUseExistingProcessHost(
           browser_context_, url) &&
       !content::RenderProcessHost::run_renderer_in_process()) {
+#if BUILDFLAG(IS_OHOS)
+    auto it = oh_prefetch_urls.find(url);
+    if (it == oh_prefetch_urls.end()) {
+      SkipNoStatePrefetchContentsAndMaybePreconnect(
+          url, origin, FINAL_STATUS_TOO_MANY_PROCESSES);
+      if (attempt) {
+        attempt->SetFailureReason(
+            ToPreloadingFailureReason(FINAL_STATUS_TOO_MANY_PROCESSES));
+      }
+      return nullptr;
+    }
+    LOG(DEBUG) << "Prefetch url in single-process mode.";
+    oh_prefetch_urls.erase(it);
+#else
     SkipNoStatePrefetchContentsAndMaybePreconnect(
         url, origin, FINAL_STATUS_TOO_MANY_PROCESSES);
     // Since it is possible that the NSP enabled group uses more processes, we
@@ -727,6 +747,7 @@ NoStatePrefetchManager::StartPrefetchingWithPreconnectFallback(
           ToPreloadingFailureReason(FINAL_STATUS_TOO_MANY_PROCESSES));
     }
     return nullptr;
+#endif
   }
 
   // Record the URL in the prefetch list, even when in full prerender mode, to

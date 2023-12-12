@@ -47,6 +47,7 @@
 #include "nweb_url_resource_request_impl.h"
 #include "nweb_url_resource_response.h"
 #include "nweb_value_callback.h"
+#include "nweb_value_convert.h"
 
 #include "ohos_adapter_helper.h"
 
@@ -64,6 +65,11 @@
 #include "nweb_download_handler_delegate.h"
 #include "ohos_nweb/src/capi/nweb_download_delegate_callback.h"
 #endif  //  OHOS_EX_DOWNLOAD
+
+#if defined(OHOS_EX_TOPCONTROLS)
+#include "cef/include/cef_command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
 
 namespace OHOS::NWeb {
 namespace {
@@ -535,6 +541,20 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
 #endif  // defined(OHOS_BACKGROUND_COLOR)
       }
       main_browser_->GetHost()->SetNativeWindow(window_);
+
+      // window new case, register ark js functions
+      ObjectMethodMap::iterator it;
+      for (it = javascript_method_map_.begin();
+           it != javascript_method_map_.end(); ++it) {
+        std::vector<CefString> method_vector;
+        for (std::string method : it->second.second) {
+          method_vector.push_back(method);
+        }
+        if (main_browser_ && main_browser_->GetHost()) {
+          main_browser_->GetHost()->RegisterArkJSfunction(
+              it->second.first, method_vector, it->first);
+        }
+      }
     }
     return;
   }
@@ -619,6 +639,26 @@ void NWebHandlerDelegate::NotifyPopupWindowResult(bool result) {
   }
   popupWindowCallback_ = nullptr;
 }
+
+void NWebHandlerDelegate::SavaArkJSFunctionForPopup(
+    const std::string& object_name,
+    const std::vector<std::string>& method_list,
+    const int32_t object_id) {
+  if (method_list.empty()) {
+    LOG(INFO) << "NWebHandlerDelegate::SavaArkJSFunctionForPopup method_list "
+                 "is empty";
+    return;
+  }
+  MethodPair object_pair;
+  std::unordered_set<std::string> method_set;
+  for (std::string method : method_list) {
+    method_set.emplace(method);
+  }
+  object_pair.first = object_name;
+  object_pair.second = method_set;
+  javascript_method_map_[object_id] = object_pair;
+}
+
 #endif  // defined(OHOS_MULTI_WINDOW)
 
 bool NWebHandlerDelegate::OnPreBeforePopup(
@@ -922,11 +962,16 @@ void NWebHandlerDelegate::OnHttpError(CefRefPtr<CefRequest> request,
         std::make_shared<NWebUrlResourceRequestImpl>(
             request->GetMethod().ToString(), request_headers,
             request->GetURL().ToString(), has_user_gesture, is_main_frame);
+
     std::string data;
+    CefResponse::HeaderMap cef_response_headers;
+    request->GetHeaderMap(cef_response_headers);
+    std::map<std::string, std::string> response_headers;
+    ConvertMapToHeaderMap(cef_response_headers, response_headers);
     std::shared_ptr<NWebUrlResourceResponse> web_response =
         std::make_shared<NWebUrlResourceResponse>(
             response->GetMimeType(), response->GetCharset(),
-            response->GetStatus(), response->GetStatusText(), request_headers,
+            response->GetStatus(), response->GetStatusText(), response_headers,
             data);
     nweb_handler_->OnHttpError(web_request, web_response);
   }
@@ -973,10 +1018,10 @@ void NWebHandlerDelegate::OnAudioStateChanged(CefRefPtr<CefBrowser> browser,
 void NWebHandlerDelegate::OnMediaStateChanged(CefRefPtr<CefBrowser> browser,
                            MediaType type,
                            MediaPlayingState state) {
-  LOG(INFO) 
-       << "NWebHandlerDelegate::OnMediaStateChanged, MediaType: " << static_cast<int>(type) 
-       << " MediaPlayingState: " << static_cast<int>(state)
-       << " nweb_id: " << nweb_id_;
+  LOG(INFO) << "NWebHandlerDelegate::OnMediaStateChanged, MediaType: "
+            << static_cast<int>(type)
+            << " MediaPlayingState: " << static_cast<int>(state)
+            << " nweb_id: " << nweb_id_;
 }
 
 /* CefLoadHandler methods end */
@@ -1403,6 +1448,49 @@ void NWebHandlerDelegate::OnHideAutofillPopup() {
 #endif  // OHOS_EX_PASSWORD
 }
 
+// #if defined(OHOS_EX_TOPCONTROLS)
+void NWebHandlerDelegate::OnTopControlsChanged(float top_controls_offset,
+                                               float top_content_offset) {
+#if defined(OHOS_EX_TOPCONTROLS)
+  if (web_app_client_extension_listener_ == nullptr ||
+      web_app_client_extension_listener_->OnTopControlsChanged == nullptr) {
+    return;
+  }
+
+  top_content_offset_ = top_content_offset;
+  web_app_client_extension_listener_->OnTopControlsChanged(
+      top_controls_offset, top_content_offset,
+      web_app_client_extension_listener_->nweb_id);
+#endif
+}
+
+int NWebHandlerDelegate::OnGetTopControlsHeight() {
+#if defined(OHOS_EX_TOPCONTROLS)
+  if (web_app_client_extension_listener_ == nullptr ||
+      web_app_client_extension_listener_->OnGetTopControlsHeight == nullptr) {
+    return 0;
+  }
+
+  return web_app_client_extension_listener_->OnGetTopControlsHeight(
+      web_app_client_extension_listener_->nweb_id);
+#else
+  return 0;
+#endif
+}
+
+bool NWebHandlerDelegate::DoBrowserControlsShrinkRendererSize() {
+#if defined(OHOS_EX_TOPCONTROLS)
+  if (CefCommandLine::GetGlobalCommandLine()->HasSwitch(
+          ::switches::kForBrowser) &&
+      top_content_offset_ > 0) {
+    return true;
+  }
+#endif
+
+  return false;
+}
+// #endif OHOS_EX_TOPCONTROLS
+
 void NWebHandlerDelegate::OnReceivedIcon(const void* data,
                                          size_t width,
                                          size_t height,
@@ -1568,6 +1656,19 @@ void NWebHandlerDelegate::SetContinueNeedFocus(bool continueNeedFocus) {
   continueNeedFocus_ = continueNeedFocus;
 }
 #endif  // defined(OHOS_INPUT_EVENTS)
+
+void NWebHandlerDelegate::OnContentsBrowserZoomChange(double zoom_factor,
+                                                      bool can_show_bubble) {
+#ifdef OHOS_EX_GET_ZOOM_LEVEL
+  if (web_app_client_extension_listener_ != nullptr &&
+      web_app_client_extension_listener_->ContentsBrowserZoomChange !=
+          nullptr) {
+    web_app_client_extension_listener_->ContentsBrowserZoomChange(
+        zoom_factor, can_show_bubble,
+        web_app_client_extension_listener_->nweb_id);
+  }
+#endif
+}
 /* CefDisplayHandler method end */
 
 /* CefFocusHandler method begin */
@@ -1595,7 +1696,7 @@ bool NWebHandlerDelegate::OnSetFocus(CefRefPtr<CefBrowser> browser,
 void NWebHandlerDelegate::OnFormEditingStateChanged(CefRefPtr<CefBrowser> browser, bool is_editing, uint64_t form_id) {
   bool form_editing_state_ = edited_forms_id_.size();
   std::vector<uint64_t>::iterator it = find(edited_forms_id_.begin(), edited_forms_id_.end(), form_id);
-  
+
   if (it == edited_forms_id_.end() && is_editing) {
     edited_forms_id_.push_back(form_id);
   } else if (it != edited_forms_id_.end() && !is_editing) {
@@ -1603,12 +1704,11 @@ void NWebHandlerDelegate::OnFormEditingStateChanged(CefRefPtr<CefBrowser> browse
   } else {
     return;
   }
- 
+
   bool current_is_editing_ = edited_forms_id_.size() != 0;
   if (current_is_editing_ != form_editing_state_) {
     LOG(INFO) << "NWebHandlerDelegate::OnFormEditingStateChanged, is_editing: " << is_editing << " nweb_id: " << nweb_id_;
   }
-  
 }
 /* CefFormHandler method end */
 
@@ -1878,7 +1978,7 @@ void NWebHandlerDelegate::CopyImageToClipboard(CefRefPtr<CefImage> image) {
     int pixel_width = 0;
     int pixel_height = 0;
     CefRefPtr<CefBinaryValue> bitMap =
-        image->GetAsBitmap(1, CEF_COLOR_TYPE_RGBA_8888, CEF_ALPHA_TYPE_OPAQUE,
+        image->GetAsBitmap(1, CEF_COLOR_TYPE_RGBA_8888, CEF_ALPHA_TYPE_PREMULTIPLIED,
                            pixel_width, pixel_height);
     size_t bitMapSize = bitMap->GetSize();
     uint8_t* data = (uint8_t*)calloc((size_t)bitMapSize, sizeof(uint8_t));
@@ -1890,7 +1990,7 @@ void NWebHandlerDelegate::CopyImageToClipboard(CefRefPtr<CefImage> image) {
 
     ClipBoardImageData imageInfo;
     imageInfo.colorType = ClipBoardImageColorType::COLOR_TYPE_RGBA_8888;
-    imageInfo.alphaType = ClipBoardImageAlphaType::ALPHA_TYPE_OPAQUE;
+    imageInfo.alphaType = ClipBoardImageAlphaType::ALPHA_TYPE_PREMULTIPLIED;
     imageInfo.data = (uint32_t*)data;
     imageInfo.dataSize = bitMapSize;
     imageInfo.width = pixel_width;
@@ -2074,122 +2174,12 @@ const std::vector<std::string> NWebHandlerDelegate::GetVisitedHistory() {
   return std::vector<std::string>();
 }
 
-void AddNWebValueCef(std::vector<std::shared_ptr<NWebValue>>& vector,
-                     NWebValue::Type type,
-                     CefRefPtr<CefValue> argument) {
-  std::shared_ptr<NWebValue> value = std::make_shared<NWebValue>(type);
-  switch (type) {
-    case NWebValue::Type::INTEGER:
-      value->SetInt(argument->GetInt());
-      vector.push_back(value);
-      break;
-    case NWebValue::Type::DOUBLE: {
-      value->SetDouble(argument->GetDouble());
-      vector.push_back(value);
-      break;
-    }
-    case NWebValue::Type::BOOLEAN:
-      value->SetBoolean(argument->GetBool());
-      vector.push_back(value);
-      break;
-    case NWebValue::Type::STRING:
-      value->SetString(argument->GetString().ToString());
-      vector.push_back(value);
-      break;
-    default:
-      LOG(INFO) << "AddNWebValueCef: not support value";
-      vector.push_back(value);
-      break;
-  }
-}
-
-std::vector<std::shared_ptr<NWebValue>> ParseCefValueTONWebValue(
-    CefRefPtr<CefListValue> args,
-    int size) {
-  std::vector<std::shared_ptr<NWebValue>> value_vector;
-  for (int i = 0; i < size; i++) {
-    CefRefPtr<CefValue> argument = args->GetValue(i);
-    switch (argument->GetType()) {
-      case CefValueType::VTYPE_INT:
-        AddNWebValueCef(value_vector, NWebValue::Type::INTEGER, argument);
-        break;
-      case CefValueType::VTYPE_DOUBLE: {
-        AddNWebValueCef(value_vector, NWebValue::Type::DOUBLE, argument);
-        break;
-      }
-      case CefValueType::VTYPE_BOOL:
-        AddNWebValueCef(value_vector, NWebValue::Type::BOOLEAN, argument);
-        break;
-      case CefValueType::VTYPE_STRING:
-        AddNWebValueCef(value_vector, NWebValue::Type::STRING, argument);
-        break;
-      case CefValueType::VTYPE_INVALID:
-        AddNWebValueCef(value_vector, NWebValue::Type::NONE, argument);
-        break;
-      default:
-        LOG(INFO) << "ParseCefValueTONWebValue: not support value";
-        AddNWebValueCef(value_vector, NWebValue::Type::NONE, argument);
-        break;
-    }
-  }
-  return value_vector;
-}
-
-CefValueType TranslateCefType(NWebValue::Type type) {
-  switch (type) {
-    case NWebValue::Type::INTEGER:
-      return CefValueType::VTYPE_INT;
-    case NWebValue::Type::DOUBLE: {
-      return CefValueType::VTYPE_DOUBLE;
-    }
-    case NWebValue::Type::BOOLEAN:
-      return CefValueType::VTYPE_BOOL;
-    case NWebValue::Type::STRING:
-      return CefValueType::VTYPE_STRING;
-    case NWebValue::Type::DICTIONARY:
-      return CefValueType::VTYPE_DICTIONARY;
-    case NWebValue::Type::LIST:
-      return CefValueType::VTYPE_LIST;
-    case NWebValue::Type::NONE:
-      return CefValueType::VTYPE_INVALID;
-    case NWebValue::Type::BINARY:
-      return CefValueType::VTYPE_BINARY;
-    default:
-      return CefValueType::VTYPE_INVALID;
-  }
-}
-
-CefRefPtr<CefListValue> ParseNWebValueToValue(std::shared_ptr<NWebValue> value,
-                                              CefRefPtr<CefListValue> result) {
-  NWebValue::Type type = value->GetType();
-  switch (type) {
-    case NWebValue::Type::INTEGER:
-      result->SetInt(0, value->GetInt());
-      break;
-    case NWebValue::Type::DOUBLE: {
-      result->SetDouble(0, value->GetDouble());
-      break;
-    }
-    case NWebValue::Type::BOOLEAN:
-      result->SetBool(0, value->GetBoolean());
-      break;
-    case NWebValue::Type::STRING:
-      result->SetString(0, value->GetString());
-      break;
-    case NWebValue::Type::NONE:
-      break;
-    default:
-      LOG(INFO) << "ParseNWebValueToValue: not support value type";
-      break;
-  }
-  return result;
-}
-
-int NWebHandlerDelegate::NotifyJavaScriptResult(
-    CefRefPtr<CefListValue> args,
-    const CefString& method,
-    const CefString& object_name,
-    CefRefPtr<CefListValue> result) {
+int NWebHandlerDelegate::NotifyJavaScriptResult(CefRefPtr<CefListValue> args,
+                                                const CefString& method,
+                                                const CefString& object_name,
+                                                CefRefPtr<CefListValue> result,
+                                                int32_t routing_id,
+                                                int32_t object_id) {
   if (args.get() == nullptr || result.get() == nullptr) {
     return 0;
   }
@@ -2200,13 +2190,62 @@ int NWebHandlerDelegate::NotifyJavaScriptResult(
   }
 
   std::shared_ptr<NWebValue> ark_result =
-      nweb_javascript_callback_->GetJavaScriptResult(value_vector, method,
-                                                     object_name);
+      nweb_javascript_callback_->GetJavaScriptResult(
+          value_vector, method, object_name, routing_id, object_id);
   if (!ark_result) {
     return 1;
   }
   ParseNWebValueToValue(ark_result, result);
   return ark_result->error_;
+}
+
+bool NWebHandlerDelegate::HasJavaScriptObjectMethods(
+    int32_t object_id,
+    const CefString& method_name) {
+  if (!nweb_javascript_callback_) {
+    LOG(ERROR) << "NWebHandlerDelegate::HasJavaScriptObjectMethods "
+                  "nweb_javascript_callback_ is null";
+    return false;
+  }
+  return nweb_javascript_callback_->HasJavaScriptObjectMethods(object_id,
+                                                               method_name);
+}
+
+void NWebHandlerDelegate::GetJavaScriptObjectMethods(
+    int32_t object_id,
+    CefRefPtr<CefValue> returned_method_names) {
+  if (!nweb_javascript_callback_) {
+    LOG(ERROR) << "NWebHandlerDelegate::GetJavaScriptObjectMethods "
+                  "nweb_javascript_callback_ is null";
+    return;
+  }
+  std::shared_ptr<NWebValue> ark_result =
+      nweb_javascript_callback_->GetJavaScriptObjectMethods(object_id);
+  if (!ark_result) {
+    LOG(ERROR) << "NWebHandlerDelegate::GetJavaScriptObjectMethods "
+                  "result is null";
+    return;
+  }
+  returned_method_names = ParseNWebValueToValueHelper(ark_result);
+}
+
+void NWebHandlerDelegate::RemoveJavaScriptObjectHolder(int32_t holder,
+                                                       int32_t object_id) {
+  if (!nweb_javascript_callback_) {
+    LOG(ERROR) << "NWebHandlerDelegate::RemoveJavaScriptObjectHolder "
+                  "nweb_javascript_callback_ is null";
+    return;
+  }
+  nweb_javascript_callback_->RemoveJavaScriptObjectHolder(holder, object_id);
+}
+
+void NWebHandlerDelegate::RemoveTransientJavaScriptObject() {
+  if (!nweb_javascript_callback_) {
+    LOG(ERROR) << "NWebHandlerDelegate::RemoveTransientJavaScriptObject "
+                  "nweb_javascript_callback_ is null";
+    return;
+  }
+  nweb_javascript_callback_->RemoveTransientJavaScriptObject();
 }
 
 #if defined(REPORT_SYS_EVENT)

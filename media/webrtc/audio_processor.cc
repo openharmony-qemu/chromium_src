@@ -48,6 +48,8 @@ int GetCaptureBufferSize(bool need_webrtc_processing,
   // (2*22050)/100 = 441 samples, while WebRTC processes in chunks of 22050/100
   // = 220 samples. This leads to unnecessary rebuffering.
   return 2 * device_format.sample_rate() / 100;
+#elif BUILDFLAG(IS_OHOS)
+  return 2 * device_format.sample_rate() / 100;
 #else
   const int buffer_size_10_ms = device_format.sample_rate() / 100;
   // If audio processing is turned on, require 10ms buffers to avoid

@@ -59,6 +59,8 @@ class NWebEventHandler {
 #if defined(OHOS_INPUT_EVENTS)
   std::unique_ptr<MMIAdapter> mmi_adapter_ = nullptr;
   int32_t mmi_id_ = -1;
+  int32_t previous_action_ = 2;
+  bool is_in_web_ = false;
   bool isFocus_ = false;
   double sum_deltaY_ = 0.0;
 #endif  // defined(OHOS_INPUT_EVENTS)

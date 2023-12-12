@@ -107,9 +107,17 @@ class NWebImpl : public NWeb {
   void RegisterArkJSfunction(
       const std::string& object_name,
       const std::vector<std::string>& method_list) override;
+  void RegisterArkJSfunctionExt(const std::string& object_name,
+                                const std::vector<std::string>& method_list,
+                                const int32_t object_id) override;
   void UnregisterArkJSfunction(
       const std::string& object_name,
       const std::vector<std::string>& method_list) override;
+  void CallH5Function(
+      int32_t routing_id,
+      int32_t h5_object_id,
+      const std::string h5_method_name,
+      const std::vector<std::shared_ptr<NWebValue>>& args) override;
   void SetNWebJavaScriptResultCallBack(
       std::shared_ptr<NWebJavaScriptResultCallBack> callback) override;
   void OnFocus(const FocusReason& focusReason =
@@ -137,6 +145,24 @@ class NWebImpl : public NWeb {
 
   void HasImages(std::shared_ptr<NWebValueCallback<bool>> callback) override;
   void RemoveCache(bool include_disk_files) override;
+  void PutAccessibilityEventCallback(
+      std::shared_ptr<NWebAccessibilityEventCallback>
+          accessibilityEventListener) override;
+  void PutAccessibilityIdGenerator(
+      std::function<int32_t()> accessibilityIdGenerator) override;
+  void ExecuteAction(int32_t accessibilityId, uint32_t action) const override;
+  bool GetFocusedAccessibilityNodeInfo(
+      int32_t accessibilityId,
+      bool isAccessibilityFocus,
+      OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const override;
+  bool GetAccessibilityNodeInfoById(
+      int32_t accessibilityId,
+      OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const override;
+  bool GetAccessibilityNodeInfoByFocusMove(
+      int32_t accessibilityId,
+      int32_t direction,
+      OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const override;
+  void SetAccessibilityState(bool state) override;
 #ifdef OHOS_SCREEN_LOCK
   void RegisterScreenLockFunction(int32_t windowId,
                                   const SetKeepScreenOn&& handle) override;
@@ -153,6 +179,8 @@ class NWebImpl : public NWeb {
 #endif
 #if defined(OHOS_COMPOSITE_RENDER)
   void SetShouldFrameSubmissionBeforeDraw(bool should) override;
+  void SetDrawRect(int32_t x, int32_t y, int32_t width, int32_t height) override;
+  void SetDrawMode(int32_t mode) override;
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 
 #if defined(OHOS_MSGPORT)
@@ -206,7 +234,13 @@ class NWebImpl : public NWeb {
 #if BUILDFLAG(IS_OHOS)
   void SetWindowId(uint32_t window_id) override;
   void SetToken(void* token) override;
+  void* CreateWebPrintDocumentAdapter(const std::string& jobName) override;
   void SetNestedScrollMode(const NestedScrollMode& nestedScrollMode) override;
+#endif
+
+#if defined(OHOS_INPUT_EVENTS)
+  void SetVirtualKeyBoardArg(int32_t width, int32_t height, double keyboard) override;
+  bool ShouldVirtualKeyboardOverlay() override;
 #endif
 
 #if defined(OHOS_NO_STATE_PREFETCH)
@@ -215,6 +249,8 @@ class NWebImpl : public NWeb {
       std::map<std::string, std::string> additionalHttpHeaders) override;
 #endif  // defined(OHOS_NO_STATE_PREFETCH)
 
+  int PostUrl(const std::string& url, std::vector<char>& postData) override;
+  void JavaScriptOnDocumentStart(const ScriptItems& scriptItems) override;
   // For NWebEx
   static NWebImpl* FromID(int32_t nweb_id);
   std::string GetUrl() const override;
@@ -237,18 +273,40 @@ class NWebImpl : public NWeb {
   void SetBrowserUserAgentString(const std::string& user_agent);
 #endif  // defined(OHOS_NWEB_EX)
 
+#ifdef OHOS_EX_NETWORK_CONNECTION
+  static void SetConnectTimeout(int32_t seconds);
+#endif
+
+#ifdef OHOS_EX_UA
+  static void UpdateCloudUAConfig(const std::string& file_path,
+                                  const std::string& version);
+  static void UpdateUAListConfig(const std::string& ua_name,
+                                 const std::string& ua_string);
+  static void SetUAForHosts(const std::string& ua_name,
+                            const std::vector<std::string>& hosts);
+  static std::string GetUANameConfig(const std::string& host);
+  static void SetBrowserUA(const std::string& ua_name);
+#endif  // OHOS_EX_UA
+
 #if defined(OHOS_EX_FORCE_ZOOM)
   void SetForceEnableZoom(bool forceEnableZoom) const;
   bool GetForceEnableZoom() const;
 #endif  // OHOS_EX_FORCE_ZOOM
 
-#if defined(OHOS_EX_DOWNLOAD)
   void PutWebDownloadDelegateCallback(
       std::shared_ptr<NWebDownloadDelegateCallback>);
   void StartDownload(const char* url);
   void ResumeDownload(std::shared_ptr<NWebDownloadItem>);
   static void ResumeDownloadStatic(std::shared_ptr<NWebDownloadItem> download_item);
-#endif  // OHOS_EX_DOWNLOAD
+
+  bool Discard() override;
+  bool Restore() override;
+
+  bool NeedSoftKeyboard() const override;
+
+#if defined(OHOS_COOKIE)
+  static bool InitializeICUStatic(const NWebInitArgs& init_args);
+#endif // defined(OHOS_COOKIE)
 
 #if defined(OHOS_MULTI_WINDOW)
   void NotifyPopupWindowResult(bool result) override {
@@ -260,6 +318,20 @@ class NWebImpl : public NWeb {
   void SelectAndCopy() const;
   bool ShouldShowFreeCopy() const;
 #endif  // defined(OHOS_EX_FREE_COPY)
+
+#if defined(OHOS_EX_TOPCONTROLS)
+  void UpdateBrowserControlsState(int constraints,
+                                  int current,
+                                  bool animate) const;
+  void UpdateBrowserControlsHeight(int height, bool animate);
+#endif
+
+#ifdef OHOS_EX_GET_ZOOM_LEVEL
+  static void SetDefaultBrowserZoomLevel(double zoom_factor);
+  void SetBrowserZoomLevel(double zoom_factor) const;
+  double GetBrowserZoomLevel() const;
+#endif
+
  private:
   void ProcessInitArgs(const NWebInitArgs& init_args);
   void InitWebEngineArgs(const NWebInitArgs& init_args);
@@ -270,8 +342,9 @@ class NWebImpl : public NWeb {
   void RestartCameraSession() const;
 #endif // defined(OHOS_WEBRTC)
 
- private:
+
   uint32_t nweb_id_ = 0;
+  int32_t draw_mode_ = 0;
   std::shared_ptr<NWebHandler> nweb_handle_ = nullptr;
   std::shared_ptr<NWebOutputHandler> output_handler_ = nullptr;
   std::shared_ptr<NWebInputHandler> input_handler_ = nullptr;
@@ -281,6 +354,7 @@ class NWebImpl : public NWeb {
   std::list<std::string> web_engine_args_;
   float device_pixel_ratio_ = 0.f;
   bool is_enhance_surface_ = false;
+  bool is_richtext_value_ = false;
 };
 }  // namespace OHOS::NWeb
 

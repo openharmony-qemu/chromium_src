@@ -31,6 +31,12 @@ interface DisplayPrivate {
   [EnableIf=ohos_composite_render, Sync]
   SetShouldFrameSubmissionBeforeDraw(bool should) => ();
 
+  [EnableIf=is_ohos]
+  SetDrawRect(gfx.mojom.Rect rect);
+
+  [EnableIf=is_ohos]
+  SetDrawMode(int32 mode);
+
   // Resizes the display.
   Resize(gfx.mojom.Size size);
 

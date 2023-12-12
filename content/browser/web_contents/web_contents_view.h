@@ -119,6 +119,10 @@ class CONTENT_EXPORT WebContentsView {
   // this informs the view of which area at the top of the view is available for
   // web contents.
   virtual void UpdateWindowControlsOverlay(const gfx::Rect& bounding_rect) = 0;
+
+#if defined(OHOS_EX_TOPCONTROLS)
+  virtual void UpdateBrowserControlsHeight(int, bool) {}
+#endif
 };
 
 // Factory function to create `WebContentsView`s. Implemented in the platform

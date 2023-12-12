@@ -101,6 +101,11 @@ std::ostream& operator<<(std::ostream& os, const UniqueProcId& obj);
 // processes (use GetUniqueIdForProcess if uniqueness is required).
 BASE_EXPORT ProcessId GetCurrentProcId();
 
+#if BUILDFLAG(IS_OHOS)
+// Returns the global id of the current process.
+BASE_EXPORT ProcessId GetCurrentRealPid();
+#endif
+
 // Returns a unique ID for the current process. The ID will be unique across all
 // currently running processes within the chrome session, but IDs of terminated
 // processes may be reused.

@@ -47,6 +47,9 @@ class NWebCookieManagerDelegateInterface {
       std::shared_ptr<NWebValueCallback<bool>> callback) = 0;
   virtual void DeleteCookieEntirely(
       std::shared_ptr<NWebValueCallback<bool>> callback) = 0;
+  virtual void ConfigCookie(const std::string& url,
+                            const std::string& value,
+                            std::shared_ptr<NWebValueCallback<long>> callback) = 0;
 };
 }  // namespace OHOS::NWeb
 #endif

@@ -600,7 +600,11 @@ void EnableNonStandardSchemesForAndroidWebView() {
 }
 
 bool AllowNonStandardSchemesForAndroidWebView() {
+#ifdef OHOS_NETWORK_LOAD
+  return true;
+#else
   return GetSchemeRegistry().allow_non_standard_schemes;
+#endif
 }
 
 void AddStandardScheme(const char* new_scheme, SchemeType type) {

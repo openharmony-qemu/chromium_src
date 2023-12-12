@@ -1753,6 +1753,36 @@ void PrintRenderFrameHelper::SnapshotForContentAnalysis(
 }
 #endif  // BUILDFLAG(ENABLE_PRINT_CONTENT_ANALYSIS)
 
+#if defined(OHOS_PRINT)
+void PrintRenderFrameHelper::DidDispatchPrintEvent(bool isBefore) {
+  blink::WebLocalFrame* web_frame = render_frame()->GetWebFrame();
+  if (!web_frame) {
+    return;
+  }
+  if (isBefore) {
+    web_frame->DispatchBeforePrintEvent(/*print_client=*/nullptr);
+  } else {
+    web_frame->DispatchAfterPrintEvent();
+  }
+}
+ 
+void PrintRenderFrameHelper::ApplicationPrintRequestedPages() {
+  ScopedIPC scoped_ipc(weak_ptr_factory_.GetWeakPtr());
+  if (ipc_nesting_level_ > kAllowedIpcDepthForPrint)
+    return;
+  blink::WebLocalFrame* frame = render_frame()->GetWebFrame();
+  // Don't print if the RenderFrame is gone.
+  if (render_frame_gone_)
+    return;
+ 
+  // If we are printing a frame with an internal PDF plugin element, find the
+  // plugin node and print that instead.
+  auto plugin = delegate_->GetPdfElement(frame);
+ 
+  Print(frame, plugin, PrintRequestType::kRegular);
+}
+#endif  // OHOS_PRINT
+
 void PrintRenderFrameHelper::GetPageSizeAndContentAreaFromPageLayout(
     const mojom::PageSizeMargins& page_layout_in_points,
     gfx::Size* page_size,

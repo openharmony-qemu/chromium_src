@@ -29,7 +29,7 @@ namespace media {
 
 namespace {
 
-#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 
 // These values are persisted to logs. Entries should not be renumbered and
 // numeric values should never be reused.
@@ -93,6 +93,9 @@ MimeType TranslateMimeTypeToHistogramEnum(const base::StringPiece& mime_type) {
 }
 
 HlsFallbackImplementation SelectHlsFallbackImplementation() {
+#if BUILDFLAG(IS_OHOS)
+  return HlsFallbackImplementation::kMediaPlayer;
+#else
 #if !BUILDFLAG(IS_ANDROID)
   // TODO(crbug/1266991): This should return kBuiltinHlsPlayer when we launch
   // on non-mobile. For now, do not support it.
@@ -116,9 +119,10 @@ HlsFallbackImplementation SelectHlsFallbackImplementation() {
   }
   return kNone;
 #endif
+#endif // BUILDFLAG(IS_OHOS)
 }
 
-#endif  // BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID)
+#endif  // BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 
 #if BUILDFLAG(ENABLE_FFMPEG)
 // Returns true if `url` represents (or is likely to) a local file.
@@ -179,7 +183,7 @@ void DemuxerManager::OnPipelineError(PipelineStatus error) {
     return client_->OnError(std::move(error));
   }
 
-#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   bool can_play_hls =
       SelectHlsFallbackImplementation() != HlsFallbackImplementation::kNone;
   if (can_play_hls && error == DEMUXER_ERROR_DETECTED_HLS) {
@@ -199,7 +203,7 @@ void DemuxerManager::OnPipelineError(PipelineStatus error) {
 
     return;
   }
-#endif  // BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID)
+#endif  // BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 
   client_->OnError(std::move(error));
 }
@@ -231,7 +235,7 @@ void DemuxerManager::SetLoadedUrl(GURL url) {
   loaded_url_ = std::move(url);
 }
 
-#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 
 void DemuxerManager::PopulateHlsHistograms(bool cryptographic_url) {
   DCHECK(data_source_);
@@ -304,7 +308,7 @@ PipelineStatus DemuxerManager::SelectHlsFallbackMechanism(
   return OkStatus();
 }
 
-#endif  // BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID)
+#endif  // BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 
 absl::optional<double> DemuxerManager::GetDemuxerDuration() {
   if (!demuxer_) {
@@ -378,14 +382,9 @@ PipelineStatus DemuxerManager::CreateDemuxer(
   }
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
-#if BUILDFLAG(IS_ANDROID)
   const bool media_player_hls =
       hls_fallback_ == HlsFallbackImplementation::kMediaPlayer;
   if (media_player_hls || client_->IsMediaPlayerRendererClient()) {
-#else
-  const bool media_player_hls = false;
-  if (client_->IsMediaPlayerRendererClient()) {
-#endif
     SetDemuxer(CreateMediaUrlDemuxer(media_player_hls));
     return std::move(on_demuxer_created)
         .Run(demuxer_.get(), Pipeline::StartType::kNormal,

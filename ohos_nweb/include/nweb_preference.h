@@ -566,6 +566,18 @@ public:
      * Put the UX color of scrollbar.
      */
     virtual void PutScrollBarColor(uint32_t colorValue) = 0;
+     
+    /**
+     * Get over-scroll Mode.
+     *
+     * @see PutScrollbarColor
+     */
+    virtual int GetOverscrollMode() = 0;
+ 
+    /**
+     * Put over-scroll Mode.
+     */
+    virtual void PutOverscrollMode(int overScrollMode) = 0;
 };
 }  // namespace OHOS::NWeb
 #endif  // NWEB_PREFERENCE_H

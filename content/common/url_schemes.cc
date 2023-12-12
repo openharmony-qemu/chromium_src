@@ -23,17 +23,20 @@ namespace {
 
 bool g_registered_url_schemes = false;
 
-const char* const kDefaultSavableSchemes[] = {
-  url::kHttpScheme,
-  url::kHttpsScheme,
-  url::kFileScheme,
-  url::kFileSystemScheme,
-  kChromeDevToolsScheme,
-  kChromeUIScheme,
-  url::kDataScheme
+const char* const kDefaultSavableSchemes[] = {url::kHttpScheme,
+                                              url::kHttpsScheme,
+                                              url::kFileScheme,
+                                              url::kFileSystemScheme,
+                                              kChromeDevToolsScheme,
+                                              kChromeUIScheme,
+                                              url::kDataScheme
 #ifdef OHOS_HAP_DECOMPRESSED
-  ,
-  url::kResourcesScheme
+                                              ,
+                                              url::kResourcesScheme
+#endif
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+                                              ,
+                                              kArkWebUIScheme
 #endif
 };
 
@@ -66,6 +69,9 @@ void RegisterContentSchemes(bool should_lock_registry) {
   url::AddStandardScheme(kChromeUIScheme, url::SCHEME_WITH_HOST);
   url::AddStandardScheme(kChromeUIUntrustedScheme, url::SCHEME_WITH_HOST);
   url::AddStandardScheme(kChromeErrorScheme, url::SCHEME_WITH_HOST);
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  url::AddStandardScheme(kArkWebUIScheme, url::SCHEME_WITH_HOST);
+#endif
   for (auto& scheme : schemes.standard_schemes)
     url::AddStandardScheme(scheme.c_str(), url::SCHEME_WITH_HOST);
 
@@ -76,6 +82,9 @@ void RegisterContentSchemes(bool should_lock_registry) {
   schemes.secure_schemes.push_back(kChromeUIScheme);
   schemes.secure_schemes.push_back(kChromeUIUntrustedScheme);
   schemes.secure_schemes.push_back(kChromeErrorScheme);
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  schemes.secure_schemes.push_back(kArkWebUIScheme);
+#endif
   for (auto& scheme : schemes.secure_schemes)
     url::AddSecureScheme(scheme.c_str());
 
@@ -91,6 +100,9 @@ void RegisterContentSchemes(bool should_lock_registry) {
 
   schemes.cors_enabled_schemes.push_back(kChromeUIScheme);
   schemes.cors_enabled_schemes.push_back(kChromeUIUntrustedScheme);
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  schemes.cors_enabled_schemes.push_back(kArkWebUIScheme);
+#endif
   for (auto& scheme : schemes.cors_enabled_schemes)
     url::AddCorsEnabledScheme(scheme.c_str());
 

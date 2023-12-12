@@ -464,6 +464,22 @@ void Compositor::SetShouldFrameSubmissionBeforeDraw(bool should) {
     display_private_->SetShouldFrameSubmissionBeforeDraw(should);
   }
 }
+
+void Compositor::SetDrawRect(const gfx::Rect& new_rect) {
+  if (display_private_) {
+    TRACE_EVENT0("viz", "Compositor::SetDrawRect");
+    mojo::SyncCallRestrictions::ScopedAllowSyncCall scoped_allow_sync_call;
+    display_private_->SetDrawRect(new_rect);
+  }
+}
+
+void Compositor::SetDrawMode(const int32_t& mode) {
+  if (display_private_) {
+    TRACE_EVENT0("viz", "Compositor::SetDrawMode");
+    mojo::SyncCallRestrictions::ScopedAllowSyncCall scoped_allow_sync_call;
+    display_private_->SetDrawMode(mode);
+  }
+}
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 
 void Compositor::SetScaleAndSize(float scale,

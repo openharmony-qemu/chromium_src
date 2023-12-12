@@ -1487,6 +1487,32 @@ void WebContentsImpl::ForEachRenderFrameHostWithAction(
       [on_frame](RenderFrameHostImpl* rfh) { return on_frame(rfh); });
 }
 
+#if BUILDFLAG(IS_OHOS)
+RenderFrameHost* WebContentsImpl::GetTargetFramesIncludingPending(
+    int routing_id) {
+  std::vector<RenderFrameHost*> frame_hosts;
+  for (FrameTreeNode* node : primary_frame_tree_.Nodes()) {
+    frame_hosts.push_back(node->current_frame_host());
+    RenderFrameHostImpl* pending_frame_host =
+        node->render_manager()->speculative_frame_host();
+    if (pending_frame_host) {
+      frame_hosts.push_back(pending_frame_host);
+    }
+  }
+
+  for (RenderFrameHost* rfh : frame_hosts) {
+    if (!rfh || !rfh->IsRenderFrameLive()) {
+      continue;
+    }
+    if (routing_id == rfh->GetRoutingID()) {
+      return rfh;
+    }
+  }
+
+  return nullptr;
+}
+#endif
+
 void WebContentsImpl::ForEachRenderFrameHost(
     base::FunctionRef<void(RenderFrameHost*)> on_frame) {
   ForEachRenderFrameHost(
@@ -1919,21 +1945,17 @@ void WebContentsImpl::SetUserAgentOverride(
     return;
   }
 
-#if defined(OHOS_EX_UA)
-  const base::CommandLine& command_line =
-      *base::CommandLine::ForCurrentProcess();
-  if (command_line.HasSwitch(switches::kForBrowser)) {
-    user_agent_ = ua_override.ua_string_override;
-    UpdateOverridingUserAgent();
+#if defined(OHOS_USERAGENT) || defined(OHOS_EX_UA)
+  user_agent_ = ua_override.ua_string_override;
+  UpdateOverridingUserAgent();
 
-    // DTS2023022711784
-    // 子进程打开新窗口时，会先创建delayed_load_url_params_，等到加载url时直接使用
-    // delayed_load_url_params_的值创建NavigationRequest。其override_user_agent默认值是
-    // UA_OVERRIDE_FALSE，故这里也要更新。
-    if (delayed_load_url_params_) {
-      delayed_load_url_params_->override_user_agent =
-          NavigationController::UA_OVERRIDE_TRUE;
-    }
+  // DTS2023022711784
+  // 子进程打开新窗口时，会先创建delayed_load_url_params_，等到加载url时直接使用
+  // delayed_load_url_params_的值创建NavigationRequest。其override_user_agent默认值是
+  // UA_OVERRIDE_FALSE，故这里也要更新。
+  if (delayed_load_url_params_) {
+    delayed_load_url_params_->override_user_agent =
+        NavigationController::UA_OVERRIDE_TRUE;
   }
 #endif
 
@@ -3072,12 +3094,10 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences() {
     prefs.hide_scrollbars = true;
 
   GetContentClient()->browser()->OverrideWebkitPrefs(this, &prefs);
-#if defined(OHOS_EX_UA)
-  if (command_line.HasSwitch(switches::kForBrowser)) {
-    bool is_win = (user_agent_.find("Windows NT") != std::string::npos) &&
-                  (user_agent_.find("Win64") != std::string::npos ||
-                   user_agent_.find("WOW64") != std::string::npos);
-    prefs.viewport_meta_enabled = !is_win;
+#if defined(OHOS_USERAGENT) || defined(OHOS_EX_UA)
+  if (!user_agent_.empty()) {
+    bool is_desktop = (user_agent_.find("Mobile") == std::string::npos);
+    prefs.viewport_meta_enabled = !is_desktop;
   }
 #endif
   return prefs;
@@ -7636,6 +7656,14 @@ void WebContentsImpl::RenderViewReady(RenderViewHost* rvh) {
     observers_.NotifyObservers(&WebContentsObserver::RenderViewReady);
   }
   view_->RenderViewReady();
+
+#ifdef OHOS_EX_TOPCONTROLS
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kForBrowser)) {
+    UpdateBrowserControlsState(browser_controls_state_,
+                               cc::BrowserControlsState::kShown, false);
+  }
+#endif
 }
 
 void WebContentsImpl::RenderViewTerminated(RenderViewHost* rvh,
@@ -7798,7 +7826,18 @@ PrerenderHostRegistry* WebContentsImpl::GetPrerenderHostRegistry() {
   return prerender_host_registry_.get();
 }
 
+#ifdef OHOS_EX_TOPCONTROLS
 void WebContentsImpl::DidStartLoading(FrameTreeNode* frame_tree_node) {
+  DidStartLoading(frame_tree_node, false);
+}
+#endif
+
+#ifdef OHOS_EX_TOPCONTROLS
+void WebContentsImpl::DidStartLoading(FrameTreeNode* frame_tree_node,
+                                      bool should_show_loading_ui) {
+#else
+void WebContentsImpl::DidStartLoading(FrameTreeNode* frame_tree_node) {
+#endif
   OPTIONAL_TRACE_EVENT1("content", "WebContentsImpl::DidStartLoading",
                         "frame_tree_node", frame_tree_node);
 
@@ -7807,6 +7846,18 @@ void WebContentsImpl::DidStartLoading(FrameTreeNode* frame_tree_node) {
       "Primary Main FrameTreeNode id",
       GetPrimaryFrameTree().root()->frame_tree_node_id());
   SCOPED_UMA_HISTOGRAM_TIMER("WebContentsObserver.DidStartLoading");
+
+#ifdef OHOS_EX_TOPCONTROLS
+  if (frame_tree_node->IsMainFrame()) {
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            switches::kForBrowser) &&
+        should_show_loading_ui) {
+      UpdateBrowserControlsState(browser_controls_state_,
+                                 cc::BrowserControlsState::kShown, false);
+    }
+  }
+#endif
+
   observers_.NotifyObservers(&WebContentsObserver::DidStartLoading);
 
   // TODO(avi): Remove. http://crbug.com/170921
@@ -9813,10 +9864,21 @@ void WebContentsImpl::UpdateBrowserControlsState(
     cc::BrowserControlsState constraints,
     cc::BrowserControlsState current,
     bool animate) {
+#ifdef OHOS_EX_TOPCONTROLS
+  browser_controls_state_ = constraints;
+#endif
   // Browser controls should be synchronised with the scroll state. Therefore,
   // they are controlled from the renderer by the main RenderFrame(Host).
   GetPrimaryPage().UpdateBrowserControlsState(constraints, current, animate);
 }
+
+#ifdef OHOS_EX_TOPCONTROLS
+void WebContentsImpl::UpdateBrowserControlsHeight(int height, bool animate) {
+  if (view_) {
+    view_->UpdateBrowserControlsHeight(height, animate);
+  }
+}
+#endif
 
 void WebContentsImpl::SetTabSwitchStartTime(base::TimeTicks start_time,
                                             bool destination_is_loaded) {

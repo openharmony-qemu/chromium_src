@@ -138,7 +138,11 @@ bool URLDataSource::ShouldServiceRequest(const GURL& url,
                                          BrowserContext* browser_context,
                                          int render_process_id) {
   return url.SchemeIs(kChromeDevToolsScheme) || url.SchemeIs(kChromeUIScheme) ||
-         url.SchemeIs(kChromeUIUntrustedScheme);
+         url.SchemeIs(kChromeUIUntrustedScheme)
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+         || url.SchemeIs(kArkWebUIScheme)
+#endif
+      ;
 }
 
 bool URLDataSource::ShouldServeMimeTypeAsContentTypeHeader() {

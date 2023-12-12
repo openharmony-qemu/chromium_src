@@ -126,6 +126,8 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool IsVerticalScrollBarAccess() override;
   void PutHorizontalScrollBarAccess(bool flag) override;
   void PutVerticalScrollBarAccess(bool flag) override;
+  void PutOverscrollMode(int overScrollMode) override;
+  int GetOverscrollMode() override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #ifdef OHOS_EX_BLANK_TARGET_POPUP_INTERCEPT
@@ -181,6 +183,7 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if defined(OHOS_INPUT_EVENTS)
   bool horizontal_scrollBar_access_{true};
   bool vertical_scrollBar_access_{true};
+  int overscroll_mode_{0};
 #endif  // defined(OHOS_INPUT_EVENTS)
 #ifdef OHOS_EX_BLANK_TARGET_POPUP_INTERCEPT
   bool enable_blank_target_popup_intercept_{true};

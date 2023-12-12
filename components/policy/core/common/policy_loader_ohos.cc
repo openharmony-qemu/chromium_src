@@ -20,10 +20,20 @@ PolicyLoaderOhos::PolicyLoaderOhos(
     scoped_refptr<base::SequencedTaskRunner> task_runner)
     : AsyncPolicyLoader(task_runner, /*periodic_updates*/ false) {}
 
-PolicyLoaderOhos::~PolicyLoaderOhos() {}
+PolicyLoaderOhos::~PolicyLoaderOhos() {
+    std::ignore = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .GetEnterpriseDeviceManagementInstance().StopObservePolicyChange();
+}
 
 void PolicyLoaderOhos::InitOnBackgroundThread() {
-  // 目前未对鸿蒙policy进行后台扫描监控，暂时为空实现
+    OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .GetEnterpriseDeviceManagementInstance()
+        .RegistPolicyChangeEventCallback([this]() {
+            LOG(INFO) << "Recv edm policy change event and reload policy.";
+            Reload(true);
+        });
+    std::ignore = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .GetEnterpriseDeviceManagementInstance().StartObservePolicyChange();
 }
 
 PolicyBundle PolicyLoaderOhos::Load() {

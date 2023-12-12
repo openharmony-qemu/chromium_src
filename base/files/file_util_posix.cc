@@ -338,6 +338,13 @@ std::string AppendModeCharacter(StringPiece mode, char mode_char) {
 
 FilePath MakeAbsoluteFilePath(const FilePath& input) {
   ScopedBlockingCall scoped_blocking_call(FROM_HERE, BlockingType::MAY_BLOCK);
+
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  if (input.IsDataShareUri()) {
+    return input;
+  }
+#endif
+
   char full_path[PATH_MAX];
   if (realpath(input.value().c_str(), full_path) == nullptr)
     return FilePath();

@@ -26,7 +26,9 @@ class CC_EXPORT BrowserControlsOffsetManagerClient {
   virtual bool OnlyExpandTopControlsAtPageTop() const = 0;
   virtual bool HaveRootScrollNode() const = 0;
   virtual void SetNeedsCommit() = 0;
-
+#ifdef OHOS_EX_TOPCONTROLS
+  virtual void SetupScrollBy() = 0;
+#endif
  protected:
   virtual ~BrowserControlsOffsetManagerClient() {}
 };

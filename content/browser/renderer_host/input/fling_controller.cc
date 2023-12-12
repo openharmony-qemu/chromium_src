@@ -13,6 +13,7 @@
 #include "ui/events/gestures/blink/web_gesture_curve_impl.h"
 #if BUILDFLAG(IS_OHOS)
 #include "base/report_loss_frame.h"
+#include "hitrace_adapter_impl.h"
 #endif
 
 using blink::WebInputEvent;
@@ -142,6 +143,7 @@ bool FlingController::ObserveAndMaybeConsumeGestureEvent(
     ProcessGestureFlingStart(gesture_event);
 #if BUILDFLAG(IS_OHOS)
   ReportLossFrame::GetInstance()->SetScrollState(ScrollMode::START);
+  OHOS::NWeb::HiTraceAdapterImpl::GetInstance().StartAsyncTrace("WEB_LIST_FLING", 0);
 #endif
     return true;
   }
@@ -371,6 +373,7 @@ void FlingController::EndCurrentFling(base::TimeTicks current_time) {
 #if BUILDFLAG(IS_OHOS)
   ReportLossFrame::GetInstance()->SetScrollState(ScrollMode::STOP);
   ReportLossFrame::GetInstance()->Report();
+  OHOS::NWeb::HiTraceAdapterImpl::GetInstance().FinishAsyncTrace("WEB_LIST_FLING", 0);
 #endif
   current_fling_parameters_ = ActiveFlingParameters();
 

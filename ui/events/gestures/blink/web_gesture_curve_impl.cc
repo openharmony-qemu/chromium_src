@@ -5,6 +5,9 @@
 #include "ui/events/gestures/blink/web_gesture_curve_impl.h"
 
 #include <limits.h>
+#include <list>
+#include <tuple>
+#include <sstream>
 
 #include <utility>
 
@@ -15,6 +18,7 @@
 #include "ui/events/gestures/fling_curve.h"
 #include "ui/events/gestures/physics_based_fling_curve.h"
 #include "ui/events/mobile_scroller.h"
+#include "ui/events/native_scroller_ohos.h"
 
 #if BUILDFLAG(IS_WIN)
 #include "ui/display/win/screen_win.h"
@@ -36,6 +40,19 @@ std::unique_ptr<GestureCurve> CreateDefaultPlatformCurve(
   if (device_source == blink::WebGestureDevice::kSyntheticAutoscroll) {
     return std::make_unique<FixedVelocityCurve>(initial_velocity,
                                                 base::TimeTicks());
+  }
+
+  bool use_native_fling_curve = false;
+#ifdef USE_NATIVE_FLING_CURVE
+  use_native_fling_curve = true;
+#endif
+  if (use_native_fling_curve) {
+    LOG(DEBUG) << "WebGestureCurveImpl DUMP_FLING_CURVE initial_velocity: " << initial_velocity.y();
+    auto scroller = std::make_unique<NativeScrollerOhos>();
+    scroller->Fling(0, 0, initial_velocity.x(), initial_velocity.y(), INT_MIN,
+                    static_cast<float>(INT_MAX), INT_MIN,
+                    static_cast<float>(INT_MAX), base::TimeTicks());
+    return std::move(scroller);
   }
 
 #ifdef USE_MOBILE_FLING_CURVE
@@ -131,6 +148,9 @@ bool WebGestureCurveImpl::Advance(double time,
   gfx::Vector2dF offset;
   bool still_active =
       curve_->ComputeScrollOffset(time_ticks, &offset, &out_current_velocity);
+  
+  // dump curve
+  LOG(DEBUG) << "WebGestureCurveImpl::Advance DUMP_FLING_CURVE time = " << time << " offset = " << offset.y() << " velocity = " << out_current_velocity.y();
 
   out_delta_to_scroll = offset - last_offset_;
   last_offset_ = offset;

@@ -6480,6 +6480,14 @@ void RenderFrameImpl::SetZoomLevel(float magnify_delta,
   }
   web_frame_widget->SetZoomLevel(magnify_delta, anchor);
 }
+
+void RenderFrameImpl::SetOverscrollMode(int mode) {
+  auto web_frame_widget = GetLocalRootWebFrameWidget();
+  if (!web_frame_widget) {
+    return;
+  }
+  web_frame_widget->SetOverscrollMode(mode);
+}
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 }  // namespace content

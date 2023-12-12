@@ -51,6 +51,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   void SetFocusStatus(bool focus_status) override;
   void OnEditableChanged(CefRefPtr<CefBrowser> browser,
                          bool is_editable_node) override;
+  bool GetIsEditableNode() override;
 
   bool Reattach(uint32_t nwebId, ReattachType type);
   void SetIMEStatus(bool status);

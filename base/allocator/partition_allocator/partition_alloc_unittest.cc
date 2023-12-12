@@ -3012,25 +3012,42 @@ TEST_P(PartitionAllocTest, PreferActiveOverEmpty) {
 
 #define TEST_STEP_SIZE 20
 #define TEST_TIME 5
-#if defined(OHOS_ENABLE_FREELIST_HARDENED)
+#define SUPER_OFFSET 4096
+#define EXTENT_OFFSET 32
+#define BUCKET_OFFSET 16
+#if defined(OHOS_ENABLE_POINTER_HARDENED)
 TEST_P(PartitionAllocTest, FreelistHardenedTest) {
-  for (int i = 0; i < TEST_TIME; i++) {
-    size_t size = TEST_STEP_SIZE * i;
-    void* ptr = allocator.root()->Alloc(size, type_name);
+  size_t size = 0x200;
+  void* ptr = allocator.root()->Alloc(size, type_name);
+  uintptr_t head = ((uintptr_t)ptr & 0xffffffffffC00000) + SUPER_OFFSET;
+  uintptr_t root = *(uintptr_t*)head;
 
-    SlotSpanMetadata<base::internal::ThreadSafe>* slot_span =
-        SlotSpanMetadata<base::internal::ThreadSafe>::FromSlotStart(
-            allocator.root()->AdjustPointerForExtrasSubtract(ptr));
+  head += EXTENT_OFFSET;
+  PartitionBucket<base::internal::ThreadSafe>* bucket = (PartitionBucket<base::internal::ThreadSafe>*)(head + BUCKET_OFFSET);
 
-    PartitionFreelistEntry *entry = slot_span->get_freelist_head();
-    PartitionFreelistEntry *next = entry->GetNext(size, slot_span->bucket->random_cookie);
+  uintptr_t active = *(uintptr_t*)(bucket->active_slot_spans_head);
+  uintptr_t slot_span = *(uintptr_t*)head;
+  uintptr_t free = *(uintptr_t*)(slot_span + sizeof(uintptr_t));
 
-    EXPECT_EQ((uintptr_t)entry & 0xfffff000, (uintptr_t)next & 0xfffff000)
-      << "size: " << size << "e: " << (uintptr_t)entry << " n: " << next;
+  uintptr_t real_root = (uintptr_t)PartitionRoot<base::internal::ThreadSafe>::FromFirstSuperPage((uintptr_t)ptr & 0xffffffffffC00000);
+  printf("\r\nreal_root = 0x%lx\r\n", real_root);
+  printf("root = 0x%lx\r\n", root);
+  printf("active_head = 0x%lx\r\n", active);
+  printf("free_next = 0x%lx\r\n\r\n", free);
+  EXPECT_NE(real_root, root);
 
-    allocator.root()->Free(ptr);
-  }
+  // slot span must >= head and <= head + 4096(metadata page size)
+  // after hardened, active slot head is not in this scope.
+  EXPECT_NE((uintptr_t)active & 0xfffff000, (uintptr_t)head & 0xfffff000);
+
+  void* ptr1 = allocator.root()->Alloc(size, type_name);
+
+  // the member of the freelist is not in the actually allocated address.
+  EXPECT_NE((uintptr_t)ptr1 & 0xfffff000, free & 0xfffff000);
+  allocator.root()->Free(ptr);
+  allocator.root()->Free(ptr1);
 }
+
 #endif
 
 #if defined(OHOS_ENABLE_RANDOM)

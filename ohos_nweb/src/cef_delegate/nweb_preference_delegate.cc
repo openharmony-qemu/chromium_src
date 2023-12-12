@@ -602,6 +602,19 @@ void NWebPreferenceDelegate::PutVerticalScrollBarAccess(bool flag) {
   vertical_scrollBar_access_ = flag;
   WebPreferencesChanged();
 }
+
+int NWebPreferenceDelegate::GetOverscrollMode() {
+  return overscroll_mode_;
+}
+
+void NWebPreferenceDelegate::PutOverscrollMode(int mode) {
+  overscroll_mode_ = mode;
+  if (!browser_) {
+    LOG(ERROR) << "PutOverscrollMode failed, browser is null";
+    return;
+  }
+  browser_->GetHost()->SetOverscrollMode(mode);
+}
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 uint32_t NWebPreferenceDelegate::GetScrollBarColor() {

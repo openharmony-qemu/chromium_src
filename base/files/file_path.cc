@@ -575,6 +575,11 @@ FilePath FilePath::AppendASCII(StringPiece component) const {
 }
 
 bool FilePath::IsAbsolute() const {
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  if (IsDataShareUri()) {
+    return true;
+  }
+#endif
   return IsPathAbsolute(path_);
 }
 
@@ -1414,6 +1419,21 @@ bool FilePath::IsDataShareUri() const {
          StartsWith(path_, "file://media/",
                     base::CompareCase::INSENSITIVE_ASCII) ||
          StartsWith(path_, "file://docs/",
+                    base::CompareCase::INSENSITIVE_ASCII);
+}
+
+#endif
+
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+// static
+bool FilePath::IsDataShareUrl(const StringType& url) {
+  return StartsWith(url, "datashare://",
+                    base::CompareCase::INSENSITIVE_ASCII) ||
+         StartsWith(url, "dataability://",
+                    base::CompareCase::INSENSITIVE_ASCII) ||
+         StartsWith(url, "file://media/",
+                    base::CompareCase::INSENSITIVE_ASCII) ||
+         StartsWith(url, "file://docs/",
                     base::CompareCase::INSENSITIVE_ASCII);
 }
 #endif

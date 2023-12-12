@@ -142,6 +142,11 @@ class NWebRenderHandler : public CefRenderHandler {
   void OnOverScrollFlingEnd(CefRefPtr<CefBrowser> browser) override;
   void OnScrollState(CefRefPtr<CefBrowser> browser,
                      bool scroll_state) override;
+  bool FilterScrollEvent(CefRefPtr<CefBrowser> browser,
+                         const float x,
+                         const float y,
+                         const float fling_x,
+                         const float fling_y) override;
 #endif
   /* CefRenderHandler method end */
 

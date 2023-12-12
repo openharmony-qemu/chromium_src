@@ -114,6 +114,10 @@ namespace web_request = api::web_request;
 
 namespace {
 
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+const char kWebRequestApiLogTag[] = "[WebRequestAPI]";
+#endif
+
 // Describes the action taken by the Web Request API for a given stage of a web
 // request.
 // These values are written to logs.  New enum values can be added, but existing
@@ -672,6 +676,13 @@ void WebRequestAPI::OnListenerRemoved(const EventListenerInfo& details) {
   // Note that details.event_name includes the sub-event details (e.g. "/123").
   const std::string& sub_event_name = details.event_name;
 
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  LOG(INFO) << kWebRequestApiLogTag
+            << " Remove listener <sub_event_name:" << sub_event_name
+            << ", is_lazy:" << details.is_lazy
+            << "> for extension_id=" << details.extension_id;
+#endif
+
   // The way we handle the listener removal depends on whether this was a
   // lazy listener registration (indicated by a null browser context on
   // `details`).
@@ -819,8 +830,12 @@ bool WebRequestAPI::MaybeProxyAuthRequest(
     const content::GlobalRequestID& request_id,
     bool is_main_frame,
     AuthRequestCallback callback) {
-  if (!MayHaveProxies())
+  if (!MayHaveProxies()) {
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+    LOG(INFO) << kWebRequestApiLogTag << " May not be proxy auth request";
+#endif
     return false;
+  }
 
   content::GlobalRequestID proxied_request_id = request_id;
   if (is_main_frame)
@@ -1445,6 +1460,10 @@ ExtensionWebRequestEventRouter::OnAuthRequired(
     blocked_request.request = request;
     blocked_request.auth_callback = std::move(callback);
     blocked_request.auth_credentials = credentials;
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+    LOG(INFO) << kWebRequestApiLogTag
+              << " webRequest.onAuthRequired dispatched";
+#endif
     return AuthRequiredResponse::AUTH_REQUIRED_RESPONSE_IO_PENDING;
   }
   return AuthRequiredResponse::AUTH_REQUIRED_RESPONSE_NO_ACTION;
@@ -1490,8 +1509,13 @@ void ExtensionWebRequestEventRouter::OnResponseStarted(
     return;
 
   // OnResponseStarted is even triggered, when the request was cancelled.
-  if (net_error != net::OK)
+  if (net_error != net::OK) {
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+    LOG(INFO) << kWebRequestApiLogTag
+              << " OnResponseStarted, net_error=" << net_error;
+#endif
     return;
+  }
 
   int extra_info_spec = 0;
   RawListeners listeners =
@@ -1794,6 +1818,11 @@ void ExtensionWebRequestEventRouter::OnEventHandled(
   }
 
   listener->blocked_requests.erase(request_id);
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  LOG(INFO) << kWebRequestApiLogTag
+            << " webRequest.OnEventHandled:" << event_name << " by extension:"
+            << extension_id;
+#endif
   DecrementBlockCount(browser_context, extension_id, event_name, request_id,
                       response, listener->extra_info_spec);
 }
@@ -1863,6 +1892,11 @@ bool ExtensionWebRequestEventRouter::AddEventListener(
     DCHECK_LE(erased, 1u);
     is_reactivated = erased > 0u;
   }
+
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  LOG(INFO) << kWebRequestApiLogTag << " webRequest.AddListener for "
+            << event_name;
+#endif
 
   data_[browser_context_id].active_listeners[event_name].push_back(
       std::move(listener));

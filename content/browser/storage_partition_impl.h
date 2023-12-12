@@ -612,10 +612,6 @@ class CONTENT_EXPORT StoragePartitionImpl
       const url::Origin& origin,
       const base::UnguessableToken* nonce);
 
-#if BUILDFLAG(IS_OHOS)
-  void GetCookieManagerForOhosInternal();
-#endif
-
   // Raw pointer that should always be valid. The BrowserContext owns the
   // StoragePartitionImplMap which then owns StoragePartitionImpl. When the
   // BrowserContext is destroyed, `this` will be destroyed too.

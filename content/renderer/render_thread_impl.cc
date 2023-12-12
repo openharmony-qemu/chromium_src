@@ -1006,6 +1006,13 @@ void RenderThreadImpl::RegisterSchemes() {
   // googlechrome:
   WebString google_chrome_scheme(WebString::FromASCII(kGoogleChromeScheme));
   WebSecurityPolicy::RegisterURLSchemeAsDisplayIsolated(google_chrome_scheme);
+
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  WebString arkweb_scheme(WebString::FromASCII(kArkWebUIScheme));
+  WebSecurityPolicy::RegisterURLSchemeAsDisplayIsolated(arkweb_scheme);
+  WebSecurityPolicy::RegisterURLSchemeAsNotAllowingJavascriptURLs(
+      arkweb_scheme);
+#endif
 }
 
 void RenderThreadImpl::RecordAction(const base::UserMetricsAction& action) {

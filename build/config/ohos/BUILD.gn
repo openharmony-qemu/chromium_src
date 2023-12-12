@@ -16,6 +16,7 @@ config("compiler") {
   cflags = [
     "-ffunction-sections",
     "-fno-short-enums",
+    "-funwind-tables",
   ]
   defines = [
     "OSOHOS",
@@ -80,8 +81,7 @@ config("compiler") {
       compile_api_level = arm64_ndk_api_level
     }
   } else if (current_cpu == "x64") {
-    abi_target = ""
-    compile_api_level = ""
+    abi_target = "x86_64-linux-ohos"
   } else {
     assert(false, "Architecture not supported")
   }
@@ -166,6 +166,21 @@ config("runtime_library") {
                 "$ohos_toolchain_root/lib/clang/current/lib/aarch64-linux-ohos",
                 root_build_dir) ]
       libclang_rt_file = "$ohos_toolchain_root/lib/clang/current/lib/aarch64-linux-ohos/libclang_rt.builtins.a"
+    }
+
+    if (current_cpu == "x64") {
+      ldflags += [ "-Wl,-z,max-page-size=4096" ]
+      ldflags += [ "-Wl,--hash-style=gnu" ]
+      ldflags += [ "-L" + rebase_path("$ohos_sysroot/usr/lib/x86_64-linux-ohos",
+                                      root_build_dir) ]
+      ldflags +=
+          [ "-L" + rebase_path("$ohos_toolchain_root/lib/x86_64-linux-ohos",
+                               root_build_dir) ]
+      ldflags +=
+          [ "-L" + rebase_path(
+                "$ohos_toolchain_root/lib/clang/current/lib/x86_64-linux-ohos",
+                root_build_dir) ]
+      libclang_rt_file = "$ohos_toolchain_root/lib/clang/current/lib/x86_64-linux-ohos/libclang_rt.builtins.a"
     }
 
     ldflags += [ "-Wl,--dynamic-linker,$dynamic_linker" ]

@@ -150,6 +150,10 @@ class CONTENT_EXPORT FrameTree {
     // loading. If a second FrameTreeNode begins loading, a new DidStartLoading
     // message will not be sent.
     virtual void DidStartLoading(FrameTreeNode* frame_tree_node) = 0;
+#ifdef OHOS_EX_TOPCONTROLS
+    virtual void DidStartLoading(FrameTreeNode* frame_tree_node,
+                                 bool should_show_loading_ui) {}
+#endif
 
     // The FrameTree has stopped loading. Sent only when all FrameTreeNodes have
     // stopped loading.

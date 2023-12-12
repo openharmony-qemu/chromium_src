@@ -100,6 +100,7 @@ class CONTENT_EXPORT RenderFrame : public IPC::Listener,
 
 #if defined(OHOS_INPUT_EVENTS)
   virtual void SetZoomLevel(float magnify_delta, const gfx::Point& anchor) {}
+  virtual void SetOverscrollMode(int mode) {}
 #endif  // defined(OHOS_INPUT_EVENTS)
 
   // Returns the RenderFrame associated with the main frame of the WebView.

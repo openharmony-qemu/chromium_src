@@ -636,6 +636,15 @@ public:
     virtual void OnActivityStateChanged(int state, ActivityType type) {}
 
     virtual void OnScrollState(bool scrollState) {}
+
+    virtual void OnRootLayerChanged(int width, int height) {}
+
+    virtual bool FilterScrollEvent(const float x,
+                                   const float y,
+                                   const float xVelocity,
+                                   const float yVelocity) {
+        return false;
+    }
 };
 }  // namespace OHOS::NWeb
 

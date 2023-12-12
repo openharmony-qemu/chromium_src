@@ -21,7 +21,11 @@ DownloadJob::~DownloadJob() = default;
 
 void DownloadJob::Cancel(bool user_cancel) {
   if (cancel_request_callback_)
+#if BUILDFLAG(IS_OHOS)
+    std::move(cancel_request_callback_).Run(user_cancel, download_item_->GetGuid());
+#else
     std::move(cancel_request_callback_).Run(user_cancel);
+#endif
 }
 
 void DownloadJob::Pause() {

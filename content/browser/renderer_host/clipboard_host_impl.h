@@ -199,15 +199,39 @@ class CONTENT_EXPORT ClipboardHostImpl
       ReadUnsanitizedCustomFormatCallback callback) override;
   void WriteUnsanitizedCustomFormat(const std::u16string& format,
                                     mojo_base::BigBuffer data) override;
-  void WriteText(const std::u16string& text) override;
-  void WriteHtml(const std::u16string& markup, const GURL& url) override;
+  void WriteText(const std::u16string& text
+#if defined(OHOS_CLIPBOARD)
+                 ,
+                 const blink::mojom::CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+  ) override;
+  void WriteHtml(const std::u16string& markup, const GURL& url
+#if defined(OHOS_CLIPBOARD)
+                 ,
+                 const blink::mojom::CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+  ) override;
   void WriteSvg(const std::u16string& markup) override;
-  void WriteSmartPasteMarker() override;
+  void WriteSmartPasteMarker(
+#if defined(OHOS_CLIPBOARD)
+                 const blink::mojom::CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+  ) override;
   void WriteCustomData(
       const base::flat_map<std::u16string, std::u16string>& data) override;
   void WriteBookmark(const std::string& url,
-                     const std::u16string& title) override;
-  void WriteImage(const SkBitmap& unsafe_bitmap) override;
+                     const std::u16string& title
+#if defined(OHOS_CLIPBOARD)
+                     ,
+                     const blink::mojom::CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+                     ) override;
+  void WriteImage(const SkBitmap& unsafe_bitmap
+#if defined(OHOS_CLIPBOARD)
+                  ,
+                  const blink::mojom::CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+  ) override;
   void CommitWrite() override;
 #if BUILDFLAG(IS_MAC)
   void WriteStringToFindPboard(const std::u16string& text) override;

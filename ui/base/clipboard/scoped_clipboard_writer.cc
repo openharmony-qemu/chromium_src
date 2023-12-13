@@ -75,19 +75,52 @@ void ScopedClipboardWriter::SetDataSourceURL(const GURL& main_frame,
   frame_url_ = frame_url;
 }
 
-void ScopedClipboardWriter::WriteText(const std::u16string& text) {
+#if defined(OHOS_CLIPBOARD)
+std::string ScopedClipboardWriter::copy_option_to_string(blink::mojom::CopyOptionMode copy_option) {
+  switch (copy_option) {
+    case blink::mojom::CopyOptionMode::NONE:
+      return "NONE";
+    case blink::mojom::CopyOptionMode::IN_APP:
+    return "IN_APP";
+    case blink::mojom::CopyOptionMode::CROSS_DEVICE:
+      return "CROSS_DEVICE";
+    case blink::mojom::CopyOptionMode::LOCAL_DEVICE:
+      return "LOCAL_DEVICE";
+    default:
+      return "IN_APP";
+  }
+}
+#endif // defined(OHOS_CLIPBOARD)
+
+void ScopedClipboardWriter::WriteText(const std::u16string& text
+#if defined(OHOS_CLIPBOARD)
+                                      ,
+                                      const blink::mojom::CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+) {
   RecordWrite(ClipboardFormatMetric::kText);
   std::string utf8_text = base::UTF16ToUTF8(text);
 
   std::vector<Clipboard::ObjectMapParam> parameters;
   parameters.emplace_back(utf8_text.begin(), utf8_text.end());
+#if defined(OHOS_CLIPBOARD)
+  std::string str_copy_option = copy_option_to_string(copy_option);
+  parameters.emplace_back(
+      Clipboard::ObjectMapParam(str_copy_option.begin(),
+                                str_copy_option.end()));
+#endif // defined(OHOS_CLIPBOARD)
   objects_[Clipboard::PortableFormat::kText] = Clipboard::ObjectMapParams(
       std::move(parameters), ClipboardContentType::kSanitized);
 }
 
 void ScopedClipboardWriter::WriteHTML(const std::u16string& markup,
                                       const std::string& source_url,
-                                      ClipboardContentType content_type) {
+                                      ClipboardContentType content_type
+#if defined(OHOS_CLIPBOARD)
+                                      ,
+                                      const blink::mojom::CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+                                      ) {
   RecordWrite(ClipboardFormatMetric::kHtml);
   std::string utf8_markup = base::UTF16ToUTF8(markup);
 
@@ -96,6 +129,12 @@ void ScopedClipboardWriter::WriteHTML(const std::u16string& markup,
   if (!source_url.empty()) {
     parameters.emplace_back(source_url.begin(), source_url.end());
   }
+#if defined(OHOS_CLIPBOARD)
+  std::string str_copy_option = copy_option_to_string(copy_option);
+  parameters.emplace_back(
+      Clipboard::ObjectMapParam(str_copy_option.begin(),
+                                str_copy_option.end()));
+#endif // defined(OHOS_CLIPBOARD)
   objects_[Clipboard::PortableFormat::kHtml] =
       Clipboard::ObjectMapParams(std::move(parameters), content_type);
 }
@@ -127,7 +166,12 @@ void ScopedClipboardWriter::WriteFilenames(const std::string& uri_list) {
 }
 
 void ScopedClipboardWriter::WriteBookmark(const std::u16string& bookmark_title,
-                                          const std::string& url) {
+                                          const std::string& url
+#if defined(OHOS_CLIPBOARD)
+                                          ,
+                                          const blink::mojom::CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+                                          ) {
   if (bookmark_title.empty() || url.empty())
     return;
   RecordWrite(ClipboardFormatMetric::kBookmark);
@@ -137,6 +181,12 @@ void ScopedClipboardWriter::WriteBookmark(const std::u16string& bookmark_title,
   std::vector<Clipboard::ObjectMapParam> parameters;
   parameters.emplace_back(utf8_markup.begin(), utf8_markup.end());
   parameters.emplace_back(url.begin(), url.end());
+#if defined(OHOS_CLIPBOARD)
+  std::string str_copy_option = copy_option_to_string(copy_option);
+  parameters.emplace_back(
+      Clipboard::ObjectMapParam(str_copy_option.begin(),
+                                str_copy_option.end()));
+#endif // defined(OHOS_CLIPBOARD)
   objects_[Clipboard::PortableFormat::kBookmark] = Clipboard::ObjectMapParams(
       std::move(parameters), ClipboardContentType::kSanitized);
 }
@@ -153,15 +203,36 @@ void ScopedClipboardWriter::WriteHyperlink(const std::u16string& anchor_text,
   html += base::EscapeForHTML(base::UTF16ToUTF8(anchor_text));
   html += "</a>";
   WriteHTML(base::UTF8ToUTF16(html), std::string(),
-            ClipboardContentType::kSanitized);
+            ClipboardContentType::kSanitized
+#if defined(OHOS_CLIPBOARD)
+            ,
+            blink::mojom::CopyOptionMode::CROSS_DEVICE
+#endif // defined(OHOS_CLIPBOARD)
+            );
 }
 
-void ScopedClipboardWriter::WriteWebSmartPaste() {
+void ScopedClipboardWriter::WriteWebSmartPaste(
+#if defined(OHOS_CLIPBOARD)
+  const blink::mojom::CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+) {
   RecordWrite(ClipboardFormatMetric::kWebSmartPaste);
+#if defined(OHOS_CLIPBOARD)
+  std::vector<Clipboard::ObjectMapParam> parameters;
+  std::string str_copy_option = copy_option_to_string(copy_option);
+  parameters.emplace_back(
+      Clipboard::ObjectMapParam(str_copy_option.begin(),
+                                str_copy_option.end()));
+#endif // defined(OHOS_CLIPBOARD)
   objects_[Clipboard::PortableFormat::kWebkit] = Clipboard::ObjectMapParams();
 }
 
-void ScopedClipboardWriter::WriteImage(const SkBitmap& bitmap) {
+void ScopedClipboardWriter::WriteImage(const SkBitmap& bitmap
+#if defined(OHOS_CLIPBOARD)
+                                       ,
+                                       const blink::mojom::CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+                                       ) {
   if (bitmap.drawsNothing())
     return;
   DCHECK(bitmap.getPixels());
@@ -181,6 +252,12 @@ void ScopedClipboardWriter::WriteImage(const SkBitmap& bitmap) {
   *reinterpret_cast<SkBitmap**>(&*packed_pointer.begin()) = bitmap_pointer;
   std::vector<Clipboard::ObjectMapParam> parameters;
   parameters.emplace_back(packed_pointer);
+#if defined(OHOS_CLIPBOARD)
+  std::string str_copy_option = copy_option_to_string(copy_option);
+  parameters.emplace_back(
+      Clipboard::ObjectMapParam(str_copy_option.begin(),
+                                str_copy_option.end()));
+#endif // defined(OHOS_CLIPBOARD)
   objects_[Clipboard::PortableFormat::kBitmap] = Clipboard::ObjectMapParams(
       std::move(parameters), ClipboardContentType::kSanitized);
 }

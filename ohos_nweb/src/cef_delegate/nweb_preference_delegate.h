@@ -130,6 +130,11 @@ class NWebPreferenceDelegate : public NWebPreference {
   int GetOverscrollMode() override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
+#if defined(OHOS_CLIPBOARD)
+  void PutCopyOptionMode(CopyOptionMode copyOption) override;
+  CopyOptionMode GetCopyOptionMode() override;
+#endif // defined(OHOS_CLIPBOARD)
+
 #ifdef OHOS_EX_BLANK_TARGET_POPUP_INTERCEPT
   void SetEnableBlankTargetPopupIntercept(bool enable);
   bool IsBlankTargetPopupInterceptEnabled();
@@ -185,6 +190,9 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool vertical_scrollBar_access_{true};
   int overscroll_mode_{0};
 #endif  // defined(OHOS_INPUT_EVENTS)
+#if defined(OHOS_CLIPBOARD)
+  CopyOptionMode copy_option_{CopyOptionMode::CROSS_DEVICE};
+#endif // defined(OHOS_CLIPBOARD)
 #ifdef OHOS_EX_BLANK_TARGET_POPUP_INTERCEPT
   bool enable_blank_target_popup_intercept_{true};
 #endif

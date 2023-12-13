@@ -25,6 +25,14 @@ public:
     NWebPreference() = default;
     virtual ~NWebPreference() = default;
     enum class AccessMode { ALWAYS_ALLOW = 0, NEVER_ALLOW = 1, COMPATIBILITY_MODE = 2 };
+
+    enum class CopyOptionMode {
+      NONE = 0,
+      IN_APP = 1,
+      LOCAL_DEVICE = 2,
+      CROSS_DEVICE = 3
+    };
+
     /* synchronous set NWebPreference and web preferences */
     /**
      * Enables or disables content URL(content from a content provider installed
@@ -578,6 +586,18 @@ public:
      * Put over-scroll Mode.
      */
     virtual void PutOverscrollMode(int overScrollMode) = 0;
+
+    /**
+     * Put copy-option.
+     */
+    virtual void PutCopyOptionMode(CopyOptionMode copyOption) = 0;
+
+    /**
+     * Get copy-option Mode.
+     *
+     * @see PutCopyOptionMode
+     */
+    virtual CopyOptionMode GetCopyOptionMode() = 0;
 };
 }  // namespace OHOS::NWeb
 #endif  // NWEB_PREFERENCE_H

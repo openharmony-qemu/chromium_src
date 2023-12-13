@@ -328,6 +328,9 @@ class ClipboardOHOSInternal {
       return nullptr;
     }
     PasteRecordList result_list;
+#if defined(OHOS_CLIPBOARD)
+    CopyOptionMode copy_option = currentData->copy_option();
+#endif // defined(OHOS_CLIPBOARD)
     std::shared_ptr<PasteDataRecordAdapter> record =
         PasteDataRecordAdapter::NewRecord("text/html");
     if (HasFormat(ClipboardInternalFormat::kHtml)) {
@@ -363,7 +366,12 @@ class ClipboardOHOSInternal {
     }
 
     result_list.push_back(record);
-    OhosAdapterHelper::GetInstance().GetPasteBoard().SetPasteData(result_list);
+    OhosAdapterHelper::GetInstance().GetPasteBoard().SetPasteData(result_list
+#if defined(OHOS_CLIPBOARD)
+                                                                  ,
+                                                                  copy_option
+#endif // defined(OHOS_CLIPBOARD)
+    );
     sequence_number_ = ClipboardSequenceNumberToken();
     return previous_data;
   }
@@ -450,21 +458,37 @@ class ClipboardDataBuilder {
     }
   }
 
-  static void WriteText(const char* text_data, size_t text_len) {
+  static void WriteText(const char* text_data, size_t text_len
+#if defined(OHOS_CLIPBOARD)
+                        ,
+                        const CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+  ) {
     ClipboardData* data = GetCurrentData();
     if (data) {
       data->set_text(std::string(text_data, text_len));
+#if defined(OHOS_CLIPBOARD)
+      data->set_copy_option(copy_option);
+#endif // defined(OHOS_CLIPBOARD)
     }
   }
 
   static void WriteHTML(const char* markup_data,
                         size_t markup_len,
                         const char* url_data,
-                        size_t url_len) {
+                        size_t url_len
+#if defined(OHOS_CLIPBOARD)
+                        ,
+                        const CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+                        ) {
     ClipboardData* data = GetCurrentData();
     if (data) {
       data->set_markup_data(std::string(markup_data, markup_len));
       data->set_url(std::string(url_data, url_len));
+#if defined(OHOS_CLIPBOARD)
+      data->set_copy_option(copy_option);
+#endif // defined(OHOS_CLIPBOARD)
     }
   }
 
@@ -754,22 +778,52 @@ void ClipboardOHOS::WritePortableAndPlatformRepresentations(
                                           std::move(data_src));
 }
 
-void ClipboardOHOS::WriteText(const char* text_data, size_t text_len) {
-  ClipboardDataBuilder::WriteText(text_data, text_len);
+void ClipboardOHOS::WriteText(const char* text_data, size_t text_len
+#if defined(OHOS_CLIPBOARD)
+                              ,
+                              const CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+) {
+  ClipboardDataBuilder::WriteText(text_data, text_len
+#if defined(OHOS_CLIPBOARD)
+                                  ,
+                                  copy_option
+#endif // defined(OHOS_CLIPBOARD)
+  );
 }
 
 void ClipboardOHOS::WriteHTML(const char* markup_data,
                               size_t markup_len,
                               const char* url_data,
-                              size_t url_len) {
-  ClipboardDataBuilder::WriteHTML(markup_data, markup_len, url_data, url_len);
+                              size_t url_len
+#if defined(OHOS_CLIPBOARD)
+                              ,
+                              const CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+                              ) {
+  ClipboardDataBuilder::WriteHTML(markup_data, markup_len, url_data, url_len
+#if defined(OHOS_CLIPBOARD)
+                                  ,
+                                  copy_option
+#endif // defined(OHOS_CLIPBOARD)
+  );
 }
 
 void ClipboardOHOS::WriteUnsanitizedHTML(const char* markup_data,
                                          size_t markup_len,
                                          const char* url_data,
-                                         size_t url_len) {
-  ClipboardDataBuilder::WriteHTML(markup_data, markup_len, url_data, url_len);
+                                         size_t url_len
+#if defined(OHOS_CLIPBOARD)
+                                         ,
+                                         const CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+                                         ) {
+  ClipboardDataBuilder::WriteHTML(markup_data, markup_len, url_data, url_len
+#if defined(OHOS_CLIPBOARD)
+                                  ,
+                                  copy_option
+#endif // defined(OHOS_CLIPBOARD)
+  );
 }
 
 void ClipboardOHOS::WriteSvg(const char* markup_data, size_t markup_len) {}
@@ -781,9 +835,18 @@ void ClipboardOHOS::WriteFilenames(std::vector<ui::FileInfo> filenames) {}
 void ClipboardOHOS::WriteBookmark(const char* title_data,
                                   size_t title_len,
                                   const char* url_data,
-                                  size_t url_len) {}
+                                  size_t url_len
+#if defined(OHOS_CLIPBOARD)
+                                  ,
+                                  const CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+                                  ) {}
 
-void ClipboardOHOS::WriteWebSmartPaste() {}
+void ClipboardOHOS::WriteWebSmartPaste(
+#if defined(OHOS_CLIPBOARD)
+  const CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+) {}
 
 void ClipboardOHOS::WriteBitmap(const SkBitmap& bitmap) {
   ClipboardDataBuilder::WriteBitmap(bitmap);

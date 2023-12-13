@@ -600,7 +600,7 @@ class NWebHandlerDelegate : public CefClient,
   uint32_t access_success_count_ = 0;
   uint32_t access_fail_count_ = 0;
 #endif
-  uint32_t window_id = 0;
+  uint32_t window_id_ = 0;
   bool focusState_ = false;
   static int32_t popIndex_;
   CefRefPtr<CefCallback> popupWindowCallback_ = nullptr;

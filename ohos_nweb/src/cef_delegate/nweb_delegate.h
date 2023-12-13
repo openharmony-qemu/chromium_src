@@ -172,7 +172,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
                   ImageAlphaType& alphaType) override;
   void PutNetworkAvailable(bool available) override;
 
-  void SetWindowId(uint32_t) override;
+  void SetWindowId(uint32_t window_id) override;
 
   bool SetZoomInFactor(float factor);
   bool SetZoomOutFactor(float factor);

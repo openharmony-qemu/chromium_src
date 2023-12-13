@@ -164,14 +164,6 @@ void InitialWebEngineArgs(std::list<std::string>& web_engine_args,
     web_engine_args.emplace_back("--ohos-enhance-surface");
   }
 
-  bool disable_extensions = true;
-#ifdef OHOS_NWEB_EX
-  if (g_browser_service_api_enabled)
-	disable_extensions = false;
-#endif
-  if (disable_extensions)
-    web_engine_args.emplace_back("--disable-extensions");
-
   for (auto arg : init_args.web_engine_args_to_delete) {
     auto it = std::find(web_engine_args.begin(), web_engine_args.end(), arg);
     if (it != web_engine_args.end()) {

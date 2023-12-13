@@ -442,7 +442,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkService
   // leaking stale listeners between tests.
   std::unique_ptr<net::NetworkChangeNotifier> mock_network_change_notifier_;
 
-#if defined(OHOS_EX_NETWORK_ENGINE)
+#if defined(OHOS_EX_NETWORK_CONNECTION)
   int timeout_override_ = 0;
 #endif
 };

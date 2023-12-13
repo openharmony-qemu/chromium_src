@@ -14,7 +14,7 @@
 
 set -x
 
-build_type="rk3568"
+build_type="$1"
 root_path="."
 sdk_path="${root_path}/src/ohos_sdk"
 sign_tool_path="${sdk_path}/10/toolchains/lib"

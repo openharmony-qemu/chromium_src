@@ -54,7 +54,7 @@ namespace {
 constexpr bool kInitFromDataCopyData = true;
 
 #if defined(OHOS_PRINT)
-constexpr int checkCancelCount = 5;
+constexpr int kCheckCancelCount = 5;
 #endif // defined(OHOS_PRINT)
 
 bool WriteAssetToBuffer(const SkStreamAsset* asset, void* buffer, size_t size) {
@@ -489,7 +489,7 @@ void MetafileSkia::CustomDataToSkPictureCallback(SkCanvas* canvas,
     for (const Page& page : data_->pages) {
       LOG(ERROR) << "OhosPrintManager page " << idex;
       idex++;
-      if (idex % checkCancelCount == 0 && checkCancel()) {
+      if (idex % kCheckCancelCount == 0 && checkCancel()) {
         doc->close();
         data_->data_stream = stream.detachAsStream();
         return false;

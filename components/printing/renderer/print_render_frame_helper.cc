@@ -122,7 +122,7 @@ struct PrintParamsWithFloatingSize {
 constexpr float kPrintingMinimumShrinkFactor = 1.33333333f;
 
 #if defined(OHOS_PRINT)
-constexpr int checkCancelCount = 10;
+constexpr int kCheckCancelCount = 10;
 #endif // defined(OHOS_PRINT)
 
 #if BUILDFLAG(ENABLE_PRINT_PREVIEW)
@@ -1318,8 +1318,13 @@ void PrintRenderFrameHelper::ScriptedPrint(bool user_initiated) {
   if (!IsScriptInitiatedPrintAllowed(web_frame, user_initiated))
     return;
 
-  if (delegate_->OverridePrint(web_frame))
+  if (delegate_->OverridePrint(web_frame)) {
+#if defined(OHOS_PRINT)
+    LOG(INFO) << "OhosPrintManager Before requesting to print Pdf";
+    GetPrintManagerHost()->BeforePrintPdfRequested();
+#endif  // IS_OHOS
     return;
+  }
 
   // Detached documents can't be printed.
   if (!web_frame->GetDocument().GetFrame())
@@ -2159,6 +2164,16 @@ void PrintRenderFrameHelper::PrintNode(const blink::WebNode& node) {
     return;
   }
 
+#if defined(OHOS_PRINT)
+  blink::WebNode duplicate_node(node);
+
+  blink::WebLocalFrame* frame = duplicate_node.GetDocument().GetFrame();
+  if (!frame)
+    return;
+
+  frame->DispatchBeforePrintEvent(/*print_client=*/nullptr);
+  GetPrintManagerHost()->PrintPdfRequested();
+#else
   if (print_node_in_progress_) {
     // This can happen as a result of processing sync messages when printing
     // from ppapi plugins. It's a rare case, so its OK to just fail here.
@@ -2200,6 +2215,7 @@ void PrintRenderFrameHelper::PrintNode(const blink::WebNode& node) {
   }
 
   print_node_in_progress_ = false;
+#endif
 }
 
 void PrintRenderFrameHelper::Print(blink::WebLocalFrame* frame,
@@ -2427,12 +2443,13 @@ bool PrintRenderFrameHelper::PrintPagesNative(
   page_params->content_area = gfx::Rect(print_params.page_size);
   bool is_pdf =
       IsPrintingPdfFrame(prep_frame_view_->frame(), prep_frame_view_->node());
+  LOG(DEBUG) << "PrintRenderFrameHelper::PrintPages is_pdf = " << is_pdf;
   PrintPageInternal(print_params, printed_pages[0], page_count,
                     GetScaleFactor(print_params.scale_factor, is_pdf), frame,
                     &metafile);
   for (size_t i = 1; i < printed_pages.size(); ++i) {
 #if defined(OHOS_PRINT)
-    if (i % checkCancelCount == 0 && CheckCancel()) {
+    if (i % kCheckCancelCount == 0 && CheckCancel()) {
       LOG(ERROR) << "OhosPrintManager stop print";
       return false;
     }

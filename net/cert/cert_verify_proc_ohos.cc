@@ -233,8 +233,41 @@ int32_t GetApplicationApiVersion() {
   return std::stoi(apiVersion);
 }
 
+void AddAppCert(const base::StringPiece &hostname, X509_STORE* ca_store) {
+  auto RootCertDataAdapter =
+      OHOS::NWeb::OhosAdapterHelper::GetInstance().GetRootCertDataAdapter();
+  if (!RootCertDataAdapter || !ca_store) {
+    LOG(ERROR)
+        << "Get cert info from cert manager, root cert data adapter is null";
+    return;
+  }
+
+  X509_LOOKUP* ca_look_up = X509_STORE_add_lookup(ca_store, X509_LOOKUP_hash_dir());
+  if (ca_look_up == nullptr) {
+    LOG(ERROR) << "Create X509 LOOKUP failed";
+    return;
+  }
+
+  // add app ca
+  std::vector<std::string> app_certs_path;
+  std::string host(hostname.data(), hostname.size());
+  if (RootCertDataAdapter->GetTrustAnchorsForHostName(host, app_certs_path)) {
+    for (size_t cert_index = 0; cert_index < app_certs_path.size(); cert_index++) {
+      int ret = X509_LOOKUP_add_dir(ca_look_up, app_certs_path[cert_index].c_str(), X509_FILETYPE_PEM);
+      if (ret == 0) {
+        LOG(WARNING) << "Add app cert failed, path:" << app_certs_path[cert_index]
+          << " ret:" << ret;
+      }
+    }
+  } else {
+    LOG(ERROR) << "GetTrustAnchorsForHostName host:" << host << " failed.";
+  }
+  return;
+}
+
 int CertVerify(const std::vector<std::string>& cert_bytes,
-               std::vector<std::string>* verified_chain) {
+               std::vector<std::string>* verified_chain,
+               base::StringPiece hostname) {
   uint32_t server_cert_sum;
   const unsigned char* der_encoded_tmp = nullptr;
   uint32_t i;
@@ -307,6 +340,9 @@ int CertVerify(const std::vector<std::string>& cert_bytes,
           << "Get cert info from cert manager, root cert data adapter is null";
       return X509_V_ERR_UNSPECIFIED;
     }
+
+    AddAppCert(hostname, ca_store);
+
     auto certMaxSize = RootCertDataAdapter->GetCertMaxSize();
     uint8_t* certData = static_cast<uint8_t*>(malloc(certMaxSize));
     if (!certData) {
@@ -444,7 +480,7 @@ void X509CertChainVerify(const std::vector<std::string>& cert_chain,
                          std::vector<std::string>* verified_chain) {
   *is_issued_by_known_root = false;
 
-  *status = CertVerify(cert_chain, verified_chain);
+  *status = CertVerify(cert_chain, verified_chain, host);
 }
 
 // Uses X509CertChainVerify() to verify the certificates in |certs| for

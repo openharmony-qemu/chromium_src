@@ -536,6 +536,15 @@ std::unique_ptr<NetworkService> NetworkService::CreateForTesting() {
 
 void NetworkService::RegisterNetworkContext(NetworkContext* network_context) {
   DCHECK_EQ(0u, network_contexts_.count(network_context));
+#if defined(OHOS_EX_NETWORK_CONNECTION)
+  net::URLRequestContext* url_request_context =
+      network_context->url_request_context();
+  if (url_request_context) {
+    LOG(INFO) << "Register network context and set network timeout "
+              << timeout_override_ << " second(s)";
+    url_request_context->SetConnectTimeout(timeout_override_);
+  }
+#endif
   network_contexts_.insert(network_context);
   if (quic_disabled_)
     network_context->DisableQuic();

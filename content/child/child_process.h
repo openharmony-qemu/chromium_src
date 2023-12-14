@@ -98,6 +98,10 @@ class CONTENT_EXPORT ChildProcess {
   static ChildProcess* current();
 
  private:
+#if BUILDFLAG(IS_OHOS)
+  void ReportIoThreadStatus(bool is_created);
+#endif
+
   const base::AutoReset<ChildProcess*> resetter_;
 
   int ref_count_ = 0;

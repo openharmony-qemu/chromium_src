@@ -112,6 +112,11 @@ interface CompositorFrameSink {
   // adjust performance to allow power saving.
   [EnableIf=is_android]
   SetThreadIds(array<int32> thread_ids);
+
+  // Report the key threads in render process. This is used on OHOS to
+  // dynamic resource scheduling.
+  [EnableIf=is_ohos]
+  ReportKeyThreadIds(array<int32> thread_ids, int32 process_id, bool is_created);
 };
 
 interface CompositorFrameSinkClient {

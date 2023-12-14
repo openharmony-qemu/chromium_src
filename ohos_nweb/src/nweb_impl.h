@@ -34,8 +34,8 @@
 namespace OHOS::NWeb {
 class NWebImpl : public NWeb {
  public:
-  NWebImpl(uint32_t id);
-  ~NWebImpl();
+  explicit NWebImpl(uint32_t id);
+  ~NWebImpl() override;
 
   bool Init(const NWebCreateInfo& create_info);
   void OnDestroy() override;

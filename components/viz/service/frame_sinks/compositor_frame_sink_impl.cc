@@ -19,6 +19,12 @@
 #include "services/viz/public/mojom/compositing/layer_context.mojom.h"
 #include "ui/gfx/overlay_transform.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "content/public/browser/browser_task_traits.h"
+#include "content/public/browser/browser_thread.h"
+#include "res_sched_client_adapter.h"
+#endif
+
 namespace viz {
 
 namespace {
@@ -214,6 +220,25 @@ void CompositorFrameSinkImpl::SetThreadIds(
     const std::vector<int32_t>& thread_ids) {
   support_->SetThreadIds(/*from_untrusted_client=*/true,
                          base::MakeFlatSet<base::PlatformThreadId>(thread_ids));
+}
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+void CompositorFrameSinkImpl::ReportKeyThreadIds(
+    const std::vector<int32_t>& thread_ids,
+    int32_t process_id,
+    bool is_created) {
+  using namespace OHOS::NWeb;
+  ResSchedStatusAdapter status = is_created
+                                     ? ResSchedStatusAdapter::THREAD_CREATED
+                                     : ResSchedStatusAdapter::THREAD_DESTROYED;
+  for (auto thread_id : thread_ids) {
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(
+            base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread), status,
+            process_id, thread_id, ResSchedRoleAdapter::IMPORTANT_DISPLAY));
+  }
 }
 #endif
 

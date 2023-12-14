@@ -436,4 +436,10 @@ interface PrintManagerHost {
 
   [EnableIf=is_ohos, Sync]
   CheckCancel() => (bool cancel);
+
+  [EnableIf=is_ohos]
+  BeforePrintPdfRequested();
+
+  [EnableIf=is_ohos]
+  PrintPdfRequested();
 };

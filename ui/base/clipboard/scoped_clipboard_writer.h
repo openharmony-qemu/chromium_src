@@ -12,6 +12,7 @@
 #include "build/chromeos_buildflags.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "ui/base/clipboard/clipboard.h"
+#include "third_party/blink/public/mojom/clipboard/clipboard.mojom.h"
 #include "ui/base/data_transfer_policy/data_transfer_endpoint.h"
 
 namespace base {
@@ -49,14 +50,24 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ScopedClipboardWriter {
   void SetDataSourceURL(const GURL& main_frame, const GURL& frame);
 
   // Converts |text| to UTF-8 and adds it to the clipboard.
-  void WriteText(const std::u16string& text);
+  void WriteText(const std::u16string& text
+#if defined(OHOS_CLIPBOARD)
+                 ,
+                 const blink::mojom::CopyOptionMode copy_option = blink::mojom::CopyOptionMode::CROSS_DEVICE
+#endif // defined(OHOS_CLIPBOARD)
+  );
 
   // Adds HTML to the clipboard. The url parameter is optional, but especially
   // useful if the HTML fragment contains relative links.
   // The `content_type` refers to the sanitization of the markup.
   void WriteHTML(const std::u16string& markup,
                  const std::string& source_url,
-                 ClipboardContentType content_type);
+                 ClipboardContentType content_type
+#if defined(OHOS_CLIPBOARD)
+                 ,
+                 const blink::mojom::CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+                 );
 
   // Adds SVG to the clipboard.
   void WriteSvg(const std::u16string& text);
@@ -72,7 +83,12 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ScopedClipboardWriter {
 
   // Adds a bookmark to the clipboard.
   void WriteBookmark(const std::u16string& bookmark_title,
-                     const std::string& url);
+                     const std::string& url
+#if defined(OHOS_CLIPBOARD)
+                     ,
+                     const blink::mojom::CopyOptionMode copy_option = blink::mojom::CopyOptionMode::CROSS_DEVICE
+#endif // defined(OHOS_CLIPBOARD)
+                     );
 
   // Adds an html hyperlink (<a href>) to the clipboard. |anchor_text| and
   // |url| will be escaped as needed.
@@ -80,7 +96,11 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ScopedClipboardWriter {
                       const std::string& url);
 
   // Used by WebKit to determine whether WebKit wrote the clipboard last
-  void WriteWebSmartPaste();
+  void WriteWebSmartPaste(
+#if defined(OHOS_CLIPBOARD)
+    const blink::mojom::CopyOptionMode copy_option = blink::mojom::CopyOptionMode::CROSS_DEVICE
+#endif // defined(OHOS_CLIPBOARD)
+  );
 
   // Adds arbitrary pickled data to clipboard.
   void WritePickledData(const base::Pickle& pickle,
@@ -91,7 +111,12 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ScopedClipboardWriter {
   // This is only used to write custom format data.
   void WriteData(const std::u16string& format, mojo_base::BigBuffer data);
 
-  void WriteImage(const SkBitmap& bitmap);
+  void WriteImage(const SkBitmap& bitmap
+#if defined(OHOS_CLIPBOARD)
+                  ,
+                  const blink::mojom::CopyOptionMode copy_option = blink::mojom::CopyOptionMode::CROSS_DEVICE
+#endif // defined(OHOS_CLIPBOARD)
+  );
 
 #if BUILDFLAG(IS_CHROMEOS_LACROS)
   // Used by clipboard unit tests to write an encoded clipboard source DTE.
@@ -103,6 +128,10 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ScopedClipboardWriter {
 
   // Removes all objects that would be written to the clipboard.
   void Reset();
+
+#if defined(OHOS_CLIPBOARD)
+  std::string copy_option_to_string(blink::mojom::CopyOptionMode copy_option);
+#endif // defined(OHOS_CLIPBOARD)
 
  private:
   // We accumulate the data passed to the various targets in the |objects_|

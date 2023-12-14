@@ -15,6 +15,7 @@
 #include "ui/base/clipboard/clipboard_sequence_number_token.h"
 #include "ui/base/clipboard/file_info.h"
 #include "ui/base/data_transfer_policy/data_transfer_endpoint.h"
+#include "ui/base/clipboard/clipboard.h"
 
 #if BUILDFLAG(IS_CHROMEOS)
 #include "base/time/time.h"
@@ -85,6 +86,13 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ClipboardData {
     svg_data_ = svg_data;
     format_ |= static_cast<int>(ClipboardInternalFormat::kSvg);
   }
+
+#if defined(OHOS_CLIPBOARD)
+  CopyOptionMode copy_option() const { return copy_option_; }
+  void set_copy_option(CopyOptionMode copy_option) {
+    copy_option_ = copy_option;
+  }
+#endif // defined(OHOS_CLIPBOARD)
 
   const std::string& rtf_data() const { return rtf_data_; }
   void SetRTFData(const std::string& rtf_data) {
@@ -188,6 +196,11 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ClipboardData {
   // Bookmark title in UTF8 format.
   std::string bookmark_title_;
   std::string bookmark_url_;
+
+#if defined(OHOS_CLIPBOARD)
+  // copy option
+  CopyOptionMode copy_option_;
+#endif // defined(OHOS_CLIPBOARD)
 
   // Image data can take the form of PNGs or bitmaps. Strongly prefer PNGs where
   // possible, since images can only be read out of this interface as PNGs. This

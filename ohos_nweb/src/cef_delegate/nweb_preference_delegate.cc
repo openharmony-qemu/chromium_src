@@ -159,6 +159,9 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
   browser_settings.hide_vertical_scrollbars =
       !IsVerticalScrollBarAccess() ? STATE_ENABLED : STATE_DISABLED;
 #endif  // defined(OHOS_INPUT_EVENTS)
+#if defined(OHOS_CLIPBOARD)
+  browser_settings.copy_option = static_cast<int>(GetCopyOptionMode());
+#endif // defined(OHOS_CLIPBOARD)
 #ifdef OHOS_SCROLLBAR
   browser_settings.scrollbar_color = GetScrollBarColor();
 #endif // OHOS_SCROLLBAR
@@ -651,5 +654,16 @@ bool NWebPreferenceDelegate::IsBlankTargetPopupInterceptEnabled() {
   return enable_blank_target_popup_intercept_;
 }
 #endif
+
+#if defined(OHOS_CLIPBOARD)
+void NWebPreferenceDelegate::PutCopyOptionMode(NWebPreference::CopyOptionMode copyOption) {
+  copy_option_ = copyOption;
+  WebPreferencesChanged();
+}
+
+NWebPreference::CopyOptionMode NWebPreferenceDelegate::GetCopyOptionMode() {
+  return copy_option_;
+}
+#endif // defined(OHOS_CLIPBOARD)
 
 }  // namespace OHOS::NWeb

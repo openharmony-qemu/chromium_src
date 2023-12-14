@@ -488,28 +488,56 @@ void ClipboardHostImpl::ReadCustomData(ui::ClipboardBuffer clipboard_buffer,
           std::move(result), std::move(callback)));
 }
 
-void ClipboardHostImpl::WriteText(const std::u16string& text) {
+void ClipboardHostImpl::WriteText(const std::u16string& text
+#if defined(OHOS_CLIPBOARD)
+                                  ,
+                                  const blink::mojom::CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+                                  ) {
   CopyIfAllowed(
       text.size() * sizeof(std::u16string::value_type),
       base::BindOnce(&ui::ScopedClipboardWriter::WriteText,
-                     base::Unretained(clipboard_writer_.get()), text));
+                     base::Unretained(clipboard_writer_.get()), text
+#if defined(OHOS_CLIPBOARD)
+                     ,
+                     copy_option
+#endif // defined(OHOS_CLIPBOARD)
+                     ));
 }
 
 void ClipboardHostImpl::WriteHtml(const std::u16string& markup,
-                                  const GURL& url) {
+                                  const GURL& url
+#if defined(OHOS_CLIPBOARD)
+                                  ,
+                                  const blink::mojom::CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+                                  ) {
   CopyIfAllowed(
       markup.size() * sizeof(std::u16string::value_type),
       base::BindOnce(&ui::ScopedClipboardWriter::WriteHTML,
                      base::Unretained(clipboard_writer_.get()), markup,
-                     url.spec(), ui::ClipboardContentType::kSanitized));
+                     url.spec(), ui::ClipboardContentType::kSanitized
+#if defined(OHOS_CLIPBOARD)
+                     ,
+                     copy_option
+#endif // defined(OHOS_CLIPBOARD)
+                     ));
 }
 
 void ClipboardHostImpl::WriteSvg(const std::u16string& markup) {
   clipboard_writer_->WriteSvg(markup);
 }
 
-void ClipboardHostImpl::WriteSmartPasteMarker() {
-  clipboard_writer_->WriteWebSmartPaste();
+void ClipboardHostImpl::WriteSmartPasteMarker(
+#if defined(OHOS_CLIPBOARD)
+  const blink::mojom::CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+) {
+  clipboard_writer_->WriteWebSmartPaste(
+#if defined(OHOS_CLIPBOARD)
+    copy_option
+#endif // defined(OHOS_CLIPBOARD)
+  );
 }
 
 void ClipboardHostImpl::WriteCustomData(
@@ -521,12 +549,32 @@ void ClipboardHostImpl::WriteCustomData(
 }
 
 void ClipboardHostImpl::WriteBookmark(const std::string& url,
-                                      const std::u16string& title) {
-  clipboard_writer_->WriteBookmark(title, url);
+                                      const std::u16string& title
+#if defined(OHOS_CLIPBOARD)
+                                      ,
+                                      const blink::mojom::CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+                                      ) {
+  clipboard_writer_->WriteBookmark(title, url
+#if defined(OHOS_CLIPBOARD)
+                                   ,
+                                   copy_option
+#endif // defined(OHOS_CLIPBOARD)
+  );
 }
 
-void ClipboardHostImpl::WriteImage(const SkBitmap& bitmap) {
-  clipboard_writer_->WriteImage(bitmap);
+void ClipboardHostImpl::WriteImage(const SkBitmap& bitmap
+#if defined(OHOS_CLIPBOARD)
+                                   ,
+                                   const blink::mojom::CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+) {
+  clipboard_writer_->WriteImage(bitmap
+#if defined(OHOS_CLIPBOARD)
+                                ,
+                                copy_option
+#endif // defined(OHOS_CLIPBOARD)
+  );
 }
 
 void ClipboardHostImpl::CommitWrite() {

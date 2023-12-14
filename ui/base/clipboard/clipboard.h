@@ -41,6 +41,16 @@ class TestClipboard;
 class ScopedClipboardWriter;
 class DataTransferEndpoint;
 
+#if defined(OHOS_CLIPBOARD)
+enum class CopyOptionMode {
+  NONE = 0,
+  IN_APP = 1,
+  LOCAL_DEVICE = 2,
+  CROSS_DEVICE = 3
+};
+#endif // defined(OHOS_CLIPBOARD)
+
+
 // Clipboard:
 // - reads from and writes to the system clipboard.
 // - specifies an ordering in which to write types to the clipboard
@@ -403,17 +413,33 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) Clipboard
   void DispatchPlatformRepresentations(
       std::vector<Clipboard::PlatformRepresentation> platform_representations);
 
-  virtual void WriteText(const char* text_data, size_t text_len) = 0;
+  virtual void WriteText(const char* text_data, size_t text_len
+#if defined(OHOS_CLIPBOARD)
+                         ,
+                         CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+
+  ) = 0;
 
   virtual void WriteHTML(const char* markup_data,
                          size_t markup_len,
                          const char* url_data,
-                         size_t url_len) = 0;
+                         size_t url_len
+#if defined(OHOS_CLIPBOARD)
+                         ,
+                         CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+                         ) = 0;
 
   virtual void WriteUnsanitizedHTML(const char* markup_data,
                                     size_t markup_len,
                                     const char* url_data,
-                                    size_t url_len) = 0;
+                                    size_t url_len
+#if defined(OHOS_CLIPBOARD)
+                                    ,
+                                    CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+                                    ) = 0;
 
   virtual void WriteSvg(const char* markup_data, size_t markup_len) = 0;
 
@@ -424,9 +450,18 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) Clipboard
   virtual void WriteBookmark(const char* title_data,
                              size_t title_len,
                              const char* url_data,
-                             size_t url_len) = 0;
+                             size_t url_len
+#if defined(OHOS_CLIPBOARD)
+                             ,
+                             CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+                             ) = 0;
 
-  virtual void WriteWebSmartPaste() = 0;
+  virtual void WriteWebSmartPaste(
+#if defined(OHOS_CLIPBOARD)
+    CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+  ) = 0;
 
   virtual void WriteBitmap(const SkBitmap& bitmap) = 0;
 
@@ -467,6 +502,11 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) Clipboard
   static base::Lock& ClipboardMapLock();
 
   base::ObserverList<ClipboardWriteObserver> write_observers_;
+
+#if defined(OHOS_CLIPBOARD)
+  static CopyOptionMode GetCopyOption(const char* param);
+#endif // defined(OHOS_CLIPBOARD)
+
 };
 
 }  // namespace ui

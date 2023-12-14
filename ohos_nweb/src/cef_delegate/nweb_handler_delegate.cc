@@ -2008,7 +2008,9 @@ void NWebHandlerDelegate::CopyImageToClipboard(CefRefPtr<CefImage> image) {
       free(data);
       return;
     }
-    OhosAdapterHelper::GetInstance().GetPasteBoard().SetPasteData(recordList);
+
+    auto copy_option = static_cast<ui::CopyOptionMode>(preference_delegate_->GetCopyOptionMode());
+    OhosAdapterHelper::GetInstance().GetPasteBoard().SetPasteData(recordList, copy_option);
     free(data);
   }
 }

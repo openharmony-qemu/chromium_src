@@ -1628,6 +1628,11 @@ bool NavigationControllerImpl::RendererDidNavigate(
   details->is_main_frame = !rfh->GetParent();
   details->http_status_code = params.http_status_code;
 
+#if defined(OHOS_NAVIGATION)
+  details->type = static_cast<OhosNavigationType>(navigation_type);
+  details->current_commit_entry_url = active_entry->GetURL();
+#endif  // defined(OHOS_NAVIGATION)
+
   active_entry->SetIsOverridingUserAgent(
       navigation_request->is_overriding_user_agent());
 

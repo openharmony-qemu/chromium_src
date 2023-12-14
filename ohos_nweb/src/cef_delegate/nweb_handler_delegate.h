@@ -239,6 +239,9 @@ class NWebHandlerDelegate : public CefClient,
 
   void OnDataResubmission(CefRefPtr<CefBrowser> browser,
                           CefRefPtr<CefCallback> callback) override;
+
+  void OnNavigationEntryCommitted(
+      CefRefPtr<CefLoadCommittedDetails> details) override;
   /* CefLoadHandler methods end */
 
   /* CefRequestHandler methods begin */

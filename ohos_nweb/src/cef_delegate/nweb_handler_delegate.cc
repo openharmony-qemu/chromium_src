@@ -40,6 +40,7 @@
 #include "nweb_js_ssl_error_result_impl.h"
 #include "nweb_js_ssl_select_cert_result_impl.h"
 #include "nweb_key_event.h"
+#include "nweb_load_committed_details_impl.h"
 #include "nweb_preference_delegate.h"
 #include "nweb_resource_handler.h"
 #include "nweb_select_popup_menu_callback.h"
@@ -869,6 +870,25 @@ void NWebHandlerDelegate::OnDataResubmission(CefRefPtr<CefBrowser> browser,
     std::shared_ptr<NWebDataResubmissionCallback> handler =
         std::make_shared<NWebDataResubmissionCallbackImpl>(callback);
     nweb_handler_->OnDataResubmission(handler);
+  }
+}
+
+void NWebHandlerDelegate::OnNavigationEntryCommitted(
+    CefRefPtr<CefLoadCommittedDetails> details) {
+  LOG(INFO) << "NWebHandlerDelegate::OnNavigationEntryCommitted";
+  if (nweb_handler_ != nullptr) {
+    if (!details) {
+      LOG(WARNING) << "NWebHandlerDelegate::OnNavigationEntryCommitted failed "
+                      "for details is null";
+      return;
+    }
+    auto type = static_cast<NWebLoadCommittedDetails::NavigationType>(
+        details->GetNavigationType());
+    std::shared_ptr<NWebLoadCommittedDetails> web_details =
+        std::make_shared<NWebLoadCommittedDetailsImpl>(
+            details->GetCurrentURL().ToString(), type, details->IsMainFrame(),
+            details->IsSameDocument(), details->DidReplaceEntry());
+    nweb_handler_->OnNavigationEntryCommitted(web_details);
   }
 }
 

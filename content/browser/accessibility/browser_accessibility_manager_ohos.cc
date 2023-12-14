@@ -1,0 +1,238 @@
+/*
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "content/browser/accessibility/browser_accessibility_manager_ohos.h"
+#include "content/browser/accessibility/browser_accessibility_ohos.h"
+#include "ui/gfx/geometry/point_conversions.h"
+
+namespace content {
+const int32_t kInvalidAccessibilityId = -1;
+const int32_t kRootAccessibilityId = 0;
+std::function<int32_t()> g_accessibility_id_generator;
+
+BrowserAccessibilityManager* BrowserAccessibilityManager::Create(
+    const ui::AXTreeUpdate& initial_tree,
+    WebAXPlatformTreeManagerDelegate* delegate) {
+  return new BrowserAccessibilityManagerOHOS(initial_tree, delegate);
+}
+
+// static
+BrowserAccessibilityManager* BrowserAccessibilityManager::Create(
+    WebAXPlatformTreeManagerDelegate* delegate) {
+  return new BrowserAccessibilityManagerOHOS(
+      BrowserAccessibilityManager::GetEmptyDocument(), delegate);
+}
+
+BrowserAccessibilityManagerOHOS::BrowserAccessibilityManagerOHOS(
+    const ui::AXTreeUpdate& initial_tree,
+    WebAXPlatformTreeManagerDelegate* delegate)
+    : BrowserAccessibilityManager(delegate) {
+  Initialize(initial_tree);
+}
+
+void BrowserAccessibilityManagerOHOS::HandleFocusChanged(
+    int32_t accessibilityId) {
+  SendAccessibilityEvent(accessibilityId,
+                         OHOS::NWeb::AccessibilityEventType::FOCUS);
+  MoveAccessibilityFocusToId(accessibilityId);
+}
+
+void BrowserAccessibilityManagerOHOS::RegisterAccessibilityIdGenerator(
+    std::function<int32_t()> accessibilityIdGenerator) {
+  if (g_accessibility_id_generator == nullptr) {
+    g_accessibility_id_generator = accessibilityIdGenerator;
+  }
+}
+
+int32_t BrowserAccessibilityManagerOHOS::GenerateAccessibilityId() {
+  if (g_accessibility_id_generator != nullptr) {
+    return g_accessibility_id_generator();
+  }
+  return kInvalidAccessibilityId;
+}
+
+void BrowserAccessibilityManagerOHOS::FireFocusEvent(
+    ui::AXNode* node) {
+  ui::AXTreeManager::FireFocusEvent(node);
+  BrowserAccessibilityOHOS* nodeOHOS =
+      static_cast<BrowserAccessibilityOHOS*>(GetFromAXNode(node));
+  if (!nodeOHOS) {
+    return;
+  }
+  HandleFocusChanged(TranslateAccessibilityId(nodeOHOS->GetAccessibilityId())); 
+}
+
+void BrowserAccessibilityManagerOHOS::FireBlinkEvent(
+    ax::mojom::Event event_type,
+    BrowserAccessibility* node,
+    int action_request_id) {
+  BrowserAccessibilityOHOS* nodeOHOS =
+      static_cast<BrowserAccessibilityOHOS*>(node);
+  if (!nodeOHOS) {
+    return;
+  }
+  int32_t accessibilityId =
+      TranslateAccessibilityId(nodeOHOS->GetAccessibilityId());
+  switch (event_type) {
+    case ax::mojom::Event::kClicked:
+      SendAccessibilityEvent(accessibilityId,
+                             OHOS::NWeb::AccessibilityEventType::CLICK);
+      break;
+    case ax::mojom::Event::kBlur:
+      SendAccessibilityEvent(accessibilityId,
+                             OHOS::NWeb::AccessibilityEventType::BLUR);
+      break;
+    case ax::mojom::Event::kHover:
+      HandleHover(accessibilityId);
+      break;
+    default:
+      break;
+  }
+}
+
+void BrowserAccessibilityManagerOHOS::RegisterAccessibilityEventListener(
+    std::shared_ptr<OHOS::NWeb::NWebAccessibilityEventCallback>
+        accessibilityEventListener) {
+  accessibilityEventListener_ = accessibilityEventListener;
+}
+
+bool BrowserAccessibilityManagerOHOS::MoveAccessibilityFocusToId(
+    int32_t newAccessibilityFocusId) {
+  if (accessibilityFocusId_ == newAccessibilityFocusId) {
+    return false;
+  }
+  MoveAccessibilityFocus(accessibilityFocusId_, newAccessibilityFocusId);
+  SendAccessibilityEvent(
+      accessibilityFocusId_,
+      OHOS::NWeb::AccessibilityEventType::ACCESSIBILITY_FOCUS_CLEARED);
+  accessibilityFocusId_ = newAccessibilityFocusId;
+  SendAccessibilityEvent(
+      accessibilityFocusId_,
+      OHOS::NWeb::AccessibilityEventType::ACCESSIBILITY_FOCUSED);
+  return true;
+}
+
+void BrowserAccessibilityManagerOHOS::MoveAccessibilityFocus(
+    int32_t oldId,
+    int32_t newId) const {
+  auto oldNode = BrowserAccessibilityOHOS::GetFromAccessibilityId(oldId);
+  if (oldNode && oldNode->manager())
+    oldNode->manager()->ClearAccessibilityFocus(*oldNode);
+
+  auto node = BrowserAccessibilityOHOS::GetFromAccessibilityId(newId);
+  if (!node)
+    return;
+  node->manager()->SetAccessibilityFocus(*node);
+}
+
+void BrowserAccessibilityManagerOHOS::SendAccessibilityEvent(
+    int32_t accessibilityId,
+    OHOS::NWeb::AccessibilityEventType eventType) {
+  accessibilityId = TranslateAccessibilityId(accessibilityId);
+
+  if (accessibilityEventListener_ != nullptr &&
+      eventType != OHOS::NWeb::AccessibilityEventType::UNKNOWN &&
+      accessibilityId != kInvalidAccessibilityId) {
+    accessibilityEventListener_->OnAccessibilityEvent(
+        accessibilityId, static_cast<int32_t>(eventType));
+  }
+
+  if (eventType == OHOS::NWeb::AccessibilityEventType::HOVER_ENTER_EVENT) {
+    auto* lastHoverNode =
+        BrowserAccessibilityOHOS::GetFromAccessibilityId(lastHoverId_);
+    if (lastHoverNode) {
+      SendAccessibilityEvent(
+          lastHoverId_, OHOS::NWeb::AccessibilityEventType::HOVER_EXIT_EVENT);
+    }
+    lastHoverId_ = accessibilityId;
+  }
+}
+
+void BrowserAccessibilityManagerOHOS::HandleHover(int32_t accessibilityId) {
+  if (lastHoverId_ == accessibilityId) {
+    return;
+  }
+
+  SendAccessibilityEvent(accessibilityId,
+                         OHOS::NWeb::AccessibilityEventType::HOVER_ENTER_EVENT);
+  MoveAccessibilityFocusToIdAndRefocusIfNeeded(accessibilityId);
+}
+
+void BrowserAccessibilityManagerOHOS::HandleEditableTextChanged(int32_t accessibilityId)
+{
+  SendAccessibilityEvent(accessibilityId, OHOS::NWeb::AccessibilityEventType::TEXT_CHANGE);
+}
+
+void BrowserAccessibilityManagerOHOS::
+    MoveAccessibilityFocusToIdAndRefocusIfNeeded(
+        int32_t newAccessibilityFocusId) {
+  if (newAccessibilityFocusId == accessibilityFocusId_) {
+    SendAccessibilityEvent(
+        newAccessibilityFocusId,
+        OHOS::NWeb::AccessibilityEventType::ACCESSIBILITY_FOCUS_CLEARED);
+    accessibilityFocusId_ = kRootAccessibilityId;
+  }
+  MoveAccessibilityFocusToId(newAccessibilityFocusId);
+}
+
+void BrowserAccessibilityManagerOHOS::OnHoverEvent(const gfx::PointF& point) {
+  auto* hoverNode = static_cast<BrowserAccessibilityOHOS*>(
+      ApproximateHitTest(gfx::ToFlooredPoint(point)));
+
+  if (hoverNode) {
+    HandleHover(TranslateAccessibilityId(hoverNode->GetAccessibilityId()));
+  } else {
+    HandleHover(kRootAccessibilityId);
+  }
+}
+
+int32_t BrowserAccessibilityManagerOHOS::TranslateAccessibilityId(
+    int32_t accessibilityId) const {
+  if (accessibilityId != kRootAccessibilityId) {
+    auto root = static_cast<BrowserAccessibilityOHOS*>(GetBrowserAccessibilityRoot());
+    if (root && accessibilityId == root->GetAccessibilityId()) {
+      return kRootAccessibilityId;
+    }
+  }
+  return accessibilityId;
+}
+
+void BrowserAccessibilityManagerOHOS::FireGeneratedEvent(
+    ui::AXEventGenerator::Event event_type,
+    const ui::AXNode* node) {
+  ui::AXTreeManager::FireGeneratedEvent(event_type, node);
+
+  BrowserAccessibility* wrapper = GetFromAXNode(node);
+  BrowserAccessibilityOHOS* nodeOHOS =
+      static_cast<BrowserAccessibilityOHOS*>(wrapper);
+  if (!nodeOHOS) {
+    return;
+  }
+
+  int32_t accessibilityId =
+      TranslateAccessibilityId(nodeOHOS->GetAccessibilityId());
+
+  switch (event_type) {
+    case ui::AXEventGenerator::Event::VALUE_IN_TEXT_FIELD_CHANGED:
+      if (nodeOHOS->IsTextField() && GetFocus() == wrapper) {
+        HandleEditableTextChanged(accessibilityId);
+      }
+      break;
+    default:
+      break;
+  }
+}
+
+}  // namespace content

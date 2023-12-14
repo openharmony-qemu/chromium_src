@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,6 +16,7 @@
 #include "nweb_delegate.h"
 
 #include <thread>
+#include "nweb_accessibility_utils.h"
 #include "nweb_application.h"
 #include "nweb_handler_delegate.h"
 #include "nweb_render_handler.h"
@@ -668,6 +669,14 @@ void NWebDelegate::SendMouseEvent(int x,
     render_handler_->SetIrregularDragBackground(true);
   }
 #endif  // #ifdef OHOS_DRAG_DROP
+  if (action == MouseAction::MOVE) {
+    auto* accessibilityManager = GetAccessibilityManager();
+    if (accessibilityManager != nullptr) {
+      gfx::PointF point(x / default_virtual_pixel_ratio_,
+                        y / default_virtual_pixel_ratio_);
+      accessibilityManager->OnHoverEvent(point);
+    }
+  }
 }
 
 void NWebDelegate::NotifyScreenInfoChanged(RotationType rotation,
@@ -2266,4 +2275,318 @@ double NWebDelegate::GetBrowserZoomLevel() {
 }
 #endif
 
+ 
+void NWebDelegate::RegisterAccessibilityEventListener(
+    std::shared_ptr<NWebAccessibilityEventCallback>
+        accessibility_event_listener) {
+  auto* accessibilityManager = GetAccessibilityManager();
+  if (accessibilityManager == nullptr) {
+    LOG(ERROR) << "RegisterAccessibilityEventListener can not get "
+                  "accessibilityManager";
+    return;
+  }
+  accessibilityManager->RegisterAccessibilityEventListener(
+      accessibility_event_listener);
+}
+
+void NWebDelegate::RegisterAccessibilityIdGenerator(
+    std::function<int32_t()> accessibilityIdGenerator) const {
+  content::BrowserAccessibilityManagerOHOS::RegisterAccessibilityIdGenerator(
+      accessibilityIdGenerator);
+};
+
+void NWebDelegate::SetAccessibilityState(cef_state_t accessibilityState) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "SetAccessibilityState can not get browser";
+    return;
+  }
+  accessibility_state_ = (accessibilityState == STATE_ENABLED);
+  GetBrowser()->GetHost()->SetAccessibilityState(accessibilityState);
+}
+
+void NWebDelegate::ExecuteAction(int32_t accessibilityId,
+                                 uint32_t action) const {
+  auto* accessibilityManager = GetAccessibilityManager();
+  if (accessibilityManager == nullptr) {
+    LOG(ERROR) << "ExecuteAction can not get accessibilityManager";
+    return;
+  }
+  auto* node = content::BrowserAccessibilityOHOS::GetFromAccessibilityId(
+      accessibilityId);
+  if (node == nullptr) {
+    LOG(ERROR) << "ExecuteAction can not get node";
+    return;
+  }
+  AceAction aceAction = static_cast<AceAction>(action);
+
+  switch (aceAction) {
+    case AceAction::ACTION_CLICK:
+      accessibilityManager->DoDefaultAction(*node);
+      break;
+    case AceAction::ACTION_ACCESSIBILITY_FOCUS:
+      accessibilityManager->MoveAccessibilityFocusToId(accessibilityId);
+      break;
+    case AceAction::ACTION_CLEAR_ACCESSIBILITY_FOCUS:
+      accessibilityManager->SendAccessibilityEvent(
+          accessibilityId, AccessibilityEventType::ACCESSIBILITY_FOCUS_CLEARED);
+      if (accessibilityManager->GetAccessibilityFocusId() == accessibilityId) {
+        accessibilityManager->MoveAccessibilityFocus(
+            accessibilityManager->GetAccessibilityFocusId(), 0);
+        accessibilityManager->SetAccessibilityFocusId(0);
+      }
+      if (accessibilityManager->GetLastHoverId() == accessibilityId) {
+        accessibilityManager->SendAccessibilityEvent(
+            accessibilityManager->GetLastHoverId(),
+            AccessibilityEventType::HOVER_EXIT_EVENT);
+        accessibilityManager->SetLastHoverId(0);
+      }
+      break;
+    case AceAction::ACTION_FOCUS:
+      accessibilityManager->SetFocus(*node);
+      break;
+    case AceAction::ACTION_CLEAR_FOCUS:
+      accessibilityManager->SetFocus(*accessibilityManager->GetBrowserAccessibilityRoot());
+      break;
+    default:
+      LOG(INFO) << "ExecuteAction unsupported action";
+      break;
+  }
+}
+
+content::BrowserAccessibilityManagerOHOS*
+NWebDelegate::GetAccessibilityManager() const {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "GetAccessibilityManager can not get browser";
+    return nullptr;
+  }
+  void* manager = nullptr;
+  GetBrowser()->GetHost()->GetOrCreateRootBrowserAccessibilityManager(&manager);
+  return static_cast<content::BrowserAccessibilityManagerOHOS*>(manager);
+}
+
+bool NWebDelegate::GetFocusedAccessibilityNodeInfo(
+    int32_t accessibilityId,
+    bool isAccessibilityFocus,
+    OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const {
+  auto* accessibilityManager = GetAccessibilityManager();
+  if (accessibilityManager == nullptr) {
+    LOG(ERROR)
+        << "GetFocusedAccessibilityNodeInfo can not get accessibilityManager";
+    return false;
+  }
+  content::BrowserAccessibilityOHOS* resultNode = nullptr;
+  if (isAccessibilityFocus) {
+    auto accessibilityFocusId = accessibilityManager->GetAccessibilityFocusId();
+    if (accessibilityFocusId > 0) {
+      resultNode = content::BrowserAccessibilityOHOS::GetFromAccessibilityId(
+          accessibilityFocusId);
+    }
+  } else {
+    resultNode = static_cast<content::BrowserAccessibilityOHOS*>(
+        accessibilityManager->GetFocus());
+  }
+  if (resultNode == nullptr) {
+    LOG(ERROR) << "GetFocusedAccessibilityNodeInfo can not get node";
+    return false;
+  }
+  if (accessibilityId != -1) {
+    auto* node = content::BrowserAccessibilityOHOS::GetFromAccessibilityId(
+        accessibilityId);
+    if (node == nullptr) {
+      LOG(ERROR)
+          << "GetFocusedAccessibilityNodeInfo can not get accessibilityId";
+      return false;
+    }
+    if (!resultNode->IsDescendantOf(node)) {
+      return false;
+    }
+  }
+  return PopulateAccessibilityNodeInfo(resultNode, nodeInfo);
+}
+
+bool NWebDelegate::GetAccessibilityNodeInfoById(
+    int32_t accessibilityId,
+    OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const {
+  auto* accessibilityManager = GetAccessibilityManager();
+  if (accessibilityManager == nullptr) {
+    LOG(ERROR)
+        << "GetAccessibilityNodeInfoById can not get accessibilityManager";
+    return false;
+  }
+  content::BrowserAccessibilityOHOS* node = nullptr;
+  if (accessibilityId < 0) {
+    node = static_cast<content::BrowserAccessibilityOHOS*>(
+        accessibilityManager->GetBrowserAccessibilityRoot());
+  } else {
+    node = content::BrowserAccessibilityOHOS::GetFromAccessibilityId(
+        accessibilityId);
+  }
+  if (node == nullptr) {
+    LOG(ERROR) << "GetAccessibilityNodeInfoById can not get node";
+    return false;
+  }
+  return PopulateAccessibilityNodeInfo(node, nodeInfo);
+}
+
+bool NWebDelegate::GetAccessibilityNodeInfoByFocusMove(
+    int32_t accessibilityId,
+    int32_t direction,
+    OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const {
+  auto* accessibilityManager = GetAccessibilityManager();
+  if (accessibilityManager == nullptr) {
+    LOG(ERROR) << "GetAccessibilityNodeInfoByFocusMove can not get "
+                  "accessibilityManager";
+    return false;
+  }
+  content::BrowserAccessibilityOHOS* node = nullptr;
+  if (accessibilityId < 0) {
+    node = static_cast<content::BrowserAccessibilityOHOS*>(
+        accessibilityManager->GetBrowserAccessibilityRoot());
+  } else {
+    node = content::BrowserAccessibilityOHOS::GetFromAccessibilityId(
+        accessibilityId);
+  }
+  auto resultNode = node->GetAccessibilityNodeByFocusMove(direction);
+  if (resultNode == nullptr) {
+    LOG(ERROR) << "GetAccessibilityNodeInfoByFocusMove can not get node";
+    return false;
+  }
+  return PopulateAccessibilityNodeInfo(resultNode, nodeInfo);
+}
+
+bool NWebDelegate::PopulateAccessibilityNodeInfo(
+    const content::BrowserAccessibilityOHOS* node,
+    NWebAccessibilityNodeInfo& nodeInfo) const {
+  auto* accessibilityManager = GetAccessibilityManager();
+  if (accessibilityManager == nullptr) {
+    LOG(ERROR)
+        << "GetFocusedAccessibilityNodeInfo can not get accessibilityManager";
+    return false;
+  }
+  nodeInfo.accessibilityId = node->GetAccessibilityId();
+  bool isRoot = !node->PlatformGetParent();
+  if (!isRoot) {
+    auto* parentNode = static_cast<content::BrowserAccessibilityOHOS*>(
+        node->PlatformGetParent());
+    nodeInfo.parentId = parentNode->GetAccessibilityId();
+
+    if (!parentNode->PlatformGetParent()) {
+      nodeInfo.parentId = -1;
+    }
+  }
+
+  nodeInfo.childIds.clear();
+
+  for (const auto& childNode : node->PlatformChildren()) {
+    const content::BrowserAccessibilityOHOS& childNodeOHOS =
+        static_cast<const content::BrowserAccessibilityOHOS&>(childNode);
+    nodeInfo.childIds.push_back(childNodeOHOS.GetAccessibilityId());
+  }
+
+  nodeInfo.componentType = node->GetRoleString();
+  nodeInfo.focused = node->IsFocused();
+  nodeInfo.visible = !node->IsInvisibleOrIgnored();
+  nodeInfo.enabled = node->IsEnabled();
+  nodeInfo.accessibilityFocus =
+      (accessibilityManager->GetAccessibilityFocusId() ==
+               node->GetAccessibilityId()
+           ? true
+           : false);
+
+  nodeInfo.focusable = node->IsFocusable();
+  nodeInfo.descriptionInfo = "";
+  nodeInfo.content = "";
+  if (node->IsLink()) {
+    nodeInfo.descriptionInfo = node->GetTargetUrl();
+  } else if (node->IsPasswordField()) {
+    nodeInfo.content = "*";
+  } else {
+    nodeInfo.content = base::UTF16ToUTF8(node->node()->GetTextContentUTF16());
+  }
+  nodeInfo.hint = node->GetHint();
+  nodeInfo.hinting = node->IsHint();
+  nodeInfo.checked = node->IsChecked();
+  nodeInfo.selected = node->IsSelected();
+  nodeInfo.password = node->IsPasswordField();
+  nodeInfo.checkable = node->IsCheckable();
+  nodeInfo.scrollable = node->IsScrollable();
+  nodeInfo.editable = node->IsTextField();
+  nodeInfo.pluralLineSupported = node->IsMultiLine();
+  nodeInfo.popupSupported = node->CanOpenPopup();
+  nodeInfo.error = node->GetContentInvalidErrorMessage();
+  nodeInfo.contentInvalid = node->IsContentInvalid();
+  nodeInfo.deletable = false;
+  nodeInfo.inputType = node->OHOSInputType();
+  nodeInfo.liveRegion = node->OHOSLiveRegionType();
+  nodeInfo.selectionStart = node->GetSelectionStart();
+  nodeInfo.selectionEnd = node->GetSelectionEnd();
+  nodeInfo.itemCounts = node->GetItemCount();
+  nodeInfo.clickable = node->IsClickable();
+
+  AddAccessibilityNodeInfoRect(nodeInfo, node);
+  AddAccessibilityNodeInfoCollection(nodeInfo, node);
+  AddAccessibilityNodeInfoActions(nodeInfo);
+
+  return true;
+}
+
+void NWebDelegate::AddAccessibilityNodeInfoRect(
+    NWebAccessibilityNodeInfo& nodeInfo,
+    const content::BrowserAccessibilityOHOS* node) const {
+  auto* accessibilityManager = GetAccessibilityManager();
+  if (accessibilityManager == nullptr) {
+    return;
+  }
+  ui::AXOffscreenResult offscreen_result = ui::AXOffscreenResult::kOnscreen;
+  gfx::Rect absolute_rect = gfx::ScaleToEnclosingRect(
+      node->GetUnclippedRootFrameBoundsRect(&offscreen_result),
+      default_virtual_pixel_ratio_, default_virtual_pixel_ratio_);
+
+  nodeInfo.rectX = absolute_rect.x();
+  nodeInfo.rectY = absolute_rect.y();
+  nodeInfo.rectWidth = absolute_rect.width();
+  nodeInfo.rectHeight = absolute_rect.height();
+}
+
+void NWebDelegate::AddAccessibilityNodeInfoCollection(
+    NWebAccessibilityNodeInfo& nodeInfo,
+    const content::BrowserAccessibilityOHOS* node) const {
+  if (node->IsCollection()) {
+    nodeInfo.gridRows = node->RowCount();
+    nodeInfo.gridColumns = node->ColumnCount();
+    nodeInfo.gridSelectedMode = node->IsHierarchical();
+  }
+  if (node->IsCollectionItem()) {
+    nodeInfo.gridItemRow = node->RowIndex();
+    nodeInfo.gridItemRowSpan = node->RowSpan();
+    nodeInfo.gridItemColumn = node->ColumnIndex();
+    nodeInfo.gridItemColumnSpan = node->ColumnSpan();
+    nodeInfo.heading = node->IsHeading();
+  }
+}
+
+void NWebDelegate::AddAccessibilityNodeInfoActions(
+    NWebAccessibilityNodeInfo& nodeInfo) const {
+  if (nodeInfo.clickable) {
+    nodeInfo.actions.emplace_back(
+        static_cast<uint32_t>(AceAction::ACTION_CLICK));
+  }
+  if (nodeInfo.focusable) {
+    if (nodeInfo.focused) {
+      nodeInfo.actions.emplace_back(
+          static_cast<uint32_t>(AceAction::ACTION_CLEAR_FOCUS));
+    } else {
+      nodeInfo.actions.emplace_back(
+          static_cast<uint32_t>(AceAction::ACTION_FOCUS));
+    }
+  }
+
+  if (nodeInfo.accessibilityFocus) {
+    nodeInfo.actions.emplace_back(
+        static_cast<uint32_t>(AceAction::ACTION_CLEAR_ACCESSIBILITY_FOCUS));
+  } else {
+    nodeInfo.actions.emplace_back(
+        static_cast<uint32_t>(AceAction::ACTION_ACCESSIBILITY_FOCUS));
+  }
+}
 }  // namespace OHOS::NWeb

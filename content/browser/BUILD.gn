@@ -3232,6 +3232,10 @@ source_set("browser") {
     sources -= [ "media/session/audio_focus_delegate_default.cc" ]
     import("//build/config/ohos/config.gni")
     sources += [
+      "accessibility/browser_accessibility_manager_ohos.cc",
+      "accessibility/browser_accessibility_manager_ohos.h",
+      "accessibility/browser_accessibility_ohos.cc",
+      "accessibility/browser_accessibility_ohos.h",
       "media/ohos/ohos_media_player_renderer.cc",
       "media/ohos/ohos_media_player_renderer.h",
       "media/session/audio_focus_delegate_ohos.cc",

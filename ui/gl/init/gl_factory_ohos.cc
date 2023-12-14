@@ -86,7 +86,6 @@ scoped_refptr<GLSurface> CreateViewGLSurface(GLDisplay* display,
 scoped_refptr<Presenter> CreateSurfacelessViewGLSurface(
     GLDisplay* display,
     gfx::AcceleratedWidget window) {
-  NOTREACHED() << "OHOS CreateSurfacelessViewGLSurface";
   return nullptr;
 }
  

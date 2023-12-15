@@ -58,6 +58,8 @@
 #include "services/network/network_service.h"
 #endif  // defined(OHOS_API_INIT_WEB_ENGINE)
 
+#include "components/security_state/core/security_state.h"
+
 #if defined(OHOS_HTTP_DNS)
 #include "cef/include/cef_app.h"
 #include "cef/libcef/browser/net_service/net_helpers.h"

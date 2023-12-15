@@ -29,6 +29,7 @@
 #include "cef/include/cef_base.h"
 #include "cef/include/cef_request_context.h"
 #include "content/public/common/content_switches.h"
+#include "components/security_state/core/security_state.h"
 #include "nweb_find_delegate.h"
 #include "nweb_preference_delegate.h"
 #include "url/gurl.h"
@@ -2282,11 +2283,9 @@ double NWebDelegate::GetBrowserZoomLevel() {
 int NWebDelegate::GetSecurityLevel() {
   if (GetBrowser() == nullptr) {
     LOG(ERROR) << "NWebDelegate::GetSecurityLevel failed.";
-    return static_cast<int>(security_state::SecurityLevel::DANGEROUS); 
+    return static_cast<int>(security_state::SecurityLevel::DANGEROUS);
   }
 
-  if (GetBrowser().get()) {
-    return GetBrowser()->GetSecurityLevel();
-  }
+  return GetBrowser()->GetSecurityLevel();
 }
 }  // namespace OHOS::NWeb

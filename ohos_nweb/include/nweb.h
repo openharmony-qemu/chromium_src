@@ -924,6 +924,12 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
     virtual bool Restore() = 0;
 
     /**
+     * Get the security level of current page.
+     * @return security level for current page.
+     */
+    virtual int GetSecurityLevel() = 0;
+
+    /**
      * CallH5Function
      *
      * @param routing_id       int32_t: the h5 frmae routing id
@@ -936,12 +942,6 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
         int32_t h5_object_id,
         const std::string h5_method_name,
         const std::vector<std::shared_ptr<NWebValue>>& args) = 0;
-
-    /**
-     * Get the security level of current page.
-     * @return security level for current page.
-     */
-    virtual int GetSecurityLevel() = 0;
 };
 }  // namespace OHOS::NWeb
 

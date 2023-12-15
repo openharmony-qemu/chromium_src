@@ -205,8 +205,7 @@ void NWebRenderHandler::OnRootLayerChanged(CefRefPtr<CefBrowser> browser,
   content_height_ = height;
   content_width_ = width;
   if (auto handler = handler_.lock()) {
-    handler->OnRootLayerChanged(width * screen_info_.display_ratio,
-                                height * screen_info_.display_ratio);
+    handler->OnRootLayerChanged(width, height);
   }
 }
 
@@ -512,15 +511,12 @@ void NWebRenderHandler::OnOverScrollFlingVelocity(CefRefPtr<CefBrowser> browser,
                                                   const float x,
                                                   const float y,
                                                   bool is_fling) {
-  double display_ratio = 1.0;
-  if (screen_info_.display_ratio > 0) {
-    display_ratio = screen_info_.display_ratio;
-  }
   if (auto handler = handler_.lock()) {
     // Value multiplied by virtual pixel ratio.
-    handler->OnOverScrollFlingVelocity(x * screen_info_.display_ratio,
+    is_fling ? handler->OnOverScrollFlingVelocity(x * screen_info_.display_ratio,
                                        y * screen_info_.display_ratio,
-                                       is_fling);
+                                       is_fling)
+             : handler->OnOverScrollFlingVelocity(x, y, is_fling);
   }
 }
 
@@ -542,16 +538,9 @@ bool NWebRenderHandler::FilterScrollEvent(CefRefPtr<CefBrowser> browser,
                                           const float y,
                                           const float fling_x,
                                           const float fling_y) {
-  double display_ratio = 1.0;
-  if (screen_info_.display_ratio > 0) {
-    display_ratio = screen_info_.display_ratio;
-  }
   if (auto handler = handler_.lock()) {
     // Value multiplied by virtual pixel ratio.
-    return handler->FilterScrollEvent(x * screen_info_.display_ratio,
-                                      y * screen_info_.display_ratio,
-                                      fling_x * screen_info_.display_ratio,
-                                      fling_y * screen_info_.display_ratio);
+    return handler->FilterScrollEvent(x, y, fling_x, fling_y);
   }
   return false;
 }

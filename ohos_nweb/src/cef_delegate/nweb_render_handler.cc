@@ -513,7 +513,10 @@ void NWebRenderHandler::OnOverScrollFlingVelocity(CefRefPtr<CefBrowser> browser,
                                                   bool is_fling) {
   if (auto handler = handler_.lock()) {
     // Value multiplied by virtual pixel ratio.
-    handler->OnOverScrollFlingVelocity(x, y, is_fling);
+    is_fling ? handler->OnOverScrollFlingVelocity(x * screen_info_.display_ratio,
+                                       y * screen_info_.display_ratio,
+                                       is_fling)
+             : handler->OnOverScrollFlingVelocity(x, y, is_fling);
   }
 }
 

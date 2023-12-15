@@ -782,7 +782,7 @@ class GLES2DecoderImpl : public GLES2Decoder,
 
   ErrorState* GetErrorState() override;
   const ContextState* GetContextState() override { return &state_; }
-#if !BUILDFLAG(IS_ANDROID)
+#if !(BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS))
   std::unique_ptr<AbstractTexture> CreateAbstractTexture(GLenum target,
                                                          GLenum internal_format,
                                                          GLsizei width,
@@ -5352,7 +5352,7 @@ void GLES2DecoderImpl::Destroy(bool have_context) {
 
   DCHECK(!have_context || context_->IsCurrent(nullptr));
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !(BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS))
   // Destroy any textures that are pending destruction.
   if (!have_context) {
     for (auto iter : texture_refs_pending_destruction_)
@@ -19585,7 +19585,7 @@ void GLES2DecoderImpl::DoWindowRectanglesEXT(GLenum mode,
   state_.UpdateWindowRectangles();
 }
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !(BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS))
 std::unique_ptr<AbstractTexture> GLES2DecoderImpl::CreateAbstractTexture(
     GLenum target,
     GLenum internal_format,

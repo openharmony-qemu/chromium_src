@@ -1385,7 +1385,7 @@ void GLES2DecoderPassthroughImpl::Destroy(bool have_context) {
     }
   }
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !(BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS))
   if (resources_) {  // Initialize may not have been called yet.
     for (PassthroughAbstractTextureImpl* iter : abstract_textures_) {
       resources_->textures_pending_destruction.insert(
@@ -2051,7 +2051,7 @@ gpu::gles2::ErrorState* GLES2DecoderPassthroughImpl::GetErrorState() {
 void GLES2DecoderPassthroughImpl::WaitForReadPixels(
     base::OnceClosure callback) {}
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !(BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS))
 std::unique_ptr<AbstractTexture>
 GLES2DecoderPassthroughImpl::CreateAbstractTexture(GLenum target,
                                                    GLenum internal_format,

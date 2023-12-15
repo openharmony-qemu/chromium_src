@@ -357,7 +357,7 @@ class GPU_GLES2_EXPORT GLES2DecoderPassthroughImpl
 
   ErrorState* GetErrorState() override;
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !(BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS))
   std::unique_ptr<AbstractTexture> CreateAbstractTexture(
       unsigned target,
       unsigned internal_format,

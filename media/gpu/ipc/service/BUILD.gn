@@ -23,7 +23,7 @@ target(link_target_type, "service") {
   ]
 
   # The legacy VDA API is not supported on Android.
-  if (!is_android) {
+  if (!(is_android || is_ohos)) {
     sources += [
       "gpu_video_decode_accelerator.cc",
       "gpu_video_decode_accelerator.h",

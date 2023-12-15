@@ -48,7 +48,7 @@ class DecoderProviderImpl : public mojom::GpuAcceleratedVideoDecoderProvider,
           client,
       CreateAcceleratedVideoDecoderCallback callback) override {
     TRACE_EVENT0("gpu", "DecoderProviderImpl::CreateAcceleratedVideoDecoder");
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
     NOTIMPLEMENTED()
         << "The legacy VideoDecodeAccelerator API is not supported on Android";
     std::move(callback).Run(false);

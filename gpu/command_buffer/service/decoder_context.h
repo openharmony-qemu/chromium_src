@@ -170,7 +170,7 @@ class GPU_GLES2_EXPORT DecoderContext : public AsyncAPIInterface,
   //
   virtual gles2::ContextGroup* GetContextGroup() = 0;
   virtual gles2::ErrorState* GetErrorState() = 0;
-#if !BUILDFLAG(IS_ANDROID)
+#if !(BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS))
   virtual std::unique_ptr<gpu::gles2::AbstractTexture> CreateAbstractTexture(
       unsigned /* GLenum */ target,
       unsigned /* GLenum */ internal_format,

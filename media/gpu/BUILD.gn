@@ -410,7 +410,7 @@ source_set("command_buffer_helper") {
     "command_buffer_helper.h",
   ]
 
-  if (!is_android) {
+  if (!(is_android || is_ohos)) {
     # This code is used only by the legacy VDA implementation, which is not
     # supported on Android.
     sources += [

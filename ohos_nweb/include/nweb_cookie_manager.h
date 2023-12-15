@@ -79,9 +79,13 @@ public:
      * @brief Gets all the cookies for the given URL. This is sync method
      *
      * @param url the URL for which the cookies are requested.
+     * @param value the cookie as a string, using the format of the 'Set-Cookie' HTTP response header.
+     * @param incognito_mode true if web is in the incognito mode, false otherwise.
      * @return the cookie value for given URL.
      */
-    virtual std::string ReturnCookie(const std::string &url, bool &is_valid) = 0;
+    virtual std::string ReturnCookie(const std::string &url,
+                                     bool &is_valid,
+                                     bool incognito_mode) = 0;
     /**
      * @brief Sets a single cookie (key-value pair) for the given URL.
      *
@@ -97,10 +101,12 @@ public:
      *
      * @param url the URL for which the cookie is to be set.
      * @param value the cookie as a string, using the format of the 'Set-Cookie' HTTP response header.
+     * @param incognito_mode true if web is in the incognito mode, false otherwise.
      * @return 0 if set cookie success else return error id.
      */
     virtual int SetCookie(const std::string &url,
-                           const std::string &value) = 0;
+                          const std::string &value,
+                          bool incognito_mode) = 0;
     /**
      * @brief Gets whether there are stored cookies.
      *
@@ -110,9 +116,10 @@ public:
     /**
     * @brief Gets whether there are stored cookies.
     *
+    * @param incognito_mode true if web is in the incognito mode, false otherwise.
     * @return true if there are stored cookies else false.
     */
-    virtual bool ExistCookies() = 0;
+    virtual bool ExistCookies(bool incognito_mode) = 0;
     /**
      * @brief Ensures all cookies currently accessible through the ReturnCookie API are written to
      * persistent storage.
@@ -137,9 +144,11 @@ public:
      * @brief Removes all cookies.
      *
      * @param callback a callback to be executed when all cookies has removed.
+     * @param incognito_mode true if web is in the incognito mode, false otherwise.
      */
-    virtual void DeleteCookieEntirely(std::shared_ptr<NWebValueCallback<bool>> callback) = 0;
-
+    virtual void DeleteCookieEntirely(
+        std::shared_ptr<NWebValueCallback<bool>> callback,
+        bool incognito_mode) = 0;
     /**
      * @brief Configs a single cookie (key-value pair) for the given URL.
      *

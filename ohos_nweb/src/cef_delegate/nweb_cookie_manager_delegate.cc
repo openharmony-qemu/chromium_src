@@ -253,6 +253,14 @@ NWebCookieManagerDelegate::GetGlobalCookieManager() {
   return cookie_manager_;
 }
 
+CefRefPtr<CefCookieManager>
+NWebCookieManagerDelegate::GetGlobalIncognitoCookieManager() {
+  if (!incognito_cookie_manager_) {
+    incognito_cookie_manager_ = CefCookieManager::GetGlobalIncognitoManager(nullptr);
+  }
+  return incognito_cookie_manager_;
+}
+
 bool NWebCookieManagerDelegate::IsAcceptCookieAllowed() {
   CefRefPtr<CefCookieManager> cookie_manager = GetGlobalCookieManager();
   if (cookie_manager == nullptr) {
@@ -329,8 +337,10 @@ void NWebCookieManagerDelegate::ReturnCookie(
 }
 
 std::string NWebCookieManagerDelegate::ReturnCookie(const std::string& url,
-                                                    bool& is_valid) {
-  CefRefPtr<CefCookieManager> cookie_manager = GetGlobalCookieManager();
+                                                    bool& is_valid,
+                                                    bool incognito_mode) {
+  CefRefPtr<CefCookieManager> cookie_manager = incognito_mode ?
+      GetGlobalIncognitoCookieManager() : GetGlobalCookieManager();
   if (cookie_manager == nullptr) {
     LOG(ERROR) << "GetGlobalCookieManager failed";
     return "";
@@ -434,8 +444,10 @@ void NWebCookieManagerDelegate::SetCookie(
 }
 
 int NWebCookieManagerDelegate::SetCookie(const std::string& url,
-                                         const std::string& value) {
-  CefRefPtr<CefCookieManager> cookie_manager = GetGlobalCookieManager();
+                                         const std::string& value,
+                                         bool incognito_mode) {
+  CefRefPtr<CefCookieManager> cookie_manager = incognito_mode ?
+      GetGlobalIncognitoCookieManager() : GetGlobalCookieManager();
   if (cookie_manager == nullptr) {
     LOG(ERROR) << "GetGlobalCookieManager failed";
     return NWEB_ERR;
@@ -478,8 +490,9 @@ void NWebCookieManagerDelegate::ExistCookies(
   }
 }
 
-bool NWebCookieManagerDelegate::ExistCookies() {
-  CefRefPtr<CefCookieManager> cookie_manager = GetGlobalCookieManager();
+bool NWebCookieManagerDelegate::ExistCookies(bool incognito_mode) {
+  CefRefPtr<CefCookieManager> cookie_manager = incognito_mode ?
+      GetGlobalIncognitoCookieManager() : GetGlobalCookieManager();
   if (cookie_manager == nullptr) {
     LOG(ERROR) << "GetGlobalCookieManager failed";
     return false;
@@ -549,8 +562,9 @@ void NWebCookieManagerDelegate::DeleteSessionCookies(
 }
 
 void NWebCookieManagerDelegate::DeleteCookieEntirely(
-    std::shared_ptr<NWebValueCallback<bool>> callback) {
-  CefRefPtr<CefCookieManager> cookie_manager = GetGlobalCookieManager();
+    std::shared_ptr<NWebValueCallback<bool>> callback, bool incognito_mode) {
+  CefRefPtr<CefCookieManager> cookie_manager = incognito_mode ?
+      GetGlobalIncognitoCookieManager() : GetGlobalCookieManager();
   if (cookie_manager == nullptr) {
     if (callback) {
       callback->OnReceiveValue(false);

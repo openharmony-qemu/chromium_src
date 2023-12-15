@@ -32,7 +32,7 @@ public:
 
     virtual ~NWebWebStorage() = default;
 
-    virtual void DeleteAllData() = 0;
+    virtual void DeleteAllData(bool incognito_mode) = 0;
     virtual int DeleteOrigin(const std::string& origin) = 0;
     virtual void GetOrigins(std::shared_ptr<NWebGetOriginsCallback> callback) = 0;
     virtual std::vector<NWebWebStorageOrigin> GetOrigins() = 0;

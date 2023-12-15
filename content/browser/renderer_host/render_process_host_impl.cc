@@ -1498,6 +1498,22 @@ int RenderProcessHost::GetCurrentRenderProcessCountForTesting() {
   return count;
 }
 
+#if defined(OHOS_INCOGNITO_MODE)
+// static
+size_t RenderProcessHost::GetOffTheRecordRenderProcessCount() {
+  RenderProcessHost::iterator it = RenderProcessHost::AllHostsIterator();
+  size_t count = 0;
+  while (!it.IsAtEnd()) {
+    RenderProcessHost* host = it.GetCurrentValue();
+    if (host->GetBrowserContext()->IsOffTheRecord()) {
+      count++;
+    }
+    it.Advance();
+  }
+  return count;
+}
+#endif
+
 // static
 RenderProcessHost* RenderProcessHostImpl::CreateRenderProcessHost(
     BrowserContext* browser_context,
@@ -4541,6 +4557,29 @@ bool RenderProcessHost::ShouldTryToUseExistingProcessHost(
   //       renderers. This is OK in moderation, since the
   //       GetMaxRendererProcessCount() is conservative.
   size_t process_count = RenderProcessHostImpl::GetProcessCountForLimit();
+
+#if defined(OHOS_INCOGNITO_MODE)
+  size_t max_render_count = GetMaxRendererProcessCount();
+  if (process_count >= max_render_count) {
+    return true;
+  }
+  size_t process_count_for_incognito_mode =
+      RenderProcessHost::GetOffTheRecordRenderProcessCount();
+  size_t max_render_count_for_incognito_mode =
+      GetContentClient()->browser()->GetProcessCountForIncognitoMode();
+  CHECK_LE(max_render_count_for_incognito_mode, max_render_count);
+  if (browser_context->IsOffTheRecord()) {
+    if (process_count_for_incognito_mode >=
+            max_render_count_for_incognito_mode) {
+        return true;
+    }
+  } else {
+    if (process_count - process_count_for_incognito_mode >=
+            max_render_count - max_render_count_for_incognito_mode) {
+        return false;
+    }
+  }
+#else
   if (process_count >= GetMaxRendererProcessCount()) {
     MAYBEVLOG(4) << __func__
                  << ": process_count >= GetMaxRendererProcessCount() ("
@@ -4548,6 +4587,7 @@ bool RenderProcessHost::ShouldTryToUseExistingProcessHost(
                  << ") - will try to reuse an existing process";
     return true;
   }
+#endif
 
   return GetContentClient()->browser()->ShouldTryToUseExistingProcessHost(
       browser_context, url);

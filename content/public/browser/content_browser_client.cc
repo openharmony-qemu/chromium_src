@@ -77,6 +77,10 @@
 #include "content/public/browser/tts_environment_android.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+const int kMaxReserveRenderCount = 20;
+#endif
+
 namespace content {
 
 ClipboardPasteData::ClipboardPasteData(std::string text,
@@ -261,6 +265,12 @@ bool ContentBrowserClient::IsSuitableHost(RenderProcessHost* process_host,
 bool ContentBrowserClient::MayReuseHost(RenderProcessHost* process_host) {
   return true;
 }
+
+#if BUILDFLAG(IS_OHOS)
+size_t ContentBrowserClient::GetProcessCountForIncognitoMode() {
+  return kMaxReserveRenderCount;
+}
+#endif
 
 size_t ContentBrowserClient::GetProcessCountToIgnoreForLimit() {
   return 0;

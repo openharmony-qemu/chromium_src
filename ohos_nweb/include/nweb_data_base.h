@@ -74,7 +74,9 @@ public:
      * @param type specifies permission type.
      * @return true if instances saved origin specified permissions.
      */
-    virtual bool ExistPermissionByOrigin(const std::string& origin, int type) = 0;
+    virtual bool ExistPermissionByOrigin(const std::string& origin,
+                                         int type,
+                                         bool incognito) = 0;
 
     /**
      * @brief get specifies permission type result by origin.
@@ -84,7 +86,10 @@ public:
      * @param result saved result.
      * @return return Whether there is a saved result.
      */
-    virtual bool GetPermissionResultByOrigin(const std::string& origin, int type, bool& result) = 0;
+    virtual bool GetPermissionResultByOrigin(const std::string& origin,
+                                             int type,
+                                             bool& result,
+                                             bool incognito) = 0;
 
     /**
      * @brief set specifies permission type result by origin.
@@ -94,7 +99,10 @@ public:
      * @param result set result.
      * @return 0 if successfully set specifies permission type result by origin other return error id.
      */
-    virtual int SetPermissionByOrigin(const std::string& origin, int type, bool result) = 0;
+    virtual int SetPermissionByOrigin(const std::string& origin,
+                                      int type,
+                                      bool result,
+                                      bool incognito) = 0;
 
     /**
      * @brief delete specifies permission type by origin.
@@ -103,14 +111,16 @@ public:
      * @param type specifies permission type.
      * @return 0 if successfully delete specifies permission type result by origin other return error id.
      */
-    virtual int ClearPermissionByOrigin(const std::string& origin, int type) = 0;
+    virtual int ClearPermissionByOrigin(const std::string& origin,
+                                        int type,
+                                        bool incognito) = 0;
 
     /**
      * @brief delete all specifies permission type.
      *
      * @param type specifies permission type.
      */
-    virtual void ClearAllPermission(int type) = 0;
+    virtual void ClearAllPermission(int type, bool incognito) = 0;
 
     /**
      * @brief obtains all origins of a specified permission type.
@@ -118,7 +128,8 @@ public:
      * @param type specifies permission type.
      * @return return all origin.
      */
-    virtual std::vector<std::string> GetOriginsByPermission(int type) = 0;
+    virtual std::vector<std::string> GetOriginsByPermission(int type,
+        bool incognito) = 0;
 };
 } // namespace OHOS::NWeb
 

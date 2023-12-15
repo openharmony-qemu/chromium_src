@@ -94,6 +94,8 @@ struct OHOS_NWEB_EXPORT NWebCreateInfo {
     /* rs producer surface, for acquiring elgsurface from ohos */
     void *producer_surface = nullptr;
     void* enhance_surface_info = nullptr;
+
+    bool incognito_mode = false;
 };
 
 enum class OHOS_NWEB_EXPORT DragAction {
@@ -942,6 +944,13 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
         int32_t h5_object_id,
         const std::string h5_method_name,
         const std::vector<std::shared_ptr<NWebValue>>& args) = 0;
+
+    /** 
+     * Get web whether has been set incognito mode.
+     *
+     * @return true if web is in incognito mode; otherwise fase.
+     */
+    virtual bool IsIncognitoMode() const = 0;
 
     /**
      * Register native function.

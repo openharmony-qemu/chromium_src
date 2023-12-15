@@ -32,9 +32,9 @@ NWebWebStorageImpl::NWebWebStorageImpl() {
 #endif
 }
 
-void NWebWebStorageImpl::DeleteAllData() {
+void NWebWebStorageImpl::DeleteAllData(bool incognito_mode) {
   if (delegate_ != nullptr) {
-    delegate_->DeleteAllData();
+    delegate_->DeleteAllData(incognito_mode);
   }
 }
 

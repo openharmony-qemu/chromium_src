@@ -44,19 +44,28 @@ class NWebDataBaseDelegate {
                               char* password,
                               uint32_t passwordSize);
 
-  bool ExistPermissionByOrigin(const std::string& origin, int type);
+  bool ExistPermissionByOrigin(const std::string& origin,
+                               int type,
+                               bool incognito);
 
   bool GetPermissionResultByOrigin(const std::string& origin,
                                    int type,
-                                   bool& result);
+                                   bool& result,
+                                   bool incognito);
 
-  int SetPermissionByOrigin(const std::string& origin, int type, bool result);
+  int SetPermissionByOrigin(const std::string& origin,
+                            int type,
+                            bool result,
+                            bool incognito);
 
-  int ClearPermissionByOrigin(const std::string& origin, int type);
+  int ClearPermissionByOrigin(const std::string& origin,
+                              int type,
+                              bool incognito);
 
-  void ClearAllPermission(int type);
+  void ClearAllPermission(int type, bool incognito);
 
-  std::vector<std::string> GetOriginsByPermission(int type);
+  std::vector<std::string> GetOriginsByPermission(int type,
+                                                  bool incognito);
 
   bool ExistFormData();
 
@@ -64,8 +73,13 @@ class NWebDataBaseDelegate {
 
  private:
   CefRefPtr<CefDataBase> GetGlobalCefDataBase();
-
   CefRefPtr<CefDataBase> data_base_ = nullptr;
+
+//#if BUILDFLAG(IS_OHOS)
+  CefRefPtr<CefDataBase> GetGlobalIncognitoCefDataBase();
+  CefRefPtr<CefDataBase> incognito_data_base_ = nullptr;
+//#endif
+
 };
 }  // namespace OHOS::NWeb
 #endif

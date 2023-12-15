@@ -802,6 +802,10 @@ class CONTENT_EXPORT RenderProcessHost : public IPC::Sender,
   // Counts current RenderProcessHost(s), ignoring the spare process.
   static int GetCurrentRenderProcessCountForTesting();
 
+#if defined(OHOS_INCOGNITO_MODE)
+  static size_t GetOffTheRecordRenderProcessCount();
+#endif
+
   // Allows tests to override host interface binding behavior. Any interface
   // binding request which would normally pass through the RPH's internal
   // IOThreadHostImpl::BindHostReceiver() will pass through |callback| first if

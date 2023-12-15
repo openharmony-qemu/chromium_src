@@ -44,14 +44,17 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
  public:
   NWebDelegate(int argc, const char* argv[]);
   ~NWebDelegate();
-#if defined(OHOS_EX_DOWNLOAD)
+
   bool Init(bool is_enhance_surface,
             void* window,
-            bool popup,
-            uint32_t nweb_id);
-#else
-  bool Init(bool is_enhance_surface, void* window, bool popup);
-#endif  //  OHOS_EX_DOWNLOAD
+            bool popup
+#if defined(OHOS_EX_DOWNLOAD)
+            , uint32_t nweb_id
+#endif
+#if BUILDFLAG(IS_OHOS)
+            , bool incognito_mode
+#endif
+            );
 
   bool IsReady() override;
   void OnDestroy(bool is_close_all) override;
@@ -363,24 +366,29 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
  private:
   void RunMessageLoop();
 
+
+  void InitializeCef(std::string url,
+                     bool is_enhance_surface,
+                     void* window,
+                     bool popup
 #if defined(OHOS_EX_DOWNLOAD)
-  void InitializeCef(std::string url,
-                     bool is_enhance_surface,
-                     void* window,
-                     bool popup,
-                     uint32_t nweb_id);
-#else
-  void InitializeCef(std::string url,
-                     bool is_enhance_surface,
-                     void* window,
-                     bool popup);
-#endif  //  OHOS_EX_DOWNLOAD
+                     , uint32_t nweb_id
+#endif
+#if defined(OHOS_INCOGNITO_MODE)
+                     , bool incognito_mode
+#endif
+                     );
+
   const CefRefPtr<CefBrowser> GetBrowser() const;
   void RequestVisitedHistory();
   bool HasBackgroundColorWithInit(int32_t& backgroundColor);
   void InitRichtextIdentifier();
 #if defined(OHOS_API_INIT_WEB_ENGINE)
-  void OnContextInitializeComplete(const std::string& url, void* windows);
+  void OnContextInitializeComplete(const std::string& url, void* windows
+#if defined(OHOS_INCOGNITO_MODE)
+      , bool incognito_mode
+#endif
+  );
 #endif  // defined(OHOS_API_INIT_WEB_ENGINE)
 #if defined(OHOS_MSGPORT)
   void ConvertNWebMsgToCefValue(std::shared_ptr<NWebMessage> data,

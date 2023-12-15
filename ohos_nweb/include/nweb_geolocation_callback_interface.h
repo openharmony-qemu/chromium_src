@@ -36,7 +36,8 @@ public:
     */
     virtual void GeolocationCallbackInvoke(const std::string& origin,
                                            bool allow,
-                                           bool retain) = 0;
+                                           bool retain,
+                                           bool incognito) = 0;
 };
 }  // namespace OHOS::NWeb
 

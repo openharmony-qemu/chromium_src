@@ -101,6 +101,17 @@ class NWebHandlerDelegate : public CefClient,
   void RegisterNWebJavaScriptCallBack(
       std::shared_ptr<NWebJavaScriptResultCallBack> callback);
 
+  void RegisterNativeJavaScriptCallBack(
+    const char* objName,
+    const char** methodName,
+    std::vector<std::function<char*(const char** argv, int32_t argc)>> callback,
+    int32_t size);
+
+  int ProcessNativeProxyResult(CefRefPtr<CefListValue> args,
+                             const CefString& method,
+                             const CefString& object_name,
+                             CefRefPtr<CefListValue> result);
+
 #if defined(OHOS_NWEB_EX)
   void UnRegisterWebAppClientExtensionListener();
 #endif  // defined(OHOS_NWEB_EX)
@@ -620,6 +631,7 @@ class NWebHandlerDelegate : public CefClient,
 #endif
 
   // js property name and object id
+  std::unordered_map<std::string, std::unordered_map<std::string, std::function<char*(const char** argv, int32_t argc)>>> objMap_;
   using MethodPair = std::pair<std::string, std::unordered_set<std::string>>;
   using ObjectMethodMap = std::map<int32_t, MethodPair>;
   ObjectMethodMap javascript_method_map_;

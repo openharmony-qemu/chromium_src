@@ -936,6 +936,27 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
         int32_t h5_object_id,
         const std::string h5_method_name,
         const std::vector<std::shared_ptr<NWebValue>>& args) = 0;
+
+    /**
+     * Register native function.
+     */
+    virtual void RegisterNativeArkJSFunction(const char* objName, const char** methodName,
+        std::vector<std::function<char*(const char** argv, int32_t argc)>> callback, int32_t size) = 0;
+
+    /**
+     * Unregister native function.
+     */
+    virtual void UnRegisterNativeArkJSFunction(const char* objName) = 0;
+
+    /**
+     * Register native valide callback function.
+     */
+    virtual void RegisterNativeValideCallback(const char* webName, std::function<void(const char*)> callback) = 0;
+
+    /**
+     * Register native destroy callback function.
+     */
+    virtual void RegisterNativeDestroyCallback(const char* webName, std::function<void(const char*)> callback) = 0;
 };
 }  // namespace OHOS::NWeb
 

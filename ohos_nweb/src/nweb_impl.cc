@@ -359,6 +359,15 @@ bool NWebImpl::Init(const NWebCreateInfo& create_info) {
 
 void NWebImpl::OnDestroy() {
   WVLOG_I("NWebImpl::OnDestroy, nweb_id = %{public}u", nweb_id_);
+
+  if (destroyCallback_ != nullptr) {
+    WVLOG_I("NWebImpl::OnDestroy destroyCallback_ webName_ is %{public}s", webName_.c_str());
+    (destroyCallback_)(webName_.c_str());
+    destroyCallback_ = nullptr;
+  } else {
+    WVLOG_E("NWebImpl::OnDestroy destroyCallback_ is null");
+  }
+
   if (g_nweb_count == 0) {
     return;
   }
@@ -1034,6 +1043,38 @@ int NWebImpl::LoadWithData(const std::string& data,
     return NWEB_ERR;
   }
   return nweb_delegate_->LoadWithData(data, mimeType, encoding);
+}
+
+void NWebImpl::RegisterNativeArkJSFunction(
+    const char* objName,
+    const char** methodName,
+    std::vector<std::function<char*(const char** argv, int32_t argc)>> callback,
+    int32_t size) {
+  if (nweb_delegate_ != nullptr) {
+    nweb_delegate_->RegisterNativeArkJSFunction(objName, methodName, callback,
+                                                size);
+  } else {
+    LOG(ERROR) << "nweb_delegate_ is nullptr";
+  }
+}
+
+void NWebImpl::UnRegisterNativeArkJSFunction(const char* objName) {
+  if (nweb_delegate_ != nullptr) {
+    nweb_delegate_->UnRegisterNativeArkJSFunction(objName);
+  } else {
+    LOG(ERROR) << "nweb_delegate_ is nullptr";
+  }
+}
+
+void NWebImpl::RegisterNativeValideCallback(const char* webName, std::function<void(const char*)> callback) {
+  base::AutoLock lock_scope(state_lock_);
+  webName_ = webName;
+  validCallback_ = callback;
+}
+void NWebImpl::RegisterNativeDestroyCallback(const char* webName, std::function<void(const char*)> callback) {
+  base::AutoLock lock_scope(state_lock_);
+  webName_ = webName;
+  destroyCallback_ = callback;
 }
 
 void NWebImpl::RegisterArkJSfunction(

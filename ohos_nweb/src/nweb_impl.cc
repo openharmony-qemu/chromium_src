@@ -1904,3 +1904,11 @@ extern "C" OHOS_NWEB_EXPORT void SetConnectionTimeout(const int& timeout) {
   }
 #endif
 }
+
+int NWebImpl::GetSecurityLevel() {
+  if (nweb_delegate_ == nullptr) {
+    return static_cast<int>(security_state::SecurityLevel::DANGEROUS);
+  }
+
+  return nweb_delegate_->GetSecurityLevel();
+}

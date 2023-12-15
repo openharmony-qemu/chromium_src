@@ -118,6 +118,7 @@ class NWebImpl : public NWeb {
       int32_t h5_object_id,
       const std::string h5_method_name,
       const std::vector<std::shared_ptr<NWebValue>>& args) override;
+  int GetSecurityLevel() override;
   void SetNWebJavaScriptResultCallBack(
       std::shared_ptr<NWebJavaScriptResultCallBack> callback) override;
   void OnFocus(const FocusReason& focusReason =

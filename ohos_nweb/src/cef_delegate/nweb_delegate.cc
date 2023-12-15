@@ -2279,4 +2279,14 @@ double NWebDelegate::GetBrowserZoomLevel() {
 }
 #endif
 
+int NWebDelegate::GetSecurityLevel() {
+  if (GetBrowser() == nullptr) {
+    LOG(ERROR) << "NWebDelegate::GetSecurityLevel failed.";
+    return static_cast<int>(security_state::SecurityLevel::DANGEROUS); 
+  }
+
+  if (GetBrowser().get()) {
+    return GetBrowser()->GetSecurityLevel();
+  }
+}
 }  // namespace OHOS::NWeb

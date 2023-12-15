@@ -29,7 +29,6 @@
 #include "cef/include/cef_base.h"
 #include "cef/include/cef_request_context.h"
 #include "content/public/common/content_switches.h"
-#include "components/security_state/core/security_state.h"
 #include "nweb_find_delegate.h"
 #include "nweb_preference_delegate.h"
 #include "url/gurl.h"
@@ -56,6 +55,10 @@
 
 #ifdef OHOS_EX_GET_ZOOM_LEVEL
 #include <cmath>
+#endif
+
+#ifdef OHOS_SECURITY_STATE
+#include "components/security_state/core/security_state.h"
 #endif
 
 namespace {

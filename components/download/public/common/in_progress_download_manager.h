@@ -250,7 +250,11 @@ class COMPONENTS_DOWNLOAD_EXPORT InProgressDownloadManager
   void NotifyDownloadsInitialized();
 
   // Cancels the given UrlDownloadHandler.
+#if BUILDFLAG(IS_OHOS)
+  void CancelUrlDownload(UrlDownloadHandler* downloader, bool user_cancel, absl::optional<std::string> guid);
+#else
   void CancelUrlDownload(UrlDownloadHandler* downloader, bool user_cancel);
+#endif
 
   // Active download handlers.
   std::vector<UrlDownloadHandler::UniqueUrlDownloadHandlerPtr>

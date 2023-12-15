@@ -22,7 +22,11 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadJob {
  public:
   // Callback to cancel the download request.
   using CancelRequestCallback =
+#if BUILDFLAG(IS_OHOS)
+      base::OnceCallback<void(bool /* user_cancel */, absl::optional<std::string> guid)>;
+#else
       base::OnceCallback<void(bool /* user_cancel */)>;
+#endif
   CancelRequestCallback cancel_request_callback;
 
   DownloadJob(DownloadItem* download_item,

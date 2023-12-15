@@ -1,0 +1,112 @@
+/*
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef OHOS_NWEB_SRC_NWEB_ACCESSIBILITY_UTILS_H
+#define OHOS_NWEB_SRC_NWEB_ACCESSIBILITY_UTILS_H
+
+#include <cstddef>
+#include <cstdint>
+
+namespace OHOS::NWeb {
+
+enum FocusMoveDirection : int32_t {
+  DIRECTION_INVALID = 0,
+  UP = 0x00000001,
+  DOWN = 0x00000002,
+  LEFT = 0x00000004,
+  RIGHT = 0x00000008,
+  FORWARD = 0x00000010,
+  BACKWARD = 0x00000020,
+};
+
+enum class AccessibilityEventType : int32_t {
+  CLICK = 0x00000001,
+  LONG_PRESS = 0x00000002,
+  SELECTED = 0x00000004,
+  BLUR = 0x00000007,
+  FOCUS = 0x00000008,
+  TEXT_CHANGE = 0x00000010,
+  EJECT_DISMISS = 0x00000020,
+  MOUSE = 149,
+  KEYBOARD_BACK = 150,
+  KEYBOARD_UP = 151,
+  KEYBOARD_DOWN = 152,
+  KEYBOARD_LEFT = 153,
+  KEYBOARD_RIGHT = 154,
+  KEYBOARD_CENTER = 155,
+  HANDLE_A = 156,
+  HANDLE_SELECT = 157,
+  KEYBOARD_TAB = 158,
+  KEYBOARD_SPACE = 159,
+  KEYBOARD_ENTER = 160,
+  KEYBOARD_ESCAPE = 161,
+  KEYBOARD_NUMBER_ENTER = 162,
+  TV_CONTROL_MEDIA_PLAY = 163,
+  PAGE_CHANGE = 200,
+  HOVER_ENTER_EVENT = 0x0000080,
+  HOVER_EXIT_EVENT = 0x0000100,
+  TOUCH_START = 0x00000200,
+  TOUCH_MOVE = 0x00000201,
+  TOUCH_CANCEL = 0x00000202,
+  TOUCH_END = 0x00000400,
+  CHANGE = 0x00000800,
+  SCROLL_END = 0x00001000,
+  TEXT_SELECTION_UPDATE = 0x000002000,
+  ACCESSIBILITY_FOCUSED = 0x00008000,
+  ACCESSIBILITY_FOCUS_CLEARED = 0x00010000,
+  TEXT_MOVE_UNIT = 0x00020000,
+  SCROLL_START = 0x01000000,
+  UNKNOWN,
+};
+
+enum class AceAction : uint32_t {
+  ACTION_NONE = 0,
+  GLOBAL_ACTION_BACK,
+  CUSTOM_ACTION,
+  ACTION_CLICK = 10,
+  ACTION_LONG_CLICK,
+  ACTION_SCROLL_FORWARD,
+  ACTION_SCROLL_BACKWARD,
+  ACTION_FOCUS,
+  ACTION_CLEAR_FOCUS,
+  ACTION_ACCESSIBILITY_FOCUS,
+  ACTION_CLEAR_ACCESSIBILITY_FOCUS,
+  ACTION_NEXT_AT_MOVEMENT_GRANULARITY,
+  ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY,
+  ACTION_SET_TEXT,
+  ACTION_COPY,
+  ACTION_PASTE,
+  ACTION_CUT,
+  ACTION_SELECT,
+  ACTION_SET_SELECTION,
+  ACTION_CLEAR_SELECTION,
+};
+
+enum class AceTextCategory {
+  INPUT_TYPE_DEFAULT = 0,
+  INPUT_TYPE_TEXT,
+  INPUT_TYPE_EMAIL,
+  INPUT_TYPE_DATE,
+  INPUT_TYPE_TIME,
+  INPUT_TYPE_NUMBER,
+  INPUT_TYPE_PASSWORD,
+  INPUT_TYPE_PHONENUMBER
+};
+
+const int32_t WEIGHTED_VALUE = 13;
+
+}  // namespace OHOS::NWeb
+
+#endif  // OHOS_NWEB_SRC_NWEB_ACCESSIBILITY_UTILS_H

@@ -219,6 +219,8 @@ component("nweb_sources") {
 
   sources = [
     "include/nweb.h",
+    "include/nweb_accessibility_event_callback.h",
+    "include/nweb_accessibility_node_info.h",
     "include/nweb_access_request.h",
     "include/nweb_console_log.h",
     "include/nweb_controller_handler.h",

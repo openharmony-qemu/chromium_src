@@ -118,7 +118,6 @@ class NWebImpl : public NWeb {
       int32_t h5_object_id,
       const std::string h5_method_name,
       const std::vector<std::shared_ptr<NWebValue>>& args) override;
-  int GetSecurityLevel() override;
   void SetNWebJavaScriptResultCallBack(
       std::shared_ptr<NWebJavaScriptResultCallBack> callback) override;
   void OnFocus(const FocusReason& focusReason =
@@ -237,6 +236,7 @@ class NWebImpl : public NWeb {
   void SetToken(void* token) override;
   void* CreateWebPrintDocumentAdapter(const std::string& jobName) override;
   void SetNestedScrollMode(const NestedScrollMode& nestedScrollMode) override;
+  int GetSecurityLevel() override;
 #endif
 
 #if defined(OHOS_INPUT_EVENTS)

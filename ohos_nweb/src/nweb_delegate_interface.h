@@ -333,7 +333,10 @@ class NWebDelegateInterface
   virtual void SetVirtualKeyBoardArg(int32_t width, int32_t height, double keyboard) = 0;
   virtual bool ShouldVirtualKeyboardOverlay() = 0;
 #endif
+
+#if defined(OHOS_SECURITY_STATE)
   virtual int GetSecurityLevel() = 0;
+#endif
 };
 }  // namespace OHOS::NWeb
 

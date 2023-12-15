@@ -253,7 +253,11 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void SetVirtualKeyBoardArg(int32_t width, int32_t height, double keyboard) override;
   bool ShouldVirtualKeyboardOverlay() override;
 #endif
+
+#if defined(OHOS_SECURITY_STATE)
   int GetSecurityLevel() override;
+#endif
+
 #ifdef OHOS_PAGE_UP_DOWN
   void PageUp(bool top) override;
   void PageDown(bool bottom) override;

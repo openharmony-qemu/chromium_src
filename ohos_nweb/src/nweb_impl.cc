@@ -58,6 +58,8 @@
 #include "services/network/network_service.h"
 #endif  // defined(OHOS_API_INIT_WEB_ENGINE)
 
+#include "components/security_state/core/security_state.h"
+
 #if defined(OHOS_HTTP_DNS)
 #include "cef/include/cef_app.h"
 #include "cef/libcef/browser/net_service/net_helpers.h"
@@ -1905,6 +1907,7 @@ extern "C" OHOS_NWEB_EXPORT void SetConnectionTimeout(const int& timeout) {
 #endif
 }
 
+#if BUILDFIAG(IS_OHOS)
 int NWebImpl::GetSecurityLevel() {
   if (nweb_delegate_ == nullptr) {
     return static_cast<int>(security_state::SecurityLevel::DANGEROUS);
@@ -1912,3 +1915,4 @@ int NWebImpl::GetSecurityLevel() {
 
   return nweb_delegate_->GetSecurityLevel();
 }
+#endif

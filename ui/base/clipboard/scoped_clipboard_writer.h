@@ -12,7 +12,9 @@
 #include "build/chromeos_buildflags.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "ui/base/clipboard/clipboard.h"
+#if defined(OHOS_CLIPBOARD)
 #include "third_party/blink/public/mojom/clipboard/clipboard.mojom.h"
+#endif // defined(OHOS_CLIPBOARD)
 #include "ui/base/data_transfer_policy/data_transfer_endpoint.h"
 
 namespace base {
@@ -130,7 +132,7 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ScopedClipboardWriter {
   void Reset();
 
 #if defined(OHOS_CLIPBOARD)
-  std::string copy_option_to_string(blink::mojom::CopyOptionMode copy_option);
+  ui::CopyOptionMode TransitionCopyOption(blink::mojom::CopyOptionMode copy_option);
 #endif // defined(OHOS_CLIPBOARD)
 
  private:
@@ -166,3 +168,4 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ScopedClipboardWriter {
 }  // namespace ui
 
 #endif  // UI_BASE_CLIPBOARD_SCOPED_CLIPBOARD_WRITER_H_
+

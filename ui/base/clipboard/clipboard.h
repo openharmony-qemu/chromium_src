@@ -370,11 +370,19 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) Clipboard
   struct ObjectMapParams {
     ObjectMapParams(std::vector<ObjectMapParam> data,
                     ClipboardContentType content_type);
+#if defined(OHOS_CLIPBOARD)
+    ObjectMapParams(std::vector<ObjectMapParam> data,
+                    ClipboardContentType content_type,
+                    CopyOptionMode copy_option);
+#endif // defined(OHOS_CLIPBOARD)
     ObjectMapParams(const ObjectMapParams& other);
     ObjectMapParams();
     ~ObjectMapParams();
     std::vector<ObjectMapParam> data;
     ClipboardContentType content_type;
+#if defined(OHOS_CLIPBOARD)
+    CopyOptionMode copy_option = CopyOptionMode::CROSS_DEVICE;
+#endif // defined(OHOS_CLIPBOARD)
   };
   using ObjectMap = base::flat_map<PortableFormat, ObjectMapParams>;
 
@@ -502,13 +510,9 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) Clipboard
   static base::Lock& ClipboardMapLock();
 
   base::ObserverList<ClipboardWriteObserver> write_observers_;
-
-#if defined(OHOS_CLIPBOARD)
-  static CopyOptionMode GetCopyOption(const char* param);
-#endif // defined(OHOS_CLIPBOARD)
-
 };
 
 }  // namespace ui
 
 #endif  // UI_BASE_CLIPBOARD_CLIPBOARD_H_
+

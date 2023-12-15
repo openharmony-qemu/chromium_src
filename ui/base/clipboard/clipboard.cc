@@ -205,22 +205,6 @@ Clipboard::ReadAvailableStandardAndCustomFormatNames(
 Clipboard::Clipboard() = default;
 Clipboard::~Clipboard() = default;
 
-#if defined(OHOS_CLIPBOARD)
-// static
-CopyOptionMode Clipboard::GetCopyOption(const char* param) {
-  std::string str_copy_option(param);
-  if (str_copy_option == "NONE") {
-    return CopyOptionMode::NONE;
-  } else if (str_copy_option == "IN_APP") {
-    return CopyOptionMode::IN_APP;
-  } else if (str_copy_option == "LOCAL_DEVICE") {
-    return CopyOptionMode::LOCAL_DEVICE;
-  } else {
-    return CopyOptionMode::CROSS_DEVICE;
-  }
-}
-#endif // defined(OHOS_CLIPBOARD)
-
 void Clipboard::DispatchPortableRepresentation(PortableFormat format,
                                                const ObjectMapParams& params) {
   // Ignore writes with empty parameters.
@@ -230,13 +214,10 @@ void Clipboard::DispatchPortableRepresentation(PortableFormat format,
     }
   }
 #if defined(OHOS_CLIPBOARD)
-  CopyOptionMode copy_option = CopyOptionMode::CROSS_DEVICE;
+  CopyOptionMode copy_option = params.copy_option;
 #endif // defined(OHOS_CLIPBOARD)
   switch (format) {
     case PortableFormat::kText:
-#if defined(OHOS_CLIPBOARD)
-      copy_option = GetCopyOption(params.data[1].data());
-#endif // defined(OHOS_CLIPBOARD)
       WriteText(params.data[0].data(), params.data[0].size()
 #if defined(OHOS_CLIPBOARD)
                 ,
@@ -246,16 +227,11 @@ void Clipboard::DispatchPortableRepresentation(PortableFormat format,
       break;
 
     case PortableFormat::kHtml:
-      // If the source URL is passed, then the markup shouldn't be empty. If it
-      // is, we can return early.
-      if (params.data.size() == 3 && params.data[1].empty()) {
+      if (params.data.size() == 2 && params.data[1].empty()) {
         return;
       }
       if (params.content_type == ClipboardContentType::kUnsanitized) {
-        if (params.data.size() == 3) {
-#if defined(OHOS_CLIPBOARD)
-          copy_option = GetCopyOption(params.data[2].data());
-#endif // defined(OHOS_CLIPBOARD)
+        if (params.data.size() == 2) {
           WriteUnsanitizedHTML(params.data[0].data(), params.data[0].size(),
                                params.data[1].data(), params.data[1].size()
 #if defined(OHOS_CLIPBOARD)
@@ -275,10 +251,7 @@ void Clipboard::DispatchPortableRepresentation(PortableFormat format,
                                );
         }
       } else {
-        if (params.data.size() == 3) {
-#if defined(OHOS_CLIPBOARD)
-          copy_option = GetCopyOption(params.data[2].data());
-#endif // defined(OHOS_CLIPBOARD)
+        if (params.data.size() == 2) {
           WriteHTML(params.data[0].data(), params.data[0].size(),
                     params.data[1].data(), params.data[1].size()
 #if defined(OHOS_CLIPBOARD)
@@ -308,9 +281,6 @@ void Clipboard::DispatchPortableRepresentation(PortableFormat format,
       break;
 
     case PortableFormat::kBookmark:
-#if defined(OHOS_CLIPBOARD)
-          copy_option = GetCopyOption(params.data[2].data());
-#endif // defined(OHOS_CLIPBOARD)
       WriteBookmark(params.data[0].data(), params.data[0].size(),
                     params.data[1].data(), params.data[1].size()
 #if defined(OHOS_CLIPBOARD)
@@ -321,9 +291,6 @@ void Clipboard::DispatchPortableRepresentation(PortableFormat format,
       break;
 
     case PortableFormat::kWebkit:
-#if defined(OHOS_CLIPBOARD)
-      copy_option = GetCopyOption(params.data[0].data());
-#endif // defined(OHOS_CLIPBOARD)
       WriteWebSmartPaste(
 #if defined(OHOS_CLIPBOARD)
         copy_option
@@ -535,3 +502,4 @@ void Clipboard::ReadData(const ClipboardFormatType& format,
 }
 
 }  // namespace ui
+

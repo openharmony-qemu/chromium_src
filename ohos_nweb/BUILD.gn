@@ -263,6 +263,15 @@ component("nweb_sources") {
     "src/nweb_web_storage_impl.h",
   ]
 
+  #if defined(OHOS_NAVIGATION)
+  if (defined(ohos_navigation) && ohos_navigation) {
+    sources += [
+      "src/nweb_load_committed_details_impl.cc",
+      "src/nweb_load_committed_details_impl.h",
+    ]
+  }
+  #endif  // defined(OHOS_NAVIGATION)
+
   if (!defined(ohos_nweb_ex) || !ohos_nweb_ex) {
     sources += [
       "src/download/web_downloader.cc"

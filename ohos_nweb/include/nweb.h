@@ -847,11 +847,6 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      * Inject the JavaScript before WebView load the DOM tree.
      */
     virtual void JavaScriptOnDocumentStart(const ScriptItems& scriptItems) = 0;
-	
-    /**
-     * Inject the JavaScript after WebView load the DOM tree.
-     */
-    virtual void JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) = 0;
 
 	/**
      * Execute an accessibility action on an accessibility node in the browser.
@@ -926,6 +921,11 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      * @return true if the discarded window reload success, otherwise false.
      */
     virtual bool Restore() = 0;
+
+    /**
+     * Inject the JavaScript after WebView load the DOM tree.
+     */
+    virtual void JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) = 0;
 };
 }  // namespace OHOS::NWeb
 

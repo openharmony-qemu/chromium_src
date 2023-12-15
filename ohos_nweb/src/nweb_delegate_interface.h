@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,6 +23,7 @@
 #include "cef/include/cef_client.h"
 #include "cef_delegate/nweb_inputmethod_client.h"
 #include "display_manager_adapter.h"
+#include "nweb_accessibility_node_info.h"
 #include "nweb_download_callback.h"
 #include "nweb_find_callback.h"
 #include "nweb_handler.h"
@@ -60,6 +61,9 @@ class NWebDelegateInterface
   virtual void OnDestroy(bool is_close_all) = 0;
   virtual void RegisterDownLoadListener(
       std::shared_ptr<NWebDownloadCallback> downloadListener) = 0;
+  virtual void RegisterAccessibilityEventListener(
+      std::shared_ptr<NWebAccessibilityEventCallback> accessibilityEventListener) = 0;
+  virtual void RegisterAccessibilityIdGenerator(std::function<int32_t()> accessibilityIdGenerator) const = 0;
   virtual void RegisterReleaseSurfaceListener(
       std::shared_ptr<NWebReleaseSurfaceCallback> releaseSurfaceListener) = 0;
   virtual void RegisterNWebHandler(std::shared_ptr<NWebHandler> handler) = 0;
@@ -337,6 +341,20 @@ class NWebDelegateInterface
 #if defined(OHOS_SECURITY_STATE)
   virtual int GetSecurityLevel() = 0;
 #endif
+
+  virtual void SetAccessibilityState(cef_state_t accessibilityState) = 0;
+  virtual void ExecuteAction(int32_t nodeId, uint32_t action) const = 0;
+  virtual bool GetFocusedAccessibilityNodeInfo(
+      int32_t accessibilityId,
+      bool isAccessibilityFocus,
+      OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const = 0;
+  virtual bool GetAccessibilityNodeInfoById(
+      int32_t accessibilityId,
+      OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const = 0;
+  virtual bool GetAccessibilityNodeInfoByFocusMove(
+      int32_t accessibilityId,
+      int32_t direction,
+      OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const = 0;
 };
 }  // namespace OHOS::NWeb
 

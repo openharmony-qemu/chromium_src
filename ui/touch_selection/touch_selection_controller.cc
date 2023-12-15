@@ -167,11 +167,12 @@ void TouchSelectionController::OnViewportChanged(
     end_selection_handle_->SetViewportRect(viewport_rect);
   }
 
-#ifdef OHOS_EX_TOPCONTROLS
-  OnSelectionChanged();
-#else
   // Update handle layout after setting the new Viewport size.
   UpdateHandleLayoutIfNecessary();
+#ifdef OHOS_EX_TOPCONTROLS
+  if (client_) {
+    client_->OnSelectionEvent(SELECTION_HANDLES_MOVED);
+  }
 #endif
 }
 

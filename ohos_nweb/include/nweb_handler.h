@@ -37,6 +37,7 @@
 #include "nweb_js_ssl_error_result.h"
 #include "nweb_js_ssl_select_cert_result.h"
 #include "nweb_key_event.h"
+#include "nweb_load_committed_details.h"
 #include "nweb_select_popup_menu.h"
 #include "nweb_touch_handle_state.h"
 #include "nweb_url_resource_error.h"
@@ -645,6 +646,13 @@ public:
                                    const float yVelocity) {
         return false;
     }
+
+    /**
+     * @brief called when the navigation entry has been committed.
+     * @param details represents the details of a committed navigation entry.
+     */
+    virtual void OnNavigationEntryCommitted(
+        std::shared_ptr<NWebLoadCommittedDetails> details) {}
 };
 }  // namespace OHOS::NWeb
 

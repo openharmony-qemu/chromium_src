@@ -771,7 +771,7 @@ config("compiler") {
 
   # Pass flag to LLD so Android builds can allow debuggerd to properly symbolize
   # stack crashes (http://crbug.com/919499).
-  if (use_lld && (is_android || is_ohos)) {
+  if (use_lld && is_android) {
     ldflags += [ "-Wl,--no-rosegment" ]
   }
 

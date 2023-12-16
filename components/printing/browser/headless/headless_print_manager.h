@@ -45,7 +45,6 @@ class HeadlessPrintManager
   void PdfWritingDone(int page_count) override {}
   void PrintRequested(PrintRequestedCallback callback) override {}
   void CheckCancel(CheckCancelCallback callback) override {}
-  void BeforePrintPdfRequested() override {}
   void PrintPdfRequested() override {}
 #endif // defined(OHOS_PRINT)
 

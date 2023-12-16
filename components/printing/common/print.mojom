@@ -357,7 +357,7 @@ interface PrintRenderFrame {
 
   [EnableIf=is_ohos]
   DidDispatchPrintEvent(bool isBefore);
- 
+
   [EnableIf=is_ohos]
   ApplicationPrintRequestedPages();
 };
@@ -436,9 +436,6 @@ interface PrintManagerHost {
 
   [EnableIf=is_ohos, Sync]
   CheckCancel() => (bool cancel);
-
-  [EnableIf=is_ohos]
-  BeforePrintPdfRequested();
 
   [EnableIf=is_ohos]
   PrintPdfRequested();

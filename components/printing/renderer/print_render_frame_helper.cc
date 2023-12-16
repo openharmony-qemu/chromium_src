@@ -1318,13 +1318,8 @@ void PrintRenderFrameHelper::ScriptedPrint(bool user_initiated) {
   if (!IsScriptInitiatedPrintAllowed(web_frame, user_initiated))
     return;
 
-  if (delegate_->OverridePrint(web_frame)) {
-#if defined(OHOS_PRINT)
-    LOG(INFO) << "OhosPrintManager Before requesting to print Pdf";
-    GetPrintManagerHost()->BeforePrintPdfRequested();
-#endif  // IS_OHOS
+  if (delegate_->OverridePrint(web_frame))
     return;
-  }
 
   // Detached documents can't be printed.
   if (!web_frame->GetDocument().GetFrame())
@@ -1770,7 +1765,7 @@ void PrintRenderFrameHelper::DidDispatchPrintEvent(bool isBefore) {
     web_frame->DispatchAfterPrintEvent();
   }
 }
- 
+
 void PrintRenderFrameHelper::ApplicationPrintRequestedPages() {
   ScopedIPC scoped_ipc(weak_ptr_factory_.GetWeakPtr());
   if (ipc_nesting_level_ > kAllowedIpcDepthForPrint)
@@ -1779,11 +1774,11 @@ void PrintRenderFrameHelper::ApplicationPrintRequestedPages() {
   // Don't print if the RenderFrame is gone.
   if (render_frame_gone_)
     return;
- 
+
   // If we are printing a frame with an internal PDF plugin element, find the
   // plugin node and print that instead.
   auto plugin = delegate_->GetPdfElement(frame);
- 
+
   Print(frame, plugin, PrintRequestType::kRegular);
 }
 #endif  // OHOS_PRINT

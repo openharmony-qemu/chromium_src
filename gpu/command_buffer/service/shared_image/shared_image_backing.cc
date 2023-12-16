@@ -220,7 +220,7 @@ SharedImageBacking::ProduceVideoDecode(SharedImageManager* manager,
   return nullptr;
 }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 std::unique_ptr<LegacyOverlayImageRepresentation>
 SharedImageBacking::ProduceLegacyOverlay(SharedImageManager* manager,
                                          MemoryTypeTracker* tracker) {

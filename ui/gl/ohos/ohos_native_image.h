@@ -1,0 +1,49 @@
+// Copyright (c) 2023 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+#ifndef UI_GL_OHOS_NATIVE_IMAGE_H_
+#define UI_GL_OHOS_NATIVE_IMAGE_H_
+
+#include <memory>
+
+#include "base/functional/callback.h"
+#include "base/memory/ref_counted.h"
+#include "ui/gl/gl_export.h"
+#include "graphic_adapter.h"
+
+namespace gl {
+
+class GL_EXPORT OhosNativeImage
+    : public base::RefCountedThreadSafe<OhosNativeImage> {
+ public:
+  static scoped_refptr<OhosNativeImage> Create(int texture_id);
+
+  OhosNativeImage(const OhosNativeImage&) = delete;
+  OhosNativeImage& operator=(const OhosNativeImage&) = delete;
+  void SetFrameAvailableCallback(base::RepeatingClosure callback);
+  void UpdateNativeImage();
+  void GetTransformMatrix(float mtx[16]);
+  void AttachToGLContext();
+  void DetachFromGLContext();
+  void ReleaseNativeImage();
+  void* AquireOhosNativeWindow();
+  static void OnFrameAvailableListener(void* context);
+
+ protected:
+  explicit OhosNativeImage(
+      std::unique_ptr<OHOS::NWeb::NativeImageAdapter> native_image_adapter);
+
+ private:
+  friend class base::RefCountedThreadSafe<OhosNativeImage>;
+  virtual ~OhosNativeImage();
+
+  std::unique_ptr<OHOS::NWeb::NativeImageAdapter> native_image_adapter_;
+  std::unique_ptr<OHOS::NWeb::OnFrameAvailableListener> listener_;
+
+  base::RepeatingClosure frame_available_cb_;
+};
+
+}  // namespace gl
+
+#endif // UI_GL_OHOS_NATIVE_IMAGE_H_

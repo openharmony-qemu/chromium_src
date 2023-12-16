@@ -58,6 +58,10 @@
 #include <cmath>
 #endif
 
+#ifdef OHOS_SECURITY_STATE
+#include "components/security_state/core/security_state.h"
+#endif
+
 namespace {
 static const float richtextDisplayRatio = 1.0;
 }
@@ -2288,6 +2292,16 @@ double NWebDelegate::GetBrowserZoomLevel() {
 }
 #endif
 
+#if defined(OHOS_SECURITY_STATE)
+int NWebDelegate::GetSecurityLevel() {
+  if (GetBrowser() == nullptr) {
+    LOG(ERROR) << "NWebDelegate::GetSecurityLevel failed.";
+    return static_cast<int>(security_state::SecurityLevel::NONE);
+  }
+
+  return GetBrowser()->GetSecurityLevel();
+}
+#endif
  
 void NWebDelegate::RegisterAccessibilityEventListener(
     std::shared_ptr<NWebAccessibilityEventCallback>

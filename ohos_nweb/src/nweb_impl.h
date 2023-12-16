@@ -236,6 +236,7 @@ class NWebImpl : public NWeb {
   void SetToken(void* token) override;
   void* CreateWebPrintDocumentAdapter(const std::string& jobName) override;
   void SetNestedScrollMode(const NestedScrollMode& nestedScrollMode) override;
+  int GetSecurityLevel() override;
 #endif
 
 #if defined(OHOS_INPUT_EVENTS)

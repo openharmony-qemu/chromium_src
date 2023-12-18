@@ -66,48 +66,60 @@ void NWebDataBaseImpl::GetHttpAuthCredentials(const std::string& host,
 }
 
 bool NWebDataBaseImpl::ExistPermissionByOrigin(const std::string& origin,
-                                               int type) {
+                                               int type,
+                                               bool incognito)
+{
   if (delegate_ != nullptr) {
-    return delegate_->ExistPermissionByOrigin(origin, type);
+    return delegate_->ExistPermissionByOrigin(origin, type, incognito);
   }
   return false;
 }
 
 bool NWebDataBaseImpl::GetPermissionResultByOrigin(const std::string& origin,
                                                    int type,
-                                                   bool& result) {
+                                                   bool& result,
+                                                   bool incognito)
+{
   if (delegate_ != nullptr) {
-    return delegate_->GetPermissionResultByOrigin(origin, type, result);
+    return delegate_->GetPermissionResultByOrigin(origin, type, result,
+        incognito);
   }
   return false;
 }
 
 int NWebDataBaseImpl::SetPermissionByOrigin(const std::string& origin,
                                             int type,
-                                            bool result) {
+                                            bool result,
+                                            bool incognito)
+{
   if (delegate_ != nullptr) {
-    return delegate_->SetPermissionByOrigin(origin, type, result);
+    return delegate_->SetPermissionByOrigin(origin, type, result, incognito);
   }
   return NWEB_ERR;
 }
 
 int NWebDataBaseImpl::ClearPermissionByOrigin(const std::string& origin,
-                                              int type) {
+                                              int type,
+                                              bool incognito)
+{
   if (delegate_ != nullptr) {
-    return delegate_->ClearPermissionByOrigin(origin, type);
+    return delegate_->ClearPermissionByOrigin(origin, type, incognito);
   }
   return NWEB_ERR;
 }
 
-void NWebDataBaseImpl::ClearAllPermission(int type) {
+void NWebDataBaseImpl::ClearAllPermission(int type, bool incognito)
+{
   if (delegate_ != nullptr) {
-    delegate_->ClearAllPermission(type);
+    delegate_->ClearAllPermission(type, incognito);
   }
 }
 
-std::vector<std::string> NWebDataBaseImpl::GetOriginsByPermission(int type) {
+std::vector<std::string> NWebDataBaseImpl::GetOriginsByPermission(
+    int type, bool incognito)
+{
   if (delegate_ != nullptr) {
-    return delegate_->GetOriginsByPermission(type);
+    return delegate_->GetOriginsByPermission(type, incognito);
   }
   return {};
 }

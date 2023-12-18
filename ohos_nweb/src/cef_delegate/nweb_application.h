@@ -46,7 +46,11 @@ class NWebApplication : public CefApp,
       std::shared_ptr<NWebPreferenceDelegate> preference_delegate,
       const std::string& url,
       CefRefPtr<NWebHandlerDelegate> handler_delegate,
-      void* window);
+      void* window
+#if defined(OHOS_INCOGNITO_MODE)
+      , bool incognito_mode
+#endif
+);
   void RunAfterContextInitialized(base::OnceCallback<void()> context_callback);
 #endif  // defined(OHOS_API_INIT_WEB_ENGINE)
 
@@ -74,7 +78,11 @@ class NWebApplication : public CefApp,
 
  private:
   void PopulateCreateSettings(CefRefPtr<CefCommandLine> command_line,
-                              CefBrowserSettings& browser_settings);
+                              CefBrowserSettings& browser_settings
+#if defined(OHOS_INCOGNITO_MODE)
+                              , bool incognito_mode
+#endif
+                              );
 
   void OnContextInitializedInternal();
 #ifdef OHOS_NETWORK_LOAD

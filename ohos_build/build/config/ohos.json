@@ -294,6 +294,14 @@
 "dependence": "",
 "default": "true"
 },
+{ "name": "OHOS_INCOGNITO_MODE",
+"owner": "",
+"desc": "",
+"effect":"main gn blink_core other",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},
 { "name": "OHOS_INIT_CALLBACK",
 "owner": "",
 "desc": "",

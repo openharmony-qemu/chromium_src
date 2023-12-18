@@ -28,7 +28,7 @@ class NWebWebStorageImpl : public NWebWebStorage {
   NWebWebStorageImpl();
   ~NWebWebStorageImpl() = default;
 
-  void DeleteAllData() override;
+  void DeleteAllData(bool incognito_mode) override;
   int DeleteOrigin(const std::string& origin) override;
   void GetOrigins(std::shared_ptr<NWebGetOriginsCallback> callback) override;
   std::vector<NWebWebStorageOrigin> GetOrigins() override;

@@ -23,18 +23,20 @@
 namespace OHOS::NWeb {
 class OHOS_NWEB_EXPORT NWebDelegateAdapter {
  public:
-#if defined(OHOS_EX_DOWNLOAD)
+
   static std::shared_ptr<NWebDelegateInterface> CreateNWebDelegate(
       int argc,
       const char* argv[],
       bool is_enhance_surface,
       void* window,
-      bool popup,
-      int nweb_id);
-#else
- static std::shared_ptr<NWebDelegateInterface>
-  CreateNWebDelegate(int argc, const char* argv[], bool is_enhance_surface, void* window, bool popup);
-#endif  //  OHOS_EX_DOWNLOAD
+      bool popup
+#if defined(OHOS_EX_DOWNLOAD)
+      , int nweb_id
+#endif
+#if BUILDFLAG(IS_OHOS)
+      , bool incognito_mode
+#endif
+      );
 };
 }  // namespace OHOS::NWeb
 

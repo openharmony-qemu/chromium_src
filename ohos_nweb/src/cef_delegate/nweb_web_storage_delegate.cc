@@ -206,8 +206,24 @@ CefRefPtr<CefWebStorage> NWebWebStorageDelegate::GetGlobalWebStorage() {
   return web_storage_;
 }
 
-void NWebWebStorageDelegate::DeleteAllData() {
-  CefRefPtr<CefWebStorage> web_storage = GetGlobalWebStorage();
+#if BUILDFLAG(IS_OHOS)
+CefRefPtr<CefWebStorage>
+NWebWebStorageDelegate::GetGlobalIncognitoWebStorage() {
+  if (!incognito_web_storage_) {
+    incognito_web_storage_ = CefWebStorage::GetGlobalIncognitoManager(nullptr);
+  }
+  return incognito_web_storage_;
+}
+#endif
+
+void NWebWebStorageDelegate::DeleteAllData(bool incognito_mode) {
+  CefRefPtr<CefWebStorage> web_storage =
+#if BUILDFLAG(IS_OHOS)
+      incognito_mode ? GetGlobalIncognitoWebStorage() : GetGlobalWebStorage();
+#else
+      GetGlobalWebStorage();
+#endif
+
   if (web_storage == nullptr) {
     return;
   }

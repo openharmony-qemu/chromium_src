@@ -567,6 +567,10 @@ class CONTENT_EXPORT ContentBrowserClient {
   // given |process_host|.
   virtual bool MayReuseHost(RenderProcessHost* process_host);
 
+#if BUILDFLAG(IS_OHOS)
+  virtual size_t GetProcessCountForIncognitoMode();
+#endif
+
   // Returns a number of processes to ignore when deciding whether to reuse
   // processes when over the process limit. This is useful for embedders that
   // may want to partly delay when normal pages start reusing processes (e.g.,

@@ -27,7 +27,8 @@ class NWebGeolocationCallback : public NWebGeolocationCallbackInterface {
 
   void GeolocationCallbackInvoke(const std::string& origin,
                                  bool allow,
-                                 bool retain) override;
+                                 bool retain,
+                                 bool incognito) override;
 
  private:
   CefRefPtr<CefBrowser> browser_ = nullptr;

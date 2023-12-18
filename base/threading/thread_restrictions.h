@@ -149,6 +149,10 @@ class File;
 class FilePath;
 }  // namespace base
 
+#if defined(OHOS_INCOGNITO_MODE)
+class CefIncognitoCookieManagerImpl;
+#endif
+
 Profile* GetLastProfileMac();
 bool EnsureBrowserStateDirectoriesCreated(const base::FilePath&,
                                           const base::FilePath&,
@@ -832,6 +836,10 @@ class BASE_EXPORT
 #if defined(OHOS_COOKIE)
   friend class ::CefCookieManagerImpl;
 #endif // defined(OHOS_COOKIE)
+#if defined(OHOS_INCOGNITO_MODE)
+  friend class ::CefIncognitoCookieManagerImpl;
+#endif
+
   friend class android_webview::VizCompositorThreadRunnerWebView;
   friend class audio::OutputDevice;
   friend class base::FileDescriptorWatcher;

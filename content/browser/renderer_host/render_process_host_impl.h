@@ -201,6 +201,10 @@ class CONTENT_EXPORT RenderProcessHostImpl
       BrowserContext* browser_context,
       SiteInstanceImpl* site_instance);
 
+#if BUILDFLAG(IS_OHOS)
+  static size_t GetRenderProcessCountForIncognitoMode();
+#endif
+
   ~RenderProcessHostImpl() override;
 
   RenderProcessHostImpl(const RenderProcessHostImpl& other) = delete;

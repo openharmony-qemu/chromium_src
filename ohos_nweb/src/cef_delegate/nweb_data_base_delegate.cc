@@ -28,6 +28,15 @@ CefRefPtr<CefDataBase> NWebDataBaseDelegate::GetGlobalCefDataBase() {
   return data_base_;
 }
 
+//#if BUILDFLAG(IS_OHOS)
+CefRefPtr<CefDataBase> NWebDataBaseDelegate::GetGlobalIncognitoCefDataBase() {
+  if (incognito_data_base_ == nullptr) {
+    incognito_data_base_ = CefDataBase::GetGlobalIncognitoDataBase();
+  }
+  return incognito_data_base_;
+}
+//#endif
+
 bool NWebDataBaseDelegate::ExistHttpAuthCredentials() {
   CefRefPtr<CefDataBase> data_base = GetGlobalCefDataBase();
   if (data_base == nullptr) {
@@ -72,19 +81,22 @@ void NWebDataBaseDelegate::GetHttpAuthCredentials(const std::string& host,
 }
 
 bool NWebDataBaseDelegate::ExistPermissionByOrigin(const std::string& origin,
-                                                   int type) {
-  CefRefPtr<CefDataBase> data_base = GetGlobalCefDataBase();
+                                                   int type,
+                                                   bool incognito) {
+  CefRefPtr<CefDataBase> data_base = incognito ?
+      GetGlobalIncognitoCefDataBase() : GetGlobalCefDataBase();
   if (data_base == nullptr) {
     return false;
   }
   return data_base->ExistPermissionByOrigin(origin, type);
 }
 
-bool NWebDataBaseDelegate::GetPermissionResultByOrigin(
-    const std::string& origin,
-    int type,
-    bool& result) {
-  CefRefPtr<CefDataBase> data_base = GetGlobalCefDataBase();
+bool NWebDataBaseDelegate::GetPermissionResultByOrigin(const std::string& origin,
+                                                       int type,
+                                                       bool& result,
+                                                       bool incognito) {
+  CefRefPtr<CefDataBase> data_base = incognito ?
+      GetGlobalIncognitoCefDataBase() : GetGlobalCefDataBase();
   if (data_base == nullptr) {
     return false;
   }
@@ -93,12 +105,14 @@ bool NWebDataBaseDelegate::GetPermissionResultByOrigin(
 
 int NWebDataBaseDelegate::SetPermissionByOrigin(const std::string& origin,
                                                 int type,
-                                                bool result) {
+                                                bool result,
+                                                bool incognito) {
   GURL gurl = GURL(origin);
   if (gurl.is_empty() || !gurl.is_valid()) {
     return NWEB_INVALID_ORIGIN;
   }
-  CefRefPtr<CefDataBase> data_base = GetGlobalCefDataBase();
+  CefRefPtr<CefDataBase> data_base = incognito ?
+      GetGlobalIncognitoCefDataBase() : GetGlobalCefDataBase();
   if (data_base == nullptr) {
     return NWEB_ERR;
   }
@@ -107,12 +121,14 @@ int NWebDataBaseDelegate::SetPermissionByOrigin(const std::string& origin,
 }
 
 int NWebDataBaseDelegate::ClearPermissionByOrigin(const std::string& origin,
-                                                  int type) {
+                                                  int type,
+                                                  bool incognito) {
   GURL gurl = GURL(origin);
   if (gurl.is_empty() || !gurl.is_valid()) {
     return NWEB_INVALID_ORIGIN;
   }
-  CefRefPtr<CefDataBase> data_base = GetGlobalCefDataBase();
+  CefRefPtr<CefDataBase> data_base = incognito ?
+      GetGlobalIncognitoCefDataBase() : GetGlobalCefDataBase();
   if (data_base == nullptr) {
     return NWEB_ERR;
   }
@@ -120,17 +136,19 @@ int NWebDataBaseDelegate::ClearPermissionByOrigin(const std::string& origin,
   return NWEB_OK;
 }
 
-void NWebDataBaseDelegate::ClearAllPermission(int type) {
-  CefRefPtr<CefDataBase> data_base = GetGlobalCefDataBase();
+void NWebDataBaseDelegate::ClearAllPermission(int type, bool incognito) {
+  CefRefPtr<CefDataBase> data_base = incognito ?
+      GetGlobalIncognitoCefDataBase() : GetGlobalCefDataBase();
   if (data_base == nullptr) {
     return;
   }
   data_base->ClearAllPermission(type);
 }
 
-std::vector<std::string> NWebDataBaseDelegate::GetOriginsByPermission(
-    int type) {
-  CefRefPtr<CefDataBase> data_base = GetGlobalCefDataBase();
+std::vector<std::string> NWebDataBaseDelegate::GetOriginsByPermission(int type,
+    bool incognito) {
+  CefRefPtr<CefDataBase> data_base = incognito ?
+      GetGlobalIncognitoCefDataBase() : GetGlobalCefDataBase();
   if (data_base == nullptr) {
     return {};
   }

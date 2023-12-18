@@ -338,6 +338,9 @@ bool NWebImpl::Init(const NWebCreateInfo& create_info) {
   if (output_handler_ == nullptr) {
     return false;
   }
+
+  incognito_mode_ = create_info.incognito_mode;
+
   output_handler_->SetNWebId(nweb_id_);
 
   ProcessInitArgs(create_info.init_args);
@@ -497,12 +500,16 @@ bool NWebImpl::InitWebEngine(const NWebCreateInfo& create_info) {
   WVLOG_D("nweb create_info.init_args.is_popup: %{public}d",
           create_info.init_args.is_popup);
   nweb_delegate_ = NWebDelegateAdapter::CreateNWebDelegate(
+      argc, argv, is_enhance_surface_, window, create_info.init_args.is_popup
 #if defined(OHOS_EX_DOWNLOAD)
-      argc, argv, is_enhance_surface_, window, create_info.init_args.is_popup,
-      nweb_id_);
-#else
-      argc, argv, is_enhance_surface_, window, create_info.init_args.is_popup);
-#endif  //  OHOS_EX_DOWNLOAD
+      , nweb_id_
+#endif
+#if defined(OHOS_INCOGNITO_MODE)
+      , create_info.incognito_mode
+#endif
+      );
+  WVLOG_D("nweb create_info.incognito_mode: %{public}d",
+          create_info.incognito_mode);
   if (nweb_delegate_ == nullptr) {
     WVLOG_E("fail to create nweb delegate of web engine");
     delete[] argv;

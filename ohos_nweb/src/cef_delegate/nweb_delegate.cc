@@ -334,14 +334,17 @@ void NWebDelegate::InitRichtextIdentifier() {
   }
 }
 
-#if defined(OHOS_EX_DOWNLOAD)
+
 bool NWebDelegate::Init(bool is_enhance_surface,
                         void* window,
-                        bool popup,
-                        uint32_t nweb_id) {
-#else
-bool NWebDelegate::Init(bool is_enhance_surface, void* window, bool popup) {
-#endif  //  OHOS_EX_DOWNLOAD
+                        bool popup
+#if defined(OHOS_EX_DOWNLOAD)
+                        , uint32_t nweb_id
+#endif
+#if defined(OHOS_INCOGNITO_MODE)
+                        , bool incognito_mode
+#endif
+                        ) {
   preference_delegate_ = std::make_shared<NWebPreferenceDelegate>();
   int32_t backgroundColor;
   if (preference_delegate_ && HasBackgroundColorWithInit(backgroundColor)) {
@@ -384,11 +387,16 @@ InitRichtextIdentifier();
   }
 
   std::string url_for_init = "";
+
+  LOG(INFO) << "NWebDelegate::Init incognito_mode:" << incognito_mode;
+  InitializeCef(url_for_init, is_enhance_surface_, window, popup
 #if defined(OHOS_EX_DOWNLOAD)
-  InitializeCef(url_for_init, is_enhance_surface_, window, popup, nweb_id);
-#else
-  InitializeCef(url_for_init, is_enhance_surface_, window, popup);
-#endif  //  OHOS_EX_DOWNLOAD
+      , nweb_id
+#endif
+#if defined(OHOS_INCOGNITO_MODE)
+      , incognito_mode
+#endif
+      );
   std::shared_ptr<DisplayAdapter> display =
       display_manager_adapter_->GetDefaultDisplay();
   if (display != nullptr) {
@@ -1147,18 +1155,18 @@ void NWebDelegate::SetEnableLowerFrameRate(bool enabled) {
   GetBrowser()->GetHost()->SetEnableLowerFrameRate(enabled);
 }
 
+
+void NWebDelegate::InitializeCef(std::string url,
+                                 bool is_enhance_surface,
+                                 void* window,
+                                 bool popup
 #if defined(OHOS_EX_DOWNLOAD)
-void NWebDelegate::InitializeCef(std::string url,
-                                 bool is_enhance_surface,
-                                 void* window,
-                                 bool popup,
-                                 uint32_t nweb_id) {
-#else
-void NWebDelegate::InitializeCef(std::string url,
-                                 bool is_enhance_surface,
-                                 void* window,
-                                 bool popup) {
+                                 , uint32_t nweb_id
 #endif
+#if defined(OHOS_INCOGNITO_MODE)
+                                 , bool incognito_mode
+#endif
+                                ) {
   if (popup) {
     LOG(DEBUG) << "pop windows";
     handler_delegate_ = NWebHandlerDelegate::Create(
@@ -1206,15 +1214,27 @@ void NWebDelegate::InitializeCef(std::string url,
 #endif
 
 #if defined(OHOS_API_INIT_WEB_ENGINE)
+#if defined(OHOS_INCOGNITO_MODE)
+  settings.incognito_mode = incognito_mode;
+#endif
+
   bool is_initialized = NWebApplication::GetDefault()->HasInitializedCef();
   if (is_initialized) {
     NWebApplication::GetDefault()->CreateBrowser(preference_delegate_, url,
-                                                 handler_delegate_, window);
+                                                 handler_delegate_, window
+#if defined(OHOS_INCOGNITO_MODE)
+                                                 , incognito_mode
+#endif
+                                                 );
   } else {
     // Create browser when context initialized.
     NWebApplication::GetDefault()->RunAfterContextInitialized(
         base::BindOnce(&NWebDelegate::OnContextInitializeComplete,
-                       base::Unretained(this), url, window));
+                       base::Unretained(this), url, window
+#if defined(OHOS_INCOGNITO_MODE)
+                       , incognito_mode
+#endif
+                       ));
     NWebApplication::GetDefault()->InitializeCef(mainargs, settings);
   }
 #endif  // defined(OHOS_API_INIT_WEB_ENGINE)
@@ -1958,10 +1978,18 @@ void NWebDelegate::SlideScroll(float vx, float vy) {
 
 #if defined(OHOS_API_INIT_WEB_ENGINE)
 void NWebDelegate::OnContextInitializeComplete(const std::string& url,
-                                               void* window) {
+                                               void* window
+#if defined(OHOS_INCOGNITO_MODE)
+                                              , bool incognito_mode
+#endif
+                                               ) {
   // Create browser after context initialzed complete.
   NWebApplication::GetDefault()->CreateBrowser(preference_delegate_, url,
-                                               handler_delegate_, window);
+                                               handler_delegate_, window
+#if defined(OHOS_INCOGNITO_MODE)
+                                               , incognito_mode
+#endif
+                                               );
 }
 #endif  // defined(OHOS_API_INIT_WEB_ENGINE)
 

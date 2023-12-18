@@ -28,7 +28,7 @@ class NWebWebStorageDelegate : public NWebWebStorageDelegateInterface {
   NWebWebStorageDelegate() = default;
   ~NWebWebStorageDelegate() = default;
 
-  void DeleteAllData() override;
+  void DeleteAllData(bool incognito_mode) override;
   int DeleteOrigin(const std::string& origin) override;
   void GetOrigins(std::shared_ptr<NWebGetOriginsCallback> callback) override;
   void GetOrigins(std::vector<NWebWebStorageOrigin>& origins) override;
@@ -60,11 +60,18 @@ class NWebWebStorageDelegate : public NWebWebStorageDelegateInterface {
 #endif
  private:
   CefRefPtr<CefWebStorage> GetGlobalWebStorage();
+
   CefRefPtr<CefWebStorage> web_storage_ = nullptr;
 #ifdef OHOS_EX_PASSWORD
   std::shared_ptr<NWebStorageExtensionCallback>
       web_storage_extension_callback_ = nullptr;
 #endif  // OHOS_EX_PASSWORD
+
+#if BUILDFLAG(IS_OHOS)
+  CefRefPtr<CefWebStorage> GetGlobalIncognitoWebStorage();
+  CefRefPtr<CefWebStorage> incognito_web_storage_ = nullptr;
+#endif
+
 };
 }  // namespace OHOS::NWeb
 #endif

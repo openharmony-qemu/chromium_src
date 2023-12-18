@@ -33,20 +33,25 @@ class NWebCookieManagerDelegateInterface {
   virtual void ReturnCookie(
       const std::string& url,
       std::shared_ptr<NWebValueCallback<std::string>> callback) = 0;
-  virtual std::string ReturnCookie(const std::string& url, bool &is_valid) = 0;
+  virtual std::string ReturnCookie(const std::string &url,
+                                   bool &is_valid,
+                                   bool incognito_mode) = 0;
   virtual void SetCookie(const std::string& url,
                          const std::string& value,
                          std::shared_ptr<NWebValueCallback<bool>> callback) = 0;
-  virtual int SetCookie(const std::string& url, const std::string& value) = 0;
+  virtual int SetCookie(const std::string &url,
+                        const std::string &value,
+                        bool incognito_mode) = 0;
   virtual void ExistCookies(
       std::shared_ptr<NWebValueCallback<bool>> callback) = 0;
-  virtual bool ExistCookies() = 0;
+  virtual bool ExistCookies(bool incognito_mode) = 0;
   virtual void Store(std::shared_ptr<NWebValueCallback<bool>> callback) = 0;
   virtual bool Store() = 0;
   virtual void DeleteSessionCookies(
       std::shared_ptr<NWebValueCallback<bool>> callback) = 0;
   virtual void DeleteCookieEntirely(
-      std::shared_ptr<NWebValueCallback<bool>> callback) = 0;
+      std::shared_ptr<NWebValueCallback<bool>> callback,
+      bool incognito_mode) = 0;
   virtual void ConfigCookie(const std::string& url,
                             const std::string& value,
                             std::shared_ptr<NWebValueCallback<long>> callback) = 0;

@@ -343,6 +343,12 @@ class NWebImpl : public NWeb {
   double GetBrowserZoomLevel() const;
 #endif
 
+#if defined(OHOS_INCOGNITO_MODE)
+  bool IsIncognitoMode() const override {
+    return incognito_mode_;
+  }
+#endif
+
  private:
   void ProcessInitArgs(const NWebInitArgs& init_args);
   void InitWebEngineArgs(const NWebInitArgs& init_args);
@@ -370,6 +376,8 @@ class NWebImpl : public NWeb {
   float device_pixel_ratio_ = 0.f;
   bool is_enhance_surface_ = false;
   bool is_richtext_value_ = false;
+
+  bool incognito_mode_ = false;
 };
 }  // namespace OHOS::NWeb
 

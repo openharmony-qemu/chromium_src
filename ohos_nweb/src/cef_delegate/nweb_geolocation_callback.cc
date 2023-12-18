@@ -23,7 +23,8 @@ NWebGeolocationCallback::NWebGeolocationCallback(CefRefPtr<CefBrowser> browser)
 void NWebGeolocationCallback::GeolocationCallbackInvoke(
     const std::string& origin,
     bool allow,
-    bool retain) {
+    bool retain,
+    bool incognito) {
   if (!browser_) {
     LOG(ERROR) << "GeolocationCallbackInvoke browser_ is nullptr";
     return;
@@ -31,9 +32,9 @@ void NWebGeolocationCallback::GeolocationCallbackInvoke(
 
   if (retain) {
     if (allow) {
-      browser_->GetGeolocationPermissions()->Enabled(origin);
+      browser_->GetGeolocationPermissions()->Enabled(origin, incognito);
     } else {
-      browser_->GetGeolocationPermissions()->Disabled(origin);
+      browser_->GetGeolocationPermissions()->Disabled(origin, incognito);
     }
   }
   browser_->GetPermissionRequestDelegate()->NotifyGeolocationPermission(allow,

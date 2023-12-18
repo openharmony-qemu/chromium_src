@@ -25,26 +25,29 @@ namespace OHOS::NWeb {
 std::shared_ptr<NWebDelegateInterface> NWebDelegateAdapter::CreateNWebDelegate(
     int argc,
     const char* argv[],
+    bool is_enhance_surface,
+    void* window,
+    bool popup
 #if defined(OHOS_EX_DOWNLOAD)
-    bool is_enhance_surface,
-    void* window,
-    bool popup,
-    int nweb_id) {
-#else
-    bool is_enhance_surface,
-    void* window,
-    bool popup) {
-#endif  //  OHOS_EX_DOWNLOAD
+    , int nweb_id
+#endif
+#if defined(OHOS_INCOGNITO_MODE)
+    , bool incognito_mode
+#endif
+    ) {
 #if defined(USE_CEF)
   std::shared_ptr<NWebDelegate> delegate =
       std::make_shared<NWebDelegate>(argc, argv);
+
+  if (delegate == nullptr ||
+      !delegate->Init(is_enhance_surface, window, popup
 #if defined(OHOS_EX_DOWNLOAD)
-  if (delegate == nullptr ||
-      !delegate->Init(is_enhance_surface, window, popup, nweb_id)) {
-#else
-  if (delegate == nullptr ||
-      !delegate->Init(is_enhance_surface, window, popup)) {
-#endif  //  OHOS_EX_DOWNLOAD
+      , nweb_id
+#endif
+#if defined(OHOS_INCOGNITO_MODE)
+      , incognito_mode
+#endif
+      )) {
     WVLOG_I("FAIL to create nweb delegate instance");
     return nullptr;
   }

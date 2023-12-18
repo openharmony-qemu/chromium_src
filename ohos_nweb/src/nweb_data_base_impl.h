@@ -43,21 +43,28 @@ class NWebDataBaseImpl : public NWebDataBase {
                               char* password,
                               uint32_t passwordSize) const override;
 
-  bool ExistPermissionByOrigin(const std::string& origin, int type) override;
+  bool ExistPermissionByOrigin(const std::string& origin,
+                               int type,
+                               bool incognito) override;
 
   bool GetPermissionResultByOrigin(const std::string& origin,
                                    int type,
-                                   bool& result) override;
+                                   bool& result,
+                                   bool incognito) override;
 
   int SetPermissionByOrigin(const std::string& origin,
                             int type,
-                            bool result) override;
+                            bool result,
+                            bool incognito) override;
 
-  int ClearPermissionByOrigin(const std::string& origin, int type) override;
+  int ClearPermissionByOrigin(const std::string& origin,
+                              int type,
+                              bool incognito) override;
 
-  void ClearAllPermission(int type) override;
+  void ClearAllPermission(int type, bool incognito) override;
 
-  std::vector<std::string> GetOriginsByPermission(int type) override;
+  std::vector<std::string> GetOriginsByPermission(int type,
+                                                  bool incognito) override;
 
   bool ExistFormData() const;
 

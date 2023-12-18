@@ -37,19 +37,24 @@ class NWebCookieManagerDelegate : public NWebCookieManagerDelegateInterface {
   void ReturnCookie(
       const std::string& url,
       std::shared_ptr<NWebValueCallback<std::string>> callback) override;
-  std::string ReturnCookie(const std::string& url, bool& is_valid) override;
+  std::string ReturnCookie(const std::string& url,
+                           bool& is_valid,
+                           bool incognito_mode) override;
   void SetCookie(const std::string& url,
                  const std::string& value,
                  std::shared_ptr<NWebValueCallback<bool>> callback) override;
-  int SetCookie(const std::string& url, const std::string& value) override;
+  int SetCookie(const std::string &url,
+                const std::string &value,
+                bool incognito_mode) override;
   void ExistCookies(std::shared_ptr<NWebValueCallback<bool>> callback) override;
-  bool ExistCookies() override;
+  bool ExistCookies(bool incognito_mode) override;
   void Store(std::shared_ptr<NWebValueCallback<bool>> callback) override;
   bool Store() override;
   void DeleteSessionCookies(
       std::shared_ptr<NWebValueCallback<bool>> callback) override;
   void DeleteCookieEntirely(
-      std::shared_ptr<NWebValueCallback<bool>> callback) override;
+      std::shared_ptr<NWebValueCallback<bool>> callback,
+      bool incognito_mode) override;
   void ConfigCookie(const std::string& url,
                     const std::string& value,
                     std::shared_ptr<NWebValueCallback<long>> callback) override;
@@ -58,6 +63,9 @@ class NWebCookieManagerDelegate : public NWebCookieManagerDelegateInterface {
   CefRefPtr<CefCookieManager> GetGlobalCookieManager();
   CefRefPtr<CefCookieManager> cookie_manager_ = nullptr;
   const int ENOUGH_WAITED_TIME = 500;
+
+  CefRefPtr<CefCookieManager> GetGlobalIncognitoCookieManager();
+  CefRefPtr<CefCookieManager> incognito_cookie_manager_ = nullptr;
 };
 }  // namespace OHOS::NWeb
 #endif

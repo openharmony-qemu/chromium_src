@@ -220,13 +220,21 @@ CefRefPtr<CefClient> NWebApplication::GetDefaultClient() {
 
 void NWebApplication::PopulateCreateSettings(
     CefRefPtr<CefCommandLine> command_line,
-    CefBrowserSettings& browser_settings) {
+    CefBrowserSettings& browser_settings
+#if defined(OHOS_INCOGNITO_MODE)
+    , bool incognito_mode
+#endif
+    ) {
   if (command_line->HasSwitch(switches::kOffScreenFrameRate)) {
     browser_settings.windowless_frame_rate =
         atoi(command_line->GetSwitchValue(switches::kOffScreenFrameRate)
                  .ToString()
                  .c_str());
   }
+
+#if defined(OHOS_INCOGNITO_MODE)
+  browser_settings.incognito_mode = incognito_mode;
+#endif
 }
 
 #if defined(OHOS_API_INIT_WEB_ENGINE)
@@ -239,13 +247,21 @@ void NWebApplication::CreateBrowser(
     std::shared_ptr<NWebPreferenceDelegate> preference_delegate,
     const std::string& url,
     CefRefPtr<NWebHandlerDelegate> handler_delegate,
-    void* window) {
+    void* window
+#if defined(OHOS_INCOGNITO_MODE)
+    , bool incognito_mode
+#endif
+    ) {
   CefRefPtr<CefCommandLine> command_line =
       CefCommandLine::GetGlobalCommandLine();
 
   // Specify CEF browser settings here.
   CefBrowserSettings browser_settings;
-  PopulateCreateSettings(command_line, browser_settings);
+  PopulateCreateSettings(command_line, browser_settings
+#if defined(OHOS_INCOGNITO_MODE)
+      , incognito_mode
+#endif
+  );
   preference_delegate->ComputeBrowserSettings(browser_settings);
 
   if (command_line->HasSwitch(switches::kForTest)) {

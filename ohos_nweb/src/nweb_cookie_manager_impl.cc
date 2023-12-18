@@ -102,10 +102,10 @@ void NWebCookieManagerImpl::SetCookie(
   }
 }
 
-int NWebCookieManagerImpl::SetCookie(const std::string& url,
-                                     const std::string& value) {
+int NWebCookieManagerImpl::SetCookie(
+    const std::string& url, const std::string& value, bool incognito_mode) {
   if (delegate_ != nullptr) {
-    return delegate_->SetCookie(url, value);
+    return delegate_->SetCookie(url, value, incognito_mode);
   }
   return NWEB_ERR;
 }
@@ -118,10 +118,10 @@ void NWebCookieManagerImpl::ReturnCookie(
   }
 }
 
-std::string NWebCookieManagerImpl::ReturnCookie(const std::string& url, bool &is_valid) {
-
+std::string NWebCookieManagerImpl::ReturnCookie(
+    const std::string& url, bool& is_valid, bool incognito_mode) {
   if (delegate_ != nullptr) {
-    return delegate_->ReturnCookie(url, is_valid);
+    return delegate_->ReturnCookie(url, is_valid, incognito_mode);
   }
   return "";
 }
@@ -133,9 +133,9 @@ void NWebCookieManagerImpl::ExistCookies(
   }
 }
 
-bool NWebCookieManagerImpl::ExistCookies() {
+bool NWebCookieManagerImpl::ExistCookies(bool incognito_mode) {
   if (delegate_ != nullptr) {
-    return delegate_->ExistCookies();
+    return delegate_->ExistCookies(incognito_mode);
   }
   return false;
 }
@@ -162,9 +162,9 @@ void NWebCookieManagerImpl::DeleteSessionCookies(
 }
 
 void NWebCookieManagerImpl::DeleteCookieEntirely(
-    std::shared_ptr<NWebValueCallback<bool>> callback) {
+    std::shared_ptr<NWebValueCallback<bool>> callback, bool incognito_mode) {
   if (delegate_ != nullptr) {
-    delegate_->DeleteCookieEntirely(callback);
+    delegate_->DeleteCookieEntirely(callback, incognito_mode);
   }
 }
 }  // namespace OHOS::NWeb

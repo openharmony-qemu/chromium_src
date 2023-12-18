@@ -848,11 +848,6 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      */
     virtual void JavaScriptOnDocumentStart(const ScriptItems& scriptItems) = 0;
 	
-    /**
-     * Inject the JavaScript after WebView load the DOM tree.
-     */
-    virtual void JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) = 0;
-
 	/**
      * Execute an accessibility action on an accessibility node in the browser.
      * @param accessibilityId The id of the accessibility node.

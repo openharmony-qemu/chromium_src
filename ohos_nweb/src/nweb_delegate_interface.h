@@ -173,7 +173,6 @@ class NWebDelegateInterface
       const std::string& object_name,
       const std::vector<std::string>& method_list) const = 0;
   virtual void JavaScriptOnDocumentStart(const ScriptItems& ScriptItems) = 0;
-  virtual void JavaScriptOnDocumentEnd(const ScriptItems& ScriptItems) = 0;
   virtual void RegisterNWebJavaScriptCallBack(
       std::shared_ptr<NWebJavaScriptResultCallBack> callback) = 0;
   virtual bool OnFocus(const FocusReason& focusReason = FocusReason::FOCUS_DEFAULT) const = 0;

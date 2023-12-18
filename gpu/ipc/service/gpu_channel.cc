@@ -69,6 +69,10 @@
 #include "gpu/ipc/service/dcomp_texture_win.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "gpu/ipc/service/stream_texture_ohos.h"
+#endif
+
 namespace gpu {
 
 namespace {
@@ -105,6 +109,19 @@ bool TryRegisterOverlayStateObserver(
       std::move(promotion_hint_observer), std::move(mailbox));
 }
 #endif  // BUILDFLAG(IS_WIN)
+
+#if BUILDFLAG(IS_OHOS)
+int32_t TryCreateNativeTexture(
+    base::WeakPtr<GpuChannel> channel,
+    int32_t native_id,
+    mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver) {
+  if (!channel) {
+    return -1;
+  }
+  channel->CreateNativeTexture(native_id, std::move(receiver));
+  return channel->current_native_embed_id(native_id);
+}
+#endif
 
 }  // namespace
 
@@ -181,6 +198,12 @@ class GPU_IPC_SERVICE_EXPORT GpuChannelMessageFilter
       const gpu::Mailbox& mailbox,
       RegisterOverlayStateObserverCallback callback) override;
 #endif  // BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_OHOS)
+  void CreateNativeTexture(
+      int32_t native_id,
+      mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver,
+      CreateNativeTextureCallback callback) override;
+#endif
   void WaitForTokenInRange(int32_t routing_id,
                            int32_t start,
                            int32_t end,
@@ -322,6 +345,12 @@ void GpuChannelMessageFilter::FlushDeferredRequests(
         routing_id = request->params->get_destroy_dcomp_texture();
         break;
 #endif  // BUILDFLAG(IS_WIN)
+
+#if BUILDFLAG(IS_OHOS)
+      case mojom::DeferredRequestParams::Tag::kDestroyNativeTexture:
+        routing_id = request->params->get_destroy_native_texture();
+        break;
+#endif  // BUILDFLAG(IS_OHOS)
 
       case mojom::DeferredRequestParams::Tag::kCommandBufferRequest:
         routing_id = request->params->get_command_buffer_request()->routing_id;
@@ -489,6 +518,25 @@ void GpuChannelMessageFilter::RegisterOverlayStateObserver(
 }
 #endif  // BUILDFLAG(IS_WIN)
 
+#if BUILDFLAG(IS_OHOS)
+void GpuChannelMessageFilter::CreateNativeTexture(
+    int32_t native_id,
+    mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver,
+    CreateNativeTextureCallback callback) {
+  base::AutoLock auto_lock(gpu_channel_lock_);
+  if (!gpu_channel_) {
+    receiver_.reset();
+    return;
+  }
+
+  main_task_runner_->PostTaskAndReplyWithResult(
+      FROM_HERE,
+      base::BindOnce(&TryCreateNativeTexture, gpu_channel_->AsWeakPtr(),
+                     native_id, std::move(receiver)),
+      std::move(callback));
+}
+#endif
+
 void GpuChannelMessageFilter::WaitForTokenInRange(
     int32_t routing_id,
     int32_t start,
@@ -578,6 +626,14 @@ GpuChannel::~GpuChannel() {
   }
   dcomp_textures_.clear();
 #endif  // BUILDFLAG(IS_WIN)
+
+#if BUILDFLAG(IS_OHOS)
+  // Release any references to this channel held by StreamTexture.
+  for (auto& native_texture : native_textures_) {
+    native_texture.second->ReleaseChannel();
+  }
+  native_textures_.clear();
+#endif
 
   // Destroy filter first to stop posting tasks to scheduler.
   filter_->Destroy();
@@ -706,6 +762,12 @@ void GpuChannel::ExecuteDeferredRequest(
       DestroyDCOMPTexture(params->get_destroy_dcomp_texture());
       break;
 #endif  // BUILDFLAG(IS_WIN)
+
+#if BUILDFLAG(IS_OHOS)
+    case mojom::DeferredRequestParams::Tag::kDestroyNativeTexture:
+      DestroyNativeTexture(params->get_destroy_native_texture());
+      break;
+#endif  // BUILDFLAG(IS_OHOS)
 
     case mojom::DeferredRequestParams::Tag::kCommandBufferRequest: {
       mojom::DeferredCommandBufferRequest& request =
@@ -1038,6 +1100,43 @@ void GpuChannel::RegisterSysmemBufferCollection(
       register_with_image_pipe);
 }
 #endif  // BUILDFLAG(IS_FUCHSIA)
+
+#if BUILDFLAG(IS_OHOS)
+int32_t GpuChannel::CreateNativeTexture(
+    int32_t native_id,
+    mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver) {
+  auto found = native_textures_.find(native_id);
+  if (found != native_textures_.end()) {
+    LOG(ERROR) << "[NativeEmbed] Trying to create a StreamTexture with an "
+                  "existing native_id.";
+    return -1;
+  }
+  scoped_refptr<StreamTexture> native_texture =
+      StreamTexture::Create(this, native_id, std::move(receiver));
+
+  if (!native_texture) {
+    return -1;
+  }
+  native_textures_.emplace(native_id, std::move(native_texture));
+
+  return current_native_embed_id(native_id);
+}
+
+void GpuChannel::DestroyNativeTexture(int32_t native_id) {
+  auto found = native_textures_.find(native_id);
+  if (found == native_textures_.end()) {
+    LOG(ERROR)
+        << "[NativeEmbed] Trying to destroy a non-existent native texture.";
+    return;
+  }
+  found->second->ReleaseChannel();
+  native_textures_.erase(native_id);
+}
+
+int32_t GpuChannel::current_native_embed_id(int32_t native_id) {
+  return native_textures_[native_id]->NativeEmbedID();
+}
+#endif
 
 absl::optional<gpu::GpuDiskCacheHandle> GpuChannel::GetCacheHandleForType(
     gpu::GpuDiskCacheType type) {

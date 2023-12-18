@@ -79,6 +79,13 @@ source_set("filters") {
     "wsola_internals.h",
   ]
 
+  if (is_ohos) {
+    sources += [
+      "native_pipeline_controller.cc",
+      "native_pipeline_controller.h",
+    ]
+  }
+
   configs += [ "//media:subcomponent_config" ]
 
   deps = [

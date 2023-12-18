@@ -220,6 +220,10 @@
 #include "base/test/clang_profiling.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "content/renderer/media/ohos/native_texture_factory.h"
+#endif
+
 namespace content {
 
 namespace {
@@ -1299,6 +1303,21 @@ RenderThreadImpl::GetOverlayStateServiceProvider() {
   return overlay_state_service_provider_.get();
 }
 #endif  // BUILDFLAG(IS_WIN)
+
+#if BUILDFLAG(IS_OHOS)
+scoped_refptr<NativeTextureFactory> RenderThreadImpl::GetNativeTexureFactory() {
+  DCHECK(IsMainThread());
+  if (!native_texture_factory_ || native_texture_factory_->IsLost()) {
+    scoped_refptr<gpu::GpuChannelHost> channel = EstablishGpuChannelSync();
+    if (!channel) {
+      native_texture_factory_ = nullptr;
+      return nullptr;
+    }
+    native_texture_factory_ = NativeTextureFactory::Create(std::move(channel));
+  }
+  return native_texture_factory_;
+}
+#endif
 
 base::WaitableEvent* RenderThreadImpl::GetShutdownEvent() {
   return ChildProcess::current()->GetShutDownEvent();

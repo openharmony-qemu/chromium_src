@@ -1165,7 +1165,7 @@ void InputHandler::HandleScrollUpdateForInternalBeginFrame(const viz::BeginFrame
     scrollbar_controller_->WillBeginImplFrame();
     input_handler_client_->DeliverInputForBeginFrame(args);
   }
-};
+}
 #endif
 
 bool InputHandler::IsCurrentScrollMainRepainted() const {

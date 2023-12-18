@@ -3270,6 +3270,17 @@ blink::WebMediaPlayer* RenderFrameImpl::CreateMediaPlayer(
       std::move(compositor_worker_task_runner));
 }
 
+#if BUILDFLAG(IS_OHOS)
+blink::WebNativeBridge* RenderFrameImpl::CreateWebNativeBridge(
+    blink::WebNativeClient* client,
+    const cc::LayerTreeSettings* settings) {
+  DCHECK(settings);
+  return media_factory_.CreateWebNativeBridge(
+      client, *settings,
+      agent_scheduling_group_.agent_group_scheduler().CompositorTaskRunner());
+}
+#endif
+
 std::unique_ptr<blink::WebContentSettingsClient>
 RenderFrameImpl::CreateWorkerContentSettingsClient() {
   if (!frame_ || !frame_->View())

@@ -7,14 +7,18 @@
 
 #include <memory>
 
+#if BUILDFLAG(IS_ANDROID)
 #include "base/android/scoped_hardware_buffer_fence_sync.h"
+#endif
 #include "gpu/gpu_gles2_export.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gl/gl_bindings.h"
 
+#if BUILDFLAG(IS_ANDROID)
 namespace base::android {
 class ScopedHardwareBufferFenceSync;
 }  // namespace base::android
+#endif
 
 namespace gpu {
 class TextureOwner;
@@ -71,7 +75,7 @@ class GPU_GLES2_EXPORT StreamTextureSharedImageInterface
   // finished and it can be safely read from.
   // The buffer is guaranteed to be valid until the lifetime of the object
   // returned.
-#if !BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ANDROID)
   virtual std::unique_ptr<base::android::ScopedHardwareBufferFenceSync>
   GetAHardwareBuffer() = 0;
 #endif

@@ -17,6 +17,12 @@
 #include "media/base/timestamp_constants.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
 
+#if BUILDFLAG(IS_OHOS)
+namespace gfx {
+class Size;
+}
+#endif
+
 namespace media {
 
 // Status states for pipeline.  All codes except PIPELINE_OK indicate errors.
@@ -190,6 +196,12 @@ MEDIA_EXPORT bool operator!=(const PipelineStatistics& first,
 // Used for updating pipeline statistics; the passed value should be a delta
 // of all attributes since the last update.
 using StatisticsCB = base::RepeatingCallback<void(const PipelineStatistics&)>;
+
+#if BUILDFLAG(IS_OHOS)
+using TextureSizeChangedCB = base::OnceCallback<void(const gfx::Size&)>;
+using CreateTextureCB = base::OnceCallback<void(TextureSizeChangedCB, int)>;
+using DestroyTextureCB = base::OnceCallback<void()>;
+#endif
 
 }  // namespace media
 

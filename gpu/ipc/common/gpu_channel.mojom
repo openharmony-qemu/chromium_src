@@ -192,6 +192,10 @@ interface GpuChannel {
       int32 route_id,
       pending_associated_receiver<DCOMPTexture> receiver) => (bool success);
 
+  [Sync, EnableIf=is_ohos] CreateNativeTexture(
+      int32 native_id,
+      pending_associated_receiver<StreamTexture> receiver) => (int32 native_embed_id);
+
   // This interface is used by MediaFoundationRendererClient to subscribe
   // to overlay state information from the Viz layer (as provided by the
   // DCOverlayProcessor). The MediaFoundationRendererClient uses the overlay
@@ -326,6 +330,17 @@ interface StreamTexture {
   UpdateRotatedVisibleSize(gfx.mojom.Size rotated_visible_size);
 };
 
+[EnableIf=is_ohos]
+interface StreamTexture {
+  // Tells the service-side instance to start sending frame available
+  // notifications.
+  StartListening(pending_associated_remote<StreamTextureClient> client);
+
+  // Updates the visible size from MediaPlayer. The size includes rotation of
+  // video.
+  UpdateRotatedVisibleSize(gfx.mojom.Size rotated_visible_size);
+};
+
 // Interface used by GPU to notify the client of a StreamTexture instance about
 // new frame availability. Implemented by renderer clients and called by
 // StreamTexture instances in the GPU process.
@@ -334,6 +349,17 @@ interface StreamTexture {
 // interface must not be used to pass other associated interface remotes or
 // receivers.
 [EnableIf=is_android]
+interface StreamTextureClient {
+  // Informs the client that a new frame is available.
+  OnFrameAvailable();
+
+  // Informs the client that a new frame with VulkanYcbcrInfo is available.
+  OnFrameWithInfoAvailable(Mailbox mailbox, gfx.mojom.Size coded_size,
+                           gfx.mojom.Rect visible_rect,
+                           VulkanYCbCrInfo? info);
+};
+
+[EnableIf=is_ohos]
 interface StreamTextureClient {
   // Informs the client that a new frame is available.
   OnFrameAvailable();
@@ -420,6 +446,11 @@ union DeferredRequestParams {
   // by this ID.
   [EnableIf=is_win]
   int32 destroy_dcomp_texture;
+
+  // Sent to indicate the client wants to destroy the NativeImageTexture identified
+  // by this ID.
+  [EnableIf=is_ohos]
+  int32 destroy_native_texture;
 };
 
 // Details of a batched request targeting a specific command buffer.

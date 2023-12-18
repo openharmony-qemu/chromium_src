@@ -175,6 +175,13 @@ source_set("ipc_common_sources") {
     libs = [ "android" ]
   }
 
+  if (is_ohos) {
+    sources += [
+      "gpu_surface_id_tracker.cc",
+      "gpu_surface_id_tracker.h",
+    ]
+  }
+
   if (use_ozone) {
     deps += [ "//ui/ozone" ]
   }

@@ -57,6 +57,13 @@ void OhosNativeImage::UpdateNativeImage() {
   native_image_adapter_->UpdateSurfaceImage();
 }
 
+void OhosNativeImage::GetSurfaceId(uint64_t* surface_id) {
+  if (native_image_adapter_ == nullptr) {
+    return;
+  }
+  native_image_adapter_->GetSurfaceId(surface_id);
+}
+
 void OhosNativeImage::GetTransformMatrix(float mtx[16]) {
   if (native_image_adapter_ == nullptr) {
     return;

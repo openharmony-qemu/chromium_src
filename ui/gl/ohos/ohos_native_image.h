@@ -23,6 +23,7 @@ class GL_EXPORT OhosNativeImage
   OhosNativeImage& operator=(const OhosNativeImage&) = delete;
   void SetFrameAvailableCallback(base::RepeatingClosure callback);
   void UpdateNativeImage();
+  void GetSurfaceId(uint64_t* surface_id);
   void GetTransformMatrix(float mtx[16]);
   void AttachToGLContext();
   void DetachFromGLContext();

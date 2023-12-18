@@ -201,6 +201,17 @@ class GPU_IPC_SERVICE_EXPORT GpuChannel : public IPC::Listener,
       const gpu::Mailbox& mailbox);
 #endif  // BUILDFLAG(IS_WIN)
 
+#if BUILDFLAG(IS_OHOS)
+  int32_t CreateNativeTexture(
+      int32_t native_id,
+      mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver);
+
+  // Called by StreamTexture to remove the GpuChannel's reference to the
+  // StreamTexture.
+  void DestroyNativeTexture(int32_t stream_id);
+  int32_t current_native_embed_id(int32_t native_id);
+#endif
+
   SharedImageStub* shared_image_stub() const {
     return shared_image_stub_.get();
   }
@@ -297,6 +308,11 @@ class GPU_IPC_SERVICE_EXPORT GpuChannel : public IPC::Listener,
 #if BUILDFLAG(IS_WIN)
   // Set of active DCOMPTextures.
   base::flat_map<int32_t, scoped_refptr<DCOMPTexture>> dcomp_textures_;
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+  // Set of active NativeTextures.
+  base::flat_map<int32_t, scoped_refptr<StreamTexture>> native_textures_;
 #endif
 
   // State shared with the IO thread. Receives all GpuChannel interface messages

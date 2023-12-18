@@ -35,9 +35,8 @@ class GPU_GLES2_EXPORT NativeImageTextureOwner
   };
 
   static scoped_refptr<NativeImageTextureOwner> Create(
-      Mode mode,
       scoped_refptr<SharedContextState> context_state,
-      scoped_refptr<RefCountedLock> drdc_lock);
+      Mode mode = Mode::kOhosSurfaceTexture);
 
   NativeImageTextureOwner(const NativeImageTextureOwner&) = delete;
   NativeImageTextureOwner& operator=(const NativeImageTextureOwner&) = delete;
@@ -53,6 +52,8 @@ class GPU_GLES2_EXPORT NativeImageTextureOwner
   virtual void* AquireOhosNativeWindow() const = 0;
 
   virtual void UpdateNativeImage() = 0;
+
+  virtual void GetSurfaceId(uint64_t* surface_id) = 0;
 
   virtual void EnsureNativeImageBound(GLuint service_id) = 0;
 

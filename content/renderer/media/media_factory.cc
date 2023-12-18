@@ -135,9 +135,12 @@
 #endif  // BUILDFLAG(IS_WIN)
 
 #if BUILDFLAG(IS_OHOS)
+#include "content/renderer/media/ohos/native_renderer_client_factory.h"
+#include "content/renderer/media/ohos/native_texture_wrapper_impl.h"
 #include "content/renderer/media/ohos/ohos_media_player_renderer_client_factory.h"
+#include "content/renderer/media/renderer_web_native_delegate.h"
+#include "third_party/blink/renderer/platform/web_native_bridge_impl.h"
 #endif
-
 namespace {
 
 // This limit is much higher than it needs to be right now, because the logic
@@ -525,6 +528,62 @@ blink::WebMediaPlayer* MediaFactory::CreateMediaPlayer(
       std::move(demuxer_override),
       blink::Platform::Current()->GetBrowserInterfaceBroker());
 }
+
+#if BUILDFLAG(IS_OHOS)
+blink::WebNativeBridge* MediaFactory::CreateWebNativeBridge(
+    blink::WebNativeClient* client,
+    const cc::LayerTreeSettings& settings,
+    scoped_refptr<base::SingleThreadTaskRunner>
+        main_thread_compositor_task_runner) {
+  LOG(INFO) << "[NativeEmbed] MediaFactory::CreateWebNativeBridge.";
+  blink::WebLocalFrame* web_frame = render_frame_->GetWebFrame();
+  RenderThreadImpl* render_thread = RenderThreadImpl::current();
+  // Render thread may not exist in tests, returning nullptr if it does not.
+  if (!render_thread) {
+    return nullptr;
+  }
+
+  auto factory_selector = std::make_unique<media::RendererFactorySelector>();
+  auto native_factory = std::make_unique<NativeRendererClientFactory>(
+      render_thread->compositor_task_runner(),
+      base::BindRepeating(
+          &NativeTextureWrapperImpl::Create, true /*enable_texture_copy*/,
+          render_thread->GetNativeTexureFactory(),
+          render_frame_->GetTaskRunner(blink::TaskType::kInternalMedia)));
+
+  factory_selector->AddBaseFactory(media::RendererType::kNative,
+                                   std::move(native_factory));
+
+  scoped_refptr<base::SequencedTaskRunner> media_task_runner =
+      render_thread->GetMediaSequencedTaskRunner();
+
+  if (!media_task_runner) {
+    // If the media thread failed to start, we will receive a null task runner.
+    // Fail the creation by returning null, and let callers handle the error.
+    // See https://crbug.com/775393.
+    return nullptr;
+  }
+
+  // TODO: Consider to use surface layer mode.
+  auto video_frame_compositor_task_runner =
+      blink::Platform::Current()->VideoFrameCompositorTaskRunner();
+  auto vfc = std::make_unique<blink::VideoFrameCompositor>(
+      video_frame_compositor_task_runner, nullptr);
+
+  auto* web_native_bridge = new blink::WebNativeBridgeImpl(
+      web_frame, client, GetWebNativeDelegate(), std::move(factory_selector),
+      std::move(vfc), blink::Platform::Current()->GetBrowserInterfaceBroker(),
+      media_task_runner, video_frame_compositor_task_runner);
+  return web_native_bridge;
+}
+
+media::RendererWebNativeDelegate* MediaFactory::GetWebNativeDelegate() {
+  if (!web_native_delegate_) {
+    web_native_delegate_ = new media::RendererWebNativeDelegate(render_frame_);
+  }
+  return web_native_delegate_;
+}
+#endif
 
 blink::WebEncryptedMediaClient* MediaFactory::EncryptedMediaClient() {
   if (!web_encrypted_media_client_) {

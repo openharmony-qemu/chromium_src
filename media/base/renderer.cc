@@ -34,6 +34,8 @@ std::string GetRendererName(RendererType renderer_type) {
     case RendererType::kTest:
       return "Media Renderer Implementation For Testing";
 #if BUILDFLAG(IS_OHOS)
+    case RendererType::kNative:
+      return "Native";
     case RendererType::kOHOSMediaPlayer:
       return "OHOSMediaPlayerRenderer";
 #endif
@@ -43,6 +45,11 @@ std::string GetRendererName(RendererType renderer_type) {
 Renderer::Renderer() = default;
 
 Renderer::~Renderer() = default;
+
+#if BUILDFLAG(IS_OHOS)
+void Renderer::Initialize(CreateTextureCB create_texture_cb,
+                          DestroyTextureCB destroy_texture_cb) {}
+#endif
 
 void Renderer::SetCdm(CdmContext* cdm_context, CdmAttachedCB cdm_attached_cb) {
   DLOG(WARNING) << "CdmContext is not supported.";

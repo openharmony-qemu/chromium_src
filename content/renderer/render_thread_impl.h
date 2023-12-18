@@ -114,6 +114,10 @@ class OverlayStateServiceProvider;
 class OverlayStateServiceProviderImpl;
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+class NativeTextureFactory;
+#endif
+
 // The RenderThreadImpl class represents the main thread, where `blink::WebView`
 // instances live.  Most of the communication occurs in the form of mojo IPC
 // messages, however there is still some legacy IPC messages.  They are
@@ -267,6 +271,10 @@ class CONTENT_EXPORT RenderThreadImpl
   // clear is supported, otherwise GetOverlayStateServiceProvider will return
   // nullptr.
   OverlayStateServiceProvider* GetOverlayStateServiceProvider();
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+  scoped_refptr<NativeTextureFactory> GetNativeTexureFactory();
 #endif
 
   blink::WebVideoCaptureImplManager* video_capture_impl_manager() const {
@@ -537,6 +545,10 @@ class CONTENT_EXPORT RenderThreadImpl
   scoped_refptr<DCOMPTextureFactory> dcomp_texture_factory_;
   std::unique_ptr<OverlayStateServiceProviderImpl>
       overlay_state_service_provider_;
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+  scoped_refptr<NativeTextureFactory> native_texture_factory_;
 #endif
 
   scoped_refptr<viz::ContextProviderCommandBuffer> shared_main_thread_contexts_;

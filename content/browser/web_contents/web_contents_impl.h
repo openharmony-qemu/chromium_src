@@ -150,6 +150,9 @@ class WebContentsView;
 struct AXEventNotificationDetails;
 struct MHTMLGenerationParams;
 class PreloadingAttempt;
+#if BUILDFLAG(IS_OHOS)
+class NativeWebContentsObserver;
+#endif
 
 namespace mojom {
 class CreateNewWindowParams;
@@ -926,6 +929,14 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
       RenderFrameHostImpl* frame_host,
       mojo::PendingAssociatedReceiver<media::mojom::MediaPlayerHost> receiver)
       override;
+#if BUILDFLAG(IS_OHOS)
+  void CreateNativeBridgeHostForRenderFrameHost(
+      RenderFrameHostImpl* frame_host,
+      mojo::PendingAssociatedReceiver<media::mojom::NativeBridgeHost> receiver)
+      override;
+  void OnNativeEmbedStatusUpdate(const NativeEmbedInfo& native_embed_info,
+                                 NativeEmbedInfo::TagState state) override;
+#endif
   void RequestMediaAccessPermission(const MediaStreamRequest& request,
                                     MediaResponseCallback callback) override;
   bool CheckMediaAccessPermission(RenderFrameHostImpl* render_frame_host,
@@ -1192,6 +1203,12 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   MediaWebContentsObserver* media_web_contents_observer() {
     return media_web_contents_observer_.get();
   }
+
+#if BUILDFLAG(IS_OHOS)
+  NativeWebContentsObserver* native_web_contents_observer() {
+    return native_web_contents_observer_.get();
+  }
+#endif
 
   // Update the web contents visibility.
   void UpdateWebContentsVisibility(Visibility visibility) override;
@@ -2276,6 +2293,10 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 
   // Manages media players, CDMs, and power save blockers for media.
   std::unique_ptr<MediaWebContentsObserver> media_web_contents_observer_;
+
+#if BUILDFLAG(IS_OHOS)
+  std::unique_ptr<NativeWebContentsObserver> native_web_contents_observer_;
+#endif
 
 #if BUILDFLAG(ENABLE_PPAPI)
   // Observes pepper playback changes, and notifies MediaSession.

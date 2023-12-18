@@ -214,6 +214,7 @@
 #endif
 
 #if BUILDFLAG(IS_OHOS)
+#include "content/browser/media/ohos/native_web_contents_observer.h"
 #include "content/public/browser/message_port_provider.h"
 #endif
 
@@ -1045,6 +1046,11 @@ WebContentsImpl::WebContentsImpl(BrowserContext* browser_context)
 
 #if BUILDFLAG(IS_ANDROID)
   display_cutout_host_impl_ = std::make_unique<DisplayCutoutHostImpl>(this);
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+  native_web_contents_observer_ =
+      std::make_unique<NativeWebContentsObserver>(this);
 #endif
 
   // WebContents can exist independently of a ColorProviderSource and is still
@@ -4678,6 +4684,24 @@ void WebContentsImpl::CreateMediaPlayerHostForRenderFrameHost(
   media_web_contents_observer()->BindMediaPlayerHost(frame_host->GetGlobalId(),
                                                      std::move(receiver));
 }
+
+#if BUILDFLAG(IS_OHOS)
+void WebContentsImpl::CreateNativeBridgeHostForRenderFrameHost(
+    RenderFrameHostImpl* frame_host,
+    mojo::PendingAssociatedReceiver<media::mojom::NativeBridgeHost> receiver) {
+  native_web_contents_observer()->BindNativeBridgeHost(
+      frame_host->GetGlobalId(), std::move(receiver));
+}
+
+void WebContentsImpl::OnNativeEmbedStatusUpdate(
+    const NativeEmbedInfo& native_embed_info,
+    NativeEmbedInfo::TagState state) {
+  LOG(INFO) << "[NativeEmbed] OnNativeEmbedStatusUpdate " << native_embed_info;
+  if (delegate_) {
+    delegate_->OnNativeEmbedStatusUpdate(native_embed_info, state);
+  }
+}
+#endif
 
 void WebContentsImpl::RequestMediaAccessPermission(
     const MediaStreamRequest& request,

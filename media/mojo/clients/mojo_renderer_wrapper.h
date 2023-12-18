@@ -30,6 +30,10 @@ class MojoRendererWrapper : public Renderer {
   void Initialize(MediaResource* media_resource,
                   RendererClient* client,
                   PipelineStatusCallback init_cb) override;
+#if BUILDFLAG(IS_OHOS)
+  void Initialize(CreateTextureCB create_texture_cb,
+                  DestroyTextureCB destroy_texture_cb) override {}
+#endif
   void SetCdm(CdmContext* cdm_context, CdmAttachedCB cdm_attached_cb) override;
   void SetLatencyHint(absl::optional<base::TimeDelta> latency_hint) override;
   void Flush(base::OnceClosure flush_cb) override;

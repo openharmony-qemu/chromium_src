@@ -2512,6 +2512,13 @@ source_set("browser") {
     ]
   }
 
+  if (is_ohos) {
+    sources += [
+      "media/ohos/native_web_contents_observer.cc",
+      "media/ohos/native_web_contents_observer.h",
+    ]
+  }
+
   if (is_mac) {
     sources += [
       "../app_shim_remote_cocoa/ns_view_bridge_factory_impl.mm",
@@ -3244,6 +3251,7 @@ source_set("browser") {
 
     #if defined(OHOS_PRINT)
     deps += [ "//components/printing/common" ]
+
     #endif // defined(OHOS_PRINT)
 
     #if defined(OHOS_MEDIA_MUTE_AUDIO)

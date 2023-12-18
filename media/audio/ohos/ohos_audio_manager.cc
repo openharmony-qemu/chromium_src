@@ -56,7 +56,7 @@ OHOSAudioManager::~OHOSAudioManager() {
   if (ret != 0)
     LOG(ERROR) << "OHOSAudioManager::UnsetDeviceChangeCallback failed. ret: "
                << ret;
-};
+}
 
 // Implementation of AudioManager.
 bool OHOSAudioManager::HasAudioOutputDevices() {

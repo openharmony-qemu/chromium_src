@@ -104,6 +104,16 @@ class NWebImpl : public NWeb {
   int LoadWithData(const std::string& data,
                    const std::string& mimeType,
                    const std::string& encoding) override;
+
+  void RegisterNativeArkJSFunction(
+      const char* objName,
+      const char** methodName,
+      std::vector<std::function<char*(const char** argv, int32_t argc)>> callback,
+      int32_t size) override;
+  void UnRegisterNativeArkJSFunction(const char* objName) override;
+  void RegisterNativeValideCallback(const char* webName, std::function<void(const char*)> callback) override;
+  void RegisterNativeDestroyCallback(const char* webName, std::function<void(const char*)> callback) override;
+
   void RegisterArkJSfunction(
       const std::string& object_name,
       const std::vector<std::string>& method_list) override;
@@ -343,6 +353,10 @@ class NWebImpl : public NWeb {
   void RestartCameraSession() const;
 #endif // defined(OHOS_WEBRTC)
 
+  std::function<void(const char*)> validCallback_ = nullptr;
+  std::function<void(const char*)> destroyCallback_ = nullptr;
+  std::string webName_;
+  base::Lock state_lock_;
 
   uint32_t nweb_id_ = 0;
   int32_t draw_mode_ = 0;

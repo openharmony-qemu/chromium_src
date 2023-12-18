@@ -2200,6 +2200,64 @@ const std::vector<std::string> NWebHandlerDelegate::GetVisitedHistory() {
   return std::vector<std::string>();
 }
 
+void NWebHandlerDelegate::RegisterNativeJavaScriptCallBack(
+    const char* objName,
+    const char** methodName,
+    std::vector<std::function<char*(const char** argv, int32_t argc)>> callback,
+    int32_t size) {
+  std::unordered_map<std::string, std::function<char*(const char**, int32_t)>> map;
+  for (int i = 0; i < size; i++) {
+    map[methodName[i]] = callback[i];
+  }
+  objMap_[objName] = map;
+}
+
+int NWebHandlerDelegate::ProcessNativeProxyResult(
+    CefRefPtr<CefListValue> args,
+    const CefString& method,
+    const CefString& object_name,
+    CefRefPtr<CefListValue> result) {
+  if (auto it = objMap_.find(object_name); it != objMap_.end()) {
+    auto& methodMap = it->second;
+    if (methodMap.find(method) != methodMap.end()) {
+      auto callback = methodMap[method];
+
+      LOG(INFO) << "NotifyJavaScriptResult GetSize:" << args->GetSize();
+      char **ptr = (char **)malloc(sizeof(char*) * args->GetSize());
+      for (size_t i = 0; i < args->GetSize(); i++) {
+        CefValueType type = args->GetType(i);
+        CefRefPtr<CefValue> value = args->GetValue(i);
+        if (type == VTYPE_STRING) {
+          ptr[i] = strdup(value->GetString().ToString().c_str());
+        } else {
+          std::string jsonString = CefWriteJSON(value, JSON_WRITER_OMIT_BINARY_VALUES);
+          ptr[i] = strdup(jsonString.c_str());
+        }
+      }
+
+      char* callbackResult = callback((const char**)ptr, args->GetSize());
+      if (callbackResult) {
+        result->SetString(0, callbackResult);
+      } else {
+        result->SetString(0, "null");
+      }
+
+      for (size_t i = 0; i < args->GetSize(); i++) {
+        if (ptr[i]) {
+          free(ptr[i]);
+          ptr[i] = nullptr;
+        }
+      }
+      if (ptr) {
+        free(ptr);
+        ptr = nullptr;
+      }
+    }
+    return 0;
+  }
+  return 1;
+}
+
 int NWebHandlerDelegate::NotifyJavaScriptResult(CefRefPtr<CefListValue> args,
                                                 const CefString& method,
                                                 const CefString& object_name,
@@ -2209,6 +2267,12 @@ int NWebHandlerDelegate::NotifyJavaScriptResult(CefRefPtr<CefListValue> args,
   if (args.get() == nullptr || result.get() == nullptr) {
     return 0;
   }
+
+  if(!ProcessNativeProxyResult(args, method, object_name, result)) {
+    // native proxy object
+    return 0;
+  } // ets proxy object
+
   std::vector<std::shared_ptr<NWebValue>> value_vector =
       ParseCefValueTONWebValue(args, args->GetSize());
   if (!nweb_javascript_callback_) {

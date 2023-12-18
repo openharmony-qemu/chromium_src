@@ -177,6 +177,13 @@ class NWebDelegateInterface
                            const std::string& mimeType,
                            const std::string& encoding) = 0;
   virtual int ContentHeight() = 0;
+
+  virtual void RegisterNativeArkJSFunction(
+      const char* objName,
+      const char** methodName,
+      std::vector<std::function<char*(const char** argv, int32_t argc)>> callback,
+      int32_t size) = 0;
+  virtual void UnRegisterNativeArkJSFunction(const char* objName) = 0;
   virtual void RegisterArkJSfunction(
       const std::string& object_name,
       const std::vector<std::string>& method_list,

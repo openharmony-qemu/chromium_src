@@ -1575,6 +1575,32 @@ void NWebDelegate::UnregisterArkJSfunction(
   GetBrowser()->GetHost()->UnregisterArkJSfunction(object_name, method_vector);
 }
 
+void NWebDelegate::RegisterNativeArkJSFunction(
+    const char* objName,
+    const char** methodName,
+    std::vector<std::function<char*(const char** argv, int32_t argc)>> callback,
+    int32_t size) {
+  handler_delegate_->RegisterNativeJavaScriptCallBack(objName, methodName, callback, size);
+  std::vector<CefString> method_vector;
+  for (int i = 0; i < size; i++) {
+    method_vector.push_back(methodName[i]);
+  }
+  if (GetBrowser() && GetBrowser()->GetHost()) {
+    GetBrowser()->GetHost()->RegisterArkJSfunction(objName, method_vector, -1);
+  } else {
+    LOG(ERROR) << "browser or host is null";
+  }
+}
+
+void NWebDelegate::UnRegisterNativeArkJSFunction(const char* objName) {
+  std::vector<CefString> method_vector;
+  if (GetBrowser() && GetBrowser()->GetHost()) {
+    GetBrowser()->GetHost()->UnregisterArkJSfunction(objName, method_vector);
+  } else {
+    LOG(ERROR) << "browser or host is null";
+  }
+}
+
 void NWebDelegate::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
   GetBrowser()->GetHost()->RemoveJavaScriptOnDocumentStart();
   for (auto item: scriptItems) {

@@ -176,6 +176,7 @@ class NWebImpl : public NWeb {
   void SetVirtualKeyBoardArg(int32_t width, int32_t height, double keyboard) override;
   bool ShouldVirtualKeyboardOverlay() override;
   void JavaScriptOnDocumentStart(const ScriptItems& scriptItems) override;
+  void JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) override;
   void* CreateWebPrintDocumentAdapter(const std::string& jobName) override;
   int PostUrl(const std::string& url, std::vector<char>& postData) override;
   // For NWebEx

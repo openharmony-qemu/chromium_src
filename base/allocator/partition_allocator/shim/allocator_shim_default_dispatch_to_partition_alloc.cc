@@ -734,7 +734,7 @@ const AllocatorDispatch AllocatorDispatch::default_dispatch = {
 
 extern "C" {
 
-#if !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID) &&!BUILDFLAG(IS_OHOS)
 
 SHIM_ALWAYS_EXPORT void malloc_stats(void) __THROW {}
 

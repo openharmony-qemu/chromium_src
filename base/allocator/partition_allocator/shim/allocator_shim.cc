@@ -392,7 +392,7 @@ ALWAYS_INLINE void ShimAlignedFree(void* address, void* context) {
 #include "base/allocator/partition_allocator/shim/allocator_shim_override_cpp_symbols.h"
 #endif
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 // Android does not support symbol interposition. The way malloc symbols are
 // intercepted on Android is by using link-time -wrap flags.
 #include "base/allocator/partition_allocator/shim/allocator_shim_override_linker_wrapped_symbols.h"

@@ -95,7 +95,8 @@ class NWebDelegateInterface
   virtual void PasswordSuggestionSelected(int list_index) const = 0;
 #endif  // defined(OHOS_EX_PASSWORD)
 #if defined(OHOS_NWEB_EX)
-   virtual void UnRegisterWebAppClientExtensionListener() = 0;
+  virtual bool CanStoreWebArchive() const = 0;
+  virtual void UnRegisterWebAppClientExtensionListener() = 0;
 #endif  // defined(OHOS_NWEB_EX)
 
 #if defined(OHOS_EX_FREE_COPY)

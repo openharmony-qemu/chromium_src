@@ -22,7 +22,7 @@ struct JsCommunication::JsObjectInfo {
   mojo::AssociatedRemote<mojom::JsToBrowserMessaging> js_to_java_messaging;
 };
 
-struct JsCommunication::DocumentStartJavaScript {
+struct JsCommunication::DocumentInjectJavaScript {
   OriginMatcher origin_matcher;
   blink::WebString script;
   int32_t script_id;
@@ -54,17 +54,34 @@ void JsCommunication::SetJsObjects(
 }
 
 void JsCommunication::AddDocumentStartScript(
-    mojom::DocumentStartJavaScriptPtr script_ptr) {
-  DocumentStartJavaScript* script = new DocumentStartJavaScript{
+    mojom::JavaScriptItemPtr script_ptr) {
+  DocumentInjectJavaScript* script = new DocumentInjectJavaScript{
       script_ptr->origin_matcher,
       blink::WebString::FromUTF16(script_ptr->script), script_ptr->script_id};
-  scripts_.push_back(std::unique_ptr<DocumentStartJavaScript>(script));
+  document_start_scripts_.push_back(std::unique_ptr<DocumentInjectJavaScript>(script));
 }
 
 void JsCommunication::RemoveDocumentStartScript(int32_t script_id) {
-  for (auto it = scripts_.begin(); it != scripts_.end(); ++it) {
+  for (auto it = document_start_scripts_.begin(); it != document_start_scripts_.end(); ++it) {
     if ((*it)->script_id == script_id) {
-      scripts_.erase(it);
+      document_start_scripts_.erase(it);
+      break;
+    }
+  }
+}
+
+void JsCommunication::AddDocumentEndScript(
+    mojom::JavaScriptItemPtr script_ptr) {
+  DocumentInjectJavaScript* script = new DocumentInjectJavaScript{
+      script_ptr->origin_matcher,
+      blink::WebString::FromUTF16(script_ptr->script), script_ptr->script_id};
+  document_end_scripts_.push_back(std::unique_ptr<DocumentInjectJavaScript>(script));
+}
+
+void JsCommunication::RemoveDocumentEndScript(int32_t script_id) {
+  for (auto it = document_end_scripts_.begin(); it != document_end_scripts_.end(); ++it) {
+    if ((*it)->script_id == script_id) {
+      document_end_scripts_.erase(it);
       break;
     }
   }
@@ -116,8 +133,19 @@ void JsCommunication::OnDestruct() {
 
 void JsCommunication::RunScriptsAtDocumentStart() {
   url::Origin frame_origin =
+    url::Origin(render_frame()->GetWebFrame()->GetSecurityOrigin());
+  for (const auto& script : document_start_scripts_) {
+    if (!script->origin_matcher.Matches(frame_origin))
+      continue;
+    render_frame()->GetWebFrame()->ExecuteScript(
+        blink::WebScriptSource(script->script));
+  }
+}
+
+void JsCommunication::RunScriptsAtDocumentEnd() {
+  url::Origin frame_origin =
       url::Origin(render_frame()->GetWebFrame()->GetSecurityOrigin());
-  for (const auto& script : scripts_) {
+  for (const auto& script : document_end_scripts_) {
     if (!script->origin_matcher.Matches(frame_origin))
       continue;
     render_frame()->GetWebFrame()->ExecuteScript(

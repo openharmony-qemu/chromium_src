@@ -159,6 +159,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       const std::vector<std::string>& method_list) const override;
 
   void JavaScriptOnDocumentStart(const ScriptItems& scriptItems) override;
+  void JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) override;
 
   bool Discard() override;
   bool Restore() override;

@@ -192,6 +192,7 @@ class NWebDelegateInterface
       const std::string& object_name,
       const std::vector<std::string>& method_list) const = 0;
   virtual void JavaScriptOnDocumentStart(const ScriptItems& ScriptItems) = 0;
+  virtual void JavaScriptOnDocumentEnd(const ScriptItems& ScriptItems) = 0;
   virtual void CallH5Function(
       int32_t routing_id,
       int32_t h5_object_id,

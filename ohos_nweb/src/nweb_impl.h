@@ -262,6 +262,7 @@ class NWebImpl : public NWeb {
 
   int PostUrl(const std::string& url, std::vector<char>& postData) override;
   void JavaScriptOnDocumentStart(const ScriptItems& scriptItems) override;
+  void JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) override;
   // For NWebEx
   static NWebImpl* FromID(int32_t nweb_id);
   std::string GetUrl() const override;

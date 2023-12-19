@@ -1397,6 +1397,32 @@ int WebContentsImpl::SendToAllFramesIncludingPending(IPC::Message* message) {
                              message);
 }
 
+#if BUILDFLAG(IS_OHOS)
+RenderFrameHost* WebContentsImpl::GetTargetFramesIncludingPending(
+    int routing_id) {
+  std::vector<RenderFrameHost*> frame_hosts;
+  for (FrameTreeNode* node : primary_frame_tree_.Nodes()) {
+    frame_hosts.push_back(node->current_frame_host());
+    RenderFrameHostImpl* pending_frame_host =
+        node->render_manager()->speculative_frame_host();
+    if (pending_frame_host) {
+      frame_hosts.push_back(pending_frame_host);
+    }
+  }
+
+  for (RenderFrameHost* rfh : frame_hosts) {
+    if (!rfh || !rfh->IsRenderFrameLive()) {
+      continue;
+    }
+    if (routing_id == rfh->GetRoutingID()) {
+      return rfh;
+    }
+  }
+
+  return nullptr;
+}
+#endif
+
 void WebContentsImpl::ForEachRenderFrameHost(
     RenderFrameHost::FrameIterationCallback on_frame) {
   ForEachRenderFrameHost(RenderFrameHostImpl::FrameIterationWrapper(on_frame));

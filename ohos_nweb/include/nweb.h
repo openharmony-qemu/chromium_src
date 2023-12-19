@@ -972,6 +972,11 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      * Register native destroy callback function.
      */
     virtual void RegisterNativeDestroyCallback(const char* webName, std::function<void(const char*)> callback) = 0;
+
+    /**
+     * Inject the JavaScript after WebView load the DOM tree.
+     */
+    virtual void JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) = 0;
 };
 }  // namespace OHOS::NWeb
 

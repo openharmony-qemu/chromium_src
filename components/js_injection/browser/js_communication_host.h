@@ -22,7 +22,7 @@ class RenderFrameHost;
 namespace js_injection {
 
 class OriginMatcher;
-struct DocumentStartJavaScript;
+struct DocumentInjectJavaScript;
 struct JsObject;
 class JsToBrowserMessaging;
 class WebMessageHostFactory;
@@ -62,6 +62,14 @@ class JsCommunicationHost : public content::WebContentsObserver {
 
   bool RemoveDocumentStartJavaScript(int script_id);
 
+  // Native side AddDocumentEndJavaScript, returns an error message if the
+  // parameters didn't pass necessary checks.
+  AddScriptResult AddDocumentEndJavaScript(
+      const std::u16string& script,
+      const std::vector<std::string>& allowed_origin_rules);
+
+  bool RemoveDocumentEndJavaScript(int script_id);
+
   // Adds a new WebMessageHostFactory. For any urls that match
   // |allowed_origin_rules|, |js_object_name| is registered as a JS object that
   // can be used by script on the page to send and receive messages. Returns
@@ -95,17 +103,26 @@ class JsCommunicationHost : public content::WebContentsObserver {
  private:
   void NotifyFrameForWebMessageListener(
       content::RenderFrameHost* render_frame_host);
-  void NotifyFrameForAllDocumentStartJavaScripts(
+  // Notification to add document inject javaScript,
+  // including injection at the start and end
+  void NotifyFrameForAllDocumentInjectJavaScripts(
       content::RenderFrameHost* render_frame_host);
   void NotifyFrameForAddDocumentStartJavaScript(
-      const DocumentStartJavaScript* script,
+       const DocumentInjectJavaScript* script,
+      content::RenderFrameHost* render_frame_host);
+  void NotifyFrameForAddDocumentEndJavaScript(
+      const DocumentInjectJavaScript* script,
       content::RenderFrameHost* render_frame_host);
   void NotifyFrameForRemoveDocumentStartJavaScript(
       int32_t script_id,
       content::RenderFrameHost* render_frame_host);
+  void NotifyFrameForRemoveDocumentEndJavaScript(
+      int32_t script_id,
+      content::RenderFrameHost* render_frame_host);
 
   int32_t next_script_id_ = 0;
-  std::vector<DocumentStartJavaScript> scripts_;
+  std::vector<DocumentInjectJavaScript> document_start_scripts_;
+  std::vector<DocumentInjectJavaScript> document_end_scripts_;
   std::vector<std::unique_ptr<JsObject>> js_objects_;
   std::map<content::GlobalRenderFrameHostId,
            std::vector<std::unique_ptr<JsToBrowserMessaging>>>

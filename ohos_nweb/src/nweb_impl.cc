@@ -1126,6 +1126,13 @@ void NWebImpl::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
   return nweb_delegate_->JavaScriptOnDocumentStart(scriptItems);
 }
 
+void NWebImpl::JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  return nweb_delegate_->JavaScriptOnDocumentEnd(scriptItems);
+}
+
 void NWebImpl::CallH5Function(
     int32_t routing_id,
     int32_t h5_object_id,

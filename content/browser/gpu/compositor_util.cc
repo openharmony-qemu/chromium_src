@@ -431,6 +431,18 @@ int NumberOfRendererRasterThreads() {
   const base::CommandLine& command_line =
       *base::CommandLine::ForCurrentProcess();
 
+#ifdef OHOS_NWEB_EX
+  if (command_line.HasSwitch(switches::kForBrowser)){
+    std::string device_type =
+        command_line.GetSwitchValueASCII(switches::kOhosDeviceType);
+    bool is_pc_device = (device_type == ::switches::kOhosTabletDevice ||
+                         device_type == ::switches::kOhos2IN1Device);
+    // Same with android.
+    if (!is_pc_device)
+      num_raster_threads = 1;
+  }
+#endif
+
   if (command_line.HasSwitch(cc::switches::kNumRasterThreads)) {
     std::string string_value =
         command_line.GetSwitchValueASCII(cc::switches::kNumRasterThreads);

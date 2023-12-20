@@ -91,6 +91,13 @@ void NativeImageTextureGlOwner::UpdateNativeImage() {
   }
 }
 
+void NativeImageTextureGlOwner::GetSurfaceId(uint64_t* surface_id) {
+  DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+  if (native_image_) {
+    native_image_->GetSurfaceId(surface_id);
+  }
+}
+
 void NativeImageTextureGlOwner::EnsureNativeImageBound(GLuint service_id) {
   DCHECK_EQ(service_id, GetTextureId());
 }

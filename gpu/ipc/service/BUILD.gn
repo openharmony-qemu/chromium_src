@@ -148,7 +148,11 @@ component("service") {
     sources += [ "image_transport_surface_linux.cc" ]
   }
   if (is_ohos) {
-    sources += [ "image_transport_surface_ohos.cc" ]
+    sources += [
+      "image_transport_surface_ohos.cc",
+      "stream_texture_ohos.cc",
+      "stream_texture_ohos.h",
+    ]
   }
   if (use_ozone) {
     sources += [

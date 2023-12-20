@@ -108,12 +108,12 @@ TimeZoneMonitorOhos::~TimeZoneMonitorOhos() {
     if (impl_.get()) {
         impl_->StopListening();
     }
-};
+}
 
 void TimeZoneMonitorOhos::NotifyClientsFromImpl(std::string& timezone) {
     LOG(DEBUG) << "TimeZoneMonitor NotifyClientsFromImpl.";
     NotifyClients(timezone);
-};
+}
 
 std::unique_ptr<TimeZoneMonitor> TimeZoneMonitor::Create() {
     LOG(DEBUG) << "TimeZoneMonitor Create.";

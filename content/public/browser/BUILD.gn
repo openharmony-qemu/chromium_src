@@ -484,6 +484,13 @@ source_set("browser_sources") {
     sources += [ "color_chooser.h" ]
   }
 
+  if (is_ohos) {
+    sources += [
+      "native_embed_info.cc",
+      "native_embed_info.h",
+    ]
+  }
+
   if (rtc_use_pipewire) {
     configs +=
         [ "//third_party/webrtc/modules/desktop_capture:pipewire_config" ]

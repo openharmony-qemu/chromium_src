@@ -37,7 +37,8 @@ enum class RendererType {
   kContentEmbedderDefined = 10,  // Defined by the content embedder
   kTest = 11,                    // Renderer implementations used in tests
 #if BUILDFLAG(IS_OHOS)
-  kOHOSMediaPlayer = 12,  // OHOSMediaPlayerRendererFactory
+  kNative = 12,
+  kOHOSMediaPlayer = 13,  // OHOSMediaPlayerRendererFactory
   kMaxValue = kOHOSMediaPlayer,
 #else
   kMaxValue = kTest,
@@ -66,6 +67,11 @@ class MEDIA_EXPORT Renderer {
   virtual void Initialize(MediaResource* media_resource,
                           RendererClient* client,
                           PipelineStatusCallback init_cb) = 0;
+
+#if BUILDFLAG(IS_OHOS)
+  virtual void Initialize(CreateTextureCB create_texture_cb,
+                          DestroyTextureCB destroy_texture_cb);
+#endif
 
   // Associates the |cdm_context| with this Renderer for decryption (and
   // decoding) of media data, then fires |cdm_attached_cb| with whether the

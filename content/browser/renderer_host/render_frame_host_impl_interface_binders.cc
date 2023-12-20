@@ -310,6 +310,18 @@ void RenderFrameHostImpl::SetUpMojoConnection() {
           },
           base::Unretained(this)));
 
+#ifdef BUILDFLAG(IS_OHOS)
+  associated_registry_->AddInterface<media::mojom::NativeBridgeHost>(
+      base::BindRepeating(
+          [](RenderFrameHostImpl* impl,
+             mojo::PendingAssociatedReceiver<media::mojom::NativeBridgeHost>
+                 receiver) {
+            impl->delegate()->CreateNativeBridgeHostForRenderFrameHost(
+                impl, std::move(receiver));
+          },
+          base::Unretained(this)));
+#endif
+
   associated_registry_->AddInterface<blink::mojom::DisplayCutoutHost>(
       base::BindRepeating(
           [](RenderFrameHostImpl* impl,

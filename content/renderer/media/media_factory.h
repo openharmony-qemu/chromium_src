@@ -42,6 +42,10 @@ class WebLocalFrame;
 class WebMediaPlayer;
 class WebMediaPlayerClient;
 class WebMediaPlayerEncryptedMediaClient;
+#if BUILDFLAG(IS_OHOS)
+class WebNativeBridge;
+class WebNativeClient;
+#endif
 }  // namespace blink
 
 #if BUILDFLAG(ENABLE_CAST_RECEIVER)
@@ -62,6 +66,9 @@ class MediaLog;
 class MediaObserver;
 class RemotePlaybackClientWrapper;
 class RendererWebMediaPlayerDelegate;
+#if BUILDFLAG(IS_OHOS)
+class RendererWebNativeDelegate;
+#endif
 }  // namespace media
 
 namespace content {
@@ -110,6 +117,15 @@ class MediaFactory {
       scoped_refptr<base::SingleThreadTaskRunner>
           main_thread_compositor_task_runner,
       scoped_refptr<base::TaskRunner> compositor_worker_task_runner);
+
+#if BUILDFLAG(IS_OHOS)
+  blink::WebNativeBridge* CreateWebNativeBridge(
+      blink::WebNativeClient* client,
+      const cc::LayerTreeSettings& settings,
+      scoped_refptr<base::SingleThreadTaskRunner>
+          main_thread_compositor_task_runner);
+  media::RendererWebNativeDelegate* GetWebNativeDelegate();
+#endif
 
   // Provides an EncryptedMediaClient to connect blink's EME layer to media's
   // implementation of requestMediaKeySystemAccess. Will always return the same
@@ -176,6 +192,10 @@ class MediaFactory {
   // Manages play, pause notifications for WebMediaPlayer implementations; its
   // lifetime is tied to the RenderFrame via the RenderFrameObserver interface.
   media::RendererWebMediaPlayerDelegate* media_player_delegate_ = nullptr;
+
+#if BUILDFLAG(IS_OHOS)
+  media::RendererWebNativeDelegate* web_native_delegate_ = nullptr;
+#endif
 
   // The CDM and decoder factory attached to this frame, lazily initialized.
   std::unique_ptr<media::DefaultDecoderFactory> decoder_factory_;

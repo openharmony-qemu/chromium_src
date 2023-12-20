@@ -51,6 +51,10 @@ mojom("mojom") {
     "webrtc_video_perf.mojom",
   ]
 
+  if (is_ohos) {
+    sources += [ "native_bridge.mojom" ]
+  }
+
   if (enable_media_drm_storage) {
     sources += [ "media_drm_storage.mojom" ]
   }

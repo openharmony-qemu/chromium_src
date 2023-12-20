@@ -59,6 +59,11 @@
 #include "services/device/public/mojom/nfc.mojom.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "content/public/browser/native_embed_info.h"
+#include "media/mojo/mojom/native_bridge.mojom.h"
+#endif
+
 class GURL;
 
 namespace IPC {
@@ -255,6 +260,17 @@ class CONTENT_EXPORT RenderFrameHostDelegate {
       RenderFrameHostImpl* frame_host,
       mojo::PendingAssociatedReceiver<media::mojom::MediaPlayerHost> receiver) {
   }
+
+#if BUILDFLAG(IS_OHOS)
+  virtual void CreateNativeBridgeHostForRenderFrameHost(
+      RenderFrameHostImpl* frame_host,
+      mojo::PendingAssociatedReceiver<media::mojom::NativeBridgeHost>
+          receiver) {}
+
+  virtual void OnNativeEmbedStatusUpdate(
+      const NativeEmbedInfo& native_embed_info,
+      NativeEmbedInfo::TagState state) {}
+#endif
 
   // The render frame has requested access to media devices listed in
   // |request|, and the client should grant or deny that permission by

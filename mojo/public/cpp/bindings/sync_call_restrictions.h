@@ -26,6 +26,9 @@ class StreamTextureFactory;
 #if BUILDFLAG(IS_WIN)
 class DCOMPTextureFactory;
 #endif
+#if BUILDFLAG(IS_OHOS)
+class NativeTextureFactory;
+#endif
 }  // namespace content
 
 namespace crosapi {
@@ -135,6 +138,9 @@ class COMPONENT_EXPORT(MOJO_CPP_BINDINGS) SyncCallRestrictions {
   friend class content::StreamTextureFactory;
 #if BUILDFLAG(IS_WIN)
   friend class content::DCOMPTextureFactory;
+#endif
+#if BUILDFLAG(IS_OHOS)
+  friend class content::NativeTextureFactory;
 #endif
   // END ALLOWED USAGE.
 

@@ -119,6 +119,10 @@
 #include "content/common/pepper_plugin.mojom.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "third_party/blink/renderer/platform/web_native_bridge.h"
+#endif
+
 namespace blink {
 namespace scheduler {
 class WebAgentGroupScheduler;
@@ -504,6 +508,11 @@ class CONTENT_EXPORT RenderFrameImpl
       const blink::WebString& sink_id,
       const cc::LayerTreeSettings* settings,
       scoped_refptr<base::TaskRunner> compositor_worker_task_runner) override;
+#if BUILDFLAG(IS_OHOS)
+  blink::WebNativeBridge* CreateWebNativeBridge(
+      blink::WebNativeClient* client,
+      const cc::LayerTreeSettings* settings) override;
+#endif
   std::unique_ptr<blink::WebContentSettingsClient>
   CreateWorkerContentSettingsClient() override;
 #if !BUILDFLAG(IS_ANDROID)

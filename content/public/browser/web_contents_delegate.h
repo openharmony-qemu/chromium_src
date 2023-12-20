@@ -42,6 +42,10 @@
 #include "base/android/scoped_java_ref.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "content/public/browser/native_embed_info.h"
+#endif
+
 class GURL;
 
 namespace base {
@@ -773,6 +777,12 @@ class CONTENT_EXPORT WebContentsDelegate {
   virtual void ClearContextMenu();
 #endif // OHOS_DRAG_DROP
   virtual bool IsPrivileged();
+
+#ifdef BUILDFLAG(IS_OHOS)
+  virtual void OnNativeEmbedStatusUpdate(
+      const NativeEmbedInfo& native_embed_info,
+      NativeEmbedInfo::TagState state) {}
+#endif
 
  protected:
   virtual ~WebContentsDelegate();

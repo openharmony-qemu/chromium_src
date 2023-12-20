@@ -79,9 +79,8 @@ NativeImageTextureOwner::~NativeImageTextureOwner() {
 
 // static
 scoped_refptr<NativeImageTextureOwner> NativeImageTextureOwner::Create(
-    Mode mode,
     scoped_refptr<SharedContextState> context_state,
-    scoped_refptr<RefCountedLock> drdc_lock) {
+    Mode mode) {
   auto texture = CreateTexture(context_state.get());
   return new NativeImageTextureGlOwner(std::move(texture),
                                        std::move(context_state));

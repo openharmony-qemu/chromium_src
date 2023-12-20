@@ -27,6 +27,7 @@ class GPU_GLES2_EXPORT NativeImageTextureGlOwner
       const base::RepeatingClosure& frame_available_cb) override;
   void* AquireOhosNativeWindow() const override;
   void UpdateNativeImage() override;
+  void GetSurfaceId(uint64_t* surface_id) override;
   void EnsureNativeImageBound(GLuint service_id) override;
   void ReleaseNativeImage() override;
   bool GetCodedSizeAndVisibleRect(gfx::Size rotated_visible_size,

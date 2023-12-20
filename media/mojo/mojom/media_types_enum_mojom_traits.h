@@ -316,6 +316,8 @@ struct EnumTraits<media::mojom::RendererType, ::media::RendererType> {
       case ::media::RendererType::kTest:
         return media::mojom::RendererType::kTest;
 #if BUILDFLAG(IS_OHOS)
+      case ::media::RendererType::kNative:
+        return media::mojom::RendererType::kNative;
       case ::media::RendererType::kOHOSMediaPlayer:
         return media::mojom::RendererType::kOHOSMediaPlayer;
 #endif
@@ -364,6 +366,9 @@ struct EnumTraits<media::mojom::RendererType, ::media::RendererType> {
         *output = ::media::RendererType::kTest;
         return true;
 #if BUILDFLAG(IS_OHOS)
+      case ::media::mojom::RendererType::kNative:
+        *output = ::media::RendererType::kNative;
+        return true;
       case media::mojom::RendererType::kOHOSMediaPlayer:
         *output = ::media::RendererType::kOHOSMediaPlayer;
         return true;

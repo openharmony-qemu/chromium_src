@@ -536,6 +536,14 @@ void NWebDelegate::RegisterWebAppClientExtensionListener(
 }
 
 #if defined(OHOS_NWEB_EX)
+bool NWebDelegate::CanStoreWebArchive() {
+  if (!GetBrowser().get()) {
+    return false;
+  }
+
+  return GetBrowser()->CanStoreWebArchive();
+}
+
 void NWebDelegate::UnRegisterWebAppClientExtensionListener() {
   if (handler_delegate_ == nullptr) {
     LOG(ERROR) << "fail to unregister web app client extension listener, nweb "

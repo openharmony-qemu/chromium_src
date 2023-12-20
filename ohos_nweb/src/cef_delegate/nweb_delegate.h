@@ -249,6 +249,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #endif
 
 #if defined(OHOS_NWEB_EX)
+  bool CanStoreWebArchive() const override;
   void UnRegisterWebAppClientExtensionListener() override;
 #endif  // defined(OHOS_NWEB_EX)
 

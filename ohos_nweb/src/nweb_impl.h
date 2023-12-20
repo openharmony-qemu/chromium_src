@@ -272,6 +272,7 @@ class NWebImpl : public NWeb {
   }
   void AddNWebToMap(uint32_t id, std::shared_ptr<NWebImpl>& nweb);
 #if defined (OHOS_NWEB_EX)
+  bool CanStoreWebArchive() const;
   static const std::vector<std::string>& GetCommandLineArgsForNWebEx();
   static void InitBrowserServiceApi(std::vector<std::string>& browser_args);
   static bool GetBrowserServiceApiEnabled();

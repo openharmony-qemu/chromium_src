@@ -1560,6 +1560,14 @@ void NWebImpl::PrefetchPage(
 #endif  // defined(OHOS_NO_STATE_PREFETCH)
 
 #if defined(OHOS_NWEB_EX)
+bool NWebImpl::CanStoreWebArchive() const {
+  if (nweb_delegate_ == nullptr) {
+    return false;
+  }
+
+  return nweb_delegate_->CanStoreWebArchive();
+}
+
 // static
 const std::vector<std::string>& NWebImpl::GetCommandLineArgsForNWebEx() {
   return g_browser_args.Get();

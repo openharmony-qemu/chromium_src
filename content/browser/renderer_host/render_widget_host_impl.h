@@ -1079,6 +1079,10 @@ class CONTENT_EXPORT RenderWidgetHostImpl
   void DecrementInFlightEventCount(
       blink::mojom::InputEventResultSource ack_source) override;
   void DidOverscroll(const ui::DidOverscrollParams& params) override;
+
+#if defined(OHOS_INPUT_EVENTS)
+  void DidNativeEmbedEvent(const blink::mojom::EmbedTouchEventPtr& touchEvent) override;
+#endif
   void DidStartScrollingViewport() override;
   void OnSetCompositorAllowedTouchAction(cc::TouchAction) override {}
   void OnInvalidInputEventSource() override;

@@ -598,6 +598,11 @@ public:
      * @see PutCopyOptionMode
      */
     virtual CopyOptionMode GetCopyOptionMode() = 0;
+
+    /**
+     * Put whether the embed mode. The default is false.
+     */
+    virtual void SetNativeEmbedMode(bool flag) = 0;
 };
 }  // namespace OHOS::NWeb
 #endif  // NWEB_PREFERENCE_H

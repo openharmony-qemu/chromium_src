@@ -405,6 +405,12 @@ void InputRouterImpl::DidOverscroll(
   client_->DidOverscroll(fling_updated_params);
 }
 
+#if defined(OHOS_INPUT_EVENTS)
+void InputRouterImpl::DidNativeEmbedEvent(blink::mojom::EmbedTouchEventPtr event) {
+
+  client_->DidNativeEmbedEvent(event);
+}
+#endif
 void InputRouterImpl::DidStartScrollingViewport() {
   client_->DidStartScrollingViewport();
 }

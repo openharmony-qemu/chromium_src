@@ -19,7 +19,6 @@
 #include "gpu/command_buffer/service/shared_image/skia_gl_image_representation.h"
 #include "gpu/command_buffer/service/skia_utils.h"
 #include "gpu/command_buffer/service/texture_manager.h"
-#include "shared_image_video_ohos.h"
 #include "third_party/skia/include/core/SkPromiseImageTexture.h"
 #include "third_party/skia/include/gpu/GrBackendSemaphore.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
@@ -36,11 +35,11 @@ SharedImageVideoOhosNativeImage::SharedImageVideoOhosNativeImage(
     scoped_refptr<StreamTextureSharedImageInterface> stream_texture_sii,
     scoped_refptr<SharedContextState> context_state)
     : SharedImageVideoOhos(mailbox,
-                               size,
-                               color_space,
-                               surface_origin,
-                               alpha_type,
-                               /*is_thread_safe=*/false),
+                           size,
+                           color_space,
+                           surface_origin,
+                           alpha_type,
+                           /*is_thread_safe=*/false),
       stream_texture_sii_(std::move(stream_texture_sii)),
       context_state_(std::move(context_state)),
       gpu_main_task_runner_(base::SingleThreadTaskRunner::GetCurrentDefault()) {

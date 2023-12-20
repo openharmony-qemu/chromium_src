@@ -42,7 +42,7 @@ class GPU_GLES2_EXPORT NativeImageTextureGlOwner
   friend class NativeImageTextureOwner;
 
   NativeImageTextureGlOwner(std::unique_ptr<AbstractTextureOHOS> texture,
-                        scoped_refptr<SharedContextState> context_state);
+                            scoped_refptr<SharedContextState> context_state);
   ~NativeImageTextureGlOwner() override;
 
   static bool DecomposeTransform(float matrix[16],

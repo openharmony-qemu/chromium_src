@@ -28,9 +28,6 @@ struct OHOS_NWEB_EXPORT NWebAccessibilityNodeInfo {
 
   int32_t accessibilityId = -1;
   size_t itemCounts = 0;
-  int32_t currentIndex = 0;
-  int32_t startIndex = 0;
-  int32_t endIndex = 0;
   int32_t selectionStart = 0;
   int32_t selectionEnd = 0;
   int32_t inputType = -1;
@@ -49,7 +46,6 @@ struct OHOS_NWEB_EXPORT NWebAccessibilityNodeInfo {
   int32_t gridItemRowSpan = -1;
   int32_t gridItemColumn = -1;
   int32_t gridItemColumnSpan = -1;
-  bool heading = false;
   std::vector<uint32_t> actions;
   int32_t pageId = -1;
 
@@ -58,7 +54,8 @@ struct OHOS_NWEB_EXPORT NWebAccessibilityNodeInfo {
   size_t rectWidth = 0;
   size_t rectHeight = 0;
 
-  bool checked = false;
+  bool heading : 1;
+  bool checked : 1;
   bool editable : 1;
   bool enabled : 1;
   bool focused : 1;
@@ -75,6 +72,10 @@ struct OHOS_NWEB_EXPORT NWebAccessibilityNodeInfo {
   bool contentInvalid : 1;
   bool deletable : 1;
   bool accessibilityFocus : 1;
+
+  float rangeInfoMin = 0.0f;
+  float rangeInfoMax = 0.0f;
+  float rangeInfoCurrent = 0.0f;
 };
 }  // namespace OHOS::NWeb
 

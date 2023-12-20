@@ -1548,8 +1548,9 @@ void NWebDelegate::RequestVisitedHistory() {
 }
 
 int NWebDelegate::ContentHeight() {
-  if (render_handler_ != nullptr) {
-    return render_handler_->ContentHeight();
+  float ratio = render_handler_->GetVirtualPixelRatio();
+  if (ratio > 0 && render_handler_ != nullptr) {
+    return render_handler_->ContentHeight() / ratio;
   }
   return 0;
 }

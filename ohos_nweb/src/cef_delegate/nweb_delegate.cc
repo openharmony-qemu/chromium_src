@@ -2625,6 +2625,9 @@ bool NWebDelegate::PopulateAccessibilityNodeInfo(
   nodeInfo.selectionEnd = node->GetSelectionEnd();
   nodeInfo.itemCounts = node->GetItemCount();
   nodeInfo.clickable = node->IsClickable();
+  nodeInfo.rangeInfoMin = node->RangeMin();
+  nodeInfo.rangeInfoMax = node->RangeMax();
+  nodeInfo.rangeInfoCurrent = node->RangeCurrentValue();
 
   AddAccessibilityNodeInfoRect(nodeInfo, node);
   AddAccessibilityNodeInfoCollection(nodeInfo, node);

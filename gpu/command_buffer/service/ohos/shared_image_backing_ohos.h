@@ -14,14 +14,14 @@ namespace gpu {
 class SharedImageBackingOhos : public ClearTrackingSharedImageBacking {
  public:
   SharedImageBackingOhos(const Mailbox& mailbox,
-                      viz::SharedImageFormat format,
-                      const gfx::Size& size,
-                      const gfx::ColorSpace& color_space,
-                      GrSurfaceOrigin surface_origin,
-                      SkAlphaType alpha_type,
-                      uint32_t usage,
-                      size_t estimated_size,
-                      bool is_thread_safe);
+                         viz::SharedImageFormat format,
+                         const gfx::Size& size,
+                         const gfx::ColorSpace& color_space,
+                         GrSurfaceOrigin surface_origin,
+                         SkAlphaType alpha_type,
+                         uint32_t usage,
+                         size_t estimated_size,
+                         bool is_thread_safe);
 
   ~SharedImageBackingOhos() override;
   SharedImageBackingOhos(const SharedImageBackingOhos&) = delete;

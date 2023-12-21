@@ -44,7 +44,7 @@ OHOSMediaPlayerRendererClientFactory::CreateRenderer(
   return std::make_unique<OHOSMediaPlayerRendererClient>(
       std::move(renderer_extension_remote),
       std::move(client_extension_receiver),
-      /*media_task_runner*/ base::SingleThreadTaskRunner::GetCurrentDefault(),
+      media_task_runner,
       std::move(mojo_renderer), video_renderer_sink);
 }
 

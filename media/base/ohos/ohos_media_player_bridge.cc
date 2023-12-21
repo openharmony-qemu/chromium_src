@@ -359,8 +359,6 @@ void OHOSMediaPlayerBridge::OnBufferAvailable(
   int32_t coded_height = buffer->GetHeight();
   int32_t coded_width = buffer->GetStride();
 
-  // video frame height must be 32*N
-  const int step_height = 32;
   // argb format video frame stride should divided by 4
   const int argb_stride_step = 4;
 
@@ -368,8 +366,6 @@ void OHOSMediaPlayerBridge::OnBufferAvailable(
       OHOS::NWeb::PixelFormatAdapter::PIXEL_FMT_RGBA_8888) {
     coded_width /= argb_stride_step;
     coded_height = buffer->GetHeight();
-  } else if (buffer->GetHeight() % step_height == 0) {
-    coded_height = (buffer->GetHeight() / step_height + 1) * step_height;
   }
   
 #if defined(RK3568)

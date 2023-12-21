@@ -42,7 +42,7 @@ class OHOSMediaPlayerRendererClient
   OHOSMediaPlayerRendererClient(
       mojo::PendingRemote<RendererExtention> renderer_extension_remote,
       mojo::PendingReceiver<ClientExtention> client_extension_receiver,
-      scoped_refptr<base::SingleThreadTaskRunner> media_task_runner,
+      scoped_refptr<base::SequencedTaskRunner> media_task_runner,
       std::unique_ptr<media::MojoRenderer> mojo_renderer,
       media::VideoRendererSink* sink);
   ~OHOSMediaPlayerRendererClient() override;
@@ -83,7 +83,7 @@ class OHOSMediaPlayerRendererClient
 
   media::VideoRendererSink* sink_;
 
-  scoped_refptr<base::SingleThreadTaskRunner> media_task_runner_;
+  scoped_refptr<base::SequencedTaskRunner> media_task_runner_;
 
   media::PipelineStatusCallback init_cb_;
 

@@ -18,7 +18,7 @@ namespace content {
 OHOSMediaPlayerRendererClient::OHOSMediaPlayerRendererClient(
     mojo::PendingRemote<RendererExtention> renderer_extension_remote,
     mojo::PendingReceiver<ClientExtention> client_extension_receiver,
-    scoped_refptr<base::SingleThreadTaskRunner> media_task_runner,
+    scoped_refptr<base::SequencedTaskRunner> media_task_runner,
     std::unique_ptr<media::MojoRenderer> mojo_renderer,
     media::VideoRendererSink* sink)
     : MojoRendererWrapper(std::move(mojo_renderer)),
@@ -43,7 +43,7 @@ void OHOSMediaPlayerRendererClient::Initialize(
     media::MediaResource* media_resource,
     media::RendererClient* client,
     media::PipelineStatusCallback init_cb) {
-  DCHECK(media_task_runner_->BelongsToCurrentThread());
+  DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
   DCHECK(!init_cb_);
 
   // Consume and bind the delayed PendingRemote and PendingReceiver now that we
@@ -71,11 +71,11 @@ media::RendererType OHOSMediaPlayerRendererClient::GetRendererType() {
 }
 
 void OHOSMediaPlayerRendererClient::OnFinishPaintCallback() {
-  if (!media_task_runner_->BelongsToCurrentThread()) {
+  if (!media_task_runner_->RunsTasksInCurrentSequence()) {
     media_task_runner_->PostTask(
         FROM_HERE,
         base::BindOnce(&OHOSMediaPlayerRendererClient::OnFinishPaintCallback,
-                       base::Unretained(this)));
+                       weak_factory_.GetWeakPtr()));
     return;
   }
   if (cached_buffers_.size() > 1) {
@@ -89,7 +89,7 @@ void OHOSMediaPlayerRendererClient::OnFinishPaintCallback() {
 
 void OHOSMediaPlayerRendererClient::OnRemoteRendererInitialized(
     media::PipelineStatus status) {
-  DCHECK(media_task_runner_->BelongsToCurrentThread());
+  DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
   DCHECK(!init_cb_.is_null());
 
   if (status == media::PIPELINE_OK) {
@@ -110,13 +110,13 @@ void OHOSMediaPlayerRendererClient::OnVideoSizeChange(const gfx::Size& size) {
 }
 
 void OHOSMediaPlayerRendererClient::OnDurationChange(base::TimeDelta duration) {
-  DCHECK(media_task_runner_->BelongsToCurrentThread());
+  DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
   media_resource_->ForwardDurationChangeToDemuxerHost(duration);
 }
 
 void OHOSMediaPlayerRendererClient::OnFrameUpdate(
     media::mojom::OhosSurfaceBufferHandlePtr ohos_surface_buffer_handle) {
-  if (!media_task_runner_->BelongsToCurrentThread()) {
+  if (!media_task_runner_->RunsTasksInCurrentSequence()) {
     media_task_runner_->PostTask(
         FROM_HERE, base::BindOnce(&OHOSMediaPlayerRendererClient::OnFrameUpdate,
                                   base::Unretained(this),
@@ -175,6 +175,9 @@ void OHOSMediaPlayerRendererClient::PaintNV12VideoFrame(
       media::VideoFrame::WrapExternalData(
           media::VideoPixelFormat::PIXEL_FORMAT_NV12, coded_size, visible_rect,
           natural_size, mapped, buffer_size, kZero);
+  if (src_frame == nullptr) {
+    return;
+  }
   scoped_refptr<media::VideoFrame> dst_frame = media::VideoFrame::CreateFrame(
       media::VideoPixelFormat::PIXEL_FORMAT_I420, coded_size, visible_rect,
       natural_size, src_frame->timestamp());

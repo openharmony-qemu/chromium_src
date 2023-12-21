@@ -1,0 +1,11 @@
+[
+    {
+        "Name": "chromium",
+        "License":"BSD-3-Clause",
+        "License File": "LICENSE.chromium_os",
+        "Version Number": "99.0.4844.84",
+        "Owner": "zouzhiwe2@huawei.com",
+        "Upstream URL": "https://chromium.googlesource.com/chromium@99.0.4844.84",
+        "Description": "chromium src主仓"
+    }
+]

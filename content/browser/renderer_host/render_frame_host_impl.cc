@@ -7349,6 +7349,12 @@ void RenderFrameHostImpl::ShowContextMenu(
   validated_params.x = transformed_point.x();
   validated_params.y = transformed_point.y();
 
+#ifdef OHOS_EX_TOPCONTROLS
+  if (GetView()) {
+    validated_params.y += GetView()->GetTopControlsOffset();
+  }
+#endif
+
   if (validated_params.selection_start_offset < 0) {
     bad_message::ReceivedBadMessage(
         GetProcess(), bad_message::RFH_NEGATIVE_SELECTION_START_OFFSET);

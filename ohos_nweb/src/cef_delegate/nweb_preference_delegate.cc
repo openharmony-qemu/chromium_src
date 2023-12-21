@@ -618,6 +618,14 @@ void NWebPreferenceDelegate::PutOverscrollMode(int mode) {
   }
   browser_->GetHost()->SetOverscrollMode(mode);
 }
+void NWebPreferenceDelegate::SetNativeEmbedMode(bool flag) {
+  enable_embed_mode_ = flag;
+  if (!browser_.get()) {
+    LOG(ERROR) << "browser is null";
+    return;
+  }
+  browser_->GetHost()->SetNativeEmbedModeEnabled(flag);
+}
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 uint32_t NWebPreferenceDelegate::GetScrollBarColor() {

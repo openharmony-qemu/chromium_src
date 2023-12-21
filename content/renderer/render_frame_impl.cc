@@ -6499,6 +6499,13 @@ void RenderFrameImpl::SetOverscrollMode(int mode) {
   }
   web_frame_widget->SetOverscrollMode(mode);
 }
+void RenderFrameImpl::SetNativeEmbedModeEnabled(bool mode) {
+  auto web_frame_widget = GetLocalRootWebFrameWidget();
+  if (!web_frame_widget) {
+    return;
+  }
+  web_frame_widget->SetNativeEmbedModeEnabled(mode);
+}
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 }  // namespace content

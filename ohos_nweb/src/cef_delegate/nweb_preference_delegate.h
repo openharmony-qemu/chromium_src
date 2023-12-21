@@ -127,6 +127,7 @@ class NWebPreferenceDelegate : public NWebPreference {
   void PutHorizontalScrollBarAccess(bool flag) override;
   void PutVerticalScrollBarAccess(bool flag) override;
   void PutOverscrollMode(int overScrollMode) override;
+  void SetNativeEmbedMode(bool flag) override;
   int GetOverscrollMode() override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
@@ -189,6 +190,7 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool horizontal_scrollBar_access_{true};
   bool vertical_scrollBar_access_{true};
   int overscroll_mode_{0};
+  bool enable_embed_mode_{false};
 #endif  // defined(OHOS_INPUT_EVENTS)
 #if defined(OHOS_CLIPBOARD)
   CopyOptionMode copy_option_{CopyOptionMode::CROSS_DEVICE};

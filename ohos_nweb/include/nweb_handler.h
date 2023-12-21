@@ -175,6 +175,59 @@ enum class ActivityType {
     FORM,
 };
 
+enum class NativeEmbedStatus {
+    CREATE,
+    UPDATE,
+    DESTROY,
+};
+
+struct NativeEmbedInfo {
+    int32_t id;
+    int32_t width;
+    int32_t height;
+    std::string type;
+    std::string src;
+    std::string url;
+};
+
+struct NativeEmbedDataInfo {
+    NativeEmbedStatus status;
+    std::string surfaceId;
+    std::string embedId;
+    NativeEmbedInfo info;
+};
+
+
+enum class TouchType : size_t {
+    DOWN = 0,
+    UP,
+    MOVE,
+    CANCEL,
+};
+
+struct TouchPoint final {
+    int32_t id;
+    float x;
+    float y;
+    float screenX;
+    float screenY;
+};
+struct NativeEmbedTouchEvent {
+    std::string embedId;
+    int32_t id;
+    float x;
+    float y;
+    float screenX;
+    float screenY;
+    TouchType type;
+    uint64_t time;
+    double size = 0.0;
+    float force = 0.0f;
+
+    // all points on the touch screen.
+    std::vector<TouchPoint> pointers;
+};
+
 using FileSelectorCallback = NWebValueCallback<std::vector<std::string>&>;
 
 class OHOS_NWEB_EXPORT NWebHandler {
@@ -653,6 +706,9 @@ public:
      */
     virtual void OnNavigationEntryCommitted(
         std::shared_ptr<NWebLoadCommittedDetails> details) {}
+    virtual void OnNativeEmbedLifecycleChange(const NativeEmbedDataInfo& dataInfo) {}
+
+    virtual void OnNativeEmbedGestureEvent(const NativeEmbedTouchEvent& event) {}
 };
 }  // namespace OHOS::NWeb
 

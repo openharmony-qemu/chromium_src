@@ -572,5 +572,29 @@ bool NWebRenderHandler::FilterScrollEvent(CefRefPtr<CefBrowser> browser,
   }
   return false;
 }
+void NWebRenderHandler::OnNativeEmbedGestureEvent(CefRefPtr<CefBrowser> browser,
+                                      const CefEmbedTouchEvent& touchEvent){
+ if (auto handler = handler_.lock()) {
+  NativeEmbedTouchEvent info{touchEvent.embedId,touchEvent.id,touchEvent.x,touchEvent.y,
+      touchEvent.screenX,touchEvent.screenY, static_cast<OHOS::NWeb::TouchType>(touchEvent.type),
+      touchEvent.time,touchEvent.size,touchEvent.force};
+  handler->OnNativeEmbedGestureEvent(info);
+  }
+}
+OHOS::NWeb::NativeEmbedDataInfo CefEmbedDataToWeb(const CefRenderHandler::CefNativeEmbedData& embedData){
+  auto info = embedData.info;
+  NativeEmbedInfo embedinfo{info.id, info.width, info.height, info.type, info.src, info.url};
+
+  NativeEmbedDataInfo datainfo{static_cast<OHOS::NWeb::NativeEmbedStatus>(embedData.status),
+                               embedData.surfaceId,embedData.embedId, embedinfo};
+  return datainfo;
+}
+void NWebRenderHandler::OnNativeEmbedLifecycleChange(CefRefPtr<CefBrowser> browser,
+                                      const CefNativeEmbedData& info){
+  if (auto handler = handler_.lock()) {
+    handler->OnNativeEmbedLifecycleChange(CefEmbedDataToWeb(info));
+ }
+
+}
 #endif
 }  // namespace OHOS::NWeb

@@ -299,6 +299,9 @@ class CONTENT_EXPORT RenderWidgetHostViewBase : public RenderWidgetHostView {
 
   virtual void DidOverscroll(const ui::DidOverscrollParams& params) {}
 
+#if defined(OHOS_INPUT_EVENTS)
+  virtual void DidNativeEmbedEvent(const blink::mojom::EmbedTouchEventPtr& touchEvent) {}
+#endif
   virtual void DidStopFlinging() {}
 
   // Returns the ID associated with the CompositorFrameSink of this view.

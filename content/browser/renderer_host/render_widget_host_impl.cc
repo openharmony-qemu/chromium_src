@@ -3156,6 +3156,14 @@ void RenderWidgetHostImpl::DidOverscroll(
     view_->DidOverscroll(params);
 }
 
+
+#if defined(OHOS_INPUT_EVENTS)
+void RenderWidgetHostImpl::DidNativeEmbedEvent(
+    const blink::mojom::EmbedTouchEventPtr& touchEvent) {
+  if (view_)
+    view_->DidNativeEmbedEvent(touchEvent);
+}
+#endif
 void RenderWidgetHostImpl::DidStopFlinging() {
   is_in_touchpad_gesture_fling_ = false;
   if (view_)

@@ -1033,6 +1033,11 @@ const char kEnableMultiRendererProcess[] = "enable-multi-renderer-process";
 const char kForBrowser[] = "for-browser";
 const char kOhosEnableDrDc[] = "ohos-enable-drdc";
 const char kOhosDisableTouchEvent[] = "disable-touch-event-register";
+const char kOhosDeviceType[] = "ohos-device-type";
+const char kOhosMobileDevice[] = "mobile";
+const char kOhosTabletDevice[] = "tablet";
+const char kOhos2IN1Device[] = "2IN1";
+const char kOhosUnkownDevice[] = "unkown";
 #if defined(OHOS_BUGFIX_CRASH)
 const char kOhosHanceSurface[] = "ohos-enhance-surface";
 #endif // defined(OHOS_BUGFIX_CRASH)

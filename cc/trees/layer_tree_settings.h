@@ -198,6 +198,9 @@ class CC_EXPORT LayerTreeSettings {
 
   // Whether it is a LayerTree for ui.
   bool is_layer_tree_for_ui = false;
+#ifdef OHOS_NWEB_EX
+  bool enable_delete_unused_resources_delay = false;
+#endif
 
   // Whether tile resources are dropped for hidden layers. In terms of code,
   // this uses PictureLayerImpl::HasValidTilePriorities(), which may return true

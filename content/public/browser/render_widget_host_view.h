@@ -309,6 +309,10 @@ class CONTENT_EXPORT RenderWidgetHostView {
 
   // Returns true if this widget is a HTML popup, e.g. a <select> menu.
   virtual bool IsHTMLFormPopup() const = 0;
+
+#ifdef OHOS_EX_TOPCONTROLS
+  virtual int GetTopControlsOffset() const = 0;
+#endif
 };
 
 }  // namespace content

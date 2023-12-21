@@ -1096,4 +1096,10 @@ void RenderWidgetHostViewBase::OnShowWithPageVisibility(
   return;
 }
 
+#ifdef OHOS_EX_TOPCONTROLS
+int RenderWidgetHostViewBase::GetTopControlsOffset() const {
+  return 0;
+}
+#endif
+
 }  // namespace content

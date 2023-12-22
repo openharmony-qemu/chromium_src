@@ -566,7 +566,14 @@ class NWebHandlerDelegate : public CefClient,
   void SavaArkJSFunctionForPopup(const std::string& object_name,
                                  const std::vector<std::string>& method_list,
                                  const int32_t object_id);
-
+#ifdef OHOS_DRAG_DROP
+  bool IsDragEnter() const {
+    return is_drag_enter_;
+  }
+  void SetDragEnter(bool enter) {
+    is_drag_enter_ = enter;
+  }
+#endif  // #ifdef OHOS_DRAG_DROP
  private:
   void CopyImageToClipboard(CefRefPtr<CefImage> image);
   // List of existing browser windows. Only accessed on the CEF UI thread.
@@ -632,7 +639,9 @@ class NWebHandlerDelegate : public CefClient,
 #if BUILDFLAG(IS_OHOS)
   std::vector<uint64_t> edited_forms_id_;
 #endif
-
+#ifdef OHOS_DRAG_DROP
+  bool is_drag_enter_ = false;
+#endif  // #ifdef OHOS_DRAG_DROP
   // js property name and object id
   std::unordered_map<std::string, std::unordered_map<std::string, std::function<char*(const char** argv, int32_t argc)>>> objMap_;
   using MethodPair = std::pair<std::string, std::unordered_set<std::string>>;

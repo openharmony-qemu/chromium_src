@@ -63,6 +63,7 @@ CONTENT_EXPORT extern const char kUnreachableWebDataURL[];
 CONTENT_EXPORT extern const char kBlockedURL[];
 #if defined(OHOS_ARKWEB_EXTENSIONS)
 CONTENT_EXPORT extern const char kArkWebUIScheme[];
+CONTENT_EXPORT extern const char kArkWebUIResourcesURL[];
 #endif
 }  // namespace content
 

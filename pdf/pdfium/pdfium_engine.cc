@@ -3421,6 +3421,9 @@ void PDFiumEngine::GetPDFiumRect(int page_index,
 
 int PDFiumEngine::GetRenderingFlags() const {
   int flags = FPDF_LCD_TEXT;
+#if defined(OS_OHOS)
+  flags |= FPDF_REVERSE_BYTE_ORDER;
+#endif
   if (render_grayscale_)
     flags |= FPDF_GRAYSCALE;
   if (client_->IsPrintPreview())

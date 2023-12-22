@@ -33,6 +33,9 @@ void AddURLPatternSetToList(
     std::vector<network::mojom::CorsOriginPatternPtr>* list,
     network::mojom::CorsOriginAccessMatchPriority priority) {
   static const char* const kSchemes[] = {
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+    content::kArkWebUIScheme,
+#endif
     content::kChromeUIScheme,
 #if BUILDFLAG(IS_CHROMEOS_ASH)
     content::kExternalFileScheme,

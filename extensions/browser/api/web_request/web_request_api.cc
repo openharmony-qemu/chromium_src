@@ -752,7 +752,11 @@ bool WebRequestAPI::MaybeProxyURLLoaderFactory(
       content::RenderFrameHost* embedder =
           frame->GetOutermostMainFrameOrEmbedder();
       const auto& embedder_url = embedder->GetLastCommittedURL();
-      if (embedder_url.SchemeIs(content::kChromeUIScheme)) {
+      if (embedder_url.SchemeIs(content::kChromeUIScheme)
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+          || embedder_url.SchemeIs(content::kArkWebUIScheme)
+#endif
+      ) {
         auto* feature = FeatureProvider::GetAPIFeature("webRequestInternal");
         if (feature
                 ->IsAvailableToContext(

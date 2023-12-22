@@ -82,7 +82,7 @@ def main(argv):
                       choices=['polymer', 'native', 'detect'],
                       default='polymer')
   parser.add_argument('--scheme',
-                      choices=['chrome', 'relative'],
+                      choices=['chrome', 'relative', 'arkweb'],
                       default='relative')
 
   args = parser.parse_args(argv)
@@ -142,9 +142,15 @@ def main(argv):
                                                   in_file))[0] + extension
         template = get_wrapper_element_template(args.template, definition_file)
 
+      # OHOS_ARKWEB_EXTENSIONS
+      scheme = ''
+      if args.scheme == 'chrome':
+        scheme = 'chrome:'
+      elif args.scheme == 'arkweb':
+        scheme = 'arkweb:'
       wrapper = template % {
           'content': html_content,
-          'scheme': 'chrome:' if args.scheme == 'chrome' else '',
+          'scheme': scheme,
       }
 
       out_folder_for_file = path.join(out_folder, path.dirname(in_file))

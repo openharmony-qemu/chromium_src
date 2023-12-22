@@ -1296,7 +1296,8 @@ bool ContentMainRunnerImpl::RunRenderRemoteProxy(
     const base::CommandLine& command_line) {
   std::string process_type =
       command_line.GetSwitchValueASCII(switches::kProcessType);
-  if (process_type != switches::kRendererProcess) {
+  if (process_type != switches::kRendererProcess &&
+      process_type != switches::kPpapiPluginProcess) {
     return true;
   }
   RenderRemoteProxy::CreateAndRegist(command_line);

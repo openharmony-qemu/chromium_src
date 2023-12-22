@@ -248,6 +248,9 @@ std::string GetSecureDirectiveValues(
         source_lower == "filesystem:" ||
         isNonWildcardTLD(source_lower, "https://", true) ||
         isNonWildcardTLD(source_lower, "chrome://", false) ||
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+        isNonWildcardTLD(source_lower, "arkweb://", false) ||
+#endif
         isNonWildcardTLD(source_lower,
                          std::string(extensions::kExtensionScheme) +
                              url::kStandardSchemeSeparator,

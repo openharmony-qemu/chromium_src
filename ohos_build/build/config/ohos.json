@@ -15,7 +15,7 @@
 "default": "true"
 },
 { "name": "OHOS_ARKWEB_EXTENSIONS",
-"owner": "luliang zengqiang",
+"owner": "",
 "desc": "Support extensions in cef",
 "effect":"main gn blink_core other",
 "genCommandline": "default",

@@ -73,7 +73,8 @@ template("html_to_wrapper") {
     }
 
     if (defined(invoker.scheme)) {
-      assert(invoker.scheme == "chrome" || invoker.scheme == "relative")
+      assert(invoker.scheme == "chrome" || invoker.scheme == "relative" ||
+             invoker.scheme == "arkweb")
       args += [
         "--scheme",
         invoker.scheme,

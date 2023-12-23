@@ -634,12 +634,9 @@ void PrefService::SetUserPrefValue(const std::string& path,
 
   const Preference* pref = FindPreference(path);
   if (!pref) {
-    NOTREACHED() << "Trying to write an unregistered pref: " << path;
     return;
   }
   if (pref->GetType() != new_value.type()) {
-    NOTREACHED() << "Trying to set pref " << path << " of type "
-                 << pref->GetType() << " to value of type " << new_value.type();
     return;
   }
 

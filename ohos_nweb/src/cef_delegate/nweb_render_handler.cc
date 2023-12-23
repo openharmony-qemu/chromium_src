@@ -575,9 +575,9 @@ bool NWebRenderHandler::FilterScrollEvent(CefRefPtr<CefBrowser> browser,
 void NWebRenderHandler::OnNativeEmbedGestureEvent(CefRefPtr<CefBrowser> browser,
                                       const CefEmbedTouchEvent& touchEvent){
  if (auto handler = handler_.lock()) {
-  NativeEmbedTouchEvent info{touchEvent.embedId,touchEvent.id,touchEvent.x,touchEvent.y,
-      touchEvent.screenX,touchEvent.screenY, static_cast<OHOS::NWeb::TouchType>(touchEvent.type),
-      touchEvent.time,touchEvent.size,touchEvent.force};
+  NativeEmbedTouchEvent info{touchEvent.embedId, touchEvent.id, touchEvent.x, touchEvent.y,
+      touchEvent.screenX, touchEvent.screenY, static_cast<OHOS::NWeb::TouchType>(touchEvent.type),
+      touchEvent.offsetX, touchEvent.offsetY};
   handler->OnNativeEmbedGestureEvent(info);
   }
 }

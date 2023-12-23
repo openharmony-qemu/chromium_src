@@ -110,6 +110,8 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
 
   std::string GetTargetUrl() const;
 
+  std::u16string GetTextContentUTF16() const override;
+
  protected:
   BrowserAccessibilityOHOS(BrowserAccessibilityManager* manager,
                            ui::AXNode* node);
@@ -123,8 +125,9 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
 
   bool HasOnlyTextChildren() const;
 
-  const char* AXRoleToOHOSClassName(ax::mojom::Role role,
-                                    bool has_parent) const;
+  bool HasOnlyTextAndImageChildren() const;
+
+  bool HasListMarkerChild() const;
 
   void AddFocusableNode(
       std::list<const BrowserAccessibilityOHOS*>& nodeList) const;
@@ -142,6 +145,14 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
 
   const BrowserAccessibilityOHOS* GetPreviousFocusableNode(
       const std::list<const BrowserAccessibilityOHOS*>& nodeList) const;
+
+  typedef base::RepeatingCallback<bool(const std::u16string& partial)>
+      EarlyExitPredicate;
+  std::u16string GetSubstringTextContentUTF16(
+      absl::optional<EarlyExitPredicate>) const;
+
+  void AppendTextToString(std::u16string extra_text,
+                          std::u16string* string) const;
 
   static bool CheckRectBeam(const gfx::Rect& nodeRect,
                             const gfx::Rect& itemRect,

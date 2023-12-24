@@ -601,21 +601,21 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
                            TRACE_EVENT_FLAG_NONE)
 
 #define TRACE_EVENT_END1(category_group, name, arg1_name, arg1_val)     \
-  do (                                                                  \
+  do {                                                                  \
     if (IsBytraceEnable()) {                                            \
       (void) (category_group);                                          \
       (void) (name);                                                    \
       (void) (arg1_name);                                               \
       (void) (arg1_val);                                                \
       FinishBytrace();                                                  \
-    } while (0);                                                        \
-  )                                                                     \
+    }                                                                   \
+  } while (0);                                                          \
   INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category_group, name, \
                            TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val)
  
 #define TRACE_EVENT_END2(category_group, name, arg1_name, arg1_val, arg2_name, \
                          arg2_val)                                             \
-  do (                                                                         \
+  do {                                                                         \
     if (IsBytraceEnable()) {                                                   \
       (void) (category_group);                                                 \
       (void) (name);                                                           \
@@ -624,26 +624,26 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
       (void) (arg2_name);                                                      \
       (void) (arg2_val);                                                       \
       FinishBytrace();                                                         \
-    } while (0);                                                               \
-  )                                                                            \
+    }                                                                          \
+  } while (0);                                                                 \
   INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category_group, name,        \
                            TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val,         \
                            arg2_name, arg2_val)
 
 #define TRACE_EVENT_END_WITH_FLAGS0(category_group, name, flags) \
-  do (                                                           \
+  do {                                                           \
     if (IsBytraceEnable()) {                                     \
       (void) (category_group);                                   \
       (void) (name);                                             \
       (void) (flags);                                            \
       FinishBytrace();                                           \
-    } while (0);                                                 \
-  )                                                              \
+    }                                                            \
+  } while (0);                                                   \
   INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category_group, name, flags)
 
 #define TRACE_EVENT_END_WITH_FLAGS1(category_group, name, flags, arg1_name,    \
                                     arg1_val)                                  \
-  do (                                                                         \
+  do {                                                                         \
     if (IsBytraceEnable()) {                                                   \
       (void) (category_group);                                                 \
       (void) (name);                                                           \
@@ -651,14 +651,14 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
       (void) (arg1_val);                                                       \
       (void) (flags);                                                          \
       FinishBytrace();                                                         \
-    } while (0);                                                               \
-  )                                                                            \
+    }                                                                          \
+  } while (0);                                                                 \
   INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category_group, name, flags, \
                            arg1_name, arg1_val)
 
-#define TRACE_EVENT_COPY_END2(category_group, name, arg1_name, arg1_val,  \
-                              arg2_name, arg2_val)                        \
-  do (                                                                         \
+#define TRACE_EVENT_COPY_END2(category_group, name, arg1_name, arg1_val,       \
+                              arg2_name, arg2_val)                             \
+  do {                                                                         \
     if (IsBytraceEnable()) {                                                   \
       (void) (category_group);                                                 \
       (void) (name);                                                           \
@@ -667,8 +667,8 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
       (void) (arg2_name);                                                      \
       (void) (arg2_val);                                                       \
       FinishBytrace();                                                         \
-    } while (0);                                                               \
-  )                                                                            \
+    }                                                                          \
+  } while (0);                                                                 \
   INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category_group, name,  \
                            TRACE_EVENT_FLAG_COPY, arg1_name, arg1_val,   \
                            arg2_name, arg2_val)

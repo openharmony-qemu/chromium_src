@@ -16,33 +16,26 @@
 #include "base/trace_event/trace_event_ohos.h"
 
 #include <chrono>
+#include <time.h>
 
 #include "base/logging.h"
 #include "ohos_adapter_helper.h"
 
 using OHOS::NWeb::OhosAdapterHelper;
 
-static std::chrono::high_resolution_clock::time_point g_lastTime;
-static bool g_lastTraceStatus = false;
-
 bool IsBytraceEnable() {
-#if defined(ENABLE_OHOS_BYTRACE)
-  auto nowTime = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double, std::milli> diff =
-      std::chrono::duration_cast<std::chrono::milliseconds>(nowTime -
-                                                            g_lastTime);
-  if (diff.count() < 50) {
-    return g_lastTraceStatus;
+  static bool traceStatus = false;
+  static time_t lastTime = 0;
+  time_t nowTime;
+  nowTime = time(0);
+  if (nowTime == lastTime) {
+    return traceStatus;
   }
-  bool ret = OhosAdapterHelper::GetInstance()
-                 .GetHiTraceAdapterInstance()
-                 .IsHiTraceEnable();
-  g_lastTraceStatus = ret;
-  g_lastTime = std::chrono::high_resolution_clock::now();
-  return ret;
-#else
-  return false;
-#endif
+  lastTime = nowTime;
+  traceStatus = OhosAdapterHelper::GetInstance()
+                .GetHiTraceAdapterInstance()
+                .IsHiTraceEnable();
+  return traceStatus;
 }
 
 BytraceArg GetArg(double i) {
@@ -119,6 +112,14 @@ ScopedBytrace::ScopedBytrace(const std::string& proc) : proc_(proc) {
         proc_);
   }
 }
+
+void ScopedBytrace::SendTraceEvent(const std::string& data) {
+  if (IsBytraceEnable()) {
+    OhosAdapterHelper::GetInstance().GetHiTraceAdapterInstance().StartTrace(data);
+  }
+}
+
+ScopedBytrace::ScopedBytrace() {}
 
 ScopedBytrace::~ScopedBytrace() {
   if (IsBytraceEnable()) {

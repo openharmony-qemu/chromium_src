@@ -328,15 +328,28 @@ const ThreadPriorityToNiceValuePairForTest
 };
 
 const ThreadTypeToNiceValuePair kThreadTypeToNiceValueMap[7] = {
+#if BUILDFLAG(IS_OHOS)
+    {ThreadType::kBackground, 0},       {ThreadType::kUtility, 0},
+    {ThreadType::kResourceEfficient, 0}, {ThreadType::kDefault, -10},
+#else
     {ThreadType::kBackground, 10},       {ThreadType::kUtility, 1},
     {ThreadType::kResourceEfficient, 0}, {ThreadType::kDefault, 0},
+#endif
+
 #if BUILDFLAG(IS_CHROMEOS)
     {ThreadType::kCompositing, -8},
+#elif BUILDFLAG(IS_OHOS)
+    {ThreadType::kCompositing, -20},
 #else
     // TODO(1329208): Experiment with bringing IS_LINUX inline with IS_CHROMEOS.
     {ThreadType::kCompositing, 0},
 #endif
+
+#if BUILDFLAG(IS_OHOS)
+    {ThreadType::kDisplayCritical, -20},  {ThreadType::kRealtimeAudio, -20},
+#else
     {ThreadType::kDisplayCritical, -8},  {ThreadType::kRealtimeAudio, -10},
+#endif
 };
 
 bool CanSetThreadTypeToRealtimeAudio() {

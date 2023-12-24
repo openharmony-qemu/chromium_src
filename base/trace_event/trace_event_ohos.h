@@ -76,7 +76,10 @@ void CountBytrace(const std::string& name, int64_t count);
 class ScopedBytrace {
  public:
   ScopedBytrace(const std::string& proc);
+  ScopedBytrace();
   ~ScopedBytrace();
+
+  static void SendTraceEvent(const std::string& data);
  
  private:
   std::string proc_;
@@ -89,5 +92,10 @@ class ScopedBytrace {
 #define BYTRACE_SCOPED(name, ...)            \
   ScopedBytrace OHOS_BY_TRACE_NAME(bytrace)( \
       GetStringWithArgs(name, ##__VA_ARGS__))
- 
+
+#define BYTRACE_SCOPED_INIT()                \
+  ScopedBytrace OHOS_BY_TRACE_NAME(bytrace)
+
+#define BYTRACE_SCOPED_TRACE_EVENT(name)     \
+  ScopedBytrace::SendTraceEvent(name)
 #endif  // BASE_TRACE_EVENT_TRACE_EVENT_OHOS_H_

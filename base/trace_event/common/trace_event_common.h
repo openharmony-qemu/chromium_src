@@ -374,9 +374,9 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
       BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val,   \
                                                   arg2_name, arg2_val));        \
     }                                                                           \
-  } while (0);
-  INTERNAL_TRACE_EVENT_ADD_SCOPED_WITH_FLOW(category_group, name, bind_id,  \
-                                            flow_flags, arg1_name, arg1_val, \
+  } while (0);                                                                  \
+  INTERNAL_TRACE_EVENT_ADD_SCOPED_WITH_FLOW(category_group, name, bind_id,      \
+                                            flow_flags, arg1_name, arg1_val,    \
                                             arg2_name, arg2_val)
 #else
 // Records a pair of begin and end events called "name" for the current

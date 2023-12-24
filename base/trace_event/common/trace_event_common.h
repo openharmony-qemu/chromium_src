@@ -590,13 +590,13 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
 
 #if defined(OS_OHOS)
 #define TRACE_EVENT_END0(category_group, name)                          \
-  do (                                                                  \
+  do {                                                                  \
     if (IsBytraceEnable()) {                                            \
       (void) (category_group);                                          \
       (void) (name);                                                    \
       FinishBytrace();                                                  \
-    } while (0);                                                        \
-  )                                                                     \
+    }                                                                   \
+  } while (0);                                                          \
   INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category_group, name, \
                            TRACE_EVENT_FLAG_NONE)
 

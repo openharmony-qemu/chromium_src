@@ -723,7 +723,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
     if (IsBytraceEnable()) {                                                     \
       (void) (timestamp);                                                        \
       (void) (category_group);                                                   \
-      BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, args1_name, arg1_val)); \
+      BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val)); \
     }                                                                            \
   } while (0);                                                                   \
   INTERNAL_TRACE_EVENT_ADD_WITH_TIMESTAMP(                                       \
@@ -761,7 +761,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
   do {                                                                            \
     if (IsBytraceEnable()) {                                                      \
       (void) (category_group);                                                    \
-      BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, args1_name, args1_val)); \
+      BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val)); \
     }                                                                             \
   } while (0);                                                                    \
   INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_MARK, category_group, name,          \

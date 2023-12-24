@@ -469,7 +469,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
   do {                                                                    \
     if (IsBytraceEnable()) {                                              \
       (void) (category_group);                                            \
-      StartBytrace(GetStringFromArg(name, arg1_name, arg1_val));          \
+      StartBytrace(GetStringFromArgs(name, arg1_name, arg1_val));          \
     }                                                                     \
   } while (0);                                                            \
   INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_BEGIN, category_group, name, \
@@ -480,7 +480,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
   do {                                                                    \
     if (IsBytraceEnable()) {                                              \
       (void) (category_group);                                            \
-      StartBytrace(GetStringFromArg(name, arg1_name, arg1_val,            \
+      StartBytrace(GetStringFromArgs(name, arg1_name, arg1_val,            \
                                    arg2_name, arg2_val));                 \
     }                                                                     \
   } while (0);                                                            \
@@ -504,7 +504,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
     if (IsBytraceEnable()) {                                                  \
       (void) (category_group);                                                \
       (void) (flags);                                                         \
-      StartBytrace(GetStringFromArg(name, arg1_name, arg1_val));              \
+      StartBytrace(GetStringFromArgs(name, arg1_name, arg1_val));              \
     }                                                                         \
   } while (0);                                                                \
   INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_BEGIN, category_group, name,     \
@@ -515,7 +515,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
   do {                                                                     \
     if (IsBytraceEnable()) {                                               \
       (void) (category_group);                                             \
-      StartBytrace(GetStringFromArg(name, arg1_name, arg1_val,             \
+      StartBytrace(GetStringFromArgs(name, arg1_name, arg1_val,             \
                                    arg2_name, arg2_val));                  \
     }                                                                      \
   } while (0);                                                             \

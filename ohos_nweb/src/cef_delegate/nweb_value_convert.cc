@@ -184,9 +184,9 @@ CefRefPtr<CefValue> ParseNWebValueToValueHelper(
       return cefValue;
     }
     case NWebValue::Type::BINARY: {
-      LOG(DEBUG) << "ParseNWebValueToValueHelper: BINARY";
-      auto size = value->GetBinaryValueSize();
+      auto size = value->GetBinaryValueSize() + 1;
       auto buff = value->GetBinaryValue();
+      LOG(DEBUG) << "ParseNWebValueToValueHelper: BINARY str=" << buff << ", size=" << size;
       auto cefDict = CefBinaryValue::Create(buff, size);
       cefValue->SetBinary(cefDict);
       return cefValue;

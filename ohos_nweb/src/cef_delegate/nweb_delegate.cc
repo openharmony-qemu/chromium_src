@@ -71,6 +71,8 @@ namespace OHOS::NWeb {
 static const double kZoomLevelToFactorRatio = 1.2;
 #endif
 
+static const int kDefaultWebNativeProxy = -2;
+
 #if BUILDFLAG(IS_OHOS)
 namespace {
 
@@ -1640,7 +1642,7 @@ void NWebDelegate::RegisterNativeArkJSFunction(
     method_vector.push_back(methodName[i]);
   }
   if (GetBrowser() && GetBrowser()->GetHost()) {
-    GetBrowser()->GetHost()->RegisterArkJSfunction(objName, method_vector, -1);
+    GetBrowser()->GetHost()->RegisterArkJSfunction(objName, method_vector, kDefaultWebNativeProxy);
   } else {
     LOG(ERROR) << "browser or host is null";
   }

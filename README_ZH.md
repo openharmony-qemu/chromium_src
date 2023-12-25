@@ -104,3 +104,10 @@
     6.10 在PR下面评论start build开始构建
 
     6.11 联系committer加分
+7. 分支信息描述
+
+   ```
+   master: chromium-99 内核
+   master114_20231127: chromium-114内核，当前的主干分支
+   master114_20231218: 对应的OpenHarmony-4.1-Beta1 分支。
+   ```

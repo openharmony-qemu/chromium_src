@@ -67,9 +67,9 @@ class CodecWrapperImpl : public base::RefCountedThreadSafe<CodecWrapperImpl> {
 
   State state_;
 
-  std::unique_ptr<MediaCodecDecoderBridgeImpl> codec_;
-
   scoped_refptr<CodecSurfaceBundle> surface_bundle_;
+
+  std::unique_ptr<MediaCodecDecoderBridgeImpl> codec_;
 
   int64_t next_buffer_id_;
 
@@ -115,8 +115,8 @@ CodecWrapperImpl::CodecWrapperImpl(
     CodecWrapper::OutputReleasedCB output_buffer_release_cb,
     scoped_refptr<base::SequencedTaskRunner> release_task_runner)
     : state_(State::kFlushed),
-      codec_(std::move(codec_surface_pair.first)),
       surface_bundle_(std::move(codec_surface_pair.second)),
+      codec_(std::move(codec_surface_pair.first)),
       next_buffer_id_(0),
       output_buffer_release_cb_(std::move(output_buffer_release_cb)),
       release_task_runner_(std::move(release_task_runner)) {

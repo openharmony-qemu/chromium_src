@@ -430,7 +430,7 @@ void CodecBridgeCallback::OnNeedInputData(uint32_t index, OhosBuffer buffer) {
     decoder_callback_task_runner_->PostTask(
         FROM_HERE,
         base::BindOnce(&CodecBridgeCallback::OnNeedInputData,
-                       base::Unretained(this),
+                       shared_from_this(),
                        std::move(index),
                        std::move(buffer)));
     return;
@@ -458,7 +458,7 @@ void CodecBridgeCallback::OnNeedOutputData(uint32_t index,
     decoder_callback_task_runner_->PostTask(
         FROM_HERE,
         base::BindOnce(&CodecBridgeCallback::OnNeedOutputData,
-                       base::Unretained(this),
+                       shared_from_this(),
                        std::move(index),
                        std::move(info),
                        std::move(flag)));

@@ -27,7 +27,6 @@ CodecSurfaceBundle::CodecSurfaceBundle(
                               ->AquireOhosNativeWindow()) {}
 
 CodecSurfaceBundle::~CodecSurfaceBundle() {
-  MediaCodecDecoderBridgeImpl::DestoryNativeWindow(ohos_native_window_);
   if (!codec_buffer_wait_coordinator_)
     return;
 

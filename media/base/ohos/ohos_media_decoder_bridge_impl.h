@@ -58,7 +58,8 @@ public:
   std::atomic<bool> isOnError_ = false;
 };
 
-class CodecBridgeCallback : public DecoderCallbackAdapter {
+class CodecBridgeCallback : public DecoderCallbackAdapter,
+                            public std::enable_shared_from_this<CodecBridgeCallback> {
  public:
   explicit CodecBridgeCallback(std::shared_ptr<DecoderBridgeSignal> signal)
       : signal_(signal) {}

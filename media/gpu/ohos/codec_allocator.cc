@@ -48,7 +48,7 @@ void ReleaseMediaCodecInternal(
   base::ScopedBlockingCall scoped_block(FROM_HERE,
                                         base::BlockingType::MAY_BLOCK);
   codec->ReleaseBridgeDecoder();
-  codec.reset();
+  codec = nullptr;
 }
 
 scoped_refptr<base::SequencedTaskRunner> CreateCodecTaskRunner() {

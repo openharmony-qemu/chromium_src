@@ -2630,7 +2630,7 @@ bool NWebDelegate::PopulateAccessibilityNodeInfo(
   } else if (node->IsPasswordField()) {
     nodeInfo.content = "*";
   } else {
-    nodeInfo.content = base::UTF16ToUTF8(node->node()->GetTextContentUTF16());
+    nodeInfo.content = base::UTF16ToUTF8(node->GetTextContentUTF16());
   }
   nodeInfo.hint = node->GetHint();
   nodeInfo.hinting = node->IsHint();
@@ -2665,14 +2665,8 @@ bool NWebDelegate::PopulateAccessibilityNodeInfo(
 void NWebDelegate::AddAccessibilityNodeInfoRect(
     NWebAccessibilityNodeInfo& nodeInfo,
     const content::BrowserAccessibilityOHOS* node) const {
-  auto* accessibilityManager = GetAccessibilityManager();
-  if (accessibilityManager == nullptr) {
-    return;
-  }
   ui::AXOffscreenResult offscreen_result = ui::AXOffscreenResult::kOnscreen;
-  gfx::Rect absolute_rect = gfx::ScaleToEnclosingRect(
-      node->GetUnclippedRootFrameBoundsRect(&offscreen_result),
-      default_virtual_pixel_ratio_, default_virtual_pixel_ratio_);
+  gfx::Rect absolute_rect = node->GetUnclippedRootFrameBoundsRect(&offscreen_result);
 
   nodeInfo.rectX = absolute_rect.x();
   nodeInfo.rectY = absolute_rect.y();

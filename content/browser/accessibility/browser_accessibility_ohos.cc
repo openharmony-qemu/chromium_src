@@ -19,7 +19,9 @@
 #include "content/browser/accessibility/browser_accessibility_manager_ohos.h"
 #include "content/public/common/content_client.h"
 #include "ohos_nweb/src/cef_delegate/nweb_accessibility_utils.h"
+#include "skia/ext/skia_utils_base.h"
 #include "third_party/blink/public/strings/grit/blink_strings.h"
+#include "ui/accessibility/ax_assistant_structure.h"
 #include "ui/accessibility/ax_selection.h"
 
 namespace content {
@@ -753,6 +755,135 @@ std::string BrowserAccessibilityOHOS::GetTargetUrl() const {
     return GetStringAttribute(ax::mojom::StringAttribute::kUrl);
   }
   return {};
+}
+
+std::u16string BrowserAccessibilityOHOS::GetTextContentUTF16() const {
+  return GetSubstringTextContentUTF16(absl::nullopt);
+}
+
+std::u16string BrowserAccessibilityOHOS::GetSubstringTextContentUTF16(
+    absl::optional<EarlyExitPredicate> predicate) const {
+  if (ui::IsIframe(GetRole()))
+    return std::u16string();
+
+  // First, always return the |value| attribute if this is an
+  // input field.
+  std::u16string value = GetValueForControl();
+  if (ShouldExposeValueAsName())
+    return value;
+
+  // For color wells, the color is stored in separate attributes.
+  // Perhaps we could return color names in the future?
+  if (GetRole() == ax::mojom::Role::kColorWell) {
+    unsigned int color = static_cast<unsigned int>(
+        GetIntAttribute(ax::mojom::IntAttribute::kColorValue));
+    return base::UTF8ToUTF16(skia::SkColorToHexString(color));
+  }
+
+  std::u16string text = GetNameAsString16();
+  if (ui::IsRangeValueSupported(GetRole())) {
+    // To prevent extra commas, only add if the text is non-empty
+    if (!text.empty() && !value.empty()) {
+      text = value + u", " + text;
+    } else if (!value.empty()) {
+      text = value;
+    }
+  } else if (text.empty()) {
+    // When a node does not have a name (e.g. a label), use its value instead.
+    text = value;
+  }
+
+  // For almost all focusable nodes we try to get text from contents, but for
+  // the root node that's redundant and often way too verbose.
+  if (ui::IsPlatformDocument(GetRole()))
+    return text;
+
+  // A role="separator" is a leaf, and cannot get name from contents, even if
+  // author appends text children.
+  if (GetRole() == ax::mojom::Role::kSplitter)
+    return text;
+
+  // Append image description strings to the text.
+  auto status = GetData().GetImageAnnotationStatus();
+  switch (status) {
+    case ax::mojom::ImageAnnotationStatus::kEligibleForAnnotation:
+    case ax::mojom::ImageAnnotationStatus::kAnnotationPending:
+    case ax::mojom::ImageAnnotationStatus::kAnnotationEmpty:
+    case ax::mojom::ImageAnnotationStatus::kAnnotationAdult:
+    case ax::mojom::ImageAnnotationStatus::kAnnotationProcessFailed:
+      AppendTextToString(GetLocalizedStringForImageAnnotationStatus(status),
+                          &text);
+      break;
+
+    case ax::mojom::ImageAnnotationStatus::kAnnotationSucceeded:
+      text =
+          GetString16Attribute(ax::mojom::StringAttribute::kImageAnnotation);
+      break;
+
+    case ax::mojom::ImageAnnotationStatus::kNone:
+    case ax::mojom::ImageAnnotationStatus::kWillNotAnnotateDueToScheme:
+    case ax::mojom::ImageAnnotationStatus::kIneligibleForAnnotation:
+    case ax::mojom::ImageAnnotationStatus::kSilentlyEligibleForAnnotation:
+      break;
+  }
+
+  // This is called from IsLeaf, so don't call PlatformChildCount
+  // from within this!
+  if (text.empty() && ((HasOnlyTextChildren() && !HasListMarkerChild()) ||
+                       (IsFocusable() && HasOnlyTextAndImageChildren()))) {
+    for (auto it = InternalChildrenBegin(); it != InternalChildrenEnd(); ++it) {
+      text += static_cast<BrowserAccessibilityOHOS*>(it.get())
+                  ->GetSubstringTextContentUTF16(predicate);
+      if (predicate && predicate.value().Run(text)) {
+        break;
+      }
+    }
+  }
+
+  if (text.empty() &&
+      (ui::IsLink(GetRole()) || ui::IsImageOrVideo(GetRole())) &&
+      !HasExplicitlyEmptyName()) {
+    std::u16string url = GetString16Attribute(ax::mojom::StringAttribute::kUrl);
+    text = ui::AXUrlBaseText(url);
+  }
+
+  return text;
+}
+
+bool BrowserAccessibilityOHOS::HasOnlyTextAndImageChildren() const {
+  // This is called from IsLeaf, so don't call PlatformChildCount
+  // from within this!
+  for (auto it = InternalChildrenBegin(); it != InternalChildrenEnd(); ++it) {
+    BrowserAccessibility* child = it.get();
+    if (!child->IsText() && !ui::IsImageOrVideo(child->GetRole())) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool BrowserAccessibilityOHOS::HasListMarkerChild() const {
+  // This is called from IsLeaf, so don't call PlatformChildCount
+  // from within this!
+  for (auto it = InternalChildrenBegin(); it != InternalChildrenEnd(); ++it) {
+    if (it->GetRole() == ax::mojom::Role::kListMarker)
+      return true;
+  }
+  return false;
+}
+
+void BrowserAccessibilityOHOS::AppendTextToString(
+    std::u16string extra_text,
+    std::u16string* string) const {
+  if (extra_text.empty())
+    return;
+
+  if (string->empty()) {
+    *string = extra_text;
+    return;
+  }
+
+  *string += std::u16string(u", ") + extra_text;
 }
 
 }  // namespace content

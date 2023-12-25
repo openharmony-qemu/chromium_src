@@ -142,7 +142,11 @@ void NWebApplication::OnRegisterCustomSchemes(
 /* CefApp methods end */
 
 /* CefBrowserProcessHandler methods begin */
-void NWebApplication::OnContextInitialized() {
+void NWebApplication::OnContextInitialized(
+#ifdef OHOS_INCOGNITO_MODE
+  bool incognito_mode
+#endif
+) {
   CEF_REQUIRE_UI_THREAD();
 
 #if defined(OHOS_API_INIT_WEB_ENGINE)
@@ -157,7 +161,11 @@ void NWebApplication::OnContextInitialized() {
       FROM_HERE, base::BindOnce(&NWebApplication::RunWebInitedCallback, this,
                                 runWebInitedCallback));
 #endif
-  OnContextInitializedInternal();
+  OnContextInitializedInternal(
+#ifdef OHOS_INCOGNITO_MODE
+      incognito_mode
+#endif
+  );
 }
 
 #ifdef OHOS_INIT_CALLBACK

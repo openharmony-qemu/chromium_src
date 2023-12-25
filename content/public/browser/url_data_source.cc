@@ -80,7 +80,7 @@ std::string URLDataSource::GetContentSecurityPolicy(
       // specific pages that need it, see context http://crbug.com/525224.
       return IsChromeUntrustedDataSource(this)
                  ? "script-src chrome-untrusted://resources 'self';"
-                 : "script-src chrome://resources 'self';";
+                 : "script-src chrome://resources  arkweb://resources 'self';";
     case network::mojom::CSPDirectiveName::FrameAncestors:
       return "frame-ancestors 'none';";
     case network::mojom::CSPDirectiveName::RequireTrustedTypesFor:

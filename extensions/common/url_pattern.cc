@@ -34,6 +34,9 @@ const char* const kValidSchemes[] = {
     url::kFileSystemScheme,    url::kWsScheme,
     url::kWssScheme,           url::kDataScheme,
     url::kUuidInPackageScheme,
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+    content::kArkWebUIScheme,
+#endif
 };
 
 const int kValidSchemeMasks[] = {
@@ -48,6 +51,9 @@ const int kValidSchemeMasks[] = {
     URLPattern::SCHEME_WSS,
     URLPattern::SCHEME_DATA,
     URLPattern::SCHEME_UUID_IN_PACKAGE,
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+    URLPattern::SCHEME_ARKWEBUI,
+#endif
 };
 
 static_assert(std::size(kValidSchemes) == std::size(kValidSchemeMasks),

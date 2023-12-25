@@ -158,6 +158,7 @@ void InitialWebEngineArgs(std::list<std::string>& web_engine_args,
   // http://crbug.com/479767
   web_engine_args.emplace_back("--enable-aggressive-domstorage-flushing");
   web_engine_args.emplace_back("--ohos-enable-drdc");
+  web_engine_args.emplace_back("--enable-features=PdfUnseasoned");
 
   if (GetLockdownModeStatus()) {
     web_engine_args.emplace_back("--js-flags=--jitless");

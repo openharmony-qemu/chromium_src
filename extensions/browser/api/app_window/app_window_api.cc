@@ -155,7 +155,11 @@ ExtensionFunction::ResponseAction AppWindowCreateFunction::Run() {
   GURL absolute = GURL(params->url);
   if (absolute.has_scheme()) {
     if (extension()->location() == mojom::ManifestLocation::kComponent &&
-        absolute.SchemeIs(content::kChromeUIScheme)) {
+        (absolute.SchemeIs(content::kChromeUIScheme)
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+         || absolute.SchemeIs(content::kArkWebUIScheme)
+#endif
+             )) {
       url = absolute;
     } else {
       // Show error when url passed isn't valid.

@@ -96,3 +96,11 @@ Below is the software architecture.
 11. Comment on "start build" under the PR.
 
 12. Contact the committer to merge the PR.
+
+13. Branch information
+
+   ```
+   master: chromium-99 kernel
+   master114_20231127: chromium-114 kernel，current master branch
+   master114_20231218: corresponding to OpenHarmony-4.1-Beta1 branch
+   ```

@@ -989,7 +989,7 @@ void NWebHandlerDelegate::OnHttpError(CefRefPtr<CefRequest> request,
 
     std::string data;
     CefResponse::HeaderMap cef_response_headers;
-    request->GetHeaderMap(cef_response_headers);
+    response->GetHeaderMap(cef_response_headers);
     std::map<std::string, std::string> response_headers;
     ConvertMapToHeaderMap(cef_response_headers, response_headers);
     std::shared_ptr<NWebUrlResourceResponse> web_response =

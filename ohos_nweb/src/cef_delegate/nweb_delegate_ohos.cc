@@ -16,5 +16,5 @@
 #include "nweb_application.h"
 
 namespace OHOS::NWeb {
-void NWebApplication::OnContextInitializedInternal() {}
+void NWebApplication::OnContextInitializedInternal(bool incognito_mode) {}
 }  // namespace OHOS::NWeb

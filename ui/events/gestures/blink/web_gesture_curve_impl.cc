@@ -24,6 +24,10 @@
 #include "ui/display/win/screen_win.h"
 #endif  // BUILDFLAG(IS_WIN)
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/system/sys_info.h"
+#endif  // BUILDFLAG(IS_OHOS)
+
 using blink::WebGestureCurve;
 
 namespace ui {
@@ -46,7 +50,7 @@ std::unique_ptr<GestureCurve> CreateDefaultPlatformCurve(
 #ifdef USE_NATIVE_FLING_CURVE
   use_native_fling_curve = true;
 #endif
-  if (use_native_fling_curve) {
+  if (use_native_fling_curve && !base::SysInfo::IsLowEndDevice()) {
     LOG(DEBUG) << "WebGestureCurveImpl DUMP_FLING_CURVE initial_velocity: " << initial_velocity.y();
     auto scroller = std::make_unique<NativeScrollerOhos>();
     scroller->Fling(0, 0, initial_velocity.x(), initial_velocity.y(), INT_MIN,

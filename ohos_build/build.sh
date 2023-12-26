@@ -236,6 +236,11 @@ if [ ${use_thin_lto} -eq 1 ]; then
   GN_ARGS="${GN_ARGS} use_thin_lto=false"
 fi
 
+if [[ ! -d "${ROOT_DIR}/third_party/ohos_ndk/toolchains/llvm/lib/clang" ]]; then
+  echo -e "\033[31m[ERROR] Please execute the prebuilts_download.sh \033[0m"
+  exit 1
+fi
+
 # Extract ohos-sdk.
 if [ -f "src/ohos_sdk/.install" ]; then
   bash "src/ohos_sdk/.install"

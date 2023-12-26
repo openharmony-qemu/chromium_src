@@ -3,6 +3,7 @@
 #include <chrono>
 #include "ohos_nweb/src/sysevent/event_reporter.h"
 #include "base/task/thread_pool.h"
+#include "base/trace_event/trace_event.h"
 
 constexpr int JANK_STATS_VER = 1;
 
@@ -73,6 +74,7 @@ void ReportLossFrame::Record() {
 
   double loss_frame = duration / period;
   LOG(DEBUG) << "ReportLossFrame: period: " << period << " duration:" << duration << " loss_frame: " << loss_frame;
+  TRACE_EVENT2("base", "WEBVIEW::JANK_STATS_APP", "DURATION", duration, "LOSS_FRAME", loss_frame);
 
   size_t type = JANK_FREQ_EXCEED_FRAME;
   if (loss_frame < 6) {

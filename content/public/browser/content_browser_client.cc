@@ -10,6 +10,7 @@
 #include "base/feature_list.h"
 #include "base/files/file_path.h"
 #include "base/functional/callback_helpers.h"
+#include "base/logging.h"
 #include "base/no_destructor.h"
 #include "base/notreached.h"
 #include "base/strings/string_piece.h"
@@ -75,6 +76,10 @@
 
 #if BUILDFLAG(IS_ANDROID)
 #include "content/public/browser/tts_environment_android.h"
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+#include "base/system/sys_info.h"
 #endif
 
 #if BUILDFLAG(IS_OHOS)
@@ -155,6 +160,12 @@ bool ContentBrowserClient::IsExplicitNavigation(ui::PageTransition transition) {
 }
 
 bool ContentBrowserClient::ShouldUseMobileFlingCurve() {
+#if BUILDFLAG(IS_OHOS)
+  if (base::SysInfo::IsLowEndDevice()) {
+    LOG(DEBUG) << "low device do not trigger fling";
+    return false;
+  }
+#endif
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS) || (BUILDFLAG(IS_OHOS) && defined(OHOS_SCROLL_PERFORMANCE))
   return true;
 #else

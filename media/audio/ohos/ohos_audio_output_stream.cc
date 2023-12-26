@@ -358,6 +358,9 @@ void OHOSAudioOutputStream::PumpSamples() {
   }
 
   // Request more samples from |callback_|.
+  if (!callback_) {
+      return;
+  }
   int frames_filled = callback_->OnMoreData(delay, now, {}, audio_bus_.get());
   DCHECK_EQ(frames_filled, audio_bus_->frames());
   audio_bus_->Scale(volume_);

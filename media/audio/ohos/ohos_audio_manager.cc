@@ -109,7 +109,10 @@ void OHOSAudioManager::GetAudioInputDeviceNames(
     device_names->emplace_back(audioDevice.deviceName,
                                base::NumberToString(audioDevice.deviceId));
   }
-  std::string defaultInputDeviceName = AUDIO_DEFAULT_DEVICE_NAME;
+  auto defaultInputDevice = OhosAdapterHelper::GetInstance()
+                                 .GetAudioSystemManager()
+                                 .GetDefaultInputDevice();
+  std::string defaultInputDeviceName = AUDIO_DEFAULT_DEVICE_NAME + defaultInputDevice.deviceName;
   AudioDeviceName device_name;
   device_name.unique_id = base::NumberToString(AUDIO_DEFAULT_DEVICE_ID);
   device_name.device_name = defaultInputDeviceName;

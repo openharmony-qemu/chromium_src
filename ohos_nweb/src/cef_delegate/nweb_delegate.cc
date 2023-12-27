@@ -1831,7 +1831,12 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
   CefMouseEvent event;
   float ratio = render_handler_->GetVirtualPixelRatio();
   event.x = dragEvent.x / ratio;
+#ifdef OHOS_EX_TOPCONTROLS
+  event.y =
+      dragEvent.y / ratio - GetBrowser()->GetHost()->GetShrinkViewportHeight();
+#else
   event.y = dragEvent.y / ratio;
+#endif
   event.modifiers = EVENTFLAG_LEFT_MOUSE_BUTTON;
 #ifdef OHOS_DRAG_DROP
   switch (dragEvent.action) {

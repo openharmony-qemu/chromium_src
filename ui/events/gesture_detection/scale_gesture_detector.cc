@@ -208,6 +208,7 @@ bool ScaleGestureDetector::OnTouchEvent(const MotionEvent& event) {
     in_progress_ = listener_->OnScaleBegin(*this, event);
   }
 
+  bool ans = false;
   // Handle motion; focal point and span/scale factor are changing.
   if (action == MotionEvent::Action::MOVE) {
     curr_span_x_ = span_x;
@@ -216,8 +217,10 @@ bool ScaleGestureDetector::OnTouchEvent(const MotionEvent& event) {
 
     bool update_prev = true;
 
-    if (in_progress_)
+    if (in_progress_) {
       update_prev = listener_->OnScale(*this, event);
+      ans = true;
+    }
 
     if (update_prev) {
       prev_span_x_ = curr_span_x_;
@@ -233,7 +236,11 @@ bool ScaleGestureDetector::OnTouchEvent(const MotionEvent& event) {
     ResetScaleWithSpan(span);
   }
 
+#ifdef BUILDFLAG(IS_OHOS)
+  return ans;
+#else
   return true;
+#endif
 }
 
 bool ScaleGestureDetector::IsInProgress() const { return in_progress_; }

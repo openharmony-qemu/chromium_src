@@ -85,6 +85,20 @@ void NWebInputHandler::OnTouchMove(int32_t id,
   last_y_ = y;
 }
 
+void NWebInputHandler::OnTouchMove(const std::list<TouchPointInfo> touch_point_info_list,
+                                   bool from_overlay) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+
+  if (touch_point_info_list.empty()) {
+    return;
+  }
+  nweb_delegate_->OnTouchMove(touch_point_info_list, from_overlay);
+  last_x_ = touch_point_info_list.begin()->x_;
+  last_y_ = touch_point_info_list.begin()->y_;
+}
+
 void NWebInputHandler::OnTouchCancel() {
   if (nweb_delegate_ == nullptr) {
     return;

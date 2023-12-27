@@ -345,7 +345,7 @@ void NWebDelegate::InitRichtextIdentifier() {
     if (argv_[i] == nullptr) {
       continue;
     }
- 
+
     if (!strncmp(argv_[i], "--init-richtext-data=", strlen("--init-richtext-data="))) {
       const char* value = argv_[i] + strlen("--init-richtext-data=");
       richtext_data_str_ = value;
@@ -656,6 +656,20 @@ void NWebDelegate::OnTouchRelease(int32_t id,
                                    y / default_virtual_pixel_ratio_,
                                    from_overlay);
   }
+}
+
+void NWebDelegate::OnTouchMove(const std::list<TouchPointInfo> touch_point_info_list,
+                               bool from_overlay) {
+  if (event_handler_ == nullptr) {
+    return;
+  }
+
+  std::list<TouchPointInfo> adjusted_touch_point_info_list = touch_point_info_list;
+  for (auto& touch_point_info : adjusted_touch_point_info_list) {
+    touch_point_info.x_ = touch_point_info.x_ / default_virtual_pixel_ratio_;
+    touch_point_info.y_ = touch_point_info.y_ / default_virtual_pixel_ratio_;
+  }
+  event_handler_->OnTouchMove(adjusted_touch_point_info_list, from_overlay);
 }
 
 void NWebDelegate::OnTouchMove(int32_t id,
@@ -2105,7 +2119,7 @@ void NWebDelegate::SetVirtualKeyBoardArg(int32_t width, int32_t height, double k
     GetBrowser()->GetHost()->SetVirtualKeyBoardArg(width, height, keyboard);
   }
 }
- 
+
 bool NWebDelegate::ShouldVirtualKeyboardOverlay() {
   if (GetBrowser().get()) {
     return GetBrowser()->GetHost()->ShouldVirtualKeyboardOverlay();
@@ -2415,7 +2429,7 @@ int NWebDelegate::GetSecurityLevel() {
   return GetBrowser()->GetSecurityLevel();
 }
 #endif
- 
+
 void NWebDelegate::RegisterAccessibilityEventListener(
     std::shared_ptr<NWebAccessibilityEventCallback>
         accessibility_event_listener) {

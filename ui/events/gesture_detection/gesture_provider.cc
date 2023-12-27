@@ -31,6 +31,9 @@ namespace {
 
 // Double-tap drag zoom sensitivity (speed).
 const float kDoubleTapDragZoomSpeed = 0.005f;
+#ifdef BUILDFLAG(IS_OHOS)
+const int MinPinchPointerCount = 2;
+#endif
 
 const char* GetMotionEventActionName(MotionEvent::Action action) {
   switch (action) {
@@ -158,9 +161,21 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
       tap_down_point_ = gfx::PointF(event.GetX(), event.GetY());
       max_diameter_before_show_press_ = event.GetTouchMajor();
     }
-    gesture_detector_.OnTouchEvent(event,
+#ifdef BUILDFLAG(IS_OHOS)
+    if (event.GetPointerCount() >= MinPinchPointerCount) {
+        if (!scale_gesture_detector_.OnTouchEvent(event)) {
+            gesture_detector_.OnTouchEvent(event,
                                    client_->RequiresDoubleTapGestureEvents());
-    scale_gesture_detector_.OnTouchEvent(event);
+        }
+    } else {
+#endif
+        gesture_detector_.OnTouchEvent(event,
+                                   client_->RequiresDoubleTapGestureEvents());
+        scale_gesture_detector_.OnTouchEvent(event);
+#ifdef BUILDFLAG(IS_OHOS)
+    }
+#endif
+
 
     if (action == MotionEvent::Action::UP ||
         action == MotionEvent::Action::CANCEL) {
@@ -316,6 +331,7 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
 
   void OnScaleEnd(const ScaleGestureDetector& detector,
                   const MotionEvent& e) override {
+    last_scale_ = -1;
     if (!pinch_event_sent_)
       return;
     Send(CreateGesture(ET_GESTURE_PINCH_END, e));
@@ -346,8 +362,23 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
     }
 
     float scale = detector.GetScaleFactor();
+#ifdef BUILDFLAG(IS_OHOS)
+    constexpr double epsilon = 0.0005f;
+    if (std::abs(scale - 1) <= epsilon)
+        return true;
+
+    if (last_scale_ < 0) {
+        last_scale_ = scale;
+    } else {
+        scale = (last_scale_ + scale) /2;
+        last_scale_ = scale;
+    }
+    LOG(DEBUG) << "GestureProvider::OnScale" << scale << ", focus x = " << detector.GetFocusX()
+        << ", focus y = " << detector.GetFocusY() << ", pointer cnt = " << e.GetPointerCount();
+#else
     if (scale == 1)
       return true;
+#endif
 
     if (detector.InAnchoredScaleMode()) {
       // Relative changes in the double-tap scale factor computed by |detector|
@@ -892,6 +923,8 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
   // The scroll focus point is set to the first touch down point when scroll
   // begins and is later updated based on the delta of touch points.
   gfx::PointF scroll_focus_point_;
+
+  double last_scale_ = -1;
 };
 
 // GestureProvider

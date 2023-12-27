@@ -2704,6 +2704,7 @@ void NWebDelegate::AddAccessibilityNodeInfoCollection(
 
 void NWebDelegate::AddAccessibilityNodeInfoActions(
     NWebAccessibilityNodeInfo& nodeInfo) const {
+  nodeInfo.actions.clear();
   if (nodeInfo.clickable) {
     nodeInfo.actions.emplace_back(
         static_cast<uint32_t>(AceAction::ACTION_CLICK));

@@ -8,6 +8,11 @@
 #include <cmath>
 
 #include "base/check_op.h"
+#include "base/logging.h"
+
+#if BUILDFLAG(IS_OHOS)
+#include "base/system/sys_info.h"
+#endif
 
 namespace {
 
@@ -43,9 +48,17 @@ FlingCurve::FlingCurve(const gfx::Vector2dF& velocity,
       position_offset_(0) {
   DCHECK(!velocity.IsZero());
   float max_start_velocity = std::max(fabs(velocity.x()), fabs(velocity.y()));
+#if BUILDFLAG(IS_OHOS)
+  if (base::SysInfo::IsLowEndDevice()) {
+    max_start_velocity /= 3;
+  }
+#endif
   if (max_start_velocity > GetVelocityAtTime(0))
     max_start_velocity = GetVelocityAtTime(0);
   CHECK_GT(max_start_velocity, 0);
+#if BUILDFLAG(IS_OHOS)
+  LOG(DEBUG) << "fling max start velocity: " << max_start_velocity;
+#endif
 
   displacement_ratio_ = gfx::Vector2dF(velocity.x() / max_start_velocity,
                                        velocity.y() / max_start_velocity);

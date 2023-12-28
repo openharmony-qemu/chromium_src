@@ -250,9 +250,7 @@ void NWebEventHandler::SendMouseEvent(int x,
       last_mouse_y_ = y;
       browser_->GetHost()->SendMouseMoveEvent(mouseEvent, false);
     } else if (NWebInputDelegate::IsMouseLeave(action)) {
-      if (NWebInputDelegate::IsMouseUp(previous_action_)) {
-        browser_->GetHost()->SendMouseMoveEvent(mouseEvent, true);
-      }
+      browser_->GetHost()->SendMouseMoveEvent(mouseEvent, true);
     } else {
       LOG(DEBUG) << "mouse event action: " << action;
     }

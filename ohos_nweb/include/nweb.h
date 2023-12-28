@@ -167,7 +167,7 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
     virtual void OnTouchPress(int32_t id, double x, double y, bool fromOverlay = false) = 0;
     virtual void OnTouchRelease(int32_t id, double x = 0, double y = 0, bool fromOverlay = false) = 0;
     virtual void OnTouchMove(int32_t id, double x, double y, bool fromOverlay = false) = 0;
-    virtual void OnTouchMove(const std::list<TouchPointInfo> touchPointInfoList, bool fromOverlay = false) = 0;
+    virtual void OnTouchMove(const std::list<TouchPointInfo>& touchPointInfoList, bool fromOverlay = false) = 0;
     virtual void OnTouchCancel() = 0;
     virtual void OnNavigateBack() = 0;
     virtual bool SendKeyEvent(int32_t keyCode, int32_t keyAction) = 0;

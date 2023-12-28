@@ -658,8 +658,7 @@ void NWebDelegate::OnTouchRelease(int32_t id,
   }
 }
 
-void NWebDelegate::OnTouchMove(const std::list<TouchPointInfo> touch_point_info_list,
-                               bool from_overlay) {
+void NWebDelegate::OnTouchMove(const std::list<TouchPointInfo>& touch_point_info_list, bool from_overlay) {
   if (event_handler_ == nullptr) {
     return;
   }

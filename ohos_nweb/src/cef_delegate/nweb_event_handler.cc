@@ -16,6 +16,7 @@
 #include "nweb_event_handler.h"
 
 #include <cmath>
+#include <vector>
 
 #include "cef/include/base/cef_logging.h"
 #include "cef/include/base/cef_macros.h"
@@ -107,7 +108,7 @@ void NWebEventHandler::OnTouchMove(int32_t id,
   }
 }
 
-void NWebEventHandler::OnTouchMove(const std::list<TouchPointInfo> touch_point_info_list,
+void NWebEventHandler::OnTouchMove(const std::list<TouchPointInfo>& touch_point_info_list,
                                    bool from_overlay) {
   std::vector<CefTouchEvent> event_list {};
   for (const auto& touch_point : touch_point_info_list) {

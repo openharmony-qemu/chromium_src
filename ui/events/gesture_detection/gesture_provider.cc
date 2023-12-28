@@ -32,7 +32,8 @@ namespace {
 // Double-tap drag zoom sensitivity (speed).
 const float kDoubleTapDragZoomSpeed = 0.005f;
 #ifdef BUILDFLAG(IS_OHOS)
-const int MinPinchPointerCount = 2;
+const int kMinPinchPointerCount = 2;
+const float kPinchScaleEpsilon = 0.0005f;
 #endif
 
 const char* GetMotionEventActionName(MotionEvent::Action action) {
@@ -162,7 +163,7 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
       max_diameter_before_show_press_ = event.GetTouchMajor();
     }
 #ifdef BUILDFLAG(IS_OHOS)
-    if (event.GetPointerCount() >= MinPinchPointerCount) {
+    if (event.GetPointerCount() >= kMinPinchPointerCount) {
         if (!scale_gesture_detector_.OnTouchEvent(event)) {
             gesture_detector_.OnTouchEvent(event,
                                    client_->RequiresDoubleTapGestureEvents());
@@ -363,8 +364,7 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
 
     float scale = detector.GetScaleFactor();
 #ifdef BUILDFLAG(IS_OHOS)
-    constexpr double epsilon = 0.0005f;
-    if (std::abs(scale - 1) <= epsilon)
+    if (std::abs(scale - 1) <= kPinchScaleEpsilon)
         return true;
 
     if (last_scale_ < 0) {

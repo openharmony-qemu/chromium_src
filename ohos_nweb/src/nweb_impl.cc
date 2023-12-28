@@ -637,7 +637,7 @@ void NWebImpl::OnTouchMove(int32_t id, double x, double y, bool from_overlay) {
   input_handler_->OnTouchMove(id, x, y, from_overlay);
 }
 
-void NWebImpl::OnTouchMove(const std::list<TouchPointInfo> touchPointInfoList, bool from_overlay) {
+void NWebImpl::OnTouchMove(const std::list<TouchPointInfo>& touchPointInfoList, bool from_overlay) {
   if (input_handler_ == nullptr) {
     return;
   }
@@ -1624,8 +1624,7 @@ void NWebImpl::PutWebAppClientExtensionCallback(
 
 void NWebImpl::RemoveWebAppClientExtensionCallback() {
   if (nweb_delegate_ == nullptr) {
-    WVLOG_E("remove web app client extension callback failed, nweb delegate is nullptr, nweb_id = %{public}u", nweb_id
-);
+    WVLOG_E("remove web app client extension callback failed, nweb delegate is nullptr, nweb_id = %{public}u", nweb_id_);
     return;
   }
 

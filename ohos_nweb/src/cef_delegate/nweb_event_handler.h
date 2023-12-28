@@ -19,12 +19,11 @@
 #include <list>
 
 #include "cef/include/cef_client.h"
+#include "nweb.h"
 #include "nweb_input_delegate.h"
 #include "nweb_inputmethod_handler.h"
 #include "nweb_key_event.h"
 #include "ohos_adapter_helper.h"
-
-#include "nweb.h"
 
 namespace OHOS::NWeb {
 

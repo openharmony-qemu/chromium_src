@@ -21,15 +21,20 @@
 namespace base {
 
 bool ParseAssetsOHOS(FilePath* result) {
-  if (!base::CommandLine::ForCurrentProcess()) {
-    LOG(ERROR) << "CommandLine not init";
-    return false;
+  if(!base::CommandLine::ForCurrentProcess()) {
+      LOG(ERROR)<< "CommandLine not init ";
+        return false; 
   }
   auto bundle_path = base::CommandLine::ForCurrentProcess()->
     GetSwitchValueASCII(switches::kBundleInstallationDir);
   if (bundle_path.empty()) {
-    LOG(ERROR) << "Bundle path is empty";
-    return false;
+	FilePath bin_dir;
+    if(!ReadSymbolicLink(FilePath(kProcSelfExe), &bin_dir)){
+      LOG(ERROR)<< "Unable to resolve " << kProcSelfExe << ".";
+        return false; 
+    }
+      *result = bin_dir.DirName();
+      return true;
   }
   bool for_test = base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kForTest);
   if (for_test) {
@@ -62,13 +67,14 @@ bool PathProviderOHOS(int key, FilePath* result) {
       *result = bin_dir.DirName();
       return true;
     }
-    case base::DIR_SOURCE_ROOT:
-      NOTIMPLEMENTED();
-      return false;
+    case base::DIR_SOURCE_ROOT:	
+      *result = FilePath("./");
+      return true;
     case base::DIR_USER_DESKTOP:
       NOTIMPLEMENTED();
       return false;
     case base::DIR_CACHE:
+      // set to /data/local directory for W|X permission.
     #if BUILDFLAG(IS_OHOS)
       *result = FilePath("/data/storage/el2/base/cache/web");
     #else

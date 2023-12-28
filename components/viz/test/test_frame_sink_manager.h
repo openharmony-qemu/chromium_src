@@ -73,7 +73,8 @@ class TestFrameSinkManagerImpl : public mojom::FrameSinkManager {
       const DebugRendererSettings& debug_settings) override {}
   void Throttle(const std::vector<FrameSinkId>& ids,
                 base::TimeDelta interval) override {}
-
+  void SendInternalBeginFrame(const FrameSinkId& frame_sink_id) override {};
+  void SetEnableLowerFrameRate(bool enabled, const FrameSinkId& frame_sink_id) override {};
   mojo::Receiver<mojom::FrameSinkManager> receiver_{this};
   mojo::Remote<mojom::FrameSinkManagerClient> client_;
 };

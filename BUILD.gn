@@ -85,6 +85,9 @@ group("gn_all") {
     "//codelabs",
     "//components:components_unittests",
     "//components/gwp_asan:gwp_asan_unittests",
+    "//components/password_manager/core/browser:affiliation_unittests",
+    "//components/password_manager/core/browser:csv_unittests",
+    "//components/policy/test_support:policy_unittests",
     "//net:net_unittests",
     "//services:services_unittests",
     "//services/service_manager/public/cpp",
@@ -101,6 +104,7 @@ group("gn_all") {
     "//ui/base:ui_base_unittests",
     "//ui/color:color_unittests",
     "//ui/gfx:gfx_unittests",
+    "//ui/ozone/common:com_unittests",
     "//url:url_unittests",
   ]
 
@@ -836,6 +840,10 @@ group("gn_all") {
       "//headless:headless_non_renderer",
       "//headless:headless_tests",
     ]
+  }
+
+  if (is_ohos){
+    deps += [ "//headless:headless_tests" ]
   }
 
   if (enable_vr) {

@@ -105,6 +105,10 @@ class MockAudioManager : public AudioManagerBase {
       : AudioManagerBase(std::make_unique<TestAudioThread>(),
                          &fake_audio_log_factory_) {}
   ~MockAudioManager() override { Shutdown(); }
+#if BUILDFLAG(IS_OHOS)
+  AudioParameters GetPreferredInputStreamParameters(
+      const std::string& input_device_id){ return AudioParameters();};
+#endif
 
   MOCK_METHOD3(MakeAudioOutputStream,
                AudioOutputStream*(const AudioParameters& params,
@@ -412,7 +416,7 @@ class AudioOutputProxyTest : public testing::Test {
     // |stream| is closed at this point. Start() should reopen it again.
     EXPECT_CALL(manager(), MakeAudioOutputStream(_, _, _))
         .Times(2)
-        .WillRepeatedly(Return(reinterpret_cast<AudioOutputStream*>(NULL)));
+        .WillRepeatedly(Return(static_cast<AudioOutputStream*>(NULL)));
 
     EXPECT_CALL(callback_, OnError(_)).Times(2);
 

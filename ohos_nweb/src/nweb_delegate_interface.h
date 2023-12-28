@@ -334,6 +334,10 @@ class NWebDelegateInterface
   virtual void SetVirtualPixelRatio(float ratio) = 0;
 #endif // defined(OHOS_SCREEN_ROTATION)
 
+#if BUILDFLAG(IS_OHOS)
+  virtual float GetBaseDisplayWidth() = 0;
+#endif
+
 #ifdef OHOS_EX_TOPCONTROLS
   virtual void UpdateBrowserControlsState(int constraints,
                                           int current,

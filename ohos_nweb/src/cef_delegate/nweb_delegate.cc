@@ -24,6 +24,7 @@
 
 #include "base/command_line.h"
 #include "base/strings/utf_string_conversions.h"
+#include "base/task/thread_pool.h"
 #include "base/trace_event/trace_event.h"
 #include "cef/include/base/cef_logging.h"
 #include "cef/include/cef_app.h"
@@ -184,12 +185,20 @@ class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
   JavaScriptResultCallbackImpl(
       std::shared_ptr<NWebValueCallback<std::shared_ptr<NWebMessage>>> callback)
       : callback_(callback) {}
+  void CallbackOnReceiveThread(std::shared_ptr<OHOS::NWeb::NWebMessage> data) {
+    callback_->OnReceiveValue(data);
+  }
+
   void OnJavaScriptExeResult(CefRefPtr<CefValue> result) override {
     if (callback_ != nullptr) {
       auto data =
           std::make_shared<OHOS::NWeb::NWebMessage>(NWebValue::Type::NONE);
       ConvertCefValueToNWebMessage(result, data);
-      callback_->OnReceiveValue(data);
+      base::ThreadPool::PostTask(
+        FROM_HERE, {base::MayBlock(), base::TaskPriority::HIGHEST},
+        base::BindOnce(base::IgnoreResult(
+            &JavaScriptResultCallbackImpl::CallbackOnReceiveThread),
+            base::WrapRefCounted(this), data));
     }
   }
 

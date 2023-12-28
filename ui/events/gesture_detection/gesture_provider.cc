@@ -32,7 +32,6 @@ namespace {
 // Double-tap drag zoom sensitivity (speed).
 const float kDoubleTapDragZoomSpeed = 0.005f;
 #ifdef BUILDFLAG(IS_OHOS)
-const int kMinPinchPointerCount = 2;
 const float kPinchScaleEpsilon = 0.0005f;
 #endif
 
@@ -162,21 +161,9 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
       tap_down_point_ = gfx::PointF(event.GetX(), event.GetY());
       max_diameter_before_show_press_ = event.GetTouchMajor();
     }
-#ifdef BUILDFLAG(IS_OHOS)
-    if (event.GetPointerCount() >= kMinPinchPointerCount) {
-        if (!scale_gesture_detector_.OnTouchEvent(event)) {
-            gesture_detector_.OnTouchEvent(event,
+    gesture_detector_.OnTouchEvent(event,
                                    client_->RequiresDoubleTapGestureEvents());
-        }
-    } else {
-#endif
-        gesture_detector_.OnTouchEvent(event,
-                                   client_->RequiresDoubleTapGestureEvents());
-        scale_gesture_detector_.OnTouchEvent(event);
-#ifdef BUILDFLAG(IS_OHOS)
-    }
-#endif
-
+    scale_gesture_detector_.OnTouchEvent(event);
 
     if (action == MotionEvent::Action::UP ||
         action == MotionEvent::Action::CANCEL) {

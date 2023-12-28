@@ -111,9 +111,11 @@ void NWebEventHandler::OnTouchMove(int32_t id,
 void NWebEventHandler::OnTouchMove(const std::list<TouchPointInfo>& touch_point_info_list,
                                    bool from_overlay) {
   std::vector<CefTouchEvent> event_list {};
+
+  std::string touch_point_info_str {"NWebEventHandler::OnTouchMove"};
   for (const auto& touch_point : touch_point_info_list) {
-     LOG(DEBUG) << "NWebEventHandler::OnTouchMove id = " << touch_point.id_ << ", x = " <<
-        touch_point.x_ << ", y = " << touch_point.y_ << ", from_overlay = " << from_overlay;
+     touch_point_info_str += " id = " + std::to_string(touch_point.id_) + ", x = " +
+        std::to_string(touch_point.x_) + ", y = " + std::to_string(touch_point.y_);
     CefTouchEvent touch_move;
     touch_move.type = CEF_TET_MOVED;
     touch_move.pointer_type = CEF_POINTER_TYPE_TOUCH;
@@ -124,6 +126,7 @@ void NWebEventHandler::OnTouchMove(const std::list<TouchPointInfo>& touch_point_
     touch_move.from_overlay = from_overlay;
     event_list.emplace_back(touch_move);
   }
+  LOG(DEBUG) << touch_point_info_str << ", from_overlay = " << from_overlay;
 
   if (browser_ && browser_->GetHost()) {
     browser_->GetHost()->SendTouchEventList(event_list);

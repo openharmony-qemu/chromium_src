@@ -21,6 +21,7 @@ export PATH=${PREBUILTS_ROOT_DIR}/oh-command-line-tools/ohpm/bin:$PATH
 
 OHPM_LINK_PATH=${SOURCE_ROOT_DIR}/src/huawei/third_party
 TOOLCHAIN_LINK_PATH=${SOURCE_ROOT_DIR}/src/third_party/ohos_ndk/toolchains
+SYSROOT_LINK_PATH=${SOURCE_ROOT_DIR}/src/third_party/ohos_ndk
 SDK_LINK_PATH=${SOURCE_ROOT_DIR}/src/ohos_sdk
 SDK_API_VERSION=10
 
@@ -176,6 +177,24 @@ function download_sdk() {
   echo -n "ohos-sdk-4.0.7.5-Beta1.tar.gz" > "${SDK_LINK_PATH}/.version"
 }
 
+function extract_sysroot() {
+  version_file=$SYSROOT_LINK_PATH/sysroot/usr/.version
+  file_path=$(ls ${SYSROOT_LINK_PATH}/sysroot-*.tar.gz)
+  if [[ "$?" -ne 0 ]]; then
+    echo "[WARNING] The sysroot tar file does not exist!"
+    return
+  fi
+  file_name=$(basename $file_path)
+  if [[ ! -d "${SYSROOT_LINK_PATH}/sysroot/usr" ]] || ! (check_version $version_file $file_name); then
+    echo "[INFO] extract ${file_name}"
+    pushd ${SYSROOT_LINK_PATH} > /dev/null
+      rm -rf sysroot
+      tar -xzf ${file_name}
+    popd > /dev/null
+    echo -n "${file_name}" > "${version_file}"
+  fi
+}
+
 if [[ ! -d "${SOURCE_ROOT_DIR}/src" ]]; then
   echo -e "\033[31m[ERROR] Please execute the prebuilts_download.sh from project root path\033[0m"
   exit 1
@@ -203,6 +222,13 @@ echo "[INFO] Sdk initialization started..."
 download_sdk
 if [[ "$?" -ne 0 ]]; then
   echo -e "\033[31m[ERROR] Sdk prebuilts download initialization failed!\033[0m"
+  exit 1
+fi
+
+echo "[INFO] Sysroot initialization started..."
+extract_sysroot
+if [[ "$?" -ne 0 ]]; then
+  echo -e "\033[31m[ERROR] Sysroot initialization failed!\033[0m"
   exit 1
 fi
 

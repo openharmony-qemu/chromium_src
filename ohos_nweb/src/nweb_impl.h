@@ -48,6 +48,7 @@ class NWebImpl : public NWeb {
                       double y,
                       bool from_overlay) override;
   void OnTouchMove(int32_t id, double x, double y, bool from_overlay) override;
+  void OnTouchMove(const std::list<TouchPointInfo>& touchPointInfoList, bool fromOverlay = false) override;
   void OnTouchCancel() override;
   void OnNavigateBack() override;
   bool SendKeyEvent(int32_t keyCode, int32_t keyAction) override;

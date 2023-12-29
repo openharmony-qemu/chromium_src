@@ -125,6 +125,12 @@ enum class FocusReason : int32_t {
     EVENT_REQUEST = 1,
 };
 
+struct TouchPointInfo {
+    int id_ = 0;
+    double x_ = 0;
+    double y_ = 0;
+};
+
 struct OHOS_NWEB_EXPORT NWebDOHConfig {
   int doh_mode = -1;
   std::string doh_config = "";
@@ -161,6 +167,7 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
     virtual void OnTouchPress(int32_t id, double x, double y, bool fromOverlay = false) = 0;
     virtual void OnTouchRelease(int32_t id, double x = 0, double y = 0, bool fromOverlay = false) = 0;
     virtual void OnTouchMove(int32_t id, double x, double y, bool fromOverlay = false) = 0;
+    virtual void OnTouchMove(const std::list<TouchPointInfo>& touchPointInfoList, bool fromOverlay = false) = 0;
     virtual void OnTouchCancel() = 0;
     virtual void OnNavigateBack() = 0;
     virtual bool SendKeyEvent(int32_t keyCode, int32_t keyAction) = 0;
@@ -851,7 +858,7 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      */
     virtual void JavaScriptOnDocumentStart(const ScriptItems& scriptItems) = 0;
 
-        /**
+	/**
      * Execute an accessibility action on an accessibility node in the browser.
      * @param accessibilityId The id of the accessibility node.
      * @param action The action to be performed on the accessibility node.
@@ -945,7 +952,7 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
         const std::string h5_method_name,
         const std::vector<std::shared_ptr<NWebValue>>& args) = 0;
 
-    /** 
+    /**
      * Get web whether has been set incognito mode.
      *
      * @return true if web is in incognito mode; otherwise fase.

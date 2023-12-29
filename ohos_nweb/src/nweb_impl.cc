@@ -463,7 +463,7 @@ bool NWebImpl::InitWebEngine(const NWebCreateInfo& create_info) {
       is_richtext_value_ = true;
     }
   }
- 
+
   if (!SetVirtualDeviceRatio()) {
     WVLOG_E("fail to set virtual device ratio");
     delete[] argv;
@@ -635,6 +635,14 @@ void NWebImpl::OnTouchMove(int32_t id, double x, double y, bool from_overlay) {
   }
 
   input_handler_->OnTouchMove(id, x, y, from_overlay);
+}
+
+void NWebImpl::OnTouchMove(const std::list<TouchPointInfo>& touchPointInfoList, bool from_overlay) {
+  if (input_handler_ == nullptr) {
+    return;
+  }
+
+  input_handler_->OnTouchMove(touchPointInfoList, from_overlay);
 }
 
 void NWebImpl::OnTouchCancel() {
@@ -1528,7 +1536,7 @@ void NWebImpl::SetVirtualKeyBoardArg(int32_t width, int32_t height, double keybo
   }
   nweb_delegate_->SetVirtualKeyBoardArg(width, height, keyboard);
 }
- 
+
 bool NWebImpl::ShouldVirtualKeyboardOverlay() {
   if (nweb_delegate_ == nullptr) {
     WVLOG_E("ShouldVirtualKeyboardOverlay nweb delegate is null");
@@ -1739,8 +1747,8 @@ bool NWebImpl::GetForceEnableZoom() const {
   return nweb_delegate_->GetForceEnableZoom();
 }
 #endif //OHOS_EX_FORCE_ZOOM
- 
- 
+
+
 void NWebImpl::PutWebDownloadDelegateCallback(
     std::shared_ptr<NWebDownloadDelegateCallback>
         web_download_delegate_listener) {
@@ -1748,26 +1756,26 @@ void NWebImpl::PutWebDownloadDelegateCallback(
     WVLOG_E("set web download delegate callback failed, nweb delegate is nullptr, nweb_id = %{public}u", nweb_id_);
     return;
   }
- 
+
   nweb_delegate_->RegisterWebDownloadDelegateListener(
       web_download_delegate_listener);
 }
- 
+
 void NWebImpl::StartDownload(const char* url) {
   if (nweb_delegate_ == nullptr) {
     WVLOG_E("start download failed, nweb delegate is nullptr, nweb_id = %{public}u", nweb_id_);
     return;
   }
- 
+
   nweb_delegate_->StartDownload(url);
 }
- 
+
 void NWebImpl::ResumeDownload(std::shared_ptr<NWebDownloadItem> web_download) {
   if (nweb_delegate_ == nullptr) {
     WVLOG_E("resume download failed, nweb delegate is nullptr, nweb_id = %{public}u", nweb_id_);
     return;
   }
- 
+
   nweb_delegate_->ResumeDownload(web_download);
 }
 
@@ -1792,7 +1800,7 @@ void NWebImpl::ExecuteAction(int32_t accessibilityId, uint32_t action) const {
     nweb_delegate_->ExecuteAction(accessibilityId, action);
   }
 }
- 
+
 bool NWebImpl::GetFocusedAccessibilityNodeInfo(
     int32_t accessibilityId,
     bool isAccessibilityFocus,
@@ -1803,7 +1811,7 @@ bool NWebImpl::GetFocusedAccessibilityNodeInfo(
   }
   return false;
 }
- 
+
 bool NWebImpl::GetAccessibilityNodeInfoById(
     int32_t accessibilityId,
     OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const {
@@ -1813,7 +1821,7 @@ bool NWebImpl::GetAccessibilityNodeInfoById(
   }
   return false;
 }
- 
+
 bool NWebImpl::GetAccessibilityNodeInfoByFocusMove(
     int32_t accessibilityId,
     int32_t direction,
@@ -1824,7 +1832,7 @@ bool NWebImpl::GetAccessibilityNodeInfoByFocusMove(
   }
   return false;
 }
- 
+
 void NWebImpl::SetAccessibilityState(bool state) {
   if (nweb_delegate_ != nullptr) {
     nweb_delegate_->SetAccessibilityState(state ? STATE_ENABLED
@@ -1905,7 +1913,7 @@ void NWebImpl::UpdateBrowserControlsState(int constraints,
   }
   nweb_delegate_->UpdateBrowserControlsState(constraints, current, animate);
 }
- 
+
 void NWebImpl::UpdateBrowserControlsHeight(int height, bool animate) {
   if (nweb_delegate_ == nullptr) {
     return;

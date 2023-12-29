@@ -31,6 +31,9 @@ namespace {
 
 // Double-tap drag zoom sensitivity (speed).
 const float kDoubleTapDragZoomSpeed = 0.005f;
+#ifdef BUILDFLAG(IS_OHOS)
+const float kPinchScaleEpsilon = 0.0005f;
+#endif
 
 const char* GetMotionEventActionName(MotionEvent::Action action) {
   switch (action) {
@@ -316,6 +319,7 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
 
   void OnScaleEnd(const ScaleGestureDetector& detector,
                   const MotionEvent& e) override {
+    last_scale_ = -1;
     if (!pinch_event_sent_)
       return;
     Send(CreateGesture(ET_GESTURE_PINCH_END, e));
@@ -346,8 +350,22 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
     }
 
     float scale = detector.GetScaleFactor();
+#ifdef BUILDFLAG(IS_OHOS)
+    if (std::abs(scale - 1) <= kPinchScaleEpsilon)
+        return true;
+
+    if (last_scale_ < 0) {
+        last_scale_ = scale;
+    } else {
+        scale = (last_scale_ + scale) /2;
+        last_scale_ = scale;
+    }
+    LOG(DEBUG) << "GestureProvider::OnScale" << scale << ", focus x = " << detector.GetFocusX()
+        << ", focus y = " << detector.GetFocusY() << ", pointer cnt = " << e.GetPointerCount();
+#else
     if (scale == 1)
       return true;
+#endif
 
     if (detector.InAnchoredScaleMode()) {
       // Relative changes in the double-tap scale factor computed by |detector|
@@ -892,6 +910,8 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
   // The scroll focus point is set to the first touch down point when scroll
   // begins and is later updated based on the delta of touch points.
   gfx::PointF scroll_focus_point_;
+
+  double last_scale_ = -1;
 };
 
 // GestureProvider

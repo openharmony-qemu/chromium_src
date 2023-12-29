@@ -23,6 +23,7 @@
 #include "cef/include/cef_client.h"
 #include "cef_delegate/nweb_inputmethod_client.h"
 #include "display_manager_adapter.h"
+#include "nweb.h"
 #include "nweb_accessibility_node_info.h"
 #include "nweb_download_callback.h"
 #include "nweb_find_callback.h"
@@ -122,6 +123,8 @@ class NWebDelegateInterface
   virtual void OnTouchMove(int32_t id,
                            double x,
                            double y,
+                           bool from_overlay) = 0;
+  virtual void OnTouchMove(const std::list<TouchPointInfo>& touch_point_info_list,
                            bool from_overlay) = 0;
   virtual void OnTouchCancel() = 0;
   virtual bool SendKeyEvent(int32_t keyCode, int32_t keyAction) = 0;

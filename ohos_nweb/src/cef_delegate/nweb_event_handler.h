@@ -16,7 +16,10 @@
 #ifndef NWEB_EVENT_HANDLER_H
 #define NWEB_EVENT_HANDLER_H
 
+#include <list>
+
 #include "cef/include/cef_client.h"
+#include "nweb.h"
 #include "nweb_input_delegate.h"
 #include "nweb_inputmethod_handler.h"
 #include "nweb_key_event.h"
@@ -36,6 +39,7 @@ class NWebEventHandler {
   void SetIsFocus(bool isFocus) { isFocus_ = isFocus; }
   void OnTouchPress(int32_t id, double x, double y, bool from_overlay);
   void OnTouchMove(int32_t id, double x, double y, bool from_overlay);
+  void OnTouchMove(const std::list<TouchPointInfo>& touch_point_info_list, bool from_overlay);
   void OnTouchRelease(int32_t id, double x, double y, bool from_overlay);
   void OnTouchCancel();
   void SendMouseWheelEvent(double x, double y, double deltaX, double deltaY);

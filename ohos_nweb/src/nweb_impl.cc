@@ -432,7 +432,16 @@ bool NWebImpl::SetVirtualDeviceRatio() {
       // Created a richtext component
       device_pixel_ratio_ = richtextDisplayRatio;
     } else {
+#if BUILDFLAG(IS_OHOS)
+      if (nweb_delegate_ && nweb_delegate_->GetBaseDisplayWidth() > 0) {
+        device_pixel_ratio_ =
+            display->GetWidth() / nweb_delegate_->GetBaseDisplayWidth();
+      } else {
+        device_pixel_ratio_ = display->GetVirtualPixelRatio();
+      }
+#else
       device_pixel_ratio_ = display->GetVirtualPixelRatio();
+#endif
     }
     if (device_pixel_ratio_ <= 0) {
       WVLOG_E("invalid ratio.");
@@ -462,12 +471,6 @@ bool NWebImpl::InitWebEngine(const NWebCreateInfo& create_info) {
     if (!strncmp(argv[i], "--init-richtext-data=", strlen("--init-richtext-data="))) {
       is_richtext_value_ = true;
     }
-  }
-
-  if (!SetVirtualDeviceRatio()) {
-    WVLOG_E("fail to set virtual device ratio");
-    delete[] argv;
-    return false;
   }
 
   is_enhance_surface_ = create_info.init_args.is_enhance_surface;
@@ -513,6 +516,12 @@ bool NWebImpl::InitWebEngine(const NWebCreateInfo& create_info) {
           create_info.incognito_mode);
   if (nweb_delegate_ == nullptr) {
     WVLOG_E("fail to create nweb delegate of web engine");
+    delete[] argv;
+    return false;
+  }
+
+  if (!SetVirtualDeviceRatio()) {
+    WVLOG_E("fail to set virtual device ratio");
     delete[] argv;
     return false;
   }

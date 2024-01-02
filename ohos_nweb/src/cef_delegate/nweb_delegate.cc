@@ -425,7 +425,15 @@ InitRichtextIdentifier();
       // Created a richtext component
       SetVirtualPixelRatio(richtextDisplayRatio);
     } else {
+#if BUILDFLAG(IS_OHOS)
+      if (GetBaseDisplayWidth() > 0) {
+        SetVirtualPixelRatio(display->GetWidth() / GetBaseDisplayWidth());
+      } else {
+        SetVirtualPixelRatio(display->GetVirtualPixelRatio());
+      }
+#else
       SetVirtualPixelRatio(display->GetVirtualPixelRatio());
+#endif
     }
   }
 
@@ -754,7 +762,15 @@ void NWebDelegate::NotifyScreenInfoChanged(RotationType rotation,
       // Created a richtext component
       display_ratio = richtextDisplayRatio;
     } else {
+#if BUILDFLAG(IS_OHOS)
+      if (GetBaseDisplayWidth() > 0) {
+        display_ratio = display->GetWidth() / GetBaseDisplayWidth();
+      } else {
+        display_ratio = display->GetVirtualPixelRatio();
+      }
+#else
       display_ratio = display->GetVirtualPixelRatio();
+#endif
     }
     if (display_ratio <= 0) {
       LOG(ERROR) << "Invalid display_ratio, display_ratio = " << display_ratio;
@@ -785,6 +801,12 @@ void NWebDelegate::SetVirtualPixelRatio(float ratio) {
   }
   ui::GestureConfiguration::GetInstance()->set_virtual_pixel_ratio(default_virtual_pixel_ratio_);
 }
+
+#if BUILDFLAG(IS_OHOS)
+float NWebDelegate::GetBaseDisplayWidth() {
+  return base_display_width_;
+}
+#endif
 
 std::shared_ptr<NWebPreference> NWebDelegate::GetPreference() const {
   return preference_delegate_;
@@ -1255,6 +1277,13 @@ void NWebDelegate::InitializeCef(std::string url,
   settings.persist_session_cookies = !is_pc_device;
 
 #if BUILDFLAG(IS_OHOS)
+  if (deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_2IN1) {
+    // To achieve a similar web page display effect on HarmonyOS PC devices as
+    // on Mac devices of the same size, it is necessary to make the web page
+    // width around approximately 1512 when in full screen.
+    base_display_width_ = 1512;
+  }
+
   if (base::CommandLine::ForCurrentProcess()) {
     base::CommandLine::ForCurrentProcess()->AppendSwitchASCII(
         ::switches::kOhosDeviceType, FromProductDeviceType(deviceType));
@@ -2451,7 +2480,7 @@ void NWebDelegate::RegisterAccessibilityIdGenerator(
     std::function<int32_t()> accessibilityIdGenerator) const {
   content::BrowserAccessibilityManagerOHOS::RegisterAccessibilityIdGenerator(
       accessibilityIdGenerator);
-};
+}
 
 void NWebDelegate::SetAccessibilityState(cef_state_t accessibilityState) {
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {

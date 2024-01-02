@@ -341,6 +341,10 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void SetVirtualPixelRatio(float ratio) override;
 #endif // defined(OHOS_SCREEN_ROTATION)
 
+#if BUILDFLAG(IS_OHOS)
+  float GetBaseDisplayWidth() override;
+#endif
+
 #ifdef OHOS_POST_URL
   int PostUrl(const std::string& url, std::vector<char>& postData) override;
 #endif // defined(OHOS_POST_URL)
@@ -441,6 +445,10 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 
 #if defined(REPORT_SYS_EVENT)
   uint32_t nweb_id_;
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+  float base_display_width_ = -1.f;
 #endif
 
   bool is_enhance_surface_ = false;

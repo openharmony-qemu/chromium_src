@@ -65,5 +65,8 @@ const base::Feature kEnforceFullDelegation{"EnforceFullDelegation",
 const base::Feature kGPayAppDynamicUpdate{"GPayAppDynamicUpdate",
                                           base::FEATURE_ENABLED_BY_DEFAULT};
 
+const base::Feature kPaymentHandlerRequireLinkHeader{
+    "PaymentHandlerRequireLinkHeader",base::FEATURE_ENABLED_BY_DEFAULT};
+
 }  // namespace features
 }  // namespace payments

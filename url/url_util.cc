@@ -127,6 +127,10 @@ struct SchemeRegistry {
   // Schemes with a predefined default custom handler.
   std::vector<SchemeWithHandler> predefined_handler_schemes;
 
+#ifdef OHOS_NETWORK_LOAD
+  std::vector<std::string> custom_schemes = {};
+#endif
+
   bool allow_non_standard_schemes = false;
 };
 
@@ -686,6 +690,17 @@ void AddEmptyDocumentScheme(const char* new_scheme) {
 const std::vector<std::string>& GetEmptyDocumentSchemes() {
   return GetSchemeRegistry().empty_document_schemes;
 }
+
+#ifdef OHOS_NETWORK_LOAD
+void AddCustomScheme(const char* new_scheme) {
+  DoAddScheme(new_scheme,
+              &GetSchemeRegistryWithoutLocking()->custom_schemes);
+}
+
+const std::vector<std::string>& GetCustomScheme() {
+  return GetSchemeRegistry().custom_schemes;
+}
+#endif
 
 void AddPredefinedHandlerScheme(const char* new_scheme, const char* handler) {
   DoAddSchemeWithHandler(

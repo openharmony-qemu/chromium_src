@@ -151,6 +151,9 @@ class CONTENT_EXPORT ContentClient {
     // Android WebView requires non-standard schemes to still be preserved.
     bool allow_non_standard_schemes_in_origins = false;
 #endif
+#ifdef OHOS_NETWORK_LOAD
+    std::vector<std::string> custom_schemes;
+#endif
   };
 
   virtual void AddAdditionalSchemes(Schemes* schemes) {}

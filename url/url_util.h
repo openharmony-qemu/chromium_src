@@ -115,6 +115,12 @@ COMPONENT_EXPORT(URL) const std::vector<std::string>& GetCSPBypassingSchemes();
 COMPONENT_EXPORT(URL) void AddEmptyDocumentScheme(const char* new_scheme);
 COMPONENT_EXPORT(URL) const std::vector<std::string>& GetEmptyDocumentSchemes();
 
+#ifdef OHOS_NETWORK_LOAD
+// Adds an custom scheme
+COMPONENT_EXPORT(URL) void AddCustomScheme(const char* new_scheme);
+COMPONENT_EXPORT(URL) const std::vector<std::string>& GetCustomScheme();
+#endif
+
 // Adds a scheme with a predefined default handler.
 //
 // This pair of strings must be normalized protocol handler parameters as

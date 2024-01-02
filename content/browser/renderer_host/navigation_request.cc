@@ -7327,7 +7327,18 @@ NavigationRequest::GetOriginForURLLoaderFactoryBeforeResponseWithDebugInfo(
     origin_and_debug_info.second += ", sandbox_flags";
   }
 
+#ifdef OHOS_NETWORK_LOAD
+  bool find_custom_scheme = false;
+  std::string scheme = origin_and_debug_info.first.GetURL().scheme();
+  for (size_t index = 0; index < url::GetCustomScheme().size(); index++) {
+    if (scheme == url::GetCustomScheme()[index]) {
+      find_custom_scheme = true;
+    }
+  }
+  if (!origin_and_debug_info.first.GetURL().IsStandard() && !find_custom_scheme) {
+#else
   if (!origin_and_debug_info.first.GetURL().IsStandard()) {
+#endif
     // Always return an opaque origin for non-standard URLs. Otherwise, the
     // CanAccessDataForOrigin() check may fail for unregistered custom scheme
     // requests in CEF.

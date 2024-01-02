@@ -119,6 +119,11 @@ void RegisterContentSchemes(bool should_lock_registry) {
     url::EnableNonStandardSchemesForAndroidWebView();
 #endif
 
+#ifdef OHOS_NETWORK_LOAD
+  for (auto& scheme : schemes.custom_schemes)
+    url::AddCustomScheme(scheme.c_str());
+#endif
+
   for (auto& [scheme, handler] : schemes.predefined_handler_schemes)
     url::AddPredefinedHandlerScheme(scheme.c_str(), handler.c_str());
 

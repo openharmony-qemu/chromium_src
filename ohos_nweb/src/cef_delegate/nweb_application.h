@@ -64,15 +64,15 @@ class NWebApplication : public CefApp,
   /* CefApp methods end */
 
   /* CefBrowserProcessHandler methods begin */
-  void OnContextInitialized(
-#ifdef OHOS_INCOGNITO_MODE
-      bool incognito_mode
-#endif
-    ) override;
+  void OnContextInitialized() override;
   CefRefPtr<CefClient> GetDefaultClient() override;
 #ifdef OHOS_NETWORK_LOAD
   void OnBeforeChildProcessLaunch(
       CefRefPtr<CefCommandLine> command_line) override;
+#endif
+
+#ifdef OHOS_INCOGNITO_MODE
+void OnContextInitializedForIncognitoMode() override;
 #endif
   /* CefBrowserProcessHandler methods end */
 
@@ -90,7 +90,7 @@ class NWebApplication : public CefApp,
 
   void OnContextInitializedInternal(
 #ifdef OHOS_INCOGNITO_MODE
-      bool incognito_mode
+      bool incognito_mode = false
 #endif
   );
 #ifdef OHOS_NETWORK_LOAD

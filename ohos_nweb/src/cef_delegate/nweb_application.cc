@@ -142,11 +142,7 @@ void NWebApplication::OnRegisterCustomSchemes(
 /* CefApp methods end */
 
 /* CefBrowserProcessHandler methods begin */
-void NWebApplication::OnContextInitialized(
-#ifdef OHOS_INCOGNITO_MODE
-  bool incognito_mode
-#endif
-) {
+void NWebApplication::OnContextInitialized() {
   CEF_REQUIRE_UI_THREAD();
 
 #if defined(OHOS_API_INIT_WEB_ENGINE)
@@ -161,11 +157,7 @@ void NWebApplication::OnContextInitialized(
       FROM_HERE, base::BindOnce(&NWebApplication::RunWebInitedCallback, this,
                                 runWebInitedCallback));
 #endif
-  OnContextInitializedInternal(
-#ifdef OHOS_INCOGNITO_MODE
-      incognito_mode
-#endif
-  );
+  OnContextInitializedInternal();
 }
 
 #ifdef OHOS_INIT_CALLBACK
@@ -210,6 +202,14 @@ void NWebApplication::OnBeforeChildProcessLaunch(
                                       .ToString());
   }
 #endif
+}
+#endif
+
+#ifdef OHOS_INCOGNITO_MODE
+void NWebApplication::OnContextInitializedForIncognitoMode() {
+  CEF_REQUIRE_UI_THREAD();
+
+  OnContextInitializedInternal(true);
 }
 #endif
 /* CefBrowserProcessHandler methods end */

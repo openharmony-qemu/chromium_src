@@ -27,6 +27,12 @@ using autofill::PasswordFormFillData;
 using url::Origin;
 using Logger = autofill::SavePasswordProgressLogger;
 
+#ifdef OHOS_EX_PASSWORD
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#include "ohos_adapter_helper.h"
+#endif
+
 namespace password_manager {
 
 namespace {
@@ -207,7 +213,7 @@ LikelyFormFilling SendFillInformationToRenderer(
       WaitForUsernameReason::kDontWait;
   if (client->IsIncognito()) {
     wait_for_username_reason = WaitForUsernameReason::kIncognitoMode;
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
   } else if (client->GetPasswordFeatureManager()
                  ->IsBiometricAuthenticationBeforeFillingEnabled()) {
     wait_for_username_reason = WaitForUsernameReason::kBiometricAuthentication;
@@ -248,6 +254,22 @@ LikelyFormFilling SendFillInformationToRenderer(
 
   bool wait_for_username =
       wait_for_username_reason != WaitForUsernameReason::kDontWait;
+#ifdef OHOS_EX_PASSWORD
+  if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(switches::kForBrowser)) {
+    auto& system_properties_adapter =
+          OHOS::NWeb::OhosAdapterHelper::GetInstance()
+              .GetSystemPropertiesInstance();
+    OHOS::NWeb::ProductDeviceType deviceType =
+        system_properties_adapter.GetProductDeviceType();
+    bool is_unsupported_devices =
+        deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_TABLET ||
+        deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_2IN1;
+    if (!is_unsupported_devices) {
+      wait_for_username = true;
+    }
+  }
+#endif // defined(OHOS_EX_PASSWORD)
+
 #else
   bool wait_for_username = true;
 #endif  // !BUILDFLAG(IS_IOS) && !defined(ANDROID)

@@ -842,7 +842,7 @@ group("gn_all") {
     ]
   }
 
-  if (is_ohos){
+  if (is_ohos) {
     deps += [ "//headless:headless_tests" ]
   }
 

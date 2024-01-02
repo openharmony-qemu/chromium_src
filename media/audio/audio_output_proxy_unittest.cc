@@ -107,7 +107,7 @@ class MockAudioManager : public AudioManagerBase {
   ~MockAudioManager() override { Shutdown(); }
 #if BUILDFLAG(IS_OHOS)
   AudioParameters GetPreferredInputStreamParameters(
-      const std::string& input_device_id){ return AudioParameters();};
+      const std::string& input_device_id) { return AudioParameters(); }
 #endif
 
   MOCK_METHOD3(MakeAudioOutputStream,

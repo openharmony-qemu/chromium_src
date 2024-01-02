@@ -22,19 +22,19 @@ namespace base {
 
 bool ParseAssetsOHOS(FilePath* result) {
   if (!base::CommandLine::ForCurrentProcess()) {
-      LOG(ERROR)<< "CommandLine not init ";
-      return false;
+    LOG(ERROR)<< "CommandLine not init ";
+    return false;
   }
   auto bundle_path = base::CommandLine::ForCurrentProcess()->
   GetSwitchValueASCII(switches::kBundleInstallationDir);
   if (bundle_path.empty()) {
-      FilePath bin_dir;
-      if (!ReadSymbolicLink(FilePath(kProcSelfExe), &bin_dir)){
-          LOG(ERROR)<< "Unable to resolve " << kProcSelfExe << ".";
-          return false; 
-      }
-      *result = bin_dir.DirName();
-      return true;
+    FilePath bin_dir;
+    if (!ReadSymbolicLink(FilePath(kProcSelfExe), &bin_dir)) {
+      LOG(ERROR)<< "Unable to resolve " << kProcSelfExe << ".";
+      return false; 
+    }
+    *result = bin_dir.DirName();
+    return true;
   }
   bool for_test = base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kForTest);
   if (for_test) {

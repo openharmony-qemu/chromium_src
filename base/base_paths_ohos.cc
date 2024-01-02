@@ -22,7 +22,7 @@ namespace base {
 
 bool ParseAssetsOHOS(FilePath* result) {
   if (!base::CommandLine::ForCurrentProcess()) {
-    LOG(ERROR)<< "CommandLine not init ";
+    LOG(ERROR) << "CommandLine not init ";
     return false;
   }
   auto bundle_path = base::CommandLine::ForCurrentProcess()->
@@ -30,7 +30,7 @@ bool ParseAssetsOHOS(FilePath* result) {
   if (bundle_path.empty()) {
     FilePath bin_dir;
     if (!ReadSymbolicLink(FilePath(kProcSelfExe), &bin_dir)) {
-      LOG(ERROR)<< "Unable to resolve " << kProcSelfExe << ".";
+      LOG(ERROR) << "Unable to resolve " << kProcSelfExe << ".";
       return false; 
     }
     *result = bin_dir.DirName();

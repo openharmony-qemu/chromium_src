@@ -310,8 +310,6 @@ void OHOSAudioOutputStream::Prepare(
         stream = mediaSession->activeAudioStream_.erase(stream);
         continue;
       }
-      (*stream)->SetInterruptMode(false);
-      (*stream)->Refresh();
       if ((*stream)->GetAudioExclusive()) {
         LOG(INFO) << "OHOSAudioOutputStream::Prepare should refresh other "
                      "active streams";

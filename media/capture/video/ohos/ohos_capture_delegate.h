@@ -76,7 +76,7 @@ class CAPTURE_EXPORT OHOSCaptureDelegate final {
                      const base::Location& from_here,
                      const std::string& reason);
 
-  void TransToOHOSCaptrueParams(const VideoCaptureParams& in,
+  int TransToOHOSCaptrueParams(const VideoCaptureParams& in,
                                 VideoCaptureParamsAdapter& out);
   int GetUsableExposureMode(ExposureModeAdapter& exposure_mode_adapter,
                             MeteringMode& exposure_mode);
@@ -87,7 +87,6 @@ class CAPTURE_EXPORT OHOSCaptureDelegate final {
   void GetFocusState(mojom::PhotoStatePtr& photo_capabilities);
   void GetFlashState(mojom::PhotoStatePtr& photo_capabilities);
   int GetCameraRotation(int surface_rotation);
-  int GetMatchedPixelFormat(VideoCaptureParamsAdapter& capture_params_adapter);
   const scoped_refptr<base::SingleThreadTaskRunner> capture_stask_runner_;
   const VideoCaptureDeviceDescriptor device_descriptor_;
   int power_line_frequency_;

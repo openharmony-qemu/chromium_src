@@ -39,6 +39,7 @@ class CAPTURE_EXPORT VideoCaptureDeviceFactoryOHOS
   void GetDevicesInfo(GetDevicesInfoCallback callback) override;
   void OnCameraStatusChanged(CameraStatusAdapter camera_status, std::string callback_device_id);
  private:
+  int CheckDeviceId(const std::string device_id);
   scoped_refptr<base::SingleThreadTaskRunner> ui_task_runner_;
   std::shared_ptr<CameraManagerAdapter> camera_manager_adapter_;
   base::WeakPtrFactory<VideoCaptureDeviceFactoryOHOS> weak_factory_{this};

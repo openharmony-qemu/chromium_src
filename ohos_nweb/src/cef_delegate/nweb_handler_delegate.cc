@@ -1019,7 +1019,7 @@ void NWebHandlerDelegate::OnRefreshAccessedHistory(
   std::string url1 = url.ToString();
   auto pos = url1.find("?");
   url1 = url1.substr(0, pos);
-  LOG(INFO)
+  LOG(DEBUG)
       << "NWebHandlerDelegate::OnRefreshAccessedHistory, intercepted url = "
       << url1 << ", isReload = " << isReload;
   if (nweb_handler_ == nullptr) {

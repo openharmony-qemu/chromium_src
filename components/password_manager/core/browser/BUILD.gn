@@ -425,6 +425,24 @@ source_set("csv_unittests") {
   ]
 }
 
+test("components_csv_unittests") {
+  testonly = true
+  sources = [
+    "import/csv_field_parser_unittest.cc",
+    "import/csv_password_iterator_unittest.cc",
+    "import/csv_password_sequence_unittest.cc",
+    "import/csv_password_unittest.cc",
+  ]
+  deps = [
+    ":csv",
+    "//base/test:run_all_unittests",
+    "//base/test:test_support",
+    "//testing/gmock",
+    "//testing/gtest",
+    "//url",
+  ]
+}
+
 # PasswordForm is an extremely common struct used by many sub-components and
 # sub-directories. Having its own target makes it possible to break up several
 # cyclic dependencies.
@@ -861,6 +879,21 @@ source_set("affiliation_unittests") {
   testonly = true
   sources = [ "android_affiliation/affiliation_utils_unittest.cc" ]
   deps = [
+    ":affiliation",
+    ":password_form",
+    "//base",
+    "//testing/gmock",
+    "//testing/gtest",
+    "//url",
+  ]
+}
+
+test("components_affiliation_unittests") {
+  testonly = true 
+ sources = [ 
+  "android_affiliation/affiliation_utils_unittest.cc" ]
+  deps = [
+    "//base/test:run_all_unittests",
     ":affiliation",
     ":password_form",
     "//base",

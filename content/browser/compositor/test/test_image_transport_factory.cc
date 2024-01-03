@@ -102,7 +102,7 @@ void TestImageTransportFactory::DisableGpuCompositing() {
 }
 
 ui::ContextFactory* TestImageTransportFactory::GetContextFactory() {
-  return this;
+  return (ContextFactory*)this;
 }
 
 }  // namespace content

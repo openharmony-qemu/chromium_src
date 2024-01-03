@@ -266,6 +266,7 @@ void NWebEventHandler::SendMouseEvent(int x,
   if (browser_ && browser_->GetHost()) {
     if (NWebInputDelegate::IsMouseDown(action)) {
       previous_action_ = action;
+      previous_button_ = buttonType;
 #ifdef OHOS_CLIPBOARD
       if (buttonType == MBT_LEFT) {
         browser_->GetHost()->SetFocus(true);
@@ -275,6 +276,7 @@ void NWebEventHandler::SendMouseEvent(int x,
                                                count);
     } else if (NWebInputDelegate::IsMouseUp(action)) {
        previous_action_ = action;
+       previous_button_ = buttonType;
       browser_->GetHost()->SendMouseClickEvent(mouseEvent, buttonType, true, 1);
       if (!is_in_web_) {
         browser_->GetHost()->SendMouseMoveEvent(mouseEvent, true);
@@ -289,7 +291,7 @@ void NWebEventHandler::SendMouseEvent(int x,
       last_mouse_y_ = y;
       browser_->GetHost()->SendMouseMoveEvent(mouseEvent, false);
     } else if (NWebInputDelegate::IsMouseLeave(action)) {
-      if (NWebInputDelegate::IsMouseUp(previous_action_)) {
+      if (NWebInputDelegate::IsMouseUp(previous_action_) || previous_button_ == MBT_RIGHT) {
         browser_->GetHost()->SendMouseMoveEvent(mouseEvent, true);
       }
     } else {

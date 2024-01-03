@@ -123,8 +123,8 @@ ChildProcessLauncherHelper::LaunchProcessOnLauncherThread(
       const std::vector<std::string> argv_str = command_line()->argv();
       std::stringstream argv_ss;
       const char separator = '#';
-      for (int i = 0; i < argv_str.size() - 1; ++i) {
-        argv_ss << argv_str[i] << separator;
+      for (auto& item : argv_str) {
+        argv_ss << item << separator;
       }
       argv_ss << argv_str[argv_str.size() - 1];
       constexpr int SHARED_FD_INDEX = 0;

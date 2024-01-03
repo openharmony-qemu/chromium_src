@@ -1243,6 +1243,19 @@ void NWebDelegate::InitializeCef(std::string url,
                                  , bool incognito_mode
 #endif
                                 ) {
+  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                                        .GetSystemPropertiesInstance();
+  OHOS::NWeb::ProductDeviceType deviceType =
+      system_properties_adapter.GetProductDeviceType();
+#if BUILDFLAG(IS_OHOS)
+  if (deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_2IN1) {
+    // To achieve a similar web page display effect on HarmonyOS PC devices as
+    // on Mac devices of the same size, it is necessary to make the web page
+    // width around approximately 1512 when in full screen.
+    base_display_width_ = 1512;
+  }
+#endif
+
   if (popup) {
     LOG(DEBUG) << "pop windows";
     handler_delegate_ = NWebHandlerDelegate::Create(
@@ -1275,24 +1288,13 @@ void NWebDelegate::InitializeCef(std::string url,
   settings.windowless_rendering_enabled = true;
   settings.log_severity = LOGSEVERITY_INFO;
   settings.multi_threaded_message_loop = false;
-  auto& system_properties_adapter =
-        OHOS::NWeb::OhosAdapterHelper::GetInstance()
-            .GetSystemPropertiesInstance();
-  OHOS::NWeb::ProductDeviceType deviceType =
-      system_properties_adapter.GetProductDeviceType();
+
   bool is_pc_device =
       deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_TABLET ||
       deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_2IN1;
   settings.persist_session_cookies = !is_pc_device;
 
 #if BUILDFLAG(IS_OHOS)
-  if (deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_2IN1) {
-    // To achieve a similar web page display effect on HarmonyOS PC devices as
-    // on Mac devices of the same size, it is necessary to make the web page
-    // width around approximately 1512 when in full screen.
-    base_display_width_ = 1512;
-  }
-
   if (base::CommandLine::ForCurrentProcess()) {
     base::CommandLine::ForCurrentProcess()->AppendSwitchASCII(
         ::switches::kOhosDeviceType, FromProductDeviceType(deviceType));

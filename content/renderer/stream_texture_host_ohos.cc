@@ -30,10 +30,9 @@ StreamTextureHost::~StreamTextureHost() {
     // We destroy the StreamTexture as a deferred message followed by a flush
     // to ensure this is ordered correctly with regards to previous deferred
     // messages, such as CreateSharedImage.
-    // TODO
-    /*uint32_t flush_id = channel_->EnqueueDeferredMessage(
-        gpu::mojom::DeferredRequestParams::NewDestroyStreamTexture(route_id_));
-    channel_->EnsureFlush(flush_id);*/
+    uint32_t flush_id = channel_->EnqueueDeferredMessage(
+        gpu::mojom::DeferredRequestParams::NewDestroyNativeTexture(route_id_));
+    channel_->EnsureFlush(flush_id);
   }
 }
 

@@ -19,6 +19,7 @@
 
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
+#include "base/task/thread_pool.h"
 #include "cef/include/cef_app.h"
 #include "cef/include/cef_cookie.h"
 #include "cef/include/cef_parser.h"
@@ -2212,50 +2213,67 @@ void NWebHandlerDelegate::RegisterNativeJavaScriptCallBack(
   objMap_[objName] = map;
 }
 
+int NWebHandlerDelegate::ProcessNativeProxyResultThread(
+    CefRefPtr<CefListValue> args, const CefString& method,
+    const CefString& object_name, CefRefPtr<CefListValue> result) {
+  auto it = objMap_.find(object_name);
+  if (it == objMap_.end()) {
+    // object name not found
+    return 1;
+  }
+  auto& methodMap = it->second;
+  auto methodIt = methodMap.find(method);
+  if (methodIt == methodMap.end()) {
+    // method name not found
+    return 1;
+  }
+
+  auto callback = methodMap[method];
+  char **ptr = (char **)malloc(sizeof(char*) * args->GetSize());
+  for (size_t i = 0; i < args->GetSize(); i++) {
+    CefValueType type = args->GetType(i);
+    CefRefPtr<CefValue> value = args->GetValue(i);
+    if (type == VTYPE_STRING) {
+      ptr[i] = strdup(value->GetString().ToString().c_str());
+    } else {
+      std::string jsonString = CefWriteJSON(value, JSON_WRITER_OMIT_BINARY_VALUES);
+      ptr[i] = strdup(jsonString.c_str());
+    }
+  }
+  char* callbackResult = callback((const char**)ptr, args->GetSize());
+  if (callbackResult) {
+    result->SetString(0, callbackResult);
+  } else {
+    LOG(INFO) << "native return nullptr, just set null string to result";
+    result->SetString(0, "null");
+  }
+
+  for (size_t i = 0; i < args->GetSize(); i++) {
+    if (ptr[i]) {
+      free(ptr[i]);
+      ptr[i] = nullptr;
+    }
+  }
+  if (ptr) {
+    free(ptr);
+    ptr = nullptr;
+  }
+  return 0;
+}
+
 int NWebHandlerDelegate::ProcessNativeProxyResult(
     CefRefPtr<CefListValue> args,
     const CefString& method,
     const CefString& object_name,
     CefRefPtr<CefListValue> result) {
-  if (auto it = objMap_.find(object_name); it != objMap_.end()) {
-    auto& methodMap = it->second;
-    if (methodMap.find(method) != methodMap.end()) {
-      auto callback = methodMap[method];
-
-      LOG(INFO) << "NotifyJavaScriptResult GetSize:" << args->GetSize();
-      char **ptr = (char **)malloc(sizeof(char*) * args->GetSize());
-      for (size_t i = 0; i < args->GetSize(); i++) {
-        CefValueType type = args->GetType(i);
-        CefRefPtr<CefValue> value = args->GetValue(i);
-        if (type == VTYPE_STRING) {
-          ptr[i] = strdup(value->GetString().ToString().c_str());
-        } else {
-          std::string jsonString = CefWriteJSON(value, JSON_WRITER_OMIT_BINARY_VALUES);
-          ptr[i] = strdup(jsonString.c_str());
-        }
-      }
-
-      char* callbackResult = callback((const char**)ptr, args->GetSize());
-      if (callbackResult) {
-        result->SetString(0, callbackResult);
-      } else {
-        result->SetString(0, "null");
-      }
-
-      for (size_t i = 0; i < args->GetSize(); i++) {
-        if (ptr[i]) {
-          free(ptr[i]);
-          ptr[i] = nullptr;
-        }
-      }
-      if (ptr) {
-        free(ptr);
-        ptr = nullptr;
-      }
-    }
-    return 0;
+  auto it = objMap_.find(object_name);
+  if (it == objMap_.end()) {
+    // not found object name
+    return 1;
   }
-  return 1;
+
+  ProcessNativeProxyResultThread(args, method, object_name, result);
+  return 0;
 }
 
 int NWebHandlerDelegate::NotifyJavaScriptResult(CefRefPtr<CefListValue> args,

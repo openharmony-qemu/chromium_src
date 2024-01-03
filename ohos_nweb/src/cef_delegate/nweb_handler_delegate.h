@@ -107,6 +107,11 @@ class NWebHandlerDelegate : public CefClient,
     std::vector<std::function<char*(const char** argv, int32_t argc)>> callback,
     int32_t size);
 
+  int ProcessNativeProxyResultThread(CefRefPtr<CefListValue> args,
+                             const CefString& method,
+                             const CefString& object_name,
+                             CefRefPtr<CefListValue> result);
+
   int ProcessNativeProxyResult(CefRefPtr<CefListValue> args,
                              const CefString& method,
                              const CefString& object_name,

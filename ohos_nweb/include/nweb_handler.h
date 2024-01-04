@@ -308,8 +308,11 @@ public:
     /**
      * @brief Request display and focus for a new nweb.
      *
+     * @return Return true if request focus success, false if request focus fail.
      */
-    virtual void OnFocus() {}
+    virtual bool OnFocus() {
+        return false;
+    }
 
     /**
      * @brief Obtains a list of all visited history items, used for link coloring

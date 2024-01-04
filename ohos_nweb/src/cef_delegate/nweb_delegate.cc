@@ -297,10 +297,6 @@ class NavigationEntryVisitorImpl : public CefNavigationEntryVisitor {
 
 #endif
 
-#if defined(OHOS_INPUT_EVENTS)
-std::set<uint32_t> NWebDelegate::focus_nweb_id_{};
-#endif  // defined(OHOS_INPUT_EVENTS)
-
 NWebDelegate::NWebDelegate(int argc, const char* argv[])
     : argc_(argc), argv_(argv) {}
 
@@ -1146,9 +1142,6 @@ void NWebDelegate::OnPause() {
   if (handler_delegate_) {
     handler_delegate_->SetFocusState(false);
   }
-  if (focus_nweb_id_.find(nweb_id_) != focus_nweb_id_.end()) {
-    focus_nweb_id_.erase(nweb_id_);
-  }
 #endif  // defined(OHOS_INPUT_EVENTS)
 
   if (!hidden_) {
@@ -1187,7 +1180,6 @@ void NWebDelegate::OnContinue() {
   if (handler_delegate_ && handler_delegate_->GetContinueNeedFocus()) {
     if (is_onPause_) {
       GetBrowser()->GetHost()->SetFocus(true);
-      focus_nweb_id_.insert(nweb_id_);
       handler_delegate_->SetContinueNeedFocus(false);
     }
   }
@@ -1780,21 +1772,9 @@ bool NWebDelegate::OnFocus(const FocusReason& focusReason) const {
     return false;
   }
 
-#if defined(OHOS_INPUT_EVENTS)
-  if (focusReason == FocusReason::FOCUS_DEFAULT && !focus_nweb_id_.empty() &&
-      focus_nweb_id_.find(nweb_id_) == focus_nweb_id_.end()) {
-    LOG(DEBUG) << "There is already web capture, and there is no need for "
-                  "capture when loading this web page.";
-    return false;
-  }
-#endif  // defined(OHOS_INPUT_EVENTS)
-
 #ifdef OHOS_FOCUS
   if (handler_delegate_ && !handler_delegate_->GetFocusState()) {
     GetBrowser()->GetHost()->SetFocus(true);
-#if defined(OHOS_INPUT_EVENTS)
-    focus_nweb_id_.insert(nweb_id_);
-#endif  // defined(OHOS_INPUT_EVENTS)
   }
 #endif  // #ifdef OHOS_FOCUS
 
@@ -1812,9 +1792,6 @@ void NWebDelegate::OnBlur() const {
     handler_delegate_->SetFocusState(false);
     GetBrowser()->GetHost()->SetFocus(false);
 #if defined(OHOS_INPUT_EVENTS)
-    if (focus_nweb_id_.find(nweb_id_) != focus_nweb_id_.end()) {
-      focus_nweb_id_.erase(nweb_id_);
-    }
     if (is_onPause_) {
       handler_delegate_->SetContinueNeedFocus(true);
     }

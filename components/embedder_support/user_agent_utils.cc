@@ -411,26 +411,6 @@ std::string GetUserAgentInternal(
     product += " Mobile";
 #endif
 
-#if BUILDFLAG(IS_OHOS) && defined(OHOS_USERAGENT)
-  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                                        .GetSystemPropertiesInstance();
-  OHOS::NWeb::ProductDeviceType deviceType =
-      system_properties_adapter.GetProductDeviceType();
-  switch (deviceType) {
-    case OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE:
-      product += " Mobile";
-      break;
-    case OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_TABLET:
-      product += " Tablet";
-      break;
-    case OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_2IN1:
-    case OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_UNKNOWN:
-    default:
-      // product += "";
-      break;
-  }
-#endif
-
   // In User-Agent reduction phase 5, only apply the <unifiedPlatform> to
   // desktop UA strings.
   // In User-Agent reduction phase 6, only apply the <unifiedPlatform> to

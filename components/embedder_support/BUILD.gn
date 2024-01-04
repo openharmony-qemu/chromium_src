@@ -2,6 +2,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+# ohos_useragent
+import("//build/config/python.gni")
+
 static_library("embedder_support") {
   sources = [
     "pref_names.cc",
@@ -9,6 +12,17 @@ static_library("embedder_support") {
     "switches.cc",
     "switches.h",
   ]
+}
+
+# ohos_useragent
+action("make_ohos_arkweb_version") {
+  script = "make_ohos_arkweb_version.py"
+  args = [
+    "--input_file",
+    rebase_path("//third_party/ohos_nweb_hap/AppScope/app.json5"),
+    "--output_file",
+    rebase_path("$target_gen_dir/arkweb_version.h", root_build_dir)]
+  outputs = [ "$target_gen_dir/arkweb_version.h" ]
 }
 
 # Target for general utilities that are only used in the browser process.
@@ -34,6 +48,10 @@ static_library("browser_util") {
     "//components/version_info",
     "//content/public/browser",
   ]
+
+  if (defined(ohos_useragent) && ohos_useragent) {
+    deps += [ ":make_ohos_arkweb_version" ]
+  }
 }
 
 source_set("unit_tests") {

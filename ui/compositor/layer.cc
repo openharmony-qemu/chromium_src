@@ -1802,6 +1802,16 @@ void Layer::CreateSurfaceLayerIfNecessary() {
     return;
 
   surface_layer_ = new_layer;
+
+#ifdef OHOS_EX_TOPCONTROLS
+  gfx::Transform origin_transform = transform();
+  if (top_controls_height_ > 0 &&
+      cc::MathUtil::IsFloatNearlyTheSame(origin_transform.To2dTranslation().y(),
+                                         0)) {
+    origin_transform.Translate(0, top_controls_height_);
+    SetTransform(origin_transform);
+  }
+#endif
 }
 
 void Layer::MatchLayerSize(const Layer* layer) {

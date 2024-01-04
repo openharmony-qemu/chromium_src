@@ -570,6 +570,10 @@ class COMPOSITOR_EXPORT Layer : public LayerAnimationDelegate,
   // set to stretch to fill bounds.
   void SetSurfaceSize(gfx::Size surface_size_in_dip);
 
+#ifdef OHOS_EX_TOPCONTROLS
+  void SetTopControlsHeight(int height) { top_controls_height_ = height; }
+#endif
+
   bool ContainsMirrorForTest(Layer* mirror) const;
 
   void SetCompositorForTesting(Compositor* compositor) {
@@ -834,6 +838,10 @@ class COMPOSITOR_EXPORT Layer : public LayerAnimationDelegate,
   // TODO(https://crbug.com/1242749): temporary while tracking down crash.
   bool in_send_damaged_rects_ = false;
   bool sending_damaged_rects_for_descendants_ = false;
+
+#ifdef OHOS_EX_TOPCONTROLS
+  int top_controls_height_ = 0;
+#endif
 
   base::WeakPtrFactory<Layer> weak_ptr_factory_{this};
 };

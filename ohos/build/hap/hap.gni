@@ -13,7 +13,7 @@
 #   auto_signed: Whether hap package is auto-signed or not, default is false, optional.
 template("ohos_hap") {
   action(target_name) {
-    script = "//huawei/build/hap/build_hap.py"
+    script = "//ohos/build/hap/build_hap.py"
     forward_variables_from(invoker, [ "deps" ])
 
     inputs = [ script ]
@@ -99,7 +99,7 @@ template("ohos_hap") {
 #   entry_raw_resources: list of raw resource files in the output directory will be copied to entry/resource.
 template("ohos_har") {
   action(target_name) {
-    script = "//huawei/build/hap/build_hap.py"
+    script = "//ohos/build/hap/build_hap.py"
     forward_variables_from(invoker, [ "deps" ])
 
     inputs = [ script ]

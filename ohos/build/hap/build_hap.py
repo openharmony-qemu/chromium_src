@@ -19,7 +19,7 @@ class HapProject:
     self.output = output
     self.sdk = os.path.abspath(sdk_root)
     self.ohpm_exe = os.path.abspath(
-        os.path.join(self.sdk, '..', 'huawei', 'third_party', 'ohpm', 'bin',
+        os.path.join(self.sdk, '..', 'ohos', 'third_party', 'ohpm', 'bin',
                      'ohpm'))
     self.node = os.path.abspath(node_root)
     self.abi = abi

@@ -603,6 +603,10 @@ public:
      * Put whether the embed mode. The default is false.
      */
     virtual void SetNativeEmbedMode(bool flag) = 0;
+    /**
+     * Get whether the embed mode. The default is false.
+     */
+    virtual bool GetNativeEmbedMode() = 0;
 };
 }  // namespace OHOS::NWeb
 #endif  // NWEB_PREFERENCE_H

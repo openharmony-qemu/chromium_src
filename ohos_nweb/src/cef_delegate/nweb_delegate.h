@@ -454,7 +454,6 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   bool is_enhance_surface_ = false;
 #if defined(OHOS_INPUT_EVENTS)
   bool is_onPause_ = false;
-  static std::set<uint32_t> focus_nweb_id_;
 #endif  // defined(OHOS_INPUT_EVENTS)
   bool accessibility_state_ = false;
   bool is_discarded_ = false;

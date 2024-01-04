@@ -19,7 +19,7 @@ export SOURCE_ROOT_DIR=$(cd $(dirname $0);pwd)
 export PREBUILTS_ROOT_DIR=${SOURCE_ROOT_DIR}/prebuilts
 export PATH=${PREBUILTS_ROOT_DIR}/oh-command-line-tools/ohpm/bin:$PATH
 
-OHPM_LINK_PATH=${SOURCE_ROOT_DIR}/src/huawei/third_party
+OHPM_LINK_PATH=${SOURCE_ROOT_DIR}/src/ohos/third_party
 TOOLCHAIN_LINK_PATH=${SOURCE_ROOT_DIR}/src/third_party/ohos_ndk/toolchains
 SYSROOT_LINK_PATH=${SOURCE_ROOT_DIR}/src/third_party/ohos_ndk
 SDK_LINK_PATH=${SOURCE_ROOT_DIR}/src/ohos_sdk

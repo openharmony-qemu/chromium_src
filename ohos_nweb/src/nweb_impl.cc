@@ -1888,16 +1888,18 @@ void NWebImpl::SetDefaultBrowserZoomLevel(double zoom_factor) {
     return;
   }
   for (const auto& cef_browser_context : CefBrowserContext::GetAll()) {
-    content::BrowserContext* browser_context =
-        cef_browser_context->AsBrowserContext();
-    if (!browser_context) {
-      LOG(ERROR) << "SetDefaultBrowserZoomLevel null browser_context";
+    auto browser_context = cef_browser_context->AsProfile();
+    if (!browser_context || browser_context->IsOffTheRecord()) {
+      LOG(ERROR) << "SetDefaultBrowserZoomLevel null browser_context or browser_context is off the record.";
       return;
     }
-    static_cast<AlloyBrowserContext*>(browser_context)
-    	->GetZoomLevelPrefs()
-            ->SetDefaultZoomLevelPref(
-	            blink::PageZoomFactorToZoomLevel(zoom_factor));
+    if (!browser_context->GetZoomLevelPrefs()) {
+      LOG(ERROR) << "GetZoomLevelPrefs is nullptr.";
+      return;
+    }
+    browser_context->GetZoomLevelPrefs()
+        ->SetDefaultZoomLevelPref(
+	          blink::PageZoomFactorToZoomLevel(zoom_factor));
     default_zoom_factor = zoom_factor;
   }
 }

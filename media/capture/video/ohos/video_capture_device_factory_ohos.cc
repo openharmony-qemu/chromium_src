@@ -51,11 +51,28 @@ VideoCaptureDeviceFactoryOHOS::~VideoCaptureDeviceFactoryOHOS() {
       .ReleaseCameraManger();
 }
 
+int VideoCaptureDeviceFactoryOHOS::CheckDeviceId(const std::string device_id) {
+  std::vector<VideoDeviceDescriptor> devices_desc;
+  OhosAdapterHelper::GetInstance().GetCameraManagerAdapter().GetDevicesInfo(
+      devices_desc);
+  for (auto single_device_desc : devices_desc) {
+    if (device_id == single_device_desc.deviceId) {
+      return kSuccessReturnValue;
+    }
+  }
+  return kErrorReturnValue;
+}
+
 VideoCaptureErrorOrDevice VideoCaptureDeviceFactoryOHOS::CreateDevice(
     const VideoCaptureDeviceDescriptor& device_descriptor) {
   LOG(INFO) << "VideoCaptureDeviceFactoryOHOS::CreateDevice id: "
             << device_descriptor.device_id;
   DCHECK(thread_checker_.CalledOnValidThread());
+  if (CheckDeviceId(device_descriptor.device_id) != kSuccessReturnValue) {
+    LOG(INFO) << "device_id can not be create";
+    return VideoCaptureErrorOrDevice(VideoCaptureError::
+                          kVideoCaptureDeviceFactoryChromeOSCreateDeviceFailed);
+  }
   // OhosAdapterHelper::GetInstance().GetCameraManagerAdapter().StopSession();
   auto self = std::make_unique<VideoCaptureDeviceOHOS>(device_descriptor);
 

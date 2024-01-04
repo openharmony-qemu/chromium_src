@@ -29,41 +29,63 @@ OHOSCaptureDelegate::OHOSCaptureDelegate(
       timeout_count_(0),
       capture_params_(capture_params) {}
 
-void OHOSCaptureDelegate::TransToOHOSCaptrueParams(
+int OHOSCaptureDelegate::TransToOHOSCaptrueParams(
     const VideoCaptureParams& in,
     VideoCaptureParamsAdapter& out) {
-  out.captureFormat.width = in.requested_format.frame_size.width();
-  out.captureFormat.height = in.requested_format.frame_size.height();
-  out.captureFormat.frameRate = in.requested_format.frame_rate;
-  out.enableFaceDetection = in.enable_face_detection;
-}
-
-int OHOSCaptureDelegate::GetMatchedPixelFormat(
-    VideoCaptureParamsAdapter& capture_params_adapter) {
   std::vector<VideoDeviceDescriptor> devices_desc;
   OhosAdapterHelper::GetInstance().GetCameraManagerAdapter().GetDevicesInfo(
       devices_desc);
-  LOG(INFO) << "GetMatchedPixelFormat " << device_descriptor_.device_id;
+  int req_width = in.requested_format.frame_size.width();
+  int req_height = in.requested_format.frame_size.height();
+  int min_diff = INT_MAX;
+  int matched_width = req_width;
+  int matched_height = req_height;
+  VideoPixelFormatAdapter matched_pixel_format = VideoPixelFormatAdapter::FORMAT_UNKNOWN;;
+  std::string device_id = device_descriptor_.device_id;
+
   for (auto single_device_desc : devices_desc) {
-    if (single_device_desc.deviceId == device_descriptor_.device_id) {
+    if (single_device_desc.deviceId == device_id) {
+      LOG(INFO) << "TransToOHOSCaptrueParams " << device_id;
       std::vector<FormatAdapter> supportCaptureFormats =
           single_device_desc.supportCaptureFormats;
       for (auto format : supportCaptureFormats) {
-        uint32_t requestWidth =
-            (uint32_t)capture_params_.requested_format.frame_size.width();
-        uint32_t requestHeight =
-            (uint32_t)capture_params_.requested_format.frame_size.height();
-        if ((format.width == requestWidth) &&
-            (format.height == requestHeight)) {
-          capture_params_adapter.captureFormat.pixelFormat = format.pixelFormat;
+        int format_support_width = (int)format.width;
+        int format_support_height = (int)format.height;
+        VideoPixelFormatAdapter format_support_format = format.pixelFormat;
+        int diff = abs(format_support_width - req_width) + abs(format_support_height - req_height);
+        LOG(DEBUG) << "support width: " << format_support_width << ", height: " << format_support_height
+          << ", diff: " << diff;
+        if ((req_width == format_support_width) && (req_height == format_support_height)) {
+          LOG(INFO) << "no need match other size, current width: " << format_support_width <<
+            ", height: " << format_support_height;
+          out.captureFormat.width = format_support_width;
+          out.captureFormat.height = format_support_height;
+          out.captureFormat.frameRate = in.requested_format.frame_rate;
+          out.captureFormat.pixelFormat = format_support_format;
+          out.enableFaceDetection = in.enable_face_detection;
           return kSuccessReturnValue;
+        }
+        if (diff < min_diff) {
+          min_diff = diff;
+          matched_width = format_support_width;
+          matched_height = format_support_height;
+          matched_pixel_format = format_support_format;
         }
       }
     }
   }
-  capture_params_adapter.captureFormat.pixelFormat =
-      VideoPixelFormatAdapter::FORMAT_UNKNOWN;
-  return kErrorReturnValue;
+
+  if (min_diff == INT_MAX) {
+    LOG(ERROR) << "can not find matched pixelformat";
+    return kErrorReturnValue;
+  }
+  LOG(INFO) << "matched width: " << matched_width << ", height: " << matched_height;
+  out.captureFormat.width = matched_width;
+  out.captureFormat.height = matched_height;
+  out.captureFormat.frameRate = in.requested_format.frame_rate;
+  out.captureFormat.pixelFormat = matched_pixel_format;
+  out.enableFaceDetection = in.enable_face_detection;
+  return kSuccessReturnValue;
 }
 
 void OHOSCaptureDelegate::AllocateAndStart(
@@ -327,9 +349,8 @@ bool OHOSCaptureDelegate::StartStream() {
   }
 
   VideoCaptureParamsAdapter capture_params_adapter;
-  TransToOHOSCaptrueParams(capture_params_, capture_params_adapter);
-  if (GetMatchedPixelFormat(capture_params_adapter) != kSuccessReturnValue) {
-    LOG(ERROR) << "can not find matched pixel format";
+  if (TransToOHOSCaptrueParams(capture_params_, capture_params_adapter) != kSuccessReturnValue) {
+    LOG(ERROR) << "can not find matched parameter";
     return false;
   }
 
@@ -345,9 +366,9 @@ bool OHOSCaptureDelegate::StartStream() {
   LOG(INFO) << "create and start session success, deviceId = " << device_descriptor_.device_id;
 
   capture_format_.frame_size.SetSize(
-      capture_params_.requested_format.frame_size.width(),
-      capture_params_.requested_format.frame_size.height());
-  capture_format_.frame_rate = capture_params_.requested_format.frame_rate;
+      capture_params_adapter.captureFormat.width,
+      capture_params_adapter.captureFormat.height);
+  capture_format_.frame_rate = capture_params_adapter.captureFormat.frameRate;
   capture_format_.pixel_format =
       VideoCaptureCommonOHOS::GetCameraPixelFormatType(
           capture_params_adapter.captureFormat.pixelFormat);

@@ -209,7 +209,12 @@ enum class VideoCaptureError {
   kWinMediaFoundationSourceCreationFailed = 144,
   kWinDirectShowDeviceFilterCreationFailed = 145,
   kWinDirectShowDeviceInitializationFailed = 146,
+#if BUILDFLAG(IS_OHOS)
+  kVideoCaptureDeviceFactoryOHOSCreateDeviceFailed = 147,
+  kMaxValue = 147
+#else
   kMaxValue = 146
+#endif
 };
 
 // WARNING: Do not change the values assigned to the entries. They are used for

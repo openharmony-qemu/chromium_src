@@ -44,27 +44,27 @@ class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
                       int action_request_id) override;
 
   static void RegisterAccessibilityIdGenerator(
-      std::function<int32_t()> accessibilityIdGenerator);
+      std::function<int64_t()> accessibilityIdGenerator);
 
-  static int32_t GenerateAccessibilityId();
+  static int64_t GenerateAccessibilityId();
 
   void RegisterAccessibilityEventListener(
       std::shared_ptr<OHOS::NWeb::NWebAccessibilityEventCallback>
           accessibility_event_listener);
 
-  void SetLastHoverId(int32_t id) { lastHoverId_ = id; }
+  void SetLastHoverId(int64_t id) { lastHoverId_ = id; }
 
-  int32_t GetLastHoverId() const { return lastHoverId_; }
+  int64_t GetLastHoverId() const { return lastHoverId_; }
 
-  void SetAccessibilityFocusId(int32_t id) { accessibilityFocusId_ = id; }
+  void SetAccessibilityFocusId(int64_t id) { accessibilityFocusId_ = id; }
 
-  int32_t GetAccessibilityFocusId() const { return accessibilityFocusId_; }
+  int64_t GetAccessibilityFocusId() const { return accessibilityFocusId_; }
 
-  void MoveAccessibilityFocus(int32_t oldId, int32_t newId) const;
+  void MoveAccessibilityFocus(int64_t oldId, int64_t newId) const;
 
-  bool MoveAccessibilityFocusToId(int32_t newAccessibilityFocusId);
+  bool MoveAccessibilityFocusToId(int64_t newAccessibilityFocusId);
 
-  void SendAccessibilityEvent(int32_t accessibilityId,
+  void SendAccessibilityEvent(int64_t accessibilityId,
                               OHOS::NWeb::AccessibilityEventType eventType);
 
   void OnHoverEvent(const gfx::PointF& point);
@@ -73,20 +73,20 @@ class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
                           const ui::AXNode* node) override;
 
  private:
-  void HandleHover(int accessibilityId);
+  void HandleHover(int64_t accessibilityId);
 
   void MoveAccessibilityFocusToIdAndRefocusIfNeeded(
-      int newAccessibilityFocusId);
+      int64_t newAccessibilityFocusId);
 
-  void HandleFocusChanged(int32_t accessibilityId);
+  void HandleFocusChanged(int64_t accessibilityId);
 
-  void HandleEditableTextChanged(int32_t accessibilityId);
+  void HandleEditableTextChanged(int64_t accessibilityId);
 
-  int32_t TranslateAccessibilityId(int32_t accessibilityId) const;
+  int64_t TranslateAccessibilityId(int64_t accessibilityId) const;
 
-  int32_t lastHoverId_ = -1;
+  int64_t lastHoverId_ = -1;
 
-  int32_t accessibilityFocusId_ = -1;
+  int64_t accessibilityFocusId_ = -1;
 
   std::shared_ptr<OHOS::NWeb::NWebAccessibilityEventCallback>
       accessibilityEventListener_;

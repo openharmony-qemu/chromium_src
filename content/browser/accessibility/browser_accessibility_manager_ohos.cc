@@ -18,9 +18,9 @@
 #include "ui/gfx/geometry/point_conversions.h"
 
 namespace content {
-const int32_t kInvalidAccessibilityId = -1;
-const int32_t kRootAccessibilityId = 0;
-std::function<int32_t()> g_accessibility_id_generator;
+const int64_t kInvalidAccessibilityId = -1;
+const int64_t kRootAccessibilityId = 0;
+std::function<int64_t()> g_accessibility_id_generator;
 
 BrowserAccessibilityManager* BrowserAccessibilityManager::Create(
     const ui::AXTreeUpdate& initial_tree,
@@ -43,20 +43,20 @@ BrowserAccessibilityManagerOHOS::BrowserAccessibilityManagerOHOS(
 }
 
 void BrowserAccessibilityManagerOHOS::HandleFocusChanged(
-    int32_t accessibilityId) {
+    int64_t accessibilityId) {
   SendAccessibilityEvent(accessibilityId,
                          OHOS::NWeb::AccessibilityEventType::FOCUS);
   MoveAccessibilityFocusToId(accessibilityId);
 }
 
 void BrowserAccessibilityManagerOHOS::RegisterAccessibilityIdGenerator(
-    std::function<int32_t()> accessibilityIdGenerator) {
+    std::function<int64_t()> accessibilityIdGenerator) {
   if (g_accessibility_id_generator == nullptr) {
     g_accessibility_id_generator = accessibilityIdGenerator;
   }
 }
 
-int32_t BrowserAccessibilityManagerOHOS::GenerateAccessibilityId() {
+int64_t BrowserAccessibilityManagerOHOS::GenerateAccessibilityId() {
   if (g_accessibility_id_generator != nullptr) {
     return g_accessibility_id_generator();
   }
@@ -83,7 +83,7 @@ void BrowserAccessibilityManagerOHOS::FireBlinkEvent(
   if (!nodeOHOS) {
     return;
   }
-  int32_t accessibilityId =
+  int64_t accessibilityId =
       TranslateAccessibilityId(nodeOHOS->GetAccessibilityId());
   switch (event_type) {
     case ax::mojom::Event::kClicked:
@@ -109,7 +109,7 @@ void BrowserAccessibilityManagerOHOS::RegisterAccessibilityEventListener(
 }
 
 bool BrowserAccessibilityManagerOHOS::MoveAccessibilityFocusToId(
-    int32_t newAccessibilityFocusId) {
+    int64_t newAccessibilityFocusId) {
   if (accessibilityFocusId_ == newAccessibilityFocusId) {
     return false;
   }
@@ -125,8 +125,8 @@ bool BrowserAccessibilityManagerOHOS::MoveAccessibilityFocusToId(
 }
 
 void BrowserAccessibilityManagerOHOS::MoveAccessibilityFocus(
-    int32_t oldId,
-    int32_t newId) const {
+    int64_t oldId,
+    int64_t newId) const {
   auto oldNode = BrowserAccessibilityOHOS::GetFromAccessibilityId(oldId);
   if (oldNode && oldNode->manager())
     oldNode->manager()->ClearAccessibilityFocus(*oldNode);
@@ -138,7 +138,7 @@ void BrowserAccessibilityManagerOHOS::MoveAccessibilityFocus(
 }
 
 void BrowserAccessibilityManagerOHOS::SendAccessibilityEvent(
-    int32_t accessibilityId,
+    int64_t accessibilityId,
     OHOS::NWeb::AccessibilityEventType eventType) {
   accessibilityId = TranslateAccessibilityId(accessibilityId);
 
@@ -146,7 +146,7 @@ void BrowserAccessibilityManagerOHOS::SendAccessibilityEvent(
       eventType != OHOS::NWeb::AccessibilityEventType::UNKNOWN &&
       accessibilityId != kInvalidAccessibilityId) {
     accessibilityEventListener_->OnAccessibilityEvent(
-        accessibilityId, static_cast<int32_t>(eventType));
+        accessibilityId, static_cast<int64_t>(eventType));
   }
 
   if (eventType == OHOS::NWeb::AccessibilityEventType::HOVER_ENTER_EVENT) {
@@ -160,7 +160,7 @@ void BrowserAccessibilityManagerOHOS::SendAccessibilityEvent(
   }
 }
 
-void BrowserAccessibilityManagerOHOS::HandleHover(int32_t accessibilityId) {
+void BrowserAccessibilityManagerOHOS::HandleHover(int64_t accessibilityId) {
   if (lastHoverId_ == accessibilityId) {
     return;
   }
@@ -170,14 +170,14 @@ void BrowserAccessibilityManagerOHOS::HandleHover(int32_t accessibilityId) {
   MoveAccessibilityFocusToIdAndRefocusIfNeeded(accessibilityId);
 }
 
-void BrowserAccessibilityManagerOHOS::HandleEditableTextChanged(int32_t accessibilityId)
+void BrowserAccessibilityManagerOHOS::HandleEditableTextChanged(int64_t accessibilityId)
 {
   SendAccessibilityEvent(accessibilityId, OHOS::NWeb::AccessibilityEventType::TEXT_CHANGE);
 }
 
 void BrowserAccessibilityManagerOHOS::
     MoveAccessibilityFocusToIdAndRefocusIfNeeded(
-        int32_t newAccessibilityFocusId) {
+        int64_t newAccessibilityFocusId) {
   if (newAccessibilityFocusId == accessibilityFocusId_) {
     SendAccessibilityEvent(
         newAccessibilityFocusId,
@@ -198,8 +198,8 @@ void BrowserAccessibilityManagerOHOS::OnHoverEvent(const gfx::PointF& point) {
   }
 }
 
-int32_t BrowserAccessibilityManagerOHOS::TranslateAccessibilityId(
-    int32_t accessibilityId) const {
+int64_t BrowserAccessibilityManagerOHOS::TranslateAccessibilityId(
+    int64_t accessibilityId) const {
   if (accessibilityId != kRootAccessibilityId) {
     auto root = static_cast<BrowserAccessibilityOHOS*>(GetBrowserAccessibilityRoot());
     if (root && accessibilityId == root->GetAccessibilityId()) {
@@ -221,7 +221,7 @@ void BrowserAccessibilityManagerOHOS::FireGeneratedEvent(
     return;
   }
 
-  int32_t accessibilityId =
+  int64_t accessibilityId =
       TranslateAccessibilityId(nodeOHOS->GetAccessibilityId());
 
   switch (event_type) {

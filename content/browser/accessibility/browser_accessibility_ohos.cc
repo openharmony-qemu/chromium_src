@@ -27,7 +27,7 @@
 namespace content {
 using namespace OHOS::NWeb;
 using AccessibilityIdMap =
-    std::unordered_map<int32_t, BrowserAccessibilityOHOS*>;
+    std::unordered_map<int64_t, BrowserAccessibilityOHOS*>;
 base::LazyInstance<AccessibilityIdMap>::Leaky g_accessibility_id_map =
     LAZY_INSTANCE_INITIALIZER;
 
@@ -51,7 +51,7 @@ BrowserAccessibilityOHOS::~BrowserAccessibilityOHOS() {
   g_accessibility_id_map.Get().erase(accessibility_id_);
 }
 
-int32_t BrowserAccessibilityOHOS::GetAccessibilityId() const {
+int64_t BrowserAccessibilityOHOS::GetAccessibilityId() const {
   return accessibility_id_;
 }
 
@@ -380,7 +380,7 @@ bool BrowserAccessibilityOHOS::IsHierarchical() const {
 }
 
 BrowserAccessibilityOHOS* BrowserAccessibilityOHOS::GetFromAccessibilityId(
-    int32_t accessibility_id) {
+    int64_t accessibility_id) {
   AccessibilityIdMap* accessibility_ids = g_accessibility_id_map.Pointer();
   auto iter = accessibility_ids->find(accessibility_id);
   if (iter != accessibility_ids->end())

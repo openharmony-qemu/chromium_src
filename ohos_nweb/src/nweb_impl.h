@@ -160,17 +160,17 @@ class NWebImpl : public NWeb {
       std::shared_ptr<NWebAccessibilityEventCallback>
           accessibilityEventListener) override;
   void PutAccessibilityIdGenerator(
-      std::function<int32_t()> accessibilityIdGenerator) override;
-  void ExecuteAction(int32_t accessibilityId, uint32_t action) const override;
+      std::function<int64_t()> accessibilityIdGenerator) override;
+  void ExecuteAction(int64_t accessibilityId, uint32_t action) const override;
   bool GetFocusedAccessibilityNodeInfo(
-      int32_t accessibilityId,
+      int64_t accessibilityId,
       bool isAccessibilityFocus,
       OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const override;
   bool GetAccessibilityNodeInfoById(
-      int32_t accessibilityId,
+      int64_t accessibilityId,
       OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const override;
   bool GetAccessibilityNodeInfoByFocusMove(
-      int32_t accessibilityId,
+      int64_t accessibilityId,
       int32_t direction,
       OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const override;
   void SetAccessibilityState(bool state) override;

@@ -2465,7 +2465,7 @@ void NWebDelegate::RegisterAccessibilityEventListener(
 }
 
 void NWebDelegate::RegisterAccessibilityIdGenerator(
-    std::function<int32_t()> accessibilityIdGenerator) const {
+    std::function<int64_t()> accessibilityIdGenerator) const {
   content::BrowserAccessibilityManagerOHOS::RegisterAccessibilityIdGenerator(
       accessibilityIdGenerator);
 }
@@ -2479,7 +2479,7 @@ void NWebDelegate::SetAccessibilityState(cef_state_t accessibilityState) {
   GetBrowser()->GetHost()->SetAccessibilityState(accessibilityState);
 }
 
-void NWebDelegate::ExecuteAction(int32_t accessibilityId,
+void NWebDelegate::ExecuteAction(int64_t accessibilityId,
                                  uint32_t action) const {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
@@ -2540,7 +2540,7 @@ NWebDelegate::GetAccessibilityManager() const {
 }
 
 bool NWebDelegate::GetFocusedAccessibilityNodeInfo(
-    int32_t accessibilityId,
+    int64_t accessibilityId,
     bool isAccessibilityFocus,
     OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const {
   auto* accessibilityManager = GetAccessibilityManager();
@@ -2580,7 +2580,7 @@ bool NWebDelegate::GetFocusedAccessibilityNodeInfo(
 }
 
 bool NWebDelegate::GetAccessibilityNodeInfoById(
-    int32_t accessibilityId,
+    int64_t accessibilityId,
     OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
@@ -2604,7 +2604,7 @@ bool NWebDelegate::GetAccessibilityNodeInfoById(
 }
 
 bool NWebDelegate::GetAccessibilityNodeInfoByFocusMove(
-    int32_t accessibilityId,
+    int64_t accessibilityId,
     int32_t direction,
     OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const {
   auto* accessibilityManager = GetAccessibilityManager();

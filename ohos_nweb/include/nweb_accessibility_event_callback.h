@@ -26,7 +26,7 @@ class OHOS_NWEB_EXPORT NWebAccessibilityEventCallback {
   NWebAccessibilityEventCallback() = default;
 
   virtual ~NWebAccessibilityEventCallback() = default;
-  virtual void OnAccessibilityEvent(int32_t accessibilityId,
+  virtual void OnAccessibilityEvent(int64_t accessibilityId,
                                     uint32_t eventType) = 0;
 };
 }  // namespace OHOS::NWeb

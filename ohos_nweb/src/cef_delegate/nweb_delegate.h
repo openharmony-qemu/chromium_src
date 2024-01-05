@@ -67,7 +67,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       std::shared_ptr<NWebAccessibilityEventCallback>
           accessibility_event_listener) override;
   void RegisterAccessibilityIdGenerator(
-      std::function<int32_t()> accessibilityIdGenerator) const override;
+      std::function<int64_t()> accessibilityIdGenerator) const override;
   void RegisterReleaseSurfaceListener(
       std::shared_ptr<NWebReleaseSurfaceCallback> releaseSurfaceListener)
       override;
@@ -353,16 +353,16 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
  double GetBrowserZoomLevel() override;
 #endif
   void SetAccessibilityState(cef_state_t accessibility_state) override;
-  void ExecuteAction(int32_t node_id, uint32_t action) const override;
+  void ExecuteAction(int64_t accessibilityId, uint32_t action) const override;
   bool GetFocusedAccessibilityNodeInfo(
-      int32_t accessibilityId,
+      int64_t accessibilityId,
       bool isAccessibilityFocus,
       OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const override;
   bool GetAccessibilityNodeInfoById(
-      int32_t accessibilityId,
+      int64_t accessibilityId,
       OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const override;
   bool GetAccessibilityNodeInfoByFocusMove(
-      int32_t accessibilityId,
+      int64_t accessibilityId,
       int32_t direction,
       OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const override;
 

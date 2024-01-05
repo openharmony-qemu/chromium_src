@@ -38,7 +38,7 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
 
   ~BrowserAccessibilityOHOS() override;
 
-  int32_t GetAccessibilityId() const;
+  int64_t GetAccessibilityId() const;
 
   bool IsEnabled() const;
 
@@ -95,7 +95,7 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
   bool IsLink() const;
 
   static BrowserAccessibilityOHOS* GetFromAccessibilityId(
-      int32_t accessibility_id);
+      int64_t accessibility_id);
 
   const BrowserAccessibilityOHOS* GetAccessibilityNodeByFocusMove(
       int32_t direction) const;
@@ -192,7 +192,7 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
                               const gfx::Rect& itemRect,
                               const gfx::Rect& tempBest);
 
-  int32_t accessibility_id_ = -1;
+  int64_t accessibility_id_ = -1;
 };
 }  // namespace content
 

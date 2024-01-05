@@ -158,6 +158,8 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
       !IsHorizontalScrollBarAccess() ? STATE_ENABLED : STATE_DISABLED;
   browser_settings.hide_vertical_scrollbars =
       !IsVerticalScrollBarAccess() ? STATE_ENABLED : STATE_DISABLED;
+  browser_settings.native_embed_mode_enabled =
+      GetNativeEmbedMode() ? STATE_ENABLED : STATE_DISABLED;
 #endif  // defined(OHOS_INPUT_EVENTS)
 #if defined(OHOS_CLIPBOARD)
   browser_settings.copy_option = static_cast<int>(GetCopyOptionMode());
@@ -619,12 +621,19 @@ void NWebPreferenceDelegate::PutOverscrollMode(int mode) {
   browser_->GetHost()->SetOverscrollMode(mode);
 }
 void NWebPreferenceDelegate::SetNativeEmbedMode(bool flag) {
-  enable_embed_mode_ = flag;
-  if (!browser_.get()) {
-    LOG(ERROR) << "browser is null";
-    return;
-  }
-  browser_->GetHost()->SetNativeEmbedModeEnabled(flag);
+  auto& system_properties_adapter =
+        OHOS::NWeb::OhosAdapterHelper::GetInstance()
+            .GetSystemPropertiesInstance();
+  OHOS::NWeb::ProductDeviceType device_type =
+        system_properties_adapter.GetProductDeviceType();
+  bool supported_device_type =
+        device_type != OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_2IN1;
+
+  enable_embed_mode_ = flag && supported_device_type;
+  WebPreferencesChanged();
+}
+bool NWebPreferenceDelegate::GetNativeEmbedMode() {
+  return enable_embed_mode_;
 }
 #endif  // defined(OHOS_INPUT_EVENTS)
 

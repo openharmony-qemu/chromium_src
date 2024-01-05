@@ -128,6 +128,7 @@ class NWebPreferenceDelegate : public NWebPreference {
   void PutVerticalScrollBarAccess(bool flag) override;
   void PutOverscrollMode(int overScrollMode) override;
   void SetNativeEmbedMode(bool flag) override;
+  bool GetNativeEmbedMode() override;
   int GetOverscrollMode() override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 

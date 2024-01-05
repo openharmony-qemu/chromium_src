@@ -81,9 +81,12 @@ void BackgroundTaskPolicy::OnIsVisibleChanged(const PageNode* page_node) {
 
   int visible_num = page_node->IsVisible() ? 1 : -1;
   visible_page_num_ += visible_num;
-
+  if (visible_page_num_ < 0) {
+    visible_page_num_ = 0;
+  }
   LOG(INFO) << BG_TASK_TAG << " OnIsVisibleChanged "
-            << (visible_num > 0 ? "true" : "false");
+            << (visible_num > 0 ? "true" : "false")
+            << ", visible_page_num: " << visible_page_num_;
   MaybeChangeBackgroundTask(page_node);
 }
 
@@ -93,11 +96,14 @@ void BackgroundTaskPolicy::OnIsMediaPlayingChanged(const PageNode* page_node) {
     return;
   }
 
-  LOG(INFO) << BG_TASK_TAG << " OnIsMediaPlayingChanged "
-            << (page_node->IsMediaPlaying() ? "true" : "false");
-
   int media_playing_num = page_node->IsMediaPlaying() ? 1 : -1;
   media_playing_num_ += media_playing_num;
+  if (media_playing_num_ < 0) {
+    media_playing_num_ = 0;
+  }
+  LOG(INFO) << BG_TASK_TAG << " OnIsMediaPlayingChanged "
+          << (page_node->IsMediaPlaying() ? "true" : "false")
+          << ", media_playing_num: " << media_playing_num_;
   MaybeChangeBackgroundTask(page_node);
 }
 
@@ -107,11 +113,14 @@ void BackgroundTaskPolicy::OnIsAudibleChanged(const PageNode* page_node) {
     return;
   }
 
-  LOG(INFO) << BG_TASK_TAG << " OnIsAudibleChanged "
-            << (page_node->IsAudible() ? "true" : "false");
-
   int audio_state_num = page_node->IsAudible() ? 1 : -1;
   audio_state_num_ += audio_state_num;
+  if (audio_state_num_ < 0) {
+    audio_state_num_ = 0;
+  }
+  LOG(INFO) << BG_TASK_TAG << " OnIsAudibleChanged "
+          << (page_node->IsAudible() ? "true" : "false")
+          << ", audio_state_num: " << audio_state_num_;
   MaybeChangeBackgroundTask(page_node);
 }
 
@@ -137,10 +146,10 @@ void BackgroundTaskPolicy::MaybeChangeBackgroundTask(
   bool need_request = reason == RequestBackgroundTaskReason::NEED_BG_TASK;
   bool ret = background_task_holder_->MaybeRequestBackgroundRunning(
       need_request, BackgroundModeAdapter::AUDIO_PLAYBACK);
+  is_request_background_task_ = need_request;
   if (ret) {
     LOG(INFO) << BG_TASK_TAG << " request bg task success, reason: "
               << static_cast<int32_t>(reason);
-    is_request_background_task_ = need_request;
   } else {
     LOG(INFO) << BG_TASK_TAG << " request bg task failed";
   }

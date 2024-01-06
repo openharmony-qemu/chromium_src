@@ -87,7 +87,7 @@ void AudioDeviceThread::ThreadMain() {
 #if BUILDFLAG(IS_OHOS)
   OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
       OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_START,
-      base::GetCurrentProcId(), base::PlatformThread::CurrentId());
+      base::GetCurrentRealPid(), base::PlatformThread::CurrentRealId());
 #endif
 
   uint32_t buffer_index = 0;

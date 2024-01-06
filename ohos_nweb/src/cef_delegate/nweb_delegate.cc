@@ -26,6 +26,7 @@
 #include "base/strings/utf_string_conversions.h"
 #include "base/task/thread_pool.h"
 #include "base/trace_event/trace_event.h"
+#include "base/files/file_util.h"
 #include "cef/include/base/cef_logging.h"
 #include "cef/include/cef_app.h"
 #include "cef/include/cef_base.h"
@@ -54,6 +55,7 @@
 #include "nweb_preference_delegate.h"
 #include "url/gurl.h"
 #include "ui/events/gesture_detection/gesture_configuration.h"
+#include "libcef/common/net/url_util.h"
 
 #ifdef OHOS_EX_GET_ZOOM_LEVEL
 #include <cmath>
@@ -817,6 +819,26 @@ std::shared_ptr<NWebPreference> NWebDelegate::GetPreference() const {
   return preference_delegate_;
 }
 
+bool NWebDelegate::IsFileProtocol(const GURL& gurl) {
+  if (gurl.is_empty() || !gurl.is_valid()) {
+    return false;
+  }
+  std::string fileProtocolName = "file://";
+  if (gurl.spec().substr(0, fileProtocolName.size()) == fileProtocolName) {
+    return true;
+  }
+  return false;
+}
+
+bool NWebDelegate::IsUrlFileExist(const GURL& gurl) {
+  std::string filePath = gurl.path();
+  if (!base::PathExists(base::FilePath(filePath))) {
+    LOG(ERROR) << "IsUrlFileExist failed, file does not exist";
+    return false;
+  }
+  return true;
+}
+
 int NWebDelegate::Load(const std::string& url) {
   GURL gurl = GURL(url);
   if (gurl.is_empty() || !gurl.is_valid()) {
@@ -824,6 +846,10 @@ int NWebDelegate::Load(const std::string& url) {
     if (!gurlWithHttp.is_valid()) {
       return NWEB_INVALID_URL;
     }
+  }
+  GURL file_gurl = url_util::FixupGURL(url);
+  if (IsFileProtocol(file_gurl) && !IsUrlFileExist(file_gurl)) {
+    return NWEB_INVALID_RESOURCE;
   }
   LOG(DEBUG) << "NWebDelegate::Load url=" << url;
   auto browser = GetBrowser();
@@ -1544,6 +1570,10 @@ int NWebDelegate::Load(
     if (!gurlWithHttp.is_valid()) {
       return NWEB_INVALID_URL;
     }
+  }
+  GURL file_gurl = url_util::FixupGURL(url);
+  if (IsFileProtocol(file_gurl) && !IsUrlFileExist(file_gurl)) {
+    return NWEB_INVALID_RESOURCE;
   }
   std::map<std::string, std::string>::iterator iter;
   std::string extra = "";

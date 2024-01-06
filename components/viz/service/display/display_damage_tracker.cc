@@ -176,7 +176,7 @@ bool DisplayDamageTracker::OnSurfaceDamaged(const SurfaceId& surface_id,
   return display_damaged;
 }
 
-void DisplayDamageTracker::OnSurfaceDamageExpected(const SurfaceId& surface_id,
+bool DisplayDamageTracker::OnSurfaceDamageExpected(const SurfaceId& surface_id,
                                                    const BeginFrameArgs& args) {
   TRACE_EVENT1("viz", "DisplayDamageTracker::SurfaceDamageExpected",
                "surface_id", surface_id.ToString());
@@ -186,7 +186,7 @@ void DisplayDamageTracker::OnSurfaceDamageExpected(const SurfaceId& surface_id,
   // but continues using the same Surface, or if a Surface does not activate its
   // first CompositorFrame immediately.
   surface_states_[surface_id].last_args = args;
-  NotifyPendingSurfacesChanged();
+  return NotifyPendingSurfacesChanged();
 }
 
 void DisplayDamageTracker::UpdateRootFrameMissing() {
@@ -220,9 +220,12 @@ void DisplayDamageTracker::NotifyRootFrameMissing(bool missing) {
     observer.OnRootFrameMissing(missing);
 }
 
-void DisplayDamageTracker::NotifyPendingSurfacesChanged() {
-  for (auto& observer : observers_)
-    observer.OnPendingSurfacesChanged();
+bool DisplayDamageTracker::NotifyPendingSurfacesChanged() {
+  bool isUpdate = false;
+  for (auto& observer : observers_) {
+    isUpdate |= observer.OnPendingSurfacesChanged();
+  }
+  return isUpdate;
 }
 
 }  // namespace viz

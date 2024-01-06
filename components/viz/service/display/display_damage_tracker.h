@@ -33,7 +33,7 @@ class VIZ_SERVICE_EXPORT DisplayDamageTracker : public SurfaceObserver {
     virtual ~Observer() = default;
     virtual void OnDisplayDamaged(SurfaceId surface_id) = 0;
     virtual void OnRootFrameMissing(bool missing) = 0;
-    virtual void OnPendingSurfacesChanged() = 0;
+    virtual bool OnPendingSurfacesChanged() = 0;
   };
 
   DisplayDamageTracker(SurfaceManager* surface_manager,
@@ -81,7 +81,7 @@ class VIZ_SERVICE_EXPORT DisplayDamageTracker : public SurfaceObserver {
   void OnSurfaceMarkedForDestruction(const SurfaceId& surface_id) override;
   bool OnSurfaceDamaged(const SurfaceId& surface_id,
                         const BeginFrameAck& ack) override;
-  void OnSurfaceDamageExpected(const SurfaceId& surface_id,
+  bool OnSurfaceDamageExpected(const SurfaceId& surface_id,
                                const BeginFrameArgs& args) override;
 
  protected:
@@ -103,7 +103,7 @@ class VIZ_SERVICE_EXPORT DisplayDamageTracker : public SurfaceObserver {
   // Used to send corresponding notifications to observers.
   void NotifyDisplayDamaged(SurfaceId surface_id);
   void NotifyRootFrameMissing(bool missing);
-  void NotifyPendingSurfacesChanged();
+  bool NotifyPendingSurfacesChanged();
 
   base::ObserverList<Observer>::Unchecked observers_;
   const raw_ptr<SurfaceManager> surface_manager_;

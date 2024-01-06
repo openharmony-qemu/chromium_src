@@ -137,9 +137,12 @@ void DisplayScheduler::OnDisplayDamaged(SurfaceId surface_id) {
   ScheduleBeginFrameDeadline();
 }
 
-void DisplayScheduler::OnPendingSurfacesChanged() {
-  if (UpdateHasPendingSurfaces())
+bool DisplayScheduler::OnPendingSurfacesChanged() {
+  if (UpdateHasPendingSurfaces()) {
     ScheduleBeginFrameDeadline();
+    return true;
+  }
+  return false;
 }
 
 base::TimeDelta DisplayScheduler::GetDeadlineOffset(

@@ -48,8 +48,8 @@ class VIZ_SERVICE_EXPORT SurfaceObserver {
 
   // Called when a Surface's CompositorFrame producer has received a BeginFrame
   // and, thus, is expected to produce damage soon.
-  virtual void OnSurfaceDamageExpected(const SurfaceId& surface_id,
-                                       const BeginFrameArgs& args) {}
+  virtual bool OnSurfaceDamageExpected(const SurfaceId& surface_id,
+                                       const BeginFrameArgs& args) { return false; }
 
   // Called whenever |surface| will be drawn in the next display frame.
   virtual void OnSurfaceWillBeDrawn(Surface* surface) {}

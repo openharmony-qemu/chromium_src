@@ -57,7 +57,7 @@ class VIZ_SERVICE_EXPORT DisplayScheduler
   // DisplayDamageTrackerObserver implementation.
   void OnDisplayDamaged(SurfaceId surface_id) override;
   void OnRootFrameMissing(bool missing) override;
-  void OnPendingSurfacesChanged() override;
+  bool OnPendingSurfacesChanged() override;
 
   // DynamicBeginFrameDeadlineOffsetSource:
   base::TimeDelta GetDeadlineOffset(base::TimeDelta interval) const override;

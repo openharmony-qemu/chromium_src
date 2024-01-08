@@ -221,11 +221,12 @@ void DisplayDamageTracker::NotifyRootFrameMissing(bool missing) {
 }
 
 bool DisplayDamageTracker::NotifyPendingSurfacesChanged() {
-  bool isUpdate = false;
   for (auto& observer : observers_) {
-    isUpdate |= observer.OnPendingSurfacesChanged();
+    if (observer.OnPendingSurfacesChanged()) {
+      return true;
+    }
   }
-  return isUpdate;
+  return false;
 }
 
 }  // namespace viz

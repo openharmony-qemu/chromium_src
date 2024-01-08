@@ -215,10 +215,11 @@ class NWebDelegateInterface
   virtual void FindNext(const bool forward) const = 0;
 
 #if defined(OHOS_MSGPORT)
+  virtual void EraseJavaScriptCallbackImpl(uint32_t id) = 0;
   virtual void ExecuteJavaScript(
       const std::string& code,
       std::shared_ptr<NWebValueCallback<std::shared_ptr<NWebMessage>>> callback,
-      bool extention) const = 0;
+      bool extention) = 0;
   virtual void CreateWebMessagePorts(std::vector<std::string>& ports) = 0;
   virtual void PostWebMessage(std::string& message,
                               std::vector<std::string>& ports,

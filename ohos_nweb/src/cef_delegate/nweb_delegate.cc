@@ -32,6 +32,7 @@
 #include "cef/include/cef_base.h"
 #include "cef/include/cef_request_context.h"
 #include "content/public/common/content_switches.h"
+#include "libcef/browser/thread_util.h"
 #include "nweb_find_delegate.h"
 #include "nweb_preference_delegate.h"
 #include "url/gurl.h"
@@ -185,14 +186,27 @@ void ConvertCefValueToNWebMessage(CefRefPtr<CefValue> src,
 class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
  public:
   JavaScriptResultCallbackImpl(
-      std::shared_ptr<NWebValueCallback<std::shared_ptr<NWebMessage>>> callback)
-      : callback_(callback) {}
+      std::shared_ptr<NWebValueCallback<std::shared_ptr<NWebMessage>>> callback,
+      uint32_t callbackId, std::shared_ptr<NWebDelegateInterface> delegate)
+      : callback_(callback), callbackId_(callbackId),
+        weakNWebDelegate_(std::weak_ptr<NWebDelegateInterface>(delegate)) {}
+  ~JavaScriptResultCallbackImpl() {
+    LOG(INFO) << "runJS ~JavaScriptResultCallbackImpl destroy";
+  }
   void CallbackOnReceiveThread(std::shared_ptr<OHOS::NWeb::NWebMessage> data) {
     callback_->OnReceiveValue(data);
+    LOG(INFO) << "runJS result NWebDelegate CallbackDestroyThread in non-ui";
+    // post this instance to ui to destroy
+    if (!weakNWebDelegate_.expired()) {
+      CEF_POST_TASK(
+          CEF_UIT,
+          base::BindOnce(&NWebDelegateInterface::EraseJavaScriptCallbackImpl, weakNWebDelegate_.lock(), callbackId_));
+    }
   }
 
   void OnJavaScriptExeResult(CefRefPtr<CefValue> result) override {
     if (callback_ != nullptr) {
+      LOG(INFO) << "runJS result NWebDelegate OnJavaScriptExeResult in ui";
       auto data =
           std::make_shared<OHOS::NWeb::NWebMessage>(NWebValue::Type::NONE);
       ConvertCefValueToNWebMessage(result, data);
@@ -200,12 +214,14 @@ class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
         FROM_HERE, {base::MayBlock(), base::TaskPriority::HIGHEST},
         base::BindOnce(base::IgnoreResult(
             &JavaScriptResultCallbackImpl::CallbackOnReceiveThread),
-            base::WrapRefCounted(this), data));
+            base::Unretained(this), data));
     }
   }
 
  private:
   std::shared_ptr<NWebValueCallback<std::shared_ptr<NWebMessage>>> callback_;
+  uint32_t callbackId_;
+  std::weak_ptr<NWebDelegateInterface> weakNWebDelegate_;
 
   IMPLEMENT_REFCOUNTING(JavaScriptResultCallbackImpl);
 };
@@ -1117,15 +1133,26 @@ void NWebDelegate::ExecuteJavaScript(const std::string& code) const {
 }
 
 #if defined(OHOS_MSGPORT)
+
+void NWebDelegate::EraseJavaScriptCallbackImpl(uint32_t id) {
+  LOG(INFO) << "runJS NWebDelegate::EraseJavaScriptCallbackImpl unref, id:" << id;
+  if (runJSCallbackMap_.count(id)) {
+    runJSCallbackMap_.erase(id);
+  }
+}
+
 void NWebDelegate::ExecuteJavaScript(
     const std::string& code,
     std::shared_ptr<NWebValueCallback<std::shared_ptr<NWebMessage>>> callback,
-    bool extention) const {
-  LOG(DEBUG) << "NWebDelegate::ExecuteJavaScript with callback";
+    bool extention) {
+  LOG(INFO) << "runJS NWebDelegate::ExecuteJavaScript with callback";
 
   if (GetBrowser().get()) {
+    runJSCallbackId_++;
     CefRefPtr<JavaScriptResultCallbackImpl> JsResultCb =
-        new JavaScriptResultCallbackImpl(callback);
+        new JavaScriptResultCallbackImpl(callback,
+        runJSCallbackId_, shared_from_this());
+    runJSCallbackMap_[runJSCallbackId_] = JsResultCb;
     GetBrowser()->GetHost()->ExecuteJavaScript(code, JsResultCb, extention);
   }
 }

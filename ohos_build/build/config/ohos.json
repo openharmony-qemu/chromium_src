@@ -206,6 +206,14 @@
 "dependence": "",
 "default": "true"
 },
+{ "name": "OHOS_EX_DOWNLOAD",
+"owner": "",
+"desc": "download feature",
+"effect":"main gn blink_core other",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},
 { "name": "OHOS_EX_NETWORK_CONNECTION",
 "owner": "",
 "desc": "",

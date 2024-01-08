@@ -575,10 +575,6 @@ void ResourcePool::EvictResourcesNotUsedSince(base::TimeTicks time_limit) {
     // delays in freeing expired resources.
     if (unused_resources_.back()->last_usage() > time_limit)
       return;
-
-    DCHECK_GE(unused_memory_usage_bytes_,
-              unused_resources_.back()->memory_usage());
-    unused_memory_usage_bytes_ -= unused_resources_.back()->memory_usage();
 #ifdef OHOS_NWEB_EX
     if (delete_unused_resources_delay_enabled_ &&
         unused_resources_.size() <= kUnusedResourcesToKeep &&
@@ -587,6 +583,9 @@ void ResourcePool::EvictResourcesNotUsedSince(base::TimeTicks time_limit) {
       return;
     }
 #endif
+    DCHECK_GE(unused_memory_usage_bytes_,
+              unused_resources_.back()->memory_usage());
+    unused_memory_usage_bytes_ -= unused_resources_.back()->memory_usage();
     DeleteResource(PopBack(&unused_resources_));
   }
 }

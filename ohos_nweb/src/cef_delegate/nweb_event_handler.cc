@@ -255,6 +255,11 @@ void NWebEventHandler::SendMouseEvent(int x,
   CefMouseEvent mouseEvent;
   mouseEvent.x = x;
   mouseEvent.y = y;
+#ifdef OHOS_CLIPBOARD
+  if (browser_ && browser_->GetHost()) {
+    mouseEvent.y -= browser_->GetHost()->GetShrinkViewportHeight();
+  }
+#endif
   cef_mouse_button_type_t buttonType = static_cast<cef_mouse_button_type_t>(
       NWebInputDelegate::CefConverter("mousebutton", button));
   mouseEvent.modifiers = input_delegate_.GetModifiers(buttonType);

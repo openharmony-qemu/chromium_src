@@ -255,7 +255,7 @@ void NWebEventHandler::SendMouseEvent(int x,
   CefMouseEvent mouseEvent;
   mouseEvent.x = x;
   mouseEvent.y = y;
-#ifdef OHOS_CLIPBOARD
+#ifdef OHOS_EX_TOPCONTROLS
   if (browser_ && browser_->GetHost()) {
     mouseEvent.y -= browser_->GetHost()->GetShrinkViewportHeight();
   }

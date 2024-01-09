@@ -114,10 +114,23 @@
 
     7.11 联系committer加分
 
-8. 分支信息描述
+## 二进制来源说明
+1. 本项目的[chromium_third_party_ohos_prebuilts](https://gitee.com/openharmony-sig/chromium_third_party_ohos_prebuilts)仓中存在两个自研二进制文件，分别为[libnweb_ohos_adapter.z.so](https://gitee.com/openharmony-sig/chromium_third_party_ohos_prebuilts/tree/master/libs)、[sysroot-20231205.tar.gz](https://gitee.com/openharmony-sig/chromium_third_party_ohos_prebuilts/blob/master/sysroot-20231205.tar.gz)。
 
-   ```
-   master: chromium-99 内核
-   master114_20231127: chromium-114内核，当前的主干分支
-   master114_20231218: 对应的OpenHarmony-4.1-Beta1 分支。
-   ```
+2. 上述二进制文件均为OpenHarmony源码基于OpenHarmony OpenHarmony-v4.1-Beta1 Tag点编译生成。源码获取可参考[OpenHarmony-v4.1-Beta1代码获取指导](https://gitee.com/openharmony/docs/blob/master/zh-cn/release-notes/OpenHarmony-v4.1-beta1.md#%E6%BA%90%E7%A0%81%E8%8E%B7%E5%8F%96),[编译构建指导](https://gitee.com/openharmony/docs/blob/master/zh-cn/device-dev/subsystems/subsys-build-all.md)
+    ```
+    代码下载命令：
+    repo init -u https://gitee.com/openharmony/manifest -b OpenHarmony-4.1-Beta1 --no-repo-verify
+    repo sync -c
+    repo forall -c 'git lfs pull'
+    ```
+
+3. 上述二进制在本项目中基于 ***RK3568*** 产品编译生成，编译命令为
+    ```
+    ./build.sh --product-name rk3568  --ccache
+    ```
+4. 二进制在OpenHarmony编译产物中的存放路径
+
+    libnweb_ohos_adapter.z.so : 存放路径为out/rk3568/web/webview
+
+    sysroot-20231205.tar.gz ： 存放路径为out/rk3568/obj/third_party/musl/usr，压缩文件为usr下include、lib文件夹压缩而成

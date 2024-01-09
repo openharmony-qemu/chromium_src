@@ -63,189 +63,379 @@ used to filter file path.
         <licensefile>LICENSE</licensefile>
         <policylist>
             <policy name="projectPolicy" desc="The LICENSE is not standardized">
-               <!-- 
-               <policyitem type="compatibility" name="MPL-1.1" path="net/cookies.*" desc="经法务确认,涉及文件在render下进行了隔离" />
-               <policyitem type="compatibility" name="MPL-1.1" path="base/third_party.*" desc="经法务确认,涉及文件在render下进行了隔离" />
-               <policyitem type="compatibility" name="MPL-1.1" path="net/http.*" desc="经法务确认,涉及文件在render下进行了隔离" /> -->
-               
-               <policyitem type="compatibility" name="MIT" path="base/third_party/xdg_user_dirs.*" desc="经法务确认为宽松型许可证" />
-               <policyitem type="compatibility" name="Khronos License" path="ppapi/lib/gl/include.*" desc="经法务确认为宽松型许可证" />
-               <policyitem type="compatibility" name="SGI-B-2.0" path="ppapi/lib/gl/include.*" desc="经法务确认为宽松型许可证" />
-               <policyitem type="compatibility" name="CC-PDDC" path="base/third_party/libevent.*" desc="经法务确认为宽松型许可证" />
-               <policyitem type="compatibility" name="AFL-2.0" path="base/third_party/xdg_mime.*" desc="经法务确认为宽松型许可证" />
-               <policyitem type="compatibility" name="AFL-2.1" path="build/linux/debian_sid_amd64-sysroot/usr/include.*" desc="经法务确认为宽松型许可证" />
-               <policyitem type="compatibility" name="BSD-Protection" path="courgette/third_party/bsdiff.*" desc="经法务确认为宽松型许可证" />
-               <policyitem type="compatibility" name="BSDStyleLicense" path="base/third_party/valgrind.*" desc="经法务确认为宽松型许可证" />
-               <policyitem type="compatibility" name="XConsortiumLicense" path="ui/base/x.*" desc="经法务确认为宽松型许可证" />
-               <policyitem type="compatibility" name="Unicode-TOU" path="base/third_party/icu.*" desc="经法务确认为宽松型许可证" />
-               <policyitem type="compatibility" name="BSD-3-Clause" path="base/third_party/libevent/test/bench.c" desc="经法务确认为宽松型许可证" />
             </policy>
         </policylist>
         <filefilterlist>
             <filefilter name="defaultPolicyFilter"
                 desc="Filters for compatibility,license header policies">
-                <filteritem type="filepath" name=".*chromium" desc="chromium原生文件无license" />
-                <filteritem type="filepath" name="content/test/data/browsing_data/media_license.html" desc="chromium原生文件无license" />
-                <filteritem type="filepath" name=".*js" desc="chromium原生文件无license" />
-                <filteritem type="filepath" name=".*expected" desc="chromium原生文件无license" />
-                <filteritem type="filepath" name=".*rst" desc="chromium原生文件无license" />
+                <filteritem type="filepath" name=".*README.chromium" desc="chromium的开源软件元数据文件" />
                 <filteritem type="filepath" name="ohos_sdk/.install" desc="OHOS自研shell文件，默认不加license" />
-                <filteritem type="filepath" name="c" desc="chromium原生文件无license" />
+                <filteritem type="filepath" name="content/test/data/browsing_data/media_license.html" desc="chromium原生文件无license" />
                 <filteritem type="filepath" name="media/learning/impl/DEPS" desc="chromium原生文件无license" />
-                <filteritem type="filepath" name=".*xml" desc="chromium原生文件无license" />
                 <filteritem type="filepath" name="components/policy_strings.grdp" desc="chromium原生文件无license" />
+                <filteritem type="filepath" name="tools/binary_size/libsupersize/testdata/AndroidManifest_AlwaysInstalled.xml" desc="chromium原生文件无license" />
+                <filteritem type="filepath" name="tools/binary_size/libsupersize/testdata/AndroidManifest_OnDemand.xml" desc="chromium原生文件无license" />
                 <filteritem type="filepath" name="android_webview/java/strings/translations/android_webview_strings_sv.xtb" desc="chromium原生文件无license" />
-                <filteritem type="filepath" name="base/third_party/libevent/event.3" desc="有license,工具误报" />
                 <filteritem type="filepath" name="android_webview/java/strings/translations/android_webview_strings_da.xtb" desc="chromium原生文件无license" />
                 <filteritem type="filepath" name="content/browser/aggregation_service/DEPS" desc="chromium原生文件无license" />
                 <filteritem type="filepath" name="tools/tests/OWNERS" desc="chromium原生文件无license" />
                 <filteritem type="filepath" name="native_client_sdk/src/doc/_project.yaml" desc="chromium原生文件无license" />
                 <filteritem type="filepath" name="tools/win/ChromeDebug/ChromeDebug/source.extension.vsixmanifest" desc="chromium原生文件无license" />
             </filefilter>
-            <filefilter name="readmeOpenSourcefileNamePolicFilter">
-                <filteritem type="filepath" name="README.OpenSource" desc="Filter readme.opensource files" />
-            </filefilter>
-
             <filefilter name="defaultFilter">
-                 <filteritem type="filepath" name="build/.*" desc="chromium原生文件，不会使用"/>
-                <filteritem type="filepath" name="ios/.*" desc="chromium原生文件，不会使用"/>
-                <filteritem type="filepath" name="android_webview/.*" desc="chromium原生文件，不会使用"/>
-                <filteritem type="filepath" name="native_client_sdk/.*" desc="chromium原生文件，不会使用"/>
-                <filteritem type="filepath" name="buildtools/android/doclava/NOTICE" desc="chromium原生文件，不会使用"/>
-                <filteritem type="filepath" name=".*md" desc="经确认，该文件不会使用" />
-                <filteritem type="filepath" name=".*LICENSE" desc="经确认，该文件不会使用" />
-
-                <filteritem type="filepath" name="base/third_party/xdg_user_dirs.*" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="url/third_party/mozilla/LICENSE.txt" desc="该文件的许可证为BSD-3-Clause" />
+                <filteritem type="filepath" name="courgette/third_party/bsdiff/LICENCE" desc="该文件的许可证为BSD-3-Clause" />
+                <filteritem type="filepath" name="build/linux/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="ios/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="test/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="net/data/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="android_webview/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="ui/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="browser_ui/widget/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/embedder_support/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/infobars/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/browser_ui/styles/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/browser_ui/site_settings/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="base/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/blocked_content/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/javascript_dialogs/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/browser_ui/media/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/media_router/browser/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/omnibox/browser/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/permissions/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="buildtools/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="translate/content/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/webrtc/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="content/public/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="chromecast/browser/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/browser_ui/settings/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/browser_ui/strings/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/webapps/browser/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="remoting/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="build/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="content/shell/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="content/test/data/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="net/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="tools/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/autofill/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/browser_ui/styles/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/browser_ui/widget/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="native_client_sdk/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="remoting/host/installer/mac/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="ui/resources/default_200_percent/mac/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="ui/resources/default_100_percent/mac/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="remoting/host/mac/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="tools/mac/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="base/third_party/xdg_user_dirs/.*" desc="经确认，该文件不会使用" />
                 <filteritem type="filepath" name="services/proxy_resolver/pac_js_library.h" desc="经确认，该文件不会使用" />
-                <filteritem type="filepath" name="net/third_party/mozilla_security_manager.*" desc="经确认，该文件不会使用" />
-                <filteritem type="filepath" name="net/base/registry_controlled_domains.*" desc="经确认，该文件不会使用" />
-                <filteritem type="filepath" name="net/third_party/mozilla_win/cert.*" desc="经确认，该文件不会使用" />
-                <filteritem type="filepath" name="net/third_party/nss/ssl.*" desc="经确认，该文件不会使用" />
-                <filteritem type="filepath" name="buildtools/third_party.*" desc="经确认，该文件不会使用" />
-                <filteritem type="filepath" name="base/third_party/valgrind.*" desc="经确认，该文件不会使用" />
-                <filteritem type="filepath" name="media/test/data.*" desc="经确认，该文件不会使用" />
-                
-                <filteritem type="filepath" name="base/third_party.*" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="net/third_party/.*" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="net/base/registry_controlled_domains/.*" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="buildtools/third_party/.*" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="base/third_party/valgrind/.*" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="media/test/data/.*" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="tools/win/ChromeDebug/ChromeDebug/ChromeDebug.vsct" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="base/third_party/.*" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="ppapi/lib/gl/include/.*" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="ui/base/x/.*" desc="经确认，该文件不会使用" />
                 <filteritem type="filepath" name="url/third_party/mozilla/url_parse.cc" desc="经确认，该文件不会使用" />
-                <filteritem type="filepath" name="url/third_party/mozilla/LICENSE.txt" desc="经确认，该文件不会使用" />
-                <filteritem type="filepath" name="courgette/third_party/bsdiff/LICENCE" desc="经确认，该文件不会使用" />
                 <filteritem type="filepath" name="net/cookies/parsed_cookie.cc" desc="经确认，该文件不会使用" />
                 <filteritem type="filepath" name="net/cookies/canonical_cookie.cc" desc="经确认，该文件不会使用" />
                 <filteritem type="filepath" name="net/cookies/cookie_monster.cc" desc="经确认，该文件不会使用" />
                 <filteritem type="filepath" name="net/http/http_chunked_decoder.cc" desc="经确认，该文件不会使用" />
                 <filteritem type="filepath" name="net/http/http_chunked_decoder.h" desc="经确认，该文件不会使用" />
-
-                <policyitem type="compatibility" name="GPLStyleLicense" path="courgette/third_party/bsdiff.*" desc="经法务确认,涉及文件在render下进行了隔离" />
+                <filteritem type="filepath" name="content/browser/storage_partition_impl_unittest.cc" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="ui/display/win/screen_win_unittest.cc" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="content/browser/browsing_data/browsing_data_remover_impl_unittest.cc" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="build/xcode_binaries.yaml" desc="经确认，该文件不会使用" />
             </filefilter>
              <filefilter name="binaryFileTypePolicyFilter" >
-                <filteritem type="filepath" name=".*xtb" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*png" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*crx" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*crx3" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*res" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*resx" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*pem" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*mp3" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="components/cbor/reader_fuzzer_corpus.*" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="mojo/public/tools/fuzzers/message_corpus.*" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*zip" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*webm" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*wav" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*jpg" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*exe" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*sha1" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*har" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*mp4" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*ttf" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*nexe" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*crl" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*pdf" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*webp" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*woff2" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*dat" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*cs" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*csproj" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*ogg" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="net\data\cache_tests.*" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*icc" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*bin" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*dll" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*jar" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*natvis" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*out" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*pb" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*svgz" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="components\cast_channel\fuzz_corpus.*" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*wbn" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*tiff" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="content/browser/storage_partition_impl_unittest.cc" desc="Tool scan errors" />
-                <filteritem type="filepath" name="ui/display/win/screen_win_unittest.cc" desc="Tool scan errors" />
-                <filteritem type="filepath" name="content/browser/browsing_data/browsing_data_remover_impl_unittest.cc" desc="Tool scan errors" />
-                <filteritem type="filepath" name="content\browser\devtools\devtools_protocol_encoding_cbor_fuzzer_corpus.*" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="content\browser\indexed_db\fuzzer_corpus\encoded_indexed_db_key.*" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*lib" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*cbor" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*wasm" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*flac" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*mov" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*gif" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*shal" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="tools/win/ChromeDebug/ChromeDebug/source.extension.vsixmanifest" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*cur" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*ico" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*raw" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*avi" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*ogv" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*emf" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*ttf" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*plist" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*sxg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ohos_sdk/OpenHarmonyApplication.pem" desc="ohos自研二进制文件" />
+                <filteritem type="filepath" name="ash/components/arc/test/data/icons/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ash/app_list/resources/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ash/login/resources/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ash/webui/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ash/public/cpp/resources/unscaled_resources/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/resources/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/translate/content/android/java/res/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/viz/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/invalidation/images/InvalidationService.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/performance_manager/doc/overview.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/sync/driver/resources/star_small.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/security_interstitials/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/services/print_compositor/ipc_flow_diagram.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/neterror/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/cronet/ios/cronet_consumer/Default.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/browser/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/app/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/child/dwrite_font_proxy/blink_dwrite_call_flow.dot.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/shell/resources/brokenCanvas.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/images/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/security/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/speed/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/testing/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/accessibility/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/ui/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/media/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/process/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/navigation-request-navigation-state.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/enterprise/extension_query_sample.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="fuchsia/engine/test/data/favicon2.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="fuchsia/engine/test/data/favicon.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="headless/test/data/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="pdf/test/data/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="pdf/pdfium/fuzzers/corpora/pdf_codec_png/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="printing/test/data/pdf_cg/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="remoting/ios/app/resources/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="remoting/resources/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/test/data/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="skia/ext/data/vectorcanvastest/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/accessibility/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/chromeos/resources/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/file_manager/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/resources/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/views/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/webui/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/gfx/test/data/compositor/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="extensions/browser/resources/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="weblayer/browser/java/res/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="weblayer/shell/android/shell_apk/res/drawable-mdpi/avatar_sunglasses.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="weblayer/test/data/favicon.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="base/test/data/file_util/red.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="base/allocator/partition_allocator/dot/super-page.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="extensions/test/data/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="headless/test/data/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/chrome_extensions/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/perf/page_sets/tough_canvas_cases/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/stats_viewer/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/grit/grit/testdata/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/binary_size/libsupersize/viewer/static/splash.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/win/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/translation/testdata/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="courgette/generation.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="courgette/application.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="figures/Web-architecture.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="figures/Web-architecture_ZH.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="net/docs/url_request.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="net/docs/pools.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="mojo/core/doc/layering.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="cc/animation/images/new-animation.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="media/mojo/renderer_extension_diagram.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="mojo/docs/mojolpm-fuzzer-structure.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ppapi/tests/extensions/load_unload/ext_icon.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="chromecast/app/resources/shell_speaker_icon.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="testing/gtest_ios/Default.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/design/sandbox_top_diagram.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/render-frame-host-lifecycle-state.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/feed/response.binarypb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ash/shortcut_viewer/strings/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ash/webui/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ash/strings/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/strings/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="chromeos/strings/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/policy/resources/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="remoting/resources/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="cloud_print/virtual_driver/win/install/resources/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="media_router/browser/android/java/strings/translations/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="device/fido/strings/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/strings/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/accessibility/extensions/strings/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/chromeos/translations/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/strings/translations/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="weblayer/browser/java/translations/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/omnibox/resources/translations/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="extensions/strings/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/media_router/browser/android/java/strings/translations/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/cbor/reader_fuzzer_corpus/.*" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="mojo/public/tools/fuzzers/message_corpus/.*mojomsg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/neterror/resources/sounds/.*mp3" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/accessibility/html/sfx.mp3" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/browser/devtools/devtools_protocol_encoding_cbor_fuzzer_corpus/.*" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/browser/indexed_db/fuzzer_corpus/encoded_indexed_db_key_path/.*" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/.*pem" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="extensions/test/data/.*pem" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/sxg/.*pem" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/python/google/httpd_config/httpd2.pem" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/python/google/httpd_config/root_ca_cert.pem" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="base/test/data/tzdata/icu/44/le/.*res" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="extensions/test/data/.*crx" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/accessibility/extensions/chromevoxclassic/cvox2/background/earcons/.*wav" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/media/.*wav" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/media/.*webm" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/gpu/vc/.*webm" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="fuchsia/engine/test/data/.*webm" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/zucchini/testdata/.*exe" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="base/test/data/pe_image_reader/.*exe" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/viz/test/data/render_pass_data/top_real_world_desktop/.*zip" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="extensions/test/data/content_hash_fetcher/.*zip" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/site_isolation/.*zip" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/ad_tagging/.*zip" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/gpu/mediapipe_zip/.*zip" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="omponents/test/data/unzip_service/.*zip" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/viz/test/data/render_pass_data/.*zip" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/crx_file/sample.zip" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/unzip_service/.*zip" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="extensions/test/data/content_hash_fetcher/manifest_mislabeled_script/source.zip" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="build/toolchain/win/.*sha1" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/zucchini/.*sha1" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="buildtools/win/clang-format.exe.sha1" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/traffic_annotation/bin/win32/traffic_annotation_auditor.exe.sha1" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/crx_file/.*crx3" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ash/display/test_data/.*icc" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/gzip-content.svgz" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="net/third_party/.*crl" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/accessibility/extensions/chromevoxclassic/chromevox/background/earcons/.*ogg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ash/webui/camera_app_ui/resources/sounds/.*ogg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/media/.*ogg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="weblayer/test/data/test_audio.ogg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="pdf/test/data/.*pdf" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="pdf/pdfium/fuzzers/corpora/.*pdf" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/browser/indexed_db/docs/.*pdf" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/ad_tagging/test.pdf" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/.*pdf" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/media/.*mp4" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="remoting/resources/.*webp" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/.*webp" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/webui/resources/roboto/.*woff2" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/ad_tagging/font.woff2" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/perf/page_sets/simple_canvas/resources/.*woff2" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="testing/libfuzzer/fuzzers/woff2_corpus/.*woff2" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/perf/testdata/.*dat" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/web_bundle/.*har" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/web_package/.*har" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="base/test/data/file_util/.*bin" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/dom_distiller/core/data/.*bin" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="media/formats/mp4/h264_annex_b_fuzz_corpus/.*bin" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/language/content/browser/ulp_language_code_locator/.*bin" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="fuchsia/engine/test/data/.*bin" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/zucchini/fuzzers/testdata/raw_or_ztf_gen_fuzzer/.*bin" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/language/content/browser/ulp_language_code_locator/.*bin" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/accessibility/fuzz_corpus/.*bin" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/download/.*bin" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/omnibox/.*bin" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="base/test/data/.*dll" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/zucchini/fuzzers/testdata/.*dll" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/zucchini/fuzzers/testdata/old_eventlog_provider.dll" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/autofill/heuristics/output/.*out" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/cast_certificate/testsuite/testsuite1.pb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/safe_browsing/content/resources/empty_file_type_policy.pb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/paint_preview/PaintPreviewTestService/wikipedia/proto.pb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="chromeos/test/data/smart_dim/20181115_example_preprocessor_config.pb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/web_bundle/.*wbn" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/web_package/.*wbn" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="pdf/pdfium/fuzzers/corpora/pdf_codec_tiff/not_kitty.tiff" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/webp_transcode/test_small.tiff" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/download-test1.lib" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/download/download-test.lib" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/media/bear_pcm_s24be.mov" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/media/bear_pcm_s16be.mov" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/media/bear.flac" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/sxg/.*cbor" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/fuzzer_corpus/signed_exchange_certificate_chain_data/wildcard_example.org.public.pem.cbor" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/gpu/mediapipe/.*wasm" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/interest_group/multiply.wasm" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/file_manager/image_loader/piex/piex.out.wasm" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ash/webui/camera_app_ui/resources/js/lib/ffmpeg.wasm" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/ui/ui_devtools/images/.*gif" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="pdf/pdfium/fuzzers/corpora/pdf_codec_gif/not_kitty.gif" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="headless/test/data/.*gif" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/perf/page_sets/key_idle_power_cases/animated-10color.gif" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="fuchsia/engine/test/data/1x1.gif" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/resources/cursors/.*cur" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/media/.*avi" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/media/.*ogv" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="printing/test/data/emf/test4.emf" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/printing/unsorted_custompapers.plist" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/.*ico" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/gfx/.*ico" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/binary_size/libsupersize/viewer/static/.*ico" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/grit/grit/testdata/.*ico" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="cloud_print/virtual_driver/win/install/resources/.*ico" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/win/ChromeDebug/ChromeDebug/Resources/.*ico" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="remoting/resources/.*ico" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/web_test/renderer/resources/fonts/.*ttf" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="headless/test/data/.*ttf" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ash/keyboard/ui/resources/.*ttf" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/.*ttf" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="skia/ext/data/test_fonts/.*ttf" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/.*ttf" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/sxg/.*sxg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/shell/app/app.icns" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="native_client/src/untrusted/irt_stub/libppapi.so" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ppapi/native_client/src/untrusted/irt_stub/libppapi.so" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/zucchini/fuzzers/testdata/imposed_ensemble_matcher_fuzzer/seed.asciipb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/accessibility/extensions/colorenhancer/res/cvd-128.xcf" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/origin_trials/eftest.key" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/origin_trials/eftest2.key" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="net/tools/testserver/dist/_ssl.pyd" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="net/tools/testserver/dist/_socket.pyd" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/download/gzip-content.gz" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="extensions/test/data/extension_with_gzipped_locales/_locales/.*gz" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/.*jpg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="remoting/ios/app/resources/Assets.xcassets/.*jpg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/accessibility/browser/figures/.*jpg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/images/.*jpg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/security/.*jpg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/speed/.*jpg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/testing/.*jpg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/ui/.*jpg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/accessibility/browser/images/cover_flow.jpg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/test/data/.*jpg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="pdf/pdfium/fuzzers/corpora/pdf_codec_jpeg/not_kitty.jpg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/.*jpg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/binary_size/libsupersize/testdata/mock_apk/assets/.*pak" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/grit/grit/testdata/resources.pak" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ppapi/native_client/src/untrusted/irt_stub/libppapi.a" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/binary_size/libsupersize/testdata/mock_source_directory/out/Release/obj/third_party/WebKit.a" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/gpu/mediapipe/face_mesh_test/face_mesh.binarypb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/cast_channel/fuzz_corpus/cast_message0" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/browser/indexed_db/fuzzer_corpus/encoded_indexed_db_key/encoded_date_key" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/cast_channel/fuzz_corpus/cast_message2" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="components/test/data/update_client/jebgalgnebhfojomionfpkfelancnnkf/component1.dll" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*bsdiff" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*linkerscript" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*der" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*icns" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*so" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*a" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*asciipb" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*pk8" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*p12" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*pkg" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*pak" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*pak" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*xcf" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*jpg" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="components/zucchini/fuzzers/testdata/patch_fuzzer/empty.zuc" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="native_client_sdk/src/libraries/xray/xray.odt" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="tools/win/ChromeDebug/ChromeDebug/ChromeDebug.vsct" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="components/test/data/crx_file/valid.crx2" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="components/test/data.*tflite" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/.*tflite" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="content/test/data/indexeddb/missing_sst/file__0.indexeddb.leveldb/000008.sst" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="content/test/data.*3gp" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/.*3gp" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="net/data/ssl/certificates/treadclimber.sctlist" desc="Binary file screening" />
-                <filteritem type="filepath" name=".*gz" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="net/data/url_request_unittest/BullRunSpeech.txt.deflate" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="components/services/storage/test_data/legacy_dom_storage_database.localstorage" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="native_client_sdk/src/tools/lib/tests/data/test.bc" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="net/data/filter_unittests/google.br" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="pdf/pdfium/fuzzers/corpora/pdf_jpx/not_kitty.jp2" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*key" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="courgette/testdata.*" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="courgette/testdata/.*exe" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="courgette/testdata/chrome64-1-2.v1.bsdiff" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="courgette/testdata/elf-.*" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="courgette/testdata/.*dll" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="courgette/testdata/setup1-setup2.v1.bsdiff" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="components/test/data/service_worker/created_by_origin_impl/Database/MANIFEST-000001" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="ohos/third_party/ohpm/node_modules/clone/LICENSE" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="device/fido/response_data_fuzzer_corpus.*" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="device/fido/response_data_fuzzer_corpus/get_assertion_response_corpus" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="device/fido/response_data_fuzzer_corpus/make_credential_response_corpus" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="device/fido/response_data_fuzzer_corpus/register1" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="device/fido/response_data_fuzzer_corpus/sign0" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="device/fido/response_data_fuzzer_corpus/sign1" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="extensions/test/data/bigfile" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="ios/chrome/browser/crash_report/seed_corpuses.*" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="net/data/pac_file_fetcher_unittest.*" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="sql/test/data/recovery_387868" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="testing/libfuzzer/fuzzers/flatbuffers_corpus/monsterdata_test.mon" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="testing/scripts/variations_smoke_test_data/webview_test_seed" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="tools/luci-go.*" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="tools/win/ChromeDebug/LowLevel.*cs" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="ui/display/util/fuzz_corpus.*" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="content/browser/indexed_db/fuzzer_corpus/indexed_db_key.*" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="components/test/data/update_client.*" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/luci-go/isolate" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/luci-go/swarming" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/win/ChromeDebug/LowLevel/.*cs" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/display/util/fuzz_corpus/.*" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/browser/indexed_db/fuzzer_corpus/indexed_db_key/date_type" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/browser/indexed_db/fuzzer_corpus/indexed_db_key/binary_type" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/browser/indexed_db/fuzzer_corpus/indexed_db_key/array_type" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/update_client/.*crx" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/update_client/.*crx3" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/update_client/.*bin" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/update_client/ihfokbkgjpifnbbojhneepfflplebdkc/ihfokbkgjpifnbbojhneepfflplebdkc_2/a_changing_binary_file" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/update_client/ihfokbkgjpifnbbojhneepfflplebdkc/ihfokbkgjpifnbbojhneepfflplebdkc_1to2_bad/f3" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/update_client/ihfokbkgjpifnbbojhneepfflplebdkc/ihfokbkgjpifnbbojhneepfflplebdkc_1to2/f1" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="content/test/data/indexeddb/corrupt_leveldb/file__0.indexeddb.leveldb/MANIFEST-000002" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/update_client/ihfokbkgjpifnbbojhneepfflplebdkc/ihfokbkgjpifnbbojhneepfflplebdkc_1/a_changing_binary_file" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="ios/testing/data/http_server_files/redchair.usdz" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="net/data/spdy_tests/examples_07.hpack" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="tools/skia_goldctl/linux/goldctl" desc="chromium原生二进制文件,不会使用" />
@@ -255,152 +445,58 @@ used to filter file path.
                 <filteritem type="filepath" name="ios/chrome/test/data/voice/test_sound.m4a" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="media/base/android/java/res/raw/empty.wav" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="tools/binary_size/libsupersize/testdata/mock_source_directory/out/Release/obj/third_party/ffmpeg/libffmpeg_internal.a" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="components/test/data/paint_preview/PaintPreviewTestService/wikipedia.*skp" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/paint_preview/PaintPreviewTestService/wikipedia/.*skp" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="content/test/data/indexeddb/schema_version_123456/file__0.indexeddb.leveldb/MANIFEST-000002" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="tools/stats_viewer/Properties/Settings.settings" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="content/test/data/indexeddb.*" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/indexeddb/v3_migration_test/file__0.indexeddb.blob/1/00/5" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="cloud_print/virtual_driver/win/install/inf/gcp_driver.inf" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="content/test/data/cache_storage/padding_v2/0430f1a484a0ea6d8de562488c5fbeec0111d16f/676288ed-4de0-44af-97d6-dbd75b07a8a3/index-dir/the-real-index" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="tools/traffic_annotation/bin/linux64/traffic_annotation_auditor" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="components/test/data/ad_tagging/bear-320x240-video-only.webm" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="weblayer/test/data/bear.webm" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="headless/test/data/protocol/emulation/resources/video.webm" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="components/test/data/autofill/automated_integration/testdata/Default/Web Data" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="pdf/pdfium/fuzzers/corpora/pdf_codec_bmp/not_kitty.bmp" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="tools/mac/icons/additional_tools/README" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="tools/win/ChromeDebug.*snk" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*keychain" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name=".*pyd" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/win/ChromeDebug/.*snk" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="tools/binary_size/libsupersize/testdata/mock_source_directory/third_party/gvr-android-sdk/libgvr_shim_static_arm.a" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="services/device/hid/fuzz_corpus.*" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="net/data/url_request_unittest/gzip-encoded" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="components/test/data/history.*" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/hid/fuzz_corpus/report0" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/hid/fuzz_corpus/report1" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/hid/fuzz_corpus/report2" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/hid/fuzz_corpus/report3" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/hid/fuzz_corpus/report4" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/indexeddb/crbug899446/file__0.indexeddb.leveldb/MANIFEST-000001" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/indexeddb/missing_sst/file__0.indexeddb.leveldb/MANIFEST-000007" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/indexeddb/ssv_version_987654/file__0.indexeddb.leveldb/MANIFEST-000002" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/indexeddb/v3_migration_test/file__0.indexeddb.leveldb/MANIFEST-000001" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/indexeddb/crbug899446_noai/file__0.indexeddb.leveldb/MANIFEST-000001" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/history/HistoryNoDuration" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/history/HistoryNoSource" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/history/History_with_starred" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="content/test/data/cache_storage/padding_v2/0430f1a484a0ea6d8de562488c5fbeec0111d16f/676288ed-4de0-44af-97d6-dbd75b07a8a3/4bfb34f348c2269e_0" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="components/test/data/value_store/MANIFEST-000004" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="content/test/data/cache_storage/padding_v2/0430f1a484a0ea6d8de562488c5fbeec0111d16f/676288ed-4de0-44af-97d6-dbd75b07a8a3/index" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="ohos/third_party/ohpm/resources/.ohpmrc" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="native_client_sdk/src/doc/reference/ideas.rst" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="native_client_sdk/src/tools/lib/tests/data/test.pexe" desc="chromium原生二进制文件,不会使用" />
                 <filteritem type="filepath" name="tools/resultdb/result_adapter" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="test/data.*" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="services/device/usb/fuzz_corpus.*" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="buildtools/linux64.*" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="components/payments/content/utility/payment_web_app_manifest_fuzzer_corpus.*" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="components/test/data/update_client/ihfokbkgjpifnbbojhneepfflplebdkc/ihfokbkgjpifnbbojhneepfflplebdkc_2.*" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="media/midi/fuzz/corpus.*" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="media/midi/fuzz/usb_midi_descriptor_corpus.*" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="media/test/data.*" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="net/data/fuzzer_data.*" desc="chromium原生二进制文件,不会使用" />
-                <filteritem type="filepath" name="buildtools/third_party/eu-strip/bin.*" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/usb/fuzz_corpus/descriptor0" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/usb/fuzz_corpus/descriptor1" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/usb/fuzz_corpus/descriptor2" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/usb/fuzz_corpus/descriptor3" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/usb/fuzz_corpus/descriptor4" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/usb/fuzz_corpus/descriptor5" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/usb/fuzz_corpus/descriptor6" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/usb/fuzz_corpus/descriptor7" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/usb/fuzz_corpus/webusb_descriptors_unittest_example" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/usb/fuzz_corpus/usb_string_descriptors_example" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="buildtools/linux64/clang-format" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="buildtools/linux64/gn" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/payments/content/utility/payment_web_app_manifest_fuzzer_corpus/input26" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/update_client/ihfokbkgjpifnbbojhneepfflplebdkc/ihfokbkgjpifnbbojhneepfflplebdkc_2/a_changing_binary_file" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="media/midi/fuzz/corpus/.*" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="media/midi/fuzz/usb_midi_descriptor_corpus/.*" desc="chromium原生二进制文件,不会使用" />
                 </filefilter>
         </filefilterlist>
         <licensematcherlist>
-          
-
-            <licensematcher name="webressources" desc="">
-                <licensetext name="
-                * Modified 1997-2009 by Guido Vollbeding.
-                * libjpeg-turbo Modifications:
-                * Copyright (C) 2009, 2011, 2014-2015, 2018, 2020, D. R. Commander.
-                * For conditions of distribution and use, see the accompanying README.ijg
-                * file.
-                *
-                * This file contains additional configuration options that customize the
-                * JPEG software for special applications or support machine-dependent
-                * optimizations.  Most users will not need to touch this file.
-            " desc="" />
-            </licensematcher>
-
-            <licensematcher name="X11-Style (FSF)" desc="">
-                <licensetext name="
-                Permission is hereby granted, free of charge, to any person obtaining a  *
-                * copy of this software and associated documentation files (the            *
-                * &quot;Software&quot;), to deal in the Software without restriction, including      *
-                * without limitation the rights to use, copy, modify, merge, publish,      *
-                * distribute, distribute with modifications, sublicense, and/or sell       *
-                * copies of the Software, and to permit persons to whom the Software is    *
-                * furnished to do so, subject to the following conditions:                 *
-                *                                                                          *
-                * The above copyright notice and this permission notice shall be included  *
-                * in all copies or substantial portions of the Software.                   *
-                *                                                                          *
-                * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS  *
-                * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF               *
-                * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.   *
-                * IN NO EVENT SHALL THE ABOVE COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,   *
-                * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR    *
-                * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR    *
-                * THE USE OR OTHER DEALINGS IN THE SOFTWARE.                               *
-                *                                                                          *
-                * Except as contained in this notice, the name(s) of the above copyright   *
-                * holders shall not be used in advertising or otherwise to promote the     *
-                * sale, use or other dealings in this Software without prior written       *
-                * authorization.                       
-            " desc="" />
-            </licensematcher>
-
-            <licensematcher name="MIT-open-group" desc="">
-                <licensetext name="
-                            Permission to use, copy, modify, distribute, and sell this software and its
-            documentation for any purpose is hereby granted without fee, provided that
-            the above copyright notice appear in all copies and that both that
-            copyright notice and this permission notice appear in supporting
-            documentation.
-
-            The above copyright notice and this permission notice shall be included in
-            all copies or substantial portions of the Software.
-
-            THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-            IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-            FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
-            OPEN GROUP BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
-            AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-            CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-            Except as contained in this notice, the name of The Open Group shall not be
-            used in advertising or otherwise to promote the sale, use or other dealings
-            in this Software without prior written authorization from The Open Group.
-            " desc="" />
-            </licensematcher>
-
-            <licensematcher name="ICU" desc="">
-                <licensetext name="
-                Permission is hereby granted, free of charge, to any person obtaining a
-                * copy of this software and associated documentation files (the &quot;Soft-
-                * ware&quot;), to deal in the Software without restriction, including without
-                * limitation the rights to use, copy, modify, merge, publish, distribute,
-                * and/or sell copies of the Software, and to permit persons to whom the
-                * Software is furnished to do so, provided that the above copyright
-                * notice(s) and this permission notice appear in all copies of the Soft-
-                * ware and that both the above copyright notice(s) and this permission
-                * notice appear in supporting documentation.
-                *
-                * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS
-                * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABIL-
-                * ITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY
-                * RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN
-                * THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSE-
-                * QUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
-                * DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
-                * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFOR-
-                * MANCE OF THIS SOFTWARE.
-                *
-                * Except as contained in this notice, the name of a copyright holder shall
-                * not be used in advertising or otherwise to promote the sale, use or
-                * other dealings in this Software without prior written authorization of
-                * the copyright holder.
-                *
-                * Authors:
-                *   Kristian Høgsberg (krh@redhat.com)
-            " desc="" />
-            </licensematcher>
-            
-            <licensematcher name="FSFAP" desc="">
-                <licensetext name="
-                Copying and distribution of this file, with or without modification,
-                are permitted in any medium without royalty provided the copyright
-                notice and this notice are preserved. 
-            " desc="" />
-            </licensematcher>
-
             <licensematcher name="Khronos License" desc="">
                 <licensetext name="
               Permission is hereby granted, free of charge, to any person obtaining a
@@ -423,166 +519,66 @@ used to filter file path.
                 ** MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
             " desc="" />
             </licensematcher>
-            
-            <licensematcher name="Zlib" desc="">
+            <licensematcher name="LicenseRef-scancode-mit-synopsys" desc="">
                 <licensetext name="
-                * For conditions of distribution and use, see copyright notice in zlib.h
-            " desc="" />
-            </licensematcher>
-                     
-            <licensematcher name="HPND" desc="">
-                <licensetext name="
-                Permission to use, copy, modify, and distribute this
-                software and its documentation for any purpose and without
-                fee is hereby granted, provided that the above copyright
-                notice appear in all copies and that both that copyright
-                notice and this permission notice appear in supporting
-                documentation, and that the name of Silicon Graphics not be
-                used in advertising or publicity pertaining to distribution
-                of the software without specific prior written permission.
-                Silicon Graphics makes no representation about the suitability
-                of this software for any purpose. It is provided &quot;as is&quot;
-                without any express or implied warranty.
+                    This package is a JavaScript porting of `wcwidth()` implementation
+                    [by Markus Kuhn](http://www.cl.cam.ac.uk/~mgk25/ucs/wcwidth.c).
 
-                SILICON GRAPHICS DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS
-                SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-                AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL SILICON
-                GRAPHICS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL
-                DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
-                DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
-                OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION  WITH
-                THE USE OR PERFORMANCE OF THIS SOFTWARE.
-            " desc="" />
-            </licensematcher>
+                    Permission is hereby granted, free of charge, to any person obtaining a copy of
+                    this software and associated documentation files (the &quot;Software&quot;), to deal in
+                    the Software without restriction, including without limitation the rights to
+                    use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+                    of the Software, and to permit persons to whom the Software is furnished to do
+                    so, subject to the following conditions:
 
-            <licensematcher name="Apache-2.0" desc="">
-                <licensetext name="
-                * Licensed under Apache License v2.0.  See the file &quot;LICENSE&quot; for more
-                * information.
-            " desc="" />
-            </licensematcher>
-            
-            <licensematcher name="X11-Style (Tektronix)" desc="">
-                <licensetext name="
-                This file is a component of an X Window System-specific implementation
-                * of Xcms based on the TekColor Color Management System.  Permission is
-                * hereby granted to use, copy, modify, sell, and otherwise distribute this
-                * software and its documentation for any purpose and without fee, provided
-                * that this copyright, permission, and disclaimer notice is reproduced in
-                * all copies of this software and in supporting documentation.  TekColor
-                * is a trademark of Tektronix, Inc.
-                *
-                * Tektronix makes no representation about the suitability of this software
-                * for any purpose.  It is provided &quot;as is&quot; and with all faults.
-                *
-                * TEKTRONIX DISCLAIMS ALL WARRANTIES APPLICABLE TO THIS SOFTWARE,
-                * INCLUDING THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-                * PARTICULAR PURPOSE.  IN NO EVENT SHALL TEKTRONIX BE LIABLE FOR ANY
-                * SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER
-                * RESULTING FROM LOSS OF USE, DATA, OR PROFITS, WHETHER IN AN ACTION OF
-                * CONTRACT, NEGLIGENCE, OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
-                * CONNECTION WITH THE USE OR THE PERFORMANCE OF THIS SOFTWARE.
-            " desc="" />
-            </licensematcher>
-     
-            <licensematcher name="MIT With Modification Obligations" desc="">
-                <licensetext name="
-            *   Export of this software from the United States of America may
-            *   require a specific license from the United States Government.
-            *   It is the responsibility of any person or organization contemplating
-            *   export to obtain such a license before exporting.
-            *
-            * WITHIN THAT CONSTRAINT, permission to use, copy, modify, and
-            * distribute this software and its documentation for any purpose and
-            * without fee is hereby granted, provided that the above copyright
-            * notice appear in all copies and that both that copyright notice and
-            * this permission notice appear in supporting documentation, and that
-            * the name of M.I.T. not be used in advertising or publicity pertaining
-            * to distribution of the software without specific, written prior
-            * permission.  Furthermore if you modify this software you must label
-            * your software as modified software and not distribute it in such a
-            * fashion that it might be confused with the original M.I.T. software.
-            * M.I.T. makes no representations about the suitability of
-            * this software for any purpose.  It is provided &quot;as is&quot; without express
-            * or implied warranty.
-            " desc="" />
-            </licensematcher>
+                    The above copyright notice and this permission notice shall be included in all
+                    copies or substantial portions of the Software.
 
-            <licensematcher name="MIT" desc="">
-                <licensetext name="
-                * Permission is hereby granted, free of charge, to any person obtaining a
-                * copy of this software and/or associated documentation files (the
-                * &quot;Materials&quot;), to deal in the Materials without restriction, including
-                * without limitation the rights to use, copy, modify, merge, publish,
-                * distribute, sublicense, and/or sell copies of the Materials, and to
-                * permit persons to whom the Materials are furnished to do so, subject to
-                * the following conditions:
-                *
-                * The above copyright notice and this permission notice shall be included
-                * unaltered in all copies or substantial portions of the Materials.
-                * Any additions, deletions, or changes to the original source files
-                * must be clearly indicated in accompanying documentation.
-                *
-                * If only executable code is distributed, then the accompanying
-                * documentation must state that &quot;this software is based in part on the
-                * work of the Khronos Group.&quot;
-                *
-                * THE MATERIALS ARE PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND,
-                * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-                * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-                * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-                * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-                * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-                * MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
-            " desc="" />
-            </licensematcher>
 
-            <licensematcher name="HPND-sell-variant" desc="">
-                <licensetext name="
-                * Permission to use, copy, modify, distribute, and sell this software and its
-                * documentation for any purpose is hereby granted without fee, provided that
-                * the above copyright notice appear in all copies and that both that copyright
-                * notice and this permission notice appear in supporting documentation, and
-                * that the name of the copyright holders not be used in advertising or
-                * publicity pertaining to distribution of the software without specific,
-                * written prior permission.  The copyright holders make no representations
-                * about the suitability of this software for any purpose.  It is provided &quot;as
-                * is&quot; without express or implied warranty.
-                *
-                * THE COPYRIGHT HOLDERS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
-                * INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO
-                * EVENT SHALL THE COPYRIGHT HOLDERS BE LIABLE FOR ANY SPECIAL, INDIRECT OR
-                * CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
-                * DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
-                * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
-                * OF THIS SOFTWARE.
+                    THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+                    INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+                    FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR
+                    OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+                    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+                    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+                    BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+                    IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+                    ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+                    POSSIBILITY OF SUCH DAMAGE.
             " desc="" />
             </licensematcher>
-            
-            <licensematcher name="MIT License" desc="">
+            <licensematcher name="ISC" desc="">
                 <licensetext name="
-                * Permission is hereby granted, free of charge, to any person obtaining a
-                * copy of this software and associated documentation files (the
-                * &quot;Software&quot;), to deal in the Software without restriction, including
-                * without limitation the rights to use, copy, modify, merge, publish,
-                * distribute, sub license, and/or sell copies of the Software, and to
-                * permit persons to whom the Software is furnished to do so, subject to
-                * the following conditions:
-                *
-                * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-                * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-                * FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL
-                * THE COPYRIGHT HOLDERS, AUTHORS AND/OR ITS SUPPLIERS BE LIABLE FOR ANY CLAIM,
-                * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-                * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-                * USE OR OTHER DEALINGS IN THE SOFTWARE.
-                *
-                * The above copyright notice and this permission notice (including the
-                * next paragraph) shall be included in all copies or substantial portions
-                * of the Software.
-            " desc="" />
-            </licensematcher>
+                    Permission to use, copy, modify, and/or distribute this
+                    software for any purpose with or without fee is hereby
+                    granted, provided that the above copyright notice and this
+                    permission notice appear in all copies.
 
+                    THE SOFTWARE IS PROVIDED &quot;AS IS&quot; AND NPM DISCLAIMS ALL
+                    WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL
+                    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO
+                    EVENT SHALL NPM BE LIABLE FOR ANY SPECIAL, DIRECT,
+                    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+                    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+                    WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+                    TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE
+                    USE OR PERFORMANCE OF THIS SOFTWARE.
+            " desc="" />
+                <licensetext name="
+                    Permission to use, copy, modify, and/or distribute this software for
+                    any purpose with or without fee is hereby granted, provided that the
+                    above copyright notice and this permission notice appear in all copies.
+
+                    THE SOFTWARE IS PROVIDED &quot;AS IS&quot; AND THE COPYRIGHT HOLDER DISCLAIMS
+                    ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
+                    WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+                    COPYRIGHT HOLDER BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR
+                    CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+                    OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
+                    OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE
+                    USE OR PERFORMANCE OF THIS SOFTWARE.
+            " desc="" />
+            </licensematcher>
             <licensematcher name="BSD-3-Clause" desc="">
                 <licensetext name="
                 * Redistribution and use in source and binary forms, with or without
@@ -612,471 +608,6 @@ used to filter file path.
                 * DAMAGE.
             " desc="" />
             </licensematcher>
-
-            <licensematcher name="curl" desc="">
-                <licensetext name="
-                * This software is licensed as described in the file COPYING, which
-                * you should have received as part of this distribution. The terms
-                * are also available at https://curl.se/docs/copyright.html.
-                *
-                * You may opt to use, copy, modify, merge, publish, distribute and/or sell
-                * copies of the Software, and permit persons to whom the Software is
-                * furnished to do so, under the terms of the COPYING file.
-                *
-                * This software is distributed on an &quot;AS IS&quot; basis, WITHOUT WARRANTY OF ANY
-                * KIND, either express or implied.
-            " desc="" />
-            </licensematcher>
-            <licensematcher name="IJG" desc="">
-                <licensetext name="
-                * For conditions of distribution and use, see the accompanying README.ijg
-                * file.
-                *
-                * This file defines the application interface for the JPEG library.
-                * Most applications using the library need only include this file,
-                * and perhaps jerror.h if they want to know the exact error codes.
-            " desc="" />
-            </licensematcher>
-            <licensematcher name="X11" desc="">
-                <licensetext name="
-                Permission is hereby granted, free of charge, to any person obtaining a copy
-                of this software and associated documentation files (the &quot;Software&quot;), to deal
-                in the Software without restriction, including without limitation the rights
-                to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-                copies of the Software.
-                
-                The above copyright notice and this permission notice shall be included in
-                all copies or substantial portions of the Software.
-                
-                THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-                IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-                FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
-                DIGITAL EQUIPMENT CORPORATION BE LIABLE FOR ANY CLAIM, DAMAGES, INCLUDING,
-                BUT NOT LIMITED TO CONSEQUENTIAL OR INCIDENTAL DAMAGES, OR OTHER LIABILITY,
-                WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
-                IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-                
-                Except as contained in this notice, the name of Digital Equipment Corporation
-                shall not be used in advertising or otherwise to promote the sale, use or other
-                dealings in this Software without prior written authorization from Digital
-                Equipment Corporation.
-            " desc="" />
-            </licensematcher>
-            <licensematcher name="ICU" desc="">
-                <licensetext name="
-                * Permission is hereby granted, free of charge, to any person obtaining a
-                * copy of this software and associated documentation files (the &quot;Soft-
-                * ware&quot;), to deal in the Software without restriction, including without
-                * limitation the rights to use, copy, modify, merge, publish, distribute,
-                * and/or sell copies of the Software, and to permit persons to whom the
-                * Software is furnished to do so, provided that the above copyright
-                * notice(s) and this permission notice appear in all copies of the Soft-
-                * ware and that both the above copyright notice(s) and this permission
-                * notice appear in supporting documentation.
-                *
-                * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS
-                * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABIL-
-                * ITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY
-                * RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN
-                * THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSE-
-                * QUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
-                * DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
-                * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFOR-
-                * MANCE OF THIS SOFTWARE.
-                *
-                * Except as contained in this notice, the name of a copyright holder shall
-                * not be used in advertising or otherwise to promote the sale, use or
-                * other dealings in this Software without prior written authorization of
-                * the copyright holder.
-            " desc="" />
-            </licensematcher>
-            <licensematcher name="HPND-sell-variant" desc="">
-                <licensetext name="
-                * Permission to use, copy, modify, distribute, and sell this software and its
-                * documentation for any purpose is hereby granted without fee, provided that
-                * the above copyright notice appear in all copies and that both that
-                * copyright notice and this permission notice appear in supporting
-                * documentation, and that the name of the author(s) not be used in
-                * advertising or publicity pertaining to distribution of the software without
-                * specific, written prior permission.  The authors make no
-                * representations about the suitability of this software for any purpose.  It
-                * is provided &quot;as is&quot; without express or implied warranty.
-                *
-                * THE AUTHOR(S) DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
-                * INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO
-                * EVENT SHALL THE AUTHOR(S) BE LIABLE FOR ANY SPECIAL, INDIRECT OR
-                * CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
-                * DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
-                * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-                * PERFORMANCE OF THIS SOFTWARE.
-            " desc="" />
-            </licensematcher>
-            <licensematcher name="BSD-2-Clause" desc="">
-                <licensetext name="
-                * Redistribution and use in source and binary forms, with or without
-                * modification, are permitted provided that the following conditions
-                * are met:
-                * 1. Redistributions of source code must retain the above copyright
-                *    notice, this list of conditions and the following disclaimer.
-                * 2. Redistributions in binary form must reproduce the above copyright
-                *    notice, this list of conditions and the following disclaimer in the
-                *    documentation and/or other materials provided with the distribution.
-                *
-                * THIS SOFTWARE IS PROVIDED BY APPLE INC. &quot;AS IS&quot; AND ANY
-                * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-                * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-                * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL APPLE INC. OR
-                * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-                * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-                * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-                * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-                * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-                * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-                * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-            " desc="" />
-            </licensematcher>
-            <licensematcher name="BSD-Source-Code" desc="">
-                <licensetext name="
-                * Redistribution and use in source and binary forms, with or without
-                * modification, are permitted provided that the following conditions are
-                * met:
-                *
-                *     * Redistributions of source code must retain the above copyright
-                * notice, this list of conditions and the following disclaimer.
-                *     * Neither the name of Google Inc. nor the names of its
-                * contributors may be used to endorse or promote products derived from
-                * this software without specific prior written permission.
-                *
-                * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-                * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-                * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-                * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-                * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-                * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-                * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-                * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-                * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-                * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-                * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-            " desc="" />
-            </licensematcher>
-            <licensematcher name="HPND-sell-variant" desc="">
-                <licensetext name="
-                * Permission to use, copy, modify, distribute, and sell this software and its
-                * documentation for any purpose is hereby granted without fee, provided that
-                * the above copyright notice appear in all copies and that both that
-                * copyright notice and this permission notice appear in supporting
-                * documentation, and that the name of NCD. not be used in advertising or
-                * publicity pertaining to distribution of the software without specific,
-                * written prior permission.  NCD. makes no representations about the
-                * suitability of this software for any purpose.  It is provided &quot;as is&quot;
-                * without express or implied warranty.
-                *
-                * NCD. DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL
-                * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL NCD.
-                * BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-                * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
-                * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
-                * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-            " desc="" />
-            </licensematcher>
-            <licensematcher name="GFDL-1.1-or-later" desc="">
-                <licensetext name="
-                * Any part of this program may be used in documents licensed under
-                * the GNU Free Documentation License, Version 1.1 or any later version
-                * published by the Free Software Foundation.
-            " desc="" />
-            </licensematcher>
-            <licensematcher name="BSD-3-Clause" desc="">
-                <licensetext name="
-                * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
-                * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
-                * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
-                * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
-                *                                                                  *
-                * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2007             *
-                * by the Xiph.Org Foundation http://www.xiph.org/                  *
-            " desc="" />
-            </licensematcher>
-            <licensematcher name="BSD-2-Clause-Views" desc="">
-                <licensetext name="
-                * Redistribution and use in source and binary forms, with or without
-                * modification, are permitted provided that the following conditions are met:
-                * 
-                *    1. Redistributions of source code must retain the above copyright notice,
-                *       this list of conditions and the following disclaimer.
-                * 
-                *    2. Redistributions in binary form must reproduce the above copyright notice,
-                *       this list of conditions and the following disclaimer in the documentation
-                *       and/or other materials provided with the distribution.
-                * 
-                * THIS SOFTWARE IS PROVIDED BY TRESYS TECHNOLOGY, LLC ``AS IS'' AND ANY EXPRESS
-                * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-                * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
-                * EVENT SHALL TRESYS TECHNOLOGY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-                * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-                * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-                * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-                * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-                * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-                * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-                * 
-                * The views and conclusions contained in the software and documentation are those
-                * of the authors and should not be interpreted as representing official policies,
-                * either expressed or implied, of Tresys Technology, LLC.
-            " desc="" />
-            </licensematcher>
-            <licensematcher name="HPND-sell-variant" desc="">
-                <licensetext name="
-                * Permission to use, copy, modify, distribute, and sell this software and its
-                * documentation for any purpose is hereby granted without fee, provided that
-                * the above copyright notice appear in all copies and that both that
-                * copyright notice and this permission notice appear in supporting
-                * documentation, and that the name of SuSE not be used in advertising or
-                * publicity pertaining to distribution of the software without specific,
-                * written prior permission.  SuSE makes no representations about the
-                * suitability of this software for any purpose.  It is provided &quot;as is&quot;
-                * without express or implied warranty.
-                *
-                * SuSE DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL
-                * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL SuSE
-                * BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-                * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
-                * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
-                * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-            " desc="" />
-            </licensematcher>
-            <licensematcher name="NTP" desc="">
-                <licensetext name="
-                * Permission to use, copy, modify, and distribute this software and its
-                * documentation for any purpose and without fee is hereby granted, provided
-                * that the above copyright notice appear in all copies and that both that
-                * copyright notice and this permission notice appear in supporting
-                * documentation, and that the name of N.C.D. not be used in advertising or
-                * publicity pertaining to distribution of the software without specific,
-                * written prior permission.  N.C.D. makes no representations about the
-                * suitability of this software for any purpose.  It is provided &quot;as is&quot;
-                * without express or implied warranty.
-            " desc="" />
-            </licensematcher>
-            <licensematcher name="Historical Permission Notice and Disclaimer" desc="">
-                <licensetext name="
-                Permission to use, copy, modify, and distribute this software and its
-                documentation for any purpose and without fee is hereby granted,
-                provided that the above copyright notice appear in all copies and that
-                both that copyright notice and this permission notice appear in
-                supporting documentation, and that the name of Digital not be
-                used in advertising or publicity pertaining to distribution of the
-                software without specific, written prior permission.
-
-                DIGITAL DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
-                ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL
-                DIGITAL BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR
-                ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
-                WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
-                ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
-                SOFTWARE.
-            " desc="" />
-            </licensematcher>
-            <licensematcher name="HPND-sell-variant" desc="">
-                <licensetext name="
-                * Permission to use, copy, modify, distribute, and sell this software and
-                * its documentation for any purpose is hereby granted without fee, provided
-                * that the above copyright notice appear in all copies and that both that
-                * copyright notice and this permission notice appear in supporting
-                * documentation, and that the name of Network Computing Devices
-                * not be used in advertising or publicity pertaining to distribution
-                * of the software without specific, written prior permission.
-                *
-                * NETWORK COMPUTING DEVICES DISCLAIMs ALL WARRANTIES WITH REGARD TO
-                * THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-                * AND FITNESS, IN NO EVENT SHALL NETWORK COMPUTING DEVICES BE LIABLE
-                * FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-                * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN
-                * AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING
-                * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-            " desc="" />
-            </licensematcher>
-            <licensematcher name="MIT-License-1998" desc="">
-                <licensetext name="
-                * Permission to use, copy, modify, distribute, and sell this software and its
-                * documentation for any purpose is hereby granted without fee, provided that
-                * the above copyright notice appear in all copies and that both that
-                * copyright notice and this permission notice appear in supporting
-                * documentation, and that the names of the above listed copyright holder(s)
-                * not be used in advertising or publicity pertaining to distribution of
-                * the software without specific, written prior permission.  The above listed
-                * copyright holder(s) make(s) no representations about the suitability of
-                * this software for any purpose.  It is provided &quot;as is&quot; without express or
-                * implied warranty.
-            " desc="" />
-            </licensematcher>
-            <licensematcher name="HPND-sell-variant" desc="">
-                <licensetext name="
-                * Permission to use, copy, modify, distribute, and sell this software and its
-                * documentation for any purpose is hereby granted without fee, provided that
-                * the above copyright notice appear in all copies and that both that
-                * copyright notice and this permission notice appear in supporting
-                * documentation, and that the name of Keith Packard not be used in
-                * advertising or publicity pertaining to distribution of the software without
-                * specific, written prior permission.  Keith Packard makes no
-                * representations about the suitability of this software for any purpose.  It
-                * is provided &quot;as is&quot; without express or implied warranty.
-                *
-                * KEITH PACKARD DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
-                * INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO
-                * EVENT SHALL KEITH PACKARD BE LIABLE FOR ANY SPECIAL, INDIRECT OR
-                * CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
-                * DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
-                * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-                * PERFORMANCE OF THIS SOFTWARE.
-            " desc="" />
-            </licensematcher>
-            <licensematcher name="HPND" desc="">
-                <licensetext name="
-                All Rights Reserved
-
-                Permission to use, copy, modify, and distribute this software and its
-                documentation for any purpose and without fee is hereby granted,
-                provided that the above copyright notice appear in all copies and that
-                both that copyright notice and this permission notice appear in
-                supporting documentation, and that the names of Digital or MIT not be
-                used in advertising or publicity pertaining to distribution of the
-                software without specific, written prior permission.
-                
-                DIGITAL DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
-                ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL
-                DIGITAL BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR
-                ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
-                WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
-                ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
-                SOFTWARE.
-            " desc="" />
-            </licensematcher>
-            <licensematcher name="IJG" desc="">
-                <licensetext name="
-                * This file was part of the Independent JPEG Group's software:
-                * Copyright (C) 1994-1997, Thomas G. Lane.
-                * Modified 1997-2009 by Guido Vollbeding.
-                * libjpeg-turbo Modifications:
-                * Copyright (C) 2014, 2017, D. R. Commander.
-                * For conditions of distribution and use, see the accompanying README.ijg
-                * file.
-                *
-                * This file defines the error and message codes for the JPEG library.
-                * Edit this file to add new codes, or to translate the message strings to
-                * some other language.
-                * A set of error-reporting macros are defined too.  Some applications using
-                * the JPEG library may wish to include this file to get the error codes
-                * and/or the macros.
-            " desc="" />
-            </licensematcher>
-            <licensematcher name="BSD-3-Clause" desc="">
-                <licensetext name="
-                * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
-                * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
-                * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
-                * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
-                *                                                                  *               
-            " desc="" />
-            </licensematcher>
-            <licensematcher name="Carnegie Mellon Simple License" desc="">
-                <licensetext name="
-                * Permission to use, copy, modify, and distribute this software and its
-                * documentation is hereby granted, provided that the above copyright
-                * notice appears in all copies.  This software is provided without any
-                * warranty, express or implied.  Red Hat makes no representations about
-                * the suitability of this software for any purpose.
-                *
-                * IN NO EVENT SHALL RED HAT BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
-                * SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OF
-                * THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF RED HAT HAS BEEN ADVISED
-                * OF THE POSSIBILITY OF SUCH DAMAGE.      
-            " desc="" />
-            </licensematcher>
-
-
-            <licensematcher name="MIT License 1998" desc="">
-                <licensetext name="
-                * Permission to use, copy, modify, distribute, and sell this software
-                * and its documentation for any purpose is hereby granted without fee,
-                * provided that the above copyright notice appears in all copies and
-                * that both that copyright notice and this permission notice appear in
-                * supporting documentation, and that the name of Sun Microsystems not be used
-                * in advertising or publicity pertaining to distribution of the software
-                * without specific, written prior permission. Sun Microsystems makes no
-                * representations about the suitability of this software for any
-                * purpose.  It is provided &quot;as is&quot; without express or implied warranty.
-            " desc="" />
-            </licensematcher>
-            <licensematcher name="MIT License" desc="">
-                <licensetext name="
-                * All Rights Reserved.
-                *
-                * Permission is hereby granted, free of charge, to any person obtaining
-                * a copy of this software and associated documentation files (the
-                * &quot;Software&quot;), to deal in the Software without restriction, including
-                * without limitation on the rights to use, copy, modify, merge,
-                * publish, distribute, sublicense, and/or sell copies of the Software,
-                * and to permit persons to whom the Software is furnished to do so,
-                * subject to the following conditions:
-                *
-                * The above copyright notice and this permission notice (including the
-                * next paragraph) shall be included in all copies or substantial
-                * portions of the Software.
-                *
-                * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND,
-                * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-                * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-                * NON-INFRINGEMENT.  IN NO EVENT SHALL RED HAT AND/OR THEIR SUPPLIERS
-                * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-                * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-                * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-                * SOFTWARE.
-            " desc="" />
-            </licensematcher>
-            <licensematcher name="Independent JPEG Group License" desc="">
-                <licensetext name="
-                *
-                * This file was part of the Independent JPEG Group's software:
-                * Copyright (C) 1991-1997, Thomas G. Lane.
-                * Modified 1997-2009 by Guido Vollbeding.
-                * libjpeg-turbo Modifications:
-                * Copyright (C) 2015-2016, D. R. Commander.
-                * Copyright (C) 2015, Google, Inc.
-                * For conditions of distribution and use, see the accompanying README.ijg
-                * file.
-                *
-                * This file provides common declarations for the various JPEG modules.
-                * These declarations are considered internal to the JPEG library; most
-                * applications using the library shouldn't need to include this file.
-            " desc="" />
-            </licensematcher>
-            <licensematcher name="Sleepycat" desc="">
-                <licensetext name="
-                Permission to use, duplicate, change, and distribute this software and
-                its documentation for any purpose and without fee is granted, provided
-                that the above copyright notice appear in such copy and that this
-                copyright notice appear in all supporting documentation, and that the
-                names of Apollo Computer Inc., the Hewlett-Packard Company, or the X
-                Consortium not be used in advertising or publicity pertaining to
-                distribution of the software without written prior permission.
-
-                HEWLETT-PACKARD MAKES NO WARRANTY OF ANY KIND WITH REGARD
-                TO THIS SOFWARE, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-                WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-                PURPOSE.  Hewlett-Packard shall not be liable for errors
-                contained herein or direct, indirect, special, incidental or
-                consequential damages in connection with the furnishing,
-                performance, or use of this material.
-
-                This software is not subject to any license of the American
-                Telephone and Telegraph Company or of the Regents of the
-                University of California.
-            " desc="" />
-            </licensematcher>
-
-      
             <licensematcher name="MIT" desc="">
                 <licensetext name="
                 * All Rights Reserved.
@@ -1101,6 +632,18 @@ used to filter file path.
                 * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
                 * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
                 * SOFTWARE.
+            " desc="" />
+            <licensetext name="
+                * MIT LICENSE
+            " desc="" />
+            <licensetext name="
+                /* MIT license */
+            " desc="" />
+            <licensetext name="
+                // MIT License
+            " desc="" />
+            <licensetext name="
+                * MIT LICENSE
             " desc="" />
             </licensematcher>
             <licensematcher name="NCSA" desc="">
@@ -1117,33 +660,6 @@ used to filter file path.
                 * 2.0. For details, see http://oss.sgi.com/projects/FreeB/ .
             " desc="" />
             </licensematcher>
-            <licensematcher name="Sleepycat" desc="">
-                <licensetext name="
-                * All rights reserved.
-                *
-                * Redistribution and use in source and binary forms, with or without
-                * modification, are permitted provided that the following conditions
-                * are met:
-                * 1. Redistributions of source code must retain the above copyright
-                *    notice, this list of conditions and the following disclaimer.
-                * 2. Redistributions in binary form must reproduce the above copyright
-                *    notice, this list of conditions and the following disclaimer in the
-                *    documentation and/or other materials provided with the distribution.
-                * 3. The name of the author may not be used to endorse or promote products
-                *    derived from this software without specific prior written permission.
-                *
-                * THIS SOFTWARE IS PROVIDED BY THE AUTHOR &quot;AS IS&quot; AND ANY EXPRESS OR
-                * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-                * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-                * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
-                * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-                * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-                * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-                * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-                * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-                * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-                " desc="" />
-            </licensematcher>
             <licensematcher name="CC-PDDC" desc="">
                 <licensetext name="
                 * This software is Public Domain. To view a copy of the public domain dedication,
@@ -1152,336 +668,13 @@ used to filter file path.
                 *
                 * I ask and expect, but do not require, that all derivative works contain an
                 * attribution similar to:
-                * 	Parts developed by Adam Langley &lt;agl@imperialviolet.org&gt;
+                *  Parts developed by Adam Langley &lt;agl@imperialviolet.org&gt;
                 *
                 * You may wish to replace the word &quot;Parts&quot; with something else depending on
                 * the amount of original code.
                 *
                 * (Derivative works does not include programs which link against, run or include
                 * the source verbatim in their source distributions)
-                " desc="" />
-            </licensematcher>
-            <licensematcher name="BSD-3-Clause" desc="">
-                <licensetext name="
-                All rights reserved.
-                Redistribution and use in source and binary forms, with or without
-                modification, are permitted provided that the following conditions are met:
-                  * Redistributions of source code must retain the above copyright notice,
-                    this list of conditions and the following disclaimer.
-                  * Redistributions in binary form must reproduce the above copyright notice,
-                    this list of conditions and the following disclaimer in the documentation
-                    and/or other materials provided with the distribution.
-                  * Neither the name Facebook nor the names of its contributors may be used to
-                    endorse or promote products derived from this software without specific
-                    prior written permission.
-                THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
-                AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-                IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-                DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-                FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-                DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-                SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-                CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-                OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-                OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-                " desc="" />
-            </licensematcher>
-            <licensematcher name="BSD-3-Clause" desc="">
-                <licensetext name="
-                * Redistribution and use in source and binary forms, with or without
-                * modification, are permitted provided that the following conditions
-                * are met:
-                * 1. Redistributions of source code must retain the above copyright
-                *    notice, this list of conditions and the following disclaimer.
-                * 2. Redistributions in binary form must reproduce the above copyright
-                *    notice, this list of conditions and the following disclaimer in the
-                *    documentation and/or other materials provided with the distribution.
-                * 3. The name of the author may not be used to endorse or promote products
-                *    derived from this software without specific prior written permission.
-                *
-                * THIS SOFTWARE IS PROVIDED BY SUN MICROSYSTEMS, INC. ``AS IS'' AND ANY
-                * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-                * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-                * DISCLAIMED. IN NO EVENT SHALL SUN MICROSYSTEMS, INC. BE LIABLE FOR ANY
-                * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-                * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-                * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-                * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-                * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-                * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
-                " desc="" />
-            </licensematcher>
-            <licensematcher name="MIT License" desc="">
-                <licensetext name="
-                * All Rights Reserved.
-                *
-                * Permission is hereby granted, free of charge, to any person obtaining
-                * a copy of this software and associated documentation files (the
-                * &quot;Software&quot;), to deal in the Software without restriction, including
-                * without limitation on the rights to use, copy, modify, merge,
-                * publish, distribute, sublicense, and/or sell copies of the Software,
-                * and to permit persons to whom the Software is furnished to do so,
-                * subject to the following conditions:
-                *
-                * The above copyright notice and this permission notice (including the
-                * next paragraph) shall be included in all copies or substantial
-                * portions of the Software.
-                *
-                * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND,
-                * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-                * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-                * NON-INFRINGEMENT.  IN NO EVENT SHALL RED HAT AND/OR THEIR SUPPLIERS
-                * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-                * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-                * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-                * SOFTWARE.
-                " desc="" />
-            </licensematcher>
-            <licensematcher name="GPL-1.0-or-later" desc="">
-                <licensetext name="
-                * Redistribution and use in source and binary forms, with or without
-                * modification, are permitted provided that the following conditions
-                * are met:
-                * 1. Redistributions of source code must retain the above copyright
-                *    notice, and the entire permission notice in its entirety,
-                *    including the disclaimer of warranties.
-                * 2. Redistributions in binary form must reproduce the above copyright
-                *    notice, this list of conditions and the following disclaimer in the
-                *    documentation and/or other materials provided with the distribution.
-                * 3. The name of the author may not be used to endorse or promote
-                *    products derived from this software without specific prior
-                *    written permission.
-                *
-                * ALTERNATIVELY, this product may be distributed under the terms of
-                * the GNU Public License, in which case the provisions of the GPL are
-                * required INSTEAD OF the above restrictions.  (This clause is
-                * necessary due to a potential bad interaction between the GPL and
-                * the restrictions contained in a BSD-style copyright.)
-                *
-                * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED
-                * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-                * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-                * DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT,
-                * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-                * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-                * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-                * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-                * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-                * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-                * OF THE POSSIBILITY OF SUCH DAMAGE.
-                " desc="" />
-            </licensematcher>
-            <licensematcher name="NTP" desc="">
-                <licensetext name="
-                * Permission to use, copy, modify, and distribute this software and its     *
-                * documentation for any purpose and without fee is hereby granted, provided *
-                * that the above copyright notice appears in all copies and that both the   *
-                * copyright notice and this permission notice appear in supporting          *
-                * documentation, and that the name University of Delaware not be used in    *
-                * advertising or publicity pertaining to distribution of the software       *
-                * without specific, written prior permission.  The University of Delaware   *
-                * makes no representations about the suitability this software for any      *
-                * purpose.  It is provided &quot;as is&quot; without express or implied warranty.     *
-                " desc="" />
-            </licensematcher>
-            <licensematcher name="BSD-3-Clause with X11 disclaimer" desc="">
-                <licensetext name="
-                // All rights reserved.
-
-                // Redistribution and use in source and binary forms, with or without
-                // modification, are permitted provided that the following conditions are met:
-                
-                // * Redistributions of source code must retain the above copyright notice, this
-                //   list of conditions and the following disclaimer.
-                // * Redistributions in binary form must reproduce the above copyright notice,
-                //   this list of conditions and the following disclaimer in the documentation
-                //   and/or other materials provided with the distribution.
-                // * Neither my name, Paul Hsieh, nor the names of any other contributors to the
-                //   code use may not be used to endorse or promote products derived from this
-                //   software without specific prior written permission.
-                
-                // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
-                // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-                // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-                // ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-                // LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-                // CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-                // SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-                // INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-                // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-                // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-                // POSSIBILITY OF SUCH DAMAGE.
-                " desc="" />
-            </licensematcher>
-            <licensematcher name="MIT" desc="">
-                <licensetext name="
-                * All Rights Reserved.
-                *
-                * Permission is hereby granted, free of charge, to any person obtaining a
-                * copy of this software and associated documentation files (the &quot;Software&quot;),
-                * to deal in the Software without restriction, including without limitation
-                * on the rights to use, copy, modify, merge, publish, distribute, sub
-                * license, and/or sell copies of the Software, and to permit persons to whom
-                * the Software is furnished to do so, subject to the following conditions:
-                *
-                * The above copyright notice and this permission notice (including the next
-                * paragraph) shall be included in all copies or substantial portions of the
-                * Software.
-                *
-                * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-                * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-                * FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT.  IN NO EVENT SHALL
-                * THE COPYRIGHT HOLDERS AND/OR THEIR SUPPLIERS BE LIABLE FOR ANY CLAIM,
-                * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-                * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-                * USE OR OTHER DEALINGS IN THE SOFTWARE.
-                " desc="" />
-            </licensematcher>
-            <licensematcher name="BSD-3-Clause with X11 disclaimer" desc="">
-                <licensetext name="
-                Redistribution and use in source and binary forms, with or without
-                // modification, are permitted provided that the following conditions are met:
-                //
-                // * Redistributions of source code must retain the above copyright notice, this
-                //   list of conditions and the following disclaimer.
-                // * Redistributions in binary form must reproduce the above copyright notice,
-                //   this list of conditions and the following disclaimer in the documentation
-                //   and/or other materials provided with the distribution.
-                // * Neither my name, Paul Hsieh, nor the names of any other contributors to the
-                //   code use may not be used to endorse or promote products derived from this
-                //   software without specific prior written permission.
-                //
-                // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
-                // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-                // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-                // ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-                // LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-                // CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-                // SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-                // INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-                // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-                // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-                // POSSIBILITY OF SUCH DAMAGE.
-                " desc="" />
-            </licensematcher>
-            <licensematcher name="BSD-3-Clause" desc="">
-                <licensetext name="
-                * Redistribution and use in source and binary forms, with or without
-                * modification, are permitted provided that the following conditions
-                * are met:
-                * 1. Redistributions of source code must retain the above copyright
-                *    notice, this list of conditions and the following disclaimer.
-                * 2. Redistributions in binary form must reproduce the above copyright
-                *    notice, this list of conditions and the following disclaimer in the
-                *    documentation and/or other materials provided with the distribution.
-                * 4. The name of the author may not be used to endorse or promote products
-                *    derived from this software without specific prior written permission.
-                *
-                * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
-                * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-                * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-                * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
-                * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-                * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-                * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-                * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-                * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-                * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-                " desc="" />
-            </licensematcher>
-            <licensematcher name="MIT" desc="">
-                <licensetext name="
-                * Permission is hereby granted, free of charge, to any person obtaining a
-                * copy of this software and associated documentation files (the &quot;Software&quot;),
-                * to deal in the Software without restriction, including without limitation
-                * on the rights to use, copy, modify, merge, publish, distribute, sub
-                * license, and/or sell copies of the Software, and to permit persons to whom
-                * the Software is furnished to do so, subject to the following conditions:
-                *
-                * The above copyright notice and this permission notice (including the next
-                * paragraph) shall be included in all copies or substantial portions of the
-                * Software.
-                *
-                * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-                * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-                * FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT.  IN NO EVENT SHALL
-                * THE COPYRIGHT HOLDERS AND/OR THEIR SUPPLIERS BE LIABLE FOR ANY CLAIM,
-                * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-                * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-                * USE OR OTHER DEALINGS IN THE SOFTWARE.
-                " desc="" />
-            </licensematcher>
-            <licensematcher name="MIT" desc="">
-                <licensetext name="
-                * Permission is hereby granted, free of charge, to any person obtaining
-                * a copy of this software and associated documentation files (the
-                * &quot;Software&quot;), to deal in the Software without restriction, including
-                * without limitation on the rights to use, copy, modify, merge,
-                * publish, distribute, sublicense, and/or sell copies of the Software,
-                * and to permit persons to whom the Software is furnished to do so,
-                * subject to the following conditions:
-                *
-                * The above copyright notice and this permission notice (including the
-                * next paragraph) shall be included in all copies or substantial
-                * portions of the Software.
-                *
-                * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND,
-                * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-                * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-                * NON-INFRINGEMENT.  IN NO EVENT SHALL RED HAT AND/OR THEIR SUPPLIERS
-                * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-                * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-                * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-                * SOFTWARE.
-                " desc="" />
-            </licensematcher>
-            <licensematcher name="MIT" desc="">
-                <licensetext name="
-                * Permission is hereby granted, free of charge, to any person obtaining
-                * a copy of this software and associated documentation files (the
-                * &quot;Software&quot;), to deal in the Software without restriction, including
-                * without limitation on the rights to use, copy, modify, merge,
-                * publish, distribute, sublicense, and/or sell copies of the Software,
-                * and to permit persons to whom the Software is furnished to do so,
-                * subject to the following conditions:
-                *
-                * The above copyright notice and this permission notice (including the
-                * next paragraph) shall be included in all copies or substantial
-                * portions of the Software.
-                *
-                * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND,
-                * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-                * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-                * NON-INFRINGEMENT.  IN NO EVENT SHALL RED HAT AND/OR THEIR SUPPLIERS
-                * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-                * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-                * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-                * SOFTWARE.
-                " desc="" />
-            </licensematcher>
-            <licensematcher name="BSD-3-Clause" desc="">
-                <licensetext name="
-                * Redistribution and use in source and binary forms, with or without
-                * modification, are permitted provided that the following conditions
-                * are met:
-                * 1. Redistributions of source code must retain the above copyright
-                *    notice, this list of conditions and the following disclaimer.
-                * 2. Redistributions in binary form must reproduce the above copyright
-                *    notice, this list of conditions and the following disclaimer in the
-                *    documentation and/or other materials provided with the distribution.
-                * 3. The name of the author may not be used to endorse or promote products
-                *    derived from this software without specific prior written permission.
-                *
-                * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
-                * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
-                * AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
-                * THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-                * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-                * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
-                * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-                * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
-                * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-                * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 " desc="" />
             </licensematcher>
         </licensematcherlist>

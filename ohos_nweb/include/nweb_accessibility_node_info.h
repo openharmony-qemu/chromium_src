@@ -23,9 +23,6 @@
 namespace OHOS::NWeb {
 struct OHOS_NWEB_EXPORT NWebAccessibilityNodeInfo {
  public:
-  NWebAccessibilityNodeInfo(int64_t accessibilityId)
-      : accessibilityId(accessibilityId) {}
-
   int64_t accessibilityId = -1;
   size_t itemCounts = 0;
   int32_t selectionStart = 0;
@@ -46,7 +43,6 @@ struct OHOS_NWEB_EXPORT NWebAccessibilityNodeInfo {
   int32_t gridItemRowSpan = -1;
   int32_t gridItemColumn = -1;
   int32_t gridItemColumnSpan = -1;
-  std::vector<uint32_t> actions;
   int32_t pageId = -1;
 
   size_t rectX = 0;

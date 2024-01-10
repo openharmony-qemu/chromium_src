@@ -72,6 +72,7 @@ class MEDIA_EXPORT OHOSAudioCapturerSource final : public AudioCapturerSource {
   base::Lock callback_lock_;
   std::shared_ptr<AudioCapturerReadCallback> audioCapturerReadCallback_ =
       nullptr;
+  base::WeakPtrFactory<OHOSAudioCapturerSource> weak_factory_{this};
 };
 
 }  // namespace media

@@ -53,7 +53,7 @@ void OHOSAudioCapturerSource::Initialize(
   capturer_task_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(&OHOSAudioCapturerSource::InitializeOnCapturerThread,
-                     this));
+                     weak_factory_.GetWeakPtr()));
 }
 
 void OHOSAudioCapturerSource::Start() {
@@ -63,7 +63,7 @@ void OHOSAudioCapturerSource::Start() {
 
   capturer_task_runner_->PostTask(
       FROM_HERE,
-      base::BindOnce(&OHOSAudioCapturerSource::StartOnCapturerThread, this));
+      base::BindOnce(&OHOSAudioCapturerSource::StartOnCapturerThread, weak_factory_.GetWeakPtr()));
 }
 
 void OHOSAudioCapturerSource::Stop() {
@@ -81,7 +81,7 @@ void OHOSAudioCapturerSource::Stop() {
 
   capturer_task_runner_->PostTask(
       FROM_HERE,
-      base::BindOnce(&OHOSAudioCapturerSource::StopOnCapturerThread, this));
+      base::BindOnce(&OHOSAudioCapturerSource::StopOnCapturerThread, weak_factory_.GetWeakPtr()));
 }
 
 void OHOSAudioCapturerSource::InitializeOnCapturerThread() {
@@ -105,7 +105,7 @@ void OHOSAudioCapturerSource::StartOnCapturerThread() {
   DCHECK(capturer_task_runner_->BelongsToCurrentThread());
   audioCapturerReadCallback_ =
       std::make_shared<AudioCapturerReadCallback>(base::BindRepeating(
-          &OHOSAudioCapturerSource::ReadData, base::Unretained(this)));
+          &OHOSAudioCapturerSource::ReadData, weak_factory_.GetWeakPtr()));
   if (!capturer_ || !audioCapturerReadCallback_) {
     return;
   }
@@ -118,12 +118,12 @@ void OHOSAudioCapturerSource::StartOnCapturerThread() {
 
   main_task_runner_->PostTask(
       FROM_HERE,
-      base::BindOnce(&OHOSAudioCapturerSource::NotifyCaptureStarted, this));
+      base::BindOnce(&OHOSAudioCapturerSource::NotifyCaptureStarted, weak_factory_.GetWeakPtr()));
 }
 
 void OHOSAudioCapturerSource::StopOnCapturerThread() {
   LOG(INFO) << "OHOSAudioCapturerSource::StopOnCapturerThread";
-  DCHECK(main_task_runner_->BelongsToCurrentThread());
+  DCHECK(capturer_task_runner_->BelongsToCurrentThread());
   if (!capturer_->Stop()) {
     LOG(ERROR) << "OHOSAudioCapturerSource::StopOnCapturerThread stop failed";
     ReportError("Stop OHOS audio capturer failed");
@@ -185,6 +185,6 @@ void OHOSAudioCapturerSource::ReportError(const std::string& message) {
   DCHECK(capturer_task_runner_->BelongsToCurrentThread());
   main_task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&OHOSAudioCapturerSource::NotifyCaptureError,
-                                this, message));
+                                weak_factory_.GetWeakPtr(), message));
 }
 }  // namespace media

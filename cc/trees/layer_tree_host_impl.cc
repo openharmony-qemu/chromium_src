@@ -5332,6 +5332,10 @@ void LayerTreeHostImpl::SetupScrollBy() {
 
   gfx::Vector2dF scroll_delta(
       0.f, browser_controls_offset_manager_->ContentTopOffset());
+  if (scroll_delta.IsZero()) {
+    return;
+  }
+
   // This counter-scrolls the page to keep the appearance of the page content
   // being fixed while the browser controls animate.
   viewport().ScrollBy(scroll_delta,

@@ -47,6 +47,10 @@
 #include "content/public/browser/android/child_process_importance.h"
 #endif
 
+#ifdef OHOS_EX_TOPCONTROLS
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
 namespace content {
 
 class RenderProcessHostInternalObserver;
@@ -298,6 +302,13 @@ base::flat_set<std::string> ParseBlockedCgiParams(
 BackForwardCacheTestDelegate* g_bfcache_disabled_test_observer = nullptr;
 
 void RestoreBrowserControlsState(RenderFrameHostImpl* cached_rfh) {
+#ifdef OHOS_EX_TOPCONTROLS
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kForBrowser)) {
+    return;
+  }
+#endif
+
   auto* current_rfh =
       cached_rfh->frame_tree_node()->render_manager()->current_frame_host();
 

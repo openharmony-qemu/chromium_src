@@ -19,6 +19,7 @@
 #include <condition_variable>
 #include <set>
 #include <string>
+#include <unordered_map>
 #include "capi/nweb_app_client_extension_callback.h"
 #include "cef/include/cef_command_line.h"
 #include "content/browser/accessibility/browser_accessibility_manager_ohos.h"
@@ -40,6 +41,7 @@
 #endif  //  OHOS_EX_DOWNLOAD
 
 namespace OHOS::NWeb {
+class JavaScriptResultCallbackImpl;
 class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
  public:
   NWebDelegate(int argc, const char* argv[]);
@@ -200,10 +202,13 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   bool IsUrlFileExist(const GURL& gurl);
 
 #if defined(OHOS_MSGPORT)
+  uint32_t runJSCallbackId_ = 0;
+  std::unordered_map<uint32_t, CefRefPtr<JavaScriptResultCallbackImpl>> runJSCallbackMap_;
+  void EraseJavaScriptCallbackImpl(uint32_t id) override;
   void ExecuteJavaScript(
       const std::string& code,
       std::shared_ptr<NWebValueCallback<std::shared_ptr<NWebMessage>>> callback,
-      bool extention) const override;
+      bool extention) override;
   void CreateWebMessagePorts(std::vector<std::string>& ports) override;
   void PostWebMessage(std::string& message,
                       std::vector<std::string>& ports,

@@ -421,8 +421,6 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void AddAccessibilityNodeInfoCollection(
     NWebAccessibilityNodeInfo& nodeInfo,
     const content::BrowserAccessibilityOHOS* node) const;
-  void AddAccessibilityNodeInfoActions(
-    NWebAccessibilityNodeInfo& nodeInfo) const;
   bool PopulateAccessibilityNodeInfo(const content::BrowserAccessibilityOHOS* node,
                                      NWebAccessibilityNodeInfo& nodeInfo) const;
 

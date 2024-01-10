@@ -2760,7 +2760,6 @@ bool NWebDelegate::PopulateAccessibilityNodeInfo(
 
   AddAccessibilityNodeInfoRect(nodeInfo, node);
   AddAccessibilityNodeInfoCollection(nodeInfo, node);
-  AddAccessibilityNodeInfoActions(nodeInfo);
 
   return true;
 }
@@ -2791,32 +2790,6 @@ void NWebDelegate::AddAccessibilityNodeInfoCollection(
     nodeInfo.gridItemColumn = node->ColumnIndex();
     nodeInfo.gridItemColumnSpan = node->ColumnSpan();
     nodeInfo.heading = node->IsHeading();
-  }
-}
-
-void NWebDelegate::AddAccessibilityNodeInfoActions(
-    NWebAccessibilityNodeInfo& nodeInfo) const {
-  nodeInfo.actions.clear();
-  if (nodeInfo.clickable) {
-    nodeInfo.actions.emplace_back(
-        static_cast<uint32_t>(AceAction::ACTION_CLICK));
-  }
-  if (nodeInfo.focusable) {
-    if (nodeInfo.focused) {
-      nodeInfo.actions.emplace_back(
-          static_cast<uint32_t>(AceAction::ACTION_CLEAR_FOCUS));
-    } else {
-      nodeInfo.actions.emplace_back(
-          static_cast<uint32_t>(AceAction::ACTION_FOCUS));
-    }
-  }
-
-  if (nodeInfo.accessibilityFocus) {
-    nodeInfo.actions.emplace_back(
-        static_cast<uint32_t>(AceAction::ACTION_CLEAR_ACCESSIBILITY_FOCUS));
-  } else {
-    nodeInfo.actions.emplace_back(
-        static_cast<uint32_t>(AceAction::ACTION_ACCESSIBILITY_FOCUS));
   }
 }
 }  // namespace OHOS::NWeb

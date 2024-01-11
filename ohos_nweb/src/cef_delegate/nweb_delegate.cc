@@ -2760,6 +2760,7 @@ bool NWebDelegate::PopulateAccessibilityNodeInfo(
 
   AddAccessibilityNodeInfoRect(nodeInfo, node);
   AddAccessibilityNodeInfoCollection(nodeInfo, node);
+  AddAccessibilityNodeInfoActions(nodeInfo);
 
   return true;
 }
@@ -2791,5 +2792,33 @@ void NWebDelegate::AddAccessibilityNodeInfoCollection(
     nodeInfo.gridItemColumnSpan = node->ColumnSpan();
     nodeInfo.heading = node->IsHeading();
   }
+}
+
+void NWebDelegate::AddAccessibilityNodeInfoActions(
+    NWebAccessibilityNodeInfo& nodeInfo) const {
+  nodeInfo.actions.clear();
+  std::vector<uint32_t> actions;
+  if (nodeInfo.clickable) {
+    actions.emplace_back(
+        static_cast<uint32_t>(AceAction::ACTION_CLICK));
+  }
+  if (nodeInfo.focusable) {
+    if (nodeInfo.focused) {
+      actions.emplace_back(
+          static_cast<uint32_t>(AceAction::ACTION_CLEAR_FOCUS));
+    } else {
+      actions.emplace_back(
+          static_cast<uint32_t>(AceAction::ACTION_FOCUS));
+    }
+  }
+
+  if (nodeInfo.accessibilityFocus) {
+    actions.emplace_back(
+        static_cast<uint32_t>(AceAction::ACTION_CLEAR_ACCESSIBILITY_FOCUS));
+  } else {
+    actions.emplace_back(
+        static_cast<uint32_t>(AceAction::ACTION_ACCESSIBILITY_FOCUS));
+  }
+  nodeInfo.actions.swap(actions);
 }
 }  // namespace OHOS::NWeb

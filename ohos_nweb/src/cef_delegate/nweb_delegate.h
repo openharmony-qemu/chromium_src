@@ -197,7 +197,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   bool SetZoomOutFactor(float factor);
 
   bool IsFileProtocol(const GURL& gurl);
-  bool IsUrlFileExist(const GURL& gurl);
+  bool IsUrlFileExist(const GURL& gurl, const std::string& url);
 
 #if defined(OHOS_MSGPORT)
   void ExecuteJavaScript(

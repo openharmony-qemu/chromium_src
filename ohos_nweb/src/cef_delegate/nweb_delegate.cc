@@ -830,7 +830,10 @@ bool NWebDelegate::IsFileProtocol(const GURL& gurl) {
   return false;
 }
 
-bool NWebDelegate::IsUrlFileExist(const GURL& gurl) {
+bool NWebDelegate::IsUrlFileExist(const GURL& gurl, const std::string& url) {
+  if (url == "file://") {
+    return false;
+  }
   std::string filePath = gurl.path();
   if (!base::PathExists(base::FilePath(filePath))) {
     LOG(ERROR) << "IsUrlFileExist failed, file does not exist";
@@ -848,7 +851,7 @@ int NWebDelegate::Load(const std::string& url) {
     }
   }
   GURL file_gurl = url_util::FixupGURL(url);
-  if (IsFileProtocol(file_gurl) && !IsUrlFileExist(file_gurl)) {
+  if (IsFileProtocol(file_gurl) && !IsUrlFileExist(file_gurl, url)) {
     return NWEB_INVALID_RESOURCE;
   }
   LOG(DEBUG) << "NWebDelegate::Load url=" << url;
@@ -1572,7 +1575,7 @@ int NWebDelegate::Load(
     }
   }
   GURL file_gurl = url_util::FixupGURL(url);
-  if (IsFileProtocol(file_gurl) && !IsUrlFileExist(file_gurl)) {
+  if (IsFileProtocol(file_gurl) && !IsUrlFileExist(file_gurl, url)) {
     return NWEB_INVALID_RESOURCE;
   }
   std::map<std::string, std::string>::iterator iter;

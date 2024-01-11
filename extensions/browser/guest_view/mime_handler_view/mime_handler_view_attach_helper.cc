@@ -38,7 +38,11 @@ namespace {
 
 // TODO(ekaramad): Make this a proper resource (https://crbug.com/659750).
 const char kFullPageMimeHandlerViewHTML[] =
-    "<!doctype html><html><body style='height: 100%%; width: 100%%; overflow: "
+    "<!doctype html><html>"
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+    "<head><meta name='viewport' content='width=device-width'></head>"
+#endif
+    "<body style='height: 100%%; width: 100%%; overflow: "
     "hidden; margin:0px; background-color: rgb(%d, %d, %d);'><embed "
     "name='%s' "
     "style='position:absolute; left: 0; top: 0;'width='100%%' height='100%%'"

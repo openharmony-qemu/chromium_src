@@ -101,6 +101,13 @@ class VIZ_SERVICE_EXPORT SurfaceManager {
 
   void RemoveObserver(SurfaceObserver* obs) {
     observer_list_.RemoveObserver(obs);
+    for (auto it = surface_observer_map_.begin(); it != surface_observer_map_.end();) {
+      if (it->second == obs) {
+        it = surface_observer_map_.erase(it);
+      } else {
+        ++it;
+      }
+    }
   }
 
   // Called when a Surface is modified, e.g. when a CompositorFrame is
@@ -299,6 +306,7 @@ class VIZ_SERVICE_EXPORT SurfaceManager {
       frame_sink_id_to_allocation_groups_;
   base::flat_map<SurfaceId, std::unique_ptr<Surface>> surface_map_;
   base::ObserverList<SurfaceObserver>::Unchecked observer_list_;
+  base::flat_map<SurfaceId, SurfaceObserver*> surface_observer_map_;
   base::ThreadChecker thread_checker_;
 
   base::flat_map<SurfaceId, base::TimeTicks> surfaces_to_destroy_;

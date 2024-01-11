@@ -46,8 +46,8 @@ class FakeSurfaceObserver : public SurfaceObserver {
   void OnSurfaceActivated(const SurfaceId& surface_id) override;
   void OnSurfaceDestroyed(const SurfaceId& surface_id) override {}
   void OnSurfaceMarkedForDestruction(const SurfaceId& surface_id) override {}
-  void OnSurfaceDamageExpected(const SurfaceId& surface_id,
-                               const BeginFrameArgs& args) override {}
+  bool OnSurfaceDamageExpected(const SurfaceId& surface_id,
+                               const BeginFrameArgs& args) override { return false; }
 
   bool damage_display_;
   BeginFrameAck last_ack_;

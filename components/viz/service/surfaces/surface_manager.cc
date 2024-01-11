@@ -26,6 +26,7 @@
 #include "components/viz/service/surfaces/surface_allocation_group.h"
 #include "components/viz/service/surfaces/surface_client.h"
 #include "components/viz/service/surfaces/surface_manager_delegate.h"
+#include "components/viz/service/display/display_damage_tracker.h"
 
 #if DCHECK_IS_ON()
 #include <sstream>
@@ -451,10 +452,18 @@ Surface* SurfaceManager::GetSurfaceForId(const SurfaceId& surface_id) const {
 bool SurfaceManager::SurfaceModified(const SurfaceId& surface_id,
                                      const BeginFrameAck& ack) {
   CHECK(thread_checker_.CalledOnValidThread());
-  bool changed = false;
-  for (auto& observer : observer_list_)
-    changed |= observer.OnSurfaceDamaged(surface_id, ack);
-  return changed;
+  auto it = surface_observer_map_.find(surface_id);
+  if (it != surface_observer_map_.end()) {
+    return it->second->OnSurfaceDamaged(surface_id, ack);
+  } else {
+    for (auto& observer : observer_list_) {
+      if (observer.OnSurfaceDamaged(surface_id, ack)) {
+        surface_observer_map_[surface_id] = &observer;
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 void SurfaceManager::FirstSurfaceActivation(const SurfaceInfo& surface_info) {
@@ -495,8 +504,17 @@ void SurfaceManager::SurfaceDestroyed(Surface* surface) {
 void SurfaceManager::SurfaceDamageExpected(const SurfaceId& surface_id,
                                            const BeginFrameArgs& args) {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
-  for (auto& observer : observer_list_)
-    observer.OnSurfaceDamageExpected(surface_id, args);
+  auto it = surface_observer_map_.find(surface_id);
+  if (it != surface_observer_map_.end()) {
+    it->second->OnSurfaceDamageExpected(surface_id, args);
+  } else {
+    for (auto& observer : observer_list_) {
+      if (observer.OnSurfaceDamageExpected(surface_id, args)) {
+        surface_observer_map_[surface_id] = &observer;
+        return;
+      }
+    }
+  }
 }
 
 void SurfaceManager::DestroySurfaceInternal(const SurfaceId& surface_id) {

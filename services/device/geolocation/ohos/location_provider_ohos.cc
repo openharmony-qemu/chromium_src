@@ -149,7 +149,6 @@ void LocationProviderOhos::SetRequestConfig(
       OHOS::NWeb::LocationRequestConfig::Scenario::UNSET);
   request_config->SetTimeInterval(1);
   request_config->SetDistanceInterval(0);
-  request_config->SetMaxAccuracy(50);
   request_config->SetFixNumber(0);
 }
 

@@ -760,8 +760,7 @@ void NWebDelegate::SendMouseEvent(int x,
   if (action == MouseAction::MOVE) {
     auto* accessibilityManager = GetAccessibilityManager();
     if (accessibilityManager != nullptr) {
-      gfx::PointF point(x / default_virtual_pixel_ratio_,
-                        y / default_virtual_pixel_ratio_);
+      gfx::PointF point(x, y);
       accessibilityManager->OnHoverEvent(point);
     }
   }
@@ -2708,12 +2707,13 @@ bool NWebDelegate::PopulateAccessibilityNodeInfo(
   }
 
   nodeInfo.childIds.clear();
-
+  std::vector<int64_t> childIds;
   for (const auto& childNode : node->PlatformChildren()) {
     const content::BrowserAccessibilityOHOS& childNodeOHOS =
         static_cast<const content::BrowserAccessibilityOHOS&>(childNode);
-    nodeInfo.childIds.push_back(childNodeOHOS.GetAccessibilityId());
+    childIds.emplace_back(childNodeOHOS.GetAccessibilityId());
   }
+  nodeInfo.childIds.swap(childIds);
 
   nodeInfo.componentType = node->GetRoleString();
   nodeInfo.focused = node->IsFocused();

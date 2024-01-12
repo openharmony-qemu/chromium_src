@@ -16,6 +16,8 @@ using namespace media;
 using namespace OHOS::NWeb;
 using namespace std;
 
+const std::string PRODUCT_MODEL_EMULATOR = "emulator";
+
 void clearInputQueue(std::queue<VideoBridgeDecoderInputBuffer>& q) {
   std::queue<VideoBridgeDecoderInputBuffer> empty;
   std::swap(empty, q);
@@ -34,6 +36,13 @@ std::unique_ptr<MediaCodecDecoderBridgeImpl>
 MediaCodecDecoderBridgeImpl::CreateVideoDecoder(
     const VideoBridgeCodecConfig& config) {
   LOG(INFO) << "MediaCodecDecoderBridgeImpl::CreateVideoDecoder.";
+  auto& system_properties_adapter: auto & =
+        OHOS::NWeb::OhosAdapterHelper::GetInstance()
+            .GetSystemPropertiesInstance();
+  std::string product_model = system_properties_adapter.GetDeviceInfoProductModel();
+  if (product_model == PRODUCT_MODEL_EMULATOR) {
+      return nullptr;
+  }
   std::string codec_type;
   if (config.codec == media::VideoCodec::kH264) {
     LOG(INFO) << "OhosVideoDecoder::CreateCodec video/avc";

@@ -57,6 +57,7 @@
 #include "url/gurl.h"
 #include "ui/events/gesture_detection/gesture_configuration.h"
 #include "libcef/common/net/url_util.h"
+#include "net/base/filename_util.h"
 
 #ifdef OHOS_EX_GET_ZOOM_LEVEL
 #include <cmath>
@@ -849,8 +850,11 @@ bool NWebDelegate::IsUrlFileExist(const GURL& gurl, const std::string& url) {
   if (url == "file://") {
     return false;
   }
-  std::string filePath = gurl.path();
-  if (!base::PathExists(base::FilePath(filePath))) {
+  base::FilePath filePath;
+  if (!net::FileURLToFilePath(gurl, &filePath)) {
+    return false;
+  }
+  if (!base::PathExists(filePath)) {
     LOG(ERROR) << "IsUrlFileExist failed, file does not exist";
     return false;
   }

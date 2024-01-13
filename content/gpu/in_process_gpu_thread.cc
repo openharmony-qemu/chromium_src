@@ -17,6 +17,12 @@
 #include "gpu/ipc/service/gpu_init.h"
 #include "media/gpu/buildflags.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include <fstream>
+#include <dirent.h>
+#include "res_sched_client_adapter.h"
+#endif  // BUILDFLAG(IS_OHOS)
+
 #if BUILDFLAG(USE_VAAPI)
 #include "media/gpu/vaapi/vaapi_wrapper.h"
 #endif
@@ -25,6 +31,10 @@
 #include "base/android/jni_android.h"
 #include "content/common/android/cpu_affinity_setter.h"
 #endif
+
+#if BUILDFLAG(IS_OHOS)
+const int MAX_FILE_LENGTH = 32* 1024 * 1024;
+#endif  // BUILDFLAG(IS_OHOS)
 
 namespace content {
 
@@ -38,6 +48,16 @@ InProcessGpuThread::InProcessGpuThread(
 
 InProcessGpuThread::~InProcessGpuThread() {
   Stop();
+#if BUILDFLAG(IS_OHOS)
+  using namespace OHOS::NWeb;
+
+  auto tid = GetGpuThreadId(base::GetCurrentProcId());
+  if (tid > 0) {
+    ResSchedClientAdapter::ReportKeyThread(
+      ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentRealPid(),
+      tid, ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+  }
+#endif // BUILDFLAG(IS_OHOS)
 }
 
 void InProcessGpuThread::Init() {
@@ -81,6 +101,16 @@ void InProcessGpuThread::Init() {
   child_thread->Init(base::Time::Now());
 
   gpu_process_->set_main_thread(child_thread);
+#if BUILDFLAG(IS_OHOS)
+  using namespace OHOS::NWeb;
+
+  auto tid = GetGpuThreadId(base::GetCurrentProcId());
+  if(tid > 0) {
+    ResSchedClientAdapter::ReportKeyThread(
+      ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentRealPid(),
+      tid, ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+  }
+#endif // BUILDFLAG(IS_OHOS)
 }
 
 void InProcessGpuThread::CleanUp() {
@@ -94,4 +124,69 @@ base::Thread* CreateInProcessGpuThread(
   return new InProcessGpuThread(params, gpu_preferences);
 }
 
+#if BUILDFLAG(IS_OHOS)
+int32_t InProcessGpuThread::GetGpuThreadId(int32_t pid)
+{
+  int32_t tid = GetTidListByName(pid, "gpu-worker-server");
+  if (tid < 0) {
+    tid = GetTidListByName(pid, "gpu-worker-backe");
+  }
+  return tid;
+}
+
+int32_t InProcessGpuThread::GetTidListByName(int32_t pid, const std::string& thread_name)
+{
+  int32_t tid = -1;
+  if (pid <= 0) {
+    return tid;
+  }
+
+  std::string path_name = std::string("/proc/").append(std::to_string(pid)).append("/task");
+  DIR *dir = opendir(path_name.c_str());
+  if (!dir) {
+    LOG(ERROR) << "opendir " << path_name <<" failed, errno: " << errono;
+    return tid;
+  }
+
+  struct dirent *de = nullptr;
+  while ((de = readdir(dir))) {
+    if (!(de->d_type & DT_DIR) || !isdigit(de->d_name[0])) {
+        continue;
+    }
+    std::string comm_path = path_name + std::string("/").append(de->d_name).append("/comm");
+    std::string comm;
+    if (!LoadStringFromFile(comm_path, comm)) {
+        continue;
+    }
+    if (tid < 0 && comm.find(thread_name) != std::string::npos) {
+        tid = atoi(de->d_name);
+        if (tid >= 0) {
+            break;
+        }
+    }
+  }
+  closedir(dir);
+  return tid;
+}
+
+bool InProcessGpuThread::LoadStringFromFile(const std::string& file_path, std::string& content)
+{
+  std::ifstream file(file_path.c_str());
+  if (!file.is_open()) {
+    LOG(ERROR) << "open file failed! file path: " << file_path;
+    return false;
+  }
+
+  file.seekg(0, std::ios::end);
+  int file_length = file.tellg();
+  if (file_length > MAX_FILE_LENGTH) {
+    LOG(ERROR) << "invalid file length: " << file_length;
+    return false;
+  }
+  content.clear();
+  file.seekg(0, std::ios::beg);
+  std::copy(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), std::back_inserter(content));
+  return true;
+}
+#endif // BUILDFLAG(IS_OHOS)
 }  // namespace content

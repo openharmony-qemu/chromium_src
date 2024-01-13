@@ -36,7 +36,7 @@ std::unique_ptr<MediaCodecDecoderBridgeImpl>
 MediaCodecDecoderBridgeImpl::CreateVideoDecoder(
     const VideoBridgeCodecConfig& config) {
   LOG(INFO) << "MediaCodecDecoderBridgeImpl::CreateVideoDecoder.";
-  auto& system_properties_adapter: auto & =
+  auto& system_properties_adapter =
         OHOS::NWeb::OhosAdapterHelper::GetInstance()
             .GetSystemPropertiesInstance();
   std::string product_model = system_properties_adapter.GetDeviceInfoProductModel();

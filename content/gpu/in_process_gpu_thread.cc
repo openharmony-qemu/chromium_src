@@ -21,7 +21,7 @@
 #include <fstream>
 #include <dirent.h>
 #include "res_sched_client_adapter.h"
-#endif  // BUILDFLAG(IS_OHOS)
+#endif
 
 #if BUILDFLAG(USE_VAAPI)
 #include "media/gpu/vaapi/vaapi_wrapper.h"
@@ -34,7 +34,7 @@
 
 #if BUILDFLAG(IS_OHOS)
 const int MAX_FILE_LENGTH = 32* 1024 * 1024;
-#endif  // BUILDFLAG(IS_OHOS)
+#endif
 
 namespace content {
 
@@ -54,10 +54,10 @@ InProcessGpuThread::~InProcessGpuThread() {
   auto tid = GetGpuThreadId(base::GetCurrentProcId());
   if (tid > 0) {
     ResSchedClientAdapter::ReportKeyThread(
-      ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentRealPid(),
+      ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentProcId(),
       tid, ResSchedRoleAdapter::IMPORTANT_DISPLAY);
   }
-#endif // BUILDFLAG(IS_OHOS)
+#endif
 }
 
 void InProcessGpuThread::Init() {
@@ -107,10 +107,10 @@ void InProcessGpuThread::Init() {
   auto tid = GetGpuThreadId(base::GetCurrentProcId());
   if(tid > 0) {
     ResSchedClientAdapter::ReportKeyThread(
-      ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentRealPid(),
+      ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(),
       tid, ResSchedRoleAdapter::IMPORTANT_DISPLAY);
   }
-#endif // BUILDFLAG(IS_OHOS)
+#endif
 }
 
 void InProcessGpuThread::CleanUp() {
@@ -127,9 +127,9 @@ base::Thread* CreateInProcessGpuThread(
 #if BUILDFLAG(IS_OHOS)
 int32_t InProcessGpuThread::GetGpuThreadId(int32_t pid)
 {
-  int32_t tid = GetTidListByName(pid, "gpu-worker-server");
+  int32_t tid = GetTidListByName(pid, "gpu-work-server");
   if (tid < 0) {
-    tid = GetTidListByName(pid, "gpu-worker-backe");
+    tid = GetTidListByName(pid, "mali-cmar-backe");
   }
   return tid;
 }
@@ -144,7 +144,7 @@ int32_t InProcessGpuThread::GetTidListByName(int32_t pid, const std::string& thr
   std::string path_name = std::string("/proc/").append(std::to_string(pid)).append("/task");
   DIR *dir = opendir(path_name.c_str());
   if (!dir) {
-    LOG(ERROR) << "opendir " << path_name <<" failed, errno: " << errono;
+    LOG(ERROR) << "opendir " << path_name <<" failed, errno: " << errno;
     return tid;
   }
 
@@ -188,5 +188,5 @@ bool InProcessGpuThread::LoadStringFromFile(const std::string& file_path, std::s
   std::copy(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), std::back_inserter(content));
   return true;
 }
-#endif // BUILDFLAG(IS_OHOS)
+#endif
 }  // namespace content

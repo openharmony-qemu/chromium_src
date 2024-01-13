@@ -11,6 +11,10 @@
 #include "content/common/in_process_child_thread_params.h"
 #include "gpu/config/gpu_preferences.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include <vector>
+#endif  // BUILDFLAG(IS_OHOS)
+
 namespace content {
 
 class ChildProcess;
@@ -30,6 +34,12 @@ class InProcessGpuThread : public base::Thread {
  protected:
   void Init() override;
   void CleanUp() override;
+
+#if BUILDFLAG(IS_OHOS)
+  int32_t GetGpuThreadId(int32_t pid);
+  int32_t GetTidListByName(int32_t pid, const std::string& thread_name);
+  bool LoadStringFromFile(const std::string& file_path, std::string& content);
+#endif  // BUILDFLAG(IS_OHOS)
 
  private:
   InProcessChildThreadParams params_;

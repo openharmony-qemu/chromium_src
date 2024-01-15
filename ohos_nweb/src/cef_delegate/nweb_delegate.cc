@@ -2549,9 +2549,10 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId,
     LOG(ERROR) << "ExecuteAction can not get accessibilityManager";
     return;
   }
+  auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
   auto* node = content::BrowserAccessibilityOHOS::GetFromAccessibilityId(
       accessibilityId);
-  if (node == nullptr) {
+  if (node == nullptr || !node->IsDescendantOf(rootNode)) {
     LOG(ERROR) << "ExecuteAction can not get node";
     return;
   }
@@ -2612,6 +2613,7 @@ bool NWebDelegate::GetFocusedAccessibilityNodeInfo(
         << "GetFocusedAccessibilityNodeInfo can not get accessibilityManager";
     return false;
   }
+  auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
   content::BrowserAccessibilityOHOS* resultNode = nullptr;
   if (isAccessibilityFocus) {
     auto accessibilityFocusId = accessibilityManager->GetAccessibilityFocusId();
@@ -2627,17 +2629,17 @@ bool NWebDelegate::GetFocusedAccessibilityNodeInfo(
     LOG(ERROR) << "GetFocusedAccessibilityNodeInfo can not get node";
     return false;
   }
-  if (accessibilityId != -1) {
-    auto* node = content::BrowserAccessibilityOHOS::GetFromAccessibilityId(
+  content::BrowserAccessibilityOHOS* node = nullptr;
+  if (accessibilityId < 0) {
+    node = static_cast<content::BrowserAccessibilityOHOS*>(rootNode);
+  } else {
+    node = content::BrowserAccessibilityOHOS::GetFromAccessibilityId(
         accessibilityId);
-    if (node == nullptr) {
-      LOG(ERROR)
-          << "GetFocusedAccessibilityNodeInfo can not get accessibilityId";
-      return false;
-    }
-    if (!resultNode->IsDescendantOf(node)) {
-      return false;
-    }
+  }
+  if (node == nullptr || !node->IsDescendantOf(rootNode) || !resultNode->IsDescendantOf(node)) {
+    LOG(ERROR)
+        << "GetFocusedAccessibilityNodeInfo can not get node";
+    return false;
   }
   return PopulateAccessibilityNodeInfo(resultNode, nodeInfo);
 }
@@ -2651,15 +2653,15 @@ bool NWebDelegate::GetAccessibilityNodeInfoById(
         << "GetAccessibilityNodeInfoById can not get accessibilityManager";
     return false;
   }
+  auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
   content::BrowserAccessibilityOHOS* node = nullptr;
   if (accessibilityId < 0) {
-    node = static_cast<content::BrowserAccessibilityOHOS*>(
-        accessibilityManager->GetBrowserAccessibilityRoot());
+    node = static_cast<content::BrowserAccessibilityOHOS*>(rootNode);
   } else {
     node = content::BrowserAccessibilityOHOS::GetFromAccessibilityId(
         accessibilityId);
   }
-  if (node == nullptr) {
+  if (node == nullptr || !node->IsDescendantOf(rootNode)) {
     LOG(ERROR) << "GetAccessibilityNodeInfoById can not get node";
     return false;
   }
@@ -2676,6 +2678,7 @@ bool NWebDelegate::GetAccessibilityNodeInfoByFocusMove(
                   "accessibilityManager";
     return false;
   }
+  auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
   content::BrowserAccessibilityOHOS* node = nullptr;
   if (accessibilityId < 0) {
     node = static_cast<content::BrowserAccessibilityOHOS*>(
@@ -2683,6 +2686,10 @@ bool NWebDelegate::GetAccessibilityNodeInfoByFocusMove(
   } else {
     node = content::BrowserAccessibilityOHOS::GetFromAccessibilityId(
         accessibilityId);
+  }
+  if (node == nullptr || !node->IsDescendantOf(rootNode)) {
+    LOG(ERROR) << "GetAccessibilityNodeInfoByFocusMove can not get node";
+    return false;
   }
   auto resultNode = node->GetAccessibilityNodeByFocusMove(direction);
   if (resultNode == nullptr) {

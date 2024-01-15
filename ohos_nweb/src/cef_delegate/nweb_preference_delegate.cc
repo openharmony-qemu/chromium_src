@@ -158,9 +158,11 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
       !IsHorizontalScrollBarAccess() ? STATE_ENABLED : STATE_DISABLED;
   browser_settings.hide_vertical_scrollbars =
       !IsVerticalScrollBarAccess() ? STATE_ENABLED : STATE_DISABLED;
+#endif  // defined(OHOS_INPUT_EVENTS)
+#if BUILDFLAG(IS_OHOS)
   browser_settings.native_embed_mode_enabled =
       GetNativeEmbedMode() ? STATE_ENABLED : STATE_DISABLED;
-#endif  // defined(OHOS_INPUT_EVENTS)
+#endif  // BUILDFLAG(IS_OHOS)
 #if defined(OHOS_CLIPBOARD)
   browser_settings.copy_option = static_cast<int>(GetCopyOptionMode());
 #endif // defined(OHOS_CLIPBOARD)

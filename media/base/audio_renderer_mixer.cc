@@ -42,6 +42,12 @@ AudioRendererMixer::AudioRendererMixer(const AudioParameters& output_params,
   RenderCallback* callback = this;
   audio_sink_->Initialize(output_params, callback);
   audio_sink_->Start();
+#if BUILDFLAG(IS_OHOS)
+  media_tid_ = base::PlatformThread::CurrentRealId();
+  OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
+      OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_START,
+      base::GetCurrentRealPid(), media_tid_);
+#endif
 }
 
 AudioRendererMixer::~AudioRendererMixer() {
@@ -50,7 +56,10 @@ AudioRendererMixer::~AudioRendererMixer() {
 #if BUILDFLAG(IS_OHOS)
   OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
       OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_STOP,
-      base::GetCurrentRealPid(), tid_);
+      base::GetCurrentRealPid(), audio_output_tid_);
+  OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
+      OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_STOP,
+      base::GetCurrentRealPid(), media_tid_);
 #endif
 
   // Ensure that all mixer inputs have removed themselves prior to destruction.
@@ -69,7 +78,10 @@ void AudioRendererMixer::AddMixerInput(const AudioParameters& input_params,
 #if BUILDFLAG(IS_OHOS)
     OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
         OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_START,
-        base::GetCurrentRealPid(), tid_);
+        base::GetCurrentRealPid(), audio_output_tid_);
+    OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
+        OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_START,
+        base::GetCurrentRealPid(), media_tid_);
 #endif
   }
 
@@ -146,7 +158,7 @@ int AudioRendererMixer::Render(base::TimeDelta delay,
   // in the pause state.
   const base::TimeTicks now = base::TimeTicks::Now();
 #if BUILDFLAG(IS_OHOS)
-  tid_ = base::PlatformThread::CurrentRealId();
+  audio_output_tid_ = base::PlatformThread::CurrentRealId();
 #endif
   if (!aggregate_converter_.empty()) {
     last_play_time_ = now;
@@ -159,7 +171,10 @@ int AudioRendererMixer::Render(base::TimeDelta delay,
 #if BUILDFLAG(IS_OHOS)
     OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
         OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_STOP,
-        base::GetCurrentRealPid(), tid_);
+        base::GetCurrentRealPid(), audio_output_tid_);
+    OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
+        OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_STOP,
+        base::GetCurrentRealPid(), media_tid_);
 #endif
   }
 

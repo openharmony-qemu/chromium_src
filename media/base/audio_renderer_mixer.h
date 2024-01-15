@@ -98,7 +98,8 @@ class MEDIA_EXPORT AudioRendererMixer
   base::TimeTicks last_play_time_ GUARDED_BY(lock_);
   bool playing_ GUARDED_BY(lock_);
 #if BUILDFLAG(IS_OHOS)
-  int tid_ GUARDED_BY(lock_);
+  int audio_output_tid_ GUARDED_BY(lock_);
+  int media_tid_ GUARDED_BY(lock_);
 #endif
 };
 

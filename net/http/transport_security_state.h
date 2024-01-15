@@ -576,6 +576,12 @@ class NET_EXPORT TransportSecurityState {
   // weeks.
   bool IsStaticPKPListTimely() const;
 
+#if BUILDFLAG(IS_OHOS)
+  TransportSecurityState::PKPStatus CheckPublicKeyPinsOhos(
+    const HostPortPair& host_port_pair,
+    const HashValueVector& public_key_hashes);
+#endif
+
   // The sets of hosts that have enabled TransportSecurity. |domain| will always
   // be empty for a STSState or PKPState in these maps; the domain comes from
   // the map keys instead. In addition, |upgrade_mode| in the STSState is never

@@ -45,6 +45,10 @@
 #include "net/ssl/ssl_info.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
+
 namespace net {
 
 namespace {
@@ -57,6 +61,11 @@ namespace {
 const TransportSecurityStateSource* const kDefaultHSTSSource = &kHSTSSource;
 #else
 const TransportSecurityStateSource* const kDefaultHSTSSource = nullptr;
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+const std::string_view kSha256Slash = "sha256/";
+const std::string_view kSha256SlashOhos = "sha256//";
 #endif
 
 const TransportSecurityStateSource* g_hsts_source = kDefaultHSTSSource;
@@ -421,6 +430,40 @@ bool TransportSecurityState::ShouldUpgradeToSSL(
   return GetSTSState(host, &sts_state) && sts_state.ShouldUpgradeToSSL();
 }
 
+#if BUILDFLAG(IS_OHOS)
+TransportSecurityState::PKPStatus
+TransportSecurityState::CheckPublicKeyPinsOhos(
+    const HostPortPair& host_port_pair,
+    const HashValueVector& public_key_hashes) {
+  auto RootCertDataAdapter =
+    OHOS::NWeb::OhosAdapterHelper::GetInstance().GetRootCertDataAdapter();
+  std::vector<std::string> pins;
+  if (!RootCertDataAdapter->GetPinSetForHostName(host_port_pair.host(), pins) ||
+      pins.empty()) {
+    return PKPStatus::OK;
+  }
+  for (auto& public_key_hash: public_key_hashes) {
+    std::string public_key_hash_string = public_key_hash.ToString();
+    if (!public_key_hash_string.starts_with(kSha256Slash)) {
+      continue;
+    }
+    std::string public_key_hash_string_code = 
+        public_key_hash_string.substr(kSha256Slash.size());
+    auto it = find_if(pins.begin(), pins.end(),
+        [&public_key_hash_string_code](const std::string& pin){
+          if (!pin.starts_with(kSha256SlashOhos))
+            return false;
+          return public_key_hash_string_code == pin.substr(kSha256SlashOhos.size());
+        });
+    if (it != pins.end()) {
+      return PKPStatus::OK;
+    }
+  }
+  LOG(INFO) << "CheckPublicKeyPinsOhos ssl pinning PKPStatus::VIOLATED";
+  return PKPStatus::VIOLATED;
+}
+#endif
+
 TransportSecurityState::PKPStatus TransportSecurityState::CheckPublicKeyPins(
     const HostPortPair& host_port_pair,
     bool is_issued_by_known_root,
@@ -430,6 +473,9 @@ TransportSecurityState::PKPStatus TransportSecurityState::CheckPublicKeyPins(
     const PublicKeyPinReportStatus report_status,
     const NetworkAnonymizationKey& network_anonymization_key,
     std::string* pinning_failure_log) {
+#if BUILDFLAG(IS_OHOS)
+  return CheckPublicKeyPinsOhos(host_port_pair, public_key_hashes);
+#else
   // Perform pin validation only if the server actually has public key pins.
   if (!HasPublicKeyPins(host_port_pair.host())) {
     return PKPStatus::OK;
@@ -448,6 +494,7 @@ TransportSecurityState::PKPStatus TransportSecurityState::CheckPublicKeyPins(
   UMA_HISTOGRAM_BOOLEAN("Net.PublicKeyPinSuccess",
                         pin_validity == PKPStatus::OK);
   return pin_validity;
+#endif
 }
 
 bool TransportSecurityState::HasPublicKeyPins(const std::string& host) {

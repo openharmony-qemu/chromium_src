@@ -149,6 +149,7 @@ ChildProcessLauncherHelper::LaunchProcessOnLauncherThread(
         process.process = base::Process(render_pid);
         OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(OHOS::NWeb::ResSchedStatusAdapter::THREAD_CREATED,
           render_pid, render_pid, OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+        LOG(DEBUG) << "report render process create event success, render pid: " << render_pid;
       }
     }
 #else

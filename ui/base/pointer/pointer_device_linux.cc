@@ -7,6 +7,10 @@
 #include "base/check_op.h"
 #include "ui/events/devices/device_data_manager.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "ohos_adapter_helper.h"
+#endif
+
 namespace ui {
 
 namespace {
@@ -42,11 +46,25 @@ bool IsMouseOrTouchpadPresent() {
 
 int GetAvailablePointerTypes() {
   int available_pointer_types = 0;
+#if BUILDFLAG(IS_OHOS)
+  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                                        .GetSystemPropertiesInstance();
+  OHOS::NWeb::ProductDeviceType deviceType =
+      system_properties_adapter.GetProductDeviceType();
+
+  if (deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_2IN1)
+    available_pointer_types |= POINTER_TYPE_FINE;
+  if (deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_TABLET ||
+      deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE)
+    available_pointer_types |= POINTER_TYPE_COARSE;
+
+#else
   if (IsMouseOrTouchpadPresent())
     available_pointer_types |= POINTER_TYPE_FINE;
 
   if (IsTouchDevicePresent())
     available_pointer_types |= POINTER_TYPE_COARSE;
+#endif
 
   if (available_pointer_types == 0)
     available_pointer_types = POINTER_TYPE_NONE;

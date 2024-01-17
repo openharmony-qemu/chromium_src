@@ -40,7 +40,7 @@ extern const base::Feature kUiCompositorScrollWithLayers;
 
 COMPONENT_EXPORT(UI_BASE_FEATURES) bool IsUiGpuRasterizationEnabled();
 
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID) || defined(OHOS_INPUT_EVENTS)
 COMPONENT_EXPORT(UI_BASE_FEATURES)
 extern const base::Feature kElasticOverscroll;
 #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID)

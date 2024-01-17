@@ -343,6 +343,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #if defined(OHOS_PRINT)
   void SetToken(void* token) override;
   void* CreateWebPrintDocumentAdapter(const std::string& jobName) override;
+  void SetPrintBackground(bool enable) override;
+  bool GetPrintBackground() override;
 #endif // defined(OHOS_PRINT)
 
 #ifdef OHOS_SCREEN_ROTATION

@@ -1534,6 +1534,20 @@ void* NWebImpl::CreateWebPrintDocumentAdapter(const std::string& jobName) {
   return nweb_delegate_->CreateWebPrintDocumentAdapter(jobName);
 }
 
+void NWebImpl::SetPrintBackground(bool enable) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->SetPrintBackground(enable);
+}
+
+bool NWebImpl::GetPrintBackground() {
+  if (nweb_delegate_ == nullptr) {
+    return false;
+  }
+  return nweb_delegate_->GetPrintBackground();
+}
+
 void NWebImpl::SetNestedScrollMode(const NestedScrollMode& nestedScrollMode) {}
 #endif
 

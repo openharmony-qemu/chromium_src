@@ -290,11 +290,11 @@ const PrefService::Preference* PrefService::FindPreference(
   if (it != prefs_map_.end())
     return &(it->second);
   const base::Value* default_value = nullptr;
-  #if BUILDFLAG(OHOS_BUGFIX_CRASH)
+#if BUILDFLAG(OHOS_BUGFIX_CRASH)
   if (!pref_registry_->defaults()) {
     return nullptr;
   }
-  #endif
+#endif
   if (!pref_registry_->defaults()->GetValue(pref_name, &default_value))
     return nullptr;
   it = prefs_map_
@@ -414,11 +414,11 @@ const base::Value* PrefService::GetDefaultPrefValue(
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   // Lookup the preference in the default store.
   const base::Value* value = nullptr;
-  #if BUILDFLAG(OHOS_BUGFIX_CRASH)
+#if defined(OHOS_BUGFIX_CRASH)
   if (!pref_registry_->defaults()) {
     return nullptr;
   }
-  #endif
+#endif
   bool has_value = pref_registry_->defaults()->GetValue(path, &value);
   DCHECK(has_value) << "Default value missing for pref: " << path;
   return value;
@@ -617,11 +617,11 @@ base::Value* PrefService::GetMutableUserPref(const std::string& path,
 
   // If no user preference of the correct type exists, clone default value.
   const base::Value* default_value = nullptr;
-  #if BUILDFLAG(OHOS_BUGFIX_CRASH)
+#if defined(OHOS_BUGFIX_CRASH)
   if (!pref_registry_->defaults()) {
     return nullptr;
   }
-  #endif
+#endif
   pref_registry_->defaults()->GetValue(path, &default_value);
   DCHECK_EQ(default_value->type(), type);
   user_pref_store_->SetValueSilently(path, default_value->Clone(),
@@ -747,14 +747,14 @@ const base::Value* PrefService::GetPreferenceValue(
     base::StringPiece path) const {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
-#if BUILDFLAG(OHOS_BUGFIX_CRASH)
-if (!pref_registry_ || !pref_registry_->defaults()) {
-  return nullptr;
-}
+#if defined(OHOS_BUGFIX_CRASH)
+  if (!pref_registry_ || !pref_registry_->defaults()) {
+    return nullptr;
+  }
 
-if (!pref_value_store_) {
-  return nullptr;
-}
+  if (!pref_value_store_) {
+    return nullptr;
+  }
 #endif
   const base::Value* default_value = nullptr;
   if (!pref_registry_->defaults()->GetValue(path, &default_value))

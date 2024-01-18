@@ -290,7 +290,7 @@ const PrefService::Preference* PrefService::FindPreference(
   if (it != prefs_map_.end())
     return &(it->second);
   const base::Value* default_value = nullptr;
-  #if BUILDFLAG(IS_CHROMEOS_ASH)
+  #if BUILDFLAG(OHOS_BUGFIX_CRASH)
   if (!pref_registry_->defaults()) {
     return nullptr;
   }
@@ -414,7 +414,7 @@ const base::Value* PrefService::GetDefaultPrefValue(
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   // Lookup the preference in the default store.
   const base::Value* value = nullptr;
-  #if BUILDFLAG(IS_CHROMEOS_ASH)
+  #if BUILDFLAG(OHOS_BUGFIX_CRASH)
   if (!pref_registry_->defaults()) {
     return nullptr;
   }
@@ -617,7 +617,7 @@ base::Value* PrefService::GetMutableUserPref(const std::string& path,
 
   // If no user preference of the correct type exists, clone default value.
   const base::Value* default_value = nullptr;
-  #if BUILDFLAG(IS_CHROMEOS_ASH)
+  #if BUILDFLAG(OHOS_BUGFIX_CRASH)
   if (!pref_registry_->defaults()) {
     return nullptr;
   }
@@ -747,7 +747,7 @@ const base::Value* PrefService::GetPreferenceValue(
     base::StringPiece path) const {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(OHOS_BUGFIX_CRASH)
 if (!pref_registry_ || !pref_registry_->defaults()) {
   return nullptr;
 }

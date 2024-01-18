@@ -290,7 +290,7 @@ const PrefService::Preference* PrefService::FindPreference(
   if (it != prefs_map_.end())
     return &(it->second);
   const base::Value* default_value = nullptr;
-#if BUILDFLAG(OHOS_BUGFIX_CRASH)
+#if defined(OHOS_BUGFIX_CRASH)
   if (!pref_registry_->defaults()) {
     return nullptr;
   }

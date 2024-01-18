@@ -13347,7 +13347,7 @@ RenderFrameHostImpl::BuildCommitNavigationCallback(
     NavigationRequest* navigation_request) {
   DCHECK(navigation_request);
   return base::BindOnce(&RenderFrameHostImpl::DidCommitNavigation,
-                        base::Unretained(this), navigation_request);
+                        weak_ptr_factory_.GetWeakPtr(), navigation_request);
 }
 
 mojom::NavigationClient::CommitFailedNavigationCallback
@@ -13355,7 +13355,7 @@ RenderFrameHostImpl::BuildCommitFailedNavigationCallback(
     NavigationRequest* navigation_request) {
   DCHECK(navigation_request);
   return base::BindOnce(&RenderFrameHostImpl::DidCommitNavigation,
-                        base::Unretained(this), navigation_request);
+                        weak_ptr_factory_.GetWeakPtr(), navigation_request);
 }
 
 void RenderFrameHostImpl::SendBeforeUnload(

@@ -7,9 +7,9 @@
 * nweb：基于CEF构建的OpenHarmony Web组件的Native引擎，主要构建Web组件浏览器内核的部分能力。
 * CEF：CEF全称Chromium Embedded Framework，是一个基于Google Chromium 的开源项目。
 ## 使用说明
-1. 下载代码
+1. 下载代码：以主干(master)为例，要下载其他分支代码请替换-b 后带的manifest分支参数，参数列表详见8
     ```
-    repo init -u https://gitee.com/openharmony-sig/manifest -b master -m chromium.xml --no-repo-verify
+    repo init -u https://gitee.com/openharmony-tpc/manifest -b chromium -m chromium.xml --no-repo-verify
     repo sync -c
     repo forall -c 'git lfs pull'
     ```
@@ -78,7 +78,7 @@
     ```
 6. 所有Chromium仓对应目录映射关系
 
-    https://gitee.com/openharmony-sig/manifest/blob/master/chromium.xml
+    https://gitee.com/openharmony-tpc/manifest/blob/master/chromium.xml
 
 7. 上库指导
 
@@ -114,23 +114,20 @@
 
     7.11 联系committer加分
 
-## 二进制来源说明
-1. 本项目的[chromium_third_party_ohos_prebuilts](https://gitee.com/openharmony-sig/chromium_third_party_ohos_prebuilts)仓中存在两个自研二进制文件，分别为[libnweb_ohos_adapter.z.so](https://gitee.com/openharmony-sig/chromium_third_party_ohos_prebuilts/tree/master/libs)、[sysroot-20231205.tar.gz](https://gitee.com/openharmony-sig/chromium_third_party_ohos_prebuilts/blob/master/sysroot-20231205.tar.gz)。
+8. chromium各版manifest分支名
 
-2. 上述二进制文件均为OpenHarmony源码基于OpenHarmony OpenHarmony-v4.1-Beta1 Tag点编译生成。源码获取可参考[OpenHarmony-v4.1-Beta1代码获取指导](https://gitee.com/openharmony/docs/blob/master/zh-cn/release-notes/OpenHarmony-v4.1-beta1.md#%E6%BA%90%E7%A0%81%E8%8E%B7%E5%8F%96),[编译构建指导](https://gitee.com/openharmony/docs/blob/master/zh-cn/device-dev/subsystems/subsys-build-all.md)
-    ```
-    代码下载命令：
-    repo init -u https://gitee.com/openharmony/manifest -b OpenHarmony-4.1-Beta1 --no-repo-verify
-    repo sync -c
-    repo forall -c 'git lfs pull'
-    ```
+    99分支：chromium
 
-3. 上述二进制在本项目中基于 ***RK3568*** 产品编译生成，编译命令为
-    ```
-    ./build.sh --product-name rk3568  --ccache
-    ```
-4. 二进制在OpenHarmony编译产物中的存放路径
+    114分支：114_trunk
 
-    libnweb_ohos_adapter.z.so : 存放路径为out/rk3568/web/webview
+    配套OpenHarmony 3.2Release分支：3.2_Release
 
-    sysroot-20231205.tar.gz ： 存放路径为out/rk3568/obj/third_party/musl/usr，压缩文件为usr下include、lib文件夹压缩而成
+    配套OpenHarmony 4.0Release分支：4.0_Release
+
+    配套OpenHarmony 4.1 Beta1 分支：master114_20231218
+
+## 相关仓
+[chromium_cef](https://gitee.com/openharmony-tpc/chromium_cef)
+
+[chromium_third_party_ohos_nweb_hap](https://gitee.com/openharmony-tpc/chromium_third_party_ohos_nweb_hap)
+

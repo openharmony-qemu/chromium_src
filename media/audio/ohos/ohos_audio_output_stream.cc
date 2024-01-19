@@ -44,10 +44,12 @@ void AudioRendererCallback::OnResume() {
 }
 
 bool AudioRendererCallback::GetSuspendFlag() {
+  LOG(INFO) << "AudioRendererCallback::GetSuspendFlag " << suspendFlag_;
   return suspendFlag_;
 }
 
 void AudioRendererCallback::SetSuspendFlag(bool flag) {
+  LOG(INFO) << "AudioRendererCallback::SetSuspendFlag " << flag;
   suspendFlag_ = flag;
 }
 
@@ -135,6 +137,10 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
   DCHECK(!callback_);
   DCHECK(reference_time_.is_null());
   DCHECK(!timer_.IsRunning());
+  if (!rendererCallback_) {
+    LOG(ERROR) << "OHOSAudioOutputStream::Start rendererCallback_ is null.";
+    return;
+  }
   rendererCallback_->SetSuspendFlag(false);
   int32_t ret = audio_renderer_->SetAudioRendererCallback(rendererCallback_);
   if (ret != AudioAdapterCode::AUDIO_OK) {
@@ -374,7 +380,7 @@ void OHOSAudioOutputStream::PumpSamples() {
                                num_filled_bytes - bytesWritten);
     if (bytesSingle <= 0) {
       LOG(DEBUG) << "Audio renderer write audio data failed.";
-      if (!audio_renderer_->IsRendererStateRunning() && !isRefreshing_) {
+      if (!audio_renderer_->IsRendererStateRunning() && !isRefreshing_ && rendererCallback_) {
         rendererCallback_->SetSuspendFlag(true);
         if (!weakMediaSession_) {
           LOG(ERROR) << "Try to suspend audio but get mediaSession failed.";
@@ -388,6 +394,7 @@ void OHOSAudioOutputStream::PumpSamples() {
           weakMediaSession_.get()->isStreamSuspended_ = true;
         }
       } else {
+        LOG(ERROR) << "Audio renderer write audio data failed, try to shut down audio stream.";
         ReportError();
         return;
       }

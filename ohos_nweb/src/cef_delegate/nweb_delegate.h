@@ -414,7 +414,11 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
                                 std::vector<std::string>& certChainData,
                                 bool isSingleCert);
 #endif
+ private:
   content::BrowserAccessibilityManagerOHOS* GetAccessibilityManager() const;
+  void AddAccessibilityNodeInfoAttributes(
+      NWebAccessibilityNodeInfo& nodeInfo,
+      const content::BrowserAccessibilityOHOS* node) const;
   void AddAccessibilityNodeInfoRect(
       NWebAccessibilityNodeInfo& nodeInfo,
       const content::BrowserAccessibilityOHOS* node) const;
@@ -426,7 +430,6 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   bool PopulateAccessibilityNodeInfo(const content::BrowserAccessibilityOHOS* node,
                                      NWebAccessibilityNodeInfo& nodeInfo) const;
 
- private:
   float zoom_in_factor_ = 1.25f;
   float zoom_out_factor_ = 0.8f;
   float default_virtual_pixel_ratio_ = 2.0;

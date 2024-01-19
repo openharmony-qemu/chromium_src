@@ -352,6 +352,11 @@ class NWebImpl : public NWeb {
   }
 #endif
 
+#if defined(OHOS_SCHEME_HANDLER)
+  void SetWebTag(const std::string& web_tag) { web_tag_ = web_tag; }
+  std::string GetWebTag() { return web_tag_; }
+#endif
+
  private:
   void ProcessInitArgs(const NWebInitArgs& init_args);
   void InitWebEngineArgs(const NWebInitArgs& init_args);
@@ -381,6 +386,9 @@ class NWebImpl : public NWeb {
   bool is_richtext_value_ = false;
 
   bool incognito_mode_ = false;
+#if defined(OHOS_SCHEME_HANDLER)
+  std::string web_tag_{""};
+#endif
 };
 }  // namespace OHOS::NWeb
 

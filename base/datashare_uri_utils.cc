@@ -27,4 +27,9 @@ std::u16string GetFileDisplayName(const FilePath& datashare_uri) {
                                  .GetFileDisplayName(datashare_uri.value());
   return base::UTF8ToUTF16(display_name);
 }
+std::string GetRealPath(const FilePath& datashare_uri) {
+  return OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .GetDatashareInstance()
+      .GetRealPath(datashare_uri.value());
+}
 }  // namespace base

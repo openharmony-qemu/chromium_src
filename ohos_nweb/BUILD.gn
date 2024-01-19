@@ -135,6 +135,26 @@ component("cef_nweb") {
     "src/sysevent/event_reporter.h",
   ]
 
+  #ifdef OHOS_SCHEME_HANDLER
+  if (defined(ohos_scheme_handler) && ohos_scheme_handler) {
+    sources += [
+      "src/cef_delegate/nweb_pipe_resource_handler.cc",
+      "src/cef_delegate/nweb_pipe_resource_handler.h",
+      "src/cef_delegate/nweb_scheme_handler_factory.cc",
+      "src/cef_delegate/nweb_scheme_handler_factory.h",
+      "src/ndk/scheme_handler/post_data_stream.cc",
+      "src/ndk/scheme_handler/post_data_stream.h",
+      "src/ndk/scheme_handler/resource_handler.cc",
+      "src/ndk/scheme_handler/resource_handler.h",
+      "src/ndk/scheme_handler/response.cc",
+      "src/ndk/scheme_handler/response.h",
+      "src/ndk/scheme_handler/resource_request.cc",
+      "src/ndk/scheme_handler/resource_request.h",
+      "src/ndk/scheme_handler/arkweb_scheme_handler.cc"
+    ]
+  }
+  #endif
+
   sources += [
     "src/cef_delegate/nweb_value_convert.cc",
     "src/cef_delegate/nweb_value_convert.h",

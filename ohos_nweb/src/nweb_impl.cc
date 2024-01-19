@@ -1972,6 +1972,19 @@ extern "C" OHOS_NWEB_EXPORT void SetHttpDns(const NWebDOHConfig& config) {
 #endif  // defined(OHOS_HTTP_DNS)
 }
 
+#if defined(OHOS_SCHEME_HANDLER)
+extern "C" OHOS_NWEB_EXPORT void SetWebTag(int32_t nweb_id,
+                                           const char* web_tag) {
+  OHOS::NWeb::NWebImpl* nweb = OHOS::NWeb::NWebImpl::FromID(nweb_id);
+  if (!nweb) {
+    WVLOG_E("fail to find a valid nweb with %{public}d", nweb_id);
+    return;
+  }
+
+  nweb->SetWebTag(std::string(web_tag));
+}
+#endif
+
 extern "C" OHOS_NWEB_EXPORT void PrepareForPageLoad(std::string url,
                                                     bool preconnectable,
                                                     int32_t num_sockets) {

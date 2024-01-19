@@ -24,6 +24,10 @@
 #include "ohos_adapter_helper.h"
 #endif
 
+#if defined(OHOS_SCHEME_HANDLER)
+#include "cef/libcef/common/scheme_registrar_impl.h"
+#endif
+
 namespace OHOS::NWeb {
 namespace switches {
 const char kUrl[] = "url";
@@ -80,6 +84,10 @@ void OnContextInitializedForIncognitoMode() override;
   void OnWebKitInitialized() override;
   /* CefRenderProcessHandler methods begin */
 
+#if defined(OHOS_SCHEME_HANDLER)
+  void RegisterCustomSchemes(const std::string& scheme, int options);
+#endif
+
  private:
   void PopulateCreateSettings(CefRefPtr<CefCommandLine> command_line,
                               CefBrowserSettings& browser_settings
@@ -105,6 +113,10 @@ void OnContextInitializedForIncognitoMode() override;
 #if defined(OHOS_API_INIT_WEB_ENGINE)
   base::OnceCallback<void()> complete_callback_;
 #endif  // defined(OHOS_API_INIT_WEB_ENGINE)
+
+#if defined(OHOS_SCHEME_HANDLER)
+  CefSchemeRegistrarImpl scheme_registrar_;
+#endif
 
   // Include the default reference counting implementation.
   IMPLEMENT_REFCOUNTING(NWebApplication);

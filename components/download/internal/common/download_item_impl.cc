@@ -441,7 +441,12 @@ DownloadItemImpl::DownloadItemImpl(DownloadItemImplDelegate* delegate,
       is_updating_observers_(false),
       fetch_error_body_(info.fetch_error_body),
       request_headers_(info.request_headers),
-      download_source_(info.download_source) {
+      download_source_(info.download_source)
+#if defined(OHOS_EX_DOWNLOAD)
+      ,
+      download_request_method_(info.method) 
+#endif
+{
 #if defined(OHOS_EX_DOWNLOAD)
   SetUserData(kRequestMethod, std::make_unique<RequestMethodData>(info.method));
 #endif  //  OHOS_EX_DOWNLOAD
@@ -816,6 +821,12 @@ bool DownloadItemImpl::AllowMetered() const {
 bool DownloadItemImpl::IsTemporary() const {
   return is_temporary_;
 }
+
+#if defined(OHOS_EX_DOWNLOAD)
+const std::string& DownloadItemImpl::GetRequestMethod() const {
+    return download_request_method_;
+}
+#endif
 
 bool DownloadItemImpl::CanResume() const {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);

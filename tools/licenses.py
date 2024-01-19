@@ -138,6 +138,8 @@ ADDITIONAL_PATHS = (
     # Fake directories to include the strongtalk and fdlibm licenses.
     os.path.join('v8', 'strongtalk'),
     os.path.join('v8', 'fdlibm'),
+    os.path.join('cef'),
+    os.path.join('cef', 'tools', 'yapf'),
 )
 
 
@@ -324,6 +326,18 @@ SPECIAL_CASES = {
         "License": "Apache 2.0 and compatible licenses",
         "License Android Compatible": "yes",
         "License File": "/third_party/swiftshader/LICENSE.txt",
+    },
+    os.path.join('cef'): {
+        "Name": "cef",
+        "URL": "https://github.com/chromiumembedded/cef",
+        "License": "BSD-3-Clause",
+        "License File": "/cef/LICENSE.txt",
+    },
+    os.path.join('cef', 'tools', 'yapf'): {
+        "Name": "yapf",
+        "URL": "https://github.com/google/yapf",
+        "License": "Apache 2.0",
+        "License File": "/cef/tools/yapf/LICENSE",
     },
 }
 

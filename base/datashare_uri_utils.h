@@ -20,6 +20,9 @@ BASE_EXPORT File OpenDatashareUriForRead(const FilePath& uri);
 // DOM layer.  If it is empty, the base part of the |file_path| is used.
 BASE_EXPORT std::u16string GetFileDisplayName(const FilePath& datashare_uri);
 
+// Get the real path for the uri.
+BASE_EXPORT std::string GetRealPath(const FilePath& datashare_uri);
+
 }  // namespace base
 
 #endif  // BASE_DATASHARE_URI_UTILS_H_

@@ -28,6 +28,10 @@
 #include "cef/include/wrapper/cef_closure_task.h"
 #endif
 
+#ifdef OHOS_SCHEME_HANDLER
+#include "cef/libcef/common/net/scheme_registration.h"
+#endif
+
 namespace {
 #if defined(OHOS_API_INIT_WEB_ENGINE)
   CefRefPtr<OHOS::NWeb::NWebApplication> g_application = nullptr;
@@ -137,6 +141,12 @@ void NWebApplication::OnRegisterCustomSchemes(
       registrar->AddCustomScheme(scheme[0], options);
     }
   }
+
+#if defined(OHOS_SCHEME_HANDLER)
+  content::ContentClient::Schemes schemes;
+  scheme_registrar_.GetSchemes(&schemes);
+  scheme::AddInternalSchemes(&schemes);
+#endif  // defined(OHOS_SCHEME_HANDLER)
 }
 #endif
 /* CefApp methods end */
@@ -304,5 +314,12 @@ void NWebApplication::CreateBrowser(
   }
 }
 #endif  // defined(OHOS_API_INIT_WEB_ENGINE)
+
+#if defined(OHOS_SCHEME_HANDLER)
+void NWebApplication::RegisterCustomSchemes(const std::string& scheme, int options) {
+  LOG(INFO) << "scheme_handler register custom schemes " << scheme;
+  scheme_registrar_.AddCustomScheme(scheme, options);
+}
+#endif  // defined(OHOS_SCHEME_HANDLER)
 
 }  // namespace OHOS::NWeb

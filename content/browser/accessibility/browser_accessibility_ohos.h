@@ -112,6 +112,10 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
 
   std::u16string GetTextContentUTF16() const override;
 
+  bool IsClickable() const override;
+
+  bool IsFocusable() const override;
+
  protected:
   BrowserAccessibilityOHOS(BrowserAccessibilityManager* manager,
                            ui::AXNode* node);
@@ -128,6 +132,8 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
   bool HasOnlyTextAndImageChildren() const;
 
   bool HasListMarkerChild() const;
+
+  bool IsHeadingLink() const;
 
   void AddFocusableNode(
       std::list<const BrowserAccessibilityOHOS*>& nodeList) const;

@@ -15,6 +15,7 @@
 
 #include "content/browser/accessibility/browser_accessibility_manager_ohos.h"
 #include "content/browser/accessibility/browser_accessibility_ohos.h"
+#include "content/public/browser/browser_thread.h"
 #include "ui/gfx/geometry/point_conversions.h"
 
 namespace content {
@@ -145,8 +146,9 @@ void BrowserAccessibilityManagerOHOS::SendAccessibilityEvent(
   if (accessibilityEventListener_ != nullptr &&
       eventType != OHOS::NWeb::AccessibilityEventType::UNKNOWN &&
       accessibilityId != kInvalidAccessibilityId) {
-    accessibilityEventListener_->OnAccessibilityEvent(
-        accessibilityId, static_cast<int64_t>(eventType));
+    GetUIThreadTaskRunner({})->PostTask(FROM_HERE, base::BindOnce(
+        &BrowserAccessibilityManagerOHOS::HandleSendAccessibilityEvent,
+        base::Unretained(this), accessibilityId, eventType));
   }
 
   if (eventType == OHOS::NWeb::AccessibilityEventType::HOVER_ENTER_EVENT) {
@@ -158,6 +160,12 @@ void BrowserAccessibilityManagerOHOS::SendAccessibilityEvent(
     }
     lastHoverId_ = accessibilityId;
   }
+}
+
+void BrowserAccessibilityManagerOHOS::HandleSendAccessibilityEvent(int64_t accessibilityId,
+    OHOS::NWeb::AccessibilityEventType eventType) const {
+  accessibilityEventListener_->OnAccessibilityEvent(
+      accessibilityId, static_cast<uint32_t>(eventType));
 }
 
 void BrowserAccessibilityManagerOHOS::HandleHover(int64_t accessibilityId) {

@@ -2552,8 +2552,7 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId,
   auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
   auto* node = content::BrowserAccessibilityOHOS::GetFromAccessibilityId(
       accessibilityId);
-  if (node == nullptr || !node->IsDescendantOf(rootNode)) {
-    LOG(ERROR) << "ExecuteAction can not get node";
+  if (node == nullptr || rootNode == nullptr || !node->IsDescendantOf(rootNode)) {
     return;
   }
   AceAction aceAction = static_cast<AceAction>(action);
@@ -2614,6 +2613,9 @@ bool NWebDelegate::GetFocusedAccessibilityNodeInfo(
     return false;
   }
   auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
+  if (rootNode == nullptr) {
+    return false;
+  }
   content::BrowserAccessibilityOHOS* resultNode = nullptr;
   if (isAccessibilityFocus) {
     auto accessibilityFocusId = accessibilityManager->GetAccessibilityFocusId();
@@ -2626,7 +2628,6 @@ bool NWebDelegate::GetFocusedAccessibilityNodeInfo(
         accessibilityManager->GetFocus());
   }
   if (resultNode == nullptr) {
-    LOG(ERROR) << "GetFocusedAccessibilityNodeInfo can not get node";
     return false;
   }
   content::BrowserAccessibilityOHOS* node = nullptr;
@@ -2636,9 +2637,8 @@ bool NWebDelegate::GetFocusedAccessibilityNodeInfo(
     node = content::BrowserAccessibilityOHOS::GetFromAccessibilityId(
         accessibilityId);
   }
-  if (node == nullptr || !node->IsDescendantOf(rootNode) || !resultNode->IsDescendantOf(node)) {
-    LOG(ERROR)
-        << "GetFocusedAccessibilityNodeInfo can not get node";
+  if (node == nullptr || !node->IsDescendantOf(rootNode) ||
+      !resultNode->IsDescendantOf(node)) {
     return false;
   }
   return PopulateAccessibilityNodeInfo(resultNode, nodeInfo);
@@ -2654,6 +2654,9 @@ bool NWebDelegate::GetAccessibilityNodeInfoById(
     return false;
   }
   auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
+  if (rootNode == nullptr) {
+    return false;
+  }
   content::BrowserAccessibilityOHOS* node = nullptr;
   if (accessibilityId < 0) {
     node = static_cast<content::BrowserAccessibilityOHOS*>(rootNode);
@@ -2662,7 +2665,6 @@ bool NWebDelegate::GetAccessibilityNodeInfoById(
         accessibilityId);
   }
   if (node == nullptr || !node->IsDescendantOf(rootNode)) {
-    LOG(ERROR) << "GetAccessibilityNodeInfoById can not get node";
     return false;
   }
   return PopulateAccessibilityNodeInfo(node, nodeInfo);
@@ -2679,6 +2681,9 @@ bool NWebDelegate::GetAccessibilityNodeInfoByFocusMove(
     return false;
   }
   auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
+  if (rootNode == nullptr) {
+    return false;
+  }
   content::BrowserAccessibilityOHOS* node = nullptr;
   if (accessibilityId < 0) {
     node = static_cast<content::BrowserAccessibilityOHOS*>(
@@ -2688,12 +2693,10 @@ bool NWebDelegate::GetAccessibilityNodeInfoByFocusMove(
         accessibilityId);
   }
   if (node == nullptr || !node->IsDescendantOf(rootNode)) {
-    LOG(ERROR) << "GetAccessibilityNodeInfoByFocusMove can not get node";
     return false;
   }
   auto resultNode = node->GetAccessibilityNodeByFocusMove(direction);
   if (resultNode == nullptr) {
-    LOG(ERROR) << "GetAccessibilityNodeInfoByFocusMove can not get node";
     return false;
   }
   return PopulateAccessibilityNodeInfo(resultNode, nodeInfo);
@@ -2728,23 +2731,38 @@ bool NWebDelegate::PopulateAccessibilityNodeInfo(
     childIds.emplace_back(childNodeOHOS.GetAccessibilityId());
   }
   nodeInfo.childIds.swap(childIds);
+  nodeInfo.accessibilityFocus =
+      (accessibilityManager->GetAccessibilityFocusId() ==
+              node->GetAccessibilityId()
+          ? true
+          : false);
 
+  AddAccessibilityNodeInfoAttributes(nodeInfo, node);
+  AddAccessibilityNodeInfoRect(nodeInfo, node);
+  AddAccessibilityNodeInfoCollection(nodeInfo, node);
+  AddAccessibilityNodeInfoActions(nodeInfo);
+  LOG(DEBUG) << "PopulateAccessibilityNodeInfo accessibilityId " << nodeInfo.accessibilityId
+  << " parentId " << nodeInfo.parentId << " content " << nodeInfo.content << " componentType "
+  << nodeInfo.componentType << " accessibilityFocus " << nodeInfo.accessibilityFocus
+  << " clickable " << nodeInfo.clickable << " focusable " << nodeInfo.focusable
+  << " focused " << nodeInfo.focused << " editable " << nodeInfo.editable
+  << " checkable " << nodeInfo.checkable << " childSize " << nodeInfo.childIds.size()
+  << " checked " << nodeInfo.checked << " selected " << nodeInfo.selected;
+
+  return true;
+}
+
+void NWebDelegate::AddAccessibilityNodeInfoAttributes(
+    NWebAccessibilityNodeInfo& nodeInfo,
+    const content::BrowserAccessibilityOHOS* node) const {
   nodeInfo.componentType = node->GetRoleString();
   nodeInfo.focused = node->IsFocused();
   nodeInfo.visible = !node->IsInvisibleOrIgnored();
   nodeInfo.enabled = node->IsEnabled();
-  nodeInfo.accessibilityFocus =
-      (accessibilityManager->GetAccessibilityFocusId() ==
-               node->GetAccessibilityId()
-           ? true
-           : false);
-
   nodeInfo.focusable = node->IsFocusable();
   nodeInfo.descriptionInfo = "";
   nodeInfo.content = "";
-  if (node->IsLink()) {
-    nodeInfo.descriptionInfo = node->GetTargetUrl();
-  } else if (node->IsPasswordField()) {
+  if (node->IsPasswordField()) {
     nodeInfo.content = "*";
   } else {
     nodeInfo.content = base::UTF16ToUTF8(node->GetTextContentUTF16());
@@ -2771,12 +2789,6 @@ bool NWebDelegate::PopulateAccessibilityNodeInfo(
   nodeInfo.rangeInfoMin = node->RangeMin();
   nodeInfo.rangeInfoMax = node->RangeMax();
   nodeInfo.rangeInfoCurrent = node->RangeCurrentValue();
-
-  AddAccessibilityNodeInfoRect(nodeInfo, node);
-  AddAccessibilityNodeInfoCollection(nodeInfo, node);
-  AddAccessibilityNodeInfoActions(nodeInfo);
-
-  return true;
 }
 
 void NWebDelegate::AddAccessibilityNodeInfoRect(

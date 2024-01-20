@@ -886,4 +886,36 @@ void BrowserAccessibilityOHOS::AppendTextToString(
   *string += std::u16string(u", ") + extra_text;
 }
 
+bool BrowserAccessibilityOHOS::IsClickable() const {
+  if (HasIntAttribute(ax::mojom::IntAttribute::kDefaultActionVerb) &&
+      (GetData().GetDefaultActionVerb() !=
+       ax::mojom::DefaultActionVerb::kClickAncestor)) {
+    return true;
+  }
+  if (IsHeadingLink()) {
+    return true;
+  }
+  if (ui::IsIframe(GetRole()) || ui::IsPlatformDocument(GetRole())) {
+    return false;
+  }
+  return ui::IsControlOnOHOS(GetRole(), IsFocusable());
+}
+
+bool BrowserAccessibilityOHOS::IsHeadingLink() const {
+  if (!(GetRole() == ax::mojom::Role::kHeading && InternalChildCount() == 1))
+    return false;
+
+  BrowserAccessibilityOHOS* child =
+      static_cast<BrowserAccessibilityOHOS*>(InternalChildrenBegin().get());
+  return ui::IsLink(child->GetRole());
+}
+
+bool BrowserAccessibilityOHOS::IsFocusable() const {
+  if (ui::IsIframe(GetRole()) ||
+      (ui::IsPlatformDocument(GetRole()) && PlatformGetParent() &&
+       PlatformGetParent()->GetRole() != ax::mojom::Role::kPortal)) {
+    return HasStringAttribute(ax::mojom::StringAttribute::kName);
+  }
+  return BrowserAccessibility::IsFocusable();
+}
 }  // namespace content

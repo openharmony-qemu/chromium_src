@@ -199,9 +199,11 @@ CodecWrapperImpl::QueueStatus CodecWrapperImpl::QueueInputBuffer(
     if (state_ == State::kFlushed || state_ == State::kDrained) {
       elided_eos_pending_ = true;
     } else {
-      codec_->QueueInputBufferEOS();
+      auto res = codec_->QueueInputBufferEOS();
+      if (res == DecoderAdapterCode::DECODER_RETRY) {
+        return QueueStatus::kTryAgainLater;
+      }
     }
-
     state_ = State::kDraining;
     return QueueStatus::kOk;
   }

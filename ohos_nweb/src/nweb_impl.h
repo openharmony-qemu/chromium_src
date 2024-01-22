@@ -248,6 +248,8 @@ class NWebImpl : public NWeb {
   void* CreateWebPrintDocumentAdapter(const std::string& jobName) override;
   void SetNestedScrollMode(const NestedScrollMode& nestedScrollMode) override;
   int GetSecurityLevel() override;
+  void SetPrintBackground(bool enable) override;
+  bool GetPrintBackground() override;
 #endif
 
 #if defined(OHOS_INPUT_EVENTS)

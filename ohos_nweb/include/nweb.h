@@ -984,6 +984,18 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      * Inject the JavaScript after WebView load the DOM tree.
      */
     virtual void JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) = 0;
+
+    /**
+     * Set the ability to print web page background.
+     * @param enable Indicate whether the ability is enabled or disabled.
+     */
+    virtual void SetPrintBackground(bool enable) = 0;
+
+    /**
+     * Obtains whether to print the background of a web page.
+     * @return true if enable print web page background, otherwise false.
+     */
+    virtual bool GetPrintBackground() = 0;
 };
 }  // namespace OHOS::NWeb
 

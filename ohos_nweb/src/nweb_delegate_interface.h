@@ -329,6 +329,8 @@ class NWebDelegateInterface
 #if defined(OHOS_PRINT)
   virtual void SetToken(void* token) = 0;
   virtual void* CreateWebPrintDocumentAdapter(const std::string& jobName) = 0;
+  virtual void SetPrintBackground(bool enable) = 0;
+  virtual bool GetPrintBackground() = 0;
 #endif // defined(OHOS_PRINT)
 
 #ifdef OHOS_SCREEN_ROTATION

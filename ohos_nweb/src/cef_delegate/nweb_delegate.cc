@@ -2367,6 +2367,24 @@ void* NWebDelegate::CreateWebPrintDocumentAdapter(const std::string& jobName) {
   GetBrowser()->GetHost()->CreateWebPrintDocumentAdapter(CefString(jobName), &webPrintDocumentAdapter);
   return webPrintDocumentAdapter;
 }
+
+void NWebDelegate::SetPrintBackground(bool enable) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "SetPrintBackground can not get browser";
+    return;
+  }
+
+  GetBrowser()->GetHost()->SetPrintBackground(enable);
+}
+
+bool NWebDelegate::GetPrintBackground() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "GetPrintBackground can not get browser";
+    return false;
+  }
+
+  return GetBrowser()->GetHost()->GetPrintBackground();
+}
 #endif // defined(OHOS_PRINT)
 
 #if defined(OHOS_EX_PASSWORD)

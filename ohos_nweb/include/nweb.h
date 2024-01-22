@@ -986,6 +986,18 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
     virtual void JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) = 0;
 
     /**
+     * Enable the ability to check website security risks.
+     * Illegal and fraudulent websites are mandatory enabled and cann't be disabled by this function.
+     */
+    virtual void EnableSafeBrowsing(bool enable) = 0;
+
+    /**
+     * Get whether checking website security risks is enabled.
+     * @return true if enable the ability to check website security risks else false.
+     */
+    virtual bool IsSafeBrowsingEnabled() = 0;
+
+    /**
      * Set the ability to print web page background.
      * @param enable Indicate whether the ability is enabled or disabled.
      */
@@ -996,6 +1008,7 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      * @return true if enable print web page background, otherwise false.
      */
     virtual bool GetPrintBackground() = 0;
+    
 };
 }  // namespace OHOS::NWeb
 

@@ -357,6 +357,11 @@ class NWebDelegateInterface
   virtual bool ShouldVirtualKeyboardOverlay() = 0;
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+  virtual bool IsSafeBrowsingEnabled() = 0;
+  virtual void EnableSafeBrowsing(bool enable) = 0;
+#endif
+
 #if defined(OHOS_SECURITY_STATE)
   virtual int GetSecurityLevel() = 0;
 #endif

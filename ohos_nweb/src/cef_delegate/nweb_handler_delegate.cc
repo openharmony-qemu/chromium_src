@@ -862,6 +862,13 @@ void NWebHandlerDelegate::OnFirstContentfulPaint(
   }
 }
 
+void NWebHandlerDelegate::OnSafeBrowsingCheckResult(int threat_type) {
+  LOG(INFO) << "NWebHandlerDelegate::OnSafeBrowsingCheckResult";
+  if (nweb_handler_ != nullptr) {
+    nweb_handler_->OnSafeBrowsingCheckResult(threat_type);
+  }
+}
+
 void NWebHandlerDelegate::OnDataResubmission(CefRefPtr<CefBrowser> browser,
                                              CefRefPtr<CefCallback> callback) {
   LOG(INFO) << "NWebHandlerDelegate::OnDataResubmission";

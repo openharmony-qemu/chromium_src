@@ -4208,7 +4208,14 @@ NavigationControllerImpl::LoadPostCommitErrorPage(
   // Error pages have a fully permissive FramePolicy.
   // TODO(arthursonzogni): Consider providing the minimal capabilities to the
   // error pages.
+#if BUILDFLAG(IS_OHOS)
+  if (error == net::ERR_BLOCKED_BY_CLIENT) {
+    blink::FramePolicy frame_policy(node->pending_frame_policy());
+    commit_params->frame_policy = frame_policy;
+  }
+#else
   commit_params->frame_policy = blink::FramePolicy();
+#endif
 
   std::unique_ptr<NavigationRequest> navigation_request =
       NavigationRequest::CreateBrowserInitiated(

@@ -286,6 +286,11 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   int GetSecurityLevel() override;
 #endif
 
+#ifdef BUILDFLAG(IS_OHOS)
+bool IsSafeBrowsingEnabled() override;
+void EnableSafeBrowsing(bool enable) override;
+#endif
+
 #ifdef OHOS_PAGE_UP_DOWN
   void PageUp(bool top) override;
   void PageDown(bool bottom) override;

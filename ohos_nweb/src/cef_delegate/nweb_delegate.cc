@@ -2554,6 +2554,27 @@ int NWebDelegate::GetSecurityLevel() {
 }
 #endif
 
+#ifdef BUILDFLAG(IS_OHOS)
+bool NWebDelegate::IsSafeBrowsingEnabled() {
+  if (GetBrowser() == nullptr) {
+    LOG(ERROR) << "NWebDelegate::IsSafeBrowsingEnabled failed.";
+    return false;
+  }
+
+  return GetBrowser()->IsSafeBrowsingEnabled();
+}
+
+void NWebDelegate::EnableSafeBrowsing(bool enable) {
+  if (GetBrowser() == nullptr) {
+    LOG(ERROR) << "NWebDelegate::EnableSafeBrowsing failed.";
+    return;
+  }
+
+  GetBrowser()->EnableSafeBrowsing(enable);
+
+}
+#endif
+
 void NWebDelegate::RegisterAccessibilityEventListener(
     std::shared_ptr<NWebAccessibilityEventCallback>
         accessibility_event_listener) {

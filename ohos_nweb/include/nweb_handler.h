@@ -701,6 +701,12 @@ public:
     virtual void OnNativeEmbedLifecycleChange(const NativeEmbedDataInfo& dataInfo) {}
 
     virtual void OnNativeEmbedGestureEvent(const NativeEmbedTouchEvent& event) {}
+
+    /**
+     * @brief Called when received website security risk check result.
+     * @param threat_type The threat_type of website.
+     */
+    virtual void OnSafeBrowsingCheckResult(int threat_type) {}
 };
 }  // namespace OHOS::NWeb
 

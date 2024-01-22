@@ -186,6 +186,7 @@ const char kSchedulerBoostUrgent[] = "scheduler-boost-urgent";
 #if BUILDFLAG(IS_OHOS)
 const char kForTest[] = "for-test";
 const char kBundleInstallationDir[] = "bundle-installation-dir";
+const char kBundleName[] = "bundle-name";
 #endif
 
 }  // namespace switches

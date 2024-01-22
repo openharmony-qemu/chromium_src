@@ -615,7 +615,7 @@ network::mojom::NetworkService* GetNetworkService() {
         }
 
         base::File file = NetworkServiceInstancePrivate::BlockingOpenFile(
-            log_path, base::File::FLAG_CREATE_ALWAYS | base::File::FLAG_WRITE);
+            base::FilePath(log_path), base::File::FLAG_CREATE_ALWAYS | base::File::FLAG_WRITE);
         if (!file.IsValid()) {
           LOG(ERROR) << "Failed opening NetLog: " << log_path.value();
         } else {

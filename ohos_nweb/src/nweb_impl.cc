@@ -131,6 +131,12 @@ static bool GetLockdownModeStatus() {
   return system_properties_adapter.GetLockdownModeStatus();
 }
 
+static std::string GetNetlogMode() {
+  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                                    .GetSystemPropertiesInstance();
+  return system_properties_adapter.GetNetlogMode();
+}
+
 #if defined(OHOS_API_INIT_WEB_ENGINE)
 void InitialWebEngineArgs(std::list<std::string>& web_engine_args,
                           const OHOS::NWeb::NWebInitArgs& init_args) {
@@ -159,6 +165,12 @@ void InitialWebEngineArgs(std::list<std::string>& web_engine_args,
   web_engine_args.emplace_back("--enable-aggressive-domstorage-flushing");
   web_engine_args.emplace_back("--ohos-enable-drdc");
   web_engine_args.emplace_back("--enable-features=PdfUnseasoned");
+
+  std::vector<std::string> modeVector = {"Default", "IncludeSensitive", "Everything"};
+  if (std::find(modeVector.begin(), modeVector.end(), GetNetlogMode()) != modeVector.end()) {
+    web_engine_args.emplace_back("--net-log-capture-mode=" + GetNetlogMode());
+    web_engine_args.emplace_back("--log-net-log=/data/storage/el2/base/cache/web/netlog.json");
+  }
 
   if (GetLockdownModeStatus()) {
     web_engine_args.emplace_back("--js-flags=--jitless");

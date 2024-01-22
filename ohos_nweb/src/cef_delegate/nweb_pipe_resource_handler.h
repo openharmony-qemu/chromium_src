@@ -21,13 +21,19 @@
 
 #include "cef/include/cef_resource_handler.h"
 #include "net/base/io_buffer.h"
+#include "ohos_nweb/src/capi/arkweb_scheme_handler.h"
+#include "ohos_nweb/src/cef_delegate/nweb_scheme_handler_factory.h"
 
 namespace OHOS::NWeb {
 
 class NWebPipeResourceHandler : public CefResourceHandler {
-
  public:
-  NWebPipeResourceHandler(const std::string& url);
+  NWebPipeResourceHandler(
+      const ArkWeb_ResourceRequest* resource_request,
+      const ArkWeb_ResourceHandler* resource_handler,
+      CefRefPtr<OHOS::NWeb::NWebSchemeHandlerFactory> factory,
+      const std::string& web_tag,
+      bool from_service_worker);
   ~NWebPipeResourceHandler() = default;
 
   /* CefResourceHandler method begin */
@@ -58,9 +64,12 @@ class NWebPipeResourceHandler : public CefResourceHandler {
 
  private:
   int UnSafeReadTrunkData(bool flush);
-  int UnSafeReadTrunkData(void* data_out, int bytes_to_read, int& bytes_read, bool flush);
+  int UnSafeReadTrunkData(void* data_out,
+                          int bytes_to_read,
+                          int& bytes_read,
+                          bool flush);
+  void CallOnRequestStop();
 
-  std::string url_;
   bool finished_{false};
   bool finished_with_error_{false};
   bool remain_read_{false};
@@ -72,6 +81,11 @@ class NWebPipeResourceHandler : public CefResourceHandler {
   void* last_data_out_{nullptr};
   int last_bytes_to_read_{0};
   scoped_refptr<net::GrowableIOBuffer> data_buffer_;
+  const ArkWeb_ResourceRequest* resource_request_{nullptr};
+  const ArkWeb_ResourceHandler* resource_handler_{nullptr};
+  CefRefPtr<OHOS::NWeb::NWebSchemeHandlerFactory> factory_;
+  std::string web_tag_;
+  bool from_service_worker_{false};
   mutable base::Lock lock_;
 
   IMPLEMENT_REFCOUNTING(NWebPipeResourceHandler);

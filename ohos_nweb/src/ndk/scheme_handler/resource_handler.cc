@@ -20,8 +20,13 @@
 #include "ohos_nweb/src/cef_delegate/nweb_pipe_resource_handler.h"
 #include "ohos_nweb/src/ndk/scheme_handler/response.h"
 
-ArkWeb_ResourceHandler_::ArkWeb_ResourceHandler_(const std::string& url) {
-  pipe_resource_handler = new OHOS::NWeb::NWebPipeResourceHandler(url);
+ArkWeb_ResourceHandler_::ArkWeb_ResourceHandler_(
+    const ArkWeb_ResourceRequest* resource_request,
+    CefRefPtr<OHOS::NWeb::NWebSchemeHandlerFactory> factory,
+    const std::string& web_tag,
+    bool from_service_worker) {
+  pipe_resource_handler = new OHOS::NWeb::NWebPipeResourceHandler(
+      resource_request, this, factory, web_tag, from_service_worker);
 }
 
 ArkWeb_ResourceHandler_::~ArkWeb_ResourceHandler_() {}

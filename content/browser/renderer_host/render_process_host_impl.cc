@@ -292,6 +292,10 @@
 #include "third_party/blink/public/mojom/android_font_lookup/android_font_lookup.mojom.h"
 #endif  // defined(OHOS_WPT)
 
+#ifdef OHOS_INCOGNITO_MODE
+#include "ohos_adapter_helper.h"
+#endif
+
 // VLOG additional statements in Fuchsia release builds.
 #if BUILDFLAG(IS_FUCHSIA)
 #define MAYBEVLOG VLOG
@@ -1247,6 +1251,70 @@ BASE_FEATURE(kCheckNoNewRefCountsWhenRphDeletingSoon,
              "CheckNoNewRefCountsWhenRphDeletingSoon",
              base::FEATURE_ENABLED_BY_DEFAULT);
 
+#ifdef OHOS_INCOGNITO_MODE
+constexpr size_t kMaxRenderCountForSingleMode = 2;
+constexpr size_t kMaxRenderCountForSingleIncognitoMode = 1;
+
+bool IsSingleRenderProcess() {
+  auto& system_properties_adapter =
+      OHOS::NWeb::OhosAdapterHelper::GetInstance()
+          .GetSystemPropertiesInstance();
+  OHOS::NWeb::ProductDeviceType deviceType =
+      system_properties_adapter.GetProductDeviceType();
+  bool support_multi_render_device =
+      deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_TABLET ||
+      deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_2IN1;
+
+  // It will be multiple render mode When device type is pc,
+  // or used in browser not in a pc device; otherwise it will be single render mode.
+  return !(*base::CommandLine::ForCurrentProcess())
+              .HasSwitch(switches::kForBrowser) &&
+         !support_multi_render_device;
+}
+
+bool ShouldReuseExistingRenderProcess(BrowserContext* browser_context) {
+  if (!browser_context) {
+    return false;
+  }
+
+  bool is_single_mode = IsSingleRenderProcess();
+
+  if (RenderProcessHostImpl::GetMaxRendererProcessCount() <
+      kMaxRenderCountForSingleMode) {
+    LOG(WARNING) << "It maybe fail to create the render process in incognito "
+                    "mode if multiple subprocesses are not supported.";
+    return true;
+  }
+
+  // In Single-process mode, there are a maximum of 2 render processes.
+  // In multi-process mode, there are a maximum of 40 render processes not in pc
+  // device; there are a maximum of 80 render processes in pc device.
+  size_t max_render_count =
+      is_single_mode ? kMaxRenderCountForSingleMode
+                     : RenderProcessHostImpl::GetMaxRendererProcessCount();
+  size_t process_count = RenderProcessHostImpl::GetProcessCountForLimit();
+  if (process_count >= max_render_count) {
+    return true;
+  }
+  size_t process_count_for_incognito_mode =
+      RenderProcessHost::GetOffTheRecordRenderProcessCount();
+
+  // In single-process mode, there are a maximum of two render processes,
+  // one for normal mode and the other for incognito mode.
+  size_t max_render_count_for_incognito_mode =
+      is_single_mode
+          ? kMaxRenderCountForSingleIncognitoMode
+          : GetContentClient()->browser()->GetProcessCountForIncognitoMode();
+  max_render_count_for_incognito_mode =
+      std::min(max_render_count / 2, max_render_count_for_incognito_mode);
+  if (browser_context->IsOffTheRecord()) {
+    return process_count_for_incognito_mode >=
+              max_render_count_for_incognito_mode;
+  }
+  return process_count - process_count_for_incognito_mode >=
+             max_render_count - max_render_count_for_incognito_mode;
+}
+#endif // OHOS_INCOGNITO_MODE
 }  // namespace
 
 // A RenderProcessHostImpl's IO thread implementation of the
@@ -4557,30 +4625,12 @@ bool RenderProcessHost::ShouldTryToUseExistingProcessHost(
   //       a renderer process for a browser context that has no existing
   //       renderers. This is OK in moderation, since the
   //       GetMaxRendererProcessCount() is conservative.
-  size_t process_count = RenderProcessHostImpl::GetProcessCountForLimit();
-
 #if defined(OHOS_INCOGNITO_MODE)
-  size_t max_render_count = GetMaxRendererProcessCount();
-  if (process_count >= max_render_count) {
+  if (ShouldReuseExistingRenderProcess(browser_context)) {
     return true;
   }
-  size_t process_count_for_incognito_mode =
-      RenderProcessHost::GetOffTheRecordRenderProcessCount();
-  size_t max_render_count_for_incognito_mode =
-      GetContentClient()->browser()->GetProcessCountForIncognitoMode();
-  CHECK_LE(max_render_count_for_incognito_mode, max_render_count);
-  if (browser_context->IsOffTheRecord()) {
-    if (process_count_for_incognito_mode >=
-            max_render_count_for_incognito_mode) {
-        return true;
-    }
-  } else {
-    if (process_count - process_count_for_incognito_mode >=
-            max_render_count - max_render_count_for_incognito_mode) {
-        return false;
-    }
-  }
 #else
+  size_t process_count = RenderProcessHostImpl::GetProcessCountForLimit();
   if (process_count >= GetMaxRendererProcessCount()) {
     MAYBEVLOG(4) << __func__
                  << ": process_count >= GetMaxRendererProcessCount() ("

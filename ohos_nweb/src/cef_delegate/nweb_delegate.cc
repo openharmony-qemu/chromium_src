@@ -1151,6 +1151,15 @@ void NWebDelegate::ExecuteJavaScript(
     const std::string& code,
     std::shared_ptr<NWebValueCallback<std::shared_ptr<NWebMessage>>> callback,
     bool extention) {
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    CEF_POST_TASK(CEF_UIT,
+      base::BindOnce((void(NWebDelegate::*)(const std::string &,
+        std::shared_ptr<NWebValueCallback<std::shared_ptr<NWebMessage>>>,
+        bool)) &
+        NWebDelegate::ExecuteJavaScript,
+        this, code, callback, extention));
+    return;
+  }
   LOG(INFO) << "runJS NWebDelegate::ExecuteJavaScript with callback";
 
   if (GetBrowser().get()) {
@@ -1748,6 +1757,13 @@ void NWebDelegate::RegisterNativeArkJSFunction(
     const char** methodName,
     std::vector<std::function<char*(const char** argv, int32_t argc)>> callback,
     int32_t size) {
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    CEF_POST_TASK(CEF_UIT,
+      base::BindOnce(&NWebDelegate::RegisterNativeArkJSFunction,
+        this, objName, methodName, callback, size));
+    return;
+  }
+
   handler_delegate_->RegisterNativeJavaScriptCallBack(objName, methodName, callback, size);
   std::vector<CefString> method_vector;
   for (int i = 0; i < size; i++) {
@@ -1761,6 +1777,12 @@ void NWebDelegate::RegisterNativeArkJSFunction(
 }
 
 void NWebDelegate::UnRegisterNativeArkJSFunction(const char* objName) {
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    CEF_POST_TASK(CEF_UIT,
+      base::BindOnce(&NWebDelegate::UnRegisterNativeArkJSFunction, this, objName));
+    return;
+  }
+
   std::vector<CefString> method_vector;
   if (GetBrowser() && GetBrowser()->GetHost()) {
     GetBrowser()->GetHost()->UnregisterArkJSfunction(objName, method_vector);

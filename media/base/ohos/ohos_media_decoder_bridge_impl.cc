@@ -241,7 +241,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::FlushBridgeDecoder() {
       FROM_HERE,
       base::BindOnce(&MediaCodecDecoderBridgeImpl::UpdateFlushToFalse,
                       base::Unretained(this)));
-  return videoDecoder_->StartDecoder();
+  return StartBridgeDecoder();
 }
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::ResetBridgeDecoder() {
@@ -357,7 +357,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBufferEOS() {
   if (signal_ == nullptr || signal_->isOnError_) {
     return DecoderAdapterCode::DECODER_ERROR;
   }
-  if (signal_->isDecoderFlushing_.load() || signal_->inputQueue_.empty()) {
+  if (signal_->isDecoderFlushing_.load() || signal_->inputQueue_.empty() || !isRunning_.load()) {
     return DecoderAdapterCode::DECODER_RETRY;
   }
   if (videoDecoder_ == nullptr) {
@@ -369,6 +369,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBufferEOS() {
   DecoderAdapterCode ret = PushInbufferDecEos(index);
 
   PopInqueueDec();
+  isRunning_.store(false);
   return ret;
 }
 

@@ -55,9 +55,6 @@ class MEDIA_EXPORT OHOSAudioCapturerSource final : public AudioCapturerSource {
  private:
   ~OHOSAudioCapturerSource() override;
 
-  void InitializeOnCapturerThread();
-  void StartOnCapturerThread();
-  void StopOnCapturerThread();
   void ReadData();
   void NotifyCaptureError(const std::string& error);
   void NotifyCaptureStarted();

@@ -3,12 +3,15 @@
 // found in the LICENSE file.
 
 #include "ui/gl/gl_surface_egl_ohos.h"
+#include "base/threading/platform_thread.h"
 #include "content/public/common/content_switches.h"
 
 #include "nweb_native_window_tracker.h"
 #include "ohos_adapter_helper.h"
 
 namespace gl {
+
+const std::string PRODUCT_MODEL_EMULATOR = "emulator";
 
 scoped_refptr<gl::NativeViewGLSurfaceEGLOhos>
 NativeViewGLSurfaceEGLOhos::CreateNativeViewGLSurfaceEGLOhos(
@@ -30,6 +33,13 @@ NativeViewGLSurfaceEGLOhos::CreateNativeViewGLSurfaceEGLOhos(
     }
   } else {
     LOG(INFO) << "CreateNativeViewGLSurfaceEGLOhos:: normal surface";
+    auto& system_properties_adapter =
+        OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance();
+    std::string product_model = system_properties_adapter.GetDeviceInfoProductModel();
+    if (product_model == PRODUCT_MODEL_EMULATOR) {
+      LOG(INFO)  << "emulator CreateNativeViewGLSurfaceEGLOhos delay 20ms";
+      base::PlatformThread::Sleep(base::Milliseconds(20));
+    }
     void* window = NWebNativeWindowTracker::Instance().GetNativeWindow(widget);
     return scoped_refptr<NativeViewGLSurfaceEGLOhos>(
         new NativeViewGLSurfaceEGLOhos(display->GetAs<gl::GLDisplayEGL>(),

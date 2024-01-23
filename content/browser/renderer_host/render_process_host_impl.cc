@@ -2975,6 +2975,10 @@ void RenderProcessHostImpl::CreateURLLoaderFactory(
 }
 
 bool RenderProcessHostImpl::MayReuseHost() {
+  if (!IsInitializedAndNotDead()) {
+    LOG(ERROR) << "RenderProcessHostImpl is dead or not initialized";
+    return false;
+  }
   return GetContentClient()->browser()->MayReuseHost(this);
 }
 
@@ -4611,7 +4615,18 @@ RenderProcessHost* RenderProcessHost::FromID(int render_process_id) {
 
 // static
 size_t RenderProcessHostImpl::GetProcessCount() {
-  return GetAllHosts().size();
+  RenderProcessHost::iterator it = RenderProcessHost::AllHostsIterator();
+  size_t count = 0;
+  while (!it.IsAtEnd()) {
+    RenderProcessHost* host = static_cast<RenderProcessHostImpl*>(
+          it.GetCurrentValue());
+    if (host->IsInitializedAndNotDead()) {
+      count++;
+    }
+    it.Advance();
+  }
+  LOG(DEBUG) << "RenderProcessHostImpl::GetProcessCount count: " << count;
+  return count;
 }
 
 // static

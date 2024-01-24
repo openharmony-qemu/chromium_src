@@ -1573,7 +1573,8 @@ size_t RenderProcessHost::GetOffTheRecordRenderProcessCount() {
   size_t count = 0;
   while (!it.IsAtEnd()) {
     RenderProcessHost* host = it.GetCurrentValue();
-    if (host->GetBrowserContext()->IsOffTheRecord()) {
+    if (host->GetBrowserContext()->IsOffTheRecord() &&
+        static_cast<RenderProcessHostImpl*>(host)->IsInitializedAndNotDead()) {
       count++;
     }
     it.Advance();
@@ -4615,6 +4616,17 @@ RenderProcessHost* RenderProcessHost::FromID(int render_process_id) {
 
 // static
 size_t RenderProcessHostImpl::GetProcessCount() {
+  return GetAllHosts().size();
+}
+
+// static
+size_t RenderProcessHostImpl::GetProcessCountForLimit() {
+  // Let the embedder specify a number of processes to ignore when checking
+  // against the process limit, to avoid forcing normal pages to reuse processes
+  // too soon.
+  size_t process_count_to_ignore =
+      GetContentClient()->browser()->GetProcessCountToIgnoreForLimit();
+  CHECK_LE(process_count_to_ignore, RenderProcessHostImpl::GetProcessCount());
   RenderProcessHost::iterator it = RenderProcessHost::AllHostsIterator();
   size_t count = 0;
   while (!it.IsAtEnd()) {
@@ -4626,18 +4638,7 @@ size_t RenderProcessHostImpl::GetProcessCount() {
     it.Advance();
   }
   LOG(DEBUG) << "RenderProcessHostImpl::GetProcessCount count: " << count;
-  return count;
-}
-
-// static
-size_t RenderProcessHostImpl::GetProcessCountForLimit() {
-  // Let the embedder specify a number of processes to ignore when checking
-  // against the process limit, to avoid forcing normal pages to reuse processes
-  // too soon.
-  size_t process_count_to_ignore =
-      GetContentClient()->browser()->GetProcessCountToIgnoreForLimit();
-  CHECK_LE(process_count_to_ignore, RenderProcessHostImpl::GetProcessCount());
-  return RenderProcessHostImpl::GetProcessCount() - process_count_to_ignore;
+  return count - process_count_to_ignore;
 }
 
 // static

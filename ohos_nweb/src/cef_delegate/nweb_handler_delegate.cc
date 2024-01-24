@@ -1047,6 +1047,22 @@ void NWebHandlerDelegate::OnMediaStateChanged(CefRefPtr<CefBrowser> browser,
             << static_cast<int>(type)
             << " MediaPlayingState: " << static_cast<int>(state)
             << " nweb_id: " << nweb_id_;
+  ActivityType mediaType = static_cast<ActivityType>(type);
+
+  if (nweb_handler_ != nullptr) {
+    nweb_handler_->OnActivityStateChanged(static_cast<int>(state), mediaType);
+  }
+
+#if defined(OHOS_NWEB_EX)
+  if (web_app_client_extension_listener_ != nullptr &&
+      web_app_client_extension_listener_->OnActivityStateChanged != nullptr) {
+    web_app_client_extension_listener_->OnActivityStateChanged(
+        static_cast<int>(state), static_cast<int>(mediaType),
+        web_app_client_extension_listener_->nweb_id);
+  }
+#endif  // OHOS_NWEB_EX
+
+  return;
 }
 
 /* CefLoadHandler methods end */
@@ -1737,6 +1753,26 @@ void NWebHandlerDelegate::OnFormEditingStateChanged(CefRefPtr<CefBrowser> browse
   if (current_is_editing_ != form_editing_state_) {
     LOG(INFO) << "NWebHandlerDelegate::OnFormEditingStateChanged, is_editing: " << is_editing << " nweb_id: " << nweb_id_;
   }
+
+  if (nweb_handler_ != nullptr) {
+    FormState state =
+        is_editing ? FormState::kHadInteraction : FormState::kNoInteraction;
+    nweb_handler_->OnActivityStateChanged(static_cast<int>(state),
+                                          ActivityType::FORM);
+  }
+
+#if defined(OHOS_NWEB_EX)
+  if (web_app_client_extension_listener_ != nullptr &&
+      web_app_client_extension_listener_->OnActivityStateChanged != nullptr) {
+    web_app_client_extension_listener_->OnActivityStateChanged(
+        is_editing ? static_cast<int>(FormState::kHadInteraction)
+                   : static_cast<int>(FormState::kNoInteraction),
+        static_cast<int>(ActivityType::FORM),
+        web_app_client_extension_listener_->nweb_id);
+  }
+#endif  // OHOS_NWEB_EX
+
+  return;
 }
 /* CefFormHandler method end */
 

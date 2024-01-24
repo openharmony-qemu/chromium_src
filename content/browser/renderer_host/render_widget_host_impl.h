@@ -797,6 +797,11 @@ class CONTENT_EXPORT RenderWidgetHostImpl
   void ProgressFlingIfNeeded(base::TimeTicks current_time);
   void StopFling();
   void SetCompositorForFlingScheduler(ui::Compositor* compositor);
+#if BUILDFLAG(IS_OHOS)
+  ui::Compositor* GetCompositorForFlingScheduler() {
+    return fling_scheduler_->GetCompositor();
+  }
+#endif
 
   // The RenderWidgetHostImpl will keep showing the old page (for a while) after
   // navigation until the first frame of the new page arrives. This reduces

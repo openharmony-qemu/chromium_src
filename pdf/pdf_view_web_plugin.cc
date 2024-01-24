@@ -117,6 +117,10 @@
 #include "url/gurl.h"
 #include "v8/include/v8.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/trace_event/trace_event.h"
+#endif
+
 namespace chrome_pdf {
 
 namespace {
@@ -1701,6 +1705,9 @@ gfx::PointF PdfViewWebPlugin::GetScrollPositionFromOffset(
 void PdfViewWebPlugin::DoPaint(const std::vector<gfx::Rect>& paint_rects,
                                std::vector<PaintReadyRect>& ready,
                                std::vector<gfx::Rect>& pending) {
+#if BUILDFLAG(IS_OHOS)
+  TRACE_EVENT0("blink", "PdfViewWebPlugin::DoPaint");
+#endif
   if (image_data_.drawsNothing()) {
     DCHECK(plugin_rect_.IsEmpty());
     return;

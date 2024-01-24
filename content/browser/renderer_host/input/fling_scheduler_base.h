@@ -22,8 +22,12 @@ class FlingSchedulerBase : public FlingControllerSchedulerClient {
     compositor_ = compositor;
   }
 
-protected:
- ui::Compositor* compositor_ = nullptr;
+#if BUILDFLAG(IS_OHOS)
+  ui::Compositor* GetCompositor() { return compositor_; }
+#endif
+
+ protected:
+  ui::Compositor* compositor_ = nullptr;
 };
 
 }  // namespace content

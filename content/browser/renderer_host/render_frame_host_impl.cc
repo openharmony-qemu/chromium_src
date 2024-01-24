@@ -12908,8 +12908,16 @@ void RenderFrameHostImpl::TakeNewDocumentPropertiesFromNavigation(
     fullscreen_document_on_document_element_ready_ =
         navigation_request->GetDocumentToken();
   }
+
+#ifdef OHOS_BUGFIX_CRASH
+  if (fullscreen_document_on_document_element_ready_ && !IsOutermostMainFrame()) {
+    LOG(INFO) << "fullscreen element is ready, while document is not main frame";
+    return;
+  }
+#else
   CHECK(!fullscreen_document_on_document_element_ready_ ||
         IsOutermostMainFrame());
+#endif
 
   // Only take some properties if this is not the synchronous initial
   // `about:blank` navigation, because the values set at construction time

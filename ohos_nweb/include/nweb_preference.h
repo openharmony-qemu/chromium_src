@@ -607,6 +607,16 @@ public:
      * Get whether the embed mode. The default is false.
      */
     virtual bool GetNativeEmbedMode() = 0;
+
+    /**
+     * Set whether the scroll is enabled.
+     */
+    virtual void SetScrollable(bool enable) = 0;
+
+    /**
+     * Get whether the scroll is enabled.
+     */
+    virtual bool GetScrollable() = 0;
 };
 }  // namespace OHOS::NWeb
 #endif  // NWEB_PREFERENCE_H

@@ -158,6 +158,7 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
       !IsHorizontalScrollBarAccess() ? STATE_ENABLED : STATE_DISABLED;
   browser_settings.hide_vertical_scrollbars =
       !IsVerticalScrollBarAccess() ? STATE_ENABLED : STATE_DISABLED;
+  browser_settings.scroll_enabled = GetScrollable();
 #endif  // defined(OHOS_INPUT_EVENTS)
 #if BUILDFLAG(IS_OHOS)
   browser_settings.native_embed_mode_enabled =
@@ -636,6 +637,20 @@ void NWebPreferenceDelegate::SetNativeEmbedMode(bool flag) {
 }
 bool NWebPreferenceDelegate::GetNativeEmbedMode() {
   return enable_embed_mode_;
+}
+
+void NWebPreferenceDelegate::SetScrollable(bool enable) {
+  scroll_enabled_ = enable;
+  WebPreferencesChanged();
+  if(!browser_.get()) {
+    LOG(ERROR) << "SetScrollable failed, browser is null";
+    return;
+  }
+  browser_->GetHost()->SetScrollable(enable);
+}
+
+bool NWebPreferenceDelegate::GetScrollable() {
+  return scroll_enabled_;
 }
 #endif  // defined(OHOS_INPUT_EVENTS)
 

@@ -292,6 +292,9 @@ CONTENT_EXPORT extern const char kOhosUnkownDevice[];
 #ifdef OHOS_NETWORK_LOAD
 CONTENT_EXPORT extern const char kOhosCustomScheme[];
 #endif
+#ifdef OHOS_SCHEME_HANDLER
+CONTENT_EXPORT extern const char kOhSchemeHandlerCustomScheme[];
+#endif
 #endif
 
 #if BUILDFLAG(IS_WIN)

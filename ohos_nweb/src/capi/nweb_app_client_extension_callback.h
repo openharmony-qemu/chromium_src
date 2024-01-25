@@ -29,6 +29,7 @@ struct NWebAppClientExtensionCallback {
                                int alpha_type,
                                int nweb_id);
   void (*OnLoadStarted)(bool toDifferentDocument, int nweb_id);
+  void (*OnActivityStateChanged)(int state, int type, int nweb_id);
   void (*OnHidePasswordAutofillPopup)(int nweb_id);
   void (*OnSaveOrUpdatePassword)(bool isUpdate, std::string url, int nweb_id);
   void (*OnShowPasswordAutofillPopup)(int left,

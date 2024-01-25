@@ -2557,14 +2557,7 @@ int NWebDelegate::GetSecurityLevel() {
 void NWebDelegate::RegisterAccessibilityEventListener(
     std::shared_ptr<NWebAccessibilityEventCallback>
         accessibility_event_listener) {
-  auto* accessibilityManager = GetAccessibilityManager();
-  if (accessibilityManager == nullptr) {
-    LOG(ERROR) << "RegisterAccessibilityEventListener can not get "
-                  "accessibilityManager";
-    return;
-  }
-  accessibilityManager->RegisterAccessibilityEventListener(
-      accessibility_event_listener);
+  accessibility_event_listener_ = accessibility_event_listener;
 }
 
 void NWebDelegate::RegisterAccessibilityIdGenerator(
@@ -2586,7 +2579,7 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId,
                                  uint32_t action) const {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
-    LOG(ERROR) << "ExecuteAction can not get accessibilityManager";
+    LOG(INFO) << "ExecuteAction can not get accessibilityManager";
     return;
   }
   auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
@@ -2634,12 +2627,17 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId,
 content::BrowserAccessibilityManagerOHOS*
 NWebDelegate::GetAccessibilityManager() const {
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "GetAccessibilityManager can not get browser";
+    LOG(INFO) << "GetAccessibilityManager can not get browser";
     return nullptr;
   }
   void* manager = nullptr;
-  GetBrowser()->GetHost()->GetOrCreateRootBrowserAccessibilityManager(&manager);
-  return static_cast<content::BrowserAccessibilityManagerOHOS*>(manager);
+  GetBrowser()->GetHost()->GetRootBrowserAccessibilityManager(&manager);
+  auto managerOHOS = static_cast<content::BrowserAccessibilityManagerOHOS*>(manager);
+  if (managerOHOS != nullptr && managerOHOS->GetAccessibilityEventListener() == nullptr
+      && accessibility_event_listener_ != nullptr) {
+      managerOHOS->RegisterAccessibilityEventListener(accessibility_event_listener_);
+  }
+  return managerOHOS;
 }
 
 bool NWebDelegate::GetFocusedAccessibilityNodeInfo(
@@ -2648,7 +2646,7 @@ bool NWebDelegate::GetFocusedAccessibilityNodeInfo(
     OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
-    LOG(ERROR)
+    LOG(INFO)
         << "GetFocusedAccessibilityNodeInfo can not get accessibilityManager";
     return false;
   }
@@ -2689,7 +2687,7 @@ bool NWebDelegate::GetAccessibilityNodeInfoById(
     OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
-    LOG(ERROR)
+    LOG(INFO)
         << "GetAccessibilityNodeInfoById can not get accessibilityManager";
     return false;
   }
@@ -2716,7 +2714,7 @@ bool NWebDelegate::GetAccessibilityNodeInfoByFocusMove(
     OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
-    LOG(ERROR) << "GetAccessibilityNodeInfoByFocusMove can not get "
+    LOG(INFO) << "GetAccessibilityNodeInfoByFocusMove can not get "
                   "accessibilityManager";
     return false;
   }
@@ -2747,7 +2745,7 @@ bool NWebDelegate::PopulateAccessibilityNodeInfo(
     NWebAccessibilityNodeInfo& nodeInfo) const {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
-    LOG(ERROR)
+    LOG(INFO)
         << "GetFocusedAccessibilityNodeInfo can not get accessibilityManager";
     return false;
   }

@@ -57,6 +57,11 @@ void BrowserAccessibilityManagerOHOS::RegisterAccessibilityIdGenerator(
   }
 }
 
+std::shared_ptr<OHOS::NWeb::NWebAccessibilityEventCallback>
+    BrowserAccessibilityManagerOHOS::GetAccessibilityEventListener() const {
+    return accessibilityEventListener_;
+}
+
 int64_t BrowserAccessibilityManagerOHOS::GenerateAccessibilityId() {
   if (g_accessibility_id_generator != nullptr) {
     return g_accessibility_id_generator();

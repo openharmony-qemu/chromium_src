@@ -471,6 +471,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   bool accessibility_state_ = false;
   bool is_discarded_ = false;
   std::string richtext_data_str_ = "";
+  std::shared_ptr<NWebAccessibilityEventCallback>
+      accessibility_event_listener_ = nullptr;
 };
 }  // namespace OHOS::NWeb
 #endif

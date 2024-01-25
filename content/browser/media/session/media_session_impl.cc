@@ -1821,8 +1821,13 @@ std::vector<MediaAudioVideoState> MediaSessionImpl::GetMediaAudioVideoStates() {
          const PlayerIdentifier& player) {
         // If we have a routed frame then we should limit the players to the
         // frame so it is aligned with the media metadata.
+#ifdef OHOS_BUGFIX_CRASH
+        if (!player.observer || (routed_rfh && player.observer->render_frame_host() != routed_rfh))
+          return;
+#else
         if (routed_rfh && player.observer->render_frame_host() != routed_rfh)
           return;
+#endif
 
         const bool has_audio = player.observer->HasAudio(player.player_id);
         const bool has_video = player.observer->HasVideo(player.player_id);

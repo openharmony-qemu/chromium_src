@@ -867,8 +867,13 @@ void InterfaceEndpointClient::ForgetAsyncRequest(uint64_t request_id) {
 }
 
 void InterfaceEndpointClient::InitControllerIfNecessary() {
+#ifdef OHOS_BUGFIX_CRASH
+  if (controller_ || handle_.pending_association() || !handle_.group_controller())
+    return;
+#else
   if (controller_ || handle_.pending_association())
     return;
+#endif
 
   controller_ = handle_.group_controller()->AttachEndpointClient(handle_, this,
                                                                  task_runner_);

@@ -931,6 +931,15 @@ void RenderWidgetHostInputEventRouter::DispatchTouchEvent(
   touch_event_ack_queue_->Add(TouchEventWithLatencyInfo(touch_event),
                               touch_target_, root_view, event_source);
 
+#if BUILDFLAG(IS_OHOS)
+  if (root_view) {
+    auto* host = touch_target_->host();
+    if (host && !host->GetCompositorForFlingScheduler()) {
+      host->SetCompositorForFlingScheduler(root_view->GetCompositor());
+    }
+  }
+#endif
+
   blink::WebTouchEvent event(touch_event);
   TransformEventTouchPositions(&event, transform);
   touch_target_->ProcessTouchEvent(event, latency);

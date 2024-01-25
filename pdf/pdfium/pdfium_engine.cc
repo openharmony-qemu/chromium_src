@@ -88,6 +88,10 @@
 #include "pdf/pdfium/pdfium_font_linux.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/trace_event/trace_event.h"
+#endif
+
 using printing::ConvertUnit;
 using printing::ConvertUnitFloat;
 using printing::kPixelsPerInch;
@@ -3182,10 +3186,23 @@ bool PDFiumEngine::ContinuePaint(int progressive_index, SkBitmap& image_data) {
     ScopedFPDFBitmap new_bitmap = CreateBitmap(dirty, has_alpha, image_data);
     FPDFBitmap_FillRect(new_bitmap.get(), start_x, start_y, size_x, size_y,
                         0xFFFFFFFF);
+#if BUILDFLAG(IS_OHOS)
+    {
+      TRACE_EVENT2("blink", "PDFiumEngine::FPDF_RenderPageBitmap_Start", "dirty",
+                   dirty.ToString(), "size",
+                   gfx::Size(size_x, size_y).ToString());
+      rv = FPDF_RenderPageBitmap_Start(
+          new_bitmap.get(), page, start_x, start_y, size_x, size_y,
+          ToPDFiumRotation(layout_.options().default_page_orientation()),
+          GetRenderingFlags(), this);
+    }
+#else
     rv = FPDF_RenderPageBitmap_Start(
         new_bitmap.get(), page, start_x, start_y, size_x, size_y,
         ToPDFiumRotation(layout_.options().default_page_orientation()),
         GetRenderingFlags(), this);
+#endif
+
     progressive_paints_[progressive_index].SetBitmapAndImageData(
         std::move(new_bitmap), image_data);
   }

@@ -28,11 +28,11 @@ namespace OHOS::NWeb {
 typedef std::map<std::string, ArkWeb_SchemeHandler*> SchemeHandlerMap;
 
 class NWebSchemeHandlerFactory : public CefSchemeHandlerFactory {
-
  public:
   explicit NWebSchemeHandlerFactory();
 
-  static CefRefPtr<OHOS::NWeb::NWebSchemeHandlerFactory> GetOrCreateForScheme(const std::string& scheme);
+  static CefRefPtr<OHOS::NWeb::NWebSchemeHandlerFactory> GetOrCreateForScheme(
+      const std::string& scheme);
   static void ClearSchemeHandlers(const std::string& web_tag);
   static void ClearServiceWorkerSchemeHandler();
 
@@ -42,9 +42,13 @@ class NWebSchemeHandlerFactory : public CefSchemeHandlerFactory {
                                        CefRefPtr<CefRequest> request) override;
 
   void SetSchemeHandlerForSW(ArkWeb_SchemeHandler* scheme_handler);
-  void SetSchemeHandler(const std::string& web_tag, ArkWeb_SchemeHandler* scheme_handler);
+  void SetSchemeHandler(const std::string& web_tag,
+                        ArkWeb_SchemeHandler* scheme_handler);
   void RemoveSchemeHandler(const std::string& web_tag);
   void RemoveServiceWorkerSchemeHandler();
+  void OnRequestStop(const ArkWeb_ResourceRequest* resource_request,
+                     const std::string& web_tag,
+                     bool from_service_worker);
 
  private:
   ArkWeb_SchemeHandler* FromTag(const std::string& web_tag);

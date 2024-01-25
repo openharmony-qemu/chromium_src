@@ -154,7 +154,7 @@ ARKWEB_EXPORT void OH_ArkWebPostDataStream_Init(
 ARKWEB_EXPORT void OH_ArkWebPostDataStream_Read(
     const ArkWeb_PostDataStream* post_data_stream,
     uint8_t* buffer,
-    int64_t buf_len) {
+    int buf_len) {
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post data stream is nullptr";
     return;
@@ -163,7 +163,7 @@ ARKWEB_EXPORT void OH_ArkWebPostDataStream_Read(
   post_data_stream->Read(buffer, buf_len);
 }
 
-ARKWEB_EXPORT int64_t
+ARKWEB_EXPORT uint64_t
 OH_ArkWebPostDataStream_GetSize(const ArkWeb_PostDataStream* post_data_stream) {
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post data stream is nullptr";
@@ -173,7 +173,7 @@ OH_ArkWebPostDataStream_GetSize(const ArkWeb_PostDataStream* post_data_stream) {
   return post_data_stream->GetSize();
 }
 
-ARKWEB_EXPORT int64_t OH_ArkWebPostDataStream_GetPosition(
+ARKWEB_EXPORT uint64_t OH_ArkWebPostDataStream_GetPosition(
     const ArkWeb_PostDataStream* post_data_stream) {
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post data stream is nullptr";
@@ -183,7 +183,7 @@ ARKWEB_EXPORT int64_t OH_ArkWebPostDataStream_GetPosition(
   return post_data_stream->GetPosition();
 }
 
-ARKWEB_EXPORT bool OH_ArkWebPostDataStream_IsTrunked(
+ARKWEB_EXPORT bool OH_ArkWebPostDataStream_IsChunked(
     const ArkWeb_PostDataStream* post_data_stream) {
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post data stream is nullptr";
@@ -313,8 +313,7 @@ ARKWEB_EXPORT bool OH_ArkWeb_SetSchemeHandler(
   return true;
 }
 
-ARKWEB_EXPORT void OH_ArkWebServiceWorker_ClearSchemeHandlers(
-    const char* web_tag) {
+ARKWEB_EXPORT void OH_ArkWebServiceWorker_ClearSchemeHandlers() {
   OHOS::NWeb::NWebSchemeHandlerFactory::ClearServiceWorkerSchemeHandler();
 }
 
@@ -429,13 +428,13 @@ ARKWEB_EXPORT ArkWeb_NetError
 OH_ArkWebResponse_GetError(const ArkWeb_Response* response) {
   if (!response) {
     LOG(ERROR) << "scheme_handler response is nullptr";
-    return ARKWEB_NET_OK;
+    return ARKWEB_NET_UNKNOWN;
   }
   return response->GetError();
 }
 
 ARKWEB_EXPORT void OH_ArkWebResponse_SetStatus(ArkWeb_Response* response,
-                                               int32_t status) {
+                                               int status) {
   if (!response) {
     LOG(ERROR) << "scheme_handler response is nullptr";
     return;
@@ -443,8 +442,7 @@ ARKWEB_EXPORT void OH_ArkWebResponse_SetStatus(ArkWeb_Response* response,
   response->SetStatus(status);
 }
 
-ARKWEB_EXPORT int32_t
-OH_ArkWebResponse_GetStatus(const ArkWeb_Response* response) {
+ARKWEB_EXPORT int OH_ArkWebResponse_GetStatus(const ArkWeb_Response* response) {
   if (!response) {
     LOG(ERROR) << "scheme_handler response is nullptr";
     return -1;

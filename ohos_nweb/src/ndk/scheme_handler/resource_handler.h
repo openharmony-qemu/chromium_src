@@ -21,7 +21,11 @@
 #include "ohos_nweb/src/ndk/scheme_handler/response.h"
 
 struct ArkWeb_ResourceHandler_ {
-  ArkWeb_ResourceHandler_(const std::string& url);
+  ArkWeb_ResourceHandler_(
+      const ArkWeb_ResourceRequest* resource_request,
+      CefRefPtr<OHOS::NWeb::NWebSchemeHandlerFactory> factory,
+      const std::string& web_tag,
+      bool from_service_worker);
   ~ArkWeb_ResourceHandler_();
 
   void DidReceiveResponse(const ArkWeb_Response* response) const;

@@ -91,11 +91,9 @@ CefRefPtr<CefResourceHandler> NWebSchemeHandlerFactory::Create(
     ArkWeb_ResourceRequest* resource_request =
         new ArkWeb_ResourceRequest(request);
     ArkWeb_ResourceHandler* resource_handler =
-        new ArkWeb_ResourceHandler(request->GetURL().ToString());
+        new ArkWeb_ResourceHandler(resource_request, this, "", true);
     scheme_handler_for_sw_->on_request_start(
         scheme_handler_for_sw_, resource_request, resource_handler, &intercept);
-    scheme_handler_for_sw_->on_request_stop(scheme_handler_for_sw_,
-                                            resource_request);
     if (!intercept) {
       delete resource_request;
       delete resource_handler;
@@ -119,10 +117,9 @@ CefRefPtr<CefResourceHandler> NWebSchemeHandlerFactory::Create(
   ArkWeb_ResourceRequest* resource_request =
       new ArkWeb_ResourceRequest(request);
   ArkWeb_ResourceHandler* resource_handler =
-      new ArkWeb_ResourceHandler(request->GetURL().ToString());
+      new ArkWeb_ResourceHandler(resource_request, this, web_tag, false);
   handler->on_request_start(handler, resource_request, resource_handler,
                             &intercept);
-  handler->on_request_stop(handler, resource_request);
 
   if (!intercept) {
     LOG(INFO) << "scheme_handler not intercept the request.";
@@ -180,6 +177,28 @@ ArkWeb_SchemeHandler* NWebSchemeHandlerFactory::FromTag(
   }
 
   return nullptr;
+}
+
+void NWebSchemeHandlerFactory::OnRequestStop(
+    const ArkWeb_ResourceRequest* resource_request,
+    const std::string& web_tag,
+    bool from_service_worker) {
+  if (scheme_handler_for_sw_) {
+    if (!scheme_handler_for_sw_) {
+      LOG(ERROR) << "scheme_handler handler for service worker is not found.";
+      return;
+    }
+    scheme_handler_for_sw_->on_request_stop(scheme_handler_for_sw_,
+                                            resource_request);
+    return;
+  }
+
+  ArkWeb_SchemeHandler* handler = FromTag(web_tag);
+  if (!handler) {
+    LOG(INFO) << "scheme_handler not set handler for " << web_tag;
+    return;
+  }
+  handler->on_request_stop(handler, resource_request);
 }
 
 }  //  namespace OHOS::NWeb

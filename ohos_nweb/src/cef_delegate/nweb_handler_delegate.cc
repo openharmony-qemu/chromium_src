@@ -803,9 +803,7 @@ void NWebHandlerDelegate::OnLoadStart(CefRefPtr<CefBrowser> browser,
   if (frame == nullptr || !frame->IsMain()) {
     return;
   }
-  if (browser != nullptr && browser->GetHost() != nullptr) {
-    browser->GetHost()->SetFocus(true);
-  }
+
   if (nweb_handler_ != nullptr) {
     nweb_handler_->OnPageLoadBegin(url.ToString());
   }

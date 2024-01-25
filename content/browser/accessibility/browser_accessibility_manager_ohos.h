@@ -52,6 +52,9 @@ class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
       std::shared_ptr<OHOS::NWeb::NWebAccessibilityEventCallback>
           accessibility_event_listener);
 
+  std::shared_ptr<OHOS::NWeb::NWebAccessibilityEventCallback>
+      GetAccessibilityEventListener() const;
+
   void SetLastHoverId(int64_t id) { lastHoverId_ = id; }
 
   int64_t GetLastHoverId() const { return lastHoverId_; }

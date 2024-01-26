@@ -51,6 +51,8 @@ class MEDIA_EXPORT FakeAudioManager : public AudioManagerBase {
   AudioParameters GetPreferredOutputStreamParameters(
       const std::string& output_device_id,
       const AudioParameters& input_params) override;
+  AudioParameters GetPreferredInputStreamParameters(
+      const std::string& input_device_id) override;
 };
 
 }  // namespace media

@@ -31,6 +31,7 @@
 #include "media/audio/audio_unittest_util.h"
 #include "media/audio/fake_audio_log_factory.h"
 #include "media/audio/fake_audio_manager.h"
+#include "media/audio/ohos/ohos_audio_manager.h"
 #include "media/audio/test_audio_thread.h"
 #include "media/base/limits.h"
 #include "media/base/media_switches.h"
@@ -187,7 +188,7 @@ class AudioManagerTest : public ::testing::Test {
       auto it = device_descriptions.begin();
 
       // The first device in the list should always be the default device.
-      EXPECT_EQ(std::string(AudioDeviceDescription::kDefaultDeviceId),
+      EXPECT_EQ(base::NumberToString(AUDIO_DEFAULT_DEVICE_ID),
                 it->unique_id);
       ++it;
 

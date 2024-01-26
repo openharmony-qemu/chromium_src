@@ -28,8 +28,13 @@ bool ParseAssetsOHOS(FilePath* result) {
   auto bundle_path = base::CommandLine::ForCurrentProcess()->
     GetSwitchValueASCII(switches::kBundleInstallationDir);
   if (bundle_path.empty()) {
-    LOG(ERROR) << "Bundle path is empty";
-    return false;
+    FilePath bin_dir;
+    if (!ReadSymbolicLink(FilePath(kProcSelfExe), &bin_dir)) {
+      LOG(ERROR) << "Unable to resolve " << kProcSelfExe << ".";
+      return false;
+    }
+    *result = bin_dir.DirName();
+    return true;
   }
   bool for_test = base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kForTest);
   if (for_test) {
@@ -63,8 +68,12 @@ bool PathProviderOHOS(int key, FilePath* result) {
       return true;
     }
     case base::DIR_SOURCE_ROOT:
-      NOTIMPLEMENTED();
-      return false;
+      if (!ReadSymbolicLink(FilePath(kProcSelfExe), &bin_dir)) {
+        NOTREACHED() << "Unable to resolve " << kProcSelfExe << ".";
+        return false;
+      }
+      *result = bin_dir.DirName();
+      return true;
     case base::DIR_USER_DESKTOP:
       NOTIMPLEMENTED();
       return false;

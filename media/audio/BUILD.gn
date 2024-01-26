@@ -457,6 +457,7 @@ source_set("unit_tests") {
     "//testing/gtest",
     "//third_party/opus:opus",
     "//url",
+    "//content/public/browser:browser",
   ]
 
   configs += [

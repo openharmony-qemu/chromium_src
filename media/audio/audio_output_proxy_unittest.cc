@@ -128,6 +128,12 @@ class MockAudioManager : public AudioManagerBase {
       : AudioManagerBase(std::make_unique<TestAudioThread>(),
                          &fake_audio_log_factory_) {}
   ~MockAudioManager() override { Shutdown(); }
+  #if BUILDFLAG(IS_OHOS)
+  AudioParameters GetPreferredInputStreamParameters(
+    const std::string& input_device_id) {
+    return AudioParameters();
+  }
+  #endif
 
   MOCK_METHOD3(MakeAudioOutputStream,
                AudioOutputStream*(const AudioParameters& params,
@@ -443,7 +449,7 @@ class AudioOutputProxyTest : public testing::Test {
     // |stream| is closed at this point. Start() should reopen it again.
     EXPECT_CALL(manager(), MakeAudioOutputStream(_, _, _))
         .Times(2)
-        .WillRepeatedly(Return(reinterpret_cast<AudioOutputStream*>(NULL)));
+        .WillRepeatedly(Return(static_cast<AudioOutputStream*>(NULL)));
 
     EXPECT_CALL(callback_, OnError(_)).Times(2);
 
@@ -563,13 +569,17 @@ TEST_F(AudioOutputResamplerTest, CreateAndClose) {
   proxy->Close();
 }
 
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(AudioOutputProxyTest, OpenAndClose) {
   OpenAndClose(dispatcher_impl_.get());
 }
+#endif
 
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(AudioOutputResamplerTest, OpenAndClose) {
   OpenAndClose(resampler_.get());
 }
+#endif
 
 // Create a stream, and verify that it is closed after kTestCloseDelayMs.
 // if it doesn't start playing.
@@ -583,13 +593,17 @@ TEST_F(AudioOutputResamplerTest, CreateAndWait) {
   CreateAndWait(resampler_.get());
 }
 
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(AudioOutputProxyTest, StartAndStop) {
   StartAndStop(dispatcher_impl_.get());
 }
+#endif
 
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(AudioOutputResamplerTest, StartAndStop) {
   StartAndStop(resampler_.get());
 }
+#endif
 
 TEST_F(AudioOutputProxyTest, CloseAfterStop) {
   CloseAfterStop(dispatcher_impl_.get());
@@ -599,32 +613,44 @@ TEST_F(AudioOutputResamplerTest, CloseAfterStop) {
   CloseAfterStop(resampler_.get());
 }
 
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(AudioOutputProxyTest, TwoStreams) {
   TwoStreams(dispatcher_impl_.get());
 }
+#endif
 
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(AudioOutputResamplerTest, TwoStreams) {
   TwoStreams(resampler_.get());
 }
+#endif
 
 // Two streams: verify that second stream is allocated when the first
 // starts playing.
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(AudioOutputProxyTest, OneStream_TwoPlays) {
   OneStream_TwoPlays(dispatcher_impl_.get());
 }
+#endif
 
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(AudioOutputResamplerTest, OneStream_TwoPlays) {
   OneStream_TwoPlays(resampler_.get());
 }
+#endif
 
 // Two streams, both are playing. Dispatcher should not open a third stream.
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(AudioOutputProxyTest, TwoStreams_BothPlaying) {
   TwoStreams_BothPlaying(dispatcher_impl_.get());
 }
+#endif
 
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(AudioOutputResamplerTest, TwoStreams_BothPlaying) {
   TwoStreams_BothPlaying(resampler_.get());
 }
+#endif
 
 TEST_F(AudioOutputProxyTest, OpenFailed) {
   OpenFailed(dispatcher_impl_.get());
@@ -671,6 +697,7 @@ TEST_F(AudioOutputResamplerTest, DispatcherDestroyed_AfterStop) {
   DispatcherDestroyed_AfterStop(std::move(resampler_));
 }
 
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(AudioOutputProxyTest, DispatcherDeviceChangeClosesIdleStreams) {
   // Set close delay so long that it triggers a test timeout if relied upon.
   InitDispatcher(base::Seconds(1000));
@@ -696,9 +723,11 @@ TEST_F(AudioOutputProxyTest, DispatcherDeviceChangeClosesIdleStreams) {
       .WillOnce(testing::InvokeWithoutArgs(&run_loop, &base::RunLoop::Quit));
   run_loop.Run();
 }
+#endif
 
 // Simulate AudioOutputStream::Create() failure with a low latency stream and
 // ensure AudioOutputResampler falls back to the high latency path.
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(AudioOutputResamplerTest, LowLatencyCreateFailedFallback) {
   MockAudioOutputStream stream(&manager_, params_);
   EXPECT_CALL(manager(), MakeAudioOutputStream(_, _, _))
@@ -712,9 +741,11 @@ TEST_F(AudioOutputResamplerTest, LowLatencyCreateFailedFallback) {
   EXPECT_TRUE(proxy->Open());
   CloseAndWaitForCloseTimer(proxy, &stream);
 }
+#endif
 
 // Simulate AudioOutputStream::Open() failure with a low latency stream and
 // ensure AudioOutputResampler falls back to the high latency path.
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(AudioOutputResamplerTest, LowLatencyOpenFailedFallback) {
   MockAudioOutputStream failed_stream(&manager_, params_);
   MockAudioOutputStream okay_stream(&manager_, params_);
@@ -733,9 +764,11 @@ TEST_F(AudioOutputResamplerTest, LowLatencyOpenFailedFallback) {
   EXPECT_TRUE(proxy->Open());
   CloseAndWaitForCloseTimer(proxy, &okay_stream);
 }
+#endif
 
 // Simulate failures to open both the low latency and the fallback high latency
 // stream and ensure AudioOutputResampler falls back to a fake stream.
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(AudioOutputResamplerTest, HighLatencyFallbackFailed) {
   MockAudioOutputStream okay_stream(&manager_, params_);
 
@@ -770,6 +803,7 @@ TEST_F(AudioOutputResamplerTest, HighLatencyFallbackFailed) {
   EXPECT_TRUE(proxy->Open());
   CloseAndWaitForCloseTimer(proxy, &okay_stream);
 }
+#endif
 
 // Simulate failures to open both the low latency, the fallback high latency
 // stream, and the fake audio output stream and ensure AudioOutputResampler
@@ -793,6 +827,7 @@ TEST_F(AudioOutputResamplerTest, AllFallbackFailed) {
 
 // Simulate an eventual OpenStream() failure; i.e. successful OpenStream() calls
 // eventually followed by one which fails; root cause of http://crbug.com/150619
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(AudioOutputResamplerTest, LowLatencyOpenEventuallyFails) {
   MockAudioOutputStream stream1(&manager_, params_);
   MockAudioOutputStream stream2(&manager_, params_);
@@ -846,11 +881,13 @@ TEST_F(AudioOutputResamplerTest, LowLatencyOpenEventuallyFails) {
   EXPECT_TRUE(stream2.stop_called());
   EXPECT_TRUE(stream2.start_called());
 }
+#endif
 
 // Simulate failures to open both the low latency and the fallback high latency
 // stream and ensure AudioOutputResampler falls back to a fake stream.  Ensure
 // that after the close delay elapses, opening another stream succeeds with a
 // non-fake stream.
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(AudioOutputResamplerTest, FallbackRecovery) {
   MockAudioOutputStream fake_stream(&manager_, params_);
 
@@ -901,7 +938,9 @@ TEST_F(AudioOutputResamplerTest, FallbackRecovery) {
   EXPECT_TRUE(proxy->Open());
   CloseAndWaitForCloseTimer(proxy, &real_stream);
 }
+#endif
 
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(AudioOutputResamplerTest, PropagatesGlitchInfo) {
   CallbackExposingMockOutputStream stream;
 
@@ -936,5 +975,6 @@ TEST_F(AudioOutputResamplerTest, PropagatesGlitchInfo) {
       .WillOnce(testing::InvokeWithoutArgs(&run_loop, &base::RunLoop::Quit));
   run_loop.Run();
 }
+#endif
 
 }  // namespace media

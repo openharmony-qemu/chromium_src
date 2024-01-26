@@ -164,7 +164,7 @@ TEST(AudioLatency, InteractiveBufferSizes) {
 TEST(AudioLatency, RtcBufferSizes) {
   for (int i = 6400; i < 204800; i *= 2) {
     EXPECT_EQ(i / 100, AudioLatency::GetRtcBufferSize(i, 0));
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
     EXPECT_EQ(500, AudioLatency::GetRtcBufferSize(i, 500));
 #elif BUILDFLAG(IS_ANDROID)
     EXPECT_EQ(i / 50, AudioLatency::GetRtcBufferSize(i, i / 50 - 1));

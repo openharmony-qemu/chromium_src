@@ -15,6 +15,9 @@ class MockVideoRendererSink : public VideoRendererSink {
  public:
   MockVideoRendererSink();
   ~MockVideoRendererSink() override;
+  #if BUILDFLAG(IS_OHOS)
+  voio SetFinishPaintCallback(base::RepeatingClosure callback) override {}
+  #endif
 
   MOCK_METHOD1(Start, void(RenderCallback* callback));
   MOCK_METHOD0(Stop, void());

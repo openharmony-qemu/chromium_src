@@ -1557,6 +1557,12 @@ void DownloadItemImpl::Start(
     URLLoaderFactoryProvider::URLLoaderFactoryProviderPtr
         url_loader_factory_provider) {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+#if BUILDFLAG(IS_OHOS)
+  // Simultaneously restoring a failed download multiple times will result in a crash.
+  if (download_file_) {
+    return;
+  }
+#endif
   CHECK(!download_file_) << "last interrupt reason: "
                          << DownloadInterruptReasonToString(last_reason_)
                          << ", state: " << DebugDownloadStateString(state_);

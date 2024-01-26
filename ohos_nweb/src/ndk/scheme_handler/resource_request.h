@@ -34,6 +34,7 @@ struct ArkWeb_ResourceRequest_ {
   void GetReferrer(char** referrer) const;
 
   CefRefPtr<CefRequest> cef_request;
+  void* user_data{nullptr};
 };
 
 struct HeaderValue {

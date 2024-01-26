@@ -84,7 +84,7 @@ CefRefPtr<CefResourceHandler> NWebSchemeHandlerFactory::Create(
   bool from_service_worker = (frame == nullptr);
 
   if (from_service_worker) {
-    if (!scheme_handler_for_sw_) {
+    if (!scheme_handler_for_sw_ || !scheme_handler_for_sw_->on_request_start) {
       LOG(INFO) << "scheme_handler not set handler for service worker.";
       return nullptr;
     }
@@ -110,7 +110,7 @@ CefRefPtr<CefResourceHandler> NWebSchemeHandlerFactory::Create(
   }
 
   ArkWeb_SchemeHandler* handler = FromTag(web_tag);
-  if (!handler) {
+  if (!handler || !handler->on_request_start) {
     LOG(INFO) << "scheme_handler not set handler for " << web_tag;
     return nullptr;
   }
@@ -118,6 +118,7 @@ CefRefPtr<CefResourceHandler> NWebSchemeHandlerFactory::Create(
       new ArkWeb_ResourceRequest(request);
   ArkWeb_ResourceHandler* resource_handler =
       new ArkWeb_ResourceHandler(resource_request, this, web_tag, false);
+
   handler->on_request_start(handler, resource_request, resource_handler,
                             &intercept);
 
@@ -184,7 +185,7 @@ void NWebSchemeHandlerFactory::OnRequestStop(
     const std::string& web_tag,
     bool from_service_worker) {
   if (scheme_handler_for_sw_) {
-    if (!scheme_handler_for_sw_) {
+    if (!scheme_handler_for_sw_ || !scheme_handler_for_sw_->on_request_stop) {
       LOG(ERROR) << "scheme_handler handler for service worker is not found.";
       return;
     }
@@ -194,7 +195,7 @@ void NWebSchemeHandlerFactory::OnRequestStop(
   }
 
   ArkWeb_SchemeHandler* handler = FromTag(web_tag);
-  if (!handler) {
+  if (!handler || !handler->on_request_stop) {
     LOG(INFO) << "scheme_handler not set handler for " << web_tag;
     return;
   }

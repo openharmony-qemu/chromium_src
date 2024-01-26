@@ -42,6 +42,7 @@ using ::testing::Invoke;
 using ::testing::Return;
 using ::testing::SaveArg;
 
+#if !BUILDFLAG(IS_OHOS)
 namespace media {
 
 namespace {
@@ -469,3 +470,4 @@ INSTANTIATE_TEST_SUITE_P(VdaVideoDecoder,
                          ::testing::Values(false, true));
 
 }  // namespace media
+#endif

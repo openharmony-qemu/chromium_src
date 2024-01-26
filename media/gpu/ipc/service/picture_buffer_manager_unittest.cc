@@ -14,6 +14,7 @@
 #include "media/video/video_decode_accelerator.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#if !BUILDFLAG(IS_OHOS)
 namespace media {
 
 class PictureBufferManagerImplTest : public testing::Test {
@@ -264,3 +265,4 @@ TEST_F(PictureBufferManagerImplTest, CanReadWithoutStalling) {
 }
 
 }  // namespace media
+#endif

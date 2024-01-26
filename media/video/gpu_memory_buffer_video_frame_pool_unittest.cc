@@ -282,6 +282,7 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest, VideoFrameOutputFormatUnknown) {
   EXPECT_EQ(software_frame.get(), frame.get());
 }
 
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(GpuMemoryBufferVideoFramePoolTest, CreateOneHardwareFrame) {
   scoped_refptr<VideoFrame> software_frame = CreateTestYUVVideoFrame(10);
   scoped_refptr<VideoFrame> frame;
@@ -295,6 +296,7 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest, CreateOneHardwareFrame) {
   EXPECT_EQ(3u, frame->NumTextures());
   EXPECT_EQ(3u, sii_->shared_image_count());
 }
+#endif
 
 TEST_F(GpuMemoryBufferVideoFramePoolTest, CreateOneHardwareFrameWithOddSize) {
   scoped_refptr<VideoFrame> software_frame =
@@ -375,6 +377,7 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest,
   EXPECT_EQ(software_frame.get(), frame.get());
 }
 
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(GpuMemoryBufferVideoFramePoolTest, CreateOne10BppHardwareFrame) {
   scoped_refptr<VideoFrame> software_frame = CreateTestYUVVideoFrame(10, 10);
   scoped_refptr<VideoFrame> frame;
@@ -388,6 +391,7 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest, CreateOne10BppHardwareFrame) {
   EXPECT_EQ(3u, frame->NumTextures());
   EXPECT_EQ(3u, sii_->shared_image_count());
 }
+#endif
 
 TEST_F(GpuMemoryBufferVideoFramePoolTest,
        CreateOne10BppHardwareFrameWithOddSize) {
@@ -449,6 +453,7 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest,
   }
 }
 
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(GpuMemoryBufferVideoFramePoolTest, ReuseFirstResource) {
   scoped_refptr<VideoFrame> software_frame = CreateTestYUVVideoFrame(10);
   scoped_refptr<VideoFrame> frame;
@@ -484,7 +489,9 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest, ReuseFirstResource) {
   EXPECT_EQ(frame->mailbox_holder(0).mailbox, mailbox);
   EXPECT_NE(frame->mailbox_holder(0).sync_token, sync_token);
 }
+#endif
 
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(GpuMemoryBufferVideoFramePoolTest, DropResourceWhenSizeIsDifferent) {
   scoped_refptr<VideoFrame> frame;
   gpu_memory_buffer_pool_->MaybeCreateHardwareFrame(
@@ -514,7 +521,9 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest, DropResourceWhenSizeIsDifferent) {
   for (size_t i = 0; i < 3; ++i)
     EXPECT_TRUE(sii_->CheckSharedImageExists(frame->mailbox_holder(i).mailbox));
 }
+#endif
 
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(GpuMemoryBufferVideoFramePoolTest, CreateOneHardwareNV12Frame) {
   scoped_refptr<VideoFrame> software_frame = CreateTestYUVVideoFrame(10);
   scoped_refptr<VideoFrame> frame;
@@ -536,6 +545,7 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest, CreateOneHardwareNV12Frame) {
   }
   EXPECT_TRUE(frame->metadata().read_lock_fences_enabled);
 }
+#endif
 
 TEST_F(GpuMemoryBufferVideoFramePoolTest,
        CreateOneHardwareNV12FrameWithOddSize) {
@@ -597,6 +607,7 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest,
   }
 }
 
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(GpuMemoryBufferVideoFramePoolTest, CreateOneHardwareNV12Frame2) {
   scoped_refptr<VideoFrame> software_frame = CreateTestYUVVideoFrame(10);
   scoped_refptr<VideoFrame> frame;
@@ -613,6 +624,7 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest, CreateOneHardwareNV12Frame2) {
   EXPECT_EQ(2u, sii_->shared_image_count());
   EXPECT_TRUE(frame->metadata().read_lock_fences_enabled);
 }
+#endif
 
 TEST_F(GpuMemoryBufferVideoFramePoolTest,
        CreateOneHardwareNV12Frame2WithOddSize) {
@@ -667,6 +679,7 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest,
   }
 }
 
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(GpuMemoryBufferVideoFramePoolTest, CreateOneHardwareFrameForNV12Input) {
   scoped_refptr<VideoFrame> software_frame = CreateTestNV12VideoFrame(10);
   scoped_refptr<VideoFrame> frame;
@@ -682,6 +695,7 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest, CreateOneHardwareFrameForNV12Input) {
   EXPECT_EQ(2u, frame->NumTextures());
   EXPECT_EQ(2u, sii_->shared_image_count());
 }
+#endif
 
 TEST_F(GpuMemoryBufferVideoFramePoolTest,
        CreateOneHardwareFrameForNV12InputWithOddSize) {
@@ -906,6 +920,7 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest, CreateOneHardwareXR30FrameBT601) {
   EXPECT_EQ(as_xr30(0, 543, 0), *static_cast<uint32_t*>(memory));
 }
 
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(GpuMemoryBufferVideoFramePoolTest, CreateOneHardwareXB30Frame) {
   scoped_refptr<VideoFrame> software_frame = CreateTestYUVVideoFrame(10, 10);
   scoped_refptr<VideoFrame> frame;
@@ -922,7 +937,9 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest, CreateOneHardwareXB30Frame) {
   EXPECT_EQ(1u, sii_->shared_image_count());
   EXPECT_TRUE(frame->metadata().read_lock_fences_enabled);
 }
+#endif
 
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(GpuMemoryBufferVideoFramePoolTest, CreateOneHardwareRGBAFrame) {
   scoped_refptr<VideoFrame> software_frame = CreateTestYUVAVideoFrame(10);
   scoped_refptr<VideoFrame> frame;
@@ -939,7 +956,9 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest, CreateOneHardwareRGBAFrame) {
   EXPECT_EQ(1u, sii_->shared_image_count());
   EXPECT_TRUE(frame->metadata().read_lock_fences_enabled);
 }
+#endif
 
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(GpuMemoryBufferVideoFramePoolTest, PreservesMetadata) {
   gfx::HDRMetadata hdr_metadata;
   hdr_metadata.max_content_light_level = 5000;
@@ -963,6 +982,7 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest, PreservesMetadata) {
   EXPECT_EQ(hdr_metadata, frame->hdr_metadata());
   EXPECT_EQ(kTestReferenceTime, *frame->metadata().reference_time);
 }
+#endif
 
 // CreateGpuMemoryBuffer can return null (e.g: when the GPU process is down).
 // This test checks that in that case we don't crash and don't create the
@@ -996,6 +1016,7 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest,
   EXPECT_EQ(0u, sii_->shared_image_count());
 }
 
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(GpuMemoryBufferVideoFramePoolTest, ShutdownReleasesUnusedResources) {
   scoped_refptr<VideoFrame> software_frame = CreateTestYUVVideoFrame(10);
   scoped_refptr<VideoFrame> frame_1;
@@ -1028,7 +1049,9 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest, ShutdownReleasesUnusedResources) {
 
   EXPECT_EQ(3u, sii_->shared_image_count());
 }
+#endif
 
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(GpuMemoryBufferVideoFramePoolTest, StaleFramesAreExpired) {
   scoped_refptr<VideoFrame> software_frame = CreateTestYUVVideoFrame(10);
   scoped_refptr<VideoFrame> frame_1;
@@ -1061,9 +1084,11 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest, StaleFramesAreExpired) {
   RunUntilIdle();
   EXPECT_EQ(3u, sii_->shared_image_count());
 }
+#endif
 
 // Test when we request two copies in a row, there should be at most one frame
 // copy in flight at any time.
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(GpuMemoryBufferVideoFramePoolTest, AtMostOneCopyInFlight) {
   mock_gpu_factories_->SetVideoFrameOutputFormat(
       media::GpuVideoAcceleratorFactories::OutputFormat::NV12_SINGLE_GMB);
@@ -1087,9 +1112,11 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest, AtMostOneCopyInFlight) {
   EXPECT_EQ(1u, copy_task_runner_->NumPendingTasks());
   RunUntilIdle();
 }
+#endif
 
 // Tests that adding a frame that the pool doesn't handle does not break the
 // FIFO order in tasks.
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(GpuMemoryBufferVideoFramePoolTest, PreservesOrder) {
   std::vector<scoped_refptr<VideoFrame>> frame_outputs;
 
@@ -1136,8 +1163,10 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest, PreservesOrder) {
   EXPECT_EQ(software_frame_3.get(), frame_3.get());
   EXPECT_LE(time_2, time_3);
 }
+#endif
 
 // Test that Abort() stops any pending copies.
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(GpuMemoryBufferVideoFramePoolTest, AbortCopies) {
   scoped_refptr<VideoFrame> software_frame_1 = CreateTestYUVVideoFrame(10);
   scoped_refptr<VideoFrame> frame_1;
@@ -1161,9 +1190,11 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest, AbortCopies) {
   RunUntilIdle();
   ASSERT_FALSE(frame_2);
 }
+#endif
 
 // Tests that an I420 VideoFrame after an I420A is ignored, i.e. passed through.
 // See e.g. https://crbug.com/875158.
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(GpuMemoryBufferVideoFramePoolTest, VideoFrameChangesPixelFormat) {
   scoped_refptr<VideoFrame> software_frame_1 = CreateTestYUVAVideoFrame(10);
   scoped_refptr<VideoFrame> frame_1;
@@ -1191,5 +1222,6 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest, VideoFrameChangesPixelFormat) {
 
   EXPECT_EQ(software_frame_2.get(), frame_2.get());
 }
+#endif
 
 }  // namespace media

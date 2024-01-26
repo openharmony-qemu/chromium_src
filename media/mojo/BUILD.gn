@@ -80,6 +80,7 @@ source_set("unit_tests") {
     "//media/mojo/mojom/stable:unit_tests",
     "//media/mojo/services:unit_tests",
     "//media/mojo/test:unit_tests",
+    "//content/public/browser:browser",
   ]
 }
 

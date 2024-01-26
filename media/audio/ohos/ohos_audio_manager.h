@@ -11,6 +11,7 @@
 #include "media/audio/ohos/ohos_audio_output_stream.h"
 
 namespace media {
+extern const int32_t AUDIO_DEFAULT_DEVICE_ID;
 
 class AudioManagerDeviceChangeCallback
     : public AudioManagerDeviceChangeCallbackAdapter {

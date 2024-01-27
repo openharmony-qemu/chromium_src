@@ -130,6 +130,7 @@ NWebInputMethodHandler::NWebInputMethodHandler()
 NWebInputMethodHandler::~NWebInputMethodHandler() {}
 
 uint32_t NWebInputMethodHandler::lastAttachNWebId_ = 0;
+IMFAdapterTextInputType NWebInputMethodHandler::lastInputMode_ = IMFAdapterTextInputType::NONE;
 
 IMFAdapterCursorInfo NWebInputMethodHandler::GetCursorInfo() {
   IMFAdapterCursorInfo cursorInfo {
@@ -185,9 +186,9 @@ void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
   IMFAdapterCursorInfo cursorInfo = GetCursorInfo();
 
   IMFAdapterTextConfig textConfig = { .inputAttribute = inputAttribute, .cursorInfo = cursorInfo };
-  if (!show_keyboard_ && isAttached_) {
+  if (!show_keyboard_ && isAttached_ && input_mode_ != lastInputMode_) {
     LOG(ERROR) << "do not need attach";
-    return;
+    inputmethod_adapter_->Close();
   }
   if (!inputmethod_adapter_->Attach(inputmethod_listener_, show_keyboard_, textConfig)) {
     LOG(ERROR) << "inputmethod_adapter_ attach failed";
@@ -195,6 +196,7 @@ void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
   }
   isAttached_ = true;
   lastAttachNWebId_ = nweb_id_;
+  lastInputMode_ = input_mode_;
 
   if (focus_status_ && focus_rect_status_) {
     if (inputmethod_adapter_) {
@@ -241,9 +243,9 @@ bool NWebInputMethodHandler::Reattach(uint32_t nwebId, ReattachType type) {
   IMFAdapterCursorInfo cursorInfo = GetCursorInfo();
 
   IMFAdapterTextConfig textConfig = { .inputAttribute = inputAttribute, .cursorInfo = cursorInfo };
-  if (!show_keyboard_ && isAttached_) {
+  if (!show_keyboard_ && isAttached_ && input_mode_ != lastInputMode_) {
     LOG(ERROR) << "do not need attach";
-    return true;
+    inputmethod_adapter_->Close();
   }
   if (!inputmethod_adapter_->Attach(inputmethod_listener_, show_keyboard_, textConfig)) {
     LOG(ERROR) << "inputmethod_adapter_ attach failed";
@@ -251,6 +253,7 @@ bool NWebInputMethodHandler::Reattach(uint32_t nwebId, ReattachType type) {
   }
   isAttached_ = true;
   lastAttachNWebId_ = nwebId;
+  lastInputMode_ = input_mode_;
 
   return show_keyboard_;
 }

@@ -46,10 +46,10 @@ struct OHOS_NWEB_EXPORT NWebAccessibilityNodeInfo {
   std::vector<uint32_t> actions;
   int32_t pageId = -1;
 
-  size_t rectX = 0;
-  size_t rectY = 0;
-  size_t rectWidth = 0;
-  size_t rectHeight = 0;
+  int32_t rectX = 0;
+  int32_t rectY = 0;
+  int32_t rectWidth = 0;
+  int32_t rectHeight = 0;
 
   bool heading : 1;
   bool checked : 1;

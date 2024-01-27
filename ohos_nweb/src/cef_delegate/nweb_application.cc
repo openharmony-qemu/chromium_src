@@ -29,6 +29,8 @@
 #endif
 
 #ifdef OHOS_SCHEME_HANDLER
+#include "base/values.h"
+#include "base/json/json_writer.h"
 #include "cef/libcef/common/net/scheme_registration.h"
 #endif
 
@@ -143,9 +145,9 @@ void NWebApplication::OnRegisterCustomSchemes(
   }
 
 #if defined(OHOS_SCHEME_HANDLER)
-  content::ContentClient::Schemes schemes;
-  scheme_registrar_.GetSchemes(&schemes);
-  scheme::AddInternalSchemes(&schemes);
+  for (auto scheme_info : scheme_registrar_) {
+    registrar->AddCustomScheme(scheme_info.first, scheme_info.second);
+  }
 #endif  // defined(OHOS_SCHEME_HANDLER)
 }
 #endif
@@ -187,6 +189,17 @@ void NWebApplication::RunWebInitedCallback(WebRunInitedCallback* callback)
 void NWebApplication::OnBeforeChildProcessLaunch(
     CefRefPtr<CefCommandLine> command_line) {
   LOG(INFO) << "NWebApplication::OnBeforeChildProcessLaunch";
+#ifdef OHOS_SCHEME_HANDLER
+  base::Value::Dict schemes_dict;
+  for (auto scheme_info : scheme_registrar_) {
+    schemes_dict.Set(scheme_info.first, scheme_info.second);
+  }
+  std::string schemes_json;
+  base::JSONWriter::Write(schemes_dict, &schemes_json);
+  command_line->AppendSwitchWithValue(
+        ::switches::kOhSchemeHandlerCustomScheme,
+        schemes_json);
+#endif
   if (CefCommandLine::GetGlobalCommandLine()->HasSwitch(
           ::switches::kOhosCustomScheme)) {
     command_line->AppendSwitchWithValue(
@@ -318,7 +331,7 @@ void NWebApplication::CreateBrowser(
 #if defined(OHOS_SCHEME_HANDLER)
 void NWebApplication::RegisterCustomSchemes(const std::string& scheme, int options) {
   LOG(INFO) << "scheme_handler register custom schemes " << scheme;
-  scheme_registrar_.AddCustomScheme(scheme, options);
+  scheme_registrar_[scheme] = options;
 }
 #endif  // defined(OHOS_SCHEME_HANDLER)
 

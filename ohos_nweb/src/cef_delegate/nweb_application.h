@@ -115,7 +115,7 @@ void OnContextInitializedForIncognitoMode() override;
 #endif  // defined(OHOS_API_INIT_WEB_ENGINE)
 
 #if defined(OHOS_SCHEME_HANDLER)
-  CefSchemeRegistrarImpl scheme_registrar_;
+  std::map<std::string, int> scheme_registrar_;
 #endif
 
   // Include the default reference counting implementation.

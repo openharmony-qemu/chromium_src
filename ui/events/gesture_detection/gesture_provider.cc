@@ -139,6 +139,9 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
   GestureListenerImpl& operator=(const GestureListenerImpl&) = delete;
 
   void OnTouchEvent(const MotionEvent& event) {
+    if (gesture_provider_->GetNativeEmbedEnabled()) {
+      return;
+    }
     const bool in_scale_gesture = IsScaleGestureDetectionInProgress();
     snap_scroll_controller_.SetSnapScrollMode(
         event, in_scale_gesture, EffectiveSlopDistance(event, config_));
@@ -985,6 +988,14 @@ void GestureProvider::SetDoubleTapSupportForPlatformEnabled(bool enabled) {
     return;
   double_tap_support_for_platform_ = enabled;
   UpdateDoubleTapDetectionSupport();
+}
+
+void GestureProvider::SetNativeEmbedEnabled(bool enabled) {
+  native_embed_enabled_ = enabled;
+}
+
+bool GestureProvider::GetNativeEmbedEnabled() {
+  return native_embed_enabled_;
 }
 
 void GestureProvider::SetDoubleTapSupportForPageEnabled(bool enabled) {

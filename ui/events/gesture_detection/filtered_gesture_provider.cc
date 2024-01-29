@@ -101,6 +101,10 @@ void FilteredGestureProvider::SetDoubleTapSupportForPageEnabled(bool enabled) {
   gesture_provider_->SetDoubleTapSupportForPageEnabled(enabled);
 }
 
+void FilteredGestureProvider::SetNativeEmbedEnabled(bool enabled) {
+  gesture_provider_->SetNativeEmbedEnabled(enabled);
+}
+
 const ui::MotionEvent* FilteredGestureProvider::GetCurrentDownEvent() const {
   return gesture_provider_->current_down_event();
 }

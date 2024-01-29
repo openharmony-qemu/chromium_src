@@ -136,7 +136,7 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ClipboardOHOS : public Clipboard {
   void WriteData(const ClipboardFormatType& format,
                  const char* data_data,
                  size_t data_len) override;
-
+  bool HasPasteData() const override;
   const std::unique_ptr<ClipboardOHOSInternal> clipboard_internal_;
 };
 }  // namespace ui

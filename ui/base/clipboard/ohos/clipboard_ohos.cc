@@ -15,6 +15,7 @@
 #include "base/notreached.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/synchronization/lock.h"
+#include "base/task/thread_pool.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/common/content_switches.h"
@@ -127,11 +128,17 @@ class ClipboardOHOSInternal {
     ClipboardOHOSInternal* clipboard_internal_ = nullptr;
   };
 
+  void AddPasteboardChangedObserver() {
+    OhosAdapterHelper::GetInstance()
+      .GetPasteBoard()
+      .AddPasteboardChangedObserver(observer_);
+  }
+
   ClipboardOHOSInternal() {
     observer_ = std::make_shared<PasteboardObserverOhos>();
-    OhosAdapterHelper::GetInstance()
-        .GetPasteBoard()
-        .AddPasteboardChangedObserver(observer_);
+    base::ThreadPool::PostTask(
+      FROM_HERE, {base::MayBlock(), base::TaskPriority::USER_BLOCKING},
+      base::BindOnce(&ClipboardOHOSInternal::AddPasteboardChangedObserver, base::Unretained(this)));
     observer_->SetClipboardInternal(this);
     std::string hapPath =
         base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
@@ -192,7 +199,7 @@ class ClipboardOHOSInternal {
             record_list)) {
       // Notice: Because pasteboard observer dont notify cross device.
       // So now we always get data from system clipboard instead of cache data.
-      // state_ = ClipboardState::kUpToDate;
+      state_ = ClipboardState::kUpToDate;
       read_data_ = std::make_shared<ClipboardOhosReadData>(record_list);
       return;
     }
@@ -202,6 +209,7 @@ class ClipboardOHOSInternal {
   // Reads text from the ClipboardData.
   void ReadText(std::u16string* result) {
     UpdateClipboardData();
+    state_ = ClipboardState::kOutOfDate;
     if (!read_data_) {
       return;
     }
@@ -226,7 +234,7 @@ class ClipboardOHOSInternal {
     *fragment_end = 0;
 
     UpdateClipboardData();
-
+    state_ = ClipboardState::kOutOfDate;
     if (!read_data_) {
       return;
     }
@@ -283,13 +291,26 @@ class ClipboardOHOSInternal {
                              alphaType, colorSpace);
   }
 
+  void DidGetPng(Clipboard::ReadPngCallback callback,
+      std::vector<uint8_t> result) {
+    // GetPngData attempts to read from the Java Clipboard, which sometimes is
+    // not available (ex. the app is not in focus, such as in unit tests).
+    if (!result.empty()) {
+      std::move(callback).Run(std::move(result));
+      return;
+    }
+    std::move(callback).Run(std::vector<uint8_t>());
+  }
+
   // Reads image from the ClipboardData.
   void ReadPng(Clipboard::ReadPngCallback callback) {
     if (!HasFormatInMisc(ClipboardInternalFormat::kPng)) {
       LOG(ERROR) << "no bitMap format in pasteboard";
       std::move(callback).Run(std::vector<uint8_t>());
+      state_ = ClipboardState::kOutOfDate;
       return;
     }
+    state_ = ClipboardState::kOutOfDate;
     SkBitmap img;
     PasteRecordList recordList;
     if (OhosAdapterHelper::GetInstance().GetPasteBoard().GetPasteData(
@@ -306,9 +327,11 @@ class ClipboardOHOSInternal {
           LOG(ERROR) << "installPixels failed";
           continue;
         } else {
-          std::vector<uint8_t> encode_png =
-              ClipboardData::EncodeBitmapData(img);
-          std::move(callback).Run(std::move(encode_png));
+          base::ThreadPool::PostTaskAndReplyWithResult(
+            FROM_HERE, {base::MayBlock(), base::TaskPriority::USER_BLOCKING},
+            base::BindOnce(&ClipboardData::EncodeBitmapData, std::move(img)),
+            base::BindOnce(&ClipboardOHOSInternal::DidGetPng, base::Unretained(this),
+                          std::move(callback)));
           return;
         }
       }
@@ -855,5 +878,9 @@ void ClipboardOHOS::WriteBitmap(const SkBitmap& bitmap) {
 void ClipboardOHOS::WriteData(const ClipboardFormatType& format,
                               const char* data_data,
                               size_t data_len) {}
+
+bool ClipboardOHOS::HasPasteData() const {
+  return OhosAdapterHelper::GetInstance().GetPasteBoard().HasPasteData();
+}
 
 }  // namespace ui

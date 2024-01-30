@@ -2860,6 +2860,17 @@ void NWebDelegate::AddAccessibilityNodeInfoRect(
   nodeInfo.rectY = absolute_rect.y();
   nodeInfo.rectWidth = absolute_rect.width();
   nodeInfo.rectHeight = absolute_rect.height();
+
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(INFO) << "AddAccessibilityNodeInfoRect can not get browser";
+    return;
+  }
+  auto viewPointHeight = GetBrowser()->GetHost()->GetShrinkViewportHeight();
+  if (viewPointHeight != 0 && render_handler_ != nullptr) {
+    CefScreenInfo screen_info;
+    render_handler_->GetScreenInfo(GetBrowser(), screen_info);
+    nodeInfo.rectY += viewPointHeight * screen_info.device_scale_factor;
+  }
 }
 
 void NWebDelegate::AddAccessibilityNodeInfoCollection(

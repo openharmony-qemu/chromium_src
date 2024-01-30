@@ -473,8 +473,7 @@ void NWebInputMethodHandler::DeleteForwardHandlerOnUI(int32_t length) {
     if (selected_from_ == 0) {
       is_need_notify_all_ = true;
     }
-  }
-  {
+  } else {
     std::unique_lock<std::mutex> lock(textCursorMutex_);
     textCursorReady_ += text_cursor_length_;
   }
@@ -503,8 +502,7 @@ void NWebInputMethodHandler::DeleteBackwardHandlerOnUI(int32_t length) {
   text_cursor_length_ = length;
   if (selected_from_ <= length) {
     text_cursor_length_ = selected_from_;
-  }
-  {
+  } else {
     std::unique_lock<std::mutex> lock(textCursorMutex_);
     textCursorReady_ += text_cursor_length_;
   }

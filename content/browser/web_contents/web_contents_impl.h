@@ -2488,7 +2488,7 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   std::unique_ptr<password_manager::PasswordFormManagerForUI> form_to_save_;
 #endif
 #if defined(OHOS_EX_FORCE_ZOOM)
-  bool force_enable_zoom_;
+  bool force_enable_zoom_ = false;
 #endif  // OHOS_NWEB_EX
 
 #if defined(OHOS_EX_FREE_COPY)

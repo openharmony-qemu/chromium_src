@@ -70,6 +70,7 @@ extern const char kSchedulerBoostUrgent[];
 #if BUILDFLAG(IS_OHOS)
 extern const char kForTest[];
 extern const char kBundleInstallationDir[];
+extern const char kBundleName[];
 #endif
 
 }  // namespace switches

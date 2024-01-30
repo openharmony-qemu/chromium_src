@@ -250,6 +250,8 @@ class NWebImpl : public NWeb {
   int GetSecurityLevel() override;
   void SetPrintBackground(bool enable) override;
   bool GetPrintBackground() override;
+  bool IsSafeBrowsingEnabled() override;
+  void EnableSafeBrowsing(bool enable) override;
 #endif
 
 #if defined(OHOS_INPUT_EVENTS)

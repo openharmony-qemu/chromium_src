@@ -3660,6 +3660,7 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
     switches::kBundleInstallationDir,
     switches::kOhosDeviceType,
     switches::kOhSchemeHandlerCustomScheme,
+    switches::kBundleName,
 #endif
 #if BUILDFLAG(IS_CHROMEOS_LACROS)
     switches::kLacrosEnablePlatformHevc,

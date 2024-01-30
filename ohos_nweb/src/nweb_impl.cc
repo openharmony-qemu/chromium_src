@@ -2058,4 +2058,20 @@ int NWebImpl::GetSecurityLevel() {
 
   return nweb_delegate_->GetSecurityLevel();
 }
+
+bool NWebImpl::IsSafeBrowsingEnabled() {
+  if (nweb_delegate_ == nullptr) {
+    return false;
+  }
+
+  return nweb_delegate_->IsSafeBrowsingEnabled();
+}
+
+void NWebImpl::EnableSafeBrowsing(bool enable) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+
+  return nweb_delegate_->EnableSafeBrowsing(enable);
+}
 #endif

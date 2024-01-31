@@ -32,6 +32,7 @@
 #ifdef OHOS_USERAGENT
 #include "ohos_adapter_helper.h"
 #include "components/embedder_support/arkweb_version.h"
+#include "components/embedder_support/user_agent_utils.h"
 #endif
 
 namespace content {
@@ -469,7 +470,8 @@ std::string BuildUserAgentFromOSAndProduct(const std::string& os_info,
       system_properties_adapter.GetProductDeviceType();
   switch (deviceType) {
     case OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE:
-      product_string += " Mobile";
+      if (!embedder_support::GetTabletMode())
+        product_string += " Mobile";
       break;
     case OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_TABLET:
     case OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_2IN1:

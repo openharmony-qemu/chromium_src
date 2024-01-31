@@ -22,6 +22,11 @@ class WebContents;
 
 namespace embedder_support {
 
+#ifdef OHOS_USERAGENT
+void SetTabletMode(bool is_tablet);
+bool GetTabletMode();
+#endif
+
 // TODO(crbug.com/1290820): Remove this enum along with policy.
 enum class ForceMajorVersionToMinorPosition {
   kDefault = 0,

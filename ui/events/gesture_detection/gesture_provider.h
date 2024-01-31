@@ -103,6 +103,10 @@ class GESTURE_DETECTION_EXPORT GestureProvider {
   // Synthesizes and propagates gesture end events.
   void SendSynthesizedEndEvents();
 
+  void SetNativeEmbedEnabled(bool enabled);
+
+  bool GetNativeEmbedEnabled();
+
   // May be NULL if there is no currently active touch sequence.
   const ui::MotionEvent* current_down_event() const {
     return current_down_event_.get();
@@ -125,6 +129,7 @@ class GESTURE_DETECTION_EXPORT GestureProvider {
   // Whether double-tap gesture detection is currently supported.
   bool double_tap_support_for_page_;
   bool double_tap_support_for_platform_;
+  bool native_embed_enabled_ = false;
 
   const bool gesture_begin_end_types_enabled_;
 };

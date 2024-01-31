@@ -517,10 +517,21 @@ bool ReadFromFD(int fd, char* buffer, size_t bytes) {
   while (total_read < bytes) {
     ssize_t bytes_read =
         HANDLE_EINTR(read(fd, buffer + total_read, bytes - total_read));
-    if (bytes_read <= 0)
+    if (bytes_read <= 0) {
+#if defined(OHOS_BUGFIX_CRASH)
+      LOG(ERROR) << "read /dev/urandom failed, ret = " << bytes_read << ", total read = " \
+        << total_read << ", bytes = " << bytes << ", fd = " << fd << ", buffer addr = " << buffer;
+#endif
       break;
+    }
     total_read += static_cast<size_t>(bytes_read);
   }
+#if defined(OHOS_BUGFIX_CRASH)
+  if (total_read != bytes) {
+    LOG(ERROR) << "read /dev/urandom end failed, total read = " \
+      << total_read << ", bytes = " << bytes << ", fd = " << fd << ", buffer addr = " << buffer;
+  }
+#endif
   return total_read == bytes;
 }
 

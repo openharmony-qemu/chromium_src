@@ -329,9 +329,14 @@ void NWebApplication::CreateBrowser(
 #endif  // defined(OHOS_API_INIT_WEB_ENGINE)
 
 #if defined(OHOS_SCHEME_HANDLER)
-void NWebApplication::RegisterCustomSchemes(const std::string& scheme, int options) {
+bool NWebApplication::RegisterCustomSchemes(const std::string& scheme, int options) {
   LOG(INFO) << "scheme_handler register custom schemes " << scheme;
-  scheme_registrar_[scheme] = options;
+  if (!HasInitializedCef()) {
+    scheme_registrar_[scheme] = options;
+    return true;
+  } else {
+    return false;
+  }
 }
 #endif  // defined(OHOS_SCHEME_HANDLER)
 

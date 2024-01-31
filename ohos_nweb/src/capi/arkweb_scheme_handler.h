@@ -33,6 +33,7 @@
 
 #include <cstdint>
 
+#include "arkweb_error_code.h"
 #include "arkweb_net_error_list.h"
 
 #ifdef __cplusplus
@@ -181,6 +182,8 @@ typedef void (*ArkWeb_OnRequestStart)(const ArkWeb_SchemeHandler* schemeHandler,
 
 /*
  * @brief Callback when the request is completed. This will called on the IO thread.
+ *        Should destory the resourceRequest by ArkWeb_ResourceRequest_Destroy and use ArkWeb_ResourceHandler_Destroy
+ *        destroy the ArkWeb_ResourceHandler received in ArkWeb_OnRequestStart. 
  * @param schemeHandler The ArkWeb_SchemeHandler.
  * @param resourceRequest The ArkWeb_ResourceRequest.
  *
@@ -263,7 +266,7 @@ void OH_ArkWebRequestHeaderList_GetHeader(const ArkWeb_RequestHeaderList* reques
  * @brief Set a user data to ArkWeb_ResourceRequest.
  * @param resourceRequest The ArkWeb_ResourceRequest.
  * @param userData The user data to set.
- * @return 0 if success; otherwise if fail. refer to arkweb_net_error_list.h.
+ * @return 0 if success; otherwise if fail. refer to arkweb_error_code.h.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
@@ -327,7 +330,7 @@ void OH_ArkWebResourceRequest_DestroyPostData(ArkWeb_PostDataStream* postDataStr
  * @brief Set a user data to ArkWeb_PostDataStream.
  * @param postDataStream The ArkWeb_PostDataStream.
  * @param userData The user data to set.
- * @return 0 if success; otherwise if fail. refer to arkweb_net_error_list.h.
+ * @return 0 if success; otherwise if fail. refer to arkweb_error_code.h.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
@@ -350,7 +353,7 @@ void* OH_ArkWebPostDataStream_GetUserData(const ArkWeb_PostDataStream* postDataS
  *        OH_ArkWebPostDataStream_Read.
  * @param postDataStream The ArkWeb_PostDataStream.
  * @param readCallback The callback of read function.
- * @return 0 if success; otherwise if fail. refer to arkweb_net_error_list.h.
+ * @return 0 if success; otherwise if fail. refer to arkweb_error_code.h.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
@@ -362,7 +365,7 @@ int32_t OH_ArkWebPostDataStream_SetReadCallback(ArkWeb_PostDataStream* postDataS
  * @brief Init the post data stream. This function must be called before calling any other functions.
  * @param postDataStream The ArkWeb_PostDataStream.
  * @param initCallback The callback of init.
- * @return 0 if success; otherwise if fail. refer to arkweb_net_error_list.h.
+ * @return 0 if success; otherwise if fail. refer to arkweb_error_code.h.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
@@ -437,6 +440,16 @@ bool OH_ArkWebPostDataStream_IsEof(const ArkWeb_PostDataStream* postDataStream);
 bool OH_ArkWebPostDataStream_IsInMemory(const ArkWeb_PostDataStream* postDataStream);
 
 /*
+ * @brief Destroy the ArkWeb_ResourceRequest.
+ * @param resourceRequest The ArkWeb_ResourceRequest.
+ * @return 0 if success; otherwise if fail. refer to arkweb_error_code.h.
+ *
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 12
+ */
+int32_t OH_ArkWebResourceRequest_Destroy(const ArkWeb_ResourceRequest* resourceRequest);
+
+/*
  * @brief Get the referrer of request.
  * @param resourceRequest The ArkWeb_ResourceRequest.
  * @param referrer The request's referrer. This function will allocate memory for the post data string and caller
@@ -493,7 +506,7 @@ bool OH_ArkWebResourceRequest_HasGesture(const ArkWeb_ResourceRequest* resourceR
  *        DATA schemes. This function should be called on main thread.
  * @param scheme The scheme to regist.
  * @param option The configuration of the scheme.
- * @return 0 if success; otherwise if fail. refer to arkweb_net_error_list.h.
+ * @return 0 if success; otherwise if fail. refer to arkweb_error_code.h.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
@@ -502,6 +515,9 @@ int32_t OH_ArkWeb_RegisterCustomSchemes(const char* scheme, int32_t option);
 
 /*
  * @brief Set a ArkWeb_SchemeHandler for a specific scheme to intercept requests of that scheme type.
+ *        SchemeHandler should be set after the BrowserContext created.
+ *        Use WebviewController.initializeWebEngine to initialize the BrowserContext without create a ArkWeb.
+ *
  * @param scheme Scheme that need to be intercepted.
  * @param schemeHandler The SchemeHandler for the scheme. Only requests triggered by ServiceWorker will be notified
  *                      through this handler.
@@ -514,6 +530,9 @@ bool OH_ArkWebServiceWorker_SetSchemeHandler(const char* scheme, ArkWeb_SchemeHa
 
 /*
  * @brief Set a ArkWeb_SchemeHandler for a specific scheme to intercept requests of that scheme type.
+ *        SchemeHandler should be set after the BrowserContext created.
+ *        Use WebviewController.initializeWebEngine to initialize the BrowserContext without create a ArkWeb.
+ *
  * @param scheme Scheme that need to be intercepted.
  * @param webTag The name of the web component.
  * @param schemeHandler The SchemeHandler for the scheme. Only requests triggered from the specified web will be
@@ -527,7 +546,7 @@ bool OH_ArkWeb_SetSchemeHandler(const char* scheme, const char* webTag, ArkWeb_S
 
 /*
  * @brief Clear the handler registered on the specified web for service worker.
- * @return 0 if success; otherwise if fail. refer to arkweb_net_error_list.h.
+ * @return 0 if success; otherwise if fail. refer to arkweb_error_code.h.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
@@ -537,7 +556,7 @@ int32_t OH_ArkWebServiceWorker_ClearSchemeHandlers();
 /*
  * @brief Clear the handler registered on the specified web.
  * @param webTag The name of the web component.
- * @return 0 if success; otherwise if fail. refer to arkweb_net_error_list.h.
+ * @return 0 if success; otherwise if fail. refer to arkweb_error_code.h.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
@@ -567,7 +586,7 @@ void OH_ArkWeb_DestroySchemeHandler(ArkWeb_SchemeHandler* schemeHandler);
  * @brief Set a user data to ArkWeb_SchemeHandler.
  * @param schemeHandler The ArkWeb_SchemeHandler.
  * @param userData The user data to set.
- * @return 0 if success; otherwise if fail. refer to arkweb_net_error_list.h.
+ * @return 0 if success; otherwise if fail. refer to arkweb_error_code.h.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
@@ -588,7 +607,7 @@ void* OH_ArkWebSchemeHandler_GetUserData(const ArkWeb_SchemeHandler* schemeHandl
  * @brief Set the OnRequestStart callback for SchemeHandler.
  * @param schemeHandler The SchemeHandler for the scheme.
  * @param onRequestStart The OnRequestStart callback.
- * @return 0 if success; otherwise if fail. refer to arkweb_net_error_list.h.
+ * @return 0 if success; otherwise if fail. refer to arkweb_error_code.h.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
@@ -600,7 +619,7 @@ int32_t OH_ArkWebSchemeHandler_SetOnRequestStart(ArkWeb_SchemeHandler* schemeHan
  * @brief Set the OnRequestStop callback for SchemeHandler.
  * @param schemeHandler The SchemeHandler for the scheme.
  * @param onRequestStop The OnRequestStop callback.
- * @return 0 if success; otherwise if fail. refer to arkweb_net_error_list.h.
+ * @return 0 if success; otherwise if fail. refer to arkweb_error_code.h.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
@@ -630,7 +649,7 @@ void OH_ArkWeb_DestroyResponse(ArkWeb_Response* response);
  * @brief Set the resolved URL after redirects or changed as a result of HSTS.
  * @param response The ArkWeb_Response.
  * @param url The resolved URL.
- * @return 0 if success; otherwise if fail. refer to arkweb_net_error_list.h.
+ * @return 0 if success; otherwise if fail. refer to arkweb_error_code.h.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
@@ -651,7 +670,7 @@ void OH_ArkWebResponse_GetUrl(const ArkWeb_Response* response, char** url);
  * @brief Set a error code to ArkWeb_Response.
  * @param response The ArkWeb_Response.
  * @param errorCode The error code for the failed request.
- * @return 0 if success; otherwise if fail. refer to arkweb_net_error_list.h.
+ * @return 0 if success; otherwise if fail. refer to arkweb_error_code.h.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
@@ -672,7 +691,7 @@ ArkWeb_NetError OH_ArkWebResponse_GetError(const ArkWeb_Response* response);
  * @brief Set a status code to ArkWebResponse.
  * @param response The ArkWeb_Response.
  * @param status The http status code for the request.
- * @return 0 if success; otherwise if fail. refer to arkweb_net_error_list.h.
+ * @return 0 if success; otherwise if fail. refer to arkweb_error_code.h.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
@@ -693,7 +712,7 @@ int OH_ArkWebResponse_GetStatus(const ArkWeb_Response* response);
  * @brief Set a status text to ArkWebResponse.
  * @param response The ArkWeb_Response.
  * @param statusText The status text for the request.
- * @return 0 if success; otherwise if fail. refer to arkweb_net_error_list.h.
+ * @return 0 if success; otherwise if fail. refer to arkweb_error_code.h.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
@@ -715,7 +734,7 @@ void OH_ArkWebResponse_GetStatusText(const ArkWeb_Response* response, char** sta
  * @brief Set mime type to ArkWebResponse.
  * @param response The ArkWeb_Response.
  * @param mimeType The mime type for the request.
- * @return 0 if success; otherwise if fail. refer to arkweb_net_error_list.h.
+ * @return 0 if success; otherwise if fail. refer to arkweb_error_code.h.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
@@ -737,7 +756,7 @@ void OH_ArkWebResponse_GetMimeType(const ArkWeb_Response* response, char** mimeT
  * @brief Set charset to ArkWeb_Response.
  * @param response The ArkWeb_Response.
  * @param charset The charset for the request.
- * @return 0 if success; otherwise if fail. refer to arkweb_net_error_list.h.
+ * @return 0 if success; otherwise if fail. refer to arkweb_error_code.h.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
@@ -761,7 +780,7 @@ void OH_ArkWebResponse_GetCharset(const ArkWeb_Response* response, char** charse
  * @param name The name of the header.
  * @param value The value of the header.
  * @bool overwirte If true will overwrite the exsits header, if false otherwise.
- * @return 0 if success; otherwise if fail. refer to arkweb_net_error_list.h.
+ * @return 0 if success; otherwise if fail. refer to arkweb_error_code.h.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
@@ -784,10 +803,20 @@ int32_t OH_ArkWebResponse_SetHeaderByName(ArkWeb_Response* response,
 void OH_ArkWebResponse_GetHeaderByName(const ArkWeb_Response* response, const char* name, char** value);
 
 /*
+ * @brief Destroy the ArkWeb_ResourceHandler.
+ * @param resourceHandler The ArkWeb_ResourceHandler.
+ * @return 0 if success; otherwise if fail. refer to arkweb_error_code.h.
+ *
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 12
+ */
+int32_t OH_ArkWebResourceHandler_Destroy(const ArkWeb_ResourceHandler* resourceHandler);
+
+/*
  * @brief Pass response headers to intercepted requests.
  * @param resourceHandler The ArkWeb_ResourceHandler for the request.
  * @param response The ArkWeb_Response for the intercepting requests.
- * @return 0 if success; otherwise if fail. refer to arkweb_net_error_list.h.
+ * @return 0 if success; otherwise if fail. refer to arkweb_error_code.h.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
@@ -800,7 +829,7 @@ int32_t OH_ArkWebResourceHandler_DidReceiveResponse(const ArkWeb_ResourceHandler
  * @param resourceHandler The ArkWeb_ResourceHandler for the request.
  * @param buffer Buffer data to send.
  * @param bufLen The size of buffer.
- * @return 0 if success; otherwise if fail. refer to arkweb_net_error_list.h.
+ * @return 0 if success; otherwise if fail. refer to arkweb_error_code.h.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
@@ -812,7 +841,7 @@ int32_t OH_ArkWebResourceHandler_DidReceiveData(const ArkWeb_ResourceHandler* re
 /*
  * @brief Notify the ArkWeb that this request should be finished and there is no more data available.
  * @param resourceHandler The ArkWeb_ResourceHandler for the request.
- * @return 0 if success; otherwise if fail. refer to arkweb_net_error_list.h.
+ * @return 0 if success; otherwise if fail. refer to arkweb_error_code.h.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
@@ -823,7 +852,7 @@ int32_t OH_ArkWebResourceHandler_DidFinish(const ArkWeb_ResourceHandler* resourc
  * @brief Notify the ArkWeb that this request should be failed.
  * @param resourceHandler The ArkWeb_ResourceHandler for the request.
  * @param errorCode The error code for this request. refer to arkweb_net_error_list.h
- * @return 0 if success; otherwise if fail. refer to arkweb_net_error_list.h.
+ * @return 0 if success; otherwise if fail. refer to arkweb_error_code.h.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12

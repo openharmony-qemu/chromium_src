@@ -72,8 +72,8 @@ int32_t OH_ArkWebResourceRequest_SetUserData(
     ArkWeb_ResourceRequest* resource_request,
     void* user_data) {
   if (!resource_request) {
-    LOG(ERROR) << "scheme_handler request header list is nullptr";
-    return ARKWEB_NET_INVALID_PARAM;
+    LOG(ERROR) << "scheme_handler resource request is nullptr";
+    return ARKWEB_INVALID_PARAM;
   }
   resource_request->user_data = user_data;
   return ARKWEB_NET_OK;
@@ -82,7 +82,7 @@ int32_t OH_ArkWebResourceRequest_SetUserData(
 void* OH_ArkWebResourceRequest_GetUserData(
     const ArkWeb_ResourceRequest* resource_request) {
   if (!resource_request) {
-    LOG(ERROR) << "scheme_handler request header list is nullptr";
+    LOG(ERROR) << "scheme_handler resource request is nullptr";
     return nullptr;
   }
   return resource_request->user_data;
@@ -92,7 +92,7 @@ ARKWEB_EXPORT void OH_ArkWebResourceRequest_GetMethod(
     const ArkWeb_ResourceRequest* resource_request,
     char** method) {
   if (!resource_request) {
-    LOG(ERROR) << "scheme_handler request header list is nullptr";
+    LOG(ERROR) << "scheme_handler resource request is nullptr";
     return;
   }
   resource_request->GetMethod(method);
@@ -102,7 +102,7 @@ ARKWEB_EXPORT void OH_ArkWebResourceRequest_GetUrl(
     const ArkWeb_ResourceRequest* resource_request,
     char** url) {
   if (!resource_request) {
-    LOG(ERROR) << "scheme_handler request header list is nullptr";
+    LOG(ERROR) << "scheme_handler resource request is nullptr";
     return;
   }
   resource_request->GetUrl(url);
@@ -112,7 +112,7 @@ ARKWEB_EXPORT void OH_ArkWebResourceRequest_GetPostData(
     const ArkWeb_ResourceRequest* resource_request,
     ArkWeb_PostDataStream** post_data_stream) {
   if (!resource_request) {
-    LOG(ERROR) << "scheme_handler request header list is nullptr";
+    LOG(ERROR) << "scheme_handler resource request is nullptr";
     return;
   }
   resource_request->GetPostDataStream(post_data_stream);
@@ -133,7 +133,7 @@ ARKWEB_EXPORT int32_t OH_ArkWebPostDataStream_SetReadCallback(
     ArkWeb_PostDataReadCallback readCallback) {
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post data stream is nullptr";
-    return ARKWEB_NET_INVALID_PARAM;
+    return ARKWEB_INVALID_PARAM;
   }
 
   post_data_stream->SetReadCallback(readCallback);
@@ -145,7 +145,7 @@ OH_ArkWebPostDataStream_SetUserData(ArkWeb_PostDataStream* post_data_stream,
                                     void* user_data) {
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post data stream is nullptr";
-    return ARKWEB_NET_INVALID_PARAM;
+    return ARKWEB_INVALID_PARAM;
   }
 
   post_data_stream->SetUserData(user_data);
@@ -167,7 +167,7 @@ OH_ArkWebPostDataStream_Init(ArkWeb_PostDataStream* post_data_stream,
                              ArkWeb_PostDataStreamInitCallback initCallback) {
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post data stream is nullptr";
-    return ARKWEB_NET_INVALID_PARAM;
+    return ARKWEB_INVALID_PARAM;
   }
 
   post_data_stream->Init(initCallback);
@@ -236,6 +236,17 @@ ARKWEB_EXPORT bool OH_ArkWebPostDataStream_IsInMemory(
   return post_data_stream->IsInMemory();
 }
 
+ARKWEB_EXPORT int32_t OH_ArkWebResourceRequest_Destroy(
+    const ArkWeb_ResourceRequest* resource_request) {
+  if (!resource_request) {
+    LOG(ERROR) << "scheme_handler resource request is nullptr";
+    return ARKWEB_INVALID_PARAM;
+  }
+
+  delete resource_request;
+  return ARKWEB_NET_OK;
+}
+
 ARKWEB_EXPORT void OH_ArkWebResourceRequest_GetReferrer(
     const ArkWeb_ResourceRequest* resource_request,
     char** referrer) {
@@ -290,11 +301,16 @@ ARKWEB_EXPORT int32_t OH_ArkWeb_RegisterCustomSchemes(const char* scheme,
       OHOS::NWeb::NWebApplication::GetDefault();
   if (!application) {
     LOG(ERROR) << "scheme_handler application is nulltpr.";
-    return ARKWEB_NET_INVALID_PARAM;
+    return ARKWEB_ERROR_UNKNOWN;
   }
 
-  application->RegisterCustomSchemes(std::string(scheme), option);
-  return ARKWEB_NET_OK;
+  bool is_registered =
+      application->RegisterCustomSchemes(std::string(scheme), option);
+  if (is_registered) {
+    return ARKWEB_NET_OK;
+  } else {
+    return ARKWEB_SCHEME_REGISTER_FAILED;
+  }
 }
 
 ARKWEB_EXPORT bool OH_ArkWebServiceWorker_SetSchemeHandler(
@@ -368,12 +384,12 @@ OH_ArkWebSchemeHandler_SetUserData(ArkWeb_SchemeHandler* scheme_handler,
                                    void* user_data) {
   if (!scheme_handler) {
     LOG(ERROR) << "scheme_handler scheme handler is nullptr.";
-    return ARKWEB_NET_INVALID_PARAM;
+    return ARKWEB_INVALID_PARAM;
   }
 
   if (!user_data) {
     LOG(ERROR) << "scheme_handler set a nullptr.";
-    return ARKWEB_NET_INVALID_PARAM;
+    return ARKWEB_INVALID_PARAM;
   }
 
   scheme_handler->user_data = user_data;
@@ -395,7 +411,7 @@ ARKWEB_EXPORT int32_t OH_ArkWebSchemeHandler_SetOnRequestStart(
     ArkWeb_OnRequestStart on_request_start) {
   if (!scheme_handler) {
     LOG(ERROR) << "scheme_handler scheme handler is nullptr.";
-    return ARKWEB_NET_INVALID_PARAM;
+    return ARKWEB_INVALID_PARAM;
   }
 
   scheme_handler->on_request_start = on_request_start;
@@ -407,7 +423,7 @@ OH_ArkWebSchemeHandler_SetOnRequestStop(ArkWeb_SchemeHandler* scheme_handler,
                                         ArkWeb_OnRequestStop on_request_stop) {
   if (!scheme_handler) {
     LOG(ERROR) << "scheme_handler scheme handler is nullptr.";
-    return ARKWEB_NET_INVALID_PARAM;
+    return ARKWEB_INVALID_PARAM;
   }
 
   scheme_handler->on_request_stop = on_request_stop;
@@ -430,7 +446,7 @@ ARKWEB_EXPORT int32_t OH_ArkWebResponse_SetUrl(ArkWeb_Response* response,
                                                const char* url) {
   if (!response) {
     LOG(ERROR) << "scheme_handler response is nullptr";
-    return ARKWEB_NET_INVALID_PARAM;
+    return ARKWEB_INVALID_PARAM;
   }
   response->SetUrl(url);
   return ARKWEB_NET_OK;
@@ -449,7 +465,7 @@ ARKWEB_EXPORT int32_t OH_ArkWebResponse_SetError(ArkWeb_Response* response,
                                                  ArkWeb_NetError error_code) {
   if (!response) {
     LOG(ERROR) << "scheme_handler response is nullptr";
-    return ARKWEB_NET_INVALID_PARAM;
+    return ARKWEB_INVALID_PARAM;
   }
   response->SetError(error_code);
   return ARKWEB_NET_OK;
@@ -459,7 +475,7 @@ ARKWEB_EXPORT ArkWeb_NetError
 OH_ArkWebResponse_GetError(const ArkWeb_Response* response) {
   if (!response) {
     LOG(ERROR) << "scheme_handler response is nullptr";
-    return ARKWEB_NET_INVALID_PARAM;
+    return ARKWEB_ERR_FAILED;
   }
   return response->GetError();
 }
@@ -468,7 +484,7 @@ ARKWEB_EXPORT int32_t OH_ArkWebResponse_SetStatus(ArkWeb_Response* response,
                                                   int status) {
   if (!response) {
     LOG(ERROR) << "scheme_handler response is nullptr";
-    return ARKWEB_NET_INVALID_PARAM;
+    return ARKWEB_INVALID_PARAM;
   }
   response->SetStatus(status);
   return ARKWEB_NET_OK;
@@ -486,7 +502,7 @@ ARKWEB_EXPORT int32_t OH_ArkWebResponse_SetStatusText(ArkWeb_Response* response,
                                                       const char* status_text) {
   if (!response) {
     LOG(ERROR) << "scheme_handler response is nullptr";
-    return ARKWEB_NET_INVALID_PARAM;
+    return ARKWEB_INVALID_PARAM;
   }
   response->SetStatusText(status_text);
   return ARKWEB_NET_OK;
@@ -506,7 +522,7 @@ ARKWEB_EXPORT int32_t OH_ArkWebResponse_SetMimeType(ArkWeb_Response* response,
                                                     const char* mime_type) {
   if (!response) {
     LOG(ERROR) << "scheme_handler response is nullptr";
-    return ARKWEB_NET_INVALID_PARAM;
+    return ARKWEB_INVALID_PARAM;
   }
   response->SetMimeType(mime_type);
   return ARKWEB_NET_OK;
@@ -526,7 +542,7 @@ ARKWEB_EXPORT int32_t OH_ArkWebResponse_SetCharset(ArkWeb_Response* response,
                                                    const char* charset) {
   if (!response) {
     LOG(ERROR) << "scheme_handler response is nullptr";
-    return ARKWEB_NET_INVALID_PARAM;
+    return ARKWEB_INVALID_PARAM;
   }
   response->SetCharset(charset);
   return ARKWEB_NET_OK;
@@ -548,7 +564,7 @@ OH_ArkWebResponse_SetHeaderByName(ArkWeb_Response* response,
                                   bool overwrite) {
   if (!response) {
     LOG(ERROR) << "scheme_handler response is nullptr";
-    return ARKWEB_NET_INVALID_PARAM;
+    return ARKWEB_INVALID_PARAM;
   }
   response->SetHeaderByName(name, value, overwrite);
   return ARKWEB_NET_OK;
@@ -565,17 +581,28 @@ ARKWEB_EXPORT void OH_ArkWebResponse_GetHeaderByName(
   response->GetHeaderByName(name, value);
 }
 
+ARKWEB_EXPORT int32_t OH_ArkWebResourceHandler_Destroy(
+    const ArkWeb_ResourceHandler* resource_handler) {
+  if (!resource_handler) {
+    LOG(ERROR) << "scheme_handler resource handler is nullptr";
+    return ARKWEB_INVALID_PARAM;
+  }
+
+  delete resource_handler;
+  return ARKWEB_NET_OK;
+}
+
 ARKWEB_EXPORT int32_t OH_ArkWebResourceHandler_DidReceiveResponse(
     const ArkWeb_ResourceHandler* resource_handler,
     const ArkWeb_Response* response) {
   if (!resource_handler) {
-    LOG(ERROR) << "scheme_handler response handler is nullptr";
-    return ARKWEB_NET_INVALID_PARAM;
+    LOG(ERROR) << "scheme_handler resource handler is nullptr";
+    return ARKWEB_INVALID_PARAM;
   }
 
   if (!response) {
     LOG(ERROR) << "scheme_handler response is nullptr";
-    return ARKWEB_NET_INVALID_PARAM;
+    return ARKWEB_INVALID_PARAM;
   }
   resource_handler->DidReceiveResponse(response);
   return ARKWEB_NET_OK;
@@ -586,13 +613,13 @@ ARKWEB_EXPORT int32_t OH_ArkWebResourceHandler_DidReceiveData(
     const uint8_t* buffer,
     int64_t buf_len) {
   if (!resource_handler) {
-    LOG(ERROR) << "scheme_handler response handler is nullptr";
-    return ARKWEB_NET_INVALID_PARAM;
+    LOG(ERROR) << "scheme_handler resource handler is nullptr";
+    return ARKWEB_INVALID_PARAM;
   }
 
   if (!buffer) {
     LOG(ERROR) << "scheme_handler buffer is nullptr";
-    return ARKWEB_NET_INVALID_PARAM;
+    return ARKWEB_INVALID_PARAM;
   }
   resource_handler->DidReceiveData(buffer, buf_len);
   return ARKWEB_NET_OK;
@@ -601,8 +628,8 @@ ARKWEB_EXPORT int32_t OH_ArkWebResourceHandler_DidReceiveData(
 ARKWEB_EXPORT int32_t OH_ArkWebResourceHandler_DidFinish(
     const ArkWeb_ResourceHandler* resource_handler) {
   if (!resource_handler) {
-    LOG(ERROR) << "scheme_handler response handler is nullptr";
-    return ARKWEB_NET_INVALID_PARAM;
+    LOG(ERROR) << "scheme_handler resource handler is nullptr";
+    return ARKWEB_INVALID_PARAM;
   }
   resource_handler->DidFinish();
   return ARKWEB_NET_OK;
@@ -612,8 +639,8 @@ ARKWEB_EXPORT int32_t OH_ArkWebResourceHandler_DidFailWithError(
     const ArkWeb_ResourceHandler* resource_handler,
     ArkWeb_NetError error_code) {
   if (!resource_handler) {
-    LOG(ERROR) << "scheme_handler response handler is nullptr";
-    return ARKWEB_NET_INVALID_PARAM;
+    LOG(ERROR) << "scheme_handler resource handler is nullptr";
+    return ARKWEB_INVALID_PARAM;
   }
   resource_handler->DidFailWithError(error_code);
   return ARKWEB_NET_OK;

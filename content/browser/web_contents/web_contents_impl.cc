@@ -10098,4 +10098,9 @@ void WebContentsImpl::SetEnableBlankTargetPopupIntercept(
 }
 #endif
 
+#ifdef OHOS_USERAGENT
+void WebContentsImpl::SetTabletMode(bool is_tablet) {
+  GetContentClient()->browser()->SetTabletMode(is_tablet);
+}
+#endif
 }  // namespace content

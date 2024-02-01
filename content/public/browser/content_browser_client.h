@@ -2487,6 +2487,10 @@ class CONTENT_EXPORT ContentBrowserClient {
   // in RenderFrameHostImpl. Currently in Chrome, this is true for all
   // extension origins.
   virtual bool ShouldUseFirstPartyStorageKey(const url::Origin& origin);
+
+#ifdef OHOS_USERAGENT
+  virtual void SetTabletMode(bool is_tablet) {}
+#endif
 };
 
 }  // namespace content

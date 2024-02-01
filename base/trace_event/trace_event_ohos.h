@@ -36,6 +36,7 @@ struct BytraceArg {
 };
  
 bool IsBytraceEnable();
+bool IsCategoryEnable(const char *category_group);
 BytraceArg GetArg(double i);
 BytraceArg GetArg(const char* i);
 std::string GetStringFromArg(const BytraceArg& arg);

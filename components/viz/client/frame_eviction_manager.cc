@@ -17,7 +17,7 @@
 #include "build/build_config.h"
 #include "components/viz/common/features.h"
 #if (BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_DISCARD_BG_WEBPAGE))
-#include "ohos_adapter_helper.h"
+#include "base/ohos/sys_info_utils.h"
 #endif
 
 namespace viz {
@@ -141,13 +141,7 @@ FrameEvictionManager::FrameEvictionManager()
 #endif
 
 #if (BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_DISCARD_BG_WEBPAGE))
-  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                                        .GetSystemPropertiesInstance();
-  OHOS::NWeb::ProductDeviceType deviceType =
-      system_properties_adapter.GetProductDeviceType();
-
-  if (deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_2IN1 ||
-      deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_TABLET) {
+  if (base::ohos::IsTabletDevice() || base::ohos::IsPcDevice()) {
     max_number_of_saved_frames_ = kMaxNumberOfSavedFrames;
   }
 

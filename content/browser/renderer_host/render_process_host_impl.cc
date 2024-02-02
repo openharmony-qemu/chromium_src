@@ -293,7 +293,7 @@
 #endif  // defined(OHOS_WPT)
 
 #ifdef OHOS_INCOGNITO_MODE
-#include "ohos_adapter_helper.h"
+#include "base/ohos/sys_info_utils.h"
 #endif
 
 // VLOG additional statements in Fuchsia release builds.
@@ -1256,20 +1256,14 @@ constexpr size_t kMaxRenderCountForSingleMode = 2;
 constexpr size_t kMaxRenderCountForSingleIncognitoMode = 1;
 
 bool IsSingleRenderProcess() {
-  auto& system_properties_adapter =
-      OHOS::NWeb::OhosAdapterHelper::GetInstance()
-          .GetSystemPropertiesInstance();
-  OHOS::NWeb::ProductDeviceType deviceType =
-      system_properties_adapter.GetProductDeviceType();
-  bool support_multi_render_device =
-      deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_TABLET ||
-      deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_2IN1;
+  // Multiple render process mode is on by default on tablet and 2in1 devices,
+  // and it is only supported by browser on mobile or other devices.
+  bool excludable_devices =
+      base::ohos::IsTabletDevice() || base::ohos::IsPcDevice();
 
-  // It will be multiple render mode When device type is pc,
-  // or used in browser not in a pc device; otherwise it will be single render mode.
   return !(*base::CommandLine::ForCurrentProcess())
               .HasSwitch(switches::kForBrowser) &&
-         !support_multi_render_device;
+         !excludable_devices;
 }
 
 bool ShouldReuseExistingRenderProcess(BrowserContext* browser_context) {
@@ -3658,7 +3652,6 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
 #if BUILDFLAG(IS_OHOS)
     switches::kForTest,
     switches::kBundleInstallationDir,
-    switches::kOhosDeviceType,
     switches::kOhSchemeHandlerCustomScheme,
     switches::kBundleName,
 #endif

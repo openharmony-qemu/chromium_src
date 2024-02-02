@@ -23,6 +23,7 @@
 #include "nweb_value_convert.h"
 
 #include "base/command_line.h"
+#include "base/ohos/sys_info_utils.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/task/thread_pool.h"
 #include "base/trace_event/trace_event.h"
@@ -77,24 +78,6 @@ static const double kZoomLevelToFactorRatio = 1.2;
 #endif
 
 static const int kDefaultWebNativeProxy = -2;
-
-#if BUILDFLAG(IS_OHOS)
-namespace {
-
-std::string FromProductDeviceType(OHOS::NWeb::ProductDeviceType deviceType) {
-  switch (deviceType) {
-    case OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_TABLET:
-      return ::switches::kOhosTabletDevice;
-    case OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_2IN1:
-      return ::switches::kOhos2IN1Device;
-    case OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE:
-      return ::switches::kOhosMobileDevice;
-    default:
-      return ::switches::kOhosUnkownDevice;
-  }
-}
-}
-#endif
 
 #if defined(OHOS_MSGPORT)
 void ConvertCefValueToNWebMessage(CefRefPtr<CefValue> src,
@@ -1303,12 +1286,8 @@ void NWebDelegate::InitializeCef(std::string url,
                                  , bool incognito_mode
 #endif
                                 ) {
-  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                                        .GetSystemPropertiesInstance();
-  OHOS::NWeb::ProductDeviceType deviceType =
-      system_properties_adapter.GetProductDeviceType();
 #if BUILDFLAG(IS_OHOS)
-  if (deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_2IN1) {
+  if (base::ohos::IsPcDevice()) {
     // To achieve a similar web page display effect on HarmonyOS PC devices as
     // on Mac devices of the same size, it is necessary to make the web page
     // width around approximately 1512 when in full screen.
@@ -1349,17 +1328,9 @@ void NWebDelegate::InitializeCef(std::string url,
   settings.log_severity = LOGSEVERITY_INFO;
   settings.multi_threaded_message_loop = false;
 
-  bool is_pc_device =
-      deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_TABLET ||
-      deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_2IN1;
-  settings.persist_session_cookies = !is_pc_device;
-
-#if BUILDFLAG(IS_OHOS)
-  if (base::CommandLine::ForCurrentProcess()) {
-    base::CommandLine::ForCurrentProcess()->AppendSwitchASCII(
-        ::switches::kOhosDeviceType, FromProductDeviceType(deviceType));
-  }
-#endif
+  bool excludable_devices =
+      base::ohos::IsTabletDevice() || base::ohos::IsPcDevice();
+  settings.persist_session_cookies = !excludable_devices;
 
 #if !defined(CEF_USE_SANDBOX)
   settings.no_sandbox = true;

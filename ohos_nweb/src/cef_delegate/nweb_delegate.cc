@@ -903,7 +903,6 @@ int NWebDelegate::PostUrl(const std::string& url, std::vector<char>& postData) {
 
 
 bool NWebDelegate::IsNavigatebackwardAllowed() const {
-  LOG(DEBUG) << "NWebDelegate::IsNavigatebackwardAllowed";
   if (GetBrowser().get()) {
     return GetBrowser()->CanGoBack();
   }
@@ -911,7 +910,6 @@ bool NWebDelegate::IsNavigatebackwardAllowed() const {
 }
 
 bool NWebDelegate::IsNavigateForwardAllowed() const {
-  LOG(DEBUG) << "NWebDelegate::IsNavigateForwardAllowed";
   if (GetBrowser().get()) {
     return GetBrowser()->CanGoForward();
   }

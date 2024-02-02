@@ -31,7 +31,7 @@ struct NWebDownloadItem {
   long current_speed;
   int percent_complete;
   long total_bytes;
-  int received_bytes;
+  long received_bytes;
   int last_error_code;
 
   char* guid;
@@ -131,7 +131,7 @@ struct NWebDownloadItem {
     current_speed = (long)download_item->GetCurrentSpeed();
     percent_complete = download_item->GetPercentComplete();
     total_bytes = (long)download_item->GetTotalBytes();
-    received_bytes = download_item->GetReceivedBytes();
+    received_bytes = (long)download_item->GetReceivedBytes();
 
     std::string guid_ = download_item->GetGuid().ToString();
     guid = strdup(guid_.c_str());

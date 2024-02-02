@@ -29,8 +29,8 @@ using Logger = autofill::SavePasswordProgressLogger;
 
 #ifdef OHOS_EX_PASSWORD
 #include "base/command_line.h"
+#include "base/ohos/sys_info_utils.h"
 #include "content/public/common/content_switches.h"
-#include "ohos_adapter_helper.h"
 #endif
 
 namespace password_manager {
@@ -256,15 +256,9 @@ LikelyFormFilling SendFillInformationToRenderer(
       wait_for_username_reason != WaitForUsernameReason::kDontWait;
 #ifdef OHOS_EX_PASSWORD
   if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(switches::kForBrowser)) {
-    auto& system_properties_adapter =
-          OHOS::NWeb::OhosAdapterHelper::GetInstance()
-              .GetSystemPropertiesInstance();
-    OHOS::NWeb::ProductDeviceType deviceType =
-        system_properties_adapter.GetProductDeviceType();
-    bool is_unsupported_devices =
-        deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_TABLET ||
-        deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_2IN1;
-    if (!is_unsupported_devices) {
+    bool excludable_devices =
+      base::ohos::IsTabletDevice() || base::ohos::IsPcDevice();
+    if (!excludable_devices) {
       wait_for_username = true;
     }
   }

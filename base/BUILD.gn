@@ -2533,6 +2533,8 @@ component("base") {
       "nix/xdg_util.cc",
       "nix/xdg_util.h",
       "system/sys_info_linux.cc",
+      "ohos/sys_info_utils.cc",
+      "ohos/sys_info_utils.h",
     ]
     deps += [
       "//base/third_party/symbolize",

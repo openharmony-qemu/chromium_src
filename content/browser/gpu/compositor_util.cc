@@ -42,6 +42,9 @@
 #include "third_party/blink/public/common/switches.h"
 #include "ui/base/ui_base_features.h"
 #include "ui/gl/gl_switches.h"
+#ifdef OHOS_NWEB_EX
+#include "base/ohos/sys_info_utils.h"
+#endif
 
 namespace content {
 
@@ -433,13 +436,12 @@ int NumberOfRendererRasterThreads() {
 
 #ifdef OHOS_NWEB_EX
   if (command_line.HasSwitch(switches::kForBrowser)){
-    std::string device_type =
-        command_line.GetSwitchValueASCII(switches::kOhosDeviceType);
-    bool is_pc_device = (device_type == ::switches::kOhosTabletDevice ||
-                         device_type == ::switches::kOhos2IN1Device);
+    bool excludable_devices =
+      base::ohos::IsTabletDevice() || base::ohos::IsPcDevice();
     // Same with android.
-    if (!is_pc_device)
+    if (!excludable_devices) {
       num_raster_threads = 1;
+    }
   }
 #endif
 

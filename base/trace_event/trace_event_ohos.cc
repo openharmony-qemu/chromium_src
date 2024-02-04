@@ -38,6 +38,29 @@ bool IsBytraceEnable() {
   return traceStatus;
 }
 
+bool IsCategoryEnable(const char *category_group) {
+  bool traceDebugStatus = false;
+  traceDebugStatus = OhosAdapterHelper::GetInstance()
+                                        .GetSystemPropertiesInstance()
+                                        .GetTraceDebugEnable();
+  if (traceDebugStatus) {
+    return true;
+  }
+
+  if (category_group == nullptr) {
+    return false;
+  }
+
+  if (strlen(category_group) < strlen("disabled-by-default-")) {
+    return true;
+  }
+
+  if (!strncmp(category_group, "disabled-by-default-", strlen("disabled-by-default-"))) {
+    return false;
+  }
+  return true;
+}
+
 BytraceArg GetArg(double i) {
   BytraceArg arg;
   arg.value.as_double = i;

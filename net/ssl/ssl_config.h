@@ -21,6 +21,10 @@ namespace net {
 
 // Supported TLS ProtocolVersion values encoded as uint16_t.
 enum {
+#ifdef OHOS_SSL_AUTH_ALGO
+  SSL_PROTOCOL_VERSION_TLS1 = 0x0301,
+  SSL_PROTOCOL_VERSION_TLS1_1 = 0x0302,
+#endif
   SSL_PROTOCOL_VERSION_TLS1_2 = 0x0303,
   SSL_PROTOCOL_VERSION_TLS1_3 = 0x0304,
 };

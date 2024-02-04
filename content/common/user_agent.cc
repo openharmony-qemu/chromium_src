@@ -30,7 +30,7 @@
 #endif
 
 #ifdef OHOS_USERAGENT
-#include "ohos_adapter_helper.h"
+#include "base/ohos/sys_info_utils.h"
 #include "components/embedder_support/arkweb_version.h"
 #include "components/embedder_support/user_agent_utils.h"
 #endif
@@ -244,32 +244,16 @@ std::string GetOSVersion(IncludeAndroidBuildNumber include_android_build_number,
 #endif
 
 #if BUILDFLAG(IS_OHOS) && defined(OHOS_USERAGENT)
-  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                                        .GetSystemPropertiesInstance();
-  OHOS::NWeb::ProductDeviceType deviceType =
-      system_properties_adapter.GetProductDeviceType();
-  std::string device_type_string = "";
-  switch (deviceType) {
-    case OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE:
-      device_type_string = "Phone";
-      break;
-    case OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_TABLET:
-      device_type_string = "Tablet";
-      break;
-    case OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_2IN1:
-      device_type_string = "PC";
-      break;
-    case OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_UNKNOWN:
-    default:
-      device_type_string = "Phone";
-      break;
+  std::string device_type_string = "Phone";
+  if (base::ohos::IsTabletDevice()) {
+    device_type_string = "Tablet";
+  } else if (base::ohos::IsPcDevice()) {
+    device_type_string = "PC";
   }
-  int32_t ohos_major_version =
-      system_properties_adapter.GetSoftwareMajorVersion();
-  int32_t ohos_senior_version = 
-      system_properties_adapter.GetSoftwareSeniorVersion();
-  std::string os_name =
-      system_properties_adapter.GetUserAgentOSName();
+
+  int32_t ohos_major_version = base::ohos::MajorVersion();
+  int32_t ohos_senior_version = base::ohos::SeniorVersion();
+  std::string os_name = base::ohos::OsName();
   os_name = os_name.empty() ? "OpenHarmony" : os_name;
   std::string ohos_version_str;
   base::StringAppendF(&ohos_version_str, "%s; %s %d.%d", 
@@ -464,20 +448,8 @@ std::string BuildUserAgentFromOSAndProduct(const std::string& os_info,
 #if BUILDFLAG(IS_OHOS) && defined(OHOS_USERAGENT)
   std::string product_string = "";
   base::StringAppendF(&product_string, " ArkWeb/%s", ARKWEB_VERSION);
-  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                                        .GetSystemPropertiesInstance();
-  OHOS::NWeb::ProductDeviceType deviceType =
-      system_properties_adapter.GetProductDeviceType();
-  switch (deviceType) {
-    case OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE:
-      if (!embedder_support::GetTabletMode())
-        product_string += " Mobile";
-      break;
-    case OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_TABLET:
-    case OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_2IN1:
-    case OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_UNKNOWN:
-    default:
-      break;
+  if (base::ohos::IsMobileDevice()) {
+    product_string += " Mobile";
   }
   base::StringAppendF(&user_agent, "%s", product_string.c_str());
 #endif

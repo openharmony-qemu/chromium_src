@@ -31,6 +31,7 @@
 #include "base/time/time.h"
 #endif  // OHOS_PERFORMANCE_MEMORY_THRESHOLD
 
+#include "base/ohos/sys_info_utils.h"
 #include "base/trace_event/common/trace_event_common.h"
 #include "base/trace_event/trace_event.h"
 #include "cef_delegate/nweb_download_handler_delegate.h"
@@ -38,7 +39,6 @@
 #include "nweb_export.h"
 #include "nweb_handler.h"
 #include "nweb_hilog.h"
-#include "ohos_adapter_helper.h"
 #include "res_sched_client_adapter.h"
 
 #if defined(REPORT_SYS_EVENT)
@@ -286,14 +286,9 @@ extern "C" OHOS_NWEB_EXPORT void InitializeWebEngine(
   settings.multi_threaded_message_loop = false;
 
 #if defined(OHOS_COOKIE)
-  auto& system_properties_adapter =
-      OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance();
-  OHOS::NWeb::ProductDeviceType deviceType =
-      system_properties_adapter.GetProductDeviceType();
-  bool is_pc_device =
-      deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_TABLET ||
-      deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_2IN1;
-  settings.persist_session_cookies = !is_pc_device;
+  bool excludable_devices =
+      base::ohos::IsTabletDevice() || base::ohos::IsPcDevice();
+  settings.persist_session_cookies = !excludable_devices;
 #endif // defined(OHOS_COOKIE)
 
 #if !defined(CEF_USE_SANDBOX)

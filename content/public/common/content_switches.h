@@ -284,11 +284,6 @@ CONTENT_EXPORT extern const char kForBrowser[];
 CONTENT_EXPORT extern const char kOhosEnableDrDc[];
 CONTENT_EXPORT extern const char kOhosHanceSurface[];
 CONTENT_EXPORT extern const char kOhosDisableTouchEvent[];
-CONTENT_EXPORT extern const char kOhosDeviceType[];
-CONTENT_EXPORT extern const char kOhosMobileDevice[];
-CONTENT_EXPORT extern const char kOhosTabletDevice[];
-CONTENT_EXPORT extern const char kOhos2IN1Device[];
-CONTENT_EXPORT extern const char kOhosUnkownDevice[];
 #ifdef OHOS_NETWORK_LOAD
 CONTENT_EXPORT extern const char kOhosCustomScheme[];
 #endif

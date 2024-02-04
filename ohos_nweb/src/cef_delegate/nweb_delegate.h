@@ -33,7 +33,6 @@
 #include "nweb_handler_delegate.h"
 #include "nweb_inputmethod_client.h"
 #include "nweb_render_handler.h"
-#include "ohos_adapter_helper.h"
 
 #if defined(OHOS_EX_DOWNLOAD)
 #include <memory>

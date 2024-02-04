@@ -28,7 +28,7 @@
 #include "net/disk_cache/simple/simple_util.h"
 
 #if BUILDFLAG(IS_OHOS)
-#include "ohos_adapter_helper.h"
+#include "base/ohos/sys_info_utils.h"
 #endif
 
 namespace {
@@ -127,12 +127,7 @@ net::Error CacheCreator::Run() {
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA)
   static const bool kSimpleBackendIsDefault = true;
 #elif BUILDFLAG(IS_OHOS) && defined(OHOS_CACHE)
-  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                                        .GetSystemPropertiesInstance();
-  OHOS::NWeb::ProductDeviceType deviceType =
-      system_properties_adapter.GetProductDeviceType();
-  static const bool kSimpleBackendIsDefault =
-      deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE;
+  static const bool kSimpleBackendIsDefault = base::ohos::IsMobileDevice();
 #else
   static const bool kSimpleBackendIsDefault = false;
 #endif
@@ -166,7 +161,7 @@ net::Error CacheCreator::Run() {
   return net::ERR_FAILED;
 #else
 #if BUILDFLAG(IS_OHOS) && defined(OHOS_CACHE)
-  if (deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE) {
+  if (base::ohos::IsMobileDevice()) {
     return net::ERR_FAILED;
   }
 #endif  // BUILDFLAG(IS_OHOS) && defined(OHOS_CACHE)

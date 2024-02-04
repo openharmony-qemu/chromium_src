@@ -42,7 +42,7 @@
 #endif
 
 #if BUILDFLAG(IS_OHOS)
-#include "ohos_adapter_helper.h"
+#include "base/ohos/sys_info_utils.h"
 #endif
 
 namespace {
@@ -788,11 +788,7 @@ void ParseCommandLineAndFieldTrials(const base::CommandLine& command_line,
 
 net::URLRequestContextBuilder::HttpCacheParams::Type ChooseCacheType() {
 #if defined(OHOS_CACHE)
-  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                                        .GetSystemPropertiesInstance();
-  OHOS::NWeb::ProductDeviceType deviceType =
-      system_properties_adapter.GetProductDeviceType();
-  if (deviceType == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE) {
+  if (base::ohos::IsMobileDevice()) {
     return net::URLRequestContextBuilder::HttpCacheParams::DISK_SIMPLE;
   } else {
     return net::URLRequestContextBuilder::HttpCacheParams::DISK_BLOCKFILE;

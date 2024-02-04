@@ -7,6 +7,10 @@ module network.mojom;
 import "services/network/public/mojom/optional_bool.mojom";
 
 enum SSLVersion {
+  [EnableIf=is_ohos]
+  kTLS1,
+  [EnableIf=is_ohos]
+  kTLS11,
   kTLS12,
   kTLS13,
 };

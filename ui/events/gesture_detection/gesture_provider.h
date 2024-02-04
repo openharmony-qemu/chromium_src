@@ -102,11 +102,11 @@ class GESTURE_DETECTION_EXPORT GestureProvider {
 
   // Synthesizes and propagates gesture end events.
   void SendSynthesizedEndEvents();
-
+#if BUILDFLAG(IS_OHOS)
   void SetNativeEmbedEnabled(bool enabled);
 
   bool GetNativeEmbedEnabled();
-
+#endif
   // May be NULL if there is no currently active touch sequence.
   const ui::MotionEvent* current_down_event() const {
     return current_down_event_.get();

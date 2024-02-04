@@ -73,7 +73,9 @@ class GESTURE_DETECTION_EXPORT FilteredGestureProvider final
   void SetDoubleTapSupportForPlatformEnabled(bool enabled);
   void SetDoubleTapSupportForPageEnabled(bool enabled);
   const ui::MotionEvent* GetCurrentDownEvent() const;
+#if BUILDFLAG(IS_OHOS)
   void SetNativeEmbedEnabled(bool enabled);
+#endif
  private:
   // GestureProviderClient implementation.
   void OnGestureEvent(const ui::GestureEventData& event) override;

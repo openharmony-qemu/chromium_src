@@ -2680,7 +2680,7 @@ bool NWebDelegate::GetFocusedAccessibilityNodeInfo(
     resultNode = static_cast<content::BrowserAccessibilityOHOS*>(
         accessibilityManager->GetFocus());
   }
-  if (resultNode == nullptr) {
+  if (resultNode == nullptr || resultNode == rootNode) {
     return false;
   }
   content::BrowserAccessibilityOHOS* node = nullptr;

@@ -100,11 +100,11 @@ void FilteredGestureProvider::SetDoubleTapSupportForPlatformEnabled(
 void FilteredGestureProvider::SetDoubleTapSupportForPageEnabled(bool enabled) {
   gesture_provider_->SetDoubleTapSupportForPageEnabled(enabled);
 }
-
+#if BUILDFLAG(IS_OHOS)
 void FilteredGestureProvider::SetNativeEmbedEnabled(bool enabled) {
   gesture_provider_->SetNativeEmbedEnabled(enabled);
 }
-
+#endif
 const ui::MotionEvent* FilteredGestureProvider::GetCurrentDownEvent() const {
   return gesture_provider_->current_down_event();
 }

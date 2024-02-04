@@ -169,8 +169,10 @@ void BrowserAccessibilityManagerOHOS::SendAccessibilityEvent(
 
 void BrowserAccessibilityManagerOHOS::HandleSendAccessibilityEvent(int64_t accessibilityId,
     OHOS::NWeb::AccessibilityEventType eventType) const {
-  accessibilityEventListener_->OnAccessibilityEvent(
-      accessibilityId, static_cast<uint32_t>(eventType));
+  if (accessibilityEventListener_ != nullptr) {
+    accessibilityEventListener_->OnAccessibilityEvent(
+        accessibilityId, static_cast<uint32_t>(eventType));
+  }
 }
 
 void BrowserAccessibilityManagerOHOS::HandleHover(int64_t accessibilityId) {

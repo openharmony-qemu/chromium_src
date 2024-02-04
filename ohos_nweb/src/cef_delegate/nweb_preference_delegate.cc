@@ -25,9 +25,9 @@
 #include "cef/libcef/browser/net_service/net_helpers.h"
 
 #include "base/feature_list.h"
+#include "base/ohos/sys_info_utils.h"
 #include "content/public/common/content_switches.h"
 #include "net/base/load_flags.h"
-#include "ohos_adapter_helper.h"
 #include "ohos_nweb/src/cef_delegate/nweb_application.h"
 
 namespace OHOS::NWeb {
@@ -624,15 +624,8 @@ void NWebPreferenceDelegate::PutOverscrollMode(int mode) {
   browser_->GetHost()->SetOverscrollMode(mode);
 }
 void NWebPreferenceDelegate::SetNativeEmbedMode(bool flag) {
-  auto& system_properties_adapter =
-        OHOS::NWeb::OhosAdapterHelper::GetInstance()
-            .GetSystemPropertiesInstance();
-  OHOS::NWeb::ProductDeviceType device_type =
-        system_properties_adapter.GetProductDeviceType();
-  bool supported_device_type =
-        device_type != OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_2IN1;
-
-  enable_embed_mode_ = flag && supported_device_type;
+  // Native Embed is not supported on pc device.
+  enable_embed_mode_ = flag && !base::ohos::IsPcDevice();
   WebPreferencesChanged();
 }
 bool NWebPreferenceDelegate::GetNativeEmbedMode() {

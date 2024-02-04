@@ -139,9 +139,11 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
   GestureListenerImpl& operator=(const GestureListenerImpl&) = delete;
 
   void OnTouchEvent(const MotionEvent& event) {
+  #if BUILDFLAG(IS_OHOS)
     if (gesture_provider_->GetNativeEmbedEnabled()) {
       return;
     }
+  #endif
     const bool in_scale_gesture = IsScaleGestureDetectionInProgress();
     snap_scroll_controller_.SetSnapScrollMode(
         event, in_scale_gesture, EffectiveSlopDistance(event, config_));
@@ -989,7 +991,7 @@ void GestureProvider::SetDoubleTapSupportForPlatformEnabled(bool enabled) {
   double_tap_support_for_platform_ = enabled;
   UpdateDoubleTapDetectionSupport();
 }
-
+#if BUILDFLAG(IS_OHOS)
 void GestureProvider::SetNativeEmbedEnabled(bool enabled) {
   native_embed_enabled_ = enabled;
 }
@@ -997,6 +999,7 @@ void GestureProvider::SetNativeEmbedEnabled(bool enabled) {
 bool GestureProvider::GetNativeEmbedEnabled() {
   return native_embed_enabled_;
 }
+#endif
 
 void GestureProvider::SetDoubleTapSupportForPageEnabled(bool enabled) {
   if (double_tap_support_for_page_ == enabled)
@@ -1076,6 +1079,10 @@ void GestureProvider::OnTouchEventHandlingBegin(const MotionEvent& event) {
 void GestureProvider::OnTouchEventHandlingEnd(const MotionEvent& event) {
   switch (event.GetAction()) {
     case MotionEvent::Action::UP:
+    #if BUILDFLAG(IS_OHOS)
+      SetNativeEmbedEnabled(false);
+      break;
+    #endif
     case MotionEvent::Action::CANCEL: {
       if (gesture_begin_end_types_enabled_) {
         GestureEventDetails details(ET_GESTURE_END);

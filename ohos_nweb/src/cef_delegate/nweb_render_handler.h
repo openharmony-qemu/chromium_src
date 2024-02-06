@@ -54,6 +54,9 @@ class NWebRenderHandler : public CefRenderHandler {
   void Resize(uint32_t width, uint32_t height);
 #ifdef OHOS_SCREEN_ROTATION
   void SetScreenInfo(const NWebScreenInfo& screen_info);
+  NWebScreenInfo& GetLastScreenInfo();
+  void SetLastScreenInfo(const NWebScreenInfo& screen_info);
+  bool IsNeedCefNotifyScreenInfoChanged();
 #endif  // #ifdef OHOS_SCREEN_ROTATION
   int ContentHeight();
   void SetInputMethodClient(CefRefPtr<NWebInputMethodClient> client);
@@ -179,6 +182,7 @@ class NWebRenderHandler : public CefRenderHandler {
   int content_height_ = 0;
   int content_width_ = 0;
   NWebScreenInfo screen_info_;
+  NWebScreenInfo last_screen_info_;
   float cef_device_ratio_ = 1.0;
 
   std::weak_ptr<NWebHandler> handler_;

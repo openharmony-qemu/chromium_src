@@ -21,17 +21,14 @@
 #include "gpu/ipc/client/gpu_channel_host.h"
 #include "gpu/ipc/common/gpu_channel.mojom.h"
 #include "mojo/public/cpp/bindings/pending_associated_remote.h"
-#include "ui/gfx/geometry/size.h"
 #include "mojo/public/cpp/bindings/sync_call_restrictions.h"
+#include "ui/gfx/geometry/size.h"
 
 namespace content {
 
 NativeTextureProxy::NativeTextureProxy(std::unique_ptr<StreamTextureHost> host,
-                                       CreateSurfaceTextureCB create_texture_cb,
-                                       DestroyTextureCB destroy_texture_cb)
-    : host_(std::move(host)),
-      create_texture_cb_(std::move(create_texture_cb)),
-      destroy_texture_cb_(std::move(destroy_texture_cb)) {}
+                                       int32_t native_embed_id)
+    : host_(std::move(host)), native_embed_id_(native_embed_id) {}
 
 NativeTextureProxy::~NativeTextureProxy() {}
 
@@ -47,15 +44,7 @@ void NativeTextureProxy::Release() {
   // which is being destroyed and is releasing NativeTextureProxy.
   ClearCreateVideoFrameCB();
 
-  if (create_texture_cb_) {
-    base::AutoLock lock(lock_);
-    create_texture_cb_.Reset();
-  }
-  if (destroy_texture_cb_) {
-    base::AutoLock lock(lock_);
-    std::move(destroy_texture_cb_).Run();
-    destroy_texture_cb_.Reset();
-  }
+  ClearDestroyTextureCB();
 
   // Release is analogous to the destructor, so there should be no more external
   // calls to this object in Release. Therefore there is no need to acquire the
@@ -76,9 +65,14 @@ void NativeTextureProxy::ClearCreateVideoFrameCB() {
   create_video_frame_cb_.Reset();
 }
 
+void NativeTextureProxy::ClearDestroyTextureCB() {
+  OnDestroySurface();
+}
+
 void NativeTextureProxy::BindToTaskRunner(
     const base::RepeatingClosure& received_frame_cb,
     const CreateVideoFrameCB& create_video_frame_cb,
+    DestroyTextureCB destroy_texture_cb,
     scoped_refptr<base::SingleThreadTaskRunner> task_runner) {
   DCHECK(task_runner.get());
 
@@ -88,6 +82,9 @@ void NativeTextureProxy::BindToTaskRunner(
     task_runner_ = task_runner;
     received_frame_cb_ = received_frame_cb;
     create_video_frame_cb_ = create_video_frame_cb;
+    if (native_embed_id_ != -1) {
+      destroy_texture_cb_ = std::move(destroy_texture_cb);
+    }
   }
 
   if (task_runner->BelongsToCurrentThread()) {
@@ -143,8 +140,10 @@ void NativeTextureProxy::UpdateRotatedVisibleSize(const gfx::Size& size) {
 }
 
 void NativeTextureProxy::OnDestroySurface() {
-  if (destroy_texture_cb_)
+  base::AutoLock lock(lock_);
+  if (!destroy_texture_cb_.is_null()) {
     std::move(destroy_texture_cb_).Run();
+  }
 }
 
 // static
@@ -161,9 +160,7 @@ NativeTextureFactory::NativeTextureFactory(
 
 NativeTextureFactory::~NativeTextureFactory() = default;
 
-ScopedNativeTextureProxy NativeTextureFactory::CreateProxy(
-    CreateSurfaceTextureCB create_texture_cb,
-    DestroyTextureCB destroy_texture_cb) {
+ScopedNativeTextureProxy NativeTextureFactory::CreateProxy() {
   // Send a StreamTexture receiver down to the GPU process. This will be bound
   // to a concrete StreamTexture impl there.
   int32_t native_id = channel_->GenerateRouteID();
@@ -177,12 +174,10 @@ ScopedNativeTextureProxy NativeTextureFactory::CreateProxy(
     return ScopedNativeTextureProxy();
   }
 
-  LOG(INFO) << "[NativeEmbed] Running create_texture_cb callback.";
-  std::move(create_texture_cb).Run(native_embed_id);
-  return ScopedNativeTextureProxy(new NativeTextureProxy(
-      std::make_unique<StreamTextureHost>(channel_, native_id,
-                                          std::move(remote)),
-      std::move(create_texture_cb), std::move(destroy_texture_cb)));
+  return ScopedNativeTextureProxy(
+      new NativeTextureProxy(std::make_unique<StreamTextureHost>(
+                                 channel_, native_id, std::move(remote)),
+                             native_embed_id));
 }
 
 bool NativeTextureFactory::IsLost() const {

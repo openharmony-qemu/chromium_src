@@ -119,11 +119,7 @@ class MediaFactory {
       scoped_refptr<base::TaskRunner> compositor_worker_task_runner);
 
 #if BUILDFLAG(IS_OHOS)
-  blink::WebNativeBridge* CreateWebNativeBridge(
-      blink::WebNativeClient* client,
-      const cc::LayerTreeSettings& settings,
-      scoped_refptr<base::SingleThreadTaskRunner>
-          main_thread_compositor_task_runner);
+  blink::WebNativeBridge* CreateWebNativeBridge(blink::WebNativeClient* client);
   media::RendererWebNativeDelegate* GetWebNativeDelegate();
 #endif
 

@@ -38,9 +38,9 @@ std::unique_ptr<media::Renderer> NativeRendererClientFactory::CreateRenderer(
   media::ScopedNativeTextureWrapper native_texture_wrapper =
       get_native_texture_wrapper_cb_.Run();
 
-  return std::make_unique<NativeRenderClient>(compositor_task_runner_,
-                                              std::move(native_texture_wrapper),
-                                              video_renderer_sink);
+  return std::make_unique<NativeRenderClient>(
+      media_task_runner, compositor_task_runner_,
+      std::move(native_texture_wrapper), video_renderer_sink);
 }
 
 media::MediaResource::Type

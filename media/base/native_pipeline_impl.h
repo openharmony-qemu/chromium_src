@@ -18,7 +18,6 @@
 
 #include <memory>
 
-#include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
 #include "base/memory/weak_ptr.h"
 #include "base/threading/thread_checker.h"
@@ -60,30 +59,18 @@ class MEDIA_EXPORT NativePipelineImpl : public NativePipeline {
              DestroyTextureCB destroy_texture_cb) override;
 
   bool IsRunning() const override;
-  bool IsSuspended() const override;
+
+  void Stop() override;
 
  private:
   class RendererWrapper;
 
   void OnSetLayer();
-  // Pipeline states
-  enum State {
-    kCreated,
-    kStarting,
-    kStopping,
-    kStopped,
-    kSuspending,
-    kSuspended,
-    kResuming,
-  };
 
   // Create a Renderer asynchronously. Must be called on the main task runner
   // and the callback will be called on the main task runner as well.
   void AsyncCreateRenderer(absl::optional<RendererType> renderer_type,
                            RendererCreatedCB renderer_created_cb);
-
-  // Task completion callbacks from RendererWrapper.
-  void OnSeekDone(bool is_suspended);
 
   // Parameters passed in the constructor.
   const scoped_refptr<base::SequencedTaskRunner> media_task_runner_;
@@ -94,12 +81,6 @@ class MEDIA_EXPORT NativePipelineImpl : public NativePipeline {
 
   // RendererWrapper instance that runs on the media thread.
   std::unique_ptr<RendererWrapper> renderer_wrapper_;
-
-  // Temporary callback used for Suspend().
-  PipelineStatusCallback suspend_cb_;
-
-  // Cached suspension state for the RendererWrapper.
-  bool is_suspended_;
 
   base::ThreadChecker thread_checker_;
   base::WeakPtrFactory<NativePipelineImpl> weak_factory_{this};

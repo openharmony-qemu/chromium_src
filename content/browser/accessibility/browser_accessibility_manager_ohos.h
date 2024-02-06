@@ -87,9 +87,6 @@ class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
 
   int64_t TranslateAccessibilityId(int64_t accessibilityId) const;
 
-  void HandleSendAccessibilityEvent(int64_t accessibilityId,
-      OHOS::NWeb::AccessibilityEventType eventType) const;
-
   int64_t lastHoverId_ = -1;
 
   int64_t accessibilityFocusId_ = -1;

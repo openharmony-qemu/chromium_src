@@ -3272,12 +3272,8 @@ blink::WebMediaPlayer* RenderFrameImpl::CreateMediaPlayer(
 
 #if BUILDFLAG(IS_OHOS)
 blink::WebNativeBridge* RenderFrameImpl::CreateWebNativeBridge(
-    blink::WebNativeClient* client,
-    const cc::LayerTreeSettings* settings) {
-  DCHECK(settings);
-  return media_factory_.CreateWebNativeBridge(
-      client, *settings,
-      agent_scheduling_group_.agent_group_scheduler().CompositorTaskRunner());
+    blink::WebNativeClient* client) {
+  return media_factory_.CreateWebNativeBridge(client);
 }
 #endif
 

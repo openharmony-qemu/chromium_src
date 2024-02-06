@@ -531,10 +531,7 @@ blink::WebMediaPlayer* MediaFactory::CreateMediaPlayer(
 
 #if BUILDFLAG(IS_OHOS)
 blink::WebNativeBridge* MediaFactory::CreateWebNativeBridge(
-    blink::WebNativeClient* client,
-    const cc::LayerTreeSettings& settings,
-    scoped_refptr<base::SingleThreadTaskRunner>
-        main_thread_compositor_task_runner) {
+    blink::WebNativeClient* client) {
   LOG(INFO) << "[NativeEmbed] MediaFactory::CreateWebNativeBridge.";
   blink::WebLocalFrame* web_frame = render_frame_->GetWebFrame();
   RenderThreadImpl* render_thread = RenderThreadImpl::current();
@@ -566,14 +563,14 @@ blink::WebNativeBridge* MediaFactory::CreateWebNativeBridge(
 
   // TODO: Consider to use surface layer mode.
   auto video_frame_compositor_task_runner =
-      blink::Platform::Current()->VideoFrameCompositorTaskRunner();
+      render_thread->compositor_task_runner();
   auto vfc = std::make_unique<blink::VideoFrameCompositor>(
       video_frame_compositor_task_runner, nullptr);
 
   auto* web_native_bridge = new blink::WebNativeBridgeImpl(
       web_frame, client, GetWebNativeDelegate(), std::move(factory_selector),
-      std::move(vfc), blink::Platform::Current()->GetBrowserInterfaceBroker(),
-      media_task_runner, video_frame_compositor_task_runner);
+      std::move(vfc), std::move(media_task_runner),
+      std::move(video_frame_compositor_task_runner));
   return web_native_bridge;
 }
 

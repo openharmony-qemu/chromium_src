@@ -110,10 +110,12 @@ void NativeTextureWrapperImpl::CreateVideoFrame(
   SetCurrentFrameInternal(new_frame);
 }
 
-void NativeTextureWrapperImpl::ClearReceivedFrameCBOnAnyThread() {
+void NativeTextureWrapperImpl::ClearCBOnAnyThread() {
   // Safely stop StreamTextureProxy from signaling the arrival of new frames.
-  if (native_texture_proxy_)
+  if (native_texture_proxy_) {
     native_texture_proxy_->ClearReceivedFrameCB();
+    native_texture_proxy_->ClearDestroyTextureCB();
+  }
 }
 
 void NativeTextureWrapperImpl::SetCurrentFrameInternal(
@@ -154,11 +156,12 @@ void NativeTextureWrapperImpl::Initialize(
 
   main_task_runner_->PostTask(
       FROM_HERE,
-      base::BindOnce(&NativeTextureWrapperImpl::InitializeOnMainThread,
-                     weak_factory_.GetWeakPtr(), received_frame_cb,
-                     base::BindPostTaskToCurrentDefault(std::move(init_cb)),
-                     std::move(create_texture_cb),
-                     std::move(destroy_texture_cb)));
+      base::BindOnce(
+          &NativeTextureWrapperImpl::InitializeOnMainThread,
+          weak_factory_.GetWeakPtr(), received_frame_cb,
+          base::BindPostTaskToCurrentDefault(std::move(init_cb)),
+          base::BindPostTaskToCurrentDefault(std::move(create_texture_cb)),
+          base::BindPostTaskToCurrentDefault(std::move(destroy_texture_cb))));
 }
 
 void NativeTextureWrapperImpl::InitializeOnMainThread(
@@ -173,8 +176,7 @@ void NativeTextureWrapperImpl::InitializeOnMainThread(
     return;
   }
 
-  native_texture_proxy_ = factory_->CreateProxy(std::move(create_texture_cb),
-                                                std::move(destroy_texture_cb));
+  native_texture_proxy_ = factory_->CreateProxy();
   if (!native_texture_proxy_) {
     std::move(init_cb).Run(false);
     return;
@@ -187,9 +189,16 @@ void NativeTextureWrapperImpl::InitializeOnMainThread(
       received_frame_cb,
       base::BindRepeating(&NativeTextureWrapperImpl::CreateVideoFrame,
                           base::Unretained(this)),
-      compositor_task_runner_);
+      std::move(destroy_texture_cb), compositor_task_runner_);
 
   std::move(init_cb).Run(true);
+
+  auto native_embed_id = native_texture_proxy_->current_native_embed_id();
+  if (native_embed_id != -1) {
+    LOG(INFO)
+        << "[NativeEmbed] Running create_texture_cb(OnCreateSurface) callback.";
+    std::move(create_texture_cb).Run(native_embed_id);
+  }
 }
 
 void NativeTextureWrapperImpl::Destroy() {

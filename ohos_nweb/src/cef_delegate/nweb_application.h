@@ -85,7 +85,7 @@ void OnContextInitializedForIncognitoMode() override;
   /* CefRenderProcessHandler methods begin */
 
 #if defined(OHOS_SCHEME_HANDLER)
-  void RegisterCustomSchemes(const std::string& scheme, int options);
+  bool RegisterCustomSchemes(const std::string& scheme, int options);
 #endif
 
  private:

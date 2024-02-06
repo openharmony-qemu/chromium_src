@@ -2440,6 +2440,11 @@ RenderFrameMetadata LayerTreeHostImpl::MakeRenderFrameMetadata(
   metadata.root_layer_size = active_tree_->ScrollableSize();
 #endif
 
+#ifdef OHOS_CLIPBOARD
+  metadata.clipped_selection_bounds =
+    active_tree_->GetClippedVisualViewportSelectionBounds();
+#endif
+
   if (last_draw_render_frame_metadata_) {
     const float last_root_scroll_offset_y =
         last_draw_render_frame_metadata_->root_scroll_offset

@@ -57,6 +57,9 @@ bool StructTraits<
          data.ReadScrollableViewportSize(&out->scrollable_viewport_size) &&
          data.ReadRootLayerSize(&out->root_layer_size) &&
 #endif
+#ifdef OHOS_CLIPBOARD
+         data.ReadClippedSelectionBounds(&out->clipped_selection_bounds) &&
+#endif
          data.ReadViewportSizeInPixels(&out->viewport_size_in_pixels) &&
          data.ReadLocalSurfaceId(&out->local_surface_id) &&
          data.ReadNewVerticalScrollDirection(

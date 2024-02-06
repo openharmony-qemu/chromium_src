@@ -706,6 +706,10 @@ void LayerTreeImpl::PullLayerTreePropertiesFrom(CommitState& commit_state) {
 
   RegisterSelection(commit_state.selection);
 
+#ifdef OHOS_CLIPBOARD
+  RegisterClippedVisualViewportSelectionBounds(commit_state.clipped_selection_bounds);
+#endif
+
   PushPageScaleFromMainThread(commit_state.page_scale_factor,
                               commit_state.min_page_scale_factor,
                               commit_state.max_page_scale_factor);
@@ -837,6 +841,11 @@ void LayerTreeImpl::PushPropertiesTo(LayerTreeImpl* target_tree) {
     target_tree->RequestForceSendMetadata();
 
   target_tree->RegisterSelection(selection_);
+
+#ifdef OHOS_CLIPBOARD
+  target_tree->RegisterClippedVisualViewportSelectionBounds(
+    clipped_selection_bounds_);
+#endif
 
   // This should match the property synchronization in
   // LayerTreeHost::finishCommitOnImplThread().
@@ -2749,6 +2758,22 @@ void LayerTreeImpl::RegisterSelection(const LayerSelection& selection) {
   handle_visibility_changed_ = true;
   selection_ = selection;
 }
+
+#ifdef OHOS_CLIPBOARD
+void LayerTreeImpl::RegisterClippedVisualViewportSelectionBounds(
+  const gfx::Rect& clipped_selection_bounds) {
+  if (clipped_selection_bounds_ == clipped_selection_bounds) {
+    return;
+  }
+
+  handle_visibility_changed_ = true;
+  clipped_selection_bounds_ = clipped_selection_bounds;
+}
+
+gfx::Rect LayerTreeImpl::GetClippedVisualViewportSelectionBounds() const {
+  return clipped_selection_bounds_;
+}
+#endif
 
 void LayerTreeImpl::ResetHandleVisibilityChanged() {
   handle_visibility_changed_ = false;

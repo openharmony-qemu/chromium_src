@@ -26,6 +26,8 @@ class NWebTouchHandleStateImpl : public NWebTouchHandleState {
   int32_t GetTouchHandleId() const override;
   int32_t GetX() const override;
   int32_t GetY() const override;
+  int32_t GetViewPortX() const override;
+  int32_t GetViewPortY() const override;
   TouchHandleType GetTouchHandleType() const override;
   bool IsEnable() const override;
   float GetAlpha() const override;

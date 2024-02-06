@@ -1344,6 +1344,18 @@ void LayerTreeHost::RegisterSelection(const LayerSelection& selection) {
   SetNeedsCommit();
 }
 
+#ifdef OHOS_CLIPBOARD
+void LayerTreeHost::RegisterClippedVisualViewportSelectionBounds(
+  const gfx::Rect& clipped_selection_bounds) {
+  if (pending_commit_state()->clipped_selection_bounds == clipped_selection_bounds){
+    return;
+  }
+
+  pending_commit_state()->clipped_selection_bounds = clipped_selection_bounds;
+  SetNeedsCommit();
+}
+#endif
+
 void LayerTreeHost::SetHaveScrollEventHandlers(bool have_event_handlers) {
   if (pending_commit_state()->have_scroll_event_handlers == have_event_handlers)
     return;

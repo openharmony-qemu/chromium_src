@@ -460,6 +460,14 @@ class CC_EXPORT LayerTreeHost : public MutatorHostClient {
     return pending_commit_state()->selection;
   }
 
+#ifdef OHOS_CLIPBOARD
+void RegisterClippedVisualViewportSelectionBounds(
+  const gfx::Rect& clipped_selection_bounds);
+  const gfx::Rect& clipped_selection_bounds() {
+    return pending_commit_state()->clipped_selection_bounds;
+  }
+#endif
+
   // Sets or gets if the client has any scroll event handlers registered. This
   // allows the threaded compositor to prioritize main frames even when
   // servicing a touch scroll on the compositor thread, in order to give the

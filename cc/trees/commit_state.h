@@ -100,6 +100,9 @@ struct CC_EXPORT CommitState {
   int hud_layer_id = Layer::INVALID_ID;
   int source_frame_number = 0;
   LayerSelection selection;
+#ifdef OHOS_CLIPBOARD
+  gfx::Rect clipped_selection_bounds;
+#endif
   LayerTreeDebugState debug_state;
   OverscrollBehavior overscroll_behavior;
   SkColor4f background_color = SkColors::kWhite;

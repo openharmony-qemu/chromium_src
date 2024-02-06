@@ -53,12 +53,20 @@ class NWebQuickMenuParamsImpl : public NWebQuickMenuParams {
                           int32_t y,
                           int32_t width,
                           int32_t height,
-                          int32_t flags);
+                          int32_t flags,
+                          int32_t select_x,
+                          int32_t select_y,
+                          int32_t select_width,
+                          int32_t select_height);
   int32_t GetXCoord() override;
   int32_t GetYCoord() override;
   int32_t GetWidth() override;
   int32_t GetHeight() override;
   int32_t GetEditStateFlags() override;
+  int32_t GetSelectX() override;
+  int32_t GetSelectY() override;
+  int32_t GetSelectWidth() override;
+  int32_t GetSelectXHeight() override;
   std::shared_ptr<NWebTouchHandleState> GetTouchHandleState(
       NWebTouchHandleState::TouchHandleType type) override;
   void SetTouchHandleState(std::shared_ptr<NWebTouchHandleState> state,
@@ -70,6 +78,10 @@ class NWebQuickMenuParamsImpl : public NWebQuickMenuParams {
   int32_t width_;
   int32_t height_;
   int32_t edit_flags_;
+  int32_t select_x_;
+  int32_t select_y_;
+  int32_t select_width_;
+  int32_t select_height_;
   std::shared_ptr<NWebTouchHandleState> insert_touch_handle_state_;
   std::shared_ptr<NWebTouchHandleState> begin_touch_handle_state_;
   std::shared_ptr<NWebTouchHandleState> end_touch_handle_state_;

@@ -2157,6 +2157,7 @@ bool NWebHandlerDelegate::RunQuickMenu(
     CefRefPtr<CefFrame> frame,
     const CefPoint& location,
     const CefSize& size,
+    const CefRect& select_bounds,
     CefContextMenuHandler::QuickMenuEditStateFlags edit_state_flags,
     CefRefPtr<CefRunQuickMenuCallback> callback) {
   if (nweb_handler_ == nullptr || render_handler_ == nullptr) {
@@ -2164,7 +2165,9 @@ bool NWebHandlerDelegate::RunQuickMenu(
   }
   std::shared_ptr<NWebQuickMenuParamsImpl> nweb_param =
       std::make_shared<NWebQuickMenuParamsImpl>(
-          location.x, location.y, size.width, size.height, edit_state_flags);
+          location.x, location.y, size.width, size.height, edit_state_flags,
+          select_bounds.x, select_bounds.y,
+          select_bounds.width, select_bounds.height);
   std::shared_ptr<NWebQuickMenuCallback> nweb_callback =
       std::make_shared<NWebQuickMenuCallbackImpl>(callback);
 

@@ -39,6 +39,10 @@ public:
 
     virtual int32_t GetY() const = 0;
 
+    virtual int32_t GetViewPortX() const = 0;
+
+    virtual int32_t GetViewPortY() const = 0;
+
     virtual TouchHandleType GetTouchHandleType() const = 0;
 
     virtual bool IsEnable() const = 0;

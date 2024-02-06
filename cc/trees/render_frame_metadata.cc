@@ -28,6 +28,9 @@ bool RenderFrameMetadata::operator==(const RenderFrameMetadata& other) const {
          root_background_color == other.root_background_color &&
          is_scroll_offset_at_top == other.is_scroll_offset_at_top &&
          selection == other.selection &&
+#ifdef OHOS_CLIPBOARD
+         clipped_selection_bounds == other.clipped_selection_bounds &&
+#endif
          is_mobile_optimized == other.is_mobile_optimized &&
          delegated_ink_metadata == other.delegated_ink_metadata &&
          device_scale_factor == other.device_scale_factor &&

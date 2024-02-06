@@ -510,8 +510,7 @@ class CONTENT_EXPORT RenderFrameImpl
       scoped_refptr<base::TaskRunner> compositor_worker_task_runner) override;
 #if BUILDFLAG(IS_OHOS)
   blink::WebNativeBridge* CreateWebNativeBridge(
-      blink::WebNativeClient* client,
-      const cc::LayerTreeSettings* settings) override;
+      blink::WebNativeClient* client) override;
 #endif
   std::unique_ptr<blink::WebContentSettingsClient>
   CreateWorkerContentSettingsClient() override;

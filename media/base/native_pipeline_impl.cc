@@ -22,17 +22,12 @@
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
 #include "base/functional/callback_helpers.h"
-#include "base/memory/raw_ptr.h"
-#include "base/metrics/histogram_macros.h"
-#include "base/synchronization/lock.h"
-#include "base/synchronization/waitable_event.h"
+#include "base/logging.h"
+#include "base/task/bind_post_task.h"
 #include "base/task/single_thread_task_runner.h"
-#include "build/build_config.h"
 #include "media/base/renderer.h"
 #include "media/base/renderer_client.h"
 #include "media/base/serial_runner.h"
-#include "media/base/text_renderer.h"
-#include "base/task/bind_post_task.h"
 
 namespace media {
 
@@ -52,13 +47,12 @@ class NativePipelineImpl::RendererWrapper {
 
   void Start(CreateTextureCB create_texture_cb,
              DestroyTextureCB destroy_texture_cb,
-             std::unique_ptr<Renderer> default_renderer,
              base::WeakPtr<NativePipelineImpl> weak_pipeline);
+  void Stop();
 
  private:
   // State transition tasks.
-  void SetState(State next_state);
-  void Complete(base::TimeDelta seek_time, PipelineStatus status);
+  void Complete(PipelineStatus status);
 
   void CreateRenderer(PipelineStatusCallback done_cb);
   void OnRendererCreated(PipelineStatusCallback done_cb,
@@ -90,9 +84,6 @@ class NativePipelineImpl::RendererWrapper {
 
   std::unique_ptr<Renderer> shared_state_renderer_;
 
-  // Current state of the pipeline.
-  State state_;
-
   std::unique_ptr<SerialRunner> pending_callbacks_;
 
   // Callback to store the |done_cb| when CreateRenderer() needs to wait for a
@@ -111,12 +102,10 @@ NativePipelineImpl::RendererWrapper::RendererWrapper(
     scoped_refptr<base::SequencedTaskRunner> media_task_runner,
     scoped_refptr<base::SingleThreadTaskRunner> main_task_runner)
     : media_task_runner_(std::move(media_task_runner)),
-      main_task_runner_(std::move(main_task_runner)),
-      state_(kCreated) {}
+      main_task_runner_(std::move(main_task_runner)) {}
 
 NativePipelineImpl::RendererWrapper::~RendererWrapper() {
   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
-  DCHECK(state_ == kCreated || state_ == kStopped);
 }
 
 // Note that the usage of base::Unretained() with the renderers is considered
@@ -128,13 +117,9 @@ NativePipelineImpl::RendererWrapper::~RendererWrapper() {
 void NativePipelineImpl::RendererWrapper::Start(
     CreateTextureCB create_texture_cb,
     DestroyTextureCB destroy_texture_cb,
-    std::unique_ptr<Renderer> default_renderer,
     base::WeakPtr<NativePipelineImpl> weak_pipeline) {
   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
-  DCHECK(state_ == kCreated || state_ == kStopped)
-      << "Received start in unexpected state: " << state_;
 
-  default_renderer_ = std::move(default_renderer);
   weak_pipeline_ = weak_pipeline;
 
   create_texture_cb_ = std::move(create_texture_cb);
@@ -160,8 +145,16 @@ void NativePipelineImpl::RendererWrapper::Start(
   // Run tasks.
   pending_callbacks_ = SerialRunner::Run(
       std::move(fns),
-      base::BindOnce(&RendererWrapper::Complete, weak_factory_.GetWeakPtr(),
-                     base::TimeDelta()));
+      base::BindOnce(&RendererWrapper::Complete, weak_factory_.GetWeakPtr()));
+}
+
+void NativePipelineImpl::RendererWrapper::Stop() {
+  DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
+
+  pending_callbacks_.reset();
+  weak_factory_.InvalidateWeakPtrs();
+
+  DestroyRenderer();
 }
 
 bool NativePipelineImpl::IsRunning() const {
@@ -169,25 +162,16 @@ bool NativePipelineImpl::IsRunning() const {
   return !!client_;
 }
 
-bool NativePipelineImpl::IsSuspended() const {
-  DCHECK(thread_checker_.CalledOnValidThread());
-  return is_suspended_;
-}
-
 void NativePipelineImpl::RendererWrapper::CreateRendererInternal(
     PipelineStatusCallback done_cb) {
-  DCHECK(state_ == kStarting || state_ == kResuming);
-
-  absl::optional<RendererType> renderer_type;
-
-  // TODO(xhwang): During Resume(), the |default_renderer_| might already match
-  // the |renderer_type|, in which case we shouldn't need to create a new one.
-  if (!default_renderer_ || renderer_type) {
+  if (!default_renderer_) {
     // Create the Renderer asynchronously on the main task runner. Use
     // BindToCurrentLoop to call OnRendererCreated() on the media task runner.
     auto renderer_created_cb = base::BindPostTaskToCurrentDefault(
         base::BindOnce(&RendererWrapper::OnRendererCreated,
                        weak_factory_.GetWeakPtr(), std::move(done_cb)));
+
+    absl::optional<RendererType> renderer_type;
     main_task_runner_->PostTask(
         FROM_HERE,
         base::BindOnce(&NativePipelineImpl::AsyncCreateRenderer, weak_pipeline_,
@@ -199,25 +183,17 @@ void NativePipelineImpl::RendererWrapper::CreateRendererInternal(
   OnRendererCreated(std::move(done_cb), std::move(default_renderer_));
 }
 
-void NativePipelineImpl::RendererWrapper::SetState(State next_state) {
+void NativePipelineImpl::RendererWrapper::Complete(PipelineStatus status) {
   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
-
-  state_ = next_state;
-}
-
-void NativePipelineImpl::RendererWrapper::Complete(base::TimeDelta seek_time,
-                                                   PipelineStatus status) {
-  DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
-  DCHECK(state_ == kStarting || state_ == kResuming);
 
   DCHECK(pending_callbacks_);
   pending_callbacks_.reset();
+  DestroyRenderer();
 }
 
 void NativePipelineImpl::RendererWrapper::CreateRenderer(
     PipelineStatusCallback done_cb) {
   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
-  DCHECK(state_ == kStarting || state_ == kResuming);
 
   CreateRendererInternal(std::move(done_cb));
 }
@@ -226,12 +202,10 @@ void NativePipelineImpl::RendererWrapper::OnRendererCreated(
     PipelineStatusCallback done_cb,
     std::unique_ptr<Renderer> renderer) {
   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
-
   if (!renderer) {
     std::move(done_cb).Run(PIPELINE_ERROR_INITIALIZATION_FAILED);
     return;
   }
-
   {
     base::AutoLock auto_lock(shared_state_lock_);
     DCHECK(!shared_state_renderer_);
@@ -266,14 +240,6 @@ void NativePipelineImpl::RendererWrapper::ReportMetadata() {
   main_task_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(&NativePipelineImpl::OnSetLayer, weak_pipeline_));
-
-  // Abort pending render initialization tasks and suspend the pipeline.
-  pending_callbacks_.reset();
-  DestroyRenderer();
-  SetState(kSuspended);
-  main_task_runner_->PostTask(
-      FROM_HERE,
-      base::BindOnce(&NativePipelineImpl::OnSeekDone, weak_pipeline_, true));
 }
 
 NativePipelineImpl::NativePipelineImpl(
@@ -282,8 +248,7 @@ NativePipelineImpl::NativePipelineImpl(
     CreateRendererCB create_renderer_cb)
     : media_task_runner_(media_task_runner),
       create_renderer_cb_(create_renderer_cb),
-      client_(nullptr),
-      is_suspended_(false) {
+      client_(nullptr) {
   DCHECK(create_renderer_cb_);
 
   renderer_wrapper_ = std::make_unique<RendererWrapper>(
@@ -293,7 +258,6 @@ NativePipelineImpl::NativePipelineImpl(
 NativePipelineImpl::~NativePipelineImpl() {
   DCHECK(thread_checker_.CalledOnValidThread());
   DCHECK(!client_) << "Stop() must complete before destroying object";
-  DCHECK(!suspend_cb_);
   DCHECK(!weak_factory_.HasWeakPtrs())
       << "Stop() should have invalidated all weak pointers";
 
@@ -310,22 +274,36 @@ void NativePipelineImpl::Start(Client* client,
   DCHECK(!client_);
   client_ = client;
 
-  std::unique_ptr<Renderer> default_renderer =
-      create_renderer_cb_.Run(absl::nullopt);
-
   media_task_runner_->PostTask(
-      FROM_HERE,
-      base::BindOnce(
-          &RendererWrapper::Start, base::Unretained(renderer_wrapper_.get()),
-          std::move(create_texture_cb), std::move(destroy_texture_cb),
-          std::move(default_renderer), weak_factory_.GetWeakPtr()));
+      FROM_HERE, base::BindOnce(&RendererWrapper::Start,
+                                base::Unretained(renderer_wrapper_.get()),
+                                std::move(create_texture_cb),
+                                std::move(destroy_texture_cb),
+                                weak_factory_.GetWeakPtr()));
+}
+
+void NativePipelineImpl::Stop() {
+  DCHECK(thread_checker_.CalledOnValidThread());
+
+  if (media_task_runner_->RunsTasksInCurrentSequence()) {
+    renderer_wrapper_->Stop();
+  } else {
+    media_task_runner_->PostTask(
+        FROM_HERE, base::BindOnce(&RendererWrapper::Stop,
+                                  base::Unretained(renderer_wrapper_.get())));
+  }
+
+  client_ = nullptr;
+
+  // Invalidate self weak pointers effectively canceling all pending
+  // notifications in the message queue.
+  weak_factory_.InvalidateWeakPtrs();
 }
 
 void NativePipelineImpl::AsyncCreateRenderer(
     absl::optional<RendererType> renderer_type,
     RendererCreatedCB renderer_created_cb) {
   DCHECK(thread_checker_.CalledOnValidThread());
-
   std::move(renderer_created_cb).Run(create_renderer_cb_.Run(renderer_type));
 }
 
@@ -335,13 +313,6 @@ void NativePipelineImpl::OnSetLayer() {
 
   DCHECK(client_);
   client_->OnSetLayer();
-}
-
-void NativePipelineImpl::OnSeekDone(bool is_suspended) {
-  DCHECK(thread_checker_.CalledOnValidThread());
-  DCHECK(IsRunning());
-
-  is_suspended_ = is_suspended;
 }
 
 }  // namespace media

@@ -41,7 +41,7 @@ StreamTextureHost::~StreamTextureHost() {
   if (channel_) {
     OnDestroySurface();
 
-    // We destroy the StreamTexture as a deferred message followed by a flush
+    // We destroy the NativeTexture as a deferred message followed by a flush
     // to ensure this is ordered correctly with regards to previous deferred
     // messages, such as CreateSharedImage.
     uint32_t flush_id = channel_->EnqueueDeferredMessage(
@@ -81,6 +81,7 @@ void StreamTextureHost::OnFrameWithInfoAvailable(
 }
 
 void StreamTextureHost::OnFrameAvailable() {
+  TRACE_EVENT0("base", "StreamTextureHost::OnFrameAvailable");
   if (listener_)
     listener_->OnFrameAvailable();
 }

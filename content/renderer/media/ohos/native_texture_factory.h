@@ -68,6 +68,7 @@ class CONTENT_EXPORT NativeTextureProxy : public StreamTextureHost::Listener {
   void BindToTaskRunner(
       const base::RepeatingClosure& received_frame_cb,
       const CreateVideoFrameCB& create_video_frame_cb,
+      DestroyTextureCB destroy_texture_cb,
       scoped_refptr<base::SingleThreadTaskRunner> task_runner);
 
   // StreamTextureHost::DestroyListener implementation:
@@ -89,6 +90,11 @@ class CONTENT_EXPORT NativeTextureProxy : public StreamTextureHost::Listener {
   // Clears |create_video_frame_cb_| in a thread safe way.
   void ClearCreateVideoFrameCB();
 
+  // Clears |destroy_texture_cb_| in a thread safe way.
+  void ClearDestroyTextureCB();
+
+  int32_t current_native_embed_id() { return native_embed_id_; }
+
   struct Deleter {
     inline void operator()(NativeTextureProxy* ptr) const { ptr->Release(); }
   };
@@ -97,8 +103,7 @@ class CONTENT_EXPORT NativeTextureProxy : public StreamTextureHost::Listener {
   friend class NativeTextureFactory;
 
   explicit NativeTextureProxy(std::unique_ptr<StreamTextureHost> host,
-                              CreateSurfaceTextureCB create_texture_cb,
-                              DestroyTextureCB destroy_texture_cb);
+                              int32_t native_embed_id);
   void BindOnThread();
   void Release();
 
@@ -108,8 +113,9 @@ class CONTENT_EXPORT NativeTextureProxy : public StreamTextureHost::Listener {
   base::Lock lock_;
   base::RepeatingClosure received_frame_cb_;
   CreateVideoFrameCB create_video_frame_cb_;
-  CreateSurfaceTextureCB create_texture_cb_;
+
   DestroyTextureCB destroy_texture_cb_;
+  int32_t native_embed_id_ = -1;
 
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
 };
@@ -132,8 +138,7 @@ class CONTENT_EXPORT NativeTextureFactory
   // gpu::StreamTexture and returns its route_id. If this route_id is invalid
   // nullptr is returned. If the route_id is valid it returns
   // NativeTextureProxy object.
-  ScopedNativeTextureProxy CreateProxy(CreateSurfaceTextureCB create_texture_cb,
-                                       DestroyTextureCB destroy_texture_cb);
+  ScopedNativeTextureProxy CreateProxy();
 
   // Returns true if the NativeTextureFactory's channel is lost.
   bool IsLost() const;

@@ -68,11 +68,7 @@ class MEDIA_EXPORT NativePipeline {
   // returns true, it is expected that Stop() will be called before destroying
   // the pipeline.
   virtual bool IsRunning() const = 0;
-
-  // Returns true if the pipeline has been suspended via Suspend() or during
-  // Start(). If IsSuspended() returns true, it is expected that Resume() will
-  // be called to resume playback.
-  virtual bool IsSuspended() const = 0;
+  virtual void Stop() = 0;
 };
 
 }  // namespace media

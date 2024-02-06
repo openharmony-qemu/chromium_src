@@ -448,7 +448,7 @@ std::string BuildUserAgentFromOSAndProduct(const std::string& os_info,
 #if BUILDFLAG(IS_OHOS) && defined(OHOS_USERAGENT)
   std::string product_string = "";
   base::StringAppendF(&product_string, " ArkWeb/%s", ARKWEB_VERSION);
-  if (base::ohos::IsMobileDevice()) {
+  if (base::ohos::IsMobileDevice() && !embedder_support::GetTabletMode()) {
     product_string += " Mobile";
   }
   base::StringAppendF(&user_agent, "%s", product_string.c_str());

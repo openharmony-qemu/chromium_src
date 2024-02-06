@@ -32,6 +32,7 @@ class NativeRenderClient : public media::MojoRendererWrapper {
  public:
   NativeRenderClient();
   NativeRenderClient(
+      scoped_refptr<base::SequencedTaskRunner> media_task_runner,
       scoped_refptr<base::SingleThreadTaskRunner> compositor_task_runner,
       media::ScopedNativeTextureWrapper native_texture_wrapper,
       media::VideoRendererSink* sink);
@@ -56,6 +57,8 @@ class NativeRenderClient : public media::MojoRendererWrapper {
   }
 
  private:
+  scoped_refptr<base::SequencedTaskRunner> media_task_runner_;
+
   // Owns the StreamTexture whose surface is used by NativeRenderer.
   // Provides the VideoFrames to |sink_|.
   media::ScopedNativeTextureWrapper native_texture_wrapper_;

@@ -57,7 +57,7 @@ class CONTENT_EXPORT NativeTextureWrapperImpl
 
   // Clears the |received_frame_cb| passed in Initialize().
   // Should be safe to call from any thread.
-  void ClearReceivedFrameCBOnAnyThread() override;
+  void ClearCBOnAnyThread() override;
 
  private:
   NativeTextureWrapperImpl(

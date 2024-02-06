@@ -48,7 +48,7 @@ class MEDIA_EXPORT NativeTextureWrapper {
 
   // Clears the |received_frame_cb| passed in Initialize().
   // Should be safe to call from any thread.
-  virtual void ClearReceivedFrameCBOnAnyThread() = 0;
+  virtual void ClearCBOnAnyThread() = 0;
 
   struct Deleter {
     inline void operator()(NativeTextureWrapper* ptr) const { ptr->Destroy(); }

@@ -116,6 +116,10 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
 
   bool IsFocusable() const override;
 
+  bool IsRangeControlWithoutAriaValueText() const;
+
+  bool IsTableHeader() const;
+
  protected:
   BrowserAccessibilityOHOS(BrowserAccessibilityManager* manager,
                            ui::AXNode* node);
@@ -124,8 +128,6 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
 
  private:
   bool ShouldExposeValueAsName() const;
-
-  bool IsRangeControlWithoutAriaValueText() const;
 
   bool HasOnlyTextChildren() const;
 

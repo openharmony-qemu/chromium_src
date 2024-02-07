@@ -2824,13 +2824,23 @@ void NWebDelegate::AddAccessibilityNodeInfoAttributes(
   nodeInfo.deletable = false;
   nodeInfo.inputType = node->OHOSInputType();
   nodeInfo.liveRegion = node->OHOSLiveRegionType();
-  nodeInfo.selectionStart = node->GetSelectionStart();
-  nodeInfo.selectionEnd = node->GetSelectionEnd();
+  nodeInfo.selectionStart = 0;
+  nodeInfo.selectionEnd = 0;
+  if (node->IsTextField()) {
+    nodeInfo.selectionStart = node->GetSelectionStart();
+    nodeInfo.selectionEnd = node->GetSelectionEnd();
+  }
   nodeInfo.itemCounts = node->GetItemCount();
   nodeInfo.clickable = node->IsClickable();
-  nodeInfo.rangeInfoMin = node->RangeMin();
-  nodeInfo.rangeInfoMax = node->RangeMax();
-  nodeInfo.rangeInfoCurrent = node->RangeCurrentValue();
+
+  nodeInfo.rangeInfoMin = 0.0f;
+  nodeInfo.rangeInfoMax = 0.0f;
+  nodeInfo.rangeInfoCurrent = 0.0f;
+  if (node->IsRangeControlWithoutAriaValueText()) {
+    nodeInfo.rangeInfoMin = node->RangeMin();
+    nodeInfo.rangeInfoMax = node->RangeMax();
+    nodeInfo.rangeInfoCurrent = node->RangeCurrentValue();
+  }
 }
 
 void NWebDelegate::AddAccessibilityNodeInfoRect(
@@ -2864,12 +2874,12 @@ void NWebDelegate::AddAccessibilityNodeInfoCollection(
     nodeInfo.gridColumns = node->ColumnCount();
     nodeInfo.gridSelectedMode = node->IsHierarchical();
   }
-  if (node->IsCollectionItem()) {
+  if (node->IsCollectionItem() || node->IsTableHeader()) {
     nodeInfo.gridItemRow = node->RowIndex();
     nodeInfo.gridItemRowSpan = node->RowSpan();
     nodeInfo.gridItemColumn = node->ColumnIndex();
     nodeInfo.gridItemColumnSpan = node->ColumnSpan();
-    nodeInfo.heading = node->IsHeading();
+    nodeInfo.heading = node->IsTableHeader();
   }
 }
 

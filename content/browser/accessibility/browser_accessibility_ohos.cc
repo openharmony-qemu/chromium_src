@@ -918,4 +918,8 @@ bool BrowserAccessibilityOHOS::IsFocusable() const {
   }
   return BrowserAccessibility::IsFocusable();
 }
+
+bool BrowserAccessibilityOHOS::IsTableHeader() const {
+  return ui::IsTableHeader(GetRole());
+}
 }  // namespace content

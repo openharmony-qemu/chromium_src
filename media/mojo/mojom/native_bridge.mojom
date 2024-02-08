@@ -17,14 +17,20 @@ module media.mojom;
 
 import "ui/gfx/geometry/mojom/geometry.mojom";
 
+struct NativeEmbedInfo {
+  int32 embed_id;
+  gfx.mojom.Size size;
+  string type;
+  string element_id;
+  string source;
+  string tag;
+  map<string, string> params;
+};
+
 // Implemented by NativeWebContentsObserver::NativeBridgeObserverHostImpl in the
 // browser process.
 interface NativeBridgeObserver {
-  OnCreateNativeSurface(int32 native_embed_id,
-                        gfx.mojom.Size size,
-                        string native_type);
-  UpdateElementId(string element_id);
-  UpdateElementSource(string element_source);
+  OnCreateNativeSurface(NativeEmbedInfo embed_info);
   OnEmbedSizeChange(gfx.mojom.Size size);
   OnDestroyNativeSurface();
 };

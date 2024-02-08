@@ -126,19 +126,13 @@ class CONTENT_EXPORT NativeWebContentsObserver : public WebContentsObserver {
             native_bridge_observer);
 
     // media::mojom::NativeBridgeObserver implementation
-    void OnCreateNativeSurface(int native_embed_id,
-                               const gfx::Size& size,
-                               const std::string& native_type) override;
-    void UpdateElementId(const std::string& element_id) override;
-    void UpdateElementSource(const std::string& element_source) override;
+    void OnCreateNativeSurface(media::mojom::NativeEmbedInfoPtr embed_info) override;
     void OnEmbedSizeChange(const gfx::Size& size) override;
     void OnDestroyNativeSurface() override;
 
    private:
     // Re-use MediaPlayerId to manage frame routing_id and delegate_id.
     const MediaPlayerId native_bridge_id_;
-    std::string element_id_;
-    std::string element_source_;
     const raw_ptr<NativeWebContentsObserver> native_web_contents_observer_;
     mojo::AssociatedReceiver<media::mojom::NativeBridgeObserver>
         native_bridge_observer_receiver_{this};

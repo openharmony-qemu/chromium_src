@@ -4696,7 +4696,16 @@ void WebContentsImpl::CreateNativeBridgeHostForRenderFrameHost(
 void WebContentsImpl::OnNativeEmbedStatusUpdate(
     const NativeEmbedInfo& native_embed_info,
     NativeEmbedInfo::TagState state) {
-  LOG(INFO) << "[NativeEmbed] OnNativeEmbedStatusUpdate " << native_embed_info;
+  std::string param_list;
+  for (auto& item : native_embed_info.params) {
+    param_list += item.first + " ";
+    param_list += item.second + ", ";
+  }
+  LOG(INFO) << "[NativeEmbed] OnNativeEmbedStatusUpdate "
+             << " state is " << (int)state << ", "
+             << native_embed_info
+             << ", params: " << param_list;
+
   if (delegate_) {
     delegate_->OnNativeEmbedStatusUpdate(native_embed_info, state);
   }

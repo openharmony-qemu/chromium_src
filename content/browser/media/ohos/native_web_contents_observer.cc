@@ -18,10 +18,10 @@
 #include <memory>
 #include <tuple>
 
-#include "base/functional/bind.h"
 #include "base/containers/cxx20_erase.h"
 #include "base/debug/crash_logging.h"
 #include "base/debug/dump_without_crashing.h"
+#include "base/functional/bind.h"
 #include "base/memory/raw_ptr.h"
 #include "content/browser/renderer_host/render_frame_host_impl.h"
 #include "content/browser/web_contents/web_contents_impl.h"
@@ -157,35 +157,32 @@ void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
 }
 
 void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
-    OnCreateNativeSurface(int native_embed_id,
-                          const gfx::Size& size,
-                          const std::string& native_type) {
-  if (!native_web_contents_observer_)
+    OnCreateNativeSurface(media::mojom::NativeEmbedInfoPtr embed_info) {
+  if (!native_web_contents_observer_) {
     return;
+  }
 
-  auto url = native_web_contents_observer_->web_contents_impl()->GetURL();
-  NativeEmbedInfo native_embed_info(native_embed_id, url, element_id_,
-                                    native_type, element_source_, size);
+  std::map<std::string, std::string> params_data;
+  for (auto& item : embed_info->params) {
+    params_data.emplace(item.first, item.second);
+  }
+
+  NativeEmbedInfo native_embed_info(
+      embed_info->embed_id,
+      native_web_contents_observer_->web_contents_impl()->GetURL(),
+      embed_info->element_id, embed_info->type, embed_info->source,
+      embed_info->tag, embed_info->size, params_data);
   native_web_contents_observer_->OnBridgeInfoChanged(native_bridge_id_,
                                                      native_embed_info);
   native_web_contents_observer_->web_contents_impl()->OnNativeEmbedStatusUpdate(
       native_embed_info, NativeEmbedInfo::TagState::TAG_STATE_CREATE);
 }
 
-void NativeWebContentsObserver::NativeBridgeObserverHostImpl::UpdateElementId(
-    const std::string& element_id) {
-  element_id_ = element_id;
-}
-
-void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
-    UpdateElementSource(const std::string& element_source) {
-  element_source_ = element_source;
-}
-
 void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
     OnDestroyNativeSurface() {
-  if (!native_web_contents_observer_)
+  if (!native_web_contents_observer_) {
     return;
+  }
 
   if (auto* bridge_info =
           native_web_contents_observer_->GetBridgeInfo(native_bridge_id_)) {
@@ -198,8 +195,9 @@ void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
 
 void NativeWebContentsObserver::NativeBridgeObserverHostImpl::OnEmbedSizeChange(
     const gfx::Size& new_size) {
-  if (!native_web_contents_observer_)
+  if (!native_web_contents_observer_) {
     return;
+  }
 
   if (auto* bridge_info =
           native_web_contents_observer_->GetBridgeInfo(native_bridge_id_)) {

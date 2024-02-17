@@ -62,13 +62,20 @@ class NWebPipeResourceHandler : public CefResourceHandler {
   void DidFinish();
   void DidFailWithError(int error_code);
 
+  void AddRef() const override { ref_count_.AddRef(); }
+  bool Release() const override;
+  bool HasOneRef() const override { return ref_count_.HasOneRef(); }
+  bool HasAtLeastOneRef() const override {
+    return ref_count_.HasAtLeastOneRef();
+  }
+
  private:
   int UnSafeReadTrunkData(bool flush);
   int UnSafeReadTrunkData(void* data_out,
                           int bytes_to_read,
                           int& bytes_read,
                           bool flush);
-  void CallOnRequestStop();
+  void CallOnRequestStop() const;
 
   bool finished_{false};
   bool finished_with_error_{false};
@@ -87,8 +94,9 @@ class NWebPipeResourceHandler : public CefResourceHandler {
   std::string web_tag_;
   bool from_service_worker_{false};
   mutable base::Lock lock_;
+  CefRefCount ref_count_;
 
-  IMPLEMENT_REFCOUNTING(NWebPipeResourceHandler);
+  // IMPLEMENT_REFCOUNTING(NWebPipeResourceHandler);
 };
 
 }  // namespace OHOS::NWeb

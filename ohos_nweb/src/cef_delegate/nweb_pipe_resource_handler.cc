@@ -80,7 +80,6 @@ bool NWebPipeResourceHandler::Read(
     LOG(INFO) << "scheme_handler this request has beed failed with error code "
               << error_code_;
     bytes_read = error_code_;
-    CallOnRequestStop();
     return false;
   }
 
@@ -99,7 +98,6 @@ bool NWebPipeResourceHandler::Read(
             << " bytes_to_read: " << bytes_to_read << " finished:" << finished_;
   if (finished_ && bytes_available <= 0) {
     bytes_read = 0;
-    CallOnRequestStop();
     return false;
   }
 
@@ -118,7 +116,6 @@ bool NWebPipeResourceHandler::Read(
   if (finished_) {
     LOG(INFO) << "scheme_handler this request has been finished.";
     bytes_read = 0;
-    CallOnRequestStop();
     return false;
   }
 
@@ -288,7 +285,7 @@ int NWebPipeResourceHandler::UnSafeReadTrunkData(void* data_out,
   return bytes_consumed;
 }
 
-void NWebPipeResourceHandler::CallOnRequestStop() {
+void NWebPipeResourceHandler::CallOnRequestStop() const {
   if (!factory_) {
     LOG(ERROR) << "scheme_handler factory is nullptr.";
     return;
@@ -297,16 +294,21 @@ void NWebPipeResourceHandler::CallOnRequestStop() {
   if (resource_handler_ && resource_request_) {
     factory_->OnRequestStop(resource_request_, web_tag_, from_service_worker_);
   } else {
-    LOG(ERROR) << "scheme_handler resource_handler_ " << resource_handler_ << " resource_request_ " << resource_request_;
+    LOG(ERROR) << "scheme_handler resource_handler_ " << resource_handler_
+               << " resource_request_ " << resource_request_;
   }
-  if (resource_handler_) {
-    delete resource_handler_;
-    resource_handler_ = nullptr;
+}
+
+bool NWebPipeResourceHandler::Release() const {
+  if (ref_count_.Release()) {
+    delete static_cast<const NWebPipeResourceHandler*>(this);
+    return true;
   }
-  if (resource_request_) {
-    delete resource_request_;
-    resource_request_ = nullptr;
+
+  if (HasOneRef() && (canceled_ || finished_ || finished_with_error_)) {
+    CallOnRequestStop();
   }
+  return false;
 }
 
 }  // namespace OHOS::NWeb

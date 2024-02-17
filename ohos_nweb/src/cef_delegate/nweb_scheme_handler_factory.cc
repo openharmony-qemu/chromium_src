@@ -184,7 +184,7 @@ void NWebSchemeHandlerFactory::OnRequestStop(
     const ArkWeb_ResourceRequest* resource_request,
     const std::string& web_tag,
     bool from_service_worker) {
-  if (scheme_handler_for_sw_) {
+  if (from_service_worker) {
     if (!scheme_handler_for_sw_ || !scheme_handler_for_sw_->on_request_stop) {
       LOG(ERROR) << "scheme_handler handler for service worker is not found.";
       return;

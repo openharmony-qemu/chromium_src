@@ -229,7 +229,7 @@ ARKWEB_EXPORT uint64_t
 OH_ArkWebPostDataStream_GetSize(const ArkWeb_PostDataStream* post_data_stream) {
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post data stream is nullptr";
-    return -1;
+    return 0;
   }
 
   return post_data_stream->GetSize();
@@ -239,7 +239,7 @@ ARKWEB_EXPORT uint64_t OH_ArkWebPostDataStream_GetPosition(
     const ArkWeb_PostDataStream* post_data_stream) {
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post data stream is nullptr";
-    return -1;
+    return 0;
   }
 
   return post_data_stream->GetPosition();

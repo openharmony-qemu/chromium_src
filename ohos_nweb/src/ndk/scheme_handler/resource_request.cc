@@ -110,7 +110,7 @@ HeaderValue::HeaderValue(const std::string& key, const std::string& value)
 ArkWeb_RequestHeaderList_::ArkWeb_RequestHeaderList_(
     const ArkWeb_ResourceRequest* request) {
   CefRequest::HeaderMap headers;
-  if (!request || request->cef_request) {
+  if (!request || !request->cef_request) {
     return;
   }
   request->cef_request->GetHeaderMap(headers);

@@ -17,6 +17,7 @@
 #define CONTENT_PUBLIC_BROWSER_NATIVE_EMBED_INFO_H_
 
 #include <string>
+#include <map>
 
 #include "content/common/content_export.h"
 #include "ui/gfx/geometry/size.h"
@@ -30,10 +31,12 @@ struct CONTENT_EXPORT NativeEmbedInfo {
   NativeEmbedInfo();
   NativeEmbedInfo(int native_embed_id,
                   GURL url,
-                  std::string element_id,
-                  std::string native_type,
-                  std::string native_source,
-                  gfx::Size size);
+                  std::string& element_id,
+                  std::string& native_type,
+                  std::string& native_source,
+                  std::string& tag,
+                  gfx::Size size,
+                  std::map<std::string, std::string>& params);
   NativeEmbedInfo(const NativeEmbedInfo& other);
   NativeEmbedInfo& operator=(const NativeEmbedInfo& other);
   NativeEmbedInfo(NativeEmbedInfo&& other);
@@ -45,7 +48,9 @@ struct CONTENT_EXPORT NativeEmbedInfo {
   std::string embed_element_id;
   std::string native_type;
   std::string native_source;
+  std::string tag;
   gfx::Size size;
+  std::map<std::string, std::string> params;
 };
 
 CONTENT_EXPORT std::ostream& operator<<(std::ostream& out,

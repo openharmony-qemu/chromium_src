@@ -380,7 +380,7 @@ void NWebImpl::OnDestroy() {
     (destroyCallback_)(webName_.c_str());
     destroyCallback_ = nullptr;
   } else {
-    WVLOG_E("NWebImpl::OnDestroy destroyCallback_ is null");
+    WVLOG_I("NWebImpl::OnDestroy destroy callback is not set");
   }
 
   if (g_nweb_count == 0) {

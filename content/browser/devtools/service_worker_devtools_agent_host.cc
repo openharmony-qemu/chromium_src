@@ -230,7 +230,8 @@ bool ServiceWorkerDevToolsAgentHost::AttachSession(DevToolsSession* session,
   session->AddHandler(std::make_unique<protocol::InspectorHandler>());
   session->AddHandler(std::make_unique<protocol::NetworkHandler>(
       GetId(), devtools_worker_token_, GetIOContext(), base::DoNothing(),
-      session->GetClient()->MayReadLocalFiles()));
+      session->GetClient()->MayReadLocalFiles(),
+      session->GetClient()->MayAttachToBrowser()));
 
   session->AddHandler(std::make_unique<protocol::FetchHandler>(
       GetIOContext(),

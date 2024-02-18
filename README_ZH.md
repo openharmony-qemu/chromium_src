@@ -126,15 +126,6 @@
 
     配套OpenHarmony 4.1 Beta1 分支：master114_20231218
 
-| 黄区梧桐分支名称(作用)  | 黄区对应的webview仓分支  | 对应的制品仓目标分支  | 黄区romm取daily版本链接  |
-|---|---|---|---|
-| huawei/ohos/114_20240126_5.0_dev(开发分支：5.0新需求+4.1的bug修复代码合入)  | br_feature_charlotte_next_ap_20240124  | HarmonyOS-Dev-ALL-Global-Full-Version5  | https://3ms.huawei.com/hi/group/3950332/wiki_7727913.html  |
-| huawei/ohos/114_20240118_dev(开发分支：4.1的bug修复代码合入)  | huawei/EMUI/HarmonyOS/hmos_trunk/3.2_Release_20240118   | HarmonyOS-Dev-ALL-Global-Full-None  | https://wiki.huawei.com/domains/4972/wiki/8/WIKI20230216758695?title=6bfe2bf5  |
-| huawei/ohos/114_trunk(主干)  |huawei/EMUI/HarmonyOS/hmos_trunk/3.2_Release   | HarmonyOS-Master-ALL-Global-Full-None  | https://wiki.huawei.com/domains/4972/wiki/8/WIKI20230216758695?title=6bfe2bf5 |
-|huawei/ohos/114_20240126_5.0_dev_hdd_blt_20240201(5.0特性2D:支撑 5.0 API12-2D Debug版本发布)   | br_release_hdd_20240201_ap  |HarmonyOS-Dev-ALL-Global-Full-Version5hdd20240201   | https://3ms.huawei.com/hi/group/3950332/wiki_7731496.html  |
-|4.1的TR5分支：huawei/ohos/114_trunk_4.1_tr5_20240205   | huawei/EMUI/HarmonyOS/hmos_trunk/3.2_Release_proto2_20240131  | HarmonyOS4.1.0-Release-ALL-Global-Full-None  | https://3ms.huawei.com/hi/group/3950332/wiki_7730290.html  |
-
-
 ## 相关仓
 [chromium_cef](https://gitee.com/openharmony-tpc/chromium_cef)
 

@@ -446,6 +446,14 @@
 "dependence": "",
 "default": "true"
 },
+{ "name": "OHOS_PDF",
+"owner": "",
+"desc": "",
+"effect":"main gn blink_core other",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},
 { "name": "OHOS_PERFORMANCE_DISCARD_BG_WEBPAGE",
 "owner": "",
 "desc": "",

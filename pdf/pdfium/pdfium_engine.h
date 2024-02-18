@@ -113,6 +113,9 @@ class PDFiumEngine : public PDFEngine,
   void ZoomUpdated(double new_zoom_level) override;
   void RotateClockwise() override;
   void RotateCounterclockwise() override;
+#if defined(OHOS_PDF)
+  void ResetDesiredLayoutOptions() override;
+#endif
   bool IsReadOnly() const override;
   void SetReadOnly(bool enable) override;
   void SetDocumentLayout(DocumentLayout::PageSpread page_spread) override;

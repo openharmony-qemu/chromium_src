@@ -2160,6 +2160,13 @@ void PDFiumEngine::RotateCounterclockwise() {
   ProposeNextDocumentLayout();
 }
 
+#if defined(OHOS_PDF)
+void PDFiumEngine::ResetDesiredLayoutOptions() {
+  DocumentLayout::Options default_options;
+  desired_layout_options_ = default_options;
+}
+#endif
+
 bool PDFiumEngine::IsReadOnly() const {
   return read_only_;
 }

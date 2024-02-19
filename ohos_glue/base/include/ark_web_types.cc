@@ -14,8 +14,44 @@
  */
 
 #include "base/include/ark_web_types.h"
+#include <codecvt>
+#include <locale>
+#include <sstream>
 #include "base/include/ark_web_log_utils.h"
 
+ArkWebU16String ArkWebU16StringClassToStruct(const std::u16string& class_value)
+{
+    ArkWebU16String struct_value = { .size = class_value.size(), .ark_web_mem_free_func = ArkWebMemFree };
+    if (struct_value.size > 0) {
+        struct_value.value = (char16_t*)ArkWebMemMalloc((struct_value.size + 1) * sizeof(char16_t));
+        memcpy((char*)struct_value.value, (char*)class_value.c_str(), struct_value.size * sizeof(char16_t));
+        struct_value.value[struct_value.size] = 0;
+    }
+
+    std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> converter;
+    std::ostringstream s;
+    s << converter.to_bytes(class_value);
+    std::string str = s.str();
+    ARK_WEB_BASE_DV_LOG("string is %{public}s,length is %{public}d", str.c_str(), struct_value.size);
+
+    return struct_value;
+}
+
+std::u16string ArkWebU16StringStructToClass(const ArkWebU16String& struct_value)
+{
+    std::u16string class_value;
+    if (struct_value.size > 0) {
+        class_value = struct_value.value;
+    }
+
+    std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> converter;
+    std::ostringstream s;
+    s << converter.to_bytes(class_value);
+    std::string str = s.str();
+    ARK_WEB_BASE_DV_LOG("string is %{public}s,length is %{public}d", str.c_str(), struct_value.size);
+
+    return class_value;
+}
 ArkWebString ArkWebStringClassToStruct(const std::string &class_value) {
   ArkWebString struct_value = {.size = class_value.size(),
                                .ark_web_mem_free_func = ArkWebMemFree};
@@ -46,6 +82,12 @@ std::string ArkWebStringStructToClass(const ArkWebString &struct_value) {
 void ArkWebStringStructRelease(ArkWebString &struct_value) {
   struct_value.size = 0;
   SAFE_FREE(struct_value.value, struct_value.ark_web_mem_free_func);
+}
+
+void ArkWebU16StringStructRelease(ArkWebU16String& struct_value)
+{
+    struct_value.size = 0;
+    SAFE_FREE(struct_value.value, struct_value.ark_web_mem_free_func);
 }
 
 ArkWebStringMap ArkWebStringMapClassToStruct(

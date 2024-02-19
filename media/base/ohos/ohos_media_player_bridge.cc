@@ -115,7 +115,7 @@ void OHOSMediaPlayerBridge::Prepare() {
       surfaceFormat,
       std::to_string(OHOS::NWeb::PixelFormatAdapter::PIXEL_FMT_RGBA_8888));
   consumer_surface_->SetQueueSize(3);
-  ret = player_->SetVideoSurface(consumer_surface_.get());
+  ret = player_->SetVideoSurface(consumer_surface_);
   if (ret != 0) {
     LOG(ERROR) << "SetVideoSurface error::ret=" << ret;
     consumer_surface_ = nullptr;
@@ -337,7 +337,7 @@ void OHOSMediaPlayerBridge::OnPlayerStateUpdate(
 }
 
 void OHOSMediaPlayerBridge::OnBufferAvailable(
-    std::unique_ptr<OHOS::NWeb::SurfaceBufferAdapter> buffer) {
+    std::shared_ptr<OHOS::NWeb::SurfaceBufferAdapter> buffer) {
   if (!task_runner_->BelongsToCurrentThread()) {
     task_runner_->PostTask(
         FROM_HERE,

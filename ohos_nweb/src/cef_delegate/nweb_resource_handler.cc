@@ -172,10 +172,12 @@ bool NWebResourceHandler::ReadResourceDataByHap(){
     LOG(INFO) << "intercept Read Resource path : " << resourcePath;
     std::string hapPath = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(switches::kOhosHapPath);
     auto resourceInstance = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetResourceAdapter(hapPath);
-    if (!resourceInstance->GetRawFileData(resourcePath, resource_data_len_, resource_data_, false)) {
+    uint8_t* data;
+    if (!resourceInstance->GetRawFileData(resourcePath, resource_data_len_, data, false)) {
       LOG(ERROR) << "intercept Read Resource path fail : " << resourcePath;
       return false;
     }
+    resource_data_.reset(data);
   }
   return true;
 }

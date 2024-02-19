@@ -181,12 +181,7 @@ if (is_fuchsia) {
 
 if (is_ohos) {
   import("//build/config/ohos/config.gni")
-  config("ohos_system_libs") {
-    libs = [ "nweb_ohos_adapter.z" ]
-
-    include_dirs = ohos_src_includes
-    lib_dirs = ohos_libs_dir
-  }
+  include_dirs = ohos_src_includes
 }
 
 config("perfetto_config") {
@@ -1026,7 +1021,6 @@ component("base") {
       "message_loop/message_pump_ohos.cc",
       "profiler/stack_sampler_android.cc",
     ]
-    public_configs = [ ":ohos_system_libs" ]
   }
 
   if (is_linux || is_chromeos || is_ohos) {
@@ -1080,6 +1074,12 @@ component("base") {
     "//build/config/compiler:compiler_buildflags",
     "//third_party/modp_b64",
   ]
+  
+  if (is_ohos) { 
+    deps += [
+      "//third_party/ohos_ndk:ohos_isolation",
+    ]
+  }
 
   # `raw_ptr` cannot be made a component due to CRT symbol issues.
   # Its gateway to being a component is through `//base`, so we have

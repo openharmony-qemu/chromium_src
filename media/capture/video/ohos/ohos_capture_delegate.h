@@ -60,7 +60,7 @@ class CAPTURE_EXPORT OHOSCaptureDelegate final {
   void MaybeSuspend();
   void Resume();
   void OnBufferAvailable(std::shared_ptr<CameraSurfaceAdapter> surface,
-                         std::unique_ptr<CameraSurfaceBufferAdapter> buffer,
+                         std::shared_ptr<CameraSurfaceBufferAdapter> buffer,
                          CameraRotationInfo rotation_info);
 
   void SetRotation(int rotation);

@@ -97,6 +97,7 @@ int32_t NetConnCallbackImpl::NetUnavailable() {
 }
 
 std::shared_ptr<NetConnCallbackImpl> g_net_connect_callback = nullptr;
+int32_t g_callback_id = -1;
 #endif
 }  // namespace
 
@@ -126,9 +127,9 @@ NetworkChangeNotifierPassive::NetworkChangeNotifierPassive(
 #if BUILDFLAG(IS_OHOS)
   g_net_connect_callback = std::make_shared<NetConnCallbackImpl>(this);
   if (ohos_net_conn_adapter_) {
-    int32_t ret =
+    g_callback_id =
         ohos_net_conn_adapter_->RegisterNetConnCallback(g_net_connect_callback);
-    if (ret != 0) {
+    if (g_callback_id < 0) {
       LOG(ERROR) << "register ohos net connect callback failed.";
     }
   }
@@ -140,7 +141,7 @@ NetworkChangeNotifierPassive::~NetworkChangeNotifierPassive() {
 #if BUILDFLAG(IS_OHOS)
   if (ohos_net_conn_adapter_) {
     int32_t ret = ohos_net_conn_adapter_->UnregisterNetConnCallback(
-        g_net_connect_callback);
+        g_callback_id);
     if (ret != 0) {
       LOG(ERROR) << "unregister ohos net connect callback failed.";
     }

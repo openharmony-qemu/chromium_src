@@ -13,11 +13,12 @@
 #include "ui/events/gestures/blink/web_gesture_curve_impl.h"
 #if BUILDFLAG(IS_OHOS)
 #include "base/report_loss_frame.h"
-#include "hitrace_adapter_impl.h"
+#include "ohos_adapter_helper.h"
 #endif
 
 using blink::WebInputEvent;
 using blink::WebGestureEvent;
+using blink::WebInputEvent;
 
 namespace {
 constexpr base::TimeDelta kFrameDelta = base::Seconds(1.0 / 60.0);
@@ -142,8 +143,10 @@ bool FlingController::ObserveAndMaybeConsumeGestureEvent(
       WebInputEvent::Type::kGestureFlingStart) {
     ProcessGestureFlingStart(gesture_event);
 #if BUILDFLAG(IS_OHOS)
-  ReportLossFrame::GetInstance()->SetScrollState(ScrollMode::START);
-  OHOS::NWeb::HiTraceAdapterImpl::GetInstance().StartAsyncTrace("WEB_LIST_FLING", 0);
+    ReportLossFrame::GetInstance()->SetScrollState(ScrollMode::START);
+    OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .GetHiTraceAdapterInstance()
+        .StartAsyncTrace("WEB_LIST_FLING", 0);
 #endif
     return true;
   }
@@ -373,7 +376,8 @@ void FlingController::EndCurrentFling(base::TimeTicks current_time) {
 #if BUILDFLAG(IS_OHOS)
   ReportLossFrame::GetInstance()->SetScrollState(ScrollMode::STOP);
   ReportLossFrame::GetInstance()->Report();
-  OHOS::NWeb::HiTraceAdapterImpl::GetInstance().FinishAsyncTrace("WEB_LIST_FLING", 0);
+  OHOS::NWeb::OhosAdapterHelper::GetInstance().GetHiTraceAdapterInstance()
+      .FinishAsyncTrace("WEB_LIST_FLING", 0);
 #endif
   current_fling_parameters_ = ActiveFlingParameters();
 

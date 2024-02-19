@@ -531,8 +531,7 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
   int32_t ret =
       OHOS::NWeb::OhosAdapterHelper::GetInstance()
           .GetWindowAdapterInstance()
-          .NativeWindowHandleOpt(reinterpret_cast<void*>(window),
-                                 OHOS::NWeb::WindowAdapter::SET_BUFFER_GEOMETRY,
+          .NativeWindowSetBufferGeometry(reinterpret_cast<void*>(window),
                                  create_info->GetWidth(), create_info->GetHeight());
 
   if (ret == OHOS::NWeb::GSErrorCode::GSERROR_OK) {

@@ -59,7 +59,7 @@ void LocationProviderOhos::StopProvider() {
   is_running_ = false;
   if (!locator_)
     return;
-  locator_->StopLocating(locator_callback_);
+  locator_->StopLocating(callback_id_);
 }
 
 const mojom::GeopositionResult* LocationProviderOhos::GetPosition() {
@@ -73,7 +73,7 @@ void LocationProviderOhos::OnPermissionGranted() {
 }
 
 void LocationProviderCallback::OnNewLocationAvailable(
-    const std::unique_ptr<OHOS::NWeb::LocationInfo>& location) {
+    const std::shared_ptr<OHOS::NWeb::LocationInfo> location) {
   LOG(DEBUG) << "LocationProviderCallback::OnNewLocationAvailable";
   if (!location)
     return;
@@ -111,7 +111,7 @@ void LocationProviderOhos::RequestLocationUpdate(bool high_accuracy) {
     return;
   }
 
-  std::unique_ptr<OHOS::NWeb::LocationRequestConfig> request_config =
+  std::shared_ptr<OHOS::NWeb::LocationRequestConfig> request_config =
       OHOS::NWeb::LocationInstance::GetInstance().CreateLocationRequestConfig();
   SetRequestConfig(request_config, high_accuracy);
   if (!locator_->IsLocationEnabled()) {
@@ -121,8 +121,8 @@ void LocationProviderOhos::RequestLocationUpdate(bool high_accuracy) {
     return;
   }
 
-  bool ret = locator_->StartLocating(request_config, locator_callback_);
-  if (!ret) {
+  callback_id_ = locator_->StartLocating(request_config, locator_callback_);
+  if (callback_id_ == -1) {
     LOG(ERROR) << "StartLocating failed. Can not get location";
     locator_callback_->OnErrorReport(
         LocationProviderCallback::LOCATION_GET_FAILED);
@@ -138,7 +138,7 @@ void LocationProviderOhos::CreateLocationManagerIfNeeded() {
 }
 
 void LocationProviderOhos::SetRequestConfig(
-    std::unique_ptr<OHOS::NWeb::LocationRequestConfig>& request_config,
+    std::shared_ptr<OHOS::NWeb::LocationRequestConfig>& request_config,
     bool high_accuracy) {
   if (!request_config)
     return;
@@ -160,7 +160,7 @@ void LocationProviderCallback::NewGeopositionReport(
 }
 
 void LocationProviderCallback::OnLocationReport(
-    const std::unique_ptr<OHOS::NWeb::LocationInfo>& location) {
+    const std::shared_ptr<OHOS::NWeb::LocationInfo> location) {
   OnNewLocationAvailable(location);
 }
 

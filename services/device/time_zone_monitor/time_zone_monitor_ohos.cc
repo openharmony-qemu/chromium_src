@@ -9,6 +9,7 @@
 #include "ohos_adapter_helper.h"
 #include "time_zone_monitor.h"
 
+using namespace OHOS::NWeb;
 namespace device {
 
 namespace {
@@ -34,6 +35,19 @@ private:
 };
 
 namespace {
+
+class TimeZoneMonitorOhosImpl;
+
+class TimezoneEventCallback : public OHOS::NWeb::TimezoneEventCallbackAdapter {
+public:
+  TimezoneEventCallback(TimeZoneMonitorOhosImpl* impl) : impl_(impl) {}
+
+  void TimezoneChanged(std::shared_ptr<WebTimezoneInfo> info) override;
+
+private:
+  TimeZoneMonitorOhosImpl* impl_;
+};
+
 class TimeZoneMonitorOhosImpl
     : public base::RefCountedThreadSafe<TimeZoneMonitorOhosImpl> {
 public:
@@ -52,9 +66,8 @@ public:
             return;
         }
 
-        timezoneClient->RegTimezoneEvent([this](OHOS::NWeb::WebTimezoneInfo& info) {
-            this->TimezoneChanged(info);
-        });
+        event_callback_ = std::make_shared<TimezoneEventCallback>(this);
+        timezoneClient->RegTimezoneEvent(event_callback_);
 
         StartListening();
     }
@@ -88,16 +101,26 @@ public:
     }
 
 private:
-    void TimezoneChanged(OHOS::NWeb::WebTimezoneInfo& info) {
+   friend class TimezoneEventCallback; 
+   
+    void TimezoneChanged(std::shared_ptr<WebTimezoneInfo> info) {
         LOG(DEBUG) << "receive timezone changed.";
-        std::string timezone = info.GetTzId();
+        std::string timezone = info->GetTzId();
         owner_->NotifyClientsFromImpl(timezone);
     }
+
+    std::shared_ptr<TimezoneEventCallbackAdapter> event_callback_;
 
     TimeZoneMonitorOhos* owner_;
     bool isListen;
     std::unique_ptr<OHOS::NWeb::DateTimeFormatAdapter> timezoneClient;
 };
+}
+
+void TimezoneEventCallback::TimezoneChanged(std::shared_ptr<WebTimezoneInfo> info) {
+  if (impl_) {
+    impl_->TimezoneChanged(info);
+  }
 }
 
 TimeZoneMonitorOhos::TimeZoneMonitorOhos() : TimeZoneMonitor(), impl_() {

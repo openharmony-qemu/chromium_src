@@ -82,7 +82,7 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   void OnEnd();
   void OnError(int32_t errorCode);
   void OnBufferAvailable(
-      std::unique_ptr<OHOS::NWeb::SurfaceBufferAdapter> buffer);
+      std::shared_ptr<OHOS::NWeb::SurfaceBufferAdapter> buffer);
   void OnPlayerStateUpdate(
       OHOS::NWeb::PlayerAdapter::PlayerStates player_state);
   void OnVideoSizeChanged(int32_t width, int32_t height);
@@ -99,8 +99,8 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
 
   const std::string surfaceFormat = "SURFACE_FORMAT";
   std::unique_ptr<OHOS::NWeb::PlayerAdapter> player_ = nullptr;
-  std::deque<std::unique_ptr<OHOS::NWeb::SurfaceBufferAdapter>> cached_buffers_;
-  std::unique_ptr<OHOS::NWeb::IConsumerSurfaceAdapter> consumer_surface_ =
+  std::deque<std::shared_ptr<OHOS::NWeb::SurfaceBufferAdapter>> cached_buffers_;
+  std::shared_ptr<OHOS::NWeb::IConsumerSurfaceAdapter> consumer_surface_ =
       nullptr;
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
   Client* client_;

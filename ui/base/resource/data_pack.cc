@@ -289,8 +289,10 @@ bool DataPack::LoadFromPath(const base::FilePath& path) {
       auto resourceInstance =
           OHOS::NWeb::OhosAdapterHelper::GetInstance().GetResourceAdapter();
 
-      std::unique_ptr<OHOS::NWeb::OhosFileMapper> fileMapper = nullptr;
-      if (!resourceInstance->GetRawFileMapper(pathHap, fileMapper, true)) {
+      std::shared_ptr<OHOS::NWeb::OhosFileMapper> fileMapper =
+        resourceInstance->GetRawFileMapper(pathHap, true);
+ 
+      if (!fileMapper) {
         LOG(ERROR) << "DataPack::LoadFromPath couldn't data file: "
                    << pathHap.c_str();
         return false;

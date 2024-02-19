@@ -547,11 +547,11 @@ int V8Initializer::LoadV8SnapshotFromFileByHap(
   auto resourceInstance =
       OHOS::NWeb::OhosAdapterHelper::GetInstance().GetResourceAdapter();
 
-  std::unique_ptr<OHOS::NWeb::OhosFileMapper> fileMapper = nullptr;
-  if (!resourceInstance->GetRawFileMapper(kSnapshotFileNameHap, fileMapper,
-                                          true)) {
-    LOG(FATAL) << "couldn't mmap snapshot_blob data file "
-               << kSnapshotFileNameHap;
+  std::shared_ptr<OHOS::NWeb::OhosFileMapper> fileMapper = 
+    resourceInstance->GetRawFileMapper(kSnapshotFileNameHap, true);
+  
+  if (!fileMapper) {
+    LOG(FATAL) << "couldn't mmap snapshot_blob data file " << kSnapshotFileNameHap;
     return 1;
   }
   LOG(INFO) << "snapshot_blob data file length: " << fileMapper->GetDataLen();

@@ -130,7 +130,7 @@ class ClipboardOHOSInternal {
 
   ClipboardOHOSInternal() {
     observer_ = std::make_shared<PasteboardObserverOhos>();
-    OhosAdapterHelper::GetInstance()
+    observer_id_ = OhosAdapterHelper::GetInstance()
         .GetPasteBoard()
         .AddPasteboardChangedObserver(observer_);
     observer_->SetClipboardInternal(this);
@@ -145,7 +145,7 @@ class ClipboardOHOSInternal {
   ~ClipboardOHOSInternal() {
     OhosAdapterHelper::GetInstance()
         .GetPasteBoard()
-        .RemovePasteboardChangedObserver(observer_);
+        .RemovePasteboardChangedObserver(observer_id_);
   }
 
   void Clear() {
@@ -456,6 +456,7 @@ class ClipboardOHOSInternal {
   // Sequence number uniquely identifying clipboard state.
   ClipboardSequenceNumberToken sequence_number_;
   std::shared_ptr<PasteboardObserverOhos> observer_;
+  int32_t observer_id_ = -1;
   ClipboardState state_ = ClipboardState::kOutOfDate;
   std::shared_ptr<ClipboardOhosReadData> read_data_ = nullptr;
   std::unique_ptr<OHOS::NWeb::OhosResourceAdapter> resource_adapter_ = nullptr;

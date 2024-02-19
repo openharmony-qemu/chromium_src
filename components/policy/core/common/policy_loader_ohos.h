@@ -8,12 +8,15 @@
 #include "base/task/sequenced_task_runner.h"
 #include "components/policy/core/common/async_policy_loader.h"
 #include "components/policy/policy_export.h"
+#include "enterprise_device_management_adapter.h"
 
 namespace base {
 class Value;
 }
 
 namespace policy {
+
+class PolicyChangedEventCallback;
 
 class POLICY_EXPORT PolicyLoaderOhos : public AsyncPolicyLoader {
  public:
@@ -28,6 +31,18 @@ class POLICY_EXPORT PolicyLoaderOhos : public AsyncPolicyLoader {
 
  private:
   void LoadOhosPolicy(const std::string& json, PolicyBundle* bundle);
+  
+  std::shared_ptr<PolicyChangedEventCallback> event_callback_;
+};
+
+class PolicyChangedEventCallback : public OHOS::NWeb::EdmPolicyChangedEventCallbackAdapter {
+ public: 
+  PolicyChangedEventCallback(PolicyLoaderOhos*);
+ 
+  void Changed() override;
+
+ private:
+  PolicyLoaderOhos* loader_;
 };
 
 }  // namespace policy

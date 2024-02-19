@@ -64,7 +64,7 @@ class OnTextChangedListenerImpl : public IMFTextListenerAdapter {
     }
   }
 
-  void SendFunctionKey(const IMFAdapterFunctionKey& functionKey) override {
+  void SendFunctionKey(std::shared_ptr<IMFAdapterFunctionKeyAdapter> functionKey) override {
     handler_->SendEnterKeyEvent();
   }
 

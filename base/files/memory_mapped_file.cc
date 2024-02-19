@@ -47,7 +47,7 @@ MemoryMappedFile::~MemoryMappedFile() {
 
 #if BUILDFLAG(IS_OHOS) && (defined(OHOS_HAP_DECOMPRESSED) ||defined(OHOS_MEM))
 void MemoryMappedFile::SetOhosFileMapper(
-    std::unique_ptr<OHOS::NWeb::OhosFileMapper>& mapper) {
+    std::shared_ptr<OHOS::NWeb::OhosFileMapper>& mapper) {
   if (IsValid()) {
     if (customizeData_) {
       if (mapper_ == nullptr) {
@@ -68,9 +68,9 @@ void MemoryMappedFile::SetOhosFileMapper(
     data_ = reinterpret_cast<uint8_t*>(mapper_->GetDataPtr());
     length_ = mapper_->GetDataLen();
   } else {
-    std::unique_ptr<uint8_t[]> dest;
-    mapper->UnzipData(dest, length_);
-    data_ = dest.release();
+    uint8_t* tmp;
+    mapper->UnzipData(tmp, length_);
+    data_ = tmp;
   }
 }
 #endif

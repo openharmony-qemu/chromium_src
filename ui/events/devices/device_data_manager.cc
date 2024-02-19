@@ -58,36 +58,36 @@ class MMIListenerAdapterImpl : public OHOS::NWeb::MMIListenerAdapter {
     if (!ui::DeviceDataManager::HasInstance()) {
       return;
     }
-    mmi_adapter_->GetDeviceInfo(
-        deviceId, [sequenced_task_runner = sequenced_task_runner_](
-                      const OHOS::NWeb::MMIDeviceInfoAdapter& info) {
-          if (!sequenced_task_runner) {
-            LOG(ERROR) << "OnDeviceAdded sequenced_task_runner is null";
-            return;
-          }
-          sequenced_task_runner->PostTask(
-              FROM_HERE,
-              base::BindOnce(
-                  [](const OHOS::NWeb::MMIDeviceInfoAdapter& info) {
-                    ui::InputDevice device(
-                        info.id, ui::InputDeviceType::INPUT_DEVICE_USB,
-                        info.name);
-                    if (info.type & TAG_MOUSE_TYPE) {
-                      ui::DeviceDataManager::GetInstance()->AddMouseDevice(
-                          device);
-                    }
-                    if (info.type & TAG_TOUCHPAD_TYPE) {
-                      ui::DeviceDataManager::GetInstance()->AddTouchpadDevice(
-                          device);
-                    }
-                    if (info.type & TAG_KEYBOARD_TYPE) {
-                      ui::DeviceDataManager::GetInstance()->AddKeyboardDevice(
-                          device);
-                    }
-                  },
-                  info));
-        });
+   
+    OHOS::NWeb::MMIDeviceInfoAdapter info;
+    mmi_adapter_->GetDeviceInfo(deviceId, info);
+    if (!sequenced_task_runner_) {
+      LOG(ERROR) << "OnDeviceAdded sequenced_task_runner is null";
+      return;
+    }
+    sequenced_task_runner_->PostTask(
+        FROM_HERE,
+        base::BindOnce(
+            [](const OHOS::NWeb::MMIDeviceInfoAdapter& info) {
+              ui::InputDevice device(
+                  info.id, ui::InputDeviceType::INPUT_DEVICE_USB,
+                  info.name);
+              if (info.type & TAG_MOUSE_TYPE) {
+                ui::DeviceDataManager::GetInstance()->AddMouseDevice(
+                    device);
+              }
+              if (info.type & TAG_TOUCHPAD_TYPE) {
+                ui::DeviceDataManager::GetInstance()->AddTouchpadDevice(
+                    device);
+              }
+              if (info.type & TAG_KEYBOARD_TYPE) {
+                ui::DeviceDataManager::GetInstance()->AddKeyboardDevice(
+                    device);
+              }
+            },
+            info));
   }
+
   void OnDeviceRemoved(int32_t deviceId, const std::string& type) override {
     if (ui::DeviceDataManager::HasInstance()) {
       if (!sequenced_task_runner_) {
@@ -133,37 +133,35 @@ DeviceDataManager::DeviceDataManager()
       std::make_shared<MMIListenerAdapterImpl>(sequenced_task_runner_);
   mmi_adapter_->RegisterDevListener(CHANGED_TYPE, dev_listener_);
   std::vector<int32_t> device_ids;
-  mmi_adapter_->GetDeviceIds(
-      [&device_ids](std::vector<int32_t>& ids) { device_ids = ids; });
+  mmi_adapter_->GetDeviceIds(device_ids);
   for (auto id : device_ids) {
-    mmi_adapter_->GetDeviceInfo(
-        id, [this](const OHOS::NWeb::MMIDeviceInfoAdapter& info) {
-          if (!this->sequenced_task_runner_) {
-            LOG(ERROR)
-                << "DeviceDataManager ctor sequenced_task_runner is null";
-            return;
-          }
+    OHOS::NWeb::MMIDeviceInfoAdapter info;
+    mmi_adapter_->GetDeviceInfo(id, info);
+    if (!sequenced_task_runner_) {
+      LOG(ERROR)
+          << "DeviceDataManager ctor sequenced_task_runner is null";
+      return;
+    }
 
-          this->sequenced_task_runner_->PostTask(
-              FROM_HERE, base::BindOnce(
-                             [](const OHOS::NWeb::MMIDeviceInfoAdapter& info,
-                                DeviceDataManager* device_data_manager) {
-                               ui::InputDevice device(
-                                   info.id,
-                                   ui::InputDeviceType::INPUT_DEVICE_USB,
-                                   info.name);
-                               if (info.type & TAG_MOUSE_TYPE) {
-                                 device_data_manager->AddMouseDevice(device);
-                               }
-                               if (info.type & TAG_TOUCHPAD_TYPE) {
-                                 device_data_manager->AddTouchpadDevice(device);
-                               }
-                               if (info.type & TAG_KEYBOARD_TYPE) {
-                                 device_data_manager->AddKeyboardDevice(device);
-                               }
-                             },
-                             info, base::Unretained(this)));
-        });
+    sequenced_task_runner_->PostTask(
+        FROM_HERE, base::BindOnce(
+                       [](const OHOS::NWeb::MMIDeviceInfoAdapter& info,
+                          DeviceDataManager* device_data_manager) {
+                         ui::InputDevice device(
+                             info.id,
+                             ui::InputDeviceType::INPUT_DEVICE_USB,
+                             info.name);
+                         if (info.type & TAG_MOUSE_TYPE) {
+                           device_data_manager->AddMouseDevice(device);
+                         }
+                         if (info.type & TAG_TOUCHPAD_TYPE) {
+                           device_data_manager->AddTouchpadDevice(device);
+                         }
+                         if (info.type & TAG_KEYBOARD_TYPE) {
+                           device_data_manager->AddKeyboardDevice(device);
+                         }
+                       },
+                       info, base::Unretained(this)));
   }
 #endif  // defined(OHOS_INPUT_EVENTS)
 }

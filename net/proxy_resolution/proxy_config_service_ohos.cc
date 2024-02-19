@@ -451,19 +451,21 @@ class ProxyConfigServiceOHOS::Delegate
   bool has_proxy_override_;
 };
 
+void NetProxyEventCallback::Changed(const std::string& host, const uint16_t& port, const std::string& pacUrl, const std::vector<std::string>& exclusionList) {
+  if (service_) {
+    service_->ProxySettingsChangedTo(host, port, pacUrl, exclusionList);
+  }
+}
+
 ProxyConfigServiceOHOS::ProxyConfigServiceOHOS(
     const scoped_refptr<base::SequencedTaskRunner>& main_task_runner)
     : delegate_(
           new Delegate(main_task_runner, base::BindRepeating(&GetProperty))) {
   delegate_->FetchInitialConfig();
+  event_callback_ = std::make_shared<NetProxyEventCallback>(this);
 
   OHOS::NWeb::OhosAdapterHelper::GetInstance()
-      .GetNetProxyInstance()
-      .RegNetProxyEvent([this](std::string& host, uint16_t& port,
-                               const std::string& pac_url,
-                               const std::vector<std::string>& exclusionList) {
-        this->ProxySettingsChangedTo(host, port, pac_url, exclusionList);
-      });
+  .GetNetProxyInstance().RegNetProxyEvent(event_callback_);
 }
 
 ProxyConfigServiceOHOS::~ProxyConfigServiceOHOS() {}

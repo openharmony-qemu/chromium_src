@@ -30,12 +30,12 @@ class LocationProviderCallback : public OHOS::NWeb::LocationCallbackAdapter {
 
   // ILocatorCallback implementation.
   void OnLocationReport(
-      const std::unique_ptr<OHOS::NWeb::LocationInfo>& location) override;
+      const std::shared_ptr<OHOS::NWeb::LocationInfo> location) override;
   void OnLocatingStatusChange(const int status) override;
   void OnErrorReport(const int errorCode) override;
 
   void OnNewLocationAvailable(
-      const std::unique_ptr<OHOS::NWeb::LocationInfo>& location);
+      const std::shared_ptr<OHOS::NWeb::LocationInfo> location);
   void OnNewErrorAvailable(std::string message);
   void SetUpdateCallback(const UpdateCallback& callback) {
     callback_ = callback;
@@ -70,15 +70,16 @@ class LocationProviderOhos : public LocationProvider {
   void RequestLocationUpdate(bool high_accuracy);
   void CreateLocationManagerIfNeeded();
   void SetRequestConfig(
-      std::unique_ptr<OHOS::NWeb::LocationRequestConfig>& requestConfig,
+      std::shared_ptr<OHOS::NWeb::LocationRequestConfig>& requestConfig,
       bool high_accuracy);
 
-  std::unique_ptr<OHOS::NWeb::LocationProxyAdapter> locator_;
+  std::shared_ptr<OHOS::NWeb::LocationProxyAdapter> locator_;
 
   LocationProviderUpdateCallback callback_;
 
   bool is_running_ = false;
   std::shared_ptr<LocationProviderCallback> locator_callback_ = nullptr;
+  int32_t callback_id_ = -1;
 };
 
 }  // namespace device

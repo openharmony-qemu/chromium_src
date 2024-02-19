@@ -643,6 +643,12 @@ class CC_EXPORT LayerTreeImpl {
 
   void RegisterSelection(const LayerSelection& selection);
 
+#ifdef OHOS_CLIPBOARD
+  void RegisterClippedVisualViewportSelectionBounds(
+    const gfx::Rect& clipped_selection_bounds);
+  gfx::Rect GetClippedVisualViewportSelectionBounds() const;
+#endif
+
   bool HandleVisibilityChanged() const { return handle_visibility_changed_; }
   void ResetHandleVisibilityChanged();
 
@@ -857,6 +863,10 @@ class CC_EXPORT LayerTreeImpl {
   ViewportPropertyIds viewport_property_ids_;
 
   LayerSelection selection_;
+
+#ifdef OHOS_CLIPBOARD
+  gfx::Rect clipped_selection_bounds_;
+#endif
 
   scoped_refptr<SyncedScale> page_scale_factor_;
   float min_page_scale_factor_;

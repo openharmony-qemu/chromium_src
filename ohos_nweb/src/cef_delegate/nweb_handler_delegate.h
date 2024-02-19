@@ -481,6 +481,7 @@ class NWebHandlerDelegate : public CefClient,
       CefRefPtr<CefFrame> frame,
       const CefPoint& location,
       const CefSize& size,
+      const CefRect& select_bounds,
       CefContextMenuHandler::QuickMenuEditStateFlags edit_state_flags,
       CefRefPtr<CefRunQuickMenuCallback> callback) override;
   bool OnQuickMenuCommand(

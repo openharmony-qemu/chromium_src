@@ -333,7 +333,7 @@ struct ArgsExtractor<R(Args...)> {
 };
 
 template <typename F>
-using ReturnTypeOf = MaybeBindTypeHelper<F>::ReturnType;
+using ReturnTypeOf = typename MaybeBindTypeHelper<F>::ReturnType;
 
 template <size_t N, typename F>
 using NthArgumentOf = std::tuple_element_t<

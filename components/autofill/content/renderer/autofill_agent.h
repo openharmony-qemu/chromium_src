@@ -260,7 +260,7 @@ class AutofillAgent : public content::RenderFrameObserver,
   void FormElementReset(const blink::WebFormElement& form) override;
   void PasswordFieldReset(const blink::WebInputElement& element) override;
 
-  void HandleFocusChangeComplete();
+  void HandleFocusChangeComplete(bool focused_node_was_last_clicked);
   void SendFocusedInputChangedNotificationToBrowser(
       const blink::WebElement& node);
 
@@ -396,7 +396,7 @@ class AutofillAgent : public content::RenderFrameObserver,
   // doesn't use PasswordAutofillAgent to handle password form.
   bool query_password_suggestion_ = false;
 
-  bool focused_node_was_last_clicked_ = false;
+  bool last_left_mouse_down_or_gesture_tap_in_node_caused_focus_ = false;
   FieldRendererId last_clicked_form_control_element_for_testing_;
 
   FormTracker form_tracker_;

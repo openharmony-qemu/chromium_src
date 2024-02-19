@@ -97,6 +97,10 @@ class InProcessContextFactory::PerCompositorData
     vsync_interval_ = interval;
   }
   void SetOutputIsSecure(bool secure) override {}
+  void SetDrawRect(const gfx::Rect& new_rect) override {}
+  void SetDrawMode(int32_t mode) override {}
+  void SetCurrentFrameSinkId(const ::viz::FrameSinkId& frame_sink_id) override {}
+  void SetShouldFrameSubmissionBeforeDraw(bool should, SetShouldFrameSubmissionBeforeDrawCallback callback) override {}
 #if BUILDFLAG(IS_MAC)
   void SetVSyncDisplayID(int64_t display_id) override {}
 #endif

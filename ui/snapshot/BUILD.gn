@@ -108,6 +108,13 @@ test("snapshot_unittests") {
     "//ui/gl",
   ]
 
+  if (is_ohos) {
+    deps += [
+      "//content/public/browser:browser",
+      "//cef:libcef_static"
+    ]
+  }
+
   data_deps = [ "//testing/buildbot/filters:snapshot_unittests_filters" ]
 
   if (use_aura) {

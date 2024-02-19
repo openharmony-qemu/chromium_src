@@ -569,6 +569,18 @@ const base::FeatureParam<bool> kAutofillAblationStudyEnabledForPaymentsParam{
 const base::FeatureParam<int> kAutofillAblationStudyAblationWeightPerMilleParam{
     &kAutofillEnableAblationStudy, "ablation_weight_per_mille", 10};
 
+// Controls whether user tap on an element is needed to show autofill
+// suggestions. If enabled, this flag would disable android autofill suggestions
+// if the focus on an element is Javascript-originated.
+// DidReceiveLeftMouseDownOrGestureTapInNode() will show suggestions if the
+// focus change occurred as a result of a gesture. See crbug.com/730764 for why
+// showing autofill suggestions as a result of JavaScript changing focus is
+// enabled on WebView.
+// TODO(crbug.com/1496382) Clean up autofill feature flag
+// `kAutofillAndroidDisableSuggestionsOnJSFocus`
+extern const base::Feature kAutofillAndroidDisableSuggestionsOnJSFocus{
+             "AutofillAndroidDisableSuggestionsOnJSFocus", base::FEATURE_DISABLED_BY_DEFAULT};
+
 // If enabled, crowdsourcing considers not just the value V but also the human
 // readable text HRT of an <option value="V">HRT</option> for voting.
 // TODO(crbug.com/1395740). This is a kill switch, remove once the feature has

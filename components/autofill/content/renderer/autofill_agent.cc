@@ -406,8 +406,16 @@ void AutofillAgent::FocusedElementChanged(const WebElement& element) {
   if ((IsKeyboardAccessoryEnabled() || !focus_requires_scroll_) &&
       !element.IsNull() &&
       element.GetDocument().GetFrame()->HasTransientUserActivation()) {
-    focused_node_was_last_clicked_ = true;
-    HandleFocusChangeComplete();
+    // If the focus change was caused by a user gesture,
+    // DidReceiveLeftMouseDownOrGestureTapInNode() will show the autofill
+    // suggestions. See crbug.com/730764 for why showing autofill suggestions as
+    // a result of JavaScript changing focus is enabled on WebView.
+    bool focused_node_was_last_clicked =
+        !base::FeatureList::IsEnabled(
+            features::kAutofillAndroidDisableSuggestionsOnJSFocus) ||
+        !focus_requires_scroll_;
+    HandleFocusChangeComplete(
+        /*focused_node_was_last_clicked=*/focused_node_was_last_clicked);
   }
 
   if (focus_moved_to_new_form)
@@ -1079,7 +1087,10 @@ void AutofillAgent::DidCompleteFocusChangeInFrame() {
   }
 
   if (!IsKeyboardAccessoryEnabled() && focus_requires_scroll_)
-    HandleFocusChangeComplete();
+    HandleFocusChangeComplete(
+        /*focused_node_was_last_clicked=*/
+        last_left_mouse_down_or_gesture_tap_in_node_caused_focus_);
+  last_left_mouse_down_or_gesture_tap_in_node_caused_focus_ = false;
 
   SendPotentiallySubmittedFormToBrowser();
 }
@@ -1087,14 +1098,10 @@ void AutofillAgent::DidCompleteFocusChangeInFrame() {
 void AutofillAgent::DidReceiveLeftMouseDownOrGestureTapInNode(
     const WebNode& node) {
   DCHECK(!node.IsNull());
-  focused_node_was_last_clicked_ = node.Focused();
-
 #if defined(ANDROID)
-  HandleFocusChangeComplete();
+  HandleFocusChangeComplete(/*focused_node_was_last_clicked=*/node.Focused());
 #else
-  if (!focus_requires_scroll_) {
-    HandleFocusChangeComplete();
-  }
+  last_left_mouse_down_or_gesture_tap_in_node_caused_focus_ = node.Focused();
 #endif
 }
 
@@ -1194,7 +1201,8 @@ void AutofillAgent::FormControlElementClicked(
   SendPotentiallySubmittedFormToBrowser();
 }
 
-void AutofillAgent::HandleFocusChangeComplete() {
+void AutofillAgent::HandleFocusChangeComplete(
+      bool focused_node_was_last_clicked) {
   WebElement focused_element =
       render_frame()->GetWebFrame()->GetDocument().FocusedElement();
   // When using Talkback on Android, and possibly others, traversing to and
@@ -1204,7 +1212,7 @@ void AutofillAgent::HandleFocusChangeComplete() {
   // When the focus is on a non-input field on Android, keyboard accessory may
   // be shown if autofill data is available. Make sure to hide the accessory if
   // focus changes to another element.
-  if ((focused_node_was_last_clicked_ || is_screen_reader_enabled_) &&
+  if ((focused_node_was_last_clicked || is_screen_reader_enabled_) &&
       !focused_element.IsNull() && focused_element.IsFormControlElement()) {
     WebFormControlElement focused_form_control_element =
         focused_element.To<WebFormControlElement>();
@@ -1216,8 +1224,6 @@ void AutofillAgent::HandleFocusChangeComplete() {
   } else if (IsKeyboardAccessoryEnabled()) {
     GetAutofillDriver().HidePopup();
   }
-
-  focused_node_was_last_clicked_ = false;
 
   SendPotentiallySubmittedFormToBrowser();
 }

@@ -210,6 +210,9 @@ BASE_DECLARE_FEATURE(kAutofillVoteForSelectOptionValues);
 COMPONENT_EXPORT(AUTOFILL)
 extern const base::FeatureParam<int>
     kAutofillMoreProminentPopupMaxOffsetToCenterParam;
+COMPONENT_EXPORT(AUTOFILL)
+extern const base::Feature 
+    kAutofillAndroidDisableSuggestionsOnJSFocus;
 COMPONENT_EXPORT(AUTOFILL) BASE_DECLARE_FEATURE(kAutofillMoreProminentPopup);
 COMPONENT_EXPORT(AUTOFILL)
 BASE_DECLARE_FEATURE(kAutofillLogUKMEventsWithSampleRate);

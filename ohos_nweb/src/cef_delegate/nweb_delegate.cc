@@ -1916,6 +1916,14 @@ void NWebDelegate::ClearDragData() const {
 #endif  // OHOS_DRAG_DROP
 
 void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
+#ifdef OHOS_DRAG_DROP
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    CEF_POST_TASK(CEF_UIT,
+      base::BindOnce(&NWebDelegate::SendDragEvent, this, dragEvent));
+    return;
+  }
+#endif  // OHOS_DRAG_DROP
+
   if (!GetBrowser().get() || !render_handler_) {
     LOG(ERROR) << "browser or render_handler is nullptr";
     return;

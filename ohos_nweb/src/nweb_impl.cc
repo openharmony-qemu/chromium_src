@@ -164,7 +164,6 @@ void InitialWebEngineArgs(std::list<std::string>& web_engine_args,
   // http://crbug.com/479767
   web_engine_args.emplace_back("--enable-aggressive-domstorage-flushing");
   web_engine_args.emplace_back("--ohos-enable-drdc");
-  web_engine_args.emplace_back("--enable-features=PdfUnseasoned");
 
   std::vector<std::string> modeVector = {"Default", "IncludeSensitive", "Everything"};
   if (std::find(modeVector.begin(), modeVector.end(), GetNetlogMode()) != modeVector.end()) {
@@ -173,7 +172,12 @@ void InitialWebEngineArgs(std::list<std::string>& web_engine_args,
   }
 
   if (GetLockdownModeStatus()) {
+    WVLOG_W("In lockdown mode, some HTML5 features will be unavailable, including WebAssembly, WebGL, PDF viewer, MathML, speech recognition, etc.");
     web_engine_args.emplace_back("--js-flags=--jitless");
+    web_engine_args.emplace_back("--disable-webgl");
+    web_engine_args.emplace_back("--disable-webgl2");
+    web_engine_args.emplace_back("--disable-pdf-extension");
+    web_engine_args.emplace_back("--disable-blink-features=MathMLCore,ScriptedSpeechRecognition");
   }
 
   web_engine_args.emplace_back("--enable-media-stream");

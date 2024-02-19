@@ -168,6 +168,12 @@ struct COMPONENT_EXPORT(CC_SHARED_MOJOM_TRAITS)
   }
 #endif
 
+#ifdef OHOS_CLIPBOARD
+  static const gfx::Rect& clipped_selection_bounds(
+    const cc::RenderFrameMetadata& metadata) {
+    return metadata.clipped_selection_bounds;
+  }
+#endif
   static bool Read(cc::mojom::RenderFrameMetadataDataView data,
                    cc::RenderFrameMetadata* out);
 };

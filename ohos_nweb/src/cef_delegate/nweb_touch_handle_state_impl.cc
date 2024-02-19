@@ -32,6 +32,14 @@ int32_t NWebTouchHandleStateImpl::GetY() const {
   return state_.origin.y;
 }
 
+int32_t NWebTouchHandleStateImpl::GetViewPortX() const {
+  return state_.view_port.x;
+}
+
+int32_t NWebTouchHandleStateImpl::GetViewPortY() const {
+  return state_.view_port.y;
+}
+
 NWebTouchHandleState::TouchHandleType
 NWebTouchHandleStateImpl::GetTouchHandleType() const {
   switch (state_.orientation) {

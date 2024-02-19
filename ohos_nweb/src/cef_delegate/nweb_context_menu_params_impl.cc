@@ -250,12 +250,20 @@ NWebQuickMenuParamsImpl::NWebQuickMenuParamsImpl(int32_t x,
                                                  int32_t y,
                                                  int32_t width,
                                                  int32_t height,
-                                                 int32_t flags)
+                                                 int32_t flags,
+                                                 int32_t select_x,
+                                                 int32_t select_y,
+                                                 int32_t select_width,
+                                                 int32_t select_height)
     : x_(x),
       y_(y),
       width_(width),
       height_(height),
-      edit_flags_(ConvertMenuFlags(flags, kQmEditStateFlagsMap)) {}
+      edit_flags_(ConvertMenuFlags(flags, kQmEditStateFlagsMap)),
+      select_x_(select_x),
+      select_y_(select_y),
+      select_width_(select_width),
+      select_height_(select_height) {}
 
 int32_t NWebQuickMenuParamsImpl::GetXCoord() {
   return x_;
@@ -275,6 +283,22 @@ int32_t NWebQuickMenuParamsImpl::GetHeight() {
 
 int32_t NWebQuickMenuParamsImpl::GetEditStateFlags() {
   return edit_flags_;
+}
+
+int32_t NWebQuickMenuParamsImpl::GetSelectX() {
+  return select_x_;
+}
+
+int32_t NWebQuickMenuParamsImpl::GetSelectY() {
+  return select_y_;
+}
+
+int32_t NWebQuickMenuParamsImpl::GetSelectWidth() {
+  return select_width_;
+}
+
+int32_t NWebQuickMenuParamsImpl::GetSelectXHeight() {
+  return select_height_;
 }
 
 std::shared_ptr<NWebTouchHandleState>

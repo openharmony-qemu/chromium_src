@@ -1525,6 +1525,13 @@ void PdfViewWebPlugin::HandleViewportMessage(const base::Value::Dict& message) {
     }
   }
 
+#if defined(OHOS_PDF)
+  if (!message.FindDouble("zoom")) {
+    engine_->ResetDesiredLayoutOptions();
+    return;
+  }
+#endif
+
   gfx::Vector2dF scroll_offset(*message.FindDouble("xOffset"),
                                *message.FindDouble("yOffset"));
   double new_zoom = *message.FindDouble("zoom");

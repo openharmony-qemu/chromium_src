@@ -1,0 +1,538 @@
+/*
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef ARK_WEB_HANDLER_WRAPPER_H_
+#define ARK_WEB_HANDLER_WRAPPER_H_
+#pragma once
+
+#include "include/nweb_handler.h"
+#include "ohos_nweb/include/ark_web_handler.h"
+
+namespace OHOS::ArkWeb {
+
+using ArkWebSslError = OHOS::NWeb::SslError;
+using ArkWebCursorType = OHOS::NWeb::CursorType;
+using ArkWebActivityType = OHOS::NWeb::ActivityType;
+using ArkWebImageColorType = OHOS::NWeb::ImageColorType;
+using ArkWebImageAlphaType = OHOS::NWeb::ImageAlphaType;
+using ArkWebRenderExitReason = OHOS::NWeb::RenderExitReason;
+using ArkWebDragOperation = OHOS::NWeb::NWebDragData::DragOperation;
+
+class ArkWebHandlerWrapper : public OHOS::NWeb::NWebHandler {
+public:
+  ArkWebHandlerWrapper(ArkWebRefPtr<ArkWebHandler> ark_web_handler);
+  ~ArkWebHandlerWrapper() = default;
+
+  void SetNWeb(std::shared_ptr<OHOS::NWeb::NWeb> nweb) override;
+
+  /**
+   * @brief Request display and focus for a new nweb.
+   *
+   */
+  bool OnFocus() override;
+
+  void OnMessage(const std::string &param) override;
+
+  /**
+   * @brief Notify the SDK that the nweb will load the resource specified by the
+   *        given url.
+   *
+   * @param url The url of the resource.
+   */
+  void OnResource(const std::string &url) override;
+
+  /**
+   * @brief Notify the SDK of a new favicon for the current web site.
+   *
+   * @param data The raw image data for the icon.
+   * @param width The width of the icon in pixel.
+   * @param height The height of the icon in pixel.
+   * @param color_type The color data encoding type.
+   * @param alpha_type The alpha value of any pixel.
+   */
+  void OnPageIcon(const void *data, size_t width, size_t height,
+                  ArkWebImageColorType color_type,
+                  ArkWebImageAlphaType alpha_type) override;
+
+  /**
+   * @brief Notify the SDK of the changed document title.
+   *
+   * @param title The document title.
+   */
+  void OnPageTitle(const std::string &title) override;
+
+  void OnProxyDied() override;
+
+  /**
+   * @brief Notify the SDK that an HTTP error has been received from the server
+   *        while loading a resource.
+   *
+   * @param request The request information.
+   * @param response The error occurred.
+   */
+  void OnHttpError(
+      std::shared_ptr<OHOS::NWeb::NWebUrlResourceRequest> request,
+      std::shared_ptr<OHOS::NWeb::NWebUrlResourceResponse> response) override;
+
+  /**
+   * @brief Report a JavaScript console message to the host application.
+   *
+   * @param console_log Details of the console message.
+   *
+   * @return Return true to stop the message from being output to the console.
+   */
+  bool OnConsoleLog(
+      std::shared_ptr<OHOS::NWeb::NWebConsoleLog> console_log) override;
+
+  void OnRouterPush(const std::string &param) override;
+
+  /**
+   * @brief Notify the SDK that a web site has finished loading. This method is
+   *        called only for main frame.
+   *
+   * @param http_status_code The status code for the http request.
+   * @param url The url of the web site.
+   */
+  void OnPageLoadEnd(int http_status_code, const std::string &url) override;
+
+  /**
+   * @brief Notify the SDK that a web site has started loading. This method is
+   *        called once for each main frame load.
+   *
+   * @param url The url to be loaded.
+   */
+  void OnPageLoadBegin(const std::string &url) override;
+
+  /**
+   * @brief Report a load error to the SDK.
+   *
+   * @param error_code The error code.
+   * @param description The error description.
+   * @param url The failed url.
+   */
+  void OnPageLoadError(int error_code, const std::string &description,
+                       const std::string &url) override;
+
+  /**
+   * @brief Notify the SDK of the url for a touch icon.
+   *
+   * @param icon_url The icon url.
+   * @param precomposed The touch icon type.
+   */
+  void OnDesktopIconUrl(const std::string &icon_url, bool precomposed) override;
+
+  /**
+   * @brief Notify the SDK the current progress of loading a web site.
+   *
+   * @param new_progress Loading progress, an integer between 0 and 100.
+   */
+  void OnLoadingProgress(int new_progress) override;
+
+  /**
+   * @brief Show prompt to ask for the geo location permission.
+   *
+   * @param origin String: the origin of the resource to get geo location
+   * @param callback GeolocationCallbackInterface: callback to report geo
+   *        location
+   */
+  void OnGeolocationShow(
+      const std::string &origin,
+      std::shared_ptr<OHOS::NWeb::NWebGeolocationCallbackInterface> callback)
+      override;
+
+  /**
+   * @brief Hide prompt to ask for the geolocation permission.
+   */
+  void OnGeolocationHide() override;
+
+  /**
+   * @brief inform application to show a file selector.
+   *
+   * @param callback the file list to select.
+   * @param params the params of file selector.
+   */
+  bool OnFileSelectorShow(
+      std::shared_ptr<OHOS::NWeb::NWebStringVectorValueCallback> callback,
+      std::shared_ptr<OHOS::NWeb::NWebFileSelectorParams> params) override;
+
+  /**
+   * @brief Report web resource loading error to the SDK. These errors usually
+   *        indicate inability to connect to the server.
+   *
+   * @param request The request information.
+   * @param error The error information.
+   */
+  void OnResourceLoadError(
+      std::shared_ptr<OHOS::NWeb::NWebUrlResourceRequest> request,
+      std::shared_ptr<OHOS::NWeb::NWebUrlResourceError> error) override;
+
+  /**
+   * @brief Ask for the permission.
+   *
+   * @param request std::shared_ptr<NWebAccessRequest>: A request to ask for the
+   *        permission.
+   */
+  void OnPermissionRequest(
+      std::shared_ptr<OHOS::NWeb::NWebAccessRequest> request) override;
+
+  void OnQuickMenuDismissed() override;
+
+  void OnContextMenuDismissed() override;
+
+  void OnTouchSelectionChanged(
+      std::shared_ptr<OHOS::NWeb::NWebTouchHandleState> insert_handle,
+      std::shared_ptr<OHOS::NWeb::NWebTouchHandleState> start_selection_handle,
+      std::shared_ptr<OHOS::NWeb::NWebTouchHandleState> end_selection_handle)
+      override;
+
+  /**
+   * @brief Notify the host application of a resource request and allow the
+   *        application to return the data.
+   *
+   * @param request request information
+   * @param response response information
+   *
+   * @retval true if handle success, otherwise false.
+   */
+  bool OnHandleInterceptRequest(
+      std::shared_ptr<OHOS::NWeb::NWebUrlResourceRequest> request,
+      std::shared_ptr<OHOS::NWeb::NWebUrlResourceResponse> response) override;
+
+  /**
+   * @brief inform application to update its visited links database.
+   *
+   * @param url the url being visited.
+   * @param is_reload true if the url is being reload.
+   */
+  void OnRefreshAccessedHistory(const std::string &url,
+                                bool is_reload) override;
+
+  /**
+   * @brief Cancel the request to ask for the permission.
+   *
+   * @param request std::shared_ptr<NWebAccessRequest>: A request to ask for the
+   *        permission.
+   */
+  void OnPermissionRequestCanceled(
+      std::shared_ptr<OHOS::NWeb::NWebAccessRequest> request) override;
+
+  /**
+   * @brief Give the SDK a chance to decide whether to continue loading the url.
+   *
+   * @param url The url to be loaded.
+   *
+   * @return true to cancel the loading, false to continue the loading.
+   */
+  bool OnHandleInterceptUrlLoading(
+      std::shared_ptr<OHOS::NWeb::NWebUrlResourceRequest> request) override;
+
+  bool RunQuickMenu(
+      std::shared_ptr<OHOS::NWeb::NWebQuickMenuParams> params,
+      std::shared_ptr<OHOS::NWeb::NWebQuickMenuCallback> callback) override;
+
+  bool RunContextMenu(
+      std::shared_ptr<OHOS::NWeb::NWebContextMenuParams> params,
+      std::shared_ptr<OHOS::NWeb::NWebContextMenuCallback> callback) override;
+
+  void UpdateDragCursor(ArkWebDragOperation op) override;
+
+  bool FilterScrollEvent(const float x, const float y, const float x_velocity,
+                         const float y_velocity) override;
+
+  /**
+   * @brief Obtains a list of all visited history items, used for link coloring
+   *
+   * @return visited history
+   */
+  std::vector<std::string> VisitedUrlHistory() override;
+
+  /**
+   * @brief called when new window required.
+   *
+   * @param target_url URL to be loaded in the new window.
+   * @param is_alert dialog window or not.
+   * @param is_user_trigger triggered by User.
+   * @param handler set the new web object.
+   */
+  void OnWindowNewByJS(
+      const std::string &target_url, bool is_alert, bool is_user_trigger,
+      std::shared_ptr<OHOS::NWeb::NWebControllerHandler> handler) override;
+
+  /**
+   * @brief called when window exit.
+   */
+  void OnWindowExitByJS() override;
+
+  /**
+   * @brief Notify the host application that the web page wants to display a
+   *        JavaScript alert() dialog.
+   *
+   * @param url String: The url of the page requesting the dialog.
+   * @param message String: The message of the dialog.
+   * @param result std::shared_ptr<NWebJSDialogResult>: A NWebJSDialogResult to
+   *        confirm that the user closed the window.
+   *
+   * @return To show a custom dialog, the app should return true.
+   */
+  bool OnAlertDialogByJS(
+      const std::string &url, const std::string &message,
+      std::shared_ptr<OHOS::NWeb::NWebJSDialogResult> result) override;
+
+  /**
+   * @brief Notify the host application that the web page wants to handle
+   *        JavaScript onbeforeunload.
+   *
+   * @param url String: The url of the page requesting.
+   * @param message String: The message of the dialog.
+   * @param result std::shared_ptr<NWebJSDialogResult>: A NWebJSDialogResult to
+   *        confirm that the user closed the window.
+   *
+   * @return To show a custom dialog, the app should return true.
+   */
+  bool OnBeforeUnloadByJS(
+      const std::string &url, const std::string &message,
+      std::shared_ptr<OHOS::NWeb::NWebJSDialogResult> result) override;
+
+  /**
+   * @brief Notify the host application that the web page wants to display a
+   *        JavaScript prompt() dialog.
+   *
+   * @param url String: The url of the page requesting the dialog.
+   * @param message String: The message of the dialog.
+   * @param default_value String: The default value of the input message.
+   * @param result std::shared_ptr<NWebJSDialogResult>: A NWebJSDialogResult to
+   *        confirm that the user closed the window.
+   *
+   * @return To show a custom dialog, the app should return true.
+   */
+  bool OnPromptDialogByJS(
+      const std::string &url, const std::string &message,
+      const std::string &default_value,
+      std::shared_ptr<OHOS::NWeb::NWebJSDialogResult> result) override;
+
+  /**
+   * @brief Notify the host application that the web page wants to display a
+   *        JavaScript Confirm() dialog.
+   *
+   * @param url String: The url of the page requesting the dialog.
+   * @param message String: The message of the dialog.
+   * @param result std::shared_ptr<NWebJSDialogResult>: A NWebJSDialogResult to
+   *        confirm that the user closed the window.
+   *
+   * @return To show a custom dialog, the app should return true.
+   */
+  bool OnConfirmDialogByJS(
+      const std::string &url, const std::string &message,
+      std::shared_ptr<OHOS::NWeb::NWebJSDialogResult> result) override;
+
+  bool OnHttpAuthRequestByJS(
+      std::shared_ptr<OHOS::NWeb::NWebJSHttpAuthResult> result,
+      const std::string &host, const std::string &realm) override;
+
+  bool OnSslErrorRequestByJS(
+      std::shared_ptr<OHOS::NWeb::NWebJSSslErrorResult> result,
+      ArkWebSslError error) override;
+
+  bool OnSslSelectCertRequestByJS(
+      std::shared_ptr<OHOS::NWeb::NWebJSSslSelectCertResult> result,
+      const std::string &host, int port,
+      const std::vector<std::string> &key_types,
+      const std::vector<std::string> &issuers) override;
+
+  void OnScroll(double x_offset, double y_offset) override;
+
+  void OnOverScroll(float x_offset, float y_offset) override;
+
+  void OnScrollState(bool scroll_state) override;
+
+  /**
+   * @brief called when the page being loaded is about to be made visible.
+   */
+  void OnPageVisible(const std::string &url) override;
+
+  /**
+   * @brief Give the host application a chance to handle the key event
+   *        synchronousl.
+   *
+   * @param event The key event.
+   *
+   * @return True if the host application wants to handle the key event itself,
+   *         otherwise return false.
+   */
+  bool OnPreKeyEvent(std::shared_ptr<OHOS::NWeb::NWebKeyEvent> event) override;
+
+  void OnScaleChanged(float old_scale_factor, float new_scale_factor) override;
+
+  /**
+   * @brief Called when the browser's cursor has changed.
+   *
+   * @param type Cursor type.
+   * @param info If |type| is CT_CUSTOM then |info| will be populated with the
+   *        custom cursor information.
+   *
+   * @return True if the cursor change was handled or false for default
+   *         handling.
+   */
+  bool OnCursorChange(const ArkWebCursorType &type,
+                      const OHOS::NWeb::NWebCursorInfo &info) override;
+
+  /**
+   * @brief called when the render process exit.
+   *
+   * @param reason the detail reason why render process exit, the implementation
+   *        of this callback should attempt to clean up the specific nweb that
+   *        was set by SetNWeb interface.
+   */
+  void OnRenderExited(ArkWebRenderExitReason reason) override;
+
+  /**
+   * @brief Called when resize not work.
+   */
+  void OnResizeNotWork() override;
+
+  /**
+   * @brief called when the page exit the full-screen mode.
+   */
+  void OnFullScreenExit() override;
+
+  /**
+   * @brief called when the page enter the full-screen mode.
+   *
+   * @param handler to exit full-screen mode.
+   */
+  void OnFullScreenEnter(
+      std::shared_ptr<OHOS::NWeb::NWebFullScreenExitHandler> handler) override;
+
+  bool OnDragAndDropData(const void *data, size_t len,
+                         const OHOS::NWeb::ImageOptions &opt) override;
+
+  void OnSelectPopupMenu(
+      std::shared_ptr<OHOS::NWeb::NWebSelectPopupMenuParam> params,
+      std::shared_ptr<OHOS::NWeb::NWebSelectPopupMenuCallback> callback)
+      override;
+
+  /**
+   * @brief shows the repost form confirmation dialog box.
+   *
+   * @param handler sets whether to resend data.
+   */
+  void OnDataResubmission(
+      std::shared_ptr<OHOS::NWeb::NWebDataResubmissionCallback> handler)
+      override;
+
+  void OnRootLayerChanged(int width, int height) override;
+
+  /**
+   * @brief Called when the audio playing state on web page changed.
+   *
+   * @param playing Whether the audio is playing or not.
+   */
+  void OnAudioStateChanged(bool playing) override;
+
+  void OnOverScrollFlingEnd() override;
+
+  /**
+   * @brief Notify the host application that a key was not handled by the
+   *        WebView.
+   *
+   * @param event The key event.
+   *
+   * @return True if the host application wants to handle the key event itself,
+   *         otherwise return false.
+   */
+  bool OnUnProcessedKeyEvent(
+      std::shared_ptr<OHOS::NWeb::NWebKeyEvent> event) override;
+
+  bool OnDragAndDropDataUdmf(
+      std::shared_ptr<OHOS::NWeb::NWebDragData> drag_data) override;
+
+  /**
+   * @brief Called when the first content rendering of web page.
+   *
+   * @param navigation_start_tick Absolute navigation start time, as TimeTicks.
+   * @param first_contentful_paint_ms Time to first contentful paint from
+   *        navigation start.
+   */
+  void OnFirstContentfulPaint(int64_t navigation_start_tick,
+                              int64_t first_contentful_paint_ms) override;
+
+  void OnDateTimeChooserPopup(
+      const OHOS::NWeb::DateTimeChooser &chooser,
+      const std::vector<std::shared_ptr<OHOS::NWeb::NWebDateTimeSuggestion>>
+          &suggestions,
+      std::shared_ptr<OHOS::NWeb::NWebDateTimeChooserCallback> callback)
+      override;
+
+  void OnDateTimeChooserClose() override;
+
+  /**
+   * @brief Ask for the screen capture permission.
+   *
+   * @param request std::shared_ptr<NWebScreenCaptureAccessRequest>: A request
+   *        to ask for the screen capture permission.
+   */
+  void OnScreenCaptureRequest(
+      std::shared_ptr<OHOS::NWeb::NWebScreenCaptureAccessRequest> request)
+      override;
+
+  /**
+   * @brief Called when the media or form state on the web page changed.
+   *
+   * @param state state of the media or form. Refer to the enum class
+   *        MediaPlayingState and FormState
+   * @param type it can be form, media, or audio
+   */
+  void OnActivityStateChanged(int state, ArkWebActivityType type) override;
+
+  void
+  OnGetTouchHandleHotZone(OHOS::NWeb::TouchHandleHotZone &hot_zone) override;
+
+  /**
+   * @brief Called when swap buffer completed with new size.
+   */
+  void OnCompleteSwapWithNewSize() override;
+
+  void OnOverScrollFlingVelocity(float x_velocity, float y_velocity,
+                                 bool is_fling) override;
+
+  /**
+   * @brief called when the navigation entry has been committed.
+   *
+   * @param details represents the details of a committed navigation entry.
+   */
+  void OnNavigationEntryCommitted(
+      std::shared_ptr<OHOS::NWeb::NWebLoadCommittedDetails> details) override;
+
+  void OnNativeEmbedLifecycleChange(
+      std::shared_ptr<OHOS::NWeb::NWebNativeEmbedDataInfo> dataInfo) override;
+
+  void OnNativeEmbedGestureEvent(
+      std::shared_ptr<OHOS::NWeb::NWebNativeEmbedTouchEvent> touchEvent)
+      override;
+
+  /**
+   * @brief Called when received website security risk check result.
+   *
+   * @param threat_type The threat type of website.
+   */
+  void OnSafeBrowsingCheckResult(int threat_type) override;
+
+private:
+  ArkWebRefPtr<ArkWebHandler> ark_web_handler_;
+};
+
+} // namespace OHOS::ArkWeb
+
+#endif // ARK_WEB_HANDLER_WRAPPER_H_

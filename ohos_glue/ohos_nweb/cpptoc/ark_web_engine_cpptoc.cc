@@ -1,0 +1,208 @@
+/*
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "ohos_nweb/cpptoc/ark_web_engine_cpptoc.h"
+#include "base/cpptoc/ark_web_cpptoc_macros.h"
+#include "ohos_nweb/cpptoc/ark_web_cookie_manager_cpptoc.h"
+#include "ohos_nweb/cpptoc/ark_web_data_base_cpptoc.h"
+#include "ohos_nweb/cpptoc/ark_web_download_manager_cpptoc.h"
+#include "ohos_nweb/cpptoc/ark_web_nweb_cpptoc.h"
+#include "ohos_nweb/cpptoc/ark_web_web_storage_cpptoc.h"
+#include "ohos_nweb/ctocpp/ark_web_engine_init_args_ctocpp.h"
+#include "ohos_nweb/ctocpp/ark_web_nweb_create_info_ctocpp.h"
+
+namespace OHOS::ArkWeb {
+
+ark_web_engine_t *ark_web_engine_get_instance() {
+  // Execute
+  ArkWebRefPtr<ArkWebEngine> _retval = ArkWebEngine::GetInstance();
+
+  // Return type: refptr_same
+  return ArkWebEngineCppToC::Invert(_retval);
+}
+
+namespace {
+
+ark_web_nweb_t *ARK_WEB_CALLBACK ark_web_engine_create_nweb(
+    struct _ark_web_engine_t *self, ark_web_nweb_create_info_t *create_info) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, NULL);
+
+  // Execute
+  ArkWebRefPtr<ArkWebNWeb> _retval = ArkWebEngineCppToC::Get(self)->CreateNWeb(
+      ArkWebNWebCreateInfoCToCpp::Invert(create_info));
+
+  // Return type: refptr_same
+  return ArkWebNWebCppToC::Invert(_retval);
+}
+
+ark_web_nweb_t *ARK_WEB_CALLBACK
+ark_web_engine_get_nweb(struct _ark_web_engine_t *self, int32_t nweb_id) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, NULL);
+
+  // Execute
+  ArkWebRefPtr<ArkWebNWeb> _retval =
+      ArkWebEngineCppToC::Get(self)->GetNWeb(nweb_id);
+
+  // Return type: refptr_same
+  return ArkWebNWebCppToC::Invert(_retval);
+}
+
+ark_web_data_base_t *ARK_WEB_CALLBACK
+ark_web_engine_get_data_base(struct _ark_web_engine_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, NULL);
+
+  // Execute
+  ArkWebRefPtr<ArkWebDataBase> _retval =
+      ArkWebEngineCppToC::Get(self)->GetDataBase();
+
+  // Return type: refptr_same
+  return ArkWebDataBaseCppToC::Invert(_retval);
+}
+
+ark_web_web_storage_t *ARK_WEB_CALLBACK
+ark_web_engine_get_web_storage(struct _ark_web_engine_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, NULL);
+
+  // Execute
+  ArkWebRefPtr<ArkWebWebStorage> _retval =
+      ArkWebEngineCppToC::Get(self)->GetWebStorage();
+
+  // Return type: refptr_same
+  return ArkWebWebStorageCppToC::Invert(_retval);
+}
+
+ark_web_cookie_manager_t *ARK_WEB_CALLBACK
+ark_web_engine_get_cookie_manager(struct _ark_web_engine_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, NULL);
+
+  // Execute
+  ArkWebRefPtr<ArkWebCookieManager> _retval =
+      ArkWebEngineCppToC::Get(self)->GetCookieManager();
+
+  // Return type: refptr_same
+  return ArkWebCookieManagerCppToC::Invert(_retval);
+}
+
+ark_web_download_manager_t *ARK_WEB_CALLBACK
+ark_web_engine_get_download_manager(struct _ark_web_engine_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, NULL);
+
+  // Execute
+  ArkWebRefPtr<ArkWebDownloadManager> _retval =
+      ArkWebEngineCppToC::Get(self)->GetDownloadManager();
+
+  // Return type: refptr_same
+  return ArkWebDownloadManagerCppToC::Invert(_retval);
+}
+
+void ARK_WEB_CALLBACK ark_web_engine_set_web_tag(struct _ark_web_engine_t *self,
+                                                 int32_t nweb_id,
+                                                 const char *web_tag) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(web_tag, );
+
+  // Execute
+  ArkWebEngineCppToC::Get(self)->SetWebTag(nweb_id, web_tag);
+}
+
+void ARK_WEB_CALLBACK ark_web_engine_initialize_web_engine(
+    struct _ark_web_engine_t *self, ark_web_engine_init_args_t *init_args) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebEngineCppToC::Get(self)->InitializeWebEngine(
+      ArkWebEngineInitArgsCToCpp::Invert(init_args));
+}
+
+void ARK_WEB_CALLBACK ark_web_engine_prepare_for_page_load(
+    struct _ark_web_engine_t *self, const ArkWebString *url,
+    bool preconnectable, int32_t num_sockets) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(url, );
+
+  // Execute
+  ArkWebEngineCppToC::Get(self)->PrepareForPageLoad(*url, preconnectable,
+                                                    num_sockets);
+}
+
+void ARK_WEB_CALLBACK ark_web_engine_set_web_debugging_access(
+    struct _ark_web_engine_t *self, bool isEnableDebug) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebEngineCppToC::Get(self)->SetWebDebuggingAccess(isEnableDebug);
+}
+
+} // namespace
+
+ArkWebEngineCppToC::ArkWebEngineCppToC() {
+  GetStruct()->create_nweb = ark_web_engine_create_nweb;
+  GetStruct()->get_nweb = ark_web_engine_get_nweb;
+  GetStruct()->get_data_base = ark_web_engine_get_data_base;
+  GetStruct()->get_web_storage = ark_web_engine_get_web_storage;
+  GetStruct()->get_cookie_manager = ark_web_engine_get_cookie_manager;
+  GetStruct()->get_download_manager = ark_web_engine_get_download_manager;
+  GetStruct()->set_web_tag = ark_web_engine_set_web_tag;
+  GetStruct()->initialize_web_engine = ark_web_engine_initialize_web_engine;
+  GetStruct()->prepare_for_page_load = ark_web_engine_prepare_for_page_load;
+  GetStruct()->set_web_debugging_access =
+      ark_web_engine_set_web_debugging_access;
+}
+
+ArkWebEngineCppToC::~ArkWebEngineCppToC() {
+}
+
+template <>
+ArkWebBridgeType ArkWebCppToCRefCounted<ArkWebEngineCppToC, ArkWebEngine,
+                                        ark_web_engine_t>::kBridgeType =
+    ARK_WEB_ENGINE;
+
+} // namespace OHOS::ArkWeb
+
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
+ARK_WEB_EXPORT ark_web_engine_t *ark_web_engine_get_instance_static() {
+  ARK_WEB_CPPTOC_DV_LOG();
+
+  return OHOS::ArkWeb::ark_web_engine_get_instance();
+}
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus

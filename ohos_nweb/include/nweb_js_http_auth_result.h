@@ -15,7 +15,7 @@ public:
     /**
      * @brief Handle a confirmation response from the user.
      */
-    virtual bool Confirm(std::string &userName, std::string &pwd) = 0;
+    virtual bool Confirm(const std::string& userName, const std::string& pwd) = 0;
     /**
      * @brief Handle the result if the user cancelled the dialog.
      */

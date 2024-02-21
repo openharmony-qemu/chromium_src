@@ -36,53 +36,14 @@ enum class NWebResponseDataType : int32_t {
 
 class NWebUrlResourceResponse {
 public:
-    /**
-     * @brief Construct a resource response with the given parameters.
-     *
-     * @param mime_type the resource response's MIME type, for example {
-     * "text/html"}.
-     * @param encoding the resource response's character encoding, for example
-     * {"utf-8"}.
-     * @param status_code the status code needs to be in the ranges [100, 299],
-     * [400, 599]. Causing a redirect by specifying a 3xx code is not supported.
-     * @param reason_phrase the phrase describing the status code, for example
-     * "OK". Must be non-empty.
-     * @param response_headers the resource response's headers represented as a
-     * mapping of header name -> header value.
-     * @param input_stream the input stream that provides the resource response's
-     * data.
-     */
-    NWebUrlResourceResponse(const std::string& mime_type,
-                            const std::string& encoding,
-                            const int status_code,
-                            const std::string& reason_phrase,
-                            const std::map<std::string, std::string>& response_headers,
-                            std::string& input_stream)
-        : mime_type_(mime_type),
-          encoding_(encoding),
-          status_code_(status_code),
-          reason_phrase_(reason_phrase),
-          response_headers_(response_headers),
-          input_stream_(input_stream) {}
-
-    NWebUrlResourceResponse(const std::string& mime_type,
-                            const std::string& encoding,
-                            std::string& input_stream)
-        : mime_type_(mime_type),
-          encoding_(encoding),
-          input_stream_(input_stream) {}
-
-    ~NWebUrlResourceResponse() = default;
+    virtual ~NWebUrlResourceResponse() = default;
 
     /**
      * @brief get input stream
      *
      * @retval inputstream string
      */
-    const std::string& ResponseData()
-    {
-        return input_stream_;
-    }
+    virtual std::string ResponseData() = 0;
 
     /**
      * @brief set input stream
@@ -90,73 +51,50 @@ public:
      * @param input_stream set inputstream for example: fread(buf, 1, sizeof(buf),
      * file)
      */
-    void PutResponseData(std::string& input_stream)
-    {
-        input_stream_ = input_stream;
-        fd_ = 0;
-        isFileFd_ = false;
-        dataType_ = NWebResponseDataType::NWEB_STRING_TYPE;
-    }
+    virtual void PutResponseData(const std::string &input_stream) = 0;
 
     /**
      * @brief Construct a resource response with the given parameters.
      *
      * @param encoding encoding { "utf-8" }
      */
-    void PutResponseEncoding(const std::string& encoding)
-    {
-        encoding_ = encoding;
-    }
+    virtual void PutResponseEncoding(const std::string &encoding) = 0;
 
     /**
      * @brief get encoding
      *
      * @retval encoding the resource response's encoding
      */
-    std::string ResponseEncoding()
-    {
-        return encoding_;
-    }
+    virtual std::string ResponseEncoding() = 0;
 
     /**
      * @brief Construct a resource response with the given parameters.
      *
      * @param mime_type mime_type{ "text/html" }
      */
-    void PutResponseMimeType(const std::string& mime_type)
-    {
-        mime_type_ = mime_type;
-    }
+    virtual void PutResponseMimeType(const std::string &mime_type) = 0;
 
     /**
      * @brief Get mimetype
      *
      * @retval mimetype The resource response's MIME type
      */
-    std::string ResponseMimeType()
-    {
-        return mime_type_;
-    }
+    virtual std::string ResponseMimeType() = 0;
 
     /**
      * @brief Set ResponseHeaders
      *
      * @param response_headers response header
      */
-    void PutResponseHeaders(const std::map<std::string, std::string>& response_headers)
-    {
-        response_headers_ = response_headers;
-    }
+    virtual void PutResponseHeaders(
+        const std::map<std::string, std::string> &response_headers) = 0;
 
     /**
      * @brief Get ResponseHeaders
      *
      * @retval response headers
      */
-    const std::map<std::string, std::string>& ResponseHeaders()
-    {
-        return response_headers_;
-    }
+    virtual std::map<std::string, std::string> ResponseHeaders() = 0;
 
     /**
      * @brief Set StatusCode And ReasonPhrase
@@ -164,99 +102,41 @@ public:
      * @param status_code status code
      * @param reasonphrase reason phrase
      */
-    void PutResponseStateAndStatuscode(int status_code,
-                                    std::string reason_phrase)
-    {
-        status_code_ = status_code;
-        reason_phrase_ = reason_phrase;
-    }
+    virtual void PutResponseStateAndStatuscode(int status_code,
+                                               const std::string &reason_phrase) = 0;
 
     /**
      * @brief Get status code
      *
      * @retval status code
     */
-    int ResponseStatusCode()
-    {
-        return status_code_;
-    }
+    virtual int ResponseStatusCode() = 0;
 
     /**
      * @brief Get ReasonPhrase
      *
      * @retval errorcode reason
     */
-    std::string ResponseStatus()
-    {
-        return reason_phrase_;
-    }
+    virtual std::string ResponseStatus() = 0;
 
-    void PutResponseDataStatus(bool isDataReady)
-    {
-        isDataReady_ = isDataReady;
-        if (isDataReady_ == true && readyCallback_ != nullptr) {
-            readyCallback_->Continue();
-            readyCallback_ = nullptr;
-        }
-    }
+    virtual void PutResponseDataStatus(bool isDataReady) = 0;
 
-    bool ResponseDataStatus() const
-    {
-        return isDataReady_;
-    }
+    virtual bool ResponseDataStatus() = 0;
 
-    bool ResponseIsFileHandle() const
-    {
-        return isFileFd_;
-    }
+    virtual bool ResponseIsFileHandle() = 0;
 
-    void PutResponseFileHandle(int fd)
-    {
-        dataType_ = NWebResponseDataType::NWEB_FILE_TYPE;
-        fd_ = fd;
-        isFileFd_ = true;
-        input_stream_.clear();
-    }
+    virtual void PutResponseFileHandle(int fd) = 0;
 
-    int ResponseFileHandle() const
-    {
-        return fd_;
-    }
+    virtual int ResponseFileHandle() = 0;
 
-    void PutResponseResourceUrl(const std::string& url)
-    {
-        resource_url_ = url;
-        dataType_ = NWebResponseDataType::NWEB_RESOURCE_URL_TYPE;
-    }
+    virtual void PutResponseResourceUrl(const std::string &url) = 0;
 
-    std::string ResponseResourceUrl()
-    {
-        return resource_url_;
-    }
+    virtual std::string ResponseResourceUrl() = 0;
 
-    NWebResponseDataType ResponseDataType() const
-    {
-        return dataType_;
-    }
+    virtual NWebResponseDataType ResponseDataType() = 0;
 
-    void PutResponseReadyCallback(std::shared_ptr<NWebResourceReadyCallback> readyCallback)
-    {
-        readyCallback_ = readyCallback;
-    }
-
-private:
-    std::string mime_type_;
-    std::string encoding_;
-    int status_code_ = 200;
-    std::string reason_phrase_;
-    std::map<std::string, std::string> response_headers_;
-    std::string input_stream_;
-    int fd_ = -1;
-    std::string resource_url_;
-    NWebResponseDataType dataType_ = NWebResponseDataType::NWEB_STRING_TYPE;
-    bool isFileFd_ = false;
-    bool isDataReady_ = true;
-    std::shared_ptr<NWebResourceReadyCallback> readyCallback_;
+    virtual void PutResponseReadyCallback(
+        std::shared_ptr<NWebResourceReadyCallback> readyCallback) = 0;
 };
 } // namespace OHOS::NWeb
 

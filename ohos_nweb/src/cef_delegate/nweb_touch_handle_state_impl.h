@@ -23,15 +23,15 @@ namespace OHOS::NWeb {
 class NWebTouchHandleStateImpl : public NWebTouchHandleState {
  public:
   explicit NWebTouchHandleStateImpl(const CefTouchHandleState& state);
-  int32_t GetTouchHandleId() const override;
-  int32_t GetX() const override;
-  int32_t GetY() const override;
-  int32_t GetViewPortX() const override;
-  int32_t GetViewPortY() const override;
-  TouchHandleType GetTouchHandleType() const override;
-  bool IsEnable() const override;
-  float GetAlpha() const override;
-  float GetEdgeHeight() const override;
+  int32_t GetTouchHandleId() override;
+  int32_t GetX() override;
+  int32_t GetY() override;
+  int32_t GetViewPortX() override;
+  int32_t GetViewPortY() override;
+  TouchHandleType GetTouchHandleType() override;
+  bool IsEnable() override;
+  float GetAlpha() override;
+  float GetEdgeHeight() override;
 
  private:
   CefTouchHandleState state_;

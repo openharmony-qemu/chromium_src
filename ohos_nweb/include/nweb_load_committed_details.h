@@ -69,7 +69,7 @@ public:
      *
      * @retval The url of the current navigation.
      */
-    virtual const std::string &GetURL() = 0;
+    virtual std::string GetURL() = 0;
 };
 }  // namespace OHOS::NWeb
 

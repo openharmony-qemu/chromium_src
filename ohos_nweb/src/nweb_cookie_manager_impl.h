@@ -26,37 +26,37 @@ class NWebCookieManagerImpl : public NWebCookieManager {
   NWebCookieManagerImpl();
   ~NWebCookieManagerImpl() = default;
 
-  static NWebCookieManager* GetCookieManagerInstance();
-  bool IsAcceptCookieAllowed() const override;
+  static std::shared_ptr<NWebCookieManager> GetInstance();
+  bool IsAcceptCookieAllowed() override;
   void PutAcceptCookieEnabled(bool accept) override;
-  bool IsThirdPartyCookieAllowed() const override;
+  bool IsThirdPartyCookieAllowed() override;
   void PutAcceptThirdPartyCookieEnabled(bool accept) override;
-  bool IsFileURLSchemeCookiesAllowed() const override;
+  bool IsFileURLSchemeCookiesAllowed() override;
   void PutAcceptFileURLSchemeCookiesEnabled(bool allow) override;
   void ReturnCookie(
       const std::string& url,
-      std::shared_ptr<NWebValueCallback<std::string>> callback) override;
+      std::shared_ptr<NWebStringValueCallback> callback) override;
   std::string ReturnCookie(const std::string &url,
                            bool &is_valid,
                            bool incognito_mode) override;
   void SetCookie(const std::string& url,
                  const std::string& value,
-                 std::shared_ptr<NWebValueCallback<bool>> callback) override;
+                 std::shared_ptr<NWebBoolValueCallback> callback) override;
   int SetCookie(const std::string &url,
                 const std::string &value,
                 bool incognito_mode) override;
-  void ExistCookies(std::shared_ptr<NWebValueCallback<bool>> callback) override;
+  void ExistCookies(std::shared_ptr<NWebBoolValueCallback> callback) override;
   bool ExistCookies(bool incognito_mode) override;
-  void Store(std::shared_ptr<NWebValueCallback<bool>> callback) override;
+  void Store(std::shared_ptr<NWebBoolValueCallback> callback) override;
   bool Store() override;
   void DeleteSessionCookies(
-      std::shared_ptr<NWebValueCallback<bool>> callback) override;
+      std::shared_ptr<NWebBoolValueCallback> callback) override;
   void DeleteCookieEntirely(
-      std::shared_ptr<NWebValueCallback<bool>> callback,
+      std::shared_ptr<NWebBoolValueCallback> callback,
       bool incognito_mode) override;
   void ConfigCookie(const std::string& url,
                     const std::string& value,
-                    std::shared_ptr<NWebValueCallback<long>> callback) override;
+                    std::shared_ptr<NWebLongValueCallback> callback) override;
 
  private:
   std::shared_ptr<NWebCookieManagerDelegateInterface> delegate_;

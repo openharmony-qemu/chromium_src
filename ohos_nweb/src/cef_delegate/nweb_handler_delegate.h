@@ -103,9 +103,7 @@ class NWebHandlerDelegate : public CefClient,
 
   void RegisterNativeJavaScriptCallBack(
     const char* objName,
-    const char** methodName,
-    std::vector<std::function<char*(const char** argv, int32_t argc)>> callback,
-    int32_t size);
+    const std::vector<std::shared_ptr<NWebJsProxyCallback>> &callbacks);
 
   int ProcessNativeProxyResultThread(CefRefPtr<CefListValue> args,
                              const CefString& method,

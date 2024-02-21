@@ -21,8 +21,8 @@ NWebJSHttpAuthResultImpl::NWebJSHttpAuthResultImpl(
     CefRefPtr<CefAuthCallback> callback)
     : callback_(callback) {}
 
-bool NWebJSHttpAuthResultImpl::Confirm(std::string& userName,
-                                       std::string& pwd) {
+bool NWebJSHttpAuthResultImpl::Confirm(const std::string& userName,
+                                       const std::string& pwd) {
   if (callback_ != nullptr) {
     callback_->Continue(CefString(userName), CefString(pwd));
     return true;

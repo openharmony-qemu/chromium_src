@@ -19,12 +19,6 @@
 
 using namespace OHOS::NWeb;
 
-extern "C" OHOS_NWEB_EXPORT NWebDataBase* GetDataBase() {
-  WVLOG_I("webdatabase get nweb data base instance");
-  static NWebDataBaseImpl instance;
-  return &instance;
-}
-
 namespace OHOS::NWeb {
 NWebDataBaseImpl::NWebDataBaseImpl() {
 #if defined(USE_CEF)
@@ -32,7 +26,7 @@ NWebDataBaseImpl::NWebDataBaseImpl() {
 #endif
 }
 
-bool NWebDataBaseImpl::ExistHttpAuthCredentials() const {
+bool NWebDataBaseImpl::ExistHttpAuthCredentials() {
   if (delegate_ != nullptr) {
     return delegate_->ExistHttpAuthCredentials();
   }
@@ -58,7 +52,7 @@ void NWebDataBaseImpl::GetHttpAuthCredentials(const std::string& host,
                                               const std::string& realm,
                                               std::string& username,
                                               char* password,
-                                              uint32_t passwordSize) const {
+                                              uint32_t passwordSize) {
   if (delegate_ != nullptr) {
     delegate_->GetHttpAuthCredentials(host, realm, username, password,
                                       passwordSize);

@@ -475,7 +475,7 @@ void NWebDragDataImpl::FreePixlMapData()
   }
 }
 
-bool NWebDragDataImpl::SetLinkURL(std::string& url)
+bool NWebDragDataImpl::SetLinkURL(const std::string& url)
 {
   if (!drag_data_) {
     drag_data_ = new CefDragDataImpl();
@@ -494,7 +494,7 @@ bool NWebDragDataImpl::SetLinkURL(std::string& url)
   return true;
 }
 
-bool NWebDragDataImpl::SetFragmentText(std::string& text)
+bool NWebDragDataImpl::SetFragmentText(const std::string& text)
 {
   if (!drag_data_) {
     drag_data_ = new CefDragDataImpl();
@@ -513,7 +513,7 @@ bool NWebDragDataImpl::SetFragmentText(std::string& text)
   return true;
 }
 
-bool NWebDragDataImpl::SetFragmentHtml(std::string& html)
+bool NWebDragDataImpl::SetFragmentHtml(const std::string& html)
 {
   if (!drag_data_) {
     drag_data_ = new CefDragDataImpl();
@@ -540,7 +540,7 @@ std::string NWebDragDataImpl::GetLinkTitle()
   return drag_data_->GetLinkTitle();
 }
 
-bool NWebDragDataImpl::SetLinkTitle(std::string& title)
+bool NWebDragDataImpl::SetLinkTitle(const std::string& title)
 {
   if (!drag_data_) {
     drag_data_ = new CefDragDataImpl();
@@ -581,7 +581,7 @@ bool NWebDragDataImpl::IsSingleImageContent() {
   return false;
 }
 
-bool NWebDragDataImpl::SetFileUri(std::string& uri) {
+bool NWebDragDataImpl::SetFileUri(const std::string& uri) {
   if (!drag_data_) {
     return false;
   }

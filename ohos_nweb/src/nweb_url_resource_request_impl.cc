@@ -30,16 +30,16 @@ NWebUrlResourceRequestImpl::NWebUrlResourceRequestImpl(
       is_for_main_frame_(is_for_main_frame),
       is_redirect_(is_redirect) {}
 
-const std::string& NWebUrlResourceRequestImpl::Method() {
+std::string NWebUrlResourceRequestImpl::Method() {
   return method_;
 }
 
-const std::map<std::string, std::string>&
+std::map<std::string, std::string>
 NWebUrlResourceRequestImpl::RequestHeaders() {
   return request_headers_;
 }
 
-const std::string& NWebUrlResourceRequestImpl::Url() {
+std::string NWebUrlResourceRequestImpl::Url() {
   return url_;
 }
 

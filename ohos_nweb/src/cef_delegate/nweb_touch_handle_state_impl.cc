@@ -20,28 +20,28 @@ NWebTouchHandleStateImpl::NWebTouchHandleStateImpl(
     const CefTouchHandleState& state)
     : state_(state) {}
 
-int32_t NWebTouchHandleStateImpl::GetTouchHandleId() const {
+int32_t NWebTouchHandleStateImpl::GetTouchHandleId() {
   return state_.touch_handle_id;
 }
 
-int32_t NWebTouchHandleStateImpl::GetX() const {
+int32_t NWebTouchHandleStateImpl::GetX() {
   return state_.origin.x;
 }
 
-int32_t NWebTouchHandleStateImpl::GetY() const {
+int32_t NWebTouchHandleStateImpl::GetY() {
   return state_.origin.y;
 }
 
-int32_t NWebTouchHandleStateImpl::GetViewPortX() const {
+int32_t NWebTouchHandleStateImpl::GetViewPortX() {
   return state_.view_port.x;
 }
 
-int32_t NWebTouchHandleStateImpl::GetViewPortY() const {
+int32_t NWebTouchHandleStateImpl::GetViewPortY() {
   return state_.view_port.y;
 }
 
 NWebTouchHandleState::TouchHandleType
-NWebTouchHandleStateImpl::GetTouchHandleType() const {
+NWebTouchHandleStateImpl::GetTouchHandleType() {
   switch (state_.orientation) {
     case CEF_HORIZONTAL_ALIGNMENT_CENTER:
       return INSERT_HANDLE;
@@ -54,15 +54,15 @@ NWebTouchHandleStateImpl::GetTouchHandleType() const {
   }
 }
 
-bool NWebTouchHandleStateImpl::IsEnable() const {
+bool NWebTouchHandleStateImpl::IsEnable() {
   return state_.enabled;
 }
 
-float NWebTouchHandleStateImpl::GetAlpha() const {
+float NWebTouchHandleStateImpl::GetAlpha() {
   return state_.alpha;
 }
 
-float NWebTouchHandleStateImpl::GetEdgeHeight() const {
+float NWebTouchHandleStateImpl::GetEdgeHeight() {
   return state_.edge_height;
 }
 }  // namespace OHOS::NWeb

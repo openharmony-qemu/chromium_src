@@ -23,6 +23,7 @@
 #include "cef/include/cef_waitable_event.h"
 #include "cef/libcef/common/time_util.h"
 #include "url/gurl.h"
+#include "nweb_web_storage_origin_impl.h"
 
 using namespace OHOS::NWeb;
 using base::WaitableEvent;
@@ -32,7 +33,7 @@ class WebStorageCompletionCallback : public CefCompletionCallback {
  public:
   WebStorageCompletionCallback(
       std::shared_ptr<WaitableEvent> event,
-      std::shared_ptr<NWebValueCallback<bool>> callback)
+      std::shared_ptr<NWebBoolValueCallback> callback)
       : event_(event), callback_(callback) {}
   void OnComplete() override {
     if (event_ != nullptr) {
@@ -45,21 +46,22 @@ class WebStorageCompletionCallback : public CefCompletionCallback {
 
  private:
   std::shared_ptr<WaitableEvent> event_;
-  std::shared_ptr<NWebValueCallback<bool>> callback_;
+  std::shared_ptr<NWebBoolValueCallback> callback_;
   IMPLEMENT_REFCOUNTING(WebStorageCompletionCallback);
 };
 
 class GetOriginsCallback : public CefGetOriginsCallback {
  public:
   GetOriginsCallback(std::shared_ptr<WaitableEvent> event,
-                     std::shared_ptr<NWebGetOriginsCallback> callback)
+                     std::shared_ptr<NWebWebStorageOriginVectorValueCallback> callback)
       : event_(event), callback_(callback) {}
   void OnComplete() override {
-    NWebWebStorageOrigin items;
     for (size_t i = 0; i < origins_.size(); i++) {
-      items.SetOrigin(origins_[i]);
-      items.SetQuota(quotas_[i]);
-      items.SetUsage(usages_[i]);
+      std::shared_ptr<NWebWebStorageOriginImpl> items = 
+        std::make_shared<NWebWebStorageOriginImpl>();
+      items->SetOrigin(origins_[i]);
+      items->SetQuota(quotas_[i]);
+      items->SetUsage(usages_[i]);
       results_.push_back(items);
     }
     if (event_ != nullptr) {
@@ -91,17 +93,17 @@ class GetOriginsCallback : public CefGetOriginsCallback {
     }
   }
 
-  std::vector<NWebWebStorageOrigin> GetWebStorageOrigin() const {
+  std::vector<std::shared_ptr<NWebWebStorageOrigin>> GetWebStorageOrigin() const {
     return results_;
   }
 
  private:
   std::shared_ptr<WaitableEvent> event_;
-  std::shared_ptr<NWebGetOriginsCallback> callback_;
+  std::shared_ptr<NWebWebStorageOriginVectorValueCallback> callback_;
   std::vector<std::string> origins_;
   std::vector<long> usages_;
   std::vector<long> quotas_;
-  std::vector<NWebWebStorageOrigin> results_;
+  std::vector<std::shared_ptr<NWebWebStorageOrigin>> results_;
 
   IMPLEMENT_REFCOUNTING(GetOriginsCallback);
 };
@@ -110,7 +112,7 @@ class GetOriginUsageOrQuotaCallback : public CefGetOriginUsageOrQuotaCallback {
  public:
   GetOriginUsageOrQuotaCallback(
       std::shared_ptr<WaitableEvent> event,
-      std::shared_ptr<NWebValueCallback<long>> callback)
+      std::shared_ptr<NWebLongValueCallback> callback)
       : event_(event), callback_(callback), nums_(-1) {}
   void OnComplete(int64 nums) override {
     nums_ = nums;
@@ -126,7 +128,7 @@ class GetOriginUsageOrQuotaCallback : public CefGetOriginUsageOrQuotaCallback {
 
  private:
   std::shared_ptr<WaitableEvent> event_;
-  std::shared_ptr<NWebValueCallback<long>> callback_;
+  std::shared_ptr<NWebLongValueCallback> callback_;
   long nums_;
 
   IMPLEMENT_REFCOUNTING(GetOriginUsageOrQuotaCallback);
@@ -136,7 +138,7 @@ class GetOriginUsageOrQuotaCallback : public CefGetOriginUsageOrQuotaCallback {
 class GetPasswordCallback : public CefGetPasswordCallback {
  public:
   GetPasswordCallback(std::shared_ptr<WaitableEvent> event,
-                      std::shared_ptr<NWebValueCallback<std::string>> callback)
+                      std::shared_ptr<NWebStringValueCallback> callback)
       : event_(event), callback_(callback), result_("") {}
   void OnComplete(const CefString& result) override {
     result_ = result;
@@ -152,7 +154,7 @@ class GetPasswordCallback : public CefGetPasswordCallback {
 
  private:
   std::shared_ptr<WaitableEvent> event_;
-  std::shared_ptr<NWebValueCallback<std::string>> callback_;
+  std::shared_ptr<NWebStringValueCallback> callback_;
   std::string result_;
 
   IMPLEMENT_REFCOUNTING(GetPasswordCallback);
@@ -162,7 +164,7 @@ class GetSavedPasswordsCallback : public CefGetSavedPasswordsCallback {
  public:
   GetSavedPasswordsCallback(
       std::shared_ptr<WaitableEvent> event,
-      std::shared_ptr<NWebValueCallback<std::string>> callback)
+      std::shared_ptr<NWebStringValueCallback> callback)
       : event_(event), callback_(callback), result_("") {}
   void OnComplete(const std::vector<CefString>& url,
                   const std::vector<CefString>& username) override {
@@ -188,7 +190,7 @@ class GetSavedPasswordsCallback : public CefGetSavedPasswordsCallback {
 
  private:
   std::shared_ptr<WaitableEvent> event_;
-  std::shared_ptr<NWebValueCallback<std::string>> callback_;
+  std::shared_ptr<NWebStringValueCallback> callback_;
   std::string result_;
   std::vector<std::string> url_;
 
@@ -244,7 +246,7 @@ int NWebWebStorageDelegate::DeleteOrigin(const std::string& origin) {
 }
 
 void NWebWebStorageDelegate::GetOrigins(
-    std::shared_ptr<NWebGetOriginsCallback> callback) {
+    std::shared_ptr<NWebWebStorageOriginVectorValueCallback> callback) {
   CefRefPtr<CefWebStorage> web_storage = GetGlobalWebStorage();
   if (web_storage == nullptr) {
     return;
@@ -253,7 +255,7 @@ void NWebWebStorageDelegate::GetOrigins(
 }
 
 void NWebWebStorageDelegate::GetOrigins(
-    std::vector<NWebWebStorageOrigin>& origins) {
+    std::vector<std::shared_ptr<NWebWebStorageOrigin>>& origins) {
   CefRefPtr<CefWebStorage> web_storage = GetGlobalWebStorage();
   if (web_storage == nullptr) {
     return;
@@ -271,7 +273,7 @@ void NWebWebStorageDelegate::GetOrigins(
 
 void NWebWebStorageDelegate::GetOriginQuota(
     const std::string& origin,
-    std::shared_ptr<NWebValueCallback<long>> callback) {
+    std::shared_ptr<NWebLongValueCallback> callback) {
   CefRefPtr<CefWebStorage> web_storage = GetGlobalWebStorage();
   if (web_storage == nullptr) {
     return;
@@ -302,7 +304,7 @@ long NWebWebStorageDelegate::GetOriginQuota(const std::string& origin) {
 
 void NWebWebStorageDelegate::GetOriginUsage(
     const std::string& origin,
-    std::shared_ptr<NWebValueCallback<long>> callback) {
+    std::shared_ptr<NWebLongValueCallback> callback) {
   CefRefPtr<CefWebStorage> web_storage = GetGlobalWebStorage();
   if (web_storage == nullptr) {
     return;

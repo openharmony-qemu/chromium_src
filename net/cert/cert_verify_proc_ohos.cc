@@ -32,10 +32,12 @@
 #include "third_party/boringssl/src/crypto/x509/internal.h"
 #include "url/gurl.h"
 
+#include "base/files/file_util.h"
+#include "base/files/file_enumerator.h"
+
 #define ROOT_CERT "/etc/ssl/certs/cacert.pem"
 #define MIN_CERT_NUM 1
 #define DER_ENCODED 0x30
-constexpr int32_t APPLICATION_API_10 = 10;
 namespace net {
 // OH ignores the authType parameter to
 // X509TrustManager.checkServerTrusted, so pass in a dummy value. See
@@ -47,6 +49,9 @@ const char kAuthType[] = "RSA";
 // TryVerifyWithAIAFetching() will give up and return
 // X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY.
 const unsigned int kMaxAIAFetches = 5;
+
+const char kUserCaPath1[] = "/data/certificates/user_cacerts/0";
+const char kUserCaPath2[] = "/data/certificates/user_cacerts/100";
 
 void GetChainDEREncodedBytes(X509Certificate* cert,
                              std::vector<std::string>* chain_bytes) {
@@ -248,6 +253,9 @@ void AddAppCert(const base::StringPiece &hostname, X509_STORE* ca_store) {
     return;
   }
 
+  X509_LOOKUP_add_dir(ca_look_up, kUserCaPath1, X509_FILETYPE_PEM);
+  X509_LOOKUP_add_dir(ca_look_up, kUserCaPath2, X509_FILETYPE_PEM);
+
   // add app ca
   std::vector<std::string> app_certs_path;
   std::string host(hostname.data(), hostname.size());
@@ -262,6 +270,7 @@ void AddAppCert(const base::StringPiece &hostname, X509_STORE* ca_store) {
   } else {
     LOG(ERROR) << "GetTrustAnchorsForHostName host:" << host << " failed.";
   }
+
   return;
 }
 
@@ -331,64 +340,7 @@ int CertVerify(const std::vector<std::string>& cert_bytes,
   }
 
   // Add user cert to ca store
-  if (GetApplicationApiVersion() >= APPLICATION_API_10) {
-    X509* certTmp = nullptr;
-    auto RootCertDataAdapter =
-        OHOS::NWeb::OhosAdapterHelper::GetInstance().GetRootCertDataAdapter();
-    if (RootCertDataAdapter == nullptr) {
-      LOG(ERROR)
-          << "Get cert info from cert manager, root cert data adapter is null";
-      return X509_V_ERR_UNSPECIFIED;
-    }
-
-    AddAppCert(hostname, ca_store);
-
-    auto certMaxSize = RootCertDataAdapter->GetCertMaxSize();
-    uint8_t* certData = static_cast<uint8_t*>(malloc(certMaxSize));
-    if (!certData) {
-      LOG(ERROR) << "Get cert info from cert manager, malloc cert store failed";
-      return X509_V_ERR_UNSPECIFIED;
-    }
-
-    auto userRootCertSum = RootCertDataAdapter->GetUserRootCertSum();
-    for (i = 0; i < userRootCertSum; i++) {
-      memset(certData, 0, certMaxSize);
-      RootCertDataAdapter->GetUserRootCertData(i, certData);
-      if (*certData == DER_ENCODED) {
-        der_encoded_tmp = certData;
-        certTmp = d2i_X509(nullptr, &der_encoded_tmp, certMaxSize);
-        if (!certTmp) {
-          LOG(ERROR) << "Get cert info from cert manager, user cert der "
-                        "convert to X509 failed, user cert count = "
-                     << i;
-          continue;
-        }
-      } else if (*certData == '-') {
-        certTmp = p2i_X509((char*)certData);
-        if (!certTmp) {
-          LOG(ERROR) << "Get cert info from cert manager, user cert pem "
-                        "convert to X509 failed, user cert count = "
-                     << i;
-          continue;
-        }
-      } else {
-        LOG(ERROR) << "Get cert info from cert manager, cert format error, "
-                      "user cert count = "
-                   << i;
-        continue;
-      }
-
-      auto ret = X509_STORE_add_cert(ca_store, certTmp);
-      if (!ret) {
-        LOG(ERROR) << "Get cert info from cert manager, add user cert to X509 "
-                      "store failed, ret = "
-                   << ret << ", user cert count = " << i;
-        continue;
-      }
-    }
-    X509_free(certTmp);
-    free(certData);
-  }
+  AddAppCert(hostname, ca_store);
 
   return CertChainVerify(server_cert, server_cert_sum, ca_store,
                          verified_chain);

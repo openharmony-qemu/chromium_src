@@ -77,8 +77,12 @@ component("cef_nweb") {
   sources = [
     "src/cef_delegate/nweb_access_request_delegate.cc",
     "src/cef_delegate/nweb_access_request_delegate.h",
+    "src/cef_delegate/nweb_accessibility_node_info_impl.cc",
+    "src/cef_delegate/nweb_accessibility_node_info_impl.h",
     "src/cef_delegate/nweb_application.cc",
     "src/cef_delegate/nweb_application.h",
+    "src/cef_delegate/nweb_console_log_impl.cc",
+    "src/cef_delegate/nweb_console_log_impl.h",
     "src/cef_delegate/nweb_context_menu_params_impl.cc",
     "src/cef_delegate/nweb_context_menu_params_impl.h",
     "src/cef_delegate/nweb_controller_handler_impl.cc",
@@ -89,6 +93,8 @@ component("cef_nweb") {
     "src/cef_delegate/nweb_data_base_delegate.h",
     "src/cef_delegate/nweb_data_resubmission_callback_impl.cc",
     "src/cef_delegate/nweb_data_resubmission_callback_impl.h",
+    "src/cef_delegate/nweb_default_engine_init_args_impl.cc",
+    "src/cef_delegate/nweb_default_engine_init_args_impl.h",
     "src/cef_delegate/nweb_delegate.cc",
     "src/cef_delegate/nweb_delegate.h",
     "src/cef_delegate/nweb_display_listener.cc",
@@ -109,6 +115,8 @@ component("cef_nweb") {
     "src/cef_delegate/nweb_handler_delegate.h",
     "src/cef_delegate/nweb_history_list_impl.cc",
     "src/cef_delegate/nweb_history_list_impl.h",
+    "src/cef_delegate/nweb_hit_test_result_impl.cc",
+    "src/cef_delegate/nweb_hit_test_result_impl.h",
     "src/cef_delegate/nweb_input_delegate.cc",
     "src/cef_delegate/nweb_input_delegate.h",
     "src/cef_delegate/nweb_inputevent_handler.h",
@@ -121,6 +129,8 @@ component("cef_nweb") {
     "src/cef_delegate/nweb_js_ssl_error_result_impl.h",
     "src/cef_delegate/nweb_js_ssl_select_cert_result_impl.cc",
     "src/cef_delegate/nweb_js_ssl_select_cert_result_impl.h",
+    "src/cef_delegate/nweb_key_event_impl.cc",
+    "src/cef_delegate/nweb_key_event_impl.h",
     "src/cef_delegate/nweb_preference_delegate.cc",
     "src/cef_delegate/nweb_preference_delegate.h",
     "src/cef_delegate/nweb_render_handler.cc",
@@ -129,8 +139,12 @@ component("cef_nweb") {
     "src/cef_delegate/nweb_resource_handler.h",
     "src/cef_delegate/nweb_touch_handle_state_impl.cc",
     "src/cef_delegate/nweb_touch_handle_state_impl.h",
+    "src/cef_delegate/nweb_url_resource_response_impl.cc",
+    "src/cef_delegate/nweb_url_resource_response_impl.h",
     "src/cef_delegate/nweb_web_storage_delegate.cc",
     "src/cef_delegate/nweb_web_storage_delegate.h",
+    "src/cef_delegate/nweb_web_storage_origin_impl.cc",
+    "src/cef_delegate/nweb_web_storage_origin_impl.h",
     "src/sysevent/event_reporter.cc",
     "src/sysevent/event_reporter.h",
   ]
@@ -142,17 +156,18 @@ component("cef_nweb") {
       "src/cef_delegate/nweb_pipe_resource_handler.h",
       "src/cef_delegate/nweb_scheme_handler_factory.cc",
       "src/cef_delegate/nweb_scheme_handler_factory.h",
+      "src/ndk/scheme_handler/arkweb_scheme_handler.cc",
       "src/ndk/scheme_handler/post_data_stream.cc",
       "src/ndk/scheme_handler/post_data_stream.h",
       "src/ndk/scheme_handler/resource_handler.cc",
       "src/ndk/scheme_handler/resource_handler.h",
-      "src/ndk/scheme_handler/response.cc",
-      "src/ndk/scheme_handler/response.h",
       "src/ndk/scheme_handler/resource_request.cc",
       "src/ndk/scheme_handler/resource_request.h",
-      "src/ndk/scheme_handler/arkweb_scheme_handler.cc"
+      "src/ndk/scheme_handler/response.cc",
+      "src/ndk/scheme_handler/response.h",
     ]
   }
+
   #endif
 
   sources += [
@@ -163,8 +178,8 @@ component("cef_nweb") {
   #ifdef OHOS_HTML_SELECT
   if (defined(ohos_html_select) && ohos_html_select) {
     sources += [
-      "src/cef_delegate/nweb_select_popup_menu_callback.cc",
-      "src/cef_delegate/nweb_select_popup_menu_callback.h",
+      "src/cef_delegate/nweb_select_popup_menu_impl.cc",
+      "src/cef_delegate/nweb_select_popup_menu_impl.h",
     ]
   }
 
@@ -204,9 +219,7 @@ component("cef_nweb") {
   if (defined(ohos_nweb_ex) && ohos_nweb_ex) {
     deps += [ "//ohos_nweb_ex/overrides/ohos_nweb" ]
   } else {
-    sources += [
-      "src/cef_delegate/nweb_delegate_ohos.cc",
-    ]
+    sources += [ "src/cef_delegate/nweb_delegate_ohos.cc" ]
   }
 }
 
@@ -239,14 +252,16 @@ component("nweb_sources") {
 
   sources = [
     "include/nweb.h",
+    "include/nweb_access_request.h",
     "include/nweb_accessibility_event_callback.h",
     "include/nweb_accessibility_node_info.h",
-    "include/nweb_access_request.h",
     "include/nweb_console_log.h",
     "include/nweb_controller_handler.h",
     "include/nweb_cookie_manager.h",
     "include/nweb_data_resubmission_callback.h",
     "include/nweb_download_callback.h",
+    "include/nweb_download_manager.h",
+    "include/nweb_engine.h",
     "include/nweb_find_callback.h",
     "include/nweb_geolocation_callback_interface.h",
     "include/nweb_handler.h",
@@ -267,6 +282,10 @@ component("nweb_sources") {
     "src/nweb_delegate_adapter.cc",
     "src/nweb_delegate_adapter.h",
     "src/nweb_delegate_interface.h",
+    "src/nweb_download_manager_impl.cc",
+    "src/nweb_download_manager_impl.h",
+    "src/nweb_engine_impl.cc",
+    "src/nweb_engine_impl.h",
     "src/nweb_hilog.h",
     "src/nweb_impl.cc",
     "src/nweb_impl.h",
@@ -290,17 +309,17 @@ component("nweb_sources") {
       "src/nweb_load_committed_details_impl.h",
     ]
   }
+
   #endif  // defined(OHOS_NAVIGATION)
 
   if (!defined(ohos_nweb_ex) || !ohos_nweb_ex) {
-    sources += [
-      "src/download/web_downloader.cc"
-    ]
+    sources += [ "src/download/web_downloader.cc" ]
   }
 
   deps = [
     ":cef_nweb",
     ":nweb_hilog",
+    "//ohos_glue:ohos_nweb_glue_source",
   ]
 
   #if defined(OHOS_NO_STATE_PREFETCH)

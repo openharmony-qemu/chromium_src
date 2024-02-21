@@ -33,14 +33,14 @@ public:
      *
      * @return The description of the error.
      */
-    virtual const std::string &ErrorInfo() const = 0;
+    virtual std::string ErrorInfo() = 0;
 
     /**
      * @brief Get the Error Code.
      *
      * @return The error code.
      */
-    virtual int ErrorCode() const = 0;
+    virtual int ErrorCode() = 0;
 };
 }
 

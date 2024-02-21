@@ -39,7 +39,8 @@ class NWebEventHandler {
   void SetIsFocus(bool isFocus) { isFocus_ = isFocus; }
   void OnTouchPress(int32_t id, double x, double y, bool from_overlay);
   void OnTouchMove(int32_t id, double x, double y, bool from_overlay);
-  void OnTouchMove(const std::list<TouchPointInfo>& touch_point_info_list, bool from_overlay);
+  void OnTouchMove(const std::vector<std::shared_ptr<NWebTouchPointInfo>> &touch_point_infos,
+                   bool from_overlay, float virtual_pixel_ratio);
   void OnTouchRelease(int32_t id, double x, double y, bool from_overlay);
   void OnTouchCancel();
   void SendMouseWheelEvent(double x, double y, double deltaX, double deltaY);

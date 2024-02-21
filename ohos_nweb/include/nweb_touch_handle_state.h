@@ -33,23 +33,23 @@ public:
 
     virtual ~NWebTouchHandleState() = default;
 
-    virtual int32_t GetTouchHandleId() const = 0;
+    virtual int32_t GetTouchHandleId() = 0;
 
-    virtual int32_t GetX() const = 0;
+    virtual int32_t GetX() = 0;
 
-    virtual int32_t GetY() const = 0;
+    virtual int32_t GetY() = 0;
 
-    virtual int32_t GetViewPortX() const = 0;
+    virtual int32_t GetViewPortX() = 0;
 
-    virtual int32_t GetViewPortY() const = 0;
+    virtual int32_t GetViewPortY() = 0;
 
-    virtual TouchHandleType GetTouchHandleType() const = 0;
+    virtual TouchHandleType GetTouchHandleType() = 0;
 
-    virtual bool IsEnable() const = 0;
+    virtual bool IsEnable() = 0;
 
-    virtual float GetAlpha() const = 0;
+    virtual float GetAlpha() = 0;
 
-    virtual float GetEdgeHeight() const = 0;
+    virtual float GetEdgeHeight() = 0;
 };
 }
 

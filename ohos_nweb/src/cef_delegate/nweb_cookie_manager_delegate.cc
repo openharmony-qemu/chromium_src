@@ -34,7 +34,7 @@ class CookieCompletionCallback : public CefCompletionCallback {
  public:
   explicit CookieCompletionCallback(
       std::shared_ptr<WaitableEvent> event,
-      std::shared_ptr<NWebValueCallback<bool>> callback)
+      std::shared_ptr<NWebBoolValueCallback> callback)
       : event_(event), callback_(callback) {}
   void OnComplete() override {
     if (event_ != nullptr) {
@@ -47,14 +47,14 @@ class CookieCompletionCallback : public CefCompletionCallback {
 
  private:
   std::shared_ptr<WaitableEvent> event_;
-  std::shared_ptr<NWebValueCallback<bool>> callback_;
+  std::shared_ptr<NWebBoolValueCallback> callback_;
   IMPLEMENT_REFCOUNTING(CookieCompletionCallback);
 };
 
 class CookieSetCallback : public CefSetCookieCallback {
  public:
   explicit CookieSetCallback(std::shared_ptr<WaitableEvent> event,
-                             std::shared_ptr<NWebValueCallback<bool>> callback)
+                             std::shared_ptr<NWebBoolValueCallback> callback)
       : event_(event), callback_(callback), set_success_(false) {}
   void OnComplete(bool success) override {
     set_success_ = success;
@@ -70,7 +70,7 @@ class CookieSetCallback : public CefSetCookieCallback {
 
  private:
   std::shared_ptr<WaitableEvent> event_;
-  std::shared_ptr<NWebValueCallback<bool>> callback_;
+  std::shared_ptr<NWebBoolValueCallback> callback_;
   bool set_success_;
 
   IMPLEMENT_REFCOUNTING(CookieSetCallback);
@@ -79,7 +79,7 @@ class CookieSetCallback : public CefSetCookieCallback {
 class CookieConfigCallback : public CefSetCookieCallback {
  public:
   explicit CookieConfigCallback(std::shared_ptr<WaitableEvent> event,
-                                std::shared_ptr<NWebValueCallback<long>> callback)
+                                std::shared_ptr<NWebLongValueCallback> callback)
       : event_(event), callback_(callback), set_success_(false) {}
   void OnComplete(bool success) override {
     set_success_ = success;
@@ -102,7 +102,7 @@ class CookieConfigCallback : public CefSetCookieCallback {
 
  private:
   std::shared_ptr<WaitableEvent> event_;
-  std::shared_ptr<NWebValueCallback<long>> callback_;
+  std::shared_ptr<NWebLongValueCallback> callback_;
   bool set_success_;
 
   IMPLEMENT_REFCOUNTING(CookieConfigCallback);
@@ -112,7 +112,7 @@ class HasCookieVisitor : public CefCookieVisitor {
  public:
   HasCookieVisitor() = delete;
   explicit HasCookieVisitor(std::shared_ptr<WaitableEvent> event,
-                            std::shared_ptr<NWebValueCallback<bool>> callback)
+                            std::shared_ptr<NWebBoolValueCallback> callback)
       : event_(event), callback_(callback) {}
   ~HasCookieVisitor() = default;
 
@@ -144,7 +144,7 @@ class HasCookieVisitor : public CefCookieVisitor {
 
  private:
   std::shared_ptr<WaitableEvent> event_;
-  std::shared_ptr<NWebValueCallback<bool>> callback_;
+  std::shared_ptr<NWebBoolValueCallback> callback_;
   IMPLEMENT_REFCOUNTING(HasCookieVisitor);
   int total_cookies_number;
 };
@@ -154,7 +154,7 @@ class ReturnCookieVisitor : public CefCookieVisitor {
   ReturnCookieVisitor() = delete;
   explicit ReturnCookieVisitor(
       std::shared_ptr<WaitableEvent> event,
-      std::shared_ptr<NWebValueCallback<std::string>> callback)
+      std::shared_ptr<NWebStringValueCallback> callback)
       : event_(event),
         cookie_line_(std::string()),
         cookies_(std::vector<CefCookie>()),
@@ -203,7 +203,7 @@ class ReturnCookieVisitor : public CefCookieVisitor {
   std::shared_ptr<WaitableEvent> event_;
   std::string cookie_line_;
   std::vector<CefCookie> cookies_;
-  std::shared_ptr<NWebValueCallback<std::string>> callback_;
+  std::shared_ptr<NWebStringValueCallback> callback_;
   IMPLEMENT_REFCOUNTING(ReturnCookieVisitor);
 };
 
@@ -211,10 +211,10 @@ class CookieDeleteCallback : public CefDeleteCookiesCallback {
  public:
   CookieDeleteCallback() = delete;
   CookieDeleteCallback(std::shared_ptr<WaitableEvent> event,
-                       std::shared_ptr<NWebValueCallback<bool>> callback)
+                       std::shared_ptr<NWebBoolValueCallback> callback)
       : event_(event), callback_(callback), num_deleted_(0) {}
   explicit CookieDeleteCallback(
-      std::shared_ptr<NWebValueCallback<bool>> callback)
+      std::shared_ptr<NWebBoolValueCallback> callback)
       : event_(nullptr), callback_(callback), num_deleted_(0) {}
   explicit CookieDeleteCallback(std::shared_ptr<WaitableEvent> event)
       : event_(event), callback_(nullptr), num_deleted_(0) {}
@@ -237,7 +237,7 @@ class CookieDeleteCallback : public CefDeleteCookiesCallback {
 
  private:
   std::shared_ptr<WaitableEvent> event_;
-  std::shared_ptr<NWebValueCallback<bool>> callback_;
+  std::shared_ptr<NWebBoolValueCallback> callback_;
   int num_deleted_;
 
   IMPLEMENT_REFCOUNTING(CookieDeleteCallback);
@@ -318,7 +318,7 @@ void NWebCookieManagerDelegate::PutAcceptFileURLSchemeCookiesEnabled(
 
 void NWebCookieManagerDelegate::ReturnCookie(
     const std::string& url,
-    std::shared_ptr<NWebValueCallback<std::string>> callback) {
+    std::shared_ptr<NWebStringValueCallback> callback) {
   CefRefPtr<CefCookieManager> cookie_manager = GetGlobalCookieManager();
   if (cookie_manager == nullptr) {
     LOG(ERROR) << "GetGlobalCookieManager failed";
@@ -371,7 +371,7 @@ bool FixInvalidGurl(const CefString& url, GURL& gurl) {
 void NWebCookieManagerDelegate::ConfigCookie(
     const std::string& url,
     const std::string& value,
-    std::shared_ptr<NWebValueCallback<long>> callback) {
+    std::shared_ptr<NWebLongValueCallback> callback) {
   CefRefPtr<CookieConfigCallback> cookie_config_callback(
     new CookieConfigCallback(nullptr, callback));
   CefRefPtr<CefCookieManager> cookie_manager = GetGlobalCookieManager();
@@ -406,7 +406,7 @@ void NWebCookieManagerDelegate::ConfigCookie(
 void NWebCookieManagerDelegate::SetCookie(
     const std::string& url,
     const std::string& value,
-    std::shared_ptr<NWebValueCallback<bool>> callback) {
+    std::shared_ptr<NWebBoolValueCallback> callback) {
   CefRefPtr<CefCookieManager> cookie_manager = GetGlobalCookieManager();
   if (cookie_manager == nullptr) {
     LOG(ERROR) << "GetGlobalCookieManager failed";
@@ -472,7 +472,7 @@ int NWebCookieManagerDelegate::SetCookie(const std::string& url,
 }
 
 void NWebCookieManagerDelegate::ExistCookies(
-    std::shared_ptr<NWebValueCallback<bool>> callback) {
+    std::shared_ptr<NWebBoolValueCallback> callback) {
   CefRefPtr<CefCookieManager> cookie_manager = GetGlobalCookieManager();
   if (cookie_manager == nullptr) {
     if (callback) {
@@ -503,7 +503,7 @@ bool NWebCookieManagerDelegate::ExistCookies(bool incognito_mode) {
 }
 
 void NWebCookieManagerDelegate::Store(
-    std::shared_ptr<NWebValueCallback<bool>> callback) {
+    std::shared_ptr<NWebBoolValueCallback> callback) {
   CefRefPtr<CefCookieManager> cookie_manager = GetGlobalCookieManager();
   if (cookie_manager == nullptr) {
     if (callback) {
@@ -541,7 +541,7 @@ bool NWebCookieManagerDelegate::Store() {
 }
 
 void NWebCookieManagerDelegate::DeleteSessionCookies(
-    std::shared_ptr<NWebValueCallback<bool>> callback) {
+    std::shared_ptr<NWebBoolValueCallback> callback) {
   CefRefPtr<CefCookieManager> cookie_manager = GetGlobalCookieManager();
   if (cookie_manager == nullptr) {
     if (callback) {
@@ -562,7 +562,7 @@ void NWebCookieManagerDelegate::DeleteSessionCookies(
 }
 
 void NWebCookieManagerDelegate::DeleteCookieEntirely(
-    std::shared_ptr<NWebValueCallback<bool>> callback, bool incognito_mode) {
+    std::shared_ptr<NWebBoolValueCallback> callback, bool incognito_mode) {
   CefRefPtr<CefCookieManager> cookie_manager = incognito_mode ?
       GetGlobalIncognitoCookieManager() : GetGlobalCookieManager();
   if (cookie_manager == nullptr) {

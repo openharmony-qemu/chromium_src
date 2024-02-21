@@ -30,15 +30,16 @@ class NWebWebStorageImpl : public NWebWebStorage {
 
   void DeleteAllData(bool incognito_mode) override;
   int DeleteOrigin(const std::string& origin) override;
-  void GetOrigins(std::shared_ptr<NWebGetOriginsCallback> callback) override;
-  std::vector<NWebWebStorageOrigin> GetOrigins() override;
+  void GetOrigins(
+      std::shared_ptr<NWebWebStorageOriginVectorValueCallback> callback) override;
+  std::vector<std::shared_ptr<NWebWebStorageOrigin>> GetOrigins() override;
   void GetOriginQuota(
       const std::string& origin,
-      std::shared_ptr<NWebValueCallback<long>> callback) override;
+      std::shared_ptr<NWebLongValueCallback> callback) override;
   long GetOriginQuota(const std::string& origin) override;
   void GetOriginUsage(
       const std::string& origin,
-      std::shared_ptr<NWebValueCallback<long>> callback) override;
+      std::shared_ptr<NWebLongValueCallback> callback) override;
   long GetOriginUsage(const std::string& origin) override;
 
 #if BUILDFLAG(IS_OHOS)

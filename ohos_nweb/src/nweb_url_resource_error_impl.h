@@ -25,8 +25,8 @@ class UrlResourceErrorImpl : public NWebUrlResourceError {
       : error_code_(error_code), error_info_(error_info){}
   ~UrlResourceErrorImpl() = default;
 
-  const std::string& ErrorInfo() const override { return error_info_; }
-  int ErrorCode() const override { return error_code_; }
+  std::string ErrorInfo() override { return error_info_; }
+  int ErrorCode() override { return error_code_; }
 
  private:
   int error_code_;

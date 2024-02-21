@@ -31,11 +31,11 @@ class FileSelectorParamsImpl : public NWebFileSelectorParams {
                          const std::string& default_filename,
                          bool is_capture);
 
-  const std::string Title() const override;
-  NWebFileSelectorParams::FileSelectorMode Mode() const override;
-  const std::string DefaultFilename() const override;
-  const AcceptTypeList AcceptType() const override;
-  bool IsCapture() const override;
+  const std::string Title() override;
+  NWebFileSelectorParams::FileSelectorMode Mode() override;
+  const std::string DefaultFilename() override;
+  const AcceptTypeList AcceptType() override;
+  bool IsCapture() override;
 
  private:
   NWebFileSelectorParams::FileSelectorMode mode_;
@@ -45,7 +45,7 @@ class FileSelectorParamsImpl : public NWebFileSelectorParams {
   bool is_capture_;
 };
 
-class FileSelectorCallbackImpl : public FileSelectorCallback {
+class FileSelectorCallbackImpl : public NWebStringVectorValueCallback {
  public:
   explicit FileSelectorCallbackImpl(CefRefPtr<CefFileDialogCallback> callback)
       : callback_(callback),
@@ -53,7 +53,7 @@ class FileSelectorCallbackImpl : public FileSelectorCallback {
         is_used_(false) {}
   ~FileSelectorCallbackImpl() = default;
 
-  void OnReceiveValue(std::vector<std::string>& value) override;
+  void OnReceiveValue(const std::vector<std::string>& value) override;
 
  private:
   CefRefPtr<CefFileDialogCallback> callback_;

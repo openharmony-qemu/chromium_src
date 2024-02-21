@@ -88,6 +88,202 @@ uint16_t ConvertRotationAngel(OHOS::NWeb::RotationType type,
 }  // namespace
 
 namespace OHOS::NWeb {
+
+class NWebNativeEmbedInfoImpl : public NWebNativeEmbedInfo {
+ public:
+  NWebNativeEmbedInfoImpl() = default;
+  ~NWebNativeEmbedInfoImpl() = default;
+
+  int32_t GetWidth() override {
+    return width_;
+  }
+
+  void SetWidth(int32_t width) {
+    width_ = width;
+  }
+
+  int32_t GetHeight() override {
+    return height_;
+  }
+
+  void SetHeight(int32_t height) {
+    height_ = height;
+  }
+
+  std::string GetId() override {
+    return id_;
+  }
+
+  void SetId(const std::string &id) {
+    id_ = id;
+  }
+
+  std::string GetSrc() override {
+    return src_;
+  }
+
+  void SetSrc(const std::string &src) {
+    src_ = src;
+  }
+
+  std::string GetUrl() override {
+    return url_;
+  }
+
+  void SetUrl(const std::string &url) {
+    url_ = url;
+  }
+
+  std::string GetType() override {
+    return type_;
+  }
+
+  void SetType(const std::string &type) {
+    type_ = type;
+  }
+
+ private:
+  int32_t width_;
+  int32_t height_;
+  std::string id_;
+  std::string src_;
+  std::string url_;
+  std::string type_;
+};
+
+class NWebNativeEmbedDataInfoImpl : public NWebNativeEmbedDataInfo {
+ public:
+  NWebNativeEmbedDataInfoImpl() = default;
+  ~NWebNativeEmbedDataInfoImpl() = default;
+
+  NativeEmbedStatus GetStatus() override {
+    return status_;
+  }
+
+  void SetStatus(NativeEmbedStatus status) {
+    status_ = status;
+  }
+
+  std::string GetEmbedId() override {
+    return embedId_;
+  }
+
+  void SetEmbedId(const std::string &embedId) {
+    embedId_ = embedId;
+  }
+
+  std::string GetSurfaceId() override {
+    return surfaceId_;
+  }
+
+  void SetSurfaceId(const std::string &surfaceId) {
+    surfaceId_ = surfaceId;
+  }
+
+  std::shared_ptr<NWebNativeEmbedInfo> GetNativeEmbedInfo() override {
+    return info_;
+  }
+
+  void SetNativeEmbedInfo(std::shared_ptr<NWebNativeEmbedInfo> info) {
+    info_ = info;
+  }
+
+ private:
+  NativeEmbedStatus status_;
+  std::string surfaceId_;
+  std::string embedId_;
+  std::shared_ptr<NWebNativeEmbedInfo> info_;
+};
+
+class NWebNativeEmbedTouchEventImpl : public NWebNativeEmbedTouchEvent {
+ public:
+  NWebNativeEmbedTouchEventImpl() = default;
+  ~NWebNativeEmbedTouchEventImpl() = default;
+
+  float GetX() override {
+    return x_;
+  }
+
+  void SetX(float x) {
+    x_ = x;
+  }
+
+  float GetY() override {
+    return y_;
+  }
+
+  void SetY(float y) {
+    y_ = y;
+  }
+
+  int32_t GetId() override {
+    return id_;
+  }
+
+  void SetId(int32_t id) {
+    id_ = id;
+  }
+
+  TouchType GetType() override {
+    return type_;
+  }
+
+  void SetType(TouchType type) {
+    type_ = type;
+  }
+
+  float GetOffsetX() override {
+    return offsetX_;
+  }
+
+  void SetOffsetX(float offsetX) {
+    offsetX_ = offsetX;
+  }
+
+  float GetOffsetY() override {
+    return offsetY_;
+  }
+
+  void SetOffsetY(float offsetY) {
+    offsetY_ = offsetY;
+  }
+
+  float GetScreenX() override {
+    return screenX_;
+  }
+
+  void SetScreenX(float screenX) {
+    screenX_ = screenX;
+  }
+
+  float GetScreenY() override {
+    return screenY_;
+  }
+
+  void SetScreenY(float screenY) {
+    screenY_ = screenY;
+  }
+
+  std::string GetEmbedId() override {
+    return embedId_;
+  }
+
+  void SetEmbedId(const std::string &embedId) {
+    embedId_ = embedId;
+  }
+
+ private:
+  std::string embedId_;
+  int32_t id_;
+  float x_;
+  float y_;
+  float offsetX_;
+  float offsetY_;
+  float screenX_;
+  float screenY_;
+  TouchType type_;
+};
+
 // static
 CefRefPtr<NWebRenderHandler> NWebRenderHandler::Create() {
   CefRefPtr<NWebRenderHandler> renderHandler(new NWebRenderHandler());
@@ -588,18 +784,34 @@ bool NWebRenderHandler::FilterScrollEvent(CefRefPtr<CefBrowser> browser,
 void NWebRenderHandler::OnNativeEmbedGestureEvent(CefRefPtr<CefBrowser> browser,
                                       const CefEmbedTouchEvent& touchEvent){
  if (auto handler = handler_.lock()) {
-  NativeEmbedTouchEvent info{touchEvent.embedId, touchEvent.id, touchEvent.x, touchEvent.y,
-      touchEvent.screenX, touchEvent.screenY, static_cast<OHOS::NWeb::TouchType>(touchEvent.type),
-      touchEvent.offsetX, touchEvent.offsetY};
+  std::shared_ptr<NWebNativeEmbedTouchEventImpl> info = std::make_shared<NWebNativeEmbedTouchEventImpl>();
+  info->SetX(touchEvent.x);
+  info->SetY(touchEvent.y);
+  info->SetId(touchEvent.id);
+  info->SetEmbedId(touchEvent.embedId);
+  info->SetOffsetX(touchEvent.offsetY);
+  info->SetOffsetY(touchEvent.offsetX);
+  info->SetScreenX(touchEvent.screenX);
+  info->SetScreenY(touchEvent.screenY);
+  info->SetType(static_cast<OHOS::NWeb::TouchType>(touchEvent.type));
   handler->OnNativeEmbedGestureEvent(info);
   }
 }
-OHOS::NWeb::NativeEmbedDataInfo CefEmbedDataToWeb(const CefRenderHandler::CefNativeEmbedData& embedData){
+std::shared_ptr<NWebNativeEmbedDataInfo> CefEmbedDataToWeb(const CefRenderHandler::CefNativeEmbedData& embedData){
   auto info = embedData.info;
-  NativeEmbedInfo embedinfo{info.id, info.width, info.height, info.type, info.src, info.url};
+  std::shared_ptr<NWebNativeEmbedInfoImpl> embedinfo = std::make_shared<NWebNativeEmbedInfoImpl>();
+  embedinfo->SetId(info.id);
+  embedinfo->SetSrc(info.src);
+  embedinfo->SetUrl(info.url);
+  embedinfo->SetType(info.type);
+  embedinfo->SetWidth(info.width);
+  embedinfo->SetHeight(info.height);
 
-  NativeEmbedDataInfo datainfo{static_cast<OHOS::NWeb::NativeEmbedStatus>(embedData.status),
-                               embedData.surfaceId,embedData.embedId, embedinfo};
+  std::shared_ptr<NWebNativeEmbedDataInfoImpl> datainfo = std::make_shared<NWebNativeEmbedDataInfoImpl>();
+  datainfo->SetNativeEmbedInfo(embedinfo);
+  datainfo->SetEmbedId(embedData.embedId);
+  datainfo->SetSurfaceId(embedData.surfaceId);
+  datainfo->SetStatus(static_cast<OHOS::NWeb::NativeEmbedStatus>(embedData.status));
   return datainfo;
 }
 void NWebRenderHandler::OnNativeEmbedLifecycleChange(CefRefPtr<CefBrowser> browser,

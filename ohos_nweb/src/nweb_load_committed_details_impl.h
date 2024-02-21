@@ -32,7 +32,7 @@ class NWebLoadCommittedDetailsImpl : public NWebLoadCommittedDetails {
   bool IsSameDocument() override;
   bool DidReplaceEntry() override;
   NavigationType GetNavigationType() override;
-  const std::string& GetURL() override;
+  std::string GetURL() override;
 
  private:
   std::string current_url_;

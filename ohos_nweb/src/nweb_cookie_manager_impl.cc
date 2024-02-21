@@ -15,24 +15,20 @@
 
 #include "nweb_cookie_manager_impl.h"
 #include "nweb_cookie_manager_delegate.h"
+#include "nweb_default_engine_init_args_impl.h"
 #include "nweb_hilog.h"
 
 #if defined(OHOS_COOKIE)
 #include "nweb_impl.h"
 #endif // defined(OHOS_COOKIE)
 
-using namespace OHOS::NWeb;
-
-extern "C" OHOS_NWEB_EXPORT NWebCookieManager* GetCookieManager() {
-  WVLOG_I("GetCookieManager");
-  return NWebCookieManagerImpl::GetCookieManagerInstance();
-}
-
 namespace OHOS::NWeb {
 
-NWebCookieManager* NWebCookieManagerImpl::GetCookieManagerInstance() {
-  static NWebCookieManagerImpl cookie_manager;
-  return &cookie_manager;
+// static
+std::shared_ptr<NWebCookieManager> NWebCookieManagerImpl::GetInstance() {
+  static std::shared_ptr<NWebCookieManagerImpl> cookie_manager =
+    std::make_shared<NWebCookieManagerImpl>();
+  return cookie_manager;
 }
 
 NWebCookieManagerImpl::NWebCookieManagerImpl() {
@@ -40,12 +36,12 @@ NWebCookieManagerImpl::NWebCookieManagerImpl() {
   delegate_ = std::make_shared<NWebCookieManagerDelegate>();
 #endif
 #if defined(OHOS_COOKIE)
-  NWebInitArgs init_args;
+  std::shared_ptr<NWebEngineInitArgs> init_args = std::make_shared<NWebDefaultEngineInitArgsImpl>();
   (void)NWebImpl::InitializeICUStatic(init_args);
 #endif // defined(OHOS_COOKIE)
 }
 
-bool NWebCookieManagerImpl::IsAcceptCookieAllowed() const {
+bool NWebCookieManagerImpl::IsAcceptCookieAllowed() {
   if (delegate_ != nullptr) {
     return delegate_->IsAcceptCookieAllowed();
   }
@@ -58,7 +54,7 @@ void NWebCookieManagerImpl::PutAcceptCookieEnabled(bool accept) {
   }
 }
 
-bool NWebCookieManagerImpl::IsThirdPartyCookieAllowed() const {
+bool NWebCookieManagerImpl::IsThirdPartyCookieAllowed() {
   if (delegate_ != nullptr) {
     return delegate_->IsThirdPartyCookieAllowed();
   }
@@ -71,7 +67,7 @@ void NWebCookieManagerImpl::PutAcceptThirdPartyCookieEnabled(bool accept) {
   }
 }
 
-bool NWebCookieManagerImpl::IsFileURLSchemeCookiesAllowed() const {
+bool NWebCookieManagerImpl::IsFileURLSchemeCookiesAllowed() {
   if (delegate_ != nullptr) {
     return delegate_->IsFileURLSchemeCookiesAllowed();
   }
@@ -87,7 +83,7 @@ void NWebCookieManagerImpl::PutAcceptFileURLSchemeCookiesEnabled(bool allow) {
 void NWebCookieManagerImpl::ConfigCookie(
     const std::string& url,
     const std::string& value,
-    std::shared_ptr<NWebValueCallback<long>> callback) {
+    std::shared_ptr<NWebLongValueCallback> callback) {
   if (delegate_ != nullptr) {
     delegate_->ConfigCookie(url, value, callback);
   }
@@ -96,7 +92,7 @@ void NWebCookieManagerImpl::ConfigCookie(
 void NWebCookieManagerImpl::SetCookie(
     const std::string& url,
     const std::string& value,
-    std::shared_ptr<NWebValueCallback<bool>> callback) {
+    std::shared_ptr<NWebBoolValueCallback> callback) {
   if (delegate_ != nullptr) {
     delegate_->SetCookie(url, value, callback);
   }
@@ -112,7 +108,7 @@ int NWebCookieManagerImpl::SetCookie(
 
 void NWebCookieManagerImpl::ReturnCookie(
     const std::string& url,
-    std::shared_ptr<NWebValueCallback<std::string>> callback) {
+    std::shared_ptr<NWebStringValueCallback> callback) {
   if (delegate_ != nullptr) {
     delegate_->ReturnCookie(url, callback);
   }
@@ -127,7 +123,7 @@ std::string NWebCookieManagerImpl::ReturnCookie(
 }
 
 void NWebCookieManagerImpl::ExistCookies(
-    std::shared_ptr<NWebValueCallback<bool>> callback) {
+    std::shared_ptr<NWebBoolValueCallback> callback) {
   if (delegate_ != nullptr) {
     delegate_->ExistCookies(callback);
   }
@@ -141,7 +137,7 @@ bool NWebCookieManagerImpl::ExistCookies(bool incognito_mode) {
 }
 
 void NWebCookieManagerImpl::Store(
-    std::shared_ptr<NWebValueCallback<bool>> callback) {
+    std::shared_ptr<NWebBoolValueCallback> callback) {
   if (delegate_ != nullptr) {
     delegate_->Store(callback);
   }
@@ -155,14 +151,14 @@ bool NWebCookieManagerImpl::Store() {
 }
 
 void NWebCookieManagerImpl::DeleteSessionCookies(
-    std::shared_ptr<NWebValueCallback<bool>> callback) {
+    std::shared_ptr<NWebBoolValueCallback> callback) {
   if (delegate_ != nullptr) {
     delegate_->DeleteSessionCookies(callback);
   }
 }
 
 void NWebCookieManagerImpl::DeleteCookieEntirely(
-    std::shared_ptr<NWebValueCallback<bool>> callback, bool incognito_mode) {
+    std::shared_ptr<NWebBoolValueCallback> callback, bool incognito_mode) {
   if (delegate_ != nullptr) {
     delegate_->DeleteCookieEntirely(callback, incognito_mode);
   }

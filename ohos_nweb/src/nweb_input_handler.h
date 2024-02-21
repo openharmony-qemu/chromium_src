@@ -37,7 +37,8 @@ class NWebInputHandler {
   void OnTouchPress(int32_t id, double x, double y, bool from_overlay);
   void OnTouchRelease(int32_t id, double x, double y, bool from_overlay);
   void OnTouchMove(int32_t id, double x, double y, bool from_overlay);
-  void OnTouchMove(const std::list<TouchPointInfo>& touch_point_info_list, bool from_overlay);
+  void OnTouchMove(const std::vector<std::shared_ptr<NWebTouchPointInfo>> &touch_point_infos,
+                   bool from_overlay);
   void OnTouchCancel();
   void OnNavigateBack();
   bool SendKeyEvent(int32_t keyCode, int32_t keyAction);

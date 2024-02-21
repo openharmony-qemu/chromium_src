@@ -30,10 +30,15 @@ struct DateTime {
     int32_t second = 0;
 };
 
-struct DateTimeSuggestion {
-    DateTime value;
-    std::string localizedValue;
-    std::string label;
+class NWebDateTimeSuggestion {
+public:
+    virtual ~NWebDateTimeSuggestion() = default;
+
+    virtual DateTime GetValue() = 0;
+
+    virtual std::string GetLabel() = 0;
+
+    virtual std::string GetLocalizedValue() = 0;
 };
 
 enum DateTimeChooserType {

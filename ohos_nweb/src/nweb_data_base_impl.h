@@ -28,7 +28,7 @@ class NWebDataBaseImpl : public NWebDataBase {
 
   ~NWebDataBaseImpl() = default;
 
-  bool ExistHttpAuthCredentials() const override;
+  bool ExistHttpAuthCredentials() override;
 
   void DeleteHttpAuthCredentials() override;
 
@@ -41,7 +41,7 @@ class NWebDataBaseImpl : public NWebDataBase {
                               const std::string& realm,
                               std::string& username,
                               char* password,
-                              uint32_t passwordSize) const override;
+                              uint32_t passwordSize) override;
 
   bool ExistPermissionByOrigin(const std::string& origin,
                                int type,

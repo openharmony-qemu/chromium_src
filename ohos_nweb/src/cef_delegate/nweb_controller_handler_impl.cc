@@ -21,14 +21,14 @@ void NWebControllerHandlerImpl::SetNWebHandlerById(int32_t nwebId) {
   nwebId_ = nwebId;
 }
 
-int32_t NWebControllerHandlerImpl::GetNWebHandlerId() const {
+int32_t NWebControllerHandlerImpl::GetNWebHandlerId() {
   return nwebId_;
 }
 
-bool NWebControllerHandlerImpl::IsFrist() const {
+bool NWebControllerHandlerImpl::IsFrist() {
   return isFrist_;
 }
 
-int32_t NWebControllerHandlerImpl::GetId() const {
+int32_t NWebControllerHandlerImpl::GetId() {
   return id_;
 }

@@ -16,13 +16,11 @@ public:
         KEY_UP_ACTION
     };
 
-    NWebKeyEvent() = default;
-
     virtual ~NWebKeyEvent() = default;
 
-    int32_t keyCode_;
+    virtual int32_t GetAction() = 0;
 
-    int32_t action_;
+    virtual int32_t GetKeyCode() = 0;
 };
 } // namespace OHOS::NWeb
 

@@ -33,27 +33,27 @@ FileSelectorParamsImpl::FileSelectorParamsImpl(
   }
 }
 
-const std::string FileSelectorParamsImpl::Title() const {
+const std::string FileSelectorParamsImpl::Title() {
   return title_;
 }
 
-NWebFileSelectorParams::FileSelectorMode FileSelectorParamsImpl::Mode() const {
+NWebFileSelectorParams::FileSelectorMode FileSelectorParamsImpl::Mode() {
   return mode_;
 }
 
-const std::string FileSelectorParamsImpl::DefaultFilename() const {
+const std::string FileSelectorParamsImpl::DefaultFilename() {
   return default_filename_;
 }
 
-const AcceptTypeList FileSelectorParamsImpl::AcceptType() const {
+const AcceptTypeList FileSelectorParamsImpl::AcceptType() {
   return accept_type_;
 }
 
-bool FileSelectorParamsImpl::IsCapture() const {
+bool FileSelectorParamsImpl::IsCapture() {
   return is_capture_;
 }
 
-void FileSelectorCallbackImpl::OnReceiveValue(std::vector<std::string>& value) {
+void FileSelectorCallbackImpl::OnReceiveValue(const std::vector<std::string>& value) {
   if (callback_ == nullptr || is_used_) {
     LOG(ERROR) << "FileSelectorCallbackImpl is null or already used";
     return;

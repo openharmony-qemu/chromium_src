@@ -25,7 +25,7 @@ class NWebJSHttpAuthResultImpl : public NWebJSHttpAuthResult {
   NWebJSHttpAuthResultImpl() = default;
   explicit NWebJSHttpAuthResultImpl(CefRefPtr<CefAuthCallback> callback);
   ~NWebJSHttpAuthResultImpl() = default;
-  bool Confirm(std::string& userName, std::string& pwd) override;
+  bool Confirm(const std::string& userName, const std::string& pwd) override;
   void Cancel() override;
   bool IsHttpAuthInfoSaved() override;
 

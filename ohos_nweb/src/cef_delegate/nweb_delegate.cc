@@ -19,6 +19,7 @@
 #include "nweb_accessibility_utils.h"
 #include "nweb_application.h"
 #include "nweb_handler_delegate.h"
+#include "nweb_hit_test_result_impl.h"
 #include "nweb_render_handler.h"
 #include "nweb_value_convert.h"
 
@@ -170,7 +171,7 @@ void ConvertCefValueToNWebMessage(CefRefPtr<CefValue> src,
 class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
  public:
   JavaScriptResultCallbackImpl(
-      std::shared_ptr<NWebValueCallback<std::shared_ptr<NWebMessage>>> callback,
+      std::shared_ptr<NWebMessageValueCallback> callback,
       uint32_t callbackId, std::shared_ptr<NWebDelegateInterface> delegate)
       : callback_(callback), callbackId_(callbackId),
         weakNWebDelegate_(std::weak_ptr<NWebDelegateInterface>(delegate)) {}
@@ -199,7 +200,7 @@ class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
   }
 
  private:
-  std::shared_ptr<NWebValueCallback<std::shared_ptr<NWebMessage>>> callback_;
+  std::shared_ptr<NWebMessageValueCallback> callback_;
   uint32_t callbackId_;
   std::weak_ptr<NWebDelegateInterface> weakNWebDelegate_;
 
@@ -209,7 +210,7 @@ class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
 class CefWebMessageReceiverImpl : public CefWebMessageReceiver {
  public:
   CefWebMessageReceiverImpl(
-      std::shared_ptr<NWebValueCallback<std::shared_ptr<NWebMessage>>> callback)
+      std::shared_ptr<NWebMessageValueCallback> callback)
       : callback_(callback) {}
   void OnMessage(CefRefPtr<CefValue> message) override {
     LOG(INFO) << "OnMessage in nweb delegate";
@@ -222,7 +223,7 @@ class CefWebMessageReceiverImpl : public CefWebMessageReceiver {
   }
 
  private:
-  std::shared_ptr<NWebValueCallback<std::shared_ptr<NWebMessage>>> callback_;
+  std::shared_ptr<NWebMessageValueCallback> callback_;
 
   IMPLEMENT_REFCOUNTING(CefWebMessageReceiverImpl);
 };
@@ -232,7 +233,7 @@ class StoreWebArchiveResultCallbackImpl
     : public CefStoreWebArchiveResultCallback {
  public:
   StoreWebArchiveResultCallbackImpl(
-      std::shared_ptr<NWebValueCallback<std::string>> callback)
+      std::shared_ptr<NWebStringValueCallback> callback)
       : callback_(callback) {}
   void OnStoreWebArchiveDone(const CefString& result) override {
     if (callback_ != nullptr) {
@@ -241,7 +242,7 @@ class StoreWebArchiveResultCallbackImpl
   }
 
  private:
-  std::shared_ptr<NWebValueCallback<std::string>> callback_;
+  std::shared_ptr<NWebStringValueCallback> callback_;
 
   IMPLEMENT_REFCOUNTING(StoreWebArchiveResultCallbackImpl);
 };
@@ -249,7 +250,7 @@ class StoreWebArchiveResultCallbackImpl
 class GetImagesCallbackImpl : public CefGetImagesCallback {
  public:
   explicit GetImagesCallbackImpl(
-      std::shared_ptr<NWebValueCallback<bool>> callback)
+      std::shared_ptr<NWebBoolValueCallback> callback)
       : callback_(callback) {}
 
   void GetImages(bool response) override {
@@ -259,7 +260,7 @@ class GetImagesCallbackImpl : public CefGetImagesCallback {
   }
 
  private:
-  std::shared_ptr<NWebValueCallback<bool>> callback_;
+  std::shared_ptr<NWebBoolValueCallback> callback_;
 
   IMPLEMENT_REFCOUNTING(GetImagesCallbackImpl);
 };
@@ -669,17 +670,13 @@ void NWebDelegate::OnTouchRelease(int32_t id,
   }
 }
 
-void NWebDelegate::OnTouchMove(const std::list<TouchPointInfo>& touch_point_info_list, bool from_overlay) {
+void NWebDelegate::OnTouchMove(const std::vector<std::shared_ptr<NWebTouchPointInfo>> &touch_point_infos,
+                               bool from_overlay) {
   if (event_handler_ == nullptr) {
     return;
   }
 
-  std::list<TouchPointInfo> adjusted_touch_point_info_list = touch_point_info_list;
-  for (auto& touch_point_info : adjusted_touch_point_info_list) {
-    touch_point_info.x_ = touch_point_info.x_ / default_virtual_pixel_ratio_;
-    touch_point_info.y_ = touch_point_info.y_ / default_virtual_pixel_ratio_;
-  }
-  event_handler_->OnTouchMove(adjusted_touch_point_info_list, from_overlay);
+  event_handler_->OnTouchMove(touch_point_infos, from_overlay, default_virtual_pixel_ratio_);
 }
 
 void NWebDelegate::OnTouchMove(int32_t id,
@@ -870,7 +867,7 @@ int NWebDelegate::Load(const std::string& url) {
 }
 
 #ifdef OHOS_POST_URL
-int NWebDelegate::PostUrl(const std::string& url, std::vector<char>& postData) {
+int NWebDelegate::PostUrl(const std::string& url, const std::vector<char>& postData) {
   GURL gurl = GURL(url);
   if (gurl.is_empty() || !gurl.is_valid()) {
     GURL gurlWithHttp = GURL("https://" + url);
@@ -1024,7 +1021,7 @@ void NWebDelegate::SetWindowId(uint32_t window_id) {
 void NWebDelegate::StoreWebArchive(
     const std::string& base_name,
     bool auto_name,
-    std::shared_ptr<NWebValueCallback<std::string>> callback) const {
+    std::shared_ptr<NWebStringValueCallback> callback) const {
   if (GetBrowser().get()) {
     CefRefPtr<StoreWebArchiveResultCallbackImpl> save_webarchive_callback =
         new StoreWebArchiveResultCallbackImpl(callback);
@@ -1131,12 +1128,12 @@ void NWebDelegate::EraseJavaScriptCallbackImpl(uint32_t id) {
 
 void NWebDelegate::ExecuteJavaScript(
     const std::string& code,
-    std::shared_ptr<NWebValueCallback<std::shared_ptr<NWebMessage>>> callback,
+    std::shared_ptr<NWebMessageValueCallback> callback,
     bool extention) {
   if (!CEF_CURRENTLY_ON_UIT()) {
     CEF_POST_TASK(CEF_UIT,
       base::BindOnce((void(NWebDelegate::*)(const std::string &,
-        std::shared_ptr<NWebValueCallback<std::shared_ptr<NWebMessage>>>,
+        std::shared_ptr<NWebMessageValueCallback>,
         bool)) &
         NWebDelegate::ExecuteJavaScript,
         this, code, callback, extention));
@@ -1383,10 +1380,11 @@ std::string NWebDelegate::Title() {
 }
 
 #if defined(OHOS_MSGPORT)
-void NWebDelegate::CreateWebMessagePorts(std::vector<std::string>& ports) {
+std::vector<std::string> NWebDelegate::CreateWebMessagePorts() {
+  std::vector<std::string> ports;
   if (!GetBrowser().get()) {
     LOG(ERROR) << "JSAPI CreateWebMessagePorts can not get browser";
-    return;
+    return ports;
   }
   std::vector<CefString> cefPorts;
   GetBrowser()->GetHost()->CreateWebMessagePorts(cefPorts);
@@ -1394,11 +1392,12 @@ void NWebDelegate::CreateWebMessagePorts(std::vector<std::string>& ports) {
   for (CefString port : cefPorts) {
     ports.push_back(port.ToString());
   }
+  return ports;
 }
 
-void NWebDelegate::PostWebMessage(std::string& message,
-                                  std::vector<std::string>& ports,
-                                  std::string& targetUri) {
+void NWebDelegate::PostWebMessage(const std::string& message,
+                                  const std::vector<std::string>& ports,
+                                  const std::string& targetUri) {
   if (!GetBrowser().get()) {
     LOG(ERROR) << "JSAPI PostWebMessage can not get browser";
     return;
@@ -1419,7 +1418,7 @@ void NWebDelegate::PostWebMessage(std::string& message,
   GetBrowser()->GetHost()->PostWebMessage(msgCef, cefPorts, uri);
 }
 
-void NWebDelegate::ClosePort(std::string& portHandle) {
+void NWebDelegate::ClosePort(const std::string& portHandle) {
   if (!GetBrowser().get()) {
     LOG(ERROR) << "JSAPI ClosePort can not get browser";
     return;
@@ -1511,7 +1510,7 @@ void NWebDelegate::ConvertNWebMsgToCefValue(std::shared_ptr<NWebMessage> data,
   }
 }
 
-void NWebDelegate::PostPortMessage(std::string& portHandle,
+void NWebDelegate::PostPortMessage(const std::string& portHandle,
                                    std::shared_ptr<NWebMessage> data) {
   if (!GetBrowser().get()) {
     LOG(ERROR) << "JSAPI PostPortMessage can not get browser";
@@ -1528,8 +1527,8 @@ void NWebDelegate::PostPortMessage(std::string& portHandle,
 }
 
 void NWebDelegate::SetPortMessageCallback(
-    std::string& portHandle,
-    std::shared_ptr<NWebValueCallback<std::shared_ptr<NWebMessage>>> callback) {
+    const std::string& portHandle,
+    std::shared_ptr<NWebMessageValueCallback> callback) {
   if (!GetBrowser().get()) {
     LOG(ERROR) << "JSAPI SetPortMessageCallback can not get browser";
     return;
@@ -1553,16 +1552,17 @@ std::string NWebDelegate::GetUrl() const {
   return "";
 }
 
-HitTestResult NWebDelegate::GetHitTestResult() const {
-  HitTestResult data;
+std::shared_ptr<HitTestResult> NWebDelegate::GetHitTestResult() const {
+  std::shared_ptr<HitTestResultImpl> data =
+      std::make_shared<HitTestResultImpl>();
   if (!GetBrowser().get()) {
     return data;
   }
   int type;
   CefString extra_data;
   GetBrowser()->GetHost()->GetHitData(type, extra_data);
-  data.SetType(type);
-  data.SetExtra(extra_data.ToString());
+  data->SetType(type);
+  data->SetExtra(extra_data.ToString());
   return data;
 }
 
@@ -1581,8 +1581,8 @@ float NWebDelegate::Scale() {
 }
 
 int NWebDelegate::Load(
-    std::string& url,
-    std::map<std::string, std::string> additionalHttpHeaders) {
+    const std::string& url,
+    const std::map<std::string, std::string>& additionalHttpHeaders) {
   GURL gurl = GURL(url);
   if (gurl.is_empty() || !gurl.is_valid()) {
     GURL gurlWithHttp = GURL("https://" + url);
@@ -1594,9 +1594,8 @@ int NWebDelegate::Load(
   if (IsFileProtocol(file_gurl) && !IsUrlFileExist(file_gurl, url)) {
     return NWEB_INVALID_RESOURCE;
   }
-  std::map<std::string, std::string>::iterator iter;
   std::string extra = "";
-  for (iter = additionalHttpHeaders.begin();
+  for (auto iter = additionalHttpHeaders.begin();
        iter != additionalHttpHeaders.end(); iter++) {
     const std::string& key = iter->first;
     const std::string& value = iter->second;
@@ -1731,20 +1730,17 @@ void NWebDelegate::UnregisterArkJSfunction(
 
 void NWebDelegate::RegisterNativeArkJSFunction(
     const char* objName,
-    const char** methodName,
-    std::vector<std::function<char*(const char** argv, int32_t argc)>> callback,
-    int32_t size) {
+    const std::vector<std::shared_ptr<NWebJsProxyCallback>> &callbacks) {
   if (!CEF_CURRENTLY_ON_UIT()) {
     CEF_POST_TASK(CEF_UIT,
-      base::BindOnce(&NWebDelegate::RegisterNativeArkJSFunction,
-        this, objName, methodName, callback, size));
+      base::BindOnce(&NWebDelegate::RegisterNativeArkJSFunction, this, objName, callbacks));
     return;
   }
 
-  handler_delegate_->RegisterNativeJavaScriptCallBack(objName, methodName, callback, size);
+  handler_delegate_->RegisterNativeJavaScriptCallBack(objName, callbacks);
   std::vector<CefString> method_vector;
-  for (int i = 0; i < size; i++) {
-    method_vector.push_back(methodName[i]);
+  for (auto callback : callbacks) {
+    method_vector.push_back(callback->GetMethodName());
   }
   if (GetBrowser() && GetBrowser()->GetHost()) {
     GetBrowser()->GetHost()->RegisterArkJSfunction(objName, method_vector, kDefaultWebNativeProxy);
@@ -1785,7 +1781,7 @@ void NWebDelegate::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
 void NWebDelegate::CallH5Function(
     int32_t routing_id,
     int32_t h5_object_id,
-    const std::string h5_method_name,
+    const std::string& h5_method_name,
     const std::vector<std::shared_ptr<NWebValue>>& args) const {
   if (!GetBrowser()) {
     LOG(ERROR) << "NWebDelegate::CallH5Function fail due to "
@@ -2005,7 +2001,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
 }
 
 void NWebDelegate::GetImages(
-    std::shared_ptr<NWebValueCallback<bool>> callback) {
+    std::shared_ptr<NWebBoolValueCallback> callback) {
   if (!GetBrowser().get()) {
     LOG(ERROR) << "JSAPI GetImages can not get browser";
     return;
@@ -2037,30 +2033,31 @@ std::shared_ptr<NWebHistoryList> NWebDelegate::GetHistoryList() {
   return visitor->GetHistoryList();
 }
 
-WebState NWebDelegate::SerializeWebState() {
+std::vector<uint8_t> NWebDelegate::SerializeWebState() {
+  std::vector<uint8_t> state;
   CefRefPtr<CefBinaryValue> state_value =
       GetBrowser()->GetHost()->GetWebState();
   if (!state_value || !GetBrowser().get()) {
-    return nullptr;
+    return state;
   }
   size_t state_size = state_value->GetSize();
   if (state_size == 0) {
-    return nullptr;
+    return state;
   }
-  WebState state = std::make_shared<std::vector<uint8_t>>(state_size);
-  size_t read_size = state_value->GetData(state->data(), state_size, 0);
+
+  size_t read_size = state_value->GetData(state.data(), state_size, 0);
   if (read_size != state_size) {
     LOG(ERROR) << "SerializeWebState failed";
-    return nullptr;
+    return state;
   }
   return state;
 }
 
-bool NWebDelegate::RestoreWebState(WebState state) {
-  if (!GetBrowser().get() || !state || state->size() == 0) {
+bool NWebDelegate::RestoreWebState(const std::vector<uint8_t>& state) {
+  if (!GetBrowser().get() || state.size() == 0) {
     return false;
   }
-  auto web_state = CefBinaryValue::Create(state->data(), state->size());
+  auto web_state = CefBinaryValue::Create(state.data(), state.size());
   return GetBrowser()->GetHost()->RestoreWebState(web_state);
 }
 #endif
@@ -2241,8 +2238,8 @@ void NWebDelegate::SetAudioExclusive(bool audioExclusive) {
 
 #if defined(OHOS_NO_STATE_PREFETCH)
 void NWebDelegate::PrefetchPage(
-    std::string& url,
-    std::map<std::string, std::string> additionalHttpHeaders) {
+    const std::string& url,
+    const std::map<std::string, std::string>& additionalHttpHeaders) {
   CefString urlCef;
   urlCef.FromString(url);
   std::string output;
@@ -2567,9 +2564,10 @@ void NWebDelegate::RegisterAccessibilityEventListener(
 }
 
 void NWebDelegate::RegisterAccessibilityIdGenerator(
-    std::function<int64_t()> accessibilityIdGenerator) const {
+    const AccessibilityIdGenerateFunc accessibilityIdGenerator) const {
+  std::function<int32_t()> generatorFunc = accessibilityIdGenerator;
   content::BrowserAccessibilityManagerOHOS::RegisterAccessibilityIdGenerator(
-      accessibilityIdGenerator);
+      generatorFunc);
 }
 
 void NWebDelegate::SetAccessibilityState(cef_state_t accessibilityState) {
@@ -2652,19 +2650,18 @@ NWebDelegate::GetAccessibilityManager() const {
   return managerOHOS;
 }
 
-bool NWebDelegate::GetFocusedAccessibilityNodeInfo(
-    int64_t accessibilityId,
-    bool isAccessibilityFocus,
-    OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const {
+std::shared_ptr<NWebAccessibilityNodeInfo>
+NWebDelegate::GetFocusedAccessibilityNodeInfo(int64_t accessibilityId,
+                                              bool isAccessibilityFocus) {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
     LOG(INFO)
         << "GetFocusedAccessibilityNodeInfo can not get accessibilityManager";
-    return false;
+    return nullptr;
   }
   auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
   if (rootNode == nullptr) {
-    return false;
+    return nullptr;
   }
   content::BrowserAccessibilityOHOS* resultNode = nullptr;
   if (isAccessibilityFocus) {
@@ -2678,7 +2675,7 @@ bool NWebDelegate::GetFocusedAccessibilityNodeInfo(
         accessibilityManager->GetFocus());
   }
   if (resultNode == nullptr || resultNode == rootNode) {
-    return false;
+    return nullptr;
   }
   content::BrowserAccessibilityOHOS* node = nullptr;
   if (accessibilityId < 0) {
@@ -2689,23 +2686,22 @@ bool NWebDelegate::GetFocusedAccessibilityNodeInfo(
   }
   if (node == nullptr || !node->IsDescendantOf(rootNode) ||
       !resultNode->IsDescendantOf(node)) {
-    return false;
+    return nullptr;
   }
-  return PopulateAccessibilityNodeInfo(resultNode, nodeInfo);
+  return PopulateAccessibilityNodeInfo(resultNode);
 }
 
-bool NWebDelegate::GetAccessibilityNodeInfoById(
-    int64_t accessibilityId,
-    OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const {
+std::shared_ptr<NWebAccessibilityNodeInfo>
+NWebDelegate::GetAccessibilityNodeInfoById(int64_t accessibilityId) {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
     LOG(INFO)
         << "GetAccessibilityNodeInfoById can not get accessibilityManager";
-    return false;
+    return nullptr;
   }
   auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
   if (rootNode == nullptr) {
-    return false;
+    return nullptr;
   }
   content::BrowserAccessibilityOHOS* node = nullptr;
   if (accessibilityId < 0) {
@@ -2715,24 +2711,23 @@ bool NWebDelegate::GetAccessibilityNodeInfoById(
         accessibilityId);
   }
   if (node == nullptr || !node->IsDescendantOf(rootNode)) {
-    return false;
+    return nullptr;
   }
-  return PopulateAccessibilityNodeInfo(node, nodeInfo);
+  return PopulateAccessibilityNodeInfo(node);
 }
 
-bool NWebDelegate::GetAccessibilityNodeInfoByFocusMove(
-    int64_t accessibilityId,
-    int32_t direction,
-    OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const {
+std::shared_ptr<NWebAccessibilityNodeInfo>
+NWebDelegate::GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
+                                                  int32_t direction) {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
     LOG(INFO) << "GetAccessibilityNodeInfoByFocusMove can not get "
                   "accessibilityManager";
-    return false;
+    return nullptr;
   }
   auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
   if (rootNode == nullptr) {
-    return false;
+    return nullptr;
   }
   content::BrowserAccessibilityOHOS* node = nullptr;
   if (accessibilityId < 0) {
@@ -2743,124 +2738,134 @@ bool NWebDelegate::GetAccessibilityNodeInfoByFocusMove(
         accessibilityId);
   }
   if (node == nullptr || !node->IsDescendantOf(rootNode)) {
-    return false;
+    return nullptr;
   }
   auto resultNode = node->GetAccessibilityNodeByFocusMove(direction);
   if (resultNode == nullptr) {
-    return false;
+    return nullptr;
   }
-  return PopulateAccessibilityNodeInfo(resultNode, nodeInfo);
+  return PopulateAccessibilityNodeInfo(resultNode);
 }
 
-bool NWebDelegate::PopulateAccessibilityNodeInfo(
-    const content::BrowserAccessibilityOHOS* node,
-    NWebAccessibilityNodeInfo& nodeInfo) const {
+std::shared_ptr<NWebAccessibilityNodeInfo>
+NWebDelegate::PopulateAccessibilityNodeInfo(
+    const content::BrowserAccessibilityOHOS* node) const {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
     LOG(INFO)
         << "GetFocusedAccessibilityNodeInfo can not get accessibilityManager";
-    return false;
+    return nullptr;
   }
-  nodeInfo.accessibilityId = node->GetAccessibilityId();
+
+  std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo =
+    std::make_shared<NWebAccessibilityNodeInfoImpl>();
+  nodeInfo->SetAccessibilityId(node->GetAccessibilityId());
   bool isRoot = !node->PlatformGetParent();
   if (!isRoot) {
     auto* parentNode = static_cast<content::BrowserAccessibilityOHOS*>(
         node->PlatformGetParent());
-    nodeInfo.parentId = parentNode->GetAccessibilityId();
-
     if (!parentNode->PlatformGetParent()) {
-      nodeInfo.parentId = -1;
+      nodeInfo->SetParentId(-1);
+    } else {
+      nodeInfo->SetParentId(parentNode->GetAccessibilityId());
     }
   }
 
-  nodeInfo.childIds.clear();
   std::vector<int64_t> childIds;
   for (const auto& childNode : node->PlatformChildren()) {
     const content::BrowserAccessibilityOHOS& childNodeOHOS =
         static_cast<const content::BrowserAccessibilityOHOS&>(childNode);
     childIds.emplace_back(childNodeOHOS.GetAccessibilityId());
   }
-  nodeInfo.childIds.swap(childIds);
-  nodeInfo.accessibilityFocus =
+  nodeInfo->SetChildIds(childIds);
+  nodeInfo->SetIsAccessibilityFocus(
       (accessibilityManager->GetAccessibilityFocusId() ==
               node->GetAccessibilityId()
           ? true
-          : false);
+          : false));
 
   AddAccessibilityNodeInfoAttributes(nodeInfo, node);
   AddAccessibilityNodeInfoRect(nodeInfo, node);
   AddAccessibilityNodeInfoCollection(nodeInfo, node);
   AddAccessibilityNodeInfoActions(nodeInfo);
-  LOG(DEBUG) << "PopulateAccessibilityNodeInfo accessibilityId " << nodeInfo.accessibilityId
-  << " parentId " << nodeInfo.parentId << " content " << nodeInfo.content << " componentType "
-  << nodeInfo.componentType << " accessibilityFocus " << nodeInfo.accessibilityFocus
-  << " clickable " << nodeInfo.clickable << " focusable " << nodeInfo.focusable
-  << " focused " << nodeInfo.focused << " editable " << nodeInfo.editable
-  << " checkable " << nodeInfo.checkable << " childSize " << nodeInfo.childIds.size()
-  << " checked " << nodeInfo.checked << " selected " << nodeInfo.selected;
+  LOG(DEBUG) << "PopulateAccessibilityNodeInfo accessibilityId "
+             << nodeInfo->GetAccessibilityId() << " parentId "
+             << nodeInfo->GetParentId() << " content " << nodeInfo->GetContent()
+             << " componentType " << nodeInfo->GetComponentType()
+             << " accessibilityFocus " << nodeInfo->GetIsAccessibilityFocus()
+             << " clickable " << nodeInfo->GetIsClickable() << " focusable "
+             << nodeInfo->GetIsFocusable() << " focused "
+             << nodeInfo->GetIsFocused() << " editable "
+             << nodeInfo->GetIsEditable() << " checkable "
+             << nodeInfo->GetIsCheckable() << " childSize "
+             << nodeInfo->GetChildIds().size() << " checked "
+             << nodeInfo->GetIsChecked() << " selected "
+             << nodeInfo->GetIsSelected();
 
-  return true;
+  return nodeInfo;
 }
 
 void NWebDelegate::AddAccessibilityNodeInfoAttributes(
-    NWebAccessibilityNodeInfo& nodeInfo,
+    std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
     const content::BrowserAccessibilityOHOS* node) const {
-  nodeInfo.componentType = node->GetRoleString();
-  nodeInfo.focused = node->IsFocused();
-  nodeInfo.visible = !node->IsInvisibleOrIgnored();
-  nodeInfo.enabled = node->IsEnabled();
-  nodeInfo.focusable = node->IsFocusable();
-  nodeInfo.descriptionInfo = "";
-  nodeInfo.content = "";
+  nodeInfo->SetComponentType(node->GetRoleString());
+  nodeInfo->SetIsFocused(node->IsFocused());
+  nodeInfo->SetIsVisible(!node->IsInvisibleOrIgnored());
+  nodeInfo->SetIsEnabled(node->IsEnabled());
+  nodeInfo->SetIsFocusable(node->IsFocusable());
   if (node->IsPasswordField()) {
-    nodeInfo.content = "*";
+    nodeInfo->SetContent("*");
+    nodeInfo->SetDescriptionInfo("");
   } else {
-    nodeInfo.content = base::UTF16ToUTF8(node->GetTextContentUTF16());
+    nodeInfo->SetContent(base::UTF16ToUTF8(node->GetTextContentUTF16()));
+    nodeInfo->SetDescriptionInfo("");
   }
-  nodeInfo.hint = node->GetHint();
-  nodeInfo.hinting = node->IsHint();
-  nodeInfo.checked = node->IsChecked();
-  nodeInfo.selected = node->IsSelected();
-  nodeInfo.password = node->IsPasswordField();
-  nodeInfo.checkable = node->IsCheckable();
-  nodeInfo.scrollable = node->IsScrollable();
-  nodeInfo.editable = node->IsTextField();
-  nodeInfo.pluralLineSupported = node->IsMultiLine();
-  nodeInfo.popupSupported = node->CanOpenPopup();
-  nodeInfo.error = node->GetContentInvalidErrorMessage();
-  nodeInfo.contentInvalid = node->IsContentInvalid();
-  nodeInfo.deletable = false;
-  nodeInfo.inputType = node->OHOSInputType();
-  nodeInfo.liveRegion = node->OHOSLiveRegionType();
-  nodeInfo.selectionStart = 0;
-  nodeInfo.selectionEnd = 0;
-  if (node->IsTextField()) {
-    nodeInfo.selectionStart = node->GetSelectionStart();
-    nodeInfo.selectionEnd = node->GetSelectionEnd();
-  }
-  nodeInfo.itemCounts = node->GetItemCount();
-  nodeInfo.clickable = node->IsClickable();
 
-  nodeInfo.rangeInfoMin = 0.0f;
-  nodeInfo.rangeInfoMax = 0.0f;
-  nodeInfo.rangeInfoCurrent = 0.0f;
+  nodeInfo->SetHint(node->GetHint());
+  nodeInfo->SetIsHinting(node->IsHint());
+  nodeInfo->SetIsChecked(node->IsChecked());
+  nodeInfo->SetIsSelected(node->IsSelected());
+  nodeInfo->SetIsPassword(node->IsPasswordField());
+  nodeInfo->SetIsCheckable(node->IsCheckable());
+  nodeInfo->SetIsScrollable(node->IsScrollable());
+  nodeInfo->SetIsEditable(node->IsTextField());
+  nodeInfo->SetIsPluralLineSupported(node->IsMultiLine());
+  nodeInfo->SetIsPopupSupported(node->CanOpenPopup());
+  nodeInfo->SetError(node->GetContentInvalidErrorMessage());
+  nodeInfo->SetIsContentInvalid(node->IsContentInvalid());
+  nodeInfo->SetIsDeletable(false);
+  nodeInfo->SetInputType(node->OHOSInputType());
+  nodeInfo->SetLiveRegion(node->OHOSLiveRegionType());
+  if (node->IsTextField()) {
+    nodeInfo->SetSelectionStart(node->GetSelectionStart());
+    nodeInfo->SetSelectionEnd(node->GetSelectionEnd());
+  } else {
+    nodeInfo->SetSelectionStart(0);
+    nodeInfo->SetSelectionEnd(0);
+  }
+  nodeInfo->SetItemCounts(node->GetItemCount());
+  nodeInfo->SetIsClickable(node->IsClickable());
   if (node->IsRangeControlWithoutAriaValueText()) {
-    nodeInfo.rangeInfoMin = node->RangeMin();
-    nodeInfo.rangeInfoMax = node->RangeMax();
-    nodeInfo.rangeInfoCurrent = node->RangeCurrentValue();
+    nodeInfo->SetRangeInfoMin(node->RangeMin());
+    nodeInfo->SetRangeInfoMax(node->RangeMax());
+    nodeInfo->SetRangeInfoCurrent(node->RangeCurrentValue());
+  } else {
+    nodeInfo->SetRangeInfoMin(0.0f);
+    nodeInfo->SetRangeInfoMax(0.0f);
+    nodeInfo->SetRangeInfoCurrent(0.0f);
   }
 }
 
 void NWebDelegate::AddAccessibilityNodeInfoRect(
-    NWebAccessibilityNodeInfo& nodeInfo,
+    std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
     const content::BrowserAccessibilityOHOS* node) const {
   ui::AXOffscreenResult offscreen_result = ui::AXOffscreenResult::kOnscreen;
   gfx::Rect absolute_rect = node->GetUnclippedRootFrameBoundsRect(&offscreen_result);
 
-  nodeInfo.rectX = absolute_rect.x();
-  nodeInfo.rectY = absolute_rect.y();
-  nodeInfo.rectWidth = absolute_rect.width();
-  nodeInfo.rectHeight = absolute_rect.height();
+  nodeInfo->SetRectX(absolute_rect.x());
+  nodeInfo->SetRectY(absolute_rect.y());
+  nodeInfo->SetRectWidth(absolute_rect.width());
+  nodeInfo->SetRectHeight(absolute_rect.height());
 
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
     LOG(INFO) << "AddAccessibilityNodeInfoRect can not get browser";
@@ -2870,37 +2875,37 @@ void NWebDelegate::AddAccessibilityNodeInfoRect(
   if (viewPointHeight != 0 && render_handler_ != nullptr) {
     CefScreenInfo screen_info;
     render_handler_->GetScreenInfo(GetBrowser(), screen_info);
-    nodeInfo.rectY += viewPointHeight * screen_info.device_scale_factor;
+    nodeInfo->SetRectY(absolute_rect.y() + viewPointHeight * screen_info.device_scale_factor);
   }
 }
 
 void NWebDelegate::AddAccessibilityNodeInfoCollection(
-    NWebAccessibilityNodeInfo& nodeInfo,
+    std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
     const content::BrowserAccessibilityOHOS* node) const {
   if (node->IsCollection()) {
-    nodeInfo.gridRows = node->RowCount();
-    nodeInfo.gridColumns = node->ColumnCount();
-    nodeInfo.gridSelectedMode = node->IsHierarchical();
+    nodeInfo->SetGridRows(node->RowCount());
+    nodeInfo->SetGridColumns(node->ColumnCount());
+    nodeInfo->SetGridSelectedMode(node->IsHierarchical());
   }
   if (node->IsCollectionItem() || node->IsTableHeader()) {
-    nodeInfo.gridItemRow = node->RowIndex();
-    nodeInfo.gridItemRowSpan = node->RowSpan();
-    nodeInfo.gridItemColumn = node->ColumnIndex();
-    nodeInfo.gridItemColumnSpan = node->ColumnSpan();
-    nodeInfo.heading = node->IsTableHeader();
+    nodeInfo->SetGridItemRow(node->RowIndex());
+    nodeInfo->SetGridItemRowSpan(node->RowSpan());
+    nodeInfo->SetGridItemColumn(node->ColumnIndex());
+    nodeInfo->SetGridItemColumnSpan(node->ColumnSpan());
+    nodeInfo->SetIsHeading(node->IsTableHeader());
   }
 }
 
 void NWebDelegate::AddAccessibilityNodeInfoActions(
-    NWebAccessibilityNodeInfo& nodeInfo) const {
-  nodeInfo.actions.clear();
-  std::vector<uint32_t> actions;
-  if (nodeInfo.clickable) {
+    std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo) const {
+  std::vector<uint32_t> actions = nodeInfo->GetActions();
+  actions.clear();
+  if (nodeInfo->GetIsClickable()) {
     actions.emplace_back(
         static_cast<uint32_t>(AceAction::ACTION_CLICK));
   }
-  if (nodeInfo.focusable) {
-    if (nodeInfo.focused) {
+  if (nodeInfo->GetIsFocusable()) {
+    if (nodeInfo->GetIsFocused()) {
       actions.emplace_back(
           static_cast<uint32_t>(AceAction::ACTION_CLEAR_FOCUS));
     } else {
@@ -2909,13 +2914,13 @@ void NWebDelegate::AddAccessibilityNodeInfoActions(
     }
   }
 
-  if (nodeInfo.accessibilityFocus) {
+  if (nodeInfo->GetIsAccessibilityFocus()) {
     actions.emplace_back(
         static_cast<uint32_t>(AceAction::ACTION_CLEAR_ACCESSIBILITY_FOCUS));
   } else {
     actions.emplace_back(
         static_cast<uint32_t>(AceAction::ACTION_ACCESSIBILITY_FOCUS));
   }
-  nodeInfo.actions.swap(actions);
+  nodeInfo->SetActions(actions);
 }
 }  // namespace OHOS::NWeb

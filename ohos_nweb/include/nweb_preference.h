@@ -72,7 +72,7 @@ public:
      *
      * @param font a font family name
      */
-    virtual void PutCursiveFontFamilyName(std::string font) = 0;
+    virtual void PutCursiveFontFamilyName(const std::string& font) = 0;
 
     /**
      * Enables or disables the database storage API. The default is false.
@@ -104,7 +104,7 @@ public:
      *
      * @param the text encoding format
      */
-    virtual void PutDefaultTextEncodingFormat(std::string encoding) = 0;
+    virtual void PutDefaultTextEncodingFormat(const std::string& encoding) = 0;
 
     /**
      * Enables or disables the DOM storage API. The default value is false.
@@ -116,14 +116,14 @@ public:
      *
      * @param font a font family name
      */
-    virtual void PutFantasyFontFamilyName(std::string font) = 0;
+    virtual void PutFantasyFontFamilyName(const std::string& font) = 0;
 
     /**
      * Put the fixed font family name. The default is "monospace".
      *
      * @param font a font family name
      */
-    virtual void PutFixedFontFamilyName(std::string font) = 0;
+    virtual void PutFixedFontFamilyName(const std::string& font) = 0;
 
     /**
      * Enables or disables the force dark mode for this NWeb.
@@ -176,21 +176,21 @@ public:
      *
      * @param font a font family name
      */
-    virtual void PutSansSerifFontFamilyName(std::string font) = 0;
+    virtual void PutSansSerifFontFamilyName(const std::string& font) = 0;
 
     /**
      * Put the serif font family name. The default is "serif".
      *
      * @param font a font family name
      */
-    virtual void PutSerifFontFamilyName(std::string font) = 0;
+    virtual void PutSerifFontFamilyName(const std::string& font) = 0;
 
     /**
      * Put the standard font family name. The default is "sans-serif".
      *
      * @param font a font family name
      */
-    virtual void PutStandardFontFamilyName(std::string font) = 0;
+    virtual void PutStandardFontFamilyName(const std::string& font) = 0;
 
     /**
      * Put the user-agent string to the nweb. If it is null or empty,
@@ -199,7 +199,7 @@ public:
      *
      * @param ua user-agent string. The value may be null.
      */
-    virtual void PutUserAgent(std::string ua) = 0;
+    virtual void PutUserAgent(const std::string& ua) = 0;
 
     /**
      * Put the zoom percentage of the page text. The default is 100.
@@ -603,6 +603,7 @@ public:
      * Put whether the embed mode. The default is false.
      */
     virtual void SetNativeEmbedMode(bool flag) = 0;
+
     /**
      * Get whether the embed mode. The default is false.
      */

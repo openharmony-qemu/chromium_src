@@ -25,22 +25,22 @@
 #include "nweb_web_storage.h"
 
 namespace OHOS::NWeb {
-using NWebGetOriginsCallback =
-    NWebValueCallback<std::vector<NWebWebStorageOrigin>>;
 class NWebWebStorageDelegateInterface {
  public:
   virtual ~NWebWebStorageDelegateInterface() = default;
   virtual void DeleteAllData(bool incognito_mode) = 0;
   virtual int DeleteOrigin(const std::string& origin) = 0;
-  virtual void GetOrigins(std::shared_ptr<NWebGetOriginsCallback> callback) = 0;
-  virtual void GetOrigins(std::vector<NWebWebStorageOrigin>& origins) = 0;
+  virtual void GetOrigins(
+      std::shared_ptr<NWebWebStorageOriginVectorValueCallback> callback) = 0;
+  virtual void GetOrigins(
+      std::vector<std::shared_ptr<NWebWebStorageOrigin>>& origins) = 0;
   virtual void GetOriginQuota(
       const std::string& origin,
-      std::shared_ptr<NWebValueCallback<long>> callback) = 0;
+      std::shared_ptr<NWebLongValueCallback> callback) = 0;
   virtual long GetOriginQuota(const std::string& origin) = 0;
   virtual void GetOriginUsage(
       const std::string& origin,
-      std::shared_ptr<NWebValueCallback<long>> callback) = 0;
+      std::shared_ptr<NWebLongValueCallback> callback) = 0;
   virtual long GetOriginUsage(const std::string& origin) = 0;
 
 #ifdef OHOS_EX_PASSWORD

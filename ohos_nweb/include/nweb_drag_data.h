@@ -54,22 +54,22 @@ public:
     virtual bool GetPixelMapSetting(const void** data, size_t& len, int& width, int& height) = 0;
 
     // set the text/html fragment that is being dragged.
-    virtual bool SetFragmentHtml(std::string& html) = 0;
+    virtual bool SetFragmentHtml(const std::string& html) = 0;
 
     // set the image representation of drag data.
     virtual bool SetPixelMapSetting(const void* data, size_t len, int width, int height) = 0;
 
     // set the link URL that is being dragged.
-    virtual bool SetLinkURL(std::string& url) = 0;
+    virtual bool SetLinkURL(const std::string& url) = 0;
 
     // set the plain text that is being dragged.
-    virtual bool SetFragmentText(std::string& Text) = 0;
+    virtual bool SetFragmentText(const std::string& Text) = 0;
 
     // get the title associated with the link that is being dragged.
     virtual std::string GetLinkTitle() = 0;
 
     // set the title associated with the link that is being dragged.
-    virtual bool SetLinkTitle(std::string& title) = 0;
+    virtual bool SetLinkTitle(const std::string& title) = 0;
 
     // get the positon of the drag point.
     virtual void GetDragStartPosition(int& x, int& y) = 0;
@@ -78,7 +78,7 @@ public:
     virtual bool IsSingleImageContent() = 0;
 
     // set the iamge file name that is being dragged.
-    virtual bool SetFileUri(std::string& uri) = 0;
+    virtual bool SetFileUri(const std::string& uri) = 0;
 
     // get the iamge file name that is being dragged.
     virtual std::string GetImageFileName() = 0;

@@ -15,11 +15,11 @@ public:
  
     virtual void SetNWebHandlerById(int32_t nwebId) = 0;
  
-    virtual int32_t GetNWebHandlerId() const = 0;
+    virtual int32_t GetNWebHandlerId() = 0;
  
-    virtual bool IsFrist() const = 0;
+    virtual bool IsFrist() = 0;
  
-    virtual int32_t GetId() const = 0;
+    virtual int32_t GetId() = 0;
 };
 }
 

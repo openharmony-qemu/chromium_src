@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef NWEB_COOKIE_MANAGER_H
-#define NWEB_COOKIE_MANAGER_H
+#ifndef NWEB_WEB_STORAGE_H
+#define NWEB_WEB_STORAGE_H
 
 #include <memory>
 #include <string>
@@ -25,7 +25,6 @@
 
 namespace OHOS::NWeb {
 class NWebWebStorageOrigin;
-using NWebGetOriginsCallback = NWebValueCallback<std::vector<NWebWebStorageOrigin>>;
 class OHOS_NWEB_EXPORT NWebWebStorage {
 public:
     NWebWebStorage() = default;
@@ -34,31 +33,27 @@ public:
 
     virtual void DeleteAllData(bool incognito_mode) = 0;
     virtual int DeleteOrigin(const std::string& origin) = 0;
-    virtual void GetOrigins(std::shared_ptr<NWebGetOriginsCallback> callback) = 0;
-    virtual std::vector<NWebWebStorageOrigin> GetOrigins() = 0;
+    virtual void GetOrigins(std::shared_ptr<NWebWebStorageOriginVectorValueCallback> callback) = 0;
+    virtual std::vector<std::shared_ptr<NWebWebStorageOrigin>> GetOrigins() = 0;
     virtual void GetOriginQuota(const std::string& origin,
-                              std::shared_ptr<NWebValueCallback<long>> callback) = 0;
+                              std::shared_ptr<NWebLongValueCallback> callback) = 0;
     virtual long GetOriginQuota(const std::string& origin) = 0;
     virtual void GetOriginUsage(const std::string& origin,
-                              std::shared_ptr<NWebValueCallback<long>> callback) = 0;
+                              std::shared_ptr<NWebLongValueCallback> callback) = 0;
     virtual long GetOriginUsage(const std::string& origin) = 0;
 };
 
 class OHOS_NWEB_EXPORT NWebWebStorageOrigin {
 public:
     NWebWebStorageOrigin() = default;
-    ~NWebWebStorageOrigin() = default;
-    void SetOrigin(const std::string& origin) { origin_ = origin; }
-    void SetQuota(long quota) { quota_ = quota; }
-    void SetUsage(long usage) { usage_ = usage; }
-    std::string GetOrigin() { return origin_; }
-    long GetQuota() { return quota_; }
-    long GetUsage() { return usage_;}
+    virtual ~NWebWebStorageOrigin() = default;
 
-private:
-    std::string origin_;
-    int64_t quota_;
-    int64_t usage_;
+    virtual void SetOrigin(const std::string &origin) = 0;
+    virtual void SetQuota(long quota) = 0;
+    virtual void SetUsage(long usage) = 0;
+    virtual std::string GetOrigin() = 0;
+    virtual long GetQuota() = 0;
+    virtual long GetUsage() = 0;
 };
 }
 

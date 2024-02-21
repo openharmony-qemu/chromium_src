@@ -45,7 +45,7 @@ NWebLoadCommittedDetailsImpl::GetNavigationType() {
   return type_;
 }
 
-const std::string& NWebLoadCommittedDetailsImpl::GetURL() {
+std::string NWebLoadCommittedDetailsImpl::GetURL() {
   return current_url_;
 }
 

@@ -24,7 +24,7 @@ config("ohos_glue_config") {
   include_dirs += ohos_src_includes
 }
 
-component("ohos_nweb_glue_source") {
+component("ohos_base_glue_source") {
   defines = [ "OHOS_GLUE_DEBUG" ]
 
   configs += [ ":ohos_glue_config" ]
@@ -36,6 +36,17 @@ component("ohos_nweb_glue_source") {
     "base/include/ark_web_memory.h",
     "base/include/ark_web_types.cc",
     "base/include/ark_web_types.h",
+  ]
+}
+
+component("ohos_nweb_glue_source") {
+  defines = [ "OHOS_GLUE_DEBUG" ]
+
+  configs += [ ":ohos_glue_config" ]
+
+  include_dirs = [ "//ohos_nweb" ]
+
+  sources = [
     "ohos_nweb/bridge/ark_web_access_request_impl.cc",
     "ohos_nweb/bridge/ark_web_access_request_impl.h",
     "ohos_nweb/bridge/ark_web_accessibility_event_callback_wrapper.cc",
@@ -305,4 +316,6 @@ component("ohos_nweb_glue_source") {
     "ohos_nweb/ctocpp/ark_web_web_storage_origin_vector_value_callback_ctocpp.cc",
     "ohos_nweb/ctocpp/ark_web_web_storage_origin_vector_value_callback_ctocpp.h",
   ]
+
+  deps = [ "//ohos_glue:ohos_base_glue_source" ]
 }

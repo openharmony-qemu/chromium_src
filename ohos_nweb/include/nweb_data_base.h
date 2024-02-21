@@ -36,7 +36,7 @@ public:
      *
      * @return true if instances saved any http authentication credentials.
      */
-    virtual bool ExistHttpAuthCredentials() const = 0;
+    virtual bool ExistHttpAuthCredentials() = 0;
 
     /**
      * @brief clear all saved authentication credentials.
@@ -65,7 +65,7 @@ public:
      * @param passwordSize the password array size.
      */
     virtual void GetHttpAuthCredentials(const std::string& host, const std::string& realm,
-        std::string& username, char* password, uint32_t passwordSize) const = 0;
+        std::string& username, char* password, uint32_t passwordSize) = 0;
 
     /**
      * @brief gets whether the instance holds the specified permissions for the specified source.

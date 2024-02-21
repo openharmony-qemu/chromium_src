@@ -37,7 +37,7 @@ class NWebImpl : public NWeb {
   explicit NWebImpl(uint32_t id);
   ~NWebImpl() override;
 
-  bool Init(const NWebCreateInfo& create_info);
+  bool Init(std::shared_ptr<NWebCreateInfo> create_info);
   void OnDestroy() override;
 
   /* event interface */
@@ -48,7 +48,8 @@ class NWebImpl : public NWeb {
                       double y,
                       bool from_overlay) override;
   void OnTouchMove(int32_t id, double x, double y, bool from_overlay) override;
-  void OnTouchMove(const std::list<TouchPointInfo>& touchPointInfoList, bool fromOverlay = false) override;
+  void OnTouchMove(const std::vector<std::shared_ptr<NWebTouchPointInfo>> &touch_point_infos,
+                   bool fromOverlay = false) override;
   void OnTouchCancel() override;
   void OnNavigateBack() override;
   bool SendKeyEvent(int32_t keyCode, int32_t keyAction) override;
@@ -59,44 +60,43 @@ class NWebImpl : public NWeb {
   void SendMouseEvent(int x, int y, int button, int action, int count) override;
 
   // public api
-  int Load(const std::string& url) const override;
-  bool IsNavigatebackwardAllowed() const override;
-  bool IsNavigateForwardAllowed() const override;
-  bool CanNavigateBackOrForward(int numSteps) const override;
-  void NavigateBack() const override;
-  void NavigateForward() const override;
-  void NavigateBackOrForward(int step) const override;
+  int Load(const std::string& url) override;
+  bool IsNavigatebackwardAllowed() override;
+  bool IsNavigateForwardAllowed() override;
+  bool CanNavigateBackOrForward(int numSteps) override;
+  void NavigateBack() override;
+  void NavigateForward() override;
+  void NavigateBackOrForward(int step) override;
   void DeleteNavigateHistory() override;
   void ClearSslCache() override;
   void ClearClientAuthenticationCache() override;
-  void Reload() const override;
-  int Zoom(float zoomFactor) const override;
-  int ZoomIn() const override;
-  int ZoomOut() const override;
-  void Stop() const override;
-  void ExecuteJavaScript(const std::string& code) const override;
-  void PutBackgroundColor(int color) const override;
-  void InitialScale(float scale) const override;
-  void OnPause() const override;
-  void OnContinue() const override;
-  void OnOccluded() const override;
-  void OnUnoccluded() const override;
-  void SetEnableLowerFrameRate(bool enabled) const override;
-  const std::shared_ptr<NWebPreference> GetPreference() const override;
+  void Reload() override;
+  int Zoom(float zoomFactor) override;
+  int ZoomIn() override;
+  int ZoomOut() override;
+  void Stop() override;
+  void ExecuteJavaScript(const std::string& code) override;
+  void PutBackgroundColor(int color) override;
+  void InitialScale(float scale) override;
+  void OnPause() override;
+  void OnContinue() override;
+  void OnOccluded() override;
+  void OnUnoccluded() override;
+  void SetEnableLowerFrameRate(bool enabled) override;
+  std::shared_ptr<NWebPreference> GetPreference() override;
   void PutDownloadCallback(
       std::shared_ptr<NWebDownloadCallback> downloadListener) override;
   void PutReleaseSurfaceCallback(std::shared_ptr<NWebReleaseSurfaceCallback>
                                      releaseSurfaceListener) override;
   void SetNWebHandler(std::shared_ptr<NWebHandler> handler) override;
-  const std::shared_ptr<NWebHandler> GetNWebHandler() const override;
   std::string Title() override;
-  uint32_t GetWebId() const override;
-  HitTestResult GetHitTestResult() const override;
+  uint32_t GetWebId() override;
+  std::shared_ptr<HitTestResult> GetHitTestResult() override;
   int PageLoadProgress() override;
   int ContentHeight() override;
   float Scale() override;
-  int Load(std::string& url,
-           std::map<std::string, std::string> additionalHttpHeaders) override;
+  int Load(const std::string& url,
+           const std::map<std::string, std::string>& additionalHttpHeaders) override;
   int LoadWithDataAndBaseUrl(const std::string& baseUrl,
                              const std::string& data,
                              const std::string& mimeType,
@@ -108,75 +108,67 @@ class NWebImpl : public NWeb {
 
   void RegisterNativeArkJSFunction(
       const char* objName,
-      const char** methodName,
-      std::vector<std::function<char*(const char** argv, int32_t argc)>> callback,
-      int32_t size) override;
+      const std::vector<std::shared_ptr<NWebJsProxyCallback>> &callbacks) override;
   void UnRegisterNativeArkJSFunction(const char* objName) override;
-  void RegisterNativeValideCallback(const char* webName, std::function<void(const char*)> callback) override;
-  void RegisterNativeDestroyCallback(const char* webName, std::function<void(const char*)> callback) override;
+  void RegisterNativeValideCallback(const char* webName, const NativeArkWebOnValidCallback callback) override;
+  void RegisterNativeDestroyCallback(const char* webName, const NativeArkWebOnDestroyCallback callback) override;
 
-  void RegisterArkJSfunction(
-      const std::string& object_name,
-      const std::vector<std::string>& method_list) override;
-  void RegisterArkJSfunctionExt(const std::string& object_name,
-                                const std::vector<std::string>& method_list,
-                                const int32_t object_id) override;
+  void RegisterArkJSfunction(const std::string& object_name,
+                             const std::vector<std::string>& method_list,
+                             const int32_t object_id) override;
   void UnregisterArkJSfunction(
       const std::string& object_name,
       const std::vector<std::string>& method_list) override;
   void CallH5Function(
       int32_t routing_id,
       int32_t h5_object_id,
-      const std::string h5_method_name,
+      const std::string& h5_method_name,
       const std::vector<std::shared_ptr<NWebValue>>& args) override;
   void SetNWebJavaScriptResultCallBack(
       std::shared_ptr<NWebJavaScriptResultCallBack> callback) override;
   void OnFocus(const FocusReason& focusReason =
-                   FocusReason::FOCUS_DEFAULT) const override;
-  void OnBlur(const BlurReason& blurReason) const override;
+                   FocusReason::FOCUS_DEFAULT) override;
+  void OnBlur(const BlurReason& blurReason) override;
   void StoreWebArchive(
       const std::string& base_name,
       bool auto_name,
-      std::shared_ptr<NWebValueCallback<std::string>> callback) const override;
+      std::shared_ptr<NWebStringValueCallback> callback) override;
 
   void PutFindCallback(std::shared_ptr<NWebFindCallback> findListener) override;
-  void FindAllAsync(const std::string& search_string) const override;
-  void ClearMatches() const override;
-  void FindNext(const bool forward) const override;
-  const std::string GetOriginalUrl() const override;
+  void FindAllAsync(const std::string& search_string) override;
+  void ClearMatches() override;
+  void FindNext(const bool forward) override;
+  const std::string GetOriginalUrl() override;
   bool GetFavicon(const void** data,
                   size_t& width,
                   size_t& height,
                   ImageColorType& colorType,
                   ImageAlphaType& alphaType) override;
   void PutNetworkAvailable(bool available) override;
-  void SendDragEvent(const DragEvent& dragEvent) const override;
+  void SendDragEvent(const DragEvent& dragEvent) override;
   void UpdateLocale(const std::string& language,
                     const std::string& region) override;
 
-  void HasImages(std::shared_ptr<NWebValueCallback<bool>> callback) override;
+  void HasImages(std::shared_ptr<NWebBoolValueCallback> callback) override;
   void RemoveCache(bool include_disk_files) override;
   void PutAccessibilityEventCallback(
       std::shared_ptr<NWebAccessibilityEventCallback>
           accessibilityEventListener) override;
   void PutAccessibilityIdGenerator(
-      std::function<int64_t()> accessibilityIdGenerator) override;
-  void ExecuteAction(int64_t accessibilityId, uint32_t action) const override;
-  bool GetFocusedAccessibilityNodeInfo(
+      const AccessibilityIdGenerateFunc accessibilityIdGenerator) override;
+  void ExecuteAction(int64_t accessibilityId, uint32_t action) override;
+  std::shared_ptr<NWebAccessibilityNodeInfo> GetFocusedAccessibilityNodeInfo(
       int64_t accessibilityId,
-      bool isAccessibilityFocus,
-      OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const override;
-  bool GetAccessibilityNodeInfoById(
+      bool isAccessibilityFocus) override;
+  std::shared_ptr<NWebAccessibilityNodeInfo> GetAccessibilityNodeInfoById(
+      int64_t accessibilityId) override;
+  std::shared_ptr<NWebAccessibilityNodeInfo> GetAccessibilityNodeInfoByFocusMove(
       int64_t accessibilityId,
-      OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const override;
-  bool GetAccessibilityNodeInfoByFocusMove(
-      int64_t accessibilityId,
-      int32_t direction,
-      OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const override;
+      int32_t direction) override;
   void SetAccessibilityState(bool state) override;
 #ifdef OHOS_SCREEN_LOCK
   void RegisterScreenLockFunction(int32_t windowId,
-                                  const SetKeepScreenOn&& handle) override;
+                                  std::shared_ptr<NWebScreenLockCallback> callback) override;
   void UnRegisterScreenLockFunction(int32_t windowId) override;
 #endif  // #ifdef OHOS_SCREEN_LOCK
 
@@ -197,27 +189,26 @@ class NWebImpl : public NWeb {
 #if defined(OHOS_MSGPORT)
   void ExecuteJavaScript(
       const std::string& code,
-      std::shared_ptr<NWebValueCallback<std::shared_ptr<NWebMessage>>> callback,
-      bool extention) const override;
-  void CreateWebMessagePorts(std::vector<std::string>& ports) override;
-  void PostWebMessage(std::string& message,
-                      std::vector<std::string>& ports,
-                      std::string& targetUri) override;
-  void ClosePort(std::string& port_handle) override;
-  void PostPortMessage(std::string& port_handle,
+      std::shared_ptr<NWebMessageValueCallback> callback,
+      bool extention) override;
+  std::vector<std::string> CreateWebMessagePorts() override;
+  void PostWebMessage(const std::string& message,
+                      const std::vector<std::string>& ports,
+                      const std::string& targetUri) override;
+  void ClosePort(const std::string& port_handle) override;
+  void PostPortMessage(const std::string& port_handle,
                        std::shared_ptr<NWebMessage> data) override;
   void SetPortMessageCallback(
-      std::string& port_handle,
-      std::shared_ptr<NWebValueCallback<std::shared_ptr<NWebMessage>>> callback)
-      override;
+      const std::string& port_handle,
+      std::shared_ptr<NWebMessageValueCallback> callback) override;
 #endif  // defined(OHOS_MSGPORT)
 #ifdef OHOS_EX_BLANK_TARGET_POPUP_INTERCEPT
   void SetEnableBlankTargetPopupIntercept(bool enableBlankTargetPopup) const;
 #endif
 
   std::shared_ptr<NWebHistoryList> GetHistoryList() override;
-  WebState SerializeWebState() override;
-  bool RestoreWebState(WebState state) override;
+  std::vector<uint8_t> SerializeWebState() override;
+  bool RestoreWebState(const std::vector<uint8_t>& state) override;
 #ifdef OHOS_PAGE_UP_DOWN
   void PageUp(bool top) override;
   void PageDown(bool bottom) override;
@@ -236,8 +227,8 @@ class NWebImpl : public NWeb {
   void SetAudioResumeInterval(int32_t resumeInterval) override;
   void SetAudioExclusive(bool audioExclusive) override;
   void NotifyMemoryLevel(int32_t level) override;
-  void OnWebviewHide() const override;
-  void OnWebviewShow() const override;
+  void OnWebviewHide() override;
+  void OnWebviewShow() override;
 #ifdef OHOS_DRAG_DROP
   std::shared_ptr<NWebDragData> GetOrCreateDragData() override;
 #endif // #ifdef OHOS_DRAG_DROP
@@ -261,16 +252,16 @@ class NWebImpl : public NWeb {
 
 #if defined(OHOS_NO_STATE_PREFETCH)
   void PrefetchPage(
-      std::string& url,
-      std::map<std::string, std::string> additionalHttpHeaders) override;
+      const std::string& url,
+      const std::map<std::string, std::string>& additionalHttpHeaders) override;
 #endif  // defined(OHOS_NO_STATE_PREFETCH)
 
-  int PostUrl(const std::string& url, std::vector<char>& postData) override;
+  int PostUrl(const std::string& url, const std::vector<char>& postData) override;
   void JavaScriptOnDocumentStart(const ScriptItems& scriptItems) override;
   void JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) override;
   // For NWebEx
   static NWebImpl* FromID(int32_t nweb_id);
-  std::string GetUrl() const override;
+  std::string GetUrl() override;
 
   CefRefPtr<CefClient> GetCefClient() const {
     return nweb_delegate_ ? nweb_delegate_->GetCefClient() : nullptr;
@@ -320,10 +311,16 @@ class NWebImpl : public NWeb {
   bool Discard() override;
   bool Restore() override;
 
-  bool NeedSoftKeyboard() const override;
+  bool NeedSoftKeyboard() override;
+
+  static std::shared_ptr<NWeb> GetNWeb(int32_t nweb_id);
+  static std::shared_ptr<NWeb> CreateNWeb(std::shared_ptr<NWebCreateInfo> create_info);
+  static void SetWebTag(int32_t nweb_id, const char* web_tag);
+  static void InitializeWebEngine(std::shared_ptr<NWebEngineInitArgs> init_args);
+  static void PrepareForPageLoad(const std::string &url, bool preconnectable, int32_t num_sockets) ;
 
 #if defined(OHOS_COOKIE)
-  static bool InitializeICUStatic(const NWebInitArgs& init_args);
+  static bool InitializeICUStatic(std::shared_ptr<NWebEngineInitArgs> init_args);
 #endif // defined(OHOS_COOKIE)
 
 #if defined(OHOS_MULTI_WINDOW)
@@ -351,7 +348,7 @@ class NWebImpl : public NWeb {
 #endif
 
 #if defined(OHOS_INCOGNITO_MODE)
-  bool IsIncognitoMode() const override {
+  bool IsIncognitoMode() override {
     return incognito_mode_;
   }
 #endif
@@ -362,9 +359,9 @@ class NWebImpl : public NWeb {
 #endif
 
  private:
-  void ProcessInitArgs(const NWebInitArgs& init_args);
-  void InitWebEngineArgs(const NWebInitArgs& init_args);
-  bool InitWebEngine(const NWebCreateInfo& create_info);
+  void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
+  void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
+  bool InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info);
   bool SetVirtualDeviceRatio();
 #if defined(OHOS_WEBRTC)
   void StopCameraSession() const;

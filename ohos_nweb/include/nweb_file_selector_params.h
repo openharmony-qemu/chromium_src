@@ -35,15 +35,15 @@ public:
 
     virtual ~NWebFileSelectorParams() = default;
 
-    virtual const std::string Title() const = 0;
+    virtual const std::string Title() = 0;
 
-    virtual FileSelectorMode Mode() const = 0;
+    virtual FileSelectorMode Mode() = 0;
 
-    virtual const std::string DefaultFilename() const = 0;
+    virtual const std::string DefaultFilename() = 0;
 
-    virtual const AcceptTypeList AcceptType() const = 0;
+    virtual const AcceptTypeList AcceptType() = 0;
 
-    virtual bool IsCapture() const = 0;
+    virtual bool IsCapture() = 0;
 };
 }
 

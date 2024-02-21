@@ -37,14 +37,14 @@ class NWebPreferenceDelegate : public NWebPreference {
   void PutEnableRawFileAccessFromFileURLs(bool flag) override;
   void PutEnableUniversalAccessFromFileURLs(bool flag) override;
   void PutLoadImageFromNetworkDisabled(bool flag) override;
-  void PutCursiveFontFamilyName(std::string font) override;
+  void PutCursiveFontFamilyName(const std::string& font) override;
   void PutDatabaseAllowed(bool flag) override;
   void PutDefaultFixedFontSize(int size) override;
   void PutDefaultFontSize(int size) override;
-  void PutDefaultTextEncodingFormat(std::string encoding) override;
+  void PutDefaultTextEncodingFormat(const std::string& encoding) override;
   void PutDomStorageEnabled(bool flag) override;
-  void PutFantasyFontFamilyName(std::string font) override;
-  void PutFixedFontFamilyName(std::string font) override;
+  void PutFantasyFontFamilyName(const std::string& font) override;
+  void PutFixedFontFamilyName(const std::string& font) override;
 
   void PutIsCreateWindowsByJavaScriptAllowed(bool flag) override;
   void PutJavaScriptEnabled(bool flag) override;
@@ -52,10 +52,10 @@ class NWebPreferenceDelegate : public NWebPreference {
   void PutFontSizeLowerLimit(int size) override;
   void PutLoadWithOverviewMode(bool flag) override;
   void PutLogicalFontSizeLowerLimit(int size) override;
-  void PutSansSerifFontFamilyName(std::string font) override;
-  void PutSerifFontFamilyName(std::string font) override;
-  void PutStandardFontFamilyName(std::string font) override;
-  void PutUserAgent(std::string ua) override;
+  void PutSansSerifFontFamilyName(const std::string& font) override;
+  void PutSerifFontFamilyName(const std::string& font) override;
+  void PutStandardFontFamilyName(const std::string& font) override;
+  void PutUserAgent(const std::string& ua) override;
   void PutZoomingForTextFactor(int textZoom) override;
   void PutGeolocationAllowed(bool flag) override;
   void PutAccessModeForSecureOriginLoadFromInsecure(AccessMode mode) override;

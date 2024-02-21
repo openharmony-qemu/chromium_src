@@ -30,9 +30,9 @@ class NWebUrlResourceRequestImpl : public NWebUrlResourceRequest {
       bool is_redirect = false);
   ~NWebUrlResourceRequestImpl() = default;
 
-  const std::string& Method() override;
-  const std::map<std::string, std::string>& RequestHeaders() override;
-  const std::string& Url() override;
+  std::string Method() override;
+  std::map<std::string, std::string> RequestHeaders() override;
+  std::string Url() override;
   bool FromGesture() override;
   bool IsAboutMainFrame() override;
   bool IsRequestRedirect() override;

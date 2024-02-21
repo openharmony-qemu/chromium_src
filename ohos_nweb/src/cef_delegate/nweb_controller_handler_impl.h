@@ -27,9 +27,9 @@ class NWebControllerHandlerImpl : public NWebControllerHandler {
   ~NWebControllerHandlerImpl() = default;
 
   void SetNWebHandlerById(int32_t nwebId) override;
-  int32_t GetNWebHandlerId() const override;
-  bool IsFrist() const override;
-  int32_t GetId() const override;
+  int32_t GetNWebHandlerId() override;
+  bool IsFrist() override;
+  int32_t GetId() override;
 
  private:
   int32_t id_;

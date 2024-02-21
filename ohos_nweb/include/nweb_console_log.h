@@ -32,58 +32,35 @@ public:
         UNKNOWN
     };
 
-    NWebConsoleLog(int line_number,
-                   std::string message,
-                   NWebConsoleLogLevel log_level,
-                   std::string sourceId)
-        : line_number_(line_number),
-          log_(message),
-          log_level_(log_level),
-          sourceId_(sourceId) {}
-
-    ~NWebConsoleLog() = default;
+    virtual ~NWebConsoleLog() = default;
 
     /**
      * @brief Get console log line number
      *
      * @retval line number
      */
-    int LineNumer() const {
-        return line_number_;
-    }
+    virtual int LineNumer() = 0;
 
     /**
      * @brief Get console log message
      *
      * @retval message
      */
-    const std::string& Log() const {
-        return log_;
-    }
+    virtual std::string Log() = 0;
 
     /**
      * @brief Get console log message level
      *
      * @retval message level
      */
-    NWebConsoleLogLevel LogLevel() const {
-        return log_level_;
-    }
+    virtual NWebConsoleLogLevel LogLevel() = 0;
 
     /**
      * @brief Get console log source id
      *
      * @retval source id
      */
-    const std::string& SourceId() const {
-        return sourceId_;
-    }
-
-private:
-    int line_number_;
-    std::string log_;
-    NWebConsoleLogLevel log_level_;
-    std::string sourceId_;
+    virtual std::string SourceId() = 0;
 };
 }
 

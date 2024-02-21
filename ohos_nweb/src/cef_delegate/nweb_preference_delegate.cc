@@ -229,7 +229,7 @@ void NWebPreferenceDelegate::PutLoadImageFromNetworkDisabled(bool flag) {
   WebPreferencesChanged();
 }
 
-void NWebPreferenceDelegate::PutCursiveFontFamilyName(std::string font) {
+void NWebPreferenceDelegate::PutCursiveFontFamilyName(const std::string& font) {
   cursive_font_family_name_ = font;
   WebPreferencesChanged();
 }
@@ -248,7 +248,7 @@ void NWebPreferenceDelegate::PutDefaultFontSize(int size) {
 }
 
 void NWebPreferenceDelegate::PutDefaultTextEncodingFormat(
-    std::string encoding) {
+    const std::string& encoding) {
   default_encoding_ = encoding;
   WebPreferencesChanged();
 }
@@ -258,12 +258,12 @@ void NWebPreferenceDelegate::PutDomStorageEnabled(bool flag) {
   WebPreferencesChanged();
 }
 
-void NWebPreferenceDelegate::PutFantasyFontFamilyName(std::string font) {
+void NWebPreferenceDelegate::PutFantasyFontFamilyName(const std::string& font) {
   fantasy_font_family_name_ = font;
   WebPreferencesChanged();
 }
 
-void NWebPreferenceDelegate::PutFixedFontFamilyName(std::string font) {
+void NWebPreferenceDelegate::PutFixedFontFamilyName(const std::string& font) {
   fixed_font_family_name_ = font;
   WebPreferencesChanged();
 }
@@ -310,22 +310,22 @@ void NWebPreferenceDelegate::PutLoadWithOverviewMode(bool flag) {
   WebPreferencesChanged();
 }
 
-void NWebPreferenceDelegate::PutSansSerifFontFamilyName(std::string font) {
+void NWebPreferenceDelegate::PutSansSerifFontFamilyName(const std::string& font) {
   sans_serif_font_family_name_ = font;
   WebPreferencesChanged();
 }
 
-void NWebPreferenceDelegate::PutSerifFontFamilyName(std::string font) {
+void NWebPreferenceDelegate::PutSerifFontFamilyName(const std::string& font) {
   serif_font_family_name_ = font;
   WebPreferencesChanged();
 }
 
-void NWebPreferenceDelegate::PutStandardFontFamilyName(std::string font) {
+void NWebPreferenceDelegate::PutStandardFontFamilyName(const std::string& font) {
   standard_font_family_name_ = font;
   WebPreferencesChanged();
 }
 
-void NWebPreferenceDelegate::PutUserAgent(std::string ua) {
+void NWebPreferenceDelegate::PutUserAgent(const std::string& ua) {
   std::string old_user_agent = user_agent_;
   if (ua.empty() || ua.length() == 0) {
     user_agent_ = DefaultUserAgent();

@@ -1,0 +1,59 @@
+/*
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef NWEB_ENGINE_IMPL_H
+#define NWEB_ENGINE_IMPL_H
+
+#include "nweb_engine.h"
+
+namespace OHOS::NWeb {
+
+class NWebEngineImpl : public NWebEngine {
+public:
+  NWebEngineImpl();
+  ~NWebEngineImpl() = default;
+
+  std::shared_ptr<NWeb>
+  CreateNWeb(std::shared_ptr<NWebCreateInfo> create_info) override;
+
+  std::shared_ptr<NWeb> GetNWeb(int32_t nweb_id) override;
+
+  std::shared_ptr<NWebDataBase> GetDataBase() override;
+
+  std::shared_ptr<NWebWebStorage> GetWebStorage() override;
+
+  std::shared_ptr<NWebCookieManager> GetCookieManager() override;
+
+  std::shared_ptr<NWebDownloadManager> GetDownloadManager() override;
+
+  void SetWebTag(int32_t nweb_id, const char *web_tag) override;
+
+  void
+  InitializeWebEngine(std::shared_ptr<NWebEngineInitArgs> init_args) override;
+
+  void PrepareForPageLoad(const std::string &url, bool preconnectable,
+                          int32_t num_sockets) override;
+
+  void SetWebDebuggingAccess(bool isEnableDebug) override;
+
+private:
+  std::shared_ptr<NWebDataBase> nweb_data_base_;
+  std::shared_ptr<NWebWebStorage> nweb_web_storage_;
+  std::shared_ptr<NWebDownloadManager> nweb_download_manager_;
+};
+
+} // namespace OHOS::NWeb
+
+#endif // NWEB_ENGINE_IMPL_H

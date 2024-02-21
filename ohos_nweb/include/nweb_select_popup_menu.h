@@ -43,25 +43,45 @@ enum TextDirection {
     SP_LTR,
 };
 
-struct SelectPopupMenuItem {
-    std::string label = "";
-    std::string toolTip = "";
-    SelectPopupMenuItemType type = SP_OPTION;
-    uint32_t action = 0;
-    TextDirection textDirection = SP_UNKNOWN;
-    bool enabled = false;
-    bool hasTextDirectionOverride = false;
-    bool checked = false;
+class NWebSelectPopupMenuItem {
+public:
+    virtual ~NWebSelectPopupMenuItem() = default;
+
+    virtual SelectPopupMenuItemType GetType() = 0;
+
+    virtual std::string GetLabel() = 0;
+
+    virtual uint32_t GetAction() = 0;
+
+    virtual std::string GetToolTip() = 0;
+
+    virtual bool GetIsChecked() = 0;
+
+    virtual bool GetIsEnabled() = 0;
+
+    virtual TextDirection GetTextDirection() = 0;
+
+    virtual bool GetHasTextDirectionOverride() = 0;
 };
 
-struct NWebSelectPopupMenuParam {
-    SelectMenuBound bounds;
-    int itemHeight = -1;
-    double itemFontSize = -1;
-    int selectedItem = -1;
-    std::vector<SelectPopupMenuItem> menuItems;
-    bool rightAligned = false;
-    bool allowMultipleSelection = false;
+class NWebSelectPopupMenuParam {
+public:
+    virtual ~NWebSelectPopupMenuParam() = default;
+
+    virtual std::vector<std::shared_ptr<NWebSelectPopupMenuItem>>
+        GetMenuItems() = 0;
+
+    virtual int GetItemHeight() = 0;
+
+    virtual int GetSelectedItem() = 0;
+
+    virtual double GetItemFontSize() = 0;
+
+    virtual bool GetIsRightAligned() = 0;
+
+    virtual SelectMenuBound GetSelectMenuBound() = 0;
+
+    virtual bool GetIsAllowMultipleSelection() = 0;
 };
 
 class NWebSelectPopupMenuCallback {

@@ -17,17 +17,55 @@
 #define VALUE_CALLBACK_H
 
 #include "nweb_export.h"
+#include <string>
 
 namespace OHOS::NWeb {
-template<typename T>
-class OHOS_NWEB_EXPORT NWebValueCallback {
+class NWebMessage;
+class NWebWebStorageOrigin;
+
+class OHOS_NWEB_EXPORT NWebBoolValueCallback {
 public:
-    NWebValueCallback() = default;
+  virtual ~NWebBoolValueCallback() = default;
 
-    virtual ~NWebValueCallback() = default;
-
-    virtual void OnReceiveValue(T value) = 0;
+  virtual void OnReceiveValue(bool value) = 0;
 };
-}
 
-#endif  // NWebValueCallback
+class OHOS_NWEB_EXPORT NWebLongValueCallback {
+public:
+  virtual ~NWebLongValueCallback() = default;
+
+  virtual void OnReceiveValue(long value) = 0;
+};
+
+class OHOS_NWEB_EXPORT NWebStringValueCallback {
+public:
+  virtual ~NWebStringValueCallback() = default;
+
+  virtual void OnReceiveValue(const std::string &value) = 0;
+};
+
+class OHOS_NWEB_EXPORT NWebStringVectorValueCallback {
+public:
+  virtual ~NWebStringVectorValueCallback() = default;
+
+  virtual void OnReceiveValue(const std::vector<std::string> &value) = 0;
+};
+
+class OHOS_NWEB_EXPORT NWebMessageValueCallback {
+public:
+  virtual ~NWebMessageValueCallback() = default;
+
+  virtual void OnReceiveValue(std::shared_ptr<NWebMessage> value) = 0;
+};
+
+class OHOS_NWEB_EXPORT NWebWebStorageOriginVectorValueCallback {
+public:
+  virtual ~NWebWebStorageOriginVectorValueCallback() = default;
+
+  virtual void OnReceiveValue(
+      const std::vector<std::shared_ptr<NWebWebStorageOrigin>> &value) = 0;
+};
+
+} // namespace OHOS::NWeb
+
+#endif // NWebValueCallback

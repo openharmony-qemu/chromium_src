@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,23 +13,24 @@
  * limitations under the License.
  */
 
-#include "nweb_select_popup_menu_callback.h"
+#include "nweb_hit_test_result_impl.h"
 
 namespace OHOS::NWeb {
-NWebSelectPopupMenuCallbackImpl::NWebSelectPopupMenuCallbackImpl(
-    CefRefPtr<CefSelectPopupCallback> callback)
-    : callback_(callback) {}
 
-void NWebSelectPopupMenuCallbackImpl::Continue(
-    const std::vector<int32_t>& indices) {
-  if (callback_) {
-    callback_->Continue(indices);
-  }
+void HitTestResultImpl::SetType(int type) {
+  type_ = type;
 }
 
-void NWebSelectPopupMenuCallbackImpl::Cancel() {
-  if (callback_) {
-    callback_->Cancel();
-  }
+int32_t HitTestResultImpl::GetType() {
+  return type_;
 }
-}  // namespace OHOS::NWeb
+
+void HitTestResultImpl::SetExtra(std::string extra) {
+  extra_ = extra;
+}
+
+std::string HitTestResultImpl::GetExtra() {
+  return extra_;
+}
+
+} // namespace OHOS::NWeb

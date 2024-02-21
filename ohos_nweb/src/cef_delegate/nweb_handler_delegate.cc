@@ -32,7 +32,8 @@
 #include "nweb_find_delegate.h"
 #include "nweb_impl.h"
 
-#include "nweb_cookie_manager_impl.h"
+#include "nweb_console_log_impl.h"
+#include "nweb_engine_impl.h"
 #include "nweb_data_resubmission_callback_impl.h"
 #include "nweb_full_screen_exit_handler_impl.h"
 #include "nweb_geolocation_callback.h"
@@ -40,14 +41,14 @@
 #include "nweb_js_http_auth_result_impl.h"
 #include "nweb_js_ssl_error_result_impl.h"
 #include "nweb_js_ssl_select_cert_result_impl.h"
-#include "nweb_key_event.h"
+#include "nweb_key_event_impl.h"
 #include "nweb_load_committed_details_impl.h"
 #include "nweb_preference_delegate.h"
 #include "nweb_resource_handler.h"
-#include "nweb_select_popup_menu_callback.h"
+#include "nweb_select_popup_menu_impl.h"
 #include "nweb_url_resource_error_impl.h"
 #include "nweb_url_resource_request_impl.h"
-#include "nweb_url_resource_response.h"
+#include "nweb_url_resource_response_impl.h"
 #include "nweb_value_callback.h"
 #include "nweb_value_convert.h"
 
@@ -263,6 +264,33 @@ char* CopyCefStringToChar(const CefString& str) {
 const char kOffScreenFrameRate[] = "off-screen-frame-rate";
 #endif  // defined(OHOS_MULTI_WINDOW)
 }  // namespace
+
+class NWebDateTimeSuggestionImpl : public NWebDateTimeSuggestion {
+ public:
+  NWebDateTimeSuggestionImpl() = default;
+  NWebDateTimeSuggestionImpl(const DateTime &value, const std::string &label,
+                             const std::string &localized_value)
+      : value_(value), label_(label), localized_value_(localized_value) {
+  }
+  ~NWebDateTimeSuggestionImpl() = default;
+
+  std::string GetLabel() override {
+    return label_;
+  }
+
+  DateTime GetValue() override {
+    return value_;
+  }
+
+  std::string GetLocalizedValue() override {
+    return localized_value_;
+  }
+
+ private:
+  DateTime value_;
+  std::string label_;
+  std::string localized_value_;
+};
 
 #ifdef OHOS_CSS_INPUT_TIME
 class NWebDateTimeChooserCallbackImpl : public NWebDateTimeChooserCallback {
@@ -999,7 +1027,7 @@ void NWebHandlerDelegate::OnHttpError(CefRefPtr<CefRequest> request,
     std::map<std::string, std::string> response_headers;
     ConvertMapToHeaderMap(cef_response_headers, response_headers);
     std::shared_ptr<NWebUrlResourceResponse> web_response =
-        std::make_shared<NWebUrlResourceResponse>(
+        std::make_shared<NWebUrlResourceResponseImpl>(
             response->GetMimeType(), response->GetCharset(),
             response->GetStatus(), response->GetStatusText(), response_headers,
             data);
@@ -1294,9 +1322,8 @@ bool NWebHandlerDelegate::OnPreKeyEvent(CefRefPtr<CefBrowser> browser,
     if (keyCode == -1) {
       return false;
     }
-    std::shared_ptr<NWebKeyEvent> nwebEvent = std::make_shared<NWebKeyEvent>();
-    nwebEvent->keyCode_ = keyCode;
-    nwebEvent->action_ = action;
+    std::shared_ptr<NWebKeyEvent> nwebEvent =
+        std::make_shared<NWebKeyEventImpl>(action, keyCode);
     return nweb_handler_->OnPreKeyEvent(nwebEvent);
   }
   return false;
@@ -1318,9 +1345,8 @@ bool NWebHandlerDelegate::OnKeyEvent(CefRefPtr<CefBrowser> browser,
     if (keyCode == -1) {
       return false;
     }
-    std::shared_ptr<NWebKeyEvent> nwebEvent = std::make_shared<NWebKeyEvent>();
-    nwebEvent->keyCode_ = keyCode;
-    nwebEvent->action_ = action;
+    std::shared_ptr<NWebKeyEvent> nwebEvent =
+        std::make_shared<NWebKeyEventImpl>(action, keyCode);
     return nweb_handler_->OnUnProcessedKeyEvent(nwebEvent);
   }
   return false;
@@ -1357,11 +1383,9 @@ CefRefPtr<CefResourceHandler> NWebHandlerDelegate::GetResourceHandler(
       std::make_shared<NWebUrlResourceRequestImpl>(
           request->GetMethod().ToString(), request_headers,
           request->GetURL().ToString(), false, request->IsMainFrame());
-  std::shared_ptr<NWebUrlResourceResponse> response;
-  if (nweb_handler_ != nullptr) {
-    response = nweb_handler_->OnHandleInterceptRequest(NWeb_request);
-  }
-  if (response) {
+  std::shared_ptr<NWebUrlResourceResponse> response =
+      std::make_shared<NWebUrlResourceResponseImpl>();
+  if (nweb_handler_->OnHandleInterceptRequest(NWeb_request, response)) {
     std::string str = "";
     return new NWebResourceHandler(response, str);
   } else {
@@ -1635,9 +1659,10 @@ bool NWebHandlerDelegate::OnConsoleMessage(CefRefPtr<CefBrowser> browser,
   if (nweb_handler_ != nullptr) {
     NWebConsoleLog::NWebConsoleLogLevel message_level =
         ConvertConsoleMessageLevel(level);
-    NWebConsoleLog console_message(line, message.ToString(), message_level,
-                                   source.ToString());
-    return nweb_handler_->OnConsoleLog(console_message);
+    std::shared_ptr<NWebConsoleLog> console_log =
+        std::make_shared<NWebConsoleLogImpl>(line, message.ToString(),
+                                             message_level, source.ToString());
+    return nweb_handler_->OnConsoleLog(console_log);
   }
   return false;
 }
@@ -1682,13 +1707,6 @@ bool NWebHandlerDelegate::OnCursorChange(
     info.x = custom_cursor_info.hotspot.x;
     info.y = custom_cursor_info.hotspot.y;
     info.scale = custom_cursor_info.image_scale_factor;
-    uint64_t len = info.width * info.height * 4;
-    info.buff = std::make_unique<uint8_t[]>(len);
-    if (!info.buff) {
-      LOG(ERROR) << "OnCursorChange make_unique failed";
-      return false;
-    }
-    memcpy((char*)info.buff.get(), custom_cursor_info.buffer, len);
   }
   CursorType cursorType(static_cast<CursorType>(type));
   return nweb_handler_->OnCursorChange(cursorType, info);
@@ -1916,7 +1934,7 @@ bool NWebHandlerDelegate::OnFileDialog(
       std::make_shared<FileSelectorParamsImpl>(
           file_mode, file_selector_title, accept_filters,
           default_file_path.ToString(), capture);
-  std::shared_ptr<FileSelectorCallback> file_path_callback =
+  std::shared_ptr<NWebStringVectorValueCallback> file_path_callback =
       std::make_shared<FileSelectorCallbackImpl>(callback);
   return nweb_handler_->OnFileSelectorShow(file_path_callback, param);
 }
@@ -1936,34 +1954,35 @@ void NWebHandlerDelegate::OnSelectPopupMenu(
     return;
   }
   float ratio = render_handler_->GetCefDeviceRatio();
-  std::shared_ptr<NWebSelectPopupMenuParam> param =
-      std::make_shared<NWebSelectPopupMenuParam>();
+  std::shared_ptr<NWebSelectPopupMenuParamImpl> param =
+      std::make_shared<NWebSelectPopupMenuParamImpl>();
   if (!param) {
     return;
   }
-  param->bounds = {bounds.x * ratio, bounds.y * ratio, bounds.width * ratio,
-                   bounds.height * ratio};
-  param->itemHeight = item_height;
-  param->itemFontSize = item_font_size * GetScale() / 100.0;
-  param->selectedItem = selected_item;
-  param->rightAligned = right_aligned;
-  param->allowMultipleSelection = allow_multiple_selection;
-  std::vector<SelectPopupMenuItem> menu_list;
+  SelectMenuBound bound = { bounds.x * ratio, bounds.y * ratio,
+                    bounds.width * ratio, bounds.height * ratio};
+  param->SetSelectMenuBound(bound);
+  param->SetItemHeight(item_height);
+  param->SetSelectedItem(selected_item);
+  param->SetIsRightAligned(right_aligned);
+  param->SetItemFontSize(item_font_size * GetScale() / 100.0);
+  param->SetIsAllowMultipleSelection(allow_multiple_selection);
+  std::vector<std::shared_ptr<NWebSelectPopupMenuItem>> menu_list;
   for (auto& menu_item : menu_items) {
     std::string label = CefString(&menu_item.label);
-    SelectPopupMenuItem item = {
-        CefString(&menu_item.label).ToString(),
-        CefString(&menu_item.tool_tip).ToString(),
-        static_cast<SelectPopupMenuItemType>(menu_item.type),
-        menu_item.action,
-        static_cast<TextDirection>(menu_item.text_direction),
-        menu_item.enabled,
-        menu_item.has_text_direction_override,
-        menu_item.checked,
-    };
+    std::shared_ptr<NWebSelectPopupMenuItemImpl> item =
+        std::make_shared<NWebSelectPopupMenuItemImpl>();
+    item->SetAction(menu_item.action);
+    item->SetIsEnabled(menu_item.enabled);
+    item->SetIsChecked(menu_item.checked);
+    item->SetLabel(CefString(&menu_item.label).ToString());
+    item->SetToolTip(CefString(&menu_item.tool_tip).ToString());
+    item->SetType(static_cast<SelectPopupMenuItemType>(menu_item.type));
+    item->SetHasTextDirectionOverride(menu_item.has_text_direction_override);
+    item->SetTextDirection(static_cast<TextDirection>(menu_item.text_direction));
     menu_list.push_back(std::move(item));
   }
-  param->menuItems = std::move(menu_list);
+  param->SetMenuItems(std::move(menu_list));
 
   std::shared_ptr<NWebSelectPopupMenuCallback> popup_callback =
       std::make_shared<NWebSelectPopupMenuCallbackImpl>(callback);
@@ -2006,16 +2025,14 @@ void NWebHandlerDelegate::OnDateTimeChooserPopup(
     return;
   }
   chooser.hasSelected = !std::isnan(date_time_chooser.dialog_value);
-  std::vector<DateTimeSuggestion> suggestions;
+  std::vector<std::shared_ptr<NWebDateTimeSuggestion>> suggestions;
   for (size_t index = 0; index < suggestion.size(); index++) {
     DateTime value = (type == DateTimeChooserType::DTC_MONTH)
                          ? ConvertMonthToDateTime(suggestion[index].value)
                          : ConvertMsToDateTime(suggestion[index].value);
-    suggestions.push_back(DateTimeSuggestion{
-        value,
-        CefString(&suggestion[index].localized_value).ToString(),
-        CefString(&suggestion[index].label).ToString(),
-    });
+    suggestions.push_back(std::make_shared<NWebDateTimeSuggestionImpl>(
+      value, CefString(&suggestion[index].label).ToString(),
+      CefString(&suggestion[index].localized_value).ToString()));
     if (date_time_chooser.dialog_value == suggestion[index].value) {
       chooser.suggestionIndex = index;
     }
@@ -2228,7 +2245,7 @@ bool NWebHandlerDelegate::CanSendCookie(CefRefPtr<CefBrowser> browser,
                                         CefRefPtr<CefFrame> frame,
                                         CefRefPtr<CefRequest> request,
                                         const CefCookie& cookie) {
-  return NWebCookieManagerImpl::GetCookieManagerInstance()
+  return NWebEngineImpl::GetInstance()->GetCookieManager()
       ->IsAcceptCookieAllowed();
 }
 bool NWebHandlerDelegate::CanSaveCookie(CefRefPtr<CefBrowser> browser,
@@ -2236,7 +2253,7 @@ bool NWebHandlerDelegate::CanSaveCookie(CefRefPtr<CefBrowser> browser,
                                         CefRefPtr<CefRequest> request,
                                         CefRefPtr<CefResponse> response,
                                         const CefCookie& cookie) {
-  return NWebCookieManagerImpl::GetCookieManagerInstance()
+  return NWebEngineImpl::GetInstance()->GetCookieManager()
       ->IsAcceptCookieAllowed();
 }
 /* CefResourceRequestHandler methods end */
@@ -2250,12 +2267,10 @@ const std::vector<std::string> NWebHandlerDelegate::GetVisitedHistory() {
 
 void NWebHandlerDelegate::RegisterNativeJavaScriptCallBack(
     const char* objName,
-    const char** methodName,
-    std::vector<std::function<char*(const char** argv, int32_t argc)>> callback,
-    int32_t size) {
+    const std::vector<std::shared_ptr<NWebJsProxyCallback>> &callbacks) {
   std::unordered_map<std::string, std::function<char*(const char**, int32_t)>> map;
-  for (int i = 0; i < size; i++) {
-    map[methodName[i]] = callback[i];
+  for (auto callback : callbacks) {
+    map[callback->GetMethodName()] = callback->GetMethodCallback();
   }
   objMap_[objName] = map;
 }

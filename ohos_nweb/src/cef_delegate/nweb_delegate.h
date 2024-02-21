@@ -24,6 +24,7 @@
 #include "cef/include/cef_command_line.h"
 #include "content/browser/accessibility/browser_accessibility_manager_ohos.h"
 #include "content/browser/accessibility/browser_accessibility_ohos.h"
+#include "nweb_accessibility_node_info_impl.h"
 #include "nweb_application.h"
 #include "nweb_delegate_interface.h"
 #include "nweb_display_listener.h"
@@ -68,7 +69,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       std::shared_ptr<NWebAccessibilityEventCallback>
           accessibility_event_listener) override;
   void RegisterAccessibilityIdGenerator(
-      std::function<int64_t()> accessibilityIdGenerator) const override;
+      const AccessibilityIdGenerateFunc accessibilityIdGenerator) const override;
   void RegisterReleaseSurfaceListener(
       std::shared_ptr<NWebReleaseSurfaceCallback> releaseSurfaceListener)
       override;
@@ -94,7 +95,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
                       double y,
                       bool from_overlay) override;
   void OnTouchMove(int32_t id, double x, double y, bool from_overlay) override;
-  void OnTouchMove(const std::list<TouchPointInfo>& touch_point_info_list, bool from_overlay = false) override;
+  void OnTouchMove(const std::vector<std::shared_ptr<NWebTouchPointInfo>> &touch_point_infos,
+                   bool from_overlay = false) override;
   void OnTouchCancel() override;
   bool SendKeyEvent(int32_t keyCode, int32_t keyAction) override;
   void SendMouseWheelEvent(double x,
@@ -132,11 +134,11 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void SetEnableLowerFrameRate(bool enabled) override;
   std::shared_ptr<NWebPreference> GetPreference() const override;
   std::string Title() override;
-  HitTestResult GetHitTestResult() const override;
+  std::shared_ptr<HitTestResult> GetHitTestResult() const override;
   int PageLoadProgress() override;
   float Scale() override;
-  int Load(std::string& url,
-           std::map<std::string, std::string> additionalHttpHeaders) override;
+  int Load(const std::string& url,
+           const std::map<std::string, std::string>& additionalHttpHeaders) override;
   int LoadWithDataAndBaseUrl(const std::string& baseUrl,
                              const std::string& data,
                              const std::string& mimeType,
@@ -148,9 +150,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   int ContentHeight() override;
 
   void RegisterNativeArkJSFunction(const char* objName,
-      const char** methodName,
-      std::vector<std::function<char*(const char** argv, int32_t argc)>> callback,
-      int32_t size) override;
+      const std::vector<std::shared_ptr<NWebJsProxyCallback>> &callbacks) override;
   void UnRegisterNativeArkJSFunction(const char* objName) override;
 
   void RegisterArkJSfunction(const std::string& object_name,
@@ -170,7 +170,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void CallH5Function(
       int32_t routing_id,
       int32_t h5_object_id,
-      const std::string h5_method_name,
+      const std::string& h5_method_name,
       const std::vector<std::shared_ptr<NWebValue>>& args) const override;
 
   void RegisterNWebJavaScriptCallBack(
@@ -207,18 +207,18 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void EraseJavaScriptCallbackImpl(uint32_t id) override;
   void ExecuteJavaScript(
       const std::string& code,
-      std::shared_ptr<NWebValueCallback<std::shared_ptr<NWebMessage>>> callback,
+      std::shared_ptr<NWebMessageValueCallback> callback,
       bool extention) override;
-  void CreateWebMessagePorts(std::vector<std::string>& ports) override;
-  void PostWebMessage(std::string& message,
-                      std::vector<std::string>& ports,
-                      std::string& targetUri) override;
-  void ClosePort(std::string& port_handle) override;
-  void PostPortMessage(std::string& port_handle,
+  std::vector<std::string> CreateWebMessagePorts() override;
+  void PostWebMessage(const std::string& message,
+                      const std::vector<std::string>& ports,
+                      const std::string& targetUri) override;
+  void ClosePort(const std::string& port_handle) override;
+  void PostPortMessage(const std::string& port_handle,
                        std::shared_ptr<NWebMessage> data) override;
   void SetPortMessageCallback(
-      std::string& port_handle,
-      std::shared_ptr<NWebValueCallback<std::shared_ptr<NWebMessage>>> callback)
+      const std::string& port_handle,
+      std::shared_ptr<NWebMessageValueCallback> callback)
       override;
 #endif  // defined(OHOS_MSGPORT)
 
@@ -229,7 +229,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void StoreWebArchive(
       const std::string& base_name,
       bool auto_name,
-      std::shared_ptr<NWebValueCallback<std::string>> callback) const override;
+      std::shared_ptr<NWebStringValueCallback> callback) const override;
   void SetBrowserUserAgentString(const std::string& user_agent) override;
   void SendDragEvent(const DelegateDragEvent& dragEvent) const override;
 #ifdef OHOS_I18N
@@ -248,13 +248,13 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void ClearDragData() const;
   std::string ohos_temp_dir_;
 #endif  // OHOS_DRAG_DROP
-  void GetImages(std::shared_ptr<NWebValueCallback<bool>> callback) override;
+  void GetImages(std::shared_ptr<NWebBoolValueCallback> callback) override;
   void RemoveCache(bool include_disk_files) override;
 
 #ifdef OHOS_NAVIGATION
   std::shared_ptr<NWebHistoryList> GetHistoryList() override;
-  WebState SerializeWebState() override;
-  bool RestoreWebState(WebState state) override;
+  std::vector<uint8_t> SerializeWebState() override;
+  bool RestoreWebState(const std::vector<uint8_t>& state) override;
 #endif
 
 #if defined(OHOS_NWEB_EX)
@@ -273,8 +273,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 
 #if defined(OHOS_NO_STATE_PREFETCH)
   void PrefetchPage(
-      std::string& url,
-      std::map<std::string, std::string> additionalHttpHeaders) override;
+      const std::string& url,
+      const std::map<std::string, std::string>& additionalHttpHeaders) override;
 #endif  // defined(OHOS_NO_STATE_PREFETCH)
 
 #if defined(OHOS_INPUT_EVENTS)
@@ -361,7 +361,7 @@ void EnableSafeBrowsing(bool enable) override;
 #endif
 
 #ifdef OHOS_POST_URL
-  int PostUrl(const std::string& url, std::vector<char>& postData) override;
+  int PostUrl(const std::string& url, const std::vector<char>& postData) override;
 #endif // defined(OHOS_POST_URL)
 #ifdef OHOS_EX_GET_ZOOM_LEVEL
  void SetBrowserZoomLevel(double zoom_factor) override;
@@ -369,17 +369,14 @@ void EnableSafeBrowsing(bool enable) override;
 #endif
   void SetAccessibilityState(cef_state_t accessibility_state) override;
   void ExecuteAction(int64_t accessibilityId, uint32_t action) const override;
-  bool GetFocusedAccessibilityNodeInfo(
-      int64_t accessibilityId,
-      bool isAccessibilityFocus,
-      OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const override;
-  bool GetAccessibilityNodeInfoById(
-      int64_t accessibilityId,
-      OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const override;
-  bool GetAccessibilityNodeInfoByFocusMove(
-      int64_t accessibilityId,
-      int32_t direction,
-      OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const override;
+  std::shared_ptr<NWebAccessibilityNodeInfo>
+  GetFocusedAccessibilityNodeInfo(int64_t accessibilityId,
+                                  bool isAccessibilityFocus) override;
+  std::shared_ptr<NWebAccessibilityNodeInfo>
+  GetAccessibilityNodeInfoById(int64_t accessibilityId) override;
+  std::shared_ptr<NWebAccessibilityNodeInfo>
+  GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
+                                      int32_t direction) override;
 
  public:
   int argc_;
@@ -424,18 +421,18 @@ void EnableSafeBrowsing(bool enable) override;
  private:
   content::BrowserAccessibilityManagerOHOS* GetAccessibilityManager() const;
   void AddAccessibilityNodeInfoAttributes(
-      NWebAccessibilityNodeInfo& nodeInfo,
+      std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
       const content::BrowserAccessibilityOHOS* node) const;
   void AddAccessibilityNodeInfoRect(
-      NWebAccessibilityNodeInfo& nodeInfo,
+      std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
       const content::BrowserAccessibilityOHOS* node) const;
   void AddAccessibilityNodeInfoCollection(
-    NWebAccessibilityNodeInfo& nodeInfo,
+    std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
     const content::BrowserAccessibilityOHOS* node) const;
+  std::shared_ptr<NWebAccessibilityNodeInfo>
+  PopulateAccessibilityNodeInfo(const content::BrowserAccessibilityOHOS* node) const;
   void AddAccessibilityNodeInfoActions(
-    NWebAccessibilityNodeInfo& nodeInfo) const;
-  bool PopulateAccessibilityNodeInfo(const content::BrowserAccessibilityOHOS* node,
-                                     NWebAccessibilityNodeInfo& nodeInfo) const;
+    std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo) const;
 
   float zoom_in_factor_ = 1.25f;
   float zoom_out_factor_ = 0.8f;

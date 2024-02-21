@@ -32,21 +32,21 @@ public:
      *
      * @retval method the method associated with the request.
      */
-    virtual const std::string &Method() = 0;
+    virtual std::string Method() = 0;
 
     /**
      * @brief Gets the headers associated with the request.
      *
      * @retval the headers associated with the request.
      */
-    virtual const std::map<std::string, std::string> &RequestHeaders() = 0;
+    virtual std::map<std::string, std::string> RequestHeaders() = 0;
 
     /**
      * @brief Gets the URL for which the resource request was made.
      *
      * @retval URL url string
      */
-    virtual const std::string &Url() = 0;
+    virtual std::string Url() = 0;
 
     /**
      * @brief Gets whether a gesture (such as a click) was associated with the

@@ -47,13 +47,13 @@ class NWebDragDataImpl : public NWebDragData {
   bool GetPixelMapSetting(const void** data, size_t& len, int& width, int& height)  override;
 
   // set the link URL that is being dragged.
-  bool SetLinkURL(std::string& url) override;
+  bool SetLinkURL(const std::string& url) override;
 
   // set the plain text that is being dragged.
-  bool SetFragmentText(std::string& Text) override;
+  bool SetFragmentText(const std::string& Text) override;
 
   // set the text/html fragment that is being dragged.
-  bool SetFragmentHtml(std::string& html) override;
+  bool SetFragmentHtml(const std::string& html) override;
 
   // set the image representation of drag data.
   bool SetPixelMapSetting(const void* data, size_t len, int width, int height) override;
@@ -62,13 +62,13 @@ class NWebDragDataImpl : public NWebDragData {
   std::string GetLinkTitle() override;
 
   // set the title associated with the link that is being dragged.
-  bool SetLinkTitle(std::string& title) override;
+  bool SetLinkTitle(const std::string& title) override;
 
   void GetDragStartPosition(int& x, int& y) override;
 
   bool IsSingleImageContent() override;
 
-  bool SetFileUri(std::string& uri) override;
+  bool SetFileUri(const std::string& uri) override;
 
   std::string GetImageFileName() override;
 

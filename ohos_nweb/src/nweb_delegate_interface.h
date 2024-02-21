@@ -64,7 +64,8 @@ class NWebDelegateInterface
       std::shared_ptr<NWebDownloadCallback> downloadListener) = 0;
   virtual void RegisterAccessibilityEventListener(
       std::shared_ptr<NWebAccessibilityEventCallback> accessibilityEventListener) = 0;
-  virtual void RegisterAccessibilityIdGenerator(std::function<int64_t()> accessibilityIdGenerator) const = 0;
+  virtual void RegisterAccessibilityIdGenerator(
+      const AccessibilityIdGenerateFunc accessibilityIdGenerator) const = 0;
   virtual void RegisterReleaseSurfaceListener(
       std::shared_ptr<NWebReleaseSurfaceCallback> releaseSurfaceListener) = 0;
   virtual void RegisterNWebHandler(std::shared_ptr<NWebHandler> handler) = 0;
@@ -124,7 +125,7 @@ class NWebDelegateInterface
                            double x,
                            double y,
                            bool from_overlay) = 0;
-  virtual void OnTouchMove(const std::list<TouchPointInfo>& touch_point_info_list,
+  virtual void OnTouchMove(const std::vector<std::shared_ptr<NWebTouchPointInfo>> &touch_point_infos,
                            bool from_overlay) = 0;
   virtual void OnTouchCancel() = 0;
   virtual bool SendKeyEvent(int32_t keyCode, int32_t keyAction) = 0;
@@ -167,12 +168,12 @@ class NWebDelegateInterface
   virtual void SetEnableLowerFrameRate(bool enabled) = 0;
   virtual std::shared_ptr<NWebPreference> GetPreference() const = 0;
   virtual std::string Title() = 0;
-  virtual HitTestResult GetHitTestResult() const = 0;
+  virtual std::shared_ptr<HitTestResult> GetHitTestResult() const = 0;
   virtual int PageLoadProgress() = 0;
   virtual float Scale() = 0;
   virtual int Load(
-      std::string& url,
-      std::map<std::string, std::string> additionalHttpHeaders) = 0;
+      const std::string& url,
+      const std::map<std::string, std::string>& additionalHttpHeaders) = 0;
   virtual int LoadWithDataAndBaseUrl(const std::string& baseUrl,
                                      const std::string& data,
                                      const std::string& mimeType,
@@ -185,9 +186,7 @@ class NWebDelegateInterface
 
   virtual void RegisterNativeArkJSFunction(
       const char* objName,
-      const char** methodName,
-      std::vector<std::function<char*(const char** argv, int32_t argc)>> callback,
-      int32_t size) = 0;
+      const std::vector<std::shared_ptr<NWebJsProxyCallback>> &callbacks) = 0;
   virtual void UnRegisterNativeArkJSFunction(const char* objName) = 0;
   virtual void RegisterArkJSfunction(
       const std::string& object_name,
@@ -201,7 +200,7 @@ class NWebDelegateInterface
   virtual void CallH5Function(
       int32_t routing_id,
       int32_t h5_object_id,
-      const std::string h5_method_name,
+      const std::string& h5_method_name,
       const std::vector<std::shared_ptr<NWebValue>>& args) const = 0;
   virtual bool Discard() = 0;
   virtual bool Restore() = 0;
@@ -219,19 +218,18 @@ class NWebDelegateInterface
   virtual void EraseJavaScriptCallbackImpl(uint32_t id) = 0;
   virtual void ExecuteJavaScript(
       const std::string& code,
-      std::shared_ptr<NWebValueCallback<std::shared_ptr<NWebMessage>>> callback,
+      std::shared_ptr<NWebMessageValueCallback> callback,
       bool extention) = 0;
-  virtual void CreateWebMessagePorts(std::vector<std::string>& ports) = 0;
-  virtual void PostWebMessage(std::string& message,
-                              std::vector<std::string>& ports,
-                              std::string& targetUri) = 0;
-  virtual void ClosePort(std::string& portHandle) = 0;
-  virtual void PostPortMessage(std::string& portHandle,
+  virtual std::vector<std::string> CreateWebMessagePorts() = 0;
+  virtual void PostWebMessage(const std::string& message,
+                              const std::vector<std::string>& ports,
+                              const std::string& targetUri) = 0;
+  virtual void ClosePort(const std::string& portHandle) = 0;
+  virtual void PostPortMessage(const std::string& portHandle,
                                std::shared_ptr<NWebMessage> data) = 0;
   virtual void SetPortMessageCallback(
-      std::string& portHandle,
-      std::shared_ptr<NWebValueCallback<std::shared_ptr<NWebMessage>>>
-          callback) = 0;
+      const std::string& portHandle,
+      std::shared_ptr<NWebMessageValueCallback> callback) = 0;
 #endif  // defined(OHOS_MSGPORT)
 
 #ifdef OHOS_I18N
@@ -250,7 +248,7 @@ class NWebDelegateInterface
   virtual void StoreWebArchive(
       const std::string& base_name,
       bool auto_name,
-      std::shared_ptr<NWebValueCallback<std::string>> callback) const = 0;
+      std::shared_ptr<NWebStringValueCallback> callback) const = 0;
 
   virtual void SetBrowserUserAgentString(const std::string& user_agent) = 0;
 
@@ -266,13 +264,13 @@ class NWebDelegateInterface
 
   virtual CefRefPtr<CefClient> GetCefClient() const = 0;
 
-  virtual void GetImages(std::shared_ptr<NWebValueCallback<bool>> callback) = 0;
+  virtual void GetImages(std::shared_ptr<NWebBoolValueCallback> callback) = 0;
   virtual void RemoveCache(bool include_disk_files) = 0;
 
 #ifdef OHOS_NAVIGATION
   virtual std::shared_ptr<NWebHistoryList> GetHistoryList() = 0;
-  virtual WebState SerializeWebState() = 0;
-  virtual bool RestoreWebState(WebState state) = 0;
+  virtual std::vector<uint8_t> SerializeWebState() = 0;
+  virtual bool RestoreWebState(const std::vector<uint8_t>& state) = 0;
 #endif
 
 #if defined(OHOS_MEDIA_MUTE_AUDIO)
@@ -308,8 +306,8 @@ class NWebDelegateInterface
 
 #if defined(OHOS_NO_STATE_PREFETCH)
   virtual void PrefetchPage(
-      std::string& url,
-      std::map<std::string, std::string> additionalHttpHeaders) = 0;
+      const std::string& url,
+      const std::map<std::string, std::string>& additionalHttpHeaders) = 0;
 #endif  // defined(OHOS_NO_STATE_PREFETCH)
 
 #if defined(OHOS_MULTI_WINDOW)
@@ -350,7 +348,7 @@ class NWebDelegateInterface
 #endif
 
 #ifdef OHOS_POST_URL
-  virtual int PostUrl(const std::string& url, std::vector<char>& postData) = 0;
+  virtual int PostUrl(const std::string& url, const std::vector<char>& postData) = 0;
 #endif
 
 #if defined(OHOS_INPUT_EVENTS)
@@ -369,17 +367,14 @@ class NWebDelegateInterface
 
   virtual void SetAccessibilityState(cef_state_t accessibilityState) = 0;
   virtual void ExecuteAction(int64_t accessibilityId, uint32_t action) const = 0;
-  virtual bool GetFocusedAccessibilityNodeInfo(
-      int64_t accessibilityId,
-      bool isAccessibilityFocus,
-      OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const = 0;
-  virtual bool GetAccessibilityNodeInfoById(
-      int64_t accessibilityId,
-      OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const = 0;
-  virtual bool GetAccessibilityNodeInfoByFocusMove(
-      int64_t accessibilityId,
-      int32_t direction,
-      OHOS::NWeb::NWebAccessibilityNodeInfo& nodeInfo) const = 0;
+  virtual std::shared_ptr<NWebAccessibilityNodeInfo>
+  GetFocusedAccessibilityNodeInfo(int64_t accessibilityId,
+                                  bool isAccessibilityFocus) = 0;
+  virtual std::shared_ptr<NWebAccessibilityNodeInfo>
+  GetAccessibilityNodeInfoById(int64_t accessibilityId) = 0;
+  virtual std::shared_ptr<NWebAccessibilityNodeInfo>
+  GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
+                                      int32_t direction) = 0;
 };
 }  // namespace OHOS::NWeb
 

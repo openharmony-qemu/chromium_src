@@ -19,12 +19,6 @@
 
 using namespace OHOS::NWeb;
 
-extern "C" OHOS_NWEB_EXPORT NWebWebStorage* GetWebStorage() {
-  WVLOG_I("GetWebStorage");
-  static NWebWebStorageImpl web_storage;
-  return &web_storage;
-}
-
 namespace OHOS::NWeb {
 NWebWebStorageImpl::NWebWebStorageImpl() {
 #if defined(USE_CEF)
@@ -46,14 +40,14 @@ int NWebWebStorageImpl::DeleteOrigin(const std::string& origin) {
 }
 
 void NWebWebStorageImpl::GetOrigins(
-    std::shared_ptr<NWebGetOriginsCallback> callback) {
+    std::shared_ptr<NWebWebStorageOriginVectorValueCallback> callback) {
   if (delegate_ != nullptr) {
     delegate_->GetOrigins(callback);
   }
 }
 
-std::vector<NWebWebStorageOrigin> NWebWebStorageImpl::GetOrigins() {
-  std::vector<NWebWebStorageOrigin> origins;
+std::vector<std::shared_ptr<NWebWebStorageOrigin>> NWebWebStorageImpl::GetOrigins() {
+  std::vector<std::shared_ptr<NWebWebStorageOrigin>> origins;
   if (delegate_ != nullptr) {
     delegate_->GetOrigins(origins);
   }
@@ -62,7 +56,7 @@ std::vector<NWebWebStorageOrigin> NWebWebStorageImpl::GetOrigins() {
 
 void NWebWebStorageImpl::GetOriginQuota(
     const std::string& origin,
-    std::shared_ptr<NWebValueCallback<long>> callback) {
+    std::shared_ptr<NWebLongValueCallback> callback) {
   if (delegate_ != nullptr) {
     delegate_->GetOriginQuota(origin, callback);
   }
@@ -77,7 +71,7 @@ long NWebWebStorageImpl::GetOriginQuota(const std::string& origin) {
 
 void NWebWebStorageImpl::GetOriginUsage(
     const std::string& origin,
-    std::shared_ptr<NWebValueCallback<long>> callback) {
+    std::shared_ptr<NWebLongValueCallback> callback) {
   if (delegate_ != nullptr) {
     delegate_->GetOriginUsage(origin, callback);
   }

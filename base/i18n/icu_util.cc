@@ -283,9 +283,9 @@ int LoadIcuDataByHap(PlatformFile data_fd,
                      UErrorCode* out_error_code) {
   auto resourceInstance =
       OHOS::NWeb::OhosAdapterHelper::GetInstance().GetResourceAdapter();
-  std::unique_ptr<OHOS::NWeb::OhosFileMapper> fileMapper = nullptr;
-  if (!resourceInstance->GetRawFileMapper(kIcuDataFileNameHap, fileMapper,
-                                          true)) {
+  std::shared_ptr<OHOS::NWeb::OhosFileMapper> fileMapper = 
+        resourceInstance->GetRawFileMapper(kIcuDataFileNameHap, true);
+  if (!fileMapper) {
     LOG(ERROR) << "Couldn't mmap icu data file by hap: " << kIcuDataFileNameHap;
     return 1;
   }

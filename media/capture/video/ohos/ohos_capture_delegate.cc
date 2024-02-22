@@ -113,7 +113,7 @@ void OHOSCaptureDelegate::StopAndDeAllocate() {
 
 void OHOSCaptureDelegate::OnBufferAvailable(
     std::shared_ptr<CameraSurfaceAdapter> surface,
-    std::unique_ptr<CameraSurfaceBufferAdapter> buffer,
+    std::shared_ptr<CameraSurfaceBufferAdapter> buffer,
     CameraRotationInfo roration_info) {
   DCHECK(capture_stask_runner_->BelongsToCurrentThread());
   const base::TimeTicks now = base::TimeTicks::Now();

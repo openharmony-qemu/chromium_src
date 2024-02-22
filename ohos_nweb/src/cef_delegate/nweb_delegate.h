@@ -449,6 +449,7 @@ void EnableSafeBrowsing(bool enable) override;
       nullptr;
   std::shared_ptr<OHOS::NWeb::DisplayScreenListener> display_listener_ =
       nullptr;
+  int32_t display_listener_id_;
   // Members only accessed on the main thread.
   bool hidden_ = false;
   bool occluded_ = false;

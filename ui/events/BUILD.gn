@@ -399,9 +399,10 @@ component("events") {
 
   if (is_ohos) {
     import("//build/config/ohos/config.gni")
-    libs = [ "nweb_ohos_adapter.z" ]
     include_dirs = ohos_src_includes
-    lib_dirs = ohos_libs_dir
+    deps += [
+      "//third_party/ohos_ndk:ohos_isolation",
+    ]
   }
 }
 

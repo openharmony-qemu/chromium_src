@@ -132,7 +132,7 @@ class BASE_EXPORT MemoryMappedFile {
     length_ = length;
   }
 
-  void SetOhosFileMapper(std::unique_ptr<OHOS::NWeb::OhosFileMapper>& mapper);
+  void SetOhosFileMapper(std::shared_ptr<OHOS::NWeb::OhosFileMapper> &mapper);
 #endif
 
  private:
@@ -167,7 +167,7 @@ class BASE_EXPORT MemoryMappedFile {
   size_t length_ = 0;
 #if BUILDFLAG(IS_OHOS) && (defined(OHOS_HAP_DECOMPRESSED) || defined(OHOS_MEM))
   bool customizeData_ = false;
-  std::unique_ptr<OHOS::NWeb::OhosFileMapper> mapper_;
+  std::shared_ptr<OHOS::NWeb::OhosFileMapper> mapper_;
 #endif
 
 #if BUILDFLAG(IS_WIN)

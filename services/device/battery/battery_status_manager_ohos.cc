@@ -12,6 +12,19 @@
 using namespace OHOS::NWeb;
 namespace device {
 namespace {
+
+class BatteryManagerListener;
+
+class BatteryEventCallback : public OHOS::NWeb::WebBatteryEventCallback {
+public:
+  BatteryEventCallback(BatteryManagerListener* lis) : listener_(lis) {}
+  
+  void BatteryInfoChanged(std::shared_ptr<WebBatteryInfo> info) override;
+      
+private:
+  BatteryManagerListener* listener_;
+}; 
+
 class BatteryManagerListener : public base::RefCountedThreadSafe<BatteryManagerListener> {
  public:
   BatteryManagerListener(const BatteryManagerListener&) = delete;
@@ -23,9 +36,9 @@ class BatteryManagerListener : public base::RefCountedThreadSafe<BatteryManagerL
         if (batteryClient == nullptr) {
             return;
         }
-        batteryClient->RegBatteryEvent([this](WebBatteryInfo& info) {
-            this->BatteryChanged(info);
-        });
+        
+        event_callback_ = std::make_shared<BatteryEventCallback>(this);
+        batteryClient->RegBatteryEvent(event_callback_);
       }
 
   bool StartListen() {
@@ -41,7 +54,7 @@ class BatteryManagerListener : public base::RefCountedThreadSafe<BatteryManagerL
         return false;
     }
     LOG(INFO) << "fisrt request battery info";
-    std::unique_ptr<WebBatteryInfo> batteryInfo = batteryClient->RequestBatteryInfo();
+    std::shared_ptr<WebBatteryInfo> batteryInfo = batteryClient->RequestBatteryInfo();
     if (batteryInfo != nullptr) {
         mojom::BatteryStatus status;
         status.level = batteryInfo->GetLevel();
@@ -73,10 +86,12 @@ class BatteryManagerListener : public base::RefCountedThreadSafe<BatteryManagerL
   }
 
  private:
-  void BatteryChanged(WebBatteryInfo& info) {
+  friend class BatteryEventCallback;
+
+  void BatteryChanged(std::shared_ptr<WebBatteryInfo>& info) {
     mojom::BatteryStatus status;
-    status.level = info.GetLevel();
-    status.charging = info.IsCharging();
+    status.level = info->GetLevel();
+    status.charging = info->IsCharging();
     status.charging_time = std::numeric_limits<double>::infinity();
     if(status.charging) {
         status.discharging_time = std::numeric_limits<double>::infinity();
@@ -87,10 +102,18 @@ class BatteryManagerListener : public base::RefCountedThreadSafe<BatteryManagerL
     callback_.Run(status);
   }
 
+  std::shared_ptr<WebBatteryEventCallback> event_callback_;
+
   BatteryStatusService::BatteryUpdateCallback callback_;
   bool isListen;
   std::unique_ptr<BatteryMgrClientAdapter> batteryClient = nullptr;
 };
+
+void BatteryEventCallback::BatteryInfoChanged(std::shared_ptr<WebBatteryInfo> info) {
+  if (listener_) {
+    listener_->BatteryChanged(info);
+  }
+}
 
 class BatteryStatusManagerOhos: public BatteryStatusManager {
  public:

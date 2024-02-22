@@ -489,12 +489,13 @@ class ResourceURLLoader : public network::mojom::URLLoader {
       observer->OnStart();
     }
     size_t length = 0;
-    std::unique_ptr<uint8_t[]> data;
+    uint8_t* rawData;
     auto resourceInstance =
         OHOS::NWeb::OhosAdapterHelper::GetInstance().GetResourceAdapter(
             hapPath);
     mojo::DataPipeProducer::DataSource::ReadResult read_result;
-    if (!resourceInstance->GetRawFileData(resourcesPath, length, data, false)) {
+
+    if (!resourceInstance->GetRawFileData(resourcesPath, length, rawData, false)) {
       LOG(ERROR) << "ResourceURLLoader GetRawFileData failed";
       read_result.result = MOJO_RESULT_NOT_FOUND;
       if (observer) {
@@ -511,6 +512,9 @@ class ResourceURLLoader : public network::mojom::URLLoader {
     read_result.result = MOJO_RESULT_OK;
     read_result.bytes_read =
         length > net::kMaxBytesToSniff ? net::kMaxBytesToSniff : length;
+    std::vector<char> initial_read_buffer;
+    std::unique_ptr<uint8_t[]> data;
+    data.reset(rawData);
     char* dataPtr = reinterpret_cast<char*>(data.get());
     if (observer) {
       observer->OnRead(base::span<char>(dataPtr, length), &read_result);
@@ -640,7 +644,7 @@ class ResourceURLLoader : public network::mojom::URLLoader {
   }
 
   void OnFileWritten(std::unique_ptr<FileURLLoaderObserver> observer,
-                     std::unique_ptr<uint8_t[]> write_data,
+                     std::unique_ptr<uint8_t[]>  write_data,
                      MojoResult result) {
     data_producer_.reset();
     if (observer) {

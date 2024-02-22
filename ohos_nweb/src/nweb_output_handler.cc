@@ -117,8 +117,7 @@ void NWebOutputHandler::Resize(uint32_t width, uint32_t height) {
       int32_t ret =
           OHOS::NWeb::OhosAdapterHelper::GetInstance()
               .GetWindowAdapterInstance()
-              .NativeWindowHandleOpt(reinterpret_cast<void*>(window_),
-                                    OHOS::NWeb::WindowAdapter::SET_BUFFER_GEOMETRY,
+              .NativeWindowSetBufferGeometry(reinterpret_cast<void*>(window_),
                                     width, height);
       if (ret == OHOS::NWeb::GSErrorCode::GSERROR_OK) {
         is_initialized_resize_ = true;

@@ -16,6 +16,16 @@
 
 namespace policy {
 
+PolicyChangedEventCallback::PolicyChangedEventCallback(
+    PolicyLoaderOhos* loader) : loader_(loader) {}
+
+void PolicyChangedEventCallback::Changed() {
+  LOG(INFO) << "Recv edm policy change event and reload policy.";
+  if (loader_) {
+    loader_->Reload(true);
+  }
+}
+
 PolicyLoaderOhos::PolicyLoaderOhos(
     scoped_refptr<base::SequencedTaskRunner> task_runner)
     : AsyncPolicyLoader(task_runner, /*periodic_updates*/ false) {}
@@ -26,12 +36,12 @@ PolicyLoaderOhos::~PolicyLoaderOhos() {
 }
 
 void PolicyLoaderOhos::InitOnBackgroundThread() {
+    event_callback_ = std::make_shared<PolicyChangedEventCallback>(this);
+
     OHOS::NWeb::OhosAdapterHelper::GetInstance()
         .GetEnterpriseDeviceManagementInstance()
-        .RegistPolicyChangeEventCallback([this]() {
-            LOG(INFO) << "Recv edm policy change event and reload policy.";
-            Reload(true);
-        });
+        .RegistPolicyChangeEventCallback(event_callback_);
+
     std::ignore = OHOS::NWeb::OhosAdapterHelper::GetInstance()
         .GetEnterpriseDeviceManagementInstance().StartObservePolicyChange();
 }

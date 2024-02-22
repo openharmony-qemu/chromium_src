@@ -300,8 +300,8 @@ NWebDelegate::NWebDelegate(int argc, const char* argv[])
     : argc_(argc), argv_(argv) {}
 
 NWebDelegate::~NWebDelegate() {
-  if (display_listener_ != nullptr && display_manager_adapter_ != nullptr) {
-    display_manager_adapter_->UnregisterDisplayListener(display_listener_);
+  if (display_listener_id_ >= 0 && display_listener_ != nullptr && display_manager_adapter_ != nullptr) {
+    display_manager_adapter_->UnregisterDisplayListener(display_listener_id_);
   }
 }
 
@@ -394,19 +394,20 @@ InitRichtextIdentifier();
     return false;
   }
 
-  if (!display_manager_adapter_->RegisterDisplayListener(display_listener_)) {
+  display_listener_id_ = display_manager_adapter_->RegisterDisplayListener(display_listener_);
+  if (display_listener_id_ < 0) {
     LOG(ERROR) << "RegisterDisplayListener failed";
   }
 
   render_handler_ = NWebRenderHandler::Create();
   if (render_handler_ == nullptr) {
-    display_manager_adapter_->UnregisterDisplayListener(display_listener_);
+    display_manager_adapter_->UnregisterDisplayListener(display_listener_id_);
     return false;
   }
 
   event_handler_ = NWebEventHandler::Create();
   if (event_handler_ == nullptr) {
-    display_manager_adapter_->UnregisterDisplayListener(display_listener_);
+    display_manager_adapter_->UnregisterDisplayListener(display_listener_id_);
     return false;
   }
 
@@ -445,8 +446,8 @@ InitRichtextIdentifier();
 }
 
 void NWebDelegate::OnDestroy(bool is_close_all) {
-  if (display_listener_ != nullptr && display_manager_adapter_ != nullptr) {
-    display_manager_adapter_->UnregisterDisplayListener(display_listener_);
+  if (display_listener_id_ >= 0 && display_listener_ != nullptr && display_manager_adapter_ != nullptr) {
+    display_manager_adapter_->UnregisterDisplayListener(display_listener_id_);
   }
   if (handler_delegate_ != nullptr) {
     handler_delegate_->OnDestroy();

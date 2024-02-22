@@ -31,6 +31,7 @@ class SequencedTaskRunner;
 namespace net {
 
 class ProxyConfigWithAnnotation;
+class NetProxyEventCallback;
 
 class NET_EXPORT ProxyConfigServiceOHOS : public ProxyConfigService {
  public:
@@ -95,7 +96,8 @@ class NET_EXPORT ProxyConfigServiceOHOS : public ProxyConfigService {
  private:
   // friend class ProxyConfigServiceOHOSTestBase
   class Delegate;
-
+  friend class NetProxyEventCallback; 
+ 
   // For tests.
   ProxyConfigServiceOHOS(
       const scoped_refptr<base::SequencedTaskRunner>& main_task_runner,
@@ -110,6 +112,17 @@ class NET_EXPORT ProxyConfigServiceOHOS : public ProxyConfigService {
                               const std::vector<std::string>& exclusion_list);
 
   scoped_refptr<Delegate> delegate_;
+  std::shared_ptr<OHOS::NWeb::NetProxyEventCallbackAdapter> event_callback_;
+};
+
+class NetProxyEventCallback : public OHOS::NWeb::NetProxyEventCallbackAdapter {
+ public:
+  NetProxyEventCallback(ProxyConfigServiceOHOS* service) : service_(service) {}
+
+  void Changed(const std::string& host, const uint16_t& port, const std::string& pacUrl, const std::vector<std::string>& exclusionList) override;
+
+ private:
+  ProxyConfigServiceOHOS* service_;
 };
 
 }  // namespace net

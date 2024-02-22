@@ -52,6 +52,17 @@ const ArkWebUint8Vector ark_web_uint8_vector_default = {
 };
 
 typedef struct {
+    int size;
+    uint16_t* value;
+
+    ArkWebMemFreeFunc ark_web_mem_free_func;
+} ArkWebUint16Vector;
+
+const ArkWebUint16Vector ark_web_uint16_vector_default = {
+    0,
+};
+
+typedef struct {
   int size;
   int32_t *value;
 
@@ -118,9 +129,20 @@ const ArkWebString ark_web_string_default = {
 };
 
 typedef struct {
-  int size;
-  ArkWebString *key;
-  ArkWebString *value;
+    int size;
+    char16_t* value;
+
+    ArkWebMemFreeFunc ark_web_mem_free_func;
+} ArkWebU16String;
+
+const ArkWebU16String ark_web_u16string_default = {
+    0,
+};
+
+typedef struct {
+    int size;
+    ArkWebString* key;
+    ArkWebString* value;
 
   ArkWebMemFreeFunc ark_web_mem_free_func;
 } ArkWebStringMap;
@@ -276,7 +298,13 @@ ArkWebString ArkWebStringClassToStruct(const std::string &class_value);
 
 std::string ArkWebStringStructToClass(const ArkWebString &struct_value);
 
-void ArkWebStringStructRelease(ArkWebString &struct_value);
+ArkWebU16String ArkWebU16StringClassToStruct(const std::u16string& class_value);
+
+std::u16string ArkWebU16StringStructToClass(const ArkWebU16String& struct_value);
+
+void ArkWebStringStructRelease(ArkWebString& struct_value);
+
+void ArkWebU16StringStructRelease(ArkWebU16String &struct_value);
 
 ArkWebStringMap ArkWebStringMapClassToStruct(
     const std::map<std::string, std::string> &class_value);

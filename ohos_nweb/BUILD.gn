@@ -21,10 +21,10 @@ import("//tools/grit/repack.gni")
 component("nweb_hilog") {
   sources = [ "src/nweb_hilog.h" ]
 
-  libs = [ "nweb_ohos_adapter.z" ]
-
   include_dirs = ohos_src_includes
-  lib_dirs = ohos_libs_dir
+  deps = [
+    "//third_party/ohos_ndk:ohos_isolation",
+  ]
 }
 
 #################################################
@@ -54,9 +54,6 @@ config("cef_nweb_config") {
 
   #endif
 
-  lib_dirs = ohos_libs_dir
-  libs = [ "nweb_ohos_adapter.z" ]
-
   defines = [ "USING_CHROMIUM_INCLUDES" ]
 
   if (product_name == "rk3568") {
@@ -72,6 +69,10 @@ component("cef_nweb") {
   configs += [
     ":cef_nweb_config",
     ":nweb_config",
+  ]
+  
+  deps = [
+    "//third_party/ohos_ndk:ohos_isolation",
   ]
 
   sources = [
@@ -210,7 +211,7 @@ component("cef_nweb") {
 
   #endif
 
-  deps = [
+  deps += [
     "//base:base",
     "//content/public/common",
     "//ui/events/keycodes:x11",
@@ -249,7 +250,7 @@ component("nweb_sources") {
     ":nweb_config",
     ":cef_nweb_config",
   ]
-
+  
   sources = [
     "include/nweb.h",
     "include/nweb_access_request.h",
@@ -329,7 +330,10 @@ component("nweb_sources") {
 
   public_deps = [ "//third_party/abseil-cpp:absl" ]
 
-  libs = [ "nweb_ohos_adapter.z" ]
+  #libs = [ "nweb_ohos_adapter.z" ]
+  deps += [
+    "//third_party/ohos_ndk:ohos_isolation",
+  ]
 }
 
 #################################################

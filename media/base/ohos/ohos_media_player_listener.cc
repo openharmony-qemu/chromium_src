@@ -15,7 +15,7 @@ OHOSMediaPlayerListener::OHOSMediaPlayerListener(
 }
 
 void OHOSMediaPlayerListener::OnBufferAvailable(
-    std::unique_ptr<OHOS::NWeb::SurfaceBufferAdapter> buffer) {
+    std::shared_ptr<OHOS::NWeb::SurfaceBufferAdapter> buffer) {
   task_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(&OHOSMediaPlayerBridge::OnVideoSizeChanged, media_player_,

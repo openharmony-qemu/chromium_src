@@ -77,9 +77,10 @@ source_set("power_save_blocker") {
       "power_save_blocker_ohos.cc",
     ]
     import("//build/config/ohos/config.gni")
-    libs = [ "nweb_ohos_adapter.z" ]
     include_dirs = ohos_src_includes
-    lib_dirs = ohos_libs_dir
+    deps += [
+      "//third_party/ohos_ndk:ohos_isolation",
+    ]
   } else {
     # Fuchsia and non-DBus Linux.
     sources += [ "power_save_blocker_stub.cc" ]

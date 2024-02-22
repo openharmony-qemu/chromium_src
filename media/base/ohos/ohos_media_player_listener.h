@@ -29,7 +29,7 @@ class OHOSMediaPlayerListener
 
   virtual ~OHOSMediaPlayerListener();
   void OnBufferAvailable(
-      std::unique_ptr<OHOS::NWeb::SurfaceBufferAdapter> buffer) override;
+      std::shared_ptr<OHOS::NWeb::SurfaceBufferAdapter> buffer) override;
 
  private:
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;

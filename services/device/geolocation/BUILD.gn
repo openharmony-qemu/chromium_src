@@ -73,8 +73,9 @@ source_set("geolocation") {
     ]
     import("//build/config/ohos/config.gni")
     include_dirs = ohos_src_includes
-    lib_dirs = ohos_libs_dir
-    libs = [ "nweb_ohos_adapter.z" ]
+    deps += [
+      "//third_party/ohos_ndk:ohos_isolation",
+    ]
   }
 
   # endif

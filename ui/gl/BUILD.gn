@@ -148,8 +148,9 @@ component("gl") {
       "ohos/ohos_native_image.h",
     ]
 
-    libs = [ "nweb_ohos_adapter.z" ]
-    lib_dirs = ohos_libs_dir
+    deps = [
+      "//third_party/ohos_ndk:ohos_isolation",
+    ]
   }
 
   if (is_android) {
@@ -186,7 +187,7 @@ component("gl") {
 
   public_configs = [ "//third_party/khronos:khronos_headers" ]
 
-  deps = [
+  deps += [
     ":buildflags",
     "//base/third_party/dynamic_annotations",
     "//build:chromeos_buildflags",

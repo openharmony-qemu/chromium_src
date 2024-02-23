@@ -514,7 +514,7 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
   if (input_mode != CEF_TEXT_INPUT_MODE_NONE) {
     auto delegate = delegate_interface_.lock();
     if (delegate && delegate->OnFocus()) {
-      inputmethod_client_->Attach(browser, show_keyboard, input_type);
+      inputmethod_client_->Attach(browser, show_keyboard, input_mode, input_type);
     }
   } else {
     inputmethod_client_->HideTextInput();

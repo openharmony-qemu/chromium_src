@@ -733,6 +733,13 @@ TEST(SafeSPrintfTest, EmbeddedNul) {
 #endif
 }
 
+/*
+  this test will cause ../../base/strings/safe_sprintf.h:236:39:
+  error: conversion from 'std::nullptr_t' to 'const internal::Arg' is ambiguous
+  SafeSNPrintf also will not do EmitNULL test, so disable this test for SafeSPrintf.
+  Because SafeSPrintf inplementation not support NULL as input paramemter.
+*/
+#if !BUILDFLAG(IS_OHOS)
 TEST(SafeSPrintfTest, EmitNULL) {
   char buf[40];
 #if defined(__GNUC__)
@@ -749,6 +756,7 @@ TEST(SafeSPrintfTest, EmitNULL) {
 #pragma GCC diagnostic pop
 #endif
 }
+#endif
 
 TEST(SafeSPrintfTest, PointerSize) {
   // The internal data representation is a 64bit value, independent of the

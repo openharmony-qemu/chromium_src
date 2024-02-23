@@ -134,9 +134,15 @@ class ClipboardOHOSInternal {
         .GetPasteBoard()
         .AddPasteboardChangedObserver(observer_);
     observer_->SetClipboardInternal(this);
+
+#ifdef OHOS_HAP_DECOMPRESSED
+    // Constants copied from //content/public/common/content_switches.cc:
+    const char kOhosHapPath[] = "user-hap-path";
+#endif
+
     std::string hapPath =
         base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
-            switches::kOhosHapPath);
+            kOhosHapPath);
     resource_adapter_ =
         OHOS::NWeb::OhosAdapterHelper::GetInstance().GetResourceAdapter(
             hapPath);
@@ -172,13 +178,17 @@ class ClipboardOHOSInternal {
   }
 
   void SetClipboardState(ClipboardState state) {
-    if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+#if ZHD_TEMPCOMMENT
+    if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::ID::UI)) {
       content::GetUIThreadTaskRunner({})->PostTask(
           FROM_HERE, base::BindOnce(&ClipboardOHOSInternal::SetClipboardState,
                                     base::Unretained(this), state));
     } else {
       state_ = state;
     }
+#else // ZHD_TEMPCOMMENT
+    state_ = state;
+#endif  // ZHD_TEMPCOMMENT
   }
 
   void UpdateClipboardData() {

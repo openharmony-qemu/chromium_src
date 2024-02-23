@@ -266,7 +266,7 @@ source_set("clipboard_test") {
     sources += [ "clipboard_util_win_unittest.cc" ]
   }
 
-  if (use_aura && !is_chromeos_lacros && !is_linux && !is_win) {
+  if (use_aura && !is_chromeos_lacros && !is_linux && !is_win && !is_ohos) {
     sources += [
       "clipboard_data_unittest.cc",
       "clipboard_non_backed_unittest.cc",

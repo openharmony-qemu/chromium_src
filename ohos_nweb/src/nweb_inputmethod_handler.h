@@ -36,6 +36,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
 
   void Attach(CefRefPtr<CefBrowser> browser,
               bool show_keyboard,
+              cef_text_input_mode_t input_mode,
               cef_text_input_type_t input_type) override;
   void ShowTextInput() override;
   void HideTextInput(

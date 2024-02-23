@@ -178,7 +178,7 @@ class ClipboardOHOSInternal {
   }
 
   void SetClipboardState(ClipboardState state) {
-#if ZHD_TEMPCOMMENT
+#if TF_TEMPCOMMENT
     if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::ID::UI)) {
       content::GetUIThreadTaskRunner({})->PostTask(
           FROM_HERE, base::BindOnce(&ClipboardOHOSInternal::SetClipboardState,
@@ -186,9 +186,9 @@ class ClipboardOHOSInternal {
     } else {
       state_ = state;
     }
-#else // ZHD_TEMPCOMMENT
+#else // TF_TEMPCOMMENT
     state_ = state;
-#endif  // ZHD_TEMPCOMMENT
+#endif  // TF_TEMPCOMMENT
   }
 
   void UpdateClipboardData() {

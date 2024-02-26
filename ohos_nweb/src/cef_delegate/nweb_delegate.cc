@@ -2111,7 +2111,8 @@ void NWebDelegate::ScrollTo(float x, float y) {
     return;
   }
 
-  GetBrowser()->GetHost()->ScrollTo(x * ratio, y * ratio);
+  GetBrowser()->GetHost()->ScrollTo(std::round(x * ratio),
+                                    std::round(y * ratio));
 }
 
 void NWebDelegate::ScrollBy(float delta_x, float delta_y) {
@@ -2125,7 +2126,8 @@ void NWebDelegate::ScrollBy(float delta_x, float delta_y) {
     return;
   }
 
-  GetBrowser()->GetHost()->ScrollBy(delta_x * ratio, delta_y * ratio);
+  GetBrowser()->GetHost()->ScrollBy(std::round(delta_x * ratio),
+                                    std::round(delta_y * ratio));
 }
 
 void NWebDelegate::SlideScroll(float vx, float vy) {

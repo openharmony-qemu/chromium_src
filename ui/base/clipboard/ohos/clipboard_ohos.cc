@@ -178,7 +178,11 @@ class ClipboardOHOSInternal {
   }
 
   void SetClipboardState(ClipboardState state) {
-#if TF_TEMPCOMMENT
+/*
+  will cause compilation errors：
+  ld.lld: error: undefined symbol: content::BrowserThread::CurrentlyOn(content::BrowserThread::ID)
+*/
+#if !BUILDFLAG(IS_OHOS)
     if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::ID::UI)) {
       content::GetUIThreadTaskRunner({})->PostTask(
           FROM_HERE, base::BindOnce(&ClipboardOHOSInternal::SetClipboardState,
@@ -186,9 +190,9 @@ class ClipboardOHOSInternal {
     } else {
       state_ = state;
     }
-#else // TF_TEMPCOMMENT
+#else
     state_ = state;
-#endif  // TF_TEMPCOMMENT
+#endif
   }
 
   void UpdateClipboardData() {

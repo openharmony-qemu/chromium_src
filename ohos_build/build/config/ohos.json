@@ -622,3 +622,11 @@
 "dependence": "",
 "default": "true"
 },
+{ "name": "OHOS_ZOOM",
+"owner": "",
+"desc": "",
+"effect":"main gn blink_core other",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},

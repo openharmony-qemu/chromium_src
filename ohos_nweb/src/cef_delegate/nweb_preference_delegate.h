@@ -120,6 +120,10 @@ class NWebPreferenceDelegate : public NWebPreference {
   int32_t GetBackgroundColor() const;
 #endif // defined(OHOS_BACKGROUND_COLOR)
   void PutScrollBarColor(uint32_t colorValue) override;
+#if BUILDFLAG(IS_OHOS)
+  void SetDrawMode(int mode);
+  int GetDrawMode() const;
+#endif
 
 #if defined(OHOS_INPUT_EVENTS)
   bool IsHorizontalScrollBarAccess() override;
@@ -196,6 +200,9 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool enable_embed_mode_{false};
   bool scroll_enabled_{true};
 #endif  // defined(OHOS_INPUT_EVENTS)
+#if BUILDFLAG(IS_OHOS)
+  int draw_mode_{0};
+#endif
 #if defined(OHOS_CLIPBOARD)
   CopyOptionMode copy_option_{CopyOptionMode::CROSS_DEVICE};
 #endif // defined(OHOS_CLIPBOARD)

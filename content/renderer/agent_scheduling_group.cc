@@ -246,6 +246,8 @@ void AgentSchedulingGroup::CreateView(mojom::CreateViewParamsPtr params) {
   RenderThreadImpl& renderer = ToImpl(render_thread_);
   renderer.SetScrollAnimatorEnabled(
       params->web_preferences.enable_scroll_animator, PassKey());
+  renderer.SetDrawMode(
+      params->web_preferences.draw_mode, PassKey());
 
   CreateWebView(std::move(params),
                 /*was_created_by_renderer=*/false,

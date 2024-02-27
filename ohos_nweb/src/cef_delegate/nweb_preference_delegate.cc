@@ -163,6 +163,7 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
 #if BUILDFLAG(IS_OHOS)
   browser_settings.native_embed_mode_enabled =
       GetNativeEmbedMode() ? STATE_ENABLED : STATE_DISABLED;
+  browser_settings.draw_mode = GetDrawMode();
 #endif  // BUILDFLAG(IS_OHOS)
 #if defined(OHOS_CLIPBOARD)
   browser_settings.copy_option = static_cast<int>(GetCopyOptionMode());
@@ -671,6 +672,15 @@ void NWebPreferenceDelegate::PutScrollBarColor(uint32_t colorValue) {
   WebPreferencesChanged();
 #endif  // OHOS_SCROLLBAR
 }
+
+#if BUILDFLAG(IS_OHOS)
+void NWebPreferenceDelegate::SetDrawMode(int mode) {
+  draw_mode_ = mode;
+}
+int NWebPreferenceDelegate::GetDrawMode() const {
+  return draw_mode_;
+}
+#endif
 
 #ifdef OHOS_EX_BLANK_TARGET_POPUP_INTERCEPT
 void NWebPreferenceDelegate::SetEnableBlankTargetPopupIntercept(bool enable) {

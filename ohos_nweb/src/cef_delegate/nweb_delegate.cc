@@ -2185,6 +2185,9 @@ void NWebDelegate::SetDrawMode(int32_t mode) {
   if (GetBrowser().get()) {
     GetBrowser()->GetHost()->SetDrawMode(mode);
   }
+  if (preference_delegate_) {
+    preference_delegate_->SetDrawMode(mode);
+  }
 }
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 

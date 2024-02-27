@@ -33,4 +33,5 @@ void ReportPageLoadErrorInfo(int instanceId,
 
 void ReportJankStats(int64_t startTime, int duration, std::vector<uint16_t> jankStats, int jankStatsVer);
 
+void ReportLockdownModeStatus(void);
 #endif

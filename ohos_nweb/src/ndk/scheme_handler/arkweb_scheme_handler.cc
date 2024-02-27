@@ -800,6 +800,18 @@ ARKWEB_EXPORT void OH_ArkWeb_ReleaseByteArray(uint8_t* byte_array) {
   }
 }
 
+ARKWEB_EXPORT int32_t OH_ArkWebSchemeHandler_SetFromEts(
+    ArkWeb_SchemeHandler* scheme_handler,
+    bool fromEts) {
+  if (!scheme_handler) {
+    LOG(ERROR) << "scheme_handler scheme handler is nullptr.";
+    return ARKWEB_INVALID_PARAM;
+  }
+
+  scheme_handler->fromEts = fromEts;
+  return ARKWEB_NET_OK;
+}
+
 #ifdef __cplusplus
 }
 #endif __cplusplus

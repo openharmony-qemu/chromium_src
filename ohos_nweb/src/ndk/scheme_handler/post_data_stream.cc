@@ -20,6 +20,8 @@
 #include "ohos_nweb/src/capi/arkweb_scheme_handler.h"
 #include "ohos_nweb/src/ndk/scheme_handler/resource_request.h"
 
+#include "cef/libcef/browser/thread_util.h"
+
 ArkWeb_PostDataStream_::ArkWeb_PostDataStream_(
     const ArkWeb_ResourceRequest* resource_request) {
   if (!resource_request) {
@@ -49,6 +51,13 @@ void ArkWeb_PostDataStream_::SetReadCallback(
 
 void ArkWeb_PostDataStream_::Init(
     ArkWeb_PostDataStreamInitCallback stream_init_callback_in) {
+  if (!CEF_CURRENTLY_ON_IOT()) {
+    CEF_POST_TASK(CEF_IOT,
+      base::BindOnce(&ArkWeb_PostDataStream_::Init,
+        this, stream_init_callback_in));
+    return;
+  }
+  
   this->stream_init_callback = stream_init_callback_in;
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post_data_stream is nullptr.";

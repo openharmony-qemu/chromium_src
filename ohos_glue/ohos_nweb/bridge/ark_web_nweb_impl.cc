@@ -800,4 +800,12 @@ ArkWebString ArkWebNWebImpl::GetLastJavascriptProxyCallingFrameUrl() {
   return ArkWebStringClassToStruct(nweb_nweb_->GetLastJavascriptProxyCallingFrameUrl());
 }
 
+void ArkWebNWebImpl::EnableIntelligentTrackingPrevention(bool enable) {
+  nweb_nweb_->EnableIntelligentTrackingPrevention(enable);
+}
+
+bool ArkWebNWebImpl::IsIntelligentTrackingPreventionEnabled() {
+  return nweb_nweb_->IsIntelligentTrackingPreventionEnabled();
+}
+
 } // namespace OHOS::ArkWeb

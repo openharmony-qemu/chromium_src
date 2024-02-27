@@ -56,6 +56,14 @@ public:
 
   void ResumeAllTimers() override;
 
+  void AddIntelligentTrackingPreventionBypassingList(
+      const ArkWebStringVector &hosts) override;
+
+  void RemoveIntelligentTrackingPreventionBypassingList(
+      const ArkWebStringVector &hosts) override;
+
+  void ClearIntelligentTrackingPreventionBypassingList() override;
+
 private:
   std::shared_ptr<OHOS::NWeb::NWebEngine> nweb_engine_;
 };

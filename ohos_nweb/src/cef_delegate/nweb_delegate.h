@@ -403,6 +403,11 @@ void EnableSafeBrowsing(bool enable) override;
   std::string GetLastJavascriptProxyCallingFrameUrl() override;
 #endif
 
+#ifdef OHOS_ITP
+  void EnableIntelligentTrackingPrevention(bool enable) override;
+  bool IsIntelligentTrackingPreventionEnabled() const override;
+#endif
+
  public:
   int argc_;
   const char** argv_;

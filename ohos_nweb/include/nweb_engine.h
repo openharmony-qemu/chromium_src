@@ -53,6 +53,14 @@ public:
 
   virtual void SetWebDebuggingAccess(bool isEnableDebug) = 0;
 
+  virtual void AddIntelligentTrackingPreventionBypassingList(
+      const std::vector<std::string>& hosts) = 0;
+
+  virtual void RemoveIntelligentTrackingPreventionBypassingList(
+      const std::vector<std::string>& hosts) = 0;
+
+  virtual void ClearIntelligentTrackingPreventionBypassingList() = 0;
+
   virtual void PauseAllTimers() = 0;
 
   virtual void ResumeAllTimers() = 0;

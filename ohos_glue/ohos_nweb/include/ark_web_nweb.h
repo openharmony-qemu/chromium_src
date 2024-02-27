@@ -1094,6 +1094,23 @@ public:
   virtual int GetMediaPlaybackState() = 0;
 
   /**
+   * @brief Enable the ability to intelligent tracking prevention, default
+   * disabled.
+   *
+   * @param enable Indicate whether the abilitiy is enabled or disabled.
+   */
+  /*--ark web()--*/
+  virtual void EnableIntelligentTrackingPrevention(bool enable) = 0;
+
+  /**
+   * @brief Get whether intelligent tracking prevention is enabled.
+   * @return true if enable the ability intelligent tracking prevention; else
+   * false.
+   */
+  /*--ark web()--*/
+  virtual bool IsIntelligentTrackingPreventionEnabled() = 0;
+
+  /**
    * @brief Start current camera.
    */
   /*--ark web()--*/

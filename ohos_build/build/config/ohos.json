@@ -326,6 +326,14 @@
 "dependence": "",
 "default": "true"
 },
+{ "name": "OHOS_ITP",
+"owner": "",
+"desc": "",
+"effect":"main gn blink_core other",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},
 { "name": "OHOS_JSPROXY",
 "owner": "",
 "desc": "",

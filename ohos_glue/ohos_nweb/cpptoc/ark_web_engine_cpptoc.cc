@@ -167,6 +167,45 @@ void ARK_WEB_CALLBACK ark_web_engine_set_web_debugging_access(
   ArkWebEngineCppToC::Get(self)->SetWebDebuggingAccess(isEnableDebug);
 }
 
+void ARK_WEB_CALLBACK
+ark_web_engine_add_intelligent_tracking_prevention_bypassing_list(
+    struct _ark_web_engine_t *self, const ArkWebStringVector *hosts) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(hosts, );
+
+  // Execute
+  ArkWebEngineCppToC::Get(self)->AddIntelligentTrackingPreventionBypassingList(
+      *hosts);
+}
+
+void ARK_WEB_CALLBACK
+ark_web_engine_remove_intelligent_tracking_prevention_bypassing_list(
+    struct _ark_web_engine_t *self, const ArkWebStringVector *hosts) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(hosts, );
+
+  // Execute
+  ArkWebEngineCppToC::Get(self)->RemoveIntelligentTrackingPreventionBypassingList(
+      *hosts);
+}
+
+void ARK_WEB_CALLBACK
+ark_web_engine_clear_intelligent_tracking_prevention_bypassing_list(
+    struct _ark_web_engine_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebEngineCppToC::Get(self)->ClearIntelligentTrackingPreventionBypassingList();
+}
+
 void ARK_WEB_CALLBACK ark_web_engine_pause_webkit_all_timers(
     struct _ark_web_engine_t *self) {
   ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
@@ -201,6 +240,12 @@ ArkWebEngineCppToC::ArkWebEngineCppToC() {
   GetStruct()->prepare_for_page_load = ark_web_engine_prepare_for_page_load;
   GetStruct()->set_web_debugging_access =
       ark_web_engine_set_web_debugging_access;
+  GetStruct()->add_intelligent_tracking_prevention_bypassing_list =
+      ark_web_engine_add_intelligent_tracking_prevention_bypassing_list;
+  GetStruct()->remove_intelligent_tracking_prevention_bypassing_list =
+      ark_web_engine_remove_intelligent_tracking_prevention_bypassing_list;
+  GetStruct()->clear_intelligent_tracking_prevention_bypassing_list =
+      ark_web_engine_clear_intelligent_tracking_prevention_bypassing_list;
   GetStruct()->pause_webkit_all_timers = ark_web_engine_pause_webkit_all_timers;
   GetStruct()->resume_webkit_all_timers =
       ark_web_engine_resume_webkit_all_timers;

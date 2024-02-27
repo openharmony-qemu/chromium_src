@@ -2579,4 +2579,14 @@ void NWebHandlerDelegate::SetFocusState(bool focusState) {
 #endif  // defined(OHOS_INPUT_EVENTS)
 }
 #endif  // #ifdef OHOS_FOCUS
+
+#ifdef OHOS_ITP
+void NWebHandlerDelegate::OnIntelligentTrackingPreventionResult(
+    const CefString& website_host, const CefString& tracker_host) {
+  LOG(INFO) << "NWebHandlerDelegate::OnIntelligentTrackingPreventionResult";
+  if (nweb_handler_ != nullptr) {
+    nweb_handler_->OnIntelligentTrackingPreventionResult(website_host, tracker_host);
+  }
+}
+#endif
 }  // namespace OHOS::NWeb

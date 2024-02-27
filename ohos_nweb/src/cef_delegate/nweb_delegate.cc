@@ -3070,4 +3070,24 @@ std::string NWebDelegate::GetLastJavascriptProxyCallingFrameUrl() {
   return GetBrowser()->GetHost()->GetLastJavascriptProxyCallingFrameUrl();
 }
 #endif
+
+#ifdef OHOS_ITP
+void NWebDelegate::EnableIntelligentTrackingPrevention(bool enable) {
+  if (GetBrowser() == nullptr) {
+    LOG(ERROR) << "NWebDelegate::EnableIntelligentTrackingPrevention failed "
+                  "for browser is nullptr";
+    return;
+  }
+  GetBrowser()->EnableIntelligentTrackingPrevention(enable);
+}
+
+bool NWebDelegate::IsIntelligentTrackingPreventionEnabled() const {
+  if (GetBrowser() == nullptr) {
+    LOG(ERROR) << "NWebDelegate::IsIntelligentTrackingPreventionEnabled "
+                  "failed for browser is nullptr";
+    return false;
+  }
+  return GetBrowser()->IsIntelligentTrackingPreventionEnabled();
+}
+#endif
 }  // namespace OHOS::NWeb

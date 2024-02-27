@@ -1056,6 +1056,17 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
     virtual int GetMediaPlaybackState() = 0;
 
     /**
+     * Enable the ability to intelligent tracking prevention, default disabled.
+     */
+    virtual void EnableIntelligentTrackingPrevention(bool enable) = 0;
+
+    /**
+     * Get whether intelligent tracking prevention is enabled.
+     * @return true if enable the ability intelligent tracking prevention; else false.
+     */
+    virtual bool IsIntelligentTrackingPreventionEnabled() const = 0;
+
+    /**
      * Start current camera.
      */
     virtual void StartCamera() = 0;

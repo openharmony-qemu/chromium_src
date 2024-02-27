@@ -22,6 +22,7 @@ struct ArkWeb_SchemeHandler_ {
   ArkWeb_OnRequestStart on_request_start;
   ArkWeb_OnRequestStop on_request_stop;
   void* user_data{nullptr};
+  bool fromEts = false;
 };
 
 #endif  // OHOS_NWEB_SRC_CAPI_SCHEME_HANDLER_SCHEME_HANDLER_H

@@ -22,6 +22,8 @@
 #include "ohos_nweb/src/ndk/scheme_handler/resource_request.h"
 #include "ohos_nweb/src/nweb_impl.h"
 
+#include "cef/libcef/browser/thread_util.h"
+
 namespace {
 
 typedef std::map<std::string, CefRefPtr<OHOS::NWeb::NWebSchemeHandlerFactory>>
@@ -88,6 +90,10 @@ CefRefPtr<CefResourceHandler> NWebSchemeHandlerFactory::Create(
       LOG(INFO) << "scheme_handler not set handler for service worker.";
       return nullptr;
     }
+    if (scheme_handler_for_sw_->fromEts && !CEF_CURRENTLY_ON_UIT()) {
+      LOG(DEBUG) << "scheme handler from ets should from UI thread";
+      return nullptr;
+    }
     ArkWeb_ResourceRequest* resource_request =
         new ArkWeb_ResourceRequest(request);
     ArkWeb_ResourceHandler* resource_handler =
@@ -112,6 +118,10 @@ CefRefPtr<CefResourceHandler> NWebSchemeHandlerFactory::Create(
   ArkWeb_SchemeHandler* handler = FromTag(web_tag);
   if (!handler || !handler->on_request_start) {
     LOG(INFO) << "scheme_handler not set handler for " << web_tag;
+    return nullptr;
+  }
+  if (handler->fromEts && !CEF_CURRENTLY_ON_UIT()) {
+    LOG(DEBUG) << "scheme handler from ets should from UI thread";
     return nullptr;
   }
   ArkWeb_ResourceRequest* resource_request =
@@ -189,8 +199,7 @@ void NWebSchemeHandlerFactory::OnRequestStop(
       LOG(ERROR) << "scheme_handler handler for service worker is not found.";
       return;
     }
-    scheme_handler_for_sw_->on_request_stop(scheme_handler_for_sw_,
-                                            resource_request);
+    scheme_handler_for_sw_->on_request_stop(scheme_handler_for_sw_, resource_request);
     return;
   }
 
@@ -201,5 +210,4 @@ void NWebSchemeHandlerFactory::OnRequestStop(
   }
   handler->on_request_stop(handler, resource_request);
 }
-
 }  //  namespace OHOS::NWeb

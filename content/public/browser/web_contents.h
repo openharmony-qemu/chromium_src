@@ -1485,10 +1485,11 @@ class WebContents : public PageNavigator,
                                     WindowOpenDisposition disposition) = 0;
 
   // Returns a scope object that needs to be owned by caller in order to
-  // disallow custom cursors. Custom cursors are diallowed in this web contents
-  // for as long as any of the returned |ScopedClosureRunner| objects is alive.
+  // disallow custom cursors. Custom cursors whose width or height are larger
+  // than `max_dimension_dips` are diallowed in this web contents for as long as
+  // any of the returned `ScopedClosureRunner` objects is alive.
   [[nodiscard]] virtual base::ScopedClosureRunner
-  CreateDisallowCustomCursorScope() = 0;
+  CreateDisallowCustomCursorScope(int max_dimension_dips = 0) = 0;
 #if BUILDFLAG(IS_OHOS)
   virtual void OnFormEditingStateChanged(uint64_t form_id, bool did_submit) = 0; 
 #endif

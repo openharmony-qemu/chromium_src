@@ -67,7 +67,7 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ScopedClipboardWriter {
                  ClipboardContentType content_type
 #if defined(OHOS_CLIPBOARD)
                  ,
-                 const blink::mojom::CopyOptionMode copy_option
+                 const blink::mojom::CopyOptionMode copy_option = blink::mojom::CopyOptionMode::CROSS_DEVICE
 #endif // defined(OHOS_CLIPBOARD)
                  );
 

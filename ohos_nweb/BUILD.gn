@@ -70,7 +70,7 @@ component("cef_nweb") {
     ":cef_nweb_config",
     ":nweb_config",
   ]
-  
+
   deps = [
     "//third_party/ohos_ndk:ohos_isolation",
   ]
@@ -171,6 +171,16 @@ component("cef_nweb") {
 
   #endif
 
+  if (defined(ohos_ndk) && ohos_ndk) {
+    sources += [
+      "src/ndk/arkweb_model.cpp",
+      "src/ndk/arkweb_native_javascript_execute_callback.cpp",
+      "src/ndk/arkweb_native_javascript_execute_callback.h",
+      "src/ndk/arkweb_native_object.cpp",
+      "src/ndk/arkweb_native_object.h",
+    ]
+  }
+
   sources += [
     "src/cef_delegate/nweb_value_convert.cc",
     "src/cef_delegate/nweb_value_convert.h",
@@ -250,7 +260,7 @@ component("nweb_sources") {
     ":nweb_config",
     ":cef_nweb_config",
   ]
-  
+
   sources = [
     "include/nweb.h",
     "include/nweb_access_request.h",

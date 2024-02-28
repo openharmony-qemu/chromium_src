@@ -109,9 +109,18 @@ class NWebImpl : public NWeb {
   void RegisterNativeArkJSFunction(
       const char* objName,
       const std::vector<std::shared_ptr<NWebJsProxyCallback>> &callbacks) override;
+  void RegisterNativeArkJSFunction(
+      const std::string& objName,
+      const std::vector<std::string>& methodName,
+      std::vector<std::function<char*(std::vector<std::vector<uint8_t>>&,
+                                      std::vector<size_t>&)>>&& callback,
+      int32_t size);
   void UnRegisterNativeArkJSFunction(const char* objName) override;
   void RegisterNativeValideCallback(const char* webName, const NativeArkWebOnValidCallback callback) override;
   void RegisterNativeDestroyCallback(const char* webName, const NativeArkWebOnDestroyCallback callback) override;
+  void RegisterNativeDestroyCallback(std::function<void(void)>&& callback);
+  void RegisterNativeLoadStartCallback(std::function<void(void)> &&callback);
+  void RegisterNativeLoadEndCallback(std::function<void(void)> &&callback);
 
   void RegisterArkJSfunction(const std::string& object_name,
                              const std::vector<std::string>& method_list,
@@ -261,6 +270,7 @@ class NWebImpl : public NWeb {
   void JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) override;
   // For NWebEx
   static NWebImpl* FromID(int32_t nweb_id);
+  static std::shared_ptr<NWebImpl> GetNWebSharedPtr(int32_t nweb_id);
   std::string GetUrl() override;
 
   CefRefPtr<CefClient> GetCefClient() const {
@@ -370,6 +380,7 @@ class NWebImpl : public NWeb {
 
   std::function<void(const char*)> validCallback_ = nullptr;
   std::function<void(const char*)> destroyCallback_ = nullptr;
+  std::function<void(void)> nativeDestroyCallback_ = nullptr;
   std::string webName_;
   base::Lock state_lock_;
 

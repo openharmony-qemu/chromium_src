@@ -508,7 +508,7 @@ bool IsDrDcEnabled() {
     return false;
   return IsUsingVulkan() ? base::FeatureList::IsEnabled(kEnableDrDcVulkan)
                          : true;
-#elif defined(OHOS_DRDC)
+#elif defined(OHOS)
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
   if (command_line)
     return command_line->HasSwitch(::switches::kOhosEnableDrDc);

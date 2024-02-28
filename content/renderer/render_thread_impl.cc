@@ -1468,6 +1468,13 @@ void RenderThreadImpl::SetIsLockedToSite() {
   blink_platform_impl_->SetIsLockedToSite();
 }
 
+#if BUILDFLAG(IS_OHOS)
+void RenderThreadImpl::SetDrawMode(int mode, base::PassKey<AgentSchedulingGroup>) {
+  DCHECK(blink_platform_impl_);
+  blink_platform_impl_->SetDrawMode(mode);
+}
+#endif
+
 #if BUILDFLAG(CLANG_PROFILING_INSIDE_SANDBOX)
 void RenderThreadImpl::WriteClangProfilingProfile(
     WriteClangProfilingProfileCallback callback) {

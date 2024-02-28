@@ -379,6 +379,15 @@ void RendererBlinkPlatformImpl::SetIsLockedToSite() {
   is_locked_to_site_ = true;
 }
 
+#if BUILDFLAG(IS_OHOS)
+int32_t RendererBlinkPlatformImpl::GetDrawMode() {
+  return draw_mode_;
+}
+void RendererBlinkPlatformImpl::SetDrawMode(int mode) {
+  draw_mode_ = mode;
+}
+#endif
+
 bool RendererBlinkPlatformImpl::IsGpuCompositingDisabled() const {
   DCHECK_CALLED_ON_VALID_THREAD(main_thread_checker_);
   RenderThreadImpl* thread = RenderThreadImpl::current();

@@ -461,6 +461,9 @@ class CONTENT_EXPORT RenderThreadImpl
   void SetAttributionReportingSupport(
       network::mojom::AttributionSupport) override;
 #endif
+#if BUILDFLAG(IS_OHOS)
+  void SetDrawMode(int mode, base::PassKey<AgentSchedulingGroup>);
+#endif
   void OnMemoryPressure(
       base::MemoryPressureListener::MemoryPressureLevel memory_pressure_level);
 

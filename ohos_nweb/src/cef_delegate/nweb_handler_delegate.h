@@ -105,6 +105,21 @@ class NWebHandlerDelegate : public CefClient,
     const char* objName,
     const std::vector<std::shared_ptr<NWebJsProxyCallback>> &callbacks);
 
+  using NativeJSProxyCallbackFunc =
+      std::function<char*(std::vector<std::vector<uint8_t>>&,
+                          std::vector<size_t>&)>;
+  void RegisterNativeJavaScriptCallBack(
+      const std::string& objName,
+      const std::vector<std::string>& methodName,
+      std::vector<NativeJSProxyCallbackFunc>&& callback,
+      int32_t size);
+  void RegisterNativeLoadStartCallback(std::function<void(void)>&& callback);
+  void RegisterNativeLoadEndCallback(std::function<void(void)>&& callback);
+  int ProcessNativeProxyResultNew(CefRefPtr<CefListValue> args,
+                                  const CefString& method,
+                                  const CefString& object_name,
+                                  CefRefPtr<CefListValue> result);
+
   int ProcessNativeProxyResultThread(CefRefPtr<CefListValue> args,
                              const CefString& method,
                              const CefString& object_name,
@@ -256,7 +271,7 @@ class NWebHandlerDelegate : public CefClient,
 
   void OnNavigationEntryCommitted(
       CefRefPtr<CefLoadCommittedDetails> details) override;
-  
+
   void OnSafeBrowsingCheckResult(int threat_type) override;
   /* CefLoadHandler methods end */
 
@@ -650,9 +665,12 @@ class NWebHandlerDelegate : public CefClient,
 #endif  // #ifdef OHOS_DRAG_DROP
   // js property name and object id
   std::unordered_map<std::string, std::unordered_map<std::string, std::function<char*(const char** argv, int32_t argc)>>> objMap_;
+  std::unordered_map<std::string, std::unordered_map<std::string, NativeJSProxyCallbackFunc>> proxyObjMap_;
   using MethodPair = std::pair<std::string, std::unordered_set<std::string>>;
   using ObjectMethodMap = std::map<int32_t, MethodPair>;
   ObjectMethodMap javascript_method_map_;
+  std::function<void(void)> onLoadStartCallback_ = nullptr;
+  std::function<void(void)> onLoadEndCallback_ = nullptr;
 };
 }  // namespace OHOS::NWeb
 

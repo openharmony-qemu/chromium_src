@@ -352,7 +352,7 @@ bool OhosVideoDecoder::QueueInput() {
     return false;
   }
   if (codec_->IsDrained() || deferred_flush_pending_) {
-    if (!codec_->HasUnreleasedOutputBuffers() && !pending_decodes_.empty()) {
+    if (!pending_decodes_.empty()) {
       FlushCodec();
       return true;
     }

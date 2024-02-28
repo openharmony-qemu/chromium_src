@@ -398,6 +398,8 @@ class CC_EXPORT LayerImpl {
 
   void set_may_contain_video(bool yes) { may_contain_video_ = yes; }
   bool may_contain_video() const { return may_contain_video_; }
+  void set_may_contain_native(bool yes) { may_contain_native_ = yes;}
+  bool may_contain_native() const { return may_contain_native_;}
 
   // Layers that share a sorting context id will be sorted together in 3d
   // space.  0 is a special value that means this layer will not be sorted and

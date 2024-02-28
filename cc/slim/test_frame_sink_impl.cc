@@ -28,6 +28,9 @@ class TestFrameSinkImpl::TestMojoCompositorFrameSink
   void SetNeedsBeginFrame(bool needs_begin_frame) override {}
   void SetWantsAnimateOnlyBeginFrames() override {}
   void SetWantsBeginFrameAcks() override {}
+  void ReportKeyThreadIds(const std::vector<int32_t>& thread_ids,
+                          int32_t process_id,
+                          bool is_created) override {}
   void SubmitCompositorFrame(
       const viz::LocalSurfaceId& local_surface_id,
       viz::CompositorFrame frame,

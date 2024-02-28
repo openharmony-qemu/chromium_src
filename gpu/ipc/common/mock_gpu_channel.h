@@ -42,6 +42,14 @@ class MockGpuChannel : public mojom::GpuChannel {
                void(int32_t, DestroyCommandBufferCallback));
   MOCK_METHOD2(ScheduleImageDecode,
                void(mojom::ScheduleImageDecodeParamsPtr, uint64_t));
+  MOCK_METHOD3(CreateNativeTexture,
+               bool(int32_t,
+                    mojo::PendingAssociatedReceiver<mojom::StreamTexture>,
+                    int32_t*));
+  MOCK_METHOD3(CreateNativeTexture,
+               void(int32_t,
+                    mojo::PendingAssociatedReceiver<mojom::StreamTexture>,
+                    CreateNativeTextureCallback));
   MOCK_METHOD1(FlushDeferredRequests,
                void(std::vector<mojom::DeferredRequestPtr>));
 #if BUILDFLAG(IS_ANDROID)

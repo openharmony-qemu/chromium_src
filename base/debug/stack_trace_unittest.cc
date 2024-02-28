@@ -186,12 +186,16 @@ TEST_F(StackTraceTest, AsyncSignalUnsafeSignalHandlerHang) {
 namespace {
 
 std::string itoa_r_wrapper(intptr_t i, size_t sz, int base, size_t padding) {
+#if defined(USE_SYMBOLIZE)
   char buffer[1024];
   CHECK_LE(sz, sizeof(buffer));
 
   char* result = internal::itoa_r(i, buffer, sz, base, padding);
   EXPECT_TRUE(result);
   return std::string(buffer);
+#else
+  return "";
+#endif
 }
 
 }  // namespace
@@ -232,6 +236,7 @@ TEST_F(StackTraceTest, itoa_r) {
   EXPECT_EQ("688", itoa_r_wrapper(0x688, 128, 16, 0));
   EXPECT_EQ("deadbeef", itoa_r_wrapper(0xdeadbeef, 128, 16, 0));
 
+#if defined(USE_SYMBOLIZE)
   // Check that itoa_r respects passed buffer size limit.
   char buffer[1024];
   EXPECT_TRUE(internal::itoa_r(0xdeadbeef, buffer, 10, 16, 0));
@@ -241,6 +246,7 @@ TEST_F(StackTraceTest, itoa_r) {
   EXPECT_TRUE(internal::itoa_r(0xbeef, buffer, 5, 16, 4));
   EXPECT_FALSE(internal::itoa_r(0xbeef, buffer, 5, 16, 5));
   EXPECT_FALSE(internal::itoa_r(0xbeef, buffer, 5, 16, 6));
+#endif
 
   // Test padding.
   EXPECT_EQ("1", itoa_r_wrapper(1, 128, 10, 0));

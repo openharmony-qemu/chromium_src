@@ -187,6 +187,12 @@ class NWebDelegateInterface
   virtual void RegisterNativeArkJSFunction(
       const char* objName,
       const std::vector<std::shared_ptr<NWebJsProxyCallback>> &callbacks) = 0;
+  virtual void RegisterNativeJSProxy(
+      const std::string& objName,
+      const std::vector<std::string>& methodName,
+      std::vector<std::function<char*(std::vector<std::vector<uint8_t>>&,
+                                      std::vector<size_t>&)>>&& callback,
+      int32_t size) = 0;
   virtual void UnRegisterNativeArkJSFunction(const char* objName) = 0;
   virtual void RegisterArkJSfunction(
       const std::string& object_name,
@@ -195,6 +201,8 @@ class NWebDelegateInterface
   virtual void UnregisterArkJSfunction(
       const std::string& object_name,
       const std::vector<std::string>& method_list) const = 0;
+  virtual void RegisterNativeLoadStartCallback(std::function<void(void)>&& callback) = 0;
+  virtual void RegisterNativeLoadEndCallback(std::function<void(void)>&& callback) = 0;
   virtual void JavaScriptOnDocumentStart(const ScriptItems& ScriptItems) = 0;
   virtual void JavaScriptOnDocumentEnd(const ScriptItems& ScriptItems) = 0;
   virtual void CallH5Function(

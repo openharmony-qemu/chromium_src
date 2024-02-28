@@ -145,7 +145,11 @@ TEST_F(URLUtilTest, GetStandardSchemeType) {
 TEST_F(URLUtilTest, GetStandardSchemes) {
   std::vector<std::string> expected = {
       kHttpsScheme, kHttpScheme, kFileScheme,       kFtpScheme,
-      kWssScheme,   kWsScheme,   kFileSystemScheme, "foo",
+      kWssScheme,   kWsScheme,   kFileSystemScheme,
+#ifdef OHOS_HAP_DECOMPRESSED
+      kResourcesScheme,
+#endif
+      "foo",
   };
   AddStandardScheme("foo", url::SCHEME_WITHOUT_AUTHORITY);
   EXPECT_EQ(expected, GetStandardSchemes());

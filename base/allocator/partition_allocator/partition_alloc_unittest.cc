@@ -3023,17 +3023,17 @@ TEST_P(PartitionAllocTest, FreelistHardenedTest) {
   uintptr_t root = *(uintptr_t*)head;
 
   head += EXTENT_OFFSET;
-  PartitionBucket<base::internal::ThreadSafe>* bucket = (PartitionBucket<base::internal::ThreadSafe>*)(head + BUCKET_OFFSET);
+  PartitionBucket<internal::ThreadSafe>* bucket = (PartitionBucket<internal::ThreadSafe>*)(head + BUCKET_OFFSET);
 
   uintptr_t active = *(uintptr_t*)(bucket->active_slot_spans_head);
   uintptr_t slot_span = *(uintptr_t*)head;
   uintptr_t free = *(uintptr_t*)(slot_span + sizeof(uintptr_t));
 
-  uintptr_t real_root = (uintptr_t)PartitionRoot<base::internal::ThreadSafe>::FromFirstSuperPage((uintptr_t)ptr & 0xffffffffffC00000);
-  printf("\r\nreal_root = 0x%lx\r\n", real_root);
-  printf("root = 0x%lx\r\n", root);
-  printf("active_head = 0x%lx\r\n", active);
-  printf("free_next = 0x%lx\r\n\r\n", free);
+  uintptr_t real_root = (uintptr_t)PartitionRoot<internal::ThreadSafe>::FromFirstSuperPage((uintptr_t)ptr & 0xffffffffffC00000);
+  printf("\r\nreal_root = 0x%x\r\n", real_root);
+  printf("root = 0x%x\r\n", root);
+  printf("active_head = 0x%x\r\n", active);
+  printf("free_next = 0x%x\r\n\r\n", free);
   EXPECT_NE(real_root, root);
 
   // slot span must >= head and <= head + 4096(metadata page size)

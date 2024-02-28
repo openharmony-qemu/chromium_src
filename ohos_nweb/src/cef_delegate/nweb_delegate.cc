@@ -1750,6 +1750,33 @@ void NWebDelegate::RegisterNativeArkJSFunction(
   }
 }
 
+void NWebDelegate::RegisterNativeJSProxy(
+    const std::string& objName,
+    const std::vector<std::string>& methodName,
+    std::vector<std::function<char*(std::vector<std::vector<uint8_t>>&,
+                                    std::vector<size_t>&)>>&& callback,
+    int32_t size) {
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    CEF_POST_TASK(CEF_UIT, base::BindOnce(&NWebDelegate::RegisterNativeJSProxy,
+                                          this, objName, methodName,
+                                          std::move(callback), size));
+    return;
+  }
+
+  handler_delegate_->RegisterNativeJavaScriptCallBack(
+      objName, methodName, std::move(callback), size);
+  std::vector<CefString> method_vector;
+  for (int i = 0; i < size; i++) {
+    method_vector.push_back(methodName[i]);
+  }
+  if (GetBrowser() && GetBrowser()->GetHost()) {
+    GetBrowser()->GetHost()->RegisterArkJSfunction(objName, method_vector,
+                                                   kDefaultWebNativeProxy);
+  } else {
+    LOG(ERROR) << "browser or host is null";
+  }
+}
+
 void NWebDelegate::UnRegisterNativeArkJSFunction(const char* objName) {
   if (!CEF_CURRENTLY_ON_UIT()) {
     CEF_POST_TASK(CEF_UIT,
@@ -1762,6 +1789,24 @@ void NWebDelegate::UnRegisterNativeArkJSFunction(const char* objName) {
     GetBrowser()->GetHost()->UnregisterArkJSfunction(objName, method_vector);
   } else {
     LOG(ERROR) << "browser or host is null";
+  }
+}
+
+void NWebDelegate::RegisterNativeLoadStartCallback(
+    std::function<void(void)>&& callback) {
+  if (handler_delegate_ != nullptr) {
+    handler_delegate_->RegisterNativeLoadStartCallback(std::move(callback));
+  } else {
+    LOG(ERROR) << "handler_delegate_ is nullptr";
+  }
+}
+
+void NWebDelegate::RegisterNativeLoadEndCallback(
+    std::function<void(void)>&& callback) {
+  if (handler_delegate_ != nullptr) {
+    handler_delegate_->RegisterNativeLoadEndCallback(std::move(callback));
+  } else {
+    LOG(ERROR) << "handler_delegate_ is nullptr";
   }
 }
 

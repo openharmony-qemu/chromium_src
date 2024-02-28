@@ -835,6 +835,10 @@ void NWebHandlerDelegate::OnLoadStart(CefRefPtr<CefBrowser> browser,
   if (nweb_handler_ != nullptr) {
     nweb_handler_->OnPageLoadBegin(url.ToString());
   }
+
+  if (onLoadStartCallback_) {
+    onLoadStartCallback_();
+  }
 }
 
 void NWebHandlerDelegate::OnLoadEnd(CefRefPtr<CefBrowser> browser,
@@ -848,6 +852,9 @@ void NWebHandlerDelegate::OnLoadEnd(CefRefPtr<CefBrowser> browser,
 
   if (nweb_handler_ != nullptr) {
     nweb_handler_->OnPageLoadEnd(http_status_code, frame->GetURL().ToString());
+  }
+  if (onLoadEndCallback_) {
+    onLoadEndCallback_();
   }
 
 #if defined(REPORT_SYS_EVENT)
@@ -2265,6 +2272,16 @@ const std::vector<std::string> NWebHandlerDelegate::GetVisitedHistory() {
   return std::vector<std::string>();
 }
 
+void NWebHandlerDelegate::RegisterNativeLoadStartCallback(
+    std::function<void(void)>&& callback) {
+  onLoadStartCallback_ = std::move(callback);
+}
+
+void NWebHandlerDelegate::RegisterNativeLoadEndCallback(
+    std::function<void(void)>&& callback) {
+  onLoadEndCallback_ = std::move(callback);
+}
+
 void NWebHandlerDelegate::RegisterNativeJavaScriptCallBack(
     const char* objName,
     const std::vector<std::shared_ptr<NWebJsProxyCallback>> &callbacks) {
@@ -2273,6 +2290,18 @@ void NWebHandlerDelegate::RegisterNativeJavaScriptCallBack(
     map[callback->GetMethodName()] = callback->GetMethodCallback();
   }
   objMap_[objName] = map;
+}
+
+void NWebHandlerDelegate::RegisterNativeJavaScriptCallBack(
+    const std::string& objName,
+    const std::vector<std::string>& methodName,
+    std::vector<NativeJSProxyCallbackFunc>&& callback,
+    int32_t size) {
+  std::unordered_map<std::string, NativeJSProxyCallbackFunc> map;
+  for (int i = 0; i < size; i++) {
+    map[methodName[i]] = callback[i];
+  }
+  proxyObjMap_[objName] = map;
 }
 
 int NWebHandlerDelegate::ProcessNativeProxyResultThread(
@@ -2323,19 +2352,83 @@ int NWebHandlerDelegate::ProcessNativeProxyResultThread(
   return 0;
 }
 
+int NWebHandlerDelegate::ProcessNativeProxyResultNew(
+    CefRefPtr<CefListValue> args,
+    const CefString& method,
+    const CefString& object_name,
+    CefRefPtr<CefListValue> result) {
+  auto it = proxyObjMap_.find(object_name);
+  if (it == proxyObjMap_.end()) {
+    // object name not found
+    return 1;
+  }
+  auto& methodMap = it->second;
+  auto methodIt = methodMap.find(method);
+  if (methodIt == methodMap.end()) {
+    // method name not found
+    return 1;
+  }
+
+  auto callback = methodMap[method];
+  size_t argsSize = args->GetSize();
+  std::vector<std::vector<uint8_t>> dataList(argsSize);
+  std::vector<size_t> dataSize(argsSize);
+
+  for (size_t i = 0; i < argsSize; i++) {
+    CefValueType type = args->GetType(i);
+    CefRefPtr<CefValue> value = args->GetValue(i);
+    if (type == VTYPE_STRING) {
+      auto argString = value->GetString().ToString();
+      size_t size = argString.size();
+
+      dataList[i] = std::vector<uint8_t>(argString.begin(), argString.end());
+      dataSize[i] = size;
+    }
+    if (type == VTYPE_BINARY) {
+      auto argBinary = value->GetBinary();
+      size_t size = argBinary->GetSize();
+
+      std::vector<uint8_t> data(size);
+      argBinary->GetData(&data[0], size, 0);
+
+      dataList[i] = std::move(data);
+      dataSize[i] = size;
+    } else {
+      std::string jsonString =
+          CefWriteJSON(value, JSON_WRITER_OMIT_BINARY_VALUES);
+      dataList[i] = std::vector<uint8_t>(jsonString.begin(), jsonString.end());
+      dataSize[i] = jsonString.size();
+    }
+  }
+
+  char* callbackResult = callback(dataList, dataSize);
+  if (callbackResult) {
+    result->SetString(0, callbackResult);
+  } else {
+    LOG(INFO) << "native return nullptr, just set null string to result";
+    result->SetNull(0);
+  }
+
+  return 0;
+}
+
 int NWebHandlerDelegate::ProcessNativeProxyResult(
     CefRefPtr<CefListValue> args,
     const CefString& method,
     const CefString& object_name,
     CefRefPtr<CefListValue> result) {
-  auto it = objMap_.find(object_name);
-  if (it == objMap_.end()) {
-    // not found object name
-    return 1;
+  if (auto it = proxyObjMap_.find(object_name); it != proxyObjMap_.end()) {
+    ProcessNativeProxyResultNew(args, method, object_name, result);
+    return 0;
   }
 
-  ProcessNativeProxyResultThread(args, method, object_name, result);
-  return 0;
+  if (auto it = objMap_.find(object_name); it != objMap_.end()) {
+    ProcessNativeProxyResultThread(args, method, object_name, result);
+    return 0;
+  }
+
+  LOG(ERROR) << "native proxy object not found, name:" << object_name.ToString();
+  return 1;
 }
 
 int NWebHandlerDelegate::NotifyJavaScriptResult(CefRefPtr<CefListValue> args,

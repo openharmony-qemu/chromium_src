@@ -35,6 +35,7 @@
 #include "base/trace_event/common/trace_event_common.h"
 #include "base/trace_event/trace_event.h"
 #include "cef_delegate/nweb_download_handler_delegate.h"
+#include "ndk/arkweb_native_object.h"
 #include "nweb_delegate_adapter.h"
 #include "nweb_export.h"
 #include "nweb_handler.h"
@@ -348,6 +349,16 @@ NWebImpl* NWebImpl::FromID(int32_t nweb_id) {
   return nullptr;
 }
 
+std::shared_ptr<NWebImpl> NWebImpl::GetNWebSharedPtr(int32_t nweb_id) {
+  NWebMap *map = g_nweb_map.Pointer();
+  if (auto it = map->find(nweb_id); it != map->end()) {
+    if (auto nweb = it->second.lock()) {
+      return nweb;
+    }
+  }
+  return nullptr;
+}
+
 NWebImpl::NWebImpl(uint32_t id) : nweb_id_(id) {
   ResSchedClientAdapter::ReportNWebInit(ResSchedStatusAdapter::WEB_SCENE_ENTER, nweb_id_);
 }
@@ -405,9 +416,9 @@ void NWebImpl::OnDestroy() {
     WVLOG_I("NWebImpl::OnDestroy destroyCallback_ webName_ is %{public}s", webName_.c_str());
     (destroyCallback_)(webName_.c_str());
     destroyCallback_ = nullptr;
-  } else {
-    WVLOG_I("NWebImpl::OnDestroy destroy callback is not set");
-  }
+  } else if (nativeDestroyCallback_) {
+    nativeDestroyCallback_();
+   }
 
   if (g_nweb_count == 0) {
     return;
@@ -1121,6 +1132,20 @@ void NWebImpl::RegisterNativeArkJSFunction(
   }
 }
 
+void NWebImpl::RegisterNativeArkJSFunction(
+    const std::string& objName,
+    const std::vector<std::string>& methodName,
+    std::vector<std::function<char*(std::vector<std::vector<uint8_t>>&,
+                                    std::vector<size_t>&)>>&& callback,
+    int32_t size) {
+  if (nweb_delegate_ != nullptr) {
+    nweb_delegate_->RegisterNativeJSProxy(objName, methodName,
+                                                std::move(callback), size);
+  } else {
+    LOG(ERROR) << "nweb_delegate_ is nullptr";
+  }
+}
+
 void NWebImpl::UnRegisterNativeArkJSFunction(const char* objName) {
   if (nweb_delegate_ != nullptr) {
     nweb_delegate_->UnRegisterNativeArkJSFunction(objName);
@@ -1138,6 +1163,27 @@ void NWebImpl::RegisterNativeDestroyCallback(const char* webName, const NativeAr
   base::AutoLock lock_scope(state_lock_);
   webName_ = webName;
   destroyCallback_ = callback;
+}
+
+void NWebImpl::RegisterNativeDestroyCallback(std::function<void(void)>&& callback) {
+  base::AutoLock lock_scope(state_lock_);
+  nativeDestroyCallback_ = std::move(callback);
+}
+
+void NWebImpl::RegisterNativeLoadStartCallback(std::function<void(void)>&& callback) {
+  if (nweb_delegate_ != nullptr) {
+    nweb_delegate_->RegisterNativeLoadStartCallback(std::move(callback));
+  } else {
+    LOG(ERROR) << "nweb_delegate_ is nullptr";
+  }
+}
+
+void NWebImpl::RegisterNativeLoadEndCallback(std::function<void(void)>&& callback) {
+  if (nweb_delegate_ != nullptr) {
+    nweb_delegate_->RegisterNativeLoadEndCallback(std::move(callback));
+  } else {
+    LOG(ERROR) << "nweb_delegate_ is nullptr";
+  }
 }
 
 void NWebImpl::RegisterArkJSfunction(
@@ -1874,7 +1920,7 @@ std::shared_ptr<NWebAccessibilityNodeInfo>
 NWebImpl::GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
                                               int32_t direction) {
   if (nweb_delegate_ != nullptr) {
-    return nweb_delegate_->GetAccessibilityNodeInfoByFocusMove(accessibilityId, 
+    return nweb_delegate_->GetAccessibilityNodeInfoByFocusMove(accessibilityId,
                                                                direction);
   }
   return nullptr;
@@ -1992,6 +2038,7 @@ std::shared_ptr<NWeb> NWebImpl::GetNWeb(int32_t nweb_id) {
 // static
 void NWebImpl::SetWebTag(int32_t nweb_id, const char* web_tag) {
   OHOS::NWeb::NWebImpl* nweb = OHOS::NWeb::NWebImpl::FromID(nweb_id);
+  OHOS::NWeb::ArkWebNativeObject::BindWebTagToWebInstance(nweb_id, web_tag);
   if (!nweb) {
     WVLOG_E("fail to find a valid nweb with %{public}d", nweb_id);
     return;

@@ -541,6 +541,8 @@ class CC_EXPORT LayerImpl {
 
   bool is_inner_viewport_scroll_layer_ : 1;
 
+  bool may_contain_native_;
+
   TouchActionRegion touch_action_region_;
 
   SkColor4f background_color_;

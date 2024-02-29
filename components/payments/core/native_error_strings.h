@@ -125,6 +125,12 @@ extern const char kPaymentManifestCrossSiteRedirectNotAllowed[];
 // be used with base::ReplaceStringPlaceholders(fmt, {A}, nullptr).
 extern const char kPaymentManifestDownloadFailed[];
 
+// Used when downloading payment manifest URL A has failed because of HTTP
+// status code B. This format should be used with
+// base::ReplaceStringPlaceholders(
+//     fmt, {A, base::NumberToString(B), net::GetHttpReasonPhrase(B)}, nullptr).
+extern const char kPaymentManifestDownloadFailedWithHttpStatusCode[];
+
 // Used when Content Security Policy (CSP) denied downloading payment manifest
 // URL A. This format should be used with base::ReplaceStringPlaceholders(fmt,
 // {A}, nullptr).
@@ -216,6 +222,11 @@ extern const char kGenericPaymentMethodNotSupportedMessage[];
 
 // Used for errors downloading the payment method manifest. This format should
 // be used with base::ReplaceStringPlaceholders(fmt, {A}, nullptr).
+extern const char kNoLinkHeader[];
+
+// Used for errors downloading the payment method manifest. This format should
+// be used with base::ReplaceStringPlaceholders(fmt, {A}, nullptr).
+
 extern const char kNoContentAndNoLinkHeader[];
 
 // Used when the downloaded payment manifest A is empty. This format should be

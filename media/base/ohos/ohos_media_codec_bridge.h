@@ -36,7 +36,6 @@ enum MediaCodecStatus {
   MEDIA_CODEC_ERROR
 };
 
-
 class OHOSMediaCodecBridge {
  public:
   OHOSMediaCodecBridge() = default;
@@ -46,12 +45,14 @@ class OHOSMediaCodecBridge {
 
   virtual ~OHOSMediaCodecBridge() = default;
 
-  virtual CodecCodeAdapter CreateVideoCodecByMime(const std::string mimetype) = 0;
+  virtual CodecCodeAdapter CreateVideoCodecByMime(
+      const std::string mimetype) = 0;
 
   virtual CodecCodeAdapter CreateVideoCodecByName(const std::string name) = 0;
 
-  virtual CodecCodeAdapter Configure(const CodecConfigPara &config,
-                                     scoped_refptr<base::SequencedTaskRunner> codec_task_runner) = 0;
+  virtual CodecCodeAdapter Configure(
+      const CodecConfigPara& config,
+      scoped_refptr<base::SequencedTaskRunner> codec_task_runner) = 0;
 
   virtual CodecCodeAdapter Prepare() = 0;
 
@@ -65,12 +66,11 @@ class OHOSMediaCodecBridge {
 
   virtual CodecCodeAdapter CreateInputSurface() = 0;
 
-  virtual CodecCodeAdapter DequeueOutputBuffer(uint32_t &index,
-                                               BufferInfo &info,
-                                               BufferFlag &flag,
-                                               OhosBuffer &buffer) = 0;
-  virtual CodecCodeAdapter ReleaseOutputBuffer(uint32_t index,
-                                               bool render) = 0;
+  virtual CodecCodeAdapter DequeueOutputBuffer(uint32_t& index,
+                                               BufferInfo& info,
+                                               BufferFlag& flag,
+                                               OhosBuffer& buffer) = 0;
+  virtual CodecCodeAdapter ReleaseOutputBuffer(uint32_t index, bool render) = 0;
 
   virtual void ClearKeyFrameCache() = 0;
 

@@ -22,9 +22,9 @@
 #include "media/base/ohos/ohos_media_codec_bridge.h"
 #include "media/base/ohos/ohos_media_codec_bridge_impl.h"
 #include "media/base/ohos/ohos_media_codec_util.h"
-#include "media_codec_adapter.h"
 #include "media/gpu/media_gpu_export.h"
 #include "media/video/video_encode_accelerator.h"
+#include "media_codec_adapter.h"
 
 namespace media {
 using namespace OHOS::NWeb;
@@ -36,8 +36,8 @@ class MEDIA_GPU_EXPORT OHOSVideoEncodeAccelerator
   OHOSVideoEncodeAccelerator();
 
   OHOSVideoEncodeAccelerator(const OHOSVideoEncodeAccelerator&) = delete;
-  OHOSVideoEncodeAccelerator& operator=(
-      const OHOSVideoEncodeAccelerator&) = delete;
+  OHOSVideoEncodeAccelerator& operator=(const OHOSVideoEncodeAccelerator&) =
+      delete;
 
   ~OHOSVideoEncodeAccelerator() override;
 
@@ -53,7 +53,7 @@ class MEDIA_GPU_EXPORT OHOSVideoEncodeAccelerator
   void Destroy() override;
 
  private:
-enum {
+  enum {
     // Arbitrary choice.
     INITIAL_FRAMERATE = 30,
     // Default I-Frame interval in seconds.
@@ -78,7 +78,7 @@ enum {
   gfx::Size frame_size_;
   std::vector<BitstreamBuffer> available_bitstream_buffers_;
   std::unique_ptr<MediaLog> log_;
-    // The difference between number of buffers queued & dequeued at the codec.
+  // The difference between number of buffers queued & dequeued at the codec.
   int32_t num_buffers_at_codec_ = 0;
 
   // A monotonically-growing value.

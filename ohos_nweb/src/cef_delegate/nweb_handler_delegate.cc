@@ -2383,8 +2383,7 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNew(
 
       dataList[i] = std::vector<uint8_t>(argString.begin(), argString.end());
       dataSize[i] = size;
-    }
-    if (type == VTYPE_BINARY) {
+    } else if (type == VTYPE_BINARY) {
       auto argBinary = value->GetBinary();
       size_t size = argBinary->GetSize();
 

@@ -271,7 +271,7 @@ TEST_P(GLES2DecoderTest, IsTexture) {
   EXPECT_FALSE(DoIsTexture(client_texture_id_));
 }
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !(BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS))
 TEST_P(GLES2DecoderTest, TestImageBindingForDecoderManagement) {
   const GLuint service_id = 123;
   EXPECT_CALL(*gl_, GenTextures(1, _))

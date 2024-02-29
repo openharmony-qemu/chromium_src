@@ -49,6 +49,12 @@ class MockDisplayClient : public mojom::DisplayClient {
   MOCK_METHOD1(DidCompleteSwapWithNewSize, void(const gfx::Size&));
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+  MOCK_METHOD1(DidCompleteSwapWithNewSizeOHOS, void(const gfx::Size&));
+  MOCK_METHOD1(UseProxyOutputDevice, void(UseProxyOutputDeviceCallback));
+  MOCK_METHOD1(CreateLayeredWindowUpdater,
+               void(::mojo::PendingReceiver<::viz::mojom::LayeredWindowUpdater>));
+#endif
  private:
   mojo::Receiver<mojom::DisplayClient> receiver_{this};
 };

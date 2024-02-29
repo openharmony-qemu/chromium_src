@@ -78,6 +78,8 @@ class TestFrameSinkManagerImpl : public mojom::FrameSinkManager {
   void StopThrottlingAllFrameSinks() override {}
   void StartFrameCountingForTest(base::TimeTicks start_time,
                                  base::TimeDelta bucket_size) override {}
+  void SendInternalBeginFrame(const ::viz::FrameSinkId& frame_sink_id) override {}
+  void SetEnableLowerFrameRate(bool enabled, const ::viz::FrameSinkId& frame_sink_id) override {}
   void StopFrameCountingForTest(
       StopFrameCountingForTestCallback callback) override {}
 

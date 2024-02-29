@@ -876,6 +876,21 @@ ark_web_preference_get_native_embed_mode(struct _ark_web_preference_t *self) {
   return ArkWebPreferenceCppToC::Get(self)->GetNativeEmbedMode();
 }
 
+void ARK_WEB_CALLBACK ark_web_preference_register_native_embed_rule(
+    struct _ark_web_preference_t *self, const ArkWebString *tag,
+    const ArkWebString *type) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(tag, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(type, );
+
+  // Execute
+  ArkWebPreferenceCppToC::Get(self)->RegisterNativeEmbedRule(*tag, *type);
+}
+
 void ARK_WEB_CALLBACK ark_web_preference_set_scrollable(
     struct _ark_web_preference_t *self, bool enable) {
   ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
@@ -1040,6 +1055,8 @@ ArkWebPreferenceCppToC::ArkWebPreferenceCppToC() {
   GetStruct()->put_copy_option_mode = ark_web_preference_put_copy_option_mode;
   GetStruct()->set_native_embed_mode = ark_web_preference_set_native_embed_mode;
   GetStruct()->get_native_embed_mode = ark_web_preference_get_native_embed_mode;
+  GetStruct()->register_native_embed_rule =
+      ark_web_preference_register_native_embed_rule;
   GetStruct()->set_scrollable = ark_web_preference_set_scrollable;
   GetStruct()->get_scrollable = ark_web_preference_get_scrollable;
 }

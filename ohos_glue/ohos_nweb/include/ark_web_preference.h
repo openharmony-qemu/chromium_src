@@ -682,6 +682,13 @@ public:
   virtual bool GetNativeEmbedMode() = 0;
 
   /**
+   * @brief Register native embed rule. The default pattern is ["embed", "native/"].
+   */
+  /*--ark web()--*/
+  virtual void RegisterNativeEmbedRule(const ArkWebString &tag,
+                                       const ArkWebString &type) = 0;
+
+  /**
    * @brief Set whether the scroll is enabled.
    */
   /*--ark web()--*/

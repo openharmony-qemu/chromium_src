@@ -198,7 +198,7 @@ MEDIA_EXPORT bool operator!=(const PipelineStatistics& first,
 using StatisticsCB = base::RepeatingCallback<void(const PipelineStatistics&)>;
 
 #if BUILDFLAG(IS_OHOS)
-using TextureSizeChangedCB = base::OnceCallback<void(const gfx::Size&)>;
+using TextureSizeChangedCB = base::RepeatingCallback<void(const gfx::Size&)>;
 using CreateTextureCB = base::OnceCallback<void(TextureSizeChangedCB, int)>;
 using DestroyTextureCB = base::OnceCallback<void()>;
 #endif

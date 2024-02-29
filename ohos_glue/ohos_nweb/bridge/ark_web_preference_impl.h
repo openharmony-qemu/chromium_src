@@ -604,6 +604,12 @@ public:
   bool GetNativeEmbedMode() override;
 
   /**
+   * @brief Register native embed rule. The default pattern is ["embed", "native/"].
+   */
+  virtual void RegisterNativeEmbedRule(const ArkWebString &tag,
+                                       const ArkWebString &type) override;
+
+  /**
    * @brief Set whether the scroll is enabled.
    */
   void SetScrollable(bool enable) override;

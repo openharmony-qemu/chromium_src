@@ -80,6 +80,26 @@ ark_web_native_embed_info_get_type(struct _ark_web_native_embed_info_t *self) {
   return ArkWebNativeEmbedInfoCppToC::Get(self)->GetType();
 }
 
+ArkWebString ARK_WEB_CALLBACK
+ark_web_native_embed_info_get_tag(struct _ark_web_native_embed_info_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, ark_web_string_default);
+
+  // Execute
+  return ArkWebNativeEmbedInfoCppToC::Get(self)->GetTag();
+}
+
+ArkWebStringMap ARK_WEB_CALLBACK ark_web_native_embed_info_get_params(
+    struct _ark_web_native_embed_info_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, ark_web_string_map_default);
+
+  // Execute
+  return ArkWebNativeEmbedInfoCppToC::Get(self)->GetParams();
+}
+
 } // namespace
 
 ArkWebNativeEmbedInfoCppToC::ArkWebNativeEmbedInfoCppToC() {
@@ -89,6 +109,8 @@ ArkWebNativeEmbedInfoCppToC::ArkWebNativeEmbedInfoCppToC() {
   GetStruct()->get_src = ark_web_native_embed_info_get_src;
   GetStruct()->get_url = ark_web_native_embed_info_get_url;
   GetStruct()->get_type = ark_web_native_embed_info_get_type;
+  GetStruct()->get_tag = ark_web_native_embed_info_get_tag;
+  GetStruct()->get_params = ark_web_native_embed_info_get_params;
 }
 
 ArkWebNativeEmbedInfoCppToC::~ArkWebNativeEmbedInfoCppToC() {

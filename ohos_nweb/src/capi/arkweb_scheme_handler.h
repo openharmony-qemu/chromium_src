@@ -880,6 +880,6 @@ void OH_ArkWeb_ReleaseByteArray(uint8_t* byteArray);
 
 
 #ifdef __cplusplus
-};
+}
 #endif
 #endif // ARKWEB_SCHEME_HANDLER_H

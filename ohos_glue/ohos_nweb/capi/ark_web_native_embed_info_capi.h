@@ -47,6 +47,12 @@ typedef struct _ark_web_native_embed_info_t {
 
   ArkWebString(ARK_WEB_CALLBACK *get_type)(
       struct _ark_web_native_embed_info_t *self);
+
+  ArkWebString(ARK_WEB_CALLBACK *get_tag)(
+      struct _ark_web_native_embed_info_t *self);
+
+  ArkWebStringMap(ARK_WEB_CALLBACK *get_params)(
+      struct _ark_web_native_embed_info_t *self);
 } ark_web_native_embed_info_t;
 
 #ifdef __cplusplus

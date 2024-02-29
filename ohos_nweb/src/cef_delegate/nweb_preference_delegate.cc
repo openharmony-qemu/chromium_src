@@ -163,6 +163,12 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
 #if BUILDFLAG(IS_OHOS)
   browser_settings.native_embed_mode_enabled =
       GetNativeEmbedMode() ? STATE_ENABLED : STATE_DISABLED;
+  str = CefString(embed_tag_);
+  cef_string_set(str.c_str(), str.length(),
+                 &(browser_settings.embed_tag), true);
+  str = CefString(embed_tag_type_);
+  cef_string_set(str.c_str(), str.length(),
+                 &(browser_settings.embed_tag_type), true);
   browser_settings.draw_mode = GetDrawMode();
 #endif  // BUILDFLAG(IS_OHOS)
 #if defined(OHOS_CLIPBOARD)
@@ -631,6 +637,13 @@ void NWebPreferenceDelegate::SetNativeEmbedMode(bool flag) {
 }
 bool NWebPreferenceDelegate::GetNativeEmbedMode() {
   return enable_embed_mode_;
+}
+
+void NWebPreferenceDelegate::RegisterNativeEmbedRule(const std::string& tag,
+                                                     const std::string& type) {
+  embed_tag_ = tag;
+  embed_tag_type_ = type;
+  WebPreferencesChanged();
 }
 
 void NWebPreferenceDelegate::SetScrollable(bool enable) {

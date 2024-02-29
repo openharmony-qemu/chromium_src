@@ -1485,6 +1485,25 @@ std::string CanonicalCookie::BuildCookieLine(
 }
 
 // static
+void CanonicalCookie::BuildCookieLineWithExpiryDate(
+    const CookieAccessResultList& cookie_access_result_list,
+    base::OnceCallback<void(const std::string&, base::Time, bool)> callback) {
+  std::string cookie_line;
+  base::Time string_expiry_date;
+  bool have_expiry_date;
+  for (const auto& cookie_with_access_result : cookie_access_result_list) {
+    const CanonicalCookie& cookie = cookie_with_access_result.cookie;
+    AppendCookieLineEntry(cookie, &cookie_line);
+    auto& expiry_date = cookie.ExpiryDate();
+    if (!expiry_date.is_null() && (!have_expiry_date || string_expiry_date > expiry_date)) {
+      string_expiry_date = expiry_date;
+      have_expiry_date = true;
+    }
+  }
+  std::move(callback).Run(cookie_line, string_expiry_date, have_expiry_date);
+}
+
+// static
 std::string CanonicalCookie::BuildCookieAttributesLine(
     const CanonicalCookie& cookie) {
   std::string cookie_line;

@@ -213,6 +213,8 @@ component("gpu") {
       "ohos/video_frame_factory.h",
       "ohos/video_frame_factory_impl.cc",
       "ohos/video_frame_factory_impl.h",
+      "ohos/ohos_video_encode_accelerator.cc",
+      "ohos/ohos_video_encode_accelerator.h",
     ]
     include_dirs = ohos_src_includes
     lib_dirs = ohos_libs_dir

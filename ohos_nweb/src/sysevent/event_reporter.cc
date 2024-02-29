@@ -43,6 +43,9 @@ constexpr char STARTTIME[] = "STARTTIME";
 constexpr char DURATION[] = "DURATION";
 constexpr char JANK_STATS[] = "JANK_STATS";
 constexpr char JANK_STATS_VER[] = "JANK_STATS_VER";
+
+constexpr char RENDER_JIT_LOCKDOWN[] = "RENDER_JIT_LOCKDOWN";
+constexpr char LOCKDOWN_MODE_STATUS[] = "JIT_LOCKDOWN_MODE";
 }  // namespace
 
 void ReportPageLoadStats(int instanceId,
@@ -52,16 +55,16 @@ void ReportPageLoadStats(int instanceId,
   float failRatio = float(accessFailCount) / accessSumCount;
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       PAGE_LOAD_STATISTICS, HiSysEventAdapter::EventType::STATISTIC,
-      {CURRENT_INSTANCE_ID, instanceId, ACCESS_SUM_COUNT, accessSumCount,
-       ACCESS_SUCC_COUNT, accessSuccCount, ACCESS_FAIL_COUNT, accessFailCount,
-       ACCESS_FAIL_RATIO, failRatio});
+      {CURRENT_INSTANCE_ID, std::to_string(instanceId), ACCESS_SUM_COUNT, std::to_string(accessSumCount),
+       ACCESS_SUCC_COUNT, std::to_string(accessSuccCount), ACCESS_FAIL_COUNT, std::to_string(accessFailCount),
+       ACCESS_FAIL_RATIO, std::to_string(failRatio)});
 }
 
 void ReportMultiInstanceStats(int instanceId, int nwebCount, int nwebMaxCount) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       MULTI_INSTANCE_STATISTICS, HiSysEventAdapter::EventType::STATISTIC,
-      {CURRENT_INSTANCE_ID, instanceId, CURRENT_INSTANCE_COUNT, nwebCount,
-       INSTANCE_MAX_COUNT, nwebMaxCount});
+      {CURRENT_INSTANCE_ID, std::to_string(instanceId), CURRENT_INSTANCE_COUNT, std::to_string(nwebCount),
+       INSTANCE_MAX_COUNT, std::to_string(nwebMaxCount)});
 }
 
 void ReportPageLoadErrorInfo(int instanceId,
@@ -79,8 +82,8 @@ void ReportPageLoadErrorInfo(int instanceId,
   }
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       PAGE_LOAD_ERROR, HiSysEventAdapter::EventType::FAULT,
-      {CURRENT_INSTANCE_ID, instanceId, ERROR_TYPE, error_type, ERROR_CODE,
-       error_code, ERROR_DESC, error_desc});
+      {CURRENT_INSTANCE_ID, std::to_string(instanceId), ERROR_TYPE, error_type, ERROR_CODE,
+       std::to_string(error_code), ERROR_DESC, error_desc});
 }
 
 void ReportJankStats(int64_t startTime,
@@ -90,4 +93,9 @@ void ReportJankStats(int64_t startTime,
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       JANK_STATS_APP, HiSysEventAdapter::EventType::STATISTIC,
       {STARTTIME, startTime, DURATION, duration, JANK_STATS, jankStats, JANK_STATS_VER, jankStatsVer});
+}
+
+void ReportLockdownModeStatus(void) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      RENDER_JIT_LOCKDOWN, HiSysEventAdapter::EventType::BEHAVIOR, {LOCKDOWN_MODE_STATUS, "true"});
 }

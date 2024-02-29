@@ -391,6 +391,14 @@ RestrictedCookieManager::~RestrictedCookieManager() {
     // The entire list is going away, no need to remove nodes from it.
     delete listener_reference;
   }
+#if BUILDFLAG(IS_OHOS)
+  base::LinkNode<CookieSharedMemoryHolder>* holder = shm_holders_.head();
+  while (holder != shm_holders_.end()) {
+    CookieSharedMemoryHolder* shm_holder_reference = holder->value();
+    holder = holder->next();
+    delete shm_holder_reference;
+  }
+#endif
 }
 
 void RestrictedCookieManager::OverrideIsolationInfoForTesting(
@@ -722,6 +730,33 @@ void RestrictedCookieManager::SetCanonicalCookieResult(
   }
   std::move(user_callback).Run(access_result.status.IsInclude());
 }
+
+#if BUILDFLAG(IS_OHOS)
+void RestrictedCookieManager::RegisterCookieChangeObserver(
+    const GURL& url,
+    const net::SiteForCookies& site_for_cookies,
+    const url::Origin& top_frame_origin,
+    bool has_storage_access,
+    mojo::ScopedSharedBufferHandle buffer,
+    RegisterCookieChangeObserverCallback callback) {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  if (!ValidateAccessToCookiesAt(url, site_for_cookies, top_frame_origin)) {
+    std::move(callback).Run();
+    return;
+  }
+
+  net::CookieOptions net_options =
+      MakeOptionsForGet(role_, url, site_for_cookies, isolation_info_,
+                        cookie_settings(), first_party_set_metadata_);
+  mojo::ScopedSharedBufferMapping mapping = buffer->Map(sizeof(bool));
+  auto shm_holder = std::make_unique<CookieSharedMemoryHolder>(
+      cookie_store_, this, url, site_for_cookies, top_frame_origin,
+      has_storage_access, cookie_partition_key_, net_options, std::move(mapping),
+      same_party_attribute_enabled_);
+  shm_holders_.Append(shm_holder.release());
+  std::move(callback).Run(true);
+}
+#endif // BUILDFLAG(IS_OHOS)
 
 void RestrictedCookieManager::AddChangeListener(
     const GURL& url,

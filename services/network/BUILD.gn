@@ -277,6 +277,14 @@ component("network_service") {
     ]
   }
 
+  if (is_ohos) {
+    sources += [
+      "cookie_shared_memory_holder.cc",
+      "cookie_shared_memory_holder.h",
+      "../../third_party/blink/renderer/core/loader/cookie_status.h"
+    ]
+  }
+
   configs += [ "//build/config/compiler:wexit_time_destructors" ]
 
   deps = [

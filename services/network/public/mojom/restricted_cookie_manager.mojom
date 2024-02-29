@@ -4,6 +4,7 @@
 
 module network.mojom;
 
+import "mojo/public/mojom/base/time.mojom";
 import "services/network/public/mojom/cookie_manager.mojom";
 import "services/network/public/mojom/site_for_cookies.mojom";
 import "url/mojom/url.mojom";
@@ -127,6 +128,14 @@ interface RestrictedCookieManager {
                    bool has_storage_access) => (
                    string cookies);
 
+  [EnableIf=is_ohos, Sync]
+  SetCookieFromStringAndExpiryDate(
+      url.mojom.Url url,
+      SiteForCookies site_for_cookies,
+      url.mojom.Origin top_frame_origin,
+      bool has_storage_access) => (
+      string cookies, mojo_base.mojom.Time expiry_date, bool have_expiry_date);
+
   // Used to check if cookies are enabled for the given URL in context of a
   // given site.
   //
@@ -138,4 +147,12 @@ interface RestrictedCookieManager {
       SiteForCookies site_for_cookies,
       url.mojom.Origin top_frame_origin,
       bool has_storage_access) => (bool cookies_enabled);
+
+  [EnableIf=is_ohos, Sync]
+  RegisterCookieChangeObserver(
+    url.mojom.Url url,
+    SiteForCookies site_for_cookies,
+    url.mojom.Origin top_frame_origin,
+    bool has_storage_access,
+    handle<shared_buffer> buffer) => (bool success);
 };

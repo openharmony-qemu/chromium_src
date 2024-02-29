@@ -23,4 +23,20 @@ void TouchEditingControllerFactory::SetInstance(
   g_shared_instance = instance;
 }
 
+#ifdef OHOS_CLIPBOARD
+//static
+int TouchEditable::ConvertMenuCommands(int ohos_command_id) {
+  switch (ohos_command_id) {
+    case QM_EDITFLAG_CAN_CUT:
+      return kCut;
+    case QM_EDITFLAG_CAN_COPY:
+      return kCopy;
+    case QM_EDITFLAG_CAN_PASTE:
+      return kPaste;
+    case QM_EDITFLAG_CAN_SELECT_ALL:
+      return kSelectAll;
+  }
+  return QM_EDITFLAG_NONE;
+}
+#endif
 }  // namespace ui

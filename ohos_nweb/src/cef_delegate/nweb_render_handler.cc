@@ -601,6 +601,10 @@ void NWebRenderHandler::OnTouchSelectionChanged(
 }
 
 #ifdef OHOS_DRAG_DROP
+void NWebRenderHandler::NotifySelectAllClicked(bool select_all)
+{
+  select_all_ = select_all;
+}
 void NWebRenderHandler::ImageDragForFileUri(CefRefPtr<CefDragData> drag_data) {
   // default temp dir in sandbox
   CefString tempPath("/data/storage/el2/base/haps/entry/temp/dragdrop/");
@@ -680,9 +684,17 @@ bool NWebRenderHandler::StartDragging(CefRefPtr<CefBrowser> browser,
           end_selection_handle_.origin.y - end_selection_handle_.edge_height),
       CefPoint(end_selection_handle_.origin.x, end_selection_handle_.origin.y)};
 
+  bool usefull_selection = false;
+  if (!link_url.empty() && !drag_data->IsImageFileContents()) {
+    usefull_selection = false;
+  } else if (select_all_) {
+    usefull_selection = false;
+  } else {
+    usefull_selection = is_irregular_drag_background_;
+  }
   nweb_drag_data_ = std::make_shared<NWebDragDataImpl>(
       drag_data, drag_touch_point, start_edge, end_edge,
-      screen_info_.display_ratio, is_irregular_drag_background_);
+      screen_info_.display_ratio, usefull_selection);
 
   auto handler = handler_.lock();
   if (handler == nullptr) {

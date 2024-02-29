@@ -135,6 +135,7 @@ class NWebRenderHandler : public CefRenderHandler {
                      int y) override;
   void SetIrregularDragBackground(bool is_irregular_background);
   void FreePixlMapData();
+  void NotifySelectAllClicked(bool select_all) override;
 #endif // #ifdef OHOS_DRAG_DROP
 
 #if BUILDFLAG(IS_OHOS)
@@ -193,6 +194,7 @@ class NWebRenderHandler : public CefRenderHandler {
 #ifdef OHOS_DRAG_DROP
   std::shared_ptr<NWebDragData> nweb_drag_data_ = nullptr;
   bool is_irregular_drag_background_ = true;
+  bool select_all_ = false;
 #endif // #ifdef OHOS_DRAG_DROP
 
 #if defined(OHOS_INPUT_EVENTS)

@@ -41,7 +41,7 @@ gfx::AcceleratedWidget CastToAcceleratedWidget(int i) {
 // Used by the GpuMemoryBufferHandle test to produce a valid object handle to
 // embed in a NativePixmapPlane object, so that the test isn't sending an
 // invalid FD/vmo object where the mojom requires a valid one.
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 base::ScopedFD CreateValidLookingBufferHandle() {
   return base::UnsafeSharedMemoryRegion::TakeHandleForSerialization(
              base::UnsafeSharedMemoryRegion::Create(1024))
@@ -201,7 +201,7 @@ TEST_F(StructTraitsTest, GpuMemoryBufferHandle) {
   handle2.id = kId;
   handle2.offset = kOffset;
   handle2.stride = kStride;
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   const uint64_t kModifier = 2;
   base::ScopedFD buffer_handle = CreateValidLookingBufferHandle();
   handle2.native_pixmap_handle.modifier = kModifier;

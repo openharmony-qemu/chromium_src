@@ -101,6 +101,7 @@ class MockFrameSinkManagerClient : public mojom::FrameSinkManagerClient {
   MOCK_METHOD1(OnFirstSurfaceActivation, void(const SurfaceInfo&));
   MOCK_METHOD3(OnFrameTokenChanged,
                void(const FrameSinkId&, uint32_t, base::TimeTicks));
+  void OnVsync(uint32_t client_id, uint32_t sink_id) override {}
   void OnAggregatedHitTestRegionListUpdated(
       const FrameSinkId& frame_sink_id,
       const std::vector<AggregatedHitTestRegion>& hit_test_data) override {}

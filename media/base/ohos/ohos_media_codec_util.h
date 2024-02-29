@@ -8,15 +8,15 @@
 #include "media_codec_adapter.h"
 #include "ohos_adapter_helper.h"
 
-
 namespace media {
 using namespace OHOS::NWeb;
 using namespace std;
 class OHOSMediaCodecUtil {
  public:
-  static CapabilityDataAdapter GetCodecCapability(const std::string &mime, const bool isCodec);
+  static CapabilityDataAdapter GetCodecCapability(const std::string& mime,
+                                                  bool isCodec);
 };
 
-}   // namespace meida
+}  // namespace media
 
 #endif  // MEDIA_BASE_OHOS_MEDIA_CODEC_UTIL_H_

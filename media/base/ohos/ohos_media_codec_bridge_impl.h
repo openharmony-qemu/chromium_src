@@ -106,7 +106,7 @@ public:
 private:
   OHOSMediaCodecBridgeImpl(std::string &mime);
   void PopOutQueue();
-  void UpdatsStatusAndClearCache(const bool &is_running);
+  void UpdateStatusAndClearCache(bool is_running);
   std::unique_ptr<MediaCodecAdapter> codec_adapter_;
   // bool isFirstCodecFrame_ = true;
   std::shared_ptr<CodecBridgeSignal> signal_ = nullptr;

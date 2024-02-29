@@ -40,7 +40,7 @@ OHOSVideoEncodeAccelerator::OHOSVideoEncodeAccelerator()
 
 OHOSVideoEncodeAccelerator::~OHOSVideoEncodeAccelerator() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-  LOG(INFO)  << "ohos video encode accelerator destroy";
+  LOG(INFO) << "ohos video encode accelerator destroy";
 }
 
 VideoEncodeAccelerator::SupportedProfiles
@@ -50,18 +50,20 @@ OHOSVideoEncodeAccelerator::GetSupportedProfiles() {
   CapabilityDataAdapter H264capabilityAdapter =
       OHOSMediaCodecUtil::GetCodecCapability("video/avc", true);
   H264profile.profile = H264PROFILE_BASELINE;
-  H264profile.max_resolution.SetSize(H264capabilityAdapter.maxWidth, H264capabilityAdapter.maxHeight);
+  H264profile.max_resolution.SetSize(H264capabilityAdapter.maxWidth,
+                                     H264capabilityAdapter.maxHeight);
   H264profile.max_framerate_numerator = H264capabilityAdapter.maxframeRate;
   LOG(INFO) << __func__ << ", maxWidth: " << H264capabilityAdapter.maxWidth
-              << ", maxHeight: " << H264capabilityAdapter.maxHeight
-              << ", maxframeRate" << H264capabilityAdapter.maxframeRate;
+            << ", maxHeight: " << H264capabilityAdapter.maxHeight
+            << ", maxframeRate" << H264capabilityAdapter.maxframeRate;
   profiles.push_back(H264profile);
   return profiles;
 }
 
-bool OHOSVideoEncodeAccelerator::Initialize(const Config& config,
-                                               Client* client,
-                                               std::unique_ptr<MediaLog> media_log) {
+bool OHOSVideoEncodeAccelerator::Initialize(
+    const Config& config,
+    Client* client,
+    std::unique_ptr<MediaLog> media_log) {
   LOG(INFO) << __func__ << ", config:  " << config.AsHumanReadableString();
   DCHECK(!media_codec_);
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
@@ -93,10 +95,10 @@ bool OHOSVideoEncodeAccelerator::Initialize(const Config& config,
   config_para.height = config.input_visible_size.height();
   config_para.bitRate = config.bitrate.target_bps();
   config_para.frameRate = INITIAL_FRAMERATE;
-  
+
   if (media_codec_->Configure(config_para,
-                              base::SequencedTaskRunner::GetCurrentDefault())
-                              != CodecCodeAdapter::OK) {
+                              base::SequencedTaskRunner::GetCurrentDefault()) !=
+      CodecCodeAdapter::OK) {
     LOG(ERROR) << "fail to set encoder config";
     return false;
   }
@@ -116,9 +118,8 @@ bool OHOSVideoEncodeAccelerator::Initialize(const Config& config,
     return false;
   }
 
-  const size_t output_buffer_capacity =
-      VideoFrame::AllocationSize(config.input_format,
-                                 config.input_visible_size);
+  const size_t output_buffer_capacity = VideoFrame::AllocationSize(
+      config.input_format, config.input_visible_size);
   base::SequencedTaskRunner::GetCurrentDefault()->PostTask(
       FROM_HERE,
       base::BindOnce(&VideoEncodeAccelerator::Client::RequireBitstreamBuffers,
@@ -143,7 +144,7 @@ void OHOSVideoEncodeAccelerator::MaybeStopIOTimer() {
 }
 
 void OHOSVideoEncodeAccelerator::Encode(scoped_refptr<VideoFrame> frame,
-                                           bool force_keyframe) {
+                                        bool force_keyframe) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   if (frame->format() != PIXEL_FORMAT_I420) {
     NotifyErrorStatus(
@@ -183,8 +184,9 @@ void OHOSVideoEncodeAccelerator::Destroy() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   client_ptr_factory_.reset();
   if (media_codec_) {
-    if (io_timer_.IsRunning())
-       io_timer_.Stop();
+    if (io_timer_.IsRunning()) {
+      io_timer_.Stop();
+    }
     media_codec_->Release();
   }
   delete this;
@@ -218,9 +220,9 @@ void OHOSVideoEncodeAccelerator::QueueInput() {
          frame_timestamp_map_.end());
   frame_timestamp_map_[presentation_timestamp_] = frame->timestamp();
 
-  if (media_codec_->FillSurfaceBuffer(std::move(frame),
-                                      presentation_timestamp_.InMicroseconds())
-                                      != CodecCodeAdapter::OK) {
+  if (media_codec_->FillSurfaceBuffer(
+          std::move(frame), presentation_timestamp_.InMicroseconds()) !=
+      CodecCodeAdapter::OK) {
     return;
   }
   LOG(DEBUG) << "QueueInput num_buffers_at_codec_ " << num_buffers_at_codec_;
@@ -240,7 +242,8 @@ void OHOSVideoEncodeAccelerator::DequeueOutput() {
   BufferInfo info;
   BufferFlag flag;
   OhosBuffer buffer;
-  CodecCodeAdapter ret = media_codec_->DequeueOutputBuffer(index, info, flag, buffer);
+  CodecCodeAdapter ret =
+      media_codec_->DequeueOutputBuffer(index, info, flag, buffer);
 
   switch (ret) {
     case CodecCodeAdapter::RETRY:
@@ -261,10 +264,12 @@ void OHOSVideoEncodeAccelerator::DequeueOutput() {
       break;
   }
   base::TimeDelta frame_timestamp;
-  base::TimeDelta presentaion_timestamp = base::Microseconds(info.presentationTimeUs);
+  base::TimeDelta presentaion_timestamp =
+      base::Microseconds(info.presentationTimeUs);
   const auto it = frame_timestamp_map_.find(presentaion_timestamp);
   if (it == frame_timestamp_map_.end()) {
-    LOG(DEBUG) << "DequeueOutput can not find timestamp " << presentaion_timestamp.InMicroseconds();
+    LOG(DEBUG) << "DequeueOutput can not find timestamp "
+               << presentaion_timestamp.InMicroseconds();
     return;
   }
   DCHECK(it != frame_timestamp_map_.end());
@@ -298,7 +303,7 @@ void OHOSVideoEncodeAccelerator::DequeueOutput() {
     media_codec_->ClearKeyFrameCache();
   }
   LOG(DEBUG) << "DequeueOutput num_buffers_at_codec_ " << num_buffers_at_codec_
-              << ", key_frame: " << key_frame;
+             << ", key_frame: " << key_frame;
   media_codec_->ReleaseOutputBuffer(index, false);
   --num_buffers_at_codec_;
 

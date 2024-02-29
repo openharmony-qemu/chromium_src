@@ -19,6 +19,11 @@ if (is_ohos) {
       "ohos_media_player_callback.h",
       "ohos_media_player_listener.cc",
       "ohos_media_player_listener.h",
+      "ohos_media_codec_bridge_impl.cc",
+      "ohos_media_codec_bridge_impl.h",
+      "ohos_media_codec_bridge.h",
+      "ohos_media_codec_util.cc",
+      "ohos_media_codec_util.h",
     ]
     configs += [ "//media:subcomponent_config" ]
 

@@ -42,7 +42,7 @@ class CookieSharedMemoryHolder
   void OnCookieChange(const net::CookieChangeInfo& change);
   raw_ptr<net::CookieStore> cookie_store_;
 
-    // Raw pointer usage is safe because RestrictedCookieManager owns this
+  // Raw pointer usage is safe because RestrictedCookieManager owns this
   // instance and is guaranteed to outlive it.
   const raw_ptr<const RestrictedCookieManager> restricted_cookie_manager_;
 
@@ -68,7 +68,7 @@ class CookieSharedMemoryHolder
   // The CookieChangeDispatcher sunscription used by this listener.
   std::unique_ptr<net::CookieChangeSubscription> cookie_store_subscription_;
 
-  mojo::ScopedSharedBufferMapping mapping_
+  mojo::ScopedSharedBufferMapping mapping_;
 
   const bool same_party_attribute_enabled_;
 };

@@ -741,7 +741,7 @@ void RestrictedCookieManager::RegisterCookieChangeObserver(
     RegisterCookieChangeObserverCallback callback) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   if (!ValidateAccessToCookiesAt(url, site_for_cookies, top_frame_origin)) {
-    std::move(callback).Run();
+    std::move(callback).Run(false);
     return;
   }
 
@@ -867,6 +867,33 @@ void RestrictedCookieManager::GetCookiesString(
                  return net::CanonicalCookie::BuildCookieLine(cookies);
                }).Then(std::move(callback)));
 }
+
+#if BUILDFLAG(IS_OHOS)
+void RestrictedCookieManager::GetCookiesStringAndExpiryDate(
+    const GURL& url,
+    const net::SiteForCookies& site_for_cookies,
+    const url::Origin& top_frame_origin,
+    bool has_storage_access,
+    GetCookiesStringAndExpiryDateCallback callback) {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  // Checks done by GetAllForUrl
+
+  if (metrics_updater_) {
+    metrics_updater_->OnGetCookiesString();
+  }
+
+  // Match everything.
+  auto match_options = mojom::CookieManagerGetOptions::New();
+  match_options->name = "";
+  match_options->match_type = mojom::CookieMatchType::STARTS_WITH;
+  GetAllForUrl(url, site_for_cookies, top_frame_origin, has_storage_access,
+               std::move(match_options),
+               base::BindOnce([](GetCookiesStringAndExpiryDateCallback callback,
+                                 const std::vector<net::CookieWithAccessResult>& cookies) {
+                 net::CanonicalCookie::BuildCookieLineWithExpiryDate(cookies, std::move(callback));
+               }, std::move(callback)));
+}
+#endif
 
 void RestrictedCookieManager::CookiesEnabledFor(
     const GURL& url,

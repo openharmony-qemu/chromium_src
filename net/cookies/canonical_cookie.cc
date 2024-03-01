@@ -1490,7 +1490,7 @@ void CanonicalCookie::BuildCookieLineWithExpiryDate(
     base::OnceCallback<void(const std::string&, base::Time, bool)> callback) {
   std::string cookie_line;
   base::Time string_expiry_date;
-  bool have_expiry_date;
+  bool have_expiry_date = false;
   for (const auto& cookie_with_access_result : cookie_access_result_list) {
     const CanonicalCookie& cookie = cookie_with_access_result.cookie;
     AppendCookieLineEntry(cookie, &cookie_line);

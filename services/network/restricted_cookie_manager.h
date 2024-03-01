@@ -267,7 +267,6 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) RestrictedCookieManager
       base::OnceClosure done_closure,
       net::FirstPartySetMetadata first_party_set_metadata);
 
-
   void OnCookiesAccessed(network::mojom::CookieAccessDetailsPtr details);
 
   void CallCookiesAccessed();

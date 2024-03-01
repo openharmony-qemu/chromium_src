@@ -1269,6 +1269,22 @@ void MediaSessionImpl::ExitPictureInPicture() {
       normal_players_.begin()->first.player_id);
 }
 
+#ifdef OHOS_MEDIA_POLICY
+MediaSessionImpl::NWebPlaybackState MediaSessionImpl::NWebGetState() {
+  if (GetMediaAudioVideoStates().empty()) {
+    return NWebPlaybackState::NONE;
+  }
+  if (IsSuspended()) {
+    return NWebPlaybackState::PAUSED;
+  }
+  if (IsActive()) {
+    return NWebPlaybackState::PLAYING;
+  } else {
+    return NWebPlaybackState::STOP;
+  }
+}
+#endif // OHOS_MEDIA_POLICY
+
 void MediaSessionImpl::SetAudioSinkId(const absl::optional<std::string>& id) {
   audio_device_id_for_origin_ = id;
 

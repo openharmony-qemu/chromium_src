@@ -1473,6 +1473,56 @@ ark_web_nweb_get_print_background(struct _ark_web_nweb_t *self) {
   return ArkWebNWebCppToC::Get(self)->GetPrintBackground();
 }
 
+void ARK_WEB_CALLBACK
+ark_web_nweb_close_all_media_presentations(struct _ark_web_nweb_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->CloseAllMediaPresentations();
+}
+
+void ARK_WEB_CALLBACK
+ark_web_nweb_stop_all_media(struct _ark_web_nweb_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->StopAllMedia();
+}
+
+void ARK_WEB_CALLBACK
+ark_web_nweb_resume_all_media(struct _ark_web_nweb_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->ResumeAllMedia();
+}
+
+void ARK_WEB_CALLBACK
+ark_web_nweb_pause_all_media(struct _ark_web_nweb_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->PauseAllMedia();
+}
+
+int ARK_WEB_CALLBACK
+ark_web_nweb_get_media_playback_state(struct _ark_web_nweb_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, 0);
+
+  // Execute
+  return ArkWebNWebCppToC::Get(self)->GetMediaPlaybackState();
+}
+
 } // namespace
 
 ArkWebNWebCppToC::ArkWebNWebCppToC() {
@@ -1630,6 +1680,12 @@ ArkWebNWebCppToC::ArkWebNWebCppToC() {
   GetStruct()->is_safe_browsing_enabled = ark_web_nweb_is_safe_browsing_enabled;
   GetStruct()->set_print_background = ark_web_nweb_set_print_background;
   GetStruct()->get_print_background = ark_web_nweb_get_print_background;
+  GetStruct()->close_all_media_presentations =
+      ark_web_nweb_close_all_media_presentations;
+  GetStruct()->stop_all_media = ark_web_nweb_stop_all_media;
+  GetStruct()->resume_all_media = ark_web_nweb_resume_all_media;
+  GetStruct()->pause_all_media = ark_web_nweb_pause_all_media;
+  GetStruct()->get_media_playback_state = ark_web_nweb_get_media_playback_state;
 }
 
 ArkWebNWebCppToC::~ArkWebNWebCppToC() {

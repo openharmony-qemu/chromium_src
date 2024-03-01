@@ -1098,6 +1098,22 @@ void ArkWebHandlerCToCpp::OnSafeBrowsingCheckResult(int threat_type) {
   _struct->on_safe_browsing_check_result(_struct, threat_type);
 }
 
+ARK_WEB_NO_SANITIZE
+bool ArkWebHandlerCToCpp::OnHandleOverrideUrlLoading(
+    ArkWebRefPtr<ArkWebUrlResourceRequest> request) {
+  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
+
+  ark_web_handler_t *_struct = GetStruct();
+  ARK_WEB_CTOCPP_CHECK_PARAM(_struct, false);
+
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, on_handle_override_url_loading,
+                                   false);
+
+  // Execute
+  return _struct->on_handle_override_url_loading(
+      _struct, ArkWebUrlResourceRequestCppToC::Invert(request));
+}
+
 ArkWebHandlerCToCpp::ArkWebHandlerCToCpp() {
 }
 

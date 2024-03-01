@@ -1040,7 +1040,7 @@ base::Value::Dict ContentBrowserClient::GetNetLogConstants() {
   return base::Value::Dict();
 }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 bool ContentBrowserClient::ShouldOverrideUrlLoading(
     int frame_tree_node_id,
     bool browser_initiated,
@@ -1053,7 +1053,9 @@ bool ContentBrowserClient::ShouldOverrideUrlLoading(
     bool* ignore_navigation) {
   return true;
 }
+#endif
 
+#if BUILDFLAG(IS_ANDROID)
 bool ContentBrowserClient::SupportsAvoidUnnecessaryBeforeUnloadCheckSync() {
   return true;
 }

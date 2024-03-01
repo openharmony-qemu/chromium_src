@@ -317,6 +317,13 @@ class NWebHandlerDelegate : public CefClient,
                           const CefString& realm,
                           const CefString& scheme,
                           CefRefPtr<CefAuthCallback> callback) override;
+
+  bool ShouldOverrideUrlLoading(CefRefPtr<CefBrowser> browser,
+                                const CefString& url,
+                                const CefString& method,
+                                bool user_gesture,
+                                bool is_redirect,
+                                bool is_outermost_main_frame) override;
   /* CefRequestHandler methods end */
 
   /* CefDownloadHandler methods begin */

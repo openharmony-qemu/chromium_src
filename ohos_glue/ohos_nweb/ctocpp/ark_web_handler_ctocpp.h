@@ -227,6 +227,9 @@ public:
       ArkWebRefPtr<ArkWebNativeEmbedTouchEvent> touch_event) override;
 
   void OnSafeBrowsingCheckResult(int threat_type) override;
+
+  bool OnHandleOverrideUrlLoading(
+      ArkWebRefPtr<ArkWebUrlResourceRequest> request) override;
 };
 
 } // namespace OHOS::ArkWeb

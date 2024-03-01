@@ -2295,10 +2295,10 @@ void NWebHandlerDelegate::RegisterNativeJavaScriptCallBack(
 void NWebHandlerDelegate::RegisterNativeJavaScriptCallBack(
     const std::string& objName,
     const std::vector<std::string>& methodName,
-    std::vector<NativeJSProxyCallbackFunc>&& callback,
-    int32_t size) {
+    std::vector<NativeJSProxyCallbackFunc>&& callback) {
   std::unordered_map<std::string, NativeJSProxyCallbackFunc> map;
-  for (int i = 0; i < size; i++) {
+  size_t size = methodName.size();
+  for (size_t i = 0; i < size; i++) {
     map[methodName[i]] = callback[i];
   }
   proxyObjMap_[objName] = map;
@@ -2369,14 +2369,23 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNew(
     return 1;
   }
 
-  auto callback = methodMap[method];
+  if (!args) {
+    LOG(ERROR) << "args is nullptr";
+    return 1;
+  }
   size_t argsSize = args->GetSize();
+  auto callback = methodMap[method];
   std::vector<std::vector<uint8_t>> dataList(argsSize);
   std::vector<size_t> dataSize(argsSize);
 
   for (size_t i = 0; i < argsSize; i++) {
     CefValueType type = args->GetType(i);
     CefRefPtr<CefValue> value = args->GetValue(i);
+    if (!value) {
+      LOG(ERROR) << "value is nullptr";
+      continue;
+    }
+
     if (type == VTYPE_STRING) {
       auto argString = value->GetString().ToString();
       size_t size = argString.size();

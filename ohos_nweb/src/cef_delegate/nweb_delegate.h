@@ -155,8 +155,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       const std::string& objName,
       const std::vector<std::string>& methodName,
       std::vector<std::function<char*(std::vector<std::vector<uint8_t>>&,
-                                      std::vector<size_t>&)>>&& callback,
-      int32_t size) override;
+                                      std::vector<size_t>&)>>&& callback)
+      override;
   void UnRegisterNativeArkJSFunction(const char* objName) override;
   void RegisterNativeLoadStartCallback(
       std::function<void(void)>&& callback) override;

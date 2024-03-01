@@ -279,6 +279,11 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #if defined(OHOS_MEDIA_POLICY)
   void SetAudioResumeInterval(int32_t resumeInterval) override;
   void SetAudioExclusive(bool audioExclusive) override;
+  void CloseAllMediaPresentations() override;
+  void StopAllMedia() override;
+  void ResumeAllMedia() override;
+  void PauseAllMedia() override;
+  int GetMediaPlaybackState() override;
 #endif  // defined(OHOS_MEDIA_POLICY)
 
 #if defined(OHOS_NO_STATE_PREFETCH)

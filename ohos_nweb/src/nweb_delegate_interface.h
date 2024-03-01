@@ -310,6 +310,11 @@ class NWebDelegateInterface
 #if defined(OHOS_MEDIA_POLICY)
   virtual void SetAudioResumeInterval(int32_t resumeInterval) = 0;
   virtual void SetAudioExclusive(bool audioExclusive) = 0;
+  virtual void CloseAllMediaPresentations() = 0;
+  virtual void StopAllMedia() = 0;
+  virtual void ResumeAllMedia() = 0;
+  virtual void PauseAllMedia() = 0;
+  virtual int GetMediaPlaybackState() = 0;
 #endif // defined(OHOS_MEDIA_POLICY)
 
 #if defined(OHOS_NO_STATE_PREFETCH)

@@ -314,6 +314,9 @@ typedef struct _ark_web_handler_t {
 
   void(ARK_WEB_CALLBACK *on_safe_browsing_check_result)(
       struct _ark_web_handler_t *self, int threat_type);
+
+  bool(ARK_WEB_CALLBACK *on_handle_override_url_loading)(
+      struct _ark_web_handler_t *self, ark_web_url_resource_request_t *request);
 } ark_web_handler_t;
 
 #ifdef __cplusplus

@@ -1851,7 +1851,7 @@ class CONTENT_EXPORT ContentBrowserClient {
   // convention is to put new constants under a subdict at the key "clientInfo".
   virtual base::Value::Dict GetNetLogConstants();
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   // Only used by Android WebView.
   // Returns:
   //   true  - The check was successfully performed without throwing a
@@ -1870,7 +1870,9 @@ class CONTENT_EXPORT ContentBrowserClient {
                                         bool is_outermost_main_frame,
                                         ui::PageTransition transition,
                                         bool* ignore_navigation);
+#endif
 
+#if BUILDFLAG(IS_ANDROID)
   // Returns true if navigation can synchronously continue if the frame
   // being navigated (and all child frames) do not have beforeunload handlers.
   // Synchronously continuing with navigation can lead to reentrancy in

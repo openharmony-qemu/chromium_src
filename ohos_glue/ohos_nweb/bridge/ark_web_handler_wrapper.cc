@@ -761,4 +761,14 @@ void ArkWebHandlerWrapper::OnSafeBrowsingCheckResult(int threat_type) {
   ark_web_handler_->OnSafeBrowsingCheckResult(threat_type);
 }
 
+bool ArkWebHandlerWrapper::OnHandleOverrideUrlLoading(
+    std::shared_ptr<OHOS::NWeb::NWebUrlResourceRequest> request) {
+  if (CHECK_SHARED_PTR_IS_NULL(request)) {
+    return ark_web_handler_->OnHandleOverrideUrlLoading(nullptr);
+  }
+
+  return ark_web_handler_->OnHandleOverrideUrlLoading(
+      new ArkWebUrlResourceRequestImpl(request));
+}
+
 } // namespace OHOS::ArkWeb

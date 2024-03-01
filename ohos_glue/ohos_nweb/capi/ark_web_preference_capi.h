@@ -277,6 +277,10 @@ typedef struct _ark_web_preference_t {
   bool(ARK_WEB_CALLBACK *get_native_embed_mode)(
       struct _ark_web_preference_t *self);
 
+  void(ARK_WEB_CALLBACK *register_native_embed_rule)(
+      struct _ark_web_preference_t *self, const ArkWebString *tag,
+      const ArkWebString *type);
+
   void(ARK_WEB_CALLBACK *set_scrollable)(struct _ark_web_preference_t *self,
                                          bool enable);
 

@@ -42,6 +42,12 @@ public:
 
   /*--ark web()--*/
   virtual ArkWebString GetType() = 0;
+
+  /*--ark web()--*/
+  virtual ArkWebString GetTag() = 0;
+
+  /*--ark web()--*/
+  virtual ArkWebStringMap GetParams() = 0;
 };
 
 } // namespace OHOS::ArkWeb

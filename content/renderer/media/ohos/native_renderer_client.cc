@@ -66,7 +66,7 @@ void NativeRenderClient::OnSurfaceCreated(int native_embed_id) {
   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
 
   std::move(create_texture_cb_)
-      .Run(base::BindOnce(&NativeRenderClient::OnVideoSizeChange,
+      .Run(base::BindRepeating(&NativeRenderClient::OnSizeChange,
                           weak_factory_.GetWeakPtr()),
            native_embed_id);
 }
@@ -90,7 +90,7 @@ void NativeRenderClient::OnFrameAvailable() {
   sink_->PaintSingleFrame(std::move(unique_frame));
 }
 
-void NativeRenderClient::OnVideoSizeChange(const gfx::Size& size) {
+void NativeRenderClient::OnSizeChange(const gfx::Size& size) {
   native_texture_wrapper_->UpdateTextureSize(size);
 }
 

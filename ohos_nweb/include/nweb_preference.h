@@ -610,6 +610,12 @@ public:
     virtual bool GetNativeEmbedMode() = 0;
 
     /**
+     * Register native embed rule. The default pattern is ["embed", "native/"].
+     */
+    virtual void RegisterNativeEmbedRule(const std::string&,
+                                         const std::string&) = 0;
+
+    /**
      * Set whether the scroll is enabled.
      */
     virtual void SetScrollable(bool enable) = 0;

@@ -233,6 +233,12 @@ class CONTENT_EXPORT VideoCaptureManager
     set_desktop_capture_window_id_callback_for_testing_ = callback;
   }
 
+#if defined(OHOS_WEBRTC)
+  void StartCamera();
+  void StopCamera();
+  void CloseCamera();
+#endif  // defined(OHOS_WEBRTC)
+
  private:
   class CaptureDeviceStartRequest;
 

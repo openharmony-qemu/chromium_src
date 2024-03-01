@@ -1550,6 +1550,15 @@ void ARK_WEB_CALLBACK ark_web_nweb_close_camera(struct _ark_web_nweb_t *self) {
   ArkWebNWebCppToC::Get(self)->CloseCamera();
 }
 
+ArkWebString ARK_WEB_CALLBACK ark_web_nweb_get_last_javascript_proxy_calling_frame_url(struct _ark_web_nweb_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, ark_web_string_default);
+
+  // Execute
+  return ArkWebNWebCppToC::Get(self)->GetLastJavascriptProxyCallingFrameUrl();
+}
+
 } // namespace
 
 ArkWebNWebCppToC::ArkWebNWebCppToC() {
@@ -1716,6 +1725,7 @@ ArkWebNWebCppToC::ArkWebNWebCppToC() {
   GetStruct()->start_camera = ark_web_nweb_start_camera;
   GetStruct()->stop_camera = ark_web_nweb_stop_camera;
   GetStruct()->close_camera = ark_web_nweb_close_camera;
+  GetStruct()->get_last_javascript_proxy_calling_frame_url = ark_web_nweb_get_last_javascript_proxy_calling_frame_url;
 }
 
 ArkWebNWebCppToC::~ArkWebNWebCppToC() {

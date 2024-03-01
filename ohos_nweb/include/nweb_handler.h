@@ -194,6 +194,10 @@ public:
     virtual std::string GetUrl() = 0;
 
     virtual std::string GetType() = 0;
+
+    virtual std::string GetTag() = 0;
+
+    virtual std::map<std::string, std::string> GetParams() = 0;
 };
 
 class NWebNativeEmbedDataInfo {

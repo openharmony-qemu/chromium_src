@@ -47,4 +47,12 @@ ArkWebString ArkWebNativeEmbedInfoImpl::GetType() {
   return ArkWebStringClassToStruct(nweb_native_embed_info_->GetType());
 }
 
+ArkWebString ArkWebNativeEmbedInfoImpl::GetTag() {
+  return ArkWebStringClassToStruct(nweb_native_embed_info_->GetTag());
+}
+
+ArkWebStringMap ArkWebNativeEmbedInfoImpl::GetParams() {
+  return ArkWebStringMapClassToStruct(nweb_native_embed_info_->GetParams());
+}
+
 } // namespace OHOS::ArkWeb

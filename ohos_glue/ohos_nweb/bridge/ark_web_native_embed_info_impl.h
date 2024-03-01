@@ -42,6 +42,9 @@ public:
 
   ArkWebString GetType() override;
 
+  ArkWebString GetTag() override;
+
+  ArkWebStringMap GetParams() override;
 private:
   std::shared_ptr<OHOS::NWeb::NWebNativeEmbedInfo> nweb_native_embed_info_;
 };

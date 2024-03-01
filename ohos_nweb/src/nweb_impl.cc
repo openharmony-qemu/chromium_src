@@ -2179,6 +2179,18 @@ void NWebImpl::CloseCamera() {
 #endif  // defined(OHOS_WEBRTC)
 }
 
+std::string NWebImpl::GetLastJavascriptProxyCallingFrameUrl() {
+#if defined(OHOS_SECURE_JAVASCRIPT_PROXY)
+  if (nweb_delegate_ == nullptr) {
+    return "";
+  }
+
+  return nweb_delegate_->GetLastJavascriptProxyCallingFrameUrl();
+#else
+  return "";
+#endif
+}
+
 }  // namespace OHOS::NWeb
 
 using namespace OHOS::NWeb;

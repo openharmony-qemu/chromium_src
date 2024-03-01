@@ -10,7 +10,7 @@
 #include "services/network/restricted_cookie_manager.h"
 #include "../../third_party/blink/renderer/core/loader/cookie_status.h"
 
-namespace netwerk {
+namespace network {
 
 CookieSharedMemoryHolder::CookieSharedMemoryHolder(
     net::CookieStore* cookie_store,
@@ -30,12 +30,12 @@ CookieSharedMemoryHolder::CookieSharedMemoryHolder(
       top_frame_origin_(top_frame_origin),
       has_storage_access_(has_storage_access),
       options_(options),
-      mojo_listener_(std::move(mojo_listener)),
+      mapping_(std::move(mapping)),
       same_party_attribute_enabled_(same_party_attribute_enabled) {
   cookie_store_subscription_ =
       cookie_store->GetChangeDispatcher().AddCallbackForUrl(
           url, cookie_partition_key,
-          base::BindRepeating(&Listener::OnCookieChange,
+          base::BindRepeating(&CookieSharedMemoryHolder::OnCookieChange,
                               base::Unretained(this)));
   }
 

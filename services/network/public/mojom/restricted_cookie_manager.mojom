@@ -129,7 +129,7 @@ interface RestrictedCookieManager {
                    string cookies);
 
   [EnableIf=is_ohos, Sync]
-  SetCookieFromStringAndExpiryDate(
+  GetCookiesStringAndExpiryDate(
       url.mojom.Url url,
       SiteForCookies site_for_cookies,
       url.mojom.Origin top_frame_origin,

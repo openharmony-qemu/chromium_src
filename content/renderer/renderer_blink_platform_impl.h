@@ -91,16 +91,6 @@ class CONTENT_EXPORT RendererBlinkPlatformImpl : public BlinkPlatformImpl {
   std::unique_ptr<blink::URLLoaderThrottleProvider>
   CreateURLLoaderThrottleProviderForWorker(
       blink::URLLoaderThrottleProviderType provider_type) override;
-  void CreateWebGPUGraphicsContext3DProviderAsync(
-      const blink::WebURL& document_url,
-      base::OnceCallback<
-          void(std::unique_ptr<blink::WebGraphicsContext3DProvider>)> callback)
-      override;
-  void OnGpuChannelEstablished(
-      const blink::WebURL& document_url,
-      base::OnceCallback<
-          void(std::unique_ptr<blink::WebGraphicsContext3DProvider>)> callback,
-      scoped_refptr<gpu::GpuChannelHost> gpu_channel_host);
   std::unique_ptr<blink::WebSocketHandshakeThrottleProvider>
   CreateWebSocketHandshakeThrottleProvider() override;
   blink::WebString DefaultLocale() override;
@@ -276,9 +266,6 @@ class CONTENT_EXPORT RendererBlinkPlatformImpl : public BlinkPlatformImpl {
   std::unique_ptr<base::Thread> video_frame_compositor_thread_;
 
   THREAD_CHECKER(main_thread_checker_);
-
-  // Used for callbacks.
-  base::WeakPtrFactory<RendererBlinkPlatformImpl> weak_factory_{this};
 };
 
 }  // namespace content

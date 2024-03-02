@@ -808,6 +808,14 @@ InputHandler::EventListenerTypeForTouchStartOrMoveAt(
   if (layer_impl_with_touch_handler == nullptr) {
     if (out_touch_action)
       *out_touch_action = TouchAction::kAuto;
+#if BUILDFLAG(IS_OHOS)
+  LayerImpl* layer_impl = ActiveTree().FindLayerThatIsHitByPoint(device_viewport_point);
+  if (layer_impl) {
+    if (layer_impl->may_contain_native()) {
+       return InputHandler::TouchStartOrMoveEventListenerType::HANDLER;
+    }
+  }
+#endif
     return InputHandler::TouchStartOrMoveEventListenerType::NO_HANDLER;
   }
 

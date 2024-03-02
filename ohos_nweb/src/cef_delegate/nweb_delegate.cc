@@ -2091,6 +2091,7 @@ std::vector<uint8_t> NWebDelegate::SerializeWebState() {
     return state;
   }
 
+  state.resize(state_size);
   size_t read_size = state_value->GetData(state.data(), state_size, 0);
   if (read_size != state_size) {
     LOG(ERROR) << "SerializeWebState failed";

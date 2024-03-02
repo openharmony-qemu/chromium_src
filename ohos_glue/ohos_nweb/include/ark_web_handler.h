@@ -610,6 +610,20 @@ public:
    */
   /*--ark web()--*/
   virtual void OnSafeBrowsingCheckResult(int threat_type) = 0;
+
+  /**
+   * @brief called when the page enter the full-screen mode.
+   *
+   * @param handler to exit full-screen mode.
+   * @param video_natural_width indicates the width of the <video> element
+   * entering full screen.
+   * @param video_natural_height indicates the height of the <video> element
+   * entering full screen.
+   */
+  /*--ark web()--*/
+  virtual void OnFullScreenEnterWithVideoSize(
+      ArkWebRefPtr<ArkWebFullScreenExitHandler> handler,
+      int video_natural_width, int video_natural_height) = 0;
 };
 
 } // namespace OHOS::ArkWeb

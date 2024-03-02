@@ -33,8 +33,8 @@
 #include "nweb_impl.h"
 
 #include "nweb_console_log_impl.h"
-#include "nweb_engine_impl.h"
 #include "nweb_data_resubmission_callback_impl.h"
+#include "nweb_engine_impl.h"
 #include "nweb_full_screen_exit_handler_impl.h"
 #include "nweb_geolocation_callback.h"
 #include "nweb_js_dialog_result_impl.h"
@@ -268,23 +268,17 @@ const char kOffScreenFrameRate[] = "off-screen-frame-rate";
 class NWebDateTimeSuggestionImpl : public NWebDateTimeSuggestion {
  public:
   NWebDateTimeSuggestionImpl() = default;
-  NWebDateTimeSuggestionImpl(const DateTime &value, const std::string &label,
-                             const std::string &localized_value)
-      : value_(value), label_(label), localized_value_(localized_value) {
-  }
+  NWebDateTimeSuggestionImpl(const DateTime& value,
+                             const std::string& label,
+                             const std::string& localized_value)
+      : value_(value), label_(label), localized_value_(localized_value) {}
   ~NWebDateTimeSuggestionImpl() = default;
 
-  std::string GetLabel() override {
-    return label_;
-  }
+  std::string GetLabel() override { return label_; }
 
-  DateTime GetValue() override {
-    return value_;
-  }
+  DateTime GetValue() override { return value_; }
 
-  std::string GetLocalizedValue() override {
-    return localized_value_;
-  }
+  std::string GetLocalizedValue() override { return localized_value_; }
 
  private:
   DateTime value_;
@@ -530,7 +524,7 @@ CefRefPtr<CefKeyboardHandler> NWebHandlerDelegate::GetKeyboardHandler() {
 CefRefPtr<CefPrintHandler> NWebHandlerDelegate::GetPrintHandler() {
   return this;
 }
-#endif // defined(OHOS_PRINT)
+#endif  // defined(OHOS_PRINT)
 
 CefRefPtr<CefFormHandler> NWebHandlerDelegate::GetFormHandler() {
   return this;
@@ -544,7 +538,7 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
   CEF_REQUIRE_UI_THREAD();
 
   if (browser && browser->GetHost() && window_id_ != 0 && nweb_id_ != 0) {
-      browser->GetHost()->SetWindowId(window_id_, nweb_id_);
+    browser->GetHost()->SetWindowId(window_id_, nweb_id_);
   }
 
 #if defined(OHOS_MULTI_WINDOW)
@@ -603,7 +597,6 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
     // Add to the list of existing browsers.
     browser_list_.push_back(browser);
   }
-
 
   if (preference_delegate_.get()) {
     preference_delegate_->SetBrowser(main_browser_);
@@ -1081,8 +1074,8 @@ void NWebHandlerDelegate::OnAudioStateChanged(CefRefPtr<CefBrowser> browser,
 #endif  // defined(OHOS_MEDIA_MUTE_AUDIO)
 
 void NWebHandlerDelegate::OnMediaStateChanged(CefRefPtr<CefBrowser> browser,
-                           MediaType type,
-                           MediaPlayingState state) {
+                                              MediaType type,
+                                              MediaPlayingState state) {
   LOG(INFO) << "NWebHandlerDelegate::OnMediaStateChanged, MediaType: "
             << static_cast<int>(type)
             << " MediaPlayingState: " << static_cast<int>(state)
@@ -1270,8 +1263,13 @@ bool NWebHandlerDelegate::GetAuthCredentials(
   return false;
 }
 
-void NWebHandlerDelegate::OnFullscreenModeChange(CefRefPtr<CefBrowser> browser,
-                                                 bool full_screen) {
+void NWebHandlerDelegate::OnFullscreenModeChange(
+    CefRefPtr<CefBrowser> browser,
+    bool full_screen,
+    const CefSize& video_natural_size) {
+  LOG(DEBUG) << __func__ << " is_fullscreen? " << full_screen
+             << ", video_natural_size: " << video_natural_size.width << "x"
+             << video_natural_size.height;
   if (nweb_handler_ == nullptr) {
     LOG(ERROR) << "OnFullscreenModeChange nweb_handler_ is null";
     return;
@@ -1279,7 +1277,8 @@ void NWebHandlerDelegate::OnFullscreenModeChange(CefRefPtr<CefBrowser> browser,
   if (full_screen) {
     std::shared_ptr<NWebFullScreenExitHandler> handler =
         std::make_shared<NWebFullScreenExitHandlerImpl>(browser);
-    nweb_handler_->OnFullScreenEnter(handler);
+    nweb_handler_->OnFullScreenEnterWithVideoSize(
+        handler, video_natural_size.width, video_natural_size.height);
   } else {
     nweb_handler_->OnFullScreenExit();
   }
@@ -1408,22 +1407,23 @@ void NWebHandlerDelegate::OnPrintStart(CefRefPtr<CefBrowser> browser) {
 }
 
 void NWebHandlerDelegate::OnPrintSettings(CefRefPtr<CefBrowser> browser,
-                                        CefRefPtr<CefPrintSettings> settings,
-                                        bool get_defaults) {
+                                          CefRefPtr<CefPrintSettings> settings,
+                                          bool get_defaults) {
   LOG(INFO) << "NWebHandlerDelegate::OnPrintSettings";
 }
 
-bool NWebHandlerDelegate::OnPrintDialog(CefRefPtr<CefBrowser> browser,
-                                      bool has_selection,
-                                      CefRefPtr<CefPrintDialogCallback> callback) {
+bool NWebHandlerDelegate::OnPrintDialog(
+    CefRefPtr<CefBrowser> browser,
+    bool has_selection,
+    CefRefPtr<CefPrintDialogCallback> callback) {
   LOG(INFO) << "NWebHandlerDelegate::OnPrintDialog";
   return false;
 }
 
 bool NWebHandlerDelegate::OnPrintJob(CefRefPtr<CefBrowser> browser,
-                                  const CefString& document_name,
-                                  const CefString& pdf_file_path,
-                                  CefRefPtr<CefPrintJobCallback> callback) {
+                                     const CefString& document_name,
+                                     const CefString& pdf_file_path,
+                                     CefRefPtr<CefPrintJobCallback> callback) {
   LOG(INFO) << "NWebHandlerDelegate::OnPrintJob";
   return false;
 }
@@ -1433,11 +1433,11 @@ void NWebHandlerDelegate::OnPrintReset(CefRefPtr<CefBrowser> browser) {
 }
 
 CefSize NWebHandlerDelegate::GetPdfPaperSize(CefRefPtr<CefBrowser> browser,
-                                          int device_units_per_inch) {
+                                             int device_units_per_inch) {
   LOG(INFO) << "NWebHandlerDelegate::GetPdfPaperSize";
   return CefSize();
 }
-#endif // defined(OHOS_PRINT)
+#endif  // defined(OHOS_PRINT)
 /* CefPrintHandler method end */
 
 /* CefDisplayHandler method begin */
@@ -1748,8 +1748,9 @@ bool NWebHandlerDelegate::OnSetFocus(CefRefPtr<CefBrowser> browser,
   if (nweb_handler_ != nullptr) {
 #ifdef OHOS_FOCUS
     if (!nweb_handler_->OnFocus()) {
-        LOG(DEBUG) << "nweb_handler request focus unsuccessful, need't to set focus";
-        return true;
+      LOG(DEBUG)
+          << "nweb_handler request focus unsuccessful, need't to set focus";
+      return true;
     }
     focusState_ = true;
 #endif  // OHOS_FOCUS
@@ -1767,9 +1768,13 @@ bool NWebHandlerDelegate::OnSetFocus(CefRefPtr<CefBrowser> browser,
 /* CefFocusHandler method end */
 
 /* CefFormHandler method begin */
-void NWebHandlerDelegate::OnFormEditingStateChanged(CefRefPtr<CefBrowser> browser, bool is_editing, uint64_t form_id) {
+void NWebHandlerDelegate::OnFormEditingStateChanged(
+    CefRefPtr<CefBrowser> browser,
+    bool is_editing,
+    uint64_t form_id) {
   bool form_editing_state_ = edited_forms_id_.size();
-  std::vector<uint64_t>::iterator it = find(edited_forms_id_.begin(), edited_forms_id_.end(), form_id);
+  std::vector<uint64_t>::iterator it =
+      find(edited_forms_id_.begin(), edited_forms_id_.end(), form_id);
 
   if (it == edited_forms_id_.end() && is_editing) {
     edited_forms_id_.push_back(form_id);
@@ -1781,7 +1786,8 @@ void NWebHandlerDelegate::OnFormEditingStateChanged(CefRefPtr<CefBrowser> browse
 
   bool current_is_editing_ = edited_forms_id_.size() != 0;
   if (current_is_editing_ != form_editing_state_) {
-    LOG(INFO) << "NWebHandlerDelegate::OnFormEditingStateChanged, is_editing: " << is_editing << " nweb_id: " << nweb_id_;
+    LOG(INFO) << "NWebHandlerDelegate::OnFormEditingStateChanged, is_editing: "
+              << is_editing << " nweb_id: " << nweb_id_;
   }
 
   if (nweb_handler_ != nullptr) {
@@ -1848,13 +1854,14 @@ void NWebHandlerDelegate::OnPermissionRequestCanceled(
 void NWebHandlerDelegate::OnScreenCaptureRequest(
     CefRefPtr<CefScreenCaptureAccessRequest> request) {
 #if defined(OHOS_WEBRTC)
-  LOG(INFO) << "NWebHandlerDelegate::OnScreenCaptureRequest origin: " << request->Origin().ToString();
+  LOG(INFO) << "NWebHandlerDelegate::OnScreenCaptureRequest origin: "
+            << request->Origin().ToString();
   if (nweb_handler_ != nullptr) {
     std::shared_ptr<NWebScreenCaptureAccessRequest> access_request =
         std::make_shared<NWebScreenCaptureAccessRequestDelegate>(request);
     nweb_handler_->OnScreenCaptureRequest(access_request);
   }
-#endif // defined(OHOS_WEBRTC)
+#endif  // defined(OHOS_WEBRTC)
 }
 /* CefPermissionRequest method begin */
 
@@ -1966,8 +1973,8 @@ void NWebHandlerDelegate::OnSelectPopupMenu(
   if (!param) {
     return;
   }
-  SelectMenuBound bound = { bounds.x * ratio, bounds.y * ratio,
-                    bounds.width * ratio, bounds.height * ratio};
+  SelectMenuBound bound = {bounds.x * ratio, bounds.y * ratio,
+                           bounds.width * ratio, bounds.height * ratio};
   param->SetSelectMenuBound(bound);
   param->SetItemHeight(item_height);
   param->SetSelectedItem(selected_item);
@@ -1986,7 +1993,8 @@ void NWebHandlerDelegate::OnSelectPopupMenu(
     item->SetToolTip(CefString(&menu_item.tool_tip).ToString());
     item->SetType(static_cast<SelectPopupMenuItemType>(menu_item.type));
     item->SetHasTextDirectionOverride(menu_item.has_text_direction_override);
-    item->SetTextDirection(static_cast<TextDirection>(menu_item.text_direction));
+    item->SetTextDirection(
+        static_cast<TextDirection>(menu_item.text_direction));
     menu_list.push_back(std::move(item));
   }
   param->SetMenuItems(std::move(menu_list));
@@ -2038,8 +2046,8 @@ void NWebHandlerDelegate::OnDateTimeChooserPopup(
                          ? ConvertMonthToDateTime(suggestion[index].value)
                          : ConvertMsToDateTime(suggestion[index].value);
     suggestions.push_back(std::make_shared<NWebDateTimeSuggestionImpl>(
-      value, CefString(&suggestion[index].label).ToString(),
-      CefString(&suggestion[index].localized_value).ToString()));
+        value, CefString(&suggestion[index].label).ToString(),
+        CefString(&suggestion[index].localized_value).ToString()));
     if (date_time_chooser.dialog_value == suggestion[index].value) {
       chooser.suggestionIndex = index;
     }
@@ -2070,9 +2078,9 @@ void NWebHandlerDelegate::CopyImageToClipboard(CefRefPtr<CefImage> image) {
   if (image != nullptr && image->GetWidth() > 0 && image->GetHeight() > 0) {
     int pixel_width = 0;
     int pixel_height = 0;
-    CefRefPtr<CefBinaryValue> bitMap =
-        image->GetAsBitmap(1, CEF_COLOR_TYPE_RGBA_8888, CEF_ALPHA_TYPE_PREMULTIPLIED,
-                           pixel_width, pixel_height);
+    CefRefPtr<CefBinaryValue> bitMap = image->GetAsBitmap(
+        1, CEF_COLOR_TYPE_RGBA_8888, CEF_ALPHA_TYPE_PREMULTIPLIED, pixel_width,
+        pixel_height);
     size_t bitMapSize = bitMap->GetSize();
     uint8_t* data = (uint8_t*)calloc((size_t)bitMapSize, sizeof(uint8_t));
     if (data == nullptr) {
@@ -2102,8 +2110,10 @@ void NWebHandlerDelegate::CopyImageToClipboard(CefRefPtr<CefImage> image) {
       return;
     }
 
-    auto copy_option = static_cast<ui::CopyOptionMode>(preference_delegate_->GetCopyOptionMode());
-    OhosAdapterHelper::GetInstance().GetPasteBoard().SetPasteData(recordList, copy_option);
+    auto copy_option = static_cast<ui::CopyOptionMode>(
+        preference_delegate_->GetCopyOptionMode());
+    OhosAdapterHelper::GetInstance().GetPasteBoard().SetPasteData(recordList,
+                                                                  copy_option);
     free(data);
   }
 }
@@ -2190,8 +2200,8 @@ bool NWebHandlerDelegate::RunQuickMenu(
   std::shared_ptr<NWebQuickMenuParamsImpl> nweb_param =
       std::make_shared<NWebQuickMenuParamsImpl>(
           location.x, location.y, size.width, size.height, edit_state_flags,
-          select_bounds.x, select_bounds.y,
-          select_bounds.width, select_bounds.height);
+          select_bounds.x, select_bounds.y, select_bounds.width,
+          select_bounds.height);
   std::shared_ptr<NWebQuickMenuCallback> nweb_callback =
       std::make_shared<NWebQuickMenuCallbackImpl>(callback);
 
@@ -2252,7 +2262,8 @@ bool NWebHandlerDelegate::CanSendCookie(CefRefPtr<CefBrowser> browser,
                                         CefRefPtr<CefFrame> frame,
                                         CefRefPtr<CefRequest> request,
                                         const CefCookie& cookie) {
-  return NWebEngineImpl::GetInstance()->GetCookieManager()
+  return NWebEngineImpl::GetInstance()
+      ->GetCookieManager()
       ->IsAcceptCookieAllowed();
 }
 bool NWebHandlerDelegate::CanSaveCookie(CefRefPtr<CefBrowser> browser,
@@ -2260,7 +2271,8 @@ bool NWebHandlerDelegate::CanSaveCookie(CefRefPtr<CefBrowser> browser,
                                         CefRefPtr<CefRequest> request,
                                         CefRefPtr<CefResponse> response,
                                         const CefCookie& cookie) {
-  return NWebEngineImpl::GetInstance()->GetCookieManager()
+  return NWebEngineImpl::GetInstance()
+      ->GetCookieManager()
       ->IsAcceptCookieAllowed();
 }
 /* CefResourceRequestHandler methods end */
@@ -2284,8 +2296,9 @@ void NWebHandlerDelegate::RegisterNativeLoadEndCallback(
 
 void NWebHandlerDelegate::RegisterNativeJavaScriptCallBack(
     const char* objName,
-    const std::vector<std::shared_ptr<NWebJsProxyCallback>> &callbacks) {
-  std::unordered_map<std::string, std::function<char*(const char**, int32_t)>> map;
+    const std::vector<std::shared_ptr<NWebJsProxyCallback>>& callbacks) {
+  std::unordered_map<std::string, std::function<char*(const char**, int32_t)>>
+      map;
   for (auto callback : callbacks) {
     map[callback->GetMethodName()] = callback->GetMethodCallback();
   }
@@ -2305,8 +2318,10 @@ void NWebHandlerDelegate::RegisterNativeJavaScriptCallBack(
 }
 
 int NWebHandlerDelegate::ProcessNativeProxyResultThread(
-    CefRefPtr<CefListValue> args, const CefString& method,
-    const CefString& object_name, CefRefPtr<CefListValue> result) {
+    CefRefPtr<CefListValue> args,
+    const CefString& method,
+    const CefString& object_name,
+    CefRefPtr<CefListValue> result) {
   auto it = objMap_.find(object_name);
   if (it == objMap_.end()) {
     // object name not found
@@ -2320,14 +2335,15 @@ int NWebHandlerDelegate::ProcessNativeProxyResultThread(
   }
 
   auto callback = methodMap[method];
-  char **ptr = (char **)malloc(sizeof(char*) * args->GetSize());
+  char** ptr = (char**)malloc(sizeof(char*) * args->GetSize());
   for (size_t i = 0; i < args->GetSize(); i++) {
     CefValueType type = args->GetType(i);
     CefRefPtr<CefValue> value = args->GetValue(i);
     if (type == VTYPE_STRING) {
       ptr[i] = strdup(value->GetString().ToString().c_str());
     } else {
-      std::string jsonString = CefWriteJSON(value, JSON_WRITER_OMIT_BINARY_VALUES);
+      std::string jsonString =
+          CefWriteJSON(value, JSON_WRITER_OMIT_BINARY_VALUES);
       ptr[i] = strdup(jsonString.c_str());
     }
   }
@@ -2440,10 +2456,10 @@ int NWebHandlerDelegate::NotifyJavaScriptResult(CefRefPtr<CefListValue> args,
     return 0;
   }
 
-  if(!ProcessNativeProxyResult(args, method, object_name, result)) {
+  if (!ProcessNativeProxyResult(args, method, object_name, result)) {
     // native proxy object
     return 0;
-  } // ets proxy object
+  }  // ets proxy object
 
   std::vector<std::shared_ptr<NWebValue>> value_vector =
       ParseCefValueTONWebValue(args, args->GetSize());

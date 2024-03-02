@@ -34,8 +34,8 @@
 #include <functional>
 #include <list>
 #include <mutex>
-#include <unordered_set>
 #include <string>
+#include <unordered_set>
 #include "capi/nweb_app_client_extension_callback.h"
 #include "nweb_download_callback.h"
 #include "nweb_javascript_result_callback.h"
@@ -69,7 +69,7 @@ class NWebHandlerDelegate : public CefClient,
                             public CefPrintHandler {
 #else
                             public CefCookieAccessFilter {
-#endif // defined(OHOS_PRINT)
+#endif  // defined(OHOS_PRINT)
  public:
   static CefRefPtr<NWebHandlerDelegate> Create(
       std::shared_ptr<NWebPreferenceDelegate> preference_delegate,
@@ -102,8 +102,8 @@ class NWebHandlerDelegate : public CefClient,
       std::shared_ptr<NWebJavaScriptResultCallBack> callback);
 
   void RegisterNativeJavaScriptCallBack(
-    const char* objName,
-    const std::vector<std::shared_ptr<NWebJsProxyCallback>> &callbacks);
+      const char* objName,
+      const std::vector<std::shared_ptr<NWebJsProxyCallback>>& callbacks);
 
   using NativeJSProxyCallbackFunc =
       std::function<char*(std::vector<std::vector<uint8_t>>&,
@@ -121,14 +121,14 @@ class NWebHandlerDelegate : public CefClient,
                                   CefRefPtr<CefListValue> result);
 
   int ProcessNativeProxyResultThread(CefRefPtr<CefListValue> args,
-                             const CefString& method,
-                             const CefString& object_name,
-                             CefRefPtr<CefListValue> result);
+                                     const CefString& method,
+                                     const CefString& object_name,
+                                     CefRefPtr<CefListValue> result);
 
   int ProcessNativeProxyResult(CefRefPtr<CefListValue> args,
-                             const CefString& method,
-                             const CefString& object_name,
-                             CefRefPtr<CefListValue> result);
+                               const CefString& method,
+                               const CefString& object_name,
+                               CefRefPtr<CefListValue> result);
 
 #if defined(OHOS_NWEB_EX)
   void UnRegisterWebAppClientExtensionListener();
@@ -193,7 +193,7 @@ class NWebHandlerDelegate : public CefClient,
 
 #if defined(OHOS_PRINT)
   CefRefPtr<CefPrintHandler> GetPrintHandler() override;
-#endif // defined(OHOS_PRINT)
+#endif  // defined(OHOS_PRINT)
   /* CefClient methods end */
 
   /* CefLifeSpanHandler methods begin */
@@ -366,7 +366,8 @@ class NWebHandlerDelegate : public CefClient,
   void OnLoadingProgressChange(CefRefPtr<CefBrowser> browser,
                                double progress) override;
   void OnFullscreenModeChange(CefRefPtr<CefBrowser> browser,
-                              bool full_screen) override;
+                              bool full_screen,
+                              const CefSize& video_natural_size) override;
   void OnReceivedIcon(const void* data,
                       size_t width,
                       size_t height,
@@ -406,7 +407,9 @@ class NWebHandlerDelegate : public CefClient,
   /* CefFocusHandler method end */
 
   /* CefFormHandler method begin */
-  void OnFormEditingStateChanged(CefRefPtr<CefBrowser> browser, bool is_editing, uint64_t form_id) override;
+  void OnFormEditingStateChanged(CefRefPtr<CefBrowser> browser,
+                                 bool is_editing,
+                                 uint64_t form_id) override;
   /* CefFormHandler method end */
 
   /* CefPermissionRequest method begin */
@@ -531,7 +534,7 @@ class NWebHandlerDelegate : public CefClient,
 #if defined(OHOS_PRINT)
   void OnPrintStart(CefRefPtr<CefBrowser> browser) override;
   void OnPrintSettings(CefRefPtr<CefBrowser> browser,
-                      CefRefPtr<CefPrintSettings> settings,
+                       CefRefPtr<CefPrintSettings> settings,
                        bool get_defaults) override;
   bool OnPrintDialog(CefRefPtr<CefBrowser> browser,
                      bool has_selection,
@@ -543,7 +546,7 @@ class NWebHandlerDelegate : public CefClient,
   void OnPrintReset(CefRefPtr<CefBrowser> browser) override;
   CefSize GetPdfPaperSize(CefRefPtr<CefBrowser> browser,
                           int device_units_per_inch) override;
-#endif // defined(OHOS_PRINT)
+#endif  // defined(OHOS_PRINT)
   /* CefPrintHandler method end */
 
   const std::vector<std::string> GetVisitedHistory();
@@ -588,12 +591,8 @@ class NWebHandlerDelegate : public CefClient,
                                  const std::vector<std::string>& method_list,
                                  const int32_t object_id);
 #ifdef OHOS_DRAG_DROP
-  bool IsDragEnter() const {
-    return is_drag_enter_;
-  }
-  void SetDragEnter(bool enter) {
-    is_drag_enter_ = enter;
-  }
+  bool IsDragEnter() const { return is_drag_enter_; }
+  void SetDragEnter(bool enter) { is_drag_enter_ = enter; }
 #endif  // #ifdef OHOS_DRAG_DROP
  private:
   void CopyImageToClipboard(CefRefPtr<CefImage> image);
@@ -664,8 +663,14 @@ class NWebHandlerDelegate : public CefClient,
   bool is_drag_enter_ = false;
 #endif  // #ifdef OHOS_DRAG_DROP
   // js property name and object id
-  std::unordered_map<std::string, std::unordered_map<std::string, std::function<char*(const char** argv, int32_t argc)>>> objMap_;
-  std::unordered_map<std::string, std::unordered_map<std::string, NativeJSProxyCallbackFunc>> proxyObjMap_;
+  std::unordered_map<
+      std::string,
+      std::unordered_map<std::string,
+                         std::function<char*(const char** argv, int32_t argc)>>>
+      objMap_;
+  std::unordered_map<std::string,
+                     std::unordered_map<std::string, NativeJSProxyCallbackFunc>>
+      proxyObjMap_;
   using MethodPair = std::pair<std::string, std::unordered_set<std::string>>;
   using ObjectMethodMap = std::map<int32_t, MethodPair>;
   ObjectMethodMap javascript_method_map_;

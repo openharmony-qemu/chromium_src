@@ -8,7 +8,6 @@
 #include "net/base/registry_controlled_domains/registry_controlled_domain.h"
 #include "net/cookies/cookie_util.h"
 #include "services/network/restricted_cookie_manager.h"
-#include "../../third_party/blink/renderer/core/loader/cookie_status.h"
 
 namespace network {
 
@@ -76,7 +75,7 @@ void CookieSharedMemoryHolder::OnCookieChange(
               has_storage_access_))) {
     return;
   }
-  bool* cookie_status(static_cast<bool*>(mapping_.get()));
-  *cookie_status = COOKIE_PRODUCED;
+  bool* cookie_changed(static_cast<bool*>(mapping_.get()));
+  *cookie_changed = true;
 }
 } // namespace network

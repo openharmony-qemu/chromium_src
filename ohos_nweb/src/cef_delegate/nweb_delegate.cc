@@ -1754,19 +1754,25 @@ void NWebDelegate::RegisterNativeJSProxy(
     const std::string& objName,
     const std::vector<std::string>& methodName,
     std::vector<std::function<char*(std::vector<std::vector<uint8_t>>&,
-                                    std::vector<size_t>&)>>&& callback,
-    int32_t size) {
+                                    std::vector<size_t>&)>>&& callback) {
   if (!CEF_CURRENTLY_ON_UIT()) {
-    CEF_POST_TASK(CEF_UIT, base::BindOnce(&NWebDelegate::RegisterNativeJSProxy,
-                                          this, objName, methodName,
-                                          std::move(callback), size));
+    CEF_POST_TASK(CEF_UIT,
+                  base::BindOnce(&NWebDelegate::RegisterNativeJSProxy, this,
+                                 objName, methodName, std::move(callback)));
     return;
   }
 
-  handler_delegate_->RegisterNativeJavaScriptCallBack(
-      objName, methodName, std::move(callback), size);
+  if (handler_delegate_ == nullptr) {
+    LOG(ERROR) << "handler_delegate_ is nullptr";
+    return;
+  }
+
+  handler_delegate_->RegisterNativeJavaScriptCallBack(objName, methodName,
+                                                      std::move(callback));
+
+  size_t size = methodName.size();
   std::vector<CefString> method_vector;
-  for (int i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; i++) {
     method_vector.push_back(methodName[i]);
   }
   if (GetBrowser() && GetBrowser()->GetHost()) {

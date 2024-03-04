@@ -56,8 +56,8 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   void SetVolume(double volume) override;
   void GetVolume(double* volume) override;
   void Close() override;
+  bool GetInterruptMode();
   void SetInterruptMode(bool audioExclusive);
-  void Refresh();
   bool GetAudioExclusive();
 
  private:
@@ -85,8 +85,6 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   bool InitRender(const AudioAdapterRendererOptions& rendererOptions);
 
   bool StartRender();
-
-  void Erase(base::WeakPtr<content::MediaSessionImpl> weakMediaSession);
 
   void Prepare(base::WeakPtr<content::MediaSessionImpl> weakMediaSession);
 
@@ -121,11 +119,11 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   std::unique_ptr<AudioRendererAdapter> audio_renderer_;
 
+  content::WebContents* webContent_ = nullptr;
+
   base::WeakPtr<content::MediaSessionImpl> weakMediaSession_ = nullptr;
 
   std::shared_ptr<AudioRendererCallback> rendererCallback_ = nullptr;
-
-  bool isRefreshing_ = false;
 
   bool isCommunication_ = false;
 

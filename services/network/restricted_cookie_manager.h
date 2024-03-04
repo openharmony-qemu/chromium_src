@@ -32,6 +32,10 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "cookie_shared_memory_holder.h"
+#endif
+
 namespace net {
 class CookieStore;
 class SiteForCookies;
@@ -130,6 +134,16 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) RestrictedCookieManager
                           net::CookieInclusionStatus status,
                           SetCanonicalCookieCallback callback) override;
 
+#if BUILDFLAG(IS_OHOS)
+  void RegisterCookieChangeObserver(
+    const GURL& url,
+    const net::SiteForCookies& site_for_cookies,
+    const url::Origin& top_frame_origin,
+    bool has_storage_access,
+    mojo::ScopedSharedBufferHandle buffer,
+    RegisterCookieChangeObserverCallback callback) override;
+#endif
+
   void AddChangeListener(
       const GURL& url,
       const net::SiteForCookies& site_for_cookies,
@@ -150,6 +164,13 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) RestrictedCookieManager
                         const url::Origin& top_frame_origin,
                         bool has_storage_access,
                         GetCookiesStringCallback callback) override;
+
+  void GetCookiesStringAndExpiryDate(const GURL& url,
+                        const net::SiteForCookies& site_for_cookies,
+                        const url::Origin& top_frame_origin,
+                        bool has_storage_access,
+                        GetCookiesStringAndExpiryDateCallback callback) override;
+
   void CookiesEnabledFor(const GURL& url,
                          const net::SiteForCookies& site_for_cookies,
                          const url::Origin& top_frame_origin,
@@ -171,6 +192,10 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) RestrictedCookieManager
       const net::CookieStore* cookie_store,
       const net::IsolationInfo& isolation_info,
       base::OnceCallback<void(net::FirstPartySetMetadata)> callback);
+
+  // Computes the CookieSettingOverrides to be used by this instance.
+  net::CookieSettingOverrides GetCookieSettingOverrides(
+      bool has_storage_access) const;
 
  private:
   // The state associated with a CookieChangeListener.
@@ -242,10 +267,6 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) RestrictedCookieManager
       base::OnceClosure done_closure,
       net::FirstPartySetMetadata first_party_set_metadata);
 
-  // Computes the CookieSettingOverrides to be used by this instance.
-  net::CookieSettingOverrides GetCookieSettingOverrides(
-      bool has_storage_access) const;
-
   void OnCookiesAccessed(network::mojom::CookieAccessDetailsPtr details);
 
   void CallCookiesAccessed();
@@ -270,6 +291,10 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) RestrictedCookieManager
   mojo::Remote<mojom::CookieAccessObserver> cookie_observer_;
 
   base::LinkedList<Listener> listeners_;
+
+#if BUILDFLAG(IS_OHOS)
+  base::LinkedList<CookieSharedMemoryHolder> shm_holders_;
+#endif
 
   SEQUENCE_CHECKER(sequence_checker_);
 

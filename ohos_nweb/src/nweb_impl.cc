@@ -1139,11 +1139,10 @@ void NWebImpl::RegisterNativeArkJSFunction(
     const std::string& objName,
     const std::vector<std::string>& methodName,
     std::vector<std::function<char*(std::vector<std::vector<uint8_t>>&,
-                                    std::vector<size_t>&)>>&& callback,
-    int32_t size) {
+                                    std::vector<size_t>&)>>&& callback) {
   if (nweb_delegate_ != nullptr) {
     nweb_delegate_->RegisterNativeJSProxy(objName, methodName,
-                                                std::move(callback), size);
+                                          std::move(callback));
   } else {
     LOG(ERROR) << "nweb_delegate_ is nullptr";
   }

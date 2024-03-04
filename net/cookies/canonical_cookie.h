@@ -10,6 +10,7 @@
 #include <tuple>
 #include <vector>
 
+#include "base/functional/callback.h"
 #include "base/feature_list.h"
 #include "base/gtest_prod_util.h"
 #include "base/strings/string_piece.h"
@@ -455,6 +456,10 @@ class NET_EXPORT CanonicalCookie {
   // Same as above but takes a CookieAccessResultList
   // (ignores the access result).
   static std::string BuildCookieLine(const CookieAccessResultList& cookies);
+
+  static void BuildCookieLineWithExpiryDate(
+      const CookieAccessResultList& cookie_access_result_list,
+      base::OnceCallback<void(const std::string&, base::Time, bool)> callback);
 
   // Takes a single CanonicalCookie and returns a cookie line containing the
   // attributes of |cookie| formatted like a http set cookie header.

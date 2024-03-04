@@ -187,5 +187,6 @@ void ExternalBeginFrameSourceOHOS::SetEnabled(bool enabled) {
     vsync_adapter_.RequestVsync(user_data_.release(),
                                  ExternalBeginFrameSourceOHOS::OnVSync);
   }
+  vsync_adapter_.SetFrameRateLinkerEnable(enabled);
 }
 }  // namespace viz

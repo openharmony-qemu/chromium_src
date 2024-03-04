@@ -281,7 +281,6 @@ component("network_service") {
     sources += [
       "cookie_shared_memory_holder.cc",
       "cookie_shared_memory_holder.h",
-      "../../third_party/blink/renderer/core/loader/cookie_status.h"
     ]
   }
 

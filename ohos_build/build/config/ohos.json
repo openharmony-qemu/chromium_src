@@ -150,14 +150,6 @@
 "dependence": "",
 "default": "true"
 },
-{ "name": "OHOS_DISABLE_MOJOJS",
-"owner": "gaojianhao",
-"desc": "",
-"effect":"main gn blink_core other",
-"genCommandline": "default",
-"dependence": "",
-"default": "true"
-},
 { "name": "OHOS_DOWNLOAD",
 "owner": "wanghui wanghao wangjing",
 "desc": "",

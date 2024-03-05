@@ -4410,15 +4410,21 @@ void RenderFrameImpl::DidCreateScriptContext(v8::Local<v8::Context> context,
   if (((enabled_bindings_ & BINDINGS_POLICY_MOJO_WEB_UI) ||
        enable_mojo_js_bindings_) &&
       IsMainFrame() && world_id == ISOLATED_WORLD_ID_GLOBAL) {
-    // We only allow these bindings to be installed when creating the main
-    // world context of the main frame.
+#if defined(OHOS_DISABLE_MOJOJS)
+    LOG(WARNING) << "MojoJS abiliby is disabled, if not it may cause some security problems.";
+#else
     blink::WebV8Features::EnableMojoJS(context, true);
-
+#endif
     if (mojo_js_features_) {
       if (mojo_js_features_->file_system_access)
         blink::WebV8Features::EnableMojoJSFileSystemAccessHelper(context, true);
     }
   }
+#if defined(OHOS_DISABLE_MOJOJS)
+  else {
+    LOG(WARNING) << "For security reasons, WebView will now be forcibly disabled Mojo JS ablity.";
+  }
+#endif
 
   if (world_id == ISOLATED_WORLD_ID_GLOBAL &&
       mojo_js_interface_broker_.is_valid()) {

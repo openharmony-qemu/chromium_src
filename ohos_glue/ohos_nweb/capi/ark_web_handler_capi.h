@@ -319,6 +319,9 @@ typedef struct _ark_web_handler_t {
       struct _ark_web_handler_t *self,
       ark_web_full_screen_exit_handler_t *handler, int video_natural_width,
       int video_natural_height);
+
+  bool(ARK_WEB_CALLBACK *on_handle_override_url_loading)(
+      struct _ark_web_handler_t *self, ark_web_url_resource_request_t *request);
 } ark_web_handler_t;
 
 #ifdef __cplusplus

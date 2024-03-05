@@ -776,4 +776,14 @@ void ArkWebHandlerWrapper::OnFullScreenEnterWithVideoSize(
       video_natural_height);
 }
 
+bool ArkWebHandlerWrapper::OnHandleOverrideUrlLoading(
+    std::shared_ptr<OHOS::NWeb::NWebUrlResourceRequest> request) {
+  if (CHECK_SHARED_PTR_IS_NULL(request)) {
+    return ark_web_handler_->OnHandleOverrideUrlLoading(nullptr);
+  }
+
+  return ark_web_handler_->OnHandleOverrideUrlLoading(
+      new ArkWebUrlResourceRequestImpl(request));
+}
+
 } // namespace OHOS::ArkWeb

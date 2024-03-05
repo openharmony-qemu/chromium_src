@@ -30,7 +30,7 @@ class CookieSharedMemoryHolder
       mojo::ScopedSharedBufferMapping mapping,
       bool same_party_attribute_enabled);
   CookieSharedMemoryHolder(const CookieSharedMemoryHolder&) = delete;
-  CookieSharedMemoryHolder& operator=(const CookieSharedMemoryHolder) = delete;
+  CookieSharedMemoryHolder& operator=(const CookieSharedMemoryHolder&) = delete;
 
   ~CookieSharedMemoryHolder();
 

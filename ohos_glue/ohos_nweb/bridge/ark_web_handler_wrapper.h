@@ -542,6 +542,17 @@ public:
       std::shared_ptr<OHOS::NWeb::NWebFullScreenExitHandler> handler,
       int video_natural_width, int video_natural_height) override;
 
+  /**
+   * @brief Give the SDK a chance to decide whether to override loading the
+   * url.
+   *
+   * @param request The request information.
+   * @return true to abort loading the url, false to continue loading the url
+   * as usual.
+   */
+  bool OnHandleOverrideUrlLoading(
+      std::shared_ptr<OHOS::NWeb::NWebUrlResourceRequest> request) override;
+
 private:
   ArkWebRefPtr<ArkWebHandler> ark_web_handler_;
 };

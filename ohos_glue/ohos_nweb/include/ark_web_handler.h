@@ -624,6 +624,17 @@ public:
   virtual void OnFullScreenEnterWithVideoSize(
       ArkWebRefPtr<ArkWebFullScreenExitHandler> handler,
       int video_natural_width, int video_natural_height) = 0;
+
+  /**
+   * @brief Give the SDK a chance to decide whether to override loading the
+   * url.
+   *
+   * @param request The request information.
+   * @return true to abort loading the url, false to continue loading the url
+   * as usual.
+   */
+  /*--ark web()--*/
+  virtual bool OnHandleOverrideUrlLoading(ArkWebRefPtr<ArkWebUrlResourceRequest> request) = 0;
 };
 
 } // namespace OHOS::ArkWeb

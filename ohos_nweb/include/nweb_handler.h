@@ -746,6 +746,19 @@ public:
     virtual void OnFullScreenEnterWithVideoSize(
         std::shared_ptr<NWebFullScreenExitHandler> handler,
         int video_natural_width, int video_natural_height) {}
+
+    /**
+     * @brief Give the SDK a chance to decide whether to override loading the
+     * url.
+     *
+     * @param request The request information.
+     * @return true to abort loading the url, false to continue loading the url
+     * as usual.
+     */
+    virtual bool OnHandleOverrideUrlLoading(
+        std::shared_ptr<OHOS::NWeb::NWebUrlResourceRequest> request) {
+      return false;
+    }
 };
 }  // namespace OHOS::NWeb
 

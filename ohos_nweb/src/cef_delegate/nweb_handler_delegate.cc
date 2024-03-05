@@ -1263,6 +1263,26 @@ bool NWebHandlerDelegate::GetAuthCredentials(
   return false;
 }
 
+bool NWebHandlerDelegate::ShouldOverrideUrlLoading(CefRefPtr<CefBrowser> browser,
+                                                   const CefString& url,
+                                                   const CefString& method,
+                                                   bool user_gesture,
+                                                   bool is_redirect,
+                                                   bool is_outermost_main_frame) {
+  LOG(INFO) << "NWebHandlerDelegate::ShouldOverrideUrlLoading";
+  (void)(browser);
+
+  std::map<std::string, std::string> request_headers;
+  std::shared_ptr<NWebUrlResourceRequest> nweb_request =
+      std::make_shared<NWebUrlResourceRequestImpl>(
+          method.ToString(), request_headers, url.ToString(), user_gesture, is_outermost_main_frame,
+          is_redirect);
+  if (nweb_handler_ != nullptr) {
+    return nweb_handler_->OnHandleOverrideUrlLoading(nweb_request);
+  }
+  return false;
+}
+
 void NWebHandlerDelegate::OnFullscreenModeChange(
     CefRefPtr<CefBrowser> browser,
     bool full_screen,

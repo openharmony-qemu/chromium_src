@@ -4412,13 +4412,21 @@ void RenderFrameImpl::DidCreateScriptContext(v8::Local<v8::Context> context,
       IsMainFrame() && world_id == ISOLATED_WORLD_ID_GLOBAL) {
     // We only allow these bindings to be installed when creating the main
     // world context of the main frame.
+#if defined(IS_OHOS)
+    LOG(WARNING) << "MojoJS ability is disabled for security reasons.";
+#else
     blink::WebV8Features::EnableMojoJS(context, true);
-
+#endif
     if (mojo_js_features_) {
       if (mojo_js_features_->file_system_access)
         blink::WebV8Features::EnableMojoJSFileSystemAccessHelper(context, true);
     }
   }
+#if defined(IS_OHOS)
+  else {
+    LOG(WARNING) << "For security reasons MojoJS is forcibly disabled.";
+  }
+#endif
 
   if (world_id == ISOLATED_WORLD_ID_GLOBAL &&
       mojo_js_interface_broker_.is_valid()) {

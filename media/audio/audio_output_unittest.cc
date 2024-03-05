@@ -17,6 +17,10 @@
 #include "base/test/test_timeouts.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
+#include "content/browser/scheduler/browser_io_thread_delegate.h"
+#include "content/browser/scheduler/browser_task_executor.h"
+#include "content/browser/scheduler/browser_task_priority.h"
+#include "content/browser/scheduler/browser_ui_thread_scheduler.h"
 #include "media/audio/audio_device_info_accessor_for_tests.h"
 #include "media/audio/audio_features.h"
 #include "media/audio/audio_io.h"
@@ -41,6 +45,18 @@ class AudioOutputTest : public testing::TestWithParam<bool> {
         AudioManager::CreateForTesting(std::make_unique<TestAudioThread>());
     audio_manager_device_info_ =
         std::make_unique<AudioDeviceInfoAccessorForTests>(audio_manager_.get());
+#if BUILDFLAG(IS_OHOS)
+    auto ui_sequence_manager_ =
+        base::sequence_manager::CreateUnboundSequenceManager(
+            base::sequence_manager::SequenceManager::Settings::Builder()
+            .SetPrioritySettings(content::internal::CreateBrowserTaskPrioritySettings())
+            .Build());
+    auto browser_ui_thread_scheduler =
+        content::BrowserUIThreadScheduler::CreateForTesting(ui_sequence_manager_.get());
+    content::BrowserTaskExecutor::CreateForTesting(
+        std::move(browser_ui_thread_scheduler),
+        std::make_unique<content::BrowserIOThreadDelegate>());
+#endif
 #if BUILDFLAG(IS_ANDROID)
     // The only parameter is used to enable/disable AAudio.
     should_use_aaudio_ = GetParam();

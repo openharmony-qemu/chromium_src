@@ -784,4 +784,15 @@ int ArkWebNWebImpl::GetMediaPlaybackState() {
   return nweb_nweb_->GetMediaPlaybackState();
 }
 
+void ArkWebNWebImpl::StartCamera() {
+  nweb_nweb_->StartCamera();
+}
+
+void ArkWebNWebImpl::StopCamera() {
+  nweb_nweb_->StopCamera();
+}
+
+void ArkWebNWebImpl::CloseCamera() {
+  nweb_nweb_->CloseCamera();
+}
 } // namespace OHOS::ArkWeb

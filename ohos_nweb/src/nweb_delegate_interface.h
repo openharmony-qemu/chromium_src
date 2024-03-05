@@ -284,6 +284,12 @@ class NWebDelegateInterface
   virtual void SetAudioMuted(bool muted) = 0;
 #endif  // defined(OHOS_MEDIA_MUTE_AUDIO)
 
+#if defined(OHOS_WEBRTC)
+  virtual void StartCamera() = 0;
+  virtual void StopCamera() = 0;
+  virtual void CloseCamera() = 0;
+#endif  // defined(OHOS_WEBRTC)
+
 #ifdef OHOS_PAGE_UP_DOWN
   virtual void PageUp(bool top) = 0;
   virtual void PageDown(bool bottom) = 0;

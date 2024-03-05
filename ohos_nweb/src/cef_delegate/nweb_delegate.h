@@ -393,6 +393,12 @@ void EnableSafeBrowsing(bool enable) override;
   GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
                                       int32_t direction) override;
 
+#if defined(OHOS_WEBRTC)
+  void StartCamera() override;
+  void StopCamera() override;
+  void CloseCamera() override;
+#endif  // defined(OHOS_WEBRTC)
+
  public:
   int argc_;
   const char** argv_;

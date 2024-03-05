@@ -1092,6 +1092,24 @@ public:
    */
   /*--ark web()--*/
   virtual int GetMediaPlaybackState() = 0;
+
+  /**
+   * @brief Start current camera.
+   */
+  /*--ark web()--*/
+  virtual void StartCamera() = 0;
+
+  /**
+   * @brief Stop current camera.
+   */
+  /*--ark web()--*/
+  virtual void StopCamera() = 0;
+
+  /**
+   * @brief Close current camera.
+   */
+  /*--ark web()--*/
+  virtual void CloseCamera() = 0;
 };
 
 } // namespace OHOS::ArkWeb

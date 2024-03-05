@@ -242,6 +242,9 @@ class NWebImpl : public NWeb {
   void NotifyMemoryLevel(int32_t level) override;
   void OnWebviewHide() override;
   void OnWebviewShow() override;
+  void StartCamera() override;
+  void StopCamera() override;
+  void CloseCamera() override;
 #ifdef OHOS_DRAG_DROP
   std::shared_ptr<NWebDragData> GetOrCreateDragData() override;
 #endif // #ifdef OHOS_DRAG_DROP

@@ -1030,4 +1030,28 @@ void VideoCaptureManager::EmitLogMessage(const std::string& message,
 #endif // defined(OHOS_WEBRTC)
 }
 
+#if defined(OHOS_WEBRTC)
+void VideoCaptureManager::StartCamera() {
+  ResumeDevices();
+}
+
+void VideoCaptureManager::StopCamera() {
+  ReleaseDevices();
+}
+
+void VideoCaptureManager::CloseCamera() {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+
+  for (const auto& it : sessions_) {
+    auto videoCaptureController = LookupControllerBySessionId(it.first);
+    if (videoCaptureController == nullptr ||
+        videoCaptureController->stream_type() !=
+            blink::mojom::MediaStreamType::DEVICE_VIDEO_CAPTURE) {
+      continue;
+    }
+    videoCaptureController->StopSession(it.first);
+  }
+}
+#endif  // defined(OHOS_WEBRTC)
+
 }  // namespace content

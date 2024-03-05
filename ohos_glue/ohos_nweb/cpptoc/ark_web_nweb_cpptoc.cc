@@ -1523,6 +1523,33 @@ ark_web_nweb_get_media_playback_state(struct _ark_web_nweb_t *self) {
   return ArkWebNWebCppToC::Get(self)->GetMediaPlaybackState();
 }
 
+void ARK_WEB_CALLBACK ark_web_nweb_start_camera(struct _ark_web_nweb_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->StartCamera();
+}
+
+void ARK_WEB_CALLBACK ark_web_nweb_stop_camera(struct _ark_web_nweb_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->StopCamera();
+}
+
+void ARK_WEB_CALLBACK ark_web_nweb_close_camera(struct _ark_web_nweb_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->CloseCamera();
+}
+
 } // namespace
 
 ArkWebNWebCppToC::ArkWebNWebCppToC() {
@@ -1686,6 +1713,9 @@ ArkWebNWebCppToC::ArkWebNWebCppToC() {
   GetStruct()->resume_all_media = ark_web_nweb_resume_all_media;
   GetStruct()->pause_all_media = ark_web_nweb_pause_all_media;
   GetStruct()->get_media_playback_state = ark_web_nweb_get_media_playback_state;
+  GetStruct()->start_camera = ark_web_nweb_start_camera;
+  GetStruct()->stop_camera = ark_web_nweb_stop_camera;
+  GetStruct()->close_camera = ark_web_nweb_close_camera;
 }
 
 ArkWebNWebCppToC::~ArkWebNWebCppToC() {

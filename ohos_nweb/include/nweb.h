@@ -1054,6 +1054,21 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      * @return The playback status of all audio and video.
      */
     virtual int GetMediaPlaybackState() = 0;
+
+    /**
+     * Start current camera.
+     */
+    virtual void StartCamera() = 0;
+
+    /**
+     * Stop current camera.
+     */
+    virtual void StopCamera() = 0;
+
+    /**
+     * Close current camera.
+     */
+    virtual void CloseCamera() = 0;
 };
 }  // namespace OHOS::NWeb
 

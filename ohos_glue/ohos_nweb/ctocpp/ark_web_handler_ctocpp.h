@@ -227,6 +227,10 @@ public:
       ArkWebRefPtr<ArkWebNativeEmbedTouchEvent> touch_event) override;
 
   void OnSafeBrowsingCheckResult(int threat_type) override;
+
+  void OnFullScreenEnterWithVideoSize(
+      ArkWebRefPtr<ArkWebFullScreenExitHandler> handler,
+      int video_natural_width, int video_natural_height) override;
 };
 
 } // namespace OHOS::ArkWeb

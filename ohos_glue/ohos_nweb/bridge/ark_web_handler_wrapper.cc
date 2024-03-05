@@ -761,4 +761,19 @@ void ArkWebHandlerWrapper::OnSafeBrowsingCheckResult(int threat_type) {
   ark_web_handler_->OnSafeBrowsingCheckResult(threat_type);
 }
 
+void ArkWebHandlerWrapper::OnFullScreenEnterWithVideoSize(
+    std::shared_ptr<OHOS::NWeb::NWebFullScreenExitHandler> handler,
+    int video_natural_width,
+    int video_natural_height) {
+  if (CHECK_SHARED_PTR_IS_NULL(handler)) {
+    ark_web_handler_->OnFullScreenEnterWithVideoSize(
+        nullptr, video_natural_width, video_natural_height);
+    return;
+  }
+
+  ark_web_handler_->OnFullScreenEnterWithVideoSize(
+      new ArkWebFullScreenExitHandlerImpl(handler), video_natural_width,
+      video_natural_height);
+}
+
 } // namespace OHOS::ArkWeb

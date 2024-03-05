@@ -49,9 +49,9 @@ public:
   void SetWebDebuggingAccess(bool isEnableDebug) override;
 
 private:
-  std::shared_ptr<NWebDataBase> nweb_data_base_;
-  std::shared_ptr<NWebWebStorage> nweb_web_storage_;
-  std::shared_ptr<NWebDownloadManager> nweb_download_manager_;
+  std::shared_ptr<NWebDataBase> nweb_data_base_ = nullptr;
+  std::shared_ptr<NWebWebStorage> nweb_web_storage_ = nullptr;
+  std::shared_ptr<NWebDownloadManager> nweb_download_manager_ = nullptr;
 };
 
 } // namespace OHOS::NWeb

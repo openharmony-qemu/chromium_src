@@ -30,8 +30,8 @@ public:
   int32_t GetKeyCode() override;
 
 private:
-  int32_t action_;
-  int32_t keyCode_;
+  int32_t action_ = 0;
+  int32_t keyCode_ = 0;
 };
 
 } // namespace OHOS::NWeb

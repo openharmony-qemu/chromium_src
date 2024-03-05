@@ -34,7 +34,7 @@ public:
   std::string GetExtra() override;
 
 private:
-  int type_;
+  int type_ = 0;
   std::string extra_;
 };
 

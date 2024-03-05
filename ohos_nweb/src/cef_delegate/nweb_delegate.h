@@ -155,8 +155,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       const std::string& objName,
       const std::vector<std::string>& methodName,
       std::vector<std::function<char*(std::vector<std::vector<uint8_t>>&,
-                                      std::vector<size_t>&)>>&& callback,
-      int32_t size) override;
+                                      std::vector<size_t>&)>>&& callback)
+      override;
   void UnRegisterNativeArkJSFunction(const char* objName) override;
   void RegisterNativeLoadStartCallback(
       std::function<void(void)>&& callback) override;
@@ -279,6 +279,11 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #if defined(OHOS_MEDIA_POLICY)
   void SetAudioResumeInterval(int32_t resumeInterval) override;
   void SetAudioExclusive(bool audioExclusive) override;
+  void CloseAllMediaPresentations() override;
+  void StopAllMedia() override;
+  void ResumeAllMedia() override;
+  void PauseAllMedia() override;
+  int GetMediaPlaybackState() override;
 #endif  // defined(OHOS_MEDIA_POLICY)
 
 #if defined(OHOS_NO_STATE_PREFETCH)

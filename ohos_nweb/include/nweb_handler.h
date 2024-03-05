@@ -735,6 +735,19 @@ public:
     virtual void OnSafeBrowsingCheckResult(int threat_type) {}
 
     /**
+     * @brief called when the page enter the full-screen mode.
+     *
+     * @param handler to exit full-screen mode.
+     * @param video_natural_width indicates the width of the <video> element
+     * entering full screen.
+     * @param video_natural_height indicates the height of the <video> element
+     * entering full screen.
+     */
+    virtual void OnFullScreenEnterWithVideoSize(
+        std::shared_ptr<NWebFullScreenExitHandler> handler,
+        int video_natural_width, int video_natural_height) {}
+
+    /**
      * @brief Give the SDK a chance to decide whether to override loading the
      * url.
      *

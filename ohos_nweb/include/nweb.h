@@ -1028,6 +1028,32 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      * @return true if enable print web page background, otherwise false.
      */
     virtual bool GetPrintBackground() = 0;
+
+    /**
+     * Close picture-in-picture video and fullScreen video.
+     */
+    virtual void CloseAllMediaPresentations() = 0;
+
+    /**
+     * Stop all audio and video playback on the web page.
+     */
+    virtual void StopAllMedia() = 0;
+
+    /**
+     * Restart playback of all audio and video on the web page.
+     */
+    virtual void ResumeAllMedia() = 0;
+
+    /**
+     * Pause all audio and video playback on the web page.
+     */
+    virtual void PauseAllMedia() = 0;
+
+    /**
+     * View the playback status of all audio and video on the web page.
+     * @return The playback status of all audio and video.
+     */
+    virtual int GetMediaPlaybackState() = 0;
 };
 }  // namespace OHOS::NWeb
 

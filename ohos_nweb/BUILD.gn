@@ -173,10 +173,10 @@ component("cef_nweb") {
 
   if (defined(ohos_ndk) && ohos_ndk) {
     sources += [
-      "src/ndk/arkweb_model.cpp",
-      "src/ndk/arkweb_native_javascript_execute_callback.cpp",
+      "src/ndk/arkweb_model.cc",
+      "src/ndk/arkweb_native_javascript_execute_callback.cc",
       "src/ndk/arkweb_native_javascript_execute_callback.h",
-      "src/ndk/arkweb_native_object.cpp",
+      "src/ndk/arkweb_native_object.cc",
       "src/ndk/arkweb_native_object.h",
     ]
   }

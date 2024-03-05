@@ -432,6 +432,17 @@ typedef struct _ark_web_nweb_t {
                                                bool enable);
 
   bool(ARK_WEB_CALLBACK *get_print_background)(struct _ark_web_nweb_t *self);
+
+  void(ARK_WEB_CALLBACK *close_all_media_presentations)(
+      struct _ark_web_nweb_t *self);
+
+  void(ARK_WEB_CALLBACK *stop_all_media)(struct _ark_web_nweb_t *self);
+
+  void(ARK_WEB_CALLBACK *resume_all_media)(struct _ark_web_nweb_t *self);
+
+  void(ARK_WEB_CALLBACK *pause_all_media)(struct _ark_web_nweb_t *self);
+
+  int(ARK_WEB_CALLBACK *get_media_playback_state)(struct _ark_web_nweb_t *self);
 } ark_web_nweb_t;
 
 #ifdef __cplusplus

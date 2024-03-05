@@ -228,6 +228,10 @@ public:
 
   void OnSafeBrowsingCheckResult(int threat_type) override;
 
+  void OnFullScreenEnterWithVideoSize(
+      ArkWebRefPtr<ArkWebFullScreenExitHandler> handler,
+      int video_natural_width, int video_natural_height) override;
+
   bool OnHandleOverrideUrlLoading(
       ArkWebRefPtr<ArkWebUrlResourceRequest> request) override;
 };

@@ -14,10 +14,10 @@
  */
 
 #include "base/include/ark_web_types.h"
+#include "base/include/ark_web_log_utils.h"
 #include <codecvt>
 #include <locale>
 #include <sstream>
-#include "base/include/ark_web_log_utils.h"
 
 ArkWebU16String ArkWebU16StringClassToStruct(const std::u16string& class_value)
 {
@@ -52,12 +52,13 @@ std::u16string ArkWebU16StringStructToClass(const ArkWebU16String& struct_value)
 
     return class_value;
 }
+
 ArkWebString ArkWebStringClassToStruct(const std::string &class_value) {
   ArkWebString struct_value = {.size = class_value.size(),
                                .ark_web_mem_free_func = ArkWebMemFree};
   if (struct_value.size > 0) {
     struct_value.value = (char *)ArkWebMemMalloc(struct_value.size + 1);
-    strncpy(struct_value.value, class_value.c_str(), struct_value.size);
+    memcpy(struct_value.value, class_value.c_str(), struct_value.size);
     struct_value.value[struct_value.size] = 0;
   }
 
@@ -70,7 +71,7 @@ ArkWebString ArkWebStringClassToStruct(const std::string &class_value) {
 std::string ArkWebStringStructToClass(const ArkWebString &struct_value) {
   std::string class_value;
   if (struct_value.size > 0) {
-    class_value = struct_value.value;
+    class_value.assign(struct_value.value, struct_value.size);
   }
 
   ARK_WEB_BASE_DV_LOG("string is %{public}s,length is %{public}d",

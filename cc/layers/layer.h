@@ -657,6 +657,14 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
     return GetBitFlag(kMayContainVideoFlagMask);
   }
 
+  void SetMayContainNative(bool value) {
+    native_.Write(*this) = value;
+  }
+
+  bool may_contain_native() const {
+    return native_.Read(*this);
+  }
+
   // Stable identifier for clients. See comment in cc/paint/element_id.h.
   void SetElementId(ElementId id);
   ElementId element_id() const { return inputs_.Read(*this).element_id; }
@@ -1127,6 +1135,8 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
   // will be handled implicitly after the update completes. Not a bitfield
   // because it's used in base::AutoReset.
   ProtectedSequenceReadable<bool> ignore_set_needs_commit_for_test_;
+
+  ProtectedSequenceReadable<bool> native_;
 
   enum : uint8_t {
     kDrawsContentFlagMask = 1 << 0,

@@ -191,8 +191,7 @@ class NWebDelegateInterface
       const std::string& objName,
       const std::vector<std::string>& methodName,
       std::vector<std::function<char*(std::vector<std::vector<uint8_t>>&,
-                                      std::vector<size_t>&)>>&& callback,
-      int32_t size) = 0;
+                                      std::vector<size_t>&)>>&& callback) = 0;
   virtual void UnRegisterNativeArkJSFunction(const char* objName) = 0;
   virtual void RegisterArkJSfunction(
       const std::string& object_name,
@@ -310,6 +309,11 @@ class NWebDelegateInterface
 #if defined(OHOS_MEDIA_POLICY)
   virtual void SetAudioResumeInterval(int32_t resumeInterval) = 0;
   virtual void SetAudioExclusive(bool audioExclusive) = 0;
+  virtual void CloseAllMediaPresentations() = 0;
+  virtual void StopAllMedia() = 0;
+  virtual void ResumeAllMedia() = 0;
+  virtual void PauseAllMedia() = 0;
+  virtual int GetMediaPlaybackState() = 0;
 #endif // defined(OHOS_MEDIA_POLICY)
 
 #if defined(OHOS_NO_STATE_PREFETCH)

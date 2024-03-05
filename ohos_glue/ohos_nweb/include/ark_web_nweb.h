@@ -1060,6 +1060,38 @@ public:
    */
   /*--ark web()--*/
   virtual bool GetPrintBackground() = 0;
+
+  /**
+   * @brief Close fullScreen video.
+   */
+  /*--ark web()--*/
+  virtual void CloseAllMediaPresentations() = 0;
+
+  /**
+   * @brief Stop all audio and video playback on the web page.
+   */
+  /*--ark web()--*/
+  virtual void StopAllMedia() = 0;
+
+  /**
+   * @brief Restart playback of all audio and video on the web page.
+   */
+  /*--ark web()--*/
+  virtual void ResumeAllMedia() = 0;
+
+  /**
+   * @brief Pause all audio and video playback on the web page.
+   */
+  /*--ark web()--*/
+  virtual void PauseAllMedia() = 0;
+
+  /**
+   * @brief View the playback status of all audio and video on the web page.
+   *
+   * @return The playback status of all audio and video.
+   */
+  /*--ark web()--*/
+  virtual int GetMediaPlaybackState() = 0;
 };
 
 } // namespace OHOS::ArkWeb

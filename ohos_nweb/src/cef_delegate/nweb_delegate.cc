@@ -78,6 +78,10 @@ namespace OHOS::NWeb {
 static const double kZoomLevelToFactorRatio = 1.2;
 #endif
 
+#if defined(OHOS_MEDIA_POLICY)
+const int NWebPlaybackState_NONE = 0;
+#endif
+
 static const int kDefaultWebNativeProxy = -2;
 
 #if defined(OHOS_MSGPORT)
@@ -1754,19 +1758,25 @@ void NWebDelegate::RegisterNativeJSProxy(
     const std::string& objName,
     const std::vector<std::string>& methodName,
     std::vector<std::function<char*(std::vector<std::vector<uint8_t>>&,
-                                    std::vector<size_t>&)>>&& callback,
-    int32_t size) {
+                                    std::vector<size_t>&)>>&& callback) {
   if (!CEF_CURRENTLY_ON_UIT()) {
-    CEF_POST_TASK(CEF_UIT, base::BindOnce(&NWebDelegate::RegisterNativeJSProxy,
-                                          this, objName, methodName,
-                                          std::move(callback), size));
+    CEF_POST_TASK(CEF_UIT,
+                  base::BindOnce(&NWebDelegate::RegisterNativeJSProxy, this,
+                                 objName, methodName, std::move(callback)));
     return;
   }
 
-  handler_delegate_->RegisterNativeJavaScriptCallBack(
-      objName, methodName, std::move(callback), size);
+  if (handler_delegate_ == nullptr) {
+    LOG(ERROR) << "handler_delegate_ is nullptr";
+    return;
+  }
+
+  handler_delegate_->RegisterNativeJavaScriptCallBack(objName, methodName,
+                                                      std::move(callback));
+
+  size_t size = methodName.size();
   std::vector<CefString> method_vector;
-  for (int i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; i++) {
     method_vector.push_back(methodName[i]);
   }
   if (GetBrowser() && GetBrowser()->GetHost()) {
@@ -2091,6 +2101,7 @@ std::vector<uint8_t> NWebDelegate::SerializeWebState() {
     return state;
   }
 
+  state.resize(state_size);
   size_t read_size = state_value->GetData(state.data(), state_size, 0);
   if (read_size != state_size) {
     LOG(ERROR) << "SerializeWebState failed";
@@ -2284,6 +2295,51 @@ void NWebDelegate::SetAudioExclusive(bool audioExclusive) {
   }
 
   GetBrowser()->GetHost()->SetAudioExclusive(audioExclusive);
+}
+
+void NWebDelegate::CloseAllMediaPresentations() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "CloseAllMediaPresentations can not get browser";
+    return;
+  }
+
+    GetBrowser()->GetHost()->CloseMedia();
+}
+
+void NWebDelegate::StopAllMedia() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "StopAllMedia can not get browser";
+    return;
+  }
+
+    GetBrowser()->GetHost()->StopMedia();
+}
+
+void NWebDelegate::ResumeAllMedia() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "ResumeAllMedia can not get browser";
+    return;
+  }
+
+    GetBrowser()->GetHost()->ResumeMedia();
+}
+
+void NWebDelegate::PauseAllMedia() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "PauseAllMedia can not get browser";
+    return;
+  }
+
+    GetBrowser()->GetHost()->PauseMedia();
+}
+
+int NWebDelegate::GetMediaPlaybackState() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "GetMediaPlaybackState can not get browser";
+    return NWebPlaybackState_NONE;
+  }
+
+  return GetBrowser()->GetHost()->GetMediaPlaybackState();
 }
 #endif  // defined(OHOS_MEDIA_POLICY)
 

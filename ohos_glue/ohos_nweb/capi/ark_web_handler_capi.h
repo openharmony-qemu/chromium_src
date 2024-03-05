@@ -314,6 +314,11 @@ typedef struct _ark_web_handler_t {
 
   void(ARK_WEB_CALLBACK *on_safe_browsing_check_result)(
       struct _ark_web_handler_t *self, int threat_type);
+
+  void(ARK_WEB_CALLBACK *on_full_screen_enter_with_video_size)(
+      struct _ark_web_handler_t *self,
+      ark_web_full_screen_exit_handler_t *handler, int video_natural_width,
+      int video_natural_height);
 } ark_web_handler_t;
 
 #ifdef __cplusplus

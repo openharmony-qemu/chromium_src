@@ -529,6 +529,19 @@ public:
    */
   void OnSafeBrowsingCheckResult(int threat_type) override;
 
+  /**
+   * @brief called when the page enter the full-screen mode.
+   *
+   * @param handler to exit full-screen mode.
+   * @param video_natural_width indicates the width of the <video> element
+   * entering full screen.
+   * @param video_natural_height indicates the height of the <video> element
+   * entering full screen.
+   */
+  void OnFullScreenEnterWithVideoSize(
+      std::shared_ptr<OHOS::NWeb::NWebFullScreenExitHandler> handler,
+      int video_natural_width, int video_natural_height) override;
+
 private:
   ArkWebRefPtr<ArkWebHandler> ark_web_handler_;
 };

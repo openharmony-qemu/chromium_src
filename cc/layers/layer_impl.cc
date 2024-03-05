@@ -71,6 +71,7 @@ LayerImpl::LayerImpl(LayerTreeImpl* tree_impl,
       contributes_to_drawn_render_surface_(false),
       hit_testable_(false),
       is_inner_viewport_scroll_layer_(false),
+      may_contain_native_(false),
       background_color_(SkColors::kTransparent),
       safe_opaque_background_color_(SkColors::kTransparent),
       transform_tree_index_(kInvalidPropertyNodeId),
@@ -398,6 +399,7 @@ void LayerImpl::PushPropertiesTo(LayerImpl* layer) {
   layer->effect_tree_index_ = effect_tree_index_;
   layer->clip_tree_index_ = clip_tree_index_;
   layer->scroll_tree_index_ = scroll_tree_index_;
+  layer->may_contain_native_ = may_contain_native_;
   if (needs_show_scrollbars_)
     layer->needs_show_scrollbars_ = needs_show_scrollbars_;
 

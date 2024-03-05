@@ -1099,6 +1099,24 @@ void ArkWebHandlerCToCpp::OnSafeBrowsingCheckResult(int threat_type) {
 }
 
 ARK_WEB_NO_SANITIZE
+void ArkWebHandlerCToCpp::OnFullScreenEnterWithVideoSize(
+    ArkWebRefPtr<ArkWebFullScreenExitHandler> handler, int video_natural_width,
+    int video_natural_height) {
+  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
+
+  ark_web_handler_t *_struct = GetStruct();
+  ARK_WEB_CTOCPP_CHECK_PARAM(_struct, );
+
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct,
+                                   on_full_screen_enter_with_video_size, );
+
+  // Execute
+  _struct->on_full_screen_enter_with_video_size(
+      _struct, ArkWebFullScreenExitHandlerCppToC::Invert(handler),
+      video_natural_width, video_natural_height);
+}
+
+ARK_WEB_NO_SANITIZE
 bool ArkWebHandlerCToCpp::OnHandleOverrideUrlLoading(
     ArkWebRefPtr<ArkWebUrlResourceRequest> request) {
   ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);

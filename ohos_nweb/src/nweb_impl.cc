@@ -121,6 +121,10 @@ uint32_t g_nweb_max_count = 0;
 static double default_zoom_factor = 1.0;
 #endif
 
+#if defined(OHOS_MEDIA_POLICY)
+const int NWebPlaybackState_NONE = 0;
+#endif
+
 bool GetWebOptimizationValue() {
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                                         .GetSystemPropertiesInstance();
@@ -1139,11 +1143,10 @@ void NWebImpl::RegisterNativeArkJSFunction(
     const std::string& objName,
     const std::vector<std::string>& methodName,
     std::vector<std::function<char*(std::vector<std::vector<uint8_t>>&,
-                                    std::vector<size_t>&)>>&& callback,
-    int32_t size) {
+                                    std::vector<size_t>&)>>&& callback) {
   if (nweb_delegate_ != nullptr) {
     nweb_delegate_->RegisterNativeJSProxy(objName, methodName,
-                                                std::move(callback), size);
+                                          std::move(callback));
   } else {
     LOG(ERROR) << "nweb_delegate_ is nullptr";
   }
@@ -1515,6 +1518,51 @@ void NWebImpl::SetAudioExclusive(bool audioExclusive) {
   if (nweb_delegate_) {
     nweb_delegate_->SetAudioExclusive(audioExclusive);
   }
+#endif  // defined(OHOS_MEDIA_POLICY)
+}
+
+void NWebImpl::CloseAllMediaPresentations() {
+#if defined(OHOS_MEDIA_POLICY)
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->CloseAllMediaPresentations();
+#endif  // defined(OHOS_MEDIA_POLICY)
+}
+
+void NWebImpl::StopAllMedia() {
+#if defined(OHOS_MEDIA_POLICY)
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->StopAllMedia();
+#endif  // defined(OHOS_MEDIA_POLICY)
+}
+
+void NWebImpl::ResumeAllMedia() {
+#if defined(OHOS_MEDIA_POLICY)
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->ResumeAllMedia();
+#endif  // defined(OHOS_MEDIA_POLICY)
+}
+
+void NWebImpl::PauseAllMedia() {
+#if defined(OHOS_MEDIA_POLICY)
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->PauseAllMedia();
+#endif  // defined(OHOS_MEDIA_POLICY)
+}
+
+int NWebImpl::GetMediaPlaybackState() {
+#if defined(OHOS_MEDIA_POLICY)
+  if (nweb_delegate_ == nullptr) {
+    return NWebPlaybackState_NONE;
+  }
+  return nweb_delegate_->GetMediaPlaybackState();
 #endif  // defined(OHOS_MEDIA_POLICY)
 }
 

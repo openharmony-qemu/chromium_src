@@ -352,6 +352,10 @@ class MediaSessionImpl : public MediaSession,
 
 #if defined(OHOS_MEDIA_POLICY)
  public:
+  enum NWebPlaybackState { NONE, PLAYING, PAUSED, STOP };
+
+  NWebPlaybackState NWebGetState();
+
   std::unordered_set<media::OHOSAudioOutputStream*> activeAudioStream_;
   int audioResumeInterval_ = 0;
   bool audioExclusive_ = true;

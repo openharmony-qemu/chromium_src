@@ -113,14 +113,13 @@ class NWebImpl : public NWeb {
       const std::string& objName,
       const std::vector<std::string>& methodName,
       std::vector<std::function<char*(std::vector<std::vector<uint8_t>>&,
-                                      std::vector<size_t>&)>>&& callback,
-      int32_t size);
+                                      std::vector<size_t>&)>>&& callback);
   void UnRegisterNativeArkJSFunction(const char* objName) override;
   void RegisterNativeValideCallback(const char* webName, const NativeArkWebOnValidCallback callback) override;
   void RegisterNativeDestroyCallback(const char* webName, const NativeArkWebOnDestroyCallback callback) override;
   void RegisterNativeDestroyCallback(std::function<void(void)>&& callback);
-  void RegisterNativeLoadStartCallback(std::function<void(void)> &&callback);
-  void RegisterNativeLoadEndCallback(std::function<void(void)> &&callback);
+  void RegisterNativeLoadStartCallback(std::function<void(void)>&& callback);
+  void RegisterNativeLoadEndCallback(std::function<void(void)>&& callback);
 
   void RegisterArkJSfunction(const std::string& object_name,
                              const std::vector<std::string>& method_list,
@@ -234,6 +233,11 @@ class NWebImpl : public NWeb {
   void SetScreenOffSet(double x, double y) override;
   void SetAudioMuted(bool muted) override;
   void SetAudioResumeInterval(int32_t resumeInterval) override;
+  void CloseAllMediaPresentations() override;
+  void StopAllMedia() override;
+  void ResumeAllMedia() override;
+  void PauseAllMedia() override;
+  int GetMediaPlaybackState() override;
   void SetAudioExclusive(bool audioExclusive) override;
   void NotifyMemoryLevel(int32_t level) override;
   void OnWebviewHide() override;

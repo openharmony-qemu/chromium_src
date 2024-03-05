@@ -915,6 +915,33 @@ public:
    */
   bool GetPrintBackground() override;
 
+  /**
+   * @brief Close fullScreen video.
+   */
+  void CloseAllMediaPresentations() override;
+
+  /**
+   * @brief Stop all audio and video playback on the web page.
+   */
+  void StopAllMedia() override;
+
+  /**
+   * @brief Restart playback of all audio and video on the web page.
+   */
+  void ResumeAllMedia() override;
+
+  /**
+   * @brief Pause all audio and video playback on the web page.
+   */
+  void PauseAllMedia() override;
+
+  /**
+   * @brief View the playback status of all audio and video on the web page.
+   *
+   * @return The playback status of all audio and video.
+   */
+  int GetMediaPlaybackState() override;
+
 private:
   std::shared_ptr<OHOS::NWeb::NWeb> nweb_nweb_;
 };

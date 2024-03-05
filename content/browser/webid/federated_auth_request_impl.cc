@@ -497,6 +497,16 @@ void FederatedAuthRequestImpl::RequestToken(
     mojo::ReportBadMessage("idp_get_params_ptrs is empty.");
     return;
   }
+  // This could only happen with a compromised renderer process. We ensure that
+  // the provider list size is > 0 on the renderer side at the beginning of
+  // parsing |IdentityCredentialRequestOptions|.
+  for (auto& idp_get_params_ptr : idp_get_params_ptrs) {
+    if (idp_get_params_ptr->providers.size() == 0) {
+      mojo::ReportBadMessage("The provider list should not be empty.");
+      return;
+    }
+  }
+
   // It should not be possible to receive multiple IDPs when the
   // `kFedCmMultipleIdentityProviders` flag is disabled. But such a message
   // could be received from a compromised renderer.
@@ -552,14 +562,6 @@ void FederatedAuthRequestImpl::RequestToken(
     // federated identities, so that they can be presented to the user in an
     // unified manner.
     return;
-  }
-
-  // Check that providers are non-empty.
-  for (auto& idp_get_params_ptr : idp_get_params_ptrs) {
-    if (idp_get_params_ptr->providers.size() == 0) {
-      std::move(callback).Run(RequestTokenStatus::kError, absl::nullopt, "");
-      return;
-    }
   }
 
   if (!fedcm_metrics_) {
@@ -1027,6 +1029,19 @@ void FederatedAuthRequestImpl::OnFetchDataForIdpFailed(
 
 void FederatedAuthRequestImpl::MaybeShowAccountsDialog() {
   if (!fetch_data_.pending_idps.empty()) {
+    return;
+  }
+
+  // The accounts fetch could be delayed for legitimate reasons. A user may be
+  // able to disable FedCM API (e.g. via settings or dismissing another FedCM UI
+  // on the same RP origin) before the browser receives the accounts response.
+  // We should exit early without showing any UI.
+  if (api_permission_delegate_->GetApiPermissionStatus(GetEmbeddingOrigin()) !=
+      FederatedApiPermissionStatus::GRANTED) {
+    CompleteRequestWithError(
+        FederatedAuthRequestResult::kErrorDisabledInSettings,
+        TokenStatus::kDisabledInSettings,
+        /*should_delay_callback=*/true);
     return;
   }
 

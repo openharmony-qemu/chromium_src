@@ -115,7 +115,7 @@ ARKWEB_NDK_EXPORT void OH_ArkWeb_RegisterJavaScriptProxy(
     }
 
     nwebSharedPtr->RegisterNativeArkJSFunction(
-        proxyObject->objName, methodNameList, std::move(callbackList), size);
+        proxyObject->objName, methodNameList, std::move(callbackList));
   } else {
     LOG(ERROR)
         << "NativeArkWeb RegisterJavaScriptProxy get nweb null: %{public}s"

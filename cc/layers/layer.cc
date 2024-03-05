@@ -116,6 +116,7 @@ Layer::Layer()
       scroll_tree_index_(kInvalidPropertyNodeId),
       property_tree_sequence_number_(-1),
       ignore_set_needs_commit_for_test_(false),
+      native_(false),
       bitflags_(0u),
       subtree_property_changed_(false) {}
 
@@ -1473,6 +1474,7 @@ void Layer::PushPropertiesTo(LayerImpl* layer,
   if (subtree_property_changed_.Read(*this))
     layer->NoteLayerPropertyChanged();
   layer->set_may_contain_video(may_contain_video());
+  layer->set_may_contain_native(may_contain_native());
   layer->SetTouchActionRegion(inputs.touch_action_region);
   layer->SetContentsOpaque(inputs.contents_opaque);
   layer->SetContentsOpaqueForText(inputs.contents_opaque_for_text);

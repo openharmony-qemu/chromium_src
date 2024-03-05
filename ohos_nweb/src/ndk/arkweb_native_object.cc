@@ -16,14 +16,18 @@
 #include "arkweb_native_object.h"
 
 #include <memory>
+#include <shared_mutex>
 #include <unordered_map>
 
 #include "base/logging.h"
 #include "nweb_impl.h"
 
-std::unordered_map<std::string, std::shared_ptr<OHOS::NWeb::ArkWebNativeObject>>
-    g_NativeWebMap;
 namespace OHOS::NWeb {
+static std::unordered_map<std::string,
+                          std::shared_ptr<OHOS::NWeb::ArkWebNativeObject>>
+    g_NativeWebMap;
+static std::shared_mutex g_NativeWebMapSharedLock;
+
 bool ArkWebNativeObject::FireValidCallback() {
   if (destroyCallback_) {
     auto nwebSharedPtr = GetWebSharedPtr();
@@ -81,12 +85,15 @@ bool ArkWebNativeObject::FireLoadEndCallback() {
 }
 
 bool ArkWebNativeObject::FireDestroyCallback() {
-  g_NativeWebMap.erase(webTag_);
   if (!destroyCallback_) {
     LOG(ERROR) << "NativeArkWeb destroy callback is nullptr";
     return false;
   }
   destroyCallback_();
+
+  std::unique_lock<std::shared_mutex> lock(g_NativeWebMapSharedLock);
+  g_NativeWebMap.erase(webTag_);
+
   return true;
 }
 
@@ -121,6 +128,7 @@ void ArkWebNativeObject::BindWebTagToWebInstance(int32_t id,
     webObject->SetWebWeakPtr(nwebShared);
     webObject->FireValidCallback();
   } else {
+    std::unique_lock<std::shared_mutex> lock(g_NativeWebMapSharedLock);
     g_NativeWebMap[webTag] = std::make_shared<ArkWebNativeObject>(webTag);
   }
 }
@@ -131,6 +139,8 @@ ArkWebNativeObject::GetWebInstanceByWebTag(const char* webTag) {
     LOG(ERROR) << "NativeArkWeb GetWebInstanceByWebTag webTag is null";
     return nullptr;
   }
+
+  std::shared_lock<std::shared_mutex> lock(g_NativeWebMapSharedLock);
   if (auto it = g_NativeWebMap.find(webTag); it != g_NativeWebMap.end()) {
     return it->second;
   }

@@ -311,13 +311,7 @@ void TestClipboard::WritePortableAndPlatformRepresentations(
   default_store_buffer_ = ClipboardBuffer::kCopyPaste;
 }
 
-void TestClipboard::WriteText(const char* text_data,
-               size_t text_len
-#if defined(OHOS_CLIPBOARD)
-               ,
-               CopyOptionMode copy_option
-#endif // defined(OHOS_CLIPBOARD)
-              ) {
+void TestClipboard::WriteText(const char* text_data, size_t text_len) {
   std::string text(text_data, text_len);
   GetDefaultStore().data[ClipboardFormatType::PlainTextType()] = text;
 #if BUILDFLAG(IS_WIN)
@@ -333,12 +327,7 @@ void TestClipboard::WriteText(const char* text_data,
 void TestClipboard::WriteHTML(const char* markup_data,
                               size_t markup_len,
                               const char* url_data,
-                              size_t url_len
-#if defined(OHOS_CLIPBOARD)
-                              ,
-                              CopyOptionMode copy_option
-#endif // defined(OHOS_CLIPBOARD)
-                              ) {
+                              size_t url_len) {
   std::u16string markup;
   base::UTF8ToUTF16(markup_data, markup_len, &markup);
   GetDefaultStore().data[ClipboardFormatType::HtmlType()] =
@@ -349,12 +338,7 @@ void TestClipboard::WriteHTML(const char* markup_data,
 void TestClipboard::WriteUnsanitizedHTML(const char* markup_data,
                                          size_t markup_len,
                                          const char* url_data,
-                                         size_t url_len
-#if defined(OHOS_CLIPBOARD)
-                                         ,
-                                         CopyOptionMode copy_option
-#endif // defined(OHOS_CLIPBOARD)
-                                    ) {
+                                         size_t url_len) {
   GetDefaultStore().data[ClipboardFormatType::HtmlType()] =
       std::string(markup_data, markup_len);
   GetDefaultStore().html_src_url = std::string(url_data, url_len);
@@ -379,12 +363,7 @@ void TestClipboard::WriteFilenames(std::vector<ui::FileInfo> filenames) {
 void TestClipboard::WriteBookmark(const char* title_data,
                                   size_t title_len,
                                   const char* url_data,
-                                  size_t url_len
-#if defined(OHOS_CLIPBOARD)
-                                  ,
-                                  CopyOptionMode copy_option
-#endif // defined(OHOS_CLIPBOARD)
-                                  ) {
+                                  size_t url_len) {
   GetDefaultStore().data[ClipboardFormatType::UrlType()] =
       std::string(url_data, url_len);
 #if !BUILDFLAG(IS_WIN)
@@ -392,11 +371,7 @@ void TestClipboard::WriteBookmark(const char* title_data,
 #endif
 }
 
-void TestClipboard::WriteWebSmartPaste(
-#if defined(OHOS_CLIPBOARD)
-    CopyOptionMode copy_option
-#endif // defined(OHOS_CLIPBOARD)
-  ) {
+void TestClipboard::WriteWebSmartPaste() {
   // Create a dummy entry.
   GetDefaultStore().data[ClipboardFormatType::WebKitSmartPasteType()];
 }

@@ -121,8 +121,8 @@ class NWebNativeEmbedInfoImpl : public NWebNativeEmbedInfo {
   std::map<std::string, std::string> GetParams() override { return params_; }
 
  private:
-  int32_t width_;
-  int32_t height_;
+  int32_t width_ = 0;
+  int32_t height_ = 0;
   std::string id_;
   std::string src_;
   std::string url_;
@@ -175,10 +175,10 @@ class NWebNativeEmbedDataInfoImpl : public NWebNativeEmbedDataInfo {
   }
 
  private:
-  NativeEmbedStatus status_;
+  NativeEmbedStatus status_ = NativeEmbedStatus::CREATE;
   std::string surfaceId_;
   std::string embedId_;
-  std::shared_ptr<NWebNativeEmbedInfo> info_;
+  std::shared_ptr<NWebNativeEmbedInfo> info_ = nullptr;
 };
 
 class NWebNativeEmbedTouchEventImpl : public NWebNativeEmbedTouchEvent {
@@ -224,14 +224,14 @@ class NWebNativeEmbedTouchEventImpl : public NWebNativeEmbedTouchEvent {
 
  private:
   std::string embedId_;
-  int32_t id_;
-  float x_;
-  float y_;
-  float offsetX_;
-  float offsetY_;
-  float screenX_;
-  float screenY_;
-  TouchType type_;
+  int32_t id_ = 0;
+  float x_ = 0;
+  float y_ = 0;
+  float offsetX_ = 0;
+  float offsetY_ = 0;
+  float screenX_ = 0;
+  float screenY_ = 0;
+  TouchType type_ = TouchType::DOWN;
 };
 
 // static

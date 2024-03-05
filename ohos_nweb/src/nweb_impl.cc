@@ -143,6 +143,44 @@ static std::string GetNetlogMode() {
   return system_properties_adapter.GetNetlogMode();
 }
 
+bool GetIsPopup(std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
+  return init_args ? init_args->GetIsPopup() : false;
+}
+
+std::string GetDumpPath(std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
+  return init_args ? init_args->GetDumpPath() : "";
+}
+
+bool GetIsFrameInfoDump(std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
+  return init_args ? init_args->GetIsFrameInfoDump() : false;
+}
+
+bool GetIsEnhanceSurface(std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
+  return init_args ? init_args->GetIsEnhanceSurface() : false;
+}
+
+bool GetIsMultiRendererProcess(std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
+  return init_args ? init_args->GetIsMultiRendererProcess() : false;
+}
+
+std::list<std::string> GetArgsToAdd(std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
+  if (!init_args) {
+    std::list<std::string> temp;
+    return temp;
+  }
+
+  return init_args->GetArgsToAdd();
+}
+
+std::list<std::string> GetArgsToDelete(std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
+  if (!init_args) {
+    std::list<std::string> temp;
+    return temp;
+  }
+
+  return init_args->GetArgsToDelete();
+}
+
 #if defined(OHOS_API_INIT_WEB_ENGINE)
 void InitialWebEngineArgs(std::list<std::string>& web_engine_args,
                           std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
@@ -190,23 +228,23 @@ void InitialWebEngineArgs(std::list<std::string>& web_engine_args,
   }
 
   web_engine_args.emplace_back("--enable-media-stream");
-  if (init_args->GetIsEnhanceSurface()) {
+  if (GetIsEnhanceSurface(init_args)) {
     WVLOG_I("is_enhance_surface is true");
     web_engine_args.emplace_back("--ohos-enhance-surface");
   }
 
-  auto args_to_delete = init_args->GetArgsToDelete();
+  auto args_to_delete = GetArgsToDelete(init_args);
   for (auto arg : args_to_delete) {
     auto it = std::find(web_engine_args.begin(), web_engine_args.end(), arg);
     if (it != web_engine_args.end()) {
       web_engine_args.erase(it);
     }
   }
-  auto args_to_add = init_args->GetArgsToAdd();
+  auto args_to_add = GetArgsToAdd(init_args);
   for (auto arg : args_to_add) {
     web_engine_args.emplace_back(arg);
   }
-  if (init_args->GetIsMultiRendererProcess()) {
+  if (GetIsMultiRendererProcess(init_args)) {
     web_engine_args.emplace_back("--enable-multi-renderer-process");
   }
 #ifdef OHOS_NWEB_EX
@@ -232,8 +270,7 @@ NWebImpl::CreateNWeb(std::shared_ptr<NWebCreateInfo> create_info) {
   TRACE_EVENT1("NWebImpl", "NWebImpl | CreateNWeb", "nweb_id", nweb_id);
   WVLOG_I("creating nweb %{public}u, size %{public}u*%{public}u", nweb_id,
           create_info->GetWidth(), create_info->GetHeight());
-  std::shared_ptr<NWebEngineInitArgs> init_args = create_info->GetEngineInitArgs();
-  bool is_enhance_surface = init_args ? init_args->GetIsEnhanceSurface() : false;
+  bool is_enhance_surface = GetIsEnhanceSurface(create_info->GetEngineInitArgs());
   WVLOG_I("creating nweb use enhance surface %{public}d", is_enhance_surface);
   std::shared_ptr<NWebImpl> nweb = std::make_shared<NWebImpl>(nweb_id);
   if (nweb == nullptr) {
@@ -295,10 +332,6 @@ NWebImpl::InitializeICUStatic(std::shared_ptr<NWebEngineInitArgs> init_args) {
 // static
 void
 NWebImpl::InitializeWebEngine(std::shared_ptr<NWebEngineInitArgs> init_args) {
-  if (!init_args) {
-    return;
-  }
-
   std::list<std::string> web_engine_args;
   InitialWebEngineArgs(web_engine_args, init_args);
   int argc = web_engine_args.size();
@@ -455,11 +488,11 @@ void NWebImpl::OnDestroy() {
 }
 
 void NWebImpl::ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args) {
-  std::string dump_path = init_args->GetDumpPath();
+  std::string dump_path = GetDumpPath(init_args);
   if (!dump_path.empty() && output_handler_ != nullptr) {
     output_handler_->SetDumpPath(dump_path);
   }
-  bool frame_info_dump = init_args->GetIsFrameInfoDump();
+  bool frame_info_dump = GetIsFrameInfoDump(init_args);
   if (frame_info_dump && output_handler_ != nullptr) {
     output_handler_->SetFrameInfoDump(frame_info_dump);
   }
@@ -527,11 +560,7 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
   }
 
   std::shared_ptr<NWebEngineInitArgs> init_args = create_info->GetEngineInitArgs();
-  if (!init_args) {
-    return false;
-  }
-
-  is_enhance_surface_ = init_args->GetIsEnhanceSurface();
+  is_enhance_surface_ = GetIsEnhanceSurface(init_args);
   void* window = nullptr;
   if (is_enhance_surface_) {
     window = create_info->GetEnhanceSurfaceInfo();
@@ -558,10 +587,10 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
       WVLOG_W("native window opt for emulator in init failed, result = %{public}d", ret);
   }
 
-  WVLOG_D("nweb create_info.init_args.is_popup: %{public}d",
-          init_args->GetIsPopup());
+  bool is_popup = GetIsPopup(init_args);
+  WVLOG_D("nweb create_info.init_args.is_popup: %{public}d", is_popup);
   nweb_delegate_ = NWebDelegateAdapter::CreateNWebDelegate(
-      argc, argv, is_enhance_surface_, window, init_args->GetIsPopup()
+      argc, argv, is_enhance_surface_, window, is_popup
 #if defined(OHOS_EX_DOWNLOAD)
       , nweb_id_
 #endif

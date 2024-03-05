@@ -34,8 +34,8 @@ public:
 
 private:
   std::string origin_;
-  int64_t quota_;
-  int64_t usage_;
+  int64_t quota_ = 0;
+  int64_t usage_ = 0;
 };
 
 } // namespace OHOS::NWeb

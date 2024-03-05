@@ -10112,4 +10112,54 @@ void WebContentsImpl::SetTabletMode(bool is_tablet) {
   GetContentClient()->browser()->SetTabletMode(is_tablet);
 }
 #endif
+
+#if defined(OHOS_WEBRTC)
+void WebContentsImpl::StartCamera() {
+  auto media_stream_manager =
+      BrowserMainLoop::GetInstance()->media_stream_manager();
+  if (!media_stream_manager) {
+    LOG(ERROR) << "media_stream_manager null";
+    return;
+  }
+
+  auto videoCaptureManager = media_stream_manager->video_capture_manager();
+  if (!videoCaptureManager) {
+    LOG(ERROR) << "videoCaptureManager null";
+    return;
+  }
+  videoCaptureManager->StartCamera();
+}
+
+void WebContentsImpl::StopCamera() {
+  auto media_stream_manager =
+      BrowserMainLoop::GetInstance()->media_stream_manager();
+  if (!media_stream_manager) {
+    LOG(ERROR) << "media_stream_manager null";
+    return;
+  }
+
+  auto videoCaptureManager = media_stream_manager->video_capture_manager();
+  if (!videoCaptureManager) {
+    LOG(ERROR) << "videoCaptureManager null";
+    return;
+  }
+  videoCaptureManager->StopCamera();
+}
+
+void WebContentsImpl::CloseCamera() {
+  auto media_stream_manager =
+      BrowserMainLoop::GetInstance()->media_stream_manager();
+  if (!media_stream_manager) {
+    LOG(ERROR) << "media_stream_manager null";
+    return;
+  }
+
+  auto videoCaptureManager = media_stream_manager->video_capture_manager();
+  if (!videoCaptureManager) {
+    LOG(ERROR) << "videoCaptureManager null";
+    return;
+  }
+  videoCaptureManager->CloseCamera();
+}
+#endif  // defined(OHOS_WEBRTC)
 }  // namespace content

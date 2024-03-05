@@ -2155,6 +2155,30 @@ void NWebImpl::EnableSafeBrowsing(bool enable) {
   return nweb_delegate_->EnableSafeBrowsing(enable);
 }
 
+void NWebImpl::StartCamera() {
+#if defined(OHOS_WEBRTC)
+  if (nweb_delegate_) {
+    nweb_delegate_->StartCamera();
+  }
+#endif  // defined(OHOS_WEBRTC)
+}
+
+void NWebImpl::StopCamera() {
+#if defined(OHOS_WEBRTC)
+  if (nweb_delegate_) {
+    nweb_delegate_->StopCamera();
+  }
+#endif  // defined(OHOS_WEBRTC)
+}
+
+void NWebImpl::CloseCamera() {
+#if defined(OHOS_WEBRTC)
+  if (nweb_delegate_) {
+    nweb_delegate_->CloseCamera();
+  }
+#endif  // defined(OHOS_WEBRTC)
+}
+
 }  // namespace OHOS::NWeb
 
 using namespace OHOS::NWeb;

@@ -99,6 +99,11 @@
 #include "content/browser/starscan_load_observer.h"
 #endif
 
+#if defined(OHOS_WEBRTC)
+#include "content/browser/renderer_host/media/media_stream_manager.h"
+#include "content/browser/renderer_host/media/video_capture_manager.h"
+#endif  // defined(OHOS_WEBRTC)
+
 namespace base {
 class FilePath;
 }  // namespace base
@@ -153,6 +158,10 @@ class PreloadingAttempt;
 #if BUILDFLAG(IS_OHOS)
 class NativeWebContentsObserver;
 #endif
+#if defined(OHOS_WEBRTC)
+class MediaStreamManager;
+class VideoCaptureManager;
+#endif  // defined(OHOS_WEBRTC)
 
 namespace mojom {
 class CreateNewWindowParams;
@@ -345,6 +354,12 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   void DelMediaPlayerAudibleCount();
   bool GetMediaPlayerCurrentAudible();
 #endif  // defined(OHOS_MEDIA_MUTE_AUDIO)
+
+#if defined(OHOS_WEBRTC)
+  void StartCamera() override;
+  void StopCamera() override;
+  void CloseCamera() override;
+#endif // defined(OHOS_WEBRTC)
 
   // WebContents ------------------------------------------------------
   WebContentsDelegate* GetDelegate() override;

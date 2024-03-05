@@ -669,6 +669,12 @@ class WebContents : public PageNavigator,
   virtual void UpdateBrowserControlsHeight(int, bool) = 0;
 #endif
 
+#if defined(OHOS_WEBRTC)
+  virtual void StartCamera() = 0;
+  virtual void StopCamera() = 0;
+  virtual void CloseCamera() = 0;
+#endif  // defined(OHOS_WEBRTC)
+
   // Saves the given title to the navigation entry and does associated work. It
   // will update history and the view with the new title, and also synthesize
   // titles for file URLs that have none. Thus |entry| must have a URL set.

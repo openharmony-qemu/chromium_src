@@ -2224,6 +2224,35 @@ void NWebDelegate::SetAudioMuted(bool muted) {
 }
 #endif  // defined(OHOS_MEDIA_MUTE_AUDIO)
 
+#if defined(OHOS_WEBRTC)
+void NWebDelegate::StartCamera() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "StartCamera can not get browser";
+    return;
+  }
+
+  GetBrowser()->GetHost()->StartCamera();
+}
+
+void NWebDelegate::StopCamera() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "StopCamera can not get browser";
+    return;
+  }
+
+  GetBrowser()->GetHost()->StopCamera();
+}
+
+void NWebDelegate::CloseCamera() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "CloseCamera can not get browser";
+    return;
+  }
+
+  GetBrowser()->GetHost()->CloseCamera();
+}
+#endif  // defined(OHOS_WEBRTC)
+
 #if defined(OHOS_COMPOSITE_RENDER)
 void NWebDelegate::SetShouldFrameSubmissionBeforeDraw(bool should) {
   if (GetBrowser().get()) {

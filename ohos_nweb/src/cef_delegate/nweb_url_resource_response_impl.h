@@ -159,7 +159,7 @@ private:
   NWebResponseDataType dataType_ = NWebResponseDataType::NWEB_STRING_TYPE;
   bool isFileFd_ = false;
   bool isDataReady_ = true;
-  std::shared_ptr<NWebResourceReadyCallback> readyCallback_;
+  std::shared_ptr<NWebResourceReadyCallback> readyCallback_ = nullptr;
 };
 
 } // namespace OHOS::NWeb

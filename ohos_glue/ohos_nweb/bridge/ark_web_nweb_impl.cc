@@ -764,4 +764,24 @@ bool ArkWebNWebImpl::GetPrintBackground() {
   return nweb_nweb_->GetPrintBackground();
 }
 
+void ArkWebNWebImpl::CloseAllMediaPresentations() {
+  nweb_nweb_->CloseAllMediaPresentations();
+}
+
+void ArkWebNWebImpl::StopAllMedia() {
+  nweb_nweb_->StopAllMedia();
+}
+
+void ArkWebNWebImpl::ResumeAllMedia() {
+  nweb_nweb_->ResumeAllMedia();
+}
+
+void ArkWebNWebImpl::PauseAllMedia() {
+  nweb_nweb_->PauseAllMedia();
+}
+
+int ArkWebNWebImpl::GetMediaPlaybackState() {
+  return nweb_nweb_->GetMediaPlaybackState();
+}
+
 } // namespace OHOS::ArkWeb

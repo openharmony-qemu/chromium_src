@@ -233,6 +233,11 @@ class NWebImpl : public NWeb {
   void SetScreenOffSet(double x, double y) override;
   void SetAudioMuted(bool muted) override;
   void SetAudioResumeInterval(int32_t resumeInterval) override;
+  void CloseAllMediaPresentations() override;
+  void StopAllMedia() override;
+  void ResumeAllMedia() override;
+  void PauseAllMedia() override;
+  int GetMediaPlaybackState() override;
   void SetAudioExclusive(bool audioExclusive) override;
   void NotifyMemoryLevel(int32_t level) override;
   void OnWebviewHide() override;

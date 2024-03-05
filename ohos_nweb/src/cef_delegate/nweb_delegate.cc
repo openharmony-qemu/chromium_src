@@ -78,6 +78,10 @@ namespace OHOS::NWeb {
 static const double kZoomLevelToFactorRatio = 1.2;
 #endif
 
+#if defined(OHOS_MEDIA_POLICY)
+const int NWebPlaybackState_NONE = 0;
+#endif
+
 static const int kDefaultWebNativeProxy = -2;
 
 #if defined(OHOS_MSGPORT)
@@ -2291,6 +2295,51 @@ void NWebDelegate::SetAudioExclusive(bool audioExclusive) {
   }
 
   GetBrowser()->GetHost()->SetAudioExclusive(audioExclusive);
+}
+
+void NWebDelegate::CloseAllMediaPresentations() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "CloseAllMediaPresentations can not get browser";
+    return;
+  }
+
+    GetBrowser()->GetHost()->CloseMedia();
+}
+
+void NWebDelegate::StopAllMedia() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "StopAllMedia can not get browser";
+    return;
+  }
+
+    GetBrowser()->GetHost()->StopMedia();
+}
+
+void NWebDelegate::ResumeAllMedia() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "ResumeAllMedia can not get browser";
+    return;
+  }
+
+    GetBrowser()->GetHost()->ResumeMedia();
+}
+
+void NWebDelegate::PauseAllMedia() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "PauseAllMedia can not get browser";
+    return;
+  }
+
+    GetBrowser()->GetHost()->PauseMedia();
+}
+
+int NWebDelegate::GetMediaPlaybackState() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "GetMediaPlaybackState can not get browser";
+    return NWebPlaybackState_NONE;
+  }
+
+  return GetBrowser()->GetHost()->GetMediaPlaybackState();
 }
 #endif  // defined(OHOS_MEDIA_POLICY)
 

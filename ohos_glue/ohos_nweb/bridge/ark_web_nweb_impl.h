@@ -968,6 +968,21 @@ public:
   /*--ark web()--*/
   ArkWebString GetLastJavascriptProxyCallingFrameUrl() override;
 
+  /**
+   * @brief Enable the ability to intelligent tracking prevention, default
+   * disabled.
+   *
+   * @param enable Indicate whether the abilitiy is enabled or disabled.
+   */
+  void EnableIntelligentTrackingPrevention(bool enable) override;
+
+  /**
+   * @brief Get whether intelligent tracking prevention is enabled.
+   * @return true if enable the ability intelligent tracking prevention; else
+   * false.
+   */
+  bool IsIntelligentTrackingPreventionEnabled() override;
+
 private:
   std::shared_ptr<OHOS::NWeb::NWeb> nweb_nweb_;
 };

@@ -234,6 +234,10 @@ public:
 
   bool OnHandleOverrideUrlLoading(
       ArkWebRefPtr<ArkWebUrlResourceRequest> request) override;
+
+  void OnIntelligentTrackingPreventionResult(
+      const ArkWebString &website_host,
+      const ArkWebString &tracker_host) override;
 };
 
 } // namespace OHOS::ArkWeb

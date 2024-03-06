@@ -444,6 +444,12 @@ typedef struct _ark_web_nweb_t {
 
   int(ARK_WEB_CALLBACK *get_media_playback_state)(struct _ark_web_nweb_t *self);
 
+  void(ARK_WEB_CALLBACK *enable_intelligent_tracking_prevention)(
+      struct _ark_web_nweb_t *self, bool enable);
+
+  bool(ARK_WEB_CALLBACK *is_intelligent_tracking_prevention_enabled)(
+      struct _ark_web_nweb_t *self);
+
   void(ARK_WEB_CALLBACK *start_camera)(struct _ark_web_nweb_t *self);
 
   void(ARK_WEB_CALLBACK *stop_camera)(struct _ark_web_nweb_t *self);

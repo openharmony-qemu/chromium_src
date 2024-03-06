@@ -1559,6 +1559,26 @@ ArkWebString ARK_WEB_CALLBACK ark_web_nweb_get_last_javascript_proxy_calling_fra
   return ArkWebNWebCppToC::Get(self)->GetLastJavascriptProxyCallingFrameUrl();
 }
 
+void ARK_WEB_CALLBACK ark_web_nweb_enable_intelligent_tracking_prevention(
+    struct _ark_web_nweb_t *self, bool enable) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->EnableIntelligentTrackingPrevention(enable);
+}
+
+bool ARK_WEB_CALLBACK ark_web_nweb_is_intelligent_tracking_prevention_enabled(
+    struct _ark_web_nweb_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, false);
+
+  // Execute
+  return ArkWebNWebCppToC::Get(self)->IsIntelligentTrackingPreventionEnabled();
+}
+
 } // namespace
 
 ArkWebNWebCppToC::ArkWebNWebCppToC() {
@@ -1726,6 +1746,10 @@ ArkWebNWebCppToC::ArkWebNWebCppToC() {
   GetStruct()->stop_camera = ark_web_nweb_stop_camera;
   GetStruct()->close_camera = ark_web_nweb_close_camera;
   GetStruct()->get_last_javascript_proxy_calling_frame_url = ark_web_nweb_get_last_javascript_proxy_calling_frame_url;
+  GetStruct()->enable_intelligent_tracking_prevention =
+      ark_web_nweb_enable_intelligent_tracking_prevention;
+  GetStruct()->is_intelligent_tracking_prevention_enabled =
+      ark_web_nweb_is_intelligent_tracking_prevention_enabled;
 }
 
 ArkWebNWebCppToC::~ArkWebNWebCppToC() {

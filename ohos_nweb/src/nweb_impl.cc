@@ -97,6 +97,10 @@
 #include "cef/libcef/browser/alloy/alloy_browser_context.h"
 #endif
 
+#ifdef OHOS_ITP
+#include "cef/libcef/browser/anti_tracking/third_party_cookie_access_policy.h"
+#endif
+
 namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
@@ -464,6 +468,11 @@ void NWebImpl::OnDestroy() {
     return;
   }
   TRACE_EVENT1("NWebImpl", "NWebImpl | DestoryNWeb", "nweb_id", nweb_id_);
+
+#ifdef OHOS_ITP
+  EnableIntelligentTrackingPrevention(false);
+#endif
+
   bool is_close_all = (--g_nweb_count) == 0 ? true : false;
   if (nweb_delegate_ != nullptr) {
     nweb_delegate_->OnDestroy(is_close_all);
@@ -2242,6 +2251,62 @@ std::string NWebImpl::GetLastJavascriptProxyCallingFrameUrl() {
 #endif
 }
 
+#ifdef OHOS_ITP
+void NWebImpl::EnableIntelligentTrackingPrevention(bool enable) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  return nweb_delegate_->EnableIntelligentTrackingPrevention(enable);
+}
+
+bool NWebImpl::IsIntelligentTrackingPreventionEnabled() const {
+  if (nweb_delegate_ == nullptr) {
+    return false;
+  }
+  return nweb_delegate_->IsIntelligentTrackingPreventionEnabled();
+}
+
+//static
+bool NWebImpl::IsAnyNWebIntelligentTrackingPreventionEnabled() {
+  NWebMap* map = g_nweb_map.Pointer();
+  for (auto it = map->begin(); it != map->end(); it++) {
+    auto nweb_weak_ptr = it->second.lock();
+    if (nweb_weak_ptr) {
+      auto nweb = nweb_weak_ptr.get();
+      if (nweb && nweb->IsIntelligentTrackingPreventionEnabled()) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+#endif
+
+// static
+void NWebImpl::AddIntelligentTrackingPreventionBypassingList(
+    const std::vector<std::string>& hosts) {
+#ifdef OHOS_ITP
+  ohos_anti_tracking::ThirdPartyCookieAccessPolicy::GetInstance()->
+      AddITPBypassingList(hosts);
+#endif
+}
+
+// static
+void NWebImpl::RemoveIntelligentTrackingPreventionBypassingList(
+    const std::vector<std::string>& hosts) {
+#ifdef OHOS_ITP
+  ohos_anti_tracking::ThirdPartyCookieAccessPolicy::GetInstance()->
+      RemoveITPBypassingList(hosts);
+#endif
+}
+
+// static
+void NWebImpl::ClearIntelligentTrackingPreventionBypassingList() {
+#ifdef OHOS_ITP
+  ohos_anti_tracking::ThirdPartyCookieAccessPolicy::GetInstance()->
+      ClearITPBypassingList();
+#endif
+}
 }  // namespace OHOS::NWeb
 
 using namespace OHOS::NWeb;

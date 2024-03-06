@@ -380,6 +380,17 @@ class NWebImpl : public NWeb {
   std::string GetWebTag() { return web_tag_; }
 #endif
 
+#ifdef OHOS_ITP
+  void EnableIntelligentTrackingPrevention(bool enable) override;
+  bool IsIntelligentTrackingPreventionEnabled() const override;
+  static bool IsAnyNWebIntelligentTrackingPreventionEnabled();
+#endif
+  static void AddIntelligentTrackingPreventionBypassingList(
+      const std::vector<std::string>& hosts);
+  static void RemoveIntelligentTrackingPreventionBypassingList(
+      const std::vector<std::string>& hosts);
+  static void ClearIntelligentTrackingPreventionBypassingList();
+
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

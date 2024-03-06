@@ -397,6 +397,11 @@ class NWebDelegateInterface
 #if defined(OHOS_SECURE_JAVASCRIPT_PROXY)
   virtual std::string GetLastJavascriptProxyCallingFrameUrl() = 0;
 #endif
+
+#ifdef OHOS_ITP
+  virtual void EnableIntelligentTrackingPrevention(bool enable) = 0;
+  virtual bool IsIntelligentTrackingPreventionEnabled() const = 0;
+#endif
 };
 }  // namespace OHOS::NWeb
 

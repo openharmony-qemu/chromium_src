@@ -960,6 +960,14 @@ public:
   /*--ark web()--*/
   void CloseCamera() override;
 
+  /**
+   * @brief Obtains the last javascript proxy calling frame url.
+   *
+   * @return the url of last calling frame url.
+   */
+  /*--ark web()--*/
+  ArkWebString GetLastJavascriptProxyCallingFrameUrl() override;
+
 private:
   std::shared_ptr<OHOS::NWeb::NWeb> nweb_nweb_;
 };

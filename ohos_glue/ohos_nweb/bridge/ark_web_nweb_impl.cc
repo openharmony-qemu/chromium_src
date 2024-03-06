@@ -795,4 +795,9 @@ void ArkWebNWebImpl::StopCamera() {
 void ArkWebNWebImpl::CloseCamera() {
   nweb_nweb_->CloseCamera();
 }
+
+ArkWebString ArkWebNWebImpl::GetLastJavascriptProxyCallingFrameUrl() {
+  return ArkWebStringClassToStruct(nweb_nweb_->GetLastJavascriptProxyCallingFrameUrl());
+}
+
 } // namespace OHOS::ArkWeb

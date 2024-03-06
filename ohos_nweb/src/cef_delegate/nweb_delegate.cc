@@ -1207,6 +1207,22 @@ void NWebDelegate::OnPause() {
 #endif  // defined(OHOS_INPUT_EVENTS)
 }
 
+void NWebDelegate::OnWindowShow() {
+  LOG(DEBUG) << "NWebDelegate::OnWindowShow";
+  if (!GetBrowser().get()) {
+    return;
+  }
+  GetBrowser()->GetHost()->OnWindowShow();
+}
+
+void NWebDelegate::OnWindowHide() {
+  LOG(DEBUG) << "NWebDelegate::OnWindowHide";
+  if (!GetBrowser().get()) {
+    return;
+  }
+  GetBrowser()->GetHost()->OnWindowHide();
+}
+
 void NWebDelegate::OnContinue() {
   LOG(DEBUG) << "NWebDelegate::OnContinue, nweb_id = " << nweb_id_;
   if (!GetBrowser().get()) {

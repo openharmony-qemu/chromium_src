@@ -133,4 +133,12 @@ void ArkWebEngineImpl::SetWebDebuggingAccess(bool isEnableDebug) {
   nweb_engine_->SetWebDebuggingAccess(isEnableDebug);
 }
 
+void ArkWebEngineImpl::PauseAllTimers() {
+  nweb_engine_->PauseAllTimers();
+}
+
+void ArkWebEngineImpl::ResumeAllTimers() {
+  nweb_engine_->ResumeAllTimers();
+}
+
 } // namespace OHOS::ArkWeb

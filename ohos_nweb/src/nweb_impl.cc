@@ -2156,6 +2156,28 @@ void NWebImpl::PrepareForPageLoad(const std::string &url,
 #endif  // defined(OHOS_NO_STATE_PREFETCH)
 }
 
+void NWebImpl::PauseAllTimers() {
+#if defined(OHOS_SUSPEND_ALL_TIMERS)
+  if (content::SuspendedProcessWatcherOHOS::GetShradWebKitTimersInstance()) {
+    content::SuspendedProcessWatcherOHOS::GetShradWebKitTimersInstance()
+        ->PauseWebKitShardTimersFromOHOS();
+  } else {
+    WVLOG_I("NWebImpl::PauseAllTimers content_view_ is nullptr");
+  }
+#endif
+}
+
+void NWebImpl::ResumeAllTimers() {
+#if defined(OHOS_SUSPEND_ALL_TIMERS)
+  if (content::SuspendedProcessWatcherOHOS::GetShradWebKitTimersInstance()) {
+    content::SuspendedProcessWatcherOHOS::GetShradWebKitTimersInstance()
+        ->ResumeWebKitShardTimersFromOHOS();
+  } else {
+    WVLOG_I("NWebImpl::ResumeAllTimers content_view_ is nullptr");
+  }
+#endif
+}
+
 int NWebImpl::GetSecurityLevel() {
 #if BUILDFLAG(IS_OHOS)
   if (nweb_delegate_ == nullptr) {

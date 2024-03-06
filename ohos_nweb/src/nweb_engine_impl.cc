@@ -94,4 +94,12 @@ void NWebEngineImpl::SetWebDebuggingAccess(bool isEnableDebug) {
   }
 }
 
+void NWebEngineImpl::PauseAllTimers() {
+  NWebImpl::PauseAllTimers();
+}
+
+void NWebEngineImpl::ResumeAllTimers() {
+  NWebImpl::ResumeAllTimers();
+}
+
 } // namespace OHOS::NWeb

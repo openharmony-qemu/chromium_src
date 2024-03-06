@@ -48,6 +48,10 @@ public:
 
   void SetWebDebuggingAccess(bool isEnableDebug) override;
 
+  void PauseAllTimers() override;
+
+  void ResumeAllTimers() override;
+
 private:
   std::shared_ptr<NWebDataBase> nweb_data_base_;
   std::shared_ptr<NWebWebStorage> nweb_web_storage_;

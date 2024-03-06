@@ -590,6 +590,14 @@
 "dependence": "",
 "default": "true"
 },
+{ "name": "OHOS_SUSPEND_ALL_TIMERS",
+"owner": "",
+"desc": "",
+"effect":"main gn blink_core other",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},
 { "name": "OHOS_USERAGENT",
 "owner": "",
 "desc": "",

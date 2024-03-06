@@ -35,7 +35,7 @@
 #include "base/files/file_util.h"
 #include "base/files/file_enumerator.h"
 
-#define ROOT_CERT "/etc/ssl/certs/cacert.pem"
+#define ROOT_CERT_PATH "/system/etc/security/certificates/"
 #define MIN_CERT_NUM 1
 #define DER_ENCODED 0x30
 namespace net {
@@ -280,7 +280,6 @@ int CertVerify(const std::vector<std::string>& cert_bytes,
   uint32_t server_cert_sum;
   const unsigned char* der_encoded_tmp = nullptr;
   uint32_t i;
-  int root_cert_sum = 0;
   X509_STORE* ca_store = nullptr;
   X509_LOOKUP* look_up = nullptr;
 
@@ -321,7 +320,7 @@ int CertVerify(const std::vector<std::string>& cert_bytes,
 
   // Create X509_LOOKUP, the store_ctx member of this data structure is
   // associated with the newly created certificate store ca_store
-  look_up = X509_STORE_add_lookup(ca_store, X509_LOOKUP_file());
+  look_up = X509_STORE_add_lookup(ca_store, X509_LOOKUP_hash_dir());
   if (look_up == nullptr) {
     LOG(ERROR) << "Create X509 LOOKUP failed";
     X509_d2i_free(server_cert, server_cert_sum);
@@ -329,11 +328,9 @@ int CertVerify(const std::vector<std::string>& cert_bytes,
     return X509_V_ERR_UNSPECIFIED;
   }
 
-  // Parse the root certificate file
-  root_cert_sum =
-      X509_load_cert_crl_file(look_up, ROOT_CERT, X509_FILETYPE_PEM);
-  if (root_cert_sum == 0) {
-    LOG(ERROR) << "Root certificate number is 0";
+  // Parse the root certificate dir
+  if (X509_LOOKUP_add_dir(look_up, ROOT_CERT_PATH, X509_FILETYPE_PEM) == 0) {
+    LOG(ERROR) << "Add root certificate dir failed";
     X509_d2i_free(server_cert, server_cert_sum);
     X509_STORE_free(ca_store);
     return X509_V_ERR_UNSPECIFIED;

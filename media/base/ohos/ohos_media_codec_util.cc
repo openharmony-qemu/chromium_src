@@ -13,12 +13,23 @@
 
 namespace media {
 // static
-CapabilityDataAdapter OHOSMediaCodecUtil::GetCodecCapability(
-    const std::string& mime,
-    bool isCodec) {
-  return OhosAdapterHelper::GetInstance()
-      .GetMediaCodecListAdapter()
-      .GetCodecCapability(mime, isCodec);
+CapabilityData OHOSMediaCodecUtil::GetCodecCapability(const std::string& mime,
+                                                      bool isCodec) {
+  std::shared_ptr<CapabilityDataAdapter> data =
+      OhosAdapterHelper::GetInstance()
+          .GetMediaCodecListAdapter()
+          .GetCodecCapability(mime, isCodec);
+
+  CapabilityData result;
+
+  if (!data) {
+    return result;
+  }
+
+  result.maxWidth = data->GetMaxWidth();
+  result.maxHeight = data->GetMaxHeight();
+  result.maxframeRate = data->GetMaxframeRate();
+  return result;
 }
 
 }  // namespace media

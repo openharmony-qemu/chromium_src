@@ -4,6 +4,7 @@
 
 #include "ui/base/clipboard/ohos/clipboard_ohos.h"
 #include "ui/base/clipboard/ohos/clipboard_ohos_read_data.h"
+#include "ui/base/clipboard/ohos/clip_board_image_data_adapter_impl.h"
 
 #include "base/check_op.h"
 #include "base/command_line.h"
@@ -188,13 +189,13 @@ class ClipboardOHOSInternal {
     }
 
     read_data_ = nullptr;
-    PasteRecordList record_list;
+    PasteRecordVector record_vector;
     if (OhosAdapterHelper::GetInstance().GetPasteBoard().GetPasteData(
-            record_list)) {
+            record_vector)) {
       // Notice: Because pasteboard observer dont notify cross device.
       // So now we always get data from system clipboard instead of cache data.
       state_ = ClipboardState::kUpToDate;
-      read_data_ = std::make_shared<ClipboardOhosReadData>(record_list);
+      read_data_ = std::make_shared<ClipboardOhosReadData>(record_vector);
       return;
     }
     LOG(ERROR) << "UpdateClipboardData Failed";
@@ -249,8 +250,13 @@ class ClipboardOHOSInternal {
     }
   }
 
-  SkAlphaType AlphaTypeToSkAlphaType(const ClipBoardImageData& imgData) const {
-    switch (imgData.alphaType) {
+  SkAlphaType AlphaTypeToSkAlphaType(
+      const std::shared_ptr<ClipBoardImageDataAdapter> imgData) const {
+    if (!imgData) {
+      return SkAlphaType::kUnknown_SkAlphaType;
+    }
+
+    switch (imgData->GetAlphaType()) {
       case ClipBoardImageAlphaType::ALPHA_TYPE_UNKNOWN:
         return SkAlphaType::kUnknown_SkAlphaType;
       case ClipBoardImageAlphaType::ALPHA_TYPE_OPAQUE:
@@ -265,8 +271,12 @@ class ClipboardOHOSInternal {
   }
 
   SkColorType PixelFormatToSkColorType(
-      const ClipBoardImageData& imgData) const {
-    switch (imgData.colorType) {
+      const std::shared_ptr<ClipBoardImageDataAdapter> imgData) const {
+    if (!imgData) {
+      return SkColorType::kUnknown_SkColorType;
+    }
+
+    switch (imgData->GetColorType()) {
       case ClipBoardImageColorType::COLOR_TYPE_RGBA_8888:
         return SkColorType::kRGBA_8888_SkColorType;
       case ClipBoardImageColorType::COLOR_TYPE_BGRA_8888:
@@ -277,12 +287,12 @@ class ClipboardOHOSInternal {
   }
 
   SkImageInfo MakeSkImageInfoFromPixelMap(
-      const ClipBoardImageData& imgData) const {
+      const std::shared_ptr<ClipBoardImageDataAdapter> imgData) const {
     SkColorType colorType = PixelFormatToSkColorType(imgData);
     SkAlphaType alphaType = AlphaTypeToSkAlphaType(imgData);
     sk_sp<SkColorSpace> colorSpace = SkColorSpace::MakeSRGB();
-    return SkImageInfo::Make(imgData.width, imgData.height, colorType,
-                             alphaType, colorSpace);
+    return SkImageInfo::Make(imgData->GetWidth(), imgData->GetHeight(), 
+                             colorType, alphaType, colorSpace);
   }
 
   void DidGetPng(Clipboard::ReadPngCallback callback,
@@ -306,17 +316,22 @@ class ClipboardOHOSInternal {
     }
     state_ = ClipboardState::kOutOfDate;
     SkBitmap img;
-    PasteRecordList recordList;
+    PasteRecordVector recordVector;
     if (OhosAdapterHelper::GetInstance().GetPasteBoard().GetPasteData(
-            recordList) &&
-        (recordList.size() > 0)) {
-      for (auto& r : recordList) {
-        ClipBoardImageData imgData;
+            recordVector) &&
+        (recordVector.size() > 0)) {
+      for (auto& r : recordVector) {
+        std::shared_ptr<ClipBoardImageDataAdapterImpl> imgData = 
+            std::make_shared<ClipBoardImageDataAdapterImpl>();
+        if (!imgData) {
+          LOG(ERROR) << "ClipBoardImageDataAdapterImpl create failed";
+          return;
+        }
         if (!r->GetImgData(imgData)) {
           continue;
         }
         SkImageInfo skImageInfo = MakeSkImageInfoFromPixelMap(imgData);
-        SkPixmap pixmap(skImageInfo, imgData.data, imgData.rowBytes);
+        SkPixmap pixmap(skImageInfo, imgData->GetData(), imgData->GetRowBytes());
         if (!img.installPixels(pixmap)) {
           LOG(ERROR) << "installPixels failed";
           continue;
@@ -344,7 +359,7 @@ class ClipboardOHOSInternal {
     if (!currentData) {
       return nullptr;
     }
-    PasteRecordList result_list;
+    PasteRecordVector result_vector;
 #if defined(OHOS_CLIPBOARD)
     CopyOptionMode copy_option = currentData->copy_option();
 #endif // defined(OHOS_CLIPBOARD)
@@ -382,8 +397,8 @@ class ClipboardOHOSInternal {
       }
     }
 
-    result_list.push_back(record);
-    OhosAdapterHelper::GetInstance().GetPasteBoard().SetPasteData(result_list
+    result_vector.push_back(record);
+    OhosAdapterHelper::GetInstance().GetPasteBoard().SetPasteData(result_vector
 #if defined(OHOS_CLIPBOARD)
                                                                   ,
                                                                   copy_option
@@ -418,12 +433,14 @@ class ClipboardOHOSInternal {
     if (!read_data_) {
       return false;
     }
-    PasteRecordList record_list = read_data_->GetPasteRecordList();
-    if (record_list.size() > 0) {
-      auto& record = record_list[0];
+    PasteRecordVector record_vector = read_data_->GetPasteRecordVector();
+    if (record_vector.size() > 0) {
+      auto& record = record_vector[0];
       std::shared_ptr<std::string> html = record->GetHtmlText();
       std::shared_ptr<std::string> text = record->GetPlainText();
-      ClipBoardImageData imgData;
+      std::shared_ptr<ClipBoardImageDataAdapterImpl> imgData 
+        = std::make_shared<ClipBoardImageDataAdapterImpl>();   
+
       bool imgFlag = false;
       imgFlag = record->GetImgData(imgData);
       if (html) {
@@ -439,16 +456,21 @@ class ClipboardOHOSInternal {
     return allFormat & static_cast<int>(format);
   }
 
-  std::shared_ptr<ClipBoardImageData> WriteBitmapToClipboard(
+  std::shared_ptr<ClipBoardImageDataAdapter> WriteBitmapToClipboard(
       const SkBitmap& bitmap) {
-    ClipBoardImageData imageInfo;
-    imageInfo.colorType = ImageToClipboardColorType(bitmap.colorType());
-    imageInfo.alphaType = ImageToClipboardAlphaType(bitmap.alphaType());
-    imageInfo.data = (uint32_t*)bitmap.getPixels();
-    imageInfo.dataSize = bitmap.computeByteSize();
-    imageInfo.width = bitmap.width();
-    imageInfo.height = bitmap.height();
-    return std::make_shared<ClipBoardImageData>(imageInfo);
+    std::shared_ptr<ClipBoardImageDataAdapterImpl> imageInfo 
+      = std::make_shared<ClipBoardImageDataAdapterImpl>();
+    if (!imageInfo) {
+      LOG(ERROR) << "WriteBitmapToClipboard ClipBoardImageDataAdapterImpl create failed"; 
+      return nullptr;
+    }
+    imageInfo->SetColorType(ImageToClipboardColorType(bitmap.colorType()));
+    imageInfo->SetAlphaType(ImageToClipboardAlphaType(bitmap.alphaType()));
+    imageInfo->SetData((uint32_t*)bitmap.getPixels());
+    imageInfo->SetDataSize(bitmap.computeByteSize());
+    imageInfo->SetWidth(bitmap.width());
+    imageInfo->SetHeight(bitmap.height());
+    return imageInfo;
   }
   // Current ClipboardData.
   std::unique_ptr<ClipboardData> data_;

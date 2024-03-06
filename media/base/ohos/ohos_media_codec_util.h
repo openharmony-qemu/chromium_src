@@ -11,10 +11,17 @@
 namespace media {
 using namespace OHOS::NWeb;
 using namespace std;
+
+struct CapabilityData {
+  int32_t maxWidth = 0;
+  int32_t maxHeight = 0;
+  int32_t maxframeRate = 0;
+};
+
 class OHOSMediaCodecUtil {
  public:
-  static CapabilityDataAdapter GetCodecCapability(const std::string& mime,
-                                                  bool isCodec);
+  static CapabilityData GetCodecCapability(const std::string& mime,
+                                           bool isCodec);
 };
 
 }  // namespace media

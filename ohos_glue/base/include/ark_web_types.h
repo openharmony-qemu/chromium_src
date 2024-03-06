@@ -119,6 +119,17 @@ const ArkWebBooleanVector ark_web_boolean_vector_default = {
 
 typedef struct {
   int size;
+  int32_t *value;
+
+  ArkWebMemFreeFunc ark_web_mem_free_func;
+} ArkWebInt32List;
+
+const ArkWebInt32List ark_web_int32_list_default = {
+    0,
+};
+
+typedef struct {
+  int size;
   char *value;
 
   ArkWebMemFreeFunc ark_web_mem_free_func;

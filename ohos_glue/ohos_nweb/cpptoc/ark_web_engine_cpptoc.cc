@@ -167,6 +167,26 @@ void ARK_WEB_CALLBACK ark_web_engine_set_web_debugging_access(
   ArkWebEngineCppToC::Get(self)->SetWebDebuggingAccess(isEnableDebug);
 }
 
+void ARK_WEB_CALLBACK ark_web_engine_pause_webkit_all_timers(
+    struct _ark_web_engine_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebEngineCppToC::Get(self)->PauseAllTimers();
+}
+
+void ARK_WEB_CALLBACK ark_web_engine_resume_webkit_all_timers(
+    struct _ark_web_engine_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebEngineCppToC::Get(self)->ResumeAllTimers();
+}
+
 } // namespace
 
 ArkWebEngineCppToC::ArkWebEngineCppToC() {
@@ -181,6 +201,9 @@ ArkWebEngineCppToC::ArkWebEngineCppToC() {
   GetStruct()->prepare_for_page_load = ark_web_engine_prepare_for_page_load;
   GetStruct()->set_web_debugging_access =
       ark_web_engine_set_web_debugging_access;
+  GetStruct()->pause_webkit_all_timers = ark_web_engine_pause_webkit_all_timers;
+  GetStruct()->resume_webkit_all_timers =
+      ark_web_engine_resume_webkit_all_timers;
 }
 
 ArkWebEngineCppToC::~ArkWebEngineCppToC() {

@@ -788,7 +788,7 @@ void ParseCommandLineAndFieldTrials(const base::CommandLine& command_line,
 
 net::URLRequestContextBuilder::HttpCacheParams::Type ChooseCacheType() {
 #if defined(OHOS_CACHE)
-  if (base::ohos::IsMobileDevice()) {
+  if (base::ohos::IsMobileDevice() || base::ohos::IsTabletDevice()) {
     return net::URLRequestContextBuilder::HttpCacheParams::DISK_SIMPLE;
   } else {
     return net::URLRequestContextBuilder::HttpCacheParams::DISK_BLOCKFILE;

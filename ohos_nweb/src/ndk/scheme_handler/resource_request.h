@@ -25,7 +25,7 @@ struct ArkWeb_ResourceRequest_ {
   ArkWeb_ResourceRequest_(CefRefPtr<CefRequest> request);
   ~ArkWeb_ResourceRequest_();
 
-  void GetPostDataStream(ArkWeb_PostDataStream** stream) const;
+  void GetHttpBodyStream(ArkWeb_HttpBodyStream** stream) const;
   void GetMethod(char** method) const;
   void GetUrl(char** url) const;
   bool IsRedirect() const;

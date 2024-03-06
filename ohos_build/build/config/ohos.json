@@ -566,6 +566,14 @@
 "dependence": "",
 "default": "true"
 },
+{ "name": "OHOS_SECURE_JAVASCRIPT_PROXY",
+"owner": "",
+"desc": "",
+"effect":"main gn blink_core other",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},
 { "name": "OHOS_SECURITY_STATE",
 "owner": "",
 "desc": "",

@@ -399,6 +399,10 @@ void EnableSafeBrowsing(bool enable) override;
   void CloseCamera() override;
 #endif  // defined(OHOS_WEBRTC)
 
+#if defined(OHOS_SECURE_JAVASCRIPT_PROXY)
+  std::string GetLastJavascriptProxyCallingFrameUrl() override;
+#endif
+
  public:
   int argc_;
   const char** argv_;

@@ -393,6 +393,10 @@ class NWebDelegateInterface
   virtual std::shared_ptr<NWebAccessibilityNodeInfo>
   GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
                                       int32_t direction) = 0;
+
+#if defined(OHOS_SECURE_JAVASCRIPT_PROXY)
+  virtual std::string GetLastJavascriptProxyCallingFrameUrl() = 0;
+#endif
 };
 }  // namespace OHOS::NWeb
 

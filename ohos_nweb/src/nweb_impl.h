@@ -262,6 +262,8 @@ class NWebImpl : public NWeb {
   void EnableSafeBrowsing(bool enable) override;
 #endif
 
+  std::string GetLastJavascriptProxyCallingFrameUrl() override;
+
 #if defined(OHOS_INPUT_EVENTS)
   void SetVirtualKeyBoardArg(int32_t width, int32_t height, double keyboard) override;
   bool ShouldVirtualKeyboardOverlay() override;

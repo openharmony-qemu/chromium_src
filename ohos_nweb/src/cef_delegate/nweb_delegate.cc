@@ -3059,4 +3059,15 @@ void NWebDelegate::AddAccessibilityNodeInfoActions(
   }
   nodeInfo->SetActions(actions);
 }
+
+#if defined(OHOS_SECURE_JAVASCRIPT_PROXY)
+std::string NWebDelegate::GetLastJavascriptProxyCallingFrameUrl() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "GetLastJavascriptProxyCallingFrameUrl can not get browser";
+    return "";
+  }
+
+  return GetBrowser()->GetHost()->GetLastJavascriptProxyCallingFrameUrl();
+}
+#endif
 }  // namespace OHOS::NWeb

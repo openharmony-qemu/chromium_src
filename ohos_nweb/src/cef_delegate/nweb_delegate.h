@@ -57,7 +57,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
             , bool incognito_mode
 #endif
             );
-
+  void OnWindowShow() override;
+  void OnWindowHide() override;
   bool IsReady() override;
   void OnDestroy(bool is_close_all) override;
   void RegisterWebAppClientExtensionListener(

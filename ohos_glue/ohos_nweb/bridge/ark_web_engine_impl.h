@@ -52,6 +52,10 @@ public:
 
   void SetWebDebuggingAccess(bool isEnableDebug) override;
 
+  void PauseAllTimers() override;
+
+  void ResumeAllTimers() override;
+
 private:
   std::shared_ptr<OHOS::NWeb::NWebEngine> nweb_engine_;
 };

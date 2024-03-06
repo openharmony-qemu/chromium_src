@@ -1586,6 +1586,12 @@ void RenderThreadImpl::SetWebKitSharedTimersSuspended(bool suspend) {
   } else {
     main_thread_scheduler_->ResumeTimersForAndroidWebView();
   }
+#elif BUILDFLAG(IS_OHOS)
+  if (suspend) {
+    main_thread_scheduler_->PauseTimersForOHOSWebView();
+  } else {
+    main_thread_scheduler_->ResumeTimersForOHOSWebView();
+  }
 #else
   NOTREACHED();
 #endif

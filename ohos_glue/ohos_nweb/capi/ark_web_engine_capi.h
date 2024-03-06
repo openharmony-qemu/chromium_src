@@ -67,6 +67,12 @@ typedef struct _ark_web_engine_t {
 
   void(ARK_WEB_CALLBACK *set_web_debugging_access)(
       struct _ark_web_engine_t *self, bool isEnableDebug);
+
+  void(ARK_WEB_CALLBACK* pause_webkit_all_timers)(
+      struct _ark_web_engine_t* self);
+
+  void(ARK_WEB_CALLBACK* resume_webkit_all_timers)(
+      struct _ark_web_engine_t* self);
 } ark_web_engine_t;
 
 ARK_WEB_EXPORT ark_web_engine_t *ark_web_engine_get_instance(void);

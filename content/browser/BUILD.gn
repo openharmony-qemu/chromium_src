@@ -3272,6 +3272,11 @@ source_set("browser") {
       ]
     }  #endif  // defined(OHOS_CSS_INPUT_TIME)
 
+    sources += [
+      "ohos/content_view_statics_ohos.cc",
+      "ohos/content_view_statics_ohos.h",
+    ]
+
     #if defined(OHOS_WPT)
     if (defined(ohos_wpt) && ohos_wpt) {
       sources += [
@@ -3287,9 +3292,7 @@ source_set("browser") {
     }  #endif  // defined(OHOS_WPT)
 
     include_dirs = ohos_src_includes
-    deps += [
-      "//third_party/ohos_ndk:ohos_isolation",
-    ]
+    deps += [ "//third_party/ohos_ndk:ohos_isolation" ]
   }
 
   if (use_aura) {

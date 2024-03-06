@@ -24,6 +24,7 @@
 #include <vector>
 #include "capi/nweb_app_client_extension_callback.h"
 #include "capi/nweb_download_delegate_callback.h"
+#include "content/browser/ohos/content_view_statics_ohos.h"
 #include "nweb.h"
 #include "nweb_download_callback.h"
 #include "nweb_errors.h"
@@ -328,6 +329,8 @@ class NWebImpl : public NWeb {
   static void SetWebTag(int32_t nweb_id, const char* web_tag);
   static void InitializeWebEngine(std::shared_ptr<NWebEngineInitArgs> init_args);
   static void PrepareForPageLoad(const std::string &url, bool preconnectable, int32_t num_sockets) ;
+  static void PauseAllTimers();
+  static void ResumeAllTimers();
 
 #if defined(OHOS_COOKIE)
   static bool InitializeICUStatic(std::shared_ptr<NWebEngineInitArgs> init_args);

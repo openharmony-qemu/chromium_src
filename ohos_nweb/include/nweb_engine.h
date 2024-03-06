@@ -52,6 +52,10 @@ public:
                                   int32_t num_sockets) = 0;
 
   virtual void SetWebDebuggingAccess(bool isEnableDebug) = 0;
+
+  virtual void PauseAllTimers() = 0;
+
+  virtual void ResumeAllTimers() = 0;
 };
 
 } // namespace OHOS::NWeb

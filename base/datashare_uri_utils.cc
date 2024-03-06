@@ -12,14 +12,8 @@
 namespace base {
 
 File OpenDatashareUriForRead(const FilePath& datashare_uri) {
-  int fd = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-               .GetDatashareInstance()
-               .OpenDataShareUriForRead(datashare_uri.value());
-  if (fd < 0) {
-    LOG(INFO) << " open datashare uri for read, fd is invalid";
-    return File();
-  }
-  return File(fd);
+  std::string real_path = GetRealPath(datashare_uri);
+  return File(FilePath(real_path), File::FLAG_OPEN | File::FLAG_READ);
 }
 std::u16string GetFileDisplayName(const FilePath& datashare_uri) {
   std::string display_name = OHOS::NWeb::OhosAdapterHelper::GetInstance()

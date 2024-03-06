@@ -13,20 +13,20 @@
  * limitations under the License.
  */
 
-#ifndef OHOS_NWEB_SRC_CAPI_SCHEME_HANDLER_POST_DATA_STREAM_H
-#define OHOS_NWEB_SRC_CAPI_SCHEME_HANDLER_POST_DATA_STREAM_H
+#ifndef OHOS_NWEB_SRC_CAPI_SCHEME_HANDLER_HTTP_BODY_STREAM_H
+#define OHOS_NWEB_SRC_CAPI_SCHEME_HANDLER_HTTP_BODY_STREAM_H
 
 #include "ohos_nweb/src/capi/arkweb_scheme_handler.h"
 
 #include "cef/include/cef_request.h"
 
-struct ArkWeb_PostDataStream_ : public CefPostDataStreamInitCallback,
-                                CefPostDataStreamReadCallback {
-  ArkWeb_PostDataStream_(const ArkWeb_ResourceRequest* resource_request);
-  ~ArkWeb_PostDataStream_();
+struct ArkWeb_HttpBodyStream_ : public CefPostDataStreamInitCallback,
+                                       CefPostDataStreamReadCallback {
+  ArkWeb_HttpBodyStream_(const ArkWeb_ResourceRequest* resource_request);
+  ~ArkWeb_HttpBodyStream_();
 
-  void SetReadCallback(ArkWeb_PostDataReadCallback read_callback_in);
-  void Init(ArkWeb_PostDataStreamInitCallback stream_init_callback_in);
+  void SetReadCallback(ArkWeb_HttpBodyStreamReadCallback read_callback_in);
+  void Init(ArkWeb_HttpBodyStreamInitCallback stream_init_callback_in);
   void Read(void* buffer, int64_t buf_len) const;
   int64_t GetSize() const;
   int64_t GetPosition() const;
@@ -38,12 +38,12 @@ struct ArkWeb_PostDataStream_ : public CefPostDataStreamInitCallback,
   void OnInitComplete(int rv) override;
   void OnReadComplete(char* buffer, int bytes_read) override;
 
-  ArkWeb_PostDataReadCallback read_callback{nullptr};
-  ArkWeb_PostDataStreamInitCallback stream_init_callback{nullptr};
+  ArkWeb_HttpBodyStreamReadCallback read_callback{nullptr};
+  ArkWeb_HttpBodyStreamInitCallback stream_init_callback{nullptr};
   CefRefPtr<CefPostDataStream> post_data_stream;
   void* user_data{nullptr};
 
-  IMPLEMENT_REFCOUNTING(ArkWeb_PostDataStream_);
+  IMPLEMENT_REFCOUNTING(ArkWeb_HttpBodyStream_);
 };
 
-#endif  // OHOS_NWEB_SRC_CAPI_SCHEME_HANDLER_POST_DATA_STREAM_H
+#endif  // OHOS_NWEB_SRC_CAPI_SCHEME_HANDLER_HTTP_BODY_STREAM_H

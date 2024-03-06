@@ -18,7 +18,7 @@
 #include "base/logging.h"
 #include "ohos_nweb/src/cef_delegate/nweb_application.h"
 #include "ohos_nweb/src/cef_delegate/nweb_scheme_handler_factory.h"
-#include "ohos_nweb/src/ndk/scheme_handler/post_data_stream.h"
+#include "ohos_nweb/src/ndk/scheme_handler/http_body_stream.h"
 #include "ohos_nweb/src/ndk/scheme_handler/resource_handler.h"
 #include "ohos_nweb/src/ndk/scheme_handler/resource_request.h"
 #include "ohos_nweb/src/ndk/scheme_handler/response.h"
@@ -142,137 +142,137 @@ ARKWEB_EXPORT void OH_ArkWebResourceRequest_GetUrl(
   resource_request->GetUrl(url);
 }
 
-ARKWEB_EXPORT void OH_ArkWebResourceRequest_GetPostData(
+ARKWEB_EXPORT void OH_ArkWebResourceRequest_GetHttpBodyStream(
     const ArkWeb_ResourceRequest* resource_request,
-    ArkWeb_PostDataStream** post_data_stream) {
+    ArkWeb_HttpBodyStream** http_body_stream) {
   if (!resource_request) {
     LOG(ERROR) << "scheme_handler resource request is nullptr";
     return;
   }
 
-  if (!post_data_stream) {
-    LOG(ERROR) << "scheme_handler post data stream is nullptr";
+  if (!http_body_stream) {
+    LOG(ERROR) << "scheme_handler http body stream is nullptr";
     return;
   }
-  resource_request->GetPostDataStream(post_data_stream);
+  resource_request->GetHttpBodyStream(http_body_stream);
 }
 
-ARKWEB_EXPORT void OH_ArkWebResourceRequest_DestroyPostData(
-    ArkWeb_PostDataStream* post_data_stream) {
-  if (!post_data_stream) {
-    LOG(ERROR) << "scheme_handler post data stream is nullptr";
+ARKWEB_EXPORT void OH_ArkWebResourceRequest_DestroyHttpBodyStream(
+    ArkWeb_HttpBodyStream* http_body_stream) {
+  if (!http_body_stream) {
+    LOG(ERROR) << "scheme_handler http body stream is nullptr";
     return;
   }
 
-  delete post_data_stream;
+  delete http_body_stream;
 }
 
-ARKWEB_EXPORT int32_t OH_ArkWebPostDataStream_SetReadCallback(
-    ArkWeb_PostDataStream* post_data_stream,
-    ArkWeb_PostDataReadCallback readCallback) {
-  if (!post_data_stream) {
-    LOG(ERROR) << "scheme_handler post data stream is nullptr";
+ARKWEB_EXPORT int32_t OH_ArkWebHttpBodyStream_SetReadCallback(
+    ArkWeb_HttpBodyStream* http_body_stream,
+    ArkWeb_HttpBodyStreamReadCallback readCallback) {
+  if (!http_body_stream) {
+    LOG(ERROR) << "scheme_handler http body stream is nullptr";
     return ARKWEB_INVALID_PARAM;
   }
 
-  post_data_stream->SetReadCallback(readCallback);
+  http_body_stream->SetReadCallback(readCallback);
   return ARKWEB_NET_OK;
 }
 
 ARKWEB_EXPORT int32_t
-OH_ArkWebPostDataStream_SetUserData(ArkWeb_PostDataStream* post_data_stream,
+OH_ArkWebHttpBodyStream_SetUserData(ArkWeb_HttpBodyStream* http_body_stream,
                                     void* user_data) {
-  if (!post_data_stream) {
-    LOG(ERROR) << "scheme_handler post data stream is nullptr";
+  if (!http_body_stream) {
+    LOG(ERROR) << "scheme_handler http body stream is nullptr";
     return ARKWEB_INVALID_PARAM;
   }
 
-  post_data_stream->SetUserData(user_data);
+  http_body_stream->SetUserData(user_data);
   return ARKWEB_NET_OK;
 }
 
-ARKWEB_EXPORT void* OH_ArkWebPostDataStream_GetUserData(
-    const ArkWeb_PostDataStream* post_data_stream) {
-  if (!post_data_stream) {
-    LOG(ERROR) << "scheme_handler post data stream is nullptr";
+ARKWEB_EXPORT void* OH_ArkWebHttpBodyStream_GetUserData(
+    const ArkWeb_HttpBodyStream* http_body_stream) {
+  if (!http_body_stream) {
+    LOG(ERROR) << "scheme_handler http body stream is nullptr";
     return nullptr;
   }
 
-  return post_data_stream->GetUserData();
+  return http_body_stream->GetUserData();
 }
 
 ARKWEB_EXPORT int32_t
-OH_ArkWebPostDataStream_Init(ArkWeb_PostDataStream* post_data_stream,
-                             ArkWeb_PostDataStreamInitCallback initCallback) {
-  if (!post_data_stream) {
-    LOG(ERROR) << "scheme_handler post data stream is nullptr";
+OH_ArkWebHttpBodyStream_Init(ArkWeb_HttpBodyStream* http_body_stream,
+                             ArkWeb_HttpBodyStreamInitCallback initCallback) {
+  if (!http_body_stream) {
+    LOG(ERROR) << "scheme_handler http body stream is nullptr";
     return ARKWEB_INVALID_PARAM;
   }
 
-  post_data_stream->Init(initCallback);
+  http_body_stream->Init(initCallback);
   return ARKWEB_NET_OK;
 }
 
-ARKWEB_EXPORT void OH_ArkWebPostDataStream_Read(
-    const ArkWeb_PostDataStream* post_data_stream,
+ARKWEB_EXPORT void OH_ArkWebHttpBodyStream_Read(
+    const ArkWeb_HttpBodyStream* http_body_stream,
     uint8_t* buffer,
     int buf_len) {
-  if (!post_data_stream) {
-    LOG(ERROR) << "scheme_handler post data stream is nullptr";
+  if (!http_body_stream) {
+    LOG(ERROR) << "scheme_handler http body stream is nullptr";
     return;
   }
 
-  post_data_stream->Read(buffer, buf_len);
+  http_body_stream->Read(buffer, buf_len);
 }
 
 ARKWEB_EXPORT uint64_t
-OH_ArkWebPostDataStream_GetSize(const ArkWeb_PostDataStream* post_data_stream) {
-  if (!post_data_stream) {
-    LOG(ERROR) << "scheme_handler post data stream is nullptr";
+OH_ArkWebHttpBodyStream_GetSize(const ArkWeb_HttpBodyStream* http_body_stream) {
+  if (!http_body_stream) {
+    LOG(ERROR) << "scheme_handler http body stream is nullptr";
     return 0;
   }
 
-  return post_data_stream->GetSize();
+  return http_body_stream->GetSize();
 }
 
-ARKWEB_EXPORT uint64_t OH_ArkWebPostDataStream_GetPosition(
-    const ArkWeb_PostDataStream* post_data_stream) {
-  if (!post_data_stream) {
-    LOG(ERROR) << "scheme_handler post data stream is nullptr";
+ARKWEB_EXPORT uint64_t OH_ArkWebHttpBodyStream_GetPosition(
+    const ArkWeb_HttpBodyStream* http_body_stream) {
+  if (!http_body_stream) {
+    LOG(ERROR) << "scheme_handler http body stream is nullptr";
     return 0;
   }
 
-  return post_data_stream->GetPosition();
+  return http_body_stream->GetPosition();
 }
 
-ARKWEB_EXPORT bool OH_ArkWebPostDataStream_IsChunked(
-    const ArkWeb_PostDataStream* post_data_stream) {
-  if (!post_data_stream) {
-    LOG(ERROR) << "scheme_handler post data stream is nullptr";
+ARKWEB_EXPORT bool OH_ArkWebHttpBodyStream_IsChunked(
+    const ArkWeb_HttpBodyStream* http_body_stream) {
+  if (!http_body_stream) {
+    LOG(ERROR) << "scheme_handler http body stream is nullptr";
     return false;
   }
 
-  return post_data_stream->IsChunked();
+  return http_body_stream->IsChunked();
 }
 
-ARKWEB_EXPORT bool OH_ArkWebPostDataStream_IsEof(
-    const ArkWeb_PostDataStream* post_data_stream) {
-  if (!post_data_stream) {
-    LOG(ERROR) << "scheme_handler post data stream is nullptr";
+ARKWEB_EXPORT bool OH_ArkWebHttpBodyStream_IsEof(
+    const ArkWeb_HttpBodyStream* http_body_stream) {
+  if (!http_body_stream) {
+    LOG(ERROR) << "scheme_handler http body stream is nullptr";
     return false;
   }
 
-  return post_data_stream->IsEOF();
+  return http_body_stream->IsEOF();
 }
 
-ARKWEB_EXPORT bool OH_ArkWebPostDataStream_IsInMemory(
-    const ArkWeb_PostDataStream* post_data_stream) {
-  if (!post_data_stream) {
-    LOG(ERROR) << "scheme_handler post data stream is nullptr";
+ARKWEB_EXPORT bool OH_ArkWebHttpBodyStream_IsInMemory(
+    const ArkWeb_HttpBodyStream* http_body_stream) {
+  if (!http_body_stream) {
+    LOG(ERROR) << "scheme_handler http body stream is nullptr";
     return false;
   }
 
-  return post_data_stream->IsInMemory();
+  return http_body_stream->IsInMemory();
 }
 
 ARKWEB_EXPORT int32_t OH_ArkWebResourceRequest_Destroy(

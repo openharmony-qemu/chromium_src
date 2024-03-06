@@ -31,7 +31,7 @@
 #ifndef ARKWEB_SCHEME_HANDLER_H
 #define ARKWEB_SCHEME_HANDLER_H
 
-#include <cstdint>
+#include "stdint.h"
 
 #include "arkweb_error_code.h"
 #include "arkweb_net_error_list.h"
@@ -155,12 +155,12 @@ typedef struct ArkWeb_ResourceRequest_ ArkWeb_ResourceRequest;
 typedef struct ArkWeb_RequestHeaderList_ ArkWeb_RequestHeaderList;
 
 /*
- * @brief The post data of the request. Use OH_ArkWebPostDataStream_* interface to read the body.
+ * @brief The http body of the request. Use OH_ArkWebHttpBodyStream_* interface to read the body.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
  */
-typedef struct ArkWeb_PostDataStream_ ArkWeb_PostDataStream;
+typedef struct ArkWeb_HttpBodyStream_ ArkWeb_HttpBodyStream;
 
 
 /*
@@ -183,7 +183,7 @@ typedef void (*ArkWeb_OnRequestStart)(const ArkWeb_SchemeHandler* schemeHandler,
 /*
  * @brief Callback when the request is completed. This will called on the IO thread.
  *        Should destory the resourceRequest by ArkWeb_ResourceRequest_Destroy and use ArkWeb_ResourceHandler_Destroy
- *        destroy the ArkWeb_ResourceHandler received in ArkWeb_OnRequestStart. 
+ *        destroy the ArkWeb_ResourceHandler received in ArkWeb_OnRequestStart.
  * @param schemeHandler The ArkWeb_SchemeHandler.
  * @param resourceRequest The ArkWeb_ResourceRequest.
  *
@@ -195,38 +195,28 @@ typedef void (*ArkWeb_OnRequestStop)(const ArkWeb_SchemeHandler* schemeHandler,
 
 /*
  * @brief Callback when the read operation done.
- * @param postDataStream The ArkWeb_PostDataStream.
+ * @param httpBodyStream The ArkWeb_HttpBodyStream.
  * @param buffer The buffer to receive data.
- * @param bytesRead Callback after OH_ArkWebPostDataStream_Read. bytesRead greater than 0 means that the buffer is
+ * @param bytesRead Callback after OH_ArkWebHttpBodyStream_Read. bytesRead greater than 0 means that the buffer is
  *                  filled with data of bytesRead size. Caller can read from the buffer, and if
- *                  OH_ArkWebPostDataStream_IsEOF is false, caller can continue to read the remaining data.
+ *                  OH_ArkWebHttpBodyStream_IsEOF is false, caller can continue to read the remaining data.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
  */
-typedef void (*ArkWeb_PostDataReadCallback)(const ArkWeb_PostDataStream* postDataStream,
-                                            uint8_t* buffer,
-                                            int bytesRead);
+typedef void (*ArkWeb_HttpBodyStreamReadCallback)(const ArkWeb_HttpBodyStream* httpBodyStream,
+                                                  uint8_t* buffer,
+                                                  int bytesRead);
 
 /*
  * @brief  Callback when the init operation done.
- * @param postDataStream The ArkWeb_PostDataStream.
+ * @param httpBodyStream The ArkWeb_HttpBodyStream.
  * @param result ARKWEB_NET_OK on success otherwise refer to ARKWEB_NET_ERROR.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
  */
-typedef void (*ArkWeb_PostDataStreamInitCallback)(const ArkWeb_PostDataStream* postDataStream, ArkWeb_NetError result);
-
-/*
- * @brief The request header list.
- * @param requestHeaderList The created ArkWeb_RequestHeaderList.
- *
- * @syscap SystemCapability.Web.Webview.Core
- * @since 12
- */
-void OH_ArkWebRequestHeaderList_Create(const ArkWeb_ResourceRequest* resourceRequest,
-                                       ArkWeb_RequestHeaderList** requestHeaderList);
+typedef void (*ArkWeb_HttpBodyStreamInitCallback)(const ArkWeb_HttpBodyStream* httpBodyStream, ArkWeb_NetError result);
 
 /*
  * @brief Destroy the ArkWeb_RequestHeaderList.
@@ -306,138 +296,139 @@ void OH_ArkWebResourceRequest_GetMethod(const ArkWeb_ResourceRequest* resourceRe
 void OH_ArkWebResourceRequest_GetUrl(const ArkWeb_ResourceRequest* resourceRequest, char** url);
 
 /*
- * @brief Create a ArkWeb_PostDataStream which used to read the post data.
+ * @brief Create a ArkWeb_HttpBodyStream which used to read the http body.
  * @param resourceRequest The ArkWeb_ResourceRequest.
- * @param postDataStream The request's post data. This function will allocate memory for the post data stream and
- *                       caller must release the postDataStream by OH_ArkWebResourceRequest_DestroyPostData.
+ * @param httpBodyStream The request's http body. This function will allocate memory for the http body stream and
+ *                       caller must release the httpBodyStream by OH_ArkWebResourceRequest_DestroyHttpBodyStream.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
  */
-void OH_ArkWebResourceRequest_GetPostData(const ArkWeb_ResourceRequest* resourceRequest,
-                                          ArkWeb_PostDataStream** postDataStream);
+void OH_ArkWebResourceRequest_GetHttpBodyStream(const ArkWeb_ResourceRequest* resourceRequest,
+                                                ArkWeb_HttpBodyStream** httpBodyStream);
 
 /*
- * @brief Destroy the post data stream.
- * @param postDataStream The postDataStream to be destroyed.
+ * @brief Destroy the http body stream.
+ * @param httpBodyStream The httpBodyStream to be destroyed.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
  */
-void OH_ArkWebResourceRequest_DestroyPostData(ArkWeb_PostDataStream* postDataStream);
+void OH_ArkWebResourceRequest_DestroyHttpBodyStream(ArkWeb_HttpBodyStream* httpBodyStream);
 
 /*
- * @brief Set a user data to ArkWeb_PostDataStream.
- * @param postDataStream The ArkWeb_PostDataStream.
+ * @brief Set a user data to ArkWeb_HttpBodyStream.
+ * @param httpBodyStream The ArkWeb_HttpBodyStream.
  * @param userData The user data to set.
  * @return 0 if success; otherwise if fail. refer to arkweb_error_code.h.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
  */
-int32_t OH_ArkWebPostDataStream_SetUserData(ArkWeb_PostDataStream* postDataStream, void* userData);
+int32_t OH_ArkWebHttpBodyStream_SetUserData(ArkWeb_HttpBodyStream* httpBodyStream, void* userData);
 
 /*
- * @brief Get the user data from ArkWeb_PostDataStream.
- * @param postDataStream The ArkWeb_PostDataStream.
+ * @brief Get the user data from ArkWeb_HttpBodyStream.
+ * @param httpBodyStream The ArkWeb_HttpBodyStream.
  * @return The set user data.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
  */
-void* OH_ArkWebPostDataStream_GetUserData(const ArkWeb_PostDataStream* postDataStream);
+void* OH_ArkWebHttpBodyStream_GetUserData(const ArkWeb_HttpBodyStream* httpBodyStream);
 
 /*
- * @brief Set the callback for OH_ArkWebPostDataStream_Read, the result of OH_ArkWebPostDataStream_Read will be
+ * @brief Set the callback for OH_ArkWebHttpBodyStream_Read, the result of OH_ArkWebHttpBodyStream_Read will be
  *        notified to caller through the readCallback. The callback will runs in the same thread as
- *        OH_ArkWebPostDataStream_Read.
- * @param postDataStream The ArkWeb_PostDataStream.
+ *        OH_ArkWebHttpBodyStream_Read.
+ * @param httpBodyStream The ArkWeb_HttpBodyStream.
  * @param readCallback The callback of read function.
  * @return 0 if success; otherwise if fail. refer to arkweb_error_code.h.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
  */
-int32_t OH_ArkWebPostDataStream_SetReadCallback(ArkWeb_PostDataStream* postDataStream,
-                                                ArkWeb_PostDataReadCallback readCallback);
+int32_t OH_ArkWebHttpBodyStream_SetReadCallback(ArkWeb_HttpBodyStream* httpBodyStream,
+                                                ArkWeb_HttpBodyStreamReadCallback readCallback);
 
 /*
- * @brief Init the post data stream. This function must be called before calling any other functions.
- * @param postDataStream The ArkWeb_PostDataStream.
+ * @brief Init the http body stream. This function must be called before calling any other functions.
+ * @param httpBodyStream The ArkWeb_HttpBodyStream.
  * @param initCallback The callback of init.
  * @return 0 if success; otherwise if fail. refer to arkweb_error_code.h.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
  */
-int32_t OH_ArkWebPostDataStream_Init(ArkWeb_PostDataStream* postDataStream,
-                                     ArkWeb_PostDataStreamInitCallback initCallback);
+int32_t OH_ArkWebHttpBodyStream_Init(ArkWeb_HttpBodyStream* httpBodyStream,
+                                     ArkWeb_HttpBodyStreamInitCallback initCallback);
 
 /*
- * @brief Read the post data to the buffer. The buffer must be larger than the bufLen. We will be reading data from a
+ * @brief Read the http body to the buffer. The buffer must be larger than the bufLen. We will be reading data from a
  *        worker thread to the buffer, so should not use the buffer in other threads before the callback to avoid
  *        concurrency issues.
- * @param postDataStream The ArkWeb_PostDataStream.
+ * @param httpBodyStream The ArkWeb_HttpBodyStream.
  * @param buffer The buffer to receive data.
  * @param bufLen The size of bytes to read.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
  */
-void OH_ArkWebPostDataStream_Read(const ArkWeb_PostDataStream* postDataStream, uint8_t* buffer, int bufLen);
+void OH_ArkWebHttpBodyStream_Read(const ArkWeb_HttpBodyStream* httpBodyStream, uint8_t* buffer, int bufLen);
 
 /*
- * @brief Get the total size of the data stream. When data is chunked, always return zero.
- * @param postDataStream The ArkWeb_PostDataStream.
- * @return The size of data stream. -1 if postDataStream is invalid.
+ * @brief Get the total size of the data stream.
+ *        When data is chunked or httpBodyStream is invalid, always return zero.
+ * @param httpBodyStream The ArkWeb_HttpBodyStream.
+ * @return The size of data stream.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
  */
-uint64_t OH_ArkWebPostDataStream_GetSize(const ArkWeb_PostDataStream* postDataStream);
+uint64_t OH_ArkWebHttpBodyStream_GetSize(const ArkWeb_HttpBodyStream* httpBodyStream);
 
 /*
  * @brief Get the current position of the data stream.
- * @param postDataStream The ArkWeb_PostDataStream.
- * @return The current position of data stream. -1 if postDataStream is invalid.
+ * @param httpBodyStream The ArkWeb_HttpBodyStream.
+ * @return The current position of data stream. 0 if httpBodyStream is invalid.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
  */
-uint64_t OH_ArkWebPostDataStream_GetPosition(const ArkWeb_PostDataStream* postDataStream);
+uint64_t OH_ArkWebHttpBodyStream_GetPosition(const ArkWeb_HttpBodyStream* httpBodyStream);
 
 /*
  * @brief Get if the data stream is chunked.
- * @param postDataStream The ArkWeb_PostDataStream.
+ * @param httpBodyStream The ArkWeb_HttpBodyStream.
  * @return True if is chunked; false otherwise.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
  */
-bool OH_ArkWebPostDataStream_IsChunked(const ArkWeb_PostDataStream* postDataStream);
+bool OH_ArkWebHttpBodyStream_IsChunked(const ArkWeb_HttpBodyStream* httpBodyStream);
 
 
 /*
  * @brief Returns true if all data has been consumed from this upload data stream. For chunked uploads, returns false
  *        until the first read attempt.
- * @param postDataStream The ArkWeb_PostDataStream.
+ * @param httpBodyStream The ArkWeb_HttpBodyStream.
  * @return True if all data has been consumed; false otherwise.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
  */
-bool OH_ArkWebPostDataStream_IsEof(const ArkWeb_PostDataStream* postDataStream);
+bool OH_ArkWebHttpBodyStream_IsEof(const ArkWeb_HttpBodyStream* httpBodyStream);
 
 /*
  * @brief Returns true if the upload data in the stream is entirely in memory, and all read requests will succeed
  *        synchronously. Expected to return false for chunked requests.
- * @param postDataStream The ArkWeb_PostDataStream.
+ * @param httpBodyStream The ArkWeb_HttpBodyStream.
  * @return True if the upload data is in memory; false otherwise.
  *
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
  */
-bool OH_ArkWebPostDataStream_IsInMemory(const ArkWeb_PostDataStream* postDataStream);
+bool OH_ArkWebHttpBodyStream_IsInMemory(const ArkWeb_HttpBodyStream* httpBodyStream);
 
 /*
  * @brief Destroy the ArkWeb_ResourceRequest.
@@ -452,7 +443,7 @@ int32_t OH_ArkWebResourceRequest_Destroy(const ArkWeb_ResourceRequest* resourceR
 /*
  * @brief Get the referrer of request.
  * @param resourceRequest The ArkWeb_ResourceRequest.
- * @param referrer The request's referrer. This function will allocate memory for the post data string and caller
+ * @param referrer The request's referrer. This function will allocate memory for the referrer string and caller
  *                 must release the string by OH_ArkWeb_ReleaseString.
  *
  * @syscap SystemCapability.Web.Webview.Core
@@ -880,6 +871,6 @@ void OH_ArkWeb_ReleaseByteArray(uint8_t* byteArray);
 
 
 #ifdef __cplusplus
-}
+};
 #endif
 #endif // ARKWEB_SCHEME_HANDLER_H

@@ -127,7 +127,8 @@ net::Error CacheCreator::Run() {
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA)
   static const bool kSimpleBackendIsDefault = true;
 #elif BUILDFLAG(IS_OHOS) && defined(OHOS_CACHE)
-  static const bool kSimpleBackendIsDefault = base::ohos::IsMobileDevice();
+  static const bool kSimpleBackendIsDefault =
+	  (base::ohos::IsMobileDevice() || base::ohos::IsTabletDevice());
 #else
   static const bool kSimpleBackendIsDefault = false;
 #endif
@@ -161,7 +162,7 @@ net::Error CacheCreator::Run() {
   return net::ERR_FAILED;
 #else
 #if BUILDFLAG(IS_OHOS) && defined(OHOS_CACHE)
-  if (base::ohos::IsMobileDevice()) {
+  if (base::ohos::IsMobileDevice() || base::ohos::IsTabletDevice()) {
     return net::ERR_FAILED;
   }
 #endif  // BUILDFLAG(IS_OHOS) && defined(OHOS_CACHE)

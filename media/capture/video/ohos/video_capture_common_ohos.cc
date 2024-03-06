@@ -49,13 +49,17 @@ VideoPixelFormatAdapter VideoCaptureCommonOHOS::GetAdapterCameraPixelFormatType(
 }
 
 VideoCaptureFormats VideoCaptureCommonOHOS::GetSupportedFormats(
-    const std::vector<FormatAdapter>& capture_formats_adapter) {
+    const std::vector<std::shared_ptr<FormatAdapter>>&
+        capture_formats_adapter) {
   VideoCaptureFormats capture_formats;
   for (auto i : capture_formats_adapter) {
+    if (!i) {
+      continue;
+    }
     VideoCaptureFormat format;
-    format.frame_size.SetSize(i.width, i.height);
-    format.frame_rate = i.frameRate;
-    format.pixel_format = GetCameraPixelFormatType(i.pixelFormat);
+    format.frame_size.SetSize(i->GetWidth(), i->GetHeight());
+    format.frame_rate = i->GetFrameRate();
+    format.pixel_format = GetCameraPixelFormatType(i->GetPixelFormat());
 
     capture_formats.push_back(format);
   }

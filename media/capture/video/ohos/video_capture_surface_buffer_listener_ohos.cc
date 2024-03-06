@@ -20,7 +20,7 @@ VideoCaptureSufaceBufferListenerOHOS::~VideoCaptureSufaceBufferListenerOHOS() {}
 void VideoCaptureSufaceBufferListenerOHOS::OnBufferAvailable(
     std::shared_ptr<CameraSurfaceAdapter> surface,
     std::shared_ptr<OHOS::NWeb::CameraSurfaceBufferAdapter> buffer,
-    CameraRotationInfo roration_info) {
+    std::shared_ptr<OHOS::NWeb::CameraRotationInfoAdapter> roration_info) {
   task_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(&OHOSCaptureDelegate::OnBufferAvailable, capture_delegate_,

@@ -5,11 +5,12 @@
 #ifndef MEDIA_BASE_OHOS_MEDIA_CODEC_BRIDGE_IMPL_H_
 #define MEDIA_BASE_OHOS_MEDIA_CODEC_BRIDGE_IMPL_H_
 
+#include "base/task/sequenced_task_runner.h"
 #include "media/base/video_decoder.h"
 #include "media/base/video_decoder_config.h"
 #include "media_codec_decoder_adapter.h"
 #include "ohos_adapter_helper.h"
-#include "base/task/sequenced_task_runner.h"
+#include "ohos_media_codec_bridge.h"
 
 #include <atomic>
 #include <condition_variable>
@@ -51,25 +52,29 @@ struct VideoBridgeDecoderOutputBuffer {
 };
 
 class DecoderBridgeSignal {
-public:
+ public:
   std::queue<VideoBridgeDecoderInputBuffer> inputQueue_;
   std::queue<VideoBridgeDecoderOutputBuffer> outputQueue_;
   std::atomic<bool> isDecoderFlushing_ = false;
   std::atomic<bool> isOnError_ = false;
 };
 
-class CodecBridgeCallback : public DecoderCallbackAdapter,
-                            public std::enable_shared_from_this<CodecBridgeCallback> {
+class CodecBridgeCallback
+    : public DecoderCallbackAdapter,
+      public std::enable_shared_from_this<CodecBridgeCallback> {
  public:
   explicit CodecBridgeCallback(std::shared_ptr<DecoderBridgeSignal> signal)
       : signal_(signal) {}
   virtual ~CodecBridgeCallback() = default;
 
   void OnError(ErrorType errorType, int32_t errorCode) override;
-  void OnStreamChanged(const DecoderFormat& format) override;
-  void OnNeedInputData(uint32_t index, OhosBuffer buffer) override;
+  void OnStreamChanged(int32_t width,
+                       int32_t height,
+                       double frameRate) override;
+  void OnNeedInputData(uint32_t index,
+                       std::shared_ptr<OhosBufferAdapter> buffer) override;
   void OnNeedOutputData(uint32_t index,
-                        BufferInfo info,
+                        std::shared_ptr<BufferInfoAdapter> info,
                         BufferFlag flag) override;
 
   base::RepeatingClosure on_buffers_available_cb_;
@@ -94,8 +99,9 @@ class MediaCodecDecoderBridgeImpl {
   DecoderAdapterCode CreateVideoBridgeDecoderByMime(std::string mimetype);
   DecoderAdapterCode CreateVideoBridgeDecoderByName(std::string name);
 
-  DecoderAdapterCode ConfigureBridgeDecoder(const DecoderFormat& format,
-                                            scoped_refptr<base::SequencedTaskRunner> decoder_task_runner);
+  DecoderAdapterCode ConfigureBridgeDecoder(
+      const DecoderFormat& format,
+      scoped_refptr<base::SequencedTaskRunner> decoder_task_runner);
   DecoderAdapterCode SetBridgeParameterDecoder(const DecoderFormat& format);
   DecoderAdapterCode SetBridgeOutputSurface(void* window);
   DecoderAdapterCode GetOutputFormatBridgeDecoder(DecoderFormat& format);
@@ -114,15 +120,9 @@ class MediaCodecDecoderBridgeImpl {
                                          uint32_t& index,
                                          bool& eos);
   static void DestoryNativeWindow(void* window);
-  bool CheckHasCreated() {
-    return hasCreated_;
-  }
-  int32_t GetConfigWidth() const {
-    return width_;
-  }
-  int32_t GetConfigHeight() const {
-    return height_;
-  }
+  bool CheckHasCreated() { return hasCreated_; }
+  int32_t GetConfigWidth() const { return width_; }
+  int32_t GetConfigHeight() const { return height_; }
 
  private:
   MediaCodecDecoderBridgeImpl(const std::string codec_type,

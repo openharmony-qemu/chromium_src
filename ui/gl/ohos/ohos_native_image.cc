@@ -38,10 +38,10 @@ void OhosNativeImage::SetFrameAvailableCallback(
   DCHECK(!frame_available_cb_);
   frame_available_cb_ = std::move(callback);
   if (native_image_adapter_ != nullptr && listener_ == nullptr) {
-    listener_ = std::make_unique<OHOS::NWeb::OnFrameAvailableListener>();
-    listener_->context = reinterpret_cast<void*>(this);
-    listener_->cb = &OhosNativeImage::OnFrameAvailableListener;
-    native_image_adapter_->SetOnFrameAvailableListener(listener_.get());
+    listener_ = std::make_shared<OHOS::NWeb::FrameAvailableListenerImpl>();
+    listener_->SetContext(reinterpret_cast<void*>(this));
+    listener_->SetOnFrameAvailableCb(&OhosNativeImage::OnFrameAvailableListener);
+    native_image_adapter_->SetOnFrameAvailableListener(listener_);
   }
 }
 

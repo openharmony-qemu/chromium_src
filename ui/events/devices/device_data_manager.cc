@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "ui/events/devices/device_data_manager.h"
+#include "ui/events/devices/mmi_device_info_adapter_impl.h"
 
 #include "base/at_exit.h"
 #include "base/check_op.h"
@@ -58,31 +59,31 @@ class MMIListenerAdapterImpl : public OHOS::NWeb::MMIListenerAdapter {
     if (!ui::DeviceDataManager::HasInstance()) {
       return;
     }
-   
-    OHOS::NWeb::MMIDeviceInfoAdapter info;
-    mmi_adapter_->GetDeviceInfo(deviceId, info);
+
+    std::shared_ptr<OHOS::NWeb::MMIDeviceInfoAdapterImpl> adapter =
+        std::make_shared<OHOS::NWeb::MMIDeviceInfoAdapterImpl>();
+
+    mmi_adapter_->GetDeviceInfo(deviceId, adapter);
     if (!sequenced_task_runner_) {
       LOG(ERROR) << "OnDeviceAdded sequenced_task_runner is null";
       return;
     }
+
+    OHOS::NWeb::MMIDeviceInfo info = transformToMMIDeviceInfo(adapter);
     sequenced_task_runner_->PostTask(
         FROM_HERE,
         base::BindOnce(
-            [](const OHOS::NWeb::MMIDeviceInfoAdapter& info) {
+            [](const OHOS::NWeb::MMIDeviceInfo& info) {
               ui::InputDevice device(
-                  info.id, ui::InputDeviceType::INPUT_DEVICE_USB,
-                  info.name);
+                  info.id, ui::InputDeviceType::INPUT_DEVICE_USB, info.name);
               if (info.type & TAG_MOUSE_TYPE) {
-                ui::DeviceDataManager::GetInstance()->AddMouseDevice(
-                    device);
+                ui::DeviceDataManager::GetInstance()->AddMouseDevice(device);
               }
               if (info.type & TAG_TOUCHPAD_TYPE) {
-                ui::DeviceDataManager::GetInstance()->AddTouchpadDevice(
-                    device);
+                ui::DeviceDataManager::GetInstance()->AddTouchpadDevice(device);
               }
               if (info.type & TAG_KEYBOARD_TYPE) {
-                ui::DeviceDataManager::GetInstance()->AddKeyboardDevice(
-                    device);
+                ui::DeviceDataManager::GetInstance()->AddKeyboardDevice(device);
               }
             },
             info));
@@ -135,21 +136,21 @@ DeviceDataManager::DeviceDataManager()
   std::vector<int32_t> device_ids;
   mmi_adapter_->GetDeviceIds(device_ids);
   for (auto id : device_ids) {
-    OHOS::NWeb::MMIDeviceInfoAdapter info;
-    mmi_adapter_->GetDeviceInfo(id, info);
+    std::shared_ptr<OHOS::NWeb::MMIDeviceInfoAdapterImpl> adapter =
+        std::make_shared<OHOS::NWeb::MMIDeviceInfoAdapterImpl>();
+    mmi_adapter_->GetDeviceInfo(id, adapter);
     if (!sequenced_task_runner_) {
-      LOG(ERROR)
-          << "DeviceDataManager ctor sequenced_task_runner is null";
+      LOG(ERROR) << "DeviceDataManager ctor sequenced_task_runner is null";
       return;
     }
 
+    OHOS::NWeb::MMIDeviceInfo info = transformToMMIDeviceInfo(adapter);
     sequenced_task_runner_->PostTask(
         FROM_HERE, base::BindOnce(
-                       [](const OHOS::NWeb::MMIDeviceInfoAdapter& info,
+                       [](const OHOS::NWeb::MMIDeviceInfo& info,
                           DeviceDataManager* device_data_manager) {
                          ui::InputDevice device(
-                             info.id,
-                             ui::InputDeviceType::INPUT_DEVICE_USB,
+                             info.id, ui::InputDeviceType::INPUT_DEVICE_USB,
                              info.name);
                          if (info.type & TAG_MOUSE_TYPE) {
                            device_data_manager->AddMouseDevice(device);
@@ -178,8 +179,9 @@ DeviceDataManager::~DeviceDataManager() {
 
 // static
 void DeviceDataManager::CreateInstance() {
-  if (instance_)
+  if (instance_) {
     return;
+  }
 
   new DeviceDataManager();
 
@@ -206,17 +208,20 @@ bool DeviceDataManager::HasInstance() {
 void DeviceDataManager::ConfigureTouchDevices(
     const std::vector<ui::TouchDeviceTransform>& transforms) {
   ClearTouchDeviceAssociations();
-  for (const TouchDeviceTransform& transform : transforms)
+  for (const TouchDeviceTransform& transform : transforms) {
     UpdateTouchInfoFromTransform(transform);
+  }
   are_touchscreen_target_displays_valid_ = true;
-  for (InputDeviceEventObserver& observer : observers_)
+  for (InputDeviceEventObserver& observer : observers_) {
     observer.OnTouchDeviceAssociationChanged();
+  }
 }
 
 void DeviceDataManager::ClearTouchDeviceAssociations() {
   touch_map_.clear();
-  for (TouchscreenDevice& touchscreen_device : touchscreen_devices_)
+  for (TouchscreenDevice& touchscreen_device : touchscreen_devices_) {
     touchscreen_device.target_display_id = display::kInvalidDisplayId;
+  }
 }
 
 void DeviceDataManager::UpdateTouchInfoFromTransform(
@@ -249,8 +254,9 @@ void DeviceDataManager::UpdateTouchMap() {
 void DeviceDataManager::ApplyTouchRadiusScale(int touch_device_id,
                                               double* radius) {
   auto iter = touch_map_.find(touch_device_id);
-  if (iter != touch_map_.end())
+  if (iter != touch_map_.end()) {
     *radius = (*radius) * iter->second.radius_scale;
+  }
 }
 
 void DeviceDataManager::ApplyTouchTransformer(int touch_device_id,
@@ -299,8 +305,9 @@ bool DeviceDataManager::AreDeviceListsComplete() const {
 int64_t DeviceDataManager::GetTargetDisplayForTouchDevice(
     int touch_device_id) const {
   auto iter = touch_map_.find(touch_device_id);
-  if (iter != touch_map_.end())
+  if (iter != touch_map_.end()) {
     return iter->second.display_id;
+  }
   return display::kInvalidDisplayId;
 }
 

@@ -3,13 +3,14 @@
 // found in the LICENSE file.
 
 #include "media/audio/ohos/ohos_audio_capturer_source.h"
-
 #include "base/command_line.h"
 #include "base/location.h"
 #include "base/logging.h"
-#include "base/task/task_runner.h"
 #include "base/task/single_thread_task_runner.h"
+#include "base/task/task_runner.h"
 #include "chrome/common/chrome_switches.h"
+#include "media/audio/ohos/audio_capturer_options_adapter_impl.h"
+#include "media/audio/ohos/buffer_desc_adapter_impl.h"
 #include "media/base/audio_parameters.h"
 #include "ohos_adapter_helper.h"
 
@@ -54,16 +55,19 @@ void OHOSAudioCapturerSource::Initialize(
   }
 
   DCHECK(capturer_task_runner_->BelongsToCurrentThread());
-  AudioAdapterCapturerOptions capturerOptions;
-  capturerOptions.samplingRate =
-      static_cast<AudioAdapterSamplingRate>(params_.sample_rate());
-  capturerOptions.encoding = AudioAdapterEncodingType::ENCODING_PCM;
-  capturerOptions.format = AudioAdapterSampleFormat::SAMPLE_S16LE;
-  capturerOptions.channels =
-      static_cast<AudioAdapterChannel>(params_.channels());
-  capturerOptions.sourceType =
-      AudioAdapterSourceType::SOURCE_TYPE_VOICE_COMMUNICATION;
-  capturerOptions.capturerFlags = 0;
+
+  std::shared_ptr<OHOS::NWeb::AudioCapturerOptionsAdapterImpl> capturerOptions =
+      std::make_shared<OHOS::NWeb::AudioCapturerOptionsAdapterImpl>();
+  capturerOptions->SetSamplingRate(
+      static_cast<AudioAdapterSamplingRate>(params_.sample_rate()));
+  capturerOptions->SetEncoding(AudioAdapterEncodingType::ENCODING_PCM);
+  capturerOptions->SetSampleFormat(AudioAdapterSampleFormat::SAMPLE_S16LE);
+  capturerOptions->SetChannels(
+      static_cast<AudioAdapterChannel>(params_.channels()));
+  capturerOptions->SetSourceType(
+      AudioAdapterSourceType::SOURCE_TYPE_VOICE_COMMUNICATION);
+  capturerOptions->SetCapturerFlags(0);
+
   capturer_->Create(capturerOptions);
   capturer_->GetFrameCount(frameCount_);
 }
@@ -85,8 +89,8 @@ void OHOSAudioCapturerSource::Start() {
     return;
   }
   main_task_runner_->PostTask(
-      FROM_HERE,
-      base::BindOnce(&OHOSAudioCapturerSource::NotifyCaptureStarted, weak_factory_.GetWeakPtr()));
+      FROM_HERE, base::BindOnce(&OHOSAudioCapturerSource::NotifyCaptureStarted,
+                                weak_factory_.GetWeakPtr()));
 }
 
 void OHOSAudioCapturerSource::Stop() {
@@ -107,8 +111,10 @@ void OHOSAudioCapturerSource::Stop() {
 
 void OHOSAudioCapturerSource::ReadData() {
   base::AutoLock lock(callback_lock_);
-  BufferDescAdapter bufferDesc;
-  bufferDesc.bufLength = 0;
+  std::shared_ptr<OHOS::NWeb::BufferDescAdapterImpl> bufferDesc =
+      std::make_shared<OHOS::NWeb::BufferDescAdapterImpl>();
+
+  bufferDesc->SetBufLength(0);
   capturer_->GetBufferDesc(bufferDesc);
   if (static_cast<int>(frameCount_) > 2 * params_.sample_rate() / 100) {
     LOG(ERROR) << "audioBus cannot handle input audio data more than 20ms. "
@@ -121,7 +127,7 @@ void OHOSAudioCapturerSource::ReadData() {
       base::TimeTicks() + base::Nanoseconds(capturer_->GetAudioTime());
   auto audio_bus = AudioBus::Create(params_.channels(), frameCount_);
   audio_bus->FromInterleaved<SignedInt16SampleTypeTraits>(
-      reinterpret_cast<const int16_t*>(bufferDesc.buffer),
+      reinterpret_cast<const int16_t*>(bufferDesc->GetBuffer()),
       static_cast<int>(frameCount_));
   if (callback_) {
     callback_->Capture(audio_bus.get(), timeStamp, 1.0, false);
@@ -144,8 +150,9 @@ void OHOSAudioCapturerSource::SetOutputDeviceForAec(
 
 void OHOSAudioCapturerSource::NotifyCaptureError(const std::string& message) {
   DCHECK(main_task_runner_->BelongsToCurrentThread());
-  if (!callback_)
+  if (!callback_) {
     return;
+  }
   callback_->OnCaptureError(AudioCapturerSource::ErrorCode::kUnknown, message);
 }
 

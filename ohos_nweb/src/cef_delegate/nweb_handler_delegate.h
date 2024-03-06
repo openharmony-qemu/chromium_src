@@ -600,6 +600,12 @@ class NWebHandlerDelegate : public CefClient,
   bool IsDragEnter() const { return is_drag_enter_; }
   void SetDragEnter(bool enter) { is_drag_enter_ = enter; }
 #endif  // #ifdef OHOS_DRAG_DROP
+
+#ifdef OHOS_ITP
+  void OnIntelligentTrackingPreventionResult(
+      const CefString& website_host, const CefString& tracker_host) override;
+#endif
+
  private:
   void CopyImageToClipboard(CefRefPtr<CefImage> image);
   // List of existing browser windows. Only accessed on the CEF UI thread.

@@ -94,6 +94,26 @@ void NWebEngineImpl::SetWebDebuggingAccess(bool isEnableDebug) {
   }
 }
 
+void NWebEngineImpl::AddIntelligentTrackingPreventionBypassingList(
+    const std::vector<std::string>& hosts) {
+#ifdef OHOS_ITP
+  NWebImpl::AddIntelligentTrackingPreventionBypassingList(hosts);
+#endif
+}
+
+void NWebEngineImpl::RemoveIntelligentTrackingPreventionBypassingList(
+    const std::vector<std::string>& hosts) {
+#ifdef OHOS_ITP
+  NWebImpl::RemoveIntelligentTrackingPreventionBypassingList(hosts);
+#endif
+}
+
+void NWebEngineImpl::ClearIntelligentTrackingPreventionBypassingList() {
+#ifdef OHOS_ITP
+  NWebImpl::ClearIntelligentTrackingPreventionBypassingList();
+#endif
+}
+
 void NWebEngineImpl::PauseAllTimers() {
   NWebImpl::PauseAllTimers();
 }

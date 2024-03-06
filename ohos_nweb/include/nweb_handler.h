@@ -735,6 +735,14 @@ public:
     virtual void OnSafeBrowsingCheckResult(int threat_type) {}
 
     /**
+     * @brief Called when tracker's cookie is prevented.
+     * @param website_host The host of website url.
+     * @param tracker_host The host of tracker url.
+     */
+    virtual void OnIntelligentTrackingPreventionResult(
+        const std::string& website_host, const std::string& tracker_host) {}
+
+    /**
      * @brief called when the page enter the full-screen mode.
      *
      * @param handler to exit full-screen mode.

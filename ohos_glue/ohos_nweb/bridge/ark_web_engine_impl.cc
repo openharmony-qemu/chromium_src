@@ -141,4 +141,20 @@ void ArkWebEngineImpl::ResumeAllTimers() {
   nweb_engine_->ResumeAllTimers();
 }
 
+void ArkWebEngineImpl::AddIntelligentTrackingPreventionBypassingList(
+    const ArkWebStringVector &hosts) {
+  nweb_engine_->AddIntelligentTrackingPreventionBypassingList(
+      ArkWebStringVectorStructToClass(hosts));
+}
+
+void ArkWebEngineImpl::RemoveIntelligentTrackingPreventionBypassingList(
+      const ArkWebStringVector &hosts) {
+  nweb_engine_->RemoveIntelligentTrackingPreventionBypassingList(
+      ArkWebStringVectorStructToClass(hosts));
+}
+
+void ArkWebEngineImpl::ClearIntelligentTrackingPreventionBypassingList() {
+  nweb_engine_->ClearIntelligentTrackingPreventionBypassingList();
+}
+
 } // namespace OHOS::ArkWeb

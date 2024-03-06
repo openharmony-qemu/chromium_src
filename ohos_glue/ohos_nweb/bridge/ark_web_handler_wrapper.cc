@@ -786,4 +786,16 @@ bool ArkWebHandlerWrapper::OnHandleOverrideUrlLoading(
       new ArkWebUrlResourceRequestImpl(request));
 }
 
+void ArkWebHandlerWrapper::OnIntelligentTrackingPreventionResult(
+    const std::string &website_host, const std::string &tracker_host) {
+  ArkWebString stWebsiteHost = ArkWebStringClassToStruct(website_host);
+  ArkWebString stTrackerHost = ArkWebStringClassToStruct(tracker_host);
+
+  ark_web_handler_->OnIntelligentTrackingPreventionResult(
+      stWebsiteHost, stTrackerHost);
+
+  ArkWebStringStructRelease(stWebsiteHost);
+  ArkWebStringStructRelease(stTrackerHost);
+}
+
 } // namespace OHOS::ArkWeb

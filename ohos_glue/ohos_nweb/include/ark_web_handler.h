@@ -612,6 +612,18 @@ public:
   virtual void OnSafeBrowsingCheckResult(int threat_type) = 0;
 
   /**
+   * @brief Called when tacker's cookie is prevented.
+   *
+   * @param website_host The host of website url.
+   *
+   * @param tracker_host The host of tracker url.
+   */
+  /*--ark web()--*/
+  virtual void
+  OnIntelligentTrackingPreventionResult(const ArkWebString &website_host,
+                                        const ArkWebString &tracker_host) = 0;
+
+  /**
    * @brief called when the page enter the full-screen mode.
    *
    * @param handler to exit full-screen mode.

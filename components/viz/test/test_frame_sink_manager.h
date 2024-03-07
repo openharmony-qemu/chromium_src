@@ -83,6 +83,7 @@ class TestFrameSinkManagerImpl : public mojom::FrameSinkManager {
   void StopFrameCountingForTest(
       StopFrameCountingForTestCallback callback) override {}
 
+
   mojo::Receiver<mojom::FrameSinkManager> receiver_{this};
   mojo::Remote<mojom::FrameSinkManagerClient> client_;
 };

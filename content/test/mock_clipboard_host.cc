@@ -127,14 +127,16 @@ void MockClipboardHost::ReadCustomData(ui::ClipboardBuffer clipboard_buffer,
                                                    : std::u16string());
 }
 
-void MockClipboardHost::WriteText(const std::u16string& text) {
+void MockClipboardHost::WriteText(const std::u16string& text,
+                                  ::blink::mojom::CopyOptionMode copy_option) {
   if (needs_reset_)
     Reset();
   plain_text_ = text;
 }
 
 void MockClipboardHost::WriteHtml(const std::u16string& markup,
-                                  const GURL& url) {
+                                  const GURL& url,
+                                  ::blink::mojom::CopyOptionMode copy_option) {
   if (needs_reset_)
     Reset();
   html_text_ = markup;
@@ -147,7 +149,7 @@ void MockClipboardHost::WriteSvg(const std::u16string& markup) {
   svg_text_ = markup;
 }
 
-void MockClipboardHost::WriteSmartPasteMarker() {
+void MockClipboardHost::WriteSmartPasteMarker(::blink::mojom::CopyOptionMode copy_option) {
   if (needs_reset_)
     Reset();
   write_smart_paste_ = true;
@@ -162,9 +164,11 @@ void MockClipboardHost::WriteCustomData(
 }
 
 void MockClipboardHost::WriteBookmark(const std::string& url,
-                                      const std::u16string& title) {}
+                                      const std::u16string& title,
+                                      ::blink::mojom::CopyOptionMode copy_option) {}
 
-void MockClipboardHost::WriteImage(const SkBitmap& bitmap) {
+void MockClipboardHost::WriteImage(const SkBitmap& bitmap,
+                                   ::blink::mojom::CopyOptionMode copy_option) {
   if (needs_reset_)
     Reset();
   gfx::PNGCodec::EncodeBGRASkBitmap(bitmap, false, &png_);

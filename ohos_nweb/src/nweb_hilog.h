@@ -18,28 +18,29 @@
 
 #if defined(OHOS_NWEB)
 #include "hilog_adapter.h"
-constexpr char logTag[] = "NWEB";
+constexpr char logTag[] = "webadapter";
 
-#define FUNC_LINE_FMT " %{public}s<%{public}d>: "
+#define FILE_NAME (__builtin_strrchr("/" __FILE__, '/') + 1)
+#define FUNC_LINE_FMT "[%{public}s:%{public}d] "
 
 using OHOS::NWeb::HiLogAdapter;
 using OHOS::NWeb::LogLevelAdapter;
 
 #define WVLOG_D(fmt, ...)                                                   \
   HiLogAdapter::PrintLog(LogLevelAdapter::DEBUG, logTag, FUNC_LINE_FMT fmt, \
-                         __FUNCTION__, __LINE__, ##__VA_ARGS__)
+                         FILE_NAME, __LINE__, ##__VA_ARGS__)
 #define WVLOG_I(fmt, ...)                                                  \
   HiLogAdapter::PrintLog(LogLevelAdapter::INFO, logTag, FUNC_LINE_FMT fmt, \
-                         __FUNCTION__, __LINE__, ##__VA_ARGS__)
+                         FILE_NAME, __LINE__, ##__VA_ARGS__)
 #define WVLOG_W(fmt, ...)                                                  \
   HiLogAdapter::PrintLog(LogLevelAdapter::WARN, logTag, FUNC_LINE_FMT fmt, \
-                         __FUNCTION__, __LINE__, ##__VA_ARGS__)
+                         FILE_NAME, __LINE__, ##__VA_ARGS__)
 #define WVLOG_E(fmt, ...)                                                   \
   HiLogAdapter::PrintLog(LogLevelAdapter::ERROR, logTag, FUNC_LINE_FMT fmt, \
-                         __FUNCTION__, __LINE__, ##__VA_ARGS__)
+                         FILE_NAME, __LINE__, ##__VA_ARGS__)
 #define WVLOG_F(fmt, ...)                                                   \
   HiLogAdapter::PrintLog(LogLevelAdapter::FATAL, logTag, FUNC_LINE_FMT fmt, \
-                         __FUNCTION__, __LINE__, ##__VA_ARGS__)
+                         FILE_NAME, __LINE__, ##__VA_ARGS__)
 
 #else  // not OHOS_NWEB
 

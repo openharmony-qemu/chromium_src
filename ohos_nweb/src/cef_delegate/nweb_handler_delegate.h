@@ -264,6 +264,12 @@ class NWebHandlerDelegate : public CefClient,
 
   void OnFirstContentfulPaint(int64_t navigationStartTick,
                               int64_t firstContentfulPaintMs) override;
+  
+  void OnFirstMeaningfulPaint(
+      CefRefPtr<CefFirstMeaningfulPaintDetails> details) override;
+  
+  void OnLargestContentfulPaint(
+      CefRefPtr<CefLargestContentfulPaintDetails> details) override;
 
   void OnDataResubmission(CefRefPtr<CefBrowser> browser,
                           CefRefPtr<CefCallback> callback) override;

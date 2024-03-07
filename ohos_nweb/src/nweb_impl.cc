@@ -1666,12 +1666,22 @@ void NWebImpl::OnWebviewHide() {
 #if defined(OHOS_WEBRTC)
   StopCameraSession();
 #endif
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("OnWebviewHide nweb delegate is null");
+    return;
+  }
+  nweb_delegate_->OnWindowHide();
 }
 
 void NWebImpl::OnWebviewShow() {
 #if defined(OHOS_WEBRTC)
   RestartCameraSession();
 #endif
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("OnWebviewShow nweb delegate is null");
+    return;
+  }
+  nweb_delegate_->OnWindowShow();
 }
 
 #if BUILDFLAG(IS_OHOS)

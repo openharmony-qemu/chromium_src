@@ -1661,7 +1661,7 @@ void NWebImpl::OnWebviewHide() {
     WVLOG_E("OnWebviewHide nweb delegate is null");
     return;
   }
-  nweb_delegate_->OnWebviewHide();
+  nweb_delegate_->OnWindowHide();
 }
 
 void NWebImpl::OnWebviewShow() {
@@ -1672,7 +1672,7 @@ void NWebImpl::OnWebviewShow() {
     WVLOG_E("OnWebviewShow nweb delegate is null");
     return;
   }
-  nweb_delegate_->OnWebviewShow();
+  nweb_delegate_->OnWindowShow();
 }
 
 #if BUILDFLAG(IS_OHOS)

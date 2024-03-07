@@ -2722,7 +2722,7 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId,
                                  uint32_t action) const {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
-    LOG(INFO) << "ExecuteAction can not get accessibilityManager";
+    LOG(WARNING) << "ExecuteAction can not get accessibilityManager";
     return;
   }
   auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
@@ -2773,7 +2773,7 @@ content::BrowserAccessibilityManagerOHOS*
 NWebDelegate::GetAccessibilityManager() const {
   if (!accessibility_state_ || GetBrowser() == nullptr
       || GetBrowser()->GetHost() == nullptr) {
-    LOG(INFO) << "GetAccessibilityManager can not get browser";
+    LOG(ERROR) << "GetAccessibilityManager can not get browser";
     return nullptr;
   }
   void* manager = nullptr;
@@ -2791,7 +2791,7 @@ NWebDelegate::GetFocusedAccessibilityNodeInfo(int64_t accessibilityId,
                                               bool isAccessibilityFocus) {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
-    LOG(INFO)
+    LOG(WARNING)
         << "GetFocusedAccessibilityNodeInfo can not get accessibilityManager";
     return nullptr;
   }
@@ -2831,7 +2831,7 @@ std::shared_ptr<NWebAccessibilityNodeInfo>
 NWebDelegate::GetAccessibilityNodeInfoById(int64_t accessibilityId) {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
-    LOG(INFO)
+    LOG(WARNING)
         << "GetAccessibilityNodeInfoById can not get accessibilityManager";
     return nullptr;
   }
@@ -2857,7 +2857,7 @@ NWebDelegate::GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
                                                   int32_t direction) {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
-    LOG(INFO) << "GetAccessibilityNodeInfoByFocusMove can not get "
+    LOG(WARNING) << "GetAccessibilityNodeInfoByFocusMove can not get "
                   "accessibilityManager";
     return nullptr;
   }
@@ -2888,7 +2888,7 @@ NWebDelegate::PopulateAccessibilityNodeInfo(
     const content::BrowserAccessibilityOHOS* node) const {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
-    LOG(INFO)
+    LOG(WARNING)
         << "GetFocusedAccessibilityNodeInfo can not get accessibilityManager";
     return nullptr;
   }
@@ -3004,7 +3004,7 @@ void NWebDelegate::AddAccessibilityNodeInfoRect(
   nodeInfo->SetRectHeight(absolute_rect.height());
 
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    LOG(INFO) << "AddAccessibilityNodeInfoRect can not get browser";
+    LOG(ERROR) << "AddAccessibilityNodeInfoRect can not get browser";
     return;
   }
   auto viewPointHeight = GetBrowser()->GetHost()->GetShrinkViewportHeight();
@@ -3018,11 +3018,19 @@ void NWebDelegate::AddAccessibilityNodeInfoRect(
 void NWebDelegate::AddAccessibilityNodeInfoCollection(
     std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
     const content::BrowserAccessibilityOHOS* node) const {
+  nodeInfo->SetGridRows(-1);
+  nodeInfo->SetGridColumns(-1);
+  nodeInfo->SetGridSelectedMode(-1);
   if (node->IsCollection()) {
     nodeInfo->SetGridRows(node->RowCount());
     nodeInfo->SetGridColumns(node->ColumnCount());
     nodeInfo->SetGridSelectedMode(node->IsHierarchical());
   }
+  nodeInfo->SetGridItemRow(-1);
+  nodeInfo->SetGridItemRowSpan(-1);
+  nodeInfo->SetGridItemColumn(-1);
+  nodeInfo->SetGridItemColumnSpan(-1);
+  nodeInfo->SetIsHeading(false);
   if (node->IsCollectionItem() || node->IsTableHeader()) {
     nodeInfo->SetGridItemRow(node->RowIndex());
     nodeInfo->SetGridItemRowSpan(node->RowSpan());

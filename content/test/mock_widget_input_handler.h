@@ -262,6 +262,10 @@ class MockWidgetInputHandler : public blink::mojom::WidgetInputHandler {
 
   void DispatchEvent(std::unique_ptr<blink::WebCoalescedInputEvent> event,
                      DispatchEventCallback callback) override;
+#if BUILDFLAG(IS_OHOS)
+  void TryStartFling() override {}
+  void TryFinishFling() override {}
+#endif
   void DispatchNonBlockingEvent(
       std::unique_ptr<blink::WebCoalescedInputEvent> event) override;
   void WaitForInputProcessed(WaitForInputProcessedCallback callback) override;

@@ -27,7 +27,7 @@
 #include "third_party/blink/public/mojom/service_worker/service_worker_registration_options.mojom.h"
 #include "url/gurl.h"
 
-#ifdef OHOS_NAVIGATION
+#if defined(OHOS_NAVIGATION) && !BUILDFLAG(IS_OHOS)
 #include "libcef/browser/navigation_state_serializer.h"
 #endif
 
@@ -207,7 +207,7 @@ BackgroundFetchTestBase::devtools_context() {
       storage_partition()->GetDevToolsBackgroundServicesContext());
 }
 
-#ifdef OHOS_NAVIGATION
+#if defined(OHOS_NAVIGATION) && !BUILDFLAG(IS_OHOS)
 CefRefPtr<CefBinaryValue> CefBrowserHostBase::GetWebState() {
   auto web_contents = GetWebContents();
   if (!web_contents) {

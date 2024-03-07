@@ -26,6 +26,7 @@
 #include "ohos_nweb/capi/ark_web_data_resubmission_callback_capi.h"
 #include "ohos_nweb/capi/ark_web_date_time_chooser_callback_capi.h"
 #include "ohos_nweb/capi/ark_web_file_selector_params_capi.h"
+#include "ohos_nweb/capi/ark_web_first_meaningful_paint_details_capi.h"
 #include "ohos_nweb/capi/ark_web_full_screen_exit_handler_capi.h"
 #include "ohos_nweb/capi/ark_web_geo_location_callback_capi.h"
 #include "ohos_nweb/capi/ark_web_js_dialog_result_capi.h"
@@ -33,6 +34,7 @@
 #include "ohos_nweb/capi/ark_web_js_ssl_error_result_capi.h"
 #include "ohos_nweb/capi/ark_web_js_ssl_select_cert_result_capi.h"
 #include "ohos_nweb/capi/ark_web_key_event_capi.h"
+#include "ohos_nweb/capi/ark_web_largest_contentful_paint_details_capi.h"
 #include "ohos_nweb/capi/ark_web_load_committed_details_capi.h"
 #include "ohos_nweb/capi/ark_web_native_embed_data_info_capi.h"
 #include "ohos_nweb/capi/ark_web_native_embed_touch_event_capi.h"
@@ -326,6 +328,14 @@ typedef struct _ark_web_handler_t {
 
   bool(ARK_WEB_CALLBACK *on_handle_override_url_loading)(
       struct _ark_web_handler_t *self, ark_web_url_resource_request_t *request);
+
+  void(ARK_WEB_CALLBACK *on_first_meaningful_paint)(
+      struct _ark_web_handler_t *self,
+      ark_web_first_meaningful_paint_details_t *details);
+
+  void(ARK_WEB_CALLBACK *on_largest_contentful_paint)(
+      struct _ark_web_handler_t *self,
+      ark_web_largest_contentful_paint_details_t *details);
 } ark_web_handler_t;
 
 #ifdef __cplusplus

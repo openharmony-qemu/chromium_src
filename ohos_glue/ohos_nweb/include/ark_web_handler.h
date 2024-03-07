@@ -26,6 +26,7 @@
 #include "ohos_nweb/include/ark_web_date_time_chooser_callback.h"
 #include "ohos_nweb/include/ark_web_date_time_suggestion_vector.h"
 #include "ohos_nweb/include/ark_web_file_selector_params.h"
+#include "ohos_nweb/include/ark_web_first_meaningful_paint_details.h"
 #include "ohos_nweb/include/ark_web_full_screen_exit_handler.h"
 #include "ohos_nweb/include/ark_web_geo_location_callback.h"
 #include "ohos_nweb/include/ark_web_js_dialog_result.h"
@@ -33,6 +34,7 @@
 #include "ohos_nweb/include/ark_web_js_ssl_error_result.h"
 #include "ohos_nweb/include/ark_web_js_ssl_select_cert_result.h"
 #include "ohos_nweb/include/ark_web_key_event.h"
+#include "ohos_nweb/include/ark_web_largest_contentful_paint_details.h"
 #include "ohos_nweb/include/ark_web_load_committed_details.h"
 #include "ohos_nweb/include/ark_web_native_embed_data_info.h"
 #include "ohos_nweb/include/ark_web_native_embed_touch_event.h"
@@ -647,6 +649,14 @@ public:
    */
   /*--ark web()--*/
   virtual bool OnHandleOverrideUrlLoading(ArkWebRefPtr<ArkWebUrlResourceRequest> request) = 0;
+
+  /*--ark web()--*/
+  virtual void OnFirstMeaningfulPaint(
+      ArkWebRefPtr<ArkWebFirstMeaningfulPaintDetails> details) = 0;
+
+  /*--ark web()--*/
+  virtual void OnLargestContentfulPaint(
+      ArkWebRefPtr<ArkWebLargestContentfulPaintDetails> details) = 0;
 };
 
 } // namespace OHOS::ArkWeb

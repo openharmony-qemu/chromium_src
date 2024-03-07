@@ -564,6 +564,24 @@ public:
       const std::string &website_host,
       const std::string &tracker_host) override;
 
+  /**
+   * @brief Called when the first meaningful paint rendering of web page.
+   *
+   * @param details represents the details of first meaningful paint.
+   */
+  void OnFirstMeaningfulPaint(
+      std::shared_ptr<OHOS::NWeb::NWebFirstMeaningfulPaintDetails> details)
+      override;
+
+  /**
+   * @brief Called when the largest contentful paint rendering of web page.
+   *
+   * @param details represents the details of largest contentful paint.
+   */
+  void OnLargestContentfulPaint(
+      std::shared_ptr<OHOS::NWeb::NWebLargestContentfulPaintDetails> details)
+      override;
+
 private:
   ArkWebRefPtr<ArkWebHandler> ark_web_handler_;
 };

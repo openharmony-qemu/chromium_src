@@ -38,6 +38,8 @@
 #include "nweb_js_ssl_select_cert_result.h"
 #include "nweb_key_event.h"
 #include "nweb_load_committed_details.h"
+#include "nweb_first_meaningful_paint_details.h"
+#include "nweb_largest_contentful_paint_details.h"
 #include "nweb_select_popup_menu.h"
 #include "nweb_touch_handle_state.h"
 #include "nweb_url_resource_error.h"
@@ -659,6 +661,20 @@ public:
      */
     virtual void OnFirstContentfulPaint(int64_t navigationStartTick,
                                         int64_t firstContentfulPaintMs) {}
+    
+    /**
+     * @brief Called when the first meaningful paint rendering of web page.
+     * @param details represents the details of first meaningful paint.
+     */
+    virtual void OnFirstMeaningfulPaint(
+        std::shared_ptr<NWebFirstMeaningfulPaintDetails> details) {}
+
+    /**
+     * @brief Called when the largest contentful paint rendering of web page.
+     * @param details represents the details of largest contentful paint.
+     */
+    virtual void OnLargestContentfulPaint(
+        std::shared_ptr<NWebLargestContentfulPaintDetails> details) {}
 
     /**
      * @brief Called when swap buffer completed with new size.

@@ -58,8 +58,8 @@ class NWebDelegateInterface
     : public std::enable_shared_from_this<NWebDelegateInterface> {
  public:
    virtual ~NWebDelegateInterface() = default;
-  virtual bool OnWindowShow() = 0;
-  virtual bool OnWindowHide() = 0;
+  virtual void OnWindowShow() = 0;
+  virtual void OnWindowHide() = 0;
   virtual bool IsReady() = 0;
   virtual void OnDestroy(bool is_close_all) = 0;
   virtual void RegisterDownLoadListener(

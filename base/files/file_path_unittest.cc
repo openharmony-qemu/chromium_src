@@ -1280,7 +1280,7 @@ TEST_F(FilePathTest, FromUTF8Unsafe_And_AsUTF8Unsafe) {
   };
 
 #if !defined(SYSTEM_NATIVE_UTF8) && \
-    (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS))
+    (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS))
   ScopedLocale locale("en_US.UTF-8");
 #endif
 

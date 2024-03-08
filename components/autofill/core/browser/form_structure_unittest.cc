@@ -2257,7 +2257,7 @@ TEST_P(ParameterizedFormStructureTest, EncodeQueryRequest) {
 
   // Prepare the expected proto string.
   AutofillPageQueryRequest query;
-  query.set_client_version(GetProductNameAndVersionForUserAgent());
+  query.set_client_version(GetProductNameAndVersionForUserAgent().data());
   {
     AutofillPageQueryRequest::Form* query_form = query.add_forms();
     query_form->set_signature(form_signature.value());
@@ -2562,7 +2562,7 @@ TEST_F(FormStructureTestImpl, EncodeUploadRequest_WithMatchingValidities) {
   // Prepare the expected proto string.
   AutofillUploadContents upload;
   upload.set_submission(true);
-  upload.set_client_version(GetProductNameAndVersionForUserAgent());
+  upload.set_client_version(GetProductNameAndVersionForUserAgent().data());
   upload.set_form_signature(form_structure->form_signature().value());
   upload.set_autofill_used(false);
   upload.set_data_present("1442000308");
@@ -2741,7 +2741,7 @@ TEST_F(FormStructureTestImpl, EncodeUploadRequest_WithNonMatchingValidities) {
   // Prepare the expected proto string.
   AutofillUploadContents upload;
   upload.set_submission(true);
-  upload.set_client_version(GetProductNameAndVersionForUserAgent());
+  upload.set_client_version(GetProductNameAndVersionForUserAgent().data());
   upload.set_form_signature(form_structure->form_signature().value());
   upload.set_autofill_used(false);
   upload.set_data_present("1442000308");
@@ -2865,7 +2865,7 @@ TEST_F(FormStructureTestImpl, EncodeUploadRequest_WithMultipleValidities) {
   // Prepare the expected proto string.
   AutofillUploadContents upload;
   upload.set_submission(true);
-  upload.set_client_version(GetProductNameAndVersionForUserAgent());
+  upload.set_client_version(GetProductNameAndVersionForUserAgent().data());
   upload.set_form_signature(form_structure->form_signature().value());
   upload.set_autofill_used(false);
   upload.set_data_present("1442000308");
@@ -2987,7 +2987,7 @@ TEST_F(FormStructureTestImpl, EncodeUploadRequest) {
   AutofillUploadContents upload;
   upload.set_submission(true);
   upload.set_submission_event(AutofillUploadContents::HTML_FORM_SUBMISSION);
-  upload.set_client_version(GetProductNameAndVersionForUserAgent());
+  upload.set_client_version(GetProductNameAndVersionForUserAgent().data());
   upload.set_form_signature(form_structure->form_signature().value());
   upload.set_autofill_used(false);
   upload.set_data_present("1442000308");
@@ -3169,7 +3169,7 @@ TEST_F(FormStructureTestImpl,
   // Prepare the expected proto string.
   AutofillUploadContents upload;
   upload.set_submission(true);
-  upload.set_client_version(GetProductNameAndVersionForUserAgent());
+  upload.set_client_version(GetProductNameAndVersionForUserAgent().data());
   upload.set_form_signature(form_structure->form_signature().value());
   upload.set_autofill_used(true);
   upload.set_data_present("1440000000000000000802");
@@ -3260,7 +3260,7 @@ TEST_F(FormStructureTestImpl, EncodeUploadRequest_WithAutocomplete) {
   // Prepare the expected proto string.
   AutofillUploadContents upload;
   upload.set_submission(true);
-  upload.set_client_version(GetProductNameAndVersionForUserAgent());
+  upload.set_client_version(GetProductNameAndVersionForUserAgent().data());
   upload.set_form_signature(form_structure->form_signature().value());
   upload.set_autofill_used(true);
   upload.set_data_present("1440");
@@ -3348,7 +3348,7 @@ TEST_F(FormStructureTestImpl, EncodeUploadRequestWithPropertiesMask) {
   // Prepare the expected proto string.
   AutofillUploadContents upload;
   upload.set_submission(true);
-  upload.set_client_version(GetProductNameAndVersionForUserAgent());
+  upload.set_client_version(GetProductNameAndVersionForUserAgent().data());
   upload.set_form_signature(form_structure->form_signature().value());
   upload.set_autofill_used(true);
   upload.set_data_present("1440");
@@ -3433,7 +3433,7 @@ TEST_F(FormStructureTestImpl, EncodeUploadRequest_ObservedSubmissionFalse) {
   // Prepare the expected proto string.
   AutofillUploadContents upload;
   upload.set_submission(false);
-  upload.set_client_version(GetProductNameAndVersionForUserAgent());
+  upload.set_client_version(GetProductNameAndVersionForUserAgent().data());
   upload.set_form_signature(form_structure->form_signature().value());
   upload.set_autofill_used(true);
   upload.set_data_present("1440");
@@ -3507,7 +3507,7 @@ TEST_F(FormStructureTestImpl, EncodeUploadRequest_WithLabels) {
   // Prepare the expected proto string.
   AutofillUploadContents upload;
   upload.set_submission(true);
-  upload.set_client_version(GetProductNameAndVersionForUserAgent());
+  upload.set_client_version(GetProductNameAndVersionForUserAgent().data());
   upload.set_form_signature(form_structure->form_signature().value());
   upload.set_autofill_used(true);
   upload.set_data_present("1440");
@@ -3580,7 +3580,7 @@ TEST_F(FormStructureTestImpl, EncodeUploadRequest_WithCssClassesAndIds) {
   // Prepare the expected proto string.
   AutofillUploadContents upload;
   upload.set_submission(true);
-  upload.set_client_version(GetProductNameAndVersionForUserAgent());
+  upload.set_client_version(GetProductNameAndVersionForUserAgent().data());
   upload.set_form_signature(form_structure->form_signature().value());
   upload.set_autofill_used(true);
   upload.set_data_present("1440");
@@ -3663,7 +3663,7 @@ TEST_F(FormStructureTestImpl, EncodeUploadRequest_WithFormName) {
   // Prepare the expected proto string.
   AutofillUploadContents upload;
   upload.set_submission(true);
-  upload.set_client_version(GetProductNameAndVersionForUserAgent());
+  upload.set_client_version(GetProductNameAndVersionForUserAgent().data());
   upload.set_form_signature(form_structure->form_signature().value());
   upload.set_autofill_used(true);
   upload.set_data_present("1440");
@@ -3739,7 +3739,7 @@ TEST_F(FormStructureTestImpl, EncodeUploadRequestPartialMetadata) {
   // Prepare the expected proto string.
   AutofillUploadContents upload;
   upload.set_submission(true);
-  upload.set_client_version(GetProductNameAndVersionForUserAgent());
+  upload.set_client_version(GetProductNameAndVersionForUserAgent().data());
   upload.set_form_signature(form_structure->form_signature().value());
   upload.set_autofill_used(true);
   upload.set_data_present("1440");
@@ -3824,7 +3824,7 @@ TEST_F(FormStructureTestImpl, EncodeUploadRequest_DisabledMetadata) {
   // Prepare the expected proto string.
   AutofillUploadContents upload;
   upload.set_submission(true);
-  upload.set_client_version(GetProductNameAndVersionForUserAgent());
+  upload.set_client_version(GetProductNameAndVersionForUserAgent().data());
   upload.set_form_signature(form_structure->form_signature().value());
   upload.set_autofill_used(true);
   upload.set_data_present("1440");
@@ -3929,7 +3929,7 @@ TEST_F(FormStructureTestImpl, EncodeUploadRequest_WithSubForms) {
     upload.set_submission(true);
     upload.set_submission_event(
         AutofillUploadContents_SubmissionIndicatorEvent_NONE);
-    upload.set_client_version(GetProductNameAndVersionForUserAgent());
+    upload.set_client_version(GetProductNameAndVersionForUserAgent().data());
     upload.set_form_signature(form_structure->form_signature().value());
     upload.set_autofill_used(false);
     upload.set_data_present("0000000000001850");
@@ -3949,7 +3949,7 @@ TEST_F(FormStructureTestImpl, EncodeUploadRequest_WithSubForms) {
 
   const AutofillUploadContents upload_name_exp = [&] {
     AutofillUploadContents upload;
-    upload.set_client_version(GetProductNameAndVersionForUserAgent());
+    upload.set_client_version(GetProductNameAndVersionForUserAgent().data());
     upload.set_form_signature(form.fields[0].host_form_signature.value());
     upload.set_autofill_used(false);
     upload.set_data_present("0000000000001850");
@@ -3962,7 +3962,7 @@ TEST_F(FormStructureTestImpl, EncodeUploadRequest_WithSubForms) {
 
   const AutofillUploadContents upload_number = [&] {
     AutofillUploadContents upload;
-    upload.set_client_version(GetProductNameAndVersionForUserAgent());
+    upload.set_client_version(GetProductNameAndVersionForUserAgent().data());
     upload.set_form_signature(form.fields[1].host_form_signature.value());
     upload.set_autofill_used(false);
     upload.set_data_present("0000000000001850");
@@ -3973,7 +3973,7 @@ TEST_F(FormStructureTestImpl, EncodeUploadRequest_WithSubForms) {
 
   const AutofillUploadContents upload_cvc = [&] {
     AutofillUploadContents upload;
-    upload.set_client_version(GetProductNameAndVersionForUserAgent());
+    upload.set_client_version(GetProductNameAndVersionForUserAgent().data());
     upload.set_form_signature(form.fields[3].host_form_signature.value());
     upload.set_autofill_used(false);
     upload.set_data_present("0000000000001850");
@@ -4040,7 +4040,7 @@ TEST_F(FormStructureTestImpl, CheckDataPresence) {
   // Prepare the expected proto string.
   AutofillUploadContents upload;
   upload.set_submission(true);
-  upload.set_client_version(GetProductNameAndVersionForUserAgent());
+  upload.set_client_version(GetProductNameAndVersionForUserAgent().data());
   upload.set_form_signature(form_structure.form_signature().value());
   upload.set_autofill_used(false);
   upload.set_data_present("");
@@ -4301,7 +4301,7 @@ TEST_F(FormStructureTestImpl, CheckMultipleTypes) {
   // Prepare the expected proto string.
   AutofillUploadContents upload;
   upload.set_submission(true);
-  upload.set_client_version(GetProductNameAndVersionForUserAgent());
+  upload.set_client_version(GetProductNameAndVersionForUserAgent().data());
   upload.set_form_signature(form_structure->form_signature().value());
   upload.set_autofill_used(false);
   upload.set_data_present("1440000360000008");
@@ -4798,7 +4798,7 @@ TEST_F(FormStructureTestImpl, SkipFieldTest) {
 
   // Create the expected query and serialize it to a string.
   AutofillPageQueryRequest query;
-  query.set_client_version(GetProductNameAndVersionForUserAgent());
+  query.set_client_version(GetProductNameAndVersionForUserAgent().data());
   AutofillPageQueryRequest::Form* query_form = query.add_forms();
   query_form->set_signature(form_structure.form_signature().value());
 
@@ -4847,7 +4847,7 @@ TEST_F(FormStructureTestImpl, EncodeQueryRequest_WithLabels) {
 
   // Create the expected query and serialize it to a string.
   AutofillPageQueryRequest query;
-  query.set_client_version(GetProductNameAndVersionForUserAgent());
+  query.set_client_version(GetProductNameAndVersionForUserAgent().data());
   AutofillPageQueryRequest::Form* query_form = query.add_forms();
   query_form->set_signature(form_structure.form_signature().value());
 
@@ -4898,7 +4898,7 @@ TEST_F(FormStructureTestImpl, EncodeQueryRequest_WithLongLabels) {
 
   // Create the expected query and serialize it to a string.
   AutofillPageQueryRequest query;
-  query.set_client_version(GetProductNameAndVersionForUserAgent());
+  query.set_client_version(GetProductNameAndVersionForUserAgent().data());
   AutofillPageQueryRequest::Form* query_form = query.add_forms();
   query_form->set_signature(form_structure.form_signature().value());
 
@@ -4944,7 +4944,7 @@ TEST_F(FormStructureTestImpl, EncodeQueryRequest_MissingNames) {
 
   // Create the expected query and serialize it to a string.
   AutofillPageQueryRequest query;
-  query.set_client_version(GetProductNameAndVersionForUserAgent());
+  query.set_client_version(GetProductNameAndVersionForUserAgent().data());
   AutofillPageQueryRequest::Form* query_form = query.add_forms();
   query_form->set_signature(form_structure.form_signature().value());
 

@@ -105,7 +105,7 @@ class FakeRenderWidgetHost : public blink::mojom::FrameWidgetHost,
   void RequestMouseLock(bool from_user_gesture,
                         bool unadjusted_movement,
                         RequestMouseLockCallback callback) override;
-
+  void DidNativeEmbedEvent(blink::mojom::EmbedTouchEventPtr event) override {}
   mojo::AssociatedReceiver<blink::mojom::WidgetHost>&
   widget_host_receiver_for_testing() {
     return widget_host_receiver_;

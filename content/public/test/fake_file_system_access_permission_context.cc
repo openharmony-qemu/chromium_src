@@ -46,12 +46,14 @@ void FakeFileSystemAccessPermissionContext::ConfirmSensitiveEntryAccess(
   std::move(callback).Run(SensitiveEntryResult::kAllowed);
 }
 
+#if BUILDFLAG(SAFE_BROWSING_AVAILABLE)
 void FakeFileSystemAccessPermissionContext::PerformAfterWriteChecks(
     std::unique_ptr<FileSystemAccessWriteItem> item,
     GlobalRenderFrameHostId frame_id,
     base::OnceCallback<void(AfterWriteCheckResult)> callback) {
   std::move(callback).Run(AfterWriteCheckResult::kAllow);
 }
+#endif
 
 bool FakeFileSystemAccessPermissionContext::CanObtainReadPermission(
     const url::Origin& origin) {

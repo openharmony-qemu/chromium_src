@@ -854,6 +854,10 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
   // surface, returns the ID of that resource.
   virtual viz::ViewTransitionElementResourceId ViewTransitionResourceId() const;
 
+#if BUILDFLAG(IS_OHOS)
+  virtual void OnLayerRectUpdate(const gfx::Rect& rect) {}
+#endif
+
  protected:
   friend class LayerImpl;
   friend class TreeSynchronizer;

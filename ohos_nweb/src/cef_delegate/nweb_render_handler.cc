@@ -101,7 +101,9 @@ class NWebNativeEmbedInfoImpl : public NWebNativeEmbedInfo {
       const std::string& url,
       const std::string& type,
       const std::string& tag,
-      const std::map<std::string, std::string>& params);
+      const std::map<std::string, std::string>& params,
+      int32_t x,
+      int32_t y);
   ~NWebNativeEmbedInfoImpl() = default;
 
   int32_t GetWidth() override { return width_; }
@@ -120,6 +122,10 @@ class NWebNativeEmbedInfoImpl : public NWebNativeEmbedInfo {
 
   std::map<std::string, std::string> GetParams() override { return params_; }
 
+  int32_t GetX() override { return x_; }
+
+  int32_t GetY() override { return y_; }
+
  private:
   int32_t width_ = 0;
   int32_t height_ = 0;
@@ -129,17 +135,21 @@ class NWebNativeEmbedInfoImpl : public NWebNativeEmbedInfo {
   std::string type_;
   std::string tag_;
   std::map<std::string, std::string> params_;
+  int32_t x_ = 0;
+  int32_t y_ = 0;
 };
 
 NWebNativeEmbedInfoImpl::NWebNativeEmbedInfoImpl(
     int32_t width,
-    const int32_t height,
+    int32_t height,
     const std::string& id,
     const std::string& src,
     const std::string& url,
     const std::string& type,
     const std::string& tag,
-    const std::map<std::string, std::string>& params)
+    const std::map<std::string, std::string>& params,
+    int32_t x,
+    int32_t y)
     : width_(width),
       height_(height),
       id_(id),
@@ -147,7 +157,9 @@ NWebNativeEmbedInfoImpl::NWebNativeEmbedInfoImpl(
       url_(url),
       type_(type),
       tag_(tag),
-      params_(params) {}
+      params_(params),
+      x_(x),
+      y_(y) {}
 
 class NWebNativeEmbedDataInfoImpl : public NWebNativeEmbedDataInfo {
  public:
@@ -767,7 +779,7 @@ std::shared_ptr<NWebNativeEmbedDataInfo> CefEmbedDataToWeb(
   std::shared_ptr<NWebNativeEmbedInfoImpl> embedinfo =
       std::make_shared<NWebNativeEmbedInfoImpl>(
           info.width, info.height, info.id, info.src, info.url, info.type,
-          info.tag, info.params);
+          info.tag, info.params, info.x, info.y);
 
   std::shared_ptr<NWebNativeEmbedDataInfoImpl> datainfo =
       std::make_shared<NWebNativeEmbedDataInfoImpl>();

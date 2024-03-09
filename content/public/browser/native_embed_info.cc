@@ -23,7 +23,7 @@ NativeEmbedInfo::NativeEmbedInfo(int native_embed_id,
                                  std::string& native_type,
                                  std::string& native_source,
                                  std::string& tag,
-                                 gfx::Size size,
+                                 gfx::Rect& rect,
                                  std::map<std::string, std::string>& param_list)
     : native_embed_id(native_embed_id),
       url(url),
@@ -31,7 +31,7 @@ NativeEmbedInfo::NativeEmbedInfo(int native_embed_id,
       native_type(native_type),
       native_source(native_source),
       tag(tag),
-      size(size),
+      rect(rect),
       params(param_list) {}
 
 NativeEmbedInfo::NativeEmbedInfo(const NativeEmbedInfo& other) = default;
@@ -51,7 +51,7 @@ std::ostream& operator<<(std::ostream& out, const NativeEmbedInfo& info) {
       << ", native type: " << info.native_type
       << ", native source: " << info.native_source
       << ", tag: " << info.tag
-      << ", native size: " << info.size.ToString();
+      << ", native rect: " << info.rect.ToString();
   return out;
 }
 

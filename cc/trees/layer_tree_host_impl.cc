@@ -5329,6 +5329,12 @@ std::string LayerTreeHostImpl::GetHungCommitDebugInfo() const {
          tile_manager_.GetHungCommitDebugInfo();
 }
 
+#if BUILDFLAG(IS_OHOS)
+void LayerTreeHostImpl::OnLayerRectUpdate(int id, const gfx::Rect& rect) {
+  client_->OnLayerRectUpdate(id, rect);
+}
+#endif
+
 #ifdef OHOS_NWEB_EX
 void LayerTreeHostImpl::SetupScrollBy() {
   if (!input_delegate_) {

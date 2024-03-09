@@ -119,6 +119,10 @@ component("ohos_nweb_glue_source") {
     "ohos_nweb/bridge/ark_web_key_event_impl.h",
     "ohos_nweb/bridge/ark_web_load_committed_details_impl.cc",
     "ohos_nweb/bridge/ark_web_load_committed_details_impl.h",
+    "ohos_nweb/bridge/ark_web_first_meaningful_paint_details_impl.cc",
+    "ohos_nweb/bridge/ark_web_first_meaningful_paint_details_impl.h",
+    "ohos_nweb/bridge/ark_web_largest_contentful_paint_details_impl.cc",
+    "ohos_nweb/bridge/ark_web_largest_contentful_paint_details_impl.h",
     "ohos_nweb/bridge/ark_web_long_value_callback_wrapper.cc",
     "ohos_nweb/bridge/ark_web_long_value_callback_wrapper.h",
     "ohos_nweb/bridge/ark_web_message_value_callback_wrapper.cc",
@@ -229,6 +233,10 @@ component("ohos_nweb_glue_source") {
     "ohos_nweb/cpptoc/ark_web_key_event_cpptoc.h",
     "ohos_nweb/cpptoc/ark_web_load_committed_details_cpptoc.cc",
     "ohos_nweb/cpptoc/ark_web_load_committed_details_cpptoc.h",
+    "ohos_nweb/cpptoc/ark_web_first_meaningful_paint_details_cpptoc.cc",
+    "ohos_nweb/cpptoc/ark_web_first_meaningful_paint_details_cpptoc.h",
+    "ohos_nweb/cpptoc/ark_web_largest_contentful_paint_details_cpptoc.cc",
+    "ohos_nweb/cpptoc/ark_web_largest_contentful_paint_details_cpptoc.h",
     "ohos_nweb/cpptoc/ark_web_native_embed_data_info_cpptoc.cc",
     "ohos_nweb/cpptoc/ark_web_native_embed_data_info_cpptoc.h",
     "ohos_nweb/cpptoc/ark_web_native_embed_info_cpptoc.cc",
@@ -315,6 +323,10 @@ component("ohos_nweb_glue_source") {
     "ohos_nweb/ctocpp/ark_web_value_vector_ctocpp.h",
     "ohos_nweb/ctocpp/ark_web_web_storage_origin_vector_value_callback_ctocpp.cc",
     "ohos_nweb/ctocpp/ark_web_web_storage_origin_vector_value_callback_ctocpp.h",
+    "ohos_nweb/ctocpp/ark_web_first_meaningful_paint_details_ctocpp.cc",
+    "ohos_nweb/ctocpp/ark_web_first_meaningful_paint_details_ctocpp.h",
+    "ohos_nweb/ctocpp/ark_web_largest_contentful_paint_details_ctocpp.cc",
+    "ohos_nweb/ctocpp/ark_web_largest_contentful_paint_details_ctocpp.h",
   ]
 
   deps = [ "//ohos_glue:ohos_base_glue_source" ]

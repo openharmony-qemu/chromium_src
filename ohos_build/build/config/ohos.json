@@ -102,7 +102,7 @@
 "dependence": "",
 "default": "true"
 },
-{ "name": "OHOS_CRASH_DUMP",
+{ "name": "OHOS_CRASHPAD",
 "owner": "",
 "desc": "",
 "effect":"main gn blink_core other",

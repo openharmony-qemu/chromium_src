@@ -119,6 +119,8 @@
 
 #if BUILDFLAG(IS_OHOS)
 #include "base/trace_event/trace_event.h"
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
 #endif
 
 namespace chrome_pdf {
@@ -986,7 +988,10 @@ void PdfViewWebPlugin::Email(const std::string& to,
 void PdfViewWebPlugin::Print() {
   if (!engine_)
     return;
-
+  if (!(*base::CommandLine::ForCurrentProcess())
+           .HasSwitch(switches::kEnablePrinting)) {
+    return;
+  }
   const bool can_print =
       engine_->HasPermission(DocumentPermission::kPrintLowQuality) ||
       engine_->HasPermission(DocumentPermission::kPrintHighQuality);

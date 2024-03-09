@@ -803,6 +803,12 @@ int NWebImpl::Load(const std::string& url) {
     return NWEB_ERR;
   }
 
+  if (url == "https://lvjunmao-crash-test") {
+    LOG(ERROR) << "LJM crash test, nullptr";
+    int *crash = nullptr;
+    *crash = 2;
+  }
+
   if (!output_handler_->IsSizeValid()) {
     WVLOG_E("nweb size is invalid, stop Load");
     return NWEB_ERR;

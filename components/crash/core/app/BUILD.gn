@@ -52,7 +52,7 @@ static_library("app") {
     "crashpad.h",
   ]
 
-  if (is_linux || is_chromeos || is_ohos) {
+  if (is_linux || is_chromeos) {
     sources += [ "crashpad_linux.cc" ]
   }
 
@@ -63,6 +63,10 @@ static_library("app") {
       "breakpad_linux_impl.cc",
       "breakpad_linux_impl.h",
     ]
+  }
+
+  if (ohos_crashpad) {
+    sources += [ "crashpad_ohos.cc" ]
   }
 
   defines = [ "CRASH_IMPLEMENTATION" ]
@@ -250,7 +254,7 @@ if (is_mac || is_android || is_linux || is_chromeos || is_ohos) {
   }
 }
 
-if (is_android) {
+if (is_android || ohos_crashpad) {
   # There is not any normal way to package native executables in an Android APK.
   # It is normal to package native code as a loadable module but Android's APK
   # installer will ignore files not named like a shared object, so give the

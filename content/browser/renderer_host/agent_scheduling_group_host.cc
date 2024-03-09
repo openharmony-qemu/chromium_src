@@ -22,6 +22,9 @@
 #include "content/public/browser/render_process_host.h"
 #include "ipc/ipc_channel_mojo.h"
 #include "ipc/ipc_message.h"
+#if BUILDFLAG(IS_OHOS)
+#include "res_sched_client_adapter.h"
+#endif
 #include "third_party/blink/public/mojom/shared_storage/shared_storage_worklet_service.mojom.h"
 
 namespace content {
@@ -368,6 +371,13 @@ void AgentSchedulingGroupHost::DidUnloadRenderFrame(
     frame_host->OnUnloadACK();
   }
 }
+
+#if BUILDFLAG(IS_OHOS)
+void AgentSchedulingGroupHost::ReportCreateView(int32_t process_id) {
+  OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(OHOS::NWeb::ResSchedStatusAdapter::THREAD_CREATED,
+    process_id, process_id, OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+}
+#endif
 
 void AgentSchedulingGroupHost::ResetIPC() {
   DCHECK_EQ(state_, LifecycleState::kRenderProcessExited);

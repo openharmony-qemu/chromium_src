@@ -1258,9 +1258,8 @@ constexpr size_t kMaxRenderCountForSingleIncognitoMode = 1;
 bool IsSingleRenderProcess() {
   // Multiple render process mode is on by default on tablet and 2in1 devices,
   // and it is only supported by browser on mobile or other devices.
-  bool excludable_devices =
-      base::ohos::IsTabletDevice() || base::ohos::IsPcDevice();
-
+  bool excludable_devices = (*base::CommandLine::ForCurrentProcess()).HasSwitch(
+            switches::kIsSingleRenderProcess);
   return !(*base::CommandLine::ForCurrentProcess())
               .HasSwitch(switches::kForBrowser) &&
          !excludable_devices;

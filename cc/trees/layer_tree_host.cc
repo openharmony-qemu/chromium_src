@@ -2077,4 +2077,13 @@ void LayerTreeHost::IncrementVisualUpdateDuration(
   pending_commit_state()->visual_update_duration += visual_update_duration;
 }
 
+#if BUILDFLAG(IS_OHOS)
+void LayerTreeHost::OnLayerRectUpdate(int id, const gfx::Rect& rect) {
+  DCHECK(IsMainThread());
+  if (auto* layer = LayerById(id)) {
+    layer->OnLayerRectUpdate(rect);
+  }
+}
+#endif
+
 }  // namespace cc

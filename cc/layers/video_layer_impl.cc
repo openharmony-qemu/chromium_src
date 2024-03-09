@@ -180,6 +180,10 @@ void VideoLayerImpl::AppendQuads(viz::CompositorRenderPass* render_pass,
                         visible_quad_rect, draw_properties().mask_filter_info,
                         clip_rect_opt, contents_opaque(), draw_opacity(),
                         GetSortingContextId());
+#if BUILDFLAG(IS_OHOS)
+  layer_tree_impl()->OnLayerRectUpdate(
+      id(), ScreenSpaceTransform().MapRect(visible_quad_rect));
+#endif
 }
 
 void VideoLayerImpl::DidDraw(viz::ClientResourceProvider* resource_provider) {

@@ -169,6 +169,10 @@ class CC_EXPORT LayerTreeImpl {
   bool IsReadyToActivate() const;
   void RequestImplSideInvalidationForRerasterTiling();
 
+#if BUILDFLAG(IS_OHOS)
+  void OnLayerRectUpdate(int id, const gfx::Rect& rect);
+#endif
+
   // Tree specific methods exposed to layer-impl tree.
   // ---------------------------------------------------------------------------
   void SetNeedsRedraw();

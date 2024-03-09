@@ -53,6 +53,10 @@ typedef struct _ark_web_native_embed_info_t {
 
   ArkWebStringMap(ARK_WEB_CALLBACK *get_params)(
       struct _ark_web_native_embed_info_t *self);
+
+  int32_t(ARK_WEB_CALLBACK *get_x)(struct _ark_web_native_embed_info_t *self);
+
+  int32_t(ARK_WEB_CALLBACK *get_y)(struct _ark_web_native_embed_info_t *self);
 } ark_web_native_embed_info_t;
 
 #ifdef __cplusplus

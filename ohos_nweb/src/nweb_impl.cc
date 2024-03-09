@@ -1691,6 +1691,7 @@ void NWebImpl::SetWindowId(uint32_t window_id) {
     return;
   }
   nweb_delegate_->SetWindowId(window_id);
+  inputmethod_handler_->SetWindowIdForIME(window_id);
 }
 
 void NWebImpl::SetToken(void* token) {

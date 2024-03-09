@@ -217,6 +217,7 @@ void MaybeWarnVmodule() {
 
 #endif  // !BUILDFLAG(USE_RUNTIME_VLOG) && DCHECK_IS_ON()
 
+#if !BUILDFLAG(IS_OHOS)
 // #if defined(OHOS_DFX_LOGGING).
 const char* const log_severity_names[] = {"INFO", "WARNING", "ERROR", "FATAL", "DEBUG"};
 // #endif
@@ -228,6 +229,7 @@ const char* log_severity_name(int severity) {
     return log_severity_names[severity];
   return "UNKNOWN";
 }
+#endif
 
 // Specifies the process' logging sink(s), represented as a combination of
 // LoggingDestination values joined by bitwise OR.
@@ -279,6 +281,7 @@ base::stack<LogAssertHandlerFunction>& GetLogAssertHandlerStack() {
 // A log message handler that gets notified of every log message we process.
 LogMessageHandlerFunction g_log_message_handler = nullptr;
 
+#if !BUILDFLAG(IS_OHOS)
 uint64_t TickCount() {
 #if BUILDFLAG(IS_WIN)
   return GetTickCount();
@@ -302,6 +305,7 @@ uint64_t TickCount() {
   return absolute_micro;
 #endif
 }
+#endif
 
 void DeleteFilePath(const PathString& log_name) {
 #if BUILDFLAG(IS_WIN)
@@ -905,9 +909,8 @@ LogMessage::~LogMessage() {
         priority = OHOS::NWeb::LogLevelAdapter::DEBUG;
     // #endif
     }
-    const char kOHOSLogTag[] = "chromium";
-    OHOS::NWeb::HiLogAdapter::PrintLog(priority, kOHOSLogTag, "%{public}s",
-                                       str_newline.c_str());
+    OHOS::NWeb::HiLogAdapter::PrintLog(priority, tag_.c_str(), "%{public}s", str_newline.c_str());
+
 #elif BUILDFLAG(IS_FUCHSIA)
     // LogMessage() will silently drop the message if the logger is not valid.
     // Skip the final character of |str_newline|, since LogMessage() will add
@@ -1004,7 +1007,20 @@ std::string LogMessage::BuildCrashString() const {
 
 // writes the common header info to the stream
 void LogMessage::Init(const char* file, int line) {
+#if BUILDFLAG(IS_OHOS)
+  base::StringPiece filename;
+  base::StringPiece message(file);
+  size_t tagStart = message.find_first_of('#');
+  if (tagStart == base::StringPiece::npos) {
+    tag_ = std::string("error_tag");
+    filename = message;
+  } else {
+    tag_ = std::string(message.substr(0, tagStart));
+    filename = message.substr(tagStart + 1, message.size() - tagStart);
+  }
+#else
   base::StringPiece filename(file);
+#endif
   size_t last_slash_pos = filename.find_last_of("\\/");
   if (last_slash_pos != base::StringPiece::npos)
     filename.remove_prefix(last_slash_pos + 1);
@@ -1019,6 +1035,7 @@ void LogMessage::Init(const char* file, int line) {
   {
     // TODO(darin): It might be nice if the columns were fixed width.
     stream_ << '[';
+#if !BUILDFLAG(IS_OHOS)
     if (g_log_prefix)
       stream_ << g_log_prefix << ':';
     if (g_log_process_id)
@@ -1068,6 +1085,9 @@ void LogMessage::Init(const char* file, int line) {
       stream_ << "VERBOSE" << -severity_;
     }
     stream_ << ":" << filename << "(" << line << ")] ";
+#else
+    stream_ << filename << ":" << line << "] ";
+#endif
   }
   message_start_ = stream_.str().length();
 }

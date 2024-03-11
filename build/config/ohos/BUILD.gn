@@ -57,6 +57,13 @@ config("compiler") {
   }
 
   if (current_cpu == "arm64") {
+    if (arm_control_flow_integrity == "standard") {
+      cflags += [ "-mbranch-protection=pac-ret+b-key+bti" ]
+      rustflags = [ "-Zbranch-protection=bti" ]
+    } else if (arm_control_flow_integrity == "pac") {
+      cflags += [ "-mbranch-protection=pac-ret+b-key" ]
+      rustflags = [ "-Zbranch-protection=pac-ret+b-key" ]
+    }
     # For outline atomics on AArch64 (can't pass this unconditionally
     # due to unused flag warning on other targets).
     # cflags += [ "--rtlib=libgcc" ]

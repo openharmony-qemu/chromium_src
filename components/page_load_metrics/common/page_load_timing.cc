@@ -9,6 +9,8 @@ namespace page_load_metrics {
 mojom::PageLoadTimingPtr CreatePageLoadTiming() {
   return mojom::PageLoadTiming::New(
       base::Time(), absl::optional<base::TimeDelta>(),
+      absl::optional<base::TimeDelta>(), absl::optional<base::TimeDelta>(),
+      absl::optional<base::TimeDelta>(), absl::optional<base::TimeDelta>(),
       mojom::DocumentTiming::New(), mojom::InteractiveTiming::New(),
       mojom::PaintTiming::New(absl::nullopt, absl::nullopt, absl::nullopt,
                               absl::nullopt,

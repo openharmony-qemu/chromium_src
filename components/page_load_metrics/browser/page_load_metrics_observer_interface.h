@@ -372,11 +372,17 @@ class PageLoadMetricsObserverInterface {
   virtual void OnUserInput(const blink::WebInputEvent& event,
                            const mojom::PageLoadTiming& timing) = 0;
 
+  virtual void OnRedirectEnd(const mojom::PageLoadTiming& timing) = 0;
   // The following methods are invoked at most once, when the timing for the
   // associated event first becomes available.
+  virtual void OnRedirectStart(const mojom::PageLoadTiming& timing) = 0;
+  virtual void OnResponseEnd(const mojom::PageLoadTiming& timing) = 0;
   virtual void OnDomContentLoadedEventStart(
       const mojom::PageLoadTiming& timing) = 0;
+  virtual void OnDomContentLoadedEventEnd(
+      const mojom::PageLoadTiming& timing) = 0;
   virtual void OnLoadEventStart(const mojom::PageLoadTiming& timing) = 0;
+  virtual void OnLoadEventEnd(const mojom::PageLoadTiming& timing) = 0;
   virtual void OnParseStart(const mojom::PageLoadTiming& timing) = 0;
   virtual void OnParseStop(const mojom::PageLoadTiming& timing) = 0;
 

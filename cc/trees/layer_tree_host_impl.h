@@ -184,6 +184,10 @@ class LayerTreeHostImplClient {
 
   virtual size_t CommitDurationSampleCountForTesting() const = 0;
 
+#if BUILDFLAG(IS_OHOS)
+  virtual void OnLayerRectUpdate(int id, const gfx::Rect& rect) {}
+#endif
+
  protected:
   virtual ~LayerTreeHostImplClient() = default;
 };
@@ -919,6 +923,10 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
   bool IsReadyToActivate() const;
 
   void RequestImplSideInvalidationForRerasterTiling();
+
+#if BUILDFLAG(IS_OHOS)
+  void OnLayerRectUpdate(int id, const gfx::Rect& rect);
+#endif
 
   void SetDownsampleMetricsForTesting(bool value) {
     downsample_metrics_ = value;

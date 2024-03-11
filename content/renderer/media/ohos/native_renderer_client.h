@@ -24,7 +24,7 @@
 #include "media/base/native_texture_wrapper.h"
 #include "media/base/video_renderer_sink.h"
 #include "media/mojo/clients/mojo_renderer_wrapper.h"
-#include "ui/gfx/geometry/size.h"
+#include "ui/gfx/geometry/rect.h"
 
 namespace content {
 
@@ -46,7 +46,7 @@ class NativeRenderClient : public media::MojoRendererWrapper {
   void OnSurfaceCreated(int native_embed_id);
   void OnSurfaceDestroy();
 
-  void OnSizeChange(const gfx::Size& size);
+  void OnSizeChange(const gfx::Rect& rect);
 
   // Called on |compositor_task_runner_| whenever |stream_texture_wrapper_| has
   // a new frame.

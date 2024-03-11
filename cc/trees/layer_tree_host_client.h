@@ -201,6 +201,9 @@ class LayerTreeHostClient {
 
   virtual void RunPaintBenchmark(int repeat_count,
                                  PaintBenchmarkResult& result) {}
+#if BUILDFLAG(IS_OHOS)
+  virtual void OnLayerRectUpdate(int id, const gfx::Rect& rect) {}
+#endif
 
  protected:
   virtual ~LayerTreeHostClient() = default;

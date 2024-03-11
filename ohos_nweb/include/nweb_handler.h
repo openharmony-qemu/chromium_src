@@ -200,6 +200,10 @@ public:
     virtual std::string GetTag() = 0;
 
     virtual std::map<std::string, std::string> GetParams() = 0;
+
+    virtual int32_t GetX() = 0;
+
+    virtual int32_t GetY() = 0;
 };
 
 class NWebNativeEmbedDataInfo {

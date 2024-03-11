@@ -2999,4 +2999,10 @@ void LayerTreeImpl::RequestImplSideInvalidationForRerasterTiling() {
   host_impl_->RequestImplSideInvalidationForRerasterTiling();
 }
 
+#if BUILDFLAG(IS_OHOS)
+void LayerTreeImpl::OnLayerRectUpdate(int id, const gfx::Rect& rect) {
+  host_impl_->OnLayerRectUpdate(id, rect);
+}
+#endif
+
 }  // namespace cc

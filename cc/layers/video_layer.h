@@ -13,7 +13,9 @@
 #include "cc/layers/layer.h"
 #include "media/base/video_transformation.h"
 
-namespace media { class VideoFrame; }
+namespace media {
+class VideoFrame;
+}
 
 namespace cc {
 
@@ -25,6 +27,12 @@ class CC_EXPORT VideoLayer : public Layer {
  public:
   static scoped_refptr<VideoLayer> Create(VideoFrameProvider* provider,
                                           media::VideoTransformation transform);
+#if BUILDFLAG(IS_OHOS)
+  using RectChangeCallback = base::RepeatingCallback<void(const gfx::Rect&)>;
+  static scoped_refptr<VideoLayer> Create(VideoFrameProvider* provider,
+                                          media::VideoTransformation transform,
+                                          RectChangeCallback callback);
+#endif
 
   VideoLayer(const VideoLayer&) = delete;
   VideoLayer& operator=(const VideoLayer&) = delete;
@@ -34,12 +42,21 @@ class CC_EXPORT VideoLayer : public Layer {
 
   bool Update() override;
 
+#if BUILDFLAG(IS_OHOS)
+  void OnLayerRectUpdate(const gfx::Rect& rect) override;
+#endif
+
   // Clears |provider_| to ensure it is not used after destruction.
   void StopUsingProvider();
 
  private:
   VideoLayer(VideoFrameProvider* provider,
              media::VideoTransformation transform);
+#if BUILDFLAG(IS_OHOS)
+  VideoLayer(VideoFrameProvider* provider,
+             media::VideoTransformation transform,
+             RectChangeCallback callback);
+#endif
   ~VideoLayer() override;
 
   // This pointer is only for passing to VideoLayerImpl's constructor. It should
@@ -47,6 +64,10 @@ class CC_EXPORT VideoLayer : public Layer {
   ProtectedSequenceReadable<raw_ptr<VideoFrameProvider>> provider_;
 
   const media::VideoTransformation transform_;
+
+#if BUILDFLAG(IS_OHOS)
+  base::RepeatingCallback<void(const gfx::Rect&)> rect_change_callback_;
+#endif
 };
 
 }  // namespace cc

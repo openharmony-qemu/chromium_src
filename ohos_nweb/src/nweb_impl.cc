@@ -432,6 +432,12 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
 
   output_handler_->SetNWebId(nweb_id_);
 
+#if defined(REPORT_SYS_EVENT)
+  if (incognito_mode_) {
+    ReportOpenPrivateMode();
+  }
+#endif
+
   ProcessInitArgs(create_info->GetEngineInitArgs());
 
   if (!InitWebEngine(create_info)) {

@@ -420,6 +420,8 @@ class FrameRemoteTester : public content::FakeLocalFrame {
     return last_message;
   }
 
+  void GetImageFromCache(const std::string& url, GetImageFromCacheCallback callback) override {}
+
  private:
   bool had_message_ = false;
 

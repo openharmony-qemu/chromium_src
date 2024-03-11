@@ -348,9 +348,9 @@ TEST(CloudPrintCddConversionTest, WiderPaper) {
   // converting to a CDD.
   printing::PrinterSemanticCapsAndDefaults input =
       printing::GenerateSamplePrinterSemanticCapsAndDefaults({});
-  input.papers.push_back(printing::PrinterSemanticCapsAndDefaults::Paper(
+  input.papers.push_back(printing::PrinterSemanticCapsAndDefaults::Paper({
       "NA_INDEX_3X5", "15", gfx::Size(127000, 76200),
-      gfx::Rect(1000, 500, 125000, 75200)));
+      gfx::Rect(1000, 500, 125000, 75200)}));
   const base::Value output = PrinterSemanticCapsAndDefaultsToCdd(input);
   const base::Value::Dict* printer_dict = GetPrinterDict(output);
 

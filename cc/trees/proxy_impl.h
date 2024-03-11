@@ -95,6 +95,10 @@ class CC_EXPORT ProxyImpl : public LayerTreeHostImplClient,
   void ClearHistory() override;
   size_t CommitDurationSampleCountForTesting() const override;
 
+#if BUILDFLAG(IS_OHOS)
+  void OnLayerRectUpdate(int id, const gfx::Rect& rect) override;
+#endif
+
  private:
   // LayerTreeHostImplClient implementation
   void DidLoseLayerTreeFrameSinkOnImplThread() override;

@@ -48,6 +48,12 @@ public:
 
   /*--ark web()--*/
   virtual ArkWebStringMap GetParams() = 0;
+
+  /*--ark web()--*/
+  virtual int32_t GetX() = 0;
+
+  /*--ark web()--*/
+  virtual int32_t GetY() = 0;
 };
 
 } // namespace OHOS::ArkWeb

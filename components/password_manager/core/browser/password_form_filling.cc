@@ -256,8 +256,8 @@ LikelyFormFilling SendFillInformationToRenderer(
       wait_for_username_reason != WaitForUsernameReason::kDontWait;
 #ifdef OHOS_EX_PASSWORD
   if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(switches::kForBrowser)) {
-    bool excludable_devices =
-      base::ohos::IsTabletDevice() || base::ohos::IsPcDevice();
+    bool excludable_devices = (*base::CommandLine::ForCurrentProcess()).HasSwitch(
+            switches::kPasswordWaitUsername);
     if (!excludable_devices) {
       wait_for_username = true;
     }

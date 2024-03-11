@@ -15,6 +15,7 @@
 
 #include "event_reporter.h"
 #include "ohos_adapter_helper.h"
+#include "libcef/browser/page_load_metrics/oh_web_performance_timing.h"
 
 using OHOS::NWeb::HiSysEventAdapter;
 using OHOS::NWeb::OhosAdapterHelper;
@@ -98,4 +99,32 @@ void ReportJankStats(int64_t startTime,
 void ReportLockdownModeStatus(void) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       RENDER_JIT_LOCKDOWN, HiSysEventAdapter::EventType::BEHAVIOR, {LOCKDOWN_MODE_STATUS, "true"});
+}
+
+void ReportPageLoadTimeStats(OhWebPerformanceTiming loadPageTime) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      "PAGE_LOAD_TIME", HiSysEventAdapter::EventType::STATISTIC,
+      {"NAVIGATION_ID", loadPageTime.navigation_id,
+       "NAVIGATION_START", loadPageTime.navigation_start,
+       "REDIRECT_COUNT", loadPageTime.redirect_count,
+       "REDIRECT_START", loadPageTime.redirect_start,
+       "REDIRECT_END", loadPageTime.redirect_end,
+       "FETCH_START", loadPageTime.fetch_start,
+       "WORKER_START", loadPageTime.worker_start,
+       "DOMAIN_LOOKUP_START", loadPageTime.domain_lookup_start,
+       "DOMAIN_LOOKUP_END", loadPageTime.domain_lookup_end,
+       "CONNECT_START", loadPageTime.connect_start,
+       "SECURE_CONNECT_START", loadPageTime.secure_connect_start,
+       "CONNECT_END", loadPageTime.connect_end,
+       "REQUEST_START", loadPageTime.request_start,
+       "RESPONSE_START", loadPageTime.response_start,
+       "RESPONSE_END", loadPageTime.response_end,
+       "DOM_INTERACTIVE", loadPageTime.dom_interactive,
+       "DOM_CONTENT_LOADED_EVENT_START", loadPageTime.dom_content_loaded_event_start,
+       "DOM_CONTENT_LOADED_EVENT_END", loadPageTime.dom_content_loaded_event_end,
+       "LOAD_EVENT_START", loadPageTime.load_event_start,
+       "LOAD_EVENT_END", loadPageTime.load_event_end,
+       "FIRST_PAINT", loadPageTime.first_paint,
+       "FIRST_CONTENTFUL_PAINT", loadPageTime.first_contentful_paint,
+       "LARGEST_CONTENTFUL_PAINT", loadPageTime.largest_contentful_paint});
 }

@@ -13,11 +13,20 @@ import "third_party/blink/public/mojom/use_counter/use_counter_feature.mojom";
 
 // TimeDeltas below relative to navigation start.
 struct DocumentTiming {
+  // Time to finish parsing the DOM tree.
+  mojo_base.mojom.TimeDelta? dom_interactive;
+
   // Time immediately before the DOMContentLoaded event is fired.
   mojo_base.mojom.TimeDelta? dom_content_loaded_event_start;
 
+  // Time when the DOMContentLoaded event is finished.
+  mojo_base.mojom.TimeDelta? dom_content_loaded_event_end;
+
   // Time immediately before the load event is fired.
   mojo_base.mojom.TimeDelta? load_event_start;
+
+  // Time when the load event is finished.
+  mojo_base.mojom.TimeDelta? load_event_end;
 };
 
 struct LargestContentfulPaintTiming {
@@ -166,9 +175,23 @@ struct PageLoadTiming {
   // future.
   mojo_base.mojom.Time navigation_start;
 
+  // Time when the redirection start.
+  mojo_base.mojom.TimeDelta? redirect_start;
+
+  // Time when the redirection end.
+  mojo_base.mojom.TimeDelta? redirect_end;
+
+  // Time when the browser is ready to fetch the document.
+  mojo_base.mojom.TimeDelta? fetch_start;
+
   // Time relative to navigation_start that the first byte of the response is
   // received.
   mojo_base.mojom.TimeDelta? response_start;
+
+  // Time relative to navigation_start that the last byte of the response is
+  // received.
+  mojo_base.mojom.TimeDelta? response_end;
+
   DocumentTiming document_timing;
   InteractiveTiming interactive_timing;
   PaintTiming paint_timing;

@@ -82,9 +82,15 @@ class PageLoadMetricsForwardObserver final
                          const mojom::CpuTiming& timing) override;
   void OnUserInput(const blink::WebInputEvent& event,
                    const mojom::PageLoadTiming& timing) override;
+  void OnRedirectStart(const mojom::PageLoadTiming& timing) override {}
+  void OnRedirectEnd(const mojom::PageLoadTiming& timing) override {}
+  void OnResponseEnd(const mojom::PageLoadTiming& timing) override {}
   void OnDomContentLoadedEventStart(
       const mojom::PageLoadTiming& timing) override;
+  void OnDomContentLoadedEventEnd(
+      const mojom::PageLoadTiming& timing) override {}
   void OnLoadEventStart(const mojom::PageLoadTiming& timing) override;
+  void OnLoadEventEnd(const mojom::PageLoadTiming& timing) override {}
   void OnParseStart(const mojom::PageLoadTiming& timing) override;
   void OnParseStop(const mojom::PageLoadTiming& timing) override;
   void OnFirstPaintInPage(const mojom::PageLoadTiming& timing) override;

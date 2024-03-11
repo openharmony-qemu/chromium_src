@@ -15,7 +15,7 @@
 
 #include "event_reporter.h"
 #include "ohos_adapter_helper.h"
-#include "libcef/browser/page_load_metrics/oh_web_performance_timing.h"
+#include "oh_web_performance_timing.h"
 
 using OHOS::NWeb::HiSysEventAdapter;
 using OHOS::NWeb::OhosAdapterHelper;

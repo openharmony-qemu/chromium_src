@@ -309,19 +309,24 @@ bool ShouldHandleCrashAndUpdateArguments(bool write_minidump_to_database,
 
 bool GetHandlerPath(base::FilePath* exe_dir, base::FilePath* handler_path) {
   // There is not any normal way to package native executables in an OHOS hap, rename shared lib
-#if defined(OHOS_CRASHPAD)
   if (!base::PathService::Get(base::DIR_OHOS_APP_INSTALLATION, exe_dir)) {
+    LOG(ERROR) << "crashpad get DIR_OHOS_APP_INSTALLATION failed";
     return false;
   }
-  *handler_path = exe_dir->Append("nweb/libs/arm64/libchrome_crashpad_handler.so");
-  LOG(INFO) << "crashpad GetHandlerPath, handler bin path = " << *handler_path;
-#else
-  if (!base::PathService::Get(base::DIR_MODULE, exe_dir)) {
-    return false;
-  }
-  *handler_path = exe_dir->Append("chrome_crashpad_handler");
-#endif // defined(OHOS_CRASHPAD)
 
+#if defined(__arm__)
+  std::string platform = "arm";
+#elif defined(__x86_64__)
+  std::string platform = "x86_64";
+#elif defined(__aarch64__)
+  std::string platform = "arm64";
+#else
+  std::string platform = "unsupported";
+#endif
+
+  std::string platform_handler_path =  "nweb/libs/" + platform + "/libchrome_crashpad_handler.so";
+  *handler_path = exe_dir->Append(platform_handler_path);
+  LOG(INFO) << "crashpad GetHandlerPath, handler bin path = " << *handler_path;
   return true;
 }
 

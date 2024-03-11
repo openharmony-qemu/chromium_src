@@ -38,7 +38,7 @@
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
 #include "third_party/breakpad/breakpad/src/client/linux/handler/exception_handler.h"  // nogncheck
 #include "third_party/breakpad/breakpad/src/client/linux/minidump_writer/linux_dumper.h"  // nogncheck
 #include "third_party/breakpad/breakpad/src/client/linux/minidump_writer/minidump_writer.h"  // nogncheck
@@ -48,7 +48,7 @@
 #define SYS_read __NR_read
 #endif
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 #include "components/crash/core/app/crashpad.h"
 #include "third_party/crashpad/crashpad/client/crashpad_client.h"  // nogncheck
 #include "third_party/crashpad/crashpad/util/posix/signals.h"      // nogncheck
@@ -56,7 +56,7 @@
 
 using content::BrowserThread;
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
 
 using google_breakpad::ExceptionHandler;
 
@@ -424,27 +424,11 @@ void CrashHandlerHostLinux::WriteDumpFile(BreakpadInfo* info,
   base::FilePath dumps_path("/tmp");
   base::PathService::Get(base::DIR_TEMP, &dumps_path);
 
-#if defined(OHOS_CRASH_DUMP)
-  dumps_path = dumps_path.Append("crashdmps");
-  if (!base::PathExists(dumps_path)) {
-    base::CreateDirectory(dumps_path);
-  }
-#endif  // defined(OHOS_CRASH_DUMP)
-
-#if !defined(OHOS_CRASH_DUMP)
   if (!info->upload)
     dumps_path = dumps_path_;
-#endif  // defined(OHOS_CRASH_DUMP)
-
-#if defined(OHOS_CRASH_DUMP)
-  const std::string minidump_filename = base::StringPrintf(
-      "%s/nweb-%s-minidump-%016" PRIx64 ".dmp", dumps_path.value().c_str(),
-      process_type_.c_str(), base::RandUint64());
-#else
   const std::string minidump_filename = base::StringPrintf(
       "%s/chromium-%s-minidump-%016" PRIx64 ".dmp", dumps_path.value().c_str(),
       process_type_.c_str(), base::RandUint64());
-#endif  // defined(OHOS_CRASH_DUMP)
 
   if (!google_breakpad::WriteMinidump(minidump_filename.c_str(),
                                       kMaxMinidumpFileSize,

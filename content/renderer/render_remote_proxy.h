@@ -9,9 +9,7 @@
 #include <mutex>
 #include "aafwk_render_scheduler_host_adapter.h"
 
-#if defined(OHOS_CRASH_DUMP)
 #include "build/build_config.h"
-#endif  // defined(OHOS_CRASH_DUMP)
 
 namespace base {
 class CommandLine;
@@ -24,11 +22,8 @@ class RenderRemoteProxy : public OHOS::NWeb::AafwkRenderSchedulerHostAdapter {
   ~RenderRemoteProxy() = default;
 
   virtual void NotifyBrowserFd(int32_t ipcFd,
-                               int32_t sharedFd
-#if BUILDFLAG(IS_OHOS)
-                               ,
+                               int32_t sharedFd,
                                int32_t crashFd
-#endif  // BUILDFLAG(IS_OHOS)
                                ) override;
 
   static void CreateAndRegist(const base::CommandLine& command_line);
@@ -37,9 +32,7 @@ class RenderRemoteProxy : public OHOS::NWeb::AafwkRenderSchedulerHostAdapter {
  private:
   int32_t ipc_fd_ = 0;
   int32_t shared_fd_ = 0;
-#if defined(OHOS_CRASH_DUMP)
   int32_t crash_id_ = 0;
-#endif  // defined(OHOS_CRASH_DUMP)
 
   static std::mutex browser_fd_mtx_;
   static std::condition_variable browser_fd_cv_;

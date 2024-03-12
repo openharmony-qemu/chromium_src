@@ -674,6 +674,7 @@ void VideoCaptureDeviceTest::RunReAllocateCameraTestCase() {
   EXPECT_EQ(last_format().frame_size.height(), 240);
 }
 
+#if !BUILDFLAG(IS_OHOS)
 // Starts the camera in 720p to try and capture MJPEG format.
 WRAPPED_TEST_P(VideoCaptureDeviceTest, MAYBE_UsingRealWebcam_CaptureMjpeg) {
   RunTestCase(base::BindOnce(&VideoCaptureDeviceTest::RunCaptureMjpegTestCase,
@@ -717,6 +718,7 @@ void VideoCaptureDeviceTest::RunCaptureMjpegTestCase() {
   device->StopAndDeAllocate();
 #endif  // BUILDFLAG(IS_WIN)
 }
+#endif  // !BUILDFLAG(IS_OHOS)
 
 #define MAYBE_UsingRealWebcam_NoCameraSupportsPixelFormatMax \
   UsingRealWebcam_NoCameraSupportsPixelFormatMax

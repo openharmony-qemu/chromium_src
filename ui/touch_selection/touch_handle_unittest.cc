@@ -61,8 +61,7 @@ class MockTouchHandleDrawable : public TouchHandleDrawable {
   gfx::RectF GetVisibleBounds() const override { return data_->rect; }
 
 #if BUILDFLAG(IS_OHOS)
-  // Sets the Selection left-handle-start or right-handle-end's edge.
-  void SetEdge(const gfx::PointF& top, const gfx::PointF& bottom) override { data_->rect.SetRect(top.x(), top.y(), bottom.x() - top.x(), bottom.y()- top.y()); }
+  void SetEdge(const gfx::PointF& top, const gfx::PointF& bottom) override {}
 #endif
 
  private:

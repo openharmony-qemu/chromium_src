@@ -196,6 +196,8 @@ void ConnectJob::LogConnectStart() {
 
 void ConnectJob::LogConnectCompletion(int net_error) {
   connect_timing_.connect_end = base::TimeTicks::Now();
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "connectEnd", connect_timing_.connect_end);
   net_log().EndEventWithNetErrorCode(net_log_connect_event_type_, net_error);
 }
 

@@ -749,8 +749,8 @@ class LayerTreeHostMaskAsBlendingPixelTest
       large_error_allowed = 11;
       small_error_allowed = 1;
     } else {
-#if defined(ARCH_CPU_ARM64)
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_APPLE)
+#if defined(ARCH_CPU_ARM64) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_OHOS)
       // ARM Windows, macOS, iOS and Fuchsia have some pixels difference
       // Affected tests: RotatedClippedCircle, RotatedClippedCircleUnderflow
       // crbug.com/1030244, crbug.com/1048249, crbug.com/1128443

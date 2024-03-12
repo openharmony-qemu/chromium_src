@@ -1604,6 +1604,8 @@ int HttpCache::Transaction::DoCacheReadResponseComplete(int result) {
 
   // Record the time immediately before the cached response is parsed.
   read_headers_since_ = TimeTicks::Now();
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "responseStart", read_headers_since_);
 
   if (result != io_buf_len_ ||
       !HttpCache::ParseResponseInfo(read_buf_->data(), io_buf_len_, &response_,

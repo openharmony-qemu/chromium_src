@@ -46,6 +46,18 @@ constexpr char JANK_STATS_VER[] = "JANK_STATS_VER";
 
 constexpr char RENDER_JIT_LOCKDOWN[] = "RENDER_JIT_LOCKDOWN";
 constexpr char LOCKDOWN_MODE_STATUS[] = "JIT_LOCKDOWN_MODE";
+
+// For force zoom enable
+constexpr char FORCE_ENABLE_ZOOM[] = "FORCE_ENABLE_ZOOM";
+constexpr char ENABLE_FORCE_ZOOM_STATUS[] = "ENABLE_FORCE_ZOOM_STATUS";
+
+// For open private mode
+constexpr char OPEN_PRIVATE_MODE[] = "OPEN_PRIVATE_MODE";
+constexpr char OPEN_PRIVATE_STATUS[] = "OPEN_PRIVATE_STATUS";
+
+// For page download error info
+constexpr char PAGE_DOWNLOAD_ERROR[] = "PAGE_DOWNLOAD_ERROR";
+constexpr char DOWNLOAD_ID[] = "DOWNLOAD_ID";
 }  // namespace
 
 void ReportPageLoadStats(int instanceId,
@@ -98,4 +110,20 @@ void ReportJankStats(int64_t startTime,
 void ReportLockdownModeStatus(void) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       RENDER_JIT_LOCKDOWN, HiSysEventAdapter::EventType::BEHAVIOR, {LOCKDOWN_MODE_STATUS, "true"});
+}
+
+void ReportForceZoomEnable(void) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      FORCE_ENABLE_ZOOM, HiSysEventAdapter::EventType::BEHAVIOR, {ENABLE_FORCE_ZOOM_STATUS, "true"});
+}
+
+void ReportOpenPrivateMode(void) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      OPEN_PRIVATE_MODE, HiSysEventAdapter::EventType::BEHAVIOR, {OPEN_PRIVATE_STATUS, "true"});
+}
+
+void ReportPageDownLoadErrorInfo(long downloadId, int errorCode) {
+    OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+        PAGE_DOWNLOAD_ERROR, HiSysEventAdapter::EventType::FAULT,
+        {DOWNLOAD_ID, std::to_string(downloadId), ERROR_CODE, std::to_string(errorCode)});
 }

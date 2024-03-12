@@ -210,7 +210,9 @@ void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
 
   IMFAdapterCursorInfo cursorInfo = GetCursorInfo();
 
-  IMFAdapterTextConfig textConfig = { .inputAttribute = inputAttribute, .cursorInfo = cursorInfo };
+  IMFAdapterTextConfig textConfig = { .inputAttribute = inputAttribute,
+                                      .cursorInfo = cursorInfo,
+                                      .windowId = windowId_ };
   if (!show_keyboard_ && isAttached_ && input_mode_ != lastInputMode_) {
     LOG(ERROR) << "do not need attach";
     inputmethod_adapter_->Close();
@@ -267,7 +269,9 @@ bool NWebInputMethodHandler::Reattach(uint32_t nwebId, ReattachType type) {
 
   IMFAdapterCursorInfo cursorInfo = GetCursorInfo();
 
-  IMFAdapterTextConfig textConfig = { .inputAttribute = inputAttribute, .cursorInfo = cursorInfo };
+  IMFAdapterTextConfig textConfig = { .inputAttribute = inputAttribute,
+                                      .cursorInfo = cursorInfo,
+                                      .windowId = windowId_ };
   if (!show_keyboard_ && isAttached_ && input_mode_ != lastInputMode_) {
     LOG(ERROR) << "do not need attach";
     inputmethod_adapter_->Close();
@@ -720,6 +724,11 @@ std::u16string NWebInputMethodHandler::GetRightTextOfCursor(int32_t number) {
     return u"";
   }
   return whole_text_.substr(selectEnd, number);
+}
+
+void NWebInputMethodHandler::SetWindowIdForIME(uint32_t windowId) {
+  LOG(INFO) << "NWebInputMethodHandler::SetWindowIdForIME windowId: " << windowId;
+  windowId_ = windowId;
 }
 
 bool NWebInputMethodHandler::IsCorrectParam(int32_t number,

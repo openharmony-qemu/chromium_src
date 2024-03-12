@@ -1049,4 +1049,13 @@ bool ProxyImpl::DataForCommit::IsValid() const {
           commit_timestamps);
 }
 
+#if BUILDFLAG(IS_OHOS)
+void ProxyImpl::OnLayerRectUpdate(int id, const gfx::Rect& rect) {
+  DCHECK(IsImplThread());
+  MainThreadTaskRunner()->PostTask(
+      FROM_HERE, base::BindOnce(&ProxyMain::OnLayerRectUpdate,
+                                proxy_main_weak_ptr_, id, rect));
+}
+#endif
+
 }  // namespace cc

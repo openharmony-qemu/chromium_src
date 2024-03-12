@@ -24,6 +24,7 @@
 #include "ohos_nweb/cpptoc/ark_web_date_time_chooser_callback_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_drag_data_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_file_selector_params_cpptoc.h"
+#include "ohos_nweb/cpptoc/ark_web_first_meaningful_paint_details_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_full_screen_exit_handler_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_geo_location_callback_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_js_dialog_result_cpptoc.h"
@@ -31,6 +32,7 @@
 #include "ohos_nweb/cpptoc/ark_web_js_ssl_error_result_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_js_ssl_select_cert_result_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_key_event_cpptoc.h"
+#include "ohos_nweb/cpptoc/ark_web_largest_contentful_paint_details_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_load_committed_details_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_native_embed_data_info_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_native_embed_touch_event_cpptoc.h"
@@ -1146,6 +1148,36 @@ void ArkWebHandlerCToCpp::OnIntelligentTrackingPreventionResult(
   // Execute
   _struct->on_intelligent_tracking_prevention_result(_struct, &website_host,
                                                      &tracker_host);
+}
+
+ARK_WEB_NO_SANITIZE
+void ArkWebHandlerCToCpp::OnFirstMeaningfulPaint(
+    ArkWebRefPtr<ArkWebFirstMeaningfulPaintDetails> details) {
+  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
+
+  ark_web_handler_t *_struct = GetStruct();
+  ARK_WEB_CTOCPP_CHECK_PARAM(_struct, );
+
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, on_first_meaningful_paint, );
+
+  // Execute
+  _struct->on_first_meaningful_paint(
+      _struct, ArkWebFirstMeaningfulPaintDetailsCppToC::Invert(details));
+}
+
+ARK_WEB_NO_SANITIZE
+void ArkWebHandlerCToCpp::OnLargestContentfulPaint(
+    ArkWebRefPtr<ArkWebLargestContentfulPaintDetails> details) {
+  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
+
+  ark_web_handler_t *_struct = GetStruct();
+  ARK_WEB_CTOCPP_CHECK_PARAM(_struct, );
+
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, on_largest_contentful_paint, );
+
+  // Execute
+  _struct->on_largest_contentful_paint(
+      _struct, ArkWebLargestContentfulPaintDetailsCppToC::Invert(details));
 }
 
 ArkWebHandlerCToCpp::ArkWebHandlerCToCpp() {

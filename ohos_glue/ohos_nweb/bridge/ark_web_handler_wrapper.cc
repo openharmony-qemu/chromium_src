@@ -25,6 +25,7 @@
 #include "ohos_nweb/bridge/ark_web_date_time_chooser_callback_impl.h"
 #include "ohos_nweb/bridge/ark_web_drag_data_impl.h"
 #include "ohos_nweb/bridge/ark_web_file_selector_params_impl.h"
+#include "ohos_nweb/bridge/ark_web_first_meaningful_paint_details_impl.h"
 #include "ohos_nweb/bridge/ark_web_full_screen_exit_handler_impl.h"
 #include "ohos_nweb/bridge/ark_web_geo_location_callback_impl.h"
 #include "ohos_nweb/bridge/ark_web_js_dialog_result_impl.h"
@@ -32,6 +33,7 @@
 #include "ohos_nweb/bridge/ark_web_js_ssl_error_result_impl.h"
 #include "ohos_nweb/bridge/ark_web_js_ssl_select_cert_result_impl.h"
 #include "ohos_nweb/bridge/ark_web_key_event_impl.h"
+#include "ohos_nweb/bridge/ark_web_largest_contentful_paint_details_impl.h"
 #include "ohos_nweb/bridge/ark_web_load_committed_details_impl.h"
 #include "ohos_nweb/bridge/ark_web_native_embed_data_info_impl.h"
 #include "ohos_nweb/bridge/ark_web_native_embed_touch_event_impl.h"
@@ -798,4 +800,25 @@ void ArkWebHandlerWrapper::OnIntelligentTrackingPreventionResult(
   ArkWebStringStructRelease(stTrackerHost);
 }
 
+void ArkWebHandlerWrapper::OnFirstMeaningfulPaint(
+    std::shared_ptr<OHOS::NWeb::NWebFirstMeaningfulPaintDetails> details) {
+  if (CHECK_SHARED_PTR_IS_NULL(details)) {
+    ark_web_handler_->OnFirstMeaningfulPaint(nullptr);
+    return;
+  }
+
+  ark_web_handler_->OnFirstMeaningfulPaint(
+      new ArkWebFirstMeaningfulPaintDetailsImpl(details));
+}
+
+void ArkWebHandlerWrapper::OnLargestContentfulPaint(
+    std::shared_ptr<OHOS::NWeb::NWebLargestContentfulPaintDetails> details) {
+  if (CHECK_SHARED_PTR_IS_NULL(details)) {
+    ark_web_handler_->OnLargestContentfulPaint(nullptr);
+    return;
+  }
+
+  ark_web_handler_->OnLargestContentfulPaint(
+      new ArkWebLargestContentfulPaintDetailsImpl(details));
+}
 } // namespace OHOS::ArkWeb

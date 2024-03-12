@@ -101,6 +101,10 @@
 #include "cef/libcef/browser/anti_tracking/third_party_cookie_access_policy.h"
 #endif
 
+#ifdef OHOS_SUSPEND_ALL_TIMERS
+#include "content/browser/ohos/content_view_statics_ohos.h"
+#endif
+
 namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
@@ -431,6 +435,12 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
   incognito_mode_ = create_info->GetIsIncognitoMode();
 
   output_handler_->SetNWebId(nweb_id_);
+
+#if defined(REPORT_SYS_EVENT)
+  if (incognito_mode_) {
+    ReportOpenPrivateMode();
+  }
+#endif
 
   ProcessInitArgs(create_info->GetEngineInitArgs());
 
@@ -1691,6 +1701,7 @@ void NWebImpl::SetWindowId(uint32_t window_id) {
     return;
   }
   nweb_delegate_->SetWindowId(window_id);
+  inputmethod_handler_->SetWindowIdForIME(window_id);
 }
 
 void NWebImpl::SetToken(void* token) {

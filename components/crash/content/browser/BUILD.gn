@@ -29,7 +29,7 @@ source_set("browser") {
     ]
   }
 
-  if (is_castos || is_chromeos || is_ohos) {
+  if (is_castos || is_chromeos) {
     configs += [ "//third_party/breakpad:client_config" ]
     public_configs = [ "//third_party/breakpad:client_config" ]
     deps += [
@@ -54,6 +54,12 @@ source_set("browser") {
     deps += [
       "//components/crash/android:jni_headers",
       "//mojo/public/cpp/bindings",
+      "//third_party/crashpad/crashpad/client",
+    ]
+  }
+
+  if (ohos_crashpad) {
+    deps += [
       "//third_party/crashpad/crashpad/client",
     ]
   }

@@ -33,6 +33,8 @@
 #include "base/ohos/sys_info_utils.h"
 #include "components/embedder_support/arkweb_version.h"
 #include "components/embedder_support/user_agent_utils.h"
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
 #endif
 
 namespace content {
@@ -245,10 +247,9 @@ std::string GetOSVersion(IncludeAndroidBuildNumber include_android_build_number,
 
 #if BUILDFLAG(IS_OHOS) && defined(OHOS_USERAGENT)
   std::string device_type_string = "Phone";
-  if (base::ohos::IsTabletDevice()) {
-    device_type_string = "Tablet";
-  } else if (base::ohos::IsPcDevice()) {
-    device_type_string = "PC";
+  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  if (command_line->HasSwitch(::switches::kUserAgentValue)) {
+    device_type_string = command_line->GetSwitchValueASCII(::switches::kUserAgentValue);
   }
 
   int32_t ohos_major_version = base::ohos::MajorVersion();

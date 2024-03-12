@@ -43,6 +43,8 @@
 #include "nweb_js_ssl_select_cert_result_impl.h"
 #include "nweb_key_event_impl.h"
 #include "nweb_load_committed_details_impl.h"
+#include "nweb_first_meaningful_paint_details_impl.h"
+#include "nweb_largest_contentful_paint_details_impl.h"
 #include "nweb_preference_delegate.h"
 #include "nweb_resource_handler.h"
 #include "nweb_select_popup_menu_impl.h"
@@ -887,6 +889,44 @@ void NWebHandlerDelegate::OnFirstContentfulPaint(
   if (nweb_handler_ != nullptr) {
     nweb_handler_->OnFirstContentfulPaint(navigationStartTick,
                                           firstContentfulPaintMs);
+  }
+}
+
+void NWebHandlerDelegate::OnFirstMeaningfulPaint(
+    CefRefPtr<CefFirstMeaningfulPaintDetails> details) {
+  LOG(INFO) << "NWebHandlerDelegate::OnFirstMeaningfulPaint";
+  if (nweb_handler_ != nullptr) {
+    if (!details) {
+      LOG(WARNING) << "NWebHandlerDelegate::OnFirstMeaningfulPaint failed "
+                      "for details is null";
+      return;
+    }
+    std::shared_ptr<NWebFirstMeaningfulPaintDetails> web_details =
+        std::make_shared<NWebFirstMeaningfulPaintDetailsImpl>(
+            details->GetNavigationStartTime(),
+            details->GetFirstMeaningfulPaintTime());
+    nweb_handler_->OnFirstMeaningfulPaint(web_details);
+  }
+}
+
+void NWebHandlerDelegate::OnLargestContentfulPaint(
+    CefRefPtr<CefLargestContentfulPaintDetails> details) {
+  LOG(INFO) << "NWebHandlerDelegate::OnLargestContentfulPaint";
+  if (nweb_handler_ != nullptr) {
+    if (!details) {
+      LOG(WARNING) << "NWebHandlerDelegate::OnLargestContentfulPaint failed "
+                      "for details is null";
+      return;
+    }
+    std::shared_ptr<NWebLargestContentfulPaintDetails> web_details =
+        std::make_shared<NWebLargestContentfulPaintDetailsImpl>(
+            details->GetNavigationStartTime(),
+            details->GetLargestImagePaintTime(),
+            details->GetLargestTextPaintTime(),
+            details->GetLargestImageLoadStartTime(),
+            details->GetLargestImageLoadEndTime(), 
+            details->GetImageBPP());
+    nweb_handler_->OnLargestContentfulPaint(web_details);
   }
 }
 

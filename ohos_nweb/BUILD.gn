@@ -311,6 +311,10 @@ component("nweb_sources") {
     "src/nweb_url_resource_request_impl.h",
     "src/nweb_web_storage_impl.cc",
     "src/nweb_web_storage_impl.h",
+    "src/nweb_first_meaningful_paint_details_impl.cc",
+    "src/nweb_first_meaningful_paint_details_impl.h",
+    "src/nweb_largest_contentful_paint_details_impl.cc",
+    "src/nweb_largest_contentful_paint_details_impl.h",
   ]
 
   #if defined(OHOS_NAVIGATION)

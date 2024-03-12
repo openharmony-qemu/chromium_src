@@ -171,7 +171,7 @@ void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
       embed_info->embed_id,
       native_web_contents_observer_->web_contents_impl()->GetURL(),
       embed_info->element_id, embed_info->type, embed_info->source,
-      embed_info->tag, embed_info->size, params_data);
+      embed_info->tag, embed_info->rect, params_data);
   native_web_contents_observer_->OnBridgeInfoChanged(native_bridge_id_,
                                                      native_embed_info);
   native_web_contents_observer_->web_contents_impl()->OnNativeEmbedStatusUpdate(
@@ -193,8 +193,8 @@ void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
   }
 }
 
-void NativeWebContentsObserver::NativeBridgeObserverHostImpl::OnEmbedSizeChange(
-    const gfx::Size& new_size) {
+void NativeWebContentsObserver::NativeBridgeObserverHostImpl::OnEmbedRectChange(
+    const gfx::Rect& new_rect) {
   if (!native_web_contents_observer_) {
     return;
   }
@@ -202,7 +202,7 @@ void NativeWebContentsObserver::NativeBridgeObserverHostImpl::OnEmbedSizeChange(
   if (auto* bridge_info =
           native_web_contents_observer_->GetBridgeInfo(native_bridge_id_)) {
     auto info = bridge_info->native_embed_info();
-    info.size = new_size;
+    info.rect = new_rect;
     native_web_contents_observer_->OnBridgeInfoChanged(native_bridge_id_, info);
     native_web_contents_observer_->web_contents_impl()
         ->OnNativeEmbedStatusUpdate(

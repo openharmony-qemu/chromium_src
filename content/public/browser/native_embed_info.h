@@ -20,13 +20,17 @@
 #include <map>
 
 #include "content/common/content_export.h"
-#include "ui/gfx/geometry/size.h"
+#include "ui/gfx/geometry/rect.h"
 #include "url/gurl.h"
 
 namespace content {
 
 struct CONTENT_EXPORT NativeEmbedInfo {
-  enum TagState { TAG_STATE_CREATE, TAG_STATE_CHANGE, TAG_STATE_DESTROY };
+  enum TagState {
+    TAG_STATE_CREATE = 0,
+    TAG_STATE_CHANGE = 1,
+    TAG_STATE_DESTROY = 2
+  };
 
   NativeEmbedInfo();
   NativeEmbedInfo(int native_embed_id,
@@ -35,7 +39,7 @@ struct CONTENT_EXPORT NativeEmbedInfo {
                   std::string& native_type,
                   std::string& native_source,
                   std::string& tag,
-                  gfx::Size size,
+                  gfx::Rect& rect,
                   std::map<std::string, std::string>& params);
   NativeEmbedInfo(const NativeEmbedInfo& other);
   NativeEmbedInfo& operator=(const NativeEmbedInfo& other);
@@ -49,7 +53,7 @@ struct CONTENT_EXPORT NativeEmbedInfo {
   std::string native_type;
   std::string native_source;
   std::string tag;
-  gfx::Size size;
+  gfx::Rect rect;
   std::map<std::string, std::string> params;
 };
 

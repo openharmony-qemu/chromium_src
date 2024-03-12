@@ -73,11 +73,6 @@
 #include <ucontext.h>  // for getcontext().
 #endif
 
-#if defined(OHOS_CRASH_DUMP)
-#include "base/files/file_path.h"
-#include "base/files/file_util.h"
-#endif  // defined(OHOS_CRASH_DUMP)
-
 #if BUILDFLAG(IS_ANDROID)
 #define STAT_STRUCT struct stat
 #define FSTAT_FUNC fstat
@@ -832,12 +827,7 @@ void EnableCrashDumping(bool unattended) {
     strncpy(g_crash_log_path, logfile_str.c_str(), crash_log_path_len);
   }
   DCHECK(!g_breakpad);
-#if defined(OHOS_CRASH_DUMP)
-  dumps_path = dumps_path.Append("crashdmps");
-  if (!base::PathExists(dumps_path)) {
-    base::CreateDirectory(dumps_path);
-  }
-#endif  // defined(OHOS_CRASH_DUMP)
+
   MinidumpDescriptor minidump_descriptor(dumps_path.value());
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kFullMemoryCrashReport)) {
@@ -849,10 +839,6 @@ void EnableCrashDumping(bool unattended) {
   unattended = true;  // Android never uploads directly.
   SetMinidumpSanitizationFields(&minidump_descriptor, sanitization_info);
 #endif
-
-#if defined(OHOS_CRASH_DUMP)
-  unattended = true;  // ohos never uploads directly.
-#endif // defined(OHOS_CRASH_DUMP)
 
   if (unattended) {
     g_breakpad =
@@ -1044,13 +1030,9 @@ void MicrodumpInfo::Initialize(const std::string& process_type,
 // Non-Browser = Extension, Gpu, Plugins, Ppapi and Renderer
 class NonBrowserCrashHandler : public google_breakpad::CrashGenerationClient {
  public:
-#if defined(OHOS_CRASH_DUMP)
-  NonBrowserCrashHandler() {}
-#else
   NonBrowserCrashHandler()
       : server_fd_(
             base::GlobalDescriptors::GetInstance()->Get(kCrashDumpSignal)) {}
-#endif  // defined(OHOS_CRASH_DUMP)
 
   NonBrowserCrashHandler(const NonBrowserCrashHandler&) = delete;
   NonBrowserCrashHandler& operator=(const NonBrowserCrashHandler&) = delete;
@@ -1060,14 +1042,6 @@ class NonBrowserCrashHandler : public google_breakpad::CrashGenerationClient {
   bool RequestDump(const void* crash_context,
                    size_t crash_context_size) override {
     int fds[2] = { -1, -1 };
-
-#if defined(OHOS_CRASH_DUMP)
-    if (server_fd_ == 0) {
-      server_fd_ =
-          base::GlobalDescriptors::GetInstance()->Get(kCrashDumpSignal);
-    }
-#endif  // defined(OHOS_CRASH_DUMP)
-
     if (sys_socketpair(AF_UNIX, SOCK_STREAM, 0, fds) < 0) {
       static const char msg[] = "Failed to create socket for crash dumping.\n";
       WriteLog(msg, sizeof(msg) - 1);
@@ -1149,11 +1123,7 @@ class NonBrowserCrashHandler : public google_breakpad::CrashGenerationClient {
 
  private:
   // The pipe FD to the browser process, which will handle the crash dumping.
-#if defined(OHOS_CRASH_DUMP)
-  int server_fd_ = 0;
-#else
   const int server_fd_;
-#endif  // defined(OHOS_CRASH_DUMP)
 };
 
 void EnableNonBrowserCrashDumping() {
@@ -1616,9 +1586,7 @@ void HandleCrashDump(const BreakpadInfo& info) {
   const char* exe_buf = nullptr;
 
   if (GetCrashReporterClient()->HandleCrashDump(info.filename, info.pid)) {
-#if !defined(OHOS_CRASH_DUMP)
     return;
-#endif  // !defined(OHOS_CRASH_DUMP)
   }
 
 #if BUILDFLAG(IS_CHROMEOS)

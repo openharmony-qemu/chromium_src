@@ -62,6 +62,15 @@ std::vector<uint64_t> ComputeHashes(const std::vector<FacetURI>& facet_uris) {
 
 }  // namespace
 
+#if BUILDFLAG(IS_OHOS)
+bool operator==(const AffiliationFetcherInterface::RequestInfo& s,
+                const AffiliationFetcherInterface::RequestInfo& d) {
+  return s.branding_info == d.branding_info &&
+         s.change_password_info == d.change_password_info &&
+         s.psl_extension_list == d.psl_extension_list;
+}
+#endif
+
 class HashAffiliationFetcherTest : public testing::Test {
  public:
   HashAffiliationFetcherTest() {

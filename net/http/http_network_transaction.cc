@@ -1082,6 +1082,9 @@ int HttpNetworkTransaction::DoBuildRequestComplete(int result) {
 
 int HttpNetworkTransaction::DoSendRequest() {
   send_start_time_ = base::TimeTicks::Now();
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "requestStart", send_start_time_);
+
   next_state_ = STATE_SEND_REQUEST_COMPLETE;
 
   stream_->SetRequestIdempotency(request_->idempotency);

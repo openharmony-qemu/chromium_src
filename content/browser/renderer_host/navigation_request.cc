@@ -3180,8 +3180,14 @@ void NavigationRequest::OnRequestRedirected(
     commit_params_->navigation_timing->redirect_start =
         commit_params_->navigation_timing->fetch_start;
   }
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "redirectStart", commit_params_->navigation_timing->redirect_start);
   commit_params_->navigation_timing->redirect_end = base::TimeTicks::Now();
   commit_params_->navigation_timing->fetch_start = base::TimeTicks::Now();
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "redirectEnd", commit_params_->navigation_timing->redirect_end);
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "fetchStart", commit_params_->navigation_timing->fetch_start);
 
   commit_params_->redirect_response.push_back(response_head_.Clone());
   commit_params_->redirect_infos.push_back(redirect_info);
@@ -4774,6 +4780,8 @@ void NavigationRequest::OnStartChecksComplete(
 
   // Mark the fetch_start (Navigation Timing API).
   commit_params_->navigation_timing->fetch_start = base::TimeTicks::Now();
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "fetchStart", commit_params_->navigation_timing->fetch_start);
 
   std::unique_ptr<NavigationUIData> navigation_ui_data;
   if (navigation_ui_data_)

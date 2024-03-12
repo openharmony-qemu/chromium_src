@@ -45,9 +45,14 @@ void SuspendedProcessWatcherOHOS::ResumeWebKitShardTimersFromOHOS() {
 }
 
 std::shared_ptr<SuspendedProcessWatcherOHOS>
+    SuspendedProcessWatcherOHOS::content_view_;
+
+std::shared_ptr<SuspendedProcessWatcherOHOS>
 SuspendedProcessWatcherOHOS::GetShradWebKitTimersInstance() {
-  static std::shared_ptr<SuspendedProcessWatcherOHOS> content_view_ =
-      std::make_shared<SuspendedProcessWatcherOHOS>();
+  if (!content_view_) {
+    content_view_ = std::make_shared<SuspendedProcessWatcherOHOS>();
+  }
+
   return content_view_;
 }
 }  // namespace content

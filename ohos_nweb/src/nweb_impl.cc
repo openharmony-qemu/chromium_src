@@ -101,6 +101,10 @@
 #include "cef/libcef/browser/anti_tracking/third_party_cookie_access_policy.h"
 #endif
 
+#ifdef OHOS_SUSPEND_ALL_TIMERS
+#include "content/browser/ohos/content_view_statics_ohos.h"
+#endif
+
 namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;

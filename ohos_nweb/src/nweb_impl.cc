@@ -116,8 +116,7 @@ const float richtextDisplayRatio = 1.0;
 
 #if defined(OHOS_NWEB_EX)
 bool g_browser_service_api_enabled = false;
-base::LazyInstance<std::vector<std::string>>::DestructorAtExit g_browser_args =
-    LAZY_INSTANCE_INITIALIZER;
+std::vector<std::string> g_browser_args = {};
 #endif  // defined(OHOS_NWEB_EX)
 
 #if defined(REPORT_SYS_EVENT)
@@ -256,8 +255,7 @@ void InitialWebEngineArgs(std::list<std::string>& web_engine_args,
     web_engine_args.emplace_back("--enable-multi-renderer-process");
   }
 #ifdef OHOS_NWEB_EX
-  auto args = g_browser_args.Get();
-  for (const std::string& arg : args) {
+  for (const std::string& arg : g_browser_args) {
     web_engine_args.emplace_back(arg);
   }
 #endif  // OHOS_NWEB_EX
@@ -1787,15 +1785,11 @@ bool NWebImpl::CanStoreWebArchive() const {
 
 // static
 const std::vector<std::string>& NWebImpl::GetCommandLineArgsForNWebEx() {
-  return g_browser_args.Get();
+  return g_browser_args;
 }
 
 void NWebImpl::InitBrowserServiceApi(std::vector<std::string>& browser_args) {
-  auto args = g_browser_args.Pointer();
-  args->clear();
-  for (const std::string& arg : browser_args) {
-    args->push_back(arg);
-  }
+  g_browser_args = browser_args;
   g_browser_service_api_enabled = true;
 }
 

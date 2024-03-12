@@ -35,6 +35,13 @@ void ReportJankStats(int64_t startTime, int duration, std::vector<uint16_t> jank
 
 void ReportLockdownModeStatus(void);
 
+void ReportDragDropStatus(const std::string& eventName, int32_t id);
+
+void ReportDragDropInfo(const std::string& eventName,
+                          int32_t id,
+                          const std::string& fragment,
+                          const std::string& linkUrl,
+                          const std::string& linkHtml);
 void ReportForceZoomEnable(void);
 
 void ReportOpenPrivateMode(void);

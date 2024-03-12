@@ -10107,12 +10107,6 @@ void WebContentsImpl::SetEnableBlankTargetPopupIntercept(
 }
 #endif
 
-#ifdef OHOS_USERAGENT
-void WebContentsImpl::SetTabletMode(bool is_tablet) {
-  GetContentClient()->browser()->SetTabletMode(is_tablet);
-}
-#endif
-
 #if defined(OHOS_WEBRTC)
 void WebContentsImpl::StartCamera() {
   auto media_stream_manager =

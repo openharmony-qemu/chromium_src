@@ -1502,11 +1502,6 @@ class WebContents : public PageNavigator,
 #ifdef OHOS_DRAG_DROP
   virtual void ClearContextMenu() = 0;
 #endif //OHOS_DRAG_DROP
-
-#ifdef OHOS_USERAGENT
-  virtual void SetTabletMode(bool is_tablet) = 0;
-#endif
-
  private:
   // This interface should only be implemented inside content.
   friend class WebContentsImpl;

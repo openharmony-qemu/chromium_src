@@ -522,7 +522,11 @@ TEST_F(FilePathWatcherTest, RecursiveWatch) {
   bool setup_result = SetupWatch(dir, &watcher, delegate.get(),
                                  FilePathWatcher::Type::kRecursive);
   if (!FilePathWatcher::RecursiveWatchAvailable()) {
+#if BUILDFLAG(IS_OHOS)
+    ASSERT_TRUE(setup_result);
+#else
     ASSERT_FALSE(setup_result);
+#endif
     return;
   }
   ASSERT_TRUE(setup_result);

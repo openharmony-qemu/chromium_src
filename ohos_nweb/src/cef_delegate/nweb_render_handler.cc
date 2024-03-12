@@ -750,8 +750,9 @@ bool NWebRenderHandler::FilterScrollEvent(CefRefPtr<CefBrowser> browser,
   if (auto handler = handler_.lock()) {
     // Value multiplied by virtual pixel ratio.
     return handler->FilterScrollEvent(x * screen_info_.display_ratio,
-                                      y * screen_info_.display_ratio, fling_x,
-                                      fling_y);
+                                      y * screen_info_.display_ratio,
+                                      fling_x * screen_info_.display_ratio,
+                                      fling_y * screen_info_.display_ratio);
   }
   return false;
 }

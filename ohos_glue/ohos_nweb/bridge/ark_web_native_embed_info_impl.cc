@@ -55,4 +55,12 @@ ArkWebStringMap ArkWebNativeEmbedInfoImpl::GetParams() {
   return ArkWebStringMapClassToStruct(nweb_native_embed_info_->GetParams());
 }
 
+int32_t ArkWebNativeEmbedInfoImpl::GetX() {
+  return nweb_native_embed_info_->GetX();
+}
+
+int32_t ArkWebNativeEmbedInfoImpl::GetY() {
+  return nweb_native_embed_info_->GetY();
+}
+
 } // namespace OHOS::ArkWeb

@@ -908,6 +908,10 @@ void RegisterClippedVisualViewportSelectionBounds(
 
   void IncrementVisualUpdateDuration(base::TimeDelta visual_update_duration);
 
+#if BUILDFLAG(IS_OHOS)
+  void OnLayerRectUpdate(int id, const gfx::Rect& rect);
+#endif
+
  protected:
   LayerTreeHost(InitParams params, CompositorMode mode);
 

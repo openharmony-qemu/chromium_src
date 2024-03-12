@@ -238,6 +238,12 @@ public:
   void OnIntelligentTrackingPreventionResult(
       const ArkWebString &website_host,
       const ArkWebString &tracker_host) override;
+
+  void OnFirstMeaningfulPaint(
+      ArkWebRefPtr<ArkWebFirstMeaningfulPaintDetails> details) override;
+
+  void OnLargestContentfulPaint(
+      ArkWebRefPtr<ArkWebLargestContentfulPaintDetails> details) override;
 };
 
 } // namespace OHOS::ArkWeb

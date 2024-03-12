@@ -19,7 +19,7 @@ import "ui/gfx/geometry/mojom/geometry.mojom";
 
 struct NativeEmbedInfo {
   int32 embed_id;
-  gfx.mojom.Size size;
+  gfx.mojom.Rect rect;
   string type;
   string element_id;
   string source;
@@ -31,7 +31,7 @@ struct NativeEmbedInfo {
 // browser process.
 interface NativeBridgeObserver {
   OnCreateNativeSurface(NativeEmbedInfo embed_info);
-  OnEmbedSizeChange(gfx.mojom.Size size);
+  OnEmbedRectChange(gfx.mojom.Rect rect);
   OnDestroyNativeSurface();
 };
 

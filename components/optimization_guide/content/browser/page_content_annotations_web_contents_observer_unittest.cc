@@ -72,6 +72,8 @@ class FrameRemoteTester : public content::FakeLocalFrame {
                        std::move(handle)));
   }
 
+  void GetImageFromCache(const std::string& url, GetImageFromCacheCallback callback) override {}
+
   // blink::mojom::LocalFrame:
   void GetOpenGraphMetadata(
       base::OnceCallback<void(blink::mojom::OpenGraphMetadataPtr)> callback)

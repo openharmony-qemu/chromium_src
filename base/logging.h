@@ -396,32 +396,38 @@ constexpr LogSeverity LOG_WARNING = LOGGING_WARNING;
 constexpr LogSeverity LOG_ERROR = LOGGING_ERROR;
 constexpr LogSeverity LOG_FATAL = LOGGING_FATAL;
 constexpr LogSeverity LOG_DFATAL = LOGGING_DFATAL;
-
+#if BUILDFLAG(IS_OHOS)
+#if !defined(LOGGING_TAG)
+#define LOGGING_TAG "chromium#"
+#endif
+#else
+#define LOGGING_TAG
+#endif
 // A few definitions of macros that don't generate much code. These are used
 // by LOG() and LOG_IF, etc. Since these are used all over our code, it's
 // better to have compact code for these operations.
 // #if defined(OHOS_DFX_LOGGING).
 #define COMPACT_GOOGLE_LOG_EX_DEBUG(ClassName, ...)                  \
-  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_DEBUG, \
+  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_DEBUG, \
                        ##__VA_ARGS__)
 // #endif
 #define COMPACT_GOOGLE_LOG_EX_INFO(ClassName, ...)                  \
-  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_INFO, \
+  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_INFO, \
                        ##__VA_ARGS__)
 #define COMPACT_GOOGLE_LOG_EX_WARNING(ClassName, ...)                  \
-  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_WARNING, \
+  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_WARNING, \
                        ##__VA_ARGS__)
 #define COMPACT_GOOGLE_LOG_EX_ERROR(ClassName, ...)                  \
-  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_ERROR, \
+  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_ERROR, \
                        ##__VA_ARGS__)
 #define COMPACT_GOOGLE_LOG_EX_FATAL(ClassName, ...)                  \
-  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_FATAL, \
+  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_FATAL, \
                        ##__VA_ARGS__)
 #define COMPACT_GOOGLE_LOG_EX_DFATAL(ClassName, ...)                  \
-  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_DFATAL, \
+  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_DFATAL, \
                        ##__VA_ARGS__)
 #define COMPACT_GOOGLE_LOG_EX_DCHECK(ClassName, ...)                  \
-  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_DCHECK, \
+  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_DCHECK, \
                        ##__VA_ARGS__)
 
 // #if defined(OHOS_DFX_LOGGING).
@@ -524,7 +530,7 @@ BASE_EXPORT int GetDisableAllVLogLevel();
 
 // The VLOG macros log with negative verbosities.
 #define VLOG_STREAM(verbose_level) \
-  ::logging::LogMessage(__FILE__, __LINE__, -(verbose_level)).stream()
+  ::logging::LogMessage(LOGGING_TAG __FILE__, __LINE__, -(verbose_level)).stream()
 
 #define VLOG(verbose_level) \
   LAZY_STREAM(VLOG_STREAM(verbose_level), VLOG_IS_ON(verbose_level))
@@ -539,7 +545,7 @@ BASE_EXPORT int GetDisableAllVLogLevel();
     ::logging::GetLastSystemErrorCode()).stream()
 #elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 #define VPLOG_STREAM(verbose_level) \
-  ::logging::ErrnoLogMessage(__FILE__, __LINE__, -(verbose_level), \
+  ::logging::ErrnoLogMessage(LOGGING_TAG __FILE__, __LINE__, -(verbose_level), \
     ::logging::GetLastSystemErrorCode()).stream()
 #endif
 
@@ -677,7 +683,9 @@ class BASE_EXPORT LogMessage {
   // The file and line information passed in to the constructor.
   const char* const file_;
   const int line_;
-
+#if BUILDFLAG(IS_OHOS)
+  std::string tag_;
+#endif
   // This is useful since the LogMessage class uses a lot of Win32 calls
   // that will lose the value of GLE and the code that called the log function
   // will have lost the thread error value when the log call returns.

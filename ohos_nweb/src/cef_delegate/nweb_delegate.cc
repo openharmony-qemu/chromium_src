@@ -70,6 +70,9 @@
 #include "components/security_state/core/security_state.h"
 #endif
 
+#if defined(REPORT_SYS_EVENT)
+#include "event_reporter.h"
+#endif
 namespace {
 static const float richtextDisplayRatio = 1.0;
 }
@@ -2300,6 +2303,9 @@ void NWebDelegate::SetDrawMode(int32_t mode) {
 #if defined(OHOS_EX_FORCE_ZOOM)
 void NWebDelegate::SetForceEnableZoom(bool forceEnableZoom) {
   LOG(INFO) << "NWebDelegate::SetForceEnableZoom " << forceEnableZoom;
+#if defined(REPORT_SYS_EVENT)
+  ReportForceZoomEnable();
+#endif
   if (GetBrowser().get()) {
     GetBrowser()->SetForceEnableZoom(forceEnableZoom);
   }

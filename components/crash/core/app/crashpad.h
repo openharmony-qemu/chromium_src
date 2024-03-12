@@ -254,7 +254,7 @@ DWORD WINAPI DumpProcessForHungInputThread(void* param);
 
 #endif  // BUILDFLAG(IS_WIN)
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 // Starts the handler process with an initial client connected on fd,
 // the handler will write minidump to database if write_minidump_to_database is
 // true.

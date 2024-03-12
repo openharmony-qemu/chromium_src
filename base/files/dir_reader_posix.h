@@ -18,7 +18,7 @@
 // probably never implement this on the Mac.
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(IS_OHOS) || defined(OHOS_CRASH_DUMP)
+    BUILDFLAG(IS_OHOS)
 #include "base/files/dir_reader_linux.h"
 #else
 #include "base/files/dir_reader_fallback.h"
@@ -27,7 +27,7 @@
 namespace base {
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(IS_OHOS) || defined(OHOS_CRASH_DUMP)
+    BUILDFLAG(IS_OHOS)
 typedef DirReaderLinux DirReaderPosix;
 #else
 typedef DirReaderFallback DirReaderPosix;

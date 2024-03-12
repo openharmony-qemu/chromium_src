@@ -42,7 +42,7 @@
 #include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace gfx {
-class Size;
+class Rect;
 }  // namespace gfx
 
 namespace content {
@@ -127,7 +127,7 @@ class CONTENT_EXPORT NativeWebContentsObserver : public WebContentsObserver {
 
     // media::mojom::NativeBridgeObserver implementation
     void OnCreateNativeSurface(media::mojom::NativeEmbedInfoPtr embed_info) override;
-    void OnEmbedSizeChange(const gfx::Size& size) override;
+    void OnEmbedRectChange(const gfx::Rect& new_rect) override;
     void OnDestroyNativeSurface() override;
 
    private:

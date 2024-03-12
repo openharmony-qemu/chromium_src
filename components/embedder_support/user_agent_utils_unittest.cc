@@ -75,6 +75,8 @@ const char kDesktop[] =
     "Macintosh; Intel Mac OS X 10_15_7"
 #elif BUILDFLAG(IS_WIN)
     "Windows NT 10.0; Win64; x64"
+#elif BUILDFLAG(IS_OHOS)
+    "ohos"
 #else
 #error Unsupported platform
 #endif
@@ -229,6 +231,7 @@ void CheckUserAgentStringOrdering(bool mobile_device) {
   // X11; Fuchsia
   ASSERT_EQ(1u, pieces.size());
   ASSERT_EQ("Fuchsia", pieces[0]);
+#elif BUILDFLAG(IS_OHOS)
 #else
 #error Unsupported platform
 #endif
@@ -456,7 +459,7 @@ TEST_F(UserAgentUtilsTest, InvalidCustomUserAgent) {
   // Make sure all APIs have the correct behavior once user provide invalid
   // custom user agent.
   const std::string major_version = version_info::GetMajorVersionNumber();
-  const std::string full_version = version_info::GetVersionNumber();
+  const std::string full_version = version_info::GetVersionNumber().data();
 
   base::test::ScopedFeatureList scoped_feature_list;
   scoped_feature_list.InitAndEnableFeature(blink::features::kReduceUserAgent);
@@ -818,7 +821,7 @@ TEST_F(UserAgentUtilsTest, UserAgentMetadata) {
   auto metadata = GetUserAgentMetadata();
 
   const std::string major_version = version_info::GetMajorVersionNumber();
-  const std::string full_version = version_info::GetVersionNumber();
+  const std::string full_version = version_info::GetVersionNumber().data();
   const std::string major_to_minor_full_version = MajorToMinorVersionNumber();
 
   // According to spec, Sec-CH-UA should contain what project the browser is
@@ -831,9 +834,9 @@ TEST_F(UserAgentUtilsTest, UserAgentMetadata) {
   const blink::UserAgentBrandVersion major_to_minor_chromium_brand_version = {
       "Chromium", "99"};
   const blink::UserAgentBrandVersion product_brand_version = {
-      version_info::GetProductName(), major_version};
+      version_info::GetProductName().data(), major_version};
   const blink::UserAgentBrandVersion major_to_minor_product_brand_version = {
-      version_info::GetProductName(), "99"};
+      version_info::GetProductName().data(), "99"};
 
   EXPECT_TRUE(ContainsBrandVersion(metadata.brand_version_list,
                                    chromium_brand_version));
@@ -847,9 +850,9 @@ TEST_F(UserAgentUtilsTest, UserAgentMetadata) {
       major_to_minor_chromium_brand_full_version = {
           "Chromium", major_to_minor_full_version};
   const blink::UserAgentBrandVersion product_brand_full_version = {
-      version_info::GetProductName(), full_version};
+      version_info::GetProductName().data(), full_version};
   const blink::UserAgentBrandVersion major_to_minor_product_brand_full_version =
-      {version_info::GetProductName(), major_to_minor_full_version};
+      {version_info::GetProductName().data(), major_to_minor_full_version};
 
   EXPECT_TRUE(ContainsBrandVersion(metadata.brand_full_version_list,
                                    chromium_brand_full_version));

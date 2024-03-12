@@ -90,8 +90,8 @@ void NativeRenderClient::OnFrameAvailable() {
   sink_->PaintSingleFrame(std::move(unique_frame));
 }
 
-void NativeRenderClient::OnSizeChange(const gfx::Size& size) {
-  native_texture_wrapper_->UpdateTextureSize(size);
+void NativeRenderClient::OnSizeChange(const gfx::Rect& rect) {
+  native_texture_wrapper_->UpdateTextureSize(rect.size());
 }
 
 }  // namespace content

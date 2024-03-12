@@ -42,4 +42,9 @@ void ReportDragDropInfo(const std::string& eventName,
                           const std::string& fragment,
                           const std::string& linkUrl,
                           const std::string& linkHtml);
+void ReportForceZoomEnable(void);
+
+void ReportOpenPrivateMode(void);
+
+void ReportPageDownLoadErrorInfo(long downloadId, int errorCode);
 #endif

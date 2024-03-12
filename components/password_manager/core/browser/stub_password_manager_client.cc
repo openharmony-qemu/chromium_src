@@ -126,7 +126,7 @@ StubPasswordManagerClient::GetPasswordProtectionService() const {
   return nullptr;
 }
 
-#if defined(ON_FOCUS_PING_ENABLED)
+#if defined(ON_FOCUS_PING_ENABLED) && BUILDFLAG(FULL_SAFE_BROWSING)
 void StubPasswordManagerClient::CheckSafeBrowsingReputation(
     const GURL& form_action,
     const GURL& frame_url) {}

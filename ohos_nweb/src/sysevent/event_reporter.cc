@@ -130,6 +130,8 @@ void ReportDragDropInfo(const std::string& eventName,
       eventName, HiSysEventAdapter::EventType::STATISTIC,
       {NWEB_ID, std::to_string(id), PLAIN_TEXT, std::to_string(fragment.size()),
       LINK_URL, std::to_string(linkUrl.size()), HTML, std::to_string(linkHtml.size())});
+}
+
 void ReportForceZoomEnable(void) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       FORCE_ENABLE_ZOOM, HiSysEventAdapter::EventType::BEHAVIOR, {ENABLE_FORCE_ZOOM_STATUS, "true"});

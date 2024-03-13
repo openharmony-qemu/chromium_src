@@ -822,7 +822,10 @@ void WebBundleURLLoaderFactory::OnResponseParsed(
   response->response_headers["X-Content-Type-Options"] = "nosniff";
   const std::string header_string = web_package::CreateHeaderString(response);
 
-  loader->SetResponseStartTime(base::TimeTicks::Now());
+  base::TimeTicks response_start_time = base::TimeTicks::Now();
+  loader->SetResponseStartTime(response_start_time);
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "responseStart", response_start_time);
   loader->SetHeadersBytes(header_string.size());
   if (!loader->trusted_header_client()) {
     SendResponseToLoader(loader, header_string, response->payload_offset,

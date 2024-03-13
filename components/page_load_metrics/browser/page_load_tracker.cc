@@ -140,23 +140,9 @@ void DispatchObserverTimingCallbacks(PageLoadMetricsObserverInterface* observer,
                                      const mojom::PageLoadTiming& new_timing) {
   if (!last_timing.Equals(new_timing))
     observer->OnTimingUpdate(nullptr, new_timing);
-  if (new_timing.redirect_start && !last_timing.redirect_start) {
-    observer->OnRedirectStart(new_timing);
-  }
-  if (new_timing.redirect_end &&
-      new_timing.redirect_end != last_timing.redirect_end) {
-    observer->OnRedirectEnd(new_timing);
-  }
-  if (new_timing.response_end && !last_timing.response_end) {
-    observer->OnResponseEnd(new_timing);
-  }
   if (new_timing.document_timing->dom_content_loaded_event_start &&
       !last_timing.document_timing->dom_content_loaded_event_start) {
     observer->OnDomContentLoadedEventStart(new_timing);
-  }
-  if (new_timing.document_timing->dom_content_loaded_event_end &&
-      !last_timing.document_timing->dom_content_loaded_event_end) {
-    observer->OnDomContentLoadedEventEnd(new_timing);
   }
   if (new_timing.document_timing->load_event_start &&
       !last_timing.document_timing->load_event_start) {

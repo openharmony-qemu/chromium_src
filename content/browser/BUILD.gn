@@ -3272,10 +3272,12 @@ source_set("browser") {
       ]
     }  #endif  // defined(OHOS_CSS_INPUT_TIME)
 
-    sources += [
-      "ohos/content_view_statics_ohos.cc",
-      "ohos/content_view_statics_ohos.h",
-    ]
+    if (defined(ohos_suspend_all_timers) && ohos_suspend_all_timers) {
+      sources += [
+        "ohos/content_view_statics_ohos.cc",
+        "ohos/content_view_statics_ohos.h",
+      ]
+    }  #endif  // defined(OHOS_SUSPEND_ALL_TIMERS)
 
     #if defined(OHOS_WPT)
     if (defined(ohos_wpt) && ohos_wpt) {

@@ -188,14 +188,14 @@ TEST_F(ProcessTest, CreationTimeCurrentProcess) {
   EXPECT_LE(Process::Current().CreationTime(), Time::Now());
 }
 
-#if !BUILDFLAG(IS_ANDROID)  // Cannot read other processes' creation time on
-                            // Android.
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
+// Cannot read other processes' creation time on Android or OHOS.
 TEST_F(ProcessTest, CreationTimeOtherProcess) {
   // The creation time of a process should be between a time recorded before it
   // was spawned and a time recorded after it was spawned. However, since the
   // base::Time and process creation clocks don't match, tolerate some error.
   constexpr base::TimeDelta kTolerance =
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
       // On Linux, process creation time is relative to boot time which has a
       // 1-second resolution. Tolerate 1 second for the imprecise boot time and
       // 100 ms for the imprecise clock.

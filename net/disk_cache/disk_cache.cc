@@ -29,6 +29,7 @@
 
 #if BUILDFLAG(IS_OHOS)
 #include "base/ohos/sys_info_utils.h"
+#include "content/public/common/content_switches.h"
 #endif
 
 namespace {
@@ -128,7 +129,8 @@ net::Error CacheCreator::Run() {
   static const bool kSimpleBackendIsDefault = true;
 #elif BUILDFLAG(IS_OHOS) && defined(OHOS_CACHE)
   static const bool kSimpleBackendIsDefault =
-	  (base::ohos::IsMobileDevice() || base::ohos::IsTabletDevice());
+      base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kSimpleBackendIsDefault);
 #else
   static const bool kSimpleBackendIsDefault = false;
 #endif
@@ -162,7 +164,7 @@ net::Error CacheCreator::Run() {
   return net::ERR_FAILED;
 #else
 #if BUILDFLAG(IS_OHOS) && defined(OHOS_CACHE)
-  if (base::ohos::IsMobileDevice() || base::ohos::IsTabletDevice()) {
+  if (kSimpleBackendIsDefault) {
     return net::ERR_FAILED;
   }
 #endif  // BUILDFLAG(IS_OHOS) && defined(OHOS_CACHE)

@@ -630,11 +630,15 @@ void NWebPreferenceDelegate::PutOverscrollMode(int mode) {
   }
   browser_->GetHost()->SetOverscrollMode(mode);
 }
+
 void NWebPreferenceDelegate::SetNativeEmbedMode(bool flag) {
   // Native Embed is not supported on pc device.
-  enable_embed_mode_ = flag && !base::ohos::IsPcDevice();
+  CefRefPtr<CefCommandLine> command_line = CefCommandLine::GetGlobalCommandLine();
+  auto isEnableEmbed = command_line->HasSwitch(::switches::kEnableEmbedMode); 
+  enable_embed_mode_ = flag && !isEnableEmbed;
   WebPreferencesChanged();
 }
+
 bool NWebPreferenceDelegate::GetNativeEmbedMode() {
   return enable_embed_mode_;
 }

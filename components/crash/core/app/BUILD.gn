@@ -223,7 +223,7 @@ if (is_win) {
   }
 }
 
-if (is_mac || is_android || is_linux || is_chromeos || is_ohos) {
+if (is_mac || is_android || is_linux || is_chromeos) {
   # We build a chromium-specific crashpad_handler executable so that we can
   # define custom UserStreamDataSources.
   executable("chrome_crashpad_handler") {
@@ -254,7 +254,15 @@ if (is_mac || is_android || is_linux || is_chromeos || is_ohos) {
   }
 }
 
-if (is_android || ohos_crashpad) {
+if (ohos_crashpad) {
+  shared_library("chrome_crashpad_handler") {
+    deps = [
+      ":crashpad_handler_main",
+    ]
+  }
+}
+
+if (is_android) {
   # There is not any normal way to package native executables in an Android APK.
   # It is normal to package native code as a loadable module but Android's APK
   # installer will ignore files not named like a shared object, so give the

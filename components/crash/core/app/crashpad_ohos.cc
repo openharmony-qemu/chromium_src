@@ -308,6 +308,19 @@ bool ShouldHandleCrashAndUpdateArguments(bool write_minidump_to_database,
 }
 
 bool GetHandlerPath(base::FilePath* exe_dir, base::FilePath* handler_path) {
+  base::FilePath path;
+  if (base::PathService::Get(base::DIR_MODULE, exe_dir)) {
+    path = exe_dir->Append("chrome_crashpad_handler");
+    if (base::PathExists(path)) {
+      *handler_path = path;
+      LOG(INFO) << "crashpad GetHandlerPath, handler bin path = " << *handler_path;
+      return true;
+    }
+    LOG(INFO) << "crashpad get exe path " << path << " failed, try to get handler path from bundle dir";
+  } else {
+    LOG(INFO) << "crashpad get exe dir failed, try to get bundle dir";
+  }
+
   // There is not any normal way to package native executables in an OHOS hap, rename shared lib
   if (!base::PathService::Get(base::DIR_OHOS_APP_INSTALLATION, exe_dir)) {
     LOG(ERROR) << "crashpad get DIR_OHOS_APP_INSTALLATION failed";

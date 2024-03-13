@@ -101,6 +101,10 @@
 #include "chromeos/lacros/lacros_service.h"
 #endif
 
+#if defined(OHOS_WEBRTC)
+#include "content/browser/web_contents/web_contents_impl.h"
+#endif  // defined(OHOS_WEBRTC)
+
 using blink::mojom::MediaDeviceType;
 
 namespace content {
@@ -792,6 +796,11 @@ class MediaStreamManager::DeviceRequest {
   }
 
   MediaStreamType video_type() const { return video_type_; }
+
+#if defined(OHOS_WEBRTC)
+  int GetTargetProcessId() const { return target_process_id_; }
+  int GetTargetFrameId() const { return target_frame_id_; }
+#endif  // defined(OHOS_WEBRTC)
 
   // Creates a MediaStreamRequest object that is used by this request when UI
   // is asked for permission and device selection.
@@ -3590,6 +3599,19 @@ void MediaStreamManager::HandleAccessRequestResponse(
         }
       }
       device.set_session_id(GetDeviceManager(device.type)->Open(device));
+
+#if defined(OHOS_WEBRTC)
+      if (device.type == MediaStreamType::DEVICE_VIDEO_CAPTURE) {
+        auto* web_contents = static_cast<WebContentsImpl*>(
+            WebContentsImpl::FromRenderFrameHostID(
+                request->GetTargetProcessId(), request->GetTargetFrameId()));
+        if (web_contents) {
+          video_capture_manager()->BindSessionIdToNWebId(
+              device.session_id(), web_contents->GetNWebId());
+        }
+      }
+#endif  // defined(OHOS_WEBRTC)
+
       TranslateDeviceIdToSourceId(request, &device);
       SetRequestDevice(
           *request->stream_devices_set.stream_devices[stream_index], device);

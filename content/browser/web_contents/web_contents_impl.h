@@ -356,10 +356,12 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 #endif  // defined(OHOS_MEDIA_MUTE_AUDIO)
 
 #if defined(OHOS_WEBRTC)
-  void StartCamera() override;
-  void StopCamera() override;
-  void CloseCamera() override;
-#endif // defined(OHOS_WEBRTC)
+  void StartCamera(int nWebID) override;
+  void StopCamera(int nWebID) override;
+  void CloseCamera(int nWebID) override;
+  int GetNWebId() override;
+  void SetNWebId(int nWebID) override;
+#endif  // defined(OHOS_WEBRTC)
 
   // WebContents ------------------------------------------------------
   WebContentsDelegate* GetDelegate() override;
@@ -2531,6 +2533,10 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 
   base::WeakPtrFactory<WebContentsImpl> loading_weak_factory_{this};
   base::WeakPtrFactory<WebContentsImpl> weak_factory_{this};
+
+#if defined(OHOS_WEBRTC)
+  int nWebID_ = 0;
+#endif  // defined(OHOS_WEBRTC)
 };
 
 // Dangerous methods which should never be made part of the public API, so we

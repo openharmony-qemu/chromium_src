@@ -670,9 +670,11 @@ class WebContents : public PageNavigator,
 #endif
 
 #if defined(OHOS_WEBRTC)
-  virtual void StartCamera() = 0;
-  virtual void StopCamera() = 0;
-  virtual void CloseCamera() = 0;
+  virtual void StartCamera(int nWebID) = 0;
+  virtual void StopCamera(int nWebID) = 0;
+  virtual void CloseCamera(int nWebID) = 0;
+  virtual int GetNWebId() = 0;
+  virtual void SetNWebId(int nWebID) = 0;
 #endif  // defined(OHOS_WEBRTC)
 
   // Saves the given title to the navigation entry and does associated work. It

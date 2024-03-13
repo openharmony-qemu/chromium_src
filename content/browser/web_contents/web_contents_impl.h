@@ -2517,6 +2517,10 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 #ifdef OHOS_EX_TOPCONTROLS
   cc::BrowserControlsState browser_controls_state_ =
       cc::BrowserControlsState::kBoth;
+  cc::BrowserControlsState controls_state_fullscreen_ =
+      cc::BrowserControlsState::kBoth;
+  cc::BrowserControlsState controls_state_current_fullscreen_ =
+      cc::BrowserControlsState::kBoth;
 #endif
 
   // Stores the information whether last navigation was prerender activation for

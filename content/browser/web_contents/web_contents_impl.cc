@@ -3770,6 +3770,22 @@ void WebContentsImpl::EnterFullscreenMode(
       &WebContentsObserver::DidToggleFullscreenModeForTab, IsFullscreen(),
       false);
   FullscreenContentsSet(GetBrowserContext())->insert(this);
+
+#ifdef OHOS_EX_TOPCONTROLS
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kForBrowser)) {
+    controls_state_current_fullscreen_ = cc::BrowserControlsState::kBoth;
+    if (auto* view = GetRenderWidgetHostView())
+      int top_controls_offset = static_cast<RenderWidgetHostViewBase*>(view)->GetTopControlsOffset();
+      controls_state_current_fullscreen_ =
+          top_controls_offset < 0 ? cc::BrowserControlsState::kHidden
+                                  : cc::BrowserControlsState::kShown;
+    }
+    controls_state_fullscreen_ = browser_controls_state_;
+    UpdateBrowserControlsState(cc::BrowserControlsState::kHidden,
+                               cc::BrowserControlsState::kHidden, false);
+  }
+#endif
 }
 
 void WebContentsImpl::ExitFullscreenMode(bool will_cause_resize) {
@@ -3812,6 +3828,14 @@ void WebContentsImpl::ExitFullscreenMode(bool will_cause_resize) {
     display_cutout_host_impl_->DidExitFullscreen();
 
   FullscreenContentsSet(GetBrowserContext())->erase(this);
+
+#ifdef OHOS_EX_TOPCONTROLS
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kForBrowser)) {
+    UpdateBrowserControlsState(controls_state_fullscreen_,
+                               controls_state_current_fullscreen_, false);
+  }
+#endif
 }
 
 void WebContentsImpl::FullscreenStateChanged(

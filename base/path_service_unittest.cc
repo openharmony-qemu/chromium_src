@@ -110,7 +110,7 @@ typedef PlatformTest PathServiceTest;
 // failure for the value(s) on that platform in this test.
 TEST_F(PathServiceTest, Get) {
   // Contains keys that are defined but not supported on the platform.
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   // The following keys are not intended to be implemented on Android (see
   // crbug.com/1257402). Current implementation is described before each key.
   // TODO(crbug.com/1257402): Remove the definition of these keys on Android

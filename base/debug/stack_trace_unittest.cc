@@ -186,16 +186,12 @@ TEST_F(StackTraceTest, AsyncSignalUnsafeSignalHandlerHang) {
 namespace {
 
 std::string itoa_r_wrapper(intptr_t i, size_t sz, int base, size_t padding) {
-#if defined(USE_SYMBOLIZE)
   char buffer[1024];
   CHECK_LE(sz, sizeof(buffer));
 
   char* result = internal::itoa_r(i, buffer, sz, base, padding);
   EXPECT_TRUE(result);
   return std::string(buffer);
-#else
-  return "";
-#endif
 }
 
 }  // namespace

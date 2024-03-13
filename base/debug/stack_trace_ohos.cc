@@ -70,7 +70,6 @@ bool EndsWith(const std::string& s, const std::string& suffix) {
 namespace base {
 namespace debug {
 
-#if defined(USE_SYMBOLIZE)
 namespace internal {
 char* itoa_r(intptr_t i, char* buf, size_t sz, int base, size_t padding) {
   // Make sure we can write at least one NUL byte.
@@ -133,6 +132,8 @@ char* itoa_r(intptr_t i, char* buf, size_t sz, int base, size_t padding) {
   return buf;
 }
 } //namespace internal
+
+#if defined(USE_SYMBOLIZE)
 
 class BacktraceOutputHandler {
  public:

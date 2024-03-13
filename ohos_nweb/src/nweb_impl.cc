@@ -101,6 +101,10 @@
 #include "cef/libcef/browser/anti_tracking/third_party_cookie_access_policy.h"
 #endif
 
+#ifdef OHOS_SUSPEND_ALL_TIMERS
+#include "content/browser/ohos/content_view_statics_ohos.h"
+#endif
+
 namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
@@ -112,8 +116,7 @@ const float richtextDisplayRatio = 1.0;
 
 #if defined(OHOS_NWEB_EX)
 bool g_browser_service_api_enabled = false;
-base::LazyInstance<std::vector<std::string>>::DestructorAtExit g_browser_args =
-    LAZY_INSTANCE_INITIALIZER;
+std::vector<std::string> g_browser_args = {};
 #endif  // defined(OHOS_NWEB_EX)
 
 #if defined(REPORT_SYS_EVENT)
@@ -252,8 +255,7 @@ void InitialWebEngineArgs(std::list<std::string>& web_engine_args,
     web_engine_args.emplace_back("--enable-multi-renderer-process");
   }
 #ifdef OHOS_NWEB_EX
-  auto args = g_browser_args.Get();
-  for (const std::string& arg : args) {
+  for (const std::string& arg : g_browser_args) {
     web_engine_args.emplace_back(arg);
   }
 #endif  // OHOS_NWEB_EX
@@ -431,6 +433,12 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
   incognito_mode_ = create_info->GetIsIncognitoMode();
 
   output_handler_->SetNWebId(nweb_id_);
+
+#if defined(REPORT_SYS_EVENT)
+  if (incognito_mode_) {
+    ReportOpenPrivateMode();
+  }
+#endif
 
   ProcessInitArgs(create_info->GetEngineInitArgs());
 
@@ -1777,15 +1785,11 @@ bool NWebImpl::CanStoreWebArchive() const {
 
 // static
 const std::vector<std::string>& NWebImpl::GetCommandLineArgsForNWebEx() {
-  return g_browser_args.Get();
+  return g_browser_args;
 }
 
 void NWebImpl::InitBrowserServiceApi(std::vector<std::string>& browser_args) {
-  auto args = g_browser_args.Pointer();
-  args->clear();
-  for (const std::string& arg : browser_args) {
-    args->push_back(arg);
-  }
+  g_browser_args = browser_args;
   g_browser_service_api_enabled = true;
 }
 

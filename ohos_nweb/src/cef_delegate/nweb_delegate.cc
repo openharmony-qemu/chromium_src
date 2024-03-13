@@ -34,6 +34,7 @@
 #include "cef/include/cef_base.h"
 #include "cef/include/cef_request_context.h"
 #include "content/public/common/content_switches.h"
+#include "event_reporter.h"
 #include "libcef/browser/thread_util.h"
 #include "nweb_find_delegate.h"
 #include "nweb_preference_delegate.h"
@@ -69,6 +70,9 @@
 #include "components/security_state/core/security_state.h"
 #endif
 
+#if defined(REPORT_SYS_EVENT)
+#include "event_reporter.h"
+#endif
 namespace {
 static const float richtextDisplayRatio = 1.0;
 }
@@ -2013,6 +2017,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
       break;
     case DelegateDragAction::DRAG_ENTER:
       if (render_handler_) {
+        ReportDragDropStatus("DRAG_ENTER", GetBrowser()->GetNWebId());
         LOG(DEBUG) << "DragDrop event DRAG_ENTER SendDragEvent enter, send dragdata to chromium webId:"
                   << GetBrowser()->GetNWebId();
         handler_delegate_->SetDragEnter(true);
@@ -2026,6 +2031,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
       break;
     case DelegateDragAction::DRAG_LEAVE:
       LOG(DEBUG) << "DragDrop event SendDragEvent leave webId:" << GetBrowser()->GetNWebId();
+      ReportDragDropStatus("DRAG_LEAVE", GetBrowser()->GetNWebId());
       handler_delegate_->SetDragEnter(false);
       GetBrowser()->GetHost()->DragTargetDragLeave();
       break;
@@ -2045,6 +2051,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
         LOG(DEBUG) << "DragDrop drag data GetLinkURL:" << link_url1.ToString();
         auto link_html1 = drag_data1->GetFragmentHtml();
         LOG(DEBUG) << "DragDrop drag data GetFragmentHtml:" << link_html1.ToString();
+        ReportDragDropInfo("DRAG_DROP", GetBrowser()->GetNWebId(), fragment1, link_url1, link_html1);
       } else {
         LOG(ERROR) << "DragDrop drag data render_handler_ nullptr";
       }
@@ -2052,6 +2059,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
       GetBrowser()->GetHost()->DragTargetDrop(event);
       break;
     case DelegateDragAction::DRAG_END:
+      ReportDragDropStatus("DRAG_END", GetBrowser()->GetNWebId());
       handler_delegate_->SetDragEnter(false);
       ClearDragData();
       LOG(DEBUG) << "DragDrop event SendDragEvent end webId:" << GetBrowser()->GetNWebId();
@@ -2295,6 +2303,9 @@ void NWebDelegate::SetDrawMode(int32_t mode) {
 #if defined(OHOS_EX_FORCE_ZOOM)
 void NWebDelegate::SetForceEnableZoom(bool forceEnableZoom) {
   LOG(INFO) << "NWebDelegate::SetForceEnableZoom " << forceEnableZoom;
+#if defined(REPORT_SYS_EVENT)
+  ReportForceZoomEnable();
+#endif
   if (GetBrowser().get()) {
     GetBrowser()->SetForceEnableZoom(forceEnableZoom);
   }

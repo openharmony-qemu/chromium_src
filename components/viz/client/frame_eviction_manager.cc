@@ -18,6 +18,8 @@
 #include "components/viz/common/features.h"
 #if (BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_DISCARD_BG_WEBPAGE))
 #include "base/ohos/sys_info_utils.h"
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
 #endif
 
 namespace viz {
@@ -141,7 +143,8 @@ FrameEvictionManager::FrameEvictionManager()
 #endif
 
 #if (BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_DISCARD_BG_WEBPAGE))
-  if (base::ohos::IsTabletDevice() || base::ohos::IsPcDevice()) {
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            switches::kMaxNumberOfSavedFrames)) {
     max_number_of_saved_frames_ = kMaxNumberOfSavedFrames;
   }
 

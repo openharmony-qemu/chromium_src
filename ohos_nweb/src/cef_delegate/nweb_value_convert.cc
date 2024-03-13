@@ -43,8 +43,8 @@ std::shared_ptr<NWebValue> AddNWebValueCef(CefRefPtr<CefValue> argument) {
     }
     case CefValueType::VTYPE_STRING: {
       LOG(DEBUG) << "AddNWebValueCef: VTYPE_STRING string = "
-                 << argument->GetString().ToString();
-      return std::make_shared<NWebValue>(argument->GetString().ToString());
+                 << argument->GetStdString();
+      return std::make_shared<NWebValue>(argument->GetStdString());
     }
     case CefValueType::VTYPE_LIST: {
       LOG(DEBUG) << "AddNWebValueCef: VTYPE_LIST";

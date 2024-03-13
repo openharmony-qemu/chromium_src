@@ -364,18 +364,6 @@ std::string GetMajorVersionForUserAgentString(
 
 }  // namespace
 
-#ifdef OHOS_USERAGENT
-bool is_tablet_ = false;
-
-void SetTabletMode(bool is_tablet) {
-  is_tablet_ = is_tablet;
-}
-
-bool GetTabletMode() {
-  return is_tablet_;
-}
-#endif
-
 std::string GetProductAndVersion(
     ForceMajorVersionToMinorPosition force_major_to_minor,
     UserAgentReductionEnterprisePolicyState user_agent_reduction) {

@@ -22,12 +22,15 @@
 #define LOG_FMT_PREFIX "[webcore]: "
 
 #if defined(OHOS_GLUE_DEBUG)
-#define ARK_WEB_BASE_DV_LOG(fmt, ...) WVLOG_I(LOG_FMT_PREFIX fmt, ##__VA_ARGS__)
+#define ARK_WEB_BASE_DV_LOG(fmt, ...) WVLOG_D(LOG_FMT_PREFIX fmt, ##__VA_ARGS__)
+
+#define ARK_WEB_BASE_REF_LOG(fmt, ...)                                         \
+  WVLOG_D(LOG_FMT_PREFIX fmt, ##__VA_ARGS__)
 #else
 #define ARK_WEB_BASE_DV_LOG(fmt, ...)
-#endif
 
 #define ARK_WEB_BASE_REF_LOG(fmt, ...)
+#endif
 
 #define ARK_WEB_BASE_DEBUG_LOG(fmt, ...)                                       \
   WVLOG_D(LOG_FMT_PREFIX fmt, ##__VA_ARGS__)

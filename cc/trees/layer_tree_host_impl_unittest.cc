@@ -5396,10 +5396,15 @@ class LayerTreeHostImplTestScrollbarAnimation : public LayerTreeHostImplTest {
     EXPECT_FALSE(did_request_next_frame_);
     EXPECT_FALSE(did_request_redraw_);
     if (animator == LayerTreeSettings::AURA_OVERLAY) {
+#ifdef OHOS_SCROLLBAR
+      EXPECT_EQ(base::TimeDelta(), requested_animation_delay_);
+      EXPECT_TRUE(animation_task_.is_null());
+#else
       EXPECT_EQ(base::Milliseconds(20), requested_animation_delay_);
       EXPECT_FALSE(animation_task_.is_null());
       requested_animation_delay_ = base::TimeDelta();
       animation_task_.Reset();
+#endif // OHOS_SCROLLBAR
     } else {
       EXPECT_EQ(base::TimeDelta(), requested_animation_delay_);
       EXPECT_TRUE(animation_task_.is_null());

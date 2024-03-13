@@ -47,6 +47,22 @@ constexpr char JANK_STATS_VER[] = "JANK_STATS_VER";
 
 constexpr char RENDER_JIT_LOCKDOWN[] = "RENDER_JIT_LOCKDOWN";
 constexpr char LOCKDOWN_MODE_STATUS[] = "JIT_LOCKDOWN_MODE";
+
+constexpr char NWEB_ID[] = "NWEB_ID";
+constexpr char PLAIN_TEXT[] = "PLAIN_TEXT";
+constexpr char LINK_URL[] = "LINK_URL";
+constexpr char HTML[] = "HTML";
+// For force zoom enable
+constexpr char FORCE_ENABLE_ZOOM[] = "FORCE_ENABLE_ZOOM";
+constexpr char ENABLE_FORCE_ZOOM_STATUS[] = "ENABLE_FORCE_ZOOM_STATUS";
+
+// For open private mode
+constexpr char OPEN_PRIVATE_MODE[] = "OPEN_PRIVATE_MODE";
+constexpr char OPEN_PRIVATE_STATUS[] = "OPEN_PRIVATE_STATUS";
+
+// For page download error info
+constexpr char PAGE_DOWNLOAD_ERROR[] = "PAGE_DOWNLOAD_ERROR";
+constexpr char DOWNLOAD_ID[] = "DOWNLOAD_ID";
 }  // namespace
 
 void ReportPageLoadStats(int instanceId,
@@ -127,4 +143,35 @@ void ReportPageLoadTimeStats(OhWebPerformanceTiming loadPageTime) {
        "FIRST_PAINT", loadPageTime.first_paint,
        "FIRST_CONTENTFUL_PAINT", loadPageTime.first_contentful_paint,
        "LARGEST_CONTENTFUL_PAINT", loadPageTime.largest_contentful_paint});
+}
+void ReportDragDropStatus(const std::string& eventName, int32_t id) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      eventName, HiSysEventAdapter::EventType::STATISTIC, {NWEB_ID, std::to_string(id)});
+}
+
+void ReportDragDropInfo(const std::string& eventName,
+                          int32_t id,
+                          const std::string& fragment,
+                          const std::string& linkUrl,
+                          const std::string& linkHtml) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      eventName, HiSysEventAdapter::EventType::STATISTIC,
+      {NWEB_ID, std::to_string(id), PLAIN_TEXT, std::to_string(fragment.size()),
+      LINK_URL, std::to_string(linkUrl.size()), HTML, std::to_string(linkHtml.size())});
+}
+
+void ReportForceZoomEnable(void) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      FORCE_ENABLE_ZOOM, HiSysEventAdapter::EventType::BEHAVIOR, {ENABLE_FORCE_ZOOM_STATUS, "true"});
+}
+
+void ReportOpenPrivateMode(void) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      OPEN_PRIVATE_MODE, HiSysEventAdapter::EventType::BEHAVIOR, {OPEN_PRIVATE_STATUS, "true"});
+}
+
+void ReportPageDownLoadErrorInfo(long downloadId, int errorCode) {
+    OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+        PAGE_DOWNLOAD_ERROR, HiSysEventAdapter::EventType::FAULT,
+        {DOWNLOAD_ID, std::to_string(downloadId), ERROR_CODE, std::to_string(errorCode)});
 }

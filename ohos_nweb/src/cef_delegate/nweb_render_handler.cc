@@ -23,6 +23,7 @@
 #include "base/logging.h"
 #include "nweb_delegate_interface.h"
 #include "nweb_touch_handle_state_impl.h"
+#include "event_reporter.h"
 
 #include "content/public/common/content_switches.h"
 #include "ohos_adapter_helper.h"
@@ -662,6 +663,9 @@ bool NWebRenderHandler::StartDragging(CefRefPtr<CefBrowser> browser,
   if (handler == nullptr) {
     LOG(ERROR) << "can't get strong ptr with handler";
     return false;
+  }
+  if (browser) {
+    ReportDragDropStatus("DRAG_START", browser->GetNWebId());
   }
   return handler->OnDragAndDropDataUdmf(nweb_drag_data_);
 }

@@ -24,7 +24,6 @@
 #include <vector>
 #include "capi/nweb_app_client_extension_callback.h"
 #include "capi/nweb_download_delegate_callback.h"
-#include "content/browser/ohos/content_view_statics_ohos.h"
 #include "nweb.h"
 #include "nweb_download_callback.h"
 #include "nweb_errors.h"

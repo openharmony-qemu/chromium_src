@@ -2020,10 +2020,6 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 
   // Data for core operation ---------------------------------------------------
 
-#ifdef OHOS_USERAGENT
-void SetTabletMode(bool is_tablet) override;
-#endif
-
   // Delegate for notifying our owner about stuff. Not owned by us.
   raw_ptr<WebContentsDelegate, DanglingUntriaged> delegate_;
 

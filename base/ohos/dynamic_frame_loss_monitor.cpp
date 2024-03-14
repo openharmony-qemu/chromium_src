@@ -22,6 +22,11 @@
 #include "base/task/thread_pool.h"
 #include "ohos_nweb/src/sysevent/event_reporter.h"
 #include "base/trace_event/trace_event.h"
+
+namespace {
+const int kSuccessiveFrameLossThreshold = 1;
+}
+
 namespace base {
 namespace ohos {
 DynamicFrameLossMonitor& DynamicFrameLossMonitor::GetInstance()
@@ -65,13 +70,21 @@ void DynamicFrameLossMonitor::OnVsync()
     // frame loss occurs
     ++total_app_missed_frames_;
     ++app_seq_missed_frames_;
-    max_app_seq_missed_frames_ = std::max(max_app_seq_missed_frames_, app_seq_missed_frames_);
+    if (app_seq_frames_ <= kSuccessiveFrameLossThreshold) {
+      app_seq_frames_ = 0;
+    }
     TRACE_EVENT0("base", "WEBVIEW::DYNAMIC_FRAME_DROP_STATISTICS");
     current_vsync_start_time_ = GetCurrentTimestampMS();
   } else {
+    ++app_seq_frames_;
+    if (app_seq_frames_ > kSuccessiveFrameLossThreshold) {
+     app_seq_missed_frames_ = 0;
+    }
     --cached_buffer_number_;
     current_vsync_start_time_ = GetCurrentTimestampMS();
   }
+
+  max_app_seq_missed_frames_ = std::max(max_app_seq_missed_frames_, app_seq_missed_frames_);
 }
 
 void DynamicFrameLossMonitor::OnSwapBuffer()
@@ -88,11 +101,6 @@ void DynamicFrameLossMonitor::OnSwapBuffer()
   auto current = GetCurrentTimestampMS();
 
   max_app_frametime_ = std::max(max_app_frametime_, current - current_vsync_start_time_);
-  // accumulate successive loss frame
-  if (app_seq_missed_frames_ > 1) {
-    max_app_seq_missed_frames_ += app_seq_missed_frames_;
-  }
-  app_seq_missed_frames_ = 0;
 }
 
 int64_t DynamicFrameLossMonitor::GetCurrentTimestampMS() {
@@ -126,6 +134,7 @@ void DynamicFrameLossMonitor::ResetStatus()
 
   max_app_seq_missed_frames_=0;
   app_seq_missed_frames_ = 0;
+  app_seq_frames_ = 0;
 
   current_vsync_start_time_ = 0;
   max_app_frametime_ = 0;

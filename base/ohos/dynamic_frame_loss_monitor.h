@@ -64,8 +64,9 @@ private:
 
   // max successive missed frames during the scene
   int32_t max_app_seq_missed_frames_ = 0;
-  // the first vsync timestamp of continuous frame loss
+  // successive missed frames during the scene
   int32_t app_seq_missed_frames_ = 0;
+  int32_t app_seq_frames_ = 0;
 
   // the number of buffer, if cached_buffer_number < 0, it will be loss frame
   int32_t cached_buffer_number_ = 0;

@@ -6302,10 +6302,7 @@ WebView* RenderFrameImpl::CreateNewWindow(
   if (GetContentClient()->renderer()->AllowPopup())
     params->allow_popup = true;
 #if BUILDFLAG(IS_OHOS)
-  if (GetNewWindowWebView(request.Url(), policy, params->allow_popup)) {
-    LOG(INFO) << "wait user create window.";
-    usleep(100000);
-  }
+  GetNewWindowWebView(request.Url(), policy, params->allow_popup);
 #endif
 
   params->window_container_type = WindowFeaturesToContainerType(features);

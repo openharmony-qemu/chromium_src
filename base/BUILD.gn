@@ -1074,8 +1074,8 @@ component("base") {
     "//build/config/compiler:compiler_buildflags",
     "//third_party/modp_b64",
   ]
-  
-  if (is_ohos) { 
+
+  if (is_ohos) {
     deps += [
       "//third_party/ohos_ndk:ohos_isolation",
     ]
@@ -2535,6 +2535,8 @@ component("base") {
       "system/sys_info_linux.cc",
       "ohos/sys_info_utils.cc",
       "ohos/sys_info_utils.h",
+      "ohos/dynamic_frame_loss_monitor.cpp",
+      "ohos/dynamic_frame_loss_monitor.h",
     ]
     deps += [
       "//base/third_party/symbolize",

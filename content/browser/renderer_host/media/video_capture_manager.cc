@@ -216,6 +216,14 @@ void VideoCaptureManager::Close(
     DCHECK(!locked_sessions_.contains(session_it->first));
   }
   sessions_.erase(session_it);
+#if defined(OHOS_WEBRTC)
+  std::lock_guard<std::mutex> lock(NWebIdMutex_);
+  auto nWebId_it = nWebId_.find(capture_session_id);
+  if (nWebId_it == nWebId_.end()) {
+    return;
+  }
+  nWebId_.erase(nWebId_it);
+#endif  // defined(OHOS_WEBRTC)
 }
 
 void VideoCaptureManager::Crop(
@@ -1031,26 +1039,59 @@ void VideoCaptureManager::EmitLogMessage(const std::string& message,
 }
 
 #if defined(OHOS_WEBRTC)
-void VideoCaptureManager::StartCamera() {
-  ResumeDevices();
-}
-
-void VideoCaptureManager::StopCamera() {
-  ReleaseDevices();
-}
-
-void VideoCaptureManager::CloseCamera() {
+void VideoCaptureManager::StartCamera(int nWebId) const {
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
-
-  for (const auto& it : sessions_) {
-    auto videoCaptureController = LookupControllerBySessionId(it.first);
-    if (videoCaptureController == nullptr ||
-        videoCaptureController->stream_type() !=
-            blink::mojom::MediaStreamType::DEVICE_VIDEO_CAPTURE) {
-      continue;
+  std::lock_guard<std::mutex> lock(NWebIdMutex_);
+  for (const auto& it : nWebId_) {
+    if (it.second == nWebId) {
+      auto videoCaptureController = LookupControllerBySessionId(it.first);
+      if (videoCaptureController == nullptr ||
+          videoCaptureController->stream_type() !=
+              blink::mojom::MediaStreamType::DEVICE_VIDEO_CAPTURE) {
+        continue;
+      }
+      videoCaptureController->ResumeClientBySessionId(it.first);
     }
-    videoCaptureController->StopSession(it.first);
   }
+}
+
+void VideoCaptureManager::StopCamera(int nWebId) const {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+  std::lock_guard<std::mutex> lock(NWebIdMutex_);
+  for (const auto& it : nWebId_) {
+    if (it.second == nWebId) {
+      auto videoCaptureController = LookupControllerBySessionId(it.first);
+      if (videoCaptureController == nullptr ||
+          videoCaptureController->stream_type() !=
+              blink::mojom::MediaStreamType::DEVICE_VIDEO_CAPTURE) {
+        continue;
+      }
+      videoCaptureController->PauseClientBySessionId(it.first);
+    }
+  }
+}
+
+void VideoCaptureManager::CloseCamera(int nWebId) const {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+  std::lock_guard<std::mutex> lock(NWebIdMutex_);
+  for (const auto& it : nWebId_) {
+    if (it.second == nWebId) {
+      auto videoCaptureController = LookupControllerBySessionId(it.first);
+      if (videoCaptureController == nullptr ||
+          videoCaptureController->stream_type() !=
+              blink::mojom::MediaStreamType::DEVICE_VIDEO_CAPTURE) {
+        continue;
+      }
+      videoCaptureController->StopSession(it.first);
+    }
+  }
+}
+
+void VideoCaptureManager::BindSessionIdToNWebId(
+    media::VideoCaptureSessionId sessionId,
+    int nWebId) {
+  std::lock_guard<std::mutex> lock(NWebIdMutex_);
+  nWebId_[sessionId] = nWebId;
 }
 #endif  // defined(OHOS_WEBRTC)
 

@@ -449,7 +449,13 @@ InitRichtextIdentifier();
 #endif
     }
   }
-
+#if defined(OHOS_WEBRTC)
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "can not get browser ,can not set NWeb id";
+    return true;
+  }
+  GetBrowser()->GetHost()->SetNWebId(GetBrowser()->GetNWebId());
+#endif  // defined(OHOS_WEBRTC)
   return true;
 }
 

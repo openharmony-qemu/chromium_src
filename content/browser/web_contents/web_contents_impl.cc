@@ -10132,7 +10132,7 @@ void WebContentsImpl::SetEnableBlankTargetPopupIntercept(
 #endif
 
 #if defined(OHOS_WEBRTC)
-void WebContentsImpl::StartCamera() {
+void WebContentsImpl::StartCamera(int nWebID) {
   auto media_stream_manager =
       BrowserMainLoop::GetInstance()->media_stream_manager();
   if (!media_stream_manager) {
@@ -10145,10 +10145,10 @@ void WebContentsImpl::StartCamera() {
     LOG(ERROR) << "videoCaptureManager null";
     return;
   }
-  videoCaptureManager->StartCamera();
+  videoCaptureManager->StartCamera(nWebID);
 }
 
-void WebContentsImpl::StopCamera() {
+void WebContentsImpl::StopCamera(int nWebID) {
   auto media_stream_manager =
       BrowserMainLoop::GetInstance()->media_stream_manager();
   if (!media_stream_manager) {
@@ -10161,10 +10161,10 @@ void WebContentsImpl::StopCamera() {
     LOG(ERROR) << "videoCaptureManager null";
     return;
   }
-  videoCaptureManager->StopCamera();
+  videoCaptureManager->StopCamera(nWebID);
 }
 
-void WebContentsImpl::CloseCamera() {
+void WebContentsImpl::CloseCamera(int nWebID) {
   auto media_stream_manager =
       BrowserMainLoop::GetInstance()->media_stream_manager();
   if (!media_stream_manager) {
@@ -10177,7 +10177,15 @@ void WebContentsImpl::CloseCamera() {
     LOG(ERROR) << "videoCaptureManager null";
     return;
   }
-  videoCaptureManager->CloseCamera();
+  videoCaptureManager->CloseCamera(nWebID);
+}
+
+int WebContentsImpl::GetNWebId() {
+  return nWebID_;
+}
+
+void WebContentsImpl::SetNWebId(int nWebID) {
+  nWebID_ = nWebID;
 }
 #endif  // defined(OHOS_WEBRTC)
 }  // namespace content

@@ -168,6 +168,11 @@ class CONTENT_EXPORT VideoCaptureController
   const media::VideoCaptureParams& parameters() const { return parameters_; }
   bool was_crop_ever_called() const { return was_crop_ever_called_; }
 
+#if defined(OHOS_WEBRTC)
+  void PauseClientBySessionId(const base::UnguessableToken& session_id);
+  void ResumeClientBySessionId(const base::UnguessableToken& session_id);
+#endif  // defined(OHOS_WEBRTC)
+
  private:
   friend class base::RefCountedThreadSafe<VideoCaptureController>;
   struct ControllerClient;

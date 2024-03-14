@@ -63,6 +63,12 @@ constexpr char OPEN_PRIVATE_STATUS[] = "OPEN_PRIVATE_STATUS";
 // For page download error info
 constexpr char PAGE_DOWNLOAD_ERROR[] = "PAGE_DOWNLOAD_ERROR";
 constexpr char DOWNLOAD_ID[] = "DOWNLOAD_ID";
+
+constexpr char DYNAMIC_FRAME_DROP_STATISTICS[] = "DYNAMIC_FRAME_DROP_STATISTICS";
+constexpr char TOTAL_APP_FRAMES[] = "TOTAL_APP_FRAMES";
+constexpr char TOTAL_APP_MISSED_FRAMES[] = "TOTAL_APP_MISSED_FRAMES";
+constexpr char MAX_APP_FRAMETIME[] = "MAX_APP_FRAMETIME";
+constexpr char MAX_APP_SEQ_MISSSED_FRAMES[] = "MAX_APP_SEQ_MISSSED_FRAMES";
 }  // namespace
 
 void ReportPageLoadStats(int instanceId,
@@ -174,4 +180,13 @@ void ReportPageDownLoadErrorInfo(long downloadId, int errorCode) {
     OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
         PAGE_DOWNLOAD_ERROR, HiSysEventAdapter::EventType::FAULT,
         {DOWNLOAD_ID, std::to_string(downloadId), ERROR_CODE, std::to_string(errorCode)});
+}
+
+void ReportSlideJankStats(int64_t startTime, int64_t duration, int32_t totalAppFrames,
+  int32_t totalAppMissedFrames, int64_t maxAppFrametime, int32_t maxAppSeqMissedFrames) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      DYNAMIC_FRAME_DROP_STATISTICS, HiSysEventAdapter::EventType::STATISTIC,
+      {STARTTIME, startTime, DURATION, duration, TOTAL_APP_FRAMES, totalAppFrames,
+      TOTAL_APP_MISSED_FRAMES, totalAppMissedFrames, MAX_APP_FRAMETIME, maxAppFrametime,
+      MAX_APP_SEQ_MISSSED_FRAMES, maxAppSeqMissedFrames});
 }

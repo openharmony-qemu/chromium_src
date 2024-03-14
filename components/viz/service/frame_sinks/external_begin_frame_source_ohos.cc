@@ -9,6 +9,7 @@
 #include "ohos_adapter_helper.h"
 #if BUILDFLAG(IS_OHOS)
 #include "base/report_loss_frame.h"
+#include "base/ohos/dynamic_frame_loss_monitor.h"
 #endif
 
 namespace viz {
@@ -104,7 +105,9 @@ void ExternalBeginFrameSourceOHOS::OnVSync(int64_t timestamp, void* data) {
     LOG(ERROR) << "OnVSync data current is nullptr";
     return;
   }
-
+#if BUILDFLAG(IS_OHOS)
+  base::ohos::DynamicFrameLossMonitor::GetInstance().OnVsync();
+#endif
   userData->current_->PostTask(
       FROM_HERE, base::BindOnce(&ExternalBeginFrameSourceOHOS::OnVSyncImpl,
                                 userData->weak_ptr_, timestamp, userData));

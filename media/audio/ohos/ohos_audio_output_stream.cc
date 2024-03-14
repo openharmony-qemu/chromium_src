@@ -8,8 +8,11 @@
 #include "content/public/browser/browser_thread.h"
 #include "media/base/audio_timestamp_helper.h"
 #include "ohos_adapter_helper.h"
+#include "ohos_nweb/src/sysevent/event_reporter.h"
 
 namespace media {
+
+constexpr int DEFAULT_AUDIO_ERROR_CODE = 0;
 
 AudioRendererCallback::AudioRendererCallback(
     content::MediaSessionImpl* media_session)
@@ -269,6 +272,10 @@ bool OHOSAudioOutputStream::StartRender() {
       LOG(ERROR) << "ohos audio render release failed";
     }
     ReportError();
+    std::string errorType = "audio play error";
+    int errorCode = DEFAULT_AUDIO_ERROR_CODE;
+    std::string errorDesc = "audio renderer start failed";
+    ReportAudioPlayErrorInfo(errorType, errorCode, errorDesc);
     return false;
   }
   return true;
@@ -320,6 +327,10 @@ void OHOSAudioOutputStream::PumpSamples() {
 
   // Request more samples from |callback_|.
   if (!callback_) {
+    std::string errorType = "audio play error";
+    int errorCode = DEFAULT_AUDIO_ERROR_CODE;
+    std::string errorDesc = "audio renderer get AudioSourceCallback failed";
+    ReportAudioPlayErrorInfo(errorType, errorCode, errorDesc);
     ReportError();
     return;
   }
@@ -342,6 +353,10 @@ void OHOSAudioOutputStream::PumpSamples() {
         if (!weakMediaSession_) {
           LOG(ERROR) << "Try to suspend audio but get mediaSession failed.";
           ReportError();
+          std::string errorType = "audio play error";
+          int errorCode = DEFAULT_AUDIO_ERROR_CODE;
+          std::string errorDesc = "audio renderer get MediaSession failed";
+          ReportAudioPlayErrorInfo(errorType, errorCode, errorDesc);
           return;
         }
         if (weakMediaSession_.get()->IsActive()) {
@@ -352,6 +367,10 @@ void OHOSAudioOutputStream::PumpSamples() {
         }
       } else {
         ReportError();
+        std::string errorType = "audio play error";
+        int errorCode = DEFAULT_AUDIO_ERROR_CODE;
+        std::string errorDesc = "audio renderer running state error";
+        ReportAudioPlayErrorInfo(errorType, errorCode, errorDesc);
         return;
       }
       break;

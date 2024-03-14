@@ -49,4 +49,7 @@ void ReportForceZoomEnable(void);
 void ReportOpenPrivateMode(void);
 
 void ReportPageDownLoadErrorInfo(long downloadId, int errorCode);
+
+void ReportSlideJankStats(int64_t startTime, int64_t duration, int32_t totalAppFrames,
+  int32_t totalAppMissedFrames, int64_t maxAppFrametime, int32_t maxAppSeqMissedFrames);
 #endif

@@ -18,6 +18,7 @@
 
 #include <string>
 #include <vector>
+#include "oh_web_performance_timing.h"
 
 void ReportPageLoadStats(int instanceId,
                          int accessSumCount,
@@ -35,6 +36,7 @@ void ReportJankStats(int64_t startTime, int duration, std::vector<uint16_t> jank
 
 void ReportLockdownModeStatus(void);
 
+void ReportPageLoadTimeStats(OhWebPerformanceTiming loadPageTime);
 void ReportDragDropStatus(const std::string& eventName, int32_t id);
 
 void ReportDragDropInfo(const std::string& eventName,

@@ -1169,6 +1169,8 @@ int HttpCache::Transaction::DoOpenOrCreateEntry() {
   cache_pending_ = true;
   net_log_.BeginEvent(NetLogEventType::HTTP_CACHE_OPEN_OR_CREATE_ENTRY);
   first_cache_access_since_ = TimeTicks::Now();
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "requestStart", first_cache_access_since_);
   const bool has_opened_or_created_entry = has_opened_or_created_entry_;
   has_opened_or_created_entry_ = true;
   record_entry_open_or_creation_time_ = false;
@@ -1604,6 +1606,8 @@ int HttpCache::Transaction::DoCacheReadResponseComplete(int result) {
 
   // Record the time immediately before the cached response is parsed.
   read_headers_since_ = TimeTicks::Now();
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "responseStart", read_headers_since_);
 
   if (result != io_buf_len_ ||
       !HttpCache::ParseResponseInfo(read_buf_->data(), io_buf_len_, &response_,

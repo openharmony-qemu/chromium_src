@@ -32,6 +32,7 @@
 #include "ohos_nweb/include/ark_web_js_dialog_result.h"
 #include "ohos_nweb/include/ark_web_js_http_auth_result.h"
 #include "ohos_nweb/include/ark_web_js_ssl_error_result.h"
+#include "ohos_nweb/include/ark_web_js_all_ssl_error_result.h"
 #include "ohos_nweb/include/ark_web_js_ssl_select_cert_result.h"
 #include "ohos_nweb/include/ark_web_key_event.h"
 #include "ohos_nweb/include/ark_web_largest_contentful_paint_details.h"
@@ -657,6 +658,16 @@ public:
   /*--ark web()--*/
   virtual void OnLargestContentfulPaint(
       ArkWebRefPtr<ArkWebLargestContentfulPaintDetails> details) = 0;
+
+  /*--ark web()--*/
+  virtual bool OnAllSslErrorRequestByJS(ArkWebRefPtr<ArkWebJsAllSslErrorResult> result,
+                        int error,
+                        const ArkWebString &url,
+                        const ArkWebString &originalUrl,
+                        const ArkWebString &referrer,
+                        bool isFatalError,
+                        bool isMainFrame
+                        ) = 0;
 };
 
 } // namespace OHOS::ArkWeb

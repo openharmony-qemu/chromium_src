@@ -244,6 +244,15 @@ public:
 
   void OnLargestContentfulPaint(
       ArkWebRefPtr<ArkWebLargestContentfulPaintDetails> details) override;
+
+ bool OnAllSslErrorRequestByJS(
+     ArkWebRefPtr<ArkWebJsAllSslErrorResult> result,
+     int error,
+     const ArkWebString &url,
+     const ArkWebString &originalUrl,
+     const ArkWebString &referrer,
+     bool isFatalError,
+     bool isMainFrame) override;
 };
 
 } // namespace OHOS::ArkWeb

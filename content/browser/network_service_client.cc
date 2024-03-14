@@ -268,6 +268,10 @@ void NetworkServiceClient::OnSSLCertificateError(
     int net_error,
     const net::SSLInfo& ssl_info,
     bool fatal,
+#ifdef OHOS_NETWORK_LOAD
+    const GURL& origin_url,
+    const std::string& referrer,
+#endif
     OnSSLCertificateErrorCallback response) {
   std::move(response).Run(net::ERR_INSECURE_RESPONSE);
 }

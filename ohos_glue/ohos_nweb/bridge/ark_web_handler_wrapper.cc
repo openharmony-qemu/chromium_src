@@ -821,4 +821,35 @@ void ArkWebHandlerWrapper::OnLargestContentfulPaint(
   ark_web_handler_->OnLargestContentfulPaint(
       new ArkWebLargestContentfulPaintDetailsImpl(details));
 }
+
+bool ArkWebHandlerWrapper::OnAllSslErrorRequestByJS(
+    std::shared_ptr<OHOS::NWeb::NWebJSAllSslErrorResult> result,
+    ArkWebSslError error,
+    const std::string& url,
+    const std::string& originalUrl,
+    const std::string& referrer,
+    bool isFatalError,
+    bool isMainFrame) {
+  if (CHECK_SHARED_PTR_IS_NULL(result)) {
+    return ark_web_handler_->OnAllSslErrorRequestByJS(
+      nullptr,
+      static_cast<int>(error),
+      ArkWebStringClassToStruct(url),
+      ArkWebStringClassToStruct(originalUrl),
+      ArkWebStringClassToStruct(referrer),
+      isFatalError,
+      isMainFrame
+      );
+  }
+
+  return ark_web_handler_->OnAllSslErrorRequestByJS(
+      new ArkWebJsAllSslErrorResultImpl(result),
+      static_cast<int>(error),
+      ArkWebStringClassToStruct(url),
+      ArkWebStringClassToStruct(originalUrl),
+      ArkWebStringClassToStruct(referrer),
+      isFatalError,
+      isMainFrame
+      );
+}
 } // namespace OHOS::ArkWeb

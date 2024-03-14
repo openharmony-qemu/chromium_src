@@ -476,6 +476,10 @@ mojom("url_loader_base") {
     export_header_blink = "third_party/blink/public/platform/web_common.h"
   }
 
+  if (defined(ohos_network_load) && ohos_network_load) {
+    enabled_features += ["is_ohos_network_load"]
+  }
+
   # Shared by cpp_typemaps and blink_cpp_typemaps.
   shared_typemaps = [
     {

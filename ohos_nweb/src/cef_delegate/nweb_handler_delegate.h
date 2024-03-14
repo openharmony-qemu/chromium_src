@@ -612,6 +612,18 @@ class NWebHandlerDelegate : public CefClient,
       const CefString& website_host, const CefString& tracker_host) override;
 #endif
 
+#ifdef OHOS_NETWORK_LOAD
+  bool OnAllCertificateError(CefRefPtr<CefBrowser> browser,
+                             cef_errorcode_t cert_error,
+                             const CefString& request_url,
+                             const CefString& origin_url,
+                             const CefString& referrer,
+                             bool is_main_frame_request,
+                             bool is_fatal_error,
+                             CefRefPtr<CefSSLInfo> ssl_info,
+                             CefRefPtr<CefCallback> callback) override;
+#endif
+
  private:
   void CopyImageToClipboard(CefRefPtr<CefImage> image);
   // List of existing browser windows. Only accessed on the CEF UI thread.

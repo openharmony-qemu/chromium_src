@@ -40,6 +40,11 @@ namespace {
 const int kCheckboxAndRadioWidth = 13;
 const int kCheckboxAndRadioHeight = 13;
 
+#if BUILDFLAG(IS_OHOS)
+// This matches Windows, same with FluentScrollbarThickness in native_theme_fluent.cc
+const int kInnerSpinButtonWidth = 15;
+#endif
+
 // Color constant pairs for light/default and dark color-schemes below.
 constexpr SkColor kThumbActiveColor[2] = {SkColorSetRGB(0xF4, 0xF4, 0xF4),
                                           gfx::kPlaceholderColor};
@@ -169,7 +174,11 @@ gfx::Size NativeThemeBase::GetPartSize(Part part,
     case kCheckbox:
       return gfx::Size(kCheckboxAndRadioWidth, kCheckboxAndRadioHeight);
     case kInnerSpinButton:
+#if BUILDFLAG(IS_OHOS)
+      return gfx::Size(kInnerSpinButtonWidth, 0);
+#else
       return gfx::Size(scrollbar_width_, 0);
+#endif
     case kMenuList:
       return gfx::Size();  // No default size.
     case kMenuPopupBackground:

@@ -19,6 +19,7 @@
 
 #include "include/nweb_js_ssl_error_result.h"
 #include "ohos_nweb/include/ark_web_js_ssl_error_result.h"
+#include "ohos_nweb/include/ark_web_js_all_ssl_error_result.h"
 
 namespace OHOS::ArkWeb {
 
@@ -43,6 +44,29 @@ public:
 
 private:
   std::shared_ptr<OHOS::NWeb::NWebJSSslErrorResult> nweb_js_ssl_error_result_;
+};
+
+class ArkWebJsAllSslErrorResultImpl : public ArkWebJsAllSslErrorResult {
+  IMPLEMENT_REFCOUNTING(ArkWebJsAllSslErrorResultImpl);
+
+public:
+  ArkWebJsAllSslErrorResultImpl(std::shared_ptr<OHOS::NWeb::NWebJSAllSslErrorResult>
+                                 nweb_js_all_ssl_error_result);
+  ~ArkWebJsAllSslErrorResultImpl() = default;
+
+  /**
+   * @brief Handle the result if the user cancelled the url request.
+   */
+  void HandleCancel() override;
+
+  /**
+   * @brief Handle a confirmation response from the user, the url request will
+   *        be continued.
+   */
+  void HandleConfirm() override;
+
+private:
+  std::shared_ptr<OHOS::NWeb::NWebJSAllSslErrorResult> nweb_js_all_ssl_error_result_;
 };
 
 } // namespace OHOS::ArkWeb

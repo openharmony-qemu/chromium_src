@@ -582,6 +582,15 @@ public:
       std::shared_ptr<OHOS::NWeb::NWebLargestContentfulPaintDetails> details)
       override;
 
+  bool OnAllSslErrorRequestByJS(
+      std::shared_ptr<OHOS::NWeb::NWebJSAllSslErrorResult> result,
+      ArkWebSslError error,
+      const std::string& url,
+      const std::string& originalUrl,
+      const std::string& referrer,
+      bool isFatalError,
+      bool isMainFrame) override;
+
 private:
   ArkWebRefPtr<ArkWebHandler> ark_web_handler_;
 };

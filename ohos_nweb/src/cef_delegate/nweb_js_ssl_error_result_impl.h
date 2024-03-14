@@ -31,6 +31,18 @@ class NWebJSSslErrorResultImpl : public NWebJSSslErrorResult {
  private:
   CefRefPtr<CefCallback> callback_;
 };
+
+class NWebJSAllSslErrorResultImpl : public NWebJSAllSslErrorResult {
+ public:
+  NWebJSAllSslErrorResultImpl() = default;
+  explicit NWebJSAllSslErrorResultImpl(CefRefPtr<CefCallback> callback);
+  ~NWebJSAllSslErrorResultImpl() = default;
+  void HandleConfirm() override;
+  void HandleCancel() override;
+
+ private:
+  CefRefPtr<CefCallback> callback_;
+};
 }  // namespace OHOS::NWeb
 
 #endif

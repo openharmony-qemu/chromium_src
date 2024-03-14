@@ -1580,6 +1580,10 @@ void URLLoader::OnSSLCertificateError(net::URLRequest* request,
   }
   url_loader_network_observer_->OnSSLCertificateError(
       url_request_->url(), net_error, ssl_info, fatal,
+#ifdef OHOS_NETWORK_LOAD
+      request->original_url(),
+      request->referrer(),
+#endif
       base::BindOnce(&URLLoader::OnSSLCertificateErrorResponse,
                      weak_ptr_factory_.GetWeakPtr(), ssl_info));
 }

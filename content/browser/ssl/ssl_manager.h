@@ -53,7 +53,13 @@ class SSLManager {
       NavigationOrDocumentHandle* navigation_or_document,
       int net_error,
       const net::SSLInfo& ssl_info,
-      bool fatal);
+      bool fatal
+#ifdef OHOS_NETWORK_LOAD
+      ,
+      const GURL& origin_url,
+      const std::string& referrer
+#endif
+      );
 
   // Construct an SSLManager for the specified tab.
   explicit SSLManager(NavigationControllerImpl* controller);

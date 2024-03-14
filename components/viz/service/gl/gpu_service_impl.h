@@ -379,6 +379,11 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
       base::RepeatingCallback<void(bool /*visible*/)>;
   void SetVisibilityChangedCallback(VisibilityChangedCallback);
 
+#if BUILDFLAG(IS_OHOS)
+  void StartMonitor() override;
+  void StopMonitor() override;
+#endif
+
  private:
   void RecordLogMessage(int severity,
                         const std::string& header,

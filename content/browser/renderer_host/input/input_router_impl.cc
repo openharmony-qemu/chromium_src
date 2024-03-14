@@ -37,6 +37,7 @@
 #include "ui/events/event.h"
 #include "ui/events/keycodes/keyboard_codes.h"
 #include "ohos_adapter_helper.h"
+
 namespace content {
 
 using blink::WebGestureEvent;

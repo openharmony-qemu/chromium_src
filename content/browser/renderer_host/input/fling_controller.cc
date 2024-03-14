@@ -12,6 +12,8 @@
 #include "ui/events/base_event_utils.h"
 #include "ui/events/gestures/blink/web_gesture_curve_impl.h"
 #if BUILDFLAG(IS_OHOS)
+#include "base/ohos/dynamic_frame_loss_monitor.h"
+#include "content/browser/gpu/gpu_process_host.h"
 #include "base/report_loss_frame.h"
 #include "ohos_adapter_helper.h"
 #endif
@@ -147,6 +149,13 @@ bool FlingController::ObserveAndMaybeConsumeGestureEvent(
     OHOS::NWeb::OhosAdapterHelper::GetInstance()
         .GetHiTraceAdapterInstance()
         .StartAsyncTrace("WEB_LIST_FLING", 0);
+
+    LOG(DEBUG) << "start web page fling";
+    if (auto* host = GpuProcessHost::Get()) {
+      if (auto* host_impl = host->gpu_host()) {
+        host_impl->StartMonitor();
+      }
+    }
 #endif
     return true;
   }
@@ -378,6 +387,13 @@ void FlingController::EndCurrentFling(base::TimeTicks current_time) {
   ReportLossFrame::GetInstance()->Report();
   OHOS::NWeb::OhosAdapterHelper::GetInstance().GetHiTraceAdapterInstance()
       .FinishAsyncTrace("WEB_LIST_FLING", 0);
+
+  LOG(DEBUG) << "stop web page fling";
+  if (auto* host = GpuProcessHost::Get()) {
+    if (auto* host_impl = host->gpu_host()) {
+      host_impl->StopMonitor();
+    }
+  }
 #endif
   current_fling_parameters_ = ActiveFlingParameters();
 

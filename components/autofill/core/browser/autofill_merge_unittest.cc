@@ -37,6 +37,7 @@
 #endif
 
 namespace autofill {
+#if defined(OHOS_UNITTESTS)
 
 namespace {
 const base::FilePath::CharType kFeatureName[] = FILE_PATH_LITERAL("autofill");
@@ -312,15 +313,13 @@ ServerFieldType AutofillMergeTest::StringToFieldType(const std::string& str) {
   return string_to_field_type_map_[str];
 }
 
-#if !BUILDFLAG(IS_OHOS)
 TEST_P(AutofillMergeTest, DataDrivenMergeProfiles) {
   const bool kIsExpectedToPass = true;
   RunOneDataDrivenTest(GetParam(), GetOutputDirectory(), kIsExpectedToPass);
 }
-#endif
 
 INSTANTIATE_TEST_SUITE_P(All,
                          AutofillMergeTest,
                          testing::ValuesIn(GetTestFiles()));
-
+#endif
 }  // namespace autofill

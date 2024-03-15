@@ -191,7 +191,7 @@ enum class EnableSettingManageState {
 };
 
 struct EnableStateParam {
-#if BUILDFLAG(IS_OHOS)
+#if defined(OHOS_UNITTESTS)
   EnableStateParam(
       bool test_pref_value_,
       EnableSettingManageState test_setting_manage_state_,

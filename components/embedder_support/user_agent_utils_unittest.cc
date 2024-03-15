@@ -75,7 +75,7 @@ const char kDesktop[] =
     "Macintosh; Intel Mac OS X 10_15_7"
 #elif BUILDFLAG(IS_WIN)
     "Windows NT 10.0; Win64; x64"
-#elif BUILDFLAG(IS_OHOS)
+#elif defined(OHOS_UNITTESTS)
     "ohos"
 #else
 #error Unsupported platform
@@ -231,7 +231,7 @@ void CheckUserAgentStringOrdering(bool mobile_device) {
   // X11; Fuchsia
   ASSERT_EQ(1u, pieces.size());
   ASSERT_EQ("Fuchsia", pieces[0]);
-#elif BUILDFLAG(IS_OHOS)
+#elif defined(OHOS_UNITTESTS)
 #else
 #error Unsupported platform
 #endif

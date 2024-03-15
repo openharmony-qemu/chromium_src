@@ -62,7 +62,7 @@ std::vector<uint64_t> ComputeHashes(const std::vector<FacetURI>& facet_uris) {
 
 }  // namespace
 
-#if BUILDFLAG(IS_OHOS)
+#if defined(OHOS_UNITTESTS)
 bool operator==(const AffiliationFetcherInterface::RequestInfo& s,
                 const AffiliationFetcherInterface::RequestInfo& d) {
   return s.branding_info == d.branding_info &&

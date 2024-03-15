@@ -60,7 +60,7 @@ class MockTouchHandleDrawable : public TouchHandleDrawable {
 
   gfx::RectF GetVisibleBounds() const override { return data_->rect; }
 
-#if BUILDFLAG(IS_OHOS)
+#if defined(OHOS_UNITTESTS)
   void SetEdge(const gfx::PointF& top, const gfx::PointF& bottom) override {}
 #endif
 

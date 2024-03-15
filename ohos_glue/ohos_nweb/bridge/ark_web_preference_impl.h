@@ -619,6 +619,12 @@ public:
    */
   bool GetScrollable() override;
 
+  /**
+   * @brief Put whether enable horizontal scroll bar, default value is false.
+   */
+  /*--ark web()--*/
+  virtual void PutTextAutosizingEnabled(bool flag) override;
+
 private:
   std::shared_ptr<OHOS::NWeb::NWebPreference> nweb_preference_;
 };

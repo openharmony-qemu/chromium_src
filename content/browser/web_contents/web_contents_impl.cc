@@ -3776,8 +3776,9 @@ void WebContentsImpl::EnterFullscreenMode(
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kForBrowser)) {
     controls_state_current_fullscreen_ = cc::BrowserControlsState::kBoth;
-    if (auto* view = GetRenderWidgetHostView())
-      int top_controls_offset = static_cast<RenderWidgetHostViewBase*>(view)->GetTopControlsOffset();
+    if (auto* view = GetRenderWidgetHostView()) {
+      int top_controls_offset =
+          static_cast<RenderWidgetHostViewBase*>(view)->GetTopControlsOffset();
       controls_state_current_fullscreen_ =
           top_controls_offset < 0 ? cc::BrowserControlsState::kHidden
                                   : cc::BrowserControlsState::kShown;

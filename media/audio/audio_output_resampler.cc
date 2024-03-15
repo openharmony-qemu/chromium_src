@@ -29,6 +29,10 @@
 #include "media/base/limits.h"
 #include "media/base/sample_rates.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "ohos_nweb/src/sysevent/event_reporter.h"
+#endif
+
 namespace media {
 
 class OnMoreDataConverter
@@ -492,8 +496,18 @@ double OnMoreDataConverter::ProvideInput(AudioBus* dest,
 
   // Zero any unfilled frames if anything was filled, otherwise we'll just
   // return a volume of zero and let AudioConverter drop the output.
+#if BUILDFLAG(IS_OHOS)
+  if (frames > 0 && frames < dest->frames()) {
+    int droppedFrames = dest->frames() - frames;
+    dest->ZeroFramesPartial(frames, droppedFrames);
+    LOG(ERROR) << "OnMoreDataConverter::ProvideInput drop frames: "
+               << droppedFrames;
+    ReportAudioFrameDropStats(droppedFrames);
+  }
+#else
   if (frames > 0 && frames < dest->frames())
     dest->ZeroFramesPartial(frames, dest->frames() - frames);
+#endif
   return frames > 0 ? 1 : 0;
 }
 

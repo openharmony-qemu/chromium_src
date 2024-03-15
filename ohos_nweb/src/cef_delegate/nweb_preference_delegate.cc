@@ -170,6 +170,8 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
   cef_string_set(str.c_str(), str.length(),
                  &(browser_settings.embed_tag_type), true);
   browser_settings.draw_mode = GetDrawMode();
+  browser_settings.text_autosizing_enabled =
+      IsTextAutosizingEnabled() ? STATE_ENABLED : STATE_DISABLED;
 #endif  // BUILDFLAG(IS_OHOS)
 #if defined(OHOS_CLIPBOARD)
   browser_settings.copy_option = static_cast<int>(GetCopyOptionMode());
@@ -696,6 +698,18 @@ void NWebPreferenceDelegate::SetDrawMode(int mode) {
 }
 int NWebPreferenceDelegate::GetDrawMode() const {
   return draw_mode_;
+}
+
+void NWebPreferenceDelegate::PutTextAutosizingEnabled(bool flag) {
+  if(text_autosizing_enabled_ == flag){
+    return;
+  }
+  text_autosizing_enabled_ = flag;
+  WebPreferencesChanged();
+}
+
+bool NWebPreferenceDelegate::IsTextAutosizingEnabled() const {
+  return text_autosizing_enabled_;
 }
 #endif
 

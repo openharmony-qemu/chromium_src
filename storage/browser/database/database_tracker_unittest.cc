@@ -220,12 +220,12 @@ class DatabaseTracker_TestHelper_Test {
           tracker->DatabaseOpened(kOrigin2, kDB2, kDescription, &database_size);
           tracker->DatabaseOpened(kOrigin2, kDB3, kDescription, &database_size);
 
-#if defined(OHOS_WEBSTORAGE)
+#if defined(OHOS_WEBSTORAGE) && defined(OHOS_UNITTESTS)
       base::FilePath db1_file =
           tracker->GetFullDBFilePath(kOrigin1, kDB1, true);
 #else
       base::FilePath db1_file = tracker->GetFullDBFilePath(kOrigin1, kDB1);
-#endif  // defined(OHOS_WEBSTORAGE) 
+#endif  // defined(OHOS_WEBSTORAGE) && defined(OHOS_UNITTESTS)
           base::FilePath kOrigin1Dir = tracker->GetOriginDirectory(kOrigin1);
           EXPECT_TRUE(base::CreateDirectory(kOrigin1Dir));
           EXPECT_TRUE(
@@ -257,11 +257,11 @@ class DatabaseTracker_TestHelper_Test {
           tracker->DatabaseOpened(kOrigin1, kDB1, kDescription, &database_size);
           EXPECT_TRUE(
               base::CreateDirectory(tracker->GetOriginDirectory(kOrigin1)));
-#if defined(OHOS_WEBSTORAGE)
+#if defined(OHOS_WEBSTORAGE) && defined(OHOS_UNITTESTS)
       db1_file = tracker->GetFullDBFilePath(kOrigin1, kDB1, true);
 #else;
       db1_file = tracker->GetFullDBFilePath(kOrigin1, kDB1);
-#endif  // defined(OHOS_WEBSTORAGE) 
+#endif  // defined(OHOS_WEBSTORAGE) && defined(OHOS_UNITTESTS)
           EXPECT_TRUE(base::WriteFile(db1_file, "a"));
           tracker->DatabaseModified(kOrigin1, kDB1);
 
@@ -356,7 +356,7 @@ class DatabaseTracker_TestHelper_Test {
 
           // Write some data to each file and check that the listeners are
           // called with the appropriate values.
-#if defined(OHOS_WEBSTORAGE)
+#if defined(OHOS_WEBSTORAGE) && defined(OHOS_UNITTESTS)
       base::FilePath db1_file =
           tracker->GetFullDBFilePath(kOrigin1, kDB1, true);
       base::FilePath db2_file =
@@ -367,7 +367,7 @@ class DatabaseTracker_TestHelper_Test {
       base::FilePath db1_file = tracker->GetFullDBFilePath(kOrigin1, kDB1);
       base::FilePath db2_file = tracker->GetFullDBFilePath(kOrigin2, kDB2);
       base::FilePath db3_file = tracker->GetFullDBFilePath(kOrigin1, kDB3);
-#endif  // defined(OHOS_WEBSTORAGE)
+#endif  // defined(OHOS_WEBSTORAGE) && defined(OHOS_UNITTESTS)
           EXPECT_TRUE(
               base::CreateDirectory(tracker->GetOriginDirectory(kOrigin1)));
           EXPECT_TRUE(
@@ -494,12 +494,12 @@ class DatabaseTracker_TestHelper_Test {
           EXPECT_TRUE(test_quota_proxy->WasAccessNotified(kStorageKey));
           test_quota_proxy->ResetRecordedTestState();
 
-#if defined(OHOS_WEBSTORAGE)
+#if defined(OHOS_WEBSTORAGE) && defined(OHOS_UNITTESTS)
       base::FilePath db_file =
           tracker->GetFullDBFilePath(kOriginId, kName, true);
 #else
       base::FilePath db_file(tracker->GetFullDBFilePath(kOriginId, kName));
-#endif  // defined(OHOS_WEBSTORAGE) 
+#endif  // defined(OHOS_WEBSTORAGE) && defined(OHOS_UNITTESTS)
           EXPECT_FALSE(
               base::PathExists(tracker->GetOriginDirectory(kOriginId)));
           EXPECT_TRUE(base::CreateDirectory(db_file.DirName()));
@@ -539,11 +539,11 @@ class DatabaseTracker_TestHelper_Test {
           EXPECT_TRUE(test_quota_proxy->WasAccessNotified(kStorageKey));
           test_quota_proxy->ResetRecordedTestState();
 
-#if defined(OHOS_WEBSTORAGE)
+#if defined(OHOS_WEBSTORAGE) && defined(OHOS_UNITTESTS)
       db_file = tracker->GetFullDBFilePath(kOriginId, kName, true);
 #else
       db_file = tracker->GetFullDBFilePath(kOriginId, kName);
-#endif  // defined(OHOS_WEBSTORAGE) 
+#endif  // defined(OHOS_WEBSTORAGE) && defined(OHOS_UNITTESTS)
           EXPECT_FALSE(
               base::PathExists(tracker->GetOriginDirectory(kOriginId)));
           EXPECT_TRUE(base::CreateDirectory(db_file.DirName()));
@@ -581,11 +581,11 @@ class DatabaseTracker_TestHelper_Test {
                                   &database_size);
           EXPECT_TRUE(test_quota_proxy->WasAccessNotified(kStorageKey));
           test_quota_proxy->ResetRecordedTestState();
-#if defined(OHOS_WEBSTORAGE)
+#if defined(OHOS_WEBSTORAGE) && defined(OHOS_UNITTESTS)
       db_file = tracker->GetFullDBFilePath(kOriginId, kName, true);
 #else
       db_file = tracker->GetFullDBFilePath(kOriginId, kName);
-#endif  // defined(OHOS_WEBSTORAGE) 
+#endif  // defined(OHOS_WEBSTORAGE) && defined(OHOS_UNITTESTS)
           EXPECT_FALSE(
               base::PathExists(tracker->GetOriginDirectory(kOriginId)));
           EXPECT_TRUE(base::CreateDirectory(db_file.DirName()));

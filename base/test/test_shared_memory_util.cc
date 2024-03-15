@@ -45,7 +45,7 @@ static const size_t kDataSize = 1024;
 static bool CheckReadOnlySharedMemoryFdPosix(int fd) {
 // Note that the error on Android is EPERM, unlike other platforms where
 // it will be EACCES.
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ANDROID) || defined(OHOS_UNITTESTS)
   const int kExpectedErrno = EPERM;
 #else
   const int kExpectedErrno = EACCES;

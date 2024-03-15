@@ -49,7 +49,7 @@ class MockTouchHandleDrawable : public TouchHandleDrawable {
   }
   float GetDrawableHorizontalPaddingRatio() const override { return 0; }
 
-#if BUILDFLAG(IS_OHOS)
+#if defined(OHOS_UNITTESTS)
   void SetEdge(const gfx::PointF& top, const gfx::PointF& bottom) override {}
 #endif
 

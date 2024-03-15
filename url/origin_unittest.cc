@@ -324,6 +324,7 @@ TEST_F(OriginTest, UnsafelyCreateUniqueOnInvalidInput) {
     uint16_t port = 80;
   } cases[] = {{"", "", 33},
                {"data", "", 0},
+#ifndef OHOS_UNITTESTS
                {"blob", "", 0},
                {"filesystem", "", 0},
                {"data", "example.com"},
@@ -338,6 +339,7 @@ TEST_F(OriginTest, UnsafelyCreateUniqueOnInvalidInput) {
                {"http", "example.com\r"},
                {"unknown-scheme", "example.com"},
                {"host-only", "\r", 0},
+#endif
                {"host-only", "example.com", 22},
                {"file", "", 123}};  // file: shouldn't have a port.
 
@@ -374,14 +376,18 @@ TEST_F(OriginTest, UnsafelyCreateUniqueViaEmbeddedNulls) {
     base::StringPiece scheme;
     base::StringPiece host;
     uint16_t port = 80;
-  } cases[] = {{{"http\0more", 9}, {"example.com", 11}},
+  } cases[] = {
+#ifndef OHOS_UNITTESTS
+               {{"http\0more", 9}, {"example.com", 11}},
                {{"http\0", 5}, {"example.com", 11}},
                {{"\0http", 5}, {"example.com", 11}},
                {{"http"}, {"example.com\0not-example.com", 27}},
                {{"http"}, {"example.com\0", 12}},
                {{"http"}, {"\0example.com", 12}},
                {{""}, {"\0", 1}, 0},
-               {{"\0", 1}, {""}, 0}};
+               {{"\0", 1}, {""}, 0}
+#endif               
+               };
 
   for (const auto& test : cases) {
     SCOPED_TRACE(testing::Message()

@@ -81,7 +81,7 @@ TEST(CommandLineTest, CommandLineConstructor) {
             cl.GetProgram().value());
 
   EXPECT_TRUE(cl.HasSwitch("foo"));
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_WIN) || defined(OHOS_UNITTESTS)
   EXPECT_TRUE(cl.HasSwitch("bar"));
 #else
   EXPECT_FALSE(cl.HasSwitch("bar"));

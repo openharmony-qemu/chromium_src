@@ -33,6 +33,11 @@
 
 namespace partition_alloc::internal::base {
 
+#if !defined(OHOS_UNITTESTS)
+void InitThreading();
+void TerminateOnThread();
+size_t GetDefaultThreadStackSize(const pthread_attr_t& attributes);
+#else
 void InitThreading() {}
 void TerminateOnThread() {}
 size_t GetDefaultThreadStackSize(const pthread_attr_t& attributes) {
@@ -44,6 +49,7 @@ size_t GetDefaultThreadStackSize(const pthread_attr_t& attributes) {
   return 2 * (1 << 20);  // 2Mb
 #endif
 }
+#endif
 
 namespace {
 

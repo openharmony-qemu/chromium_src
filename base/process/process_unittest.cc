@@ -188,7 +188,7 @@ TEST_F(ProcessTest, CreationTimeCurrentProcess) {
   EXPECT_LE(Process::Current().CreationTime(), Time::Now());
 }
 
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
+#if !BUILDFLAG(IS_ANDROID) && !defined(OHOS_UNITTESTS)
 // Cannot read other processes' creation time on Android or OHOS.
 TEST_F(ProcessTest, CreationTimeOtherProcess) {
   // The creation time of a process should be between a time recorded before it

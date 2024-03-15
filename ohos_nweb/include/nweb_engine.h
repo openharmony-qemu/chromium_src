@@ -64,6 +64,11 @@ public:
   virtual void PauseAllTimers() = 0;
 
   virtual void ResumeAllTimers() = 0;
+
+  virtual void PrefetchResource(const std::shared_ptr<NWebEnginePrefetchArgs>& pre_args,
+                                const std::map<std::string, std::string>& additional_http_headers,
+                                const std::string& cache_key,
+                                const uint32_t& cache_valid_time) = 0;
 };
 
 } // namespace OHOS::NWeb

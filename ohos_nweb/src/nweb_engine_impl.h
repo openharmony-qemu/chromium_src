@@ -60,6 +60,11 @@ public:
 
   void ResumeAllTimers() override;
 
+  void PrefetchResource(const std::shared_ptr<NWebEnginePrefetchArgs>& pre_args,
+                        const std::map<std::string, std::string>& additional_http_headers,
+                        const std::string& cache_key,
+                        const uint32_t& cache_valid_time) override;
+
 private:
   std::shared_ptr<NWebDataBase> nweb_data_base_ = nullptr;
   std::shared_ptr<NWebWebStorage> nweb_web_storage_ = nullptr;

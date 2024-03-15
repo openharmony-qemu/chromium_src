@@ -122,4 +122,11 @@ void NWebEngineImpl::ResumeAllTimers() {
   NWebImpl::ResumeAllTimers();
 }
 
+void NWebEngineImpl::PrefetchResource(const std::shared_ptr<NWebEnginePrefetchArgs>& pre_args,
+                                      const std::map<std::string, std::string>& additional_http_headers,
+                                      const std::string& cache_key,
+                                      const uint32_t& cache_valid_time) {
+  return NWebImpl::PrefetchResource(pre_args, additional_http_headers, cache_key, cache_valid_time);
+}
+
 } // namespace OHOS::NWeb

@@ -99,7 +99,7 @@ void FrameEvictionManager::RegisterUnlockedFrame(
 #ifdef OHOS_NWEB_EX
   if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
            switches::kForBrowser)) {
-  #endif
+#endif
     if (base::FeatureList::IsEnabled(features::kAggressiveFrameCulling)) {
       if (!idle_frames_culling_timer_.IsRunning()) {
         // Unretained: `idle_frames_culling_timer_` is a member of `this`, doesn't

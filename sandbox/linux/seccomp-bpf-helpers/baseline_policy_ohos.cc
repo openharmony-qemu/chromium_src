@@ -138,7 +138,6 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
     case __NR_ptrace:
     case __NR_membarrier:
     case __NR_setitimer:
-    case __NR_execve:
     case __NR_msync:
     case __NR_statx:
     case __NR_set_robust_list:
@@ -231,6 +230,7 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
     case __NR_pkey_free:
     case __NR_pkey_mprotect:
     case __NR_pkey_alloc:
+    case __NR_execve:
 #endif
 #if defined(__arm__)
     case __NR_sigaction:

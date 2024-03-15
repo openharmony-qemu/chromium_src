@@ -52,4 +52,16 @@ void ReportPageDownLoadErrorInfo(long downloadId, int errorCode);
 
 void ReportSlideJankStats(int64_t startTime, int64_t duration, int32_t totalAppFrames,
   int32_t totalAppMissedFrames, int64_t maxAppFrametime, int32_t maxAppSeqMissedFrames);
+  
+void ReportAudioPlayErrorInfo(const std::string errorType,
+                              int errorCode,
+                              const std::string errorDesc);
+
+void ReportVideoPlayErrorInfo(const std::string errorType,
+                              int errorCode,
+                              const std::string errorDesc);
+
+void ReportAudioFrameDropStats(int frameCount);
+
+void ReportVideoFrameDropStats(int64_t frameCount, int64_t frameDuration);
 #endif

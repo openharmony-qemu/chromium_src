@@ -69,6 +69,18 @@ constexpr char TOTAL_APP_FRAMES[] = "TOTAL_APP_FRAMES";
 constexpr char TOTAL_APP_MISSED_FRAMES[] = "TOTAL_APP_MISSED_FRAMES";
 constexpr char MAX_APP_FRAMETIME[] = "MAX_APP_FRAMETIME";
 constexpr char MAX_APP_SEQ_MISSSED_FRAMES[] = "MAX_APP_SEQ_MISSSED_FRAMES";
+
+// For audio/video error info
+constexpr char AUDIO_PLAY_ERROR[] = "AUDIO_PLAY_ERROR";
+constexpr char VIDEO_PLAY_ERROR[] = "VIDEO_PLAY_ERROR";
+
+//For audio/video frame dropped statistics
+constexpr char AUDIO_FRAME_DROP_STATISTICS[] = "AUDIO_FRAME_DROP_STATISTICS";
+constexpr char AUDIO_BLANK_FRAME_COUNT[] = "AUDIO_BLANK_FRAME_COUNT";
+constexpr char VIDEO_FRAME_DROP_STATISTICS[] = "VIDEO_FRAME_DROP_STATISTICS";
+constexpr char VIDEO_FRAME_DROPPED_COUNT[] = "VIDEO_FRAME_DROPPED_COUNT";
+constexpr char VIDEO_FRAME_DROPPED_DURATION[] = "VIDEO_FRAME_DROPPED_DURATION";
+
 }  // namespace
 
 void ReportPageLoadStats(int instanceId,
@@ -189,4 +201,53 @@ void ReportSlideJankStats(int64_t startTime, int64_t duration, int32_t totalAppF
       {STARTTIME, startTime, DURATION, duration, TOTAL_APP_FRAMES, totalAppFrames,
       TOTAL_APP_MISSED_FRAMES, totalAppMissedFrames, MAX_APP_FRAMETIME, maxAppFrametime,
       MAX_APP_SEQ_MISSSED_FRAMES, maxAppSeqMissedFrames});
+}
+
+void ReportAudioPlayErrorInfo(const std::string errorType,
+                              int errorCode,
+                              const std::string errorDesc) {
+  std::string error_type = "";
+  std::string error_desc = "";
+  int error_code = errorCode;
+  if (!errorType.empty()) {
+    error_type = errorType;
+  }
+  if (!errorDesc.empty()) {
+    error_desc = errorDesc;
+  }
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      AUDIO_PLAY_ERROR, HiSysEventAdapter::EventType::FAULT,
+      {ERROR_TYPE, error_type, ERROR_CODE, std::to_string(error_code),
+       ERROR_DESC, error_desc});
+}
+
+void ReportVideoPlayErrorInfo(const std::string errorType,
+                              int errorCode,
+                              const std::string errorDesc) {
+  std::string error_type = "";
+  std::string error_desc = "";
+  int error_code = errorCode;
+  if (!errorType.empty()) {
+    error_type = errorType;
+  }
+  if (!errorDesc.empty()) {
+    error_desc = errorDesc;
+  }
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      VIDEO_PLAY_ERROR, HiSysEventAdapter::EventType::FAULT,
+      {ERROR_TYPE, error_type, ERROR_CODE, std::to_string(error_code),
+       ERROR_DESC, error_desc});
+}
+
+void ReportAudioFrameDropStats(int frameCount) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+    AUDIO_FRAME_DROP_STATISTICS, HiSysEventAdapter::EventType::STATISTIC,
+    {AUDIO_BLANK_FRAME_COUNT, std::to_string(frameCount)});
+}
+
+void ReportVideoFrameDropStats(int64_t frameCount, int64_t frameDuration) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+    VIDEO_FRAME_DROP_STATISTICS, HiSysEventAdapter::EventType::STATISTIC,
+    {VIDEO_FRAME_DROPPED_COUNT, std::to_string(frameCount),
+     VIDEO_FRAME_DROPPED_DURATION, std::to_string(frameDuration)});
 }

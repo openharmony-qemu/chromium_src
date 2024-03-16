@@ -123,6 +123,8 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if BUILDFLAG(IS_OHOS)
   void SetDrawMode(int mode);
   int GetDrawMode() const;
+  void PutTextAutosizingEnabled(bool enable) override;
+  bool IsTextAutosizingEnabled() const;
 #endif
 
 #if defined(OHOS_INPUT_EVENTS)
@@ -202,6 +204,7 @@ class NWebPreferenceDelegate : public NWebPreference {
 #endif  // defined(OHOS_INPUT_EVENTS)
 #if BUILDFLAG(IS_OHOS)
   int draw_mode_{0};
+  bool text_autosizing_enabled_{true};
 #endif
   bool enable_embed_mode_{false};
   std::string embed_tag_{"embed"};

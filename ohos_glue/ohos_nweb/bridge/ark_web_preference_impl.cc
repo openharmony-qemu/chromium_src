@@ -381,4 +381,9 @@ bool ArkWebPreferenceImpl::GetScrollable() {
   return nweb_preference_->GetScrollable();
 }
 
+void ArkWebPreferenceImpl::PutTextAutosizingEnabled(bool flag) {
+  if (nweb_preference_)
+    nweb_preference_->PutTextAutosizingEnabled(flag);
+}
+
 } // namespace OHOS::ArkWeb

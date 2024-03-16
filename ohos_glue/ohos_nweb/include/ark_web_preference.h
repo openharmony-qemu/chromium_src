@@ -699,6 +699,12 @@ public:
    */
   /*--ark web()--*/
   virtual bool GetScrollable() = 0;
+
+  /**
+   * @brief Put whether enable horizontal scroll bar, default value is false.
+   */
+  /*--ark web()--*/
+  virtual void PutTextAutosizingEnabled(bool flag) = 0;
 };
 
 } // namespace OHOS::ArkWeb

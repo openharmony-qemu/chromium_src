@@ -15,6 +15,10 @@ interface MediaPlayer {
   // Requests the media player to start or resume media playback.
   RequestPlay();
 
+  // Suspend the html play.
+  [EnableIf=is_ohos]
+  SetHtmlPlayEnabled(bool enabled);
+
   // Requests the media player to pause media playback.
   RequestPause(bool triggered_by_user);
 

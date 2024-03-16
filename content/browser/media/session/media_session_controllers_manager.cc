@@ -104,6 +104,15 @@ void MediaSessionControllersManager::WebContentsMutedStateChanged(bool muted) {
     entry.second->WebContentsMutedStateChanged(muted);
 }
 
+#if defined(OHOS_MEDIA_POLICY)
+void MediaSessionControllersManager::SetHtmlPlayEnabled(bool enabled) {
+  if (!IsMediaSessionEnabled())
+    return;
+  for (auto& entry : controllers_map_)
+    entry.second->SetHtmlPlayEnabled(enabled);
+}
+#endif // defined(OHOS_MEDIA_POLICY)
+
 void MediaSessionControllersManager::OnMediaMutedStatusChanged(
     const MediaPlayerId& id,
     bool mute) {

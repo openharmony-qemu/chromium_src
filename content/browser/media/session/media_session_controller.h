@@ -56,6 +56,9 @@ class CONTENT_EXPORT MediaSessionController
   // MediaSessionPlayerObserver implementation.
   void OnSuspend(int player_id) override;
   void OnResume(int player_id) override;
+#if defined(OHOS_MEDIA_POLICY)
+  void OnSetHtmlPlayEnabled(int player_id, bool enabled) override;
+#endif // defined(OHOS_MEDIA_POLICY)
   void OnSeekForward(int player_id, base::TimeDelta seek_time) override;
   void OnSeekBackward(int player_id, base::TimeDelta seek_time) override;
   void OnSeekTo(int player_id, base::TimeDelta seek_time) override;
@@ -85,6 +88,11 @@ class CONTENT_EXPORT MediaSessionController
 
   // Called when the WebContents is either muted or unmuted.
   void WebContentsMutedStateChanged(bool muted);
+
+#if defined(OHOS_MEDIA_POLICY)
+  // Set whether to the HTML play can be used to control media
+  void SetHtmlPlayEnabled(bool enabled);
+#endif // defined(OHOS_MEDIA_POLICY)
 
   // Called when the media position state of the player has changed.
   void OnMediaPositionStateChanged(

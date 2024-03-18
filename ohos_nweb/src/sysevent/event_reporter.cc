@@ -164,7 +164,7 @@ void ReportPageLoadTimeStats(OhWebPerformanceTiming loadPageTime) {
 }
 void ReportDragDropStatus(const std::string& eventName, int32_t id) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
-      eventName, HiSysEventAdapter::EventType::STATISTIC, {NWEB_ID, std::to_string(id)});
+      eventName, HiSysEventAdapter::EventType::BEHAVIOR, {NWEB_ID, std::to_string(id)});
 }
 
 void ReportDragDropInfo(const std::string& eventName,
@@ -173,7 +173,7 @@ void ReportDragDropInfo(const std::string& eventName,
                           const std::string& linkUrl,
                           const std::string& linkHtml) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
-      eventName, HiSysEventAdapter::EventType::STATISTIC,
+      eventName, HiSysEventAdapter::EventType::BEHAVIOR,
       {NWEB_ID, std::to_string(id), PLAIN_TEXT, std::to_string(fragment.size()),
       LINK_URL, std::to_string(linkUrl.size()), HTML, std::to_string(linkHtml.size())});
 }

@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 #include "components/test/components_test_suite.h"
-#if !BUILDFLAG(IS_OHOS)
+#if !defined(OHOS_UNITTESTS)
 
 int main(int argc, char** argv) {
   return base::LaunchUnitTests(argc, argv, GetLaunchCallback(argc, argv));

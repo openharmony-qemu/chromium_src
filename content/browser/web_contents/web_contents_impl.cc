@@ -3100,13 +3100,17 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences() {
   if (command_line.HasSwitch(switches::kHideScrollbars))
     prefs.hide_scrollbars = true;
 
-  GetContentClient()->browser()->OverrideWebkitPrefs(this, &prefs);
 #if defined(OHOS_USERAGENT) || defined(OHOS_EX_UA)
   if (!user_agent_.empty()) {
     bool is_desktop = (user_agent_.find("Mobile") == std::string::npos);
     prefs.viewport_meta_enabled = !is_desktop;
-  }
+  } else
+    prefs.viewport_meta_enabled = true;
+#else
+    prefs.viewport_meta_enabled = true;
 #endif
+  GetContentClient()->browser()->OverrideWebkitPrefs(this, &prefs);
+  
   return prefs;
 }
 

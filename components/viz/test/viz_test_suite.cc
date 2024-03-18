@@ -34,8 +34,12 @@ void VizTestSuite::Initialize() {
 
   // Must be initialized after time outs are initialized in by the TestSuite.
   CHECK(!task_environment_);
+#if defined(OHOS_UNITTESTS)
+  task_environment_ = std::make_unique<base::test::TaskEnvironment>();
+#else
   task_environment_ = std::make_unique<base::test::TaskEnvironment>(
-      base::test::TaskEnvironment::MainThreadType::UI);
+    base::test::TaskEnvironment::MainThreadType::UI);
+#endif
 
   platform_event_source_ = ui::PlatformEventSource::CreateDefault();
 

@@ -45,8 +45,7 @@ gfx::AcceleratedWidget CastToAcceleratedWidget(int i) {
 base::ScopedFD CreateValidLookingBufferHandle() {
   return base::UnsafeSharedMemoryRegion::TakeHandleForSerialization(
              base::UnsafeSharedMemoryRegion::Create(1024))
-      .PassPlatformHandle()
-      .fd;
+      .PassPlatformHandle();
 }
 #elif BUILDFLAG(IS_FUCHSIA)
 zx::vmo CreateValidLookingBufferHandle() {

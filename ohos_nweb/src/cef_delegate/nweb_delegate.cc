@@ -2121,6 +2121,10 @@ std::shared_ptr<NWebHistoryList> NWebDelegate::GetHistoryList() {
 
 std::vector<uint8_t> NWebDelegate::SerializeWebState() {
   std::vector<uint8_t> state;
+  if (!GetBrowser() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "SerializeWebState get browser is nullptr";
+    return state;
+  }
   CefRefPtr<CefBinaryValue> state_value =
       GetBrowser()->GetHost()->GetWebState();
   if (!state_value || !GetBrowser().get()) {

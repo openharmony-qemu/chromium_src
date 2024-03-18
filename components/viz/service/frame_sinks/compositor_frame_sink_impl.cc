@@ -22,6 +22,7 @@
 #if BUILDFLAG(IS_OHOS)
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
+#include "ohos_nweb/src/sysevent/event_reporter.h"
 #include "res_sched_client_adapter.h"
 #endif
 
@@ -146,6 +147,13 @@ void CompositorFrameSinkImpl::SubmitCompositorFrame(
     CompositorFrame frame,
     absl::optional<HitTestRegionList> hit_test_region_list,
     uint64_t submit_time) {
+#if BUILDFLAG(IS_OHOS)
+  auto count = frame.metadata.dropped_frame_count;
+  auto duration = frame.metadata.dropped_frame_duration;
+  if (!!count && !!duration) {
+    ReportVideoFrameDropStats(count, duration);
+  }
+#endif
   // Non-root surface frames should not have display transform hint.
   DCHECK_EQ(gfx::OVERLAY_TRANSFORM_NONE, frame.metadata.display_transform_hint);
   SubmitCompositorFrameInternal(local_surface_id, std::move(frame),

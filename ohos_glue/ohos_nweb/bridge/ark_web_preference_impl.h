@@ -631,6 +631,11 @@ public:
    */
   void SetViewportEnable(bool enable) override;
 
+  /**
+   * @brief Put whether enable horizontal scroll bar, default value is false.
+   */
+  void SetNativeVideoPlayerConfig(bool enable, bool shouldOverlay) override;
+
 private:
   std::shared_ptr<OHOS::NWeb::NWebPreference> nweb_preference_;
 };

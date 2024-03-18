@@ -391,4 +391,11 @@ void ArkWebPreferenceImpl::SetViewportEnable(bool enable) {
     nweb_preference_->SetViewportEnable(enable);
 }
 
+void ArkWebPreferenceImpl::SetNativeVideoPlayerConfig(bool enable,
+                                                      bool shouldOverlay) {
+  if (nweb_preference_) {
+    nweb_preference_->SetNativeVideoPlayerConfig(enable, shouldOverlay);
+  }
+}
+
 } // namespace OHOS::ArkWeb

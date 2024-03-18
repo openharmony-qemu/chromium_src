@@ -16,6 +16,8 @@
 #ifndef NWEB_PREFERENCE_DELEGATE_H
 #define NWEB_PREFERENCE_DELEGATE_H
 
+#include <tuple>
+
 #include "cef/include/cef_browser.h"
 #include "ohos_nweb/include/nweb_preference.h"
 
@@ -155,6 +157,8 @@ class NWebPreferenceDelegate : public NWebPreference {
   void SetEnableBlankTargetPopupIntercept(bool enable);
   bool IsBlankTargetPopupInterceptEnabled();
 #endif
+  void SetNativeVideoPlayerConfig(bool enable, bool shouldOverlay) override;
+
  private:
   CefRefPtr<CefBrowser> browser_ = nullptr;
 
@@ -227,6 +231,7 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if defined(OHOS_BACKGROUND_COLOR)
   int32_t background_color_{0xffffffff};
 #endif // defined(OHOS_BACKGROUND_COLOR)
+  std::tuple<bool, bool> native_video_player_config_{false, false};
 };
 }  // namespace OHOS::NWeb
 

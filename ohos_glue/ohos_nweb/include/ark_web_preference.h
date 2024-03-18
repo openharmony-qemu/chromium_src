@@ -705,6 +705,13 @@ public:
    */
   /*--ark web()--*/
   virtual void PutTextAutosizingEnabled(bool flag) = 0;
+
+  /**
+   * @brief Set whether to support the viewport attribute of the meta tag in the
+   * frontend page.
+   */
+  /*--ark web()--*/
+  virtual void SetViewportEnable(bool enable) = 0;
 };
 
 } // namespace OHOS::ArkWeb

@@ -180,7 +180,7 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
   browser_settings.scrollbar_color = GetScrollBarColor();
 #endif // OHOS_SCROLLBAR
 #ifdef OHOS_VIEWPORT
-  browser_settings.viewport_meta_enabled = true;
+  browser_settings.viewport_meta_enabled = GetViewportEnable();
 #endif // OHOS_VIEWPORT
 
 #if defined(OHOS_BACKGROUND_COLOR)
@@ -666,6 +666,17 @@ bool NWebPreferenceDelegate::GetScrollable() {
   return scroll_enabled_;
 }
 #endif  // defined(OHOS_INPUT_EVENTS)
+
+#if defined(OHOS_VIEWPORT)
+void NWebPreferenceDelegate::SetViewportEnable(bool enable) {
+  viewport_enabled_ = enable;
+  WebPreferencesChanged();
+}
+
+std::optional<bool> NWebPreferenceDelegate::GetViewportEnable() {
+  return viewport_enabled_;
+}
+#endif  // defined(OHOS_VIEWPORT)
 
 uint32_t NWebPreferenceDelegate::GetScrollBarColor() {
 #ifdef OHOS_SCROLLBAR

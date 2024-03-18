@@ -921,6 +921,16 @@ void ARK_WEB_CALLBACK ark_web_preference_put_text_autosizing_enabled(
   ArkWebPreferenceCppToC::Get(self)->PutTextAutosizingEnabled(flag);
 }
 
+void ARK_WEB_CALLBACK ark_web_preference_set_viewport_enable(
+    struct _ark_web_preference_t *self, bool enable) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebPreferenceCppToC::Get(self)->SetViewportEnable(enable);
+}
+
 } // namespace
 
 ArkWebPreferenceCppToC::ArkWebPreferenceCppToC() {
@@ -1071,6 +1081,7 @@ ArkWebPreferenceCppToC::ArkWebPreferenceCppToC() {
   GetStruct()->get_scrollable = ark_web_preference_get_scrollable;
   GetStruct()->put_text_autosizing_enabled = 
       ark_web_preference_put_text_autosizing_enabled;
+  GetStruct()->set_viewport_enable = ark_web_preference_set_viewport_enable;
 }
 
 ArkWebPreferenceCppToC::~ArkWebPreferenceCppToC() {

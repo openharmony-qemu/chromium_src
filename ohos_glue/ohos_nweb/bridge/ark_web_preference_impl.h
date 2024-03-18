@@ -625,6 +625,12 @@ public:
   /*--ark web()--*/
   virtual void PutTextAutosizingEnabled(bool flag) override;
 
+  /**
+   * @brief Set whether to support the viewport attribute of the meta tag in the
+   * frontend page.
+   */
+  void SetViewportEnable(bool enable) override;
+
 private:
   std::shared_ptr<OHOS::NWeb::NWebPreference> nweb_preference_;
 };

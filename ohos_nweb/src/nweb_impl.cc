@@ -642,9 +642,7 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
   nweb_delegate_->SetNWebDelegateInterface(nweb_delegate_);
   inputmethod_handler_->SetVirtualDeviceRatio(device_pixel_ratio_);
 
-#if defined(REPORT_SYS_EVENT)
-    nweb_delegate_->SetNWebId(nweb_id_);
-#endif
+  nweb_delegate_->SetNWebId(nweb_id_);
 
   delete[] argv;
   return nweb_delegate_->IsReady();

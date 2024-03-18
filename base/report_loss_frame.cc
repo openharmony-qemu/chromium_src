@@ -1,11 +1,15 @@
 #include "base/logging.h"
 #include "base/report_loss_frame.h"
 #include <chrono>
+#if defined(REPORT_SYS_EVENT)
 #include "ohos_nweb/src/sysevent/event_reporter.h"
+#endif
 #include "base/task/thread_pool.h"
 #include "base/trace_event/trace_event.h"
 
+#if defined(REPORT_SYS_EVENT)
 constexpr int JANK_STATS_VER = 1;
+#endif
 
 ReportLossFrame* ReportLossFrame::instance = nullptr;
 
@@ -41,6 +45,7 @@ void ReportLossFrame::Report() {
     start_time_for_scroll_ = 0;
     return;
   }
+#if defined(REPORT_SYS_EVENT)
   int64_t now = GetCurrentTimestampMS();
   int duration = now - start_time_for_scroll_;
   base::ThreadPool::PostTask(
@@ -48,6 +53,7 @@ void ReportLossFrame::Report() {
     {base::TaskPriority::LOWEST},
     base::BindOnce(&ReportJankStats, start_time_for_scroll_, duration, jank_stats_, JANK_STATS_VER)
   );
+#endif
   Reset();
 }
 

@@ -243,6 +243,9 @@ void AgentSchedulingGroup::DidUnloadRenderFrame(
 }
 
 void AgentSchedulingGroup::CreateView(mojom::CreateViewParamsPtr params) {
+#if BUILDFLAG(IS_OHOS)
+  host_remote_->ReportCreateView(base::GetCurrentRealPid());
+#endif
   RenderThreadImpl& renderer = ToImpl(render_thread_);
   renderer.SetScrollAnimatorEnabled(
       params->web_preferences.enable_scroll_animator, PassKey());

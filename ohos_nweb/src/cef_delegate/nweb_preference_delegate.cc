@@ -194,6 +194,12 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
     browser_settings.contextmenu_customization_enabled = true;
   }
 #endif  // OHOS_EX_FREE_COPY
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  browser_settings.custom_video_player_enable =
+      std::get<0>(native_video_player_config_);
+  browser_settings.custom_video_player_overlay =
+      std::get<1>(native_video_player_config_);
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 }
 
 void NWebPreferenceDelegate::SetBrowserSettingsToNetHelpers() {
@@ -744,5 +750,15 @@ NWebPreference::CopyOptionMode NWebPreferenceDelegate::GetCopyOptionMode() {
   return copy_option_;
 }
 #endif // defined(OHOS_CLIPBOARD)
+
+void NWebPreferenceDelegate::SetNativeVideoPlayerConfig(bool enable,
+                                                        bool shouldOverlay) {
+
+  if (native_video_player_config_ == std::make_tuple(enable, shouldOverlay)) {
+    return;
+  }
+  native_video_player_config_ = {enable, shouldOverlay};
+  WebPreferencesChanged();
+}
 
 }  // namespace OHOS::NWeb

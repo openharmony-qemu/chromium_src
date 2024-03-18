@@ -557,10 +557,9 @@ class NWebHandlerDelegate : public CefClient,
 
   const std::vector<std::string> GetVisitedHistory();
 
-#if defined(REPORT_SYS_EVENT)
   void SetNWebId(uint32_t nwebId);
   uint32_t GetNWebId();
-#endif
+
   void SetWindowId(uint32_t window_id) { window_id_ = window_id; }
 
   void SetFavicon(const void* icon_data,
@@ -646,8 +645,8 @@ class NWebHandlerDelegate : public CefClient,
   ImageColorType color_type_ = ImageColorType::COLOR_TYPE_UNKNOWN;
   ImageAlphaType alpha_type_ = ImageAlphaType::ALPHA_TYPE_UNKNOWN;
 
-#if defined(REPORT_SYS_EVENT)
   uint32_t nweb_id_ = 0;
+#if defined(REPORT_SYS_EVENT)
   // For page load statistics
   uint32_t access_sum_count_ = 0;
   uint32_t access_success_count_ = 0;

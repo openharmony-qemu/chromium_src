@@ -2555,7 +2555,6 @@ void NWebHandlerDelegate::RemoveTransientJavaScriptObject() {
   nweb_javascript_callback_->RemoveTransientJavaScriptObject();
 }
 
-#if defined(REPORT_SYS_EVENT)
 void NWebHandlerDelegate::SetNWebId(uint32_t nwebId) {
   nweb_id_ = nwebId;
 }
@@ -2563,7 +2562,6 @@ void NWebHandlerDelegate::SetNWebId(uint32_t nwebId) {
 uint32_t NWebHandlerDelegate::GetNWebId() {
   return nweb_id_;
 }
-#endif
 
 #ifdef OHOS_FOCUS
 bool NWebHandlerDelegate::GetFocusState() {

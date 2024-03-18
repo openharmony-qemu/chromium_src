@@ -629,6 +629,12 @@ public:
      * Put whether fonts are automatically laid out, default value is ture.
      */
     virtual void PutTextAutosizingEnabled(bool flag) = 0;
+
+    /**
+     * Set whether to support the viewport attribute of the meta tag in the
+     * frontend page.
+     */
+    virtual void SetViewportEnable(bool enable) = 0;
 };
 }  // namespace OHOS::NWeb
 #endif  // NWEB_PREFERENCE_H

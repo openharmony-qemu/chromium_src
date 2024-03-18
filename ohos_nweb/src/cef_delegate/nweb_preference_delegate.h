@@ -141,6 +141,11 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool GetNativeEmbedMode() override;
   void RegisterNativeEmbedRule(const std::string& tag, const std::string& type) override;
 
+#if defined(OHOS_VIEWPORT)
+  void SetViewportEnable(bool enable) override;
+  std::optional<bool> GetViewportEnable();
+#endif  // defined(OHOS_VIEWPORT)
+
 #if defined(OHOS_CLIPBOARD)
   void PutCopyOptionMode(CopyOptionMode copyOption) override;
   CopyOptionMode GetCopyOptionMode() override;
@@ -202,6 +207,9 @@ class NWebPreferenceDelegate : public NWebPreference {
   int overscroll_mode_{0};
   bool scroll_enabled_{true};
 #endif  // defined(OHOS_INPUT_EVENTS)
+#if defined(OHOS_VIEWPORT)
+  std::optional<bool> viewport_enabled_;
+#endif  // defined(OHOS_VIEWPORT)
 #if BUILDFLAG(IS_OHOS)
   int draw_mode_{0};
   bool text_autosizing_enabled_{true};

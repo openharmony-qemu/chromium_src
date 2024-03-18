@@ -105,6 +105,15 @@
 #include "content/browser/ohos/content_view_statics_ohos.h"
 #endif
 
+#if defined(OHOS_SITE_ISOLATION)
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
+
+#if defined(OHOS_SITE_ISOLATION)
+extern bool g_siteIsolationMode;
+#endif
+
 namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
@@ -149,6 +158,51 @@ static std::string GetNetlogMode() {
                                     .GetSystemPropertiesInstance();
   return system_properties_adapter.GetNetlogMode();
 }
+
+#if defined(OHOS_SITE_ISOLATION)
+static std::string GetSiteIsolationMode() {
+  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                                    .GetSystemPropertiesInstance();
+  return system_properties_adapter.GetSiteIsolationMode();
+}
+
+static bool IsMultipleRenderProcess() {
+    const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+    
+    if (command_line->HasSwitch(switches::kRendererProcessLimit)) {
+        int limit_value = std::stoi(command_line->GetSwitchValueASCII(switches::kRendererProcessLimit));
+        return (limit_value > 1);
+    }
+
+    return false;
+}
+
+static bool ShouldEnableSiteIsolation() {
+  std::string isSiteIsolationMode = GetSiteIsolationMode();
+  
+  if (isSiteIsolationMode == "true") {
+    return true;
+  }
+
+  if (isSiteIsolationMode == "false") {
+    return false;
+  }
+
+  //for judge PC&&Tablet devices
+  bool isIgnoreLockdownMode = (*base::CommandLine::ForCurrentProcess()).HasSwitch(
+            switches::kIgnoreLockdownMode);
+
+  if (isIgnoreLockdownMode) {
+    return true;
+  }
+
+  if (GetLockdownModeStatus() && IsMultipleRenderProcess()) {
+    return true;
+  }
+
+  return false;
+}
+#endif
 
 bool GetIsPopup(std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
   return init_args ? init_args->GetIsPopup() : false;
@@ -456,6 +510,13 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
   OHOS::NWeb::OhosAdapterHelper::GetInstance()
       .GetNetProxyInstance()
       .StartListen();
+#endif
+
+#if defined(OHOS_SITE_ISOLATION)
+  g_siteIsolationMode = ShouldEnableSiteIsolation();
+#if defined(REPORT_SYS_EVENT)
+  ReportSiteIsolationMode(std::to_string(g_siteIsolationMode));
+#endif
 #endif
 
   return true;

@@ -233,9 +233,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       override;
 #endif  // defined(OHOS_MSGPORT)
 
-#if defined(REPORT_SYS_EVENT)
   void SetNWebId(uint32_t nwebId) override;
-#endif
 
   void StoreWebArchive(
       const std::string& base_name,
@@ -490,9 +488,7 @@ void EnableSafeBrowsing(bool enable) override;
   uint32_t height_ = 0;
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 
-#if defined(REPORT_SYS_EVENT)
   uint32_t nweb_id_;
-#endif
 
 #if BUILDFLAG(IS_OHOS)
   float base_display_width_ = -1.f;

@@ -1961,14 +1961,12 @@ void NWebDelegate::UpdateLocale(const std::string& language,
 }
 #endif  // #ifdef OHOS_I18N
 
-#if defined(REPORT_SYS_EVENT)
 void NWebDelegate::SetNWebId(uint32_t nwebId) {
   nweb_id_ = nwebId;
   if (nweb_id_ != 0) {
     handler_delegate_->SetNWebId(nweb_id_);
   }
 }
-#endif
 
 #ifdef OHOS_DRAG_DROP
 std::shared_ptr<NWebDragData> NWebDelegate::GetOrCreateDragData() {

@@ -93,6 +93,10 @@ class NetworkServiceClient
                              int net_error,
                              const net::SSLInfo& ssl_info,
                              bool fatal,
+#ifdef OHOS_NETWORK_LOAD
+                             const GURL& origin_url,
+                             const std::string& referrer,
+#endif
                              OnSSLCertificateErrorCallback response) override;
   void OnCertificateRequested(
       const absl::optional<base::UnguessableToken>& window_id,

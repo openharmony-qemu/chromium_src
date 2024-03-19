@@ -14,6 +14,7 @@
  */
 
 #include "ohos_nweb/bridge/ark_web_js_ssl_error_result_impl.h"
+#include "ohos_nweb/bridge/ark_web_js_ssl_error_result_impl.h"
 #include "base/bridge/ark_web_bridge_macros.h"
 
 namespace OHOS::ArkWeb {
@@ -29,6 +30,19 @@ void ArkWebJsSslErrorResultImpl::HandleCancel() {
 
 void ArkWebJsSslErrorResultImpl::HandleConfirm() {
   nweb_js_ssl_error_result_->HandleConfirm();
+}
+
+ArkWebJsAllSslErrorResultImpl::ArkWebJsAllSslErrorResultImpl(
+    std::shared_ptr<OHOS::NWeb::NWebJSAllSslErrorResult> nweb_js_all_ssl_error_result)
+    : nweb_js_all_ssl_error_result_(nweb_js_all_ssl_error_result) {
+}
+
+void ArkWebJsAllSslErrorResultImpl::HandleCancel() {
+  nweb_js_all_ssl_error_result_->HandleCancel();
+}
+
+void ArkWebJsAllSslErrorResultImpl::HandleConfirm() {
+  nweb_js_all_ssl_error_result_->HandleConfirm();
 }
 
 } // namespace OHOS::ArkWeb

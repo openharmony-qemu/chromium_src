@@ -2627,4 +2627,34 @@ void NWebHandlerDelegate::OnIntelligentTrackingPreventionResult(
   }
 }
 #endif
+
+#ifdef OHOS_NETWORK_LOAD
+bool NWebHandlerDelegate::OnAllCertificateError(CefRefPtr<CefBrowser> browser,
+                                                cef_errorcode_t cert_error,
+                                                const CefString& request_url,
+                                                const CefString& origin_url,
+                                                const CefString& referrer,
+                                                bool is_main_frame_request,
+                                                bool is_fatal_error,
+                                                CefRefPtr<CefSSLInfo> ssl_info,
+                                                CefRefPtr<CefCallback> callback) {
+  LOG(INFO) << "NWebHandlerDelegate::OnAllCertificateError happened";
+  SslError error = SslErrorConvert(cert_error);
+
+  CEF_REQUIRE_IO_THREAD();
+  std::shared_ptr<NWebJSAllSslErrorResult> js_result =
+      std::make_shared<NWebJSAllSslErrorResultImpl>(callback);
+  if (nweb_handler_ != nullptr) {
+    return nweb_handler_->OnAllSslErrorRequestByJS(js_result,
+                                                   error,
+                                                   request_url,
+                                                   origin_url,
+                                                   referrer,
+                                                   is_fatal_error,
+                                                   is_main_frame_request
+                                                   );
+  }
+  return false;
+}
+#endif
 }  // namespace OHOS::NWeb

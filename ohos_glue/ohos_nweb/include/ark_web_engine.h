@@ -21,6 +21,7 @@
 #include "ohos_nweb/include/ark_web_data_base.h"
 #include "ohos_nweb/include/ark_web_download_manager.h"
 #include "ohos_nweb/include/ark_web_engine_init_args.h"
+#include "ohos_nweb/include/ark_web_engine_prefetch_args.h"
 #include "ohos_nweb/include/ark_web_nweb.h"
 #include "ohos_nweb/include/ark_web_nweb_create_info.h"
 #include "ohos_nweb/include/ark_web_web_storage.h"
@@ -82,6 +83,12 @@ public:
 
   /*--ark web()--*/
   virtual void ResumeAllTimers() = 0;
+
+  /*--ark web()--*/
+  virtual void PrefetchResource(ArkWebRefPtr<ArkWebEnginePrefetchArgs> &pre_args,
+                                const ArkWebStringMap &additional_http_headers,
+                                const ArkWebString &cache_key,
+                                const uint32_t &cache_valid_time) = 0;
 };
 
 } // namespace OHOS::ArkWeb

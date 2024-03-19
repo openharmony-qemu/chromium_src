@@ -2277,6 +2277,17 @@ void WebContentsImpl::SetAudioMuted(bool mute) {
   NotifyNavigationStateChanged(INVALIDATE_TYPE_AUDIO);
 }
 
+#if defined(OHOS_MEDIA_POLICY)
+void WebContentsImpl::SetHtmlPlayEnabled(bool enabled) {
+  observers_.NotifyObservers(&WebContentsObserver::SetHtmlPlayEnabled, enabled);
+  is_enabled_HTML_play_ = enabled;
+}
+
+bool WebContentsImpl::IsHtmlPlayEnabled() {
+  return is_enabled_HTML_play_;
+}
+#endif
+
 bool WebContentsImpl::IsCurrentlyAudible() {
   return is_currently_audible_;
 }

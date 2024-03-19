@@ -33,7 +33,8 @@ class GL_EXPORT NativeViewGLSurfaceEGLOhos : public NativeViewGLSurfaceEGL {
               float scale_factor,
               const gfx::ColorSpace& color_space,
               bool has_alpha) override;
-
+  bool SetBackbufferAllocation(bool allocated) override;
+  
  private:
   EGLNativeWindowType window_;
 };

@@ -4016,10 +4016,16 @@ void WebContentsImpl::UpdateVisibilityAndNotifyPageAndView(
   // calls us).
   if (auto* view = GetRenderWidgetHostView()) {
     if (view_is_visible) {
+#if BUILDFLAG(IS_OHOS)
+      view->EvictFrameBackBuffers(false);
+#endif
       static_cast<RenderWidgetHostViewBase*>(view)->ShowWithVisibility(
           page_visibility);
     } else if (new_visibility == Visibility::HIDDEN) {
       view->Hide();
+#if BUILDFLAG(IS_OHOS)
+      view->EvictFrameBackBuffers(true);
+#endif
     } else {
       view->WasOccluded();
     }

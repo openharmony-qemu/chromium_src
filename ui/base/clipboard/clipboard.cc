@@ -501,5 +501,10 @@ void Clipboard::ReadData(const ClipboardFormatType& format,
   std::move(callback).Run(std::move(result));
 }
 
+#if defined(OHOS_CLIPBOARD)
+bool Clipboard::HasPasteData() const {
+  return false;
+}
+#endif // defined(OHOS_CLIPBOARD)
 }  // namespace ui
 

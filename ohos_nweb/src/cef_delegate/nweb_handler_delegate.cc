@@ -1310,7 +1310,6 @@ bool NWebHandlerDelegate::ShouldOverrideUrlLoading(CefRefPtr<CefBrowser> browser
                                                    bool is_redirect,
                                                    bool is_outermost_main_frame) {
   LOG(INFO) << "NWebHandlerDelegate::ShouldOverrideUrlLoading";
-  (void)(browser);
 
   std::map<std::string, std::string> request_headers;
   std::shared_ptr<NWebUrlResourceRequest> nweb_request =

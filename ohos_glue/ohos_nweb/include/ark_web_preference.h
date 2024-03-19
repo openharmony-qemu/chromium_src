@@ -712,6 +712,12 @@ public:
    */
   /*--ark web()--*/
   virtual void SetViewportEnable(bool enable) = 0;
+
+  /**
+   * @brief Set native video player config.
+   */
+  /*--ark web()--*/
+  virtual void SetNativeVideoPlayerConfig(bool enable, bool shouldOverlay) = 0;
 };
 
 } // namespace OHOS::ArkWeb

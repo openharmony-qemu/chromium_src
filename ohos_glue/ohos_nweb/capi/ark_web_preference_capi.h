@@ -291,6 +291,9 @@ typedef struct _ark_web_preference_t {
 
   void(ARK_WEB_CALLBACK *set_viewport_enable)(
       struct _ark_web_preference_t *self, bool enable);
+
+  void(ARK_WEB_CALLBACK *set_native_video_player_config)(
+      struct _ark_web_preference_t *self, bool enable, bool shouldOverlay);
 } ark_web_preference_t;
 
 #ifdef __cplusplus

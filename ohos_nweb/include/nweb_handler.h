@@ -45,6 +45,7 @@
 #include "nweb_url_resource_error.h"
 #include "nweb_url_resource_request.h"
 #include "nweb_url_resource_response.h"
+#include "nweb_gesture_event_result.h"
 
 namespace OHOS::NWeb {
 enum class RenderExitReason {
@@ -247,6 +248,8 @@ public:
     virtual float GetScreenY() = 0;
 
     virtual std::string GetEmbedId() = 0;
+
+    virtual std::shared_ptr<NWebGestureEventResult> GetResult() = 0;
 };
 
 class OHOS_NWEB_EXPORT NWebHandler {

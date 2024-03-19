@@ -406,12 +406,6 @@ void InputRouterImpl::DidOverscroll(
   client_->DidOverscroll(fling_updated_params);
 }
 
-#if defined(OHOS_INPUT_EVENTS)
-void InputRouterImpl::DidNativeEmbedEvent(blink::mojom::EmbedTouchEventPtr event) {
-
-  client_->DidNativeEmbedEvent(event);
-}
-#endif
 void InputRouterImpl::DidStartScrollingViewport() {
   client_->DidStartScrollingViewport();
 }
@@ -868,4 +862,9 @@ void InputRouterImpl::UpdateTouchAckTimeoutEnabled() {
   touch_event_queue_.SetAckTimeoutEnabled(!touch_ack_timeout_disabled);
 }
 
+#if BUILDFLAG(IS_OHOS)
+void InputRouterImpl::SetGestureEventResult(bool result) {
+  client_->GetWidgetInputHandler()->SetGestureEventResult(result);
+}
+#endif
 }  // namespace content

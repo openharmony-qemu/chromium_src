@@ -414,6 +414,8 @@ void LayerImpl::PushPropertiesTo(LayerImpl* layer) {
   layer->SetBounds(bounds_);
   layer->UpdateScrollable();
 
+  layer->SetNativeRect(native_rect_);
+
   layer->UnionUpdateRect(update_rect_);
 
   layer->UpdateDebugInfo(debug_info_.get());
@@ -978,6 +980,42 @@ int LayerImpl::CalculateJitter() {
     }
   }
   return jitter;
+}
+
+gfx::RectF LayerImpl::NativeRect() const {
+  if (!may_contain_native()) {
+    return native_rect_;
+  }
+
+  auto viewport_bounds_delta = gfx::ToCeiledVector2d(GetPropertyTrees()->inner_viewport_scroll_bounds_delta());
+  return gfx::RectF(native_rect_.x(),native_rect_.y(),
+                    native_rect_.width() + viewport_bounds_delta.x(),
+                    native_rect_.height() + viewport_bounds_delta.y());
+}
+
+void LayerImpl::SetNativeRect(const gfx::RectF& rect) {
+  if (native_rect_ == rect) {
+    return;
+  }
+  native_rect_ = rect;
+  // Scrollbar positions depend on the scrolling layer bounds.
+  if (scrollable_)
+    layer_tree_impl()->SetScrollbarGeometriesNeedUpdate();
+
+  NoteLayerPropertyChanged();
+}
+
+gfx::RectF LayerImpl::GetNativeRect() {
+  if (!may_contain_native()) {
+      return native_rect_;
+  }
+  gfx::Transform transform = ScreenSpaceTransform();
+  gfx::RectF rf = NativeRect();
+  if(rf.IsEmpty()) {
+    rf.set_width(bounds().width());
+    rf.set_height(bounds().height());
+  }
+  return transform.MapRect(rf);
 }
 
 std::string LayerImpl::DebugName() const {

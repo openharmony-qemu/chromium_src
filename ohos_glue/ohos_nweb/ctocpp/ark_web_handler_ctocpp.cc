@@ -47,6 +47,7 @@
 #include "ohos_nweb/cpptoc/ark_web_url_resource_error_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_url_resource_request_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_url_resource_response_cpptoc.h"
+#include "ohos_nweb/cpptoc/ark_web_js_all_ssl_error_result_cpptoc.h"
 
 namespace OHOS::ArkWeb {
 
@@ -1178,6 +1179,33 @@ void ArkWebHandlerCToCpp::OnLargestContentfulPaint(
   // Execute
   _struct->on_largest_contentful_paint(
       _struct, ArkWebLargestContentfulPaintDetailsCppToC::Invert(details));
+}
+
+ARK_WEB_NO_SANITIZE
+bool ArkWebHandlerCToCpp::OnAllSslErrorRequestByJS(
+    ArkWebRefPtr<ArkWebJsAllSslErrorResult> result,
+    int error,
+    const ArkWebString &url,
+    const ArkWebString &originalUrl,
+    const ArkWebString &referrer,
+    bool isFatalError,
+    bool isMainFrame) {
+  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
+
+  ark_web_handler_t* _struct = GetStruct();
+  ARK_WEB_CTOCPP_CHECK_PARAM(_struct, false);
+
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, on_all_ssl_error_request_by_js, false);
+
+  // Execute
+  return _struct->on_all_ssl_error_request_by_js(_struct,
+      ArkWebJsAllSslErrorResultCppToC::Invert(result),
+      error,
+      &url,
+      &originalUrl,
+      &referrer,
+      isFatalError,
+      isMainFrame);
 }
 
 ArkWebHandlerCToCpp::ArkWebHandlerCToCpp() {

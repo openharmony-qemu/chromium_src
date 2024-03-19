@@ -32,6 +32,7 @@
 #include "ohos_nweb/capi/ark_web_js_dialog_result_capi.h"
 #include "ohos_nweb/capi/ark_web_js_http_auth_result_capi.h"
 #include "ohos_nweb/capi/ark_web_js_ssl_error_result_capi.h"
+#include "ohos_nweb/capi/ark_web_js_all_ssl_error_result_capi.h"
 #include "ohos_nweb/capi/ark_web_js_ssl_select_cert_result_capi.h"
 #include "ohos_nweb/capi/ark_web_key_event_capi.h"
 #include "ohos_nweb/capi/ark_web_largest_contentful_paint_details_capi.h"
@@ -336,6 +337,16 @@ typedef struct _ark_web_handler_t {
   void(ARK_WEB_CALLBACK *on_largest_contentful_paint)(
       struct _ark_web_handler_t *self,
       ark_web_largest_contentful_paint_details_t *details);
+
+  bool(ARK_WEB_CALLBACK *on_all_ssl_error_request_by_js)(
+      struct _ark_web_handler_t *self,
+      ark_web_js_all_ssl_error_result_t *result,
+      int error,
+      const ArkWebString *url,
+      const ArkWebString *originalUrl,
+      const ArkWebString *referrer,
+      bool isFatalError,
+      bool isMainFrame);
 } ark_web_handler_t;
 
 #ifdef __cplusplus

@@ -227,6 +227,8 @@ component("ohos_nweb_glue_source") {
     "ohos_nweb/cpptoc/ark_web_js_http_auth_result_cpptoc.h",
     "ohos_nweb/cpptoc/ark_web_js_ssl_error_result_cpptoc.cc",
     "ohos_nweb/cpptoc/ark_web_js_ssl_error_result_cpptoc.h",
+    "ohos_nweb/cpptoc/ark_web_js_all_ssl_error_result_cpptoc.cc",
+    "ohos_nweb/cpptoc/ark_web_js_all_ssl_error_result_cpptoc.h",
     "ohos_nweb/cpptoc/ark_web_js_ssl_select_cert_result_cpptoc.cc",
     "ohos_nweb/cpptoc/ark_web_js_ssl_select_cert_result_cpptoc.h",
     "ohos_nweb/cpptoc/ark_web_key_event_cpptoc.cc",

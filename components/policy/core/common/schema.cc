@@ -1530,8 +1530,8 @@ bool CompareKeys(const PropertyNode& node, const std::string& key) {
 }  // namespace
 
 Schema Schema::GetKnownProperty(const std::string& key) const {
+  LOG(INFO) << "Schema::GetKnownProperty current-type is :" << type();
   CHECK(valid());
-  LOG(INFO) << "==Schema::GetKnownProperty=current=type==" << type();
   CHECK_EQ(base::Value::Type::DICT, type());
   const PropertiesNode* node = storage_->properties(node_->extra);
   if (node->begin == kInvalid || node->end == kInvalid)

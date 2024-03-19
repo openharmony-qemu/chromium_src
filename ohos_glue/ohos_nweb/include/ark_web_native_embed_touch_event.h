@@ -19,6 +19,7 @@
 
 #include "base/include/ark_web_base_ref_counted.h"
 #include "base/include/ark_web_types.h"
+#include "ark_web_gesture_event_result.h"
 
 namespace OHOS::ArkWeb {
 
@@ -51,6 +52,9 @@ public:
 
   /*--ark web()--*/
   virtual ArkWebString GetEmbedId() = 0;
+
+  /*--ark web()--*/
+  virtual ArkWebRefPtr<ArkWebGestureEventResult> GetResult() = 0;
 };
 
 } // namespace OHOS::ArkWeb

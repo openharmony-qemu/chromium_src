@@ -28,6 +28,7 @@
 #include "content/public/common/content_switches.h"
 #include "ohos_adapter_helper.h"
 #include "res_sched_client_adapter.h"
+#include "nweb_gesture_event_result_impl.h"
 #ifdef OHOS_DRAG_DROP
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
@@ -235,6 +236,11 @@ class NWebNativeEmbedTouchEventImpl : public NWebNativeEmbedTouchEvent {
 
   void SetEmbedId(const std::string& embedId) { embedId_ = embedId; }
 
+  std::shared_ptr<NWebGestureEventResult> GetResult() override { return result_;}
+  void SetResult(const std::shared_ptr<NWebGestureEventResult> result) {
+    result_ = result;
+  }
+
  private:
   std::string embedId_;
   int32_t id_ = 0;
@@ -245,6 +251,7 @@ class NWebNativeEmbedTouchEventImpl : public NWebNativeEmbedTouchEvent {
   float screenX_ = 0;
   float screenY_ = 0;
   TouchType type_ = TouchType::DOWN;
+  std::shared_ptr<NWebGestureEventResult> result_;
 };
 
 // static
@@ -762,7 +769,8 @@ bool NWebRenderHandler::FilterScrollEvent(CefRefPtr<CefBrowser> browser,
 }
 void NWebRenderHandler::OnNativeEmbedGestureEvent(
     CefRefPtr<CefBrowser> browser,
-    const CefEmbedTouchEvent& touchEvent) {
+    const CefEmbedTouchEvent& touchEvent,
+    CefRefPtr<CefGestureEventCallback> callback) {
   if (auto handler = handler_.lock()) {
     std::shared_ptr<NWebNativeEmbedTouchEventImpl> info =
         std::make_shared<NWebNativeEmbedTouchEventImpl>();
@@ -775,6 +783,8 @@ void NWebRenderHandler::OnNativeEmbedGestureEvent(
     info->SetScreenX(touchEvent.screenX);
     info->SetScreenY(touchEvent.screenY);
     info->SetType(static_cast<OHOS::NWeb::TouchType>(touchEvent.type));
+    std::shared_ptr<NWebGestureEventResult> result = std::make_shared<NWebGestureEventResultImpl>(callback);
+    info->SetResult(result);
     handler->OnNativeEmbedGestureEvent(info);
   }
 }

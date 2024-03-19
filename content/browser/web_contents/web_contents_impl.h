@@ -502,6 +502,10 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   bool IsBeingVisiblyCaptured() override;
   bool IsAudioMuted() override;
   void SetAudioMuted(bool mute) override;
+#if defined(OHOS_MEDIA_POLICY)
+  void SetHtmlPlayEnabled(bool enabled) override;
+  bool IsHtmlPlayEnabled() override;
+#endif
   bool IsCurrentlyAudible() override;
   bool IsConnectedToBluetoothDevice() override;
   bool IsScanningForBluetoothDevices() override;
@@ -2370,6 +2374,11 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   bool stylus_handwriting_enabled_ = false;
 
   bool is_currently_audible_ = false;
+
+#if defined(OHOS_MEDIA_POLICY)
+  bool is_enabled_HTML_play_ = true;
+#endif
+
 #if defined(OHOS_MEDIA_MUTE_AUDIO)
   int media_player_audible_count_ = 0;
   bool is_ohos_currently_audible_ = false;

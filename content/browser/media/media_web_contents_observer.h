@@ -96,6 +96,11 @@ class CONTENT_EXPORT MediaWebContentsObserver
   void MediaPictureInPictureChanged(bool is_picture_in_picture) override;
   void DidUpdateAudioMutingState(bool muted) override;
 
+#if defined(OHOS_MEDIA_POLICY)
+  // Set whether to the HTML play can be used to control media
+  void SetHtmlPlayEnabled(bool enabled) override;
+#endif // defined(OHOS_MEDIA_POLICY)
+
   // MediaPlayerObserverClient implementation.
   void GetHasPlayedBefore(GetHasPlayedBeforeCallback callback) override;
 
@@ -127,6 +132,10 @@ class CONTENT_EXPORT MediaWebContentsObserver
   // is an error to call this method if no MediaPlayer with |player_id| exists.
   mojo::AssociatedRemote<media::mojom::MediaPlayer>& GetMediaPlayerRemote(
       const MediaPlayerId& player_id);
+  
+#if defined(OHOS_MEDIA_POLICY)
+  bool IsPlayerIdInMediaPlayerRemotesMap(const MediaPlayerId& player_id);
+#endif // defined(OHOS_MEDIA_POLICY)
 
   // Creates a new MediaPlayerObserverHostImpl associated to |player_id| if
   // needed, and then passes |player_receiver| to it to establish a

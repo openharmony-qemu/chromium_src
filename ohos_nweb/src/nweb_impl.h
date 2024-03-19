@@ -336,9 +336,13 @@ class NWebImpl : public NWeb {
   static std::shared_ptr<NWeb> CreateNWeb(std::shared_ptr<NWebCreateInfo> create_info);
   static void SetWebTag(int32_t nweb_id, const char* web_tag);
   static void InitializeWebEngine(std::shared_ptr<NWebEngineInitArgs> init_args);
-  static void PrepareForPageLoad(const std::string &url, bool preconnectable, int32_t num_sockets) ;
+  static void PrepareForPageLoad(const std::string &url, bool preconnectable, int32_t num_sockets);
   static void PauseAllTimers();
   static void ResumeAllTimers();
+  static void PrefetchResource(const std::shared_ptr<NWebEnginePrefetchArgs>& pre_args,
+                               const std::map<std::string, std::string>& additional_http_headers,
+                               const std::string& cache_key,
+                               const uint32_t& cache_valid_time);
 
 #if defined(OHOS_COOKIE)
   static bool InitializeICUStatic(std::shared_ptr<NWebEngineInitArgs> init_args);

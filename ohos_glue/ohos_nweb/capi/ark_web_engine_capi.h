@@ -22,6 +22,7 @@
 #include "ohos_nweb/capi/ark_web_data_base_capi.h"
 #include "ohos_nweb/capi/ark_web_download_manager_capi.h"
 #include "ohos_nweb/capi/ark_web_engine_init_args_capi.h"
+#include "ohos_nweb/capi/ark_web_engine_prefetch_args_capi.h"
 #include "ohos_nweb/capi/ark_web_nweb_capi.h"
 #include "ohos_nweb/capi/ark_web_nweb_create_info_capi.h"
 #include "ohos_nweb/capi/ark_web_web_storage_capi.h"
@@ -77,11 +78,14 @@ typedef struct _ark_web_engine_t {
   void(ARK_WEB_CALLBACK *clear_intelligent_tracking_prevention_bypassing_list)(
       struct _ark_web_engine_t *self);
 
-  void(ARK_WEB_CALLBACK* pause_webkit_all_timers)(
-      struct _ark_web_engine_t* self);
+  void(ARK_WEB_CALLBACK *pause_all_timers)(struct _ark_web_engine_t *self);
 
-  void(ARK_WEB_CALLBACK* resume_webkit_all_timers)(
-      struct _ark_web_engine_t* self);
+  void(ARK_WEB_CALLBACK *resume_all_timers)(struct _ark_web_engine_t *self);
+
+  void(ARK_WEB_CALLBACK *prefetch_resource)(
+      struct _ark_web_engine_t *self, ark_web_engine_prefetch_args_t **pre_args,
+      const ArkWebStringMap *additional_http_headers,
+      const ArkWebString *cache_key, const uint32_t *cache_valid_time);
 } ark_web_engine_t;
 
 ARK_WEB_EXPORT ark_web_engine_t *ark_web_engine_get_instance(void);

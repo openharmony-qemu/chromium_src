@@ -2335,3 +2335,41 @@ extern "C" OHOS_NWEB_EXPORT void WebDownloadManager_PutDownloadCallback(NWebDown
   delegate->RegisterWebDownloadDelegateListener(std::make_shared<NWebDownloadDelegateCallback>(*callback));
   CefSetDownloadHandler(delegate);
 }
+
+void NWebImpl::PrefetchResource(const std::shared_ptr<NWebEnginePrefetchArgs>& pre_args,
+                                const std::map<std::string, std::string>& additional_http_headers,
+                                const std::string& cache_key,
+                                const uint32_t& cache_valid_time) {
+  auto it = additional_http_headers.find("Content-Type");
+  if (it != additional_http_headers.end() && it->second != "application/x-www-form-urlencoded") {
+    WVLOG_E("PrefetchResource post request content-type:%{public}s is not supported.", it->second.c_str());
+    return;
+  }
+
+  std::vector<CefBrowserContext*> browser_context_all = 
+      CefBrowserContext::GetAll();
+  if (browser_context_all.size() == 0) {
+    WVLOG_E("PrefetchResource has no browser_context");
+    return;
+  }
+
+  CefBrowserContext* context =browser_context_all[0];
+  content::BrowserContext* browser_context =context->AsBrowserContext();
+  if (!browser_context) {
+    WVLOG_E("PrefetchResource null browser_context");
+    return;
+  }
+  ohos_predictors::LoadingPredictor* loading_predictor =
+      ohos_predictors::LoadingPredictorFactory::GetForBrowserContext(
+          browser_context);
+  if (!loading_predictor) {
+    WVLOG_E("PrefetchResource no load predictor");
+    return;
+  }
+  std::shared_ptr<ohos_predictors::PreRequestInfo> request_info = std::make_shared<ohos_predictors::PreRequestInfo>();
+  request_info->url = GURL(pre_args->GetUrl());
+  request_info->method = pre_args->GetMethod();
+  request_info->request_body = pre_args->GetFormData();
+
+  loading_predictor->PrefetchResource(request_info, additional_http_headers, cache_key, cache_valid_time);
+}

@@ -2343,8 +2343,8 @@ void NWebImpl::PrefetchResource(const std::shared_ptr<NWebEnginePrefetchArgs>& p
                                 const std::string& cache_key,
                                 const uint32_t& cache_valid_time) {
   auto it = additional_http_headers.find("Content-Type");
-  if (it != additional_http_headers.end() && it->second != "application/x-www-form-urlencoded") {
-    WVLOG_E("PrefetchResource post request content-type:%{public}s is not supported.", it->second.c_str());
+  if (it == additional_http_headers.end() || it->second != "application/x-www-form-urlencoded") {
+    WVLOG_E("PrefetchResource post request has no content-type or it is not supported.");
     return;
   }
 

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "ohos_nweb/src/ndk/scheme_handler/post_data_stream.h"
+#include "ohos_nweb/src/ndk/scheme_handler/http_body_stream.h"
 
 #include "base/logging.h"
 #include "cef/include/cef_request.h"
@@ -22,7 +22,7 @@
 
 #include "cef/libcef/browser/thread_util.h"
 
-ArkWeb_PostDataStream_::ArkWeb_PostDataStream_(
+ArkWeb_HttpBodyStream_::ArkWeb_HttpBodyStream_(
     const ArkWeb_ResourceRequest* resource_request) {
   if (!resource_request) {
     LOG(ERROR) << "scheme_handler resource request is nullptr";
@@ -42,18 +42,18 @@ ArkWeb_PostDataStream_::ArkWeb_PostDataStream_(
   post_data_stream = resource_request->cef_request->GetUploadStream();
 }
 
-ArkWeb_PostDataStream_::~ArkWeb_PostDataStream_() {}
+ArkWeb_HttpBodyStream_::~ArkWeb_HttpBodyStream_() {}
 
-void ArkWeb_PostDataStream_::SetReadCallback(
-    ArkWeb_PostDataReadCallback read_callback_in) {
+void ArkWeb_HttpBodyStream_::SetReadCallback(
+    ArkWeb_HttpBodyStreamReadCallback read_callback_in) {
   read_callback = read_callback_in;
 }
 
-void ArkWeb_PostDataStream_::Init(
-    ArkWeb_PostDataStreamInitCallback stream_init_callback_in) {
+void ArkWeb_HttpBodyStream_::Init(
+    ArkWeb_HttpBodyStreamInitCallback stream_init_callback_in) {
   if (!CEF_CURRENTLY_ON_IOT()) {
     CEF_POST_TASK(CEF_IOT,
-      base::BindOnce(&ArkWeb_PostDataStream_::Init,
+      base::BindOnce(&ArkWeb_HttpBodyStream_::Init,
         this, stream_init_callback_in));
     return;
   }
@@ -67,7 +67,7 @@ void ArkWeb_PostDataStream_::Init(
   post_data_stream->Init(this);
 }
 
-void ArkWeb_PostDataStream_::SetUserData(void* user_data_in) {
+void ArkWeb_HttpBodyStream_::SetUserData(void* user_data_in) {
   if (!user_data_in) {
     LOG(ERROR) << "scheme_handler set a nullptr.";
     return;
@@ -75,11 +75,11 @@ void ArkWeb_PostDataStream_::SetUserData(void* user_data_in) {
   user_data = user_data_in;
 }
 
-void* ArkWeb_PostDataStream_::GetUserData() const {
+void* ArkWeb_HttpBodyStream_::GetUserData() const {
   return user_data;
 }
 
-void ArkWeb_PostDataStream_::Read(void* buffer, int64_t buf_len) const {
+void ArkWeb_HttpBodyStream_::Read(void* buffer, int64_t buf_len) const {
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post_data_stream is nullptr.";
     return;
@@ -90,10 +90,10 @@ void ArkWeb_PostDataStream_::Read(void* buffer, int64_t buf_len) const {
   }
 
   post_data_stream->Read(buffer, buf_len,
-                         const_cast<ArkWeb_PostDataStream*>(this));
+                         const_cast<ArkWeb_HttpBodyStream*>(this));
 }
 
-int64_t ArkWeb_PostDataStream_::GetSize() const {
+int64_t ArkWeb_HttpBodyStream_::GetSize() const {
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post_data_stream is nullptr.";
     return -1;
@@ -102,7 +102,7 @@ int64_t ArkWeb_PostDataStream_::GetSize() const {
   return post_data_stream->GetSize();
 }
 
-int64_t ArkWeb_PostDataStream_::GetPosition() const {
+int64_t ArkWeb_HttpBodyStream_::GetPosition() const {
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post_data_stream is nullptr.";
     return -1;
@@ -111,7 +111,7 @@ int64_t ArkWeb_PostDataStream_::GetPosition() const {
   return post_data_stream->GetPosition();
 }
 
-bool ArkWeb_PostDataStream_::IsChunked() const {
+bool ArkWeb_HttpBodyStream_::IsChunked() const {
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post_data_stream is nullptr.";
     return false;
@@ -120,7 +120,7 @@ bool ArkWeb_PostDataStream_::IsChunked() const {
   return post_data_stream->IsChunked();
 }
 
-bool ArkWeb_PostDataStream_::IsEOF() const {
+bool ArkWeb_HttpBodyStream_::IsEOF() const {
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post_data_stream is nullptr.";
     return false;
@@ -129,7 +129,7 @@ bool ArkWeb_PostDataStream_::IsEOF() const {
   return post_data_stream->IsEOF();
 }
 
-bool ArkWeb_PostDataStream_::IsInMemory() const {
+bool ArkWeb_HttpBodyStream_::IsInMemory() const {
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post_data_stream is nullptr.";
     return false;
@@ -138,7 +138,7 @@ bool ArkWeb_PostDataStream_::IsInMemory() const {
   return post_data_stream->IsInMemory();
 }
 
-void ArkWeb_PostDataStream_::OnInitComplete(int rv) {
+void ArkWeb_HttpBodyStream_::OnInitComplete(int rv) {
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post_data_stream is nullptr.";
     return;
@@ -152,7 +152,7 @@ void ArkWeb_PostDataStream_::OnInitComplete(int rv) {
   stream_init_callback(this, static_cast<ArkWeb_NetError>(rv));
 }
 
-void ArkWeb_PostDataStream_::OnReadComplete(char* buffer, int bytes_read) {
+void ArkWeb_HttpBodyStream_::OnReadComplete(char* buffer, int bytes_read) {
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post_data_stream is nullptr.";
   }

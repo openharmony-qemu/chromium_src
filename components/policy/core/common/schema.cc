@@ -30,6 +30,7 @@
 #include "components/policy/core/common/json_schema_constants.h"
 #include "components/policy/core/common/schema_internal.h"
 #include "third_party/re2/src/re2/re2.h"
+#include "base/logging.h"
 
 namespace schema = json_schema_constants;
 
@@ -1530,6 +1531,9 @@ bool CompareKeys(const PropertyNode& node, const std::string& key) {
 
 Schema Schema::GetKnownProperty(const std::string& key) const {
   CHECK(valid());
+  if (base::Value::Type::DICT != type()) {
+    LOG(INFO) << "Schema::GetKnownProperty current-type is :" << type();
+  }
   CHECK_EQ(base::Value::Type::DICT, type());
   const PropertiesNode* node = storage_->properties(node_->extra);
   if (node->begin == kInvalid || node->end == kInvalid)

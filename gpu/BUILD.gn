@@ -734,6 +734,10 @@ test("gpu_unittests") {
     deps += [ "//base/test:test_trace_processor" ]
   }
 
+  if (ohos_unittests) {
+    deps += ["//content/public/common:static_switches"]
+  }
+
   if (is_android) {
     deps += [
       "//ui/android:ui_java",

@@ -18,7 +18,7 @@
 
 #if defined(OHOS_NWEB)
 #include "hilog_adapter.h"
-constexpr char logTag[] = "webadapter";
+constexpr char logTag[] = "chromium";
 
 #define FILE_NAME (__builtin_strrchr("/" __FILE__, '/') + 1)
 #define FUNC_LINE_FMT "[%{public}s:%{public}d] "

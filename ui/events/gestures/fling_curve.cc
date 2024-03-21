@@ -50,7 +50,7 @@ FlingCurve::FlingCurve(const gfx::Vector2dF& velocity,
   float max_start_velocity = std::max(fabs(velocity.x()), fabs(velocity.y()));
 #if BUILDFLAG(IS_OHOS)
   if (base::SysInfo::IsLowEndDevice()) {
-    max_start_velocity /= 3;
+    max_start_velocity /= 15;
   }
 #endif
   if (max_start_velocity > GetVelocityAtTime(0))

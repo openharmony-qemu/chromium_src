@@ -468,7 +468,7 @@ TEST(PlatformThreadTest, CanChangeThreadType) {
   EXPECT_EQ(PlatformThread::CanChangeThreadType(ThreadType::kBackground,
                                                 ThreadType::kDisplayCritical),
             kCanIncreasePriority);
-#if BUILDFLAG(IS_OHOS)
+#if defined(OHOS_UNITTESTS)
   EXPECT_NE(PlatformThread::CanChangeThreadType(ThreadType::kBackground,
                                                 ThreadType::kRealtimeAudio),
             kCanIncreasePriority);

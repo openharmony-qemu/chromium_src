@@ -673,11 +673,11 @@ bool NWebRenderHandler::StartDragging(CefRefPtr<CefBrowser> browser,
     LOG(ERROR) << "can't get strong ptr with handler";
     return false;
   }
-  #if defined(REPORT_SYS_EVENT)
+#if defined(REPORT_SYS_EVENT)
   if (browser) {
     ReportDragDropStatus("DRAG_START", browser->GetNWebId());
   }
-  #endif
+#endif
   return handler->OnDragAndDropDataUdmf(nweb_drag_data_);
 }
 

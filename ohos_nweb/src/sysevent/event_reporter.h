@@ -37,7 +37,6 @@ void ReportJankStats(int64_t startTime, int duration, std::vector<uint16_t> jank
 void ReportLockdownModeStatus(void);
 
 void ReportPageLoadTimeStats(OhWebPerformanceTiming loadPageTime);
-#if defined(REPORT_SYS_EVENT)
 void ReportDragDropStatus(const std::string& eventName, int32_t id);
 
 void ReportDragDropInfo(const std::string& eventName,
@@ -45,7 +44,6 @@ void ReportDragDropInfo(const std::string& eventName,
                           const std::string& fragment,
                           const std::string& linkUrl,
                           const std::string& linkHtml);
-#endif
 void ReportForceZoomEnable(void);
 
 void ReportOpenPrivateMode(void);

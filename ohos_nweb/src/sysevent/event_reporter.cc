@@ -48,10 +48,12 @@ constexpr char JANK_STATS_VER[] = "JANK_STATS_VER";
 constexpr char RENDER_JIT_LOCKDOWN[] = "RENDER_JIT_LOCKDOWN";
 constexpr char LOCKDOWN_MODE_STATUS[] = "JIT_LOCKDOWN_MODE";
 
+#if defined(REPORT_SYS_EVENT)
 constexpr char NWEB_ID[] = "NWEB_ID";
 constexpr char PLAIN_TEXT[] = "PLAIN_TEXT";
 constexpr char LINK_URL[] = "LINK_URL";
 constexpr char HTML[] = "HTML";
+#endif
 // For force zoom enable
 constexpr char FORCE_ENABLE_ZOOM[] = "FORCE_ENABLE_ZOOM";
 constexpr char ENABLE_FORCE_ZOOM_STATUS[] = "ENABLE_FORCE_ZOOM_STATUS";
@@ -166,6 +168,7 @@ void ReportPageLoadTimeStats(OhWebPerformanceTiming loadPageTime) {
        "FIRST_CONTENTFUL_PAINT", loadPageTime.first_contentful_paint,
        "LARGEST_CONTENTFUL_PAINT", loadPageTime.largest_contentful_paint});
 }
+#if defined(REPORT_SYS_EVENT)
 void ReportDragDropStatus(const std::string& eventName, int32_t id) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       eventName, HiSysEventAdapter::EventType::BEHAVIOR, {NWEB_ID, std::to_string(id)});
@@ -181,6 +184,7 @@ void ReportDragDropInfo(const std::string& eventName,
       {NWEB_ID, std::to_string(id), PLAIN_TEXT, std::to_string(fragment.size()),
       LINK_URL, std::to_string(linkUrl.size()), HTML, std::to_string(linkHtml.size())});
 }
+#endif
 
 void ReportForceZoomEnable(void) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(

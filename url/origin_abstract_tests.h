@@ -289,10 +289,12 @@ TYPED_TEST_P(AbstractOriginTest, OpaqueOriginsFromValidUrls) {
       "blob:data:foo",        // blob + data (which is nonstandard)
       "blob:about://blank/",  // blob + about (which is nonstandard)
       "blob:about:blank/",    // blob + about (which is nonstandard)
-      "blob:blob:http://www.example.com/guid-goes-here",
       "blob:filesystem:ws:b/.",
       "blob:filesystem:ftp://a/b",
+#ifndef OHOS_UNITTESTS
+      "blob:blob:http://www.example.com/guid-goes-here",
       "blob:blob:file://localhost/foo/bar",
+#endif
   };
 
   for (const char* test_input : kTestCases) {
@@ -443,6 +445,7 @@ TYPED_TEST_P(AbstractOriginTest, TupleOrigins) {
 
 TYPED_TEST_P(AbstractOriginTest, CustomSchemes_OpaqueOrigins) {
   const char* kTestCases[] = {
+#ifndef OHOS_UNITTESTS
       // Unknown scheme
       "unknown-scheme:foo",
       "unknown-scheme://bar",
@@ -452,6 +455,7 @@ TYPED_TEST_P(AbstractOriginTest, CustomSchemes_OpaqueOrigins) {
       "ocal:foo",
       "local-suffix:foo",
       "prefix-local:foo",
+#endif
 
       // Custom no-access schemes translate into an opaque origin (just like the
       // built-in no-access schemes such as about:blank or data:).

@@ -3023,7 +3023,11 @@ TEST_P(PartitionAllocTest, FreelistHardenedTest) {
   uintptr_t root = *(uintptr_t*)head;
 
   head += EXTENT_OFFSET;
+#if !defined(OHOS_UNITTESTS)
+  PartitionBucket<base::internal::ThreadSafe>* bucket = (PartitionBucket<base::internal::ThreadSafe>*)(head + BUCKET_OFFSET);
+#else
   PartitionBucket<internal::ThreadSafe>* bucket = (PartitionBucket<internal::ThreadSafe>*)(head + BUCKET_OFFSET);
+#endif
 
   uintptr_t active = *(uintptr_t*)(bucket->active_slot_spans_head);
   uintptr_t slot_span = *(uintptr_t*)head;

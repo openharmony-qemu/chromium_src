@@ -1259,13 +1259,19 @@ base::WeakPtr<NavigationHandle> NavigationControllerImpl::LoadURL(
     const GURL& url,
     const Referrer& referrer,
     ui::PageTransition transition,
-    const std::string& extra_headers) {
+    const std::string& extra_headers
+#if OHOS_NETWORK_LOAD
+    ,
+    bool has_user_gesture
+#endif
+    ) {
   LoadURLParams params(url);
   params.referrer = referrer;
   params.transition_type = transition;
   params.extra_headers = extra_headers;
 #if BUILDFLAG(IS_OHOS)
   params.override_user_agent = NavigationController::UA_OVERRIDE_TRUE;
+  params.has_user_gesture = has_user_gesture;
 #endif
   return LoadURLWithParams(params);
 }

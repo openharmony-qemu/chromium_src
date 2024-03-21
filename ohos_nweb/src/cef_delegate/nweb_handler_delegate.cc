@@ -804,7 +804,11 @@ bool NWebHandlerDelegate::OnBeforePopup(
   }
   if (main_browser_) {
     preference_delegate_->WebPreferencesChanged();
+#ifdef OHOS_NETWORK_LOAD
+    main_browser_->GetMainFrame()->LoadURLWithUserGesture(target_url, user_gesture);
+#else
     main_browser_->GetMainFrame()->LoadURL(target_url);
+#endif
   }
 #endif  // defined(OHOS_MULTI_WINDOW)
   return true;

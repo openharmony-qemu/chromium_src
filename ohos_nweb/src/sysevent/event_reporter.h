@@ -64,4 +64,6 @@ void ReportVideoPlayErrorInfo(const std::string errorType,
 void ReportAudioFrameDropStats(int frameCount);
 
 void ReportVideoFrameDropStats(int64_t frameCount, int64_t frameDuration);
+
+void ReportSiteIsolationMode(const std::string site_isolation_status);
 #endif

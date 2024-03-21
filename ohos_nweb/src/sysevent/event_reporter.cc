@@ -81,6 +81,10 @@ constexpr char VIDEO_FRAME_DROP_STATISTICS[] = "VIDEO_FRAME_DROP_STATISTICS";
 constexpr char VIDEO_FRAME_DROPPED_COUNT[] = "VIDEO_FRAME_DROPPED_COUNT";
 constexpr char VIDEO_FRAME_DROPPED_DURATION[] = "VIDEO_FRAME_DROPPED_DURATION";
 
+// For site_isolation 
+constexpr char SITE_ISOLATION_MODE[] = "SITE_ISOLATION_MODE";
+constexpr char SITE_ISOLATION_STATUS[] = "SITE_ISOLATION_STATUS";
+
 }  // namespace
 
 void ReportPageLoadStats(int instanceId,
@@ -250,4 +254,9 @@ void ReportVideoFrameDropStats(int64_t frameCount, int64_t frameDuration) {
     VIDEO_FRAME_DROP_STATISTICS, HiSysEventAdapter::EventType::STATISTIC,
     {VIDEO_FRAME_DROPPED_COUNT, std::to_string(frameCount),
      VIDEO_FRAME_DROPPED_DURATION, std::to_string(frameDuration)});
+}
+
+void ReportSiteIsolationMode(const std::string site_isolation_status) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      SITE_ISOLATION_MODE, HiSysEventAdapter::EventType::BEHAVIOR, {SITE_ISOLATION_STATUS, site_isolation_status});
 }

@@ -132,6 +132,8 @@ component("cef_nweb") {
     "src/cef_delegate/nweb_js_ssl_error_result_impl.h",
     "src/cef_delegate/nweb_js_ssl_select_cert_result_impl.cc",
     "src/cef_delegate/nweb_js_ssl_select_cert_result_impl.h",
+    "src/cef_delegate/nweb_gesture_event_result_impl.cc",
+    "src/cef_delegate/nweb_gesture_event_result_impl.h",
     "src/cef_delegate/nweb_key_event_impl.cc",
     "src/cef_delegate/nweb_key_event_impl.h",
     "src/cef_delegate/nweb_preference_delegate.cc",

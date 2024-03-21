@@ -1085,8 +1085,8 @@ class CONTENT_EXPORT RenderWidgetHostImpl
       blink::mojom::InputEventResultSource ack_source) override;
   void DidOverscroll(const ui::DidOverscrollParams& params) override;
 
-#if defined(OHOS_INPUT_EVENTS)
-  void DidNativeEmbedEvent(const blink::mojom::EmbedTouchEventPtr& touchEvent) override;
+#if BUILDFLAG(IS_OHOS)
+  void DidNativeEmbedEvent(blink::mojom::NativeEmbedTouchEventPtr touchEvent) override;
 #endif
   void DidStartScrollingViewport() override;
   void OnSetCompositorAllowedTouchAction(cc::TouchAction) override {}

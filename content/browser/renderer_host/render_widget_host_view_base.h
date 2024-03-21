@@ -37,6 +37,7 @@
 #include "third_party/blink/public/mojom/frame/intrinsic_sizing_info.mojom-forward.h"
 #include "third_party/blink/public/mojom/input/input_event_result.mojom-shared.h"
 #include "third_party/blink/public/mojom/input/input_handler.mojom-forward.h"
+#include "third_party/blink/public/mojom/widget/platform_widget.mojom-forward.h"
 #include "third_party/blink/public/mojom/widget/record_content_to_visible_time_request.mojom.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "ui/accessibility/ax_action_handler_registry.h"
@@ -302,8 +303,8 @@ class CONTENT_EXPORT RenderWidgetHostViewBase : public RenderWidgetHostView {
 
   virtual void DidOverscroll(const ui::DidOverscrollParams& params) {}
 
-#if defined(OHOS_INPUT_EVENTS)
-  virtual void DidNativeEmbedEvent(const blink::mojom::EmbedTouchEventPtr& touchEvent) {}
+#if BUILDFLAG(IS_OHOS)
+  virtual void DidNativeEmbedEvent(const blink::mojom::NativeEmbedTouchEventPtr& touchEvent) {}
 #endif
   virtual void DidStopFlinging() {}
 

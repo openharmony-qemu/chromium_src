@@ -353,6 +353,11 @@ class UnboundWidgetInputHandler : public blink::mojom::WidgetInputHandler {
                                   bool animate) override {
     NOTREACHED() << "Input request on unbound interface";
   }
+#if BUILDFLAG(IS_OHOS)
+  void SetGestureEventResult(bool result) override {
+    DLOG(WARNING) << "Input request on unbound interface";
+  }
+#endif
 };
 
 std::u16string GetWrappedTooltipText(
@@ -3167,10 +3172,9 @@ void RenderWidgetHostImpl::DidOverscroll(
     view_->DidOverscroll(params);
 }
 
-
-#if defined(OHOS_INPUT_EVENTS)
+#if BUILDFLAG(IS_OHOS)
 void RenderWidgetHostImpl::DidNativeEmbedEvent(
-    const blink::mojom::EmbedTouchEventPtr& touchEvent) {
+      blink::mojom::NativeEmbedTouchEventPtr touchEvent) {
   if (view_)
     view_->DidNativeEmbedEvent(touchEvent);
 }

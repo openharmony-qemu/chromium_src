@@ -31,14 +31,14 @@
 #include "media/mojo/services/playback_events_recorder.h"
 #endif
 
-#if BUILDFLAG(IS_OHOS)
+#if defined(REPORT_SYS_EVENT)
 #include "ohos_nweb/src/sysevent/event_reporter.h"
 #endif
 
 namespace media {
 
 constexpr char kInvalidInitialize[] = "Initialize() was not called correctly.";
-#if BUILDFLAG(IS_OHOS)
+#if defined(REPORT_SYS_EVENT)
 constexpr int DEFAULT_VIDEO_ERROR_CODE = 0;
 #endif
 
@@ -256,7 +256,7 @@ void MediaMetricsProvider::Initialize(
 
 void MediaMetricsProvider::OnError(const PipelineStatus& status) {
   DCHECK(IsInitialized());
-#if BUILDFLAG(IS_OHOS)
+#if defined(REPORT_SYS_EVENT)
   std::string errorType = "video play error";
   int errorCode = DEFAULT_VIDEO_ERROR_CODE;
   std::string errorDesc = "media player start failed or network error";

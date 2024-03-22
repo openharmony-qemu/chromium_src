@@ -22,8 +22,11 @@
 #if BUILDFLAG(IS_OHOS)
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
-#include "ohos_nweb/src/sysevent/event_reporter.h"
 #include "res_sched_client_adapter.h"
+#endif
+
+#if defined(REPORT_SYS_EVENT)
+#include "ohos_nweb/src/sysevent/event_reporter.h"
 #endif
 
 namespace viz {
@@ -147,7 +150,7 @@ void CompositorFrameSinkImpl::SubmitCompositorFrame(
     CompositorFrame frame,
     absl::optional<HitTestRegionList> hit_test_region_list,
     uint64_t submit_time) {
-#if BUILDFLAG(IS_OHOS)
+#if defined(REPORT_SYS_EVENT)
   auto count = frame.metadata.dropped_frame_count;
   auto duration = frame.metadata.dropped_frame_duration;
   if (!!count && !!duration) {

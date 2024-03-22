@@ -1003,6 +1003,11 @@ void Compositor::SetCurrentFrameSinkId(const viz::FrameSinkId& id) {
 void Compositor::SetEnableLowerFrameRate(bool enabled) {
   context_factory_->GetHostFrameSinkManager()->SetEnableLowerFrameRate(enabled, frame_sink_id());
 }
+
+void Compositor::EvictFrameBackBuffers(bool invisible) {
+  context_factory_->GetHostFrameSinkManager()->EvictFrameBackBuffers(
+      frame_sink_id(), invisible);
+}
 #endif
 
 const cc::LayerTreeSettings& Compositor::GetLayerTreeSettings() const {

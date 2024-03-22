@@ -779,6 +779,18 @@ void FrameSinkManagerImpl::SendInternalBeginFrame(const FrameSinkId& id) {
     root_sink_map_[id]->SendInternalBeginFrame();
   }
 }
+
+void FrameSinkManagerImpl::EvictFrameBackBuffers(
+    const FrameSinkId& root_frame_sink_id,
+    bool invisible) {
+  TRACE_EVENT1("viz", "FrameSinkManagerImpl::EvictFrameBackBuffers",
+               "root_frame_sink_id", root_frame_sink_id.ToString());
+
+  auto root_it = root_sink_map_.find(root_frame_sink_id);
+  if (root_it != root_sink_map_.end()) {
+    root_it->second->EvictFrameBackBuffers(invisible);
+  }
+}
 #endif
 
 void FrameSinkManagerImpl::UpdateThrottling() {

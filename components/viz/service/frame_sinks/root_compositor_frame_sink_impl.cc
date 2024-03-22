@@ -691,6 +691,16 @@ void RootCompositorFrameSinkImpl::SendInternalBeginFrame() {
 void RootCompositorFrameSinkImpl::SetEnableLowerFrameRate(bool enabled) {
   external_begin_frame_source_->SetEnableLowerFrameRate(enabled);
 }
+
+void RootCompositorFrameSinkImpl::EvictFrameBackBuffers(bool invisible) {
+  TRACE_EVENT1("viz", "RootCompositorFrameSinkImpl::EvictFrameBackBuffers",
+               "invisible", invisible);
+  if (invisible) {
+    SetDisplayVisible(false);
+  } else {
+    SetDisplayVisible(true);
+  }
+}
 #endif
 
 void RootCompositorFrameSinkImpl::SetWideColorEnabled(bool enabled) {

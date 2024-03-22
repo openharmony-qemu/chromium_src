@@ -164,6 +164,8 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
 
 #if BUILDFLAG(IS_OHOS)
   void SendInternalBeginFrame(const FrameSinkId& id) override;
+  void EvictFrameBackBuffers(const FrameSinkId& root_frame_sink_id,
+                             bool invisible) override;
 #endif
 
   void DestroyFrameSinkBundle(const FrameSinkBundleId& id);

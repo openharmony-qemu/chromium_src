@@ -234,6 +234,11 @@ GpuFeatureStatus GetCanvasOopRasterizationFeatureStatus(
     const base::CommandLine& command_line,
     const GpuPreferences& gpu_preferences,
     bool use_swift_shader) {
+  if (command_line.HasSwitch(switches::kDisableCanvasOopRasterization))
+    return kGpuFeatureStatusDisabled;
+  else if (command_line.HasSwitch(switches::kEnableCanvasOopRasterization))
+    return kGpuFeatureStatusEnabled;
+
   // Requires GPU rasterization
   if (GetGpuRasterizationFeatureStatus(blocklisted_features, command_line,
                                        use_swift_shader) !=

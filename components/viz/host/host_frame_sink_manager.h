@@ -311,9 +311,10 @@ class VIZ_HOST_EXPORT HostFrameSinkManager
   void OnAggregatedHitTestRegionListUpdated(
       const FrameSinkId& frame_sink_id,
       const std::vector<AggregatedHitTestRegion>& hit_test_data) override;
- 
+
  #if BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_JITTER)
   void OnVsync(uint32_t client_id, uint32_t sink_id) override;
+  void OnVsyncReceived(uint32_t client_id, uint32_t sink_id) override;
 #endif
 
   // Connections to/from FrameSinkManagerImpl.

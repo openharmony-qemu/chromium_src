@@ -1429,15 +1429,17 @@ void NWebImpl::StoreWebArchive(
   nweb_delegate_->StoreWebArchive(base_name, auto_name, callback);
 }
 
-void NWebImpl::SendDragEvent(const DragEvent& dragEvent) {
+void NWebImpl::SendDragEvent(std::shared_ptr<NWebDragEvent> dragEvent) {
   if (nweb_delegate_ == nullptr) {
     WVLOG_E("nweb_delegate_ is nullptr");
     return;
   }
   DelegateDragEvent event;
-  event.action = static_cast<DelegateDragAction>(dragEvent.action);
-  event.x = dragEvent.x;
-  event.y = dragEvent.y;
+  if (dragEvent) {
+    event.action = static_cast<DelegateDragAction>(dragEvent->GetAction());
+    event.x = dragEvent->GetX();
+    event.y = dragEvent->GetY();
+  }
   nweb_delegate_->SendDragEvent(event);
 }
 

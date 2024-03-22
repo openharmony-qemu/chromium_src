@@ -19,7 +19,7 @@
 
 #include "base/capi/ark_web_base_ref_counted_capi.h"
 #include "base/include/ark_web_types.h"
-#include "ohos_nweb/include/ark_web_nweb_structs.h"
+#include "ohos_nweb/capi/ark_web_screen_capture_config_capi.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,7 +33,7 @@ typedef struct _ark_web_screen_capture_access_request_t {
 
   void(ARK_WEB_CALLBACK *agree)(
       struct _ark_web_screen_capture_access_request_t *self,
-      const ArkWebScreenCaptureConfig *config);
+      ark_web_screen_capture_config_t *config);
 
   void(ARK_WEB_CALLBACK *refuse)(
       struct _ark_web_screen_capture_access_request_t *self);

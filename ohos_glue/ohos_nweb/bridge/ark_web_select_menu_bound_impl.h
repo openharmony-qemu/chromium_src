@@ -13,26 +13,35 @@
  * limitations under the License.
  */
 
-#ifndef ARK_WEB_HANDLER_CPPTOC_H_
-#define ARK_WEB_HANDLER_CPPTOC_H_
+#ifndef ARK_WEB_SELECT_MENU_BOUND_IMPL_H_
+#define ARK_WEB_SELECT_MENU_BOUND_IMPL_H_
 #pragma once
 
-#include "base/cpptoc/ark_web_cpptoc_ref_counted.h"
-#include "ohos_nweb/capi/ark_web_handler_capi.h"
-#include "ohos_nweb/include/ark_web_handler.h"
+#include "include/nweb_select_popup_menu.h"
+#include "ohos_nweb/include/ark_web_select_menu_bound.h"
 
 namespace OHOS::ArkWeb {
 
-// Wrap a C++ class with a C structure.
-// This class may be instantiated and accessed DLL-side only.
-class ArkWebHandlerCppToC
-    : public ArkWebCppToCRefCounted<ArkWebHandlerCppToC, ArkWebHandler,
-                                    ark_web_handler_t> {
+class ArkWebSelectMenuBoundImpl : public ArkWebSelectMenuBound {
+  IMPLEMENT_REFCOUNTING(ArkWebSelectMenuBoundImpl);
+
 public:
-  ArkWebHandlerCppToC();
-  virtual ~ArkWebHandlerCppToC();
+  ArkWebSelectMenuBoundImpl(
+      std::shared_ptr<OHOS::NWeb::NWebSelectMenuBound> nweb_select_menu_bound);
+  ~ArkWebSelectMenuBoundImpl() = default;
+
+  int GetX() override;
+
+  int GetY() override;
+
+  int GetWidth() override;
+
+  int GetHeight() override;
+
+private:
+  std::shared_ptr<OHOS::NWeb::NWebSelectMenuBound> nweb_select_menu_bound_;
 };
 
 } // namespace OHOS::ArkWeb
 
-#endif // ARK_WEB_HANDLER_CPPTOC_H_
+#endif // ARK_WEB_SELECT_MENU_BOUND_IMPL_H_

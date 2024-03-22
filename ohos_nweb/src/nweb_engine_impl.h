@@ -49,10 +49,10 @@ public:
   void SetWebDebuggingAccess(bool isEnableDebug) override;
 
   void AddIntelligentTrackingPreventionBypassingList(
-      const std::vector<std::string>& hosts) override;
+      const std::vector<std::string> &hosts) override;
 
   void RemoveIntelligentTrackingPreventionBypassingList(
-      const std::vector<std::string>& hosts) override;
+      const std::vector<std::string> &hosts) override;
 
   void ClearIntelligentTrackingPreventionBypassingList() override;
 
@@ -60,10 +60,10 @@ public:
 
   void ResumeAllTimers() override;
 
-  void PrefetchResource(const std::shared_ptr<NWebEnginePrefetchArgs>& pre_args,
-                        const std::map<std::string, std::string>& additional_http_headers,
-                        const std::string& cache_key,
-                        const uint32_t& cache_valid_time) override;
+  void PrefetchResource(
+      const std::shared_ptr<NWebEnginePrefetchArgs> &pre_args,
+      const std::map<std::string, std::string> &additional_http_headers,
+      const std::string &cache_key, const uint32_t &cache_valid_time) override;
 
 private:
   std::shared_ptr<NWebDataBase> nweb_data_base_ = nullptr;

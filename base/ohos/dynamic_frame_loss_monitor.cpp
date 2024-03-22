@@ -114,12 +114,14 @@ void DynamicFrameLossMonitor::Report()
   if(total_app_missed_frames_ == 0) {
     return;
   }
+#if defined(REPORT_SYS_EVENT)
   base::ThreadPool::PostTask(
     FROM_HERE,
     {base::TaskPriority::LOWEST},
     base::BindOnce(&ReportSlideJankStats, start_time_, stop_time_ - start_time_, total_app_frames_,
       total_app_missed_frames_, max_app_frametime_, max_app_seq_missed_frames_)
   );
+#endif
 }
 
 void DynamicFrameLossMonitor::ResetStatus()

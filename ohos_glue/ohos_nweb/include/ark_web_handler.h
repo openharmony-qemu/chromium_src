@@ -23,16 +23,18 @@
 #include "ohos_nweb/include/ark_web_context_menu_params.h"
 #include "ohos_nweb/include/ark_web_controller_handler.h"
 #include "ohos_nweb/include/ark_web_data_resubmission_callback.h"
+#include "ohos_nweb/include/ark_web_date_time_chooser.h"
 #include "ohos_nweb/include/ark_web_date_time_chooser_callback.h"
 #include "ohos_nweb/include/ark_web_date_time_suggestion_vector.h"
 #include "ohos_nweb/include/ark_web_file_selector_params.h"
 #include "ohos_nweb/include/ark_web_first_meaningful_paint_details.h"
 #include "ohos_nweb/include/ark_web_full_screen_exit_handler.h"
 #include "ohos_nweb/include/ark_web_geo_location_callback.h"
+#include "ohos_nweb/include/ark_web_image_options.h"
+#include "ohos_nweb/include/ark_web_js_all_ssl_error_result.h"
 #include "ohos_nweb/include/ark_web_js_dialog_result.h"
 #include "ohos_nweb/include/ark_web_js_http_auth_result.h"
 #include "ohos_nweb/include/ark_web_js_ssl_error_result.h"
-#include "ohos_nweb/include/ark_web_js_all_ssl_error_result.h"
 #include "ohos_nweb/include/ark_web_js_ssl_select_cert_result.h"
 #include "ohos_nweb/include/ark_web_key_event.h"
 #include "ohos_nweb/include/ark_web_largest_contentful_paint_details.h"
@@ -46,6 +48,7 @@
 #include "ohos_nweb/include/ark_web_select_popup_menu_callback.h"
 #include "ohos_nweb/include/ark_web_select_popup_menu_param.h"
 #include "ohos_nweb/include/ark_web_string_vector_value_callback.h"
+#include "ohos_nweb/include/ark_web_touch_handle_hot_zone.h"
 #include "ohos_nweb/include/ark_web_touch_handle_state.h"
 #include "ohos_nweb/include/ark_web_url_resource_error.h"
 #include "ohos_nweb/include/ark_web_url_resource_request.h"
@@ -490,7 +493,7 @@ public:
 
   /*--ark web()--*/
   virtual bool OnDragAndDropData(const void *data, size_t len,
-                                 const ArkWebImageOptions &opt) = 0;
+                                 ArkWebRefPtr<ArkWebImageOptions> opt) = 0;
 
   /*--ark web()--*/
   virtual void
@@ -549,7 +552,7 @@ public:
 
   /*--ark web()--*/
   virtual void OnDateTimeChooserPopup(
-      const ArkWebDateTimeChooser &chooser,
+      ArkWebRefPtr<ArkWebDateTimeChooser> chooser,
       const ArkWebDateTimeSuggestionVector &suggestions,
       ArkWebRefPtr<ArkWebDateTimeChooserCallback> callback) = 0;
 
@@ -577,7 +580,8 @@ public:
   virtual void OnActivityStateChanged(int state, int type) = 0;
 
   /*--ark web()--*/
-  virtual void OnGetTouchHandleHotZone(ArkWebTouchHandleHotZone &hot_zone) = 0;
+  virtual void
+  OnGetTouchHandleHotZone(ArkWebRefPtr<ArkWebTouchHandleHotZone> hot_zone) = 0;
 
   /**
    * @brief Called when swap buffer completed with new size.
@@ -615,7 +619,7 @@ public:
   virtual void OnSafeBrowsingCheckResult(int threat_type) = 0;
 
   /**
-   * @brief Called when tacker's cookie is prevented.
+   * @brief Called when tracker's cookie is prevented.
    *
    * @param website_host The host of website url.
    *
@@ -649,7 +653,8 @@ public:
    * as usual.
    */
   /*--ark web()--*/
-  virtual bool OnHandleOverrideUrlLoading(ArkWebRefPtr<ArkWebUrlResourceRequest> request) = 0;
+  virtual bool OnHandleOverrideUrlLoading(
+      ArkWebRefPtr<ArkWebUrlResourceRequest> request) = 0;
 
   /*--ark web()--*/
   virtual void OnFirstMeaningfulPaint(
@@ -660,14 +665,10 @@ public:
       ArkWebRefPtr<ArkWebLargestContentfulPaintDetails> details) = 0;
 
   /*--ark web()--*/
-  virtual bool OnAllSslErrorRequestByJS(ArkWebRefPtr<ArkWebJsAllSslErrorResult> result,
-                        int error,
-                        const ArkWebString &url,
-                        const ArkWebString &originalUrl,
-                        const ArkWebString &referrer,
-                        bool isFatalError,
-                        bool isMainFrame
-                        ) = 0;
+  virtual bool OnAllSslErrorRequestByJS(
+      ArkWebRefPtr<ArkWebJsAllSslErrorResult> result, int error,
+      const ArkWebString &url, const ArkWebString &originalUrl,
+      const ArkWebString &referrer, bool isFatalError, bool isMainFrame) = 0;
 };
 
 } // namespace OHOS::ArkWeb

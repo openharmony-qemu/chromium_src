@@ -19,7 +19,7 @@
 
 #include "base/include/ark_web_base_ref_counted.h"
 #include "base/include/ark_web_types.h"
-#include "ohos_nweb/include/ark_web_nweb_structs.h"
+#include "ohos_nweb/include/ark_web_screen_capture_config.h"
 
 namespace OHOS::ArkWeb {
 
@@ -33,7 +33,7 @@ public:
    * @param config screen capture config.
    */
   /*--ark web()--*/
-  virtual void Agree(const ArkWebScreenCaptureConfig &config) = 0;
+  virtual void Agree(ArkWebRefPtr<ArkWebScreenCaptureConfig> config) = 0;
 
   /**
    * @brief Refuse the request.

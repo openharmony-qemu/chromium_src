@@ -23,11 +23,13 @@
 #include "ohos_nweb/bridge/ark_web_core_struct_utils.h"
 #include "ohos_nweb/bridge/ark_web_data_resubmission_callback_impl.h"
 #include "ohos_nweb/bridge/ark_web_date_time_chooser_callback_impl.h"
+#include "ohos_nweb/bridge/ark_web_date_time_chooser_impl.h"
 #include "ohos_nweb/bridge/ark_web_drag_data_impl.h"
 #include "ohos_nweb/bridge/ark_web_file_selector_params_impl.h"
 #include "ohos_nweb/bridge/ark_web_first_meaningful_paint_details_impl.h"
 #include "ohos_nweb/bridge/ark_web_full_screen_exit_handler_impl.h"
 #include "ohos_nweb/bridge/ark_web_geo_location_callback_impl.h"
+#include "ohos_nweb/bridge/ark_web_image_options_impl.h"
 #include "ohos_nweb/bridge/ark_web_js_dialog_result_impl.h"
 #include "ohos_nweb/bridge/ark_web_js_http_auth_result_impl.h"
 #include "ohos_nweb/bridge/ark_web_js_ssl_error_result_impl.h"
@@ -44,6 +46,7 @@
 #include "ohos_nweb/bridge/ark_web_select_popup_menu_callback_impl.h"
 #include "ohos_nweb/bridge/ark_web_select_popup_menu_param_impl.h"
 #include "ohos_nweb/bridge/ark_web_string_vector_value_callback_impl.h"
+#include "ohos_nweb/bridge/ark_web_touch_handle_hot_zone_impl.h"
 #include "ohos_nweb/bridge/ark_web_touch_handle_state_impl.h"
 #include "ohos_nweb/bridge/ark_web_url_resource_error_impl.h"
 #include "ohos_nweb/bridge/ark_web_url_resource_request_impl.h"
@@ -596,10 +599,14 @@ void ArkWebHandlerWrapper::OnFullScreenEnter(
 }
 
 bool ArkWebHandlerWrapper::OnDragAndDropData(
-    const void *data, size_t len, const OHOS::NWeb::ImageOptions &opt) {
-  ArkWebImageOptions ark_web_image_options =
-      ArkWebImageOptionsClassToStruct(opt);
-  return ark_web_handler_->OnDragAndDropData(data, len, ark_web_image_options);
+    const void *data, size_t len,
+    std::shared_ptr<OHOS::NWeb::NWebImageOptions> opt) {
+  if (CHECK_SHARED_PTR_IS_NULL(opt)) {
+    return ark_web_handler_->OnDragAndDropData(data, len, nullptr);
+  }
+
+  return ark_web_handler_->OnDragAndDropData(data, len,
+                                             new ArkWebImageOptionsImpl(opt));
 }
 
 void ArkWebHandlerWrapper::OnSelectPopupMenu(
@@ -667,23 +674,28 @@ void ArkWebHandlerWrapper::OnFirstContentfulPaint(
 }
 
 void ArkWebHandlerWrapper::OnDateTimeChooserPopup(
-    const OHOS::NWeb::DateTimeChooser &chooser,
+    std::shared_ptr<OHOS::NWeb::NWebDateTimeChooser> chooser,
     const std::vector<std::shared_ptr<OHOS::NWeb::NWebDateTimeSuggestion>>
         &suggestions,
     std::shared_ptr<OHOS::NWeb::NWebDateTimeChooserCallback> callback) {
-  ArkWebDateTimeChooser ark_web_chooser =
-      ArkWebDateTimeChooserClassToStruct(chooser);
   ArkWebDateTimeSuggestionVector st_date_time_suggestion_vector =
       ArkWebDateTimeSuggestionVectorClassToStruct(suggestions);
 
-  if (CHECK_SHARED_PTR_IS_NULL(callback)) {
-    ark_web_handler_->OnDateTimeChooserPopup(
-        ark_web_chooser, st_date_time_suggestion_vector, nullptr);
-  } else {
-    ark_web_handler_->OnDateTimeChooserPopup(
-        ark_web_chooser, st_date_time_suggestion_vector,
-        new ArkWebDateTimeChooserCallbackImpl(callback));
+  ArkWebRefPtr<ArkWebDateTimeChooser> ark_web_date_time_chooser = nullptr;
+  if (!CHECK_SHARED_PTR_IS_NULL(chooser)) {
+    ark_web_date_time_chooser = new ArkWebDateTimeChooserImpl(chooser);
   }
+
+  ArkWebRefPtr<ArkWebDateTimeChooserCallback>
+      ark_web_date_time_chooser_callback = nullptr;
+  if (!CHECK_SHARED_PTR_IS_NULL(callback)) {
+    ark_web_date_time_chooser_callback =
+        new ArkWebDateTimeChooserCallbackImpl(callback);
+  }
+
+  ark_web_handler_->OnDateTimeChooserPopup(ark_web_date_time_chooser,
+                                           st_date_time_suggestion_vector,
+                                           ark_web_date_time_chooser_callback);
 
   ArkWebDateTimeSuggestionVectorStructRelease(st_date_time_suggestion_vector);
 }
@@ -709,11 +721,14 @@ void ArkWebHandlerWrapper::OnActivityStateChanged(int state,
 }
 
 void ArkWebHandlerWrapper::OnGetTouchHandleHotZone(
-    OHOS::NWeb::TouchHandleHotZone &hot_zone) {
-  ArkWebTouchHandleHotZone ark_web_hot_zone = ark_web_touch_handle_zone_default;
-  ark_web_handler_->OnGetTouchHandleHotZone(ark_web_hot_zone);
+    std::shared_ptr<OHOS::NWeb::NWebTouchHandleHotZone> hot_zone) {
+  if (CHECK_SHARED_PTR_IS_NULL(hot_zone)) {
+    ark_web_handler_->OnGetTouchHandleHotZone(nullptr);
+    return;
+  }
 
-  hot_zone = ArkWebTouchHandleHotZoneStructToClass(ark_web_hot_zone);
+  ark_web_handler_->OnGetTouchHandleHotZone(
+      new ArkWebTouchHandleHotZoneImpl(hot_zone));
 }
 
 void ArkWebHandlerWrapper::OnCompleteSwapWithNewSize() {
@@ -765,8 +780,7 @@ void ArkWebHandlerWrapper::OnSafeBrowsingCheckResult(int threat_type) {
 
 void ArkWebHandlerWrapper::OnFullScreenEnterWithVideoSize(
     std::shared_ptr<OHOS::NWeb::NWebFullScreenExitHandler> handler,
-    int video_natural_width,
-    int video_natural_height) {
+    int video_natural_width, int video_natural_height) {
   if (CHECK_SHARED_PTR_IS_NULL(handler)) {
     ark_web_handler_->OnFullScreenEnterWithVideoSize(
         nullptr, video_natural_width, video_natural_height);
@@ -793,8 +807,8 @@ void ArkWebHandlerWrapper::OnIntelligentTrackingPreventionResult(
   ArkWebString stWebsiteHost = ArkWebStringClassToStruct(website_host);
   ArkWebString stTrackerHost = ArkWebStringClassToStruct(tracker_host);
 
-  ark_web_handler_->OnIntelligentTrackingPreventionResult(
-      stWebsiteHost, stTrackerHost);
+  ark_web_handler_->OnIntelligentTrackingPreventionResult(stWebsiteHost,
+                                                          stTrackerHost);
 
   ArkWebStringStructRelease(stWebsiteHost);
   ArkWebStringStructRelease(stTrackerHost);
@@ -824,32 +838,19 @@ void ArkWebHandlerWrapper::OnLargestContentfulPaint(
 
 bool ArkWebHandlerWrapper::OnAllSslErrorRequestByJS(
     std::shared_ptr<OHOS::NWeb::NWebJSAllSslErrorResult> result,
-    ArkWebSslError error,
-    const std::string& url,
-    const std::string& originalUrl,
-    const std::string& referrer,
-    bool isFatalError,
-    bool isMainFrame) {
+    ArkWebSslError error, const std::string &url,
+    const std::string &originalUrl, const std::string &referrer,
+    bool isFatalError, bool isMainFrame) {
   if (CHECK_SHARED_PTR_IS_NULL(result)) {
     return ark_web_handler_->OnAllSslErrorRequestByJS(
-      nullptr,
-      static_cast<int>(error),
-      ArkWebStringClassToStruct(url),
-      ArkWebStringClassToStruct(originalUrl),
-      ArkWebStringClassToStruct(referrer),
-      isFatalError,
-      isMainFrame
-      );
+        nullptr, static_cast<int>(error), ArkWebStringClassToStruct(url),
+        ArkWebStringClassToStruct(originalUrl),
+        ArkWebStringClassToStruct(referrer), isFatalError, isMainFrame);
   }
 
   return ark_web_handler_->OnAllSslErrorRequestByJS(
-      new ArkWebJsAllSslErrorResultImpl(result),
-      static_cast<int>(error),
-      ArkWebStringClassToStruct(url),
-      ArkWebStringClassToStruct(originalUrl),
-      ArkWebStringClassToStruct(referrer),
-      isFatalError,
-      isMainFrame
-      );
+      new ArkWebJsAllSslErrorResultImpl(result), static_cast<int>(error),
+      ArkWebStringClassToStruct(url), ArkWebStringClassToStruct(originalUrl),
+      ArkWebStringClassToStruct(referrer), isFatalError, isMainFrame);
 }
 } // namespace OHOS::ArkWeb

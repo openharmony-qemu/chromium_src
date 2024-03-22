@@ -13,17 +13,31 @@
  * limitations under the License.
  */
 
-#ifndef ARK_WEB_INTERFACE_RESULT_H_
-#define ARK_WEB_INTERFACE_RESULT_H_
+#ifndef ARK_WEB_DRAG_EVENT_CAPI_H_
+#define ARK_WEB_DRAG_EVENT_CAPI_H_
 #pragma once
 
-enum ArkWebInterfaceResult {
-  RESULT_OK = 0,
-  RESULT_NOT_IMPL,
-  RESULT_CPPTOC_ERROR,
-  RESULT_CTOCPP_ERROR
-};
+#include "base/capi/ark_web_base_ref_counted_capi.h"
 
-static thread_local ArkWebInterfaceResult interface_result;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#endif // ARK_WEB_INTERFACE_RESULT_H_
+typedef struct _ark_web_drag_event_t {
+  /**
+   * @brief Base structure.
+   */
+  ark_web_base_ref_counted_t base;
+
+  double(ARK_WEB_CALLBACK *get_x)(struct _ark_web_drag_event_t *self);
+
+  double(ARK_WEB_CALLBACK *get_y)(struct _ark_web_drag_event_t *self);
+
+  int(ARK_WEB_CALLBACK *get_action)(struct _ark_web_drag_event_t *self);
+} ark_web_drag_event_t;
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // ARK_WEB_DRAG_EVENT_CAPI_H_

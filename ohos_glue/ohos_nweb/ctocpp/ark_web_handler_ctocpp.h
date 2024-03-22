@@ -176,7 +176,7 @@ public:
   OnFullScreenEnter(ArkWebRefPtr<ArkWebFullScreenExitHandler> handler) override;
 
   bool OnDragAndDropData(const void *data, size_t len,
-                         const ArkWebImageOptions &opt) override;
+                         ArkWebRefPtr<ArkWebImageOptions> opt) override;
 
   void OnSelectPopupMenu(
       ArkWebRefPtr<ArkWebSelectPopupMenuParam> params,
@@ -199,7 +199,7 @@ public:
                               int64_t first_contentful_paint_ms) override;
 
   void OnDateTimeChooserPopup(
-      const ArkWebDateTimeChooser &chooser,
+      ArkWebRefPtr<ArkWebDateTimeChooser> chooser,
       const ArkWebDateTimeSuggestionVector &suggestions,
       ArkWebRefPtr<ArkWebDateTimeChooserCallback> callback) override;
 
@@ -210,7 +210,8 @@ public:
 
   void OnActivityStateChanged(int state, int type) override;
 
-  void OnGetTouchHandleHotZone(ArkWebTouchHandleHotZone &hot_zone) override;
+  void OnGetTouchHandleHotZone(
+      ArkWebRefPtr<ArkWebTouchHandleHotZone> hot_zone) override;
 
   void OnCompleteSwapWithNewSize() override;
 
@@ -228,6 +229,10 @@ public:
 
   void OnSafeBrowsingCheckResult(int threat_type) override;
 
+  void OnIntelligentTrackingPreventionResult(
+      const ArkWebString &website_host,
+      const ArkWebString &tracker_host) override;
+
   void OnFullScreenEnterWithVideoSize(
       ArkWebRefPtr<ArkWebFullScreenExitHandler> handler,
       int video_natural_width, int video_natural_height) override;
@@ -235,24 +240,17 @@ public:
   bool OnHandleOverrideUrlLoading(
       ArkWebRefPtr<ArkWebUrlResourceRequest> request) override;
 
-  void OnIntelligentTrackingPreventionResult(
-      const ArkWebString &website_host,
-      const ArkWebString &tracker_host) override;
-
   void OnFirstMeaningfulPaint(
       ArkWebRefPtr<ArkWebFirstMeaningfulPaintDetails> details) override;
 
   void OnLargestContentfulPaint(
       ArkWebRefPtr<ArkWebLargestContentfulPaintDetails> details) override;
 
- bool OnAllSslErrorRequestByJS(
-     ArkWebRefPtr<ArkWebJsAllSslErrorResult> result,
-     int error,
-     const ArkWebString &url,
-     const ArkWebString &originalUrl,
-     const ArkWebString &referrer,
-     bool isFatalError,
-     bool isMainFrame) override;
+  bool OnAllSslErrorRequestByJS(ArkWebRefPtr<ArkWebJsAllSslErrorResult> result,
+                                int error, const ArkWebString &url,
+                                const ArkWebString &originalUrl,
+                                const ArkWebString &referrer, bool isFatalError,
+                                bool isMainFrame) override;
 };
 
 } // namespace OHOS::ArkWeb

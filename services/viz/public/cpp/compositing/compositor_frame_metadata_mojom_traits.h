@@ -58,7 +58,7 @@ struct StructTraits<viz::mojom::CompositorFrameMetadataDataView,
   }
 #endif
 
-#if BUILDFLAG(IS_OHOS)
+#if defined(REPORT_SYS_EVENT)
   static int64_t dropped_frame_count(const viz::CompositorFrameMetadata& metadata) {
     return metadata.dropped_frame_count;
   }

@@ -83,9 +83,9 @@ struct CompositorFrameMetadata {
   [EnableIf=ohos_slide]
   bool is_scrolling;
 
-  [EnableIf=is_ohos]
+  [EnableIf=report_sys_event]
   int64 dropped_frame_count;
 
-  [EnableIf=is_ohos]
+  [EnableIf=report_sys_event]
   int64 dropped_frame_duration;
 };

@@ -1103,6 +1103,17 @@ std::string NWebImpl::Title() {
   return nweb_delegate_->Title();
 }
 
+void NWebImpl::ExecuteJavaScriptExt(
+    const int fd,
+    const size_t scriptLength,
+    std::shared_ptr<NWebMessageValueCallback> callback,
+    bool extention) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->ExecuteJavaScriptExt(fd, scriptLength, callback, extention);
+}
+
 #if defined(OHOS_MSGPORT)
 void NWebImpl::ExecuteJavaScript(
     const std::string& code,

@@ -808,4 +808,15 @@ bool ArkWebNWebImpl::IsIntelligentTrackingPreventionEnabled() {
   return nweb_nweb_->IsIntelligentTrackingPreventionEnabled();
 }
 
+void ArkWebNWebImpl::ExecuteJavaScriptExt(const int fd, const size_t scriptLength,
+    ArkWebRefPtr<ArkWebMessageValueCallback> callback, bool extention) {
+  if (CHECK_REF_PTR_IS_NULL(callback)) {
+    nweb_nweb_->ExecuteJavaScriptExt(fd, scriptLength, nullptr, extention);
+    return;
+  }
+
+  nweb_nweb_->ExecuteJavaScriptExt(fd, scriptLength,
+      std::make_shared<ArkWebMessageValueCallbackWrapper>(callback), extention);
+}
+
 } // namespace OHOS::ArkWeb

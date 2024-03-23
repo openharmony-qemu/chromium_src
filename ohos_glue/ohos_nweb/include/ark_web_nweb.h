@@ -1135,6 +1135,20 @@ public:
    */
   /*--ark web()--*/
   virtual ArkWebString GetLastJavascriptProxyCallingFrameUrl() = 0;
+
+  /**
+     * ExecuteJavaScript with ashmem
+     *
+     * @param fd fd of the ashmem
+     * @param scriptLength javascript code length
+     * @param callback NWebValueCallback: javascript running result
+     * @param extention true if is extention
+     */
+  /*--ark web()--*/
+  virtual void
+  ExecuteJavaScriptExt(const int fd, const size_t scriptLength,
+                       ArkWebRefPtr<ArkWebMessageValueCallback> callback,
+                       bool extention) = 0;
 };
 
 } // namespace OHOS::ArkWeb

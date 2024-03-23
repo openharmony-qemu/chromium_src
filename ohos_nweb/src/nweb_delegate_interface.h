@@ -223,6 +223,12 @@ class NWebDelegateInterface
   virtual void ClearMatches() const = 0;
   virtual void FindNext(const bool forward) const = 0;
 
+  virtual void ExecuteJavaScriptExt(
+      const int fd,
+      const size_t scriptLength,
+      std::shared_ptr<NWebMessageValueCallback> callback,
+      bool extention) = 0;
+
 #if defined(OHOS_MSGPORT)
   virtual void EraseJavaScriptCallbackImpl(uint32_t id) = 0;
   virtual void ExecuteJavaScript(

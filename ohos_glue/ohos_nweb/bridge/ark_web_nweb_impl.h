@@ -983,6 +983,18 @@ public:
    */
   bool IsIntelligentTrackingPreventionEnabled() override;
 
+  /**
+   * ExecuteJavaScript with ashmem
+   *
+   * @param fd fd of the ashmem
+   * @param scriptLength javascript code length
+   * @param callback NWebValueCallback: javascript running result
+   * @param extention true if is extention
+   */
+  void ExecuteJavaScriptExt(const int fd, const size_t scriptLength,
+                            ArkWebRefPtr<ArkWebMessageValueCallback> callback,
+                            bool extention) override;
+
 private:
   std::shared_ptr<OHOS::NWeb::NWeb> nweb_nweb_;
 };

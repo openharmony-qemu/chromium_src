@@ -56,6 +56,7 @@ class CONTENT_EXPORT DelegatedFrameHostClient {
   virtual bool ShouldShowStaleContentOnEviction() = 0;
 #if BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_JITTER)
   virtual void OnVsync() {}
+  virtual void OnVsyncReceived() {}
 #endif
 };
 
@@ -109,6 +110,7 @@ class CONTENT_EXPORT DelegatedFrameHost
                            base::TimeTicks activation_time) override;
 #if BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_JITTER)
   void OnVsync() override;
+  void OnVsyncReceived() override;
 #endif
 
   // Public interface exposed to RenderWidgetHostView.

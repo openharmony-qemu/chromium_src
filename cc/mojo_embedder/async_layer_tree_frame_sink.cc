@@ -268,6 +268,9 @@ void AsyncLayerTreeFrameSink::OnBeginFrame(
     const viz::FrameTimingDetailsMap& timing_details,
     bool frame_ack,
     std::vector<viz::ReturnedResource> resources) {
+  if (compositor_frame_sink_ptr_) {
+    compositor_frame_sink_ptr_->OnVsyncReceived();
+  }
   if (features::IsOnBeginFrameAcksEnabled()) {
     if (frame_ack) {
       DidReceiveCompositorFrameAck(std::move(resources));

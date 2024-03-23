@@ -776,6 +776,10 @@ void NWebImpl::SetDrawMode(int mode) {
 }
 
 void NWebImpl::OnTouchPress(int32_t id, double x, double y, bool from_overlay) {
+  WVLOG_D(
+      "NWebImpl::OnTouchPress id=%{public}d, x=%{public}f, y=%{public}f, "
+      "from_overlay=%{public}d",
+      id, x, y, from_overlay);
   if (input_handler_ == nullptr) {
     return;
   }
@@ -789,6 +793,10 @@ void NWebImpl::OnTouchRelease(int32_t id,
                               double x,
                               double y,
                               bool from_overlay) {
+  WVLOG_D(
+      "NWebImpl::OnTouchRelease id=%{public}d, x=%{public}f, y=%{public}f, "
+      "from_overlay=%{public}d",
+      id, x, y, from_overlay);
   if (input_handler_ == nullptr) {
     return;
   }
@@ -814,6 +822,7 @@ void NWebImpl::OnTouchMove(const std::vector<std::shared_ptr<NWebTouchPointInfo>
 }
 
 void NWebImpl::OnTouchCancel() {
+  WVLOG_D("NWebImpl::OnTouchCancel");
   if (input_handler_ == nullptr) {
     return;
   }
@@ -1568,6 +1577,13 @@ void NWebImpl::ScrollBy(float delta_x, float delta_y) {
     return;
   }
   return nweb_delegate_->ScrollBy(delta_x, delta_y);
+}
+
+void NWebImpl::ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  return nweb_delegate_->ScrollByRefScreen(delta_x, delta_y, vx, vy);
 }
 
 void NWebImpl::SlideScroll(float vx, float vy) {

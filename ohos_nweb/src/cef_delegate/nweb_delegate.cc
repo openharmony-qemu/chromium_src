@@ -1343,6 +1343,16 @@ void NWebDelegate::OnContinue() {
         browser->GetHost()->NotifyScreenInfoChanged();
       }
     }
+
+#ifdef OHOS_RENDER_PROCESS_MODE
+    if (GetBrowser() && GetBrowser()->GetHost() &&
+        GetBrowser()->GetHost()->NeedsReload()) {
+      LOG(INFO) << "NWebDelegate::OnContinue restore.";
+      GetBrowser()->GetHost()->Restore();
+      GetBrowser()->GetHost()->NotifyNeedsReload(false);
+    }
+#endif
+
     hidden_ = false;
   }
 

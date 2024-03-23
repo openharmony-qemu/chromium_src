@@ -50,7 +50,7 @@ bool StructTraits<viz::mojom::CompositorFrameMetadataDataView,
   out->is_scrolling = data.is_scrolling();
 #endif
 
-#if BUILDFLAG(IS_OHOS)
+#if defined(REPORT_SYS_EVENT)
   out->dropped_frame_count = data.dropped_frame_count();
   out->dropped_frame_duration = data.dropped_frame_duration();
 #endif

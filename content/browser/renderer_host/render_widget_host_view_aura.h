@@ -117,6 +117,9 @@ class CONTENT_EXPORT RenderWidgetHostViewAura
   bool IsShowing() override;
   void WasUnOccluded() override;
   void WasOccluded() override;
+#if BUILDFLAG(IS_OHOS)
+  void EvictFrameBackBuffers(bool invisible) override {}
+#endif
   gfx::Rect GetViewBounds() override;
   bool IsMouseLocked() override;
   gfx::Size GetVisibleViewportSize() override;

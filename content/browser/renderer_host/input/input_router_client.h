@@ -57,6 +57,10 @@ class InputRouterClient {
   // Called when a GSB has started scrolling a viewport.
   virtual void DidStartScrollingViewport() = 0;
 
+#if defined(IS_OHOS)
+  virtual void OnVsyncReceived() = 0;
+#endif
+
   // Called when the input router generates an event. It is intended that the
   // client will do some processing on |gesture_event| and then send it back
   // to the InputRouter via SendGestureEvent.

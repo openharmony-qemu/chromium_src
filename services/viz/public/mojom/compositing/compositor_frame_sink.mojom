@@ -117,6 +117,10 @@ interface CompositorFrameSink {
   // dynamic resource scheduling.
   [EnableIf=is_ohos]
   ReportKeyThreadIds(array<int32> thread_ids, int32 process_id, bool is_created);
+
+  // Sent by compositor thread when vsync received and OnBeginFrame in CompositorFrameSinkClient invoked.
+  [EnableIf=is_ohos]
+  OnVsyncReceived();
 };
 
 interface CompositorFrameSinkClient {

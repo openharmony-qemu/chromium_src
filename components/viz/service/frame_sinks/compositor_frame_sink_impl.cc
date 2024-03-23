@@ -251,6 +251,15 @@ void CompositorFrameSinkImpl::ReportKeyThreadIds(
             process_id, thread_id, ResSchedRoleAdapter::IMPORTANT_DISPLAY));
   }
 }
+
+void CompositorFrameSinkImpl::OnVsyncReceived() {
+  if (!support_ || !support_->frame_sink_manager()) {
+    DLOG(ERROR) << "Compositor frame support or frame sink manager is not exist";
+    return;
+  }
+  FrameSinkId frame_sink_id = support_->frame_sink_id();
+  support_->frame_sink_manager()->OnVsyncReceived(frame_sink_id);
+}
 #endif
 
 void CompositorFrameSinkImpl::OnClientConnectionLost() {

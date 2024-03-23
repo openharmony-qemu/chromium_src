@@ -323,7 +323,7 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      * @param callback NWebValueCallback: javascript running result
      * @param extention true if is extention
      */
-    virtual void ExecuteJavaScript(
+    virtual void ExecuteJavaScriptExt(
             const int fd,
             const size_t scriptLength,
             std::shared_ptr<NWebMessageValueCallback> callback,

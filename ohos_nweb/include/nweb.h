@@ -316,6 +316,19 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
             std::shared_ptr<NWebMessageValueCallback> callback,
             bool extention) = 0;
     /**
+     * ExecuteJavaScript with ashmem
+     *
+     * @param fd fd of the ashmem
+     * @param scriptLength javascript code length
+     * @param callback NWebValueCallback: javascript running result
+     * @param extention true if is extention
+     */
+    virtual void ExecuteJavaScript(
+            const int fd,
+            const size_t scriptLength,
+            std::shared_ptr<NWebMessageValueCallback> callback,
+            bool extention) = 0;
+    /**
      * Gets the NWebPreference object used to control the settings for this
      * NWeb.
      *

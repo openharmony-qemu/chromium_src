@@ -527,6 +527,14 @@ class CONTENT_EXPORT RenderFrameHost : public IPC::Listener,
   virtual void ExecuteJavaScript(const std::u16string& javascript,
                                  JavaScriptResultCallback callback) = 0;
 
+#if BUILDFLAG(IS_OHOS)
+  // This is the default API to run JavaScript in this frame. This API can only
+  // be called on chrome:// or devtools:// URLs.
+  virtual void ExecuteJavaScriptExt(const int fd,
+                                    const uint64_t scriptLength,
+                                    JavaScriptResultCallback callback) = 0;
+#endif
+
   // This runs the JavaScript in an isolated world of the top of this frame's
   // context.
   virtual void ExecuteJavaScriptInIsolatedWorld(

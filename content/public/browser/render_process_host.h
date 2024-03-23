@@ -115,6 +115,14 @@ namespace mojom {
 class Renderer;
 }  // namespace mojom
 
+#ifdef OHOS_RENDER_PROCESS_MODE
+enum class RenderProcessMode {
+    SINGLE_MODE = 0,
+    MULTIPLE_MODE = 1,
+    DEFAULT_MODE = 2,
+};
+#endif
+
 // Interface that represents the browser side of the browser <-> renderer
 // communication channel. There will generally be one RenderProcessHost per
 // renderer process.
@@ -411,6 +419,10 @@ class CONTENT_EXPORT RenderProcessHost : public IPC::Sender,
 
   // Returns true if this process currently has backgrounded priority.
   virtual bool IsProcessBackgrounded() = 0;
+
+#ifdef OHOS_RENDER_PROCESS_MODE
+  virtual const base::TimeTicks& ProcessBackgroundTime() = 0;
+#endif
 
   // "Keep alive ref count" represents the number of the customers of this
   // render process who wish the renderer process to be alive. While the ref
@@ -804,6 +816,23 @@ class CONTENT_EXPORT RenderProcessHost : public IPC::Sender,
 
 #if defined(OHOS_INCOGNITO_MODE)
   static size_t GetOffTheRecordRenderProcessCount();
+#endif
+
+#ifdef OHOS_RENDER_PROCESS_MODE
+  static void SetRenderProcessMode(RenderProcessMode mode);
+  static RenderProcessMode render_process_mode();
+
+  enum class RenderType {
+    kExtension = 0,
+    kPdf = 1,
+    kWebUI = 2,
+  };
+
+  std::map<RenderType, unsigned> special_render_numbers_ {
+    {RenderType::kExtension, 0},
+    {RenderType::kPdf, 0},
+    {RenderType::kWebUI, 0},
+  };
 #endif
 
   // Allows tests to override host interface binding behavior. Any interface

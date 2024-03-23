@@ -412,6 +412,11 @@ class NWebImpl : public NWeb {
       const std::vector<std::string>& hosts);
   static void ClearIntelligentTrackingPreventionBypassingList();
 
+#ifdef OHOS_RENDER_PROCESS_MODE
+  static void SetRenderProcessMode(RenderProcessMode mode);
+  static RenderProcessMode GetRenderProcessMode();
+#endif
+
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

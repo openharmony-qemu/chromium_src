@@ -142,6 +142,11 @@ enum class FocusReason : int32_t {
     EVENT_REQUEST = 1,
 };
 
+enum class RenderProcessMode : int32_t {
+    SINGLE_MODE = 0,
+    MULTIPLE_MODE = 1,
+};
+
 class NWebTouchPointInfo {
     public:
     virtual ~NWebTouchPointInfo() = default;

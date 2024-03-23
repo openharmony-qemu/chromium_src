@@ -85,7 +85,7 @@ class VIZ_COMMON_EXPORT CompositorFrameMetadata {
   bool is_scrolling = false;
 #endif
 
-#if BUILDFLAG(IS_OHOS)
+#if defined(REPORT_SYS_EVENT)
   // For video frame drop sysevent report
   int64_t dropped_frame_count = 0;
   int64_t dropped_frame_duration = 0;

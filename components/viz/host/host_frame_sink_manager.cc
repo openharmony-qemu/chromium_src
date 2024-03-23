@@ -452,6 +452,10 @@ void HostFrameSinkManager::UpdateDebugRendererSettings(
 void HostFrameSinkManager::SetEnableLowerFrameRate(bool enabled, const FrameSinkId& frame_sink_id) {
   frame_sink_manager_->SetEnableLowerFrameRate(enabled, frame_sink_id);
 }
+
+void HostFrameSinkManager::EvictFrameBackBuffers(const FrameSinkId& frame_sink_id, bool invisible) {
+  frame_sink_manager_->EvictFrameBackBuffers(frame_sink_id, invisible);
+}
 #endif
 
 void HostFrameSinkManager::StartFrameCountingForTest(

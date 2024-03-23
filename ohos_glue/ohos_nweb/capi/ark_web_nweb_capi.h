@@ -458,6 +458,10 @@ typedef struct _ark_web_nweb_t {
 
   ArkWebString(ARK_WEB_CALLBACK *get_last_javascript_proxy_calling_frame_url)(
       struct _ark_web_nweb_t *self);
+
+  void(ARK_WEB_CALLBACK *scroll_by_ref_screen)(struct _ark_web_nweb_t *self,
+                                               float delta_x, float delta_y,
+                                               float vx, float vy);
 } ark_web_nweb_t;
 
 #ifdef __cplusplus

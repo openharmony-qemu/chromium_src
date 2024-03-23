@@ -225,6 +225,7 @@ class NWebImpl : public NWeb {
 #if defined(OHOS_INPUT_EVENTS)
   void ScrollTo(float x, float y) override;
   void ScrollBy(float delta_x, float delta_y) override;
+  void ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) override;
   void SlideScroll(float vx, float vy) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 

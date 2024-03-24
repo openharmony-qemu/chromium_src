@@ -154,6 +154,7 @@ ReportLossFrame::GetInstance()->SetVsyncPeriod(vsync_period_);
     TRACE_EVENT0("viz", "vsync not skip");
     auto begin_frame_args = begin_frame_args_generator_.GenerateBeginFrameArgs(
         source_id(), frame_time, deadline, vsync_period);
+    begin_frame_args.draw_rect = draw_rect_;
     OnBeginFrame(begin_frame_args);
 
 #if defined(OHOS_PERFORMANCE_JITTER)

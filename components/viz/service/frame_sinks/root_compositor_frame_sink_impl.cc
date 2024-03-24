@@ -282,6 +282,7 @@ void RootCompositorFrameSinkImpl::SetShouldFrameSubmissionBeforeDraw(
 
 void RootCompositorFrameSinkImpl::SetDrawRect(const gfx::Rect& new_rect)
 {
+   external_begin_frame_source_->SetDrawRect(new_rect);
    display_->SetDrawRect(new_rect);
 }
 

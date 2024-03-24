@@ -67,6 +67,9 @@ struct StructTraits<viz::mojom::BeginFrameArgsDataView, viz::BeginFrameArgs> {
   static bool internal_frame(const viz::BeginFrameArgs& args) {
     return args.internal_frame;
   }
+  static gfx::Rect draw_rect(const viz::BeginFrameArgs& args) {
+    return args.draw_rect;
+  }
 #endif
 
   static bool Read(viz::mojom::BeginFrameArgsDataView data,

@@ -19,6 +19,7 @@
 #include "components/viz/common/frame_sinks/begin_frame_args.h"
 #include "components/viz/common/frame_sinks/delay_based_time_source.h"
 #include "components/viz/common/surfaces/frame_sink_id.h"
+#include "ui/gfx/geometry/rect.h"
 
 namespace perfetto {
 class EventContext;
@@ -421,6 +422,7 @@ class VIZ_COMMON_EXPORT ExternalBeginFrameSource : public BeginFrameSource {
   // Set Current display client Frame sink ID.
   virtual void SetCurrentFrameSinkId(const FrameSinkId& frame_sink_id) {}
   virtual void SetEnableLowerFrameRate(bool enabled) {}
+  virtual void SetDrawRect(const gfx::Rect& new_rect) {}
 #endif
 
   // Notifies the begin frame source of the desired frame interval for the

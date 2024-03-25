@@ -153,14 +153,14 @@ void InputRouterImpl::SendGestureEvent(
       gesture_event.event.GetType() == WebInputEvent::Type::kGestureScrollBegin) {
 #if defined(OHOS_PERFORMANCE_INC_FREQ)
     prePerfTimeStamp_ = timeStamp_;
-    LOG(INFO) << "InputRouterImpl::SendGestureEvent type=kGestureScrollUpdate success";
+    LOG(DEBUG) << "InputRouterImpl::SendGestureEvent type=kGestureScrollUpdate success";
     client_->GetWidgetInputHandler()->TryStartFling();
     OHOS::NWeb::OhosAdapterHelper::GetInstance()
       .CreateSocPerfClientAdapter()
       ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID, true);
   } else if (gesture_event.event.GetType() ==
              WebInputEvent::Type::kGestureScrollEnd) {
-    LOG(INFO) << "InputRouterImpl::SendGestureEvent type=kGestureScrollEnd";
+    LOG(DEBUG) << "InputRouterImpl::SendGestureEvent type=kGestureScrollEnd";
     client_->GetWidgetInputHandler()->TryFinishFling();
     OHOS::NWeb::OhosAdapterHelper::GetInstance()
       .CreateSocPerfClientAdapter()

@@ -2549,6 +2549,38 @@ int NWebHandlerDelegate::NotifyJavaScriptResult(CefRefPtr<CefListValue> args,
   return ark_result->error_;
 }
 
+int NWebHandlerDelegate::NotifyJavaScriptResultFlowbuf(CefRefPtr<CefListValue> args,
+                                                const CefString& method,
+                                                const CefString& object_name,
+                                                int fd,
+                                                CefRefPtr<CefListValue> result,
+                                                int32_t routing_id,
+                                                int32_t object_id) {
+  if (args.get() == nullptr || result.get() == nullptr) {
+    return 0;
+  }
+
+  if (!ProcessNativeProxyResult(args, method, object_name, result)) {
+    // native proxy object
+    return 0;
+  }  // ets proxy object
+
+  std::vector<std::shared_ptr<NWebValue>> value_vector =
+      ParseCefValueTONWebValue(args, args->GetSize());
+  if (!nweb_javascript_callback_) {
+    return 1;
+  }
+
+  std::shared_ptr<NWebValue> ark_result =
+      nweb_javascript_callback_->GetJavaScriptResultFlowbuf(
+          value_vector, method, object_name, fd, routing_id, object_id);
+  if (!ark_result) {
+    return 1;
+  }
+  ParseNWebValueToValue(ark_result, result);
+  return ark_result->error_;
+}
+
 bool NWebHandlerDelegate::HasJavaScriptObjectMethods(
     int32_t object_id,
     const CefString& method_name) {

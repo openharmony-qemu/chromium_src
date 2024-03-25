@@ -18,6 +18,7 @@
 #include "base/logging.h"
 #include "base/command_line.h"
 #include "content/public/common/content_switches.h"
+#include "nweb_touch_handle_hot_zone_impl.h"
 #include "ohos_adapter_helper.h"
 
 #ifdef OHOS_NETWORK_LOAD

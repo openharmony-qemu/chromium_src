@@ -51,7 +51,7 @@ TEST_F(ContentSettingsRegistryTest, GetPlatformDependent) {
 #endif
 
 // Protected media identifier only registered on Android, Chrome OS and Windows.
-#if defined(ANDROID) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_WIN)
+#if defined(ANDROID) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_WIN) || defined(OHOS_UNITTESTS)
   EXPECT_TRUE(registry()->Get(ContentSettingsType::PROTECTED_MEDIA_IDENTIFIER));
 #else
   EXPECT_FALSE(
@@ -87,7 +87,7 @@ TEST_F(ContentSettingsRegistryTest, Properties) {
   ASSERT_TRUE(website_settings_info->initial_default_value().is_int());
   EXPECT_EQ(CONTENT_SETTING_ALLOW,
             website_settings_info->initial_default_value().GetInt());
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS) || defined(OHOS_UNITTESTS)
   EXPECT_EQ(PrefRegistry::NO_REGISTRATION_FLAGS,
             website_settings_info->GetPrefRegistrationFlags());
 #else

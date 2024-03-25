@@ -18,7 +18,7 @@
 #pragma once
 
 #include "base/include/ark_web_base_ref_counted.h"
-#include "ohos_nweb/include/ark_web_nweb_structs.h"
+#include "ohos_nweb/include/ark_web_select_menu_bound.h"
 #include "ohos_nweb/include/ark_web_select_popup_menu_item_vector.h"
 
 namespace OHOS::ArkWeb {
@@ -42,7 +42,7 @@ public:
   virtual bool GetIsRightAligned() = 0;
 
   /*--ark web()--*/
-  virtual ArkWebSelectMenuBound GetSelectMenuBound() = 0;
+  virtual ArkWebRefPtr<ArkWebSelectMenuBound> GetSelectMenuBound() = 0;
 
   /*--ark web()--*/
   virtual bool GetIsAllowMultipleSelection() = 0;

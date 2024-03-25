@@ -415,8 +415,9 @@ public:
   void OnFullScreenEnter(
       std::shared_ptr<OHOS::NWeb::NWebFullScreenExitHandler> handler) override;
 
-  bool OnDragAndDropData(const void *data, size_t len,
-                         const OHOS::NWeb::ImageOptions &opt) override;
+  bool
+  OnDragAndDropData(const void *data, size_t len,
+                    std::shared_ptr<OHOS::NWeb::NWebImageOptions> opt) override;
 
   void OnSelectPopupMenu(
       std::shared_ptr<OHOS::NWeb::NWebSelectPopupMenuParam> params,
@@ -469,7 +470,7 @@ public:
                               int64_t first_contentful_paint_ms) override;
 
   void OnDateTimeChooserPopup(
-      const OHOS::NWeb::DateTimeChooser &chooser,
+      std::shared_ptr<OHOS::NWeb::NWebDateTimeChooser> chooser,
       const std::vector<std::shared_ptr<OHOS::NWeb::NWebDateTimeSuggestion>>
           &suggestions,
       std::shared_ptr<OHOS::NWeb::NWebDateTimeChooserCallback> callback)
@@ -496,8 +497,8 @@ public:
    */
   void OnActivityStateChanged(int state, ArkWebActivityType type) override;
 
-  void
-  OnGetTouchHandleHotZone(OHOS::NWeb::TouchHandleHotZone &hot_zone) override;
+  void OnGetTouchHandleHotZone(
+      std::shared_ptr<OHOS::NWeb::NWebTouchHandleHotZone> hot_zone) override;
 
   /**
    * @brief Called when swap buffer completed with new size.
@@ -584,12 +585,9 @@ public:
 
   bool OnAllSslErrorRequestByJS(
       std::shared_ptr<OHOS::NWeb::NWebJSAllSslErrorResult> result,
-      ArkWebSslError error,
-      const std::string& url,
-      const std::string& originalUrl,
-      const std::string& referrer,
-      bool isFatalError,
-      bool isMainFrame) override;
+      ArkWebSslError error, const std::string &url,
+      const std::string &originalUrl, const std::string &referrer,
+      bool isFatalError, bool isMainFrame) override;
 
 private:
   ArkWebRefPtr<ArkWebHandler> ark_web_handler_;

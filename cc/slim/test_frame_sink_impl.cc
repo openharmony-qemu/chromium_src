@@ -31,6 +31,7 @@ class TestFrameSinkImpl::TestMojoCompositorFrameSink
   void ReportKeyThreadIds(const std::vector<int32_t>& thread_ids,
                           int32_t process_id,
                           bool is_created) override {}
+  void OnVsyncReceived() override {}
   void SubmitCompositorFrame(
       const viz::LocalSurfaceId& local_surface_id,
       viz::CompositorFrame frame,

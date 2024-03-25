@@ -284,7 +284,9 @@ class MockWidgetInputHandler : public blink::mojom::WidgetInputHandler {
   void UpdateBrowserControlsState(cc::BrowserControlsState constraints,
                                   cc::BrowserControlsState current,
                                   bool animate) override;
-
+#if defined(OHOS_UNITTESTS)
+  void SetGestureEventResult(bool result) override {}
+#endif
   using MessageVector = std::vector<std::unique_ptr<DispatchedMessage>>;
   MessageVector GetAndResetDispatchedMessages();
 

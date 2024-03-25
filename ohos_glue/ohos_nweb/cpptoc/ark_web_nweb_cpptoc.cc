@@ -23,6 +23,7 @@
 #include "ohos_nweb/ctocpp/ark_web_accessibility_event_callback_ctocpp.h"
 #include "ohos_nweb/ctocpp/ark_web_bool_value_callback_ctocpp.h"
 #include "ohos_nweb/ctocpp/ark_web_download_callback_ctocpp.h"
+#include "ohos_nweb/ctocpp/ark_web_drag_event_ctocpp.h"
 #include "ohos_nweb/ctocpp/ark_web_find_callback_ctocpp.h"
 #include "ohos_nweb/ctocpp/ark_web_handler_ctocpp.h"
 #include "ohos_nweb/ctocpp/ark_web_js_result_callback_ctocpp.h"
@@ -717,15 +718,14 @@ void ARK_WEB_CALLBACK ark_web_nweb_set_port_message_callback(
 }
 
 void ARK_WEB_CALLBACK ark_web_nweb_send_drag_event(
-    struct _ark_web_nweb_t *self, const ArkWebDragEvent *drag_event) {
+    struct _ark_web_nweb_t *self, ark_web_drag_event_t *drag_event) {
   ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
 
   ARK_WEB_CPPTOC_CHECK_PARAM(self, );
 
-  ARK_WEB_CPPTOC_CHECK_PARAM(drag_event, );
-
   // Execute
-  ArkWebNWebCppToC::Get(self)->SendDragEvent(*drag_event);
+  ArkWebNWebCppToC::Get(self)->SendDragEvent(
+      ArkWebDragEventCToCpp::Invert(drag_event));
 }
 
 void ARK_WEB_CALLBACK
@@ -1523,6 +1523,26 @@ ark_web_nweb_get_media_playback_state(struct _ark_web_nweb_t *self) {
   return ArkWebNWebCppToC::Get(self)->GetMediaPlaybackState();
 }
 
+void ARK_WEB_CALLBACK ark_web_nweb_enable_intelligent_tracking_prevention(
+    struct _ark_web_nweb_t *self, bool enable) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->EnableIntelligentTrackingPrevention(enable);
+}
+
+bool ARK_WEB_CALLBACK ark_web_nweb_is_intelligent_tracking_prevention_enabled(
+    struct _ark_web_nweb_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, false);
+
+  // Execute
+  return ArkWebNWebCppToC::Get(self)->IsIntelligentTrackingPreventionEnabled();
+}
+
 void ARK_WEB_CALLBACK ark_web_nweb_start_camera(struct _ark_web_nweb_t *self) {
   ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
 
@@ -1550,33 +1570,15 @@ void ARK_WEB_CALLBACK ark_web_nweb_close_camera(struct _ark_web_nweb_t *self) {
   ArkWebNWebCppToC::Get(self)->CloseCamera();
 }
 
-ArkWebString ARK_WEB_CALLBACK ark_web_nweb_get_last_javascript_proxy_calling_frame_url(struct _ark_web_nweb_t *self) {
+ArkWebString ARK_WEB_CALLBACK
+ark_web_nweb_get_last_javascript_proxy_calling_frame_url(
+    struct _ark_web_nweb_t *self) {
   ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
 
   ARK_WEB_CPPTOC_CHECK_PARAM(self, ark_web_string_default);
 
   // Execute
   return ArkWebNWebCppToC::Get(self)->GetLastJavascriptProxyCallingFrameUrl();
-}
-
-void ARK_WEB_CALLBACK ark_web_nweb_enable_intelligent_tracking_prevention(
-    struct _ark_web_nweb_t *self, bool enable) {
-  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
-
-  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
-
-  // Execute
-  ArkWebNWebCppToC::Get(self)->EnableIntelligentTrackingPrevention(enable);
-}
-
-bool ARK_WEB_CALLBACK ark_web_nweb_is_intelligent_tracking_prevention_enabled(
-    struct _ark_web_nweb_t *self) {
-  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
-
-  ARK_WEB_CPPTOC_CHECK_PARAM(self, false);
-
-  // Execute
-  return ArkWebNWebCppToC::Get(self)->IsIntelligentTrackingPreventionEnabled();
 }
 
 void ARK_WEB_CALLBACK ark_web_nweb_execute_java_script_ext(
@@ -1755,14 +1757,15 @@ ArkWebNWebCppToC::ArkWebNWebCppToC() {
   GetStruct()->resume_all_media = ark_web_nweb_resume_all_media;
   GetStruct()->pause_all_media = ark_web_nweb_pause_all_media;
   GetStruct()->get_media_playback_state = ark_web_nweb_get_media_playback_state;
-  GetStruct()->start_camera = ark_web_nweb_start_camera;
-  GetStruct()->stop_camera = ark_web_nweb_stop_camera;
-  GetStruct()->close_camera = ark_web_nweb_close_camera;
-  GetStruct()->get_last_javascript_proxy_calling_frame_url = ark_web_nweb_get_last_javascript_proxy_calling_frame_url;
   GetStruct()->enable_intelligent_tracking_prevention =
       ark_web_nweb_enable_intelligent_tracking_prevention;
   GetStruct()->is_intelligent_tracking_prevention_enabled =
       ark_web_nweb_is_intelligent_tracking_prevention_enabled;
+  GetStruct()->start_camera = ark_web_nweb_start_camera;
+  GetStruct()->stop_camera = ark_web_nweb_stop_camera;
+  GetStruct()->close_camera = ark_web_nweb_close_camera;
+  GetStruct()->get_last_javascript_proxy_calling_frame_url =
+      ark_web_nweb_get_last_javascript_proxy_calling_frame_url;
 }
 
 ArkWebNWebCppToC::~ArkWebNWebCppToC() {

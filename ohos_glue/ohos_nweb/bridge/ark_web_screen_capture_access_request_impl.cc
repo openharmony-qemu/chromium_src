@@ -15,7 +15,7 @@
 
 #include "ohos_nweb/bridge/ark_web_screen_capture_access_request_impl.h"
 #include "base/bridge/ark_web_bridge_macros.h"
-#include "ohos_nweb/bridge/ark_web_core_struct_utils.h"
+#include "ohos_nweb/bridge/ark_web_screen_capture_config_wrapper.h"
 
 namespace OHOS::ArkWeb {
 
@@ -26,10 +26,14 @@ ArkWebScreenCaptureAccessRequestImpl::ArkWebScreenCaptureAccessRequestImpl(
 }
 
 void ArkWebScreenCaptureAccessRequestImpl::Agree(
-    const ArkWebScreenCaptureConfig &config) {
-  OHOS::NWeb::NWebScreenCaptureConfig nwe_config =
-      ArkWebScreenCaptureConfigStructToClass(config);
-  nweb_screen_capture_access_request_->Agree(nwe_config);
+    ArkWebRefPtr<ArkWebScreenCaptureConfig> config) {
+  if (CHECK_REF_PTR_IS_NULL(config)) {
+    nweb_screen_capture_access_request_->Agree(nullptr);
+    return;
+  }
+
+  nweb_screen_capture_access_request_->Agree(
+      std::make_shared<ArkWebScreenCaptureConfigWrapper>(config));
 }
 
 void ArkWebScreenCaptureAccessRequestImpl::Refuse() {

@@ -76,12 +76,17 @@ const char kDesktop[] =
 #elif BUILDFLAG(IS_WIN)
     "Windows NT 10.0; Win64; x64"
 #elif defined(OHOS_UNITTESTS)
-    "ohos"
+    "Phone; OpenHarmony 5.0"
 #else
 #error Unsupported platform
 #endif
+#if defined(OHOS_UNITTESTS)
+    ") AppleWebKit/537.36 (KHTML, like Gecko) Chrome/%s.0.0.0 "
+    "Safari/537.36  ArkWeb/4.1.6.1 Mobile";
+#else
     ") AppleWebKit/537.36 (KHTML, like Gecko) Chrome/%s.0.0.0 "
     "Safari/537.36";
+#endif
 #endif  // BUILDFLAG(IS_ANDROID)
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
@@ -730,12 +735,18 @@ TEST_F(UserAgentUtilsTest, ReduceUserAgentPlatformOsCpu) {
        blink::features::kForceMajorVersionInMinorPositionInUserAgent},
       {});
   {
+#if defined(OHOS_UNITTESTS)
+    EXPECT_EQ(base::StringPrintf(kDesktop,
+                                 version_info::GetMajorVersionNumber().c_str()),
+              GetUserAgent());
+#else
     EXPECT_EQ(
         base::StringPrintf("Mozilla/5.0 (%s) AppleWebKit/537.36 (KHTML, "
                            "like Gecko) Chrome/%s.%s.0.0 Safari/537.36",
                            content::GetUnifiedPlatformForTesting().c_str(),
                            "99", version_info::GetMajorVersionNumber().c_str()),
         GetUserAgent());
+#endif
   }
 
   // Ensure that the ForceMajorVersionToMinorPosition policy is applied even
@@ -764,6 +775,10 @@ TEST_F(UserAgentUtilsTest, ReduceUserAgentPlatformOsCpu) {
   EXPECT_NE(GetUserAgent(), GetReducedUserAgent());
   EXPECT_NE(content::GetUnifiedPlatformForTesting().c_str(),
             GetUserAgentPlatformOsCpu(GetUserAgent()));
+#elif defined(OHOS_UNITTEST)
+  EXPECT_EQ(base::StringPrintf(kDesktop,
+                               version_info::GetMajorVersionNumber().c_str()),
+            GetUserAgent());
 #else
   scoped_feature_list.Reset();
   scoped_feature_list.InitWithFeatures(

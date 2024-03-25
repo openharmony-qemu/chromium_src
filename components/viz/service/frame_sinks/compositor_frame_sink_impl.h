@@ -75,6 +75,7 @@ class CompositorFrameSinkImpl : public mojom::CompositorFrameSink {
   void ReportKeyThreadIds(const std::vector<int32_t>& thread_ids,
                           int32_t process_id,
                           bool is_created) override;
+  void OnVsyncReceived() override;
 #endif
 
  private:

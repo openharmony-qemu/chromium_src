@@ -427,8 +427,12 @@ class TestRectangleBuffer {
 class RenderTextTest : public testing::Test {
  public:
   RenderTextTest()
+#if defined(OHOS_UNITTESTS)
+      : task_environment_(),
+#else
       : task_environment_(
             base::test::SingleThreadTaskEnvironment::MainThreadType::UI),
+#endif
         render_text_(std::make_unique<RenderTextHarfBuzz>()),
         test_api_(new test::RenderTextTestApi(render_text_.get())),
         renderer_(canvas()) {}

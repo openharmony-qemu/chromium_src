@@ -814,4 +814,12 @@ bool ArkWebNWebImpl::IsIntelligentTrackingPreventionEnabled() {
   return nweb_nweb_->IsIntelligentTrackingPreventionEnabled();
 }
 
+void ArkWebNWebImpl::OnRenderToBackground() {
+  nweb_nweb_->OnRenderToBackground();
+}
+
+void ArkWebNWebImpl::OnRenderToForeground() {
+  nweb_nweb_->OnRenderToForeground();
+}
+
 } // namespace OHOS::ArkWeb

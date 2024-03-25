@@ -775,6 +775,13 @@ void NWebImpl::SetDrawMode(int mode) {
   }
 }
 
+bool NWebImpl::GetPendingSizeStatus() {
+  if (nweb_delegate_) {
+    return nweb_delegate_->GetPendingSizeStatus();
+  }
+  return false;
+}
+
 void NWebImpl::OnTouchPress(int32_t id, double x, double y, bool from_overlay) {
   if (input_handler_ == nullptr) {
     return;

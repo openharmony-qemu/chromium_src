@@ -1581,6 +1581,15 @@ ark_web_nweb_get_last_javascript_proxy_calling_frame_url(
   return ArkWebNWebCppToC::Get(self)->GetLastJavascriptProxyCallingFrameUrl();
 }
 
+bool ARK_WEB_CALLBACK ark_web_nweb_get_pending_size_status(struct _ark_web_nweb_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, false);
+
+  // Execute
+  return ArkWebNWebCppToC::Get(self)->GetPendingSizeStatus();
+}
+
 } // namespace
 
 ArkWebNWebCppToC::ArkWebNWebCppToC() {
@@ -1753,6 +1762,7 @@ ArkWebNWebCppToC::ArkWebNWebCppToC() {
   GetStruct()->close_camera = ark_web_nweb_close_camera;
   GetStruct()->get_last_javascript_proxy_calling_frame_url =
       ark_web_nweb_get_last_javascript_proxy_calling_frame_url;
+  GetStruct()->get_pending_size_status = ark_web_nweb_get_pending_size_status;
 }
 
 ArkWebNWebCppToC::~ArkWebNWebCppToC() {

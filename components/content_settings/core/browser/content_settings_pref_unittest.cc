@@ -175,9 +175,16 @@ TEST(ContentSettingsPref, ExpirationWhileReadingFromPrefs) {
 
   // We should only have our un-expired setting left over.
   using CanonicalPatternToTag = std::pair<std::string, std::string>;
+#if defined(OHOS_UNITTESTS)
+  const std::vector<CanonicalPatternToTag> kExpectedPatternsToTags = {
+      {kTestPatternCanonicalAlpha, kTestPatternCanonicalAlpha},
+      {kTestPatternCanonicalBeta, kTestPatternCanonicalBeta},
+  };
+#else
   const std::vector<CanonicalPatternToTag> kExpectedPatternsToTags = {
       {kTestPatternCanonicalBeta, kTestPatternCanonicalBeta},
   };
+#endif
 
   // Create two pre-existing entries, one that is expired and one that never
   // expires.

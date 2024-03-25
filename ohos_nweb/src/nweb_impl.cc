@@ -1735,19 +1735,29 @@ void NWebImpl::OnWebviewHide() {
 #if defined(OHOS_WEBRTC)
   StopCameraSession();
 #endif
-  if (nweb_delegate_ == nullptr) {
-    WVLOG_E("OnWebviewHide nweb delegate is null");
-    return;
-  }
-  nweb_delegate_->OnWindowHide();
 }
 
 void NWebImpl::OnWebviewShow() {
 #if defined(OHOS_WEBRTC)
   RestartCameraSession();
 #endif
+}
+
+void NWebImpl::OnRenderToBackground() {
+  TRACE_EVENT0("base", "OnRenderToBackground");
+  WVLOG_D("NWebImpl::OnRenderToBackground");
   if (nweb_delegate_ == nullptr) {
-    WVLOG_E("OnWebviewShow nweb delegate is null");
+    WVLOG_E("OnRenderToBackground nweb delegate is null");
+    return;
+  }
+  nweb_delegate_->OnWindowHide();
+}
+
+void NWebImpl::OnRenderToForeground() {
+  TRACE_EVENT0("base", "OnRenderToForeground");
+  WVLOG_D("NWebImpl::OnRenderToForeground");
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("OnRenderToForeground nweb delegate is null");
     return;
   }
   nweb_delegate_->OnWindowShow();

@@ -434,7 +434,7 @@ public:
       const ArkWebString &port_handle,
       ArkWebRefPtr<ArkWebMessageValueCallback> callback) override;
 
-  void SendDragEvent(const ArkWebDragEvent &drag_event) override;
+  void SendDragEvent(ArkWebRefPtr<ArkWebDragEvent> drag_event) override;
 
   /**
    * @brief Clear ssl cache.

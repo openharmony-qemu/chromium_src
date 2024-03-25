@@ -49,7 +49,7 @@ class NWebScreenCaptureAccessRequestDelegate : public NWebScreenCaptureAccessReq
 
   std::string Origin() override;
 
-  void Agree(const NWebScreenCaptureConfig& config) override;
+  void Agree(std::shared_ptr<NWebScreenCaptureConfig> config) override;
 
   void Refuse() override;
 

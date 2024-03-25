@@ -18,7 +18,7 @@
 #pragma once
 
 #include "base/capi/ark_web_base_ref_counted_capi.h"
-#include "ohos_nweb/include/ark_web_nweb_structs.h"
+#include "ohos_nweb/capi/ark_web_select_menu_bound_capi.h"
 #include "ohos_nweb/include/ark_web_select_popup_menu_item_vector.h"
 
 #ifdef __cplusplus
@@ -46,7 +46,7 @@ typedef struct _ark_web_select_popup_menu_param_t {
   bool(ARK_WEB_CALLBACK *get_is_right_aligned)(
       struct _ark_web_select_popup_menu_param_t *self);
 
-  ArkWebSelectMenuBound(ARK_WEB_CALLBACK *get_select_menu_bound)(
+  ark_web_select_menu_bound_t *(ARK_WEB_CALLBACK *get_select_menu_bound)(
       struct _ark_web_select_popup_menu_param_t *self);
 
   bool(ARK_WEB_CALLBACK *get_is_allow_multiple_selection)(

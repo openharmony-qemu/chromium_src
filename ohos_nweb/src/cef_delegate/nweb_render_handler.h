@@ -93,6 +93,8 @@ class NWebRenderHandler : public CefRenderHandler {
                           int height,
                           int width) override;
 
+  void ReleaseResizeHold(CefRefPtr<CefBrowser> browser) override;
+
   void OnScrollOffsetChanged(CefRefPtr<CefBrowser> browser,
                              double x,
                              double y) override;

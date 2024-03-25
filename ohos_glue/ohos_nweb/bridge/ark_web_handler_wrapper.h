@@ -589,6 +589,12 @@ public:
       const std::string &originalUrl, const std::string &referrer,
       bool isFatalError, bool isMainFrame) override;
 
+  /**
+   * @brief called when resizehold is released.
+   *
+   */
+  void ReleaseResizeHold() override;
+
 private:
   ArkWebRefPtr<ArkWebHandler> ark_web_handler_;
 };

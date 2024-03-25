@@ -853,4 +853,8 @@ bool ArkWebHandlerWrapper::OnAllSslErrorRequestByJS(
       ArkWebStringClassToStruct(url), ArkWebStringClassToStruct(originalUrl),
       ArkWebStringClassToStruct(referrer), isFatalError, isMainFrame);
 }
+
+void ArkWebHandlerWrapper::ReleaseResizeHold() {
+  ark_web_handler_->ReleaseResizeHold();
+}
 } // namespace OHOS::ArkWeb

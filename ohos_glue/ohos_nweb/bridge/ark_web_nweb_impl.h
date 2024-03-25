@@ -983,6 +983,13 @@ public:
    */
   bool IsIntelligentTrackingPreventionEnabled() override;
 
+  /**
+   * @brief get pendingsize status.
+   *
+   * @return the result of last pendingsize status.
+   */
+  bool GetPendingSizeStatus() override;
+
 private:
   std::shared_ptr<OHOS::NWeb::NWeb> nweb_nweb_;
 };

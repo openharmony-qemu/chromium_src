@@ -814,4 +814,8 @@ bool ArkWebNWebImpl::IsIntelligentTrackingPreventionEnabled() {
   return nweb_nweb_->IsIntelligentTrackingPreventionEnabled();
 }
 
+bool ArkWebNWebImpl::GetPendingSizeStatus() {
+  return nweb_nweb_->GetPendingSizeStatus();
+}
+
 } // namespace OHOS::ArkWeb

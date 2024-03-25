@@ -45,9 +45,9 @@ enum class DelegateDragAction {
 };
 
 struct DelegateDragEvent {
-  double x;
-  double y;
-  DelegateDragAction action;
+  double x = 0.0;
+  double y = 0.0;
+  DelegateDragAction action = DelegateDragAction::DRAG_START;
 };
 
 #ifdef OHOS_NAVIGATION

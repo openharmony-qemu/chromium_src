@@ -22,6 +22,7 @@
 #include "base/command_line.h"
 #include "base/logging.h"
 #include "nweb_delegate_interface.h"
+#include "nweb_touch_handle_hot_zone_impl.h"
 #include "nweb_touch_handle_state_impl.h"
 #if defined(REPORT_SYS_EVENT)
 #include "event_reporter.h"
@@ -507,11 +508,12 @@ void NWebRenderHandler::GetTouchHandleSize(
     return;
   }
   if (auto handler = handler_.lock()) {
-    TouchHandleHotZone hot_zone;
+    std::shared_ptr<NWebTouchHandleHotZoneImpl> hot_zone =
+	    std::make_shared<NWebTouchHandleHotZoneImpl>();
     handler->OnGetTouchHandleHotZone(hot_zone);
-    if (hot_zone.width > 0 && hot_zone.height > 0) {
-      size.width = static_cast<int>(hot_zone.width) + 1;
-      size.height = static_cast<int>(hot_zone.height) + 1;
+    if (hot_zone->GetWidth() > 0 && hot_zone->GetHeight() > 0) {
+      size.width = static_cast<int>(hot_zone->GetWidth()) + 1;
+      size.height = static_cast<int>(hot_zone->GetHeight()) + 1;
     }
   }
   LOG(INFO) << "GetTouchHandleSize " << size.width << " " << size.height;
@@ -782,8 +784,8 @@ void NWebRenderHandler::OnNativeEmbedGestureEvent(
     info->SetY(touchEvent.y);
     info->SetId(touchEvent.id);
     info->SetEmbedId(touchEvent.embedId);
-    info->SetOffsetX(touchEvent.offsetY);
-    info->SetOffsetY(touchEvent.offsetX);
+    info->SetOffsetX(touchEvent.offsetX);
+    info->SetOffsetY(touchEvent.offsetY);
     info->SetScreenX(touchEvent.screenX);
     info->SetScreenY(touchEvent.screenY);
     info->SetType(static_cast<OHOS::NWeb::TouchType>(touchEvent.type));

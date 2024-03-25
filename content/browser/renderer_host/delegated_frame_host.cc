@@ -340,6 +340,10 @@ void DelegatedFrameHost::OnFrameTokenChanged(uint32_t frame_token,
 void DelegatedFrameHost::OnVsync() {
   client_->OnVsync();
 }
+
+void DelegatedFrameHost::OnVsyncReceived() {
+  client_->OnVsyncReceived();
+}
 #endif
 
 // CommitPending without a target for TakeFallbackContentFrom. Since we cannot

@@ -33,6 +33,7 @@
 #include "nweb_impl.h"
 
 #include "nweb_console_log_impl.h"
+#include "nweb_date_time_chooser_impl.h"
 #include "nweb_data_resubmission_callback_impl.h"
 #include "nweb_engine_impl.h"
 #include "nweb_full_screen_exit_handler_impl.h"
@@ -47,6 +48,7 @@
 #include "nweb_largest_contentful_paint_details_impl.h"
 #include "nweb_preference_delegate.h"
 #include "nweb_resource_handler.h"
+#include "nweb_select_menu_bound_impl.h"
 #include "nweb_select_popup_menu_impl.h"
 #include "nweb_url_resource_error_impl.h"
 #include "nweb_url_resource_request_impl.h"
@@ -2036,8 +2038,9 @@ void NWebHandlerDelegate::OnSelectPopupMenu(
   if (!param) {
     return;
   }
-  SelectMenuBound bound = {bounds.x * ratio, bounds.y * ratio,
-                           bounds.width * ratio, bounds.height * ratio};
+  std::shared_ptr<NWebSelectMenuBound> bound =
+      std::make_shared<NWebSelectMenuBoundImpl>(bounds.x * ratio, bounds.y * ratio,
+                                                bounds.width * ratio, bounds.height * ratio);
   param->SetSelectMenuBound(bound);
   param->SetItemHeight(item_height);
   param->SetSelectedItem(selected_item);
@@ -2094,15 +2097,16 @@ void NWebHandlerDelegate::OnDateTimeChooserPopup(
   DateTime maximum = (type == DateTimeChooserType::DTC_MONTH)
                          ? ConvertMonthToDateTime(date_time_chooser.maximum)
                          : ConvertMsToDateTime(date_time_chooser.maximum);
-  DateTimeChooser chooser = {type, selected, minimum, maximum,
-                             date_time_chooser.step};
+  std::shared_ptr<NWebDateTimeChooserImpl> chooser =
+      std::make_shared<NWebDateTimeChooserImpl>(date_time_chooser.step, minimum, maximum,
+                                                selected, type);
   std::shared_ptr<NWebDateTimeChooserCallback> chooser_callback =
       std::make_shared<NWebDateTimeChooserCallbackImpl>(type, callback);
   if (!chooser_callback) {
     callback->Continue(false, 0);
     return;
   }
-  chooser.hasSelected = !std::isnan(date_time_chooser.dialog_value);
+  chooser->SetHasSelected(!std::isnan(date_time_chooser.dialog_value));
   std::vector<std::shared_ptr<NWebDateTimeSuggestion>> suggestions;
   for (size_t index = 0; index < suggestion.size(); index++) {
     DateTime value = (type == DateTimeChooserType::DTC_MONTH)
@@ -2112,7 +2116,7 @@ void NWebHandlerDelegate::OnDateTimeChooserPopup(
         value, CefString(&suggestion[index].label).ToString(),
         CefString(&suggestion[index].localized_value).ToString()));
     if (date_time_chooser.dialog_value == suggestion[index].value) {
-      chooser.suggestionIndex = index;
+      chooser->SetSuggestionIndex(index);
     }
   }
   nweb_handler_->OnDateTimeChooserPopup(chooser, suggestions, chooser_callback);

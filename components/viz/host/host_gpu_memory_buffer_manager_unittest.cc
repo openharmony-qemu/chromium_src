@@ -108,6 +108,10 @@ class TestGpuService : public mojom::GpuService {
   }
 
   // mojom::GpuService:
+  #if defined(OHOS_UNITTESTS)
+  void StartMonitor() override{}
+  void StopMonitor() override{}
+  #endif
   void EstablishGpuChannel(int32_t client_id,
                            uint64_t client_tracing_id,
                            bool is_gpu_host,

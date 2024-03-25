@@ -153,7 +153,7 @@ class NWebImpl : public NWeb {
                   ImageColorType& colorType,
                   ImageAlphaType& alphaType) override;
   void PutNetworkAvailable(bool available) override;
-  void SendDragEvent(const DragEvent& dragEvent) override;
+  void SendDragEvent(std::shared_ptr<NWebDragEvent> dragEvent) override;
   void UpdateLocale(const std::string& language,
                     const std::string& region) override;
 

@@ -6,6 +6,10 @@
 
 #include <memory>
 
+#if defined(OHOS_UNITTESTS)
+#include "base/base_switches.h"
+#endif
+#include "base/command_line.h"
 #include "base/files/scoped_temp_dir.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/test/task_environment.h"
@@ -43,6 +47,12 @@ class HistoryClustersProviderTest : public testing::Test,
                                     public AutocompleteProviderListener {
  public:
   void SetUp() override {
+#if defined(OHOS_UNITTESTS)
+    base::CommandLine::ForCurrentProcess()->AppendSwitch(
+        switches::kDisableLowEndDeviceMode);
+    base::CommandLine::ForCurrentProcess()->RemoveSwitch(
+        switches::kEnableLowEndDeviceMode);
+#endif
     config_.is_journeys_enabled_no_locale_check = true;
     config_.omnibox_history_cluster_provider = true;
     history_clusters::SetConfigForTesting(config_);

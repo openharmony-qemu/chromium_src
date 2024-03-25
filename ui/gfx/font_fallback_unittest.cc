@@ -139,8 +139,12 @@ class GetFallbackFontTest
 
  private:
   // Needed to bypass DCHECK in GetFallbackFont.
+#if defined(OHOS_UNITTESTS)
+  base::test::TaskEnvironment task_environment_{};
+#else
   base::test::TaskEnvironment task_environment_{
       base::test::TaskEnvironment::MainThreadType::UI};
+#endif
 };
 
 }  // namespace

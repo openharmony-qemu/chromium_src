@@ -161,6 +161,12 @@ static_library("test_support") {
     "test/throughput_report_checker.h",
   ]
 
+  if (ohos_unittests) {
+    sources += [
+      "//ohos_nweb/src/sysevent/event_reporter.cc",
+    ]
+  }
+
   if (is_android) {
     sources += [ "test/test_compositor_host_android.cc" ]
   }

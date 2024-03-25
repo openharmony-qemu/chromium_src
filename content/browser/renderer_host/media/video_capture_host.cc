@@ -20,6 +20,9 @@
 #include "content/public/browser/render_process_host.h"
 #include "media/capture/mojom/video_capture_types.mojom.h"
 #include "mojo/public/cpp/bindings/self_owned_receiver.h"
+#if BUILDFLAG(IS_OHOS)
+#include "res_sched_client_adapter.h"
+#endif
 
 namespace content {
 
@@ -68,7 +71,9 @@ VideoCaptureHost::VideoCaptureHost(uint32_t render_process_id,
                                    MediaStreamManager* media_stream_manager)
     : VideoCaptureHost(
           std::make_unique<RenderProcessHostDelegateImpl>(render_process_id),
-          media_stream_manager) {}
+          media_stream_manager) {
+            render_process_id_ = render_process_id;
+          }
 
 VideoCaptureHost::VideoCaptureHost(
     std::unique_ptr<RenderProcessHostDelegate> delegate,
@@ -251,6 +256,20 @@ void VideoCaptureHost::Start(
   DCHECK(!base::Contains(device_id_to_observer_map_, device_id));
   device_id_to_observer_map_[device_id].Bind(std::move(observer));
 
+#if BUILDFLAG(IS_OHOS)
+  RenderProcessHost* host = RenderProcessHost::FromId(render_process_id_);
+  if (host) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    LOG(DEBUG) << __func__ << " start screen_capture, pid: " << host->GetProcess().Pid()
+        << ", screen_capture_session_cnt: " << screen_capture_session_cnt_;
+    if (screen_capture_session_cnt_ == 0) {
+        OHOS::NWEB::ResSchedClientAdapter::ReportScreenCapture(
+            OHOS::NWeb::ResSchedStatusAdapter::SCREEN_CAPTURE_START, host->GetProcess().Pid());
+    }
+    ++screen_capture_session_cnt_;
+  }
+#endif
+
   const VideoCaptureControllerID controller_id(device_id);
   if (controllers_.find(controller_id) != controllers_.end()) {
     device_id_to_observer_map_[device_id]->OnStateChanged(
@@ -272,6 +291,21 @@ void VideoCaptureHost::Stop(const base::UnguessableToken& device_id) {
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("video_and_image_capture"),
                "VideoCaptureHost::Stop");
+
+#if BUILDFLAG(IS_OHOS)
+  RenderProcessHost* host = RenderProcessHost::FromId(render_process_id_);
+  if (host) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    LOG(DEBUG) << __func__ << " stop screen capture, pid: " << host->GetProcess().Pid()
+        << ", screen_capture_session_cnt: " << screen_capture_session_cnt_;
+    --screen_capture_session_cnt_;
+    if (screen_capture_session_cnt_ == 0) {
+        OHOS::NWEB::ResSchedClientAdapter::ReportScreenCapture(
+            OHOS::NWeb::ResSchedStatusAdapter::SCREEN_CAPTURE_STOP, host->GetProcess().Pid());
+    }
+    screen_capture_session_cnt_ = std::max(screen_capture_session_cnt_, 0);
+  }
+#endif
 
   const VideoCaptureControllerID& controller_id(device_id);
 

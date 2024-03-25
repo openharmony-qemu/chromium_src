@@ -38,7 +38,7 @@ public:
    *
    * @param config screen capture config.
    */
-  void Agree(const ArkWebScreenCaptureConfig &config) override;
+  void Agree(ArkWebRefPtr<ArkWebScreenCaptureConfig> config) override;
 
   /**
    * @brief Refuse the request.

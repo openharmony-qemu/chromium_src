@@ -149,7 +149,7 @@ void ArkWebEngineImpl::AddIntelligentTrackingPreventionBypassingList(
 }
 
 void ArkWebEngineImpl::RemoveIntelligentTrackingPreventionBypassingList(
-      const ArkWebStringVector &hosts) {
+    const ArkWebStringVector &hosts) {
   nweb_engine_->RemoveIntelligentTrackingPreventionBypassingList(
       ArkWebStringVectorStructToClass(hosts));
 }
@@ -158,15 +158,16 @@ void ArkWebEngineImpl::ClearIntelligentTrackingPreventionBypassingList() {
   nweb_engine_->ClearIntelligentTrackingPreventionBypassingList();
 }
 
-void ArkWebEngineImpl::PrefetchResource(ArkWebRefPtr<ArkWebEnginePrefetchArgs> &pre_args,
-                                        const ArkWebStringMap &additional_http_headers,
-                                        const ArkWebString &cache_key,
-                                        const uint32_t &cache_valid_time) {
+void ArkWebEngineImpl::PrefetchResource(
+    ArkWebRefPtr<ArkWebEnginePrefetchArgs> &pre_args,
+    const ArkWebStringMap &additional_http_headers,
+    const ArkWebString &cache_key, const uint32_t &cache_valid_time) {
   std::shared_ptr<OHOS::NWeb::NWebEnginePrefetchArgs> nweb_engine_pre_args =
       std::make_shared<ArkWebEnginePrefetchArgsWrapper>(pre_args);
-  nweb_engine_->PrefetchResource(nweb_engine_pre_args, 
-                                 ArkWebStringMapStructToClass(additional_http_headers),
-                                 ArkWebStringStructToClass(cache_key), cache_valid_time);                                        
+  nweb_engine_->PrefetchResource(
+      nweb_engine_pre_args,
+      ArkWebStringMapStructToClass(additional_http_headers),
+      ArkWebStringStructToClass(cache_key), cache_valid_time);
 }
 
 } // namespace OHOS::ArkWeb

@@ -15,6 +15,7 @@
 
 #include "ohos_nweb/cpptoc/ark_web_screen_capture_access_request_cpptoc.h"
 #include "base/cpptoc/ark_web_cpptoc_macros.h"
+#include "ohos_nweb/ctocpp/ark_web_screen_capture_config_ctocpp.h"
 
 namespace OHOS::ArkWeb {
 
@@ -22,15 +23,14 @@ namespace {
 
 void ARK_WEB_CALLBACK ark_web_screen_capture_access_request_agree(
     struct _ark_web_screen_capture_access_request_t *self,
-    const ArkWebScreenCaptureConfig *config) {
+    ark_web_screen_capture_config_t *config) {
   ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
 
   ARK_WEB_CPPTOC_CHECK_PARAM(self, );
 
-  ARK_WEB_CPPTOC_CHECK_PARAM(config, );
-
   // Execute
-  ArkWebScreenCaptureAccessRequestCppToC::Get(self)->Agree(*config);
+  ArkWebScreenCaptureAccessRequestCppToC::Get(self)->Agree(
+      ArkWebScreenCaptureConfigCToCpp::Invert(config));
 }
 
 void ARK_WEB_CALLBACK ark_web_screen_capture_access_request_refuse(

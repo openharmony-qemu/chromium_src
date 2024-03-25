@@ -75,10 +75,10 @@ std::string NWebScreenCaptureAccessRequestDelegate::Origin() {
   return "";
 }
 
-void NWebScreenCaptureAccessRequestDelegate::Agree(const NWebScreenCaptureConfig& config) {
+void NWebScreenCaptureAccessRequestDelegate::Agree(std::shared_ptr<NWebScreenCaptureConfig> config) {
   if (request_ != nullptr) {
-    request_->SetCaptureMode(config.mode);
-    request_->SetCaptureSourceId(config.sourceId);
+    request_->SetCaptureMode(config ? config->GetMode() : 0);
+    request_->SetCaptureSourceId(config ? config->GetSourceId() : -1);
     request_->ReportRequestResult(true);
   }
 }

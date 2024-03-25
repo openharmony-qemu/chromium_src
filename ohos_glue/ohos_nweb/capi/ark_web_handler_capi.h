@@ -25,14 +25,16 @@
 #include "ohos_nweb/capi/ark_web_controller_handler_capi.h"
 #include "ohos_nweb/capi/ark_web_data_resubmission_callback_capi.h"
 #include "ohos_nweb/capi/ark_web_date_time_chooser_callback_capi.h"
+#include "ohos_nweb/capi/ark_web_date_time_chooser_capi.h"
 #include "ohos_nweb/capi/ark_web_file_selector_params_capi.h"
 #include "ohos_nweb/capi/ark_web_first_meaningful_paint_details_capi.h"
 #include "ohos_nweb/capi/ark_web_full_screen_exit_handler_capi.h"
 #include "ohos_nweb/capi/ark_web_geo_location_callback_capi.h"
+#include "ohos_nweb/capi/ark_web_image_options_capi.h"
+#include "ohos_nweb/capi/ark_web_js_all_ssl_error_result_capi.h"
 #include "ohos_nweb/capi/ark_web_js_dialog_result_capi.h"
 #include "ohos_nweb/capi/ark_web_js_http_auth_result_capi.h"
 #include "ohos_nweb/capi/ark_web_js_ssl_error_result_capi.h"
-#include "ohos_nweb/capi/ark_web_js_all_ssl_error_result_capi.h"
 #include "ohos_nweb/capi/ark_web_js_ssl_select_cert_result_capi.h"
 #include "ohos_nweb/capi/ark_web_key_event_capi.h"
 #include "ohos_nweb/capi/ark_web_largest_contentful_paint_details_capi.h"
@@ -46,6 +48,7 @@
 #include "ohos_nweb/capi/ark_web_select_popup_menu_callback_capi.h"
 #include "ohos_nweb/capi/ark_web_select_popup_menu_param_capi.h"
 #include "ohos_nweb/capi/ark_web_string_vector_value_callback_capi.h"
+#include "ohos_nweb/capi/ark_web_touch_handle_hot_zone_capi.h"
 #include "ohos_nweb/capi/ark_web_touch_handle_state_capi.h"
 #include "ohos_nweb/capi/ark_web_url_resource_error_capi.h"
 #include "ohos_nweb/capi/ark_web_url_resource_request_capi.h"
@@ -248,7 +251,7 @@ typedef struct _ark_web_handler_t {
 
   bool(ARK_WEB_CALLBACK *on_drag_and_drop_data)(struct _ark_web_handler_t *self,
                                                 const void *data, size_t len,
-                                                const ArkWebImageOptions *opt);
+                                                ark_web_image_options_t *opt);
 
   void(ARK_WEB_CALLBACK *on_select_popup_menu)(
       struct _ark_web_handler_t *self,
@@ -279,7 +282,7 @@ typedef struct _ark_web_handler_t {
       int64_t first_contentful_paint_ms);
 
   void(ARK_WEB_CALLBACK *on_date_time_chooser_popup)(
-      struct _ark_web_handler_t *self, const ArkWebDateTimeChooser *chooser,
+      struct _ark_web_handler_t *self, ark_web_date_time_chooser_t *chooser,
       const ArkWebDateTimeSuggestionVector *suggestions,
       ark_web_date_time_chooser_callback_t *callback);
 
@@ -294,7 +297,8 @@ typedef struct _ark_web_handler_t {
       struct _ark_web_handler_t *self, int state, int type);
 
   void(ARK_WEB_CALLBACK *on_get_touch_handle_hot_zone)(
-      struct _ark_web_handler_t *self, ArkWebTouchHandleHotZone *hot_zone);
+      struct _ark_web_handler_t *self,
+      ark_web_touch_handle_hot_zone_t *hot_zone);
 
   void(ARK_WEB_CALLBACK *on_complete_swap_with_new_size)(
       struct _ark_web_handler_t *self);
@@ -340,13 +344,9 @@ typedef struct _ark_web_handler_t {
 
   bool(ARK_WEB_CALLBACK *on_all_ssl_error_request_by_js)(
       struct _ark_web_handler_t *self,
-      ark_web_js_all_ssl_error_result_t *result,
-      int error,
-      const ArkWebString *url,
-      const ArkWebString *originalUrl,
-      const ArkWebString *referrer,
-      bool isFatalError,
-      bool isMainFrame);
+      ark_web_js_all_ssl_error_result_t *result, int error,
+      const ArkWebString *url, const ArkWebString *originalUrl,
+      const ArkWebString *referrer, bool isFatalError, bool isMainFrame);
 } ark_web_handler_t;
 
 #ifdef __cplusplus

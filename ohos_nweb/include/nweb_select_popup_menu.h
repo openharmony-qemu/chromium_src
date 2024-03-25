@@ -22,11 +22,14 @@
 
 namespace OHOS::NWeb {
 
-struct SelectMenuBound {
-    int x = -1;
-    int y = -1;
-    int width = -1;
-    int height = -1;
+class NWebSelectMenuBound {
+public:
+    virtual ~NWebSelectMenuBound() = default;
+
+    virtual int GetX() = 0;
+    virtual int GetY() = 0;
+    virtual int GetWidth() = 0;
+    virtual int GetHeight() = 0;
 };
 
 enum SelectPopupMenuItemType {
@@ -79,7 +82,7 @@ public:
 
     virtual bool GetIsRightAligned() = 0;
 
-    virtual SelectMenuBound GetSelectMenuBound() = 0;
+    virtual std::shared_ptr<NWebSelectMenuBound> GetSelectMenuBound() = 0;
 
     virtual bool GetIsAllowMultipleSelection() = 0;
 };

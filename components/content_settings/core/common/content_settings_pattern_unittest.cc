@@ -8,8 +8,17 @@
 #include "url/gurl.h"
 
 namespace {
-
+#if defined(OHOS_UNITTESTS)
+const char* const kNonWildcardDomainNonPortSchemes[] = {
+    "chrome-extension", "chrome-search", "chrome", "chrome-untrusted",
+    "devtools"};
+#endif
 ContentSettingsPattern Pattern(const std::string& str) {
+#if defined(OHOS_UNITTESTS)
+  ContentSettingsPattern::SetNonWildcardDomainNonPortSchemes(
+        kNonWildcardDomainNonPortSchemes,
+        std::size(kNonWildcardDomainNonPortSchemes));
+#endif
   return ContentSettingsPattern::FromString(str);
 }
 
@@ -89,24 +98,44 @@ TEST(ContentSettingsPatternTest, FromURL) {
   EXPECT_EQ("file:///foo/bar.html", pattern.ToString());
 
   // WebUI and other portless schemes shouldn't use domain wildcards.
+#if defined(OHOS_UNITTESTS)
+  pattern = Pattern("chrome://test");
+#else
   pattern = ContentSettingsPattern::FromURL(GURL("chrome://test"));
+#endif
   EXPECT_TRUE(pattern.IsValid());
   EXPECT_FALSE(pattern.Matches(GURL("chrome://foo.test")));
+#if defined(OHOS_UNITTESTS)
+  pattern = Pattern("chrome-untrusted://test");
+#else
   pattern = ContentSettingsPattern::FromURL(GURL("chrome-untrusted://test"));
+#endif
   EXPECT_TRUE(pattern.IsValid());
   EXPECT_FALSE(pattern.Matches(GURL("chrome-untrusted://foo.test")));
+#if defined(OHOS_UNITTESTS)
+  pattern = Pattern("devtools://devtools");
+#else
   pattern = ContentSettingsPattern::FromURL(GURL("devtools://devtools"));
+#endif
   EXPECT_TRUE(pattern.IsValid());
   EXPECT_FALSE(pattern.Matches(GURL("devtools://foo.devtools")));
 
   // Ports should be ignored for portless schemes.
+#if defined(OHOS_UNITTESTS)
+  pattern = Pattern("devtools://devtools");
+#else
   pattern = ContentSettingsPattern::FromURL(GURL("devtools://devtools"));
+#endif
   EXPECT_TRUE(pattern.Matches(GURL("devtools://devtools:80")));
   EXPECT_TRUE(pattern.Matches(GURL("devtools://devtools:81")));
 
   // TODO(crbug.com/1405269): Including a port with a portless scheme should
   // return an invalid pattern.
+#if defined(OHOS_UNITTESTS)
+  pattern = Pattern("devtools://devtools:80");
+#else
   pattern = ContentSettingsPattern::FromURL(GURL("devtools://devtools:80"));
+#endif
   EXPECT_TRUE(pattern.Matches(GURL("devtools://devtools:80")));
   EXPECT_TRUE(pattern.Matches(GURL("devtools://devtools:81")));
 

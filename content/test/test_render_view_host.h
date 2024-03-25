@@ -102,6 +102,9 @@ class TestRenderWidgetHostView : public RenderWidgetHostViewBase,
 
   void TakeFallbackContentFrom(RenderWidgetHostView* view) override;
   void EnsureSurfaceSynchronizedForWebTest() override;
+#if defined(OHOS_UNITTESTS)
+  void EvictFrameBackBuffers(bool invisible) override {}
+#endif
 
   // RenderWidgetHostViewBase:
   uint32_t GetCaptureSequenceNumber() const override;

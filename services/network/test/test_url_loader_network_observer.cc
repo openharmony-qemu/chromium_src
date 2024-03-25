@@ -23,6 +23,9 @@ void TestURLLoaderNetworkObserver::OnSSLCertificateError(
     int net_error,
     const net::SSLInfo& ssl_info,
     bool fatal,
+#if defined(OHOS_UNITTESTS)
+    const ::GURL& origin_url, const std::string& referrer,
+#endif
     OnSSLCertificateErrorCallback response) {
   std::move(response).Run(ignore_certificate_errors_ ? net::OK : net_error);
 }

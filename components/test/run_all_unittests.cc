@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
 #include "base/test/test_suite.h"
 #include "build/build_config.h"
 #include "mojo/core/embedder/embedder.h"
-
+#include "ui/base/resource/resource_bundle.h"
 
 class TestSuiteNoAtExit : public base::TestSuite {
  public:
@@ -33,6 +33,9 @@ class TestSuiteNoAtExit : public base::TestSuite {
 void TestSuiteNoAtExit::Initialize() {
   // Run TestSuite::Initialize first so that logging is initialized.
   base::TestSuite::Initialize();
+  ui::ResourceBundle::InitSharedInstanceWithLocale(
+      "en-US", NULL,
+      ui::ResourceBundle::DO_NOT_LOAD_COMMON_RESOURCES);
 
   // Run this here instead of main() to ensure an AtExitManager is already
   // present.

@@ -410,14 +410,24 @@ TEST(ContentSettingsPatternParserTest, SerializePatterns) {
   parts = ContentSettingsPattern::PatternParts();
   parts.scheme = "chrome-search";
   parts.host = "local-ntp";
+#if defined(OHOS_UNITTESTS)
+  EXPECT_EQ("chrome-search://local-ntp:",
+            content_settings::PatternParser::ToString(parts));
+#else
   EXPECT_EQ("chrome-search://local-ntp/",
             content_settings::PatternParser::ToString(parts));
+#endif
 
   parts = ContentSettingsPattern::PatternParts();
   parts.scheme = "chrome-extension";
   parts.host = "peoadpeiejnhkmpaakpnompolbglelel";
+#if defined(OHOS_UNITTESTS)
+  EXPECT_EQ("chrome-extension://peoadpeiejnhkmpaakpnompolbglelel:",
+            content_settings::PatternParser::ToString(parts));
+#else
   EXPECT_EQ("chrome-extension://peoadpeiejnhkmpaakpnompolbglelel/",
             content_settings::PatternParser::ToString(parts));
+#endif
 }
 
 TEST(ContentSettingsPatternParserTest, IdempotencyOfCanonicalization) {

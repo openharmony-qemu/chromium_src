@@ -1135,7 +1135,7 @@ public:
    */
   /*--ark web()--*/
   virtual ArkWebString GetLastJavascriptProxyCallingFrameUrl() = 0;
-  
+
   /**
    * @brief Scroll by the delta distance or velocity takes the screen as a reference.
    *

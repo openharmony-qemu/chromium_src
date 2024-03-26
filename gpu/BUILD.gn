@@ -590,12 +590,6 @@ test("gpu_unittests") {
     "ipc/service/gpu_channel_test_common.h",
     "ipc/service/gpu_watchdog_thread_unittest.cc",
   ]
-
-  if (ohos_unittests) {
-    sources += [
-      "//content/public/common/content_switches.cc",
-    ]
-  }
   
   if (enable_validating_command_decoder) {
     sources += [

@@ -126,7 +126,7 @@ inline void DispatchToMethod(const ObjT& obj,
 }
 
 template <typename ObjT, typename Method, typename InTuple, typename P, typename OutTuple>
-inline void DispatchToMethod(const ObjT& obj,
+inline void DispatchToMethod_Param(const ObjT& obj,
                              Method method,
                              InTuple&& in,
                              P* parameter,

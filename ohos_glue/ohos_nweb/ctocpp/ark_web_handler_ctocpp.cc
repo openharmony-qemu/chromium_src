@@ -1205,6 +1205,19 @@ bool ArkWebHandlerCToCpp::OnAllSslErrorRequestByJS(
       &originalUrl, &referrer, isFatalError, isMainFrame);
 }
 
+ARK_WEB_NO_SANITIZE
+void ArkWebHandlerCToCpp::OnTooltip(const ArkWebString &tooltip) {
+  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
+
+  ark_web_handler_t *_struct = GetStruct();
+  ARK_WEB_CTOCPP_CHECK_PARAM(_struct, );
+
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, on_tooltip, );
+
+  // Execute
+  _struct->on_tooltip(_struct, &tooltip);
+}
+
 ArkWebHandlerCToCpp::ArkWebHandlerCToCpp() {
 }
 

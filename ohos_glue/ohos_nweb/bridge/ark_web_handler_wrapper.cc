@@ -853,4 +853,13 @@ bool ArkWebHandlerWrapper::OnAllSslErrorRequestByJS(
       ArkWebStringClassToStruct(url), ArkWebStringClassToStruct(originalUrl),
       ArkWebStringClassToStruct(referrer), isFatalError, isMainFrame);
 }
+
+void ArkWebHandlerWrapper::OnTooltip(const std::string& tooltip) {
+  ArkWebString stTooltip = ArkWebStringClassToStruct(tooltip);
+
+  ark_web_handler_->OnTooltip(stTooltip);
+
+  ArkWebStringStructRelease(stTooltip);
+}
+
 } // namespace OHOS::ArkWeb

@@ -462,7 +462,11 @@ typedef struct _ark_web_nweb_t {
   void(ARK_WEB_CALLBACK *scroll_by_ref_screen)(struct _ark_web_nweb_t *self,
                                                float delta_x, float delta_y,
                                                float vx, float vy);
-  
+
+  void(ARK_WEB_CALLBACK *execute_java_script_ext)(
+      struct _ark_web_nweb_t *self, const int fd, const size_t scriptLength,
+      ark_web_message_value_callback_t *callback, bool extention);
+
   void(ARK_WEB_CALLBACK *on_render_to_background)(struct _ark_web_nweb_t *self);
 
   void(ARK_WEB_CALLBACK *on_render_to_foreground)(struct _ark_web_nweb_t *self);

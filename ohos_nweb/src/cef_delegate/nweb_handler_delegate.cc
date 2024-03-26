@@ -2602,6 +2602,14 @@ void NWebHandlerDelegate::RemoveTransientJavaScriptObject() {
   nweb_javascript_callback_->RemoveTransientJavaScriptObject();
 }
 
+bool NWebHandlerDelegate::OnTooltip(CefRefPtr<CefBrowser> browser, CefString& text) {
+  if (nweb_handler_ != nullptr) {
+    nweb_handler_->OnTooltip(text.ToString());
+    return true;
+  }
+  return false;
+}
+
 void NWebHandlerDelegate::SetNWebId(uint32_t nwebId) {
   nweb_id_ = nwebId;
 }

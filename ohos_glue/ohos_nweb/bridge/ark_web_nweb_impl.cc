@@ -814,6 +814,10 @@ bool ArkWebNWebImpl::IsIntelligentTrackingPreventionEnabled() {
   return nweb_nweb_->IsIntelligentTrackingPreventionEnabled();
 }
 
+void ArkWebNWebImpl::ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) {
+  nweb_nweb_->ScrollByRefScreen(delta_x, delta_y, vx, vy);
+}
+
 void ArkWebNWebImpl::ExecuteJavaScriptExt(const int fd, const size_t scriptLength,
     ArkWebRefPtr<ArkWebMessageValueCallback> callback, bool extention) {
   if (CHECK_REF_PTR_IS_NULL(callback)) {

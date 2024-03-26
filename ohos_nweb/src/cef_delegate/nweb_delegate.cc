@@ -1935,6 +1935,7 @@ void NWebDelegate::RegisterNWebJavaScriptCallBack(
 }
 
 bool NWebDelegate::OnFocus(const FocusReason& focusReason) const {
+  LOG(DEBUG) << "NWebDelegate::OnFocus, nweb_id = " << nweb_id_;
   if (!GetBrowser().get()) {
     LOG(ERROR) << "NWebDelegate::OnFocus GetBrowser().get() fail";
     return false;
@@ -1950,6 +1951,7 @@ bool NWebDelegate::OnFocus(const FocusReason& focusReason) const {
 }
 
 void NWebDelegate::OnBlur() const {
+  LOG(DEBUG) << "NWebDelegate::OnBlur, nweb_id = " << nweb_id_;
   if (!GetBrowser().get()) {
     LOG(ERROR) << "NWebDelegate::OnBlur GetBrowser().get() fail";
     return;
@@ -2252,6 +2254,19 @@ void NWebDelegate::ScrollBy(float delta_x, float delta_y) {
 
   GetBrowser()->GetHost()->ScrollBy(std::round(delta_x * ratio),
                                     std::round(delta_y * ratio));
+}
+
+void NWebDelegate::ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) {
+  if (!GetBrowser().get()) {
+    LOG(ERROR) << "ScrollByRefScreen can not get browser";
+    return;
+  }
+  float scale = Scale();
+  if (scale > 0 && (delta_x != 0 || delta_y != 0)) {
+    // delta_x and delta_y here should be sure to be a value in physical pixels.
+    GetBrowser()->GetHost()->ScrollBy(std::round(delta_x) / scale,
+                                      std::round(delta_y) / scale);
+  }
 }
 
 void NWebDelegate::SlideScroll(float vx, float vy) {

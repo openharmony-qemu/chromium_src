@@ -1135,6 +1135,32 @@ void NWebDelegate::ExecuteJavaScript(const std::string& code) const {
   }
 }
 
+void NWebDelegate::ExecuteJavaScriptExt(
+    const int fd,
+    const size_t scriptLength,
+    std::shared_ptr<NWebMessageValueCallback> callback,
+    bool extention) {
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    CEF_POST_TASK(CEF_UIT,
+      base::BindOnce((void(NWebDelegate::*)(const int fd,
+        const size_t scriptLength,
+        std::shared_ptr<NWebMessageValueCallback>,
+        bool)) &
+        NWebDelegate::ExecuteJavaScriptExt,
+        this, fd, scriptLength, callback, extention));
+    return;
+  }
+
+  if (GetBrowser().get()) {
+    runJSCallbackId_++;
+    CefRefPtr<JavaScriptResultCallbackImpl> JsResultCb =
+        new JavaScriptResultCallbackImpl(callback,
+        runJSCallbackId_, shared_from_this());
+    runJSCallbackMap_[runJSCallbackId_] = JsResultCb;
+    GetBrowser()->GetHost()->ExecuteJavaScriptExt(fd, static_cast<uint64_t>(scriptLength), JsResultCb, extention);
+  }
+}
+
 #if defined(OHOS_MSGPORT)
 
 void NWebDelegate::EraseJavaScriptCallbackImpl(uint32_t id) {

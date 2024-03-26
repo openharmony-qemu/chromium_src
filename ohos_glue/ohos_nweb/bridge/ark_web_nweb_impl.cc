@@ -818,4 +818,15 @@ void ArkWebNWebImpl::ScrollByRefScreen(float delta_x, float delta_y, float vx, f
   nweb_nweb_->ScrollByRefScreen(delta_x, delta_y, vx, vy);
 }
 
+void ArkWebNWebImpl::ExecuteJavaScriptExt(const int fd, const size_t scriptLength,
+    ArkWebRefPtr<ArkWebMessageValueCallback> callback, bool extention) {
+  if (CHECK_REF_PTR_IS_NULL(callback)) {
+    nweb_nweb_->ExecuteJavaScriptExt(fd, scriptLength, nullptr, extention);
+    return;
+  }
+
+  nweb_nweb_->ExecuteJavaScriptExt(fd, scriptLength,
+      std::make_shared<ArkWebMessageValueCallbackWrapper>(callback), extention);
+}
+
 } // namespace OHOS::ArkWeb

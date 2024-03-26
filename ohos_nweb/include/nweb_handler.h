@@ -807,6 +807,13 @@ public:
                                        bool isMainFrame) {
         return false;
     }
+
+    /**
+     * @brief Called when a tooltip should be presented for a component.
+     *
+     * @param tooltip The content of the tooltip.
+     */
+    virtual void OnTooltip(const std::string& param) {}
 };
 }  // namespace OHOS::NWeb
 

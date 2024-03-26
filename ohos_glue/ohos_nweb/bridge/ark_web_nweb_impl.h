@@ -982,7 +982,7 @@ public:
    * false.
    */
   bool IsIntelligentTrackingPreventionEnabled() override;
-  
+
   /**
    * Scroll by the delta distance or velocity takes the screen as a reference.
    *

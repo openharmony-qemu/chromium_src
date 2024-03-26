@@ -159,6 +159,12 @@ static std::string GetNetlogMode() {
   return system_properties_adapter.GetNetlogMode();
 }
 
+static bool GetOOPGPUEnable() {
+  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                                    .GetSystemPropertiesInstance();
+  return system_properties_adapter.GetOOPGPUEnable();
+}
+
 #if defined(OHOS_SITE_ISOLATION)
 static std::string GetSiteIsolationMode() {
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
@@ -305,6 +311,11 @@ void InitialWebEngineArgs(std::list<std::string>& web_engine_args,
   for (auto arg : args_to_add) {
     web_engine_args.emplace_back(arg);
   }
+
+  if (!GetOOPGPUEnable()) {
+    web_engine_args.emplace_back("--disable-canvas-oop-gpu-rasterization");
+  }
+
   if (GetIsMultiRendererProcess(init_args)) {
     web_engine_args.emplace_back("--enable-multi-renderer-process");
   }

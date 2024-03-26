@@ -993,7 +993,7 @@ public:
    */
   /*--ark web()--*/
   void ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) override;
-  
+
   /**
    * ExecuteJavaScript with ashmem
    *

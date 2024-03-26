@@ -2357,6 +2357,13 @@ void NWebDelegate::SetDrawMode(int32_t mode) {
     preference_delegate_->SetDrawMode(mode);
   }
 }
+
+bool NWebDelegate::GetPendingSizeStatus() {
+  if (GetBrowser().get()) {
+    return GetBrowser()->GetHost()->GetPendingSizeStatus();
+  }
+  return false;
+}
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 
 #if defined(OHOS_EX_FORCE_ZOOM)

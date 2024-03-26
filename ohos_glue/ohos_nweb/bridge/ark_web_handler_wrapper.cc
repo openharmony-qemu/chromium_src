@@ -862,4 +862,7 @@ void ArkWebHandlerWrapper::OnTooltip(const std::string& tooltip) {
   ArkWebStringStructRelease(stTooltip);
 }
 
+void ArkWebHandlerWrapper::ReleaseResizeHold() {
+  ark_web_handler_->ReleaseResizeHold();
+}
 } // namespace OHOS::ArkWeb

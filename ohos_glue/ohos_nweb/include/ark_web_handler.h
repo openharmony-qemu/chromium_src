@@ -672,6 +672,9 @@ public:
 
   /*--ark web()--*/
   virtual void OnTooltip(const ArkWebString &tooltip) = 0;
+
+  /*--ark web()--*/
+  virtual void ReleaseResizeHold() = 0;
 };
 
 } // namespace OHOS::ArkWeb

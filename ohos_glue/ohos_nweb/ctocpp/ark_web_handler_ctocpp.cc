@@ -1218,6 +1218,19 @@ void ArkWebHandlerCToCpp::OnTooltip(const ArkWebString &tooltip) {
   _struct->on_tooltip(_struct, &tooltip);
 }
 
+ARK_WEB_NO_SANITIZE
+void ArkWebHandlerCToCpp::ReleaseResizeHold() {
+  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
+
+  ark_web_handler_t *_struct = GetStruct();
+  ARK_WEB_CTOCPP_CHECK_PARAM(_struct, );
+
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, release_resize_hold, );
+
+  // Execute
+  _struct->release_resize_hold(_struct);
+}
+
 ArkWebHandlerCToCpp::ArkWebHandlerCToCpp() {
 }
 

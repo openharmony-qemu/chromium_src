@@ -1115,6 +1115,14 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
     virtual std::string GetLastJavascriptProxyCallingFrameUrl() = 0;
 
     /**
+     * @brief get pendingsize status.
+     *
+     * @return the result of last pendingsize status.
+     */
+    /*--ark web()--*/
+    virtual bool GetPendingSizeStatus() = 0;
+
+    /**
      * Scroll by the delta distance or velocity takes the screen as a reference.
      *
      * @param delta_x horizontal offset in physical pixel.

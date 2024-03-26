@@ -345,6 +345,7 @@ void EnableSafeBrowsing(bool enable) override;
   void SetShouldFrameSubmissionBeforeDraw(bool should) override;
   void SetDrawRect(int32_t x, int32_t y, int32_t width, int32_t height) override;
   void SetDrawMode(int32_t mode) override;
+  bool GetPendingSizeStatus() override;
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 
 #if defined(OHOS_MULTI_WINDOW)

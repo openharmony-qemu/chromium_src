@@ -591,6 +591,11 @@ public:
 
   void OnTooltip(const std::string& tooltip) override;
 
+  /**
+   * @brief called when resizehold is released.
+   *
+   */
+  void ReleaseResizeHold() override;
 private:
   ArkWebRefPtr<ArkWebHandler> ark_web_handler_;
 };

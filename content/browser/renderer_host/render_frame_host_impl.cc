@@ -204,6 +204,9 @@
 #include "mojo/public/cpp/bindings/self_owned_receiver.h"
 #include "mojo/public/cpp/bindings/struct_ptr.h"
 #include "mojo/public/cpp/system/data_pipe.h"
+#if BUILDFLAG(IS_OHOS)
+#include "mojo/public/cpp/system/platform_handle.h"
+#endif
 #include "net/base/schemeful_site.h"
 #include "net/net_buildflags.h"
 #include "ppapi/buildflags/buildflags.h"
@@ -2629,6 +2632,26 @@ void RenderFrameHostImpl::ExecuteJavaScript(const std::u16string& javascript,
   GetAssociatedLocalFrame()->JavaScriptExecuteRequest(javascript, wants_result,
                                                       std::move(callback));
 }
+
+#if BUILDFLAG(IS_OHOS)
+void RenderFrameHostImpl::ExecuteJavaScriptExt(const int fd,
+                                               const uint64_t scriptLength,
+                                               JavaScriptResultCallback callback) {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  CHECK(CanExecuteJavaScript());
+  AssertNonSpeculativeFrame();
+
+  const bool wants_result = !callback.is_null();
+  MojoPlatformHandle platform_handle;
+  platform_handle.struct_size = sizeof(platform_handle);
+  platform_handle.type = MOJO_PLATFORM_HANDLE_TYPE_FILE_DESCRIPTOR;
+  platform_handle.value = static_cast<uint64_t>(fd);
+  MojoHandle handle;
+  MojoWrapPlatformHandle(&platform_handle, nullptr, &handle);
+  GetAssociatedLocalFrame()->JavaScriptExecuteRequestExt(
+      mojo::ScopedHandle(mojo::Handle(handle)), scriptLength, wants_result, std::move(callback));
+}
+#endif
 
 void RenderFrameHostImpl::ExecuteJavaScriptInIsolatedWorld(
     const std::u16string& javascript,

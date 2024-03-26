@@ -854,6 +854,14 @@ bool ArkWebHandlerWrapper::OnAllSslErrorRequestByJS(
       ArkWebStringClassToStruct(referrer), isFatalError, isMainFrame);
 }
 
+void ArkWebHandlerWrapper::OnTooltip(const std::string& tooltip) {
+  ArkWebString stTooltip = ArkWebStringClassToStruct(tooltip);
+
+  ark_web_handler_->OnTooltip(stTooltip);
+
+  ArkWebStringStructRelease(stTooltip);
+}
+
 void ArkWebHandlerWrapper::ReleaseResizeHold() {
   ark_web_handler_->ReleaseResizeHold();
 }

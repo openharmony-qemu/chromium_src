@@ -159,6 +159,12 @@ static std::string GetNetlogMode() {
   return system_properties_adapter.GetNetlogMode();
 }
 
+static bool GetOOPGPUEnable() {
+  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                                    .GetSystemPropertiesInstance();
+  return system_properties_adapter.GetOOPGPUEnable();
+}
+
 #if defined(OHOS_SITE_ISOLATION)
 static std::string GetSiteIsolationMode() {
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
@@ -305,6 +311,11 @@ void InitialWebEngineArgs(std::list<std::string>& web_engine_args,
   for (auto arg : args_to_add) {
     web_engine_args.emplace_back(arg);
   }
+
+  if (!GetOOPGPUEnable()) {
+    web_engine_args.emplace_back("--disable-canvas-oop-gpu-rasterization");
+  }
+
   if (GetIsMultiRendererProcess(init_args)) {
     web_engine_args.emplace_back("--enable-multi-renderer-process");
   }
@@ -783,6 +794,10 @@ bool NWebImpl::GetPendingSizeStatus() {
 }
 
 void NWebImpl::OnTouchPress(int32_t id, double x, double y, bool from_overlay) {
+  WVLOG_D(
+      "NWebImpl::OnTouchPress id=%{public}d, x=%{public}f, y=%{public}f, "
+      "from_overlay=%{public}d",
+      id, x, y, from_overlay);
   if (input_handler_ == nullptr) {
     return;
   }
@@ -796,6 +811,10 @@ void NWebImpl::OnTouchRelease(int32_t id,
                               double x,
                               double y,
                               bool from_overlay) {
+  WVLOG_D(
+      "NWebImpl::OnTouchRelease id=%{public}d, x=%{public}f, y=%{public}f, "
+      "from_overlay=%{public}d",
+      id, x, y, from_overlay);
   if (input_handler_ == nullptr) {
     return;
   }
@@ -821,6 +840,7 @@ void NWebImpl::OnTouchMove(const std::vector<std::shared_ptr<NWebTouchPointInfo>
 }
 
 void NWebImpl::OnTouchCancel() {
+  WVLOG_D("NWebImpl::OnTouchCancel");
   if (input_handler_ == nullptr) {
     return;
   }
@@ -1575,6 +1595,13 @@ void NWebImpl::ScrollBy(float delta_x, float delta_y) {
     return;
   }
   return nweb_delegate_->ScrollBy(delta_x, delta_y);
+}
+
+void NWebImpl::ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  return nweb_delegate_->ScrollByRefScreen(delta_x, delta_y, vx, vy);
 }
 
 void NWebImpl::SlideScroll(float vx, float vy) {

@@ -1108,6 +1108,16 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      */
     /*--ark web()--*/
     virtual bool GetPendingSizeStatus() = 0;
+
+    /**
+     * Scroll by the delta distance or velocity takes the screen as a reference.
+     *
+     * @param delta_x horizontal offset in physical pixel.
+     * @param delta_y vertical offset in physical pixel.
+     * @param vx      horizontal velocity in physical pixel.
+     * @param vx      vertical velocity in physical pixel.
+    */
+    virtual void ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) = 0;
 };
 }  // namespace OHOS::NWeb
 

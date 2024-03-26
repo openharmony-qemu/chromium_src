@@ -811,8 +811,13 @@ TEST_F(NetworkSessionConfiguratorTest, DefaultCacheBackend) {
 
 TEST_F(NetworkSessionConfiguratorTest, SimpleCacheTrialExperimentYes) {
   base::FieldTrialList::CreateFieldTrial("SimpleCacheTrial", "ExperimentYes");
+#if defined(OHOS_UNITTESTS)
+  EXPECT_EQ(net::URLRequestContextBuilder::HttpCacheParams::DISK_BLOCKFILE,
+            ChooseCacheType());
+#else
   EXPECT_EQ(net::URLRequestContextBuilder::HttpCacheParams::DISK_SIMPLE,
             ChooseCacheType());
+#endif
 }
 
 TEST_F(NetworkSessionConfiguratorTest, SimpleCacheTrialDisable) {

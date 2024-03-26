@@ -1143,6 +1143,17 @@ public:
     */
   /*--ark web()--*/
   virtual bool GetPendingSizeStatus() = 0;
+
+  /**
+   * @brief Scroll by the delta distance or velocity takes the screen as a reference.
+   *
+   * @param delta_x horizontal offset in physical pixel.
+   * @param delta_y vertical offset in physical pixel.
+   * @param vx      horizontal velocity in physical pixel.
+   * @param vx      vertical velocity in physical pixel.
+   */
+  /*--ark web()--*/
+  virtual void ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) = 0;
 };
 
 } // namespace OHOS::ArkWeb

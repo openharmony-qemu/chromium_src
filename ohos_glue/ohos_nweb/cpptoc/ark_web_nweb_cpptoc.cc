@@ -1590,6 +1590,17 @@ bool ARK_WEB_CALLBACK ark_web_nweb_get_pending_size_status(struct _ark_web_nweb_
   return ArkWebNWebCppToC::Get(self)->GetPendingSizeStatus();
 }
 
+void ARK_WEB_CALLBACK
+ark_web_nweb_scroll_by_ref_screen(struct _ark_web_nweb_t *self, float delta_x,
+                                  float delta_y, float vx, float vy) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->ScrollByRefScreen(delta_x, delta_y, vx, vy);
+}
+
 } // namespace
 
 ArkWebNWebCppToC::ArkWebNWebCppToC() {
@@ -1763,6 +1774,7 @@ ArkWebNWebCppToC::ArkWebNWebCppToC() {
   GetStruct()->get_last_javascript_proxy_calling_frame_url =
       ark_web_nweb_get_last_javascript_proxy_calling_frame_url;
   GetStruct()->get_pending_size_status = ark_web_nweb_get_pending_size_status;
+  GetStruct()->scroll_by_ref_screen = ark_web_nweb_scroll_by_ref_screen;
 }
 
 ArkWebNWebCppToC::~ArkWebNWebCppToC() {

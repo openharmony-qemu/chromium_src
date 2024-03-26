@@ -818,4 +818,7 @@ bool ArkWebNWebImpl::GetPendingSizeStatus() {
   return nweb_nweb_->GetPendingSizeStatus();
 }
 
+void ArkWebNWebImpl::ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) {
+  nweb_nweb_->ScrollByRefScreen(delta_x, delta_y, vx, vy);
+}
 } // namespace OHOS::ArkWeb

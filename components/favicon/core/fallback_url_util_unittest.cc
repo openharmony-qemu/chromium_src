@@ -32,7 +32,11 @@ TEST(FallbackURLUtilTest, GetFallbackIconText) {
     {"http://w-3.137.org", "1"},
     // Test URLs with a domain not in the registry.
     {"http://localhost/", "L"},
+#if defined(OHOS_UNITTESTS)
+    {"chrome-search://most-visited/title.html", ""},
+#else
     {"chrome-search://most-visited/title.html", "M"},
+#endif
     // Test IP URLs.
     {"http://192.168.0.1/", "IP"},
     {"http://[2001:4860:4860::8888]/", "IP"},

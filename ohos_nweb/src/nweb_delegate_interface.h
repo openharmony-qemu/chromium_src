@@ -298,6 +298,7 @@ class NWebDelegateInterface
 #if defined(OHOS_INPUT_EVENTS)
   virtual void ScrollTo(float x, float y) = 0;
   virtual void ScrollBy(float delta_x, float delta_y) = 0;
+  virtual void ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) = 0;
   virtual void SlideScroll(float vx, float vy) = 0;
 #endif  // defined(OHOS_INPUT_EVENTS)
 

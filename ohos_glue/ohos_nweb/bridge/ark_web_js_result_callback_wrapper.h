@@ -34,6 +34,11 @@ public:
                       const std::string &method, const std::string &object_name,
                       int32_t routing_id, int32_t object_id) override;
 
+  std::shared_ptr<OHOS::NWeb::NWebValue>
+  GetJavaScriptResultFlowbuf(std::vector<std::shared_ptr<OHOS::NWeb::NWebValue>> args,
+                      const std::string &method, const std::string &object_name,
+                      int fd, int32_t routing_id, int32_t object_id) override;
+
   /**
    * @brief GetJavaScriptObjectMethods
    *

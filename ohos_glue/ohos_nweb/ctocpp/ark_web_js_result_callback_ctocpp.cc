@@ -94,6 +94,24 @@ void ArkWebJsResultCallbackCToCpp::RemoveTransientJavaScriptObject() {
   _struct->remove_transient_java_script_object(_struct);
 }
 
+ARK_WEB_NO_SANITIZE
+ArkWebValue ArkWebJsResultCallbackCToCpp::GetJavaScriptResultFlowbuf(
+    ArkWebValueVector args, const ArkWebString &method,
+    const ArkWebString &object_name, int fd,
+    int32_t routing_id, int32_t object_id) {
+  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
+
+  ark_web_js_result_callback_t *_struct = GetStruct();
+  ARK_WEB_CTOCPP_CHECK_PARAM(_struct, ark_web_value_default);
+
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, get_java_script_result_flowbuf,
+                                   ark_web_value_default);
+
+  // Execute
+  return _struct->get_java_script_result_flowbuf(_struct, args, &method, &object_name,
+                                         fd, routing_id, object_id);
+}
+
 ArkWebJsResultCallbackCToCpp::ArkWebJsResultCallbackCToCpp() {
 }
 

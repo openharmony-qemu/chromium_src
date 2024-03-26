@@ -50,6 +50,11 @@ typedef struct _ark_web_js_result_callback_t {
 
   void(ARK_WEB_CALLBACK *remove_transient_java_script_object)(
       struct _ark_web_js_result_callback_t *self);
+
+  ArkWebValue(ARK_WEB_CALLBACK *get_java_script_result_flowbuf)(
+      struct _ark_web_js_result_callback_t *self, ArkWebValueVector args,
+      const ArkWebString *method, const ArkWebString *object_name,
+      int fd, int32_t routing_id, int32_t object_id);
 } ark_web_js_result_callback_t;
 
 #ifdef __cplusplus

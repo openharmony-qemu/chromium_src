@@ -68,6 +68,14 @@ public:
    */
   /*--ark web()--*/
   virtual void RemoveTransientJavaScriptObject() = 0;
+
+  /*--ark web()--*/
+  virtual ArkWebValue GetJavaScriptResultFlowbuf(ArkWebValueVector args,
+                                          const ArkWebString &method,
+                                          const ArkWebString &object_name,
+                                          int fd,
+                                          int32_t routing_id,
+                                          int32_t object_id) = 0;
 };
 
 } // namespace OHOS::ArkWeb

@@ -1113,7 +1113,7 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      */
     /*--ark web()--*/
     virtual std::string GetLastJavascriptProxyCallingFrameUrl() = 0;
-    
+
     /**
      * Scroll by the delta distance or velocity takes the screen as a reference.
      *

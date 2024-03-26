@@ -360,10 +360,14 @@ void OHOSAudioOutputStream::PumpSamples() {
           return;
         }
         if (weakMediaSession_.get()->IsActive()) {
-          LOG(INFO) << "MediaSession is suspending the audio.";
+          LOG(ERROR) << "MediaSession is suspending the audio.";
           weakMediaSession_.get()->Suspend(
               content::MediaSession::SuspendType::kSystem);
           weakMediaSession_.get()->isStreamSuspended_ = true;
+        } else {
+          LOG(DEBUG) << "This AudioStream should be restarted.";
+          if (!audio_renderer_->Start())
+            LOG(DEBUG) << "Try to restart the AudioStream but failed.";
         }
       } else {
         ReportError();

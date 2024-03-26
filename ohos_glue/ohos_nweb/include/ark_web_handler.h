@@ -671,6 +671,9 @@ public:
       const ArkWebString &referrer, bool isFatalError, bool isMainFrame) = 0;
 
   /*--ark web()--*/
+  virtual void OnTooltip(const ArkWebString &tooltip) = 0;
+
+  /*--ark web()--*/
   virtual void ReleaseResizeHold() = 0;
 };
 

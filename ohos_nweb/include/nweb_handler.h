@@ -814,6 +814,11 @@ public:
      * @param tooltip The content of the tooltip.
      */
     virtual void OnTooltip(const std::string& param) {}
+
+    /**
+     * @brief called when resizehold is released.
+     */
+    virtual void ReleaseResizeHold() {}
 };
 }  // namespace OHOS::NWeb
 

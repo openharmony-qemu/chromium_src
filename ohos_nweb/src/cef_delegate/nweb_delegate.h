@@ -212,6 +212,12 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   bool IsFileProtocol(const GURL& gurl);
   bool IsUrlFileExist(const GURL& gurl, const std::string& url);
 
+  void ExecuteJavaScriptExt(
+      const int fd,
+      const size_t scriptLength,
+      std::shared_ptr<NWebMessageValueCallback> callback,
+      bool extention) override;
+
 #if defined(OHOS_MSGPORT)
   uint32_t runJSCallbackId_ = 0;
   std::unordered_map<uint32_t, CefRefPtr<JavaScriptResultCallbackImpl>> runJSCallbackMap_;

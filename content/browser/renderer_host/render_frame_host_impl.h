@@ -433,6 +433,11 @@ class CONTENT_EXPORT RenderFrameHostImpl
                                JavaScriptResultCallback callback) override;
   void ExecuteJavaScript(const std::u16string& javascript,
                          JavaScriptResultCallback callback) override;
+#if BUILDFLAG(IS_OHOS)
+  void ExecuteJavaScriptExt(const int fd,
+                            const uint64_t scriptLength,
+                            JavaScriptResultCallback callback) override;
+#endif
   void ExecuteJavaScriptInIsolatedWorld(const std::u16string& javascript,
                                         JavaScriptResultCallback callback,
                                         int32_t world_id) override;

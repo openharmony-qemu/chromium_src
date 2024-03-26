@@ -194,6 +194,12 @@ class NWebImpl : public NWeb {
   void SetDrawMode(int32_t mode) override;
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 
+  void ExecuteJavaScriptExt(
+      const int fd,
+      const size_t scriptLength,
+      std::shared_ptr<NWebMessageValueCallback> callback,
+      bool extention) override;
+
 #if defined(OHOS_MSGPORT)
   void ExecuteJavaScript(
       const std::string& code,

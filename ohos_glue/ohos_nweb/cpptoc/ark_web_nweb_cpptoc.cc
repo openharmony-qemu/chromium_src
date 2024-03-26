@@ -1592,8 +1592,19 @@ ark_web_nweb_scroll_by_ref_screen(struct _ark_web_nweb_t *self, float delta_x,
   ArkWebNWebCppToC::Get(self)->ScrollByRefScreen(delta_x, delta_y, vx, vy);
 }
 
+void ARK_WEB_CALLBACK ark_web_nweb_execute_java_script_ext(
+    struct _ark_web_nweb_t *self, const int fd, const size_t scriptLength,
+    ark_web_message_value_callback_t *callback, bool extention) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->ExecuteJavaScriptExt(
+      fd, scriptLength, ArkWebMessageValueCallbackCToCpp::Invert(callback), extention);
+}
+
 void ARK_WEB_CALLBACK ark_web_nweb_on_render_to_background(struct _ark_web_nweb_t *self) {
-  
   ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
 
   ARK_WEB_CPPTOC_CHECK_PARAM(self, );
@@ -1603,7 +1614,6 @@ void ARK_WEB_CALLBACK ark_web_nweb_on_render_to_background(struct _ark_web_nweb_
 }
 
 void ARK_WEB_CALLBACK ark_web_nweb_on_render_to_foreground(struct _ark_web_nweb_t *self) {
-
   ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
 
   ARK_WEB_CPPTOC_CHECK_PARAM(self, );
@@ -1611,7 +1621,6 @@ void ARK_WEB_CALLBACK ark_web_nweb_on_render_to_foreground(struct _ark_web_nweb_
   // Execute
   ArkWebNWebCppToC::Get(self)->OnRenderToForeground();
 }
-
 } // namespace
 
 ArkWebNWebCppToC::ArkWebNWebCppToC() {
@@ -1648,6 +1657,7 @@ ArkWebNWebCppToC::ArkWebNWebCppToC() {
   GetStruct()->stop = ark_web_nweb_stop;
   GetStruct()->execute_java_script1 = ark_web_nweb_execute_java_script1;
   GetStruct()->execute_java_script2 = ark_web_nweb_execute_java_script2;
+  GetStruct()->execute_java_script_ext = ark_web_nweb_execute_java_script_ext;
   GetStruct()->get_preference = ark_web_nweb_get_preference;
   GetStruct()->get_web_id = ark_web_nweb_get_web_id;
   GetStruct()->get_hit_test_result = ark_web_nweb_get_hit_test_result;

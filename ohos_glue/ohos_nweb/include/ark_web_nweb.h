@@ -1148,6 +1148,20 @@ public:
   virtual void ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) = 0;
 
   /**
+   * ExecuteJavaScript with ashmem
+   *
+   * @param fd fd of the ashmem
+   * @param scriptLength javascript code length
+   * @param callback NWebValueCallback: javascript running result
+   * @param extention true if is extention
+   */
+  /*--ark web()--*/
+  virtual void
+  ExecuteJavaScriptExt(const int fd, const size_t scriptLength,
+                       ArkWebRefPtr<ArkWebMessageValueCallback> callback,
+                       bool extention) = 0;
+
+  /**
    * @brief Render process switch to background.
    */
   /*--ark web()--*/
@@ -1158,7 +1172,6 @@ public:
    */
   /*--ark web()--*/
   virtual void OnRenderToForeground() = 0;
-
 };
 
 } // namespace OHOS::ArkWeb

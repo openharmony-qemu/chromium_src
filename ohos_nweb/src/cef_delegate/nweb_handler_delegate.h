@@ -147,6 +147,7 @@ class NWebHandlerDelegate : public CefClient,
   void CloseAllBrowsers(bool force_close);
   bool IsClosing() const;
   const CefRefPtr<CefBrowser> GetBrowser();
+  bool OnTooltip(CefRefPtr<CefBrowser> browser, CefString& text) override;
 
   /* CefClient methods begin */
   CefRefPtr<CefDownloadHandler> GetDownloadHandler() override;

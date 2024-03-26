@@ -347,6 +347,9 @@ typedef struct _ark_web_handler_t {
       ark_web_js_all_ssl_error_result_t *result, int error,
       const ArkWebString *url, const ArkWebString *originalUrl,
       const ArkWebString *referrer, bool isFatalError, bool isMainFrame);
+
+  void(ARK_WEB_CALLBACK *on_tooltip)(struct _ark_web_handler_t *self,
+                                     const ArkWebString *tooltip);
 } ark_web_handler_t;
 
 #ifdef __cplusplus

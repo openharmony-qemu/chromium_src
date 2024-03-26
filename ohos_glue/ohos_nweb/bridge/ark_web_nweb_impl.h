@@ -993,6 +993,18 @@ public:
    */
   /*--ark web()--*/
   void ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) override;
+  
+  /**
+   * ExecuteJavaScript with ashmem
+   *
+   * @param fd fd of the ashmem
+   * @param scriptLength javascript code length
+   * @param callback NWebValueCallback: javascript running result
+   * @param extention true if is extention
+   */
+  void ExecuteJavaScriptExt(const int fd, const size_t scriptLength,
+                            ArkWebRefPtr<ArkWebMessageValueCallback> callback,
+                            bool extention) override;
 
   /**
    * @brief Render process switch to background.
@@ -1005,7 +1017,6 @@ public:
    */
   /*--ark web()--*/
   void OnRenderToForeground() override;
-
 private:
   std::shared_ptr<OHOS::NWeb::NWeb> nweb_nweb_;
 };

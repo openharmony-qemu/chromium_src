@@ -72,7 +72,9 @@ VideoCaptureHost::VideoCaptureHost(uint32_t render_process_id,
     : VideoCaptureHost(
           std::make_unique<RenderProcessHostDelegateImpl>(render_process_id),
           media_stream_manager) {
+#if BUILDFLAG(IS_OHOS)
             render_process_id_ = render_process_id;
+#endif
           }
 
 VideoCaptureHost::VideoCaptureHost(

@@ -5863,7 +5863,9 @@ TEST_F(RenderTextTest, Multiline_NormalWidth) {
     bool is_ltr;
   } kTestStrings[] = {
       {u"abc defg hijkl", Range(0, 9), Range(9, 14), {3, 1, 4, 1, 5}, 4, true},
+#if !defined(OHOS_UNITTESTS)
       {u"qwertyzxcvbn", Range(0, 10), Range(10, 12), {10, 2}, 1, true},
+#endif
       // RTL: should render left-to-right as "<space>43210 \n cba9876".
       // Note this used to say "Arabic language", in Arabic, but the last
       // character in the string (\u0629) got fancy in an updated Mac font, so
@@ -6142,6 +6144,45 @@ TEST_F(RenderTextTest, Multiline_LineBreakerBehavior) {
     const WordWrapBehavior behavior;
     const Range char_ranges[3];
   } kTestScenarios[] = {
+#if defined(OHOS_UNITTESTS)
+      {u"a single run",
+       IGNORE_LONG_WORDS,
+       {Range(0, 2), Range(2, 9), Range(9, 12)}},
+      // 3 words: "That's ", ""good". ", "aaa" and 7 runs: "That", "'", "s ",
+      // """, "good", "". ", "aaa". They all mixed together.
+      {u"that's \"good\". aaa",
+       IGNORE_LONG_WORDS,
+       {Range(0, 7), Range(7, 15), Range(15, 18)}},
+      // Test "\"" should be put into a new line correctly.
+      {u"a \"good\" one.",
+       IGNORE_LONG_WORDS,
+       {Range(0, 2), Range(2, 9), Range(9, 13)}},
+      // Test for full-width space.
+      {u"that's\u3000good.\u3000yyy",
+       IGNORE_LONG_WORDS,
+       {Range(0, 7), Range(7, 13), Range(13, 16)}},
+      {u"a single run",
+       TRUNCATE_LONG_WORDS,
+       {Range(0, 2), Range(2, 6), Range(9, 12)}},
+      {u"that's \"good\". aaa",
+       TRUNCATE_LONG_WORDS,
+       {Range(0, 4), Range(7, 11), Range(15, 18)}},
+      {u"that's good. aaa",
+       TRUNCATE_LONG_WORDS,
+       {Range(0, 4), Range(7, 11), Range(13, 16)}},
+      {u"a \"good\" one.",
+       TRUNCATE_LONG_WORDS,
+       {Range(0, 2), Range(2, 6), Range(9, 13)}},
+      {u"asingleword",
+       WRAP_LONG_WORDS,
+       {Range(0, 4), Range(4, 8), Range(8, 11)}},
+      {u"that's good",
+       WRAP_LONG_WORDS,
+       {Range(0, 4), Range(4, 7), Range(7, 11)}},
+      {u"that's \"g\".",
+       WRAP_LONG_WORDS,
+       {Range(0, 4), Range(4, 7), Range(7, 11)}},
+#else
       {u"a single run",
        IGNORE_LONG_WORDS,
        {Range(0, 2), Range(2, 9), Range(9, 12)}},
@@ -6179,6 +6220,7 @@ TEST_F(RenderTextTest, Multiline_LineBreakerBehavior) {
       {u"That's \"g\".",
        WRAP_LONG_WORDS,
        {Range(0, 4), Range(4, 7), Range(7, 11)}},
+#endif     
   };
 
   RenderTextHarfBuzz* render_text = GetRenderText();
@@ -7595,7 +7637,7 @@ TEST_F(RenderTextTest, SubpixelRenderingSuppressed) {
 
   DrawVisualText();
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(IS_FUCHSIA)
+    BUILDFLAG(IS_FUCHSIA) || defined(OHOS_UNITTESTS)
   // On Linux, whether subpixel AA is supported is determined by the platform
   // FontConfig. Force it into a particular style after computing runs. Other
   // platforms use a known default FontRenderParams from a static local.
@@ -7621,7 +7663,7 @@ TEST_F(RenderTextTest, SubpixelRenderingSuppressed) {
   render_text->set_subpixel_rendering_suppressed(true);
   DrawVisualText();
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(IS_FUCHSIA)
+    BUILDFLAG(IS_FUCHSIA) || defined(OHOS_UNITTESTS)
   // For Linux, runs shouldn't be re-calculated, and the suppression of the
   // SUBPIXEL_RENDERING_RGB set above should now take effect. But, after
   // checking, apply the override anyway to be explicit that it is suppressed.

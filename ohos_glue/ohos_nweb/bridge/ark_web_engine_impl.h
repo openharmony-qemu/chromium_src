@@ -52,10 +52,6 @@ public:
 
   void SetWebDebuggingAccess(bool isEnableDebug) override;
 
-  void PauseAllTimers() override;
-
-  void ResumeAllTimers() override;
-
   void AddIntelligentTrackingPreventionBypassingList(
       const ArkWebStringVector &hosts) override;
 
@@ -64,6 +60,10 @@ public:
 
   void ClearIntelligentTrackingPreventionBypassingList() override;
 
+  void PauseAllTimers() override;
+
+  void ResumeAllTimers() override;
+  
   void PrefetchResource(ArkWebRefPtr<ArkWebEnginePrefetchArgs> &pre_args,
                         const ArkWebStringMap &additional_http_headers,
                         const ArkWebString &cache_key,

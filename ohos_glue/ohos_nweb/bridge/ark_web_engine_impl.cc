@@ -134,14 +134,6 @@ void ArkWebEngineImpl::SetWebDebuggingAccess(bool isEnableDebug) {
   nweb_engine_->SetWebDebuggingAccess(isEnableDebug);
 }
 
-void ArkWebEngineImpl::PauseAllTimers() {
-  nweb_engine_->PauseAllTimers();
-}
-
-void ArkWebEngineImpl::ResumeAllTimers() {
-  nweb_engine_->ResumeAllTimers();
-}
-
 void ArkWebEngineImpl::AddIntelligentTrackingPreventionBypassingList(
     const ArkWebStringVector &hosts) {
   nweb_engine_->AddIntelligentTrackingPreventionBypassingList(
@@ -156,6 +148,14 @@ void ArkWebEngineImpl::RemoveIntelligentTrackingPreventionBypassingList(
 
 void ArkWebEngineImpl::ClearIntelligentTrackingPreventionBypassingList() {
   nweb_engine_->ClearIntelligentTrackingPreventionBypassingList();
+}
+
+void ArkWebEngineImpl::PauseAllTimers() {
+  nweb_engine_->PauseAllTimers();
+}
+
+void ArkWebEngineImpl::ResumeAllTimers() {
+  nweb_engine_->ResumeAllTimers();
 }
 
 void ArkWebEngineImpl::PrefetchResource(

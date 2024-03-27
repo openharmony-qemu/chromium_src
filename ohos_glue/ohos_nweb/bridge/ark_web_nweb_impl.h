@@ -943,24 +943,6 @@ public:
   int GetMediaPlaybackState() override;
 
   /**
-   * @brief Start current camera.
-   */
-  /*--ark web()--*/
-  void StartCamera() override;
-
-  /**
-   * @brief Stop current camera.
-   */
-  /*--ark web()--*/
-  void StopCamera() override;
-
-  /**
-   * @brief Close current camera.
-   */
-  /*--ark web()--*/
-  void CloseCamera() override;
-
-  /**
    * @brief Obtains the last javascript proxy calling frame url.
    *
    * @return the url of last calling frame url.
@@ -982,6 +964,24 @@ public:
    * false.
    */
   bool IsIntelligentTrackingPreventionEnabled() override;
+  
+  /**
+   * @brief Start current camera.
+   */
+  /*--ark web()--*/
+  void StartCamera() override;
+
+  /**
+   * @brief Stop current camera.
+   */
+  /*--ark web()--*/
+  void StopCamera() override;
+
+  /**
+   * @brief Close current camera.
+   */
+  /*--ark web()--*/
+  void CloseCamera() override;
 
   /**
    * @brief get pendingsize status.

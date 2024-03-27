@@ -1001,6 +1001,7 @@ ThreadGroupImpl::CreateAndRegisterWorkerLockRequired(
       task_tracker_, worker_sequence_num_++, &lock_);
 
   workers_.push_back(worker);
+  report_workers_.push_back(worker);
   executor->ScheduleStart(worker);
   DCHECK_LE(workers_.size(), max_tasks_);
 

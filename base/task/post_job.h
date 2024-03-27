@@ -130,6 +130,10 @@ class BASE_EXPORT JobHandle {
   // Can be invoked before ~JobHandle() to avoid waiting on the job completing.
   void Detach();
 
+  internal::JobTaskSource* GetTaskSource() {
+    return task_source_.get();
+  }
+
  private:
   friend class internal::JobTaskSource;
 

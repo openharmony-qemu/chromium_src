@@ -833,4 +833,11 @@ void ArkWebNWebImpl::ExecuteJavaScriptExt(const int fd, const size_t scriptLengt
       std::make_shared<ArkWebMessageValueCallbackWrapper>(callback), extention);
 }
 
+void ArkWebNWebImpl::OnRenderToBackground() {
+  nweb_nweb_->OnRenderToBackground();
+}
+
+void ArkWebNWebImpl::OnRenderToForeground() {
+  nweb_nweb_->OnRenderToForeground();
+}
 } // namespace OHOS::ArkWeb

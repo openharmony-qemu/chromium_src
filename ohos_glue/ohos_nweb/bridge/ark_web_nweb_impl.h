@@ -1013,6 +1013,17 @@ public:
                             ArkWebRefPtr<ArkWebMessageValueCallback> callback,
                             bool extention) override;
 
+  /**
+   * @brief Render process switch to background.
+   */
+  /*--ark web()--*/
+  void OnRenderToBackground() override;
+
+  /**
+   * @brief Render process switch to foreground.
+   */
+  /*--ark web()--*/
+  void OnRenderToForeground() override;
 private:
   std::shared_ptr<OHOS::NWeb::NWeb> nweb_nweb_;
 };

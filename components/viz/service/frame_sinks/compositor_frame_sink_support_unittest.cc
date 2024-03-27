@@ -99,6 +99,9 @@ class MockFrameSinkManagerClient : public mojom::FrameSinkManagerClient {
 
   // mojom::FrameSinkManagerClient:
   MOCK_METHOD1(OnFirstSurfaceActivation, void(const SurfaceInfo&));
+#if defined(OHOS_UNITTESTS)
+  MOCK_METHOD2(OnVsyncReceived,void(uint32_t client_id, uint32_t sink_id));
+#endif
   MOCK_METHOD3(OnFrameTokenChanged,
                void(const FrameSinkId&, uint32_t, base::TimeTicks));
   void OnVsync(uint32_t client_id, uint32_t sink_id) override {}

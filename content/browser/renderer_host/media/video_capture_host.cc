@@ -257,16 +257,11 @@ void VideoCaptureHost::Start(
   device_id_to_observer_map_[device_id].Bind(std::move(observer));
 
 #if BUILDFLAG(IS_OHOS)
-  RenderProcessHost* host = RenderProcessHost::FromId(render_process_id_);
+  RenderProcessHost* host = RenderProcessHost::FromID(render_process_id_);
   if (host) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    LOG(DEBUG) << __func__ << " start screen_capture, pid: " << host->GetProcess().Pid()
-        << ", screen_capture_session_cnt: " << screen_capture_session_cnt_;
-    if (screen_capture_session_cnt_ == 0) {
-        OHOS::NWEB::ResSchedClientAdapter::ReportScreenCapture(
-            OHOS::NWeb::ResSchedStatusAdapter::SCREEN_CAPTURE_START, host->GetProcess().Pid());
-    }
-    ++screen_capture_session_cnt_;
+    LOG(DEBUG) << __func__ << " start screen_capture, pid: " << host->GetProcess().Pid();
+    OHOS::NWeb::ResSchedClientAdapter::ReportScreenCapture(
+      OHOS::NWeb::ResSchedStatusAdapter::SCREEN_CAPTURE_START, host->GetProcess().Pid());
   }
 #endif
 
@@ -293,17 +288,11 @@ void VideoCaptureHost::Stop(const base::UnguessableToken& device_id) {
                "VideoCaptureHost::Stop");
 
 #if BUILDFLAG(IS_OHOS)
-  RenderProcessHost* host = RenderProcessHost::FromId(render_process_id_);
+  RenderProcessHost* host = RenderProcessHost::FromID(render_process_id_);
   if (host) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    LOG(DEBUG) << __func__ << " stop screen capture, pid: " << host->GetProcess().Pid()
-        << ", screen_capture_session_cnt: " << screen_capture_session_cnt_;
-    --screen_capture_session_cnt_;
-    if (screen_capture_session_cnt_ == 0) {
-        OHOS::NWEB::ResSchedClientAdapter::ReportScreenCapture(
-            OHOS::NWeb::ResSchedStatusAdapter::SCREEN_CAPTURE_STOP, host->GetProcess().Pid());
-    }
-    screen_capture_session_cnt_ = std::max(screen_capture_session_cnt_, 0);
+    LOG(DEBUG) << __func__ << " stop screen capture, pid: " << host->GetProcess().Pid();
+    OHOS::NWeb::ResSchedClientAdapter::ReportScreenCapture(
+      OHOS::NWeb::ResSchedStatusAdapter::SCREEN_CAPTURE_STOP, host->GetProcess().Pid());
   }
 #endif
 

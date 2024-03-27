@@ -421,6 +421,11 @@ class FrameRemoteTester : public content::FakeLocalFrame {
   }
 
   void GetImageFromCache(const std::string& url, GetImageFromCacheCallback callback) override {}
+#if defined(OHOS_UNITTESTS)
+  void JavaScriptExecuteRequestExt(
+      ::mojo::ScopedHandle fd_handle, uint64_t scriptLength, bool wants_result,
+      JavaScriptExecuteRequestExtCallback callback) override {}
+#endif
 
  private:
   bool had_message_ = false;

@@ -120,6 +120,14 @@ VideoCaptureHost::~VideoCaptureHost() {
   NotifyAllStreamsRemoved();
   GetUIThreadTaskRunner({})->DeleteSoon(
       FROM_HERE, render_process_host_delegate_.release());
+#if BUILDFLAG(IS_OHOS)
+  RenderProcessHost* host = RenderProcessHost::FromID(render_process_id_);
+  if (host) {
+    LOG(DEBUG) << __func__ << " stop screen capture, pid: " << host->GetProcess().Pid();
+    OHOS::NWeb::ResSchedClientAdapter::ReportScreenCapture(
+      OHOS::NWeb::ResSchedStatusAdapter::SCREEN_CAPTURE_STOP, host->GetProcess().Pid());
+  }
+#endif
 }
 
 void VideoCaptureHost::OnError(const VideoCaptureControllerID& controller_id,

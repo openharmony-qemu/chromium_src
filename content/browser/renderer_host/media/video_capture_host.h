@@ -153,8 +153,6 @@ class CONTENT_EXPORT VideoCaptureHost
 
 #if BUILDFLAG(IS_OHOS)
   uint32_t render_process_id_ {0};
-  std::mutex mutex_;
-  int screen_capture_session_cnt_ = 0;
 #endif
 };
 

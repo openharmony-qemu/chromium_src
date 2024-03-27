@@ -153,6 +153,10 @@ class BASE_EXPORT ThreadPoolImpl : public ThreadPoolInstance,
   scoped_refptr<UpdateableSequencedTaskRunner>
   CreateUpdateableSequencedTaskRunner(const TaskTraits& traits);
 
+  ThreadGroup* GetForegroundThreadGroup() {
+    return foreground_thread_group_.get();
+  }
+
  private:
   // Invoked after |num_fences_| or |num_best_effort_fences_| is updated. Sets
   // the CanRunPolicy in TaskTracker and wakes up workers as appropriate.

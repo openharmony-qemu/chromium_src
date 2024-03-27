@@ -205,6 +205,9 @@ class CC_EXPORT CategorizedWorkerPoolJob : public CategorizedWorkerPool {
   void FlushForTesting() override;
   void Start(int max_concurrency_foreground) override;
   void Shutdown() override;
+  base::JobHandle* GetForegroundJobHandle() {
+    return &foreground_job_handle_;
+  }
 
  private:
   ~CategorizedWorkerPoolJob() override;

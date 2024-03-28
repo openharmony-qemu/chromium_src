@@ -727,6 +727,10 @@ void ThreadGroupImpl::WorkerThreadDelegateImpl::CleanupLockRequired(
   auto worker_iter = ranges::find(outer_->workers_, worker);
   DCHECK(worker_iter != outer_->workers_.end());
   outer_->workers_.erase(worker_iter);
+
+#if BUILDFLAG(IS_OHOS)
+  outer_->destroy_workers_.push_back(worker);
+#endif
 }
 
 void ThreadGroupImpl::WorkerThreadDelegateImpl::OnWorkerBecomesIdleLockRequired(
@@ -1001,7 +1005,9 @@ ThreadGroupImpl::CreateAndRegisterWorkerLockRequired(
       task_tracker_, worker_sequence_num_++, &lock_);
 
   workers_.push_back(worker);
+#if BUILDFLAG(IS_OHOS)
   report_workers_.push_back(worker);
+#endif
   executor->ScheduleStart(worker);
   DCHECK_LE(workers_.size(), max_tasks_);
 

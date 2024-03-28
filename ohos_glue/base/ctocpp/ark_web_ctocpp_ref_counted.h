@@ -67,8 +67,8 @@ template <class ClassName, class BaseName, class StructName>
 ArkWebRefPtr<BaseName>
 ArkWebCToCppRefCounted<ClassName, BaseName, StructName>::Invert(StructName *s) {
   if (!s) {
-    ARK_WEB_CTOCPP_INFO_LOG("capi struct is null,bridge type is %{public}d",
-                            kBridgeType);
+    ARK_WEB_CTOCPP_DEBUG_LOG("capi struct is null,bridge type is %{public}d",
+                             kBridgeType);
     return nullptr;
   }
 
@@ -91,7 +91,7 @@ StructName *ArkWebCToCppRefCounted<ClassName, BaseName, StructName>::Revert(
     ArkWebRefPtr<BaseName> c) {
   BridgeStruct *bridgeStruct = GetBridgeStruct(c.get());
   if (!bridgeStruct) {
-    ARK_WEB_CTOCPP_INFO_LOG(
+    ARK_WEB_CTOCPP_DEBUG_LOG(
         "failed to get bridge struct,bridge type is %{public}d", kBridgeType);
     return nullptr;
   }
@@ -123,8 +123,8 @@ typename ArkWebCToCppRefCounted<ClassName, BaseName, StructName>::BridgeStruct *
 ArkWebCToCppRefCounted<ClassName, BaseName, StructName>::GetBridgeStruct(
     const BaseName *obj) {
   if (!obj) {
-    ARK_WEB_CTOCPP_INFO_LOG("base class is null,bridge type is %{public}d",
-                            kBridgeType);
+    ARK_WEB_CTOCPP_DEBUG_LOG("base class is null,bridge type is %{public}d",
+                             kBridgeType);
     return nullptr;
   }
 

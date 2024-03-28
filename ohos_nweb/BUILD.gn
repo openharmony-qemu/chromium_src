@@ -162,6 +162,8 @@ component("cef_nweb") {
     "src/sysevent/event_reporter.h",
     "src/sysevent/oh_web_performance_timing.cc",
     "src/sysevent/oh_web_performance_timing.h",
+    "src/nweb__resize_helper.cc",
+    "src/nweb__resize_helper.h",
   ]
 
   #ifdef OHOS_SCHEME_HANDLER

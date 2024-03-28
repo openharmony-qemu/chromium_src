@@ -42,6 +42,8 @@
 #include "nweb_hilog.h"
 #include "nweb_hit_test_result_impl.h"
 #include "res_sched_client_adapter.h"
+#include "nweb_resize_helper.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 
 #if defined(REPORT_SYS_EVENT)
 #include "event_reporter.h"
@@ -118,6 +120,7 @@ namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
 const uint32_t kSurfaceMaxHeight = 7680;
+const int SOC_PERF_WEB_DRAG_RESIZE_ID = 10073;
 #if defined(OHOS_MEDIA_POLICY)
 const int32_t kMaxResumeInterval = 60;
 #endif  // defined(OHOS_MEDIA_POLICY)
@@ -769,6 +772,50 @@ void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
   }
   nweb_delegate_->SetDrawMode(draw_mode_);
   nweb_delegate_->Resize(width, height, isKeyboard);
+  output_handler_->Resize(width, height);
+}
+
+void NWebImpl::DragResize(uint32_t width, uint32_t height, uint32_t pre_height, uint32_t pre_width) {
+  LOG(DEBUG) << "===== start drag resize =====";
+  bool drag_bigger_height = false;
+  bool drag_bigger_width = false;
+  if (input_handler_ == nullptr || output_handler_ == nullptr) {
+    return;
+  }
+  OHOS::NWeb::NWebResizeHelper::GetInstance().SetDragResizeStart(true);
+  if (pre_height > 0) {
+    drag_bigger_height = true;
+  }
+  if (pre_width > 0) {
+    drag_bigger_width = true;
+  }
+  if (drag_bigger_height) {
+    height = OHOS::NWeb::NWebResizeHelper::GetInstance().GetResizeAdjustValue(height,
+                                                                              pre_height,
+                                                                              true);
+  }
+  if (drag_bigger_width) {
+    width = OHOS::NWeb::NWebResizeHelper::GetInstance().GetResizeAdjustValue(width,
+                                                                             pre_width,
+                                                                             false);
+  }
+  OHOS::NWeb::NWebResizeHelper::GetInstance().SetResizeHeightAndWidth(height, width);
+  if (width > kSurfaceMaxWidth || height > kSurfaceMaxHeight) {
+    if (draw_mode_ == 0) {
+      OHOS::NWeb::NWebResizeHelper::GetInstance().RefreshParam();
+      WVLOG_E("size too large in surface mode (%{public}u , %{public}u)", width, height);
+      return;
+    };
+  }
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("resize failed, nweb delegate is nullptr, nweb_id = %{public}u", nweb_id_);
+    return;
+  }
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .CreateSocPerfClientAdapter()
+      ->ApplySocPerfConfigByIdEx(SOC_PERF_WEB_DRAG_RESIZE_ID, true);
+  nweb_delegate_->SetDrawMode(draw_mode_);
+  nweb_delegate_->Resize(width, height, false);
   output_handler_->Resize(width, height);
 }
 

@@ -1143,7 +1143,15 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      */
     /*--ark web()--*/
     virtual void OnRenderToForeground() = 0;
-
+    
+    /**
+     * @brief Web drag resize optimize.
+     */
+    /*--ark web()--*/
+    virtual void DragResize(uint32_t width,
+                            uint32_t height,
+                            uint32_t pre_height,
+                            uint32_t pre_width) = 0;
 };
 }  // namespace OHOS::NWeb
 

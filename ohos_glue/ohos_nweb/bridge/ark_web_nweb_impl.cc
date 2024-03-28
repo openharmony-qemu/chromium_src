@@ -840,4 +840,12 @@ void ArkWebNWebImpl::OnRenderToBackground() {
 void ArkWebNWebImpl::OnRenderToForeground() {
   nweb_nweb_->OnRenderToForeground();
 }
+
+void ArkWebNWebImpl::DragResize(uint32_t width,
+                                uint32_t height,
+                                uint32_t pre_height,
+                                uint32_t pre_width) {
+  nweb_nweb_->DragResize(width, height, pre_height, pre_width);
+}
+
 } // namespace OHOS::ArkWeb

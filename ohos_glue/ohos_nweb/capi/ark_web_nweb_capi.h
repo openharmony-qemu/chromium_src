@@ -472,6 +472,9 @@ typedef struct _ark_web_nweb_t {
   void(ARK_WEB_CALLBACK *on_render_to_background)(struct _ark_web_nweb_t *self);
 
   void(ARK_WEB_CALLBACK *on_render_to_foreground)(struct _ark_web_nweb_t *self);
+  
+  void(ARK_WEB_CALLBACK *ark_web_nweb_drag_resize)(struct _ark_web_nweb_t *self,uint32_t width,
+                                 uint32_t height, uint32_t pre_height, uint32_t pre_width);
 } ark_web_nweb_t;
 
 #ifdef __cplusplus

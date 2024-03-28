@@ -207,9 +207,6 @@ source_set("unit_tests") {
   testonly = true
   sources = [
     "android_app_communication_test_support.h",
-    "android_app_communication_unittest.cc",
-    "android_payment_app_factory_unittest.cc",
-    "android_payment_app_unittest.cc",
     "mock_android_app_communication.cc",
     "mock_android_app_communication.h",
     "mock_payment_app_factory_delegate.cc",
@@ -221,6 +218,14 @@ source_set("unit_tests") {
     "service_worker_payment_app_finder_unittest.cc",
     "web_app_manifest_section_table_unittest.cc",
   ]
+
+  if (!ohos_unittests) {
+    source += [
+      "android_app_communication_unittest.cc",
+      "android_payment_app_factory_unittest.cc",
+      "android_payment_app_unittest.cc",
+    ]
+  }
 
   if (!is_android) {
     sources += [

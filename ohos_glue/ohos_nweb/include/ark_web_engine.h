@@ -90,6 +90,9 @@ public:
                    const ArkWebStringMap &additional_http_headers,
                    const ArkWebString &cache_key,
                    const uint32_t &cache_valid_time) = 0;
+
+  /*--ark web()--*/
+  virtual void WarmupServiceWorker(const ArkWebString &url) = 0;
 };
 
 } // namespace OHOS::ArkWeb

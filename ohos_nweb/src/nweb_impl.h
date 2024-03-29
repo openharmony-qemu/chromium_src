@@ -403,6 +403,7 @@ class NWebImpl : public NWeb {
   static void RemoveIntelligentTrackingPreventionBypassingList(
       const std::vector<std::string>& hosts);
   static void ClearIntelligentTrackingPreventionBypassingList();
+  static void WarmupServiceWorker(const std::string &url);
 
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

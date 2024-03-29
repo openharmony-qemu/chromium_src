@@ -131,6 +131,17 @@ class BASE_EXPORT ThreadGroupImpl : public ThreadGroup {
   // Returns the number of workers that are idle (i.e. not running tasks).
   size_t NumberOfIdleWorkersForTesting() const;
 
+#if BUILDFLAG(IS_OHOS)
+  std::vector<scoped_refptr<WorkerThread>>& ReportCreateWorkers() {
+    CheckedAutoLock auto_lock(lock_);
+    return create_workers_;
+  }
+  std::vector<scoped_refptr<WorkerThread>>& ReportDestroyWorkers() {
+    CheckedAutoLock auto_lock(lock_);
+    return destroy_workers_;
+  }
+#endif
+
  private:
   class ScopedCommandsExecutor;
   class WorkerThreadDelegateImpl;
@@ -281,6 +292,12 @@ class BASE_EXPORT ThreadGroupImpl : public ThreadGroup {
 
   // All workers owned by this thread group.
   std::vector<scoped_refptr<WorkerThread>> workers_ GUARDED_BY(lock_);
+
+#if BUILDFLAG(IS_OHOS)
+  std::vector<scoped_refptr<WorkerThread>> create_workers_ GUARDED_BY(lock_);
+  std::vector<scoped_refptr<WorkerThread>> destroy_workers_ GUARDED_BY(lock_);
+#endif
+
   size_t worker_sequence_num_ GUARDED_BY(lock_) = 0;
 
   bool shutdown_started_ GUARDED_BY(lock_) = false;

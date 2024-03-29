@@ -2320,8 +2320,8 @@ void NWebImpl::PrepareForPageLoad(const std::string &url,
     loading_predictor->PrepareForPageLoad(
       GURL(preconnect_url_info.url), ohos_predictors::HintOrigin::OMNIBOX, preconnect_url_info.is_preconnectable,
       preconnect_url_info.num_sockets);
-#endif  // defined(OHOS_NO_STATE_PREFETCH)
   }
+#endif  // defined(OHOS_NO_STATE_PREFETCH)
 }
 
 void NWebImpl::PauseAllTimers() {

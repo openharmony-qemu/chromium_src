@@ -267,6 +267,18 @@ void ARK_WEB_CALLBACK ark_web_engine_prefetch_resource(
   }
 }
 
+void ARK_WEB_CALLBACK ark_web_engine_warmup_service_worker(
+    struct _ark_web_engine_t *self, const ArkWebString *url) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(url, );
+
+  // Execute
+  ArkWebEngineCppToC::Get(self)->WarmupServiceWorker(*url);
+}
+
 } // namespace
 
 ArkWebEngineCppToC::ArkWebEngineCppToC() {

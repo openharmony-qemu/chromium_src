@@ -208,6 +208,9 @@ class CONTENT_EXPORT ServiceWorkerContextWrapper
       const GURL& document_url,
       const blink::StorageKey& key,
       StartServiceWorkerForNavigationHintCallback callback) override;
+  void WarmUpServiceWorker(const GURL& document_url,
+                           const blink::StorageKey& key,
+                           WarmUpServiceWorkerCallback callback) override;
   void StopAllServiceWorkersForStorageKey(
       const blink::StorageKey& key) override;
   void StopAllServiceWorkers(base::OnceClosure callback) override;
@@ -433,6 +436,8 @@ class CONTENT_EXPORT ServiceWorkerContextWrapper
                                     bool include_installing_version,
                                     FindRegistrationCallback callback);
 
+  void MaybeProcessPendingWarmUpRequest();
+
   void DidFindRegistrationForFindImpl(
       bool include_installing_version,
       FindRegistrationCallback callback,
@@ -458,10 +463,19 @@ class CONTENT_EXPORT ServiceWorkerContextWrapper
       blink::ServiceWorkerStatusCode status,
       scoped_refptr<ServiceWorkerRegistration> registration);
 
+  void DidFindRegistrationForWarmUp(
+      WarmUpServiceWorkerCallback callback,
+      blink::ServiceWorkerStatusCode status,
+      scoped_refptr<ServiceWorkerRegistration> registration);
+
   void DidStartServiceWorkerForNavigationHint(
       const GURL& scope,
       StartServiceWorkerForNavigationHintCallback callback,
       blink::ServiceWorkerStatusCode code);
+
+  void DidWarmUpServiceWorker(const GURL& scope,
+                              WarmUpServiceWorkerCallback callback,
+                              blink::ServiceWorkerStatusCode code);
 
   void DidFindRegistrationForMessageDispatch(
       blink::TransferableMessage message,

@@ -95,10 +95,8 @@ class AssertPageLoadMetricsObserver final
       const page_load_metrics::mojom::PageLoadTiming& timing) override;
   void OnLoadEventStart(
       const page_load_metrics::mojom::PageLoadTiming& timing) override;
-#if defined(REPORT_SYS_EVENT)
   void OnLoadEventEnd(
       const page_load_metrics::mojom::PageLoadTiming& timing) override {}
-#endif
   void OnFirstPaintInPage(
       const page_load_metrics::mojom::PageLoadTiming& timing) override;
   void OnFirstImagePaintInPage(

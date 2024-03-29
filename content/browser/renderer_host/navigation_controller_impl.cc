@@ -3629,9 +3629,10 @@ base::WeakPtr<NavigationHandle> NavigationControllerImpl::NavigateWithoutEntry(
   // RenderFrameHost to execute its BeforeUnload event, the navigation start
   // will be updated when the BeforeUnload ack is received.
   const auto navigation_start_time = base::TimeTicks::Now();
-
+#if BUILDFLAG(IS_OHOS)
   TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
                "navigationStart", navigation_start_time);
+#endif
   std::unique_ptr<NavigationRequest> request =
       CreateNavigationRequestFromLoadParams(
           node, params, override_user_agent, should_replace_current_entry,

@@ -224,8 +224,10 @@ void HttpBasicStream::OnHandshakeConfirmed(CompletionOnceCallback callback,
     // asynchronously. If it was synchronous, GetLoadTimingInfo() assumes the
     // handshake was already confirmed or there was nothing to confirm.
     confirm_handshake_end_ = base::TimeTicks::Now();
+#if BUILDFLAG(IS_OHOS)
     TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
                  "connectEnd", confirm_handshake_end_);
+#endif
   }
   std::move(callback).Run(rv);
 }

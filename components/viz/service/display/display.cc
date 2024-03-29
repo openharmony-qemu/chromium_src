@@ -508,7 +508,7 @@ void Display::SetShouldFrameSubmissionBeforeDraw(bool should) {
 
 void Display::SetDrawRect(const gfx::Rect& new_rect)
 {
-  if ((draw_rect_ == new_rect) || (draw_mode_ == 0)) {
+  if (draw_mode_ == 0) {
     LOG(ERROR) << "draw_mode =" << draw_mode_;
     return;
   }

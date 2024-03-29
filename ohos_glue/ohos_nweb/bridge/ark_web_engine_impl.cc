@@ -170,4 +170,8 @@ void ArkWebEngineImpl::PrefetchResource(
       ArkWebStringStructToClass(cache_key), cache_valid_time);
 }
 
+void ArkWebEngineImpl::WarmupServiceWorker(const ArkWebString &url) {
+  nweb_engine_->WarmupServiceWorker(ArkWebStringStructToClass(url));
+}
+
 } // namespace OHOS::ArkWeb

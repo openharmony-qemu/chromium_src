@@ -130,4 +130,8 @@ void NWebEngineImpl::PrefetchResource(
                                     cache_key, cache_valid_time);
 }
 
+void NWebEngineImpl::WarmupServiceWorker(const std::string &url) {
+  NWebImpl::WarmupServiceWorker(url);
+}
+
 } // namespace OHOS::NWeb

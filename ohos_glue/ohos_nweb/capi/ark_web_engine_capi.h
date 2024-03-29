@@ -86,6 +86,9 @@ typedef struct _ark_web_engine_t {
       struct _ark_web_engine_t *self, ark_web_engine_prefetch_args_t **pre_args,
       const ArkWebStringMap *additional_http_headers,
       const ArkWebString *cache_key, const uint32_t *cache_valid_time);
+
+  void(ARK_WEB_CALLBACK *warmup_service_worker)(struct _ark_web_engine_t *self,
+                                                const ArkWebString *url);
 } ark_web_engine_t;
 
 ARK_WEB_EXPORT ark_web_engine_t *ark_web_engine_get_instance(void);

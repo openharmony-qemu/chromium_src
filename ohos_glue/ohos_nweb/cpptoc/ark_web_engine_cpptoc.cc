@@ -302,6 +302,7 @@ ArkWebEngineCppToC::ArkWebEngineCppToC() {
   GetStruct()->pause_all_timers = ark_web_engine_pause_all_timers;
   GetStruct()->resume_all_timers = ark_web_engine_resume_all_timers;
   GetStruct()->prefetch_resource = ark_web_engine_prefetch_resource;
+  GetStruct()->warmup_service_worker = ark_web_engine_warmup_service_worker;
 }
 
 ArkWebEngineCppToC::~ArkWebEngineCppToC() {

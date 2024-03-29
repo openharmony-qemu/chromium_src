@@ -7809,6 +7809,22 @@ void RenderFrameHostImpl::GetCreateNewWindow(
       std::move(callback));
 #endif  // defined(OHOS_MULTI_WINDOW)
 }
+
+void RenderFrameHostImpl::GenerateCodeCache(const std::string& url,
+                                            const std::string& script,
+                                            const std::shared_ptr<oh_code_cache::CacheOptions>& cacheOptions,
+                                            CodeCacheCallback callback) {
+  auto options = blink::mojom::CacheOptions::New();
+
+  for (auto header : cacheOptions->response_headers_) {
+    options->response_headers.insert(std::make_pair(header.first, header.second));
+  }
+
+  options->is_module = cacheOptions->is_module_;
+  options->is_top_level = cacheOptions->is_top_level_;
+
+  GetAssociatedLocalFrame()->GenerateCodeCache(url, script, std::move(options), std::move(callback));
+}
 #endif
 
 void RenderFrameHostImpl::CreateNewWindow(

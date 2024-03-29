@@ -1024,6 +1024,19 @@ public:
    */
   /*--ark web()--*/
   void OnRenderToForeground() override;
+  
+  /**
+   * @brief Compile javascript and generate code cache.
+   * 
+   * @param url url of javascript.
+   * @param script javascript text content.
+   * @param cacheOptions compile options and info.
+   * @param callback callback will be called on getting the result of compiling javascript.
+   */
+  void PrecompileJavaScript(const ArkWebString& url,
+                            const ArkWebString& script,
+                            ArkWebRefPtr<ArkWebCacheOptions>& cacheOptions,
+                            ArkWebRefPtr<ArkWebMessageValueCallback> callback) override;
 private:
   std::shared_ptr<OHOS::NWeb::NWeb> nweb_nweb_;
 };

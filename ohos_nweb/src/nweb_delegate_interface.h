@@ -385,6 +385,10 @@ class NWebDelegateInterface
 #if BUILDFLAG(IS_OHOS)
   virtual bool IsSafeBrowsingEnabled() = 0;
   virtual void EnableSafeBrowsing(bool enable) = 0;
+  virtual void PrecompileJavaScript(const std::string& url,
+                                    const std::string& script,
+                                    std::shared_ptr<CacheOptions>& cacheOptions,
+                                    std::shared_ptr<NWebMessageValueCallback> callback) = 0;
 #endif
 
 #if defined(OHOS_SECURITY_STATE)

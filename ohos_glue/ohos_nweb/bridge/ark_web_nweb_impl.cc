@@ -18,6 +18,7 @@
 #include "ohos_nweb/bridge/ark_web_accessibility_event_callback_wrapper.h"
 #include "ohos_nweb/bridge/ark_web_accessibility_node_info_impl.h"
 #include "ohos_nweb/bridge/ark_web_bool_value_callback_wrapper.h"
+#include "ohos_nweb/bridge/ark_web_cache_options_wrapper.h"
 #include "ohos_nweb/bridge/ark_web_core_struct_utils.h"
 #include "ohos_nweb/bridge/ark_web_download_callback_wrapper.h"
 #include "ohos_nweb/bridge/ark_web_drag_data_impl.h"
@@ -839,5 +840,16 @@ void ArkWebNWebImpl::OnRenderToBackground() {
 
 void ArkWebNWebImpl::OnRenderToForeground() {
   nweb_nweb_->OnRenderToForeground();
+}
+
+void ArkWebNWebImpl::PrecompileJavaScript(const ArkWebString& url,
+                                          const ArkWebString& script,
+                                          ArkWebRefPtr<ArkWebCacheOptions>& cacheOptions,
+                                          ArkWebRefPtr<ArkWebMessageValueCallback> callback) {
+  std::shared_ptr<OHOS::NWeb::CacheOptions> options = std::make_shared<ArkWebCacheOptionsWrapper>(cacheOptions);
+  nweb_nweb_->PrecompileJavaScript(ArkWebStringStructToClass(url),
+                                   ArkWebStringStructToClass(script),
+                                   options,
+                                   std::make_shared<ArkWebMessageValueCallbackWrapper>(callback));
 }
 } // namespace OHOS::ArkWeb

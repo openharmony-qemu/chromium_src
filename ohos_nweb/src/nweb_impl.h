@@ -269,6 +269,10 @@ class NWebImpl : public NWeb {
   bool GetPrintBackground() override;
   bool IsSafeBrowsingEnabled() override;
   void EnableSafeBrowsing(bool enable) override;
+  void PrecompileJavaScript(const std::string& url,
+                            const std::string& script,
+                            std::shared_ptr<CacheOptions>& cacheOptions,
+                            std::shared_ptr<NWebMessageValueCallback> callback) override;
 #endif
 
   std::string GetLastJavascriptProxyCallingFrameUrl() override;

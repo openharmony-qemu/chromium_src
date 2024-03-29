@@ -183,6 +183,20 @@ class OHOS_NWEB_EXPORT NWebEnginePrefetchArgs {
     virtual std::string GetFormData() = 0;
 };
 
+enum class PrecompileError : int32_t {
+    OK = 0,
+    INTERNAL_ERROR = -1
+};
+
+class OHOS_NWEB_EXPORT CacheOptions {
+    public:
+    virtual ~CacheOptions() = default;
+
+    virtual std::map<std::string, std::string> GetResponseHeaders() = 0;
+    virtual bool IsModule() = 0;
+    virtual bool IsTopLevel() = 0;
+};
+
 typedef int64_t (*AccessibilityIdGenerateFunc)();
 typedef void (*NativeArkWebOnValidCallback)(const char *);
 typedef void (*NativeArkWebOnDestroyCallback)(const char *);
@@ -1144,6 +1158,20 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
     /*--ark web()--*/
     virtual void OnRenderToForeground() = 0;
 
+
+    /**
+     * @brief Compile javascript and generate code cache.
+     * 
+     * @param url url of javascript.
+     * @param script javascript text content.
+     * @param cacheOptions compile options and info.
+     * @param callback callback will be called on getting the result of compiling javascript.
+     */
+    virtual void PrecompileJavaScript(
+        const std::string& url,
+        const std::string& script,
+        std::shared_ptr<CacheOptions>& cacheOptions,
+        std::shared_ptr<NWebMessageValueCallback> callback) = 0;
 };
 }  // namespace OHOS::NWeb
 

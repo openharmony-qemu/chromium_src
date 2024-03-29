@@ -69,6 +69,8 @@ public:
                         const ArkWebString &cache_key,
                         const uint32_t &cache_valid_time) override;
 
+  void WarmupServiceWorker(const ArkWebString &url) override;
+
 private:
   std::shared_ptr<OHOS::NWeb::NWebEngine> nweb_engine_;
 };

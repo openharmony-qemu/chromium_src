@@ -295,6 +295,9 @@ SandboxGrantResult MaybeGrantSandboxAccessToNetworkContextData(
         PLOG(ERROR) << "Failed to grant sandbox access to cache directory "
                     << params->http_cache_directory->path();
       }
+
+      oh_code_cache::ResponseCache::InitCacheDirectory(
+          params->http_cache_directory->path());
     }
   }
 

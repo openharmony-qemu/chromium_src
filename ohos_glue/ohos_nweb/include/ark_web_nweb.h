@@ -20,6 +20,7 @@
 #include "ohos_nweb/include/ark_web_accessibility_event_callback.h"
 #include "ohos_nweb/include/ark_web_accessibility_node_info.h"
 #include "ohos_nweb/include/ark_web_bool_value_callback.h"
+#include "ohos_nweb/include/ark_web_cache_options.h"
 #include "ohos_nweb/include/ark_web_download_callback.h"
 #include "ohos_nweb/include/ark_web_drag_data.h"
 #include "ohos_nweb/include/ark_web_drag_event.h"
@@ -1180,6 +1181,20 @@ public:
    */
   /*--ark web()--*/
   virtual void OnRenderToForeground() = 0;
+
+  /**
+   * @brief Compile javascript and generate code cache.
+   *
+   * @param url url of javascript.
+   * @param script javascript text content.
+   * @param cacheOptions compile options and info.
+   * @param callback callback will be called on getting the result of compiling javascript.
+   */
+  /*--ark web()--*/
+  virtual void PrecompileJavaScript(const ArkWebString& url,
+                                    const ArkWebString& script,
+                                    ArkWebRefPtr<ArkWebCacheOptions>& cacheOptions,
+                                    ArkWebRefPtr<ArkWebMessageValueCallback> callback) = 0;
 };
 
 } // namespace OHOS::ArkWeb

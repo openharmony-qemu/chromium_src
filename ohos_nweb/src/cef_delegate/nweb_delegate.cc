@@ -34,6 +34,7 @@
 #include "cef/include/cef_base.h"
 #include "cef/include/cef_request_context.h"
 #include "content/public/common/content_switches.h"
+#include "cef/include/internal/cef_string_map.h"
 #if defined(REPORT_SYS_EVENT)
 #include "event_reporter.h"
 #endif
@@ -273,6 +274,61 @@ class GetImagesCallbackImpl : public CefGetImagesCallback {
   std::shared_ptr<NWebBoolValueCallback> callback_;
 
   IMPLEMENT_REFCOUNTING(GetImagesCallbackImpl);
+};
+
+class CefPrecompileCallbackImpl : public CefPrecompileCallback {
+ public:
+  explicit CefPrecompileCallbackImpl(
+      std::shared_ptr<NWebMessageValueCallback> callback)
+      : callback_(callback) {}
+
+  void OnPrecompileFinished(int32_t result) override {
+    if (callback_ != nullptr) {
+      auto message = std::make_shared<OHOS::NWeb::NWebMessage>(NWebValue::Type::INTEGER);
+      message->SetInt64(result);
+      callback_->OnReceiveValue(message);
+    }
+  }
+
+ private:
+  std::shared_ptr<NWebMessageValueCallback> callback_;
+
+  IMPLEMENT_REFCOUNTING(CefPrecompileCallbackImpl);
+};
+
+class CefCacheOptionsImpl : public CefCacheOptions {
+ public:
+  explicit CefCacheOptionsImpl(const std::shared_ptr<CacheOptions>& cacheOptions) :
+      responseHeaders_(cacheOptions->GetResponseHeaders()),
+      isModule_(cacheOptions->IsModule()),
+      isTopLevel_(cacheOptions->IsModule()) {}
+
+  cef_string_map_t GetResponseHeaders() override {
+    cef_string_map_t cefHeaders = cef_string_map_alloc();
+    for (const auto& pair : responseHeaders_) {
+      cef_string_t key = {};
+      cef_string_t value = {};
+      cef_string_from_utf8(pair.first.c_str(), pair.first.size(), &key);
+      cef_string_from_utf8(pair.second.c_str(), pair.second.size(), &value);
+      cef_string_map_append(cefHeaders, &key, &value);
+    }
+    return cefHeaders;
+  }
+
+  bool IsModule() override {
+    return isModule_;
+  }
+
+  bool IsTopLevel() override {
+    return isTopLevel_;
+  }
+
+ private:
+  std::map<std::string, std::string> responseHeaders_;
+  bool isModule_;
+  bool isTopLevel_;
+
+  IMPLEMENT_REFCOUNTING(CefCacheOptionsImpl);
 };
 
 #ifdef OHOS_NAVIGATION
@@ -2783,6 +2839,20 @@ void NWebDelegate::EnableSafeBrowsing(bool enable) {
 
   GetBrowser()->EnableSafeBrowsing(enable);
 
+}
+
+void NWebDelegate::PrecompileJavaScript(const std::string& url,
+                                        const std::string& script,
+                                        std::shared_ptr<CacheOptions>& cacheOptions,
+                                        std::shared_ptr<NWebMessageValueCallback> callback) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "NWebDelegate::PrecompileJavaScript failed. browser host has not initialized";
+    return;
+  }
+
+  CefRefPtr<CefPrecompileCallbackImpl> precompileCallback = new CefPrecompileCallbackImpl(callback);
+  CefRefPtr<CefCacheOptionsImpl> cefOptions = new CefCacheOptionsImpl(cacheOptions);
+  GetBrowser()->GetHost()->PrecompileJavaScript(url, script, cefOptions, precompileCallback);
 }
 #endif
 

@@ -1848,6 +1848,17 @@ bool NWebImpl::GetPrintBackground() {
 }
 
 void NWebImpl::SetNestedScrollMode(const NestedScrollMode& nestedScrollMode) {}
+
+void NWebImpl::PrecompileJavaScript(const std::string& url,
+                          const std::string& script,
+                          std::shared_ptr<CacheOptions>& cacheOptions,
+                          std::shared_ptr<NWebMessageValueCallback> callback) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "PrecompileJavaScript: nweb delegate has not init.";
+    return;
+  }
+  nweb_delegate_->PrecompileJavaScript(url, script, cacheOptions, callback);
+}
 #endif
 
 #if defined(OHOS_INPUT_EVENTS)

@@ -180,6 +180,8 @@ void BrowsingDataRemoverImpl::Remove(const base::Time& delete_begin,
                                      uint64_t origin_type_mask) {
   RemoveInternal(delete_begin, delete_end, remove_mask, origin_type_mask,
                  std::unique_ptr<BrowsingDataFilterBuilder>(), nullptr);
+
+  oh_code_cache::ResponseCache::ClearAllCache();
 }
 
 void BrowsingDataRemoverImpl::RemoveWithFilter(

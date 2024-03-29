@@ -22,6 +22,7 @@
 #include "ohos_nweb/cpptoc/ark_web_preference_cpptoc.h"
 #include "ohos_nweb/ctocpp/ark_web_accessibility_event_callback_ctocpp.h"
 #include "ohos_nweb/ctocpp/ark_web_bool_value_callback_ctocpp.h"
+#include "ohos_nweb/ctocpp/ark_web_cache_options_ctocpp.h"
 #include "ohos_nweb/ctocpp/ark_web_download_callback_ctocpp.h"
 #include "ohos_nweb/ctocpp/ark_web_drag_event_ctocpp.h"
 #include "ohos_nweb/ctocpp/ark_web_find_callback_ctocpp.h"
@@ -1630,6 +1631,45 @@ void ARK_WEB_CALLBACK ark_web_nweb_on_render_to_foreground(struct _ark_web_nweb_
   // Execute
   ArkWebNWebCppToC::Get(self)->OnRenderToForeground();
 }
+
+void ARK_WEB_CALLBACK ark_web_nweb_precompile_java_script(
+    struct _ark_web_nweb_t *self, const ArkWebString *url,
+    const ArkWebString *script, ark_web_cache_options_t **cacheOptions,
+    ark_web_message_value_callback_t *callback) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(url, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(script, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(cacheOptions, );
+
+  // Translate param: cacheOptions; type: refptr_diff_byref
+  ArkWebRefPtr<ArkWebCacheOptions> cacheOptionsPtr;
+  if (cacheOptions && *cacheOptions) {
+    cacheOptionsPtr = ArkWebCacheOptionsCToCpp::Invert(*cacheOptions);
+  }
+  ArkWebCacheOptions *cacheOptionsOrig = cacheOptionsPtr.get();
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->PrecompileJavaScript(
+      *url, *script, cacheOptionsPtr,
+      ArkWebMessageValueCallbackCToCpp::Invert(callback));
+
+  // Restore param: cacheOptions; type: refptr_diff_byref
+  if (cacheOptions) {
+    if (cacheOptionsPtr.get()) {
+      if (cacheOptionsPtr.get() != cacheOptionsOrig) {
+        *cacheOptions = ArkWebCacheOptionsCToCpp::Revert(cacheOptionsPtr);
+      }
+    } else {
+      *cacheOptions = nullptr;
+    }
+  }
+}
+
 } // namespace
 
 ArkWebNWebCppToC::ArkWebNWebCppToC() {
@@ -1807,6 +1847,7 @@ ArkWebNWebCppToC::ArkWebNWebCppToC() {
   GetStruct()->scroll_by_ref_screen = ark_web_nweb_scroll_by_ref_screen;
   GetStruct()->on_render_to_background = ark_web_nweb_on_render_to_background;
   GetStruct()->on_render_to_foreground = ark_web_nweb_on_render_to_foreground;
+  GetStruct()->precompile_java_script = ark_web_nweb_precompile_java_script;
 }
 
 ArkWebNWebCppToC::~ArkWebNWebCppToC() {

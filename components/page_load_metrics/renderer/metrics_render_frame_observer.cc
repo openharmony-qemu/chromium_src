@@ -549,7 +549,7 @@ MetricsRenderFrameObserver::Timing MetricsRenderFrameObserver::GetTiming()
         CreateTimeDeltaFromTimestampsInSeconds(
             (*perf.FirstScrollTimestamp()).InSecondsF(), start);
   }
-#if defined(IS_OHOS)
+#if BUILDFLAG(IS_OHOS)
   if (perf.RedirectStart() > 0.0)
     timing->redirect_start =
         CreateTimeDeltaFromTimestampsInSeconds(perf.RedirectStart(), start);

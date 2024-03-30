@@ -116,7 +116,7 @@
 #include "third_party/blink/public/mojom/runtime_feature_state/runtime_feature_state.mojom.h"
 #include "url/url_constants.h"
 
-#if defined(IS_OHOS)
+#if BUILDFLAG(IS_OHOS)
 #include "cef/libcef/browser/page_load_metrics/oh_page_load_metrics_observer.h"
 #endif
 
@@ -1288,7 +1288,7 @@ base::WeakPtr<NavigationHandle> NavigationControllerImpl::LoadURLWithParams(
   TRACE_EVENT1("browser,navigation",
                "NavigationControllerImpl::LoadURLWithParams", "url",
                params.url.possibly_invalid_spec());
-#if defined(IS_OHOS)
+#if BUILDFLAG(IS_OHOS)
   OhPageLoadMetricsObserver::OnNavigationStart();
 #endif
   bool is_explicit_navigation =

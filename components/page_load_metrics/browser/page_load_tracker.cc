@@ -148,7 +148,7 @@ void DispatchObserverTimingCallbacks(PageLoadMetricsObserverInterface* observer,
       !last_timing.document_timing->load_event_start) {
     observer->OnLoadEventStart(new_timing);
   }
-#if defined(IS_OHOS)
+#if BUILDFLAG(IS_OHOS)
   if (new_timing.document_timing->load_event_end &&
       !last_timing.document_timing->load_event_end) {
     observer->OnLoadEventEnd(new_timing);

@@ -251,6 +251,10 @@ public:
                                 const ArkWebString &originalUrl,
                                 const ArkWebString &referrer, bool isFatalError,
                                 bool isMainFrame) override;
+
+  void OnTooltip(const ArkWebString &tooltip) override;
+
+  void ReleaseResizeHold() override;
 };
 
 } // namespace OHOS::ArkWeb

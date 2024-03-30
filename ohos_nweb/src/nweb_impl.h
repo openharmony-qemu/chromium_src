@@ -192,7 +192,14 @@ class NWebImpl : public NWeb {
   void SetShouldFrameSubmissionBeforeDraw(bool should) override;
   void SetDrawRect(int32_t x, int32_t y, int32_t width, int32_t height) override;
   void SetDrawMode(int32_t mode) override;
+  bool GetPendingSizeStatus() override;
 #endif  // defined(OHOS_COMPOSITE_RENDER)
+
+  void ExecuteJavaScriptExt(
+      const int fd,
+      const size_t scriptLength,
+      std::shared_ptr<NWebMessageValueCallback> callback,
+      bool extention) override;
 
 #if defined(OHOS_MSGPORT)
   void ExecuteJavaScript(
@@ -225,6 +232,7 @@ class NWebImpl : public NWeb {
 #if defined(OHOS_INPUT_EVENTS)
   void ScrollTo(float x, float y) override;
   void ScrollBy(float delta_x, float delta_y) override;
+  void ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) override;
   void SlideScroll(float vx, float vy) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
@@ -245,6 +253,8 @@ class NWebImpl : public NWeb {
   void StartCamera() override;
   void StopCamera() override;
   void CloseCamera() override;
+  void OnRenderToBackground() override;
+  void OnRenderToForeground() override;
 #ifdef OHOS_DRAG_DROP
   std::shared_ptr<NWebDragData> GetOrCreateDragData() override;
 #endif // #ifdef OHOS_DRAG_DROP
@@ -259,6 +269,10 @@ class NWebImpl : public NWeb {
   bool GetPrintBackground() override;
   bool IsSafeBrowsingEnabled() override;
   void EnableSafeBrowsing(bool enable) override;
+  void PrecompileJavaScript(const std::string& url,
+                            const std::string& script,
+                            std::shared_ptr<CacheOptions>& cacheOptions,
+                            std::shared_ptr<NWebMessageValueCallback> callback) override;
 #endif
 
   std::string GetLastJavascriptProxyCallingFrameUrl() override;

@@ -21,6 +21,7 @@
 #include "ohos_nweb/capi/ark_web_accessibility_event_callback_capi.h"
 #include "ohos_nweb/capi/ark_web_accessibility_node_info_capi.h"
 #include "ohos_nweb/capi/ark_web_bool_value_callback_capi.h"
+#include "ohos_nweb/capi/ark_web_cache_options_capi.h"
 #include "ohos_nweb/capi/ark_web_download_callback_capi.h"
 #include "ohos_nweb/capi/ark_web_drag_data_capi.h"
 #include "ohos_nweb/capi/ark_web_drag_event_capi.h"
@@ -458,6 +459,25 @@ typedef struct _ark_web_nweb_t {
 
   ArkWebString(ARK_WEB_CALLBACK *get_last_javascript_proxy_calling_frame_url)(
       struct _ark_web_nweb_t *self);
+
+  bool(ARK_WEB_CALLBACK *get_pending_size_status)(struct _ark_web_nweb_t *self);
+
+  void(ARK_WEB_CALLBACK *scroll_by_ref_screen)(struct _ark_web_nweb_t *self,
+                                               float delta_x, float delta_y,
+                                               float vx, float vy);
+
+  void(ARK_WEB_CALLBACK *execute_java_script_ext)(
+      struct _ark_web_nweb_t *self, const int fd, const size_t scriptLength,
+      ark_web_message_value_callback_t *callback, bool extention);
+
+  void(ARK_WEB_CALLBACK *on_render_to_background)(struct _ark_web_nweb_t *self);
+
+  void(ARK_WEB_CALLBACK *on_render_to_foreground)(struct _ark_web_nweb_t *self);
+
+  void(ARK_WEB_CALLBACK *precompile_java_script)(
+      struct _ark_web_nweb_t *self, const ArkWebString *url,
+      const ArkWebString *script, ark_web_cache_options_t **cacheOptions,
+      ark_web_message_value_callback_t *callback);
 } ark_web_nweb_t;
 
 #ifdef __cplusplus

@@ -20,6 +20,7 @@
 #include "ohos_nweb/include/ark_web_accessibility_event_callback.h"
 #include "ohos_nweb/include/ark_web_accessibility_node_info.h"
 #include "ohos_nweb/include/ark_web_bool_value_callback.h"
+#include "ohos_nweb/include/ark_web_cache_options.h"
 #include "ohos_nweb/include/ark_web_download_callback.h"
 #include "ohos_nweb/include/ark_web_drag_data.h"
 #include "ohos_nweb/include/ark_web_drag_event.h"
@@ -1135,6 +1136,65 @@ public:
    */
   /*--ark web()--*/
   virtual ArkWebString GetLastJavascriptProxyCallingFrameUrl() = 0;
+
+  /**
+    * @brief get pendingsize status.
+    *
+    * @return the result of last pendingsize status.
+    */
+  /*--ark web()--*/
+  virtual bool GetPendingSizeStatus() = 0;
+
+  /**
+   * @brief Scroll by the delta distance or velocity takes the screen as a reference.
+   *
+   * @param delta_x horizontal offset in physical pixel.
+   * @param delta_y vertical offset in physical pixel.
+   * @param vx      horizontal velocity in physical pixel.
+   * @param vx      vertical velocity in physical pixel.
+   */
+  /*--ark web()--*/
+  virtual void ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) = 0;
+
+  /**
+   * ExecuteJavaScript with ashmem
+   *
+   * @param fd fd of the ashmem
+   * @param scriptLength javascript code length
+   * @param callback NWebValueCallback: javascript running result
+   * @param extention true if is extention
+   */
+  /*--ark web()--*/
+  virtual void
+  ExecuteJavaScriptExt(const int fd, const size_t scriptLength,
+                       ArkWebRefPtr<ArkWebMessageValueCallback> callback,
+                       bool extention) = 0;
+
+  /**
+   * @brief Render process switch to background.
+   */
+  /*--ark web()--*/
+  virtual void OnRenderToBackground() = 0;
+
+  /**
+   * @brief Render process switch to foreground.
+   */
+  /*--ark web()--*/
+  virtual void OnRenderToForeground() = 0;
+
+  /**
+   * @brief Compile javascript and generate code cache.
+   *
+   * @param url url of javascript.
+   * @param script javascript text content.
+   * @param cacheOptions compile options and info.
+   * @param callback callback will be called on getting the result of compiling javascript.
+   */
+  /*--ark web()--*/
+  virtual void PrecompileJavaScript(const ArkWebString& url,
+                                    const ArkWebString& script,
+                                    ArkWebRefPtr<ArkWebCacheOptions>& cacheOptions,
+                                    ArkWebRefPtr<ArkWebMessageValueCallback> callback) = 0;
 };
 
 } // namespace OHOS::ArkWeb

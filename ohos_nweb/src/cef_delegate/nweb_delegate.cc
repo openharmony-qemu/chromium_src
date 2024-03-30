@@ -34,6 +34,7 @@
 #include "cef/include/cef_base.h"
 #include "cef/include/cef_request_context.h"
 #include "content/public/common/content_switches.h"
+#include "cef/include/internal/cef_string_map.h"
 #if defined(REPORT_SYS_EVENT)
 #include "event_reporter.h"
 #endif
@@ -273,6 +274,61 @@ class GetImagesCallbackImpl : public CefGetImagesCallback {
   std::shared_ptr<NWebBoolValueCallback> callback_;
 
   IMPLEMENT_REFCOUNTING(GetImagesCallbackImpl);
+};
+
+class CefPrecompileCallbackImpl : public CefPrecompileCallback {
+ public:
+  explicit CefPrecompileCallbackImpl(
+      std::shared_ptr<NWebMessageValueCallback> callback)
+      : callback_(callback) {}
+
+  void OnPrecompileFinished(int32_t result) override {
+    if (callback_ != nullptr) {
+      auto message = std::make_shared<OHOS::NWeb::NWebMessage>(NWebValue::Type::INTEGER);
+      message->SetInt64(result);
+      callback_->OnReceiveValue(message);
+    }
+  }
+
+ private:
+  std::shared_ptr<NWebMessageValueCallback> callback_;
+
+  IMPLEMENT_REFCOUNTING(CefPrecompileCallbackImpl);
+};
+
+class CefCacheOptionsImpl : public CefCacheOptions {
+ public:
+  explicit CefCacheOptionsImpl(const std::shared_ptr<CacheOptions>& cacheOptions) :
+      responseHeaders_(cacheOptions->GetResponseHeaders()),
+      isModule_(cacheOptions->IsModule()),
+      isTopLevel_(cacheOptions->IsModule()) {}
+
+  cef_string_map_t GetResponseHeaders() override {
+    cef_string_map_t cefHeaders = cef_string_map_alloc();
+    for (const auto& pair : responseHeaders_) {
+      cef_string_t key = {};
+      cef_string_t value = {};
+      cef_string_from_utf8(pair.first.c_str(), pair.first.size(), &key);
+      cef_string_from_utf8(pair.second.c_str(), pair.second.size(), &value);
+      cef_string_map_append(cefHeaders, &key, &value);
+    }
+    return cefHeaders;
+  }
+
+  bool IsModule() override {
+    return isModule_;
+  }
+
+  bool IsTopLevel() override {
+    return isTopLevel_;
+  }
+
+ private:
+  std::map<std::string, std::string> responseHeaders_;
+  bool isModule_;
+  bool isTopLevel_;
+
+  IMPLEMENT_REFCOUNTING(CefCacheOptionsImpl);
 };
 
 #ifdef OHOS_NAVIGATION
@@ -1135,6 +1191,32 @@ void NWebDelegate::ExecuteJavaScript(const std::string& code) const {
   }
 }
 
+void NWebDelegate::ExecuteJavaScriptExt(
+    const int fd,
+    const size_t scriptLength,
+    std::shared_ptr<NWebMessageValueCallback> callback,
+    bool extention) {
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    CEF_POST_TASK(CEF_UIT,
+      base::BindOnce((void(NWebDelegate::*)(const int fd,
+        const size_t scriptLength,
+        std::shared_ptr<NWebMessageValueCallback>,
+        bool)) &
+        NWebDelegate::ExecuteJavaScriptExt,
+        this, fd, scriptLength, callback, extention));
+    return;
+  }
+
+  if (GetBrowser().get()) {
+    runJSCallbackId_++;
+    CefRefPtr<JavaScriptResultCallbackImpl> JsResultCb =
+        new JavaScriptResultCallbackImpl(callback,
+        runJSCallbackId_, shared_from_this());
+    runJSCallbackMap_[runJSCallbackId_] = JsResultCb;
+    GetBrowser()->GetHost()->ExecuteJavaScriptExt(fd, static_cast<uint64_t>(scriptLength), JsResultCb, extention);
+  }
+}
+
 #if defined(OHOS_MSGPORT)
 
 void NWebDelegate::EraseJavaScriptCallbackImpl(uint32_t id) {
@@ -1909,6 +1991,7 @@ void NWebDelegate::RegisterNWebJavaScriptCallBack(
 }
 
 bool NWebDelegate::OnFocus(const FocusReason& focusReason) const {
+  LOG(DEBUG) << "NWebDelegate::OnFocus, nweb_id = " << nweb_id_;
   if (!GetBrowser().get()) {
     LOG(ERROR) << "NWebDelegate::OnFocus GetBrowser().get() fail";
     return false;
@@ -1924,6 +2007,7 @@ bool NWebDelegate::OnFocus(const FocusReason& focusReason) const {
 }
 
 void NWebDelegate::OnBlur() const {
+  LOG(DEBUG) << "NWebDelegate::OnBlur, nweb_id = " << nweb_id_;
   if (!GetBrowser().get()) {
     LOG(ERROR) << "NWebDelegate::OnBlur GetBrowser().get() fail";
     return;
@@ -2228,6 +2312,19 @@ void NWebDelegate::ScrollBy(float delta_x, float delta_y) {
                                     std::round(delta_y * ratio));
 }
 
+void NWebDelegate::ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) {
+  if (!GetBrowser().get()) {
+    LOG(ERROR) << "ScrollByRefScreen can not get browser";
+    return;
+  }
+  float scale = Scale();
+  if (scale > 0 && (delta_x != 0 || delta_y != 0)) {
+    // delta_x and delta_y here should be sure to be a value in physical pixels.
+    GetBrowser()->GetHost()->ScrollBy(std::round(delta_x) / scale,
+                                      std::round(delta_y) / scale);
+  }
+}
+
 void NWebDelegate::SlideScroll(float vx, float vy) {
   if (!GetBrowser().get()) {
     LOG(ERROR) << "JSAPI SlideScroll can not get browser";
@@ -2315,6 +2412,13 @@ void NWebDelegate::SetDrawMode(int32_t mode) {
   if (preference_delegate_) {
     preference_delegate_->SetDrawMode(mode);
   }
+}
+
+bool NWebDelegate::GetPendingSizeStatus() {
+  if (GetBrowser().get()) {
+    return GetBrowser()->GetHost()->GetPendingSizeStatus();
+  }
+  return false;
 }
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 
@@ -2735,6 +2839,20 @@ void NWebDelegate::EnableSafeBrowsing(bool enable) {
 
   GetBrowser()->EnableSafeBrowsing(enable);
 
+}
+
+void NWebDelegate::PrecompileJavaScript(const std::string& url,
+                                        const std::string& script,
+                                        std::shared_ptr<CacheOptions>& cacheOptions,
+                                        std::shared_ptr<NWebMessageValueCallback> callback) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "NWebDelegate::PrecompileJavaScript failed. browser host has not initialized";
+    return;
+  }
+
+  CefRefPtr<CefPrecompileCallbackImpl> precompileCallback = new CefPrecompileCallbackImpl(callback);
+  CefRefPtr<CefCacheOptionsImpl> cefOptions = new CefCacheOptionsImpl(cacheOptions);
+  GetBrowser()->GetHost()->PrecompileJavaScript(url, script, cefOptions, precompileCallback);
 }
 #endif
 

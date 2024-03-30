@@ -14,18 +14,21 @@ import "third_party/blink/public/mojom/use_counter/use_counter_feature.mojom";
 // TimeDeltas below relative to navigation start.
 struct DocumentTiming {
   // Time to finish parsing the DOM tree.
+  [EnableIf=is_ohos]
   mojo_base.mojom.TimeDelta? dom_interactive;
 
   // Time immediately before the DOMContentLoaded event is fired.
   mojo_base.mojom.TimeDelta? dom_content_loaded_event_start;
 
   // Time when the DOMContentLoaded event is finished.
+  [EnableIf=is_ohos]
   mojo_base.mojom.TimeDelta? dom_content_loaded_event_end;
 
   // Time immediately before the load event is fired.
   mojo_base.mojom.TimeDelta? load_event_start;
 
   // Time when the load event is finished.
+  [EnableIf=is_ohos]
   mojo_base.mojom.TimeDelta? load_event_end;
 };
 
@@ -176,12 +179,15 @@ struct PageLoadTiming {
   mojo_base.mojom.Time navigation_start;
 
   // Time when the redirection start.
+  [EnableIf=is_ohos]
   mojo_base.mojom.TimeDelta? redirect_start;
 
   // Time when the redirection end.
+  [EnableIf=is_ohos]
   mojo_base.mojom.TimeDelta? redirect_end;
 
   // Time when the browser is ready to fetch the document.
+  [EnableIf=is_ohos]
   mojo_base.mojom.TimeDelta? fetch_start;
 
   // Time relative to navigation_start that the first byte of the response is
@@ -190,6 +196,7 @@ struct PageLoadTiming {
 
   // Time relative to navigation_start that the last byte of the response is
   // received.
+  [EnableIf=is_ohos]
   mojo_base.mojom.TimeDelta? response_end;
 
   DocumentTiming document_timing;

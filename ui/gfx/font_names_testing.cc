@@ -26,7 +26,7 @@ dessert.
 const char kTestFontName[] = "Arimo";
 #elif BUILDFLAG(IS_ANDROID)
 const char kTestFontName[] = "sans-serif";
-#elif BUILDFLAG(OHOS_UNITTESTS)
+#elif defined(OHOS_UNITTESTS)
 const char kTestFontName[] = "harmonyos-sans";
 #else
 const char kTestFontName[] = "Arial";
@@ -38,7 +38,7 @@ const char kSymbolFontName[] = "DejaVu Sans";
 const char kSymbolFontName[] = "monospace";
 #elif BUILDFLAG(IS_WIN)
 const char kSymbolFontName[] = "Segoe UI Symbol";
-#elif BUILDFLAG(OHOS_UNITTESTS)
+#elif defined(OHOS_UNITTESTS)
 const char kSymbolFontName[] = "harmonyos-sans";
 #else
 const char kSymbolFontName[] = "Symbol";
@@ -50,7 +50,7 @@ const char kCJKFontName[] = "Noto Sans CJK JP";
 const char kCJKFontName[] = "serif";
 #elif BUILDFLAG(IS_APPLE)
 const char kCJKFontName[] = "Heiti SC";
-#elif BUILDFLAG(OHOS_UNITTESTS)
+#elif defined(OHOS_UNITTESTS)
 const char kCJKFontName[] = "harmonyos-sans";
 #else
 const char kCJKFontName[] = "SimSun";

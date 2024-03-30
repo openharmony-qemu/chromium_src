@@ -183,6 +183,20 @@ class OHOS_NWEB_EXPORT NWebEnginePrefetchArgs {
     virtual std::string GetFormData() = 0;
 };
 
+enum class PrecompileError : int32_t {
+    OK = 0,
+    INTERNAL_ERROR = -1
+};
+
+class OHOS_NWEB_EXPORT CacheOptions {
+    public:
+    virtual ~CacheOptions() = default;
+
+    virtual std::map<std::string, std::string> GetResponseHeaders() = 0;
+    virtual bool IsModule() = 0;
+    virtual bool IsTopLevel() = 0;
+};
+
 typedef int64_t (*AccessibilityIdGenerateFunc)();
 typedef void (*NativeArkWebOnValidCallback)(const char *);
 typedef void (*NativeArkWebOnDestroyCallback)(const char *);
@@ -316,6 +330,19 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      */
     virtual void ExecuteJavaScript(
             const std::string& code,
+            std::shared_ptr<NWebMessageValueCallback> callback,
+            bool extention) = 0;
+    /**
+     * ExecuteJavaScript with ashmem
+     *
+     * @param fd fd of the ashmem
+     * @param scriptLength javascript code length
+     * @param callback NWebValueCallback: javascript running result
+     * @param extention true if is extention
+     */
+    virtual void ExecuteJavaScriptExt(
+            const int fd,
+            const size_t scriptLength,
             std::shared_ptr<NWebMessageValueCallback> callback,
             bool extention) = 0;
     /**
@@ -1100,6 +1127,51 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      */
     /*--ark web()--*/
     virtual std::string GetLastJavascriptProxyCallingFrameUrl() = 0;
+
+    /**
+     * @brief get pendingsize status.
+     *
+     * @return the result of last pendingsize status.
+     */
+    /*--ark web()--*/
+    virtual bool GetPendingSizeStatus() = 0;
+
+    /**
+     * Scroll by the delta distance or velocity takes the screen as a reference.
+     *
+     * @param delta_x horizontal offset in physical pixel.
+     * @param delta_y vertical offset in physical pixel.
+     * @param vx      horizontal velocity in physical pixel.
+     * @param vx      vertical velocity in physical pixel.
+    */
+    virtual void ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) = 0;
+    
+    /**
+     * @brief Render process switch to background.
+     */
+    /*--ark web()--*/
+    virtual void OnRenderToBackground() = 0;
+
+    /**
+     * @brief Render process switch to foreground.
+     */
+    /*--ark web()--*/
+    virtual void OnRenderToForeground() = 0;
+
+
+    /**
+     * @brief Compile javascript and generate code cache.
+     * 
+     * @param url url of javascript.
+     * @param script javascript text content.
+     * @param cacheOptions compile options and info.
+     * @param callback callback will be called on getting the result of compiling javascript.
+     */
+    virtual void PrecompileJavaScript(
+        const std::string& url,
+        const std::string& script,
+        std::shared_ptr<CacheOptions>& cacheOptions,
+        std::shared_ptr<NWebMessageValueCallback> callback) = 0;
 };
 }  // namespace OHOS::NWeb
 

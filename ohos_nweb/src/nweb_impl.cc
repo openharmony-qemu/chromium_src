@@ -159,6 +159,12 @@ static std::string GetNetlogMode() {
   return system_properties_adapter.GetNetlogMode();
 }
 
+static bool GetOOPGPUEnable() {
+  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                                    .GetSystemPropertiesInstance();
+  return system_properties_adapter.GetOOPGPUEnable();
+}
+
 #if defined(OHOS_SITE_ISOLATION)
 static std::string GetSiteIsolationMode() {
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
@@ -305,6 +311,11 @@ void InitialWebEngineArgs(std::list<std::string>& web_engine_args,
   for (auto arg : args_to_add) {
     web_engine_args.emplace_back(arg);
   }
+
+  if (!GetOOPGPUEnable()) {
+    web_engine_args.emplace_back("--disable-canvas-oop-gpu-rasterization");
+  }
+
   if (GetIsMultiRendererProcess(init_args)) {
     web_engine_args.emplace_back("--enable-multi-renderer-process");
   }
@@ -775,7 +786,18 @@ void NWebImpl::SetDrawMode(int mode) {
   }
 }
 
+bool NWebImpl::GetPendingSizeStatus() {
+  if (nweb_delegate_) {
+    return nweb_delegate_->GetPendingSizeStatus();
+  }
+  return false;
+}
+
 void NWebImpl::OnTouchPress(int32_t id, double x, double y, bool from_overlay) {
+  WVLOG_D(
+      "NWebImpl::OnTouchPress id=%{public}d, x=%{public}f, y=%{public}f, "
+      "from_overlay=%{public}d",
+      id, x, y, from_overlay);
   if (input_handler_ == nullptr) {
     return;
   }
@@ -789,6 +811,10 @@ void NWebImpl::OnTouchRelease(int32_t id,
                               double x,
                               double y,
                               bool from_overlay) {
+  WVLOG_D(
+      "NWebImpl::OnTouchRelease id=%{public}d, x=%{public}f, y=%{public}f, "
+      "from_overlay=%{public}d",
+      id, x, y, from_overlay);
   if (input_handler_ == nullptr) {
     return;
   }
@@ -814,6 +840,7 @@ void NWebImpl::OnTouchMove(const std::vector<std::shared_ptr<NWebTouchPointInfo>
 }
 
 void NWebImpl::OnTouchCancel() {
+  WVLOG_D("NWebImpl::OnTouchCancel");
   if (input_handler_ == nullptr) {
     return;
   }
@@ -1101,6 +1128,17 @@ std::string NWebImpl::Title() {
     return "";
   }
   return nweb_delegate_->Title();
+}
+
+void NWebImpl::ExecuteJavaScriptExt(
+    const int fd,
+    const size_t scriptLength,
+    std::shared_ptr<NWebMessageValueCallback> callback,
+    bool extention) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->ExecuteJavaScriptExt(fd, scriptLength, callback, extention);
 }
 
 #if defined(OHOS_MSGPORT)
@@ -1570,6 +1608,13 @@ void NWebImpl::ScrollBy(float delta_x, float delta_y) {
   return nweb_delegate_->ScrollBy(delta_x, delta_y);
 }
 
+void NWebImpl::ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  return nweb_delegate_->ScrollByRefScreen(delta_x, delta_y, vx, vy);
+}
+
 void NWebImpl::SlideScroll(float vx, float vy) {
   if (nweb_delegate_ == nullptr) {
     return;
@@ -1735,19 +1780,29 @@ void NWebImpl::OnWebviewHide() {
 #if defined(OHOS_WEBRTC)
   StopCameraSession();
 #endif
-  if (nweb_delegate_ == nullptr) {
-    WVLOG_E("OnWebviewHide nweb delegate is null");
-    return;
-  }
-  nweb_delegate_->OnWindowHide();
 }
 
 void NWebImpl::OnWebviewShow() {
 #if defined(OHOS_WEBRTC)
   RestartCameraSession();
 #endif
+}
+
+void NWebImpl::OnRenderToBackground() {
+  TRACE_EVENT0("base", "OnRenderToBackground");
+  WVLOG_D("NWebImpl::OnRenderToBackground");
   if (nweb_delegate_ == nullptr) {
-    WVLOG_E("OnWebviewShow nweb delegate is null");
+    WVLOG_E("OnRenderToBackground nweb delegate is null");
+    return;
+  }
+  nweb_delegate_->OnWindowHide();
+}
+
+void NWebImpl::OnRenderToForeground() {
+  TRACE_EVENT0("base", "OnRenderToForeground");
+  WVLOG_D("NWebImpl::OnRenderToForeground");
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("OnRenderToForeground nweb delegate is null");
     return;
   }
   nweb_delegate_->OnWindowShow();
@@ -1793,6 +1848,17 @@ bool NWebImpl::GetPrintBackground() {
 }
 
 void NWebImpl::SetNestedScrollMode(const NestedScrollMode& nestedScrollMode) {}
+
+void NWebImpl::PrecompileJavaScript(const std::string& url,
+                          const std::string& script,
+                          std::shared_ptr<CacheOptions>& cacheOptions,
+                          std::shared_ptr<NWebMessageValueCallback> callback) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "PrecompileJavaScript: nweb delegate has not init.";
+    return;
+  }
+  nweb_delegate_->PrecompileJavaScript(url, script, cacheOptions, callback);
+}
 #endif
 
 #if defined(OHOS_INPUT_EVENTS)

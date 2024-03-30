@@ -807,6 +807,18 @@ public:
                                        bool isMainFrame) {
         return false;
     }
+
+    /**
+     * @brief Called when a tooltip should be presented for a component.
+     *
+     * @param tooltip The content of the tooltip.
+     */
+    virtual void OnTooltip(const std::string& param) {}
+
+    /**
+     * @brief called when resizehold is released.
+     */
+    virtual void ReleaseResizeHold() {}
 };
 }  // namespace OHOS::NWeb
 

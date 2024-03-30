@@ -42,6 +42,24 @@ ArkWebJsResultCallbackWrapper::GetJavaScriptResult(
   return ark_web_value.nweb_value;
 }
 
+std::shared_ptr<OHOS::NWeb::NWebValue>
+ArkWebJsResultCallbackWrapper::GetJavaScriptResultFlowbuf(
+    std::vector<std::shared_ptr<OHOS::NWeb::NWebValue>> args,
+    const std::string &method, const std::string &object_name,
+    int fd, int32_t routing_id, int32_t object_id) {
+  ArkWebString stMethod = ArkWebStringClassToStruct(method);
+  ArkWebValueVector stArgs = ArkWebValueVectorClassToStruct(args);
+  ArkWebString stObjectName = ArkWebStringClassToStruct(object_name);
+
+  ArkWebValue ark_web_value = ark_web_js_result_callback_->GetJavaScriptResultFlowbuf(
+      stArgs, stMethod, stObjectName, fd, routing_id, object_id);
+
+  ArkWebStringStructRelease(stMethod);
+  ArkWebValueVectorStructRelease(stArgs);
+  ArkWebStringStructRelease(stObjectName);
+  return ark_web_value.nweb_value;
+}
+
 bool ArkWebJsResultCallbackWrapper::HasJavaScriptObjectMethods(
     int32_t object_id, const std::string &method_name) {
   ArkWebString stMethodName = ArkWebStringClassToStruct(method_name);

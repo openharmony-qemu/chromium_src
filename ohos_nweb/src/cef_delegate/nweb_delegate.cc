@@ -90,6 +90,7 @@ const int NWebPlaybackState_NONE = 0;
 #endif
 
 static const int kDefaultWebNativeProxy = -2;
+int32_t draw_mode_ = -1;
 
 #if defined(OHOS_MSGPORT)
 void ConvertCefValueToNWebMessage(CefRefPtr<CefValue> src,
@@ -2406,6 +2407,10 @@ void NWebDelegate::SetDrawRect(int32_t x, int32_t y, int32_t width, int32_t heig
 }
 
 void NWebDelegate::SetDrawMode(int32_t mode) {
+  if (draw_mode_ == mode) {
+    return;
+  }
+  draw_mode_ = mdoe;
   if (GetBrowser().get()) {
     GetBrowser()->GetHost()->SetDrawMode(mode);
   }

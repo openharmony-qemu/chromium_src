@@ -521,9 +521,7 @@ void Display::SetDrawRect(const gfx::Rect& new_rect)
 
 void Display::SetDrawMode(const int32_t mode)
 {
-  if (draw_mode_ != mode) {
-    LOG(INFO) << "SetDrawMode mode=" << mode;
-  }
+  LOG(INFO) << "SetDrawMode mode=" << mode;
   draw_mode_ = mode;
 }
 #endif  // defined(OHOS_COMPOSITE_RENDER)

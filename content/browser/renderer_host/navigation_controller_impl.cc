@@ -1288,7 +1288,7 @@ base::WeakPtr<NavigationHandle> NavigationControllerImpl::LoadURLWithParams(
   TRACE_EVENT1("browser,navigation",
                "NavigationControllerImpl::LoadURLWithParams", "url",
                params.url.possibly_invalid_spec());
-#if BUILDFLAG(IS_OHOS)
+#if defined(REPORT_SYS_EVENT)
   OhPageLoadMetricsObserver::OnNavigationStart();
 #endif
   bool is_explicit_navigation =

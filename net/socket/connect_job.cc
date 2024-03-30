@@ -196,8 +196,10 @@ void ConnectJob::LogConnectStart() {
 
 void ConnectJob::LogConnectCompletion(int net_error) {
   connect_timing_.connect_end = base::TimeTicks::Now();
+#if BUILDFLAG(IS_OHOS)
   TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
                "connectEnd", connect_timing_.connect_end);
+#endif
   net_log().EndEventWithNetErrorCode(net_log_connect_event_type_, net_error);
 }
 

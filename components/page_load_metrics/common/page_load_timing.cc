@@ -7,6 +7,7 @@
 namespace page_load_metrics {
 
 mojom::PageLoadTimingPtr CreatePageLoadTiming() {
+#if BUILDFLAG(IS_OHOS)
   return mojom::PageLoadTiming::New(
       base::Time(), absl::optional<base::TimeDelta>(),
       absl::optional<base::TimeDelta>(), absl::optional<base::TimeDelta>(),
@@ -22,6 +23,21 @@ mojom::PageLoadTimingPtr CreatePageLoadTiming() {
       absl::optional<base::TimeDelta>(), absl::optional<base::TimeDelta>(),
       absl::optional<base::TimeDelta>(), absl::optional<base::TimeDelta>(),
       absl::optional<base::TimeDelta>());
+#else
+  return mojom::PageLoadTiming::New(
+      base::Time(), absl::optional<base::TimeDelta>(),
+      mojom::DocumentTiming::New(), mojom::InteractiveTiming::New(),
+      mojom::PaintTiming::New(absl::nullopt, absl::nullopt, absl::nullopt,
+                              absl::nullopt,
+                              mojom::LargestContentfulPaintTiming::New(),
+                              mojom::LargestContentfulPaintTiming::New(),
+                              absl::nullopt, absl::nullopt, absl::nullopt),
+      mojom::ParseTiming::New(),
+      std::vector<mojo::StructPtr<mojom::BackForwardCacheTiming>>{},
+      absl::optional<base::TimeDelta>(), absl::optional<base::TimeDelta>(),
+      absl::optional<base::TimeDelta>(), absl::optional<base::TimeDelta>(),
+      absl::optional<base::TimeDelta>());
+#endif
 }
 
 bool IsEmpty(const page_load_metrics::mojom::DocumentTiming& timing) {

@@ -223,6 +223,12 @@ class NWebDelegateInterface
   virtual void ClearMatches() const = 0;
   virtual void FindNext(const bool forward) const = 0;
 
+  virtual void ExecuteJavaScriptExt(
+      const int fd,
+      const size_t scriptLength,
+      std::shared_ptr<NWebMessageValueCallback> callback,
+      bool extention) = 0;
+
 #if defined(OHOS_MSGPORT)
   virtual void EraseJavaScriptCallbackImpl(uint32_t id) = 0;
   virtual void ExecuteJavaScript(
@@ -298,6 +304,7 @@ class NWebDelegateInterface
 #if defined(OHOS_INPUT_EVENTS)
   virtual void ScrollTo(float x, float y) = 0;
   virtual void ScrollBy(float delta_x, float delta_y) = 0;
+  virtual void ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) = 0;
   virtual void SlideScroll(float vx, float vy) = 0;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
@@ -310,6 +317,7 @@ class NWebDelegateInterface
   virtual void SetShouldFrameSubmissionBeforeDraw(bool should) = 0;
   virtual void SetDrawRect(int32_t x, int32_t y, int32_t width, int32_t height) = 0;
   virtual void SetDrawMode(int32_t mode) = 0;
+  virtual bool GetPendingSizeStatus() = 0;
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 
 #if defined(OHOS_MEDIA_POLICY)
@@ -377,6 +385,10 @@ class NWebDelegateInterface
 #if BUILDFLAG(IS_OHOS)
   virtual bool IsSafeBrowsingEnabled() = 0;
   virtual void EnableSafeBrowsing(bool enable) = 0;
+  virtual void PrecompileJavaScript(const std::string& url,
+                                    const std::string& script,
+                                    std::shared_ptr<CacheOptions>& cacheOptions,
+                                    std::shared_ptr<NWebMessageValueCallback> callback) = 0;
 #endif
 
 #if defined(OHOS_SECURITY_STATE)

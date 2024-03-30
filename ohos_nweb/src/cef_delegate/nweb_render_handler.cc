@@ -439,6 +439,12 @@ void NWebRenderHandler::OnRootLayerChanged(CefRefPtr<CefBrowser> browser,
   }
 }
 
+void NWebRenderHandler::ReleaseResizeHold(CefRefPtr<CefBrowser> browser) {
+  if (auto handler = handler_.lock()) {
+    handler->ReleaseResizeHold();
+  }
+}
+
 void NWebRenderHandler::OnScrollOffsetChanged(CefRefPtr<CefBrowser> browser,
                                               double x,
                                               double y) {

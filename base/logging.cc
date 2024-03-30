@@ -1012,7 +1012,7 @@ void LogMessage::Init(const char* file, int line) {
   base::StringPiece message(file);
   size_t tagStart = message.find_first_of('#');
   if (tagStart == base::StringPiece::npos) {
-    tag_ = std::string("error_tag");
+    tag_ = std::string("chromium");
     filename = message;
   } else {
     tag_ = std::string(message.substr(0, tagStart));

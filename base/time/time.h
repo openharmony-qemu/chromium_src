@@ -870,6 +870,9 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
   // Returns the milliseconds since the Unix epoch (1970), rounding the
   // microseconds towards -infinity.
   int64_t ToRoundedDownMillisecondsSinceUnixEpoch() const;
+
+  // Returns the UTC time string parsed from base::Time
+  static std::string ToUTCString(const base::Time& time);
 };
 
 // Factory methods that return a TimeDelta of the given unit.

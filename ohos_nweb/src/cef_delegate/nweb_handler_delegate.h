@@ -147,6 +147,7 @@ class NWebHandlerDelegate : public CefClient,
   void CloseAllBrowsers(bool force_close);
   bool IsClosing() const;
   const CefRefPtr<CefBrowser> GetBrowser();
+  bool OnTooltip(CefRefPtr<CefBrowser> browser, CefString& text) override;
 
   /* CefClient methods begin */
   CefRefPtr<CefDownloadHandler> GetDownloadHandler() override;
@@ -172,6 +173,13 @@ class NWebHandlerDelegate : public CefClient,
   int NotifyJavaScriptResult(CefRefPtr<CefListValue> args,
                              const CefString& method,
                              const CefString& object_name,
+                             CefRefPtr<CefListValue> result,
+                             int32_t routing_id,
+                             int32_t object_id) override;
+  int NotifyJavaScriptResultFlowbuf(CefRefPtr<CefListValue> args,
+                             const CefString& method,
+                             const CefString& object_name,
+                             int fd,
                              CefRefPtr<CefListValue> result,
                              int32_t routing_id,
                              int32_t object_id) override;

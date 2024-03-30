@@ -126,14 +126,12 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
     case __NR_mkdirat:
     case __NR_set_tid_address:
     case __NR_getdents64:
-    case __NR_madvise:
     case __NR_prlimit64:
     case __NR_sched_setscheduler:
     case __NR_sched_getscheduler:
     case __NR_membarrier:
     case __NR_setitimer:
     case __NR_msync:
-    case __NR_statx:
     case __NR_set_robust_list:
     case __NR_sched_getparam:
 #endif
@@ -167,6 +165,7 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
     case __NR_sigreturn:
     case __NR_fork:
     case __NR_access:
+    case __NR_statx:
 #endif
 #if defined(__aarch64__)
     case __NR_getrlimit:
@@ -202,6 +201,19 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
 
     if (sysno == __NR_clock_getres) {
         return RestrictClockID();
+    }
+
+    if (sysno == __NR_ptrace) {
+        return RestrictPtrace();
+    }
+
+    if (sysno == __NR_madvise) {
+        const Arg<int> advice(2);
+        const unsigned int MADV_WIPEONFORK = 18;
+        return If(AnyOf(advice == -1,
+                        advice == MADV_WIPEONFORK),
+                Allow())
+            .Else(BaselinePolicy::EvaluateSyscall(sysno));
     }
 #endif
 

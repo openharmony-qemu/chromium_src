@@ -304,6 +304,20 @@ int64_t Time::ToRoundedDownMillisecondsSinceUnixEpoch() const {
   return millis - kEpochOffsetMillis - (submillis < 0);
 }
 
+std::string Time::ToUTCString(const base::Time& time) {
+  Time::Exploded exploded;
+  time.UTCExplode(&exploded);
+  std::string time_string = StringPrintf("%04d-%02d-%02d %02d:%02d:%02d.%03d UTC",
+                            exploded.year,
+                            exploded.month,
+                            exploded.day_of_month,
+                            exploded.hour,
+                            exploded.minute,
+                            exploded.second,
+                            exploded.millisecond);
+  return time_string;
+}
+
 std::ostream& operator<<(std::ostream& os, Time time) {
   Time::Exploded exploded;
   time.UTCExplode(&exploded);

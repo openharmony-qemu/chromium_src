@@ -24,6 +24,7 @@ import("//printing/buildflags/buildflags.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//third_party/blink/public/public_features.gni")
 import("//tools/ipc_fuzzer/ipc_fuzzer.gni")
+import("//ohos_nweb/src/nweb_sysevent.gni")
 if (is_mac) {
   import("//content/public/app/mac_helpers.gni")
 }
@@ -2320,6 +2321,10 @@ source_set("browser") {
     "worker_host/worker_script_loader_factory.cc",
     "worker_host/worker_script_loader_factory.h",
   ]
+
+  if (report_sys_event) {
+    defines += [ "REPORT_SYS_EVENT" ]
+  }
 
   if (use_starscan) {
     sources += [

@@ -30,6 +30,7 @@
 #include "nweb_history_list.h"
 #include "nweb_hit_testresult.h"
 #include "nweb_javascript_result_callback.h"
+#include "nweb_native_media_player.h"
 #include "nweb_preference.h"
 #include "nweb_release_surface_callback.h"
 #include "nweb_value_callback.h"
@@ -1172,6 +1173,8 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
         const std::string& script,
         std::shared_ptr<CacheOptions>& cacheOptions,
         std::shared_ptr<NWebMessageValueCallback> callback) = 0;
+
+    virtual void OnCreateNativeMediaPlayer(std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) = 0;
 };
 }  // namespace OHOS::NWeb
 

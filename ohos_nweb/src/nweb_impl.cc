@@ -2408,6 +2408,9 @@ bool NWebImpl::IsIntelligentTrackingPreventionEnabled() const {
   return nweb_delegate_->IsIntelligentTrackingPreventionEnabled();
 }
 
+void NWebImpl::OnCreateNativeMediaPlayer(
+    std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) {}
+
 //static
 bool NWebImpl::IsAnyNWebIntelligentTrackingPreventionEnabled() {
   NWebMap* map = g_nweb_map.Pointer();

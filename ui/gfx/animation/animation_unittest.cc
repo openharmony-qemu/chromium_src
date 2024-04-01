@@ -20,9 +20,14 @@ namespace gfx {
 
 class AnimationTest : public testing::Test {
  protected:
+#if defined(OHOS_UNITTESTS)
+  AnimationTest()
+      : task_environment_() {}
+#else
   AnimationTest()
       : task_environment_(
             base::test::SingleThreadTaskEnvironment::MainThreadType::UI) {}
+#endif
 
  private:
   base::test::SingleThreadTaskEnvironment task_environment_;

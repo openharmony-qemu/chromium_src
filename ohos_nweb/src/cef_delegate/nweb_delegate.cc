@@ -2410,7 +2410,7 @@ void NWebDelegate::SetDrawMode(int32_t mode) {
   if (draw_mode_ == mode) {
     return;
   }
-  draw_mode_ = mdoe;
+  draw_mode_ = mode;
   if (GetBrowser().get()) {
     GetBrowser()->GetHost()->SetDrawMode(mode);
   }

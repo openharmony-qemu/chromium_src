@@ -7,6 +7,9 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include "buffer_flush_config_adapter_impl.h"
+#include "buffer_request_config_adapter_impl.h"
+#include "codec_config_para_adapter_impl.h"
 #include "ohos_adapter_helper.h"
 
 #include "base/logging.h"
@@ -110,7 +113,20 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::Configure(
   }
   codec_task_runner_ = codec_task_runner;
   cb_->codec_callback_task_runner_ = codec_task_runner;
-  return codec_adapter_->Configure(config);
+
+  std::shared_ptr<CodecConfigParaAdapterImpl> configAdapter =
+      std::make_shared<CodecConfigParaAdapterImpl>();
+  if (!configAdapter) {
+    LOG(ERROR) << "OHOSMediaCodecBridgeImpl::Configure error configAdapter is NULL";
+    return CodecCodeAdapter::ERROR;
+  }
+
+  configAdapter->SetWidth(config.width);
+  configAdapter->SetHeight(config.height);
+  configAdapter->SetBitRate(config.bitRate);
+  configAdapter->SetFrameRate(config.frameRate);
+
+  return codec_adapter_->Configure(configAdapter);
 }
 
 CodecCodeAdapter OHOSMediaCodecBridgeImpl::Prepare() {
@@ -186,14 +202,15 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::FillSurfaceBuffer(
     LOG(DEBUG) << "surface_ is null when QueueInput";
     return CodecCodeAdapter::ERROR;
   }
-  BufferRequestConfigAdapter configAdapter;
+  std::shared_ptr<BufferRequestConfigAdapterImpl> configAdapter =
+      std::make_shared<BufferRequestConfigAdapterImpl>();
 
   int32_t fence;
   constexpr int32_t SAMPLE_RATIO = 2;
   constexpr int32_t DEFAULT_STRIDE = 16;
-  configAdapter.width = frame->coded_size().width();
-  configAdapter.height = frame->coded_size().height();
-  configAdapter.strideAlignment = DEFAULT_STRIDE;
+  configAdapter->SetWidth(frame->coded_size().width());
+  configAdapter->SetHeight(frame->coded_size().height());
+  configAdapter->SetStrideAlignment(DEFAULT_STRIDE);
 
   buffer_adapter_ = surface_->RequestBuffer(fence, configAdapter);
   if (buffer_adapter_ == nullptr) {
@@ -202,8 +219,8 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::FillSurfaceBuffer(
   }
 
   int32_t stride = buffer_adapter_->GetStride();
-  int32_t width = configAdapter.width;
-  int32_t height = configAdapter.height;
+  int32_t width = configAdapter->GetWidth();
+  int32_t height = configAdapter->GetHeight();
   uint8_t* dst = reinterpret_cast<uint8_t*>(buffer_adapter_->GetVirAddr());
 
   const uint8_t* y_src = frame->data(VideoFrame::kYPlane);
@@ -239,16 +256,18 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::FillSurfaceBuffer(
     v_src += src_v_stride;
   }
 
-  BufferFlushConfigAdapter flush_config_adapter;
-  flush_config_adapter.x = 0;
-  flush_config_adapter.y = 0;
-  flush_config_adapter.w = configAdapter.width;
-  flush_config_adapter.h = configAdapter.height;
-  flush_config_adapter.timestamp = timestamp_ms;
-  LOG(DEBUG) << "flush_config_adapter x " << flush_config_adapter.x << ", y "
-             << flush_config_adapter.y << ", w " << flush_config_adapter.w
-             << ", h " << flush_config_adapter.h << ", timestamp "
-             << flush_config_adapter.timestamp
+  std::shared_ptr<BufferFlushConfigAdapterImpl> flush_config_adapter =
+      std::make_shared<BufferFlushConfigAdapterImpl>();
+  flush_config_adapter->SetX(0);
+  flush_config_adapter->SetY(0);
+  flush_config_adapter->SetW(configAdapter->GetWidth());
+  flush_config_adapter->SetH(configAdapter->GetHeight());
+  flush_config_adapter->SetTimestamp(timestamp_ms);
+  LOG(DEBUG) << "flush_config_adapter x " << flush_config_adapter->GetX()
+             << ", y " << flush_config_adapter->GetY() << ", w "
+             << flush_config_adapter->GetW() << ", h "
+             << flush_config_adapter->GetH() << ", timestamp "
+             << flush_config_adapter->GetTimestamp()
              << ", intput real frame time stamp: "
              << frame->timestamp().InMicroseconds();
   if (surface_->FlushBuffer(buffer_adapter_, fence, flush_config_adapter) !=
@@ -396,12 +415,13 @@ void CodecEncodeBridgeCallback::OnError(ErrorType errorType,
 }
 
 void CodecEncodeBridgeCallback::OnStreamChanged(
-    const CodecFormatAdapter& format) {
+    const std::shared_ptr<CodecFormatAdapter> format) {
   LOG(DEBUG) << "Output Format Changed.";
 }
 
-void CodecEncodeBridgeCallback::OnNeedInputData(uint32_t index,
-                                                OhosBuffer buffer) {
+void CodecEncodeBridgeCallback::OnNeedInputData(
+    uint32_t index,
+    std::shared_ptr<OhosBufferAdapter> buffer) {
   LOG(DEBUG) << "CodecBridgeCallback::OnNeedInputData";
 }
 
@@ -440,13 +460,18 @@ void CodecEncodeBridgeCallback::InitEncodeOuputBuffer(
   output_buffer.flag = BufferFlag::CODEC_BUFFER_FLAG_NONE;
 }
 
-void CodecEncodeBridgeCallback::OnNeedOutputData(uint32_t index,
-                                                 BufferInfo info,
-                                                 BufferFlag flag,
-                                                 OhosBuffer buffer) {
+void CodecEncodeBridgeCallback::OnNeedOutputData(
+    uint32_t index,
+    std::shared_ptr<BufferInfoAdapter> info,
+    BufferFlag flag,
+    std::shared_ptr<OhosBufferAdapter> buffer) {
+  if (!info || !buffer) {
+    LOG(ERROR) << "Output is invalid";
+  }
+
   LOG(DEBUG) << "Output Buffer Available, queue size, "
              << signal_->out_buffer_queue_.size() << ", index =" << index
-             << ", timestamp = " << info.presentationTimeUs
+             << ", timestamp = " << info->GetPresentationTimeUs()
              << ", isrunning = " << is_running_.load();
   if (!is_running_.load()) {
     LOG(DEBUG) << "encoder is not running";
@@ -462,14 +487,18 @@ void CodecEncodeBridgeCallback::OnNeedOutputData(uint32_t index,
   }
 
   LOG(DEBUG) << "OnNeedOutputData::index " << index << ", presentationTimeUs. "
-             << info.presentationTimeUs << ", size. " << info.size
-             << ", offset. " << info.offset << ", flag. " << (int32_t)flag
-             << ", buffersize. " << buffer.bufferSize;
+             << info->GetPresentationTimeUs() << ", size. " << info->GetSize()
+             << ", offset. " << info->GetOffset() << ", flag. " << (int32_t)flag
+             << ", buffersize. " << buffer->GetBufferSize();
+
   if (flag == BufferFlag::CODEC_BUFFER_FLAG_CODEC_DATA) {
     LOG(DEBUG) << "flag is codec_data, handle with keyframe later";
     config_data_.index = index;
-    config_data_.buffer_info = info;
-    config_data_.buffer_data = buffer;
+    config_data_.buffer_info.presentationTimeUs = info->GetPresentationTimeUs();
+    config_data_.buffer_info.size = info->GetSize();
+    config_data_.buffer_info.offset = info->GetOffset();
+    config_data_.buffer_data.addr = buffer->GetAddr();
+    config_data_.buffer_data.bufferSize = buffer->GetBufferSize();
     return;
   }
   EncodeOutputBuffer output_buffer;
@@ -482,8 +511,11 @@ void CodecEncodeBridgeCallback::OnNeedOutputData(uint32_t index,
   }
 
   output_buffer.index = index;
-  output_buffer.buffer_info = info;
-  output_buffer.buffer_data = buffer;
+  output_buffer.buffer_info.presentationTimeUs = info->GetPresentationTimeUs();
+  output_buffer.buffer_info.size = info->GetSize();
+  output_buffer.buffer_info.offset = info->GetOffset();
+  output_buffer.buffer_data.addr = buffer->GetAddr();
+  output_buffer.buffer_data.bufferSize = buffer->GetBufferSize();
   output_buffer.flag = flag;
   signal_->out_buffer_queue_.push(output_buffer);
   ClearConfigCache();

@@ -26,7 +26,8 @@ class VideoCaptureSufaceBufferListenerOHOS
   void OnBufferAvailable(
       std::shared_ptr<CameraSurfaceAdapter> surface,
       std::shared_ptr<OHOS::NWeb::CameraSurfaceBufferAdapter> buffer,
-      CameraRotationInfo roration_info) override;
+      std::shared_ptr<OHOS::NWeb::CameraRotationInfoAdapter> roration_info)
+      override;
 
  private:
   std::unique_ptr<VideoCaptureDevice::Client> client_;

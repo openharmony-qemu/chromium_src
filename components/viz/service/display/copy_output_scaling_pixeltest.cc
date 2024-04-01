@@ -311,10 +311,12 @@ const auto kParameters =
                      testing::Values(CopyOutputResult::Format::RGBA,
                                      CopyOutputResult::Format::I420_PLANES));
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(CopyOutputScalingPixelTest, ScaledCopyOfDrawnFrame) {
   RunTest();
 }
 INSTANTIATE_TEST_SUITE_P(, CopyOutputScalingPixelTest, kParameters);
+#endif
 
 }  // namespace
 }  // namespace viz

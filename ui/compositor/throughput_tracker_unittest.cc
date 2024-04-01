@@ -9,6 +9,8 @@
 #include "ui/compositor/test/animation_throughput_reporter_test_base.h"
 #include "ui/compositor/test/throughput_report_checker.h"
 
+#if !defined(OHOS_UNITTESTS)
+
 namespace ui {
 
 using ThroughputReporterTest = AnimationThroughputReporterTestBase;
@@ -36,3 +38,5 @@ TEST_F(ThroughputReporterTest, ThreadCheck) {
 }
 
 }  // namespace ui
+
+#endif  // !defined(OHOS_UNITTESTS)

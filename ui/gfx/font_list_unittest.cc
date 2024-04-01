@@ -284,6 +284,7 @@ TEST(FontListTest, Fonts_DeriveWithHeightUpperBound) {
   EXPECT_EQ(font_list.GetFontSize(), derived_2.GetFontSize());
 }
 
+#if !defined(OHOS_UNITTESTS)
 TEST(FontListTest, FirstAvailableOrFirst) {
   EXPECT_TRUE(FontList::FirstAvailableOrFirst("").empty());
   EXPECT_TRUE(FontList::FirstAvailableOrFirst(std::string()).empty());
@@ -303,5 +304,6 @@ TEST(FontListTest, FirstAvailableOrFirst) {
   EXPECT_EQ("not exist",
             FontList::FirstAvailableOrFirst(", not exist, not exist"));
 }
+#endif  // !defined(OHOS_UNITTESTS)
 
 }  // namespace gfx

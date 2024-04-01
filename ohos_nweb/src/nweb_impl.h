@@ -402,6 +402,10 @@ class NWebImpl : public NWeb {
   bool IsIntelligentTrackingPreventionEnabled() const override;
   static bool IsAnyNWebIntelligentTrackingPreventionEnabled();
 #endif
+
+  void OnCreateNativeMediaPlayer(
+      std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) override;
+
   static void AddIntelligentTrackingPreventionBypassingList(
       const std::vector<std::string>& hosts);
   static void RemoveIntelligentTrackingPreventionBypassingList(

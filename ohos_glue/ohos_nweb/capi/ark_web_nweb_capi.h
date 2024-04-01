@@ -22,6 +22,7 @@
 #include "ohos_nweb/capi/ark_web_accessibility_node_info_capi.h"
 #include "ohos_nweb/capi/ark_web_bool_value_callback_capi.h"
 #include "ohos_nweb/capi/ark_web_cache_options_capi.h"
+#include "ohos_nweb/capi/ark_web_create_native_media_player_callback_capi.h"
 #include "ohos_nweb/capi/ark_web_download_callback_capi.h"
 #include "ohos_nweb/capi/ark_web_drag_data_capi.h"
 #include "ohos_nweb/capi/ark_web_drag_event_capi.h"
@@ -478,6 +479,10 @@ typedef struct _ark_web_nweb_t {
       struct _ark_web_nweb_t *self, const ArkWebString *url,
       const ArkWebString *script, ark_web_cache_options_t **cacheOptions,
       ark_web_message_value_callback_t *callback);
+
+  void(ARK_WEB_CALLBACK *on_create_native_media_player)(
+      struct _ark_web_nweb_t *self,
+      ark_web_create_native_media_player_callback_t *callback);
 } ark_web_nweb_t;
 
 #ifdef __cplusplus

@@ -66,10 +66,38 @@
 #include "ui/gfx/presentation_feedback.h"
 #include "ui/gfx/swap_result.h"
 
+#if defined(OHOS_DFX_DUMP)
+#include "components/viz/service/display/frame_dump_copy_output_request.h"
+#include "ohos_adapter_helper.h"
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
 #include "ui/gfx/android/android_surface_control_compat.h"
 #endif
 namespace viz {
+#if defined(OHOS_DFX_DUMP)
+class DumpFrameObserver : public OHOS::NWeb::SystemPropertiesObserver {
+ public:
+   DumpFrameObserver() = default;
+   ~DumpFrameObserver() override = default;
+
+   void PropertiesUpdate(const char* value) override {
+    if (strcmp(value, "true") == 0) {
+      should_dump_ = true;
+    } else if (strcmp(value, "false") == 0) {
+      should_dump_ = false;
+    } else {
+      LOG(ERROR) << "sys prop observer return value is invalid";
+    }
+   }
+
+   bool ShouldDump() {
+     return should_dump_;
+   }
+ private:
+    bool should_dump_ = false;
+};
+#endif
 
 namespace {
 const int MAX_SURFACE_SIZE = 8000;
@@ -337,12 +365,25 @@ Display::Display(
   DCHECK(frame_sink_id_.is_valid());
   if (scheduler_)
     scheduler_->SetClient(this);
+#if defined(OHOS_DFX_DUMP)
+  dump_frame_observer_ = std::make_unique<DumpFrameObserver>();
+  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                                      .GetSystemPropertiesInstance();
+  system_properties_adapter.AttachSysPropObserver(OHOS::NWeb::PropertiesKey::PROP_RENDER_DUMP,
+      dump_frame_observer_.get());
+#endif
 }
 
 Display::~Display() {
 #if DCHECK_IS_ON()
   allow_schedule_gpu_task_during_destruction_.reset(
       new gpu::ScopedAllowScheduleGpuTask);
+#endif
+#if defined(OHOS_DFX_DUMP)
+  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                                      .GetSystemPropertiesInstance();
+  system_properties_adapter.DetachSysPropObserver(OHOS::NWeb::PropertiesKey::PROP_RENDER_DUMP,
+      dump_frame_observer_.get());
 #endif
   if (resource_provider_) {
     resource_provider_->SetAllowAccessToGPUThread(true);
@@ -913,6 +954,15 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
     base::ElapsedTimer draw_occlusion_timer;
     RemoveOverdrawQuads(&frame);
     DebugDrawFrameVisible(frame);
+#if defined(OHOS_DFX_DUMP)
+    if (dump_frame_observer_ && dump_frame_observer_->ShouldDump()) {
+      auto request = std::make_unique<FrameDumpCopyOutputRequest>();
+      auto& root_render_pass = frame.render_pass_list.back();
+      if (root_render_pass) {
+        root_render_pass->copy_requests.push_back(std::move(request));
+      }
+    }
+#endif
     UMA_HISTOGRAM_COUNTS_1000(
         "Compositing.Display.Draw.Occlusion.Calculation.Time",
         draw_occlusion_timer.Elapsed().InMicroseconds());

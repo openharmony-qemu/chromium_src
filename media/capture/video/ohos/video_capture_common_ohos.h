@@ -66,7 +66,7 @@ class VideoCaptureCommonOHOS {
   static VideoPixelFormat GetCameraPixelFormatType(
       VideoPixelFormatAdapter pixel_format);
   static VideoCaptureFormats GetSupportedFormats(
-      const std::vector<FormatAdapter>& capture_formats_adapter);
+      const std::vector<std::shared_ptr<FormatAdapter>>& capture_formats_adapter);
   static VideoPixelFormatAdapter GetAdapterCameraPixelFormatType(
       VideoPixelFormat pixel_format);
 };

@@ -329,6 +329,14 @@ component("nweb_sources") {
     "src/nweb_first_meaningful_paint_details_impl.h",
     "src/nweb_largest_contentful_paint_details_impl.cc",
     "src/nweb_largest_contentful_paint_details_impl.h",
+    "src/nweb_imf_cursor_info_adapter_impl.cc",
+    "src/nweb_imf_cursor_info_adapter_impl.h",
+    "src/nweb_imf_input_attribute_adapter_impl.cc",
+    "src/nweb_imf_input_attribute_adapter_impl.h",
+    "src/nweb_imf_selection_range_adapter_impl.cc",
+    "src/nweb_imf_selection_range_adapter_impl.h",
+    "src/nweb_imf_text_config_adapter_impl.cc",
+    "src/nweb_imf_text_config_adapter_impl.h",
   ]
 
   #if defined(OHOS_NAVIGATION)
@@ -358,7 +366,6 @@ component("nweb_sources") {
 
   public_deps = [ "//third_party/abseil-cpp:absl" ]
 
-  #libs = [ "nweb_ohos_adapter.z" ]
   deps += [
     "//third_party/ohos_ndk:ohos_isolation",
   ]

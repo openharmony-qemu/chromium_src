@@ -14,6 +14,34 @@ namespace media {
 
 constexpr int DEFAULT_AUDIO_ERROR_CODE = 0;
 
+AudioAdapterSamplingRate AudioRendererOptions::GetSamplingRate() {
+  return rate_;
+}
+
+AudioAdapterEncodingType AudioRendererOptions::GetEncodingType() {
+  return encoding_;
+}
+
+AudioAdapterSampleFormat AudioRendererOptions::GetSampleFormat() {
+  return format_;
+}
+
+AudioAdapterChannel AudioRendererOptions::GetChannel() {
+  return channels_;
+}
+
+AudioAdapterContentType AudioRendererOptions::GetContentType() {
+  return content_type_;
+}
+
+AudioAdapterStreamUsage AudioRendererOptions::GetStreamUsage() {
+  return stream_usage_;
+}
+
+int32_t AudioRendererOptions::GetRenderFlags() {
+  return renderer_flags_;
+}
+
 AudioRendererCallback::AudioRendererCallback(
     content::MediaSessionImpl* media_session)
     : media_session_(media_session) {}
@@ -102,21 +130,22 @@ OHOSAudioOutputStream::~OHOSAudioOutputStream() {
 }
 
 bool OHOSAudioOutputStream::Open() {
-  AudioAdapterRendererOptions rendererOptions;
-  rendererOptions.samplingRate =
+  std::shared_ptr<AudioRendererOptions> rendererOptions =
+      std::make_shared<AudioRendererOptions>();
+  rendererOptions->rate_ =
       static_cast<AudioAdapterSamplingRate>(parameters_.sample_rate());
-  rendererOptions.encoding = AudioAdapterEncodingType::ENCODING_PCM;
-  rendererOptions.format = AudioAdapterSampleFormat::SAMPLE_S16LE;
-  rendererOptions.channels =
+  rendererOptions->encoding_ = AudioAdapterEncodingType::ENCODING_PCM;
+  rendererOptions->format_ = AudioAdapterSampleFormat::SAMPLE_S16LE;
+  rendererOptions->channels_ =
       static_cast<AudioAdapterChannel>(parameters_.channels());
-  rendererOptions.contentType =
+  rendererOptions->content_type_ =
       isCommunication_ ? AudioAdapterContentType::CONTENT_TYPE_SPEECH
                        : AudioAdapterContentType::CONTENT_TYPE_MUSIC;
-  rendererOptions.streamUsage =
+  rendererOptions->stream_usage_ =
       isCommunication_
           ? AudioAdapterStreamUsage::STREAM_USAGE_VOICE_COMMUNICATION
           : AudioAdapterStreamUsage::STREAM_USAGE_MEDIA;
-  rendererOptions.rendererFlags = 0;
+  rendererOptions->renderer_flags_ = 0;
 
   if (!InitRender(rendererOptions)) {
     return false;
@@ -237,32 +266,32 @@ base::TimeTicks OHOSAudioOutputStream::GetCurrentStreamTime() {
 }
 
 bool OHOSAudioOutputStream::InitRender(
-    const AudioAdapterRendererOptions& rendererOptions) {
-  int32_t ret = audio_renderer_->Create(rendererOptions);
-  if (ret != 0) {
-    if (!audio_renderer_->Release()) {
-      LOG(ERROR) << "ohos audio render release failed.";
-    }
-    return false;
+    const std::shared_ptr<AudioRendererOptionsAdapter> rendererOptions) {
+    int32_t ret = audio_renderer_->Create(rendererOptions);
+if (ret != 0) {
+  if (!audio_renderer_->Release()) {
+    LOG(ERROR) << "ohos audio render release failed.";
   }
-  if (!weakMediaSession_) {
-    LOG(ERROR) << "OHOSAudioOutputStream::InitRender Get mediaSession failed.";
-    return false;
-  }
-  rendererCallback_ =
-      std::make_shared<AudioRendererCallback>(weakMediaSession_.get());
-  if (!rendererCallback_) {
-    LOG(ERROR)
-        << "OHOSAudioOutputStream::InitRender Get rendererCallback failed.";
-    return false;
-  }
-  if (ret != AudioAdapterCode::AUDIO_OK) {
-    LOG(ERROR) << "OHOSAudioOutputStream::InitRender Set audio renderer "
-                  "callback failed.";
-    rendererCallback_.reset();
-    return false;
-  }
-  return true;
+  return false;
+}
+if (!weakMediaSession_) {
+  LOG(ERROR) << "OHOSAudioOutputStream::InitRender Get mediaSession failed.";
+  return false;
+}
+rendererCallback_ =
+    std::make_shared<AudioRendererCallback>(weakMediaSession_.get());
+if (!rendererCallback_) {
+  LOG(ERROR)
+      << "OHOSAudioOutputStream::InitRender Get rendererCallback failed.";
+  return false;
+}
+if (ret != AudioAdapterCode::AUDIO_OK) {
+  LOG(ERROR) << "OHOSAudioOutputStream::InitRender Set audio renderer "
+                "callback failed.";
+  rendererCallback_.reset();
+  return false;
+}
+return true;
 }
 
 bool OHOSAudioOutputStream::StartRender() {

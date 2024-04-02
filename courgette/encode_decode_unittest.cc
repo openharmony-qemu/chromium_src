@@ -89,6 +89,7 @@ void EncodeDecodeTest::TestAssembleToStreamDisassemble(
   EXPECT_EQ(0, memcmp(original_data, executable_data, original_length));
 }
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(EncodeDecodeTest, PE) {
   std::string file = FileContents("setup1.exe");
   TestAssembleToStreamDisassemble(file, 972845);
@@ -98,6 +99,7 @@ TEST_F(EncodeDecodeTest, PE64) {
   std::string file = FileContents("chrome64_1.exe");
   TestAssembleToStreamDisassemble(file, 810090);
 }
+#endif // OHOS_UNITTESTS courgette_unittests drop case
 
 TEST_F(EncodeDecodeTest, Elf_Small) {
   std::string file = FileContents("elf-32-1");

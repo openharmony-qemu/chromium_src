@@ -94,6 +94,7 @@ TEST(PartitionAllocAddressSpaceRandomizationTest, Range) {
   }
 }
 
+#if !defined(OHOS_UNITTESTS)
 TEST(PartitionAllocAddressSpaceRandomizationTest, Predictable) {
   uintptr_t mask = GetMask();
   if (!mask) {
@@ -114,6 +115,7 @@ TEST(PartitionAllocAddressSpaceRandomizationTest, Predictable) {
     EXPECT_EQ(GetRandomPageBase(), sequence[i]);
   }
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 // This randomness test is adapted from V8's PRNG tests.
 

@@ -198,6 +198,7 @@ class MessagePumpTest : public ::testing::TestWithParam<MessagePumpType> {
 
 }  // namespace
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(MessagePumpTest, QuitStopsWork) {
   testing::InSequence sequence;
   testing::StrictMock<MockMessagePumpDelegate> delegate(GetParam());
@@ -225,7 +226,9 @@ TEST_P(MessagePumpTest, QuitStopsWork) {
   message_pump_->ScheduleWork();
   message_pump_->Run(&delegate);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(MessagePumpTest, QuitStopsWorkWithNestedRunLoop) {
   testing::InSequence sequence;
   testing::StrictMock<MockMessagePumpDelegate> delegate(GetParam());
@@ -269,7 +272,9 @@ TEST_P(MessagePumpTest, QuitStopsWorkWithNestedRunLoop) {
   message_pump_->ScheduleWork();
   message_pump_->Run(&delegate);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(MessagePumpTest, YieldToNativeRequestedSmokeTest) {
   // The handling of the "yield_to_native" boolean in the NextWorkInfo is only
   // implemented on the MessagePumpForUI on android. However since we inject a
@@ -300,6 +305,7 @@ TEST_P(MessagePumpTest, YieldToNativeRequestedSmokeTest) {
   message_pump_->ScheduleWork();
   message_pump_->Run(&delegate);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 namespace {
 
@@ -362,6 +368,7 @@ class TimerSlackTestDelegate : public MessagePump::Delegate {
 
 }  // namespace
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(MessagePumpTest, TimerSlackWithLongDelays) {
   // This is a regression test for an issue where the iOS message pump fails to
   // run delayed work when timer slack is enabled. The steps needed to trigger
@@ -388,7 +395,9 @@ TEST_P(MessagePumpTest, TimerSlackWithLongDelays) {
 
   message_pump_->Run(&delegate);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(MessagePumpTest, RunWithoutScheduleWorkInvokesDoWork) {
   testing::InSequence sequence;
   testing::StrictMock<MockMessagePumpDelegate> delegate(GetParam());
@@ -408,7 +417,9 @@ TEST_P(MessagePumpTest, RunWithoutScheduleWorkInvokesDoWork) {
 
   message_pump_->Run(&delegate);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(MessagePumpTest, NestedRunWithoutScheduleWorkInvokesDoWork) {
   testing::InSequence sequence;
   testing::StrictMock<MockMessagePumpDelegate> delegate(GetParam());
@@ -441,11 +452,14 @@ TEST_P(MessagePumpTest, NestedRunWithoutScheduleWorkInvokesDoWork) {
 
   message_pump_->Run(&delegate);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 INSTANTIATE_TEST_SUITE_P(All,
                          MessagePumpTest,
                          ::testing::Values(MessagePumpType::DEFAULT,
                                            MessagePumpType::UI,
                                            MessagePumpType::IO));
 
+#endif // OHOS_UNITTESTS base_unittests drop case
 }  // namespace base

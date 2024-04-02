@@ -474,6 +474,16 @@ source_set("browser_sources") {
   }
   #endif
 
+  #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  if (defined(ohos_custom_video_player) && ohos_custom_video_player) {
+    sources += [
+      "custom_media_info.h",
+      "custom_media_player.cc",
+      "custom_media_player.h",
+    ]
+  }
+  #endif // OHOS_CUSTOM_VIDEO_PLAYER
+
   configs += [
     "//build/config:precompiled_headers",
     "//build/config/compiler:wexit_time_destructors",

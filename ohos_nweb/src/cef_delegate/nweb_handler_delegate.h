@@ -41,6 +41,10 @@
 #include "nweb_javascript_result_callback.h"
 #include "nweb_value.h"
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#include "custom_media_player_impl.h"
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 struct NativeWindow;
 
 namespace OHOS::NWeb {
@@ -635,6 +639,15 @@ class NWebHandlerDelegate : public CefClient,
   void SetWakeLockCallback(int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback);
 #endif
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void RegisterOnCreateNativeMediaPlayerListener(
+      std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback);
+
+  CefOwnPtr<CefCustomMediaPlayerDelegate> OnCreateCustomMediaPlayer(
+      CefOwnPtr<CefMediaPlayerListener> listener,
+      const CefCustomMediaInfo& media_info) override;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
  private:
   void CopyImageToClipboard(CefRefPtr<CefImage> image);
   // List of existing browser windows. Only accessed on the CEF UI thread.
@@ -662,6 +675,11 @@ class NWebHandlerDelegate : public CefClient,
       web_app_client_extension_listener_ = nullptr;
 
   std::shared_ptr<NWebGeolocationCallback> callback_ = nullptr;
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  std::shared_ptr<NWebCreateNativeMediaPlayerCallback>
+      create_native_media_player_cb_ = nullptr;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
   bool is_enhance_surface_ = false;
   void* window_ = nullptr;
 

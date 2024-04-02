@@ -83,6 +83,10 @@
 #include "media/base/media_switches.h"
 #endif  // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#include "content/browser/media/ohos/ohos_custom_media_player_renderer.h"
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 namespace content {
 
 namespace {
@@ -378,6 +382,29 @@ void MediaInterfaceProxy::CreateMediaPlayerRenderer(
       std::move(receiver));
 }
 #endif
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void MediaInterfaceProxy::CreateCustomMediaPlayerRenderer(
+    mojo::PendingRemote<media::mojom::CustomMediaPlayerRendererClientExtension>
+        client_extension_remote,
+    mojo::PendingReceiver<media::mojom::Renderer> receiver,
+    mojo::PendingReceiver<media::mojom::MediaPlayerRendererExtension>
+        renderer_extension_receiver,
+    int player_id) {
+  DCHECK(thread_checker_.CalledOnValidThread());
+
+  media::MojoRendererService::Create(
+      nullptr,
+      std::make_unique<OHOSCustomMediaPlayerRenderer>(
+          render_frame_host().GetProcess()->GetID(),
+          render_frame_host().GetRoutingID(),
+          player_id,
+          WebContents::FromRenderFrameHost(&render_frame_host()),
+          std::move(renderer_extension_receiver),
+          std::move(client_extension_remote)),
+      std::move(receiver));
+}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 
 #if BUILDFLAG(IS_WIN)
 void MediaInterfaceProxy::CreateMediaFoundationRenderer(

@@ -746,6 +746,18 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
     frame_sink_manager_->DidFinishFrame(frame_sink_id_, last_begin_frame_args_);
   }
 
+#if BUILDFLAG(IS_OHOS)
+  int64_t frame_ts = GetCurrentTimeStampMS();
+  frames_time_stamps_.push(frame_ts);
+  if (frames_time_stamps_.size() > max_frame_count_) {
+    frames_time_stamps_.pop();
+  }
+  int64_t diff_time = frames_time_stamps_.back() - frames_time_stamps_.front();
+  if (diff_time != 0) {
+    estimated_frame_rate_ = 1000 * frames_time_stamps_.size() / diff_time;
+  }
+#endif
+
   return SubmitResult::ACCEPTED;
 }
 
@@ -1396,4 +1408,14 @@ void CompositorFrameSinkSupport::ScheduleSelfDestruction() {
                                 weak_factory_.GetWeakPtr()));
 }
 
+#if BUILDFLAG(IS_OHOS)
+int CompositorFrameSinkSupport::GetFrameRate(){
+  return estimated_frame_rate_;
+}
+
+int64_t CompositorFrameSinkSupport::GetCurrentTimeStampMS() {
+  auto currentTime = std::chrono::system_clock::now().time_since_epoch();
+  return std::chrono::duration_cast<std::chrono::milliseconds>(currentTime).count();
+}
+#endif
 }  // namespace viz

@@ -291,6 +291,8 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
 
 #if BUILDFLAG(IS_OHOS)
   void SetEnableLowerFrameRate(bool enabled, const FrameSinkId& frame_sink_id) override;
+  void SetLowerFrameRateWithVideo(const FrameSinkId& frame_sink_id, uint32_t client_id) override;
+  void ResetFrameRate(const FrameSinkId& frame_sink_id) override;
 #endif
 
  private:

@@ -425,6 +425,11 @@ class VIZ_COMMON_EXPORT ExternalBeginFrameSource : public BeginFrameSource {
   virtual void SetDrawRect(const gfx::Rect& new_rect) {}
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+  virtual void SetLowerFrameRateWithVideo(int frame_rate) {}
+  virtual void ResetFrameRate() {}
+#endif
+
   // Notifies the begin frame source of the desired frame interval for the
   // observers.
   virtual void SetPreferredInterval(base::TimeDelta interval) {}

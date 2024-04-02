@@ -260,6 +260,10 @@ void CompositorFrameSinkImpl::OnVsyncReceived() {
   FrameSinkId frame_sink_id = support_->frame_sink_id();
   support_->frame_sink_manager()->OnVsyncReceived(frame_sink_id);
 }
+
+int CompositorFrameSinkImpl::GetFrameRate() {
+  return support_->GetFrameRate();
+}
 #endif
 
 void CompositorFrameSinkImpl::OnClientConnectionLost() {

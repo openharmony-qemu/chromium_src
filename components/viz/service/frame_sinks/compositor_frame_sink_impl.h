@@ -76,6 +76,7 @@ class CompositorFrameSinkImpl : public mojom::CompositorFrameSink {
                           int32_t process_id,
                           bool is_created) override;
   void OnVsyncReceived() override;
+  int GetFrameRate();
 #endif
 
  private:

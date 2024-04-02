@@ -702,6 +702,14 @@ void RootCompositorFrameSinkImpl::EvictFrameBackBuffers(bool invisible) {
     SetDisplayVisible(true);
   }
 }
+
+void RootCompositorFrameSinkImpl::SetLowerFrameRateWithVideo(int frame_rate) {
+  external_begin_frame_source_->SetLowerFrameRateWithVideo(frame_rate);
+}
+
+void RootCompositorFrameSinkImpl::ResetFrameRate() {
+  external_begin_frame_source_->ResetFrameRate();
+}
 #endif
 
 void RootCompositorFrameSinkImpl::SetWideColorEnabled(bool enabled) {

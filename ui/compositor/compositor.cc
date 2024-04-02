@@ -1008,6 +1008,15 @@ void Compositor::EvictFrameBackBuffers(bool invisible) {
   context_factory_->GetHostFrameSinkManager()->EvictFrameBackBuffers(
       frame_sink_id(), invisible);
 }
+
+void Compositor::SetLowerFrameRateWithVideo() {
+  context_factory_->GetHostFrameSinkManager()->SetLowerFrameRateWithVideo(frame_sink_id());
+}
+
+void Compositor::ResetFrameRate() {
+  context_factory_->GetHostFrameSinkManager()->ResetFrameRate(frame_sink_id());
+}
+
 #endif
 
 const cc::LayerTreeSettings& Compositor::GetLayerTreeSettings() const {

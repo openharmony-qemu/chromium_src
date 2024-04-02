@@ -240,6 +240,8 @@ class VIZ_HOST_EXPORT HostFrameSinkManager
   void SendInternalBeginFrame(const FrameSinkId& id);
   void SetEnableLowerFrameRate(bool enabled, const FrameSinkId& frame_sink_id);
   void EvictFrameBackBuffers(const FrameSinkId& frame_sink_id, bool invisible);
+  void SetLowerFrameRateWithVideo(const FrameSinkId& frame_sink_id);
+  void ResetFrameRate(const FrameSinkId& frame_sink_id);
 #endif
 
  private:

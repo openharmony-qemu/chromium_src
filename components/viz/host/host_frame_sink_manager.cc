@@ -468,6 +468,21 @@ void HostFrameSinkManager::SetEnableLowerFrameRate(bool enabled, const FrameSink
 void HostFrameSinkManager::EvictFrameBackBuffers(const FrameSinkId& frame_sink_id, bool invisible) {
   frame_sink_manager_->EvictFrameBackBuffers(frame_sink_id, invisible);
 }
+
+void HostFrameSinkManager::SetLowerFrameRateWithVideo(const FrameSinkId& frame_sink_id) {
+  auto frame_sink_data_it = frame_sink_data_map_.find(frame_sink_id);
+  auto children = frame_sink_data_it->second.children;
+  auto children_it = children.begin();
+  uint32_t client_id = 0;
+  if (children_it != children.end()) {
+    client_id = children_it->client_id();
+  }
+  frame_sink_manager_->SetLowerFrameRateWithVideo(frame_sink_id, client_id);
+}
+
+void HostFrameSinkManager::ResetFrameRate(const FrameSinkId& frame_sink_id) {
+  frame_sink_manager_->ResetFrameRate(frame_sink_id);
+}
 #endif
 
 void HostFrameSinkManager::StartFrameCountingForTest(

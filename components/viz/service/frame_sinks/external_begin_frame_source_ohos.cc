@@ -21,6 +21,7 @@ constexpr int64_t VSYNC_PERIOD_6090HZ_MID = 13000000;
 bool g_skip_vsync = false;
 constexpr int64_t VSYNC_PERIOD_120HZ = 8333333;
 constexpr int64_t VSYNC_PERIOD_90120HZ_MID = 9800000;
+constexpr int64_t VSYNC_TIME_FOR_CALCULATION = 1000000000;
 
 class ExternalBeginFrameSourceOHOS::VSyncUserData {
  public:
@@ -134,6 +135,7 @@ void ExternalBeginFrameSourceOHOS::OnVSyncImpl(int64_t timestamp,
       }
     }
   }
+  int64_t cur_vsync = (VSYNC_TIME_FOR_CALCULATION - 1) / vsync_period_ + 1;
   if (lower_frame_rate_enabled_) {
     vsync_period_ = vsync_period_ * 2;
   }
@@ -173,6 +175,20 @@ ReportLossFrame::GetInstance()->SetVsyncPeriod(vsync_period_);
 
   vsync_adapter_.RequestVsync(user_data_.release(),
                                ExternalBeginFrameSourceOHOS::OnVSync);
+  if (lower_vsync_with_video_playing_) {
+    vsync_before_lower_ = cur_vsync;
+    if (lower_vsync_period_ != cur_vsync) {
+      TRACE_EVENT1("viz", "ExternalBeginFrameSourceOHOS::OnVSyncImpl::LowerFrameRateWithVideoPlaying", "FrameRate",
+              lower_vsync_period_);
+      vsync_adapter_.SetFramePreferredRate(lower_vsync_period_);
+    }
+  }
+  if (need_to_reset_) {
+    TRACE_EVENT1("viz", "ExternalBeginFrameSourceOHOS::OnVSyncImpl::ResetFrameRate", "FrameRate",
+        vsync_before_lower_);
+    vsync_adapter_.SetFramePreferredRate(vsync_before_lower_);
+    need_to_reset_ = false;
+  }
 }
 
 void ExternalBeginFrameSourceOHOS::OnNeedsBeginFrames(bool needs_begin_frames) {
@@ -192,5 +208,21 @@ void ExternalBeginFrameSourceOHOS::SetEnabled(bool enabled) {
                                  ExternalBeginFrameSourceOHOS::OnVSync);
   }
   vsync_adapter_.SetFrameRateLinkerEnable(enabled);
+}
+
+void ExternalBeginFrameSourceOHOS::SetLowerFrameRateWithVideo(int frame_rate) {
+  lower_vsync_with_video_playing_ = true;
+  if (frame_rate <= 30) {
+    lower_vsync_period_ = 30;
+  } else if (frame_rate < 60) {
+    lower_vsync_period_ = (frame_rate / 10) * 10;
+  } else {
+    lower_vsync_period_ = 60;
+  }
+}
+
+void ExternalBeginFrameSourceOHOS::ResetFrameRate() {
+  need_to_reset_ = true;
+  lower_vsync_with_video_playing_ = false;
 }
 }  // namespace viz

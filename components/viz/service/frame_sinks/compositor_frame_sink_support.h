@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "base/containers/flat_set.h"
+#include "base/containers/queue.h"
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/read_only_shared_memory_region.h"
@@ -249,7 +250,10 @@ class VIZ_SERVICE_EXPORT CompositorFrameSinkSupport
   mojom::CompositorFrameSinkType frame_sink_type() const {
     return frame_sink_type_;
   }
-
+  
+#if BUILDFLAG(IS_OHOS)
+  int GetFrameRate();
+#endif
  private:
   friend class CompositorFrameSinkSupportTest;
   friend class DisplayTest;
@@ -322,6 +326,10 @@ class VIZ_SERVICE_EXPORT CompositorFrameSinkSupport
 
   // Posts a task to invoke DestroySelf() ASAP.
   void ScheduleSelfDestruction();
+
+#if BUILDFLAG(IS_OHOS)
+  int64_t GetCurrentTimeStampMS();
+#endif
 
   const raw_ptr<mojom::CompositorFrameSinkClient> client_;
 
@@ -476,6 +484,12 @@ class VIZ_SERVICE_EXPORT CompositorFrameSinkSupport
   std::unique_ptr<LayerContextImpl> layer_context_impl_;
 
   base::WeakPtrFactory<CompositorFrameSinkSupport> weak_factory_{this};
+
+#if BUILDFLAG(IS_OHOS)
+  base::queue<int64_t> frames_time_stamps_;
+  int max_frame_count_ = 30;
+  int estimated_frame_rate_ = 0;
+#endif
 };
 
 }  // namespace viz

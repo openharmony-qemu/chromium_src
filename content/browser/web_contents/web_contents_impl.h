@@ -761,6 +761,9 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
       bool start_recording,
       absl::optional<ui::AXEventCallback> callback) override;
   device::mojom::GeolocationContext* GetGeolocationContext() override;
+#if defined(OHOS_SCREEN_LOCK)
+  void SetWakeLockHandler(int32_t windowId, const SetKeepScreenOn& handler) override;
+#endif
   device::mojom::WakeLockContext* GetWakeLockContext() override;
 #if BUILDFLAG(IS_ANDROID)
   void GetNFC(RenderFrameHost*,

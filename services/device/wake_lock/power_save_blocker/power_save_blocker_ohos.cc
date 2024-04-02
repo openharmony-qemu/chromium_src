@@ -13,27 +13,53 @@ namespace device {
 class PowerSaveBlocker::Delegate
     : public base::RefCountedThreadSafe<PowerSaveBlocker::Delegate> {
  public:
-  Delegate();
+  Delegate(mojom::WakeLockType type);
 
   Delegate(const Delegate&) = delete;
   Delegate& operator=(const Delegate&) = delete;
 
-  void ApplyBlock();
-  void RemoveBlock();
+  void ApplyBlock(const int32_t& id);
+  void RemoveBlock(const int32_t& id);
 
  private:
   friend class base::RefCountedThreadSafe<Delegate>;
   virtual ~Delegate() {}
+
+  mojom::WakeLockType type_;
 };
 
-PowerSaveBlocker::Delegate::Delegate() {}
+PowerSaveBlocker::Delegate::Delegate(mojom::WakeLockType type): type_(type) {}
 
-void PowerSaveBlocker::Delegate::ApplyBlock() {
-  NWebScreenLockTracker::Instance().Lock();
+void PowerSaveBlocker::Delegate::ApplyBlock(const int32_t& id) {
+  switch (type_) {
+    case mojom::WakeLockType::kPreventAppSuspension:
+      if (id != -1) {
+        NWebScreenLockTracker::Instance().Lock(id);
+      }
+      break;
+    case mojom::WakeLockType::kPreventDisplaySleep:
+    case mojom::WakeLockType::kPreventDisplaySleepAllowDimming:
+      NWebScreenLockTracker::Instance().Lock(id);
+      break;
+    default:
+      LOG(INFO) << "Unhandled block type " << type_;
+  }
 }
 
-void PowerSaveBlocker::Delegate::RemoveBlock() {
-  NWebScreenLockTracker::Instance().UnLock();
+void PowerSaveBlocker::Delegate::RemoveBlock(const int32_t& id) {
+  switch (type_) {
+    case mojom::WakeLockType::kPreventAppSuspension:
+      if (id != -1) {
+        NWebScreenLockTracker::Instance().UnLock(id);
+      }
+      break;
+    case mojom::WakeLockType::kPreventDisplaySleep:
+    case mojom::WakeLockType::kPreventDisplaySleepAllowDimming:
+      NWebScreenLockTracker::Instance().UnLock(id);
+      break;
+    default:
+      LOG(INFO) << "Unhandled block type " << type_;
+  }
 }
 
 PowerSaveBlocker::PowerSaveBlocker(
@@ -41,18 +67,20 @@ PowerSaveBlocker::PowerSaveBlocker(
     mojom::WakeLockReason reason,
     const std::string& description,
     scoped_refptr<base::SequencedTaskRunner> ui_task_runner,
-    scoped_refptr<base::SingleThreadTaskRunner> blocking_task_runner)
-    : delegate_(new Delegate()),
+    scoped_refptr<base::SingleThreadTaskRunner> blocking_task_runner,
+    int32_t id)
+    : delegate_(new Delegate(type)),
       ui_task_runner_(ui_task_runner),
-      blocking_task_runner_(blocking_task_runner) {
+      blocking_task_runner_(blocking_task_runner),
+      id_(id) {
   if (delegate_.get()) {
-    delegate_->ApplyBlock();
+    delegate_->ApplyBlock(id);
   }
 }
 
 PowerSaveBlocker::~PowerSaveBlocker() {
   if (delegate_.get()) {
-    delegate_->RemoveBlock();
+    delegate_->RemoveBlock(id_);
   }
 }
 

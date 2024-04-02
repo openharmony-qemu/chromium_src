@@ -77,6 +77,13 @@ struct DropData;
 struct MediaPlayerWatchTime;
 struct NativeWebKeyboardEvent;
 struct Referrer;
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+class CustomMediaPlayer;
+class CustomMediaPlayerListener;
+struct MediaInfo;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 }  // namespace content
 
 namespace device {
@@ -783,6 +790,12 @@ class CONTENT_EXPORT WebContentsDelegate {
       const NativeEmbedInfo& native_embed_info,
       NativeEmbedInfo::TagState state) {}
 #endif
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  virtual std::unique_ptr<CustomMediaPlayer> CreateCustomMediaPlayer(
+      std::unique_ptr<CustomMediaPlayerListener> listener,
+      const MediaInfo& media_info);
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 
  protected:
   virtual ~WebContentsDelegate();

@@ -811,7 +811,7 @@ InputHandler::EventListenerTypeForTouchStartOrMoveAt(
 #if BUILDFLAG(IS_OHOS)
   LayerImpl* layer_impl = ActiveTree().FindLayerThatIsHitByPoint(device_viewport_point);
   if (layer_impl) {
-    if (layer_impl->may_contain_native()) {
+    if (layer_impl->ShouldInterceptTouchEvent()) {
        return InputHandler::TouchStartOrMoveEventListenerType::HANDLER;
     }
   }

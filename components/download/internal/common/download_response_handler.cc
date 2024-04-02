@@ -242,6 +242,7 @@ void DownloadResponseHandler::OnTransferSizeUpdated(
 void DownloadResponseHandler::OnComplete(
     const network::URLLoaderCompletionStatus& status) {
 #if defined(OHOS_EX_DOWNLOAD)
+  LOG(INFO) << "oncomplete " << status.error_code;
   if (status.abort_due_to_cef_browser_destroyed)
     return;
 #endif  //  OHOS_EX_DOWNLOAD

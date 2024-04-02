@@ -1965,6 +1965,17 @@ void NWebImpl::ResumeDownload(std::shared_ptr<NWebDownloadItem> web_download) {
   nweb_delegate_->ResumeDownload(web_download);
 }
 
+#ifdef OHOS_EX_DOWNLOAD
+NWebDownloadItemState NWebImpl::GetDownloadItemState(long item_id) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("GetDownloadItemState failed, nweb delegate is nullptr, nweb_id = %{public}u", nweb_id_);
+    return NWebDownloadItemState::MAX_DOWNLOAD_STATE;
+  }
+
+  return nweb_delegate_->GetDownloadItemState(item_id);
+}
+#endif
+
 void NWebImpl::PutAccessibilityEventCallback(
     std::shared_ptr<NWebAccessibilityEventCallback>
         accessibilityEventListener) {

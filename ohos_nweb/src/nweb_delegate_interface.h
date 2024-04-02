@@ -402,6 +402,10 @@ class NWebDelegateInterface
   virtual void EnableIntelligentTrackingPrevention(bool enable) = 0;
   virtual bool IsIntelligentTrackingPreventionEnabled() const = 0;
 #endif
+
+#ifdef OHOS_EX_DOWNLOAD
+  virtual NWebDownloadItemState GetDownloadItemState(long item_id) = 0;
+#endif
 };
 }  // namespace OHOS::NWeb
 

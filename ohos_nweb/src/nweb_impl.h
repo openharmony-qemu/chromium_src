@@ -327,6 +327,9 @@ class NWebImpl : public NWeb {
   void StartDownload(const char* url);
   void ResumeDownload(std::shared_ptr<NWebDownloadItem>);
   static void ResumeDownloadStatic(std::shared_ptr<NWebDownloadItem> download_item);
+#ifdef OHOS_EX_DOWNLOAD
+  NWebDownloadItemState GetDownloadItemState(long item_id);
+#endif
 
   bool Discard() override;
   bool Restore() override;

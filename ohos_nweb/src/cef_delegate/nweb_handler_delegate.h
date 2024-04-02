@@ -631,6 +631,10 @@ class NWebHandlerDelegate : public CefClient,
                              CefRefPtr<CefCallback> callback) override;
 #endif
 
+#if defined(OHOS_SCREEN_LOCK)
+  void SetWakeLockCallback(int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback);
+#endif
+
  private:
   void CopyImageToClipboard(CefRefPtr<CefImage> image);
   // List of existing browser windows. Only accessed on the CEF UI thread.
@@ -660,6 +664,11 @@ class NWebHandlerDelegate : public CefClient,
   std::shared_ptr<NWebGeolocationCallback> callback_ = nullptr;
   bool is_enhance_surface_ = false;
   void* window_ = nullptr;
+
+#if defined(OHOS_SCREEN_LOCK)
+  std::shared_ptr<NWebScreenLockCallback> screen_lock_callback_ = nullptr;
+  int32_t screen_lock_window_id_ = -1;
+#endif
 
   CefString image_cache_src_url_;
 

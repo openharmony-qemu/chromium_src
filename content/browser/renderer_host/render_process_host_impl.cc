@@ -1424,6 +1424,15 @@ class RenderProcessHostImpl::IOThreadHostImpl : public mojom::ChildProcessHost {
     ResSchedClientAdapter::ReportKeyThread(
       static_cast<ResSchedStatusAdapter>(status), process_id, thread_id, static_cast<ResSchedRoleAdapter>(role));
   }
+
+  void ReportKeyThreadIds(int32_t status, int32_t process_id,
+      const std::vector<int32_t>& thread_ids, int32_t role) override {
+    using namespace OHOS::NWeb;
+    for (auto thread_id : thread_ids) {
+      ResSchedClientAdapter::ReportKeyThread(
+        static_cast<ResSchedStatusAdapter>(status), process_id, thread_id, static_cast<ResSchedRoleAdapter>(role));
+    }
+  }
 #endif
 
   static void BindHostReceiverOnUIThread(

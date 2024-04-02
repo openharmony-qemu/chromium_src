@@ -2881,7 +2881,7 @@ void NWebDelegate::SetAccessibilityState(cef_state_t accessibilityState) {
   }
   if (accessibility_state_ != (accessibilityState == STATE_ENABLED)) {
     accessibility_state_ = (accessibilityState == STATE_ENABLED);
-    LOG(INFO) << "SetAccessibilityState accessibility_state_ " << accessibility_state_;
+    LOG(DEBUG) << "SetAccessibilityState state: " << accessibility_state_;
     GetBrowser()->GetHost()->SetAccessibilityState(accessibilityState);
   }
 }

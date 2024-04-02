@@ -147,10 +147,10 @@ bool GetWebOptimizationValue() {
   return system_properties_adapter.GetWebOptimizationValue();
 }
 
-static bool GetLockdownModeStatus() {
+static bool IsAdvancedSecurityMode() {
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                                     .GetSystemPropertiesInstance();
-  return system_properties_adapter.GetLockdownModeStatus();
+  return system_properties_adapter.IsAdvancedSecurityMode();
 }
 
 static std::string GetNetlogMode() {
@@ -202,7 +202,7 @@ static bool ShouldEnableSiteIsolation() {
     return true;
   }
 
-  if (GetLockdownModeStatus() && IsMultipleRenderProcess()) {
+  if (IsAdvancedSecurityMode() && IsMultipleRenderProcess()) {
     return true;
   }
 
@@ -282,8 +282,8 @@ void InitialWebEngineArgs(std::list<std::string>& web_engine_args,
     web_engine_args.emplace_back("--log-net-log=/data/storage/el2/base/cache/web/netlog.json");
   }
 
-  if (GetLockdownModeStatus()) {
-    WVLOG_W("In lockdown mode, some HTML5 features will be unavailable, including WebAssembly, WebGL, PDF viewer, MathML, speech recognition, etc.");
+  if (IsAdvancedSecurityMode()) {
+    WVLOG_I("In advanced security mode, some HTML5 features will be unavailable, including WebAssembly, WebGL, PDF viewer, MathML, speech recognition, etc.");
     web_engine_args.emplace_back("--js-flags=--jitless");
     web_engine_args.emplace_back("--disable-webgl");
     web_engine_args.emplace_back("--disable-webgl2");

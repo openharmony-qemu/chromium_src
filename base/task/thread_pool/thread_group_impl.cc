@@ -1006,7 +1006,7 @@ ThreadGroupImpl::CreateAndRegisterWorkerLockRequired(
 
   workers_.push_back(worker);
 #if BUILDFLAG(IS_OHOS)
-  create_workers_.push_back(worker);
+  create_workers_.push_back(worker.get());
 #endif
   executor->ScheduleStart(worker);
   DCHECK_LE(workers_.size(), max_tasks_);

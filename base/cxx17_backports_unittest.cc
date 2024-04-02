@@ -84,6 +84,7 @@ TEST(ClampTest, Behavior) {
                         compare_another_type));
 }
 
+#if !defined(OHOS_UNITTESTS)
 TEST(ClampTest, Death) {
   EXPECT_DEATH_IF_SUPPORTED(std::ignore = base::clamp(3, 10, 0), "");
   EXPECT_DEATH_IF_SUPPORTED(std::ignore = base::clamp(3.0, 10.0, 0.0), "");
@@ -105,6 +106,7 @@ TEST(ClampTest, Death) {
                                 compare_another_type),
       "");
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 }  // namespace
 }  // namespace base

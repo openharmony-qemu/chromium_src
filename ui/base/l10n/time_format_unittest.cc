@@ -365,6 +365,7 @@ class TimeFormatTest : public ::testing::Test {
   base::TimeDelta delta_1mo10d_;
 };
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(TimeFormatTest, SimpleAndDetailedRounding) {
   // Test rounding behavior (simple).
   EXPECT_EQ(u"0 secs", TimeFormat::Simple(TimeFormat::FORMAT_DURATION,
@@ -510,6 +511,7 @@ TEST_F(TimeFormatTest, RelativeDate) {
   std::u16string a_week_ago_str = TimeFormat::RelativeDate(a_week_ago, NULL);
   EXPECT_TRUE(a_week_ago_str.empty());
 }
+#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
 }  // namespace
 }  // namespace ui

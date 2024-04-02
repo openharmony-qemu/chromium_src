@@ -146,7 +146,7 @@ TEST_F(URLUtilTest, GetStandardSchemes) {
   std::vector<std::string> expected = {
       kHttpsScheme, kHttpScheme, kFileScheme,       kFtpScheme,
       kWssScheme,   kWsScheme,   kFileSystemScheme,
-#ifdef OHOS_HAP_DECOMPRESSED && OHOS_UNITTESTS
+#if defined(OHOS_HAP_DECOMPRESSED) && defined(OHOS_UNITTESTS)
       kResourcesScheme,
 #endif
       "foo",

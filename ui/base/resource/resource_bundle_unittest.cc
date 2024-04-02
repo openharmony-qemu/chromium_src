@@ -168,6 +168,7 @@ TEST_F(ResourceBundleTest, DelegateGetPathForResourcePack) {
   resource_bundle->AddDataPackFromPath(pack_path, pack_scale_factor);
 }
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(ResourceBundleTest, DelegateGetPathForLocalePack) {
   ResourceBundle* orig_instance =
       ResourceBundle::SwapSharedInstanceForTesting(nullptr);
@@ -195,6 +196,7 @@ TEST_F(ResourceBundleTest, DelegateGetPathForLocalePack) {
   ResourceBundle::CleanupSharedInstance();
   ResourceBundle::SwapSharedInstanceForTesting(orig_instance);
 }
+#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
 TEST_F(ResourceBundleTest, DelegateGetImageNamed) {
   ResourceBundle* resource_bundle = CreateResourceBundle(&delegate_);

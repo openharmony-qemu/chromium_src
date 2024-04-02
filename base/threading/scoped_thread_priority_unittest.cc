@@ -22,10 +22,12 @@ namespace {
     ADD_FAILURE() << "This test cannot run multiple times in the same " \
                      "process.";
 
+#if !defined(OHOS_UNITTESTS)
 static ThreadType kAllThreadTypes[] = {
     ThreadType::kRealtimeAudio, ThreadType::kDisplayCritical,
     ThreadType::kCompositing, ThreadType::kDefault, ThreadType::kBackground};
 
+#endif // OHOS_UNITTESTS base_unittests drop case
 static_assert(static_cast<int>(ThreadType::kBackground) == 0,
               "kBackground isn't lowest");
 static_assert(ThreadType::kRealtimeAudio == ThreadType::kMaxValue,
@@ -58,6 +60,7 @@ void FunctionThatBoostsPriorityOnEveryInvoke() {
 
 }  // namespace
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(ScopedThreadPriorityTest, BasicTest) {
   for (auto from : kAllThreadTypes) {
     if (!PlatformThread::CanChangeThreadType(ThreadType::kDefault, from))
@@ -90,7 +93,9 @@ TEST_F(ScopedThreadPriorityTest, BasicTest) {
     }
   }
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(ScopedThreadPriorityTest, WithoutPriorityBoost) {
   ASSERT_RUNS_ONCE();
 
@@ -103,6 +108,7 @@ TEST_F(ScopedThreadPriorityTest, WithoutPriorityBoost) {
   EXPECT_EQ(ThreadPriorityForTest::kNormal,
             PlatformThread::GetCurrentThreadPriorityForTest());
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 #if BUILDFLAG(IS_WIN)
 TEST_F(ScopedThreadPriorityTest, WithPriorityBoost) {

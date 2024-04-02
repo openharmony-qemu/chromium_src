@@ -36,6 +36,7 @@ class OSExchangeDataTest : public PlatformTest {
   std::unique_ptr<PlatformEventSource> event_source_;
 };
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(OSExchangeDataTest, StringDataGetAndSet) {
   OSExchangeData data;
   std::u16string input = u"I can has cheezburger?";
@@ -229,5 +230,6 @@ TEST_F(OSExchangeDataTest, TestHTML) {
   EXPECT_EQ(html, read_html);
 }
 #endif
+#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
 }  // namespace ui

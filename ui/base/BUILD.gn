@@ -1014,6 +1014,14 @@ test("ui_base_unittests") {
     "test/run_all_unittests.cc",
     "webui/i18n_source_stream_unittest.cc",
   ]
+  if (ohos_unittests) {
+    sources += [
+      "//content/browser/browser_thread_impl.cc",
+      "//content/browser/scheduler/browser_task_executor.cc",
+      "//content/public/common/content_features.cc",
+      "//content/public/common/content_switches.cc",
+    ]
+  }
   if (is_mac) {
     sources += [
       "cocoa/defaults_utils_unittest.mm",

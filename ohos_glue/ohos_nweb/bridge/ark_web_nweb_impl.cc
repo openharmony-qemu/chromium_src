@@ -868,4 +868,8 @@ void ArkWebNWebImpl::OnCreateNativeMediaPlayer(
       std::make_shared<ArkWebCreateNativeMediaPlayerCallbackWrapper>(callback));
 }
 
+int ArkWebNWebImpl::ScaleGestureChange(double scale, double centerX, double centerY) {
+  return nweb_nweb_->ScaleGestureChange(scale, centerX, centerY);
+}
+
 } // namespace OHOS::ArkWeb

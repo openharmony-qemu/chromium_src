@@ -414,6 +414,8 @@ class NWebDelegateInterface
   virtual void EnableIntelligentTrackingPrevention(bool enable) = 0;
   virtual bool IsIntelligentTrackingPreventionEnabled() const = 0;
 #endif
+
+  virtual int ScaleGestureChange(double scale, double centerX, double centerY) const = 0;
 };
 }  // namespace OHOS::NWeb
 

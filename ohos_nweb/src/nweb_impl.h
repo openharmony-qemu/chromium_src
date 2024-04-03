@@ -412,6 +412,8 @@ class NWebImpl : public NWeb {
       const std::vector<std::string>& hosts);
   static void ClearIntelligentTrackingPreventionBypassingList();
 
+  int ScaleGestureChange(double scale, double centerX, double centerY) override;
+
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

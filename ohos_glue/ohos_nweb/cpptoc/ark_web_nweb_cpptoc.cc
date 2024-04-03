@@ -1687,6 +1687,18 @@ void ARK_WEB_CALLBACK ark_web_nweb_on_create_native_media_player(
       ArkWebCreateNativeMediaPlayerCallbackCToCpp::Invert(callback));
 }
 
+int ARK_WEB_CALLBACK
+ark_web_nweb_scale_gesture_change(struct _ark_web_nweb_t *self, double scale,
+                                  double centerX, double centerY) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, 0);
+
+  // Execute
+  return ArkWebNWebCppToC::Get(self)->ScaleGestureChange(scale, centerX,
+                                                         centerY);
+}
+
 } // namespace
 
 ArkWebNWebCppToC::ArkWebNWebCppToC() {
@@ -1867,6 +1879,7 @@ ArkWebNWebCppToC::ArkWebNWebCppToC() {
   GetStruct()->precompile_java_script = ark_web_nweb_precompile_java_script;
   GetStruct()->on_create_native_media_player =
       ark_web_nweb_on_create_native_media_player;
+  GetStruct()->scale_gesture_change = ark_web_nweb_scale_gesture_change;
 }
 
 ArkWebNWebCppToC::~ArkWebNWebCppToC() {

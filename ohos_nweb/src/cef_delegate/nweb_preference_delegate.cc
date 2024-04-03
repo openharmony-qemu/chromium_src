@@ -70,7 +70,7 @@ void NWebPreferenceDelegate::SetBrowser(CefRefPtr<CefBrowser> browser) {
 
 void NWebPreferenceDelegate::WebPreferencesChanged() {
   if (!browser_) {
-    LOG(ERROR) << "update web preferences failed, browser is null";
+    LOG(DEBUG) << "update web preferences failed, browser is null";
     return;
   }
 

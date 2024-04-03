@@ -1203,6 +1203,21 @@ public:
   /*--ark web()--*/
   virtual void OnCreateNativeMediaPlayer(
       ArkWebRefPtr<ArkWebCreateNativeMediaPlayerCallback> callback) = 0;
+
+  /**
+   * @brief Set the params when the scale of WebView changed by pinch gestrue.
+   *
+   * @param scale: the scale factor to apply. The scale will be
+   *        clamped to the pinch limits. This value must be in the range
+   *        0.01 to 8.0 inclusive.
+   * @param centerX: X-coordinate of the pinch center
+   * @param centerX: Y-coordinate of the pinch center
+   *
+   * @return the error id.
+   */
+  /*--ark web()--*/
+  virtual int ScaleGestureChange(double scale, double centerX,
+                                 double centerY) = 0;
 };
 
 } // namespace OHOS::ArkWeb

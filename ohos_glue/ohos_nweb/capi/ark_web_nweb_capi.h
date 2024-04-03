@@ -483,6 +483,10 @@ typedef struct _ark_web_nweb_t {
   void(ARK_WEB_CALLBACK *on_create_native_media_player)(
       struct _ark_web_nweb_t *self,
       ark_web_create_native_media_player_callback_t *callback);
+
+  int(ARK_WEB_CALLBACK *scale_gesture_change)(struct _ark_web_nweb_t *self,
+                                              double scale, double centerX,
+                                              double centerY);
 } ark_web_nweb_t;
 
 #ifdef __cplusplus

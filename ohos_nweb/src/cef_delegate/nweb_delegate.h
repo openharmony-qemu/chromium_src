@@ -218,6 +218,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       std::shared_ptr<NWebMessageValueCallback> callback,
       bool extention) override;
 
+  int ScaleGestureChange(double scale, double centerX, double centerY) const override;
+  
 #if defined(OHOS_MSGPORT)
   uint32_t runJSCallbackId_ = 0;
   std::unordered_map<uint32_t, CefRefPtr<JavaScriptResultCallbackImpl>> runJSCallbackMap_;

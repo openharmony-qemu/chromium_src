@@ -414,6 +414,10 @@ class NWebDelegateInterface
   virtual void EnableIntelligentTrackingPrevention(bool enable) = 0;
   virtual bool IsIntelligentTrackingPreventionEnabled() const = 0;
 #endif
+
+#if defined(OHOS_SCREEN_LOCK)
+  virtual void SetWakeLockCallback(int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback) = 0;
+#endif
 };
 }  // namespace OHOS::NWeb
 

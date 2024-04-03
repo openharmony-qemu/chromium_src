@@ -3236,6 +3236,15 @@ void NWebDelegate::AddAccessibilityNodeInfoActions(
   nodeInfo->SetActions(actions);
 }
 
+#if defined(OHOS_SCREEN_LOCK)
+void NWebDelegate::SetWakeLockCallback(
+    int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback) {
+  if (handler_delegate_) {
+    handler_delegate_->SetWakeLockCallback(windowId, callback);
+  }
+}
+#endif
+
 #if defined(OHOS_SECURE_JAVASCRIPT_PROXY)
 std::string NWebDelegate::GetLastJavascriptProxyCallingFrameUrl() {
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {

@@ -4980,6 +4980,14 @@ device::mojom::GeolocationContext* WebContentsImpl::GetGeolocationContext() {
   return geolocation_context_.get();
 }
 
+#if defined(OHOS_SCREEN_LOCK)
+void WebContentsImpl::SetWakeLockHandler(int32_t windowId, const SetKeepScreenOn& handler) {
+  if (!wake_lock_context_host_)
+    wake_lock_context_host_ = std::make_unique<WakeLockContextHost>(this);
+  wake_lock_context_host_->SetWakeLockHandler(windowId, std::move(handler));
+}
+#endif
+
 device::mojom::WakeLockContext* WebContentsImpl::GetWakeLockContext() {
   if (!enable_wake_locks_)
     return nullptr;

@@ -30,6 +30,7 @@
 #include "nweb_history_list.h"
 #include "nweb_hit_testresult.h"
 #include "nweb_javascript_result_callback.h"
+#include "nweb_native_media_player.h"
 #include "nweb_preference.h"
 #include "nweb_release_surface_callback.h"
 #include "nweb_value_callback.h"
@@ -121,10 +122,13 @@ enum class OHOS_NWEB_EXPORT DragAction {
     DRAG_CANCEL,
 };
 
-struct OHOS_NWEB_EXPORT DragEvent {
-    double x;
-    double y;
-    DragAction action;
+class NWebDragEvent {
+    public:
+    virtual ~NWebDragEvent() = default;
+
+    virtual double GetX() = 0;
+    virtual double GetY() = 0;
+    virtual DragAction GetAction() = 0;
 };
 
 enum class BlurReason : int32_t {
@@ -169,6 +173,29 @@ class NWebJsProxyCallback {
     virtual std::string GetMethodName() = 0;
 
     virtual NativeArkWebOnJavaScriptProxyCallback GetMethodCallback() = 0;
+};
+
+class OHOS_NWEB_EXPORT NWebEnginePrefetchArgs {
+    public:
+    virtual ~NWebEnginePrefetchArgs() = default;
+
+    virtual std::string GetUrl() = 0;
+    virtual std::string GetMethod() = 0;
+    virtual std::string GetFormData() = 0;
+};
+
+enum class PrecompileError : int32_t {
+    OK = 0,
+    INTERNAL_ERROR = -1
+};
+
+class OHOS_NWEB_EXPORT CacheOptions {
+    public:
+    virtual ~CacheOptions() = default;
+
+    virtual std::map<std::string, std::string> GetResponseHeaders() = 0;
+    virtual bool IsModule() = 0;
+    virtual bool IsTopLevel() = 0;
 };
 
 typedef int64_t (*AccessibilityIdGenerateFunc)();
@@ -304,6 +331,19 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      */
     virtual void ExecuteJavaScript(
             const std::string& code,
+            std::shared_ptr<NWebMessageValueCallback> callback,
+            bool extention) = 0;
+    /**
+     * ExecuteJavaScript with ashmem
+     *
+     * @param fd fd of the ashmem
+     * @param scriptLength javascript code length
+     * @param callback NWebValueCallback: javascript running result
+     * @param extention true if is extention
+     */
+    virtual void ExecuteJavaScriptExt(
+            const int fd,
+            const size_t scriptLength,
             std::shared_ptr<NWebMessageValueCallback> callback,
             bool extention) = 0;
     /**
@@ -579,7 +619,7 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
         const std::string& portHandle,
         std::shared_ptr<NWebMessageValueCallback> callback) = 0;
 
-    virtual void SendDragEvent(const DragEvent& dragEvent) = 0;
+    virtual void SendDragEvent(std::shared_ptr<NWebDragEvent> dragEvent) = 0;
 
     /**
      * Clear ssl cache.
@@ -1088,6 +1128,53 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      */
     /*--ark web()--*/
     virtual std::string GetLastJavascriptProxyCallingFrameUrl() = 0;
+
+    /**
+     * @brief get pendingsize status.
+     *
+     * @return the result of last pendingsize status.
+     */
+    /*--ark web()--*/
+    virtual bool GetPendingSizeStatus() = 0;
+
+    /**
+     * Scroll by the delta distance or velocity takes the screen as a reference.
+     *
+     * @param delta_x horizontal offset in physical pixel.
+     * @param delta_y vertical offset in physical pixel.
+     * @param vx      horizontal velocity in physical pixel.
+     * @param vx      vertical velocity in physical pixel.
+    */
+    virtual void ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) = 0;
+    
+    /**
+     * @brief Render process switch to background.
+     */
+    /*--ark web()--*/
+    virtual void OnRenderToBackground() = 0;
+
+    /**
+     * @brief Render process switch to foreground.
+     */
+    /*--ark web()--*/
+    virtual void OnRenderToForeground() = 0;
+
+
+    /**
+     * @brief Compile javascript and generate code cache.
+     * 
+     * @param url url of javascript.
+     * @param script javascript text content.
+     * @param cacheOptions compile options and info.
+     * @param callback callback will be called on getting the result of compiling javascript.
+     */
+    virtual void PrecompileJavaScript(
+        const std::string& url,
+        const std::string& script,
+        std::shared_ptr<CacheOptions>& cacheOptions,
+        std::shared_ptr<NWebMessageValueCallback> callback) = 0;
+
+    virtual void OnCreateNativeMediaPlayer(std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) = 0;
 };
 }  // namespace OHOS::NWeb
 

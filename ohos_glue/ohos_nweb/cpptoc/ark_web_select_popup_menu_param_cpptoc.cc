@@ -15,6 +15,7 @@
 
 #include "ohos_nweb/cpptoc/ark_web_select_popup_menu_param_cpptoc.h"
 #include "base/cpptoc/ark_web_cpptoc_macros.h"
+#include "ohos_nweb/cpptoc/ark_web_select_menu_bound_cpptoc.h"
 
 namespace OHOS::ArkWeb {
 
@@ -72,15 +73,19 @@ bool ARK_WEB_CALLBACK ark_web_select_popup_menu_param_get_is_right_aligned(
   return ArkWebSelectPopupMenuParamCppToC::Get(self)->GetIsRightAligned();
 }
 
-ArkWebSelectMenuBound ARK_WEB_CALLBACK
+ark_web_select_menu_bound_t *ARK_WEB_CALLBACK
 ark_web_select_popup_menu_param_get_select_menu_bound(
     struct _ark_web_select_popup_menu_param_t *self) {
   ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
 
-  ARK_WEB_CPPTOC_CHECK_PARAM(self, ark_web_select_menu_bound_default);
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, NULL);
 
   // Execute
-  return ArkWebSelectPopupMenuParamCppToC::Get(self)->GetSelectMenuBound();
+  ArkWebRefPtr<ArkWebSelectMenuBound> _retval =
+      ArkWebSelectPopupMenuParamCppToC::Get(self)->GetSelectMenuBound();
+
+  // Return type: refptr_same
+  return ArkWebSelectMenuBoundCppToC::Invert(_retval);
 }
 
 bool ARK_WEB_CALLBACK

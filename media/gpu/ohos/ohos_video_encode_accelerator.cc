@@ -47,7 +47,7 @@ VideoEncodeAccelerator::SupportedProfiles
 OHOSVideoEncodeAccelerator::GetSupportedProfiles() {
   SupportedProfiles profiles;
   SupportedProfile H264profile;
-  CapabilityDataAdapter H264capabilityAdapter =
+  CapabilityData H264capabilityAdapter =
       OHOSMediaCodecUtil::GetCodecCapability("video/avc", true);
   H264profile.profile = H264PROFILE_BASELINE;
   H264profile.max_resolution.SetSize(H264capabilityAdapter.maxWidth,

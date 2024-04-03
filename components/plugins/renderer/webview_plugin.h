@@ -212,6 +212,9 @@ class WebViewPlugin : public blink::WebPlugin, public blink::WebViewObserver {
     // This function sets the "title" attribute to the text value passed by
     // parameter on the container's element, if possible.
     void UpdateTooltip(const std::u16string& tooltip_text);
+#if BUILDFLAG(IS_OHOS)
+    void DidNativeEmbedEvent(blink::mojom::NativeEmbedTouchEventPtr touchEvent) override {}
+#endif
 
    private:
     WebViewPlugin* plugin_;

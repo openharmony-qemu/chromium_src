@@ -150,6 +150,10 @@ class CONTENT_EXPORT VideoCaptureHost
   absl::optional<gfx::Rect> region_capture_rect_;
 
   base::WeakPtrFactory<VideoCaptureHost> weak_factory_{this};
+
+#if BUILDFLAG(IS_OHOS)
+  uint32_t render_process_id_ {0};
+#endif
 };
 
 }  // namespace content

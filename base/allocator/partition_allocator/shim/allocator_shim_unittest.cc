@@ -375,14 +375,14 @@ TEST_F(AllocatorShimTest, InterceptLibcSymbols) {
 
   // (p)valloc() are not defined on Android. pvalloc() is a GNU extension,
   // valloc() is not in POSIX.
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !defined(OHOS_UNITTESTS)
   const size_t kPageSize = base::GetPageSize();
   void* valloc_ptr = valloc(61);
   ASSERT_NE(nullptr, valloc_ptr);
   ASSERT_EQ(0u, reinterpret_cast<uintptr_t>(valloc_ptr) % kPageSize);
   ASSERT_GE(aligned_allocs_intercepted_by_alignment[kPageSize], 1u);
   ASSERT_GE(aligned_allocs_intercepted_by_size[61], 1u);
-#endif  // !BUILDFLAG(IS_ANDROID)
+#endif  // !BUILDFLAG(IS_ANDROID) && !defined(OHOS_UNITTESTS)
 
 #endif  // !BUILDFLAG(IS_WIN)
 
@@ -393,21 +393,14 @@ TEST_F(AllocatorShimTest, InterceptLibcSymbols) {
   ASSERT_GE(aligned_allocs_intercepted_by_alignment[128], 1u);
   ASSERT_GE(aligned_allocs_intercepted_by_size[53], 1u);
 
-#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID)
-  /*
-    third_party/ohos_ndk/sysroot/usr/include/arm-linux-ohos/malloc.h
-    not support pvalloc, so disable this test, when pvalloc is ready,
-    should reopen it.
-  */
-#if !BUILDFLAG(IS_OHOS) // pvalloc is ready, should reopen it
+#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID) && !defined(OHOS_UNITTESTS)
   void* pvalloc_ptr = pvalloc(67);
   ASSERT_NE(nullptr, pvalloc_ptr);
   ASSERT_EQ(0u, reinterpret_cast<uintptr_t>(pvalloc_ptr) % kPageSize);
   ASSERT_GE(aligned_allocs_intercepted_by_alignment[kPageSize], 1u);
   // pvalloc rounds the size up to the next page.
   ASSERT_GE(aligned_allocs_intercepted_by_size[kPageSize], 1u);
-#endif  // !BUILDFLAG(IS_OHOS)
-#endif  // BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID)
+#endif  // BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID) && !defined(OHOS_UNITTESTS)
 
 #endif  // !BUILDFLAG(IS_WIN) && !BUILDFLAG(IS_APPLE)
 
@@ -439,12 +432,10 @@ TEST_F(AllocatorShimTest, InterceptLibcSymbols) {
   free(memalign_ptr);
   ASSERT_GE(frees_intercepted_by_addr[Hash(memalign_ptr)], 1u);
 
-#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID)
-#if !BUILDFLAG(IS_OHOS) // pvalloc is ready, should reopen it
+#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID) && !defined(OHOS_UNITTESTS)
   free(pvalloc_ptr);
   ASSERT_GE(frees_intercepted_by_addr[Hash(pvalloc_ptr)], 1u);
-#endif  // !BUILDFLAG(IS_OHOS)
-#endif  // BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID)
+#endif  // BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID) && !defined(OHOS_UNITTESTS)
 
 #endif  // !BUILDFLAG(IS_WIN) && !BUILDFLAG(IS_APPLE)
 
@@ -452,10 +443,10 @@ TEST_F(AllocatorShimTest, InterceptLibcSymbols) {
   free(posix_memalign_ptr);
   ASSERT_GE(frees_intercepted_by_addr[Hash(posix_memalign_ptr)], 1u);
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !defined(OHOS_UNITTESTS)
   free(valloc_ptr);
   ASSERT_GE(frees_intercepted_by_addr[Hash(valloc_ptr)], 1u);
-#endif  // !BUILDFLAG(IS_ANDROID)
+#endif  // !BUILDFLAG(IS_ANDROID) && !defined(OHOS_UNITTESTS)
 
 #endif  // !BUILDFLAG(IS_WIN)
 

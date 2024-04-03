@@ -64,6 +64,10 @@ class MockPasswordChangeMetricsRecorder
 };
 
 struct StartEventAndCorrespondingUmaString {
+#if defined(OHOS_UNITTESTS)
+  StartEventAndCorrespondingUmaString(PasswordChangeSuccessTracker::StartEvent event,
+                                      std::string uma) : start_event(event), uma_string(uma) {}
+#endif
   PasswordChangeSuccessTracker::StartEvent start_event;
   std::string uma_string;
 };

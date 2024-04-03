@@ -1580,6 +1580,10 @@ void URLLoader::OnSSLCertificateError(net::URLRequest* request,
   }
   url_loader_network_observer_->OnSSLCertificateError(
       url_request_->url(), net_error, ssl_info, fatal,
+#ifdef OHOS_NETWORK_LOAD
+      request->original_url(),
+      request->referrer(),
+#endif
       base::BindOnce(&URLLoader::OnSSLCertificateErrorResponse,
                      weak_ptr_factory_.GetWeakPtr(), ssl_info));
 }
@@ -2118,6 +2122,10 @@ void URLLoader::NotifyCompleted(int error_code) {
     }
     status.exists_in_cache = url_request_->response_info().was_cached;
     status.completion_time = base::TimeTicks::Now();
+#if BUILDFLAG(IS_OHOS)
+    TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+                 "responseEnd", status.completion_time);
+#endif
     status.encoded_data_length = url_request_->GetTotalReceivedBytes();
     status.encoded_body_length = url_request_->GetRawBodyBytes();
     status.decoded_body_length = total_written_bytes_;

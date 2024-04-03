@@ -22,15 +22,20 @@
 #include "ohos_nweb/cpptoc/ark_web_controller_handler_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_data_resubmission_callback_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_date_time_chooser_callback_cpptoc.h"
+#include "ohos_nweb/cpptoc/ark_web_date_time_chooser_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_drag_data_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_file_selector_params_cpptoc.h"
+#include "ohos_nweb/cpptoc/ark_web_first_meaningful_paint_details_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_full_screen_exit_handler_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_geo_location_callback_cpptoc.h"
+#include "ohos_nweb/cpptoc/ark_web_image_options_cpptoc.h"
+#include "ohos_nweb/cpptoc/ark_web_js_all_ssl_error_result_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_js_dialog_result_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_js_http_auth_result_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_js_ssl_error_result_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_js_ssl_select_cert_result_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_key_event_cpptoc.h"
+#include "ohos_nweb/cpptoc/ark_web_largest_contentful_paint_details_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_load_committed_details_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_native_embed_data_info_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_native_embed_touch_event_cpptoc.h"
@@ -41,6 +46,7 @@
 #include "ohos_nweb/cpptoc/ark_web_select_popup_menu_callback_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_select_popup_menu_param_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_string_vector_value_callback_cpptoc.h"
+#include "ohos_nweb/cpptoc/ark_web_touch_handle_hot_zone_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_touch_handle_state_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_url_resource_error_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_url_resource_request_cpptoc.h"
@@ -809,8 +815,8 @@ void ArkWebHandlerCToCpp::OnFullScreenEnter(
 }
 
 ARK_WEB_NO_SANITIZE
-bool ArkWebHandlerCToCpp::OnDragAndDropData(const void *data, size_t len,
-                                            const ArkWebImageOptions &opt) {
+bool ArkWebHandlerCToCpp::OnDragAndDropData(
+    const void *data, size_t len, ArkWebRefPtr<ArkWebImageOptions> opt) {
   ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
 
   ark_web_handler_t *_struct = GetStruct();
@@ -819,7 +825,8 @@ bool ArkWebHandlerCToCpp::OnDragAndDropData(const void *data, size_t len,
   ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, on_drag_and_drop_data, false);
 
   // Execute
-  return _struct->on_drag_and_drop_data(_struct, data, len, &opt);
+  return _struct->on_drag_and_drop_data(_struct, data, len,
+                                        ArkWebImageOptionsCppToC::Invert(opt));
 }
 
 ARK_WEB_NO_SANITIZE
@@ -940,7 +947,7 @@ void ArkWebHandlerCToCpp::OnFirstContentfulPaint(
 
 ARK_WEB_NO_SANITIZE
 void ArkWebHandlerCToCpp::OnDateTimeChooserPopup(
-    const ArkWebDateTimeChooser &chooser,
+    ArkWebRefPtr<ArkWebDateTimeChooser> chooser,
     const ArkWebDateTimeSuggestionVector &suggestions,
     ArkWebRefPtr<ArkWebDateTimeChooserCallback> callback) {
   ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
@@ -952,7 +959,7 @@ void ArkWebHandlerCToCpp::OnDateTimeChooserPopup(
 
   // Execute
   _struct->on_date_time_chooser_popup(
-      _struct, &chooser, &suggestions,
+      _struct, ArkWebDateTimeChooserCppToC::Invert(chooser), &suggestions,
       ArkWebDateTimeChooserCallbackCppToC::Invert(callback));
 }
 
@@ -999,7 +1006,7 @@ void ArkWebHandlerCToCpp::OnActivityStateChanged(int state, int type) {
 
 ARK_WEB_NO_SANITIZE
 void ArkWebHandlerCToCpp::OnGetTouchHandleHotZone(
-    ArkWebTouchHandleHotZone &hot_zone) {
+    ArkWebRefPtr<ArkWebTouchHandleHotZone> hot_zone) {
   ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
 
   ark_web_handler_t *_struct = GetStruct();
@@ -1008,7 +1015,8 @@ void ArkWebHandlerCToCpp::OnGetTouchHandleHotZone(
   ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, on_get_touch_handle_hot_zone, );
 
   // Execute
-  _struct->on_get_touch_handle_hot_zone(_struct, &hot_zone);
+  _struct->on_get_touch_handle_hot_zone(
+      _struct, ArkWebTouchHandleHotZoneCppToC::Invert(hot_zone));
 }
 
 ARK_WEB_NO_SANITIZE
@@ -1099,6 +1107,22 @@ void ArkWebHandlerCToCpp::OnSafeBrowsingCheckResult(int threat_type) {
 }
 
 ARK_WEB_NO_SANITIZE
+void ArkWebHandlerCToCpp::OnIntelligentTrackingPreventionResult(
+    const ArkWebString &website_host, const ArkWebString &tracker_host) {
+  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
+
+  ark_web_handler_t *_struct = GetStruct();
+  ARK_WEB_CTOCPP_CHECK_PARAM(_struct, );
+
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct,
+                                   on_intelligent_tracking_prevention_result, );
+
+  // Execute
+  _struct->on_intelligent_tracking_prevention_result(_struct, &website_host,
+                                                     &tracker_host);
+}
+
+ARK_WEB_NO_SANITIZE
 void ArkWebHandlerCToCpp::OnFullScreenEnterWithVideoSize(
     ArkWebRefPtr<ArkWebFullScreenExitHandler> handler, int video_natural_width,
     int video_natural_height) {
@@ -1133,19 +1157,78 @@ bool ArkWebHandlerCToCpp::OnHandleOverrideUrlLoading(
 }
 
 ARK_WEB_NO_SANITIZE
-void ArkWebHandlerCToCpp::OnIntelligentTrackingPreventionResult(
-    const ArkWebString &website_host, const ArkWebString &tracker_host) {
+void ArkWebHandlerCToCpp::OnFirstMeaningfulPaint(
+    ArkWebRefPtr<ArkWebFirstMeaningfulPaintDetails> details) {
   ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
 
   ark_web_handler_t *_struct = GetStruct();
   ARK_WEB_CTOCPP_CHECK_PARAM(_struct, );
 
-  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct,
-                                   on_intelligent_tracking_prevention_result, );
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, on_first_meaningful_paint, );
 
   // Execute
-  _struct->on_intelligent_tracking_prevention_result(_struct, &website_host,
-                                                     &tracker_host);
+  _struct->on_first_meaningful_paint(
+      _struct, ArkWebFirstMeaningfulPaintDetailsCppToC::Invert(details));
+}
+
+ARK_WEB_NO_SANITIZE
+void ArkWebHandlerCToCpp::OnLargestContentfulPaint(
+    ArkWebRefPtr<ArkWebLargestContentfulPaintDetails> details) {
+  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
+
+  ark_web_handler_t *_struct = GetStruct();
+  ARK_WEB_CTOCPP_CHECK_PARAM(_struct, );
+
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, on_largest_contentful_paint, );
+
+  // Execute
+  _struct->on_largest_contentful_paint(
+      _struct, ArkWebLargestContentfulPaintDetailsCppToC::Invert(details));
+}
+
+ARK_WEB_NO_SANITIZE
+bool ArkWebHandlerCToCpp::OnAllSslErrorRequestByJS(
+    ArkWebRefPtr<ArkWebJsAllSslErrorResult> result, int error,
+    const ArkWebString &url, const ArkWebString &originalUrl,
+    const ArkWebString &referrer, bool isFatalError, bool isMainFrame) {
+  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
+
+  ark_web_handler_t *_struct = GetStruct();
+  ARK_WEB_CTOCPP_CHECK_PARAM(_struct, false);
+
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, on_all_ssl_error_request_by_js,
+                                   false);
+
+  // Execute
+  return _struct->on_all_ssl_error_request_by_js(
+      _struct, ArkWebJsAllSslErrorResultCppToC::Invert(result), error, &url,
+      &originalUrl, &referrer, isFatalError, isMainFrame);
+}
+
+ARK_WEB_NO_SANITIZE
+void ArkWebHandlerCToCpp::OnTooltip(const ArkWebString &tooltip) {
+  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
+
+  ark_web_handler_t *_struct = GetStruct();
+  ARK_WEB_CTOCPP_CHECK_PARAM(_struct, );
+
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, on_tooltip, );
+
+  // Execute
+  _struct->on_tooltip(_struct, &tooltip);
+}
+
+ARK_WEB_NO_SANITIZE
+void ArkWebHandlerCToCpp::ReleaseResizeHold() {
+  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
+
+  ark_web_handler_t *_struct = GetStruct();
+  ARK_WEB_CTOCPP_CHECK_PARAM(_struct, );
+
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, release_resize_hold, );
+
+  // Execute
+  _struct->release_resize_hold(_struct);
 }
 
 ArkWebHandlerCToCpp::ArkWebHandlerCToCpp() {

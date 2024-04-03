@@ -434,7 +434,7 @@ public:
       const ArkWebString &port_handle,
       ArkWebRefPtr<ArkWebMessageValueCallback> callback) override;
 
-  void SendDragEvent(const ArkWebDragEvent &drag_event) override;
+  void SendDragEvent(ArkWebRefPtr<ArkWebDragEvent> drag_event) override;
 
   /**
    * @brief Clear ssl cache.
@@ -943,24 +943,6 @@ public:
   int GetMediaPlaybackState() override;
 
   /**
-   * @brief Start current camera.
-   */
-  /*--ark web()--*/
-  void StartCamera() override;
-
-  /**
-   * @brief Stop current camera.
-   */
-  /*--ark web()--*/
-  void StopCamera() override;
-
-  /**
-   * @brief Close current camera.
-   */
-  /*--ark web()--*/
-  void CloseCamera() override;
-
-  /**
    * @brief Obtains the last javascript proxy calling frame url.
    *
    * @return the url of last calling frame url.
@@ -982,6 +964,84 @@ public:
    * false.
    */
   bool IsIntelligentTrackingPreventionEnabled() override;
+
+  /**
+   * @brief Start current camera.
+   */
+  /*--ark web()--*/
+  void StartCamera() override;
+
+  /**
+   * @brief Stop current camera.
+   */
+  /*--ark web()--*/
+  void StopCamera() override;
+
+  /**
+   * @brief Close current camera.
+   */
+  /*--ark web()--*/
+  void CloseCamera() override;
+
+  /**
+   * @brief get pendingsize status.
+   *
+   * @return the result of last pendingsize status.
+   */
+  bool GetPendingSizeStatus() override;
+
+  /**
+   * Scroll by the delta distance or velocity takes the screen as a reference.
+   *
+   * @param delta_x horizontal offset in physical pixel.
+   * @param delta_y vertical offset in physical pixel.
+   * @param vx      horizontal velocity in physical pixel.
+   * @param vx      vertical velocity in physical pixel.
+   */
+  /*--ark web()--*/
+  void ScrollByRefScreen(float delta_x, float delta_y, float vx,
+                         float vy) override;
+
+  /**
+   * ExecuteJavaScript with ashmem
+   *
+   * @param fd fd of the ashmem
+   * @param scriptLength javascript code length
+   * @param callback NWebValueCallback: javascript running result
+   * @param extention true if is extention
+   */
+  void ExecuteJavaScriptExt(const int fd, const size_t scriptLength,
+                            ArkWebRefPtr<ArkWebMessageValueCallback> callback,
+                            bool extention) override;
+
+  /**
+   * @brief Render process switch to background.
+   */
+  /*--ark web()--*/
+  void OnRenderToBackground() override;
+
+  /**
+   * @brief Render process switch to foreground.
+   */
+  /*--ark web()--*/
+  void OnRenderToForeground() override;
+
+  /**
+   * @brief Compile javascript and generate code cache.
+   *
+   * @param url url of javascript.
+   * @param script javascript text content.
+   * @param cacheOptions compile options and info.
+   * @param callback callback will be called on getting the result of compiling
+   * javascript.
+   */
+  void PrecompileJavaScript(
+      const ArkWebString &url, const ArkWebString &script,
+      ArkWebRefPtr<ArkWebCacheOptions> &cacheOptions,
+      ArkWebRefPtr<ArkWebMessageValueCallback> callback) override;
+
+  void OnCreateNativeMediaPlayer(
+      ArkWebRefPtr<ArkWebCreateNativeMediaPlayerCallback> callback) override;
 
 private:
   std::shared_ptr<OHOS::NWeb::NWeb> nweb_nweb_;

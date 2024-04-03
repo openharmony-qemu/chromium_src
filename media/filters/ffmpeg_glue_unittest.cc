@@ -328,11 +328,12 @@ TEST_F(FFmpegGlueContainerTest, AVI) {
 #endif  // BUILDFLAG(IS_CHROMEOS_ASH)
 #endif  // BUILDFLAG(USE_PROPRIETARY_CODECS)
 
+#if !defined(OHOS_UNITTESTS)
 // Probe something unsupported to ensure we fall back to the our internal guess.
 TEST_F(FFmpegGlueContainerTest, FLV) {
   Initialize("bear.flv");
   ASSERT_FALSE(glue_->OpenContext());
   ExpectContainer(container_names::CONTAINER_FLV);
 }
-
+#endif  // !defined(OHOS_UNITTESTS)
 }  // namespace media

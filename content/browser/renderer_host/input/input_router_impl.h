@@ -98,9 +98,6 @@ class CONTENT_EXPORT InputRouterImpl
   void SetTouchActionFromMain(cc::TouchAction touch_action) override;
   void SetPanAction(blink::mojom::PanAction pan_action) override;
   void DidOverscroll(blink::mojom::DidOverscrollParamsPtr params) override;
-#if defined(OHOS_INPUT_EVENTS)
-  void DidNativeEmbedEvent(blink::mojom::EmbedTouchEventPtr event) override;
-#endif
   void ImeCancelComposition() override;
   void DidStartScrollingViewport() override;
   void ImeCompositionRangeChanged(
@@ -127,6 +124,10 @@ class CONTENT_EXPORT InputRouterImpl
   void ForceResetTouchActionForTest();
 
   bool IsFlingActiveForTest();
+  
+#if BUILDFLAG(IS_OHOS)
+  void SetGestureEventResult(bool result) override;
+#endif
 
  private:
   friend class InputRouterImplTest;

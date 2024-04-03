@@ -17,15 +17,15 @@
 
 #include "base/logging.h"
 #include "ohos_nweb/src/capi/arkweb_scheme_handler.h"
-#include "ohos_nweb/src/ndk/scheme_handler/post_data_stream.h"
+#include "ohos_nweb/src/ndk/scheme_handler/http_body_stream.h"
 
 ArkWeb_ResourceRequest_::ArkWeb_ResourceRequest_(CefRefPtr<CefRequest> request)
     : cef_request(request) {}
 
 ArkWeb_ResourceRequest_::~ArkWeb_ResourceRequest_() {}
 
-void ArkWeb_ResourceRequest_::GetPostDataStream(
-    ArkWeb_PostDataStream** stream) const {
+void ArkWeb_ResourceRequest_::GetHttpBodyStream(
+    ArkWeb_HttpBodyStream** stream) const {
   if (!cef_request) {
     LOG(ERROR) << "scheme_handler resource request is nullptr.";
     return;
@@ -37,7 +37,7 @@ void ArkWeb_ResourceRequest_::GetPostDataStream(
     return;
   }
 
-  *stream = new ArkWeb_PostDataStream(this);
+  *stream = new ArkWeb_HttpBodyStream(this);
 }
 
 void ArkWeb_ResourceRequest_::GetMethod(char** method) const {

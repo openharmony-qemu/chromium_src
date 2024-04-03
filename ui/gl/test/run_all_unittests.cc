@@ -40,8 +40,12 @@ class GlTestSuite : public base::TestSuite {
     mock_cr_app::RegisterMockCrApp();
 #endif
 
+#if defined(OHOS_UNITTESTS)
+    task_environment_ = std::make_unique<base::test::TaskEnvironment>();
+#else
     task_environment_ = std::make_unique<base::test::TaskEnvironment>(
         base::test::TaskEnvironment::MainThreadType::UI);
+#endif
 
 #if BUILDFLAG(IS_OZONE)
     // Make Ozone run in single-process mode, where it doesn't expect a GPU

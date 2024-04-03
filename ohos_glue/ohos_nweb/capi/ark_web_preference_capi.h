@@ -285,6 +285,15 @@ typedef struct _ark_web_preference_t {
                                          bool enable);
 
   bool(ARK_WEB_CALLBACK *get_scrollable)(struct _ark_web_preference_t *self);
+
+  void(ARK_WEB_CALLBACK *put_text_autosizing_enabled)(
+      struct _ark_web_preference_t *self, bool flag);
+
+  void(ARK_WEB_CALLBACK *set_viewport_enable)(
+      struct _ark_web_preference_t *self, bool enable);
+
+  void(ARK_WEB_CALLBACK *set_native_video_player_config)(
+      struct _ark_web_preference_t *self, bool enable, bool shouldOverlay);
 } ark_web_preference_t;
 
 #ifdef __cplusplus

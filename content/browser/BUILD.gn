@@ -24,6 +24,7 @@ import("//printing/buildflags/buildflags.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//third_party/blink/public/public_features.gni")
 import("//tools/ipc_fuzzer/ipc_fuzzer.gni")
+import("//ohos_nweb/src/nweb_sysevent.gni")
 if (is_mac) {
   import("//content/public/app/mac_helpers.gni")
 }
@@ -722,6 +723,8 @@ source_set("browser") {
     "code_cache/generated_code_cache_context.h",
     "code_cache/simple_lru_cache.cc",
     "code_cache/simple_lru_cache.h",
+    "code_cache/oh_code_cache.cc",
+    "code_cache/oh_code_cache.h",
     "compositor/surface_utils.cc",
     "compositor/surface_utils.h",
     "contacts/contacts_manager_impl.cc",
@@ -2321,6 +2324,10 @@ source_set("browser") {
     "worker_host/worker_script_loader_factory.h",
   ]
 
+  if (report_sys_event) {
+    defines += [ "REPORT_SYS_EVENT" ]
+  }
+
   if (use_starscan) {
     sources += [
       "starscan_load_observer.cc",
@@ -3247,6 +3254,8 @@ source_set("browser") {
       "media/ohos/ohos_media_player_renderer.h",
       "media/session/audio_focus_delegate_ohos.cc",
       "media/session/audio_focus_delegate_ohos.h",
+      "media/session/audio_interrupt_adapter_impl.cc",
+      "media/session/audio_interrupt_adapter_impl.h",
     ]
 
     deps += [ "//ui/accessibility:ax_assistant" ]
@@ -3272,10 +3281,12 @@ source_set("browser") {
       ]
     }  #endif  // defined(OHOS_CSS_INPUT_TIME)
 
-    sources += [
-      "ohos/content_view_statics_ohos.cc",
-      "ohos/content_view_statics_ohos.h",
-    ]
+    if (defined(ohos_suspend_all_timers) && ohos_suspend_all_timers) {
+      sources += [
+        "ohos/content_view_statics_ohos.cc",
+        "ohos/content_view_statics_ohos.h",
+      ]
+    }  #endif  // defined(OHOS_SUSPEND_ALL_TIMERS)
 
     #if defined(OHOS_WPT)
     if (defined(ohos_wpt) && ohos_wpt) {

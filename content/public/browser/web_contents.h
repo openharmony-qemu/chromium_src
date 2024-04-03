@@ -65,6 +65,10 @@
 #include "ui/gfx/geometry/rect_f.h"
 #endif
 
+#if defined(OHOS_SCREEN_LOCK)
+#include "services/device/wake_lock/power_save_blocker/nweb_screen_lock_tracker.h"
+#endif
+
 namespace base {
 class FilePath;
 }  // namespace base
@@ -670,9 +674,11 @@ class WebContents : public PageNavigator,
 #endif
 
 #if defined(OHOS_WEBRTC)
-  virtual void StartCamera() = 0;
-  virtual void StopCamera() = 0;
-  virtual void CloseCamera() = 0;
+  virtual void StartCamera(int nWebID) = 0;
+  virtual void StopCamera(int nWebID) = 0;
+  virtual void CloseCamera(int nWebID) = 0;
+  virtual int GetNWebId() = 0;
+  virtual void SetNWebId(int nWebID) = 0;
 #endif  // defined(OHOS_WEBRTC)
 
   // Saves the given title to the navigation entry and does associated work. It
@@ -795,6 +801,12 @@ class WebContents : public PageNavigator,
   // This does not affect audio capture, just local/system output.
   virtual bool IsAudioMuted() = 0;
   virtual void SetAudioMuted(bool mute) = 0;
+
+#if defined(OHOS_MEDIA_POLICY)
+  //Set whether to the HTML play can be used to control media
+  virtual void SetHtmlPlayEnabled(bool enabled) = 0;
+  virtual bool IsHtmlPlayEnabled() = 0;
+#endif // defined(OHOS_MEDIA_POLICY)
 
   // Returns true if the audio is currently audible.
   virtual bool IsCurrentlyAudible() = 0;
@@ -1193,6 +1205,10 @@ class WebContents : public PageNavigator,
   // `HasLiveOriginalOpenerChain()` for more details.
   virtual WebContents* GetFirstWebContentsInLiveOriginalOpenerChain() = 0;
 
+#if defined(OHOS_SCREEN_LOCK)
+  virtual void SetWakeLockHandler(int32_t windowId, const SetKeepScreenOn& handler) = 0;
+#endif
+
   // Returns the WakeLockContext accociated with this WebContents.
   virtual device::mojom::WakeLockContext* GetWakeLockContext() = 0;
 
@@ -1502,11 +1518,6 @@ class WebContents : public PageNavigator,
 #ifdef OHOS_DRAG_DROP
   virtual void ClearContextMenu() = 0;
 #endif //OHOS_DRAG_DROP
-
-#ifdef OHOS_USERAGENT
-  virtual void SetTabletMode(bool is_tablet) = 0;
-#endif
-
  private:
   // This interface should only be implemented inside content.
   friend class WebContentsImpl;

@@ -121,7 +121,13 @@ void SSLManager::OnSSLCertificateError(
     NavigationOrDocumentHandle* navigation_or_document,
     int net_error,
     const net::SSLInfo& ssl_info,
-    bool fatal) {
+    bool fatal
+#ifdef OHOS_NETWORK_LOAD
+    ,
+    const GURL& origin_url,
+    const std::string& referrer
+#endif
+    ) {
   DCHECK(delegate.get());
   DVLOG(1) << "OnSSLCertificateError() cert_error: " << net_error
            << " url: " << url.spec() << " cert_status: " << std::hex
@@ -138,7 +144,13 @@ void SSLManager::OnSSLCertificateError(
 
   std::unique_ptr<SSLErrorHandler> handler(
       new SSLErrorHandler(web_contents, delegate, is_primary_main_frame_request,
-                          url, net_error, ssl_info, fatal));
+                          url, net_error, ssl_info, fatal
+#ifdef OHOS_NETWORK_LOAD
+                          ,
+                          origin_url,
+                          referrer
+#endif
+                          ));
 
   if (!web_contents || !frame_tree_node) {
     // Requests can fail to dispatch because they don't have a WebContents. See
@@ -397,6 +409,10 @@ void SSLManager::OnCertErrorInternal(std::unique_ptr<SSLErrorHandler> handler) {
   const GURL& request_url = handler->request_url();
   bool is_primary_main_frame_request = handler->is_primary_main_frame_request();
   bool fatal = handler->fatal();
+#ifdef OHOS_NETWORK_LOAD
+  const GURL& origin_url = handler->origin_url();
+  const std::string& referrer = handler->referrer();
+#endif
 
   base::RepeatingCallback<void(bool, content::CertificateRequestResultType)>
       callback = base::BindRepeating(
@@ -413,6 +429,10 @@ void SSLManager::OnCertErrorInternal(std::unique_ptr<SSLErrorHandler> handler) {
   GetContentClient()->browser()->AllowCertificateError(
       web_contents, cert_error, ssl_info, request_url,
       is_primary_main_frame_request, fatal,
+#ifdef OHOS_NETWORK_LOAD
+      origin_url,
+      referrer,
+#endif
       base::BindOnce(std::move(callback), true));
 }
 

@@ -739,7 +739,7 @@ TEST(SafeSPrintfTest, EmbeddedNul) {
   SafeSNPrintf also will not do EmitNULL test, so disable this test for SafeSPrintf.
   Because SafeSPrintf inplementation not support NULL as input paramemter.
 */
-#if !BUILDFLAG(IS_OHOS)
+#if !defined(OHOS_UNITTESTS)
 TEST(SafeSPrintfTest, EmitNULL) {
   char buf[40];
 #if defined(__GNUC__)

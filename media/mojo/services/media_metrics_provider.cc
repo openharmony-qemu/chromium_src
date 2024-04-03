@@ -31,9 +31,16 @@
 #include "media/mojo/services/playback_events_recorder.h"
 #endif
 
+#if defined(REPORT_SYS_EVENT)
+#include "ohos_nweb/src/sysevent/event_reporter.h"
+#endif
+
 namespace media {
 
 constexpr char kInvalidInitialize[] = "Initialize() was not called correctly.";
+#if defined(REPORT_SYS_EVENT)
+constexpr int DEFAULT_VIDEO_ERROR_CODE = 0;
+#endif
 
 static uint64_t g_player_id = 0;
 
@@ -249,6 +256,12 @@ void MediaMetricsProvider::Initialize(
 
 void MediaMetricsProvider::OnError(const PipelineStatus& status) {
   DCHECK(IsInitialized());
+#if defined(REPORT_SYS_EVENT)
+  std::string errorType = "video play error";
+  int errorCode = DEFAULT_VIDEO_ERROR_CODE;
+  std::string errorDesc = "media player start failed or network error";
+  ReportVideoPlayErrorInfo(errorType, errorCode, errorDesc);
+#endif
   if (is_shutting_down_cb_.Run()) {
     DVLOG(1) << __func__ << ": Error " << PipelineStatusToString(status)
              << " ignored since it is reported during shutdown.";

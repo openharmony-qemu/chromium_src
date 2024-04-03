@@ -665,6 +665,16 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
     return native_.Read(*this);
   }
 
+  void SetNativeEmbedId(int embedId) {
+    native_embed_id_.Write(*this) = embedId;
+  }
+
+  int native_embed_id() const {
+    return native_embed_id_.Read(*this);
+  }
+
+  void SetNativeRect(const gfx::RectF& rect) { native_rect_ = rect; }
+
   // Stable identifier for clients. See comment in cc/paint/element_id.h.
   void SetElementId(ElementId id);
   ElementId element_id() const { return inputs_.Read(*this).element_id; }
@@ -853,6 +863,10 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
   // If the content of this layer is provided by a cached or live render
   // surface, returns the ID of that resource.
   virtual viz::ViewTransitionElementResourceId ViewTransitionResourceId() const;
+
+#if BUILDFLAG(IS_OHOS)
+  virtual void OnLayerRectUpdate(const gfx::Rect& rect) {}
+#endif
 
  protected:
   friend class LayerImpl;
@@ -1138,6 +1152,8 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
 
   ProtectedSequenceReadable<bool> native_;
 
+  ProtectedSequenceReadable<int> native_embed_id_;
+
   enum : uint8_t {
     kDrawsContentFlagMask = 1 << 0,
     kShouldCheckBackfaceVisibilityFlagMask = 1 << 1,
@@ -1189,6 +1205,7 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
   };
 #endif
 
+  gfx::RectF native_rect_;
   ProtectedSequenceWritable<std::unique_ptr<LayerDebugInfo>> debug_info_;
 
   static constexpr gfx::Transform kIdentityTransform{};

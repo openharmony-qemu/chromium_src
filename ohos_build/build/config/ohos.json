@@ -102,7 +102,7 @@
 "dependence": "",
 "default": "true"
 },
-{ "name": "OHOS_CRASH_DUMP",
+{ "name": "OHOS_CRASHPAD",
 "owner": "",
 "desc": "",
 "effect":"main gn blink_core other",
@@ -135,6 +135,14 @@
 "default": "true"
 },
 { "name": "OHOS_DEVTOOLS",
+"owner": "",
+"desc": "",
+"effect":"main gn blink_core other",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},
+{ "name": "OHOS_DFX_DUMP",
 "owner": "",
 "desc": "",
 "effect":"main gn blink_core other",
@@ -590,6 +598,14 @@
 "dependence": "",
 "default": "true"
 },
+{ "name": "OHOS_SITE_ISOLATION",
+"owner": "",
+"desc": "",
+"effect":"main gn blink_core other",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},
 { "name": "OHOS_SLIDE",
 "owner": "",
 "desc": "",
@@ -607,6 +623,14 @@
 "default": "true"
 },
 { "name": "OHOS_SUSPEND_ALL_TIMERS",
+"owner": "",
+"desc": "",
+"effect":"main gn blink_core other",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},
+{ "name": "OHOS_UNITTESTS",
 "owner": "",
 "desc": "",
 "effect":"main gn blink_core other",

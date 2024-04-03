@@ -284,6 +284,24 @@ CONTENT_EXPORT extern const char kForBrowser[];
 CONTENT_EXPORT extern const char kOhosEnableDrDc[];
 CONTENT_EXPORT extern const char kOhosHanceSurface[];
 CONTENT_EXPORT extern const char kOhosDisableTouchEvent[];
+CONTENT_EXPORT extern const char kPasswordWaitUsername[];
+CONTENT_EXPORT extern const char kMaxNumberOfSavedFrames[];
+CONTENT_EXPORT extern const char kNumRasterThreads[];
+CONTENT_EXPORT extern const char kIsSingleRenderProcess[];
+CONTENT_EXPORT extern const char kSimpleBackendIsDefault[];
+CONTENT_EXPORT extern const char kOHOSPersistSessionCookies[];
+CONTENT_EXPORT extern const char kEnableEmbedMode[];
+CONTENT_EXPORT extern const char kWebViewImplForLargeScreen[];
+CONTENT_EXPORT extern const char kEnableDeleteUnusedResourcesDelay[];
+CONTENT_EXPORT extern const char kHttpCacheMaxSize[];
+CONTENT_EXPORT extern const char kCookieConfigPersistSession[];
+CONTENT_EXPORT extern const char kDoubleTapSupportForPlatformEnabled[];
+CONTENT_EXPORT extern const char kUserAgentValue[];
+CONTENT_EXPORT extern const char kIgnoreLockdownMode[];
+CONTENT_EXPORT extern const char kEnablePrinting[];
+CONTENT_EXPORT extern const char kOhosHttpCacheSimple[];
+CONTENT_EXPORT extern const char kCalcTabletMode[];
+
 #ifdef OHOS_NETWORK_LOAD
 CONTENT_EXPORT extern const char kOhosCustomScheme[];
 #endif

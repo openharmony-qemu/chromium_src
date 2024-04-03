@@ -22,7 +22,7 @@
 namespace OHOS::NWeb {
 
 class NWebSelectPopupMenuItemImpl : public NWebSelectPopupMenuItem {
- public:
+public:
   NWebSelectPopupMenuItemImpl() = default;
   ~NWebSelectPopupMenuItemImpl() = default;
 
@@ -58,7 +58,7 @@ class NWebSelectPopupMenuItemImpl : public NWebSelectPopupMenuItem {
 
   void SetHasTextDirectionOverride(bool has_text_direction_override);
 
- private:
+private:
   std::string label_ = "";
   std::string tool_tip_ = "";
   uint32_t action_ = 0;
@@ -70,7 +70,7 @@ class NWebSelectPopupMenuItemImpl : public NWebSelectPopupMenuItem {
 };
 
 class NWebSelectPopupMenuParamImpl : public NWebSelectPopupMenuParam {
- public:
+public:
   NWebSelectPopupMenuParamImpl() = default;
   ~NWebSelectPopupMenuParamImpl() = default;
 
@@ -95,16 +95,16 @@ class NWebSelectPopupMenuParamImpl : public NWebSelectPopupMenuParam {
 
   void SetIsRightAligned(bool is_right_aligned);
 
-  SelectMenuBound GetSelectMenuBound();
+  std::shared_ptr<NWebSelectMenuBound> GetSelectMenuBound();
 
-  void SetSelectMenuBound(const SelectMenuBound &bounds);
+  void SetSelectMenuBound(std::shared_ptr<NWebSelectMenuBound> bounds);
 
   bool GetIsAllowMultipleSelection();
 
   void SetIsAllowMultipleSelection(bool is_allow_multiple_selection);
 
- private:
-  SelectMenuBound bounds_;
+private:
+  std::shared_ptr<NWebSelectMenuBound> bounds_;
   int item_height_ = -1;
   int selected_item_ = -1;
   double item_font_size_ = -1;
@@ -114,16 +114,16 @@ class NWebSelectPopupMenuParamImpl : public NWebSelectPopupMenuParam {
 };
 
 class NWebSelectPopupMenuCallbackImpl : public NWebSelectPopupMenuCallback {
- public:
+public:
   NWebSelectPopupMenuCallbackImpl() = default;
   explicit NWebSelectPopupMenuCallbackImpl(
       CefRefPtr<CefSelectPopupCallback> callback);
   ~NWebSelectPopupMenuCallbackImpl() = default;
-  void Continue(const std::vector<int32_t>& indices) override;
+  void Continue(const std::vector<int32_t> &indices) override;
   void Cancel() override;
 
- private:
+private:
   CefRefPtr<CefSelectPopupCallback> callback_ = nullptr;
 };
-}  // namespace OHOS::NWeb
+} // namespace OHOS::NWeb
 #endif

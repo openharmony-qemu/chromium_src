@@ -21,6 +21,7 @@
 #include "ohos_nweb/cpptoc/ark_web_nweb_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_web_storage_cpptoc.h"
 #include "ohos_nweb/ctocpp/ark_web_engine_init_args_ctocpp.h"
+#include "ohos_nweb/ctocpp/ark_web_engine_prefetch_args_ctocpp.h"
 #include "ohos_nweb/ctocpp/ark_web_nweb_create_info_ctocpp.h"
 
 namespace OHOS::ArkWeb {
@@ -191,8 +192,8 @@ ark_web_engine_remove_intelligent_tracking_prevention_bypassing_list(
   ARK_WEB_CPPTOC_CHECK_PARAM(hosts, );
 
   // Execute
-  ArkWebEngineCppToC::Get(self)->RemoveIntelligentTrackingPreventionBypassingList(
-      *hosts);
+  ArkWebEngineCppToC::Get(self)
+      ->RemoveIntelligentTrackingPreventionBypassingList(*hosts);
 }
 
 void ARK_WEB_CALLBACK
@@ -203,11 +204,12 @@ ark_web_engine_clear_intelligent_tracking_prevention_bypassing_list(
   ARK_WEB_CPPTOC_CHECK_PARAM(self, );
 
   // Execute
-  ArkWebEngineCppToC::Get(self)->ClearIntelligentTrackingPreventionBypassingList();
+  ArkWebEngineCppToC::Get(self)
+      ->ClearIntelligentTrackingPreventionBypassingList();
 }
 
-void ARK_WEB_CALLBACK ark_web_engine_pause_webkit_all_timers(
-    struct _ark_web_engine_t *self) {
+void ARK_WEB_CALLBACK
+ark_web_engine_pause_all_timers(struct _ark_web_engine_t *self) {
   ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
 
   ARK_WEB_CPPTOC_CHECK_PARAM(self, );
@@ -216,14 +218,53 @@ void ARK_WEB_CALLBACK ark_web_engine_pause_webkit_all_timers(
   ArkWebEngineCppToC::Get(self)->PauseAllTimers();
 }
 
-void ARK_WEB_CALLBACK ark_web_engine_resume_webkit_all_timers(
-    struct _ark_web_engine_t *self) {
+void ARK_WEB_CALLBACK
+ark_web_engine_resume_all_timers(struct _ark_web_engine_t *self) {
   ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
 
   ARK_WEB_CPPTOC_CHECK_PARAM(self, );
 
   // Execute
   ArkWebEngineCppToC::Get(self)->ResumeAllTimers();
+}
+
+void ARK_WEB_CALLBACK ark_web_engine_prefetch_resource(
+    struct _ark_web_engine_t *self, ark_web_engine_prefetch_args_t **pre_args,
+    const ArkWebStringMap *additional_http_headers,
+    const ArkWebString *cache_key, const uint32_t *cache_valid_time) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(pre_args, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(additional_http_headers, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(cache_key, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(cache_valid_time, );
+
+  // Translate param: pre_args; type: refptr_diff_byref
+  ArkWebRefPtr<ArkWebEnginePrefetchArgs> pre_argsPtr;
+  if (pre_args && *pre_args) {
+    pre_argsPtr = ArkWebEnginePrefetchArgsCToCpp::Invert(*pre_args);
+  }
+  ArkWebEnginePrefetchArgs *pre_argsOrig = pre_argsPtr.get();
+
+  // Execute
+  ArkWebEngineCppToC::Get(self)->PrefetchResource(
+      pre_argsPtr, *additional_http_headers, *cache_key, *cache_valid_time);
+
+  // Restore param: pre_args; type: refptr_diff_byref
+  if (pre_args) {
+    if (pre_argsPtr.get()) {
+      if (pre_argsPtr.get() != pre_argsOrig) {
+        *pre_args = ArkWebEnginePrefetchArgsCToCpp::Revert(pre_argsPtr);
+      }
+    } else {
+      *pre_args = nullptr;
+    }
+  }
 }
 
 } // namespace
@@ -246,9 +287,9 @@ ArkWebEngineCppToC::ArkWebEngineCppToC() {
       ark_web_engine_remove_intelligent_tracking_prevention_bypassing_list;
   GetStruct()->clear_intelligent_tracking_prevention_bypassing_list =
       ark_web_engine_clear_intelligent_tracking_prevention_bypassing_list;
-  GetStruct()->pause_webkit_all_timers = ark_web_engine_pause_webkit_all_timers;
-  GetStruct()->resume_webkit_all_timers =
-      ark_web_engine_resume_webkit_all_timers;
+  GetStruct()->pause_all_timers = ark_web_engine_pause_all_timers;
+  GetStruct()->resume_all_timers = ark_web_engine_resume_all_timers;
+  GetStruct()->prefetch_resource = ark_web_engine_prefetch_resource;
 }
 
 ArkWebEngineCppToC::~ArkWebEngineCppToC() {

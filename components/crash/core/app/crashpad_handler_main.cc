@@ -4,6 +4,10 @@
 
 #include <memory>
 
+#if defined(OHOS_CRASHPAD)
+#include "base/logging.h"
+#endif
+
 #include "components/gwp_asan/buildflags/buildflags.h"
 #include "third_party/crashpad/crashpad/handler/handler_main.h"
 #include "third_party/crashpad/crashpad/handler/user_stream_data_source.h"
@@ -21,6 +25,10 @@ __attribute__((visibility("default"), used)) int CrashpadHandlerMain(
 #if BUILDFLAG(ENABLE_GWP_ASAN)
   user_stream_data_sources.push_back(
       std::make_unique<gwp_asan::UserStreamDataSource>());
+#endif
+
+#if defined(OHOS_CRASHPAD)
+  LOG(INFO) << "crashpad::HandlerMain start";
 #endif
 
   return crashpad::HandlerMain(argc, argv, &user_stream_data_sources);

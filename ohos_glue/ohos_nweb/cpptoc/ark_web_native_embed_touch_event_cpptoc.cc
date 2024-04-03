@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "ohos_nweb/cpptoc/ark_web_gesture_event_result_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_native_embed_touch_event_cpptoc.h"
 #include "base/cpptoc/ark_web_cpptoc_macros.h"
 
@@ -110,6 +111,20 @@ ArkWebString ARK_WEB_CALLBACK ark_web_native_embed_touch_event_get_embed_id(
   return ArkWebNativeEmbedTouchEventCppToC::Get(self)->GetEmbedId();
 }
 
+ark_web_gesture_event_result_t* ARK_WEB_CALLBACK ark_web_native_embed_touch_event_get_result(struct _ark_web_native_embed_touch_event_t* self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self,  NULL);
+
+
+  // Execute
+  ArkWebRefPtr<ArkWebGestureEventResult> _retval = ArkWebNativeEmbedTouchEventCppToC::Get(self)->GetResult();
+
+  // Return type: refptr_same
+  return ArkWebGestureEventResultCppToC::Invert(_retval);
+}
+
+
 } // namespace
 
 ArkWebNativeEmbedTouchEventCppToC::ArkWebNativeEmbedTouchEventCppToC() {
@@ -122,6 +137,7 @@ ArkWebNativeEmbedTouchEventCppToC::ArkWebNativeEmbedTouchEventCppToC() {
   GetStruct()->get_screen_x = ark_web_native_embed_touch_event_get_screen_x;
   GetStruct()->get_screen_y = ark_web_native_embed_touch_event_get_screen_y;
   GetStruct()->get_embed_id = ark_web_native_embed_touch_event_get_embed_id;
+  GetStruct()->get_result = ark_web_native_embed_touch_event_get_result;
 }
 
 ArkWebNativeEmbedTouchEventCppToC::~ArkWebNativeEmbedTouchEventCppToC() {

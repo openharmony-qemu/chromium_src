@@ -37,6 +37,7 @@
 #include "ui/events/event.h"
 #include "ui/events/keycodes/keyboard_codes.h"
 #include "ohos_adapter_helper.h"
+
 namespace content {
 
 using blink::WebGestureEvent;
@@ -152,7 +153,7 @@ void InputRouterImpl::SendGestureEvent(
       gesture_event.event.GetType() == WebInputEvent::Type::kGestureScrollBegin) {
 #if defined(OHOS_PERFORMANCE_INC_FREQ)
     prePerfTimeStamp_ = timeStamp_;
-    LOG(INFO) << "InputRouterImpl::SendGestureEvent type=kGestureScrollUpdate success";
+    LOG(DEBUG) << "InputRouterImpl::SendGestureEvent type=kGestureScrollUpdate success";
     client_->GetWidgetInputHandler()->TryStartFling();
     OHOS::NWeb::OhosAdapterHelper::GetInstance()
       .CreateSocPerfClientAdapter()
@@ -405,12 +406,6 @@ void InputRouterImpl::DidOverscroll(
   client_->DidOverscroll(fling_updated_params);
 }
 
-#if defined(OHOS_INPUT_EVENTS)
-void InputRouterImpl::DidNativeEmbedEvent(blink::mojom::EmbedTouchEventPtr event) {
-
-  client_->DidNativeEmbedEvent(event);
-}
-#endif
 void InputRouterImpl::DidStartScrollingViewport() {
   client_->DidStartScrollingViewport();
 }
@@ -867,4 +862,9 @@ void InputRouterImpl::UpdateTouchAckTimeoutEnabled() {
   touch_event_queue_.SetAckTimeoutEnabled(!touch_ack_timeout_disabled);
 }
 
+#if BUILDFLAG(IS_OHOS)
+void InputRouterImpl::SetGestureEventResult(bool result) {
+  client_->GetWidgetInputHandler()->SetGestureEventResult(result);
+}
+#endif
 }  // namespace content

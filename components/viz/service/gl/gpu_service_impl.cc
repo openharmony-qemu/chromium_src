@@ -132,6 +132,10 @@
 #include "components/viz/common/gpu/vulkan_in_process_context_provider.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/ohos/dynamic_frame_loss_monitor.h"
+#endif
+
 namespace viz {
 
 namespace {
@@ -1366,6 +1370,16 @@ void GpuServiceImpl::GetPeakMemoryUsageOnMainThread(
 gpu::Scheduler* GpuServiceImpl::GetGpuScheduler() {
   return scheduler_;
 }
+
+#if BUILDFLAG(IS_OHOS)
+void GpuServiceImpl::StartMonitor() {
+  base::ohos::DynamicFrameLossMonitor::GetInstance().StartMonitor();
+}
+
+void GpuServiceImpl::StopMonitor() {
+  base::ohos::DynamicFrameLossMonitor::GetInstance().StopMonitor();
+}
+#endif
 
 #if BUILDFLAG(IS_WIN)
 // Update Overlay and DXGI Info

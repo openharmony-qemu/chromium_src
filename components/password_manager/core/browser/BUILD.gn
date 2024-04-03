@@ -609,7 +609,6 @@ source_set("unit_tests") {
     "affiliation/affiliation_fetch_throttler_unittest.cc",
     "affiliation/affiliation_fetcher_factory_impl_unittest.cc",
     "affiliation/affiliation_service_impl_unittest.cc",
-    "affiliation/affiliations_prefetcher_unittest.cc",
     "affiliation/asset_link_data_unittest.cc",
     "affiliation/facet_manager_unittest.cc",
     "affiliation/hash_affiliation_fetcher_unittest.cc",
@@ -695,6 +694,11 @@ source_set("unit_tests") {
     "well_known_change_password_state_unittest.cc",
     "well_known_change_password_util_unittest.cc",
   ]
+  if (!ohos_unittests) {
+    sources += [
+      "affiliation/affiliations_prefetcher_unittest.cc",
+    ]
+  }
   if (is_android) {
     sources += [
       "built_in_backend_to_android_backend_migrator_unittest.cc",

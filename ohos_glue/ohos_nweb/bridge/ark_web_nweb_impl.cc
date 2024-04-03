@@ -18,9 +18,12 @@
 #include "ohos_nweb/bridge/ark_web_accessibility_event_callback_wrapper.h"
 #include "ohos_nweb/bridge/ark_web_accessibility_node_info_impl.h"
 #include "ohos_nweb/bridge/ark_web_bool_value_callback_wrapper.h"
+#include "ohos_nweb/bridge/ark_web_cache_options_wrapper.h"
 #include "ohos_nweb/bridge/ark_web_core_struct_utils.h"
+#include "ohos_nweb/bridge/ark_web_create_native_media_player_callback_wrapper.h"
 #include "ohos_nweb/bridge/ark_web_download_callback_wrapper.h"
 #include "ohos_nweb/bridge/ark_web_drag_data_impl.h"
+#include "ohos_nweb/bridge/ark_web_drag_event_wrapper.h"
 #include "ohos_nweb/bridge/ark_web_find_callback_wrapper.h"
 #include "ohos_nweb/bridge/ark_web_handler_wrapper.h"
 #include "ohos_nweb/bridge/ark_web_history_list_impl.h"
@@ -395,10 +398,14 @@ void ArkWebNWebImpl::SetPortMessageCallback(
       std::make_shared<ArkWebMessageValueCallbackWrapper>(callback));
 }
 
-void ArkWebNWebImpl::SendDragEvent(const ArkWebDragEvent &drag_event) {
-  OHOS::NWeb::DragEvent nweb_drag_event =
-      ArkWebDragEventStructToClass(drag_event);
-  nweb_nweb_->SendDragEvent(nweb_drag_event);
+void ArkWebNWebImpl::SendDragEvent(ArkWebRefPtr<ArkWebDragEvent> drag_event) {
+  if (CHECK_REF_PTR_IS_NULL(drag_event)) {
+    nweb_nweb_->SendDragEvent(nullptr);
+    return;
+  }
+
+  nweb_nweb_->SendDragEvent(
+      std::make_shared<ArkWebDragEventWrapper>(drag_event));
 }
 
 void ArkWebNWebImpl::ClearSslCache() {
@@ -784,6 +791,19 @@ int ArkWebNWebImpl::GetMediaPlaybackState() {
   return nweb_nweb_->GetMediaPlaybackState();
 }
 
+ArkWebString ArkWebNWebImpl::GetLastJavascriptProxyCallingFrameUrl() {
+  return ArkWebStringClassToStruct(
+      nweb_nweb_->GetLastJavascriptProxyCallingFrameUrl());
+}
+
+void ArkWebNWebImpl::EnableIntelligentTrackingPrevention(bool enable) {
+  nweb_nweb_->EnableIntelligentTrackingPrevention(enable);
+}
+
+bool ArkWebNWebImpl::IsIntelligentTrackingPreventionEnabled() {
+  return nweb_nweb_->IsIntelligentTrackingPreventionEnabled();
+}
+
 void ArkWebNWebImpl::StartCamera() {
   nweb_nweb_->StartCamera();
 }
@@ -796,16 +816,56 @@ void ArkWebNWebImpl::CloseCamera() {
   nweb_nweb_->CloseCamera();
 }
 
-ArkWebString ArkWebNWebImpl::GetLastJavascriptProxyCallingFrameUrl() {
-  return ArkWebStringClassToStruct(nweb_nweb_->GetLastJavascriptProxyCallingFrameUrl());
+bool ArkWebNWebImpl::GetPendingSizeStatus() {
+  return nweb_nweb_->GetPendingSizeStatus();
 }
 
-void ArkWebNWebImpl::EnableIntelligentTrackingPrevention(bool enable) {
-  nweb_nweb_->EnableIntelligentTrackingPrevention(enable);
+void ArkWebNWebImpl::ScrollByRefScreen(float delta_x, float delta_y, float vx,
+                                       float vy) {
+  nweb_nweb_->ScrollByRefScreen(delta_x, delta_y, vx, vy);
 }
 
-bool ArkWebNWebImpl::IsIntelligentTrackingPreventionEnabled() {
-  return nweb_nweb_->IsIntelligentTrackingPreventionEnabled();
+void ArkWebNWebImpl::ExecuteJavaScriptExt(
+    const int fd, const size_t scriptLength,
+    ArkWebRefPtr<ArkWebMessageValueCallback> callback, bool extention) {
+  if (CHECK_REF_PTR_IS_NULL(callback)) {
+    nweb_nweb_->ExecuteJavaScriptExt(fd, scriptLength, nullptr, extention);
+    return;
+  }
+
+  nweb_nweb_->ExecuteJavaScriptExt(
+      fd, scriptLength,
+      std::make_shared<ArkWebMessageValueCallbackWrapper>(callback), extention);
+}
+
+void ArkWebNWebImpl::OnRenderToBackground() {
+  nweb_nweb_->OnRenderToBackground();
+}
+
+void ArkWebNWebImpl::OnRenderToForeground() {
+  nweb_nweb_->OnRenderToForeground();
+}
+
+void ArkWebNWebImpl::PrecompileJavaScript(
+    const ArkWebString &url, const ArkWebString &script,
+    ArkWebRefPtr<ArkWebCacheOptions> &cacheOptions,
+    ArkWebRefPtr<ArkWebMessageValueCallback> callback) {
+  std::shared_ptr<OHOS::NWeb::CacheOptions> options =
+      std::make_shared<ArkWebCacheOptionsWrapper>(cacheOptions);
+  nweb_nweb_->PrecompileJavaScript(
+      ArkWebStringStructToClass(url), ArkWebStringStructToClass(script),
+      options, std::make_shared<ArkWebMessageValueCallbackWrapper>(callback));
+}
+
+void ArkWebNWebImpl::OnCreateNativeMediaPlayer(
+    ArkWebRefPtr<ArkWebCreateNativeMediaPlayerCallback> callback) {
+  if (CHECK_REF_PTR_IS_NULL(callback)) {
+    nweb_nweb_->OnCreateNativeMediaPlayer(nullptr);
+    return;
+  }
+
+  nweb_nweb_->OnCreateNativeMediaPlayer(
+      std::make_shared<ArkWebCreateNativeMediaPlayerCallbackWrapper>(callback));
 }
 
 } // namespace OHOS::ArkWeb

@@ -15,6 +15,7 @@
 #include "base/time/time.h"
 #include "components/viz/common/viz_common_export.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
+#include "ui/gfx/geometry/rect.h"
 
 namespace perfetto {
 class EventContext;
@@ -240,6 +241,7 @@ struct VIZ_COMMON_EXPORT BeginFrameArgs {
 
 #if BUILDFLAG(IS_OHOS)
   bool internal_frame = false;
+  gfx::Rect draw_rect;
 #endif
 
  private:

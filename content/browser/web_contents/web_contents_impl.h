@@ -356,10 +356,12 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 #endif  // defined(OHOS_MEDIA_MUTE_AUDIO)
 
 #if defined(OHOS_WEBRTC)
-  void StartCamera() override;
-  void StopCamera() override;
-  void CloseCamera() override;
-#endif // defined(OHOS_WEBRTC)
+  void StartCamera(int nWebID) override;
+  void StopCamera(int nWebID) override;
+  void CloseCamera(int nWebID) override;
+  int GetNWebId() override;
+  void SetNWebId(int nWebID) override;
+#endif  // defined(OHOS_WEBRTC)
 
   // WebContents ------------------------------------------------------
   WebContentsDelegate* GetDelegate() override;
@@ -500,6 +502,10 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   bool IsBeingVisiblyCaptured() override;
   bool IsAudioMuted() override;
   void SetAudioMuted(bool mute) override;
+#if defined(OHOS_MEDIA_POLICY)
+  void SetHtmlPlayEnabled(bool enabled) override;
+  bool IsHtmlPlayEnabled() override;
+#endif
   bool IsCurrentlyAudible() override;
   bool IsConnectedToBluetoothDevice() override;
   bool IsScanningForBluetoothDevices() override;
@@ -755,6 +761,9 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
       bool start_recording,
       absl::optional<ui::AXEventCallback> callback) override;
   device::mojom::GeolocationContext* GetGeolocationContext() override;
+#if defined(OHOS_SCREEN_LOCK)
+  void SetWakeLockHandler(int32_t windowId, const SetKeepScreenOn& handler) override;
+#endif
   device::mojom::WakeLockContext* GetWakeLockContext() override;
 #if BUILDFLAG(IS_ANDROID)
   void GetNFC(RenderFrameHost*,
@@ -1323,6 +1332,7 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 
   // Called when a file selection is to be done.
   void RunFileChooser(
+      base::WeakPtr<FileChooserImpl> file_chooser,
       RenderFrameHost* render_frame_host,
       scoped_refptr<FileChooserImpl::FileSelectListenerImpl> listener,
       const blink::mojom::FileChooserParams& params);
@@ -1331,6 +1341,7 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   // chooser in directory-enumeration mode and having the user select the given
   // directory.
   void EnumerateDirectory(
+      base::WeakPtr<FileChooserImpl> file_chooser,
       RenderFrameHost* render_frame_host,
       scoped_refptr<FileChooserImpl::FileSelectListenerImpl> listener,
       const base::FilePath& directory_path);
@@ -2020,10 +2031,6 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 
   // Data for core operation ---------------------------------------------------
 
-#ifdef OHOS_USERAGENT
-void SetTabletMode(bool is_tablet) override;
-#endif
-
   // Delegate for notifying our owner about stuff. Not owned by us.
   raw_ptr<WebContentsDelegate, DanglingUntriaged> delegate_;
 
@@ -2370,6 +2377,11 @@ void SetTabletMode(bool is_tablet) override;
   bool stylus_handwriting_enabled_ = false;
 
   bool is_currently_audible_ = false;
+
+#if defined(OHOS_MEDIA_POLICY)
+  bool is_enabled_HTML_play_ = true;
+#endif
+
 #if defined(OHOS_MEDIA_MUTE_AUDIO)
   int media_player_audible_count_ = 0;
   bool is_ohos_currently_audible_ = false;
@@ -2521,6 +2533,10 @@ void SetTabletMode(bool is_tablet) override;
 #ifdef OHOS_EX_TOPCONTROLS
   cc::BrowserControlsState browser_controls_state_ =
       cc::BrowserControlsState::kBoth;
+  cc::BrowserControlsState controls_state_fullscreen_ =
+      cc::BrowserControlsState::kBoth;
+  cc::BrowserControlsState controls_state_current_fullscreen_ =
+      cc::BrowserControlsState::kBoth;
 #endif
 
   // Stores the information whether last navigation was prerender activation for
@@ -2533,8 +2549,14 @@ void SetTabletMode(bool is_tablet) override;
   // contents. Custom cursors are allowed if this is 0.
   int disallow_custom_cursor_scope_count_ = 0;
 
+  base::WeakPtr<FileChooserImpl> active_file_chooser_;
+
   base::WeakPtrFactory<WebContentsImpl> loading_weak_factory_{this};
   base::WeakPtrFactory<WebContentsImpl> weak_factory_{this};
+
+#if defined(OHOS_WEBRTC)
+  int nWebID_ = 0;
+#endif  // defined(OHOS_WEBRTC)
 };
 
 // Dangerous methods which should never be made part of the public API, so we

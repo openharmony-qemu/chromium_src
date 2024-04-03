@@ -17,7 +17,7 @@
 #define ARK_WEB_CTOCPP_MACROS_H_
 #pragma once
 
-#include "base/include/ark_web_interface_result.h"
+#include "base/include/ark_web_errno.h"
 #include "base/include/ark_web_log_utils.h"
 
 #define ARK_WEB_CTOCPP_DV_LOG(fmt, ...) ARK_WEB_BASE_DV_LOG(fmt, ##__VA_ARGS__)
@@ -39,8 +39,9 @@
 
 #define ARK_WEB_CTOCPP_CHECK_PARAM(param, result)                              \
   {                                                                            \
+    ArkWebSetErrno(RESULT_OK);                                                 \
     if (!(param)) {                                                            \
-      interface_result = RESULT_CTOCPP_ERROR;                                  \
+      ArkWebSetErrno(RESULT_CTOCPP_ERROR);                                     \
       ARK_WEB_CTOCPP_WRAN_LOG("param is null");                                \
       return result;                                                           \
     }                                                                          \
@@ -48,8 +49,9 @@
 
 #define ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(struct, function, result)             \
   {                                                                            \
+    ArkWebSetErrno(RESULT_OK);                                                 \
     if (ARK_WEB_FUNC_MEMBER_MISSING(struct, function)) {                       \
-      interface_result = RESULT_NOT_IMPL;                                      \
+      ArkWebSetErrno(RESULT_NOT_IMPL);                                         \
       ARK_WEB_CTOCPP_INFO_LOG("function isn't existing");                      \
       return result;                                                           \
     }                                                                          \

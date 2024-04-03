@@ -128,6 +128,10 @@ class CONTENT_EXPORT RenderWidgetHostView {
   virtual void Show() = 0;
   virtual void Hide() = 0;
 
+#if BUILDFLAG(IS_OHOS)
+  virtual void EvictFrameBackBuffers(bool invisible) = 0;
+#endif
+
   // Whether the view is showing.
   virtual bool IsShowing() = 0;
 

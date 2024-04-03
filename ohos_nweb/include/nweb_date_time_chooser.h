@@ -51,14 +51,23 @@ enum DateTimeChooserType {
     DTC_UNKNOWN
 };
 
-struct DateTimeChooser {
-    DateTimeChooserType type;
-    DateTime dialogValue;
-    DateTime minimum;
-    DateTime maximum;
-    double step;
-    size_t suggestionIndex = 0;
-    bool hasSelected = false;
+class NWebDateTimeChooser {
+public:
+    virtual ~NWebDateTimeChooser() = default;
+
+    virtual DateTimeChooserType GetType() = 0;
+
+    virtual double GetStep() = 0;
+
+    virtual DateTime GetMinimum() = 0;
+
+    virtual DateTime GetMaximum() = 0;
+
+    virtual DateTime GetDialogValue() = 0;
+
+    virtual bool GetHasSelected() = 0;
+
+    virtual size_t GetSuggestionIndex() = 0;
 };
 
 class NWebDateTimeChooserCallback {

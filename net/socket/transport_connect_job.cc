@@ -243,6 +243,10 @@ int TransportConnectJob::DoLoop(int result) {
 
 int TransportConnectJob::DoResolveHost() {
   connect_timing_.domain_lookup_start = base::TimeTicks::Now();
+#if BUILDFLAG(IS_OHOS)
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "domainLookupStart", connect_timing_.domain_lookup_start);
+#endif
 
   if (has_dns_override_) {
     DCHECK_EQ(1u, endpoint_results_.size());
@@ -277,6 +281,12 @@ int TransportConnectJob::DoResolveHostComplete(int result) {
   // Overwrite connection start time, since for connections that do not go
   // through proxies, |connect_start| should not include dns lookup time.
   connect_timing_.connect_start = connect_timing_.domain_lookup_end;
+#if BUILDFLAG(IS_OHOS)
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "domainLookupEnd", connect_timing_.domain_lookup_end);
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "connectStart", connect_timing_.connect_start);
+#endif
   resolve_error_info_ = request_->GetResolveErrorInfo();
 
   if (result != OK) {

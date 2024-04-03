@@ -82,4 +82,10 @@ struct CompositorFrameMetadata {
   // Add for sliding response debug
   [EnableIf=ohos_slide]
   bool is_scrolling;
+
+  [EnableIf=report_sys_event]
+  int64 dropped_frame_count;
+
+  [EnableIf=report_sys_event]
+  int64 dropped_frame_duration;
 };

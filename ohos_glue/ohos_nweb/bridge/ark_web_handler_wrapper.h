@@ -415,8 +415,9 @@ public:
   void OnFullScreenEnter(
       std::shared_ptr<OHOS::NWeb::NWebFullScreenExitHandler> handler) override;
 
-  bool OnDragAndDropData(const void *data, size_t len,
-                         const OHOS::NWeb::ImageOptions &opt) override;
+  bool
+  OnDragAndDropData(const void *data, size_t len,
+                    std::shared_ptr<OHOS::NWeb::NWebImageOptions> opt) override;
 
   void OnSelectPopupMenu(
       std::shared_ptr<OHOS::NWeb::NWebSelectPopupMenuParam> params,
@@ -469,7 +470,7 @@ public:
                               int64_t first_contentful_paint_ms) override;
 
   void OnDateTimeChooserPopup(
-      const OHOS::NWeb::DateTimeChooser &chooser,
+      std::shared_ptr<OHOS::NWeb::NWebDateTimeChooser> chooser,
       const std::vector<std::shared_ptr<OHOS::NWeb::NWebDateTimeSuggestion>>
           &suggestions,
       std::shared_ptr<OHOS::NWeb::NWebDateTimeChooserCallback> callback)
@@ -496,8 +497,8 @@ public:
    */
   void OnActivityStateChanged(int state, ArkWebActivityType type) override;
 
-  void
-  OnGetTouchHandleHotZone(OHOS::NWeb::TouchHandleHotZone &hot_zone) override;
+  void OnGetTouchHandleHotZone(
+      std::shared_ptr<OHOS::NWeb::NWebTouchHandleHotZone> hot_zone) override;
 
   /**
    * @brief Called when swap buffer completed with new size.
@@ -564,6 +565,37 @@ public:
       const std::string &website_host,
       const std::string &tracker_host) override;
 
+  /**
+   * @brief Called when the first meaningful paint rendering of web page.
+   *
+   * @param details represents the details of first meaningful paint.
+   */
+  void OnFirstMeaningfulPaint(
+      std::shared_ptr<OHOS::NWeb::NWebFirstMeaningfulPaintDetails> details)
+      override;
+
+  /**
+   * @brief Called when the largest contentful paint rendering of web page.
+   *
+   * @param details represents the details of largest contentful paint.
+   */
+  void OnLargestContentfulPaint(
+      std::shared_ptr<OHOS::NWeb::NWebLargestContentfulPaintDetails> details)
+      override;
+
+  bool OnAllSslErrorRequestByJS(
+      std::shared_ptr<OHOS::NWeb::NWebJSAllSslErrorResult> result,
+      ArkWebSslError error, const std::string &url,
+      const std::string &originalUrl, const std::string &referrer,
+      bool isFatalError, bool isMainFrame) override;
+
+  void OnTooltip(const std::string& tooltip) override;
+
+  /**
+   * @brief called when resizehold is released.
+   *
+   */
+  void ReleaseResizeHold() override;
 private:
   ArkWebRefPtr<ArkWebHandler> ark_web_handler_;
 };

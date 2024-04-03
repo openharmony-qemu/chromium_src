@@ -75,6 +75,11 @@ class MediaSessionPlayerObserver {
   // Returns true if the |player_id| has video tracks.
   virtual bool HasVideo(int player_id) const = 0;
 
+#if defined(OHOS_MEDIA_POLICY)
+  // Set to use the given |player_id| to control the HTML play of the media
+  virtual void OnSetHtmlPlayEnabled(int player_id, bool enabled) {}
+#endif // defined(OHOS_MEDIA_POLICY)
+
   // Returns the id of the audio output device used by |player_id|. Returns the
   // empty string if unavailable.
   virtual std::string GetAudioOutputSinkId(int player_id) const = 0;

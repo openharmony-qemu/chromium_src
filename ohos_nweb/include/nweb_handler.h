@@ -38,11 +38,14 @@
 #include "nweb_js_ssl_select_cert_result.h"
 #include "nweb_key_event.h"
 #include "nweb_load_committed_details.h"
+#include "nweb_first_meaningful_paint_details.h"
+#include "nweb_largest_contentful_paint_details.h"
 #include "nweb_select_popup_menu.h"
 #include "nweb_touch_handle_state.h"
 #include "nweb_url_resource_error.h"
 #include "nweb_url_resource_request.h"
 #include "nweb_url_resource_response.h"
+#include "nweb_gesture_event_result.h"
 
 namespace OHOS::NWeb {
 enum class RenderExitReason {
@@ -62,11 +65,14 @@ enum class RenderExitReason {
     PROCESS_EXIT_UNKNOWN,
 };
 
-struct ImageOptions {
-    ImageColorType colorType;
-    ImageAlphaType alphaType;
-    size_t width;
-    size_t height;
+class NWebImageOptions {
+public:
+    virtual ~NWebImageOptions() = default;
+
+    virtual ImageColorType GetColorType() = 0;
+    virtual ImageAlphaType GetAlphaType() = 0;
+    virtual size_t GetWidth() = 0;
+    virtual size_t GetHeight() = 0;
 };
 
 enum class SslError {
@@ -146,9 +152,12 @@ struct NWebCursorInfo {
     float scale = 1.0;
 };
 
-struct TouchHandleHotZone {
-    double width = 0.0;
-    double height = 0.0;
+class NWebTouchHandleHotZone {
+public:
+    virtual ~NWebTouchHandleHotZone() = default;
+
+    virtual void SetWidth(double width) = 0;
+    virtual void SetHeight(double height) = 0;
 };
 
 enum class MediaPlayingState {
@@ -198,6 +207,10 @@ public:
     virtual std::string GetTag() = 0;
 
     virtual std::map<std::string, std::string> GetParams() = 0;
+
+    virtual int32_t GetX() = 0;
+
+    virtual int32_t GetY() = 0;
 };
 
 class NWebNativeEmbedDataInfo {
@@ -241,6 +254,8 @@ public:
     virtual float GetScreenY() = 0;
 
     virtual std::string GetEmbedId() = 0;
+
+    virtual std::shared_ptr<NWebGestureEventResult> GetResult() = 0;
 };
 
 class OHOS_NWEB_EXPORT NWebHandler {
@@ -554,7 +569,8 @@ public:
 
     virtual void OnScroll(double xOffset, double yOffset) {}
 
-    virtual bool OnDragAndDropData(const void* data, size_t len, const ImageOptions& opt) {
+    virtual bool OnDragAndDropData(const void* data, size_t len,
+                                   std::shared_ptr<NWebImageOptions> opt) {
         return false;
     }
 
@@ -659,6 +675,20 @@ public:
      */
     virtual void OnFirstContentfulPaint(int64_t navigationStartTick,
                                         int64_t firstContentfulPaintMs) {}
+    
+    /**
+     * @brief Called when the first meaningful paint rendering of web page.
+     * @param details represents the details of first meaningful paint.
+     */
+    virtual void OnFirstMeaningfulPaint(
+        std::shared_ptr<NWebFirstMeaningfulPaintDetails> details) {}
+
+    /**
+     * @brief Called when the largest contentful paint rendering of web page.
+     * @param details represents the details of largest contentful paint.
+     */
+    virtual void OnLargestContentfulPaint(
+        std::shared_ptr<NWebLargestContentfulPaintDetails> details) {}
 
     /**
      * @brief Called when swap buffer completed with new size.
@@ -670,10 +700,10 @@ public:
      */
     virtual void OnResizeNotWork() {}
 
-    virtual void OnGetTouchHandleHotZone(TouchHandleHotZone& hotZone) {}
+    virtual void OnGetTouchHandleHotZone(std::shared_ptr<NWebTouchHandleHotZone> hotZone) {}
 
     virtual void OnDateTimeChooserPopup(
-        const DateTimeChooser& chooser,
+        std::shared_ptr<NWebDateTimeChooser> chooser,
         const std::vector<std::shared_ptr<NWebDateTimeSuggestion>>& suggestions,
         std::shared_ptr<NWebDateTimeChooserCallback> callback) {}
 
@@ -767,6 +797,28 @@ public:
         std::shared_ptr<OHOS::NWeb::NWebUrlResourceRequest> request) {
       return false;
     }
+
+    virtual bool OnAllSslErrorRequestByJS(std::shared_ptr<NWebJSAllSslErrorResult> result,
+                                       SslError error,
+                                       const std::string& url,
+                                       const std::string& originalUrl,
+                                       const std::string& referrer,
+                                       bool isFatalError,
+                                       bool isMainFrame) {
+        return false;
+    }
+
+    /**
+     * @brief Called when a tooltip should be presented for a component.
+     *
+     * @param tooltip The content of the tooltip.
+     */
+    virtual void OnTooltip(const std::string& param) {}
+
+    /**
+     * @brief called when resizehold is released.
+     */
+    virtual void ReleaseResizeHold() {}
 };
 }  // namespace OHOS::NWeb
 

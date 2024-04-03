@@ -25,6 +25,10 @@
 #include "res_sched_client_adapter.h"
 #endif
 
+#if defined(REPORT_SYS_EVENT)
+#include "ohos_nweb/src/sysevent/event_reporter.h"
+#endif
+
 namespace viz {
 
 namespace {
@@ -146,6 +150,13 @@ void CompositorFrameSinkImpl::SubmitCompositorFrame(
     CompositorFrame frame,
     absl::optional<HitTestRegionList> hit_test_region_list,
     uint64_t submit_time) {
+#if defined(REPORT_SYS_EVENT)
+  auto count = frame.metadata.dropped_frame_count;
+  auto duration = frame.metadata.dropped_frame_duration;
+  if (!!count && !!duration) {
+    ReportVideoFrameDropStats(count, duration);
+  }
+#endif
   // Non-root surface frames should not have display transform hint.
   DCHECK_EQ(gfx::OVERLAY_TRANSFORM_NONE, frame.metadata.display_transform_hint);
   SubmitCompositorFrameInternal(local_surface_id, std::move(frame),
@@ -239,6 +250,15 @@ void CompositorFrameSinkImpl::ReportKeyThreadIds(
             base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread), status,
             process_id, thread_id, ResSchedRoleAdapter::IMPORTANT_DISPLAY));
   }
+}
+
+void CompositorFrameSinkImpl::OnVsyncReceived() {
+  if (!support_ || !support_->frame_sink_manager()) {
+    DLOG(ERROR) << "Compositor frame support or frame sink manager is not exist";
+    return;
+  }
+  FrameSinkId frame_sink_id = support_->frame_sink_id();
+  support_->frame_sink_manager()->OnVsyncReceived(frame_sink_id);
 }
 #endif
 

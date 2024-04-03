@@ -1020,4 +1020,42 @@ void VideoCaptureController::MaybeEmitFrameDropLogMessage(
   EmitLogMessage(string_stream.str(), 1);
 }
 
+#if defined(OHOS_WEBRTC)
+void VideoCaptureController::PauseClientBySessionId(
+    const base::UnguessableToken& session_id) {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+
+  ControllerClient* client = FindClient(session_id, controller_clients_);
+  if (!client) {
+    DVLOG(1) << "Client not found";
+    return;
+  }
+
+  if (client->paused) {
+    DVLOG(1) << "Calling pause on paused client";
+    return;
+  }
+
+  client->paused = true;
+}
+
+void VideoCaptureController::ResumeClientBySessionId(
+    const base::UnguessableToken& session_id) {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+
+  ControllerClient* client = FindClient(session_id, controller_clients_);
+  if (!client) {
+    DVLOG(1) << "Client not found";
+    return;
+  }
+
+  if (!client->paused) {
+    DVLOG(1) << "Calling resume on unpaused client";
+    return;
+  }
+
+  client->paused = false;
+}
+#endif  // defined(OHOS_WEBRTC)
+
 }  // namespace content

@@ -109,6 +109,10 @@ class InputRouter {
   // Acks any pending touch events that are waiting for acks from the renderer.
   // Any future acks for those events from the renderer will be ignored.
   virtual void FlushTouchEventQueue() = 0;
+
+#if BUILDFLAG(IS_OHOS)
+  virtual void SetGestureEventResult(bool result) = 0;
+#endif
 };
 
 }  // namespace content

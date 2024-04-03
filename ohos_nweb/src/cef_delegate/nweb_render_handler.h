@@ -93,6 +93,8 @@ class NWebRenderHandler : public CefRenderHandler {
                           int height,
                           int width) override;
 
+  void ReleaseResizeHold(CefRefPtr<CefBrowser> browser) override;
+
   void OnScrollOffsetChanged(CefRefPtr<CefBrowser> browser,
                              double x,
                              double y) override;
@@ -147,7 +149,8 @@ class NWebRenderHandler : public CefRenderHandler {
   void OnScrollState(CefRefPtr<CefBrowser> browser,
                      bool scroll_state) override;
   void OnNativeEmbedGestureEvent(CefRefPtr<CefBrowser> browser,
-                    const CefEmbedTouchEvent& event) override;
+                    const CefEmbedTouchEvent& event,
+                    CefRefPtr<CefGestureEventCallback> callback) override;
   void OnNativeEmbedLifecycleChange(CefRefPtr<CefBrowser> browser,
                     const CefNativeEmbedData& info) override;
   bool FilterScrollEvent(CefRefPtr<CefBrowser> browser,

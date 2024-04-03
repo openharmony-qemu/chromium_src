@@ -147,6 +147,7 @@ class NWebHandlerDelegate : public CefClient,
   void CloseAllBrowsers(bool force_close);
   bool IsClosing() const;
   const CefRefPtr<CefBrowser> GetBrowser();
+  bool OnTooltip(CefRefPtr<CefBrowser> browser, CefString& text) override;
 
   /* CefClient methods begin */
   CefRefPtr<CefDownloadHandler> GetDownloadHandler() override;
@@ -175,6 +176,13 @@ class NWebHandlerDelegate : public CefClient,
                              CefRefPtr<CefListValue> result,
                              int32_t routing_id,
                              int32_t object_id) override;
+  int NotifyJavaScriptResultFlowbuf(CefRefPtr<CefListValue> args,
+                                    const CefString& method,
+                                    const CefString& object_name,
+                                    int fd,
+                                    CefRefPtr<CefListValue> result,
+                                    int32_t routing_id,
+                                    int32_t object_id) override;
   bool HasJavaScriptObjectMethods(int32_t object_id,
                                   const CefString& method_name) override;
   void GetJavaScriptObjectMethods(
@@ -264,6 +272,12 @@ class NWebHandlerDelegate : public CefClient,
 
   void OnFirstContentfulPaint(int64_t navigationStartTick,
                               int64_t firstContentfulPaintMs) override;
+  
+  void OnFirstMeaningfulPaint(
+      CefRefPtr<CefFirstMeaningfulPaintDetails> details) override;
+  
+  void OnLargestContentfulPaint(
+      CefRefPtr<CefLargestContentfulPaintDetails> details) override;
 
   void OnDataResubmission(CefRefPtr<CefBrowser> browser,
                           CefRefPtr<CefCallback> callback) override;
@@ -557,10 +571,9 @@ class NWebHandlerDelegate : public CefClient,
 
   const std::vector<std::string> GetVisitedHistory();
 
-#if defined(REPORT_SYS_EVENT)
   void SetNWebId(uint32_t nwebId);
   uint32_t GetNWebId();
-#endif
+
   void SetWindowId(uint32_t window_id) { window_id_ = window_id; }
 
   void SetFavicon(const void* icon_data,
@@ -606,6 +619,22 @@ class NWebHandlerDelegate : public CefClient,
       const CefString& website_host, const CefString& tracker_host) override;
 #endif
 
+#ifdef OHOS_NETWORK_LOAD
+  bool OnAllCertificateError(CefRefPtr<CefBrowser> browser,
+                             cef_errorcode_t cert_error,
+                             const CefString& request_url,
+                             const CefString& origin_url,
+                             const CefString& referrer,
+                             bool is_main_frame_request,
+                             bool is_fatal_error,
+                             CefRefPtr<CefSSLInfo> ssl_info,
+                             CefRefPtr<CefCallback> callback) override;
+#endif
+
+#if defined(OHOS_SCREEN_LOCK)
+  void SetWakeLockCallback(int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback);
+#endif
+
  private:
   void CopyImageToClipboard(CefRefPtr<CefImage> image);
   // List of existing browser windows. Only accessed on the CEF UI thread.
@@ -636,6 +665,11 @@ class NWebHandlerDelegate : public CefClient,
   bool is_enhance_surface_ = false;
   void* window_ = nullptr;
 
+#if defined(OHOS_SCREEN_LOCK)
+  std::shared_ptr<NWebScreenLockCallback> screen_lock_callback_ = nullptr;
+  int32_t screen_lock_window_id_ = -1;
+#endif
+
   CefString image_cache_src_url_;
 
   // the received icon
@@ -646,8 +680,8 @@ class NWebHandlerDelegate : public CefClient,
   ImageColorType color_type_ = ImageColorType::COLOR_TYPE_UNKNOWN;
   ImageAlphaType alpha_type_ = ImageAlphaType::ALPHA_TYPE_UNKNOWN;
 
-#if defined(REPORT_SYS_EVENT)
   uint32_t nweb_id_ = 0;
+#if defined(REPORT_SYS_EVENT)
   // For page load statistics
   uint32_t access_sum_count_ = 0;
   uint32_t access_success_count_ = 0;

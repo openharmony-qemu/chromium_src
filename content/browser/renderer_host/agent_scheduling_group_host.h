@@ -115,6 +115,11 @@ class CONTENT_EXPORT AgentSchedulingGroupHost
   // mojom::AgentSchedulingGroupHost overrides.
   void DidUnloadRenderFrame(const blink::LocalFrameToken& frame_token) override;
 
+#if BUILDFLAG(IS_OHOS)
+  // mojom::AgentSchedulingGroupHost overrides.
+  void ReportCreateView(int32_t process_id) override;
+#endif
+
  private:
   enum class LifecycleState {
     // Just instantiated, no route assigned yet.

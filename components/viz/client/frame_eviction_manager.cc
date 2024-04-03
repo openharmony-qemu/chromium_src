@@ -16,8 +16,14 @@
 #include "base/task/single_thread_task_runner.h"
 #include "build/build_config.h"
 #include "components/viz/common/features.h"
+#ifdef OHOS_NWEB_EX
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
 #if (BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_DISCARD_BG_WEBPAGE))
 #include "base/ohos/sys_info_utils.h"
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
 #endif
 
 namespace viz {
@@ -90,17 +96,25 @@ void FrameEvictionManager::UnlockFrame(FrameEvictionManagerClient* frame) {
 void FrameEvictionManager::RegisterUnlockedFrame(
     FrameEvictionManagerClient* frame) {
   unlocked_frames_.emplace_front(frame, clock_->NowTicks());
-  if (base::FeatureList::IsEnabled(features::kAggressiveFrameCulling)) {
-    if (!idle_frames_culling_timer_.IsRunning()) {
-      // Unretained: `idle_frames_culling_timer_` is a member of `this`, doesn't
-      // outlive it, and cancels the task in its destructor.
-      idle_frames_culling_timer_.Start(
-          FROM_HERE, kPeriodicCullingDelay,
-          base::BindRepeating(&FrameEvictionManager::CullOldUnlockedFrames,
-                              base::Unretained(this)));
+#ifdef OHOS_NWEB_EX
+  if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
+           switches::kForBrowser)) {
+#endif
+    if (base::FeatureList::IsEnabled(features::kAggressiveFrameCulling)) {
+      if (!idle_frames_culling_timer_.IsRunning()) {
+        // Unretained: `idle_frames_culling_timer_` is a member of `this`, doesn't
+        // outlive it, and cancels the task in its destructor.
+        idle_frames_culling_timer_.Start(
+            FROM_HERE, kPeriodicCullingDelay,
+            base::BindRepeating(&FrameEvictionManager::CullOldUnlockedFrames,
+                                base::Unretained(this)));
+      }
     }
+#ifdef OHOS_NWEB_EX
   }
+#endif
 }
+
 
 size_t FrameEvictionManager::GetMaxNumberOfSavedFrames() const {
   int percentage = 100;
@@ -141,7 +155,8 @@ FrameEvictionManager::FrameEvictionManager()
 #endif
 
 #if (BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_DISCARD_BG_WEBPAGE))
-  if (base::ohos::IsTabletDevice() || base::ohos::IsPcDevice()) {
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            switches::kMaxNumberOfSavedFrames)) {
     max_number_of_saved_frames_ = kMaxNumberOfSavedFrames;
   }
 

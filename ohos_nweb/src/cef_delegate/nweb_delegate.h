@@ -57,7 +57,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
             , bool incognito_mode
 #endif
             );
-
+  void OnWindowShow() override;
+  void OnWindowHide() override;
   bool IsReady() override;
   void OnDestroy(bool is_close_all) override;
   void RegisterWebAppClientExtensionListener(
@@ -214,6 +215,12 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   bool IsFileProtocol(const GURL& gurl);
   bool IsUrlFileExist(const GURL& gurl, const std::string& url);
 
+  void ExecuteJavaScriptExt(
+      const int fd,
+      const size_t scriptLength,
+      std::shared_ptr<NWebMessageValueCallback> callback,
+      bool extention) override;
+
 #if defined(OHOS_MSGPORT)
   uint32_t runJSCallbackId_ = 0;
   std::unordered_map<uint32_t, CefRefPtr<JavaScriptResultCallbackImpl>> runJSCallbackMap_;
@@ -235,9 +242,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       override;
 #endif  // defined(OHOS_MSGPORT)
 
-#if defined(REPORT_SYS_EVENT)
   void SetNWebId(uint32_t nwebId) override;
-#endif
 
   void StoreWebArchive(
       const std::string& base_name,
@@ -307,6 +312,10 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #ifdef BUILDFLAG(IS_OHOS)
 bool IsSafeBrowsingEnabled() override;
 void EnableSafeBrowsing(bool enable) override;
+void PrecompileJavaScript(const std::string& url,
+                          const std::string& script,
+                          std::shared_ptr<CacheOptions>& cacheOptions,
+                          std::shared_ptr<NWebMessageValueCallback> callback) override;
 #endif
 
 #ifdef OHOS_PAGE_UP_DOWN
@@ -319,6 +328,7 @@ void EnableSafeBrowsing(bool enable) override;
       std::shared_ptr<NWebDelegateInterface> client) override;
   void ScrollTo(float x, float y) override;
   void ScrollBy(float delta_x, float delta_y) override;
+  void ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) override;
   void SlideScroll(float vx, float vy) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
@@ -342,6 +352,7 @@ void EnableSafeBrowsing(bool enable) override;
   void SetShouldFrameSubmissionBeforeDraw(bool should) override;
   void SetDrawRect(int32_t x, int32_t y, int32_t width, int32_t height) override;
   void SetDrawMode(int32_t mode) override;
+  bool GetPendingSizeStatus() override;
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 
 #if defined(OHOS_MULTI_WINDOW)
@@ -401,6 +412,10 @@ void EnableSafeBrowsing(bool enable) override;
   void StopCamera() override;
   void CloseCamera() override;
 #endif  // defined(OHOS_WEBRTC)
+
+#if defined(OHOS_SCREEN_LOCK)
+  void SetWakeLockCallback(int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback) override;
+#endif
 
 #if defined(OHOS_SECURE_JAVASCRIPT_PROXY)
   std::string GetLastJavascriptProxyCallingFrameUrl() override;
@@ -492,9 +507,7 @@ void EnableSafeBrowsing(bool enable) override;
   uint32_t height_ = 0;
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 
-#if defined(REPORT_SYS_EVENT)
   uint32_t nweb_id_;
-#endif
 
 #if BUILDFLAG(IS_OHOS)
   float base_display_width_ = -1.f;

@@ -72,6 +72,8 @@ class FrameRemoteTester : public content::FakeLocalFrame {
                        std::move(handle)));
   }
 
+  void GetImageFromCache(const std::string& url, GetImageFromCacheCallback callback) override {}
+
   // blink::mojom::LocalFrame:
   void GetOpenGraphMetadata(
       base::OnceCallback<void(blink::mojom::OpenGraphMetadataPtr)> callback)
@@ -80,6 +82,11 @@ class FrameRemoteTester : public content::FakeLocalFrame {
     std::move(callback).Run(std::move(response_));
   }
 
+#if defined(OHOS_UNITTESTS)
+  void JavaScriptExecuteRequestExt(
+      ::mojo::ScopedHandle fd_handle, uint64_t scriptLength, bool wants_result,
+      JavaScriptExecuteRequestExtCallback callback) override {}
+#endif
  private:
   mojo::AssociatedReceiverSet<blink::mojom::LocalFrame> receivers_;
   bool did_get_request_ = false;

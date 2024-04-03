@@ -86,6 +86,9 @@ class CC_EXPORT ProxyMain : public Proxy {
   CommitPipelineStage final_pipeline_stage() const {
     return final_pipeline_stage_;
   }
+#if BUILDFLAG(IS_OHOS)
+  void OnLayerRectUpdate(int id, const gfx::Rect& rect);
+#endif
 
  private:
   // Proxy implementation.

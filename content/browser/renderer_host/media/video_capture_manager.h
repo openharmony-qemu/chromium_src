@@ -234,9 +234,11 @@ class CONTENT_EXPORT VideoCaptureManager
   }
 
 #if defined(OHOS_WEBRTC)
-  void StartCamera();
-  void StopCamera();
-  void CloseCamera();
+  void StartCamera(int nWebId) const;
+  void StopCamera(int nWebId) const;
+  void CloseCamera(int nWebId) const;
+  void BindSessionIdToNWebId(media::VideoCaptureSessionId sessionId,
+                             int nWebId);
 #endif  // defined(OHOS_WEBRTC)
 
  private:
@@ -247,6 +249,9 @@ class CONTENT_EXPORT VideoCaptureManager
   using DeviceStartQueue = base::circular_deque<CaptureDeviceStartRequest>;
   using VideoCaptureDeviceDescriptor = media::VideoCaptureDeviceDescriptor;
   using VideoCaptureDeviceDescriptors = media::VideoCaptureDeviceDescriptors;
+#if defined(OHOS_WEBRTC)
+  using NWebIdMap = std::map<media::VideoCaptureSessionId, int>;
+#endif  // defined(OHOS_WEBRTC)
 
   ~VideoCaptureManager() override;
 
@@ -369,6 +374,11 @@ class CONTENT_EXPORT VideoCaptureManager
 
   SetDesktopCaptureWindowIdCallback
       set_desktop_capture_window_id_callback_for_testing_;
+
+#if defined(OHOS_WEBRTC)
+  NWebIdMap nWebId_;
+  mutable std::mutex NWebIdMutex_;
+#endif  // defined(OHOS_WEBRTC)
 };
 
 }  // namespace content

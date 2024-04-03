@@ -43,6 +43,7 @@
 
 #if BUILDFLAG(IS_OHOS)
 #include "base/ohos/sys_info_utils.h"
+#include "content/public/common/content_switches.h"
 #endif
 
 namespace {
@@ -788,7 +789,8 @@ void ParseCommandLineAndFieldTrials(const base::CommandLine& command_line,
 
 net::URLRequestContextBuilder::HttpCacheParams::Type ChooseCacheType() {
 #if defined(OHOS_CACHE)
-  if (base::ohos::IsMobileDevice() || base::ohos::IsTabletDevice()) {
+  if ((*base::CommandLine::ForCurrentProcess())
+          .HasSwitch(switches::kOhosHttpCacheSimple)) {
     return net::URLRequestContextBuilder::HttpCacheParams::DISK_SIMPLE;
   } else {
     return net::URLRequestContextBuilder::HttpCacheParams::DISK_BLOCKFILE;

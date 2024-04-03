@@ -114,6 +114,7 @@ bool InitializeCrashpadImpl(bool initial_client,
   if (!internal::PlatformCrashpadInitialization(
           initial_client, browser_process, embedded_handler, user_data_dir,
           exe_path, initial_arguments, &database_path)) {
+    LOG(ERROR) << "crashpad PlatformCrashpadInitialization failed";
     return false;
   }
 
@@ -209,6 +210,7 @@ bool InitializeCrashpadImpl(bool initial_client,
     SetUploadConsent(crash_reporter_client->GetCollectStatsConsent());
 #endif
   }
+
   return true;
 }
 
@@ -271,7 +273,7 @@ void SetUploadConsent(bool consent) {
 
 #endif  // !BUILDFLAG(IS_CHROMEOS_ASH)
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
 void DumpWithoutCrashing() {
   CRASHPAD_SIMULATE_CRASH();
 }

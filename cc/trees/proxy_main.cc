@@ -873,4 +873,10 @@ double ProxyMain::GetPercentDroppedFrames() const {
   return 0.0;
 }
 
+#if BUILDFLAG(IS_OHOS)
+void ProxyMain::OnLayerRectUpdate(int id, const gfx::Rect& rect) {
+  layer_tree_host_->OnLayerRectUpdate(id, rect);
+}
+#endif
+
 }  // namespace cc

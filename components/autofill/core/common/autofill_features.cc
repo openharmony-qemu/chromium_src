@@ -578,8 +578,9 @@ const base::FeatureParam<int> kAutofillAblationStudyAblationWeightPerMilleParam{
 // enabled on WebView.
 // TODO(crbug.com/1496382) Clean up autofill feature flag
 // `kAutofillAndroidDisableSuggestionsOnJSFocus`
-extern const base::Feature kAutofillAndroidDisableSuggestionsOnJSFocus{
-             "AutofillAndroidDisableSuggestionsOnJSFocus", base::FEATURE_DISABLED_BY_DEFAULT};
+BASE_FEATURE(kAutofillAndroidDisableSuggestionsOnJSFocus,
+             "AutofillAndroidDisableSuggestionsOnJSFocus",
+             base::FEATURE_DISABLED_BY_DEFAULT);
 
 // If enabled, crowdsourcing considers not just the value V but also the human
 // readable text HRT of an <option value="V">HRT</option> for voting.

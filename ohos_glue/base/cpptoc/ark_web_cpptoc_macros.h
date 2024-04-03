@@ -17,7 +17,7 @@
 #define ARK_WEB_CPPTOC_MACROS_H_
 #pragma once
 
-#include "base/include/ark_web_interface_result.h"
+#include "base/include/ark_web_errno.h"
 #include "base/include/ark_web_log_utils.h"
 
 #define ARK_WEB_CPPTOC_DV_LOG(fmt, ...) ARK_WEB_BASE_DV_LOG(fmt, ##__VA_ARGS__)
@@ -39,8 +39,9 @@
 
 #define ARK_WEB_CPPTOC_CHECK_PARAM(param, result)                              \
   {                                                                            \
+    ArkWebSetErrno(RESULT_OK);                                                 \
     if (!(param)) {                                                            \
-      interface_result = RESULT_CPPTOC_ERROR;                                  \
+      ArkWebSetErrno(RESULT_CPPTOC_ERROR);                                     \
       ARK_WEB_CPPTOC_WRAN_LOG("param is null");                                \
       return result;                                                           \
     }                                                                          \

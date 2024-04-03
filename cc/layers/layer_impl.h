@@ -401,6 +401,13 @@ class CC_EXPORT LayerImpl {
   void set_may_contain_native(bool yes) { may_contain_native_ = yes;}
   bool may_contain_native() const { return may_contain_native_;}
 
+  void set_native_embed_id(int embedId) { native_embed_id_ = embedId; }
+  int native_embed_id() const { return native_embed_id_; }
+
+  void SetNativeRect(const gfx::RectF& rect);
+  gfx::RectF NativeRect() const;
+  gfx::RectF GetNativeRect();
+
   // Layers that share a sorting context id will be sorted together in 3d
   // space.  0 is a special value that means this layer will not be sorted and
   // will be drawn in paint order.
@@ -517,6 +524,9 @@ class CC_EXPORT LayerImpl {
   // container layer. Remove scroll_container_bounds_ when we launch CAP.
   gfx::Size scroll_container_bounds_;
   gfx::Size scroll_contents_bounds_;
+
+  gfx::RectF native_rect_;
+
   bool scrollable_ : 1;
 
   // Tracks if drawing-related properties have changed since last redraw.
@@ -542,6 +552,8 @@ class CC_EXPORT LayerImpl {
   bool is_inner_viewport_scroll_layer_ : 1;
 
   bool may_contain_native_;
+
+  int native_embed_id_;
 
   TouchActionRegion touch_action_region_;
 

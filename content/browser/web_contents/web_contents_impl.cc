@@ -9,6 +9,7 @@
 #include <cmath>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -109,6 +110,7 @@
 #include "content/browser/webui/web_ui_impl.h"
 #include "content/browser/xr/service/xr_runtime_manager_impl.h"
 #include "content/common/content_switches_internal.h"
+#include "content/common/features.h"
 #include "content/public/browser/ax_inspect_factory.h"
 #include "content/public/browser/browser_context.h"
 #include "content/public/browser/browser_plugin_guest_manager.h"
@@ -2275,6 +2277,17 @@ void WebContentsImpl::SetAudioMuted(bool mute) {
   NotifyNavigationStateChanged(INVALIDATE_TYPE_AUDIO);
 }
 
+#if defined(OHOS_MEDIA_POLICY)
+void WebContentsImpl::SetHtmlPlayEnabled(bool enabled) {
+  observers_.NotifyObservers(&WebContentsObserver::SetHtmlPlayEnabled, enabled);
+  is_enabled_HTML_play_ = enabled;
+}
+
+bool WebContentsImpl::IsHtmlPlayEnabled() {
+  return is_enabled_HTML_play_;
+}
+#endif
+
 bool WebContentsImpl::IsCurrentlyAudible() {
   return is_currently_audible_;
 }
@@ -3099,13 +3112,17 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences() {
   if (command_line.HasSwitch(switches::kHideScrollbars))
     prefs.hide_scrollbars = true;
 
-  GetContentClient()->browser()->OverrideWebkitPrefs(this, &prefs);
 #if defined(OHOS_USERAGENT) || defined(OHOS_EX_UA)
   if (!user_agent_.empty()) {
     bool is_desktop = (user_agent_.find("Mobile") == std::string::npos);
     prefs.viewport_meta_enabled = !is_desktop;
-  }
+  } else
+    prefs.viewport_meta_enabled = true;
+#else
+    prefs.viewport_meta_enabled = true;
 #endif
+  GetContentClient()->browser()->OverrideWebkitPrefs(this, &prefs);
+  
   return prefs;
 }
 
@@ -3770,6 +3787,23 @@ void WebContentsImpl::EnterFullscreenMode(
       &WebContentsObserver::DidToggleFullscreenModeForTab, IsFullscreen(),
       false);
   FullscreenContentsSet(GetBrowserContext())->insert(this);
+
+#ifdef OHOS_EX_TOPCONTROLS
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kForBrowser)) {
+    controls_state_current_fullscreen_ = cc::BrowserControlsState::kBoth;
+    if (auto* view = GetRenderWidgetHostView()) {
+      int top_controls_offset =
+          static_cast<RenderWidgetHostViewBase*>(view)->GetTopControlsOffset();
+      controls_state_current_fullscreen_ =
+          top_controls_offset < 0 ? cc::BrowserControlsState::kHidden
+                                  : cc::BrowserControlsState::kShown;
+    }
+    controls_state_fullscreen_ = browser_controls_state_;
+    UpdateBrowserControlsState(cc::BrowserControlsState::kHidden,
+                               cc::BrowserControlsState::kHidden, false);
+  }
+#endif
 }
 
 void WebContentsImpl::ExitFullscreenMode(bool will_cause_resize) {
@@ -3812,6 +3846,14 @@ void WebContentsImpl::ExitFullscreenMode(bool will_cause_resize) {
     display_cutout_host_impl_->DidExitFullscreen();
 
   FullscreenContentsSet(GetBrowserContext())->erase(this);
+
+#ifdef OHOS_EX_TOPCONTROLS
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kForBrowser)) {
+    UpdateBrowserControlsState(controls_state_fullscreen_,
+                               controls_state_current_fullscreen_, false);
+  }
+#endif
 }
 
 void WebContentsImpl::FullscreenStateChanged(
@@ -3974,10 +4016,16 @@ void WebContentsImpl::UpdateVisibilityAndNotifyPageAndView(
   // calls us).
   if (auto* view = GetRenderWidgetHostView()) {
     if (view_is_visible) {
+#if BUILDFLAG(IS_OHOS)
+      view->EvictFrameBackBuffers(false);
+#endif
       static_cast<RenderWidgetHostViewBase*>(view)->ShowWithVisibility(
           page_visibility);
     } else if (new_visibility == Visibility::HIDDEN) {
       view->Hide();
+#if BUILDFLAG(IS_OHOS)
+      view->EvictFrameBackBuffers(true);
+#endif
     } else {
       view->WasOccluded();
     }
@@ -4214,6 +4262,16 @@ FrameTree* WebContentsImpl::CreateNewWindow(
   TRACE_EVENT2("browser,content,navigation", "WebContentsImpl::CreateNewWindow",
                "opener", opener, "params", params);
   DCHECK(opener);
+
+  if (active_file_chooser_) {
+    // Do not allow opening a new window or tab while a file select is active
+    // file chooser to avoid user confusion over which tab triggered the file
+    // chooser.
+    opener->AddMessageToConsole(
+        blink::mojom::ConsoleMessageLevel::kWarning,
+        "window.open blocked due to active file chooser.");
+    return nullptr;
+  }
 
   // Give the content browser client a chance to intercept the request and open
   // the URL with an external handler.
@@ -4526,6 +4584,17 @@ void WebContentsImpl::ShowCreatedWindow(
   // mojom::CreateNewWindowStatus::kReuse is used). Ignore the request then.
   if (!owned_created || !owned_created->contents)
     return;
+
+  if (base::FeatureList::IsEnabled(kWindowOpenFileSelectFix) &&
+      active_file_chooser_) {
+    // Do not allow opening a new window or tab while a file select is active
+    // file chooser to avoid user confusion over which tab triggered the file
+    // chooser.
+    opener->AddMessageToConsole(
+        blink::mojom::ConsoleMessageLevel::kWarning,
+        "window.open blocked due to active file chooser.");
+    return;
+  }
 
   WebContentsImpl* created = owned_created->contents.get();
 
@@ -4910,6 +4979,14 @@ device::mojom::GeolocationContext* WebContentsImpl::GetGeolocationContext() {
   }
   return geolocation_context_.get();
 }
+
+#if defined(OHOS_SCREEN_LOCK)
+void WebContentsImpl::SetWakeLockHandler(int32_t windowId, const SetKeepScreenOn& handler) {
+  if (!wake_lock_context_host_)
+    wake_lock_context_host_ = std::make_unique<WakeLockContextHost>(this);
+  wake_lock_context_host_->SetWakeLockHandler(windowId, std::move(handler));
+}
+#endif
 
 device::mojom::WakeLockContext* WebContentsImpl::GetWakeLockContext() {
   if (!enable_wake_locks_)
@@ -6713,21 +6790,35 @@ void WebContentsImpl::OnPageScaleFactorChanged(PageImpl& source) {
 }
 
 void WebContentsImpl::EnumerateDirectory(
+    base::WeakPtr<FileChooserImpl> file_chooser,
     RenderFrameHost* render_frame_host,
     scoped_refptr<FileChooserImpl::FileSelectListenerImpl> listener,
     const base::FilePath& directory_path) {
   OPTIONAL_TRACE_EVENT2("content", "WebContentsImpl::EnumerateDirectory",
                         "render_frame_host", render_frame_host,
                         "directory_path", directory_path);
+  base::ScopedClosureRunner cancel_chooser(base::BindOnce(
+      &FileChooserImpl::FileSelectListenerImpl::FileSelectionCanceled,
+      listener));
+  if (visibility_ == Visibility::HIDDEN) {
+    // Do not allow background tab to open file chooser.
+    return;
+  }
+  if (active_file_chooser_) {
+    // Only allow one active file chooser at one time.
+    return;
+  }
+
   // Any explicit focusing of another window while this WebContents is in
   // fullscreen can be used to confuse the user, so drop fullscreen.
   base::ScopedClosureRunner fullscreen_block = ForSecurityDropFullscreen();
   listener->SetFullscreenBlock(std::move(fullscreen_block));
 
-  if (delegate_)
+  if (delegate_) {
+    active_file_chooser_ = std::move(file_chooser);
     delegate_->EnumerateDirectory(this, std::move(listener), directory_path);
-  else
-    listener->FileSelectionCanceled();
+    std::ignore = cancel_chooser.Release();
+  }
 }
 
 void WebContentsImpl::RegisterProtocolHandler(RenderFrameHostImpl* source,
@@ -7485,20 +7576,35 @@ void WebContentsImpl::RunBeforeUnloadConfirm(
 }
 
 void WebContentsImpl::RunFileChooser(
+    base::WeakPtr<FileChooserImpl> file_chooser,
     RenderFrameHost* render_frame_host,
     scoped_refptr<FileChooserImpl::FileSelectListenerImpl> listener,
     const blink::mojom::FileChooserParams& params) {
   OPTIONAL_TRACE_EVENT1("content", "WebContentsImpl::RunFileChooser",
                         "render_frame_host", render_frame_host);
+
+  base::ScopedClosureRunner cancel_chooser(base::BindOnce(
+      &FileChooserImpl::FileSelectListenerImpl::FileSelectionCanceled,
+      listener));
+  if (visibility_ == Visibility::HIDDEN) {
+    // Do not allow background tab to open file chooser.
+    return;
+  }
+  if (active_file_chooser_) {
+    // Only allow one active file chooser at one time.
+    return;
+  }
+
   // Any explicit focusing of another window while this WebContents is in
   // fullscreen can be used to confuse the user, so drop fullscreen.
   base::ScopedClosureRunner fullscreen_block = ForSecurityDropFullscreen();
   listener->SetFullscreenBlock(std::move(fullscreen_block));
 
-  if (delegate_)
+  if (delegate_) {
+    active_file_chooser_ = std::move(file_chooser);
     delegate_->RunFileChooser(render_frame_host, std::move(listener), params);
-  else
-    listener->FileSelectionCanceled();
+    std::ignore = cancel_chooser.Release();
+  }
 }
 
 double WebContentsImpl::GetPendingPageZoomLevel() {
@@ -10107,14 +10213,8 @@ void WebContentsImpl::SetEnableBlankTargetPopupIntercept(
 }
 #endif
 
-#ifdef OHOS_USERAGENT
-void WebContentsImpl::SetTabletMode(bool is_tablet) {
-  GetContentClient()->browser()->SetTabletMode(is_tablet);
-}
-#endif
-
 #if defined(OHOS_WEBRTC)
-void WebContentsImpl::StartCamera() {
+void WebContentsImpl::StartCamera(int nWebID) {
   auto media_stream_manager =
       BrowserMainLoop::GetInstance()->media_stream_manager();
   if (!media_stream_manager) {
@@ -10127,10 +10227,10 @@ void WebContentsImpl::StartCamera() {
     LOG(ERROR) << "videoCaptureManager null";
     return;
   }
-  videoCaptureManager->StartCamera();
+  videoCaptureManager->StartCamera(nWebID);
 }
 
-void WebContentsImpl::StopCamera() {
+void WebContentsImpl::StopCamera(int nWebID) {
   auto media_stream_manager =
       BrowserMainLoop::GetInstance()->media_stream_manager();
   if (!media_stream_manager) {
@@ -10143,10 +10243,10 @@ void WebContentsImpl::StopCamera() {
     LOG(ERROR) << "videoCaptureManager null";
     return;
   }
-  videoCaptureManager->StopCamera();
+  videoCaptureManager->StopCamera(nWebID);
 }
 
-void WebContentsImpl::CloseCamera() {
+void WebContentsImpl::CloseCamera(int nWebID) {
   auto media_stream_manager =
       BrowserMainLoop::GetInstance()->media_stream_manager();
   if (!media_stream_manager) {
@@ -10159,7 +10259,15 @@ void WebContentsImpl::CloseCamera() {
     LOG(ERROR) << "videoCaptureManager null";
     return;
   }
-  videoCaptureManager->CloseCamera();
+  videoCaptureManager->CloseCamera(nWebID);
+}
+
+int WebContentsImpl::GetNWebId() {
+  return nWebID_;
+}
+
+void WebContentsImpl::SetNWebId(int nWebID) {
+  nWebID_ = nWebID;
 }
 #endif  // defined(OHOS_WEBRTC)
 }  // namespace content

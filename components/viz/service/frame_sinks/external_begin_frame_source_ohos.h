@@ -49,6 +49,9 @@ class VIZ_SERVICE_EXPORT ExternalBeginFrameSourceOHOS
   void SetEnableLowerFrameRate(bool enabled) override {
     lower_frame_rate_enabled_ = enabled;
   }
+  void SetDrawRect(const gfx::Rect& new_rect) override {
+    draw_rect_ = new_rect;
+  }
 
  private:
   // ExternalBeginFrameSourceClient implementation.
@@ -72,6 +75,7 @@ class VIZ_SERVICE_EXPORT ExternalBeginFrameSourceOHOS
   int64_t last_vsync_period_ = 0;
   base::TimeTicks last_dead_line_ = base::TimeTicks();
   bool lower_frame_rate_enabled_ = false;
+  gfx::Rect draw_rect_;
   base::WeakPtrFactory<ExternalBeginFrameSourceOHOS> weak_factory_{this};
 };
 }  // namespace viz

@@ -431,7 +431,12 @@ class NavigationController {
       const GURL& url,
       const Referrer& referrer,
       ui::PageTransition type,
-      const std::string& extra_headers) = 0;
+      const std::string& extra_headers
+#ifdef OHOS_NETWORK_LOAD
+      ,
+      bool has_user_gesture = false
+#endif
+      ) = 0;
 
   // More general version of LoadURL. See comments in LoadURLParams for
   // using |params|.

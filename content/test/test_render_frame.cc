@@ -137,6 +137,9 @@ class MockFrameHost : public mojom::FrameHost {
     return true;
   }
 
+  void GetCreateNewWindow(const ::GURL& target_url, ::WindowOpenDisposition disposition,
+                          bool allow_popup, GetCreateNewWindowCallback callback) override {}
+
   void CreateChildFrame(
       int new_routing_id,
       mojo::PendingAssociatedRemote<mojom::Frame> frame_remote,

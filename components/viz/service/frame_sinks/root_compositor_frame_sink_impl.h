@@ -144,6 +144,8 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
 void SetEnableLowerFrameRate(bool enabled);
 void ReportKeyThreadIds(
   const std::vector<int32_t>& thread_ids, int32_t process_id, bool is_created) override {}
+void EvictFrameBackBuffers(bool invisible);
+void OnVsyncReceived() override {}
 #endif
 
   base::ScopedClosureRunner GetCacheBackBufferCb();

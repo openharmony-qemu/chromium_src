@@ -82,6 +82,9 @@ class TestFrameSinkManagerImpl : public mojom::FrameSinkManager {
   void SetEnableLowerFrameRate(bool enabled, const ::viz::FrameSinkId& frame_sink_id) override {}
   void StopFrameCountingForTest(
       StopFrameCountingForTestCallback callback) override {}
+#if defined(OHOS_UNITTESTS)
+  void EvictFrameBackBuffers(const ::viz::FrameSinkId& frame_sink_id, bool invisible) {}
+#endif
 
   mojo::Receiver<mojom::FrameSinkManager> receiver_{this};
   mojo::Remote<mojom::FrameSinkManagerClient> client_;

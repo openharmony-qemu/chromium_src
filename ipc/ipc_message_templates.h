@@ -203,6 +203,33 @@ class MessageT<Meta, std::tuple<Ins...>, std::tuple<Outs...>>
     return true;
   }
 
+#if BUILDFLAG(IS_OHOS)
+  template <class T, class S, class P, class Method>
+  static bool Dispatch_Param(const Message* msg,
+                             T* obj,
+                             S* sender,
+                             P* parameter,
+                             Method func) {
+    TRACE_EVENT0("ipc", Meta::kName);
+    SendParam send_params;
+    bool ok = ReadSendParam(msg, &send_params);
+    Message* reply = SyncMessage::GenerateReply(msg);
+    if (!ok) {
+      NOTREACHED() << "Error deserializing message " << msg->type();
+      reply->set_reply_error();
+      sender->Send(reply);
+      return false;
+    }
+
+    ReplyParam reply_params;
+    base::DispatchToMethod_Param(obj, func, std::move(send_params), parameter, &reply_params);
+    WriteParam(reply, reply_params);
+    LogReplyParamsToMessage(reply_params, msg);
+    sender->Send(reply);
+    return true;
+  }
+#endif
+
   template <class T, class P, class Method>
   static bool DispatchDelayReply(const Message* msg,
                                  T* obj,

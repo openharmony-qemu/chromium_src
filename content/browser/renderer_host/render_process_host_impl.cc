@@ -1258,9 +1258,8 @@ constexpr size_t kMaxRenderCountForSingleIncognitoMode = 1;
 bool IsSingleRenderProcess() {
   // Multiple render process mode is on by default on tablet and 2in1 devices,
   // and it is only supported by browser on mobile or other devices.
-  bool excludable_devices =
-      base::ohos::IsTabletDevice() || base::ohos::IsPcDevice();
-
+  bool excludable_devices = (*base::CommandLine::ForCurrentProcess()).HasSwitch(
+            switches::kIsSingleRenderProcess);
   return !(*base::CommandLine::ForCurrentProcess())
               .HasSwitch(switches::kForBrowser) &&
          !excludable_devices;
@@ -1424,6 +1423,15 @@ class RenderProcessHostImpl::IOThreadHostImpl : public mojom::ChildProcessHost {
     using namespace OHOS::NWeb;
     ResSchedClientAdapter::ReportKeyThread(
       static_cast<ResSchedStatusAdapter>(status), process_id, thread_id, static_cast<ResSchedRoleAdapter>(role));
+  }
+
+  void ReportKeyThreadIds(int32_t status, int32_t process_id,
+      const std::vector<int32_t>& thread_ids, int32_t role) override {
+    using namespace OHOS::NWeb;
+    for (auto thread_id : thread_ids) {
+      ResSchedClientAdapter::ReportKeyThread(
+        static_cast<ResSchedStatusAdapter>(status), process_id, thread_id, static_cast<ResSchedRoleAdapter>(role));
+    }
   }
 #endif
 

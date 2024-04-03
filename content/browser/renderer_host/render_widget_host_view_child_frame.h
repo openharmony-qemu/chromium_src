@@ -93,6 +93,9 @@ class CONTENT_EXPORT RenderWidgetHostViewChildFrame
   bool IsShowing() override;
   void WasUnOccluded() override;
   void WasOccluded() override;
+#if BUILDFLAG(IS_OHOS)
+  void EvictFrameBackBuffers(bool) override {}
+#endif
   gfx::Rect GetViewBounds() override;
   gfx::Size GetVisibleViewportSize() override;
   void SetInsets(const gfx::Insets& insets) override;

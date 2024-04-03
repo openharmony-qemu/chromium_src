@@ -24,7 +24,6 @@
 #include <vector>
 #include "capi/nweb_app_client_extension_callback.h"
 #include "capi/nweb_download_delegate_callback.h"
-#include "content/browser/ohos/content_view_statics_ohos.h"
 #include "nweb.h"
 #include "nweb_download_callback.h"
 #include "nweb_errors.h"
@@ -154,7 +153,7 @@ class NWebImpl : public NWeb {
                   ImageColorType& colorType,
                   ImageAlphaType& alphaType) override;
   void PutNetworkAvailable(bool available) override;
-  void SendDragEvent(const DragEvent& dragEvent) override;
+  void SendDragEvent(std::shared_ptr<NWebDragEvent> dragEvent) override;
   void UpdateLocale(const std::string& language,
                     const std::string& region) override;
 
@@ -193,7 +192,14 @@ class NWebImpl : public NWeb {
   void SetShouldFrameSubmissionBeforeDraw(bool should) override;
   void SetDrawRect(int32_t x, int32_t y, int32_t width, int32_t height) override;
   void SetDrawMode(int32_t mode) override;
+  bool GetPendingSizeStatus() override;
 #endif  // defined(OHOS_COMPOSITE_RENDER)
+
+  void ExecuteJavaScriptExt(
+      const int fd,
+      const size_t scriptLength,
+      std::shared_ptr<NWebMessageValueCallback> callback,
+      bool extention) override;
 
 #if defined(OHOS_MSGPORT)
   void ExecuteJavaScript(
@@ -226,6 +232,7 @@ class NWebImpl : public NWeb {
 #if defined(OHOS_INPUT_EVENTS)
   void ScrollTo(float x, float y) override;
   void ScrollBy(float delta_x, float delta_y) override;
+  void ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) override;
   void SlideScroll(float vx, float vy) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
@@ -246,6 +253,8 @@ class NWebImpl : public NWeb {
   void StartCamera() override;
   void StopCamera() override;
   void CloseCamera() override;
+  void OnRenderToBackground() override;
+  void OnRenderToForeground() override;
 #ifdef OHOS_DRAG_DROP
   std::shared_ptr<NWebDragData> GetOrCreateDragData() override;
 #endif // #ifdef OHOS_DRAG_DROP
@@ -260,6 +269,10 @@ class NWebImpl : public NWeb {
   bool GetPrintBackground() override;
   bool IsSafeBrowsingEnabled() override;
   void EnableSafeBrowsing(bool enable) override;
+  void PrecompileJavaScript(const std::string& url,
+                            const std::string& script,
+                            std::shared_ptr<CacheOptions>& cacheOptions,
+                            std::shared_ptr<NWebMessageValueCallback> callback) override;
 #endif
 
   std::string GetLastJavascriptProxyCallingFrameUrl() override;
@@ -340,9 +353,13 @@ class NWebImpl : public NWeb {
   static std::shared_ptr<NWeb> CreateNWeb(std::shared_ptr<NWebCreateInfo> create_info);
   static void SetWebTag(int32_t nweb_id, const char* web_tag);
   static void InitializeWebEngine(std::shared_ptr<NWebEngineInitArgs> init_args);
-  static void PrepareForPageLoad(const std::string &url, bool preconnectable, int32_t num_sockets) ;
+  static void PrepareForPageLoad(const std::string &url, bool preconnectable, int32_t num_sockets);
   static void PauseAllTimers();
   static void ResumeAllTimers();
+  static void PrefetchResource(const std::shared_ptr<NWebEnginePrefetchArgs>& pre_args,
+                               const std::map<std::string, std::string>& additional_http_headers,
+                               const std::string& cache_key,
+                               const uint32_t& cache_valid_time);
 
 #if defined(OHOS_COOKIE)
   static bool InitializeICUStatic(std::shared_ptr<NWebEngineInitArgs> init_args);
@@ -388,6 +405,10 @@ class NWebImpl : public NWeb {
   bool IsIntelligentTrackingPreventionEnabled() const override;
   static bool IsAnyNWebIntelligentTrackingPreventionEnabled();
 #endif
+
+  void OnCreateNativeMediaPlayer(
+      std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) override;
+
   static void AddIntelligentTrackingPreventionBypassingList(
       const std::vector<std::string>& hosts);
   static void RemoveIntelligentTrackingPreventionBypassingList(

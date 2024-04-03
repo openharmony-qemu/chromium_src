@@ -282,6 +282,7 @@ void RootCompositorFrameSinkImpl::SetShouldFrameSubmissionBeforeDraw(
 
 void RootCompositorFrameSinkImpl::SetDrawRect(const gfx::Rect& new_rect)
 {
+   external_begin_frame_source_->SetDrawRect(new_rect);
    display_->SetDrawRect(new_rect);
 }
 
@@ -690,6 +691,16 @@ void RootCompositorFrameSinkImpl::SendInternalBeginFrame() {
 #if BUILDFLAG(IS_OHOS)
 void RootCompositorFrameSinkImpl::SetEnableLowerFrameRate(bool enabled) {
   external_begin_frame_source_->SetEnableLowerFrameRate(enabled);
+}
+
+void RootCompositorFrameSinkImpl::EvictFrameBackBuffers(bool invisible) {
+  TRACE_EVENT1("viz", "RootCompositorFrameSinkImpl::EvictFrameBackBuffers",
+               "invisible", invisible);
+  if (invisible) {
+    SetDisplayVisible(false);
+  } else {
+    SetDisplayVisible(true);
+  }
 }
 #endif
 

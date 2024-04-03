@@ -119,7 +119,12 @@ class CONTENT_EXPORT NavigationControllerImpl : public NavigationController {
       const GURL& url,
       const Referrer& referrer,
       ui::PageTransition type,
-      const std::string& extra_headers) override;
+      const std::string& extra_headers
+#ifdef OHOS_NETWORK_LOAD
+      ,
+      bool has_user_gesture = false
+#endif
+      ) override;
   base::WeakPtr<NavigationHandle> LoadURLWithParams(
       const LoadURLParams& params) override;
   void LoadIfNecessary() override;

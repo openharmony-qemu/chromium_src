@@ -262,6 +262,10 @@ class MockWidgetInputHandler : public blink::mojom::WidgetInputHandler {
 
   void DispatchEvent(std::unique_ptr<blink::WebCoalescedInputEvent> event,
                      DispatchEventCallback callback) override;
+#if BUILDFLAG(IS_OHOS)
+  void TryStartFling() override {}
+  void TryFinishFling() override {}
+#endif
   void DispatchNonBlockingEvent(
       std::unique_ptr<blink::WebCoalescedInputEvent> event) override;
   void WaitForInputProcessed(WaitForInputProcessedCallback callback) override;
@@ -280,7 +284,9 @@ class MockWidgetInputHandler : public blink::mojom::WidgetInputHandler {
   void UpdateBrowserControlsState(cc::BrowserControlsState constraints,
                                   cc::BrowserControlsState current,
                                   bool animate) override;
-
+#if defined(OHOS_UNITTESTS)
+  void SetGestureEventResult(bool result) override {}
+#endif
   using MessageVector = std::vector<std::unique_ptr<DispatchedMessage>>;
   MessageVector GetAndResetDispatchedMessages();
 

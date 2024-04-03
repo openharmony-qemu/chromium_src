@@ -911,6 +911,37 @@ ark_web_preference_get_scrollable(struct _ark_web_preference_t *self) {
   return ArkWebPreferenceCppToC::Get(self)->GetScrollable();
 }
 
+void ARK_WEB_CALLBACK ark_web_preference_put_text_autosizing_enabled(
+    struct _ark_web_preference_t *self, bool flag) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebPreferenceCppToC::Get(self)->PutTextAutosizingEnabled(flag);
+}
+
+void ARK_WEB_CALLBACK ark_web_preference_set_viewport_enable(
+    struct _ark_web_preference_t *self, bool enable) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebPreferenceCppToC::Get(self)->SetViewportEnable(enable);
+}
+
+void ARK_WEB_CALLBACK ark_web_preference_set_native_video_player_config(
+    struct _ark_web_preference_t *self, bool enable, bool shouldOverlay) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebPreferenceCppToC::Get(self)->SetNativeVideoPlayerConfig(enable,
+                                                                shouldOverlay);
+}
+
 } // namespace
 
 ArkWebPreferenceCppToC::ArkWebPreferenceCppToC() {
@@ -1059,6 +1090,11 @@ ArkWebPreferenceCppToC::ArkWebPreferenceCppToC() {
       ark_web_preference_register_native_embed_rule;
   GetStruct()->set_scrollable = ark_web_preference_set_scrollable;
   GetStruct()->get_scrollable = ark_web_preference_get_scrollable;
+  GetStruct()->put_text_autosizing_enabled = 
+      ark_web_preference_put_text_autosizing_enabled;
+  GetStruct()->set_viewport_enable = ark_web_preference_set_viewport_enable;
+  GetStruct()->set_native_video_player_config =
+      ark_web_preference_set_native_video_player_config;
 }
 
 ArkWebPreferenceCppToC::~ArkWebPreferenceCppToC() {

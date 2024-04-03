@@ -15,6 +15,7 @@
 
 #include "event_reporter.h"
 #include "ohos_adapter_helper.h"
+#include "oh_web_performance_timing.h"
 
 using OHOS::NWeb::HiSysEventAdapter;
 using OHOS::NWeb::OhosAdapterHelper;
@@ -46,6 +47,38 @@ constexpr char JANK_STATS_VER[] = "JANK_STATS_VER";
 
 constexpr char RENDER_JIT_LOCKDOWN[] = "RENDER_JIT_LOCKDOWN";
 constexpr char LOCKDOWN_MODE_STATUS[] = "JIT_LOCKDOWN_MODE";
+
+constexpr char NWEB_ID[] = "NWEB_ID";
+constexpr char PLAIN_TEXT[] = "PLAIN_TEXT";
+constexpr char LINK_URL[] = "LINK_URL";
+constexpr char HTML[] = "HTML";
+// For force zoom enable
+constexpr char FORCE_ENABLE_ZOOM[] = "FORCE_ENABLE_ZOOM";
+constexpr char ENABLE_FORCE_ZOOM_STATUS[] = "ENABLE_FORCE_ZOOM_STATUS";
+
+// For open private mode
+constexpr char OPEN_PRIVATE_MODE[] = "OPEN_PRIVATE_MODE";
+constexpr char OPEN_PRIVATE_STATUS[] = "OPEN_PRIVATE_STATUS";
+
+// For page download error info
+constexpr char PAGE_DOWNLOAD_ERROR[] = "PAGE_DOWNLOAD_ERROR";
+constexpr char DOWNLOAD_ID[] = "DOWNLOAD_ID";
+
+// For audio/video error info
+constexpr char AUDIO_PLAY_ERROR[] = "AUDIO_PLAY_ERROR";
+constexpr char VIDEO_PLAY_ERROR[] = "VIDEO_PLAY_ERROR";
+
+//For audio/video frame dropped statistics
+constexpr char AUDIO_FRAME_DROP_STATISTICS[] = "AUDIO_FRAME_DROP_STATISTICS";
+constexpr char AUDIO_BLANK_FRAME_COUNT[] = "AUDIO_BLANK_FRAME_COUNT";
+constexpr char VIDEO_FRAME_DROP_STATISTICS[] = "VIDEO_FRAME_DROP_STATISTICS";
+constexpr char VIDEO_FRAME_DROPPED_COUNT[] = "VIDEO_FRAME_DROPPED_COUNT";
+constexpr char VIDEO_FRAME_DROPPED_DURATION[] = "VIDEO_FRAME_DROPPED_DURATION";
+
+// For site_isolation
+constexpr char SITE_ISOLATION_MODE[] = "SITE_ISOLATION_MODE";
+constexpr char SITE_ISOLATION_STATUS[] = "SITE_ISOLATION_STATUS";
+
 }  // namespace
 
 void ReportPageLoadStats(int instanceId,
@@ -98,4 +131,97 @@ void ReportJankStats(int64_t startTime,
 void ReportLockdownModeStatus(void) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       RENDER_JIT_LOCKDOWN, HiSysEventAdapter::EventType::BEHAVIOR, {LOCKDOWN_MODE_STATUS, "true"});
+}
+
+void ReportPageLoadTimeStats(OhWebPerformanceTiming loadPageTime) {
+}
+
+void ReportDragDropStatus(const std::string& eventName, int32_t id) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      eventName, HiSysEventAdapter::EventType::BEHAVIOR, {NWEB_ID, std::to_string(id)});
+}
+
+void ReportDragDropInfo(const std::string& eventName,
+                          int32_t id,
+                          const std::string& fragment,
+                          const std::string& linkUrl,
+                          const std::string& linkHtml) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      eventName, HiSysEventAdapter::EventType::BEHAVIOR,
+      {NWEB_ID, std::to_string(id), PLAIN_TEXT, std::to_string(fragment.size()),
+      LINK_URL, std::to_string(linkUrl.size()), HTML, std::to_string(linkHtml.size())});
+}
+
+void ReportForceZoomEnable(void) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      FORCE_ENABLE_ZOOM, HiSysEventAdapter::EventType::BEHAVIOR, {ENABLE_FORCE_ZOOM_STATUS, "true"});
+}
+
+void ReportOpenPrivateMode(void) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      OPEN_PRIVATE_MODE, HiSysEventAdapter::EventType::BEHAVIOR, {OPEN_PRIVATE_STATUS, "true"});
+}
+
+void ReportPageDownLoadErrorInfo(long downloadId, int errorCode) {
+    OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+        PAGE_DOWNLOAD_ERROR, HiSysEventAdapter::EventType::FAULT,
+        {DOWNLOAD_ID, std::to_string(downloadId), ERROR_CODE, std::to_string(errorCode)});
+}
+
+void ReportSlideJankStats(int64_t startTime, int64_t duration, int32_t totalAppFrames,
+  int32_t totalAppMissedFrames, int64_t maxAppFrametime, int32_t maxAppSeqMissedFrames) {
+}
+
+void ReportAudioPlayErrorInfo(const std::string errorType,
+                              int errorCode,
+                              const std::string errorDesc) {
+  std::string error_type = "";
+  std::string error_desc = "";
+  int error_code = errorCode;
+  if (!errorType.empty()) {
+    error_type = errorType;
+  }
+  if (!errorDesc.empty()) {
+    error_desc = errorDesc;
+  }
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      AUDIO_PLAY_ERROR, HiSysEventAdapter::EventType::FAULT,
+      {ERROR_TYPE, error_type, ERROR_CODE, std::to_string(error_code),
+       ERROR_DESC, error_desc});
+}
+
+void ReportVideoPlayErrorInfo(const std::string errorType,
+                              int errorCode,
+                              const std::string errorDesc) {
+  std::string error_type = "";
+  std::string error_desc = "";
+  int error_code = errorCode;
+  if (!errorType.empty()) {
+    error_type = errorType;
+  }
+  if (!errorDesc.empty()) {
+    error_desc = errorDesc;
+  }
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      VIDEO_PLAY_ERROR, HiSysEventAdapter::EventType::FAULT,
+      {ERROR_TYPE, error_type, ERROR_CODE, std::to_string(error_code),
+       ERROR_DESC, error_desc});
+}
+
+void ReportAudioFrameDropStats(int frameCount) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+    AUDIO_FRAME_DROP_STATISTICS, HiSysEventAdapter::EventType::STATISTIC,
+    {AUDIO_BLANK_FRAME_COUNT, std::to_string(frameCount)});
+}
+
+void ReportVideoFrameDropStats(int64_t frameCount, int64_t frameDuration) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+    VIDEO_FRAME_DROP_STATISTICS, HiSysEventAdapter::EventType::STATISTIC,
+    {VIDEO_FRAME_DROPPED_COUNT, std::to_string(frameCount),
+     VIDEO_FRAME_DROPPED_DURATION, std::to_string(frameDuration)});
+}
+
+void ReportSiteIsolationMode(const std::string site_isolation_status) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      SITE_ISOLATION_MODE, HiSysEventAdapter::EventType::BEHAVIOR, {SITE_ISOLATION_STATUS, site_isolation_status});
 }

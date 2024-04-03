@@ -29,6 +29,10 @@
 #include "build/build_config.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/threading/platform_thread.h"
+#endif
+
 #if (BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_NACL)) || BUILDFLAG(IS_FUCHSIA)
 #include "base/files/file_descriptor_watcher_posix.h"
 #endif
@@ -303,10 +307,20 @@ void WorkerThread::UpdateThreadType(ThreadType desired_thread_type) {
   current_thread_type_ = desired_thread_type;
 }
 
+#if BUILDFLAG(IS_OHOS)
+PlatformThreadId WorkerThread::GetRealTid() {
+  return realtid_;
+}
+#endif
+
 void WorkerThread::ThreadMain() {
 #if (BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_NACL)) || BUILDFLAG(IS_FUCHSIA)
   DCHECK(io_thread_task_runner_);
   FileDescriptorWatcher file_descriptor_watcher(io_thread_task_runner_);
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+  realtid_ = PlatformThread::CurrentRealId();
 #endif
 
   if (thread_type_hint_ == ThreadType::kBackground) {

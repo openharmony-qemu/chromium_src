@@ -116,6 +116,10 @@
 #include "third_party/blink/public/mojom/runtime_feature_state/runtime_feature_state.mojom.h"
 #include "url/url_constants.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "cef/libcef/browser/page_load_metrics/oh_page_load_metrics_observer.h"
+#endif
+
 namespace content {
 namespace {
 
@@ -1259,13 +1263,19 @@ base::WeakPtr<NavigationHandle> NavigationControllerImpl::LoadURL(
     const GURL& url,
     const Referrer& referrer,
     ui::PageTransition transition,
-    const std::string& extra_headers) {
+    const std::string& extra_headers
+#if OHOS_NETWORK_LOAD
+    ,
+    bool has_user_gesture
+#endif
+    ) {
   LoadURLParams params(url);
   params.referrer = referrer;
   params.transition_type = transition;
   params.extra_headers = extra_headers;
 #if BUILDFLAG(IS_OHOS)
   params.override_user_agent = NavigationController::UA_OVERRIDE_TRUE;
+  params.has_user_gesture = has_user_gesture;
 #endif
   return LoadURLWithParams(params);
 }
@@ -1278,6 +1288,9 @@ base::WeakPtr<NavigationHandle> NavigationControllerImpl::LoadURLWithParams(
   TRACE_EVENT1("browser,navigation",
                "NavigationControllerImpl::LoadURLWithParams", "url",
                params.url.possibly_invalid_spec());
+#if defined(REPORT_SYS_EVENT)
+  OhPageLoadMetricsObserver::OnNavigationStart();
+#endif
   bool is_explicit_navigation =
       GetContentClient()->browser()->IsExplicitNavigation(
           params.transition_type);
@@ -3623,7 +3636,10 @@ base::WeakPtr<NavigationHandle> NavigationControllerImpl::NavigateWithoutEntry(
   // RenderFrameHost to execute its BeforeUnload event, the navigation start
   // will be updated when the BeforeUnload ack is received.
   const auto navigation_start_time = base::TimeTicks::Now();
-
+#if BUILDFLAG(IS_OHOS)
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "navigationStart", navigation_start_time);
+#endif
   std::unique_ptr<NavigationRequest> request =
       CreateNavigationRequestFromLoadParams(
           node, params, override_user_agent, should_replace_current_entry,

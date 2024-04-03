@@ -50,6 +50,7 @@ public:
 
   ArkWebString GetEmbedId() override;
 
+  ArkWebRefPtr<ArkWebGestureEventResult> GetResult() override;
 private:
   std::shared_ptr<OHOS::NWeb::NWebNativeEmbedTouchEvent>
       nweb_native_embed_touch_event_;

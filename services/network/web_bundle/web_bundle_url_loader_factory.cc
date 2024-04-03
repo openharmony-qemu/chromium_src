@@ -823,6 +823,10 @@ void WebBundleURLLoaderFactory::OnResponseParsed(
   const std::string header_string = web_package::CreateHeaderString(response);
 
   loader->SetResponseStartTime(base::TimeTicks::Now());
+#if BUILDFLAG(IS_OHOS)
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "responseStart", base::TimeTicks::Now());
+#endif
   loader->SetHeadersBytes(header_string.size());
   if (!loader->trusted_header_client()) {
     SendResponseToLoader(loader, header_string, response->payload_offset,

@@ -405,6 +405,18 @@ void HostFrameSinkManager::OnVsync(uint32_t client_id, uint32_t sink_id) {
 void HostFrameSinkManager::SendInternalBeginFrame(const FrameSinkId& id) {
   frame_sink_manager_->SendInternalBeginFrame(id);
 }
+
+void HostFrameSinkManager::OnVsyncReceived(uint32_t client_id, uint32_t sink_id) {
+  FrameSinkId id(client_id, sink_id);
+  auto iter = frame_sink_data_map_.find(id);
+  if (iter == frame_sink_data_map_.end())
+    return;
+
+  const FrameSinkData& data = iter->second;
+  if (data.client) {
+    data.client->OnVsyncReceived();
+  }
+}
 #endif
 
 uint32_t HostFrameSinkManager::CacheBackBufferForRootSink(
@@ -451,6 +463,10 @@ void HostFrameSinkManager::UpdateDebugRendererSettings(
 #if BUILDFLAG(IS_OHOS)
 void HostFrameSinkManager::SetEnableLowerFrameRate(bool enabled, const FrameSinkId& frame_sink_id) {
   frame_sink_manager_->SetEnableLowerFrameRate(enabled, frame_sink_id);
+}
+
+void HostFrameSinkManager::EvictFrameBackBuffers(const FrameSinkId& frame_sink_id, bool invisible) {
+  frame_sink_manager_->EvictFrameBackBuffers(frame_sink_id, invisible);
 }
 #endif
 

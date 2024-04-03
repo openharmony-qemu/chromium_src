@@ -63,6 +63,19 @@ void MediaSessionController::OnResume(int player_id) {
       ->RequestPlay();
 }
 
+#if defined(OHOS_MEDIA_POLICY)
+void MediaSessionController::OnSetHtmlPlayEnabled(int player_id, bool enabled) {
+  DCHECK_EQ(player_id_, player_id);
+  if (!web_contents_)
+    return;
+  auto web_contents_observer = web_contents_->media_web_contents_observer();
+  if (!web_contents_observer)
+    return;
+  if(web_contents_observer->IsPlayerIdInMediaPlayerRemotesMap(id_))
+    web_contents_observer->GetMediaPlayerRemote(id_)->SetHtmlPlayEnabled(enabled);
+}
+#endif // defined(OHOS_MEDIA_POLICY)
+
 void MediaSessionController::OnSeekForward(int player_id,
                                            base::TimeDelta seek_time) {
   DCHECK_EQ(player_id_, player_id);
@@ -201,6 +214,12 @@ void MediaSessionController::PictureInPictureStateChanged(
 void MediaSessionController::WebContentsMutedStateChanged(bool muted) {
   AddOrRemovePlayer();
 }
+
+#if defined(OHOS_MEDIA_POLICY)
+void MediaSessionController::SetHtmlPlayEnabled(bool enabled) {
+  OnSetHtmlPlayEnabled(player_id_, enabled);
+}
+#endif // defined(OHOS_MEDIA_POLICY)
 
 void MediaSessionController::OnMediaPositionStateChanged(
     const media_session::MediaPosition& position) {

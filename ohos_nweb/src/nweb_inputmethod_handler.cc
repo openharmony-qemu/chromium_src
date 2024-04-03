@@ -14,6 +14,10 @@
  */
 
 #include "nweb_inputmethod_handler.h"
+#include "nweb_imf_cursor_info_adapter_impl.h"
+#include "nweb_imf_input_attribute_adapter_impl.h"
+#include "nweb_imf_selection_range_adapter_impl.h"
+#include "nweb_imf_text_config_adapter_impl.h"
 
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
@@ -64,7 +68,8 @@ class OnTextChangedListenerImpl : public IMFTextListenerAdapter {
     }
   }
 
-  void SendFunctionKey(std::shared_ptr<IMFAdapterFunctionKeyAdapter> functionKey) override {
+  void SendFunctionKey(
+      std::shared_ptr<IMFAdapterFunctionKeyAdapter> functionKey) override {
     handler_->SendEnterKeyEvent();
   }
 
@@ -130,19 +135,26 @@ NWebInputMethodHandler::NWebInputMethodHandler()
 NWebInputMethodHandler::~NWebInputMethodHandler() {}
 
 uint32_t NWebInputMethodHandler::lastAttachNWebId_ = 0;
-IMFAdapterTextInputType NWebInputMethodHandler::lastInputMode_ = IMFAdapterTextInputType::NONE;
+IMFAdapterTextInputType NWebInputMethodHandler::lastInputMode_ =
+    IMFAdapterTextInputType::NONE;
 
-IMFAdapterCursorInfo NWebInputMethodHandler::GetCursorInfo() {
-  IMFAdapterCursorInfo cursorInfo {
-        .left = (focus_rect_.x + focus_rect_.width) * device_pixel_ratio_ +
-                offset_x_,
-        .top = focus_rect_.y * device_pixel_ratio_ + offset_y_,
-        .width = focus_rect_.width * device_pixel_ratio_,
-        .height = focus_rect_.height * device_pixel_ratio_};
-    LOG(DEBUG) << "NWebInputMethodHandler::Attach cursorInfo.left = "
-                << cursorInfo.left << ", cursorInfo.top = " << cursorInfo.top
-                << ", cursorInfo.width = " << cursorInfo.width
-                << ", cursorInfo.height = " << cursorInfo.height;
+std::shared_ptr<IMFCursorInfoAdapter> NWebInputMethodHandler::GetCursorInfo() {
+  std::shared_ptr<NWebIMFCursorInfoAdapterImpl> cursorInfo =
+      std::make_shared<NWebIMFCursorInfoAdapterImpl>();
+  double left =
+      (focus_rect_.x + focus_rect_.width) * device_pixel_ratio_ + offset_x_;
+  double top = focus_rect_.y * device_pixel_ratio_ + offset_y_;
+  double width = focus_rect_.width * device_pixel_ratio_;
+  double height = focus_rect_.height * device_pixel_ratio_;
+
+  cursorInfo->SetLeft(left);
+  cursorInfo->SetTop(top);
+  cursorInfo->SetWidth(width);
+  cursorInfo->SetHeight(height);
+
+  LOG(DEBUG) << "NWebInputMethodHandler::Attach cursorInfo.left = " << left
+             << ", cursorInfo.top = " << top << ", cursorInfo.width = " << width
+             << ", cursorInfo.height = " << height;
   return cursorInfo;
 }
 
@@ -205,17 +217,26 @@ void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
     inputmethod_listener_ = std::make_shared<OnTextChangedListenerImpl>(this);
   }
 
-  IMFAdapterInputAttribute inputAttribute = { .inputPattern = static_cast<int32_t>(input_mode_),
-        .enterKeyType = static_cast<int32_t>(IMFAdapterEnterKeyType::DONE) };
+  std::shared_ptr<NWebIMFInputAttributeAdapterImpl> inputAttribute =
+      std::make_shared<NWebIMFInputAttributeAdapterImpl>();
+  inputAttribute->SetInputPattern(static_cast<int32_t>(input_mode_));
+  inputAttribute->SetEnterKeyType(
+      static_cast<int32_t>(IMFAdapterEnterKeyType::DONE));
 
-  IMFAdapterCursorInfo cursorInfo = GetCursorInfo();
+  std::shared_ptr<IMFCursorInfoAdapter> cursorInfo = GetCursorInfo();
 
-  IMFAdapterTextConfig textConfig = { .inputAttribute = inputAttribute, .cursorInfo = cursorInfo };
+  std::shared_ptr<NWebIMFTextConfigAdapterImpl> textConfig =
+      std::make_shared<NWebIMFTextConfigAdapterImpl>();
+  textConfig->SetInputAttribute(inputAttribute);
+  textConfig->SetCursorInfo(cursorInfo);
+  textConfig->SetWindowId(windowId_);
+
   if (!show_keyboard_ && isAttached_ && input_mode_ != lastInputMode_) {
     LOG(ERROR) << "do not need attach";
     inputmethod_adapter_->Close();
   }
-  if (!inputmethod_adapter_->Attach(inputmethod_listener_, show_keyboard_, textConfig)) {
+  if (!inputmethod_adapter_->Attach(inputmethod_listener_, show_keyboard_,
+                                    textConfig)) {
     LOG(ERROR) << "inputmethod_adapter_ attach failed";
     return;
   }
@@ -262,17 +283,27 @@ bool NWebInputMethodHandler::Reattach(uint32_t nwebId, ReattachType type) {
     inputmethod_adapter_->Close();
     return false;
   }
-  IMFAdapterInputAttribute inputAttribute = { .inputPattern = static_cast<int32_t>(input_mode_),
-        .enterKeyType = static_cast<int32_t>(IMFAdapterEnterKeyType::DONE) };
 
-  IMFAdapterCursorInfo cursorInfo = GetCursorInfo();
+  std::shared_ptr<NWebIMFInputAttributeAdapterImpl> inputAttribute =
+      std::make_shared<NWebIMFInputAttributeAdapterImpl>();
+  inputAttribute->SetInputPattern(static_cast<int32_t>(input_mode_));
+  inputAttribute->SetEnterKeyType(
+      static_cast<int32_t>(IMFAdapterEnterKeyType::DONE));
 
-  IMFAdapterTextConfig textConfig = { .inputAttribute = inputAttribute, .cursorInfo = cursorInfo };
+  std::shared_ptr<IMFCursorInfoAdapter> cursorInfo = GetCursorInfo();
+
+  std::shared_ptr<NWebIMFTextConfigAdapterImpl> textConfig =
+      std::make_shared<NWebIMFTextConfigAdapterImpl>();
+  textConfig->SetInputAttribute(inputAttribute);
+  textConfig->SetCursorInfo(cursorInfo);
+  textConfig->SetWindowId(windowId_);
+
   if (!show_keyboard_ && isAttached_ && input_mode_ != lastInputMode_) {
     LOG(ERROR) << "do not need attach";
     inputmethod_adapter_->Close();
   }
-  if (!inputmethod_adapter_->Attach(inputmethod_listener_, show_keyboard_, textConfig)) {
+  if (!inputmethod_adapter_->Attach(inputmethod_listener_, show_keyboard_,
+                                    textConfig)) {
     LOG(ERROR) << "inputmethod_adapter_ attach failed";
     return false;
   }
@@ -352,15 +383,22 @@ void NWebInputMethodHandler::OnCursorUpdate(const CefRect& rect) {
   focus_rect_ = rect;
   focus_rect_status_ = true;
   if (focus_status_) {
-    IMFAdapterCursorInfo cursorInfo{
-        .left = (rect.x + rect.width) * device_pixel_ratio_ + offset_x_,
-        .top = rect.y * device_pixel_ratio_ + offset_y_,
-        .width = rect.width * device_pixel_ratio_,
-        .height = rect.height * device_pixel_ratio_};
+    std::shared_ptr<NWebIMFCursorInfoAdapterImpl> cursorInfo =
+        std::make_shared<NWebIMFCursorInfoAdapterImpl>();
+    double left = (rect.x + rect.width) * device_pixel_ratio_ + offset_x_;
+    double top = rect.y * device_pixel_ratio_ + offset_y_;
+    double width = rect.width * device_pixel_ratio_;
+    double height = rect.height * device_pixel_ratio_;
+
+    cursorInfo->SetLeft(left);
+    cursorInfo->SetTop(top);
+    cursorInfo->SetWidth(width);
+    cursorInfo->SetHeight(height);
+
     LOG(DEBUG) << "NWebInputMethodHandler::OnCursorUpdate cursorInfo.left = "
-               << cursorInfo.left << ", cursorInfo.top = " << cursorInfo.top
-               << ", cursorInfo.width = " << cursorInfo.width
-               << ", cursorInfo.height = " << cursorInfo.height;
+               << left << ", cursorInfo.top = " << top
+               << ", cursorInfo.width = " << width
+               << ", cursorInfo.height = " << height;
     if (inputmethod_adapter_) {
       inputmethod_adapter_->OnCursorUpdate(cursorInfo);
     }
@@ -463,8 +501,8 @@ void NWebInputMethodHandler::InsertTextHandlerOnUI(const std::u16string& text) {
                                      CefRange(UINT32_MAX, UINT32_MAX), 0);
 
   if (text.length() > 1) {
-    ResSchedClientAdapter::ReportScene(
-      ResSchedStatusAdapter::WEB_SCENE_ENTER, ResSchedSceneAdapter::CLICK);
+    ResSchedClientAdapter::ReportScene(ResSchedStatusAdapter::WEB_SCENE_ENTER,
+                                       ResSchedSceneAdapter::CLICK);
   }
 
   // no selection
@@ -615,15 +653,23 @@ void NWebInputMethodHandler::MoveCursor(const IMFAdapterDirection direction) {
 void NWebInputMethodHandler::SetScreenOffSet(double x, double y) {
   if (focus_status_) {
     if (focus_rect_status_ && (offset_x_ != x || offset_y_ != y)) {
-      IMFAdapterCursorInfo cursorInfo{
-          .left = (focus_rect_.x + focus_rect_.width) * device_pixel_ratio_ + x,
-          .top = focus_rect_.y * device_pixel_ratio_ + y,
-          .width = focus_rect_.width * device_pixel_ratio_,
-          .height = focus_rect_.height * device_pixel_ratio_};
+      std::shared_ptr<NWebIMFCursorInfoAdapterImpl> cursorInfo =
+          std::make_shared<NWebIMFCursorInfoAdapterImpl>();
+      double left =
+          (focus_rect_.x + focus_rect_.width) * device_pixel_ratio_ + x;
+      double top = focus_rect_.y * device_pixel_ratio_ + y;
+      double width = focus_rect_.width * device_pixel_ratio_;
+      double height = focus_rect_.height * device_pixel_ratio_;
+
+      cursorInfo->SetLeft(left);
+      cursorInfo->SetTop(top);
+      cursorInfo->SetWidth(width);
+      cursorInfo->SetHeight(height);
+
       LOG(DEBUG) << "NWebInputMethodHandler::SetScreenOffSet cursorInfo.left = "
-                 << cursorInfo.left << ", cursorInfo.top = " << cursorInfo.top
-                 << ", cursorInfo.width = " << cursorInfo.width
-                 << ", cursorInfo.height = " << cursorInfo.height;
+                 << left << ", cursorInfo.top = " << top
+                 << ", cursorInfo.width = " << width
+                 << ", cursorInfo.height = " << height;
       if (inputmethod_adapter_) {
         inputmethod_adapter_->OnCursorUpdate(cursorInfo);
       }
@@ -639,16 +685,21 @@ void NWebInputMethodHandler::SetVirtualDeviceRatio(float device_pixel_ratio) {
 
 void NWebInputMethodHandler::SetFocusStatus(bool focus_status) {
   if (focus_status && focus_rect_status_) {
-    IMFAdapterCursorInfo cursorInfo{
-        .left = (focus_rect_.x + focus_rect_.width) * device_pixel_ratio_ +
-                offset_x_,
-        .top = focus_rect_.y * device_pixel_ratio_ + offset_y_,
-        .width = focus_rect_.width * device_pixel_ratio_,
-        .height = focus_rect_.height * device_pixel_ratio_};
+    std::shared_ptr<NWebIMFCursorInfoAdapterImpl> cursorInfo =
+        std::make_shared<NWebIMFCursorInfoAdapterImpl>();
+    double left =
+        (focus_rect_.x + focus_rect_.width) * device_pixel_ratio_ + offset_x_;
+    double top = focus_rect_.y * device_pixel_ratio_ + offset_y_;
+    double width = focus_rect_.width * device_pixel_ratio_;
+    double height = focus_rect_.height * device_pixel_ratio_;
+
+    cursorInfo->SetLeft(left);
+    cursorInfo->SetTop(top);
+    cursorInfo->SetWidth(width);
+    cursorInfo->SetHeight(height);
     LOG(DEBUG) << "NWebInputMethodHandler::SetFocusStatus cursorInfo.left = "
-               << cursorInfo.left << ", cursorInfo.top = " << cursorInfo.top
-               << ", cursorInfo.width = " << cursorInfo.width
-               << ", cursorInfo.height = " << cursorInfo.height;
+               << left << ", cursorInfo.top = " << top << ", width = " << width
+               << ", height = " << height;
     if (inputmethod_adapter_) {
       inputmethod_adapter_->OnCursorUpdate(cursorInfo);
     }
@@ -662,7 +713,8 @@ void NWebInputMethodHandler::OnEditableChanged(CefRefPtr<CefBrowser> browser,
 }
 
 bool NWebInputMethodHandler::GetIsEditableNode() {
-  LOG(INFO) << "NWebInputMethodHandler is_editable_node_ = " << is_editable_node_;
+  LOG(INFO) << "NWebInputMethodHandler is_editable_node_ = "
+            << is_editable_node_;
   return is_editable_node_;
 }
 
@@ -720,6 +772,12 @@ std::u16string NWebInputMethodHandler::GetRightTextOfCursor(int32_t number) {
     return u"";
   }
   return whole_text_.substr(selectEnd, number);
+}
+
+void NWebInputMethodHandler::SetWindowIdForIME(uint32_t windowId) {
+  LOG(INFO) << "NWebInputMethodHandler::SetWindowIdForIME windowId: "
+            << windowId;
+  windowId_ = windowId;
 }
 
 bool NWebInputMethodHandler::IsCorrectParam(int32_t number,

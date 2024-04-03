@@ -4412,7 +4412,7 @@ void RenderFrameImpl::DidCreateScriptContext(v8::Local<v8::Context> context,
       IsMainFrame() && world_id == ISOLATED_WORLD_ID_GLOBAL) {
     // We only allow these bindings to be installed when creating the main
     // world context of the main frame.
-#if defined(IS_OHOS)
+#if BUILDFLAG(IS_OHOS)
     LOG(WARNING) << "MojoJS ability is disabled for security reasons.";
 #else
     blink::WebV8Features::EnableMojoJS(context, true);
@@ -4422,7 +4422,7 @@ void RenderFrameImpl::DidCreateScriptContext(v8::Local<v8::Context> context,
         blink::WebV8Features::EnableMojoJSFileSystemAccessHelper(context, true);
     }
   }
-#if defined(IS_OHOS)
+#if BUILDFLAG(IS_OHOS)
   else {
     LOG(WARNING) << "For security reasons MojoJS is forcibly disabled.";
   }
@@ -6306,10 +6306,7 @@ WebView* RenderFrameImpl::CreateNewWindow(
   if (GetContentClient()->renderer()->AllowPopup())
     params->allow_popup = true;
 #if BUILDFLAG(IS_OHOS)
-  if (GetNewWindowWebView(request.Url(), policy, params->allow_popup)) {
-    LOG(INFO) << "wait user create window.";
-    usleep(100000);
-  }
+  GetNewWindowWebView(request.Url(), policy, params->allow_popup);
 #endif
 
   params->window_container_type = WindowFeaturesToContainerType(features);

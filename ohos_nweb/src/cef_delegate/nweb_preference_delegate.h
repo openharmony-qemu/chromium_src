@@ -16,6 +16,8 @@
 #ifndef NWEB_PREFERENCE_DELEGATE_H
 #define NWEB_PREFERENCE_DELEGATE_H
 
+#include <tuple>
+
 #include "cef/include/cef_browser.h"
 #include "ohos_nweb/include/nweb_preference.h"
 
@@ -123,6 +125,8 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if BUILDFLAG(IS_OHOS)
   void SetDrawMode(int mode);
   int GetDrawMode() const;
+  void PutTextAutosizingEnabled(bool enable) override;
+  bool IsTextAutosizingEnabled() const;
 #endif
 
 #if defined(OHOS_INPUT_EVENTS)
@@ -139,6 +143,11 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool GetNativeEmbedMode() override;
   void RegisterNativeEmbedRule(const std::string& tag, const std::string& type) override;
 
+#if defined(OHOS_VIEWPORT)
+  void SetViewportEnable(bool enable) override;
+  std::optional<bool> GetViewportEnable();
+#endif  // defined(OHOS_VIEWPORT)
+
 #if defined(OHOS_CLIPBOARD)
   void PutCopyOptionMode(CopyOptionMode copyOption) override;
   CopyOptionMode GetCopyOptionMode() override;
@@ -148,6 +157,8 @@ class NWebPreferenceDelegate : public NWebPreference {
   void SetEnableBlankTargetPopupIntercept(bool enable);
   bool IsBlankTargetPopupInterceptEnabled();
 #endif
+  void SetNativeVideoPlayerConfig(bool enable, bool shouldOverlay) override;
+
  private:
   CefRefPtr<CefBrowser> browser_ = nullptr;
 
@@ -200,8 +211,12 @@ class NWebPreferenceDelegate : public NWebPreference {
   int overscroll_mode_{0};
   bool scroll_enabled_{true};
 #endif  // defined(OHOS_INPUT_EVENTS)
+#if defined(OHOS_VIEWPORT)
+  std::optional<bool> viewport_enabled_;
+#endif  // defined(OHOS_VIEWPORT)
 #if BUILDFLAG(IS_OHOS)
   int draw_mode_{0};
+  bool text_autosizing_enabled_{true};
 #endif
   bool enable_embed_mode_{false};
   std::string embed_tag_{"embed"};
@@ -216,6 +231,7 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if defined(OHOS_BACKGROUND_COLOR)
   int32_t background_color_{0xffffffff};
 #endif // defined(OHOS_BACKGROUND_COLOR)
+  std::tuple<bool, bool> native_video_player_config_{false, false};
 };
 }  // namespace OHOS::NWeb
 

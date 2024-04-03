@@ -64,7 +64,7 @@ test("device_unittests") {
 
   #disable Bluetooth releated tests,
   #because bluetooth tests needs bluez and dbus, it seems dbus is not supported on ohos.
-  if (is_ohos) {
+  if (defined(ohos_unittests) && ohos_unittests) {
     sources -= [
       "bluetooth/adapter_unittest.cc",
       "bluetooth/advertisement_unittest.cc",
@@ -233,7 +233,7 @@ test("device_unittests") {
 
   #disable Bluetooth releated tests,
   #because bluetooth tests needs bluez and dbus, it seems dbus is not supported on ohos.
-  if (is_ohos) {
+  if (defined(ohos_unittests) && ohos_unittests) {
     sources -= [
       "fido/cable/fido_ble_connection_unittest.cc",
       "fido/cable/fido_ble_frames_unittest.cc",
@@ -491,7 +491,7 @@ test("device_unittests") {
 
   # Some gamepad tests require the HID service. Only build these tests on
   # platforms where the HID service is enabled.
-  if (!is_android && !is_fuchsia && !is_ios && !is_ohos) {
+  if (!is_android && !is_fuchsia && !is_ios && !(defined(ohos_unittests) && ohos_unittests)) {
     sources += [ "gamepad/nintendo_data_fetcher_unittest.cc" ]
 
     deps += [

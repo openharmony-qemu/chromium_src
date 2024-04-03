@@ -16,16 +16,16 @@ namespace ui {
 using FileUrlMap = std::unordered_map<std::string, base::File>;
 class ClipboardOhosReadData {
  public:
-  ClipboardOhosReadData(OHOS::NWeb::PasteRecordList& record_list);
+  ClipboardOhosReadData(OHOS::NWeb::PasteRecordVector& record_vector);
 
   std::unordered_map<std::string, base::File>& GetFileMap() {
     return file_map_;
   }
 
-  OHOS::NWeb::PasteRecordList& GetPasteRecordList() { return record_list_; }
+  OHOS::NWeb::PasteRecordVector& GetPasteRecordVector() { return record_vector_; }
   uint32_t GetTokenId() const { return token_id_; }
   bool IsLocalPaste() const { return is_in_app_; }
-  size_t GetRecordListSize() const { return record_list_.size(); }
+  size_t GetRecordVectorSize() const { return record_vector_.size(); }
   std::shared_ptr<std::string> ReadHtml();
   std::shared_ptr<std::string> ReadText() { return text_; }
   ~ClipboardOhosReadData();
@@ -36,7 +36,7 @@ class ClipboardOhosReadData {
                    std::string& new_uri,
                    uint32_t token_id);
 
-  OHOS::NWeb::PasteRecordList record_list_;
+  OHOS::NWeb::PasteRecordVector record_vector_;
   bool has_been_read_html_ = false;
   FileUrlMap file_map_;
   uint32_t token_id_ = 0;

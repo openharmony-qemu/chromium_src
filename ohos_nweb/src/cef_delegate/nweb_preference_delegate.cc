@@ -170,6 +170,8 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
   cef_string_set(str.c_str(), str.length(),
                  &(browser_settings.embed_tag_type), true);
   browser_settings.draw_mode = GetDrawMode();
+  browser_settings.text_autosizing_enabled =
+      IsTextAutosizingEnabled() ? STATE_ENABLED : STATE_DISABLED;
 #endif  // BUILDFLAG(IS_OHOS)
 #if defined(OHOS_CLIPBOARD)
   browser_settings.copy_option = static_cast<int>(GetCopyOptionMode());
@@ -178,7 +180,7 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
   browser_settings.scrollbar_color = GetScrollBarColor();
 #endif // OHOS_SCROLLBAR
 #ifdef OHOS_VIEWPORT
-  browser_settings.viewport_meta_enabled = true;
+  browser_settings.viewport_meta_enabled = GetViewportEnable();
 #endif // OHOS_VIEWPORT
 
 #if defined(OHOS_BACKGROUND_COLOR)
@@ -192,6 +194,12 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
     browser_settings.contextmenu_customization_enabled = true;
   }
 #endif  // OHOS_EX_FREE_COPY
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  browser_settings.custom_video_player_enable =
+      std::get<0>(native_video_player_config_);
+  browser_settings.custom_video_player_overlay =
+      std::get<1>(native_video_player_config_);
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 }
 
 void NWebPreferenceDelegate::SetBrowserSettingsToNetHelpers() {
@@ -630,11 +638,15 @@ void NWebPreferenceDelegate::PutOverscrollMode(int mode) {
   }
   browser_->GetHost()->SetOverscrollMode(mode);
 }
+
 void NWebPreferenceDelegate::SetNativeEmbedMode(bool flag) {
   // Native Embed is not supported on pc device.
-  enable_embed_mode_ = flag && !base::ohos::IsPcDevice();
+  CefRefPtr<CefCommandLine> command_line = CefCommandLine::GetGlobalCommandLine();
+  auto isEnableEmbed = command_line->HasSwitch(::switches::kEnableEmbedMode); 
+  enable_embed_mode_ = flag && !isEnableEmbed;
   WebPreferencesChanged();
 }
+
 bool NWebPreferenceDelegate::GetNativeEmbedMode() {
   return enable_embed_mode_;
 }
@@ -660,6 +672,17 @@ bool NWebPreferenceDelegate::GetScrollable() {
   return scroll_enabled_;
 }
 #endif  // defined(OHOS_INPUT_EVENTS)
+
+#if defined(OHOS_VIEWPORT)
+void NWebPreferenceDelegate::SetViewportEnable(bool enable) {
+  viewport_enabled_ = enable;
+  WebPreferencesChanged();
+}
+
+std::optional<bool> NWebPreferenceDelegate::GetViewportEnable() {
+  return viewport_enabled_;
+}
+#endif  // defined(OHOS_VIEWPORT)
 
 uint32_t NWebPreferenceDelegate::GetScrollBarColor() {
 #ifdef OHOS_SCROLLBAR
@@ -693,6 +716,18 @@ void NWebPreferenceDelegate::SetDrawMode(int mode) {
 int NWebPreferenceDelegate::GetDrawMode() const {
   return draw_mode_;
 }
+
+void NWebPreferenceDelegate::PutTextAutosizingEnabled(bool flag) {
+  if(text_autosizing_enabled_ == flag){
+    return;
+  }
+  text_autosizing_enabled_ = flag;
+  WebPreferencesChanged();
+}
+
+bool NWebPreferenceDelegate::IsTextAutosizingEnabled() const {
+  return text_autosizing_enabled_;
+}
 #endif
 
 #ifdef OHOS_EX_BLANK_TARGET_POPUP_INTERCEPT
@@ -715,5 +750,15 @@ NWebPreference::CopyOptionMode NWebPreferenceDelegate::GetCopyOptionMode() {
   return copy_option_;
 }
 #endif // defined(OHOS_CLIPBOARD)
+
+void NWebPreferenceDelegate::SetNativeVideoPlayerConfig(bool enable,
+                                                        bool shouldOverlay) {
+
+  if (native_video_player_config_ == std::make_tuple(enable, shouldOverlay)) {
+    return;
+  }
+  native_video_player_config_ = {enable, shouldOverlay};
+  WebPreferencesChanged();
+}
 
 }  // namespace OHOS::NWeb

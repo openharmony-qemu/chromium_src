@@ -204,6 +204,9 @@
 #include "mojo/public/cpp/bindings/self_owned_receiver.h"
 #include "mojo/public/cpp/bindings/struct_ptr.h"
 #include "mojo/public/cpp/system/data_pipe.h"
+#if BUILDFLAG(IS_OHOS)
+#include "mojo/public/cpp/system/platform_handle.h"
+#endif
 #include "net/base/schemeful_site.h"
 #include "net/net_buildflags.h"
 #include "ppapi/buildflags/buildflags.h"
@@ -2629,6 +2632,26 @@ void RenderFrameHostImpl::ExecuteJavaScript(const std::u16string& javascript,
   GetAssociatedLocalFrame()->JavaScriptExecuteRequest(javascript, wants_result,
                                                       std::move(callback));
 }
+
+#if BUILDFLAG(IS_OHOS)
+void RenderFrameHostImpl::ExecuteJavaScriptExt(const int fd,
+                                               const uint64_t scriptLength,
+                                               JavaScriptResultCallback callback) {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  CHECK(CanExecuteJavaScript());
+  AssertNonSpeculativeFrame();
+
+  const bool wants_result = !callback.is_null();
+  MojoPlatformHandle platform_handle;
+  platform_handle.struct_size = sizeof(platform_handle);
+  platform_handle.type = MOJO_PLATFORM_HANDLE_TYPE_FILE_DESCRIPTOR;
+  platform_handle.value = static_cast<uint64_t>(fd);
+  MojoHandle handle;
+  MojoWrapPlatformHandle(&platform_handle, nullptr, &handle);
+  GetAssociatedLocalFrame()->JavaScriptExecuteRequestExt(
+      mojo::ScopedHandle(mojo::Handle(handle)), scriptLength, wants_result, std::move(callback));
+}
+#endif
 
 void RenderFrameHostImpl::ExecuteJavaScriptInIsolatedWorld(
     const std::u16string& javascript,
@@ -7785,6 +7808,22 @@ void RenderFrameHostImpl::GetCreateNewWindow(
       this, target_url, disposition, effective_transient_activation_state,
       std::move(callback));
 #endif  // defined(OHOS_MULTI_WINDOW)
+}
+
+void RenderFrameHostImpl::GenerateCodeCache(const std::string& url,
+                                            const std::string& script,
+                                            const std::shared_ptr<oh_code_cache::CacheOptions>& cacheOptions,
+                                            CodeCacheCallback callback) {
+  auto options = blink::mojom::CacheOptions::New();
+
+  for (auto header : cacheOptions->response_headers_) {
+    options->response_headers.insert(std::make_pair(header.first, header.second));
+  }
+
+  options->is_module = cacheOptions->is_module_;
+  options->is_top_level = cacheOptions->is_top_level_;
+
+  GetAssociatedLocalFrame()->GenerateCodeCache(url, script, std::move(options), std::move(callback));
 }
 #endif
 

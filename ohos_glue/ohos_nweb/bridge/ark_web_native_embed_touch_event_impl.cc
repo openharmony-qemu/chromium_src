@@ -15,6 +15,7 @@
 
 #include "ohos_nweb/bridge/ark_web_native_embed_touch_event_impl.h"
 #include "base/bridge/ark_web_bridge_macros.h"
+#include "ohos_nweb/bridge/ark_web_gesture_event_result_impl.h"
 
 namespace OHOS::ArkWeb {
 
@@ -59,6 +60,15 @@ float ArkWebNativeEmbedTouchEventImpl::GetScreenY() {
 ArkWebString ArkWebNativeEmbedTouchEventImpl::GetEmbedId() {
   return ArkWebStringClassToStruct(
       nweb_native_embed_touch_event_->GetEmbedId());
+}
+
+ArkWebRefPtr<ArkWebGestureEventResult> ArkWebNativeEmbedTouchEventImpl::GetResult() {
+  std::shared_ptr<OHOS::NWeb::NWebGestureEventResult> result = 
+        nweb_native_embed_touch_event_->GetResult();
+  if (CHECK_SHARED_PTR_IS_NULL(result)) {
+    return nullptr;
+  }
+  return new ArkWebGestureEventResultImpl(result);
 }
 
 } // namespace OHOS::ArkWeb

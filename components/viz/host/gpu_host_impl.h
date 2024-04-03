@@ -217,6 +217,11 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost
                       gpu::SurfaceHandle child_window);
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+  void StartMonitor();
+  void StopMonitor();
+#endif
+
  private:
   friend class GpuHostImplTestApi;
 

@@ -4,6 +4,7 @@
 
 #include "ui/gl/gl_surface_egl_ohos.h"
 #include "base/threading/platform_thread.h"
+#include "base/trace_event/trace_event.h"
 #include "content/public/common/content_switches.h"
 
 #include "nweb_native_window_tracker.h"
@@ -64,6 +65,7 @@ bool NativeViewGLSurfaceEGLOhos::Resize(const gfx::Size& size,
                                         float scale_factor,
                                         const gfx::ColorSpace& color_space,
                                         bool has_alpha) {
+  TRACE_EVENT0("gpu", "NativeViewGLSurfaceEGLOhos::Resize");
   int32_t ret =
       OHOS::NWeb::OhosAdapterHelper::GetInstance()
           .GetWindowAdapterInstance()
@@ -73,6 +75,25 @@ bool NativeViewGLSurfaceEGLOhos::Resize(const gfx::Size& size,
     LOG(ERROR) << "fail to set NativeWindowHandleOpt, ret=" << ret;
     return false;
   }
+
+  // recreate eglsurface to release previous eglsurface's dma buffer
+  NativeViewGLSurfaceEGL::Recreate();
+  return true;
+}
+
+
+bool NativeViewGLSurfaceEGLOhos::SetBackbufferAllocation(bool allocated) {
+  TRACE_EVENT1("gpu", "NativeViewGLSurfaceEGLOhos::SetBackbufferAllocation",
+               "allocated", allocated);
+  if (!allocated) {
+    NativeViewGLSurfaceEGL::Recreate();
+
+    // Notify the bufferqueue associated with the OHNativeWindow to clean cache
+    OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .GetWindowAdapterInstance()
+        .NativeWindowSurfaceCleanCache(reinterpret_cast<void*>(window_));
+  }
+  
   return true;
 }
 

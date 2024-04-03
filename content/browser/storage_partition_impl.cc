@@ -2068,6 +2068,10 @@ void StoragePartitionImpl::OnSSLCertificateError(
     int net_error,
     const net::SSLInfo& ssl_info,
     bool fatal,
+#ifdef OHOS_NETWORK_LOAD
+    const GURL& origin_url,
+    const std::string& referrer,
+#endif
     OnSSLCertificateErrorCallback response) {
   URLLoaderNetworkContext context =
       url_loader_network_observers_.current_context();
@@ -2086,7 +2090,13 @@ void StoragePartitionImpl::OnSSLCertificateError(
   bool is_primary_main_frame_request = IsPrimaryMainFrameRequest(context);
   SSLManager::OnSSLCertificateError(
       delegate->GetWeakPtr(), is_primary_main_frame_request, url,
-      context.navigation_or_document(), net_error, ssl_info, fatal);
+      context.navigation_or_document(), net_error, ssl_info, fatal
+#ifdef OHOS_NETWORK_LOAD
+      ,
+      origin_url,
+      referrer
+#endif
+      );
 }
 
 void StoragePartitionImpl::OnLoadingStateUpdate(

@@ -167,6 +167,16 @@ void GpuHostImpl::ResetFontRenderParams() {
   GetFontRenderParams().Reset();
 }
 
+#if BUILDFLAG(IS_OHOS)
+void GpuHostImpl::StartMonitor() {
+  gpu_service_remote_->StartMonitor();
+}
+
+void GpuHostImpl::StopMonitor() {
+  gpu_service_remote_->StopMonitor();
+}
+#endif
+
 void GpuHostImpl::SetProcessId(base::ProcessId pid) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   DCHECK_EQ(base::kNullProcessId, pid_);

@@ -66,7 +66,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   int32_t GetTextIndexAtCursor();
   std::u16string GetLeftTextOfCursor(int32_t number);
   std::u16string GetRightTextOfCursor(int32_t number);
-
+  void SetWindowIdForIME(uint32_t windowId);
  private:
   void SetIMEStatusOnUI(bool status);
   void InsertTextHandlerOnUI(const std::u16string& text);
@@ -74,7 +74,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   void DeleteForwardHandlerOnUI(int32_t length);
   bool IsCorrectParam(int32_t number, int32_t& selectBegin, int32_t& selectEnd);
   bool ResetTextSelectiondata();
-  IMFAdapterCursorInfo GetCursorInfo();
+  std::shared_ptr<IMFCursorInfoAdapter> GetCursorInfo();
 
   static uint32_t lastAttachNWebId_;
   static IMFAdapterTextInputType lastInputMode_;
@@ -108,6 +108,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   std::condition_variable textCursorCv_;
   bool is_need_notify_all_ = false;
   int32_t text_cursor_length_ = 0;
+  uint32_t windowId_ = 0;
 
   IMPLEMENT_REFCOUNTING(NWebInputMethodHandler);
 };

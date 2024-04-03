@@ -164,6 +164,8 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
 
 #if BUILDFLAG(IS_OHOS)
   void SendInternalBeginFrame(const FrameSinkId& id) override;
+  void EvictFrameBackBuffers(const FrameSinkId& root_frame_sink_id,
+                             bool invisible) override;
 #endif
 
   void DestroyFrameSinkBundle(const FrameSinkBundleId& id);
@@ -284,7 +286,8 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
 
 #if BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_JITTER)
   void OnVsync(const FrameSinkId& frame_sink_id);
-#endif 
+  void OnVsyncReceived(const FrameSinkId& frame_sink_id);
+#endif
 
 #if BUILDFLAG(IS_OHOS)
   void SetEnableLowerFrameRate(bool enabled, const FrameSinkId& frame_sink_id) override;

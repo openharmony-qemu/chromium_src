@@ -84,6 +84,7 @@
 #include "ui/gl/progress_reporter.h"
 #include "url/gurl.h"
 #if BUILDFLAG(IS_OHOS)
+#include "base/ohos/dynamic_frame_loss_monitor.h"
 #include "base/report_loss_frame.h"
 #endif
 
@@ -585,6 +586,9 @@ void SkiaOutputSurfaceImplOnGpu::SwapBuffers(OutputSurfaceFrame frame) {
   ReportLossFrame::GetInstance()->Record();
 #endif
   SwapBuffersInternal(std::move(frame));
+#if BUILDFLAG(IS_OHOS)
+  base::ohos::DynamicFrameLossMonitor::GetInstance().OnSwapBuffer();
+#endif
 }
 
 void SkiaOutputSurfaceImplOnGpu::EnsureMinNumberOfBuffers(int n) {

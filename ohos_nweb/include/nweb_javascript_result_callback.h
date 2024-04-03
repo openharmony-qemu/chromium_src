@@ -35,6 +35,15 @@ namespace OHOS::NWeb {
             int32_t routing_id,
             int32_t object_id) = 0;
 
+
+        virtual std::shared_ptr<NWebValue> GetJavaScriptResultFlowbuf(
+            std::vector<std::shared_ptr<NWebValue>> args,
+            const std::string& method,
+            const std::string& object_name,
+            int fd,
+            int32_t routing_id,
+            int32_t object_id) = 0;
+
         /* HasJavaScriptObjectMethods
          *
          * @param object_id: means the JavaScript object id

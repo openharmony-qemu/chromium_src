@@ -22,11 +22,16 @@
 #include "base/command_line.h"
 #include "base/logging.h"
 #include "nweb_delegate_interface.h"
+#include "nweb_touch_handle_hot_zone_impl.h"
 #include "nweb_touch_handle_state_impl.h"
+#if defined(REPORT_SYS_EVENT)
+#include "event_reporter.h"
+#endif
 
 #include "content/public/common/content_switches.h"
 #include "ohos_adapter_helper.h"
 #include "res_sched_client_adapter.h"
+#include "nweb_gesture_event_result_impl.h"
 #ifdef OHOS_DRAG_DROP
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
@@ -101,7 +106,9 @@ class NWebNativeEmbedInfoImpl : public NWebNativeEmbedInfo {
       const std::string& url,
       const std::string& type,
       const std::string& tag,
-      const std::map<std::string, std::string>& params);
+      const std::map<std::string, std::string>& params,
+      int32_t x,
+      int32_t y);
   ~NWebNativeEmbedInfoImpl() = default;
 
   int32_t GetWidth() override { return width_; }
@@ -120,6 +127,10 @@ class NWebNativeEmbedInfoImpl : public NWebNativeEmbedInfo {
 
   std::map<std::string, std::string> GetParams() override { return params_; }
 
+  int32_t GetX() override { return x_; }
+
+  int32_t GetY() override { return y_; }
+
  private:
   int32_t width_ = 0;
   int32_t height_ = 0;
@@ -129,17 +140,21 @@ class NWebNativeEmbedInfoImpl : public NWebNativeEmbedInfo {
   std::string type_;
   std::string tag_;
   std::map<std::string, std::string> params_;
+  int32_t x_ = 0;
+  int32_t y_ = 0;
 };
 
 NWebNativeEmbedInfoImpl::NWebNativeEmbedInfoImpl(
     int32_t width,
-    const int32_t height,
+    int32_t height,
     const std::string& id,
     const std::string& src,
     const std::string& url,
     const std::string& type,
     const std::string& tag,
-    const std::map<std::string, std::string>& params)
+    const std::map<std::string, std::string>& params,
+    int32_t x,
+    int32_t y)
     : width_(width),
       height_(height),
       id_(id),
@@ -147,7 +162,9 @@ NWebNativeEmbedInfoImpl::NWebNativeEmbedInfoImpl(
       url_(url),
       type_(type),
       tag_(tag),
-      params_(params) {}
+      params_(params),
+      x_(x),
+      y_(y) {}
 
 class NWebNativeEmbedDataInfoImpl : public NWebNativeEmbedDataInfo {
  public:
@@ -222,6 +239,11 @@ class NWebNativeEmbedTouchEventImpl : public NWebNativeEmbedTouchEvent {
 
   void SetEmbedId(const std::string& embedId) { embedId_ = embedId; }
 
+  std::shared_ptr<NWebGestureEventResult> GetResult() override { return result_;}
+  void SetResult(const std::shared_ptr<NWebGestureEventResult> result) {
+    result_ = result;
+  }
+
  private:
   std::string embedId_;
   int32_t id_ = 0;
@@ -232,6 +254,7 @@ class NWebNativeEmbedTouchEventImpl : public NWebNativeEmbedTouchEvent {
   float screenX_ = 0;
   float screenY_ = 0;
   TouchType type_ = TouchType::DOWN;
+  std::shared_ptr<NWebGestureEventResult> result_;
 };
 
 // static
@@ -416,6 +439,12 @@ void NWebRenderHandler::OnRootLayerChanged(CefRefPtr<CefBrowser> browser,
   }
 }
 
+void NWebRenderHandler::ReleaseResizeHold(CefRefPtr<CefBrowser> browser) {
+  if (auto handler = handler_.lock()) {
+    handler->ReleaseResizeHold();
+  }
+}
+
 void NWebRenderHandler::OnScrollOffsetChanged(CefRefPtr<CefBrowser> browser,
                                               double x,
                                               double y) {
@@ -485,11 +514,12 @@ void NWebRenderHandler::GetTouchHandleSize(
     return;
   }
   if (auto handler = handler_.lock()) {
-    TouchHandleHotZone hot_zone;
+    std::shared_ptr<NWebTouchHandleHotZoneImpl> hot_zone =
+	    std::make_shared<NWebTouchHandleHotZoneImpl>();
     handler->OnGetTouchHandleHotZone(hot_zone);
-    if (hot_zone.width > 0 && hot_zone.height > 0) {
-      size.width = static_cast<int>(hot_zone.width) + 1;
-      size.height = static_cast<int>(hot_zone.height) + 1;
+    if (hot_zone->GetWidth() > 0 && hot_zone->GetHeight() > 0) {
+      size.width = static_cast<int>(hot_zone->GetWidth()) + 1;
+      size.height = static_cast<int>(hot_zone->GetHeight()) + 1;
     }
   }
   LOG(INFO) << "GetTouchHandleSize " << size.width << " " << size.height;
@@ -651,6 +681,11 @@ bool NWebRenderHandler::StartDragging(CefRefPtr<CefBrowser> browser,
     LOG(ERROR) << "can't get strong ptr with handler";
     return false;
   }
+#if defined(REPORT_SYS_EVENT)
+  if (browser) {
+    ReportDragDropStatus("DRAG_START", browser->GetNWebId());
+  }
+#endif
   return handler->OnDragAndDropDataUdmf(nweb_drag_data_);
 }
 
@@ -738,14 +773,16 @@ bool NWebRenderHandler::FilterScrollEvent(CefRefPtr<CefBrowser> browser,
   if (auto handler = handler_.lock()) {
     // Value multiplied by virtual pixel ratio.
     return handler->FilterScrollEvent(x * screen_info_.display_ratio,
-                                      y * screen_info_.display_ratio, fling_x,
-                                      fling_y);
+                                      y * screen_info_.display_ratio,
+                                      fling_x * screen_info_.display_ratio,
+                                      fling_y * screen_info_.display_ratio);
   }
   return false;
 }
 void NWebRenderHandler::OnNativeEmbedGestureEvent(
     CefRefPtr<CefBrowser> browser,
-    const CefEmbedTouchEvent& touchEvent) {
+    const CefEmbedTouchEvent& touchEvent,
+    CefRefPtr<CefGestureEventCallback> callback) {
   if (auto handler = handler_.lock()) {
     std::shared_ptr<NWebNativeEmbedTouchEventImpl> info =
         std::make_shared<NWebNativeEmbedTouchEventImpl>();
@@ -753,11 +790,13 @@ void NWebRenderHandler::OnNativeEmbedGestureEvent(
     info->SetY(touchEvent.y);
     info->SetId(touchEvent.id);
     info->SetEmbedId(touchEvent.embedId);
-    info->SetOffsetX(touchEvent.offsetY);
-    info->SetOffsetY(touchEvent.offsetX);
+    info->SetOffsetX(touchEvent.offsetX);
+    info->SetOffsetY(touchEvent.offsetY);
     info->SetScreenX(touchEvent.screenX);
     info->SetScreenY(touchEvent.screenY);
     info->SetType(static_cast<OHOS::NWeb::TouchType>(touchEvent.type));
+    std::shared_ptr<NWebGestureEventResult> result = std::make_shared<NWebGestureEventResultImpl>(callback);
+    info->SetResult(result);
     handler->OnNativeEmbedGestureEvent(info);
   }
 }
@@ -767,7 +806,7 @@ std::shared_ptr<NWebNativeEmbedDataInfo> CefEmbedDataToWeb(
   std::shared_ptr<NWebNativeEmbedInfoImpl> embedinfo =
       std::make_shared<NWebNativeEmbedInfoImpl>(
           info.width, info.height, info.id, info.src, info.url, info.type,
-          info.tag, info.params);
+          info.tag, info.params, info.x, info.y);
 
   std::shared_ptr<NWebNativeEmbedDataInfoImpl> datainfo =
       std::make_shared<NWebNativeEmbedDataInfoImpl>();

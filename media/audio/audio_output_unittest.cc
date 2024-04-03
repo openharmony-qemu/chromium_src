@@ -45,7 +45,8 @@ class AudioOutputTest : public testing::TestWithParam<bool> {
         AudioManager::CreateForTesting(std::make_unique<TestAudioThread>());
     audio_manager_device_info_ =
         std::make_unique<AudioDeviceInfoAccessorForTests>(audio_manager_.get());
-#if BUILDFLAG(IS_OHOS)
+
+#if defined(OHOS_UNITTESTS)
     auto ui_sequence_manager_ =
         base::sequence_manager::CreateUnboundSequenceManager(
             base::sequence_manager::SequenceManager::Settings::Builder()
@@ -57,6 +58,7 @@ class AudioOutputTest : public testing::TestWithParam<bool> {
         std::move(browser_ui_thread_scheduler),
         std::make_unique<content::BrowserIOThreadDelegate>());
 #endif
+
 #if BUILDFLAG(IS_ANDROID)
     // The only parameter is used to enable/disable AAudio.
     should_use_aaudio_ = GetParam();

@@ -19,6 +19,7 @@
 #include "ohos_nweb/bridge/ark_web_data_base_impl.h"
 #include "ohos_nweb/bridge/ark_web_download_manager_impl.h"
 #include "ohos_nweb/bridge/ark_web_engine_init_args_wrapper.h"
+#include "ohos_nweb/bridge/ark_web_engine_prefetch_args_wrapper.h"
 #include "ohos_nweb/bridge/ark_web_nweb_create_info_wrapper.h"
 #include "ohos_nweb/bridge/ark_web_nweb_impl.h"
 #include "ohos_nweb/bridge/ark_web_web_storage_impl.h"
@@ -133,6 +134,22 @@ void ArkWebEngineImpl::SetWebDebuggingAccess(bool isEnableDebug) {
   nweb_engine_->SetWebDebuggingAccess(isEnableDebug);
 }
 
+void ArkWebEngineImpl::AddIntelligentTrackingPreventionBypassingList(
+    const ArkWebStringVector &hosts) {
+  nweb_engine_->AddIntelligentTrackingPreventionBypassingList(
+      ArkWebStringVectorStructToClass(hosts));
+}
+
+void ArkWebEngineImpl::RemoveIntelligentTrackingPreventionBypassingList(
+    const ArkWebStringVector &hosts) {
+  nweb_engine_->RemoveIntelligentTrackingPreventionBypassingList(
+      ArkWebStringVectorStructToClass(hosts));
+}
+
+void ArkWebEngineImpl::ClearIntelligentTrackingPreventionBypassingList() {
+  nweb_engine_->ClearIntelligentTrackingPreventionBypassingList();
+}
+
 void ArkWebEngineImpl::PauseAllTimers() {
   nweb_engine_->PauseAllTimers();
 }
@@ -141,20 +158,16 @@ void ArkWebEngineImpl::ResumeAllTimers() {
   nweb_engine_->ResumeAllTimers();
 }
 
-void ArkWebEngineImpl::AddIntelligentTrackingPreventionBypassingList(
-    const ArkWebStringVector &hosts) {
-  nweb_engine_->AddIntelligentTrackingPreventionBypassingList(
-      ArkWebStringVectorStructToClass(hosts));
-}
-
-void ArkWebEngineImpl::RemoveIntelligentTrackingPreventionBypassingList(
-      const ArkWebStringVector &hosts) {
-  nweb_engine_->RemoveIntelligentTrackingPreventionBypassingList(
-      ArkWebStringVectorStructToClass(hosts));
-}
-
-void ArkWebEngineImpl::ClearIntelligentTrackingPreventionBypassingList() {
-  nweb_engine_->ClearIntelligentTrackingPreventionBypassingList();
+void ArkWebEngineImpl::PrefetchResource(
+    ArkWebRefPtr<ArkWebEnginePrefetchArgs> &pre_args,
+    const ArkWebStringMap &additional_http_headers,
+    const ArkWebString &cache_key, const uint32_t &cache_valid_time) {
+  std::shared_ptr<OHOS::NWeb::NWebEnginePrefetchArgs> nweb_engine_pre_args =
+      std::make_shared<ArkWebEnginePrefetchArgsWrapper>(pre_args);
+  nweb_engine_->PrefetchResource(
+      nweb_engine_pre_args,
+      ArkWebStringMapStructToClass(additional_http_headers),
+      ArkWebStringStructToClass(cache_key), cache_valid_time);
 }
 
 } // namespace OHOS::ArkWeb

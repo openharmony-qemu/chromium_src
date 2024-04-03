@@ -41,6 +41,7 @@
 #include "ui/gfx/native_widget_types.h"
 #if BUILDFLAG(IS_OHOS)
 #include "base/memory/read_only_shared_memory_region.h"
+#include "content/browser/code_cache/oh_code_cache.h"
 #endif
 
 class GURL;
@@ -527,6 +528,14 @@ class CONTENT_EXPORT RenderFrameHost : public IPC::Listener,
   virtual void ExecuteJavaScript(const std::u16string& javascript,
                                  JavaScriptResultCallback callback) = 0;
 
+#if BUILDFLAG(IS_OHOS)
+  // This is the default API to run JavaScript in this frame. This API can only
+  // be called on chrome:// or devtools:// URLs.
+  virtual void ExecuteJavaScriptExt(const int fd,
+                                    const uint64_t scriptLength,
+                                    JavaScriptResultCallback callback) = 0;
+#endif
+
   // This runs the JavaScript in an isolated world of the top of this frame's
   // context.
   virtual void ExecuteJavaScriptInIsolatedWorld(
@@ -587,6 +596,12 @@ class CONTENT_EXPORT RenderFrameHost : public IPC::Listener,
       base::OnceCallback<void(uint32_t, base::ReadOnlySharedMemoryRegion)>;
   virtual void GetImageFromCache(const std::string& url,
                                  ImageCacheCallback callback) = 0;
+
+  using CodeCacheCallback = base::OnceCallback<void(int32_t)>;
+  virtual void GenerateCodeCache(const std::string& url,
+                                 const std::string& script,
+                                 const std::shared_ptr<oh_code_cache::CacheOptions>& cacheOptions,
+                                 CodeCacheCallback) = 0;
 #endif
 
   // RenderViewHost for this frame.

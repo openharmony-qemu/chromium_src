@@ -377,6 +377,7 @@ class PageLoadMetricsObserverInterface {
   virtual void OnDomContentLoadedEventStart(
       const mojom::PageLoadTiming& timing) = 0;
   virtual void OnLoadEventStart(const mojom::PageLoadTiming& timing) = 0;
+  virtual void OnLoadEventEnd(const mojom::PageLoadTiming& timing) = 0;
   virtual void OnParseStart(const mojom::PageLoadTiming& timing) = 0;
   virtual void OnParseStop(const mojom::PageLoadTiming& timing) = 0;
 

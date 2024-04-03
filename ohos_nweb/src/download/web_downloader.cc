@@ -19,6 +19,9 @@
 #include "ohos_nweb/src/capi/nweb_download_delegate_callback.h"
 #include "ohos_nweb/src/nweb_hilog.h"
 #include "ohos_nweb/src/nweb_impl.h"
+#if defined(REPORT_SYS_EVENT)
+#include "event_reporter.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -387,6 +390,9 @@ char* WebDownloadItem_Method(const NWebDownloadItem* download_item) {
 
 int WebDownloadItem_LastErrorCode(const NWebDownloadItem* download_item) {
   if (download_item) {
+#if defined(REPORT_SYS_EVENT)
+    ReportPageDownLoadErrorInfo(download_item->download_item_id, download_item->last_error_code);
+#endif
     return download_item->last_error_code;
   }
   WVLOG_E("WebDownloadItem_LastErrorCode download_item null");

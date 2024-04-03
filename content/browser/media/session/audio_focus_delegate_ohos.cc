@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "content/browser/media/session/audio_focus_delegate_ohos.h"
+#include "content/browser/media/session/audio_interrupt_adapter_impl.h"
 
 #include "audio_renderer_adapter.h"
 #include "audio_system_manager_adapter.h"
@@ -12,10 +13,8 @@
 #include "ohos_adapter_helper.h"
 
 namespace content {
-static constexpr AudioAdapterInterrupt kAudioInterrupt = {
-    .streamUsage = AudioAdapterStreamUsage::STREAM_USAGE_MEDIA,
-    .contentType = AudioAdapterContentType::CONTENT_TYPE_MUSIC,
-    .streamType = AudioAdapterStreamType::STREAM_MUSIC};
+static std::shared_ptr<AudioInterruptAdapterImpl> kAudioInterrupt =
+    std::make_shared<AudioInterruptAdapterImpl>();
 
 AudioManagerCallback::AudioManagerCallback(MediaSessionImpl* media_session)
     : media_session_(media_session) {}
@@ -24,15 +23,18 @@ AudioManagerCallback::~AudioManagerCallback() {}
 
 void AudioManagerCallback::OnSuspend() {
   if (!media_session_->IsActive() ||
-      !base::FeatureList::IsEnabled(media::kAudioFocusLossSuspendMediaSession))
+      !base::FeatureList::IsEnabled(
+          media::kAudioFocusLossSuspendMediaSession)) {
     return;
+  }
 
   media_session_->Suspend(MediaSession::SuspendType::kSystem);
 }
 
 void AudioManagerCallback::OnResume() {
-  if (!media_session_->IsSuspended())
+  if (!media_session_->IsSuspended()) {
     return;
+  }
 
   media_session_->Resume(MediaSession::SuspendType::kSystem);
 }

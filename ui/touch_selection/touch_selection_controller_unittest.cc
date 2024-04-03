@@ -49,8 +49,7 @@ class MockTouchHandleDrawable : public TouchHandleDrawable {
   }
   float GetDrawableHorizontalPaddingRatio() const override { return 0; }
 
-#if BUILDFLAG(IS_OHOS)
-  // Sets the Selection left-handle-start or right-handle-end's edge.
+#if defined(OHOS_UNITTESTS)
   void SetEdge(const gfx::PointF& top, const gfx::PointF& bottom) override {}
 #endif
 

@@ -125,12 +125,13 @@ void NWebSelectPopupMenuParamImpl::SetIsRightAligned(bool is_right_aligned) {
   is_right_aligned_ = is_right_aligned;
 }
 
-SelectMenuBound NWebSelectPopupMenuParamImpl::GetSelectMenuBound() {
+std::shared_ptr<NWebSelectMenuBound>
+NWebSelectPopupMenuParamImpl::GetSelectMenuBound() {
   return bounds_;
 }
 
 void NWebSelectPopupMenuParamImpl::SetSelectMenuBound(
-    const SelectMenuBound &bounds) {
+    std::shared_ptr<NWebSelectMenuBound> bounds) {
   bounds_ = bounds;
 }
 
@@ -145,10 +146,11 @@ void NWebSelectPopupMenuParamImpl::SetIsAllowMultipleSelection(
 
 NWebSelectPopupMenuCallbackImpl::NWebSelectPopupMenuCallbackImpl(
     CefRefPtr<CefSelectPopupCallback> callback)
-    : callback_(callback) {}
+    : callback_(callback) {
+}
 
 void NWebSelectPopupMenuCallbackImpl::Continue(
-    const std::vector<int32_t>& indices) {
+    const std::vector<int32_t> &indices) {
   if (callback_) {
     callback_->Continue(indices);
   }
@@ -159,4 +161,4 @@ void NWebSelectPopupMenuCallbackImpl::Cancel() {
     callback_->Cancel();
   }
 }
-}  // namespace OHOS::NWeb
+} // namespace OHOS::NWeb

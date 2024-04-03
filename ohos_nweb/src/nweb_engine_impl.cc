@@ -95,14 +95,14 @@ void NWebEngineImpl::SetWebDebuggingAccess(bool isEnableDebug) {
 }
 
 void NWebEngineImpl::AddIntelligentTrackingPreventionBypassingList(
-    const std::vector<std::string>& hosts) {
+    const std::vector<std::string> &hosts) {
 #ifdef OHOS_ITP
   NWebImpl::AddIntelligentTrackingPreventionBypassingList(hosts);
 #endif
 }
 
 void NWebEngineImpl::RemoveIntelligentTrackingPreventionBypassingList(
-    const std::vector<std::string>& hosts) {
+    const std::vector<std::string> &hosts) {
 #ifdef OHOS_ITP
   NWebImpl::RemoveIntelligentTrackingPreventionBypassingList(hosts);
 #endif
@@ -120,6 +120,14 @@ void NWebEngineImpl::PauseAllTimers() {
 
 void NWebEngineImpl::ResumeAllTimers() {
   NWebImpl::ResumeAllTimers();
+}
+
+void NWebEngineImpl::PrefetchResource(
+    const std::shared_ptr<NWebEnginePrefetchArgs> &pre_args,
+    const std::map<std::string, std::string> &additional_http_headers,
+    const std::string &cache_key, const uint32_t &cache_valid_time) {
+  return NWebImpl::PrefetchResource(pre_args, additional_http_headers,
+                                    cache_key, cache_valid_time);
 }
 
 } // namespace OHOS::NWeb

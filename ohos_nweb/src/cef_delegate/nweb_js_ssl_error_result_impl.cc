@@ -32,4 +32,20 @@ void NWebJSSslErrorResultImpl::HandleCancel() {
     return callback_->Cancel();
   }
 }
+
+NWebJSAllSslErrorResultImpl::NWebJSAllSslErrorResultImpl(
+    CefRefPtr<CefCallback> callback)
+    : callback_(callback) {}
+
+void NWebJSAllSslErrorResultImpl::HandleConfirm() {
+  if (callback_ != nullptr) {
+    return callback_->Continue();
+  }
+}
+
+void NWebJSAllSslErrorResultImpl::HandleCancel() {
+  if (callback_ != nullptr) {
+    return callback_->Cancel();
+  }
+}
  

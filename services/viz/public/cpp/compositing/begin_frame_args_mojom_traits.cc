@@ -6,6 +6,7 @@
 
 #include "mojo/public/cpp/base/time_mojom_traits.h"
 #include "services/viz/public/cpp/crash_keys.h"
+#include "ui/gfx/geometry/mojom/geometry_mojom_traits.h"
 
 namespace mojo {
 
@@ -61,6 +62,9 @@ bool StructTraits<viz::mojom::BeginFrameArgsDataView, viz::BeginFrameArgs>::
   out->animate_only = data.animate_only();
 #if BUILDFLAG(IS_OHOS)
   out->internal_frame = data.internal_frame();
+  if (!data.ReadDrawRect(&out->draw_rect)) {
+    return false;
+  }
 #endif
   return true;
 }

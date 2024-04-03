@@ -372,6 +372,10 @@ void WebSocket::WebSocketEventHandler::OnSSLCertificateError(
   }
   impl_->url_loader_network_observer_->OnSSLCertificateError(
       url, net_error, ssl_info, fatal,
+#ifdef OHOS_NETWORK_LOAD
+      url,
+      url.spec(),
+#endif
       base::BindOnce(&WebSocket::OnSSLCertificateErrorResponse,
                      impl_->weak_ptr_factory_.GetWeakPtr(),
                      std::move(callbacks), ssl_info));

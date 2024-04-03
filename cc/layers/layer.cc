@@ -64,6 +64,8 @@ struct SameSizeAsLayer : public base::RefCounted<SameSizeAsLayer>,
   int int_fields[7];
   gfx::Vector2dF offset;
   unsigned bitfields;
+  gfx::RectF native_rect_;
+  int native_embed_id_;
   raw_ptr<void> debug_info;
 };
 
@@ -117,6 +119,7 @@ Layer::Layer()
       property_tree_sequence_number_(-1),
       ignore_set_needs_commit_for_test_(false),
       native_(false),
+      native_embed_id_(0),
       bitflags_(0u),
       subtree_property_changed_(false) {}
 
@@ -1475,6 +1478,8 @@ void Layer::PushPropertiesTo(LayerImpl* layer,
     layer->NoteLayerPropertyChanged();
   layer->set_may_contain_video(may_contain_video());
   layer->set_may_contain_native(may_contain_native());
+  layer->set_native_embed_id(native_embed_id());
+  layer->SetNativeRect(native_rect_);
   layer->SetTouchActionRegion(inputs.touch_action_region);
   layer->SetContentsOpaque(inputs.contents_opaque);
   layer->SetContentsOpaqueForText(inputs.contents_opaque_for_text);

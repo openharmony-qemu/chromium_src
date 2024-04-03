@@ -268,6 +268,9 @@ void AsyncLayerTreeFrameSink::OnBeginFrame(
     const viz::FrameTimingDetailsMap& timing_details,
     bool frame_ack,
     std::vector<viz::ReturnedResource> resources) {
+  if (compositor_frame_sink_ptr_) {
+    compositor_frame_sink_ptr_->OnVsyncReceived();
+  }
   if (features::IsOnBeginFrameAcksEnabled()) {
     if (frame_ack) {
       DidReceiveCompositorFrameAck(std::move(resources));
@@ -296,7 +299,7 @@ void AsyncLayerTreeFrameSink::OnBeginFrame(
       "viz,benchmark", "Graphics.Pipeline", TRACE_ID_GLOBAL(args.trace_id),
       TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT, "step",
       "ReceiveBeginFrame", "frame_sequence", args.frame_id.sequence_number);
-
+  SetDrawRect(args.draw_rect);
   if (begin_frame_source_)
     begin_frame_source_->OnBeginFrame(args);
 }
@@ -341,6 +344,13 @@ void AsyncLayerTreeFrameSink::OnMojoConnectionError(
     DLOG(ERROR) << description;
   if (client_)
     client_->DidLoseLayerTreeFrameSink();
+}
+
+void AsyncLayerTreeFrameSink::SetDrawRect(const gfx::Rect& new_rect) {
+  if (new_rect.IsEmpty()) {
+    return;
+  }
+  client_->SetExternalTilePriorityConstraints(new_rect, gfx::Transform());
 }
 
 }  // namespace mojo_embedder

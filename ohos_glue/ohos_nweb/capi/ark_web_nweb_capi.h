@@ -21,8 +21,11 @@
 #include "ohos_nweb/capi/ark_web_accessibility_event_callback_capi.h"
 #include "ohos_nweb/capi/ark_web_accessibility_node_info_capi.h"
 #include "ohos_nweb/capi/ark_web_bool_value_callback_capi.h"
+#include "ohos_nweb/capi/ark_web_cache_options_capi.h"
+#include "ohos_nweb/capi/ark_web_create_native_media_player_callback_capi.h"
 #include "ohos_nweb/capi/ark_web_download_callback_capi.h"
 #include "ohos_nweb/capi/ark_web_drag_data_capi.h"
+#include "ohos_nweb/capi/ark_web_drag_event_capi.h"
 #include "ohos_nweb/capi/ark_web_find_callback_capi.h"
 #include "ohos_nweb/capi/ark_web_history_list_capi.h"
 #include "ohos_nweb/capi/ark_web_hit_test_result_capi.h"
@@ -33,7 +36,6 @@
 #include "ohos_nweb/capi/ark_web_screen_lock_callback_capi.h"
 #include "ohos_nweb/capi/ark_web_string_value_callback_capi.h"
 #include "ohos_nweb/include/ark_web_js_proxy_callback_vector.h"
-#include "ohos_nweb/include/ark_web_nweb_structs.h"
 #include "ohos_nweb/include/ark_web_touch_point_info_vector.h"
 
 #ifdef __cplusplus
@@ -230,7 +232,7 @@ typedef struct _ark_web_nweb_t {
       ark_web_message_value_callback_t *callback);
 
   void(ARK_WEB_CALLBACK *send_drag_event)(struct _ark_web_nweb_t *self,
-                                          const ArkWebDragEvent *drag_event);
+                                          ark_web_drag_event_t *drag_event);
 
   void(ARK_WEB_CALLBACK *clear_ssl_cache)(struct _ark_web_nweb_t *self);
 
@@ -456,7 +458,31 @@ typedef struct _ark_web_nweb_t {
 
   void(ARK_WEB_CALLBACK *close_camera)(struct _ark_web_nweb_t *self);
 
-  ArkWebString(ARK_WEB_CALLBACK *get_last_javascript_proxy_calling_frame_url)(struct _ark_web_nweb_t *self);
+  ArkWebString(ARK_WEB_CALLBACK *get_last_javascript_proxy_calling_frame_url)(
+      struct _ark_web_nweb_t *self);
+
+  bool(ARK_WEB_CALLBACK *get_pending_size_status)(struct _ark_web_nweb_t *self);
+
+  void(ARK_WEB_CALLBACK *scroll_by_ref_screen)(struct _ark_web_nweb_t *self,
+                                               float delta_x, float delta_y,
+                                               float vx, float vy);
+
+  void(ARK_WEB_CALLBACK *execute_java_script_ext)(
+      struct _ark_web_nweb_t *self, const int fd, const size_t scriptLength,
+      ark_web_message_value_callback_t *callback, bool extention);
+
+  void(ARK_WEB_CALLBACK *on_render_to_background)(struct _ark_web_nweb_t *self);
+
+  void(ARK_WEB_CALLBACK *on_render_to_foreground)(struct _ark_web_nweb_t *self);
+
+  void(ARK_WEB_CALLBACK *precompile_java_script)(
+      struct _ark_web_nweb_t *self, const ArkWebString *url,
+      const ArkWebString *script, ark_web_cache_options_t **cacheOptions,
+      ark_web_message_value_callback_t *callback);
+
+  void(ARK_WEB_CALLBACK *on_create_native_media_player)(
+      struct _ark_web_nweb_t *self,
+      ark_web_create_native_media_player_callback_t *callback);
 } ark_web_nweb_t;
 
 #ifdef __cplusplus

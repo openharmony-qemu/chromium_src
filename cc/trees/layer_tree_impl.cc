@@ -2474,6 +2474,23 @@ LayerImpl* LayerTreeImpl::FindLayerThatIsHitByPoint(
   return state.closest_match;
 }
 
+struct HitTestFunctorNative {
+  bool operator()(LayerImpl* layer) const { return layer->may_contain_native(); }
+};
+
+LayerImpl* LayerTreeImpl::FindLayerThatIsHitByPointNative(
+    const gfx::PointF& screen_space_point) {
+  if (layer_list_.empty())
+    return nullptr;
+  if (!UpdateDrawProperties())
+    return nullptr;
+  FindClosestMatchingLayerState state;
+  FindClosestMatchingLayer(screen_space_point, layer_list_[0].get(),
+                           HitTestFunctorNative(),
+                           &state);
+  return state.closest_match;
+}
+
 struct FindTouchEventLayerFunctor {
   bool operator()(LayerImpl* layer) const {
     if (!layer->has_touch_action_regions())
@@ -2998,5 +3015,11 @@ void LayerTreeImpl::SetVisualUpdateDurations(
 void LayerTreeImpl::RequestImplSideInvalidationForRerasterTiling() {
   host_impl_->RequestImplSideInvalidationForRerasterTiling();
 }
+
+#if BUILDFLAG(IS_OHOS)
+void LayerTreeImpl::OnLayerRectUpdate(int id, const gfx::Rect& rect) {
+  host_impl_->OnLayerRectUpdate(id, rect);
+}
+#endif
 
 }  // namespace cc

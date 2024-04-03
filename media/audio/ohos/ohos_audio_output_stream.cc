@@ -8,8 +8,39 @@
 #include "content/public/browser/browser_thread.h"
 #include "media/base/audio_timestamp_helper.h"
 #include "ohos_adapter_helper.h"
+#include "ohos_nweb/src/sysevent/event_reporter.h"
 
 namespace media {
+
+constexpr int DEFAULT_AUDIO_ERROR_CODE = 0;
+
+AudioAdapterSamplingRate AudioRendererOptions::GetSamplingRate() {
+  return rate_;
+}
+
+AudioAdapterEncodingType AudioRendererOptions::GetEncodingType() {
+  return encoding_;
+}
+
+AudioAdapterSampleFormat AudioRendererOptions::GetSampleFormat() {
+  return format_;
+}
+
+AudioAdapterChannel AudioRendererOptions::GetChannel() {
+  return channels_;
+}
+
+AudioAdapterContentType AudioRendererOptions::GetContentType() {
+  return content_type_;
+}
+
+AudioAdapterStreamUsage AudioRendererOptions::GetStreamUsage() {
+  return stream_usage_;
+}
+
+int32_t AudioRendererOptions::GetRenderFlags() {
+  return renderer_flags_;
+}
 
 AudioRendererCallback::AudioRendererCallback(
     content::MediaSessionImpl* media_session)
@@ -99,21 +130,22 @@ OHOSAudioOutputStream::~OHOSAudioOutputStream() {
 }
 
 bool OHOSAudioOutputStream::Open() {
-  AudioAdapterRendererOptions rendererOptions;
-  rendererOptions.samplingRate =
+  std::shared_ptr<AudioRendererOptions> rendererOptions =
+      std::make_shared<AudioRendererOptions>();
+  rendererOptions->rate_ =
       static_cast<AudioAdapterSamplingRate>(parameters_.sample_rate());
-  rendererOptions.encoding = AudioAdapterEncodingType::ENCODING_PCM;
-  rendererOptions.format = AudioAdapterSampleFormat::SAMPLE_S16LE;
-  rendererOptions.channels =
+  rendererOptions->encoding_ = AudioAdapterEncodingType::ENCODING_PCM;
+  rendererOptions->format_ = AudioAdapterSampleFormat::SAMPLE_S16LE;
+  rendererOptions->channels_ =
       static_cast<AudioAdapterChannel>(parameters_.channels());
-  rendererOptions.contentType =
+  rendererOptions->content_type_ =
       isCommunication_ ? AudioAdapterContentType::CONTENT_TYPE_SPEECH
                        : AudioAdapterContentType::CONTENT_TYPE_MUSIC;
-  rendererOptions.streamUsage =
+  rendererOptions->stream_usage_ =
       isCommunication_
           ? AudioAdapterStreamUsage::STREAM_USAGE_VOICE_COMMUNICATION
           : AudioAdapterStreamUsage::STREAM_USAGE_MEDIA;
-  rendererOptions.rendererFlags = 0;
+  rendererOptions->renderer_flags_ = 0;
 
   if (!InitRender(rendererOptions)) {
     return false;
@@ -234,32 +266,32 @@ base::TimeTicks OHOSAudioOutputStream::GetCurrentStreamTime() {
 }
 
 bool OHOSAudioOutputStream::InitRender(
-    const AudioAdapterRendererOptions& rendererOptions) {
-  int32_t ret = audio_renderer_->Create(rendererOptions);
-  if (ret != 0) {
-    if (!audio_renderer_->Release()) {
-      LOG(ERROR) << "ohos audio render release failed.";
-    }
-    return false;
+    const std::shared_ptr<AudioRendererOptionsAdapter> rendererOptions) {
+    int32_t ret = audio_renderer_->Create(rendererOptions);
+if (ret != 0) {
+  if (!audio_renderer_->Release()) {
+    LOG(ERROR) << "ohos audio render release failed.";
   }
-  if (!weakMediaSession_) {
-    LOG(ERROR) << "OHOSAudioOutputStream::InitRender Get mediaSession failed.";
-    return false;
-  }
-  rendererCallback_ =
-      std::make_shared<AudioRendererCallback>(weakMediaSession_.get());
-  if (!rendererCallback_) {
-    LOG(ERROR)
-        << "OHOSAudioOutputStream::InitRender Get rendererCallback failed.";
-    return false;
-  }
-  if (ret != AudioAdapterCode::AUDIO_OK) {
-    LOG(ERROR) << "OHOSAudioOutputStream::InitRender Set audio renderer "
-                  "callback failed.";
-    rendererCallback_.reset();
-    return false;
-  }
-  return true;
+  return false;
+}
+if (!weakMediaSession_) {
+  LOG(ERROR) << "OHOSAudioOutputStream::InitRender Get mediaSession failed.";
+  return false;
+}
+rendererCallback_ =
+    std::make_shared<AudioRendererCallback>(weakMediaSession_.get());
+if (!rendererCallback_) {
+  LOG(ERROR)
+      << "OHOSAudioOutputStream::InitRender Get rendererCallback failed.";
+  return false;
+}
+if (ret != AudioAdapterCode::AUDIO_OK) {
+  LOG(ERROR) << "OHOSAudioOutputStream::InitRender Set audio renderer "
+                "callback failed.";
+  rendererCallback_.reset();
+  return false;
+}
+return true;
 }
 
 bool OHOSAudioOutputStream::StartRender() {
@@ -269,6 +301,10 @@ bool OHOSAudioOutputStream::StartRender() {
       LOG(ERROR) << "ohos audio render release failed";
     }
     ReportError();
+    std::string errorType = "audio play error";
+    int errorCode = DEFAULT_AUDIO_ERROR_CODE;
+    std::string errorDesc = "audio renderer start failed";
+    ReportAudioPlayErrorInfo(errorType, errorCode, errorDesc);
     return false;
   }
   return true;
@@ -320,6 +356,10 @@ void OHOSAudioOutputStream::PumpSamples() {
 
   // Request more samples from |callback_|.
   if (!callback_) {
+    std::string errorType = "audio play error";
+    int errorCode = DEFAULT_AUDIO_ERROR_CODE;
+    std::string errorDesc = "audio renderer get AudioSourceCallback failed";
+    ReportAudioPlayErrorInfo(errorType, errorCode, errorDesc);
     ReportError();
     return;
   }
@@ -342,16 +382,28 @@ void OHOSAudioOutputStream::PumpSamples() {
         if (!weakMediaSession_) {
           LOG(ERROR) << "Try to suspend audio but get mediaSession failed.";
           ReportError();
+          std::string errorType = "audio play error";
+          int errorCode = DEFAULT_AUDIO_ERROR_CODE;
+          std::string errorDesc = "audio renderer get MediaSession failed";
+          ReportAudioPlayErrorInfo(errorType, errorCode, errorDesc);
           return;
         }
         if (weakMediaSession_.get()->IsActive()) {
-          LOG(INFO) << "MediaSession is suspending the audio.";
+          LOG(ERROR) << "MediaSession is suspending the audio.";
           weakMediaSession_.get()->Suspend(
               content::MediaSession::SuspendType::kSystem);
           weakMediaSession_.get()->isStreamSuspended_ = true;
+        } else {
+          LOG(DEBUG) << "This AudioStream should be restarted.";
+          if (!audio_renderer_->Start())
+            LOG(DEBUG) << "Try to restart the AudioStream but failed.";
         }
       } else {
         ReportError();
+        std::string errorType = "audio play error";
+        int errorCode = DEFAULT_AUDIO_ERROR_CODE;
+        std::string errorDesc = "audio renderer running state error";
+        ReportAudioPlayErrorInfo(errorType, errorCode, errorDesc);
         return;
       }
       break;

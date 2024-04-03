@@ -20,7 +20,7 @@ ROOT_DIR="${CUR_DIR%/src*}""/src"
 # Global variables.
 BUILD_TARGET_WEBVIEW="ohos_nweb_hap"
 BUILD_TARGET_BROWSERSHELL="ohos_browser_shell"
-BUILD_TARGET_NATIVE="libweb_engine web_render libnweb_render"
+BUILD_TARGET_NATIVE="libweb_engine web_render libnweb_render chrome_crashpad_handler"
 BUILD_TARGET_BROWSER_SERVICE="ohos_nweb_ex/browser_service"
 BUILD_TARGET_BROWSER_SERVICE_HAR="browser_service_har"
 TEXT_BOLD="\033[1m"

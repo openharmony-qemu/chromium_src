@@ -14,6 +14,32 @@ scoped_refptr<VideoLayer> VideoLayer::Create(
   return base::WrapRefCounted(new VideoLayer(provider, transform));
 }
 
+#if BUILDFLAG(IS_OHOS)
+scoped_refptr<VideoLayer> VideoLayer::Create(
+    VideoFrameProvider* provider,
+    media::VideoTransformation transform,
+    RectChangeCallback callback) {
+  return base::WrapRefCounted(
+      new VideoLayer(provider, transform, std::move(callback)));
+}
+
+VideoLayer::VideoLayer(VideoFrameProvider* provider,
+                       media::VideoTransformation transform,
+                       RectChangeCallback callback)
+    : provider_(provider),
+      transform_(transform),
+      rect_change_callback_(std::move(callback)) {
+  SetMayContainVideo(true);
+  DCHECK(provider_.Read(*this));
+}
+
+void VideoLayer::OnLayerRectUpdate(const gfx::Rect& rect) {
+  if (!rect_change_callback_.is_null()) {
+    rect_change_callback_.Run(rect);
+  }
+}
+#endif
+
 VideoLayer::VideoLayer(VideoFrameProvider* provider,
                        media::VideoTransformation transform)
     : provider_(provider), transform_(transform) {

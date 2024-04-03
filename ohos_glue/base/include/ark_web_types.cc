@@ -15,9 +15,6 @@
 
 #include "base/include/ark_web_types.h"
 #include "base/include/ark_web_log_utils.h"
-#include <codecvt>
-#include <locale>
-#include <sstream>
 
 ArkWebU16String ArkWebU16StringClassToStruct(const std::u16string& class_value)
 {
@@ -28,11 +25,7 @@ ArkWebU16String ArkWebU16StringClassToStruct(const std::u16string& class_value)
         struct_value.value[struct_value.size] = 0;
     }
 
-    std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> converter;
-    std::ostringstream s;
-    s << converter.to_bytes(class_value);
-    std::string str = s.str();
-    ARK_WEB_BASE_DV_LOG("string is %{public}s,length is %{public}d", str.c_str(), struct_value.size);
+    ARK_WEB_BASE_DV_LOG("length is %{public}d", struct_value.size);
 
     return struct_value;
 }
@@ -44,11 +37,7 @@ std::u16string ArkWebU16StringStructToClass(const ArkWebU16String& struct_value)
         class_value = struct_value.value;
     }
 
-    std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> converter;
-    std::ostringstream s;
-    s << converter.to_bytes(class_value);
-    std::string str = s.str();
-    ARK_WEB_BASE_DV_LOG("string is %{public}s,length is %{public}d", str.c_str(), struct_value.size);
+    ARK_WEB_BASE_DV_LOG("length is %{public}d", struct_value.size);
 
     return class_value;
 }

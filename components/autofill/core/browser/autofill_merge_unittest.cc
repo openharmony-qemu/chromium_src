@@ -37,6 +37,7 @@
 #endif
 
 namespace autofill {
+#if defined(OHOS_UNITTESTS)
 
 namespace {
 const base::FilePath::CharType kFeatureName[] = FILE_PATH_LITERAL("autofill");
@@ -320,5 +321,5 @@ TEST_P(AutofillMergeTest, DataDrivenMergeProfiles) {
 INSTANTIATE_TEST_SUITE_P(All,
                          AutofillMergeTest,
                          testing::ValuesIn(GetTestFiles()));
-
+#endif
 }  // namespace autofill

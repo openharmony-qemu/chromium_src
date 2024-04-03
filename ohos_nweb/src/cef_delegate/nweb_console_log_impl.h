@@ -57,7 +57,8 @@ public:
 private:
   int line_number_ = 0;
   std::string log_;
-  NWebConsoleLog::NWebConsoleLogLevel log_level_ = NWebConsoleLog::NWebConsoleLogLevel::UNKNOWN;
+  NWebConsoleLog::NWebConsoleLogLevel log_level_ =
+      NWebConsoleLog::NWebConsoleLogLevel::UNKNOWN;
   std::string sourceId_;
 };
 

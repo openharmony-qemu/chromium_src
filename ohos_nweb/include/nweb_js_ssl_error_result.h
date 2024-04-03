@@ -32,6 +32,19 @@ public:
      */
     virtual void HandleCancel() = 0;
 };
+
+class OHOS_NWEB_EXPORT NWebJSAllSslErrorResult {
+public:
+    virtual ~NWebJSAllSslErrorResult() = default;
+    /**
+     * @brief Handle a confirmation response from the user, the url request will be continued.
+     */
+    virtual void HandleConfirm() = 0;
+    /**
+     * @brief Handle the result if the user cancelled the url request.
+     */
+    virtual void HandleCancel() = 0;
+};
 }
 
 #endif

@@ -590,7 +590,7 @@ test("gpu_unittests") {
     "ipc/service/gpu_channel_test_common.h",
     "ipc/service/gpu_watchdog_thread_unittest.cc",
   ]
-
+  
   if (enable_validating_command_decoder) {
     sources += [
       "command_buffer/service/gles2_cmd_decoder_unittest.cc",
@@ -732,6 +732,10 @@ test("gpu_unittests") {
 
   if (enable_base_tracing) {
     deps += [ "//base/test:test_trace_processor" ]
+  }
+
+  if (ohos_unittests) {
+    deps += ["//content/public/common:static_switches"]
   }
 
   if (is_android) {

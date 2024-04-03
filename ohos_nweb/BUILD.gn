@@ -94,8 +94,12 @@ component("cef_nweb") {
     "src/cef_delegate/nweb_data_base_delegate.h",
     "src/cef_delegate/nweb_data_resubmission_callback_impl.cc",
     "src/cef_delegate/nweb_data_resubmission_callback_impl.h",
+    "src/cef_delegate/nweb_date_time_chooser_impl.cc",
+    "src/cef_delegate/nweb_date_time_chooser_impl.h",
     "src/cef_delegate/nweb_default_engine_init_args_impl.cc",
     "src/cef_delegate/nweb_default_engine_init_args_impl.h",
+    "src/cef_delegate/nweb_default_engine_prefetch_args_impl.cc",
+    "src/cef_delegate/nweb_default_engine_prefetch_args_impl.h",
     "src/cef_delegate/nweb_delegate.cc",
     "src/cef_delegate/nweb_delegate.h",
     "src/cef_delegate/nweb_display_listener.cc",
@@ -118,6 +122,8 @@ component("cef_nweb") {
     "src/cef_delegate/nweb_history_list_impl.h",
     "src/cef_delegate/nweb_hit_test_result_impl.cc",
     "src/cef_delegate/nweb_hit_test_result_impl.h",
+    "src/cef_delegate/nweb_image_options_impl.cc",
+    "src/cef_delegate/nweb_image_options_impl.h",
     "src/cef_delegate/nweb_input_delegate.cc",
     "src/cef_delegate/nweb_input_delegate.h",
     "src/cef_delegate/nweb_inputevent_handler.h",
@@ -130,6 +136,8 @@ component("cef_nweb") {
     "src/cef_delegate/nweb_js_ssl_error_result_impl.h",
     "src/cef_delegate/nweb_js_ssl_select_cert_result_impl.cc",
     "src/cef_delegate/nweb_js_ssl_select_cert_result_impl.h",
+    "src/cef_delegate/nweb_gesture_event_result_impl.cc",
+    "src/cef_delegate/nweb_gesture_event_result_impl.h",
     "src/cef_delegate/nweb_key_event_impl.cc",
     "src/cef_delegate/nweb_key_event_impl.h",
     "src/cef_delegate/nweb_preference_delegate.cc",
@@ -138,6 +146,10 @@ component("cef_nweb") {
     "src/cef_delegate/nweb_render_handler.h",
     "src/cef_delegate/nweb_resource_handler.cc",
     "src/cef_delegate/nweb_resource_handler.h",
+    "src/cef_delegate/nweb_select_menu_bound_impl.cc",
+    "src/cef_delegate/nweb_select_menu_bound_impl.h",
+    "src/cef_delegate/nweb_touch_handle_hot_zone_impl.cc",
+    "src/cef_delegate/nweb_touch_handle_hot_zone_impl.h",
     "src/cef_delegate/nweb_touch_handle_state_impl.cc",
     "src/cef_delegate/nweb_touch_handle_state_impl.h",
     "src/cef_delegate/nweb_url_resource_response_impl.cc",
@@ -148,6 +160,8 @@ component("cef_nweb") {
     "src/cef_delegate/nweb_web_storage_origin_impl.h",
     "src/sysevent/event_reporter.cc",
     "src/sysevent/event_reporter.h",
+    "src/sysevent/oh_web_performance_timing.cc",
+    "src/sysevent/oh_web_performance_timing.h",
   ]
 
   #ifdef OHOS_SCHEME_HANDLER
@@ -158,8 +172,8 @@ component("cef_nweb") {
       "src/cef_delegate/nweb_scheme_handler_factory.cc",
       "src/cef_delegate/nweb_scheme_handler_factory.h",
       "src/ndk/scheme_handler/arkweb_scheme_handler.cc",
-      "src/ndk/scheme_handler/post_data_stream.cc",
-      "src/ndk/scheme_handler/post_data_stream.h",
+      "src/ndk/scheme_handler/http_body_stream.cc",
+      "src/ndk/scheme_handler/http_body_stream.h",
       "src/ndk/scheme_handler/resource_handler.cc",
       "src/ndk/scheme_handler/resource_handler.h",
       "src/ndk/scheme_handler/resource_request.cc",
@@ -311,6 +325,18 @@ component("nweb_sources") {
     "src/nweb_url_resource_request_impl.h",
     "src/nweb_web_storage_impl.cc",
     "src/nweb_web_storage_impl.h",
+    "src/nweb_first_meaningful_paint_details_impl.cc",
+    "src/nweb_first_meaningful_paint_details_impl.h",
+    "src/nweb_largest_contentful_paint_details_impl.cc",
+    "src/nweb_largest_contentful_paint_details_impl.h",
+    "src/nweb_imf_cursor_info_adapter_impl.cc",
+    "src/nweb_imf_cursor_info_adapter_impl.h",
+    "src/nweb_imf_input_attribute_adapter_impl.cc",
+    "src/nweb_imf_input_attribute_adapter_impl.h",
+    "src/nweb_imf_selection_range_adapter_impl.cc",
+    "src/nweb_imf_selection_range_adapter_impl.h",
+    "src/nweb_imf_text_config_adapter_impl.cc",
+    "src/nweb_imf_text_config_adapter_impl.h",
   ]
 
   #if defined(OHOS_NAVIGATION)
@@ -340,7 +366,6 @@ component("nweb_sources") {
 
   public_deps = [ "//third_party/abseil-cpp:absl" ]
 
-  #libs = [ "nweb_ohos_adapter.z" ]
   deps += [
     "//third_party/ohos_ndk:ohos_isolation",
   ]

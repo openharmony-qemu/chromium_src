@@ -687,6 +687,11 @@ class CONTENT_EXPORT WebContentsObserver {
   // Invoked when the WebContents is muted/unmuted.
   virtual void DidUpdateAudioMutingState(bool muted) {}
 
+#if defined(OHOS_MEDIA_POLICY)
+  //Set whether to the HTML play can be used to control media
+  virtual void SetHtmlPlayEnabled(bool enabled) {}
+#endif // defined(OHOS_MEDIA_POLICY)
+
   // Invoked when the renderer process has toggled the tab into/out of
   // fullscreen mode.
   virtual void DidToggleFullscreenModeForTab(bool entered_fullscreen,

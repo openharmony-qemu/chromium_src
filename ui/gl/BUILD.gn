@@ -146,6 +146,8 @@ component("gl") {
       "gl_surface_egl_ohos.h",
       "ohos/ohos_native_image.cc",
       "ohos/ohos_native_image.h",
+      "ohos/frame_available_listener_impl.cc",
+      "ohos/frame_available_listener_impl.h",
     ]
 
     deps = [

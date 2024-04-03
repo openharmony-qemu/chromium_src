@@ -173,6 +173,12 @@ source_set("test_support") {
     "//media/renderers:test_support",
     "//media/video:test_support",
   ]
+  
+  if (ohos_unittests) {
+    sources = [
+      "//ohos_nweb/src/sysevent/event_reporter.cc",
+    ]
+  }
 }
 
 if (is_ios) {

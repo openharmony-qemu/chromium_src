@@ -268,6 +268,12 @@ void MediaWebContentsObserver::DidUpdateAudioMutingState(bool muted) {
   session_controllers_manager_->WebContentsMutedStateChanged(muted);
 }
 
+#if defined(OHOS_MEDIA_POLICY)
+void MediaWebContentsObserver::SetHtmlPlayEnabled(bool enabled) {
+  session_controllers_manager_->SetHtmlPlayEnabled(enabled);
+}
+#endif // defined(OHOS_MEDIA_POLICY)
+
 void MediaWebContentsObserver::GetHasPlayedBefore(
     GetHasPlayedBeforeCallback callback) {
   std::move(callback).Run(has_played_before_);
@@ -598,6 +604,16 @@ MediaWebContentsObserver::GetMediaPlayerRemote(const MediaPlayerId& player_id) {
   return media_player_remotes_.at(player_id);
 }
 
+#if defined(OHOS_MEDIA_POLICY)
+bool MediaWebContentsObserver::IsPlayerIdInMediaPlayerRemotesMap(const MediaPlayerId& player_id) {
+  auto it = media_player_remotes_.find(player_id);
+  if (it != media_player_remotes_.end())
+    return true;
+
+  return false;
+}
+#endif // defined(OHOS_MEDIA_POLICY)
+
 void MediaWebContentsObserver::OnMediaPlayerObserverDisconnected(
     const MediaPlayerId& player_id) {
   DCHECK(media_player_observer_hosts_.contains(player_id));
@@ -676,6 +692,10 @@ void MediaWebContentsObserver::OnMediaPlayerAdded(
           observer->fullscreen_player_.reset();
         }
         observer->web_contents_impl()->MediaDestroyed(player_id);
+#if defined(OHOS_MEDIA_POLICY)
+        if (!observer->web_contents_impl()->IsHtmlPlayEnabled())
+          observer->web_contents_impl()->SetHtmlPlayEnabled(true);
+#endif
       },
       base::Unretained(this), player_id));
 

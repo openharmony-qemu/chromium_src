@@ -50,10 +50,6 @@
 #include "soc_perf_client_adapter.h"
 #endif
 
-#ifdef OHOS_SCREEN_LOCK
-#include "services/device/wake_lock/power_save_blocker/nweb_screen_lock_tracker.h"
-#endif
-
 #if defined(OHOS_API_INIT_WEB_ENGINE)
 #include "cef_delegate/nweb_application.h"
 #include "content/public/browser/network_service_instance.h"
@@ -1721,15 +1717,15 @@ int NWebImpl::GetMediaPlaybackState() {
 #ifdef OHOS_SCREEN_LOCK
 void NWebImpl::RegisterScreenLockFunction(int32_t windowId,
                                           std::shared_ptr<NWebScreenLockCallback> callback) {
-  NWebScreenLockTracker::Instance().AddScreenLock(windowId, nweb_id_, [callback](bool key) {
-    if (callback) {
-      callback->Handle(key);
-    }
-  });
+  if (nweb_delegate_) {
+    nweb_delegate_->SetWakeLockCallback(windowId, callback);
+  }
 }
 
 void NWebImpl::UnRegisterScreenLockFunction(int32_t windowId) {
-  NWebScreenLockTracker::Instance().RemoveScreenLock(windowId, nweb_id_);
+  if (nweb_delegate_) {
+    nweb_delegate_->SetWakeLockCallback(windowId, nullptr);
+  }
 }
 #endif  // #ifdef OHOS_SCREEN_LOCK
 

@@ -266,6 +266,26 @@ char* CopyCefStringToChar(const CefString& str) {
   return result;
 }
 
+#if defined(OHOS_SCREEN_LOCK)
+class SetKeepScreenOnCallback : public CefSetLockCallback {
+public:
+  explicit SetKeepScreenOnCallback(const std::shared_ptr<NWebScreenLockCallback>& callback): callback_(callback) {}
+
+  ~SetKeepScreenOnCallback() override {}
+
+  void Handle(bool key) override {
+    if (callback_) {
+      callback_->Handle(key);
+    }
+  }
+
+private:
+  std::shared_ptr<NWebScreenLockCallback> callback_;
+
+  IMPLEMENT_REFCOUNTING(SetKeepScreenOnCallback);
+};
+#endif
+
 #if defined(OHOS_MULTI_WINDOW)
 const char kOffScreenFrameRate[] = "off-screen-frame-rate";
 #endif  // defined(OHOS_MULTI_WINDOW)
@@ -537,6 +557,19 @@ CefRefPtr<CefFormHandler> NWebHandlerDelegate::GetFormHandler() {
 }
 /* CefClient methods end */
 
+#if defined(OHOS_SCREEN_LOCK)
+void NWebHandlerDelegate::SetWakeLockCallback(
+    int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback) {
+  if (main_browser_ && main_browser_->GetHost()) {
+    main_browser_->GetHost()->SetWakeLockHandler(
+        windowId, callback ? new SetKeepScreenOnCallback(callback) : nullptr);
+  } else {
+    screen_lock_callback_ = callback;
+    screen_lock_window_id_ = windowId;
+  }
+}
+#endif
+
 /* CefLifeSpanHandler methods begin */
 void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
   LOG(INFO) << "NWebHandlerDelegate::OnAfterCreated IsPopup "
@@ -546,6 +579,14 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
   if (browser && browser->GetHost() && window_id_ != 0 && nweb_id_ != 0) {
     browser->GetHost()->SetWindowId(window_id_, nweb_id_);
   }
+
+#if defined(OHOS_SCREEN_LOCK)
+  if (screen_lock_callback_ && browser && browser->GetHost()) {
+    browser->GetHost()->SetWakeLockHandler(
+        screen_lock_window_id_, new SetKeepScreenOnCallback(screen_lock_callback_));
+    screen_lock_callback_ = nullptr;
+  }
+#endif
 
 #if defined(OHOS_MULTI_WINDOW)
   if (!main_browser_ && browser->IsPopup()) {

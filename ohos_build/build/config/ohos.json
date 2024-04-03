@@ -142,6 +142,14 @@
 "dependence": "",
 "default": "true"
 },
+{ "name": "OHOS_DFX_DUMP",
+"owner": "",
+"desc": "",
+"effect":"main gn blink_core other",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},
 { "name": "OHOS_DFX_LOGGING",
 "owner": "",
 "desc": "",

@@ -177,12 +177,12 @@ class NWebHandlerDelegate : public CefClient,
                              int32_t routing_id,
                              int32_t object_id) override;
   int NotifyJavaScriptResultFlowbuf(CefRefPtr<CefListValue> args,
-                             const CefString& method,
-                             const CefString& object_name,
-                             int fd,
-                             CefRefPtr<CefListValue> result,
-                             int32_t routing_id,
-                             int32_t object_id) override;
+                                    const CefString& method,
+                                    const CefString& object_name,
+                                    int fd,
+                                    CefRefPtr<CefListValue> result,
+                                    int32_t routing_id,
+                                    int32_t object_id) override;
   bool HasJavaScriptObjectMethods(int32_t object_id,
                                   const CefString& method_name) override;
   void GetJavaScriptObjectMethods(

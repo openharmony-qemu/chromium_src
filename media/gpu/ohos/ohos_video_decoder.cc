@@ -58,6 +58,9 @@ std::vector<SupportedVideoDecoderConfig> GetSupportedConfigsInternal() {
   supported_configs.emplace_back(HEVCPROFILE_MIN, HEVCPROFILE_MAX,
                                  gfx::Size(0, 0), gfx::Size(3840, 2160), true,
                                  false);
+  supported_configs.emplace_back(HEVCPROFILE_MIN, HEVCPROFILE_MAX,
+                                 gfx::Size(0, 0), gfx::Size(2160, 3840), true,
+                                 false);
   supported_configs.emplace_back(DOLBYVISION_PROFILE4, DOLBYVISION_PROFILE9,
                                  gfx::Size(0, 0), gfx::Size(3840, 2160), true,
                                  false);
@@ -285,7 +288,12 @@ void OhosVideoDecoder::OnCodecConfigured(
   decoderFormat.height = decoder_config_.coded_size().height();
   codec->ConfigureBridgeDecoder(decoderFormat,
                                 base::SequencedTaskRunner::GetCurrentDefault());
-  codec->SetBridgeOutputSurface(surface_bundle->GetOHOSNativeWindow());
+  if (codec->SetBridgeOutputSurface(surface_bundle->GetOHOSNativeWindow()) ==
+      DecoderAdapterCode::DECODER_ERROR) {
+    LOG(ERROR) << "OhosVideoDecoder::SetBridgeOutputSurface failed.";
+    EnterTerminalState(State::kError, "Unable to initialize codec");
+    return;
+  }
   codec->PrepareBridgeDecoder();
   codec->StartBridgeDecoder();
   codec_ = std::make_unique<CodecWrapper>(
@@ -521,7 +529,7 @@ void OhosVideoDecoder::OnCodecDrained() {
 }
 
 void OhosVideoDecoder::EnterTerminalState(State state, const char* reason) {
-  LOG(INFO) << "OhosVideoDecoder::EnterTerminalState";
+  LOG(INFO) << "OhosVideoDecoder::EnterTerminalState reason: " << reason;
   state_ = state;
   DCHECK(InTerminalState());
 

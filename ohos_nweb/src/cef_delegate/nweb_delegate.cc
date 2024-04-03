@@ -2941,7 +2941,7 @@ content::BrowserAccessibilityManagerOHOS*
 NWebDelegate::GetAccessibilityManager() const {
   if (!accessibility_state_ || GetBrowser() == nullptr
       || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "GetAccessibilityManager can not get browser";
+    LOG(DEBUG) << "GetAccessibilityManager can not get browser";
     return nullptr;
   }
   void* manager = nullptr;

@@ -27,7 +27,11 @@ UniqueProcId GetUniqueIdForProcess() {
   // into it.
   return (g_pid_outside_of_namespace != kNullProcessId)
              ? UniqueProcId(g_pid_outside_of_namespace)
+#if BUILDFLAG(IS_OHOS)
+             : UniqueProcId(GetCurrentRealPid());
+#else
              : UniqueProcId(GetCurrentProcId());
+#endif
 }
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX) || \

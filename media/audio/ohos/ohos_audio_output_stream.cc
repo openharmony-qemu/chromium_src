@@ -307,6 +307,7 @@ bool OHOSAudioOutputStream::StartRender() {
     ReportAudioPlayErrorInfo(errorType, errorCode, errorDesc);
     return false;
   }
+  isSuspended_ = false;
   return true;
 }
 
@@ -376,11 +377,11 @@ void OHOSAudioOutputStream::PumpSamples() {
         audio_renderer_->Write(audio_data_[active_buffer_index_] + bytesWritten,
                                num_filled_bytes - bytesWritten);
     if (bytesSingle <= 0) {
-      LOG(DEBUG) << "Audio renderer write audio data failed.";
+      LOG(DEBUG) << "Audio renderer write audio data failed";
       if (!audio_renderer_->IsRendererStateRunning()) {
         rendererCallback_->SetSuspendFlag(true);
         if (!weakMediaSession_) {
-          LOG(ERROR) << "Try to suspend audio but get mediaSession failed.";
+          LOG(ERROR) << "Try to suspend audio but get mediaSession failed";
           ReportError();
           std::string errorType = "audio play error";
           int errorCode = DEFAULT_AUDIO_ERROR_CODE;
@@ -389,14 +390,21 @@ void OHOSAudioOutputStream::PumpSamples() {
           return;
         }
         if (weakMediaSession_.get()->IsActive()) {
-          LOG(ERROR) << "MediaSession is suspending the audio.";
+          if (isSuspended_) {
+            LOG(INFO) << "AudioStream should be restarted";
+            if (!audio_renderer_->Start()) {
+              LOG(ERROR) << "Restarted audioStream but failed";
+            }
+            isSuspended_ = false;
+            break;
+          }
+          LOG(INFO) << "MediaSession is suspending the audio";
           weakMediaSession_.get()->Suspend(
               content::MediaSession::SuspendType::kSystem);
           weakMediaSession_.get()->isStreamSuspended_ = true;
         } else {
-          LOG(DEBUG) << "This AudioStream should be restarted.";
-          if (!audio_renderer_->Start())
-            LOG(DEBUG) << "Try to restart the AudioStream but failed.";
+          LOG(INFO) << "MediaSession is suspended";
+          isSuspended_ = true;
         }
       } else {
         ReportError();

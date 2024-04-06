@@ -318,6 +318,10 @@ struct EnumTraits<media::mojom::RendererType, ::media::RendererType> {
 #if BUILDFLAG(IS_OHOS)
       case ::media::RendererType::kNative:
         return media::mojom::RendererType::kNative;
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+      case ::media::RendererType::kOHOSCustomMediaPlayer:
+        return media::mojom::RendererType::kOHOSCustomMediaPlayer;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
       case ::media::RendererType::kOHOSMediaPlayer:
         return media::mojom::RendererType::kOHOSMediaPlayer;
 #endif
@@ -369,6 +373,11 @@ struct EnumTraits<media::mojom::RendererType, ::media::RendererType> {
       case ::media::mojom::RendererType::kNative:
         *output = ::media::RendererType::kNative;
         return true;
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+      case media::mojom::RendererType::kOHOSCustomMediaPlayer:
+        *output = ::media::RendererType::kOHOSCustomMediaPlayer;
+        return true;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
       case media::mojom::RendererType::kOHOSMediaPlayer:
         *output = ::media::RendererType::kOHOSMediaPlayer;
         return true;

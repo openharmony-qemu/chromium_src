@@ -3275,4 +3275,15 @@ bool NWebDelegate::IsIntelligentTrackingPreventionEnabled() const {
   return GetBrowser()->IsIntelligentTrackingPreventionEnabled();
 }
 #endif
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void NWebDelegate::RegisterOnCreateNativeMediaPlayerListener(
+    std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) {
+  if (handler_delegate_ == nullptr) {
+    LOG(ERROR) << "fail to set create native media player callback, NWEB handler is nullptr";
+    return;
+  }
+  handler_delegate_->RegisterOnCreateNativeMediaPlayerListener(std::move(callback));
+}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 }  // namespace OHOS::NWeb

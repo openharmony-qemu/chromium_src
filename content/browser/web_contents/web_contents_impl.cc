@@ -223,6 +223,11 @@
 #ifdef OHOS_CSS_INPUT_TIME
 #include "content/browser/ohos/date_time_chooser_ohos.h"
 #endif  // #ifdef OHOS_CSS_INPUT_TIME
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#include "content/public/browser/custom_media_player_listener.h"
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 namespace content {
 
 namespace {
@@ -10270,4 +10275,41 @@ void WebContentsImpl::SetNWebId(int nWebID) {
   nWebID_ = nWebID;
 }
 #endif  // defined(OHOS_WEBRTC)
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+std::unique_ptr<CustomMediaPlayer> WebContentsImpl::CreateCustomMediaPlayer(
+    std::unique_ptr<CustomMediaPlayerListener> listener,
+    const MediaInfo& media_info) {
+  if (delegate_) {
+    return delegate_->CreateCustomMediaPlayer(std::move(listener), media_info);
+  }
+  return nullptr;
+}
+
+void WebContentsImpl::AddCustomMediaPlayer(const MediaPlayerId& player_id,
+                                           CustomMediaPlayer* player) {
+  players_[player_id] = player;
+}
+
+void WebContentsImpl::RemoveCustomMediaPlayer(const MediaPlayerId& player_id,
+                                              CustomMediaPlayer* player) {
+  auto iter = players_.find(player_id);
+  if (iter == players_.end()) {
+    return;
+  }
+  DCHECK(iter->second == player);
+  players_.erase(iter);
+}
+
+void WebContentsImpl::UpdateLayerRect(const MediaPlayerId& player_id,
+                                      const gfx::Rect& rect) {
+  auto iter = players_.find(player_id);
+  if (iter == players_.end()) {
+    return;
+  }
+  iter->second->UpdateLayerRect(rect.x(), rect.y(), rect.width(), rect.height());
+}
+
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 }  // namespace content

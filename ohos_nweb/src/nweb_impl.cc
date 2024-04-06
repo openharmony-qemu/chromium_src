@@ -2404,9 +2404,6 @@ bool NWebImpl::IsIntelligentTrackingPreventionEnabled() const {
   return nweb_delegate_->IsIntelligentTrackingPreventionEnabled();
 }
 
-void NWebImpl::OnCreateNativeMediaPlayer(
-    std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) {}
-
 //static
 bool NWebImpl::IsAnyNWebIntelligentTrackingPreventionEnabled() {
   NWebMap* map = g_nweb_map.Pointer();
@@ -2422,6 +2419,18 @@ bool NWebImpl::IsAnyNWebIntelligentTrackingPreventionEnabled() {
   return false;
 }
 #endif
+
+void NWebImpl::OnCreateNativeMediaPlayer(
+    std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("set create custome media player callback failed, nweb delegate is nullptr, nweb_id = %{public}u", nweb_id_);
+    return;
+  }
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  nweb_delegate_->RegisterOnCreateNativeMediaPlayerListener(std::move(callback));
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+}
 
 // static
 void NWebImpl::AddIntelligentTrackingPreventionBypassingList(

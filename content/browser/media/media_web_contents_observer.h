@@ -224,6 +224,10 @@ class CONTENT_EXPORT MediaWebContentsObserver
         media_session::mojom::RemotePlaybackMetadataPtr
             remote_playback_metadata) override;
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+    void UpdateLayerRect(const gfx::Rect& rect) override;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
    private:
     PlayerInfo* GetPlayerInfo();
     void NotifyAudioStreamMonitorIfNeeded();

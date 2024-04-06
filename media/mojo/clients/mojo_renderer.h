@@ -65,6 +65,19 @@ class MojoRenderer : public Renderer, public mojom::RendererClient {
   base::TimeDelta GetMediaTime() override;
   RendererType GetRendererType() override;
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void SetSurfaceId(int surface_id) override;
+  void SetMediaSourceList(
+      const std::vector<MediaSourceInfo>& source_infos) override;
+  void SetMediaControls(bool show_media_controls,
+      const std::vector<std::string>& controls_list) override;
+  void SetPoster(const std::string& poster_url) override;
+  void SetAttributes(
+      base::flat_map<std::string, std::string> attributes) override;
+  void SetIsAudio(bool is_audio) override;
+  bool IsAudio();
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
  private:
   // mojom::RendererClient implementation, dispatched on the |task_runner_|.
   void OnTimeUpdate(base::TimeDelta time,
@@ -160,6 +173,15 @@ class MojoRenderer : public Renderer, public mojom::RendererClient {
   media::TimeDeltaInterpolator media_time_interpolator_;
 
   absl::optional<PipelineStatistics> pending_stats_;
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  std::vector<mojom::MediaSourceInfoPtr> source_infos_;
+  bool show_media_controls_ = false;
+  std::vector<std::string> controls_list_;
+  std::string poster_url_;
+  base::flat_map<std::string, std::string> attributes_;
+  bool is_audio_ = false;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 };
 
 }  // namespace media

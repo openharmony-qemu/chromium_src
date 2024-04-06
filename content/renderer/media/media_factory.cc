@@ -141,6 +141,11 @@
 #include "content/renderer/media/renderer_web_native_delegate.h"
 #include "third_party/blink/renderer/platform/web_native_bridge_impl.h"
 #endif
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#include "content/renderer/media/ohos/ohos_custom_media_player_renderer_client_factory.h"
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 namespace {
 
 // This limit is much higher than it needs to be right now, because the logic
@@ -639,6 +644,19 @@ MediaFactory::CreateRendererFactorySelector(
   factory_selector->AddFactory(RendererType::kOHOSMediaPlayer,
                                std::move(ohos_media_player_factory));
 #endif
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  auto ohos_custom_media_player_factory =
+      std::make_unique<OHOSCustomMediaPlayerRendererClientFactory>(
+          render_thread->compositor_task_runner(),
+          CreateMojoRendererFactory(),
+          base::BindRepeating(
+              &NativeTextureWrapperImpl::Create, true,
+              render_thread->GetNativeTexureFactory(),
+              render_frame_->GetTaskRunner(blink::TaskType::kInternalMedia)));
+  factory_selector->AddFactory(RendererType::kOHOSCustomMediaPlayer,
+                               std::move(ohos_custom_media_player_factory));
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 
 #if BUILDFLAG(IS_ANDROID)
   DCHECK(interface_broker_);

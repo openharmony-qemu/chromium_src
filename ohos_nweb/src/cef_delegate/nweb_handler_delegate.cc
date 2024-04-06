@@ -80,6 +80,12 @@
 
 #include "ui/base/clipboard/ohos/clip_board_image_data_adapter_impl.h"
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#include "cef/include/cef_media_player_listener.h"
+#include "ohos_nweb/src/native_media_player/nweb_media_info_impl.h"
+#include "ohos_nweb/src/native_media_player/nweb_native_media_player_handler_impl.h"
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 namespace OHOS::NWeb {
 namespace {
 
@@ -2755,4 +2761,37 @@ bool NWebHandlerDelegate::OnAllCertificateError(CefRefPtr<CefBrowser> browser,
   return false;
 }
 #endif
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void NWebHandlerDelegate::RegisterOnCreateNativeMediaPlayerListener(
+    std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) {
+  WVLOG_I("===gpz=== NWebHandlerDelegate::OnCreateNativeMediaPlayer(%{public}p)", callback.get());
+  create_native_media_player_cb_ = std::move(callback);
+}
+
+CefOwnPtr<CefCustomMediaPlayerDelegate>
+NWebHandlerDelegate::OnCreateCustomMediaPlayer(
+    CefOwnPtr<CefMediaPlayerListener> listener,
+    const CefCustomMediaInfo& media_info) {
+  if (!create_native_media_player_cb_) {
+    LOG(ERROR) << "OnCreateNativeMediaPlayer failed, callback is null";
+    return nullptr;
+  }
+
+  std::shared_ptr<NWebNativeMediaPlayerHandler> handler(
+      new NWebNativeMediaPlayerHandlerImpl(std::move(listener)));
+  std::shared_ptr<NWebMediaInfo> nweb_media_info(new NWebMediaInfoImpl(media_info));
+  std::shared_ptr<NWebNativeMediaPlayerBridge> bridge =
+      create_native_media_player_cb_->OnCreate(
+          std::move(handler), std::move(nweb_media_info));
+  if (!bridge) {
+    LOG(INFO) << "app creates no media player";
+    return nullptr;
+  }
+
+  CefOwnPtr<CustomMediaPlayerImpl> player(new CustomMediaPlayerImpl(std::move(bridge)));
+  return player;
+}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 }  // namespace OHOS::NWeb

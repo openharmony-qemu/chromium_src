@@ -54,6 +54,9 @@ VideoLayerImpl::VideoLayerImpl(
       provider_client_impl_(std::move(provider_client_impl)),
       video_transform_(video_transform) {
   set_may_contain_video(true);
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  SetNeedNotifyRectChange(true);
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 }
 
 VideoLayerImpl::~VideoLayerImpl() {

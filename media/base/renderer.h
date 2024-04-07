@@ -163,6 +163,7 @@ class MEDIA_EXPORT Renderer {
   virtual void SetMediaSourceList(const std::vector<MediaSourceInfo>& source_infos) {}
   virtual void SetMediaControls(bool show_media_controls,
       const std::vector<std::string>& controls_list) {}
+  virtual void SetMuted(bool muted) {}
   virtual void SetPoster(const std::string& poster_url) {}
   virtual void SetAttributes(base::flat_map<std::string, std::string> attributes) {}
   using SurfaceCreatedCallback = base::OnceCallback<void(int)>;

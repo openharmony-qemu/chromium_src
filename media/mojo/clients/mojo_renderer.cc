@@ -117,6 +117,7 @@ void MojoRenderer::InitializeRendererFromUrl(media::RendererClient* client) {
   remote_renderer_->SetPoster(std::move(poster_url_));
   remote_renderer_->SetAttributes(std::move(attributes_));
   remote_renderer_->SetIsAudio(is_audio_);
+  remote_renderer_->SetMuted(muted_);
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
   const MediaUrlParams& url_params = media_resource_->GetMediaUrlParams();
@@ -415,6 +416,9 @@ void MojoRenderer::CancelPendingCallbacks() {
 }
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void MojoRenderer::SetMuted(bool muted) {
+  muted_ = muted;
+}
 void MojoRenderer::SetSurfaceId(int surface_id) {
   BindRemoteRendererIfNeeded();
   if (remote_renderer_.is_bound()) {

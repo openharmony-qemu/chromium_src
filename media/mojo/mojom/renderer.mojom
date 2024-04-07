@@ -60,6 +60,9 @@ interface Renderer {
   SetCdm(mojo_base.mojom.UnguessableToken? cdm_id) => (bool success);
 
   [EnableIf=ohos_custom_video_player]
+  SetMuted(bool muted);
+
+  [EnableIf=ohos_custom_video_player]
   SetSurfaceId(int32 surface_id);
 
   [EnableIf=ohos_custom_video_player]

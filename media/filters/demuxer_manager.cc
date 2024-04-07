@@ -176,8 +176,31 @@ void DemuxerManager::RestartClientForHLS() {
   }
 }
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void DemuxerManager::RestartClientForPrimitive() {
+  if (client_) {
+    client_->RestartForPrimitive();
+  }
+}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 void DemuxerManager::OnPipelineError(PipelineStatus error) {
   DCHECK(client_);
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  if (error == PIPELINE_ERROR_INITIALIZATION_FAILED_CUSTOM_PLAYER) {
+    if (client_) {
+      client_->StopForDemuxerReset();
+    }
+    if (data_source_) {
+      data_source_->Stop();
+    }
+
+    FreeResourcesAfterMediaThreadWait(base::BindOnce(
+        &DemuxerManager::RestartClientForPrimitive, weak_factory_.GetWeakPtr()));
+    return;
+  }
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 
   if (!fallback_allowed_) {
     return client_->OnError(std::move(error));
@@ -375,11 +398,24 @@ PipelineStatus DemuxerManager::CreateDemuxer(
     bool load_media_source,
     DataSource::Preload preload,
     bool has_poster,
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+    bool should_create_custom_renderer,
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
     DemuxerManager::DemuxerCreatedCB on_demuxer_created) {
   // TODO(crbug/1377053) return a better error
   if (!client_) {
     return DEMUXER_ERROR_COULD_NOT_OPEN;
   }
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  if (should_create_custom_renderer) {
+    SetDemuxer(CreateMediaUrlDemuxer(false));
+    return std::move(on_demuxer_created)
+        .Run(demuxer_.get(), Pipeline::StartType::kNormal,
+             /*is_streaming = */ false,
+             /*is_static = */ false);
+  }
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   const bool media_player_hls =

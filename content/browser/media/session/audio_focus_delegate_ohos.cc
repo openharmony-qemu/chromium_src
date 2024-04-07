@@ -16,28 +16,13 @@ namespace content {
 static std::shared_ptr<AudioInterruptAdapterImpl> kAudioInterrupt =
     std::make_shared<AudioInterruptAdapterImpl>();
 
-AudioManagerCallback::AudioManagerCallback(MediaSessionImpl* media_session)
-    : media_session_(media_session) {}
+AudioManagerCallback::AudioManagerCallback(MediaSessionImpl* media_session) {}
 
 AudioManagerCallback::~AudioManagerCallback() {}
 
-void AudioManagerCallback::OnSuspend() {
-  if (!media_session_->IsActive() ||
-      !base::FeatureList::IsEnabled(
-          media::kAudioFocusLossSuspendMediaSession)) {
-    return;
-  }
+void AudioManagerCallback::OnSuspend() {}
 
-  media_session_->Suspend(MediaSession::SuspendType::kSystem);
-}
-
-void AudioManagerCallback::OnResume() {
-  if (!media_session_->IsSuspended()) {
-    return;
-  }
-
-  media_session_->Resume(MediaSession::SuspendType::kSystem);
-}
+void AudioManagerCallback::OnResume() {}
 
 AudioFocusDelegateOHOS::AudioFocusDelegateOHOS(MediaSessionImpl* media_session)
     : media_session_(media_session) {}

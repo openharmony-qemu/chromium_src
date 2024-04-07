@@ -127,6 +127,16 @@ void FramelessMediaInterfaceProxy::CreateMediaPlayerRenderer(
         renderer_extension_receiver) {}
 #endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void FramelessMediaInterfaceProxy::CreateCustomMediaPlayerRenderer(
+    mojo::PendingRemote<media::mojom::CustomMediaPlayerRendererClientExtension>
+        client_extension_remote,
+    mojo::PendingReceiver<media::mojom::Renderer> receiver,
+    mojo::PendingReceiver<media::mojom::MediaPlayerRendererExtension>
+        renderer_extension_receiver,
+    int player_id) {}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 #if BUILDFLAG(IS_WIN)
 // Unimplemented method as this requires CDM and media::Renderer services with
 // frame context.

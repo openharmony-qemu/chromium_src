@@ -22,6 +22,8 @@
 #include "ohos_nweb/cpptoc/ark_web_preference_cpptoc.h"
 #include "ohos_nweb/ctocpp/ark_web_accessibility_event_callback_ctocpp.h"
 #include "ohos_nweb/ctocpp/ark_web_bool_value_callback_ctocpp.h"
+#include "ohos_nweb/ctocpp/ark_web_cache_options_ctocpp.h"
+#include "ohos_nweb/ctocpp/ark_web_create_native_media_player_callback_ctocpp.h"
 #include "ohos_nweb/ctocpp/ark_web_download_callback_ctocpp.h"
 #include "ohos_nweb/ctocpp/ark_web_drag_event_ctocpp.h"
 #include "ohos_nweb/ctocpp/ark_web_find_callback_ctocpp.h"
@@ -1581,7 +1583,8 @@ ark_web_nweb_get_last_javascript_proxy_calling_frame_url(
   return ArkWebNWebCppToC::Get(self)->GetLastJavascriptProxyCallingFrameUrl();
 }
 
-bool ARK_WEB_CALLBACK ark_web_nweb_get_pending_size_status(struct _ark_web_nweb_t *self) {
+bool ARK_WEB_CALLBACK
+ark_web_nweb_get_pending_size_status(struct _ark_web_nweb_t *self) {
   ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
 
   ARK_WEB_CPPTOC_CHECK_PARAM(self, false);
@@ -1610,25 +1613,78 @@ void ARK_WEB_CALLBACK ark_web_nweb_execute_java_script_ext(
 
   // Execute
   ArkWebNWebCppToC::Get(self)->ExecuteJavaScriptExt(
-      fd, scriptLength, ArkWebMessageValueCallbackCToCpp::Invert(callback), extention);
+      fd, scriptLength, ArkWebMessageValueCallbackCToCpp::Invert(callback),
+      extention);
 }
 
-void ARK_WEB_CALLBACK ark_web_nweb_on_render_to_background(struct _ark_web_nweb_t *self) {
+void ARK_WEB_CALLBACK
+ark_web_nweb_on_render_to_background(struct _ark_web_nweb_t *self) {
   ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
 
   ARK_WEB_CPPTOC_CHECK_PARAM(self, );
-  
+
   // Execute
   ArkWebNWebCppToC::Get(self)->OnRenderToBackground();
 }
 
-void ARK_WEB_CALLBACK ark_web_nweb_on_render_to_foreground(struct _ark_web_nweb_t *self) {
+void ARK_WEB_CALLBACK
+ark_web_nweb_on_render_to_foreground(struct _ark_web_nweb_t *self) {
   ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
 
   ARK_WEB_CPPTOC_CHECK_PARAM(self, );
 
   // Execute
   ArkWebNWebCppToC::Get(self)->OnRenderToForeground();
+}
+
+void ARK_WEB_CALLBACK ark_web_nweb_precompile_java_script(
+    struct _ark_web_nweb_t *self, const ArkWebString *url,
+    const ArkWebString *script, ark_web_cache_options_t **cacheOptions,
+    ark_web_message_value_callback_t *callback) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(url, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(script, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(cacheOptions, );
+
+  // Translate param: cacheOptions; type: refptr_diff_byref
+  ArkWebRefPtr<ArkWebCacheOptions> cacheOptionsPtr;
+  if (cacheOptions && *cacheOptions) {
+    cacheOptionsPtr = ArkWebCacheOptionsCToCpp::Invert(*cacheOptions);
+  }
+  ArkWebCacheOptions *cacheOptionsOrig = cacheOptionsPtr.get();
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->PrecompileJavaScript(
+      *url, *script, cacheOptionsPtr,
+      ArkWebMessageValueCallbackCToCpp::Invert(callback));
+
+  // Restore param: cacheOptions; type: refptr_diff_byref
+  if (cacheOptions) {
+    if (cacheOptionsPtr.get()) {
+      if (cacheOptionsPtr.get() != cacheOptionsOrig) {
+        *cacheOptions = ArkWebCacheOptionsCToCpp::Revert(cacheOptionsPtr);
+      }
+    } else {
+      *cacheOptions = nullptr;
+    }
+  }
+}
+
+void ARK_WEB_CALLBACK ark_web_nweb_on_create_native_media_player(
+    struct _ark_web_nweb_t *self,
+    ark_web_create_native_media_player_callback_t *callback) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->OnCreateNativeMediaPlayer(
+      ArkWebCreateNativeMediaPlayerCallbackCToCpp::Invert(callback));
 }
 
 void ARK_WEB_CALLBACK ark_web_nweb_drag_resize(struct _ark_web_nweb_t *self, uint32_t width,
@@ -1676,7 +1732,6 @@ ArkWebNWebCppToC::ArkWebNWebCppToC() {
   GetStruct()->stop = ark_web_nweb_stop;
   GetStruct()->execute_java_script1 = ark_web_nweb_execute_java_script1;
   GetStruct()->execute_java_script2 = ark_web_nweb_execute_java_script2;
-  GetStruct()->execute_java_script_ext = ark_web_nweb_execute_java_script_ext;
   GetStruct()->get_preference = ark_web_nweb_get_preference;
   GetStruct()->get_web_id = ark_web_nweb_get_web_id;
   GetStruct()->get_hit_test_result = ark_web_nweb_get_hit_test_result;
@@ -1815,8 +1870,12 @@ ArkWebNWebCppToC::ArkWebNWebCppToC() {
       ark_web_nweb_get_last_javascript_proxy_calling_frame_url;
   GetStruct()->get_pending_size_status = ark_web_nweb_get_pending_size_status;
   GetStruct()->scroll_by_ref_screen = ark_web_nweb_scroll_by_ref_screen;
+  GetStruct()->execute_java_script_ext = ark_web_nweb_execute_java_script_ext;
   GetStruct()->on_render_to_background = ark_web_nweb_on_render_to_background;
   GetStruct()->on_render_to_foreground = ark_web_nweb_on_render_to_foreground;
+  GetStruct()->precompile_java_script = ark_web_nweb_precompile_java_script;
+  GetStruct()->on_create_native_media_player =
+      ark_web_nweb_on_create_native_media_player;
   GetStruct()->ark_web_nweb_drag_resize = ark_web_nweb_drag_resize;
 }
 

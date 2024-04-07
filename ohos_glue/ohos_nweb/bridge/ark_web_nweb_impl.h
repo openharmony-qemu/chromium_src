@@ -964,7 +964,7 @@ public:
    * false.
    */
   bool IsIntelligentTrackingPreventionEnabled() override;
-  
+
   /**
    * @brief Start current camera.
    */
@@ -999,7 +999,8 @@ public:
    * @param vx      vertical velocity in physical pixel.
    */
   /*--ark web()--*/
-  void ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) override;
+  void ScrollByRefScreen(float delta_x, float delta_y, float vx,
+                         float vy) override;
 
   /**
    * ExecuteJavaScript with ashmem
@@ -1024,7 +1025,24 @@ public:
    */
   /*--ark web()--*/
   void OnRenderToForeground() override;
-  
+
+  /**
+   * @brief Compile javascript and generate code cache.
+   *
+   * @param url url of javascript.
+   * @param script javascript text content.
+   * @param cacheOptions compile options and info.
+   * @param callback callback will be called on getting the result of compiling
+   * javascript.
+   */
+  void PrecompileJavaScript(
+      const ArkWebString &url, const ArkWebString &script,
+      ArkWebRefPtr<ArkWebCacheOptions> &cacheOptions,
+      ArkWebRefPtr<ArkWebMessageValueCallback> callback) override;
+
+  void OnCreateNativeMediaPlayer(
+      ArkWebRefPtr<ArkWebCreateNativeMediaPlayerCallback> callback) override;
+
   /**
    * @brief Web drag resize optimize.
    */
@@ -1032,6 +1050,7 @@ public:
                           uint32_t height,
                           uint32_t pre_height,
                           uint32_t pre_width) override;
+
 private:
   std::shared_ptr<OHOS::NWeb::NWeb> nweb_nweb_;
 };

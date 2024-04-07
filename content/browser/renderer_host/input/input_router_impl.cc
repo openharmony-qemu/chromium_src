@@ -153,7 +153,7 @@ void InputRouterImpl::SendGestureEvent(
       gesture_event.event.GetType() == WebInputEvent::Type::kGestureScrollBegin) {
 #if defined(OHOS_PERFORMANCE_INC_FREQ)
     prePerfTimeStamp_ = timeStamp_;
-    LOG(INFO) << "InputRouterImpl::SendGestureEvent type=kGestureScrollUpdate success";
+    LOG(DEBUG) << "InputRouterImpl::SendGestureEvent type=kGestureScrollUpdate success";
     client_->GetWidgetInputHandler()->TryStartFling();
     OHOS::NWeb::OhosAdapterHelper::GetInstance()
       .CreateSocPerfClientAdapter()

@@ -474,6 +474,18 @@ class CC_EXPORT LayerImpl {
 
   virtual viz::ViewTransitionElementResourceId ViewTransitionResourceId() const;
 
+  void SetShouldInterceptTouchEvent(bool intercept);
+  bool ShouldInterceptTouchEvent() const;
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void SetNeedNotifyRectChange(bool need);
+  gfx::RectF VideoRect() const;
+  gfx::RectF VideoRectInScreenSpace() const;
+  void SetVideoRect(const gfx::RectF& rect);
+  void OnDrawPropertiesChanged();
+  void CheckLayerRectChange();
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
  protected:
   // When |will_always_push_properties| is true, the layer will not itself set
   // its SetNeedsPushProperties() state, as it expects to be always pushed to
@@ -610,6 +622,12 @@ class CC_EXPORT LayerImpl {
   bool raster_even_if_not_drawn_ : 1;
 
   bool has_transform_node_ : 1;
+
+  bool should_intercept_touch_event_ = false;
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  gfx::RectF video_rect_;
+  bool need_notify_rect_changed_ = false;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 };
 
 }  // namespace cc

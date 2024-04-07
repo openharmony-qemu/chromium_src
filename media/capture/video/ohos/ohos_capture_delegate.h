@@ -27,6 +27,7 @@
 #include "media/capture/video/video_capture_device.h"
 #include "media/capture/video_capture_types.h"
 #include "video_capture_surface_buffer_listener_ohos.h"
+#include "video_capture_params_adapter_impl.h"
 
 namespace media {
 using namespace OHOS::NWeb;
@@ -61,7 +62,7 @@ class CAPTURE_EXPORT OHOSCaptureDelegate final {
   void Resume();
   void OnBufferAvailable(std::shared_ptr<CameraSurfaceAdapter> surface,
                          std::shared_ptr<CameraSurfaceBufferAdapter> buffer,
-                         CameraRotationInfo rotation_info);
+                         std::shared_ptr<CameraRotationInfoAdapter> rotation_info);
 
   void SetRotation(int rotation);
 
@@ -77,7 +78,7 @@ class CAPTURE_EXPORT OHOSCaptureDelegate final {
                      const std::string& reason);
 
   int TransToOHOSCaptrueParams(const VideoCaptureParams& in,
-                                VideoCaptureParamsAdapter& out);
+                               std::shared_ptr<VideoCaptureParamsAdapterImpl>& out);
   int GetUsableExposureMode(ExposureModeAdapter& exposure_mode_adapter,
                             MeteringMode& exposure_mode);
   MeteringMode GetCurrentExposureMode(

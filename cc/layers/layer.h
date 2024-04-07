@@ -41,6 +41,10 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/rounded_corners_f.h"
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#include "cc/layers/layer_client.h"
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 namespace viz {
 class CopyOutputRequest;
 }
@@ -868,6 +872,22 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
   virtual void OnLayerRectUpdate(const gfx::Rect& rect) {}
 #endif
 
+  void SetShouldInterceptTouchEvent(bool intercept) {
+    should_intercept_touch_event_.Write(*this) = intercept;
+  }
+  bool ShouldInterceptTouchEvent() {
+    return should_intercept_touch_event_.Read(*this);
+  }
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  virtual void SetLayerClient(LayerClient* client);
+  virtual LayerClient* GetLayerClient();
+  void SetVideoRect(const gfx::RectF& rect) { video_rect_ = rect; }
+
+  virtual bool ShouldOverlay();
+  virtual void SetShouldOverlay(bool should_overlay);
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
  protected:
   friend class LayerImpl;
   friend class TreeSynchronizer;
@@ -1207,6 +1227,13 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
 
   gfx::RectF native_rect_;
   ProtectedSequenceWritable<std::unique_ptr<LayerDebugInfo>> debug_info_;
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  raw_ptr<LayerClient> client_ = nullptr;
+  gfx::RectF video_rect_;
+  ProtectedSequenceWritable<bool> should_intercept_touch_event_{false};
+  bool should_overlay_{false};
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 
   static constexpr gfx::Transform kIdentityTransform{};
   static constexpr gfx::RoundedCornersF kNoRoundedCornersF{};

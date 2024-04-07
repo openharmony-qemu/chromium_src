@@ -309,6 +309,10 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #ifdef BUILDFLAG(IS_OHOS)
 bool IsSafeBrowsingEnabled() override;
 void EnableSafeBrowsing(bool enable) override;
+void PrecompileJavaScript(const std::string& url,
+                          const std::string& script,
+                          std::shared_ptr<CacheOptions>& cacheOptions,
+                          std::shared_ptr<NWebMessageValueCallback> callback) override;
 #endif
 
 #ifdef OHOS_PAGE_UP_DOWN
@@ -406,6 +410,10 @@ void EnableSafeBrowsing(bool enable) override;
   void CloseCamera() override;
 #endif  // defined(OHOS_WEBRTC)
 
+#if defined(OHOS_SCREEN_LOCK)
+  void SetWakeLockCallback(int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback) override;
+#endif
+
 #if defined(OHOS_SECURE_JAVASCRIPT_PROXY)
   std::string GetLastJavascriptProxyCallingFrameUrl() override;
 #endif
@@ -455,6 +463,10 @@ void EnableSafeBrowsing(bool enable) override;
                                 std::vector<std::string>& certChainData,
                                 bool isSingleCert);
 #endif
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void RegisterOnCreateNativeMediaPlayerListener(
+      std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) override;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
  private:
   content::BrowserAccessibilityManagerOHOS* GetAccessibilityManager() const;
   void AddAccessibilityNodeInfoAttributes(

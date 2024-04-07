@@ -111,6 +111,14 @@ void MojoRenderer::InitializeRendererFromUrl(media::RendererClient* client) {
 
   BindRemoteRendererIfNeeded();
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  remote_renderer_->SetMediaSourceList(std::move(source_infos_));
+  remote_renderer_->SetMediaControls(show_media_controls_, std::move(controls_list_));
+  remote_renderer_->SetPoster(std::move(poster_url_));
+  remote_renderer_->SetAttributes(std::move(attributes_));
+  remote_renderer_->SetIsAudio(is_audio_);
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
   const MediaUrlParams& url_params = media_resource_->GetMediaUrlParams();
 
   // Using base::Unretained(this) is safe because |this| owns
@@ -405,5 +413,44 @@ void MojoRenderer::CancelPendingCallbacks() {
   if (cdm_attached_cb_)
     std::move(cdm_attached_cb_).Run(false);
 }
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void MojoRenderer::SetSurfaceId(int surface_id) {
+  BindRemoteRendererIfNeeded();
+  if (remote_renderer_.is_bound()) {
+    remote_renderer_->SetSurfaceId(surface_id);
+  } else {
+    LOG(ERROR) << "SetSurfaceId failed";
+  }
+}
+void MojoRenderer::SetMediaSourceList(
+    const std::vector<MediaSourceInfo>& source_infos) {
+  source_infos_.clear();
+  source_infos_.reserve(source_infos.size());
+  for (const auto& source_info : source_infos) {
+    mojom::MediaSourceInfoPtr info = mojom::MediaSourceInfo::New(
+        source_info.media_source, source_info.media_format);
+    source_infos_.push_back(std::move(info));
+  }
+}
+void MojoRenderer::SetMediaControls(bool show_media_controls,
+    const std::vector<std::string>& controls_list) {
+  show_media_controls_ = show_media_controls;
+  controls_list_ = controls_list;
+}
+void MojoRenderer::SetPoster(const std::string& poster_url) {
+  poster_url_ = poster_url;
+}
+void MojoRenderer::SetAttributes(
+    base::flat_map<std::string, std::string> attributes) {
+  attributes_ = std::move(attributes);
+}
+void MojoRenderer::SetIsAudio(bool is_audio) {
+  is_audio_ = is_audio;
+}
+bool MojoRenderer::IsAudio() {
+  return is_audio_;
+}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 
 }  // namespace media

@@ -732,4 +732,12 @@ MediaWebContentsObserver::GetWeakPtrForFrame(
   return result.first->second->GetWeakPtr();
 }
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
+    UpdateLayerRect(const gfx::Rect& rect) {
+  media_web_contents_observer_->web_contents_impl()->UpdateLayerRect(
+      media_player_id_, rect);
+}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 }  // namespace content

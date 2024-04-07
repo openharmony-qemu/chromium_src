@@ -64,6 +64,11 @@ class MEDIA_EXPORT MediaResource {
   // This method could be refactored if WMPI was aware of the concrete type of
   // Demuxer* it is dealing with.
   virtual void ForwardDurationChangeToDemuxerHost(base::TimeDelta duration);
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  virtual void ForwardBufferedEndTimeChangeToDemuxerHost(
+      base::TimeDelta buffered_time) {}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 };
 
 }  // namespace media

@@ -43,6 +43,7 @@ import("//build_overrides/build.gni")
 import("//cef/libcef/features/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//testing/test.gni")
+import("//ohos_nweb/src/nweb_sysevent.gni")
 
 if (is_mac) {
   # Used to generate fuzzer corpus :base_mach_port_rendezvous_convert_corpus.
@@ -1079,6 +1080,10 @@ component("base") {
     deps += [
       "//third_party/ohos_ndk:ohos_isolation",
     ]
+  }
+
+  if (report_sys_event) {
+    defines += [ "REPORT_SYS_EVENT" ]
   }
 
   # `raw_ptr` cannot be made a component due to CRT symbol issues.

@@ -75,6 +75,7 @@ class MojoRenderer : public Renderer, public mojom::RendererClient {
   void SetPoster(const std::string& poster_url) override;
   void SetAttributes(
       base::flat_map<std::string, std::string> attributes) override;
+  void SetReferrer(const std::string& referrer) override;
   void SetIsAudio(bool is_audio) override;
   bool IsAudio();
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
@@ -181,6 +182,7 @@ class MojoRenderer : public Renderer, public mojom::RendererClient {
   std::vector<std::string> controls_list_;
   std::string poster_url_;
   base::flat_map<std::string, std::string> attributes_;
+  std::string referrer_;
   bool is_audio_ = false;
   bool muted_ = false;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER

@@ -81,6 +81,7 @@ class MEDIA_MOJO_EXPORT MojoRendererService final : public mojom::Renderer,
   void SetPoster(const std::string& poster_url) override;
   void SetAttributes(
       const base::flat_map<std::string, std::string>& attributes) override;
+  void SetReferrer(const std::string& referrer) override;
   void SetIsAudio(bool is_audio) override;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 

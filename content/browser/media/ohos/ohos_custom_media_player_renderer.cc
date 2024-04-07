@@ -16,7 +16,11 @@
 #include "media/base/timestamp_constants.h"
 
 #include "gpu/ipc/common/gpu_surface_id_tracker.h"
+#include "content/browser/child_process_security_policy_impl.h"
 #include "content/public/browser/custom_media_player_listener.h"
+#include "content/public/browser/storage_partition.h"
+#include "services/network/public/mojom/network_context.mojom.h"
+#include "services/network/public/mojom/restricted_cookie_manager.mojom.h"
 
 namespace content {
 
@@ -126,6 +130,65 @@ void CustomMediaPlayerListenerImpl::OnVideoSizeChanged(int width, int height) {
   }
 }
 
+// Returns the cookie manager for the `browser_context` at the client end of the
+// mojo pipe. This will be restricted to the origin of `url`, and will apply
+// policies from user and ContentBrowserClient to cookie operations.
+mojo::PendingRemote<network::mojom::RestrictedCookieManager>
+GetRestrictedCookieManagerForContext(
+    BrowserContext* browser_context,
+    const GURL& url,
+    const net::SiteForCookies& site_for_cookies,
+    const url::Origin& top_frame_origin,
+    RenderFrameHostImpl* render_frame_host) {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+
+  url::Origin request_origin = url::Origin::Create(url);
+  StoragePartition* storage_partition =
+      browser_context->GetDefaultStoragePartition();
+
+  // `request_origin` cannot be used to create `isolation_info` since it
+  // represents the media resource, not the frame origin. Here we use the
+  // `top_frame_origin` as the frame origin to ensure the consistency check
+  // passes when creating `isolation_info`. This is ok because
+  // `isolation_info.frame_origin` is unused in RestrictedCookieManager.
+  DCHECK(site_for_cookies.IsNull() ||
+         site_for_cookies.IsFirstParty(top_frame_origin.GetURL()));
+  net::IsolationInfo isolation_info = net::IsolationInfo::Create(
+      net::IsolationInfo::RequestType::kOther, top_frame_origin,
+      top_frame_origin, site_for_cookies, absl::nullopt);
+
+  mojo::PendingRemote<network::mojom::RestrictedCookieManager> pipe;
+  static_cast<StoragePartitionImpl*>(storage_partition)
+      ->CreateRestrictedCookieManager(
+          network::mojom::RestrictedCookieManagerRole::NETWORK, request_origin,
+          std::move(isolation_info),
+          /* is_service_worker = */ false,
+          render_frame_host ? render_frame_host->GetProcess()->GetID() : -1,
+          render_frame_host ? render_frame_host->GetRoutingID()
+                            : MSG_ROUTING_NONE,
+          render_frame_host ? render_frame_host->GetCookieSettingOverrides()
+                            : net::CookieSettingOverrides(),
+          pipe.InitWithNewPipeAndPassReceiver(),
+          render_frame_host ? render_frame_host->CreateCookieAccessObserver()
+                            : mojo::NullRemote());
+  return pipe;
+}
+
+void ReturnResultOnUIThread(
+    base::OnceCallback<void(const std::string&)> callback,
+    const std::string& result) {
+  GetUIThreadTaskRunner({})->PostTask(
+      FROM_HERE, base::BindOnce(std::move(callback), result));
+}
+
+void ReturnResultOnUIThreadAndClosePipe(
+    mojo::Remote<network::mojom::RestrictedCookieManager> pipe,
+    base::OnceCallback<void(const std::string&)> callback,
+    const std::string& result) {
+  GetUIThreadTaskRunner({})->PostTask(
+      FROM_HERE, base::BindOnce(std::move(callback), result));
+}
+
 }  // namespace
 
 OHOSCustomMediaPlayerRenderer::OHOSCustomMediaPlayerRenderer(
@@ -180,9 +243,74 @@ void OHOSCustomMediaPlayerRenderer::Initialize(media::MediaResource* media_resou
   init_cb_ = std::move(init_cb);
   media_resource_ = media_resource;
 
-  if (surface_id_ != -1) {
-    CreateMediaPlayer();
+  GetCookies();
+}
+
+void OHOSCustomMediaPlayerRenderer::GetCookies() {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+
+  const GURL& url = media_resource_->GetMediaUrlParams().media_url;
+  const net::SiteForCookies& site_for_cookies =
+      media_resource_->GetMediaUrlParams().site_for_cookies;
+  const url::Origin& top_frame_origin =
+      media_resource_->GetMediaUrlParams().top_frame_origin;
+  bool has_storage_access =
+      media_resource_->GetMediaUrlParams().has_storage_access;
+
+  base::OnceCallback<void(const std::string&)> callback =
+        base::BindOnce(&OHOSCustomMediaPlayerRenderer::OnCookiesRetrieved,
+                       weak_factory_.GetWeakPtr());
+
+  ChildProcessSecurityPolicyImpl* policy =
+      ChildProcessSecurityPolicyImpl::GetInstance();
+  if (!policy->CanAccessDataForOrigin(media_player_id_.frame_routing_id.child_id,
+                                      url::Origin::Create(url))) {
+    // Running the callback asynchronously on the caller thread to avoid
+    // reentrancy issues.
+    ReturnResultOnUIThread(std::move(callback), std::string());
+    return;
   }
+
+  RenderProcessHost* host = RenderProcessHost::FromID(
+      media_player_id_.frame_routing_id.child_id);
+  if (!host) {
+    return;
+  }
+
+  BrowserContext* context = host->GetBrowserContext();
+
+  mojo::Remote<network::mojom::RestrictedCookieManager> cookie_manager(
+      GetRestrictedCookieManagerForContext(
+          context, url, site_for_cookies, top_frame_origin,
+          RenderFrameHostImpl::FromID(media_player_id_.frame_routing_id)));
+  network::mojom::RestrictedCookieManager* cookie_manager_ptr =
+      cookie_manager.get();
+
+  cookie_manager_ptr->GetCookiesString(
+      url, site_for_cookies, top_frame_origin, has_storage_access,
+      base::BindOnce(&ReturnResultOnUIThreadAndClosePipe,
+                     std::move(cookie_manager), std::move(callback)));
+}
+
+void OHOSCustomMediaPlayerRenderer::OnCookiesRetrieved(
+    const std::string& cookies) {
+  cookies_= cookies;
+  TryCreateMediaPlayer();
+}
+
+void OHOSCustomMediaPlayerRenderer::TryCreateMediaPlayer() {
+  DVLOG(1) << __func__;
+
+  bool wait_surface_created = !is_audio_ && surface_id_ == -1;
+  if (wait_surface_created) {
+    return;
+  }
+
+  if (!cookies_) {
+    return;
+  }
+
+  CreateMediaPlayer();
 }
 
 void OHOSCustomMediaPlayerRenderer::CreateMediaPlayer() {
@@ -218,6 +346,19 @@ void OHOSCustomMediaPlayerRenderer::CreateMediaPlayer() {
   media_info.muted = muted_;
   media_info.poster_url = poster_url_;
   media_info.preload = MediaInfo::Preload::AUTO;
+  if (!cookies_->empty()) {
+    media_info.https_headers.insert(std::make_pair("Cookie",
+        std::move(cookies_.value())));
+  }
+  if (!referrer_.empty()) {
+    media_info.https_headers.insert(std::make_pair("Referrer",
+        std::move(referrer_)));
+  }
+  std::string user_agent = GetContentClient()->browser()->GetUserAgent();
+  if (!user_agent.empty()) {
+    media_info.https_headers.insert(std::make_pair("User-Agent",
+        std::move(user_agent)));
+  }
   media_info.attributes = std::move(attributes_);
 
   media_player_ = web_contents_impl->CreateCustomMediaPlayer(
@@ -348,9 +489,7 @@ void OHOSCustomMediaPlayerRenderer::SetMuted(bool muted) {
 
 void OHOSCustomMediaPlayerRenderer::SetSurfaceId(int surface_id) {
   surface_id_ = surface_id;
-  if (init_cb_) {
-    CreateMediaPlayer();
-  }
+  TryCreateMediaPlayer();
 }
 
 void OHOSCustomMediaPlayerRenderer::SetMediaSourceList(
@@ -375,6 +514,11 @@ void OHOSCustomMediaPlayerRenderer::SetAttributes(
   for (const auto& item : attributes) {
     attributes_.insert({item.first, item.second});
   }
+}
+
+void OHOSCustomMediaPlayerRenderer::SetReferrer(
+    const std::string& referrer) {
+  referrer_ = referrer;
 }
 
 void OHOSCustomMediaPlayerRenderer::SetIsAudio(bool is_audio) {

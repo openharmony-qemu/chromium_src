@@ -72,6 +72,9 @@ void MojoRendererWrapper::SetAttributes(
     base::flat_map<std::string, std::string> attributes) {
   mojo_renderer_->SetAttributes(std::move(attributes));
 }
+void MojoRendererWrapper::SetReferrer(const std::string& referrer) {
+  mojo_renderer_->SetReferrer(referrer);
+}
 void MojoRendererWrapper::SetIsAudio(bool is_audio) {
   mojo_renderer_->SetIsAudio(is_audio);
 }

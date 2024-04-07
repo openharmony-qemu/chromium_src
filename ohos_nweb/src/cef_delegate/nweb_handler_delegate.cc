@@ -2765,7 +2765,7 @@ bool NWebHandlerDelegate::OnAllCertificateError(CefRefPtr<CefBrowser> browser,
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
 void NWebHandlerDelegate::RegisterOnCreateNativeMediaPlayerListener(
     std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) {
-  WVLOG_I("===gpz=== NWebHandlerDelegate::OnCreateNativeMediaPlayer(%{public}p)", callback.get());
+  WVLOG_I("RegisterOnCreateNativeMediaPlayerListener(%{public}p)", callback.get());
   create_native_media_player_cb_ = std::move(callback);
 }
 

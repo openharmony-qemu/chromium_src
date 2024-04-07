@@ -319,6 +319,9 @@ void MojoRendererService::SetAttributes(
     const base::flat_map<std::string, std::string>& attributes) {
   renderer_->SetAttributes(attributes);
 }
+void MojoRendererService::SetReferrer(const std::string& referrer) {
+  renderer_->SetReferrer(referrer);
+}
 void MojoRendererService::SetIsAudio(bool is_audio) {
   renderer_->SetIsAudio(is_audio);
 }

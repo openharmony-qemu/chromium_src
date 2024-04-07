@@ -165,6 +165,7 @@ class MEDIA_EXPORT Renderer {
       const std::vector<std::string>& controls_list) {}
   virtual void SetPoster(const std::string& poster_url) {}
   virtual void SetAttributes(base::flat_map<std::string, std::string> attributes) {}
+  virtual void SetReferrer(const std::string& referrer) {}
   using SurfaceCreatedCallback = base::OnceCallback<void(int)>;
   virtual void SetSurfaceCreatedCallback(SurfaceCreatedCallback cb) {}
   using UpdatePlaybackStatusCallback = base::RepeatingCallback<void(uint32_t)>;

@@ -603,6 +603,22 @@ void NWebDelegate::ResumeDownload(
   }
 }
 
+#ifdef OHOS_EX_DOWNLOAD
+NWebDownloadItemState NWebDelegate::GetDownloadItemState(long item_id) {
+  auto browser = GetBrowser();
+  if (browser == nullptr || browser->GetHost() == nullptr) {
+    LOG(ERROR) << "GetDownloadItemState failed, for browser or browser->host is nullptr";
+    return NWebDownloadItemState::MAX_DOWNLOAD_STATE;
+  }
+  CefRefPtr<CefDownloadItem> download_item = browser->GetHost()->GetDownloadItem(item_id);
+  if (!download_item) {
+    LOG(ERROR) << "GetDownloadItemState failed, for download_item is nullptr";
+    return NWebDownloadItemState::MAX_DOWNLOAD_STATE;
+  }
+   return NWebDownloadItem::GetNWebState(download_item);
+}
+#endif
+
 void NWebDelegate::FindAllAsync(const std::string& search_string) const {
   if (find_delegate_ == nullptr) {
     LOG(ERROR) << "fail to FindAllAsync, find_delegate_ is nullptr";

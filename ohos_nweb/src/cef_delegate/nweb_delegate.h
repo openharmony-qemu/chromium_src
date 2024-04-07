@@ -80,6 +80,9 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       override;
   void StartDownload(const char* url) override;
   void ResumeDownload(std::shared_ptr<NWebDownloadItem> web_download) override;
+#ifdef OHOS_EX_DOWNLOAD
+  NWebDownloadItemState GetDownloadItemState(long item_id) override;
+#endif
 
   void RegisterNWebHandler(std::shared_ptr<NWebHandler> handler) override;
   void RegisterRenderCb(

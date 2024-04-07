@@ -427,6 +427,10 @@ class NWebDelegateInterface
   virtual void RegisterOnCreateNativeMediaPlayerListener(
       std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) = 0;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+#ifdef OHOS_EX_DOWNLOAD
+  virtual NWebDownloadItemState GetDownloadItemState(long item_id) = 0;
+#endif
 };
 }  // namespace OHOS::NWeb
 

@@ -31,6 +31,26 @@ struct NWebBeforeDownloadCallbackWrapper {
       callback_->Continue(cef_file_path, false);
     }
   }
+
+#if defined(OHOS_EX_DOWNLOAD)
+  void Cancel() const {
+    if (callback_) {
+      callback_->Cancel();
+    }
+  }
+
+  void Pause() const {
+    if (callback_) {
+      callback_->Pause();
+    }
+  }
+
+  void Resume() const {
+    if (callback_) {
+      callback_->Resume();
+    }
+  }
+#endif
 };
 
 struct NWebDownloadItemCallbackWrapper {

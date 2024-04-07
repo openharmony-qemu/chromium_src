@@ -5359,4 +5359,14 @@ void LayerTreeHostImpl::SetupScrollBy() {
 }
 #endif
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void LayerTreeHostImpl::OnLayerRectChange(int id,
+                                          int x,
+                                          int y,
+                                          int width,
+                                          int height) {
+  client_->OnLayerRectChange(id, x, y, width, height);
+}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 }  // namespace cc

@@ -294,4 +294,33 @@ void MojoRendererService::OnCdmAttached(base::OnceCallback<void(bool)> callback,
 
   std::move(callback).Run(success);
 }
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void MojoRendererService::SetSurfaceId(int surface_id) {
+  renderer_->SetSurfaceId(surface_id);
+}
+void MojoRendererService::SetMediaSourceList(
+    std::vector<mojom::MediaSourceInfoPtr> source_infos) {
+  std::vector<media::Renderer::MediaSourceInfo> infos;
+  infos.reserve(source_infos.size());
+  for (const auto& info : source_infos) {
+    infos.push_back({info->media_source, info->media_format});
+  }
+  renderer_->SetMediaSourceList(infos);
+}
+void MojoRendererService::SetMediaControls(bool show_media_controls,
+    const std::vector<std::string>& controls_list) {
+  renderer_->SetMediaControls(show_media_controls, controls_list);
+}
+void MojoRendererService::SetPoster(const std::string& poster_url) {
+  renderer_->SetPoster(poster_url);
+}
+void MojoRendererService::SetAttributes(
+    const base::flat_map<std::string, std::string>& attributes) {
+  renderer_->SetAttributes(attributes);
+}
+void MojoRendererService::SetIsAudio(bool is_audio) {
+  renderer_->SetIsAudio(is_audio);
+}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 }  // namespace media

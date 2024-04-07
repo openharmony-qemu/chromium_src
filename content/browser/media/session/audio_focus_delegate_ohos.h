@@ -24,9 +24,6 @@ class AudioManagerCallback : public AudioManagerCallbackAdapter {
   ~AudioManagerCallback();
   void OnSuspend() override;
   void OnResume() override;
-
- private:
-  MediaSessionImpl* media_session_;
 };
 
 class AudioFocusDelegateOHOS : public AudioFocusDelegate {

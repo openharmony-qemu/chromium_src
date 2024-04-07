@@ -118,6 +118,9 @@ interface MediaPlayerObserver {
   // Notifies that the RemotePlayback metadata of the media player has changed.
   OnRemotePlaybackMetadataChange(media_session.mojom.RemotePlaybackMetadata
                              remote_playback_metadata);
+
+  [EnableIf=ohos_custom_video_player]
+  UpdateLayerRect(gfx.mojom.Rect rect);
 };
 
 // Implemented by MediaWebContentsObserver::MediaPlayerHostImpl in the browser

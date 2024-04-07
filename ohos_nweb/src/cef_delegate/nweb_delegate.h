@@ -466,6 +466,10 @@ void PrecompileJavaScript(const std::string& url,
                                 std::vector<std::string>& certChainData,
                                 bool isSingleCert);
 #endif
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void RegisterOnCreateNativeMediaPlayerListener(
+      std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) override;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
  private:
   content::BrowserAccessibilityManagerOHOS* GetAccessibilityManager() const;
   void AddAccessibilityNodeInfoAttributes(

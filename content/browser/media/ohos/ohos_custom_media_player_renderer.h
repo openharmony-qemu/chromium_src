@@ -62,6 +62,7 @@ class CONTENT_EXPORT OHOSCustomMediaPlayerRenderer
   void SetVolume(float volume) override;
   base::TimeDelta GetMediaTime() override;
   media::RendererType GetRendererType() override;
+  void SetMuted(bool muted) override;
   void SetSurfaceId(int surface_id) override;
 
   void SetMediaSourceList(const std::vector<MediaSourceInfo>& source_infos) override;
@@ -129,6 +130,8 @@ class CONTENT_EXPORT OHOSCustomMediaPlayerRenderer
   GlobalRenderFrameHostId global_render_frame_host_id_;
 
   MediaPlayerId media_player_id_;
+
+  bool muted_ = false;
 
   int surface_id_ = -1;
 

@@ -296,6 +296,9 @@ void MojoRendererService::OnCdmAttached(base::OnceCallback<void(bool)> callback,
 }
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void MojoRendererService::SetMuted(bool muted) {
+  renderer_->SetMuted(muted);
+}
 void MojoRendererService::SetSurfaceId(int surface_id) {
   renderer_->SetSurfaceId(surface_id);
 }

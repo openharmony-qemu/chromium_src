@@ -116,6 +116,7 @@ void MojoRenderer::InitializeRendererFromUrl(media::RendererClient* client) {
   remote_renderer_->SetMediaControls(show_media_controls_, std::move(controls_list_));
   remote_renderer_->SetPoster(std::move(poster_url_));
   remote_renderer_->SetAttributes(std::move(attributes_));
+  remote_renderer_->SetReferrer(std::move(referrer_));
   remote_renderer_->SetIsAudio(is_audio_);
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
@@ -444,6 +445,9 @@ void MojoRenderer::SetPoster(const std::string& poster_url) {
 void MojoRenderer::SetAttributes(
     base::flat_map<std::string, std::string> attributes) {
   attributes_ = std::move(attributes);
+}
+void MojoRenderer::SetReferrer(const std::string& referrer) {
+  referrer_ = referrer;
 }
 void MojoRenderer::SetIsAudio(bool is_audio) {
   is_audio_ = is_audio;

@@ -69,6 +69,7 @@ class CONTENT_EXPORT OHOSCustomMediaPlayerRenderer
       const std::vector<std::string>& controls_list) override;
   void SetPoster(const std::string& poster_url) override;
   void SetAttributes(base::flat_map<std::string, std::string> attributes) override;
+  void SetReferrer(const std::string& referrer) override;
   void SetIsAudio(bool is_audio) override;
 
   // media::OHOSMediaPlayerBridge::Client implementation
@@ -96,6 +97,10 @@ class CONTENT_EXPORT OHOSCustomMediaPlayerRenderer
   void UpdateBufferedEndTime(double buffered_time);
 
  private:
+  void GetCookies();
+  void OnCookiesRetrieved(const std::string& cookies);
+
+  void TryCreateMediaPlayer();
   void CreateMediaPlayer();
 
   void UpdateVolume();
@@ -146,9 +151,13 @@ class CONTENT_EXPORT OHOSCustomMediaPlayerRenderer
 
   std::map<std::string, std::string> attributes_;
 
+  std::string referrer_;
+
   bool is_audio_ = false;
 
   bool is_playing_ = false;
+
+  absl::optional<std::string> cookies_;
 
   // NOTE: Weak pointers must be invalidated before all other member variables.
   base::WeakPtrFactory<OHOSCustomMediaPlayerRenderer> weak_factory_{this};

@@ -12,7 +12,6 @@ CustomMediaPlayerImpl::CustomMediaPlayerImpl(
 CustomMediaPlayerImpl::~CustomMediaPlayerImpl() {}
 
 void CustomMediaPlayerImpl::UpdateLayerRect(int x, int y, int width, int height) {
-  LOG(INFO) << "===gpz=== enter CustomMediaPlayerImpl::UpdateLayerRect";
   if (bridge_) {
     bridge_->UpdateRect(x, y, width, height);
   }

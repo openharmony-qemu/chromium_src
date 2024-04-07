@@ -76,6 +76,9 @@ interface Renderer {
   SetAttributes(map<string, string> attributes);
 
   [EnableIf=ohos_custom_video_player]
+  SetReferrer(string referrer);
+
+  [EnableIf=ohos_custom_video_player]
   SetIsAudio(bool is_audio);
 };
 

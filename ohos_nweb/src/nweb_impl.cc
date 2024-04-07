@@ -106,6 +106,11 @@
 #include "content/public/common/content_switches.h"
 #endif
 
+#ifdef OHOS_RENDER_PROCESS_MODE
+#include "base/ohos/sys_info_utils.h"
+#include "content/public/browser/render_process_host.h"
+#endif
+
 #if defined(OHOS_SITE_ISOLATION)
 extern bool g_siteIsolationMode;
 #endif
@@ -173,7 +178,12 @@ static bool IsMultipleRenderProcess() {
     
     if (command_line->HasSwitch(switches::kRendererProcessLimit)) {
         int limit_value = std::stoi(command_line->GetSwitchValueASCII(switches::kRendererProcessLimit));
-        return (limit_value > 1);
+        return (limit_value > 1
+#ifdef OHOS_RENDER_PROCESS_MODE
+                && OHOS::NWeb::NWebImpl::GetRenderProcessMode() ==
+                    OHOS::NWeb::RenderProcessMode::MULTIPLE_MODE
+#endif
+        );
     }
 
     return false;
@@ -182,10 +192,6 @@ static bool IsMultipleRenderProcess() {
 static bool ShouldEnableSiteIsolation() {
   std::string isSiteIsolationMode = GetSiteIsolationMode();
   
-  if (isSiteIsolationMode == "true") {
-    return true;
-  }
-
   if (isSiteIsolationMode == "false") {
     return false;
   }
@@ -194,7 +200,7 @@ static bool ShouldEnableSiteIsolation() {
   bool isIgnoreLockdownMode = (*base::CommandLine::ForCurrentProcess()).HasSwitch(
             switches::kIgnoreLockdownMode);
 
-  if (isIgnoreLockdownMode) {
+  if (isIgnoreLockdownMode && IsMultipleRenderProcess()){
     return true;
   }
 
@@ -2468,6 +2474,36 @@ void NWebImpl::ClearIntelligentTrackingPreventionBypassingList() {
       ClearITPBypassingList();
 #endif
 }
+
+#ifdef OHOS_RENDER_PROCESS_MODE
+// static
+void NWebImpl::SetRenderProcessMode(RenderProcessMode mode) {
+  LOG(INFO) << "SetRenderProcessMode mode:" << (int)mode;
+  content::RenderProcessMode render_process_mode =
+      content::RenderProcessMode::SINGLE_MODE;
+  if (mode == RenderProcessMode::MULTIPLE_MODE) {
+    render_process_mode = content::RenderProcessMode::MULTIPLE_MODE;
+  }
+  content::RenderProcessHost::SetRenderProcessMode(render_process_mode);
+
+#if defined(OHOS_SITE_ISOLATION)
+  g_siteIsolationMode = ShouldEnableSiteIsolation();
+#if defined(REPORT_SYS_EVENT)
+  ReportSiteIsolationMode(std::to_string(g_siteIsolationMode));
+#endif
+#endif
+}
+
+// static
+RenderProcessMode NWebImpl::GetRenderProcessMode() {
+  content::RenderProcessMode render_process_mode =
+      content::RenderProcessHost::render_process_mode();
+  if (render_process_mode == content::RenderProcessMode::SINGLE_MODE) {
+    return RenderProcessMode::SINGLE_MODE;
+  }
+  return RenderProcessMode::MULTIPLE_MODE;
+}
+#endif // OHOS_RENDER_PROCESS_MODE
 }  // namespace OHOS::NWeb
 
 using namespace OHOS::NWeb;

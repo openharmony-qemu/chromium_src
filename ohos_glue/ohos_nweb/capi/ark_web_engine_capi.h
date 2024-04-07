@@ -86,6 +86,13 @@ typedef struct _ark_web_engine_t {
       struct _ark_web_engine_t *self, ark_web_engine_prefetch_args_t **pre_args,
       const ArkWebStringMap *additional_http_headers,
       const ArkWebString *cache_key, const uint32_t *cache_valid_time);
+
+  void(ARK_WEB_CALLBACK *set_render_process_mode)(
+      struct _ark_web_engine_t *self, int32_t mode);
+
+  int32_t(ARK_WEB_CALLBACK *get_render_process_mode)(
+      struct _ark_web_engine_t *self);
+
 } ark_web_engine_t;
 
 ARK_WEB_EXPORT ark_web_engine_t *ark_web_engine_get_instance(void);

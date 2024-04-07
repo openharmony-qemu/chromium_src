@@ -550,6 +550,14 @@
 "dependence": "",
 "default": "true"
 },
+{ "name": "OHOS_RENDER_PROCESS_MODE",
+"owner": "",
+"desc": "",
+"effect":"main gn blink_core other",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},
 { "name": "OHOS_SCHEME_HANDLER",
 "owner": "",
 "desc": "",

@@ -24,6 +24,14 @@ if (is_ohos) {
       "ohos_media_codec_bridge.h",
       "ohos_media_codec_util.cc",
       "ohos_media_codec_util.h",
+      "buffer_flush_config_adapter_impl.cc",
+      "buffer_flush_config_adapter_impl.h",
+      "buffer_request_config_adapter_impl.cc",
+      "buffer_request_config_adapter_impl.h",
+      "codec_config_para_adapter_impl.cc",
+      "codec_config_para_adapter_impl.h",
+      "decoder_format_adapter_impl.cc",
+      "decoder_format_adapter_impl.h",
     ]
     configs += [ "//media:subcomponent_config" ]
 

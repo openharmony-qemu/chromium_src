@@ -20,6 +20,9 @@
 #include "content/public/browser/render_process_host.h"
 #include "media/capture/mojom/video_capture_types.mojom.h"
 #include "mojo/public/cpp/bindings/self_owned_receiver.h"
+#if BUILDFLAG(IS_OHOS)
+#include "res_sched_client_adapter.h"
+#endif
 
 namespace content {
 
@@ -68,7 +71,11 @@ VideoCaptureHost::VideoCaptureHost(uint32_t render_process_id,
                                    MediaStreamManager* media_stream_manager)
     : VideoCaptureHost(
           std::make_unique<RenderProcessHostDelegateImpl>(render_process_id),
-          media_stream_manager) {}
+          media_stream_manager) {
+#if BUILDFLAG(IS_OHOS)
+            render_process_id_ = render_process_id;
+#endif
+          }
 
 VideoCaptureHost::VideoCaptureHost(
     std::unique_ptr<RenderProcessHostDelegate> delegate,
@@ -113,6 +120,14 @@ VideoCaptureHost::~VideoCaptureHost() {
   NotifyAllStreamsRemoved();
   GetUIThreadTaskRunner({})->DeleteSoon(
       FROM_HERE, render_process_host_delegate_.release());
+#if BUILDFLAG(IS_OHOS)
+  RenderProcessHost* host = RenderProcessHost::FromID(render_process_id_);
+  if (host) {
+    LOG(DEBUG) << __func__ << " stop screen capture, pid: " << host->GetProcess().Pid();
+    OHOS::NWeb::ResSchedClientAdapter::ReportScreenCapture(
+      OHOS::NWeb::ResSchedStatusAdapter::SCREEN_CAPTURE_STOP, host->GetProcess().Pid());
+  }
+#endif
 }
 
 void VideoCaptureHost::OnError(const VideoCaptureControllerID& controller_id,
@@ -251,6 +266,15 @@ void VideoCaptureHost::Start(
   DCHECK(!base::Contains(device_id_to_observer_map_, device_id));
   device_id_to_observer_map_[device_id].Bind(std::move(observer));
 
+#if BUILDFLAG(IS_OHOS)
+  RenderProcessHost* host = RenderProcessHost::FromID(render_process_id_);
+  if (host) {
+    LOG(DEBUG) << __func__ << " start screen_capture, pid: " << host->GetProcess().Pid();
+    OHOS::NWeb::ResSchedClientAdapter::ReportScreenCapture(
+      OHOS::NWeb::ResSchedStatusAdapter::SCREEN_CAPTURE_START, host->GetProcess().Pid());
+  }
+#endif
+
   const VideoCaptureControllerID controller_id(device_id);
   if (controllers_.find(controller_id) != controllers_.end()) {
     device_id_to_observer_map_[device_id]->OnStateChanged(
@@ -272,6 +296,15 @@ void VideoCaptureHost::Stop(const base::UnguessableToken& device_id) {
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("video_and_image_capture"),
                "VideoCaptureHost::Stop");
+
+#if BUILDFLAG(IS_OHOS)
+  RenderProcessHost* host = RenderProcessHost::FromID(render_process_id_);
+  if (host) {
+    LOG(DEBUG) << __func__ << " stop screen capture, pid: " << host->GetProcess().Pid();
+    OHOS::NWeb::ResSchedClientAdapter::ReportScreenCapture(
+      OHOS::NWeb::ResSchedStatusAdapter::SCREEN_CAPTURE_STOP, host->GetProcess().Pid());
+  }
+#endif
 
   const VideoCaptureControllerID& controller_id(device_id);
 

@@ -130,6 +130,12 @@ class BASE_EXPORT JobHandle {
   // Can be invoked before ~JobHandle() to avoid waiting on the job completing.
   void Detach();
 
+#if BUILDFLAG(IS_OHOS)
+  internal::JobTaskSource* GetTaskSource() {
+    return task_source_.get();
+  }
+#endif
+
  private:
   friend class internal::JobTaskSource;
 

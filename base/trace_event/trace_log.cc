@@ -652,6 +652,8 @@ TraceLog::TraceLog(int generation)
 
 #if BUILDFLAG(IS_NACL)  // NaCl shouldn't expose the process id.
   SetProcessID(0);
+#elif BUILDFLAG(IS_OHOS)
+  SetProcessID(GetCurrentRealPid());
 #else
   SetProcessID(GetCurrentProcId());
 #endif

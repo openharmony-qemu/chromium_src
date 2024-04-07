@@ -31,6 +31,10 @@
 #include "nweb_preference.h"
 #include "nweb_web_message.h"
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#include "nweb_native_media_player.h"
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 namespace OHOS::NWeb {
 class NWebValue;
 
@@ -385,6 +389,10 @@ class NWebDelegateInterface
 #if BUILDFLAG(IS_OHOS)
   virtual bool IsSafeBrowsingEnabled() = 0;
   virtual void EnableSafeBrowsing(bool enable) = 0;
+  virtual void PrecompileJavaScript(const std::string& url,
+                                    const std::string& script,
+                                    std::shared_ptr<CacheOptions>& cacheOptions,
+                                    std::shared_ptr<NWebMessageValueCallback> callback) = 0;
 #endif
 
 #if defined(OHOS_SECURITY_STATE)
@@ -410,6 +418,15 @@ class NWebDelegateInterface
   virtual void EnableIntelligentTrackingPrevention(bool enable) = 0;
   virtual bool IsIntelligentTrackingPreventionEnabled() const = 0;
 #endif
+
+#if defined(OHOS_SCREEN_LOCK)
+  virtual void SetWakeLockCallback(int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback) = 0;
+#endif
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  virtual void RegisterOnCreateNativeMediaPlayerListener(
+      std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) = 0;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 };
 }  // namespace OHOS::NWeb
 

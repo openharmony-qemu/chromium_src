@@ -74,7 +74,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   void DeleteForwardHandlerOnUI(int32_t length);
   bool IsCorrectParam(int32_t number, int32_t& selectBegin, int32_t& selectEnd);
   bool ResetTextSelectiondata();
-  IMFAdapterCursorInfo GetCursorInfo();
+  std::shared_ptr<IMFCursorInfoAdapter> GetCursorInfo();
 
   static uint32_t lastAttachNWebId_;
   static IMFAdapterTextInputType lastInputMode_;

@@ -13,6 +13,10 @@
 #include "media/base/pipeline_status.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#include "base/containers/flat_map.h"
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 namespace media {
 
 class CdmContext;
@@ -38,7 +42,10 @@ enum class RendererType {
   kTest = 11,                    // Renderer implementations used in tests
 #if BUILDFLAG(IS_OHOS)
   kNative = 12,
-  kOHOSMediaPlayer = 13,  // OHOSMediaPlayerRendererFactory
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  kOHOSCustomMediaPlayer,
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+  kOHOSMediaPlayer,      // OHOSMediaPlayerRendererFactory
   kMaxValue = kOHOSMediaPlayer,
 #else
   kMaxValue = kTest,
@@ -72,6 +79,10 @@ class MEDIA_EXPORT Renderer {
   virtual void Initialize(CreateTextureCB create_texture_cb,
                           DestroyTextureCB destroy_texture_cb);
 #endif
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  virtual void SetSurfaceId(int surface_id);
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 
   // Associates the |cdm_context| with this Renderer for decryption (and
   // decoding) of media data, then fires |cdm_attached_cb| with whether the
@@ -142,6 +153,31 @@ class MEDIA_EXPORT Renderer {
   // enforce RendererType registration for all Renderer implementations.
   // Note: New implementation should update RendererType.
   virtual RendererType GetRendererType() = 0;
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  struct MediaSourceInfo {
+    std::string media_source;
+    std::string media_format;
+  };
+
+  virtual void SetMediaSourceList(const std::vector<MediaSourceInfo>& source_infos) {}
+  virtual void SetMediaControls(bool show_media_controls,
+      const std::vector<std::string>& controls_list) {}
+  virtual void SetPoster(const std::string& poster_url) {}
+  virtual void SetAttributes(base::flat_map<std::string, std::string> attributes) {}
+  using SurfaceCreatedCallback = base::OnceCallback<void(int)>;
+  virtual void SetSurfaceCreatedCallback(SurfaceCreatedCallback cb) {}
+  using UpdatePlaybackStatusCallback = base::RepeatingCallback<void(uint32_t)>;
+  virtual void SetUpdatePlaybackStatusCallback(UpdatePlaybackStatusCallback cb) {}
+  using UpdateVolumeCallback = base::RepeatingCallback<void(double)>;
+  virtual void SetUpdateVolumeCallback(UpdateVolumeCallback cb) {}
+  using UpdateMutedCallback = base::RepeatingCallback<void(bool)>;
+  virtual void SetUpdateMutedCallback(UpdateMutedCallback cb) {}
+  using UpdatePlaybackRateCallback = base::RepeatingCallback<void(double)>;
+  virtual void SetUpdatePlaybackRateCallback(UpdatePlaybackRateCallback cb) {}
+
+  virtual void SetIsAudio(bool is_audio) {}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 };
 
 }  // namespace media

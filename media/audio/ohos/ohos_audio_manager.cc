@@ -5,8 +5,8 @@
 #include "media/audio/ohos/ohos_audio_manager.h"
 
 #include <stdlib.h>
-#include "base/functional/bind.h"
 #include "base/command_line.h"
+#include "base/functional/bind.h"
 #include "base/logging.h"
 #include "base/system/system_monitor.h"
 #include "base/task/bind_post_task.h"
@@ -20,7 +20,7 @@ constexpr int kDefaultChannelCount = 2;
 constexpr int kMinimumOutputBufferSize = 2048;
 #if defined(OHOS_WEBRTC)
 constexpr int kMinimumInputBufferSize = 2048;
-#endif // defined(OHOS_WEBRTC)
+#endif  // defined(OHOS_WEBRTC)
 const int32_t AUDIO_DEFAULT_DEVICE_ID = 1000000;
 const char* AUDIO_DEFAULT_DEVICE_NAME = "(default)";
 static const char* AUDIO_MANAGER_NAME = "OHOS";
@@ -34,8 +34,9 @@ AudioManagerDeviceChangeCallback::~AudioManagerDeviceChangeCallback() {}
 void AudioManagerDeviceChangeCallback::OnDeviceChange() {
   LOG(INFO) << "AudioManagerDeviceChangeCallback::OnDeviceChange";
   outputDeviceChangeListenerCallback_.Run();
-  if (auto* monitor = base::SystemMonitor::Get())
+  if (auto* monitor = base::SystemMonitor::Get()) {
     monitor->ProcessDevicesChanged(base::SystemMonitor::DEVTYPE_AUDIO);
+  }
 }
 
 std::unique_ptr<AudioManager> CreateAudioManager(
@@ -53,9 +54,10 @@ OHOSAudioManager::~OHOSAudioManager() {
   int32_t ret = OhosAdapterHelper::GetInstance()
                     .GetAudioSystemManager()
                     .UnsetDeviceChangeCallback();
-  if (ret != 0)
+  if (ret != 0) {
     LOG(ERROR) << "OHOSAudioManager::UnsetDeviceChangeCallback failed. ret: "
                << ret;
+  }
 }
 
 // Implementation of AudioManager.
@@ -81,14 +83,23 @@ void OHOSAudioManager::GetAudioOutputDeviceNames(
       OhosAdapterHelper::GetInstance().GetAudioSystemManager().GetDevices(
           AdapterDeviceFlag::OUTPUT_DEVICES_FLAG);
   for (auto audioDevice : audioDeviceList) {
-    device_names->emplace_back(audioDevice.deviceName,
-                               base::NumberToString(audioDevice.deviceId));
+    if (audioDevice) {
+      device_names->emplace_back(
+          audioDevice->GetDeviceName(),
+          base::NumberToString(audioDevice->GetDeviceId()));
+    }
   }
   auto defaultOutputDevice = OhosAdapterHelper::GetInstance()
                                  .GetAudioSystemManager()
                                  .GetDefaultOutputDevice();
+  if (!defaultOutputDevice) {
+    LOG(ERROR) << "OHOSAudioManager::GetAudioOutputDeviceNames "
+                  "defaultOutputDevice is null";
+    return;
+  }
+
   std::string defaultOutputDeviceName =
-      AUDIO_DEFAULT_DEVICE_NAME + defaultOutputDevice.deviceName;
+      AUDIO_DEFAULT_DEVICE_NAME + defaultOutputDevice->GetDeviceName();
   AudioDeviceName device_name;
   device_name.unique_id = base::NumberToString(AUDIO_DEFAULT_DEVICE_ID);
   device_name.device_name = defaultOutputDeviceName;
@@ -106,19 +117,30 @@ void OHOSAudioManager::GetAudioInputDeviceNames(
       OhosAdapterHelper::GetInstance().GetAudioSystemManager().GetDevices(
           AdapterDeviceFlag::INPUT_DEVICES_FLAG);
   for (auto audioDevice : audioDeviceList) {
-    device_names->emplace_back(audioDevice.deviceName,
-                               base::NumberToString(audioDevice.deviceId));
+    if (audioDevice) {
+      device_names->emplace_back(
+          audioDevice->GetDeviceName(),
+          base::NumberToString(audioDevice->GetDeviceId()));
+    }
   }
   auto defaultInputDevice = OhosAdapterHelper::GetInstance()
-                                 .GetAudioSystemManager()
-                                 .GetDefaultInputDevice();
-  std::string defaultInputDeviceName = AUDIO_DEFAULT_DEVICE_NAME + defaultInputDevice.deviceName;
+                                .GetAudioSystemManager()
+                                .GetDefaultInputDevice();
+
+  if (!defaultInputDevice) {
+    LOG(ERROR) << "OHOSAudioManager::GetAudioInputDeviceNames "
+                  "defaultInputDeviceName is null";
+    return;
+  }
+
+  std::string defaultInputDeviceName =
+      AUDIO_DEFAULT_DEVICE_NAME + defaultInputDevice->GetDeviceName();
   AudioDeviceName device_name;
   device_name.unique_id = base::NumberToString(AUDIO_DEFAULT_DEVICE_ID);
   device_name.device_name = defaultInputDeviceName;
   device_names->push_front(device_name);
 }
-#endif // defined(OHOS_WEBRTC)
+#endif  // defined(OHOS_WEBRTC)
 
 const char* OHOSAudioManager::GetName() {
   return AUDIO_MANAGER_NAME;
@@ -147,9 +169,10 @@ AudioOutputStream* OHOSAudioManager::MakeLowLatencyOutputStream(
     int32_t ret = OhosAdapterHelper::GetInstance()
                       .GetAudioSystemManager()
                       .SetDeviceChangeCallback(outputDeviceChangeCallback_);
-    if (ret != 0)
+    if (ret != 0) {
       LOG(ERROR) << "OHOSAudioManager::SetDeviceChangeCallback failed. ret: "
                  << ret;
+    }
   }
   return new OHOSAudioOutputStream(this, params, isCommunication_);
 }
@@ -188,7 +211,7 @@ AudioParameters OHOSAudioManager::GetPreferredInputStreamParameters(
   LOG(INFO) << "OHOSAudioManager::GetPreferredInputStreamParameters";
   AudioParameters params =
       AudioParameters(AudioParameters::AUDIO_PCM_LOW_LATENCY,
-		              ChannelLayoutConfig::Guess(kDefaultChannelCount),
+                      ChannelLayoutConfig::Guess(kDefaultChannelCount),
                       kDefaultSampleRate, kMinimumInputBufferSize);
   params.set_effects(AudioParameters::ECHO_CANCELLER |
                      AudioParameters::NOISE_SUPPRESSION |
@@ -209,16 +232,14 @@ void OHOSAudioManager::SelectAudioDevice(const std::string& device_id,
   }
   LOG(INFO) << "OHOSAudioManager::SelectAudioDevice device_id is: "
             << device_id;
-  AudioAdapterDeviceDesc desc;
   int deviceId = 0;
   base::StringToInt(device_id, &deviceId);
-  desc.deviceId = deviceId;
-  desc.deviceName = std::string();
   int32_t ret = OhosAdapterHelper::GetInstance()
                     .GetAudioSystemManager()
-                    .SelectAudioDevice(desc, isInput);
-  if (ret != 0)
+                    .SelectAudioDeviceById(deviceId, isInput);
+  if (ret != 0) {
     LOG(ERROR) << "OHOSAudioManager::SelectAudioDevice failed. ret: " << ret;
+  }
 }
-#endif // defined(OHOS_WEBRTC)
+#endif  // defined(OHOS_WEBRTC)
 }  // namespace media

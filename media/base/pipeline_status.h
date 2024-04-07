@@ -72,8 +72,14 @@ enum PipelineStatusCodes : StatusCodeType {
   // The remote media component was disconnected unexpectedly, e.g. crash.
   PIPELINE_ERROR_DISCONNECTED = 24,
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  PIPELINE_ERROR_INITIALIZATION_FAILED_CUSTOM_PLAYER = 25,
+  // Must be equal to the largest value ever logged.
+  PIPELINE_STATUS_MAX = PIPELINE_ERROR_INITIALIZATION_FAILED_CUSTOM_PLAYER,
+#else
   // Must be equal to the largest value ever logged.
   PIPELINE_STATUS_MAX = PIPELINE_ERROR_DISCONNECTED,
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 };
 
 struct PipelineStatusTraits {

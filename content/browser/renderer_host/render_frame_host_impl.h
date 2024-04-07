@@ -2430,6 +2430,11 @@ class CONTENT_EXPORT RenderFrameHostImpl
                           WindowOpenDisposition disposition,
                           bool allow_popup,
                           GetCreateNewWindowCallback callback) override;
+
+  void GenerateCodeCache(const std::string& url,
+                         const std::string& script,
+                         const std::shared_ptr<oh_code_cache::CacheOptions>& cacheOptions,
+                         CodeCacheCallback callback) override;
 #endif
   void CreatePortal(
       mojo::PendingAssociatedReceiver<blink::mojom::Portal> pending_receiver,

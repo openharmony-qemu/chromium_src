@@ -36,6 +36,10 @@ class WakeLockContextHost {
     return wake_lock_context_ ? wake_lock_context_.get() : nullptr;
   }
 
+#if defined(OHOS_SCREEN_LOCK)
+  void SetWakeLockHandler(int32_t windowId, const SetKeepScreenOn& handler);
+#endif
+
  private:
   // This instance's ID.
   int id_;
@@ -45,6 +49,10 @@ class WakeLockContextHost {
 
   // The WakeLockContext instance that is connected to this instance.
   mojo::Remote<device::mojom::WakeLockContext> wake_lock_context_;
+
+#if defined(OHOS_SCREEN_LOCK)
+  int32_t window_id_ = -1;
+#endif
 };
 
 }  // namespace content

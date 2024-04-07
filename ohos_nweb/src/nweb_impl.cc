@@ -52,10 +52,6 @@
 #include "soc_perf_client_adapter.h"
 #endif
 
-#ifdef OHOS_SCREEN_LOCK
-#include "services/device/wake_lock/power_save_blocker/nweb_screen_lock_tracker.h"
-#endif
-
 #if defined(OHOS_API_INIT_WEB_ENGINE)
 #include "cef_delegate/nweb_application.h"
 #include "content/public/browser/network_service_instance.h"
@@ -150,10 +146,10 @@ bool GetWebOptimizationValue() {
   return system_properties_adapter.GetWebOptimizationValue();
 }
 
-static bool GetLockdownModeStatus() {
+static bool IsAdvancedSecurityMode() {
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                                     .GetSystemPropertiesInstance();
-  return system_properties_adapter.GetLockdownModeStatus();
+  return system_properties_adapter.IsAdvancedSecurityMode();
 }
 
 static std::string GetNetlogMode() {
@@ -205,7 +201,7 @@ static bool ShouldEnableSiteIsolation() {
     return true;
   }
 
-  if (GetLockdownModeStatus() && IsMultipleRenderProcess()) {
+  if (IsAdvancedSecurityMode() && IsMultipleRenderProcess()) {
     return true;
   }
 
@@ -285,8 +281,8 @@ void InitialWebEngineArgs(std::list<std::string>& web_engine_args,
     web_engine_args.emplace_back("--log-net-log=/data/storage/el2/base/cache/web/netlog.json");
   }
 
-  if (GetLockdownModeStatus()) {
-    WVLOG_W("In lockdown mode, some HTML5 features will be unavailable, including WebAssembly, WebGL, PDF viewer, MathML, speech recognition, etc.");
+  if (IsAdvancedSecurityMode()) {
+    WVLOG_I("In advanced security mode, some HTML5 features will be unavailable, including WebAssembly, WebGL, PDF viewer, MathML, speech recognition, etc.");
     web_engine_args.emplace_back("--js-flags=--jitless");
     web_engine_args.emplace_back("--disable-webgl");
     web_engine_args.emplace_back("--disable-webgl2");
@@ -1768,15 +1764,15 @@ int NWebImpl::GetMediaPlaybackState() {
 #ifdef OHOS_SCREEN_LOCK
 void NWebImpl::RegisterScreenLockFunction(int32_t windowId,
                                           std::shared_ptr<NWebScreenLockCallback> callback) {
-  NWebScreenLockTracker::Instance().AddScreenLock(windowId, nweb_id_, [callback](bool key) {
-    if (callback) {
-      callback->Handle(key);
-    }
-  });
+  if (nweb_delegate_) {
+    nweb_delegate_->SetWakeLockCallback(windowId, callback);
+  }
 }
 
 void NWebImpl::UnRegisterScreenLockFunction(int32_t windowId) {
-  NWebScreenLockTracker::Instance().RemoveScreenLock(windowId, nweb_id_);
+  if (nweb_delegate_) {
+    nweb_delegate_->SetWakeLockCallback(windowId, nullptr);
+  }
 }
 #endif  // #ifdef OHOS_SCREEN_LOCK
 
@@ -1895,6 +1891,17 @@ bool NWebImpl::GetPrintBackground() {
 }
 
 void NWebImpl::SetNestedScrollMode(const NestedScrollMode& nestedScrollMode) {}
+
+void NWebImpl::PrecompileJavaScript(const std::string& url,
+                          const std::string& script,
+                          std::shared_ptr<CacheOptions>& cacheOptions,
+                          std::shared_ptr<NWebMessageValueCallback> callback) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "PrecompileJavaScript: nweb delegate has not init.";
+    return;
+  }
+  nweb_delegate_->PrecompileJavaScript(url, script, cacheOptions, callback);
+}
 #endif
 
 #if defined(OHOS_INPUT_EVENTS)
@@ -2459,6 +2466,18 @@ bool NWebImpl::IsAnyNWebIntelligentTrackingPreventionEnabled() {
   return false;
 }
 #endif
+
+void NWebImpl::OnCreateNativeMediaPlayer(
+    std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("set create custome media player callback failed, nweb delegate is nullptr, nweb_id = %{public}u", nweb_id_);
+    return;
+  }
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  nweb_delegate_->RegisterOnCreateNativeMediaPlayerListener(std::move(callback));
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+}
 
 // static
 void NWebImpl::AddIntelligentTrackingPreventionBypassingList(

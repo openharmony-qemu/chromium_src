@@ -11,6 +11,7 @@
 #include "base/memory/ref_counted.h"
 #include "ui/gl/gl_export.h"
 #include "graphic_adapter.h"
+#include "ui/gl/ohos/frame_available_listener_impl.h"
 
 namespace gl {
 
@@ -40,7 +41,7 @@ class GL_EXPORT OhosNativeImage
   virtual ~OhosNativeImage();
 
   std::unique_ptr<OHOS::NWeb::NativeImageAdapter> native_image_adapter_;
-  std::unique_ptr<OHOS::NWeb::OnFrameAvailableListener> listener_;
+  std::shared_ptr<OHOS::NWeb::FrameAvailableListenerImpl> listener_;
 
   base::RepeatingClosure frame_available_cb_;
 };

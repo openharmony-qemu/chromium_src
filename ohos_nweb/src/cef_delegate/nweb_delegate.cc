@@ -34,6 +34,7 @@
 #include "cef/include/cef_base.h"
 #include "cef/include/cef_request_context.h"
 #include "content/public/common/content_switches.h"
+#include "cef/include/internal/cef_string_map.h"
 #if defined(REPORT_SYS_EVENT)
 #include "event_reporter.h"
 #endif
@@ -89,6 +90,7 @@ const int NWebPlaybackState_NONE = 0;
 #endif
 
 static const int kDefaultWebNativeProxy = -2;
+int32_t draw_mode_ = -1;
 
 #if defined(OHOS_MSGPORT)
 void ConvertCefValueToNWebMessage(CefRefPtr<CefValue> src,
@@ -273,6 +275,61 @@ class GetImagesCallbackImpl : public CefGetImagesCallback {
   std::shared_ptr<NWebBoolValueCallback> callback_;
 
   IMPLEMENT_REFCOUNTING(GetImagesCallbackImpl);
+};
+
+class CefPrecompileCallbackImpl : public CefPrecompileCallback {
+ public:
+  explicit CefPrecompileCallbackImpl(
+      std::shared_ptr<NWebMessageValueCallback> callback)
+      : callback_(callback) {}
+
+  void OnPrecompileFinished(int32_t result) override {
+    if (callback_ != nullptr) {
+      auto message = std::make_shared<OHOS::NWeb::NWebMessage>(NWebValue::Type::INTEGER);
+      message->SetInt64(result);
+      callback_->OnReceiveValue(message);
+    }
+  }
+
+ private:
+  std::shared_ptr<NWebMessageValueCallback> callback_;
+
+  IMPLEMENT_REFCOUNTING(CefPrecompileCallbackImpl);
+};
+
+class CefCacheOptionsImpl : public CefCacheOptions {
+ public:
+  explicit CefCacheOptionsImpl(const std::shared_ptr<CacheOptions>& cacheOptions) :
+      responseHeaders_(cacheOptions->GetResponseHeaders()),
+      isModule_(cacheOptions->IsModule()),
+      isTopLevel_(cacheOptions->IsModule()) {}
+
+  cef_string_map_t GetResponseHeaders() override {
+    cef_string_map_t cefHeaders = cef_string_map_alloc();
+    for (const auto& pair : responseHeaders_) {
+      cef_string_t key = {};
+      cef_string_t value = {};
+      cef_string_from_utf8(pair.first.c_str(), pair.first.size(), &key);
+      cef_string_from_utf8(pair.second.c_str(), pair.second.size(), &value);
+      cef_string_map_append(cefHeaders, &key, &value);
+    }
+    return cefHeaders;
+  }
+
+  bool IsModule() override {
+    return isModule_;
+  }
+
+  bool IsTopLevel() override {
+    return isTopLevel_;
+  }
+
+ private:
+  std::map<std::string, std::string> responseHeaders_;
+  bool isModule_;
+  bool isTopLevel_;
+
+  IMPLEMENT_REFCOUNTING(CefCacheOptionsImpl);
 };
 
 #ifdef OHOS_NAVIGATION
@@ -2350,6 +2407,10 @@ void NWebDelegate::SetDrawRect(int32_t x, int32_t y, int32_t width, int32_t heig
 }
 
 void NWebDelegate::SetDrawMode(int32_t mode) {
+  if (draw_mode_ == mode) {
+    return;
+  }
+  draw_mode_ = mode;
   if (GetBrowser().get()) {
     GetBrowser()->GetHost()->SetDrawMode(mode);
   }
@@ -2784,6 +2845,20 @@ void NWebDelegate::EnableSafeBrowsing(bool enable) {
   GetBrowser()->EnableSafeBrowsing(enable);
 
 }
+
+void NWebDelegate::PrecompileJavaScript(const std::string& url,
+                                        const std::string& script,
+                                        std::shared_ptr<CacheOptions>& cacheOptions,
+                                        std::shared_ptr<NWebMessageValueCallback> callback) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "NWebDelegate::PrecompileJavaScript failed. browser host has not initialized";
+    return;
+  }
+
+  CefRefPtr<CefPrecompileCallbackImpl> precompileCallback = new CefPrecompileCallbackImpl(callback);
+  CefRefPtr<CefCacheOptionsImpl> cefOptions = new CefCacheOptionsImpl(cacheOptions);
+  GetBrowser()->GetHost()->PrecompileJavaScript(url, script, cefOptions, precompileCallback);
+}
 #endif
 
 void NWebDelegate::RegisterAccessibilityEventListener(
@@ -2806,7 +2881,7 @@ void NWebDelegate::SetAccessibilityState(cef_state_t accessibilityState) {
   }
   if (accessibility_state_ != (accessibilityState == STATE_ENABLED)) {
     accessibility_state_ = (accessibilityState == STATE_ENABLED);
-    LOG(INFO) << "SetAccessibilityState accessibility_state_ " << accessibility_state_;
+    LOG(DEBUG) << "SetAccessibilityState state: " << accessibility_state_;
     GetBrowser()->GetHost()->SetAccessibilityState(accessibilityState);
   }
 }
@@ -2866,7 +2941,7 @@ content::BrowserAccessibilityManagerOHOS*
 NWebDelegate::GetAccessibilityManager() const {
   if (!accessibility_state_ || GetBrowser() == nullptr
       || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "GetAccessibilityManager can not get browser";
+    LOG(DEBUG) << "GetAccessibilityManager can not get browser";
     return nullptr;
   }
   void* manager = nullptr;
@@ -3161,6 +3236,15 @@ void NWebDelegate::AddAccessibilityNodeInfoActions(
   nodeInfo->SetActions(actions);
 }
 
+#if defined(OHOS_SCREEN_LOCK)
+void NWebDelegate::SetWakeLockCallback(
+    int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback) {
+  if (handler_delegate_) {
+    handler_delegate_->SetWakeLockCallback(windowId, callback);
+  }
+}
+#endif
+
 #if defined(OHOS_SECURE_JAVASCRIPT_PROXY)
 std::string NWebDelegate::GetLastJavascriptProxyCallingFrameUrl() {
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
@@ -3191,4 +3275,15 @@ bool NWebDelegate::IsIntelligentTrackingPreventionEnabled() const {
   return GetBrowser()->IsIntelligentTrackingPreventionEnabled();
 }
 #endif
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void NWebDelegate::RegisterOnCreateNativeMediaPlayerListener(
+    std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) {
+  if (handler_delegate_ == nullptr) {
+    LOG(ERROR) << "fail to set create native media player callback, NWEB handler is nullptr";
+    return;
+  }
+  handler_delegate_->RegisterOnCreateNativeMediaPlayerListener(std::move(callback));
+}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 }  // namespace OHOS::NWeb

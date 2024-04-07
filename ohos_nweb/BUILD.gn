@@ -237,6 +237,19 @@ component("cef_nweb") {
 
   #endif
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  if (defined(ohos_custom_video_player) && ohos_custom_video_player) {
+    sources += [
+      "src/cef_delegate/custom_media_player_impl.cc",
+      "src/cef_delegate/custom_media_player_impl.h",
+      "src/native_media_player/nweb_native_media_player_handler_impl.cc",
+      "src/native_media_player/nweb_native_media_player_handler_impl.h",
+      "src/native_media_player/nweb_media_info_impl.cc",
+      "src/native_media_player/nweb_media_info_impl.h",
+    ]
+  }
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
   deps += [
     "//base:base",
     "//content/public/common",
@@ -331,6 +344,14 @@ component("nweb_sources") {
     "src/nweb_first_meaningful_paint_details_impl.h",
     "src/nweb_largest_contentful_paint_details_impl.cc",
     "src/nweb_largest_contentful_paint_details_impl.h",
+    "src/nweb_imf_cursor_info_adapter_impl.cc",
+    "src/nweb_imf_cursor_info_adapter_impl.h",
+    "src/nweb_imf_input_attribute_adapter_impl.cc",
+    "src/nweb_imf_input_attribute_adapter_impl.h",
+    "src/nweb_imf_selection_range_adapter_impl.cc",
+    "src/nweb_imf_selection_range_adapter_impl.h",
+    "src/nweb_imf_text_config_adapter_impl.cc",
+    "src/nweb_imf_text_config_adapter_impl.h",
   ]
 
   #if defined(OHOS_NAVIGATION)
@@ -360,7 +381,6 @@ component("nweb_sources") {
 
   public_deps = [ "//third_party/abseil-cpp:absl" ]
 
-  #libs = [ "nweb_ohos_adapter.z" ]
   deps += [
     "//third_party/ohos_ndk:ohos_isolation",
   ]

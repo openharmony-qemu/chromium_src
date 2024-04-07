@@ -43,6 +43,7 @@ class MojoRendererWrapper : public Renderer {
   base::TimeDelta GetMediaTime() override;
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void SetMuted(bool muted) override;
   void SetSurfaceId(int surface_id) override;
   void SetMediaSourceList(
       const std::vector<MediaSourceInfo>& source_infos) override;

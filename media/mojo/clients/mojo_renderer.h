@@ -66,6 +66,7 @@ class MojoRenderer : public Renderer, public mojom::RendererClient {
   RendererType GetRendererType() override;
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void SetMuted(bool muted) override;
   void SetSurfaceId(int surface_id) override;
   void SetMediaSourceList(
       const std::vector<MediaSourceInfo>& source_infos) override;
@@ -181,6 +182,7 @@ class MojoRenderer : public Renderer, public mojom::RendererClient {
   std::string poster_url_;
   base::flat_map<std::string, std::string> attributes_;
   bool is_audio_ = false;
+  bool muted_ = false;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 };
 

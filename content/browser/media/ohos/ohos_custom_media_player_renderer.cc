@@ -215,7 +215,7 @@ void OHOSCustomMediaPlayerRenderer::CreateMediaPlayer() {
   media_info.surface_info.id = surface_id_string;
   media_info.controls = show_media_controls_;
   media_info.controlslist = std::move(controls_list_);
-  media_info.muted = false;
+  media_info.muted = muted_;
   media_info.poster_url = poster_url_;
   media_info.preload = MediaInfo::Preload::AUTO;
   media_info.attributes = std::move(attributes_);
@@ -340,6 +340,10 @@ void OHOSCustomMediaPlayerRenderer::OnVideoSizeChanged(int width, int height) {
     // MPRClient will then continue propagating changes via its RendererClient.
     client_extension_->OnVideoSizeChange(video_size_);
   }
+}
+
+void OHOSCustomMediaPlayerRenderer::SetMuted(bool muted) {
+  muted_ = muted;
 }
 
 void OHOSCustomMediaPlayerRenderer::SetSurfaceId(int surface_id) {

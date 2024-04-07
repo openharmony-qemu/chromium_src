@@ -51,6 +51,9 @@ base::TimeDelta MojoRendererWrapper::GetMediaTime() {
 }
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void MojoRendererWrapper::SetMuted(bool muted) {
+  mojo_renderer_->SetMuted(muted);
+}
 void MojoRendererWrapper::SetSurfaceId(int surface_id) {
   mojo_renderer_->SetSurfaceId(surface_id);
 }

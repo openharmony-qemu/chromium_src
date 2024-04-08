@@ -70,13 +70,11 @@ public:
       const std::map<std::string, std::string> &additional_http_headers,
       const std::string &cache_key, const uint32_t &cache_valid_time) = 0;
 
-<<<<<<< HEAD
-  virtual void WarmupServiceWorker(const std::string &url) = 0;
-=======
   virtual void SetRenderProcessMode(RenderProcessMode mode) = 0;
 
   virtual RenderProcessMode GetRenderProcessMode() = 0;
->>>>>>> master_center
+
+  virtual void WarmupServiceWorker(const std::string &url) = 0;
 };
 
 } // namespace OHOS::NWeb

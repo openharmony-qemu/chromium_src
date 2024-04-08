@@ -46,8 +46,12 @@ class AnimationThroughputReporterTestBase : public testing::Test {
   void QuitRunLoop();
 
  private:
+#if defined(OHOS_UNITTESTS)
+  base::test::TaskEnvironment task_environment_{};
+#else
   base::test::TaskEnvironment task_environment_{
       base::test::TaskEnvironment::MainThreadType::UI};
+#endif
 
   std::unique_ptr<TestContextFactories> context_factories_;
   std::unique_ptr<TestCompositorHost> host_;

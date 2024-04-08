@@ -31,7 +31,7 @@ namespace gfx {
 namespace {
 
 gfx::AcceleratedWidget CastToAcceleratedWidget(int i) {
-#if BUILDFLAG(IS_OZONE) || BUILDFLAG(IS_APPLE)
+#if BUILDFLAG(IS_OZONE) || BUILDFLAG(IS_APPLE) && !defined(OHOS_UNITTESTS)
   return static_cast<gfx::AcceleratedWidget>(i);
 #else
   return reinterpret_cast<gfx::AcceleratedWidget>(i);
@@ -91,7 +91,11 @@ class StructTraitsTest : public testing::Test, public mojom::TraitsTestService {
     std::move(callback).Run(r);
   }
 
+#if defined(OHOS_UNITTESTS)
+  base::test::TaskEnvironment task_environment_{};
+#else
   base::test::TaskEnvironment task_environment_;
+#endif
   mojo::ReceiverSet<TraitsTestService> traits_test_receivers_;
 };
 

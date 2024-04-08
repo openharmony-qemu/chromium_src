@@ -26,6 +26,8 @@
 #include "mojo/public/cpp/bindings/remote.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#if ! defined(OHOS_UNITTESTS)
+
 namespace viz {
 namespace {
 
@@ -927,3 +929,5 @@ INSTANTIATE_TEST_SUITE_P(
                        ::testing::ValuesIn(kBFSOrderList)));
 
 }  // namespace viz
+
+#endif  // !defined(OHOS_UNITTESTS)

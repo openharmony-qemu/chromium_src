@@ -150,6 +150,7 @@ struct NWebCursorInfo {
     int32_t x = 0;
     int32_t y = 0;
     float scale = 1.0;
+    uint8_t* buff = nullptr;
 };
 
 class NWebTouchHandleHotZone {

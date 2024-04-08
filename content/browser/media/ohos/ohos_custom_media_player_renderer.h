@@ -94,6 +94,7 @@ class CONTENT_EXPORT OHOSCustomMediaPlayerRenderer
   void UpdateMuted(bool muted);
   void UpdatePlaybackRate(double playback_rate);
   void UpdateBufferedEndTime(double buffered_time);
+  void OnFullscreenChanged(bool fullscreen);
 
  private:
   void CreateMediaPlayer();

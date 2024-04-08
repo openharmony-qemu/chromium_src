@@ -62,6 +62,12 @@ interface MediaPlayer {
   // Request the media player to start Media Remoting when there are available
   // sinks.
   RequestMediaRemoting();
+
+  [EnableIf=ohos_custom_video_player]
+  RequestEnterFullscreen();
+
+  [EnableIf=ohos_custom_video_player]
+  RequestExitFullscreen();
 };
 
 // Implemented by the MediaWebContentsObserver. The remote lives in the renderer
@@ -121,6 +127,9 @@ interface MediaPlayerObserver {
 
   [EnableIf=ohos_custom_video_player]
   UpdateLayerRect(gfx.mojom.Rect rect);
+
+  [EnableIf=ohos_custom_video_player]
+  FullscreenChanged(bool is_fullscreen);
 };
 
 // Implemented by MediaWebContentsObserver::MediaPlayerHostImpl in the browser

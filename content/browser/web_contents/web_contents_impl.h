@@ -1507,6 +1507,11 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
                                CustomMediaPlayer* player);
   void UpdateLayerRect(const MediaPlayerId& player_id,
                        const gfx::Rect& rect);
+  void FullScreenChanged(const MediaPlayerId& player_id,
+                         bool is_fullscreen);
+
+  void RequestEnterFullscreen(const MediaPlayerId& player_id);
+  void RequestExitFullscreen(const MediaPlayerId& player_id);
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
  private:

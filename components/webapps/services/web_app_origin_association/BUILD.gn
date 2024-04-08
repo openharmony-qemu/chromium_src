@@ -45,10 +45,14 @@ source_set("service") {
 source_set("unit_tests") {
   testonly = true
   sources = [
-    "web_app_origin_association_fetcher_unittest.cc",
     "web_app_origin_association_parser_impl_unittest.cc",
     "web_app_origin_association_parser_unittest.cc",
   ]
+  if (!ohos_unittests) {
+    sources += [
+      "web_app_origin_association_fetcher_unittest.cc",
+    ]
+  }
 
   deps = [
     "//base",

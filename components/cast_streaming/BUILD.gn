@@ -16,8 +16,10 @@ buildflag_header("buildflags") {
 
 source_set("unit_tests") {
   testonly = true
-  deps = [
-    "//components/cast_streaming/browser:unit_tests",
-    "//components/cast_streaming/renderer:unit_tests",
-  ]
+  if (!ohos_unittests) {
+    deps = [
+      "//components/cast_streaming/browser:unit_tests",
+      "//components/cast_streaming/renderer:unit_tests",
+    ]
+  }
 }

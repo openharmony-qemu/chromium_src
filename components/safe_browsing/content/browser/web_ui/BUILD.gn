@@ -42,7 +42,9 @@ static_library("web_ui") {
 
 source_set("unit_tests") {
   testonly = true
-  sources = [ "safe_browsing_ui_unittest.cc" ]
+  if (!ohos_unittests) {
+    sources = [ "safe_browsing_ui_unittest.cc" ]
+  }
 
   deps = [
     ":web_ui",

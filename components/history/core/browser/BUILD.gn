@@ -163,7 +163,6 @@ source_set("unit_tests") {
     "browsing_history_service_unittest.cc",
     "download_slice_info_unittest.cc",
     "expire_history_backend_unittest.cc",
-    "history_backend_db_unittest.cc",
     "history_backend_unittest.cc",
     "history_database_unittest.cc",
     "history_querying_unittest.cc",
@@ -187,6 +186,11 @@ source_set("unit_tests") {
     "visit_tracker_unittest.cc",
     "web_history_service_unittest.cc",
   ]
+  if (!ohos_unittests) {
+    sources += [
+      "history_backend_db_unittest.cc",
+    ]
+  }
   deps = [
     ":browser",
     "//base",

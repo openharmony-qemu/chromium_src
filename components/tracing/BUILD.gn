@@ -88,11 +88,12 @@ source_set("unit_tests") {
     sources = [ "common/trace_startup_config_unittest.cc" ]
     deps += [ ":startup_tracing" ]
   }
-
-  sources += [
-    "common/background_tracing_state_manager_unittest.cc",
-    "common/background_tracing_utils_unittest.cc",
-  ]
+  if (!ohos_unittests) {
+    sources += [
+      "common/background_tracing_state_manager_unittest.cc",
+      "common/background_tracing_utils_unittest.cc",
+    ]
+  }
   deps += [
     ":background_tracing_utils",
     ":startup_tracing",

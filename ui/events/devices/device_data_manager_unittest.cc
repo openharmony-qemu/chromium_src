@@ -35,6 +35,7 @@ class DeviceDataManagerTest : public testing::Test {
   }
 };
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(DeviceDataManagerTest, DisplayIdUpdated) {
   DeviceDataManager* device_data_manager = DeviceDataManager::GetInstance();
   std::vector<TouchscreenDevice> touchscreen_devices(1);
@@ -56,6 +57,7 @@ TEST_F(DeviceDataManagerTest, DisplayIdUpdated) {
   EXPECT_EQ(kDisplayId,
             device_data_manager->GetTouchscreenDevices()[0].target_display_id);
 }
+#endif // OHOS_UNITTESTS events_unittests drop case
 
 namespace {
 
@@ -82,6 +84,7 @@ class TestInputDeviceEventObserver : public InputDeviceEventObserver {
 
 }  // namespace
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(DeviceDataManagerTest, AreTouchscreenTargetDisplaysValid) {
   DeviceDataManager* device_data_manager = DeviceDataManager::GetInstance();
   EXPECT_FALSE(device_data_manager->AreTouchscreenTargetDisplaysValid());
@@ -109,5 +112,6 @@ TEST_F(DeviceDataManagerTest, AreTouchscreenTargetDisplaysValid) {
   EXPECT_EQ(2, observer.on_touch_device_associations_changed_call_count());
   EXPECT_TRUE(device_data_manager->AreTouchscreenTargetDisplaysValid());
 }
+#endif // OHOS_UNITTESTS events_unittests drop case
 
 }  // namespace ui

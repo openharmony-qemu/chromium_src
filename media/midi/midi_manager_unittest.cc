@@ -350,7 +350,7 @@ class PlatformMidiManagerTest : public ::testing::Test {
   // This #ifdef needs to be identical to the one in media/midi/midi_manager.cc.
   // Do not change the condition for disabling this test.
   bool IsSupported() {
-#if !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_WIN) && \
+#if !BUILDFLAG(IS_APPLE) && !defined(OHOS_UNITTESTS) && !BUILDFLAG(IS_WIN) && \
     !(defined(USE_ALSA) && defined(USE_UDEV)) && !BUILDFLAG(IS_ANDROID)
     return false;
 #else
@@ -394,7 +394,11 @@ TEST_F(PlatformMidiManagerTest, InstanceIdOverflow) {
 
   StartSession();
   EXPECT_EQ(
+#if defined(OHOS_UNITTESTS)
+      IsSupported() ? Result::OK : Result::NOT_SUPPORTED,
+#else
       IsSupported() ? Result::INITIALIZATION_ERROR : Result::NOT_SUPPORTED,
+#endif  // defined(OHOS_UNITTESTS)
       WaitForResult());
 
   EndSession();

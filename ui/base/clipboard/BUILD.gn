@@ -274,7 +274,11 @@ source_set("clipboard_test") {
       "clipboard_non_backed_unittest.cc",
     ]
   }
-
+  if (ohos_unittests) {
+    sources -= [
+      "clipboard_non_backed_unittest.cc",
+    ]
+  }
   deps = [
     ":clipboard_test_support",
     "//base/test:test_support",

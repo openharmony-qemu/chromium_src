@@ -623,6 +623,11 @@ void InputRouterImpl::FilterAndSendWebInputEvent(
                                        latency_info.trace_id());
               });
 
+  if (input_event.GetType() == WebInputEvent::Type::kGestureScrollUpdate) {
+    OHOS::NWeb::ResSchedClientAdapter::ReportScene(
+      OHOS::NWeb::ResSchedStatusAdapter::WEB_SCENE_ENTER, OHOS::NWeb::ResSchedSceneAdapter::SLIDE);
+  }
+
   output_stream_validator_.Validate(input_event);
   blink::mojom::InputEventResultState filtered_state =
       client_->FilterInputEvent(input_event, latency_info);

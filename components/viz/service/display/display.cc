@@ -76,26 +76,40 @@
 #endif
 namespace viz {
 #if defined(OHOS_DFX_DUMP)
+const int DUMP_FRAME_FREQ = 60;
+
 class DumpFrameObserver : public OHOS::NWeb::SystemPropertiesObserver {
  public:
-   DumpFrameObserver() = default;
-   ~DumpFrameObserver() override = default;
+    DumpFrameObserver() = default;
+    ~DumpFrameObserver() override = default;
 
-   void PropertiesUpdate(const char* value) override {
-    if (strcmp(value, "true") == 0) {
-      should_dump_ = true;
-    } else if (strcmp(value, "false") == 0) {
-      should_dump_ = false;
-    } else {
-      LOG(ERROR) << "sys prop observer return value is invalid";
+    void PropertiesUpdate(const char* value) override {
+      if (strcmp(value, "true") == 0) {
+        should_dump_ = true;
+      } else if (strcmp(value, "false") == 0) {
+        should_dump_ = false;
+      } else {
+        LOG(ERROR) << "sys prop observer return value is invalid";
+      }
     }
-   }
 
-   bool ShouldDump() {
-     return should_dump_;
-   }
+    bool ShouldDump() {
+      return should_dump_;
+    }
+
+    bool ShouldDumpInFreq() {
+      if (dump_freq_count == DUMP_FRAME_FREQ) {
+        dump_freq_count = 0;
+        return true;
+      } else {
+        dump_freq_count++;
+        return false;
+      }
+    }
+
  private:
     bool should_dump_ = false;
+    int dump_freq_count = 0;
 };
 #endif
 
@@ -956,11 +970,14 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
     DebugDrawFrameVisible(frame);
 #if defined(OHOS_DFX_DUMP)
     if (dump_frame_observer_ && dump_frame_observer_->ShouldDump()) {
-      auto request = std::make_unique<FrameDumpCopyOutputRequest>();
-      auto& root_render_pass = frame.render_pass_list.back();
-      if (root_render_pass) {
-        root_render_pass->copy_requests.push_back(std::move(request));
+      if (dump_frame_observer_->ShouldDumpInFreq()) {
+        auto request = std::make_unique<FrameDumpCopyOutputRequest>();
+        auto& root_render_pass = frame.render_pass_list.back();
+        if (root_render_pass) {
+          root_render_pass->copy_requests.push_back(std::move(request));
+        }
       }
+
     }
 #endif
     UMA_HISTOGRAM_COUNTS_1000(

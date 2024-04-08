@@ -27,12 +27,20 @@ class SlideAnimationTest : public testing::Test {
   SlideAnimation* slide_animation() { return slide_animation_.get(); }
 
  protected:
+#if defined(OHOS_UNITTESTS)
+  SlideAnimationTest()
+      : task_environment_(),
+        slide_animation_(std::make_unique<SlideAnimation>(nullptr)),
+        animation_api_(
+            std::make_unique<AnimationTestApi>(slide_animation_.get())) {}
+#else
   SlideAnimationTest()
       : task_environment_(
             base::test::SingleThreadTaskEnvironment::MainThreadType::UI),
         slide_animation_(std::make_unique<SlideAnimation>(nullptr)),
         animation_api_(
             std::make_unique<AnimationTestApi>(slide_animation_.get())) {}
+#endif
 
  private:
   base::test::SingleThreadTaskEnvironment task_environment_;

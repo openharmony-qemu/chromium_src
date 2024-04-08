@@ -183,6 +183,12 @@ static_library("test_support") {
     sources += [ "test/test_compositor_host_win.cc" ]
   }
 
+  if (ohos_unittests) {
+    sources += [
+      "test/test_compositor_host_ohos.cc",
+    ]
+  }
+
   public_deps = [ ":compositor" ]
   deps = [
     "//base/test:test_support",
@@ -213,7 +219,7 @@ static_library("test_support") {
     ]
   }
 
-  if (use_ozone) {
+  if (use_ozone && !ohos_unittests) {
     sources += [
       "test/test_compositor_host_ozone.cc",
       "test/test_compositor_host_ozone.h",

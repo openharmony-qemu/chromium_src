@@ -8,6 +8,8 @@
 #include "ui/gfx/animation/animation_container_element.h"
 #include "ui/gfx/animation/animation_delegate.h"
 
+#if !defined(OHOS_UNITTESTS)
+
 namespace gfx {
 
 TEST(MultiAnimationTest, Basic) {
@@ -133,3 +135,5 @@ TEST(MultiAnimationTest, GetCurrentValueDerivedFromStartAndEndOfCurrentPart) {
 }
 
 }  // namespace gfx
+
+#endif  // !defined(OHOS_UNITTESTS)

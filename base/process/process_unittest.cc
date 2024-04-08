@@ -352,6 +352,11 @@ TEST_F(ProcessTest, SetProcessBackgrounded) {
   if (!Process::CanBackgroundProcesses())
     return;
   Process process(SpawnChild("SimpleChildProcess"));
+#if defined(OHOS_UNITTESTS)
+  // initialize priority
+  process.SetProcessBackgrounded(false);
+#endif // defined(OHOS_UNITTESTS)
+
   int old_priority = process.GetPriority();
 #if BUILDFLAG(IS_APPLE)
   // On the Mac, backgrounding a process requires a port to that process.

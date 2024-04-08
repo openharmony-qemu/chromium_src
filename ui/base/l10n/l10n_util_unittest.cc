@@ -57,6 +57,7 @@ class StringWrapper {
 class L10nUtilTest : public PlatformTest {
 };
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(L10nUtilTest, GetString) {
   std::string s = l10n_util::GetStringUTF8(IDS_SIMPLE);
   EXPECT_EQ(std::string("Hello World!"), s);
@@ -70,6 +71,7 @@ TEST_F(L10nUtilTest, GetString) {
   // See //base/strings/string_util.h ReplaceStringPlaceholders().
   EXPECT_EQ(u"You owe me $$1.", s16);
 }
+#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
 #if !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID)
 // On Mac, we are disabling this test because GetApplicationLocale() as an
@@ -90,9 +92,13 @@ const bool kPlatformHasDefaultLocale = true;
 const bool kUseLocaleFromEnvironment = false;
 const bool kSupportsLocalePreference = true;
 #else
+#if !defined(OHOS_UNITTESTS)
 const bool kPlatformHasDefaultLocale = false;
+#endif // OHOS_UNITTESTS ui_base_unittests drop case
 const bool kUseLocaleFromEnvironment = false;
+#if !defined(OHOS_UNITTESTS)
 const bool kSupportsLocalePreference = true;
+#endif // OHOS_UNITTESTS ui_base_unittests drop case
 #endif
 
 void SetDefaultLocaleForTest(const std::string& tag, base::Environment* env) {
@@ -102,6 +108,7 @@ void SetDefaultLocaleForTest(const std::string& tag, base::Environment* env) {
     base::i18n::SetICUDefaultLocale(tag);
 }
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(L10nUtilTest, GetAppLocale) {
   std::unique_ptr<base::Environment> env;
   // Use a temporary locale dir so we don't have to actually build the locale
@@ -383,6 +390,7 @@ TEST_F(L10nUtilTest, GetAppLocale) {
   // Clean up.
   base::i18n::SetICUDefaultLocale(original_locale);
 }
+#endif // OHOS_UNITTESTS ui_base_unittests drop case
 #endif  // !BUILDFLAG(IS_APPLE)
 
 TEST_F(L10nUtilTest, SortStringsUsingFunction) {

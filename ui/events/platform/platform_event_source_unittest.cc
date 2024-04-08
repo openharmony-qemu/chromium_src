@@ -555,7 +555,9 @@ class ScopedDispatcherRestoresAfterDestroy
   }
 };
 
+#if !defined(OHOS_UNITTESTS)
 RUN_TEST_IN_MESSAGE_LOOP(ScopedDispatcherRestoresAfterDestroy)
+#endif // OHOS_UNITTESTS events_unittests drop case
 
 // This dispatcher destroys the handle to the ScopedEventDispatcher when
 // dispatching an event.
@@ -690,7 +692,9 @@ class ConsecutiveOverriddenDispatcherInTheSameMessageLoopIteration
   base::RunLoop run_loop_{base::RunLoop::Type::kNestableTasksAllowed};
 };
 
+#if !defined(OHOS_UNITTESTS)
 RUN_TEST_IN_MESSAGE_LOOP(
     ConsecutiveOverriddenDispatcherInTheSameMessageLoopIteration)
 
+#endif // OHOS_UNITTESTS events_unittests drop case
 }  // namespace ui

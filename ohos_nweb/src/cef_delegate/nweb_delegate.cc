@@ -2061,7 +2061,7 @@ void NWebDelegate::UpdateLocale(const std::string& language,
   }
 
   CefString locale = "";
-  if (language == "en" && region == "US") {
+  if (language == "en") {
     locale = "en-US";
   } else if (language == "zh") {
     locale = "zh-CN";

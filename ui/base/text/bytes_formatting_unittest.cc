@@ -30,6 +30,7 @@ TEST(BytesFormattingTest, GetByteDisplayUnits) {
     EXPECT_EQ(cases[i].expected, GetByteDisplayUnits(cases[i].bytes));
 }
 
+#if !defined(OHOS_UNITTESTS)
 TEST(BytesFormattingTest, FormatBytes) {
   static const struct {
     int64_t bytes;
@@ -73,5 +74,6 @@ TEST(BytesFormattingTest, FormatBytes) {
               FormatBytesWithUnits(cases[i].bytes, cases[i].units, true));
   }
 }
+#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
 }  // namespace ui

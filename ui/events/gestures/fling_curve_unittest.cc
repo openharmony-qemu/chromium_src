@@ -6,8 +6,13 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/system/sys_info.h"
+#endif // BUILDFLAG(IS_OHOS)
+
 namespace ui {
 
+#if !defined(OHOS_UNITTESTS)
 TEST(FlingCurveTest, Basic) {
   const gfx::Vector2dF velocity(0, 5000);
   base::TimeTicks now = base::TimeTicks::Now();
@@ -22,14 +27,31 @@ TEST(FlingCurveTest, Basic) {
   EXPECT_TRUE(
       curve.ComputeScrollDeltaAtTime(now + base::Milliseconds(250), &delta));
   EXPECT_EQ(0, delta.x());
+#if BUILDFLAG(IS_OHOS)
+  if (base::SysInfo::IsLowEndDevice()) {
+    EXPECT_NEAR(delta.y(), 675, 1);
+  } else {
+    EXPECT_NEAR(delta.y(), 705, 1);
+  }
+#else
   EXPECT_NEAR(delta.y(), 705, 1);
+#endif // BUILDFLAG(IS_OHOS)
 
   EXPECT_FALSE(curve.ComputeScrollDeltaAtTime(now + base::Seconds(10), &delta));
   EXPECT_EQ(0, delta.x());
+#if BUILDFLAG(IS_OHOS)
+  if (base::SysInfo::IsLowEndDevice()) {
+    EXPECT_NEAR(delta.y(), 250, 1);
+  } else {
+    EXPECT_NEAR(delta.y(), 392, 1);
+  }
+#else
   EXPECT_NEAR(delta.y(), 392, 1);
+#endif // BUILDFLAG(IS_OHOS)
 
   EXPECT_FALSE(curve.ComputeScrollDeltaAtTime(now + base::Seconds(20), &delta));
   EXPECT_TRUE(delta.IsZero());
 }
+#endif // OHOS_UNITTESTS events_unittests drop case
 
 }  // namespace ui

@@ -201,10 +201,6 @@ class CONTENT_EXPORT RenderProcessHostImpl
       BrowserContext* browser_context,
       SiteInstanceImpl* site_instance);
 
-#if BUILDFLAG(IS_OHOS)
-  static size_t GetRenderProcessCountForIncognitoMode();
-#endif
-
   ~RenderProcessHostImpl() override;
 
   RenderProcessHostImpl(const RenderProcessHostImpl& other) = delete;
@@ -275,6 +271,11 @@ class CONTENT_EXPORT RenderProcessHostImpl
       override;
   const base::TimeTicks& GetLastInitTime() override;
   bool IsProcessBackgrounded() override;
+
+#ifdef OHOS_RENDER_PROCESS_MODE
+  const base::TimeTicks& ProcessBackgroundTime() override;
+#endif
+
   void IncrementKeepAliveRefCount(uint64_t handle_id_) override;
   void DecrementKeepAliveRefCount(uint64_t handle_id_) override;
   std::string GetKeepAliveDurations() const override;
@@ -953,6 +954,11 @@ class CONTENT_EXPORT RenderProcessHostImpl
       SiteInstanceImpl* site_instance);
   FRIEND_TEST_ALL_PREFIXES(RenderProcessHostUnitTest,
                            GuestsAreNotSuitableHosts);
+
+#ifdef OHOS_RENDER_PROCESS_MODE
+  static RenderProcessHost* GetExistingBackgroundProcessHost(
+      SiteInstanceImpl* site_instance);
+#endif
 
   // Returns a RenderProcessHost that is rendering a URL corresponding to
   // |site_instance| in one of its frames, or that is expecting a navigation to

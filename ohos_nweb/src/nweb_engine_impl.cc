@@ -130,8 +130,15 @@ void NWebEngineImpl::PrefetchResource(
                                     cache_key, cache_valid_time);
 }
 
+void NWebEngineImpl::SetRenderProcessMode(RenderProcessMode mode) {
+  NWebImpl::SetRenderProcessMode(mode);
+}
+
+RenderProcessMode NWebEngineImpl::GetRenderProcessMode() {
+  return NWebImpl::GetRenderProcessMode();
+}
+
 void NWebEngineImpl::WarmupServiceWorker(const std::string &url) {
   NWebImpl::WarmupServiceWorker(url);
 }
-
 } // namespace OHOS::NWeb

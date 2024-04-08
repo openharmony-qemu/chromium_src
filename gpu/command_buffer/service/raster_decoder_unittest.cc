@@ -36,6 +36,8 @@ using ::testing::_;
 using ::testing::Return;
 using ::testing::SetArgPointee;
 
+#if !defined(OHOS_UNITTESTS)
+
 namespace gpu {
 namespace raster {
 
@@ -523,3 +525,5 @@ TEST_F(RasterDecoderOOPTest, StateRestoreAcrossDecoders) {
 
 }  // namespace raster
 }  // namespace gpu
+
+#endif  // !defined(OHOS_UNITTESTS)

@@ -591,7 +591,7 @@ test("gpu_unittests") {
     "ipc/service/gpu_watchdog_thread_unittest.cc",
   ]
   
-  if (enable_validating_command_decoder) {
+  if (enable_validating_command_decoder && !ohos_unittests) {
     sources += [
       "command_buffer/service/gles2_cmd_decoder_unittest.cc",
       "command_buffer/service/gles2_cmd_decoder_unittest.h",

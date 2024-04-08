@@ -176,6 +176,10 @@ class BASE_EXPORT WorkerThread : public RefCountedThreadSafe<WorkerThread>,
 
   size_t sequence_num() const { return sequence_num_; }
 
+#if BUILDFLAG(IS_OHOS)
+  PlatformThreadId GetRealTid();
+#endif
+
  private:
   friend class RefCountedThreadSafe<WorkerThread>;
   class Thread;
@@ -260,6 +264,10 @@ class BASE_EXPORT WorkerThread : public RefCountedThreadSafe<WorkerThread>,
 
   // Service thread task runner.
   scoped_refptr<SingleThreadTaskRunner> io_thread_task_runner_;
+
+#if BUILDFLAG(IS_OHOS)
+  PlatformThreadId realtid_ = kInvalidThreadId;
+#endif
 };
 
 }  // namespace internal

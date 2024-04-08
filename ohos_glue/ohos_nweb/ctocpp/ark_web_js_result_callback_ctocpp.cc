@@ -109,7 +109,7 @@ ArkWebValue ArkWebJsResultCallbackCToCpp::GetJavaScriptResultFlowbuf(
 
   // Execute
   return _struct->get_java_script_result_flowbuf(_struct, args, &method, &object_name,
-                                         fd, routing_id, object_id);
+                                                 fd, routing_id, object_id);
 }
 
 ArkWebJsResultCallbackCToCpp::ArkWebJsResultCallbackCToCpp() {

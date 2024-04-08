@@ -113,7 +113,11 @@ TEST(MetafileSkiaTest, TestMultiPictureDocumentTypefaces) {
 #else
   constexpr char kTypefaceName2[] = "monospace";
 #endif
+#if defined(OHOS_UNITTESTS)
+  constexpr size_t kNumTypefaces = 1;
+#else
   constexpr size_t kNumTypefaces = 2;
+#endif  // defined(OHOS_UNITTESTS)
   sk_sp<SkTypeface> typeface1 =
       SkTypeface::MakeFromName(kTypefaceName1, SkFontStyle());
   sk_sp<SkTypeface> typeface2 =

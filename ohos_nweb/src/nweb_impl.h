@@ -269,6 +269,10 @@ class NWebImpl : public NWeb {
   bool GetPrintBackground() override;
   bool IsSafeBrowsingEnabled() override;
   void EnableSafeBrowsing(bool enable) override;
+  void PrecompileJavaScript(const std::string& url,
+                            const std::string& script,
+                            std::shared_ptr<CacheOptions>& cacheOptions,
+                            std::shared_ptr<NWebMessageValueCallback> callback) override;
 #endif
 
   std::string GetLastJavascriptProxyCallingFrameUrl() override;
@@ -336,6 +340,9 @@ class NWebImpl : public NWeb {
   void StartDownload(const char* url);
   void ResumeDownload(std::shared_ptr<NWebDownloadItem>);
   static void ResumeDownloadStatic(std::shared_ptr<NWebDownloadItem> download_item);
+#ifdef OHOS_EX_DOWNLOAD
+  NWebDownloadItemState GetDownloadItemState(long item_id);
+#endif
 
   bool Discard() override;
   bool Restore() override;
@@ -398,12 +405,21 @@ class NWebImpl : public NWeb {
   bool IsIntelligentTrackingPreventionEnabled() const override;
   static bool IsAnyNWebIntelligentTrackingPreventionEnabled();
 #endif
+
+  void OnCreateNativeMediaPlayer(
+      std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) override;
+
   static void AddIntelligentTrackingPreventionBypassingList(
       const std::vector<std::string>& hosts);
   static void RemoveIntelligentTrackingPreventionBypassingList(
       const std::vector<std::string>& hosts);
   static void ClearIntelligentTrackingPreventionBypassingList();
   static void WarmupServiceWorker(const std::string &url);
+
+#ifdef OHOS_RENDER_PROCESS_MODE
+  static void SetRenderProcessMode(RenderProcessMode mode);
+  static RenderProcessMode GetRenderProcessMode();
+#endif
 
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

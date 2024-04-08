@@ -50,11 +50,11 @@ public:
   void RemoveTransientJavaScriptObject() override;
 
   ArkWebValue GetJavaScriptResultFlowbuf(ArkWebValueVector args,
-                                  const ArkWebString &method,
-                                  const ArkWebString &object_name,
-                                  int fd,
-                                  int32_t routing_id,
-                                  int32_t object_id) override;
+                                         const ArkWebString &method,
+                                         const ArkWebString &object_name,
+                                         int fd,
+                                         int32_t routing_id,
+                                         int32_t object_id) override;
 };
 
 } // namespace OHOS::ArkWeb

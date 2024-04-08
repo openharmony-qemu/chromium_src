@@ -39,6 +39,10 @@ std::string GetRendererName(RendererType renderer_type) {
     case RendererType::kOHOSMediaPlayer:
       return "OHOSMediaPlayerRenderer";
 #endif
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+    case RendererType::kOHOSCustomMediaPlayer:
+      return "OHOSCustomMediaPlayerRednerer";
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
   }
 }
 
@@ -50,6 +54,10 @@ Renderer::~Renderer() = default;
 void Renderer::Initialize(CreateTextureCB create_texture_cb,
                           DestroyTextureCB destroy_texture_cb) {}
 #endif
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void Renderer::SetSurfaceId(int surface_id) {}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 
 void Renderer::SetCdm(CdmContext* cdm_context, CdmAttachedCB cdm_attached_cb) {
   DLOG(WARNING) << "CdmContext is not supported.";

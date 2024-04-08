@@ -65,6 +65,10 @@ public:
       const std::map<std::string, std::string> &additional_http_headers,
       const std::string &cache_key, const uint32_t &cache_valid_time) override;
 
+  void SetRenderProcessMode(RenderProcessMode mode) override;
+
+  RenderProcessMode GetRenderProcessMode() override;
+
   void WarmupServiceWorker(const std::string &url) override;
 
 private:

@@ -315,6 +315,11 @@ size_t g_max_renderer_count_override = 0;
 
 bool g_run_renderer_in_process = false;
 
+#ifdef OHOS_RENDER_PROCESS_MODE
+RenderProcessMode g_render_process_mode =
+    RenderProcessMode::DEFAULT_MODE;
+#endif
+
 RendererMainThreadFactoryFunction g_renderer_main_thread_factory = nullptr;
 
 base::Thread* g_in_process_thread = nullptr;
@@ -1251,63 +1256,10 @@ BASE_FEATURE(kCheckNoNewRefCountsWhenRphDeletingSoon,
              "CheckNoNewRefCountsWhenRphDeletingSoon",
              base::FEATURE_ENABLED_BY_DEFAULT);
 
-#ifdef OHOS_INCOGNITO_MODE
-constexpr size_t kMaxRenderCountForSingleMode = 2;
-constexpr size_t kMaxRenderCountForSingleIncognitoMode = 1;
-
-bool IsSingleRenderProcess() {
-  // Multiple render process mode is on by default on tablet and 2in1 devices,
-  // and it is only supported by browser on mobile or other devices.
-  bool excludable_devices = (*base::CommandLine::ForCurrentProcess()).HasSwitch(
-            switches::kIsSingleRenderProcess);
-  return !(*base::CommandLine::ForCurrentProcess())
-              .HasSwitch(switches::kForBrowser) &&
-         !excludable_devices;
-}
-
-bool ShouldReuseExistingRenderProcess(BrowserContext* browser_context) {
-  if (!browser_context) {
-    return false;
-  }
-
-  bool is_single_mode = IsSingleRenderProcess();
-
-  if (RenderProcessHostImpl::GetMaxRendererProcessCount() <
-      kMaxRenderCountForSingleMode) {
-    LOG(WARNING) << "It maybe fail to create the render process in incognito "
-                    "mode if multiple subprocesses are not supported.";
-    return true;
-  }
-
-  // In Single-process mode, there are a maximum of 2 render processes.
-  // In multi-process mode, there are a maximum of 40 render processes not in pc
-  // device; there are a maximum of 80 render processes in pc device.
-  size_t max_render_count =
-      is_single_mode ? kMaxRenderCountForSingleMode
-                     : RenderProcessHostImpl::GetMaxRendererProcessCount();
-  size_t process_count = RenderProcessHostImpl::GetProcessCountForLimit();
-  if (process_count >= max_render_count) {
-    return true;
-  }
-  size_t process_count_for_incognito_mode =
-      RenderProcessHost::GetOffTheRecordRenderProcessCount();
-
-  // In single-process mode, there are a maximum of two render processes,
-  // one for normal mode and the other for incognito mode.
-  size_t max_render_count_for_incognito_mode =
-      is_single_mode
-          ? kMaxRenderCountForSingleIncognitoMode
-          : GetContentClient()->browser()->GetProcessCountForIncognitoMode();
-  max_render_count_for_incognito_mode =
-      std::min(max_render_count / 2, max_render_count_for_incognito_mode);
-  if (browser_context->IsOffTheRecord()) {
-    return process_count_for_incognito_mode >=
-              max_render_count_for_incognito_mode;
-  }
-  return process_count - process_count_for_incognito_mode >=
-             max_render_count - max_render_count_for_incognito_mode;
-}
-#endif // OHOS_INCOGNITO_MODE
+#ifdef OHOS_RENDER_PROCESS_MODE
+static constexpr char kExtensionScheme[] = "chrome-extension";
+constexpr int kSingleRenderProcessCount = 1;
+#endif
 }  // namespace
 
 // A RenderProcessHostImpl's IO thread implementation of the
@@ -1424,6 +1376,15 @@ class RenderProcessHostImpl::IOThreadHostImpl : public mojom::ChildProcessHost {
     ResSchedClientAdapter::ReportKeyThread(
       static_cast<ResSchedStatusAdapter>(status), process_id, thread_id, static_cast<ResSchedRoleAdapter>(role));
   }
+
+  void ReportKeyThreadIds(int32_t status, int32_t process_id,
+      const std::vector<int32_t>& thread_ids, int32_t role) override {
+    using namespace OHOS::NWeb;
+    for (auto thread_id : thread_ids) {
+      ResSchedClientAdapter::ReportKeyThread(
+        static_cast<ResSchedStatusAdapter>(status), process_id, thread_id, static_cast<ResSchedRoleAdapter>(role));
+    }
+  }
 #endif
 
   static void BindHostReceiverOnUIThread(
@@ -1467,13 +1428,27 @@ size_t RenderProcessHostImpl::GetPlatformMaxRendererProcessCount() {
 
 // static
 size_t RenderProcessHost::GetMaxRendererProcessCount() {
+#ifdef OHOS_RENDER_PROCESS_MODE
+  if (render_process_mode() == RenderProcessMode::SINGLE_MODE) {
+    return kSingleRenderProcessCount;
+  }
+#endif
+
   if (g_max_renderer_count_override)
+#ifdef OHOS_RENDER_PROCESS_MODE
+    return g_max_renderer_count_override * 0.9;
+#else
     return g_max_renderer_count_override;
+#endif
 
   size_t client_override =
       GetContentClient()->browser()->GetMaxRendererProcessCountOverride();
   if (client_override)
+#ifdef OHOS_RENDER_PROCESS_MODE
+    return client_override * 0.9;
+#else
     return client_override;
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
   // On Android we don't maintain a limit of renderer process hosts - we are
@@ -1529,7 +1504,13 @@ size_t RenderProcessHost::GetMaxRendererProcessCount() {
                            kMaxRendererProcessCount);
     MAYBEVLOG(1) << __func__ << ": Calculated max " << max_count;
   }
+
+#ifdef OHOS_RENDER_PROCESS_MODE
+  return max_count * 0.9;
+#else
   return max_count;
+#endif // OHOS_RENDER_PROCESS_MODE
+
 #endif
 }
 
@@ -1638,6 +1619,10 @@ RenderProcessHostImpl::RenderProcessHostImpl(
 #if BUILDFLAG(IS_ANDROID)
                 ,
                 ChildProcessImportance::NORMAL
+#endif
+#ifdef OHOS_RENDER_PROCESS_MODE
+                ,
+                base::TimeTicks::Now()
 #endif
                 ),
       id_(ChildProcessHostImpl::GenerateChildProcessUniqueId()),
@@ -2781,6 +2766,12 @@ const base::TimeTicks& RenderProcessHostImpl::GetLastInitTime() {
 bool RenderProcessHostImpl::IsProcessBackgrounded() {
   return priority_.is_background();
 }
+
+#ifdef OHOS_RENDER_PROCESS_MODE
+const base::TimeTicks& RenderProcessHostImpl::ProcessBackgroundTime() {
+  return priority_.background_time;
+}
+#endif // OHOS_RENDER_PROCESS_MODE
 
 void RenderProcessHostImpl::IncrementKeepAliveRefCount(uint64_t handle_id) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
@@ -4447,6 +4438,15 @@ bool RenderProcessHostImpl::IsSuitableHost(
   if (host->IsPdf() != site_info.is_pdf())
     return false;
 
+#ifdef OHOS_RENDER_PROCESS_MODE
+  if (site_info.is_pdf()) {
+    return host->special_render_numbers_[RenderType::kPdf] > 0;
+  }
+  if (site_info.site_url().SchemeIs(kExtensionScheme)) {
+    return host->special_render_numbers_[RenderType::kExtension] > 0;
+  }
+#endif // OHOS_RENDER_PROCESS_MODE
+
   // Check whether the given host and the intended site_info will be using the
   // same StoragePartition, since a RenderProcessHost can only support a
   // single StoragePartition.  This is relevant for packaged apps.
@@ -4484,6 +4484,12 @@ bool RenderProcessHostImpl::IsSuitableHost(
     // and WebUI target URLs.
     if (!host_has_web_ui_bindings && url_is_for_web_ui)
       return false;
+
+#ifdef OHOS_RENDER_PROCESS_MODE
+    if (url_is_for_web_ui) {
+      return host->special_render_numbers_[RenderType::kWebUI] > 0;
+    }
+#endif
 
     if (process_lock.is_locked_to_site()) {
       // If this process is locked to a site, it cannot be reused for a
@@ -4647,11 +4653,6 @@ bool RenderProcessHost::ShouldTryToUseExistingProcessHost(
   //       a renderer process for a browser context that has no existing
   //       renderers. This is OK in moderation, since the
   //       GetMaxRendererProcessCount() is conservative.
-#if defined(OHOS_INCOGNITO_MODE)
-  if (ShouldReuseExistingRenderProcess(browser_context)) {
-    return true;
-  }
-#else
   size_t process_count = RenderProcessHostImpl::GetProcessCountForLimit();
   if (process_count >= GetMaxRendererProcessCount()) {
     MAYBEVLOG(4) << __func__
@@ -4660,7 +4661,6 @@ bool RenderProcessHost::ShouldTryToUseExistingProcessHost(
                  << ") - will try to reuse an existing process";
     return true;
   }
-#endif
 
   return GetContentClient()->browser()->ShouldTryToUseExistingProcessHost(
       browser_context, url);
@@ -4697,6 +4697,59 @@ RenderProcessHost* RenderProcessHostImpl::GetExistingProcessHost(
 
   return nullptr;
 }
+
+#ifdef OHOS_RENDER_PROCESS_MODE
+// static
+RenderProcessHost* RenderProcessHostImpl::GetExistingBackgroundProcessHost(
+      SiteInstanceImpl* site_instance) {
+  // First figure out which existing renderers we can use.
+  RenderProcessHost* longest_background_host;
+  base::TimeDelta longest_duration;
+  base::TimeTicks current_time = base::TimeTicks::Now();
+
+  for (iterator iter(AllHostsIterator()); !iter.IsAtEnd(); iter.Advance()) {
+    // The spare RenderProcessHost will have been considered by this point.
+    // Ensure it is not added to the collection of suitable renderers.
+    if (iter.GetCurrentValue() == SpareRenderProcessHostManager::GetInstance()
+                                      .spare_render_process_host()) {
+      continue;
+    }
+    if (iter.GetCurrentValue()->IsProcessBackgrounded()) {
+      base::TimeDelta background_duration = current_time -
+        iter.GetCurrentValue()->ProcessBackgroundTime();
+      if (background_duration >= longest_duration) {
+        longest_background_host = iter.GetCurrentValue();
+        longest_duration = background_duration;
+      }
+    }
+  }
+
+  // Now pick a longest time in background renderer.
+  if (longest_background_host) {
+    LOG(INFO) <<  __func__ << ": Found one background render host.";
+    return longest_background_host;
+  }
+
+  return nullptr;
+}
+
+// static
+void RenderProcessHost::SetRenderProcessMode(RenderProcessMode mode) {
+  g_render_process_mode = mode;
+  LOG(INFO) << "SetRenderProcessMode g_render_process_mode:"
+            << (int)g_render_process_mode;
+}
+
+// static
+RenderProcessMode RenderProcessHost::render_process_mode() {
+  if (g_render_process_mode == RenderProcessMode::DEFAULT_MODE) {
+    return (base::ohos::IsPcDevice() || base::ohos::IsTabletDevice())
+        ? RenderProcessMode::MULTIPLE_MODE
+        : RenderProcessMode::SINGLE_MODE;
+  }
+  return g_render_process_mode;
+}
+#endif // OHOS_RENDER_PROCESS_MODE
 
 // static
 RenderProcessHost* RenderProcessHostImpl::GetSoleProcessHostForSite(
@@ -4871,6 +4924,37 @@ RenderProcessHost* RenderProcessHostImpl::GetProcessHostForSiteInstance(
 
     site_instance->set_process_assignment(
         SiteInstanceProcessAssignment::CREATED_NEW_PROCESS);
+
+#ifdef OHOS_RENDER_PROCESS_MODE
+    if (site_info.site_url().SchemeIs(kExtensionScheme)) {
+      render_process_host
+          ->special_render_numbers_[RenderType::kExtension]++;
+    }
+    if (site_info.is_pdf()) {
+      render_process_host
+          ->special_render_numbers_[RenderType::kPdf]++;
+    }
+    if (WebUIControllerFactoryRegistry::GetInstance()->UseWebUIForURL(
+            browser_context, site_info.site_url())) {
+      render_process_host
+          ->special_render_numbers_[RenderType::kWebUI]++;
+    }
+
+    if (RenderProcessHost::render_process_mode() !=
+            RenderProcessMode::SINGLE_MODE &&
+        (RenderProcessHostImpl::GetProcessCountForLimit() >
+         RenderProcessHostImpl::GetMaxRendererProcessCount())) {
+      // Kill the idel render process.
+      RenderProcessHostImpl* render_host =
+          static_cast<RenderProcessHostImpl*>(
+              RenderProcessHostImpl::GetExistingBackgroundProcessHost(
+                  site_instance));
+      if (render_host) {
+        LOG(INFO) << "It will FastShutdownIfPossible.";
+        render_host->FastShutdownIfPossible(1u, true);
+      }
+    }
+#endif // OHOS_RENDER_PROCESS_MODE
   }
 
   // It is important to call PrepareForFutureRequests *after* potentially
@@ -5204,6 +5288,10 @@ void RenderProcessHostImpl::UpdateProcessPriority() {
       ,
       GetEffectiveImportance()
 #endif
+#ifdef OHOS_RENDER_PROCESS_MODE
+      ,
+      base::TimeTicks::Now()
+#endif
   );
 
   // If a priority override has been specified, use it instead.
@@ -5222,6 +5310,10 @@ void RenderProcessHostImpl::UpdateProcessPriority() {
         ,
         foregrounded ? ChildProcessImportance::NORMAL
                      : ChildProcessImportance::MODERATE /* importance */
+#endif
+#ifdef OHOS_RENDER_PROCESS_MODE
+      ,
+      base::TimeTicks::Now()
 #endif
     );
     DCHECK_EQ(!foregrounded, priority.is_background());

@@ -26,6 +26,8 @@ component("devices") {
     "touch_device_transform.h",
     "touchscreen_device.cc",
     "touchscreen_device.h",
+    "mmi_device_info_adapter_impl.cc",
+    "mmi_device_info_adapter_impl.h",
   ]
 
   if (is_linux || is_chromeos) {

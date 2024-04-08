@@ -105,8 +105,6 @@ CodecOutputBuffer::~CodecOutputBuffer() {
 bool CodecOutputBuffer::ReleaseToSurface() {
   was_rendered_ = true;
   auto result = codec_->ReleaseCodecOutputBuffer(id_, true);
-  // if (render_cb_)
-  //   std::move(render_cb_).Run();
   return result;
 }
 
@@ -120,7 +118,7 @@ CodecWrapperImpl::CodecWrapperImpl(
       next_buffer_id_(0),
       output_buffer_release_cb_(std::move(output_buffer_release_cb)),
       release_task_runner_(std::move(release_task_runner)) {
-  // DVLOG(2) << __func__;
+  size_ = gfx::Size(codec_->GetConfigWidth(), codec_->GetConfigHeight());
 }
 
 CodecWrapperImpl::~CodecWrapperImpl() = default;
@@ -261,23 +259,10 @@ CodecWrapperImpl::DequeueStatus CodecWrapperImpl::DequeueOutputBuffer(
         int64_t buffer_id = next_buffer_id_++;
         buffer_ids_[buffer_id] = index;
 
-        OHOS::NWeb::DecoderFormat format;
-        auto result = codec_->GetOutputFormatBridgeDecoder(format);
-        LOG(DEBUG) << "CodecWrapperImpl::DequeueOutputBuffer "
-                      "des width: "
-                   << format.width << ", height: " << format.height;
         LOG(DEBUG) << "CodecWrapperImpl::DequeueOutputBuffer "
                       "src width: "
                    << codec_->GetConfigWidth()
                    << ", height: " << codec_->GetConfigHeight();
-        if (result == DecoderAdapterCode::DECODER_OK) {
-          size_ = gfx::Size(format.width, format.height);
-        } else {
-          LOG(ERROR) << "CodecWrapperImpl::GetOutputFormatBridgeDecoder "
-                        "failed.";
-          size_ =
-              gfx::Size(codec_->GetConfigWidth(), codec_->GetConfigHeight());
-        }
 
         *codec_buffer = base::WrapUnique(
             new CodecOutputBuffer(this, buffer_id, size_, color_space_));

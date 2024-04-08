@@ -36,6 +36,7 @@
 #include "nweb_date_time_chooser_impl.h"
 #include "nweb_data_resubmission_callback_impl.h"
 #include "nweb_engine_impl.h"
+#include "nweb_first_meaningful_paint_details_impl.h"
 #include "nweb_full_screen_exit_handler_impl.h"
 #include "nweb_geolocation_callback.h"
 #include "nweb_js_dialog_result_impl.h"
@@ -43,9 +44,8 @@
 #include "nweb_js_ssl_error_result_impl.h"
 #include "nweb_js_ssl_select_cert_result_impl.h"
 #include "nweb_key_event_impl.h"
-#include "nweb_load_committed_details_impl.h"
-#include "nweb_first_meaningful_paint_details_impl.h"
 #include "nweb_largest_contentful_paint_details_impl.h"
+#include "nweb_load_committed_details_impl.h"
 #include "nweb_preference_delegate.h"
 #include "nweb_resource_handler.h"
 #include "nweb_select_menu_bound_impl.h"
@@ -77,6 +77,14 @@
 #include "cef/include/cef_command_line.h"
 #include "content/public/common/content_switches.h"
 #endif
+
+#include "ui/base/clipboard/ohos/clip_board_image_data_adapter_impl.h"
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#include "cef/include/cef_media_player_listener.h"
+#include "ohos_nweb/src/native_media_player/nweb_media_info_impl.h"
+#include "ohos_nweb/src/native_media_player/nweb_native_media_player_handler_impl.h"
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 
 namespace OHOS::NWeb {
 namespace {
@@ -263,6 +271,26 @@ char* CopyCefStringToChar(const CefString& str) {
   strncpy(result, str.ToString().c_str(), strLen);
   return result;
 }
+
+#if defined(OHOS_SCREEN_LOCK)
+class SetKeepScreenOnCallback : public CefSetLockCallback {
+public:
+  explicit SetKeepScreenOnCallback(const std::shared_ptr<NWebScreenLockCallback>& callback): callback_(callback) {}
+
+  ~SetKeepScreenOnCallback() override {}
+
+  void Handle(bool key) override {
+    if (callback_) {
+      callback_->Handle(key);
+    }
+  }
+
+private:
+  std::shared_ptr<NWebScreenLockCallback> callback_;
+
+  IMPLEMENT_REFCOUNTING(SetKeepScreenOnCallback);
+};
+#endif
 
 #if defined(OHOS_MULTI_WINDOW)
 const char kOffScreenFrameRate[] = "off-screen-frame-rate";
@@ -535,6 +563,19 @@ CefRefPtr<CefFormHandler> NWebHandlerDelegate::GetFormHandler() {
 }
 /* CefClient methods end */
 
+#if defined(OHOS_SCREEN_LOCK)
+void NWebHandlerDelegate::SetWakeLockCallback(
+    int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback) {
+  if (main_browser_ && main_browser_->GetHost()) {
+    main_browser_->GetHost()->SetWakeLockHandler(
+        windowId, callback ? new SetKeepScreenOnCallback(callback) : nullptr);
+  } else {
+    screen_lock_callback_ = callback;
+    screen_lock_window_id_ = windowId;
+  }
+}
+#endif
+
 /* CefLifeSpanHandler methods begin */
 void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
   LOG(INFO) << "NWebHandlerDelegate::OnAfterCreated IsPopup "
@@ -544,6 +585,14 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
   if (browser && browser->GetHost() && window_id_ != 0 && nweb_id_ != 0) {
     browser->GetHost()->SetWindowId(window_id_, nweb_id_);
   }
+
+#if defined(OHOS_SCREEN_LOCK)
+  if (screen_lock_callback_ && browser && browser->GetHost()) {
+    browser->GetHost()->SetWakeLockHandler(
+        screen_lock_window_id_, new SetKeepScreenOnCallback(screen_lock_callback_));
+    screen_lock_callback_ = nullptr;
+  }
+#endif
 
 #if defined(OHOS_MULTI_WINDOW)
   if (!main_browser_ && browser->IsPopup()) {
@@ -930,8 +979,7 @@ void NWebHandlerDelegate::OnLargestContentfulPaint(
             details->GetLargestImagePaintTime(),
             details->GetLargestTextPaintTime(),
             details->GetLargestImageLoadStartTime(),
-            details->GetLargestImageLoadEndTime(), 
-            details->GetImageBPP());
+            details->GetLargestImageLoadEndTime(), details->GetImageBPP());
     nweb_handler_->OnLargestContentfulPaint(web_details);
   }
 }
@@ -1309,19 +1357,20 @@ bool NWebHandlerDelegate::GetAuthCredentials(
   return false;
 }
 
-bool NWebHandlerDelegate::ShouldOverrideUrlLoading(CefRefPtr<CefBrowser> browser,
-                                                   const CefString& url,
-                                                   const CefString& method,
-                                                   bool user_gesture,
-                                                   bool is_redirect,
-                                                   bool is_outermost_main_frame) {
+bool NWebHandlerDelegate::ShouldOverrideUrlLoading(
+    CefRefPtr<CefBrowser> browser,
+    const CefString& url,
+    const CefString& method,
+    bool user_gesture,
+    bool is_redirect,
+    bool is_outermost_main_frame) {
   LOG(INFO) << "NWebHandlerDelegate::ShouldOverrideUrlLoading";
 
   std::map<std::string, std::string> request_headers;
   std::shared_ptr<NWebUrlResourceRequest> nweb_request =
       std::make_shared<NWebUrlResourceRequestImpl>(
-          method.ToString(), request_headers, url.ToString(), user_gesture, is_outermost_main_frame,
-          is_redirect);
+          method.ToString(), request_headers, url.ToString(), user_gesture,
+          is_outermost_main_frame, is_redirect);
   if (nweb_handler_ != nullptr) {
     return nweb_handler_->OnHandleOverrideUrlLoading(nweb_request);
   }
@@ -1779,6 +1828,14 @@ bool NWebHandlerDelegate::OnCursorChange(
     info.x = custom_cursor_info.hotspot.x;
     info.y = custom_cursor_info.hotspot.y;
     info.scale = custom_cursor_info.image_scale_factor;
+    uint64_t len = info.width * info.height * 4;
+    std::unique_ptr<uint8_t[]> buff = std::make_unique<uint8_t[]>(len);
+    if (!buff) {
+      LOG(ERROR) << "OnCursorChange make_unique failed";
+      return false;
+    }
+    memcpy((char*)buff.get(), custom_cursor_info.buffer, len);
+    info.buff = buff.get();
   }
   CursorType cursorType(static_cast<CursorType>(type));
   return nweb_handler_->OnCursorChange(cursorType, info);
@@ -2156,20 +2213,25 @@ void NWebHandlerDelegate::CopyImageToClipboard(CefRefPtr<CefImage> image) {
     }
     bitMap->GetData((void*)data, bitMapSize, 0);
 
-    ClipBoardImageData imageInfo;
-    imageInfo.colorType = ClipBoardImageColorType::COLOR_TYPE_RGBA_8888;
-    imageInfo.alphaType = ClipBoardImageAlphaType::ALPHA_TYPE_PREMULTIPLIED;
-    imageInfo.data = (uint32_t*)data;
-    imageInfo.dataSize = bitMapSize;
-    imageInfo.width = pixel_width;
-    imageInfo.height = pixel_height;
-    std::shared_ptr<ClipBoardImageData> imgData =
-        std::make_shared<ClipBoardImageData>(imageInfo);
+    std::shared_ptr<ClipBoardImageDataAdapterImpl> imageInfo =
+        std::make_shared<ClipBoardImageDataAdapterImpl>();
+    if (!imageInfo) {
+      LOG(ERROR) << "new ClipBoardImageDataAdapterImpl failed";
+      return;
+    }
+
+    imageInfo->SetColorType(ClipBoardImageColorType::COLOR_TYPE_RGBA_8888);
+    imageInfo->SetAlphaType(ClipBoardImageAlphaType::ALPHA_TYPE_PREMULTIPLIED);
+    imageInfo->SetData((uint32_t*)data);
+    imageInfo->SetDataSize(bitMapSize);
+    imageInfo->SetWidth(pixel_width);
+    imageInfo->SetHeight(pixel_height);
+
     std::shared_ptr<PasteDataRecordAdapter> imgRecord =
         PasteDataRecordAdapter::NewRecord("pixelMap");
-    PasteRecordList recordList;
-    if (imgRecord->SetImgData(imgData)) {
-      recordList.push_back(imgRecord);
+    PasteRecordVector recordVector;
+    if (imgRecord->SetImgData(imageInfo)) {
+      recordVector.push_back(imgRecord);
       LOG(INFO) << "set img to record success";
     } else {
       LOG(ERROR) << "set img to record failed";
@@ -2179,7 +2241,7 @@ void NWebHandlerDelegate::CopyImageToClipboard(CefRefPtr<CefImage> image) {
 
     auto copy_option = static_cast<ui::CopyOptionMode>(
         preference_delegate_->GetCopyOptionMode());
-    OhosAdapterHelper::GetInstance().GetPasteBoard().SetPasteData(recordList,
+    OhosAdapterHelper::GetInstance().GetPasteBoard().SetPasteData(recordVector,
                                                                   copy_option);
     free(data);
   }
@@ -2518,7 +2580,8 @@ int NWebHandlerDelegate::ProcessNativeProxyResult(
     return 0;
   }
 
-  LOG(ERROR) << "native proxy object not found, name:" << object_name.ToString();
+  LOG(ERROR) << "native proxy object not found, name:"
+             << object_name.ToString();
   return 1;
 }
 
@@ -2554,12 +2617,12 @@ int NWebHandlerDelegate::NotifyJavaScriptResult(CefRefPtr<CefListValue> args,
 }
 
 int NWebHandlerDelegate::NotifyJavaScriptResultFlowbuf(CefRefPtr<CefListValue> args,
-                                                const CefString& method,
-                                                const CefString& object_name,
-                                                int fd,
-                                                CefRefPtr<CefListValue> result,
-                                                int32_t routing_id,
-                                                int32_t object_id) {
+                                                       const CefString& method,
+                                                       const CefString& object_name,
+                                                       int fd,
+                                                       CefRefPtr<CefListValue> result,
+                                                       int32_t routing_id,
+                                                       int32_t object_id) {
   if (args.get() == nullptr || result.get() == nullptr) {
     return 0;
   }
@@ -2667,10 +2730,12 @@ void NWebHandlerDelegate::SetFocusState(bool focusState) {
 
 #ifdef OHOS_ITP
 void NWebHandlerDelegate::OnIntelligentTrackingPreventionResult(
-    const CefString& website_host, const CefString& tracker_host) {
+    const CefString& website_host,
+    const CefString& tracker_host) {
   LOG(INFO) << "NWebHandlerDelegate::OnIntelligentTrackingPreventionResult";
   if (nweb_handler_ != nullptr) {
-    nweb_handler_->OnIntelligentTrackingPreventionResult(website_host, tracker_host);
+    nweb_handler_->OnIntelligentTrackingPreventionResult(website_host,
+                                                         tracker_host);
   }
 }
 #endif
@@ -2704,4 +2769,37 @@ bool NWebHandlerDelegate::OnAllCertificateError(CefRefPtr<CefBrowser> browser,
   return false;
 }
 #endif
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void NWebHandlerDelegate::RegisterOnCreateNativeMediaPlayerListener(
+    std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) {
+  WVLOG_I("RegisterOnCreateNativeMediaPlayerListener(%{public}p)", callback.get());
+  create_native_media_player_cb_ = std::move(callback);
+}
+
+CefOwnPtr<CefCustomMediaPlayerDelegate>
+NWebHandlerDelegate::OnCreateCustomMediaPlayer(
+    CefOwnPtr<CefMediaPlayerListener> listener,
+    const CefCustomMediaInfo& media_info) {
+  if (!create_native_media_player_cb_) {
+    LOG(ERROR) << "OnCreateNativeMediaPlayer failed, callback is null";
+    return nullptr;
+  }
+
+  std::shared_ptr<NWebNativeMediaPlayerHandler> handler(
+      new NWebNativeMediaPlayerHandlerImpl(std::move(listener)));
+  std::shared_ptr<NWebMediaInfo> nweb_media_info(new NWebMediaInfoImpl(media_info));
+  std::shared_ptr<NWebNativeMediaPlayerBridge> bridge =
+      create_native_media_player_cb_->OnCreate(
+          std::move(handler), std::move(nweb_media_info));
+  if (!bridge) {
+    LOG(INFO) << "app creates no media player";
+    return nullptr;
+  }
+
+  CefOwnPtr<CustomMediaPlayerImpl> player(new CustomMediaPlayerImpl(std::move(bridge)));
+  return player;
+}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 }  // namespace OHOS::NWeb

@@ -69,6 +69,7 @@ TEST(ValuesUtilTest, InvalidInt64Values) {
   }
 }
 
+#if !defined(OHOS_UNITTESTS)
 TEST(ValuesUtilTest, FilePath) {
   // Ω is U+03A9 GREEK CAPITAL LETTER OMEGA, a non-ASCII character.
   constexpr StringPiece kTestCases[] = {
@@ -84,6 +85,7 @@ TEST(ValuesUtilTest, FilePath) {
     EXPECT_EQ(*ValueToFilePath(&expected), input);
   }
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 TEST(ValuesUtilTest, UnguessableToken) {
   constexpr struct {

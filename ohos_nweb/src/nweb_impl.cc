@@ -50,10 +50,6 @@
 #include "soc_perf_client_adapter.h"
 #endif
 
-#ifdef OHOS_SCREEN_LOCK
-#include "services/device/wake_lock/power_save_blocker/nweb_screen_lock_tracker.h"
-#endif
-
 #if defined(OHOS_API_INIT_WEB_ENGINE)
 #include "cef_delegate/nweb_application.h"
 #include "content/public/browser/network_service_instance.h"
@@ -111,6 +107,11 @@
 #include "content/public/common/content_switches.h"
 #endif
 
+#ifdef OHOS_RENDER_PROCESS_MODE
+#include "base/ohos/sys_info_utils.h"
+#include "content/public/browser/render_process_host.h"
+#endif
+
 #if defined(OHOS_WARMUP_SERVICEWORKER)
 #include "content/public/browser/storage_partition.h"
 #include "content/public/browser/service_worker_context.h"
@@ -119,7 +120,7 @@
 #include "third_party/blink/public/common/storage_key/storage_key.h"
 #include "url/gurl.h"
 #include "url/origin.h"
-#endif
+#endif // defined(OHOS_WARMUP_SERVICEWORKER)
 
 #if defined(OHOS_SITE_ISOLATION)
 extern bool g_siteIsolationMode;
@@ -158,10 +159,10 @@ bool GetWebOptimizationValue() {
   return system_properties_adapter.GetWebOptimizationValue();
 }
 
-static bool GetLockdownModeStatus() {
+static bool IsAdvancedSecurityMode() {
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                                     .GetSystemPropertiesInstance();
-  return system_properties_adapter.GetLockdownModeStatus();
+  return system_properties_adapter.IsAdvancedSecurityMode();
 }
 
 static std::string GetNetlogMode() {
@@ -188,7 +189,12 @@ static bool IsMultipleRenderProcess() {
     
     if (command_line->HasSwitch(switches::kRendererProcessLimit)) {
         int limit_value = std::stoi(command_line->GetSwitchValueASCII(switches::kRendererProcessLimit));
-        return (limit_value > 1);
+        return (limit_value > 1
+#ifdef OHOS_RENDER_PROCESS_MODE
+                && OHOS::NWeb::NWebImpl::GetRenderProcessMode() ==
+                    OHOS::NWeb::RenderProcessMode::MULTIPLE_MODE
+#endif
+        );
     }
 
     return false;
@@ -197,10 +203,6 @@ static bool IsMultipleRenderProcess() {
 static bool ShouldEnableSiteIsolation() {
   std::string isSiteIsolationMode = GetSiteIsolationMode();
   
-  if (isSiteIsolationMode == "true") {
-    return true;
-  }
-
   if (isSiteIsolationMode == "false") {
     return false;
   }
@@ -209,11 +211,11 @@ static bool ShouldEnableSiteIsolation() {
   bool isIgnoreLockdownMode = (*base::CommandLine::ForCurrentProcess()).HasSwitch(
             switches::kIgnoreLockdownMode);
 
-  if (isIgnoreLockdownMode) {
+  if (isIgnoreLockdownMode && IsMultipleRenderProcess()){
     return true;
   }
 
-  if (GetLockdownModeStatus() && IsMultipleRenderProcess()) {
+  if (IsAdvancedSecurityMode() && IsMultipleRenderProcess()) {
     return true;
   }
 
@@ -293,8 +295,8 @@ void InitialWebEngineArgs(std::list<std::string>& web_engine_args,
     web_engine_args.emplace_back("--log-net-log=/data/storage/el2/base/cache/web/netlog.json");
   }
 
-  if (GetLockdownModeStatus()) {
-    WVLOG_W("In lockdown mode, some HTML5 features will be unavailable, including WebAssembly, WebGL, PDF viewer, MathML, speech recognition, etc.");
+  if (IsAdvancedSecurityMode()) {
+    WVLOG_I("In advanced security mode, some HTML5 features will be unavailable, including WebAssembly, WebGL, PDF viewer, MathML, speech recognition, etc.");
     web_engine_args.emplace_back("--js-flags=--jitless");
     web_engine_args.emplace_back("--disable-webgl");
     web_engine_args.emplace_back("--disable-webgl2");
@@ -1732,15 +1734,15 @@ int NWebImpl::GetMediaPlaybackState() {
 #ifdef OHOS_SCREEN_LOCK
 void NWebImpl::RegisterScreenLockFunction(int32_t windowId,
                                           std::shared_ptr<NWebScreenLockCallback> callback) {
-  NWebScreenLockTracker::Instance().AddScreenLock(windowId, nweb_id_, [callback](bool key) {
-    if (callback) {
-      callback->Handle(key);
-    }
-  });
+  if (nweb_delegate_) {
+    nweb_delegate_->SetWakeLockCallback(windowId, callback);
+  }
 }
 
 void NWebImpl::UnRegisterScreenLockFunction(int32_t windowId) {
-  NWebScreenLockTracker::Instance().RemoveScreenLock(windowId, nweb_id_);
+  if (nweb_delegate_) {
+    nweb_delegate_->SetWakeLockCallback(windowId, nullptr);
+  }
 }
 #endif  // #ifdef OHOS_SCREEN_LOCK
 
@@ -1859,6 +1861,17 @@ bool NWebImpl::GetPrintBackground() {
 }
 
 void NWebImpl::SetNestedScrollMode(const NestedScrollMode& nestedScrollMode) {}
+
+void NWebImpl::PrecompileJavaScript(const std::string& url,
+                          const std::string& script,
+                          std::shared_ptr<CacheOptions>& cacheOptions,
+                          std::shared_ptr<NWebMessageValueCallback> callback) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "PrecompileJavaScript: nweb delegate has not init.";
+    return;
+  }
+  nweb_delegate_->PrecompileJavaScript(url, script, cacheOptions, callback);
+}
 #endif
 
 #if defined(OHOS_INPUT_EVENTS)
@@ -2106,6 +2119,17 @@ void NWebImpl::ResumeDownload(std::shared_ptr<NWebDownloadItem> web_download) {
 
   nweb_delegate_->ResumeDownload(web_download);
 }
+
+#ifdef OHOS_EX_DOWNLOAD
+NWebDownloadItemState NWebImpl::GetDownloadItemState(long item_id) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("GetDownloadItemState failed, nweb delegate is nullptr, nweb_id = %{public}u", nweb_id_);
+    return NWebDownloadItemState::MAX_DOWNLOAD_STATE;
+  }
+
+  return nweb_delegate_->GetDownloadItemState(item_id);
+}
+#endif
 
 void NWebImpl::PutAccessibilityEventCallback(
     std::shared_ptr<NWebAccessibilityEventCallback>
@@ -2441,6 +2465,18 @@ bool NWebImpl::IsAnyNWebIntelligentTrackingPreventionEnabled() {
 }
 #endif
 
+void NWebImpl::OnCreateNativeMediaPlayer(
+    std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("set create custome media player callback failed, nweb delegate is nullptr, nweb_id = %{public}u", nweb_id_);
+    return;
+  }
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  nweb_delegate_->RegisterOnCreateNativeMediaPlayerListener(std::move(callback));
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+}
+
 // static
 void NWebImpl::AddIntelligentTrackingPreventionBypassingList(
     const std::vector<std::string>& hosts) {
@@ -2466,6 +2502,36 @@ void NWebImpl::ClearIntelligentTrackingPreventionBypassingList() {
       ClearITPBypassingList();
 #endif
 }
+
+#ifdef OHOS_RENDER_PROCESS_MODE
+// static
+void NWebImpl::SetRenderProcessMode(RenderProcessMode mode) {
+  LOG(INFO) << "SetRenderProcessMode mode:" << (int)mode;
+  content::RenderProcessMode render_process_mode =
+      content::RenderProcessMode::SINGLE_MODE;
+  if (mode == RenderProcessMode::MULTIPLE_MODE) {
+    render_process_mode = content::RenderProcessMode::MULTIPLE_MODE;
+  }
+  content::RenderProcessHost::SetRenderProcessMode(render_process_mode);
+
+#if defined(OHOS_SITE_ISOLATION)
+  g_siteIsolationMode = ShouldEnableSiteIsolation();
+#if defined(REPORT_SYS_EVENT)
+  ReportSiteIsolationMode(std::to_string(g_siteIsolationMode));
+#endif
+#endif
+}
+
+// static
+RenderProcessMode NWebImpl::GetRenderProcessMode() {
+  content::RenderProcessMode render_process_mode =
+      content::RenderProcessHost::render_process_mode();
+  if (render_process_mode == content::RenderProcessMode::SINGLE_MODE) {
+    return RenderProcessMode::SINGLE_MODE;
+  }
+  return RenderProcessMode::MULTIPLE_MODE;
+}
+#endif // OHOS_RENDER_PROCESS_MODE
 }  // namespace OHOS::NWeb
 
 using namespace OHOS::NWeb;

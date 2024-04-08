@@ -72,6 +72,15 @@ class FramelessMediaInterfaceProxy final
       mojo::PendingReceiver<media::mojom::MediaPlayerRendererExtension>
           renderer_extension_receiver) final;
 #endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void CreateCustomMediaPlayerRenderer(
+      mojo::PendingRemote<media::mojom::CustomMediaPlayerRendererClientExtension>
+          client_extension_remote,
+      mojo::PendingReceiver<media::mojom::Renderer> receiver,
+      mojo::PendingReceiver<media::mojom::MediaPlayerRendererExtension>
+          renderer_extension_receiver,
+      int player_id) final;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 #if BUILDFLAG(IS_ANDROID)
   void CreateFlingingRenderer(
       const std::string& presentation_id,

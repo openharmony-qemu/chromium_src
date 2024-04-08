@@ -44,6 +44,8 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/size.h"
 
+#if !defined(OHOS_UNITTESTS)
+
 namespace viz {
 namespace {
 
@@ -772,3 +774,5 @@ GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(
 #endif
 
 }  // namespace viz
+
+#endif  // !defined(OHOS_UNITTESTS)

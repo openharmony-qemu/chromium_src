@@ -35,6 +35,7 @@ typedef struct {
   int32_t x;
   int32_t y;
   float scale;
+  uint8_t* buff;
 } ArkWebCursorInfo;
 
 const ArkWebCursorInfo ark_web_cursor_info_default = {

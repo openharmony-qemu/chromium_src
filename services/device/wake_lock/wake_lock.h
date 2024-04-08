@@ -92,6 +92,8 @@ class WakeLock : public mojom::WakeLock {
 #if BUILDFLAG(IS_ANDROID)
   int context_id_;
   WakeLockContextCallback native_view_getter_;
+#elif defined(OHOS_SCREEN_LOCK)
+  int context_id_;
 #endif
 
   scoped_refptr<base::SequencedTaskRunner> main_task_runner_;

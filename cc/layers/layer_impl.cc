@@ -432,6 +432,12 @@ void LayerImpl::PushPropertiesTo(LayerImpl* layer) {
   // Reset any state that should be cleared for the next update.
   needs_show_scrollbars_ = false;
   ResetChangeTracking();
+
+  layer->SetShouldInterceptTouchEvent(ShouldInterceptTouchEvent());
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  layer->SetNeedNotifyRectChange(need_notify_rect_changed_);
+  layer->SetVideoRect(video_rect_);
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 }
 
 bool LayerImpl::IsAffectedByPageScale() const {
@@ -1032,5 +1038,78 @@ viz::ViewTransitionElementResourceId LayerImpl::ViewTransitionResourceId()
     const {
   return viz::ViewTransitionElementResourceId();
 }
+
+void LayerImpl::SetShouldInterceptTouchEvent(bool intercept) {
+  should_intercept_touch_event_ = intercept;
+}
+
+bool LayerImpl::ShouldInterceptTouchEvent() const {
+  return should_intercept_touch_event_;
+}
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void LayerImpl::SetNeedNotifyRectChange(bool need) {
+  need_notify_rect_changed_ = need;
+}
+
+gfx::RectF LayerImpl::VideoRect() const {
+  if (!is_inner_viewport_scroll_layer_) {
+    return video_rect_;
+  }
+
+  auto viewport_bounds_delta = gfx::ToCeiledVector2d(
+    GetPropertyTrees()->inner_viewport_scroll_bounds_delta());
+  return gfx::RectF(video_rect_.x(), video_rect_.y(),
+                    video_rect_.width() + viewport_bounds_delta.x(),
+                    video_rect_.height() + viewport_bounds_delta.y());
+}
+
+gfx::RectF LayerImpl::VideoRectInScreenSpace() const {
+  gfx::Transform transform = ScreenSpaceTransform();
+  gfx::RectF rf = VideoRect();
+  if (rf.IsEmpty()) {
+    rf.set_width(bounds().width());
+    rf.set_height(bounds().height());
+  }
+  return transform.MapRect(rf);
+}
+
+void LayerImpl::SetVideoRect(const gfx::RectF& rect) {
+  if (video_rect_ == rect) {
+    return;
+  }
+
+  video_rect_ = rect;
+
+  // Scrollbar positions depend on the scrolling layer bounds.
+  if (scrollable_) {
+    layer_tree_impl()->SetScrollbarGeometriesNeedUpdate();
+  }
+
+  NoteLayerPropertyChanged();
+}
+
+void LayerImpl::OnDrawPropertiesChanged() {
+  CheckLayerRectChange();
+}
+
+void LayerImpl::CheckLayerRectChange() {
+  if (!need_notify_rect_changed_) {
+    return;
+  }
+  gfx::Transform transform = ScreenSpaceTransform();
+  gfx::RectF rf = VideoRect();
+  if (rf.IsEmpty()) {
+    rf.set_width(bounds().width());
+    rf.set_height(bounds().height());
+  }
+  gfx::RectF res = transform.MapRect(rf);
+  layer_tree_impl()->OnLayerRectChange(id(),
+      static_cast<int>(res.x()),
+      static_cast<int>(res.y()),
+      static_cast<int>(res.width()),
+      static_cast<int>(res.height()));
+}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 
 }  // namespace cc

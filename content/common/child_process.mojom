@@ -40,6 +40,11 @@ interface ChildProcessHost {
   // dynamic resource scheduling.
   [EnableIf=is_ohos]
   ReportKeyThread(int32 status, int32 process_id, int32 thread_id, int32 role);
+
+  // Report the key threads in render process in batches. This is used on OHOS to
+  // dynamic resource scheduling.
+  [EnableIf=is_ohos]
+  ReportKeyThreadIds(int32 status, int32 process_id, array<int32> thread_ids, int32 role);
 };
 
 // A control interface the browser uses to drive the behavior of all types of

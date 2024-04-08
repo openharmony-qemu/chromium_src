@@ -61,12 +61,14 @@ class CodecEncodeBridgeCallback
   virtual ~CodecEncodeBridgeCallback() = default;
 
   void OnError(ErrorType errorType, int32_t errorCode) override;
-  void OnStreamChanged(const CodecFormatAdapter& format) override;
+  void OnStreamChanged(
+      const std::shared_ptr<CodecFormatAdapter> format) override;
   void OnNeedOutputData(uint32_t index,
-                        BufferInfo info,
+                        std::shared_ptr<BufferInfoAdapter> info,
                         BufferFlag flag,
-                        OhosBuffer buffer) override;
-  void OnNeedInputData(uint32_t index, OhosBuffer buffer) override;
+                        std::shared_ptr<OhosBufferAdapter> buffer) override;
+  void OnNeedInputData(uint32_t index,
+                       std::shared_ptr<OhosBufferAdapter> buffer) override;
   void ClearCache();
   scoped_refptr<base::SequencedTaskRunner> codec_callback_task_runner_;
   std::atomic<bool> is_running_ = false;

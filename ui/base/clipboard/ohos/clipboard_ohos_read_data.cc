@@ -15,22 +15,22 @@
 using namespace OHOS::NWeb;
 
 namespace ui {
-ClipboardOhosReadData::ClipboardOhosReadData(PasteRecordList& record_list)
-    : record_list_(record_list) {
+ClipboardOhosReadData::ClipboardOhosReadData(PasteRecordVector& record_vector)
+    : record_vector_(record_vector) {
   is_in_app_ = OhosAdapterHelper::GetInstance().GetPasteBoard().IsLocalPaste();
   token_id_ = OhosAdapterHelper::GetInstance().GetPasteBoard().GetTokenId();
   std::string htmlString;
   std::string textString;
 
-  for (auto& recordList : record_list_) {
-    if (!recordList) {
+  for (auto& recordVector : record_vector_) {
+    if (!recordVector) {
       continue;
     }
-    if (recordList->GetHtmlText()) {
-      htmlString.append(*(recordList->GetHtmlText()));
+    if (recordVector->GetHtmlText()) {
+      htmlString.append(*(recordVector->GetHtmlText()));
     }
-    if (recordList->GetPlainText()) {
-      textString.append(*(recordList->GetPlainText()));
+    if (recordVector->GetPlainText()) {
+      textString.append(*(recordVector->GetPlainText()));
     }
   }
   html_ = std::make_shared<std::string>(htmlString.c_str());
@@ -42,7 +42,7 @@ std::shared_ptr<std::string> ClipboardOhosReadData::ReadHtml() {
     return nullptr;
   }
 
-  if (record_list_.size() > 1 && !is_in_app_ && !has_been_read_html_) {
+  if (record_vector_.size() > 1 && !is_in_app_ && !has_been_read_html_) {
     has_been_read_html_ = true;
   }
   return html_;

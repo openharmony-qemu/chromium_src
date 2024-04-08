@@ -19,6 +19,32 @@
 
 #include "media/base/video_frame.h"
 
+namespace OHOS::NWeb {
+struct DecoderFormat {
+  int32_t width;
+  int32_t height;
+  double frameRate;
+};
+
+struct BufferInfo {
+    int64_t presentationTimeUs = 0;
+    int32_t size = 0;
+    int32_t offset = 0;
+};
+
+struct OhosBuffer {
+    uint8_t *addr; 
+    uint32_t bufferSize;
+};
+
+struct CodecConfigPara {
+    int32_t width;
+    int32_t height;
+    int64_t bitRate;
+    double frameRate;
+};
+} // namespace OHOS::NWeb
+
 namespace media {
 using namespace OHOS::NWeb;
 enum class CodecType {

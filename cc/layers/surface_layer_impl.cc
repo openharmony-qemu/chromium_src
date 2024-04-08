@@ -47,7 +47,11 @@ SurfaceLayerImpl::SurfaceLayerImpl(
     UpdateSubmissionStateCB update_submission_state_callback)
     : LayerImpl(tree_impl, id),
       update_submission_state_callback_(
-          std::move(update_submission_state_callback)) {}
+          std::move(update_submission_state_callback)) {
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  SetNeedNotifyRectChange(true);
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+}
 
 SurfaceLayerImpl::~SurfaceLayerImpl() {
   // Do not call `update_submission_state_callback_` here.  There is only very

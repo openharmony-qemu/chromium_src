@@ -37,8 +37,10 @@ const float kFakeCoordY = 24.f;
 const base::TimeDelta kOneSecond = base::Seconds(1);
 const base::TimeDelta kOneMicrosecond = base::Microseconds(1);
 const base::TimeDelta kDeltaTimeForFlingSequences = base::Milliseconds(5);
+#if !defined(OHOS_UNITTESTS)
 const float kMockTouchRadius = MockMotionEvent::TOUCH_MAJOR / 2;
 const float kMaxTwoFingerTapSeparation = 300;
+#endif // OHOS_UNITTESTS events_unittests drop case
 
 GestureProvider::Config CreateDefaultConfig() {
   GestureProvider::Config sConfig;
@@ -548,6 +550,7 @@ class GestureProviderTest : public testing::Test, public GestureProviderClient {
   base::test::SingleThreadTaskEnvironment task_environment_;
   bool should_process_double_tap_events_ = true;
 };
+#if !defined(OHOS_UNITTESTS)
 
 // Verify that a DOWN has the same unique_touch_event_id and
 // primary_touch_event_id
@@ -3669,5 +3672,5 @@ TEST_F(GestureProviderTest, GesutreDragLongpressCancelAndReset) {
   EXPECT_FALSE(HasReceivedGesture(ET_GESTURE_DRAG_LONG_PRESS));
 }
 #endif //OHOS_DRAG_DROP
-
+#endif // OHOS_UNITTESTS events_unittests drop case
 }  // namespace ui

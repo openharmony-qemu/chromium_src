@@ -402,4 +402,12 @@ bool WebContentsDelegate::IsPrivileged() {
   return false;
 }
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+std::unique_ptr<CustomMediaPlayer> WebContentsDelegate::CreateCustomMediaPlayer(
+    std::unique_ptr<CustomMediaPlayerListener> listener,
+    const MediaInfo& media_info) {
+  return nullptr;
+}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 }  // namespace content

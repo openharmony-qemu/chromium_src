@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include "decoder_format_adapter_impl.h"
 
 #include "base/logging.h"
 #include "base/task/task_runner.h"
@@ -36,12 +37,12 @@ std::unique_ptr<MediaCodecDecoderBridgeImpl>
 MediaCodecDecoderBridgeImpl::CreateVideoDecoder(
     const VideoBridgeCodecConfig& config) {
   LOG(INFO) << "MediaCodecDecoderBridgeImpl::CreateVideoDecoder.";
-  auto& system_properties_adapter =
-        OHOS::NWeb::OhosAdapterHelper::GetInstance()
-            .GetSystemPropertiesInstance();
-  std::string product_model = system_properties_adapter.GetDeviceInfoProductModel();
+  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                                        .GetSystemPropertiesInstance();
+  std::string product_model =
+      system_properties_adapter.GetDeviceInfoProductModel();
   if (product_model == PRODUCT_MODEL_EMULATOR) {
-      return nullptr;
+    return nullptr;
   }
   std::string codec_type;
   if (config.codec == media::VideoCodec::kH264) {
@@ -112,8 +113,9 @@ MediaCodecDecoderBridgeImpl::MediaCodecDecoderBridgeImpl(
     std::string codec_type,
     base::RepeatingClosure on_buffers_available_cb) {
   LOG(INFO) << "MediaCodecDecoderBridgeImpl::MediaCodecDecoderBridgeImpl.";
-  if (!on_buffers_available_cb)
+  if (!on_buffers_available_cb) {
     return;
+  }
   videoDecoder_ =
       OhosAdapterHelper::GetInstance().CreateMediaCodecDecoderAdapter();
   DecoderAdapterCode ret = CreateVideoBridgeDecoderByMime(codec_type);
@@ -143,7 +145,20 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::ConfigureBridgeDecoder(
                   "is NULL.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
-  return videoDecoder_->ConfigureDecoder(format);
+
+  std::shared_ptr<DecoderFormatAdapterImpl> formatAdapter =
+      std::make_shared<DecoderFormatAdapterImpl>();
+  if (!formatAdapter) {
+    LOG(ERROR) << "MediaCodecDecoderBridgeImpl::ConfigureBridgeDecoder "
+                  "DecoderFormatAdapterImpl is NULL";
+    return DecoderAdapterCode::DECODER_ERROR;
+  }
+
+  formatAdapter->SetWidth(format.width);
+  formatAdapter->SetHeight(format.height);
+  formatAdapter->SetFrameRate(format.frameRate);
+
+  return videoDecoder_->ConfigureDecoder(formatAdapter);
 }
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::SetBridgeParameterDecoder(
@@ -155,14 +170,27 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::SetBridgeParameterDecoder(
                   "decoder is NULL.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
-  return videoDecoder_->SetParameterDecoder(format);
+
+  std::shared_ptr<DecoderFormatAdapterImpl> formatAdapter =
+      std::make_shared<DecoderFormatAdapterImpl>();
+  if (!formatAdapter) {
+    LOG(ERROR) << "MediaCodecDecoderBridgeImpl::SetBridgeParameterDecoder "
+                  "DecoderFormatAdapterImpl is NULL";
+    return DecoderAdapterCode::DECODER_ERROR;
+  }
+
+  formatAdapter->SetWidth(format.width);
+  formatAdapter->SetHeight(format.height);
+  formatAdapter->SetFrameRate(format.frameRate);
+
+  return videoDecoder_->SetParameterDecoder(formatAdapter);
 }
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::SetBridgeOutputSurface(
     void* window) {
   LOG(INFO) << "MediaCodecDecoderBridgeImpl::SetBridgeOutputSurface set "
                "decoder outputsurface.";
-  if (videoDecoder_ == nullptr) {
+  if (videoDecoder_ == nullptr || window == nullptr) {
     LOG(ERROR) << "MediaCodecDecoderBridgeImpl::SetBridgeOutputSurface decoder "
                   "is NULL.";
     return DecoderAdapterCode::DECODER_ERROR;
@@ -179,7 +207,21 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::GetOutputFormatBridgeDecoder(
                   "decoder is NULL.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
-  return videoDecoder_->GetOutputFormatDec(format);
+
+  std::shared_ptr<DecoderFormatAdapterImpl> formatAdapter =
+      std::make_shared<DecoderFormatAdapterImpl>();
+  if (!formatAdapter) {
+    LOG(ERROR) << "MediaCodecDecoderBridgeImpl::GetOutputFormatBridgeDecoder "
+                  "DecoderFormatAdapterImpl is NULL";
+    return DecoderAdapterCode::DECODER_ERROR;
+  }
+
+  DecoderAdapterCode result = videoDecoder_->GetOutputFormatDec(formatAdapter);
+  format.width = formatAdapter->GetWidth();
+  format.height = formatAdapter->GetHeight();
+  format.frameRate = formatAdapter->GetFrameRate();
+
+  return result;
 }
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::PrepareBridgeDecoder() {
@@ -240,7 +282,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::FlushBridgeDecoder() {
   decoder_task_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(&MediaCodecDecoderBridgeImpl::UpdateFlushToFalse,
-                      base::Unretained(this)));
+                     base::Unretained(this)));
   return StartBridgeDecoder();
 }
 
@@ -266,12 +308,13 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::ResetBridgeDecoder() {
   decoder_task_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(&MediaCodecDecoderBridgeImpl::UpdateFlushToFalse,
-                      base::Unretained(this)));
+                     base::Unretained(this)));
   return ret;
 }
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::ReleaseBridgeDecoder() {
-  LOG(INFO) << "MediaCodecDecoderBridgeImpl::ReleaseBridgeDecoder release decoder.";
+  LOG(INFO)
+      << "MediaCodecDecoderBridgeImpl::ReleaseBridgeDecoder release decoder.";
   if (videoDecoder_ == nullptr) {
     LOG(ERROR)
         << "MediaCodecDecoderBridgeImpl::ReleaseBridgeDecoder decoder is NULL.";
@@ -293,11 +336,6 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::PushInbufferDec(
     const uint32_t index,
     const uint32_t& bufferSize,
     const int64_t& time) {
-  BufferInfo bufferInfo;
-  bufferInfo.presentationTimeUs = time;
-  bufferInfo.size = bufferSize;
-  bufferInfo.offset = 0;
-
   BufferFlag bufferFlag;
   if (isFirstDecFrame_) {
     bufferFlag = BufferFlag::CODEC_BUFFER_FLAG_CODEC_DATA;
@@ -307,19 +345,14 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::PushInbufferDec(
   }
   LOG(DEBUG) << "PushInbufferDec index:" << index
              << ", buffersize:" << bufferSize;
-  return videoDecoder_->QueueInputBufferDec(index, bufferInfo, bufferFlag);
+  return videoDecoder_->QueueInputBufferDec(index, time, bufferSize, 0,
+                                            bufferFlag);
 }
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::PushInbufferDecEos(
     const uint32_t index) {
-  BufferInfo bufferInfo;
-  bufferInfo.presentationTimeUs = 0;
-  bufferInfo.size = 0;
-  bufferInfo.offset = 0;
-
-  BufferFlag bufferFlag;
-  bufferFlag = BufferFlag::CODEC_BUFFER_FLAG_EOS;
-  return videoDecoder_->QueueInputBufferDec(index, bufferInfo, bufferFlag);
+  BufferFlag bufferFlag = BufferFlag::CODEC_BUFFER_FLAG_EOS;
+  return videoDecoder_->QueueInputBufferDec(index, 0, 0, 0, bufferFlag);
 }
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBuffer(
@@ -357,7 +390,8 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBufferEOS() {
   if (signal_ == nullptr || signal_->isOnError_) {
     return DecoderAdapterCode::DECODER_ERROR;
   }
-  if (signal_->isDecoderFlushing_.load() || signal_->inputQueue_.empty() || !isRunning_.load()) {
+  if (signal_->isDecoderFlushing_.load() || signal_->inputQueue_.empty() ||
+      !isRunning_.load()) {
     return DecoderAdapterCode::DECODER_RETRY;
   }
   if (videoDecoder_ == nullptr) {
@@ -408,7 +442,8 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::DequeueOutputBuffer(
     return DecoderAdapterCode::DECODER_ERROR;
   }
   index = signal_->outputQueue_.front().outputBufferIndex;
-  eos = signal_->outputQueue_.front().outputBufferFlag == BufferFlag::CODEC_BUFFER_FLAG_EOS;
+  eos = signal_->outputQueue_.front().outputBufferFlag ==
+        BufferFlag::CODEC_BUFFER_FLAG_EOS;
   *presentation_time = base::Microseconds(
       signal_->outputQueue_.front().outputBufferInfo.presentationTimeUs);
 
@@ -418,8 +453,9 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::DequeueOutputBuffer(
 
 void MediaCodecDecoderBridgeImpl::DestoryNativeWindow(void* window) {
   if (window) {
-    OhosAdapterHelper::GetInstance().GetWindowAdapterInstance()
-                                    .DestroyNativeWindow(window);
+    OhosAdapterHelper::GetInstance()
+        .GetWindowAdapterInstance()
+        .DestroyNativeWindow(window);
   }
 }
 
@@ -430,19 +466,21 @@ void CodecBridgeCallback::OnError(ErrorType errorType, int32_t errorCode) {
   clearOutputQueue(signal_->outputQueue_);
 }
 
-void CodecBridgeCallback::OnStreamChanged(const DecoderFormat& format) {
+void CodecBridgeCallback::OnStreamChanged(int32_t width,
+                                          int32_t height,
+                                          double frameRate) {
   LOG(INFO) << "CodecBridgeCallback::OnStreamChanged Output Format Changed.";
 }
 
-void CodecBridgeCallback::OnNeedInputData(uint32_t index, OhosBuffer buffer) {
+void CodecBridgeCallback::OnNeedInputData(
+    uint32_t index,
+    std::shared_ptr<OhosBufferAdapter> buffer) {
   LOG(DEBUG) << "CodecBridgeCallback::OnNeedInputData";
   if (!decoder_callback_task_runner_->RunsTasksInCurrentSequence()) {
     decoder_callback_task_runner_->PostTask(
-        FROM_HERE,
-        base::BindOnce(&CodecBridgeCallback::OnNeedInputData,
-                       shared_from_this(),
-                       std::move(index),
-                       std::move(buffer)));
+        FROM_HERE, base::BindOnce(&CodecBridgeCallback::OnNeedInputData,
+                                  shared_from_this(), std::move(index),
+                                  std::move(buffer)));
     return;
   }
   TRACE_EVENT0("media", "CodecBridgeCallback::OnNeedInputData");
@@ -453,39 +491,59 @@ void CodecBridgeCallback::OnNeedInputData(uint32_t index, OhosBuffer buffer) {
     LOG(DEBUG) << "CodecBridgeCallback::OnNeedInputData Decoder is flushing.";
     return;
   }
+
+  if (!buffer) {
+    LOG(ERROR) << "CodecBridgeCallback::OnNeedInputData buffer is NULL";
+    return;
+  }
+
   VideoBridgeDecoderInputBuffer inputBuffer;
   inputBuffer.inputBufferIndex = index;
-  inputBuffer.inputBuffer = buffer;
+  inputBuffer.inputBuffer.addr = buffer->GetAddr();
+  inputBuffer.inputBuffer.bufferSize = buffer->GetBufferSize();
   signal_->inputQueue_.push(inputBuffer);
   on_buffers_available_cb_.Run();
 }
 
-void CodecBridgeCallback::OnNeedOutputData(uint32_t index,
-                                           BufferInfo info,
-                                           BufferFlag flag) {
+void CodecBridgeCallback::OnNeedOutputData(
+    uint32_t index,
+    std::shared_ptr<BufferInfoAdapter> info,
+    BufferFlag flag) {
   LOG(DEBUG) << "CodecBridgeCallback::OnNeedOutputData";
   if (!decoder_callback_task_runner_->RunsTasksInCurrentSequence()) {
     decoder_callback_task_runner_->PostTask(
-        FROM_HERE,
-        base::BindOnce(&CodecBridgeCallback::OnNeedOutputData,
-                       shared_from_this(),
-                       std::move(index),
-                       std::move(info),
-                       std::move(flag)));
+        FROM_HERE, base::BindOnce(&CodecBridgeCallback::OnNeedOutputData,
+                                  shared_from_this(), std::move(index),
+                                  std::move(info), std::move(flag)));
     return;
   }
+
+  if (!info) {
+    LOG(ERROR) << "CodecBridgeCallback::OnNeedOutputData info is NULLL";
+    return;
+  }
+
   TRACE_EVENT0("media", "CodecBridgeCallback::OnNeedOutputData");
   LOG(DEBUG) << "CodecBridgeCallback::OnNeedOutputData Output Buffer "
                 "Available, index ="
-             << index << ", timestamp = " << info.presentationTimeUs;
+             << index << ", timestamp = " << info->GetPresentationTimeUs();
   if (signal_->isDecoderFlushing_.load()) {
     LOG(DEBUG) << "CodecBridgeCallback::OnNeedOutputData Decoder is flushing.";
     return;
   }
+
+  if (!info) {
+    LOG(ERROR) << "CodecBridgeCallback::OnNeedOutputData info is NULL";
+    return;
+  }
+
   VideoBridgeDecoderOutputBuffer outputBuffer;
   outputBuffer.outputBufferIndex = index;
   outputBuffer.outputBufferFlag = flag;
-  outputBuffer.outputBufferInfo = info;
+  outputBuffer.outputBufferInfo.presentationTimeUs =
+      info->GetPresentationTimeUs();
+  outputBuffer.outputBufferInfo.size = info->GetSize();
+  outputBuffer.outputBufferInfo.offset = info->GetOffset();
   signal_->outputQueue_.push(outputBuffer);
   on_buffers_available_cb_.Run();
 }

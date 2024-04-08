@@ -39,9 +39,11 @@ bool CompareCaptureDevices(const VideoCaptureDeviceInfo& a,
 VideoCaptureDeviceFactoryOHOS::VideoCaptureDeviceFactoryOHOS(
     scoped_refptr<base::SingleThreadTaskRunner> ui_task_runner)
     : ui_task_runner_(ui_task_runner) {
-  auto status_callback = std::make_shared<VideoCaptureCameraStatusCallbackListenerOHOS>
-    (ui_task_runner_, weak_factory_.GetWeakPtr());
-  OhosAdapterHelper::GetInstance().GetCameraManagerAdapter().Create(status_callback);
+  auto status_callback =
+      std::make_shared<VideoCaptureCameraStatusCallbackListenerOHOS>(
+          ui_task_runner_, weak_factory_.GetWeakPtr());
+  OhosAdapterHelper::GetInstance().GetCameraManagerAdapter().Create(
+      status_callback);
 }
 
 VideoCaptureDeviceFactoryOHOS::~VideoCaptureDeviceFactoryOHOS() {
@@ -52,11 +54,12 @@ VideoCaptureDeviceFactoryOHOS::~VideoCaptureDeviceFactoryOHOS() {
 }
 
 int VideoCaptureDeviceFactoryOHOS::CheckDeviceId(const std::string device_id) {
-  std::vector<VideoDeviceDescriptor> devices_desc;
-  OhosAdapterHelper::GetInstance().GetCameraManagerAdapter().GetDevicesInfo(
-      devices_desc);
+  std::vector<std::shared_ptr<VideoDeviceDescriptorAdapter>> devices_desc =
+      OhosAdapterHelper::GetInstance()
+          .GetCameraManagerAdapter()
+          .GetDevicesInfo();
   for (auto single_device_desc : devices_desc) {
-    if (device_id == single_device_desc.deviceId) {
+    if (single_device_desc && device_id == single_device_desc->GetDeviceId()) {
       return kSuccessReturnValue;
     }
   }
@@ -70,8 +73,9 @@ VideoCaptureErrorOrDevice VideoCaptureDeviceFactoryOHOS::CreateDevice(
   DCHECK(thread_checker_.CalledOnValidThread());
   if (CheckDeviceId(device_descriptor.device_id) != kSuccessReturnValue) {
     LOG(INFO) << "device_id can not be create";
-    return VideoCaptureErrorOrDevice(VideoCaptureError::
-                          kVideoCaptureDeviceFactoryChromeOSCreateDeviceFailed);
+    return VideoCaptureErrorOrDevice(
+        VideoCaptureError::
+            kVideoCaptureDeviceFactoryChromeOSCreateDeviceFailed);
   }
   // OhosAdapterHelper::GetInstance().GetCameraManagerAdapter().StopSession();
   auto self = std::make_unique<VideoCaptureDeviceOHOS>(device_descriptor);
@@ -84,28 +88,30 @@ void VideoCaptureDeviceFactoryOHOS::GetDevicesInfo(
   DCHECK(thread_checker_.CalledOnValidThread());
   std::vector<VideoCaptureDeviceInfo> devices_info;
 
-  std::vector<VideoDeviceDescriptor> devices_desc;
-  OhosAdapterHelper::GetInstance().GetCameraManagerAdapter().GetDevicesInfo(
-      devices_desc);
+  std::vector<std::shared_ptr<OHOS::NWeb::VideoDeviceDescriptorAdapter>> devices_desc = 
+  OhosAdapterHelper::GetInstance().GetCameraManagerAdapter().GetDevicesInfo();
 
   LOG(INFO) << "GetDevicesInfo size " << devices_desc.size();
   for (auto single_device_desc : devices_desc) {
+    if (!single_device_desc || !(single_device_desc->GetControlSupport())) {
+      continue;
+    }
     VideoCaptureControlSupport control_support;
-    control_support.pan = single_device_desc.controlSupport.pan;
-    control_support.tilt = single_device_desc.controlSupport.tilt;
-    control_support.zoom = single_device_desc.controlSupport.zoom;
+    control_support.pan = single_device_desc->GetControlSupport()->GetPan();
+    control_support.tilt = single_device_desc->GetControlSupport()->GetTilt();
+    control_support.zoom = single_device_desc->GetControlSupport()->GetZoom();
     VideoFacingMode facing_mode =
-        VideoCaptureCommonOHOS::GetCameraFacingMode(single_device_desc.facing);
+        VideoCaptureCommonOHOS::GetCameraFacingMode(single_device_desc->GetFacingMode());
     VideoCaptureDeviceInfo device_info(VideoCaptureDeviceDescriptor(
-        single_device_desc.displayName, single_device_desc.deviceId,
+        single_device_desc->GetDisplayName(), single_device_desc->GetDeviceId(),
         "" /*model_id*/, VideoCaptureApi::LINUX_V4L2_SINGLE_PLANE,
         control_support,
         VideoCaptureCommonOHOS::GetCameraTransportType(
-            single_device_desc.transportType),
+            single_device_desc->GetTransportType()),
         facing_mode));
     device_info.supported_formats = VideoCaptureCommonOHOS::GetSupportedFormats(
-        single_device_desc.supportCaptureFormats);
-    LOG(INFO) << "GetDevicesInfo deviceId: " << single_device_desc.deviceId
+        single_device_desc->GetSupportCaptureFormats());
+    LOG(INFO) << "GetDevicesInfo deviceId: " << single_device_desc->GetDeviceId()
               << ", pan: " << control_support.pan
               << ", tilt: " << control_support.tilt
               << ", zoom: " << control_support.zoom
@@ -124,27 +130,35 @@ void VideoCaptureDeviceFactoryOHOS::GetDevicesInfo(
 }
 
 void VideoCaptureDeviceFactoryOHOS::OnCameraStatusChanged(
-    CameraStatusAdapter camera_status, std::string callback_device_id) {
+    CameraStatusAdapter camera_status,
+    std::string callback_device_id) {
   DCHECK(thread_checker_.CalledOnValidThread());
-    std::string current_device_Id = OhosAdapterHelper::GetInstance().GetCameraManagerAdapter().
-      GetCurrentDeviceId();
-  LOG(INFO) << "camera status changed, current_device_Id is " << current_device_Id
-            << ", callback_device_id is " << callback_device_id;
-  if ((camera_status == CameraStatusAdapter::DISAPPEAR) || (camera_status == CameraStatusAdapter::APPEAR)) {
-    if ((current_device_Id == callback_device_id) && (camera_status == CameraStatusAdapter::DISAPPEAR)) {
-        OhosAdapterHelper::GetInstance().GetCameraManagerAdapter().StopSession(CameraStopType::NORMAL);
+  std::string current_device_Id = OhosAdapterHelper::GetInstance()
+                                      .GetCameraManagerAdapter()
+                                      .GetCurrentDeviceId();
+  LOG(INFO) << "camera status changed, current_device_Id is "
+            << current_device_Id << ", callback_device_id is "
+            << callback_device_id;
+  if ((camera_status == CameraStatusAdapter::DISAPPEAR) ||
+      (camera_status == CameraStatusAdapter::APPEAR)) {
+    if ((current_device_Id == callback_device_id) &&
+        (camera_status == CameraStatusAdapter::DISAPPEAR)) {
+      OhosAdapterHelper::GetInstance().GetCameraManagerAdapter().StopSession(
+          CameraStopType::NORMAL);
     }
-    if(auto* monitor = base::SystemMonitor::Get()){
-      monitor->ProcessDevicesChanged(base::SystemMonitor::DEVTYPE_VIDEO_CAPTURE);
+    if (auto* monitor = base::SystemMonitor::Get()) {
+      monitor->ProcessDevicesChanged(
+          base::SystemMonitor::DEVTYPE_VIDEO_CAPTURE);
     }
   }
   LOG(INFO) << "camera status changed";
   if (camera_status == CameraStatusAdapter::AVAILABLE) {
-    OhosAdapterHelper::GetInstance().GetCameraManagerAdapter().
-      SetCameraStatus(CameraStatusAdapter::AVAILABLE);
-    if (!OhosAdapterHelper::GetInstance().GetCameraManagerAdapter().
-        IsExistCaptureTask()) {
-        return;
+    OhosAdapterHelper::GetInstance().GetCameraManagerAdapter().SetCameraStatus(
+        CameraStatusAdapter::AVAILABLE);
+    if (!OhosAdapterHelper::GetInstance()
+             .GetCameraManagerAdapter()
+             .IsExistCaptureTask()) {
+      return;
     }
     OhosAdapterHelper::GetInstance().GetCameraManagerAdapter().RestartSession();
   }

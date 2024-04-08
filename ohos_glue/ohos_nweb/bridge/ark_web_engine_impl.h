@@ -69,6 +69,10 @@ public:
                         const ArkWebString &cache_key,
                         const uint32_t &cache_valid_time) override;
 
+  void SetRenderProcessMode(int32_t mode) override;
+
+  int32_t GetRenderProcessMode() override;
+
   void WarmupServiceWorker(const ArkWebString &url) override;
 
 private:

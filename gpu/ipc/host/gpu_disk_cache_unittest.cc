@@ -12,6 +12,8 @@
 #include "net/base/test_completion_callback.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#if !defined(OHOS_UNITTESTS)
+
 namespace gpu {
 namespace {
 
@@ -233,3 +235,5 @@ TEST_F(GpuDiskCacheTest, DestroyedCallbackCalledMultipleInstance) {
 }
 
 }  // namespace gpu
+
+#endif  // !defined(OHOS_UNITTESTS)

@@ -20,6 +20,36 @@ namespace media {
 using namespace OHOS::NWeb;
 
 class OHOSAudioManager;
+class OHOSAudioOutputStream;
+
+class AudioRendererOptions : public AudioRendererOptionsAdapter {
+ public:
+  AudioRendererOptions() = default;
+
+  AudioAdapterSamplingRate GetSamplingRate() override;
+
+  AudioAdapterEncodingType GetEncodingType() override;
+
+  AudioAdapterSampleFormat GetSampleFormat() override;
+
+  AudioAdapterChannel GetChannel() override;
+
+  AudioAdapterContentType GetContentType() override;
+
+  AudioAdapterStreamUsage GetStreamUsage() override;
+
+  int32_t GetRenderFlags() override;
+
+ private:
+  friend class OHOSAudioOutputStream;
+  AudioAdapterSamplingRate rate_;
+  AudioAdapterEncodingType encoding_;
+  AudioAdapterSampleFormat format_;
+  AudioAdapterChannel channels_;
+  AudioAdapterContentType content_type_;
+  AudioAdapterStreamUsage stream_usage_;
+  int32_t renderer_flags_;
+};
 
 class AudioRendererCallback : public AudioRendererCallbackAdapter {
  public:
@@ -82,7 +112,7 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   // Called in Close();
   void ReleaseAudioBuffer();
 
-  bool InitRender(const AudioAdapterRendererOptions& rendererOptions);
+  bool InitRender(const std::shared_ptr<AudioRendererOptionsAdapter> options);
 
   bool StartRender();
 
@@ -128,6 +158,8 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   bool isCommunication_ = false;
 
   bool audioExclusive_ = false;
+
+  bool isSuspended_ = false;
 
   scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_;
 };

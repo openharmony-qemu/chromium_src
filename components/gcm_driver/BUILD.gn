@@ -192,14 +192,18 @@ source_set("unit_tests") {
       "gcm_account_mapper_unittest.cc",
       "gcm_account_tracker_unittest.cc",
       "gcm_client_impl_unittest.cc",
-      "gcm_driver_desktop_unittest.cc",
-      "gcm_driver_unittest.cc",
       "gcm_stats_recorder_impl_unittest.cc",
     ]
 
     deps += [
       "//build:chromeos_buildflags",
       "//components/signin/public/identity_manager:test_support",
+    ]
+  }
+  if (!ohos_unittests) {
+    sources += [
+      "gcm_driver_desktop_unittest.cc",
+      "gcm_driver_unittest.cc",
     ]
   }
 }

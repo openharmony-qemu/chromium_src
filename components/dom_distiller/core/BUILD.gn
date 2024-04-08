@@ -121,15 +121,20 @@ source_set("unit_tests") {
     "distillable_page_detector_unittest.cc",
     "distilled_content_store_unittest.cc",
     "distilled_page_prefs_unittests.cc",
-    "distiller_unittest.cc",
-    "distiller_url_fetcher_unittest.cc",
     "dom_distiller_request_view_base_unittest.cc",
     "dom_distiller_service_unittest.cc",
     "page_features_unittest.cc",
     "task_tracker_unittest.cc",
-    "url_utils_unittest.cc",
-    "viewer_unittest.cc",
   ]
+
+  if (!ohos_unittests) {
+    sources += [
+      "distiller_unittest.cc",
+      "distiller_url_fetcher_unittest.cc",
+      "url_utils_unittest.cc",
+      "viewer_unittest.cc",
+    ]
+  }
 
   deps = [
     ":core",

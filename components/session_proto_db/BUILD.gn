@@ -30,7 +30,9 @@ source_set("session_proto_db") {
 if (!is_ios) {
   source_set("unit_tests") {
     testonly = true
-    sources = [ "session_proto_db_unittest.cc" ]
+    if (!ohos_unittests) {
+      sources = [ "session_proto_db_unittest.cc" ]
+    }
 
     deps = [
       ":core",

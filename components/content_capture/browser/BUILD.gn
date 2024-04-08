@@ -39,8 +39,9 @@ source_set("test_support") {
 
 source_set("unit_tests") {
   testonly = true
-  sources = [ "content_capture_receiver_test.cc" ]
-
+  if (!ohos_unittests) {
+    sources = [ "content_capture_receiver_test.cc" ]
+  }
   deps = [
     ":test_support",
     "//base/test:test_support",

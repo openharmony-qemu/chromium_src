@@ -67,12 +67,15 @@ if (is_android) {
 source_set("unit_tests") {
   testonly = true
   sources = [
-    "elide_url_unittest.cc",
     "spoof_checks/idn_spoof_checker_unittest.cc",
-    "url_fixer_unittest.cc",
     "url_formatter_unittest.cc",
   ]
-
+  if (!ohos_unittests) {
+    sources += [
+      "elide_url_unittest.cc",
+      "url_fixer_unittest.cc",
+    ]
+  }
   deps = [
     ":skeleton_generator",
     ":url_formatter",

@@ -266,52 +266,18 @@ source_set("unit_tests") {
   testonly = true
 
   sources = [
-    "decorators/decorators_utils_unittest.cc",
-    "decorators/frame_visibility_decorator_unittest.cc",
-    "decorators/freezing_vote_decorator_unittest.cc",
-    "decorators/page_live_state_decorator_unittest.cc",
-    "decorators/page_load_tracker_decorator_unittest.cc",
-    "decorators/process_hosted_content_types_aggregator_unittest.cc",
-    "decorators/process_metrics_decorator_unittest.cc",
-    "execution_context/execution_context_attached_data_unittest.cc",
-    "execution_context/execution_context_registry_impl_unittest.cc",
-    "execution_context_priority/ad_frame_voter_unittest.cc",
     "execution_context_priority/boosting_vote_aggregator_unittest.cc",
     "execution_context_priority/execution_context_priority_unittest.cc",
-    "execution_context_priority/frame_audible_voter_unittest.cc",
-    "execution_context_priority/frame_visibility_voter_unittest.cc",
-    "execution_context_priority/inherit_client_priority_voter_unittest.cc",
     "execution_context_priority/max_vote_aggregator_unittest.cc",
     "execution_context_priority/override_vote_aggregator_unittest.cc",
-    "execution_context_priority/root_vote_observer_unittest.cc",
     "freezing/freezing_vote_aggregator_unittest.cc",
-    "graph/frame_node_impl_unittest.cc",
-    "graph/graph_impl_operations_unittest.cc",
-    "graph/graph_impl_unittest.cc",
-    "graph/graph_operations_unittest.cc",
-    "graph/graph_registered_unittest.cc",
-    "graph/node_attached_data_unittest.cc",
-    "graph/node_base_unittest.cc",
-    "graph/node_data_describer_util_unittest.cc",
-    "graph/page_node_impl_unittest.cc",
-    "graph/policies/process_priority_policy_unittest.cc",
-    "graph/process_node_impl_unittest.cc",
     "graph/properties_unittest.cc",
-    "graph/system_node_impl_unittest.cc",
-    "graph/worker_node_impl_unittest.cc",
     "graph_features_unittest.cc",
-    "metrics/metrics_collector_unittest.cc",
     "owned_objects_unittest.cc",
-    "performance_manager_impl_unittest.cc",
-    "performance_manager_registry_impl_unittest.cc",
-    "performance_manager_tab_helper_unittest.cc",
-    "performance_manager_unittest.cc",
     "registered_objects_unittest.cc",
     "render_process_host_id_unittest.cc",
     "user_tuning/prefs_unittest.cc",
     "voting_unittest.cc",
-    "web_contents_proxy_unittest.cc",
-    "worker_watcher_unittest.cc",
   ]
 
   if (!ohos_unittests) {
@@ -324,6 +290,40 @@ source_set("unit_tests") {
       "v8_memory/v8_memory_test_helpers.h",
       "v8_memory/web_memory_aggregator_unittest.cc",
       "v8_memory/web_memory_impl_unittest.cc",
+      "decorators/decorators_utils_unittest.cc",
+      "decorators/frame_visibility_decorator_unittest.cc",
+      "decorators/freezing_vote_decorator_unittest.cc",
+      "decorators/page_live_state_decorator_unittest.cc",
+      "decorators/page_load_tracker_decorator_unittest.cc",
+      "decorators/process_hosted_content_types_aggregator_unittest.cc",
+      "decorators/process_metrics_decorator_unittest.cc",
+      "execution_context/execution_context_attached_data_unittest.cc",
+      "execution_context/execution_context_registry_impl_unittest.cc",
+      "execution_context_priority/ad_frame_voter_unittest.cc",
+      "execution_context_priority/frame_audible_voter_unittest.cc",
+      "execution_context_priority/frame_visibility_voter_unittest.cc",
+      "execution_context_priority/inherit_client_priority_voter_unittest.cc",
+      "execution_context_priority/root_vote_observer_unittest.cc",
+      "graph/frame_node_impl_unittest.cc",
+      "graph/graph_impl_operations_unittest.cc",
+      "graph/graph_impl_unittest.cc",
+      "graph/graph_operations_unittest.cc",
+      "graph/graph_registered_unittest.cc",
+      "graph/node_attached_data_unittest.cc",
+      "graph/node_base_unittest.cc",
+      "graph/node_data_describer_util_unittest.cc",
+      "graph/page_node_impl_unittest.cc",
+      "graph/policies/process_priority_policy_unittest.cc",
+      "graph/process_node_impl_unittest.cc",
+      "graph/system_node_impl_unittest.cc",
+      "graph/worker_node_impl_unittest.cc",
+      "metrics/metrics_collector_unittest.cc",
+      "performance_manager_impl_unittest.cc",
+      "performance_manager_registry_impl_unittest.cc",
+      "performance_manager_tab_helper_unittest.cc",
+      "performance_manager_unittest.cc",
+      "web_contents_proxy_unittest.cc",
+      "worker_watcher_unittest.cc",
     ]
   }
 
@@ -344,20 +344,23 @@ source_set("unit_tests") {
   # The site data database isn't supported on Android.
   if (!is_android) {
     sources += [
-      "decorators/site_data_recorder_unittest.cc",
-      "freezing/freezing_unittest.cc",
       "persistence/site_data/exponential_moving_average_unittest.cc",
-      "persistence/site_data/leveldb_site_data_store_unittest.cc",
-      "persistence/site_data/non_recording_site_data_cache_unittest.cc",
-      "persistence/site_data/site_data_cache_factory_unittest.cc",
-      "persistence/site_data/site_data_cache_impl_unittest.cc",
-      "persistence/site_data/site_data_impl_unittest.cc",
       "persistence/site_data/site_data_reader_unittest.cc",
       "persistence/site_data/site_data_writer_unittest.cc",
-
-      # TODO(crbug.com/1225070): Consider using this policy on Android.
-      "graph/policies/bfcache_policy_unittest.cc",
     ]
+    if (!ohos_unittests) {
+      sources += [
+        "decorators/site_data_recorder_unittest.cc",
+        "freezing/freezing_unittest.cc",
+        # TODO(crbug.com/1225070): Consider using this policy on Android.
+        "graph/policies/bfcache_policy_unittest.cc",
+        "persistence/site_data/leveldb_site_data_store_unittest.cc",
+        "persistence/site_data/non_recording_site_data_cache_unittest.cc",
+        "persistence/site_data/site_data_cache_factory_unittest.cc",
+        "persistence/site_data/site_data_cache_impl_unittest.cc",
+        "persistence/site_data/site_data_impl_unittest.cc",
+      ]
+    }
   }
 
   if (is_chromeos_ash) {

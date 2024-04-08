@@ -50,10 +50,14 @@ source_set("test_support") {
 source_set("unit_tests") {
   testonly = true
   sources = [
-    "ads_page_load_metrics_observer_unittest.cc",
     "page_ad_density_tracker_unittest.cc",
     "univariate_stats_unittest.cc",
   ]
+  if (!ohos_unittests) {
+    sources += [
+      "ads_page_load_metrics_observer_unittest.cc",
+    ]
+  }
   deps = [
     ":ad_metrics",
     "//components/blocklist/opt_out_blocklist",

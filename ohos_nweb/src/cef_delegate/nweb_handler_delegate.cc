@@ -1828,6 +1828,14 @@ bool NWebHandlerDelegate::OnCursorChange(
     info.x = custom_cursor_info.hotspot.x;
     info.y = custom_cursor_info.hotspot.y;
     info.scale = custom_cursor_info.image_scale_factor;
+    uint64_t len = info.width * info.height * 4;
+    std::unique_ptr<uint8_t[]> buff = std::make_unique<uint8_t[]>(len);
+    if (!buff) {
+      LOG(ERROR) << "OnCursorChange make_unique failed";
+      return false;
+    }
+    memcpy((char*)buff.get(), custom_cursor_info.buffer, len);
+    info.buff = buff.get();
   }
   CursorType cursorType(static_cast<CursorType>(type));
   return nweb_handler_->OnCursorChange(cursorType, info);

@@ -57,14 +57,17 @@ source_set("unit_tests") {
   testonly = true
   sources = [ "chinese_script_classifier_test.cc" ]
   if (build_with_tflite_lib) {
+    if (!ohos_unittests) {
+      sources += [
+        "language_detection_model_unittest.cc",
+      ]
+    }
     sources += [
-      "language_detection_model_unittest.cc",
       "language_detection_util_unittest.cc",
       "ngram_hash_ops_utils_unittest.cc",
       "quantization_utils_unittest.cc",
     ]
   }
-
   deps = [
     ":chinese_script_classifier",
     ":language_detection",

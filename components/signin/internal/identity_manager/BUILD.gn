@@ -148,9 +148,12 @@ source_set("unit_tests") {
     "primary_account_manager_unittest.cc",
     "profile_oauth2_token_service_delegate_unittest.cc",
     "profile_oauth2_token_service_unittest.cc",
-    "ubertoken_fetcher_impl_unittest.cc",
   ]
-
+  if (!ohos_unittests) {
+    sources += [
+      "ubertoken_fetcher_impl_unittest.cc",
+    ]
+  }
   deps = [
     ":identity_manager",
     ":test_support",
@@ -205,7 +208,7 @@ source_set("unit_tests") {
     deps += [ "//components/signin/public/identity_manager/ios:test_support" ]
   }
 
-  if (enable_dice_support) {
+  if (enable_dice_support && !ohos_unittests) {
     sources += [ "mutable_profile_oauth2_token_service_delegate_unittest.cc" ]
   }
 }

@@ -254,7 +254,6 @@ source_set("unit_tests") {
     "database/signal_storage_config_unittest.cc",
     "database/test_segment_info_database.cc",
     "database/test_segment_info_database.h",
-    "database/ukm_database_backend_unittest.cc",
     "database/ukm_database_test_utils.cc",
     "database/ukm_database_test_utils.h",
     "database/ukm_metrics_table_unittest.cc",
@@ -312,7 +311,11 @@ source_set("unit_tests") {
     "stats_unittest.cc",
     "ukm_data_manager_impl_unittest.cc",
   ]
-
+  if (!ohos_unittests) {
+    sources += [
+      "database/ukm_database_backend_unittest.cc",
+    ]
+  }
   deps = [
     ":internal",
     ":test_support",
@@ -344,8 +347,12 @@ source_set("unit_tests") {
     # tests in //components/segmentation_platform/components_unittests.filter
     sources += [
       "execution/optimization_guide/optimization_guide_segmentation_model_provider_unittest.cc",
-      "execution/optimization_guide/segmentation_model_executor_unittest.cc",
     ]
+    if (!ohos_unittests) {
+      sources += [
+        "execution/optimization_guide/segmentation_model_executor_unittest.cc",
+      ]
+    }
     deps += [
       ":optimization_guide_segmentation_handler",
       ":unit_tests_bundle_data",

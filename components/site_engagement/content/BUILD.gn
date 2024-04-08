@@ -49,9 +49,13 @@ source_set("content") {
 source_set("unit_tests") {
   testonly = true
   sources = [
-    "site_engagement_helper_unittest.cc",
     "site_engagement_score_unittest.cc",
   ]
+  if (!ohos_unittests) {
+    sources += [
+      "site_engagement_helper_unittest.cc",
+    ]
+  }
   deps = [
     ":content",
     "//base",

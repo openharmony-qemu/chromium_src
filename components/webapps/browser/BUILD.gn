@@ -155,12 +155,16 @@ source_set("test_support") {
 source_set("unit_tests") {
   testonly = true
   sources = [
-    "banners/app_banner_settings_helper_unittest.cc",
     "install_result_code_unittest.cc",
     "installable/installable_manager_unittest.cc",
     "installable/installable_task_queue_unittest.cc",
     "pwa_install_path_tracker_unittest.cc",
   ]
+  if (!ohos_unittests) {
+    sources += [
+      "banners/app_banner_settings_helper_unittest.cc",
+    ]
+  }
   deps = [
     ":browser",
     "//base",

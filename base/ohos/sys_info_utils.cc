@@ -17,6 +17,7 @@
 
 #include "base/threading/scoped_blocking_call.h"
 #include "ohos_adapter_helper.h"
+#include "ui/base/clipboard/clipboard.h"
 
 namespace base {
 namespace ohos {

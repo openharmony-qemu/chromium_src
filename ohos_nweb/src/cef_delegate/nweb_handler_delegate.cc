@@ -2239,7 +2239,7 @@ void NWebHandlerDelegate::CopyImageToClipboard(CefRefPtr<CefImage> image) {
       return;
     }
 
-    auto copy_option = static_cast<ui::CopyOptionMode>(
+    auto copy_option = static_cast<CopyOptionMode>(
         preference_delegate_->GetCopyOptionMode());
     OhosAdapterHelper::GetInstance().GetPasteBoard().SetPasteData(recordVector,
                                                                   copy_option);

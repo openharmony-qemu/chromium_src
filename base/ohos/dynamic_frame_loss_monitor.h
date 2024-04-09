@@ -59,8 +59,8 @@ private:
 
   // max single frame during the scene
   int64_t max_app_frametime_ = 0;
-  // the vsync timestamp of current vsync period
-  int64_t current_vsync_start_time_ = 0;
+  // timestamp of previous swap buffer
+  int64_t prev_swap_buffer_time_ = 0;
 
   // max successive missed frames during the scene
   int32_t max_app_seq_missed_frames_ = 0;

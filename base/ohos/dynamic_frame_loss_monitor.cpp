@@ -100,7 +100,7 @@ void DynamicFrameLossMonitor::OnSwapBuffer()
   auto current = GetCurrentTimestampMS();
 
   max_app_frametime_ = std::max(max_app_frametime_, current - prev_swap_buffer_time_);
-  prev_swap_buffer_time_ = GetCurrentTimestampMS();
+  prev_swap_buffer_time_ = current;
 }
 
 int64_t DynamicFrameLossMonitor::GetCurrentTimestampMS() {

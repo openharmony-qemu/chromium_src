@@ -2649,6 +2649,15 @@ void RenderWidgetHostImpl::UpdateBrowserControlsState(
                                                       animate);
 }
 
+#ifdef OHOS_EX_FREE_COPY
+void RenderWidgetHostImpl::GetWordSelection(const std::string& text,
+                                            int8_t offset,
+                                            GetWordSelectionCallback callback) {
+  std::vector<int8_t> select = view_->GetWordSelection(text, offset);
+  std::move(callback).Run(select);
+}
+#endif
+
 // static
 bool RenderWidgetHostImpl::DidVisualPropertiesSizeChange(
     const blink::VisualProperties& old_visual_properties,

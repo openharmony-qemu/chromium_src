@@ -24,6 +24,7 @@
 #include "content/public/common/content_switches.h"
 #include "content/public/common/input_event_ack_state.h"
 #include "ipc/ipc_sender.h"
+#include "res_sched_client_adapter.h"
 #include "services/tracing/public/cpp/perfetto/flow_event_utils.h"
 #include "third_party/blink/public/common/input/web_coalesced_input_event.h"
 #include "third_party/blink/public/mojom/input/input_event_result.mojom-shared.h"
@@ -622,6 +623,11 @@ void InputRouterImpl::FilterAndSendWebInputEvent(
                                            LegacyEvent::FLOW_INOUT,
                                        latency_info.trace_id());
               });
+
+  if (input_event.GetType() == WebInputEvent::Type::kGestureScrollUpdate) {
+    OHOS::NWeb::ResSchedClientAdapter::ReportScene(
+      OHOS::NWeb::ResSchedStatusAdapter::WEB_SCENE_ENTER, OHOS::NWeb::ResSchedSceneAdapter::SLIDE);
+  }
 
   output_stream_validator_.Validate(input_event);
   blink::mojom::InputEventResultState filtered_state =

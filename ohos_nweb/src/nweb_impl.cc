@@ -2589,12 +2589,6 @@ void NWebImpl::PrefetchResource(const std::shared_ptr<NWebEnginePrefetchArgs>& p
 // static
 void NWebImpl::WarmupServiceWorker(const std::string &url) {
 #if defined(OHOS_WARMUP_SERVICEWORKER)
-  if (!base::FeatureList::IsEnabled(
-      blink::features::kSpeculativeServiceWorkerWarmUp)) {
-    WVLOG_E("Warmup Service Worker ability is not enabled.");
-    return;
-  }
-
   std::vector<CefBrowserContext*> browser_context_all =
       CefBrowserContext::GetAll();
   if (browser_context_all.size() == 0) {

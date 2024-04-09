@@ -645,7 +645,7 @@ public:
       int video_natural_width, int video_natural_height) = 0;
 
   /**
-   * @brief Give the SDK a chance to decide whether to override loading the
+   * @brief Give the application a chance to decide whether to override loading the
    * url.
    *
    * @param request The request information.

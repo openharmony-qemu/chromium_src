@@ -52,7 +52,7 @@ std::unique_ptr<GestureCurve> CreateDefaultPlatformCurve(
   bool use_native_fling_curve = false;
 #ifdef USE_NATIVE_FLING_CURVE
   if (!OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetBoolParameter(
-      "web.instruction", 0)) {
+      "web.instructionOptimize.enable", 0)) {
     use_native_fling_curve = true;
   }
 #endif

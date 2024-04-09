@@ -74,14 +74,12 @@ void DynamicFrameLossMonitor::OnVsync()
       app_seq_frames_ = 0;
     }
     TRACE_EVENT0("base", "WEBVIEW::DYNAMIC_FRAME_DROP_STATISTICS");
-    current_vsync_start_time_ = GetCurrentTimestampMS();
   } else {
     ++app_seq_frames_;
     if (app_seq_frames_ > kSuccessiveFrameLossThreshold) {
      app_seq_missed_frames_ = 0;
     }
     --cached_buffer_number_;
-    current_vsync_start_time_ = GetCurrentTimestampMS();
   }
 
   max_app_seq_missed_frames_ = std::max(max_app_seq_missed_frames_, app_seq_missed_frames_);
@@ -95,12 +93,14 @@ void DynamicFrameLossMonitor::OnSwapBuffer()
   }
   received_first_frame_ = true;
   ++cached_buffer_number_;
-  if (current_vsync_start_time_ == 0) {
+  if (prev_swap_buffer_time_ == 0) {
+    prev_swap_buffer_time_ = GetCurrentTimestampMS();
     return;
   }
   auto current = GetCurrentTimestampMS();
 
-  max_app_frametime_ = std::max(max_app_frametime_, current - current_vsync_start_time_);
+  max_app_frametime_ = std::max(max_app_frametime_, current - prev_swap_buffer_time_);
+  prev_swap_buffer_time_ = current;
 }
 
 int64_t DynamicFrameLossMonitor::GetCurrentTimestampMS() {
@@ -138,7 +138,7 @@ void DynamicFrameLossMonitor::ResetStatus()
   app_seq_missed_frames_ = 0;
   app_seq_frames_ = 0;
 
-  current_vsync_start_time_ = 0;
+  prev_swap_buffer_time_ = 0;
   max_app_frametime_ = 0;
 
   cached_buffer_number_ = 0;

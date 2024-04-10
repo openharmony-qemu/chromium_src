@@ -25,6 +25,7 @@
 
 namespace {
 const int kSuccessiveFrameLossThreshold = 1;
+const int kMicrosecondsPerMillisecond = 1000;
 }
 
 namespace base {
@@ -119,7 +120,7 @@ void DynamicFrameLossMonitor::Report()
     FROM_HERE,
     {base::TaskPriority::LOWEST},
     base::BindOnce(&ReportSlideJankStats, start_time_, stop_time_ - start_time_, total_app_frames_,
-      total_app_missed_frames_, max_app_frametime_, max_app_seq_missed_frames_)
+      total_app_missed_frames_, max_app_frametime_ / kMicrosecondsPerMillisecond, max_app_seq_missed_frames_)
   );
 #endif
 }

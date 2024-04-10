@@ -175,7 +175,7 @@ static std::string GetSiteIsolationMode() {
 
 static bool IsMultipleRenderProcess() {
     const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
-    
+
     if (command_line->HasSwitch(switches::kRendererProcessLimit)) {
         int limit_value = std::stoi(command_line->GetSwitchValueASCII(switches::kRendererProcessLimit));
         return (limit_value > 1
@@ -191,7 +191,7 @@ static bool IsMultipleRenderProcess() {
 
 static bool ShouldEnableSiteIsolation() {
   std::string isSiteIsolationMode = GetSiteIsolationMode();
-  
+
   if (isSiteIsolationMode == "false") {
     return false;
   }
@@ -527,6 +527,7 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
 
 #if defined(OHOS_SITE_ISOLATION)
   g_siteIsolationMode = ShouldEnableSiteIsolation();
+  OHOS::NWeb::ResSchedClientAdapter::ReportSiteIsolationMode(g_siteIsolationMode);
 #if defined(REPORT_SYS_EVENT)
   ReportSiteIsolationMode(std::to_string(g_siteIsolationMode));
 #endif
@@ -2530,7 +2531,7 @@ void NWebImpl::PrefetchResource(const std::shared_ptr<NWebEnginePrefetchArgs>& p
     return;
   }
 
-  std::vector<CefBrowserContext*> browser_context_all = 
+  std::vector<CefBrowserContext*> browser_context_all =
       CefBrowserContext::GetAll();
   if (browser_context_all.size() == 0) {
     WVLOG_E("PrefetchResource has no browser_context");

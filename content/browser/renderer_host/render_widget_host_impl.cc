@@ -2653,6 +2653,9 @@ void RenderWidgetHostImpl::UpdateBrowserControlsState(
 void RenderWidgetHostImpl::GetWordSelection(const std::string& text,
                                             int8_t offset,
                                             GetWordSelectionCallback callback) {
+  if (!view_) {
+    return;
+  }
   std::vector<int8_t> select = view_->GetWordSelection(text, offset);
   std::move(callback).Run(select);
 }

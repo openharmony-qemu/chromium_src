@@ -159,6 +159,13 @@ class NWebRenderHandler : public CefRenderHandler {
                          const float fling_x,
                          const float fling_y) override;
 #endif
+
+#ifdef OHOS_EX_FREE_COPY
+  void GetWordSelection(CefRefPtr<CefBrowser> browser,
+                        const CefString& text,
+                        int8_t offset,
+                        CefPoint& select) override;
+#endif
   /* CefRenderHandler method end */
 
   std::shared_ptr<NWebTouchHandleState> GetTouchHandleState(

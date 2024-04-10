@@ -34,7 +34,7 @@ struct BytraceArg {
   BytraceArgValue value;
   BytraceArgType type;
 };
-static bool isByTraceEnable {false};
+static bool isHiTraceEnable {false};
 void StartObserveTraceEnable();
 bool IsBytraceEnable();
 bool IsCategoryEnable(const char *category_group);

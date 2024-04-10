@@ -1261,6 +1261,7 @@ BASE_FEATURE(kCheckNoNewRefCountsWhenRphDeletingSoon,
 #ifdef OHOS_RENDER_PROCESS_MODE
 static constexpr char kExtensionScheme[] = "chrome-extension";
 constexpr int kSingleRenderProcessCount = 1;
+constexpr int kMinMultipleRenderProcessCount = 5;
 #endif
 }  // namespace
 
@@ -1438,7 +1439,8 @@ size_t RenderProcessHost::GetMaxRendererProcessCount() {
 
   if (g_max_renderer_count_override)
 #ifdef OHOS_RENDER_PROCESS_MODE
-    return g_max_renderer_count_override * 0.9;
+    return std::max(kMinMultipleRenderProcessCount,
+                    (int)(g_max_renderer_count_override * 0.9));
 #else
     return g_max_renderer_count_override;
 #endif
@@ -4716,7 +4718,9 @@ RenderProcessHost* RenderProcessHostImpl::GetExistingBackgroundProcessHost(
                                       .spare_render_process_host()) {
       continue;
     }
-    if (iter.GetCurrentValue()->IsProcessBackgrounded()) {
+    if (iter.GetCurrentValue()->IsProcessBackgrounded() &&
+        static_cast<RenderProcessHostImpl*>(iter.GetCurrentValue())
+            ->AreAllRefCountsZero()) {
       base::TimeDelta background_duration = current_time -
         iter.GetCurrentValue()->ProcessBackgroundTime();
       if (background_duration >= longest_duration) {
@@ -4728,10 +4732,12 @@ RenderProcessHost* RenderProcessHostImpl::GetExistingBackgroundProcessHost(
 
   // Now pick a longest time in background renderer.
   if (longest_background_host) {
-    LOG(INFO) <<  __func__ << ": Found one background render host.";
+    LOG(INFO) <<  __func__ << ": Found one background render process host.";
     return longest_background_host;
   }
 
+  LOG(WARNING) <<  __func__
+               << ": It has no background render process host to shutdown.";
   return nullptr;
 }
 
@@ -4944,7 +4950,7 @@ RenderProcessHost* RenderProcessHostImpl::GetProcessHostForSiteInstance(
 
     if (RenderProcessHost::render_process_mode() !=
             RenderProcessMode::SINGLE_MODE &&
-        (RenderProcessHostImpl::GetProcessCountForLimit() >
+        (RenderProcessHostImpl::GetProcessCountForLimit() >=
          RenderProcessHostImpl::GetMaxRendererProcessCount())) {
       // Kill the idel render process.
       RenderProcessHostImpl* render_host =
@@ -4952,7 +4958,6 @@ RenderProcessHost* RenderProcessHostImpl::GetProcessHostForSiteInstance(
               RenderProcessHostImpl::GetExistingBackgroundProcessHost(
                   site_instance));
       if (render_host) {
-        LOG(INFO) << "It will FastShutdownIfPossible.";
         render_host->FastShutdownIfPossible(1u, true);
       }
     }

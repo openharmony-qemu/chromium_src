@@ -6981,6 +6981,9 @@ void RenderFrameHostImpl::EnterFullscreen(
   // allow fullscreen when mocking screen orientation changes.
   if (!delegate_->HasSeenRecentScreenOrientationChange() &&
       !WindowManagementAllowsFullscreen() && !HasSeenRecentXrOverlaySetup() &&
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+      !options->is_custom_media_player &&
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
       !GetContentClient()
            ->browser()
            ->CanEnterFullscreenWithoutUserActivation()) {

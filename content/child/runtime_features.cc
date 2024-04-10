@@ -439,6 +439,10 @@ void SetRuntimeFeaturesFromCommandLine(const base::CommandLine& command_line) {
        switches::kEnableWebGPUDeveloperFeatures, true},
       {wrf::EnableDirectSockets, switches::kEnableIsolatedWebAppsInRenderer,
        true},
+#if BUILDFLAG(IS_OHOS)
+      {wrf::EnableNonAdvancedSecurityMode, switches::kDisableNonAdvancedSecurityMode,
+       false},
+#endif
   };
 
   for (const auto& mapping : switchToFeatureMapping) {

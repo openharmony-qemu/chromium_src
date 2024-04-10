@@ -339,6 +339,9 @@ NWebImpl::CreateNWeb(std::shared_ptr<NWebCreateInfo> create_info) {
     return nullptr;
   }
   static uint32_t current_nweb_id = 0;
+  if (current_nweb_id == 0) {
+    StartObserveTraceEnable();
+  }
   uint32_t nweb_id = ++current_nweb_id;
   TRACE_EVENT1("NWebImpl", "NWebImpl | CreateNWeb", "nweb_id", nweb_id);
   WVLOG_I("creating nweb %{public}u, size %{public}u*%{public}u", nweb_id,

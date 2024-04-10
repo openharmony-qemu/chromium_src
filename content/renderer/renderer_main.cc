@@ -86,7 +86,7 @@
 #if BUILDFLAG(MOJO_RANDOM_DELAYS_ENABLED)
 #include "mojo/public/cpp/bindings/lib/test_random_mojo_delays.h"
 #endif
-
+#include "ohos_adapter_helper.h"
 namespace content {
 namespace {
 
@@ -133,6 +133,7 @@ void LogTimeToStartRunLoop(const base::CommandLine& command_line,
 int RendererMain(MainFunctionParams parameters) {
   // Don't use the TRACE_EVENT0 macro because the tracing infrastructure doesn't
   // expect synchronous events around the main loop of a thread.
+  StartObserveTraceEnable();
   TRACE_EVENT_INSTANT0("startup", "RendererMain", TRACE_EVENT_SCOPE_THREAD);
 
   base::CurrentProcess::GetInstance().SetProcessType(

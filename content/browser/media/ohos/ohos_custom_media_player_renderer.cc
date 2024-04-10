@@ -116,7 +116,11 @@ void CustomMediaPlayerListenerImpl::OnReadyStateChanged(uint32_t state) {
   }
 }
 
-void CustomMediaPlayerListenerImpl::OnFullscreenChanged(bool fullscreen) {}
+void CustomMediaPlayerListenerImpl::OnFullscreenChanged(bool fullscreen) {
+  if (renderer_) {
+    renderer_->OnFullscreenChanged(fullscreen);
+  }
+}
 void CustomMediaPlayerListenerImpl::OnSeeking() {}
 void CustomMediaPlayerListenerImpl::OnSeekFinished() {}
 void CustomMediaPlayerListenerImpl::OnError(uint32_t error_code, const std::string& error_msg) {
@@ -555,4 +559,16 @@ void OHOSCustomMediaPlayerRenderer::UpdateBufferedEndTime(double buffered_time) 
   client_extension_->UpdateBufferedEndTime(buffered_time);
 }
 
+void OHOSCustomMediaPlayerRenderer::OnFullscreenChanged(bool fullscreen) {
+  if (!web_contents_) {
+    return;
+  }
+  WebContentsImpl* web_contents_impl =
+      static_cast<WebContentsImpl*>(web_contents_);
+  if (fullscreen) {
+    web_contents_impl->RequestEnterFullscreen(media_player_id_);
+  } else {
+    web_contents_impl->RequestExitFullscreen(media_player_id_);
+  }
+}
 }  // namespace content

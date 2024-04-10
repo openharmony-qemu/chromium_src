@@ -290,7 +290,7 @@ void InitialWebEngineArgs(std::list<std::string>& web_engine_args,
     web_engine_args.emplace_back("--disable-webgl");
     web_engine_args.emplace_back("--disable-webgl2");
     web_engine_args.emplace_back("--disable-pdf-extension");
-    web_engine_args.emplace_back("--disable-blink-features=MathMLCore,ScriptedSpeechRecognition");
+    web_engine_args.emplace_back("--disable-blink-features=NonAdvancedSecurityMode");
 #if defined(REPORT_SYS_EVENT)
     ReportLockdownModeStatus();
 #endif

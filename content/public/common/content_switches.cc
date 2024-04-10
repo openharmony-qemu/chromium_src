@@ -1050,6 +1050,7 @@ const char kIgnoreLockdownMode[] = "ohos-enable-Ignore-lockdown-mode";
 const char kEnablePrinting[] = "ohos-enable-printing";
 const char kOhosHttpCacheSimple[] = "ohos-enable-http-cache-simple";
 const char kCalcTabletMode[] = "ohos-enable-calc-tablet-mode";
+const char kDisableNonAdvancedSecurityMode[] = "disable-non-advanced-security-mode";
 
 #if defined(OHOS_BUGFIX_CRASH)
 const char kOhosHanceSurface[] = "ohos-enhance-surface";

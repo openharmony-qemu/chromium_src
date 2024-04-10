@@ -824,7 +824,7 @@ void NWebDelegate::SendMouseEvent(int x,
     render_handler_->SetIrregularDragBackground(true);
   }
 #endif  // #ifdef OHOS_DRAG_DROP
-  if (action == MouseAction::MOVE) {
+  if (accessibility_state_ && action == MouseAction::MOVE) {
     auto* accessibilityManager = GetAccessibilityManager();
     if (accessibilityManager != nullptr) {
       gfx::PointF point(x, y);
@@ -2916,7 +2916,7 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId,
                                  uint32_t action) const {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
-    LOG(WARNING) << "ExecuteAction can not get accessibilityManager";
+    LOG(DEBUG) << "ExecuteAction can not get accessibilityManager";
     return;
   }
   auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
@@ -2985,7 +2985,7 @@ NWebDelegate::GetFocusedAccessibilityNodeInfo(int64_t accessibilityId,
                                               bool isAccessibilityFocus) {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
-    LOG(WARNING)
+    LOG(DEBUG)
         << "GetFocusedAccessibilityNodeInfo can not get accessibilityManager";
     return nullptr;
   }
@@ -3025,7 +3025,7 @@ std::shared_ptr<NWebAccessibilityNodeInfo>
 NWebDelegate::GetAccessibilityNodeInfoById(int64_t accessibilityId) {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
-    LOG(WARNING)
+    LOG(DEBUG)
         << "GetAccessibilityNodeInfoById can not get accessibilityManager";
     return nullptr;
   }
@@ -3051,7 +3051,7 @@ NWebDelegate::GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
                                                   int32_t direction) {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
-    LOG(WARNING) << "GetAccessibilityNodeInfoByFocusMove can not get "
+    LOG(DEBUG) << "GetAccessibilityNodeInfoByFocusMove can not get "
                   "accessibilityManager";
     return nullptr;
   }
@@ -3082,7 +3082,7 @@ NWebDelegate::PopulateAccessibilityNodeInfo(
     const content::BrowserAccessibilityOHOS* node) const {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
-    LOG(WARNING)
+    LOG(DEBUG)
         << "GetFocusedAccessibilityNodeInfo can not get accessibilityManager";
     return nullptr;
   }

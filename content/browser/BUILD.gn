@@ -3311,6 +3311,14 @@ source_set("browser") {
     }
     #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+    #if defined(OHOS_MEDIA_AVSESSION)
+    if (defined(ohos_media_avsession) && ohos_media_avsession) {
+      sources += [
+        "media/session/media_session_ohos.cc",
+        "media/session/media_session_ohos.h",
+      ]
+    }  #endif  // defined(OHOS_MEDIA_AVSESSION)
+
     include_dirs = ohos_src_includes
     deps += [ "//third_party/ohos_ndk:ohos_isolation" ]
   }

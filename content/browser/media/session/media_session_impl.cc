@@ -44,6 +44,10 @@
 #include "content/browser/media/session/media_session_android.h"
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if defined(OHOS_MEDIA_AVSESSION)
+#include "content/browser/media/session/media_session_ohos.h"
+#endif  // defined(OHOS_MEDIA_AVSESSION)
+
 namespace content {
 
 using blink::mojom::MediaSessionPlaybackState;
@@ -635,8 +639,12 @@ void MediaSessionImpl::RebuildAndNotifyMediaPositionChanged() {
     }
   }
 
-  if (position == position_)
+  if (position == position_) {
+  #if defined(OHOS_MEDIA_AVSESSION)
+    session_ohos_->MediaSessionPositionChanged(position);
+  #endif  // defined(OHOS_MEDIA_AVSESSION)
     return;
+  }
 
   position_ = position;
 
@@ -993,6 +1001,9 @@ MediaSessionImpl::MediaSessionImpl(WebContents* web_contents)
   session_android_ = std::make_unique<MediaSessionAndroid>(this);
   should_throttle_duration_update_ = true;
 #endif  // BUILDFLAG(IS_ANDROID)
+#if defined(OHOS_MEDIA_AVSESSION)
+  session_ohos_ = std::make_unique<MediaSessionOHOS>(this);
+#endif  // defined(OHOS_MEDIA_AVSESSION)
   if (web_contents && web_contents->GetPrimaryMainFrame() &&
       web_contents->GetPrimaryMainFrame()->GetView()) {
     focused_ = web_contents->GetPrimaryMainFrame()->GetView()->HasFocus();

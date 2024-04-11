@@ -22,6 +22,7 @@
 #include "ohos_adapter_helper.h"
 
 using OHOS::NWeb::OhosAdapterHelper;
+constexpr uint64_t HITRACE_TAG_NWEB = (1ULL << 24); // nweb trace tag
 class TraceObserver : public OHOS::NWeb::SystemPropertiesObserver {
   public:
     TraceObserver() = default;
@@ -29,13 +30,9 @@ class TraceObserver : public OHOS::NWeb::SystemPropertiesObserver {
 
     void PropertiesUpdate(const char* value) override {
       auto status = std::atol(value);
-      if (status != 0) {
-        isHiTraceEnable = true;
-      } else {
-        isHiTraceEnable = false;
-      }
-    };
-}
+      isHiTraceEnable = status & HITRACE_TAG_NWEB;
+    }
+};
 std::unique_ptr<TraceObserver> traceObserver;
 void StartObserveTraceEnable() {
   traceObserver = std::make_unique<TraceObserver>();

@@ -178,4 +178,8 @@ void ArkWebEngineImpl::SetRenderProcessMode(int32_t mode) {
 int32_t ArkWebEngineImpl::GetRenderProcessMode() {
   return static_cast<int32_t>(nweb_engine_->GetRenderProcessMode());
 }
+
+void ArkWebEngineImpl::ClearPrefetchedResource(const ArkWebStringVector& cache_key_list) {
+  nweb_engine_->ClearPrefetchedResource(ArkWebStringVectorStructToClass(cache_key_list));
+}
 } // namespace OHOS::ArkWeb

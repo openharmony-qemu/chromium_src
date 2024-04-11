@@ -364,6 +364,7 @@ class NWebImpl : public NWeb {
                                const std::map<std::string, std::string>& additional_http_headers,
                                const std::string& cache_key,
                                const uint32_t& cache_valid_time);
+  static void ClearPrefetchedResource(const std::vector<std::string>& cache_key_list);
 
 #if defined(OHOS_COOKIE)
   static bool InitializeICUStatic(std::shared_ptr<NWebEngineInitArgs> init_args);

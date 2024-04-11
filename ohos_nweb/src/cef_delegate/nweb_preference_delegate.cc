@@ -761,4 +761,21 @@ void NWebPreferenceDelegate::SetNativeVideoPlayerConfig(bool enable,
   WebPreferencesChanged();
 }
 
+#if defined(OHOS_MEDIA_POLICY)
+void NWebPreferenceDelegate::PutAudioExclusive(bool audioExclusive) {
+  audio_exclusive_ = audioExclusive;
+}
+
+bool NWebPreferenceDelegate::GetAudioExclusive() {
+  return audio_exclusive_;
+}
+
+void NWebPreferenceDelegate::PutAudioResumeInterval(int32_t resumeInterval) {
+  resume_interval_ = resumeInterval;
+}
+
+int32_t NWebPreferenceDelegate::GetAudioResumeInterval() {
+  return resume_interval_;
+}
+#endif
 }  // namespace OHOS::NWeb

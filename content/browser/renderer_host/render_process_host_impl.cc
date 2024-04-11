@@ -1181,6 +1181,8 @@ void CopyFeatureSwitch(const base::CommandLine& src,
                        base::CommandLine* dest,
                        const char* switch_name) {
   std::vector<std::string> features = FeaturesFromSwitch(src, switch_name);
+  std::set<std::string> dedup(features.begin(), features.end());
+  features.assign(dedup.begin(), dedup.end());
   if (!features.empty())
     dest->AppendSwitchASCII(switch_name, base::JoinString(features, ","));
 }

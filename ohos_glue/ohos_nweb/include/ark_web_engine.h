@@ -96,6 +96,9 @@ public:
 
   /*--ark web()--*/
   virtual int32_t GetRenderProcessMode() = 0;
+
+  /*--ark web()--*/
+  virtual void ClearPrefetchedResource(const ArkWebStringVector& cache_key_list) = 0;
 };
 
 } // namespace OHOS::ArkWeb

@@ -73,6 +73,8 @@ public:
 
   int32_t GetRenderProcessMode() override;
 
+  void ClearPrefetchedResource(const ArkWebStringVector& cache_key_list) override;
+
 private:
   std::shared_ptr<OHOS::NWeb::NWebEngine> nweb_engine_;
 };

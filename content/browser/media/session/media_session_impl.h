@@ -62,6 +62,10 @@ class MediaSessionServiceImplBrowserTest;
 class MediaSessionAndroid;
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if defined(OHOS_MEDIA_AVSESSION)
+class MediaSessionOHOS;
+#endif  // defined(OHOS_MEDIA_AVSESSION)
+
 // MediaSessionImpl is the implementation of MediaSession. It manages the media
 // session and audio focus for a given WebContents. It is requesting the audio
 // focus, pausing when requested by the system and dropping it on demand. The
@@ -375,6 +379,9 @@ class MediaSessionImpl : public MediaSession,
   friend class MediaSessionImplTest;
   friend class MediaSessionImplDurationThrottleTest;
   friend class MediaInternalsAudioFocusTest;
+#if defined(OHOS_MEDIA_AVSESSION)
+  friend class MediaSessionOHOS;
+#endif  // defined(OHOS_MEDIA_AVSESSION)
 
   CONTENT_EXPORT void RemoveAllPlayersForTest();
   CONTENT_EXPORT MediaSessionUmaHelper* uma_helper_for_test();
@@ -602,6 +609,10 @@ class MediaSessionImpl : public MediaSession,
 #if BUILDFLAG(IS_ANDROID)
   std::unique_ptr<MediaSessionAndroid> session_android_;
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if defined(OHOS_MEDIA_AVSESSION)
+  std::unique_ptr<MediaSessionOHOS> session_ohos_;
+#endif  // defined(OHOS_MEDIA_AVSESSION)
 
   // MediaSessionService-related fields
   using ServicesMap =

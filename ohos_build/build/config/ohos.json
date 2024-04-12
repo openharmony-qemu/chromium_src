@@ -126,6 +126,14 @@
 "dependence": "",
 "default": "true"
 },
+{ "name": "OHOS_CUSTOM_VIDEO_PLAYER",
+"owner": "",
+"desc": "",
+"effect":"main gn blink_core other",
+"genCommandline": "",
+"dependence": "",
+"default": "true"
+},
 { "name": "OHOS_DARKMODE",
 "owner": "",
 "desc": "",
@@ -135,6 +143,14 @@
 "default": "true"
 },
 { "name": "OHOS_DEVTOOLS",
+"owner": "",
+"desc": "",
+"effect":"main gn blink_core other",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},
+{ "name": "OHOS_DFX_DUMP",
 "owner": "",
 "desc": "",
 "effect":"main gn blink_core other",
@@ -358,6 +374,14 @@
 "dependence": "",
 "default": "true"
 },
+{ "name": "OHOS_MEDIA_AVSESSION",
+"owner": "",
+"desc": "",
+"effect":"main gn blink_core other",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},
 { "name": "OHOS_MEDIA_MUTE_AUDIO",
 "owner": "gaolei",
 "desc": "",
@@ -527,6 +551,14 @@
 "default": "true"
 },
 { "name": "OHOS_PRINT",
+"owner": "",
+"desc": "",
+"effect":"main gn blink_core other",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},
+{ "name": "OHOS_RENDER_PROCESS_MODE",
 "owner": "",
 "desc": "",
 "effect":"main gn blink_core other",

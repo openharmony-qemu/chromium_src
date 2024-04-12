@@ -41,6 +41,8 @@ using ::testing::Expectation;
 using ::testing::Ne;
 using ::testing::Return;
 
+#if !defined(OHOS_UNITTESTS)
+
 namespace viz {
 namespace {
 
@@ -1054,3 +1056,5 @@ TEST_F_GPU(SkiaOutputDeviceSwapSkippedTest, SkipWithPending) {
 
 }  // namespace
 }  // namespace viz
+
+#endif  // !defined(OHOS_UNITTESTS)

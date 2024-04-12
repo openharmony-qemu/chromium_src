@@ -30,6 +30,7 @@ namespace {
 constexpr TimeDelta kTestDelay = Seconds(10);
 constexpr TimeDelta kLongTestDelay = Minutes(10);
 
+#if !defined(OHOS_UNITTESTS)
 // The main thread types on which each timer should be tested.
 const test::TaskEnvironment::MainThreadType testing_main_threads[] = {
     test::TaskEnvironment::MainThreadType::DEFAULT,
@@ -38,6 +39,7 @@ const test::TaskEnvironment::MainThreadType testing_main_threads[] = {
     test::TaskEnvironment::MainThreadType::UI,
 #endif
 };
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 class Receiver {
  public:
@@ -50,6 +52,7 @@ class Receiver {
   int count_;
 };
 
+#if !defined(OHOS_UNITTESTS)
 // Basic test with same setup as RunTest_OneShotTimers_Cancel below to confirm
 // that |timer| would be fired in that test if it wasn't for the deletion.
 void RunTest_OneShotTimers(
@@ -212,6 +215,7 @@ void RunTest_DelayTimer_Deleted(
   task_environment.FastForwardBy(kTestDelay);
   EXPECT_FALSE(receiver.WasCalled());
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 }  // namespace
 
@@ -222,19 +226,25 @@ void RunTest_DelayTimer_Deleted(
 class TimerTestWithThreadType
     : public testing::TestWithParam<test::TaskEnvironment::MainThreadType> {};
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(TimerTestWithThreadType, OneShotTimers) {
   RunTest_OneShotTimers(GetParam());
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(TimerTestWithThreadType, OneShotTimers_Cancel) {
   RunTest_OneShotTimers_Cancel(GetParam());
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 // If underline timer does not handle properly, we will crash or fail
 // in full page heap environment.
 TEST_P(TimerTestWithThreadType, OneShotSelfDeletingTimer) {
   RunTest_OneShotSelfDeletingTimer(GetParam());
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 TEST(TimerTest, OneShotTimer_CustomTaskRunner) {
   auto task_runner = base::MakeRefCounted<TestSimpleTaskRunner>();
@@ -268,21 +278,29 @@ TEST(TimerTest, OneShotTimerWithTickClock) {
   EXPECT_FALSE(timer.IsRunning());
 }
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(TimerTestWithThreadType, RepeatingTimer) {
   RunTest_RepeatingTimer(GetParam(), kTestDelay);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(TimerTestWithThreadType, RepeatingTimer_Cancel) {
   RunTest_RepeatingTimer_Cancel(GetParam(), kTestDelay);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(TimerTestWithThreadType, RepeatingTimerZeroDelay) {
   RunTest_RepeatingTimer(GetParam(), Seconds(0));
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(TimerTestWithThreadType, RepeatingTimerZeroDelay_Cancel) {
   RunTest_RepeatingTimer_Cancel(GetParam(), Seconds(0));
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 TEST(TimerTest, RepeatingTimerWithTickClock) {
   test::TaskEnvironment task_environment(
@@ -297,21 +315,29 @@ TEST(TimerTest, RepeatingTimerWithTickClock) {
   EXPECT_EQ(expected_times_called, receiver.TimesCalled());
 }
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(TimerTestWithThreadType, DelayTimer_NoCall) {
   RunTest_DelayTimer_NoCall(GetParam());
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(TimerTestWithThreadType, DelayTimer_OneCall) {
   RunTest_DelayTimer_OneCall(GetParam());
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(TimerTestWithThreadType, DelayTimer_Reset) {
   RunTest_DelayTimer_Reset(GetParam());
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(TimerTestWithThreadType, DelayTimer_Deleted) {
   RunTest_DelayTimer_Deleted(GetParam());
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 TEST(TimerTest, DelayTimerWithTickClock) {
   test::TaskEnvironment task_environment(
@@ -653,8 +679,10 @@ TEST(TimerTest, MetronomeTimerCancel) {
   EXPECT_EQ(start + Seconds(5), TimeTicks::Now());
 }
 
+#if !defined(OHOS_UNITTESTS)
 INSTANTIATE_TEST_SUITE_P(All,
                          TimerTestWithThreadType,
                          testing::ValuesIn(testing_main_threads));
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 }  // namespace base

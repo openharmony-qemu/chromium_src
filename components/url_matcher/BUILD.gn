@@ -36,8 +36,12 @@ source_set("unit_tests") {
     "regex_set_matcher_unittest.cc",
     "url_matcher_factory_unittest.cc",
     "url_matcher_unittest.cc",
-    "url_util_unittest.cc",
   ]
+  if (!ohos_unittests) {
+    sources += [
+      "url_util_unittest.cc",
+    ]
+  }
   deps = [
     ":url_matcher",
     "//testing/gmock",

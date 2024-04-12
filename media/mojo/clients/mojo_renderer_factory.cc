@@ -130,4 +130,28 @@ std::unique_ptr<MojoRenderer> MojoRendererFactory::CreateMediaPlayerRenderer(
 }
 #endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+std::unique_ptr<MojoRenderer> MojoRendererFactory::CreateCustomMediaPlayerRenderer(
+    mojo::PendingReceiver<mojom::MediaPlayerRendererExtension>
+        renderer_extension_receiver,
+    mojo::PendingRemote<mojom::CustomMediaPlayerRendererClientExtension>
+        client_extension_remote,
+    const scoped_refptr<base::SequencedTaskRunner>& media_task_runner,
+    VideoRendererSink* video_renderer_sink,
+    int player_id) {
+  DCHECK(interface_factory_);
+  mojo::PendingRemote<mojom::Renderer> renderer_remote;
+
+  interface_factory_->CreateCustomMediaPlayerRenderer(
+      std::move(client_extension_remote),
+      renderer_remote.InitWithNewPipeAndPassReceiver(),
+      std::move(renderer_extension_receiver),
+      player_id);
+
+  return std::make_unique<MojoRenderer>(media_task_runner, nullptr,
+                                        video_renderer_sink,
+                                        std::move(renderer_remote));
+}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 }  // namespace media

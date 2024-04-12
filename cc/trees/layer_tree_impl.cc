@@ -2475,7 +2475,7 @@ LayerImpl* LayerTreeImpl::FindLayerThatIsHitByPoint(
 }
 
 struct HitTestFunctorNative {
-  bool operator()(LayerImpl* layer) const { return layer->may_contain_native(); }
+  bool operator()(LayerImpl* layer) const { return layer->ShouldInterceptTouchEvent(); }
 };
 
 LayerImpl* LayerTreeImpl::FindLayerThatIsHitByPointNative(
@@ -3021,5 +3021,15 @@ void LayerTreeImpl::OnLayerRectUpdate(int id, const gfx::Rect& rect) {
   host_impl_->OnLayerRectUpdate(id, rect);
 }
 #endif
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void LayerTreeImpl::OnLayerRectChange(int id,
+                                      int x,
+                                      int y,
+                                      int width,
+                                      int height) {
+  host_impl_->OnLayerRectChange(id, x, y, width, height);
+}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 
 }  // namespace cc

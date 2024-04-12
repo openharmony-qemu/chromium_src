@@ -90,6 +90,14 @@ class CC_EXPORT ProxyMain : public Proxy {
   void OnLayerRectUpdate(int id, const gfx::Rect& rect);
 #endif
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void OnLayerRectChange(int id,
+                         int x,
+                         int y,
+                         int width,
+                         int height);
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
  private:
   // Proxy implementation.
   bool IsStarted() const override;

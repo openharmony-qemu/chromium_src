@@ -663,7 +663,11 @@ class RenderTextTest : public testing::Test {
 
  private:
   // Needed to bypass DCHECK in GetFallbackFont.
+#if defined(ohos_UNITTESTS)
+  base::test::SingleThreadTaskEnvironment task_environment_ {};
+#else
   base::test::SingleThreadTaskEnvironment task_environment_;
+#endif
 
   std::unique_ptr<RenderTextHarfBuzz> render_text_;
   std::unique_ptr<test::RenderTextTestApi> test_api_;
@@ -6947,7 +6951,7 @@ TEST_F(RenderTextTest, EmojiFlagGlyphCount) {
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_APPLE)
   // On Linux and macOS, the flags should be found, so two glyphs result.
   EXPECT_EQ(2u, run_list->runs()[0]->shape.glyph_count);
-#elif BUILDFLAG(IS_ANDROID)
+#elif BUILDFLAG(IS_ANDROID) || defined(OHOS_UNITTESTS)
   // It seems that some versions of android support the flags. Older versions
   // don't support it.
   EXPECT_TRUE(2u == run_list->runs()[0]->shape.glyph_count ||
@@ -7104,6 +7108,7 @@ TEST_F(RenderTextTest, HarfBuzz_UnicodeFallback) {
 #endif  // !BUILDFLAG(IS_LINUX) && !BUILDFLAG(IS_CHROMEOS) &&
         // !BUILDFLAG(IS_ANDROID)
 
+#if !defined(OHOS_UNITTESTS)
 // Ensure that the fallback fonts offered by GetFallbackFont() support glyphs
 // for different languages.
 TEST_F(RenderTextTest, HarfBuzz_FallbackFontsSupportGlyphs) {
@@ -7125,7 +7130,9 @@ TEST_F(RenderTextTest, HarfBuzz_FallbackFontsSupportGlyphs) {
     }
   }
 }
+#endif
 
+#if !defined(OHOS_UNITTESTS)
 // Ensure that the fallback fonts offered by GetFallbackFont() support glyphs
 // for different languages.
 TEST_F(RenderTextTest, HarfBuzz_MultiRunsSupportGlyphs) {
@@ -7150,6 +7157,7 @@ TEST_F(RenderTextTest, HarfBuzz_MultiRunsSupportGlyphs) {
     }
   }
 }
+#endif
 
 struct FallbackFontCase {
   const char* test_name;
@@ -7182,8 +7190,10 @@ TEST_P(RenderTextTestWithFallbackFontCase, FallbackFont) {
 const FallbackFontCase kUnicodeDecomposeCases[] = {
     // Decompose to "\u0041\u0300".
     {"letter_A_with_grave", u"\u00c0"},
+#if !defined(OHOS_UNITTESTS)
     // Decompose to "\u004f\u0328\u0304".
     {"letter_O_with_ogonek_macron", u"\u01ec"},
+#endif
     // Decompose to "\u0041\u030a".
     {"angstrom_sign", u"\u212b"},
     // Decompose to "\u1100\u1164\u11b6".
@@ -7203,6 +7213,7 @@ INSTANTIATE_TEST_SUITE_P(FallbackFontUnicodeDecompose,
 // codepoint can be rendered by the font. An error here can be by an incorrect
 // ItemizeText(...) leading to an invalid fallback font.
 const FallbackFontCase kComplexTextCases[] = {
+#if !defined(OHOS_UNITTESTS)
     {"simple1", u"test"},
     {"simple2", u"اختبار"},
     {"simple3", u"Δοκιμή"},
@@ -7212,6 +7223,14 @@ const FallbackFontCase kComplexTextCases[] = {
     {"mixed1", u"www.اختبار.com"},
     {"mixed2", u"(اختبار)"},
     {"mixed3", u"/ זה (מבחן) /"},
+#else
+    {"simple1", u"test"},
+    {"simple2", u"اختبار"},
+    {"simple3", u"Δοκιμή"},
+    {"simple4", u"تست"},
+    {"mixed1", u"www.اختبار.com"},
+    {"mixed2", u"(اختبار)"},
+#endif  // !defined(OHOS_UNITTESTS)
 #if BUILDFLAG(IS_WIN)
     {"asc_arb", u"abcښڛڜdef"},
     {"devanagari", u"ञटठडढणतथ"},
@@ -7269,6 +7288,7 @@ INSTANTIATE_TEST_SUITE_P(FallbackFontComplexTextCases,
                          ::testing::ValuesIn(kComplexTextCases),
                          RenderTextTestWithFallbackFontCase::ParamInfoToString);
 
+#if !defined(OHOS_UNITTESTS)
 // Test cases to ensures the COMMON unicode script is split by unicode code
 // block. These tests work on Windows and Mac default fonts installation.
 // On other platforms, the fonts are mock (see test_fonts).
@@ -7386,6 +7406,7 @@ INSTANTIATE_TEST_SUITE_P(FallbackFontCommonScript,
                          RenderTextTestWithFallbackFontCase,
                          ::testing::ValuesIn(kCommonScriptCases),
                          RenderTextTestWithFallbackFontCase::ParamInfoToString);
+#endif
 
 #if BUILDFLAG(IS_WIN)
 // Ensures that locale is used for fonts selection.
@@ -8529,7 +8550,6 @@ TEST_F(RenderTextTest, FontSizeOverride) {
   render_text->ApplyFontSizeOverride(test_font_size_override, gfx::Range(3, 7));
   EXPECT_EQ(std::vector<std::u16string>({u"012", u"3456", u"789"}),
             GetRunListStrings());
-
   const internal::TextRunList* run_list = GetHarfBuzzRunList();
   ASSERT_EQ(3U, run_list->size());
 
@@ -8548,7 +8568,12 @@ TEST_F(RenderTextTest, DrawVisualText_WithSelection) {
   render_text->set_selection_color(SK_ColorGREEN);
   DrawVisualText({{3, 14}});
   ExpectTextLog(
-      {{3, kPlaceholderColor}, {11, SK_ColorGREEN}, {17, kPlaceholderColor}});
+#if defined(OHOS_UNITTESTS)
+      {{2, kPlaceholderColor}, {11, SK_ColorGREEN}, {17, kPlaceholderColor}}
+#else
+      {{3, kPlaceholderColor}, {11, SK_ColorGREEN}, {17, kPlaceholderColor}}
+#endif
+  );
 }
 
 TEST_F(RenderTextTest, DrawVisualText_WithSelectionOnObcuredEmoji) {

@@ -150,6 +150,7 @@ struct NWebCursorInfo {
     int32_t x = 0;
     int32_t y = 0;
     float scale = 1.0;
+    uint8_t* buff = nullptr;
 };
 
 class NWebTouchHandleHotZone {
@@ -786,7 +787,7 @@ public:
         int video_natural_width, int video_natural_height) {}
 
     /**
-     * @brief Give the SDK a chance to decide whether to override loading the
+     * @brief Give the application a chance to decide whether to override loading the
      * url.
      *
      * @param request The request information.

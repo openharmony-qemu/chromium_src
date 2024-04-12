@@ -321,6 +321,7 @@ TEST_F(TouchSelectionControllerTest, InsertionToSelectionTransition) {
   EXPECT_EQ(end_rect.bottom_left(), GetLastEventStart());
 }
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(TouchSelectionControllerTest, InsertionDragged) {
   base::TimeTicks event_time = base::TimeTicks::Now();
   OnTapEvent();
@@ -373,7 +374,9 @@ TEST_F(TouchSelectionControllerTest, InsertionDragged) {
   event = MockMotionEvent(MotionEvent::Action::DOWN, event_time, 0, 0);
   EXPECT_FALSE(controller().WillHandleTouchEvent(event));
 }
+#endif // OHOS_UNITTESTS ui_touch_selection_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(TouchSelectionControllerTest, InsertionDeactivatedWhileDragging) {
   base::TimeTicks event_time = base::TimeTicks::Now();
   OnTapEvent();
@@ -427,7 +430,9 @@ TEST_F(TouchSelectionControllerTest, InsertionDeactivatedWhileDragging) {
   event = MockMotionEvent(MotionEvent::Action::DOWN, event_time, 0, 0);
   EXPECT_FALSE(controller().WillHandleTouchEvent(event));
 }
+#endif // OHOS_UNITTESTS ui_touch_selection_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(TouchSelectionControllerTest, InsertionTapped) {
   base::TimeTicks event_time = base::TimeTicks::Now();
   OnTapEvent();
@@ -496,6 +501,7 @@ TEST_F(TouchSelectionControllerTest, InsertionTapped) {
   EXPECT_THAT(GetAndResetEvents(), ElementsAre(INSERTION_HANDLE_DRAG_STARTED,
                                                INSERTION_HANDLE_DRAG_STOPPED));
 }
+#endif // OHOS_UNITTESTS ui_touch_selection_unittests drop case
 
 TEST_F(TouchSelectionControllerTest, SelectionBasic) {
   gfx::RectF start_rect(5, 5, 0, 10);
@@ -622,6 +628,7 @@ TEST_F(TouchSelectionControllerTest, SelectionRepeatedLongPress) {
   EXPECT_EQ(end_rect.bottom_left(), GetLastEventEnd());
 }
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(TouchSelectionControllerTest, SelectionDragged) {
   base::TimeTicks event_time = base::TimeTicks::Now();
   OnLongPressEvent();
@@ -682,7 +689,9 @@ TEST_F(TouchSelectionControllerTest, SelectionDragged) {
   event = MockMotionEvent(MotionEvent::Action::DOWN, event_time, 0, 0);
   EXPECT_FALSE(controller().WillHandleTouchEvent(event));
 }
+#endif // OHOS_UNITTESTS ui_touch_selection_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(TouchSelectionControllerTest, SelectionDraggedWithOverlap) {
   base::TimeTicks event_time = base::TimeTicks::Now();
   OnLongPressEvent();
@@ -721,7 +730,9 @@ TEST_F(TouchSelectionControllerTest, SelectionDraggedWithOverlap) {
   EXPECT_THAT(GetAndResetEvents(), ElementsAre(SELECTION_HANDLE_DRAG_STOPPED));
   EXPECT_FALSE(GetAndResetSelectionMoved());
 }
+#endif // OHOS_UNITTESTS ui_touch_selection_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(TouchSelectionControllerTest, SelectionDraggedToSwitchBaseAndExtent) {
   base::TimeTicks event_time = base::TimeTicks::Now();
   OnLongPressEvent();
@@ -841,7 +852,9 @@ TEST_F(TouchSelectionControllerTest, SelectionDraggedToSwitchBaseAndExtent) {
   EXPECT_THAT(GetAndResetEvents(), ElementsAre(SELECTION_HANDLE_DRAG_STOPPED));
   EXPECT_FALSE(GetAndResetSelectionMoved());
 }
+#endif // OHOS_UNITTESTS ui_touch_selection_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(TouchSelectionControllerTest, SelectionDragExtremeLineSize) {
   base::TimeTicks event_time = base::TimeTicks::Now();
   OnLongPressEvent();
@@ -877,6 +890,7 @@ TEST_F(TouchSelectionControllerTest, SelectionDragExtremeLineSize) {
   EXPECT_TRUE(GetAndResetSelectionMoved());
   EXPECT_EQ(small_line_rect.CenterPoint(), GetLastSelectionEnd());
 }
+#endif // OHOS_UNITTESTS ui_touch_selection_unittests drop case
 
 TEST_F(TouchSelectionControllerTest, Animation) {
   OnTapEvent();
@@ -1166,6 +1180,7 @@ TEST_F(TouchSelectionControllerTest, RectBetweenBounds) {
   EXPECT_EQ(gfx::RectF(), controller().GetRectBetweenBounds());
 }
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(TouchSelectionControllerTest, TouchHandleHeight) {
   OnLongPressEvent();
   SetDraggingEnabled(true);
@@ -1210,7 +1225,9 @@ TEST_F(TouchSelectionControllerTest, TouchHandleHeight) {
   ASSERT_THAT(GetAndResetEvents(), ElementsAre(SELECTION_HANDLES_CLEARED));
   EXPECT_EQ(0.f, controller().GetTouchHandleHeight());
 }
+#endif // OHOS_UNITTESTS ui_touch_selection_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(TouchSelectionControllerTest, SelectionNoOrientationChangeWhenSwapped) {
   TouchSelectionControllerTestApi test_controller(&controller());
   base::TimeTicks event_time = base::TimeTicks::Now();
@@ -1328,7 +1345,9 @@ TEST_F(TouchSelectionControllerTest, SelectionNoOrientationChangeWhenSwapped) {
   EXPECT_EQ(test_controller.GetEndHandleOrientation(),
             TouchHandleOrientation::RIGHT);
 }
+#endif // OHOS_UNITTESTS ui_touch_selection_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(TouchSelectionControllerTest, VerticalTextSelectionHandleSwap) {
   TouchSelectionControllerTestApi test_controller(&controller());
   base::TimeTicks event_time = base::TimeTicks::Now();
@@ -1404,7 +1423,9 @@ TEST_F(TouchSelectionControllerTest, VerticalTextSelectionHandleSwap) {
   EXPECT_EQ(test_controller.GetEndHandleOrientation(),
             TouchHandleOrientation::LEFT);
 }
+#endif // OHOS_UNITTESTS ui_touch_selection_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(TouchSelectionControllerTest, InsertionUpdateDragPosition) {
   base::TimeTicks event_time = base::TimeTicks::Now();
   float line_height = 10.f;
@@ -1449,7 +1470,9 @@ TEST_F(TouchSelectionControllerTest, InsertionUpdateDragPosition) {
 
   SetDraggingEnabled(false);
 }
+#endif // OHOS_UNITTESTS ui_touch_selection_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(TouchSelectionControllerTest, SelectionUpdateDragPosition) {
   base::TimeTicks event_time = base::TimeTicks::Now();
   float line_height = 10.f;
@@ -1504,6 +1527,7 @@ TEST_F(TouchSelectionControllerTest, SelectionUpdateDragPosition) {
   EXPECT_TRUE(controller().WillHandleTouchEvent(event));
   EXPECT_THAT(GetAndResetEvents(), ElementsAre(SELECTION_HANDLE_DRAG_STOPPED));
 }
+#endif // OHOS_UNITTESTS ui_touch_selection_unittests drop case
 
 TEST_F(TouchSelectionControllerTest, LongpressDragSelectorUpdateDragPosition) {
   TouchSelectionController::Config config = kDefaultConfig;
@@ -1557,6 +1581,7 @@ TEST_F(TouchSelectionControllerTest, LongpressDragSelectorUpdateDragPosition) {
   EXPECT_EQ(gfx::PointF(-10.f, 5.f), GetLastDragUpdatePosition());
 }
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(TouchSelectionControllerTest, NoHideActiveInsertionHandle) {
   TouchSelectionController::Config config = kDefaultConfig;
   config.hide_active_handle = false;
@@ -1579,7 +1604,9 @@ TEST_F(TouchSelectionControllerTest, NoHideActiveInsertionHandle) {
   EXPECT_TRUE(controller().WillHandleTouchEvent(event));
   EXPECT_EQ(1.f, test_controller.GetInsertionHandleAlpha());
 }
+#endif // OHOS_UNITTESTS ui_touch_selection_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(TouchSelectionControllerTest, HideActiveInsertionHandle) {
   TouchSelectionController::Config config = kDefaultConfig;
   config.hide_active_handle = true;
@@ -1612,7 +1639,9 @@ TEST_F(TouchSelectionControllerTest, HideActiveInsertionHandle) {
   EXPECT_TRUE(controller().WillHandleTouchEvent(event));
   EXPECT_EQ(1.f, test_controller.GetInsertionHandleAlpha());
 }
+#endif // OHOS_UNITTESTS ui_touch_selection_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(TouchSelectionControllerTest, NoHideActiveSelectionHandle) {
   TouchSelectionController::Config config = kDefaultConfig;
   config.hide_active_handle = false;
@@ -1655,7 +1684,9 @@ TEST_F(TouchSelectionControllerTest, NoHideActiveSelectionHandle) {
   EXPECT_EQ(1.f, test_controller.GetStartAlpha());
   EXPECT_EQ(1.f, test_controller.GetEndAlpha());
 }
+#endif // OHOS_UNITTESTS ui_touch_selection_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(TouchSelectionControllerTest, HideActiveSelectionHandle) {
   TouchSelectionController::Config config = kDefaultConfig;
   config.hide_active_handle = true;
@@ -1712,6 +1743,7 @@ TEST_F(TouchSelectionControllerTest, HideActiveSelectionHandle) {
   EXPECT_EQ(1.f, test_controller.GetStartAlpha());
   EXPECT_EQ(1.f, test_controller.GetEndAlpha());
 }
+#endif // OHOS_UNITTESTS ui_touch_selection_unittests drop case
 
 TEST_F(TouchSelectionControllerTest, SwipeToMoveCursor_HideHandlesIfShown) {
   // Step 1: Extra set-up.

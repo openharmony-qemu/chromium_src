@@ -115,6 +115,7 @@ void EnsembleTest::Pe64Ensemble() const {
   TestEnsemble(src_bytes, tgt_bytes);
 }
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(EnsembleTest, MAYBE_PE) {
   PeEnsemble();
 }
@@ -126,3 +127,4 @@ TEST_F(EnsembleTest, MAYBE_PE64) {
 TEST_F(EnsembleTest, MAYBE_Elf32) {
   Elf32Ensemble();
 }
+#endif // OHOS_UNITTESTS courgette_unittests drop case

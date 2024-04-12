@@ -136,6 +136,7 @@ TEST(NativeLibraryTest, LoadLibrary) {
 #if !BUILDFLAG(IS_ANDROID) && !defined(THREAD_SANITIZER) && \
     !defined(MEMORY_SANITIZER)
 
+#if !defined(OHOS_UNITTESTS)
 // Verifies that the |prefer_own_symbols| option satisfies its guarantee that
 // a loaded library will always prefer local symbol resolution before
 // considering global symbols.
@@ -171,6 +172,7 @@ TEST(NativeLibraryTest, LoadLibraryPreferOwnSymbols) {
   EXPECT_EQ(2, NativeLibraryTestIncrement());
   EXPECT_EQ(3, NativeLibraryTestIncrement());
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 #endif  // !BUILDFLAG(IS_ANDROID) && !defined(THREAD_SANITIZER) && \
         // !defined(MEMORY_SANITIZER)

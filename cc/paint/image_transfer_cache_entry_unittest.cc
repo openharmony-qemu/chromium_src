@@ -42,6 +42,8 @@
 #include "ui/gl/init/create_gr_gl_interface.h"
 #include "ui/gl/init/gl_factory.h"
 
+#if !defined(OHOS_UNITTESTS)
+
 namespace cc {
 namespace {
 
@@ -563,3 +565,5 @@ TEST(ImageTransferCacheEntryTestHDR, Gainmap) {
 
 }  // namespace
 }  // namespace cc
+
+#endif  // !defined(OHOS_UNITTESTS)

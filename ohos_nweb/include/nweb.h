@@ -142,6 +142,11 @@ enum class FocusReason : int32_t {
     EVENT_REQUEST = 1,
 };
 
+enum class RenderProcessMode : int32_t {
+    SINGLE_MODE = 0,
+    MULTIPLE_MODE = 1,
+};
+
 class NWebTouchPointInfo {
     public:
     virtual ~NWebTouchPointInfo() = default;
@@ -1159,7 +1164,6 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
     /*--ark web()--*/
     virtual void OnRenderToForeground() = 0;
 
-
     /**
      * @brief Compile javascript and generate code cache.
      * 
@@ -1175,6 +1179,16 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
         std::shared_ptr<NWebMessageValueCallback> callback) = 0;
 
     virtual void OnCreateNativeMediaPlayer(std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) = 0;
+
+    /**
+     * @brief Web drag resize optimize.
+     */
+    /*--ark web()--*/
+    virtual void DragResize(uint32_t width,
+                            uint32_t height,
+                            uint32_t pre_height,
+                            uint32_t pre_width) = 0;
+
     /**
      * @brief Set the params when the scale of WebView changed by pinch gestrue.
      *

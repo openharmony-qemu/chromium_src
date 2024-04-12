@@ -42,16 +42,14 @@
 #include "nweb_hilog.h"
 #include "nweb_hit_test_result_impl.h"
 #include "res_sched_client_adapter.h"
+#include "nweb_resize_helper.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 
 #if defined(REPORT_SYS_EVENT)
 #include "event_reporter.h"
 #endif
 #if BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_INC_FREQ)
 #include "soc_perf_client_adapter.h"
-#endif
-
-#ifdef OHOS_SCREEN_LOCK
-#include "services/device/wake_lock/power_save_blocker/nweb_screen_lock_tracker.h"
 #endif
 
 #if defined(OHOS_API_INIT_WEB_ENGINE)
@@ -110,6 +108,11 @@
 #include "content/public/common/content_switches.h"
 #endif
 
+#ifdef OHOS_RENDER_PROCESS_MODE
+#include "base/ohos/sys_info_utils.h"
+#include "content/public/browser/render_process_host.h"
+#endif
+
 #if defined(OHOS_SITE_ISOLATION)
 extern bool g_siteIsolationMode;
 #endif
@@ -118,6 +121,7 @@ namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
 const uint32_t kSurfaceMaxHeight = 7680;
+const int SOC_PERF_WEB_DRAG_RESIZE_ID = 10073;
 #if defined(OHOS_MEDIA_POLICY)
 const int32_t kMaxResumeInterval = 60;
 #endif  // defined(OHOS_MEDIA_POLICY)
@@ -174,10 +178,15 @@ static std::string GetSiteIsolationMode() {
 
 static bool IsMultipleRenderProcess() {
     const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
-    
+
     if (command_line->HasSwitch(switches::kRendererProcessLimit)) {
         int limit_value = std::stoi(command_line->GetSwitchValueASCII(switches::kRendererProcessLimit));
-        return (limit_value > 1);
+        return (limit_value > 1
+#ifdef OHOS_RENDER_PROCESS_MODE
+                && OHOS::NWeb::NWebImpl::GetRenderProcessMode() ==
+                    OHOS::NWeb::RenderProcessMode::MULTIPLE_MODE
+#endif
+        );
     }
 
     return false;
@@ -185,10 +194,6 @@ static bool IsMultipleRenderProcess() {
 
 static bool ShouldEnableSiteIsolation() {
   std::string isSiteIsolationMode = GetSiteIsolationMode();
-  
-  if (isSiteIsolationMode == "true") {
-    return true;
-  }
 
   if (isSiteIsolationMode == "false") {
     return false;
@@ -198,7 +203,7 @@ static bool ShouldEnableSiteIsolation() {
   bool isIgnoreLockdownMode = (*base::CommandLine::ForCurrentProcess()).HasSwitch(
             switches::kIgnoreLockdownMode);
 
-  if (isIgnoreLockdownMode) {
+  if (isIgnoreLockdownMode && IsMultipleRenderProcess()){
     return true;
   }
 
@@ -288,7 +293,7 @@ void InitialWebEngineArgs(std::list<std::string>& web_engine_args,
     web_engine_args.emplace_back("--disable-webgl");
     web_engine_args.emplace_back("--disable-webgl2");
     web_engine_args.emplace_back("--disable-pdf-extension");
-    web_engine_args.emplace_back("--disable-blink-features=MathMLCore,ScriptedSpeechRecognition");
+    web_engine_args.emplace_back("--disable-blink-features=NonAdvancedSecurityMode");
 #if defined(REPORT_SYS_EVENT)
     ReportLockdownModeStatus();
 #endif
@@ -525,6 +530,7 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
 
 #if defined(OHOS_SITE_ISOLATION)
   g_siteIsolationMode = ShouldEnableSiteIsolation();
+  OHOS::NWeb::ResSchedClientAdapter::ReportSiteIsolationMode(g_siteIsolationMode);
 #if defined(REPORT_SYS_EVENT)
   ReportSiteIsolationMode(std::to_string(g_siteIsolationMode));
 #endif
@@ -769,6 +775,50 @@ void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
   }
   nweb_delegate_->SetDrawMode(draw_mode_);
   nweb_delegate_->Resize(width, height, isKeyboard);
+  output_handler_->Resize(width, height);
+}
+
+void NWebImpl::DragResize(uint32_t width, uint32_t height, uint32_t pre_height, uint32_t pre_width) {
+  LOG(DEBUG) << "===== start drag resize =====";
+  bool drag_bigger_height = false;
+  bool drag_bigger_width = false;
+  if (input_handler_ == nullptr || output_handler_ == nullptr) {
+    return;
+  }
+  OHOS::NWeb::NWebResizeHelper::GetInstance().SetDragResizeStart(true);
+  if (pre_height > 0) {
+    drag_bigger_height = true;
+  }
+  if (pre_width > 0) {
+    drag_bigger_width = true;
+  }
+  if (drag_bigger_height) {
+    height = OHOS::NWeb::NWebResizeHelper::GetInstance().GetResizeAdjustValue(height,
+                                                                              pre_height,
+                                                                              true);
+  }
+  if (drag_bigger_width) {
+    width = OHOS::NWeb::NWebResizeHelper::GetInstance().GetResizeAdjustValue(width,
+                                                                             pre_width,
+                                                                             false);
+  }
+  OHOS::NWeb::NWebResizeHelper::GetInstance().SetResizeHeightAndWidth(height, width);
+  if (width > kSurfaceMaxWidth || height > kSurfaceMaxHeight) {
+    if (draw_mode_ == 0) {
+      OHOS::NWeb::NWebResizeHelper::GetInstance().RefreshParam();
+      WVLOG_E("size too large in surface mode (%{public}u , %{public}u)", width, height);
+      return;
+    };
+  }
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("resize failed, nweb delegate is nullptr, nweb_id = %{public}u", nweb_id_);
+    return;
+  }
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .CreateSocPerfClientAdapter()
+      ->ApplySocPerfConfigByIdEx(SOC_PERF_WEB_DRAG_RESIZE_ID, true);
+  nweb_delegate_->SetDrawMode(draw_mode_);
+  nweb_delegate_->Resize(width, height, false);
   output_handler_->Resize(width, height);
 }
 
@@ -1721,15 +1771,15 @@ int NWebImpl::GetMediaPlaybackState() {
 #ifdef OHOS_SCREEN_LOCK
 void NWebImpl::RegisterScreenLockFunction(int32_t windowId,
                                           std::shared_ptr<NWebScreenLockCallback> callback) {
-  NWebScreenLockTracker::Instance().AddScreenLock(windowId, nweb_id_, [callback](bool key) {
-    if (callback) {
-      callback->Handle(key);
-    }
-  });
+  if (nweb_delegate_) {
+    nweb_delegate_->SetWakeLockCallback(windowId, callback);
+  }
 }
 
 void NWebImpl::UnRegisterScreenLockFunction(int32_t windowId) {
-  NWebScreenLockTracker::Instance().RemoveScreenLock(windowId, nweb_id_);
+  if (nweb_delegate_) {
+    nweb_delegate_->SetWakeLockCallback(windowId, nullptr);
+  }
 }
 #endif  // #ifdef OHOS_SCREEN_LOCK
 
@@ -2107,6 +2157,17 @@ void NWebImpl::ResumeDownload(std::shared_ptr<NWebDownloadItem> web_download) {
   nweb_delegate_->ResumeDownload(web_download);
 }
 
+#ifdef OHOS_EX_DOWNLOAD
+NWebDownloadItemState NWebImpl::GetDownloadItemState(long item_id) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("GetDownloadItemState failed, nweb delegate is nullptr, nweb_id = %{public}u", nweb_id_);
+    return NWebDownloadItemState::MAX_DOWNLOAD_STATE;
+  }
+
+  return nweb_delegate_->GetDownloadItemState(item_id);
+}
+#endif
+
 void NWebImpl::PutAccessibilityEventCallback(
     std::shared_ptr<NWebAccessibilityEventCallback>
         accessibilityEventListener) {
@@ -2408,9 +2469,6 @@ bool NWebImpl::IsIntelligentTrackingPreventionEnabled() const {
   return nweb_delegate_->IsIntelligentTrackingPreventionEnabled();
 }
 
-void NWebImpl::OnCreateNativeMediaPlayer(
-    std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) {}
-
 //static
 bool NWebImpl::IsAnyNWebIntelligentTrackingPreventionEnabled() {
   NWebMap* map = g_nweb_map.Pointer();
@@ -2426,6 +2484,18 @@ bool NWebImpl::IsAnyNWebIntelligentTrackingPreventionEnabled() {
   return false;
 }
 #endif
+
+void NWebImpl::OnCreateNativeMediaPlayer(
+    std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("set create custome media player callback failed, nweb delegate is nullptr, nweb_id = %{public}u", nweb_id_);
+    return;
+  }
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  nweb_delegate_->RegisterOnCreateNativeMediaPlayerListener(std::move(callback));
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+}
 
 // static
 void NWebImpl::AddIntelligentTrackingPreventionBypassingList(
@@ -2461,6 +2531,36 @@ int NWebImpl::ScaleGestureChange(double scale, double centerX, double centerY) {
   }
   return nweb_delegate_->ScaleGestureChange(scale, centerX, centerY);
 }
+
+#ifdef OHOS_RENDER_PROCESS_MODE
+// static
+void NWebImpl::SetRenderProcessMode(RenderProcessMode mode) {
+  LOG(INFO) << "SetRenderProcessMode mode:" << (int)mode;
+  content::RenderProcessMode render_process_mode =
+      content::RenderProcessMode::SINGLE_MODE;
+  if (mode == RenderProcessMode::MULTIPLE_MODE) {
+    render_process_mode = content::RenderProcessMode::MULTIPLE_MODE;
+  }
+  content::RenderProcessHost::SetRenderProcessMode(render_process_mode);
+
+#if defined(OHOS_SITE_ISOLATION)
+  g_siteIsolationMode = ShouldEnableSiteIsolation();
+#if defined(REPORT_SYS_EVENT)
+  ReportSiteIsolationMode(std::to_string(g_siteIsolationMode));
+#endif
+#endif
+}
+
+// static
+RenderProcessMode NWebImpl::GetRenderProcessMode() {
+  content::RenderProcessMode render_process_mode =
+      content::RenderProcessHost::render_process_mode();
+  if (render_process_mode == content::RenderProcessMode::SINGLE_MODE) {
+    return RenderProcessMode::SINGLE_MODE;
+  }
+  return RenderProcessMode::MULTIPLE_MODE;
+}
+#endif // OHOS_RENDER_PROCESS_MODE
 }  // namespace OHOS::NWeb
 
 using namespace OHOS::NWeb;
@@ -2487,7 +2587,7 @@ void NWebImpl::PrefetchResource(const std::shared_ptr<NWebEnginePrefetchArgs>& p
     return;
   }
 
-  std::vector<CefBrowserContext*> browser_context_all = 
+  std::vector<CefBrowserContext*> browser_context_all =
       CefBrowserContext::GetAll();
   if (browser_context_all.size() == 0) {
     WVLOG_E("PrefetchResource has no browser_context");

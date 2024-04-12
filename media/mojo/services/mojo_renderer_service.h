@@ -71,6 +71,20 @@ class MEDIA_MOJO_EXPORT MojoRendererService final : public mojom::Renderer,
   void SetCdm(const absl::optional<base::UnguessableToken>& cdm_id,
               SetCdmCallback callback) final;
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void SetMuted(bool muted) override;
+  void SetSurfaceId(int surface_id) override;
+  void SetMediaSourceList(
+      std::vector<mojom::MediaSourceInfoPtr> source_infos) override;
+  void SetMediaControls(bool show_media_controls,
+      const std::vector<std::string>& controls_list) override;
+  void SetPoster(const std::string& poster_url) override;
+  void SetAttributes(
+      const base::flat_map<std::string, std::string>& attributes) override;
+  void SetReferrer(const std::string& referrer) override;
+  void SetIsAudio(bool is_audio) override;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
  private:
   enum State {
     STATE_UNINITIALIZED,

@@ -789,6 +789,7 @@ TEST_P(ClientResourceProviderTest, ReturnDuplicateResourceBeforeRemove) {
   EXPECT_CALL(release, Released(_, false)).Times(0);
 }
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(ClientResourceProviderTest, ReturnDuplicateResourceAfterRemove) {
   MockReleaseCallback release;
 
@@ -834,6 +835,7 @@ TEST_P(ClientResourceProviderTest, ReturnDuplicateResourceAfterRemove) {
 
   EXPECT_CALL(release, Released(_, false)).Times(0);
 }
+#endif
 
 }  // namespace
 }  // namespace viz

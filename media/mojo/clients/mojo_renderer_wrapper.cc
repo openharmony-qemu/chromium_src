@@ -50,4 +50,34 @@ base::TimeDelta MojoRendererWrapper::GetMediaTime() {
   return mojo_renderer_->GetMediaTime();
 }
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void MojoRendererWrapper::SetMuted(bool muted) {
+  mojo_renderer_->SetMuted(muted);
+}
+void MojoRendererWrapper::SetSurfaceId(int surface_id) {
+  mojo_renderer_->SetSurfaceId(surface_id);
+}
+void MojoRendererWrapper::SetMediaSourceList(
+    const std::vector<MediaSourceInfo>& source_infos) {
+  mojo_renderer_->SetMediaSourceList(source_infos);
+}
+void MojoRendererWrapper::SetMediaControls(bool show_media_controls,
+    const std::vector<std::string>& controls_list) {
+  mojo_renderer_->SetMediaControls(show_media_controls, controls_list);
+}
+void MojoRendererWrapper::SetPoster(const std::string& poster_url) {
+  mojo_renderer_->SetPoster(poster_url);
+}
+void MojoRendererWrapper::SetAttributes(
+    base::flat_map<std::string, std::string> attributes) {
+  mojo_renderer_->SetAttributes(std::move(attributes));
+}
+void MojoRendererWrapper::SetReferrer(const std::string& referrer) {
+  mojo_renderer_->SetReferrer(referrer);
+}
+void MojoRendererWrapper::SetIsAudio(bool is_audio) {
+  mojo_renderer_->SetIsAudio(is_audio);
+}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 }  // namespace media

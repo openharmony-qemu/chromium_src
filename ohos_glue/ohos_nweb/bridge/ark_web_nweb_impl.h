@@ -1043,6 +1043,13 @@ public:
   void OnCreateNativeMediaPlayer(
       ArkWebRefPtr<ArkWebCreateNativeMediaPlayerCallback> callback) override;
 
+   /**
+   * @brief Web drag resize optimize.
+   */
+  virtual void DragResize(uint32_t width,
+                          uint32_t height,
+                          uint32_t pre_height,
+                          uint32_t pre_width) override;
   /**
    * @brief Set the params when the scale of WebView changed by pinch gestrue.
    *
@@ -1056,7 +1063,6 @@ public:
    */
   /*--ark web()--*/
   int ScaleGestureChange(double scale, double centerX, double centerY) override;
-
 private:
   std::shared_ptr<OHOS::NWeb::NWeb> nweb_nweb_;
 };

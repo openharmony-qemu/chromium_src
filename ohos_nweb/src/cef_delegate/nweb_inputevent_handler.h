@@ -48,6 +48,12 @@ class NWebInputEventHandle {
     return false;
   }
 
+  void ClearIntputEvent() {
+    for (size_t i = 0; i < event_.size(); i++) {
+        result_[i] = false;
+    }
+  }
+
  private:
   std::vector<EeventType> event_;
   std::vector<ConditionType> condition_;

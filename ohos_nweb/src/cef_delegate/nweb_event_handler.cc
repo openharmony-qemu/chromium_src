@@ -288,7 +288,7 @@ void NWebEventHandler::SendMouseEvent(int x,
       }
     } else if (NWebInputDelegate::IsMouseMove(action)) {
       if (last_mouse_x_ == x && last_mouse_y_ == y) {
-        LOG(INFO) << "no change in coordinates, cancel mouse move event";
+        LOG(DEBUG) << "no change in coordinates, cancel mouse move event";
         return;
       }
 

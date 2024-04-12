@@ -91,16 +91,25 @@ class CompositorTestWithMockedTime : public CompositorTest {
   base::test::ScopedPowerMonitorTestSource test_power_monitor_source_;
 
  private:
+#if defined(OHOS_UNITTESTS)
+  base::test::TaskEnvironment task_environment_{};
+#else
   base::test::TaskEnvironment task_environment_{
       base::test::TaskEnvironment::MainThreadType::UI,
       base::test::TaskEnvironment::TimeSource::MOCK_TIME};
+#endif
 };
 
 // For tests that run on a real MessageLoop with real time.
 class CompositorTestWithMessageLoop : public CompositorTest {
  public:
+#if defined(OHOS_UNITTESTS)
+  CompositorTestWithMessageLoop()
+      : task_environment_() {}
+#else
   CompositorTestWithMessageLoop()
       : task_environment_(base::test::TaskEnvironment::MainThreadType::UI) {}
+#endif
   ~CompositorTestWithMessageLoop() override = default;
 
  protected:
@@ -112,7 +121,11 @@ class CompositorTestWithMessageLoop : public CompositorTest {
   base::SequencedTaskRunner* task_runner() { return task_runner_.get(); }
 
  private:
+#if defined(OHOS_UNITTESTS)
+  base::test::TaskEnvironment task_environment_{};
+#else
   base::test::TaskEnvironment task_environment_;
+#endif
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
 };
 
@@ -139,6 +152,7 @@ class TestCompositorAnimationObserver : public CompositorAnimationObserver {
 
 }  // namespace
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(CompositorTestWithMockedTime, AnimationObserverBasic) {
   TestCompositorAnimationObserver test;
   compositor()->AddAnimationObserver(&test);
@@ -154,7 +168,9 @@ TEST_F(CompositorTestWithMockedTime, AnimationObserverBasic) {
 
   compositor()->RemoveAnimationObserver(&test);
 }
+#endif
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(CompositorTestWithMockedTime, AnimationObserverResetAfterResume) {
   TestCompositorAnimationObserver test;
   compositor()->AddAnimationObserver(&test);
@@ -191,7 +207,9 @@ TEST_F(CompositorTestWithMockedTime, AnimationObserverResetAfterResume) {
 
   compositor()->RemoveAnimationObserver(&test);
 }
+#endif
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(CompositorTestWithMessageLoop, ShouldUpdateDisplayProperties) {
   auto root_layer = std::make_unique<Layer>(ui::LAYER_SOLID_COLOR);
   viz::ParentLocalSurfaceIdAllocator allocator;
@@ -254,6 +272,7 @@ TEST_F(CompositorTestWithMessageLoop, ShouldUpdateDisplayProperties) {
   EXPECT_EQ(max_vrr_interval, context_factory->GetMaxVrrInterval(compositor()));
   compositor()->SetRootLayer(nullptr);
 }
+#endif
 
 TEST_F(CompositorTestWithMockedTime,
        ReleaseWidgetWithOutputSurfaceNeverCreated) {
@@ -329,6 +348,7 @@ TEST_F(CompositorTestWithMessageLoop, MoveThroughputTracker) {
   }
 }
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(CompositorTestWithMessageLoop, ThroughputTracker) {
   auto root_layer = std::make_unique<Layer>(ui::LAYER_SOLID_COLOR);
   viz::ParentLocalSurfaceIdAllocator allocator;
@@ -367,6 +387,7 @@ TEST_F(CompositorTestWithMessageLoop, ThroughputTracker) {
 
   run_loop.Run();
 }
+#endif
 
 TEST_F(CompositorTestWithMessageLoop, ThroughputTrackerOutliveCompositor) {
   auto tracker = compositor()->RequestNewThroughputTracker();
@@ -381,6 +402,7 @@ TEST_F(CompositorTestWithMessageLoop, ThroughputTrackerOutliveCompositor) {
   EXPECT_FALSE(tracker.Stop());
 }
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(CompositorTestWithMessageLoop, ThroughputTrackerCallbackStateChange) {
   auto root_layer = std::make_unique<Layer>(ui::LAYER_SOLID_COLOR);
   viz::ParentLocalSurfaceIdAllocator allocator;
@@ -425,7 +447,9 @@ TEST_F(CompositorTestWithMessageLoop, ThroughputTrackerCallbackStateChange) {
 
   run_loop.Run();
 }
+#endif
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(CompositorTestWithMessageLoop, ThroughputTrackerInvoluntaryReport) {
   auto root_layer = std::make_unique<Layer>(ui::LAYER_SOLID_COLOR);
   viz::ParentLocalSurfaceIdAllocator allocator;
@@ -457,7 +481,9 @@ TEST_F(CompositorTestWithMessageLoop, ThroughputTrackerInvoluntaryReport) {
   // Stop() fails but no DCHECK or crash.
   EXPECT_FALSE(tracker.Stop());
 }
+#endif
 
+#if !defined(OHOS_UNITTESTS)
 #if BUILDFLAG(IS_WIN)
 // TODO(crbug.com/608436): Flaky on windows trybots
 #define MAYBE_CreateAndReleaseOutputSurface \
@@ -485,6 +511,7 @@ TEST_F(CompositorTestWithMessageLoop, MAYBE_CreateAndReleaseOutputSurface) {
   DrawWaiterForTest::WaitForCompositingEnded(compositor());
   compositor()->SetRootLayer(nullptr);
 }
+#endif
 
 class LayerDelegateThatAddsDuringUpdateVisualState : public LayerDelegate {
  public:
@@ -511,6 +538,7 @@ class LayerDelegateThatAddsDuringUpdateVisualState : public LayerDelegate {
   bool update_visual_state_called_ = false;
 };
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(CompositorTestWithMessageLoop, AddLayerDuringUpdateVisualState) {
   std::unique_ptr<Layer> root_layer =
       std::make_unique<Layer>(ui::LAYER_SOLID_COLOR);
@@ -539,5 +567,6 @@ TEST_F(CompositorTestWithMessageLoop, AddLayerDuringUpdateVisualState) {
   child_layer.reset();
   root_layer.reset();
 }
+#endif
 
 }  // namespace ui

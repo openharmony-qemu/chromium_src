@@ -65,6 +65,10 @@
 #include "ui/gfx/geometry/rect_f.h"
 #endif
 
+#if defined(OHOS_SCREEN_LOCK)
+#include "services/device/wake_lock/power_save_blocker/nweb_screen_lock_tracker.h"
+#endif
+
 namespace base {
 class FilePath;
 }  // namespace base
@@ -1200,6 +1204,10 @@ class WebContents : public PageNavigator,
   // is true, or nullptr otherwise. See the comment for
   // `HasLiveOriginalOpenerChain()` for more details.
   virtual WebContents* GetFirstWebContentsInLiveOriginalOpenerChain() = 0;
+
+#if defined(OHOS_SCREEN_LOCK)
+  virtual void SetWakeLockHandler(int32_t windowId, const SetKeepScreenOn& handler) = 0;
+#endif
 
   // Returns the WakeLockContext accociated with this WebContents.
   virtual device::mojom::WakeLockContext* GetWakeLockContext() = 0;

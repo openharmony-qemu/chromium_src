@@ -54,6 +54,9 @@ VideoLayerImpl::VideoLayerImpl(
       provider_client_impl_(std::move(provider_client_impl)),
       video_transform_(video_transform) {
   set_may_contain_video(true);
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  SetNeedNotifyRectChange(true);
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 }
 
 VideoLayerImpl::~VideoLayerImpl() {
@@ -181,8 +184,12 @@ void VideoLayerImpl::AppendQuads(viz::CompositorRenderPass* render_pass,
                         clip_rect_opt, contents_opaque(), draw_opacity(),
                         GetSortingContextId());
 #if BUILDFLAG(IS_OHOS)
-  layer_tree_impl()->OnLayerRectUpdate(
-      id(), ScreenSpaceTransform().MapRect(visible_quad_rect));
+   visible_quad_rect.set_origin(
+        ScreenSpaceTransform().MapPoint(visible_quad_rect.origin()));
+  if (!visible_quad_rect_.ApproximatelyEqual(visible_quad_rect, 1)) {
+    visible_quad_rect_ = visible_quad_rect;
+    layer_tree_impl()->OnLayerRectUpdate(id(), visible_quad_rect);
+  }
 #endif
 }
 

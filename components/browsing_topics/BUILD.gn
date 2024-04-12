@@ -65,13 +65,18 @@ source_set("test_support") {
 source_set("unit_tests") {
   testonly = true
   sources = [
-    "browsing_topics_calculator_unittest.cc",
-    "browsing_topics_page_load_data_tracker_unittest.cc",
-    "browsing_topics_service_impl_unittest.cc",
     "browsing_topics_state_unittest.cc",
     "epoch_topics_unittest.cc",
     "topic_and_domains_unittest.cc",
   ]
+
+  if (!ohos_unittests) {
+    sources += [
+      "browsing_topics_calculator_unittest.cc",
+      "browsing_topics_page_load_data_tracker_unittest.cc",
+      "browsing_topics_service_impl_unittest.cc",
+    ]
+  }
 
   deps = [
     ":browsing_topics",

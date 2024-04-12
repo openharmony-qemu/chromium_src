@@ -276,6 +276,10 @@ class NWebImpl : public NWeb {
 #endif
 
   std::string GetLastJavascriptProxyCallingFrameUrl() override;
+  void DragResize(uint32_t width,
+                  uint32_t height,
+                  uint32_t pre_height,
+                  uint32_t pre_width) override;
 
 #if defined(OHOS_INPUT_EVENTS)
   void SetVirtualKeyBoardArg(int32_t width, int32_t height, double keyboard) override;
@@ -340,6 +344,9 @@ class NWebImpl : public NWeb {
   void StartDownload(const char* url);
   void ResumeDownload(std::shared_ptr<NWebDownloadItem>);
   static void ResumeDownloadStatic(std::shared_ptr<NWebDownloadItem> download_item);
+#ifdef OHOS_EX_DOWNLOAD
+  NWebDownloadItemState GetDownloadItemState(long item_id);
+#endif
 
   bool Discard() override;
   bool Restore() override;
@@ -413,6 +420,11 @@ class NWebImpl : public NWeb {
   static void ClearIntelligentTrackingPreventionBypassingList();
 
   int ScaleGestureChange(double scale, double centerX, double centerY) override;
+
+#ifdef OHOS_RENDER_PROCESS_MODE
+  static void SetRenderProcessMode(RenderProcessMode mode);
+  static RenderProcessMode GetRenderProcessMode();
+#endif
 
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

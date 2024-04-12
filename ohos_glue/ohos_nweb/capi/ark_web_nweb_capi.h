@@ -484,6 +484,9 @@ typedef struct _ark_web_nweb_t {
       struct _ark_web_nweb_t *self,
       ark_web_create_native_media_player_callback_t *callback);
 
+  void(ARK_WEB_CALLBACK *ark_web_nweb_drag_resize)(struct _ark_web_nweb_t *self,uint32_t width,
+                                 uint32_t height, uint32_t pre_height, uint32_t pre_width);
+                                 
   int(ARK_WEB_CALLBACK *scale_gesture_change)(struct _ark_web_nweb_t *self,
                                               double scale, double centerX,
                                               double centerY);

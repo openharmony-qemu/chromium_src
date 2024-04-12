@@ -604,6 +604,7 @@ INSTANTIATE_TEST_SUITE_P(AlternateBucketDistribution,
 
 namespace {
 
+#if !defined(OHOS_UNITTESTS)
 void FreeFullSlotSpan(PartitionRoot<internal::ThreadSafe>* root,
                       SlotSpan* slot_span) {
   EXPECT_TRUE(slot_span->is_full());
@@ -620,6 +621,7 @@ void FreeFullSlotSpan(PartitionRoot<internal::ThreadSafe>* root,
   }
   EXPECT_TRUE(slot_span->is_empty());
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 bool CheckPageInCore(void* ptr, bool in_core) {
@@ -687,6 +689,7 @@ INSTANTIATE_TEST_SUITE_P(AlternateBucketDistribution,
                          PartitionAllocTest,
                          testing::ValuesIn(GetPartitionAllocTestParams()));
 
+#if !defined(OHOS_UNITTESTS)
 // Check that the most basic of allocate / free pairs work.
 TEST_P(PartitionAllocTest, Basic) {
   PartitionRoot<ThreadSafe>::Bucket* bucket =
@@ -713,7 +716,9 @@ TEST_P(PartitionAllocTest, Basic) {
   EXPECT_TRUE(bucket->empty_slot_spans_head);
   EXPECT_FALSE(bucket->decommitted_slot_spans_head);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 // Test multiple allocations, and freelist handling.
 TEST_P(PartitionAllocTest, MultiAlloc) {
   void* ptr1 = allocator.root()->Alloc(kTestAllocSize, type_name);
@@ -744,7 +749,9 @@ TEST_P(PartitionAllocTest, MultiAlloc) {
   allocator.root()->Free(ptr2);
   allocator.root()->Free(ptr3);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 // Test a bucket with multiple slot spans.
 TEST_P(PartitionAllocTest, MultiSlotSpans) {
   PartitionRoot<ThreadSafe>::Bucket* bucket =
@@ -785,7 +792,9 @@ TEST_P(PartitionAllocTest, MultiSlotSpans) {
   EXPECT_EQ(0u, slot_span2->num_unprovisioned_slots);
   EXPECT_TRUE(slot_span2->in_empty_cache());
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 // Test some finer aspects of internal slot span transitions.
 TEST_P(PartitionAllocTest, SlotSpanTransitions) {
   PartitionRoot<ThreadSafe>::Bucket* bucket =
@@ -845,7 +854,9 @@ TEST_P(PartitionAllocTest, SlotSpanTransitions) {
   ptr = allocator.root()->Alloc(kTestAllocSize, type_name);
   allocator.root()->Free(ptr);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(PartitionAllocTest, PreferSlotSpansWithProvisionedEntries) {
   size_t size = SystemPageSize() - ExtraAllocSize(allocator);
   size_t real_size = size + ExtraAllocSize(allocator);
@@ -922,7 +933,9 @@ TEST_P(PartitionAllocTest, PreferSlotSpansWithProvisionedEntries) {
     }
   }
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 // Test some corner cases relating to slot span transitions in the internal
 // free slot span list metadata bucket.
 TEST_P(PartitionAllocTest, FreeSlotSpanListSlotSpanTransitions) {
@@ -969,7 +982,9 @@ TEST_P(PartitionAllocTest, FreeSlotSpanListSlotSpanTransitions) {
   EXPECT_EQ(SlotSpan::get_sentinel_slot_span(), bucket->active_slot_spans_head);
   EXPECT_TRUE(bucket->empty_slot_spans_head);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 // Test a large series of allocations that cross more than one underlying
 // super page.
 TEST_P(PartitionAllocTest, MultiPageAllocs) {
@@ -1009,6 +1024,7 @@ TEST_P(PartitionAllocTest, MultiPageAllocs) {
     FreeFullSlotSpan(allocator.root(), slot_spans[i]);
   }
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 // Test the generic allocation functions that can handle arbitrary sizes and
 // reallocing etc.
@@ -2016,6 +2032,7 @@ TEST_P(PartitionAllocTest, PartialPageFreelists) {
   allocator.root()->Free(ptr);
 }
 
+#if !defined(OHOS_UNITTESTS)
 // Test some of the fragmentation-resistant properties of the allocator.
 TEST_P(PartitionAllocTest, SlotSpanRefilling) {
   PartitionRoot<ThreadSafe>::Bucket* bucket =
@@ -2051,7 +2068,9 @@ TEST_P(PartitionAllocTest, SlotSpanRefilling) {
   FreeFullSlotSpan(allocator.root(), slot_span1);
   allocator.root()->Free(ptr);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 // Basic tests to ensure that allocations work for partial page buckets.
 TEST_P(PartitionAllocTest, PartialPages) {
   // Find a size that is backed by a partial partition page.
@@ -2076,7 +2095,9 @@ TEST_P(PartitionAllocTest, PartialPages) {
   FreeFullSlotSpan(allocator.root(), slot_span2);
   FreeFullSlotSpan(allocator.root(), slot_span1);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 // Test correct handling if our mapping collides with another.
 TEST_P(PartitionAllocTest, MappingCollision) {
   size_t num_pages_per_slot_span = GetNumPagesPerSlotSpan(kTestAllocSize);
@@ -2183,7 +2204,9 @@ TEST_P(PartitionAllocTest, MappingCollision) {
     FreeFullSlotSpan(allocator.root(), second_super_page_pages[i]);
   }
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 // Tests that slot spans in the free slot span cache do get freed as
 // appropriate.
 TEST_P(PartitionAllocTest, FreeCache) {
@@ -2242,7 +2265,9 @@ TEST_P(PartitionAllocTest, FreeCache) {
   EXPECT_EQ(expected_committed_size,
             allocator.root()->get_total_size_of_committed_pages());
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 // Tests for a bug we had with losing references to free slot spans.
 TEST_P(PartitionAllocTest, LostFreeSlotSpansBug) {
   size_t size = PartitionPageSize() - ExtraAllocSize(allocator);
@@ -2317,6 +2342,7 @@ TEST_P(PartitionAllocTest, LostFreeSlotSpansBug) {
   EXPECT_TRUE(bucket->empty_slot_spans_head);
   EXPECT_TRUE(bucket->decommitted_slot_spans_head);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 #if defined(PA_HAS_DEATH_TESTS)
 
@@ -2633,6 +2659,7 @@ TEST_P(PartitionAllocDeathTest, OffByOneDetectionWithRealisticData) {
 
 #endif  // !defined(PA_HAS_DEATH_TESTS)
 
+#if !defined(OHOS_UNITTESTS)
 // Tests that |PartitionDumpStats| and |PartitionDumpStats| run without
 // crashing and return non-zero values when memory is allocated.
 TEST_P(PartitionAllocTest, DumpMemoryStats) {
@@ -2718,7 +2745,6 @@ TEST_P(PartitionAllocTest, DumpMemoryStats) {
       EXPECT_EQ(1u, stats->num_decommitted_slot_spans);
     }
   }
-
   // This test checks for correct empty slot span list accounting.
   {
     size_t size = PartitionPageSize() - ExtraAllocSize(allocator);
@@ -2908,6 +2934,7 @@ TEST_P(PartitionAllocTest, DumpMemoryStats) {
     allocator.root()->Free(ptr2);
   }
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 // Tests the API to purge freeable memory.
 TEST_P(PartitionAllocTest, Purge) {
@@ -2956,6 +2983,7 @@ TEST_P(PartitionAllocTest, Purge) {
   CHECK_PAGE_IN_CORE(big_ptr - kPointerOffset, false);
 }
 
+#if !defined(OHOS_UNITTESTS)
 // Tests that we prefer to allocate into a non-empty partition page over an
 // empty one. This is an important aspect of minimizing memory usage for some
 // allocation sizes, particularly larger ones.
@@ -3009,12 +3037,14 @@ TEST_P(PartitionAllocTest, PreferActiveOverEmpty) {
   allocator.root()->Free(ptr5);
   allocator.root()->Free(ptr7);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 #define TEST_STEP_SIZE 20
 #define TEST_TIME 5
 #define SUPER_OFFSET 4096
 #define EXTENT_OFFSET 32
 #define BUCKET_OFFSET 16
+#if !defined(OHOS_UNITTESTS)
 #if defined(OHOS_ENABLE_POINTER_HARDENED)
 TEST_P(PartitionAllocTest, FreelistHardenedTest) {
   size_t size = 0x200;
@@ -3053,6 +3083,7 @@ TEST_P(PartitionAllocTest, FreelistHardenedTest) {
 }
 
 #endif
+#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
 #if defined(OHOS_ENABLE_RANDOM)
 TEST_P(PartitionAllocTest, RandomTest) {
@@ -3458,6 +3489,7 @@ TEST_P(PartitionAllocTest, PurgeDiscardableSmallSlotsWithTruncate) {
   allocator.root()->Free(ptr2);
 }
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(PartitionAllocTest, ActiveListMaintenance) {
   size_t size = SystemPageSize() - ExtraAllocSize(allocator);
   size_t real_size = size + ExtraAllocSize(allocator);
@@ -3513,6 +3545,7 @@ TEST_P(PartitionAllocTest, ActiveListMaintenance) {
     }
   }
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 TEST_P(PartitionAllocTest, ReallocMovesCookie) {
   // Resize so as to be sure to hit a "resize in place" case, and ensure that
@@ -5197,6 +5230,7 @@ TEST_P(PartitionAllocTest, HandleMixedAllocations) {
 }
 #endif
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(PartitionAllocTest, SortFreelist) {
   const size_t count = 100;
   const size_t allocation_size = 1;
@@ -5252,6 +5286,7 @@ TEST_P(PartitionAllocTest, SortFreelist) {
 
   allocator.root()->Free(first_ptr);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 #if BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC) && BUILDFLAG(IS_LINUX) && \
     defined(ARCH_CPU_64_BITS)
@@ -5380,6 +5415,7 @@ TEST_P(PartitionAllocTest, SmallSlotSpanWaste) {
   }
 }
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(PartitionAllocTest, SortActiveSlotSpans) {
   auto run_test = [](size_t count) {
     PartitionBucket<ThreadSafe> bucket;
@@ -5447,6 +5483,7 @@ TEST_P(PartitionAllocTest, SortActiveSlotSpans) {
   run_test(0);
   run_test(1);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 #if BUILDFLAG(USE_FREESLOT_BITMAP)
 TEST_P(PartitionAllocTest, FreeSlotBitmapMarkedAsUsedAfterAlloc) {

@@ -41,6 +41,10 @@
 #include "nweb_javascript_result_callback.h"
 #include "nweb_value.h"
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#include "custom_media_player_impl.h"
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 struct NativeWindow;
 
 namespace OHOS::NWeb {
@@ -177,12 +181,12 @@ class NWebHandlerDelegate : public CefClient,
                              int32_t routing_id,
                              int32_t object_id) override;
   int NotifyJavaScriptResultFlowbuf(CefRefPtr<CefListValue> args,
-                             const CefString& method,
-                             const CefString& object_name,
-                             int fd,
-                             CefRefPtr<CefListValue> result,
-                             int32_t routing_id,
-                             int32_t object_id) override;
+                                    const CefString& method,
+                                    const CefString& object_name,
+                                    int fd,
+                                    CefRefPtr<CefListValue> result,
+                                    int32_t routing_id,
+                                    int32_t object_id) override;
   bool HasJavaScriptObjectMethods(int32_t object_id,
                                   const CefString& method_name) override;
   void GetJavaScriptObjectMethods(
@@ -631,6 +635,19 @@ class NWebHandlerDelegate : public CefClient,
                              CefRefPtr<CefCallback> callback) override;
 #endif
 
+#if defined(OHOS_SCREEN_LOCK)
+  void SetWakeLockCallback(int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback);
+#endif
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void RegisterOnCreateNativeMediaPlayerListener(
+      std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback);
+
+  CefOwnPtr<CefCustomMediaPlayerDelegate> OnCreateCustomMediaPlayer(
+      CefOwnPtr<CefMediaPlayerListener> listener,
+      const CefCustomMediaInfo& media_info) override;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
  private:
   void CopyImageToClipboard(CefRefPtr<CefImage> image);
   // List of existing browser windows. Only accessed on the CEF UI thread.
@@ -658,8 +675,18 @@ class NWebHandlerDelegate : public CefClient,
       web_app_client_extension_listener_ = nullptr;
 
   std::shared_ptr<NWebGeolocationCallback> callback_ = nullptr;
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  std::shared_ptr<NWebCreateNativeMediaPlayerCallback>
+      create_native_media_player_cb_ = nullptr;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
   bool is_enhance_surface_ = false;
   void* window_ = nullptr;
+
+#if defined(OHOS_SCREEN_LOCK)
+  std::shared_ptr<NWebScreenLockCallback> screen_lock_callback_ = nullptr;
+  int32_t screen_lock_window_id_ = -1;
+#endif
 
   CefString image_cache_src_url_;
 

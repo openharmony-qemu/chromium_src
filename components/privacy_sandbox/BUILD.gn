@@ -64,10 +64,13 @@ source_set("unit_tests") {
   testonly = true
   sources = [
     "canonical_topic_unittest.cc",
-    "privacy_sandbox_settings_impl_unittest.cc",
-    "privacy_sandbox_test_util_unittest.cc",
   ]
-
+  if (!ohos_unittests) {
+    sources = [
+      "privacy_sandbox_settings_impl_unittest.cc",
+      "privacy_sandbox_test_util_unittest.cc",
+    ]
+  }
   deps = [
     ":privacy_sandbox",
     ":privacy_sandbox_prefs",

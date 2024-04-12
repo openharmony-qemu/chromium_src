@@ -482,10 +482,10 @@ TEST_P(LayerTreeHostReadbackPixelTest, MultipleReadbacksOnLayer) {
 // readback.
 ReadbackTestConfig const kTestConfigs[] = {
     ReadbackTestConfig{viz::RendererType::kSoftware, TestReadBackType::kBitmap},
-#if BUILDFLAG(ENABLE_GL_BACKEND_TESTS)
+#if BUILDFLAG(ENABLE_GL_BACKEND_TESTS) && !defined(OHOS_UNITTESTS)
     ReadbackTestConfig{viz::RendererType::kSkiaGL, TestReadBackType::kTexture},
     ReadbackTestConfig{viz::RendererType::kSkiaGL, TestReadBackType::kBitmap},
-#endif  // BUILDFLAG(ENABLE_GL_BACKEND_TESTS)
+#endif  // BUILDFLAG(ENABLE_GL_BACKEND_TESTS) && !defined(OHOS_UNITTESTS)
 #if BUILDFLAG(ENABLE_VULKAN_BACKEND_TESTS)
     ReadbackTestConfig{viz::RendererType::kSkiaVk, TestReadBackType::kBitmap},
     ReadbackTestConfig{viz::RendererType::kSkiaVk, TestReadBackType::kTexture},

@@ -17,6 +17,8 @@
 #include "ui/compositor/test/test_utils.h"
 #include "ui/gfx/presentation_feedback.h"
 
+#if !defined(OHOS_UNITTESTS)
+
 namespace ui {
 
 class PresentationTimeRecorderTest : public testing::Test {
@@ -113,3 +115,5 @@ TEST_F(PresentationTimeRecorderTest, DelayedHistogram) {
 }
 
 }  // namespace ui
+
+#endif

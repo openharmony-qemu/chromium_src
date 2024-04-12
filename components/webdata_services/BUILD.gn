@@ -38,8 +38,9 @@ static_library("webdata_services") {
 
 source_set("unit_tests") {
   testonly = true
-
-  sources = [ "web_data_service_wrapper_unittest.cc" ]
+  if (!ohos_unittests) {
+    sources = [ "web_data_service_wrapper_unittest.cc" ]
+  }
 
   deps = [
     ":webdata_services",

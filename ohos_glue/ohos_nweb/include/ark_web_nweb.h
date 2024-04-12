@@ -1205,6 +1205,14 @@ public:
       ArkWebRefPtr<ArkWebCreateNativeMediaPlayerCallback> callback) = 0;
 
   /**
+   * @brief Web drag resize optimize.
+   */
+  /*--ark web()--*/
+  virtual void DragResize(uint32_t width,
+                          uint32_t height,
+                          uint32_t pre_height,
+                          uint32_t pre_width) = 0;
+  /**
    * @brief Set the params when the scale of WebView changed by pinch gestrue.
    *
    * @param scale: the scale factor to apply. The scale will be

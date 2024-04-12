@@ -151,6 +151,11 @@ class CONTENT_EXPORT MediaWebContentsObserver
   // be suspended.
   void SuspendAllMediaPlayers();
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void RequestEnterFullscreen(const MediaPlayerId& player_id);
+  void RequestExitFullscreen(const MediaPlayerId& player_id);
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
  protected:
   MediaSessionControllersManager* session_controllers_manager() {
     return session_controllers_manager_.get();
@@ -223,6 +228,11 @@ class CONTENT_EXPORT MediaWebContentsObserver
     void OnRemotePlaybackMetadataChange(
         media_session::mojom::RemotePlaybackMetadataPtr
             remote_playback_metadata) override;
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+    void UpdateLayerRect(const gfx::Rect& rect) override;
+    void FullscreenChanged(bool is_fullscreen) override;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 
    private:
     PlayerInfo* GetPlayerInfo();

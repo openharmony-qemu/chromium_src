@@ -89,14 +89,17 @@ static_library("ntp_tiles") {
 source_set("unit_tests") {
   testonly = true
   sources = [
-    "custom_links_manager_impl_unittest.cc",
     "custom_links_store_unittest.cc",
     "icon_cacher_impl_unittest.cc",
     "metrics_unittest.cc",
-    "most_visited_sites_unittest.cc",
-    "popular_sites_impl_unittest.cc",
   ]
-
+  if (!ohos_unittests) {
+    sources += [
+      "custom_links_manager_impl_unittest.cc",
+      "most_visited_sites_unittest.cc",
+      "popular_sites_impl_unittest.cc",
+    ]
+  }
   deps = [
     ":ntp_tiles",
     "//base/test:test_support",

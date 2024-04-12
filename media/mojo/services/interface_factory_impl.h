@@ -76,6 +76,15 @@ class InterfaceFactoryImpl final
       mojo::PendingReceiver<mojom::MediaPlayerRendererExtension>
           renderer_extension_receiver) final;
 #endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void CreateCustomMediaPlayerRenderer(
+      mojo::PendingRemote<mojom::CustomMediaPlayerRendererClientExtension>
+          client_extension_ptr,
+      mojo::PendingReceiver<mojom::Renderer> receiver,
+      mojo::PendingReceiver<mojom::MediaPlayerRendererExtension>
+          renderer_extension_receiver,
+      int player_id) final;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 #if BUILDFLAG(IS_ANDROID)
   void CreateFlingingRenderer(
       const std::string& presentation_id,

@@ -83,6 +83,15 @@ class MediaInterfaceProxy final : public DocumentUserData<MediaInterfaceProxy>,
       mojo::PendingReceiver<media::mojom::MediaPlayerRendererExtension>
           renderer_extension_request) final;
 #endif  // defined(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void CreateCustomMediaPlayerRenderer(
+      mojo::PendingRemote<media::mojom::CustomMediaPlayerRendererClientExtension>
+          client_extension_remote,
+      mojo::PendingReceiver<media::mojom::Renderer> receiver,
+      mojo::PendingReceiver<media::mojom::MediaPlayerRendererExtension>
+          renderer_extension_receiver,
+      int player_id) final;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 #if BUILDFLAG(IS_WIN)
   void CreateMediaFoundationRenderer(
       mojo::PendingRemote<media::mojom::MediaLog> media_log_remote,

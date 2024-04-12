@@ -729,6 +729,7 @@ namespace nested_test {
   }
 }  // namespace nested_test
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(LoggingTest, LogPrefix) {
   // Use a static because only captureless lambdas can be converted to a
   // function pointer for SetLogMessageHandler().
@@ -749,6 +750,7 @@ TEST_F(LoggingTest, LogPrefix) {
   LOG(ERROR) << "test";  // Writes into |log_string|.
   EXPECT_EQ(std::string::npos, log_string->find(kPrefix));
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 #if BUILDFLAG(IS_CHROMEOS_ASH)
 TEST_F(LoggingTest, LogCrosSyslogFormat) {

@@ -80,6 +80,9 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       override;
   void StartDownload(const char* url) override;
   void ResumeDownload(std::shared_ptr<NWebDownloadItem> web_download) override;
+#ifdef OHOS_EX_DOWNLOAD
+  NWebDownloadItemState GetDownloadItemState(long item_id) override;
+#endif
 
   void RegisterNWebHandler(std::shared_ptr<NWebHandler> handler) override;
   void RegisterRenderCb(
@@ -412,6 +415,10 @@ void PrecompileJavaScript(const std::string& url,
   void CloseCamera() override;
 #endif  // defined(OHOS_WEBRTC)
 
+#if defined(OHOS_SCREEN_LOCK)
+  void SetWakeLockCallback(int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback) override;
+#endif
+
 #if defined(OHOS_SECURE_JAVASCRIPT_PROXY)
   std::string GetLastJavascriptProxyCallingFrameUrl() override;
 #endif
@@ -461,6 +468,10 @@ void PrecompileJavaScript(const std::string& url,
                                 std::vector<std::string>& certChainData,
                                 bool isSingleCert);
 #endif
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void RegisterOnCreateNativeMediaPlayerListener(
+      std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) override;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
  private:
   content::BrowserAccessibilityManagerOHOS* GetAccessibilityManager() const;
   void AddAccessibilityNodeInfoAttributes(

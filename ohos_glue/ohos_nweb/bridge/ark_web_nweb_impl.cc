@@ -868,6 +868,13 @@ void ArkWebNWebImpl::OnCreateNativeMediaPlayer(
       std::make_shared<ArkWebCreateNativeMediaPlayerCallbackWrapper>(callback));
 }
 
+void ArkWebNWebImpl::DragResize(uint32_t width,
+                                uint32_t height,
+                                uint32_t pre_height,
+                                uint32_t pre_width) {
+  nweb_nweb_->DragResize(width, height, pre_height, pre_width);
+}
+
 int ArkWebNWebImpl::ScaleGestureChange(double scale, double centerX, double centerY) {
   return nweb_nweb_->ScaleGestureChange(scale, centerX, centerY);
 }

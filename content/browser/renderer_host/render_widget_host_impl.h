@@ -907,6 +907,12 @@ class CONTENT_EXPORT RenderWidgetHostImpl
                                   cc::BrowserControlsState current,
                                   bool animate);
 
+#ifdef OHOS_EX_FREE_COPY
+  void GetWordSelection(const std::string& text,
+                        int8_t offset,
+                        GetWordSelectionCallback callback) override;
+#endif
+
  protected:
   // |routing_id| must not be MSG_ROUTING_NONE.
   // If this object outlives |delegate|, DetachDelegate() must be called when

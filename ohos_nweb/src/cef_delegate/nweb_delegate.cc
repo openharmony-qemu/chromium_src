@@ -2489,21 +2489,21 @@ bool NWebDelegate::ShouldVirtualKeyboardOverlay() {
 
 #if defined(OHOS_MEDIA_POLICY)
 void NWebDelegate::SetAudioResumeInterval(int32_t resumeInterval) {
-  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "SetAudioResumeInterval can not get browser";
-    return;
+  if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
+    GetBrowser()->GetHost()->SetAudioResumeInterval(resumeInterval);
   }
-
-  GetBrowser()->GetHost()->SetAudioResumeInterval(resumeInterval);
+  if (preference_delegate_) {
+    preference_delegate_->PutAudioResumeInterval(resumeInterval);
+  }
 }
 
 void NWebDelegate::SetAudioExclusive(bool audioExclusive) {
-  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "SetAudioExclusive can not get browser";
-    return;
+  if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
+    GetBrowser()->GetHost()->SetAudioExclusive(audioExclusive);
   }
-
-  GetBrowser()->GetHost()->SetAudioExclusive(audioExclusive);
+  if (preference_delegate_) {
+    preference_delegate_->PutAudioExclusive(audioExclusive);
+  }
 }
 
 void NWebDelegate::CloseAllMediaPresentations() {

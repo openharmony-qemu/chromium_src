@@ -157,6 +157,10 @@
 #include "ui/accelerated_widget_mac/window_resize_helper_mac.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/ohos/ltpo/include/sliding_observer.h"
+#endif
+
 using blink::DragOperationsMask;
 using blink::WebGestureEvent;
 using blink::WebInputEvent;
@@ -1591,6 +1595,18 @@ void RenderWidgetHostImpl::ForwardGestureEventWithLatencyInfo(
     const ui::LatencyInfo& latency) {
   TRACE_EVENT1("input", "RenderWidgetHostImpl::ForwardGestureEvent", "type",
                WebInputEvent::GetName(gesture_event.GetType()));
+
+#if BUILDFLAG(IS_OHOS)
+  if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollBegin) {
+    base::ohos::SlidingObserver::GetInstance().StartSliding();
+  } else if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollEnd
+    || gesture_event.GetType() == WebInputEvent::Type::kGestureScrollEnd) {
+    base::ohos::SlidingObserver::GetInstance().StopSliding();
+  } else if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollUpdate) {
+    base::ohos::SlidingObserver::GetInstance().OnScrollUpdate(gesture_event.data.scroll_update.delta_x,
+      gesture_event.data.scroll_update.delta_y);
+  }
+#endif
 
   // This is used to auto-disable accessibility if we detect user input
   // but no accessibility API usage.

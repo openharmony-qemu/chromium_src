@@ -10,6 +10,7 @@
 #if BUILDFLAG(IS_OHOS)
 #include "base/report_loss_frame.h"
 #include "base/ohos/dynamic_frame_loss_monitor.h"
+#include "base/ohos/ltpo/include/sliding_observer.h"
 #endif
 
 namespace viz {
@@ -140,6 +141,7 @@ void ExternalBeginFrameSourceOHOS::OnVSyncImpl(int64_t timestamp,
 
 #if BUILDFLAG(IS_OHOS)
 ReportLossFrame::GetInstance()->SetVsyncPeriod(vsync_period_);
+base::ohos::SlidingObserver::GetInstance().SetVsyncPeriod(vsync_period_);
 #endif
   base::TimeDelta vsync_period(base::Nanoseconds(vsync_period_));
   base::TimeTicks frame_time = base::TimeTicks() + base::Nanoseconds(timestamp);

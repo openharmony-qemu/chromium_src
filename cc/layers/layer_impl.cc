@@ -1092,6 +1092,9 @@ void LayerImpl::SetVideoRect(const gfx::RectF& rect) {
   }
 
   video_rect_ = rect;
+  if (init_scale_ == -1.0f) {
+    init_scale_ = GetIdealContentsScaleKey();
+  }
 
   // Scrollbar positions depend on the scrolling layer bounds.
   if (scrollable_) {

@@ -134,6 +134,7 @@ class NWebDelegateInterface
   virtual void OnTouchMove(const std::vector<std::shared_ptr<NWebTouchPointInfo>> &touch_point_infos,
                            bool from_overlay) = 0;
   virtual void OnTouchCancel() = 0;
+  virtual void OnTouchCancelById(int32_t id, double x, double y, bool from_overlay) = 0;
   virtual bool SendKeyEvent(int32_t keyCode, int32_t keyAction) = 0;
   virtual void SendMouseWheelEvent(double x,
                                    double y,

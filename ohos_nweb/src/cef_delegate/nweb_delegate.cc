@@ -497,11 +497,8 @@ InitRichtextIdentifier();
       SetVirtualPixelRatio(richtextDisplayRatio);
     } else {
 #if BUILDFLAG(IS_OHOS)
-      if (GetBaseDisplayWidth() > 0) {
-        SetVirtualPixelRatio(display->GetWidth() / GetBaseDisplayWidth());
-      } else {
-        SetVirtualPixelRatio(display->GetVirtualPixelRatio());
-      }
+      SetVirtualPixelRatio(display->GetVirtualPixelRatio() *
+                           GetBaseDisplayRatio());
 #else
       SetVirtualPixelRatio(display->GetVirtualPixelRatio());
 #endif
@@ -863,11 +860,7 @@ void NWebDelegate::NotifyScreenInfoChanged(RotationType rotation,
       display_ratio = richtextDisplayRatio;
     } else {
 #if BUILDFLAG(IS_OHOS)
-      if (GetBaseDisplayWidth() > 0) {
-        display_ratio = display->GetWidth() / GetBaseDisplayWidth();
-      } else {
-        display_ratio = display->GetVirtualPixelRatio();
-      }
+      display_ratio = display->GetVirtualPixelRatio() * GetBaseDisplayRatio();
 #else
       display_ratio = display->GetVirtualPixelRatio();
 #endif
@@ -908,8 +901,8 @@ void NWebDelegate::SetVirtualPixelRatio(float ratio) {
 }
 
 #if BUILDFLAG(IS_OHOS)
-float NWebDelegate::GetBaseDisplayWidth() {
-  return base_display_width_;
+float NWebDelegate::GetBaseDisplayRatio() {
+  return base_display_ratio_;
 }
 #endif
 
@@ -1445,8 +1438,9 @@ void NWebDelegate::InitializeCef(std::string url,
   if (base::ohos::IsPcDevice()) {
     // To achieve a similar web page display effect on HarmonyOS PC devices as
     // on Mac devices of the same size, it is necessary to make the web page
-    // width around approximately 1512 when in full screen.
-    base_display_width_ = 1512;
+    // width around approximately 1512 when in full screen, making the default
+    // dpr=1.25*1.12=1.4f.
+    base_display_ratio_ = 1.12f;
   }
 #endif
 

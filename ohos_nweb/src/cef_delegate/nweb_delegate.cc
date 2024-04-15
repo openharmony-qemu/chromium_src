@@ -784,6 +784,17 @@ void NWebDelegate::OnTouchCancel() {
   }
 }
 
+void NWebDelegate::OnTouchCancelById(int32_t id,
+                                     double x,
+                                     double y,
+                                     bool from_overlay) {
+  if (event_handler_ != nullptr) {
+    event_handler_->OnTouchCancelById(id, x / default_virtual_pixel_ratio_,
+                                      y / default_virtual_pixel_ratio_,
+                                      from_overlay);
+  }
+}
+
 bool NWebDelegate::SendKeyEvent(int32_t keyCode, int32_t keyAction) {
   bool retVal = false;
   if (event_handler_ != nullptr) {

@@ -486,7 +486,11 @@ typedef struct _ark_web_nweb_t {
 
   void(ARK_WEB_CALLBACK *ark_web_nweb_drag_resize)(struct _ark_web_nweb_t *self,uint32_t width,
                                  uint32_t height, uint32_t pre_height, uint32_t pre_width);
-                                 
+
+  void(ARK_WEB_CALLBACK *on_touch_cancel_by_id)(struct _ark_web_nweb_t *self,
+                                                int32_t id, double x, double y,
+                                                bool from_overlay);
+                                                
   int(ARK_WEB_CALLBACK *scale_gesture_change)(struct _ark_web_nweb_t *self,
                                               double scale, double centerX,
                                               double centerY);

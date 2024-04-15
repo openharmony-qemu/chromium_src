@@ -773,7 +773,6 @@ void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
     WVLOG_E("resize failed, nweb delegate is nullptr, nweb_id = %{public}u", nweb_id_);
     return;
   }
-  nweb_delegate_->SetDrawMode(draw_mode_);
   nweb_delegate_->Resize(width, height, isKeyboard);
   output_handler_->Resize(width, height);
 }
@@ -895,6 +894,15 @@ void NWebImpl::OnTouchCancel() {
     return;
   }
   input_handler_->OnTouchCancel();
+}
+
+void NWebImpl::OnTouchCancelById(int32_t id, double x, double y, bool from_overlay) {
+  WVLOG_D("NWebImpl::OnTouchCancelById id=%{public}d, x=%{public}f, y=%{public}f, from_overlay=%{public}d",
+      id, x, y, from_overlay);
+  if (input_handler_ == nullptr) {
+    return;
+  }
+  input_handler_->OnTouchCancelById(id, x, y, from_overlay);
 }
 
 void NWebImpl::OnNavigateBack() {
@@ -2613,4 +2621,28 @@ void NWebImpl::PrefetchResource(const std::shared_ptr<NWebEnginePrefetchArgs>& p
   request_info->request_body = pre_args->GetFormData();
 
   loading_predictor->PrefetchResource(request_info, additional_http_headers, cache_key, cache_valid_time);
+}
+
+void NWebImpl::ClearPrefetchedResource(const std::vector<std::string>& cache_key_list) {
+  std::vector<CefBrowserContext*> browser_context_all =
+      CefBrowserContext::GetAll();
+  if (browser_context_all.size() == 0) {
+    WVLOG_E("PrefetchResource has no browser_context");
+    return;
+  }
+
+  CefBrowserContext* context =browser_context_all[0];
+  content::BrowserContext* browser_context =context->AsBrowserContext();
+  if (!browser_context) {
+    WVLOG_E("PrefetchResource null browser_context");
+    return;
+  }
+  ohos_predictors::LoadingPredictor* loading_predictor =
+      ohos_predictors::LoadingPredictorFactory::GetForBrowserContext(
+          browser_context);
+  if (!loading_predictor) {
+    WVLOG_E("PrefetchResource no load predictor");
+    return;
+  }
+  loading_predictor->ClearPrefetchedResource(cache_key_list);
 }

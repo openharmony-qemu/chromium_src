@@ -69,6 +69,8 @@ public:
 
   RenderProcessMode GetRenderProcessMode() override;
 
+  void ClearPrefetchedResource(const std::vector<std::string>& cache_key_list) override;
+
 private:
   std::shared_ptr<NWebDataBase> nweb_data_base_ = nullptr;
   std::shared_ptr<NWebWebStorage> nweb_web_storage_ = nullptr;

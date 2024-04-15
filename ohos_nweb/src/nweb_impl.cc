@@ -896,6 +896,15 @@ void NWebImpl::OnTouchCancel() {
   input_handler_->OnTouchCancel();
 }
 
+void NWebImpl::OnTouchCancelById(int32_t id, double x, double y, bool from_overlay) {
+  WVLOG_D("NWebImpl::OnTouchCancelById id=%{public}d, x=%{public}f, y=%{public}f, from_overlay=%{public}d",
+      id, x, y, from_overlay);
+  if (input_handler_ == nullptr) {
+    return;
+  }
+  input_handler_->OnTouchCancelById(id, x, y, from_overlay);
+}
+
 void NWebImpl::OnNavigateBack() {
   if (input_handler_ == nullptr) {
     return;

@@ -875,4 +875,9 @@ void ArkWebNWebImpl::DragResize(uint32_t width,
   nweb_nweb_->DragResize(width, height, pre_height, pre_width);
 }
 
+void ArkWebNWebImpl::OnTouchCancelById(int32_t id, double x, double y,
+                                       bool from_overlay) {
+  nweb_nweb_->OnTouchCancelById(id, x, y, from_overlay);
+}
+
 } // namespace OHOS::ArkWeb

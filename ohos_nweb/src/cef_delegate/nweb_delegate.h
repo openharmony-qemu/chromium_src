@@ -102,6 +102,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void OnTouchMove(const std::vector<std::shared_ptr<NWebTouchPointInfo>> &touch_point_infos,
                    bool from_overlay = false) override;
   void OnTouchCancel() override;
+  void OnTouchCancelById(int32_t id, double x, double y, bool from_overlay) override;
   bool SendKeyEvent(int32_t keyCode, int32_t keyAction) override;
   void SendMouseWheelEvent(double x,
                            double y,

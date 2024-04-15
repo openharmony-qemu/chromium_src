@@ -1189,6 +1189,8 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
                             uint32_t pre_height,
                             uint32_t pre_width) = 0;
 
+    virtual void OnTouchCancelById(int32_t id, double x, double y, bool from_overlay) = 0;
+
     /**
      * @brief Set the params when the scale of WebView changed by pinch gestrue.
      *

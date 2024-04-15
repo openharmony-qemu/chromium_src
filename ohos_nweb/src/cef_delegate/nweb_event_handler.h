@@ -43,6 +43,7 @@ class NWebEventHandler {
                    bool from_overlay, float virtual_pixel_ratio);
   void OnTouchRelease(int32_t id, double x, double y, bool from_overlay);
   void OnTouchCancel();
+  void OnTouchCancelById(int32_t id, double x, double y, bool from_overlay);
   void SendMouseWheelEvent(double x, double y, double deltaX, double deltaY);
   void SendMouseEvent(int x, int y, int button, int action, int count);
 

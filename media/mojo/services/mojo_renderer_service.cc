@@ -79,6 +79,9 @@ void MojoRendererService::Initialize(
       nullptr, media_url_params->media_url, media_url_params->site_for_cookies,
       media_url_params->top_frame_origin, media_url_params->has_storage_access,
       media_url_params->allow_credentials, media_url_params->is_hls);
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  media_resource_->SetPreloadType(media_url_params->preload_type);
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
   renderer_->Initialize(
       media_resource_.get(), this,
       base::BindOnce(&MojoRendererService::OnRendererInitializeDone, weak_this_,

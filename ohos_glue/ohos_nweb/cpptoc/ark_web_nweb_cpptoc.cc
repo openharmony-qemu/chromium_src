@@ -1696,6 +1696,17 @@ void ARK_WEB_CALLBACK ark_web_nweb_drag_resize(struct _ark_web_nweb_t *self, uin
   ArkWebNWebCppToC::Get(self)->DragResize(width, height, pre_height, pre_width);
 }
 
+void ARK_WEB_CALLBACK ark_web_nweb_on_touch_cancel_by_id(struct _ark_web_nweb_t *self,
+                                                         int32_t id, double x,
+                                                         double y, bool from_overlay) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->OnTouchCancelById(id, x, y, from_overlay);
+}
+
 } // namespace
 
 ArkWebNWebCppToC::ArkWebNWebCppToC() {
@@ -1877,6 +1888,7 @@ ArkWebNWebCppToC::ArkWebNWebCppToC() {
   GetStruct()->on_create_native_media_player =
       ark_web_nweb_on_create_native_media_player;
   GetStruct()->ark_web_nweb_drag_resize = ark_web_nweb_drag_resize;
+  GetStruct()->on_touch_cancel_by_id = ark_web_nweb_on_touch_cancel_by_id;
 }
 
 ArkWebNWebCppToC::~ArkWebNWebCppToC() {

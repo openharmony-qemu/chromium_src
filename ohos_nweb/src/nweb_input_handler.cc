@@ -104,7 +104,22 @@ void NWebInputHandler::OnTouchCancel() {
   if (nweb_delegate_ == nullptr) {
     return;
   }
-  nweb_delegate_->OnTouchCancel();
+  for (auto it = touch_press_id_map_.begin(); it != touch_press_id_map_.end(); it++) {
+    if (it->second) {
+      nweb_delegate_->OnTouchCancelById(it->first, 0, 0, false);
+    }
+  }
+  touch_press_id_map_.clear();
+}
+
+void NWebInputHandler::OnTouchCancelById(int32_t id,
+                                         double x,
+                                         double y,
+                                         bool from_overlay) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->OnTouchCancelById(id, x, y, from_overlay);
 }
 
 void NWebInputHandler::OnNavigateBack() {

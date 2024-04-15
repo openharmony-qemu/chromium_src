@@ -614,12 +614,8 @@ bool NWebImpl::SetVirtualDeviceRatio() {
       device_pixel_ratio_ = richtextDisplayRatio;
     } else {
 #if BUILDFLAG(IS_OHOS)
-      if (nweb_delegate_ && nweb_delegate_->GetBaseDisplayWidth() > 0) {
-        device_pixel_ratio_ =
-            display->GetWidth() / nweb_delegate_->GetBaseDisplayWidth();
-      } else {
-        device_pixel_ratio_ = display->GetVirtualPixelRatio();
-      }
+      device_pixel_ratio_ = display->GetVirtualPixelRatio() *
+                            nweb_delegate_->GetBaseDisplayRatio();
 #else
       device_pixel_ratio_ = display->GetVirtualPixelRatio();
 #endif

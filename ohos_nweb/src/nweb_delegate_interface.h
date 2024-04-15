@@ -368,7 +368,7 @@ class NWebDelegateInterface
 #endif // defined(OHOS_SCREEN_ROTATION)
 
 #if BUILDFLAG(IS_OHOS)
-  virtual float GetBaseDisplayWidth() = 0;
+  virtual float GetBaseDisplayRatio() = 0;
 #endif
 
 #ifdef OHOS_EX_TOPCONTROLS

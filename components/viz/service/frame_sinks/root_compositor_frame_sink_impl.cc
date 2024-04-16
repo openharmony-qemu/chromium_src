@@ -703,8 +703,8 @@ void RootCompositorFrameSinkImpl::EvictFrameBackBuffers(bool invisible) {
   }
 }
 
-void RootCompositorFrameSinkImpl::SetLowerFrameRateWithVideo(int frame_rate) {
-  external_begin_frame_source_->SetLowerFrameRateWithVideo(frame_rate);
+void RootCompositorFrameSinkImpl::ReduceFrameRate(int frame_rate) {
+  external_begin_frame_source_->ReduceFrameRate(frame_rate);
 }
 
 void RootCompositorFrameSinkImpl::ResetFrameRate() {

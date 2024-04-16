@@ -52,7 +52,7 @@ class VIZ_SERVICE_EXPORT ExternalBeginFrameSourceOHOS
   void SetDrawRect(const gfx::Rect& new_rect) override {
     draw_rect_ = new_rect;
   }
-  void SetLowerFrameRateWithVideo(int frame_rate) override;
+  void ReduceFrameRate(int frame_rate) override;
   void ResetFrameRate() override;
 
  private:

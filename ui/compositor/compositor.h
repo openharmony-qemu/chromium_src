@@ -531,7 +531,7 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
 #if BUILDFLAG(IS_OHOS)
 void SetEnableLowerFrameRate(bool enabled);
 void EvictFrameBackBuffers(bool invisible);
-void SetLowerFrameRateWithVideo();
+void ReduceFrameRate();
 void ResetFrameRate();
 #endif
 

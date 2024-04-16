@@ -146,7 +146,7 @@ void ReportKeyThreadIds(
   const std::vector<int32_t>& thread_ids, int32_t process_id, bool is_created) override {}
 void EvictFrameBackBuffers(bool invisible);
 void OnVsyncReceived() override {}
-void SetLowerFrameRateWithVideo(int frame_rate);
+void ReduceFrameRate(int frame_rate);
 void ResetFrameRate();
 #endif
 

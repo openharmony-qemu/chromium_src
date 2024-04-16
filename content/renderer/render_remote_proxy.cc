@@ -61,6 +61,7 @@ void RenderRemoteProxy::NotifyBrowserFd(int32_t ipcFd,
       close(crashFd);
     }
   }
+  LOG(INFO) << "notify browser fd received";
   RenderRemoteProxy::is_browser_fd_received_ = true;
   RenderRemoteProxy::browser_fd_cv_.notify_one();
 }

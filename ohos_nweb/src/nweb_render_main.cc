@@ -21,7 +21,7 @@
 #include "nweb_hilog.h"
 
 extern "C" OHOS_NWEB_EXPORT void NWebRenderMain(const char* args) {
-  WVLOG_I("NWebRenderMain start, pid=%{public}d", getpid());
+  WVLOG_I("NWebRenderMain start, sandbox pid=%{public}d global pid=%{public}d", getpid(), getprocpid());
 
   std::string args_str = args;
   std::stringstream args_ss(args_str);
@@ -42,6 +42,6 @@ extern "C" OHOS_NWEB_EXPORT void NWebRenderMain(const char* args) {
   CefMainArgs main_args(argc, const_cast<char**>(argv_cstr.data()));
   (void)CefExecuteProcess(main_args, nullptr, nullptr);
 
-  WVLOG_I("NWebRenderMain end, pid=%{public}d", getpid());
+  WVLOG_I("NWebRenderMain end, sandbox pid=%{public}d global pid=%{public}d", getpid(), getprocpid());
 }
  

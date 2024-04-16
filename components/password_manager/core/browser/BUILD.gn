@@ -604,11 +604,8 @@ source_set("unit_tests") {
   testonly = true
   sources = [
     "affiliation/affiliated_match_helper_unittest.cc",
-    "affiliation/affiliation_backend_unittest.cc",
     "affiliation/affiliation_database_unittest.cc",
-    "affiliation/affiliation_fetch_throttler_unittest.cc",
     "affiliation/affiliation_fetcher_factory_impl_unittest.cc",
-    "affiliation/affiliation_service_impl_unittest.cc",
     "affiliation/asset_link_data_unittest.cc",
     "affiliation/facet_manager_unittest.cc",
     "affiliation/hash_affiliation_fetcher_unittest.cc",
@@ -625,8 +622,6 @@ source_set("unit_tests") {
     "credentials_cleaner_unittest.cc",
     "export/csv_writer_unittest.cc",
     "export/password_csv_writer_unittest.cc",
-    "export/password_manager_exporter_unittest.cc",
-    "field_info_manager_unittest.cc",
     "field_info_table_unittest.cc",
     "form_fetcher_impl_unittest.cc",
     "form_saver_impl_unittest.cc",
@@ -669,9 +664,7 @@ source_set("unit_tests") {
     "password_reuse_detector_unittest.cc",
     "password_reuse_manager_impl_unittest.cc",
     "password_save_manager_impl_unittest.cc",
-    "password_store_built_in_backend_unittest.cc",
     "password_store_consumer_unittest.cc",
-    "password_store_unittest.cc",
     "password_sync_util_unittest.cc",
     "password_ui_utils_unittest.cc",
     "possible_username_data_unittest.cc",
@@ -691,12 +684,19 @@ source_set("unit_tests") {
     "ui/saved_passwords_presenter_unittest.cc",
     "vote_uploads_test_matchers.h",
     "votes_uploader_unittest.cc",
-    "well_known_change_password_state_unittest.cc",
     "well_known_change_password_util_unittest.cc",
   ]
   if (!ohos_unittests) {
     sources += [
+      "affiliation/affiliation_backend_unittest.cc",
+      "affiliation/affiliation_fetch_throttler_unittest.cc",
       "affiliation/affiliations_prefetcher_unittest.cc",
+      "affiliation/affiliation_service_impl_unittest.cc",
+      "export/password_manager_exporter_unittest.cc",
+      "field_info_manager_unittest.cc",
+      "password_store_built_in_backend_unittest.cc",
+      "password_store_unittest.cc",
+      "well_known_change_password_state_unittest.cc",
     ]
   }
   if (is_android) {

@@ -738,6 +738,28 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
   media_web_contents_observer_->web_contents_impl()->UpdateLayerRect(
       media_player_id_, rect);
 }
+
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
+    FullscreenChanged(bool is_fullscreen) {
+  media_web_contents_observer_->web_contents_impl()->FullScreenChanged(
+      media_player_id_, is_fullscreen);
+}
+
+void MediaWebContentsObserver::RequestEnterFullscreen(const MediaPlayerId& player_id) {
+  const auto iter = media_player_remotes_.find(player_id);
+  if (iter == media_player_remotes_.end()) {
+    return;
+  }
+  iter->second->RequestEnterFullscreen();
+}
+
+void MediaWebContentsObserver::RequestExitFullscreen(const MediaPlayerId& player_id) {
+  const auto iter = media_player_remotes_.find(player_id);
+  if (iter == media_player_remotes_.end()) {
+    return;
+  }
+  iter->second->RequestExitFullscreen();
+}
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
 }  // namespace content

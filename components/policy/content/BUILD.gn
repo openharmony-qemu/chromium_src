@@ -47,7 +47,9 @@ source_set("content") {
 
 source_set("unit_tests") {
   testonly = true
-  sources = [ "policy_blocklist_navigation_throttle_unittest.cc" ]
+  if (!ohos_unittests) {
+    sources = [ "policy_blocklist_navigation_throttle_unittest.cc" ]
+  }
   deps = [
     ":content",
     ":safe_sites_navigation_throttle",

@@ -172,7 +172,9 @@ source_set("test_support") {
 source_set("unit_tests") {
   testonly = true
 
-  sources = [ "auto_resumption_handler_unittest.cc" ]
+  if (!ohos_unittests) {
+    sources = [ "auto_resumption_handler_unittest.cc" ]
+  }
 
   deps = [
     ":public",

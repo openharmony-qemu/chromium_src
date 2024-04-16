@@ -130,7 +130,10 @@ source_set("message_port_core") {
 
 source_set("message_port_unittest") {
   testonly = true
-  sources = [ "message_port_unittest.cc" ]
+  if (!ohos_unittests) {
+    sources = [ "message_port_unittest.cc" ]
+  }
+
   deps = [
     ":blink_message_port_adapter",
     ":message_port",

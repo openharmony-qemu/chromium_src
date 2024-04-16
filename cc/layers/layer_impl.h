@@ -405,6 +405,9 @@ class CC_EXPORT LayerImpl {
   int native_embed_id() const { return native_embed_id_; }
 
   void SetNativeRect(const gfx::RectF& rect);
+
+  void SetInitScale(float scale);
+  float GetInitScale() { return init_scale_; }
   gfx::RectF NativeRect() const;
   gfx::RectF GetNativeRect();
 
@@ -576,6 +579,8 @@ class CC_EXPORT LayerImpl {
   int effect_tree_index_;
   int clip_tree_index_;
   int scroll_tree_index_;
+
+  float init_scale_ = -1.0f;
 
   std::unique_ptr<RareProperties> rare_properties_;
 

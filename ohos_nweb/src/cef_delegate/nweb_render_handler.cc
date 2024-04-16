@@ -825,4 +825,23 @@ void NWebRenderHandler::OnNativeEmbedLifecycleChange(
   }
 }
 #endif
+
+#ifdef OHOS_EX_FREE_COPY
+void NWebRenderHandler::GetWordSelection(CefRefPtr<CefBrowser> browser,
+                                         const CefString& text,
+                                         int8_t offset,
+                                         CefPoint& select) {
+  std::vector<int8_t> vec =
+      OHOS::NWeb::OhosAdapterHelper::GetInstance()
+          .GetAiEngineAdapterInstance()
+          .GetWordSelection(text.ToString(), offset);
+  if (vec.size() == 2) {
+    select.x = vec[0];
+    select.y = vec[1];
+  } else {
+    select.x = -1;
+    select.y = -1;
+  }
+}
+#endif
 }  // namespace OHOS::NWeb

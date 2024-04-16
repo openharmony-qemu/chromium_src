@@ -153,6 +153,13 @@ class NWebPreferenceDelegate : public NWebPreference {
   CopyOptionMode GetCopyOptionMode() override;
 #endif // defined(OHOS_CLIPBOARD)
 
+#if defined(OHOS_MEDIA_POLICY)
+  void PutAudioExclusive(bool audioExclusive);
+  bool GetAudioExclusive();
+  void PutAudioResumeInterval(int32_t resumeInterval);
+  int32_t GetAudioResumeInterval();
+#endif
+
 #ifdef OHOS_EX_BLANK_TARGET_POPUP_INTERCEPT
   void SetEnableBlankTargetPopupIntercept(bool enable);
   bool IsBlankTargetPopupInterceptEnabled();
@@ -232,6 +239,10 @@ class NWebPreferenceDelegate : public NWebPreference {
   int32_t background_color_{0xffffffff};
 #endif // defined(OHOS_BACKGROUND_COLOR)
   std::tuple<bool, bool> native_video_player_config_{false, false};
+#if defined(OHOS_MEDIA_POLICY)
+  bool audio_exclusive_{true};
+  int32_t resume_interval_{0};
+#endif
 };
 }  // namespace OHOS::NWeb
 

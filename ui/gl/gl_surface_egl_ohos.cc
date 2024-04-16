@@ -76,8 +76,6 @@ bool NativeViewGLSurfaceEGLOhos::Resize(const gfx::Size& size,
     return false;
   }
 
-  // recreate eglsurface to release previous eglsurface's dma buffer
-  NativeViewGLSurfaceEGL::Recreate();
   return true;
 }
 

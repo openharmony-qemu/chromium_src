@@ -102,6 +102,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void OnTouchMove(const std::vector<std::shared_ptr<NWebTouchPointInfo>> &touch_point_infos,
                    bool from_overlay = false) override;
   void OnTouchCancel() override;
+  void OnTouchCancelById(int32_t id, double x, double y, bool from_overlay) override;
   bool SendKeyEvent(int32_t keyCode, int32_t keyAction) override;
   void SendMouseWheelEvent(double x,
                            double y,
@@ -386,7 +387,7 @@ void PrecompileJavaScript(const std::string& url,
 #endif // defined(OHOS_SCREEN_ROTATION)
 
 #if BUILDFLAG(IS_OHOS)
-  float GetBaseDisplayWidth() override;
+  float GetBaseDisplayRatio() override;
 #endif
 
 #ifdef OHOS_POST_URL
@@ -514,7 +515,7 @@ void PrecompileJavaScript(const std::string& url,
   uint32_t nweb_id_;
 
 #if BUILDFLAG(IS_OHOS)
-  float base_display_width_ = -1.f;
+  float base_display_ratio_ = 1.f;
 #endif
 
   bool is_enhance_surface_ = false;

@@ -24,7 +24,9 @@ static_library("filename_generation") {
 
 source_set("unit_tests") {
   testonly = true
-  sources = [ "filename_generation_unittest.cc" ]
+  if (!ohos_unittests) {
+    sources = [ "filename_generation_unittest.cc" ]
+  }
 
   deps = [
     ":filename_generation",

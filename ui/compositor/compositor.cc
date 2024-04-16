@@ -1009,8 +1009,8 @@ void Compositor::EvictFrameBackBuffers(bool invisible) {
       frame_sink_id(), invisible);
 }
 
-void Compositor::SetLowerFrameRateWithVideo() {
-  context_factory_->GetHostFrameSinkManager()->SetLowerFrameRateWithVideo(frame_sink_id());
+void Compositor::ReduceFrameRate() {
+  context_factory_->GetHostFrameSinkManager()->ReduceFrameRate(frame_sink_id());
 }
 
 void Compositor::ResetFrameRate() {

@@ -426,7 +426,7 @@ class VIZ_COMMON_EXPORT ExternalBeginFrameSource : public BeginFrameSource {
 #endif
 
 #if BUILDFLAG(IS_OHOS)
-  virtual void SetLowerFrameRateWithVideo(int frame_rate) {}
+  virtual void ReduceFrameRate(int frame_rate) {}
   virtual void ResetFrameRate() {}
 #endif
 

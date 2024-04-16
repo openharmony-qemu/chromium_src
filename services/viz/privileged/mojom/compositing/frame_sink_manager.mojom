@@ -215,9 +215,9 @@ interface FrameSinkManager {
 
   // Set enable lower frame rate, because there is video playing with low frame rate and no touch event
   [EnableIf=is_ohos]
-  SetLowerFrameRateWithVideo(FrameSinkId frame_sink_id, uint32 client_id);
+  ReduceFrameRate(FrameSinkId frame_sink_id, uint32 client_id);
 
-  // Reset the frame rate after SetLowerFrameRateWithVideo
+  // Reset the frame rate after ReduceFrameRate
   [EnableIf=is_ohos]
   ResetFrameRate(FrameSinkId frame_sink_id);
 };

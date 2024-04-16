@@ -130,8 +130,6 @@ class CONTENT_EXPORT OHOSCustomMediaPlayerRenderer
 
   bool initialized_ = false;
 
-  WebContents* web_contents_ = nullptr;
-
   // TODO : delete
   GlobalRenderFrameHostId global_render_frame_host_id_;
 

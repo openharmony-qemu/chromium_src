@@ -490,6 +490,10 @@ typedef struct _ark_web_nweb_t {
   void(ARK_WEB_CALLBACK *on_touch_cancel_by_id)(struct _ark_web_nweb_t *self,
                                                 int32_t id, double x, double y,
                                                 bool from_overlay);
+                                                
+  int(ARK_WEB_CALLBACK *scale_gesture_change)(struct _ark_web_nweb_t *self,
+                                              double scale, double centerX,
+                                              double centerY);
 } ark_web_nweb_t;
 
 #ifdef __cplusplus

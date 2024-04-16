@@ -2530,6 +2530,15 @@ void NWebImpl::ClearIntelligentTrackingPreventionBypassingList() {
 #endif
 }
 
+int NWebImpl::ScaleGestureChange(double scale, double centerX, double centerY) {
+  LOG(INFO) << "NWebImpl::ScaleGestureChange scale:" << scale << " centerX: " << centerX << " centerY: " << centerY;
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "nweb_delegate_ is nullptr.";
+    return NWEB_ERR;
+  }
+  return nweb_delegate_->ScaleGestureChange(scale, centerX, centerY);
+}
+
 #ifdef OHOS_RENDER_PROCESS_MODE
 // static
 void NWebImpl::SetRenderProcessMode(RenderProcessMode mode) {

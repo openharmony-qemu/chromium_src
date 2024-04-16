@@ -13,6 +13,7 @@ namespace base {
 
 namespace {
 
+#if !defined(OHOS_UNITTESTS)
 TEST(ScopedMockClockOverrideTest, Time) {
   // Choose a reference time that we know to be in the past but close to now.
   Time build_time = GetBuildTime();
@@ -62,6 +63,7 @@ TEST(ScopedMockClockOverrideTest, TimeTicks) {
   EXPECT_GT(TimeTicks::Max(), TimeTicks::Now());
   EXPECT_LT(TimeTicks::UnixEpoch() + Days(365), TimeTicks::Now());
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 TEST(ScopedMockClockOverrideTest, ThreadTicks) {
   if (ThreadTicks::IsSupported()) {

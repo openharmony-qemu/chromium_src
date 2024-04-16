@@ -49,6 +49,7 @@ using ActionRecord = std::tuple<ActionType,
 const ui::ElementContext kTestContext1(1);
 const ui::ElementContext kTestContext2(2);
 
+#if !defined(OHOS_UNITTESTS)
 DEFINE_LOCAL_ELEMENT_IDENTIFIER_VALUE(kTestId1);
 DEFINE_LOCAL_ELEMENT_IDENTIFIER_VALUE(kTestId2);
 DEFINE_LOCAL_ELEMENT_IDENTIFIER_VALUE(kTestId3);
@@ -58,7 +59,7 @@ DEFINE_LOCAL_CUSTOM_ELEMENT_EVENT_TYPE(kTestEvent2);
 
 constexpr char kSetOnIncompatibleActionMessage[] =
     "Explicitly testing incompatibility-handling.";
-
+#endif // OHOS_UNITTESTS ui_base_unittests drop case
 class TestSimulator : public InteractionTestUtil::Simulator {
  public:
   TestSimulator() = default;
@@ -138,6 +139,7 @@ class TestSimulator : public InteractionTestUtil::Simulator {
   std::vector<ActionRecord> records_;
 };
 
+#if !defined(OHOS_UNITTESTS)
 void DoFunction() {
   LOG(INFO) << "In normal function.";
 }
@@ -149,6 +151,7 @@ const TrackedElement* CheckElementFunction(const TrackedElement* el) {
 int ValueGeneratingFunction() {
   return 5;
 }
+#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
 struct CallableObject {
   bool operator()() const { return i != 0; }
@@ -189,6 +192,7 @@ class InteractiveTestTest : public InteractiveTest {
       base::test::SingleThreadTaskEnvironment::MainThreadType::UI};
 };
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(InteractiveTestTest, StepsConstructsMultiStep) {
   auto result =
       Steps(StepBuilder(), Steps(StepBuilder(), StepBuilder()), StepBuilder());
@@ -1277,5 +1281,6 @@ TEST_F(InteractiveTestTest, ConditionalBindingMethods) {
       IfElementMatches(kTestId2, &CheckElementFunction, testing::Ne(nullptr),
                        Do(incorrect.Get()), Do(correct.Get())));
 }
+#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
 }  // namespace ui::test

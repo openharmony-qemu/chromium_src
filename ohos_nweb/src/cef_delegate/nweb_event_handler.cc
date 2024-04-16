@@ -158,6 +158,22 @@ void NWebEventHandler::OnTouchCancel() {
   }
 }
 
+void NWebEventHandler::OnTouchCancelById(int32_t id,
+                                         double x,
+                                         double y,
+                                         bool from_overlay) {
+  (void)from_overlay;
+  CefTouchEvent touch_cancelled;
+  touch_cancelled.type = CEF_TET_CANCELLED;
+  touch_cancelled.pointer_type = CEF_POINTER_TYPE_TOUCH;
+  touch_cancelled.id = id;
+  touch_cancelled.x = x;
+  touch_cancelled.y = y;
+  if (browser_ && browser_->GetHost()) {
+    browser_->GetHost()->SendTouchEvent(touch_cancelled);
+  }
+}
+
 #if defined(OHOS_INPUT_EVENTS)
 void NWebEventHandler::SendKeyEventFromMMI(int32_t keyCode, int32_t keyAction) {
   if (!isFocus_ || !NWebInputDelegate::IsMMIKeyEvent(keyCode)) {
@@ -288,7 +304,7 @@ void NWebEventHandler::SendMouseEvent(int x,
       }
     } else if (NWebInputDelegate::IsMouseMove(action)) {
       if (last_mouse_x_ == x && last_mouse_y_ == y) {
-        LOG(INFO) << "no change in coordinates, cancel mouse move event";
+        LOG(DEBUG) << "no change in coordinates, cancel mouse move event";
         return;
       }
 

@@ -80,6 +80,9 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       override;
   void StartDownload(const char* url) override;
   void ResumeDownload(std::shared_ptr<NWebDownloadItem> web_download) override;
+#ifdef OHOS_EX_DOWNLOAD
+  NWebDownloadItemState GetDownloadItemState(long item_id) override;
+#endif
 
   void RegisterNWebHandler(std::shared_ptr<NWebHandler> handler) override;
   void RegisterRenderCb(
@@ -99,6 +102,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void OnTouchMove(const std::vector<std::shared_ptr<NWebTouchPointInfo>> &touch_point_infos,
                    bool from_overlay = false) override;
   void OnTouchCancel() override;
+  void OnTouchCancelById(int32_t id, double x, double y, bool from_overlay) override;
   bool SendKeyEvent(int32_t keyCode, int32_t keyAction) override;
   void SendMouseWheelEvent(double x,
                            double y,
@@ -383,7 +387,7 @@ void PrecompileJavaScript(const std::string& url,
 #endif // defined(OHOS_SCREEN_ROTATION)
 
 #if BUILDFLAG(IS_OHOS)
-  float GetBaseDisplayWidth() override;
+  float GetBaseDisplayRatio() override;
 #endif
 
 #ifdef OHOS_POST_URL
@@ -409,6 +413,10 @@ void PrecompileJavaScript(const std::string& url,
   void StopCamera() override;
   void CloseCamera() override;
 #endif  // defined(OHOS_WEBRTC)
+
+#if defined(OHOS_SCREEN_LOCK)
+  void SetWakeLockCallback(int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback) override;
+#endif
 
 #if defined(OHOS_SECURE_JAVASCRIPT_PROXY)
   std::string GetLastJavascriptProxyCallingFrameUrl() override;
@@ -459,6 +467,10 @@ void PrecompileJavaScript(const std::string& url,
                                 std::vector<std::string>& certChainData,
                                 bool isSingleCert);
 #endif
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void RegisterOnCreateNativeMediaPlayerListener(
+      std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) override;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
  private:
   content::BrowserAccessibilityManagerOHOS* GetAccessibilityManager() const;
   void AddAccessibilityNodeInfoAttributes(
@@ -503,7 +515,7 @@ void PrecompileJavaScript(const std::string& url,
   uint32_t nweb_id_;
 
 #if BUILDFLAG(IS_OHOS)
-  float base_display_width_ = -1.f;
+  float base_display_ratio_ = 1.f;
 #endif
 
   bool is_enhance_surface_ = false;

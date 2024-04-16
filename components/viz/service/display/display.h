@@ -39,6 +39,10 @@
 #include "ui/gfx/swap_result.h"
 #include "ui/latency/latency_info.h"
 
+#if defined(OHOS_DFX_DUMP)
+#include "ohos_adapter_helper.h"
+#endif
+
 namespace gfx {
 class Size;
 }
@@ -58,6 +62,9 @@ class RendererSettings;
 class SharedBitmapManager;
 class SkiaOutputSurface;
 class SoftwareRenderer;
+#if defined(OHOS_DFX_DUMP)
+class DumpFrameObserver;
+#endif
 
 class VIZ_SERVICE_EXPORT DisplayObserver {
  public:
@@ -283,6 +290,10 @@ class VIZ_SERVICE_EXPORT Display : public DisplaySchedulerClient,
 #if BUILDFLAG(IS_OHOS)
   gfx::Rect draw_rect_;
   int32_t draw_mode_ = 0;
+#endif
+
+#if defined(OHOS_DFX_DUMP)
+  std::unique_ptr<DumpFrameObserver> dump_frame_observer_;
 #endif
 
 #if DCHECK_IS_ON()

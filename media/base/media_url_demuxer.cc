@@ -10,6 +10,10 @@
 #include "base/task/single_thread_task_runner.h"
 #include "media/base/demuxer.h"
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#include "media/base/ranges.h"
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 namespace media {
 
 MediaUrlDemuxer::MediaUrlDemuxer(
@@ -54,6 +58,21 @@ void MediaUrlDemuxer::ForwardDurationChangeToDemuxerHost(
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
   host_->SetDuration(duration);
 }
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void MediaUrlDemuxer::ForwardBufferedEndTimeChangeToDemuxerHost(
+    base::TimeDelta buffered_time) {
+  DCHECK(host_);
+  DCHECK(task_runner_->RunsTasksInCurrentSequence());
+  Ranges<base::TimeDelta> buffered;
+  buffered.Add(base::TimeDelta(), buffered_time);
+  host_->OnBufferedTimeRangesChanged(buffered);
+}
+
+void MediaUrlDemuxer::SetPreloadType(uint32_t preload_type) {
+  params_.preload_type = preload_type;
+}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 
 void MediaUrlDemuxer::Initialize(DemuxerHost* host,
                                  PipelineStatusCallback status_cb) {

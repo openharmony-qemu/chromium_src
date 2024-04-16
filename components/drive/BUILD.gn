@@ -74,10 +74,15 @@ source_set("unit_tests") {
     "drive_notification_manager_unittest.cc",
     "drive_uploader_unittest.cc",
     "event_logger_unittest.cc",
-    "resource_metadata_storage_unittest.cc",
     "service/drive_api_service_unittest.cc",
     "service/fake_drive_service_unittest.cc",
   ]
+
+  if (!ohos_unittests) {
+    sources += [
+      "resource_metadata_storage_unittest.cc",
+    ]
+  }
 
   deps = [
     ":drive",

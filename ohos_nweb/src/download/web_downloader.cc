@@ -101,6 +101,30 @@ void WebDownload_Continue(const NWebBeforeDownloadCallbackWrapper* wrapper,
   }
 }
 
+void WebDownload_CancelBeforeDownload(const NWebBeforeDownloadCallbackWrapper* wrapper) {
+#ifdef OHOS_EX_DOWNLOAD
+  if (wrapper) {
+    wrapper->Cancel();
+  }
+#endif
+}
+
+void WebDownload_PauseBeforeDownload(const NWebBeforeDownloadCallbackWrapper* wrapper) {
+#ifdef OHOS_EX_DOWNLOAD
+  if (wrapper) {
+    wrapper->Pause();
+  }
+#endif
+}
+
+void WebDownload_ResumeBeforeDownload(const NWebBeforeDownloadCallbackWrapper* wrapper) {
+#ifdef OHOS_EX_DOWNLOAD
+  if (wrapper) {
+    wrapper->Resume();
+  }
+#endif
+}
+
 void WebDownload_Cancel(const NWebDownloadItemCallbackWrapper* wrapper) {
   if (wrapper) {
     wrapper->Cancel();
@@ -117,6 +141,19 @@ void WebDownload_Resume(const NWebDownloadItemCallbackWrapper* wrapper) {
   if (wrapper) {
     wrapper->Resume();
   }
+}
+
+NWebDownloadItemState WebDownload_GetItemState(int32_t nweb_id, long download_item_id) {
+#ifdef OHOS_EX_DOWNLOAD
+  OHOS::NWeb::NWebImpl* nweb = OHOS::NWeb::NWebImpl::FromID(nweb_id);
+  if (!nweb) {
+    WVLOG_E("fail to find a nweb with %{public}d", nweb_id);
+    return NWebDownloadItemState::MAX_DOWNLOAD_STATE;
+  }
+  return nweb->GetDownloadItemState(download_item_id);
+#else
+  return NWebDownloadItemState::MAX_DOWNLOAD_STATE;
+#endif
 }
 
 void WebDownloadItem_CreateWebDownloadItem(NWebDownloadItem** download_item) {

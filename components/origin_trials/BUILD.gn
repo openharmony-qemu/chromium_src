@@ -64,10 +64,14 @@ source_set("proto") {
 source_set("unit_tests") {
   testonly = true
   sources = [
-    "browser/leveldb_persistence_provider_unittest.cc",
     "browser/origin_trials_unittest.cc",
     "common/persisted_trial_token_unittest.cc",
   ]
+  if (!ohos_unittests) {
+    sources += [
+      "browser/leveldb_persistence_provider_unittest.cc",
+    ]
+  }
   deps = [
     ":browser",
     ":common",

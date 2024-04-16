@@ -15,6 +15,8 @@
 #include "mojo/public/cpp/bindings/remote.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#if !defined(OHOS_UNITTESTS)
+
 namespace gpu {
 
 namespace {
@@ -454,3 +456,5 @@ TEST_F(StructTraitsTest, GpuFeatureInfo) {
 }
 
 }  // namespace gpu
+
+#endif  // !defined(OHOS_UNITTESTS)

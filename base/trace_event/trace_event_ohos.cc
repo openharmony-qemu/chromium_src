@@ -22,20 +22,28 @@
 #include "ohos_adapter_helper.h"
 
 using OHOS::NWeb::OhosAdapterHelper;
+constexpr uint64_t HITRACE_TAG_NWEB = (1ULL << 24); // nweb trace tag
+class TraceObserver : public OHOS::NWeb::SystemPropertiesObserver {
+  public:
+    TraceObserver() = default;
+    ~TraceObserver() override = default;
+
+    void PropertiesUpdate(const char* value) override {
+      auto status = std::atol(value);
+      isHiTraceEnable = status & HITRACE_TAG_NWEB;
+    }
+};
+std::unique_ptr<TraceObserver> traceObserver;
+void StartObserveTraceEnable() {
+  traceObserver = std::make_unique<TraceObserver>();
+  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                                    .GetSystemPropertiesInstance();
+  system_properties_adapter.AttachSysPropObserver(OHOS::NWeb::PropertiesKey::PROP_HITRACE_ENABLEFLAGS,
+    traceObserver.get());
+}
 
 bool IsBytraceEnable() {
-  static bool traceStatus = false;
-  static time_t lastTime = 0;
-  time_t nowTime;
-  nowTime = time(0);
-  if (nowTime == lastTime) {
-    return traceStatus;
-  }
-  lastTime = nowTime;
-  traceStatus = OhosAdapterHelper::GetInstance()
-                .GetHiTraceAdapterInstance()
-                .IsHiTraceEnable();
-  return traceStatus;
+  return isHiTraceEnable;
 }
 
 bool IsCategoryEnable(const char *category_group) {

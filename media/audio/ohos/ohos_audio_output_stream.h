@@ -159,6 +159,8 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   bool audioExclusive_ = false;
 
+  bool isSuspended_ = false;
+
   scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_;
 };
 

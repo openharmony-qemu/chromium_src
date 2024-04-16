@@ -21,6 +21,15 @@ struct MediaUrlParams {
   bool has_storage_access;
   bool allow_credentials;
   bool is_hls;
+
+  [EnableIf=ohos_custom_video_player]
+  uint32 preload_type;
+};
+
+[EnableIf=ohos_custom_video_player]
+struct MediaSourceInfo {
+  string media_source;
+  string media_format;
 };
 
 // A Mojo equivalent of media::Renderer. Used when audio and video decoding
@@ -52,6 +61,31 @@ interface Renderer {
   // Attaches the CDM associated with `cdm_id` to the renderer service,
   // executing the callback with whether the CDM was successfully attached.
   SetCdm(mojo_base.mojom.UnguessableToken? cdm_id) => (bool success);
+
+  [EnableIf=ohos_custom_video_player]
+  SetMuted(bool muted);
+
+  [EnableIf=ohos_custom_video_player]
+  SetSurfaceId(int32 surface_id);
+
+  [EnableIf=ohos_custom_video_player]
+  SetMediaSourceList(array<MediaSourceInfo> source_infos);
+
+  [EnableIf=ohos_custom_video_player]
+  SetMediaControls(bool show_media_controls,
+      array<string> controls_list);
+
+  [EnableIf=ohos_custom_video_player]
+  SetPoster(string poster_url);
+
+  [EnableIf=ohos_custom_video_player]
+  SetAttributes(map<string, string> attributes);
+
+  [EnableIf=ohos_custom_video_player]
+  SetReferrer(string referrer);
+
+  [EnableIf=ohos_custom_video_player]
+  SetIsAudio(bool is_audio);
 };
 
 // A Mojo equivalent of media::RendererClient. See media/mojo/README.md

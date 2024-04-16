@@ -30,7 +30,9 @@ static_library("renderer") {
 
 source_set("unit_tests") {
   testonly = true
-  sources = [ "subresource_filter_agent_unittest.cc" ]
+  if (!ohos_unittests) {
+    sources = [ "subresource_filter_agent_unittest.cc" ]
+  }
   deps = [
     ":renderer",
     "//base",

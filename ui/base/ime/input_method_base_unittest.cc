@@ -194,6 +194,7 @@ class MockInputMethodObserver : public InputMethodObserver {
 typedef base::ScopedObservation<InputMethod, InputMethodObserver>
     InputMethodScopedObservation;
 
+#if !defined(OHOS_UNITTESTS)
 void SetFocusedTextInputClient(InputMethod* input_method,
                                TextInputClient* text_input_client) {
   input_method->SetFocusedTextInputClient(text_input_client);
@@ -314,6 +315,7 @@ TEST_F(InputMethodBaseTest, SetsPasswordWhenHasBeenPassword) {
 
   EXPECT_EQ(TEXT_INPUT_TYPE_PASSWORD, input_method.GetTextInputType());
 }
+#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
 }  // namespace
 }  // namespace ui

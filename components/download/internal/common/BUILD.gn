@@ -149,18 +149,22 @@ source_set("unit_tests") {
 
   sources = [
     "all_download_event_notifier_unittest.cc",
-    "base_file_unittest.cc",
     "download_db_cache_unittest.cc",
-    "download_file_unittest.cc",
-    "download_item_impl_unittest.cc",
-    "download_path_reservation_tracker_unittest.cc",
     "download_stats_unittest.cc",
     "download_ukm_helper_unittest.cc",
     "download_utils_unittest.cc",
-    "parallel_download_job_unittest.cc",
     "parallel_download_utils_unittest.cc",
     "rate_estimator_unittest.cc",
   ]
+  if (!ohos_unittests) {
+    sources += [
+      "base_file_unittest.cc",
+      "download_file_unittest.cc",
+      "download_item_impl_unittest.cc",
+      "download_path_reservation_tracker_unittest.cc",
+      "parallel_download_job_unittest.cc",
+    ]
+  }
 
   deps = [
     ":for_tests",

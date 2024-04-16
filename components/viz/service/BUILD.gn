@@ -367,6 +367,13 @@ viz_component("service") {
     deps += [ ":service_jni_headers" ]
   }
 
+  if (defined(ohos_dfx_dump) && ohos_dfx_dump) {
+    sources += [
+      "display/frame_dump_copy_output_request.cc",
+      "display/frame_dump_copy_output_request.h",
+    ]
+  }
+
   #if defined(OHOS_COMPOSITE_RENDER)
   if (is_ohos && defined(ohos_composite_render) && ohos_composite_render) {
     sources += [

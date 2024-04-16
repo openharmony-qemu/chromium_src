@@ -80,6 +80,12 @@
 
 #include "ui/base/clipboard/ohos/clip_board_image_data_adapter_impl.h"
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#include "cef/include/cef_media_player_listener.h"
+#include "ohos_nweb/src/native_media_player/nweb_media_info_impl.h"
+#include "ohos_nweb/src/native_media_player/nweb_native_media_player_handler_impl.h"
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 namespace OHOS::NWeb {
 namespace {
 
@@ -265,6 +271,26 @@ char* CopyCefStringToChar(const CefString& str) {
   strncpy(result, str.ToString().c_str(), strLen);
   return result;
 }
+
+#if defined(OHOS_SCREEN_LOCK)
+class SetKeepScreenOnCallback : public CefSetLockCallback {
+public:
+  explicit SetKeepScreenOnCallback(const std::shared_ptr<NWebScreenLockCallback>& callback): callback_(callback) {}
+
+  ~SetKeepScreenOnCallback() override {}
+
+  void Handle(bool key) override {
+    if (callback_) {
+      callback_->Handle(key);
+    }
+  }
+
+private:
+  std::shared_ptr<NWebScreenLockCallback> callback_;
+
+  IMPLEMENT_REFCOUNTING(SetKeepScreenOnCallback);
+};
+#endif
 
 #if defined(OHOS_MULTI_WINDOW)
 const char kOffScreenFrameRate[] = "off-screen-frame-rate";
@@ -537,6 +563,19 @@ CefRefPtr<CefFormHandler> NWebHandlerDelegate::GetFormHandler() {
 }
 /* CefClient methods end */
 
+#if defined(OHOS_SCREEN_LOCK)
+void NWebHandlerDelegate::SetWakeLockCallback(
+    int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback) {
+  if (main_browser_ && main_browser_->GetHost()) {
+    main_browser_->GetHost()->SetWakeLockHandler(
+        windowId, callback ? new SetKeepScreenOnCallback(callback) : nullptr);
+  } else {
+    screen_lock_callback_ = callback;
+    screen_lock_window_id_ = windowId;
+  }
+}
+#endif
+
 /* CefLifeSpanHandler methods begin */
 void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
   LOG(INFO) << "NWebHandlerDelegate::OnAfterCreated IsPopup "
@@ -546,6 +585,14 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
   if (browser && browser->GetHost() && window_id_ != 0 && nweb_id_ != 0) {
     browser->GetHost()->SetWindowId(window_id_, nweb_id_);
   }
+
+#if defined(OHOS_SCREEN_LOCK)
+  if (screen_lock_callback_ && browser && browser->GetHost()) {
+    browser->GetHost()->SetWakeLockHandler(
+        screen_lock_window_id_, new SetKeepScreenOnCallback(screen_lock_callback_));
+    screen_lock_callback_ = nullptr;
+  }
+#endif
 
 #if defined(OHOS_MULTI_WINDOW)
   if (!main_browser_ && browser->IsPopup()) {
@@ -573,6 +620,12 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
         main_browser_->GetHost()->SetBackgroundColor(
             preference_delegate_->GetBackgroundColor());
 #endif  // defined(OHOS_BACKGROUND_COLOR)
+#if defined(OHOS_MEDIA_POLICY)
+        main_browser_->GetHost()->SetAudioExclusive(
+            preference_delegate_->GetAudioExclusive());
+        main_browser_->GetHost()->SetAudioResumeInterval(
+            preference_delegate_->GetAudioResumeInterval());
+#endif
       }
       main_browser_->GetHost()->SetNativeWindow(window_);
 
@@ -1781,6 +1834,14 @@ bool NWebHandlerDelegate::OnCursorChange(
     info.x = custom_cursor_info.hotspot.x;
     info.y = custom_cursor_info.hotspot.y;
     info.scale = custom_cursor_info.image_scale_factor;
+    uint64_t len = info.width * info.height * 4;
+    std::unique_ptr<uint8_t[]> buff = std::make_unique<uint8_t[]>(len);
+    if (!buff) {
+      LOG(ERROR) << "OnCursorChange make_unique failed";
+      return false;
+    }
+    memcpy((char*)buff.get(), custom_cursor_info.buffer, len);
+    info.buff = buff.get();
   }
   CursorType cursorType(static_cast<CursorType>(type));
   return nweb_handler_->OnCursorChange(cursorType, info);
@@ -2184,7 +2245,7 @@ void NWebHandlerDelegate::CopyImageToClipboard(CefRefPtr<CefImage> image) {
       return;
     }
 
-    auto copy_option = static_cast<ui::CopyOptionMode>(
+    auto copy_option = static_cast<CopyOptionMode>(
         preference_delegate_->GetCopyOptionMode());
     OhosAdapterHelper::GetInstance().GetPasteBoard().SetPasteData(recordVector,
                                                                   copy_option);
@@ -2562,12 +2623,12 @@ int NWebHandlerDelegate::NotifyJavaScriptResult(CefRefPtr<CefListValue> args,
 }
 
 int NWebHandlerDelegate::NotifyJavaScriptResultFlowbuf(CefRefPtr<CefListValue> args,
-                                                const CefString& method,
-                                                const CefString& object_name,
-                                                int fd,
-                                                CefRefPtr<CefListValue> result,
-                                                int32_t routing_id,
-                                                int32_t object_id) {
+                                                       const CefString& method,
+                                                       const CefString& object_name,
+                                                       int fd,
+                                                       CefRefPtr<CefListValue> result,
+                                                       int32_t routing_id,
+                                                       int32_t object_id) {
   if (args.get() == nullptr || result.get() == nullptr) {
     return 0;
   }
@@ -2714,4 +2775,37 @@ bool NWebHandlerDelegate::OnAllCertificateError(CefRefPtr<CefBrowser> browser,
   return false;
 }
 #endif
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void NWebHandlerDelegate::RegisterOnCreateNativeMediaPlayerListener(
+    std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) {
+  WVLOG_I("RegisterOnCreateNativeMediaPlayerListener(%{public}p)", callback.get());
+  create_native_media_player_cb_ = std::move(callback);
+}
+
+CefOwnPtr<CefCustomMediaPlayerDelegate>
+NWebHandlerDelegate::OnCreateCustomMediaPlayer(
+    CefOwnPtr<CefMediaPlayerListener> listener,
+    const CefCustomMediaInfo& media_info) {
+  if (!create_native_media_player_cb_) {
+    LOG(ERROR) << "OnCreateNativeMediaPlayer failed, callback is null";
+    return nullptr;
+  }
+
+  std::shared_ptr<NWebNativeMediaPlayerHandler> handler(
+      new NWebNativeMediaPlayerHandlerImpl(std::move(listener)));
+  std::shared_ptr<NWebMediaInfo> nweb_media_info(new NWebMediaInfoImpl(media_info));
+  std::shared_ptr<NWebNativeMediaPlayerBridge> bridge =
+      create_native_media_player_cb_->OnCreate(
+          std::move(handler), std::move(nweb_media_info));
+  if (!bridge) {
+    LOG(INFO) << "app creates no media player";
+    return nullptr;
+  }
+
+  CefOwnPtr<CustomMediaPlayerImpl> player(new CustomMediaPlayerImpl(std::move(bridge)));
+  return player;
+}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 }  // namespace OHOS::NWeb

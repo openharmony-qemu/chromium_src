@@ -3302,6 +3302,22 @@ bool NWebDelegate::IsIntelligentTrackingPreventionEnabled() const {
 }
 #endif
 
+int NWebDelegate::ScaleGestureChange(double scale, double centerX, double centerY) const {
+  LOG(DEBUG) << "NWebDelegate::ScaleGestureChange";
+  if (!preference_delegate_) {
+    LOG(ERROR) << "preference_delegate_ get fail";
+    return NWEB_ERR;
+  }
+  if (!preference_delegate_->ZoomingfunctionEnabled()) {
+    return NWEB_FUNCTION_NOT_ENABLE;
+  }
+  if (!GetBrowser().get()) {
+    LOG(ERROR) << "NWebDelegate::ScaleGestrueChange can not get browser";
+    return NWEB_ERR;
+  }
+  GetBrowser()->GetHost()->ZoomBy(scale, centerX * 2, centerY * 2);
+  return NWEB_OK;
+}
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
 void NWebDelegate::RegisterOnCreateNativeMediaPlayerListener(
     std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) {

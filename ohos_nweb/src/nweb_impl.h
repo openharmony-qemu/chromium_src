@@ -421,6 +421,8 @@ class NWebImpl : public NWeb {
       const std::vector<std::string>& hosts);
   static void ClearIntelligentTrackingPreventionBypassingList();
 
+  int ScaleGestureChange(double scale, double centerX, double centerY) override;
+
 #ifdef OHOS_RENDER_PROCESS_MODE
   static void SetRenderProcessMode(RenderProcessMode mode);
   static RenderProcessMode GetRenderProcessMode();

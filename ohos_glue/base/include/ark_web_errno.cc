@@ -18,7 +18,11 @@
 
 void ArkWebSetErrno(ArkWebInterfaceResult result) {
   interface_result = result;
-  ARK_WEB_BASE_DEBUG_LOG("ark web errno is %{public}d", interface_result);
+  ARK_WEB_BASE_DV_LOG("ark web errno is %{public}d", interface_result);
+}
+
+ArkWebInterfaceResult ArkWebGetErrno() {
+  return interface_result;
 }
 
 ArkWebInterfaceResult ArkWebResetErrno() {

@@ -21,6 +21,9 @@ struct MediaUrlParams {
   bool has_storage_access;
   bool allow_credentials;
   bool is_hls;
+
+  [EnableIf=ohos_custom_video_player]
+  uint32 preload_type;
 };
 
 [EnableIf=ohos_custom_video_player]

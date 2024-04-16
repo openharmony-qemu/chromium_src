@@ -193,6 +193,19 @@ void ReturnResultOnUIThreadAndClosePipe(
       FROM_HERE, base::BindOnce(std::move(callback), result));
 }
 
+MediaInfo::Preload ConvertTo(uint32_t preload_type) {
+  if (preload_type == 0) {
+    return MediaInfo::Preload::NONE;
+  }
+  if (preload_type == 1) {
+    return MediaInfo::Preload::METADATA;
+  }
+  if (preload_type == 2) {
+    return MediaInfo::Preload::AUTO;
+  }
+  return MediaInfo::Preload::AUTO;
+}
+
 }  // namespace
 
 OHOSCustomMediaPlayerRenderer::OHOSCustomMediaPlayerRenderer(
@@ -349,7 +362,7 @@ void OHOSCustomMediaPlayerRenderer::CreateMediaPlayer() {
   media_info.controlslist = std::move(controls_list_);
   media_info.muted = muted_;
   media_info.poster_url = poster_url_;
-  media_info.preload = MediaInfo::Preload::AUTO;
+  media_info.preload = ConvertTo(media_resource_->GetMediaUrlParams().preload_type);
   if (!cookies_->empty()) {
     media_info.https_headers.insert(std::make_pair("Cookie",
         std::move(cookies_.value())));

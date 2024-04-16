@@ -28,6 +28,8 @@ static thread_local ArkWebInterfaceResult interface_result = RESULT_OK;
 
 void ArkWebSetErrno(ArkWebInterfaceResult result);
 
+ArkWebInterfaceResult ArkWebGetErrno();
+
 ArkWebInterfaceResult ArkWebResetErrno();
 
 #endif // ARK_WEB_ERRNO_H_

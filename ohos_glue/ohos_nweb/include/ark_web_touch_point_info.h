@@ -21,7 +21,7 @@
 
 namespace OHOS::ArkWeb {
 
-/*--ark web(source=web core)--*/
+/*--ark web(source=library)--*/
 class ArkWebTouchPointInfo : public virtual ArkWebBaseRefCounted {
 public:
   /*--ark web()--*/

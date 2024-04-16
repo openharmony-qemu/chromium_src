@@ -215,12 +215,12 @@ OHOSCustomMediaPlayerRenderer::OHOSCustomMediaPlayerRenderer(
     WebContents* web_contents,
     mojo::PendingReceiver<RendererExtension> renderer_extension_receiver,
     mojo::PendingRemote<ClientExtension> client_extension_remote)
-    : client_extension_(std::move(client_extension_remote)),
+    : WebContentsObserver(web_contents),
+      client_extension_(std::move(client_extension_remote)),
       has_error_(false),
       volume_(kDefaultVolume),
       renderer_extension_receiver_(this,
                                    std::move(renderer_extension_receiver)),
-      web_contents_(web_contents),
       global_render_frame_host_id_(process_id, routing_id),
       media_player_id_(GlobalRenderFrameHostId(process_id, routing_id), player_id) {
   DCHECK_EQ(WebContents::FromRenderFrameHost(
@@ -228,14 +228,14 @@ OHOSCustomMediaPlayerRenderer::OHOSCustomMediaPlayerRenderer(
             web_contents);
 
   WebContentsImpl* web_contents_impl =
-      static_cast<WebContentsImpl*>(web_contents);
+      static_cast<WebContentsImpl*>(WebContentsObserver::web_contents());
   web_contents_muted_ = web_contents_impl && web_contents_impl->IsAudioMuted();
 }
 
 OHOSCustomMediaPlayerRenderer::~OHOSCustomMediaPlayerRenderer() {
   WebContentsImpl* web_contents_impl =
-      static_cast<WebContentsImpl*>(web_contents_);
-  if (media_player_) {
+      static_cast<WebContentsImpl*>(web_contents());
+  if (web_contents_impl && media_player_) {
     web_contents_impl->RemoveCustomMediaPlayer(
         media_player_id_, media_player_.get());
     media_player_->Release();
@@ -336,9 +336,9 @@ void OHOSCustomMediaPlayerRenderer::CreateMediaPlayer() {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
 
   WebContentsImpl* web_contents_impl =
-      static_cast<WebContentsImpl*>(web_contents_);
+      static_cast<WebContentsImpl*>(web_contents());
 
-  if (!web_contents_) {
+  if (!web_contents_impl) {
     LOG(ERROR) << "CreateMediaPlayer failed, no web_contents";
     std::move(init_cb_).Run(media::PIPELINE_ERROR_INITIALIZATION_FAILED);
     return;
@@ -573,11 +573,11 @@ void OHOSCustomMediaPlayerRenderer::UpdateBufferedEndTime(double buffered_time) 
 }
 
 void OHOSCustomMediaPlayerRenderer::OnFullscreenChanged(bool fullscreen) {
-  if (!web_contents_) {
+  WebContentsImpl* web_contents_impl =
+      static_cast<WebContentsImpl*>(web_contents());
+  if (!web_contents_impl) {
     return;
   }
-  WebContentsImpl* web_contents_impl =
-      static_cast<WebContentsImpl*>(web_contents_);
   if (fullscreen) {
     web_contents_impl->RequestEnterFullscreen(media_player_id_);
   } else {

@@ -410,6 +410,7 @@ PipelineStatus DemuxerManager::CreateDemuxer(
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
   if (should_create_custom_renderer) {
     SetDemuxer(CreateMediaUrlDemuxer(false));
+    demuxer_->SetPreloadType(static_cast<uint32_t>(preload));
     return std::move(on_demuxer_created)
         .Run(demuxer_.get(), Pipeline::StartType::kNormal,
              /*is_streaming = */ false,

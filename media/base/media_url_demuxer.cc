@@ -68,6 +68,10 @@ void MediaUrlDemuxer::ForwardBufferedEndTimeChangeToDemuxerHost(
   buffered.Add(base::TimeDelta(), buffered_time);
   host_->OnBufferedTimeRangesChanged(buffered);
 }
+
+void MediaUrlDemuxer::SetPreloadType(uint32_t preload_type) {
+  params_.preload_type = preload_type;
+}
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
 void MediaUrlDemuxer::Initialize(DemuxerHost* host,

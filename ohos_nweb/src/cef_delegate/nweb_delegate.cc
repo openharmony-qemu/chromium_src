@@ -90,7 +90,6 @@ const int NWebPlaybackState_NONE = 0;
 #endif
 
 static const int kDefaultWebNativeProxy = -2;
-int32_t draw_mode_ = -1;
 
 #if defined(OHOS_MSGPORT)
 void ConvertCefValueToNWebMessage(CefRefPtr<CefValue> src,
@@ -498,11 +497,8 @@ InitRichtextIdentifier();
       SetVirtualPixelRatio(richtextDisplayRatio);
     } else {
 #if BUILDFLAG(IS_OHOS)
-      if (GetBaseDisplayWidth() > 0) {
-        SetVirtualPixelRatio(display->GetWidth() / GetBaseDisplayWidth());
-      } else {
-        SetVirtualPixelRatio(display->GetVirtualPixelRatio());
-      }
+      SetVirtualPixelRatio(display->GetVirtualPixelRatio() *
+                           GetBaseDisplayRatio());
 #else
       SetVirtualPixelRatio(display->GetVirtualPixelRatio());
 #endif
@@ -602,6 +598,22 @@ void NWebDelegate::ResumeDownload(
         web_download->last_modified, web_download->received_slices);
   }
 }
+
+#ifdef OHOS_EX_DOWNLOAD
+NWebDownloadItemState NWebDelegate::GetDownloadItemState(long item_id) {
+  auto browser = GetBrowser();
+  if (browser == nullptr || browser->GetHost() == nullptr) {
+    LOG(ERROR) << "GetDownloadItemState failed, for browser or browser->host is nullptr";
+    return NWebDownloadItemState::MAX_DOWNLOAD_STATE;
+  }
+  CefRefPtr<CefDownloadItem> download_item = browser->GetHost()->GetDownloadItem(item_id);
+  if (!download_item) {
+    LOG(ERROR) << "GetDownloadItemState failed, for download_item is nullptr";
+    return NWebDownloadItemState::MAX_DOWNLOAD_STATE;
+  }
+   return NWebDownloadItem::GetNWebState(download_item);
+}
+#endif
 
 void NWebDelegate::FindAllAsync(const std::string& search_string) const {
   if (find_delegate_ == nullptr) {
@@ -769,6 +781,17 @@ void NWebDelegate::OnTouchCancel() {
   }
 }
 
+void NWebDelegate::OnTouchCancelById(int32_t id,
+                                     double x,
+                                     double y,
+                                     bool from_overlay) {
+  if (event_handler_ != nullptr) {
+    event_handler_->OnTouchCancelById(id, x / default_virtual_pixel_ratio_,
+                                      y / default_virtual_pixel_ratio_,
+                                      from_overlay);
+  }
+}
+
 bool NWebDelegate::SendKeyEvent(int32_t keyCode, int32_t keyAction) {
   bool retVal = false;
   if (event_handler_ != nullptr) {
@@ -808,7 +831,7 @@ void NWebDelegate::SendMouseEvent(int x,
     render_handler_->SetIrregularDragBackground(true);
   }
 #endif  // #ifdef OHOS_DRAG_DROP
-  if (action == MouseAction::MOVE) {
+  if (accessibility_state_ && action == MouseAction::MOVE) {
     auto* accessibilityManager = GetAccessibilityManager();
     if (accessibilityManager != nullptr) {
       gfx::PointF point(x, y);
@@ -837,11 +860,7 @@ void NWebDelegate::NotifyScreenInfoChanged(RotationType rotation,
       display_ratio = richtextDisplayRatio;
     } else {
 #if BUILDFLAG(IS_OHOS)
-      if (GetBaseDisplayWidth() > 0) {
-        display_ratio = display->GetWidth() / GetBaseDisplayWidth();
-      } else {
-        display_ratio = display->GetVirtualPixelRatio();
-      }
+      display_ratio = display->GetVirtualPixelRatio() * GetBaseDisplayRatio();
 #else
       display_ratio = display->GetVirtualPixelRatio();
 #endif
@@ -882,8 +901,8 @@ void NWebDelegate::SetVirtualPixelRatio(float ratio) {
 }
 
 #if BUILDFLAG(IS_OHOS)
-float NWebDelegate::GetBaseDisplayWidth() {
-  return base_display_width_;
+float NWebDelegate::GetBaseDisplayRatio() {
+  return base_display_ratio_;
 }
 #endif
 
@@ -1343,6 +1362,16 @@ void NWebDelegate::OnContinue() {
         browser->GetHost()->NotifyScreenInfoChanged();
       }
     }
+
+#ifdef OHOS_RENDER_PROCESS_MODE
+    if (GetBrowser() && GetBrowser()->GetHost() &&
+        GetBrowser()->GetHost()->NeedsReload()) {
+      LOG(INFO) << "NWebDelegate::OnContinue restore.";
+      GetBrowser()->GetHost()->Restore();
+      GetBrowser()->GetHost()->NotifyNeedsReload(false);
+    }
+#endif
+
     hidden_ = false;
   }
 
@@ -1409,8 +1438,9 @@ void NWebDelegate::InitializeCef(std::string url,
   if (base::ohos::IsPcDevice()) {
     // To achieve a similar web page display effect on HarmonyOS PC devices as
     // on Mac devices of the same size, it is necessary to make the web page
-    // width around approximately 1512 when in full screen.
-    base_display_width_ = 1512;
+    // width around approximately 1512 when in full screen, making the default
+    // dpr=1.25*1.12=1.4f.
+    base_display_ratio_ = 1.12f;
   }
 #endif
 
@@ -2035,7 +2065,7 @@ void NWebDelegate::UpdateLocale(const std::string& language,
   }
 
   CefString locale = "";
-  if (language == "en" && region == "US") {
+  if (language == "en") {
     locale = "en-US";
   } else if (language == "zh") {
     locale = "zh-CN";
@@ -2407,10 +2437,6 @@ void NWebDelegate::SetDrawRect(int32_t x, int32_t y, int32_t width, int32_t heig
 }
 
 void NWebDelegate::SetDrawMode(int32_t mode) {
-  if (draw_mode_ == mode) {
-    return;
-  }
-  draw_mode_ = mode;
   if (GetBrowser().get()) {
     GetBrowser()->GetHost()->SetDrawMode(mode);
   }
@@ -2463,21 +2489,21 @@ bool NWebDelegate::ShouldVirtualKeyboardOverlay() {
 
 #if defined(OHOS_MEDIA_POLICY)
 void NWebDelegate::SetAudioResumeInterval(int32_t resumeInterval) {
-  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "SetAudioResumeInterval can not get browser";
-    return;
+  if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
+    GetBrowser()->GetHost()->SetAudioResumeInterval(resumeInterval);
   }
-
-  GetBrowser()->GetHost()->SetAudioResumeInterval(resumeInterval);
+  if (preference_delegate_) {
+    preference_delegate_->PutAudioResumeInterval(resumeInterval);
+  }
 }
 
 void NWebDelegate::SetAudioExclusive(bool audioExclusive) {
-  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "SetAudioExclusive can not get browser";
-    return;
+  if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
+    GetBrowser()->GetHost()->SetAudioExclusive(audioExclusive);
   }
-
-  GetBrowser()->GetHost()->SetAudioExclusive(audioExclusive);
+  if (preference_delegate_) {
+    preference_delegate_->PutAudioExclusive(audioExclusive);
+  }
 }
 
 void NWebDelegate::CloseAllMediaPresentations() {
@@ -2881,7 +2907,7 @@ void NWebDelegate::SetAccessibilityState(cef_state_t accessibilityState) {
   }
   if (accessibility_state_ != (accessibilityState == STATE_ENABLED)) {
     accessibility_state_ = (accessibilityState == STATE_ENABLED);
-    LOG(INFO) << "SetAccessibilityState accessibility_state_ " << accessibility_state_;
+    LOG(DEBUG) << "SetAccessibilityState state: " << accessibility_state_;
     GetBrowser()->GetHost()->SetAccessibilityState(accessibilityState);
   }
 }
@@ -2890,7 +2916,7 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId,
                                  uint32_t action) const {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
-    LOG(WARNING) << "ExecuteAction can not get accessibilityManager";
+    LOG(DEBUG) << "ExecuteAction can not get accessibilityManager";
     return;
   }
   auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
@@ -2941,7 +2967,7 @@ content::BrowserAccessibilityManagerOHOS*
 NWebDelegate::GetAccessibilityManager() const {
   if (!accessibility_state_ || GetBrowser() == nullptr
       || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "GetAccessibilityManager can not get browser";
+    LOG(DEBUG) << "GetAccessibilityManager can not get browser";
     return nullptr;
   }
   void* manager = nullptr;
@@ -2959,7 +2985,7 @@ NWebDelegate::GetFocusedAccessibilityNodeInfo(int64_t accessibilityId,
                                               bool isAccessibilityFocus) {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
-    LOG(WARNING)
+    LOG(DEBUG)
         << "GetFocusedAccessibilityNodeInfo can not get accessibilityManager";
     return nullptr;
   }
@@ -2999,7 +3025,7 @@ std::shared_ptr<NWebAccessibilityNodeInfo>
 NWebDelegate::GetAccessibilityNodeInfoById(int64_t accessibilityId) {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
-    LOG(WARNING)
+    LOG(DEBUG)
         << "GetAccessibilityNodeInfoById can not get accessibilityManager";
     return nullptr;
   }
@@ -3025,7 +3051,7 @@ NWebDelegate::GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
                                                   int32_t direction) {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
-    LOG(WARNING) << "GetAccessibilityNodeInfoByFocusMove can not get "
+    LOG(DEBUG) << "GetAccessibilityNodeInfoByFocusMove can not get "
                   "accessibilityManager";
     return nullptr;
   }
@@ -3056,7 +3082,7 @@ NWebDelegate::PopulateAccessibilityNodeInfo(
     const content::BrowserAccessibilityOHOS* node) const {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
-    LOG(WARNING)
+    LOG(DEBUG)
         << "GetFocusedAccessibilityNodeInfo can not get accessibilityManager";
     return nullptr;
   }
@@ -3236,6 +3262,15 @@ void NWebDelegate::AddAccessibilityNodeInfoActions(
   nodeInfo->SetActions(actions);
 }
 
+#if defined(OHOS_SCREEN_LOCK)
+void NWebDelegate::SetWakeLockCallback(
+    int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback) {
+  if (handler_delegate_) {
+    handler_delegate_->SetWakeLockCallback(windowId, callback);
+  }
+}
+#endif
+
 #if defined(OHOS_SECURE_JAVASCRIPT_PROXY)
 std::string NWebDelegate::GetLastJavascriptProxyCallingFrameUrl() {
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
@@ -3266,4 +3301,15 @@ bool NWebDelegate::IsIntelligentTrackingPreventionEnabled() const {
   return GetBrowser()->IsIntelligentTrackingPreventionEnabled();
 }
 #endif
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void NWebDelegate::RegisterOnCreateNativeMediaPlayerListener(
+    std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) {
+  if (handler_delegate_ == nullptr) {
+    LOG(ERROR) << "fail to set create native media player callback, NWEB handler is nullptr";
+    return;
+  }
+  handler_delegate_->RegisterOnCreateNativeMediaPlayerListener(std::move(callback));
+}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 }  // namespace OHOS::NWeb

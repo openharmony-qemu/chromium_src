@@ -79,6 +79,9 @@ void MojoRendererService::Initialize(
       nullptr, media_url_params->media_url, media_url_params->site_for_cookies,
       media_url_params->top_frame_origin, media_url_params->has_storage_access,
       media_url_params->allow_credentials, media_url_params->is_hls);
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  media_resource_->SetPreloadType(media_url_params->preload_type);
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
   renderer_->Initialize(
       media_resource_.get(), this,
       base::BindOnce(&MojoRendererService::OnRendererInitializeDone, weak_this_,
@@ -294,4 +297,39 @@ void MojoRendererService::OnCdmAttached(base::OnceCallback<void(bool)> callback,
 
   std::move(callback).Run(success);
 }
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void MojoRendererService::SetMuted(bool muted) {
+  renderer_->SetMuted(muted);
+}
+void MojoRendererService::SetSurfaceId(int surface_id) {
+  renderer_->SetSurfaceId(surface_id);
+}
+void MojoRendererService::SetMediaSourceList(
+    std::vector<mojom::MediaSourceInfoPtr> source_infos) {
+  std::vector<media::Renderer::MediaSourceInfo> infos;
+  infos.reserve(source_infos.size());
+  for (const auto& info : source_infos) {
+    infos.push_back({info->media_source, info->media_format});
+  }
+  renderer_->SetMediaSourceList(infos);
+}
+void MojoRendererService::SetMediaControls(bool show_media_controls,
+    const std::vector<std::string>& controls_list) {
+  renderer_->SetMediaControls(show_media_controls, controls_list);
+}
+void MojoRendererService::SetPoster(const std::string& poster_url) {
+  renderer_->SetPoster(poster_url);
+}
+void MojoRendererService::SetAttributes(
+    const base::flat_map<std::string, std::string>& attributes) {
+  renderer_->SetAttributes(attributes);
+}
+void MojoRendererService::SetReferrer(const std::string& referrer) {
+  renderer_->SetReferrer(referrer);
+}
+void MojoRendererService::SetIsAudio(bool is_audio) {
+  renderer_->SetIsAudio(is_audio);
+}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 }  // namespace media

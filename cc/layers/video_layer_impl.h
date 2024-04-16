@@ -71,6 +71,10 @@ class CC_EXPORT VideoLayerImpl : public LayerImpl {
   media::VideoTransformation video_transform_;
 
   std::unique_ptr<media::VideoResourceUpdater> updater_;
+
+#if BUILDFLAG(IS_OHOS)
+  gfx::Rect visible_quad_rect_;
+#endif
 };
 
 }  // namespace cc

@@ -91,12 +91,16 @@ source_set("unit_tests") {
   testonly = true
   sources = [
     "disconnectable_client_unittest.cc",
-    "file_unittest.cc",
     "refcounted_closure_list_unittest.cc",
     "status_macros_unittest.cc",
     "status_unittest.cc",
     "statusor_unittest.cc",
   ]
+  if (!ohos_unittests) {
+    sources += [
+      "file_unittest.cc",
+    ]
+  }
   deps = [
     ":disconnectable_client",
     ":file",

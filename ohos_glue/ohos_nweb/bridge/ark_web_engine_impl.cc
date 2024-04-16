@@ -25,6 +25,7 @@
 #include "ohos_nweb/bridge/ark_web_web_storage_impl.h"
 
 namespace OHOS::ArkWeb {
+using ArkWebRenderProcessMode = OHOS::NWeb::RenderProcessMode;
 
 ArkWebEngineImpl::ArkWebEngineImpl(
     std::shared_ptr<OHOS::NWeb::NWebEngine> nweb_engine)
@@ -170,4 +171,15 @@ void ArkWebEngineImpl::PrefetchResource(
       ArkWebStringStructToClass(cache_key), cache_valid_time);
 }
 
+void ArkWebEngineImpl::SetRenderProcessMode(int32_t mode) {
+  nweb_engine_->SetRenderProcessMode(static_cast<ArkWebRenderProcessMode>(mode));
+}
+
+int32_t ArkWebEngineImpl::GetRenderProcessMode() {
+  return static_cast<int32_t>(nweb_engine_->GetRenderProcessMode());
+}
+
+void ArkWebEngineImpl::ClearPrefetchedResource(const ArkWebStringVector& cache_key_list) {
+  nweb_engine_->ClearPrefetchedResource(ArkWebStringVectorStructToClass(cache_key_list));
+}
 } // namespace OHOS::ArkWeb

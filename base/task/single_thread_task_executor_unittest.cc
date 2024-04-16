@@ -112,6 +112,7 @@ class Foo : public RefCounted<Foo> {
   std::string result_;
 };
 
+#if !defined(OHOS_UNITTESTS)
 // This function runs slowly to simulate a large amount of work being done.
 static void SlowFunc(TimeDelta pause, int* quit_counter) {
   PlatformThread::Sleep(pause);
@@ -129,6 +130,7 @@ static void RecordRunTimeFunc(TimeTicks* run_time, int* quit_counter) {
   // without worry about the resolution of our system clock being an issue.
   SlowFunc(Milliseconds(10), quit_counter);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 enum TaskType {
   MESSAGEBOX,
@@ -264,11 +266,13 @@ void RecursiveFunc(TaskList* order, int cookie, int depth) {
   order->RecordEnd(RECURSIVE, cookie);
 }
 
+#if !defined(OHOS_UNITTESTS)
 void QuitFunc(TaskList* order, int cookie) {
   order->RecordStart(QUITMESSAGELOOP, cookie);
   RunLoop::QuitCurrentWhenIdleDeprecated();
   order->RecordEnd(QUITMESSAGELOOP, cookie);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 #if BUILDFLAG(IS_WIN)
 
@@ -514,6 +518,7 @@ class SingleThreadTaskExecutorTypedTest
   }
 };
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(SingleThreadTaskExecutorTypedTest, PostTask) {
   SingleThreadTaskExecutor executor(GetParam());
   // Add tests to message loop
@@ -541,7 +546,9 @@ TEST_P(SingleThreadTaskExecutorTypedTest, PostTask) {
   EXPECT_EQ(foo->test_count(), 105);
   EXPECT_EQ(foo->result(), "abacad");
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(SingleThreadTaskExecutorTypedTest, PostDelayedTask_Basic) {
   SingleThreadTaskExecutor executor(GetParam());
 
@@ -561,7 +568,9 @@ TEST_P(SingleThreadTaskExecutorTypedTest, PostDelayedTask_Basic) {
   EXPECT_EQ(0, num_tasks);
   EXPECT_LT(kDelay, time_after_run - time_before_run);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(SingleThreadTaskExecutorTypedTest, PostDelayedTask_InDelayOrder) {
   SingleThreadTaskExecutor executor(GetParam());
 
@@ -583,7 +592,9 @@ TEST_P(SingleThreadTaskExecutorTypedTest, PostDelayedTask_InDelayOrder) {
 
   EXPECT_TRUE(run_time2 < run_time1);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(SingleThreadTaskExecutorTypedTest, PostDelayedTask_InPostOrder) {
   SingleThreadTaskExecutor executor(GetParam());
 
@@ -610,7 +621,9 @@ TEST_P(SingleThreadTaskExecutorTypedTest, PostDelayedTask_InPostOrder) {
 
   EXPECT_TRUE(run_time1 < run_time2);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(SingleThreadTaskExecutorTypedTest, PostDelayedTask_InPostOrder_2) {
   SingleThreadTaskExecutor executor(GetParam());
 
@@ -636,7 +649,9 @@ TEST_P(SingleThreadTaskExecutorTypedTest, PostDelayedTask_InPostOrder_2) {
 
   EXPECT_LT(kPause, time_after_run - time_before_run);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(SingleThreadTaskExecutorTypedTest, PostDelayedTask_InPostOrder_3) {
   SingleThreadTaskExecutor executor(GetParam());
 
@@ -663,7 +678,9 @@ TEST_P(SingleThreadTaskExecutorTypedTest, PostDelayedTask_InPostOrder_3) {
 
   EXPECT_TRUE(run_time2 > run_time1);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(SingleThreadTaskExecutorTypedTest, PostDelayedTask_SharedTimer) {
   SingleThreadTaskExecutor executor(GetParam());
 
@@ -700,6 +717,7 @@ TEST_P(SingleThreadTaskExecutorTypedTest, PostDelayedTask_SharedTimer) {
   EXPECT_TRUE(run_time1.is_null());
   EXPECT_FALSE(run_time2.is_null());
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 namespace {
 
@@ -789,6 +807,7 @@ void NestingFunc(int* depth) {
 
 }  // namespace
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(SingleThreadTaskExecutorTypedTest, Nesting) {
   SingleThreadTaskExecutor executor(GetParam());
 
@@ -798,7 +817,9 @@ TEST_P(SingleThreadTaskExecutorTypedTest, Nesting) {
   RunLoop().Run();
   EXPECT_EQ(depth, 0);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(SingleThreadTaskExecutorTypedTest, Recursive) {
   SingleThreadTaskExecutor executor(GetParam());
 
@@ -829,6 +850,7 @@ TEST_P(SingleThreadTaskExecutorTypedTest, Recursive) {
   EXPECT_EQ(order.Get(12), TaskItem(RECURSIVE, 2, true));
   EXPECT_EQ(order.Get(13), TaskItem(RECURSIVE, 2, false));
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 namespace {
 
@@ -839,6 +861,7 @@ void OrderedFunc(TaskList* order, int cookie) {
 
 }  // namespace
 
+#if !defined(OHOS_UNITTESTS)
 // Tests that non nestable tasks run in FIFO if there are no nested loops.
 TEST_P(SingleThreadTaskExecutorTypedTest, NonNestableWithNoNesting) {
   SingleThreadTaskExecutor executor(GetParam());
@@ -862,9 +885,11 @@ TEST_P(SingleThreadTaskExecutorTypedTest, NonNestableWithNoNesting) {
   EXPECT_EQ(order.Get(4), TaskItem(QUITMESSAGELOOP, 3, true));
   EXPECT_EQ(order.Get(5), TaskItem(QUITMESSAGELOOP, 3, false));
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 namespace {
 
+#if !defined(OHOS_UNITTESTS)
 void FuncThatPumps(TaskList* order, int cookie) {
   order->RecordStart(PUMPS, cookie);
   RunLoop(RunLoop::Type::kNestableTasksAllowed).RunUntilIdle();
@@ -876,9 +901,11 @@ void SleepFunc(TaskList* order, int cookie, TimeDelta delay) {
   PlatformThread::Sleep(delay);
   order->RecordEnd(SLEEP, cookie);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 }  // namespace
 
+#if !defined(OHOS_UNITTESTS)
 // Tests that non nestable tasks don't run when there's code in the call stack.
 TEST_P(SingleThreadTaskExecutorTypedTest, NonNestableDelayedInNestedLoop) {
   SingleThreadTaskExecutor executor(GetParam());
@@ -915,14 +942,17 @@ TEST_P(SingleThreadTaskExecutorTypedTest, NonNestableDelayedInNestedLoop) {
   EXPECT_EQ(order.Get(10), TaskItem(QUITMESSAGELOOP, 6, true));
   EXPECT_EQ(order.Get(11), TaskItem(QUITMESSAGELOOP, 6, false));
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 namespace {
 
+#if !defined(OHOS_UNITTESTS)
 void FuncThatRuns(TaskList* order, int cookie, RunLoop* run_loop) {
   order->RecordStart(RUNS, cookie);
   run_loop->Run();
   order->RecordEnd(RUNS, cookie);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 void FuncThatQuitsNow() {
   base::RunLoop::QuitCurrentDeprecated();
@@ -930,6 +960,7 @@ void FuncThatQuitsNow() {
 
 }  // namespace
 
+#if !defined(OHOS_UNITTESTS)
 // Tests RunLoopQuit only quits the corresponding MessageLoop::Run.
 TEST_P(SingleThreadTaskExecutorTypedTest, QuitNow) {
   SingleThreadTaskExecutor executor(GetParam());
@@ -964,7 +995,9 @@ TEST_P(SingleThreadTaskExecutorTypedTest, QuitNow) {
   EXPECT_EQ(order.Get(task_index++), TaskItem(ORDERED, 3, false));
   EXPECT_EQ(static_cast<size_t>(task_index), order.Size());
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 // Tests RunLoopQuit only quits the corresponding MessageLoop::Run.
 TEST_P(SingleThreadTaskExecutorTypedTest, RunLoopQuitTop) {
   SingleThreadTaskExecutor executor(GetParam());
@@ -994,7 +1027,9 @@ TEST_P(SingleThreadTaskExecutorTypedTest, RunLoopQuitTop) {
   EXPECT_EQ(order.Get(task_index++), TaskItem(RUNS, 1, false));
   EXPECT_EQ(static_cast<size_t>(task_index), order.Size());
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 // Tests RunLoopQuit only quits the corresponding MessageLoop::Run.
 TEST_P(SingleThreadTaskExecutorTypedTest, RunLoopQuitNested) {
   SingleThreadTaskExecutor executor(GetParam());
@@ -1024,7 +1059,9 @@ TEST_P(SingleThreadTaskExecutorTypedTest, RunLoopQuitNested) {
   EXPECT_EQ(order.Get(task_index++), TaskItem(ORDERED, 2, false));
   EXPECT_EQ(static_cast<size_t>(task_index), order.Size());
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 // Quits current loop and immediately runs a nested loop.
 void QuitAndRunNestedLoop(TaskList* order,
                           int cookie,
@@ -1035,7 +1072,9 @@ void QuitAndRunNestedLoop(TaskList* order,
   nested_run_loop->Run();
   order->RecordEnd(RUNS, cookie);
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 // Test that we can run nested loop after quitting the current one.
 TEST_P(SingleThreadTaskExecutorTypedTest, RunLoopNestedAfterQuit) {
   SingleThreadTaskExecutor executor(GetParam());
@@ -1059,7 +1098,9 @@ TEST_P(SingleThreadTaskExecutorTypedTest, RunLoopNestedAfterQuit) {
   EXPECT_EQ(order.Get(task_index++), TaskItem(RUNS, 1, false));
   EXPECT_EQ(static_cast<size_t>(task_index), order.Size());
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 // Tests RunLoopQuit only quits the corresponding MessageLoop::Run.
 TEST_P(SingleThreadTaskExecutorTypedTest, RunLoopQuitBogus) {
   SingleThreadTaskExecutor executor(GetParam());
@@ -1092,7 +1133,9 @@ TEST_P(SingleThreadTaskExecutorTypedTest, RunLoopQuitBogus) {
   EXPECT_EQ(order.Get(task_index++), TaskItem(RUNS, 1, false));
   EXPECT_EQ(static_cast<size_t>(task_index), order.Size());
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 // Tests RunLoopQuit only quits the corresponding MessageLoop::Run.
 TEST_P(SingleThreadTaskExecutorTypedTest, RunLoopQuitDeep) {
   SingleThreadTaskExecutor executor(GetParam());
@@ -1160,6 +1203,7 @@ TEST_P(SingleThreadTaskExecutorTypedTest, RunLoopQuitDeep) {
   EXPECT_EQ(order.Get(task_index++), TaskItem(RUNS, 1, false));
   EXPECT_EQ(static_cast<size_t>(task_index), order.Size());
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 // Tests RunLoopQuit works before RunWithID.
 TEST_P(SingleThreadTaskExecutorTypedTest, RunLoopQuitOrderBefore) {
@@ -1181,6 +1225,7 @@ TEST_P(SingleThreadTaskExecutorTypedTest, RunLoopQuitOrderBefore) {
   ASSERT_EQ(0U, order.Size());
 }
 
+#if !defined(OHOS_UNITTESTS)
 // Tests RunLoopQuit works during RunWithID.
 TEST_P(SingleThreadTaskExecutorTypedTest, RunLoopQuitOrderDuring) {
   SingleThreadTaskExecutor executor(GetParam());
@@ -1206,7 +1251,9 @@ TEST_P(SingleThreadTaskExecutorTypedTest, RunLoopQuitOrderDuring) {
   EXPECT_EQ(order.Get(task_index++), TaskItem(ORDERED, 1, false));
   EXPECT_EQ(static_cast<size_t>(task_index), order.Size());
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 // Tests RunLoopQuit works after RunWithID.
 TEST_P(SingleThreadTaskExecutorTypedTest, RunLoopQuitOrderAfter) {
   SingleThreadTaskExecutor executor(GetParam());
@@ -1248,6 +1295,7 @@ TEST_P(SingleThreadTaskExecutorTypedTest, RunLoopQuitOrderAfter) {
   EXPECT_EQ(order.Get(task_index++), TaskItem(ORDERED, 4, false));
   EXPECT_EQ(static_cast<size_t>(task_index), order.Size());
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 // Regression test for crbug.com/170904 where posting tasks recursively caused
 // the message loop to hang in MessagePumpGLib, due to the buffer of the
@@ -1265,6 +1313,7 @@ TEST_P(SingleThreadTaskExecutorTypedTest, RunLoopQuitOrderAfter) {
 #else
 #define MAYBE_RecursivePostsDoNotFloodPipe RecursivePostsDoNotFloodPipe
 #endif
+#if !defined(OHOS_UNITTESTS)
 TEST_P(SingleThreadTaskExecutorTypedTest, MAYBE_RecursivePostsDoNotFloodPipe) {
   SingleThreadTaskExecutor executor(GetParam());
   const auto begin_ticks = TimeTicks::Now();
@@ -1273,6 +1322,7 @@ TEST_P(SingleThreadTaskExecutorTypedTest, MAYBE_RecursivePostsDoNotFloodPipe) {
                         TimeDelta(), run_loop.QuitClosure());
   run_loop.Run();
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 TEST_P(SingleThreadTaskExecutorTypedTest,
        ApplicationTasksAllowedInNativeNestedLoopAtTopLevel) {
@@ -1281,6 +1331,7 @@ TEST_P(SingleThreadTaskExecutorTypedTest,
       CurrentThread::Get()->ApplicationTasksAllowedInNativeNestedLoop());
 }
 
+#if !defined(OHOS_UNITTESTS)
 // Nestable tasks shouldn't be allowed to run reentrantly by default (regression
 // test for https://crbug.com/754112).
 TEST_P(SingleThreadTaskExecutorTypedTest, NestableTasksDisallowedByDefault) {
@@ -1297,7 +1348,9 @@ TEST_P(SingleThreadTaskExecutorTypedTest, NestableTasksDisallowedByDefault) {
           Unretained(&run_loop)));
   run_loop.Run();
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(SingleThreadTaskExecutorTypedTest,
        NestableTasksProcessedWhenRunLoopAllows) {
   SingleThreadTaskExecutor executor(GetParam());
@@ -1332,7 +1385,9 @@ TEST_P(SingleThreadTaskExecutorTypedTest,
           Unretained(&run_loop)));
   run_loop.Run();
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(SingleThreadTaskExecutorTypedTest,
        ApplicationTasksAllowedInNativeNestedLoopExplicitlyInScope) {
   SingleThreadTaskExecutor executor(GetParam());
@@ -1354,7 +1409,9 @@ TEST_P(SingleThreadTaskExecutorTypedTest,
           Unretained(&run_loop)));
   run_loop.Run();
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(SingleThreadTaskExecutorTypedTest, IsIdleForTesting) {
   SingleThreadTaskExecutor executor(GetParam());
   EXPECT_TRUE(CurrentThread::Get()->IsIdleForTesting());
@@ -1368,7 +1425,9 @@ TEST_P(SingleThreadTaskExecutorTypedTest, IsIdleForTesting) {
   PlatformThread::Sleep(Milliseconds(20));
   EXPECT_TRUE(CurrentThread::Get()->IsIdleForTesting());
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
+#if !defined(OHOS_UNITTESTS)
 TEST_P(SingleThreadTaskExecutorTypedTest, IsIdleForTestingNonNestableTask) {
   SingleThreadTaskExecutor executor(GetParam());
   RunLoop run_loop;
@@ -1397,6 +1456,7 @@ TEST_P(SingleThreadTaskExecutorTypedTest, IsIdleForTestingNonNestableTask) {
   EXPECT_TRUE(nested_task_run);
   EXPECT_TRUE(CurrentThread::Get()->IsIdleForTesting());
 }
+#endif // OHOS_UNITTESTS base_unittests drop case
 
 INSTANTIATE_TEST_SUITE_P(All,
                          SingleThreadTaskExecutorTypedTest,

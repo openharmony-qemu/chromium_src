@@ -34,7 +34,11 @@ class PowerSaveBlocker {
       mojom::WakeLockReason reason,
       const std::string& description,
       scoped_refptr<base::SequencedTaskRunner> ui_task_runner,
-      scoped_refptr<base::SingleThreadTaskRunner> blocking_task_runner);
+      scoped_refptr<base::SingleThreadTaskRunner> blocking_task_runner
+      #if defined(OHOS_SCREEN_LOCK)
+      , int32_t id
+      #endif
+      );
 
   PowerSaveBlocker(const PowerSaveBlocker&) = delete;
   PowerSaveBlocker& operator=(const PowerSaveBlocker&) = delete;
@@ -67,6 +71,9 @@ class PowerSaveBlocker {
 
   scoped_refptr<base::SequencedTaskRunner> ui_task_runner_;
   scoped_refptr<base::SequencedTaskRunner> blocking_task_runner_;
+#if defined(OHOS_SCREEN_LOCK)
+  int32_t id_;
+#endif
 };
 
 }  // namespace device

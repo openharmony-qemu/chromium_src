@@ -393,6 +393,7 @@ NWebInputDelegate::NWebInputDelegate() {
   keyEventHandle_.RegistInputEvent(KeyEvent::KEYCODE_ALT_LEFT, KEY_DOWN, false);
   keyEventHandle_.RegistInputEvent(KeyEvent::KEYCODE_ALT_RIGHT, KEY_DOWN,
                                    false);
+  keyEventHandle_.ClearInputEvent();
 }
 
 bool NWebInputDelegate::KeyValueConvert(const std::string keyValue,

@@ -591,6 +591,13 @@ class CONTENT_EXPORT RenderWidgetHostViewBase : public RenderWidgetHostView {
 
   bool HasFallbackSurfaceForTesting() const { return HasFallbackSurface(); }
 
+#ifdef OHOS_EX_FREE_COPY
+  virtual std::vector<int8_t> GetWordSelection(const std::string& text,
+                                               int8_t offset) {
+    return { -1, -1 };
+  }
+#endif
+
  protected:
   explicit RenderWidgetHostViewBase(RenderWidgetHost* host);
   ~RenderWidgetHostViewBase() override;

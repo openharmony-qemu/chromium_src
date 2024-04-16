@@ -72,6 +72,9 @@ class MEDIA_EXPORT DemuxerManager {
     // Used for controlling the client when a demuxer swap happens.
     virtual void StopForDemuxerReset() = 0;
     virtual void RestartForHls() = 0;
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+    virtual void RestartForPrimitive() = 0;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 
     virtual bool IsSecurityOriginCryptographic() const = 0;
 
@@ -142,6 +145,9 @@ class MEDIA_EXPORT DemuxerManager {
   PipelineStatus CreateDemuxer(bool load_media_source,
                                DataSource::Preload preload,
                                bool has_poster,
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+                               bool should_create_custom_renderer,
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
                                DemuxerCreatedCB on_demuxer_created);
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
@@ -195,6 +201,9 @@ class MEDIA_EXPORT DemuxerManager {
   void OnChunkDemuxerOpened();
   void OnProgress();
   void RestartClientForHLS();
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void RestartClientForPrimitive();
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
   void FreeResourcesAfterMediaThreadWait(base::OnceClosure cb);
 
 #if BUILDFLAG(ENABLE_FFMPEG)

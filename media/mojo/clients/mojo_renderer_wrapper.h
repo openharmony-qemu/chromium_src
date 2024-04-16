@@ -42,6 +42,20 @@ class MojoRendererWrapper : public Renderer {
   void SetVolume(float volume) override;
   base::TimeDelta GetMediaTime() override;
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void SetMuted(bool muted) override;
+  void SetSurfaceId(int surface_id) override;
+  void SetMediaSourceList(
+      const std::vector<MediaSourceInfo>& source_infos) override;
+  void SetMediaControls(bool show_media_controls,
+      const std::vector<std::string>& controls_list) override;
+  void SetPoster(const std::string& poster_url) override;
+  void SetAttributes(
+      base::flat_map<std::string, std::string> attributes) override;
+  void SetReferrer(const std::string& referrer) override;
+  void SetIsAudio(bool is_audio) override;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
  private:
   std::unique_ptr<MojoRenderer> mojo_renderer_;
 };

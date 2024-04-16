@@ -879,4 +879,14 @@ void ProxyMain::OnLayerRectUpdate(int id, const gfx::Rect& rect) {
 }
 #endif
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void ProxyMain::OnLayerRectChange(int id,
+                                  int x,
+                                  int y,
+                                  int width,
+                                  int height) {
+  layer_tree_host_->OnLayerRectChange(id, x, y, width, height);
+}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 }  // namespace cc

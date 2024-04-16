@@ -90,6 +90,15 @@ public:
                    const ArkWebStringMap &additional_http_headers,
                    const ArkWebString &cache_key,
                    const uint32_t &cache_valid_time) = 0;
+
+  /*--ark web()--*/
+  virtual void SetRenderProcessMode(int32_t mode) = 0;
+
+  /*--ark web()--*/
+  virtual int32_t GetRenderProcessMode() = 0;
+
+  /*--ark web()--*/
+  virtual void ClearPrefetchedResource(const ArkWebStringVector& cache_key_list) = 0;
 };
 
 } // namespace OHOS::ArkWeb

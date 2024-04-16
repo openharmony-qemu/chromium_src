@@ -31,6 +31,10 @@
 #include "nweb_preference.h"
 #include "nweb_web_message.h"
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#include "nweb_native_media_player.h"
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 namespace OHOS::NWeb {
 class NWebValue;
 
@@ -130,6 +134,7 @@ class NWebDelegateInterface
   virtual void OnTouchMove(const std::vector<std::shared_ptr<NWebTouchPointInfo>> &touch_point_infos,
                            bool from_overlay) = 0;
   virtual void OnTouchCancel() = 0;
+  virtual void OnTouchCancelById(int32_t id, double x, double y, bool from_overlay) = 0;
   virtual bool SendKeyEvent(int32_t keyCode, int32_t keyAction) = 0;
   virtual void SendMouseWheelEvent(double x,
                                    double y,
@@ -363,7 +368,7 @@ class NWebDelegateInterface
 #endif // defined(OHOS_SCREEN_ROTATION)
 
 #if BUILDFLAG(IS_OHOS)
-  virtual float GetBaseDisplayWidth() = 0;
+  virtual float GetBaseDisplayRatio() = 0;
 #endif
 
 #ifdef OHOS_EX_TOPCONTROLS
@@ -413,6 +418,19 @@ class NWebDelegateInterface
 #ifdef OHOS_ITP
   virtual void EnableIntelligentTrackingPrevention(bool enable) = 0;
   virtual bool IsIntelligentTrackingPreventionEnabled() const = 0;
+#endif
+
+#if defined(OHOS_SCREEN_LOCK)
+  virtual void SetWakeLockCallback(int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback) = 0;
+#endif
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  virtual void RegisterOnCreateNativeMediaPlayerListener(
+      std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) = 0;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+#ifdef OHOS_EX_DOWNLOAD
+  virtual NWebDownloadItemState GetDownloadItemState(long item_id) = 0;
 #endif
 };
 }  // namespace OHOS::NWeb

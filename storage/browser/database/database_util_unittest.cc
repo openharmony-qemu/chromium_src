@@ -35,6 +35,19 @@ void TestVfsFilePath(bool expected_result,
 
 // Test DatabaseUtil::CrackVfsFilePath on various inputs.
 TEST(DatabaseUtilTest, CrackVfsFilePathTest) {
+#if defined(OHOS_UNITTESTS)
+  TestVfsFilePath(true, "/http_origin_0/.", "http_origin_0", "", ".");
+  TestVfsFilePath(true, "/http_origin_0/.suffix", "http_origin_0", "", ".suffix");
+  TestVfsFilePath(true, "/http_origin_0/db_name.", "http_origin_0", "db_name", ".");
+  TestVfsFilePath(true, "/http_origin_0/db_name.suffix", "http_origin_0",
+                  "db_name", ".suffix");
+  TestVfsFilePath(false, "http_origin_0db_name.");
+  TestVfsFilePath(false, "http_origin_0db_name.suffix");
+  TestVfsFilePath(false, "http_origin_0/db_name");
+  TestVfsFilePath(false, "http_origin_0.db_name/suffix");
+  TestVfsFilePath(false, "/db_name.");
+  TestVfsFilePath(false, "/db_name.suffix");
+#else
   TestVfsFilePath(true, "http_origin_0/#", "http_origin_0", "", "");
   TestVfsFilePath(true, "http_origin_0/#suffix", "http_origin_0", "", "suffix");
   TestVfsFilePath(true, "http_origin_0/db_name#", "http_origin_0", "db_name",
@@ -47,6 +60,7 @@ TEST(DatabaseUtilTest, CrackVfsFilePathTest) {
   TestVfsFilePath(false, "http_origin_0#db_name/suffix");
   TestVfsFilePath(false, "/db_name#");
   TestVfsFilePath(false, "/db_name#suffix");
+#endif
 }
 
 }  // namespace storage

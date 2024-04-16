@@ -46,7 +46,8 @@ ArkWebCursorInfoClassToStruct(const OHOS::NWeb::NWebCursorInfo &class_value) {
                                    .height = class_value.height,
                                    .x = class_value.x,
                                    .y = class_value.y,
-                                   .scale = class_value.scale};
+                                   .scale = class_value.scale,
+                                   .buff = class_value.buff};
   return struct_value;
 }
 

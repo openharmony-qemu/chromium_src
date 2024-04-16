@@ -148,29 +148,7 @@ struct NWebDownloadItem {
     mime_type = strdup(mime_type_.c_str());
     // additional information about download_item
     // calculate NWebDownloadItem state by CefDownloadItem state
-    int cef_download_item_state_ = download_item->GetState();
-    bool is_interrupted = (cef_download_item_state_ == INTERRUPTED_STATE);
-    if (!download_item->IsValid()) {
-      state = NWebDownloadItemState::CANCELED;
-    } else {
-      if (download_item->IsInProgress()) {
-        if (download_item->IsPaused()) {
-          state = NWebDownloadItemState::PAUSED;
-        } else if (download_item->IsPending()) {
-          state = NWebDownloadItemState::PENDING;
-        } else {
-          state = NWebDownloadItemState::IN_PROGRESS;
-        }
-      } else if (download_item->IsCanceled()) {
-        state = NWebDownloadItemState::CANCELED;
-      } else if (download_item->IsComplete()) {
-        state = NWebDownloadItemState::COMPLETE;
-      } else if (is_interrupted) {
-        state = NWebDownloadItemState::INTERRUPTED;
-      } else {
-        state = NWebDownloadItemState::CANCELED;
-      }
-    }
+    state = GetNWebState(download_item);
 
     std::string method_ = download_item->GetMethod().ToString();
     method = strdup(method_.c_str());
@@ -181,6 +159,34 @@ struct NWebDownloadItem {
     last_modified = strdup(last_modified_.c_str());
     std::string etag_ = download_item->GetETag();
     etag = strdup(etag_.c_str());
+  }
+
+  static NWebDownloadItemState GetNWebState(CefRefPtr<CefDownloadItem> download_item) {
+    int cef_download_item_state_ = download_item->GetState();
+    bool is_interrupted = (cef_download_item_state_ == INTERRUPTED_STATE);
+    NWebDownloadItemState nweb_state = NWebDownloadItemState::MAX_DOWNLOAD_STATE;
+    if (!download_item->IsValid()) {
+      nweb_state = NWebDownloadItemState::CANCELED;
+    } else {
+      if (download_item->IsInProgress()) {
+        if (download_item->IsPaused()) {
+          nweb_state = NWebDownloadItemState::PAUSED;
+        } else if (download_item->IsPending()) {
+          nweb_state = NWebDownloadItemState::PENDING;
+        } else {
+          nweb_state = NWebDownloadItemState::IN_PROGRESS;
+        }
+      } else if (download_item->IsCanceled()) {
+        nweb_state = NWebDownloadItemState::CANCELED;
+      } else if (download_item->IsComplete()) {
+        nweb_state = NWebDownloadItemState::COMPLETE;
+      } else if (is_interrupted) {
+        nweb_state = NWebDownloadItemState::INTERRUPTED;
+      } else {
+        nweb_state = NWebDownloadItemState::CANCELED;
+      }
+    }
+    return nweb_state;
   }
 };
 

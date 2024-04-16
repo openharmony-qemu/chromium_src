@@ -190,7 +190,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::SetBridgeOutputSurface(
     void* window) {
   LOG(INFO) << "MediaCodecDecoderBridgeImpl::SetBridgeOutputSurface set "
                "decoder outputsurface.";
-  if (videoDecoder_ == nullptr) {
+  if (videoDecoder_ == nullptr || window == nullptr) {
     LOG(ERROR) << "MediaCodecDecoderBridgeImpl::SetBridgeOutputSurface decoder "
                   "is NULL.";
     return DecoderAdapterCode::DECODER_ERROR;

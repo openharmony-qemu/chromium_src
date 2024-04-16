@@ -52,6 +52,12 @@ class MEDIA_EXPORT MediaUrlDemuxer : public Demuxer {
   MediaResource::Type GetType() const override;
   void ForwardDurationChangeToDemuxerHost(base::TimeDelta duration) override;
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void ForwardBufferedEndTimeChangeToDemuxerHost(
+      base::TimeDelta buffered_time) override;
+  void SetPreloadType(uint32_t preload_type) override;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
   // Demuxer interface.
   std::string GetDisplayName() const override;
   DemuxerType GetDemuxerType() const override;

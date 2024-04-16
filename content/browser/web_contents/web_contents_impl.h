@@ -104,6 +104,11 @@
 #include "content/browser/renderer_host/media/video_capture_manager.h"
 #endif  // defined(OHOS_WEBRTC)
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#include "content/public/browser/custom_media_player.h"
+#include "content/public/browser/custom_media_info.h"
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 namespace base {
 class FilePath;
 }  // namespace base
@@ -174,6 +179,10 @@ class WebContentsAndroid;
 #if BUILDFLAG(ENABLE_PPAPI)
 class PepperPlaybackObserver;
 #endif
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+class CustomMediaPlayerListener;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 
 // CreatedWindow holds the WebContentsImpl and target url between IPC calls to
 // CreateNewWindow and ShowCreatedWindow.
@@ -761,6 +770,9 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
       bool start_recording,
       absl::optional<ui::AXEventCallback> callback) override;
   device::mojom::GeolocationContext* GetGeolocationContext() override;
+#if defined(OHOS_SCREEN_LOCK)
+  void SetWakeLockHandler(int32_t windowId, const SetKeepScreenOn& handler) override;
+#endif
   device::mojom::WakeLockContext* GetWakeLockContext() override;
 #if BUILDFLAG(IS_ANDROID)
   void GetNFC(RenderFrameHost*,
@@ -1483,6 +1495,24 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   }
 
   ui::mojom::VirtualKeyboardMode GetVirtualKeyboardMode() const;
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  std::unique_ptr<CustomMediaPlayer> CreateCustomMediaPlayer(
+      std::unique_ptr<CustomMediaPlayerListener> listenter,
+      const MediaInfo& media_info);
+
+  void AddCustomMediaPlayer(const MediaPlayerId& player_id,
+                            CustomMediaPlayer* player);
+  void RemoveCustomMediaPlayer(const MediaPlayerId& player_id,
+                               CustomMediaPlayer* player);
+  void UpdateLayerRect(const MediaPlayerId& player_id,
+                       const gfx::Rect& rect);
+  void FullScreenChanged(const MediaPlayerId& player_id,
+                         bool is_fullscreen);
+
+  void RequestEnterFullscreen(const MediaPlayerId& player_id);
+  void RequestExitFullscreen(const MediaPlayerId& player_id);
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 
  private:
   using FrameTreeIterationCallback = base::RepeatingCallback<void(FrameTree&)>;
@@ -2554,6 +2584,10 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 #if defined(OHOS_WEBRTC)
   int nWebID_ = 0;
 #endif  // defined(OHOS_WEBRTC)
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  std::map<MediaPlayerId, CustomMediaPlayer*> players_;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 };
 
 // Dangerous methods which should never be made part of the public API, so we

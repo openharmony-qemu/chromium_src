@@ -405,6 +405,9 @@ class CC_EXPORT LayerImpl {
   int native_embed_id() const { return native_embed_id_; }
 
   void SetNativeRect(const gfx::RectF& rect);
+
+  void SetInitScale(float scale);
+  float GetInitScale() { return init_scale_; }
   gfx::RectF NativeRect() const;
   gfx::RectF GetNativeRect();
 
@@ -473,6 +476,18 @@ class CC_EXPORT LayerImpl {
           known_resource_ids) {}
 
   virtual viz::ViewTransitionElementResourceId ViewTransitionResourceId() const;
+
+  void SetShouldInterceptTouchEvent(bool intercept);
+  bool ShouldInterceptTouchEvent() const;
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void SetNeedNotifyRectChange(bool need);
+  gfx::RectF VideoRect() const;
+  gfx::RectF VideoRectInScreenSpace() const;
+  void SetVideoRect(const gfx::RectF& rect);
+  void OnDrawPropertiesChanged();
+  void CheckLayerRectChange();
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 
  protected:
   // When |will_always_push_properties| is true, the layer will not itself set
@@ -565,6 +580,8 @@ class CC_EXPORT LayerImpl {
   int clip_tree_index_;
   int scroll_tree_index_;
 
+  float init_scale_ = -1.0f;
+
   std::unique_ptr<RareProperties> rare_properties_;
 
  protected:
@@ -610,6 +627,12 @@ class CC_EXPORT LayerImpl {
   bool raster_even_if_not_drawn_ : 1;
 
   bool has_transform_node_ : 1;
+
+  bool should_intercept_touch_event_ = false;
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  gfx::RectF video_rect_;
+  bool need_notify_rect_changed_ = false;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 };
 
 }  // namespace cc

@@ -89,6 +89,9 @@ struct RenderProcessPriority {
                         ,
                         ChildProcessImportance importance
 #endif
+#ifdef OHOS_RENDER_PROCESS_MODE
+                        , base::TimeTicks background_time
+#endif
                         )
       : visible(visible),
         has_media_stream(has_media_stream),
@@ -99,6 +102,10 @@ struct RenderProcessPriority {
 #if BUILDFLAG(IS_ANDROID)
         ,
         importance(importance)
+#endif
+#ifdef OHOS_RENDER_PROCESS_MODE
+        ,
+        background_time(background_time)
 #endif
   {
   }
@@ -152,6 +159,10 @@ struct RenderProcessPriority {
 
 #if BUILDFLAG(IS_ANDROID)
   ChildProcessImportance importance;
+#endif
+
+#ifdef OHOS_RENDER_PROCESS_MODE
+  base::TimeTicks background_time;
 #endif
 };
 

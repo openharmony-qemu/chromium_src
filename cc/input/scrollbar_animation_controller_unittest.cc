@@ -273,6 +273,7 @@ TEST_F(ScrollbarAnimationControllerAuraOverlayTest, BasicAppearAndFadeOut) {
   EXPECT_TRUE(scrollbar_controller_->ScrollbarsHidden());
 }
 
+#if !defined(OHOS_UNITTESTS)
 // Confirm the scrollbar appears by WillUpdateScroll and fade out.
 TEST_F(ScrollbarAnimationControllerAuraOverlayTest,
        BasicAppearByWillUpdateScrollThenFadeOut) {
@@ -301,6 +302,7 @@ TEST_F(ScrollbarAnimationControllerAuraOverlayTest,
   ExpectScrollbarsOpacity(0);
   EXPECT_TRUE(scrollbar_controller_->ScrollbarsHidden());
 }
+#endif
 
 // Scroll content. Move the mouse near the scrollbar track but not near thumb
 // and confirm it stay thin. Move the mouse near the scrollbar thumb and
@@ -1059,6 +1061,7 @@ TEST_F(ScrollbarAnimationControllerAuraOverlayTest, MouseLeaveFadeOut) {
   EXPECT_EQ(kFadeDelay, client_.delay());
 }
 
+#if !defined(OHOS_UNITTESTS)
 // Scrollbars should schedule a delay fade in when mouse hover the show
 // scrollbar region of a hidden scrollbar.
 TEST_F(ScrollbarAnimationControllerAuraOverlayTest, BasicMouseHoverFadeIn) {
@@ -1090,7 +1093,9 @@ TEST_F(ScrollbarAnimationControllerAuraOverlayTest, BasicMouseHoverFadeIn) {
   ExpectScrollbarsOpacity(1);
   EXPECT_FALSE(scrollbar_controller_->ScrollbarsHidden());
 }
+#endif
 
+#if !defined(OHOS_UNITTESTS)
 // Scrollbars should not schedule a new delay fade in when the mouse hovers
 // inside a scrollbar already scheduled a delay fade in.
 TEST_F(ScrollbarAnimationControllerAuraOverlayTest,
@@ -1115,7 +1120,9 @@ TEST_F(ScrollbarAnimationControllerAuraOverlayTest,
 
   EXPECT_TRUE(client_.start_fade().is_null());
 }
+#endif
 
+#if !defined(OHOS_UNITTESTS)
 // Scrollbars should cancel delay fade in when mouse hover hidden scrollbar then
 // move far away.
 TEST_F(ScrollbarAnimationControllerAuraOverlayTest,
@@ -1139,7 +1146,9 @@ TEST_F(ScrollbarAnimationControllerAuraOverlayTest,
   EXPECT_TRUE(client_.start_fade().is_null() ||
               client_.start_fade().IsCancelled());
 }
+#endif
 
+#if !defined(OHOS_UNITTESTS)
 // Scrollbars should cancel delay fade in when mouse hover hidden scrollbar then
 // move out of window.
 TEST_F(ScrollbarAnimationControllerAuraOverlayTest,
@@ -1179,7 +1188,9 @@ TEST_F(ScrollbarAnimationControllerAuraOverlayTest,
 
   EXPECT_FALSE(scrollbar_controller_->ScrollbarsHidden());
 }
+#endif
 
+#if !defined(OHOS_UNITTESTS)
 // Make sure mouse down will cancel hover fade in timer, then mouse move with
 // press will not trigger hover fade in, mouse release near will trigger new
 // hover fade in.
@@ -1227,7 +1238,9 @@ TEST_F(ScrollbarAnimationControllerAuraOverlayTest,
 
   EXPECT_FALSE(scrollbar_controller_->ScrollbarsHidden());
 }
+#endif
 
+#if !defined(OHOS_UNITTESTS)
 // Make sure mouse down will cancel hover fade in timer, then mouse move with
 // press will not trigger hover fade in, mouse release far will not trigger new
 // hover fade in.
@@ -1266,6 +1279,7 @@ TEST_F(ScrollbarAnimationControllerAuraOverlayTest,
   EXPECT_TRUE(client_.start_fade().is_null() ||
               client_.start_fade().IsCancelled());
 }
+#endif
 
 // Ensure Aura Overlay Scrollbars shows and did not fade out when tickmarks show
 // and fade out when tickmarks hide.

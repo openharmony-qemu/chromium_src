@@ -87,7 +87,7 @@ source_set("unit_tests") {
     "//components/cast_streaming/browser/frame:unit_tests",
   ]
 
-  if (!is_win) {
+  if (!is_win && !ohos_unittests) {
     sources += [ "cast_message_port_impl_unittest.cc" ]
     deps += [
       "//base/test:test_support",

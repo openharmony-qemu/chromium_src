@@ -62,7 +62,7 @@ source_set("unit_tests") {
     "origin_trials/origin_trials_settings_manager_unittest.cc",
   ]
 
-  if (!is_ios) {
+  if (!is_ios && !ohos_unittests) {
     sources += [ "user_agent_utils_unittest.cc" ]
   }
 

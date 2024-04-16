@@ -97,12 +97,12 @@ void ResponseCache::InitCacheDirectory(base::FilePath path) {
 // static
 std::shared_ptr<ResponseCache> ResponseCache::CreateResponseCache(const std::string& url) {
   if (url.empty()) {
-    LOG(ERROR) << "Create Response Cache error: url is empty. url: " << url.c_str();
+    LOG(DEBUG) << "Create Response Cache error: url is empty. url: " << url.c_str();
     return nullptr;
   }
 
-  if (cache_dir_path_->empty()) {
-    LOG(ERROR) << "Create Response Cache error: cache dir path has not initialized. url: " << url.c_str();
+  if (!cache_dir_path_ || cache_dir_path_->empty()) {
+    LOG(DEBUG) << "Create Response Cache error: cache dir path has not initialized. url: " << url.c_str();
     return nullptr;
   }
   
@@ -113,7 +113,7 @@ std::shared_ptr<ResponseCache> ResponseCache::CreateResponseCache(const std::str
   response_cache->metadata_file_path_ = cache_dir_path_->Append(kCacheMetadataFileName);
   response_cache->metadata_out_ = std::make_shared<ResponseCacheMetadata>();
 
-  LOG(ERROR) << "Create response cache successfully. url: " << url.c_str();
+  LOG(DEBUG) << "Create response cache successfully. url: " << url.c_str();
   return response_cache;
 }
 

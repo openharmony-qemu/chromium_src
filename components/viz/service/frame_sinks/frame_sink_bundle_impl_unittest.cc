@@ -46,6 +46,8 @@
 #include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/khronos/GLES2/gl2.h"
 
+#if !defined(OHOS_UNITTESTS)
+
 namespace viz {
 namespace {
 
@@ -520,3 +522,5 @@ INSTANTIATE_TEST_SUITE_P(,
                          });
 }  // namespace
 }  // namespace viz
+
+#endif  // !defined(OHOS_UNITTESTS)

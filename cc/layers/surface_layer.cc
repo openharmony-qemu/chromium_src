@@ -135,6 +135,9 @@ void SurfaceLayer::SetIsReflection(bool is_reflection) {
 }
 
 void SurfaceLayer::SetMayContainVideo(bool may_contain_video) {
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  Layer::SetMayContainVideo(may_contain_video);
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
   may_contain_video_.Write(*this) = may_contain_video;
   SetNeedsCommit();
 }

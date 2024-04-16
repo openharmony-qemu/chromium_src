@@ -53,11 +53,14 @@ static_library("browser") {
 source_set("unit_tests") {
   testonly = true
   sources = [
-    "no_state_prefetch_processor_impl_unittest.cc",
     "no_state_prefetch_utils_unittest.cc",
     "prerender_history_unittest.cc",
   ]
-
+  if (!ohos_unittests) {
+    sources += [
+      "no_state_prefetch_processor_impl_unittest.cc",
+    ]
+  }
   deps = [
     "//base",
     "//base/test:test_support",

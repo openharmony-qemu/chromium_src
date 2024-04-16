@@ -94,10 +94,13 @@ source_set("unit_tests") {
   sources = [
     "file_manager_unittest.cc",
     "hit_tester_unittest.cc",
-    "paint_preview_base_service_unittest.cc",
-    "paint_preview_client_unittest.cc",
   ]
-
+  if (!ohos_unittests) {
+    sources += [
+      "paint_preview_base_service_unittest.cc",
+      "paint_preview_client_unittest.cc",
+    ]
+  }
   deps = [
     ":browser",
     ":test_support",

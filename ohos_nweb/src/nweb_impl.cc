@@ -42,6 +42,8 @@
 #include "nweb_hilog.h"
 #include "nweb_hit_test_result_impl.h"
 #include "res_sched_client_adapter.h"
+#include "nweb_resize_helper.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 
 #if defined(REPORT_SYS_EVENT)
 #include "event_reporter.h"
@@ -130,6 +132,7 @@ namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
 const uint32_t kSurfaceMaxHeight = 7680;
+const int SOC_PERF_WEB_DRAG_RESIZE_ID = 10073;
 #if defined(OHOS_MEDIA_POLICY)
 const int32_t kMaxResumeInterval = 60;
 #endif  // defined(OHOS_MEDIA_POLICY)
@@ -186,7 +189,7 @@ static std::string GetSiteIsolationMode() {
 
 static bool IsMultipleRenderProcess() {
     const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
-    
+
     if (command_line->HasSwitch(switches::kRendererProcessLimit)) {
         int limit_value = std::stoi(command_line->GetSwitchValueASCII(switches::kRendererProcessLimit));
         return (limit_value > 1
@@ -202,7 +205,7 @@ static bool IsMultipleRenderProcess() {
 
 static bool ShouldEnableSiteIsolation() {
   std::string isSiteIsolationMode = GetSiteIsolationMode();
-  
+
   if (isSiteIsolationMode == "false") {
     return false;
   }
@@ -301,7 +304,7 @@ void InitialWebEngineArgs(std::list<std::string>& web_engine_args,
     web_engine_args.emplace_back("--disable-webgl");
     web_engine_args.emplace_back("--disable-webgl2");
     web_engine_args.emplace_back("--disable-pdf-extension");
-    web_engine_args.emplace_back("--disable-blink-features=MathMLCore,ScriptedSpeechRecognition");
+    web_engine_args.emplace_back("--disable-blink-features=NonAdvancedSecurityMode");
 #if defined(REPORT_SYS_EVENT)
     ReportLockdownModeStatus();
 #endif
@@ -350,6 +353,9 @@ NWebImpl::CreateNWeb(std::shared_ptr<NWebCreateInfo> create_info) {
     return nullptr;
   }
   static uint32_t current_nweb_id = 0;
+  if (current_nweb_id == 0) {
+    StartObserveTraceEnable();
+  }
   uint32_t nweb_id = ++current_nweb_id;
   TRACE_EVENT1("NWebImpl", "NWebImpl | CreateNWeb", "nweb_id", nweb_id);
   WVLOG_I("creating nweb %{public}u, size %{public}u*%{public}u", nweb_id,
@@ -538,6 +544,7 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
 
 #if defined(OHOS_SITE_ISOLATION)
   g_siteIsolationMode = ShouldEnableSiteIsolation();
+  OHOS::NWeb::ResSchedClientAdapter::ReportSiteIsolationMode(g_siteIsolationMode);
 #if defined(REPORT_SYS_EVENT)
   ReportSiteIsolationMode(std::to_string(g_siteIsolationMode));
 #endif
@@ -621,12 +628,8 @@ bool NWebImpl::SetVirtualDeviceRatio() {
       device_pixel_ratio_ = richtextDisplayRatio;
     } else {
 #if BUILDFLAG(IS_OHOS)
-      if (nweb_delegate_ && nweb_delegate_->GetBaseDisplayWidth() > 0) {
-        device_pixel_ratio_ =
-            display->GetWidth() / nweb_delegate_->GetBaseDisplayWidth();
-      } else {
-        device_pixel_ratio_ = display->GetVirtualPixelRatio();
-      }
+      device_pixel_ratio_ = display->GetVirtualPixelRatio() *
+                            nweb_delegate_->GetBaseDisplayRatio();
 #else
       device_pixel_ratio_ = display->GetVirtualPixelRatio();
 #endif
@@ -780,8 +783,51 @@ void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
     WVLOG_E("resize failed, nweb delegate is nullptr, nweb_id = %{public}u", nweb_id_);
     return;
   }
-  nweb_delegate_->SetDrawMode(draw_mode_);
   nweb_delegate_->Resize(width, height, isKeyboard);
+  output_handler_->Resize(width, height);
+}
+
+void NWebImpl::DragResize(uint32_t width, uint32_t height, uint32_t pre_height, uint32_t pre_width) {
+  LOG(DEBUG) << "===== start drag resize =====";
+  bool drag_bigger_height = false;
+  bool drag_bigger_width = false;
+  if (input_handler_ == nullptr || output_handler_ == nullptr) {
+    return;
+  }
+  OHOS::NWeb::NWebResizeHelper::GetInstance().SetDragResizeStart(true);
+  if (pre_height > 0) {
+    drag_bigger_height = true;
+  }
+  if (pre_width > 0) {
+    drag_bigger_width = true;
+  }
+  if (drag_bigger_height) {
+    height = OHOS::NWeb::NWebResizeHelper::GetInstance().GetResizeAdjustValue(height,
+                                                                              pre_height,
+                                                                              true);
+  }
+  if (drag_bigger_width) {
+    width = OHOS::NWeb::NWebResizeHelper::GetInstance().GetResizeAdjustValue(width,
+                                                                             pre_width,
+                                                                             false);
+  }
+  OHOS::NWeb::NWebResizeHelper::GetInstance().SetResizeHeightAndWidth(height, width);
+  if (width > kSurfaceMaxWidth || height > kSurfaceMaxHeight) {
+    if (draw_mode_ == 0) {
+      OHOS::NWeb::NWebResizeHelper::GetInstance().RefreshParam();
+      WVLOG_E("size too large in surface mode (%{public}u , %{public}u)", width, height);
+      return;
+    };
+  }
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("resize failed, nweb delegate is nullptr, nweb_id = %{public}u", nweb_id_);
+    return;
+  }
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .CreateSocPerfClientAdapter()
+      ->ApplySocPerfConfigByIdEx(SOC_PERF_WEB_DRAG_RESIZE_ID, true);
+  nweb_delegate_->SetDrawMode(draw_mode_);
+  nweb_delegate_->Resize(width, height, false);
   output_handler_->Resize(width, height);
 }
 
@@ -858,6 +904,15 @@ void NWebImpl::OnTouchCancel() {
     return;
   }
   input_handler_->OnTouchCancel();
+}
+
+void NWebImpl::OnTouchCancelById(int32_t id, double x, double y, bool from_overlay) {
+  WVLOG_D("NWebImpl::OnTouchCancelById id=%{public}d, x=%{public}f, y=%{public}f, from_overlay=%{public}d",
+      id, x, y, from_overlay);
+  if (input_handler_ == nullptr) {
+    return;
+  }
+  input_handler_->OnTouchCancelById(id, x, y, from_overlay);
 }
 
 void NWebImpl::OnNavigateBack() {
@@ -2558,7 +2613,7 @@ void NWebImpl::PrefetchResource(const std::shared_ptr<NWebEnginePrefetchArgs>& p
     return;
   }
 
-  std::vector<CefBrowserContext*> browser_context_all = 
+  std::vector<CefBrowserContext*> browser_context_all =
       CefBrowserContext::GetAll();
   if (browser_context_all.size() == 0) {
     WVLOG_E("PrefetchResource has no browser_context");
@@ -2584,6 +2639,30 @@ void NWebImpl::PrefetchResource(const std::shared_ptr<NWebEnginePrefetchArgs>& p
   request_info->request_body = pre_args->GetFormData();
 
   loading_predictor->PrefetchResource(request_info, additional_http_headers, cache_key, cache_valid_time);
+}
+
+void NWebImpl::ClearPrefetchedResource(const std::vector<std::string>& cache_key_list) {
+  std::vector<CefBrowserContext*> browser_context_all =
+      CefBrowserContext::GetAll();
+  if (browser_context_all.size() == 0) {
+    WVLOG_E("PrefetchResource has no browser_context");
+    return;
+  }
+
+  CefBrowserContext* context =browser_context_all[0];
+  content::BrowserContext* browser_context =context->AsBrowserContext();
+  if (!browser_context) {
+    WVLOG_E("PrefetchResource null browser_context");
+    return;
+  }
+  ohos_predictors::LoadingPredictor* loading_predictor =
+      ohos_predictors::LoadingPredictorFactory::GetForBrowserContext(
+          browser_context);
+  if (!loading_predictor) {
+    WVLOG_E("PrefetchResource no load predictor");
+    return;
+  }
+  loading_predictor->ClearPrefetchedResource(cache_key_list);
 }
 
 // static
@@ -2629,6 +2708,7 @@ void NWebImpl::WarmupServiceWorker(const std::string &url) {
     return;
   }
 
+  WVLOG_I("Start to warm up service worker.");
   service_worker_context->WarmUpServiceWorker(GURL(url), key, base::DoNothing());
 #endif
 }

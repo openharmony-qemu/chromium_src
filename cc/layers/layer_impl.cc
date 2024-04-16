@@ -418,6 +418,8 @@ void LayerImpl::PushPropertiesTo(LayerImpl* layer) {
 
   layer->SetNativeRect(native_rect_);
 
+  layer->SetInitScale(init_scale_);
+
   layer->UnionUpdateRect(update_rect_);
 
   layer->UpdateDebugInfo(debug_info_.get());
@@ -1006,11 +1008,21 @@ void LayerImpl::SetNativeRect(const gfx::RectF& rect) {
     return;
   }
   native_rect_ = rect;
+  if (init_scale_ == -1.0f) {
+    init_scale_ = GetIdealContentsScaleKey();
+  }
   // Scrollbar positions depend on the scrolling layer bounds.
   if (scrollable_)
     layer_tree_impl()->SetScrollbarGeometriesNeedUpdate();
 
   NoteLayerPropertyChanged();
+}
+
+void LayerImpl::SetInitScale(float scale) {
+  if (init_scale_ == scale) {
+    return;
+  }
+  init_scale_ = scale;
 }
 
 gfx::RectF LayerImpl::GetNativeRect() {
@@ -1080,6 +1092,9 @@ void LayerImpl::SetVideoRect(const gfx::RectF& rect) {
   }
 
   video_rect_ = rect;
+  if (init_scale_ == -1.0f) {
+    init_scale_ = GetIdealContentsScaleKey();
+  }
 
   // Scrollbar positions depend on the scrolling layer bounds.
   if (scrollable_) {

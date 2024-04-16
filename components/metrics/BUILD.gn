@@ -509,7 +509,6 @@ if (!is_cronet_build) {
       "metrics_service_unittest.cc",
       "metrics_state_manager_unittest.cc",
       "net/net_metrics_log_uploader_unittest.cc",
-      "net/network_metrics_provider_unittest.cc",
       "persistent_synthetic_trial_observer_unittest.cc",
       "persistent_system_profile_unittest.cc",
       "reporting_service_unittest.cc",
@@ -521,7 +520,11 @@ if (!is_cronet_build) {
       "unsent_log_store_metrics_impl_unittest.cc",
       "unsent_log_store_unittest.cc",
     ]
-
+    if (!ohos_unittests) {
+      sources += [
+        "net/network_metrics_provider_unittest.cc",
+      ]
+    }
     deps = [
       ":call_stack_profile_builder",
       ":component_metrics",
@@ -594,10 +597,12 @@ if (!is_cronet_build) {
       sources -= [ "child_call_stack_profile_collector_unittest.cc" ]
       deps += [ "//ios/web/public/test" ]
     } else {
-      sources += [
-        "content/content_stability_metrics_provider_unittest.cc",
-        "content/subprocess_metrics_provider_unittest.cc",
-      ]
+      if (!ohos_unittests) {
+        sources += [
+          "content/content_stability_metrics_provider_unittest.cc",
+          "content/subprocess_metrics_provider_unittest.cc",
+        ]
+      }
       deps += [ "//extensions/buildflags" ]
     }
 

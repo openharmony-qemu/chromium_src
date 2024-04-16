@@ -48,9 +48,12 @@ source_set("unit_tests") {
   testonly = true
   sources = [
     "partial_translate_manager_unittest.cc",
-    "per_frame_content_translate_driver_unittest.cc",
   ]
-
+  if (!ohos_unittests) {
+    sources += [
+      "per_frame_content_translate_driver_unittest.cc",
+    ]
+  }
   deps = [
     ":browser",
     "//base",

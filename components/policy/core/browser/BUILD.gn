@@ -150,10 +150,14 @@ source_set("unit_tests") {
     "policy_error_map_unittest.cc",
     "signin/user_cloud_signin_restriction_policy_fetcher_unittest.cc",
     "url_allowlist_policy_handler_unittest.cc",
-    "url_blocklist_manager_unittest.cc",
     "url_blocklist_policy_handler_unittest.cc",
     "url_scheme_list_policy_handler_unittest.cc",
   ]
+  if (!ohos_unittests) {
+    sources += [
+      "url_blocklist_manager_unittest.cc",
+    ]
+  }
   deps = [
     ":browser",
     ":test_support",

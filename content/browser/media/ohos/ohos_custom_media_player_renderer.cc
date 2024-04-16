@@ -116,7 +116,11 @@ void CustomMediaPlayerListenerImpl::OnReadyStateChanged(uint32_t state) {
   }
 }
 
-void CustomMediaPlayerListenerImpl::OnFullscreenChanged(bool fullscreen) {}
+void CustomMediaPlayerListenerImpl::OnFullscreenChanged(bool fullscreen) {
+  if (renderer_) {
+    renderer_->OnFullscreenChanged(fullscreen);
+  }
+}
 void CustomMediaPlayerListenerImpl::OnSeeking() {}
 void CustomMediaPlayerListenerImpl::OnSeekFinished() {}
 void CustomMediaPlayerListenerImpl::OnError(uint32_t error_code, const std::string& error_msg) {
@@ -187,6 +191,19 @@ void ReturnResultOnUIThreadAndClosePipe(
     const std::string& result) {
   GetUIThreadTaskRunner({})->PostTask(
       FROM_HERE, base::BindOnce(std::move(callback), result));
+}
+
+MediaInfo::Preload ConvertTo(uint32_t preload_type) {
+  if (preload_type == 0) {
+    return MediaInfo::Preload::NONE;
+  }
+  if (preload_type == 1) {
+    return MediaInfo::Preload::METADATA;
+  }
+  if (preload_type == 2) {
+    return MediaInfo::Preload::AUTO;
+  }
+  return MediaInfo::Preload::AUTO;
 }
 
 }  // namespace
@@ -345,7 +362,7 @@ void OHOSCustomMediaPlayerRenderer::CreateMediaPlayer() {
   media_info.controlslist = std::move(controls_list_);
   media_info.muted = muted_;
   media_info.poster_url = poster_url_;
-  media_info.preload = MediaInfo::Preload::AUTO;
+  media_info.preload = ConvertTo(media_resource_->GetMediaUrlParams().preload_type);
   if (!cookies_->empty()) {
     media_info.https_headers.insert(std::make_pair("Cookie",
         std::move(cookies_.value())));
@@ -555,4 +572,16 @@ void OHOSCustomMediaPlayerRenderer::UpdateBufferedEndTime(double buffered_time) 
   client_extension_->UpdateBufferedEndTime(buffered_time);
 }
 
+void OHOSCustomMediaPlayerRenderer::OnFullscreenChanged(bool fullscreen) {
+  if (!web_contents_) {
+    return;
+  }
+  WebContentsImpl* web_contents_impl =
+      static_cast<WebContentsImpl*>(web_contents_);
+  if (fullscreen) {
+    web_contents_impl->RequestEnterFullscreen(media_player_id_);
+  } else {
+    web_contents_impl->RequestExitFullscreen(media_player_id_);
+  }
+}
 }  // namespace content

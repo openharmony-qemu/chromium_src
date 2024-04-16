@@ -620,6 +620,12 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
         main_browser_->GetHost()->SetBackgroundColor(
             preference_delegate_->GetBackgroundColor());
 #endif  // defined(OHOS_BACKGROUND_COLOR)
+#if defined(OHOS_MEDIA_POLICY)
+        main_browser_->GetHost()->SetAudioExclusive(
+            preference_delegate_->GetAudioExclusive());
+        main_browser_->GetHost()->SetAudioResumeInterval(
+            preference_delegate_->GetAudioResumeInterval());
+#endif
       }
       main_browser_->GetHost()->SetNativeWindow(window_);
 
@@ -2239,7 +2245,7 @@ void NWebHandlerDelegate::CopyImageToClipboard(CefRefPtr<CefImage> image) {
       return;
     }
 
-    auto copy_option = static_cast<ui::CopyOptionMode>(
+    auto copy_option = static_cast<CopyOptionMode>(
         preference_delegate_->GetCopyOptionMode());
     OhosAdapterHelper::GetInstance().GetPasteBoard().SetPasteData(recordVector,
                                                                   copy_option);

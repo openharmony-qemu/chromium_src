@@ -287,6 +287,18 @@ ark_web_engine_get_render_process_mode(struct _ark_web_engine_t *self) {
   return ArkWebEngineCppToC::Get(self)->GetRenderProcessMode();
 }
 
+void ARK_WEB_CALLBACK ark_web_engine_clear_prefetched_resource(
+    struct _ark_web_engine_t *self, const ArkWebStringVector *cache_key_list) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(cache_key_list, );
+
+  // Execute
+  ArkWebEngineCppToC::Get(self)->ClearPrefetchedResource(*cache_key_list);
+}
+
 void ARK_WEB_CALLBACK ark_web_engine_warmup_service_worker(
     struct _ark_web_engine_t *self, const ArkWebString *url) {
   ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
@@ -324,6 +336,8 @@ ArkWebEngineCppToC::ArkWebEngineCppToC() {
   GetStruct()->prefetch_resource = ark_web_engine_prefetch_resource;
   GetStruct()->set_render_process_mode = ark_web_engine_set_render_process_mode;
   GetStruct()->get_render_process_mode = ark_web_engine_get_render_process_mode;
+  GetStruct()->clear_prefetched_resource =
+      ark_web_engine_clear_prefetched_resource;
   GetStruct()->warmup_service_worker = ark_web_engine_warmup_service_worker;
 }
 

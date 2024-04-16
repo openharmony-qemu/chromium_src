@@ -93,6 +93,9 @@ typedef struct _ark_web_engine_t {
   int32_t(ARK_WEB_CALLBACK *get_render_process_mode)(
       struct _ark_web_engine_t *self);
 
+  void(ARK_WEB_CALLBACK *clear_prefetched_resource)(
+      struct _ark_web_engine_t *self, const ArkWebStringVector *cache_key_list);
+
   void(ARK_WEB_CALLBACK *warmup_service_worker)(struct _ark_web_engine_t *self,
                                                 const ArkWebString *url);
 } ark_web_engine_t;

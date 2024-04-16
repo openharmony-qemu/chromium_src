@@ -401,12 +401,26 @@ class ClipboardOHOSInternal {
     OhosAdapterHelper::GetInstance().GetPasteBoard().SetPasteData(result_vector
 #if defined(OHOS_CLIPBOARD)
                                                                   ,
-                                                                  copy_option
+                                                                  ChangeCopyOptionMode(copy_option)
 #endif // defined(OHOS_CLIPBOARD)
     );
     sequence_number_ = ClipboardSequenceNumberToken();
     return previous_data;
   }
+
+#if defined(OHOS_CLIPBOARD)
+  OHOS::NWeb::CopyOptionMode ChangeCopyOptionMode(ui::CopyOptionMode copy_option) {
+    if (copy_option == ui::CopyOptionMode::NONE) {
+      return OHOS::NWeb::CopyOptionMode::NONE;
+    } else if (copy_option == ui::CopyOptionMode::IN_APP) {
+      return OHOS::NWeb::CopyOptionMode::IN_APP;
+    } else if (copy_option == ui::CopyOptionMode::LOCAL_DEVICE) {
+      return OHOS::NWeb::CopyOptionMode::LOCAL_DEVICE;
+    } else {
+      return OHOS::NWeb::CopyOptionMode::CROSS_DEVICE;
+    }
+  }
+#endif // defined(OHOS_CLIPBOARD)
 
   bool IsReadAllowed(const DataTransferEndpoint* data_dst,
                      absl::optional<ClipboardInternalFormat> format) const {

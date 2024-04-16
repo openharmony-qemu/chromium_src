@@ -53,6 +53,10 @@ struct MEDIA_EXPORT MediaUrlParams {
   // True when MediaPlayerRenderer has been selected because the media has been
   // detected to be HLS. Used only for metrics.
   bool is_hls;
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  uint32_t preload_type = 0;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 };
 
 }  // namespace media

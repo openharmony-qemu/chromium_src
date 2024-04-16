@@ -10310,6 +10310,29 @@ void WebContentsImpl::UpdateLayerRect(const MediaPlayerId& player_id,
   iter->second->UpdateLayerRect(rect.x(), rect.y(), rect.width(), rect.height());
 }
 
+void WebContentsImpl::FullScreenChanged(const MediaPlayerId& player_id,
+                                        bool is_fullscreen) {
+  DVLOG(1) << "FullScreenChanged(" << is_fullscreen << ")";
+  auto iter = players_.find(player_id);
+  if (iter == players_.end()) {
+    LOG(WARNING) << "FullScreenChanged failed, no player found";
+    return;
+  }
+  if (is_fullscreen) {
+    iter->second->EnterFullscreen();
+  } else {
+    iter->second->ExitFullscreen();
+  }
+}
+
+void WebContentsImpl::RequestEnterFullscreen(const MediaPlayerId& player_id) {
+  media_web_contents_observer()->RequestEnterFullscreen(player_id);
+}
+
+void WebContentsImpl::RequestExitFullscreen(const MediaPlayerId& player_id) {
+  media_web_contents_observer()->RequestExitFullscreen(player_id);
+
+}
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
 }  // namespace content

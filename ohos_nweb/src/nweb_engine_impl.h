@@ -69,6 +69,8 @@ public:
 
   RenderProcessMode GetRenderProcessMode() override;
 
+  void ClearPrefetchedResource(const std::vector<std::string>& cache_key_list) override;
+
   void WarmupServiceWorker(const std::string &url) override;
 
 private:

@@ -26,6 +26,7 @@
 
 #if BUILDFLAG(IS_OHOS)
 #include "base/system/sys_info.h"
+#include "ohos_adapter_helper.h"
 #endif  // BUILDFLAG(IS_OHOS)
 
 using blink::WebGestureCurve;
@@ -50,7 +51,10 @@ std::unique_ptr<GestureCurve> CreateDefaultPlatformCurve(
 
   bool use_native_fling_curve = false;
 #ifdef USE_NATIVE_FLING_CURVE
-  use_native_fling_curve = true;
+  if (!OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetBoolParameter(
+      "web.instructionOptimize.enable", 0)) {
+    use_native_fling_curve = true;
+  }
 #endif
   if (use_native_fling_curve && !base::SysInfo::IsLowEndDevice() && 
       (std::abs(initial_velocity.y()) > std::abs(initial_velocity.x()))) {

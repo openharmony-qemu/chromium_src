@@ -596,6 +596,14 @@ public:
    *
    */
   void ReleaseResizeHold() override;
+
+  /**
+   * @brief Called when select a word.
+   *
+   * @param text The content of the text.
+   * @param offset The offset of the point.
+   */
+  std::vector<int8_t> GetWordSelection(const std::string& text, int8_t offset) override;
 private:
   ArkWebRefPtr<ArkWebHandler> ark_web_handler_;
 };

@@ -1009,12 +1009,12 @@ void Compositor::EvictFrameBackBuffers(bool invisible) {
       frame_sink_id(), invisible);
 }
 
-void Compositor::ReduceFrameRate() {
-  context_factory_->GetHostFrameSinkManager()->ReduceFrameRate(frame_sink_id());
+void Compositor::UpdateVSyncFrequency() {
+  context_factory_->GetHostFrameSinkManager()->UpdateVSyncFrequency(frame_sink_id());
 }
 
-void Compositor::ResetFrameRate() {
-  context_factory_->GetHostFrameSinkManager()->ResetFrameRate(frame_sink_id());
+void Compositor::ResetVSyncFrequency() {
+  context_factory_->GetHostFrameSinkManager()->ResetVSyncFrequency(frame_sink_id());
 }
 
 #endif

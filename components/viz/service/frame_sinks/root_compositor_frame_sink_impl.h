@@ -146,8 +146,8 @@ void ReportKeyThreadIds(
   const std::vector<int32_t>& thread_ids, int32_t process_id, bool is_created) override {}
 void EvictFrameBackBuffers(bool invisible);
 void OnVsyncReceived() override {}
-void ReduceFrameRate(int frame_rate);
-void ResetFrameRate();
+void UpdateVSyncFrequency(int frame_rate);
+void ResetVSyncFrequency();
 #endif
 
   base::ScopedClosureRunner GetCacheBackBufferCb();

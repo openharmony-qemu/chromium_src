@@ -23,6 +23,9 @@ constexpr int64_t VSYNC_PERIOD_120HZ = 8333333;
 constexpr int64_t VSYNC_PERIOD_90120HZ_MID = 9800000;
 constexpr int64_t VSYNC_TIME_FOR_CALCULATION = 1000000000;
 
+constexpr int VSYNC_30HZ = 30;
+constexpr int VSYNC_60HZ = 60;
+
 class ExternalBeginFrameSourceOHOS::VSyncUserData {
  public:
   VSyncUserData(const scoped_refptr<base::SingleThreadTaskRunner>& current,
@@ -135,7 +138,7 @@ void ExternalBeginFrameSourceOHOS::OnVSyncImpl(int64_t timestamp,
       }
     }
   }
-  int64_t cur_vsync = (VSYNC_TIME_FOR_CALCULATION - 1) / vsync_period_ + 1;
+  int64_t cur_vsync_frequency = (VSYNC_TIME_FOR_CALCULATION - 1) / vsync_period_ + 1;
   if (lower_frame_rate_enabled_) {
     vsync_period_ = vsync_period_ * 2;
   }
@@ -175,19 +178,18 @@ ReportLossFrame::GetInstance()->SetVsyncPeriod(vsync_period_);
 
   vsync_adapter_.RequestVsync(user_data_.release(),
                                ExternalBeginFrameSourceOHOS::OnVSync);
-  if (lower_vsync_with_video_playing_) {
-    vsync_before_lower_ = cur_vsync;
-    if (lower_vsync_period_ != cur_vsync) {
-      TRACE_EVENT1("viz", "ExternalBeginFrameSourceOHOS::OnVSyncImpl::LowerFrameRateWithVideoPlaying", "FrameRate",
-              lower_vsync_period_);
-      vsync_adapter_.SetFramePreferredRate(lower_vsync_period_);
-    }
+  if (update_vsync_frequency_ && 
+      vsync_frequency_to_update_ != cur_vsync_frequency) {
+    vsync_frequency_to_reset_ = cur_vsync_frequency;
+    TRACE_EVENT1("viz", "ExternalBeginFrameSourceOHOS::OnVSyncImpl::UpdateVSyncFrequency", "VSyncFrequency",
+            vsync_frequency_to_update_);
+    vsync_adapter_.SetFramePreferredRate(vsync_frequency_to_update_);
   }
-  if (need_to_reset_) {
-    TRACE_EVENT1("viz", "ExternalBeginFrameSourceOHOS::OnVSyncImpl::ResetFrameRate", "FrameRate",
-        vsync_before_lower_);
-    vsync_adapter_.SetFramePreferredRate(vsync_before_lower_);
-    need_to_reset_ = false;
+  if (reset_vsync_frequency_) {
+    TRACE_EVENT1("viz", "ExternalBeginFrameSourceOHOS::OnVSyncImpl::ResetVSyncFrequency", "VSync",
+        vsync_frequency_to_reset_);
+    vsync_adapter_.SetFramePreferredRate(vsync_frequency_to_reset_);
+    reset_vsync_frequency_ = false;
   }
 }
 
@@ -210,19 +212,19 @@ void ExternalBeginFrameSourceOHOS::SetEnabled(bool enabled) {
   vsync_adapter_.SetFrameRateLinkerEnable(enabled);
 }
 
-void ExternalBeginFrameSourceOHOS::SetLowerFrameRateWithVideo(int frame_rate) {
-  lower_vsync_with_video_playing_ = true;
-  if (frame_rate <= 30) {
-    lower_vsync_period_ = 30;
-  } else if (frame_rate < 60) {
-    lower_vsync_period_ = (frame_rate / 10) * 10;
+void ExternalBeginFrameSourceOHOS::UpdateVSyncFrequency(int frame_rate) {
+  update_vsync_frequency_ = true;
+  if (frame_rate <= VSYNC_30HZ) {
+    vsync_frequency_to_update_ = VSYNC_30HZ;
+  } else if (frame_rate < VSYNC_60HZ) {
+    vsync_frequency_to_update_ = (frame_rate / 10) * 10;
   } else {
-    lower_vsync_period_ = 60;
+    vsync_frequency_to_update_ = VSYNC_60HZ;
   }
 }
 
-void ExternalBeginFrameSourceOHOS::ResetFrameRate() {
-  need_to_reset_ = true;
-  lower_vsync_with_video_playing_ = false;
+void ExternalBeginFrameSourceOHOS::ResetVSyncFrequency() {
+  reset_vsync_frequency_ = true;
+  update_vsync_frequency_ = false;
 }
 }  // namespace viz

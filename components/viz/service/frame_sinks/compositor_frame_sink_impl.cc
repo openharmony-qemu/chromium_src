@@ -262,7 +262,10 @@ void CompositorFrameSinkImpl::OnVsyncReceived() {
 }
 
 int CompositorFrameSinkImpl::GetFrameRate() {
-  return support_->GetFrameRate();
+  if (support_) {
+    return support_->GetFrameRate();
+  }
+  return 0;
 }
 #endif
 

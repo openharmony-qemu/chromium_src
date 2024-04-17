@@ -749,7 +749,7 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
 #if BUILDFLAG(IS_OHOS)
   int64_t frame_ts = GetCurrentTimeStampMS();
   frames_time_stamps_.push(frame_ts);
-  if (frames_time_stamps_.size() > max_frame_count_) {
+  if (frames_time_stamps_.size() > kMaxFrameCount) {
     frames_time_stamps_.pop();
   }
   int64_t diff_time = frames_time_stamps_.back() - frames_time_stamps_.front();

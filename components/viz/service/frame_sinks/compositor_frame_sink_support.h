@@ -487,7 +487,7 @@ class VIZ_SERVICE_EXPORT CompositorFrameSinkSupport
 
 #if BUILDFLAG(IS_OHOS)
   base::queue<int64_t> frames_time_stamps_;
-  int max_frame_count_ = 30;
+  const int kMaxFrameCount = 30;
   int estimated_frame_rate_ = 0;
 #endif
 };

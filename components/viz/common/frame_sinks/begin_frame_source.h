@@ -426,8 +426,8 @@ class VIZ_COMMON_EXPORT ExternalBeginFrameSource : public BeginFrameSource {
 #endif
 
 #if BUILDFLAG(IS_OHOS)
-  virtual void ReduceFrameRate(int frame_rate) {}
-  virtual void ResetFrameRate() {}
+  virtual void UpdateVSyncFrequency(int frame_rate) {}
+  virtual void ResetVSyncFrequency() {}
 #endif
 
   // Notifies the begin frame source of the desired frame interval for the

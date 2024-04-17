@@ -703,12 +703,12 @@ void RootCompositorFrameSinkImpl::EvictFrameBackBuffers(bool invisible) {
   }
 }
 
-void RootCompositorFrameSinkImpl::ReduceFrameRate(int frame_rate) {
-  external_begin_frame_source_->ReduceFrameRate(frame_rate);
+void RootCompositorFrameSinkImpl::UpdateVSyncFrequency(int frame_rate) {
+  external_begin_frame_source_->UpdateVSyncFrequency(frame_rate);
 }
 
-void RootCompositorFrameSinkImpl::ResetFrameRate() {
-  external_begin_frame_source_->ResetFrameRate();
+void RootCompositorFrameSinkImpl::ResetVSyncFrequency() {
+  external_begin_frame_source_->ResetVSyncFrequency();
 }
 #endif
 

@@ -911,7 +911,7 @@ void FrameSinkManagerImpl::SetEnableLowerFrameRate(bool enabled, const FrameSink
   it->second->SetEnableLowerFrameRate(enabled);
 }
 
-void FrameSinkManagerImpl::ReduceFrameRate(const FrameSinkId& frame_sink_id, uint32_t client_id) {
+void FrameSinkManagerImpl::UpdateVSyncFrequency(const FrameSinkId& frame_sink_id, uint32_t client_id) {
   auto sink_it = sink_map_.begin();
   
   int frame_rate = 0;
@@ -925,19 +925,19 @@ void FrameSinkManagerImpl::ReduceFrameRate(const FrameSinkId& frame_sink_id, uin
 
   auto root_sink_it = root_sink_map_.find(frame_sink_id);
   if (root_sink_it == root_sink_map_.end()) {
-    LOG(ERROR) << "ReduceFrameRate Fail, no vaild root sink";
+    LOG(ERROR) << "UpdateVSyncFrequency Fail, no vaild root sink";
     return;
   }
-  root_sink_it->second->ReduceFrameRate(frame_rate);
+  root_sink_it->second->UpdateVSyncFrequency(frame_rate);
 }
 
-void FrameSinkManagerImpl::ResetFrameRate(const FrameSinkId& frame_sink_id) {
+void FrameSinkManagerImpl::ResetVSyncFrequency(const FrameSinkId& frame_sink_id) {
   auto root_sink_it = root_sink_map_.find(frame_sink_id);
   if (root_sink_it == root_sink_map_.end()) {
-    LOG(ERROR) << "ResetFrameRate Fail, no vaild root sink";
+    LOG(ERROR) << "ResetVSyncFrequency Fail, no vaild root sink";
     return;
   }
-  root_sink_it->second->ResetFrameRate();
+  root_sink_it->second->ResetVSyncFrequency();
 }
 #endif
 

@@ -2571,8 +2571,11 @@ void NWebDelegate::SetAccessibilityState(cef_state_t accessibilityState) {
     LOG(ERROR) << "SetAccessibilityState can not get browser";
     return;
   }
-  accessibility_state_ = (accessibilityState == STATE_ENABLED);
-  GetBrowser()->GetHost()->SetAccessibilityState(accessibilityState);
+  if (accessibility_state_ != (accessibilityState == STATE_ENABLED)) {
+    accessibility_state_ = (accessibilityState == STATE_ENABLED);
+    LOG(INFO) << "SetAccessibilityState accessibility_state_ " << accessibility_state_;
+    GetBrowser()->GetHost()->SetAccessibilityState(accessibilityState);
+  }
 }
 
 void NWebDelegate::ExecuteAction(int64_t accessibilityId,
@@ -2604,6 +2607,8 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId,
         accessibilityManager->MoveAccessibilityFocus(
             accessibilityManager->GetAccessibilityFocusId(), 0);
         accessibilityManager->SetAccessibilityFocusId(0);
+        accessibilityManager->SendAccessibilityEvent(0,
+            AccessibilityEventType::ACCESSIBILITY_FOCUSED);
       }
       if (accessibilityManager->GetLastHoverId() == accessibilityId) {
         accessibilityManager->SendAccessibilityEvent(
@@ -2626,7 +2631,8 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId,
 
 content::BrowserAccessibilityManagerOHOS*
 NWebDelegate::GetAccessibilityManager() const {
-  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+  if (!accessibility_state_ || GetBrowser() == nullptr
+      || GetBrowser()->GetHost() == nullptr) {
     LOG(INFO) << "GetAccessibilityManager can not get browser";
     return nullptr;
   }

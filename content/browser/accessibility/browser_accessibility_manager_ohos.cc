@@ -151,9 +151,8 @@ void BrowserAccessibilityManagerOHOS::SendAccessibilityEvent(
   if (accessibilityEventListener_ != nullptr &&
       eventType != OHOS::NWeb::AccessibilityEventType::UNKNOWN &&
       accessibilityId != kInvalidAccessibilityId) {
-    GetUIThreadTaskRunner({})->PostTask(FROM_HERE, base::BindOnce(
-        &BrowserAccessibilityManagerOHOS::HandleSendAccessibilityEvent,
-        base::Unretained(this), accessibilityId, eventType));
+    accessibilityEventListener_->OnAccessibilityEvent(
+        accessibilityId, static_cast<uint32_t>(eventType));
   }
 
   if (eventType == OHOS::NWeb::AccessibilityEventType::HOVER_ENTER_EVENT) {
@@ -165,12 +164,6 @@ void BrowserAccessibilityManagerOHOS::SendAccessibilityEvent(
     }
     lastHoverId_ = accessibilityId;
   }
-}
-
-void BrowserAccessibilityManagerOHOS::HandleSendAccessibilityEvent(int64_t accessibilityId,
-    OHOS::NWeb::AccessibilityEventType eventType) const {
-  accessibilityEventListener_->OnAccessibilityEvent(
-      accessibilityId, static_cast<uint32_t>(eventType));
 }
 
 void BrowserAccessibilityManagerOHOS::HandleHover(int64_t accessibilityId) {

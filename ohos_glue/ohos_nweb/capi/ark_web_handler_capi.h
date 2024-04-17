@@ -352,6 +352,11 @@ typedef struct _ark_web_handler_t {
                                      const ArkWebString *tooltip);
 
   void(ARK_WEB_CALLBACK *release_resize_hold)(struct _ark_web_handler_t *self);
+
+  ArkWebCharVector(ARK_WEB_CALLBACK *get_word_selection)(
+      struct _ark_web_handler_t* self,
+      const ArkWebString* text,
+      int8_t offset);
 } ark_web_handler_t;
 
 #ifdef __cplusplus

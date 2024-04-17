@@ -831,16 +831,17 @@ void NWebRenderHandler::GetWordSelection(CefRefPtr<CefBrowser> browser,
                                          const CefString& text,
                                          int8_t offset,
                                          CefPoint& select) {
-  std::vector<int8_t> vec =
-      OHOS::NWeb::OhosAdapterHelper::GetInstance()
-          .GetAiEngineAdapterInstance()
-          .GetWordSelection(text.ToString(), offset);
-  if (vec.size() == 2) {
-    select.x = vec[0];
-    select.y = vec[1];
-  } else {
-    select.x = -1;
-    select.y = -1;
+  if (auto handler = handler_.lock()) {
+    LOG(DEBUG) << "NWebRenderHandler::GetWordSelection, text: "
+               << text.ToString()
+               << ", offset: "
+               << static_cast<int>(offset);
+    std::vector<int8_t> vec =
+        handler->GetWordSelection(text.ToString(), offset);
+    if (vec.size() == 2) {
+      select.x = vec[0];
+      select.y = vec[1];
+    }
   }
 }
 #endif

@@ -26,7 +26,7 @@ namespace gpu {
 
 class Buffer;
 
-#if !BUILDFLAG(IS_ANDROID) || !BUILDFLAG(IS_OHOS)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
 #define CMD_HELPER_PERIODIC_FLUSH_CHECK
 const int kCommandsPerFlushCheck = 100;
 const int kPeriodicFlushDelayInMicroseconds = 500;

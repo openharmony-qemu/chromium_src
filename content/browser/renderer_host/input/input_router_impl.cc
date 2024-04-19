@@ -38,7 +38,9 @@
 #include "ui/events/event.h"
 #include "ui/events/keycodes/keyboard_codes.h"
 #include "ohos_adapter_helper.h"
-
+#if BUILDFLAG(IS_OHOS)
+#include "base/ohos/ltpo/include/sliding_observer.h"
+#endif
 namespace content {
 
 using blink::WebGestureEvent;
@@ -167,6 +169,7 @@ void InputRouterImpl::SendGestureEvent(
       .CreateSocPerfClientAdapter()
       ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID, false);
     prePerfTimeStamp_ = 0;
+    base::ohos::SlidingObserver::GetInstance().StopSliding();
 #endif
   }
 #endif

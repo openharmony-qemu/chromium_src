@@ -67,6 +67,12 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   std::u16string GetLeftTextOfCursor(int32_t number);
   std::u16string GetRightTextOfCursor(int32_t number);
   void SetWindowIdForIME(uint32_t windowId);
+  int32_t SetPreviewText(const std::u16string& text,
+                         int32_t start,
+                         int32_t end);
+  void FinishTextPreview();
+  void SetNeedUnderLine(bool is_need_underline);
+
  private:
   void SetIMEStatusOnUI(bool status);
   void InsertTextHandlerOnUI(const std::u16string& text);
@@ -75,6 +81,11 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   bool IsCorrectParam(int32_t number, int32_t& selectBegin, int32_t& selectEnd);
   bool ResetTextSelectiondata();
   std::shared_ptr<IMFCursorInfoAdapter> GetCursorInfo();
+  void PreviewTextHandlerOnUI(const std::u16string& text,
+                              int32_t start,
+                              int32_t end);
+  void FinishPreviewTextOnUI();
+  void SetNeedUnderLineOnUI(bool is_need_underline);
 
   static uint32_t lastAttachNWebId_;
   static IMFAdapterTextInputType lastInputMode_;
@@ -109,7 +120,9 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   bool is_need_notify_all_ = false;
   int32_t text_cursor_length_ = 0;
   uint32_t windowId_ = 0;
-
+  const int32_t OK = 0;
+  const int32_t ERROR = -1;
+  bool is_need_underline_ = true;
   IMPLEMENT_REFCOUNTING(NWebInputMethodHandler);
 };
 

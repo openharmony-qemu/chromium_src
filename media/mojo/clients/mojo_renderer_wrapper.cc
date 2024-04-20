@@ -54,8 +54,8 @@ base::TimeDelta MojoRendererWrapper::GetMediaTime() {
 void MojoRendererWrapper::SetMuted(bool muted) {
   mojo_renderer_->SetMuted(muted);
 }
-void MojoRendererWrapper::SetSurfaceId(int surface_id) {
-  mojo_renderer_->SetSurfaceId(surface_id);
+void MojoRendererWrapper::SetSurfaceId(int surface_id, const gfx::Rect& rect) {
+  mojo_renderer_->SetSurfaceId(surface_id, rect);
 }
 void MojoRendererWrapper::SetMediaSourceList(
     const std::vector<MediaSourceInfo>& source_infos) {

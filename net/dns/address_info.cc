@@ -208,6 +208,9 @@ std::unique_ptr<addrinfo, FreeAddrInfoFunc> AddrInfoGetter::getaddrinfo(
 #if BUILDFLAG(IS_WIN)
     *out_os_error = WSAGetLastError();
 #endif
+#ifdef OHOS_NETWORK_LOAD
+    LOG(ERROR) << "get address info failed, out_os_error is: " << *out_os_error;
+#endif
     return rv;
   }
 

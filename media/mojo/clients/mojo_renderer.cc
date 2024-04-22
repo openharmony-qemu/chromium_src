@@ -425,10 +425,10 @@ void MojoRenderer::CancelPendingCallbacks() {
 void MojoRenderer::SetMuted(bool muted) {
   muted_ = muted;
 }
-void MojoRenderer::SetSurfaceId(int surface_id) {
+void MojoRenderer::SetSurfaceId(int surface_id, const gfx::Rect& rect) {
   BindRemoteRendererIfNeeded();
   if (remote_renderer_.is_bound()) {
-    remote_renderer_->SetSurfaceId(surface_id);
+    remote_renderer_->SetSurfaceId(surface_id, rect);
   } else {
     LOG(ERROR) << "SetSurfaceId failed";
   }

@@ -73,7 +73,7 @@ class MEDIA_MOJO_EXPORT MojoRendererService final : public mojom::Renderer,
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
   void SetMuted(bool muted) override;
-  void SetSurfaceId(int surface_id) override;
+  void SetSurfaceId(int surface_id, const gfx::Rect& rect) override;
   void SetMediaSourceList(
       std::vector<mojom::MediaSourceInfoPtr> source_infos) override;
   void SetMediaControls(bool show_media_controls,

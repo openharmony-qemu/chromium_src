@@ -2382,10 +2382,6 @@ void NWebImpl::PrepareForPageLoad(const std::string &url,
     return;
   }
 
-#if defined(OHOS_WARMUP_SERVICEWORKER)
-  WarmupServiceWorker(url);
-#endif
-
   ohos_predictors::LoadingPredictor* loading_predictor =
       ohos_predictors::LoadingPredictorFactory::GetForBrowserContext(
           browser_context);

@@ -678,6 +678,9 @@ public:
 
   /*--ark web()--*/
   virtual ArkWebCharVector GetWordSelection(const ArkWebString &text, int8_t offset) = 0;
+
+  /*--ark web()--*/
+  virtual void UpdateClippedSelectionBounds(int x, int y, int w, int h) = 0;
 };
 
 } // namespace OHOS::ArkWeb

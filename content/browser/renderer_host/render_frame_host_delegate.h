@@ -192,6 +192,10 @@ class CONTENT_EXPORT RenderFrameHostDelegate {
           context_menu_client,
       const ContextMenuParams& params) {}
 
+#if defined(OHOS_CLIPBOARD)
+  virtual void MouseSelectMenuShow(bool show) {}
+#endif
+
   // A JavaScript alert, confirmation or prompt dialog should be shown.
   // Will only be called for active frames belonging to a primary page.
   virtual void RunJavaScriptDialog(RenderFrameHostImpl* render_frame_host,

@@ -3328,4 +3328,14 @@ void NWebDelegate::RegisterOnCreateNativeMediaPlayerListener(
   handler_delegate_->RegisterOnCreateNativeMediaPlayerListener(std::move(callback));
 }
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+#if defined(OHOS_CLIPBOARD)
+void NWebDelegate::SetIsRichText(bool is_rich_text) {
+  if (!handler_delegate_) {
+    LOG(ERROR) << "fail to set is_rich_text, NWEB handler is nullptr";
+    return;
+  }
+  handler_delegate_->SetIsRichText(is_rich_text);
+}
+#endif
 }  // namespace OHOS::NWeb

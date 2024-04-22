@@ -301,6 +301,10 @@ int32_t NWebQuickMenuParamsImpl::GetSelectXHeight() {
   return select_height_;
 }
 
+void NWebQuickMenuParamsImpl::SetIsMouseTrigger(bool is_mouse_trigger) {
+  is_mouse_trigger_ = is_mouse_trigger;
+}
+
 std::shared_ptr<NWebTouchHandleState>
 NWebQuickMenuParamsImpl::GetTouchHandleState(
     NWebTouchHandleState::TouchHandleType type) {

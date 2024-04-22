@@ -1012,6 +1012,15 @@ void Compositor::EvictFrameBackBuffers(bool invisible) {
   context_factory_->GetHostFrameSinkManager()->EvictFrameBackBuffers(
       frame_sink_id(), invisible);
 }
+
+void Compositor::UpdateVSyncFrequency() {
+  context_factory_->GetHostFrameSinkManager()->UpdateVSyncFrequency(frame_sink_id());
+}
+
+void Compositor::ResetVSyncFrequency() {
+  context_factory_->GetHostFrameSinkManager()->ResetVSyncFrequency(frame_sink_id());
+}
+
 #endif
 
 const cc::LayerTreeSettings& Compositor::GetLayerTreeSettings() const {

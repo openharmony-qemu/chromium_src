@@ -52,6 +52,8 @@ class VIZ_SERVICE_EXPORT ExternalBeginFrameSourceOHOS
   void SetDrawRect(const gfx::Rect& new_rect) override {
     draw_rect_ = new_rect;
   }
+  void UpdateVSyncFrequency(int frame_rate) override;
+  void ResetVSyncFrequency() override;
 
  private:
   // ExternalBeginFrameSourceClient implementation.
@@ -77,6 +79,10 @@ class VIZ_SERVICE_EXPORT ExternalBeginFrameSourceOHOS
   bool lower_frame_rate_enabled_ = false;
   gfx::Rect draw_rect_;
   base::WeakPtrFactory<ExternalBeginFrameSourceOHOS> weak_factory_{this};
+  int64_t vsync_frequency_to_reset_ = 0;
+  int64_t vsync_frequency_to_update_ = 30; // vsync_to_update_ >= 30 for user experience
+  bool update_vsync_frequency_ = false;
+  bool reset_vsync_frequency_ = false;
 };
 }  // namespace viz
 

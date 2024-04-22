@@ -702,6 +702,14 @@ void RootCompositorFrameSinkImpl::EvictFrameBackBuffers(bool invisible) {
     SetDisplayVisible(true);
   }
 }
+
+void RootCompositorFrameSinkImpl::UpdateVSyncFrequency(int frame_rate) {
+  external_begin_frame_source_->UpdateVSyncFrequency(frame_rate);
+}
+
+void RootCompositorFrameSinkImpl::ResetVSyncFrequency() {
+  external_begin_frame_source_->ResetVSyncFrequency();
+}
 #endif
 
 void RootCompositorFrameSinkImpl::SetWideColorEnabled(bool enabled) {

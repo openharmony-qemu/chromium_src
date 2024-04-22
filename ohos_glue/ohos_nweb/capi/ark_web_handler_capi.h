@@ -357,6 +357,9 @@ typedef struct _ark_web_handler_t {
       struct _ark_web_handler_t* self,
       const ArkWebString* text,
       int8_t offset);
+
+  void(ARK_WEB_CALLBACK *update_clipped_selection_bounds)(struct _ark_web_handler_t *self,
+      int x, int y, int w, int h);
 } ark_web_handler_t;
 
 #ifdef __cplusplus

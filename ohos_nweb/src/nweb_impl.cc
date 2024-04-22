@@ -700,6 +700,10 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
     return false;
   }
 
+#if defined(OHOS_CLIPBOARD)
+  nweb_delegate_->SetIsRichText(is_richtext_value_);
+#endif
+
   if (!SetVirtualDeviceRatio()) {
     WVLOG_E("fail to set virtual device ratio");
     delete[] argv;

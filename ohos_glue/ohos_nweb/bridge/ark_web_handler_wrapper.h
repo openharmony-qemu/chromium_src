@@ -604,6 +604,8 @@ public:
    * @param offset The offset of the point.
    */
   std::vector<int8_t> GetWordSelection(const std::string& text, int8_t offset) override;
+
+  void UpdateClippedSelectionBounds(int x, int y, int w, int h) override;
 private:
   ArkWebRefPtr<ArkWebHandler> ark_web_handler_;
 };

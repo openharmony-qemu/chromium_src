@@ -7352,6 +7352,14 @@ void RenderFrameHostImpl::ShowPopupMenu(
 #endif
 }
 
+#if defined(OHOS_CLIPBOARD)
+void RenderFrameHostImpl::MouseSelectMenuShow(bool show) {
+  if (delegate_) {
+    delegate_->MouseSelectMenuShow(show);
+  }
+}
+#endif
+
 void RenderFrameHostImpl::ShowContextMenu(
     mojo::PendingAssociatedRemote<blink::mojom::ContextMenuClient>
         context_menu_client,

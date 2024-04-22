@@ -429,6 +429,10 @@ void PrecompileJavaScript(const std::string& url,
   bool IsIntelligentTrackingPreventionEnabled() const override;
 #endif
 
+#if defined(OHOS_CLIPBOARD)
+  void SetIsRichText(bool is_rich_text) override;
+#endif
+
  public:
   int argc_;
   const char** argv_;

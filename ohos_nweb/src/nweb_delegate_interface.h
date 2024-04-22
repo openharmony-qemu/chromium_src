@@ -433,6 +433,10 @@ class NWebDelegateInterface
 #ifdef OHOS_EX_DOWNLOAD
   virtual NWebDownloadItemState GetDownloadItemState(long item_id) = 0;
 #endif
+
+#if defined(OHOS_CLIPBOARD)
+  virtual void SetIsRichText(bool is_rich_text) = 0;
+#endif
 };
 }  // namespace OHOS::NWeb
 

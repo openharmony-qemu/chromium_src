@@ -2365,6 +2365,14 @@ void RenderFrameImpl::SetSelectedText(const std::u16string& selection_text,
                                       static_cast<uint32_t>(offset), range);
 }
 
+#if defined(OHOS_CLIPBOARD)
+void RenderFrameImpl::MouseSelectMenuShow(bool show) {
+  if (GetFrameHost()) {
+    GetFrameHost()->MouseSelectMenuShow(show);
+  }
+}
+#endif
+
 void RenderFrameImpl::AddMessageToConsole(
     blink::mojom::ConsoleMessageLevel level,
     const std::string& message) {

@@ -523,14 +523,22 @@ class NWebHandlerDelegate : public CefClient,
       const CefSize& size,
       const CefRect& select_bounds,
       CefContextMenuHandler::QuickMenuEditStateFlags edit_state_flags,
-      CefRefPtr<CefRunQuickMenuCallback> callback) override;
+      CefRefPtr<CefRunQuickMenuCallback> callback,
+      bool is_mouse_trigger) override;
+
+  bool UpdateClippedSelectionBounds(
+      CefRefPtr<CefBrowser> browser,
+      CefRefPtr<CefFrame> frame,
+      const CefRect& select_bounds) override;
+  
   bool OnQuickMenuCommand(
       CefRefPtr<CefBrowser> browser,
       CefRefPtr<CefFrame> frame,
       int command_id,
       CefContextMenuHandler::EventFlags event_flags) override;
   void OnQuickMenuDismissed(CefRefPtr<CefBrowser> browser,
-                            CefRefPtr<CefFrame> frame) override;
+                            CefRefPtr<CefFrame> frame,
+                            bool is_mouse_trigger) override;
   /* CefContextMenuHandler method end */
 
   /* CefFindandler methods begin */
@@ -648,6 +656,10 @@ class NWebHandlerDelegate : public CefClient,
       const CefCustomMediaInfo& media_info) override;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+#if defined(OHOS_CLIPBOARD)
+  void SetIsRichText(bool is_rich_text) { is_rich_text_ = is_rich_text; }
+#endif
+
  private:
   void CopyImageToClipboard(CefRefPtr<CefImage> image);
   // List of existing browser windows. Only accessed on the CEF UI thread.
@@ -726,6 +738,9 @@ class NWebHandlerDelegate : public CefClient,
 #ifdef OHOS_DRAG_DROP
   bool is_drag_enter_ = false;
 #endif  // #ifdef OHOS_DRAG_DROP
+#if defined(OHOS_CLIPBOARD)
+  bool is_rich_text_ = false;
+#endif
   // js property name and object id
   std::unordered_map<
       std::string,

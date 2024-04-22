@@ -547,6 +547,10 @@ void EvictFrameBackBuffers(bool invisible);
 
   gfx::Size size_;
 
+#if BUILDFLAG(IS_OHOS)
+  int drawMode_ = 0;
+#endif
+
   raw_ptr<ui::ContextFactory> context_factory_;
 
   // |display_private_| can be unbound for:

@@ -45,6 +45,7 @@
 #include "net/base/mime_sniffer.h"
 #include "net/base/mime_util.h"
 #include "net/base/net_errors.h"
+#include "net/base/url_util.h"
 #include "net/http/http_byte_range.h"
 #include "net/http/http_response_headers.h"
 #include "net/http/http_util.h"
@@ -442,7 +443,7 @@ class ResourceURLLoader : public network::mojom::URLLoader {
     std::string resourcesPath;
     if (request.url.SchemeIs(url::kResourcesScheme)) {
       resourcesPath = "resources/";
-      resourcesPath += request.url.host() + request.url.path();
+      resourcesPath += request.url.host() + net::UnescapePercentEncodedUrl(request.url.path());
     } else if (request.url.SchemeIs(url::kFileScheme)) {
       base::FilePath path;
       if (!net::FileURLToFilePath(request.url, &path)) {

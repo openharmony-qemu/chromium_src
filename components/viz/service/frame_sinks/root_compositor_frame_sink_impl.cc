@@ -288,7 +288,7 @@ void RootCompositorFrameSinkImpl::SetDrawRect(const gfx::Rect& new_rect)
 
 void RootCompositorFrameSinkImpl::SetDrawMode(int32_t mode)
 {
-   LOG(INFO) << "ootCompositorFrameSinkImpl::SetDrawMode";
+   LOG(DEBUG) << "RootCompositorFrameSinkImpl::SetDrawMode";
    display_->SetDrawMode(mode);
 }
 #endif  // defined(OHOS_COMPOSITE_RENDER)

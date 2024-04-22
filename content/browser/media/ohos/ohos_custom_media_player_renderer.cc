@@ -358,6 +358,10 @@ void OHOSCustomMediaPlayerRenderer::CreateMediaPlayer() {
         info.media_source, info.media_format});
   }
   media_info.surface_info.id = surface_id_string;
+  media_info.surface_info.x = video_rect_.x();
+  media_info.surface_info.y = video_rect_.y();
+  media_info.surface_info.width = video_rect_.width();
+  media_info.surface_info.height = video_rect_.height();
   media_info.controls = show_media_controls_;
   media_info.controlslist = std::move(controls_list_);
   media_info.muted = muted_;
@@ -504,8 +508,10 @@ void OHOSCustomMediaPlayerRenderer::SetMuted(bool muted) {
   muted_ = muted;
 }
 
-void OHOSCustomMediaPlayerRenderer::SetSurfaceId(int surface_id) {
+void OHOSCustomMediaPlayerRenderer::SetSurfaceId(int surface_id,
+    const gfx::Rect& rect) {
   surface_id_ = surface_id;
+  video_rect_ = rect;
   TryCreateMediaPlayer();
 }
 

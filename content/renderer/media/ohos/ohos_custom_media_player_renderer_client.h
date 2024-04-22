@@ -80,6 +80,7 @@ class CONTENT_EXPORT OHOSCustomMediaPlayerRendererClient
   void OnStreamTextureWrapperInitialized(media::MediaResource* media_resource,
                                          bool success);
   void OnRemoteRendererInitialized(media::PipelineStatus status);
+  void OnGetVideoRect(const gfx::Rect& rect);
   void OnSurfaceCreated(int surface_id);
   void OnSurfaceDestroyed();
 

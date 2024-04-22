@@ -65,10 +65,10 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ScopedClipboardWriter {
   void WriteHTML(const std::u16string& markup,
                  const std::string& source_url,
                  ClipboardContentType content_type
-#if defined(OHOS_CLIPBOARD) && defined(OHOS_UNITTESTS)
+#if defined(OHOS_CLIPBOARD)
                  ,
-                 const blink::mojom::CopyOptionMode copy_option = blink::mojom::CopyOptionMode::CROSS_DEVICE
-#endif // defined(OHOS_CLIPBOARD) && defined(OHOS_UNITTESTS)
+                 const blink::mojom::CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
                  );
 
   // Adds SVG to the clipboard.

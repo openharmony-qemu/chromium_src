@@ -29,19 +29,6 @@ const ArkWebDateTime ark_web_date_time_default = {
     0,
 };
 
-typedef struct {
-  int32_t width;
-  int32_t height;
-  int32_t x;
-  int32_t y;
-  float scale;
-  uint8_t* buff;
-} ArkWebCursorInfo;
-
-const ArkWebCursorInfo ark_web_cursor_info_default = {
-    0,
-};
-
 typedef int64_t (*AccessibilityIdGenerateFunc)();
 
 typedef void (*NativeArkWebOnValidCallback)(const char *);

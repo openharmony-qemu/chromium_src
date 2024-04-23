@@ -69,7 +69,7 @@ void MemoryMappedFile::SetOhosFileMapper(
     length_ = mapper_->GetDataLen();
   } else {
     uint8_t* tmp;
-    mapper->UnzipData(tmp, length_);
+    mapper->UnzipData(&tmp, length_);
     data_ = tmp;
   }
 }

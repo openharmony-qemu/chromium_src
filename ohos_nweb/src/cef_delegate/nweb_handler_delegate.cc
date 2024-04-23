@@ -33,6 +33,7 @@
 #include "nweb_impl.h"
 
 #include "nweb_console_log_impl.h"
+#include "nweb_cursor_info_impl.h"
 #include "nweb_date_time_chooser_impl.h"
 #include "nweb_data_resubmission_callback_impl.h"
 #include "nweb_engine_impl.h"
@@ -1826,25 +1827,27 @@ bool NWebHandlerDelegate::OnCursorChange(
     LOG(ERROR) << "OnCursorChange type exception";
     return false;
   }
-  NWebCursorInfo info = {0};
+
+  CursorType cursorType(static_cast<CursorType>(type));
   if (type == CT_CUSTOM && custom_cursor_info.size.width > 0 &&
       custom_cursor_info.size.height > 0) {
-    info.width = custom_cursor_info.size.width;
-    info.height = custom_cursor_info.size.height;
-    info.x = custom_cursor_info.hotspot.x;
-    info.y = custom_cursor_info.hotspot.y;
-    info.scale = custom_cursor_info.image_scale_factor;
-    uint64_t len = info.width * info.height * 4;
+    uint64_t len = custom_cursor_info.size.width *custom_cursor_info.size.height * 4;
     std::unique_ptr<uint8_t[]> buff = std::make_unique<uint8_t[]>(len);
     if (!buff) {
       LOG(ERROR) << "OnCursorChange make_unique failed";
       return false;
     }
     memcpy((char*)buff.get(), custom_cursor_info.buffer, len);
-    info.buff = buff.get();
+    std::shared_ptr<NWebCursorInfo> info =
+        std::make_shared<NWebCursorInfoImpl>(custom_cursor_info.hotspot.x,
+                                             custom_cursor_info.hotspot.y,
+                                             custom_cursor_info.image_scale_factor,
+                                             custom_cursor_info.size.width,
+                                             custom_cursor_info.size.height, buff.get());
+    return nweb_handler_->OnCursorChange(cursorType, info);
   }
-  CursorType cursorType(static_cast<CursorType>(type));
-  return nweb_handler_->OnCursorChange(cursorType, info);
+
+  return nweb_handler_->OnCursorChange(cursorType, std::make_shared<NWebCursorInfoImpl>());
 }
 
 bool NWebHandlerDelegate::GetContinueNeedFocus() {

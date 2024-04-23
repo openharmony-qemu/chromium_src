@@ -40,15 +40,4 @@ ArkWebDateTimeStructToClass(const ArkWebDateTime &struct_value) {
   return class_value;
 }
 
-ArkWebCursorInfo
-ArkWebCursorInfoClassToStruct(const OHOS::NWeb::NWebCursorInfo &class_value) {
-  ArkWebCursorInfo struct_value = {.width = class_value.width,
-                                   .height = class_value.height,
-                                   .x = class_value.x,
-                                   .y = class_value.y,
-                                   .scale = class_value.scale,
-                                   .buff = class_value.buff};
-  return struct_value;
-}
-
 } // namespace OHOS::ArkWeb

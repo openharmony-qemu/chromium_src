@@ -496,7 +496,7 @@ class ResourceURLLoader : public network::mojom::URLLoader {
             hapPath);
     mojo::DataPipeProducer::DataSource::ReadResult read_result;
 
-    if (!resourceInstance->GetRawFileData(resourcesPath, length, rawData, false)) {
+    if (!resourceInstance->GetRawFileData(resourcesPath, length, &rawData, false)) {
       LOG(ERROR) << "ResourceURLLoader GetRawFileData failed";
       read_result.result = MOJO_RESULT_NOT_FOUND;
       if (observer) {

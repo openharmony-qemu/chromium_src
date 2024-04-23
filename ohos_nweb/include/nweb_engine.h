@@ -75,6 +75,8 @@ public:
   virtual RenderProcessMode GetRenderProcessMode() = 0;
 
   virtual void ClearPrefetchedResource(const std::vector<std::string>& cache_key_list) = 0;
+
+  virtual void WarmupServiceWorker(const std::string &url) = 0;
 };
 
 } // namespace OHOS::NWeb

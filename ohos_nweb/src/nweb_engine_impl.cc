@@ -141,4 +141,8 @@ RenderProcessMode NWebEngineImpl::GetRenderProcessMode() {
 void NWebEngineImpl::ClearPrefetchedResource(const std::vector<std::string>& cache_key_list) {
   return NWebImpl::ClearPrefetchedResource(cache_key_list);
 }
+
+void NWebEngineImpl::WarmupServiceWorker(const std::string &url) {
+  NWebImpl::WarmupServiceWorker(url);
+}
 } // namespace OHOS::NWeb

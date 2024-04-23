@@ -420,6 +420,7 @@ class NWebImpl : public NWeb {
   static void RemoveIntelligentTrackingPreventionBypassingList(
       const std::vector<std::string>& hosts);
   static void ClearIntelligentTrackingPreventionBypassingList();
+  static void WarmupServiceWorker(const std::string &url);
 
   int ScaleGestureChange(double scale, double centerX, double centerY) override;
 

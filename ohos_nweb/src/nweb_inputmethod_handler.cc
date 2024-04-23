@@ -243,10 +243,6 @@ void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
   textConfig->SetCursorInfo(cursorInfo);
   textConfig->SetWindowId(windowId_);
 
-  if (!show_keyboard_ && isAttached_ && input_mode_ != lastInputMode_) {
-    LOG(ERROR) << "do not need attach";
-    inputmethod_adapter_->Close();
-  }
   if (!inputmethod_adapter_->Attach(inputmethod_listener_, show_keyboard_,
                                     textConfig)) {
     LOG(ERROR) << "inputmethod_adapter_ attach failed";

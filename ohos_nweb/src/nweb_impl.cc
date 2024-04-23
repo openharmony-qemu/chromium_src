@@ -2079,8 +2079,8 @@ void NWebImpl::SetBrowserUA(const std::string& ua_name) {
 
 #if defined(OHOS_I18N)
 void NWebImpl::UpdateAcceptLanguageInternal() {
-  base::CommandLine& command_line = *base::CommandLine::ForCurrentProcess();
-  if (command_line.HasSwitch(::switches::kLang)) {
+  const base::CommandLine& command_line = *base::CommandLine::ForCurrentProcess();
+  if (!command_line.HasSwitch(::switches::kLang)) {
     return;
   }
   std::string lang = command_line.GetSwitchValueASCII(::switches::kLang);

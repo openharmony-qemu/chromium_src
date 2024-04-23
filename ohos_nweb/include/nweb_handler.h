@@ -144,13 +144,16 @@ enum class CursorType: int32_t {
   CT_MAX_VALUE,
 };
 
-struct NWebCursorInfo {
-    int32_t width = 0;
-    int32_t height = 0;
-    int32_t x = 0;
-    int32_t y = 0;
-    float scale = 1.0;
-    uint8_t* buff = nullptr;
+class NWebCursorInfo {
+public:
+    virtual ~NWebCursorInfo() = default;
+
+    virtual int32_t GetX() = 0;
+    virtual int32_t GetY() = 0;
+    virtual uint8_t *GetBuff() = 0;
+    virtual float GetScale() = 0;
+    virtual int32_t GetWidth() = 0;
+    virtual int32_t GetHeight() = 0;
 };
 
 class NWebTouchHandleHotZone {
@@ -655,7 +658,7 @@ public:
      * @param info If |type| is CT_CUSTOM then |info| will be populated with the custom cursor information.
      * @return True if the cursor change was handled or false for default handling.
      */
-    virtual bool OnCursorChange(const CursorType& type, const NWebCursorInfo& info) {
+    virtual bool OnCursorChange(const CursorType& type, std::shared_ptr<NWebCursorInfo> info) {
         return false;
     }
 

@@ -20,6 +20,7 @@
 #include "ohos_nweb/cpptoc/ark_web_context_menu_callback_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_context_menu_params_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_controller_handler_cpptoc.h"
+#include "ohos_nweb/cpptoc/ark_web_cursor_info_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_data_resubmission_callback_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_date_time_chooser_callback_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_date_time_chooser_cpptoc.h"
@@ -748,7 +749,7 @@ void ArkWebHandlerCToCpp::OnScaleChanged(float old_scale_factor,
 
 ARK_WEB_NO_SANITIZE
 bool ArkWebHandlerCToCpp::OnCursorChange(const int32_t &type,
-                                         const ArkWebCursorInfo &info) {
+                                         ArkWebRefPtr<ArkWebCursorInfo> info) {
   ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
 
   ark_web_handler_t *_struct = GetStruct();
@@ -757,7 +758,8 @@ bool ArkWebHandlerCToCpp::OnCursorChange(const int32_t &type,
   ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, on_cursor_change, false);
 
   // Execute
-  return _struct->on_cursor_change(_struct, &type, &info);
+  return _struct->on_cursor_change(_struct, &type,
+                                   ArkWebCursorInfoCppToC::Invert(info));
 }
 
 ARK_WEB_NO_SANITIZE

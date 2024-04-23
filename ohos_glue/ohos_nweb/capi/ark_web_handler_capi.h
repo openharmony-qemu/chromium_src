@@ -23,6 +23,7 @@
 #include "ohos_nweb/capi/ark_web_context_menu_callback_capi.h"
 #include "ohos_nweb/capi/ark_web_context_menu_params_capi.h"
 #include "ohos_nweb/capi/ark_web_controller_handler_capi.h"
+#include "ohos_nweb/capi/ark_web_cursor_info_capi.h"
 #include "ohos_nweb/capi/ark_web_data_resubmission_callback_capi.h"
 #include "ohos_nweb/capi/ark_web_date_time_chooser_callback_capi.h"
 #include "ohos_nweb/capi/ark_web_date_time_chooser_capi.h"
@@ -236,7 +237,7 @@ typedef struct _ark_web_handler_t {
 
   bool(ARK_WEB_CALLBACK *on_cursor_change)(struct _ark_web_handler_t *self,
                                            const int32_t *type,
-                                           const ArkWebCursorInfo *info);
+                                           ark_web_cursor_info_t *info);
 
   void(ARK_WEB_CALLBACK *on_render_exited)(struct _ark_web_handler_t *self,
                                            int reason);

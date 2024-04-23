@@ -101,6 +101,18 @@ class OnTextChangedListenerImpl : public IMFTextListenerAdapter {
     return handler_->GetRightTextOfCursor(number);
   }
 
+  int32_t SetPreviewText(const std::u16string& text,
+                         int32_t start,
+                         int32_t end) override {
+    return handler_->SetPreviewText(text, start, end);
+  }
+
+  void FinishTextPreview() override { return handler_->FinishTextPreview(); }
+
+  void SetNeedUnderLine(bool is_need_underline) override {
+    handler_->SetNeedUnderLine(is_need_underline);
+  }
+
  private:
   NWebInputMethodHandler* handler_;
 };
@@ -376,6 +388,9 @@ void NWebInputMethodHandler::OnTextSelectionChanged(
   selected_from_ = selected_range.from;
   selected_to_ = selected_range.to;
   ime_text_composing_ = false;
+  LOG(DEBUG) << "NWebInputMethodHandler::OnTextSelectionChanged text: "
+             << selected_text_ << ", selected_from_: " << selected_from_
+             << ", selected_to_: " << selected_to_;
   composing_text_.clear();
 }
 
@@ -515,6 +530,63 @@ void NWebInputMethodHandler::InsertTextHandlerOnUI(const std::u16string& text) {
   browser_->GetHost()->SendKeyEvent(keyEvent);
 }
 
+void NWebInputMethodHandler::PreviewTextHandlerOnUI(const std::u16string& text,
+                                                    int32_t start,
+                                                    int32_t end) {
+  if (text.empty() || (start > end)) {
+    LOG(ERROR) << "input para invalid";
+    return;
+  }
+  {
+    std::unique_lock<std::mutex> lock(textCursorMutex_);
+    textCursorReady_++;
+  }
+  bool is_need_replace = ((start == -1) && (end == -1)) ? false : true;
+  LOG(DEBUG) << "NWebInputMethodHandler::text " << text << ", start " << start
+             << ", end " << end << ", is_need_replace " << is_need_replace;
+
+  std::vector<CefCompositionUnderline> underlines;
+  CefCompositionUnderline underline;
+  underline.range.from = 0;
+  underline.range.to = text.length();
+  if (is_need_underline_) {
+    underline.style = CEF_CUS_SOLID;
+  } else {
+    underline.style = CEF_CUS_NONE;
+  }
+  underlines.push_back(underline);
+
+  CefRange replace_range = CefRange::InvalidRange();
+  if (is_need_replace) {
+    replace_range.Set(start, end);
+  }
+  CefRange selection_range(text.length(), text.length());
+  LOG(DEBUG) << "NWebInputMethodHandler::underline style: " << underline.style
+             << ", from: " << underline.range.from
+             << ", to: " << underline.range.to;
+  LOG(DEBUG) << "NWebInputMethodHandler::replace_range from "
+             << replace_range.from << ", to " << replace_range.to;
+  LOG(DEBUG) << "NWebInputMethodHandler::selection_range from "
+             << selection_range.from << ", to " << selection_range.to;
+
+  browser_->GetHost()->ImeSetComposition(text, underlines, replace_range,
+                                         selection_range);
+}
+
+void NWebInputMethodHandler::FinishPreviewTextOnUI() {
+  if (browser_ != nullptr && browser_->GetHost() != nullptr) {
+    LOG(DEBUG) << "NWebInputMethodHandler::FinishPreviewTextOnUI";
+    browser_->GetHost()->ImeFinishComposingText(false);
+  }
+  // InsertTextHandlerOnUI(preview_text_);
+}
+
+void NWebInputMethodHandler::SetNeedUnderLineOnUI(bool is_need_underline) {
+  LOG(DEBUG) << "NWebInputMethodHandler::SetNeedUnderLine "
+             << is_need_underline;
+  is_need_underline_ = is_need_underline;
+}
+
 void NWebInputMethodHandler::DeleteForwardHandlerOnUI(int32_t length) {
   CefKeyEvent keyEvent;
   keyEvent.windows_key_code = ui::VKEY_DELETE;
@@ -522,6 +594,7 @@ void NWebInputMethodHandler::DeleteForwardHandlerOnUI(int32_t length) {
   keyEvent.modifiers = 0;
   keyEvent.is_system_key = false;
   keyEvent.character = keyEvent.unmodified_character = DEL_CHAR;
+  LOG(DEBUG) << "NWebInputMethodHandler::DeleteForwardHandlerOnUI";
 
   if (!browser_ || !browser_->GetHost()) {
     LOG(ERROR) << "delete backward browser get failed";
@@ -557,6 +630,7 @@ void NWebInputMethodHandler::DeleteBackwardHandlerOnUI(int32_t length) {
   keyEvent.modifiers = 0;
   keyEvent.is_system_key = false;
   keyEvent.character = keyEvent.unmodified_character = DEL_CHAR;
+  LOG(DEBUG) << "NWebInputMethodHandler::DeleteBackwardHandlerOnUI";
 
   if (!browser_ || !browser_->GetHost()) {
     LOG(ERROR) << "delete forward browser get failed";
@@ -583,6 +657,7 @@ void NWebInputMethodHandler::SendEnterKeyEvent() {
   CefKeyEvent keyEvent;
   keyEvent.windows_key_code = ui::VKEY_RETURN;
   keyEvent.native_key_code = static_cast<int>(ScanKeyCode::ENTER_SCAN_CODE);
+  LOG(DEBUG) << "NWebInputMethodHandler::SendEnterKeyEvent";
 
   keyEvent.type = KEYEVENT_KEYDOWN;
   keyEvent.character = '\r';
@@ -729,6 +804,8 @@ int32_t NWebInputMethodHandler::GetTextIndexAtCursor() {
       return 0;
     }
   }
+  LOG(DEBUG) << "NWebInputMethodHandler::GetTextIndexAtCursor selected_to_ "
+             << selected_to_;
   return selected_to_;
 }
 
@@ -774,6 +851,41 @@ std::u16string NWebInputMethodHandler::GetRightTextOfCursor(int32_t number) {
   return whole_text_.substr(selectEnd, number);
 }
 
+int32_t NWebInputMethodHandler::SetPreviewText(const std::u16string& text,
+                                               int32_t start,
+                                               int32_t end) {
+  if (text.empty()) {
+    LOG(ERROR) << "insert text empty!";
+    return ERROR;
+  }
+
+  if (browser_ != nullptr && browser_->GetHost() != nullptr) {
+    CefRefPtr<CefTask> task = new InputMethodTask(
+        base::BindOnce(&NWebInputMethodHandler::PreviewTextHandlerOnUI, this,
+                       std::move(text), start, end));
+    browser_->GetHost()->PostTaskToUIThread(task);
+  }
+
+  return OK;
+}
+
+void NWebInputMethodHandler::FinishTextPreview() {
+  if (browser_ != nullptr && browser_->GetHost() != nullptr) {
+    CefRefPtr<CefTask> task = new InputMethodTask(
+        base::BindOnce(&NWebInputMethodHandler::FinishPreviewTextOnUI, this));
+    browser_->GetHost()->PostTaskToUIThread(task);
+  }
+}
+
+void NWebInputMethodHandler::SetNeedUnderLine(bool is_need_underline) {
+  if (browser_ != nullptr && browser_->GetHost() != nullptr) {
+    CefRefPtr<CefTask> task = new InputMethodTask(
+        base::BindOnce(&NWebInputMethodHandler::SetNeedUnderLineOnUI, this,
+                       is_need_underline));
+    browser_->GetHost()->PostTaskToUIThread(task);
+  }
+}
+
 void NWebInputMethodHandler::SetWindowIdForIME(uint32_t windowId) {
   LOG(INFO) << "NWebInputMethodHandler::SetWindowIdForIME windowId: "
             << windowId;
@@ -802,6 +914,7 @@ bool NWebInputMethodHandler::IsCorrectParam(int32_t number,
 
 bool NWebInputMethodHandler::ResetTextSelectiondata() {
   if (is_need_notify_all_) {
+    LOG(ERROR) << "NWebInputMethodHandler::ResetTextSelectiondata";
     whole_text_ = u"";
     selected_from_ = 0;
     selected_to_ = 0;

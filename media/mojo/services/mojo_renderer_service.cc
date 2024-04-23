@@ -302,8 +302,8 @@ void MojoRendererService::OnCdmAttached(base::OnceCallback<void(bool)> callback,
 void MojoRendererService::SetMuted(bool muted) {
   renderer_->SetMuted(muted);
 }
-void MojoRendererService::SetSurfaceId(int surface_id) {
-  renderer_->SetSurfaceId(surface_id);
+void MojoRendererService::SetSurfaceId(int surface_id, const gfx::Rect& rect) {
+  renderer_->SetSurfaceId(surface_id, rect);
 }
 void MojoRendererService::SetMediaSourceList(
     std::vector<mojom::MediaSourceInfoPtr> source_infos) {

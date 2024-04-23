@@ -56,7 +56,7 @@ void Renderer::Initialize(CreateTextureCB create_texture_cb,
 #endif
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-void Renderer::SetSurfaceId(int surface_id) {}
+void Renderer::SetSurfaceId(int surface_id, const gfx::Rect& rect) {}
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
 void Renderer::SetCdm(CdmContext* cdm_context, CdmAttachedCB cdm_attached_cb) {

@@ -910,6 +910,35 @@ void FrameSinkManagerImpl::SetEnableLowerFrameRate(bool enabled, const FrameSink
   }
   it->second->SetEnableLowerFrameRate(enabled);
 }
+
+void FrameSinkManagerImpl::UpdateVSyncFrequency(const FrameSinkId& frame_sink_id, uint32_t client_id) {
+  auto sink_it = sink_map_.begin();
+  
+  int frame_rate = 0;
+  while (sink_it != sink_map_.end()) {
+    if (sink_it->first.client_id() == client_id) {
+      int fr = sink_it->second->GetFrameRate();
+      frame_rate = std::max(frame_rate, fr);
+    }
+    ++sink_it;
+  }
+
+  auto root_sink_it = root_sink_map_.find(frame_sink_id);
+  if (root_sink_it == root_sink_map_.end()) {
+    LOG(ERROR) << "UpdateVSyncFrequency Fail, no vaild root sink";
+    return;
+  }
+  root_sink_it->second->UpdateVSyncFrequency(frame_rate);
+}
+
+void FrameSinkManagerImpl::ResetVSyncFrequency(const FrameSinkId& frame_sink_id) {
+  auto root_sink_it = root_sink_map_.find(frame_sink_id);
+  if (root_sink_it == root_sink_map_.end()) {
+    LOG(ERROR) << "ResetVSyncFrequency Fail, no vaild root sink";
+    return;
+  }
+  root_sink_it->second->ResetVSyncFrequency();
+}
 #endif
 
 }  // namespace viz

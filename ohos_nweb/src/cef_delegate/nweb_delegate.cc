@@ -188,12 +188,15 @@ class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
         weakNWebDelegate_(std::weak_ptr<NWebDelegateInterface>(delegate)) {}
   ~JavaScriptResultCallbackImpl() {}
   void CallbackOnReceiveThread(std::shared_ptr<OHOS::NWeb::NWebMessage> data) {
-    callback_->OnReceiveValue(data);
+    if (callback_) {
+      callback_->OnReceiveValue(data);
+    }
     // post this instance to ui to destroy
-    if (!weakNWebDelegate_.expired()) {
+    auto delegate = weakNWebDelegate_.lock();
+    if (delegate) {
       CEF_POST_TASK(
           CEF_UIT,
-          base::BindOnce(&NWebDelegateInterface::EraseJavaScriptCallbackImpl, weakNWebDelegate_.lock(), callbackId_));
+          base::BindOnce(&NWebDelegateInterface::EraseJavaScriptCallbackImpl, delegate, callbackId_));
     }
   }
 
@@ -3302,6 +3305,22 @@ bool NWebDelegate::IsIntelligentTrackingPreventionEnabled() const {
 }
 #endif
 
+int NWebDelegate::ScaleGestureChange(double scale, double centerX, double centerY) const {
+  LOG(DEBUG) << "NWebDelegate::ScaleGestureChange";
+  if (!preference_delegate_) {
+    LOG(ERROR) << "preference_delegate_ get fail";
+    return NWEB_ERR;
+  }
+  if (!preference_delegate_->ZoomingfunctionEnabled()) {
+    return NWEB_FUNCTION_NOT_ENABLE;
+  }
+  if (!GetBrowser().get()) {
+    LOG(ERROR) << "NWebDelegate::ScaleGestrueChange can not get browser";
+    return NWEB_ERR;
+  }
+  GetBrowser()->GetHost()->ZoomBy(scale, centerX * 2, centerY * 2);
+  return NWEB_OK;
+}
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
 void NWebDelegate::RegisterOnCreateNativeMediaPlayerListener(
     std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) {

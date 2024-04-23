@@ -63,7 +63,7 @@ class CONTENT_EXPORT OHOSCustomMediaPlayerRenderer
   base::TimeDelta GetMediaTime() override;
   media::RendererType GetRendererType() override;
   void SetMuted(bool muted) override;
-  void SetSurfaceId(int surface_id) override;
+  void SetSurfaceId(int surface_id, const gfx::Rect& rect) override;
 
   void SetMediaSourceList(const std::vector<MediaSourceInfo>& source_infos) override;
   void SetMediaControls(bool show_media_controls,
@@ -130,8 +130,6 @@ class CONTENT_EXPORT OHOSCustomMediaPlayerRenderer
 
   bool initialized_ = false;
 
-  WebContents* web_contents_ = nullptr;
-
   // TODO : delete
   GlobalRenderFrameHostId global_render_frame_host_id_;
 
@@ -140,6 +138,8 @@ class CONTENT_EXPORT OHOSCustomMediaPlayerRenderer
   bool muted_ = false;
 
   int surface_id_ = -1;
+
+  gfx::Rect video_rect_;
 
   media::MediaResource* media_resource_;
 

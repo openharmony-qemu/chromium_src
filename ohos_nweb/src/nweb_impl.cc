@@ -839,9 +839,11 @@ void NWebImpl::SetDrawRect(int x, int y, int width, int height) {
 
 void NWebImpl::SetDrawMode(int mode) {
   WVLOG_D("NWebImpl::SetDrawMode %{public}d", mode);
-  draw_mode_ = mode;
-  if (nweb_delegate_) {
-    nweb_delegate_->SetDrawMode(mode);
+  if (draw_mode_ != mode) {
+    draw_mode_ = mode;
+    if (nweb_delegate_) {
+      nweb_delegate_->SetDrawMode(draw_mode_);
+    }
   }
 }
 
@@ -2552,6 +2554,15 @@ void NWebImpl::ClearIntelligentTrackingPreventionBypassingList() {
   ohos_anti_tracking::ThirdPartyCookieAccessPolicy::GetInstance()->
       ClearITPBypassingList();
 #endif
+}
+
+int NWebImpl::ScaleGestureChange(double scale, double centerX, double centerY) {
+  LOG(INFO) << "NWebImpl::ScaleGestureChange scale:" << scale << " centerX: " << centerX << " centerY: " << centerY;
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "nweb_delegate_ is nullptr.";
+    return NWEB_ERR;
+  }
+  return nweb_delegate_->ScaleGestureChange(scale, centerX, centerY);
 }
 
 #ifdef OHOS_RENDER_PROCESS_MODE

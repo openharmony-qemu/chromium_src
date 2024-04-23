@@ -23,7 +23,7 @@
 
 namespace OHOS::ArkWeb {
 
-/*--ark web(source=web core)--*/
+/*--ark web(source=library)--*/
 class ArkWebJsProxyCallback : public virtual ArkWebBaseRefCounted {
 public:
   /*--ark web()--*/

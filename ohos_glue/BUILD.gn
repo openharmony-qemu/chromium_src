@@ -383,10 +383,6 @@ component("ohos_nweb_glue_source") {
     "ohos_nweb/ctocpp/ark_web_value_vector_ctocpp.h",
     "ohos_nweb/ctocpp/ark_web_web_storage_origin_vector_value_callback_ctocpp.cc",
     "ohos_nweb/ctocpp/ark_web_web_storage_origin_vector_value_callback_ctocpp.h",
-    "ohos_nweb/ctocpp/ark_web_first_meaningful_paint_details_ctocpp.cc",
-    "ohos_nweb/ctocpp/ark_web_first_meaningful_paint_details_ctocpp.h",
-    "ohos_nweb/ctocpp/ark_web_largest_contentful_paint_details_ctocpp.cc",
-    "ohos_nweb/ctocpp/ark_web_largest_contentful_paint_details_ctocpp.h",
     "ohos_nweb/ctocpp/ark_web_cache_options_ctocpp.cc",
     "ohos_nweb/ctocpp/ark_web_cache_options_ctocpp.h",
   ]

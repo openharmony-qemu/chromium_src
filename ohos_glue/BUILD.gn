@@ -30,6 +30,8 @@ component("ohos_base_glue_source") {
   include_dirs = [ "//ohos_nweb" ]
 
   sources = [
+    "base/bridge/ark_web_bridge_helper.cc",
+    "base/bridge/ark_web_bridge_helper.h",
     "base/include/ark_web_errno.cc",
     "base/include/ark_web_errno.h",
     "base/include/ark_web_memory.cc",
@@ -69,6 +71,8 @@ component("ohos_nweb_glue_source") {
     "ohos_nweb/bridge/ark_web_core_struct_utils.h",
     "ohos_nweb/bridge/ark_web_create_native_media_player_callback_wrapper.cc",
     "ohos_nweb/bridge/ark_web_create_native_media_player_callback_wrapper.h",
+    "ohos_nweb/bridge/ark_web_cursor_info_impl.cc",
+    "ohos_nweb/bridge/ark_web_cursor_info_impl.h",
     "ohos_nweb/bridge/ark_web_data_base_impl.cc",
     "ohos_nweb/bridge/ark_web_data_base_impl.h",
     "ohos_nweb/bridge/ark_web_data_resubmission_callback_impl.cc",
@@ -221,6 +225,8 @@ component("ohos_nweb_glue_source") {
     "ohos_nweb/cpptoc/ark_web_controller_handler_cpptoc.h",
     "ohos_nweb/cpptoc/ark_web_cookie_manager_cpptoc.cc",
     "ohos_nweb/cpptoc/ark_web_cookie_manager_cpptoc.h",
+    "ohos_nweb/cpptoc/ark_web_cursor_info_cpptoc.cc",
+    "ohos_nweb/cpptoc/ark_web_cursor_info_cpptoc.h",
     "ohos_nweb/cpptoc/ark_web_data_base_cpptoc.cc",
     "ohos_nweb/cpptoc/ark_web_data_base_cpptoc.h",
     "ohos_nweb/cpptoc/ark_web_data_resubmission_callback_cpptoc.cc",

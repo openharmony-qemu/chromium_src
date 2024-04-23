@@ -22,6 +22,7 @@
 #include "ohos_nweb/include/ark_web_context_menu_callback.h"
 #include "ohos_nweb/include/ark_web_context_menu_params.h"
 #include "ohos_nweb/include/ark_web_controller_handler.h"
+#include "ohos_nweb/include/ark_web_cursor_info.h"
 #include "ohos_nweb/include/ark_web_data_resubmission_callback.h"
 #include "ohos_nweb/include/ark_web_date_time_chooser.h"
 #include "ohos_nweb/include/ark_web_date_time_chooser_callback.h"
@@ -458,7 +459,7 @@ public:
    */
   /*--ark web()--*/
   virtual bool OnCursorChange(const int32_t &type,
-                              const ArkWebCursorInfo &info) = 0;
+                              ArkWebRefPtr<ArkWebCursorInfo> info) = 0;
 
   /**
    * @brief called when the render process exit.

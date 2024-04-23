@@ -76,10 +76,6 @@ component("animation") {
     "//ui/gfx/geometry:geometry_skia",
   ]
 
-  if(ohos_unittests){
-    deps += [ "//ui/linux:linux_ui" ]
-  }
-
   if (is_android) {
     deps += [ "//ui/gfx:gfx_jni_headers" ]
   }

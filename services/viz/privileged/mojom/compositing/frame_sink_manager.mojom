@@ -212,6 +212,14 @@ interface FrameSinkManager {
   // When frame is invisible, evict display back buffers
   [EnableIf=is_ohos]
   EvictFrameBackBuffers(FrameSinkId frame_sink_id, bool invisible);
+
+  // Set enable lower frame rate, because there is video playing with low frame rate and no touch event
+  [EnableIf=is_ohos]
+  UpdateVSyncFrequency(FrameSinkId frame_sink_id, uint32 client_id);
+
+  // Reset the frame rate after UpdateVSyncFrequency
+  [EnableIf=is_ohos]
+  ResetVSyncFrequency(FrameSinkId frame_sink_id);
 };
 
 // The FrameSinkManagerClient interface is implemented by the Display

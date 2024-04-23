@@ -288,7 +288,7 @@ void RootCompositorFrameSinkImpl::SetDrawRect(const gfx::Rect& new_rect)
 
 void RootCompositorFrameSinkImpl::SetDrawMode(int32_t mode)
 {
-   LOG(INFO) << "ootCompositorFrameSinkImpl::SetDrawMode";
+   LOG(DEBUG) << "RootCompositorFrameSinkImpl::SetDrawMode";
    display_->SetDrawMode(mode);
 }
 #endif  // defined(OHOS_COMPOSITE_RENDER)
@@ -701,6 +701,14 @@ void RootCompositorFrameSinkImpl::EvictFrameBackBuffers(bool invisible) {
   } else {
     SetDisplayVisible(true);
   }
+}
+
+void RootCompositorFrameSinkImpl::UpdateVSyncFrequency(int frame_rate) {
+  external_begin_frame_source_->UpdateVSyncFrequency(frame_rate);
+}
+
+void RootCompositorFrameSinkImpl::ResetVSyncFrequency() {
+  external_begin_frame_source_->ResetVSyncFrequency();
 }
 #endif
 

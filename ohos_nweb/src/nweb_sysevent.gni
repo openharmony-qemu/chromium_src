@@ -13,5 +13,5 @@
 
 declare_args() {
   # enable ohos hisysevent, true by default
-  report_sys_event = true
+  # report_sys_event = true
 }

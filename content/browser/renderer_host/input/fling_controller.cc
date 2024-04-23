@@ -16,6 +16,7 @@
 #include "content/browser/gpu/gpu_process_host.h"
 #include "base/report_loss_frame.h"
 #include "ohos_adapter_helper.h"
+#include "base/ohos/ltpo/include/sliding_observer.h"
 #endif
 
 using blink::WebInputEvent;
@@ -156,6 +157,7 @@ bool FlingController::ObserveAndMaybeConsumeGestureEvent(
         host_impl->StartMonitor();
       }
     }
+    base::ohos::SlidingObserver::GetInstance().StartFling();
 #endif
     return true;
   }
@@ -394,6 +396,8 @@ void FlingController::EndCurrentFling(base::TimeTicks current_time) {
       host_impl->StopMonitor();
     }
   }
+
+  base::ohos::SlidingObserver::GetInstance().StopSliding();
 #endif
   current_fling_parameters_ = ActiveFlingParameters();
 

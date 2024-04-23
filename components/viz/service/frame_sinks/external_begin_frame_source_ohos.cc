@@ -10,6 +10,7 @@
 #if BUILDFLAG(IS_OHOS)
 #include "base/report_loss_frame.h"
 #include "base/ohos/dynamic_frame_loss_monitor.h"
+#include "base/ohos/ltpo/include/sliding_observer.h"
 #endif
 
 namespace viz {
@@ -21,6 +22,10 @@ constexpr int64_t VSYNC_PERIOD_6090HZ_MID = 13000000;
 bool g_skip_vsync = false;
 constexpr int64_t VSYNC_PERIOD_120HZ = 8333333;
 constexpr int64_t VSYNC_PERIOD_90120HZ_MID = 9800000;
+constexpr int64_t VSYNC_TIME_FOR_CALCULATION = 1000000000;
+
+constexpr int VSYNC_30HZ = 30;
+constexpr int VSYNC_60HZ = 60;
 
 class ExternalBeginFrameSourceOHOS::VSyncUserData {
  public:
@@ -134,12 +139,14 @@ void ExternalBeginFrameSourceOHOS::OnVSyncImpl(int64_t timestamp,
       }
     }
   }
+  int64_t cur_vsync_frequency = (VSYNC_TIME_FOR_CALCULATION - 1) / vsync_period_ + 1;
   if (lower_frame_rate_enabled_) {
     vsync_period_ = vsync_period_ * 2;
   }
 
 #if BUILDFLAG(IS_OHOS)
 ReportLossFrame::GetInstance()->SetVsyncPeriod(vsync_period_);
+base::ohos::SlidingObserver::GetInstance().SetVsyncPeriod(vsync_period_);
 #endif
   base::TimeDelta vsync_period(base::Nanoseconds(vsync_period_));
   base::TimeTicks frame_time = base::TimeTicks() + base::Nanoseconds(timestamp);
@@ -173,6 +180,19 @@ ReportLossFrame::GetInstance()->SetVsyncPeriod(vsync_period_);
 
   vsync_adapter_.RequestVsync(user_data_.release(),
                                ExternalBeginFrameSourceOHOS::OnVSync);
+  if (update_vsync_frequency_ && 
+      vsync_frequency_to_update_ != cur_vsync_frequency) {
+    vsync_frequency_to_reset_ = cur_vsync_frequency;
+    TRACE_EVENT1("viz", "ExternalBeginFrameSourceOHOS::OnVSyncImpl::UpdateVSyncFrequency", "VSyncFrequency",
+            vsync_frequency_to_update_);
+    vsync_adapter_.SetFramePreferredRate(vsync_frequency_to_update_);
+  }
+  if (reset_vsync_frequency_) {
+    TRACE_EVENT1("viz", "ExternalBeginFrameSourceOHOS::OnVSyncImpl::ResetVSyncFrequency", "VSync",
+        vsync_frequency_to_reset_);
+    vsync_adapter_.SetFramePreferredRate(vsync_frequency_to_reset_);
+    reset_vsync_frequency_ = false;
+  }
 }
 
 void ExternalBeginFrameSourceOHOS::OnNeedsBeginFrames(bool needs_begin_frames) {
@@ -192,5 +212,21 @@ void ExternalBeginFrameSourceOHOS::SetEnabled(bool enabled) {
                                  ExternalBeginFrameSourceOHOS::OnVSync);
   }
   vsync_adapter_.SetFrameRateLinkerEnable(enabled);
+}
+
+void ExternalBeginFrameSourceOHOS::UpdateVSyncFrequency(int frame_rate) {
+  update_vsync_frequency_ = true;
+  if (frame_rate <= VSYNC_30HZ) {
+    vsync_frequency_to_update_ = VSYNC_30HZ;
+  } else if (frame_rate < VSYNC_60HZ) {
+    vsync_frequency_to_update_ = (frame_rate / 10) * 10;
+  } else {
+    vsync_frequency_to_update_ = VSYNC_60HZ;
+  }
+}
+
+void ExternalBeginFrameSourceOHOS::ResetVSyncFrequency() {
+  reset_vsync_frequency_ = true;
+  update_vsync_frequency_ = false;
 }
 }  // namespace viz

@@ -177,20 +177,33 @@ void OHOSCustomMediaPlayerRendererClient::UpdateBufferedEndTime(double buffered_
   media_resource_->ForwardBufferedEndTimeChangeToDemuxerHost(
       base::Seconds(buffered_time));
 }
-void OHOSCustomMediaPlayerRendererClient::OnSurfaceCreated(int surface_id) {
-  if (!media_task_runner_->RunsTasksInCurrentSequence()) {
-    media_task_runner_->PostTask(
-        FROM_HERE,
-        base::BindOnce(
-            &OHOSCustomMediaPlayerRendererClient::SetSurfaceId,
-            weak_factory_.GetWeakPtr(), surface_id));
+
+void OHOSCustomMediaPlayerRendererClient::OnGetVideoRect(const gfx::Rect& rect) {
+  native_texture_wrapper_->UpdateTextureSize(rect.size());
+
+  if (media_task_runner_->RunsTasksInCurrentSequence()) {
+    SetSurfaceId(surface_id_, rect);
     return;
   }
+
+  media_task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(
+          &OHOSCustomMediaPlayerRendererClient::SetSurfaceId,
+          weak_factory_.GetWeakPtr(), surface_id_, rect));
+}
+
+void OHOSCustomMediaPlayerRendererClient::OnSurfaceCreated(int surface_id) {
   surface_id_ = surface_id;
   if (surface_created_cb_) {
-    std::move(surface_created_cb_).Run(surface_id);
+    std::move(surface_created_cb_).Run(surface_id,
+        base::BindOnce(
+            &OHOSCustomMediaPlayerRendererClient::OnGetVideoRect,
+            base::Unretained(this)));
+  } else {
+    OnGetVideoRect(gfx::Rect());
   }
-  SetSurfaceId(surface_id);
+
 }
 
 void OHOSCustomMediaPlayerRendererClient::OnSurfaceDestroyed() {

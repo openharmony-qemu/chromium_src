@@ -1231,6 +1231,21 @@ void ArkWebHandlerCToCpp::ReleaseResizeHold() {
   _struct->release_resize_hold(_struct);
 }
 
+ARK_WEB_NO_SANITIZE
+ArkWebCharVector ArkWebHandlerCToCpp::GetWordSelection(const ArkWebString& text, int8_t offset) {
+  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
+
+  ark_web_handler_t* _struct = GetStruct();
+  ARK_WEB_CTOCPP_CHECK_PARAM(_struct,  ark_web_char_vector_default);
+
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, get_word_selection,  ark_web_char_vector_default);
+
+  // Execute
+  return _struct->get_word_selection(_struct,
+      &text,
+      offset);
+}
+
 ArkWebHandlerCToCpp::ArkWebHandlerCToCpp() {
 }
 

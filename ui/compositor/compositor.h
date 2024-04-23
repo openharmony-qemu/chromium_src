@@ -531,6 +531,8 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
 #if BUILDFLAG(IS_OHOS)
 void SetEnableLowerFrameRate(bool enabled);
 void EvictFrameBackBuffers(bool invisible);
+void UpdateVSyncFrequency();
+void ResetVSyncFrequency();
 #endif
 
  private:
@@ -546,6 +548,10 @@ void EvictFrameBackBuffers(bool invisible);
       const cc::FrameSequenceMetrics::CustomReportData& data);
 
   gfx::Size size_;
+
+#if BUILDFLAG(IS_OHOS)
+  int drawMode_ = 0;
+#endif
 
   raw_ptr<ui::ContextFactory> context_factory_;
 

@@ -880,4 +880,8 @@ void ArkWebNWebImpl::OnTouchCancelById(int32_t id, double x, double y,
   nweb_nweb_->OnTouchCancelById(id, x, y, from_overlay);
 }
 
+int ArkWebNWebImpl::ScaleGestureChange(double scale, double centerX, double centerY) {
+  return nweb_nweb_->ScaleGestureChange(scale, centerX, centerY);
+}
+
 } // namespace OHOS::ArkWeb

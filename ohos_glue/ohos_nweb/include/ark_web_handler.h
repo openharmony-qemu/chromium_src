@@ -675,6 +675,9 @@ public:
 
   /*--ark web()--*/
   virtual void ReleaseResizeHold() = 0;
+
+  /*--ark web()--*/
+  virtual ArkWebCharVector GetWordSelection(const ArkWebString &text, int8_t offset) = 0;
 };
 
 } // namespace OHOS::ArkWeb

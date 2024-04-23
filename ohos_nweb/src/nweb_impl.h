@@ -377,6 +377,10 @@ class NWebImpl : public NWeb {
   }
 #endif  // defined(OHOS_MULTI_WINDOW)
 
+#ifdef OHOS_I18N
+  void UpdateAcceptLanguageInternal();
+#endif
+
 #if defined(OHOS_EX_FREE_COPY)
   void SelectAndCopy() const;
   bool ShouldShowFreeCopy() const;

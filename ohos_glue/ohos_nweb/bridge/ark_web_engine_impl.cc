@@ -182,4 +182,8 @@ int32_t ArkWebEngineImpl::GetRenderProcessMode() {
 void ArkWebEngineImpl::ClearPrefetchedResource(const ArkWebStringVector& cache_key_list) {
   nweb_engine_->ClearPrefetchedResource(ArkWebStringVectorStructToClass(cache_key_list));
 }
+
+void ArkWebEngineImpl::WarmupServiceWorker(const ArkWebString &url) {
+  nweb_engine_->WarmupServiceWorker(ArkWebStringStructToClass(url));
+}
 } // namespace OHOS::ArkWeb

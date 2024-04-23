@@ -75,6 +75,8 @@ public:
 
   void ClearPrefetchedResource(const ArkWebStringVector& cache_key_list) override;
 
+  void WarmupServiceWorker(const ArkWebString &url) override;
+
 private:
   std::shared_ptr<OHOS::NWeb::NWebEngine> nweb_engine_;
 };

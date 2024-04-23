@@ -72,6 +72,7 @@
 #include "libcef/browser/predictors/loading_predictor.h"
 #include "libcef/browser/predictors/loading_predictor_config.h"
 #include "libcef/browser/predictors/loading_predictor_factory.h"
+#include "libcef/browser/predictors/predictor_database.h"
 #endif  // defined(OHOS_NO_STATE_PREFETCH)
 
 #if defined(OHOS_COOKIE)
@@ -112,6 +113,16 @@
 #include "base/ohos/sys_info_utils.h"
 #include "content/public/browser/render_process_host.h"
 #endif
+
+#if defined(OHOS_WARMUP_SERVICEWORKER)
+#include "content/public/browser/storage_partition.h"
+#include "content/public/browser/service_worker_context.h"
+#include "content/public/common/origin_util.h"
+#include "third_party/blink/public/common/features.h"
+#include "third_party/blink/public/common/storage_key/storage_key.h"
+#include "url/gurl.h"
+#include "url/origin.h"
+#endif // defined(OHOS_WARMUP_SERVICEWORKER)
 
 #if defined(OHOS_SITE_ISOLATION)
 extern bool g_siteIsolationMode;
@@ -2354,25 +2365,38 @@ void NWebImpl::PrepareForPageLoad(const std::string &url,
                                   bool preconnectable,
                                   int32_t num_sockets) {
 #if defined(OHOS_NO_STATE_PREFETCH)
-  if (g_nweb_count != 0) {
-    for (const auto& cef_browser_context : CefBrowserContext::GetAll()) {
-      content::BrowserContext* browser_context =
-          cef_browser_context->AsBrowserContext();
-      if (!browser_context) {
-        LOG(ERROR) << "PrepareForPageLoad null browser_context";
-        return;
-      }
-      ohos_predictors::LoadingPredictor* loading_predictor =
-          ohos_predictors::LoadingPredictorFactory::GetForBrowserContext(
-              browser_context);
-      if (loading_predictor) {
-        loading_predictor->num_sockets_ = (int)num_sockets;
-        loading_predictor->PrepareForPageLoad(
-            GURL(url), ohos_predictors::HintOrigin::OMNIBOX, preconnectable);
-      }
-    }
-  } else {
-    WVLOG_I("nweb hadn't initiated try to prepare for page load later");
+  predictor::PreconnectUrlInfo preconnectUrlInfo;
+  preconnectUrlInfo.url = url;
+  preconnectUrlInfo.num_sockets = num_sockets;
+  preconnectUrlInfo.is_preconnectable = preconnectable;
+  predictor::PredictorDatabase::preconnect_url_info_list.emplace_back(preconnectUrlInfo);
+
+  std::vector<CefBrowserContext*> browser_context_all =
+      CefBrowserContext::GetAll();
+  if (browser_context_all.size() == 0) {
+    return;
+  }
+
+  CefBrowserContext* context = browser_context_all[0];
+  content::BrowserContext* browser_context = context->AsBrowserContext();
+  if (!browser_context) {
+    WVLOG_E("PrepareForPageLoad null browser_context");
+    return;
+  }
+
+  ohos_predictors::LoadingPredictor* loading_predictor =
+      ohos_predictors::LoadingPredictorFactory::GetForBrowserContext(
+          browser_context);
+  if (!loading_predictor) {
+    return;
+  }
+
+  std::vector<predictor::PreconnectUrlInfo> preconnect_url_infos =
+      std::move(predictor::PredictorDatabase::preconnect_url_info_list);
+  for(auto& preconnect_url_info : preconnect_url_infos) {
+    loading_predictor->PrepareForPageLoad(
+      GURL(preconnect_url_info.url), ohos_predictors::HintOrigin::OMNIBOX, preconnect_url_info.is_preconnectable,
+      preconnect_url_info.num_sockets);
   }
 #endif  // defined(OHOS_NO_STATE_PREFETCH)
 }
@@ -2646,4 +2670,52 @@ void NWebImpl::ClearPrefetchedResource(const std::vector<std::string>& cache_key
     return;
   }
   loading_predictor->ClearPrefetchedResource(cache_key_list);
+}
+
+// static
+void NWebImpl::WarmupServiceWorker(const std::string &url) {
+#if defined(OHOS_WARMUP_SERVICEWORKER)
+  std::vector<CefBrowserContext*> browser_context_all =
+      CefBrowserContext::GetAll();
+  if (browser_context_all.size() == 0) {
+    WVLOG_E("WarmupServiceWorker has no browser_context.");
+    return;
+  }
+
+  content::BrowserContext* browser_context =
+      browser_context_all[0]->AsBrowserContext();
+  if (!browser_context) {
+    WVLOG_E("WarmupServiceWorker has null browser_context.");
+    return;
+  }
+
+  content::StoragePartition* storage_partition =
+      browser_context->GetDefaultStoragePartition();
+  if (!storage_partition) {
+    WVLOG_E("WarmupServiceWorker has null storage_partition.");
+    return;
+  }
+
+  content::ServiceWorkerContext* service_worker_context =
+      storage_partition->GetServiceWorkerContext();
+  if (!service_worker_context) {
+    WVLOG_E("WarmupServiceWorker has null service_worker_context.");
+    return;
+  }
+
+  if (!content::OriginCanAccessServiceWorkers(GURL(url))) {
+    WVLOG_E("Input url can not access service worker.");
+    return;
+  }
+
+  const blink::StorageKey key =
+      blink::StorageKey::CreateFirstParty(url::Origin::Create(GURL(url)));
+  if (!service_worker_context->MaybeHasRegistrationForStorageKey(key)) {
+    WVLOG_E("WarmupServiceWorker has no registration for storage key.");
+    return;
+  }
+
+  WVLOG_I("Start to warm up service worker.");
+  service_worker_context->WarmUpServiceWorker(GURL(url), key, base::DoNothing());
+#endif
 }

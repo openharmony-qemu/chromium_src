@@ -99,6 +99,9 @@ public:
 
   /*--ark web()--*/
   virtual void ClearPrefetchedResource(const ArkWebStringVector& cache_key_list) = 0;
+
+  /*--ark web()--*/
+  virtual void WarmupServiceWorker(const ArkWebString &url) = 0;
 };
 
 } // namespace OHOS::ArkWeb

@@ -171,6 +171,9 @@ class MockRenderProcessHost : public RenderProcessHost {
       override;
   const base::TimeTicks& GetLastInitTime() override;
   bool IsProcessBackgrounded() override;
+#if defined(OHOS_RENDER_PROCESS_MODE) && defined(OHOS_UNITTESTS)
+  const base::TimeTicks& ProcessBackgroundTime() override {return base::TimeTicks::Now();}
+#endif
   size_t GetKeepAliveRefCount() const;
   size_t GetWorkerRefCount() const;
   void IncrementKeepAliveRefCount(uint64_t handle_id) override;

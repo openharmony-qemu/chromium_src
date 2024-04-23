@@ -128,7 +128,9 @@ class MockBrowserControlsOffsetManagerClient
     gfx::Vector2dF viewport_scroll_delta = manager()->ScrollBy({0.f, dy});
     viewport_scroll_offset_ += viewport_scroll_delta;
   }
-
+#if defined(OHOS_UNITTESTS)
+  void SetupScrollBy() override {}
+#endif // OHOS_UNITTESTS
  private:
   FakeImplTaskRunnerProvider task_runner_provider_;
   TestTaskGraphRunner task_graph_runner_;

@@ -188,18 +188,16 @@ static std::string GetSiteIsolationMode() {
 }
 
 static bool IsMultipleRenderProcess() {
-    const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
-
-    if (command_line->HasSwitch(switches::kRendererProcessLimit)) {
-        int limit_value = std::stoi(command_line->GetSwitchValueASCII(switches::kRendererProcessLimit));
-        return (limit_value > 1
+  const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  if (command_line && command_line->HasSwitch(switches::kRendererProcessLimit)) {
+      int limit_value = std::stoi(command_line->GetSwitchValueASCII(switches::kRendererProcessLimit));
+      return (limit_value > 1
 #ifdef OHOS_RENDER_PROCESS_MODE
-                && OHOS::NWeb::NWebImpl::GetRenderProcessMode() ==
-                    OHOS::NWeb::RenderProcessMode::MULTIPLE_MODE
+              && OHOS::NWeb::NWebImpl::GetRenderProcessMode() ==
+                  OHOS::NWeb::RenderProcessMode::MULTIPLE_MODE
 #endif
-        );
-    }
-
+      );
+  }
     return false;
 }
 
@@ -210,8 +208,14 @@ static bool ShouldEnableSiteIsolation() {
     return false;
   }
 
+  const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  if (!command_line) {
+    LOG(WARNING) << "web component is not initialized, unable to enable site isolation";
+    return false;
+  }
+
   //for judge PC&&Tablet devices
-  bool isIgnoreLockdownMode = (*base::CommandLine::ForCurrentProcess()).HasSwitch(
+  bool isIgnoreLockdownMode = command_line->HasSwitch(
             switches::kIgnoreLockdownMode);
 
   if (isIgnoreLockdownMode && IsMultipleRenderProcess()){

@@ -377,10 +377,6 @@ class NWebImpl : public NWeb {
   }
 #endif  // defined(OHOS_MULTI_WINDOW)
 
-#ifdef OHOS_I18N
-  void UpdateAcceptLanguageInternal();
-#endif
-
 #if defined(OHOS_EX_FREE_COPY)
   void SelectAndCopy() const;
   bool ShouldShowFreeCopy() const;
@@ -438,6 +434,9 @@ class NWebImpl : public NWeb {
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   bool InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info);
   bool SetVirtualDeviceRatio();
+#ifdef OHOS_I18N
+  void UpdateAcceptLanguageInternal();
+#endif
 #if defined(OHOS_WEBRTC)
   void StopCameraSession() const;
   void RestartCameraSession() const;

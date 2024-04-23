@@ -109,6 +109,10 @@
 #include "content/public/common/content_switches.h"
 #endif
 
+#if defined(OHOS_I18N)
+#include "ui/base/ui_base_switches.h"
+#endif
+
 #ifdef OHOS_RENDER_PROCESS_MODE
 #include "base/ohos/sys_info_utils.h"
 #include "content/public/browser/render_process_host.h"
@@ -740,6 +744,9 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
 
   nweb_delegate_->SetNWebId(nweb_id_);
 
+#ifdef OHOS_I18N
+  UpdateAcceptLanguageInternal();
+#endif
   delete[] argv;
   return nweb_delegate_->IsReady();
 }
@@ -2069,6 +2076,23 @@ void NWebImpl::SetBrowserUA(const std::string& ua_name) {
   nweb_ex::AlloyBrowserUAConfig::GetInstance()->SetBrowserUA(ua_name);
 }
 #endif  // OHOS_EX_UA
+
+#if defined(OHOS_I18N)
+void NWebImpl::UpdateAcceptLanguageInternal() {
+  base::CommandLine& command_line = *base::CommandLine::ForCurrentProcess();
+  if (command_line.HasSwitch(::switches::kLang)) {
+    return;
+  }
+  std::string lang = command_line.GetSwitchValueASCII(::switches::kLang);
+  std::regex pattern("-");
+  std::smatch match;
+  if (std::regex_search(lang, match, pattern)) {
+    std::string language = match.prefix();
+    std::string region = match.suffix();
+    UpdateLocale(language, region);
+  }
+}
+#endif
 
 #if defined(OHOS_EX_FREE_COPY)
 void NWebImpl::SelectAndCopy() const {

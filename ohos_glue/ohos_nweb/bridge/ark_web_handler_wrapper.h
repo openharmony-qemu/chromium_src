@@ -386,7 +386,7 @@ public:
    *         handling.
    */
   bool OnCursorChange(const ArkWebCursorType &type,
-                      const OHOS::NWeb::NWebCursorInfo &info) override;
+                      std::shared_ptr<OHOS::NWeb::NWebCursorInfo> info) override;
 
   /**
    * @brief called when the render process exit.

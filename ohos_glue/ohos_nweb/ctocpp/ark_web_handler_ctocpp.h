@@ -164,7 +164,7 @@ public:
   void OnScaleChanged(float old_scale_factor, float new_scale_factor) override;
 
   bool OnCursorChange(const int32_t &type,
-                      const ArkWebCursorInfo &info) override;
+                      ArkWebRefPtr<ArkWebCursorInfo> info) override;
 
   void OnRenderExited(int reason) override;
 

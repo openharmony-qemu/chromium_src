@@ -28,9 +28,6 @@ ArkWebDateTimeClassToStruct(const OHOS::NWeb::DateTime &class_value);
 OHOS::NWeb::DateTime
 ArkWebDateTimeStructToClass(const ArkWebDateTime &struct_value);
 
-ArkWebCursorInfo
-ArkWebCursorInfoClassToStruct(const OHOS::NWeb::NWebCursorInfo &class_value);
-
 } // namespace OHOS::ArkWeb
 
 #endif // ARK_WEB_CORE_STRUCT_UTILS_H_

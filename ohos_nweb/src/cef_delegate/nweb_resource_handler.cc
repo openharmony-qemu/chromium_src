@@ -174,7 +174,7 @@ bool NWebResourceHandler::ReadResourceDataByHap(){
     std::string hapPath = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(switches::kOhosHapPath);
     auto resourceInstance = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetResourceAdapter(hapPath);
     uint8_t* data;
-    if (!resourceInstance->GetRawFileData(resourcePath, resource_data_len_, data, false)) {
+    if (!resourceInstance->GetRawFileData(resourcePath, resource_data_len_, &data, false)) {
       LOG(ERROR) << "intercept Read Resource path fail : " << resourcePath;
       return false;
     }

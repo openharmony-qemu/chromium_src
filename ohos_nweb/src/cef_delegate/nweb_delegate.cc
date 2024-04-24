@@ -2945,10 +2945,8 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId,
           accessibilityId, AccessibilityEventType::ACCESSIBILITY_FOCUS_CLEARED);
       if (accessibilityManager->GetAccessibilityFocusId() == accessibilityId) {
         accessibilityManager->MoveAccessibilityFocus(
-            accessibilityManager->GetAccessibilityFocusId(), 0);
-        accessibilityManager->SetAccessibilityFocusId(0);
-        accessibilityManager->SendAccessibilityEvent(0,
-            AccessibilityEventType::ACCESSIBILITY_FOCUSED);
+            accessibilityManager->GetAccessibilityFocusId(), -1);
+        accessibilityManager->SetAccessibilityFocusId(-1);
       }
       if (accessibilityManager->GetLastHoverId() == accessibilityId) {
         accessibilityManager->SendAccessibilityEvent(

@@ -204,13 +204,8 @@ source_set("unit_tests") {
       "model_impl_unittest.cc",
       "navigation_monitor_impl_unittests.cc",
       "proto_conversions_unittest.cc",
-      "scheduler/scheduler_impl_unittest.cc",
-    ]
-  }
-
-  if (!ohos_unittests) {
-    sources += [
       "scheduler/device_status_listener_unittest.cc",
+      "scheduler/scheduler_impl_unittest.cc",
     ]
   }
 

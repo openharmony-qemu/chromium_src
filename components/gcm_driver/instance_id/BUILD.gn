@@ -68,9 +68,8 @@ static_library("test_support") {
 
 source_set("unit_tests") {
   testonly = true
-  if (!ohos_unittests) {
-    sources = [ "instance_id_driver_unittest.cc" ]
-  }
+  sources = [ "instance_id_driver_unittest.cc" ]
+
   deps = [
     ":instance_id",
     ":test_support",

@@ -12,7 +12,6 @@
 
 namespace ui {
 
-#if !defined(OHOS_UNITTESTS)
 TEST(FlingCurveTest, Basic) {
   const gfx::Vector2dF velocity(0, 5000);
   base::TimeTicks now = base::TimeTicks::Now();
@@ -52,6 +51,5 @@ TEST(FlingCurveTest, Basic) {
   EXPECT_FALSE(curve.ComputeScrollDeltaAtTime(now + base::Seconds(20), &delta));
   EXPECT_TRUE(delta.IsZero());
 }
-#endif // OHOS_UNITTESTS events_unittests drop case
 
 }  // namespace ui

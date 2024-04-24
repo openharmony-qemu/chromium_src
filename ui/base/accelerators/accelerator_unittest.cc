@@ -44,7 +44,6 @@ TEST(AcceleratorTest, TimeStamp) {
 #else
 #define MAYBE_GetShortcutText GetShortcutText
 #endif
-#if !defined(OHOS_UNITTESTS)
 TEST(AcceleratorTest, MAYBE_GetShortcutText) {
   struct {
     KeyboardCode code;
@@ -71,7 +70,6 @@ TEST(AcceleratorTest, MAYBE_GetShortcutText) {
 #endif
   }
 }
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
 TEST(AcceleratorTest, ShortcutTextForUnknownKey) {
   const Accelerator accelerator(VKEY_UNKNOWN, EF_NONE);

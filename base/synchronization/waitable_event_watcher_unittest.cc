@@ -22,7 +22,6 @@ namespace base {
 
 namespace {
 
-#if !defined(OHOS_UNITTESTS)
 // The main thread types on which each waitable event should be tested.
 const test::TaskEnvironment::MainThreadType testing_main_threads[] = {
     test::TaskEnvironment::MainThreadType::DEFAULT,
@@ -35,7 +34,6 @@ const test::TaskEnvironment::MainThreadType testing_main_threads[] = {
 void QuitWhenSignaled(WaitableEvent* event) {
   RunLoop::QuitCurrentWhenIdleDeprecated();
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
 class DecrementCountContainer {
  public:
@@ -54,7 +52,6 @@ class DecrementCountContainer {
 class WaitableEventWatcherTest
     : public testing::TestWithParam<test::TaskEnvironment::MainThreadType> {};
 
-#if !defined(OHOS_UNITTESTS)
 TEST_P(WaitableEventWatcherTest, BasicSignalManual) {
   test::TaskEnvironment task_environment(GetParam());
 
@@ -72,9 +69,7 @@ TEST_P(WaitableEventWatcherTest, BasicSignalManual) {
 
   EXPECT_TRUE(event.IsSignaled());
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TEST_P(WaitableEventWatcherTest, BasicSignalAutomatic) {
   test::TaskEnvironment task_environment(GetParam());
 
@@ -92,9 +87,7 @@ TEST_P(WaitableEventWatcherTest, BasicSignalAutomatic) {
   // The WaitableEventWatcher consumes the event signal.
   EXPECT_FALSE(event.IsSignaled());
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TEST_P(WaitableEventWatcherTest, BasicCancel) {
   test::TaskEnvironment task_environment(GetParam());
 
@@ -109,9 +102,7 @@ TEST_P(WaitableEventWatcherTest, BasicCancel) {
 
   watcher.StopWatching();
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TEST_P(WaitableEventWatcherTest, CancelAfterSet) {
   test::TaskEnvironment task_environment(GetParam());
 
@@ -140,9 +131,7 @@ TEST_P(WaitableEventWatcherTest, CancelAfterSet) {
   // Our delegate should not have fired.
   EXPECT_EQ(1, counter);
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TEST_P(WaitableEventWatcherTest, OutlivesTaskEnvironment) {
   // Simulate a task environment that dies before an WaitableEventWatcher.  This
   // ordinarily doesn't happen when people use the Thread class, but it can
@@ -160,9 +149,7 @@ TEST_P(WaitableEventWatcherTest, OutlivesTaskEnvironment) {
     }
   }
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TEST_P(WaitableEventWatcherTest, SignaledAtStartManual) {
   test::TaskEnvironment task_environment(GetParam());
 
@@ -177,9 +164,7 @@ TEST_P(WaitableEventWatcherTest, SignaledAtStartManual) {
 
   EXPECT_TRUE(event.IsSignaled());
 }
-#endif // OHOS_UNITTESTS base_unittests drop casePECT_TRUE(event.IsSignaled());
 
-#if !defined(OHOS_UNITTESTS)
 TEST_P(WaitableEventWatcherTest, SignaledAtStartAutomatic) {
   test::TaskEnvironment task_environment(GetParam());
 
@@ -195,9 +180,7 @@ TEST_P(WaitableEventWatcherTest, SignaledAtStartAutomatic) {
   // The watcher consumes the event signal.
   EXPECT_FALSE(event.IsSignaled());
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TEST_P(WaitableEventWatcherTest, StartWatchingInCallback) {
   test::TaskEnvironment task_environment(GetParam());
 
@@ -221,9 +204,7 @@ TEST_P(WaitableEventWatcherTest, StartWatchingInCallback) {
 
   RunLoop().Run();
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TEST_P(WaitableEventWatcherTest, MultipleWatchersManual) {
   test::TaskEnvironment task_environment(GetParam());
 
@@ -265,9 +246,7 @@ TEST_P(WaitableEventWatcherTest, MultipleWatchersManual) {
   EXPECT_EQ(2, total_counter);
   EXPECT_TRUE(event.IsSignaled());
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 // Tests that only one async waiter gets called back for an auto-reset event.
 TEST_P(WaitableEventWatcherTest, MultipleWatchersAutomatic) {
   test::TaskEnvironment task_environment(GetParam());
@@ -326,7 +305,6 @@ TEST_P(WaitableEventWatcherTest, MultipleWatchersAutomatic) {
   EXPECT_EQ(1, counter1);
   EXPECT_EQ(1, counter2);
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
 // To help detect errors around deleting WaitableEventWatcher, an additional
 // bool parameter is used to test sleeping between watching and deletion.
@@ -334,7 +312,6 @@ class WaitableEventWatcherDeletionTest
     : public testing::TestWithParam<
           std::tuple<test::TaskEnvironment::MainThreadType, bool>> {};
 
-#if !defined(OHOS_UNITTESTS)
 TEST_P(WaitableEventWatcherDeletionTest, DeleteUnder) {
   auto [main_thread_type, delay_after_delete] = GetParam();
 
@@ -364,9 +341,7 @@ TEST_P(WaitableEventWatcherDeletionTest, DeleteUnder) {
     delete event;
   }
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TEST_P(WaitableEventWatcherDeletionTest, SignalAndDelete) {
   auto [main_thread_type, delay_after_delete] = GetParam();
 
@@ -399,9 +374,7 @@ TEST_P(WaitableEventWatcherDeletionTest, SignalAndDelete) {
     RunLoop().Run();
   }
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 // Tests deleting the WaitableEventWatcher between signaling the event and
 // when the callback should be run.
 TEST_P(WaitableEventWatcherDeletionTest, DeleteWatcherBeforeCallback) {
@@ -447,9 +420,7 @@ TEST_P(WaitableEventWatcherDeletionTest, DeleteWatcherBeforeCallback) {
 
   EXPECT_FALSE(did_callback);
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 INSTANTIATE_TEST_SUITE_P(All,
                          WaitableEventWatcherTest,
                          testing::ValuesIn(testing_main_threads));
@@ -459,5 +430,4 @@ INSTANTIATE_TEST_SUITE_P(
     WaitableEventWatcherDeletionTest,
     testing::Combine(testing::ValuesIn(testing_main_threads), testing::Bool()));
 
-#endif // OHOS_UNITTESTS base_unittests drop case
 }  // namespace base

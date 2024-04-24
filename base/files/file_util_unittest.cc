@@ -1214,7 +1214,6 @@ TEST_F(FileUtilTest, CopyFileFollowsSymlinks) {
   EXPECT_EQ(file_contents, ReadTextFile(link_to));
 }
 
-#if !defined(OHOS_UNITTESTS)
 TEST_F(FileUtilTest, ChangeFilePermissionsAndRead) {
   // Create a file path.
   FilePath file_name =
@@ -1256,9 +1255,7 @@ TEST_F(FileUtilTest, ChangeFilePermissionsAndRead) {
   EXPECT_TRUE(DeleteFile(file_name));
   EXPECT_FALSE(PathExists(file_name));
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TEST_F(FileUtilTest, ChangeFilePermissionsAndWrite) {
   // Create a file path.
   FilePath file_name =
@@ -1298,9 +1295,7 @@ TEST_F(FileUtilTest, ChangeFilePermissionsAndWrite) {
   EXPECT_TRUE(DeleteFile(file_name));
   EXPECT_FALSE(PathExists(file_name));
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TEST_F(FileUtilTest, ChangeDirectoryPermissionsAndEnumerate) {
   // Create a directory path.
   FilePath subdir_path = temp_dir_.GetPath().Append(FPL("PermissionTest1"));
@@ -1346,7 +1341,6 @@ TEST_F(FileUtilTest, ChangeDirectoryPermissionsAndEnumerate) {
   EXPECT_TRUE(DeletePathRecursively(subdir_path));
   EXPECT_FALSE(PathExists(subdir_path));
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
 TEST_F(FileUtilTest, ExecutableExistsInPath) {
   // Create two directories that we will put in our PATH

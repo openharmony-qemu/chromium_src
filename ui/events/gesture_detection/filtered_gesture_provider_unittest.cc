@@ -26,7 +26,6 @@ class FilteredGestureProviderTest : public GestureProviderClient,
   base::test::SingleThreadTaskEnvironment task_environment_;
 };
 
-#if !defined(OHOS_UNITTESTS)
 // Single touch drag test: After touch-start, the moved_beyond_slop_region bit
 // should stay unset as long as the touch movement is confined to the slop
 // region. Once the touch moves beyond the slop region, the bit should remain
@@ -91,9 +90,7 @@ TEST_F(FilteredGestureProviderTest, TouchMovedBeyondSlopRegion_SingleTouch) {
   EXPECT_TRUE(result.succeeded);
   EXPECT_TRUE(result.moved_beyond_slop_region);
 }
-#endif // OHOS_UNITTESTS events_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 // Multi-touch: The moved_beyond_slop_region bit should stay unset as long as
 // all touch-points are stationary, and should be set after (including) the
 // first movement in any touch-point.
@@ -157,9 +154,7 @@ TEST_F(FilteredGestureProviderTest, TouchMovedBeyondSlopRegion_MultiTouch) {
     EXPECT_TRUE(result.moved_beyond_slop_region);
   }
 }
-#endif // OHOS_UNITTESTS events_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 // Extra cancel events should be handled gracefully: https://crbug.com/1407442
 TEST_F(FilteredGestureProviderTest, ExtraCancel) {
   GestureProvider::Config config;
@@ -170,6 +165,5 @@ TEST_F(FilteredGestureProviderTest, ExtraCancel) {
   auto result = provider.OnTouchEvent(event);
   EXPECT_FALSE(result.succeeded);
 }
-#endif // OHOS_UNITTESTS events_unittests drop case
 
 }  // namespace ui

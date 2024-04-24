@@ -371,7 +371,9 @@ source_set("unit_tests") {
     "batch_entity_metadata_task_unittest.cc",
     "bloom_filter_unittest.cc",
     "command_line_top_host_provider_unittest.cc",
+    "hint_cache_unittest.cc",
     "hints_component_util_unittest.cc",
+    "hints_fetcher_unittest.cc",
     "hints_manager_unittest.cc",
     "hints_processing_util_unittest.cc",
     "insertion_ordered_set_unittest.cc",
@@ -388,33 +390,23 @@ source_set("unit_tests") {
     "optimization_hints_component_update_listener_unittest.cc",
     "optimization_metadata_unittest.cc",
     "page_content_annotation_job_unittest.cc",
+    "prediction_manager_unittest.cc",
     "prediction_model_download_manager_unittest.cc",
+    "prediction_model_fetcher_unittest.cc",
     "prediction_model_store_unittest.cc",
     "push_notification_manager_unittest.cc",
     "store_update_data_unittest.cc",
     "url_pattern_with_wildcards_unittest.cc",
   ]
-  if (!ohos_unittests) {
-    sources += [
-      "hint_cache_unittest.cc",
-      "hints_fetcher_unittest.cc",
-      "prediction_manager_unittest.cc",
-      "prediction_model_fetcher_unittest.cc",
-    ]
-  }
   if (build_with_tflite_lib) {
     sources += [
+      "bert_model_executor_unittest.cc",
+      "model_validator_unittest.cc",
       "page_content_annotation_job_executor_unittest.cc",
+      "page_topics_model_handler_unittest.cc",
       "page_visibility_model_handler_unittest.cc",
+      "tflite_model_executor_unittest.cc",
     ]
-    if (!ohos_unittests) {
-      sources += [
-        "bert_model_executor_unittest.cc",
-        "model_validator_unittest.cc",
-        "page_topics_model_handler_unittest.cc",
-        "tflite_model_executor_unittest.cc",
-      ]
-    }
     if (build_with_internal_optimization_guide) {
       sources += [
         "entity_annotator_native_library_unittest.cc",

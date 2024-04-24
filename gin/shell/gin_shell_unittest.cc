@@ -29,7 +29,6 @@ base::FilePath HelloWorldPath() {
     .AppendASCII("hello_world.js");
 }
 
-#if !defined(OHOS_UNITTESTS)
 TEST(GinShellTest, HelloWorld) {
   base::FilePath gin_shell_path(GinShellPath());
   base::FilePath hello_world_path(HelloWorldPath());
@@ -43,4 +42,3 @@ TEST(GinShellTest, HelloWorld) {
   base::TrimWhitespaceASCII(output, base::TRIM_ALL, &output);
   ASSERT_EQ("Hello World", output);
 }
-#endif // OHOS_UNITTESTS gin_unittests drop case

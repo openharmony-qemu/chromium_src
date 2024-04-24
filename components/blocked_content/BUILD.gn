@@ -75,13 +75,11 @@ source_set("test_support") {
 
 source_set("unit_tests") {
   testonly = true
-  if (!ohos_unittests) {
-    sources = [
-      "popup_blocker_tab_helper_unittest.cc",
-      "safe_browsing_triggered_popup_blocker_unittest.cc",
-      "subresource_filter_abusive_unittest.cc",
-    ]
-  }
+  sources = [
+    "popup_blocker_tab_helper_unittest.cc",
+    "safe_browsing_triggered_popup_blocker_unittest.cc",
+    "subresource_filter_abusive_unittest.cc",
+  ]
   deps = [
     ":blocked_content",
     ":test_support",

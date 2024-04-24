@@ -60,9 +60,7 @@ source_set("test_support") {
 source_set("unit_tests") {
   testonly = true
 
-  if (!ohos_unittests) {
-    sources = [ "protocol_handler_registry_unittest.cc" ]
-  }
+  sources = [ "protocol_handler_registry_unittest.cc" ]
 
   deps = [
     ":custom_handlers",

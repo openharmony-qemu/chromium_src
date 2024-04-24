@@ -134,7 +134,6 @@ struct NullClipboardTraits {
   static void Destroy(Clipboard*) {}
 };
 
-#if !defined(OHOS_UNITTESTS)
 // |NamesOfTypesToTest| provides a way to differentiate between different
 // clipboard tests that include this file. See docs in gtest-typed-test.h
 TYPED_TEST_SUITE(ClipboardTest, TypesToTest, NamesOfTypesToTest);
@@ -156,9 +155,7 @@ TYPED_TEST(ClipboardTest, ClearTest) {
       /* data_dst = */ nullptr));
 #endif
 }
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TYPED_TEST(ClipboardTest, TextTest) {
   std::u16string text(u"This is a std::u16string!#$"), text_result;
   std::string ascii_text;
@@ -187,9 +184,7 @@ TYPED_TEST(ClipboardTest, TextTest) {
                                   /* data_dst = */ nullptr, &ascii_text);
   EXPECT_EQ(UTF16ToUTF8(text), ascii_text);
 }
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TYPED_TEST(ClipboardTest, HTMLTest) {
   std::u16string markup(u"<string>Hi!</string>"), markup_result;
   std::u16string plain(u"Hi!"), plain_result;
@@ -220,9 +215,7 @@ TYPED_TEST(ClipboardTest, HTMLTest) {
   EXPECT_EQ(url, url_result);
 #endif  // BUILDFLAG(IS_WIN)
 }
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TYPED_TEST(ClipboardTest, SvgTest) {
   std::u16string markup(u"<svg> <circle r=\"40\" /> </svg>");
 
@@ -243,9 +236,7 @@ TYPED_TEST(ClipboardTest, SvgTest) {
 
   EXPECT_EQ(markup, markup_result);
 }
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 #if !BUILDFLAG(IS_ANDROID)
 // TODO(crbug/1064968): This test fails with ClipboardAndroid, but passes with
 // the TestClipboard as RTF isn't implemented in ClipboardAndroid.
@@ -271,7 +262,6 @@ TYPED_TEST(ClipboardTest, RTFTest) {
   EXPECT_EQ(rtf, result);
 }
 #endif  // !BUILDFLAG(IS_ANDROID)
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
 // MultipleBufferTest only ran on Linux because Linux is the only platform that
 // supports the selection buffer by default.
@@ -331,7 +321,6 @@ TYPED_TEST(ClipboardTest, MultipleBufferTest) {
 }
 #endif  // BUILDFLAG(IS_LINUX)
 
-#if !defined(OHOS_UNITTESTS)
 TYPED_TEST(ClipboardTest, TrickyHTMLTest) {
   std::u16string markup(u"<em>Bye!<!--EndFragment --></em>"), markup_result;
   std::string url, url_result;
@@ -362,9 +351,7 @@ TYPED_TEST(ClipboardTest, TrickyHTMLTest) {
   EXPECT_EQ(url, url_result);
 #endif  // BUILDFLAG(IS_WIN)
 }
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 // Some platforms store HTML as UTF-8 internally. Make sure fragment indices are
 // adjusted appropriately when converting back to UTF-16.
 TYPED_TEST(ClipboardTest, UnicodeHTMLTest) {
@@ -397,7 +384,6 @@ TYPED_TEST(ClipboardTest, UnicodeHTMLTest) {
   EXPECT_EQ(url, url_result);
 #endif
 }
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
 // TODO(estade): Port the following test (decide what target we use for urls)
 #if !BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_WIN)
@@ -425,7 +411,6 @@ TYPED_TEST(ClipboardTest, BookmarkTest) {
 }
 #endif  // !BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_APPLE)
 
-#if !defined(OHOS_UNITTESTS)
 #if !BUILDFLAG(IS_ANDROID)
 // Filenames is not implemented in ClipboardAndroid.
 TYPED_TEST(ClipboardTest, FilenamesTest) {
@@ -458,9 +443,7 @@ TYPED_TEST(ClipboardTest, FilenamesTest) {
   EXPECT_EQ(file, filenames[0].path);
 }
 #endif  // !BUILDFLAG(IS_ANDROID)
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TYPED_TEST(ClipboardTest, MultiFormatTest) {
   std::u16string text(u"Hi!"), text_result;
   std::u16string markup(u"<strong>Hi!</string>"), markup_result;
@@ -508,9 +491,7 @@ TYPED_TEST(ClipboardTest, MultiFormatTest) {
                                   /* data_dst = */ nullptr, &ascii_text);
   EXPECT_EQ(UTF16ToUTF8(text), ascii_text);
 }
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TYPED_TEST(ClipboardTest, URLTest) {
   std::u16string url(u"http://www.google.com/");
 
@@ -550,7 +531,6 @@ TYPED_TEST(ClipboardTest, URLTest) {
   EXPECT_EQ(UTF16ToUTF8(url), ascii_text);
 #endif
 }
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
 namespace {
 
@@ -608,7 +588,6 @@ static void TestBitmapWriteAndPngRead(Clipboard* clipboard,
   AssertBitmapMatchesExpected(image, info, expect_data);
 }
 
-#if !defined(OHOS_UNITTESTS)
 #if !BUILDFLAG(IS_ANDROID)
 // TODO(crbug.com/815537): Re-enable this test once death tests work on Android.
 
@@ -625,9 +604,7 @@ TYPED_TEST(ClipboardTest, BitmapWriteAndPngRead_F16_Premul) {
       "");
 }
 #endif  // !BUILDFLAG(IS_ANDROID)
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TYPED_TEST(ClipboardTest, BitmapWriteAndPngRead_N32_Premul) {
   constexpr U8x4 b[4 * 3] = {
       {0x26, 0x16, 0x06, 0x46}, {0x88, 0x59, 0x9f, 0xf6},
@@ -640,9 +617,7 @@ TYPED_TEST(ClipboardTest, BitmapWriteAndPngRead_N32_Premul) {
   TestBitmapWriteAndPngRead(&this->clipboard(),
                             SkImageInfo::MakeN32Premul(4, 3), b, b);
 }
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TYPED_TEST(ClipboardTest, BitmapWriteAndPngRead_N32_Premul_2x7) {
   constexpr U8x4 b[2 * 7] = {
       {0x26, 0x16, 0x06, 0x46}, {0x88, 0x59, 0x9f, 0xf6},
@@ -656,11 +631,9 @@ TYPED_TEST(ClipboardTest, BitmapWriteAndPngRead_N32_Premul_2x7) {
   TestBitmapWriteAndPngRead(&this->clipboard(),
                             SkImageInfo::MakeN32Premul(2, 7), b, b);
 }
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
 }  // namespace
 
-#if !defined(OHOS_UNITTESTS)
 TYPED_TEST(ClipboardTest, PickleTest) {
   const ClipboardFormatType kFormat =
       ClipboardFormatType::GetType("chromium/x-test-format");
@@ -685,9 +658,7 @@ TYPED_TEST(ClipboardTest, PickleTest) {
   ASSERT_TRUE(iter.ReadString(&unpickled_string));
   EXPECT_EQ(payload, unpickled_string);
 }
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TYPED_TEST(ClipboardTest, MultiplePickleTest) {
   const ClipboardFormatType kFormat1 =
       ClipboardFormatType::GetType("chromium/x-test-format1");
@@ -747,9 +718,7 @@ TYPED_TEST(ClipboardTest, MultiplePickleTest) {
   ASSERT_TRUE(iter1.ReadString(&unpickled_string1));
   EXPECT_EQ(payload1, unpickled_string1);
 }
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 // TODO(crbug.com/106449): Implement multiple custom format write on Chrome OS.
 #if !BUILDFLAG(IS_CHROMEOS_ASH)
 TYPED_TEST(ClipboardTest, DataTest) {
@@ -777,9 +746,7 @@ TYPED_TEST(ClipboardTest, DataTest) {
 
   EXPECT_EQ(payload, output);
 }
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TYPED_TEST(ClipboardTest, MultipleDataTest) {
   const std::string kFormatString1 = "web chromium/x-test-format1";
   const std::u16string kFormatString116 = u"chromium/x-test-format1";
@@ -832,9 +799,7 @@ TYPED_TEST(ClipboardTest, MultipleDataTest) {
                              /* data_dst = */ nullptr, &output2);
   EXPECT_EQ(payload2, output2);
 }
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TYPED_TEST(ClipboardTest, DataAndPortableFormatTest) {
   const std::string kFormatString1 = "web chromium/x-test-format1";
   const std::u16string kFormatString116 = u"chromium/x-test-format1";
@@ -887,9 +852,7 @@ TYPED_TEST(ClipboardTest, DataAndPortableFormatTest) {
                              /* data_dst = */ nullptr, &output2);
   EXPECT_EQ(payload2, output2);
 }
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 // Test that platform-specific functionality works, with a predefined format in
 // On X11 Linux, this test uses a simple MIME type, text/plain.
 // On Windows, this test uses a pre-defined ANSI format, CF_TEXT, and tests that
@@ -941,8 +904,6 @@ TYPED_TEST(ClipboardTest, PlatformSpecificDataTest) {
 }
 #endif
 
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
-#if !defined(OHOS_UNITTESTS)
 #if !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID)
 TYPED_TEST(ClipboardTest, HyperlinkTest) {
   const std::string kTitle("The <Example> Company's \"home page\"");
@@ -971,9 +932,7 @@ TYPED_TEST(ClipboardTest, HyperlinkTest) {
                                kExpectedHtml.size()));
 }
 #endif
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TYPED_TEST(ClipboardTest, WebSmartPasteTest) {
   {
     ScopedClipboardWriter clipboard_writer(ClipboardBuffer::kCopyPaste);
@@ -984,7 +943,6 @@ TYPED_TEST(ClipboardTest, WebSmartPasteTest) {
       ClipboardFormatType::WebKitSmartPasteType(), ClipboardBuffer::kCopyPaste,
       /* data_dst = */ nullptr));
 }
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
 #if BUILDFLAG(IS_WIN)  // Windows only tests.
 void HtmlTestHelper(const std::string& cf_html,
@@ -1032,7 +990,6 @@ TYPED_TEST(ClipboardTest, HtmlTest) {
 }
 #endif  // BUILDFLAG(IS_WIN)
 
-#if !defined(OHOS_UNITTESTS)
 // Test writing all formats we have simultaneously.
 TYPED_TEST(ClipboardTest, WriteEverything) {
   {
@@ -1047,9 +1004,7 @@ TYPED_TEST(ClipboardTest, WriteEverything) {
 
   // Passes if we don't crash.
 }
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 // TODO(dcheng): Fix this test for Android. It's rather involved, since the
 // clipboard change listener is posted to the Java message loop, and spinning
 // that loop from C++ to trigger the callback in the test requires a non-trivial
@@ -1077,66 +1032,49 @@ TYPED_TEST(ClipboardTest, GetSequenceNumber) {
   EXPECT_NE(first_sequence_number, second_sequence_number);
 }
 #endif
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 // Test that writing empty parameters doesn't try to dereference an empty data
 // vector. Not crashing = passing.
 TYPED_TEST(ClipboardTest, WriteTextEmptyParams) {
   ScopedClipboardWriter scw(ClipboardBuffer::kCopyPaste);
   scw.WriteText(std::u16string());
 }
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TYPED_TEST(ClipboardTest, WriteHTMLEmptyParams) {
   ScopedClipboardWriter scw(ClipboardBuffer::kCopyPaste);
   scw.WriteHTML(std::u16string(), std::string(),
                 ClipboardContentType::kSanitized);
 }
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TYPED_TEST(ClipboardTest, EmptySvgTest) {
   ScopedClipboardWriter clipboard_writer(ClipboardBuffer::kCopyPaste);
   clipboard_writer.WriteSvg(std::u16string());
 }
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TYPED_TEST(ClipboardTest, WriteRTFEmptyParams) {
   ScopedClipboardWriter scw(ClipboardBuffer::kCopyPaste);
   scw.WriteRTF(std::string());
 }
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TYPED_TEST(ClipboardTest, WriteBookmarkEmptyParams) {
   ScopedClipboardWriter scw(ClipboardBuffer::kCopyPaste);
   scw.WriteBookmark(std::u16string(), std::string());
 }
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TYPED_TEST(ClipboardTest, WriteHyperlinkEmptyParams) {
   ScopedClipboardWriter scw(ClipboardBuffer::kCopyPaste);
   scw.WriteHyperlink(std::u16string(), std::string());
 }
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TYPED_TEST(ClipboardTest, WritePickledData) {
   ScopedClipboardWriter scw(ClipboardBuffer::kCopyPaste);
   scw.WritePickledData(base::Pickle(), ClipboardFormatType::PlainTextType());
 }
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TYPED_TEST(ClipboardTest, WriteImageEmptyParams) {
   ScopedClipboardWriter scw(ClipboardBuffer::kCopyPaste);
   scw.WriteImage(SkBitmap());
 }
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
 // Policy controller is only intended to be used in Chrome OS, so the following
 // policy related tests are only run on Chrome OS.

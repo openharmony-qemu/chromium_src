@@ -41,10 +41,7 @@ source_set("test_support") {
 
 source_set("unit_tests") {
   testonly = true
-  if (!ohos_unittests) {
-    sources = [ "page_specific_content_settings_unittest.cc" ]
-  }
-
+  sources = [ "page_specific_content_settings_unittest.cc" ]
   deps = [
     ":browser",
     ":test_support",

@@ -158,6 +158,7 @@ source_set("unit_tests") {
     "model/get_visuals_task_unittest.cc",
     "model/mark_page_accessed_task_unittest.cc",
     "model/offline_page_model_taskified_unittest.cc",
+    "model/offline_page_model_utils_unittest.cc",
     "model/persistent_page_consistency_check_task_unittest.cc",
     "model/startup_maintenance_task_unittest.cc",
     "model/store_visuals_task_unittest.cc",
@@ -172,11 +173,7 @@ source_set("unit_tests") {
     "page_criteria_unittest.cc",
     "snapshot_controller_unittest.cc",
   ]
-  if (!ohos_unittests) {
-    sources += [
-      "model/offline_page_model_utils_unittest.cc",
-    ]
-  }
+
   deps = [
     ":core",
     ":switches",

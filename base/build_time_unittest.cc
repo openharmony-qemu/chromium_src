@@ -21,9 +21,7 @@ TEST(BuildTime, DateLooksValid) {
 #endif
 }
 
-#if !defined(OHOS_UNITTESTS)
 TEST(BuildTime, InThePast) {
   EXPECT_LT(base::GetBuildTime(), base::Time::Now());
   EXPECT_LT(base::GetBuildTime(), base::Time::NowFromSystemTime());
 }
-#endif // OHOS_UNITTESTS base_unittests drop case

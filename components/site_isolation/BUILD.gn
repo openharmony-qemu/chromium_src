@@ -58,9 +58,7 @@ source_set("site_isolation") {
 
 source_set("unit_tests") {
   testonly = true
-  if (!ohos_unittests) {
-    sources = [ "site_isolation_policy_unittest.cc" ]
-  }
+  sources = [ "site_isolation_policy_unittest.cc" ]
   deps = [
     ":site_isolation",
     "//base",

@@ -117,12 +117,10 @@ class StupidWatcher : public MessagePumpLibevent::FdWatcher {
   void OnFileCanWriteWithoutBlocking(int fd) override {}
 };
 
-#if !defined(OHOS_UNITTESTS)
 TEST_P(MessagePumpLibeventTest, QuitOutsideOfRun) {
   std::unique_ptr<MessagePumpLibevent> pump = CreateMessagePump();
   ASSERT_DCHECK_DEATH(pump->Quit());
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
 class BaseWatcher : public MessagePumpLibevent::FdWatcher {
  public:
@@ -156,7 +154,6 @@ class DeleteWatcher : public BaseWatcher {
   std::unique_ptr<MessagePumpLibevent::FdWatchController> controller_;
 };
 
-#if !defined(OHOS_UNITTESTS)
 TEST_P(MessagePumpLibeventTest, DeleteWatcher) {
   DeleteWatcher delegate(
       std::make_unique<MessagePumpLibevent::FdWatchController>(FROM_HERE));
@@ -166,7 +163,6 @@ TEST_P(MessagePumpLibeventTest, DeleteWatcher) {
                             delegate.controller(), &delegate);
   SimulateIOEvent(pump.get(), delegate.controller());
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
 class StopWatcher : public BaseWatcher {
  public:
@@ -183,7 +179,6 @@ class StopWatcher : public BaseWatcher {
   raw_ptr<MessagePumpLibevent::FdWatchController> controller_ = nullptr;
 };
 
-#if !defined(OHOS_UNITTESTS)
 TEST_P(MessagePumpLibeventTest, StopWatcher) {
   std::unique_ptr<MessagePumpLibevent> pump = CreateMessagePump();
   MessagePumpLibevent::FdWatchController controller(FROM_HERE);
@@ -193,7 +188,6 @@ TEST_P(MessagePumpLibeventTest, StopWatcher) {
                             &delegate);
   SimulateIOEvent(pump.get(), &controller);
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
 void QuitMessageLoopAndStart(OnceClosure quit_closure) {
   std::move(quit_closure).Run();
@@ -219,7 +213,6 @@ class NestedPumpWatcher : public MessagePumpLibevent::FdWatcher {
   void OnFileCanWriteWithoutBlocking(int /* fd */) override {}
 };
 
-#if !defined(OHOS_UNITTESTS)
 TEST_P(MessagePumpLibeventTest, NestedPumpWatcher) {
   NestedPumpWatcher delegate;
   std::unique_ptr<MessagePumpLibevent> pump = CreateMessagePump();
@@ -228,7 +221,6 @@ TEST_P(MessagePumpLibeventTest, NestedPumpWatcher) {
                             &controller, &delegate);
   SimulateIOEvent(pump.get(), &controller);
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
 void FatalClosure() {
   FAIL() << "Reached fatal closure.";
@@ -252,16 +244,13 @@ class QuitWatcher : public BaseWatcher {
   base::OnceClosure quit_closure_;
 };
 
-#if !defined(OHOS_UNITTESTS)
 void WriteFDWrapper(const int fd,
                     const char* buf,
                     int size,
                     WaitableEvent* event) {
   ASSERT_TRUE(WriteFileDescriptor(fd, StringPiece(buf, size)));
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 // Tests that MessagePumpLibevent quits immediately when it is quit from
 // libevent's event_base_loop().
 TEST_P(MessagePumpLibeventTest, QuitWatcher) {
@@ -302,7 +291,6 @@ TEST_P(MessagePumpLibeventTest, QuitWatcher) {
   io_runner()->PostTask(FROM_HERE, BindOnce(&WaitableEventWatcher::StopWatching,
                                             Owned(watcher.release())));
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
 #if BUILDFLAG(ENABLE_MESSAGE_PUMP_EPOLL)
 #define TEST_PARAM_VALUES kLibevent, kEpoll
@@ -310,12 +298,10 @@ TEST_P(MessagePumpLibeventTest, QuitWatcher) {
 #define TEST_PARAM_VALUES kLibevent
 #endif
 
-#if !defined(OHOS_UNITTESTS)
 INSTANTIATE_TEST_SUITE_P(,
                          MessagePumpLibeventTest,
                          ::testing::Values(TEST_PARAM_VALUES));
 
-#endif // OHOS_UNITTESTS base_unittests drop case
 }  // namespace
 
 }  // namespace base

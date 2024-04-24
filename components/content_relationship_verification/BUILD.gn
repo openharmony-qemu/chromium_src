@@ -35,14 +35,9 @@ source_set("unit_tests") {
   testonly = true
 
   sources = [
+    "digital_asset_links_handler_unittest.cc",
     "response_header_verifier_unittest.cc",
   ]
-
-  if (!ohos_unittests) {
-    sources += [
-      "digital_asset_links_handler_unittest.cc",
-    ]
-  }
 
   deps = [
     ":content_relationship_verification",

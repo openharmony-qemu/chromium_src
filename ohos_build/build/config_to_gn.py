@@ -63,7 +63,7 @@ def generateGnConfig(itemEnable, itemDisable, gnOutputDest, targetName):
   strItemGn = strItemGn.lower()
 
   contentMain = gtemplate%(strItemGn, json.dumps(listItemDefineMain), json.dumps(listItemDefineBlink), json.dumps(listItemDefineOther), json.dumps(listBuildDefines))
-  print glineSep + "final build_config:\n" + contentMain + glineSep
+  print(glineSep + "final build_config:\n" + contentMain + glineSep)
 
   gnOutputFile.write(contentMain)
   gnOutputFile.close()
@@ -97,8 +97,7 @@ def WriteIfChange(outFile, contentMain):
   pass
 
 def getItemFromFile(configFile):
-  content = open(configFile, 'r').read().encode('utf-8')
-  content = "".join(content).strip()
+  content = open(configFile, 'r').read().strip()
   #splitItem = eval("[" + content + "]")
   from collections import OrderedDict
   if content.endswith(','):
@@ -109,7 +108,7 @@ def getItemFromFile(configFile):
 def isInConfigItems(configItems, newItem):
   indice = 0
   for item in configItems:
-    if cmp(item['name'], newItem['name']) == 0:
+    if item['name'] == newItem['name']:
       return True, indice
     indice = indice + 1
   return False, -1
@@ -134,7 +133,7 @@ def doCheck(newConfigItems, file):
   itemsCopy=copy.deepcopy(newConfigItems)
   itemsCopy.sort(key = lambda x:x["name"])
   for i in range(len(newConfigItems)):
-    if not newConfigItems[i].has_key("dependence"):
+    if "dependence" not in newConfigItems[i]:
       print("\n\033[1;31mError:Plese check config.json!!!!!!!!! key: " + newConfigItems[i].get('name') + " have add {dependence} value [file is] " + file +"\033[0m \n")
       return False
     if (newConfigItems[i].get('name') != itemsCopy[i].get('name')):
@@ -180,7 +179,7 @@ def main(argv):
     configDirectory = os.path.dirname(configFile)
   else:
     configDirectory = os.path.split(os.path.realpath(__file__))[0] + '/config/'
-  print "configDirectory:%s" % configDirectory
+  print("configDirectory:%s" % configDirectory)
 
   # scan and merge all jsons under configDirectory, set all of items' default value to 'false'
   allConfigItems = getAllConfigItems(configDirectory)
@@ -197,14 +196,14 @@ def main(argv):
 
   for item in overrideItems:
     if len(item) < 5:
-      print "json.config format error"
+      print("json.config format error")
       return 1
     name = item['name']
     if name in dynamicConfigs and dynamicConfigs[name] != item['default']:
       item['default'] = dynamicConfigs[name]
 
     if item.get('default') == 'true':
-      print item.get('name') + " :" + item.get('effect') + ": [enable]"
+      print(item.get('name') + " :" + item.get('effect') + ": [enable]")
       itemEnable.append(item)
       allConfigDisableItems = delConfigItems(allConfigDisableItems, item)
 

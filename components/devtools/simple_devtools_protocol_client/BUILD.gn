@@ -20,10 +20,7 @@ static_library("simple_devtools_protocol_client") {
 
 source_set("unit_tests") {
   testonly = true
-
-  if (!ohos_unittests) {
-    sources = [ "simple_devtools_protocol_client_unittest.cc" ]
-  }
+  sources = [ "simple_devtools_protocol_client_unittest.cc" ]
 
   deps = [
     ":simple_devtools_protocol_client",

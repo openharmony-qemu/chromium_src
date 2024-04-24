@@ -334,7 +334,6 @@ TEST_F(TaskEnvironmentTest,
       TaskEnvironment::TimeSource::MOCK_TIME);
 }
 
-#if !defined(OHOS_UNITTESTS)
 // Verify that the right MessagePump is instantiated under each MainThreadType.
 // This avoids having to run all other TaskEnvironmentTests in every
 // MainThreadType which is redundant (message loop and message pump tests
@@ -367,7 +366,6 @@ TEST_F(TaskEnvironmentTest, MainThreadType) {
   EXPECT_FALSE(CurrentUIThread::IsSet());
   EXPECT_FALSE(CurrentIOThread::IsSet());
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
 #if BUILDFLAG(IS_POSIX)
 TEST_F(TaskEnvironmentTest, SupportsFileDescriptorWatcherOnIOMainThread) {

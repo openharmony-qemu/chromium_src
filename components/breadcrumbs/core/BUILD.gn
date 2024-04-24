@@ -57,17 +57,13 @@ source_set("unit_tests") {
   ]
 
   sources = [
+    "application_breadcrumbs_logger_unittest.cc",
     "application_breadcrumbs_not_user_action_unittest.cc",
     "breadcrumb_manager_keyed_service_unittest.cc",
     "breadcrumb_manager_observer_unittest.cc",
     "breadcrumb_manager_unittest.cc",
     "breadcrumb_persistent_storage_manager_unittest.cc",
   ]
-  if (!ohos_unittests) {
-    sources += [
-      "application_breadcrumbs_logger_unittest.cc",
-    ]
-  }
 }
 
 action("generate_not_user_triggered_actions") {

@@ -253,7 +253,6 @@ TEST_F(TouchHandleTest, Orientation) {
   EXPECT_EQ(TouchHandleOrientation::CENTER, drawable().orientation);
 }
 
-#if !defined(OHOS_UNITTESTS)
 TEST_F(TouchHandleTest, Position) {
   TouchHandle handle(this, TouchHandleOrientation::CENTER,
                      kDefaultViewportRect);
@@ -655,7 +654,6 @@ TEST_F(TouchHandleTest, DragDefersMirrorChange) {
   EXPECT_TRUE(drawable().mirror_vertical);
   EXPECT_FALSE(drawable().mirror_horizontal);
 }
-#endif // OHOS_UNITTESTS ui_touch_selection_unittests drop case
 
 TEST_F(TouchHandleTest, ViewportSizeChange) {
   TouchHandle handle(this, TouchHandleOrientation::RIGHT, kDefaultViewportRect);

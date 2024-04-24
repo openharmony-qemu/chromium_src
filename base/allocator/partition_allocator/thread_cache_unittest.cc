@@ -1212,7 +1212,6 @@ TEST_P(PartitionAllocThreadCacheTest, TryPurgeNoAllocs) {
   tcache->TryPurge();
 }
 
-#if !defined(OHOS_UNITTESTS)
 TEST_P(PartitionAllocThreadCacheTest, TryPurgeMultipleCorrupted) {
   auto* tcache = root()->thread_cache_for_testing();
 
@@ -1227,7 +1226,6 @@ TEST_P(PartitionAllocThreadCacheTest, TryPurgeMultipleCorrupted) {
   curr->SetNext(nullptr);
   root()->Free(ptr);
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
 TEST(AlternateBucketDistributionTest, SizeToIndex) {
   using internal::BucketIndexLookup;

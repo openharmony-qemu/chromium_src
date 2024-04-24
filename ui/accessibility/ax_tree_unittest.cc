@@ -5234,7 +5234,6 @@ TEST(AXTreeTest, UnserializeErrors) {
 #endif
 }
 
-#if !defined(OHOS_UNITTESTS)
 #if !defined(AX_FAIL_FAST_BUILD) && !BUILDFLAG(IS_MAC) && !BUILDFLAG(IS_IOS)
 // TODO(crbug.com/1430317): UnserializePerformance is failing on fuchsia and
 // windows bots.
@@ -5296,7 +5295,6 @@ TEST(AXTreeTest, MAYBE_UnserializePerformance) {
     }
     node_id++;
   }
-#endif // OHOS_UNITTESTS accessibility_unittests drop case
   // This makes a structure like:
   //
   //                    1

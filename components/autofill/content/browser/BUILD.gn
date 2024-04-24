@@ -105,14 +105,12 @@ source_set("test_support") {
 
 source_set("unit_tests") {
   testonly = true
-  if (!ohos_unittests) {
-    sources = [
-      "autofill_internals_log_router_unittest.cc",
-      "content_autofill_driver_factory_unittest.cc",
-      "content_autofill_driver_unittest.cc",
-      "form_forest_unittest.cc",
-    ]
-  }
+  sources = [
+    "autofill_internals_log_router_unittest.cc",
+    "content_autofill_driver_factory_unittest.cc",
+    "content_autofill_driver_unittest.cc",
+    "form_forest_unittest.cc",
+  ]
 
   deps = [
     ":browser",

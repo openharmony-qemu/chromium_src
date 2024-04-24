@@ -1138,7 +1138,6 @@ TEST_F(FilePathTest, MatchesFinalExtension) {
   }
 }
 
-#if !defined(OHOS_UNITTESTS)
 TEST_F(FilePathTest, CompareIgnoreCase) {
   const struct BinaryIntTestData cases[] = {
     {{FPL("foo"), FPL("foo")}, 0},
@@ -1222,7 +1221,6 @@ TEST_F(FilePathTest, CompareIgnoreCase) {
         "i: " << i << ", s1: " << s1 << ", s2: " << s2;
   }
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
 TEST_F(FilePathTest, ReferencesParent) {
   const struct UnaryBooleanTestData cases[] = {

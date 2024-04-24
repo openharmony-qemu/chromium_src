@@ -25,7 +25,6 @@
 #include "third_party/skia/include/core/SkBitmap.h"
 
 #if !BUILDFLAG(IS_ANDROID)
-#if !defined(OHOS_UNITTESTS)
 
 namespace viz {
 
@@ -543,5 +542,4 @@ INSTANTIATE_TEST_SUITE_P(
 
 }  // namespace viz
 
-#endif  // !defined(OHOS_UNITTESTS)
 #endif

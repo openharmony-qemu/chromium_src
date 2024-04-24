@@ -24,7 +24,6 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 #if !BUILDFLAG(IS_ANDROID)
-#if !defined(OHOS_UNITTESTS)
 
 namespace viz {
 namespace {
@@ -401,5 +400,4 @@ TEST_P(SurfaceAggregatorPixelTest, DrawAndEraseDelegatedInkTrail) {
 }  // namespace
 }  // namespace viz
 
-#endif  // !defined(OHOS_UNITTESTS)
 #endif  // !BUILDFLAG(IS_ANDROID)

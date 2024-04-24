@@ -29,7 +29,7 @@ std::vector<RendererType> GetRendererTypes(bool include_software,
   std::vector<RendererType> types;
   if (include_software && !skia_only)
     types.push_back(RendererType::kSoftware);
-#if BUILDFLAG(ENABLE_GL_BACKEND_TESTS) && !defined(OHOS_UNITTESTS)
+#if BUILDFLAG(ENABLE_GL_BACKEND_TESTS)
   types.push_back(RendererType::kSkiaGL);
 #endif
 #if BUILDFLAG(ENABLE_VULKAN_BACKEND_TESTS)

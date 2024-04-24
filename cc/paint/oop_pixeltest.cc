@@ -56,8 +56,6 @@
 #include "base/android/build_info.h"
 #endif
 
-#if !defined(OHOS_UNITTESTS)
-
 namespace cc {
 namespace {
 scoped_refptr<DisplayItemList> MakeNoopDisplayItemList() {
@@ -2491,5 +2489,3 @@ INSTANTIATE_TEST_SUITE_P(P, OopPathPixelTest, ::testing::Bool());
 
 }  // namespace
 }  // namespace cc
-
-#endif  // !defined(OHOS_UNITTESTS)

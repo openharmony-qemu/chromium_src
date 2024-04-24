@@ -21,7 +21,6 @@ TEST_P(RasterDecoderTest1, GetErrorValidArgs) {
   EXPECT_EQ(GL_NO_ERROR, GetGLError());
 }
 
-#if !defined(OHOS_UNITTESTS)
 TEST_P(RasterDecoderTest1, GetErrorInvalidArgsBadSharedMemoryId) {
   EXPECT_CALL(*gl_, GetError()).Times(0);
   SpecializedSetup<cmds::GetError, 0>(false);
@@ -31,5 +30,4 @@ TEST_P(RasterDecoderTest1, GetErrorInvalidArgsBadSharedMemoryId) {
   cmd.Init(shared_memory_id_, kInvalidSharedMemoryOffset);
   EXPECT_EQ(error::kOutOfBounds, ExecuteCmd(cmd));
 }
-#endif  // !defined(OHOS_UNITTESTS)
 #endif  // GPU_COMMAND_BUFFER_SERVICE_RASTER_DECODER_UNITTEST_1_AUTOGEN_H_

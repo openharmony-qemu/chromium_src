@@ -243,9 +243,9 @@ class LayerTreeHostBlendingPixelTest
 
 std::vector<RasterTestConfig> const kTestCases = {
     {viz::RendererType::kSoftware, TestRasterType::kBitmap},
-#if BUILDFLAG(ENABLE_GL_BACKEND_TESTS) && !defined(OHOS_UNITTESTS)
+#if BUILDFLAG(ENABLE_GL_BACKEND_TESTS)
     {viz::RendererType::kSkiaGL, TestRasterType::kGpu},
-#endif  // BUILDFLAG(ENABLE_GL_BACKEND_TESTS) && !defined(OHOS_UNITTESTS)
+#endif  // BUILDFLAG(ENABLE_GL_BACKEND_TESTS)
 #if BUILDFLAG(ENABLE_VULKAN_BACKEND_TESTS)
     {viz::RendererType::kSkiaVk, TestRasterType::kGpu},
 #endif  // BUILDFLAG(ENABLE_VULKAN_BACKEND_TESTS)

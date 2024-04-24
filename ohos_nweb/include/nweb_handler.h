@@ -833,6 +833,8 @@ public:
     virtual std::vector<int8_t> GetWordSelection(const std::string& text, int8_t offset) {
         return { -1, -1 };
     }
+
+    virtual void UpdateClippedSelectionBounds(int x, int y, int w, int h) {}
 };
 }  // namespace OHOS::NWeb
 

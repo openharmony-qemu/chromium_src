@@ -52,6 +52,10 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
   virtual void ShowContextMenu(RenderFrameHost& render_frame_host,
                                const ContextMenuParams& params) {}
 
+#if defined(OHOS_CLIPBOARD)
+  virtual void MouseSelectMenuShow(bool show) {}
+#endif
+
   // The user started dragging content of the specified type within the
   // `blink::WebView`. Contextual information about the dragged content is
   // supplied by DropData. If the delegate's view cannot start the drag for

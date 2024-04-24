@@ -2324,6 +2324,19 @@ void NWebHandlerDelegate::OnContextMenuDismissed(CefRefPtr<CefBrowser> browser,
   }
 }
 
+bool NWebHandlerDelegate::UpdateClippedSelectionBounds(
+    CefRefPtr<CefBrowser> browser,
+    CefRefPtr<CefFrame> frame,
+    const CefRect& select_bounds) {
+  if (nweb_handler_ == nullptr || render_handler_ == nullptr) {
+    return false;
+  }
+
+  nweb_handler_->UpdateClippedSelectionBounds(
+      select_bounds.x, select_bounds.y, select_bounds.width, select_bounds.height);
+  return true;
+}
+
 bool NWebHandlerDelegate::RunQuickMenu(
     CefRefPtr<CefBrowser> browser,
     CefRefPtr<CefFrame> frame,
@@ -2331,24 +2344,44 @@ bool NWebHandlerDelegate::RunQuickMenu(
     const CefSize& size,
     const CefRect& select_bounds,
     CefContextMenuHandler::QuickMenuEditStateFlags edit_state_flags,
-    CefRefPtr<CefRunQuickMenuCallback> callback) {
+    CefRefPtr<CefRunQuickMenuCallback> callback,
+    bool is_mouse_trigger) {
   if (nweb_handler_ == nullptr || render_handler_ == nullptr) {
     return false;
   }
+#if defined(OHOS_CLIPBOARD)
+  LOG(INFO) << "RunQuickMenu is_mouse_trigger:" << is_mouse_trigger
+            << ", is_rich_text:" << is_rich_text_;
+#endif
+  std::shared_ptr<NWebTouchHandleState> insert_touch_handle;
+  std::shared_ptr<NWebTouchHandleState> begin_touch_handle;
+  std::shared_ptr<NWebTouchHandleState> end_touch_handle;
+  if (is_mouse_trigger) {
+#if defined(OHOS_CLIPBOARD)
+    if (!is_rich_text_) {
+      return false;
+    }
+#endif
+    insert_touch_handle = nullptr;
+    begin_touch_handle = render_handler_->GetDefalutTouchHandleState(
+        NWebTouchHandleState::TouchHandleType::SELECTION_BEGIN_HANDLE);
+    end_touch_handle = render_handler_->GetDefalutTouchHandleState(
+        NWebTouchHandleState::TouchHandleType::SELECTION_END_HANDLE);
+  } else {
+    insert_touch_handle = render_handler_->GetTouchHandleState(
+        NWebTouchHandleState::TouchHandleType::INSERT_HANDLE);
+    begin_touch_handle = render_handler_->GetTouchHandleState(
+        NWebTouchHandleState::TouchHandleType::SELECTION_BEGIN_HANDLE);
+    end_touch_handle = render_handler_->GetTouchHandleState(
+        NWebTouchHandleState::TouchHandleType::SELECTION_END_HANDLE);
+  }
+  std::shared_ptr<NWebQuickMenuCallback> nweb_callback =
+      std::make_shared<NWebQuickMenuCallbackImpl>(callback);
   std::shared_ptr<NWebQuickMenuParamsImpl> nweb_param =
       std::make_shared<NWebQuickMenuParamsImpl>(
           location.x, location.y, size.width, size.height, edit_state_flags,
           select_bounds.x, select_bounds.y, select_bounds.width,
           select_bounds.height);
-  std::shared_ptr<NWebQuickMenuCallback> nweb_callback =
-      std::make_shared<NWebQuickMenuCallbackImpl>(callback);
-
-  auto insert_touch_handle = render_handler_->GetTouchHandleState(
-      NWebTouchHandleState::TouchHandleType::INSERT_HANDLE);
-  auto begin_touch_handle = render_handler_->GetTouchHandleState(
-      NWebTouchHandleState::TouchHandleType::SELECTION_BEGIN_HANDLE);
-  auto end_touch_handle = render_handler_->GetTouchHandleState(
-      NWebTouchHandleState::TouchHandleType::SELECTION_END_HANDLE);
   nweb_param->SetTouchHandleState(
       insert_touch_handle,
       NWebTouchHandleState::TouchHandleType::INSERT_HANDLE);
@@ -2358,6 +2391,7 @@ bool NWebHandlerDelegate::RunQuickMenu(
   nweb_param->SetTouchHandleState(
       end_touch_handle,
       NWebTouchHandleState::TouchHandleType::SELECTION_END_HANDLE);
+  nweb_param->SetIsMouseTrigger(is_mouse_trigger);
   return nweb_handler_->RunQuickMenu(nweb_param, nweb_callback);
 }
 
@@ -2371,10 +2405,19 @@ bool NWebHandlerDelegate::OnQuickMenuCommand(
 }
 
 void NWebHandlerDelegate::OnQuickMenuDismissed(CefRefPtr<CefBrowser> browser,
-                                               CefRefPtr<CefFrame> frame) {
+                                               CefRefPtr<CefFrame> frame,
+                                               bool is_mouse_trigger) {
+#if defined(OHOS_CLIPBOARD)
+  if (!is_mouse_trigger || is_rich_text_) {
+    if (nweb_handler_ != nullptr) {
+      nweb_handler_->OnQuickMenuDismissed();
+    }
+  }
+#else
   if (nweb_handler_ != nullptr) {
     nweb_handler_->OnQuickMenuDismissed();
   }
+#endif
 }
 /* CefContextMenuHandler method end */
 

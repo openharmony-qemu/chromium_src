@@ -7345,6 +7345,14 @@ void WebContentsImpl::RenderFrameDeleted(
                          blink::mojom::FullscreenOptionsPtr());
 }
 
+#if defined(OHOS_CLIPBOARD)
+void WebContentsImpl::MouseSelectMenuShow(bool show) {
+  if (render_view_host_delegate_view_) {
+    render_view_host_delegate_view_->MouseSelectMenuShow(show);
+  }
+}
+#endif
+
 void WebContentsImpl::ShowContextMenu(
     RenderFrameHost& render_frame_host,
     mojo::PendingAssociatedRemote<blink::mojom::ContextMenuClient>

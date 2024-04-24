@@ -71,6 +71,7 @@ class NWebQuickMenuParamsImpl : public NWebQuickMenuParams {
       NWebTouchHandleState::TouchHandleType type) override;
   void SetTouchHandleState(std::shared_ptr<NWebTouchHandleState> state,
                            NWebTouchHandleState::TouchHandleType type);
+  void SetIsMouseTrigger(bool is_mouse_trigger);
 
  private:
   int32_t x_;
@@ -85,6 +86,7 @@ class NWebQuickMenuParamsImpl : public NWebQuickMenuParams {
   std::shared_ptr<NWebTouchHandleState> insert_touch_handle_state_;
   std::shared_ptr<NWebTouchHandleState> begin_touch_handle_state_;
   std::shared_ptr<NWebTouchHandleState> end_touch_handle_state_;
+  bool is_mouse_trigger_ = false;
 };
 
 class NWebContextMenuCallbackImpl : public NWebContextMenuCallback {

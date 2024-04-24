@@ -380,6 +380,9 @@ class CONTENT_EXPORT RenderFrameImpl
   void SetSelectedText(const std::u16string& selection_text,
                        size_t offset,
                        const gfx::Range& range) override;
+#if defined(OHOS_CLIPBOARD)
+  void MouseSelectMenuShow(bool show) override;
+#endif
   void AddMessageToConsole(blink::mojom::ConsoleMessageLevel level,
                            const std::string& message) override;
   bool IsPasting() override;

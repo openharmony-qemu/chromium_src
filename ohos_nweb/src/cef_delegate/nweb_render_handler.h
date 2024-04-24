@@ -171,6 +171,9 @@ class NWebRenderHandler : public CefRenderHandler {
   std::shared_ptr<NWebTouchHandleState> GetTouchHandleState(
       NWebTouchHandleState::TouchHandleType type);
 
+  std::shared_ptr<NWebTouchHandleState> GetDefalutTouchHandleState(
+    NWebTouchHandleState::TouchHandleType type);
+
   CefRefPtr<CefDragData> GetDragData();
 
 // #ifdef OHOS_PAGE_UP_DOWN

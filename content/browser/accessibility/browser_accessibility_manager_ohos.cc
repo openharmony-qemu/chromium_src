@@ -103,6 +103,9 @@ void BrowserAccessibilityManagerOHOS::FireBlinkEvent(
     case ax::mojom::Event::kHover:
       HandleHover(accessibilityId);
       break;
+    case ax::mojom::Event::kLayoutComplete:
+      HandleContentChanged(accessibilityId);
+      break;
     default:
       break;
   }
@@ -179,6 +182,11 @@ void BrowserAccessibilityManagerOHOS::HandleHover(int64_t accessibilityId) {
 void BrowserAccessibilityManagerOHOS::HandleEditableTextChanged(int64_t accessibilityId)
 {
   SendAccessibilityEvent(accessibilityId, OHOS::NWeb::AccessibilityEventType::TEXT_CHANGE);
+}
+
+void BrowserAccessibilityManagerOHOS::HandleContentChanged(int64_t accessibilityId)
+{
+  SendAccessibilityEvent(accessibilityId, OHOS::NWeb::AccessibilityEventType::CHANGE);
 }
 
 void BrowserAccessibilityManagerOHOS::

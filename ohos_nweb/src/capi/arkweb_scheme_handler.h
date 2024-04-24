@@ -111,6 +111,14 @@ typedef enum ArkWeb_CustomSchemeOption {
      * @since 12
      */
     ARKWEB_SCHEME_OPTION_FETCH_ENABLED = 1 << 6,
+
+    /*
+     * @brief If ARKWEB_SCHEME_OPTION_CODE_CACHE_ENABLED is set, then the js of this scheme can generate code cache.
+     *
+     * @syscap SystemCapability.Web.Webview.Core
+     * @since 12
+     */
+    ARKWEB_SCHEME_OPTION_CODE_CACHE_ENABLED = 1 << 7,
 } ArkWeb_CustomSchemeOption;
 
 /*

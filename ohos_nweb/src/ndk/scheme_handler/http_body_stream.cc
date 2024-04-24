@@ -149,6 +149,13 @@ void ArkWeb_HttpBodyStream_::OnInitComplete(int rv) {
     return;
   }
 
+  if (!CEF_CURRENTLY_ON_UIT() && is_ets_) {
+    CEF_POST_TASK(CEF_UIT,
+      base::BindOnce(&ArkWeb_HttpBodyStream_::OnInitComplete,
+        this, rv));
+    return;
+  }
+
   stream_init_callback(this, static_cast<ArkWeb_NetError>(rv));
 }
 
@@ -159,6 +166,13 @@ void ArkWeb_HttpBodyStream_::OnReadComplete(char* buffer, int bytes_read) {
 
   if (!read_callback) {
     LOG(ERROR) << "scheme_handler read callback is nullptr.";
+    return;
+  }
+
+  if (!CEF_CURRENTLY_ON_UIT() && is_ets_) {
+    CEF_POST_TASK(CEF_UIT,
+      base::BindOnce(&ArkWeb_HttpBodyStream_::OnReadComplete,
+        this, buffer, bytes_read));
     return;
   }
 

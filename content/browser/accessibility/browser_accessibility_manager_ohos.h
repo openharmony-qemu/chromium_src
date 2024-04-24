@@ -85,6 +85,8 @@ class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
 
   void HandleEditableTextChanged(int64_t accessibilityId);
 
+  void HandleContentChanged(int64_t accessibilityId);
+
   int64_t TranslateAccessibilityId(int64_t accessibilityId) const;
 
   int64_t lastHoverId_ = -1;

@@ -32,10 +32,12 @@ struct ArkWeb_ResourceRequest_ {
   bool IsMainFrame() const;
   bool HasUserGesture() const;
   void GetReferrer(char** referrer) const;
+  void SetForEts(bool ets) { is_ets_ = ets; }
 
   CefRefPtr<CefRequest> cef_request;
   CefRefPtr<ArkWeb_HttpBodyStream> http_body_stream;
   void* user_data{nullptr};
+  bool is_ets_ = false;
 };
 
 struct HeaderValue {

@@ -2910,7 +2910,6 @@ void NWebDelegate::SetAccessibilityState(cef_state_t accessibilityState) {
   }
   if (accessibility_state_ != (accessibilityState == STATE_ENABLED)) {
     accessibility_state_ = (accessibilityState == STATE_ENABLED);
-    LOG(DEBUG) << "SetAccessibilityState state: " << accessibility_state_;
     GetBrowser()->GetHost()->SetAccessibilityState(accessibilityState);
   }
 }
@@ -2919,7 +2918,6 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId,
                                  uint32_t action) const {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
-    LOG(DEBUG) << "ExecuteAction can not get accessibilityManager";
     return;
   }
   auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
@@ -2970,7 +2968,6 @@ content::BrowserAccessibilityManagerOHOS*
 NWebDelegate::GetAccessibilityManager() const {
   if (!accessibility_state_ || GetBrowser() == nullptr
       || GetBrowser()->GetHost() == nullptr) {
-    LOG(DEBUG) << "GetAccessibilityManager can not get browser";
     return nullptr;
   }
   void* manager = nullptr;
@@ -2988,8 +2985,6 @@ NWebDelegate::GetFocusedAccessibilityNodeInfo(int64_t accessibilityId,
                                               bool isAccessibilityFocus) {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
-    LOG(DEBUG)
-        << "GetFocusedAccessibilityNodeInfo can not get accessibilityManager";
     return nullptr;
   }
   auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
@@ -3028,8 +3023,6 @@ std::shared_ptr<NWebAccessibilityNodeInfo>
 NWebDelegate::GetAccessibilityNodeInfoById(int64_t accessibilityId) {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
-    LOG(DEBUG)
-        << "GetAccessibilityNodeInfoById can not get accessibilityManager";
     return nullptr;
   }
   auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
@@ -3054,8 +3047,6 @@ NWebDelegate::GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
                                                   int32_t direction) {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
-    LOG(DEBUG) << "GetAccessibilityNodeInfoByFocusMove can not get "
-                  "accessibilityManager";
     return nullptr;
   }
   auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
@@ -3085,8 +3076,6 @@ NWebDelegate::PopulateAccessibilityNodeInfo(
     const content::BrowserAccessibilityOHOS* node) const {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
-    LOG(DEBUG)
-        << "GetFocusedAccessibilityNodeInfo can not get accessibilityManager";
     return nullptr;
   }
 
@@ -3121,19 +3110,6 @@ NWebDelegate::PopulateAccessibilityNodeInfo(
   AddAccessibilityNodeInfoRect(nodeInfo, node);
   AddAccessibilityNodeInfoCollection(nodeInfo, node);
   AddAccessibilityNodeInfoActions(nodeInfo);
-  LOG(DEBUG) << "PopulateAccessibilityNodeInfo accessibilityId "
-             << nodeInfo->GetAccessibilityId() << " parentId "
-             << nodeInfo->GetParentId() << " content " << nodeInfo->GetContent()
-             << " componentType " << nodeInfo->GetComponentType()
-             << " accessibilityFocus " << nodeInfo->GetIsAccessibilityFocus()
-             << " clickable " << nodeInfo->GetIsClickable() << " focusable "
-             << nodeInfo->GetIsFocusable() << " focused "
-             << nodeInfo->GetIsFocused() << " editable "
-             << nodeInfo->GetIsEditable() << " checkable "
-             << nodeInfo->GetIsCheckable() << " childSize "
-             << nodeInfo->GetChildIds().size() << " checked "
-             << nodeInfo->GetIsChecked() << " selected "
-             << nodeInfo->GetIsSelected();
 
   return nodeInfo;
 }

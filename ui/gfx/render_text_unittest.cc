@@ -7108,7 +7108,6 @@ TEST_F(RenderTextTest, HarfBuzz_UnicodeFallback) {
 #endif  // !BUILDFLAG(IS_LINUX) && !BUILDFLAG(IS_CHROMEOS) &&
         // !BUILDFLAG(IS_ANDROID)
 
-#if !defined(OHOS_UNITTESTS)
 // Ensure that the fallback fonts offered by GetFallbackFont() support glyphs
 // for different languages.
 TEST_F(RenderTextTest, HarfBuzz_FallbackFontsSupportGlyphs) {
@@ -7130,9 +7129,7 @@ TEST_F(RenderTextTest, HarfBuzz_FallbackFontsSupportGlyphs) {
     }
   }
 }
-#endif
 
-#if !defined(OHOS_UNITTESTS)
 // Ensure that the fallback fonts offered by GetFallbackFont() support glyphs
 // for different languages.
 TEST_F(RenderTextTest, HarfBuzz_MultiRunsSupportGlyphs) {
@@ -7157,7 +7154,6 @@ TEST_F(RenderTextTest, HarfBuzz_MultiRunsSupportGlyphs) {
     }
   }
 }
-#endif
 
 struct FallbackFontCase {
   const char* test_name;
@@ -7288,7 +7284,6 @@ INSTANTIATE_TEST_SUITE_P(FallbackFontComplexTextCases,
                          ::testing::ValuesIn(kComplexTextCases),
                          RenderTextTestWithFallbackFontCase::ParamInfoToString);
 
-#if !defined(OHOS_UNITTESTS)
 // Test cases to ensures the COMMON unicode script is split by unicode code
 // block. These tests work on Windows and Mac default fonts installation.
 // On other platforms, the fonts are mock (see test_fonts).
@@ -7406,7 +7401,6 @@ INSTANTIATE_TEST_SUITE_P(FallbackFontCommonScript,
                          RenderTextTestWithFallbackFontCase,
                          ::testing::ValuesIn(kCommonScriptCases),
                          RenderTextTestWithFallbackFontCase::ParamInfoToString);
-#endif
 
 #if BUILDFLAG(IS_WIN)
 // Ensures that locale is used for fonts selection.

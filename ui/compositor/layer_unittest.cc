@@ -478,15 +478,12 @@ class TestCallbackAnimationObserver : public ImplicitAnimationObserver {
 
 }  // namespace
 
-#if !defined(OHOS_UNITTESTS)
 TEST_F(LayerWithRealCompositorTest, Draw) {
   std::unique_ptr<Layer> layer =
       CreateColorLayer(SK_ColorRED, gfx::Rect(20, 20, 50, 50));
   DrawTree(layer.get());
 }
-#endif
 
-#if !defined(OHOS_UNITTESTS)
 // Create this hierarchy:
 // L1 - red
 // +-- L2 - blue
@@ -509,7 +506,6 @@ TEST_F(LayerWithRealCompositorTest, Hierarchy) {
 
   DrawTree(l1.get());
 }
-#endif
 
 class LayerWithDelegateTest : public testing::Test {
  public:
@@ -618,7 +614,6 @@ TEST(LayerStandaloneTest, ReleaseMailboxOnDestruction) {
   EXPECT_TRUE(callback_run);
 }
 
-#if !defined(OHOS_UNITTESTS)
 // L1
 //  +-- L2
 TEST_F(LayerWithDelegateTest, ConvertPointToLayer_Simple) {
@@ -641,9 +636,7 @@ TEST_F(LayerWithDelegateTest, ConvertPointToLayer_Simple) {
   gfx::PointF point2_in_l2_coords(-5, -5);
   EXPECT_EQ(point2_in_l2_coords, point2_in_l1_coords);
 }
-#endif
 
-#if !defined(OHOS_UNITTESTS)
 // L1
 //  +-- L2
 //       +-- L3
@@ -670,9 +663,7 @@ TEST_F(LayerWithDelegateTest, ConvertPointToLayer_Medium) {
   gfx::PointF point2_in_l3_coords(-15, -15);
   EXPECT_EQ(point2_in_l3_coords, point2_in_l1_coords);
 }
-#endif
 
-#if !defined(OHOS_UNITTESTS)
 TEST_F(LayerWithRealCompositorTest, Delegate) {
   // This test makes sure that whenever paint happens at a layer, its layer
   // delegate gets the paint, which in this test update its color and
@@ -704,9 +695,7 @@ TEST_F(LayerWithRealCompositorTest, Delegate) {
   // Test that paint happened at layer delegate.
   EXPECT_EQ(0, delegate.color_index());
 }
-#endif
 
-#if !defined(OHOS_UNITTESTS)
 TEST_F(LayerWithRealCompositorTest, DrawTree) {
   std::unique_ptr<Layer> l1 =
       CreateColorLayer(SK_ColorRED, gfx::Rect(20, 20, 400, 400));
@@ -733,9 +722,7 @@ TEST_F(LayerWithRealCompositorTest, DrawTree) {
   EXPECT_TRUE(d2.painted());
   EXPECT_FALSE(d3.painted());
 }
-#endif
 
-#if !defined(OHOS_UNITTESTS)
 // Tests that scheduling paint on a layer with a mask updates the mask.
 TEST_F(LayerWithRealCompositorTest, SchedulePaintUpdatesMask) {
   std::unique_ptr<Layer> layer =
@@ -757,9 +744,7 @@ TEST_F(LayerWithRealCompositorTest, SchedulePaintUpdatesMask) {
   EXPECT_TRUE(d1.painted());
   EXPECT_TRUE(d2.painted());
 }
-#endif
 
-#if !defined(OHOS_UNITTESTS)
 // Tests no-texture Layers.
 // Create this hierarchy:
 // L1 - red
@@ -797,7 +782,6 @@ TEST_F(LayerWithRealCompositorTest, HierarchyNoTexture) {
   // |d3| should have received a paint notification.
   EXPECT_TRUE(d3.painted());
 }
-#endif
 
 TEST_F(LayerWithDelegateTest, Cloning) {
   std::unique_ptr<Layer> layer = CreateLayer(LAYER_SOLID_COLOR);
@@ -967,7 +951,6 @@ TEST_F(LayerWithDelegateTest, CloneDamagedRegion) {
   EXPECT_EQ(damaged_region, clone->damaged_region());
 }
 
-#if !defined(OHOS_UNITTESTS)
 TEST_F(LayerWithDelegateTest, Mirroring) {
   std::unique_ptr<Layer> root = CreateNoTextureLayer(gfx::Rect(0, 0, 100, 100));
   std::unique_ptr<Layer> child = CreateLayer(LAYER_TEXTURED);
@@ -1039,7 +1022,6 @@ TEST_F(LayerWithDelegateTest, Mirroring) {
   EXPECT_EQ(kCornerRadii, mirror1->rounded_corner_radii());
   EXPECT_TRUE(mirror1->is_fast_rounded_corner());
 }
-#endif
 
 // Tests for SurfaceLayer cloning and mirroring. This tests certain properties
 // are preserved.
@@ -1232,7 +1214,6 @@ TEST_F(LayerWithNullDelegateTest, SwitchLayerPreservesCCLayerState) {
   l1->SetShowSolidColorContent();
 }
 
-#if !defined(OHOS_UNITTESTS)
 // Various visible/drawn assertions.
 TEST_F(LayerWithNullDelegateTest, Visibility) {
   auto l1 = std::make_unique<Layer>(LAYER_TEXTURED);
@@ -1282,9 +1263,7 @@ TEST_F(LayerWithNullDelegateTest, Visibility) {
   EXPECT_FALSE(l2->cc_layer_for_testing()->hide_layer_and_subtree());
   EXPECT_TRUE(l3->cc_layer_for_testing()->hide_layer_and_subtree());
 }
-#endif
 
-#if !defined(OHOS_UNITTESTS)
 // Various visible/drawn assertions.
 TEST_F(LayerWithNullDelegateTest, MirroringVisibility) {
   auto l1 = std::make_unique<Layer>(LAYER_TEXTURED);
@@ -1397,9 +1376,7 @@ TEST_F(LayerWithNullDelegateTest, MirroringVisibility) {
   EXPECT_TRUE(l2_mirror->IsVisible());
   EXPECT_FALSE(l2_mirror->cc_layer_for_testing()->hide_layer_and_subtree());
 }
-#endif
 
-#if !defined(OHOS_UNITTESTS)
 TEST_F(LayerWithDelegateTest, RoundedCorner) {
   gfx::Rect layer_bounds(10, 20, 100, 100);
   constexpr gfx::RoundedCornersF kRadii(5, 10, 15, 20);
@@ -1421,9 +1398,7 @@ TEST_F(LayerWithDelegateTest, RoundedCorner) {
   layer->SetRoundedCornerRadius(kRadii);
   EXPECT_EQ(kRadii, layer->rounded_corner_radii());
 }
-#endif
 
-#if !defined(OHOS_UNITTESTS)
 TEST_F(LayerWithDelegateTest, GradientMask) {
   gfx::Rect layer_bounds(10, 20, 100, 100);
   gfx::LinearGradient gradient_mask;
@@ -1446,7 +1421,6 @@ TEST_F(LayerWithDelegateTest, GradientMask) {
   layer->SetGradientMask(gradient_mask);
   EXPECT_EQ(gradient_mask, layer->gradient_mask());
 }
-#endif
 
 // Checks that stacking-related methods behave as advertised.
 TEST_F(LayerWithNullDelegateTest, Stacking) {
@@ -1535,7 +1509,6 @@ TEST_F(LayerWithNullDelegateTest, Stacking) {
   EXPECT_EQ("3 1 2", test::ChildLayerNamesAsString(*root.get()));
 }
 
-#if !defined(OHOS_UNITTESTS)
 // Verifies SetBounds triggers the appropriate painting/drawing.
 TEST_F(LayerWithNullDelegateTest, SetBoundsSchedulesPaint) {
   std::unique_ptr<Layer> l1 = CreateTextureLayer(gfx::Rect(0, 0, 200, 200));
@@ -1553,9 +1526,7 @@ TEST_F(LayerWithNullDelegateTest, SetBoundsSchedulesPaint) {
   // The CompositorDelegate (us) should have been told to draw for a resize.
   WaitForDraw();
 }
-#endif
 
-#if !defined(OHOS_UNITTESTS)
 // Checks that the damage rect for a TextureLayer is empty after a commit.
 TEST_F(LayerWithNullDelegateTest, EmptyDamagedRect) {
   base::RunLoop run_loop;
@@ -1593,9 +1564,7 @@ TEST_F(LayerWithNullDelegateTest, EmptyDamagedRect) {
   // Wait for texture mailbox release to avoid DCHECKs.
   run_loop.Run();
 }
-#endif
 
-#if !defined(OHOS_UNITTESTS)
 // Tests that in deferred paint request, the layer damage will be accumulated.
 TEST_F(LayerWithNullDelegateTest, UpdateDamageInDeferredPaint) {
   gfx::Rect bound(gfx::Rect(500, 500));
@@ -1639,9 +1608,7 @@ TEST_F(LayerWithNullDelegateTest, UpdateDamageInDeferredPaint) {
   root->PaintContentsToDisplayList();
   EXPECT_EQ(bound_union, LastInvalidation());
 }
-#endif
 
-#if !defined(OHOS_UNITTESTS)
 // Tests that Layer::SendDamagedRects() always recurses into its mask layer, if
 // present, even if it shouldn't send its damaged regions itself.
 TEST_F(LayerWithNullDelegateTest, AlwaysSendsMaskDamagedRects) {
@@ -1660,7 +1627,6 @@ TEST_F(LayerWithNullDelegateTest, AlwaysSendsMaskDamagedRects) {
   root->SendDamagedRects();
   EXPECT_EQ(mask->damaged_region_for_testing().bounds(), gfx::Rect());
 }
-#endif
 
 // Verifies that when a layer is reflecting other layers, mirror counts of
 // reflected layers are updated properly.
@@ -1757,7 +1723,6 @@ void ExpectRgba(int x, int y, SkColor expected_color, SkColor actual_color) {
       << SkColorGetA(expected_color) << ")";
 }
 
-#if !defined(OHOS_UNITTESTS)
 // Checks that pixels are actually drawn to the screen with a read back.
 TEST_F(LayerWithRealCompositorTest, DrawPixels) {
   gfx::Size viewport_size = GetCompositor()->size();
@@ -1790,9 +1755,7 @@ TEST_F(LayerWithRealCompositorTest, DrawPixels) {
     }
   }
 }
-#endif
 
-#if !defined(OHOS_UNITTESTS)
 // Checks that drawing a layer with transparent pixels is blended correctly
 // with the lower layer.
 TEST_F(LayerWithRealCompositorTest, DrawAlphaBlendedPixels) {
@@ -1828,9 +1791,7 @@ TEST_F(LayerWithRealCompositorTest, DrawAlphaBlendedPixels) {
   cc::FuzzyPixelOffByOneComparator comparator;
   EXPECT_TRUE(comparator.Compare(bitmap, original_bitmap));
 }
-#endif
 
-#if !defined(OHOS_UNITTESTS)
 // Checks that using the AlphaShape filter applied to a layer with
 // transparency, alpha-blends properly with the layer below.
 TEST_F(LayerWithRealCompositorTest, DrawAlphaThresholdFilterPixels) {
@@ -1871,7 +1832,6 @@ TEST_F(LayerWithRealCompositorTest, DrawAlphaThresholdFilterPixels) {
     }
   }
 }
-#endif
 
 // Checks the logic around Compositor::SetRootLayer and Layer::SetCompositor.
 TEST_F(LayerWithRealCompositorTest, SetRootLayer) {
@@ -1901,7 +1861,6 @@ TEST_F(LayerWithRealCompositorTest, SetRootLayer) {
   EXPECT_EQ(NULL, l2->GetCompositor());
 }
 
-#if !defined(OHOS_UNITTESTS)
 // Checks that compositor observers are notified when:
 // - DrawTree is called,
 // - After ScheduleDraw is called, or
@@ -1978,9 +1937,7 @@ TEST_F(LayerWithRealCompositorTest, MAYBE_CompositorObservers) {
 
   EXPECT_FALSE(observer.notified());
 }
-#endif
 
-#if !defined(OHOS_UNITTESTS)
 // Checks that modifying the hierarchy correctly affects final composite.
 TEST_F(LayerWithRealCompositorTest, ModifyHierarchy) {
   viz::ParentLocalSurfaceIdAllocator allocator;
@@ -2055,9 +2012,7 @@ TEST_F(LayerWithRealCompositorTest, ModifyHierarchy) {
   EXPECT_TRUE(MatchesPNGFile(bitmap, ref_img2,
                              cc::AlphaDiscardingExactPixelComparator()));
 }
-#endif
 
-#if !defined(OHOS_UNITTESTS)
 // Checks that basic background blur is working.
 TEST_F(LayerWithRealCompositorTest, BackgroundBlur) {
 #if defined(THREAD_SANITIZER)
@@ -2107,9 +2062,7 @@ TEST_F(LayerWithRealCompositorTest, BackgroundBlur) {
   // WritePNGFile(bitmap, ref_img2, false);
   EXPECT_TRUE(MatchesPNGFile(bitmap, ref_img2, fuzzy_comparator));
 }
-#endif
 
-#if !defined(OHOS_UNITTESTS)
 // Checks that background blur bounds rect gets properly updated when device
 // scale changes.
 TEST_F(LayerWithRealCompositorTest, BackgroundBlurChangeDeviceScale) {
@@ -2160,9 +2113,7 @@ TEST_F(LayerWithRealCompositorTest, BackgroundBlurChangeDeviceScale) {
   // WritePNGFile(bitmap, ref_img2, false);
   EXPECT_TRUE(MatchesPNGFile(bitmap, ref_img2, fuzzy_comparator));
 }
-#endif
 
-#if !defined(OHOS_UNITTESTS)
 // Opacity is rendered correctly.
 // Checks that modifying the hierarchy correctly affects final composite.
 TEST_F(LayerWithRealCompositorTest, Opacity) {
@@ -2190,7 +2141,6 @@ TEST_F(LayerWithRealCompositorTest, Opacity) {
   EXPECT_TRUE(MatchesPNGFile(bitmap, ref_img,
                              cc::AlphaDiscardingExactPixelComparator()));
 }
-#endif
 
 namespace {
 
@@ -2243,7 +2193,6 @@ class SchedulePaintLayerDelegate : public LayerDelegate {
 
 }  // namespace
 
-#if !defined(OHOS_UNITTESTS)
 // Verifies that if SchedulePaint is invoked during painting the layer is still
 // marked dirty.
 TEST_F(LayerWithDelegateTest, SchedulePaintFromOnPaintLayer) {
@@ -2274,9 +2223,7 @@ TEST_F(LayerWithDelegateTest, SchedulePaintFromOnPaintLayer) {
   EXPECT_TRUE(child_delegate.last_clip_rect().Contains(
                   gfx::Rect(10, 10, 30, 30)));
 }
-#endif
 
-#if !defined(OHOS_UNITTESTS)
 TEST_F(LayerWithRealCompositorTest, ScaleUpDown) {
   std::unique_ptr<Layer> root =
       CreateColorLayer(SK_ColorWHITE, gfx::Rect(10, 20, 200, 220));
@@ -2353,7 +2300,6 @@ TEST_F(LayerWithRealCompositorTest, ScaleUpDown) {
   EXPECT_EQ(0.0f, root_delegate.device_scale_factor());
   EXPECT_EQ(0.0f, l1_delegate.device_scale_factor());
 }
-#endif
 
 TEST_F(LayerWithRealCompositorTest, ScaleReparent) {
   viz::ParentLocalSurfaceIdAllocator allocator;
@@ -2396,7 +2342,6 @@ TEST_F(LayerWithRealCompositorTest, ScaleReparent) {
   EXPECT_EQ(2.0f, l1_delegate.device_scale_factor());
 }
 
-#if !defined(OHOS_UNITTESTS)
 // Verifies that when changing bounds on a layer that is invisible, and then
 // made visible, the right thing happens:
 // - if just a move, then no painting should happen.
@@ -2437,7 +2382,6 @@ TEST_F(LayerWithDelegateTest, SetBoundsWhenInvisible) {
   DrawTree(root.get());
   EXPECT_TRUE(delegate.painted());
 }
-#endif
 
 TEST_F(LayerWithDelegateTest, ExternalContent) {
   std::unique_ptr<Layer> root =
@@ -3442,7 +3386,6 @@ TEST(LayerDelegateTest, OnLayerAlphaShapeChanged) {
   testing::Mock::VerifyAndClear(&delegate);
 }
 
-#if !defined(OHOS_UNITTESTS)
 TEST_F(LayerWithRealCompositorTest, CompositorAnimationObserverTest) {
   std::unique_ptr<Layer> root = CreateLayer(LAYER_TEXTURED);
 
@@ -3459,9 +3402,7 @@ TEST_F(LayerWithRealCompositorTest, CompositorAnimationObserverTest) {
   ResetCompositor();
   EXPECT_TRUE(animation_observer.shutdown());
 }
-#endif
 
-#if !defined(OHOS_UNITTESTS)
 TEST_F(LayerWithRealCompositorTest, NoContentNoDraw) {
   std::unique_ptr<Layer> root =
       CreateNoTextureLayer(gfx::Rect(0, 0, 1000, 1000));
@@ -3473,6 +3414,5 @@ TEST_F(LayerWithRealCompositorTest, NoContentNoDraw) {
   root->SetBounds({100, 100});
   EXPECT_FALSE(GetLayerTreeHost()->CommitRequested());
 }
-#endif
 
 }  // namespace ui

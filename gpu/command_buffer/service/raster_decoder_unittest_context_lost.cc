@@ -15,8 +15,6 @@ using ::testing::Return;
 using ::testing::SaveArg;
 using ::testing::SetArrayArgument;
 
-#if !defined(OHOS_UNITTESTS)
-
 namespace gpu {
 namespace raster {
 
@@ -271,5 +269,3 @@ INSTANTIATE_TEST_SUITE_P(Service,
 
 }  // namespace raster
 }  // namespace gpu
-
-#endif  // !defined(OHOS_UNITTESTS)

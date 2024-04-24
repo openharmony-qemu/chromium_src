@@ -30,8 +30,6 @@
 #include "ui/gl/test/gl_surface_test_support.h"
 #endif
 
-#if !defined(OHOS_UNITTESTS)
-
 namespace gpu {
 
 template <typename GpuMemoryBufferImplType>
@@ -414,5 +412,4 @@ REGISTER_TYPED_TEST_SUITE_P(GpuMemoryBufferImplCreateTest, Create);
 
 }  // namespace gpu
 
-#endif  // !defined(OHOS_UNITTESTS)
 #endif  // GPU_IPC_COMMON_GPU_MEMORY_BUFFER_IMPL_TEST_TEMPLATE_H_

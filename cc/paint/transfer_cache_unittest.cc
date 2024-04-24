@@ -25,8 +25,6 @@
 #include "third_party/skia/include/core/SkImage.h"
 #include "ui/gl/gl_implementation.h"
 
-#if !defined(OHOS_UNITTESTS)
-
 namespace cc {
 namespace {
 
@@ -234,5 +232,3 @@ TEST_F(TransferCacheTest, RawMemoryTransferLarge) {
 
 }  // namespace
 }  // namespace cc
-
-#endif  // !defined(OHOS_UNITTESTS)

@@ -11,8 +11,6 @@
 #include "cc/test/test_task_graph_runner.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
-#if !defined(OHOS_UNITTESTS)
-
 namespace cc {
 
 namespace {
@@ -90,5 +88,3 @@ TEST(PaintedOverlayScrollbarLayerTest, PaintTickmarks) {
 
 }  // namespace
 }  // namespace cc
-
-#endif  // !defined(OHOS_UNITTESTS)

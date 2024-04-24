@@ -36,8 +36,6 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/lottie/animation_observer.h"
 
-#if !defined(OHOS_UNITTESTS)
-
 namespace lottie {
 namespace {
 
@@ -1713,5 +1711,3 @@ TEST_F(AnimationTest, GetCurrentCycleBoundaries) {
 }
 
 }  // namespace lottie
-
-#endif  // !defined(OHOS_UNITTESTS)

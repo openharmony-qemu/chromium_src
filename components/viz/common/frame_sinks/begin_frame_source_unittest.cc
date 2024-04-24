@@ -770,7 +770,6 @@ TEST_F(ExternalBeginFrameSourceTest, OnBeginFrameChecksBeginFrameContinuity) {
   source2.RemoveObserver(obs_.get());
 }
 
-#if !defined(OHOS_UNITTESTS)
 TEST_F(ExternalBeginFrameSourceTest, GetMissedBeginFrameArgs) {
   BeginFrameArgs args = CreateBeginFrameArgsForTesting(BEGINFRAME_FROM_HERE, 0,
                                                        2, 10000, 10100, 100);
@@ -795,7 +794,6 @@ TEST_F(ExternalBeginFrameSourceTest, GetMissedBeginFrameArgs) {
   EXPECT_CALL((*client_), OnNeedsBeginFrames(false)).Times(1);
   source_->RemoveObserver(obs_.get());
 }
-#endif
 
 // Tests that an observer which returns true from IsRoot is notified after
 // observers which return false.

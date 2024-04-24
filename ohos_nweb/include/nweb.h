@@ -1204,6 +1204,15 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
     */
     /*--ark web()--*/
     virtual int ScaleGestureChange(double scale, double centerX, double centerY) = 0;
+
+    /**
+    * @brief Terminate render process
+    *
+    * @return true if it was possible to terminate this render process, false
+    *         otherwise.
+    */
+    /*--ark web()--*/
+    virtual bool TerminateRenderProcess() = 0;
 };
 }  // namespace OHOS::NWeb
 

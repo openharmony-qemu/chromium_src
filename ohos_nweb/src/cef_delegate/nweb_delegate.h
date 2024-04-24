@@ -199,6 +199,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void FindAllAsync(const std::string& search_string) const override;
   void ClearMatches() const override;
   void FindNext(const bool forward) const override;
+  bool TerminateRenderProcess() override;
   std::string GetUrl() const override;
   const std::string GetOriginalUrl() override;
   bool GetFavicon(const void** data,

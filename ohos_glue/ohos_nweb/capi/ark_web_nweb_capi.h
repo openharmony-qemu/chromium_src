@@ -494,6 +494,8 @@ typedef struct _ark_web_nweb_t {
   int(ARK_WEB_CALLBACK *scale_gesture_change)(struct _ark_web_nweb_t *self,
                                               double scale, double centerX,
                                               double centerY);
+
+  bool(ARK_WEB_CALLBACK *terminate_render_process)(struct _ark_web_nweb_t *self);
 } ark_web_nweb_t;
 
 #ifdef __cplusplus

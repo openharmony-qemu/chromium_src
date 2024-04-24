@@ -257,6 +257,8 @@ public:
   void ReleaseResizeHold() override;
 
   ArkWebCharVector GetWordSelection(const ArkWebString &text, int8_t offset) override;
+
+  void UpdateClippedSelectionBounds(int x, int y, int w, int h) override;
 };
 
 } // namespace OHOS::ArkWeb

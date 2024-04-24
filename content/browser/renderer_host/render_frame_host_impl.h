@@ -2381,6 +2381,9 @@ class CONTENT_EXPORT RenderFrameHostImpl
       mojo::PendingAssociatedRemote<blink::mojom::ContextMenuClient>
           context_menu_client,
       const blink::UntrustworthyContextMenuParams& params) override;
+#if defined(OHOS_CLIPBOARD)
+  void MouseSelectMenuShow(bool show) override;
+#endif
   void DidLoadResourceFromMemoryCache(
       const GURL& url,
       const std::string& http_method,

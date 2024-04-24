@@ -826,4 +826,9 @@ interface FrameHost {
   [EnableIf=ohos_drag_drop]
   OnClearContextMenu();
   // #endif OHOS_DRAG_DROP
+
+  // #ifdef OHOS_CLIPBOARD
+  [EnableIf=ohos_clipboard]
+  MouseSelectMenuShow(bool show);
+  // #endif OHOS_CLIPBOARD
 };

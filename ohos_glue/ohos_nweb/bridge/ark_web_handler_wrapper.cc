@@ -880,4 +880,11 @@ std::vector<int8_t> ArkWebHandlerWrapper::GetWordSelection(
   ArkWebStringStructRelease(ark_text);
   return result;
 }
+
+void ArkWebHandlerWrapper::UpdateClippedSelectionBounds(int x,
+                                                        int y,
+                                                        int w,
+                                                        int h) {
+  ark_web_handler_->UpdateClippedSelectionBounds(x, y, w, h);
+}
 } // namespace OHOS::ArkWeb

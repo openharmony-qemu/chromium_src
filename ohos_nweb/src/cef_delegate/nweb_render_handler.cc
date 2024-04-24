@@ -547,6 +547,28 @@ std::shared_ptr<NWebTouchHandleState> NWebRenderHandler::GetTouchHandleState(
   }
 }
 
+std::shared_ptr<NWebTouchHandleState> NWebRenderHandler::GetDefalutTouchHandleState(
+    NWebTouchHandleState::TouchHandleType type) {
+  CefTouchHandleState state;
+  state.touch_handle_id = -1;
+  state.origin.x = 0;
+  state.origin.y = 0;
+  state.view_port.x = 0;
+  state.view_port.y = 0;
+  state.edge_height = 0;
+  state.enabled = true;
+  state.alpha = 0;
+  if (type == NWebTouchHandleState::TouchHandleType::SELECTION_BEGIN_HANDLE) {
+    state.orientation = CEF_HORIZONTAL_ALIGNMENT_LEFT;
+  } else if (type == NWebTouchHandleState::TouchHandleType::SELECTION_END_HANDLE) {
+    state.orientation = CEF_HORIZONTAL_ALIGNMENT_RIGHT;
+  } else {
+    state.orientation = CEF_HORIZONTAL_ALIGNMENT_CENTER;
+  }
+
+  return std::make_shared<NWebTouchHandleStateImpl>(state);
+}
+
 CefTouchHandleState NWebRenderHandler::ConvertTouchHandleDisplayRatio(
     const CefTouchHandleState& touch_handle) {
   CefTouchHandleState result_touch_handle = touch_handle;

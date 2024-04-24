@@ -260,6 +260,10 @@ class NWebImpl : public NWeb {
   std::shared_ptr<NWebDragData> GetOrCreateDragData() override;
 #endif // #ifdef OHOS_DRAG_DROP
 
+#ifdef BUILDFLAG(IS_OHOS)
+  bool TerminateRenderProcess() override;
+#endif
+
 #if BUILDFLAG(IS_OHOS)
   void SetWindowId(uint32_t window_id) override;
   void SetToken(void* token) override;

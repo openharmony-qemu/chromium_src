@@ -1067,6 +1067,15 @@ public:
   /*--ark web()--*/
   int ScaleGestureChange(double scale, double centerX, double centerY) override;
 
+  /*
+   * @brief Terminate render process
+   *
+   * @return true if it was possible to terminate this render process, false
+   * otherwise.
+   */
+  /*--ark web()--*/
+  bool TerminateRenderProcess() override;
+
 private:
   std::shared_ptr<OHOS::NWeb::NWeb> nweb_nweb_;
 };

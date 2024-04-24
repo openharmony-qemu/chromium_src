@@ -1576,6 +1576,16 @@ const std::string NWebImpl::GetOriginalUrl() {
   return nweb_delegate_->GetOriginalUrl();
 }
 
+#if BUILDFLAG(IS_OHOS)
+bool NWebImpl::TerminateRenderProcess() {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("TerminateRenderProcess failed, nweb_delegate_ is null");
+    return false;
+  }
+  return nweb_delegate_->TerminateRenderProcess();
+}
+#endif
+
 bool NWebImpl::GetFavicon(const void** data,
                           size_t& width,
                           size_t& height,

@@ -1087,6 +1087,14 @@ bool NWebDelegate::GetFavicon(const void** data,
   }
 }
 
+bool NWebDelegate::TerminateRenderProcess() {
+  LOG(DEBUG) << "NWebDelegate::TerminateRenderProcess";
+  if (GetBrowser().get()) {
+    return GetBrowser()->GetHost()->TerminateRenderProcess();
+  }
+  return false;
+}
+
 void NWebDelegate::PutNetworkAvailable(bool avaiable) {
   LOG(DEBUG) << "NWebDelegate::PutNetworkAvailable";
   if (GetBrowser().get()) {

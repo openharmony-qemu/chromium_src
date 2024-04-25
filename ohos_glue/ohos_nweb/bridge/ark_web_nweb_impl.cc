@@ -884,4 +884,8 @@ int ArkWebNWebImpl::ScaleGestureChange(double scale, double centerX, double cent
   return nweb_nweb_->ScaleGestureChange(scale, centerX, centerY);
 }
 
+bool ArkWebNWebImpl::TerminateRenderProcess() {
+  return nweb_nweb_->TerminateRenderProcess();
+}
+
 } // namespace OHOS::ArkWeb

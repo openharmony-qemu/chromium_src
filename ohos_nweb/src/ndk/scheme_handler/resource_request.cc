@@ -20,7 +20,9 @@
 #include "ohos_nweb/src/ndk/scheme_handler/http_body_stream.h"
 
 ArkWeb_ResourceRequest_::ArkWeb_ResourceRequest_(CefRefPtr<CefRequest> request)
-    : cef_request(request) {}
+    : cef_request(request) {
+  http_body_stream = new ArkWeb_HttpBodyStream(this);
+}
 
 ArkWeb_ResourceRequest_::~ArkWeb_ResourceRequest_() {}
 
@@ -37,7 +39,9 @@ void ArkWeb_ResourceRequest_::GetHttpBodyStream(
     return;
   }
 
-  *stream = new ArkWeb_HttpBodyStream(this);
+  *stream = http_body_stream.get();
+  // Add ref and decrement at DestroyHttpBodyStream.
+  http_body_stream->AddRef();
 }
 
 void ArkWeb_ResourceRequest_::GetMethod(char** method) const {

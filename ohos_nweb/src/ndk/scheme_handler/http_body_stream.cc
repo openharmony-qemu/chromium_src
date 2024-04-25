@@ -164,3 +164,12 @@ void ArkWeb_HttpBodyStream_::OnReadComplete(char* buffer, int bytes_read) {
 
   read_callback(this, reinterpret_cast<uint8_t*>(buffer), bytes_read);
 }
+
+void ArkWeb_HttpBodyStream_::Reset() {
+  if (!post_data_stream) {
+    return;
+  }
+
+  post_data_stream->Reset();
+  post_data_stream->Release();
+}

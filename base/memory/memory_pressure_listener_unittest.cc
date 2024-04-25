@@ -53,7 +53,6 @@ class MemoryPressureListenerTest : public testing::Test {
   std::unique_ptr<MemoryPressureListener> listener_;
 };
 
-#if !defined(OHOS_UNITTESTS)
 TEST_F(MemoryPressureListenerTest, NotifyMemoryPressure) {
   // Memory pressure notifications are not suppressed by default.
   EXPECT_FALSE(MemoryPressureListener::AreNotificationsSuppressed());
@@ -78,6 +77,5 @@ TEST_F(MemoryPressureListenerTest, NotifyMemoryPressure) {
   ExpectNotification(&MemoryPressureListener::SimulatePressureNotification,
                      MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_CRITICAL);
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
 }  // namespace base

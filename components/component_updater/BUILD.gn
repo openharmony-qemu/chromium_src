@@ -74,13 +74,8 @@ source_set("unit_tests") {
     "component_installer_unittest.cc",
     "component_updater_service_unittest.cc",
     "configurator_impl_unittest.cc",
+    "timer_unittest.cc",
   ]
-
-  if (!ohos_unittests) {
-    sources += [
-      "timer_unittest.cc",
-    ]
-  }
 
   deps = [
     ":component_updater",

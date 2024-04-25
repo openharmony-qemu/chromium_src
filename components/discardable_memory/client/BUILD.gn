@@ -25,9 +25,7 @@ component("client") {
 source_set("unit_tests") {
   testonly = true
 
-  if (!ohos_unittests) {
-    sources = [ "client_discardable_shared_memory_manager_unittest.cc" ]
-  }
+  sources = [ "client_discardable_shared_memory_manager_unittest.cc" ]
 
   deps = [
     ":client",

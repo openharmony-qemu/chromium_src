@@ -27,7 +27,7 @@ if (use_blink) {
 source_set("unit_tests") {
   testonly = true
 
-  if (!is_ios && !ohos_unittests) {
+  if (!is_ios) {
     sources = [ "files_scan_data_unittest.cc" ]
 
     deps = [

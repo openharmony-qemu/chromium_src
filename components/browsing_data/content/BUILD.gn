@@ -57,22 +57,17 @@ source_set("unit_tests") {
   testonly = true
   sources = [
     "browsing_data_helper_unittest.cc",
+    "browsing_data_model_unittest.cc",
+    "browsing_data_quota_helper_unittest.cc",
+    "cache_storage_helper_unittest.cc",
+    "cookie_helper_unittest.cc",
+    "database_helper_unittest.cc",
+    "file_system_helper_unittest.cc",
+    "indexed_db_helper_unittest.cc",
+    "local_storage_helper_unittest.cc",
+    "service_worker_helper_unittest.cc",
+    "shared_worker_helper_unittest.cc",
   ]
-
-  if (!ohos_unittests) {
-    sources += [
-      "browsing_data_model_unittest.cc",
-      "browsing_data_quota_helper_unittest.cc",
-      "cache_storage_helper_unittest.cc",
-      "cookie_helper_unittest.cc",
-      "database_helper_unittest.cc",
-      "file_system_helper_unittest.cc",
-      "indexed_db_helper_unittest.cc",
-      "local_storage_helper_unittest.cc",
-      "service_worker_helper_unittest.cc",
-      "shared_worker_helper_unittest.cc",
-    ]
-  }
 
   deps = [
     ":content",

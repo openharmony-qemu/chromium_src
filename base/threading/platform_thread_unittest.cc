@@ -319,7 +319,6 @@ void TestSetCurrentThreadType() {
   }
 }
 
-#if !defined(OHOS_UNITTESTS)
 void TestPriorityResultingFromThreadType(ThreadType thread_type,
                                          ThreadPriorityForTest priority) {
   ThreadPriorityTestThread thread(thread_type, priority);
@@ -334,9 +333,7 @@ void TestPriorityResultingFromThreadType(ThreadType thread_type,
   PlatformThread::Join(handle);
   ASSERT_FALSE(thread.IsRunning());
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 ThreadPriorityForTest GetCurrentThreadPriorityIfStartWithThreadType(
     ThreadType thread_type,
     MessagePumpType message_pump_type) {
@@ -360,9 +357,7 @@ ThreadPriorityForTest GetCurrentThreadPriorityIfStartWithThreadType(
 
   return priority;
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 ThreadPriorityForTest GetCurrentThreadPriorityIfSetThreadTypeLater(
     ThreadType thread_type,
     MessagePumpType message_pump_type) {
@@ -386,9 +381,7 @@ ThreadPriorityForTest GetCurrentThreadPriorityIfSetThreadTypeLater(
 
   return priority;
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 void TestPriorityResultingFromThreadType(ThreadType thread_type,
                                          MessagePumpType message_pump_type,
                                          ThreadPriorityForTest priority) {
@@ -406,7 +399,6 @@ void TestPriorityResultingFromThreadType(ThreadType thread_type,
               priority);
   }
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
 }  // namespace
 
@@ -498,7 +490,6 @@ TEST(PlatformThreadTest, CanChangeThreadType) {
 #endif
 }
 
-#if !defined(OHOS_UNITTESTS)
 TEST(PlatformThreadTest, SetCurrentThreadTypeTest) {
   TestPriorityResultingFromThreadType(ThreadType::kBackground,
                                       ThreadPriorityForTest::kBackground);
@@ -543,7 +534,6 @@ TEST(PlatformThreadTest, SetCurrentThreadTypeTest) {
   TestPriorityResultingFromThreadType(ThreadType::kRealtimeAudio,
                                       ThreadPriorityForTest::kRealtimeAudio);
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
 TEST(PlatformThreadTest, SetHugeThreadName) {
   // Construct an excessively long thread name.

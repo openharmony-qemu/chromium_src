@@ -29,9 +29,7 @@ static_library("background_sync") {
 
 source_set("unit_tests") {
   testonly = true
-  if (!ohos_unittests) {
-    sources = [ "background_sync_permission_context_unittest.cc" ]
-  }
+  sources = [ "background_sync_permission_context_unittest.cc" ]
 
   deps = [
     ":background_sync",

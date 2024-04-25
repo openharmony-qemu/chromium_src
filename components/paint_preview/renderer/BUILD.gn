@@ -32,9 +32,8 @@ source_set("renderer") {
 
 source_set("unit_tests") {
   testonly = true
-  if (!ohos_unittests) {
-    sources = [ "paint_preview_recorder_utils_unittest.cc" ]
-  }
+
+  sources = [ "paint_preview_recorder_utils_unittest.cc" ]
 
   deps = [
     ":renderer",

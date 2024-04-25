@@ -235,7 +235,6 @@ TEST_F(RTLTest, GetStringDirection) {
     EXPECT_EQ(i.direction, GetStringDirection(WideToUTF16(i.text)));
 }
 
-#if !defined(OHOS_UNITTESTS)
 TEST_F(RTLTest, WrapPathWithLTRFormatting) {
   const wchar_t* cases[] = {
     // Test common path, such as "c:\foo\bar".
@@ -285,7 +284,6 @@ TEST_F(RTLTest, WrapPathWithLTRFormatting) {
     EXPECT_EQ(wrapped_expected, wrapped_actual);
   }
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
 TEST_F(RTLTest, WrapString) {
   const wchar_t* cases[] = {

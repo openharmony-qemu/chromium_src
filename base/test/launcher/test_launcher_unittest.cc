@@ -1344,7 +1344,6 @@ MATCHER(CheckTruncationPreservesMessage, "") {
   return true;
 }
 
-#if !defined(OHOS_UNITTESTS)
 void MatchesFatalMessagesTest() {
   // Different Chrome test suites have different settings for their logs.
   // E.g. unit tests may not show the process ID (as they are single process),
@@ -1380,9 +1379,7 @@ void MatchesFatalMessagesTest() {
                               CheckTruncationPreservesMessage());
   }
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 // Validates TestSnippetFocused correctly identifies fatal messages to
 // retain during truncation.
 TEST(TestLauncherTools, TruncateSnippetFocusedMatchesFatalMessagesTest) {
@@ -1392,7 +1389,6 @@ TEST(TestLauncherTools, TruncateSnippetFocusedMatchesFatalMessagesTest) {
 #endif
   MatchesFatalMessagesTest();
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
 #if BUILDFLAG(IS_CHROMEOS_ASH)
 // Validates TestSnippetFocused correctly identifies fatal messages to

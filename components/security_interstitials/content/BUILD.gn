@@ -142,15 +142,12 @@ source_set("unit_tests") {
   testonly = true
   sources = [
     "certificate_error_report_unittest.cc",
+    "security_interstitial_tab_helper_unittest.cc",
+    "ssl_error_assistant_unittest.cc",
+    "ssl_error_handler_unittest.cc",
+    "ssl_error_navigation_throttle_unittest.cc",
   ]
-  if (!ohos_unittests) {
-    sources += [
-      "security_interstitial_tab_helper_unittest.cc",
-      "ssl_error_assistant_unittest.cc",
-      "ssl_error_handler_unittest.cc",
-      "ssl_error_navigation_throttle_unittest.cc",
-    ]
-  }
+
   deps = [
     ":proto",
     ":security_interstitial_page",

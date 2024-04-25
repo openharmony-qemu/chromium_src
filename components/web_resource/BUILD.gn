@@ -41,12 +41,8 @@ source_set("unit_tests") {
   testonly = true
   sources = [
     "eula_accepted_notifier_unittest.cc",
+    "resource_request_allowed_notifier_unittest.cc",
   ]
-  if (!ohos_unittests) {
-    sources += [
-      "resource_request_allowed_notifier_unittest.cc",
-    ]
-  }
 
   deps = [
     ":test_support",

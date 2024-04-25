@@ -90,6 +90,9 @@ class ObjectNavigationFallbackBodyLoader
       network::mojom::URLResponseHeadPtr,
       mojo::ScopedDataPipeConsumerHandle body,
       absl::optional<mojo_base::BigBuffer> cached_metadata) override;
+#if BUILDFLAG(IS_OHOS)
+  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {}
+#endif
   void OnReceiveRedirect(const net::RedirectInfo&,
                          network::mojom::URLResponseHeadPtr) override;
   void OnUploadProgress(int64_t current_position,

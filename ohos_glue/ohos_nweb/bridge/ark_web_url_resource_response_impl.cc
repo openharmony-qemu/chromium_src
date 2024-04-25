@@ -129,4 +129,16 @@ void ArkWebUrlResourceResponseImpl::PutResponseReadyCallback(
       std::make_shared<ArkWebResourceReadyCallbackWrapper>(callback));
 }
 
+void ArkWebUrlResourceResponseImpl::PutResponseDataBuffer(char* buffer, size_t bufferSize) {
+  nweb_url_resource_response_->PutResponseDataBuffer(buffer, bufferSize);
+}
+
+char* ArkWebUrlResourceResponseImpl::GetResponseDataBuffer() {
+  return nweb_url_resource_response_->GetResponseDataBuffer();
+}
+
+size_t ArkWebUrlResourceResponseImpl::GetResponseDataBufferSize() {
+  return nweb_url_resource_response_->GetResponseDataBufferSize();
+}
+
 } // namespace OHOS::ArkWeb

@@ -75,6 +75,10 @@ class ExtensionLocalizationURLLoader : public network::mojom::URLLoaderClient,
     // equivalent to OnReceiveResponse().
     NOTREACHED();
   }
+#if BUILDFLAG(IS_OHOS)
+  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {}
+#endif
+
   void OnReceiveRedirect(
       const net::RedirectInfo& redirect_info,
       network::mojom::URLResponseHeadPtr response_head) override {

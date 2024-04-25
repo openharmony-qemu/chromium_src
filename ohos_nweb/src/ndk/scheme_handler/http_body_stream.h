@@ -38,11 +38,13 @@ struct ArkWeb_HttpBodyStream_ : public CefPostDataStreamInitCallback,
   void OnInitComplete(int rv) override;
   void OnReadComplete(char* buffer, int bytes_read) override;
   void Reset();
+  void SetForEts(bool ets) { is_ets_ = ets; }
 
   ArkWeb_HttpBodyStreamReadCallback read_callback{nullptr};
   ArkWeb_HttpBodyStreamInitCallback stream_init_callback{nullptr};
   CefRefPtr<CefPostDataStream> post_data_stream;
   void* user_data{nullptr};
+  bool is_ets_ = false;
 
   IMPLEMENT_REFCOUNTING(ArkWeb_HttpBodyStream_);
 };

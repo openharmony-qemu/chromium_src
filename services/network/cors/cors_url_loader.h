@@ -103,6 +103,9 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) CorsURLLoader
       mojom::URLResponseHeadPtr head,
       mojo::ScopedDataPipeConsumerHandle body,
       absl::optional<mojo_base::BigBuffer> cached_metadata) override;
+#if BUILDFLAG(IS_OHOS)
+  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {}
+#endif
   void OnReceiveRedirect(const net::RedirectInfo& redirect_info,
                          mojom::URLResponseHeadPtr head) override;
   void OnUploadProgress(int64_t current_position,

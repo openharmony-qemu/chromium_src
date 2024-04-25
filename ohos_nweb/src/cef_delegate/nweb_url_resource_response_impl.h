@@ -147,6 +147,12 @@ public:
   void PutResponseReadyCallback(
       std::shared_ptr<NWebResourceReadyCallback> readyCallback) override;
 
+  void PutResponseDataBuffer(char* buffer, size_t bufferSize) override;
+
+  char* GetResponseDataBuffer() override;
+
+  size_t GetResponseDataBufferSize() override;
+
 private:
   std::string mime_type_;
   std::string encoding_;
@@ -160,6 +166,8 @@ private:
   bool isFileFd_ = false;
   bool isDataReady_ = true;
   std::shared_ptr<NWebResourceReadyCallback> readyCallback_ = nullptr;
+  char* buffer_;
+  size_t bufferSize_ = 0;
 };
 
 } // namespace OHOS::NWeb

@@ -410,6 +410,10 @@ void TouchSelectionControllerClientAura::OnSelectionEvent(
       quick_menu_requested_ = !quick_menu_requested_;
       UpdateQuickMenu();
       break;
+#ifdef OHOS_CLIPBOARD
+    case ui::SELECTION_HANDLES_UPDATEMENU:
+      break;
+#endif
   }
 }
 

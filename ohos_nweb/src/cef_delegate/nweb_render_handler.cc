@@ -579,6 +579,8 @@ CefTouchHandleState NWebRenderHandler::ConvertTouchHandleDisplayRatio(
   result_touch_handle.edge_height *= screen_info_.display_ratio;
   result_touch_handle.origin.x *= screen_info_.display_ratio;
   result_touch_handle.origin.y *= screen_info_.display_ratio;
+  result_touch_handle.view_port.x *= screen_info_.display_ratio;
+  result_touch_handle.view_port.y *= screen_info_.display_ratio;
   return result_touch_handle;
 }
 

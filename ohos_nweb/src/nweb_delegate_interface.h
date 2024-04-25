@@ -271,6 +271,7 @@ class NWebDelegateInterface
   virtual void SetBrowserUserAgentString(const std::string& user_agent) = 0;
 
   virtual void SendDragEvent(const DelegateDragEvent& dragEvent) const = 0;
+  virtual bool TerminateRenderProcess() = 0;
   virtual std::string GetUrl() const = 0;
   virtual const std::string GetOriginalUrl() = 0;
   virtual bool GetFavicon(const void** data,

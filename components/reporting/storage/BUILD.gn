@@ -171,13 +171,9 @@ source_set("unit_tests") {
   testonly = true
   sources = [
     "storage_queue_stress_test.cc",
+    "storage_queue_unittest.cc",
+    "storage_unittest.cc",
   ]
-  if (!ohos_unittests) {
-    sources += [
-      "storage_queue_unittest.cc",
-      "storage_unittest.cc",
-    ]
-  }
   deps = [
     ":storage",
     ":storage_configuration",

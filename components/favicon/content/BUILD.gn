@@ -27,9 +27,7 @@ static_library("content") {
 
 source_set("unit_tests") {
   testonly = true
-  if (!ohos_unittests) {
-    sources = [ "content_favicon_driver_unittest.cc" ]
-  }
+  sources = [ "content_favicon_driver_unittest.cc" ]
   deps = [
     ":content",
     "//base/test:test_support",

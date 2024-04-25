@@ -207,8 +207,10 @@ source_set("unit_tests") {
     "base/unique_position_unittest.cc",
     "base/weak_handle_unittest.cc",
     "driver/backend_migrator_unittest.cc",
+    "driver/data_type_manager_impl_unittest.cc",
     "driver/glue/sync_engine_impl_unittest.cc",
     "driver/glue/sync_transport_data_prefs_unittest.cc",
+    "driver/model_load_manager_unittest.cc",
     "driver/model_type_controller_unittest.cc",
     "driver/passphrase_type_metrics_provider_unittest.cc",
     "driver/startup_controller_unittest.cc",
@@ -243,6 +245,7 @@ source_set("unit_tests") {
     "engine/net/http_bridge_unittest.cc",
     "engine/net/sync_server_connection_manager_unittest.cc",
     "engine/nigori/nigori_unittest.cc",
+    "engine/sync_manager_impl_unittest.cc",
     "engine/sync_scheduler_impl_unittest.cc",
     "engine/syncer_proto_util_unittest.cc",
     "engine/syncer_unittest.cc",
@@ -275,13 +278,7 @@ source_set("unit_tests") {
     "protocol/proto_enum_conversions_unittest.cc",
     "protocol/proto_value_conversions_unittest.cc",
   ]
-  if (!ohos_unittests) {
-    sources += [
-      "driver/data_type_manager_impl_unittest.cc",
-      "driver/model_load_manager_unittest.cc",
-      "engine/sync_manager_impl_unittest.cc",
-    ]
-  }
+
   if (is_chromeos) {
     sources += [ "chromeos/explicit_passphrase_mojo_utils_unittest.cc" ]
   }

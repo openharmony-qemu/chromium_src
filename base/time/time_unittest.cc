@@ -1220,7 +1220,6 @@ class TimeOverride {
 // static
 Time TimeOverride::now_time_;
 
-#if !defined(OHOS_UNITTESTS)
 TEST_F(TimeTest, NowOverride) {
   TimeOverride::now_time_ = Time::UnixEpoch();
 
@@ -1271,7 +1270,6 @@ TEST_F(TimeTest, NowOverride) {
   EXPECT_LT(build_time, subtle::TimeNowFromSystemTimeIgnoringOverride());
   EXPECT_GT(Time::Max(), subtle::TimeNowFromSystemTimeIgnoringOverride());
 }
-#endif // OHOS_UNITTESTS base_unittests drop case
 
 #undef MAYBE_NowOverride
 

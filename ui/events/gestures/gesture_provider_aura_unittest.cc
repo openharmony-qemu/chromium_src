@@ -40,7 +40,6 @@ class GestureProviderAuraTest : public testing::Test,
   base::test::SingleThreadTaskEnvironment task_environment_;
 };
 
-#if !defined(OHOS_UNITTESTS)
 TEST_F(GestureProviderAuraTest, IgnoresExtraPressEvents) {
   base::TimeTicks time = ui::EventTimeForNow();
   TouchEvent press1(ET_TOUCH_PRESSED, gfx::Point(10, 10), time,
@@ -52,9 +51,7 @@ TEST_F(GestureProviderAuraTest, IgnoresExtraPressEvents) {
                     PointerDetails(ui::EventPointerType::kTouch, 0));
   EXPECT_FALSE(provider()->OnTouchEvent(&press2));
 }
-#endif // OHOS_UNITTESTS events_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TEST_F(GestureProviderAuraTest, IgnoresExtraMoveOrReleaseEvents) {
   base::TimeTicks time = ui::EventTimeForNow();
   TouchEvent press1(ET_TOUCH_PRESSED, gfx::Point(10, 10), time,
@@ -76,9 +73,7 @@ TEST_F(GestureProviderAuraTest, IgnoresExtraMoveOrReleaseEvents) {
                    PointerDetails(ui::EventPointerType::kTouch, 0));
   EXPECT_FALSE(provider()->OnTouchEvent(&move1));
 }
-#endif // OHOS_UNITTESTS events_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TEST_F(GestureProviderAuraTest, DoesntStallOnCancelAndRelease) {
   GestureConfiguration::GetInstance()->set_single_pointer_cancel_enabled(false);
   base::TimeTicks time = ui::EventTimeForNow();
@@ -112,9 +107,7 @@ TEST_F(GestureProviderAuraTest, DoesntStallOnCancelAndRelease) {
                           PointerDetails(ui::EventPointerType::kPen, 0));
   EXPECT_TRUE(provider()->OnTouchEvent(&pen_release2));
 }
-#endif // OHOS_UNITTESTS events_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TEST_F(GestureProviderAuraTest, ContinueGestureDetectionAfterCancel) {
   GestureConfiguration::GetInstance()->set_single_pointer_cancel_enabled(true);
   base::TimeTicks time = ui::EventTimeForNow();
@@ -154,9 +147,7 @@ TEST_F(GestureProviderAuraTest, ContinueGestureDetectionAfterCancel) {
   EXPECT_TRUE(provider()->OnTouchEvent(&touch_release));
   time += base::Milliseconds(10);
 }
-#endif // OHOS_UNITTESTS events_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TEST_F(GestureProviderAuraTest, ContinueGestureDetectionAfterMultipleCancel) {
   GestureConfiguration::GetInstance()->set_single_pointer_cancel_enabled(true);
   base::TimeTicks time = ui::EventTimeForNow();
@@ -221,9 +212,7 @@ TEST_F(GestureProviderAuraTest, ContinueGestureDetectionAfterMultipleCancel) {
   EXPECT_TRUE(provider()->OnTouchEvent(&touch_release));
   time += base::Milliseconds(10);
 }
-#endif // OHOS_UNITTESTS events_unittests drop case
 
-#if !defined(OHOS_UNITTESTS)
 TEST_F(GestureProviderAuraTest, IgnoresIdenticalMoveEvents) {
   const float kRadiusX = 20.f;
   const float kRadiusY = 30.f;
@@ -280,7 +269,6 @@ TEST_F(GestureProviderAuraTest, IgnoresIdenticalMoveEvents) {
   move0_4.set_location_f(gfx::PointF(70, 75.1f));
   move0_4.set_root_location_f(gfx::PointF(70, 75.1f));
 }
-#endif // OHOS_UNITTESTS events_unittests drop case
 
 // TODO(jdduke): Test whether event marked as scroll trigger.
 

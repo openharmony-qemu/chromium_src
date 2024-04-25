@@ -966,11 +966,9 @@ TEST(DatabaseTrackerTest, DatabaseTrackerQuotaIntegration) {
   DatabaseTracker_TestHelper_Test::DatabaseTrackerQuotaIntegration(false);
 }
 
-#if !defined(OHOS_UNITTESTS)
 TEST(DatabaseTrackerTest, DatabaseTrackerQuotaIntegrationIncognitoMode) {
   DatabaseTracker_TestHelper_Test::DatabaseTrackerQuotaIntegration(true);
 }
-#endif // OHOS_UNITTESTS storage_unittests drop case
 
 TEST(DatabaseTrackerTest, DatabaseTrackerClearSessionOnlyDatabasesOnExit) {
   // Only works for regular mode.

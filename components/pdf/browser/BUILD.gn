@@ -71,14 +71,11 @@ source_set("unit_tests") {
     "fake_pdf_stream_delegate.h",
     "mock_url_loader_client.cc",
     "mock_url_loader_client.h",
+    "pdf_navigation_throttle_unittest.cc",
+    "pdf_url_loader_request_interceptor_unittest.cc",
+    "plugin_response_writer_unittest.cc",
   ]
-  if (!ohos_unittests) {
-    sources += [
-      "pdf_navigation_throttle_unittest.cc",
-      "pdf_url_loader_request_interceptor_unittest.cc",
-      "plugin_response_writer_unittest.cc",
-    ]
-  }
+
   deps = [
     ":interceptors",
     "//base",

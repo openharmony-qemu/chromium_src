@@ -14,7 +14,6 @@
 using blink::WebGestureCurve;
 
 namespace ui {
-#if !defined(OHOS_UNITTESTS)
 TEST(WebGestureCurveImplTest, Basic) {
   gfx::Vector2dF velocity(5000, 0);
   gfx::Vector2dF offset;
@@ -53,6 +52,5 @@ TEST(WebGestureCurveImplTest, Basic) {
   EXPECT_EQ(current_velocity.x(), 0);
   EXPECT_EQ(current_velocity.y(), 0);
 }
-#endif // OHOS_UNITTESTS events_unittests drop case
 
 }  // namespace ui

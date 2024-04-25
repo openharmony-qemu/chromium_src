@@ -105,17 +105,13 @@ source_set("suspicious_site_trigger") {
 source_set("unit_tests") {
   testonly = true
   sources = [
+    "ad_sampler_trigger_unittest.cc",
     "mock_trigger_manager.cc",
     "mock_trigger_manager.h",
+    "suspicious_site_trigger_unittest.cc",
+    "trigger_manager_unittest.cc",
     "trigger_throttler_unittest.cc",
   ]
-  if (!ohos_unittests) {
-    sources += [
-      "ad_sampler_trigger_unittest.cc",
-      "suspicious_site_trigger_unittest.cc",
-      "trigger_manager_unittest.cc",
-    ]
-  }
   deps = [
     ":ad_sampler_trigger",
     ":suspicious_site_trigger",

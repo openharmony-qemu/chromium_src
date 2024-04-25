@@ -231,7 +231,6 @@ INSTANTIATE_TEST_SUITE_P(WriteUTF16,
                          DataPackTest,
                          ::testing::Values(DataPack::UTF16));
 
-#if !defined(OHOS_UNITTESTS)
 TEST(DataPackTest, LoadFileWithTruncatedHeader) {
   base::FilePath data_path;
   ASSERT_TRUE(base::PathService::Get(UI_DIR_TEST_DATA, &data_path));
@@ -240,7 +239,6 @@ TEST(DataPackTest, LoadFileWithTruncatedHeader) {
   DataPack pack(k100Percent);
   ASSERT_FALSE(pack.LoadFromPath(data_path));
 }
-#endif // OHOS_UNITTESTS ui_base_unittests drop case
 
 TEST_P(DataPackTest, Write) {
   base::ScopedTempDir dir;

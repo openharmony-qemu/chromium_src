@@ -96,6 +96,9 @@ CefRefPtr<CefResourceHandler> NWebSchemeHandlerFactory::Create(
     }
     ArkWeb_ResourceRequest* resource_request =
         new ArkWeb_ResourceRequest(request);
+    if (scheme_handler_for_sw_->fromEts) {
+      resource_request->SetForEts(true);
+    }
     ArkWeb_ResourceHandler* resource_handler =
         new ArkWeb_ResourceHandler(resource_request, this, "", true);
     scheme_handler_for_sw_->on_request_start(
@@ -126,6 +129,9 @@ CefRefPtr<CefResourceHandler> NWebSchemeHandlerFactory::Create(
   }
   ArkWeb_ResourceRequest* resource_request =
       new ArkWeb_ResourceRequest(request);
+  if (handler->fromEts) {
+    resource_request->SetForEts(true);
+  }
   ArkWeb_ResourceHandler* resource_handler =
       new ArkWeb_ResourceHandler(resource_request, this, web_tag, false);
 

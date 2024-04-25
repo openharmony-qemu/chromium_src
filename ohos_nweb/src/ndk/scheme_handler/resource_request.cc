@@ -39,6 +39,7 @@ void ArkWeb_ResourceRequest_::GetHttpBodyStream(
     return;
   }
 
+  http_body_stream->SetForEts(is_ets_);
   *stream = http_body_stream.get();
   // Add ref and decrement at DestroyHttpBodyStream.
   http_body_stream->AddRef();

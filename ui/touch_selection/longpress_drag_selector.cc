@@ -38,6 +38,9 @@ bool LongPressDragSelector::WillHandleTouchEvent(const MotionEvent& event) {
     case MotionEvent::Action::UP:
     case MotionEvent::Action::CANCEL:
       SetState(INACTIVE);
+#ifdef OHOS_CLIPBOARD
+      client_->UpdateSelectionChanged(*this);
+#endif
       return false;
 
     case MotionEvent::Action::MOVE:

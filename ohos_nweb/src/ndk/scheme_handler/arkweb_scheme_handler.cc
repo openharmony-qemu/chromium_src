@@ -164,7 +164,8 @@ ARKWEB_EXPORT void OH_ArkWebResourceRequest_DestroyHttpBodyStream(
     return;
   }
 
-  delete http_body_stream;
+  http_body_stream->Reset();
+  http_body_stream = nullptr;
 }
 
 ARKWEB_EXPORT int32_t OH_ArkWebHttpBodyStream_SetReadCallback(

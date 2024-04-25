@@ -20,8 +20,6 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
-#if !defined(OHOS_UNITTESTS)
-
 namespace gpu {
 namespace gles2 {
 
@@ -156,5 +154,3 @@ TEST_F(BufferTrackerTest, Unmanage) {
 
 }  // namespace gles2
 }  // namespace gpu
-
-#endif  // !defined(OHOS_UNITTESTS)

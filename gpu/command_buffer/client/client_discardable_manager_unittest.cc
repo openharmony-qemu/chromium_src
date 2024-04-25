@@ -6,8 +6,6 @@
 #include "gpu/command_buffer/client/client_discardable_texture_manager.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
-#if !defined(OHOS_UNITTESTS)
-
 namespace gpu {
 namespace {
 class FakeCommandBuffer : public CommandBuffer {
@@ -247,5 +245,3 @@ TEST(ClientDiscardableTextureManagerTest, BasicUsage) {
 }
 
 }  // namespace gpu
-
-#endif  // !defined(OHOS_UNITTESTS)

@@ -18,8 +18,6 @@
 #include "ui/compositor/test/throughput_report_checker.h"
 #include "ui/gfx/geometry/rect.h"
 
-#if !defined(OHOS_UNITTESTS)
-
 namespace ui {
 
 using AnimationThroughputReporterTest = AnimationThroughputReporterTestBase;
@@ -275,5 +273,3 @@ TEST_F(AnimationThroughputReporterTest, NoLeakWithNoAnimationStart) {
 }
 
 }  // namespace ui
-
-#endif

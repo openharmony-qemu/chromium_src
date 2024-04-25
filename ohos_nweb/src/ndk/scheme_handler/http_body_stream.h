@@ -37,6 +37,7 @@ struct ArkWeb_HttpBodyStream_ : public CefPostDataStreamInitCallback,
   void* GetUserData() const;
   void OnInitComplete(int rv) override;
   void OnReadComplete(char* buffer, int bytes_read) override;
+  void Reset();
 
   ArkWeb_HttpBodyStreamReadCallback read_callback{nullptr};
   ArkWeb_HttpBodyStreamInitCallback stream_init_callback{nullptr};

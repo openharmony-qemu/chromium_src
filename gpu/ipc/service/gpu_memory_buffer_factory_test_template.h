@@ -24,8 +24,6 @@
 #include "ui/gl/test/gl_surface_test_support.h"
 #endif
 
-#if !defined(OHOS_UNITTESTS)
-
 namespace gpu {
 
 template <typename GpuMemoryBufferFactoryType>
@@ -99,5 +97,4 @@ REGISTER_TYPED_TEST_SUITE_P(GpuMemoryBufferFactoryTest, CreateGpuMemoryBuffer);
 
 }  // namespace gpu
 
-#endif  // !defined(OHOS_UNITTESTS)
 #endif  // GPU_IPC_SERVICE_GPU_MEMORY_BUFFER_FACTORY_TEST_TEMPLATE_H_

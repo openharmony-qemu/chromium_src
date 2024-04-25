@@ -5893,7 +5893,6 @@ TEST_P(ScrollUnifiedLayerTreeHostImplTest, NullScrollerLayerForScrollbarLayer) {
   GetInputHandler().ScrollEnd();
 }
 
-#if !defined(OHOS_UNITTESTS)
 TEST_P(ScrollUnifiedLayerTreeHostImplTest,
        ScrollbarVisibilityChangeCausesRedrawAndCommit) {
   LayerTreeSettings settings = DefaultSettings();
@@ -5990,7 +5989,6 @@ TEST_P(ScrollUnifiedLayerTreeHostImplTest,
     EXPECT_TRUE(did_request_commit_);
   }
 }
-#endif  // !BUILDFLAG(OHOS_UNITTESTS)
 
 TEST_P(ScrollUnifiedLayerTreeHostImplTest, ScrollbarInnerLargerThanOuter) {
   LayerTreeSettings settings = DefaultSettings();

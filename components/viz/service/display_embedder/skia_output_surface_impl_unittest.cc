@@ -28,8 +28,6 @@
 #include "ui/gfx/gpu_fence_handle.h"
 #include "ui/gl/gl_implementation.h"
 
-#if !defined(OHOS_UNITTESTS)
-
 namespace viz {
 namespace {
 
@@ -303,5 +301,3 @@ TEST_F(SkiaOutputSurfaceImplTest, CopyOutputBitmapUnsupportedColorSpace) {
 }
 
 }  // namespace viz
-
-#endif  // !defined(OHOS_UNITTESTS)

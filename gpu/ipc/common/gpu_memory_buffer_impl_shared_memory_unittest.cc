@@ -10,7 +10,6 @@
 namespace gpu {
 namespace {
 
-#if !defined(OHOS_UNITTESTS)
 INSTANTIATE_TYPED_TEST_SUITE_P(GpuMemoryBufferImplSharedMemory,
                                GpuMemoryBufferImplTest,
                                GpuMemoryBufferImplSharedMemory);
@@ -18,7 +17,6 @@ INSTANTIATE_TYPED_TEST_SUITE_P(GpuMemoryBufferImplSharedMemory,
 INSTANTIATE_TYPED_TEST_SUITE_P(GpuMemoryBufferImplSharedMemory,
                                GpuMemoryBufferImplCreateTest,
                                GpuMemoryBufferImplSharedMemory);
-#endif
 
 }  // namespace
 }  // namespace gpu

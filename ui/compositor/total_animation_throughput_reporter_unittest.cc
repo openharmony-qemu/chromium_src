@@ -28,8 +28,6 @@
 #define SANITIZER_ENABLED
 #endif
 
-#if !defined(OHOS_UNITTESTS)
-
 namespace ui {
 namespace {
 
@@ -514,5 +512,3 @@ TEST_F(TotalAnimationThroughputReporterTest, ThreadCheck) {
 }
 
 }  // namespace ui
-
-#endif  // !defined(OHOS_UNITTESTS)

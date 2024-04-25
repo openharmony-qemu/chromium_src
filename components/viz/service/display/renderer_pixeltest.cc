@@ -68,8 +68,6 @@
 #include "ui/gfx/video_types.h"
 #include "ui/gl/gl_implementation.h"
 
-#if !defined(OHOS_UNITTESTS)
-
 namespace viz {
 namespace {
 const gfx::DisplayColorSpaces kRec601DisplayColorSpaces(
@@ -5876,5 +5874,3 @@ TEST_P(DelegatedInkWithPredictionTest,
 
 }  // namespace
 }  // namespace viz
-
-#endif  // !defined(OHOS_UNITTESTS)

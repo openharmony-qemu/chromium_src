@@ -15,6 +15,7 @@
 
 #include "nweb_handler_delegate.h"
 
+#include <sys/mman.h>
 #include <thread>
 
 #include "base/functional/bind.h"
@@ -86,6 +87,11 @@
 #include "ohos_nweb/src/native_media_player/nweb_media_info_impl.h"
 #include "ohos_nweb/src/native_media_player/nweb_native_media_player_handler_impl.h"
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+#define MAX_FLOWBUF_DATA_SIZE 52428800 /* 50 MB */
+#define MAX_ENTRIES 10
+#define HEADER_SIZE (MAX_ENTRIES * 8) /* 10 * (int position + int length) */
+#define INDEX_SIZE 2
 
 namespace OHOS::NWeb {
 namespace {
@@ -2668,6 +2674,209 @@ int NWebHandlerDelegate::NotifyJavaScriptResult(CefRefPtr<CefListValue> args,
   return ark_result->error_;
 }
 
+int NWebHandlerDelegate::GetFlowbufSize(void* mem){
+  int* header = static_cast<int*>(mem); // Cast the memory block to int* for easier access
+  int count = 0;
+  for (int i = 0; i < MAX_ENTRIES; i+=INDEX_SIZE) {
+      if (*(header + i + 1) != 0) {
+          count++;
+      }
+  }
+  return count;
+}
+
+char* NWebHandlerDelegate::FlowbufStrAtIndex(void* mem, int flowbufIndex, int* argIndex, int* strLen)
+{
+    int* header = static_cast<int*>(mem); // Cast the memory block to int* for easier access
+    int offset = 0;
+
+    if (flowbufIndex >=  MAX_ENTRIES) {
+        *argIndex = -1;
+        return nullptr;
+    }
+
+    int* entry = header + (flowbufIndex * INDEX_SIZE);
+    if (*(entry + 1) == 0) { // Check if length is 0, indicating unused entry
+        *argIndex = -1;
+        return nullptr;
+    }
+
+    int i = 0;
+    for (i = 0; i < flowbufIndex; i++) {
+        offset += *(header + (i * INDEX_SIZE) + 1);
+    }
+
+    *strLen = *(header + (i * INDEX_SIZE) + 1) - 1;
+
+    *argIndex = *entry;
+
+    char* dataSegment = static_cast<char*>(mem) + HEADER_SIZE;
+    char* currentString = dataSegment + offset;
+    return currentString;
+}
+
+int NWebHandlerDelegate::ProcessNativeProxyResultNewFlowbuf(
+    CefRefPtr<CefListValue> args,
+    const CefString& method,
+    const CefString& object_name,
+    int fd,
+    CefRefPtr<CefListValue> result) {
+  auto it = proxyObjMap_.find(object_name);
+  if (it == proxyObjMap_.end()) {
+    // object name not found
+    return 1;
+  }
+  auto& methodMap = it->second;
+  auto methodIt = methodMap.find(method);
+  if (methodIt == methodMap.end()) {
+    // method name not found
+    return 1;
+  }
+
+  if (!args) {
+    LOG(ERROR) << "args is nullptr";
+    return 1;
+  }
+
+  auto flowbufferAdapter = OhosAdapterHelper::GetInstance().CreateFlowbufferAdapter();
+  if (!flowbufferAdapter) {
+      return 1;
+  }
+  auto ashmem = flowbufferAdapter->CreateAshmemWithFd(fd, MAX_FLOWBUF_DATA_SIZE + HEADER_SIZE, PROT_READ);
+  if (!ashmem) {
+      return 1;
+  }
+
+  size_t argsSize = args->GetSize();
+  auto callback = methodMap[method];
+  int flowbufSize = GetFlowbufSize(ashmem);
+  std::vector<std::vector<uint8_t>> dataList(argsSize + static_cast<size_t>(flowbufSize));
+  std::vector<size_t> dataSize(argsSize + static_cast<size_t>(flowbufSize));
+
+  int argIndex = -1;
+  int currIndex = 0;
+  int flowbufIndex = 0;
+  int strLen = 0;
+  char* flowbufStr = FlowbufStrAtIndex(ashmem, flowbufIndex, &argIndex, &strLen);
+  flowbufIndex++;
+  while (argIndex == currIndex) {
+      std::string flowbuf_stdstr(flowbufStr,strLen);
+      dataList[currIndex] = std::vector<uint8_t>(flowbuf_stdstr.begin(), flowbuf_stdstr.end());
+      dataSize[currIndex] = strLen;
+      currIndex++;
+      flowbufStr = FlowbufStrAtIndex(ashmem, flowbufIndex, &argIndex, &strLen);
+      flowbufIndex++;
+  }
+
+  for (size_t i = 0; i < argsSize; i++) {
+    while (argIndex == currIndex) {
+      std::string flowbuf_stdstr(flowbufStr,strLen);
+      dataList[currIndex] = std::vector<uint8_t>(flowbuf_stdstr.begin(), flowbuf_stdstr.end());
+      dataSize[currIndex] = strLen;
+      currIndex++;
+      flowbufStr = FlowbufStrAtIndex(ashmem, flowbufIndex, &argIndex, &strLen);
+      flowbufIndex++;
+    }
+
+    CefValueType type = args->GetType(i);
+    CefRefPtr<CefValue> value = args->GetValue(i);
+    if (!value) {
+      LOG(ERROR) << "value is nullptr";
+      currIndex++;
+      continue;
+    }
+
+    if (type == VTYPE_STRING) {
+      auto argString = value->GetString().ToString();
+      size_t size = argString.size();
+
+      dataList[currIndex] = std::vector<uint8_t>(argString.begin(), argString.end());
+      dataSize[currIndex] = size;
+    } else if (type == VTYPE_BINARY) {
+      auto argBinary = value->GetBinary();
+      size_t size = argBinary->GetSize();
+
+      std::vector<uint8_t> data(size);
+      argBinary->GetData(&data[0], size, 0);
+
+      dataList[currIndex] = std::move(data);
+      dataSize[currIndex] = size;
+    } else {
+      std::string jsonString =
+          CefWriteJSON(value, JSON_WRITER_OMIT_BINARY_VALUES);
+      dataList[currIndex] = std::vector<uint8_t>(jsonString.begin(), jsonString.end());
+      dataSize[currIndex] = jsonString.size();
+    }
+    currIndex++;
+  }
+
+  while (argIndex == currIndex) {
+      std::string flowbuf_stdstr(flowbufStr,strLen);
+      dataList[currIndex] = std::vector<uint8_t>(flowbuf_stdstr.begin(), flowbuf_stdstr.end());
+      dataSize[currIndex] = strLen;
+      currIndex++;
+      flowbufStr = FlowbufStrAtIndex(ashmem, flowbufIndex, &argIndex, &strLen);
+      flowbufIndex++;
+  }
+
+  close(fd);
+
+  char* callbackResult = callback(dataList, dataSize);
+  if (callbackResult) {
+    result->SetString(0, callbackResult);
+  } else {
+    LOG(INFO) << "native return nullptr, just set null string to result";
+    result->SetNull(0);
+  }
+
+  return 0;
+}
+
+int NWebHandlerDelegate::ProcessNativeProxyResultFlowbuf(
+    CefRefPtr<CefListValue> args,
+    const CefString& method,
+    const CefString& object_name,
+    int fd,
+    CefRefPtr<CefListValue> result) {
+  if (auto it = proxyObjMap_.find(object_name); it != proxyObjMap_.end()) {
+    ProcessNativeProxyResultNewFlowbuf(args, method, object_name, fd, result);
+    return 0;
+  }
+
+  if (auto it = objMap_.find(object_name); it != objMap_.end()) {
+    auto flowbufferAdapter = OhosAdapterHelper::GetInstance().CreateFlowbufferAdapter();
+    if (!flowbufferAdapter) {
+        return 1;
+    }
+
+    auto ashmem = flowbufferAdapter->CreateAshmemWithFd(fd, MAX_FLOWBUF_DATA_SIZE + HEADER_SIZE, PROT_READ);
+    if (!ashmem) {
+        return 1;
+    }
+
+    int argIndex = -1;
+    int flowbufIndex = 0;
+    int strLen = 0;
+    do {
+        char* flowbufStr = FlowbufStrAtIndex(ashmem, flowbufIndex, &argIndex, &strLen);
+        if (argIndex == -1) {
+            break;
+        }
+        flowbufIndex++;
+        std::string str(flowbufStr);
+        CefRefPtr<CefValue> value = CefValue::Create();
+        value->SetStdString(str);
+        args->SetValue(argIndex, value);
+    } while (argIndex <= MAX_ENTRIES);
+    close(fd);
+    ProcessNativeProxyResultThread(args, method, object_name, result);
+    return 0;
+  }
+
+  LOG(ERROR) << "native proxy object not found, name:" << object_name.ToString();
+  return 1;
+}
+
 int NWebHandlerDelegate::NotifyJavaScriptResultFlowbuf(CefRefPtr<CefListValue> args,
                                                        const CefString& method,
                                                        const CefString& object_name,
@@ -2679,7 +2888,7 @@ int NWebHandlerDelegate::NotifyJavaScriptResultFlowbuf(CefRefPtr<CefListValue> a
     return 0;
   }
 
-  if (!ProcessNativeProxyResult(args, method, object_name, result)) {
+  if (!ProcessNativeProxyResultFlowbuf(args, method, object_name, fd, result)) {
     // native proxy object
     return 0;
   }  // ets proxy object

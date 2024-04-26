@@ -188,10 +188,6 @@ class LayerTreeHostImplClient {
   virtual void OnLayerRectUpdate(int id, const gfx::Rect& rect) {}
 #endif
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-  virtual void OnLayerRectChange(int id, int x, int y, int width, int height) {}
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
-
  protected:
   virtual ~LayerTreeHostImplClient() = default;
 };
@@ -931,10 +927,6 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
 #if BUILDFLAG(IS_OHOS)
   void OnLayerRectUpdate(int id, const gfx::Rect& rect);
 #endif
-
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-  void OnLayerRectChange(int id, int x, int y, int width, int height);
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
 
   void SetDownsampleMetricsForTesting(bool value) {
     downsample_metrics_ = value;

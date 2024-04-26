@@ -64,15 +64,13 @@ struct SameSizeAsLayer : public base::RefCounted<SameSizeAsLayer>,
   int int_fields[7];
   gfx::Vector2dF offset;
   unsigned bitfields;
-  gfx::RectF native_rect_;
   int native_embed_id_;
+  gfx::RectF native_rect_;
   raw_ptr<void> debug_info;
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-  raw_ptr<LayerClient> client;
-  gfx::RectF video_rect;
   bool should_intercept_touch_event_;
-  bool should_overlay_{false};
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  bool should_overlay_;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 };
 
@@ -126,7 +124,6 @@ Layer::Layer()
       property_tree_sequence_number_(-1),
       ignore_set_needs_commit_for_test_(false),
       native_(false),
-      native_embed_id_(0),
       bitflags_(0u),
       subtree_property_changed_(false) {}
 
@@ -1529,9 +1526,6 @@ void Layer::PushPropertiesTo(LayerImpl* layer,
   update_rect_.Write(*this) = gfx::Rect();
 
   layer->SetShouldInterceptTouchEvent(ShouldInterceptTouchEvent());
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-  layer->SetVideoRect(video_rect_);
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
 }
 
 void Layer::TakeCopyRequests(
@@ -1709,12 +1703,6 @@ gfx::Transform Layer::ScreenSpaceTransform() const {
 }
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-void Layer::SetLayerClient(LayerClient* client) {
-  client_ = client;
-}
-LayerClient* Layer::GetLayerClient() {
-  return client_;
-}
 bool Layer::ShouldOverlay() {
   return should_overlay_;
 }

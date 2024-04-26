@@ -61,6 +61,11 @@ class CC_EXPORT SurfaceLayer : public Layer {
 
   void SetMayContainVideo(bool may_contain_video);
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  using RectChangeCallback = base::RepeatingCallback<void(const gfx::Rect&)>;
+  void SetVideoRectChangeCallback(RectChangeCallback callback);
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
   // Layer overrides.
   std::unique_ptr<LayerImpl> CreateLayerImpl(
       LayerTreeImpl* tree_impl) const override;
@@ -68,6 +73,9 @@ class CC_EXPORT SurfaceLayer : public Layer {
   void PushPropertiesTo(LayerImpl* layer,
                         const CommitState& commit_state,
                         const ThreadUnsafeCommitState& unsafe_state) override;
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void OnLayerRectUpdate(const gfx::Rect& rect) override;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 
   const viz::SurfaceId& surface_id() const {
     return surface_range_.Read(*this).end();
@@ -114,6 +122,10 @@ class CC_EXPORT SurfaceLayer : public Layer {
 
   // This surface layer is reflecting the root surface of another display.
   ProtectedSequenceReadable<bool> is_reflection_;
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  RectChangeCallback video_rect_change_callback_;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 };
 
 }  // namespace cc

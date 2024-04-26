@@ -318,7 +318,7 @@ void OHOSCustomMediaPlayerRenderer::OnCookiesRetrieved(
 void OHOSCustomMediaPlayerRenderer::TryCreateMediaPlayer() {
   DVLOG(1) << __func__;
 
-  bool wait_surface_created = !is_audio_ && surface_id_ == -1;
+  bool wait_surface_created = surface_id_ == -1;
   if (wait_surface_created) {
     return;
   }

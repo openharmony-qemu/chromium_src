@@ -163,6 +163,10 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionController
   }
 #endif
 
+#ifdef OHOS_CLIPBOARD
+  void UpdateSelectionChanged(const TouchSelectionDraggable& draggable) override;
+  bool IsLongPressDragSelectionActive();
+#endif
   ActiveStatus active_status() const { return active_status_; }
 
  private:

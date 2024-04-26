@@ -23,6 +23,9 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionDraggableClient {
                             const gfx::PointF& new_position) = 0;
   virtual void OnDragEnd(const TouchSelectionDraggable& draggable) = 0;
   virtual bool IsWithinTapSlop(const gfx::Vector2dF& delta) const = 0;
+#ifdef OHOS_CLIPBOARD
+  virtual void UpdateSelectionChanged(const TouchSelectionDraggable& draggable) = 0;
+#endif
 };
 
 // Generic interface for entities that manipulate the selection via dragging.

@@ -19,6 +19,7 @@
 
 #include "base/capi/ark_web_base_ref_counted_capi.h"
 #include "ohos_nweb/capi/ark_web_access_request_capi.h"
+#include "ohos_nweb/capi/ark_web_applink_callback_capi.h"
 #include "ohos_nweb/capi/ark_web_console_log_capi.h"
 #include "ohos_nweb/capi/ark_web_context_menu_callback_capi.h"
 #include "ohos_nweb/capi/ark_web_context_menu_params_capi.h"
@@ -361,6 +362,10 @@ typedef struct _ark_web_handler_t {
 
   void(ARK_WEB_CALLBACK *update_clipped_selection_bounds)(struct _ark_web_handler_t *self,
       int x, int y, int w, int h);
+
+  bool(ARK_WEB_CALLBACK *on_open_app_link)(
+      struct _ark_web_handler_t *self, const ArkWebString *url,
+      ark_web_app_link_callback_t *callback);
 } ark_web_handler_t;
 
 #ifdef __cplusplus

@@ -29,6 +29,11 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/logging.h"
+#include "url/url_util.h"
+#endif
+
 using blink::mojom::CacheStorageError;
 
 namespace content {
@@ -82,6 +87,13 @@ bool CheckSecurityForAccessingCodeCacheData(const GURL& resource_url,
     }
     return true;
   }
+
+#if BUILDFLAG(IS_OHOS)
+  if (resource_url.SchemeIsCodeCacheEnabled()) {
+    LOG(DEBUG) << "CheckSecurity scheme is code cache enabled.";
+    return true;
+  }
+#endif
 
   if (operation == Operation::kWrite) {
     mojo::ReportBadMessage("Invalid URL scheme for code cache.");

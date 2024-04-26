@@ -131,6 +131,10 @@ struct SchemeRegistry {
   std::vector<std::string> custom_schemes = {};
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+  std::vector<std::string> code_cache_enabled_schemes = {};
+#endif
+
   bool allow_non_standard_schemes = false;
 };
 
@@ -699,6 +703,22 @@ void AddCustomScheme(const char* new_scheme) {
 
 const std::vector<std::string>& GetCustomScheme() {
   return GetSchemeRegistry().custom_schemes;
+}
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+void AddCodeCacheEnabledScheme(const char* new_scheme) {
+  DoAddScheme(new_scheme,
+              &GetSchemeRegistryWithoutLocking()->code_cache_enabled_schemes);
+}
+
+bool IsCodeCacheEnabledScheme(const std::string& scheme) {
+  for (const std::string& it : GetSchemeRegistry().code_cache_enabled_schemes) {
+    if (it == scheme) {
+      return true;
+    }
+  }
+  return false;
 }
 #endif
 

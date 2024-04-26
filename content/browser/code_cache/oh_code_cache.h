@@ -54,14 +54,10 @@ enum class CacheError {
 
 class CacheOptions {
  public:
-  explicit CacheOptions(const std::map<std::string, std::string> response_headers,
-                        const bool is_module,
-                        const bool is_top_level)
-      : response_headers_(response_headers), is_module_(is_module), is_top_level_(is_top_level) {}
+  explicit CacheOptions(const std::map<std::string, std::string> response_headers)
+      : response_headers_(response_headers) {}
 
   std::map<std::string, std::string> response_headers_;
-  bool is_module_;
-  bool is_top_level_;
 };
 
 class TaskRunner {

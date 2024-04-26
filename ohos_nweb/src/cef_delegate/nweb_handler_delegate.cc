@@ -2760,7 +2760,7 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNewFlowbuf(
 
   size_t argsSize = args->GetSize();
   auto callback = methodMap[method];
-  int flowbufSize = GetFlowbufSize(ashmem);
+  int flowbufSize = GetFlowbufCount(ashmem);
   std::vector<std::vector<uint8_t>> dataList(argsSize + static_cast<size_t>(flowbufSize));
   std::vector<size_t> dataSize(argsSize + static_cast<size_t>(flowbufSize));
 

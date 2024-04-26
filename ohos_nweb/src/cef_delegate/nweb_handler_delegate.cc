@@ -2674,45 +2674,49 @@ int NWebHandlerDelegate::NotifyJavaScriptResult(CefRefPtr<CefListValue> args,
   return ark_result->error_;
 }
 
-int NWebHandlerDelegate::GetFlowbufSize(void* mem){
+// in flowbuf header (int *), odd positions stored length of stored strings, 0 represents unused slot
+// iterate through flowbuf header, and count No. of string stored
+int NWebHandlerDelegate::GetFlowbufCount(void* mem){
   int* header = static_cast<int*>(mem); // Cast the memory block to int* for easier access
   int count = 0;
-  for (int i = 0; i < MAX_ENTRIES; i+=INDEX_SIZE) {
-      if (*(header + i + 1) != 0) {
-          count++;
-      }
+  for (int i = 0; i < MAX_ENTRIES; i++) {
+    if (*(header + (i * 2) + 1) != 0) {
+      count++;
+    }else{
+      break;
+    }
   }
   return count;
 }
 
+// flowbufIndex is index in flowbuf
 char* NWebHandlerDelegate::FlowbufStrAtIndex(void* mem, int flowbufIndex, int* argIndex, int* strLen)
 {
-    int* header = static_cast<int*>(mem); // Cast the memory block to int* for easier access
-    int offset = 0;
+  int* header = static_cast<int*>(mem); // Cast the memory block to int* for easier access
+  int offset = 0;
 
-    if (flowbufIndex >=  MAX_ENTRIES) {
-        *argIndex = -1;
-        return nullptr;
-    }
+  if (flowbufIndex >=  MAX_ENTRIES) {
+    *argIndex = -1;
+    return nullptr;
+  }
 
-    int* entry = header + (flowbufIndex * INDEX_SIZE);
-    if (*(entry + 1) == 0) { // Check if length is 0, indicating unused entry
-        *argIndex = -1;
-        return nullptr;
-    }
+  int* entry = header + (flowbufIndex * INDEX_SIZE);
+  if (*(entry + 1) == 0) { // Check if length is 0, indicating unused entry
+    *argIndex = -1;
+    return nullptr;
+  }
 
-    int i = 0;
-    for (i = 0; i < flowbufIndex; i++) {
-        offset += *(header + (i * INDEX_SIZE) + 1);
-    }
+  int i = 0;
+  for (i = 0; i < flowbufIndex; i++) {
+    offset += *(header + (i * INDEX_SIZE) + 1);
+  }
 
-    *strLen = *(header + (i * INDEX_SIZE) + 1) - 1;
+  *strLen = *(header + (i * INDEX_SIZE) + 1) - 1;
+  *argIndex = *entry;
 
-    *argIndex = *entry;
-
-    char* dataSegment = static_cast<char*>(mem) + HEADER_SIZE;
-    char* currentString = dataSegment + offset;
-    return currentString;
+  char* dataSegment = static_cast<char*>(mem) + HEADER_SIZE;
+  char* currentString = dataSegment + offset;
+  return currentString;
 }
 
 int NWebHandlerDelegate::ProcessNativeProxyResultNewFlowbuf(
@@ -2754,26 +2758,26 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNewFlowbuf(
   std::vector<size_t> dataSize(argsSize + static_cast<size_t>(flowbufSize));
 
   int argIndex = -1;
-  int currIndex = 0;
+  int curIndex = 0;
   int flowbufIndex = 0;
   int strLen = 0;
   char* flowbufStr = FlowbufStrAtIndex(ashmem, flowbufIndex, &argIndex, &strLen);
   flowbufIndex++;
-  while (argIndex == currIndex) {
+  while (argIndex == curIndex) {
       std::string flowbuf_stdstr(flowbufStr,strLen);
-      dataList[currIndex] = std::vector<uint8_t>(flowbuf_stdstr.begin(), flowbuf_stdstr.end());
-      dataSize[currIndex] = strLen;
-      currIndex++;
+      dataList[curIndex] = std::vector<uint8_t>(flowbuf_stdstr.begin(), flowbuf_stdstr.end());
+      dataSize[curIndex] = strLen;
+      curIndex++;
       flowbufStr = FlowbufStrAtIndex(ashmem, flowbufIndex, &argIndex, &strLen);
       flowbufIndex++;
   }
 
   for (size_t i = 0; i < argsSize; i++) {
-    while (argIndex == currIndex) {
+    while (argIndex == curIndex) {
       std::string flowbuf_stdstr(flowbufStr,strLen);
-      dataList[currIndex] = std::vector<uint8_t>(flowbuf_stdstr.begin(), flowbuf_stdstr.end());
-      dataSize[currIndex] = strLen;
-      currIndex++;
+      dataList[curIndex] = std::vector<uint8_t>(flowbuf_stdstr.begin(), flowbuf_stdstr.end());
+      dataSize[curIndex] = strLen;
+      curIndex++;
       flowbufStr = FlowbufStrAtIndex(ashmem, flowbufIndex, &argIndex, &strLen);
       flowbufIndex++;
     }
@@ -2782,7 +2786,7 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNewFlowbuf(
     CefRefPtr<CefValue> value = args->GetValue(i);
     if (!value) {
       LOG(ERROR) << "value is nullptr";
-      currIndex++;
+      curIndex++;
       continue;
     }
 
@@ -2790,8 +2794,8 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNewFlowbuf(
       auto argString = value->GetString().ToString();
       size_t size = argString.size();
 
-      dataList[currIndex] = std::vector<uint8_t>(argString.begin(), argString.end());
-      dataSize[currIndex] = size;
+      dataList[curIndex] = std::vector<uint8_t>(argString.begin(), argString.end());
+      dataSize[curIndex] = size;
     } else if (type == VTYPE_BINARY) {
       auto argBinary = value->GetBinary();
       size_t size = argBinary->GetSize();
@@ -2799,22 +2803,22 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNewFlowbuf(
       std::vector<uint8_t> data(size);
       argBinary->GetData(&data[0], size, 0);
 
-      dataList[currIndex] = std::move(data);
-      dataSize[currIndex] = size;
+      dataList[curIndex] = std::move(data);
+      dataSize[curIndex] = size;
     } else {
       std::string jsonString =
           CefWriteJSON(value, JSON_WRITER_OMIT_BINARY_VALUES);
-      dataList[currIndex] = std::vector<uint8_t>(jsonString.begin(), jsonString.end());
-      dataSize[currIndex] = jsonString.size();
+      dataList[curIndex] = std::vector<uint8_t>(jsonString.begin(), jsonString.end());
+      dataSize[curIndex] = jsonString.size();
     }
-    currIndex++;
+    curIndex++;
   }
 
-  while (argIndex == currIndex) {
+  while (argIndex == curIndex) {
       std::string flowbuf_stdstr(flowbufStr,strLen);
-      dataList[currIndex] = std::vector<uint8_t>(flowbuf_stdstr.begin(), flowbuf_stdstr.end());
-      dataSize[currIndex] = strLen;
-      currIndex++;
+      dataList[curIndex] = std::vector<uint8_t>(flowbuf_stdstr.begin(), flowbuf_stdstr.end());
+      dataSize[curIndex] = strLen;
+      curIndex++;
       flowbufStr = FlowbufStrAtIndex(ashmem, flowbufIndex, &argIndex, &strLen);
       flowbufIndex++;
   }

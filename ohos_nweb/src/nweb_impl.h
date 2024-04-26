@@ -278,6 +278,11 @@ class NWebImpl : public NWeb {
                             const std::string& script,
                             std::shared_ptr<CacheOptions>& cacheOptions,
                             std::shared_ptr<NWebMessageValueCallback> callback) override;
+  void InjectOfflineResource(const std::string& url,
+                             const std::string& origin,
+                             const std::vector<uint8_t>& resource,
+                             const std::map<std::string, std::string>& responseHeaders,
+                             const int type) override;
 #endif
 
   std::string GetLastJavascriptProxyCallingFrameUrl() override;

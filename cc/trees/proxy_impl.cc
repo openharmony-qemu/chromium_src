@@ -1057,17 +1057,4 @@ void ProxyImpl::OnLayerRectUpdate(int id, const gfx::Rect& rect) {
                                 proxy_main_weak_ptr_, id, rect));
 }
 #endif
-
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-void ProxyImpl::OnLayerRectChange(int id,
-                                  int x,
-                                  int y,
-                                  int width,
-                                  int height) {
-  MainThreadTaskRunner()->PostTask(
-      FROM_HERE,
-      base::BindOnce(&ProxyMain::OnLayerRectChange, proxy_main_weak_ptr_,
-                     id, x, y, width, height));
-}
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
 }  // namespace cc

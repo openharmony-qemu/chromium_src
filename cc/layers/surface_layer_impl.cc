@@ -47,11 +47,7 @@ SurfaceLayerImpl::SurfaceLayerImpl(
     UpdateSubmissionStateCB update_submission_state_callback)
     : LayerImpl(tree_impl, id),
       update_submission_state_callback_(
-          std::move(update_submission_state_callback)) {
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-  SetNeedNotifyRectChange(true);
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
-}
+          std::move(update_submission_state_callback)) {}
 
 SurfaceLayerImpl::~SurfaceLayerImpl() {
   // Do not call `update_submission_state_callback_` here.  There is only very
@@ -215,6 +211,15 @@ void SurfaceLayerImpl::AppendQuads(viz::CompositorRenderPass* render_pass,
   // Unless the client explicitly specifies otherwise, don't block on
   // |surface_range_| more than once.
   deadline_in_frames_ = 0u;
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+   visible_quad_rect.set_origin(
+        ScreenSpaceTransform().MapPoint(visible_quad_rect.origin()));
+  if (!visible_quad_rect_.ApproximatelyEqual(visible_quad_rect, 1)) {
+    visible_quad_rect_ = visible_quad_rect;
+    layer_tree_impl()->OnLayerRectUpdate(id(), visible_quad_rect);
+  }
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 }
 
 bool SurfaceLayerImpl::is_surface_layer() const {

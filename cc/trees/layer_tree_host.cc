@@ -2086,18 +2086,4 @@ void LayerTreeHost::OnLayerRectUpdate(int id, const gfx::Rect& rect) {
 }
 #endif
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-void LayerTreeHost::OnLayerRectChange(int id,
-                                      int x,
-                                      int y,
-                                      int width,
-                                      int height) {
-  DCHECK(IsMainThread());
-  Layer* layer = LayerById(id);
-  if (layer && layer->GetLayerClient()) {
-    layer->GetLayerClient()->OnLayerRectChange(x, y, width, height);
-  }
-}
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
-
 }  // namespace cc

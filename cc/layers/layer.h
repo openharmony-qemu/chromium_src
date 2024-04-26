@@ -41,10 +41,6 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/rounded_corners_f.h"
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-#include "cc/layers/layer_client.h"
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
-
 namespace viz {
 class CopyOutputRequest;
 }
@@ -880,10 +876,6 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
   }
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-  virtual void SetLayerClient(LayerClient* client);
-  virtual LayerClient* GetLayerClient();
-  void SetVideoRect(const gfx::RectF& rect) { video_rect_ = rect; }
-
   virtual bool ShouldOverlay();
   virtual void SetShouldOverlay(bool should_overlay);
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
@@ -1172,8 +1164,6 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
 
   ProtectedSequenceReadable<bool> native_;
 
-  ProtectedSequenceReadable<int> native_embed_id_;
-
   enum : uint8_t {
     kDrawsContentFlagMask = 1 << 0,
     kShouldCheckBackfaceVisibilityFlagMask = 1 << 1,
@@ -1225,13 +1215,12 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
   };
 #endif
 
+  ProtectedSequenceReadable<int> native_embed_id_{0};
   gfx::RectF native_rect_;
   ProtectedSequenceWritable<std::unique_ptr<LayerDebugInfo>> debug_info_;
 
+  ProtectedSequenceReadable<bool> should_intercept_touch_event_{false};
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-  raw_ptr<LayerClient> client_ = nullptr;
-  gfx::RectF video_rect_;
-  ProtectedSequenceWritable<bool> should_intercept_touch_event_{false};
   bool should_overlay_{false};
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 

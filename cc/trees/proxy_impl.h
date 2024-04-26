@@ -99,14 +99,6 @@ class CC_EXPORT ProxyImpl : public LayerTreeHostImplClient,
   void OnLayerRectUpdate(int id, const gfx::Rect& rect) override;
 #endif
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-  void OnLayerRectChange(int id,
-                         int x,
-                         int y,
-                         int width,
-                         int height) override;
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
-
  private:
   // LayerTreeHostImplClient implementation
   void DidLoseLayerTreeFrameSinkOnImplThread() override;

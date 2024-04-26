@@ -89,6 +89,10 @@ class CC_EXPORT SurfaceLayerImpl : public LayerImpl {
   bool has_pointer_events_none_ = false;
   bool is_reflection_ = false;
   bool will_draw_ = false;
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  gfx::Rect visible_quad_rect_;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 };
 
 }  // namespace cc

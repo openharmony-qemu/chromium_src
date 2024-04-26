@@ -912,14 +912,6 @@ void RegisterClippedVisualViewportSelectionBounds(
   void OnLayerRectUpdate(int id, const gfx::Rect& rect);
 #endif
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-  void OnLayerRectChange(int id,
-                         int x,
-                         int y,
-                         int width,
-                         int height);
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
-
  protected:
   LayerTreeHost(InitParams params, CompositorMode mode);
 

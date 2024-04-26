@@ -2687,7 +2687,7 @@ int NWebHandlerDelegate::GetFlowbufCount(void* mem){
   for (int i = 0; i < MAX_ENTRIES; i++) {
     if (*(header + (i * 2) + 1) != 0) {
       count++;
-    }else{
+    } else {
       break;
     }
   }

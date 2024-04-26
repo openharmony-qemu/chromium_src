@@ -45,6 +45,16 @@ class WebCacheImpl : public mojom::WebCache {
   // navigation event.
   void ClearCache(bool on_navigation) override;
 
+#if BUILDFLAG(IS_OHOS)
+  // mojom::WebCache methods:
+  // Add offline resource into memory cache.
+  void AddResourceToCache(const std::string& url,
+                          const std::string& origin,
+                          const std::vector<uint8_t>& resource,
+                          const base::flat_map<std::string, std::string>& response_headers,
+                          const uint64_t type) override;
+#endif
+
   // Records status regarding the sequence of navigation event and
   // ClearCache(true) call, to ensure delayed 'clear cache' command always
   // get executed on navigation.

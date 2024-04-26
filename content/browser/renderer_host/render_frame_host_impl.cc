@@ -7869,9 +7869,6 @@ void RenderFrameHostImpl::GenerateCodeCache(const std::string& url,
     options->response_headers.insert(std::make_pair(header.first, header.second));
   }
 
-  options->is_module = cacheOptions->is_module_;
-  options->is_top_level = cacheOptions->is_top_level_;
-
   GetAssociatedLocalFrame()->GenerateCodeCache(url, script, std::move(options), std::move(callback));
 }
 #endif

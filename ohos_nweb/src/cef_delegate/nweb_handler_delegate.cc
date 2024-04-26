@@ -2744,11 +2744,13 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNewFlowbuf(
 
   auto flowbufferAdapter = OhosAdapterHelper::GetInstance().CreateFlowbufferAdapter();
   if (!flowbufferAdapter) {
-      return 1;
+    close(fd);
+    return 1;
   }
   auto ashmem = flowbufferAdapter->CreateAshmemWithFd(fd, MAX_FLOWBUF_DATA_SIZE + HEADER_SIZE, PROT_READ);
   if (!ashmem) {
-      return 1;
+    close(fd);
+    return 1;
   }
 
   size_t argsSize = args->GetSize();
@@ -2764,12 +2766,12 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNewFlowbuf(
   char* flowbufStr = FlowbufStrAtIndex(ashmem, flowbufIndex, &argIndex, &strLen);
   flowbufIndex++;
   while (argIndex == curIndex) {
-      std::string flowbuf_stdstr(flowbufStr,strLen);
-      dataList[curIndex] = std::vector<uint8_t>(flowbuf_stdstr.begin(), flowbuf_stdstr.end());
-      dataSize[curIndex] = strLen;
-      curIndex++;
-      flowbufStr = FlowbufStrAtIndex(ashmem, flowbufIndex, &argIndex, &strLen);
-      flowbufIndex++;
+    std::string flowbuf_stdstr(flowbufStr,strLen);
+    dataList[curIndex] = std::vector<uint8_t>(flowbuf_stdstr.begin(), flowbuf_stdstr.end());
+    dataSize[curIndex] = strLen;
+    curIndex++;
+    flowbufStr = FlowbufStrAtIndex(ashmem, flowbufIndex, &argIndex, &strLen);
+    flowbufIndex++;
   }
 
   for (size_t i = 0; i < argsSize; i++) {
@@ -2815,12 +2817,12 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNewFlowbuf(
   }
 
   while (argIndex == curIndex) {
-      std::string flowbuf_stdstr(flowbufStr,strLen);
-      dataList[curIndex] = std::vector<uint8_t>(flowbuf_stdstr.begin(), flowbuf_stdstr.end());
-      dataSize[curIndex] = strLen;
-      curIndex++;
-      flowbufStr = FlowbufStrAtIndex(ashmem, flowbufIndex, &argIndex, &strLen);
-      flowbufIndex++;
+    std::string flowbuf_stdstr(flowbufStr,strLen);
+    dataList[curIndex] = std::vector<uint8_t>(flowbuf_stdstr.begin(), flowbuf_stdstr.end());
+    dataSize[curIndex] = strLen;
+    curIndex++;
+    flowbufStr = FlowbufStrAtIndex(ashmem, flowbufIndex, &argIndex, &strLen);
+    flowbufIndex++;
   }
 
   close(fd);
@@ -2850,27 +2852,29 @@ int NWebHandlerDelegate::ProcessNativeProxyResultFlowbuf(
   if (auto it = objMap_.find(object_name); it != objMap_.end()) {
     auto flowbufferAdapter = OhosAdapterHelper::GetInstance().CreateFlowbufferAdapter();
     if (!flowbufferAdapter) {
-        return 1;
+      close(fd);
+      return 1;
     }
 
     auto ashmem = flowbufferAdapter->CreateAshmemWithFd(fd, MAX_FLOWBUF_DATA_SIZE + HEADER_SIZE, PROT_READ);
     if (!ashmem) {
-        return 1;
+      close(fd);
+      return 1;
     }
 
     int argIndex = -1;
     int flowbufIndex = 0;
     int strLen = 0;
     do {
-        char* flowbufStr = FlowbufStrAtIndex(ashmem, flowbufIndex, &argIndex, &strLen);
-        if (argIndex == -1) {
-            break;
-        }
-        flowbufIndex++;
-        std::string str(flowbufStr);
-        CefRefPtr<CefValue> value = CefValue::Create();
-        value->SetStdString(str);
-        args->SetValue(argIndex, value);
+      char* flowbufStr = FlowbufStrAtIndex(ashmem, flowbufIndex, &argIndex, &strLen);
+      if (argIndex == -1) {
+        break;
+      }
+      flowbufIndex++;
+      std::string str(flowbufStr);
+      CefRefPtr<CefValue> value = CefValue::Create();
+      value->SetStdString(str);
+      args->SetValue(argIndex, value);
     } while (argIndex <= MAX_ENTRIES);
     close(fd);
     ProcessNativeProxyResultThread(args, method, object_name, result);

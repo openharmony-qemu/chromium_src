@@ -296,8 +296,10 @@ SandboxGrantResult MaybeGrantSandboxAccessToNetworkContextData(
                     << params->http_cache_directory->path();
       }
 
+#if BUILDFLAG(IS_OHOS)
       oh_code_cache::ResponseCache::InitCacheDirectory(
           params->http_cache_directory->path());
+#endif
     }
   }
 

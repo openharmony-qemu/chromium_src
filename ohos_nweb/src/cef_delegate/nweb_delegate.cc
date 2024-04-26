@@ -302,9 +302,7 @@ class CefPrecompileCallbackImpl : public CefPrecompileCallback {
 class CefCacheOptionsImpl : public CefCacheOptions {
  public:
   explicit CefCacheOptionsImpl(const std::shared_ptr<CacheOptions>& cacheOptions) :
-      responseHeaders_(cacheOptions->GetResponseHeaders()),
-      isModule_(cacheOptions->IsModule()),
-      isTopLevel_(cacheOptions->IsModule()) {}
+      responseHeaders_(cacheOptions->GetResponseHeaders()) {}
 
   cef_string_map_t GetResponseHeaders() override {
     cef_string_map_t cefHeaders = cef_string_map_alloc();
@@ -318,18 +316,8 @@ class CefCacheOptionsImpl : public CefCacheOptions {
     return cefHeaders;
   }
 
-  bool IsModule() override {
-    return isModule_;
-  }
-
-  bool IsTopLevel() override {
-    return isTopLevel_;
-  }
-
  private:
   std::map<std::string, std::string> responseHeaders_;
-  bool isModule_;
-  bool isTopLevel_;
 
   IMPLEMENT_REFCOUNTING(CefCacheOptionsImpl);
 };

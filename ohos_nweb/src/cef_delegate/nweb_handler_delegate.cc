@@ -2674,7 +2674,8 @@ int NWebHandlerDelegate::NotifyJavaScriptResult(CefRefPtr<CefListValue> args,
   return ark_result->error_;
 }
 
-// in flowbuf header (int *), odd positions stored length of stored strings, 0 represents unused slot
+// in flowbuf header (int *), odd positions stored length of stored strings,
+// even positions stroed string's original index in V8 arglist, 0 represents unused slot
 // iterate through flowbuf header, and count No. of string stored
 int NWebHandlerDelegate::GetFlowbufCount(void* mem){
   int* header = static_cast<int*>(mem); // Cast the memory block to int* for easier access
@@ -2689,7 +2690,7 @@ int NWebHandlerDelegate::GetFlowbufCount(void* mem){
   return count;
 }
 
-// flowbufIndex is index in flowbuf
+// flowbufIndex is index in flowbuf, argindex is string's original index in V8 arglist
 char* NWebHandlerDelegate::FlowbufStrAtIndex(void* mem, int flowbufIndex, int* argIndex, int* strLen)
 {
   int* header = static_cast<int*>(mem); // Cast the memory block to int* for easier access

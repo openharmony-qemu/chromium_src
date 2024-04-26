@@ -388,6 +388,18 @@ void TouchSelectionController::OnSwipeToMoveCursorEnd() {
     SetTemporarilyHidden(false);
 }
 
+#ifdef OHOS_CLIPBOARD
+void  TouchSelectionController::UpdateSelectionChanged(
+    const TouchSelectionDraggable& draggable) {
+  if(&draggable != insertion_handle_.get()) {
+    client_->OnSelectionEvent(SELECTION_HANDLES_UPDATEMENU);
+  }
+}
+
+bool TouchSelectionController::IsLongPressDragSelectionActive() {
+  return longpress_drag_selector_.IsActive();
+}
+#endif
 void TouchSelectionController::OnDragBegin(
     const TouchSelectionDraggable& draggable,
     const gfx::PointF& drag_position) {

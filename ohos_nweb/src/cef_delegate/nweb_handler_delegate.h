@@ -118,7 +118,7 @@ class NWebHandlerDelegate : public CefClient,
       std::vector<NativeJSProxyCallbackFunc>&& callback);
   void RegisterNativeLoadStartCallback(std::function<void(void)>&& callback);
   void RegisterNativeLoadEndCallback(std::function<void(void)>&& callback);
-  int GetFlowbufSize(void* mem);
+  int GetFlowbufCount(void* mem);
   char* FlowbufStrAtIndex(void* mem, int flowbufIndex, int* argIndex, int* strLen);
   int ProcessNativeProxyResultNew(CefRefPtr<CefListValue> args,
                                   const CefString& method,

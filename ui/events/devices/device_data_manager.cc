@@ -45,6 +45,7 @@ constexpr uint32_t TAG_KEYBOARD_TYPE = (1 << 1);
 constexpr uint32_t TAG_MOUSE_TYPE = (1 << 2);
 constexpr uint32_t TAG_TOUCHPAD_TYPE = (1 << 3);
 const std::string CHANGED_TYPE = "change";
+const std::string IGNORE_MOUSE_DEVICE_NAME = "hw_fingerprint_mouse";
 
 class MMIListenerAdapterImpl : public OHOS::NWeb::MMIListenerAdapter {
  public:
@@ -70,6 +71,11 @@ class MMIListenerAdapterImpl : public OHOS::NWeb::MMIListenerAdapter {
     }
 
     OHOS::NWeb::MMIDeviceInfo info = transformToMMIDeviceInfo(adapter);
+    if ((info.name.find(IGNORE_MOUSE_DEVICE_NAME) != std::string::npos) &&
+        (info.type & TAG_MOUSE_TYPE)) {
+      LOG(INFO) << "OnDeviceAdded ignore this mouse device";
+      return;
+    }
     sequenced_task_runner_->PostTask(
         FROM_HERE,
         base::BindOnce(
@@ -145,6 +151,11 @@ DeviceDataManager::DeviceDataManager()
     }
 
     OHOS::NWeb::MMIDeviceInfo info = transformToMMIDeviceInfo(adapter);
+    if ((info.name.find(IGNORE_MOUSE_DEVICE_NAME) != std::string::npos) &&
+        (info.type & TAG_MOUSE_TYPE)) {
+      LOG(INFO) << "DeviceDataManager ignore this mouse device";
+      continue;
+    }
     sequenced_task_runner_->PostTask(
         FROM_HERE, base::BindOnce(
                        [](const OHOS::NWeb::MMIDeviceInfo& info,

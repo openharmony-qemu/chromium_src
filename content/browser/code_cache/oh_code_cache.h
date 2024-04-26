@@ -24,6 +24,7 @@
 #include "base/files/file_enumerator.h"
 #include "net/disk_cache/simple/simple_util.h"
 #include "cef/libcef/browser/net_service/stream_reader_url_loader.h"
+#include "base/trace_event/trace_event.h"
 
 namespace oh_code_cache {
 
@@ -50,6 +51,12 @@ const char kResponseDataID[] = "ResponseDataID";
 enum class CacheError {
     NO_ERROR = 0,
     INTERNAL_ERROR = -1
+};
+
+enum class NextOp {
+  WRITE_CODE_CACHE,
+  THROW_ERROR,
+  DO_NOTHING
 };
 
 class CacheOptions {
@@ -101,11 +108,12 @@ class ResponseCache {
   static std::shared_ptr<ResponseCache> CreateResponseCache(const std::string& url);
   static void ClearAllCache();
 
-  bool Write(const std::map<std::string, std::string> response_headers,
+  NextOp Write(const std::map<std::string, std::string> response_headers,
              const std::string response_body);
   bool CanUseCache();
 
   static std::unique_ptr<base::FilePath> cache_dir_path_;
+  static std::map<std::string, std::shared_ptr<ResponseCacheMetadata>> cache_metadata_map_;
 
   std::string url_;
   std::string url_hash_;
@@ -122,8 +130,8 @@ class ResponseCache {
   bool ReadMetadata();
   bool ReadContent();
   bool NeedUpdate();
-  bool DoCreate();
-  bool DoUpdate();
+  NextOp DoCreate();
+  NextOp DoUpdate();
   bool DoUpdateMetadata();
   bool DoWriteIntoFile(base::FilePath path, std::string data);
   bool DeleteCacheFile();

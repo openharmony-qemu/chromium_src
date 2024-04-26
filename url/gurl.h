@@ -260,6 +260,9 @@ class COMPONENT_EXPORT(URL) GURL {
 #if BUILDFLAG(IS_OHOS)
   // Resource URLs for ohos system
   bool SchemeIsOhosResource() const { return SchemeIs(url::kResourcesScheme); }
+
+  // Return true if the js of this scheme supports code cache.
+  bool SchemeIsCodeCacheEnabled() const;
 #endif
   // Returns true if the scheme indicates a network connection that uses TLS or
   // some other cryptographic protocol (e.g. QUIC) for security.

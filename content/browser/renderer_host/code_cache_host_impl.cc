@@ -90,7 +90,8 @@ bool CheckSecurityForAccessingCodeCacheData(const GURL& resource_url,
 
 #if BUILDFLAG(IS_OHOS)
   if (resource_url.SchemeIsCodeCacheEnabled()) {
-    LOG(DEBUG) << "CheckSecurity scheme is code cache enabled.";
+    LOG(DEBUG) << "CheckSecurity scheme:" << resource_url.scheme().c_str()
+               << " is code cache enabled.";
     return true;
   }
 #endif

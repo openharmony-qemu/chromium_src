@@ -18,6 +18,7 @@
 #pragma once
 
 #include "ohos_nweb/include/ark_web_access_request.h"
+#include "ohos_nweb/include/ark_web_applink_callback.h"
 #include "ohos_nweb/include/ark_web_console_log.h"
 #include "ohos_nweb/include/ark_web_context_menu_callback.h"
 #include "ohos_nweb/include/ark_web_context_menu_params.h"
@@ -682,6 +683,11 @@ public:
 
   /*--ark web()--*/
   virtual void UpdateClippedSelectionBounds(int x, int y, int w, int h) = 0;
+
+  /*--ark web()--*/
+  virtual bool OnOpenAppLink(
+      const ArkWebString &url,
+      ArkWebRefPtr<ArkWebAppLinkCallback> callback) = 0;
 };
 
 } // namespace OHOS::ArkWeb

@@ -16,6 +16,7 @@
 #include "ohos_nweb/ctocpp/ark_web_handler_ctocpp.h"
 #include "base/ctocpp/ark_web_ctocpp_macros.h"
 #include "ohos_nweb/cpptoc/ark_web_access_request_cpptoc.h"
+#include "ohos_nweb/cpptoc/ark_web_app_link_callback_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_console_log_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_context_menu_callback_cpptoc.h"
 #include "ohos_nweb/cpptoc/ark_web_context_menu_params_cpptoc.h"
@@ -1259,6 +1260,21 @@ void ArkWebHandlerCToCpp::UpdateClippedSelectionBounds(int x, int y, int w, int 
 
   // Execute
   _struct->update_clipped_selection_bounds(_struct, x, y, w, h);
+}
+
+ARK_WEB_NO_SANITIZE
+bool ArkWebHandlerCToCpp::OnOpenAppLink(
+    const ArkWebString &url, ArkWebRefPtr<ArkWebAppLinkCallback> callback) {
+  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
+
+  ark_web_handler_t *_struct = GetStruct();
+  ARK_WEB_CTOCPP_CHECK_PARAM(_struct, false);
+
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, on_open_app_link, false);
+
+  // Execute
+  return _struct->on_open_app_link(
+      _struct, &url, ArkWebAppLinkCallbackCppToC::Invert(callback));
 }
 
 ArkWebHandlerCToCpp::ArkWebHandlerCToCpp() {

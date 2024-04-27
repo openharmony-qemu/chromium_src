@@ -606,6 +606,9 @@ public:
   std::vector<int8_t> GetWordSelection(const std::string& text, int8_t offset) override;
 
   void UpdateClippedSelectionBounds(int x, int y, int w, int h) override;
+
+  bool OnOpenAppLink(const std::string& url,
+                     std::shared_ptr<OHOS::NWeb::NWebAppLinkCallback> callback) override;
 private:
   ArkWebRefPtr<ArkWebHandler> ark_web_handler_;
 };

@@ -349,6 +349,27 @@ class NWebDateTimeChooserCallbackImpl : public NWebDateTimeChooserCallback {
   CefRefPtr<CefDateTimeChooserCallback> callback_ = nullptr;
 };
 #endif  // #ifdef OHOS_CSS_INPUT_TIME
+
+class NWebAppLinkCallbackImpl : public NWebAppLinkCallback {
+ public:
+  explicit NWebAppLinkCallbackImpl(CefRefPtr<CefOpenAppLinkCallback> callback)
+    : callback_(callback) {}
+
+  void ContinueLoad() override {
+    if (callback_) {
+      callback_->Continue();
+    }
+  }
+
+  void CancelLoad() override {
+    if (callback_) {
+      callback_->Cancel();
+    }
+  }
+ private:
+  CefRefPtr<CefOpenAppLinkCallback> callback_ = nullptr;
+};
+
 // static
 CefRefPtr<NWebHandlerDelegate> NWebHandlerDelegate::Create(
     std::shared_ptr<NWebPreferenceDelegate> preference_delegate,
@@ -1380,6 +1401,17 @@ bool NWebHandlerDelegate::ShouldOverrideUrlLoading(
           is_outermost_main_frame, is_redirect);
   if (nweb_handler_ != nullptr) {
     return nweb_handler_->OnHandleOverrideUrlLoading(nweb_request);
+  }
+  return false;
+}
+
+bool NWebHandlerDelegate::OnOpenAppLink(
+    const CefString& url,
+    CefRefPtr<CefOpenAppLinkCallback> callback) {
+  std::shared_ptr<NWebAppLinkCallback> nweb_callback = 
+    std::make_shared<NWebAppLinkCallbackImpl>(callback);
+  if (nweb_handler_ != nullptr) {
+    return nweb_handler_->OnOpenAppLink(url.ToString(), nweb_callback);
   }
   return false;
 }

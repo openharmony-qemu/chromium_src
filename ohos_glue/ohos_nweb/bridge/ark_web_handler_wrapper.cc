@@ -16,6 +16,7 @@
 #include "ohos_nweb/bridge/ark_web_handler_wrapper.h"
 #include "base/bridge/ark_web_bridge_macros.h"
 #include "ohos_nweb/bridge/ark_web_access_request_impl.h"
+#include "ohos_nweb/bridge/ark_web_applink_callback_impl.h"
 #include "ohos_nweb/bridge/ark_web_console_log_impl.h"
 #include "ohos_nweb/bridge/ark_web_context_menu_callback_impl.h"
 #include "ohos_nweb/bridge/ark_web_context_menu_params_impl.h"
@@ -886,5 +887,16 @@ void ArkWebHandlerWrapper::UpdateClippedSelectionBounds(int x,
                                                         int w,
                                                         int h) {
   ark_web_handler_->UpdateClippedSelectionBounds(x, y, w, h);
+}
+
+bool ArkWebHandlerWrapper::OnOpenAppLink(
+    const std::string& url,
+    std::shared_ptr<OHOS::NWeb::NWebAppLinkCallback> callback) {
+  if (CHECK_SHARED_PTR_IS_NULL(callback)) {
+    return false;
+  }
+
+  return ark_web_handler_->OnOpenAppLink(
+      ArkWebStringClassToStruct(url), new ArkWebAppLinkCallbackImpl(callback));
 }
 } // namespace OHOS::ArkWeb

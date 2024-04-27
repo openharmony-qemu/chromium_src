@@ -341,6 +341,8 @@ class NWebHandlerDelegate : public CefClient,
                                 bool user_gesture,
                                 bool is_redirect,
                                 bool is_outermost_main_frame) override;
+  bool OnOpenAppLink(const CefString& url,
+                     CefRefPtr<CefOpenAppLinkCallback> callback) override;
   /* CefRequestHandler methods end */
 
   /* CefDownloadHandler methods begin */

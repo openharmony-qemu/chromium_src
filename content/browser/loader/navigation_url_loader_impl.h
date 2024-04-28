@@ -199,6 +199,9 @@ class CONTENT_EXPORT NavigationURLLoaderImpl
       network::mojom::URLResponseHeadPtr head,
       mojo::ScopedDataPipeConsumerHandle response_body,
       absl::optional<mojo_base::BigBuffer> cached_metadata) override;
+#if BUILDFLAG(IS_OHOS)
+  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {}
+#endif
   void OnReceiveRedirect(const net::RedirectInfo& redirect_info,
                          network::mojom::URLResponseHeadPtr head) override;
   void OnUploadProgress(int64_t current_position,

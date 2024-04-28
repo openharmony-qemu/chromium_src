@@ -125,6 +125,12 @@ public:
   void PutResponseReadyCallback(
       ArkWebRefPtr<ArkWebResourceReadyCallback> callback) override;
 
+  void PutResponseDataBuffer(char* buffer, size_t bufferSize) override;
+
+  char* GetResponseDataBuffer() override;
+
+  size_t GetResponseDataBufferSize() override;
+
 private:
   std::shared_ptr<OHOS::NWeb::NWebUrlResourceResponse>
       nweb_url_resource_response_;

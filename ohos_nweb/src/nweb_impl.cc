@@ -2163,7 +2163,9 @@ void NWebImpl::SaveOrUpdatePassword(bool is_update) {
   }
   nweb_delegate_->SaveOrUpdatePassword(is_update);
 }
+#endif  // #ifdef OHOS_EX_PASSWORD
 
+#if defined(OHOS_EX_PASSWORD) || (OHOS_DATALIST)
 void NWebImpl::PasswordSuggestionSelected(int list_index) const {
   if (nweb_delegate_ == nullptr) {
     return;
@@ -2171,7 +2173,7 @@ void NWebImpl::PasswordSuggestionSelected(int list_index) const {
 
   nweb_delegate_->PasswordSuggestionSelected(list_index);
 }
-#endif  // #ifdef OHOS_EX_PASSWORD
+#endif 
 
 #if defined(OHOS_EX_FORCE_ZOOM)
 void NWebImpl::SetForceEnableZoom(bool forceEnableZoom) const {
@@ -2802,4 +2804,12 @@ void NWebImpl::ClearHostIP(const std::string &hostName) {
   net_service::NetHelpers::ClearHostIP(hostName);
   WVLOG_I("Clear host IP successfully.");
 #endif
+}
+
+void NWebImpl::SuggestionSelected(int index) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+
+  nweb_delegate_->SuggestionSelected(index);
 }

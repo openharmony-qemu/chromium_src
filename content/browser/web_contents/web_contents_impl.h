@@ -451,6 +451,8 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
       bool is_update_password,
       std::unique_ptr<password_manager::PasswordFormManagerForUI> form_to_save);
   void SaveOrUpdatePassword(bool is_update) override;
+#endif
+#if defined(OHOS_EX_PASSWORD) || (OHOS_DATALIST)
   void ShowAutofillPopup(
       const gfx::RectF& element_bounds,
       bool is_rtl,

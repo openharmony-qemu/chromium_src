@@ -1277,6 +1277,33 @@ bool ArkWebHandlerCToCpp::OnOpenAppLink(
       _struct, &url, ArkWebAppLinkCallbackCppToC::Invert(callback));
 }
 
+void ArkWebHandlerCToCpp::OnShowAutofillPopup(
+    const float offsetX, const float offsetY,
+    const ArkWebStringVector &menu_items) {
+  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
+
+  ark_web_handler_t *_struct = GetStruct();
+  ARK_WEB_CTOCPP_CHECK_PARAM(_struct, );
+
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, on_show_autofill_popup, );
+
+  // Execute
+  _struct->on_show_autofill_popup(_struct, offsetX, offsetY, &menu_items);
+}
+
+ARK_WEB_NO_SANITIZE
+void ArkWebHandlerCToCpp::OnHideAutofillPopup() {
+  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
+
+  ark_web_handler_t *_struct = GetStruct();
+  ARK_WEB_CTOCPP_CHECK_PARAM(_struct, );
+
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, on_hide_autofill_popup, );
+
+  // Execute
+  _struct->on_hide_autofill_popup(_struct);
+}
+
 ArkWebHandlerCToCpp::ArkWebHandlerCToCpp() {
 }
 

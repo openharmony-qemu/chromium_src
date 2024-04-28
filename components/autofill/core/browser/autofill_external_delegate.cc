@@ -355,7 +355,8 @@ bool AutofillExternalDelegate::RemoveSuggestion(const std::u16string& value,
 }
 
 void AutofillExternalDelegate::DidEndTextFieldEditing() {
-  manager_->client()->HideAutofillPopup(PopupHidingReason::kEndEditing);
+  if (!manager_->driver()->IsPrerendering())
+    manager_->client()->HideAutofillPopup(PopupHidingReason::kEndEditing);
 }
 
 void AutofillExternalDelegate::ClearPreviewedForm() {

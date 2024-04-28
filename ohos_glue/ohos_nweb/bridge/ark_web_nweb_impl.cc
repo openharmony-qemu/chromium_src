@@ -892,4 +892,13 @@ void ArkWebNWebImpl::SuggestionSelected(int32_t index) {
   nweb_nweb_->SuggestionSelected(index);
 }
 
+void ArkWebNWebImpl::RegisterArkJSfunction(
+    const ArkWebString &object_name, const ArkWebStringVector &method_list,
+    const ArkWebStringVector &async_method_list, const int32_t object_id) {
+  nweb_nweb_->RegisterArkJSfunction(
+      ArkWebStringStructToClass(object_name),
+      ArkWebStringVectorStructToClass(method_list),
+      ArkWebStringVectorStructToClass(async_method_list), object_id);
+}
+
 } // namespace OHOS::ArkWeb

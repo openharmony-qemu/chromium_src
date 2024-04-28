@@ -200,11 +200,13 @@ class NWebDelegateInterface
       const std::string& objName,
       const std::vector<std::string>& methodName,
       std::vector<std::function<char*(std::vector<std::vector<uint8_t>>&,
-                                      std::vector<size_t>&)>>&& callback) = 0;
+                                      std::vector<size_t>&)>>&& callback,
+      bool isAsync) = 0;
   virtual void UnRegisterNativeArkJSFunction(const char* objName) = 0;
   virtual void RegisterArkJSfunction(
       const std::string& object_name,
       const std::vector<std::string>& method_list,
+      const std::vector<std::string>& async_method_list,
       const int32_t object_id) const = 0;
   virtual void UnregisterArkJSfunction(
       const std::string& object_name,

@@ -186,7 +186,7 @@ typedef struct _ark_web_nweb_t {
                                         const ArkWebString *mime_type,
                                         const ArkWebString *encoding);
 
-  void(ARK_WEB_CALLBACK *register_ark_jsfunction)(
+  void(ARK_WEB_CALLBACK *register_ark_jsfunction1)(
       struct _ark_web_nweb_t *self, const ArkWebString *object_name,
       const ArkWebStringVector *method_list, const int32_t object_id);
 
@@ -499,6 +499,12 @@ typedef struct _ark_web_nweb_t {
   
   void(ARK_WEB_CALLBACK *suggestion_selected)(struct _ark_web_nweb_t *self,
                                               int32_t index);
+
+  void(ARK_WEB_CALLBACK *register_ark_jsfunction2)(
+      struct _ark_web_nweb_t *self, const ArkWebString *object_name,
+      const ArkWebStringVector *method_list,
+      const ArkWebStringVector *async_method_list, const int32_t object_id);
+
 } ark_web_nweb_t;
 
 #ifdef __cplusplus

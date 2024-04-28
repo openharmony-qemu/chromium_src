@@ -39,8 +39,13 @@ void OH_ArkWeb_OnPageEnd(const char* webTag,
 void OH_ArkWeb_OnDestroy(const char* webTag,
                          ArkWeb_OnComponentCallback callback,
                          void* userData);
+void OH_ArkWeb_RegisterAsyncJavaScriptProxy(const char* webTag,
+                                       const ArkWeb_ProxyObject* proxyObject);
+void RegisterJavaScriptProxy(const char* webTag,
+                             const ArkWeb_ProxyObject* proxyObject,
+                             bool isAsync);
 
 #ifdef __cplusplus
 }
 #endif
-#endif  // ARKWEB_MODEL_H
+#endif  // ARKWEB_MODEL_Hap

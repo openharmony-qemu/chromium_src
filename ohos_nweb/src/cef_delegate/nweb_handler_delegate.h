@@ -118,9 +118,17 @@ class NWebHandlerDelegate : public CefClient,
       std::vector<NativeJSProxyCallbackFunc>&& callback);
   void RegisterNativeLoadStartCallback(std::function<void(void)>&& callback);
   void RegisterNativeLoadEndCallback(std::function<void(void)>&& callback);
+  int GetFlowbufCount(void* mem);
+  char* FlowbufStrAtIndex(void* mem, int flowbufIndex, int* argIndex, int* strLen);
   int ProcessNativeProxyResultNew(CefRefPtr<CefListValue> args,
                                   const CefString& method,
                                   const CefString& object_name,
+                                  CefRefPtr<CefListValue> result);
+
+  int ProcessNativeProxyResultNewFlowbuf(CefRefPtr<CefListValue> args,
+                                  const CefString& method,
+                                  const CefString& object_name,
+                                  int fd,
                                   CefRefPtr<CefListValue> result);
 
   int ProcessNativeProxyResultThread(CefRefPtr<CefListValue> args,
@@ -132,6 +140,12 @@ class NWebHandlerDelegate : public CefClient,
                                const CefString& method,
                                const CefString& object_name,
                                CefRefPtr<CefListValue> result);
+
+  int ProcessNativeProxyResultFlowbuf(CefRefPtr<CefListValue> args,
+                                const CefString& method,
+                                const CefString& object_name,
+                                int fd,
+                                CefRefPtr<CefListValue> result);
 
 #if defined(OHOS_NWEB_EX)
   void UnRegisterWebAppClientExtensionListener();

@@ -13,6 +13,8 @@
 #include "services/device/public/cpp/geolocation/location_provider.h"
 #include "services/device/public/mojom/geoposition.mojom.h"
 
+#include "base/memory/weak_ptr.h"
+
 namespace device {
 class LocationProviderCallback : public OHOS::NWeb::LocationCallbackAdapter {
  public:
@@ -80,6 +82,7 @@ class LocationProviderOhos : public LocationProvider {
   bool is_running_ = false;
   std::shared_ptr<LocationProviderCallback> locator_callback_ = nullptr;
   int32_t callback_id_ = -1;
+  base::WeakPtrFactory<LocationProviderOhos> weak_factory_{this};
 };
 
 }  // namespace device

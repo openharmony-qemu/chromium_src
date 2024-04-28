@@ -37,7 +37,7 @@ void LocationProviderOhos::SetUpdateCallback(
   }
 
   locator_callback_->SetUpdateCallback(base::BindRepeating(
-      &LocationProviderOhos::ProviderUpdateCallback, base::Unretained(this)));
+      &LocationProviderOhos::ProviderUpdateCallback, weak_factory_.GetWeakPtr()));
 }
 
 void LocationProviderOhos::ProviderUpdateCallback(

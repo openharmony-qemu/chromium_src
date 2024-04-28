@@ -227,7 +227,7 @@ class CefWebMessageReceiverImpl : public CefWebMessageReceiver {
       std::shared_ptr<NWebMessageValueCallback> callback)
       : callback_(callback) {}
   void OnMessage(CefRefPtr<CefValue> message) override {
-    LOG(INFO) << "OnMessage in nweb delegate";
+    LOG(DEBUG) << "OnMessage in nweb delegate";
     if (callback_ != nullptr) {
       auto data =
           std::make_shared<OHOS::NWeb::NWebMessage>(NWebValue::Type::NONE);

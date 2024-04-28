@@ -33,12 +33,12 @@ class NWebResourceReadyCallbackImpl : public NWebResourceReadyCallback {
       : callback_(callback) {}
   ~NWebResourceReadyCallbackImpl() = default;
   void Continue() override {
-    LOG(INFO) << "intercept NWebResourceReadyCallbackImpl::Continue";
+    LOG(DEBUG) << "intercept NWebResourceReadyCallbackImpl::Continue";
     callback_->Continue();
   }
 
   void Cancel() override {
-    LOG(INFO) << "intercept NWebResourceReadyCallbackImpl::Cancel";
+    LOG(DEBUG) << "intercept NWebResourceReadyCallbackImpl::Cancel";
     callback_->Cancel();
   }
 
@@ -68,17 +68,17 @@ NWebResourceHandler::NWebResourceHandler(
 bool NWebResourceHandler::Open(CefRefPtr<CefRequest> request,
                                bool& handle_request,
                                CefRefPtr<CefCallback> callback) {
-  LOG(INFO) << "intercept NWebResourceHandler::Open";
+  LOG(DEBUG) << "intercept NWebResourceHandler::Open";
   if (response_ == nullptr) {
     return false;
   }
   if (response_->ResponseDataStatus()) {
-    LOG(INFO) << "intercept open reponse sync";
+    LOG(DEBUG) << "intercept open reponse sync";
     handle_request = true;
     data_ = response_->ResponseData();
     return true;
   }
-  LOG(INFO) << "intercept open async";
+  LOG(DEBUG) << "intercept open async";
   handle_request = false;
   std::shared_ptr<NWebResourceReadyCallbackImpl> nwebCb =
       std::make_shared<NWebResourceReadyCallbackImpl>(callback);
@@ -89,7 +89,7 @@ bool NWebResourceHandler::Open(CefRefPtr<CefRequest> request,
 bool NWebResourceHandler::ReadStringData(void* data_out,
                                          int bytes_to_read,
                                          int& bytes_read) {
-  LOG(INFO) << "intercept ReadStringData";
+  LOG(DEBUG) << "intercept ReadStringData";
   bool has_data = false;
   bytes_read = 0;
 
@@ -129,7 +129,7 @@ int64_t NWebResourceHandler::GetFileSizeByFd() {
 bool NWebResourceHandler::ReadFileData(void* data_out,
                                        int bytes_to_read,
                                        int& bytes_read) {
-  LOG(INFO) << "intercept ReadFileData";
+  LOG(DEBUG) << "intercept ReadFileData";
   int fd = response_->ResponseFileHandle();
   if (fd <= 0) {
     bytes_read = fd;
@@ -147,11 +147,11 @@ bool NWebResourceHandler::ReadFileData(void* data_out,
   }
   // completed read
   if (ret == 0) {
-    LOG(INFO) << "intercept ReadFileData completed";
+    LOG(DEBUG) << "intercept ReadFileData completed";
     bytes_read = 0;
     return false;
   }
-  LOG(INFO) << "intercept contiunue to read:" << ret;
+  LOG(DEBUG) << "intercept contiunue to read:" << ret;
   bytes_read = ret;
 #ifdef OHOS_NETWORK_LOAD
   resource_data_offset_ += bytes_read;
@@ -170,7 +170,7 @@ bool NWebResourceHandler::ReadResourceDataByHap(){
     }
     resourceUrl.erase(0, resourceUrlHead.length());
     std::string resourcePath = "resources/rawfile" + resourceUrl;
-    LOG(INFO) << "intercept Read Resource path : " << resourcePath;
+    LOG(DEBUG) << "intercept Read Resource path : " << resourcePath;
     std::string hapPath = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(switches::kOhosHapPath);
     auto resourceInstance = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetResourceAdapter(hapPath);
     uint8_t* data;
@@ -263,7 +263,7 @@ bool NWebResourceHandler::Read(void* data_out,
 void NWebResourceHandler::GetResponseHeaders(CefRefPtr<CefResponse> response,
                                              int64& response_length,
                                              CefString& redirectUrl) {
-  LOG(INFO) << "intercept NWebResourceHandler::GetResponseHeaders";
+  LOG(DEBUG) << "intercept NWebResourceHandler::GetResponseHeaders";
   if (response_ && response) {
     response->SetMimeType(response_->ResponseMimeType());
     response->SetStatus(response_->ResponseStatusCode());
@@ -302,7 +302,7 @@ void NWebResourceHandler::GetResponseHeaders(CefRefPtr<CefResponse> response,
 }
 
 void NWebResourceHandler::Cancel() {
-  LOG(INFO) << "intercept NWebResourceHandler::Cancel";
+  LOG(DEBUG) << "intercept NWebResourceHandler::Cancel";
   if (response_ == nullptr) {
     return;
   }

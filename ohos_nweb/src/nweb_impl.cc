@@ -1370,11 +1370,11 @@ void NWebImpl::RegisterNativeArkJSFunction(
 void NWebImpl::RegisterNativeArkJSFunction(
     const std::string& objName,
     const std::vector<std::string>& methodName,
-    std::vector<std::function<char*(std::vector<std::vector<uint8_t>>&,
-                                    std::vector<size_t>&)>>&& callback) {
+    std::vector<NativeJSProxyCallbackFunc>&& callback,
+    bool isAsync) {
   if (nweb_delegate_ != nullptr) {
     nweb_delegate_->RegisterNativeJSProxy(objName, methodName,
-                                          std::move(callback));
+                                          std::move(callback), isAsync);
   } else {
     LOG(ERROR) << "nweb_delegate_ is nullptr";
   }
@@ -1429,7 +1429,20 @@ void NWebImpl::RegisterArkJSfunction(
     return;
   }
   return nweb_delegate_->RegisterArkJSfunction(object_name, method_list,
-                                               object_id);
+                                               std::vector<std::string>(), object_id);
+}
+
+void NWebImpl::RegisterArkJSfunction(
+    const std::string& object_name,
+    const std::vector<std::string>& method_list,
+    const std::vector<std::string>& async_method_list,
+    const int32_t object_id) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("fail to register ark js function");
+    return;
+  }
+  return nweb_delegate_->RegisterArkJSfunction(object_name, method_list,
+                                               async_method_list, object_id);
 }
 
 void NWebImpl::UnregisterArkJSfunction(

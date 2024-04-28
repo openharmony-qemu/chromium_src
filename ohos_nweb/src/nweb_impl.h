@@ -110,11 +110,12 @@ class NWebImpl : public NWeb {
   void RegisterNativeArkJSFunction(
       const char* objName,
       const std::vector<std::shared_ptr<NWebJsProxyCallback>> &callbacks) override;
+  using NativeJSProxyCallbackFunc = std::function<char*(std::vector<std::vector<uint8_t>>&, std::vector<size_t>&)>;
   void RegisterNativeArkJSFunction(
       const std::string& objName,
       const std::vector<std::string>& methodName,
-      std::vector<std::function<char*(std::vector<std::vector<uint8_t>>&,
-                                      std::vector<size_t>&)>>&& callback);
+      std::vector<NativeJSProxyCallbackFunc>&& callback,
+      bool isAsync);
   void UnRegisterNativeArkJSFunction(const char* objName) override;
   void RegisterNativeValideCallback(const char* webName, const NativeArkWebOnValidCallback callback) override;
   void RegisterNativeDestroyCallback(const char* webName, const NativeArkWebOnDestroyCallback callback) override;
@@ -124,6 +125,10 @@ class NWebImpl : public NWeb {
 
   void RegisterArkJSfunction(const std::string& object_name,
                              const std::vector<std::string>& method_list,
+                             const int32_t object_id) override;
+  void RegisterArkJSfunction(const std::string& object_name,
+                             const std::vector<std::string>& method_list,
+                             const std::vector<std::string>& async_method_list,
                              const int32_t object_id) override;
   void UnregisterArkJSfunction(
       const std::string& object_name,

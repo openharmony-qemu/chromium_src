@@ -552,7 +552,7 @@ int ARK_WEB_CALLBACK ark_web_nweb_load_with_data(struct _ark_web_nweb_t *self,
                                                    *encoding);
 }
 
-void ARK_WEB_CALLBACK ark_web_nweb_register_ark_jsfunction(
+void ARK_WEB_CALLBACK ark_web_nweb_register_ark_jsfunction1(
     struct _ark_web_nweb_t *self, const ArkWebString *object_name,
     const ArkWebStringVector *method_list, const int32_t object_id) {
   ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
@@ -1739,6 +1739,25 @@ ark_web_nweb_suggestion_selected(struct _ark_web_nweb_t *self, int32_t index) {
   ArkWebNWebCppToC::Get(self)->SuggestionSelected(index);
 }
 
+void ARK_WEB_CALLBACK ark_web_nweb_register_ark_jsfunction2(
+    struct _ark_web_nweb_t *self, const ArkWebString *object_name,
+    const ArkWebStringVector *method_list,
+    const ArkWebStringVector *async_method_list, const int32_t object_id) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(object_name, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(method_list, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(async_method_list, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->RegisterArkJSfunction(
+      *object_name, *method_list, *async_method_list, object_id);
+}
+
 } // namespace
 
 ArkWebNWebCppToC::ArkWebNWebCppToC() {
@@ -1794,7 +1813,7 @@ ArkWebNWebCppToC::ArkWebNWebCppToC() {
   GetStruct()->load_with_data_and_base_url =
       ark_web_nweb_load_with_data_and_base_url;
   GetStruct()->load_with_data = ark_web_nweb_load_with_data;
-  GetStruct()->register_ark_jsfunction = ark_web_nweb_register_ark_jsfunction;
+  GetStruct()->register_ark_jsfunction1 = ark_web_nweb_register_ark_jsfunction1;
   GetStruct()->unregister_ark_jsfunction =
       ark_web_nweb_unregister_ark_jsfunction;
   GetStruct()->set_nweb_java_script_result_call_back =
@@ -1924,6 +1943,7 @@ ArkWebNWebCppToC::ArkWebNWebCppToC() {
   GetStruct()->scale_gesture_change = ark_web_nweb_scale_gesture_change;
   GetStruct()->terminate_render_process = ark_web_nweb_terminate_render_process;
   GetStruct()->suggestion_selected = ark_web_nweb_suggestion_selected;
+  GetStruct()->register_ark_jsfunction2 = ark_web_nweb_register_ark_jsfunction2;
 }
 
 ArkWebNWebCppToC::~ArkWebNWebCppToC() {

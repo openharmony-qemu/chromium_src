@@ -653,15 +653,27 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
 
       // window new case, register ark js functions
       ObjectMethodMap::iterator it;
-      for (it = javascript_method_map_.begin();
-           it != javascript_method_map_.end(); ++it) {
+      for (it = javascript_sync_method_map_.begin();
+           it != javascript_sync_method_map_.end(); ++it) {
         std::vector<CefString> method_vector;
         for (std::string method : it->second.second) {
           method_vector.push_back(method);
         }
         if (main_browser_ && main_browser_->GetHost()) {
-          main_browser_->GetHost()->RegisterArkJSfunction(
-              it->second.first, method_vector, it->first);
+          main_browser_->GetHost()->RegisterNativeJSProxy(
+              it->second.first, method_vector, it->first, false);
+        }
+      }
+      // async method
+      for (it = javascript_async_method_map_.begin();
+           it != javascript_async_method_map_.end(); ++it) {
+        std::vector<CefString> async_method_vector;
+        for (std::string method : it->second.second) {
+          async_method_vector.push_back(method);
+        }
+        if (main_browser_ && main_browser_->GetHost()) {
+          main_browser_->GetHost()->RegisterNativeJSProxy(
+              it->second.first, async_method_vector, it->first, true);
         }
       }
     }
@@ -751,20 +763,35 @@ void NWebHandlerDelegate::NotifyPopupWindowResult(bool result) {
 void NWebHandlerDelegate::SavaArkJSFunctionForPopup(
     const std::string& object_name,
     const std::vector<std::string>& method_list,
+    const std::vector<std::string>& async_method_list,
     const int32_t object_id) {
-  if (method_list.empty()) {
+  if (method_list.empty() && async_method_list.empty()) {
     LOG(INFO) << "NWebHandlerDelegate::SavaArkJSFunctionForPopup method_list "
                  "is empty";
     return;
   }
+  // sync method
   MethodPair object_pair;
-  std::unordered_set<std::string> method_set;
-  for (std::string method : method_list) {
-    method_set.emplace(method);
+  if (!method_list.empty()) {
+    std::unordered_set<std::string> method_set;
+    for (std::string method : method_list) {
+      method_set.emplace(method);
+    }
+    object_pair.first = object_name;
+    object_pair.second = method_set;
+    javascript_sync_method_map_[object_id] = object_pair;
   }
-  object_pair.first = object_name;
-  object_pair.second = method_set;
-  javascript_method_map_[object_id] = object_pair;
+
+  // async method
+  if (!async_method_list.empty()) {
+    std::unordered_set<std::string> async_method_set;
+    for (std::string method : async_method_list) {
+      async_method_set.emplace(method);
+    }
+    object_pair.first = object_name;
+    object_pair.second = async_method_set;
+    javascript_sync_method_map_[object_id] = object_pair;
+  }
 }
 
 #endif  // defined(OHOS_MULTI_WINDOW)
@@ -2537,13 +2564,23 @@ void NWebHandlerDelegate::RegisterNativeJavaScriptCallBack(
 void NWebHandlerDelegate::RegisterNativeJavaScriptCallBack(
     const std::string& objName,
     const std::vector<std::string>& methodName,
-    std::vector<NativeJSProxyCallbackFunc>&& callback) {
-  std::unordered_map<std::string, NativeJSProxyCallbackFunc> map;
+    std::vector<NativeJSProxyCallbackFunc>&& callback,
+    bool isAsync) {
   size_t size = methodName.size();
+  if (size == 0) {
+    LOG(ERROR) << "NWebHandlerDelegate RegisterNativeJavaScriptCallBack error: "
+                  "empty methods list";
+    return;
+  }
+  std::unordered_map<std::string, NativeJSProxyCallbackFunc> map;
   for (size_t i = 0; i < size; i++) {
     map[methodName[i]] = callback[i];
   }
-  proxyObjMap_[objName] = map;
+  if (isAsync) {
+    asyncProxyObjMap_[objName] = map;
+  } else {
+    syncProxyObjMap_[objName] = map;
+  }
 }
 
 int NWebHandlerDelegate::ProcessNativeProxyResultThread(
@@ -2602,24 +2639,42 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNew(
     const CefString& method,
     const CefString& object_name,
     CefRefPtr<CefListValue> result) {
-  auto it = proxyObjMap_.find(object_name);
-  if (it == proxyObjMap_.end()) {
-    // object name not found
-    return 1;
-  }
-  auto& methodMap = it->second;
-  auto methodIt = methodMap.find(method);
-  if (methodIt == methodMap.end()) {
-    // method name not found
-    return 1;
-  }
-
   if (!args) {
     LOG(ERROR) << "args is nullptr";
     return 1;
   }
+
+  NativeJSProxyCallbackFunc callback = nullptr;
+  auto it = asyncProxyObjMap_.find(object_name);
+  if (it != asyncProxyObjMap_.end()) {
+    auto& methodMap = it->second;
+    auto methodIt = methodMap.find(method);
+    if (methodIt != methodMap.end()) {
+      LOG(DEBUG) << "Processing async native proxy result, "
+                 << "method name: " << method.ToString();
+      callback = methodMap[method];
+    }
+  }
+  if (callback == nullptr) {
+    it = syncProxyObjMap_.find(object_name);
+    if (it != syncProxyObjMap_.end()) {
+      auto& methodMap = it->second;
+      auto methodIt = methodMap.find(method);
+      if (methodIt != methodMap.end()) {
+        LOG(DEBUG) << "Processing sync native proxy result, "
+                   << "method name: " << method.ToString();
+        callback = methodMap[method];
+      }
+    }
+  }
+
+  if (callback == nullptr) {
+    LOG(DEBUG) << "Processing sync native proxy result failed, "
+               << "method not found, name: "
+               << method.ToString();
+    return 1;
+  }
   size_t argsSize = args->GetSize();
-  auto callback = methodMap[method];
   std::vector<std::vector<uint8_t>> dataList(argsSize);
   std::vector<size_t> dataSize(argsSize);
 
@@ -2670,7 +2725,10 @@ int NWebHandlerDelegate::ProcessNativeProxyResult(
     const CefString& method,
     const CefString& object_name,
     CefRefPtr<CefListValue> result) {
-  if (auto it = proxyObjMap_.find(object_name); it != proxyObjMap_.end()) {
+  if (auto it = syncProxyObjMap_.find(object_name); it != syncProxyObjMap_.end()) {
+    ProcessNativeProxyResultNew(args, method, object_name, result);
+    return 0;
+  } else if (auto async_it = asyncProxyObjMap_.find(object_name); async_it != asyncProxyObjMap_.end()) {
     ProcessNativeProxyResultNew(args, method, object_name, result);
     return 0;
   }

@@ -1219,6 +1219,20 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      * @param index index value.
      */
     virtual void SuggestionSelected(int32_t index) = 0;
+
+    /**
+     * RegisterArkJSfunction
+     *
+     * @param object_name  String: object name
+     * @param method_list vector<String>: vector list, async method list
+     * @param method_list vector<String>: vector list, sync method list
+     * @param object_id int32_t: object id
+     */
+    virtual void RegisterArkJSfunction(
+        const std::string& object_name,
+        const std::vector<std::string>& method_list,
+        const std::vector<std::string>& async_method_list,
+        const int32_t object_id) = 0;
 };
 }  // namespace OHOS::NWeb
 

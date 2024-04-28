@@ -1247,6 +1247,19 @@ public:
    */
   /*--ark web()--*/
   virtual void SuggestionSelected(int32_t index) = 0;
+
+  /**
+   * @brief RegisterArkJSfunction
+   *
+   * @param object_name  String: object name
+   * @param method_list vector<String>: vector list, method list
+   * @param async_method_list vector<String>: vector list, async method list
+   * @param object_id int32_t: object id
+   */
+  /*--ark web()--*/
+  virtual void RegisterArkJSfunction(
+      const ArkWebString &object_name, const ArkWebStringVector &method_list,
+      const ArkWebStringVector &async_method_list, const int32_t object_id) = 0;
 };
 
 } // namespace OHOS::ArkWeb

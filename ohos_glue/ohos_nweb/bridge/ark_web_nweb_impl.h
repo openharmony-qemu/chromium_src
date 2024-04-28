@@ -1083,6 +1083,19 @@ public:
   /*--ark web()--*/
   bool TerminateRenderProcess() override;
 
+  /**
+   * @brief RegisterArkJSfunction
+   *
+   * @param object_name  String: object name
+   * @param method_list vector<String>: vector list, method list
+   * @param async_method_list vector<String>: vector list, async method list
+   * @param object_id int32_t: object id
+   */
+  void RegisterArkJSfunction(const ArkWebString &object_name,
+                             const ArkWebStringVector &method_list,
+                             const ArkWebStringVector &async_method_list,
+                             const int32_t object_id) override;
+
 private:
   std::shared_ptr<OHOS::NWeb::NWeb> nweb_nweb_;
 };

@@ -115,7 +115,8 @@ class NWebHandlerDelegate : public CefClient,
   void RegisterNativeJavaScriptCallBack(
       const std::string& objName,
       const std::vector<std::string>& methodName,
-      std::vector<NativeJSProxyCallbackFunc>&& callback);
+      std::vector<NativeJSProxyCallbackFunc>&& callback,
+      bool isAsync);
   void RegisterNativeLoadStartCallback(std::function<void(void)>&& callback);
   void RegisterNativeLoadEndCallback(std::function<void(void)>&& callback);
   int ProcessNativeProxyResultNew(CefRefPtr<CefListValue> args,
@@ -622,6 +623,7 @@ class NWebHandlerDelegate : public CefClient,
   // save ark js function for window.open
   void SavaArkJSFunctionForPopup(const std::string& object_name,
                                  const std::vector<std::string>& method_list,
+                                 const std::vector<std::string>& async_method_list,
                                  const int32_t object_id);
 #ifdef OHOS_DRAG_DROP
   bool IsDragEnter() const { return is_drag_enter_; }
@@ -751,10 +753,14 @@ class NWebHandlerDelegate : public CefClient,
       objMap_;
   std::unordered_map<std::string,
                      std::unordered_map<std::string, NativeJSProxyCallbackFunc>>
-      proxyObjMap_;
+      syncProxyObjMap_;
+  std::unordered_map<std::string,
+                     std::unordered_map<std::string, NativeJSProxyCallbackFunc>>
+      asyncProxyObjMap_;
   using MethodPair = std::pair<std::string, std::unordered_set<std::string>>;
   using ObjectMethodMap = std::map<int32_t, MethodPair>;
-  ObjectMethodMap javascript_method_map_;
+  ObjectMethodMap javascript_sync_method_map_;
+  ObjectMethodMap javascript_async_method_map_;
   std::function<void(void)> onLoadStartCallback_ = nullptr;
   std::function<void(void)> onLoadEndCallback_ = nullptr;
 };

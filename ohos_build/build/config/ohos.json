@@ -126,6 +126,14 @@
 "dependence": "",
 "default": "true"
 },
+{ "name": "OHOS_CUSTOM_DNS",
+"owner": "",
+"desc": "",
+"effect":"main gn blink_core other",
+"genCommandline": "",
+"dependence": "",
+"default": "true"
+},
 { "name": "OHOS_CUSTOM_VIDEO_PLAYER",
 "owner": "",
 "desc": "",

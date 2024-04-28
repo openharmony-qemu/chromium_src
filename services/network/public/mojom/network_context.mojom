@@ -1372,6 +1372,12 @@ interface NetworkContext {
               ResolveHostParameters? optional_parameters,
               pending_remote<ResolveHostClient> response_client);
 
+  [EnableIf=ohos_custom_dns]
+  SetHostIP(string HostName, array<string> Address, uint32 AliveTime);
+
+  [EnableIf=ohos_custom_dns]
+  ClearHostIP(string HostName);
+
   // Creates a HostResolver interface that can be passed to code/processes
   // without direct access to NetworkContext to make ResolveHost requests.
   //

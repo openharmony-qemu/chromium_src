@@ -2761,3 +2761,45 @@ void NWebImpl::WarmupServiceWorker(const std::string &url) {
   service_worker_context->WarmUpServiceWorker(GURL(url), key, base::DoNothing());
 #endif
 }
+
+// static
+void NWebImpl::SetHostIP(const std::string &hostName, const std::string &address, int32_t aliveTime) {
+#if defined(OHOS_CUSTOM_DNS)
+  net_service::NetHelpers::SetHostIP(hostName, address, aliveTime);
+  auto it = net_service::NetHelpers::GetHostIP(hostName);
+  if (it.size() == 0) {
+    WVLOG_E("fail to set host IP.");
+    return;
+  }
+
+  for (const auto& cef_browser_context : CefBrowserContext::GetAll()) {
+    if (!cef_browser_context) {
+      WVLOG_E("SetHostIP null browser_context");
+      return;
+    }
+    cef_browser_context->GetNetworkContext()->SetHostIP(hostName, it, aliveTime);
+  }
+  WVLOG_I("Set host IP successfully.");
+#endif
+}
+
+// static
+void NWebImpl::ClearHostIP(const std::string &hostName) {
+#if defined(OHOS_CUSTOM_DNS)
+  auto it = net_service::NetHelpers::GetHostIP(hostName);
+  if (it.size() == 0) {
+    WVLOG_E("NWeb has not set the host IP.");
+    return;
+  }
+
+  for (const auto& cef_browser_context : CefBrowserContext::GetAll()) {
+    if (!cef_browser_context) {
+      WVLOG_E("ClearHostIP null browser_context");
+      return;
+    }
+    cef_browser_context->GetNetworkContext()->ClearHostIP(hostName);
+  }
+  net_service::NetHelpers::ClearHostIP(hostName);
+  WVLOG_I("Clear host IP successfully.");
+#endif
+}

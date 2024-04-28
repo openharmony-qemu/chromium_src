@@ -1735,6 +1735,61 @@ void NetworkContext::CreateHostResolver(
       std::move(private_internal_resolver));
 }
 
+#if defined(OHOS_CUSTOM_DNS)
+void NetworkContext::SetHostIP(
+    const std::string& host_name,
+    const std::vector<std::string>& address,
+    uint32_t alive_time) {
+ auto host_cache = url_request_context_->host_resolver()->GetHostCache();
+  if (host_cache) {
+    std::vector<net::IPEndPoint> expected;
+    for (auto& it : address) {
+      net::IPAddress ip;
+      bool result = ip.AssignFromIPLiteral(it);
+      DCHECK(result);
+      expected.push_back(net::IPEndPoint(ip, 0));
+    }
+    host_cache->Set(
+      net::HostCache::Key(
+        url::SchemeHostPort("http", host_name, 80),
+        net::DnsQueryType::UNSPECIFIED,
+        0, net::HostResolverSource::ANY,
+        net::NetworkAnonymizationKey()
+      ),
+      net::HostCache::Entry(net::OK, expected,
+                       std::set<std::string>({host_name}),
+                       net::HostCache::Entry::SOURCE_UNKNOWN, base::Seconds(alive_time)),
+      base::TimeTicks::Now(), base::Seconds(alive_time)
+    );
+    host_cache->Set(
+      net::HostCache::Key(
+        url::SchemeHostPort("https", host_name, 443),
+        net::DnsQueryType::UNSPECIFIED,
+        0, net::HostResolverSource::ANY,
+        net::NetworkAnonymizationKey()
+      ),
+      net::HostCache::Entry(net::OK, expected,
+                       std::set<std::string>({host_name}),
+                       net::HostCache::Entry::SOURCE_UNKNOWN, base::Seconds(alive_time)),
+      base::TimeTicks::Now(), base::Seconds(alive_time)
+    );
+  }
+}
+
+void NetworkContext::ClearHostIP(const std::string& host_name) {
+  net::HostCache* host_cache =
+      url_request_context_->host_resolver()->GetHostCache();
+  DCHECK(host_cache);
+  if (host_name == "")
+    return;
+
+  std::set<std::string> filter_domains;
+  filter_domains.insert(host_name);
+  host_cache->ClearForHosts(base::BindRepeating(&MatchesDomainFilter, mojom::ClearDataFilter_Type::DELETE_MATCHES,
+                            std::move(filter_domains)));
+}
+#endif
+
 void NetworkContext::VerifyCertForSignedExchange(
     const scoped_refptr<net::X509Certificate>& certificate,
     const GURL& url,

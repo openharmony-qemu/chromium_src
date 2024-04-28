@@ -73,6 +73,11 @@ public:
 
   void WarmupServiceWorker(const std::string &url) override;
 
+  void SetHostIP(
+      const std::string &hostName, const std::string &address, int32_t aliveTime) override;
+
+  void ClearHostIP(const std::string &hostName) override;
+
 private:
   std::shared_ptr<NWebDataBase> nweb_data_base_ = nullptr;
   std::shared_ptr<NWebWebStorage> nweb_web_storage_ = nullptr;

@@ -145,4 +145,13 @@ void NWebEngineImpl::ClearPrefetchedResource(const std::vector<std::string>& cac
 void NWebEngineImpl::WarmupServiceWorker(const std::string &url) {
   NWebImpl::WarmupServiceWorker(url);
 }
+
+void NWebEngineImpl::SetHostIP(
+    const std::string &hostName, const std::string &address, int32_t aliveTime) {
+  NWebImpl::SetHostIP(hostName, address, aliveTime);
+}
+
+void NWebEngineImpl::ClearHostIP(const std::string &hostName) {
+  NWebImpl::ClearHostIP(hostName);
+}
 } // namespace OHOS::NWeb

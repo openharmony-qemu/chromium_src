@@ -77,6 +77,10 @@ public:
 
   void WarmupServiceWorker(const ArkWebString &url) override;
 
+  void SetHostIP(const ArkWebString &hostName, const ArkWebString &address,
+                 int32_t aliveTime) override;
+
+  void ClearHostIP(const ArkWebString &hostName) override;
 private:
   std::shared_ptr<OHOS::NWeb::NWebEngine> nweb_engine_;
 };

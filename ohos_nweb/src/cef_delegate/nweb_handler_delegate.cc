@@ -2836,8 +2836,8 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNewFlowbuf(
     const CefString& object_name,
     int fd,
     CefRefPtr<CefListValue> result) {
-  auto it = proxyObjMap_.find(object_name);
-  if (it == proxyObjMap_.end()) {
+  auto it = syncProxyObjMap_.find(object_name);
+  if (it == syncProxyObjMap_.end()) {
     // object name not found
     return 1;
   }
@@ -2955,7 +2955,7 @@ int NWebHandlerDelegate::ProcessNativeProxyResultFlowbuf(
     const CefString& object_name,
     int fd,
     CefRefPtr<CefListValue> result) {
-  if (auto it = proxyObjMap_.find(object_name); it != proxyObjMap_.end()) {
+  if (auto it = syncProxyObjMap_.find(object_name); it != syncProxyObjMap_.end()) {
     ProcessNativeProxyResultNewFlowbuf(args, method, object_name, fd, result);
     return 0;
   }

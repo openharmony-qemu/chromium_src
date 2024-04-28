@@ -16,6 +16,8 @@
 #ifndef ARK_WEB_NWEB_STRUCTS_H
 #define ARK_WEB_NWEB_STRUCTS_H
 
+#include <stdint.h>
+
 typedef struct {
   int32_t year;
   int32_t month;

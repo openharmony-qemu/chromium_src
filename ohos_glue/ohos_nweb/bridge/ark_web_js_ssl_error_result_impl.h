@@ -18,8 +18,8 @@
 #pragma once
 
 #include "include/nweb_js_ssl_error_result.h"
-#include "ohos_nweb/include/ark_web_js_ssl_error_result.h"
 #include "ohos_nweb/include/ark_web_js_all_ssl_error_result.h"
+#include "ohos_nweb/include/ark_web_js_ssl_error_result.h"
 
 namespace OHOS::ArkWeb {
 
@@ -50,8 +50,9 @@ class ArkWebJsAllSslErrorResultImpl : public ArkWebJsAllSslErrorResult {
   IMPLEMENT_REFCOUNTING(ArkWebJsAllSslErrorResultImpl);
 
 public:
-  ArkWebJsAllSslErrorResultImpl(std::shared_ptr<OHOS::NWeb::NWebJSAllSslErrorResult>
-                                 nweb_js_all_ssl_error_result);
+  ArkWebJsAllSslErrorResultImpl(
+      std::shared_ptr<OHOS::NWeb::NWebJSAllSslErrorResult>
+          nweb_js_all_ssl_error_result);
   ~ArkWebJsAllSslErrorResultImpl() = default;
 
   /**
@@ -66,7 +67,8 @@ public:
   void HandleConfirm() override;
 
 private:
-  std::shared_ptr<OHOS::NWeb::NWebJSAllSslErrorResult> nweb_js_all_ssl_error_result_;
+  std::shared_ptr<OHOS::NWeb::NWebJSAllSslErrorResult>
+      nweb_js_all_ssl_error_result_;
 };
 
 } // namespace OHOS::ArkWeb

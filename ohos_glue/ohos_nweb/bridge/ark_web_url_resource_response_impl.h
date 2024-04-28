@@ -125,9 +125,9 @@ public:
   void PutResponseReadyCallback(
       ArkWebRefPtr<ArkWebResourceReadyCallback> callback) override;
 
-  void PutResponseDataBuffer(char* buffer, size_t bufferSize) override;
+  void PutResponseDataBuffer(char *buffer, size_t bufferSize) override;
 
-  char* GetResponseDataBuffer() override;
+  char *GetResponseDataBuffer() override;
 
   size_t GetResponseDataBufferSize() override;
 

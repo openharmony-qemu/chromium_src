@@ -1240,6 +1240,13 @@ public:
    */
   /*--ark web()--*/
   virtual bool TerminateRenderProcess() = 0;
+
+/**
+   * Get value of Autofill index.
+   * @param index index value.
+   */
+  /*--ark web()--*/
+  virtual void SuggestionSelected(int32_t index) = 0;
 };
 
 } // namespace OHOS::ArkWeb

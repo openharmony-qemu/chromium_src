@@ -211,6 +211,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 
   void SetWindowId(uint32_t window_id) override;
 
+  void SuggestionSelected(int index) const override;
+
   bool SetZoomInFactor(float factor);
   bool SetZoomOutFactor(float factor);
 
@@ -342,6 +344,8 @@ void PrecompileJavaScript(const std::string& url,
   void SetSavePassword(bool enable) override;
   bool GetSavePassword() override;
   void SaveOrUpdatePassword(bool is_udpate) override;
+#endif
+#if defined(OHOS_EX_PASSWORD) || (OHOS_DATALIST)
   void PasswordSuggestionSelected(int list_index) const override;
 #endif
 #if defined(OHOS_EX_FORCE_ZOOM)

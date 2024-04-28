@@ -1729,6 +1729,16 @@ ark_web_nweb_terminate_render_process(struct _ark_web_nweb_t *self) {
   return ArkWebNWebCppToC::Get(self)->TerminateRenderProcess();
 }
 
+void ARK_WEB_CALLBACK
+ark_web_nweb_suggestion_selected(struct _ark_web_nweb_t *self, int32_t index) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->SuggestionSelected(index);
+}
+
 } // namespace
 
 ArkWebNWebCppToC::ArkWebNWebCppToC() {
@@ -1913,6 +1923,7 @@ ArkWebNWebCppToC::ArkWebNWebCppToC() {
   GetStruct()->on_touch_cancel_by_id = ark_web_nweb_on_touch_cancel_by_id;
   GetStruct()->scale_gesture_change = ark_web_nweb_scale_gesture_change;
   GetStruct()->terminate_render_process = ark_web_nweb_terminate_render_process;
+  GetStruct()->suggestion_selected = ark_web_nweb_suggestion_selected;
 }
 
 ArkWebNWebCppToC::~ArkWebNWebCppToC() {

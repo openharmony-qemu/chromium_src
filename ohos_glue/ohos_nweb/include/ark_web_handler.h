@@ -688,6 +688,13 @@ public:
   virtual bool OnOpenAppLink(
       const ArkWebString &url,
       ArkWebRefPtr<ArkWebAppLinkCallback> callback) = 0;
+  
+  /*--ark web()--*/
+  virtual void OnShowAutofillPopup(const float offsetX, const float offsetY,
+                                   const ArkWebStringVector &menu_items) = 0;
+
+  /*--ark web()--*/
+  virtual void OnHideAutofillPopup() = 0;
 };
 
 } // namespace OHOS::ArkWeb

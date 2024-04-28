@@ -10186,7 +10186,8 @@ void WebContentsImpl::SaveOrUpdatePassword(bool is_update) {
     form_to_save_->Save();
   }
 }
-
+#endif
+#if defined(OHOS_EX_PASSWORD) || (OHOS_DATALIST)
 void WebContentsImpl::ShowAutofillPopup(
     const gfx::RectF& element_bounds,
     bool is_rtl,

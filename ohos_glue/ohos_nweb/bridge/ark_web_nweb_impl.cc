@@ -888,4 +888,8 @@ bool ArkWebNWebImpl::TerminateRenderProcess() {
   return nweb_nweb_->TerminateRenderProcess();
 }
 
+void ArkWebNWebImpl::SuggestionSelected(int32_t index) {
+  nweb_nweb_->SuggestionSelected(index);
+}
+
 } // namespace OHOS::ArkWeb

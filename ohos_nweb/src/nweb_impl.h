@@ -175,6 +175,7 @@ class NWebImpl : public NWeb {
       int64_t accessibilityId,
       int32_t direction) override;
   void SetAccessibilityState(bool state) override;
+  void SuggestionSelected(int index) override;
 #ifdef OHOS_SCREEN_LOCK
   void RegisterScreenLockFunction(int32_t windowId,
                                   std::shared_ptr<NWebScreenLockCallback> callback) override;
@@ -182,12 +183,14 @@ class NWebImpl : public NWeb {
 #endif  // #ifdef OHOS_SCREEN_LOCK
 
 #if defined(OHOS_EX_PASSWORD)
-  void PasswordSuggestionSelected(int list_index) const;
   void SetSavePasswordAutomatically(bool enable) const;
   bool GetSavePasswordAutomatically() const;
   void SetSavePassword(bool enable) const;
   bool GetSavePassword() const;
   void SaveOrUpdatePassword(bool is_update);
+#endif
+#if defined(OHOS_EX_PASSWORD) || (OHOS_DATALIST)
+  void PasswordSuggestionSelected(int list_index) const;
 #endif
 #if defined(OHOS_COMPOSITE_RENDER)
   void SetShouldFrameSubmissionBeforeDraw(bool should) override;

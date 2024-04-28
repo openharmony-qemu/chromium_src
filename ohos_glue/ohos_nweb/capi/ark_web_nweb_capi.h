@@ -496,6 +496,9 @@ typedef struct _ark_web_nweb_t {
                                               double centerY);
 
   bool(ARK_WEB_CALLBACK *terminate_render_process)(struct _ark_web_nweb_t *self);
+  
+  void(ARK_WEB_CALLBACK *suggestion_selected)(struct _ark_web_nweb_t *self,
+                                              int32_t index);
 } ark_web_nweb_t;
 
 #ifdef __cplusplus

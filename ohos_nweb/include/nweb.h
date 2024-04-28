@@ -1213,6 +1213,12 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
     */
     /*--ark web()--*/
     virtual bool TerminateRenderProcess() = 0;
+    
+   /**
+     * Get value of Autofill index.
+     * @param index index value.
+     */
+    virtual void SuggestionSelected(int32_t index) = 0;
 };
 }  // namespace OHOS::NWeb
 

@@ -262,6 +262,11 @@ public:
 
   bool OnOpenAppLink(const ArkWebString &url,
                      ArkWebRefPtr<ArkWebAppLinkCallback> callback) override;
+  
+  void OnShowAutofillPopup(const float offsetX, const float offsetY,
+                           const ArkWebStringVector &menu_items) override;
+
+  void OnHideAutofillPopup() override;
 };
 
 } // namespace OHOS::ArkWeb

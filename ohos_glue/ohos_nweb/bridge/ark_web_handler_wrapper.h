@@ -609,6 +609,11 @@ public:
 
   bool OnOpenAppLink(const std::string& url,
                      std::shared_ptr<OHOS::NWeb::NWebAppLinkCallback> callback) override;
+  
+  void OnShowAutofillPopup(const float offsetX, const float offsetY,
+                           const std::vector<std::string> &menu_items) override;
+
+  void OnHideAutofillPopup() override;
 private:
   ArkWebRefPtr<ArkWebHandler> ark_web_handler_;
 };

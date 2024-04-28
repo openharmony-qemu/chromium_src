@@ -34,7 +34,7 @@
 #include "ui/gfx/geometry/rect_f.h"
 #include "ui/gfx/native_widget_types.h"
 
-#ifdef OHOS_EX_PASSWORD
+#if defined(OHOS_EX_PASSWORD) || (OHOS_DATALIST)
 #include "components/autofill/core/browser/ui/suggestion.h"
 #endif
 
@@ -296,7 +296,8 @@ class CONTENT_EXPORT WebContentsDelegate {
 #if defined(OHOS_EX_PASSWORD)
   // notify ui show save password dialog
   virtual void ShowPasswordDialog(bool is_update, const std::string& url) {}
-
+#endif
+#if defined(OHOS_EX_PASSWORD) || (OHOS_DATALIST)
   virtual void OnShowAutofillPopup(
       const gfx::RectF& element_bounds,
       bool is_rtl,

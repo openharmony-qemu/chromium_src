@@ -841,6 +841,13 @@ public:
                                std::shared_ptr<NWebAppLinkCallback> callback) {
         return false;
     }
+    
+    virtual void OnShowAutofillPopup(
+      const float offsetX,
+      const float offsetY,
+      const std::vector<std::string>& menu_items) {}
+    
+    virtual void OnHideAutofillPopup() {}
 };
 }  // namespace OHOS::NWeb
 

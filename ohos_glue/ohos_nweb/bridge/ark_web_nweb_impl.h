@@ -1066,6 +1066,13 @@ public:
    */
   /*--ark web()--*/
   int ScaleGestureChange(double scale, double centerX, double centerY) override;
+  
+  /**
+   * Get value of Autofill index.
+   * @param index index value.
+   */
+  /*--ark web()--*/
+  void SuggestionSelected(int32_t index) override;
 
   /*
    * @brief Terminate render process

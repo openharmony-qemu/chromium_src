@@ -100,8 +100,10 @@ class NWebDelegateInterface
   virtual void SetSavePassword(bool enable) = 0;
   virtual bool GetSavePassword() = 0;
   virtual void SaveOrUpdatePassword(bool is_update) = 0;
-  virtual void PasswordSuggestionSelected(int list_index) const = 0;
 #endif  // defined(OHOS_EX_PASSWORD)
+#if defined(OHOS_EX_PASSWORD) || (OHOS_DATALIST)
+  virtual void PasswordSuggestionSelected(int list_index) const = 0;
+#endif
 #if defined(OHOS_NWEB_EX)
   virtual bool CanStoreWebArchive() const = 0;
   virtual void UnRegisterWebAppClientExtensionListener() = 0;
@@ -227,6 +229,7 @@ class NWebDelegateInterface
   virtual void FindAllAsync(const std::string& str) const = 0;
   virtual void ClearMatches() const = 0;
   virtual void FindNext(const bool forward) const = 0;
+  virtual void SuggestionSelected(int index) const = 0;
 
   virtual void ExecuteJavaScriptExt(
       const int fd,

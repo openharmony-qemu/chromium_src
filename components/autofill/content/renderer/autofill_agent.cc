@@ -185,7 +185,9 @@ class AutofillAgent::DeferringAutofillDriver : public mojom::AutofillDriver {
              bounding_box, autoselect_first_suggestion,
              form_element_was_clicked);
   }
-  void HidePopup() override { DeferMsg(&mojom::AutofillDriver::HidePopup); }
+  void HidePopup() override { 
+    DeferMsg(&mojom::AutofillDriver::HidePopup); 
+  }
   void FocusNoLongerOnForm(bool had_interacted_form) override {
     DeferMsg(&mojom::AutofillDriver::FocusNoLongerOnForm, had_interacted_form);
   }
@@ -347,7 +349,7 @@ void AutofillAgent::DidChangeScrollOffset() {
         ->PostTask(FROM_HERE,
                    base::BindOnce(&AutofillAgent::DidChangeScrollOffsetImpl,
                                   weak_ptr_factory_.GetWeakPtr(), element_));
-  } else {
+  } else if (!is_popup_possibly_visible_){
     HidePopup();
   }
 }
@@ -489,6 +491,13 @@ void AutofillAgent::TextFieldDidEndEditing(const WebInputElement& element) {
       password_generation_agent_->ShouldIgnoreBlur()) {
     return;
   }
+
+#if defined(OHOS_DATALIST)
+  if (is_popup_possibly_visible_){
+    return;
+  }
+  #endif
+
   GetAutofillDriver().DidEndTextFieldEditing();
   focus_state_notifier_.ResetFocus();
   if (password_generation_agent_)
@@ -538,6 +547,14 @@ void AutofillAgent::TextFieldDidReceiveKeyDown(const WebInputElement& element,
                                                const WebKeyboardEvent& event) {
   DCHECK(IsOwnedByFrame(element, render_frame()));
 
+
+#if defined(OHOS_DATALIST)
+  if (is_popup_possibly_visible_){
+    LOG(INFO) << "TextFieldDidReceiveKeyDown is_popup_possibly_visible_";
+    return;
+  }
+  #endif 
+
   if (event.windows_key_code == ui::VKEY_DOWN ||
       event.windows_key_code == ui::VKEY_UP) {
     ShowSuggestions(element,
@@ -550,6 +567,10 @@ void AutofillAgent::TextFieldDidReceiveKeyDown(const WebInputElement& element,
 
 void AutofillAgent::OpenTextDataListChooser(const WebInputElement& element) {
   DCHECK(IsOwnedByFrame(element, render_frame()));
+  if (is_popup_possibly_visible_ || last_left_mouse_down_or_gesture_tap_in_node_caused_focus_){
+    return;
+  }
+
   ShowSuggestions(element, {.autofill_on_empty_values = true});
 }
 

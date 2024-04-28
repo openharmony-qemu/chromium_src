@@ -405,6 +405,13 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
       const net::NetworkAnonymizationKey& network_anonymization_key,
       mojom::ResolveHostParametersPtr optional_parameters,
       mojo::PendingRemote<mojom::ResolveHostClient> response_client) override;
+#if defined(OHOS_CUSTOM_DNS)
+  void SetHostIP(
+      const std::string& host_name,
+      const std::vector<std::string>& dddress,
+      uint32_t alive_time) override;
+  void ClearHostIP(const std::string& host_name) override;
+#endif
   void CreateHostResolver(
       const absl::optional<net::DnsConfigOverrides>& config_overrides,
       mojo::PendingReceiver<mojom::HostResolver> receiver) override;

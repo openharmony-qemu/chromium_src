@@ -311,6 +311,34 @@ void ARK_WEB_CALLBACK ark_web_engine_warmup_service_worker(
   ArkWebEngineCppToC::Get(self)->WarmupServiceWorker(*url);
 }
 
+void ARK_WEB_CALLBACK ark_web_engine_set_host_ip(struct _ark_web_engine_t *self,
+                                                 const ArkWebString *hostName,
+                                                 const ArkWebString *address,
+                                                 int32_t aliveTime) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(hostName, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(address, );
+
+  // Execute
+  ArkWebEngineCppToC::Get(self)->SetHostIP(*hostName, *address, aliveTime);
+}
+
+void ARK_WEB_CALLBACK ark_web_engine_clear_host_ip(
+    struct _ark_web_engine_t *self, const ArkWebString *hostName) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(hostName, );
+
+  // Execute
+  ArkWebEngineCppToC::Get(self)->ClearHostIP(*hostName);
+}
+
 } // namespace
 
 ArkWebEngineCppToC::ArkWebEngineCppToC() {
@@ -339,6 +367,8 @@ ArkWebEngineCppToC::ArkWebEngineCppToC() {
   GetStruct()->clear_prefetched_resource =
       ark_web_engine_clear_prefetched_resource;
   GetStruct()->warmup_service_worker = ark_web_engine_warmup_service_worker;
+  GetStruct()->set_host_ip = ark_web_engine_set_host_ip;
+  GetStruct()->clear_host_ip = ark_web_engine_clear_host_ip;
 }
 
 ArkWebEngineCppToC::~ArkWebEngineCppToC() {

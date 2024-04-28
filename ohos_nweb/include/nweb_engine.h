@@ -77,6 +77,11 @@ public:
   virtual void ClearPrefetchedResource(const std::vector<std::string>& cache_key_list) = 0;
 
   virtual void WarmupServiceWorker(const std::string &url) = 0;
+
+  virtual void SetHostIP(const std::string &hostName,
+                         const std::string &address, int32_t aliveTime) = 0;
+
+  virtual void ClearHostIP(const std::string &hostName) = 0;
 };
 
 } // namespace OHOS::NWeb

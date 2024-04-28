@@ -2751,14 +2751,16 @@ bool NWebDelegate::GetSavePassword() {
   }
   return false;
 }
+#endif  // OHOS_EX_PASSWORD
 
+#if defined(OHOS_EX_PASSWORD) || (OHOS_DATALIST)
 void NWebDelegate::PasswordSuggestionSelected(int list_index) const {
   LOG(INFO) << "NWebDelegate::PasswordSuggestionSelected";
   if (GetBrowser().get()) {
     GetBrowser()->PasswordSuggestionSelected(list_index);
   }
 }
-#endif  // OHOS_EX_PASSWORD
+#endif
 
 #if defined(OHOS_EX_FREE_COPY)
 void NWebDelegate::SelectAndCopy() {
@@ -3245,6 +3247,13 @@ void NWebDelegate::AddAccessibilityNodeInfoActions(
         static_cast<uint32_t>(AceAction::ACTION_ACCESSIBILITY_FOCUS));
   }
   nodeInfo->SetActions(actions);
+}
+
+void NWebDelegate::SuggestionSelected(int index) const {
+  LOG(INFO) << "NWebDelegate::SuggestionSelected";
+  if (GetBrowser().get()) {
+    GetBrowser()->PasswordSuggestionSelected(index);
+  }
 }
 
 #if defined(OHOS_SCREEN_LOCK)

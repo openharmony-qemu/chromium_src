@@ -366,6 +366,13 @@ typedef struct _ark_web_handler_t {
   bool(ARK_WEB_CALLBACK *on_open_app_link)(
       struct _ark_web_handler_t *self, const ArkWebString *url,
       ark_web_app_link_callback_t *callback);
+      
+  void(ARK_WEB_CALLBACK *on_show_autofill_popup)(
+      struct _ark_web_handler_t *self, const float offsetX, const float offsetY,
+      const ArkWebStringVector *menu_items);
+
+  void(ARK_WEB_CALLBACK *on_hide_autofill_popup)(
+      struct _ark_web_handler_t *self);
 } ark_web_handler_t;
 
 #ifdef __cplusplus

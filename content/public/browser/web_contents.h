@@ -60,7 +60,7 @@
 #include "third_party/blink/public/common/messaging/web_message_port.h"
 #endif
 
-#if defined(OHOS_EX_PASSWORD)
+#if defined(OHOS_EX_PASSWORD) || (OHOS_DATALIST)
 #include "components/autofill/core/browser/ui/suggestion.h"
 #include "ui/gfx/geometry/rect_f.h"
 #endif
@@ -646,12 +646,15 @@ class WebContents : public PageNavigator,
   virtual void SetSavePassword(bool enable) = 0;
   virtual bool GetSavePassword() = 0;
   virtual void SaveOrUpdatePassword(bool is_update) = 0;
+#endif  // OHOS_EX_PASSWORD
+
+#if defined(OHOS_EX_PASSWORD) || (OHOS_DATALIST)
   virtual void ShowAutofillPopup(
       const gfx::RectF& element_bounds,
       bool is_rtl,
       const std::vector<autofill::Suggestion>& suggestions) = 0;
   virtual void HideAutofillPopup() = 0;
-#endif  // OHOS_EX_PASSWORD
+#endif
 
 #if defined(OHOS_EX_FORCE_ZOOM)
   virtual void SetForceEnableZoom(bool forceEnableZoom) = 0;

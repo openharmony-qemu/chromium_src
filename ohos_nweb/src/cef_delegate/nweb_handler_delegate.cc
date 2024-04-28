@@ -1644,10 +1644,6 @@ void NWebHandlerDelegate::OnShowAutofillPopup(
     const CefRect& bounds,
     bool right_aligned,
     const std::vector<CefAutofillPopupItem>& menu_items) {
-#if defined(OHOS_EX_PASSWORD)
-  if (!render_handler_) {
-    return;
-  }
   float ratio = render_handler_->GetCefDeviceRatio();
   std::vector<std::string> label_list;
   std::vector<std::string> sublabel_list;
@@ -1656,6 +1652,19 @@ void NWebHandlerDelegate::OnShowAutofillPopup(
     sublabel_list.push_back(CefString(&menu_item.sublabel).ToString());
   }
 
+#if defined(OHOS_DATALIST)
+  if (!nweb_handler_) {
+    return;
+  }
+  nweb_handler_->OnShowAutofillPopup(
+    bounds.x * ratio, bounds.y * ratio + bounds.height * ratio , label_list);
+#endif
+
+#if defined(OHOS_EX_PASSWORD)
+  if (!render_handler_) {
+    return;
+  }
+  
   if (web_app_client_extension_listener_ != nullptr &&
       web_app_client_extension_listener_->OnShowPasswordAutofillPopup !=
           nullptr) {
@@ -1668,6 +1677,13 @@ void NWebHandlerDelegate::OnShowAutofillPopup(
 }
 
 void NWebHandlerDelegate::OnHideAutofillPopup() {
+#if defined(OHOS_DATALIST)
+  if (!nweb_handler_) {
+    return;
+  }
+  nweb_handler_->OnHideAutofillPopup();
+#endif
+
 #if defined(OHOS_EX_PASSWORD)
   if (web_app_client_extension_listener_ != nullptr &&
       web_app_client_extension_listener_->OnHidePasswordAutofillPopup !=

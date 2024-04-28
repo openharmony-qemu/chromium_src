@@ -199,7 +199,7 @@ target(link_target_type, "renderer") {
   if (is_ohos) {
     include_dirs = ohos_src_includes
     deps = [
-      "//third_party/ohos_ndk:ohos_isolation",
+      "//ohos_glue:ohos_adapter_glue_source",
     ]
     sources += [
       "media/ohos/native_renderer_client.cc",

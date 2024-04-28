@@ -63,7 +63,7 @@ public:
   void PauseAllTimers() override;
 
   void ResumeAllTimers() override;
-  
+
   void PrefetchResource(ArkWebRefPtr<ArkWebEnginePrefetchArgs> &pre_args,
                         const ArkWebStringMap &additional_http_headers,
                         const ArkWebString &cache_key,
@@ -73,7 +73,8 @@ public:
 
   int32_t GetRenderProcessMode() override;
 
-  void ClearPrefetchedResource(const ArkWebStringVector& cache_key_list) override;
+  void
+  ClearPrefetchedResource(const ArkWebStringVector &cache_key_list) override;
 
   void WarmupServiceWorker(const ArkWebString &url) override;
 
@@ -81,6 +82,7 @@ public:
                  int32_t aliveTime) override;
 
   void ClearHostIP(const ArkWebString &hostName) override;
+
 private:
   std::shared_ptr<OHOS::NWeb::NWebEngine> nweb_engine_;
 };

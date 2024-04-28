@@ -3320,7 +3320,7 @@ source_set("browser") {
     }  #endif  // defined(OHOS_MEDIA_AVSESSION)
 
     include_dirs = ohos_src_includes
-    deps += [ "//third_party/ohos_ndk:ohos_isolation" ]
+    deps += [ "//ohos_glue:ohos_adapter_glue_source" ]
   }
 
   if (use_aura) {

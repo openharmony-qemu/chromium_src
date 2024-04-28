@@ -23,10 +23,10 @@ namespace OHOS::ArkWeb {
 /*--ark web(source=web core)--*/
 class ArkWebGestureEventResult : public virtual ArkWebBaseRefCounted {
 public:
-    virtual ~ArkWebGestureEventResult() = default;
-    
-    /*--ark web()--*/
-    virtual void SetGestureEventResult(bool result) = 0;
+  virtual ~ArkWebGestureEventResult() = default;
+
+  /*--ark web()--*/
+  virtual void SetGestureEventResult(bool result) = 0;
 };
 } // namespace OHOS::ArkWeb
 

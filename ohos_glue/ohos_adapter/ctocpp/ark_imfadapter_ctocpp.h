@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef ARK_IMFADAPTER_CTOCPP_H_
+#define ARK_IMFADAPTER_CTOCPP_H_
+#pragma once
+
+#include "base/ctocpp/ark_web_ctocpp_ref_counted.h"
+#include "ohos_adapter/capi/ark_imf_adapter_capi.h"
+#include "ohos_adapter/include/ark_imf_adapter.h"
+
+namespace OHOS::ArkWeb {
+
+// Wrap a C structure with a C++ class.
+// This class may be instantiated and accessed wrapper-side only.
+class ArkIMFAdapterCToCpp
+    : public ArkWebCToCppRefCounted<ArkIMFAdapterCToCpp, ArkIMFAdapter,
+                                    ark_imfadapter_t> {
+public:
+  ArkIMFAdapterCToCpp();
+  virtual ~ArkIMFAdapterCToCpp();
+
+  // ArkIMFAdapter methods.
+  bool Attach(ArkWebRefPtr<ArkIMFTextListenerAdapter> listener,
+              bool isShowKeyboard) override;
+
+  bool Attach(ArkWebRefPtr<ArkIMFTextListenerAdapter> listener,
+              bool isShowKeyboard,
+              ArkWebRefPtr<ArkIMFTextConfigAdapter> config) override;
+
+  void ShowCurrentInput(const int32_t &inputType) override;
+
+  void HideTextInput() override;
+
+  void Close() override;
+
+  void
+  OnCursorUpdate(ArkWebRefPtr<ArkIMFCursorInfoAdapter> cursorInfo) override;
+
+  void OnSelectionChange(ArkWebU16String &text, int start, int end) override;
+};
+
+} // namespace OHOS::ArkWeb
+
+#endif // ARK_IMFADAPTER_CTOCPP_H_

@@ -148,6 +148,12 @@ class ResourceResponse : public net_service::ResourceResponse {
                           int64_t* content_length,
                           HeaderMap* extra_headers);
 
+#if BUILDFLAG(IS_OHOS)
+  const std::string& GetResponseData() {static const std::string data; return data;}
+  size_t GetResponseDataBuffer(char* data) {return 0;}
+  size_t GetResponseDataBufferSize() {return 0;}
+#endif
+
   std::shared_ptr<ResponseCache> response_cache_;
 };
 

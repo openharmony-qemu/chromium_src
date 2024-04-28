@@ -43,6 +43,13 @@ class NWebResourceHandler : public CefResourceHandler {
   void GetResponseHeaders(CefRefPtr<CefResponse> response,
                           int64& response_length,
                           CefString& redirectUrl) override;
+
+  const std::string& GetResponseData() override;
+
+  size_t GetResponseDataBuffer(char* data) override;
+
+  size_t GetResponseDataBufferSize() override;
+
 #ifdef OHOS_NETWORK_LOAD
   bool Skip(int64 bytes_to_skip,
             int64& bytes_skipped,

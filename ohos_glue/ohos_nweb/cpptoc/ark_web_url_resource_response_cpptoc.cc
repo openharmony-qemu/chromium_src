@@ -246,6 +246,40 @@ void ARK_WEB_CALLBACK ark_web_url_resource_response_put_response_ready_callback(
       ArkWebResourceReadyCallbackCToCpp::Invert(callback));
 }
 
+void ARK_WEB_CALLBACK ark_web_url_resource_response_put_response_data_buffer(
+    struct _ark_web_url_resource_response_t *self, char *buffer,
+    size_t bufferSize) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebUrlResourceResponseCppToC::Get(self)->PutResponseDataBuffer(buffer,
+                                                                    bufferSize);
+}
+
+char *ARK_WEB_CALLBACK ark_web_url_resource_response_get_response_data_buffer(
+    struct _ark_web_url_resource_response_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, NULL);
+
+  // Execute
+  return ArkWebUrlResourceResponseCppToC::Get(self)->GetResponseDataBuffer();
+}
+
+size_t ARK_WEB_CALLBACK
+ark_web_url_resource_response_get_response_data_buffer_size(
+    struct _ark_web_url_resource_response_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, 0);
+
+  // Execute
+  return ArkWebUrlResourceResponseCppToC::Get(self)
+      ->GetResponseDataBufferSize();
+}
+
 } // namespace
 
 ArkWebUrlResourceResponseCppToC::ArkWebUrlResourceResponseCppToC() {
@@ -287,6 +321,12 @@ ArkWebUrlResourceResponseCppToC::ArkWebUrlResourceResponseCppToC() {
       ark_web_url_resource_response_put_response_state_and_statuscode;
   GetStruct()->put_response_ready_callback =
       ark_web_url_resource_response_put_response_ready_callback;
+  GetStruct()->put_response_data_buffer =
+      ark_web_url_resource_response_put_response_data_buffer;
+  GetStruct()->get_response_data_buffer =
+      ark_web_url_resource_response_get_response_data_buffer;
+  GetStruct()->get_response_data_buffer_size =
+      ark_web_url_resource_response_get_response_data_buffer_size;
 }
 
 ArkWebUrlResourceResponseCppToC::~ArkWebUrlResourceResponseCppToC() {

@@ -127,4 +127,20 @@ void NWebUrlResourceResponseImpl::PutResponseReadyCallback(
   readyCallback_ = readyCallback;
 }
 
+void NWebUrlResourceResponseImpl::PutResponseDataBuffer(char* buffer, size_t bufferSize) {
+  buffer_ = buffer;
+  bufferSize_ = bufferSize;
+  fd_ = 0;
+  isFileFd_ = false;
+  dataType_ = NWebResponseDataType::NWEB_BUFFER_TYPE;
+}
+
+char* NWebUrlResourceResponseImpl::GetResponseDataBuffer() {
+  return buffer_;
+}
+
+size_t NWebUrlResourceResponseImpl::GetResponseDataBufferSize() {
+  return bufferSize_;
+}
+
 } // namespace OHOS::NWeb

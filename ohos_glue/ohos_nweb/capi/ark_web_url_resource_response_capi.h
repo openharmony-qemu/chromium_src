@@ -96,6 +96,16 @@ typedef struct _ark_web_url_resource_response_t {
   void(ARK_WEB_CALLBACK *put_response_ready_callback)(
       struct _ark_web_url_resource_response_t *self,
       ark_web_resource_ready_callback_t *callback);
+
+  void(ARK_WEB_CALLBACK *put_response_data_buffer)(
+      struct _ark_web_url_resource_response_t *self, char *buffer,
+      size_t bufferSize);
+
+  char *(ARK_WEB_CALLBACK *get_response_data_buffer)(
+      struct _ark_web_url_resource_response_t *self);
+
+  size_t(ARK_WEB_CALLBACK *get_response_data_buffer_size)(
+      struct _ark_web_url_resource_response_t *self);
 } ark_web_url_resource_response_t;
 
 #ifdef __cplusplus

@@ -159,6 +159,9 @@ class DelegatingURLLoaderClient final : public network::mojom::URLLoaderClient {
     client_->OnReceiveResponse(std::move(head), std::move(body),
                                std::move(cached_metadata));
   }
+#if BUILDFLAG(IS_OHOS)
+  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {}
+#endif
   void OnReceiveRedirect(const net::RedirectInfo& redirect_info,
                          network::mojom::URLResponseHeadPtr head) override {
     if (devtools_enabled_) {

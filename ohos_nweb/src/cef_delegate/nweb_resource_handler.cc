@@ -301,6 +301,30 @@ void NWebResourceHandler::GetResponseHeaders(CefRefPtr<CefResponse> response,
 #endif
 }
 
+const std::string& NWebResourceHandler::GetResponseData() {
+  if (response_ == nullptr || response_->ResponseDataType() != NWebResponseDataType::NWEB_STRING_TYPE) {
+    static const std::string data;
+    return data;
+  }
+  return response_->ResponseData();
+}
+
+size_t NWebResourceHandler::GetResponseDataBuffer(char* data) {
+  if (response_ == nullptr || response_->ResponseDataType() != NWebResponseDataType::NWEB_BUFFER_TYPE) {
+    return 0;
+  }
+  size_t buffer_size = response_->GetResponseDataBufferSize();
+  memcpy(data, response_->GetResponseDataBuffer(), buffer_size);
+  return buffer_size;
+}
+
+size_t NWebResourceHandler::GetResponseDataBufferSize() {
+  if (response_ == nullptr) {
+    return 0;
+  }
+  return response_->GetResponseDataBufferSize();
+}
+
 void NWebResourceHandler::Cancel() {
   LOG(DEBUG) << "intercept NWebResourceHandler::Cancel";
   if (response_ == nullptr) {

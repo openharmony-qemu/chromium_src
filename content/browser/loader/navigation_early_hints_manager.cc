@@ -319,6 +319,9 @@ class NavigationEarlyHintsManager::PreloadURLLoaderClient
     response_body_drainer_ =
         std::make_unique<mojo::DataPipeDrainer>(this, std::move(body));
   }
+#if BUILDFLAG(IS_OHOS)
+  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {}
+#endif
   void OnReceiveRedirect(const net::RedirectInfo& redirect_info,
                          network::mojom::URLResponseHeadPtr head) override {}
   void OnUploadProgress(int64_t current_position,

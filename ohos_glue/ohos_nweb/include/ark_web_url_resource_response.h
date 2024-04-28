@@ -144,6 +144,15 @@ public:
   /*--ark web()--*/
   virtual void PutResponseReadyCallback(
       ArkWebRefPtr<ArkWebResourceReadyCallback> callback) = 0;
+
+  /*--ark web()--*/
+  virtual void PutResponseDataBuffer(char *buffer, size_t bufferSize) = 0;
+
+  /*--ark web()--*/
+  virtual char *GetResponseDataBuffer() = 0;
+
+  /*--ark web()--*/
+  virtual size_t GetResponseDataBufferSize() = 0;
 };
 
 } // namespace OHOS::ArkWeb

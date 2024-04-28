@@ -98,6 +98,14 @@ typedef struct _ark_web_engine_t {
 
   void(ARK_WEB_CALLBACK *warmup_service_worker)(struct _ark_web_engine_t *self,
                                                 const ArkWebString *url);
+
+  void(ARK_WEB_CALLBACK *set_host_ip)(struct _ark_web_engine_t *self,
+                                      const ArkWebString *hostName,
+                                      const ArkWebString *address,
+                                      int32_t aliveTime);
+
+  void(ARK_WEB_CALLBACK *clear_host_ip)(struct _ark_web_engine_t *self,
+                                        const ArkWebString *hostName);
 } ark_web_engine_t;
 
 ARK_WEB_EXPORT ark_web_engine_t *ark_web_engine_get_instance(void);

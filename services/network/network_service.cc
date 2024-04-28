@@ -31,6 +31,9 @@
 #include "base/task/thread_pool.h"
 #include "base/timer/timer.h"
 #include "base/values.h"
+#if defined(OHOS_CUSTOM_DNS)
+#include "cef/libcef/browser/net_service/net_helpers.h"
+#endif
 #include "build/build_config.h"
 #include "build/chromecast_buildflags.h"
 #include "build/chromeos_buildflags.h"
@@ -569,6 +572,20 @@ void NetworkService::RegisterNetworkContext(NetworkContext* network_context) {
   }
 #endif
   network_contexts_.insert(network_context);
+
+#if defined(OHOS_CUSTOM_DNS)
+  std::string hostName = "";
+  std::vector<std::string> address = {};
+  int32_t ttl = 0;
+  auto host_map = net_service::NetHelpers::GetHostIP();
+  for (auto& it : host_map) {
+    hostName = it.first;
+    address = it.second.address;
+    ttl = it.second.ttl;
+    network_context->SetHostIP(hostName, address, ttl);
+  }
+#endif
+
   if (quic_disabled_)
     network_context->DisableQuic();
 
@@ -594,6 +611,14 @@ void NetworkService::RegisterNetworkContext(NetworkContext* network_context) {
 void NetworkService::DeregisterNetworkContext(NetworkContext* network_context) {
   DCHECK_EQ(1u, network_contexts_.count(network_context));
   network_contexts_.erase(network_context);
+#if defined(OHOS_CUSTOM_DNS)
+  auto host_map = net_service::NetHelpers::GetHostIP();
+  for (auto& it : host_map) {
+    auto hostName = it.first;
+    network_context->ClearHostIP(hostName);
+  }
+  net_service::NetHelpers::ClearHostIP();
+#endif
 }
 
 void NetworkService::CreateNetLogEntriesForActiveObjects(

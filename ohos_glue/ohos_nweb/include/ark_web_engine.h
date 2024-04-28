@@ -102,6 +102,13 @@ public:
 
   /*--ark web()--*/
   virtual void WarmupServiceWorker(const ArkWebString &url) = 0;
+
+  /*--ark web()--*/
+  virtual void SetHostIP(const ArkWebString &hostName,
+                         const ArkWebString &address, int32_t aliveTime) = 0;
+
+  /*--ark web()--*/
+  virtual void ClearHostIP(const ArkWebString &hostName) = 0;
 };
 
 } // namespace OHOS::ArkWeb

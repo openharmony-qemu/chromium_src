@@ -186,4 +186,17 @@ void ArkWebEngineImpl::ClearPrefetchedResource(const ArkWebStringVector& cache_k
 void ArkWebEngineImpl::WarmupServiceWorker(const ArkWebString &url) {
   nweb_engine_->WarmupServiceWorker(ArkWebStringStructToClass(url));
 }
+
+void ArkWebEngineImpl::SetHostIP(const ArkWebString &hostName,
+                                 const ArkWebString &address,
+                                 int32_t aliveTime) {
+  nweb_engine_->SetHostIP(
+    ArkWebStringStructToClass(hostName),
+    ArkWebStringStructToClass(address), aliveTime
+  );
+}
+
+void ArkWebEngineImpl::ClearHostIP(const ArkWebString &hostName) {
+  nweb_engine_->ClearHostIP(ArkWebStringStructToClass(hostName));
+}
 } // namespace OHOS::ArkWeb

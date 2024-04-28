@@ -134,6 +134,8 @@ typedef struct {
     void (*deleteJavaScriptRegister)(const char* webTag, const char* objName);
     /** Refresh the current web page. */
     void (*refresh)(const char* webTag);
+    /** Register the JavaScript object and async method list. */
+    void (*registerAsyncJavaScriptProxy)(const char* webTag, const ArkWeb_ProxyObject* proxyObject);
 } ArkWeb_ControllerAPI;
 
 /**

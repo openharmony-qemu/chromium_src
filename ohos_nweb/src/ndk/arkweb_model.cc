@@ -67,60 +67,7 @@ ARKWEB_NDK_EXPORT void OH_ArkWeb_RunJavaScript(
 ARKWEB_NDK_EXPORT void OH_ArkWeb_RegisterJavaScriptProxy(
     const char* webTag,
     const ArkWeb_ProxyObject* proxyObject) {
-  if (proxyObject == nullptr) {
-    LOG(ERROR) << "NativeArkWeb proxy object is nullptr";
-    return;
-  }
-
-  auto webObjectPtr =
-      OHOS::NWeb::ArkWebNativeObject::GetWebInstanceByWebTag(webTag);
-  if (!webObjectPtr) {
-    LOG(ERROR) << "NativeArkWeb object pointer is nullptr";
-    return;
-  }
-
-  if (auto nwebSharedPtr = webObjectPtr->GetWebSharedPtr()) {
-    int32_t size = proxyObject->size;
-    std::vector<std::function<char*(std::vector<std::vector<uint8_t>>&,
-                                    std::vector<size_t>&)>>
-        callbackList(size);
-    const ArkWeb_ProxyMethod* methodList = proxyObject->methodList;
-    if (methodList == nullptr) {
-      LOG(ERROR) << "NativeArkWeb method list is nullptr";
-      return;
-    }
-
-    std::vector<std::string> methodNameList(size);
-    for (int i = 0; i < size; i++) {
-      auto methodNameObject = methodList[i];
-      methodNameList[i] = methodNameObject.methodName;
-      auto proxyCallback = [cb = methodNameObject.callback,
-                            webTag = std::string(webTag),
-                            userData = methodNameObject.userData](
-                               std::vector<std::vector<uint8_t>>& dataList,
-                               std::vector<size_t>& dataSize) -> char* {
-        if (cb) {
-          size_t size = dataList.size();
-          std::vector<ArkWeb_JavaScriptBridgeData> dataVector(size);
-          for (size_t i = 0; i < size; i++) {
-            ArkWeb_JavaScriptBridgeData data = {.buffer = dataList[i].data(),
-                                                .size = dataSize[i]};
-            dataVector[i] = data;
-          }
-          cb(webTag.c_str(), dataVector.data(), size, userData);
-        }
-        return nullptr;
-      };
-      callbackList[i] = std::move(proxyCallback);
-    }
-
-    nwebSharedPtr->RegisterNativeArkJSFunction(
-        proxyObject->objName, methodNameList, std::move(callbackList));
-  } else {
-    LOG(ERROR)
-        << "NativeArkWeb RegisterJavaScriptProxy get nweb null: %{public}s"
-        << webTag;
-  }
+  RegisterJavaScriptProxy(webTag, proxyObject, false);
 }
 
 ARKWEB_NDK_EXPORT void OH_ArkWeb_DeleteJavaScriptProxy(const char* webTag,
@@ -247,6 +194,72 @@ ARKWEB_NDK_EXPORT void OH_ArkWeb_OnDestroy(const char* webTag,
         }
         cb(webTag.c_str(), userData);
       });
+}
+
+ARKWEB_NDK_EXPORT void OH_ArkWeb_RegisterAsyncJavaScriptProxy(
+    const char* webTag,
+    const ArkWeb_ProxyObject* proxyObject) {
+  RegisterJavaScriptProxy(webTag, proxyObject, true);
+}
+
+void RegisterJavaScriptProxy(
+    const char* webTag,
+    const ArkWeb_ProxyObject* proxyObject,
+    bool isAsync) {
+  if (proxyObject == nullptr) {
+    LOG(ERROR) << "NativeArkWeb proxy object is nullptr";
+    return;
+  }
+
+  auto webObjectPtr =
+      OHOS::NWeb::ArkWebNativeObject::GetWebInstanceByWebTag(webTag);
+  if (!webObjectPtr) {
+    LOG(ERROR) << "NativeArkWeb object pointer is nullptr";
+    return;
+  }
+
+  if (auto nwebSharedPtr = webObjectPtr->GetWebSharedPtr()) {
+    int32_t size = proxyObject->size;
+    std::vector<std::function<char*(std::vector<std::vector<uint8_t>>&,
+                                    std::vector<size_t>&)>>
+        callbackList(size);
+    const ArkWeb_ProxyMethod* methodList = proxyObject->methodList;
+    if (methodList == nullptr) {
+      LOG(ERROR) << "NativeArkWeb method list is nullptr";
+      return;
+    }
+
+    std::vector<std::string> methodNameList(size);
+    for (int32_t i = 0; i < size; i++) {
+      auto methodNameObject = methodList[i];
+      methodNameList[i] = methodNameObject.methodName;
+      auto proxyCallback = [cb = methodNameObject.callback,
+                            webTag = std::string(webTag),
+                            userData = methodNameObject.userData](
+                               std::vector<std::vector<uint8_t>>& dataList,
+                               std::vector<size_t>& dataSize) -> char* {
+        if (cb) {
+          size_t size = dataList.size();
+          std::vector<ArkWeb_JavaScriptBridgeData> dataVector(size);
+          for (size_t i = 0; i < size; i++) {
+            ArkWeb_JavaScriptBridgeData data = {.buffer = dataList[i].data(),
+                                                .size = dataSize[i]};
+            dataVector[i] = data;
+          }
+          cb(webTag.c_str(), dataVector.data(), size, userData);
+        }
+        return nullptr;
+      };
+      callbackList[i] = std::move(proxyCallback);
+    }
+
+    nwebSharedPtr->RegisterNativeArkJSFunction(
+      proxyObject->objName, methodNameList, std::move(callbackList), isAsync);
+  } else {
+    LOG(ERROR)
+        << "NativeArkWeb RegisterJavaScriptProxy get nweb null: %{public}s"
+        << webTag;
+  }
 }
 
 #ifdef __cplusplus

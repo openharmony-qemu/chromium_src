@@ -1839,11 +1839,16 @@ int NWebDelegate::ContentHeight() {
 void NWebDelegate::RegisterArkJSfunction(
     const std::string& object_name,
     const std::vector<std::string>& method_list,
+    const std::vector<std::string>& async_method_list,
     const int32_t object_id) const {
   LOG(INFO) << "RegisterArkJSfunction name : " << object_name.c_str();
   std::vector<CefString> method_vector;
   for (std::string method : method_list) {
     method_vector.push_back(method);
+  }
+  std::vector<CefString> async_method_vector;
+  for (std::string method : async_method_list) {
+    async_method_vector.push_back(method);
   }
 
   if (is_popup_ready_) {
@@ -1852,7 +1857,7 @@ void NWebDelegate::RegisterArkJSfunction(
                    "object_name is "
                 << object_name.c_str();
       handler_delegate_->SavaArkJSFunctionForPopup(object_name, method_list,
-                                                   object_id);
+                                                   async_method_list, object_id);
     }
     return;
   } else if (!GetBrowser()) {
@@ -1862,7 +1867,7 @@ void NWebDelegate::RegisterArkJSfunction(
     return;
   } else {
     GetBrowser()->GetHost()->RegisterArkJSfunction(object_name, method_vector,
-                                                   object_id);
+                                                   async_method_vector, object_id);
   }
 }
 
@@ -1900,7 +1905,8 @@ void NWebDelegate::RegisterNativeArkJSFunction(
     method_vector.push_back(callback->GetMethodName());
   }
   if (GetBrowser() && GetBrowser()->GetHost()) {
-    GetBrowser()->GetHost()->RegisterArkJSfunction(objName, method_vector, kDefaultWebNativeProxy);
+    GetBrowser()->GetHost()->RegisterArkJSfunction(objName, method_vector,
+                                                   std::vector<CefString>(), kDefaultWebNativeProxy);
   } else {
     LOG(ERROR) << "browser or host is null";
   }
@@ -1910,11 +1916,12 @@ void NWebDelegate::RegisterNativeJSProxy(
     const std::string& objName,
     const std::vector<std::string>& methodName,
     std::vector<std::function<char*(std::vector<std::vector<uint8_t>>&,
-                                    std::vector<size_t>&)>>&& callback) {
+                                    std::vector<size_t>&)>>&& callback,
+    bool isAsync) {
   if (!CEF_CURRENTLY_ON_UIT()) {
     CEF_POST_TASK(CEF_UIT,
                   base::BindOnce(&NWebDelegate::RegisterNativeJSProxy, this,
-                                 objName, methodName, std::move(callback)));
+                                 objName, methodName, std::move(callback), isAsync));
     return;
   }
 
@@ -1924,7 +1931,7 @@ void NWebDelegate::RegisterNativeJSProxy(
   }
 
   handler_delegate_->RegisterNativeJavaScriptCallBack(objName, methodName,
-                                                      std::move(callback));
+                                                      std::move(callback), isAsync);
 
   size_t size = methodName.size();
   std::vector<CefString> method_vector;
@@ -1932,8 +1939,8 @@ void NWebDelegate::RegisterNativeJSProxy(
     method_vector.push_back(methodName[i]);
   }
   if (GetBrowser() && GetBrowser()->GetHost()) {
-    GetBrowser()->GetHost()->RegisterArkJSfunction(objName, method_vector,
-                                                   kDefaultWebNativeProxy);
+    GetBrowser()->GetHost()->RegisterNativeJSProxy(objName, method_vector,
+                                                   kDefaultWebNativeProxy, isAsync);
   } else {
     LOG(ERROR) << "browser or host is null";
   }

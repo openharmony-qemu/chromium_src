@@ -156,6 +156,10 @@
 #include "services/device/public/mojom/wake_lock_provider.mojom.h"
 #include "ui/accelerated_widget_mac/window_resize_helper_mac.h"
 #endif
+#if defined(OHOS_RENDERER_ANR_DUMP)
+#include "base/ohos/sys_info_utils.h"
+#include "content/public/browser/web_contents_delegate.h"
+#endif
 
 #if BUILDFLAG(IS_OHOS)
 #include "base/ohos/ltpo/include/sliding_observer.h"
@@ -486,6 +490,14 @@ RenderWidgetHostImpl::RenderWidgetHostImpl(
 #else
   fling_scheduler_ = std::make_unique<FlingScheduler>(this);
 #endif
+
+#if defined(OHOS_RENDERER_ANR_DUMP)
+  // Timeout for pc is 15s, if mobileDevice, we kepp it same with android.
+  if (base::ohos::IsMobileDevice()) {
+    hung_renderer_delay_ = base::Seconds(5);
+  }
+#endif
+
   CHECK(delegate_);
   CHECK_NE(MSG_ROUTING_NONE, routing_id_);
   DCHECK(base::ThreadPoolInstance::Get());
@@ -1438,7 +1450,6 @@ void RenderWidgetHostImpl::RenderProcessBlockedStateChanged(bool blocked) {
 void RenderWidgetHostImpl::StartInputEventAckTimeout() {
   if (should_disable_hang_monitor_)
     return;
-
   if (!input_event_ack_timeout_.IsRunning()) {
     input_event_ack_timeout_.Start(
         FROM_HERE, hung_renderer_delay_,
@@ -2487,13 +2498,24 @@ void RenderWidgetHostImpl::OnInputEventAckTimeout() {
   // Since input has timed out, let the BrowserUiThreadScheduler know we are
   // done with input currently.
   user_input_active_handle_.reset();
-  RendererIsUnresponsive(base::BindRepeating(
-      &RenderWidgetHostImpl::RestartInputEventAckTimeoutIfNecessary,
-      weak_factory_.GetWeakPtr()));
+  RendererIsUnresponsive(
+      base::BindRepeating(
+          &RenderWidgetHostImpl::RestartInputEventAckTimeoutIfNecessary,
+          weak_factory_.GetWeakPtr())
+#if defined(OHOS_RENDERER_ANR_DUMP)
+          ,
+      content::RenderProcessNotRespondingReason::kRendererAnrInputTimeout
+#endif
+  );
 }
 
 void RenderWidgetHostImpl::RendererIsUnresponsive(
-    base::RepeatingClosure restart_hang_monitor_timeout) {
+    base::RepeatingClosure restart_hang_monitor_timeout
+#if defined(OHOS_RENDERER_ANR_DUMP)
+    ,
+    RenderProcessNotRespondingReason reason
+#endif
+) {
   NotificationService::current()->Notify(
       NOTIFICATION_RENDER_WIDGET_HOST_HANG,
       Source<RenderWidgetHost>(this),
@@ -2502,7 +2524,12 @@ void RenderWidgetHostImpl::RendererIsUnresponsive(
 
   if (delegate_) {
     delegate_->RendererUnresponsive(this,
-                                    std::move(restart_hang_monitor_timeout));
+                                    std::move(restart_hang_monitor_timeout)
+#if defined(OHOS_RENDERER_ANR_DUMP)
+                                        ,
+                                    reason
+#endif
+    );
   }
 
   // Do not add code after this since the Delegate may delete this

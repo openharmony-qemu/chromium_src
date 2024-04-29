@@ -838,7 +838,12 @@ class CONTENT_EXPORT RenderWidgetHostImpl
   // 1) |hang_monitor_timeout_| (slow to ack input events) or
   // 2) NavigationHandle::OnCommitTimeout (slow to commit).
   void RendererIsUnresponsive(
-      base::RepeatingClosure restart_hang_monitor_timeout);
+      base::RepeatingClosure restart_hang_monitor_timeout
+#if defined(OHOS_RENDERER_ANR_DUMP)
+      ,
+      content::RenderProcessNotRespondingReason reason
+#endif
+  );
 
   // Called if we know the renderer is responsive. When we currently think the
   // renderer is unresponsive, this will clear that state and call

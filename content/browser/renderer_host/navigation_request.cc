@@ -195,6 +195,9 @@
 #include "ui/android/window_android.h"
 #include "ui/android/window_android_compositor.h"
 #endif
+#if defined(OHOS_RENDERER_ANR_DUMP)
+#include "content/public/browser/web_contents_delegate.h"
+#endif
 
 namespace content {
 
@@ -7541,7 +7544,12 @@ void NavigationRequest::OnCommitTimeout() {
   render_process_blocked_state_changed_subscription_ = {};
   GetRenderFrameHost()->GetRenderWidgetHost()->RendererIsUnresponsive(
       base::BindRepeating(&NavigationRequest::RestartCommitTimeout,
-                          weak_factory_.GetWeakPtr()));
+                          weak_factory_.GetWeakPtr())
+#if defined(OHOS_RENDERER_ANR_DUMP)
+          ,
+      content::RenderProcessNotRespondingReason::kRendererAnrNavigationTimeout
+#endif
+  );
 }
 
 // static

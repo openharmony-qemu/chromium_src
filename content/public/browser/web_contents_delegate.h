@@ -122,6 +122,18 @@ enum class PictureInPictureResult {
   kNotSupported,
 };
 
+// #if defined(OHOS_RENDERER_ANR_DUMP)
+enum class RenderProcessNotRespondingReason {
+
+  // Input  ack from Render process timeout
+  kRendererAnrInputTimeout = 0,
+
+  // navigation commit ack from Render process timeout
+  kRendererAnrNavigationTimeout,
+
+};
+// #endif
+
 // Objects implement this interface to get notified about changes in the
 // WebContents and to provide necessary functionality. If a method doesn't
 // change state, e.g. has no return value, then it can move to
@@ -420,7 +432,13 @@ class CONTENT_EXPORT WebContentsDelegate {
   virtual void RendererUnresponsive(
       WebContents* source,
       RenderWidgetHost* render_widget_host,
-      base::RepeatingClosure hang_monitor_restarter) {}
+      base::RepeatingClosure hang_monitor_restarter
+#if defined(OHOS_RENDERER_ANR_DUMP)
+      ,
+      RenderProcessNotRespondingReason reason
+#endif
+  ) {
+  }
 
   // Notification that a process in the WebContents is no longer hung. |source|
   // is the WebContents that was hung, and |render_widget_host| is the

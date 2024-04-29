@@ -678,6 +678,14 @@ class NWebHandlerDelegate : public CefClient,
   void SetIsRichText(bool is_rich_text) { is_rich_text_ = is_rich_text; }
 #endif
 
+#if defined(OHOS_RENDERER_ANR_DUMP)
+  void OnRenderProcessNotResponding(CefRefPtr<CefBrowser> browser,
+                                    const CefString& js_stack,
+                                    int pid,
+                                    int reason) override;
+  void OnRenderProcessResponding(CefRefPtr<CefBrowser> browser) override;
+#endif
+
  private:
   void CopyImageToClipboard(CefRefPtr<CefImage> image);
   // List of existing browser windows. Only accessed on the CEF UI thread.

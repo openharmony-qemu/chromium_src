@@ -3182,4 +3182,30 @@ NWebHandlerDelegate::OnCreateCustomMediaPlayer(
 }
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+#if defined(OHOS_RENDERER_ANR_DUMP)
+void NWebHandlerDelegate::OnRenderProcessNotResponding(
+    CefRefPtr<CefBrowser> browser,
+    const CefString& js_stack,
+    int pid,
+    int reason) {
+  if (nweb_handler_ == nullptr) {
+    LOG(ERROR) << "invalid nweb handler (nullptr)";
+    return;
+  }
+  LOG(INFO) << "OnRenderProcessNotResponding:" << pid;
+  RenderProcessNotRespondingReason anr_reason =
+      static_cast<RenderProcessNotRespondingReason>(reason);
+  nweb_handler_->OnRenderProcessNotResponding(js_stack, pid, anr_reason);
+}
+
+void NWebHandlerDelegate::OnRenderProcessResponding(
+    CefRefPtr<CefBrowser> browser) {
+  if (nweb_handler_ == nullptr) {
+    LOG(ERROR) << "invalid nweb handler (nullptr)";
+    return;
+  }
+  LOG(INFO) << "OnRenderProcessResponding";
+  nweb_handler_->OnRenderProcessResponding();
+}
+#endif
 }  // namespace OHOS::NWeb

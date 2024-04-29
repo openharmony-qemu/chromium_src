@@ -937,7 +937,12 @@ void SimulateUnresponsiveRenderer(WebContents* web_contents,
                                   RenderWidgetHost* widget) {
   static_cast<WebContentsImpl*>(web_contents)
       ->RendererUnresponsive(RenderWidgetHostImpl::From(widget),
-                             base::DoNothing());
+                             base::DoNothing()
+#if defined(OHOS_RENDERER_ANR_DUMP)
+                                 ,
+                             RenderProcessNotRespondingReason::INPUT_TIMEOUT
+#endif
+      );
 }
 
 #if defined(USE_AURA)

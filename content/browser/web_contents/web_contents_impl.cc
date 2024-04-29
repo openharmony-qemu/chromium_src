@@ -8578,7 +8578,13 @@ void WebContentsImpl::OnIgnoredUIEvent() {
 
 void WebContentsImpl::RendererUnresponsive(
     RenderWidgetHostImpl* render_widget_host,
-    base::RepeatingClosure hang_monitor_restarter) {
+    base::RepeatingClosure hang_monitor_restarter
+#if defined(OHOS_RENDERER_ANR_DUMP)
+    ,
+    RenderProcessNotRespondingReason reason
+#endif
+
+) {
   OPTIONAL_TRACE_EVENT1("content", "WebContentsImpl::RendererUnresponsive",
                         "render_widget_host", render_widget_host);
   if (ShouldIgnoreUnresponsiveRenderer())
@@ -8598,7 +8604,12 @@ void WebContentsImpl::RendererUnresponsive(
                              render_widget_host->GetProcess());
   if (delegate_)
     delegate_->RendererUnresponsive(this, render_widget_host,
-                                    std::move(hang_monitor_restarter));
+                                    std::move(hang_monitor_restarter)
+#if defined(OHOS_RENDERER_ANR_DUMP)
+                                        ,
+                                    reason
+#endif
+    );
 }
 
 void WebContentsImpl::RendererResponsive(

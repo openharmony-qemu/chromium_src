@@ -912,4 +912,16 @@ void ArkWebHandlerWrapper::OnShowAutofillPopup(
 void ArkWebHandlerWrapper::OnHideAutofillPopup() {
   ark_web_handler_->OnHideAutofillPopup();
 }
+
+void ArkWebHandlerWrapper::OnRenderProcessNotResponding(
+    const std::string &js_stack, int pid,
+    ArkWebRenderProcessNotRespondingReason reason) {
+  ArkWebString js_stack_str = ArkWebStringClassToStruct(js_stack);
+  ark_web_handler_->OnRenderProcessNotResponding(js_stack_str, pid,
+                                                 static_cast<int>(reason));
+}
+
+void ArkWebHandlerWrapper::OnRenderProcessResponding() {
+  ark_web_handler_->OnRenderProcessResponding();
+}
 } // namespace OHOS::ArkWeb

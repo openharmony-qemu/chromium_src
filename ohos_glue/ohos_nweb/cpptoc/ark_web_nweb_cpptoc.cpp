@@ -1721,6 +1721,28 @@ ark_web_nweb_scale_gesture_change(struct _ark_web_nweb_t *self, double scale,
                                                          centerY);
 }
 
+
+void ARK_WEB_CALLBACK ark_web_nweb_inject_offline_resource(
+    struct _ark_web_nweb_t *self, const ArkWebString *url,
+    const ArkWebString *origin, const ArkWebUint8Vector *resource,
+    const ArkWebStringMap *responseHeaders, const int type) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(url, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(origin, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(resource, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(responseHeaders, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->InjectOfflineResource(*url, *origin, *resource,
+                                                     *responseHeaders, type);
+}
+
 bool ARK_WEB_CALLBACK
 ark_web_nweb_terminate_render_process(struct _ark_web_nweb_t *self) {
   ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
@@ -1943,6 +1965,7 @@ ArkWebNWebCppToC::ArkWebNWebCppToC() {
   GetStruct()->ark_web_nweb_drag_resize = ark_web_nweb_drag_resize;
   GetStruct()->on_touch_cancel_by_id = ark_web_nweb_on_touch_cancel_by_id;
   GetStruct()->scale_gesture_change = ark_web_nweb_scale_gesture_change;
+  GetStruct()->inject_offline_resource = ark_web_nweb_inject_offline_resource;
   GetStruct()->terminate_render_process = ark_web_nweb_terminate_render_process;
   GetStruct()->suggestion_selected = ark_web_nweb_suggestion_selected;
   GetStruct()->register_ark_jsfunction2 = ark_web_nweb_register_ark_jsfunction2;

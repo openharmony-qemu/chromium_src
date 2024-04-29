@@ -43,6 +43,15 @@ public:
 
   /*--ark web()--*/
   virtual bool IsHiTraceEnable() = 0;
+
+  /*--ark web()--*/
+  virtual void StartOHOSTrace(const ArkWebString &value, float limit) = 0;
+
+  /*--ark web()--*/
+  virtual void FinishOHOSTrace() = 0;
+
+  /*--ark web()--*/
+  virtual void CountOHOSTrace(const ArkWebString &name, int64_t count) = 0;
 };
 
 } // namespace OHOS::ArkWeb

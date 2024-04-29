@@ -372,6 +372,76 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
   INTERNAL_TRACE_EVENT_ADD_SCOPED_WITH_FLOW(category_group, name, bind_id,      \
                                             flow_flags, arg1_name, arg1_val,    \
                                             arg2_name, arg2_val)
+
+#define OHOS_TRACE_EVENT0(category_group, name) \
+  OHOS_BYTRACE_SCOPED_INIT();                   \
+  do {                                     \
+    if (IsOHOSBytraceEnable()) {               \
+      OHOS_BYTRACE_SCOPED_TRACE_EVENT(name);    \
+    }                                      \
+  } while (0);                             \
+  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name)
+
+#define OHOS_TRACE_EVENT1(category_group, name, arg1_name, arg1_val)                 \
+  OHOS_BYTRACE_SCOPED_INIT();                                                        \
+  do {                                                                          \
+    if (IsOHOSBytraceEnable()) {                                                    \
+      OHOS_BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val)); \
+    }                                                                           \
+  } while (0);                                                                  \
+  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name, arg1_name, arg1_val)
+
+#define OHOS_TRACE_EVENT2(category_group, name, arg1_name, arg1_val, arg2_name,      \
+                     arg2_val)                                                  \
+  OHOS_BYTRACE_SCOPED_INIT();                                                        \
+  do {                                                                          \
+    if (IsOHOSBytraceEnable()) {                                                    \
+      OHOS_BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val,   \
+                                                  arg2_name, arg2_val));        \
+    }                                                                           \
+  } while (0);                                                                  \
+  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name, arg1_name, arg1_val,    \
+                                  arg2_name, arg2_val)
+
+#define OHOS_TRACE_EVENT_WITH_FLOW0(category_group, name, bind_id, flow_flags) \
+  OHOS_BYTRACE_SCOPED_INIT();                                                  \
+  do {                                                                    \
+    if (IsOHOSBytraceEnable()) {                                              \
+      (void) (bind_id);                                                   \
+      (void) (flow_flags);                                                \
+      OHOS_BYTRACE_SCOPED_TRACE_EVENT(name);                                   \
+    }                                                                     \
+  } while (0);                                                            \
+  INTERNAL_TRACE_EVENT_ADD_SCOPED_WITH_FLOW(category_group, name, bind_id,\
+                                            flow_flags)
+
+#define OHOS_TRACE_EVENT_WITH_FLOW1(category_group, name, bind_id, flow_flags,       \
+                               arg1_name, arg1_val)                             \
+  OHOS_BYTRACE_SCOPED_INIT();                                                        \
+  do {                                                                          \
+    if (IsOHOSBytraceEnable()) {                                                    \
+      (void) (bind_id);                                                         \
+      (void) (flow_flags);                                                      \
+      OHOS_BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val)); \
+    }                                                                           \
+  } while (0);                                                                  \
+  INTERNAL_TRACE_EVENT_ADD_SCOPED_WITH_FLOW(category_group, name, bind_id,      \
+                                            flow_flags, arg1_name, arg1_val)
+
+#define OHOS_TRACE_EVENT_WITH_FLOW2(category_group, name, bind_id, flow_flags,       \
+                               arg1_name, arg1_val, arg2_name, arg2_val)        \
+  OHOS_BYTRACE_SCOPED_INIT();                                                        \
+  do {                                                                          \
+    if (IsOHOSBytraceEnable()) {                                                    \
+      (void) (bind_id);                                                         \
+      (void) (flow_flags);                                                      \
+      OHOS_BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val,   \
+                                                  arg2_name, arg2_val));        \
+    }                                                                           \
+  } while (0);                                                                  \
+  INTERNAL_TRACE_EVENT_ADD_SCOPED_WITH_FLOW(category_group, name, bind_id,      \
+                                            flow_flags, arg1_name, arg1_val,    \
+                                            arg2_name, arg2_val)
 #else
 // Records a pair of begin and end events called "name" for the current
 // scope, with 0, 1 or 2 associated arguments. If the category is not
@@ -504,6 +574,68 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
   do {                                                                     \
     if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                               \
       StartBytrace(GetStringFromArgs(name, arg1_name, arg1_val,             \
+                                   arg2_name, arg2_val));                  \
+    }                                                                      \
+  } while (0);                                                             \
+  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_BEGIN, category_group, name,  \
+                           TRACE_EVENT_FLAG_COPY, arg1_name, arg1_val,     \
+                           arg2_name, arg2_val)
+
+#define OHOS_TRACE_EVENT_BEGIN0(category_group, name)                          \
+  do {                                                                    \
+    if (IsOHOSBytraceEnable()) {                                              \
+      StartOHOSBytrace(name);                                                 \
+    }                                                                     \
+  } while (0);                                                            \
+  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_BEGIN, category_group, name, \
+                           TRACE_EVENT_FLAG_NONE);
+
+#define OHOS_TRACE_EVENT_BEGIN1(category_group, name, arg1_name, arg1_val)     \
+  do {                                                                    \
+    if (IsOHOSBytraceEnable()) {                                              \
+      StartOHOSBytrace(GetStringFromArgs(name, arg1_name, arg1_val));          \
+    }                                                                     \
+  } while (0);                                                            \
+  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_BEGIN, category_group, name, \
+                           TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val)
+
+#define OHOS_TRACE_EVENT_BEGIN2(category_group, name, arg1_name, arg1_val,     \
+                           arg2_name, arg2_val)                           \
+  do {                                                                    \
+    if (IsOHOSBytraceEnable()) {                                              \
+      StartOHOSBytrace(GetStringFromArgs(name, arg1_name, arg1_val,            \
+                                   arg2_name, arg2_val));                 \
+    }                                                                     \
+  } while (0);                                                            \
+  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_BEGIN, category_group, name, \
+                           TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val,    \
+                           arg2_name, arg2_val)
+
+#define OHOS_TRACE_EVENT_BEGIN_WITH_FLAGS0(category_group, name, flags) \
+  do {                                                             \
+    if (IsOHOSBytraceEnable()) {                                       \
+      (void) (flags);                                              \
+      StartOHOSBytrace(name);                                          \
+    }                                                              \
+  } while (0);                                                     \
+  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_BEGIN, category_group, name, flags)
+
+#define OHOS_TRACE_EVENT_BEGIN_WITH_FLAGS1(category_group, name, flags, arg1_name, \
+                                      arg1_val)                               \
+  do {                                                                        \
+    if (IsOHOSBytraceEnable()) {                                                  \
+      (void) (flags);                                                         \
+      StartOHOSBytrace(GetStringFromArgs(name, arg1_name, arg1_val));              \
+    }                                                                         \
+  } while (0);                                                                \
+  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_BEGIN, category_group, name,     \
+                           flags, arg1_name, arg1_val)
+
+#define OHOS_TRACE_EVENT_COPY_BEGIN2(category_group, name, arg1_name, arg1_val, \
+                                arg2_name, arg2_val)                       \
+  do {                                                                     \
+    if (IsOHOSBytraceEnable()) {                                               \
+      StartOHOSBytrace(GetStringFromArgs(name, arg1_name, arg1_val,             \
                                    arg2_name, arg2_val));                  \
     }                                                                      \
   } while (0);                                                             \
@@ -655,6 +787,83 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
                            TRACE_EVENT_FLAG_COPY, arg1_name, arg1_val,   \
                            arg2_name, arg2_val)
 
+#define OHOS_TRACE_EVENT_END0(category_group, name)                          \
+  do {                                                                  \
+    if (IsOHOSBytraceEnable()) {                                            \
+      (void) (name);                                                    \
+      FinishOHOSBytrace();                                                  \
+    }                                                                   \
+  } while (0);                                                          \
+  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category_group, name, \
+                           TRACE_EVENT_FLAG_NONE)
+
+#define OHOS_TRACE_EVENT_END1(category_group, name, arg1_name, arg1_val)     \
+  do {                                                                  \
+    if (IsOHOSBytraceEnable()) {                                            \
+      (void) (name);                                                    \
+      (void) (arg1_name);                                               \
+      (void) (arg1_val);                                                \
+      FinishOHOSBytrace();                                                  \
+    }                                                                   \
+  } while (0);                                                          \
+  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category_group, name, \
+                           TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val)
+ 
+#define OHOS_TRACE_EVENT_END2(category_group, name, arg1_name, arg1_val, arg2_name, \
+                         arg2_val)                                             \
+  do {                                                                         \
+    if (IsOHOSBytraceEnable()) {                                                   \
+      (void) (name);                                                           \
+      (void) (arg1_name);                                                      \
+      (void) (arg1_val);                                                       \
+      (void) (arg2_name);                                                      \
+      (void) (arg2_val);                                                       \
+      FinishOHOSBytrace();                                                         \
+    }                                                                          \
+  } while (0);                                                                 \
+  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category_group, name,        \
+                           TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val,         \
+                           arg2_name, arg2_val)
+
+#define OHOS_TRACE_EVENT_END_WITH_FLAGS0(category_group, name, flags) \
+  do {                                                           \
+    if (IsOHOSBytraceEnable()) {                                     \
+      (void) (name);                                             \
+      (void) (flags);                                            \
+      FinishOHOSBytrace();                                           \
+    }                                                            \
+  } while (0);                                                   \
+  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category_group, name, flags)
+
+#define OHOS_TRACE_EVENT_END_WITH_FLAGS1(category_group, name, flags, arg1_name,    \
+                                    arg1_val)                                  \
+  do {                                                                         \
+    if (IsOHOSBytraceEnable()) {                                                   \
+      (void) (name);                                                           \
+      (void) (arg1_name);                                                      \
+      (void) (arg1_val);                                                       \
+      (void) (flags);                                                          \
+      FinishOHOSBytrace();                                                         \
+    }                                                                          \
+  } while (0);                                                                 \
+  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category_group, name, flags, \
+                           arg1_name, arg1_val)
+
+#define OHOS_TRACE_EVENT_COPY_END2(category_group, name, arg1_name, arg1_val,       \
+                              arg2_name, arg2_val)                             \
+  do {                                                                         \
+    if (IsOHOSBytraceEnable()) {                                                   \
+      (void) (name);                                                           \
+      (void) (arg1_name);                                                      \
+      (void) (arg1_val);                                                       \
+      (void) (arg2_name);                                                      \
+      (void) (arg2_val);                                                       \
+      FinishOHOSBytrace();                                                         \
+    }                                                                          \
+  } while (0);                                                                 \
+  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category_group, name,  \
+                           TRACE_EVENT_FLAG_COPY, arg1_name, arg1_val,   \
+                           arg2_name, arg2_val)
 #else
 // Records a single END event for "name" immediately. If the category
 // is not enabled, then this does nothing.
@@ -750,6 +959,77 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
     if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                                      \
       (void) (timestamp);                                                         \
       BYTRACE_SCOPED_TRACE_EVENT(name);                                           \
+    }                                                                             \
+  } while (0);                                                                    \
+  INTERNAL_TRACE_EVENT_ADD_WITH_TIMESTAMP(                                        \
+      TRACE_EVENT_PHASE_MARK, category_group, name, timestamp,                    \
+      TRACE_EVENT_FLAG_COPY)
+
+#define OHOS_TRACE_EVENT_MARK_WITH_TIMESTAMP0(category_group, name, timestamp) \
+  OHOS_BYTRACE_SCOPED_INIT();                                                  \
+  do {                                                                    \
+    if (IsOHOSBytraceEnable()) {                                              \
+      (void) (timestamp);                                                 \
+      OHOS_BYTRACE_SCOPED_TRACE_EVENT(name);                                   \
+    }                                                                     \
+  } while (0);                                                            \
+  INTERNAL_TRACE_EVENT_ADD_WITH_TIMESTAMP(                                \
+      TRACE_EVENT_PHASE_MARK, category_group, name, timestamp,            \
+      TRACE_EVENT_FLAG_NONE)
+
+#define OHOS_TRACE_EVENT_MARK_WITH_TIMESTAMP1(category_group, name, timestamp,        \
+                                         arg1_name, arg1_val)                    \
+  OHOS_BYTRACE_SCOPED_INIT();                                                         \
+  do {                                                                           \
+    if (IsOHOSBytraceEnable()) {                                                     \
+      (void) (timestamp);                                                        \
+      OHOS_BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val)); \
+    }                                                                            \
+  } while (0);                                                                   \
+  INTERNAL_TRACE_EVENT_ADD_WITH_TIMESTAMP(                                       \
+      TRACE_EVENT_PHASE_MARK, category_group, name, timestamp,                   \
+      TRACE_EVENT_FLAG_NONE)
+
+#define OHOS_TRACE_EVENT_MARK_WITH_TIMESTAMP2(                                        \
+    category_group, name, timestamp, arg1_name, arg1_val, arg2_name, arg2_val)   \
+  OHOS_BYTRACE_SCOPED_INIT();                                                         \
+  do {                                                                           \
+    if (IsOHOSBytraceEnable()) {                                                     \
+      (void) (timestamp);                                                        \
+      OHOS_BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val,    \
+                                                   arg2_name, arg2_val));        \
+    }                                                                            \
+  } while (0);                                                                   \
+  INTERNAL_TRACE_EVENT_ADD_WITH_TIMESTAMP(                                       \
+      TRACE_EVENT_PHASE_MARK, category_group, name, timestamp,                   \
+      TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val, arg2_name, arg2_val)
+
+#define OHOS_TRACE_EVENT_COPY_MARK(category_group, name)                      \
+  OHOS_BYTRACE_SCOPED_INIT();                                                 \
+  do {                                                                   \
+    if (IsOHOSBytraceEnable()) {                                             \
+      OHOS_BYTRACE_SCOPED_TRACE_EVENT(name);                                  \
+    }                                                                    \
+  } while (0);                                                           \
+  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_MARK, category_group, name, \
+                           TRACE_EVENT_FLAG_COPY)
+
+#define OHOS_TRACE_EVENT_COPY_MARK1(category_group, name, arg1_name, arg1_val)         \
+  OHOS_BYTRACE_SCOPED_INIT();                                                          \
+  do {                                                                            \
+    if (IsOHOSBytraceEnable()) {                                                      \
+      OHOS_BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val)); \
+    }                                                                             \
+  } while (0);                                                                    \
+  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_MARK, category_group, name,          \
+                           TRACE_EVENT_FLAG_COPY, arg1_name, arg1_val)
+
+#define OHOS_TRACE_EVENT_COPY_MARK_WITH_TIMESTAMP(category_group, name, timestamp)     \
+  OHOS_BYTRACE_SCOPED_INIT();                                                          \
+  do {                                                                            \
+    if (IsOHOSBytraceEnable()) {                                                      \
+      (void) (timestamp);                                                         \
+      OHOS_BYTRACE_SCOPED_TRACE_EVENT(name);                                           \
     }                                                                             \
   } while (0);                                                                    \
   INTERNAL_TRACE_EVENT_ADD_WITH_TIMESTAMP(                                        \
@@ -853,6 +1133,36 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
   INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_COUNTER, category_group, name, \
                            TRACE_EVENT_FLAG_COPY, "value",                  \
                            static_cast<int>(value))
+
+#define OHOS_TRACE_COUNTER1(category_group, name, value)                         \
+  do {                                                                      \
+    if (IsOHOSBytraceEnable()) {                                                \
+      CountOHOSBytrace(name, value);                                            \
+    }                                                                       \
+  } while (0);                                                              \
+  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_COUNTER, category_group, name, \
+                           TRACE_EVENT_FLAG_NONE, "value",                  \
+                           static_cast<int>(value))
+
+#define OHOS_TRACE_COUNTER_WITH_FLAG1(category_group, name, flag, value)         \
+  do {                                                                      \
+    if (IsOHOSBytraceEnable()) {                                                \
+      (void) (flag);                                                        \
+      CountOHOSBytrace(name, value);                                            \
+    }                                                                       \
+  } while (0);                                                              \
+  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_COUNTER, category_group, name, \
+                           flag, "value", static_cast<int>(value))
+
+#define OHOS_TRACE_COPY_COUNTER1(category_group, name, value)                    \
+  do {                                                                      \
+    if (IsOHOSBytraceEnable()) {                                                \
+      CountOHOSBytrace(name, static_cast<int>(value));                          \
+    }                                                                       \
+  } while (0);                                                              \
+  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_COUNTER, category_group, name, \
+                           TRACE_EVENT_FLAG_COPY, "value",                  \
+                           static_cast<int>(value))
 #else
 // Records the value of a counter called "name" immediately. Value
 // must be representable as a 32 bit integer.
@@ -895,6 +1205,17 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
     if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                                  \
       (void) (timestamp);                                                     \
       CountBytrace(name, value);                                              \
+    }                                                                         \
+   } while (0);                                                               \
+   INTERNAL_TRACE_EVENT_ADD_WITH_TIMESTAMP(                                   \
+      TRACE_EVENT_PHASE_COUNTER, category_group, name, timestamp,             \
+      TRACE_EVENT_FLAG_NONE, "value", static_cast<int>(value))
+
+#define OHOS_TRACE_COUNTER_WITH_TIMESTAMP1(category_group, name, timestamp, value) \
+   do {                                                                       \
+    if (IsOHOSBytraceEnable()) {                                                  \
+      (void) (timestamp);                                                     \
+      CountOHOSBytrace(name, value);                                              \
     }                                                                         \
    } while (0);                                                               \
    INTERNAL_TRACE_EVENT_ADD_WITH_TIMESTAMP(                                   \

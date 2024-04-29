@@ -794,7 +794,7 @@ void ProxyImpl::ScheduledActionSendBeginMainFrame(
 }
 
 DrawResult ProxyImpl::ScheduledActionDrawIfPossible() {
-  TRACE_EVENT0("cc", "ProxyImpl::ScheduledActionDraw");
+  OHOS_TRACE_EVENT0("cc", "ProxyImpl::ScheduledActionDraw");
   DCHECK(IsImplThread());
 
   // The scheduler should never generate this call when it can't draw.

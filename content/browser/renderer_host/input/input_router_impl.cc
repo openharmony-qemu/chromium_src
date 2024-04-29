@@ -612,7 +612,7 @@ void InputRouterImpl::FilterAndSendWebInputEvent(
     const WebInputEvent& input_event,
     const ui::LatencyInfo& latency_info,
     blink::mojom::WidgetInputHandler::DispatchEventCallback callback) {
-  TRACE_EVENT1("input", "InputRouterImpl::FilterAndSendWebInputEvent", "type",
+  OHOS_TRACE_EVENT1("input", "InputRouterImpl::FilterAndSendWebInputEvent", "type",
                WebInputEvent::GetName(input_event.GetType()));
   TRACE_EVENT("input,benchmark,devtools.timeline,latencyInfo",
               "LatencyInfo.Flow", [&latency_info](perfetto::EventContext ctx) {

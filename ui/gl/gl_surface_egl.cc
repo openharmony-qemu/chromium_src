@@ -624,7 +624,7 @@ bool NativeViewGLSurfaceEGL::IsOffscreen() {
 gfx::SwapResult NativeViewGLSurfaceEGL::SwapBuffers(
     PresentationCallback callback,
     gfx::FrameData data) {
-  TRACE_EVENT2("gpu", "NativeViewGLSurfaceEGL:RealSwapBuffers",
+  OHOS_TRACE_EVENT2("gpu", "NativeViewGLSurfaceEGL::RealSwapBuffers",
       "width", GetSize().width(),
       "height", GetSize().height());
 

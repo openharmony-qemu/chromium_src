@@ -135,12 +135,15 @@ void SurfaceLayer::SetIsReflection(bool is_reflection) {
 }
 
 void SurfaceLayer::SetMayContainVideo(bool may_contain_video) {
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-  Layer::SetMayContainVideo(may_contain_video);
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
   may_contain_video_.Write(*this) = may_contain_video;
   SetNeedsCommit();
 }
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void SurfaceLayer::SetVideoRectChangeCallback(RectChangeCallback callback) {
+  video_rect_change_callback_ = std::move(callback);
+}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 
 std::unique_ptr<LayerImpl> SurfaceLayer::CreateLayerImpl(
     LayerTreeImpl* tree_impl) const {
@@ -192,5 +195,13 @@ void SurfaceLayer::PushPropertiesTo(
   layer_impl->SetHasPointerEventsNone(has_pointer_events_none_.Read(*this));
   layer_impl->set_may_contain_video(may_contain_video_.Read(*this));
 }
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void SurfaceLayer::OnLayerRectUpdate(const gfx::Rect& rect) {
+  if (video_rect_change_callback_) {
+    video_rect_change_callback_.Run(rect);
+  }
+}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 
 }  // namespace cc

@@ -98,7 +98,8 @@ public:
   virtual int32_t GetRenderProcessMode() = 0;
 
   /*--ark web()--*/
-  virtual void ClearPrefetchedResource(const ArkWebStringVector& cache_key_list) = 0;
+  virtual void
+  ClearPrefetchedResource(const ArkWebStringVector &cache_key_list) = 0;
 
   /*--ark web()--*/
   virtual void WarmupServiceWorker(const ArkWebString &url) = 0;

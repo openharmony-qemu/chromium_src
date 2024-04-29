@@ -17,9 +17,9 @@
 #define ARK_WEB_JS_ALL_SSL_ERROR_RESULT_CPPTOC_H_
 #pragma once
 
+#include "base/cpptoc/ark_web_cpptoc_ref_counted.h"
 #include "ohos_nweb/capi/ark_web_js_all_ssl_error_result_capi.h"
 #include "ohos_nweb/include/ark_web_js_all_ssl_error_result.h"
-#include "base/cpptoc/ark_web_cpptoc_ref_counted.h"
 
 namespace OHOS::ArkWeb {
 
@@ -29,13 +29,11 @@ class ArkWebJsAllSslErrorResultCppToC
     : public ArkWebCppToCRefCounted<ArkWebJsAllSslErrorResultCppToC,
                                     ArkWebJsAllSslErrorResult,
                                     ark_web_js_all_ssl_error_result_t> {
-  public:
-    ArkWebJsAllSslErrorResultCppToC();
-    virtual ~ArkWebJsAllSslErrorResultCppToC();
-
+public:
+  ArkWebJsAllSslErrorResultCppToC();
+  virtual ~ArkWebJsAllSslErrorResultCppToC();
 };
 
-} // OHOS::ArkWeb
-
+} // namespace OHOS::ArkWeb
 
 #endif // ARK_WEB_JS_ALL_SSL_ERROR_RESULT_CPPTOC_H_

@@ -57,8 +57,9 @@ typedef struct _ark_web_native_embed_touch_event_t {
 
   ArkWebString(ARK_WEB_CALLBACK *get_embed_id)(
       struct _ark_web_native_embed_touch_event_t *self);
-  ark_web_gesture_event_result_t* (ARK_WEB_CALLBACK *get_result)(
-      struct _ark_web_native_embed_touch_event_t* self);
+
+  ark_web_gesture_event_result_t *(ARK_WEB_CALLBACK *get_result)(
+      struct _ark_web_native_embed_touch_event_t *self);
 } ark_web_native_embed_touch_event_t;
 
 #ifdef __cplusplus

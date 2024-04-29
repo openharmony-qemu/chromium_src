@@ -883,6 +883,19 @@ int ArkWebNWebImpl::ScaleGestureChange(double scale, double centerX,
   return nweb_nweb_->ScaleGestureChange(scale, centerX, centerY);
 }
 
+void ArkWebNWebImpl::InjectOfflineResource(const ArkWebString &url,
+                                           const ArkWebString &origin,
+                                           const ArkWebUint8Vector &resource,
+                                           const ArkWebStringMap &responseHeaders,
+                                           const int type) {
+  nweb_nweb_->InjectOfflineResource(
+      ArkWebStringStructToClass(url),
+      ArkWebStringStructToClass(origin),
+      ArkWebBasicVectorStructToClass<uint8_t, ArkWebUint8Vector>(resource),
+      ArkWebStringMapStructToClass(responseHeaders),
+      type);
+}
+
 bool ArkWebNWebImpl::TerminateRenderProcess() {
   return nweb_nweb_->TerminateRenderProcess();
 }

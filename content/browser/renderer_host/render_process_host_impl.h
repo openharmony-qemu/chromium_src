@@ -763,7 +763,10 @@ class CONTENT_EXPORT RenderProcessHostImpl
     return private_memory_footprint_bytes_;
   }
 #endif
-
+#if defined(OHOS_RENDERER_ANR_DUMP)
+  void dumpCurrentJavaScriptStackInMainThread(
+      base::OnceCallback<void(const std::string&)> dump_callback) override;
+#endif
  protected:
   // A proxy for our IPC::Channel that lives on the IO thread.
   std::unique_ptr<IPC::ChannelProxy> channel_;

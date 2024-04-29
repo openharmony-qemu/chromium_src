@@ -1535,7 +1535,12 @@ VisibilityMetricsLogger::VisibilityInfo AwContents::GetVisibilityInfo() {
 }
 
 void AwContents::RendererUnresponsive(
-    content::RenderProcessHost* render_process_host) {
+    content::RenderProcessHost* render_process_host
+#if defined(OHOS_RENDERER_ANR_DUMP)
+    ,
+    content::RenderProcessNotRespondingReason reason
+#endif
+) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = java_ref_.get(env);

@@ -1288,11 +1288,6 @@ void ComputeDrawPropertiesOfVisibleLayers(const LayerImplList* layer_list,
   for (LayerImpl* layer : *layer_list) {
     layer->SetNeedsPushProperties();
   }
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-  for (LayerImpl* layer : *layer_list) {
-    layer->OnDrawPropertiesChanged();
-  }
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
 }
 
 #if DCHECK_IS_ON()

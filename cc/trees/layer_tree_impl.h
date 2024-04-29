@@ -830,10 +830,6 @@ class CC_EXPORT LayerTreeImpl {
     return visual_update_duration_;
   }
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
- void OnLayerRectChange(int id, int x, int y, int width, int height);
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
-
  protected:
   float ClampPageScaleFactorToLimits(float page_scale_factor) const;
   void PushPageScaleFactorAndLimits(const float* page_scale_factor,

@@ -3022,14 +3022,4 @@ void LayerTreeImpl::OnLayerRectUpdate(int id, const gfx::Rect& rect) {
 }
 #endif
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-void LayerTreeImpl::OnLayerRectChange(int id,
-                                      int x,
-                                      int y,
-                                      int width,
-                                      int height) {
-  host_impl_->OnLayerRectChange(id, x, y, width, height);
-}
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
-
 }  // namespace cc

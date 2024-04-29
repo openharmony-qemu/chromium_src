@@ -349,7 +349,11 @@ void AutofillAgent::DidChangeScrollOffset() {
         ->PostTask(FROM_HERE,
                    base::BindOnce(&AutofillAgent::DidChangeScrollOffsetImpl,
                                   weak_ptr_factory_.GetWeakPtr(), element_));
+#if defined(OHOS_DATALIST)
   } else if (!is_popup_possibly_visible_){
+#else
+  } else {
+#endif
     HidePopup();
   }
 }

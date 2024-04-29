@@ -1231,6 +1231,22 @@ public:
                                  double centerY) = 0;
 
   /**
+   * @brief Inject offline resource into MemoryCache.
+   *
+   * @param url url of resource.
+   * @param origin origin of resource.
+   * @param resource data of resource.
+   * @param response_headers response headers of resource.
+   * @param type resource type.
+   */
+  /*--ark web()--*/
+  virtual void InjectOfflineResource(const ArkWebString &url,
+                                     const ArkWebString &origin,
+                                     const ArkWebUint8Vector &resource,
+                                     const ArkWebStringMap &responseHeaders,
+                                     const int type) = 0;
+
+  /**
    * @brief Terminate render process
    *
    * @return true if it was possible to terminate this render process, false

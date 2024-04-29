@@ -59,6 +59,15 @@ class WebCacheManager : public content::RenderProcessHostCreationObserver,
       const content::ChildProcessTerminationInfo& info) override;
   void RenderProcessHostDestroyed(content::RenderProcessHost* host) override;
 
+#if BUILDFLAG(IS_OHOS)
+  // Add offline resource into MemoryCache.
+  void AddResourceToCache(const std::string& url,
+                          const std::string& origin,
+                          const std::vector<uint8_t>& resource,
+                          const std::map<std::string, std::string>& response_headers,
+                          const int type);
+#endif
+
  private:
   friend class base::NoDestructor<WebCacheManager>;
   FRIEND_TEST_ALL_PREFIXES(WebCacheManagerTest, AddRemoveRendererTest);

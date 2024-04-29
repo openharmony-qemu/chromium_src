@@ -44,6 +44,7 @@
 #include "res_sched_client_adapter.h"
 #include "nweb_resize_helper.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#include "components/web_cache/browser/web_cache_manager.h"
 
 #if defined(REPORT_SYS_EVENT)
 #include "event_reporter.h"
@@ -1966,6 +1967,15 @@ void NWebImpl::PrecompileJavaScript(const std::string& url,
     return;
   }
   nweb_delegate_->PrecompileJavaScript(url, script, cacheOptions, callback);
+}
+
+void NWebImpl::InjectOfflineResource(const std::string& url,
+                                     const std::string& origin,
+                                     const std::vector<uint8_t>& resource,
+                                     const std::map<std::string, std::string>& responseHeaders,
+                                     const int type) {
+  auto manager = web_cache::WebCacheManager::GetInstance();
+  manager->AddResourceToCache(url, origin, resource, responseHeaders, type);
 }
 #endif
 

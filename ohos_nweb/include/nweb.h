@@ -1206,6 +1206,21 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
     virtual int ScaleGestureChange(double scale, double centerX, double centerY) = 0;
 
     /**
+     * @brief Inject offline resource into MemoryCache.
+     *
+     * @param url url of resource.
+     * @param origin origin of resource.
+     * @param resource data of resource.
+     * @param response_headers response headers of resource.
+     * @param type resource type.
+     */
+    virtual void InjectOfflineResource(const std::string& url,
+                                       const std::string& origin,
+                                       const std::vector<uint8_t>& resource,
+                                       const std::map<std::string, std::string>& responseHeaders,
+                                       const int type) = 0;
+
+    /**
     * @brief Terminate render process
     *
     * @return true if it was possible to terminate this render process, false

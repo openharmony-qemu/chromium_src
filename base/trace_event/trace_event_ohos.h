@@ -35,8 +35,10 @@ struct BytraceArg {
   BytraceArgType type;
 };
 static bool isHiTraceEnable {false};
+static bool isOHOSHiTraceEnable {false};
 void StartObserveTraceEnable();
 bool IsBytraceEnable();
+bool IsOHOSBytraceEnable();
 bool IsCategoryEnable(const char *category_group);
 BytraceArg GetArg(double i);
 BytraceArg GetArg(const char* i);
@@ -74,6 +76,10 @@ void FinishBytrace();
 void StartAsyncBytrace(const std::string& value, int32_t taskId);
 void FinishAsyncBytrace(const std::string& value, int32_t taskId);
 void CountBytrace(const std::string& name, int64_t count);
+
+void StartOHOSBytrace(const std::string& value);
+void FinishOHOSBytrace();
+void CountOHOSBytrace(const std::string& name, int64_t count);
  
 class ScopedBytrace {
  public:
@@ -82,6 +88,18 @@ class ScopedBytrace {
   ~ScopedBytrace();
 
   static void SendTraceEvent(const std::string& data);
+ 
+ private:
+  std::string proc_;
+};
+
+class ScopedOHOSBytrace {
+ public:
+  ScopedOHOSBytrace(const std::string& proc);
+  ScopedOHOSBytrace();
+  ~ScopedOHOSBytrace();
+
+  static void SendOHOSTraceEvent(const std::string& data);
  
  private:
   std::string proc_;
@@ -100,4 +118,14 @@ class ScopedBytrace {
 
 #define BYTRACE_SCOPED_TRACE_EVENT(name)     \
   ScopedBytrace::SendTraceEvent(name)
+
+#define OHOS_BYTRACE_SCOPED(name, ...)            \
+  ScopedOHOSBytrace OHOS_BY_TRACE_NAME(bytrace)( \
+      GetStringWithArgs(name, ##__VA_ARGS__))
+
+#define OHOS_BYTRACE_SCOPED_INIT()                \
+  ScopedOHOSBytrace OHOS_BY_TRACE_NAME(bytrace)
+
+#define OHOS_BYTRACE_SCOPED_TRACE_EVENT(name)     \
+  ScopedOHOSBytrace::SendOHOSTraceEvent(name)
 #endif  // BASE_TRACE_EVENT_TRACE_EVENT_OHOS_H_

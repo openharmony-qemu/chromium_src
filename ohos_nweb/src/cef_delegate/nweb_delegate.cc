@@ -2686,12 +2686,14 @@ void NWebDelegate::UpdateBrowserControlsHeight(int height, bool animate) {
 
 #if defined(OHOS_PRINT)
 void NWebDelegate::SetToken(void* token) {
-  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "SetToken can not get browser";
-    return;
+  if (GetBrowser() && GetBrowser()->GetHost()) {
+    LOG(INFO) << "SetToken can not get browser";
+    GetBrowser()->GetHost()->SetToken(token);
   }
 
-  GetBrowser()->GetHost()->SetToken(token);
+  if (preference_delegate_) {
+    preference_delegate_->PutPrintToken(token);
+  }
 }
 
 void* NWebDelegate::CreateWebPrintDocumentAdapter(const std::string& jobName) {

@@ -128,7 +128,10 @@ class NWebPreferenceDelegate : public NWebPreference {
   void PutTextAutosizingEnabled(bool enable) override;
   bool IsTextAutosizingEnabled() const;
 #endif
-
+#if defined(OHOS_PRINT)
+  void PutPrintToken(void* token) { token_ = token; }
+  void* GetPrintToken() { return token_; }
+#endif
 #if defined(OHOS_INPUT_EVENTS)
   bool IsHorizontalScrollBarAccess() override;
   bool IsVerticalScrollBarAccess() override;
@@ -212,6 +215,9 @@ class NWebPreferenceDelegate : public NWebPreference {
 #ifdef OHOS_SCROLLBAR
   uint32_t scrollbar_color_{0};
 #endif // OHOS_SCROLLBAR
+#if defined(OHOS_PRINT)
+  void* token_ = nullptr;
+#endif
 #if defined(OHOS_INPUT_EVENTS)
   bool horizontal_scrollBar_access_{true};
   bool vertical_scrollBar_access_{true};

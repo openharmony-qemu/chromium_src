@@ -13,18 +13,15 @@
  * limitations under the License.
  */
 
-
 #ifndef ARK_WEB_GESTURE_EVENT_RESULT_CAPI_H_
 #define ARK_WEB_GESTURE_EVENT_RESULT_CAPI_H_
 #pragma once
 
 #include "base/capi/ark_web_base_ref_counted_capi.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 typedef struct _ark_web_gesture_event_result_t {
   /**
@@ -32,10 +29,9 @@ typedef struct _ark_web_gesture_event_result_t {
    */
   ark_web_base_ref_counted_t base;
 
-  void (ARK_WEB_CALLBACK *set_gesture_event_result)(struct _ark_web_gesture_event_result_t* self, bool result);
+  void(ARK_WEB_CALLBACK *set_gesture_event_result)(
+      struct _ark_web_gesture_event_result_t *self, bool result);
 } ark_web_gesture_event_result_t;
-
-
 
 #ifdef __cplusplus
 }

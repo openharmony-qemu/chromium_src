@@ -13,28 +13,27 @@
  * limitations under the License.
  */
 
-
 #ifndef ARK_WEB_GESTURE_EVENT_RESULT_CPPTOC_H_
 #define ARK_WEB_GESTURE_EVENT_RESULT_CPPTOC_H_
 #pragma once
 
+#include "base/cpptoc/ark_web_cpptoc_ref_counted.h"
 #include "ohos_nweb/capi/ark_web_gesture_event_result_capi.h"
 #include "ohos_nweb/include/ark_web_gesture_event_result.h"
-#include "base/cpptoc/ark_web_cpptoc_ref_counted.h"
 
 namespace OHOS::ArkWeb {
 
 // Wrap a C++ class with a C structure.
 // This class may be instantiated and accessed DLL-side only.
 class ArkWebGestureEventResultCppToC
-    : public ArkWebCppToCRefCounted<ArkWebGestureEventResultCppToC, ArkWebGestureEventResult, ark_web_gesture_event_result_t> {
-  public:
-    ArkWebGestureEventResultCppToC();
-    virtual ~ArkWebGestureEventResultCppToC();
-
+    : public ArkWebCppToCRefCounted<ArkWebGestureEventResultCppToC,
+                                    ArkWebGestureEventResult,
+                                    ark_web_gesture_event_result_t> {
+public:
+  ArkWebGestureEventResultCppToC();
+  virtual ~ArkWebGestureEventResultCppToC();
 };
 
-} // OHOS::ArkWeb
-
+} // namespace OHOS::ArkWeb
 
 #endif // ARK_WEB_GESTURE_EVENT_RESULT_CPPTOC_H_

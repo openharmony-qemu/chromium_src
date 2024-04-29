@@ -647,8 +647,8 @@ public:
       int video_natural_width, int video_natural_height) = 0;
 
   /**
-   * @brief Give the application a chance to decide whether to override loading the
-   * url.
+   * @brief Give the application a chance to decide whether to override loading
+   * the url.
    *
    * @param request The request information.
    * @return true to abort loading the url, false to continue loading the url
@@ -679,16 +679,16 @@ public:
   virtual void ReleaseResizeHold() = 0;
 
   /*--ark web()--*/
-  virtual ArkWebCharVector GetWordSelection(const ArkWebString &text, int8_t offset) = 0;
+  virtual ArkWebCharVector GetWordSelection(const ArkWebString &text,
+                                            int8_t offset) = 0;
 
   /*--ark web()--*/
   virtual void UpdateClippedSelectionBounds(int x, int y, int w, int h) = 0;
 
   /*--ark web()--*/
-  virtual bool OnOpenAppLink(
-      const ArkWebString &url,
-      ArkWebRefPtr<ArkWebAppLinkCallback> callback) = 0;
-  
+  virtual bool OnOpenAppLink(const ArkWebString &url,
+                             ArkWebRefPtr<ArkWebAppLinkCallback> callback) = 0;
+
   /*--ark web()--*/
   virtual void OnShowAutofillPopup(const float offsetX, const float offsetY,
                                    const ArkWebStringVector &menu_items) = 0;

@@ -62,7 +62,7 @@ if (!is_android) {
       import("//build/config/ohos/config.gni")
       include_dirs = ohos_src_includes
       deps += [
-        "//third_party/ohos_ndk:ohos_isolation",
+        "//ohos_glue:ohos_adapter_glue_source",
       ]
     } else {
       sources += [ "battery_status_manager_default.cc" ]

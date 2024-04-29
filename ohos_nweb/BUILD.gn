@@ -23,7 +23,7 @@ component("nweb_hilog") {
 
   include_dirs = ohos_src_includes
   deps = [
-    "//third_party/ohos_ndk:ohos_isolation",
+    "//ohos_glue:ohos_adapter_glue_source",
   ]
 }
 
@@ -72,7 +72,7 @@ component("cef_nweb") {
   ]
 
   deps = [
-    "//third_party/ohos_ndk:ohos_isolation",
+    "//ohos_glue:ohos_adapter_glue_source",
   ]
 
   sources = [
@@ -384,7 +384,7 @@ component("nweb_sources") {
   public_deps = [ "//third_party/abseil-cpp:absl" ]
 
   deps += [
-    "//third_party/ohos_ndk:ohos_isolation",
+    "//ohos_glue:ohos_adapter_glue_source",
   ]
 }
 

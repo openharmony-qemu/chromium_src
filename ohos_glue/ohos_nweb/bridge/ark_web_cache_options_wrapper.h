@@ -28,10 +28,11 @@ public:
   ~ArkWebCacheOptionsWrapper() = default;
 
   std::map<std::string, std::string> GetResponseHeaders() override;
-  
+
   virtual bool IsModule() override;
 
   virtual bool IsTopLevel() override;
+
 private:
   ArkWebRefPtr<ArkWebCacheOptions> cache_options_;
 };

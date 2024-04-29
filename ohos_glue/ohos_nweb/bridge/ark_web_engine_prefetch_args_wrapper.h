@@ -22,7 +22,8 @@
 
 namespace OHOS::ArkWeb {
 
-class ArkWebEnginePrefetchArgsWrapper : public OHOS::NWeb::NWebEnginePrefetchArgs {
+class ArkWebEnginePrefetchArgsWrapper
+    : public OHOS::NWeb::NWebEnginePrefetchArgs {
 public:
   ArkWebEnginePrefetchArgsWrapper(
       ArkWebRefPtr<ArkWebEnginePrefetchArgs> ark_web_engine_pre_args);

@@ -356,17 +356,15 @@ typedef struct _ark_web_handler_t {
   void(ARK_WEB_CALLBACK *release_resize_hold)(struct _ark_web_handler_t *self);
 
   ArkWebCharVector(ARK_WEB_CALLBACK *get_word_selection)(
-      struct _ark_web_handler_t* self,
-      const ArkWebString* text,
-      int8_t offset);
+      struct _ark_web_handler_t *self, const ArkWebString *text, int8_t offset);
 
-  void(ARK_WEB_CALLBACK *update_clipped_selection_bounds)(struct _ark_web_handler_t *self,
-      int x, int y, int w, int h);
+  void(ARK_WEB_CALLBACK *update_clipped_selection_bounds)(
+      struct _ark_web_handler_t *self, int x, int y, int w, int h);
 
   bool(ARK_WEB_CALLBACK *on_open_app_link)(
       struct _ark_web_handler_t *self, const ArkWebString *url,
       ark_web_app_link_callback_t *callback);
-      
+
   void(ARK_WEB_CALLBACK *on_show_autofill_popup)(
       struct _ark_web_handler_t *self, const float offsetX, const float offsetY,
       const ArkWebStringVector *menu_items);

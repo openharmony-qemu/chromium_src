@@ -1208,15 +1208,13 @@ public:
    * @brief Web drag resize optimize.
    */
   /*--ark web()--*/
-  virtual void DragResize(uint32_t width,
-                          uint32_t height,
-                          uint32_t pre_height,
+  virtual void DragResize(uint32_t width, uint32_t height, uint32_t pre_height,
                           uint32_t pre_width) = 0;
 
   /*--ark web()--*/
   virtual void OnTouchCancelById(int32_t id, double x, double y,
                                  bool from_overlay) = 0;
-                                 
+
   /**
    * @brief Set the params when the scale of WebView changed by pinch gestrue.
    *
@@ -1241,7 +1239,7 @@ public:
   /*--ark web()--*/
   virtual bool TerminateRenderProcess() = 0;
 
-/**
+  /**
    * Get value of Autofill index.
    * @param index index value.
    */
@@ -1251,8 +1249,8 @@ public:
   /**
    * @brief RegisterArkJSfunction
    *
-   * @param object_name  String: object name
-   * @param method_list vector<String>: vector list, method list
+   * @param object_name  String: objector name
+   * @param method_list vector<String>: vector list, sync method list
    * @param async_method_list vector<String>: vector list, async method list
    * @param object_id int32_t: object id
    */

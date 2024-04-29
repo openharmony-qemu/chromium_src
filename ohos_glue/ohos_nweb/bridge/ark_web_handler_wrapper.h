@@ -385,8 +385,9 @@ public:
    * @return True if the cursor change was handled or false for default
    *         handling.
    */
-  bool OnCursorChange(const ArkWebCursorType &type,
-                      std::shared_ptr<OHOS::NWeb::NWebCursorInfo> info) override;
+  bool
+  OnCursorChange(const ArkWebCursorType &type,
+                 std::shared_ptr<OHOS::NWeb::NWebCursorInfo> info) override;
 
   /**
    * @brief called when the render process exit.
@@ -544,8 +545,8 @@ public:
       int video_natural_width, int video_natural_height) override;
 
   /**
-   * @brief Give the application a chance to decide whether to override loading the
-   * url.
+   * @brief Give the application a chance to decide whether to override loading
+   * the url.
    *
    * @param request The request information.
    * @return true to abort loading the url, false to continue loading the url
@@ -589,7 +590,7 @@ public:
       const std::string &originalUrl, const std::string &referrer,
       bool isFatalError, bool isMainFrame) override;
 
-  void OnTooltip(const std::string& tooltip) override;
+  void OnTooltip(const std::string &tooltip) override;
 
   /**
    * @brief called when resizehold is released.
@@ -603,17 +604,20 @@ public:
    * @param text The content of the text.
    * @param offset The offset of the point.
    */
-  std::vector<int8_t> GetWordSelection(const std::string& text, int8_t offset) override;
+  std::vector<int8_t> GetWordSelection(const std::string &text,
+                                       int8_t offset) override;
 
   void UpdateClippedSelectionBounds(int x, int y, int w, int h) override;
 
-  bool OnOpenAppLink(const std::string& url,
-                     std::shared_ptr<OHOS::NWeb::NWebAppLinkCallback> callback) override;
-  
+  bool OnOpenAppLink(
+      const std::string &url,
+      std::shared_ptr<OHOS::NWeb::NWebAppLinkCallback> callback) override;
+
   void OnShowAutofillPopup(const float offsetX, const float offsetY,
                            const std::vector<std::string> &menu_items) override;
 
   void OnHideAutofillPopup() override;
+
 private:
   ArkWebRefPtr<ArkWebHandler> ark_web_handler_;
 };

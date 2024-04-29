@@ -151,7 +151,7 @@ component("gl") {
     ]
 
     deps = [
-      "//third_party/ohos_ndk:ohos_isolation",
+      "//ohos_glue:ohos_adapter_glue_source",
     ]
   }
 

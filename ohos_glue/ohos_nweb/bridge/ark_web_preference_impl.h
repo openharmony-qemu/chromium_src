@@ -604,7 +604,8 @@ public:
   bool GetNativeEmbedMode() override;
 
   /**
-   * @brief Register native embed rule. The default pattern is ["embed", "native/"].
+   * @brief Register native embed rule. The default pattern is ["embed",
+   * "native/"].
    */
   void RegisterNativeEmbedRule(const ArkWebString &tag,
                                const ArkWebString &type) override;

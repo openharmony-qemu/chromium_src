@@ -47,7 +47,9 @@ class TextInputManager;
 class VisibleTimeRequestTrigger;
 enum class KeyboardEventProcessingResult;
 struct NativeWebKeyboardEvent;
-
+#if defined(OHOS_RENDERER_ANR_DUMP)
+enum class RenderProcessNotRespondingReason;
+#endif
 //
 // RenderWidgetHostDelegate
 //
@@ -177,7 +179,13 @@ class CONTENT_EXPORT RenderWidgetHostDelegate {
   // See also WebContentsDelegate::RendererUnresponsive.
   virtual void RendererUnresponsive(
       RenderWidgetHostImpl* render_widget_host,
-      base::RepeatingClosure hang_monitor_restarter) {}
+      base::RepeatingClosure hang_monitor_restarter
+#if defined(OHOS_RENDERER_ANR_DUMP)
+      ,
+      RenderProcessNotRespondingReason reason
+#endif
+  ) {
+  }
 
   // Notification that a previously unresponsive renderer has become
   // responsive again. The delegate can use this notification to end the

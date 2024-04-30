@@ -59,7 +59,13 @@ AwWebContentsDelegate::~AwWebContentsDelegate() = default;
 void AwWebContentsDelegate::RendererUnresponsive(
     content::WebContents* source,
     content::RenderWidgetHost* render_widget_host,
-    base::RepeatingClosure hang_monitor_restarter) {
+    base::RepeatingClosure hang_monitor_restarter
+#if defined(OHOS_RENDERER_ANR_DUMP)
+    ,
+    content::RenderProcessNotRespondingReason reason
+#endif
+
+) {
   AwContents* aw_contents = AwContents::FromWebContents(source);
   if (!aw_contents)
     return;

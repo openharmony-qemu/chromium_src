@@ -268,6 +268,11 @@ public:
                            const ArkWebStringVector &menu_items) override;
 
   void OnHideAutofillPopup() override;
+
+  void OnRenderProcessNotResponding(const ArkWebString& js_stack, int pid, int reason) override;
+
+
+  void OnRenderProcessResponding() override;
 };
 
 } // namespace OHOS::ArkWeb

@@ -242,6 +242,15 @@ target(link_target_type, "renderer") {
   }
   #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+  #if defined(OHOS_RENDERER_ANR_DUMP)
+  if (defined(ohos_renderer_anr_dump) && ohos_renderer_anr_dump) {
+    sources += [
+      "anr_dumper.cc",
+      "anr_dumper.h"
+    ]
+  }
+ #endif
+
   if (is_mac) {
     sources += [
       "renderer_main_platform_delegate_mac.mm",

@@ -695,6 +695,26 @@ public:
 
   /*--ark web()--*/
   virtual void OnHideAutofillPopup() = 0;
+
+  /**
+   * @brief Called when the render process not responding.
+   *
+   * @param js_stack Javascript stack info of webpage when render process not
+   * responding.
+   * @param pid Process id of the render process not responding.
+   * @param reason Reason of the render process not responding.
+   */
+  /*--ark web()--*/
+  virtual void OnRenderProcessNotResponding(const ArkWebString& js_stack,
+                                            int pid,
+                                            int reason) = 0;
+
+  /**
+   * @brief Called when the unresponding render process becomes responsive.
+   *
+   */
+  /*--ark web()--*/
+  virtual void OnRenderProcessResponding() = 0;
 };
 
 } // namespace OHOS::ArkWeb

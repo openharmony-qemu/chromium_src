@@ -91,6 +91,10 @@
 #include "res_sched_client_adapter.h"
 #endif
 
+#if defined(OHOS_RENDERER_ANR_DUMP)
+#include "content/renderer/anr_dumper.h"
+#endif
+
 #if BUILDFLAG(IS_APPLE)
 #include "base/mac/mach_port_rendezvous.h"
 #endif
@@ -335,7 +339,12 @@ class ChildThreadImpl::IOThreadState
         base::BindOnce(&ChildThreadImpl::GetBackgroundTracingAgentProvider,
                        weak_main_thread_, std::move(receiver)));
   }
-
+#if defined(OHOS_RENDERER_ANR_DUMP)
+  void dumpCurrentJavaScriptStackInMainThread(
+      dumpCurrentJavaScriptStackInMainThreadCallback callback) override {
+    AnrDumper::GetInstance()->DumpCurrentJavaScriptStack(std::move(callback));
+  }
+#endif
 #if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID)
   void EnableSystemTracingService(
       mojo::PendingRemote<tracing::mojom::SystemTracingService> remote)

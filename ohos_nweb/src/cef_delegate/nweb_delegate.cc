@@ -1446,7 +1446,9 @@ void NWebDelegate::InitializeCef(std::string url,
 #endif
                                 ) {
 #if BUILDFLAG(IS_OHOS)
-  if (base::ohos::IsPcDevice()) {
+  if (base::ohos::IsPcDevice() &&
+      base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kForBrowser)) {
     // To achieve a similar web page display effect on HarmonyOS PC devices as
     // on Mac devices of the same size, it is necessary to make the web page
     // width around approximately 1512 when in full screen, making the default

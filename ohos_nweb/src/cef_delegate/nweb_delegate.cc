@@ -494,7 +494,7 @@ InitRichtextIdentifier();
   std::shared_ptr<DisplayAdapter> display =
       display_manager_adapter_->GetDefaultDisplay();
   if (display != nullptr) {
-    NotifyScreenInfoChanged(display->GetRotation(), display->GetOrientation(), true);
+    NotifyScreenInfoChanged(display->GetRotation(), display->GetDisplayOrientation(), true);
     if (!richtext_data_str_.empty()) {
       // Created a richtext component
       SetVirtualPixelRatio(richtextDisplayRatio);
@@ -844,7 +844,7 @@ void NWebDelegate::SendMouseEvent(int x,
 }
 
 void NWebDelegate::NotifyScreenInfoChanged(RotationType rotation,
-                                           OrientationType orientation,
+                                           DisplayOrientation orientation,
                                            bool isWebinitialization) {
   if (render_handler_ != nullptr) {
     if (display_manager_adapter_ == nullptr) {

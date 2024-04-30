@@ -110,7 +110,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
                            double deltaY) override;
   void SendMouseEvent(int x, int y, int button, int action, int count) override;
   void NotifyScreenInfoChanged(RotationType rotation,
-                               OrientationType orientation,
+                               DisplayOrientation orientation,
                                bool isWebinitialization = false) override;
 
   int Load(const std::string& url) override;

@@ -109,6 +109,19 @@ int32_t ArkDisplayAdapterCToCpp::GetDpi() {
   return _struct->get_dpi(_struct);
 }
 
+ARK_WEB_NO_SANITIZE
+uint32_t ArkDisplayAdapterCToCpp::GetDisplayOrientation() {
+  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
+
+  ark_display_adapter_t* _struct = GetStruct();
+  ARK_WEB_CTOCPP_CHECK_PARAM(_struct,  0);
+
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, get_display_orientation,  0);
+
+  // Execute
+  return _struct->get_display_orientation(_struct);
+}
+
 ArkDisplayAdapterCToCpp::ArkDisplayAdapterCToCpp() {
 }
 

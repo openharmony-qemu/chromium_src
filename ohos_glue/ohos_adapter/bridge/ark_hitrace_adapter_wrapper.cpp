@@ -80,4 +80,32 @@ bool ArkHiTraceAdapterWrapper::IsHiTraceEnable() {
   return ctocpp_->IsHiTraceEnable();
 }
 
+void ArkHiTraceAdapterWrapper::StartOHOSTrace(const std::string &value,
+                                          float limit) {
+  if (!ctocpp_) {
+    return;
+  }
+  ArkWebString str = ArkWebStringClassToStruct(value);
+  ctocpp_->StartOHOSTrace(str, limit);
+
+  ArkWebStringStructRelease(str);
+}
+
+void ArkHiTraceAdapterWrapper::FinishOHOSTrace() {
+  if (!ctocpp_) {
+    return;
+  }
+  ctocpp_->FinishOHOSTrace();
+}
+
+void ArkHiTraceAdapterWrapper::CountOHOSTrace(const std::string &name,
+                                          int64_t count) {
+  if (!ctocpp_) {
+    return;
+  }
+  ArkWebString str = ArkWebStringClassToStruct(name);
+  ctocpp_->CountOHOSTrace(str, count);
+
+  ArkWebStringStructRelease(str);
+}
 } // namespace OHOS::ArkWeb

@@ -45,6 +45,13 @@ public:
   void CountTrace(const ArkWebString &name, int64_t count) override;
 
   bool IsHiTraceEnable() override;
+
+  void StartOHOSTrace(const ArkWebString &value, float limit) override;
+
+  void FinishOHOSTrace() override;
+
+  void CountOHOSTrace(const ArkWebString &name, int64_t count) override;
+
 };
 
 } // namespace OHOS::ArkWeb

@@ -48,6 +48,14 @@ typedef struct _ark_hi_trace_adapter_t {
 
   bool(ARK_WEB_CALLBACK *is_hi_trace_enable)(
       struct _ark_hi_trace_adapter_t *self);
+
+  void(ARK_WEB_CALLBACK *start_ohos_trace)(struct _ark_hi_trace_adapter_t *self,
+                                      const ArkWebString *value, float limit);
+
+  void(ARK_WEB_CALLBACK *finish_ohos_trace)(struct _ark_hi_trace_adapter_t *self);
+
+  void(ARK_WEB_CALLBACK *count_ohos_trace)(struct _ark_hi_trace_adapter_t *self,
+                                      const ArkWebString *name, int64_t count);
 } ark_hi_trace_adapter_t;
 
 #ifdef __cplusplus

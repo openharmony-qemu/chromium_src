@@ -654,6 +654,9 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
         main_browser_->GetHost()->SetAudioResumeInterval(
             preference_delegate_->GetAudioResumeInterval());
 #endif
+#if defined(OHOS_PRINT)
+        main_browser_->GetHost()->SetToken(preference_delegate_->GetPrintToken());
+#endif
       }
       main_browser_->GetHost()->SetNativeWindow(window_);
 

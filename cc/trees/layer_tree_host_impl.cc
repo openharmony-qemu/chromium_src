@@ -2554,7 +2554,7 @@ absl::optional<LayerTreeHostImpl::SubmitInfo> LayerTreeHostImpl::DrawLayers(
 
   base::TimeTicks submit_time = base::TimeTicks::Now();
   {
-    TRACE_EVENT_WITH_FLOW0(
+    OHOS_TRACE_EVENT_WITH_FLOW0(
         "viz,benchmark", "MainFrame.SubmitCompositorFrame",
         TRACE_ID_GLOBAL(active_tree()->trace_id()),
         TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT);

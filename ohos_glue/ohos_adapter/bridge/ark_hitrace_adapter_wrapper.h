@@ -39,6 +39,12 @@ public:
 
   bool IsHiTraceEnable() override;
 
+  void StartOHOSTrace(const std::string &value, float limit = -1) override;
+
+  void FinishOHOSTrace() override;
+
+  void CountOHOSTrace(const std::string &name, int64_t count) override;
+
 private:
   ArkWebRefPtr<ArkHiTraceAdapter> ctocpp_;
 };

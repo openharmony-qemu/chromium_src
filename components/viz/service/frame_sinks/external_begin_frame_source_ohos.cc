@@ -152,7 +152,7 @@ base::ohos::SlidingObserver::GetInstance().SetVsyncPeriod(vsync_period_);
   base::TimeTicks frame_time = base::TimeTicks() + base::Nanoseconds(timestamp);
   base::TimeTicks deadline = frame_time + vsync_period;
   last_dead_line_ = deadline;
-  TRACE_EVENT2("viz", "ExternalBeginFrameSourceOHOS::OnVSyncImpl", "frame_time",
+  OHOS_TRACE_EVENT2("viz", "ExternalBeginFrameSourceOHOS::OnVSyncImpl", "frame_time",
                frame_time, "deadline", deadline);
     if (lower_frame_rate_enabled_ && g_skip_vsync) {
     TRACE_EVENT0("viz", "vsync skip");

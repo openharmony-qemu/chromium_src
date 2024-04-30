@@ -229,7 +229,7 @@ void DisplayScheduler::ReportFrameTime(
 }
 
 bool DisplayScheduler::DrawAndSwap() {
-  TRACE_EVENT0("viz", "DisplayScheduler::DrawAndSwap");
+  OHOS_TRACE_EVENT0("viz", "DisplayScheduler::DrawAndSwap");
   DCHECK_LT(pending_swaps_,
             std::max(pending_swap_params_.max_pending_swaps,
                      pending_swap_params_.max_pending_swaps_120hz.value_or(0)));

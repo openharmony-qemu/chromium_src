@@ -340,7 +340,7 @@ InputHandlerScrollResult InputHandler::ScrollUpdate(
 
   // The current_native_scrolling_element should only be set for ScrollBegin.
   DCHECK(!scroll_state->data()->current_native_scrolling_element());
-  TRACE_EVENT2("cc", "InputHandler::ScrollUpdate", "dx",
+  OHOS_TRACE_EVENT2("cc", "InputHandler::ScrollUpdate", "dx",
                scroll_state->delta_x(), "dy", scroll_state->delta_y());
 
   if (!CurrentlyScrollingNode())

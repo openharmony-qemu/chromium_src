@@ -40,6 +40,8 @@ public:
 
   int32_t GetDpi() override;
 
+  OHOS::NWeb::DisplayOrientation GetDisplayOrientation() override;
+
 private:
   ArkWebRefPtr<ArkDisplayAdapter> ctocpp_;
 };

@@ -148,7 +148,7 @@ class NWebDelegateInterface
                               int action,
                               int count) = 0;
   virtual void NotifyScreenInfoChanged(RotationType rotation,
-                                       OrientationType orientation,
+                                       DisplayOrientation orientation,
                                        bool isWebinitialization = false) = 0;
 
   virtual int Load(const std::string& url) = 0;

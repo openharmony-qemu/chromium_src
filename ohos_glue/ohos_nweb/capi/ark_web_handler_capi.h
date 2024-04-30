@@ -371,6 +371,13 @@ typedef struct _ark_web_handler_t {
 
   void(ARK_WEB_CALLBACK *on_hide_autofill_popup)(
       struct _ark_web_handler_t *self);
+
+  void(ARK_WEB_CALLBACK *on_render_process_not_responding)(
+      struct _ark_web_handler_t *self, const ArkWebString *js_stack, int pid,
+      int reason);
+
+  void(ARK_WEB_CALLBACK *on_render_process_responding)(
+      struct _ark_web_handler_t *self);
 } ark_web_handler_t;
 
 #ifdef __cplusplus

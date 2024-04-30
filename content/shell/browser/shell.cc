@@ -621,10 +621,14 @@ void Shell::PortalWebContentsCreated(WebContents* portal_web_contents) {
   g_platform->DidCreateOrAttachWebContents(this, portal_web_contents);
 }
 
-void Shell::RendererUnresponsive(
-    WebContents* source,
-    RenderWidgetHost* render_widget_host,
-    base::RepeatingClosure hang_monitor_restarter) {
+void Shell::RendererUnresponsive(WebContents* source,
+                                 RenderWidgetHost* render_widget_host,
+                                 base::RepeatingClosure hang_monitor_restarter
+#if defined(OHOS_RENDERER_ANR_DUMP)
+                                 ,
+                                 RenderProcessNotRespondingReason reason
+#endif
+) {
   LOG(WARNING) << "renderer unresponsive";
 }
 

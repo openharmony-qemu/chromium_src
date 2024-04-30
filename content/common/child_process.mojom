@@ -140,4 +140,8 @@ interface ChildProcess {
   // See https://crbug.com/1393283 for details.
   [EnableIf=is_android]
   OnMemoryPressure(mojo_base.mojom.MemoryPressureLevel memory_pressure_level);
+
+  // #if defined(OHOS_RENDERER_ANR_DUMP)
+  [EnableIf=ohos_renderer_anr_dump]
+  dumpCurrentJavaScriptStackInMainThread() => (string js_stack);
 };

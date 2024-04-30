@@ -29,6 +29,8 @@ using ArkWebImageColorType = OHOS::NWeb::ImageColorType;
 using ArkWebImageAlphaType = OHOS::NWeb::ImageAlphaType;
 using ArkWebRenderExitReason = OHOS::NWeb::RenderExitReason;
 using ArkWebDragOperation = OHOS::NWeb::NWebDragData::DragOperation;
+using ArkWebRenderProcessNotRespondingReason =
+    OHOS::NWeb::RenderProcessNotRespondingReason;
 
 class ArkWebHandlerWrapper : public OHOS::NWeb::NWebHandler {
 public:
@@ -617,6 +619,24 @@ public:
                            const std::vector<std::string> &menu_items) override;
 
   void OnHideAutofillPopup() override;
+
+
+  /**
+   * @brief called when the render process  not responding.
+   *
+   * @param js_stack
+   * @param pid
+   * @param reason
+   */
+  void OnRenderProcessNotResponding(
+      const std::string &js_stack, int pid,
+      ArkWebRenderProcessNotRespondingReason reason) override;
+
+  /**
+   * @brief called when the render process  not responding.
+   *
+   */
+  void OnRenderProcessResponding() override;
 
 private:
   ArkWebRefPtr<ArkWebHandler> ark_web_handler_;

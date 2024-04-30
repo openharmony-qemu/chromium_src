@@ -31,6 +31,9 @@ class SkBitmap;
 
 namespace content {
 class WebContents;
+#if defined(OHOS_RENDERER_ANR_DUMP)
+enum class RenderProcessNotRespondingReason;
+#endif
 }
 
 namespace android_webview {
@@ -294,7 +297,12 @@ class AwContents : public FindHelper::Listener,
 
   void ResumeLoadingCreatedPopupWebContents(JNIEnv* env);
 
-  void RendererUnresponsive(content::RenderProcessHost* render_process_host);
+  void RendererUnresponsive(content::RenderProcessHost* render_process_host
+#if defined(OHOS_RENDERER_ANR_DUMP)
+                            ,
+                            RenderProcessNotRespondingReason reason
+#endif
+  );
   void RendererResponsive(content::RenderProcessHost* render_process_host);
 
   // content::WebContentsObserver overrides

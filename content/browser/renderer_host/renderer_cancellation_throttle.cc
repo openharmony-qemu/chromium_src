@@ -6,7 +6,9 @@
 
 #include "content/browser/renderer_host/frame_tree_node.h"
 #include "content/browser/renderer_host/navigation_request.h"
-
+#if defined(OHOS_RENDERER_ANR_DUMP)
+#include "content/public/browser/web_contents_delegate.h"
+#endif
 namespace content {
 
 namespace {
@@ -93,7 +95,12 @@ void RendererCancellationThrottle::OnTimeout() {
   DCHECK(request);
   request->GetRenderFrameHost()->GetRenderWidgetHost()->RendererIsUnresponsive(
       base::BindRepeating(&RendererCancellationThrottle::RestartTimeout,
-                          weak_factory_.GetWeakPtr()));
+                          weak_factory_.GetWeakPtr())
+#if defined(OHOS_RENDERER_ANR_DUMP)
+          ,
+      content::RenderProcessNotRespondingReason::kRendererAnrNavigationTimeout
+#endif
+  );
 }
 
 void RendererCancellationThrottle::RestartTimeout() {

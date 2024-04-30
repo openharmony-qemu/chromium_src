@@ -33,6 +33,9 @@ class ShellDevToolsFrontend;
 class SiteInstance;
 class WebContents;
 class RenderFrameHost;
+#if defined(OHOS_RENDERER_ANR_DUMP)
+enum class RenderProcessNotRespondingReason;
+#endif
 
 // This represents one window of the Content Shell, i.e. all the UI including
 // buttons and url bar, as well as the web content area.
@@ -159,10 +162,14 @@ class Shell : public WebContentsDelegate, public WebContentsObserver {
                               int32_t line_no,
                               const std::u16string& source_id) override;
   void PortalWebContentsCreated(WebContents* portal_web_contents) override;
-  void RendererUnresponsive(
-      WebContents* source,
-      RenderWidgetHost* render_widget_host,
-      base::RepeatingClosure hang_monitor_restarter) override;
+  void RendererUnresponsive(WebContents* source,
+                            RenderWidgetHost* render_widget_host,
+                            base::RepeatingClosure hang_monitor_restarter
+#if defined(OHOS_RENDERER_ANR_DUMP)
+                            ,
+                            RenderProcessNotRespondingReason reason
+#endif
+                            ) override;
   void ActivateContents(WebContents* contents) override;
   void RunFileChooser(RenderFrameHost* render_frame_host,
                       scoped_refptr<FileSelectListener> listener,

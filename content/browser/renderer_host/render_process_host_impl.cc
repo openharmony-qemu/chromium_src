@@ -5759,5 +5759,14 @@ void RenderProcessHostImpl::SetAttributionReportingSupport(
 }
 
 #endif
+#if defined(OHOS_RENDERER_ANR_DUMP)
+void RenderProcessHostImpl::dumpCurrentJavaScriptStackInMainThread(
+    base::OnceCallback<void(const std::string&)> dump_callback) {
+  child_process_->dumpCurrentJavaScriptStackInMainThread(base::BindOnce(
+      [](base::OnceCallback<void(const std::string&)> callback,
+         const std::string& stack) { std::move(callback).Run(stack); },
+      std::move(dump_callback)));
+}
+#endif
 
 }  // namespace content

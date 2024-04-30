@@ -684,7 +684,13 @@ void WebViewGuest::RendererResponsive(
 void WebViewGuest::RendererUnresponsive(
     WebContents* source,
     content::RenderWidgetHost* render_widget_host,
-    base::RepeatingClosure hang_monitor_restarter) {
+    base::RepeatingClosure hang_monitor_restarter
+#if defined(OHOS_RENDERER_ANR_DUMP)
+    ,
+    content::RenderProcessNotRespondingReason reason
+#endif
+
+) {
   base::Value::Dict args;
   args.Set(webview::kProcessId, render_widget_host->GetProcess()->GetID());
   DispatchEventToView(std::make_unique<GuestViewEvent>(

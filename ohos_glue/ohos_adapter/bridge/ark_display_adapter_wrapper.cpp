@@ -51,4 +51,9 @@ OHOS::NWeb::OrientationType ArkDisplayAdapterWrapper::GetOrientation() {
 int32_t ArkDisplayAdapterWrapper::GetDpi() {
   return ctocpp_->GetDpi();
 }
+
+OHOS::NWeb::DisplayOrientation ArkDisplayAdapterWrapper::GetDisplayOrientation() {
+  uint32_t type = ctocpp_->GetDisplayOrientation();
+  return (OHOS::NWeb::DisplayOrientation)type;
+}
 } // namespace OHOS::ArkWeb

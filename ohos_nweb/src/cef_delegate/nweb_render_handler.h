@@ -36,7 +36,7 @@ namespace OHOS::NWeb {
 // #ifdef OHOS_SCREEN_ROTATION
 struct NWebScreenInfo {
   RotationType rotation = RotationType::ROTATION_0;
-  OrientationType orientation = OrientationType::UNSPECIFIED;
+  DisplayOrientation orientation = DisplayOrientation::UNKNOWN;
   int width = 0;
   int height = 0;
   double display_ratio = -1.0;

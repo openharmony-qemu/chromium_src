@@ -58,6 +58,9 @@ public:
 
   /*--ark web()--*/
   virtual int32_t GetDpi() = 0;
+
+  /*--ark web()--*/
+  virtual uint32_t GetDisplayOrientation() = 0;
 };
 
 /*--ark web(source=library)--*/

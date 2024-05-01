@@ -43,49 +43,42 @@
 
 namespace {
 cef_screen_orientation_type_t ConvertOrientationType(
-    OHOS::NWeb::OrientationType type,
+    OHOS::NWeb::DisplayOrientation type,
     bool default_portrait) {
   switch (type) {
-    case OHOS::NWeb::OrientationType::UNSPECIFIED:
+    case OHOS::NWeb::DisplayOrientation::PORTRAIT:
       return default_portrait
                  ? cef_screen_orientation_type_t::PORTRAIT_PRIMARY
                  : cef_screen_orientation_type_t::LANDSCAPE_PRIMARY;
-    case OHOS::NWeb::OrientationType::VERTICAL:
-      return cef_screen_orientation_type_t::PORTRAIT_PRIMARY;
-    case OHOS::NWeb::OrientationType::HORIZONTAL:
-      return default_portrait
-                 ? cef_screen_orientation_type_t::LANDSCAPE_SECONDARY
-                 : cef_screen_orientation_type_t::LANDSCAPE_PRIMARY;
-    case OHOS::NWeb::OrientationType::REVERSE_VERTICAL:
-      return cef_screen_orientation_type_t::PORTRAIT_SECONDARY;
-    case OHOS::NWeb::OrientationType::REVERSE_HORIZONTAL:
+    case OHOS::NWeb::DisplayOrientation::LANDSCAPE:
       return default_portrait
                  ? cef_screen_orientation_type_t::LANDSCAPE_PRIMARY
+                 : cef_screen_orientation_type_t::PORTRAIT_PRIMARY;
+    case OHOS::NWeb::DisplayOrientation::PORTRAIT_INVERTED:
+      return default_portrait
+                 ? cef_screen_orientation_type_t::PORTRAIT_SECONDARY
                  : cef_screen_orientation_type_t::LANDSCAPE_SECONDARY;
-    // Now ohos platform don't hava sensor orientation.
-    // Will be support later.
-    case OHOS::NWeb::OrientationType::SENSOR:
-    case OHOS::NWeb::OrientationType::SENSOR_VERTICAL:
-    case OHOS::NWeb::OrientationType::SENSOR_HORIZONTAL:
-      return cef_screen_orientation_type_t::UNDEFINED;
+    case OHOS::NWeb::DisplayOrientation::LANDSCAPE_INVERTED:
+      return default_portrait
+                 ? cef_screen_orientation_type_t::LANDSCAPE_SECONDARY
+                 : cef_screen_orientation_type_t::PORTRAIT_SECONDARY;
     default:
       return cef_screen_orientation_type_t::UNDEFINED;
   }
 }
 
-uint16_t ConvertRotationAngel(OHOS::NWeb::RotationType type,
-                              bool default_portrait) {
+uint16_t ConvertRotationAngel(OHOS::NWeb::RotationType type) {
   // Notice: 90 and 270 is reverse.
 
   switch (type) {
     case OHOS::NWeb::RotationType::ROTATION_0:
-      return default_portrait ? 0 : 90;
+      return 0;
     case OHOS::NWeb::RotationType::ROTATION_90:
-      return default_portrait ? 270 : 0;
+      return 90;
     case OHOS::NWeb::RotationType::ROTATION_180:
-      return default_portrait ? 180 : 270;
+      return 180;
     case OHOS::NWeb::RotationType::ROTATION_270:
-      return default_portrait ? 90 : 180;
+      return 270;
     default:
       return 0;
   }
@@ -387,8 +380,7 @@ bool NWebRenderHandler::GetScreenInfo(CefRefPtr<CefBrowser> browser,
                                       CefScreenInfo& screen_info) {
   screen_info.orientation = ConvertOrientationType(
       screen_info_.orientation, screen_info_.default_portrait);
-  screen_info.angle = ConvertRotationAngel(screen_info_.rotation,
-                                           screen_info_.default_portrait);
+  screen_info.angle = ConvertRotationAngel(screen_info_.rotation);
   screen_info.rect.width = screen_info_.width;
   screen_info.rect.height = screen_info_.height;
   screen_info.device_scale_factor = screen_info_.display_ratio;

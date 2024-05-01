@@ -42,7 +42,7 @@ void DisplayScreenListener::OnChange(DisplayId id) {
     auto nweb = nweb_.lock();
     if (nweb != nullptr && display != nullptr) {
       nweb->NotifyScreenInfoChanged(display->GetRotation(),
-                                    display->GetOrientation());
+                                    display->GetDisplayOrientation());
     } else {
       LOG(ERROR) << "notify screen info change failed";
     }

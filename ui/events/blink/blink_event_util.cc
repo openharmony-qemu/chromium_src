@@ -236,7 +236,11 @@ WebTouchPoint CreateWebTouchPoint(const MotionEvent& event,
 blink::WebTouchEvent CreateWebTouchEventFromMotionEvent(
     const MotionEvent& event,
     bool moved_beyond_slop_region,
-    bool hovering) {
+    bool hovering
+#if BUILDFLAG(IS_OHOS)
+    , int32_t is_fit_content
+#endif
+) {
   static_assert(static_cast<int>(MotionEvent::MAX_TOUCH_POINT_COUNT) ==
                     static_cast<int>(blink::WebTouchEvent::kTouchesLengthCap),
                 "inconsistent maximum number of active touch points");
@@ -249,6 +253,9 @@ blink::WebTouchEvent CreateWebTouchEventFromMotionEvent(
                              : WebInputEvent::DispatchType::kBlocking;
   result.moved_beyond_slop_region = moved_beyond_slop_region;
   result.hovering = hovering;
+  if (is_fit_content) {
+    result.is_fit_content = true;
+  }
 
   // TODO(mustaq): MotionEvent flags seems unrelated, should use
   // metaState instead?

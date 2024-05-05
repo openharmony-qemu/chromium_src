@@ -913,4 +913,8 @@ void ArkWebNWebImpl::RegisterArkJSfunction(
       ArkWebStringVectorStructToClass(async_method_list), object_id);
 }
 
+void ArkWebNWebImpl::SetFitContentMode(int32_t mode) {
+  nweb_nweb_->SetFitContentMode(mode);
+}
+
 } // namespace OHOS::ArkWeb

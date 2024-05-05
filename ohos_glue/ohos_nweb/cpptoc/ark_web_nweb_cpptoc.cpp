@@ -1782,6 +1782,16 @@ void ARK_WEB_CALLBACK ark_web_nweb_register_ark_jsfunction2(
       *object_name, *method_list, *async_method_list, object_id);
 }
 
+void ARK_WEB_CALLBACK ark_web_nweb_set_fit_content_mode(struct _ark_web_nweb_t *self,
+                                                 int32_t mode) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->SetFitContentMode(mode);
+}
+
 } // namespace
 
 ArkWebNWebCppToC::ArkWebNWebCppToC() {
@@ -1969,6 +1979,7 @@ ArkWebNWebCppToC::ArkWebNWebCppToC() {
   GetStruct()->terminate_render_process = ark_web_nweb_terminate_render_process;
   GetStruct()->suggestion_selected = ark_web_nweb_suggestion_selected;
   GetStruct()->register_ark_jsfunction2 = ark_web_nweb_register_ark_jsfunction2;
+  GetStruct()->set_fit_content_mode = ark_web_nweb_set_fit_content_mode;
 }
 
 ArkWebNWebCppToC::~ArkWebNWebCppToC() {

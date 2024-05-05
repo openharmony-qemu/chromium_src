@@ -513,6 +513,9 @@ typedef struct _ark_web_nweb_t {
       struct _ark_web_nweb_t *self, const ArkWebString *object_name,
       const ArkWebStringVector *method_list,
       const ArkWebStringVector *async_method_list, const int32_t object_id);
+
+  void(ARK_WEB_CALLBACK *set_fit_content_mode)(struct _ark_web_nweb_t *self,
+                                        int32_t mode);
 } ark_web_nweb_t;
 
 #ifdef __cplusplus

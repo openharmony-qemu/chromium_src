@@ -1274,6 +1274,12 @@ public:
   virtual void RegisterArkJSfunction(
       const ArkWebString &object_name, const ArkWebStringVector &method_list,
       const ArkWebStringVector &async_method_list, const int32_t object_id) = 0;
+
+  /**
+   * @brief Set fit content mode.
+   */
+  /*--ark web()--*/
+  virtual void SetFitContentMode(int32_t mode) = 0;
 };
 
 } // namespace OHOS::ArkWeb

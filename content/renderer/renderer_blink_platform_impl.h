@@ -262,7 +262,7 @@ class CONTENT_EXPORT RendererBlinkPlatformImpl : public BlinkPlatformImpl {
   bool is_locked_to_site_;
 
   int32_t draw_mode_;
-  
+
   // NOT OWNED
   blink::scheduler::WebThreadScheduler* main_thread_scheduler_;
 

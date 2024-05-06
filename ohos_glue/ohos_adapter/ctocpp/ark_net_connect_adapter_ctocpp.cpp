@@ -62,6 +62,20 @@ ArkNetConnectAdapterCToCpp::GetDefaultNetConnect(uint32_t &type,
   return _struct->get_default_net_connect(_struct, &type, &netConnectSubtype);
 }
 
+ARK_WEB_NO_SANITIZE
+ArkWebStringVector ArkNetConnectAdapterCToCpp::GetDnsServers() {
+  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
+
+  ark_net_connect_adapter_t *_struct = GetStruct();
+  ARK_WEB_CTOCPP_CHECK_PARAM(_struct, ark_web_string_vector_default);
+
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, get_dns_servers,
+                                   ark_web_string_vector_default);
+
+  // Execute
+  return _struct->get_dns_servers(_struct);
+}
+
 ArkNetConnectAdapterCToCpp::ArkNetConnectAdapterCToCpp() {
 }
 

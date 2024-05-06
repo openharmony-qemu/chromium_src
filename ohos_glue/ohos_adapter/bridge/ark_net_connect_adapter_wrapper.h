@@ -35,6 +35,8 @@ public:
       OHOS::NWeb::NetConnectType &type,
       OHOS::NWeb::NetConnectSubtype &netConnectSubtype) override;
 
+  std::vector<std::string> GetDnsServers() override;
+
 private:
   ArkWebRefPtr<ArkNetConnectAdapter> ctocpp_;
 };

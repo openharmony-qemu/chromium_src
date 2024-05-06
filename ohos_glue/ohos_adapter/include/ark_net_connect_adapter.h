@@ -52,6 +52,9 @@ public:
   /*--ark web()--*/
   virtual int32_t GetDefaultNetConnect(uint32_t &type,
                                        uint32_t &netConnectSubtype) = 0;
+
+  /*--ark web()--*/
+  virtual ArkWebStringVector GetDnsServers() = 0;
 };
 
 } // namespace OHOS::ArkWeb

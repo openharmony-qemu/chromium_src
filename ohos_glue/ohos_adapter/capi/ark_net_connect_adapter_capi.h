@@ -59,6 +59,9 @@ typedef struct _ark_net_connect_adapter_t {
   int32_t(ARK_WEB_CALLBACK *get_default_net_connect)(
       struct _ark_net_connect_adapter_t *self, uint32_t *type,
       uint32_t *netConnectSubtype);
+
+  ArkWebStringVector(ARK_WEB_CALLBACK *get_dns_servers)(
+      struct _ark_net_connect_adapter_t *self);
 } ark_net_connect_adapter_t;
 
 #ifdef __cplusplus

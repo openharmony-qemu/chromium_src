@@ -18,7 +18,6 @@
 #include "ohos_adapter/bridge/ark_web_adapter_bridge_helper.h"
 #include "ohos_adapter/ctocpp/ark_aafwk_app_mgr_client_adapter_ctocpp.h"
 #include "ohos_adapter/ctocpp/ark_access_token_adapter_ctocpp.h"
-#include "ohos_adapter/ctocpp/ark_ai_engine_adapter_ctocpp.h"
 #include "ohos_adapter/ctocpp/ark_audio_capturer_adapter_ctocpp.h"
 #include "ohos_adapter/ctocpp/ark_audio_renderer_adapter_ctocpp.h"
 #include "ohos_adapter/ctocpp/ark_audio_system_manager_adapter_ctocpp.h"
@@ -801,25 +800,6 @@ ArkOhosAdapterHelperCToCpp::CreateFlowbufferAdapter() {
 
   // Return type: refptr_same
   return ArkFlowbufferAdapterCToCpp::Invert(_retval);
-}
-
-ARK_WEB_NO_SANITIZE
-ArkWebRefPtr<ArkAiEngineAdapter>
-ArkOhosAdapterHelperCToCpp::GetAiEngineAdapterInstance() {
-  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
-
-  ark_ohos_adapter_helper_t *_struct = GetStruct();
-  ARK_WEB_CTOCPP_CHECK_PARAM(_struct, nullptr);
-
-  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, get_ai_engine_adapter_instance,
-                                   nullptr);
-
-  // Execute
-  ark_ai_engine_adapter_t *_retval =
-      _struct->get_ai_engine_adapter_instance(_struct);
-
-  // Return type: refptr_same
-  return ArkAiEngineAdapterCToCpp::Invert(_retval);
 }
 
 ARK_WEB_NO_SANITIZE

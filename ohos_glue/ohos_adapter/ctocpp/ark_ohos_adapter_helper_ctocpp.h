@@ -120,8 +120,6 @@ public:
 
   ArkWebRefPtr<ArkFlowbufferAdapter> CreateFlowbufferAdapter() override;
 
-  ArkWebRefPtr<ArkAiEngineAdapter> GetAiEngineAdapterInstance() override;
-
   ArkWebRefPtr<ArkMediaAVSessionAdapter> CreateMediaAVSessionAdapter() override;
 };
 

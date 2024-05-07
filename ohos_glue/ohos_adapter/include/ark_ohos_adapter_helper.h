@@ -19,7 +19,6 @@
 
 #include "ohos_adapter/include/ark_aafwk_app_mgr_client_adapter.h"
 #include "ohos_adapter/include/ark_access_token_adapter.h"
-#include "ohos_adapter/include/ark_ai_engine_adapter.h"
 #include "ohos_adapter/include/ark_audio_capturer_adapter.h"
 #include "ohos_adapter/include/ark_audio_renderer_adapter.h"
 #include "ohos_adapter/include/ark_audio_system_manager_adapter.h"
@@ -195,9 +194,6 @@ public:
 
   /*--ark web()--*/
   virtual ArkWebRefPtr<ArkFlowbufferAdapter> CreateFlowbufferAdapter() = 0;
-
-  /*--ark web()--*/
-  virtual ArkWebRefPtr<ArkAiEngineAdapter> GetAiEngineAdapterInstance() = 0;
 
   /*--ark web()--*/
   virtual ArkWebRefPtr<ArkMediaAVSessionAdapter>

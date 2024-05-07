@@ -118,8 +118,6 @@ public:
 
   std::unique_ptr<NWeb::FlowbufferAdapter> CreateFlowbufferAdapter() override;
 
-  NWeb::AiEngineAdapter &GetAiEngineAdapterInstance() override;
-
   std::unique_ptr<NWeb::MediaAVSessionAdapter>
   CreateMediaAVSessionAdapter() override;
 

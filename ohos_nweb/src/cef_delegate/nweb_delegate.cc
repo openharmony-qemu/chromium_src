@@ -1445,10 +1445,19 @@ void NWebDelegate::InitializeCef(std::string url,
                                  , bool incognito_mode
 #endif
                                 ) {
-#if BUILDFLAG(IS_OHOS)
-  if (base::ohos::IsPcDevice() &&
-      base::CommandLine::ForCurrentProcess()->HasSwitch(
-          ::switches::kForBrowser)) {
+#if defined(OHOS_HAP_DECOMPRESSED) || BUILDFLAG(IS_OHOS)
+  bool for_browser = false;
+  std::string for_browser_cmd("--");
+  for_browser_cmd.append(::switches::kForBrowser);
+  CefMainArgs mainargs(argc_, const_cast<char**>(argv_));
+  base::CommandLine::StringVector argv;
+  for (int i = 0; i < argc_; i++) {
+    argv.push_back(argv_[i]);
+    if (!for_browser && argv_[i] == for_browser_cmd) {
+      for_browser = true;
+    }
+  }
+  if (base::ohos::IsPcDevice() && for_browser) {
     // To achieve a similar web page display effect on HarmonyOS PC devices as
     // on Mac devices of the same size, it is necessary to make the web page
     // width around approximately 1512 when in full screen, making the default
@@ -1474,11 +1483,6 @@ void NWebDelegate::InitializeCef(std::string url,
 #endif
 
 #ifdef OHOS_HAP_DECOMPRESSED
-  CefMainArgs mainargs(argc_, const_cast<char**>(argv_));
-  base::CommandLine::StringVector argv;
-  for (int i = 0; i < argc_; i++) {
-    argv.push_back(argv_[i]);
-  }
   if (base::CommandLine::ForCurrentProcess()) {
     base::CommandLine cl(argv);
     base::CommandLine::ForCurrentProcess()->AppendArguments(cl, false);

@@ -17,7 +17,6 @@
 #include "base/bridge/ark_web_bridge_macros.h"
 #include "ohos_adapter/bridge/ark_aafwk_app_mgr_client_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_access_token_adapter_wrapper.h"
-#include "ohos_adapter/bridge/ark_ai_engine_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_audio_capturer_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_audio_renderer_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_audio_system_manager_adapter_wrapper.h"
@@ -449,13 +448,6 @@ ArkOhosAdapterHelperWrapper::CreateFlowbufferAdapter() {
   }
 
   return std::make_unique<ArkFlowbufferAdapterWrapper>(adapter);
-}
-
-NWeb::AiEngineAdapter &
-ArkOhosAdapterHelperWrapper::GetAiEngineAdapterInstance() {
-  static ArkAiEngineAdapterWrapper instance(
-      ctocpp_->GetAiEngineAdapterInstance());
-  return instance;
 }
 
 std::unique_ptr<NWeb::MediaAVSessionAdapter>

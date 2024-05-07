@@ -1248,6 +1248,12 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
         const std::vector<std::string>& method_list,
         const std::vector<std::string>& async_method_list,
         const int32_t object_id) = 0;
+
+    /**
+     * Set fit content mode.
+     *
+    */
+    virtual void SetFitContentMode(int32_t mode) = 0;
 };
 }  // namespace OHOS::NWeb
 

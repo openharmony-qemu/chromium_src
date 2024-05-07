@@ -1111,6 +1111,10 @@ public:
                              const ArkWebStringVector &async_method_list,
                              const int32_t object_id) override;
 
+  /**
+   * @brief Set fit content mode.
+   */
+  void SetFitContentMode(int32_t mode) override;
 private:
   std::shared_ptr<OHOS::NWeb::NWeb> nweb_nweb_;
 };

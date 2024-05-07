@@ -1115,6 +1115,11 @@ public:
    * @brief Set fit content mode.
    */
   void SetFitContentMode(int32_t mode) override;
+
+  /**
+   * @brief Get select info.
+   */
+  ArkWebString GetSelectInfo() override;
 private:
   std::shared_ptr<OHOS::NWeb::NWeb> nweb_nweb_;
 };

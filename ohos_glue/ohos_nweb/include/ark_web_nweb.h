@@ -1280,6 +1280,14 @@ public:
    */
   /*--ark web()--*/
   virtual void SetFitContentMode(int32_t mode) = 0;
+
+  /**
+   * @brief Get select info.
+   *
+   * @return the info of selection.
+   */
+  /*--ark web()--*/
+  virtual ArkWebString GetSelectInfo() = 0;
 };
 
 } // namespace OHOS::ArkWeb

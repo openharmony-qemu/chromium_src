@@ -1254,6 +1254,12 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      *
     */
     virtual void SetFitContentMode(int32_t mode) = 0;
+
+    /**
+     * Get select info.
+     *
+    */
+    virtual std::string GetSelectInfo() = 0;
 };
 }  // namespace OHOS::NWeb
 

@@ -152,7 +152,7 @@ bool FlingController::ObserveAndMaybeConsumeGestureEvent(
         .StartAsyncTrace("WEB_LIST_FLING", 0);
     OHOS::NWeb::OhosAdapterHelper::GetInstance()
         .CreateSocPerfClientAdapter()
-        ->ApplySocPerfConfigByIdEx(OHOS::NWeb::SocPerfClientAdapter::SOC_PERF_WEB_GUSTURE_ID, true);
+        ->ApplySocPerfConfigByIdEx(OHOS::NWeb::SocPerfClientAdapter::SOC_PERF_WEB_GESTURE_ID, true);
 
     LOG(DEBUG) << "start web page fling";
     if (auto* host = GpuProcessHost::Get()) {

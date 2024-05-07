@@ -870,6 +870,13 @@ bool NWebImpl::GetPendingSizeStatus() {
   return false;
 }
 
+void NWebImpl::SetFitContentMode(int mode) {
+  WVLOG_D("NWebImpl::SetFitContentMode %{public}d", mode);
+  if (nweb_delegate_) {
+    nweb_delegate_->SetFitContentMode(mode);
+  }
+}
+
 void NWebImpl::OnTouchPress(int32_t id, double x, double y, bool from_overlay) {
   WVLOG_D(
       "NWebImpl::OnTouchPress id=%{public}d, x=%{public}f, y=%{public}f, "

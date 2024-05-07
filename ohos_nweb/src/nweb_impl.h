@@ -202,6 +202,7 @@ class NWebImpl : public NWeb {
   void SetDrawRect(int32_t x, int32_t y, int32_t width, int32_t height) override;
   void SetDrawMode(int32_t mode) override;
   bool GetPendingSizeStatus() override;
+  void SetFitContentMode(int32_t mode) override;
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 
   void ExecuteJavaScriptExt(

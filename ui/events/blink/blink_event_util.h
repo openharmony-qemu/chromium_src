@@ -36,7 +36,11 @@ const float kScrollPercentPerLineOrChar = 0.05f;
 blink::WebTouchEvent CreateWebTouchEventFromMotionEvent(
     const MotionEvent& event,
     bool may_cause_scrolling,
-    bool hovering);
+    bool hovering
+#if BUILDFLAG(IS_OHOS)
+    , int32_t is_fit_content = 0 
+#endif
+    );
 
 blink::WebGestureEvent CreateWebGestureEvent(const GestureEventDetails& details,
                                              base::TimeTicks timestamp,

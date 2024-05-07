@@ -2471,6 +2471,12 @@ bool NWebDelegate::GetPendingSizeStatus() {
   }
   return false;
 }
+
+void NWebDelegate::SetFitContentMode(int32_t mode) {
+  if (GetBrowser().get()) {
+    GetBrowser()->GetHost()->SetFitContentMode(mode);
+  }
+}
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 
 #if defined(OHOS_EX_FORCE_ZOOM)

@@ -329,6 +329,7 @@ class NWebDelegateInterface
   virtual void SetDrawRect(int32_t x, int32_t y, int32_t width, int32_t height) = 0;
   virtual void SetDrawMode(int32_t mode) = 0;
   virtual bool GetPendingSizeStatus() = 0;
+  virtual void SetFitContentMode(int32_t mode) = 0;
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 
 #if defined(OHOS_MEDIA_POLICY)

@@ -93,7 +93,11 @@ class FakePasswordStoreBackend : public PasswordStoreBackend {
   CreateSyncControllerDelegate() override;
   void ClearAllLocalPasswords() override;
   void OnSyncServiceInitialized(syncer::SyncService* sync_service) override;
-
+#if defined(OHOS_EX_PASSWORD) && defined(OHOS_UNITTESTS)
+  LoginsResultOrError FillMatchingLogins(
+      bool include_psl,
+      const std::vector<PasswordFormDigest>& forms) override { return {}; }
+#endif // OHOS_UNITTESTS
   // Returns the task runner. Defaults to
   // `base::SequencedTaskRunner::GetCurrentDefault` if none is injected.
   const scoped_refptr<base::SequencedTaskRunner>& GetTaskRunner() const;

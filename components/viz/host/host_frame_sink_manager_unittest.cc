@@ -99,6 +99,12 @@ class MockFrameSinkManagerImpl : public TestFrameSinkManagerImpl {
               Throttle,
               (const std::vector<FrameSinkId>& ids, base::TimeDelta interval),
               (override));
+#if defined(OHOS_UNITTESTS)
+  MOCK_METHOD2(UpdateVSyncFrequency,
+              void(const FrameSinkId& frame_sink_id, uint32_t client_id));
+  MOCK_METHOD1(ResetVSyncFrequency,
+              void(const FrameSinkId& frame_sink_id));
+#endif // OHOS_UNITTESTS
 };
 
 }  // namespace

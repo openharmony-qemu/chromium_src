@@ -57,11 +57,11 @@ class TestPasswordStore : public PasswordStore {
 
   void CallSyncEnabledOrDisabledCallbacks();
 
-#ifdef OHOS_EX_PASSWORD
+#if defined(OHOS_EX_PASSWORD) && !defined(OHOS_UNITTESTS)
   LoginsResult FillMatchingLogins(
       bool include_psl,
       const std::vector<PasswordFormDigest>& forms) override;
-#endif
+#endif // OHOS_UNITTESTS
 
  protected:
   ~TestPasswordStore() override;

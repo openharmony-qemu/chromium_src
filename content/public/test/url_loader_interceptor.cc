@@ -214,7 +214,9 @@ class URLLoaderClientInterceptor : public network::mojom::URLLoaderClient {
       completion_status_callback_.Run(request_url_, status);
     original_client_->OnComplete(status);
   }
-
+#if defined(OHOS_UNITTESTS)
+  void OnTransferDataWithSharedMemory(::base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {}
+#endif // OHOS_UNITTESTS
  private:
   mojo::Remote<network::mojom::URLLoaderClient> original_client_;
   mojo::Receiver<network::mojom::URLLoaderClient> delegating_client_receiver_{

@@ -48,6 +48,13 @@ class MockURLLoaderClient : public network::mojom::URLLoaderClient {
               OnComplete,
               (const network::URLLoaderCompletionStatus& status),
               (override));
+#if defined(OHOS_UNITTESTS)
+  MOCK_METHOD(void,
+              OnTransferDataWithSharedMemory,
+              (::base::ReadOnlySharedMemoryRegion region,
+               uint64_t buffer_size),
+              (override));
+#endif // OHOS_UNITTESTS
 };
 
 }  // namespace pdf

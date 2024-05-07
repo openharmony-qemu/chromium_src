@@ -221,7 +221,9 @@ class MockFrameHost : public mojom::FrameHost {
 #if BUILDFLAG(IS_ANDROID)
   void UpdateUserGestureCarryoverInfo() override {}
 #endif
-
+#if defined(OHOS_UNITTESTS)
+  void MouseSelectMenuShow(bool show) override {}
+#endif // OHOS_UNITTESTS
  private:
   mojom::DidCommitProvisionalLoadParamsPtr last_commit_params_;
   mojo::PendingReceiver<blink::mojom::BrowserInterfaceBroker>

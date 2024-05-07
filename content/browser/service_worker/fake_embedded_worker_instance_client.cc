@@ -82,7 +82,9 @@ class FakeEmbeddedWorkerInstanceClient::LoaderClient final
     std::move(callback).Run();
     // Do not add code after that, the object is deleted.
   }
-
+#if defined(OHOS_UNITTESTS)
+  void OnTransferDataWithSharedMemory(::base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {}
+#endif // OHOS_UNITTESTS
  private:
   mojo::Receiver<network::mojom::URLLoaderClient> receiver_;
   base::OnceClosure callback_;

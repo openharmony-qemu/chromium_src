@@ -19,6 +19,11 @@ viz_test("viz_unittests") {
   if (ohos_unittests) {
     sources += [
       "//ohos_nweb/src/sysevent/event_reporter.cc",
+      "//cef/libcef/common/soc_perf_util.cc",
+      "//content/browser/browser_thread_impl.cc",
+      "//content/browser/scheduler/browser_task_executor.cc",
+      "//content/public/common/content_features.cc",
+      "//content/public/common/content_switches.cc",
     ]
   }
 

@@ -153,7 +153,11 @@ class ParallelDownloadJobTest : public testing::Test {
 
   bool IsJobCanceled() const { return job_->is_canceled_; }
 
+#if defined(OHOS_UNITTESTS)
+  void CancelRequest(bool user_cancel, absl::optional<std::string> guid) { canceled_ = true; }
+#else
   void CancelRequest(bool user_cancel) { canceled_ = true; }
+#endif // OHOS_UNITTESTS
 
   void VerifyWorker(int64_t offset, int64_t length) const {
     EXPECT_TRUE(job_->workers_.find(offset) != job_->workers_.end());

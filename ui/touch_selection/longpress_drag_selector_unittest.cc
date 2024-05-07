@@ -65,7 +65,9 @@ class LongPressDragSelectorTest : public testing::Test,
   gfx::PointF GetSelectionStart() const override { return selection_start_; }
 
   gfx::PointF GetSelectionEnd() const override { return selection_end_; }
-
+#if defined(OHOS_UNITTESTS)
+  void UpdateSelectionChanged(const TouchSelectionDraggable& draggable) override {}
+#endif // OHOS_UNITTESTS
  private:
   bool dragging_;
   bool active_state_changed_;

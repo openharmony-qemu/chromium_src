@@ -84,6 +84,8 @@ class TestFrameSinkManagerImpl : public mojom::FrameSinkManager {
       StopFrameCountingForTestCallback callback) override {}
 #if defined(OHOS_UNITTESTS)
   void EvictFrameBackBuffers(const ::viz::FrameSinkId& frame_sink_id, bool invisible) {}
+  void UpdateVSyncFrequency(const ::viz::FrameSinkId& frame_sink_id, uint32_t client_id) override {}
+  void ResetVSyncFrequency(const ::viz::FrameSinkId& frame_sink_id) override {}
 #endif
 
   mojo::Receiver<mojom::FrameSinkManager> receiver_{this};

@@ -83,7 +83,9 @@ class FakeRenderWidgetHost : public blink::mojom::FrameWidgetHost,
           render_frame_metadata_observer_client_receiver,
       mojo::PendingRemote<cc::mojom::RenderFrameMetadataObserver>
           render_frame_metadata_observer) override;
-
+#if defined(OHOS_UNITTESTS)
+  void GetWordSelection(const std::string& text, int8_t offset, GetWordSelectionCallback callback) override {}
+#endif // OHOS_UNITTESTS
   // blink::mojom::PopupWidgetHost overrides.
   void RequestClosePopup() override;
   void ShowPopup(const gfx::Rect& initial_rect,

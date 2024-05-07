@@ -2747,7 +2747,7 @@ int NWebHandlerDelegate::ProcessNativeProxyResult(
     return 0;
   }
 
-  LOG(ERROR) << "native proxy object not found, name:"
+  LOG(DEBUG) << "native proxy object not found, name:"
              << object_name.ToString();
   return 1;
 }

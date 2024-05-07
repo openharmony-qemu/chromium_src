@@ -14,6 +14,7 @@
  */
 
 #include "nweb_inputmethod_handler.h"
+#include <codecvt>
 #include "nweb_imf_cursor_info_adapter_impl.h"
 #include "nweb_imf_input_attribute_adapter_impl.h"
 #include "nweb_imf_selection_range_adapter_impl.h"
@@ -881,6 +882,13 @@ void NWebInputMethodHandler::SetNeedUnderLine(bool is_need_underline) {
     browser_->GetHost()->PostTaskToUIThread(task);
   }
 }
+
+#if defined(OHOS_CLIPBOARD)
+std::string NWebInputMethodHandler::GetSelectInfo() {
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;
+  return converter.to_bytes(selected_text_);
+}
+#endif
 
 void NWebInputMethodHandler::SetWindowIdForIME(uint32_t windowId) {
   LOG(INFO) << "NWebInputMethodHandler::SetWindowIdForIME windowId: "

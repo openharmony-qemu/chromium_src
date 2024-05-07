@@ -443,6 +443,7 @@ class NWebDelegateInterface
 
 #if defined(OHOS_CLIPBOARD)
   virtual void SetIsRichText(bool is_rich_text) = 0;
+  virtual std::string GetSelectInfo() = 0;
 #endif
 };
 }  // namespace OHOS::NWeb

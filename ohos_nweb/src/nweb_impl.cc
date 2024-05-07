@@ -2592,6 +2592,15 @@ bool NWebImpl::IsAnyNWebIntelligentTrackingPreventionEnabled() {
 }
 #endif
 
+#if defined(OHOS_CLIPBOARD)
+std::string NWebImpl::GetSelectInfo() {
+  if (inputmethod_handler_) {
+    return inputmethod_handler_->GetSelectInfo();
+  }
+  return std::string();
+}
+#endif
+
 void NWebImpl::OnCreateNativeMediaPlayer(
     std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) {
   if (nweb_delegate_ == nullptr) {

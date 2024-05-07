@@ -3348,5 +3348,9 @@ void NWebDelegate::SetIsRichText(bool is_rich_text) {
   }
   handler_delegate_->SetIsRichText(is_rich_text);
 }
+
+std::string NWebDelegate::GetSelectInfo() {
+  return std::string();
+}
 #endif
 }  // namespace OHOS::NWeb

@@ -29,33 +29,31 @@ static std::unordered_map<std::string,
 static std::shared_mutex g_NativeWebMapSharedLock;
 
 bool ArkWebNativeObject::FireValidCallback() {
-  if (destroyCallback_) {
-    auto nwebSharedPtr = GetWebSharedPtr();
-    if (nwebSharedPtr) {
-      auto destroyCallback = [weak = GetWeakPtr()]() {
-        if (auto webObjectPtr = weak.lock()) {
-          webObjectPtr->FireDestroyCallback();
-        }
-      };
-      nwebSharedPtr->RegisterNativeDestroyCallback(std::move(destroyCallback));
+  auto nwebSharedPtr = GetWebSharedPtr();
+  if (nwebSharedPtr) {
+    auto destroyCallback = [weak = GetWeakPtr()]() {
+      if (auto webObjectPtr = weak.lock()) {
+        webObjectPtr->FireDestroyCallback();
+      }
+    };
+    nwebSharedPtr->RegisterNativeDestroyCallback(std::move(destroyCallback));
 
-      auto loadStartCallback = [weak = GetWeakPtr()]() {
-        if (auto webObjectPtr = weak.lock()) {
-          webObjectPtr->FireLoadStartCallback();
-        }
-      };
-      nwebSharedPtr->RegisterNativeLoadStartCallback(
-          std::move(loadStartCallback));
+    auto loadStartCallback = [weak = GetWeakPtr()]() {
+      if (auto webObjectPtr = weak.lock()) {
+        webObjectPtr->FireLoadStartCallback();
+      }
+    };
+    nwebSharedPtr->RegisterNativeLoadStartCallback(
+        std::move(loadStartCallback));
 
-      auto loadEndCallback = [weak = GetWeakPtr()]() {
-        if (auto webObjectPtr = weak.lock()) {
-          webObjectPtr->FireLoadEndCallback();
-        }
-      };
-      nwebSharedPtr->RegisterNativeLoadEndCallback(std::move(loadEndCallback));
-    } else {
-      LOG(ERROR) << "NativeArkWeb nweb shared pointer is nullptr";
-    }
+    auto loadEndCallback = [weak = GetWeakPtr()]() {
+      if (auto webObjectPtr = weak.lock()) {
+        webObjectPtr->FireLoadEndCallback();
+      }
+    };
+    nwebSharedPtr->RegisterNativeLoadEndCallback(std::move(loadEndCallback));
+  } else {
+    LOG(ERROR) << "NativeArkWeb nweb shared pointer is nullptr";
   }
 
   if (!validCallback_) {

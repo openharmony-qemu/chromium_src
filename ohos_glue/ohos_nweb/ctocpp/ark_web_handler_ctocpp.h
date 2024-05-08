@@ -256,6 +256,11 @@ public:
 
   void ReleaseResizeHold() override;
 
+    void OnShowAutofillPopup(const float offsetX, const float offsetY,
+                           const ArkWebStringVector &menu_items) override;
+
+  void OnHideAutofillPopup() override;
+
   ArkWebCharVector GetWordSelection(const ArkWebString &text,
                                     int8_t offset) override;
 
@@ -263,11 +268,6 @@ public:
 
   bool OnOpenAppLink(const ArkWebString &url,
                      ArkWebRefPtr<ArkWebAppLinkCallback> callback) override;
-
-  void OnShowAutofillPopup(const float offsetX, const float offsetY,
-                           const ArkWebStringVector &menu_items) override;
-
-  void OnHideAutofillPopup() override;
 
   void OnRenderProcessNotResponding(const ArkWebString& js_stack, int pid, int reason) override;
 

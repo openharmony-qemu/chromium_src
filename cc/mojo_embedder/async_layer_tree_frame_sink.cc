@@ -350,6 +350,7 @@ void AsyncLayerTreeFrameSink::SetDrawRect(const gfx::Rect& new_rect) {
   if (new_rect.IsEmpty()) {
     return;
   }
+  client_->SetDrawRectState(true);
   client_->SetExternalTilePriorityConstraints(new_rect, gfx::Transform());
 }
 

@@ -570,6 +570,7 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
   void SetExternalTilePriorityConstraints(
       const gfx::Rect& viewport_rect,
       const gfx::Transform& transform) override;
+  void SetDrawRectState(bool isNeedDrawRect) override;
   absl::optional<viz::HitTestRegionList> BuildHitTestData() override;
   void DidLoseLayerTreeFrameSink() override;
   void DidReceiveCompositorFrameAck() override;
@@ -1356,6 +1357,8 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
   // Must be the last member to ensure this is destroyed first in the
   // destruction order and invalidates all weak pointers.
   base::WeakPtrFactory<LayerTreeHostImpl> weak_factory_{this};
+
+  bool is_need_draw_rect_ = false;
 };
 
 }  // namespace cc

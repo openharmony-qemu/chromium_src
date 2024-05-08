@@ -2457,6 +2457,7 @@ void NWebDelegate::SetShouldFrameSubmissionBeforeDraw(bool should) {
 void NWebDelegate::SetDrawRect(int32_t x, int32_t y, int32_t width, int32_t height) {
   if (GetBrowser().get()) {
     GetBrowser()->GetHost()->SetDrawRect(x, y, width, height);
+    GetBrowser()->GetHost()->UpdateDrawRect();
   }
 }
 

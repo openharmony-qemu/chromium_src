@@ -91,6 +91,8 @@ class CC_EXPORT LayerTreeFrameSinkClient {
   virtual void OnCompositorFrameTransitionDirectiveProcessed(
       uint32_t sequence_id) {}
 
+  virtual void SetDrawRectState(bool isNeedDrawRect) = 0;
+
  protected:
   virtual ~LayerTreeFrameSinkClient() {}
 };

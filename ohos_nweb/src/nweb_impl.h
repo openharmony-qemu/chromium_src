@@ -430,6 +430,9 @@ class NWebImpl : public NWeb {
   static bool IsAnyNWebIntelligentTrackingPreventionEnabled();
 #endif
 
+#if defined(OHOS_CLIPBOARD)
+  std::string GetSelectInfo() override;
+#endif
   void OnCreateNativeMediaPlayer(
       std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) override;
 

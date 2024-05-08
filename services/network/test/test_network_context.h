@@ -315,6 +315,12 @@ class TestNetworkContext : public mojom::NetworkContext {
       const std::string& realm,
       LookupProxyAuthCredentialsCallback callback) override {}
 #endif
+#if defined(OHOS_UNITTESTS)
+  void SetHostIP(const std::string& HostName,
+    const std::vector<std::string>& Address,
+    uint32_t AliveTime) override {}
+  void ClearHostIP(const std::string& HostName) override {}
+#endif // OHOS_UNITTESTS
 };
 
 }  // namespace network

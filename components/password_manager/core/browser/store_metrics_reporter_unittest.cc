@@ -197,7 +197,7 @@ struct EnableStateParam {
       EnableSettingManageState test_setting_manage_state_,
       int expected_histogram_value_) : test_pref_value(test_pref_value_),
       test_setting_manage_state(test_setting_manage_state_),
-      expected_histogram_value(expected_histogram_value_) {};
+      expected_histogram_value(expected_histogram_value_) {}
 #endif
   bool test_pref_value;
   EnableSettingManageState test_setting_manage_state;

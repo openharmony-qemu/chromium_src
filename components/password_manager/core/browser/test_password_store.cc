@@ -65,12 +65,12 @@ const FakePasswordStoreBackend* TestPasswordStore::fake_backend() const {
   return const_cast<TestPasswordStore*>(this)->fake_backend();
 }
 
-#ifdef OHOS_EX_PASSWORD
+#if defined(OHOS_EX_PASSWORD) && !defined(OHOS_UNITTESTS)
 LoginsResultOrError TestPasswordStore::FillMatchingLogins(
     bool include_psl,
     const std::vector<PasswordFormDigest>& forms) {
   return {};
 }
-#endif
+#endif // OHOS_UNITTESTS
 
 }  // namespace password_manager

@@ -393,7 +393,11 @@ class DownloadItemTest : public testing::Test {
 
   DownloadCreateInfo* create_info() { return create_info_.get(); }
 
+#if defined(OHOS_UNITTESTS)
+  void CancelRequest(bool user_cancel, absl::optional<std::string> guid) { canceled_ = true; }
+#else
   void CancelRequest(bool user_cancel) { canceled_ = true; }
+#endif // OHOS_UNITTESTS
 
   bool canceled() { return canceled_; }
 

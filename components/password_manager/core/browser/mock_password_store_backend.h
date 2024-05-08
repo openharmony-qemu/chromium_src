@@ -92,6 +92,14 @@ class MockPasswordStoreBackend : public PasswordStoreBackend {
               OnSyncServiceInitialized,
               (syncer::SyncService*),
               (override));
+#if defined(OHOS_UNITTESTS)
+  MOCK_METHOD(void,
+              LoginsResultOrError,
+              FillMatchingLogins,
+              (bool include_psl,
+              const std::vector<PasswordFormDigest>& forms),
+              (override));
+#endif // OHOS_UNITTESTS
 };
 
 }  // namespace password_manager

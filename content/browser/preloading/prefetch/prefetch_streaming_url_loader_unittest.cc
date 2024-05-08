@@ -233,7 +233,9 @@ class TestURLLoaderClient : public network::mojom::URLLoaderClient,
   void OnComplete(const network::URLLoaderCompletionStatus& status) override {
     completion_status_ = status;
   }
-
+#if defined(OHOS_UNITTESTS)
+  void OnTransferDataWithSharedMemory(::base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {}
+#endif // OHOS_UNITTESTS
   // mojo::DataPipeDrainer::Client
   void OnDataAvailable(const void* data, size_t num_bytes) override {
     body_content_.append(

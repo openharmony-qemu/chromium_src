@@ -3034,10 +3034,17 @@ TEST_P(PartitionAllocTest, FreelistHardenedTest) {
   uintptr_t free = *(uintptr_t*)(slot_span + sizeof(uintptr_t));
 
   uintptr_t real_root = (uintptr_t)PartitionRoot<internal::ThreadSafe>::FromFirstSuperPage((uintptr_t)ptr & 0xffffffffffC00000);
+#if defined(OHOS_UNITTESTS)
+  printf("\r\nreal_root = %#lx\r\n", real_root);
+  printf("root = %#lx\r\n", root);
+  printf("active_head = %#lx\r\n", active);
+  printf("free_next = %#lx\r\n\r\n", free);
+#else
   printf("\r\nreal_root = 0x%lx\r\n", real_root);
   printf("root = 0x%lx\r\n", root);
   printf("active_head = 0x%lx\r\n", active);
   printf("free_next = 0x%lx\r\n\r\n", free);
+#endif // OHOS_UNITTESTS
   EXPECT_NE(real_root, root);
 
   // slot span must >= head and <= head + 4096(metadata page size)

@@ -439,6 +439,7 @@ void PrecompileJavaScript(const std::string& url,
 
 #if defined(OHOS_CLIPBOARD)
   void SetIsRichText(bool is_rich_text) override;
+  std::string GetSelectInfo() override;
 #endif
 
  public:

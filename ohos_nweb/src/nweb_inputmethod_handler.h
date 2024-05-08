@@ -72,6 +72,9 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
                          int32_t end);
   void FinishTextPreview();
   void SetNeedUnderLine(bool is_need_underline);
+#if defined(OHOS_CLIPBOARD)
+  std::string GetSelectInfo();
+#endif
 
  private:
   void SetIMEStatusOnUI(bool status);

@@ -917,4 +917,8 @@ void ArkWebNWebImpl::SetFitContentMode(int32_t mode) {
   nweb_nweb_->SetFitContentMode(mode);
 }
 
+ArkWebString ArkWebNWebImpl::GetSelectInfo() {
+  return ArkWebStringClassToStruct(nweb_nweb_->GetSelectInfo());
+}
+
 } // namespace OHOS::ArkWeb

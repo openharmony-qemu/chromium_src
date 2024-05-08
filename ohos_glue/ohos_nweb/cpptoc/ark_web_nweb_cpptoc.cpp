@@ -1792,6 +1792,16 @@ void ARK_WEB_CALLBACK ark_web_nweb_set_fit_content_mode(struct _ark_web_nweb_t *
   ArkWebNWebCppToC::Get(self)->SetFitContentMode(mode);
 }
 
+ArkWebString ARK_WEB_CALLBACK ark_web_nweb_get_select_info(
+    struct _ark_web_nweb_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, ark_web_string_default);
+
+  // Execute
+  return ArkWebNWebCppToC::Get(self)->GetSelectInfo();
+}
+
 } // namespace
 
 ArkWebNWebCppToC::ArkWebNWebCppToC() {
@@ -1980,6 +1990,7 @@ ArkWebNWebCppToC::ArkWebNWebCppToC() {
   GetStruct()->suggestion_selected = ark_web_nweb_suggestion_selected;
   GetStruct()->register_ark_jsfunction2 = ark_web_nweb_register_ark_jsfunction2;
   GetStruct()->set_fit_content_mode = ark_web_nweb_set_fit_content_mode;
+  GetStruct()->get_select_info = ark_web_nweb_get_select_info;
 }
 
 ArkWebNWebCppToC::~ArkWebNWebCppToC() {

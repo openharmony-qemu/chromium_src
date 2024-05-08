@@ -37,6 +37,7 @@ class VIZ_SERVICE_EXPORT ExternalBeginFrameSourceOHOS
           dynamic_begin_frame_deadline_offset_source) override;
 
   static void OnVSync(int64_t timestamp, void* data);
+  static void OnVSyncCallback();
   class VSyncUserData;
   void OnVSyncImpl(int64_t timestamp, VSyncUserData* user_data);
 

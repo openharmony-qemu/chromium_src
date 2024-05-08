@@ -678,6 +678,13 @@ public:
   /*--ark web()--*/
   virtual void ReleaseResizeHold() = 0;
 
+    /*--ark web()--*/
+  virtual void OnShowAutofillPopup(const float offsetX, const float offsetY,
+                                   const ArkWebStringVector &menu_items) = 0;
+
+  /*--ark web()--*/
+  virtual void OnHideAutofillPopup() = 0;
+
   /*--ark web()--*/
   virtual ArkWebCharVector GetWordSelection(const ArkWebString &text,
                                             int8_t offset) = 0;
@@ -688,13 +695,6 @@ public:
   /*--ark web()--*/
   virtual bool OnOpenAppLink(const ArkWebString &url,
                              ArkWebRefPtr<ArkWebAppLinkCallback> callback) = 0;
-
-  /*--ark web()--*/
-  virtual void OnShowAutofillPopup(const float offsetX, const float offsetY,
-                                   const ArkWebStringVector &menu_items) = 0;
-
-  /*--ark web()--*/
-  virtual void OnHideAutofillPopup() = 0;
 
   /**
    * @brief Called when the render process not responding.

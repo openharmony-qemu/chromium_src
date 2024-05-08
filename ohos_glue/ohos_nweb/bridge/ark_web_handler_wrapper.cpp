@@ -873,6 +873,17 @@ void ArkWebHandlerWrapper::ReleaseResizeHold() {
   ark_web_handler_->ReleaseResizeHold();
 }
 
+void ArkWebHandlerWrapper::OnShowAutofillPopup(
+    const float offsetX, const float offsetY,
+    const std::vector<std::string> &menu_items) {
+  ArkWebStringVector stMenuItems = ArkWebStringVectorClassToStruct(menu_items);
+  ark_web_handler_->OnShowAutofillPopup(offsetX, offsetY, stMenuItems);
+}
+
+void ArkWebHandlerWrapper::OnHideAutofillPopup() {
+  ark_web_handler_->OnHideAutofillPopup();
+}
+
 std::vector<int8_t>
 ArkWebHandlerWrapper::GetWordSelection(const std::string &text, int8_t offset) {
   ArkWebString ark_text = ArkWebStringClassToStruct(text);
@@ -900,17 +911,6 @@ bool ArkWebHandlerWrapper::OnOpenAppLink(
 
   return ark_web_handler_->OnOpenAppLink(
       ArkWebStringClassToStruct(url), new ArkWebAppLinkCallbackImpl(callback));
-}
-
-void ArkWebHandlerWrapper::OnShowAutofillPopup(
-    const float offsetX, const float offsetY,
-    const std::vector<std::string> &menu_items) {
-  ArkWebStringVector stMenuItems = ArkWebStringVectorClassToStruct(menu_items);
-  ark_web_handler_->OnShowAutofillPopup(offsetX, offsetY, stMenuItems);
-}
-
-void ArkWebHandlerWrapper::OnHideAutofillPopup() {
-  ark_web_handler_->OnHideAutofillPopup();
 }
 
 void ArkWebHandlerWrapper::OnRenderProcessNotResponding(

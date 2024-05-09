@@ -52,4 +52,10 @@ void ArkVSyncAdapterWrapper::SetFramePreferredRate(int32_t preferredRate) {
   return ctocpp_->SetFramePreferredRate(preferredRate);
 }
 
+void ArkVSyncAdapterWrapper::SetOnVsyncCallback(void (*callback)()) {
+  if (!ctocpp_) {
+    return;
+  }
+  return ctocpp_->SetOnVsyncCallback(callback);
+}
 } // namespace OHOS::ArkWeb

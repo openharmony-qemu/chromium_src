@@ -40,6 +40,8 @@ public:
   void SetFrameRateLinkerEnable(bool enabled) override;
 
   void SetFramePreferredRate(int32_t preferredRate) override;
+
+  void SetOnVsyncCallback(void (*callback)()) override;
 };
 
 } // namespace OHOS::ArkWeb

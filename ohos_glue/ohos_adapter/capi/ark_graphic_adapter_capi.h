@@ -41,6 +41,9 @@ typedef struct _ark_vsync_adapter_t {
 
   void(ARK_WEB_CALLBACK *set_frame_preferred_rate)(
       struct _ark_vsync_adapter_t *self, int32_t preferredRate);
+
+  void(ARK_WEB_CALLBACK* set_on_vsync_callback)(
+      struct _ark_vsync_adapter_t* self, void (*callback)());
 } ark_vsync_adapter_t;
 
 typedef struct _ark_buffer_request_config_adapter_t {

@@ -419,6 +419,14 @@ void MimeUtil::AddSupportedMediaFormats() {
     AddContainerWithCodecs("audio/x-mpegurl", hls_codecs);
   }
 #endif  // BUILDFLAG(IS_ANDROID)
+#if defined(OHOS_MEDIA)
+  if (base::FeatureList::IsEnabled(kCanPlayHls)) {
+    CodecSet hls_codecs{H264,
+                        MP3,
+                        MPEG4_AAC};
+    AddContainerWithCodecs("application/x-mpegurl", hls_codecs);
+  }
+#endif
 #endif  // BUILDFLAG(USE_PROPRIETARY_CODECS)
 }
 

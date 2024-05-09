@@ -43,6 +43,7 @@ class NWebInputHandler {
   void OnTouchCancelById(int32_t id, double x, double y, bool from_overlay);
   void OnNavigateBack();
   bool SendKeyEvent(int32_t keyCode, int32_t keyAction);
+  void SendTouchpadFlingEvent(double x, double y, double vx, double vy);
   void SendMouseWheelEvent(double x, double y, double deltaX, double deltaY);
   void SendMouseEvent(int x, int y, int button, int action, int count);
 

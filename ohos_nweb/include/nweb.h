@@ -1236,6 +1236,16 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
     virtual void SuggestionSelected(int32_t index) = 0;
 
     /**
+     * @brief Send touchpad fling event.
+     *
+     * @param x location of x.
+     * @param y location of y.
+     * @param vx velocity of x.
+     * @param vy velocity of y.
+     */
+    virtual void SendTouchpadFlingEvent(double x, double y, double vx, double vy) = 0;
+
+    /**
      * RegisterArkJSfunction
      *
      * @param object_name  String: object name

@@ -2142,6 +2142,10 @@ void LayerTreeHostImpl::SetMemoryPolicyImpl(const ManagedMemoryPolicy& policy) {
     client_->SetNeedsCommitOnImplThread();
 }
 
+void LayerTreeHostImpl::SetDrawRectState(bool isNeedDrawRect) {
+  is_need_draw_rect_ = isNeedDrawRect;
+}
+
 void LayerTreeHostImpl::SetExternalTilePriorityConstraints(
     const gfx::Rect& viewport_rect,
     const gfx::Transform& transform) {
@@ -2149,7 +2153,7 @@ void LayerTreeHostImpl::SetExternalTilePriorityConstraints(
       viewport_rect_for_tile_priority_ != viewport_rect;
   viewport_rect_for_tile_priority_ = viewport_rect;
 
-  if (tile_priority_params_changed) {
+  if (is_need_draw_rect_ || tile_priority_params_changed) {
     active_tree_->set_needs_update_draw_properties();
     if (pending_tree_)
       pending_tree_->set_needs_update_draw_properties();

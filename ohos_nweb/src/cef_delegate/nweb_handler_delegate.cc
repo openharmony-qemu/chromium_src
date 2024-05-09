@@ -657,6 +657,37 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
 #if defined(OHOS_PRINT)
         main_browser_->GetHost()->SetToken(preference_delegate_->GetPrintToken());
 #endif
+#if defined(OHOS_JSPROXY)
+        auto scriptItemsStart = preference_delegate_->GetJavaScriptOnDocumentStart();
+        if (scriptItemsStart.size() > 0) {
+          main_browser_->GetHost()->RemoveJavaScriptOnDocumentStart();
+          for (const auto& item: scriptItemsStart) {
+            CefString script = item.first;
+            std::vector<CefString> scriptRules;
+            for (const std::string& rule : item.second) {
+              CefString cefRule;
+              cefRule.FromString(rule);
+              scriptRules.push_back(cefRule);
+            }
+            main_browser_->GetHost()->JavaScriptOnDocumentStart(script, scriptRules);
+          }
+        }
+
+        auto scriptItemsEnd = preference_delegate_->GetJavaScriptOnDocumentEnd();
+        if (scriptItemsEnd.size() > 0) {
+          main_browser_->GetHost()->RemoveJavaScriptOnDocumentEnd();
+          for (const auto& item: scriptItemsEnd) {
+            CefString script = item.first;
+            std::vector<CefString> scriptRules;
+            for (const std::string& rule : item.second) {
+              CefString cefRule;
+              cefRule.FromString(rule);
+              scriptRules.push_back(cefRule);
+            }
+            main_browser_->GetHost()->JavaScriptOnDocumentEnd(script, scriptRules);
+          }
+        }
+#endif
       }
       main_browser_->GetHost()->SetNativeWindow(window_);
 

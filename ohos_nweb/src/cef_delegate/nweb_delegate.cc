@@ -1982,16 +1982,22 @@ void NWebDelegate::RegisterNativeLoadEndCallback(
 }
 
 void NWebDelegate::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
-  GetBrowser()->GetHost()->RemoveJavaScriptOnDocumentStart();
-  for (auto item: scriptItems) {
-    CefString script = item.first;
-    std::vector<CefString> scriptRules;
-    for (std::string rule : item.second) {
-      CefString cefRule;
-      cefRule.FromString(rule);
-      scriptRules.push_back(cefRule);
+  if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
+    GetBrowser()->GetHost()->RemoveJavaScriptOnDocumentStart();
+    for (auto item: scriptItems) {
+      CefString script = item.first;
+      std::vector<CefString> scriptRules;
+      for (std::string rule : item.second) {
+        CefString cefRule;
+        cefRule.FromString(rule);
+        scriptRules.push_back(cefRule);
+      }
+      GetBrowser()->GetHost()->JavaScriptOnDocumentStart(script, scriptRules);
     }
-    GetBrowser()->GetHost()->JavaScriptOnDocumentStart(script, scriptRules);
+  } else if (preference_delegate_) {
+    preference_delegate_->PutJavaScriptOnDocumentStart(scriptItems);
+  } else {
+    LOG(ERROR) << "JavaScriptOnDocumentStart has failed";
   }
 }
 
@@ -2019,16 +2025,22 @@ void NWebDelegate::CallH5Function(
 }
 
 void NWebDelegate::JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) {
-  GetBrowser()->GetHost()->RemoveJavaScriptOnDocumentEnd();
-  for (auto item: scriptItems) {
-    CefString script = item.first;
-    std::vector<CefString> scriptRules;
-    for (std::string rule : item.second) {
-      CefString cefRule;
-      cefRule.FromString(rule);
-      scriptRules.push_back(cefRule);
+  if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
+    GetBrowser()->GetHost()->RemoveJavaScriptOnDocumentEnd();
+    for (auto item: scriptItems) {
+      CefString script = item.first;
+      std::vector<CefString> scriptRules;
+      for (std::string rule : item.second) {
+        CefString cefRule;
+        cefRule.FromString(rule);
+        scriptRules.push_back(cefRule);
+      }
+      GetBrowser()->GetHost()->JavaScriptOnDocumentEnd(script, scriptRules);
     }
-    GetBrowser()->GetHost()->JavaScriptOnDocumentEnd(script, scriptRules);
+  } else if (preference_delegate_) {
+    preference_delegate_->PutJavaScriptOnDocumentEnd(scriptItems);
+  } else {
+    LOG(ERROR) << "JavaScriptOnDocumentEnd has failed";
   }
 }
 

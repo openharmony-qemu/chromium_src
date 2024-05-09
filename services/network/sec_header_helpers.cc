@@ -159,6 +159,43 @@ void SetSecFetchDestHeader(net::URLRequest* request,
 
 }  // namespace
 
+#ifdef OHOS_NETWORK_LOAD
+std::map<std::string, std::string> GetFetchMetadataHeaders(
+    const GURL& target_url,
+    network::mojom::RequestMode mode,
+    bool has_user_activation,
+    network::mojom::RequestDestination dest,
+    const absl::optional<url::Origin>& initiator) {
+ 
+  std::map<std::string, std::string> headers;
+  if (!IsUrlPotentiallyTrustworthy(target_url))
+    return headers;
+ 
+  // Other requests default to `kSameOrigin`, and walk through the request's URL
+  // chain to calculate the correct value.
+  auto header_value = SecFetchSiteValue::kSameOrigin;
+  if (!initiator.has_value()) {
+    header_value = SecFetchSiteValue::kNoOrigin;
+  } else {
+    header_value = std::max(header_value, GetHeaderValueForTargetAndInitiator(
+                                            target_url, initiator.value()));
+  }
+ 
+  headers[kSecFetchSite] = GetSecFetchSiteHeaderString(header_value);
+ 
+  headers[kSecFetchMode] = RequestModeToString(mode);
+ 
+  if (has_user_activation)
+    headers[kSecFetchUser] = "?1";
+ 
+  std::string destination_value = dest == mojom::RequestDestination::kEmpty
+                                 ? "empty"
+                                 : RequestDestinationToString(dest);
+  headers[kSecFetchDest] = destination_value;
+  return headers;
+}
+#endif
+
 void SetFetchMetadataHeaders(
     net::URLRequest* request,
     network::mojom::RequestMode mode,

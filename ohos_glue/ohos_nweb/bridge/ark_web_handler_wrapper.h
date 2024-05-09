@@ -600,6 +600,11 @@ public:
    */
   void ReleaseResizeHold() override;
 
+  void OnShowAutofillPopup(const float offsetX, const float offsetY,
+                           const std::vector<std::string> &menu_items) override;
+
+  void OnHideAutofillPopup() override;
+
   /**
    * @brief Called when select a word.
    *
@@ -614,12 +619,6 @@ public:
   bool OnOpenAppLink(
       const std::string &url,
       std::shared_ptr<OHOS::NWeb::NWebAppLinkCallback> callback) override;
-
-  void OnShowAutofillPopup(const float offsetX, const float offsetY,
-                           const std::vector<std::string> &menu_items) override;
-
-  void OnHideAutofillPopup() override;
-
 
   /**
    * @brief called when the render process  not responding.

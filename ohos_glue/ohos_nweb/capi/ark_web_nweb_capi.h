@@ -509,6 +509,9 @@ typedef struct _ark_web_nweb_t {
   void(ARK_WEB_CALLBACK *suggestion_selected)(struct _ark_web_nweb_t *self,
                                               int32_t index);
 
+  void(ARK_WEB_CALLBACK *send_touchpad_fling_event)(struct _ark_web_nweb_t *self,
+                                                    double x, double y, double vx, double vy);
+
   void(ARK_WEB_CALLBACK *register_ark_jsfunction2)(
       struct _ark_web_nweb_t *self, const ArkWebString *object_name,
       const ArkWebStringVector *method_list,

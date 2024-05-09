@@ -954,6 +954,14 @@ bool NWebImpl::SendKeyEvent(int32_t keyCode, int32_t keyAction) {
   return input_handler_->SendKeyEvent(keyCode, keyAction);
 }
 
+void NWebImpl::SendTouchpadFlingEvent(double x, double y, double vx, double vy) {
+  if (input_handler_ == nullptr) {
+    return;
+  }
+
+  input_handler_->SendTouchpadFlingEvent(x, y, vx, vy);
+}
+
 void NWebImpl::SendMouseWheelEvent(double x,
                                    double y,
                                    double deltaX,

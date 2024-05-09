@@ -803,6 +803,15 @@ bool NWebDelegate::SendKeyEvent(int32_t keyCode, int32_t keyAction) {
   return retVal;
 }
 
+void NWebDelegate::SendTouchpadFlingEvent(double x, double y, double vx, double vy) {
+  if (event_handler_ != nullptr) {
+    event_handler_->SendTouchpadFlingEvent(x / default_virtual_pixel_ratio_,
+                                           y / default_virtual_pixel_ratio_,
+                                           vx / default_virtual_pixel_ratio_,
+                                           vy / default_virtual_pixel_ratio_);
+  }
+}
+
 void NWebDelegate::SendMouseWheelEvent(double x,
                                        double y,
                                        double deltaX,

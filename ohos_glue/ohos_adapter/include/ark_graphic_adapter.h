@@ -36,6 +36,9 @@ public:
 
   /*--ark web()--*/
   virtual void SetFramePreferredRate(int32_t preferredRate) = 0;
+
+  /*--ark web()--*/
+  virtual void SetOnVsyncCallback(void (*callback)()) = 0;
 };
 
 /*--ark web(source=web core)--*/

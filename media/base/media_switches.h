@@ -328,6 +328,10 @@ MEDIA_EXPORT BASE_DECLARE_FEATURE(kUsePooledSharedImageVideoProvider);
 MEDIA_EXPORT BASE_DECLARE_FEATURE(kUseRealColorSpaceForAndroidVideo);
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if defined(OHOS_MEDIA)
+MEDIA_EXPORT BASE_DECLARE_FEATURE(kCanPlayHls);
+#endif
+
 #if BUILDFLAG(ENABLE_HLS_DEMUXER)
 // The feature |kHlsPlayer| enables the use of Android's builtin media-player
 // based HLS implementation, which chrome currently relies on when playing

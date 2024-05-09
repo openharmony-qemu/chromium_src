@@ -1051,6 +1051,10 @@ BASE_FEATURE(kUseRealColorSpaceForAndroidVideo,
 
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if defined(OHOS_MEDIA)
+BASE_FEATURE(kCanPlayHls, "CanPlayHls", base::FEATURE_ENABLED_BY_DEFAULT);
+#endif
+
 #if BUILDFLAG(ENABLE_HLS_DEMUXER)
 BASE_FEATURE(kBuiltInHlsPlayer,
              "BuiltInHlsPlayer",

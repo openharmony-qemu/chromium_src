@@ -72,6 +72,9 @@ ExternalBeginFrameSourceOHOS::ExternalBeginFrameSourceOHOS(
   LOG(INFO) << "ExternalBeginFrameSourceOHOS constructor!!!";
   user_data_ = std::make_unique<VSyncUserData>(
       base::SingleThreadTaskRunner::GetCurrentDefault(), weak_factory_.GetWeakPtr());
+#if BUILDFLAG(IS_OHOS)
+  vsync_adapter_.SetOnVsyncCallback(ExternalBeginFrameSourceOHOS::OnVSyncCallback);
+#endif
 }
 
 void ExternalBeginFrameSourceOHOS::SendInternalBeginFrame() {
@@ -110,9 +113,6 @@ void ExternalBeginFrameSourceOHOS::OnVSync(int64_t timestamp, void* data) {
     LOG(ERROR) << "OnVSync data current is nullptr";
     return;
   }
-#if BUILDFLAG(IS_OHOS)
-  base::ohos::DynamicFrameLossMonitor::GetInstance().OnVsync();
-#endif
   userData->current_->PostTask(
       FROM_HERE, base::BindOnce(&ExternalBeginFrameSourceOHOS::OnVSyncImpl,
                                 userData->weak_ptr_, timestamp, userData));
@@ -183,7 +183,7 @@ base::ohos::SlidingObserver::GetInstance().SetVsyncPeriod(vsync_period_);
 
   vsync_adapter_.RequestVsync(user_data_.release(),
                                ExternalBeginFrameSourceOHOS::OnVSync);
-  if (update_vsync_frequency_ && 
+  if (update_vsync_frequency_ &&
       vsync_frequency_to_update_ != cur_vsync_frequency) {
     vsync_frequency_to_reset_ = cur_vsync_frequency;
     TRACE_EVENT1("viz", "ExternalBeginFrameSourceOHOS::OnVSyncImpl::UpdateVSyncFrequency", "VSyncFrequency",
@@ -231,5 +231,10 @@ void ExternalBeginFrameSourceOHOS::UpdateVSyncFrequency(int frame_rate) {
 void ExternalBeginFrameSourceOHOS::ResetVSyncFrequency() {
   reset_vsync_frequency_ = true;
   update_vsync_frequency_ = false;
+}
+
+void ExternalBeginFrameSourceOHOS::OnVSyncCallback()
+{
+  base::ohos::DynamicFrameLossMonitor::GetInstance().OnVsync();
 }
 }  // namespace viz

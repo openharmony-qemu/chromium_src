@@ -904,6 +904,10 @@ void ArkWebNWebImpl::SuggestionSelected(int32_t index) {
   nweb_nweb_->SuggestionSelected(index);
 }
 
+void ArkWebNWebImpl::SendTouchpadFlingEvent(double x, double y, double vx, double vy) {
+  nweb_nweb_->SendTouchpadFlingEvent(x, y, vx, vy);
+}
+
 void ArkWebNWebImpl::RegisterArkJSfunction(
     const ArkWebString &object_name, const ArkWebStringVector &method_list,
     const ArkWebStringVector &async_method_list, const int32_t object_id) {

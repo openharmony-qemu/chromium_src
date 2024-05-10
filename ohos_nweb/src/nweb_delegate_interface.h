@@ -138,6 +138,7 @@ class NWebDelegateInterface
   virtual void OnTouchCancel() = 0;
   virtual void OnTouchCancelById(int32_t id, double x, double y, bool from_overlay) = 0;
   virtual bool SendKeyEvent(int32_t keyCode, int32_t keyAction) = 0;
+  virtual void SendTouchpadFlingEvent(double x, double y, double vx, double vy) = 0;
   virtual void SendMouseWheelEvent(double x,
                                    double y,
                                    double deltaX,

@@ -104,6 +104,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void OnTouchCancel() override;
   void OnTouchCancelById(int32_t id, double x, double y, bool from_overlay) override;
   bool SendKeyEvent(int32_t keyCode, int32_t keyAction) override;
+  void SendTouchpadFlingEvent(double x, double y, double vx, double vy) override;
   void SendMouseWheelEvent(double x,
                            double y,
                            double deltaX,

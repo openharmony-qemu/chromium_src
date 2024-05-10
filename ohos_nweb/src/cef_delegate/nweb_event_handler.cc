@@ -235,6 +235,21 @@ bool NWebEventHandler::SendKeyEvent(int32_t keyCode, int32_t keyAction) {
   return true;
 }
 
+void NWebEventHandler::SendTouchpadFlingEvent(double x, double y, double vx, double vy) {
+  CefMouseEvent mouseEvent;
+  mouseEvent.x = x;
+  mouseEvent.y = y;
+  mouseEvent.modifiers = input_delegate_.GetModifiers();
+
+#if defined(OHOS_INPUT_EVENTS)
+  if (!browser_ || !browser_->GetHost()) {
+    return;
+  }
+
+  browser_->GetHost()->SendTouchpadFlingEvent(mouseEvent, vx, vy);
+#endif  // defined(OHOS_INPUT_EVENTS)
+}
+
 void NWebEventHandler::SendMouseWheelEvent(double x,
                                            double y,
                                            double deltaX,

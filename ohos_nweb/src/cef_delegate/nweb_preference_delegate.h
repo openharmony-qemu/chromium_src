@@ -19,6 +19,9 @@
 #include <tuple>
 
 #include "cef/include/cef_browser.h"
+#if defined(OHOS_JSPROXY)
+#include "ohos_nweb/include/nweb.h"
+#endif
 #include "ohos_nweb/include/nweb_preference.h"
 
 namespace OHOS::NWeb {
@@ -169,6 +172,13 @@ class NWebPreferenceDelegate : public NWebPreference {
 #endif
   void SetNativeVideoPlayerConfig(bool enable, bool shouldOverlay) override;
 
+#if defined(OHOS_JSPROXY)
+  void PutJavaScriptOnDocumentStart(const ScriptItems& scriptItems);
+  ScriptItems GetJavaScriptOnDocumentStart();
+  void PutJavaScriptOnDocumentEnd(const ScriptItems& scriptItems);
+  ScriptItems GetJavaScriptOnDocumentEnd();
+#endif
+
  private:
   CefRefPtr<CefBrowser> browser_ = nullptr;
 
@@ -248,6 +258,10 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if defined(OHOS_MEDIA_POLICY)
   bool audio_exclusive_{true};
   int32_t resume_interval_{0};
+#endif
+#if defined(OHOS_JSPROXY)
+  ScriptItems script_items_start_{};
+  ScriptItems script_items_end_{};
 #endif
 };
 }  // namespace OHOS::NWeb

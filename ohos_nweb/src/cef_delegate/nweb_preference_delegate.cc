@@ -778,4 +778,22 @@ int32_t NWebPreferenceDelegate::GetAudioResumeInterval() {
   return resume_interval_;
 }
 #endif
+
+#if defined(OHOS_JSPROXY)
+void NWebPreferenceDelegate::PutJavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
+  script_items_start_ = scriptItems;
+}
+
+ScriptItems NWebPreferenceDelegate::GetJavaScriptOnDocumentStart() {
+  return script_items_start_;
+}
+
+void NWebPreferenceDelegate::PutJavaScriptOnDocumentEnd(const ScriptItems& scriptItems) {
+  script_items_end_ = scriptItems;
+}
+
+ScriptItems NWebPreferenceDelegate::GetJavaScriptOnDocumentEnd() {
+  return script_items_end_;
+}
+#endif
 }  // namespace OHOS::NWeb

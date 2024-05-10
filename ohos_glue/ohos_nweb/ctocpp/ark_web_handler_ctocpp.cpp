@@ -1290,6 +1290,18 @@ void ArkWebHandlerCToCpp::UpdateClippedSelectionBounds(int x, int y, int w,
   _struct->update_clipped_selection_bounds(_struct, x, y, w, h);
 }
 
+void ArkWebHandlerCToCpp::OnViewportFitChange(int viewportFit) {
+  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
+
+  ark_web_handler_t* _struct = GetStruct();
+  ARK_WEB_CTOCPP_CHECK_PARAM(_struct, );
+
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, on_viewport_fit_change, );
+
+  // Execute
+  _struct->on_viewport_fit_change(_struct, viewportFit);
+}
+
 ARK_WEB_NO_SANITIZE
 bool ArkWebHandlerCToCpp::OnOpenAppLink(
     const ArkWebString &url, ArkWebRefPtr<ArkWebAppLinkCallback> callback) {

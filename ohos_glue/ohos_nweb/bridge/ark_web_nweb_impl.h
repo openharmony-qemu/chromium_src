@@ -1120,6 +1120,12 @@ public:
    * @brief Get select info.
    */
   ArkWebString GetSelectInfo() override;
+
+  /**
+   * @brief Notify that safe insets change.
+   *
+   */
+  void OnSafeInsetsChange(int left, int top, int right, int bottom) override;
 private:
   std::shared_ptr<OHOS::NWeb::NWeb> nweb_nweb_;
 };

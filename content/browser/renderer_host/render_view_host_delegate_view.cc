@@ -52,4 +52,11 @@ void RenderViewHostDelegateView::GestureEventAck(
     const blink::WebGestureEvent& event,
     blink::mojom::InputEventResultState ack_result) {}
 
+#ifdef OHOS_DISPLAY_CUTOUT
+void RenderViewHostDelegateView::OnSafeInsetsChange(int left,
+                                                    int top,
+                                                    int right,
+                                                    int bottom) {}
+#endif
+
 }  //  namespace content

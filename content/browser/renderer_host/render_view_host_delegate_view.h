@@ -157,6 +157,10 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
   virtual ui::OverscrollRefreshHandler* GetOverscrollRefreshHandler() const;
 #endif
 
+#ifdef OHOS_DISPLAY_CUTOUT
+  virtual void OnSafeInsetsChange(int left, int top, int right, int bottom);
+#endif
+
  protected:
   virtual ~RenderViewHostDelegateView() {}
 };

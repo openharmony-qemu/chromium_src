@@ -107,6 +107,8 @@ void SetRuntimeFeatureDefaultsForPlatform(
     // Display Cutout is limited to Android P+.
     WebRuntimeFeatures::EnableDisplayCutoutAPI(true);
   }
+#elif defined(OHOS_DISPLAY_CUTOUT) && BUILDFLAG(IS_OHOS)
+  WebRuntimeFeatures::EnableDisplayCutoutAPI(true);
 #endif
 
 #if BUILDFLAG(IS_ANDROID)

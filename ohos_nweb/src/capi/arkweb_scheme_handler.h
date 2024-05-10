@@ -325,6 +325,16 @@ void OH_ArkWebResourceRequest_GetHttpBodyStream(const ArkWeb_ResourceRequest* re
 void OH_ArkWebResourceRequest_DestroyHttpBodyStream(ArkWeb_HttpBodyStream* httpBodyStream);
 
 /*
+ * @brief Get the resource type of request.
+ * @param resourceRequest The ArkWeb_ResourceRequest.
+ * @return The resource type of request. -1 if resourceRequest is invalid.
+ *
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 12
+ */
+int32_t OH_ArkWebResourceRequest_GetResourceType(const ArkWeb_ResourceRequest* resourceRequest);
+
+/*
  * @brief Set a user data to ArkWeb_HttpBodyStream.
  * @param httpBodyStream The ArkWeb_HttpBodyStream.
  * @param userData The user data to set.

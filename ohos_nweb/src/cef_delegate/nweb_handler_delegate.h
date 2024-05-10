@@ -686,6 +686,11 @@ class NWebHandlerDelegate : public CefClient,
   void OnRenderProcessResponding(CefRefPtr<CefBrowser> browser) override;
 #endif
 
+#ifdef OHOS_DISPLAY_CUTOUT
+  void OnViewportFitChange(CefRefPtr<CefBrowser> browser,
+                           int viewport_fit) override;
+#endif
+
  private:
   void CopyImageToClipboard(CefRefPtr<CefImage> image);
   // List of existing browser windows. Only accessed on the CEF UI thread.

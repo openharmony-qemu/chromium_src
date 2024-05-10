@@ -445,6 +445,10 @@ class NWebDelegateInterface
   virtual void SetIsRichText(bool is_rich_text) = 0;
   virtual std::string GetSelectInfo() = 0;
 #endif
+
+#ifdef OHOS_DISPLAY_CUTOUT
+  virtual void OnSafeInsetsChange(int left, int top, int right, int bottom) = 0;
+#endif
 };
 }  // namespace OHOS::NWeb
 

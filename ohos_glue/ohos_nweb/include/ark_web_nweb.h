@@ -1288,6 +1288,13 @@ public:
    */
   /*--ark web()--*/
   virtual ArkWebString GetSelectInfo() = 0;
+
+  /**
+   * @brief Notify that safe insets change.
+   *
+   */
+  /*--ark web()--*/
+  virtual void OnSafeInsetsChange(int left, int top, int right, int bottom) = 0;
 };
 
 } // namespace OHOS::ArkWeb

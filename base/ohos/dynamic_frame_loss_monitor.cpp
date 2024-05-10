@@ -63,10 +63,12 @@ void DynamicFrameLossMonitor::OnVsync()
   if (!is_monitoring_) {
     return;
   }
+
   ++total_app_frames_;
   if (!received_first_frame_) {
     return;
   }
+
   if (cached_buffer_number_ <= 0) {
     // frame loss occurs
     ++total_app_missed_frames_;
@@ -107,7 +109,7 @@ void DynamicFrameLossMonitor::OnSwapBuffer()
 int64_t DynamicFrameLossMonitor::GetCurrentTimestampMS() {
   auto currentTime = std::chrono::system_clock::now().time_since_epoch();
   return std::chrono::duration_cast<std::chrono::microseconds>(currentTime)
-      .count();
+      .count() / kMicrosecondsPerMillisecond;
 }
 
 void DynamicFrameLossMonitor::Report()
@@ -120,7 +122,7 @@ void DynamicFrameLossMonitor::Report()
     FROM_HERE,
     {base::TaskPriority::LOWEST},
     base::BindOnce(&ReportSlideJankStats, start_time_, stop_time_ - start_time_, total_app_frames_,
-      total_app_missed_frames_, max_app_frametime_ / kMicrosecondsPerMillisecond, max_app_seq_missed_frames_)
+      total_app_missed_frames_, max_app_frametime_, max_app_seq_missed_frames_)
   );
 #endif
 }

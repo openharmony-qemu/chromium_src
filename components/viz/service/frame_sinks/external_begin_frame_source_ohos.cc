@@ -139,7 +139,10 @@ void ExternalBeginFrameSourceOHOS::OnVSyncImpl(int64_t timestamp,
       }
     }
   }
-  int64_t cur_vsync_frequency = (VSYNC_TIME_FOR_CALCULATION - 1) / vsync_period_ + 1;
+  int64_t cur_vsync_frequency = 0;
+  if (vsync_period_ != 0) {
+    cur_vsync_frequency = (VSYNC_TIME_FOR_CALCULATION - 1) / vsync_period_ + 1;
+  }
   if (lower_frame_rate_enabled_) {
     vsync_period_ = vsync_period_ * 2;
   }

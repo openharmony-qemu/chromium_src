@@ -140,6 +140,13 @@ bool NWebInputHandler::SendKeyEvent(int32_t keyCode, int32_t keyAction) {
   return nweb_delegate_->SendKeyEvent(keyCode, keyAction);
 }
 
+void NWebInputHandler::SendTouchpadFlingEvent(double x, double y, double vx, double vy) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->SendTouchpadFlingEvent(x, y, vx, vy);
+}
+
 void NWebInputHandler::SendMouseWheelEvent(double x,
                                            double y,
                                            double deltaX,

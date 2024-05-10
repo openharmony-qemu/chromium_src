@@ -1763,6 +1763,20 @@ ark_web_nweb_suggestion_selected(struct _ark_web_nweb_t *self, int32_t index) {
   ArkWebNWebCppToC::Get(self)->SuggestionSelected(index);
 }
 
+void ARK_WEB_CALLBACK ark_web_nweb_send_touchpad_fling_event(struct _ark_web_nweb_t *self,
+                                                             double x, double y, double vx, double vy) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->SendTouchpadFlingEvent(
+      x,
+      y,
+      vx,
+      vy);
+}
+
 void ARK_WEB_CALLBACK ark_web_nweb_register_ark_jsfunction2(
     struct _ark_web_nweb_t *self, const ArkWebString *object_name,
     const ArkWebStringVector *method_list,
@@ -1988,6 +2002,7 @@ ArkWebNWebCppToC::ArkWebNWebCppToC() {
   GetStruct()->inject_offline_resource = ark_web_nweb_inject_offline_resource;
   GetStruct()->terminate_render_process = ark_web_nweb_terminate_render_process;
   GetStruct()->suggestion_selected = ark_web_nweb_suggestion_selected;
+  GetStruct()->send_touchpad_fling_event = ark_web_nweb_send_touchpad_fling_event;
   GetStruct()->register_ark_jsfunction2 = ark_web_nweb_register_ark_jsfunction2;
   GetStruct()->set_fit_content_mode = ark_web_nweb_set_fit_content_mode;
   GetStruct()->get_select_info = ark_web_nweb_get_select_info;

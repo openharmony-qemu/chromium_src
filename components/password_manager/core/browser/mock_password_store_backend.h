@@ -93,8 +93,7 @@ class MockPasswordStoreBackend : public PasswordStoreBackend {
               (syncer::SyncService*),
               (override));
 #if defined(OHOS_UNITTESTS)
-  MOCK_METHOD(void,
-              LoginsResultOrError,
+  MOCK_METHOD(LoginsResultOrError,
               FillMatchingLogins,
               (bool include_psl,
               const std::vector<PasswordFormDigest>& forms),

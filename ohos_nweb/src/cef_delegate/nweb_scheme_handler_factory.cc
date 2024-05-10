@@ -94,6 +94,10 @@ CefRefPtr<CefResourceHandler> NWebSchemeHandlerFactory::Create(
       LOG(DEBUG) << "scheme handler from ets should from UI thread";
       return nullptr;
     }
+    if (!scheme_handler_for_sw_->fromEts && !CEF_CURRENTLY_ON_IOT()) {
+      LOG(DEBUG) << "scheme handler not from ets should from IO thread";
+      return nullptr;
+    }
     ArkWeb_ResourceRequest* resource_request =
         new ArkWeb_ResourceRequest(request);
     if (scheme_handler_for_sw_->fromEts) {
@@ -125,6 +129,11 @@ CefRefPtr<CefResourceHandler> NWebSchemeHandlerFactory::Create(
   }
   if (handler->fromEts && !CEF_CURRENTLY_ON_UIT()) {
     LOG(DEBUG) << "scheme handler from ets should from UI thread";
+    return nullptr;
+  }
+
+  if (!handler->fromEts && !CEF_CURRENTLY_ON_IOT()) {
+    LOG(DEBUG) << "scheme handler not from ets should from IO thread";
     return nullptr;
   }
   ArkWeb_ResourceRequest* resource_request =

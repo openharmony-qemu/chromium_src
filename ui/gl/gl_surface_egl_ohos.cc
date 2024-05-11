@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "ui/gl/gl_surface_egl_ohos.h"
+#include "base/ohos/sys_info_utils.h"
 #include "base/threading/platform_thread.h"
 #include "base/trace_event/trace_event.h"
 #include "content/public/common/content_switches.h"
@@ -66,6 +67,14 @@ bool NativeViewGLSurfaceEGLOhos::Resize(const gfx::Size& size,
                                         const gfx::ColorSpace& color_space,
                                         bool has_alpha) {
   TRACE_EVENT0("gpu", "NativeViewGLSurfaceEGLOhos::Resize");
+
+  if (base::ohos::IsMobileDevice()) {
+    NativeViewGLSurfaceEGL::Resize(size, scale_factor, color_space, has_alpha);
+    OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .GetWindowAdapterInstance()
+        .NativeWindowSurfaceCleanCache(reinterpret_cast<void*>(window_));
+  }
+
   int32_t ret =
       OHOS::NWeb::OhosAdapterHelper::GetInstance()
           .GetWindowAdapterInstance()

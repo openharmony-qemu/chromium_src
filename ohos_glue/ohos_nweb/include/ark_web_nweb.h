@@ -1306,6 +1306,12 @@ public:
    */
   /*--ark web()--*/
   virtual void OnSafeInsetsChange(int left, int top, int right, int bottom) = 0;
+
+  /**
+    * @brief Online Render process switch to foreground.
+   */
+  /*--ark web()--*/
+  virtual void OnOnlineRenderToForeground() = 0;
 };
 
 } // namespace OHOS::ArkWeb

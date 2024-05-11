@@ -59,6 +59,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
             );
   void OnWindowShow() override;
   void OnWindowHide() override;
+  void OnOnlineRenderToForeground() override;
   bool IsReady() override;
   void OnDestroy(bool is_close_all) override;
   void RegisterWebAppClientExtensionListener(

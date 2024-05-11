@@ -64,6 +64,7 @@ class NWebDelegateInterface
    virtual ~NWebDelegateInterface() = default;
   virtual void OnWindowShow() = 0;
   virtual void OnWindowHide() = 0;
+  virtual void OnOnlineRenderToForeground() = 0;
   virtual bool IsReady() = 0;
   virtual void OnDestroy(bool is_close_all) = 0;
   virtual void RegisterDownLoadListener(

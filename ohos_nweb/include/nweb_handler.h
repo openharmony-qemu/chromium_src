@@ -272,6 +272,12 @@ public:
     virtual std::shared_ptr<NWebGestureEventResult> GetResult() = 0;
 };
 
+enum class ViewportFit {
+  AUTO,
+  CONTAIN,
+  COVER,
+};
+
 class OHOS_NWEB_EXPORT NWebHandler {
 public:
     NWebHandler() = default;
@@ -689,7 +695,7 @@ public:
      */
     virtual void OnFirstContentfulPaint(int64_t navigationStartTick,
                                         int64_t firstContentfulPaintMs) {}
-    
+
     /**
      * @brief Called when the first meaningful paint rendering of web page.
      * @param details represents the details of first meaningful paint.
@@ -838,7 +844,7 @@ public:
       const float offsetX,
       const float offsetY,
       const std::vector<std::string>& menu_items) {}
-    
+
     virtual void OnHideAutofillPopup() {}
 
     /**
@@ -878,6 +884,13 @@ public:
      */
 
     virtual void OnRenderProcessResponding() {}
+
+  /**
+   * @brief Called when the viewport-fit meta is detected for web page.
+   *
+   * @param viewport_fit The type of the viewport-fit.
+   */
+  virtual void OnViewportFitChange(ViewportFit viewportFit) {}
 };
 }  // namespace OHOS::NWeb
 

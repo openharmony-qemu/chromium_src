@@ -378,6 +378,10 @@ typedef struct _ark_web_handler_t {
 
   void(ARK_WEB_CALLBACK *on_render_process_responding)(
       struct _ark_web_handler_t *self);
+
+  void(ARK_WEB_CALLBACK* on_viewport_fit_change)(
+      struct _ark_web_handler_t* self,
+      int viewport_fit);
 } ark_web_handler_t;
 
 #ifdef __cplusplus

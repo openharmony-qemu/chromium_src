@@ -273,6 +273,8 @@ public:
 
 
   void OnRenderProcessResponding() override;
+
+  void OnViewportFitChange(int viewport_fit) override;
 };
 
 } // namespace OHOS::ArkWeb

@@ -2365,6 +2365,16 @@ source_set("browser") {
     ]
   }
 
+  #ifdef OHOS_DISPLAY_CUTOUT
+  if (is_ohos && defined(ohos_display_cutout) && ohos_display_cutout) {
+    sources += [
+      "display_cutout/display_cutout_host_ohos.cc",
+      "display_cutout/display_cutout_host_ohos.h",
+    ]
+  }
+
+  #endif // #ifdef OHOS_DISPLAY_CUTOUT
+
   if (is_linux || is_chromeos) {
     sources += [
       "child_process_launcher_helper_linux.cc",

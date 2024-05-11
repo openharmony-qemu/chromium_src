@@ -925,4 +925,11 @@ ArkWebString ArkWebNWebImpl::GetSelectInfo() {
   return ArkWebStringClassToStruct(nweb_nweb_->GetSelectInfo());
 }
 
+void ArkWebNWebImpl::OnSafeInsetsChange(int left,
+                                        int top,
+                                        int right,
+                                        int bottom) {
+  nweb_nweb_->OnSafeInsetsChange(left, top, right, bottom);
+}
+
 } // namespace OHOS::ArkWeb

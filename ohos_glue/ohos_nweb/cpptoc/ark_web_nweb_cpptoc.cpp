@@ -1816,6 +1816,20 @@ ArkWebString ARK_WEB_CALLBACK ark_web_nweb_get_select_info(
   return ArkWebNWebCppToC::Get(self)->GetSelectInfo();
 }
 
+void ARK_WEB_CALLBACK
+ark_web_nweb_on_safe_insets_change(struct _ark_web_nweb_t* self,
+                                   int left,
+                                   int top,
+                                   int right,
+                                   int bottom) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->OnSafeInsetsChange(left, top, right, bottom);
+}
+
 } // namespace
 
 ArkWebNWebCppToC::ArkWebNWebCppToC() {
@@ -2006,6 +2020,7 @@ ArkWebNWebCppToC::ArkWebNWebCppToC() {
   GetStruct()->register_ark_jsfunction2 = ark_web_nweb_register_ark_jsfunction2;
   GetStruct()->set_fit_content_mode = ark_web_nweb_set_fit_content_mode;
   GetStruct()->get_select_info = ark_web_nweb_get_select_info;
+  GetStruct()->on_safe_insets_change = ark_web_nweb_on_safe_insets_change;
 }
 
 ArkWebNWebCppToC::~ArkWebNWebCppToC() {

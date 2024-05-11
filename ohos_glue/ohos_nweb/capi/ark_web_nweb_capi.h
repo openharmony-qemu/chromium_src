@@ -521,6 +521,12 @@ typedef struct _ark_web_nweb_t {
                                         int32_t mode);
 
   ArkWebString(ARK_WEB_CALLBACK *get_select_info)(struct _ark_web_nweb_t *self);
+
+  void(ARK_WEB_CALLBACK* on_safe_insets_change)(struct _ark_web_nweb_t* self,
+                                                int left,
+                                                int top,
+                                                int right,
+                                                int bottom);
 } ark_web_nweb_t;
 
 #ifdef __cplusplus

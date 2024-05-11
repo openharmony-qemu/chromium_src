@@ -3119,6 +3119,16 @@ bool NWebHandlerDelegate::OnTooltip(CefRefPtr<CefBrowser> browser, CefString& te
   return false;
 }
 
+#ifdef OHOS_DISPLAY_CUTOUT
+void NWebHandlerDelegate::OnViewportFitChange(CefRefPtr<CefBrowser> browser,
+                                              int viewport_fit) {
+  if (nweb_handler_ != nullptr) {
+    ViewportFit viewport_fit_type = static_cast<ViewportFit>(viewport_fit);
+    nweb_handler_->OnViewportFitChange(viewport_fit_type);
+  }
+}
+#endif
+
 void NWebHandlerDelegate::SetNWebId(uint32_t nwebId) {
   nweb_id_ = nwebId;
 }

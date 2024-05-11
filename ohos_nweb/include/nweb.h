@@ -1151,7 +1151,7 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      * @param vx      vertical velocity in physical pixel.
     */
     virtual void ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) = 0;
-    
+
     /**
      * @brief Render process switch to background.
      */
@@ -1166,7 +1166,7 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
 
     /**
      * @brief Compile javascript and generate code cache.
-     * 
+     *
      * @param url url of javascript.
      * @param script javascript text content.
      * @param cacheOptions compile options and info.
@@ -1228,7 +1228,6 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
     */
     /*--ark web()--*/
     virtual bool TerminateRenderProcess() = 0;
-    
    /**
      * Get value of Autofill index.
      * @param index index value.
@@ -1270,6 +1269,15 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      *
     */
     virtual std::string GetSelectInfo() = 0;
+
+    /**
+     * @brief Notify that safe insets change.
+     *
+     */
+    virtual void OnSafeInsetsChange(int left,
+                                    int top,
+                                    int right,
+                                    int bottom) = 0;
 };
 }  // namespace OHOS::NWeb
 

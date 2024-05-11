@@ -228,6 +228,10 @@
 #include "content/public/browser/custom_media_player_listener.h"
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+#ifdef OHOS_DISPLAY_CUTOUT
+#include "content/browser/display_cutout/display_cutout_host_ohos.h"
+#endif
+
 namespace content {
 
 namespace {
@@ -1053,6 +1057,8 @@ WebContentsImpl::WebContentsImpl(BrowserContext* browser_context)
 
 #if BUILDFLAG(IS_ANDROID)
   display_cutout_host_impl_ = std::make_unique<DisplayCutoutHostImpl>(this);
+#elif defined(OHOS_DISPLAY_CUTOUT)
+  display_cutout_host_impl_ = std::make_unique<DisplayCutoutHostOhos>(this);
 #endif
 
 #if BUILDFLAG(IS_OHOS)
@@ -2075,7 +2081,7 @@ bool WebContentsImpl::IsFullAccessibilityModeForTesting() {
   return accessibility_mode_ == ui::kAXModeComplete;
 }
 
-#if BUILDFLAG(IS_ANDROID)
+#if defined(OHOS_DISPLAY_CUTOUT) || BUILDFLAG(IS_ANDROID)
 
 void WebContentsImpl::SetDisplayCutoutSafeArea(gfx::Insets insets) {
   OPTIONAL_TRACE_EVENT0("content", "WebContentsImpl::SetDisplayCutoutSafeArea");
@@ -3127,7 +3133,7 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences() {
     prefs.viewport_meta_enabled = true;
 #endif
   GetContentClient()->browser()->OverrideWebkitPrefs(this, &prefs);
-  
+
   return prefs;
 }
 

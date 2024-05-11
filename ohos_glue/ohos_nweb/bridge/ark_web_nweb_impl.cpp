@@ -846,6 +846,10 @@ void ArkWebNWebImpl::OnRenderToForeground() {
   nweb_nweb_->OnRenderToForeground();
 }
 
+void ArkWebNWebImpl::OnOnlineRenderToForeground() {
+  nweb_nweb_->OnOnlineRenderToForeground();
+}
+
 void ArkWebNWebImpl::PrecompileJavaScript(
     const ArkWebString &url, const ArkWebString &script,
     ArkWebRefPtr<ArkWebCacheOptions> &cacheOptions,

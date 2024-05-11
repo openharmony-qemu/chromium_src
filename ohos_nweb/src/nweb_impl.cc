@@ -583,6 +583,11 @@ void NWebImpl::OnDestroy() {
 #endif
 
   bool is_close_all = (--g_nweb_count) == 0 ? true : false;
+  WVLOG_D("NWebImpl::OnDestroy, nweb_id = %{public}u, number = %{public}u", nweb_id_, g_nweb_count);
+  if (is_close_all) {
+    OHOS::NWeb::OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetFrameRateLinkerEnable(false);
+  }
+
   if (nweb_delegate_ != nullptr) {
     nweb_delegate_->OnDestroy(is_close_all);
     nweb_delegate_ = nullptr;
@@ -1932,6 +1937,16 @@ void NWebImpl::OnRenderToForeground() {
   nweb_delegate_->OnWindowShow();
 }
 
+void NWebImpl::OnOnlineRenderToForeground() {
+  TRACE_EVENT0("base", "OnOnlineRenderToForeground");
+  WVLOG_D("NWebImpl::OnOnlineRenderToForeground");
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("OnOnlineRenderToForeground nweb delegate is null");
+    return;
+  }
+  nweb_delegate_->OnOnlineRenderToForeground();
+}
+
 #if BUILDFLAG(IS_OHOS)
 void NWebImpl::SetWindowId(uint32_t window_id) {
   if (nweb_delegate_ == nullptr) {
@@ -2211,7 +2226,7 @@ void NWebImpl::PasswordSuggestionSelected(int list_index) const {
 
   nweb_delegate_->PasswordSuggestionSelected(list_index);
 }
-#endif 
+#endif
 
 #if defined(OHOS_EX_FORCE_ZOOM)
 void NWebImpl::SetForceEnableZoom(bool forceEnableZoom) const {

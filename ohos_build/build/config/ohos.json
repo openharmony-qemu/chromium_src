@@ -182,6 +182,14 @@
 "dependence": "",
 "default": "true"
 },
+{   "name": "OHOS_DISPLAY_CUTOUT",
+    "owner": "",
+    "desc": "",
+    "effect":"main gn blink_core other",
+    "genCommandline": "",
+    "dependence": "",
+    "default": "true"
+},
 { "name": "OHOS_DOWNLOAD",
 "owner": "wanghui wanghao wangjing",
 "desc": "",

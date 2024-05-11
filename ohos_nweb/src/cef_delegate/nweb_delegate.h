@@ -443,6 +443,10 @@ void PrecompileJavaScript(const std::string& url,
   std::string GetSelectInfo() override;
 #endif
 
+#ifdef OHOS_DISPLAY_CUTOUT
+  void OnSafeInsetsChange(int left, int top, int right, int bottom) override;
+#endif
+
  public:
   int argc_;
   const char** argv_;

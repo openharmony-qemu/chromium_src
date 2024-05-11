@@ -2860,3 +2860,20 @@ void NWebImpl::SuggestionSelected(int index) {
 
   nweb_delegate_->SuggestionSelected(index);
 }
+
+#ifdef OHOS_DISPLAY_CUTOUT
+void NWebImpl::OnSafeInsetsChange(int left, int top, int right, int bottom) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E(
+        "OnSafeInsetsChange failed, nweb delegate is nullptr, nweb_id = "
+        "%{public}u",
+        nweb_id_);
+    return;
+  }
+  WVLOG_I(
+      "OnSafeInsetsChange nweb_id:%{public}u "
+      "%{public}d,%{public}d,%{public}d,%{public}d",
+      nweb_id_, left, top, right, bottom);
+  nweb_delegate_->OnSafeInsetsChange(left, top, right, bottom);
+}
+#endif

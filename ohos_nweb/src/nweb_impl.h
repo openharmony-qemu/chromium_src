@@ -453,6 +453,10 @@ class NWebImpl : public NWeb {
   static RenderProcessMode GetRenderProcessMode();
 #endif
 
+#ifdef OHOS_DISPLAY_CUTOUT
+  void OnSafeInsetsChange(int left, int top, int right, int bottom) override;
+#endif
+
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

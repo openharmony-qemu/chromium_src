@@ -1137,6 +1137,12 @@ public:
    *
    */
   void OnSafeInsetsChange(int left, int top, int right, int bottom) override;
+
+  /**
+    * @brief Render process switch to foreground.
+   */
+  /*--ark web()--*/
+  void OnOnlineRenderToForeground() override;
 private:
   std::shared_ptr<OHOS::NWeb::NWeb> nweb_nweb_;
 };

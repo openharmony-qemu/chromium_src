@@ -1357,6 +1357,15 @@ void NWebDelegate::OnWindowHide() {
   GetBrowser()->GetHost()->OnWindowHide();
 }
 
+void NWebDelegate::OnOnlineRenderToForeground() {
+  TRACE_EVENT0("base", "NWebDelegate::OnOnlineRenderToForeground");
+  LOG(DEBUG) << "NWebDelegate::OnOnlineRenderToForeground";
+  if (!GetBrowser().get()) {
+    return;
+  }
+  GetBrowser()->GetHost()->OnOnlineRenderToForeground();
+}
+
 void NWebDelegate::OnContinue() {
   LOG(DEBUG) << "NWebDelegate::OnContinue, nweb_id = " << nweb_id_;
   if (!GetBrowser().get()) {

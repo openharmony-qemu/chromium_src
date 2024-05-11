@@ -266,6 +266,8 @@ class NWebImpl : public NWeb {
   void CloseCamera() override;
   void OnRenderToBackground() override;
   void OnRenderToForeground() override;
+
+  void OnOnlineRenderToForeground() override;
 #ifdef OHOS_DRAG_DROP
   std::shared_ptr<NWebDragData> GetOrCreateDragData() override;
 #endif // #ifdef OHOS_DRAG_DROP

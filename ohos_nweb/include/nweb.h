@@ -1278,6 +1278,12 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
                                     int top,
                                     int right,
                                     int bottom) = 0;
+
+    /**
+    * @brief Render process switch to foreground.
+     */
+    /*--ark web()--*/
+    virtual void OnOnlineRenderToForeground() = 0;
 };
 }  // namespace OHOS::NWeb
 

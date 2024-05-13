@@ -1179,7 +1179,7 @@ LayerImpl* InputHandler::GetLayerImpl(const gfx::Point& viewport_point) {
   gfx::PointF device_viewport_point =
           gfx::ScalePoint(gfx::PointF(viewport_point),
                           compositor_delegate_->DeviceScaleFactor());
-  return ActiveTree().FindLayerThatIsHitByPoint(device_viewport_point);
+  return ActiveTree().FindLayerThatIsHitByPointNative(device_viewport_point);
 }
 #endif
 

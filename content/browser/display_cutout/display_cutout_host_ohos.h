@@ -52,7 +52,8 @@ class DisplayCutoutHostOhos : public blink::mojom::DisplayCutoutHost {
  private:
   // Set the current |RenderFrameHost| that should have control over the
   // viewport fit value and we should set safe area insets on.
-  void SetCurrentRenderFrameHost(RenderFrameHost* rfh);
+  void SetCurrentRenderFrameHost(RenderFrameHost* rfh,
+                                 blink::mojom::ViewportFit value);
 
   // Send the safe area insets to a |RenderFrameHost|.
   void SendSafeAreaToFrame(RenderFrameHost* rfh, gfx::Insets insets);
@@ -66,7 +67,6 @@ class DisplayCutoutHostOhos : public blink::mojom::DisplayCutoutHost {
   // browser side driven fullscreen mode, not just renderer side requested
   // frames.
   base::WeakPtr<RenderFrameHostImpl> current_rfh_;
-  blink::mojom::ViewportFit current_viewport_fit_;
 
   // Holds WebContents associated mojo receivers.
   RenderFrameHostReceiverSet<blink::mojom::DisplayCutoutHost> receivers_;

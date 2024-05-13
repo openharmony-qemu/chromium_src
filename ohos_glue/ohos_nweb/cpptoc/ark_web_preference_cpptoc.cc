@@ -876,21 +876,6 @@ ark_web_preference_get_native_embed_mode(struct _ark_web_preference_t *self) {
   return ArkWebPreferenceCppToC::Get(self)->GetNativeEmbedMode();
 }
 
-void ARK_WEB_CALLBACK ark_web_preference_register_native_embed_rule(
-    struct _ark_web_preference_t *self, const ArkWebString *tag,
-    const ArkWebString *type) {
-  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
-
-  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
-
-  ARK_WEB_CPPTOC_CHECK_PARAM(tag, );
-
-  ARK_WEB_CPPTOC_CHECK_PARAM(type, );
-
-  // Execute
-  ArkWebPreferenceCppToC::Get(self)->RegisterNativeEmbedRule(*tag, *type);
-}
-
 void ARK_WEB_CALLBACK ark_web_preference_set_scrollable(
     struct _ark_web_preference_t *self, bool enable) {
   ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
@@ -911,6 +896,32 @@ ark_web_preference_get_scrollable(struct _ark_web_preference_t *self) {
   return ArkWebPreferenceCppToC::Get(self)->GetScrollable();
 }
 
+void ARK_WEB_CALLBACK ark_web_preference_register_native_embed_rule(
+    struct _ark_web_preference_t *self, const ArkWebString *tag,
+    const ArkWebString *type) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(tag, );
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(type, );
+
+  // Execute
+  ArkWebPreferenceCppToC::Get(self)->RegisterNativeEmbedRule(*tag, *type);
+}
+
+void ARK_WEB_CALLBACK ark_web_preference_set_native_video_player_config(
+    struct _ark_web_preference_t *self, bool enable, bool shouldOverlay) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebPreferenceCppToC::Get(self)->SetNativeVideoPlayerConfig(enable,
+                                                                shouldOverlay);
+}
+
 void ARK_WEB_CALLBACK ark_web_preference_put_text_autosizing_enabled(
     struct _ark_web_preference_t *self, bool flag) {
   ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
@@ -929,17 +940,6 @@ void ARK_WEB_CALLBACK ark_web_preference_set_viewport_enable(
 
   // Execute
   ArkWebPreferenceCppToC::Get(self)->SetViewportEnable(enable);
-}
-
-void ARK_WEB_CALLBACK ark_web_preference_set_native_video_player_config(
-    struct _ark_web_preference_t *self, bool enable, bool shouldOverlay) {
-  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
-
-  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
-
-  // Execute
-  ArkWebPreferenceCppToC::Get(self)->SetNativeVideoPlayerConfig(enable,
-                                                                shouldOverlay);
 }
 
 } // namespace
@@ -1086,15 +1086,15 @@ ArkWebPreferenceCppToC::ArkWebPreferenceCppToC() {
   GetStruct()->put_copy_option_mode = ark_web_preference_put_copy_option_mode;
   GetStruct()->set_native_embed_mode = ark_web_preference_set_native_embed_mode;
   GetStruct()->get_native_embed_mode = ark_web_preference_get_native_embed_mode;
-  GetStruct()->register_native_embed_rule =
-      ark_web_preference_register_native_embed_rule;
   GetStruct()->set_scrollable = ark_web_preference_set_scrollable;
   GetStruct()->get_scrollable = ark_web_preference_get_scrollable;
-  GetStruct()->put_text_autosizing_enabled = 
-      ark_web_preference_put_text_autosizing_enabled;
-  GetStruct()->set_viewport_enable = ark_web_preference_set_viewport_enable;
+  GetStruct()->register_native_embed_rule =
+      ark_web_preference_register_native_embed_rule;
   GetStruct()->set_native_video_player_config =
       ark_web_preference_set_native_video_player_config;
+  GetStruct()->set_viewport_enable = ark_web_preference_set_viewport_enable;
+  GetStruct()->put_text_autosizing_enabled = 
+      ark_web_preference_put_text_autosizing_enabled;
 }
 
 ArkWebPreferenceCppToC::~ArkWebPreferenceCppToC() {

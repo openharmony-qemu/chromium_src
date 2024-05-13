@@ -1475,6 +1475,85 @@ ark_web_nweb_get_print_background(struct _ark_web_nweb_t *self) {
   return ArkWebNWebCppToC::Get(self)->GetPrintBackground();
 }
 
+void ARK_WEB_CALLBACK ark_web_nweb_enable_intelligent_tracking_prevention(
+    struct _ark_web_nweb_t *self, bool enable) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->EnableIntelligentTrackingPrevention(enable);
+}
+
+bool ARK_WEB_CALLBACK ark_web_nweb_is_intelligent_tracking_prevention_enabled(
+    struct _ark_web_nweb_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, false);
+
+  // Execute
+  return ArkWebNWebCppToC::Get(self)->IsIntelligentTrackingPreventionEnabled();
+}
+
+ArkWebString ARK_WEB_CALLBACK
+ark_web_nweb_get_last_javascript_proxy_calling_frame_url(
+    struct _ark_web_nweb_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, ark_web_string_default);
+
+  // Execute
+  return ArkWebNWebCppToC::Get(self)->GetLastJavascriptProxyCallingFrameUrl();
+}
+
+bool ARK_WEB_CALLBACK
+ark_web_nweb_get_pending_size_status(struct _ark_web_nweb_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, false);
+
+  // Execute
+  return ArkWebNWebCppToC::Get(self)->GetPendingSizeStatus();
+}
+
+void ARK_WEB_CALLBACK
+ark_web_nweb_scroll_by_ref_screen(struct _ark_web_nweb_t *self, float delta_x,
+                                  float delta_y, float vx, float vy) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->ScrollByRefScreen(delta_x, delta_y, vx, vy);
+}
+
+void ARK_WEB_CALLBACK ark_web_nweb_start_camera(struct _ark_web_nweb_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->StartCamera();
+}
+
+void ARK_WEB_CALLBACK ark_web_nweb_stop_camera(struct _ark_web_nweb_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->StopCamera();
+}
+
+void ARK_WEB_CALLBACK ark_web_nweb_close_camera(struct _ark_web_nweb_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->CloseCamera();
+}
+
 void ARK_WEB_CALLBACK
 ark_web_nweb_close_all_media_presentations(struct _ark_web_nweb_t *self) {
   ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
@@ -1525,84 +1604,6 @@ ark_web_nweb_get_media_playback_state(struct _ark_web_nweb_t *self) {
   return ArkWebNWebCppToC::Get(self)->GetMediaPlaybackState();
 }
 
-void ARK_WEB_CALLBACK ark_web_nweb_enable_intelligent_tracking_prevention(
-    struct _ark_web_nweb_t *self, bool enable) {
-  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
-
-  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
-
-  // Execute
-  ArkWebNWebCppToC::Get(self)->EnableIntelligentTrackingPrevention(enable);
-}
-
-bool ARK_WEB_CALLBACK ark_web_nweb_is_intelligent_tracking_prevention_enabled(
-    struct _ark_web_nweb_t *self) {
-  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
-
-  ARK_WEB_CPPTOC_CHECK_PARAM(self, false);
-
-  // Execute
-  return ArkWebNWebCppToC::Get(self)->IsIntelligentTrackingPreventionEnabled();
-}
-
-void ARK_WEB_CALLBACK ark_web_nweb_start_camera(struct _ark_web_nweb_t *self) {
-  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
-
-  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
-
-  // Execute
-  ArkWebNWebCppToC::Get(self)->StartCamera();
-}
-
-void ARK_WEB_CALLBACK ark_web_nweb_stop_camera(struct _ark_web_nweb_t *self) {
-  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
-
-  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
-
-  // Execute
-  ArkWebNWebCppToC::Get(self)->StopCamera();
-}
-
-void ARK_WEB_CALLBACK ark_web_nweb_close_camera(struct _ark_web_nweb_t *self) {
-  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
-
-  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
-
-  // Execute
-  ArkWebNWebCppToC::Get(self)->CloseCamera();
-}
-
-ArkWebString ARK_WEB_CALLBACK
-ark_web_nweb_get_last_javascript_proxy_calling_frame_url(
-    struct _ark_web_nweb_t *self) {
-  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
-
-  ARK_WEB_CPPTOC_CHECK_PARAM(self, ark_web_string_default);
-
-  // Execute
-  return ArkWebNWebCppToC::Get(self)->GetLastJavascriptProxyCallingFrameUrl();
-}
-
-bool ARK_WEB_CALLBACK
-ark_web_nweb_get_pending_size_status(struct _ark_web_nweb_t *self) {
-  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
-
-  ARK_WEB_CPPTOC_CHECK_PARAM(self, false);
-
-  // Execute
-  return ArkWebNWebCppToC::Get(self)->GetPendingSizeStatus();
-}
-
-void ARK_WEB_CALLBACK
-ark_web_nweb_scroll_by_ref_screen(struct _ark_web_nweb_t *self, float delta_x,
-                                  float delta_y, float vx, float vy) {
-  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
-
-  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
-
-  // Execute
-  ArkWebNWebCppToC::Get(self)->ScrollByRefScreen(delta_x, delta_y, vx, vy);
-}
 
 void ARK_WEB_CALLBACK ark_web_nweb_execute_java_script_ext(
     struct _ark_web_nweb_t *self, const int fd, const size_t scriptLength,
@@ -1615,6 +1616,18 @@ void ARK_WEB_CALLBACK ark_web_nweb_execute_java_script_ext(
   ArkWebNWebCppToC::Get(self)->ExecuteJavaScriptExt(
       fd, scriptLength, ArkWebMessageValueCallbackCToCpp::Invert(callback),
       extention);
+}
+
+void ARK_WEB_CALLBACK ark_web_nweb_on_create_native_media_player(
+    struct _ark_web_nweb_t *self,
+    ark_web_create_native_media_player_callback_t *callback) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->OnCreateNativeMediaPlayer(
+      ArkWebCreateNativeMediaPlayerCallbackCToCpp::Invert(callback));
 }
 
 void ARK_WEB_CALLBACK
@@ -1673,18 +1686,6 @@ void ARK_WEB_CALLBACK ark_web_nweb_precompile_java_script(
       *cacheOptions = nullptr;
     }
   }
-}
-
-void ARK_WEB_CALLBACK ark_web_nweb_on_create_native_media_player(
-    struct _ark_web_nweb_t *self,
-    ark_web_create_native_media_player_callback_t *callback) {
-  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
-
-  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
-
-  // Execute
-  ArkWebNWebCppToC::Get(self)->OnCreateNativeMediaPlayer(
-      ArkWebCreateNativeMediaPlayerCallbackCToCpp::Invert(callback));
 }
 
 void ARK_WEB_CALLBACK ark_web_nweb_drag_resize(struct _ark_web_nweb_t *self, uint32_t width,
@@ -1886,29 +1887,31 @@ ArkWebNWebCppToC::ArkWebNWebCppToC() {
   GetStruct()->is_safe_browsing_enabled = ark_web_nweb_is_safe_browsing_enabled;
   GetStruct()->set_print_background = ark_web_nweb_set_print_background;
   GetStruct()->get_print_background = ark_web_nweb_get_print_background;
+  
+  GetStruct()->enable_intelligent_tracking_prevention =
+      ark_web_nweb_enable_intelligent_tracking_prevention;
+  GetStruct()->is_intelligent_tracking_prevention_enabled =
+      ark_web_nweb_is_intelligent_tracking_prevention_enabled;
+  GetStruct()->get_last_javascript_proxy_calling_frame_url =
+      ark_web_nweb_get_last_javascript_proxy_calling_frame_url;
+  GetStruct()->get_pending_size_status = ark_web_nweb_get_pending_size_status;
+  GetStruct()->scroll_by_ref_screen = ark_web_nweb_scroll_by_ref_screen;
+  GetStruct()->start_camera = ark_web_nweb_start_camera;
+  GetStruct()->stop_camera = ark_web_nweb_stop_camera;
+  GetStruct()->close_camera = ark_web_nweb_close_camera;
   GetStruct()->close_all_media_presentations =
       ark_web_nweb_close_all_media_presentations;
   GetStruct()->stop_all_media = ark_web_nweb_stop_all_media;
   GetStruct()->resume_all_media = ark_web_nweb_resume_all_media;
   GetStruct()->pause_all_media = ark_web_nweb_pause_all_media;
   GetStruct()->get_media_playback_state = ark_web_nweb_get_media_playback_state;
-  GetStruct()->enable_intelligent_tracking_prevention =
-      ark_web_nweb_enable_intelligent_tracking_prevention;
-  GetStruct()->is_intelligent_tracking_prevention_enabled =
-      ark_web_nweb_is_intelligent_tracking_prevention_enabled;
-  GetStruct()->start_camera = ark_web_nweb_start_camera;
-  GetStruct()->stop_camera = ark_web_nweb_stop_camera;
-  GetStruct()->close_camera = ark_web_nweb_close_camera;
-  GetStruct()->get_last_javascript_proxy_calling_frame_url =
-      ark_web_nweb_get_last_javascript_proxy_calling_frame_url;
-  GetStruct()->get_pending_size_status = ark_web_nweb_get_pending_size_status;
-  GetStruct()->scroll_by_ref_screen = ark_web_nweb_scroll_by_ref_screen;
   GetStruct()->execute_java_script_ext = ark_web_nweb_execute_java_script_ext;
+  GetStruct()->on_create_native_media_player =
+      ark_web_nweb_on_create_native_media_player;
   GetStruct()->on_render_to_background = ark_web_nweb_on_render_to_background;
   GetStruct()->on_render_to_foreground = ark_web_nweb_on_render_to_foreground;
   GetStruct()->precompile_java_script = ark_web_nweb_precompile_java_script;
-  GetStruct()->on_create_native_media_player =
-      ark_web_nweb_on_create_native_media_player;
+  
   GetStruct()->ark_web_nweb_drag_resize = ark_web_nweb_drag_resize;
   GetStruct()->on_touch_cancel_by_id = ark_web_nweb_on_touch_cancel_by_id;
   GetStruct()->scale_gesture_change = ark_web_nweb_scale_gesture_change;

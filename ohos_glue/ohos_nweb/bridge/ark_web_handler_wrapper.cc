@@ -782,6 +782,18 @@ void ArkWebHandlerWrapper::OnSafeBrowsingCheckResult(int threat_type) {
   ark_web_handler_->OnSafeBrowsingCheckResult(threat_type);
 }
 
+void ArkWebHandlerWrapper::OnIntelligentTrackingPreventionResult(
+      const std::string &website_host, const std::string &tracker_host) {
+  ArkWebString stWebsiteHost = ArkWebStringClassToStruct(website_host);
+  ArkWebString stTrackerHost = ArkWebStringClassToStruct(tracker_host);
+
+  ark_web_handler_->OnIntelligentTrackingPreventionResult(
+      stWebsiteHost, stTrackerHost);
+
+  ArkWebStringStructRelease(stWebsiteHost);
+  ArkWebStringStructRelease(stTrackerHost);
+}
+
 void ArkWebHandlerWrapper::OnFullScreenEnterWithVideoSize(
     std::shared_ptr<OHOS::NWeb::NWebFullScreenExitHandler> handler,
     int video_natural_width, int video_natural_height) {
@@ -806,16 +818,8 @@ bool ArkWebHandlerWrapper::OnHandleOverrideUrlLoading(
       new ArkWebUrlResourceRequestImpl(request));
 }
 
-void ArkWebHandlerWrapper::OnIntelligentTrackingPreventionResult(
-    const std::string &website_host, const std::string &tracker_host) {
-  ArkWebString stWebsiteHost = ArkWebStringClassToStruct(website_host);
-  ArkWebString stTrackerHost = ArkWebStringClassToStruct(tracker_host);
-
-  ark_web_handler_->OnIntelligentTrackingPreventionResult(stWebsiteHost,
-                                                          stTrackerHost);
-
-  ArkWebStringStructRelease(stWebsiteHost);
-  ArkWebStringStructRelease(stTrackerHost);
+void ArkWebHandlerWrapper::ReleaseResizeHold() {
+  ark_web_handler_->ReleaseResizeHold();
 }
 
 void ArkWebHandlerWrapper::OnFirstMeaningfulPaint(
@@ -864,10 +868,6 @@ void ArkWebHandlerWrapper::OnTooltip(const std::string& tooltip) {
   ark_web_handler_->OnTooltip(stTooltip);
 
   ArkWebStringStructRelease(stTooltip);
-}
-
-void ArkWebHandlerWrapper::ReleaseResizeHold() {
-  ark_web_handler_->ReleaseResizeHold();
 }
 
 std::vector<int8_t> ArkWebHandlerWrapper::GetWordSelection(

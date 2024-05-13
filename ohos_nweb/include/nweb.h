@@ -886,21 +886,6 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
     virtual void SetNestedScrollMode(const NestedScrollMode& nestedScrollMode) = 0;
 
     /**
-     * Set enable lower the frame rate.
-     */
-    virtual void SetEnableLowerFrameRate(bool enabled) = 0;
-
-    /**
-     * Set the property values for width, height, and keyboard height.
-     */
-    virtual void SetVirtualKeyBoardArg(int32_t width, int32_t height, double keyboard) = 0;
-
-    /**
-     * Set the virtual keyboard to override the web status.
-     */
-    virtual bool ShouldVirtualKeyboardOverlay() = 0;
-
-    /**
      * Set draw rect.
      *
     */
@@ -932,11 +917,26 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
                         const std::vector<char>& postData) = 0;
 
     /**
+     * Set the property values for width, height, and keyboard height.
+     */
+    virtual void SetVirtualKeyBoardArg(int32_t width, int32_t height, double keyboard) = 0;
+
+    /**
+     * Set the virtual keyboard to override the web status.
+     */
+    virtual bool ShouldVirtualKeyboardOverlay() = 0;
+
+    /**
      * Inject the JavaScript before WebView load the DOM tree.
      */
     virtual void JavaScriptOnDocumentStart(const ScriptItems& scriptItems) = 0;
 
     /**
+     * Set enable lower the frame rate.
+     */
+    virtual void SetEnableLowerFrameRate(bool enabled) = 0;
+
+	/**
      * Execute an accessibility action on an accessibility node in the browser.
      * @param accessibilityId The id of the accessibility node.
      * @param action The action to be performed on the accessibility node.
@@ -984,26 +984,8 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      * @return true if need soft keyboard, otherwise false.
      */
     virtual bool NeedSoftKeyboard() = 0;
-
-    /**
-     * Discard the webview window.
-     * @return true if the discarding success, otherwise false.
-     */
-    virtual bool Discard() = 0;
-
-    /**
-     * Reload the webview window that has been discarded before.
-     * @return true if the discarded window reload success, otherwise false.
-     */
-    virtual bool Restore() = 0;
-
-    /**
-     * Get the security level of current page.
-     * @return security level for current page.
-     */
-    virtual int GetSecurityLevel() = 0;
-
-    /**
+	
+	/**
      * CallH5Function
      *
      * @param routing_id       int32_t: the h5 frmae routing id
@@ -1051,6 +1033,18 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
     virtual void JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) = 0;
 
     /**
+     * Discard the webview window.
+     * @return true if the discarding success, otherwise false.
+     */
+    virtual bool Discard() = 0;
+
+    /**
+     * Reload the webview window that has been discarded before.
+     * @return true if the discarded window reload success, otherwise false.
+     */
+    virtual bool Restore() = 0;
+
+    /**
      * Enable the ability to check website security risks.
      * Illegal and fraudulent websites are mandatory enabled and cann't be disabled by this function.
      */
@@ -1063,6 +1057,12 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
     virtual bool IsSafeBrowsingEnabled() = 0;
 
     /**
+     * Get the security level of current page.
+     * @return security level for current page.
+     */
+    virtual int GetSecurityLevel() = 0;
+
+    /*
      * Set the ability to print web page background.
      * @param enable Indicate whether the ability is enabled or disabled.
      */
@@ -1073,6 +1073,58 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      * @return true if enable print web page background, otherwise false.
      */
     virtual bool GetPrintBackground() = 0;
+
+    /**
+     * Enable the ability to intelligent tracking prevention, default disabled.
+     */
+    virtual void EnableIntelligentTrackingPrevention(bool enable) = 0;
+
+    /**
+     * Get whether intelligent tracking prevention is enabled.
+     * @return true if enable the ability intelligent tracking prevention; else false.
+     */
+    virtual bool IsIntelligentTrackingPreventionEnabled() const = 0;
+
+    /**
+     * @brief Obtains the last javascript proxy calling frame url.
+     *
+     * @return the url of last calling frame url.
+     */
+    /*--ark web()--*/
+    virtual std::string GetLastJavascriptProxyCallingFrameUrl() = 0;
+
+    /**
+     * @brief get pendingsize status.
+     *
+     * @return the result of last pendingsize status.
+     */
+    /*--ark web()--*/
+    virtual bool GetPendingSizeStatus() = 0;
+
+    /**
+     * Scroll by the delta distance or velocity takes the screen as a reference.
+     *
+     * @param delta_x horizontal offset in physical pixel.
+     * @param delta_y vertical offset in physical pixel.
+     * @param vx      horizontal velocity in physical pixel.
+     * @param vx      vertical velocity in physical pixel.
+    */
+    virtual void ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) = 0;
+
+    /**
+     * Start current camera.
+     */
+    virtual void StartCamera() = 0;
+
+    /**
+     * Stop current camera.
+     */
+    virtual void StopCamera() = 0;
+
+    /**
+     * Close current camera.
+     */
+    virtual void CloseCamera() = 0;
 
     /**
      * Close picture-in-picture video and fullScreen video.
@@ -1100,58 +1152,7 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      */
     virtual int GetMediaPlaybackState() = 0;
 
-    /**
-     * Enable the ability to intelligent tracking prevention, default disabled.
-     */
-    virtual void EnableIntelligentTrackingPrevention(bool enable) = 0;
-
-    /**
-     * Get whether intelligent tracking prevention is enabled.
-     * @return true if enable the ability intelligent tracking prevention; else false.
-     */
-    virtual bool IsIntelligentTrackingPreventionEnabled() const = 0;
-
-    /**
-     * Start current camera.
-     */
-    virtual void StartCamera() = 0;
-
-    /**
-     * Stop current camera.
-     */
-    virtual void StopCamera() = 0;
-
-    /**
-     * Close current camera.
-     */
-    virtual void CloseCamera() = 0;
-
-    /**
-     * @brief Obtains the last javascript proxy calling frame url.
-     *
-     * @return the url of last calling frame url.
-     */
-    /*--ark web()--*/
-    virtual std::string GetLastJavascriptProxyCallingFrameUrl() = 0;
-
-    /**
-     * @brief get pendingsize status.
-     *
-     * @return the result of last pendingsize status.
-     */
-    /*--ark web()--*/
-    virtual bool GetPendingSizeStatus() = 0;
-
-    /**
-     * Scroll by the delta distance or velocity takes the screen as a reference.
-     *
-     * @param delta_x horizontal offset in physical pixel.
-     * @param delta_y vertical offset in physical pixel.
-     * @param vx      horizontal velocity in physical pixel.
-     * @param vx      vertical velocity in physical pixel.
-    */
-    virtual void ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) = 0;
-    
+    virtual void OnCreateNativeMediaPlayer(std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) = 0;
     /**
      * @brief Render process switch to background.
      */
@@ -1177,8 +1178,6 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
         const std::string& script,
         std::shared_ptr<CacheOptions>& cacheOptions,
         std::shared_ptr<NWebMessageValueCallback> callback) = 0;
-
-    virtual void OnCreateNativeMediaPlayer(std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) = 0;
 
     /**
      * @brief Web drag resize optimize.

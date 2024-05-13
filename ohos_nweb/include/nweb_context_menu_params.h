@@ -119,6 +119,9 @@ public:
 
     virtual int32_t GetEditStateFlags() = 0;
 
+    virtual std::shared_ptr<NWebTouchHandleState> GetTouchHandleState(
+        NWebTouchHandleState::TouchHandleType type) = 0;
+
     virtual int32_t GetSelectX() = 0;
 
     virtual int32_t GetSelectY() = 0;
@@ -127,8 +130,6 @@ public:
 
     virtual int32_t GetSelectXHeight() = 0;
 
-    virtual std::shared_ptr<NWebTouchHandleState> GetTouchHandleState(
-        NWebTouchHandleState::TouchHandleType type) = 0;
 };
 
 enum MenuEventFlags {

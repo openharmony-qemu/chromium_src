@@ -240,6 +240,8 @@ public:
   bool OnHandleOverrideUrlLoading(
       ArkWebRefPtr<ArkWebUrlResourceRequest> request) override;
 
+  void ReleaseResizeHold() override;
+
   void OnFirstMeaningfulPaint(
       ArkWebRefPtr<ArkWebFirstMeaningfulPaintDetails> details) override;
 
@@ -253,8 +255,6 @@ public:
                                 bool isMainFrame) override;
 
   void OnTooltip(const ArkWebString &tooltip) override;
-
-  void ReleaseResizeHold() override;
 
   ArkWebCharVector GetWordSelection(const ArkWebString &text, int8_t offset) override;
 

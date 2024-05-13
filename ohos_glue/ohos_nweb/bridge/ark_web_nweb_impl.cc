@@ -771,6 +771,38 @@ bool ArkWebNWebImpl::GetPrintBackground() {
   return nweb_nweb_->GetPrintBackground();
 }
 
+void ArkWebNWebImpl::EnableIntelligentTrackingPrevention(bool enable) {
+  nweb_nweb_->EnableIntelligentTrackingPrevention(enable);
+}
+
+bool ArkWebNWebImpl::IsIntelligentTrackingPreventionEnabled() {
+  return nweb_nweb_->IsIntelligentTrackingPreventionEnabled();
+}
+
+ArkWebString ArkWebNWebImpl::GetLastJavascriptProxyCallingFrameUrl() {
+  return ArkWebStringClassToStruct(nweb_nweb_->GetLastJavascriptProxyCallingFrameUrl());
+}
+
+bool ArkWebNWebImpl::GetPendingSizeStatus() {
+  return nweb_nweb_->GetPendingSizeStatus();
+}
+
+void ArkWebNWebImpl::ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) {
+  nweb_nweb_->ScrollByRefScreen(delta_x, delta_y, vx, vy);
+}
+
+void ArkWebNWebImpl::StartCamera() {
+  nweb_nweb_->StartCamera();
+}
+
+void ArkWebNWebImpl::StopCamera() {
+  nweb_nweb_->StopCamera();
+}
+
+void ArkWebNWebImpl::CloseCamera() {
+  nweb_nweb_->CloseCamera();
+}
+
 void ArkWebNWebImpl::CloseAllMediaPresentations() {
   nweb_nweb_->CloseAllMediaPresentations();
 }
@@ -791,40 +823,6 @@ int ArkWebNWebImpl::GetMediaPlaybackState() {
   return nweb_nweb_->GetMediaPlaybackState();
 }
 
-ArkWebString ArkWebNWebImpl::GetLastJavascriptProxyCallingFrameUrl() {
-  return ArkWebStringClassToStruct(
-      nweb_nweb_->GetLastJavascriptProxyCallingFrameUrl());
-}
-
-void ArkWebNWebImpl::EnableIntelligentTrackingPrevention(bool enable) {
-  nweb_nweb_->EnableIntelligentTrackingPrevention(enable);
-}
-
-bool ArkWebNWebImpl::IsIntelligentTrackingPreventionEnabled() {
-  return nweb_nweb_->IsIntelligentTrackingPreventionEnabled();
-}
-
-void ArkWebNWebImpl::StartCamera() {
-  nweb_nweb_->StartCamera();
-}
-
-void ArkWebNWebImpl::StopCamera() {
-  nweb_nweb_->StopCamera();
-}
-
-void ArkWebNWebImpl::CloseCamera() {
-  nweb_nweb_->CloseCamera();
-}
-
-bool ArkWebNWebImpl::GetPendingSizeStatus() {
-  return nweb_nweb_->GetPendingSizeStatus();
-}
-
-void ArkWebNWebImpl::ScrollByRefScreen(float delta_x, float delta_y, float vx,
-                                       float vy) {
-  nweb_nweb_->ScrollByRefScreen(delta_x, delta_y, vx, vy);
-}
-
 void ArkWebNWebImpl::ExecuteJavaScriptExt(
     const int fd, const size_t scriptLength,
     ArkWebRefPtr<ArkWebMessageValueCallback> callback, bool extention) {
@@ -837,6 +835,19 @@ void ArkWebNWebImpl::ExecuteJavaScriptExt(
       fd, scriptLength,
       std::make_shared<ArkWebMessageValueCallbackWrapper>(callback), extention);
 }
+
+
+void ArkWebNWebImpl::OnCreateNativeMediaPlayer(
+    ArkWebRefPtr<ArkWebCreateNativeMediaPlayerCallback> callback) {
+  if (CHECK_REF_PTR_IS_NULL(callback)) {
+    nweb_nweb_->OnCreateNativeMediaPlayer(nullptr);
+    return;
+  }
+
+  nweb_nweb_->OnCreateNativeMediaPlayer(
+      std::make_shared<ArkWebCreateNativeMediaPlayerCallbackWrapper>(callback));
+}
+
 
 void ArkWebNWebImpl::OnRenderToBackground() {
   nweb_nweb_->OnRenderToBackground();
@@ -855,17 +866,6 @@ void ArkWebNWebImpl::PrecompileJavaScript(
   nweb_nweb_->PrecompileJavaScript(
       ArkWebStringStructToClass(url), ArkWebStringStructToClass(script),
       options, std::make_shared<ArkWebMessageValueCallbackWrapper>(callback));
-}
-
-void ArkWebNWebImpl::OnCreateNativeMediaPlayer(
-    ArkWebRefPtr<ArkWebCreateNativeMediaPlayerCallback> callback) {
-  if (CHECK_REF_PTR_IS_NULL(callback)) {
-    nweb_nweb_->OnCreateNativeMediaPlayer(nullptr);
-    return;
-  }
-
-  nweb_nweb_->OnCreateNativeMediaPlayer(
-      std::make_shared<ArkWebCreateNativeMediaPlayerCallbackWrapper>(callback));
 }
 
 void ArkWebNWebImpl::DragResize(uint32_t width,

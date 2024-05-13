@@ -654,8 +654,10 @@ public:
    * as usual.
    */
   /*--ark web()--*/
-  virtual bool OnHandleOverrideUrlLoading(
-      ArkWebRefPtr<ArkWebUrlResourceRequest> request) = 0;
+  virtual bool OnHandleOverrideUrlLoading(ArkWebRefPtr<ArkWebUrlResourceRequest> request) = 0;
+
+  /*--ark web()--*/
+  virtual void ReleaseResizeHold() = 0;
 
   /*--ark web()--*/
   virtual void OnFirstMeaningfulPaint(
@@ -673,9 +675,6 @@ public:
 
   /*--ark web()--*/
   virtual void OnTooltip(const ArkWebString &tooltip) = 0;
-
-  /*--ark web()--*/
-  virtual void ReleaseResizeHold() = 0;
 
   /*--ark web()--*/
   virtual ArkWebCharVector GetWordSelection(const ArkWebString &text, int8_t offset) = 0;

@@ -531,6 +531,17 @@ public:
   void OnSafeBrowsingCheckResult(int threat_type) override;
 
   /**
+   * @brief Called when tacker's cookie is prevented.
+   *
+   * @param website_host The host of website url.
+   *
+   * @param tracker_host The host of tracker url.
+   */
+  void OnIntelligentTrackingPreventionResult(
+      const std::string &website_host,
+      const std::string &tracker_host) override;
+
+  /**
    * @brief called when the page enter the full-screen mode.
    *
    * @param handler to exit full-screen mode.
@@ -555,15 +566,10 @@ public:
       std::shared_ptr<OHOS::NWeb::NWebUrlResourceRequest> request) override;
 
   /**
-   * @brief Called when tacker's cookie is prevented.
+   * @brief called when resizehold is released.
    *
-   * @param website_host The host of website url.
-   *
-   * @param tracker_host The host of tracker url.
    */
-  void OnIntelligentTrackingPreventionResult(
-      const std::string &website_host,
-      const std::string &tracker_host) override;
+  void ReleaseResizeHold() override;
 
   /**
    * @brief Called when the first meaningful paint rendering of web page.
@@ -591,11 +597,6 @@ public:
 
   void OnTooltip(const std::string& tooltip) override;
 
-  /**
-   * @brief called when resizehold is released.
-   *
-   */
-  void ReleaseResizeHold() override;
 
   /**
    * @brief Called when select a word.

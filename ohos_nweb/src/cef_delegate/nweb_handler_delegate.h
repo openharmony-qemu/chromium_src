@@ -286,10 +286,12 @@ class NWebHandlerDelegate : public CefClient,
   void OnDataResubmission(CefRefPtr<CefBrowser> browser,
                           CefRefPtr<CefCallback> callback) override;
 
+  void OnSafeBrowsingCheckResult(int threat_type) override;
+
   void OnNavigationEntryCommitted(
       CefRefPtr<CefLoadCommittedDetails> details) override;
 
-  void OnSafeBrowsingCheckResult(int threat_type) override;
+
   /* CefLoadHandler methods end */
 
   /* CefRequestHandler methods begin */

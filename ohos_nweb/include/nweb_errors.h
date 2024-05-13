@@ -28,6 +28,12 @@ namespace OHOS::NWeb {
         NWEB_INVALID_ORIGIN = 17100011,
 
     };
+
+    enum NWebNavigationEntryUpdateResult {
+      UPDATE_OK = 0,
+      ERR_WRONG_OFFSET = -1,
+      ERR_OTHER = -2,
+    };
 }  // namespace OHOS::NWeb
 
 #endif  // NWEB_ERRORS_H

@@ -701,10 +701,10 @@ public:
   virtual bool GetScrollable() = 0;
 
   /**
-   * @brief Put whether enable horizontal scroll bar, default value is false.
+   * @brief Set native video player config.
    */
   /*--ark web()--*/
-  virtual void PutTextAutosizingEnabled(bool flag) = 0;
+  virtual void SetNativeVideoPlayerConfig(bool enable, bool shouldOverlay) = 0;
 
   /**
    * @brief Set whether to support the viewport attribute of the meta tag in the
@@ -714,10 +714,10 @@ public:
   virtual void SetViewportEnable(bool enable) = 0;
 
   /**
-   * @brief Set native video player config.
+   * @brief Put whether enable horizontal scroll bar, default value is false.
    */
   /*--ark web()--*/
-  virtual void SetNativeVideoPlayerConfig(bool enable, bool shouldOverlay) = 0;
+  virtual void PutTextAutosizingEnabled(bool flag) = 0;
 };
 
 } // namespace OHOS::ArkWeb

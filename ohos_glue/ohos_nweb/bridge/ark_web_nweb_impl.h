@@ -916,6 +916,65 @@ public:
   bool GetPrintBackground() override;
 
   /**
+   * @brief Enable the ability to intelligent tracking prevention, default
+   * disabled.
+   *
+   * @param enable Indicate whether the abilitiy is enabled or disabled.
+   */
+  void EnableIntelligentTrackingPrevention(bool enable) override;
+
+  /**
+   * @brief Get whether intelligent tracking prevention is enabled.
+   * @return true if enable the ability intelligent tracking prevention; else
+   * false.
+   */
+  bool IsIntelligentTrackingPreventionEnabled() override;
+
+  /**
+   * @brief Obtains the last javascript proxy calling frame url.
+   *
+   * @return the url of last calling frame url.
+   */
+  /*--ark web()--*/
+  ArkWebString GetLastJavascriptProxyCallingFrameUrl() override;
+
+  /**
+   * @brief get pendingsize status.
+   *
+   * @return the result of last pendingsize status.
+   */
+  bool GetPendingSizeStatus() override;
+
+  /**
+   * Scroll by the delta distance or velocity takes the screen as a reference.
+   *
+   * @param delta_x horizontal offset in physical pixel.
+   * @param delta_y vertical offset in physical pixel.
+   * @param vx      horizontal velocity in physical pixel.
+   * @param vx      vertical velocity in physical pixel.
+   */
+  /*--ark web()--*/
+  void ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) override;
+
+  /**
+   * @brief Start current camera.
+   */
+  /*--ark web()--*/
+  void StartCamera() override;
+
+  /**
+   * @brief Stop current camera.
+   */
+  /*--ark web()--*/
+  void StopCamera() override;
+
+  /**
+   * @brief Close current camera.
+   */
+  /*--ark web()--*/
+  void CloseCamera() override;
+
+  /**
    * @brief Close fullScreen video.
    */
   void CloseAllMediaPresentations() override;
@@ -943,66 +1002,6 @@ public:
   int GetMediaPlaybackState() override;
 
   /**
-   * @brief Obtains the last javascript proxy calling frame url.
-   *
-   * @return the url of last calling frame url.
-   */
-  /*--ark web()--*/
-  ArkWebString GetLastJavascriptProxyCallingFrameUrl() override;
-
-  /**
-   * @brief Enable the ability to intelligent tracking prevention, default
-   * disabled.
-   *
-   * @param enable Indicate whether the abilitiy is enabled or disabled.
-   */
-  void EnableIntelligentTrackingPrevention(bool enable) override;
-
-  /**
-   * @brief Get whether intelligent tracking prevention is enabled.
-   * @return true if enable the ability intelligent tracking prevention; else
-   * false.
-   */
-  bool IsIntelligentTrackingPreventionEnabled() override;
-
-  /**
-   * @brief Start current camera.
-   */
-  /*--ark web()--*/
-  void StartCamera() override;
-
-  /**
-   * @brief Stop current camera.
-   */
-  /*--ark web()--*/
-  void StopCamera() override;
-
-  /**
-   * @brief Close current camera.
-   */
-  /*--ark web()--*/
-  void CloseCamera() override;
-
-  /**
-   * @brief get pendingsize status.
-   *
-   * @return the result of last pendingsize status.
-   */
-  bool GetPendingSizeStatus() override;
-
-  /**
-   * Scroll by the delta distance or velocity takes the screen as a reference.
-   *
-   * @param delta_x horizontal offset in physical pixel.
-   * @param delta_y vertical offset in physical pixel.
-   * @param vx      horizontal velocity in physical pixel.
-   * @param vx      vertical velocity in physical pixel.
-   */
-  /*--ark web()--*/
-  void ScrollByRefScreen(float delta_x, float delta_y, float vx,
-                         float vy) override;
-
-  /**
    * ExecuteJavaScript with ashmem
    *
    * @param fd fd of the ashmem
@@ -1013,6 +1012,9 @@ public:
   void ExecuteJavaScriptExt(const int fd, const size_t scriptLength,
                             ArkWebRefPtr<ArkWebMessageValueCallback> callback,
                             bool extention) override;
+
+  void OnCreateNativeMediaPlayer(
+      ArkWebRefPtr<ArkWebCreateNativeMediaPlayerCallback> callback) override;
 
   /**
    * @brief Render process switch to background.
@@ -1040,8 +1042,6 @@ public:
       ArkWebRefPtr<ArkWebCacheOptions> &cacheOptions,
       ArkWebRefPtr<ArkWebMessageValueCallback> callback) override;
 
-  void OnCreateNativeMediaPlayer(
-      ArkWebRefPtr<ArkWebCreateNativeMediaPlayerCallback> callback) override;
 
    /**
    * @brief Web drag resize optimize.

@@ -552,7 +552,7 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
 
 #if defined(OHOS_SITE_ISOLATION)
   g_siteIsolationMode = ShouldEnableSiteIsolation();
-  OHOS::NWeb::ResSchedClientAdapter::ReportSiteIsolationMode(g_siteIsolationMode);
+  //OHOS::NWeb::ResSchedClientAdapter::ReportSiteIsolationMode(g_siteIsolationMode);
 #if defined(REPORT_SYS_EVENT)
   ReportSiteIsolationMode(std::to_string(g_siteIsolationMode));
 #endif

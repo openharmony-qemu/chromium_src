@@ -871,8 +871,10 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
   // microseconds towards -infinity.
   int64_t ToRoundedDownMillisecondsSinceUnixEpoch() const;
 
+#if BUILDFLAG(IS_OHOS)
   // Returns the UTC time string parsed from base::Time
   static std::string ToUTCString(const base::Time& time);
+#endif
 };
 
 // Factory methods that return a TimeDelta of the given unit.

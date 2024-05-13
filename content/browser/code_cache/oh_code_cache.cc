@@ -43,13 +43,6 @@ ResponseCacheMetadata::ResponseCacheMetadata(
 
   file_hash_ =
       std::to_string(disk_cache::simple_util::GetEntryHashKey(response_body));
-
-  LOG(DEBUG) << "New Response Cache Metadata. URL Hash: " << url_hash_.c_str()
-      << ", Content-Length: " << content_length_.c_str()
-      << ", E-Tag: " << e_tag_.c_str()
-      << ", Last-Modified: " << last_modified_.c_str()
-      << ", Access-Control-Allow-Origin: " << access_control_allow_origin_.c_str()
-      << ", File Hash: " << file_hash_.c_str();
 }
 
 std::string ResponseCacheMetadata::ToString() {
@@ -68,20 +61,19 @@ scoped_refptr<base::SingleThreadTaskRunner> TaskRunner::task_runner_ = nullptr;
 // static
 scoped_refptr<base::SingleThreadTaskRunner> TaskRunner::GetTaskRunner() {
   if (!task_runner_) {
-    LOG(DEBUG) << "Init Single Thread Task Runner For Precompile Javascript.";
     task_runner_ = base::ThreadPool::CreateSingleThreadTaskRunner(
         {base::MayBlock(), base::WithBaseSyncPrimitives(),
         base::TaskPriority::BEST_EFFORT},
         base::SingleThreadTaskRunnerThreadMode::DEDICATED);
   }
 
-  LOG(DEBUG) << "Use exist Single Thread Task Runner For Precompile Javascript.";
   return task_runner_;
 }
 
 // ResponseCache --------------------------------------------------
 
-std::unique_ptr<base::FilePath> ResponseCache::cache_dir_path_ = nullptr;
+std::unique_ptr<base::FilePath> ResponseCache::cache_dir_path_ = std::make_unique<base::FilePath>();
+std::map<std::string, std::shared_ptr<ResponseCacheMetadata>> ResponseCache::cache_metadata_map_ = {};
 
 // static
 void ResponseCache::InitCacheDirectory(base::FilePath path) {
@@ -91,21 +83,23 @@ void ResponseCache::InitCacheDirectory(base::FilePath path) {
   }
 
   cache_dir_path_ = std::make_unique<base::FilePath>(path);
-  LOG(ERROR) << "Response Cache directory init succefully.";
 }
 
 // static
 std::shared_ptr<ResponseCache> ResponseCache::CreateResponseCache(const std::string& url) {
   if (url.empty()) {
-    LOG(DEBUG) << "Create Response Cache error: url is empty. url: " << url.c_str();
+    return nullptr;
+  }
+
+  std::regex url_regex(R"(^http(s)?:\/\/.+\.js(\?.+)?$)", std::regex_constants::icase);
+  if (!std::regex_match(url, url_regex)) {
     return nullptr;
   }
 
   if (!cache_dir_path_ || cache_dir_path_->empty()) {
-    LOG(DEBUG) << "Create Response Cache error: cache dir path has not initialized. url: " << url.c_str();
     return nullptr;
   }
-  
+
   auto response_cache = std::make_shared<ResponseCache>(url);
   response_cache->url_hash_ = std::to_string(disk_cache::simple_util::GetEntryHashKey(url));
   base::FilePath file_path(kFileTag + response_cache->url_hash_);
@@ -113,14 +107,19 @@ std::shared_ptr<ResponseCache> ResponseCache::CreateResponseCache(const std::str
   response_cache->metadata_file_path_ = cache_dir_path_->Append(kCacheMetadataFileName);
   response_cache->metadata_out_ = std::make_shared<ResponseCacheMetadata>();
 
-  LOG(DEBUG) << "Create response cache successfully. url: " << url.c_str();
   return response_cache;
 }
 
 // static
 void ResponseCache::ClearAllCache() {
-  auto cache_dir_path = *(cache_dir_path_.get());
-  base::FileEnumerator enumerator(cache_dir_path, false, base::FileEnumerator::FILES);
+  auto cache_dir_path = cache_dir_path_.get();
+
+  if (!cache_dir_path || !base::PathExists(*cache_dir_path)) {
+    LOG(ERROR) << "Cannot clear response cache. cache directory path has not initialized";
+    return;
+  }
+
+  base::FileEnumerator enumerator(*cache_dir_path, false, base::FileEnumerator::FILES);
   for (auto name = enumerator.Next(); !name.empty(); name = enumerator.Next()) {
     base::FileEnumerator::FileInfo info = enumerator.GetInfo();
     auto file_name = name.BaseName().MaybeAsASCII();
@@ -130,49 +129,46 @@ void ResponseCache::ClearAllCache() {
     }
   }
 
-  LOG(ERROR) << "Delete All Response Cache.";
+  cache_metadata_map_.clear();
 }
 
 ResponseCache::ResponseCache(const std::string& url) : url_(url) {}
 
-bool ResponseCache::Write(const std::map<std::string, std::string> response_headers,
-                          const std::string response_body) {
+NextOp ResponseCache::Write(const std::map<std::string, std::string> response_headers,
+                            const std::string response_body) {
   metadata_in_ = std::make_shared<ResponseCacheMetadata>(url_, response_body, response_headers);
   response_body_in_ = response_body;
 
   if (!FindMetadata()) {
-    LOG(ERROR) << "Create response cache. url: " << url_.c_str();
     return DoCreate();
   }
 
   if (NeedUpdate()) {
-    LOG(ERROR) << "Update response cache. url: " << url_.c_str();
     return DoUpdate();
   }
 
-  LOG(ERROR) << "Response Cache is hot, no need to write again. url: " << url_.c_str();
-  return true;
+  return NextOp::DO_NOTHING;
 }
 
 bool ResponseCache::CanUseCache() {
   if (!FindMetadata()) {
-    LOG(ERROR) << "Cannot find response cache metadata. url: " << url_.c_str();
     return false;
   }
 
   if (!ReadContent()) {
-    LOG(ERROR) << "Cannot read response cache content. url: " << url_.c_str();
     return false;
   }
 
-  LOG(ERROR) << "Response cache can be used. url: " << url_.c_str();
   return true;
 }
 
 bool ResponseCache::CreateStream() {
+  if (!base::PathExists(metadata_file_path_)) {
+    return false;
+  }
+
   metadata_file_stream_ = std::make_shared<std::fstream>(metadata_file_path_.LossyDisplayName());
   if (!metadata_file_stream_) {
-    LOG(ERROR) << "Create response cache metadata file stream failed. url: " << url_.c_str();
     return false;
   }
 
@@ -180,32 +176,38 @@ bool ResponseCache::CreateStream() {
 }
 
 bool ResponseCache::FindMetadata() {
-  if (!CreateStream()) {
-    LOG(ERROR) << "Create response cache metadata file stream failed. url: " << url_.c_str();
-    return false;
-  }
-  
-  bool find_metadata = false;
-  while(ReadMetadata()) {
-    if (metadata_out_->url_hash_ == url_hash_) {
-      find_metadata = true;
-      break;
+  TRACE_EVENT1("net", "ResponseCache::FindMetadata", "url", url_);
+
+  if (cache_metadata_map_.empty()) {
+    if (!CreateStream()) {
+      return false;
     }
+
+    while(ReadMetadata()) {
+      cache_metadata_map_.emplace(metadata_out_->url_hash_, metadata_out_);
+    }
+
+    CloseStream();
   }
 
-  metadata_file_stream_->close();
-  metadata_file_stream_ = nullptr;
-  return find_metadata;
+  auto  it = cache_metadata_map_.find(url_hash_);
+
+  if (it == cache_metadata_map_.end()) {
+    return false;
+  }
+
+  metadata_out_ = it->second;
+  return true;
 }
 
 bool ResponseCache::ReadContent() {
+  TRACE_EVENT1("net", "ResponseCache::ReadContent", "url", url_);
+
   if (!base::PathExists(cache_file_path_)) {
-    LOG(ERROR) << "Response cache content file path is not exist. url: " << url_.c_str();
     return false;
   }
 
   if (!base::ReadFileToString(cache_file_path_, &response_body_out_)) {
-    LOG(ERROR) << "Read response cache content failed. url: " << url_.c_str();
     return false;
   }
 
@@ -213,8 +215,9 @@ bool ResponseCache::ReadContent() {
 }
 
 bool ResponseCache::ReadMetadata() {
+  TRACE_EVENT1("net", "ResponseCache::ReadContent", "url", url_);
+
   if (!metadata_file_stream_) {
-    LOG(ERROR) << "Response cache metadata file stream has not initialized. url: " << url_.c_str();
     return false;
   }
 
@@ -244,81 +247,63 @@ bool ResponseCache::ReadMetadata() {
 
 bool ResponseCache::NeedUpdate() {
   if (metadata_in_->content_length_ != metadata_out_->content_length_) {
-    LOG(ERROR) << "Response cache Content-Length changed. url: " << url_.c_str() <<
-      ". old: " << metadata_out_->content_length_ << 
-      ". new: " << metadata_in_->content_length_;
     return true;
   }
 
   if (metadata_in_->e_tag_ != metadata_out_->e_tag_) {
-    LOG(ERROR) << "Response cache E-Tag changed. url: " << url_.c_str() <<
-      ". old: " << metadata_out_->e_tag_ << 
-      ". new: " << metadata_in_->e_tag_;
     return true;
   }
 
   if (metadata_in_->last_modified_ != metadata_out_->last_modified_) {
-    LOG(ERROR) << "Response cache Last-Modified changed. url: " << url_.c_str() <<
-      ". old: " << metadata_out_->last_modified_ << 
-      ". new: " << metadata_in_->last_modified_;
     return true;
   }
 
   if (metadata_in_->access_control_allow_origin_ != metadata_out_->access_control_allow_origin_) {
-    LOG(ERROR) << "Response cache Access-Control-Allow-Origin changed. url: " << url_.c_str() <<
-      ". old: " << metadata_out_->access_control_allow_origin_ << 
-      ". new: " << metadata_in_->access_control_allow_origin_;
     return true;
   }
 
   if (metadata_in_->file_hash_ != metadata_out_->file_hash_) {
-    LOG(ERROR) << "Response cache File Hash changed. url: " << url_.c_str() <<
-      ". old: " << metadata_out_->file_hash_ << 
-      ". new: " << metadata_in_->file_hash_;
     return true;
   }
 
   return false;
 }
 
-bool ResponseCache::DoCreate() {
+NextOp ResponseCache::DoCreate() {
   if (!DoWriteIntoFile(metadata_file_path_, metadata_in_->ToString())) {
-    LOG(ERROR) << "Create new response cache failed. Reason: write metadata faild. url: " << url_.c_str();
-    return false;
+    LOG(ERROR) << "Create new response cache failed. Reason: write metadata faild.";
+    return NextOp::THROW_ERROR;
   }
 
   if (!DoWriteIntoFile(cache_file_path_, response_body_in_)) {
-    LOG(ERROR) << "Create new response cache failed. Reason: write content faild. url: " << url_.c_str();
-    return false;
+    LOG(ERROR) << "Create new response cache failed. Reason: write content faild.";
+    return NextOp::THROW_ERROR;
   }
 
-  LOG(ERROR) << "Create new response cache successfully. url: " << url_.c_str();
-  return true;
+  return NextOp::WRITE_CODE_CACHE;
 }
 
-bool ResponseCache::DoUpdate() {
+NextOp ResponseCache::DoUpdate() {
   if (!DoUpdateMetadata()) {
-    LOG(ERROR) << "Update response cache failed. Reason: update metadata faild. url: " << url_.c_str();
-    return false;
+    LOG(ERROR) << "Update response cache failed. Reason: update metadata faild.";
+    return NextOp::THROW_ERROR;
   }
 
   if (!DeleteCacheFile()) {
-    LOG(ERROR) << "Update response cache failed. Reason: delete old content faild. url: " << url_.c_str();
-    return false;
+    LOG(ERROR) << "Update response cache failed. Reason: delete old content faild.";
+    return NextOp::THROW_ERROR;
   }
 
   if (!DoWriteIntoFile(cache_file_path_, response_body_in_)) {
-    LOG(ERROR) << "Update response cache failed. Reason: write new content faild. url: " << url_.c_str();
-    return false;
+    LOG(ERROR) << "Update response cache failed. Reason: write new content faild.";
+    return NextOp::THROW_ERROR;
   }
 
-  LOG(ERROR) << "Update response cache successfully. url: " << url_.c_str();
-  return true;
+  return NextOp::WRITE_CODE_CACHE;
 }
 
 bool ResponseCache::DoUpdateMetadata() {
   if (!CreateStream()) {
-    LOG(ERROR) << "Update metadata failed, file stream has not initialized. url: " << url_.c_str();
     return false;
   }
 
@@ -328,7 +313,6 @@ bool ResponseCache::DoUpdateMetadata() {
   temp_file->Lock(base::File::LockMode::kExclusive);
 
   if (!temp_file->IsValid()) {
-    LOG(ERROR) << "Update metadata failed, create temp file failed. url: " << url_.c_str();
     return false;
   }
 
@@ -341,9 +325,12 @@ bool ResponseCache::DoUpdateMetadata() {
     }
 
     if (!temp_file->WriteAtCurrentPosAndCheck(base::as_bytes(base::make_span(wait_to_write->ToString())))) {
-      LOG(ERROR) << "Update metadata failed, write new metadata into temp file failed. url: " << url_.c_str();
       result = false;
       break;
+    }
+    
+    if (result) {
+      cache_metadata_map_[url_hash_] = metadata_in_;
     }
   }
 
@@ -356,7 +343,6 @@ bool ResponseCache::DoUpdateMetadata() {
 
   base::File::Error error;
   if (!base::ReplaceFile(temp_file_path, metadata_file_path_, &error)) {
-    LOG(ERROR) << "Update metadata failed, replace old metadata file with temp file failed. url: " << url_.c_str();
     base::DeleteFile(temp_file_path);
     return false;
   }
@@ -378,7 +364,6 @@ bool ResponseCache::DoWriteIntoFile(base::FilePath path, std::string data) {
   }
 
   if (!file->IsValid()) {
-    LOG(ERROR) << "Write into file failed. File is invalid. url: " << url_.c_str();
     return false;
   }
 
@@ -389,7 +374,6 @@ bool ResponseCache::DoWriteIntoFile(base::FilePath path, std::string data) {
   file->Close();
 
   if (!result) {
-    LOG(ERROR) << "Write into file failed. Cannot write file. url: " << url_.c_str();
     return false;
   }
 
@@ -398,12 +382,10 @@ bool ResponseCache::DoWriteIntoFile(base::FilePath path, std::string data) {
 
 bool ResponseCache::DeleteCacheFile() {
   if (!base::PathExists(cache_file_path_)) {
-    LOG(ERROR) << "Response cache content file doesn't exist, no need to delete. url: " << url_.c_str();
     return true;
   }
 
   bool result = base::DeleteFile(cache_file_path_);
-  LOG(ERROR) << "Delete response cache content file result: " << result << ". url: " << url_.c_str();
   return result;
 }
 
@@ -432,6 +414,7 @@ void ResourceResponse::GetResponseHeaders(int32_t request_id,
                                           std::string* charset,
                                           int64_t* content_length,
                                           HeaderMap* extra_headers) {
+  TRACE_EVENT0("net", "ResourceResponse::GetResponseHeaders");
   *status_code = 200;
   *reason_phrase = "OK";
   *mime_type = "text/javascript";
@@ -459,6 +442,7 @@ bool InputStream::Read(net::IOBuffer* dest,
                        int length,
                        int* bytes_read,
                        ReadCallback callback) {
+  TRACE_EVENT0("net", "InputStream::Read");
   bool has_data = false;
   int transfer_size = 0;
   if (offset_ < data_.length()) {

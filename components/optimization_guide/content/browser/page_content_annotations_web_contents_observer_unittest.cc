@@ -87,7 +87,7 @@ class FrameRemoteTester : public content::FakeLocalFrame {
       ::mojo::ScopedHandle fd_handle, uint64_t scriptLength, bool wants_result,
       JavaScriptExecuteRequestExtCallback callback) override {}
   void GenerateCodeCache(const std::string& url, const std::string& script,
-      blink::mojom::CacheOptionPtr cache_options, GenerateCodeCacheCallback callback) override {}
+      blink::mojom::CacheOptionsPtr cache_options, GenerateCodeCacheCallback callback) override {}
 #endif
  private:
   mojo::AssociatedReceiverSet<blink::mojom::LocalFrame> receivers_;

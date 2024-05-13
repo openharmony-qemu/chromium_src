@@ -1064,6 +1064,70 @@ public:
   virtual bool GetPrintBackground() = 0;
 
   /**
+   * @brief Enable the ability to intelligent tracking prevention, default
+   * disabled.
+   *
+   * @param enable Indicate whether the abilitiy is enabled or disabled.
+   */
+  /*--ark web()--*/
+  virtual void EnableIntelligentTrackingPrevention(bool enable) = 0;
+
+  /**
+   * @brief Get whether intelligent tracking prevention is enabled.
+   * @return true if enable the ability intelligent tracking prevention; else
+   * false.
+   */
+  /*--ark web()--*/
+  virtual bool IsIntelligentTrackingPreventionEnabled() = 0;
+
+  /**
+   * @brief Obtains the last javascript proxy calling frame url.
+   *
+   * @return the url of last calling frame url.
+   */
+  /*--ark web()--*/
+  virtual ArkWebString GetLastJavascriptProxyCallingFrameUrl() = 0;
+
+  /**
+   * @brief get pendingsize status.
+   *
+   * @return the result of last pendingsize status.
+   */
+  /*--ark web()--*/
+  virtual bool GetPendingSizeStatus() = 0;
+
+  /**
+   * @brief Scroll by the delta distance or velocity takes the screen as a
+   * reference.
+   *
+   * @param delta_x horizontal offset in physical pixel.
+   * @param delta_y vertical offset in physical pixel.
+   * @param vx      horizontal velocity in physical pixel.
+   * @param vx      vertical velocity in physical pixel.
+   */
+  /*--ark web()--*/
+  virtual void ScrollByRefScreen(float delta_x, float delta_y, float vx,
+                                 float vy) = 0;
+
+  /**
+   * @brief Start current camera.
+   */
+  /*--ark web()--*/
+  virtual void StartCamera() = 0;
+
+  /**
+   * @brief Stop current camera.
+   */
+  /*--ark web()--*/
+  virtual void StopCamera() = 0;
+
+  /**
+   * @brief Close current camera.
+   */
+  /*--ark web()--*/
+  virtual void CloseCamera() = 0;
+
+  /**
    * @brief Close fullScreen video.
    */
   /*--ark web()--*/
@@ -1096,70 +1160,6 @@ public:
   virtual int GetMediaPlaybackState() = 0;
 
   /**
-   * @brief Enable the ability to intelligent tracking prevention, default
-   * disabled.
-   *
-   * @param enable Indicate whether the abilitiy is enabled or disabled.
-   */
-  /*--ark web()--*/
-  virtual void EnableIntelligentTrackingPrevention(bool enable) = 0;
-
-  /**
-   * @brief Get whether intelligent tracking prevention is enabled.
-   * @return true if enable the ability intelligent tracking prevention; else
-   * false.
-   */
-  /*--ark web()--*/
-  virtual bool IsIntelligentTrackingPreventionEnabled() = 0;
-
-  /**
-   * @brief Start current camera.
-   */
-  /*--ark web()--*/
-  virtual void StartCamera() = 0;
-
-  /**
-   * @brief Stop current camera.
-   */
-  /*--ark web()--*/
-  virtual void StopCamera() = 0;
-
-  /**
-   * @brief Close current camera.
-   */
-  /*--ark web()--*/
-  virtual void CloseCamera() = 0;
-
-  /**
-   * @brief Obtains the last javascript proxy calling frame url.
-   *
-   * @return the url of last calling frame url.
-   */
-  /*--ark web()--*/
-  virtual ArkWebString GetLastJavascriptProxyCallingFrameUrl() = 0;
-
-  /**
-   * @brief Get pendingsize status.
-   *
-   * @return result of last pendingsize status.
-   */
-  /*--ark web()--*/
-  virtual bool GetPendingSizeStatus() = 0;
-
-  /**
-   * @brief Scroll by the delta distance or velocity takes the screen as a
-   * reference.
-   *
-   * @param delta_x horizontal offset in physical pixel.
-   * @param delta_y vertical offset in physical pixel.
-   * @param vx      horizontal velocity in physical pixel.
-   * @param vx      vertical velocity in physical pixel.
-   */
-  /*--ark web()--*/
-  virtual void ScrollByRefScreen(float delta_x, float delta_y, float vx,
-                                 float vy) = 0;
-
-  /**
    * @brief ExecuteJavaScript with ashmem
    *
    * @param fd fd of the ashmem
@@ -1172,6 +1172,9 @@ public:
   ExecuteJavaScriptExt(const int fd, const size_t scriptLength,
                        ArkWebRefPtr<ArkWebMessageValueCallback> callback,
                        bool extention) = 0;
+  /*--ark web()--*/
+  virtual void OnCreateNativeMediaPlayer(
+      ArkWebRefPtr<ArkWebCreateNativeMediaPlayerCallback> callback) = 0;
 
   /**
    * @brief Render process switch to background.
@@ -1199,10 +1202,6 @@ public:
   PrecompileJavaScript(const ArkWebString &url, const ArkWebString &script,
                        ArkWebRefPtr<ArkWebCacheOptions> &cacheOptions,
                        ArkWebRefPtr<ArkWebMessageValueCallback> callback) = 0;
-
-  /*--ark web()--*/
-  virtual void OnCreateNativeMediaPlayer(
-      ArkWebRefPtr<ArkWebCreateNativeMediaPlayerCallback> callback) = 0;
 
   /**
    * @brief Web drag resize optimize.

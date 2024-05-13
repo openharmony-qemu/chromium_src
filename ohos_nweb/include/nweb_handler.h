@@ -802,6 +802,11 @@ public:
       return false;
     }
 
+    /**
+     * @brief called when resizehold is released.
+     */
+    virtual void ReleaseResizeHold() {}
+
     virtual bool OnAllSslErrorRequestByJS(std::shared_ptr<NWebJSAllSslErrorResult> result,
                                        SslError error,
                                        const std::string& url,
@@ -818,11 +823,6 @@ public:
      * @param tooltip The content of the tooltip.
      */
     virtual void OnTooltip(const std::string& param) {}
-
-    /**
-     * @brief called when resizehold is released.
-     */
-    virtual void ReleaseResizeHold() {}
 
     /**
      * @brief Called when select a word.

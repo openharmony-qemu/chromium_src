@@ -604,12 +604,6 @@ public:
   bool GetNativeEmbedMode() override;
 
   /**
-   * @brief Register native embed rule. The default pattern is ["embed", "native/"].
-   */
-  void RegisterNativeEmbedRule(const ArkWebString &tag,
-                               const ArkWebString &type) override;
-
-  /**
    * @brief Set whether the scroll is enabled.
    */
   void SetScrollable(bool enable) override;
@@ -618,6 +612,17 @@ public:
    * @brief Get whether the scroll is enabled.
    */
   bool GetScrollable() override;
+
+  /**
+   * @brief Register native embed rule. The default pattern is ["embed", "native/"].
+   */
+  void RegisterNativeEmbedRule(const ArkWebString &tag,
+                               const ArkWebString &type) override;
+
+ /**
+   * @brief Put whether enable horizontal scroll bar, default value is false.
+   */
+  void SetNativeVideoPlayerConfig(bool enable, bool shouldOverlay) override;
 
   /**
    * @brief Put whether enable horizontal scroll bar, default value is false.
@@ -630,11 +635,6 @@ public:
    * frontend page.
    */
   void SetViewportEnable(bool enable) override;
-
-  /**
-   * @brief Put whether enable horizontal scroll bar, default value is false.
-   */
-  void SetNativeVideoPlayerConfig(bool enable, bool shouldOverlay) override;
 
 private:
   std::shared_ptr<OHOS::NWeb::NWebPreference> nweb_preference_;

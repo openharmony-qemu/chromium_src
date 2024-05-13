@@ -435,6 +435,27 @@ typedef struct _ark_web_nweb_t {
 
   bool(ARK_WEB_CALLBACK *get_print_background)(struct _ark_web_nweb_t *self);
 
+
+  void(ARK_WEB_CALLBACK *enable_intelligent_tracking_prevention)(
+      struct _ark_web_nweb_t *self, bool enable);
+
+  bool(ARK_WEB_CALLBACK *is_intelligent_tracking_prevention_enabled)(
+      struct _ark_web_nweb_t *self);
+  ArkWebString(ARK_WEB_CALLBACK *get_last_javascript_proxy_calling_frame_url)(
+      struct _ark_web_nweb_t *self);
+
+  bool(ARK_WEB_CALLBACK *get_pending_size_status)(struct _ark_web_nweb_t *self);
+
+  void(ARK_WEB_CALLBACK *scroll_by_ref_screen)(struct _ark_web_nweb_t *self,
+                                               float delta_x, float delta_y,
+                                               float vx, float vy);
+
+  void(ARK_WEB_CALLBACK *start_camera)(struct _ark_web_nweb_t *self);
+
+  void(ARK_WEB_CALLBACK *stop_camera)(struct _ark_web_nweb_t *self);
+
+  void(ARK_WEB_CALLBACK *close_camera)(struct _ark_web_nweb_t *self);
+
   void(ARK_WEB_CALLBACK *close_all_media_presentations)(
       struct _ark_web_nweb_t *self);
 
@@ -446,31 +467,13 @@ typedef struct _ark_web_nweb_t {
 
   int(ARK_WEB_CALLBACK *get_media_playback_state)(struct _ark_web_nweb_t *self);
 
-  void(ARK_WEB_CALLBACK *enable_intelligent_tracking_prevention)(
-      struct _ark_web_nweb_t *self, bool enable);
-
-  bool(ARK_WEB_CALLBACK *is_intelligent_tracking_prevention_enabled)(
-      struct _ark_web_nweb_t *self);
-
-  void(ARK_WEB_CALLBACK *start_camera)(struct _ark_web_nweb_t *self);
-
-  void(ARK_WEB_CALLBACK *stop_camera)(struct _ark_web_nweb_t *self);
-
-  void(ARK_WEB_CALLBACK *close_camera)(struct _ark_web_nweb_t *self);
-
-  ArkWebString(ARK_WEB_CALLBACK *get_last_javascript_proxy_calling_frame_url)(
-      struct _ark_web_nweb_t *self);
-
-  bool(ARK_WEB_CALLBACK *get_pending_size_status)(struct _ark_web_nweb_t *self);
-
-  void(ARK_WEB_CALLBACK *scroll_by_ref_screen)(struct _ark_web_nweb_t *self,
-                                               float delta_x, float delta_y,
-                                               float vx, float vy);
-
   void(ARK_WEB_CALLBACK *execute_java_script_ext)(
       struct _ark_web_nweb_t *self, const int fd, const size_t scriptLength,
       ark_web_message_value_callback_t *callback, bool extention);
 
+  void(ARK_WEB_CALLBACK *on_create_native_media_player)(
+      struct _ark_web_nweb_t *self,
+      ark_web_create_native_media_player_callback_t *callback);
   void(ARK_WEB_CALLBACK *on_render_to_background)(struct _ark_web_nweb_t *self);
 
   void(ARK_WEB_CALLBACK *on_render_to_foreground)(struct _ark_web_nweb_t *self);
@@ -479,10 +482,6 @@ typedef struct _ark_web_nweb_t {
       struct _ark_web_nweb_t *self, const ArkWebString *url,
       const ArkWebString *script, ark_web_cache_options_t **cacheOptions,
       ark_web_message_value_callback_t *callback);
-
-  void(ARK_WEB_CALLBACK *on_create_native_media_player)(
-      struct _ark_web_nweb_t *self,
-      ark_web_create_native_media_player_callback_t *callback);
 
   void(ARK_WEB_CALLBACK *ark_web_nweb_drag_resize)(struct _ark_web_nweb_t *self,uint32_t width,
                                  uint32_t height, uint32_t pre_height, uint32_t pre_width);

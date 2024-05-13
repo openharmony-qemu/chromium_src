@@ -309,9 +309,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   bool ShouldVirtualKeyboardOverlay() override;
 #endif
 
-#if defined(OHOS_SECURITY_STATE)
-  int GetSecurityLevel() override;
-#endif
+
 
 #ifdef BUILDFLAG(IS_OHOS)
 bool IsSafeBrowsingEnabled() override;
@@ -320,6 +318,10 @@ void PrecompileJavaScript(const std::string& url,
                           const std::string& script,
                           std::shared_ptr<CacheOptions>& cacheOptions,
                           std::shared_ptr<NWebMessageValueCallback> callback) override;
+#endif
+
+#if defined(OHOS_SECURITY_STATE)
+  int GetSecurityLevel() override;
 #endif
 
 #ifdef OHOS_PAGE_UP_DOWN
@@ -417,17 +419,17 @@ void PrecompileJavaScript(const std::string& url,
   void CloseCamera() override;
 #endif  // defined(OHOS_WEBRTC)
 
+#ifdef OHOS_ITP
+  void EnableIntelligentTrackingPrevention(bool enable) override;
+  bool IsIntelligentTrackingPreventionEnabled() const override;
+#endif
+
 #if defined(OHOS_SCREEN_LOCK)
   void SetWakeLockCallback(int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback) override;
 #endif
 
 #if defined(OHOS_SECURE_JAVASCRIPT_PROXY)
   std::string GetLastJavascriptProxyCallingFrameUrl() override;
-#endif
-
-#ifdef OHOS_ITP
-  void EnableIntelligentTrackingPrevention(bool enable) override;
-  bool IsIntelligentTrackingPreventionEnabled() const override;
 #endif
 
 #if defined(OHOS_CLIPBOARD)

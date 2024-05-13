@@ -366,13 +366,6 @@ void ArkWebPreferenceImpl::SetNativeEmbedMode(bool flag) {
 bool ArkWebPreferenceImpl::GetNativeEmbedMode() {
   return nweb_preference_->GetNativeEmbedMode();
 }
-
-void ArkWebPreferenceImpl::RegisterNativeEmbedRule(const ArkWebString &tag,
-                                                   const ArkWebString &type) {
-  nweb_preference_->RegisterNativeEmbedRule(ArkWebStringStructToClass(tag),
-                                            ArkWebStringStructToClass(type));
-}
-
 void ArkWebPreferenceImpl::SetScrollable(bool enable) {
   nweb_preference_->SetScrollable(enable);
 }
@@ -381,21 +374,29 @@ bool ArkWebPreferenceImpl::GetScrollable() {
   return nweb_preference_->GetScrollable();
 }
 
+void ArkWebPreferenceImpl::RegisterNativeEmbedRule(const ArkWebString &tag,
+                                                   const ArkWebString &type) {
+  nweb_preference_->RegisterNativeEmbedRule(ArkWebStringStructToClass(tag),
+                                            ArkWebStringStructToClass(type));
+}
+
+
 void ArkWebPreferenceImpl::PutTextAutosizingEnabled(bool flag) {
   if (nweb_preference_)
     nweb_preference_->PutTextAutosizingEnabled(flag);
 }
 
-void ArkWebPreferenceImpl::SetViewportEnable(bool enable) {
-  if (nweb_preference_)
-    nweb_preference_->SetViewportEnable(enable);
-}
 
 void ArkWebPreferenceImpl::SetNativeVideoPlayerConfig(bool enable,
                                                       bool shouldOverlay) {
   if (nweb_preference_) {
     nweb_preference_->SetNativeVideoPlayerConfig(enable, shouldOverlay);
   }
+}
+
+void ArkWebPreferenceImpl::SetViewportEnable(bool enable) {
+  if (nweb_preference_)
+    nweb_preference_->SetViewportEnable(enable);
 }
 
 } // namespace OHOS::ArkWeb

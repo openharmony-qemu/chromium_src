@@ -335,6 +335,8 @@ typedef struct _ark_web_handler_t {
   bool(ARK_WEB_CALLBACK *on_handle_override_url_loading)(
       struct _ark_web_handler_t *self, ark_web_url_resource_request_t *request);
 
+  void(ARK_WEB_CALLBACK *release_resize_hold)(struct _ark_web_handler_t *self);
+
   void(ARK_WEB_CALLBACK *on_first_meaningful_paint)(
       struct _ark_web_handler_t *self,
       ark_web_first_meaningful_paint_details_t *details);
@@ -351,8 +353,6 @@ typedef struct _ark_web_handler_t {
 
   void(ARK_WEB_CALLBACK *on_tooltip)(struct _ark_web_handler_t *self,
                                      const ArkWebString *tooltip);
-
-  void(ARK_WEB_CALLBACK *release_resize_hold)(struct _ark_web_handler_t *self);
 
   ArkWebCharVector(ARK_WEB_CALLBACK *get_word_selection)(
       struct _ark_web_handler_t* self,

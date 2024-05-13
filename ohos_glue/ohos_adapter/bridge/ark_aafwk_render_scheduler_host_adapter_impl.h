@@ -31,6 +31,11 @@ public:
   void NotifyBrowserFd(int32_t ipcFd, int32_t sharedFd,
                        int32_t crashFd) override;
 
+  void NotifyBrowser(int32_t ipcFd,
+                     int32_t sharedFd,
+                     int32_t crashFd,
+                     ArkWebRefPtr<ArkAafwkBrowserClientAdapter> adapter) override;
+
 private:
   std::shared_ptr<OHOS::NWeb::AafwkRenderSchedulerHostAdapter> real_;
 

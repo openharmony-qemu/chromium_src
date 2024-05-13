@@ -200,6 +200,9 @@ class CONTENT_EXPORT RenderProcessHostImpl
   static RenderProcessHost* CreateRenderProcessHost(
       BrowserContext* browser_context,
       SiteInstanceImpl* site_instance);
+#if BUILDFLAG(IS_OHOS)
+  static void Refresh();
+#endif
 
   ~RenderProcessHostImpl() override;
 

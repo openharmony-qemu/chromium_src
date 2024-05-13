@@ -5,6 +5,7 @@
 #ifndef COMPONENTS_VIZ_HOST_GPU_HOST_IMPL_H_
 #define COMPONENTS_VIZ_HOST_GPU_HOST_IMPL_H_
 
+#include <cstdint>
 #include <map>
 #include <queue>
 #include <set>
@@ -186,6 +187,7 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost
                            bool sync,
                            EstablishChannelCallback callback);
   void SetChannelClientPid(int client_id, base::ProcessId client_pid);
+  std::string GetSurfaceId(int32_t native_embed_id);
   void SetChannelDiskCacheHandle(int client_id,
                                  const gpu::GpuDiskCacheHandle& handle);
   void RemoveChannelDiskCacheHandles(int client_id);

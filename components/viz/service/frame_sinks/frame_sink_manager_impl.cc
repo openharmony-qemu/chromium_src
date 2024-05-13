@@ -33,6 +33,7 @@
 #include "components/viz/service/performance_hint/utils.h"
 #include "components/viz/service/surfaces/pending_copy_output_request.h"
 #include "components/viz/service/surfaces/surface.h"
+#include "gpu/ipc/common/nweb_native_window_tracker.h"
 
 namespace viz {
 
@@ -241,6 +242,11 @@ void FrameSinkManagerImpl::CreateCompositorFrameSink(
 void FrameSinkManagerImpl::DestroyCompositorFrameSink(
     const FrameSinkId& frame_sink_id,
     DestroyCompositorFrameSinkCallback callback) {
+  // when destroy web tab, destroy window
+  if (frame_sink_id.client_id() == 0) {
+    LOG(DEBUG) << "DestroyCompositorFrameSink nweb id = " << frame_sink_id.sink_id();
+    NWebNativeWindowTracker::GetInstance()->DestroyNativeWindow(frame_sink_id.sink_id());
+  }
   sink_map_.erase(frame_sink_id);
   root_sink_map_.erase(frame_sink_id);
   std::move(callback).Run();

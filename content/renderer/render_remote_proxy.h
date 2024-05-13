@@ -26,6 +26,13 @@ class RenderRemoteProxy : public OHOS::NWeb::AafwkRenderSchedulerHostAdapter {
                                int32_t crashFd
                                ) override;
 
+  virtual void NotifyBrowser(
+    int32_t ipcFd, int32_t sharedFd, int32_t crashFd
+#if BUILDFLAG(IS_OHOS)
+    , std::shared_ptr<OHOS::NWeb::AafwkBrowserClientAdapter> clientAdapter
+#endif // BUILDFLAG(IS_OHOS)
+  ) override;
+
   static void CreateAndRegist(const base::CommandLine& command_line);
   static bool WaitForBrowserFd();
 

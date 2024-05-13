@@ -8,6 +8,8 @@
 
 #include "base/check.h"
 #include "base/debug/crash_logging.h"
+#include "base/logging.h"
+#include "gpu/ipc/common/nweb_native_window_tracker.h"
 #include "ui/gl/gl_bindings.h"
 #include "ohos_adapter_helper.h"
 
@@ -62,6 +64,12 @@ void OhosNativeImage::GetSurfaceId(uint64_t* surface_id) {
     return;
   }
   native_image_adapter_->GetSurfaceId(surface_id);
+  LOG(DEBUG) << "GetSurfaceId : " << *surface_id;
+  if (OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                  .GetSystemPropertiesInstance()
+                  .GetOOPGPUEnable()) {
+    NWebNativeWindowTracker::GetInstance()->g_browser_client_->PassSurface(*surface_id);
+  }
 }
 
 void OhosNativeImage::GetTransformMatrix(float mtx[16]) {

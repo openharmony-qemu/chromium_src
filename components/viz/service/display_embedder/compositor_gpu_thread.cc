@@ -19,6 +19,7 @@
 #include "gpu/config/gpu_finch_features.h"
 #include "gpu/ipc/common/gpu_client_ids.h"
 #include "gpu/ipc/service/gpu_channel_manager.h"
+#include "gpu/ipc/common/nweb_native_window_tracker.h"
 #include "gpu/vulkan/buildflags.h"
 #include "ui/gl/gl_bindings.h"
 #include "ui/gl/gl_context.h"
@@ -114,12 +115,21 @@ CompositorGpuThread::CompositorGpuThread(
 CompositorGpuThread::~CompositorGpuThread() {
 #if BUILDFLAG(IS_OHOS)
   using namespace OHOS::NWeb;
-  task_runner()->PostTask(
+  if (!OHOS::NWeb::OhosAdapterHelper::GetInstance()
+             .GetSystemPropertiesInstance()
+             .GetOOPGPUEnable()) {
+    task_runner()->PostTask(
       FROM_HERE,
       base::BindOnce(
           base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread),
           ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentRealPid(),
           GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
+  } else {
+    NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
+        ResSchedStatusAdapter::THREAD_DESTROYED,
+        base::GetCurrentRealPid(), GetThreadRealId(),
+        ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+  }
 #endif
 
   base::Thread::Stop();
@@ -243,12 +253,21 @@ bool CompositorGpuThread::Initialize() {
 
 #if BUILDFLAG(IS_OHOS)
   using namespace OHOS::NWeb;
-  task_runner()->PostTask(
+  if (!OHOS::NWeb::OhosAdapterHelper::GetInstance()
+             .GetSystemPropertiesInstance()
+             .GetOOPGPUEnable()) {
+    task_runner()->PostTask(
       FROM_HERE,
       base::BindOnce(
           base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread),
           ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentRealPid(),
           GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
+  } else {
+    NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
+        ResSchedStatusAdapter::THREAD_CREATED,
+        base::GetCurrentRealPid(), GetThreadRealId(),
+        ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+  }
 #endif
   return init_succeeded_;
 }

@@ -6,8 +6,8 @@
 #include "base/threading/platform_thread.h"
 #include "base/trace_event/trace_event.h"
 #include "content/public/common/content_switches.h"
+#include "gpu/ipc/common/nweb_native_window_tracker.h"
 
-#include "nweb_native_window_tracker.h"
 #include "ohos_adapter_helper.h"
 
 namespace gl {
@@ -22,7 +22,7 @@ NativeViewGLSurfaceEGLOhos::CreateNativeViewGLSurfaceEGLOhos(
   if (command_line->HasSwitch(::switches::kOhosHanceSurface)) {
     LOG(INFO) << "CreateNativeViewGLSurfaceEGLOhos:: enhance surface";
     WindowsSurfaceInfo* surfaceInfo = static_cast<WindowsSurfaceInfo*>(
-        NWebNativeWindowTracker::Instance().GetNativeWindow(widget));
+        NWebNativeWindowTracker::GetInstance()->GetNativeWindow(widget));
     if (surfaceInfo != nullptr) {
       LOG(INFO) << "clear surface from NWEB";
       eglDestroySurface(surfaceInfo->display, surfaceInfo->surface);
@@ -33,7 +33,8 @@ NativeViewGLSurfaceEGLOhos::CreateNativeViewGLSurfaceEGLOhos(
               reinterpret_cast<EGLNativeWindowType>(surfaceInfo->window)));
     }
   } else {
-    LOG(INFO) << "CreateNativeViewGLSurfaceEGLOhos:: normal surface";
+    LOG(INFO) << "CreateNativeViewGLSurfaceEGLOhos:: normal surface"
+              << ", widgetid = " << widget;
     auto& system_properties_adapter =
         OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance();
     std::string product_model = system_properties_adapter.GetDeviceInfoProductModel();
@@ -41,7 +42,7 @@ NativeViewGLSurfaceEGLOhos::CreateNativeViewGLSurfaceEGLOhos(
       LOG(INFO)  << "emulator CreateNativeViewGLSurfaceEGLOhos delay 20ms";
       base::PlatformThread::Sleep(base::Milliseconds(20));
     }
-    void* window = NWebNativeWindowTracker::Instance().GetNativeWindow(widget);
+    void* window = NWebNativeWindowTracker::GetInstance()->GetNativeWindow(widget);
     return scoped_refptr<NativeViewGLSurfaceEGLOhos>(
         new NativeViewGLSurfaceEGLOhos(display->GetAs<gl::GLDisplayEGL>(),
             reinterpret_cast<EGLNativeWindowType>(window)));

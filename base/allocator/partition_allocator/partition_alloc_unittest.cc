@@ -9,6 +9,9 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#if defined(OHOS_UNITTESTS)
+#include <inttypes.h>
+#endif // OHOS_UNITTESTS
 #include <iostream>
 #include <limits>
 #include <memory>
@@ -3035,10 +3038,10 @@ TEST_P(PartitionAllocTest, FreelistHardenedTest) {
 
   uintptr_t real_root = (uintptr_t)PartitionRoot<internal::ThreadSafe>::FromFirstSuperPage((uintptr_t)ptr & 0xffffffffffC00000);
 #if defined(OHOS_UNITTESTS)
-  printf("\r\nreal_root = %#lx\r\n", real_root);
-  printf("root = %#lx\r\n", root);
-  printf("active_head = %#lx\r\n", active);
-  printf("free_next = %#lx\r\n\r\n", free);
+  printf("\r\nreal_root = 0x%016" PRIxPTR "\r\n", real_root);
+  printf("root = 0x%016" PRIxPTR "\r\n", root);
+  printf("active_head = 0x%016" PRIxPTR "\r\n", active);
+  printf("free_next = 0x%016" PRIxPTR "\r\n\r\n", free);
 #else
   printf("\r\nreal_root = 0x%lx\r\n", real_root);
   printf("root = 0x%lx\r\n", root);

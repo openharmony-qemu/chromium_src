@@ -168,6 +168,16 @@ ARKWEB_EXPORT void OH_ArkWebResourceRequest_DestroyHttpBodyStream(
   http_body_stream = nullptr;
 }
 
+ARKWEB_EXPORT int32_t OH_ArkWebResourceRequest_GetResourceType(
+    const ArkWeb_ResourceRequest* resource_request) {
+  if (!resource_request) {
+    LOG(ERROR) << "scheme_handler resource request is nullptr";
+    return -1;
+  }
+
+  return resource_request->GetRequestResourceType();
+}
+
 ARKWEB_EXPORT int32_t OH_ArkWebHttpBodyStream_SetReadCallback(
     ArkWeb_HttpBodyStream* http_body_stream,
     ArkWeb_HttpBodyStreamReadCallback readCallback) {

@@ -109,6 +109,15 @@ void ArkWeb_ResourceRequest_::GetReferrer(char** referrer) const {
   strcpy((*referrer), cef_referrer.c_str());
 }
 
+int32_t ArkWeb_ResourceRequest_::GetRequestResourceType() const {
+  if (!cef_request) {
+    LOG(ERROR) << "scheme_handler resource request is nullptr.";
+    return -1;
+  }
+
+  return cef_request->GetResourceType();
+}
+
 HeaderValue::HeaderValue(const std::string& key, const std::string& value)
     : key(key), value(value) {}
 

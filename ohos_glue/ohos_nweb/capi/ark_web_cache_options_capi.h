@@ -33,9 +33,6 @@ typedef struct _ark_web_cache_options_t {
   ArkWebStringMap(ARK_WEB_CALLBACK *get_response_headers)(
       struct _ark_web_cache_options_t *self);
 
-  bool(ARK_WEB_CALLBACK *is_module)(struct _ark_web_cache_options_t *self);
-
-  bool(ARK_WEB_CALLBACK *is_top_level)(struct _ark_web_cache_options_t *self);
 } ark_web_cache_options_t;
 
 #ifdef __cplusplus

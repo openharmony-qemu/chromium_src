@@ -27,12 +27,4 @@ ArkWebCacheOptionsWrapper::GetResponseHeaders() {
   return ArkWebStringMapStructToClass(cache_options_->GetResponseHeaders());
 }
 
-bool ArkWebCacheOptionsWrapper::IsModule() {
-  return cache_options_->IsModule();
-}
-
-bool ArkWebCacheOptionsWrapper::IsTopLevel() {
-  return cache_options_->IsTopLevel();
-}
-
 } // namespace OHOS::ArkWeb

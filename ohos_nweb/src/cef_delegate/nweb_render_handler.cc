@@ -372,7 +372,9 @@ bool NWebRenderHandler::IsNeedCefNotifyScreenInfoChanged() {
   if (last_screen_info_.display_ratio <= 0 || screen_info_.display_ratio <= 0) {
     return false;
   }
-  return last_screen_info_.display_ratio != screen_info_.display_ratio;
+  return last_screen_info_.display_ratio != screen_info_.display_ratio ||
+         last_screen_info_.width != screen_info_.width ||
+         last_screen_info_.height != screen_info_.height;
 }
 // #endif  // #ifdef OHOS_SCREEN_ROTATION
 

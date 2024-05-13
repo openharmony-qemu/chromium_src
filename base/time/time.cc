@@ -304,6 +304,7 @@ int64_t Time::ToRoundedDownMillisecondsSinceUnixEpoch() const {
   return millis - kEpochOffsetMillis - (submillis < 0);
 }
 
+#if BUILDFLAG(IS_OHOS)
 std::string Time::ToUTCString(const base::Time& time) {
   Time::Exploded exploded;
   time.UTCExplode(&exploded);
@@ -317,6 +318,7 @@ std::string Time::ToUTCString(const base::Time& time) {
                             exploded.millisecond);
   return time_string;
 }
+#endif
 
 std::ostream& operator<<(std::ostream& os, Time time) {
   Time::Exploded exploded;

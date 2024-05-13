@@ -181,7 +181,9 @@ void BrowsingDataRemoverImpl::Remove(const base::Time& delete_begin,
   RemoveInternal(delete_begin, delete_end, remove_mask, origin_type_mask,
                  std::unique_ptr<BrowsingDataFilterBuilder>(), nullptr);
 
+#if BUILDFLAG(IS_OHOS)
   oh_code_cache::ResponseCache::ClearAllCache();
+#endif
 }
 
 void BrowsingDataRemoverImpl::RemoveWithFilter(

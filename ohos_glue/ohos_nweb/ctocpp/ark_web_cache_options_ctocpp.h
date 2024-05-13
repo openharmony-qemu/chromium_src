@@ -36,9 +36,6 @@ public:
   // ArkWebCacheOptions methods.
   ArkWebStringMap GetResponseHeaders() override;
 
-  bool IsModule() override;
-
-  bool IsTopLevel() override;
 };
 
 } // namespace OHOS::ArkWeb

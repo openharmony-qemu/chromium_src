@@ -203,6 +203,19 @@ ArkAudioSystemManagerAdapterCToCpp::GetDefaultInputDevice() {
   return ArkAudioDeviceDescAdapterCToCpp::Invert(_retval);
 }
 
+ARK_WEB_NO_SANITIZE
+bool ArkAudioSystemManagerAdapterCToCpp::SetLanguage(ArkWebString language) {
+  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
+
+  ark_audio_system_manager_adapter_t *_struct = GetStruct();
+  ARK_WEB_CTOCPP_CHECK_PARAM(_struct, 0);
+
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, set_language, 0);
+
+  // Execute
+  return _struct->set_language(_struct,language);
+}
+
 ArkAudioSystemManagerAdapterCToCpp::ArkAudioSystemManagerAdapterCToCpp() {
 }
 

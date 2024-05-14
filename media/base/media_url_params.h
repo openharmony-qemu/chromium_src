@@ -10,6 +10,10 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#include "media/base/custom_media_url_params.h"
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 namespace media {
 
 // Encapsulates the necessary information in order to play media in URL based
@@ -55,7 +59,7 @@ struct MEDIA_EXPORT MediaUrlParams {
   bool is_hls;
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-  uint32_t preload_type = 0;
+  CustomMediaUrlParams custom_media_url_params;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 };
 

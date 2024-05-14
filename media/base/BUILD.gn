@@ -487,6 +487,13 @@ source_set("base") {
       "media_drm_storage.h",
     ]
   }
+
+  if (defined(ohos_custom_video_player) && ohos_custom_video_player) {
+    sources += [
+      "custom_media_url_params.cc",
+      "custom_media_url_params.h",
+    ]
+  }
 }
 
 source_set("video_facing") {

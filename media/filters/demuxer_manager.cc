@@ -400,6 +400,8 @@ PipelineStatus DemuxerManager::CreateDemuxer(
     bool has_poster,
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
     bool should_create_custom_renderer,
+    uint32_t initial_preload,
+    uint32_t media_source_type,
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
     DemuxerManager::DemuxerCreatedCB on_demuxer_created) {
   // TODO(crbug/1377053) return a better error
@@ -410,7 +412,8 @@ PipelineStatus DemuxerManager::CreateDemuxer(
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
   if (should_create_custom_renderer) {
     SetDemuxer(CreateMediaUrlDemuxer(false));
-    demuxer_->SetPreloadType(static_cast<uint32_t>(preload));
+    demuxer_->SetPreloadType(initial_preload);
+    demuxer_->SetMediaSourceType(media_source_type);
     return std::move(on_demuxer_created)
         .Run(demuxer_.get(), Pipeline::StartType::kNormal,
              /*is_streaming = */ false,

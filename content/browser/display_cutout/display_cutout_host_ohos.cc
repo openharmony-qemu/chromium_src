@@ -26,17 +26,11 @@ void DisplayCutoutHostOhos::BindReceiver(
 
 void DisplayCutoutHostOhos::NotifyViewportFitChanged(
     blink::mojom::ViewportFit value) {
-  ViewportFitChangedForFrame(receivers_.GetCurrentTargetFrame(), value);
-  if (current_rfh_) {
-    SendSafeAreaToFrame(current_rfh_.get(), insets_);
+  content::RenderFrameHost* rfh = receivers_.GetCurrentTargetFrame();
+  if (!rfh->IsInPrimaryMainFrame()) {
+    return;
   }
-}
-
-void DisplayCutoutHostOhos::ViewportFitChangedForFrame(
-    RenderFrameHost* rfh,
-    blink::mojom::ViewportFit value) {
-  current_viewport_fit_ = value;
-  web_contents_impl_->NotifyViewportFitChanged(value);
+  SetCurrentRenderFrameHost(rfh, value);
 }
 
 void DisplayCutoutHostOhos::DidAcquireFullscreen(RenderFrameHost* rfh) {}
@@ -44,23 +38,20 @@ void DisplayCutoutHostOhos::DidAcquireFullscreen(RenderFrameHost* rfh) {}
 void DisplayCutoutHostOhos::DidExitFullscreen() {}
 
 void DisplayCutoutHostOhos::DidFinishNavigation(
-    NavigationHandle* navigation_handle) {
-  if (!navigation_handle->IsInPrimaryMainFrame() ||
-      navigation_handle->IsSameDocument()) {
-    return;
-  }
-  SetCurrentRenderFrameHost(web_contents_impl_->GetPrimaryMainFrame());
-}
+    NavigationHandle* navigation_handle) {}
 
 void DisplayCutoutHostOhos::RenderFrameDeleted(RenderFrameHost* rfh) {}
 
-void DisplayCutoutHostOhos::RenderFrameCreated(RenderFrameHost* rfh) {
-  ViewportFitChangedForFrame(rfh, blink::mojom::ViewportFit::kAuto);
-}
+void DisplayCutoutHostOhos::RenderFrameCreated(RenderFrameHost* rfh) {}
 
 void DisplayCutoutHostOhos::SetDisplayCutoutSafeArea(gfx::Insets insets) {
+  if (insets == insets_) {
+    return;
+  }
+
   LOG(INFO) << __func__ << " " << insets_.ToString() << "->"
-            << insets.ToString();
+            << insets.ToString() << " rfh:" << current_rfh_.get();
+
   insets_ = insets;
 
   if (current_rfh_) {
@@ -68,15 +59,17 @@ void DisplayCutoutHostOhos::SetDisplayCutoutSafeArea(gfx::Insets insets) {
   }
 }
 
-void DisplayCutoutHostOhos::SetCurrentRenderFrameHost(RenderFrameHost* rfh) {
+void DisplayCutoutHostOhos::SetCurrentRenderFrameHost(
+    RenderFrameHost* rfh,
+    blink::mojom::ViewportFit value) {
   if (!rfh) {
     return;
   }
 
-  // Update the |current_rfh_| with the new frame.
-  current_rfh_ = static_cast<RenderFrameHostImpl*>(rfh)->GetWeakPtr();
-
-  if (current_viewport_fit_ == blink::mojom::ViewportFit::kCover) {
+  web_contents_impl_->NotifyViewportFitChanged(value);
+  if (value == blink::mojom::ViewportFit::kCover) {
+    // Update the |current_rfh_| with the new frame.
+    current_rfh_ = static_cast<RenderFrameHostImpl*>(rfh)->GetWeakPtr();
     // Send the current safe area to the new frame.
     SendSafeAreaToFrame(rfh, insets_);
   } else {

@@ -99,6 +99,16 @@ public:
       const ArkWebString key21, const int64_t value21, const ArkWebString key22,
       const int64_t value22, const ArkWebString key23,
       const int64_t value23) = 0;
+
+  /*--ark web()--*/
+  virtual int Write(const ArkWebString &eventName, uint32_t type,
+                    const ArkWebString key1, const ArkWebString value1,
+                    const ArkWebString key2, const ArkWebString value2,
+                    const ArkWebString key3, const ArkWebString value3,
+                    const ArkWebString key4, const ArkWebString value4,
+                    const ArkWebString key5, const ArkWebString value5,
+                    const ArkWebString key6, const ArkWebString value6,
+                    const ArkWebString key7, const ArkWebString value7) = 0;
 };
 
 } // namespace OHOS::ArkWeb

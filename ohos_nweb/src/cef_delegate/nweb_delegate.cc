@@ -2105,7 +2105,10 @@ void NWebDelegate::UpdateLocale(const std::string& language,
   if (!GetBrowser().get()) {
     return;
   }
-
+  bool setSuccess = OhosAdapterHelper::GetInstance()::GetAudioSystemManager().SetLanguage(language);
+  if(!setSuccess){
+    LOG(ERROR) << "UpdateLocale SetLanguage error,language=" <<language;
+  }
   CefString locale = "";
   if (language == "en") {
     locale = "en-US";

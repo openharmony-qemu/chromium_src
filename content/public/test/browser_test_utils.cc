@@ -158,6 +158,10 @@
 #include "ui/events/event.h"
 #endif  // USE_AURA
 
+#if defined(OHOS_RENDERER_ANR_DUMP)
+#include "content/public/browser/web_contents_delegate.h"
+#endif
+
 namespace content {
 namespace {
 
@@ -940,7 +944,7 @@ void SimulateUnresponsiveRenderer(WebContents* web_contents,
                              base::DoNothing()
 #if defined(OHOS_RENDERER_ANR_DUMP)
                                  ,
-                             RenderProcessNotRespondingReason::INPUT_TIMEOUT
+                             RenderProcessNotRespondingReason::kRendererAnrInputTimeout
 #endif
       );
 }

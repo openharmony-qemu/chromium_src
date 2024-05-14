@@ -147,6 +147,8 @@ class MEDIA_EXPORT DemuxerManager {
                                bool has_poster,
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
                                bool should_create_custom_renderer,
+                               uint32_t initial_preload,
+                               uint32_t media_source_type,
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
                                DemuxerCreatedCB on_demuxer_created);
 

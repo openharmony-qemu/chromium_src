@@ -70,7 +70,11 @@ void MediaUrlDemuxer::ForwardBufferedEndTimeChangeToDemuxerHost(
 }
 
 void MediaUrlDemuxer::SetPreloadType(uint32_t preload_type) {
-  params_.preload_type = preload_type;
+  params_.custom_media_url_params.preload_type = preload_type;
+}
+
+void MediaUrlDemuxer::SetMediaSourceType(uint32_t media_source_type) {
+  params_.custom_media_url_params.media_source_type = media_source_type;
 }
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 

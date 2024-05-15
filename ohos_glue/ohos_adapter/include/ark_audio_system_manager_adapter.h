@@ -116,6 +116,7 @@ public:
 
   /*--ark web()--*/
   virtual bool SetLanguage(ArkWebString language) = 0;
+
 };
 
 } // namespace OHOS::ArkWeb

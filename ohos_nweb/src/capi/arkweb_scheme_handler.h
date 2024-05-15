@@ -335,6 +335,17 @@ void OH_ArkWebResourceRequest_DestroyHttpBodyStream(ArkWeb_HttpBodyStream* httpB
 int32_t OH_ArkWebResourceRequest_GetResourceType(const ArkWeb_ResourceRequest* resourceRequest);
 
 /*
+ * @brief Get the url of frame which trigger this request.
+ * @param resourceRequest The ArkWeb_ResourceRequest.
+ * @param frameUrl The url of frame which trigger this request. This function will allocate memory for the url string
+ *            and caller must release the string by OH_ArkWeb_ReleaseString.
+ *
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 12
+ */
+void OH_ArkWebResourceRequest_GetFrameUrl(const ArkWeb_ResourceRequest* resourceRequest, char** frameUrl);
+
+/*
  * @brief Set a user data to ArkWeb_HttpBodyStream.
  * @param httpBodyStream The ArkWeb_HttpBodyStream.
  * @param userData The user data to set.

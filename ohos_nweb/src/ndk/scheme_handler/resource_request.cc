@@ -18,6 +18,7 @@
 #include "base/logging.h"
 #include "ohos_nweb/src/capi/arkweb_scheme_handler.h"
 #include "ohos_nweb/src/ndk/scheme_handler/http_body_stream.h"
+#include "cef/libcef/common/request_impl.h"
 
 ArkWeb_ResourceRequest_::ArkWeb_ResourceRequest_(CefRefPtr<CefRequest> request)
     : cef_request(request) {
@@ -116,6 +117,19 @@ int32_t ArkWeb_ResourceRequest_::GetRequestResourceType() const {
   }
 
   return cef_request->GetResourceType();
+}
+
+void ArkWeb_ResourceRequest_::GetFrameUrl(char** frame_url) const {
+  if (!cef_request) {
+    LOG(ERROR) << "scheme_handler resource request is nullptr.";
+    return;
+  }
+
+  std::string cef_frame_url =
+      static_cast<CefRequestImpl*>(cef_request.get())->GetFrameUrl().ToString();
+  const int length = cef_frame_url.length();
+  *frame_url = new char[length + 1];
+  strcpy((*frame_url), cef_frame_url.c_str());
 }
 
 HeaderValue::HeaderValue(const std::string& key, const std::string& value)

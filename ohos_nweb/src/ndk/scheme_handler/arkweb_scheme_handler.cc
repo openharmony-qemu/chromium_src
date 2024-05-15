@@ -178,6 +178,21 @@ ARKWEB_EXPORT int32_t OH_ArkWebResourceRequest_GetResourceType(
   return resource_request->GetRequestResourceType();
 }
 
+ARKWEB_EXPORT void OH_ArkWebResourceRequest_GetFrameUrl(
+    const ArkWeb_ResourceRequest* resource_request,
+    char** frame_url) {
+  if (!resource_request) {
+    LOG(ERROR) << "scheme_handler resource request is nullptr";
+    return;
+  }
+
+  if (!frame_url) {
+    LOG(ERROR) << "scheme_handler frame_url is nullptr";
+    return;
+  }
+  resource_request->GetFrameUrl(frame_url);
+}
+
 ARKWEB_EXPORT int32_t OH_ArkWebHttpBodyStream_SetReadCallback(
     ArkWeb_HttpBodyStream* http_body_stream,
     ArkWeb_HttpBodyStreamReadCallback readCallback) {

@@ -60,7 +60,7 @@ public:
   std::shared_ptr<NWeb::AudioDeviceDescAdapter>
   GetDefaultInputDevice() override;
   
-  bool SetLanguage(std::string language) override;
+  bool SetLanguage(const std::string language) override;
   
 private:
   ArkWebRefPtr<ArkAudioSystemManagerAdapter> ctocpp_;

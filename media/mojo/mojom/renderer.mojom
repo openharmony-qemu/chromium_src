@@ -13,6 +13,12 @@ import "ui/gfx/geometry/mojom/geometry.mojom";
 import "url/mojom/url.mojom";
 import "url/mojom/origin.mojom";
 
+[EnableIf=ohos_custom_video_player]
+struct CustomMediaUrlParams {
+  uint32 preload_type;
+  uint32 media_source_type;
+};
+
 // See media/base/media_url_params.h for descriptions.
 struct MediaUrlParams {
   url.mojom.Url media_url;
@@ -23,7 +29,7 @@ struct MediaUrlParams {
   bool is_hls;
 
   [EnableIf=ohos_custom_video_player]
-  uint32 preload_type;
+  CustomMediaUrlParams custom_media_url_params;
 };
 
 [EnableIf=ohos_custom_video_player]

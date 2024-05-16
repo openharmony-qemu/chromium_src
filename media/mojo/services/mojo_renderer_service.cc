@@ -80,7 +80,10 @@ void MojoRendererService::Initialize(
       media_url_params->top_frame_origin, media_url_params->has_storage_access,
       media_url_params->allow_credentials, media_url_params->is_hls);
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-  media_resource_->SetPreloadType(media_url_params->preload_type);
+  media_resource_->SetPreloadType(
+      media_url_params->custom_media_url_params->preload_type);
+  media_resource_->SetMediaSourceType(
+      media_url_params->custom_media_url_params->media_source_type);
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
   renderer_->Initialize(
       media_resource_.get(), this,

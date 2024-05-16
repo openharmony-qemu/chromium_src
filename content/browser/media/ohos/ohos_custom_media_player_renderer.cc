@@ -354,7 +354,8 @@ void OHOSCustomMediaPlayerRenderer::CreateMediaPlayer() {
   media_info.media_src_list.reserve(source_infos_.size());
   for (const auto& info : source_infos_) {
     media_info.media_src_list.push_back({
-        static_cast<MediaInfo::SourceType>(media_resource_->GetType()),
+        static_cast<MediaInfo::SourceType>(
+            media_resource_->GetMediaUrlParams().custom_media_url_params.media_source_type),
         info.media_source, info.media_format});
   }
   media_info.surface_info.id = surface_id_string;
@@ -366,7 +367,8 @@ void OHOSCustomMediaPlayerRenderer::CreateMediaPlayer() {
   media_info.controlslist = std::move(controls_list_);
   media_info.muted = muted_;
   media_info.poster_url = poster_url_;
-  media_info.preload = ConvertTo(media_resource_->GetMediaUrlParams().preload_type);
+  media_info.preload = ConvertTo(
+      media_resource_->GetMediaUrlParams().custom_media_url_params.preload_type);
   if (!cookies_->empty()) {
     media_info.https_headers.insert(std::make_pair("Cookie",
         std::move(cookies_.value())));

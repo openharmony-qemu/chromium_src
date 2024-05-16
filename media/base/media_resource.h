@@ -69,6 +69,7 @@ class MEDIA_EXPORT MediaResource {
   virtual void ForwardBufferedEndTimeChangeToDemuxerHost(
       base::TimeDelta buffered_time) {}
   virtual void SetPreloadType(uint32_t preload_type) {}
+  virtual void SetMediaSourceType(uint32_t media_source_type) {}
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 };
 

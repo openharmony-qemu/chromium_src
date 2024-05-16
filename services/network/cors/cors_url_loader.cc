@@ -547,6 +547,15 @@ void CorsURLLoader::OnReceiveResponse(
       std::move(response_head), std::move(body), std::move(cached_metadata));
 }
 
+#if BUILDFLAG(IS_OHOS)
+void CorsURLLoader::OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) {
+  DCHECK(network_loader_);
+  DCHECK(forwarding_client_);
+
+  forwarding_client_->OnTransferDataWithSharedMemory(std::move(region), buffer_size);
+}
+#endif
+
 void CorsURLLoader::CheckTainted(const net::RedirectInfo& redirect_info) {
   // If `actualResponse`’s location URL’s origin is not same origin with
   // `request`’s current url’s origin and `request`’s origin is not same origin

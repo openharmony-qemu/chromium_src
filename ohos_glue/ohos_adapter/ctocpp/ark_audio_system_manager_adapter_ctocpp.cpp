@@ -217,7 +217,6 @@ bool ArkAudioSystemManagerAdapterCToCpp::SetLanguage(
   return _struct->set_language(_struct, language);
 }
 
-
 ArkAudioSystemManagerAdapterCToCpp::ArkAudioSystemManagerAdapterCToCpp() {
 }
 

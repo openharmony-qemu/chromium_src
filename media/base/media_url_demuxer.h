@@ -56,6 +56,7 @@ class MEDIA_EXPORT MediaUrlDemuxer : public Demuxer {
   void ForwardBufferedEndTimeChangeToDemuxerHost(
       base::TimeDelta buffered_time) override;
   void SetPreloadType(uint32_t preload_type) override;
+  void SetMediaSourceType(uint32_t media_source_type) override;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
   // Demuxer interface.

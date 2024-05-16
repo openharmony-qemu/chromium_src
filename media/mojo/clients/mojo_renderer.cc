@@ -123,6 +123,13 @@ void MojoRenderer::InitializeRendererFromUrl(media::RendererClient* client) {
 
   const MediaUrlParams& url_params = media_resource_->GetMediaUrlParams();
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  mojom::CustomMediaUrlParamsPtr custom_media_url_params =
+      mojom::CustomMediaUrlParams::New(
+          url_params.custom_media_url_params.preload_type,
+          url_params.custom_media_url_params.media_source_type);
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
   // Using base::Unretained(this) is safe because |this| owns
   // |remote_renderer_|, and the callback won't be dispatched if
   // |remote_renderer_| is destroyed.
@@ -131,7 +138,7 @@ void MojoRenderer::InitializeRendererFromUrl(media::RendererClient* client) {
       url_params.top_frame_origin, url_params.has_storage_access,
       url_params.allow_credentials, url_params.is_hls
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-      , url_params.preload_type
+      , std::move(custom_media_url_params)
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
     );
 

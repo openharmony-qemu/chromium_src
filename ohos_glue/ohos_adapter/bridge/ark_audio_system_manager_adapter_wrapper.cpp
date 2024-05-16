@@ -171,7 +171,7 @@ ArkAudioSystemManagerAdapterWrapper::GetDefaultInputDevice() {
 }
 
 bool ArkAudioSystemManagerAdapterWrapper::SetLanguage(
-    std::string language) {
+    const std::string language) {
   if (!ctocpp_) {
     return false;
   }

@@ -18,12 +18,12 @@
 
 namespace OHOS::ArkWeb {
 
-const std::string LIB_FILE_NAME = "libnweb_ohos_adapter.z.so";
+const std::string LIB_FILE_NAME = "libohos_adapter_glue_source.z.so";
 
 #if defined(__aarch64__) || defined(__x86_64__)
-const std::string LIB_DIR_PATH = "/system/lib64/platformsdk";
+const std::string LIB_DIR_PATH = "/system/lib64";
 #else
-const std::string LIB_DIR_PATH = "/system/lib/platformsdk";
+const std::string LIB_DIR_PATH = "/system/lib";
 #endif
 
 ArkWebAdapterBridgeHelper &

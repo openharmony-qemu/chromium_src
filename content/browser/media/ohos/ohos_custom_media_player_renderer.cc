@@ -235,9 +235,11 @@ OHOSCustomMediaPlayerRenderer::OHOSCustomMediaPlayerRenderer(
 OHOSCustomMediaPlayerRenderer::~OHOSCustomMediaPlayerRenderer() {
   WebContentsImpl* web_contents_impl =
       static_cast<WebContentsImpl*>(web_contents());
-  if (web_contents_impl && media_player_) {
-    web_contents_impl->RemoveCustomMediaPlayer(
-        media_player_id_, media_player_.get());
+  if (media_player_) {
+    if (web_contents_impl) {
+      web_contents_impl->RemoveCustomMediaPlayer(
+          media_player_id_, media_player_.get());
+    }
     media_player_->Release();
   }
 }

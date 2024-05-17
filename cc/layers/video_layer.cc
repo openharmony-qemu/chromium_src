@@ -38,6 +38,12 @@ void VideoLayer::OnLayerRectUpdate(const gfx::Rect& rect) {
     rect_change_callback_.Run(rect);
   }
 }
+
+void VideoLayer::ResetLayerRectUpdateCallback() {
+  if (!rect_change_callback_.is_null()) {
+    rect_change_callback_.Reset();
+  }
+}
 #endif
 
 VideoLayer::VideoLayer(VideoFrameProvider* provider,

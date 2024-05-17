@@ -1,3 +1,11 @@
+{ "name": "OHOS_AI",
+"owner": "",
+"desc": "",
+"effect":"main gn blink_core other",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},
 { "name": "OHOS_API_INIT_WEB_ENGINE",
 "owner": "gaolei",
 "desc": "",
@@ -751,14 +759,6 @@
 "default": "true"
 },
 { "name": "REPORT_SYS_EVENT",
-"owner": "",
-"desc": "",
-"effect":"main gn blink_core other",
-"genCommandline": "default",
-"dependence": "",
-"default": "true"
-},
-{ "name": "OHOS_AI",
 "owner": "",
 "desc": "",
 "effect":"main gn blink_core other",

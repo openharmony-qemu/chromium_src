@@ -200,6 +200,9 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
   browser_settings.custom_video_player_overlay =
       std::get<1>(native_video_player_config_);
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+#if defined(OHOS_MULTI_WINDOW)
+  browser_settings.supports_multiple_windows = IsMultiWindowAccess();
+#endif // defined(OHOS_MULTI_WINDOW)
 }
 
 void NWebPreferenceDelegate::SetBrowserSettingsToNetHelpers() {
@@ -212,6 +215,7 @@ void NWebPreferenceDelegate::SetBrowserSettingsToNetHelpers() {
 
 void NWebPreferenceDelegate::PutMultiWindowAccess(bool flag) {
   multiWindow_access_ = flag;
+  WebPreferencesChanged();
 }
 
 void NWebPreferenceDelegate::PutEnableContentAccess(bool flag) {

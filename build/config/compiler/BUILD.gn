@@ -861,6 +861,10 @@ config("compiler") {
     asmflags += cflags_c
   }
 
+  if (use_safe_libcxx) {
+    defines += [ "_LIBCPP_ENABLE_ASSERTIONS=1" ]
+  }
+
   # Rust compiler flags setup.
   # ---------------------------
   rustflags = [

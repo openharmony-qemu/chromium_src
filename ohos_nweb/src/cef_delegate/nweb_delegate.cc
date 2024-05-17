@@ -1381,10 +1381,11 @@ void NWebDelegate::OnContinue() {
     }
 
 #ifdef OHOS_RENDER_PROCESS_MODE
-    if (GetBrowser()->GetHost()->NeedsReload()) {
+    if (GetBrowser() && GetBrowser()->GetHost() &&
+        GetBrowser()->GetHost()->NeedsReload()) {
       LOG(INFO) << "NWebDelegate::OnContinue restore.";
       GetBrowser()->GetHost()->Restore();
-      GetBrowser()->GetHost()->SetNeedsReload(false);
+      GetBrowser()->GetHost()->NotifyNeedsReload(false);
     }
 #endif
 

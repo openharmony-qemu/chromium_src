@@ -205,7 +205,7 @@ ArkAudioSystemManagerAdapterCToCpp::GetDefaultInputDevice() {
 
 ARK_WEB_NO_SANITIZE
 bool ArkAudioSystemManagerAdapterCToCpp::SetLanguage(
-    ArkWebString language) {
+    const ArkWebString &language) {
   ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
 
   ark_audio_system_manager_adapter_t* _struct = GetStruct();

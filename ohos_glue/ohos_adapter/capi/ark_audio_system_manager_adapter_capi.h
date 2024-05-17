@@ -130,6 +130,9 @@ typedef struct _ark_audio_system_manager_adapter_t {
 
   ark_audio_device_desc_adapter_t *(ARK_WEB_CALLBACK *get_default_input_device)(
       struct _ark_audio_system_manager_adapter_t *self);
+      
+  bool(ARK_WEB_CALLBACK* set_language)(
+      struct _ark_audio_system_manager_adapter_t* self, ArkWebString language);
 } ark_audio_system_manager_adapter_t;
 
 #ifdef __cplusplus

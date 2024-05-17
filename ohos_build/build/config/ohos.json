@@ -758,3 +758,11 @@
 "dependence": "",
 "default": "true"
 },
+{ "name": "OHOS_AI",
+"owner": "",
+"desc": "",
+"effect":"main gn blink_core other",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},

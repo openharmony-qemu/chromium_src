@@ -5,10 +5,8 @@
 #ifndef MEDIA_BASE_CUSTOM_MEDIA_URL_PARAMS_H_
 #define MEDIA_BASE_CUSTOM_MEDIA_URL_PARAMS_H_
 
+#include <cstdint>
 #include "media/base/media_export.h"
-#include "net/cookies/site_for_cookies.h"
-#include "url/gurl.h"
-#include "url/origin.h"
 
 namespace media {
 

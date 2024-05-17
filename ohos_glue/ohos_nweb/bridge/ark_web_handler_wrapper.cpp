@@ -928,4 +928,36 @@ void ArkWebHandlerWrapper::OnRenderProcessResponding() {
 void ArkWebHandlerWrapper::OnViewportFitChange(ArkWebViewportFit viewportFit) {
   ark_web_handler_->OnViewportFitChange(static_cast<int>(viewportFit));
 }
+
+void ArkWebHandlerWrapper::CreateOverlay(void* data,
+                                         size_t len,
+                                         int width,
+                                         int height,
+                                         int offset_x,
+                                         int offset_y,
+                                         int rect_width,
+                                         int rect_height,
+                                         int point_x,
+                                         int point_y) {
+  ark_web_handler_->CreateOverlay(data,
+                                  len,
+                                  width,
+                                  height,
+                                  offset_x,
+                                  offset_x,
+                                  rect_width,
+                                  rect_height,
+                                  point_x,
+                                  point_y);
+}
+
+void ArkWebHandlerWrapper::OnOverlayStateChanged(int offset_x,
+                                                 int offset_y,
+                                                 int rect_width,
+                                                 int rect_height) {
+  ark_web_handler_->OnOverlayStateChanged(offset_x,
+                                          offset_y,
+                                          rect_width,
+                                          rect_height);
+}
 } // namespace OHOS::ArkWeb

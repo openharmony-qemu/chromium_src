@@ -382,6 +382,26 @@ typedef struct _ark_web_handler_t {
   void(ARK_WEB_CALLBACK* on_viewport_fit_change)(
       struct _ark_web_handler_t* self,
       int viewport_fit);
+
+  void(ARK_WEB_CALLBACK* create_overlay)(
+      struct _ark_web_handler_t* self,
+      void* data,
+      size_t len,
+      int width,
+      int height,
+      int offset_x,
+      int offset_y,
+      int rect_width,
+      int rect_height,
+      int point_x,
+      int point_y);
+
+  void(ARK_WEB_CALLBACK* on_overlay_state_changed)(
+      struct _ark_web_handler_t* self,
+      int offset_x,
+      int offset_y,
+      int rect_width,
+      int rect_height);
 } ark_web_handler_t;
 
 #ifdef __cplusplus

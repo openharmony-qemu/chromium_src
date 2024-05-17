@@ -863,4 +863,63 @@ void NWebRenderHandler::GetWordSelection(CefRefPtr<CefBrowser> browser,
   }
 }
 #endif
+
+// #ifdef OHOS_AI
+void NWebRenderHandler::CreateOverlay(CefRefPtr<CefBrowser> browser,
+                                      CefRefPtr<CefImage> cef_image,
+                                      const CefRect& cef_image_rect,
+                                      const CefPoint& cef_touch_point,
+                                      const CefRect& cef_screen_rect) {
+  if (auto handler = handler_.lock()) {
+    gfx::ImageSkia image_skia = static_cast<CefImageImpl*>(cef_image.get())->AsImageSkia();
+    int width = cef_image->GetWidth();
+    int height = cef_image->GetHeight();
+    auto bitmap = cef_image->GetAsBitmap(1, CEF_COLOR_TYPE_RGBA_8888, CEF_ALPHA_TYPE_OPAQUE, width, height);
+    if (!bitmap) {
+      LOG(ERROR) << "NWebRenderHandler::CreateOverlay, bitmap invalid";
+      return;
+    }
+    size_t data_size = bitmap->GetSize();
+    void* buffer = calloc(1, data_size);
+    if (!buffer) {
+      LOG(ERROR) << "NWebRenderHandler::CreateOverlay, calloc failed";
+      return;
+    }
+    size_t read_size = bitmap->GetData(buffer, data_size, 0);
+    if (read_size != data_size) {
+      free(buffer);
+      LOG(ERROR) << "NWebRenderHandler::CreateOverlay, get data from bitmap failed";
+      return;
+    }
+
+    cef_image_rect_ = cef_image_rect;
+    float scale = browser->GetHost()->GetPageScaleFactor();
+    auto view_port_height = browser->GetHost()->GetShrinkViewportHeight();
+    handler->CreateOverlay(
+        buffer,
+        read_size,
+        width,
+        height,
+        (cef_image_rect.x - cef_screen_rect.y) * scale,
+        (cef_image_rect.y - cef_screen_rect.y) * scale + view_port_height * screen_info.display_ratio,
+        cef_image_rect.width * scale,
+        cef_image_rect.height * scale,
+        cef_touch_point.x * scale,
+        cef_touch_point.y * scale);
+  }
+}
+
+void NWebRenderHandler::OnOverlayStateChanged(CefRefPtr<CefBroser> browser,
+                                              const CefRect& cef_screen_rect) {
+  if (auto handler = handler_.lock()) {
+    float scale = browser->GetHost()->GetPageScaleFactor();
+    auto view_port_height = browser->GetHost()->GetShrinkViewportHeight();
+    handler->OnOverlayStateChanged(
+        (cef_image_rect.x - cef_screen_rect.y) * scale,
+        (cef_image_rect.y - cef_screen_rect.y) * scale + view_port_height * screen_info.display_ratio,
+        cef_image_rect.width * scale,
+        cef_image_rect.height * scale);
+  }
+}
+// #endif
 }  // namespace OHOS::NWeb

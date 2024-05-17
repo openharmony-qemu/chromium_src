@@ -891,6 +891,28 @@ public:
    * @param viewport_fit The type of the viewport-fit.
    */
   virtual void OnViewportFitChange(ViewportFit viewportFit) {}
+
+    /**
+     * @brief called when creating overlay.
+     */
+    virtual void CreateOverlay(void* data,
+                               size_t len,
+                               int width,
+                               int height,
+                               int offsetX,
+                               int offsetY,
+                               int rectWidth,
+                               int rectHeight,
+                               int pointX,
+                               int pointY) {}
+
+    /**
+     * @brief called when state changed.
+     */
+    virtual void OnOverlayStateChanged(int offsetX,
+                                       int offsetY,
+                                       int rectWidth,
+                                       int rectHeight) {}
 };
 }  // namespace OHOS::NWeb
 

@@ -640,6 +640,22 @@ public:
 
   void OnViewportFitChange(ArkWebViewportFit viewport_fit) override;
 
+  void CreateOverlay(void* data,
+                     size_t len,
+                     int width,
+                     int height,
+                     int offset_x,
+                     int offset_y,
+                     int rect_width,
+                     int rect_height,
+                     int point_x,
+                     int point_y) override;
+
+  void OnOverlayStateChanged(int offset_x,
+                             int offset_y,
+                             int rect_width,
+                             int rect_height) override;
+
 private:
   ArkWebRefPtr<ArkWebHandler> ark_web_handler_;
 };

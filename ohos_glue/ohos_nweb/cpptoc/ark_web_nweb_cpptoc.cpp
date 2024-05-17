@@ -1838,6 +1838,15 @@ void ARK_WEB_CALLBACK ark_web_nweb_on_online_render_to_foreground(struct _ark_we
   // Execute
   ArkWebNWebCppToC::Get(self)->OnOnlineRenderToForeground();
 }
+
+void ARK_WEB_CALLBACK ark_web_nweb_on_text_selected(struct _ark_web_nweb_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->OnTextSelected();
+}
 } // namespace
 
 ArkWebNWebCppToC::ArkWebNWebCppToC() {
@@ -2030,6 +2039,7 @@ ArkWebNWebCppToC::ArkWebNWebCppToC() {
   GetStruct()->get_select_info = ark_web_nweb_get_select_info;
   GetStruct()->on_safe_insets_change = ark_web_nweb_on_safe_insets_change;
   GetStruct()->on_online_render_to_foreground = ark_web_nweb_on_online_render_to_foreground;
+  GetStruct()->on_text_selected = ark_web_nweb_on_text_selected;
 }
 
 ArkWebNWebCppToC::~ArkWebNWebCppToC() {

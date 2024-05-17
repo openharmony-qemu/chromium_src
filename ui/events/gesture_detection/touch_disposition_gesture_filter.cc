@@ -85,6 +85,10 @@ DispositionHandlingInfo GetDispositionHandlingInfo(EventType type) {
     case ET_GESTURE_DRAG_LONG_PRESS:
       return Info(RT_START);
 #endif
+#ifdef OHOS_AI
+    case ET_GESTURE_CREATE_OVERLAY:
+      return Info(RT_START);
+#endif
     case ET_GESTURE_SHORT_PRESS:
       return Info(RT_START);
     case ET_GESTURE_LONG_TAP:

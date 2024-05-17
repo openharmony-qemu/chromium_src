@@ -25,6 +25,9 @@ class GESTURE_DETECTION_EXPORT GestureListener {
 #ifdef OHOS_DRAG_DROP
   virtual void OnDragLongPress(const MotionEvent& e) = 0;
 #endif
+#ifdef OHOS_AI
+  virtual void OnCreateOverlay(const MotionEvent& e) = 0;
+#endif
   virtual bool OnScroll(const MotionEvent& e1,
                         const MotionEvent& e2,
                         const MotionEvent& secondary_pointer_down,
@@ -68,6 +71,9 @@ class GESTURE_DETECTION_EXPORT SimpleGestureListener
   void OnLongPress(const MotionEvent& e) override;
 #ifdef OHOS_DRAG_DROP
   void OnDragLongPress(const MotionEvent& e) override;
+#endif
+#ifdef OHOS_AI
+  void OnCreateOverlay(const MotionEvent& e) override;
 #endif
   bool OnScroll(const MotionEvent& e1,
                 const MotionEvent& e2,

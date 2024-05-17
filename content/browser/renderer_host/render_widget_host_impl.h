@@ -918,6 +918,14 @@ class CONTENT_EXPORT RenderWidgetHostImpl
                         GetWordSelectionCallback callback) override;
 #endif
 
+#ifdef OHOS_AI
+  void CreateOverlay(const SkBitmap& bitmap,
+                     const gfx::Rect& image_rect,
+                     const gfx::Point& touch_point) override;
+  gfx::Rect GetScreenRect();
+  void OnTextSelected(bool flag);
+#endif
+
  protected:
   // |routing_id| must not be MSG_ROUTING_NONE.
   // If this object outlives |delegate|, DetachDelegate() must be called when

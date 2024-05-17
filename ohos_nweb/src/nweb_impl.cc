@@ -2892,3 +2892,12 @@ void NWebImpl::OnSafeInsetsChange(int left, int top, int right, int bottom) {
   nweb_delegate_->OnSafeInsetsChange(left, top, right, bottom);
 }
 #endif
+
+#ifdef OHOS_AI
+void NWebImpl::OnTextSelected() {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->OnTextSelected();
+}
+#endif

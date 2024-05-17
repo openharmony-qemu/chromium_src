@@ -205,6 +205,13 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
         LOG(DEBUG) << "DragDrop UpdateStateForEventPost";
         break;
 #endif
+#ifdef OHOS_AI
+      case ET_GESTURE_CREATE_OVERLAY:
+        DCHECK(!IsScaleGestureDetectionInProgress());
+        current_longpress_time_ = gesture.time;
+        LOG(DEBUG) << "CreateOverlay UpdateStateForEventPost";
+        break;
+#endif
       case ET_GESTURE_LONG_TAP:
         current_longpress_time_ = base::TimeTicks();
         break;
@@ -254,6 +261,9 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
            gesture.type() == ET_GESTURE_BEGIN ||
 #ifdef OHOS_DRAG_DROP
            gesture.type() == ET_GESTURE_DRAG_LONG_PRESS ||
+#endif
+#ifdef OHOS_AI
+           gesture.type() == ET_GESTURE_CREATE_OVERLAY ||
 #endif
            gesture.type() == ET_GESTURE_END);
 
@@ -680,6 +690,22 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
   }
 #endif
 
+#ifdef OHOS_AI
+  void OnCreateOverlay(const MotionEvent& e) override {
+    LOG(DEBUG) << "CreateOverlay GestureDetector::OnCreateOverlay";
+    DCHECK(!IsDoubleTapInProgress());
+    SetIgnoreSingleTap(true);
+    GestureEventDetails create_overlay_details(ET_GESTURE_CREATE_OVERLAY);
+    create_overlay_details.set_device_type(
+        GestureDeviceType::DEVICE_TOUCHSCREEN);
+    Send(CreateGesture(create_overlay_details, e));
+  }
+
+  void StopCreateOverlayGesture() {
+    gesture_detector_.StopCreateOverlayGesture();
+  }
+#endif
+
   GestureEventData CreateGesture(const GestureEventDetails& details,
                                  int motion_event_id,
                                  MotionEvent::ToolType primary_tool_type,
@@ -956,6 +982,11 @@ bool GestureProvider::OnTouchEvent(const MotionEvent& event) {
 #ifdef OHOS_DRAG_DROP
   if (event.GetAction() == MotionEvent::Action::UP) {
     gesture_listener_->StopDragLongPressGesture();
+  }
+#endif
+#ifdef OHOS_AI
+  if (event.GetAction() == MotionEvent::Action::UP) {
+    gesture_listener_->StopCreateOverlayGesture();
   }
 #endif
   if (!CanHandle(event))

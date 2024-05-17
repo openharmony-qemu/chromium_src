@@ -1143,6 +1143,12 @@ public:
    */
   /*--ark web()--*/
   void OnOnlineRenderToForeground() override;
+
+  /**
+    * @brief Called when text is selected in image.
+   */
+  /*--ark web()--*/
+  void OnTextSelected() override;
 private:
   std::shared_ptr<OHOS::NWeb::NWeb> nweb_nweb_;
 };

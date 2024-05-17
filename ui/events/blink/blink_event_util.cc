@@ -404,6 +404,15 @@ WebGestureEvent CreateWebGestureEvent(const GestureEventDetails& details,
           IfNanUseMaxFloat(details.bounding_box_f().height());
       break;
 #endif
+#ifdef OHOS_AI
+    case ET_GESTURE_CREATE_OVERLAY:
+      gesture.SetType(WebInputEvent::Type::kGestureCreateOverlay);
+      gesture.data.long_press.width =
+          IfNanUseMaxFloat(details.bounding_box_f().width());
+      gesture.data.long_press.height =
+          IfNanUseMaxFloat(details.bounding_box_f().height());
+      break;
+#endif
     case ET_GESTURE_LONG_TAP:
       gesture.SetType(WebInputEvent::Type::kGestureLongTap);
       gesture.data.long_press.width =
@@ -603,6 +612,9 @@ std::unique_ptr<blink::WebInputEvent> TranslateAndScaleWebInputEvent(
       case blink::WebInputEvent::Type::kGestureLongPress:
 #ifdef OHOS_DRAG_DROP
       case blink::WebInputEvent::Type::kGestureDragLongPress:
+#endif
+#ifdef OHOS_AI
+      case blink::WebInputEvent::Type::kGestureCreateOverlay:
 #endif
       case blink::WebInputEvent::Type::kGestureLongTap:
         gesture_event->data.long_press.width *= scale;

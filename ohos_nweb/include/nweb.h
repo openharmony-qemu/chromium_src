@@ -1282,6 +1282,12 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      */
     /*--ark web()--*/
     virtual void OnOnlineRenderToForeground() = 0;
+
+    /**
+    * @brief Called when text is selected in image.
+     */
+    /*--ark web()--*/
+    virtual void OnTextSelected() = 0;
 };
 }  // namespace OHOS::NWeb
 

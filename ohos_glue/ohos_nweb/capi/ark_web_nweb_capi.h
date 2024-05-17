@@ -529,6 +529,8 @@ typedef struct _ark_web_nweb_t {
                                                 int bottom);
 
   void(ARK_WEB_CALLBACK *on_online_render_to_foreground)(struct _ark_web_nweb_t *self);
+
+  void(ARK_WEB_CALLBACK *on_text_selected)(struct _ark_web_nweb_t *self);
 } ark_web_nweb_t;
 
 #ifdef __cplusplus

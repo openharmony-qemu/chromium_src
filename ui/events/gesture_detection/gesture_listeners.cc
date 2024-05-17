@@ -23,6 +23,9 @@ void SimpleGestureListener::OnLongPress(const MotionEvent& e) {}
 #ifdef OHOS_DRAG_DROP
 void SimpleGestureListener::OnDragLongPress(const MotionEvent& e) {
 }
+#ifdef OHOS_AI
+void SimpleGestureListener::OnCreateOverlay(const MotionEvent& e) {
+}
 #endif
 bool SimpleGestureListener::OnScroll(const MotionEvent& e1,
                                      const MotionEvent& e2,

@@ -161,6 +161,13 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
   virtual void OnSafeInsetsChange(int left, int top, int right, int bottom);
 #endif
 
+#ifdef OHOS_AI
+  virtual void CreateOverlay(const gfx::ImageSkia& image,
+                             const gfx::Rect& image_rect,
+                             const gfx::Point& touch_point,
+                             const gfx::Rect& screen_rect) {}
+#endif
+
  protected:
   virtual ~RenderViewHostDelegateView() {}
 };

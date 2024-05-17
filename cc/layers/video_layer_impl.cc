@@ -181,8 +181,12 @@ void VideoLayerImpl::AppendQuads(viz::CompositorRenderPass* render_pass,
                         clip_rect_opt, contents_opaque(), draw_opacity(),
                         GetSortingContextId());
 #if BUILDFLAG(IS_OHOS)
-   visible_quad_rect.set_origin(
-        ScreenSpaceTransform().MapPoint(visible_quad_rect.origin()));
+  visible_quad_rect.set_origin(
+      ScreenSpaceTransform().MapPoint(visible_quad_rect.origin()));
+  LOG(DEBUG) << "[NativeEmbed] visible_quad_rect:"
+             << visible_quad_rect.ToString()
+             << ", bounds_:" << bounds().ToString();
+  visible_quad_rect.set_size(bounds());
   if (!visible_quad_rect_.ApproximatelyEqual(visible_quad_rect, 1)) {
     visible_quad_rect_ = visible_quad_rect;
     layer_tree_impl()->OnLayerRectUpdate(id(), visible_quad_rect);

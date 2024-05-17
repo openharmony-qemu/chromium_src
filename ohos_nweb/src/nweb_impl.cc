@@ -2675,8 +2675,12 @@ int NWebImpl::ScaleGestureChange(double scale, double centerX, double centerY) {
 // static
 void NWebImpl::SetRenderProcessMode(RenderProcessMode mode) {
   LOG(INFO) << "SetRenderProcessMode mode:" << (int)mode;
-  content::RenderProcessHost::SetRenderProcessMode(
-      static_cast<content::RenderProcessMode>(mode));
+  content::RenderProcessMode render_process_mode =
+      content::RenderProcessMode::SINGLE_MODE;
+  if (mode == RenderProcessMode::MULTIPLE_MODE) {
+    render_process_mode = content::RenderProcessMode::MULTIPLE_MODE;
+  }
+  content::RenderProcessHost::SetRenderProcessMode(render_process_mode);
 
 #if defined(OHOS_SITE_ISOLATION)
   g_siteIsolationMode = ShouldEnableSiteIsolation();
@@ -2688,8 +2692,12 @@ void NWebImpl::SetRenderProcessMode(RenderProcessMode mode) {
 
 // static
 RenderProcessMode NWebImpl::GetRenderProcessMode() {
-  return static_cast<RenderProcessMode>(
-      content::RenderProcessHost::render_process_mode());
+  content::RenderProcessMode render_process_mode =
+      content::RenderProcessHost::render_process_mode();
+  if (render_process_mode == content::RenderProcessMode::SINGLE_MODE) {
+    return RenderProcessMode::SINGLE_MODE;
+  }
+  return RenderProcessMode::MULTIPLE_MODE;
 }
 #endif // OHOS_RENDER_PROCESS_MODE
 }  // namespace OHOS::NWeb

@@ -169,4 +169,13 @@ ArkAudioSystemManagerAdapterWrapper::GetDefaultInputDevice() {
 
   return std::make_shared<ArkAudioDeviceDescAdapterWrapper>(adapter);
 }
+
+bool ArkAudioSystemManagerAdapterWrapper::SetLanguage(
+    const std::string& language) {
+  if (!ctocpp_) {
+    return false;
+  }
+
+  return ctocpp_->SetLanguage(ArkWebStringClassToStruct(language));
+}
 } // namespace OHOS::ArkWeb

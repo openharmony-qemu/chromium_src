@@ -40,6 +40,10 @@
 #include "nweb_drag_data.h"
 #include "nweb_drag_data_impl.h"
 #endif  // #ifdef OHOS_DRAG_DROP
+#ifdef OHOS_AI
+#include "cef/libcef/browser/image_impl.h"
+#include "ui/gfx/image/image_skia.h"
+#endif  // #ifdef OHOS_AI
 
 namespace {
 cef_screen_orientation_type_t ConvertOrientationType(
@@ -864,7 +868,7 @@ void NWebRenderHandler::GetWordSelection(CefRefPtr<CefBrowser> browser,
 }
 #endif
 
-// #ifdef OHOS_AI
+#ifdef OHOS_AI
 void NWebRenderHandler::CreateOverlay(CefRefPtr<CefBrowser> browser,
                                       CefRefPtr<CefImage> cef_image,
                                       const CefRect& cef_image_rect,
@@ -901,7 +905,7 @@ void NWebRenderHandler::CreateOverlay(CefRefPtr<CefBrowser> browser,
         width,
         height,
         (cef_image_rect.x - cef_screen_rect.y) * scale,
-        (cef_image_rect.y - cef_screen_rect.y) * scale + view_port_height * screen_info.display_ratio,
+        (cef_image_rect.y - cef_screen_rect.y) * scale + view_port_height * screen_info_.display_ratio,
         cef_image_rect.width * scale,
         cef_image_rect.height * scale,
         cef_touch_point.x * scale,
@@ -909,17 +913,17 @@ void NWebRenderHandler::CreateOverlay(CefRefPtr<CefBrowser> browser,
   }
 }
 
-void NWebRenderHandler::OnOverlayStateChanged(CefRefPtr<CefBroser> browser,
+void NWebRenderHandler::OnOverlayStateChanged(CefRefPtr<CefBrowser> browser,
                                               const CefRect& cef_screen_rect) {
   if (auto handler = handler_.lock()) {
     float scale = browser->GetHost()->GetPageScaleFactor();
     auto view_port_height = browser->GetHost()->GetShrinkViewportHeight();
     handler->OnOverlayStateChanged(
-        (cef_image_rect.x - cef_screen_rect.y) * scale,
-        (cef_image_rect.y - cef_screen_rect.y) * scale + view_port_height * screen_info.display_ratio,
-        cef_image_rect.width * scale,
-        cef_image_rect.height * scale);
+        (cef_image_rect_.x - cef_screen_rect.y) * scale,
+        (cef_image_rect_.y - cef_screen_rect.y) * scale + view_port_height * screen_info_.display_ratio,
+        cef_image_rect_.width * scale,
+        cef_image_rect_.height * scale);
   }
 }
-// #endif
+#endif
 }  // namespace OHOS::NWeb

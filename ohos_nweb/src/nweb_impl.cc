@@ -35,12 +35,15 @@
 #include "base/trace_event/common/trace_event_common.h"
 #include "base/trace_event/trace_event.h"
 #include "cef_delegate/nweb_download_handler_delegate.h"
+#include "content/renderer/host_proxy.h"
+#include "gpu/ipc/common/nweb_native_window_tracker.h"
 #include "ndk/arkweb_native_object.h"
 #include "nweb_delegate_adapter.h"
 #include "nweb_export.h"
 #include "nweb_handler.h"
 #include "nweb_hilog.h"
 #include "nweb_hit_test_result_impl.h"
+#include "ohos_adapter_helper.h"
 #include "res_sched_client_adapter.h"
 #include "nweb_resize_helper.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
@@ -185,6 +188,12 @@ static bool GetOOPGPUEnable() {
   return system_properties_adapter.GetOOPGPUEnable();
 }
 
+static void SetOOPGPUDisable() {
+  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                                    .GetSystemPropertiesInstance();
+  system_properties_adapter.SetOOPGPUDisable();
+}
+
 #if defined(OHOS_SITE_ISOLATION)
 static std::string GetSiteIsolationMode() {
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
@@ -326,19 +335,38 @@ void InitialWebEngineArgs(std::list<std::string>& web_engine_args,
   }
 
   auto args_to_delete = GetArgsToDelete(init_args);
+  bool xml_gpu = false;
   for (auto arg : args_to_delete) {
     auto it = std::find(web_engine_args.begin(), web_engine_args.end(), arg);
     if (it != web_engine_args.end()) {
       web_engine_args.erase(it);
+      if (*it == "--in-process-gpu") {
+        xml_gpu = true;
+      }
     }
+  }
+  if (!xml_gpu) {
+    SetOOPGPUDisable();
   }
   auto args_to_add = GetArgsToAdd(init_args);
   for (auto arg : args_to_add) {
     web_engine_args.emplace_back(arg);
   }
 
-  if (!GetOOPGPUEnable()) {
+  bool oop_gpu_enable = GetOOPGPUEnable();
+  if (!oop_gpu_enable) {
     web_engine_args.emplace_back("--disable-canvas-oop-gpu-rasterization");
+  }
+
+  if (!xml_gpu && oop_gpu_enable) {
+    auto it = std::find(web_engine_args.begin(), web_engine_args.end(), "--in-process-gpu");
+    if (it != web_engine_args.end()) {
+      web_engine_args.erase(it);
+    }
+  }
+
+  if (xml_gpu && !oop_gpu_enable) {
+    web_engine_args.emplace_back("--in-process-gpu");
   }
 
   if (GetIsMultiRendererProcess(init_args)) {

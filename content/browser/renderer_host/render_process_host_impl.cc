@@ -1608,6 +1608,25 @@ const unsigned int RenderProcessHostImpl::kMaxFrameDepthForPriority =
 const base::TimeDelta RenderProcessHostImpl::kKeepAliveHandleFactoryTimeout =
     base::Milliseconds(kKeepAliveHandleFactoryTimeoutInMSec);
 
+#if BUILDFLAG(IS_OHOS)
+void RenderProcessHostImpl::Refresh() {
+  RenderProcessHost::iterator it = RenderProcessHost::AllHostsIterator();
+  if (it.IsAtEnd()) {
+    return;
+  }
+  do {
+    RenderProcessHostImpl* host = static_cast<RenderProcessHostImpl*>(
+      it.GetCurrentValue());
+    auto temp_set = host->render_frame_host_id_set_;
+
+    for (auto rfh_id : temp_set) {
+      auto rfh = RenderFrameHostImpl::FromID(rfh_id);
+      rfh->Reload();
+    }
+  } while (0);
+}
+#endif
+
 RenderProcessHostImpl::RenderProcessHostImpl(
     BrowserContext* browser_context,
     StoragePartitionImpl* storage_partition_impl,

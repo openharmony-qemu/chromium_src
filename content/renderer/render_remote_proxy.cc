@@ -10,6 +10,7 @@
 #include "base/logging.h"
 #include "base/posix/global_descriptors.h"
 #include "content/public/common/content_descriptors.h"
+#include "gpu/ipc/common/nweb_native_window_tracker.h"
 #include "ohos_adapter_helper.h"
 
 namespace content {
@@ -64,6 +65,55 @@ void RenderRemoteProxy::NotifyBrowserFd(int32_t ipcFd,
   LOG(INFO) << "notify browser fd received";
   RenderRemoteProxy::is_browser_fd_received_ = true;
   RenderRemoteProxy::browser_fd_cv_.notify_one();
+}
+
+void RenderRemoteProxy::NotifyBrowser(
+  int32_t ipcFd, int32_t sharedFd, int32_t crashFd
+#if BUILDFLAG(IS_OHOS)
+  , std::shared_ptr<OHOS::NWeb::AafwkBrowserClientAdapter> clientAdapter
+#endif
+) {
+  base::GlobalDescriptors* g_fds = base::GlobalDescriptors::GetInstance();
+  if (g_fds != nullptr) {
+    int new_ipc_fd;
+    if ((new_ipc_fd = dup(ipcFd)) < 0) {
+      LOG(ERROR) << "ipcFd duplicate error";
+      g_fds->Set(kMojoIPCChannel, ipcFd);
+      ipc_fd_ = ipcFd;
+    } else {
+      g_fds->Set(kMojoIPCChannel, new_ipc_fd);
+      ipc_fd_ = new_ipc_fd;
+      close(ipcFd);
+    }
+
+    int new_shared_fd;
+    if ((new_shared_fd = dup(sharedFd)) < 0) {
+      LOG(ERROR) << "sharedFd duplicate error";
+      g_fds->Set(kFieldTrialDescriptor, sharedFd);
+      shared_fd_ = sharedFd;
+    } else {
+      g_fds->Set(kFieldTrialDescriptor, new_shared_fd);
+      shared_fd_ = new_shared_fd;
+      close(sharedFd);
+    }
+
+    int new_crash_id;
+    if ((new_crash_id = dup(crashFd)) < 0) {
+      LOG(ERROR) << "crashFd duplicate error";
+      g_fds->Set(kCrashDumpSignal, crashFd);
+      crash_id_ = crashFd;
+    } else {
+      g_fds->Set(kCrashDumpSignal, new_crash_id);
+      crash_id_ = new_crash_id;
+      close(crashFd);
+    }
+  }
+  RenderRemoteProxy::is_browser_fd_received_ = true;
+  RenderRemoteProxy::browser_fd_cv_.notify_one();
+  if (clientAdapter) {
+    LOG(DEBUG) << "NWebNativeWindowTracker set g_browser_client_";
+    NWebNativeWindowTracker::Get()->g_browser_client_ = clientAdapter;
+  }
 }
 
 void RenderRemoteProxy::CreateAndRegist(const base::CommandLine& command_line) {

@@ -42,6 +42,15 @@ typedef struct _ark_aafwk_app_mgr_client_adapter_t {
   int(ARK_WEB_CALLBACK *get_render_process_termination_status)(
       struct _ark_aafwk_app_mgr_client_adapter_t *self, pid_t renderPid,
       int *status);
+
+  int(ARK_WEB_CALLBACK *start_child_process)(
+      struct _ark_aafwk_app_mgr_client_adapter_t *self,
+      const ArkWebString *renderParam, int32_t ipcFd, int32_t sharedFd,
+      int32_t crashFd, pid_t *renderPid, const ArkWebString *processType);
+
+  void(ARK_WEB_CALLBACK *save_browser_connect)(
+    struct _ark_aafwk_app_mgr_client_adapter_t *self, 
+    struct _ark_aafwk_browser_host_adapter_t* adapter);
 } ark_aafwk_app_mgr_client_adapter_t;
 
 #ifdef __cplusplus

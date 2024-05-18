@@ -520,7 +520,7 @@ void GpuDataManagerImplPrivate::InitializeGpuModes() {
   // Android and Chrome OS can't switch to software compositing. If the GPU
   // process initialization fails or GPU process is too unstable then crash the
   // browser process to reset everything.
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS_ASH)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS_ASH) && !BUILDFLAG(IS_OHOS)
   fallback_modes_.push_back(gpu::GpuMode::DISPLAY_COMPOSITOR);
   if (SwiftShaderAllowed())
     fallback_modes_.push_back(gpu::GpuMode::SWIFTSHADER);

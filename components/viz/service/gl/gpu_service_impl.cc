@@ -4,6 +4,7 @@
 
 #include "components/viz/service/gl/gpu_service_impl.h"
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <utility>
@@ -41,6 +42,7 @@
 #include "gpu/ipc/common/gpu_client_ids.h"
 #include "gpu/ipc/common/gpu_memory_buffer_support.h"
 #include "gpu/ipc/common/gpu_peak_memory.h"
+#include "gpu/ipc/common/gpu_surface_id_tracker.h"
 #include "gpu/ipc/common/memory_stats.h"
 #include "gpu/ipc/service/gpu_channel.h"
 #include "gpu/ipc/service/gpu_channel_manager.h"
@@ -1084,6 +1086,13 @@ void GpuServiceImpl::SetChannelClientPid(int32_t client_id,
   // this condition is reasonable.
   DCHECK_NE(client_pid, base::kNullProcessId);
   gpu_channel_manager_->SetChannelClientPid(client_id, client_pid);
+}
+
+void GpuServiceImpl::GetSurfaceId(int32_t native_embed_id, GetSurfaceIdCallback callback)
+{
+  std::string res = gpu::GpuSurfaceIdTracker::Get()->AcquireNativeImageSurfaceId(native_embed_id);
+  LOG(DEBUG) << "GetSurfaceId native_embed_id: " << native_embed_id << ", getSurfaceId: " << res;
+  std::move(callback).Run(res);
 }
 
 void GpuServiceImpl::SetChannelDiskCacheHandle(

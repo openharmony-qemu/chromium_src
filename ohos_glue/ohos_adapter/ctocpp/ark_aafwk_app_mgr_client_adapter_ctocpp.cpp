@@ -15,6 +15,7 @@
 
 #include "ohos_adapter/ctocpp/ark_aafwk_app_mgr_client_adapter_ctocpp.h"
 #include "base/ctocpp/ark_web_ctocpp_macros.h"
+#include "ohos_adapter/cpptoc/ark_aafwk_browser_host_adapter_cpptoc.h"
 #include "ohos_adapter/cpptoc/ark_aafwk_render_scheduler_host_adapter_cpptoc.h"
 
 namespace OHOS::ArkWeb {
@@ -64,6 +65,37 @@ int ArkAafwkAppMgrClientAdapterCToCpp::GetRenderProcessTerminationStatus(
   // Execute
   return _struct->get_render_process_termination_status(_struct, renderPid,
                                                         &status);
+}
+
+ARK_WEB_NO_SANITIZE
+int ArkAafwkAppMgrClientAdapterCToCpp::StartChildProcess(
+    const ArkWebString &renderParam, int32_t ipcFd, int32_t sharedFd,
+    int32_t crashFd, pid_t &renderPid, const ArkWebString &processType) {
+  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
+
+  ark_aafwk_app_mgr_client_adapter_t *_struct = GetStruct();
+  ARK_WEB_CTOCPP_CHECK_PARAM(_struct, 0);
+
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, start_child_process, 0);
+
+  // Execute
+  return _struct->start_child_process(_struct, &renderParam, ipcFd, sharedFd,
+                                       crashFd, &renderPid, &processType);
+}
+
+ARK_WEB_NO_SANITIZE
+void ArkAafwkAppMgrClientAdapterCToCpp::SaveBrowserConnect(
+    ArkWebRefPtr<ArkAafwkBrowserHostAdapter> adapter)
+{
+  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
+
+  ark_aafwk_app_mgr_client_adapter_t *_struct = GetStruct();
+  ARK_WEB_CTOCPP_CHECK_PARAM(_struct, );
+
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, save_browser_connect, );
+
+  // Excute
+  _struct->save_browser_connect(_struct, ArkAafwkBrowserHostAdapterCppToC::Invert(adapter));
 }
 
 ArkAafwkAppMgrClientAdapterCToCpp::ArkAafwkAppMgrClientAdapterCToCpp() {

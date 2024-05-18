@@ -448,6 +448,10 @@ void PrecompileJavaScript(const std::string& url,
   void OnSafeInsetsChange(int left, int top, int right, int bottom) override;
 #endif
 
+#ifdef OHOS_AI
+  void OnTextSelected() override;
+#endif
+
  public:
   int argc_;
   const char** argv_;

@@ -3393,4 +3393,14 @@ void NWebDelegate::OnSafeInsetsChange(int left,
 }
 #endif
 
+#ifdef OHOS_AI
+void NWebDelegate::OnTextSelected() {
+  LOG(INFO) << "NWebDelegate::OnTextSelected";
+  if (!GetBrowser().get()) {
+    return;
+  }
+  GetBrowser()->GetHost()->OnTextSelected(true);
+}
+#endif
+
 }  // namespace OHOS::NWeb

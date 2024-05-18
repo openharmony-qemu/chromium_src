@@ -723,6 +723,46 @@ public:
    */
   /*--ark web()--*/
   virtual void OnViewportFitChange(int viewport_fit) = 0;
+
+  /**
+   * @brief Called when creating overlay.
+   *
+   * @param data
+   * @param len
+   * @param width
+   * @param height
+   * @param offset_x
+   * @param offset_y
+   * @param rect_width
+   * @param rect_height
+   * @param point_x
+   * @param point_y
+   */
+  /*--ark web()--*/
+  virtual void CreateOverlay(void* data,
+                             size_t len,
+                             int width,
+                             int height,
+                             int offset_x,
+                             int offset_y,
+                             int rect_width,
+                             int rect_height,
+                             int point_x,
+                             int point_y) = 0;
+
+  /**
+   * @brief Called when overlay state changed.
+   *
+   * @param offset_x
+   * @param offset_y
+   * @param rect_width
+   * @param rect_height
+   */
+  /*--ark web()--*/
+  virtual void OnOverlayStateChanged(int offset_x,
+                                     int offset_y,
+                                     int rect_width,
+                                     int rect_height) = 0;
 };
 
 } // namespace OHOS::ArkWeb

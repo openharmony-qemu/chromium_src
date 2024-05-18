@@ -2704,6 +2704,27 @@ void RenderWidgetHostImpl::GetWordSelection(const std::string& text,
 }
 #endif
 
+#ifdef OHOS_AI
+void RenderWidgetHostImpl::CreateOverlay(const SkBitmap& bitmap,
+                    const gfx::Rect& image_rect,
+                    const gfx::Point& touch_point) {
+  RenderViewHostDelegateView* view = delegate_->GetDelegateView();
+  float scale = GetScaleFactorForView(GetView());
+  gfx::ImageSkia image = gfx::ImageSkia::CreateFromBitmap(bitmap, scale);
+  view->CreateOverlay(image, image_rect, touch_point, GetScreenRect());
+}
+
+gfx::Rect RenderWidgetHostImpl::GetScreenRect() {
+  gfx::Rect screen_rect;
+  blink_frame_widget_->GetScreenRect(&screen_rect);
+  return screen_rect;
+}
+
+void RenderWidgetHostImpl::OnTextSelected(bool flag) {
+  blink_frame_widget_->OnTextSelected(flag);
+}
+#endif
+
 // static
 bool RenderWidgetHostImpl::DidVisualPropertiesSizeChange(
     const blink::VisualProperties& old_visual_properties,

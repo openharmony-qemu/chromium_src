@@ -40,6 +40,10 @@
 #include "nweb_drag_data.h"
 #include "nweb_drag_data_impl.h"
 #endif  // #ifdef OHOS_DRAG_DROP
+#ifdef OHOS_AI
+#include "cef/libcef/browser/image_impl.h"
+#include "ui/gfx/image/image_skia.h"
+#endif  // #ifdef OHOS_AI
 
 namespace {
 cef_screen_orientation_type_t ConvertOrientationType(
@@ -860,6 +864,65 @@ void NWebRenderHandler::GetWordSelection(CefRefPtr<CefBrowser> browser,
       select.x = vec[0];
       select.y = vec[1];
     }
+  }
+}
+#endif
+
+#ifdef OHOS_AI
+void NWebRenderHandler::CreateOverlay(CefRefPtr<CefBrowser> browser,
+                                      CefRefPtr<CefImage> cef_image,
+                                      const CefRect& cef_image_rect,
+                                      const CefPoint& cef_touch_point,
+                                      const CefRect& cef_screen_rect) {
+  if (auto handler = handler_.lock()) {
+    gfx::ImageSkia image_skia = static_cast<CefImageImpl*>(cef_image.get())->AsImageSkia();
+    int width = cef_image->GetWidth();
+    int height = cef_image->GetHeight();
+    auto bitmap = cef_image->GetAsBitmap(1, CEF_COLOR_TYPE_RGBA_8888, CEF_ALPHA_TYPE_OPAQUE, width, height);
+    if (!bitmap) {
+      LOG(ERROR) << "NWebRenderHandler::CreateOverlay, bitmap invalid";
+      return;
+    }
+    size_t data_size = bitmap->GetSize();
+    void* buffer = calloc(1, data_size);
+    if (!buffer) {
+      LOG(ERROR) << "NWebRenderHandler::CreateOverlay, calloc failed";
+      return;
+    }
+    size_t read_size = bitmap->GetData(buffer, data_size, 0);
+    if (read_size != data_size) {
+      free(buffer);
+      LOG(ERROR) << "NWebRenderHandler::CreateOverlay, get data from bitmap failed";
+      return;
+    }
+
+    cef_image_rect_ = cef_image_rect;
+    float scale = browser->GetHost()->GetPageScaleFactor();
+    auto view_port_height = browser->GetHost()->GetShrinkViewportHeight();
+    handler->CreateOverlay(
+        buffer,
+        read_size,
+        width,
+        height,
+        (cef_image_rect.x - cef_screen_rect.y) * scale,
+        (cef_image_rect.y - cef_screen_rect.y) * scale + view_port_height * screen_info_.display_ratio,
+        cef_image_rect.width * scale,
+        cef_image_rect.height * scale,
+        cef_touch_point.x * scale,
+        cef_touch_point.y * scale);
+  }
+}
+
+void NWebRenderHandler::OnOverlayStateChanged(CefRefPtr<CefBrowser> browser,
+                                              const CefRect& cef_screen_rect) {
+  if (auto handler = handler_.lock()) {
+    float scale = browser->GetHost()->GetPageScaleFactor();
+    auto view_port_height = browser->GetHost()->GetShrinkViewportHeight();
+    handler->OnOverlayStateChanged(
+        (cef_image_rect_.x - cef_screen_rect.y) * scale,
+        (cef_image_rect_.y - cef_screen_rect.y) * scale + view_port_height * screen_info_.display_ratio,
+        cef_image_rect_.width * scale,
+        cef_image_rect_.height * scale);
   }
 }
 #endif

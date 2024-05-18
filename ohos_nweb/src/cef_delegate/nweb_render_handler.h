@@ -166,6 +166,16 @@ class NWebRenderHandler : public CefRenderHandler {
                         int8_t offset,
                         CefPoint& select) override;
 #endif
+
+#ifdef OHOS_AI
+  void CreateOverlay(CefRefPtr<CefBrowser> browser,
+                     CefRefPtr<CefImage> cef_image,
+                     const CefRect& cef_image_rect,
+                     const CefPoint& cef_touch_point,
+                     const CefRect& cef_screen_rect) override;
+  void OnOverlayStateChanged(CefRefPtr<CefBrowser> browser,
+                             const CefRect& cef_screen_rect) override;
+#endif
   /* CefRenderHandler method end */
 
   std::shared_ptr<NWebTouchHandleState> GetTouchHandleState(
@@ -209,6 +219,10 @@ class NWebRenderHandler : public CefRenderHandler {
   bool is_irregular_drag_background_ = true;
   bool select_all_ = false;
 #endif // #ifdef OHOS_DRAG_DROP
+
+#ifdef OHOS_AI
+  CefRect cef_image_rect_;
+#endif
 
 #if defined(OHOS_INPUT_EVENTS)
   std::weak_ptr<NWebDelegateInterface> delegate_interface_;

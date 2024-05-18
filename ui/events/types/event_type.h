@@ -50,6 +50,9 @@ enum EventType {
 #ifdef OHOS_DRAG_DROP
   ET_GESTURE_DRAG_LONG_PRESS,
 #endif
+#ifdef OHOS_AI
+  ET_GESTURE_CREATE_OVERLAY,
+#endif
   ET_GESTURE_LONG_TAP,
   // A SWIPE gesture can happen at the end of a touch sequence involving one or
   // more fingers if the finger velocity was high enough when the first finger

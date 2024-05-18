@@ -46,13 +46,6 @@ config("gl_config") {
   }
 }
 
-component("native_window_tracker") {
-  sources = [
-    "nweb_native_window_tracker.cc",
-    "nweb_native_window_tracker.h",
-  ]
-}
-
 component("gl") {
   output_name = "gl_wrapper"  # Avoid colliding with OS X"s libGL.dylib.
 
@@ -200,9 +193,6 @@ component("gl") {
     "//ui/gfx/mojom",
   ]
 
-  if (is_ohos) {
-    deps += [ ":native_window_tracker" ]
-  }
   public_deps = [
     "//base",
     "//third_party/mesa_headers",

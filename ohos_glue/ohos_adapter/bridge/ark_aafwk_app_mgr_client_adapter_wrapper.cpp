@@ -15,6 +15,7 @@
 
 #include "ohos_adapter/bridge/ark_aafwk_app_mgr_client_adapter_wrapper.h"
 #include "base/bridge/ark_web_bridge_macros.h"
+#include "ohos_adapter/bridge/ark_aafwk_browser_host_adapter_impl.h"
 #include "ohos_adapter/bridge/ark_aafwk_render_scheduler_host_adapter_impl.h"
 
 namespace OHOS::ArkWeb {
@@ -50,6 +51,36 @@ void ArkAafwkAppMgrClientAdapterWrapper::AttachRenderProcess(
 int ArkAafwkAppMgrClientAdapterWrapper::GetRenderProcessTerminationStatus(
     pid_t renderPid, int &status) {
   return ctocpp_->GetRenderProcessTerminationStatus(renderPid, status);
+}
+
+int ArkAafwkAppMgrClientAdapterWrapper::StartChildProcess(
+    const std::string& renderParam,
+    int32_t ipcFd,
+    int32_t sharedFd,
+    int32_t crashFd,
+    pid_t& renderPid,
+    const std::string& processType) {
+  ArkWebString ark_renderParam = ArkWebStringClassToStruct(renderParam);
+  ArkWebString ark_processType = ArkWebStringClassToStruct(processType);
+  int result = ctocpp_->StartChildProcess(ark_renderParam, ipcFd, sharedFd,
+                                           crashFd, renderPid, ark_processType);
+
+  ArkWebStringStructRelease(ark_renderParam);
+  ArkWebStringStructRelease(ark_processType);
+
+  return result;
+}
+
+void ArkAafwkAppMgrClientAdapterWrapper::SaveBrowserConnect(
+  std::shared_ptr<NWeb::AafwkBrowserHostAdapter> adapter)
+{
+  if (CHECK_SHARED_PTR_IS_NULL(adapter)) {
+    ctocpp_->SaveBrowserConnect(nullptr);
+    return;
+  }
+
+  ctocpp_->SaveBrowserConnect(
+      new ArkAafwkBrowserHostAdapterImpl(adapter));
 }
 
 } // namespace OHOS::ArkWeb

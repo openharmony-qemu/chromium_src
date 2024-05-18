@@ -202,6 +202,8 @@ target(link_target_type, "renderer") {
       "//ohos_glue:ohos_adapter_glue_source",
     ]
     sources += [
+      "host_proxy.cc",
+      "host_proxy.h",
       "media/ohos/native_renderer_client.cc",
       "media/ohos/native_renderer_client.h",
       "media/ohos/native_renderer_client_factory.cc",

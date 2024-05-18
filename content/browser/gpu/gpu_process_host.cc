@@ -43,6 +43,7 @@
 #include "content/browser/gpu/gpu_main_thread_factory.h"
 #include "content/browser/gpu/gpu_memory_buffer_manager_singleton.h"
 #include "content/browser/renderer_host/render_frame_host_impl.h"
+#include "content/browser/renderer_host/render_process_host_impl.h"
 #include "content/browser/storage_partition_impl.h"
 #include "content/browser/worker_host/dedicated_worker_host.h"
 #include "content/browser/worker_host/dedicated_worker_service_impl.h"
@@ -939,6 +940,12 @@ bool GpuProcessHost::Init() {
   ca_transaction_gpu_coordinator_ = CATransactionGPUCoordinator::Create(this);
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+  if (gpu_crash_count_ != 0) {
+    RenderProcessHostImpl::Refresh();
+  }
+#endif
+
   return true;
 }
 
@@ -1319,6 +1326,8 @@ int GpuProcessHost::GetFallbackCrashLimit() const {
 #elif BUILDFLAG(IS_CHROMEOS)
   // Chrome OS does not use software compositing and fallback crashes the
   // browser process. So use larger maximum crash count limit.
+  return 6;
+#elif BUILDFLAG(IS_OHOS)
   return 6;
 #else
   // Maximum number of times the GPU process can crash before we try something

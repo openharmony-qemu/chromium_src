@@ -16,10 +16,12 @@
 #include "build/build_config.h"
 #include "components/viz/service/frame_sinks/frame_sink_bundle_impl.h"
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
+#include "gpu/ipc/common/nweb_native_window_tracker.h"
 #include "services/viz/public/mojom/compositing/layer_context.mojom.h"
 #include "ui/gfx/overlay_transform.h"
 
 #if BUILDFLAG(IS_OHOS)
+#include "base/system/sys_info.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
 #include "res_sched_client_adapter.h"
@@ -243,12 +245,21 @@ void CompositorFrameSinkImpl::ReportKeyThreadIds(
   ResSchedStatusAdapter status = is_created
                                      ? ResSchedStatusAdapter::THREAD_CREATED
                                      : ResSchedStatusAdapter::THREAD_DESTROYED;
-  for (auto thread_id : thread_ids) {
-    content::GetUIThreadTaskRunner({})->PostTask(
-        FROM_HERE,
-        base::BindOnce(
-            base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread), status,
-            process_id, thread_id, ResSchedRoleAdapter::IMPORTANT_DISPLAY));
+  if (!OHOS::NWeb::OhosAdapterHelper::GetInstance()
+             .GetSystemPropertiesInstance()
+             .GetOOPGPUEnable()) {
+      for (auto thread_id : thread_ids) {
+        content::GetUIThreadTaskRunner({})->PostTask(
+            FROM_HERE,
+            base::BindOnce(
+                base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread), status,
+                process_id, thread_id, ResSchedRoleAdapter::IMPORTANT_DISPLAY));
+      }
+  } else {
+    for (auto thread_id : thread_ids) {
+      NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
+        status, process_id, thread_id, ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+    }
   }
 }
 

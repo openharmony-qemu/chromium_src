@@ -17,6 +17,7 @@
 #define ARK_AAFWK_APP_MGR_CLIENT_ADAPTER_H
 #pragma once
 
+#include "ohos_adapter/include/ark_aafwk_browser_host_adapter.h"
 #include "ohos_adapter/include/ark_aafwk_render_scheduler_host_adapter.h"
 
 #include "base/include/ark_web_types.h"
@@ -38,6 +39,14 @@ public:
   /*--ark web()--*/
   virtual int GetRenderProcessTerminationStatus(pid_t renderPid,
                                                 int &status) = 0;
+
+  /*--ark web()--*/
+  virtual int StartChildProcess(const ArkWebString &renderParam, int32_t ipcFd,
+                                 int32_t sharedFd, int32_t crashFd,
+                                 pid_t &renderPid, const ArkWebString &processType) = 0;
+
+  /*--ark web()--*/
+  virtual void SaveBrowserConnect(ArkWebRefPtr<ArkAafwkBrowserHostAdapter> adapter) = 0;
 };
 
 } // namespace OHOS::ArkWeb

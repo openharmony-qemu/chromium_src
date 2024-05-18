@@ -22,6 +22,7 @@
 #include "content/common/mojo_core_library_support.h"
 #include "content/common/process_visibility_tracker.h"
 #include "content/public/common/content_switches.h"
+#include "gpu/ipc/common/nweb_native_window_tracker.h"
 #include "mojo/public/cpp/system/dynamic_library_support.h"
 #include "sandbox/policy/sandbox_type.h"
 #include "services/tracing/public/cpp/trace_startup.h"
@@ -199,6 +200,17 @@ void ChildProcess::ReportIoThreadStatus(bool is_created) {
   if (main_thread_->IsInBrowserProcess()) {
     ResSchedClientAdapter::ReportKeyThread(
       status, base::GetCurrentRealPid(), io_thread_->GetThreadRealId(), ResSchedRoleAdapter::USER_INTERACT);
+  } else if (OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                .GetSystemPropertiesInstance()
+                .GetOOPGPUEnable()) {
+    if (NWebNativeWindowTracker::Get() && 
+        NWebNativeWindowTracker::Get()->g_browser_client_) {
+      LOG(DEBUG) << "get native window success pid:" << base::GetCurrentRealPid()
+                 << ", tid = " << io_thread_->GetThreadRealId();
+      NWebNativeWindowTracker::Get()->g_browser_client_ -> ReportThread(
+        status, base::GetCurrentRealPid(), io_thread_->GetThreadRealId(),
+        ResSchedRoleAdapter::USER_INTERACT);
+    }
   } else {
     main_thread_->ReportKeyThread(
       static_cast<int32_t>(status), base::GetCurrentRealPid(), io_thread_->GetThreadRealId());

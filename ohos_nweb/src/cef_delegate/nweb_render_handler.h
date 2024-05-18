@@ -173,7 +173,7 @@ class NWebRenderHandler : public CefRenderHandler {
                      const CefRect& cef_image_rect,
                      const CefPoint& cef_touch_point,
                      const CefRect& cef_screen_rect) override;
-  void OnOverlayStateChanged(CefRefPtr<CefBroser> browser,
+  void OnOverlayStateChanged(CefRefPtr<CefBrowser> browser,
                              const CefRect& cef_screen_rect) override;
 #endif
   /* CefRenderHandler method end */

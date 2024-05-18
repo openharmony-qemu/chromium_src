@@ -25,6 +25,9 @@ namespace gfx {
 class ImageSkia;
 class Rect;
 class Vector2d;
+#ifdef OHOS_AI
+class Point;
+#endif
 }
 
 #if BUILDFLAG(IS_ANDROID)

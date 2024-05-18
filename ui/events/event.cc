@@ -74,6 +74,9 @@ SourceEventType EventTypeToLatencySourceEventType(EventType type) {
 #ifdef OHOS_DRAG_DROP
     case ET_GESTURE_DRAG_LONG_PRESS:
 #endif
+#ifdef OHOS_AI
+    case ET_GESTURE_CREATE_OVERLAY:
+#endif
     case ET_GESTURE_LONG_TAP:
     case ET_GESTURE_SWIPE:
     case ET_GESTURE_SHOW_PRESS:

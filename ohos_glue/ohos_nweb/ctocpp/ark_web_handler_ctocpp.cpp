@@ -1347,6 +1347,58 @@ void ArkWebHandlerCToCpp::OnRenderProcessResponding() {
   _struct->on_render_process_responding(_struct);
 }
 
+ARK_WEB_NO_SANITIZE
+void ArkWebHandlerCToCpp::CreateOverlay(void* data,
+                                        size_t len,
+                                        int width,
+                                        int height,
+                                        int offset_x,
+                                        int offset_y,
+                                        int rect_width,
+                                        int rect_height,
+                                        int point_x,
+                                        int point_y) {
+  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
+
+  ark_web_handler_t* _struct = GetStruct();
+  ARK_WEB_CTOCPP_CHECK_PARAM(_struct, );
+
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, create_overlay, );
+
+  // Execute
+  _struct->create_overlay(_struct,
+                          data,
+                          len,
+                          width,
+                          height,
+                          offset_x,
+                          offset_x,
+                          rect_width,
+                          rect_height,
+                          point_x,
+                          point_y);
+}
+
+ARK_WEB_NO_SANITIZE
+void ArkWebHandlerCToCpp::OnOverlayStateChanged(int offset_x,
+                                                int offset_y,
+                                                int rect_width,
+                                                int rect_height) {
+  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
+
+  ark_web_handler_t* _struct = GetStruct();
+  ARK_WEB_CTOCPP_CHECK_PARAM(_struct, );
+
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, on_overlay_state_changed, );
+
+  // Execute
+  _struct->on_overlay_state_changed(_struct,
+                                    offset_x,
+                                    offset_x,
+                                    rect_width,
+                                    rect_height);
+}
+
 ArkWebHandlerCToCpp::ArkWebHandlerCToCpp() {
 }
 

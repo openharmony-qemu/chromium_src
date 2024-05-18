@@ -979,6 +979,7 @@ void NWebHandlerDelegate::OnLoadStart(CefRefPtr<CefBrowser> browser,
 
   if (nweb_handler_ != nullptr) {
     nweb_handler_->OnPageLoadBegin(url.ToString());
+    browser->GetHost()->OnTextSelected(false);
   }
 
   if (onLoadStartCallback_) {

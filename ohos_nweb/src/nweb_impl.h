@@ -459,6 +459,10 @@ class NWebImpl : public NWeb {
   void OnSafeInsetsChange(int left, int top, int right, int bottom) override;
 #endif
 
+#ifdef OHOS_AI
+  void OnTextSelected() override;
+#endif
+
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

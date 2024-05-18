@@ -451,6 +451,10 @@ class NWebDelegateInterface
 #ifdef OHOS_DISPLAY_CUTOUT
   virtual void OnSafeInsetsChange(int left, int top, int right, int bottom) = 0;
 #endif
+
+#ifdef OHOS_AI
+  virtual void OnTextSelected() = 0;
+#endif
 };
 }  // namespace OHOS::NWeb
 

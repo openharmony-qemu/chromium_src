@@ -43,6 +43,9 @@ class GESTURE_DETECTION_EXPORT GestureDetector {
 #ifdef OHOS_DRAG_DROP
     base::TimeDelta draglongpress_timeout = base::Milliseconds(1500);
 #endif
+#ifdef OHOS_AI
+    base::TimeDelta createoverlay_timeout = base::Milliseconds(150);
+#endif
     base::TimeDelta showpress_timeout = base::Milliseconds(180);
     base::TimeDelta double_tap_timeout = base::Milliseconds(300);
 
@@ -151,6 +154,9 @@ class GESTURE_DETECTION_EXPORT GestureDetector {
   }
   void StopDragLongPressGesture();
 #endif
+#ifdef OHOS_AI
+  void StopCreateOverlayGesture();
+#endif
   // Returns the event storing the initial position of the pointer with given
   // pointer ID. This returns nullptr if the source event isn't
   // current_down_event_ or secondary_pointer_down_event_.
@@ -169,6 +175,9 @@ class GESTURE_DETECTION_EXPORT GestureDetector {
   void Cancel(bool is_lost_focus);
   void CancelTaps(bool is_lost_focus);
   void ActivateLongPressKeepDragTimeout(const MotionEvent& ev);
+#endif
+#ifdef OHOS_AI
+  void OnCreateOverlayTimeout();
 #endif
   void OnTapTimeout();
   void ActivateShortPressGesture(const MotionEvent& ev);

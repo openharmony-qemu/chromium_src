@@ -72,6 +72,11 @@ class NWebRenderHandler : public CefRenderHandler {
   void OnCursorUpdate(CefRefPtr<CefBrowser> browser,
                               const CefRect& rect) override;
   void SetFocusStatus(bool focus_status);
+
+  void OnUpdateTextInputStateCalled(CefRefPtr<CefBrowser> browser,
+                                    const CefString& text,
+                                    const CefRange& selected_range,
+                                    const CefRange& compositon_range) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 #if BUILDFLAG(IS_OHOS)
   void OnEditableChanged(CefRefPtr<CefBrowser> browser,
@@ -111,7 +116,8 @@ class NWebRenderHandler : public CefRenderHandler {
   void OnVirtualKeyboardRequested(CefRefPtr<CefBrowser> browser,
                                           TextInputMode input_mode,
                                           TextInputType input_type,
-                                          bool show_keyboard) override;
+                                          bool show_keyboard,
+                                          bool is_need_reset_listener) override;
   void GetTouchHandleSize(CefRefPtr<CefBrowser> browser,
                           cef_horizontal_alignment_t orientation,
                           CefSize& size) override;

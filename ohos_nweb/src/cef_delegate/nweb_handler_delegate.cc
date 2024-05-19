@@ -458,6 +458,12 @@ void NWebHandlerDelegate::RegisterNWebHandler(
   }
 }
 
+void NWebHandlerDelegate::SetInputMethodClient(
+    CefRefPtr<NWebInputMethodClient> client) {
+  LOG(INFO) << "SetInputMethodClient";
+  input_method_client_ = client;
+}
+
 void NWebHandlerDelegate::RegisterNWebJavaScriptCallBack(
     std::shared_ptr<NWebJavaScriptResultCallBack> callback) {
   nweb_javascript_callback_ = callback;
@@ -2403,11 +2409,24 @@ bool NWebHandlerDelegate::RunContextMenu(
   if (!nweb_handler_ || !render_handler_) {
     return false;
   }
+  LOG(INFO) << "NWebHandlerDelegate RunContextMenu ";
   std::shared_ptr<NWebContextMenuParams> nweb_param =
       std::make_shared<NWebContextMenuParamsImpl>(
           params, render_handler_->GetVirtualPixelRatio());
   std::shared_ptr<NWebContextMenuCallback> nweb_callback =
       std::make_shared<NWebContextMenuCallbackImpl>(callback);
+  if (input_method_client_) {
+    bool has_composition = input_method_client_->HasComposition();
+    LOG(INFO) << "NWebHandlerDelegate has_composition " << has_composition;
+    if (has_composition) {
+      LOG(INFO) << "NWebHandlerDelegate input has composition";
+      if (nweb_callback) {
+        nweb_callback->Cancel();
+      }
+      return true;
+    }
+  }
+
   image_cache_src_url_ = params->GetSourceUrl();
   if (nweb_handler_->RunContextMenu(nweb_param, nweb_callback)) {
     return true;
@@ -2465,6 +2484,17 @@ bool NWebHandlerDelegate::RunQuickMenu(
   if (nweb_handler_ == nullptr || render_handler_ == nullptr) {
     return false;
   }
+
+  LOG(INFO) << "NWebHandlerDelegate RunQuickMenu ";
+  if (input_method_client_) {
+    bool has_composition = input_method_client_->HasComposition();
+    LOG(INFO) << "NWebHandlerDelegate has_composition " << has_composition;
+    if (has_composition) {
+      LOG(INFO) << "NWebHandlerDelegate input has composition";
+      return false;
+    }
+  }
+
 #if defined(OHOS_CLIPBOARD)
   LOG(INFO) << "RunQuickMenu is_mouse_trigger:" << is_mouse_trigger
             << ", is_rich_text:" << is_rich_text_;

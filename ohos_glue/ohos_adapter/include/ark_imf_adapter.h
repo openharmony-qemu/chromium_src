@@ -148,7 +148,8 @@ public:
   /*--ark web()--*/
   virtual bool Attach(ArkWebRefPtr<ArkIMFTextListenerAdapter> listener,
                       bool isShowKeyboard,
-                      ArkWebRefPtr<ArkIMFTextConfigAdapter> config) = 0;
+                      ArkWebRefPtr<ArkIMFTextConfigAdapter> config,
+                      bool isResetListener) = 0;
 
   /*--ark web()--*/
   virtual void ShowCurrentInput(const int32_t &inputType) = 0;

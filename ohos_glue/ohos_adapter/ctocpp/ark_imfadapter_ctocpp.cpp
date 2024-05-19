@@ -40,7 +40,8 @@ bool ArkIMFAdapterCToCpp::Attach(
 ARK_WEB_NO_SANITIZE
 bool ArkIMFAdapterCToCpp::Attach(
     ArkWebRefPtr<ArkIMFTextListenerAdapter> listener, bool isShowKeyboard,
-    ArkWebRefPtr<ArkIMFTextConfigAdapter> config) {
+    ArkWebRefPtr<ArkIMFTextConfigAdapter> config,
+    bool isResetListener) {
   ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
 
   ark_imfadapter_t *_struct = GetStruct();
@@ -51,7 +52,8 @@ bool ArkIMFAdapterCToCpp::Attach(
   // Execute
   return _struct->attach2(
       _struct, ArkIMFTextListenerAdapterCppToC::Invert(listener),
-      isShowKeyboard, ArkIMFTextConfigAdapterCppToC::Invert(config));
+      isShowKeyboard, ArkIMFTextConfigAdapterCppToC::Invert(config),
+      isResetListener);
 }
 
 ARK_WEB_NO_SANITIZE

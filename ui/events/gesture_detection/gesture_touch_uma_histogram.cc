@@ -127,6 +127,10 @@ UMAEventType GestureTouchUMAHistogram::UMAEventTypeFromEvent(
     case ET_GESTURE_DRAG_LONG_PRESS:
       return UMA_ET_GESTURE_DRAG_LONG_PRESS;
 #endif //OHOS_DRAG_DROP
+#ifdef OHOS_AI
+    case ET_GESTURE_CREATE_OVERLAY:
+      return UMA_ET_GESTURE_CREATE_OVERLAY;
+#endif //OHOS_AI
     case ET_GESTURE_LONG_TAP:
       return UMA_ET_GESTURE_LONG_TAP;
     case ET_GESTURE_SWIPE: {

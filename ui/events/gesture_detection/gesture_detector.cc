@@ -59,6 +59,13 @@ class GestureDetector::TimeoutGestureHandler {
     timeout_callbacks_[SHOW_PRESS] = &GestureDetector::OnShowPressTimeout;
     timeout_delays_[SHOW_PRESS] = config.showpress_timeout;
 
+#ifdef OHOS_AI
+    timeout_callbacks_[CREATE_OVERLAY] =
+        &GestureDetector::OnCreateOverlayTimeout;
+    timeout_delays_[CREATE_OVERLAY] =
+        config.createoverlay_timeout + config.showpress_timeout;
+#endif
+
     timeout_callbacks_[SHORT_PRESS] = &GestureDetector::OnShortPressTimeout;
     timeout_delays_[SHORT_PRESS] =
         config.shortpress_timeout + config.showpress_timeout;
@@ -74,12 +81,6 @@ class GestureDetector::TimeoutGestureHandler {
         &GestureDetector::OnDragLongPressTimeout;
     timeout_delays_[DRAG_LONG_PRESS] =
         config.draglongpress_timeout + config.showpress_timeout;
-#endif
-#ifdef OHOS_AI
-    timeout_callbacks_[CREATE_OVERLAY] =
-        &GestureDetector::OnCreateOverlayTimeout;
-    timeout_delays_[CREATE_OVERLAY] =
-        config.createoverlay_timeout + config.showpress_timeout;
 #endif
     if (config.task_runner) {
       timeout_timers_[SHOW_PRESS].SetTaskRunner(config.task_runner);
@@ -192,11 +193,11 @@ bool GestureDetector::OnTouchEvent(const MotionEvent& ev,
       down_focus_y_ = last_focus_y_ = focus_y;
       // Cancel long press and taps.
       CancelTaps();
-#ifdef OHOS_DRAG_DROP
-      timeout_handler_->StopTimeout(DRAG_LONG_PRESS);
-#endif
 #ifdef OHOS_AI
       timeout_handler_->StopTimeout(CREATE_OVERLAY);
+#endif
+#ifdef OHOS_DRAG_DROP
+      timeout_handler_->StopTimeout(DRAG_LONG_PRESS);
 #endif
       maximum_pointer_count_ = std::max(maximum_pointer_count_,
                                         static_cast<int>(ev.GetPointerCount()));
@@ -303,15 +304,15 @@ bool GestureDetector::OnTouchEvent(const MotionEvent& ev,
       // ensure proper timeout ordering.
       if (showpress_enabled_)
         timeout_handler_->StartTimeout(SHOW_PRESS);
+#ifdef OHOS_AI
+      timeout_handler_->StartTimeout(CREATE_OVERLAY);
+#endif
       if (press_and_hold_enabled_) {
         timeout_handler_->StartTimeout(SHORT_PRESS);
         timeout_handler_->StartTimeout(LONG_PRESS);
 #ifdef OHOS_DRAG_DROP
       if (draglongpress_enabled_)
         timeout_handler_->StartTimeout(DRAG_LONG_PRESS);
-#endif
-#ifdef OHOS_AI
-      timeout_handler_->StartTimeout(CREATE_OVERLAY);
 #endif
       }
 
@@ -442,13 +443,13 @@ bool GestureDetector::OnTouchEvent(const MotionEvent& ev,
         is_double_tapping_ = false;
         defer_confirm_single_tap_ = false;
         timeout_handler_->StopTimeout(SHOW_PRESS);
+#ifdef OHOS_AI
+        timeout_handler_->StopTimeout(CREATE_OVERLAY);
+#endif
         timeout_handler_->StopTimeout(SHORT_PRESS);
         timeout_handler_->StopTimeout(LONG_PRESS);
 #ifdef OHOS_DRAG_DROP
         timeout_handler_->StopTimeout(DRAG_LONG_PRESS);
-#endif
-#ifdef OHOS_AI
-        timeout_handler_->StopTimeout(CREATE_OVERLAY);
 #endif
       }
       maximum_pointer_count_ = 0;

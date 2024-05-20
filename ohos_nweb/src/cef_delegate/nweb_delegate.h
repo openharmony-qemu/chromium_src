@@ -275,6 +275,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   std::shared_ptr<NWebDragData> GetOrCreateDragData() override;
   void ClearDragData() const;
   std::string ohos_temp_dir_;
+  bool DarkModeEnabled() override;
 #endif  // OHOS_DRAG_DROP
   void GetImages(std::shared_ptr<NWebBoolValueCallback> callback) override;
   void RemoveCache(bool include_disk_files) override;

@@ -1399,6 +1399,35 @@ void ArkWebHandlerCToCpp::OnOverlayStateChanged(int offset_x,
                                     rect_height);
 }
 
+ARK_WEB_NO_SANITIZE
+bool ArkWebHandlerCToCpp::OnFocus(int source) {
+  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
+
+  ark_web_handler_t *_struct = GetStruct();
+  ARK_WEB_CTOCPP_CHECK_PARAM(_struct, false);
+
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, on_focus2, false);
+
+  // Execute
+  return _struct->on_focus2(_struct, source);
+}
+
+ARK_WEB_NO_SANITIZE
+bool ArkWebHandlerCToCpp::OnOverScroll(float xOffset,
+                                       float yOffset,
+                                       float xVelocity,
+                                       float yVelocity) {
+  ARK_WEB_CTOCPP_DV_LOG("capi struct is %{public}ld", (long)this);
+
+  ark_web_handler_t *_struct = GetStruct();
+  ARK_WEB_CTOCPP_CHECK_PARAM(_struct, false);
+
+  ARK_WEB_CTOCPP_CHECK_FUNC_MEMBER(_struct, on_over_scroll2, false);
+
+  // Execute
+  return _struct->on_over_scroll2(_struct, xOffset, yOffset, xVelocity, yVelocity);
+}
+
 ArkWebHandlerCToCpp::ArkWebHandlerCToCpp() {
 }
 

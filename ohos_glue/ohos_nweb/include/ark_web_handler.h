@@ -763,6 +763,30 @@ public:
                                      int offset_y,
                                      int rect_width,
                                      int rect_height) = 0;
+
+  /**
+   * @brief Request display and focus for a new nweb.
+   *
+   * @param source The Focus Source.
+   * @return Return true if request focus success, false if request focus fail.
+   */
+  /*--ark web()--*/
+  virtual bool OnFocus(int source) = 0;
+
+  /**
+   * @brief Called when the page is over scroll.
+   *
+   * @param xOffset The offset of x axis.
+   * @param yOffset The offset of y axis.
+   * @param xVelocity The velocity of x axis.
+   * @param yVelocity The velocity of y axis.
+   * @return Return true if value is consumed, false if value is unconsumed.
+   */
+  /*--ark web()--*/
+  virtual bool OnOverScroll(float xOffset,
+                            float yOffset,
+                            float xVelocity,
+                            float yVelocity) = 0;
 };
 
 } // namespace OHOS::ArkWeb

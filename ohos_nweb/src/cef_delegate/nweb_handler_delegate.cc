@@ -2000,9 +2000,10 @@ bool NWebHandlerDelegate::OnSetFocus(CefRefPtr<CefBrowser> browser,
                                      FocusSource source) {
   if (nweb_handler_ != nullptr) {
 #ifdef OHOS_FOCUS
-    if (!nweb_handler_->OnFocus()) {
-      LOG(DEBUG)
-          << "nweb_handler request focus unsuccessful, need't to set focus";
+    if (!nweb_handler_->OnFocus(static_cast<NWebFocusSource>(source))) {
+      LOG(DEBUG) << "nweb_handler request focus unsuccessful, need't to set "
+                    "focus, source = "
+                 << source;
       return true;
     }
     focusState_ = true;

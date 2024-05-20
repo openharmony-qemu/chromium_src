@@ -32,6 +32,7 @@ using ArkWebDragOperation = OHOS::NWeb::NWebDragData::DragOperation;
 using ArkWebRenderProcessNotRespondingReason =
     OHOS::NWeb::RenderProcessNotRespondingReason;
 using ArkWebViewportFit = OHOS::NWeb::ViewportFit;
+using ArkWebFocusSource = OHOS::NWeb::NWebFocusSource;
 
 class ArkWebHandlerWrapper : public OHOS::NWeb::NWebHandler {
 public:
@@ -655,6 +656,13 @@ public:
                              int offset_y,
                              int rect_width,
                              int rect_height) override;
+
+  bool OnFocus(ArkWebFocusSource source) override;
+
+  bool OnOverScroll(float xOffset,
+                    float yOffset,
+                    float xVelocity,
+                    float yVelocity) override;
 
 private:
   ArkWebRefPtr<ArkWebHandler> ark_web_handler_;

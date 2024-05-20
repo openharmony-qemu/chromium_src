@@ -137,6 +137,7 @@ void NWebEventHandler::OnTouchRelease(int32_t id,
                                       double x,
                                       double y,
                                       bool from_overlay) {
+  LOG(DEBUG) << "NWebEventHandler::OnTouchRelease";
   CefTouchEvent touch_end;
   touch_end.type = CEF_TET_RELEASED;
   touch_end.pointer_type = CEF_POINTER_TYPE_TOUCH;
@@ -151,6 +152,7 @@ void NWebEventHandler::OnTouchRelease(int32_t id,
 }
 
 void NWebEventHandler::OnTouchCancel() {
+  LOG(DEBUG) << "NWebEventHandler::OnTouchCancel";
   CefTouchEvent touch_cancelled;
   touch_cancelled.type = CEF_TET_CANCELLED;
   if (browser_ && browser_->GetHost()) {

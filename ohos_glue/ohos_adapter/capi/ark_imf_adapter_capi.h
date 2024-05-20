@@ -173,7 +173,8 @@ typedef struct _ark_imfadapter_t {
   bool(ARK_WEB_CALLBACK *attach2)(struct _ark_imfadapter_t *self,
                                   ark_imftext_listener_adapter_t *listener,
                                   bool isShowKeyboard,
-                                  ark_imftext_config_adapter_t *config);
+                                  ark_imftext_config_adapter_t *config,
+                                  bool isResetListener);
 
   void(ARK_WEB_CALLBACK *show_current_input)(struct _ark_imfadapter_t *self,
                                              const int32_t *inputType);

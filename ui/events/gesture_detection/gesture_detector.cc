@@ -428,7 +428,6 @@ bool GestureDetector::OnTouchEvent(const MotionEvent& ev,
           velocity_tracker_.ComputeCurrentVelocity(1000, max_fling_velocity_);
           const float velocity_y = velocity_tracker_.GetYVelocity(pointer_id);
           const float velocity_x = velocity_tracker_.GetXVelocity(pointer_id);
-
           if ((std::abs(velocity_y) > min_fling_velocity_) ||
               (std::abs(velocity_x) > min_fling_velocity_)) {
             handled = listener_->OnFling(*current_down_event_, ev, velocity_x,
@@ -437,7 +436,6 @@ bool GestureDetector::OnTouchEvent(const MotionEvent& ev,
 
           handled |= HandleSwipeIfNeeded(ev, velocity_x, velocity_y);
         }
-
         previous_up_event_ = ev.Clone();
 
         velocity_tracker_.Clear();

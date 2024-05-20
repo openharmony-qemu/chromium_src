@@ -316,6 +316,16 @@ void NWebRenderHandler::SetFocusStatus(bool focus_status) {
     inputmethod_client_->SetFocusStatus(focus_status);
   }
 }
+
+void NWebRenderHandler::OnUpdateTextInputStateCalled(CefRefPtr<CefBrowser> browser,
+                                  const CefString& text,
+                                  const CefRange& selected_range,
+                                  const CefRange& compositon_range) {
+  if (inputmethod_client_) {
+    inputmethod_client_->OnUpdateTextInputStateCalled(browser, text, selected_range, compositon_range);
+  }
+}
+
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #if BUILDFLAG(IS_OHOS)
@@ -462,7 +472,9 @@ void NWebRenderHandler::OnImeCompositionRangeChanged(
     CefRefPtr<CefBrowser> browser,
     const CefRange& selected_range,
     const RectList& character_bounds) {
-  LOG(INFO) << "NWebRenderHandler::OnImeCompositionRangeChanged";
+  if (inputmethod_client_) {
+    inputmethod_client_->OnImeCompositionRangeChanged(browser, selected_range);
+  }
 }
 
 void NWebRenderHandler::OnTextSelectionChanged(CefRefPtr<CefBrowser> browser,
@@ -478,7 +490,8 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
     CefRefPtr<CefBrowser> browser,
     TextInputMode input_mode,
     TextInputType input_type,
-    bool show_keyboard) {
+    bool show_keyboard,
+    bool is_need_reset_listener) {
   LOG(INFO) << "NWebRenderHandler::OnVirtualKeyboardRequested input_mode = "
             << input_mode << ", input_type = " << input_type
             << ", show_keyboard = " << show_keyboard;
@@ -491,7 +504,8 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
   if (input_mode != CEF_TEXT_INPUT_MODE_NONE) {
     auto delegate = delegate_interface_.lock();
     if (delegate && delegate->OnFocus()) {
-      inputmethod_client_->Attach(browser, show_keyboard, input_mode, input_type);
+      inputmethod_client_->Attach(browser, show_keyboard,
+        input_mode, input_type, is_need_reset_listener);
     }
   } else {
     inputmethod_client_->HideTextInput();

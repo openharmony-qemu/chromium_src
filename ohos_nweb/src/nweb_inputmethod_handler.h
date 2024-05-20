@@ -23,6 +23,15 @@
 #include "cef_delegate/nweb_inputmethod_client.h"
 
 namespace OHOS::NWeb {
+enum CompositionType {
+  COMPOSITION_CURRENT,
+  COMPOSITION_POSITION,
+  COMPOSITION_REPLACE,
+  COMPOSITION_CANCEL,
+  COMPOSITION_DELETE,
+  COMPOSITION_INVALID,
+};
+
 class NWebInputMethodHandler : public NWebInputMethodClient {
  public:
   enum class ReattachType {
@@ -37,7 +46,8 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   void Attach(CefRefPtr<CefBrowser> browser,
               bool show_keyboard,
               cef_text_input_mode_t input_mode,
-              cef_text_input_type_t input_type) override;
+              cef_text_input_type_t input_type,
+              bool is_need_reset_listener) override;
   void ShowTextInput() override;
   void HideTextInput(
       uint32_t nwebId = 0,
@@ -72,6 +82,13 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
                          int32_t end);
   void FinishTextPreview();
   void SetNeedUnderLine(bool is_need_underline);
+  bool HasComposition() override;
+  void OnImeCompositionRangeChanged(CefRefPtr<CefBrowser> browser,
+                                    const CefRange& selected_range) override;
+  void OnUpdateTextInputStateCalled(CefRefPtr<CefBrowser> browser,
+                                    const CefString& text,
+                                    const CefRange& selected_range,
+                                    const CefRange& compositon_range) override;
 #if defined(OHOS_CLIPBOARD)
   std::string GetSelectInfo();
 #endif
@@ -89,6 +106,14 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
                               int32_t end);
   void FinishPreviewTextOnUI();
   void SetNeedUnderLineOnUI(bool is_need_underline);
+  void ClearComposingStatus();
+  int32_t UpdateCompositionInfo(const std::u16string& text, int32_t start, int32_t end);
+  int32_t GetCompositionTypeAndCheckInput(const std::u16string& text,
+    int32_t start, int32_t end, CompositionType& composition_type);
+  void CancelPreviewHandlerOnUI();
+  bool IsTextInputStateChange(const CefString& text,
+                              const CefRange& selected_range,
+                              const CefRange& compositon_range);
 
   static uint32_t lastAttachNWebId_;
   static IMFAdapterTextInputType lastInputMode_;
@@ -125,7 +150,13 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   uint32_t windowId_ = 0;
   const int32_t OK = 0;
   const int32_t ERROR = -1;
-  bool is_need_underline_ = true;
+  bool is_need_underline_ = false;
+  bool has_composition_ = false;
+  std::u16string preview_text_cache_;
+  int32_t composition_range_start_ = 0;
+  int32_t composition_range_end_ = 0;
+  CompositionType composition_type_ = COMPOSITION_INVALID;
+  int32_t composition_cursor_index_ = 0;
   IMPLEMENT_REFCOUNTING(NWebInputMethodHandler);
 };
 

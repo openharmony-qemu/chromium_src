@@ -63,7 +63,7 @@ public:
 
   ArkWebRefPtr<ArkAudioDeviceDescAdapter> GetDefaultInputDevice() override;
 
-  bool SetLanguage(ArkWebString language) override;
+  bool SetLanguage(const ArkWebString &language) override;
 };
 
 } // namespace OHOS::ArkWeb

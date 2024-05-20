@@ -109,6 +109,8 @@ class NWebHandlerDelegate : public CefClient,
       const char* objName,
       const std::vector<std::shared_ptr<NWebJsProxyCallback>>& callbacks);
 
+  void SetInputMethodClient(CefRefPtr<NWebInputMethodClient> client);
+
   using NativeJSProxyCallbackFunc =
       std::function<char*(std::vector<std::vector<uint8_t>>&,
                           std::vector<size_t>&)>;
@@ -716,7 +718,7 @@ class NWebHandlerDelegate : public CefClient,
   std::shared_ptr<NWebFindDelegate> find_delegate_ = nullptr;
   std::shared_ptr<NWebAppClientExtensionCallback>
       web_app_client_extension_listener_ = nullptr;
-
+  CefRefPtr<NWebInputMethodClient> input_method_client_ = nullptr;
   std::shared_ptr<NWebGeolocationCallback> callback_ = nullptr;
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
   std::shared_ptr<NWebCreateNativeMediaPlayerCallback>

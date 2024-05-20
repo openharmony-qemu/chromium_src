@@ -267,6 +267,7 @@ class NWebDelegateInterface
 #ifdef OHOS_DRAG_DROP
   virtual std::shared_ptr<NWebDragData> GetOrCreateDragData() = 0;
   virtual std::string GetAppTempDir() const = 0;
+  virtual bool DarkModeEnabled() = 0;
 #endif // #ifdef OHOS_DRAG_DROP
   virtual void SetNWebId(uint32_t nwebId) = 0;
 

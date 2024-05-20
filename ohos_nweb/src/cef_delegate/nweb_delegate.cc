@@ -2159,6 +2159,20 @@ void NWebDelegate::ClearDragData() const {
     drag_data->SetFragmentHtml("");
   }
 }
+
+bool NWebDelegate::DarkModeEnabled() {
+  if (!preference_delegate_) {
+    LOG(ERROR) << "DarkModeEnabled preference_delegate_ get failed";
+    return false;
+  }
+
+  LOG(DEBUG) << "DarkModeEnabled DarkSchemeEnabled: " << preference_delegate_->DarkSchemeEnabled()
+             << ", ForceDarkModeEnabled: " << preference_delegate_->ForceDarkModeEnabled();
+  if (preference_delegate_->DarkSchemeEnabled() && preference_delegate_->ForceDarkModeEnabled()) {
+    return true;
+  }
+  return false;
+}
 #endif  // OHOS_DRAG_DROP
 
 void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {

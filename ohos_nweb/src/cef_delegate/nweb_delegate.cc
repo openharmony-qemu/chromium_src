@@ -734,7 +734,7 @@ void NWebDelegate::OnTouchPress(int32_t id,
                                 bool from_overlay) {
   if (event_handler_ != nullptr) {
     auto browser = GetBrowser();
-    if (browser != nullptr && browser->GetHost() != nullptr) {
+    if (browser != nullptr && browser->GetHost() != nullptr && !HitNativeArea(x, y)) {
       browser->GetHost()->SetFocus(true);
     }
     event_handler_->OnTouchPress(id, x / default_virtual_pixel_ratio_,
@@ -2949,6 +2949,39 @@ void NWebDelegate::PrecompileJavaScript(const std::string& url,
   CefRefPtr<CefPrecompileCallbackImpl> precompileCallback = new CefPrecompileCallbackImpl(callback);
   CefRefPtr<CefCacheOptionsImpl> cefOptions = new CefCacheOptionsImpl(cacheOptions);
   GetBrowser()->GetHost()->PrecompileJavaScript(url, script, cefOptions, precompileCallback);
+}
+
+bool NWebDelegate::HitNativeArea(double x, double y) {
+  auto iter = embedDataInfo_.begin();
+  for (; iter != embedDataInfo_.end(); iter++) {
+    std::shared_ptr<NWebNativeEmbedDataInfo> dataInfo = iter->second;
+    if (dataInfo == nullptr) {
+      continue;
+    }
+    auto embedInfo = dataInfo->GetNativeEmbedInfo();
+
+    double width = embedInfo->GetWidth();
+    double height = embedInfo->GetHeight();
+    double embedX = embedInfo->GetX();
+    double embedY = embedInfo->GetY();
+    if (embedX <= x && x <= (embedX + width) && embedY <= y && y <= (embedY + height)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void NWebDelegate::UpdateNativeEmbedInfo(std::shared_ptr<NWebNativeEmbedDataInfo> info) {
+  std::string embedId = info->GetEmbedId();
+  auto status = info->GetStatus();
+  if (status == NativeEmbedStatus::CREATE || status == NativeEmbedStatus::UPDATE) {
+    embedDataInfo_.insert_or_assign(embedId, info);
+  } else if (status == NativeEmbedStatus::DESTROY) {
+    auto iter = embedDataInfo_.find(embedId);
+    if (iter != embedDataInfo_.end()) {
+        embedDataInfo_.erase(iter);
+    }
+  }
 }
 #endif
 

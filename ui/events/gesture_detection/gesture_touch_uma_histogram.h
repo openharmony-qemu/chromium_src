@@ -58,6 +58,7 @@ enum UMAEventType {
 
   //#ifdef OHOS_DRAG_DROP
   UMA_ET_GESTURE_DRAG_LONG_PRESS = 37,
+  UMA_ET_GESTURE_CREATE_OVERLAY = 38,
   //#endif
   UMA_ET_COUNT
 };

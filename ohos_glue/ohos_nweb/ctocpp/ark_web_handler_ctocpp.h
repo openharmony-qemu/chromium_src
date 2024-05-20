@@ -291,6 +291,10 @@ public:
                              int offset_y,
                              int rect_width,
                              int rect_height) override;
+
+  bool OnFocus(int source) override;
+
+  bool OnOverScroll(float xOffset, float yOffset, float xVelocity, float yVelocity) override;
 };
 
 } // namespace OHOS::ArkWeb

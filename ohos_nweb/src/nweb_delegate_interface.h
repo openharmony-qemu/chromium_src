@@ -378,6 +378,7 @@ class NWebDelegateInterface
 
 #if BUILDFLAG(IS_OHOS)
   virtual float GetBaseDisplayRatio() = 0;
+  virtual void UpdateNativeEmbedInfo(std::shared_ptr<NWebNativeEmbedDataInfo> info) = 0;
 #endif
 
 #ifdef OHOS_EX_TOPCONTROLS

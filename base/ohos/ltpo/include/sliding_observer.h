@@ -18,6 +18,7 @@
 
 #include <stdint.h>
 #include <vector>
+#include "adapter_base.h"
 #include "system_properties_adapter.h"
 
 namespace base {

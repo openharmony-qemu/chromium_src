@@ -202,6 +202,12 @@ enum class NativeEmbedStatus {
     DESTROY,
 };
 
+enum class NWebFocusSource {
+    FOCUS_SOURCE_DEFAULT = -1,
+    FOCUS_SOURCE_NAVIGATION = 0,
+    FOCUS_SOURCE_SYSTEM,
+};
+
 class NWebNativeEmbedInfo {
 public:
     virtual ~NWebNativeEmbedInfo() = default;
@@ -913,6 +919,31 @@ public:
                                        int offsetY,
                                        int rectWidth,
                                        int rectHeight) {}
+
+    /**
+     * @brief Request display and focus for a new nweb.
+     *
+     * @param source The Focus Source.
+     * @return Return true if request focus success, false if request focus fail.
+     */
+    virtual bool OnFocus(NWebFocusSource source)
+    {
+        return false;
+    }
+
+    /**
+     * @brief Called when the page is over scroll.
+     *
+     * @param xOffset The offset of x axis.
+     * @param yOffset The offset of y axis.
+     * @param xVelocity The velocity of x axis.
+     * @param yVelocity The velocity of y axis.
+     * @return Return true if value is consumed, false if value is unconsumed.
+     */
+    virtual bool OnOverScroll(float xOffset, float yOffset, float xVelocity, float yVelocity)
+    {
+        return false;
+    }
 };
 }  // namespace OHOS::NWeb
 

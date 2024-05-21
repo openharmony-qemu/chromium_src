@@ -326,6 +326,8 @@ void PrecompileJavaScript(const std::string& url,
                           const std::string& script,
                           std::shared_ptr<CacheOptions>& cacheOptions,
                           std::shared_ptr<NWebMessageValueCallback> callback) override;
+void UpdateNativeEmbedInfo(std::shared_ptr<NWebNativeEmbedDataInfo> info) override;
+bool HitNativeArea(double x, double y);
 #endif
 
 #ifdef OHOS_PAGE_UP_DOWN
@@ -541,6 +543,7 @@ void PrecompileJavaScript(const std::string& url,
 
 #if BUILDFLAG(IS_OHOS)
   float base_display_ratio_ = 1.f;
+  std::map<std::string, std::shared_ptr<NWebNativeEmbedDataInfo>> embedDataInfo_;
 #endif
 
   bool is_enhance_surface_ = false;

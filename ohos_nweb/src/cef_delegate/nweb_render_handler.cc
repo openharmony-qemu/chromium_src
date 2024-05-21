@@ -708,9 +708,18 @@ bool NWebRenderHandler::StartDragging(CefRefPtr<CefBrowser> browser,
   } else {
     usefull_selection = is_irregular_drag_background_;
   }
+
+  // default value false
+  bool dark_mode_enable = false;
+  auto delegete = delegate_interface_.lock();
+  if (delegete) {
+    dark_mode_enable = delegete->DarkModeEnabled();
+  }
+  LOG(DEBUG) << "DragDrop StartDragging darkModeEnable:" << dark_mode_enable;
+
   nweb_drag_data_ = std::make_shared<NWebDragDataImpl>(
       drag_data, drag_touch_point, start_edge, end_edge,
-      screen_info_.display_ratio, usefull_selection);
+      screen_info_.display_ratio, usefull_selection, dark_mode_enable);
 
   auto handler = handler_.lock();
   if (handler == nullptr) {

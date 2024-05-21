@@ -42,6 +42,7 @@ namespace {
   constexpr int DEFAULT_MARGIN = 5;
   constexpr int IMAGE_MIN_WIDTH = 64;
   constexpr int DEFAULT_COLOR_BG = 0xF2FFFFFF;
+  constexpr int DEFAULT_COLOR_BG_DARK_MODE = 0xF2000000;
   constexpr int SHADOW_RADIUS = 5;
   constexpr int EXPAND_PADDING = 9;
   constexpr int SHADOW_COLOR = 0x33000000;
@@ -253,7 +254,11 @@ void NWebDragDataImpl::GenerateOhosDragBitmapFromOriginForImage(const SkBitmap& 
 
   SkPaint clip_image_paint;
   clip_image_paint.setAntiAlias(true);
-  clip_image_paint.setColor(DEFAULT_COLOR_BG);
+  if (dark_mode_enable_) {
+    clip_image_paint.setColor(DEFAULT_COLOR_BG_DARK_MODE);
+  } else {
+    clip_image_paint.setColor(DEFAULT_COLOR_BG);
+  }
   clip_image_paint.setBlendMode(SkBlendMode::kSrcOver);
   clip_image_paint.setStyle(SkPaint::kFill_Style);
   clip_image_canvas.drawPath(clip_image_path, clip_image_paint);
@@ -302,7 +307,11 @@ void NWebDragDataImpl::GenerateOhosDragBitmapFromOriginForRichtext(const SkBitma
   SkPaint shadow_layer_paint;
   shadow_layer_paint.setAntiAlias(true);
   shadow_layer_paint.setStyle(SkPaint::kFill_Style);
-  shadow_layer_paint.setColor(DEFAULT_COLOR_BG);
+  if (dark_mode_enable_) {
+    shadow_layer_paint.setColor(DEFAULT_COLOR_BG_DARK_MODE);
+  } else {
+    shadow_layer_paint.setColor(DEFAULT_COLOR_BG);
+  }
   shadow_layer_paint.setBlendMode(SkBlendMode::kSrcOver);
   auto shadow = SkImageFilters::DropShadow(ToOhCoordinate(SHADOW_DX), ToOhCoordinate(SHADOW_DY),
     ToOhCoordinate(SHADOW_RADIUS), ToOhCoordinate(SHADOW_RADIUS), SHADOW_COLOR, nullptr);
@@ -338,13 +347,15 @@ NWebDragDataImpl::NWebDragDataImpl(CefRefPtr<CefDragData> drag_data)
     : drag_data_(drag_data) {}
 
 NWebDragDataImpl::NWebDragDataImpl(CefRefPtr<CefDragData> drag_data, CefPoint& drag_touch_point,
-    std::vector<CefPoint>& start_edge, std::vector<CefPoint>& end_edge, float device_pixel_ratio, bool is_useful_selection)
+    std::vector<CefPoint>& start_edge, std::vector<CefPoint>& end_edge, float device_pixel_ratio,
+    bool is_useful_selection, bool dark_mode_enable)
     : drag_data_(drag_data), is_useful_selection_(is_useful_selection) {
   device_pixel_ratio_ = device_pixel_ratio;
   if (device_pixel_ratio_ <= 0) {
     LOG(ERROR) << "invalid device pixel ratio, ratio = " << device_pixel_ratio_;
     return;
   }
+  dark_mode_enable_ = dark_mode_enable;
 
   if (drag_data_) {
     drag_image_origin_point_.x = ToOhCoordinate(drag_touch_point.x - drag_data_->GetImageHotspot().x);
@@ -387,7 +398,8 @@ NWebDragDataImpl::NWebDragDataImpl(CefRefPtr<CefDragData> drag_data, CefPoint& d
              << ", bottom = "
              << ToOhCoordinate(drag_touch_point.y -
                                drag_data_->GetImageHotspot().y +
-                               image->GetHeight());
+                               image->GetHeight())
+             << ", dark mode enable = " << dark_mode_enable_;
 }
 
 std::string NWebDragDataImpl::GetLinkURL()

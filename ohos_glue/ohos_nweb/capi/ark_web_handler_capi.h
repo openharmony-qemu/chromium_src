@@ -402,6 +402,17 @@ typedef struct _ark_web_handler_t {
       int offset_y,
       int rect_width,
       int rect_height);
+
+  bool(ARK_WEB_CALLBACK* on_focus2)(
+      struct _ark_web_handler_t* self,
+      int source);
+
+  bool(ARK_WEB_CALLBACK* on_over_scroll2)(
+      struct _ark_web_handler_t* self,
+      float xOffset,
+      float yOffset,
+      float xVelocity,
+      float yVelocity);
 } ark_web_handler_t;
 
 #ifdef __cplusplus

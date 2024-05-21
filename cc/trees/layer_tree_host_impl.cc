@@ -2284,6 +2284,11 @@ void LayerTreeHostImpl::OnDraw(const gfx::Transform& transform,
     // draw as well.
     SetFullViewportDamage();
   }
+
+#if defined(OHOS_SOFTWARE_COMPOSITOR)
+  external_transform_ = gfx::Transform();
+  external_viewport_ = gfx::Rect();
+#endif
 }
 
 void LayerTreeHostImpl::OnCompositorFrameTransitionDirectiveProcessed(

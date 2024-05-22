@@ -383,6 +383,7 @@ void NWebInputMethodHandler::OnTextSelectionChanged(
     CefRefPtr<CefBrowser> browser,
     const CefString& selected_text,
     const CefRange& selected_range) {
+    selected_text_ = selected_text.ToString16();
 }
 
 void NWebInputMethodHandler::OnCursorUpdate(const CefRect& rect) {
@@ -479,16 +480,6 @@ void NWebInputMethodHandler::OnUpdateTextInputStateCalled(CefRefPtr<CefBrowser> 
 
   selected_from_ = selected_range.from;
   selected_to_ = selected_range.to;
-
-  if ((selected_from_ != selected_to_) && !whole_text_.empty()) {
-    int32_t pos = selected_from_;
-    int32_t length = selected_to_ - selected_from_;
-    if (pos + length <= whole_text_.length()) {
-      selected_text_ = whole_text_.substr(pos, length);
-    }
-    LOG(DEBUG) << "NWebInputMethodHandler::OnUpdateTextInputStateCalled substr pos = " << selected_from_
-      << ", length " << length << ", selected_text_ " << selected_text_;
-  }
 
   if (inputmethod_adapter_) {
     inputmethod_adapter_->OnSelectionChange(

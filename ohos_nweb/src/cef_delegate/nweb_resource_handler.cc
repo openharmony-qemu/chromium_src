@@ -240,12 +240,14 @@ bool NWebResourceHandler::Read(void* data_out,
     return false;
   }
 #ifdef OHOS_NETWORK_LOAD
+  LOG(DEBUG) << "intercept NWebResourceHandler::Read, responseDataType=" << static_cast<int32_t>(response_->ResponseDataType());
   switch (response_->ResponseDataType()) {
     case NWebResponseDataType::NWEB_RESOURCE_URL_TYPE:
       return ReadResourceData(data_out, bytes_to_read, bytes_read);
     case NWebResponseDataType::NWEB_FILE_TYPE:
       return ReadFileData(data_out, bytes_to_read, bytes_read);
     case NWebResponseDataType::NWEB_STRING_TYPE:
+    case NWebResponseDataType::NWEB_BUFFER_TYPE:
       return ReadStringData(data_out, bytes_to_read, bytes_read);
     default:
       break;
@@ -279,6 +281,10 @@ void NWebResourceHandler::GetResponseHeaders(CefRefPtr<CefResponse> response,
 #ifdef OHOS_NETWORK_LOAD
   if (response_->ResponseDataType() == NWebResponseDataType::NWEB_STRING_TYPE) {
     response_length = data_.length();
+    LOG(DEBUG) << "intercept NWEB_STRING_TYPE response_length=" << response_length;
+  } else if (response_->ResponseDataType() == NWebResponseDataType::NWEB_BUFFER_TYPE) {
+    response_length = response_->GetResponseDataBufferSize();
+    LOG(DEBUG) << "intercept NWEB_BUFFER_TYPE response_length=" << response_length;
   } else if (response_->ResponseDataType() == NWebResponseDataType::NWEB_RESOURCE_URL_TYPE) {
     if (ReadResourceDataByHap() == false) {
       response_length = -1;

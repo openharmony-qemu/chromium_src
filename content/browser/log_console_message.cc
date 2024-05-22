@@ -3,12 +3,16 @@
 // found in the LICENSE file.
 
 #include "content/browser/log_console_message.h"
+#include <codecvt>
 
 #include "base/feature_list.h"
 #include "base/logging.h"
 #include "build/build_config.h"
 #include "content/public/browser/console_message.h"
 #include "content/public/common/content_features.h"
+#if BUILDFLAG(IS_OHOS)
+#include "hilog_adapter.h"
+#endif
 
 namespace content {
 
@@ -35,9 +39,37 @@ void LogConsoleMessage(blink::mojom::ConsoleMessageLevel log_level,
   if (!base::FeatureList::IsEnabled(features::kLogJsConsoleMessages))
     return;
 
+#if BUILDFLAG(IS_OHOS)
+  auto priority = (resolved_level < 0) ? OHOS::NWeb::LogLevelAdapter::DEBUG
+                                       : OHOS::NWeb::LogLevelAdapter::LEVEL_MAX;
+  switch (resolved_level) {
+    case logging::LOGGING_INFO:
+      priority = OHOS::NWeb::LogLevelAdapter::INFO;
+      break;
+    case logging::LOGGING_WARNING:
+      priority = OHOS::NWeb::LogLevelAdapter::WARN;
+      break;
+    case logging::LOGGING_ERROR:
+      priority = OHOS::NWeb::LogLevelAdapter::ERROR;
+      break;
+    case logging::LOGGING_FATAL:
+      priority = OHOS::NWeb::LogLevelAdapter::FATAL;
+      break;
+    case logging::LOGGING_DEBUG:
+      priority = OHOS::NWeb::LogLevelAdapter::DEBUG;
+  }
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;
+  std::string message_string = converter.to_bytes(message);
+  std::string source_string = converter.to_bytes(source_id);
+  OHOS::NWeb::HiLogAdapter::PrintConsoleLog(priority, "ARKWEB-CONSOLE",
+                                            "[%{public}s:%{public}d] \"%{public}s\", source: %{public}s (%{public}d)",
+                                            "CONSOLE", line_number, message_string.c_str(), source_string.c_str(),
+                                            line_number);
+#else
   logging::LogMessage("CONSOLE", line_number, resolved_level).stream()
       << "\"" << message << "\", source: " << source_id << " (" << line_number
       << ")";
+#endif
 }
 
 }  // namespace content

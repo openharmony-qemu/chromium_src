@@ -552,6 +552,7 @@ void CorsURLLoader::OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryReg
   DCHECK(network_loader_);
   DCHECK(forwarding_client_);
 
+  LOG(DEBUG) << "shared-memory CorsURLLoader::OnTransferDataWithSharedMemory buffer_size=" << buffer_size;
   forwarding_client_->OnTransferDataWithSharedMemory(std::move(region), buffer_size);
 }
 #endif

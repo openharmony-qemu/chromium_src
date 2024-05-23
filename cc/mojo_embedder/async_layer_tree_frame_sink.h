@@ -31,6 +31,11 @@
 #include "mojo/public/cpp/bindings/remote.h"
 #include "services/viz/public/mojom/compositing/compositor_frame_sink.mojom.h"
 
+#if defined(OHOS_SOFTWARE_COMPOSITOR)
+#include "cc/mojo_embedder/software_compositor_renderer_ohos.h"
+#include "cc/mojo_embedder/software_compositor_registry_ohos.h"
+#endif
+
 namespace cc {
 
 class RasterContextProviderWrapper;
@@ -104,6 +109,10 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
     return last_hit_test_data_;
   }
 
+#if defined(OHOS_SOFTWARE_COMPOSITOR)
+  void InitSoftwareCompositorRender(SoftwareCompositorRegistryOhos* registry);
+#endif
+
  private:
   // mojom::CompositorFrameSinkClient implementation:
   void DidReceiveCompositorFrameAck(
@@ -158,6 +167,11 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
   power_scheduler::FrameProductionPowerModeVoter power_mode_voter_;
 
   base::WeakPtrFactory<AsyncLayerTreeFrameSink> weak_factory_{this};
+
+#if defined(OHOS_SOFTWARE_COMPOSITOR)
+  std::unique_ptr<SoftwareCompositorRendererOhos> software_renderer_ohos_;
+#endif
+
 };
 
 }  // namespace mojo_embedder

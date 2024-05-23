@@ -154,4 +154,10 @@ void NWebEngineImpl::SetHostIP(
 void NWebEngineImpl::ClearHostIP(const std::string &hostName) {
   NWebImpl::ClearHostIP(hostName);
 }
+
+void NWebEngineImpl::EnableWholeWebPageDrawing() {
+#if defined(OHOS_SOFTWARE_COMPOSITOR)
+  NWebImpl::EnableWholeWebPageDrawing();
+#endif
+}
 } // namespace OHOS::NWeb

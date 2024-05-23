@@ -463,6 +463,10 @@ class NWebImpl : public NWeb {
   void OnTextSelected() override;
 #endif
 
+#if defined(OHOS_SOFTWARE_COMPOSITOR)
+  static void EnableWholeWebPageDrawing();
+#endif
+
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

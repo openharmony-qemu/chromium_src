@@ -194,15 +194,14 @@ void ChildProcess::ReportIoThreadStatus(bool is_created) {
   using namespace OHOS::NWeb;
   ResSchedStatusAdapter status = is_created ?
     ResSchedStatusAdapter::THREAD_CREATED : ResSchedStatusAdapter::THREAD_DESTROYED;
-  
+  auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
+    switches::kProcessType);
   // If this thread is in browser process, then report key thread info to RSS directly.
   // Otherwise, report key thread info to the browser process firstly.
   if (main_thread_->IsInBrowserProcess()) {
     ResSchedClientAdapter::ReportKeyThread(
       status, base::GetCurrentRealPid(), io_thread_->GetThreadRealId(), ResSchedRoleAdapter::USER_INTERACT);
-  } else if (OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                .GetSystemPropertiesInstance()
-                .GetOOPGPUEnable()) {
+  } else if (type == switches::kGpuProcess) {
     if (NWebNativeWindowTracker::Get() && 
         NWebNativeWindowTracker::Get()->g_browser_client_) {
       LOG(DEBUG) << "get native window success pid:" << base::GetCurrentRealPid()

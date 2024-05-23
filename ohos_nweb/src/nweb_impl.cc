@@ -182,16 +182,10 @@ static std::string GetNetlogMode() {
   return system_properties_adapter.GetNetlogMode();
 }
 
-static bool GetOOPGPUEnable() {
+static std::string GetOOPGPUStatus() {
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                                     .GetSystemPropertiesInstance();
-  return system_properties_adapter.GetOOPGPUEnable();
-}
-
-static void SetOOPGPUDisable() {
-  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                                    .GetSystemPropertiesInstance();
-  system_properties_adapter.SetOOPGPUDisable();
+  return system_properties_adapter.GetOOPGPUStatus();
 }
 
 #if defined(OHOS_SITE_ISOLATION)
@@ -339,34 +333,27 @@ void InitialWebEngineArgs(std::list<std::string>& web_engine_args,
   for (auto arg : args_to_delete) {
     auto it = std::find(web_engine_args.begin(), web_engine_args.end(), arg);
     if (it != web_engine_args.end()) {
-      web_engine_args.erase(it);
       if (*it == "--in-process-gpu") {
         xml_gpu = true;
+        continue;
       }
+      web_engine_args.erase(it);
     }
   }
-  if (!xml_gpu) {
-    SetOOPGPUDisable();
-  }
+
   auto args_to_add = GetArgsToAdd(init_args);
   for (auto arg : args_to_add) {
     web_engine_args.emplace_back(arg);
   }
 
-  bool oop_gpu_enable = GetOOPGPUEnable();
-  if (!oop_gpu_enable) {
-    web_engine_args.emplace_back("--disable-canvas-oop-gpu-rasterization");
-  }
-
-  if (!xml_gpu && oop_gpu_enable) {
+  std::string oop_gpu_enable = GetOOPGPUStatus();
+  if ((xml_gpu && oop_gpu_enable != "false") || (!xml_gpu && oop_gpu_enable == "true")) {
     auto it = std::find(web_engine_args.begin(), web_engine_args.end(), "--in-process-gpu");
     if (it != web_engine_args.end()) {
       web_engine_args.erase(it);
     }
-  }
-
-  if (xml_gpu && !oop_gpu_enable) {
-    web_engine_args.emplace_back("--in-process-gpu");
+  } else {
+    web_engine_args.emplace_back("--disable-canvas-oop-gpu-rasterization");
   }
 
   if (GetIsMultiRendererProcess(init_args)) {

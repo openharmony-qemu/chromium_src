@@ -145,8 +145,10 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
                            EstablishGpuChannelCallback callback) override;
   void SetChannelClientPid(int32_t client_id,
                            base::ProcessId client_pid) override;
+#if BUILDFLAG(IS_OHOS)
   void GetSurfaceId(int32_t native_embed_id,
                     GetSurfaceIdCallback callback) override;
+#endif
   void SetChannelDiskCacheHandle(
       int32_t client_id,
       const gpu::GpuDiskCacheHandle& handle) override;

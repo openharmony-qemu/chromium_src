@@ -36,6 +36,7 @@
 #include "base/process/process_handle.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
+#include "content/public/common/content_switches.h"
 #include "res_sched_client_adapter.h"
 #endif
 
@@ -115,20 +116,20 @@ CompositorGpuThread::CompositorGpuThread(
 CompositorGpuThread::~CompositorGpuThread() {
 #if BUILDFLAG(IS_OHOS)
   using namespace OHOS::NWeb;
-  if (!OHOS::NWeb::OhosAdapterHelper::GetInstance()
-             .GetSystemPropertiesInstance()
-             .GetOOPGPUEnable()) {
+  auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
+    switches::kProcessType);
+  if (type == switches::kGpuProcess) {
+    NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
+        ResSchedStatusAdapter::THREAD_DESTROYED,
+        base::GetCurrentRealPid(), GetThreadRealId(),
+        ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+  } else {
     task_runner()->PostTask(
       FROM_HERE,
       base::BindOnce(
           base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread),
           ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentRealPid(),
           GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
-  } else {
-    NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
-        ResSchedStatusAdapter::THREAD_DESTROYED,
-        base::GetCurrentRealPid(), GetThreadRealId(),
-        ResSchedRoleAdapter::IMPORTANT_DISPLAY);
   }
 #endif
 
@@ -253,20 +254,20 @@ bool CompositorGpuThread::Initialize() {
 
 #if BUILDFLAG(IS_OHOS)
   using namespace OHOS::NWeb;
-  if (!OHOS::NWeb::OhosAdapterHelper::GetInstance()
-             .GetSystemPropertiesInstance()
-             .GetOOPGPUEnable()) {
+  auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
+    switches::kProcessType);
+  if (type == switches::kGpuProcess) {
+    NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
+        ResSchedStatusAdapter::THREAD_CREATED,
+        base::GetCurrentRealPid(), GetThreadRealId(),
+        ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+  } else {
     task_runner()->PostTask(
       FROM_HERE,
       base::BindOnce(
           base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread),
           ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentRealPid(),
           GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
-  } else {
-    NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
-        ResSchedStatusAdapter::THREAD_CREATED,
-        base::GetCurrentRealPid(), GetThreadRealId(),
-        ResSchedRoleAdapter::IMPORTANT_DISPLAY);
   }
 #endif
   return init_succeeded_;

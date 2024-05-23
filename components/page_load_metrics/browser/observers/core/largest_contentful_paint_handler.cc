@@ -397,6 +397,14 @@ void LargestContentfulPaintHandler::RecordCrossSiteSubframeTiming(
     MergeForSubframesWithAdjustedTime(
         &cross_site_subframe_contentful_paint_.Image(), new_image_candidate);
   }
+
+  if(largest_contentful_paint.largest_image_paint_size >= largest_contentful_paint.largest_text_paint_size) {
+    LOG(INFO) << "Web Load Performance LCP: "
+              << largest_contentful_paint.largest_image_paint.value_or(::base::TimeDelta()).InMilliseconds();
+  } else {
+    LOG(INFO) << "Web Load Performance LCP: "
+              << largest_contentful_paint.largest_text_paint.value_or(::base::TimeDelta()).InMilliseconds();
+  }
 }
 
 void LargestContentfulPaintHandler::UpdateFirstInputOrScrollNotified(

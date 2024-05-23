@@ -4,11 +4,14 @@
 
 #include "components/viz/service/frame_sinks/frame_sink_bundle_impl.h"
 
+#include <map>
 #include <utility>
 #include <vector>
 
 #include "base/bind.h"
 #include "base/check.h"
+#include "base/memory/raw_ptr.h"
+#include "base/memory/weak_ptr.h"
 #include "build/build_config.h"
 #include "components/viz/service/frame_sinks/compositor_frame_sink_impl.h"
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
@@ -36,6 +39,10 @@ class FrameSinkBundleImpl::SinkGroup : public BeginFrameObserver {
   ~SinkGroup() override { source_.RemoveObserver(this); }
 
   bool IsEmpty() const { return frame_sinks_.empty(); }
+
+  base::WeakPtr<SinkGroup> GetWeakPtr() {
+    return weak_ptr_factory_.GetWeakPtr();
+  }
 
   void AddFrameSink(uint32_t sink_id) { frame_sinks_.insert(sink_id); }
 
@@ -152,6 +159,8 @@ class FrameSinkBundleImpl::SinkGroup : public BeginFrameObserver {
   std::set<uint32_t> unacked_submissions_;
 
   BeginFrameArgs last_used_begin_frame_args_;
+
+  base::WeakPtrFactory<SinkGroup> weak_ptr_factory_{this};
 };
 
 FrameSinkBundleImpl::FrameSinkBundleImpl(
@@ -215,7 +224,7 @@ void FrameSinkBundleImpl::SetNeedsBeginFrame(uint32_t sink_id,
 
 void FrameSinkBundleImpl::Submit(
     std::vector<mojom::BundledFrameSubmissionPtr> submissions) {
-  std::set<SinkGroup*> affected_groups;
+  std::map<raw_ptr<SinkGroup>, base::WeakPtr<SinkGroup>> affected_groups;
   // Count the frame submissions before processing anything. This ensures that
   // any frames submitted here will be acked together in a batch, and not acked
   // individually in case they happen to ack synchronously within
@@ -228,7 +237,7 @@ void FrameSinkBundleImpl::Submit(
     if (submission->data->is_frame()) {
       if (auto* group = GetSinkGroup(submission->sink_id)) {
         group->WillSubmitFrame(submission->sink_id);
-        affected_groups.insert(group);
+        affected_groups.emplace(group, group->GetWeakPtr());
       }
     }
   }
@@ -258,8 +267,10 @@ void FrameSinkBundleImpl::Submit(
     }
   }
 
-  for (auto* group : affected_groups) {
-    group->FlushMessages();
+  for (const auto& [unsafe_group, weak_group] : affected_groups) {
+    if (weak_group) {
+      weak_group->FlushMessages();
+    }
   }
 }
 

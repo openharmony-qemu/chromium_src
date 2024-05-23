@@ -26,16 +26,18 @@
 #include "content/public/common/sandboxed_process_launcher_delegate.h"
 #include "content/public/common/zygote/sandbox_support_linux.h"
 #include "content/public/common/zygote/zygote_handle.h"
-#include "content/renderer/host_proxy.h"
 #include "sandbox/policy/linux/sandbox_linux.h"
 
 #if BUILDFLAG(IS_OHOS)
+#include "content/renderer/host_proxy.h"
 #include "res_sched_client_adapter.h"
 #endif
 
 namespace content {
 namespace internal {
+#if BUILDFLAG(IS_OHOS)
 static bool save_browser_connect_{false};
+#endif
 
 absl::optional<mojo::NamedPlatformChannel>
 ChildProcessLauncherHelper::CreateNamedPlatformChannelOnLauncherThread() {

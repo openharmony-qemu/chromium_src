@@ -296,6 +296,7 @@ void GpuHostImpl::SetChannelClientPid(int client_id,
   gpu_service_remote_->SetChannelClientPid(client_id, client_pid);
 }
 
+#if BUILDFLAG(IS_OHOS)
 std::string GpuHostImpl::GetSurfaceId(int32_t native_embed_id){
   LOG(DEBUG) << "get surface id = " << native_embed_id;
   mojo::SyncCallRestrictions::ScopedAllowSyncCall allow_sync;
@@ -303,6 +304,7 @@ std::string GpuHostImpl::GetSurfaceId(int32_t native_embed_id){
   gpu_service_remote_->GetSurfaceId(native_embed_id, &surface_id);
   return surface_id;
 }
+#endif
 
 void GpuHostImpl::SetChannelDiskCacheHandle(
     int client_id,

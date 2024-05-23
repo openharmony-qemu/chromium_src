@@ -2322,6 +2322,13 @@ source_set("browser") {
     "worker_host/worker_script_loader_factory.h",
   ]
 
+  if (defined(ohos_software_compositor) && ohos_software_compositor) {
+    sources += [
+      "ohos/software_compositor_host_ohos.cc",
+      "ohos/software_compositor_host_ohos.h",
+    ]
+  }
+
   if (report_sys_event) {
     defines += [ "REPORT_SYS_EVENT" ]
   }

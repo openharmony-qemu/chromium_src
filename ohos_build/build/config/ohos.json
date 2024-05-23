@@ -678,6 +678,14 @@
 "dependence": "",
 "default": "true"
 },
+{ "name": "OHOS_SOFTWARE_COMPOSITOR",
+"owner": "",
+"desc": "",
+"effect":"main gn blink_core other",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},
 { "name": "OHOS_SSL_AUTH_ALGO",
 "owner": "",
 "desc": "",

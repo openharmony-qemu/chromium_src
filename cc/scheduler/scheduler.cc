@@ -185,8 +185,12 @@ void Scheduler::DidSubmitCompositorFrame(uint32_t frame_token,
   // Hardware and software draw may occur at the same frame simultaneously for
   // Android WebView. There is no need to call DidSubmitCompositorFrame here for
   // software draw.
+#if defined(OHOS_SOFTWARE_COMPOSITOR)
+  if (!state_machine_.resourceless_draw()) {
+#else
   if (!settings_.using_synchronous_renderer_compositor ||
       !state_machine_.resourceless_draw()) {
+#endif
     compositor_frame_reporting_controller_->DidSubmitCompositorFrame(
         frame_token, submit_time, begin_main_frame_args_.frame_id,
         last_activate_origin_frame_args_.frame_id, std::move(events_metrics),

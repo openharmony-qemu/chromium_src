@@ -43,7 +43,6 @@
 #include "content/browser/gpu/gpu_main_thread_factory.h"
 #include "content/browser/gpu/gpu_memory_buffer_manager_singleton.h"
 #include "content/browser/renderer_host/render_frame_host_impl.h"
-#include "content/browser/renderer_host/render_process_host_impl.h"
 #include "content/browser/storage_partition_impl.h"
 #include "content/browser/worker_host/dedicated_worker_host.h"
 #include "content/browser/worker_host/dedicated_worker_service_impl.h"
@@ -105,6 +104,7 @@
 #endif
 
 #if BUILDFLAG(IS_OHOS)
+#include "content/browser/renderer_host/render_process_host_impl.h"
 #include "res_sched_client_adapter.h"
 #endif
 

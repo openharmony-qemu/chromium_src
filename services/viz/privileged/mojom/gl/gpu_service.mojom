@@ -59,7 +59,7 @@ interface GpuService {
   // `client_id`.
   SetChannelClientPid(int32 client_id, mojo_base.mojom.ProcessId client_pid);
 
-  [Sync] GetSurfaceId(int32 native_embed_id)
+  [EnableIf=is_ohos, Sync] GetSurfaceId(int32 native_embed_id)
       => (string surfaceId);
 
   // Tells the GPU service an assigned cache handle. Note that for each type of

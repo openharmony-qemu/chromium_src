@@ -30,7 +30,7 @@
 #include "gpu/config/gpu_finch_features.h"
 #include "gpu/config/gpu_switches.h"
 #include "gpu/ipc/service/gpu_memory_buffer_factory.h"
-#include "gpu/ipc/common/nweb_native_window_tracker.h"
+
 #include "ui/gfx/switches.h"
 
 #if BUILDFLAG(IS_OZONE)
@@ -41,6 +41,8 @@
 #include "base/process/process_handle.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
+#include "content/public/common/content_switches.h"
+#include "gpu/ipc/common/nweb_native_window_tracker.h"
 #include "res_sched_client_adapter.h"
 #endif
 
@@ -90,20 +92,20 @@ std::unique_ptr<VizCompositorThreadType> CreateAndStartCompositorThread() {
 
 #if BUILDFLAG(IS_OHOS)
   using namespace OHOS::NWeb;
-  if (!OHOS::NWeb::OhosAdapterHelper::GetInstance()
-             .GetSystemPropertiesInstance()
-             .GetOOPGPUEnable()) {
-      thread->task_runner()->PostTask(
-          FROM_HERE,
-          base::BindOnce(
-              base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread),
-              ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentRealPid(),
-              thread->GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
-  } else {
+  auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
+    switches::kProcessType);
+  if (type == switches::kGpuProcess) {
     NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
         ResSchedStatusAdapter::THREAD_CREATED,
         base::GetCurrentRealPid(), thread->GetThreadRealId(),
         ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+  } else {
+    thread->task_runner()->PostTask(
+        FROM_HERE,
+        base::BindOnce(
+            base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread),
+            ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentRealPid(),
+            thread->GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
   }
 #endif
 
@@ -126,20 +128,20 @@ VizCompositorThreadRunnerImpl::~VizCompositorThreadRunnerImpl() {
 
 #if BUILDFLAG(IS_OHOS)
   using namespace OHOS::NWeb;
-  if (!OHOS::NWeb::OhosAdapterHelper::GetInstance()
-             .GetSystemPropertiesInstance()
-             .GetOOPGPUEnable()) {
-      task_runner_->PostTask(
+  auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
+    switches::kProcessType);
+  if (type == switches::kGpuProcess) {
+    NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
+        ResSchedStatusAdapter::THREAD_DESTROYED,
+        base::GetCurrentRealPid(), thread_->GetThreadRealId(),
+        ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+  } else {
+    task_runner_->PostTask(
           FROM_HERE,
           base::BindOnce(
               base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread),
               ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentRealPid(),
               thread_->GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
-  } else {
-    NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
-        ResSchedStatusAdapter::THREAD_DESTROYED,
-        base::GetCurrentRealPid(), thread_->GetThreadRealId(),
-        ResSchedRoleAdapter::IMPORTANT_DISPLAY);
   }
 #endif
 }

@@ -1585,6 +1585,27 @@ bool NWebHandlerDelegate::OnKeyEvent(CefRefPtr<CefBrowser> browser,
   return false;
 }
 
+#if defined(OHOS_INPUT_EVENTS)
+void NWebHandlerDelegate::KeyboardReDispatch(const CefKeyEvent& event,  bool isUsed) {
+  LOG(INFO) << "NWebHandlerDelegate::KeyboardReDispatch type:" << event.type
+             << ", win:" << event.windows_key_code << ", isUsed:" << isUsed;
+  if (nweb_handler_ != nullptr) {
+    int32_t action =
+        NWebInputDelegate::CefConverter("ohoskeyaction", event.type);
+    if (action == -1) {
+      return;
+    }
+    int32_t keyCode =
+        NWebInputDelegate::CefConverter("ohoskeycode", event.windows_key_code);
+    if (keyCode == -1) {
+      return;
+    }
+    std::shared_ptr<NWebKeyEvent> nwebEvent =
+        std::make_shared<NWebKeyEventImpl>(action, keyCode);
+    return nweb_handler_->KeyboardReDispatch(nwebEvent, isUsed);
+  }
+}
+#endif
 /* CefKeyboardHandler methods end */
 
 /* CefResourceRequestHandler method begin */

@@ -133,6 +133,16 @@ void NWebInputHandler::OnNavigateBack() {
   }
 }
 
+#if defined(OHOS_INPUT_EVENTS)
+bool NWebInputHandler::WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
+                                       const std::vector<int32_t>& pressedCodes) {
+  if (nweb_delegate_ == nullptr) {
+    return false;
+  }
+  return nweb_delegate_->WebSendKeyEvent(keyCode, keyAction, pressedCodes);
+}
+#endif
+
 bool NWebInputHandler::SendKeyEvent(int32_t keyCode, int32_t keyAction) {
   if (nweb_delegate_ == nullptr) {
     return false;

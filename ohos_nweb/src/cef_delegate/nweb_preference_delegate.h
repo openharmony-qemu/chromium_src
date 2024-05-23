@@ -179,6 +179,11 @@ class NWebPreferenceDelegate : public NWebPreference {
   ScriptItems GetJavaScriptOnDocumentEnd();
 #endif
 
+#if defined(OHOS_SOFTWARE_COMPOSITOR)
+  void EnableWholeWebPageDrawing();
+  bool GetEnableWholeWebPageDrawing();
+#endif
+
  private:
   CefRefPtr<CefBrowser> browser_ = nullptr;
 
@@ -262,6 +267,10 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if defined(OHOS_JSPROXY)
   ScriptItems script_items_start_{};
   ScriptItems script_items_end_{};
+#endif
+
+#if defined(OHOS_SOFTWARE_COMPOSITOR)
+  bool record_whole_document_{false};
 #endif
 };
 }  // namespace OHOS::NWeb

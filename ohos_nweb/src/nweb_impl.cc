@@ -1778,6 +1778,14 @@ void NWebImpl::SlideScroll(float vx, float vy) {
   }
   return nweb_delegate_->SlideScroll(vx, vy);
 }
+
+bool NWebImpl::WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
+                               const std::vector<int32_t>& pressedCodes) {
+  if (input_handler_ == nullptr) {
+    return false;
+  }
+  return input_handler_->WebSendKeyEvent(keyCode, keyAction, pressedCodes);
+}
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 bool NWebImpl::GetCertChainDerData(std::vector<std::string>& certChainData,

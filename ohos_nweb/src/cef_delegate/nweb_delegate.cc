@@ -2431,6 +2431,15 @@ void NWebDelegate::SlideScroll(float vx, float vy) {
 
   GetBrowser()->GetHost()->SlideScroll(vx, vy);
 }
+
+bool NWebDelegate::WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
+                                   const std::vector<int32_t>& pressedCodes) {
+  bool retVal = false;
+  if (event_handler_ != nullptr) {
+    retVal = event_handler_->WebSendKeyEventFromAce(keyCode, keyAction, pressedCodes);
+  }
+  return retVal;
+}
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #if defined(OHOS_API_INIT_WEB_ENGINE)

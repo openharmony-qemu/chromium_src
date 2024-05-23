@@ -42,7 +42,6 @@
 #include "gpu/ipc/common/gpu_client_ids.h"
 #include "gpu/ipc/common/gpu_memory_buffer_support.h"
 #include "gpu/ipc/common/gpu_peak_memory.h"
-#include "gpu/ipc/common/gpu_surface_id_tracker.h"
 #include "gpu/ipc/common/memory_stats.h"
 #include "gpu/ipc/service/gpu_channel.h"
 #include "gpu/ipc/service/gpu_channel_manager.h"
@@ -136,6 +135,7 @@
 
 #if BUILDFLAG(IS_OHOS)
 #include "base/ohos/dynamic_frame_loss_monitor.h"
+#include "gpu/ipc/common/gpu_surface_id_tracker.h"
 #endif
 
 namespace viz {
@@ -1088,12 +1088,14 @@ void GpuServiceImpl::SetChannelClientPid(int32_t client_id,
   gpu_channel_manager_->SetChannelClientPid(client_id, client_pid);
 }
 
+#if BUILDFLAG(IS_OHOS)
 void GpuServiceImpl::GetSurfaceId(int32_t native_embed_id, GetSurfaceIdCallback callback)
 {
   std::string res = gpu::GpuSurfaceIdTracker::Get()->AcquireNativeImageSurfaceId(native_embed_id);
   LOG(DEBUG) << "GetSurfaceId native_embed_id: " << native_embed_id << ", getSurfaceId: " << res;
   std::move(callback).Run(res);
 }
+#endif
 
 void GpuServiceImpl::SetChannelDiskCacheHandle(
     int32_t client_id,

@@ -7,8 +7,10 @@
 #include <utility>
 
 #include "base/check.h"
+#include "base/command_line.h"
 #include "base/debug/crash_logging.h"
 #include "base/logging.h"
+#include "content/public/common/content_switches.h"
 #include "gpu/ipc/common/nweb_native_window_tracker.h"
 #include "ui/gl/gl_bindings.h"
 #include "ohos_adapter_helper.h"
@@ -65,9 +67,9 @@ void OhosNativeImage::GetSurfaceId(uint64_t* surface_id) {
   }
   native_image_adapter_->GetSurfaceId(surface_id);
   LOG(DEBUG) << "GetSurfaceId : " << *surface_id;
-  if (OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                  .GetSystemPropertiesInstance()
-                  .GetOOPGPUEnable()) {
+  auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
+    switches::kProcessType);
+  if (type == switches::kGpuProcess) {
     NWebNativeWindowTracker::GetInstance()->g_browser_client_->PassSurface(*surface_id);
   }
 }

@@ -72,6 +72,9 @@ std::string NWebSchemeHandlerFactory::GetWebTag(CefRefPtr<CefBrowser> browser) {
   int nweb_id = -1;
   nweb_id = browser->GetNWebId();
   NWebImpl* nweb = NWebImpl::FromID(nweb_id);
+  if (!nweb) {
+    return "";
+  }
   std::string web_tag = nweb->GetWebTag();
   LOG(INFO) << "scheme_handler nweb_id: " << nweb_id << " web_tag: " << web_tag;
   return web_tag;

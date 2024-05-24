@@ -437,6 +437,10 @@ bool HitNativeArea(double x, double y);
   std::string GetLastJavascriptProxyCallingFrameUrl() override;
 #endif
 
+#if defined(OHOS_SOFTWARE_COMPOSITOR)
+  void EnableWholeWebPageDrawing() override;  
+#endif
+
 #ifdef OHOS_ITP
   void EnableIntelligentTrackingPrevention(bool enable) override;
   bool IsIntelligentTrackingPreventionEnabled() const override;

@@ -164,6 +164,10 @@ static double default_zoom_factor = 1.0;
 const int NWebPlaybackState_NONE = 0;
 #endif
 
+#if defined(OHOS_SOFTWARE_COMPOSITOR)
+static bool enable_whole_web_page_drawing = false;
+#endif
+
 bool GetWebOptimizationValue() {
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                                         .GetSystemPropertiesInstance();
@@ -772,6 +776,13 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
   inputmethod_handler_->SetVirtualDeviceRatio(device_pixel_ratio_);
 
   nweb_delegate_->SetNWebId(nweb_id_);
+
+#if defined(OHOS_SOFTWARE_COMPOSITOR)
+  if (enable_whole_web_page_drawing) {
+    nweb_delegate_->EnableWholeWebPageDrawing();
+  }
+#endif
+
 
 #ifdef OHOS_I18N
   UpdateAcceptLanguageInternal();
@@ -2715,6 +2726,14 @@ RenderProcessMode NWebImpl::GetRenderProcessMode() {
   return RenderProcessMode::MULTIPLE_MODE;
 }
 #endif // OHOS_RENDER_PROCESS_MODE
+
+// static
+void NWebImpl::EnableWholeWebPageDrawing() {
+#if defined(OHOS_SOFTWARE_COMPOSITOR)
+  enable_whole_web_page_drawing = true;
+#endif
+}
+
 }  // namespace OHOS::NWeb
 
 using namespace OHOS::NWeb;

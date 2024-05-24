@@ -1550,7 +1550,7 @@ size_t RenderProcessHost::GetOffTheRecordRenderProcessCount() {
   while (!it.IsAtEnd()) {
     RenderProcessHost* host = it.GetCurrentValue();
     if (host->GetBrowserContext()->IsOffTheRecord() &&
-        static_cast<RenderProcessHostImpl*>(host)->IsInitializedAndNotDead()) {
+        !static_cast<RenderProcessHostImpl*>(host)->is_dead()) {
       count++;
     }
     it.Advance();
@@ -2981,10 +2981,12 @@ void RenderProcessHostImpl::CreateURLLoaderFactory(
 }
 
 bool RenderProcessHostImpl::MayReuseHost() {
-  if (!IsInitializedAndNotDead()) {
-    LOG(ERROR) << "RenderProcessHostImpl is dead or not initialized";
+#if BUILDFLAG(IS_OHOS)
+  if (is_dead_) {
+    LOG(ERROR) << "RenderProcessHostImpl is dead";
     return false;
   }
+#endif
   return GetContentClient()->browser()->MayReuseHost(this);
 }
 
@@ -4651,9 +4653,9 @@ size_t RenderProcessHostImpl::GetProcessCountForLimit() {
   RenderProcessHost::iterator it = RenderProcessHost::AllHostsIterator();
   size_t count = 0;
   while (!it.IsAtEnd()) {
-    RenderProcessHost* host = static_cast<RenderProcessHostImpl*>(
+    RenderProcessHostImpl* host = static_cast<RenderProcessHostImpl*>(
           it.GetCurrentValue());
-    if (host->IsInitializedAndNotDead()) {
+    if (!host->is_dead()) {
       count++;
     }
     it.Advance();

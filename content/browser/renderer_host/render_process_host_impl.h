@@ -573,6 +573,7 @@ class CONTENT_EXPORT RenderProcessHostImpl
 
   bool is_initialized() const { return is_initialized_; }
 
+  bool is_dead() const {return is_dead_; }
   // Ensures that this process is kept alive for the specified timeouts. This
   // delays by |unload_handler_timeout| to ensure that unload handlers have a
   // chance to execute before the process shuts down, and by

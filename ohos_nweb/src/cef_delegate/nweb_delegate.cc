@@ -3394,6 +3394,16 @@ bool NWebDelegate::IsIntelligentTrackingPreventionEnabled() const {
 }
 #endif
 
+#if defined(OHOS_SOFTWARE_COMPOSITOR)
+void NWebDelegate::EnableWholeWebPageDrawing() {
+  if (!preference_delegate_) {
+    LOG(ERROR) << "preference_delegate_ get fail";
+    return;
+  }
+  preference_delegate_->EnableWholeWebPageDrawing();
+}
+#endif
+
 int NWebDelegate::ScaleGestureChange(double scale, double centerX, double centerY) const {
   LOG(DEBUG) << "NWebDelegate::ScaleGestureChange";
   if (!preference_delegate_) {

@@ -203,6 +203,9 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
 #if defined(OHOS_MULTI_WINDOW)
   browser_settings.supports_multiple_windows = IsMultiWindowAccess();
 #endif // defined(OHOS_MULTI_WINDOW)
+#if defined(OHOS_SOFTWARE_COMPOSITOR)
+  browser_settings.record_whole_document = GetEnableWholeWebPageDrawing();
+#endif // OHOS_SOFTWARE_COMPOSITOR
 }
 
 void NWebPreferenceDelegate::SetBrowserSettingsToNetHelpers() {
@@ -798,6 +801,16 @@ void NWebPreferenceDelegate::PutJavaScriptOnDocumentEnd(const ScriptItems& scrip
 
 ScriptItems NWebPreferenceDelegate::GetJavaScriptOnDocumentEnd() {
   return script_items_end_;
+}
+#endif
+
+#if defined(OHOS_SOFTWARE_COMPOSITOR)
+void NWebPreferenceDelegate::EnableWholeWebPageDrawing() {
+  record_whole_document_ = true;
+}
+
+bool NWebPreferenceDelegate::GetEnableWholeWebPageDrawing() {
+  return record_whole_document_;
 }
 #endif
 }  // namespace OHOS::NWeb

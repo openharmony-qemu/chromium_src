@@ -457,6 +457,10 @@ class NWebDelegateInterface
 #ifdef OHOS_AI
   virtual void OnTextSelected() = 0;
 #endif
+
+#if defined(OHOS_SOFTWARE_COMPOSITOR)
+  virtual void EnableWholeWebPageDrawing() = 0;
+#endif
 };
 }  // namespace OHOS::NWeb
 

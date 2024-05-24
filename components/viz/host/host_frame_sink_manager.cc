@@ -485,6 +485,14 @@ void HostFrameSinkManager::UpdateVSyncFrequency(const FrameSinkId& frame_sink_id
 void HostFrameSinkManager::ResetVSyncFrequency(const FrameSinkId& frame_sink_id) {
   frame_sink_manager_->ResetVSyncFrequency(frame_sink_id);
 }
+
+void HostFrameSinkManager::SetNeedWaitForInput(const FrameSinkId& frame_sink_id, bool need_wait_for_input) {
+  frame_sink_manager_->SetNeedWaitForInput(frame_sink_id, need_wait_for_input);
+}
+
+void HostFrameSinkManager::TriggerVsync(const FrameSinkId& frame_sink_id) {
+  frame_sink_manager_->TriggerVsync(frame_sink_id);
+}
 #endif
 
 void HostFrameSinkManager::StartFrameCountingForTest(

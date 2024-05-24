@@ -455,6 +455,8 @@ bool HitNativeArea(double x, double y);
   void OnSafeInsetsChange(int left, int top, int right, int bottom) override;
 #endif
 
+void NotifyForNextTouchMoveEvent() override;
+
 #ifdef OHOS_AI
   void OnTextSelected() override;
 #endif

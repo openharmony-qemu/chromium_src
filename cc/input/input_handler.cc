@@ -1181,6 +1181,11 @@ LayerImpl* InputHandler::GetLayerImpl(const gfx::Point& viewport_point) {
                           compositor_delegate_->DeviceScaleFactor());
   return ActiveTree().FindLayerThatIsHitByPointNative(device_viewport_point);
 }
+
+void InputHandler::TriggerVsyncImplTask() {
+  TRACE_EVENT0("cc", "InputHandler::TriggerVsyncImplTask");
+  compositor_delegate_->GetImplDeprecated().TriggerVsyncImplTask();
+}
 #endif
 
 bool InputHandler::IsCurrentScrollMainRepainted() const {

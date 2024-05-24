@@ -112,7 +112,9 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
   void InitSoftwareCompositorRender(SoftwareCompositorRegistryOhos* registry);
 #endif
-
+#if BUILDFLAG(IS_OHOS)
+  void TriggerVsyncImplTask() override;
+#endif
  private:
   // mojom::CompositorFrameSinkClient implementation:
   void DidReceiveCompositorFrameAck(

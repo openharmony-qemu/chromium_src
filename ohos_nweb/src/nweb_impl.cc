@@ -1973,6 +1973,16 @@ void NWebImpl::OnOnlineRenderToForeground() {
   nweb_delegate_->OnOnlineRenderToForeground();
 }
 
+void NWebImpl::NotifyForNextTouchMoveEvent() {
+  TRACE_EVENT0("base", "NotifyForNextTouchMoveEvent");
+  WVLOG_D("NWebImpl::NotifyForNextTouchMoveEvent");
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("NotifyForNextTouchMoveEvent nweb delegate is null");
+    return;
+  }
+  nweb_delegate_->NotifyForNextTouchMoveEvent();
+}
+
 #if BUILDFLAG(IS_OHOS)
 void NWebImpl::SetWindowId(uint32_t window_id) {
   if (nweb_delegate_ == nullptr) {

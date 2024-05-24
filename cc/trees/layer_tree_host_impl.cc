@@ -3103,6 +3103,14 @@ void LayerTreeHostImpl::HandleScrollUpdateForInternalBeginFrame(const viz::Begin
     input_delegate_->HandleScrollUpdateForInternalBeginFrame(args);
   }
 }
+
+void LayerTreeHostImpl::TriggerVsyncImplTask() {
+  if (!layer_tree_frame_sink_) {
+    return;
+  }
+
+  layer_tree_frame_sink_->TriggerVsyncImplTask();
+}
 #endif
 
 void LayerTreeHostImpl::DidFinishImplFrame(const viz::BeginFrameArgs& args) {

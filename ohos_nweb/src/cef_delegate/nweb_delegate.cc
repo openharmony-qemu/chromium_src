@@ -1361,6 +1361,14 @@ void NWebDelegate::OnOnlineRenderToForeground() {
   GetBrowser()->GetHost()->OnOnlineRenderToForeground();
 }
 
+void NWebDelegate::NotifyForNextTouchMoveEvent() {
+  TRACE_EVENT0("base", "NWebDelegate::NotifyForNextTouchMoveEvent");
+
+  if (event_handler_ != nullptr) {
+    event_handler_->NotifyForNextTouchMoveEvent();
+  }
+}
+
 void NWebDelegate::OnContinue() {
   LOG(DEBUG) << "NWebDelegate::OnContinue, nweb_id = " << nweb_id_;
   if (!GetBrowser().get()) {

@@ -11,10 +11,13 @@
 #include "base/report_loss_frame.h"
 #include "base/ohos/dynamic_frame_loss_monitor.h"
 #include "base/ohos/ltpo/include/sliding_observer.h"
+#include "base/ohos/input_sync/input_vsync_sync_lock.h"
+#include "base/task/thread_pool.h"
 #endif
 
 namespace viz {
 using namespace OHOS::NWeb;
+using base::ohos::InputSyncLock;
 
 constexpr int64_t VSYNC_PERIOD_90HZ = 11111111;
 constexpr int64_t VSYNC_PERIOD_60HZ = 16666666;
@@ -52,6 +55,9 @@ class ExternalBeginFrameSourceOHOS::VSyncUserData {
   base::WeakPtr<viz::ExternalBeginFrameSourceOHOS> weak_ptr_;
 };
 
+base::circular_deque<std::pair<int64_t, ExternalBeginFrameSourceOHOS::VSyncUserData*>>
+  ExternalBeginFrameSourceOHOS::on_vsync_impl_task_queue_ {};
+
 ExternalBeginFrameSourceOHOS::ExternalBeginFrameSourceOHOS(
     uint32_t restart_id,
 #if defined(OHOS_PERFORMANCE_JITTER)
@@ -74,6 +80,7 @@ ExternalBeginFrameSourceOHOS::ExternalBeginFrameSourceOHOS(
       base::SingleThreadTaskRunner::GetCurrentDefault(), weak_factory_.GetWeakPtr());
 #if BUILDFLAG(IS_OHOS)
   vsync_adapter_.SetOnVsyncCallback(ExternalBeginFrameSourceOHOS::OnVSyncCallback);
+  vsync_adapter_.SetOnVsyncEndCallback(ExternalBeginFrameSourceOHOS::OnVSyncEndCallback);
 #endif
 }
 
@@ -113,9 +120,13 @@ void ExternalBeginFrameSourceOHOS::OnVSync(int64_t timestamp, void* data) {
     LOG(ERROR) << "OnVSync data current is nullptr";
     return;
   }
-  userData->current_->PostTask(
-      FROM_HERE, base::BindOnce(&ExternalBeginFrameSourceOHOS::OnVSyncImpl,
-                                userData->weak_ptr_, timestamp, userData));
+  if (InputSyncLock::GetInstance().NeedWaitForInput() || !on_vsync_impl_task_queue_.empty()) {
+    on_vsync_impl_task_queue_.emplace_back(timestamp, userData);
+  } else {
+    userData->current_->PostTask(
+    FROM_HERE, base::BindOnce(&ExternalBeginFrameSourceOHOS::OnVSyncImpl,
+                              userData->weak_ptr_, timestamp, userData));
+  }
 }
 
 void ExternalBeginFrameSourceOHOS::OnVSyncImpl(int64_t timestamp,
@@ -235,5 +246,29 @@ void ExternalBeginFrameSourceOHOS::ResetVSyncFrequency() {
 void ExternalBeginFrameSourceOHOS::OnVSyncCallback()
 {
   base::ohos::DynamicFrameLossMonitor::GetInstance().OnVsync();
+}
+
+void ExternalBeginFrameSourceOHOS::OnVSyncEndCallback()
+{
+  InputSyncLock::GetInstance().SetNeedWaitForInput(false);
+}
+
+void ExternalBeginFrameSourceOHOS::SetNeedWaitForInput(bool need_wait_for_input) {
+  InputSyncLock::GetInstance().SetNeedWaitForInput(need_wait_for_input);
+}
+
+void ExternalBeginFrameSourceOHOS::TriggerVsyncImpl() {
+  TRACE_EVENT0("base", "ExternalBeginFrameSourceOHOS::TriggerVsyncImpl");
+  while(!on_vsync_impl_task_queue_.empty()) {
+    auto& [timestamp, userData] = on_vsync_impl_task_queue_.front();
+    if (!userData->current_) {
+      LOG(ERROR) << "OnVSync data current is nullptr";
+      continue;
+    }
+    userData->current_->PostTask(
+    FROM_HERE, base::BindOnce(&ExternalBeginFrameSourceOHOS::OnVSyncImpl,
+                              userData->weak_ptr_, timestamp, userData));
+    on_vsync_impl_task_queue_.pop_front();
+  }
 }
 }  // namespace viz

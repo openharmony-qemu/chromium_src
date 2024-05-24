@@ -381,5 +381,14 @@ void AsyncLayerTreeFrameSink::InitSoftwareCompositorRender(
 }
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+void AsyncLayerTreeFrameSink::TriggerVsyncImplTask() {
+  TRACE_EVENT1("cc", "AsyncLayerTreeFrameSink::TriggerVsyncImplTask",
+    "res", !compositor_frame_sink_ptr_);
+  DCHECK(compositor_frame_sink_ptr_);
+
+  compositor_frame_sink_ptr_->TriggerVsyncImplTask();
+}
+#endif
 }  // namespace mojo_embedder
 }  // namespace cc

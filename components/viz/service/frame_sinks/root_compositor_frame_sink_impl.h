@@ -148,6 +148,9 @@ void EvictFrameBackBuffers(bool invisible);
 void OnVsyncReceived() override {}
 void UpdateVSyncFrequency(int frame_rate);
 void ResetVSyncFrequency();
+
+  void SetNeedWaitForInput(bool need_wait_for_input);
+  void TriggerVsyncImplTask() override {}
 #endif
 
   base::ScopedClosureRunner GetCacheBackBufferCb();

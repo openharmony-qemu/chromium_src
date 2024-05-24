@@ -280,6 +280,14 @@ int CompositorFrameSinkImpl::GetFrameRate() {
   }
   return 0;
 }
+
+void CompositorFrameSinkImpl::TriggerVsyncImplTask() {
+  if (!support_ || !support_->begin_frame_source()) {
+    DLOG(ERROR) << "Compositor frame support or begin frame souce is not exist";
+    return;
+  }
+  support_->begin_frame_source()->TriggerVsync();
+}
 #endif
 
 void CompositorFrameSinkImpl::OnClientConnectionLost() {

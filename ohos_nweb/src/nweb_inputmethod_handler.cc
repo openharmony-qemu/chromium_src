@@ -263,7 +263,6 @@ void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
 }
 
 bool NWebInputMethodHandler::Reattach(uint32_t nwebId, ReattachType type) {
-  LOG(INFO) << "NWebInputMethodHandler::Reattach";
   nweb_id_ = nwebId;
   if (type == ReattachType::FROM_CONTINUE) {
     if (!isNeedReattachOncontinue_ || !is_editable_node_) {
@@ -281,10 +280,6 @@ bool NWebInputMethodHandler::Reattach(uint32_t nwebId, ReattachType type) {
     isNeedReattachOnfocus_ = false;
   }
 
-  LOG(INFO) << "need to reattach input method, show_keyboard_ = "
-            << show_keyboard_ << ", \
-    reattach type = "
-            << static_cast<int>(type);
   composing_text_.clear();
   if (inputmethod_listener_ == nullptr) {
     inputmethod_listener_ = std::make_shared<OnTextChangedListenerImpl>(this);
@@ -592,7 +587,6 @@ void NWebInputMethodHandler::InsertTextHandlerOnUI(const std::u16string& text) {
 }
 
 void NWebInputMethodHandler::ClearComposingStatus() {
-  LOG(DEBUG) << "NWebInputMethodHandler::ClearComposingStatus";
   has_composition_ = false;
   preview_text_cache_ = u"";
   composition_range_start_ = 0;

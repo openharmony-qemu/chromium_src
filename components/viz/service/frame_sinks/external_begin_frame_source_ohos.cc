@@ -143,9 +143,19 @@ void ExternalBeginFrameSourceOHOS::OnVSyncImpl(int64_t timestamp,
   if (vsync_period_ != 0) {
     cur_vsync_frequency = (VSYNC_TIME_FOR_CALCULATION - 1) / vsync_period_ + 1;
   }
+#if defined(OHOS_PERFORMANCE_JITTER)
+  static bool isAlreadyThrottle = false;
   if (lower_frame_rate_enabled_) {
-    vsync_period_ = vsync_period_ * 2;
+    if (!isAlreadyThrottle) {
+      frame_sink_manager_->StartThrottlingAllFrameSinks(base::Hertz(0.01));
+      isAlreadyThrottle = true;
+      LOG(DEBUG) << "OnVSyncImpl StartThrottlingAllFrameSinks!";
+    }
+  } else if (isAlreadyThrottle) {
+    frame_sink_manager_->StopThrottlingAllFrameSinks();
+    isAlreadyThrottle = false;
   }
+#endif
 
 #if BUILDFLAG(IS_OHOS)
 ReportLossFrame::GetInstance()->SetVsyncPeriod(vsync_period_);

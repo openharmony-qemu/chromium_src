@@ -584,6 +584,9 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
 void NWebImpl::OnDestroy() {
   WVLOG_I("NWebImpl::OnDestroy, nweb_id = %{public}u", nweb_id_);
 
+  ResSchedClientAdapter::ReportScene(
+    ResSchedStatusAdapter::WEB_SCENE_ENTER, ResSchedSceneAdapter::KEY_TASK);
+
   if (destroyCallback_ != nullptr) {
     WVLOG_I("NWebImpl::OnDestroy destroyCallback_ webName_ is %{public}s", webName_.c_str());
     (destroyCallback_)(webName_.c_str());

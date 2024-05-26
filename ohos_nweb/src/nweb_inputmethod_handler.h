@@ -47,11 +47,13 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
               bool show_keyboard,
               cef_text_input_mode_t input_mode,
               cef_text_input_type_t input_type,
-              bool is_need_reset_listener) override;
+              bool is_need_reset_listener,
+              int32_t enterKeyType) override;
   void ShowTextInput() override;
   void HideTextInput(
       uint32_t nwebId = 0,
       HideTextinputType hideType = HideTextinputType::FROM_KERNEL) override;
+  void HideTextInputForce() override;
   void OnTextSelectionChanged(CefRefPtr<CefBrowser> browser,
                               const CefString& selected_text,
                               const CefRange& selected_range) override;
@@ -157,6 +159,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   int32_t composition_range_end_ = 0;
   CompositionType composition_type_ = COMPOSITION_INVALID;
   int32_t composition_cursor_index_ = 0;
+  int32_t enterKeyType_ = -1;
   IMPLEMENT_REFCOUNTING(NWebInputMethodHandler);
 };
 

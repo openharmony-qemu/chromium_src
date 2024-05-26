@@ -491,10 +491,16 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
     TextInputMode input_mode,
     TextInputType input_type,
     bool show_keyboard,
-    bool is_need_reset_listener) {
+    bool is_need_reset_listener, const AttributesMap& attributes) {
   LOG(INFO) << "NWebRenderHandler::OnVirtualKeyboardRequested input_mode = "
             << input_mode << ", input_type = " << input_type
             << ", show_keyboard = " << show_keyboard;
+
+  std::map<std::string, std::string> attributesMap;
+  for (const auto& item : attributes) {
+    LOG(DEBUG) << "WebCustomKeyboard OnVirtualKeyboardRequested attributes, key = " << item.first.ToString() << ", value = " << item.second.ToString();
+    attributesMap.insert({item.first.ToString(), item.second.ToString()});
+  }
 #if defined(OHOS_INPUT_EVENTS)
   if (!inputmethod_client_) {
     LOG(ERROR) << "inputmethod_client_ is nullptr.";
@@ -504,11 +510,50 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
   if (input_mode != CEF_TEXT_INPUT_MODE_NONE) {
     auto delegate = delegate_interface_.lock();
     if (delegate && delegate->OnFocus()) {
-      inputmethod_client_->Attach(browser, show_keyboard,
-        input_mode, input_type, is_need_reset_listener);
+      bool useSystemKeyboard = true;
+      int32_t enterKeyType = -1;
+      if (auto handler = handler_.lock()) {
+        if (!custom_keyboard_handler_) {
+          custom_keyboard_handler_ = std::make_shared<NWebCustomKeyboardHandlerImpl>(handler_.lock());
+        }
+        handler->OnInterceptKeyboardAttach(custom_keyboard_handler_, attributesMap, useSystemKeyboard, enterKeyType);
+        LOG(INFO) << "WebCustomKeyboard OnInterceptKeyboardAttach return, useSystemKeyboard = "
+          << useSystemKeyboard << ", enterKeyType = " << enterKeyType;
+      }
+
+      if (useSystemKeyboard) {
+        if (!isSystemKeyboard_ && custom_keyboard_handler_) {
+          LOG(INFO) << "WebCustomKeyboard before use system keyboard, need to close custom keyboard";
+          custom_keyboard_handler_->Close();
+        }
+        LOG(INFO) << "WebCustomKeyboard attach system keyboard";
+        inputmethod_client_->Attach(browser, show_keyboard, input_mode, input_type, is_need_reset_listener, enterKeyType);
+      } else {
+        if (isSystemKeyboard_) {
+          LOG(INFO) << "WebCustomKeyboard before use custom keyboard, need to close system keyboard";
+          inputmethod_client_->HideTextInput();
+        }
+        // need to colse system forcely from native input change to custom keyboard input
+        inputmethod_client_->HideTextInputForce();
+
+        if (custom_keyboard_handler_) {
+          LOG(INFO) << "WebCustomKeyboard attach custom keyboard";
+          custom_keyboard_handler_->Attach(browser, show_keyboard);
+        }
+      }
+
+      isSystemKeyboard_ = useSystemKeyboard;
     }
   } else {
-    inputmethod_client_->HideTextInput();
+    if (isSystemKeyboard_) {
+      LOG(INFO) << "WebCustomKeyboard close system keyboard";
+      inputmethod_client_->HideTextInput();
+    } else {
+      if (custom_keyboard_handler_) {
+        LOG(INFO) << "WebCustomKeyboard close custom keyboard";
+        custom_keyboard_handler_->Close();
+      }
+    }
   }
 #endif  // defined(OHOS_INPUT_EVENTS)
 }

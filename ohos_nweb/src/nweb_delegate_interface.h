@@ -35,6 +35,8 @@
 #include "nweb_native_media_player.h"
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+#include "cef_delegate/nweb_custom_keyboard_handler_impl.h"
+
 namespace OHOS::NWeb {
 class NWebValue;
 
@@ -461,6 +463,10 @@ class NWebDelegateInterface
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
   virtual void EnableWholeWebPageDrawing() = 0;
 #endif
+
+  virtual bool IsCustomKeyboard() const = 0;
+
+  virtual std::shared_ptr<NWebCustomKeyboardHandlerImpl> GetCustomKeyboardHandler() const = 0;
 };
 }  // namespace OHOS::NWeb
 

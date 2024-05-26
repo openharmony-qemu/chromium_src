@@ -21,6 +21,7 @@
 #include <vector>
 #include "cef/include/cef_render_handler.h"
 #include "display_manager_adapter.h"
+#include "nweb_custom_keyboard_handler_impl.h"
 #include "nweb_delegate_interface.h"
 #include "nweb_handler.h"
 #include "nweb_inputmethod_client.h"
@@ -117,7 +118,9 @@ class NWebRenderHandler : public CefRenderHandler {
                                           TextInputMode input_mode,
                                           TextInputType input_type,
                                           bool show_keyboard,
-                                          bool is_need_reset_listener) override;
+                                          bool is_need_reset_listener,
+                                          const AttributesMap& attributes) override;
+
   void GetTouchHandleSize(CefRefPtr<CefBrowser> browser,
                           cef_horizontal_alignment_t orientation,
                           CefSize& size) override;
@@ -184,6 +187,14 @@ class NWebRenderHandler : public CefRenderHandler {
 #endif
   /* CefRenderHandler method end */
 
+  bool IsCustomKeyboard() const {
+    return !isSystemKeyboard_;
+  }
+
+  std::shared_ptr<NWebCustomKeyboardHandlerImpl> GetCustomKeyboardHandler() const {
+    return custom_keyboard_handler_;
+  }
+
   std::shared_ptr<NWebTouchHandleState> GetTouchHandleState(
       NWebTouchHandleState::TouchHandleType type);
 
@@ -207,6 +218,7 @@ class NWebRenderHandler : public CefRenderHandler {
 
   std::function<void(const char*)> render_update_cb_ = nullptr;
   CefRefPtr<NWebInputMethodClient> inputmethod_client_ = nullptr;
+  std::shared_ptr<NWebCustomKeyboardHandlerImpl> custom_keyboard_handler_ = nullptr;
   uint32_t width_ = 0;
   uint32_t height_ = 0;
   int content_height_ = 0;
@@ -233,6 +245,7 @@ class NWebRenderHandler : public CefRenderHandler {
 #if defined(OHOS_INPUT_EVENTS)
   std::weak_ptr<NWebDelegateInterface> delegate_interface_;
 #endif  // defined(OHOS_INPUT_EVENTS)
+  bool isSystemKeyboard_ = true;
 };
 }  // namespace OHOS::NWeb
 

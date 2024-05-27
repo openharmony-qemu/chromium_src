@@ -85,19 +85,26 @@ void SoftwareCompositorHostOhos::DumpSnapshot(std::string type) {
   }
 }
 
-void SoftwareCompositorHostOhos::OnDrawSwCallback(bool result) {
+void SoftwareCompositorHostOhos::OnDrawSwCallback(WebSnapchatCallback callback,
+                                                  const char* id,
+                                                  bool result) {
   TRACE_EVENT0("browser", "SoftwareCompositorHostOhos::OnDrawSwCallback");
   LOG(INFO) << "OnDrawSwCallback result:" << result;
 
   if (!result) {
+    std::move(callback).Run(id, result, nullptr, 0, 0);
     return;
   }
+  std::move(callback).Run(id, result, software_draw_shm_->shared_memory.memory(),
+                          current_.width(), current_.height());
 }
 
-void SoftwareCompositorHostOhos::DemandDrawSwAsync(gfx::SizeF size,
-                                                   gfx::PointF offset,
+void SoftwareCompositorHostOhos::DemandDrawSwAsync(const char* id,
                                                    float clip_width,
-                                                   float clip_height) {
+                                                   float clip_height,
+                                                   gfx::SizeF size,
+                                                   gfx::PointF offset,
+                                                   WebSnapchatCallback callback) {
   TRACE_EVENT0("browser", "SoftwareCompositorHostOhos::DemandDrawSwAsync");
   LOG(INFO) << "start DemandDrawSwAsync";
 
@@ -116,12 +123,18 @@ void SoftwareCompositorHostOhos::DemandDrawSwAsync(gfx::SizeF size,
   size_t buffer_size = info.computeByteSize(stride);
   if (SkImageInfo::ByteSizeOverflowed(buffer_size)) {
     LOG(ERROR) << "request snapshot size is too large make skia overflowed";
+    GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(std::move(callback), id, false, nullptr, 0, 0));
     return;
   }
 
   SetSharedMemory(stride, buffer_size);
   if (!software_draw_shm_) {
     LOG(ERROR) << "set shared memory error";
+    GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(std::move(callback), id, false, nullptr, 0, 0));
     return;
   }
 
@@ -133,7 +146,7 @@ void SoftwareCompositorHostOhos::DemandDrawSwAsync(gfx::SizeF size,
   software_compositor_->DemandDrawSwAsync(
       std::move(params),
       base::BindOnce(&SoftwareCompositorHostOhos::OnDrawSwCallback,
-                     weak_factory_.GetWeakPtr()));
+                     weak_factory_.GetWeakPtr(), std::move(callback), id));
 }
 
 void SoftwareCompositorHostOhos::SetSharedMemory(size_t stride,

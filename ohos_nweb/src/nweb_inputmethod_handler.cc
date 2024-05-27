@@ -213,9 +213,11 @@ void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
                                     bool show_keyboard,
                                     cef_text_input_mode_t input_mode,
                                     cef_text_input_type_t input_type,
-                                    bool is_need_reset_listener) {
+                                    bool is_need_reset_listener,
+                                    int32_t enterKeyType) {
   LOG(INFO) << "NWebInputMethodHandler::Attach";
   show_keyboard_ = show_keyboard;
+  enterKeyType_ = enterKeyType;
   if (input_mode != CEF_TEXT_INPUT_MODE_DEFAULT &&
       input_type != CEF_TEXT_INPUT_TYPE_PASSWORD) {
     input_mode_ = TextInputModeToIMFAdapter(input_mode);
@@ -235,8 +237,10 @@ void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
   std::shared_ptr<NWebIMFInputAttributeAdapterImpl> inputAttribute =
       std::make_shared<NWebIMFInputAttributeAdapterImpl>();
   inputAttribute->SetInputPattern(static_cast<int32_t>(input_mode_));
-  inputAttribute->SetEnterKeyType(
-      static_cast<int32_t>(IMFAdapterEnterKeyType::DONE));
+  if (enterKeyType_ == -1) {
+    enterKeyType_ = static_cast<int32_t>(IMFAdapterEnterKeyType::DONE);
+  }
+  inputAttribute->SetEnterKeyType(enterKeyType_);
 
   std::shared_ptr<IMFCursorInfoAdapter> cursorInfo = GetCursorInfo();
 
@@ -300,8 +304,7 @@ bool NWebInputMethodHandler::Reattach(uint32_t nwebId, ReattachType type) {
   std::shared_ptr<NWebIMFInputAttributeAdapterImpl> inputAttribute =
       std::make_shared<NWebIMFInputAttributeAdapterImpl>();
   inputAttribute->SetInputPattern(static_cast<int32_t>(input_mode_));
-  inputAttribute->SetEnterKeyType(
-      static_cast<int32_t>(IMFAdapterEnterKeyType::DONE));
+  inputAttribute->SetEnterKeyType(enterKeyType_);
 
   std::shared_ptr<IMFCursorInfoAdapter> cursorInfo = GetCursorInfo();
 
@@ -377,6 +380,16 @@ void NWebInputMethodHandler::HideTextInput(uint32_t nwebId,
   if (hideType == HideTextinputType::FROM_ONBLUR) {
     isNeedReattachOnfocus_ = true;
   }
+}
+
+void NWebInputMethodHandler::HideTextInputForce() {
+  if (inputmethod_adapter_ == nullptr) {
+    LOG(ERROR) << "inputmethod_adapter_ is nullptr";
+    return;
+  }
+
+  inputmethod_adapter_->HideTextInput();
+  inputmethod_adapter_->Close();
 }
 
 void NWebInputMethodHandler::OnTextSelectionChanged(

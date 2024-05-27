@@ -230,7 +230,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       bool extention) override;
 
   int ScaleGestureChange(double scale, double centerX, double centerY) const override;
-  
+
 #if defined(OHOS_MSGPORT)
   uint32_t runJSCallbackId_ = 0;
   std::unordered_map<uint32_t, CefRefPtr<JavaScriptResultCallbackImpl>> runJSCallbackMap_;
@@ -438,7 +438,7 @@ bool HitNativeArea(double x, double y);
 #endif
 
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
-  void EnableWholeWebPageDrawing() override;  
+  void EnableWholeWebPageDrawing() override;
 #endif
 
 #ifdef OHOS_ITP
@@ -503,6 +503,21 @@ bool HitNativeArea(double x, double y);
   void RegisterOnCreateNativeMediaPlayerListener(
       std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) override;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+  std::shared_ptr<NWebCustomKeyboardHandlerImpl> GetCustomKeyboardHandler() const override {
+    if (render_handler_) {
+      return render_handler_->GetCustomKeyboardHandler();
+    }
+    return nullptr;
+  }
+
+  bool IsCustomKeyboard() const override {
+    if (render_handler_) {
+      return render_handler_->IsCustomKeyboard();
+    }
+    return true;
+  }
+
  private:
   content::BrowserAccessibilityManagerOHOS* GetAccessibilityManager() const;
   void AddAccessibilityNodeInfoAttributes(

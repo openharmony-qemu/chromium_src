@@ -464,6 +464,7 @@ class NWebImpl : public NWeb {
 #ifdef OHOS_AI
   void OnTextSelected() override;
 #endif
+  static base::Lock nweb_map_lock_;
 
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
   static void EnableWholeWebPageDrawing();

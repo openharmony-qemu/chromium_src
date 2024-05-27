@@ -1702,6 +1702,14 @@ gfx::Transform Layer::ScreenSpaceTransform() const {
       this, layer_tree_host()->property_trees()->transform_tree());
 }
 
+void Layer::SetNativeEmbedId(int embedId) {
+  if (native_embed_id() == embedId) {
+    return;
+  }
+  native_embed_id_.Write(*this) = embedId;
+  SetNeedsPushProperties();
+}
+
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
 bool Layer::ShouldOverlay() {
   return should_overlay_;

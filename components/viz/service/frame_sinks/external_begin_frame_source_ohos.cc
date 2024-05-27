@@ -149,7 +149,7 @@ void ExternalBeginFrameSourceOHOS::OnVSyncImpl(int64_t timestamp,
     if (!isAlreadyThrottle) {
       frame_sink_manager_->StartThrottlingAllFrameSinks(base::Hertz(0.01));
       isAlreadyThrottle = true;
-      LOG(DEBUG) << "OnVSyncImpl StartThrottlingAllFrameSinks!";
+      LOG(DEBUG) << "OnVSyncImpl StartThrottlingAllFrameSinks";
     }
   } else if (isAlreadyThrottle) {
     frame_sink_manager_->StopThrottlingAllFrameSinks();

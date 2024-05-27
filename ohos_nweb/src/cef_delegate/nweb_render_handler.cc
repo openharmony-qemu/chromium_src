@@ -490,10 +490,14 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
     CefRefPtr<CefBrowser> browser,
     TextInputMode input_mode,
     TextInputType input_type,
+    TextInputAction input_action,
+    TextInputFlags input_flags,
     bool show_keyboard,
     bool is_need_reset_listener, const AttributesMap& attributes) {
   LOG(INFO) << "NWebRenderHandler::OnVirtualKeyboardRequested input_mode = "
             << input_mode << ", input_type = " << input_type
+            << ", input_action = " << input_action
+            << ", input_flags = " << input_flags
             << ", show_keyboard = " << show_keyboard;
 
   std::map<std::string, std::string> attributesMap;
@@ -527,7 +531,10 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
           custom_keyboard_handler_->Close();
         }
         LOG(INFO) << "WebCustomKeyboard attach system keyboard";
-        inputmethod_client_->Attach(browser, show_keyboard, input_mode, input_type, is_need_reset_listener, enterKeyType);
+        inputmethod_client_->Attach(
+            browser,
+            {show_keyboard, input_mode, input_type, input_action, input_flags},
+            is_need_reset_listener, enterKeyType);
       } else {
         if (isSystemKeyboard_) {
           LOG(INFO) << "WebCustomKeyboard before use custom keyboard, need to close system keyboard";

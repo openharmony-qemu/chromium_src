@@ -1179,6 +1179,12 @@ void NWebImpl::OnPause() {
     return;
   }
   nweb_delegate_->OnPause();
+
+  if (nweb_delegate_->IsCustomKeyboard()) {
+    LOG(INFO) << "WebCustomKeyboard NWebImpl::OnPause";
+    nweb_delegate_->GetCustomKeyboardHandler()->CloseFromWebStateChange(WebCustomKeyboardState::FROM_ONPAUSE);
+  }
+
   if (inputmethod_handler_ == nullptr) {
     LOG(ERROR) << "inputmethod_handler_ is nullptr.";
     return;
@@ -1193,6 +1199,15 @@ void NWebImpl::OnContinue() {
     return;
   }
   nweb_delegate_->OnContinue();
+
+  if (nweb_delegate_->IsCustomKeyboard()) {
+    LOG(INFO) << "WebCustomKeyboard NWebImpl::OnContinue and focus";
+    auto handler = nweb_delegate_->GetCustomKeyboardHandler();
+    if (handler && handler->AttachFromWebStateChange(WebCustomKeyboardState::FROME_ONCONTINUE)) {
+      nweb_delegate_->OnFocus();
+    }
+  }
+
   if (inputmethod_handler_ == nullptr) {
     LOG(ERROR) << "inputmethod_handler_ is nullptr.";
     return;
@@ -1542,6 +1557,11 @@ void NWebImpl::OnFocus(const FocusReason& focusReason) {
     return;
   }
 
+  if (nweb_delegate_->IsCustomKeyboard()) {
+    LOG(INFO) << "WebCustomKeyboard NWebImpl::OnFocus";
+    nweb_delegate_->GetCustomKeyboardHandler()->AttachFromWebStateChange(WebCustomKeyboardState::FROME_ONFOCUS);
+  }
+
   if (inputmethod_handler_ == nullptr) {
     LOG(ERROR) << "inputmethod_handler_ is nullptr.";
     return;
@@ -1558,6 +1578,12 @@ void NWebImpl::OnBlur(const BlurReason& blurReason) {
     return;
   }
   nweb_delegate_->OnBlur();
+
+  if (nweb_delegate_->IsCustomKeyboard()) {
+    LOG(INFO) << "WebCustomKeyboard NWebImpl::OnBlur";
+    nweb_delegate_->GetCustomKeyboardHandler()->CloseFromWebStateChange(WebCustomKeyboardState::FROM_ONBLUR);
+  }
+
   if (inputmethod_handler_ == nullptr) {
     LOG(ERROR) << "inputmethod_handler_ is nullptr.";
     return;

@@ -109,8 +109,9 @@ class TestGpuService : public mojom::GpuService {
 
   // mojom::GpuService:
   #if defined(OHOS_UNITTESTS)
-  void StartMonitor() override{}
-  void StopMonitor() override{}
+  void StartMonitor() override {}
+  void StopMonitor() override {}
+  void GetSurfaceId(int32_t native_embed_id, GetSurfaceIdCallback callback) override {}
   #endif
   void EstablishGpuChannel(int32_t client_id,
                            uint64_t client_tracing_id,

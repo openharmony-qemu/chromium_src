@@ -665,9 +665,7 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
     return native_.Read(*this);
   }
 
-  void SetNativeEmbedId(int embedId) {
-    native_embed_id_.Write(*this) = embedId;
-  }
+  void SetNativeEmbedId(int embedId);
 
   int native_embed_id() const {
     return native_embed_id_.Read(*this);

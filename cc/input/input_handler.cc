@@ -1181,6 +1181,11 @@ LayerImpl* InputHandler::GetLayerImpl(const gfx::Point& viewport_point) {
                           compositor_delegate_->DeviceScaleFactor());
   return ActiveTree().FindLayerThatIsHitByPointNative(device_viewport_point);
 }
+
+LayerImpl* InputHandler::GetLayerImplById(int id) {
+  return ActiveTree().LayerById(id);
+}
+
 #endif
 
 bool InputHandler::IsCurrentScrollMainRepainted() const {

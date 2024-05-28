@@ -4,6 +4,7 @@
 #include <utility>
 
 #include "base/functional/bind.h"
+#include "base/task/bind_post_task.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/single_thread_task_runner.h"
 
@@ -29,6 +30,7 @@ OHOSCustomMediaPlayerRendererClient::OHOSCustomMediaPlayerRendererClient(
           std::move(renderer_extension_remote)) {}
 
 OHOSCustomMediaPlayerRendererClient::~OHOSCustomMediaPlayerRendererClient() {
+  DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
   native_texture_wrapper_->ClearCBOnAnyThread();
 }
 
@@ -37,7 +39,7 @@ void OHOSCustomMediaPlayerRendererClient::Initialize(
     media::RendererClient* client,
     media::PipelineStatusCallback init_cb) {
   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
-  DCHECK(!init_cb);
+  DCHECK(!init_cb_);
 
   // Consume and bind the delayed PendingRemote and PendingReceiver now that we
   // are on |media_task_runner_|.
@@ -141,7 +143,7 @@ void OHOSCustomMediaPlayerRendererClient::OnFrameAvailable() {
 }
 
 void OHOSCustomMediaPlayerRendererClient::OnVideoSizeChange(const gfx::Size& size) {
-  native_texture_wrapper_->UpdateTextureSize(size);
+  DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
   client_->OnVideoNaturalSizeChange(size);
 }
 
@@ -179,31 +181,30 @@ void OHOSCustomMediaPlayerRendererClient::UpdateBufferedEndTime(double buffered_
 }
 
 void OHOSCustomMediaPlayerRendererClient::OnGetVideoRect(const gfx::Rect& rect) {
+  DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
+
   native_texture_wrapper_->UpdateTextureSize(rect.size());
 
-  if (media_task_runner_->RunsTasksInCurrentSequence()) {
-    SetSurfaceId(surface_id_, rect);
+  if (has_sent_surface_id_to_remote_) {
     return;
   }
+  has_sent_surface_id_to_remote_ = true;
 
-  media_task_runner_->PostTask(
-      FROM_HERE,
-      base::BindOnce(
-          &OHOSCustomMediaPlayerRendererClient::SetSurfaceId,
-          weak_factory_.GetWeakPtr(), surface_id_, rect));
+  SetSurfaceId(surface_id_, rect);
 }
 
 void OHOSCustomMediaPlayerRendererClient::OnSurfaceCreated(int surface_id) {
+  DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
   surface_id_ = surface_id;
   if (surface_created_cb_) {
     std::move(surface_created_cb_).Run(surface_id,
-        base::BindOnce(
-            &OHOSCustomMediaPlayerRendererClient::OnGetVideoRect,
-            base::Unretained(this)));
+        base::BindPostTask(media_task_runner_,
+            base::BindRepeating(
+                &OHOSCustomMediaPlayerRendererClient::OnGetVideoRect,
+                weak_factory_.GetWeakPtr())));
   } else {
     OnGetVideoRect(gfx::Rect());
   }
-
 }
 
 void OHOSCustomMediaPlayerRendererClient::OnSurfaceDestroyed() {

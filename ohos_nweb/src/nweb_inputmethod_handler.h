@@ -44,9 +44,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   NWebInputMethodHandler& operator=(const NWebInputMethodHandler&) = delete;
 
   void Attach(CefRefPtr<CefBrowser> browser,
-              bool show_keyboard,
-              cef_text_input_mode_t input_mode,
-              cef_text_input_type_t input_type,
+              InputInfo inputInfo,
               bool is_need_reset_listener,
               int32_t enterKeyType) override;
   void ShowTextInput() override;
@@ -102,6 +100,10 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   void DeleteForwardHandlerOnUI(int32_t length);
   bool IsCorrectParam(int32_t number, int32_t& selectBegin, int32_t& selectEnd);
   bool ResetTextSelectiondata();
+  IMFAdapterTextInputType TextInputModeToIMFAdapter(cef_text_input_mode_t mode);
+  IMFAdapterTextInputType TextInputTypeToIMFAdapter(cef_text_input_type_t type);
+  IMFAdapterEnterKeyType TextInputActionToIMFAdapter(cef_text_input_action_t action);
+  void ComputeEditorInfo(InputInfo inputInfo, int32_t customEnterKeyType);
   std::shared_ptr<IMFCursorInfoAdapter> GetCursorInfo();
   void PreviewTextHandlerOnUI(const std::u16string& text,
                               int32_t start,
@@ -140,7 +142,10 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   bool show_keyboard_ = false;
   bool is_editable_node_ = false;
   bool isNeedReattachOncontinue_ = false;
-  IMFAdapterTextInputType input_mode_ = IMFAdapterTextInputType::TEXT;
+  IMFAdapterTextInputType imf_input_mode_ = IMFAdapterTextInputType::TEXT;
+  IMFAdapterEnterKeyType imf_input_action_ = IMFAdapterEnterKeyType::GO;
+  InputInfo inputInfo_;
+  bool type_text_flag_multi_line_ = false;
   std::chrono::high_resolution_clock::time_point lastCloseInputMethodTime_;
   bool isNeedReattachOnfocus_ = false;
 
@@ -159,7 +164,6 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   int32_t composition_range_end_ = 0;
   CompositionType composition_type_ = COMPOSITION_INVALID;
   int32_t composition_cursor_index_ = 0;
-  int32_t enterKeyType_ = -1;
   IMPLEMENT_REFCOUNTING(NWebInputMethodHandler);
 };
 

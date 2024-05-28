@@ -28,11 +28,17 @@ class NWebInputMethodClient : public virtual CefBaseRefCounted {
     FROM_ONPAUSE,
   };
 
+  struct InputInfo {
+    bool show_keyboard;
+    cef_text_input_mode_t input_mode;
+    cef_text_input_type_t input_type;
+    cef_text_input_action_t input_action;
+    cef_text_input_flags_t input_flags;
+  };
+
   virtual ~NWebInputMethodClient() = default;
   virtual void Attach(CefRefPtr<CefBrowser> browser,
-                      bool show_keyboard,
-                      cef_text_input_mode_t input_mode,
-                      cef_text_input_type_t input_type,
+                      InputInfo inputInfo,
                       bool is_need_reset_listener,
                       int32_t enterKeyType) = 0;
   virtual void ShowTextInput() = 0;

@@ -269,7 +269,7 @@ class NWebImpl : public NWeb {
 
   void OnOnlineRenderToForeground() override;
 
-  void NotifyForNextTouchMoveEvent() override;
+  void NotifyForNextTouchEvent() override;
 #ifdef OHOS_DRAG_DROP
   std::shared_ptr<NWebDragData> GetOrCreateDragData() override;
 #endif // #ifdef OHOS_DRAG_DROP

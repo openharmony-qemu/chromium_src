@@ -338,9 +338,9 @@ void NWebEventHandler::SendMouseEvent(int x,
   }
 }
 
-void NWebEventHandler::NotifyForNextTouchMoveEvent() {
+void NWebEventHandler::NotifyForNextTouchEvent() {
   if (browser_ && browser_->GetHost()) {
-    browser_->GetHost()->NotifyForNextTouchMoveEvent();
+    browser_->GetHost()->NotifyForNextTouchEvent();
   }
 }
 }  // namespace OHOS::NWeb

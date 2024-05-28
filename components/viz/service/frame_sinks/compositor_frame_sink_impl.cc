@@ -27,6 +27,7 @@
 #include "content/public/browser/browser_thread.h"
 #include "content/public/common/content_switches.h"
 #include "res_sched_client_adapter.h"
+#include "base/ohos/input_sync/input_vsync_sync_lock.h"
 #endif
 
 #if defined(REPORT_SYS_EVENT)
@@ -36,7 +37,7 @@
 namespace viz {
 
 namespace {
-
+using base::ohos::InputSyncLock;
 // Helper class which implements the CompositorFrameSinkClient interface so it
 // can route CompositorFrameSinkSupport client messages to a local
 // FrameSinkBundleImpl for batching, rather than having them go directly to the
@@ -266,12 +267,11 @@ void CompositorFrameSinkImpl::ReportKeyThreadIds(
 }
 
 void CompositorFrameSinkImpl::OnVsyncReceived() {
-  if (!support_ || !support_->frame_sink_manager()) {
-    DLOG(ERROR) << "Compositor frame support or frame sink manager is not exist";
+  if (!support_ || !support_->begin_frame_source()) {
+    DLOG(ERROR) << "Compositor frame support or begin frame souce is not exist";
     return;
   }
-  FrameSinkId frame_sink_id = support_->frame_sink_id();
-  support_->frame_sink_manager()->OnVsyncReceived(frame_sink_id);
+  InputSyncLock::GetInstance().SetHandledTouchEvent(false);
 }
 
 int CompositorFrameSinkImpl::GetFrameRate() {

@@ -1973,14 +1973,14 @@ void NWebImpl::OnOnlineRenderToForeground() {
   nweb_delegate_->OnOnlineRenderToForeground();
 }
 
-void NWebImpl::NotifyForNextTouchMoveEvent() {
-  TRACE_EVENT0("base", "NotifyForNextTouchMoveEvent");
-  WVLOG_D("NWebImpl::NotifyForNextTouchMoveEvent");
+void NWebImpl::NotifyForNextTouchEvent() {
+  TRACE_EVENT0("base", "NotifyForNextTouchEvent");
+  WVLOG_D("NWebImpl::NotifyForNextTouchEvent");
   if (nweb_delegate_ == nullptr) {
-    WVLOG_E("NotifyForNextTouchMoveEvent nweb delegate is null");
+    WVLOG_E("NotifyForNextTouchEvent nweb delegate is null");
     return;
   }
-  nweb_delegate_->NotifyForNextTouchMoveEvent();
+  nweb_delegate_->NotifyForNextTouchEvent();
 }
 
 #if BUILDFLAG(IS_OHOS)

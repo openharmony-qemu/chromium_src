@@ -22,7 +22,6 @@
 
 namespace base  {
 namespace ohos {
-// const int kWaitForInputTimeoutMillSeconds = 2;
 
 InputSyncLock::InputSyncLock() {}
 InputSyncLock::~InputSyncLock() {}
@@ -45,5 +44,15 @@ bool InputSyncLock::NeedWaitForInput()
 {
     return need_wait_for_input_.load();
 }
+
+void InputSyncLock::SetHandledTouchEvent(bool handled_touch_event)
+{
+    handled_touch_event_.store(handled_touch_event);
+}
+
+bool InputSyncLock::HandledTouchEvent()
+{
+    return handled_touch_event_.load();
+}
 }  // namespace ohos
-}  // namespace base
+}  // namespace base

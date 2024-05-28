@@ -18,8 +18,6 @@
 
 #include "base/base_export.h"
 #include <atomic>
-#include <condition_variable>
-#include <mutex>
 
 namespace base {
 namespace ohos {
@@ -34,9 +32,12 @@ public:
     static InputSyncLock& GetInstance();
     void SetNeedWaitForInput(bool need_wait);
     bool NeedWaitForInput();
+    void SetHandledTouchEvent(bool handled_touch_event);
+    bool HandledTouchEvent();
 
 private:
     std::atomic<bool> need_wait_for_input_ = false;
+    std::atomic<bool> handled_touch_event_ = false;
 };
 }  // namespace ohos
 }  // namespace  base

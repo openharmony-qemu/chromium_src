@@ -230,7 +230,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       bool extention) override;
 
   int ScaleGestureChange(double scale, double centerX, double centerY) const override;
-  
+
 #if defined(OHOS_MSGPORT)
   uint32_t runJSCallbackId_ = 0;
   std::unordered_map<uint32_t, CefRefPtr<JavaScriptResultCallbackImpl>> runJSCallbackMap_;
@@ -438,7 +438,7 @@ bool HitNativeArea(double x, double y);
 #endif
 
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
-  void EnableWholeWebPageDrawing() override;  
+  void EnableWholeWebPageDrawing() override;
 #endif
 
 #ifdef OHOS_ITP
@@ -455,7 +455,7 @@ bool HitNativeArea(double x, double y);
   void OnSafeInsetsChange(int left, int top, int right, int bottom) override;
 #endif
 
-void NotifyForNextTouchMoveEvent() override;
+void NotifyForNextTouchEvent() override;
 
 #ifdef OHOS_AI
   void OnTextSelected() override;

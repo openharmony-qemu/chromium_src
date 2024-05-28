@@ -89,7 +89,7 @@ class NWebDelegateInterface
   virtual void StartDownload(const char *url) = 0;
   virtual void
   ResumeDownload(std::shared_ptr<NWebDownloadItem> web_download) = 0;
-  virtual void NotifyForNextTouchMoveEvent() = 0;
+  virtual void NotifyForNextTouchEvent() = 0;
 
 #if defined(OHOS_INPUT_EVENTS)
   virtual void SetNWebDelegateInterface(

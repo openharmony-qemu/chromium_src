@@ -495,6 +495,9 @@ class CC_EXPORT InputHandler : public InputDelegateForCompositor {
   void HandleScrollUpdateForInternalBeginFrame(const viz::BeginFrameArgs& args) override;
 
   LayerImpl* GetLayerImpl(const gfx::Point& viewport_point);
+
+  LayerImpl* GetLayerImplById(int id);
+
 #endif
 
  private:

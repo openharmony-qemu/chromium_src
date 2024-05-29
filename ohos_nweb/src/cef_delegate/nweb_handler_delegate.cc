@@ -1119,6 +1119,9 @@ void NWebHandlerDelegate::OnNavigationEntryCommitted(
             details->GetCurrentURL().ToString(), type, details->IsMainFrame(),
             details->IsSameDocument(), details->DidReplaceEntry());
     nweb_handler_->OnNavigationEntryCommitted(web_details);
+    if (main_browser_ && main_browser_->GetHost()) {
+      main_browser_->GetHost()->OnTextSelected(false);
+    }
   }
 }
 

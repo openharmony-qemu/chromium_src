@@ -346,3 +346,6 @@ vs-chromium-project.txt
 /results
 
 *.sw*
+
+# Ignore glue files
+ohos_glue/

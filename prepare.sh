@@ -43,6 +43,9 @@ handle_copy_files() {
   echo "begin to copy ohos glue files,module name is $1" >> ${OHOS_GLUE_LOG_DIR}/prepare.log
 
   if [ "$1" = "base" ]; then
+    mkdir -p ${OHOS_GLUE_DIR}
+    cp ${INTERFACE_OHOS_GLUE_DIR}/BUILD_webcore.gn ${OHOS_GLUE_DIR}/BUILD.gn
+
     handle_copy_dir ${INTERFACE_OHOS_GLUE_DIR}/base ${OHOS_GLUE_DIR}/base
     handle_copy_dir ${INTERFACE_OHOS_GLUE_DIR}/scripts ${OHOS_GLUE_DIR}/scripts
     return

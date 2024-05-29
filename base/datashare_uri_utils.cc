@@ -13,6 +13,8 @@ namespace base {
 
 File OpenDatashareUriForRead(const FilePath& datashare_uri) {
   std::string real_path = GetRealPath(datashare_uri);
+  LOG(INFO) << "open datashare for read, uri: " <<  datashare_uri.value()
+            << ", realpath: " << real_path;
   return File(FilePath(real_path), File::FLAG_OPEN | File::FLAG_READ);
 }
 std::u16string GetFileDisplayName(const FilePath& datashare_uri) {

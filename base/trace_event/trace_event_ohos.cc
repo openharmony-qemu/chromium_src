@@ -23,7 +23,7 @@
 
 using OHOS::NWeb::OhosAdapterHelper;
 constexpr uint64_t HITRACE_TAG_NWEB = (1ULL << 24); // nweb trace tag
-constexpr uint64_t HITRACE_TAG_OHOS = (1ULL << 30); // ohos trace tag
+constexpr uint64_t HITRACE_TAG_ACE = (1ULL << 39); // ohos trace tag
 class TraceObserver : public OHOS::NWeb::SystemPropertiesObserver {
   public:
     TraceObserver() = default;
@@ -32,7 +32,7 @@ class TraceObserver : public OHOS::NWeb::SystemPropertiesObserver {
     void PropertiesUpdate(const char* value) override {
       auto status = std::atol(value);
       isHiTraceEnable = status & HITRACE_TAG_NWEB;
-      isOHOSHiTraceEnable = status & HITRACE_TAG_OHOS;
+      isACETraceEnable = status & HITRACE_TAG_ACE;
     }
 };
 std::unique_ptr<TraceObserver> traceObserver;
@@ -49,7 +49,7 @@ bool IsBytraceEnable() {
 }
 
 bool IsOHOSBytraceEnable() {
-  return isOHOSHiTraceEnable;
+  return isHiTraceEnable || isACETraceEnable;
 }
 
 bool IsCategoryEnable(const char *category_group) {

@@ -35,7 +35,7 @@ struct BytraceArg {
   BytraceArgType type;
 };
 static bool isHiTraceEnable {false};
-static bool isOHOSHiTraceEnable {false};
+static bool isACETraceEnable {false};
 void StartObserveTraceEnable();
 bool IsBytraceEnable();
 bool IsOHOSBytraceEnable();

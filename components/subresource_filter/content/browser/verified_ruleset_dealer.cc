@@ -43,6 +43,7 @@ RulesetFilePtr VerifiedRulesetDealer::OpenAndSetRulesetFile(
     SetRulesetFile(file->Duplicate());
     expected_checksum_ = expected_checksum;
   }
+
   return file;
 }
 

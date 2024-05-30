@@ -640,6 +640,20 @@ class WebContents : public PageNavigator,
   virtual bool GetTouchInsertHandleMenuShow() = 0;
 #endif
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+  virtual bool TrigAdBlockEnabledForSite(GURL url) = 0;
+
+  virtual void EnableAdsBlock(bool enable) = 0;
+
+  virtual bool IsAdsBlockEnabled() = 0;
+  virtual bool IsAdsBlockEnabledForCurPage() = 0;
+
+  virtual void OnAdsBlocked(
+      const std::string& main_frame_url,
+      const std::map<std::string, int32_t>& subresource_blocked,
+      bool is_site_first_report) = 0;
+#endif
+
 #if defined(OHOS_EX_PASSWORD)
   virtual void SetSavePasswordAutomatically(bool enable) = 0;
   virtual bool GetSavePasswordAutomatically() = 0;
@@ -1516,7 +1530,7 @@ class WebContents : public PageNavigator,
   [[nodiscard]] virtual base::ScopedClosureRunner
   CreateDisallowCustomCursorScope(int max_dimension_dips = 0) = 0;
 #if BUILDFLAG(IS_OHOS)
-  virtual void OnFormEditingStateChanged(uint64_t form_id, bool did_submit) = 0; 
+  virtual void OnFormEditingStateChanged(uint64_t form_id, bool did_submit) = 0;
 #endif
 #ifdef OHOS_DRAG_DROP
   virtual void ClearContextMenu() = 0;

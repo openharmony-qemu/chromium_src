@@ -9,9 +9,12 @@
 #include "components/prefs/pref_service.h"
 #include "components/subresource_filter/core/common/indexed_ruleset.h"
 
+#include "base/logging.h"
 namespace subresource_filter {
 
+#ifndef OHOS_ARKWEB_ADBLOCK
 namespace {
+#endif
 
 // Names of the preferences storing the most recent ruleset version that
 // was successfully stored to disk.
@@ -22,7 +25,9 @@ const char kSubresourceFilterRulesetFormatVersion[] =
 const char kSubresourceFilterRulesetChecksum[] =
     "subresource_filter.ruleset_version.checksum";
 
+#ifndef OHOS_ARKWEB_ADBLOCK
 }  // namespace
+#endif
 
 UnindexedRulesetInfo::UnindexedRulesetInfo() = default;
 UnindexedRulesetInfo::~UnindexedRulesetInfo() = default;

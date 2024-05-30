@@ -304,6 +304,12 @@ class CONTENT_EXPORT WebContentsDelegate {
   // Returns true if the context menu operation was handled by the delegate.
   virtual bool HandleContextMenu(RenderFrameHost& render_frame_host,
                                  const ContextMenuParams& params);
+#ifdef OHOS_ARKWEB_ADBLOCK
+  virtual void OnAdsBlocked(
+      const std::string& main_frame_url,
+      const std::map<std::string, int32_t>& subresource_blocked,
+      bool is_site_first_report) {}
+#endif
 
 #if defined(OHOS_EX_PASSWORD)
   // notify ui show save password dialog

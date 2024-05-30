@@ -71,12 +71,14 @@ public:
 
   void ClearPrefetchedResource(const std::vector<std::string>& cache_key_list) override;
 
+
   void WarmupServiceWorker(const std::string &url) override;
 
   void SetHostIP(
       const std::string &hostName, const std::string &address, int32_t aliveTime) override;
 
   void ClearHostIP(const std::string &hostName) override;
+  std::shared_ptr<NWebAdsBlockManager> GetAdsBlockManager() override;
 
   void EnableWholeWebPageDrawing() override;
 

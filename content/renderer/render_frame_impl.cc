@@ -3969,14 +3969,26 @@ void RenderFrameImpl::DidFinishLoad() {
                          frame_->IsOutermostMainFrame());
   }
 
-  for (auto& observer : observers_)
+  for (auto& observer : observers_) {
     observer.DidFinishLoad();
+  }
 }
 
 void RenderFrameImpl::DidFinishLoadForPrinting() {
   for (auto& observer : observers_)
     observer.DidFinishLoadForPrinting();
 }
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+void RenderFrameImpl::DidSubresourceFiltered() {
+  TRACE_EVENT1("navigation, benchmark, rail",
+               "RenderFrameImpl::DidSubresourceFiltered", "id", routing_id_);
+  for (auto& observer : observers_){
+    observer.DidSubresourceFiltered();
+  }
+}
+
+#endif // OHOS_ARKWEB_ADBLOCK
 
 void RenderFrameImpl::DidFinishSameDocumentNavigation(
     blink::WebHistoryCommitType commit_type,

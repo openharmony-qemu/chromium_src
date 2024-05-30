@@ -47,14 +47,33 @@ namespace flat_rule = url_pattern_index::flat;
 // url_pattern_index.fbs. Whenever an extension with an indexed ruleset format
 // version different from the one currently used by Chrome is loaded, the
 // extension ruleset will be reindexed.
+#ifdef OHOS_ARKWEB_ADBLOCK
 constexpr int kIndexedRulesetFormatVersion = 28;
+#else
+constexpr int kIndexedRulesetFormatVersion = 28;
+#endif
 
 // This static assert is meant to catch cases where
 // url_pattern_index::kUrlPatternIndexFormatVersion is incremented without
 // updating kIndexedRulesetFormatVersion.
+#ifdef OHOS_ARKWEB_ADBLOCK
 static_assert(url_pattern_index::kUrlPatternIndexFormatVersion == 15,
               "kUrlPatternIndexFormatVersion has changed, make sure you've "
               "also updated kIndexedRulesetFormatVersion above.");
+#else
+static_assert(url_pattern_index::kUrlPatternIndexFormatVersion == 15,
+              "kUrlPatternIndexFormatVersion has changed, make sure you've "
+              "also updated kIndexedRulesetFormatVersion above.");
+#endif  // OHOS_ARKWEB_ADBLOCK
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+// This static assert is meant to catch cases where
+// url pattern_index: : kCssPatternIndexFormatVersion is incremented without
+// updating kIndexedRulesetFormatVersion.
+static_assert(url_pattern_index::kCssPatternIndexFormatVersion == 1,
+              "kCssPatternIndexFormatVersion has changed, make sure you've "
+              "also updated kIndexedRulesetFormatVersion above.");
+#endif  // OHOS_ARKWEB_ADBLOCK
 
 constexpr int kInvalidIndexedRulesetFormatVersion = -1;
 int g_indexed_ruleset_format_version_for_testing =

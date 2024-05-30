@@ -71,6 +71,39 @@ class WebDocumentSubresourceFilterImpl
   // blink::WebDocumentSubresourceFilter:
   LoadPolicy GetLoadPolicy(const blink::WebURL& resourceUrl,
                            blink::mojom::RequestContextType) override;
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  void ClearStatistics() override;
+
+  std::unique_ptr<std::string> GetElementHidingSelectors(
+      const blink::WebURL& document_url,
+      bool need_generic_selectors) override;
+
+  bool HasGenericHideTypeOption(
+      const blink::WebURL& document_url,
+      const url::Origin& parent_document_origin) override;
+
+  bool HasElemHideTypeOption(
+      const blink::WebURL& document_url,
+      const url::Origin& parent_document_origin) override;
+
+  bool HasDocumentTypeOption(
+      const blink::WebURL& document_url,
+      const url::Origin& parent_document_origin) override;
+
+  void DidMatchCssRule(const blink::WebURL& document_url,
+                       const std::string& dom_path,
+                       bool is_for_report = false) override;
+
+  bool GetDidFinishLoad() override;
+
+  void SetDidFinishLoad(bool did_load_finished) override;
+
+  std::unique_ptr<std::vector<std::string>> GetUserDomPathSelectors(
+      const blink::WebURL& document_url,
+      bool need_generic_selectors) override;
+#endif  // OHOS_ARKWEB_ADBLOCK
+
   LoadPolicy GetLoadPolicyForWebSocketConnect(
       const blink::WebURL& url) override;
   LoadPolicy GetLoadPolicyForWebTransportConnect(

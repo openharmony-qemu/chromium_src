@@ -435,6 +435,28 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
     return touch_insert_handle_menu_show_;
   }
 #endif  // #ifdef OHOS_CLIPBOARD
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  bool TrigAdBlockEnabledForSite(GURL url) override;
+
+  void EnableAdsBlock(bool enable) override {
+    LOG(INFO) << "enable adblock: " << enable;
+    base::AutoLock locker(lock_);
+    enable_adblock_ = enable;
+  }
+
+  bool IsAdsBlockEnabled() override {
+    base::AutoLock locker(lock_);
+    return enable_adblock_;
+  }
+
+  bool IsAdsBlockEnabledForCurPage() override;
+
+  void OnAdsBlocked(const std::string& main_frame_url,
+                    const std::map<std::string, int32_t>& subresource_blocked,
+                    bool is_site_first_report) override;
+#endif
+
 #if defined(OHOS_EX_PASSWORD)
   void SetSavePasswordAutomatically(bool enable) override {
     LOG(INFO) << "set save password automatically: " << enable;
@@ -2558,6 +2580,15 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 #if defined(OHOS_USERAGENT) || defined(OHOS_EX_UA)
   std::string user_agent_{""};
 #endif  // OHOS_EX_UA
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  mutable base::Lock lock_;
+
+  bool enable_adblock_ = false;
+
+  bool enable_adblock_for_site_ = false;
+#endif
+
 #if defined(OHOS_EX_PASSWORD)
   bool save_password_ = true;
   bool save_password_automatically_ = false;

@@ -60,6 +60,44 @@ class DocumentSubresourceFilter {
       const GURL& subresource_url,
       url_pattern_index::proto::ElementType subresource_type);
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+  void ClearStatistics();
+
+  std::unique_ptr<std::string> GetSelectors(const GURL& url,
+                                            bool disable_generic_rules) const;
+
+  std::unique_ptr<const std::vector<const url_pattern_index::flat::CssRule*>>
+  FindMatchingCssRule(const GURL& document_url,
+                      bool disable_generic_rules = false) const;
+
+  bool HasGenericHideTypeOption(
+      const GURL& document_url,
+      const url::Origin& parent_document_origin) const;
+
+  bool HasElemHideTypeOption(const GURL& document_url,
+                             const url::Origin& parent_document_origin) const;
+
+  bool HasDocumentTypeOption(const GURL& document_url,
+                             const url::Origin& parent_document_origin) const;
+
+  const std::vector<const url_pattern_index::flat::CssRule*>
+  FindMatchingCssRule(const GURL& subresource_url);
+
+  void DidMatchCssRule(const GURL& document_url,
+                       const std::string& dom_path,
+                       bool is_for_report = false);
+
+  void SetDidFinishLoad(bool did_load_finished) {
+    did_load_finished_ = did_load_finished;
+  }
+
+  bool GetDidFinishLoad() { return did_load_finished_; }
+
+  std::unique_ptr<std::vector<std::string>> GetUserDomPathSelectors(
+      const GURL& document_url,
+      bool disable_generic_rules) const;
+#endif  // OHOS_ARKWEB_ADBLOCK
+
   // Returns the matching rule that determines whether the request url and type
   // should be allowed. If no rule matches, returns nullptr.
   const url_pattern_index::flat::UrlRule* FindMatchingUrlRule(
@@ -81,6 +119,10 @@ class DocumentSubresourceFilter {
   std::unique_ptr<FirstPartyOrigin> document_origin_;
 
   mojom::DocumentLoadStatistics statistics_;
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  bool did_load_finished_ = false;
+#endif  // OHOS_ARKWEB_ADBLOCK
 };
 
 }  // namespace subresource_filter

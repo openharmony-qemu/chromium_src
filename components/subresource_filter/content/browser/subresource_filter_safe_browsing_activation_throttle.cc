@@ -94,7 +94,9 @@ SubresourceFilterSafeBrowsingActivationThrottle::
 
 content::NavigationThrottle::ThrottleCheckResult
 SubresourceFilterSafeBrowsingActivationThrottle::WillRedirectRequest() {
+#ifndef OHOS_ARKWEB_ADBLOCK
   CheckCurrentUrl();
+#endif
   return PROCEED;
 }
 
@@ -209,7 +211,6 @@ void SubresourceFilterSafeBrowsingActivationThrottle::NotifyResult() {
   auto* devtools_interaction_tracker =
       DevtoolsInteractionTracker::FromWebContents(
           navigation_handle()->GetWebContents());
-
   if (devtools_interaction_tracker &&
       devtools_interaction_tracker->activated_via_devtools()) {
     activation_level = mojom::ActivationLevel::kEnabled;

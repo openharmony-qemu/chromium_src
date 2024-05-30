@@ -42,6 +42,15 @@ namespace {
 using MockClosureTarget =
     ::testing::StrictMock<::testing::MockFunction<void()>>;
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+class MockRulesetServiceClient : public RulesetServiceClient {
+ public:
+  void OnDeleteRulesetFile() override {}
+};
+
+MockRulesetServiceClient g_mock_ruleset_service_client_;
+#endif
+
 class NotifyingMockRenderProcessHost : public content::MockRenderProcessHost {
  public:
   explicit NotifyingMockRenderProcessHost(

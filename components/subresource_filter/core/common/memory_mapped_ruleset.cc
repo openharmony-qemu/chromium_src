@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "base/check.h"
+#include "base/logging.h"
 
 namespace subresource_filter {
 
@@ -16,14 +17,23 @@ static bool g_fail_memory_map_initialization_for_testing = false;
 // static
 scoped_refptr<MemoryMappedRuleset> MemoryMappedRuleset::CreateAndInitialize(
     base::File ruleset_file) {
-  if (g_fail_memory_map_initialization_for_testing)
+  LOG(WARNING)
+      << "[AdBlock] Indexed ruleset create and initialized begin--------";
+  if (g_fail_memory_map_initialization_for_testing) {
     return nullptr;
+  }
 
   auto ruleset = base::AdoptRef(new MemoryMappedRuleset());
   if (g_fail_memory_map_initialization_for_testing ||
-      !ruleset->ruleset_.Initialize(std::move(ruleset_file)))
+      !ruleset->ruleset_.Initialize(std::move(ruleset_file))) {
+    if (ruleset->ruleset_.IsValid()) {
+      return ruleset;
+    }
+
     return nullptr;
+  }
   DCHECK(ruleset->ruleset_.IsValid());
+  LOG(WARNING) << "[AdBlock] Indexed ruleset create and initialized ok";
   return ruleset;
 }
 

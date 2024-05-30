@@ -37,11 +37,16 @@ class SoftwareCompositorHostOhos {
   SoftwareCompositorHostOhos& operator=(const SoftwareCompositorHostOhos&) =
       delete;
 
-  void DemandDrawSwAsync(gfx::SizeF size,
-                         gfx::PointF offset,
+  using WebSnapchatCallback = base::OnceCallback<
+      void(const char* id, bool state, void* data, int width, int height)>;
+
+  void DemandDrawSwAsync(const char* id,
                          float clip_width,
-                         float clip_height);
-  void OnDrawSwCallback(bool result);
+                         float clip_height,
+                         gfx::SizeF size,
+                         gfx::PointF offset,
+                         WebSnapchatCallback callback);
+  void OnDrawSwCallback(WebSnapchatCallback callback, const char* id, bool result);
   void SetSharedMemory(size_t stride, size_t buffer_size);
 
  private:

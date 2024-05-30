@@ -69,7 +69,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   void InsertText(const std::u16string& text);
   void DeleteBackward(int32_t length);
   void DeleteForward(int32_t length);
-  void SendEnterKeyEvent();
+  void SendEnterKeyEvent(int32_t enterKeyType);
   void MoveCursor(const IMFAdapterDirection direction);
   void SetScreenOffSet(double x, double y);
   void SetVirtualDeviceRatio(float device_pixel_ratio);
@@ -102,7 +102,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   bool ResetTextSelectiondata();
   IMFAdapterTextInputType TextInputModeToIMFAdapter(cef_text_input_mode_t mode);
   IMFAdapterTextInputType TextInputTypeToIMFAdapter(cef_text_input_type_t type);
-  IMFAdapterEnterKeyType TextInputActionToIMFAdapter(cef_text_input_action_t action);
+  IMFAdapterEnterKeyType TextInputActionToIMFAdapter(InputInfo inputInfo);
   void ComputeEditorInfo(InputInfo inputInfo, int32_t customEnterKeyType);
   std::shared_ptr<IMFCursorInfoAdapter> GetCursorInfo();
   void PreviewTextHandlerOnUI(const std::u16string& text,
@@ -144,7 +144,6 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   bool isNeedReattachOncontinue_ = false;
   IMFAdapterTextInputType imf_input_mode_ = IMFAdapterTextInputType::TEXT;
   IMFAdapterEnterKeyType imf_input_action_ = IMFAdapterEnterKeyType::GO;
-  InputInfo inputInfo_;
   bool type_text_flag_multi_line_ = false;
   std::chrono::high_resolution_clock::time_point lastCloseInputMethodTime_;
   bool isNeedReattachOnfocus_ = false;
@@ -278,6 +277,34 @@ enum ScanKeyCode {
   NUMPADCOMMA_SCAN_CODE = 0x0081,
   METALEFT_SCAN_CODE = 0x0085,
   METARIGHT_SCAN_CODE = 0x0086,
+};
+
+enum class FocusType : int32_t {
+  // Map to: blink.mojom.FocusType.kNone
+  NONE = 0,
+
+  // Map to: blink.mojom.FocusType.kScript
+  SCRIPT = 1,
+
+  // Map to: blink.mojom.FocusType.kForward
+  FORWARD = 2,
+
+  // Map to: blink.mojom.FocusType.kBackward
+  BACKWARD = 3,
+
+  // Map to: blink.mojom.FocusType.kSpatialNavigation
+  SPATIALNAVIGATION = 4,
+
+  // Map to: blink.mojom.FocusType.kMouse
+  MOUSE = 5,
+
+  // Map to: blink.mojom.FocusType.kAccessKey
+  ACCESSKEY = 6,
+
+  // Map to: blink.mojom.FocusType.kPage
+  PAGE = 7,
+
+  MAXVALUE = 7,
 };
 }  // namespace OHOS::NWeb
 

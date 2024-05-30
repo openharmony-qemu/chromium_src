@@ -768,6 +768,13 @@ void NWebPreferenceDelegate::SetNativeVideoPlayerConfig(bool enable,
   WebPreferencesChanged();
 }
 
+#if defined(OHOS_SCROLLBAR)
+void NWebPreferenceDelegate::PutOverlayScrollbarEnabled(bool enable) {
+   base::FeatureList::SetScrollbarEnable(enable);
+   WebPreferencesChanged();
+}
+#endif
+
 #if defined(OHOS_MEDIA_POLICY)
 void NWebPreferenceDelegate::PutAudioExclusive(bool audioExclusive) {
   audio_exclusive_ = audioExclusive;

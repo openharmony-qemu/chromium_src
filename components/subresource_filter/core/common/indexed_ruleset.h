@@ -24,6 +24,9 @@ class Origin;
 namespace url_pattern_index {
 namespace proto {
 class UrlRule;
+#ifdef OHOS_ARKWEB_ADBLOCK
+class CssRule;
+#endif  // OHOS_ARKWEB_ADBLOCK
 }
 }
 
@@ -70,6 +73,10 @@ class RulesetIndexer {
   // Returns whether the |rule| has been serialized and added to the index.
   bool AddUrlRule(const url_pattern_index::proto::UrlRule& rule);
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+  bool AddCssRule(const url_pattern_index::proto::CssRule& rule);
+#endif  // OHOS_ARKWEB_ADBLOCK
+
   // Finalizes construction of the data structures.
   void Finish();
 
@@ -90,6 +97,11 @@ class RulesetIndexer {
   url_pattern_index::UrlPatternIndexBuilder allowlist_;
   url_pattern_index::UrlPatternIndexBuilder deactivation_;
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+  url_pattern_index::CssPatternIndexBuilder css_blocklist_;
+  url_pattern_index::CssPatternIndexBuilder css_allowlist_;
+#endif  // OHOS_ARKWEB_ADBLOCK
+
   // Maintains a map of domain vectors to their existing offsets, to avoid
   // storing a particular vector more than once.
   url_pattern_index::FlatDomainMap domain_map_;
@@ -106,6 +118,10 @@ class IndexedRulesetMatcher {
   // provided as the root object of serialized data in the |buffer| of the given
   // |size|.
   IndexedRulesetMatcher(const uint8_t* buffer, size_t size);
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  ~IndexedRulesetMatcher();
+#endif // OHOS_ARKWEB_ADBLOCK
 
   IndexedRulesetMatcher(const IndexedRulesetMatcher&) = delete;
   IndexedRulesetMatcher& operator=(const IndexedRulesetMatcher&) = delete;
@@ -139,6 +155,20 @@ class IndexedRulesetMatcher {
       url_pattern_index::proto::ElementType element_type,
       bool disable_generic_rules) const;
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+  std::unique_ptr<const std::vector<const url_pattern_index::flat::CssRule*>>
+  MatchedCssRule(const GURL& url, bool disable_generic_rules) const;
+
+  bool HasGenericHideOption(const GURL& document_url,
+                            const url::Origin& parent_document_origin) const;
+
+  bool HasElemHideOption(const GURL& document_url,
+                         const url::Origin& parent_document_origin) const;
+
+  bool HasDocumentOption(const GURL& document_url,
+                         const url::Origin& parent_document_origin) const;
+#endif  // OHOS_ARKWEB_ADBLOCK
+
  private:
   // This field is not a raw_ptr<> because it was filtered by the rewriter for:
   // #union
@@ -147,6 +177,11 @@ class IndexedRulesetMatcher {
   url_pattern_index::UrlPatternIndexMatcher blocklist_;
   url_pattern_index::UrlPatternIndexMatcher allowlist_;
   url_pattern_index::UrlPatternIndexMatcher deactivation_;
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  url_pattern_index::CssPatternIndexMatcher css_blocklist_;
+  url_pattern_index::CssPatternIndexMatcher css_allowlist_;
+#endif // OHOS_ARKWEB_ADBLOCK
 };
 
 }  // namespace subresource_filter

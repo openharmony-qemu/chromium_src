@@ -1856,6 +1856,16 @@ int NWebDelegate::ContentHeight() {
   return 0;
 }
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+void NWebDelegate::UpdateAdblockEasyListRules(
+    long adBlockEasyListVersion) {
+  if (GetBrowser() && GetBrowser()->GetHost()) {
+    GetBrowser()->GetHost()->UpdateAdblockEasyListRules(
+        adBlockEasyListVersion);
+  }
+}
+#endif
+
 void NWebDelegate::RegisterArkJSfunction(
     const std::string& object_name,
     const std::vector<std::string>& method_list,
@@ -2793,6 +2803,29 @@ bool NWebDelegate::GetPrintBackground() {
 }
 #endif // defined(OHOS_PRINT)
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+void NWebDelegate::EnableAdsBlock(bool enable) {
+  LOG(INFO) << "NWebDelegate::EnableAdsBlock " << enable;
+  if (GetBrowser().get()) {
+    GetBrowser()->EnableAdsBlock(enable);
+  }
+}
+
+bool NWebDelegate::IsAdsBlockEnabled() {
+  if (GetBrowser().get()) {
+    return GetBrowser()->IsAdsBlockEnabled();
+  }
+  return false;
+}
+
+bool NWebDelegate::IsAdsBlockEnabledForCurPage() {
+  if (GetBrowser().get()) {
+    return GetBrowser()->IsAdsBlockEnabledForCurPage();
+  }
+  return false;
+}
+#endif
+
 #if defined(OHOS_EX_PASSWORD)
 void NWebDelegate::SaveOrUpdatePassword(bool is_update) {
   if (GetBrowser().get()) {
@@ -3430,6 +3463,7 @@ int NWebDelegate::ScaleGestureChange(double scale, double centerX, double center
   GetBrowser()->GetHost()->ZoomBy(scale, centerX * 2, centerY * 2);
   return NWEB_OK;
 }
+
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
 void NWebDelegate::RegisterOnCreateNativeMediaPlayerListener(
     std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) {

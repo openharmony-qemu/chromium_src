@@ -119,6 +119,67 @@ WebLoadPolicy WebDocumentSubresourceFilterImpl::GetLoadPolicy(
   return getLoadPolicyImpl(resourceUrl, ToElementType(request_context));
 }
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+void WebDocumentSubresourceFilterImpl::ClearStatistics() {
+  filter_.ClearStatistics();
+}
+
+void WebDocumentSubresourceFilterImpl::SetDidFinishLoad(
+    bool did_load_finished) {
+  filter_.SetDidFinishLoad(did_load_finished);
+}
+
+std::unique_ptr<std::string>
+WebDocumentSubresourceFilterImpl::GetElementHidingSelectors(
+    const blink::WebURL& document_url,
+    bool need_generic_selectors) {
+  if (filter_.activation_state().filtering_disabled_for_document) {
+    return std::make_unique<std::string>();
+  }
+
+  return filter_.GetSelectors(document_url, !need_generic_selectors);
+}
+
+bool WebDocumentSubresourceFilterImpl::HasGenericHideTypeOption(
+    const blink::WebURL& document_url,
+    const url::Origin& parent_document_origin) {
+  return filter_.HasGenericHideTypeOption(document_url, parent_document_origin);
+}
+
+bool WebDocumentSubresourceFilterImpl::HasElemHideTypeOption(
+    const blink::WebURL& document_url,
+    const url::Origin& parent_document_origin) {
+  return filter_.HasElemHideTypeOption(document_url, parent_document_origin);
+}
+
+bool WebDocumentSubresourceFilterImpl::HasDocumentTypeOption(
+    const blink::WebURL& document_url,
+    const url::Origin& parent_document_origin) {
+  return filter_.HasDocumentTypeOption(document_url, parent_document_origin);
+}
+
+void WebDocumentSubresourceFilterImpl::DidMatchCssRule(
+    const blink::WebURL& document_url,
+    const std::string& dom_path,
+    bool is_for_report) {
+  filter_.DidMatchCssRule(document_url, dom_path, is_for_report);
+}
+
+bool WebDocumentSubresourceFilterImpl::GetDidFinishLoad() {
+  return filter_.GetDidFinishLoad();
+}
+
+std::unique_ptr<std::vector<std::string>>
+WebDocumentSubresourceFilterImpl::GetUserDomPathSelectors(
+    const blink::WebURL& document_url,
+    bool need_generic_selectors) {
+  if (filter_.activation_state().filtering_disabled_for_document) {
+    return nullptr;
+  }
+  return filter_.GetUserDomPathSelectors(document_url, !need_generic_selectors);
+}
+#endif
+
 WebLoadPolicy
 WebDocumentSubresourceFilterImpl::GetLoadPolicyForWebSocketConnect(
     const blink::WebURL& url) {
@@ -170,6 +231,7 @@ WebDocumentSubresourceFilterImpl::BuilderImpl::~BuilderImpl() {}
 std::unique_ptr<blink::WebDocumentSubresourceFilter>
 WebDocumentSubresourceFilterImpl::BuilderImpl::Build() {
   DCHECK(ruleset_file_.IsValid());
+
   scoped_refptr<MemoryMappedRuleset> ruleset =
       MemoryMappedRuleset::CreateAndInitialize(std::move(ruleset_file_));
   if (!ruleset)

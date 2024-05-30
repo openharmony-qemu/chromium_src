@@ -82,6 +82,10 @@ class UnindexedRulesetWriter {
   bool AddUrlRule(const url_pattern_index::proto::UrlRule& rule);
   // TODO(pkalinnikov): Implement AddCssRule when needed.
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+  bool AddCssRule(const url_pattern_index::proto::CssRule& rule);
+#endif
+
   // Finalizes the serialization of the unindexed ruleset, i.e., writes the
   // final chunk of rules, if there are any still pending. This method *should*
   // be called exactly once when interaction with |this| instance ends, unless

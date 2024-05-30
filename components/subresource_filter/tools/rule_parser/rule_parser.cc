@@ -14,6 +14,10 @@
 #include "components/subresource_filter/tools/rule_parser/rule_options.h"
 #include "components/url_pattern_index/proto/rules.pb.h"
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+#include "base/strings/string_number_conversions.h"
+#endif OHOS_ARKWEB_ADBLOCK
+
 namespace subresource_filter {
 
 namespace {
@@ -245,6 +249,19 @@ RuleType RuleParser::Parse(base::StringPiece line) {
       break;
     }
     const char next_char = part[css_separator_pos + 1];
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+    if (css_separator_pos + 2 < part.size()) {
+      // skip "#?#", extended css selector not supported yet
+      // and "#?##" should not be considered normal css rule.
+      const char next_next_char = part[css_separator_pos + 2];
+      if (next_char == '?' && next_next_char == '#') {
+        css_separator_pos = base::StringPiece::npos;
+        break;
+      }
+    }
+#endif
+
     if (next_char == '#' || next_char == '@')  // CSS rule starter.
       break;
   }

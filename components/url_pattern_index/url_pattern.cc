@@ -25,6 +25,9 @@
 #include "base/ranges/algorithm.h"
 #include "base/strings/string_util.h"
 #include "components/url_pattern_index/flat/url_pattern_index_generated.h"
+#ifdef OHOS_ARKWEB_ADBLOCK
+#include "components/url_pattern_index/flat/css_pattern_index_generated.h"
+#endif  // OHOS_ARKWEB_ADBLOCK
 #include "components/url_pattern_index/fuzzy_pattern_matching.h"
 #include "components/url_pattern_index/string_splitter.h"
 #include "url/gurl.h"
@@ -343,6 +346,15 @@ UrlPattern::UrlPattern(const flat::UrlRule& rule)
                       ? MatchCase::kFalse
                       : MatchCase::kTrue) {}
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+UrlPattern::UrlPattern(const flat::UrlRule& rule, MatchCase match_case)
+          : type_(ConvertUrlPatternType(rule.url_pattern_type())),
+            url_pattern_(ConvertString(rule.url_pattern())),
+            anchor_left_(ConvertAnchorType(rule.anchor_left())),
+            anchor_right_(ConvertAnchorType(rule.anchor_right())),
+            match_case_(match_case) {}
+#endif  // OHOS_ARKWEB_ADBLOCK
+
 UrlPattern::~UrlPattern() = default;
 
 bool UrlPattern::MatchesUrl(const UrlInfo& url) const {
@@ -374,9 +386,14 @@ bool UrlPattern::MatchesUrl(const UrlInfo& url) const {
 
   // Use the lower-cased url for case-insensitive comparison. Case-insensitive
   // patterns should already be lower-cased.
+#ifdef OHOS_ARKWEB_ADBLOCK
+  return IsCaseSensitiveMatch(base::ToLowerASCII(url_pattern_), anchor_left, anchor_right,
+                              url.GetLowerCaseSpec(), url.host());
+#else
   DCHECK(!HasAnyUpperAscii(url_pattern_));
   return IsCaseSensitiveMatch(url_pattern_, anchor_left, anchor_right,
                               url.GetLowerCaseSpec(), url.host());
+#endif
 }
 
 std::ostream& operator<<(std::ostream& out, const UrlPattern& pattern) {
@@ -398,5 +415,44 @@ std::ostream& operator<<(std::ostream& out, const UrlPattern& pattern) {
 
   return out;
 }
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+CssPattern::UrlInfo::UrlInfo(const GURL& url)
+    : spec_(url.possibly_invalid_spec()),
+      host_(url.parsed_for_possibly_invalid_spec().host) {
+  DCHECK(url.is_valid());
+}
+
+base::StringPiece CssPattern::UrlInfo::GetLowerCaseSpec() const {
+  if (lower_case_spec_cached_) {
+    return *lower_case_spec_cached_;
+  }
+
+  if (!HasAnyUpperAscii(spec_)){
+    lower_case_spec_cached_ = spec_;
+  } else {
+    lower_case_spec_owner_ = base::ToLowerASCII(spec_);
+    lower_case_spec_cached_ = lower_case_spec_owner_;
+  }
+
+  return *lower_case_spec_cached_;
+}
+
+CssPattern::UrlInfo::~UrlInfo() = default;
+
+CssPattern::CssPattern() = default;
+
+CssPattern::CssPattern(const flat::CssRule& rule)
+    : match_case_(rule.options() & flat::OptionFlag_IS_CASE_INSENSITIVE
+                       ? MatchCase::kFalse
+                       : MatchCase::kTrue) {}
+
+CssPattern::~CssPattern() = default;
+
+bool CssPattern::MatchesCss(const UrlInfo& url) const {
+  return true;
+}
+
+#endif  // OHOS_ARKWEB_ADBLOCK
 
 }  // namespace url_pattern_index

@@ -1160,6 +1160,10 @@ class CONTENT_EXPORT RenderFrameImpl
   // CommitNavigation() and DidCommitNavigation().
   void ResetMembersUsedForDurationOfCommit();
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+  void DidSubresourceFiltered() override;
+#endif
+
 #if BUILDFLAG(IS_OHOS)
   bool GetNewWindowWebView(const GURL& target_url,
                            blink::WebNavigationPolicy policy,

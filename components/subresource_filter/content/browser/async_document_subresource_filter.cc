@@ -15,6 +15,10 @@
 #include "components/subresource_filter/core/common/time_measurements.h"
 #include "components/url_pattern_index/proto/rules.pb.h"
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+#include "components/subresource_filter/content/browser/ohos_adblock_config.h"
+#endif
+
 namespace subresource_filter {
 
 mojom::ActivationState ComputeActivationState(
@@ -249,6 +253,13 @@ mojom::ActivationState AsyncDocumentSubresourceFilter::Core::Initialize(
   mojom::ActivationState activation_state = ComputeActivationState(
       params.document_url, params.parent_document_origin,
       params.parent_activation_state, verified_ruleset->Get());
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  OHOS::adblock::AdBlockConfig::GetInstance()->ReadFromPrefService();
+  activation_state.user_subresource_filter_replace =
+      OHOS::adblock::AdBlockConfig::GetInstance()
+          ->GetUserEasylistReplaceSwitch();
+#endif
 
   DCHECK_NE(mojom::ActivationLevel::kDisabled,
             activation_state.activation_level);

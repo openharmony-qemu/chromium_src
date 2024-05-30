@@ -18,6 +18,10 @@ namespace url_pattern_index {
 
 namespace flat {
 struct UrlRule;  // The FlatBuffers version of UrlRule.
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+struct CssRule;
+#endif  // OHOS_ARKWEB_ADBLOCK
 }
 
 // The structure used to mirror a URL pattern regardless of the representation
@@ -69,6 +73,10 @@ class UrlPattern {
              proto::AnchorType anchor_left,
              proto::AnchorType anchor_right);
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+  UrlPattern(const flat::UrlRule& rule, MatchCase match_case);
+#endif  // OHOS_ARKWEB_ADBLOCK
+
   // The passed in |rule| must outlive the created instance.
   explicit UrlPattern(const flat::UrlRule& rule);
 
@@ -103,6 +111,65 @@ class UrlPattern {
 
   MatchCase match_case_ = MatchCase::kTrue;
 };
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+class CssPattern {
+ public:
+  enum class MatchCase {
+    kTrue,
+    kFalse,
+  };
+
+  // A wrapper over a GURL to reduce redundant computation.
+  class UrlInfo {
+   public:
+    // The lurll must outlive this instance.
+    UrlInfo(const GURL& url);
+    ~UrlInfo();
+
+    base::StringPiece spec() const { return spec_; }
+    base::StringPiece GetLowerCaseSpec() const;
+
+    url::Component host() const { return host_; }
+
+   private:
+    // The url spec.
+    const base::StringPiece spec_;
+
+    // String to hold the lazily computed lower cased spec.
+    mutable std::string lower_case_spec_owner_;
+
+    // Reference to the lower case spec. Computed lazily.
+    mutable absl::optional<base::StringPiece> lower_case_spec_cached_;
+
+    // The url host component.
+    const url::Component host_;
+  };
+
+  CssPattern();
+
+  // The passed in rulel must outlive the created instance
+  explicit CssPattern(const flat::CssRule& rule);
+
+  ~CssPattern();
+
+  bool match_case() const { return match_case_ == MatchCase::kTrue; }
+
+  // Returns whether the lurl matches the URL Ipattern.Requires the type of
+  // this pattern to be either SUBSTRING or HILDCARDED.
+  //
+  // Splits the pattern into subpatterns separated by wildcards,and
+  // greedily finds each of them in the spec of the url.Respects anchors at
+  // either end of the pattern,and separator placeholders when comparing a
+  // subpattern to a subtring of the spec.
+  bool MatchesCss(const UrlInfo& url) const;
+
+ private:
+  // TODO(pkalinnikov): Store flat:: types instead of proto::, in order to avoid
+  // conversions in IndexedRuleset.
+  MatchCase match_case_ = MatchCase::kTrue;
+};
+#endif  // OHOS_ARKWEB_ADBLOCK
 
 // Allow pretty-printing URLPatterns when they are used in GTest assertions.
 std::ostream& operator<<(std::ostream& out, const UrlPattern& pattern);

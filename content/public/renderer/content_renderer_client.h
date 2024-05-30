@@ -310,6 +310,12 @@ class CONTENT_EXPORT ContentRendererClient {
   // invalidate the frame.
   virtual void RunScriptsAtDocumentStart(RenderFrame* render_frame) {}
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+  virtual void TriggerElementHidingInFrame(int routing_id) {}
+
+  virtual void TriggerUserElementHidingInFrame(int routing_id) {}
+#endif
+
   // Notifies that the DOM is ready in the frame's document.
   // This method may invalidate the frame.
   virtual void RunScriptsAtDocumentEnd(RenderFrame* render_frame) {}

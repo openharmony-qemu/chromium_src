@@ -136,6 +136,11 @@
 extern bool g_siteIsolationMode;
 #endif
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+#include "components/subresource_filter/content/browser/ohos_adblock_config.h"
+#include "cef/libcef/browser/subresource_filter/adblock_list.h"
+#endif
+
 namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
@@ -246,23 +251,28 @@ bool GetIsPopup(std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
   return init_args ? init_args->GetIsPopup() : false;
 }
 
-std::string GetDumpPath(std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
+std::string GetDumpPath(
+    std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
   return init_args ? init_args->GetDumpPath() : "";
 }
 
-bool GetIsFrameInfoDump(std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
+bool GetIsFrameInfoDump(
+    std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
   return init_args ? init_args->GetIsFrameInfoDump() : false;
 }
 
-bool GetIsEnhanceSurface(std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
+bool GetIsEnhanceSurface(
+    std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
   return init_args ? init_args->GetIsEnhanceSurface() : false;
 }
 
-bool GetIsMultiRendererProcess(std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
+bool GetIsMultiRendererProcess(
+    std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
   return init_args ? init_args->GetIsMultiRendererProcess() : false;
 }
 
-std::list<std::string> GetArgsToAdd(std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
+std::list<std::string> GetArgsToAdd(
+    std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
   if (!init_args) {
     std::list<std::string> temp;
     return temp;
@@ -271,7 +281,8 @@ std::list<std::string> GetArgsToAdd(std::shared_ptr<OHOS::NWeb::NWebEngineInitAr
   return init_args->GetArgsToAdd();
 }
 
-std::list<std::string> GetArgsToDelete(std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
+std::list<std::string> GetArgsToDelete(
+    std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
   if (!init_args) {
     std::list<std::string> temp;
     return temp;
@@ -281,8 +292,9 @@ std::list<std::string> GetArgsToDelete(std::shared_ptr<OHOS::NWeb::NWebEngineIni
 }
 
 #if defined(OHOS_API_INIT_WEB_ENGINE)
-void InitialWebEngineArgs(std::list<std::string>& web_engine_args,
-                          std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
+void InitialWebEngineArgs(
+    std::list<std::string>& web_engine_args,
+    std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
   web_engine_args.clear();
 
   web_engine_args.emplace_back("/system/bin/web_render");
@@ -375,8 +387,8 @@ void InitialWebEngineArgs(std::list<std::string>& web_engine_args,
 namespace OHOS::NWeb {
 
 // static
-std::shared_ptr<NWeb>
-NWebImpl::CreateNWeb(std::shared_ptr<NWebCreateInfo> create_info) {
+std::shared_ptr<NWeb> NWebImpl::CreateNWeb(
+    std::shared_ptr<NWebCreateInfo> create_info) {
   if (!create_info) {
     return nullptr;
   }
@@ -388,7 +400,8 @@ NWebImpl::CreateNWeb(std::shared_ptr<NWebCreateInfo> create_info) {
   TRACE_EVENT1("NWebImpl", "NWebImpl | CreateNWeb", "nweb_id", nweb_id);
   WVLOG_I("creating nweb %{public}u, size %{public}u*%{public}u", nweb_id,
           create_info->GetWidth(), create_info->GetHeight());
-  bool is_enhance_surface = GetIsEnhanceSurface(create_info->GetEngineInitArgs());
+  bool is_enhance_surface =
+      GetIsEnhanceSurface(create_info->GetEngineInitArgs());
   WVLOG_I("creating nweb use enhance surface %{public}d", is_enhance_surface);
   std::shared_ptr<NWebImpl> nweb = std::make_shared<NWebImpl>(nweb_id);
   if (nweb == nullptr) {
@@ -412,6 +425,25 @@ NWebImpl::CreateNWeb(std::shared_ptr<NWebCreateInfo> create_info) {
 #endif
   return nweb;
 }
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+void NWebImpl::UpdateAdblockEasyListRules(long adBlockEasyListVersion) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("fail to register ark js function");
+    return;
+  }
+
+  OHOS::adblock::AdBlockConfig::GetInstance()->ReadFromPrefService();
+  bool replace_switch = OHOS::adblock::AdBlockConfig::GetInstance()
+                            ->GetUserEasylistReplaceSwitch();
+  if (replace_switch) {
+    WVLOG_D("[adblock] replace switch is true, not update cloud easylist");
+    return;
+  }
+
+  return nweb_delegate_->UpdateAdblockEasyListRules(adBlockEasyListVersion);
+}
+#endif
 
 #if defined(OHOS_COOKIE)
 // static
@@ -608,6 +640,10 @@ void NWebImpl::OnDestroy() {
 #ifdef OHOS_ITP
   EnableIntelligentTrackingPrevention(false);
 #endif
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  EnableAdsBlock(false);
+#endif  // OHOS_ARKWEB_ADBLOCK
 
   bool is_close_all = (--g_nweb_count) == 0 ? true : false;
   WVLOG_D("NWebImpl::OnDestroy, nweb_id = %{public}u, number = %{public}u", nweb_id_, g_nweb_count);
@@ -2249,6 +2285,104 @@ bool NWebImpl::ShouldShowFreeCopy() const {
 }
 
 #endif  // OHOS_EX_FREE_COPY
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+// static
+void NWebImpl::SetAdsBlockRules(const std::string& rulesFiles,
+                                const bool replace) {
+  LOG(DEBUG) << "[adblock] SetAdsBlockRules called from ui";
+  OHOS::adblock::AdBlockConfig::GetInstance()->SetAdsBlockRules(rulesFiles,
+                                                                replace);
+  ::adblock::AdBlockList::UpdateUserEasyListRules(rulesFiles);
+}
+
+// static
+void NWebImpl::AddAdsBlockDisallowList(
+    const std::vector<std::string>& domainSuffixes) {
+  LOG(DEBUG) << "[adblock] AddAdsBlockDisallowList called from ui";
+  OHOS::adblock::AdBlockConfig::GetInstance()->AddAdsBlockDisallowList(
+      domainSuffixes);
+}
+
+// static
+void NWebImpl::AddAdsBlockAllowList(
+    const std::vector<std::string>& domainSuffixes) {
+  LOG(DEBUG) << "[adblock] AddAdsBlockAllowList called from ui";
+  OHOS::adblock::AdBlockConfig::GetInstance()->AddAdsBlockAllowList(
+      domainSuffixes);
+}
+
+// static
+void NWebImpl::RemoveAdsBlockDisallowedList(
+    const std::vector<std::string>& domainSuffixes) {
+  LOG(DEBUG) << "[adblock] RemoveAdsBlockDisallowedList called from ui";
+  OHOS::adblock::AdBlockConfig::GetInstance()->RemoveAdsBlockDisallowedList(
+      domainSuffixes);
+}
+
+// static
+void NWebImpl::RemoveAdsBlockAllowedList(
+    const std::vector<std::string>& domainSuffixes) {
+  LOG(DEBUG) << "[adblock] RemoveAdsBlockAllowedList called from ui";
+  OHOS::adblock::AdBlockConfig::GetInstance()->RemoveAdsBlockAllowedList(
+      domainSuffixes);
+}
+
+// static
+void NWebImpl::ClearAdsBlockDisallowedList() {
+  LOG(DEBUG) << "[adblock] ClearAdsBlockDisallowedList called from ui";
+  OHOS::adblock::AdBlockConfig::GetInstance()->ClearAdsBlockDisallowedList();
+}
+
+// static
+void NWebImpl::ClearAdsBlockAllowedList() {
+  LOG(DEBUG) << "[adblock] ClearAdsBlockAllowedList called from ui";
+  OHOS::adblock::AdBlockConfig::GetInstance()->ClearAdsBlockAllowedList();
+}
+
+bool NWebImpl::IsAdsBlockEnabledForCurPage() {
+  if (nweb_delegate_ == nullptr) {
+    return false;
+  }
+  LOG(DEBUG) << "[adblock] IsAdsBlockEnabledForCurPage called from ui";
+  return nweb_delegate_->IsAdsBlockEnabledForCurPage();
+}
+
+bool NWebImpl::IsAdsBlockEnabled() {
+  if (nweb_delegate_ == nullptr) {
+    return false;
+  }
+  LOG(DEBUG) << "[adblock] IsAdsBlockEnabled called from ui";
+  return nweb_delegate_->IsAdsBlockEnabled();
+}
+
+void NWebImpl::EnableAdsBlock(bool enable) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  LOG(DEBUG) << "[adblock] EnableAdsBlock called from ui";
+  nweb_delegate_->EnableAdsBlock(enable);
+}
+
+// static
+bool NWebImpl::IsAnyNWebAdblockEnabled() {
+  NWebMap* map = g_nweb_map.Pointer();
+
+  OHOS::adblock::AdBlockConfig::GetInstance()->ReadFromPrefService();
+  bool replace_switch = OHOS::adblock::AdBlockConfig::GetInstance()
+                            ->GetUserEasylistReplaceSwitch();
+  for (auto it = map->begin(); it != map->end(); it++) {
+    auto nweb_weak_ptr = it->second.lock();
+    if (nweb_weak_ptr) {
+      auto nweb = nweb_weak_ptr.get();
+      if (nweb && nweb->IsAdsBlockEnabled() && !replace_switch) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+#endif
 
 #ifdef OHOS_EX_PASSWORD
 bool NWebImpl::GetSavePasswordAutomatically() const {

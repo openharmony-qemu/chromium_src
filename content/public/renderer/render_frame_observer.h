@@ -134,6 +134,11 @@ class CONTENT_EXPORT RenderFrameObserver : public IPC::Listener,
   virtual void DidFinishLoad() {}
   virtual void DidFinishLoadForPrinting() {}
   virtual void DidDispatchDOMContentLoadedEvent() {}
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  virtual void DidSubresourceFiltered() {}
+#endif  // OHOS_ARKWEB_ADBLOCK
+
   virtual void DidHandleOnloadEvents() {}
   virtual void DidCreateScriptContext(v8::Local<v8::Context> context,
                                       int32_t world_id) {}

@@ -37,6 +37,10 @@ enum OptionFlag : ubyte (bit_flags) {
 enum ActivationType : ubyte (bit_flags) {
   DOCUMENT,       // Disable all rules on the page.
   GENERIC_BLOCK,  // Disable generic URL rules on the page.
+  // #ifdef OHOS_ARKWEB_ADBLOCK
+  ELEMHIDE, // - Disable all element hiding on the page.
+  GENERIC_HIDE, // - Disable generic element hiding on the page.
+  // #endif // OHOS_ARKWEB_ADBLOCK
 }
 
 // The types of subresource requests that a URL rule should be applied to.

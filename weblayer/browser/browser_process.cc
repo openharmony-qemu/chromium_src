@@ -112,8 +112,12 @@ void BrowserProcess::CreateSubresourceFilterRulesetService() {
   base::FilePath user_data_dir;
   CHECK(base::PathService::Get(DIR_USER_DATA, &user_data_dir));
   subresource_filter_ruleset_service_ =
-      subresource_filter::RulesetService::Create(GetLocalState(),
-                                                 user_data_dir);
+      subresource_filter::RulesetService::Create(GetLocalState(), user_data_dir
+#ifdef OHOS_ARKWEB_ADBLOCK
+                                                 ,
+                                                 nullptr
+#endif  // OHOS_ARKWEB_ADBLOCK
+      );
 }
 
 #if BUILDFLAG(IS_ANDROID)

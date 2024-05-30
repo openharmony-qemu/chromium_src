@@ -59,6 +59,17 @@ namespace subresource_filter {
 class RulesetIndexer;
 class UnindexedRulesetStreamGenerator;
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+class RulesetServiceClient {
+ public:
+  RulesetServiceClient() {}
+  virtual ~RulesetServiceClient() {}
+  virtual void OnDeleteRulesetFile();
+
+ private:
+};
+#endif
+
 // Contains all utility functions that govern how files pertaining to indexed
 // ruleset version should be organized on disk.
 //
@@ -102,6 +113,10 @@ class IndexedRulesetLocator {
   // To be called on the |background_task_runner_|.
   static void DeleteObsoleteRulesets(
       const base::FilePath& indexed_ruleset_base_dir,
+#ifdef OHOS_ARKWEB_ADBLOCK
+      const base::FilePath& unindexed_ruleset_base_dir,
+      RulesetServiceClient* client,
+#endif
       const IndexedRulesetVersion& most_recent_version);
 };
 
@@ -145,9 +160,16 @@ class RulesetService : public base::SupportsWeakPtr<RulesetService> {
 
   // Creates a new instance of a ruleset with common configuration for
   // production usage in embedders.
+#ifdef OHOS_ARKWEB_ADBLOCK
+  static std::unique_ptr<RulesetService> Create(
+      PrefService* local_state,
+      const base::FilePath& user_data_dir,
+      RulesetServiceClient* client);
+#else
   static std::unique_ptr<RulesetService> Create(
       PrefService* local_state,
       const base::FilePath& user_data_dir);
+#endif
 
   // Creates a new instance of a ruleset This is then assigned to a
   // RulesetPublisher that calls Initialize for this ruleset service.  Starts
@@ -164,6 +186,19 @@ class RulesetService : public base::SupportsWeakPtr<RulesetService> {
       std::unique_ptr<RulesetPublisher> publisher = nullptr);
 
   RulesetService(const RulesetService&) = delete;
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  RulesetService(
+      PrefService* local_state,
+      scoped_refptr<base::SequencedTaskRunner> background_task_runner,
+      const base::FilePath& indexed_ruleset_base_dir,
+      const base::FilePath& unindexed_ruleset_base_dir,
+      RulesetServiceClient* client,
+      scoped_refptr<base::SequencedTaskRunner> blocking_task_runner,
+      // Note: Optional publisher parameter used exclusively for testing.
+      std::unique_ptr<RulesetPublisher> publisher = nullptr);
+#endif
+
   RulesetService& operator=(const RulesetService&) = delete;
 
   virtual ~RulesetService();
@@ -273,6 +308,11 @@ class RulesetService : public base::SupportsWeakPtr<RulesetService> {
   bool is_initialized_;
 
   const base::FilePath indexed_ruleset_base_dir_;
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  const base::FilePath unindexed_ruleset_base_dir_;
+  const raw_ptr<RulesetServiceClient> ruleset_service_client_;
+#endif
 };
 
 }  // namespace subresource_filter

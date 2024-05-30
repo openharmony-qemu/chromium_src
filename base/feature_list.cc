@@ -307,8 +307,17 @@ void FeatureList::InitializeFromCommandLine(
   // Process disabled features first, so that disabled ones take precedence over
   // enabled ones (since RegisterOverride() uses insert()).
   RegisterOverridesFromCommandLine(disable_features, OVERRIDE_DISABLE_FEATURE);
-  RegisterOverridesFromCommandLine(parsed_enable_features,
+#if defined(OHOS_SCROLLBAR)
+  if (parsed_enable_features == "OverlayScrollbar") {
+    RegisterOverridesFromCommandLine(parsed_enable_features,
+                                   OVERRIDE_DISABLE_FEATURE);
+  } else {
+#endif
+    RegisterOverridesFromCommandLine(parsed_enable_features,
                                    OVERRIDE_ENABLE_FEATURE);
+#if defined(OHOS_SCROLLBAR)
+  }
+#endif
 
   initialized_from_command_line_ = true;
 }
@@ -445,6 +454,22 @@ bool FeatureList::IsEnabled(const Feature& feature) {
 bool FeatureList::IsValidFeatureOrFieldTrialName(StringPiece name) {
   return IsStringASCII(name) && name.find_first_of(",<*") == std::string::npos;
 }
+
+#if defined(OHOS_SCROLLBAR)
+// static
+void FeatureList::SetScrollbarEnable(bool enable) {
+  if (g_feature_list_instance) {
+    OverrideState state = OVERRIDE_ENABLE_FEATURE;
+    if (enable) {
+      state = OVERRIDE_DISABLE_FEATURE;
+    }
+    g_feature_list_instance->SetOverrideStateByFeatureName("OverlayScrollbar", state);
+    LOG(DEBUG) << "set OverlayScrollbar:" << enable;
+  } else {
+    LOG(ERROR) << "set OverlayScrollbar error";
+  }
+}
+#endif
 
 // static
 absl::optional<bool> FeatureList::GetStateIfOverridden(const Feature& feature) {
@@ -702,6 +727,30 @@ FeatureList::OverrideState FeatureList::GetOverrideStateByFeatureName(
   // Otherwise, report that we want to use the default state.
   return OVERRIDE_USE_DEFAULT;
 }
+
+#if defined(OHOS_SCROLLBAR)
+void FeatureList::SetOverrideStateByFeatureName(
+    StringPiece feature_name, OverrideState state) {
+  DCHECK(initialized_);
+  DCHECK(IsValidFeatureOrFieldTrialName(feature_name)) << feature_name;
+  auto it = overrides_.find(feature_name);
+  if (it != overrides_.end()) {
+    OverrideEntry entry = it->second;
+
+    // Activate the corresponding field trial, if necessary.
+    if (entry.field_trial)
+      entry.field_trial->Activate();
+
+    // TODO(asvitkine) Expand this section as more support is added.
+    LOG(DEBUG) << "overlay set change state:" << (int)state;
+    entry.overridden_state = state;
+  } else {
+    LOG(DEBUG) << "overlay set state:" << (int)state;
+    overrides_.emplace(std::string(feature_name),
+                   OverrideEntry(state, nullptr));
+  }
+}
+#endif
 
 FieldTrial* FeatureList::GetAssociatedFieldTrial(const Feature& feature) const {
   DCHECK(initialized_);

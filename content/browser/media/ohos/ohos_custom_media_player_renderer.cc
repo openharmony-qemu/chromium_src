@@ -556,6 +556,15 @@ void OHOSCustomMediaPlayerRenderer::SetIsAudio(bool is_audio) {
   is_audio_ = is_audio;
 }
 
+void OHOSCustomMediaPlayerRenderer::SetPlaybackRateWithReason(
+    double playback_rate, media::ActionReason reason) {
+  DVLOG(1) << __func__ << "(" << playback_rate << ", " << static_cast<int>(reason) << ")";
+  if (reason != media::ActionReason::kNormal) {
+    return;
+  }
+  SetPlaybackRate(playback_rate);
+}
+
 void OHOSCustomMediaPlayerRenderer::OnTimeUpdate(base::TimeDelta media_time) {
   media_time_ = media_time;
 }

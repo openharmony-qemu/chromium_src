@@ -15,6 +15,7 @@
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
 #include "base/containers/flat_map.h"
+#include "media/base/action_reason.h"
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
 namespace media {
@@ -180,6 +181,8 @@ class MEDIA_EXPORT Renderer {
   virtual void SetUpdatePlaybackRateCallback(UpdatePlaybackRateCallback cb) {}
 
   virtual void SetIsAudio(bool is_audio) {}
+
+  virtual void SetPlaybackRateWithReason(double playback_rate, ActionReason reason) {}
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 };
 

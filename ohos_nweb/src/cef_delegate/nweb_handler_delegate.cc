@@ -1608,6 +1608,16 @@ void NWebHandlerDelegate::KeyboardReDispatch(const CefKeyEvent& event,  bool isU
     return nweb_handler_->KeyboardReDispatch(nwebEvent, isUsed);
   }
 }
+
+void NWebHandlerDelegate::OnTakeFocus(CefRefPtr<CefBrowser> browser,  bool next) {
+  // Focus is triggered by pressing the tab key on the last element.
+  LOG(INFO) << "NWebHandlerDelegate::OnTakeFocus next:" << next;
+  int32_t keyCode =
+      NWebInputDelegate::CefConverter("ohoskeycode", static_cast<int32_t>(ui::VKEY_TAB));
+  std::shared_ptr<NWebKeyEvent> nwebEvent =
+      std::make_shared<NWebKeyEventImpl>(0, keyCode);
+  nweb_handler_->KeyboardReDispatch(nwebEvent, false);
+}
 #endif
 /* CefKeyboardHandler methods end */
 

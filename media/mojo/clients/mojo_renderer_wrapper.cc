@@ -78,6 +78,10 @@ void MojoRendererWrapper::SetReferrer(const std::string& referrer) {
 void MojoRendererWrapper::SetIsAudio(bool is_audio) {
   mojo_renderer_->SetIsAudio(is_audio);
 }
+void MojoRendererWrapper::SetPlaybackRateWithReason(double playback_rate,
+    ActionReason reason) {
+  mojo_renderer_->SetPlaybackRateWithReason(playback_rate, reason);
+}
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
 }  // namespace media

@@ -490,6 +490,7 @@ source_set("base") {
 
   if (defined(ohos_custom_video_player) && ohos_custom_video_player) {
     sources += [
+      "action_reason.h",
       "custom_media_url_params.cc",
       "custom_media_url_params.h",
     ]

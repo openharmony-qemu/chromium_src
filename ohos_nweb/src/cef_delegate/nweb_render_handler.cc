@@ -977,6 +977,7 @@ void NWebRenderHandler::CreateOverlay(CefRefPtr<CefBrowser> browser,
     cef_image_rect_ = cef_image_rect;
     float scale = browser->GetHost()->GetPageScaleFactor();
     auto view_port_height = browser->GetHost()->GetShrinkViewportHeight();
+    view_port_height += view_port_height > 0 ? browser->GetHost()->GetTopControlsOffset() : 0;
     handler->CreateOverlay(
         buffer,
         read_size,
@@ -996,6 +997,7 @@ void NWebRenderHandler::OnOverlayStateChanged(CefRefPtr<CefBrowser> browser,
   if (auto handler = handler_.lock()) {
     float scale = browser->GetHost()->GetPageScaleFactor();
     auto view_port_height = browser->GetHost()->GetShrinkViewportHeight();
+    view_port_height += view_port_height > 0 ? browser->GetHost()->GetTopControlsOffset() : 0;
     handler->OnOverlayStateChanged(
         (cef_image_rect_.x - cef_screen_rect.y) * scale,
         (cef_image_rect_.y - cef_screen_rect.y) * scale + view_port_height * screen_info_.display_ratio,

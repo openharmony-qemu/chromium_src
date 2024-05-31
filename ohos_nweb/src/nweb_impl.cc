@@ -1934,20 +1934,19 @@ void NWebImpl::SetEnableBlankTargetPopupIntercept(
 #endif
 
 void NWebImpl::OnWebviewHide() {
-#if defined(OHOS_WEBRTC)
-  StopCameraSession();
-#endif
+  WVLOG_D("NWebImpl::OnWebviewHide");
 }
 
 void NWebImpl::OnWebviewShow() {
-#if defined(OHOS_WEBRTC)
-  RestartCameraSession();
-#endif
+  WVLOG_D("NWebImpl::OnWebviewShow");
 }
 
 void NWebImpl::OnRenderToBackground() {
   TRACE_EVENT0("base", "OnRenderToBackground");
   WVLOG_D("NWebImpl::OnRenderToBackground");
+#if defined(OHOS_WEBRTC)
+  StopCameraSession();
+#endif
   if (nweb_delegate_ == nullptr) {
     WVLOG_E("OnRenderToBackground nweb delegate is null");
     return;
@@ -1958,6 +1957,9 @@ void NWebImpl::OnRenderToBackground() {
 void NWebImpl::OnRenderToForeground() {
   TRACE_EVENT0("base", "OnRenderToForeground");
   WVLOG_D("NWebImpl::OnRenderToForeground");
+#if defined(OHOS_WEBRTC)
+  RestartCameraSession();
+#endif
   if (nweb_delegate_ == nullptr) {
     WVLOG_E("OnRenderToForeground nweb delegate is null");
     return;

@@ -753,4 +753,13 @@ void RootCompositorFrameSinkImpl::SetMaxVrrInterval(
   // TODO(b/221220344): Use VRR parameters in frame scheduling logic.
 }
 
+void RootCompositorFrameSinkImpl::SetNeedWaitForInput(bool need_wait_for_input)
+{
+  external_begin_frame_source_->SetNeedWaitForInput(need_wait_for_input);
+}
+
+void RootCompositorFrameSinkImpl::TriggerVsync()
+{
+  external_begin_frame_source_->TriggerVsync();
+}
 }  // namespace viz

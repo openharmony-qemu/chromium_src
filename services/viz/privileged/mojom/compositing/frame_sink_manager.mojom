@@ -220,6 +220,14 @@ interface FrameSinkManager {
   // Reset the frame rate after UpdateVSyncFrequency
   [EnableIf=is_ohos]
   ResetVSyncFrequency(FrameSinkId frame_sink_id);
+
+  // Set need wait for next input or not
+  [EnableIf=is_ohos]
+  SetNeedWaitForInput(FrameSinkId frame_sink_id, bool need_wait_for_input);
+
+  // trigger vsync after input completed
+  [EnableIf=is_ohos]
+  TriggerVsync(FrameSinkId frame_sink_id);
 };
 
 // The FrameSinkManagerClient interface is implemented by the Display

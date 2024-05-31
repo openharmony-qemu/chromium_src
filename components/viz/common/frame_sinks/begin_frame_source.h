@@ -231,6 +231,7 @@ class VIZ_COMMON_EXPORT BeginFrameSource {
 
 #if BUILDFLAG(IS_OHOS)
   virtual void SendInternalBeginFrame() {}
+  virtual void TriggerVsync() {}
 #endif
 
  protected:
@@ -428,6 +429,9 @@ class VIZ_COMMON_EXPORT ExternalBeginFrameSource : public BeginFrameSource {
 #if BUILDFLAG(IS_OHOS)
   virtual void UpdateVSyncFrequency(int frame_rate) {}
   virtual void ResetVSyncFrequency() {}
+
+  virtual void SetNeedWaitForInput(bool need_wait_for_input) {}
+  void TriggerVsync() override {}
 #endif
 
   // Notifies the begin frame source of the desired frame interval for the

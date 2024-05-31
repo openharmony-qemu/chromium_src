@@ -1182,10 +1182,14 @@ LayerImpl* InputHandler::GetLayerImpl(const gfx::Point& viewport_point) {
   return ActiveTree().FindLayerThatIsHitByPointNative(device_viewport_point);
 }
 
+void InputHandler::TriggerVsyncImplTask() {
+  TRACE_EVENT0("cc", "InputHandler::TriggerVsyncImplTask");
+  compositor_delegate_->GetImplDeprecated().TriggerVsyncImplTask();
+}
+
 LayerImpl* InputHandler::GetLayerImplById(int id) {
   return ActiveTree().LayerById(id);
 }
-
 #endif
 
 bool InputHandler::IsCurrentScrollMainRepainted() const {

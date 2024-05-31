@@ -463,4 +463,11 @@ void PipelineController::OnTrackChangeComplete() {
   Dispatch();
 }
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void PipelineController::SetPlaybackRateWithReason(
+    double playback_rate, ActionReason reason) {
+  pipeline_->SetPlaybackRateWithReason(playback_rate, reason);
+}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 }  // namespace media

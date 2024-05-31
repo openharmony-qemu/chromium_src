@@ -23,6 +23,10 @@
 #include "third_party/abseil-cpp/absl/types/optional.h"
 #include "ui/gfx/geometry/size.h"
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#include "media/base/action_reason.h"
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
 namespace media {
 
 class CdmContext;
@@ -263,6 +267,11 @@ class MEDIA_EXPORT Pipeline {
   using CdmAttachedCB = base::OnceCallback<void(bool)>;
   virtual void SetCdm(CdmContext* cdm_context,
                       CdmAttachedCB cdm_attached_cb) = 0;
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  virtual void SetPlaybackRateWithReason(double playback_rate,
+      ActionReason reason) {}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 };
 
 }  // namespace media

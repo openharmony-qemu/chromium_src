@@ -133,6 +133,10 @@ class MEDIA_EXPORT PipelineImpl : public Pipeline {
 
   void OnExternalVideoFrameRequest() override;
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void SetPlaybackRateWithReason(double playback_rate, ActionReason reason) override;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
  private:
   friend class MediaLog;
   class RendererWrapper;

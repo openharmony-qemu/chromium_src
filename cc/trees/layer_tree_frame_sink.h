@@ -139,6 +139,10 @@ class CC_EXPORT LayerTreeFrameSink : public viz::SharedBitmapReporter,
                                const viz::SharedBitmapId& id) override = 0;
   void DidDeleteSharedBitmap(const viz::SharedBitmapId& id) override = 0;
 
+#if BUILDFLAG(IS_OHOS)
+  virtual void TriggerVsyncImplTask() = 0;
+#endif
+
  protected:
   class ContextLostForwarder;
 

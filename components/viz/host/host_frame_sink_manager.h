@@ -242,6 +242,8 @@ class VIZ_HOST_EXPORT HostFrameSinkManager
   void EvictFrameBackBuffers(const FrameSinkId& frame_sink_id, bool invisible);
   void UpdateVSyncFrequency(const FrameSinkId& frame_sink_id);
   void ResetVSyncFrequency(const FrameSinkId& frame_sink_id);
+  void SetNeedWaitForInput(const FrameSinkId& frame_sink_id, bool need_wait_for_input);
+  void TriggerVsync(const FrameSinkId& frame_sink_id);
 #endif
 
  private:

@@ -133,6 +133,10 @@ class TestLayerTreeFrameSink : public LayerTreeFrameSink,
     return owned_bitmaps_;
   }
 
+#if BUILDFLAG(IS_OHOS)
+  void TriggerVsyncImplTask() override {};
+#endif
+
  private:
   // ExternalBeginFrameSource implementation.
   void OnNeedsBeginFrames(bool needs_begin_frames) override;

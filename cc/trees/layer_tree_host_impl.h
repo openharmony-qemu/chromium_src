@@ -685,6 +685,7 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
 
 #if BUILDFLAG(IS_OHOS)
   virtual void HandleScrollUpdateForInternalBeginFrame(const viz::BeginFrameArgs& args);
+  void TriggerVsyncImplTask();
 #endif
 
   // Shortcuts to layers/nodes on the active tree.

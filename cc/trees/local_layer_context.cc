@@ -147,5 +147,4 @@ void LocalLayerContext::DidLoseLayerTreeFrameSink() {}
 
 void LocalLayerContext::FrameSinksToThrottleUpdated(
     const base::flat_set<viz::FrameSinkId>& ids) {}
-
 }  // namespace cc

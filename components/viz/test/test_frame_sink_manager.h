@@ -86,6 +86,8 @@ class TestFrameSinkManagerImpl : public mojom::FrameSinkManager {
   void EvictFrameBackBuffers(const ::viz::FrameSinkId& frame_sink_id, bool invisible) {}
   void UpdateVSyncFrequency(const ::viz::FrameSinkId& frame_sink_id, uint32_t client_id) override {}
   void ResetVSyncFrequency(const ::viz::FrameSinkId& frame_sink_id) override {}
+  void SetNeedWaitForInput(const ::viz::FrameSinkId& frame_sink_id, bool need_wait_for_input) override {}
+  void TriggerVsync(const ::viz::FrameSinkId& frame_sink_id) override {}
 #endif
 
   mojo::Receiver<mojom::FrameSinkManager> receiver_{this};

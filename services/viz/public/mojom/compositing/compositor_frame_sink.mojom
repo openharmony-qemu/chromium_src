@@ -121,6 +121,10 @@ interface CompositorFrameSink {
   // Sent by compositor thread when vsync received and OnBeginFrame in CompositorFrameSinkClient invoked.
   [EnableIf=is_ohos]
   OnVsyncReceived();
+
+  // Sent by compositor thread when input event has been handled.
+  [EnableIf=is_ohos]
+  TriggerVsyncImplTask();
 };
 
 interface CompositorFrameSinkClient {

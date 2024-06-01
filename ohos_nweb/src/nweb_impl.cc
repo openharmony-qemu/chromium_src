@@ -2017,6 +2017,16 @@ void NWebImpl::OnOnlineRenderToForeground() {
   nweb_delegate_->OnOnlineRenderToForeground();
 }
 
+void NWebImpl::NotifyForNextTouchEvent() {
+  TRACE_EVENT0("base", "NotifyForNextTouchEvent");
+  WVLOG_D("NWebImpl::NotifyForNextTouchEvent");
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("NotifyForNextTouchEvent nweb delegate is null");
+    return;
+  }
+  nweb_delegate_->NotifyForNextTouchEvent();
+}
+
 #if BUILDFLAG(IS_OHOS)
 void NWebImpl::SetWindowId(uint32_t window_id) {
   if (nweb_delegate_ == nullptr) {

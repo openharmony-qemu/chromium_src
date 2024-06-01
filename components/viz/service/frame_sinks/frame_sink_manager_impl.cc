@@ -923,7 +923,7 @@ void FrameSinkManagerImpl::SetEnableLowerFrameRate(bool enabled, const FrameSink
 
 void FrameSinkManagerImpl::UpdateVSyncFrequency(const FrameSinkId& frame_sink_id, uint32_t client_id) {
   auto sink_it = sink_map_.begin();
-  
+
   int frame_rate = 0;
   while (sink_it != sink_map_.end()) {
     if (sink_it->first.client_id() == client_id) {
@@ -948,6 +948,18 @@ void FrameSinkManagerImpl::ResetVSyncFrequency(const FrameSinkId& frame_sink_id)
     return;
   }
   root_sink_it->second->ResetVSyncFrequency();
+}
+
+void FrameSinkManagerImpl::SetNeedWaitForInput(const FrameSinkId& frame_sink_id, bool need_wait_for_input) {
+  if (root_sink_map_[frame_sink_id]) {
+    root_sink_map_[frame_sink_id]->SetNeedWaitForInput(need_wait_for_input);
+  }
+}
+
+void FrameSinkManagerImpl::TriggerVsync(const FrameSinkId& frame_sink_id) {
+  if (root_sink_map_[frame_sink_id]) {
+    root_sink_map_[frame_sink_id]->TriggerVsync();
+  }
 }
 #endif
 

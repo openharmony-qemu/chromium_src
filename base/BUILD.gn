@@ -2542,6 +2542,8 @@ component("base") {
       "ohos/ltpo/src/dynamic_frame_rate_decision.cc",
       "ohos/ltpo/include/sliding_observer.h",
       "ohos/ltpo/src/sliding_observer.cc",
+      "ohos/input_sync/input_vsync_sync_lock.h",
+      "ohos/input_sync/input_vsync_sync_lock.cc",
       "ohos/sys_info_utils.cc",
       "ohos/sys_info_utils.h",
       "ohos/dynamic_frame_loss_monitor.cpp",

@@ -32,6 +32,7 @@ class TestFrameSinkImpl::TestMojoCompositorFrameSink
                           int32_t process_id,
                           bool is_created) override {}
   void OnVsyncReceived() override {}
+  void TriggerVsyncImplTask() override {}
   void SubmitCompositorFrame(
       const viz::LocalSurfaceId& local_surface_id,
       viz::CompositorFrame frame,

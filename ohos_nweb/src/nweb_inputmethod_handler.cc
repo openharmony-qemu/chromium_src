@@ -1036,11 +1036,7 @@ int32_t NWebInputMethodHandler::GetCompositionTypeAndCheckInput(
       type = COMPOSITION_CURRENT;
     }
   } else if (start == end) {
-    if (is_empty) {
-      type = COMPOSITION_INVALID;
-    } else {
-      type = COMPOSITION_POSITION;
-    }
+    type = COMPOSITION_POSITION;
   } else if (start < end) {
     if (is_empty && (preview_text_cache_.length() == 1)) {
       type = COMPOSITION_DELETE;

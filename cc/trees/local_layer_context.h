@@ -82,7 +82,6 @@ class CC_EXPORT LocalLayerContext : public LayerContext,
   void DidLoseLayerTreeFrameSink() override;
   void FrameSinksToThrottleUpdated(
       const base::flat_set<viz::FrameSinkId>& ids) override;
-
  private:
   const raw_ptr<MutatorHost> mutator_host_;
 

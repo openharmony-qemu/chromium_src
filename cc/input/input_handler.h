@@ -496,8 +496,9 @@ class CC_EXPORT InputHandler : public InputDelegateForCompositor {
 
   LayerImpl* GetLayerImpl(const gfx::Point& viewport_point);
 
-  LayerImpl* GetLayerImplById(int id);
+  void TriggerVsyncImplTask();
 
+  LayerImpl* GetLayerImplById(int id);
 #endif
 
  private:

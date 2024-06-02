@@ -15,6 +15,8 @@
 using namespace OHOS::NWeb;
 
 namespace ui {
+const std::string SPAN_STRING_TAG = "openharmoney.styled-string";
+
 ClipboardOhosReadData::ClipboardOhosReadData(PasteRecordVector& record_vector)
     : record_vector_(record_vector) {
   is_in_app_ = OhosAdapterHelper::GetInstance().GetPasteBoard().IsLocalPaste();
@@ -25,6 +27,17 @@ ClipboardOhosReadData::ClipboardOhosReadData(PasteRecordVector& record_vector)
   for (auto& recordVector : record_vector_) {
     if (!recordVector) {
       continue;
+    }
+    auto pasteCustomData = recordVector->GetCustomData();
+    if (pasteCustomData != nullptr && pasteCustomData->find(SPAN_STRING_TAG) != pasteCustomData->end()) {
+      std::vector<uint8_t> customData = (*pasteCustomData)[SPAN_STRING_TAG];
+      LOG(DEBUG) << "get paste custom data success, the length is " <<  customData.size();
+      if (convert_html_callback_ == nullptr) {
+        LOG(ERROR) << "the convert_html_callback is null";
+      }
+      std::string htmlStr = convert_html_callback_->SpanstringConvertHtml(customData);
+      LOG(DEBUG) << "pasteboard spanstring to html success, the length is " <<  htmlStr.length();
+      htmlString.append(htmlStr);
     }
     if (recordVector->GetHtmlText()) {
       htmlString.append(*(recordVector->GetHtmlText()));
@@ -46,6 +59,13 @@ std::shared_ptr<std::string> ClipboardOhosReadData::ReadHtml() {
     has_been_read_html_ = true;
   }
   return html_;
+}
+
+std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> ClipboardOhosReadData::convert_html_callback_ = nullptr;
+// static
+void ClipboardOhosReadData::SetConvertHtmlCallback(
+    std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> callback) {
+  convert_html_callback_ = callback;
 }
 
 ClipboardOhosReadData::~ClipboardOhosReadData() {}

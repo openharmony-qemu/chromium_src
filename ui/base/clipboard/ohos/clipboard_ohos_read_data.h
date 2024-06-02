@@ -7,6 +7,7 @@
 
 #include "base/files/file_util.h"
 #include "ui/base/clipboard/clipboard.h"
+#include "ohos_nweb/include/nweb_spanstring_convert_html_callback.h"
 
 #include "ohos_adapter_helper.h"
 
@@ -28,6 +29,7 @@ class ClipboardOhosReadData {
   size_t GetRecordVectorSize() const { return record_vector_.size(); }
   std::shared_ptr<std::string> ReadHtml();
   std::shared_ptr<std::string> ReadText() { return text_; }
+  static void SetConvertHtmlCallback(std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> callback);
   ~ClipboardOhosReadData();
 
  private:
@@ -43,6 +45,7 @@ class ClipboardOhosReadData {
   bool is_in_app_ = false;
   std::shared_ptr<std::string> html_ = nullptr;
   std::shared_ptr<std::string> text_ = nullptr;
+  static std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> convert_html_callback_;
 };
 }  // namespace ui
 

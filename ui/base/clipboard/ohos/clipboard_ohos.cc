@@ -195,6 +195,7 @@ class ClipboardOHOSInternal {
       // Notice: Because pasteboard observer dont notify cross device.
       // So now we always get data from system clipboard instead of cache data.
       state_ = ClipboardState::kUpToDate;
+      ClipboardOhosReadData::SetConvertHtmlCallback(convert_html_callback_);
       read_data_ = std::make_shared<ClipboardOhosReadData>(record_vector);
       return;
     }
@@ -434,6 +435,10 @@ class ClipboardOHOSInternal {
                                                      data->size(format));
   }
 
+  static void SetSpanstringConvertHtml(std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> callback) {
+    convert_html_callback_ = callback;
+  }
+
  private:
   // True if the ClipboardData has format |format|.
   bool HasFormat(ClipboardInternalFormat format) const {
@@ -457,6 +462,11 @@ class ClipboardOHOSInternal {
 
       bool imgFlag = false;
       imgFlag = record->GetImgData(imgData);
+      const std::string SPAN_STRING_TAG = "openharmoney.styled-string";
+      std::shared_ptr<PasteCustomData> pasteCustomData = record->GetCustomData();
+      if (pasteCustomData && (pasteCustomData->find(SPAN_STRING_TAG) != pasteCustomData->end())) {
+        allFormat |= static_cast<int>(ClipboardInternalFormat::kHtml);
+      }
       if (html) {
         allFormat |= static_cast<int>(ClipboardInternalFormat::kHtml);
       }
@@ -496,7 +506,10 @@ class ClipboardOHOSInternal {
   ClipboardState state_ = ClipboardState::kOutOfDate;
   std::shared_ptr<ClipboardOhosReadData> read_data_ = nullptr;
   std::unique_ptr<OHOS::NWeb::OhosResourceAdapter> resource_adapter_ = nullptr;
+  static std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> convert_html_callback_;
 };
+
+std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> ClipboardOHOSInternal::convert_html_callback_ = nullptr;
 
 class ClipboardDataBuilder {
  public:
@@ -593,6 +606,11 @@ ClipboardOHOS* ClipboardOHOS::GetForCurrentThread() {
   }
 
   return static_cast<ClipboardOHOS*>(clipboard);
+}
+
+// static
+void ClipboardOHOS::SetConvertHtmlCallback(std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> callback) {
+  ClipboardOHOSInternal::SetSpanstringConvertHtml(callback);
 }
 
 // ClipboardOHOS implementation.

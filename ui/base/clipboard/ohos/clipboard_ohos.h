@@ -6,6 +6,7 @@
 #define UI_BASE_CLIPBOARD_CLIPBOARD_OHOS_H_
 
 #include "ui/base/clipboard/clipboard.h"
+#include "ohos_nweb/include/nweb_spanstring_convert_html_callback.h"
 
 namespace ui {
 class ClipboardData;
@@ -24,6 +25,7 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ClipboardOHOS : public Clipboard {
   // the current thread is in fact an instance of ClipboardOHOS.
   static ClipboardOHOS* GetForCurrentThread();
 
+  static void SetConvertHtmlCallback(std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> callback);
   // Writes the current ClipboardData and returns the previous data.
   // The data source is expected to be set in `data`.
   std::unique_ptr<ClipboardData> WriteClipboardData(
@@ -138,6 +140,7 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ClipboardOHOS : public Clipboard {
                  size_t data_len) override;
   bool HasPasteData() const override;
   const std::unique_ptr<ClipboardOHOSInternal> clipboard_internal_;
+  static std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> convert_html_callback_;
 };
 }  // namespace ui
 

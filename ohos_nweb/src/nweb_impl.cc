@@ -48,6 +48,7 @@
 #include "nweb_resize_helper.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #include "components/web_cache/browser/web_cache_manager.h"
+#include "ui/base/clipboard/ohos/clipboard_ohos.h"
 
 #if defined(REPORT_SYS_EVENT)
 #include "event_reporter.h"
@@ -2964,6 +2965,10 @@ void NWebImpl::SuggestionSelected(int index) {
   }
 
   nweb_delegate_->SuggestionSelected(index);
+}
+
+void NWebImpl::PutSpanstringConvertHtmlCallback(std::shared_ptr<NWebSpanstringConvertHtmlCallback> callback) {
+  ui::ClipboardOHOS::SetConvertHtmlCallback(callback);
 }
 
 #ifdef OHOS_DISPLAY_CUTOUT

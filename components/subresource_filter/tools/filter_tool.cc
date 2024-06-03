@@ -86,6 +86,19 @@ const url_pattern_index::flat::UrlRule* FindMatchingUrlRule(
   return filter.FindMatchingUrlRule(request_url, type);
 }
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+std::unique_ptr<const std::vector<const url_pattern_index::flat::CssRule*>>
+FindMatchingCssRule(const subresource_filter::MemoryMappedRuleset* ruleset,
+                    const url::Origin& document_origin,
+                    const GURL& request_url) {
+  subresource_filter::mojom::ActivationState state;
+  state.activation_level = subresource_filter::mojom::ActivationLevel::kEnabled;
+  subresource_filter::DocumentSubresourceFilter filter(document_origin, state,
+                                                       ruleset);
+  return filter.FindMatchingCssRule(request_url, true);
+}
+#endif  // OHOS_ARKWEB_ADBLOCK
+
 const std::string& ExtractStringFromDictionary(
     const base::Value::Dict& dictionary,
     const std::string& key) {
@@ -107,8 +120,13 @@ void FilterTool::Match(const std::string& document_origin,
                        const std::string& url,
                        const std::string& type) {
   bool blocked;
+#ifdef OHOS_ARKWEB_ADBLOCK
+  const url_pattern_index::flat::UrlRule* rule =
+      MatchUrlRuleImpl(document_origin, url, type, &blocked);
+#else
   const url_pattern_index::flat::UrlRule* rule =
       MatchImpl(document_origin, url, type, &blocked);
+#endif
   PrintResult(blocked, rule, document_origin, url, type);
 }
 
@@ -133,7 +151,11 @@ void FilterTool::PrintResult(bool blocked,
   *output_ << document_origin << " " << url << " " << type << std::endl;
 }
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+const url_pattern_index::flat::UrlRule* FilterTool::MatchUrlRuleImpl(
+#else
 const url_pattern_index::flat::UrlRule* FilterTool::MatchImpl(
+#endif
     base::StringPiece document_origin,
     base::StringPiece url,
     base::StringPiece type,
@@ -147,14 +169,30 @@ const url_pattern_index::flat::UrlRule* FilterTool::MatchImpl(
   return rule;
 }
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+std::unique_ptr<const std::vector<const url_pattern_index::flat::CssRule*>>
+FilterTool::MatchCssRuleImpl(base::StringPiece document_origin,
+                             base::StringPiece url) {
+  return FindMatchingCssRule(ruleset_.get(), ParseOrigin(document_origin),
+                             ParseRequestUrl(url));
+}
+#endif  // OHOS_ARKWEB_ADBLOCK
+
 // If |print_each_request| is true, then the result of each match is written
 // to |output_|, just as in Match. Otherwise, the set of matching rules is
 // written to |output_|.
 void FilterTool::MatchBatchImpl(std::istream* request_stream,
                                 bool print_each_request,
                                 int min_match_count) {
+#ifdef OHOS_ARKWEB_ADBLOCK
+  std::unordered_map<const url_pattern_index::flat::CssRule*, int>
+      matched_css_rules;
+  std::unordered_map<const url_pattern_index::flat::UrlRule*, int>
+      matched_url_rules;
+#else
   std::unordered_map<const url_pattern_index::flat::UrlRule*, int>
       matched_rules;
+#endif
 
   std::string line;
   while (std::getline(*request_stream, line)) {
@@ -173,13 +211,36 @@ void FilterTool::MatchBatchImpl(std::istream* request_stream,
         ExtractStringFromDictionary(dictionary->GetDict(), "request_type");
 
     bool blocked;
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+    const url_pattern_index::flat::UrlRule* url_rule =
+        MatchUrlRuleImpl(origin, request_url, request_type, &blocked);
+    if (url_rule) {
+      matched_url_rules[url_rule] += 1;
+    }
+
+    std::unique_ptr<const std::vector<const url_pattern_index::flat::CssRule*>>
+        css_rules = MatchCssRuleImpl(origin, request_url);
+    if (css_rules) {
+      for (auto* css_rule : *css_rules) {
+        if (css_rule) {
+          matched_css_rules[css_rule] += 1;
+        }
+      }
+    }
+#else
     const url_pattern_index::flat::UrlRule* rule =
         MatchImpl(origin, request_url, request_type, &blocked);
     if (rule)
       matched_rules[rule] += 1;
+#endif  // OHOS_ARKWEB_ADBLOCK
 
     if (print_each_request)
+#ifdef OHOS_ARKWEB_ADBLOCK
+      PrintResult(blocked, url_rule, origin, request_url, request_type);
+#else
       PrintResult(blocked, rule, origin, request_url, request_type);
+#endif  // OHOS_ARKWEB_ADBLOCK
   }
 
   if (print_each_request)
@@ -187,7 +248,11 @@ void FilterTool::MatchBatchImpl(std::istream* request_stream,
 
   // Sort the rules in descending order by match count.
   std::vector<std::pair<std::string, int>> vector_rules;
+#ifdef OHOS_ARKWEB_ADBLOCK
+  for (auto rule_and_count : matched_url_rules) {
+#else
   for (auto rule_and_count : matched_rules) {
+#endif
     if (rule_and_count.second < min_match_count)
       continue;
 

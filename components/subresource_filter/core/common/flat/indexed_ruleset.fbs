@@ -4,6 +4,10 @@
 
 include "components/url_pattern_index/flat/url_pattern_index.fbs";
 
+// #ifdef OHOS_ARKWEB_ADBLOCK
+include "components/url_pattern_index/flat/css_pattern_index.fbs";
+// #endif // OHOS_ARKWEB_ADBLOCK
+
 namespace subresource_filter.flat;
 
 // The top-level data structure used to store URL rules.
@@ -16,6 +20,11 @@ table IndexedRuleset {
 
   // The index of all allowlist URL rules with activation options.
   deactivation_index : url_pattern_index.flat.UrlPatternIndex;
+
+  // #ifdef OHOS_ARKWEB_ADBLOCK
+  css_blocklist_index : url_pattern_index.flat.CssPatternIndex;
+  css_allowlist_index : url_pattern_index.flat.CssPatternIndex;
+  // #endif // OHOS_ARKWEB_ADBLOCK
 }
 
 root_type IndexedRuleset;

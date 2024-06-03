@@ -232,6 +232,10 @@
 #include "content/browser/display_cutout/display_cutout_host_ohos.h"
 #endif
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+#include "components/subresource_filter/content/browser/ohos_adblock_config.h"
+#endif // OHOS_ARKWEB_ADBLOCK
+
 namespace content {
 
 namespace {
@@ -10180,6 +10184,46 @@ void WebContentsImpl::ClearContextMenu() {
   }
 }
 #endif //OHOS_DRAG_DROP
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+bool WebContentsImpl::TrigAdBlockEnabledForSite(GURL url) {
+  if (!IsAdsBlockEnabled()) {
+    base::AutoLock locker(lock_);
+    enable_adblock_for_site_ = false;
+    return false;
+  }
+
+  if (!OHOS::adblock::AdBlockConfig::GetInstance()->IsAdblockEnabledForUrl(
+          url)) {
+    base::AutoLock locker(lock_);
+    enable_adblock_for_site_ = false;
+    return false;
+  }
+
+  base::AutoLock locker(lock_);
+  enable_adblock_for_site_ = true;
+  return true;
+}
+
+bool WebContentsImpl::IsAdsBlockEnabledForCurPage() {
+  base::AutoLock locker(lock_);
+  return enable_adblock_for_site_;
+}
+
+void WebContentsImpl::OnAdsBlocked(
+    const std::string& main_frame_url,
+    const std::map<std::string, int32_t>& subresource_blocked,
+    bool is_site_first_report) {
+  LOG(DEBUG) << "[AdBlock] subresource_blocked.size():"
+            << subresource_blocked.size();
+
+  if (delegate_) {
+    delegate_->OnAdsBlocked(main_frame_url, subresource_blocked,
+                            is_site_first_report);
+  }
+}
+
+#endif
 
 #ifdef OHOS_EX_PASSWORD
 void WebContentsImpl::PromptSaveOrUpdatePassword(

@@ -17,6 +17,15 @@ static_library("browser") {
     "//components/subresource_filter/core/common",
     "//third_party/protobuf:protobuf_lite",
   ]
+
+  #ifdef OHOS_ARKWEB_ADBLOCK
+  if (defined(ohos_arkweb_adblock) && ohos_arkweb_adblock) {
+    sources += [
+    "user_subresource_filter_constants.cc",
+    "user_subresource_filter_constants.h",
+    ]
+  }
+  #endif
 }
 
 static_library("test_support") {

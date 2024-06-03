@@ -67,6 +67,7 @@ content::NavigationThrottle::ThrottleCheckResult
 ActivationStateComputingNavigationThrottle::WillStartRequest() {
   if (parent_activation_state_)
     CheckActivationState();
+
   return content::NavigationThrottle::PROCEED;
 }
 
@@ -74,6 +75,7 @@ content::NavigationThrottle::ThrottleCheckResult
 ActivationStateComputingNavigationThrottle::WillRedirectRequest() {
   if (parent_activation_state_)
     CheckActivationState();
+
   return content::NavigationThrottle::PROCEED;
 }
 

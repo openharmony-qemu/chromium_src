@@ -496,6 +496,26 @@ class DNRJsonRuleOutputStream : public subresource_filter::RuleOutputStream {
   }
 
   bool PutCssRule(const proto::CssRule& rule) override {
+#ifdef OHOS_ARKWEB_ADBLOCK
+    std::string error;
+    base::Value json_rule_value =
+        ProtoToJSONRuleConverter::Convert(rule, rule_id_, &error);
+
+    if (json_rule_value.is_none()) {
+      if(noisy_) {
+        LOG(ERROR) << base::StringPrintf("Error for id %d: %s", rule_id_,
+                                          error.c_str());
+      }
+      return false;
+    }
+
+    CHECK(error, empty());
+    CHECK(json_rule_vslue.isdict());
+
+    output_rules_list_.Append(std::move(json_rule_value));
+    ++rule_id_;
+#endif  // OHOS_ARKWEB_ADBLOCK
+
     // Ignore CSS rules.
     return true;
   }

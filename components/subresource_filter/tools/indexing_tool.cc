@@ -16,6 +16,10 @@
 #include "components/subresource_filter/core/common/unindexed_ruleset.h"
 #include "components/url_pattern_index/proto/rules.pb.h"
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+#include "base/logging.h"
+#endif
+
 namespace subresource_filter {
 
 bool IndexAndWriteRuleset(const base::FilePath& unindexed_path,
@@ -36,17 +40,49 @@ bool IndexAndWriteRuleset(const base::FilePath& unindexed_path,
       &copying_stream, 4096 /* buffer_size */);
   UnindexedRulesetReader reader(&zero_copy_stream_adaptor);
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+  size_t num_supported_url_rules = 0;
+  size_t num_supported_css_rules = 0;
+  size_t num_unsupported_rules = 0;
+  size_t num_unsupported_css_rules = 0;
+#endif  // OHOS_ARKWEB_ADBLOCK
+
   url_pattern_index::proto::FilteringRules ruleset_chunk;
 
   while (reader.ReadNextChunk(&ruleset_chunk)) {
     for (const auto& rule : ruleset_chunk.url_rules()) {
+#ifdef OHOS_ARKWEB_ADBLOCK
+      if (!indexer.AddUrlRule(rule)) {
+        ++num_unsupported_rules;
+      } else {
+        ++num_supported_url_rules;
+      }
+#else
       indexer.AddUrlRule(rule);
+#endif
     }
+#ifdef OHOS_ARKWEB_ADBLOCK
+    for (const auto& rule : ruleset_chunk.css_rules()) {
+      if (!indexer.AddCssRule(rule)) {
+        ++num_unsupported_css_rules;
+      } else {
+        ++num_supported_css_rules;
+      }
+    }
+#endif  // OHOS_ARKWEB_ADBLOCK
   }
 
   indexer.Finish();
 
   base::WriteFile(indexed_path, base::make_span(indexer));
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  LOG(INFO) << "[AdBlock]reader.num bytes read=" << reader.num_bytes_read()
+            << ",num unsupported url rules=" << num_unsupported_rules
+            << "num unsupported_css_rules=" << num_unsupported_css_rules
+            << "num supported_url rules=" << num_supported_url_rules
+            << ", num_supported_css_rules=" << num_supported_css_rules;
+#endif  // OHOS_ARKWEB_ADBLOCK
 
   if (out_checksum)
     *out_checksum = indexer.GetChecksum();

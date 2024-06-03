@@ -22,6 +22,14 @@
 "dependence": "",
 "default": "true"
 },
+{"name": "OHOS_ARKWEB_ADBLOCK",
+"owner": "jianglinyang",
+"desc": "ad block",
+"effect":"main gn blink_core other",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},
 { "name": "OHOS_ARKWEB_EXTENSIONS",
 "owner": "",
 "desc": "Support extensions in cef",

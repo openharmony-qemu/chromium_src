@@ -101,6 +101,11 @@ class SubresourceFilterAgent
   virtual const absl::optional<blink::FrameAdEvidence>& AdEvidence();
   virtual void SetAdEvidence(const blink::FrameAdEvidence& ad_evidence);
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+  virtual void SendStatisticsAfterDocumentLoad(
+      const mojom::DocumentLoadStatistics& statistics);
+#endif  // OHOS_ARKWEB_ADBLOCK
+
   // The browser will not inform the renderer of the (sub)frame's ad status and
   // evidence in the case of an initial synchronous commit to about:blank. We
   // thus fill in the frame's ad evidence and, if necessary, tag it as an ad.
@@ -114,6 +119,11 @@ class SubresourceFilterAgent
       const absl::optional<blink::FrameAdEvidence>& ad_evidence) override;
 
  private:
+#ifdef OHOS_ARKWEB_ADBLOCK
+  void CalcElementHidingTypeOption(content::RenderFrame* render_frame);
+  void DidSubresourceFiltered() override;
+#endif  // OHOS_ARKWEB_ADBLOCK
+
   // Returns the activation state for the `render_frame` to inherit. Root frames
   // inherit from their opener frames, and child frames inherit from their
   // parent frames. Assumes that the parent/opener is in a local frame relative
@@ -163,6 +173,10 @@ class SubresourceFilterAgent
 
   base::WeakPtr<WebDocumentSubresourceFilterImpl>
       filter_for_last_created_document_;
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  bool did_load_finished_ = false;
+#endif
 };
 
 }  // namespace subresource_filter

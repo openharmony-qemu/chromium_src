@@ -79,7 +79,10 @@ config("skia_config") {
 
   # TODO: ohos use skia to be adapted
   if (is_ohos) {
-    defines += [ "USE_CHROMIUM_SKIA" ]
+    defines += [
+      "USE_CHROMIUM_SKIA",
+      "OHOS_SKIA_CACHE",
+    ]
 
     if (enable_ohos_bytrace) {
       defines += [ "ENABLE_OHOS_SKIA_TRACE" ]

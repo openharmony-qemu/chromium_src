@@ -545,7 +545,7 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
 
         if (custom_keyboard_handler_) {
           LOG(INFO) << "WebCustomKeyboard attach custom keyboard";
-          custom_keyboard_handler_->Attach(browser, show_keyboard);
+          custom_keyboard_handler_->Attach(browser, show_keyboard, static_cast<int32_t>(input_flags));
         }
       }
 

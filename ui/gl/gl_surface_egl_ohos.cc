@@ -94,10 +94,7 @@ bool NativeViewGLSurfaceEGLOhos::Resize(const gfx::Size& size,
 bool NativeViewGLSurfaceEGLOhos::SetBackbufferAllocation(bool allocated) {
   TRACE_EVENT1("gpu", "NativeViewGLSurfaceEGLOhos::SetBackbufferAllocation",
                "allocated", allocated);
-  if (base::ohos::IsEmulator()) {
-    return true;
-  }
-
+  // emulator不触发（接口改动未同步蓝区）
   if (!allocated) {
     if (NativeViewGLSurfaceEGL::Recreate()) {
       // Notify the bufferqueue associated with the OHNativeWindow to clean cache

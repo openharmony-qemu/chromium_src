@@ -1602,7 +1602,7 @@ void NWebImpl::OnBlur(const BlurReason& blurReason) {
     return;
   }
 #endif  // #ifdef OHOS_FOCUS
-  if (blurReason != OHOS::NWEB::BlurReason::FOCUS_SWITCH) {
+  if (blurReason != OHOS::NWeb::BlurReason::FOCUS_SWITCH) {
     inputmethod_handler_->HideTextInput(
         nweb_id_, NWebInputMethodClient::HideTextinputType::FROM_ONBLUR);
   }

@@ -253,7 +253,9 @@ void OHOSMediaPlayerBridge::FinishPaint(int fd) {
   } else {
     LOG(ERROR) << "cached_buffers_.front() is nullptr";
   }
-  cached_buffers_.pop_front();
+  if (!cached_buffers_.empty()) {
+    cached_buffers_.pop_front();
+  }
 }
 
 void OHOSMediaPlayerBridge::SetPlaybackSpeed(

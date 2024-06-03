@@ -49,7 +49,7 @@ template <class ARG1_TYPE>
 std::string GetStringWithArgs(const std::string& name,
                               const char* arg1_name,
                               ARG1_TYPE&& arg1_val) {
-  if (IsBytraceEnable()) {
+  if (IsBytraceEnable() || IsOHOSBytraceEnable()) {
     BytraceArg arg1 = GetArg(std::forward<ARG1_TYPE>(arg1_val));
     return name + " | " + arg1_name + "=" + GetStringFromArg(arg1);
   }
@@ -62,7 +62,7 @@ std::string GetStringWithArgs(const std::string& name,
                               ARG1_TYPE&& arg1_val,
                               const char* arg2_name,
                               ARG2_TYPE&& arg2_val) {
-  if (IsBytraceEnable()) {
+  if (IsBytraceEnable() || IsOHOSBytraceEnable()) {
     BytraceArg arg1 = GetArg(std::forward<ARG1_TYPE>(arg1_val));
     BytraceArg arg2 = GetArg(std::forward<ARG2_TYPE>(arg2_val));
     return name + " | " + arg1_name + "=" + GetStringFromArg(arg1) + " | " +

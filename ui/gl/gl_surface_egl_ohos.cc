@@ -70,10 +70,11 @@ bool NativeViewGLSurfaceEGLOhos::Resize(const gfx::Size& size,
   TRACE_EVENT0("gpu", "NativeViewGLSurfaceEGLOhos::Resize");
 
   if (base::ohos::IsMobileDevice()) {
-    NativeViewGLSurfaceEGL::Resize(size, scale_factor, color_space, has_alpha);
-    OHOS::NWeb::OhosAdapterHelper::GetInstance()
+    if (NativeViewGLSurfaceEGL::Resize(size, scale_factor, color_space, has_alpha)) {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance()
         .GetWindowAdapterInstance()
         .NativeWindowSurfaceCleanCache(reinterpret_cast<void*>(window_));
+    }
   }
 
   int32_t ret =
@@ -93,15 +94,18 @@ bool NativeViewGLSurfaceEGLOhos::Resize(const gfx::Size& size,
 bool NativeViewGLSurfaceEGLOhos::SetBackbufferAllocation(bool allocated) {
   TRACE_EVENT1("gpu", "NativeViewGLSurfaceEGLOhos::SetBackbufferAllocation",
                "allocated", allocated);
-  if (!allocated) {
-    NativeViewGLSurfaceEGL::Recreate();
+  if (base::ohos::IsEmulator()) {
+    return true;
+  }
 
-    // Notify the bufferqueue associated with the OHNativeWindow to clean cache
-    OHOS::NWeb::OhosAdapterHelper::GetInstance()
+  if (!allocated) {
+    if (NativeViewGLSurfaceEGL::Recreate()) {
+      // Notify the bufferqueue associated with the OHNativeWindow to clean cache
+      OHOS::NWeb::OhosAdapterHelper::GetInstance()
         .GetWindowAdapterInstance()
         .NativeWindowSurfaceCleanCache(reinterpret_cast<void*>(window_));
+    }
   }
-  
   return true;
 }
 

@@ -44,7 +44,7 @@ public:
 
   void Close() override;
 
-  void Attach(CefRefPtr<CefBrowser> browser, bool show_keyboard);
+  void Attach(CefRefPtr<CefBrowser> browser, bool show_keyboard, int32_t input_flags);
 
   void CloseFromWebStateChange(WebCustomKeyboardState mode);
 
@@ -56,6 +56,7 @@ private:
   bool isAttached_ = false;
   bool isCloseFromOnblur_ = false;
   bool isCloseFromOnpause_ = false;
+  int32_t input_flags_ = 0;
 };
 }  // namespace OHOS::NWeb
 

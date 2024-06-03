@@ -88,11 +88,14 @@
 #include "ohos_nweb/src/native_media_player/nweb_native_media_player_handler_impl.h"
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+#include "base/strings/string_number_conversions.h"
+#endif
+
 #define MAX_FLOWBUF_DATA_SIZE 52428800 /* 50 MB */
 #define MAX_ENTRIES 10
 #define HEADER_SIZE (MAX_ENTRIES * 8) /* 10 * (int position + int length) */
 #define INDEX_SIZE 2
-
 namespace OHOS::NWeb {
 namespace {
 
@@ -957,7 +960,8 @@ bool NWebHandlerDelegate::OnBeforePopup(
   if (main_browser_) {
     preference_delegate_->WebPreferencesChanged();
 #ifdef OHOS_NETWORK_LOAD
-    main_browser_->GetMainFrame()->LoadURLWithUserGesture(target_url, user_gesture);
+    main_browser_->GetMainFrame()->LoadURLWithUserGesture(target_url,
+                                                          user_gesture);
 #else
     main_browser_->GetMainFrame()->LoadURL(target_url);
 #endif
@@ -1485,7 +1489,7 @@ bool NWebHandlerDelegate::ShouldOverrideUrlLoading(
 bool NWebHandlerDelegate::OnOpenAppLink(
     const CefString& url,
     CefRefPtr<CefOpenAppLinkCallback> callback) {
-  std::shared_ptr<NWebAppLinkCallback> nweb_callback = 
+  std::shared_ptr<NWebAppLinkCallback> nweb_callback =
     std::make_shared<NWebAppLinkCallbackImpl>(callback);
   if (nweb_handler_ != nullptr) {
     return nweb_handler_->OnOpenAppLink(url.ToString(), nweb_callback);
@@ -1772,7 +1776,7 @@ void NWebHandlerDelegate::OnShowAutofillPopup(
   if (!render_handler_) {
     return;
   }
-  
+
   if (web_app_client_extension_listener_ != nullptr &&
       web_app_client_extension_listener_->OnShowPasswordAutofillPopup !=
           nullptr) {
@@ -1801,6 +1805,39 @@ void NWebHandlerDelegate::OnHideAutofillPopup() {
   }
 #endif  // OHOS_EX_PASSWORD
 }
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+void NWebHandlerDelegate::OnAdsBlocked(
+    CefRefPtr<CefBrowser> browser,
+    const CefString& url,
+    const std::map<CefString, CefString>& adsBlocked,
+    bool is_site_first_report) {
+  std::map<std::string, int32_t> adsBlocked_str;
+  for (auto item : adsBlocked) {
+    int32_t num = 0;
+    base::StringToInt(item.second.ToString(), &num);
+    adsBlocked_str.insert({item.first, num});
+  }
+  LOG(DEBUG) << "[adblock] OnAdsBlocked size: " << adsBlocked_str.size()
+             << "  url =" << url.ToString();
+
+  if (web_app_client_extension_listener_ != nullptr &&
+      web_app_client_extension_listener_->OnAdsBlocked != nullptr) {
+    web_app_client_extension_listener_->OnAdsBlocked(
+        url, adsBlocked_str, web_app_client_extension_listener_->nweb_id);
+  }
+
+  if (nweb_handler_ != nullptr) {
+    std::vector<std::string> blocked;
+    for (auto item : adsBlocked_str) {
+      for (auto i = 0; i < item.second; i++) {
+        blocked.push_back(item.first);
+      }
+    }
+    nweb_handler_->OnAdsBlocked(url, blocked);
+  }
+}
+#endif
 
 // #if defined(OHOS_EX_TOPCONTROLS)
 void NWebHandlerDelegate::OnTopControlsChanged(float top_controls_offset,

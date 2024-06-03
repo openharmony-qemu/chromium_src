@@ -13,6 +13,18 @@ static_library("renderer") {
     "web_document_subresource_filter_impl.cc",
     "web_document_subresource_filter_impl.h",
   ]
+
+  #ifdef OHOS_ARKWEB_ADBLOCK
+  if (defined(ohos_arkweb_adblock) && ohos_arkweb_adblock) {
+    sources += [
+      "user_subresource_filter_agent.cc",
+      "user_subresource_filter_agent.h",
+      "user_unverified_ruleset_dealer.cc",
+      "user_unverified_ruleset_dealer.h"
+    ]
+  }
+  #endif
+
   deps = [
     "//base",
     "//components/subresource_filter/content/common",

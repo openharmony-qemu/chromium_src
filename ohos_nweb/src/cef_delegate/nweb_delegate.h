@@ -171,6 +171,11 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void RegisterNativeLoadEndCallback(
       std::function<void(void)>&& callback) override;
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+  void UpdateAdblockEasyListRules(
+      long adBlockEasyListVersion) override;
+#endif
+
   void RegisterArkJSfunction(const std::string& object_name,
                              const std::vector<std::string>& method_list,
                              const std::vector<std::string>& async_method_list,
@@ -346,6 +351,12 @@ bool HitNativeArea(double x, double y);
   bool WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
                        const std::vector<int32_t>& pressedCodes) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  void EnableAdsBlock(bool enable) override;
+  bool IsAdsBlockEnabled() override;
+  bool IsAdsBlockEnabledForCurPage() override;
+#endif
 
 #ifdef OHOS_EX_PASSWORD
   void SetSavePasswordAutomatically(bool enable) override;

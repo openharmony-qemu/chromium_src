@@ -49,8 +49,15 @@ void ProfileInteractionManager::OnReloadRequested() {
 
   ContentSubresourceFilterThrottleManager::LogAction(
       SubresourceFilterAction::kAllowlistedSite);
+#ifdef OHOS_ARKWEB_ADBLOCK
+  if (profile_context_ && page_) {
+    profile_context_->settings_manager()->AllowlistSite(
+        page_->GetMainDocument().GetLastCommittedURL());
+  }
+#else
   profile_context_->settings_manager()->AllowlistSite(
       page_->GetMainDocument().GetLastCommittedURL());
+#endif
 
   // Since the reload comes from the primary page, the use of WebContents here
   // is correct.
@@ -76,6 +83,28 @@ void ProfileInteractionManager::OnAdsViolationTriggered(
   //
   // TODO(https://crbug.com/1131971): Add support for enabling ads interventions
   // separately for different ads violations.
+#ifdef OHOS_ARKWEB_ADBLOCK
+  if (profile_context_) {
+    const GURL& url = rfh->GetLastCommittedURL();
+    absl::optional<AdsInterventionManager::LastAdsIntervention>
+        last_intervention = profile_context_->ads_intervention_manager()
+                                ->GetLastAdsIntervention(url);
+    // TODO(crbug.com/1131971): If a host triggers multiple times on a single
+    // navigate and the durations don't match, we'll use the last duration
+    // rather than the longest. The metadata should probably store the
+    // activation with the longest duration.
+    if (last_intervention &&
+        last_intervention->duration_since <
+            AdsInterventionManager::GetInterventionDuration(
+                last_intervention->ads_violation)) {
+      return;
+    }
+
+    profile_context_->ads_intervention_manager()
+        ->TriggerAdsInterventionForUrlOnSubsequentLoads(url,
+                                                        triggered_violation);
+  }
+#else
   const GURL& url = rfh->GetLastCommittedURL();
   absl::optional<AdsInterventionManager::LastAdsIntervention>
       last_intervention =
@@ -93,6 +122,7 @@ void ProfileInteractionManager::OnAdsViolationTriggered(
 
   profile_context_->ads_intervention_manager()
       ->TriggerAdsInterventionForUrlOnSubsequentLoads(url, triggered_violation);
+#endif
 
   ads_violation_triggered_for_last_committed_navigation_ = true;
 }
@@ -101,26 +131,48 @@ mojom::ActivationLevel ProfileInteractionManager::OnPageActivationComputed(
     content::NavigationHandle* navigation_handle,
     mojom::ActivationLevel initial_activation_level,
     ActivationDecision* decision) {
+#ifdef OHOS_ARKWEB_ADBLOCK
+  DCHECK(IsInSubresourceFilterRoot(navigation_handle));
+
+  mojom::ActivationLevel effective_activation_level = initial_activation_level;
+  if (navigation_handle && !navigation_handle->IsDownload() &&
+      navigation_handle->GetURL().SchemeIsHTTPOrHTTPS() &&
+      navigation_handle->IsInMainFrame() &&
+      navigation_handle->GetWebContents() &&
+      navigation_handle->GetWebContents()->TrigAdBlockEnabledForSite(
+          navigation_handle->GetURL())) {
+    LOG(DEBUG) << "[adblock] activation_level enabled, url:"
+               << navigation_handle->GetURL().spec();
+    effective_activation_level = mojom::ActivationLevel::kEnabled;
+  } else {
+    effective_activation_level = mojom::ActivationLevel::kDisabled;
+    LOG(DEBUG) << "[adblock] activation_level disabled, url:"
+               << navigation_handle->GetURL().spec();
+  }
+  return effective_activation_level;
+#else
   DCHECK(IsInSubresourceFilterRoot(navigation_handle));
 
   mojom::ActivationLevel effective_activation_level = initial_activation_level;
 
-  if (profile_context_->ads_intervention_manager()->ShouldActivate(
+  if (profile_context_ &&
+      profile_context_->ads_intervention_manager()->ShouldActivate(
           navigation_handle)) {
     effective_activation_level = mojom::ActivationLevel::kEnabled;
     *decision = ActivationDecision::ACTIVATED;
   }
 
   const GURL& url(navigation_handle->GetURL());
-  if (url.SchemeIsHTTPOrHTTPS()) {
+  if (profile_context_ && url.SchemeIsHTTPOrHTTPS()) {
     profile_context_->settings_manager()->SetSiteMetadataBasedOnActivation(
         url, effective_activation_level == mojom::ActivationLevel::kEnabled,
         SubresourceFilterContentSettingsManager::ActivationSource::
             kSafeBrowsing);
   }
 
-  if (profile_context_->settings_manager()->GetSitePermission(url) ==
-      CONTENT_SETTING_ALLOW) {
+  if (profile_context_ &&
+      profile_context_->settings_manager()->GetSitePermission(url) ==
+          CONTENT_SETTING_ALLOW) {
     if (effective_activation_level == mojom::ActivationLevel::kEnabled) {
       *decision = ActivationDecision::URL_ALLOWLISTED;
     }
@@ -128,6 +180,7 @@ mojom::ActivationLevel ProfileInteractionManager::OnPageActivationComputed(
   }
 
   return effective_activation_level;
+#endif
 }
 
 void ProfileInteractionManager::MaybeShowNotification() {
@@ -137,8 +190,14 @@ void ProfileInteractionManager::MaybeShowNotification() {
   DCHECK(page_->IsPrimary());
 
   const GURL& top_level_url = page_->GetMainDocument().GetLastCommittedURL();
+#ifdef OHOS_ARKWEB_ADBLOCK
+  if (profile_context_ &&
+      profile_context_->settings_manager()->ShouldShowUIForSite(
+          top_level_url)) {
+#else
   if (profile_context_->settings_manager()->ShouldShowUIForSite(
           top_level_url)) {
+#endif
 #if BUILDFLAG(IS_ANDROID)
     if (messages::IsAdsBlockedMessagesUiEnabled() &&
         messages::MessageDispatcherBridge::Get()
@@ -171,7 +230,13 @@ void ProfileInteractionManager::MaybeShowNotification() {
 
     ContentSubresourceFilterThrottleManager::LogAction(
         SubresourceFilterAction::kUIShown);
+#ifdef OHOS_ARKWEB_ADBLOCK
+    if (profile_context_) {
+      profile_context_->settings_manager()->OnDidShowUI(top_level_url);
+    }
+#else
     profile_context_->settings_manager()->OnDidShowUI(top_level_url);
+#endif
   } else {
     ContentSubresourceFilterThrottleManager::LogAction(
         SubresourceFilterAction::kUISuppressed);

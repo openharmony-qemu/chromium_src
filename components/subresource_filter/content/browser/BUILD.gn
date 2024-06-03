@@ -24,6 +24,18 @@ static_library("browser") {
     "navigation_console_logger.h",
     "page_load_statistics.cc",
     "page_load_statistics.h",
+#ifdef OHOS_ARKWEB_ADBLOCK
+    "ohos_adblock_config.cc",
+    "ohos_adblock_config.h",
+    "user_ruleset_version.cc",
+    "user_ruleset_version.h",
+    "user_ruleset_service.cc",
+    "user_ruleset_service.h",
+    "user_ruleset_publisher_impl.cc",
+    "user_ruleset_publisher_impl.h",
+    "user_unindexed_ruleset_stream_generator.cc",
+    "user_unindexed_ruleset_stream_generator.h",
+#endif
     "profile_interaction_manager.cc",
     "profile_interaction_manager.h",
     "ruleset_publisher.h",

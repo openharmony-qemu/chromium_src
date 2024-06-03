@@ -16,6 +16,9 @@
 namespace url_pattern_index {
 namespace flat {
 struct UrlRule;
+#ifdef OHOS_ARKWEB_ADBLOCK
+struct CssRule;
+#endif
 }
 }  // namespace url_pattern_index
 
@@ -64,11 +67,22 @@ class FilterTool {
                    base::StringPiece url,
                    base::StringPiece type);
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+  const url_pattern_index::flat::UrlRule* MatchUrlRuleImpl(
+      base::StringPiece document_origin,
+      base::StringPiece url,
+      base::StringPiece type,
+      bool blocked);
+
+  std::unique_ptr<const std::vector<const url_pattern_index::flat::CssRule>>
+  MatchCssRuleImpl(base::StringPiece document_origin, base::StringPiece url);
+#else
   const url_pattern_index::flat::UrlRule* MatchImpl(
       base::StringPiece document_origin,
       base::StringPiece url,
       base::StringPiece type,
       bool* blocked);
+#endif  // OHOS_ARKWEB_ADBLOCK
 
   void MatchBatchImpl(std::istream* request_stream,
                       bool print_each_request,

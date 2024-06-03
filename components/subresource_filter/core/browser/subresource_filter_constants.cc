@@ -30,4 +30,9 @@ const base::FilePath::CharType kUnindexedRulesetLicenseFileName[] =
 const base::FilePath::CharType kUnindexedRulesetDataFileName[] =
     FILE_PATH_LITERAL("Filtering Rules");
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+const base::FilePath::CharType kAdblockEasylistFileName[] =
+    FILE_PATH_LITERAL("easylist.txt");
+#endif
+
 }  // namespace subresource_filter

@@ -98,6 +98,14 @@ class NWebDelegateInterface
       std::shared_ptr<NWebDelegateInterface> client) = 0;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+  virtual void EnableAdsBlock(bool enable) = 0;
+
+  virtual bool IsAdsBlockEnabled() = 0;
+
+  virtual bool IsAdsBlockEnabledForCurPage() = 0;
+#endif
+
 #ifdef OHOS_EX_PASSWORD
   virtual void SetSavePasswordAutomatically(bool enable) = 0;
   virtual bool GetSavePasswordAutomatically() = 0;
@@ -208,6 +216,12 @@ class NWebDelegateInterface
                                       std::vector<size_t>&)>>&& callback,
       bool isAsync) = 0;
   virtual void UnRegisterNativeArkJSFunction(const char* objName) = 0;
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  virtual void UpdateAdblockEasyListRules(
+      long adBlockEasyListVersion) = 0;
+#endif
+
   virtual void RegisterArkJSfunction(
       const std::string& object_name,
       const std::vector<std::string>& method_list,
@@ -437,6 +451,7 @@ class NWebDelegateInterface
 #endif
 
   virtual int ScaleGestureChange(double scale, double centerX, double centerY) const = 0;
+
 #if defined(OHOS_SCREEN_LOCK)
   virtual void SetWakeLockCallback(int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback) = 0;
 #endif

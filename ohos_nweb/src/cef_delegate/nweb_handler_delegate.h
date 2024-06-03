@@ -36,6 +36,7 @@
 #include <mutex>
 #include <string>
 #include <unordered_set>
+#include <map>
 #include "capi/nweb_app_client_extension_callback.h"
 #include "nweb_download_callback.h"
 #include "nweb_javascript_result_callback.h"
@@ -632,6 +633,13 @@ class NWebHandlerDelegate : public CefClient,
 #if defined(OHOS_MULTI_WINDOW)
   void NotifyPopupWindowResult(bool result);
 #endif  // defined(OHOS_MULTI_WINDOW)
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  void OnAdsBlocked(CefRefPtr<CefBrowser> browser,
+                    const CefString& url,
+                    const std::map<CefString, CefString>& adsBlocked,
+                    bool is_site_first_report) override;
+#endif
 
   // #if defined(OHOS_EX_TOPCONTROLS)
   void OnTopControlsChanged(float top_controls_offset,

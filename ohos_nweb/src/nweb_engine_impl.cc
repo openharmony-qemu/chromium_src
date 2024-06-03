@@ -15,6 +15,7 @@
 
 #include "nweb_engine_impl.h"
 #include "cef/libcef/browser/devtools/devtools_manager_delegate.h"
+#include "nweb_adsblock_manager_impl.h"
 #include "nweb_cookie_manager_impl.h"
 #include "nweb_data_base_impl.h"
 #include "nweb_download_manager_impl.h"
@@ -159,5 +160,9 @@ void NWebEngineImpl::EnableWholeWebPageDrawing() {
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
   NWebImpl::EnableWholeWebPageDrawing();
 #endif
+}
+
+std::shared_ptr<NWebAdsBlockManager> NWebEngineImpl::GetAdsBlockManager() {
+  return NWebAdsBlockManagerImpl::GetInstance();
 }
 } // namespace OHOS::NWeb

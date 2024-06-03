@@ -188,6 +188,26 @@ class NWebImpl : public NWeb {
   void UnRegisterScreenLockFunction(int32_t windowId) override;
 #endif  // #ifdef OHOS_SCREEN_LOCK
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+  static void AddAdsBlockDisallowList(
+      const std::vector<std::string>& domain_suffixes);
+  static void AddAdsBlockAllowList(
+      const std::vector<std::string>& domainSuffixes);
+  static void SetAdsBlockRules(const std::string& rulesFiles,
+                               const bool replace);
+  static void RemoveAdsBlockDisallowedList(
+      const std::vector<std::string>& domainSuffixes);
+  static void RemoveAdsBlockAllowedList(
+      const std::vector<std::string>& domainSuffixes);
+  static void ClearAdsBlockDisallowedList();
+  static void ClearAdsBlockAllowedList();
+  void EnableAdsBlock(bool enable) override;
+  bool IsAdsBlockEnabled() override;
+  bool IsAdsBlockEnabledForCurPage() override;
+  static bool IsAnyNWebAdblockEnabled();
+  void UpdateAdblockEasyListRules(long adBlockEasyListVersion);
+#endif
+
 #if defined(OHOS_EX_PASSWORD)
   void SetSavePasswordAutomatically(bool enable) const;
   bool GetSavePasswordAutomatically() const;

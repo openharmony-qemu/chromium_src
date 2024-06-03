@@ -20,6 +20,11 @@ class TracedValue;
 }  // namespace base
 
 namespace subresource_filter {
+#ifdef OHOS_ARKWEB_ADBLOCK
+extern const char kSubresourceFilterRulesetContentVersion[];
+extern const char kSubresourceFilterRulesetFormatVersion[];
+extern const char kSubresourceFilterRulesetChecksum[];
+#endif
 
 // Encapsulates information about a version of unindexed subresource
 // filtering rules on disk.

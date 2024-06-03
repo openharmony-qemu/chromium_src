@@ -16,6 +16,7 @@
 #ifndef OHOS_NWEB_SRC_NWEB_APP_CLIENT_EXTENSION_CALLBACK_H_
 #define OHOS_NWEB_SRC_NWEB_APP_CLIENT_EXTENSION_CALLBACK_H_
 
+#include <map>
 #include <stddef.h>
 #include <string>
 
@@ -48,6 +49,11 @@ struct NWebAppClientExtensionCallback {
   void (*ContentsBrowserZoomChange)(double zoom_factor,
                                     bool can_show_bubble,
                                     int nweb_id);
+#ifdef OHOS_ARKWEB_ADBLOCK
+  void (*OnAdsBlocked)(std::string url,
+                       std::map<std::string, int32_t> adsBlocked,
+                       int nweb_id);
+#endif
 };
 
 #endif  // OHOS_NWEB_SRC_NWEB_APP_CLIENT_EXTENSION_CALLBACK_H_

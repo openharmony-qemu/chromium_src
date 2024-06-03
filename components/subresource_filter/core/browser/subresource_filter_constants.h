@@ -47,6 +47,10 @@ extern const base::FilePath::CharType kUnindexedRulesetLicenseFileName[];
 // The name of the file that stores the unindexed filtering rules.
 extern const base::FilePath::CharType kUnindexedRulesetDataFileName[];
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+extern const base::FilePath::CharType kAdblockEasylistFileName[];
+#endif
+
 // Console message to be displayed on activation.
 constexpr char kActivationConsoleMessage[] =
     "Chrome is blocking ads on this site because this site tends to show ads "

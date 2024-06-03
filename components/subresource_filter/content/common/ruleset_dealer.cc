@@ -7,6 +7,8 @@
 #include "base/check.h"
 #include "components/subresource_filter/core/common/memory_mapped_ruleset.h"
 
+#include "base/logging.h"
+
 namespace subresource_filter {
 
 RulesetDealer::RulesetDealer() {
@@ -18,6 +20,10 @@ RulesetDealer::~RulesetDealer() = default;
 void RulesetDealer::SetRulesetFile(base::File ruleset_file) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   DCHECK(ruleset_file.IsValid());
+  if (!ruleset_file.IsValid()) {
+    LOG(INFO)<<"initialize SetRulesetFile not valid";
+  }
+
   ruleset_file_ = std::move(ruleset_file);
   weak_cached_ruleset_.reset();
 }

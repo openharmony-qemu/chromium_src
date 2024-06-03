@@ -119,7 +119,15 @@ base::FilePath IndexedRulesetLocator::GetSentinelFilePath(
 // static
 void IndexedRulesetLocator::DeleteObsoleteRulesets(
     const base::FilePath& indexed_ruleset_base_dir,
+#ifdef OHOS_ARKWEB_ADBLOCK
+    const base::FilePath& unindexed_ruleset_base_dir,
+    RulesetServiceClient* client,
+#endif
     const IndexedRulesetVersion& most_recent_version) {
+#ifdef OHOS_ARKWEB_ADBLOCK
+  bool has_different_format = false;
+  bool has_different_version = false;
+#endif
   base::FilePath current_format_dir(indexed_ruleset_base_dir.AppendASCII(
       base::NumberToString(IndexedRulesetVersion::CurrentFormatVersion())));
 
@@ -129,8 +137,17 @@ void IndexedRulesetLocator::DeleteObsoleteRulesets(
                                    base::FileEnumerator::DIRECTORIES);
   for (base::FilePath format_dir = format_dirs.Next(); !format_dir.empty();
        format_dir = format_dirs.Next()) {
+#ifdef OHOS_ARKWEB_ADBLOCK
+    if (format_dir != current_format_dir) {
+      base::DeletePathRecursively(format_dir);
+      LOG(INFO) << "[Adblock] Delete obsolete indexed rulesets:"
+                << format_dir.value();
+      has_different_format = true;
+    }
+#else
     if (format_dir != current_format_dir)
       base::DeletePathRecursively(format_dir);
+#endif
   }
 
   base::FilePath most_recent_version_dir =
@@ -150,7 +167,27 @@ void IndexedRulesetLocator::DeleteObsoleteRulesets(
     if (version_dir == most_recent_version_dir)
       continue;
     base::DeletePathRecursively(version_dir);
+#ifdef OHOS_ARKWEB_ADBLOCK
+    LOG(INFO) << "[Adblock] Delete obsolete indexed rulesets:"
+              << version_dir.value();
+    has_different_version = true;
+#endif
   }
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  // Upgrading case, should also remove unindexed file when format or version
+  // change.
+  if (has_different_format || has_different_version) {
+    LOG(INFO) << "[AdBlock] Delete obsolete unindexed rulesets:"
+              << unindexed_ruleset_base_dir.value();
+    base::DeletePathRecursively(unindexed_ruleset_base_dir);
+  }
+  if (has_different_format) {
+    if (client) {
+      client->OnDeleteRulesetFile();
+    }
+  }
+#endif
 }
 
 // RulesetService -------------------------------------------------------------
@@ -166,7 +203,12 @@ decltype(&base::ReplaceFile) RulesetService::g_replace_file_func =
 // static
 std::unique_ptr<RulesetService> RulesetService::Create(
     PrefService* local_state,
-    const base::FilePath& user_data_dir) {
+    const base::FilePath& user_data_dir
+#ifdef OHOS_ARKWEB_ADBLOCK
+    ,
+    RulesetServiceClient* client
+#endif
+) {
   if (!base::FeatureList::IsEnabled(kSafeBrowsingSubresourceFilter)) {
     return nullptr;
   }
@@ -187,9 +229,18 @@ std::unique_ptr<RulesetService> RulesetService::Create(
       user_data_dir.Append(kTopLevelDirectoryName)
           .Append(kIndexedRulesetBaseDirectoryName);
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+  base::FilePath unindexed_ruleset_base_dir =
+      user_data_dir.Append(::subresource_filter::kTopLevelDirectoryName)
+          .Append(::subresource_filter::kUnindexedRulesetBaseDirectoryName);
+  return std::make_unique<RulesetService>(
+      local_state, background_task_runner, indexed_ruleset_base_dir,
+      unindexed_ruleset_base_dir, client, blocking_task_runner);
+#else
   return std::make_unique<RulesetService>(local_state, background_task_runner,
                                           indexed_ruleset_base_dir,
                                           blocking_task_runner);
+#endif
 }
 
 RulesetService::RulesetService(
@@ -201,7 +252,12 @@ RulesetService::RulesetService(
     : local_state_(local_state),
       background_task_runner_(std::move(background_task_runner)),
       is_initialized_(false),
-      indexed_ruleset_base_dir_(indexed_ruleset_base_dir) {
+      indexed_ruleset_base_dir_(indexed_ruleset_base_dir)
+#ifdef OHOS_ARKWEB_ADBLOCK
+      ,
+      ruleset_service_client_(nullptr)
+#endif
+{
   DCHECK_NE(local_state_->GetInitializationStatus(),
             PrefService::INITIALIZATION_STATUS_WAITING);
   publisher_ = publisher ? std::move(publisher)
@@ -225,6 +281,45 @@ RulesetService::RulesetService(
       base::BindOnce(&RulesetService::FinishInitialization, AsWeakPtr()));
 }
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+RulesetService::RulesetService(
+    PrefService* local_state,
+    scoped_refptr<base::SequencedTaskRunner> background_task_runner,
+    const base::FilePath& indexed_ruleset_base_dir,
+    const base::FilePath& unindexed_ruleset_base_dir,
+    RulesetServiceClient* client,
+    scoped_refptr<base::SequencedTaskRunner> blocking_task_runner,
+    std::unique_ptr<RulesetPublisher> publisher)
+    : local_state_(local_state),
+      background_task_runner_(std::move(background_task_runner)),
+      is_initialized_(false),
+      indexed_ruleset_base_dir_(indexed_ruleset_base_dir),
+      unindexed_ruleset_base_dir_(unindexed_ruleset_base_dir),
+      ruleset_service_client_(client) {
+  DCHECK_NE(local_state_->GetInitializationStatus(),
+            PrefService::INITIALIZATION_STATUS_WAITING);
+  publisher_ = publisher ? std::move(publisher)
+                         : std::make_unique<RulesetPublisherImpl>(
+                               this, blocking_task_runner);
+  IndexedRulesetVersion most_recently_indexed_version;
+  most_recently_indexed_version.ReadFromPrefs(local_state_);
+  TRACE_EVENT1(TRACE_DISABLED_BY_DEFAULT("loading"),
+               "RulesetService::RulesetService", "prefs_version",
+               most_recently_indexed_version.ToTracedValue());
+  if (most_recently_indexed_version.IsValid() &&
+      most_recently_indexed_version.IsCurrentFormatVersion()) {
+    OpenAndPublishRuleset(most_recently_indexed_version);
+  } else {
+    IndexedRulesetVersion().SaveToPrefs(local_state_);
+  }
+
+  DCHECK(publisher_->BestEffortTaskRunner()->BelongsToCurrentThread());
+  publisher_->BestEffortTaskRunner()->PostTask(
+      FROM_HERE,
+      base::BindOnce(&RulesetService::FinishInitialization, AsWeakPtr()));
+}
+#endif
+
 RulesetService::~RulesetService() {}
 
 void RulesetService::IndexAndStoreAndPublishRulesetIfNeeded(
@@ -238,11 +333,14 @@ void RulesetService::IndexAndStoreAndPublishRulesetIfNeeded(
   // in use.
   IndexedRulesetVersion most_recently_indexed_version;
   most_recently_indexed_version.ReadFromPrefs(local_state_);
+
+#ifndef OHOS_ARKWEB_ADBLOCK
   if (most_recently_indexed_version.IsCurrentFormatVersion() &&
       most_recently_indexed_version.content_version ==
           unindexed_ruleset_info.content_version) {
     return;
   }
+#endif
 
   // Before initialization, retain information about the most recently supplied
   // unindexed ruleset, to be processed during initialization.
@@ -275,6 +373,7 @@ IndexedRulesetVersion RulesetService::IndexAndWriteRuleset(
   if (!unindexed_ruleset_stream_generator.ruleset_stream()) {
     RecordIndexAndWriteRulesetResult(
         IndexAndWriteRulesetResult::FAILED_OPENING_UNINDEXED_RULESET);
+
     return IndexedRulesetVersion();
   }
 
@@ -288,6 +387,7 @@ IndexedRulesetVersion RulesetService::IndexAndWriteRuleset(
   if (!base::CreateDirectory(indexed_ruleset_version_dir)) {
     RecordIndexAndWriteRulesetResult(
         IndexAndWriteRulesetResult::FAILED_CREATING_VERSION_DIR);
+
     return IndexedRulesetVersion();
   }
 
@@ -295,12 +395,14 @@ IndexedRulesetVersion RulesetService::IndexAndWriteRuleset(
   if (sentinel_file.IsPresent()) {
     RecordIndexAndWriteRulesetResult(
         IndexAndWriteRulesetResult::ABORTED_BECAUSE_SENTINEL_FILE_PRESENT);
+
     return IndexedRulesetVersion();
   }
 
   if (!sentinel_file.Create()) {
     RecordIndexAndWriteRulesetResult(
         IndexAndWriteRulesetResult::FAILED_CREATING_SENTINEL_FILE);
+
     return IndexedRulesetVersion();
   }
 
@@ -313,6 +415,7 @@ IndexedRulesetVersion RulesetService::IndexAndWriteRuleset(
   if (!(*g_index_ruleset_func)(&unindexed_ruleset_stream_generator, &indexer)) {
     RecordIndexAndWriteRulesetResult(
         IndexAndWriteRulesetResult::FAILED_PARSING_UNINDEXED_RULESET);
+
     return IndexedRulesetVersion();
   }
 
@@ -321,6 +424,7 @@ IndexedRulesetVersion RulesetService::IndexAndWriteRuleset(
   if (!sentinel_file.Remove()) {
     RecordIndexAndWriteRulesetResult(
         IndexAndWriteRulesetResult::FAILED_DELETING_SENTINEL_FILE);
+
     return IndexedRulesetVersion();
   }
 
@@ -328,10 +432,12 @@ IndexedRulesetVersion RulesetService::IndexAndWriteRuleset(
       indexed_ruleset_version_dir, unindexed_ruleset_info.license_path,
       indexer.data(), indexer.size());
   RecordIndexAndWriteRulesetResult(result);
-  if (result != IndexAndWriteRulesetResult::SUCCESS)
+  if (result != IndexAndWriteRulesetResult::SUCCESS) {
     return IndexedRulesetVersion();
+  }
 
   DCHECK(indexed_version.IsValid());
+
   return indexed_version;
 }
 
@@ -351,18 +457,43 @@ bool RulesetService::IndexRuleset(
       unindexed_ruleset_stream_generator->ruleset_stream());
 
   size_t num_unsupported_rules = 0;
+#ifdef OHOS_ARKWEB_ADBLOCK
+  size_t num_supported_url_rules = 0;
+  size_t num_supported_css_rules = 0;
+  size_t num_unsupported_css_rules = 0;
+#endif  // OHOS_ARKWEB_ADBLOCK
+
   url_pattern_index::proto::FilteringRules ruleset_chunk;
   while (reader.ReadNextChunk(&ruleset_chunk)) {
     for (const auto& rule : ruleset_chunk.url_rules()) {
       if (!indexer->AddUrlRule(rule))
         ++num_unsupported_rules;
     }
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+    for (const auto& rule : ruleset_chunk.css_rules()) {
+      if (!indexer->AddCssRule(rule)) {
+        ++num_unsupported_css_rules;
+      } else {
+        ++num_supported_css_rules;
+      }
+    }
+#endif  // OHOS_ARKWEB_ADBLOCK
   }
   indexer->Finish();
 
   UMA_HISTOGRAM_COUNTS_10000(
       "SubresourceFilter.IndexRuleset.NumUnsupportedRules",
       num_unsupported_rules);
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  LOG(INFO) << "[AdBlock] reader.num_bytes_read=" << reader.num_bytes_read()
+            << ", unindexed_ruleset size=" << unindexed_ruleset_size
+            << ", num_unsupported url_rules=" << num_unsupported_rules
+            << ", num_unsupported_css_rules=" << num_unsupported_css_rules
+            << ", num_supported_url_rules=" << num_supported_url_rules
+            << ", num_supported_css_rules=" << num_supported_css_rules;
+#endif  // OHOS_ARKWEB_ADBLOCK
 
   return reader.num_bytes_read() == unindexed_ruleset_size;
 }
@@ -428,7 +559,11 @@ void RulesetService::FinishInitialization() {
   background_task_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(&IndexedRulesetLocator::DeleteObsoleteRulesets,
-                     indexed_ruleset_base_dir_, most_recently_indexed_version));
+                     indexed_ruleset_base_dir_,
+#ifdef OHOS_ARKWEB_ADBLOCK
+                     unindexed_ruleset_base_dir_, ruleset_service_client_,
+#endif
+                     most_recently_indexed_version));
 
   if (!queued_unindexed_ruleset_info_.content_version.empty()) {
     IndexAndStoreRuleset(
@@ -455,6 +590,7 @@ void RulesetService::OnWrittenRuleset(WriteRulesetCallback result_callback,
   DCHECK(!result_callback.is_null());
   if (!version.IsValid())
     return;
+
   version.SaveToPrefs(local_state_);
   std::move(result_callback).Run(version);
 }

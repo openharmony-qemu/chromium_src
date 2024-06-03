@@ -328,7 +328,7 @@ bool ResponseCache::DoUpdateMetadata() {
       result = false;
       break;
     }
-    
+
     if (result) {
       cache_metadata_map_[url_hash_] = metadata_in_;
     }

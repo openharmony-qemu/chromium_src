@@ -7,6 +7,10 @@
 #include "base/check_op.h"
 #include "base/numerics/safe_conversions.h"
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+#include "base/logging.h"
+#endif  // OHOS_ARKWEB_ADBLOCK
+
 namespace subresource_filter {
 
 namespace proto = url_pattern_index::proto;
@@ -52,9 +56,29 @@ bool UnindexedRulesetWriter::AddUrlRule(const proto::UrlRule& rule) {
   return true;
 }
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+bool UnindexedRulesetWriter::AddCssRule(const proto::CssRule& rule) {
+  DCHECK(!had_error());
+  pending_chunk_.add_css_rules()->CopyFrom(rule);
+  if (pending_chunk_.css_rules_size() >= max_rules_per_chunk_) {
+    DCHECK_EQ(pending_chunk_.css_rules_size(), max_rules_per_chunk_);
+    return WritePendingChunk();
+  }
+
+  return true;
+}
+#endif
+
 bool UnindexedRulesetWriter::Finish() {
   DCHECK(!had_error());
+#ifdef OHOS_ARKWEB_ADBLOCK
+  const bool success =
+      (!pending_chunk_.url_rules_size() && !pending_chunk_.css_rules_size()) ||
+      WritePendingChunk();
+#else
   const bool success = !pending_chunk_.url_rules_size() || WritePendingChunk();
+#endif
+
   if (success)
     coded_stream_.Trim();
   return success;
@@ -62,7 +86,11 @@ bool UnindexedRulesetWriter::Finish() {
 
 bool UnindexedRulesetWriter::WritePendingChunk() {
   DCHECK(!had_error());
+#ifdef OHOS_ARKWEB_ADBLOCK
+  DCHECK_GT(pending_chunk_.url_rules_size() || pending_chunk_.css_rules_size(), 0);
+  #else
   DCHECK_GT(pending_chunk_.url_rules_size(), 0);
+  #endif
 
   proto::FilteringRules chunk;
   chunk.Swap(&pending_chunk_);

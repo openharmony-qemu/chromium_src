@@ -110,7 +110,12 @@ enum class SubresourceFilterAction {
 // https://docs.google.com/document/d/1p-IXk8hI5ucWRf5vJEi9K_YvJXsTr8kbvzGrjMcALDE/edit?usp=sharing
 class ContentSubresourceFilterThrottleManager
     : public base::SupportsUserData::Data,
-      public mojom::SubresourceFilterHost {
+      public mojom::SubresourceFilterHost
+#ifdef OHOS_ARKWEB_ADBLOCK
+    ,
+      public mojom::UserSubresourceFilterHost
+#endif
+{
  public:
   static const int kUserDataKey = 0;
 
@@ -119,6 +124,13 @@ class ContentSubresourceFilterThrottleManager
   static void BindReceiver(mojo::PendingAssociatedReceiver<
                                mojom::SubresourceFilterHost> pending_receiver,
                            content::RenderFrameHost* render_frame_host);
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  static void BindUserReceiver(
+      mojo::PendingAssociatedReceiver<mojom::UserSubresourceFilterHost>
+          pending_receiver,
+      content::RenderFrameHost* render_frame_host);
+#endif
 
   // Creates a ThrottleManager instance from the given parameters.
   // NOTE: Short-circuits out if the kSafeBrowsingSubresourceFilter feature is
@@ -329,6 +341,17 @@ class ContentSubresourceFilterThrottleManager
       mojom::DocumentLoadStatisticsPtr statistics) override;
   void OnAdsViolationTriggered(mojom::AdsViolation violation) override;
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+  void SetStatisticsAfterDocumentLoad(
+      mojom::DocumentLoadStatisticsPtr statistics) override;
+
+  void UserSetStatisticsAfterDocumentLoad(
+      mojom::DocumentLoadStatisticsPtr statistics) override;
+
+  void UserSetDocumentLoadStatistics(
+      mojom::DocumentLoadStatisticsPtr statistics) override;
+#endif
+
   // Gets a filter for the navigation from `throttle`, creates and returns a new
   // filter, or returns `nullptr`. Also updates `frame_host_filter_map_` as
   // appropriate. `frame_host` is provided as `navigation_handle`'s getter
@@ -391,6 +414,11 @@ class ContentSubresourceFilterThrottleManager
 
   // Receiver set for all RenderFrames in this throttle manager's page.
   content::RenderFrameHostReceiverSet<mojom::SubresourceFilterHost> receiver_;
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  content::RenderFrameHostReceiverSet<mojom::UserSubresourceFilterHost>
+      user_receiver_;
+#endif
 
   // Lazily instantiated in EnsureRulesetHandle when the first page level
   // activation is triggered. Will go away when there are no more activated

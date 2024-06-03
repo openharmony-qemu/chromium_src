@@ -194,6 +194,59 @@ bool NWebEventHandler::SendKeyEventFromAce(int32_t keyCode, int32_t keyAction) {
              << " keyAction = " << keyAction;
   return SendKeyEvent(keyCode, keyAction);
 }
+
+bool NWebEventHandler::WebSendKeyEventFromAce(int32_t keyCode, int32_t keyAction,
+                                              const std::vector<int32_t>& pressedCodes) {
+  if (mmi_id_ >= 0 && NWebInputDelegate::IsMMIKeyEvent(keyCode)) {
+    return true;
+  }
+  LOG(DEBUG) << "WebSendKeyEventFromAce keyCode = " << keyCode
+             << " keyAction = " << keyAction;
+  return WebSendKeyEvent(keyCode, keyAction, pressedCodes);
+}
+
+bool NWebEventHandler::WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
+                                       const std::vector<int32_t>& pressedCodes) {
+  LOG(DEBUG) << "WebSendKeyEvent keyCode = " << keyCode
+             << " keyAction = " << keyAction;
+  if (keyCode < 0) {
+    LOG(ERROR) << "WebSendKeyEvent obtaining invalid keyCode";
+    return false;
+  }
+  CefKeyEvent keyEvent;
+  input_delegate_.SetModifiers(keyCode, keyAction);
+  keyEvent.windows_key_code =
+      NWebInputDelegate::CefConverter("keycode", keyCode);
+  if (keyEvent.windows_key_code == -1) {
+    LOG(ERROR) << "WebSendKeyEvent keyCode conversion failed";
+    return false;
+  }
+  keyEvent.type = static_cast<cef_key_event_type_t>(
+      NWebInputDelegate::CefConverter("keyaction", keyAction));
+  keyEvent.modifiers = NWebInputDelegate::GetWebModifiers(keyCode, keyAction, pressedCodes);
+  LOG(DEBUG) << "WebSendKeyEvent modifiers = " << keyEvent.modifiers;
+  keyEvent.is_system_key = false;
+  keyEvent.native_key_code =
+      NWebInputDelegate::CefConverter("keyscancode", keyCode);
+  ui::KeyboardCode key_code =
+      static_cast<ui::KeyboardCode>(keyEvent.windows_key_code);
+  int keysym = ui::XKeysymForWindowsKeyCode(
+      key_code, keyEvent.modifiers & EVENTFLAG_SHIFT_DOWN);
+  char16_t character = ui::GetUnicodeCharacterFromXKeySym(keysym);
+  keyEvent.character = keyEvent.unmodified_character = character;
+  if (browser_ && browser_->GetHost()) {
+    browser_->GetHost()->SendKeyEvent(keyEvent);
+  }
+
+  if (keyEvent.type == KEYEVENT_RAWKEYDOWN) {
+    keyEvent.type = KEYEVENT_CHAR;
+    if (browser_ && browser_->GetHost()) {
+      browser_->GetHost()->SendKeyEvent(keyEvent);
+    }
+  }
+
+  return true;
+}
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 bool NWebEventHandler::SendKeyEvent(int32_t keyCode, int32_t keyAction) {
@@ -335,6 +388,12 @@ void NWebEventHandler::SendMouseEvent(int x,
     } else {
       LOG(DEBUG) << "mouse event action: " << action;
     }
+  }
+}
+
+void NWebEventHandler::NotifyForNextTouchEvent() {
+  if (browser_ && browser_->GetHost()) {
+    browser_->GetHost()->NotifyForNextTouchEvent();
   }
 }
 }  // namespace OHOS::NWeb

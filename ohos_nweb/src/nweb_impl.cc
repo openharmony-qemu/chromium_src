@@ -488,15 +488,18 @@ static constexpr int32_t SOC_PERF_MOUSEWHEEL_CONFIG_ID = 10071;
 typedef std::unordered_map<int32_t, std::weak_ptr<NWebImpl>> NWebMap;
 base::LazyInstance<NWebMap>::DestructorAtExit g_nweb_map =
     LAZY_INSTANCE_INITIALIZER;
+base::Lock OHOS::NWeb::NWebImpl::nweb_map_lock_;
 
 void NWebImpl::AddNWebToMap(uint32_t id, std::shared_ptr<NWebImpl>& nweb) {
   if (nweb) {
+    base::AutoLock lock_scope(nweb_map_lock_);
     std::weak_ptr<NWebImpl> nweb_weak(nweb);
     g_nweb_map.Get().emplace(id, nweb_weak);
   }
 }
 
 NWebImpl* NWebImpl::FromID(int32_t nweb_id) {
+  base::AutoLock lock_scope(nweb_map_lock_);
   NWebMap* map = g_nweb_map.Pointer();
   if (auto it = map->find(nweb_id); it != map->end()) {
     auto nweb = it->second.lock();
@@ -508,6 +511,7 @@ NWebImpl* NWebImpl::FromID(int32_t nweb_id) {
 }
 
 std::shared_ptr<NWebImpl> NWebImpl::GetNWebSharedPtr(int32_t nweb_id) {
+  base::AutoLock lock_scope(nweb_map_lock_);
   NWebMap *map = g_nweb_map.Pointer();
   if (auto it = map->find(nweb_id); it != map->end()) {
     if (auto nweb = it->second.lock()) {
@@ -525,6 +529,7 @@ NWebImpl::~NWebImpl() {
   ResSchedClientAdapter::ReportNWebInit(ResSchedStatusAdapter::WEB_SCENE_EXIT, nweb_id_);
   ReportLossFrame::GetInstance()->Reset();
   ReportLossFrame::GetInstance()->SetScrollState(ScrollMode::STOP);
+  base::AutoLock lock_scope(nweb_map_lock_);
   g_nweb_map.Get().erase(nweb_id_);
 }
 
@@ -583,6 +588,9 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
 
 void NWebImpl::OnDestroy() {
   WVLOG_I("NWebImpl::OnDestroy, nweb_id = %{public}u", nweb_id_);
+
+  ResSchedClientAdapter::ReportScene(
+    ResSchedStatusAdapter::WEB_SCENE_ENTER, ResSchedSceneAdapter::KEY_TASK);
 
   if (destroyCallback_ != nullptr) {
     WVLOG_I("NWebImpl::OnDestroy destroyCallback_ webName_ is %{public}s", webName_.c_str());
@@ -1802,6 +1810,14 @@ void NWebImpl::SlideScroll(float vx, float vy) {
   }
   return nweb_delegate_->SlideScroll(vx, vy);
 }
+
+bool NWebImpl::WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
+                               const std::vector<int32_t>& pressedCodes) {
+  if (input_handler_ == nullptr) {
+    return false;
+  }
+  return input_handler_->WebSendKeyEvent(keyCode, keyAction, pressedCodes);
+}
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 bool NWebImpl::GetCertChainDerData(std::vector<std::string>& certChainData,
@@ -1958,20 +1974,19 @@ void NWebImpl::SetEnableBlankTargetPopupIntercept(
 #endif
 
 void NWebImpl::OnWebviewHide() {
-#if defined(OHOS_WEBRTC)
-  StopCameraSession();
-#endif
+  WVLOG_D("NWebImpl::OnWebviewHide");
 }
 
 void NWebImpl::OnWebviewShow() {
-#if defined(OHOS_WEBRTC)
-  RestartCameraSession();
-#endif
+  WVLOG_D("NWebImpl::OnWebviewShow");
 }
 
 void NWebImpl::OnRenderToBackground() {
   TRACE_EVENT0("base", "OnRenderToBackground");
   WVLOG_D("NWebImpl::OnRenderToBackground");
+#if defined(OHOS_WEBRTC)
+  StopCameraSession();
+#endif
   if (nweb_delegate_ == nullptr) {
     WVLOG_E("OnRenderToBackground nweb delegate is null");
     return;
@@ -1982,6 +1997,9 @@ void NWebImpl::OnRenderToBackground() {
 void NWebImpl::OnRenderToForeground() {
   TRACE_EVENT0("base", "OnRenderToForeground");
   WVLOG_D("NWebImpl::OnRenderToForeground");
+#if defined(OHOS_WEBRTC)
+  RestartCameraSession();
+#endif
   if (nweb_delegate_ == nullptr) {
     WVLOG_E("OnRenderToForeground nweb delegate is null");
     return;
@@ -1997,6 +2015,16 @@ void NWebImpl::OnOnlineRenderToForeground() {
     return;
   }
   nweb_delegate_->OnOnlineRenderToForeground();
+}
+
+void NWebImpl::NotifyForNextTouchEvent() {
+  TRACE_EVENT0("base", "NotifyForNextTouchEvent");
+  WVLOG_D("NWebImpl::NotifyForNextTouchEvent");
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("NotifyForNextTouchEvent nweb delegate is null");
+    return;
+  }
+  nweb_delegate_->NotifyForNextTouchEvent();
 }
 
 #if BUILDFLAG(IS_OHOS)
@@ -2487,6 +2515,7 @@ bool NWebImpl::NeedSoftKeyboard() {
 
 // static
 std::shared_ptr<NWeb> NWebImpl::GetNWeb(int32_t nweb_id) {
+  base::AutoLock lock_scope(nweb_map_lock_);
   NWebMap* map = OHOS::NWeb::g_nweb_map.Pointer();
   if (auto it = map->find(nweb_id); it != map->end()) {
     return it->second.lock();
@@ -2653,6 +2682,7 @@ bool NWebImpl::IsIntelligentTrackingPreventionEnabled() const {
 
 //static
 bool NWebImpl::IsAnyNWebIntelligentTrackingPreventionEnabled() {
+  base::AutoLock lock_scope(nweb_map_lock_);
   NWebMap* map = g_nweb_map.Pointer();
   for (auto it = map->begin(); it != map->end(); it++) {
     auto nweb_weak_ptr = it->second.lock();

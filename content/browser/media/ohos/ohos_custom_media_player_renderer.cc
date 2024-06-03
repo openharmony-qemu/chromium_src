@@ -14,6 +14,7 @@
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/content_client.h"
 #include "media/base/timestamp_constants.h"
+#include "net/http/http_request_headers.h"
 
 #include "gpu/ipc/common/gpu_surface_id_tracker.h"
 #include "content/browser/child_process_security_policy_impl.h"
@@ -372,16 +373,19 @@ void OHOSCustomMediaPlayerRenderer::CreateMediaPlayer() {
   media_info.preload = ConvertTo(
       media_resource_->GetMediaUrlParams().custom_media_url_params.preload_type);
   if (!cookies_->empty()) {
-    media_info.https_headers.insert(std::make_pair("Cookie",
+    media_info.https_headers.insert(std::make_pair(
+        net::HttpRequestHeaders::kCookie,
         std::move(cookies_.value())));
   }
   if (!referrer_.empty()) {
-    media_info.https_headers.insert(std::make_pair("Referrer",
+    media_info.https_headers.insert(std::make_pair(
+        net::HttpRequestHeaders::kReferer,
         std::move(referrer_)));
   }
   std::string user_agent = GetContentClient()->browser()->GetUserAgent();
   if (!user_agent.empty()) {
-    media_info.https_headers.insert(std::make_pair("User-Agent",
+    media_info.https_headers.insert(std::make_pair(
+        net::HttpRequestHeaders::kUserAgent,
         std::move(user_agent)));
   }
   media_info.attributes = std::move(attributes_);
@@ -550,6 +554,15 @@ void OHOSCustomMediaPlayerRenderer::SetReferrer(
 
 void OHOSCustomMediaPlayerRenderer::SetIsAudio(bool is_audio) {
   is_audio_ = is_audio;
+}
+
+void OHOSCustomMediaPlayerRenderer::SetPlaybackRateWithReason(
+    double playback_rate, media::ActionReason reason) {
+  DVLOG(1) << __func__ << "(" << playback_rate << ", " << static_cast<int>(reason) << ")";
+  if (reason != media::ActionReason::kNormal) {
+    return;
+  }
+  SetPlaybackRate(playback_rate);
 }
 
 void OHOSCustomMediaPlayerRenderer::OnTimeUpdate(base::TimeDelta media_time) {

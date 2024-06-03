@@ -471,6 +471,21 @@ void MojoRenderer::SetIsAudio(bool is_audio) {
 bool MojoRenderer::IsAudio() {
   return is_audio_;
 }
+
+void MojoRenderer::SetPlaybackRateWithReason(double playback_rate,
+    ActionReason reason) {
+  DVLOG(2) << __func__ << "(" << playback_rate << ")";
+  DCHECK(task_runner_->RunsTasksInCurrentSequence());
+  DCHECK(remote_renderer_.is_bound());
+
+  remote_renderer_->SetPlaybackRateWithReason(playback_rate,
+      static_cast<mojom::ActionReason>(reason));
+
+  {
+    base::AutoLock auto_lock(lock_);
+    media_time_interpolator_.SetPlaybackRate(playback_rate);
+  }
+}
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
 }  // namespace media

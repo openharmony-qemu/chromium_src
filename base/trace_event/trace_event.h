@@ -798,7 +798,7 @@ template <class ARG1_TYPE>
 std::string GetStringFromArgs(const char* name,
                               const char* arg1_name,
                               ARG1_TYPE&& arg1_val) {
-  if (IsBytraceEnable()) {
+  if (IsBytraceEnable() || IsOHOSBytraceEnable()) {
     std::string str(name);
     base::trace_event::TraceArguments args(arg1_name,
                                            std::forward<ARG1_TYPE>(arg1_val));
@@ -817,7 +817,7 @@ std::string GetStringFromArgs(const char* name,
                               ARG1_TYPE&& arg1_val,
                               const char* arg2_name,
                               ARG2_TYPE&& arg2_val) {
-  if (IsBytraceEnable()) {
+  if (IsBytraceEnable() || IsOHOSBytraceEnable()) {
     std::string str(name);
     base::trace_event::TraceArguments args(
         arg1_name, std::forward<ARG1_TYPE>(arg1_val), arg2_name,

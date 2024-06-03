@@ -102,6 +102,10 @@ class PipelineImpl::RendererWrapper final : public DemuxerHost,
 
   void OnExternalVideoFrameRequest();
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void SetPlaybackRateWithReason(double playback_rate, ActionReason reason);
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
  private:
   // Contains state shared between main and media thread. On the media thread
   // each member can be read without locking, but writing requires locking. On
@@ -1755,5 +1759,40 @@ void PipelineImpl::OnSuspendDone() {
   if (suspend_cb_)
     std::move(suspend_cb_).Run(PIPELINE_OK);
 }
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void PipelineImpl::RendererWrapper::SetPlaybackRateWithReason(
+    double playback_rate, ActionReason reason) {
+  DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
+
+  playback_rate_ = playback_rate;
+  if (state_ == kPlaying)
+    shared_state_.renderer->SetPlaybackRateWithReason(playback_rate_, reason);
+
+  if (state_ != kCreated && state_ != kStopping && state_ != kStopped) {
+    DCHECK(demuxer_);
+    demuxer_->SetPlaybackRate(playback_rate);
+  }
+}
+
+void PipelineImpl::SetPlaybackRateWithReason(
+    double playback_rate, ActionReason reason) {
+  DVLOG(2) << __func__ << "(" << playback_rate << ")";
+  DCHECK(thread_checker_.CalledOnValidThread());
+
+  // Not checking IsRunning() so we can set the playback rate before Start().
+
+  if (playback_rate < 0.0) {
+    DVLOG(1) << __func__ << ": Invalid playback rate " << playback_rate;
+    return;
+  }
+
+  playback_rate_ = playback_rate;
+  media_task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(&RendererWrapper::SetPlaybackRateWithReason,
+                                base::Unretained(renderer_wrapper_.get()),
+                                playback_rate_, reason));
+}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 
 }  // namespace media

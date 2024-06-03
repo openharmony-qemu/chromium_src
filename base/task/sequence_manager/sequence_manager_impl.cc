@@ -615,7 +615,6 @@ SequenceManagerImpl::SelectNextTaskImpl(LazyNow& lazy_now,
       lazy_now.Now() >= main_thread_only().next_time_to_reclaim_memory) {
     main_thread_only().memory_reclaim_scheduled = true;
   }
-
   while (true) {
     internal::WorkQueue* work_queue =
         main_thread_only().selector.SelectWorkQueueToService(option);

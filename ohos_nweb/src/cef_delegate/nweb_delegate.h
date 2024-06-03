@@ -343,6 +343,8 @@ bool HitNativeArea(double x, double y);
   void ScrollBy(float delta_x, float delta_y) override;
   void ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) override;
   void SlideScroll(float vx, float vy) override;
+  bool WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
+                       const std::vector<int32_t>& pressedCodes) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #ifdef OHOS_EX_PASSWORD
@@ -454,6 +456,8 @@ bool HitNativeArea(double x, double y);
 #ifdef OHOS_DISPLAY_CUTOUT
   void OnSafeInsetsChange(int left, int top, int right, int bottom) override;
 #endif
+
+void NotifyForNextTouchEvent() override;
 
 #ifdef OHOS_AI
   void OnTextSelected() override;

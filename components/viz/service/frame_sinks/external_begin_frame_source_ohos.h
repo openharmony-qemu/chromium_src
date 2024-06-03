@@ -13,6 +13,7 @@
 // #endif OHOS_PERFORMANCE_JITTER
 #include "components/viz/service/viz_service_export.h"
 #include "graphic_adapter.h"
+#include "base/containers/circular_deque.h"
 
 namespace viz {
 class VIZ_SERVICE_EXPORT ExternalBeginFrameSourceOHOS
@@ -35,9 +36,13 @@ class VIZ_SERVICE_EXPORT ExternalBeginFrameSourceOHOS
   void SetDynamicBeginFrameDeadlineOffsetSource(
       DynamicBeginFrameDeadlineOffsetSource*
           dynamic_begin_frame_deadline_offset_source) override;
+  void SetNeedWaitForInput(bool need_wait_for_input) override;
+  void TriggerVsync() override;
 
   static void OnVSync(int64_t timestamp, void* data);
   static void OnVSyncCallback();
+  static void OnVSyncEndCallback();
+  static void TriggerVsyncImpl();
   class VSyncUserData;
   void OnVSyncImpl(int64_t timestamp, VSyncUserData* user_data);
 
@@ -84,6 +89,8 @@ class VIZ_SERVICE_EXPORT ExternalBeginFrameSourceOHOS
   int64_t vsync_frequency_to_update_ = 30; // vsync_to_update_ >= 30 for user experience
   bool update_vsync_frequency_ = false;
   bool reset_vsync_frequency_ = false;
+
+  static base::circular_deque<std::pair<int64_t, VSyncUserData*>> on_vsync_impl_task_queue_;
 };
 }  // namespace viz
 

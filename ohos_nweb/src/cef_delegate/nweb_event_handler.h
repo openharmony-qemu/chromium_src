@@ -47,9 +47,12 @@ class NWebEventHandler {
   void SendTouchpadFlingEvent(double x, double y, double vx, double vy);
   void SendMouseWheelEvent(double x, double y, double deltaX, double deltaY);
   void SendMouseEvent(int x, int y, int button, int action, int count);
+  void NotifyForNextTouchEvent();
 
 #if defined(OHOS_INPUT_EVENTS)
   bool SendKeyEventFromAce(int32_t keyCode, int32_t keyAction);
+  bool WebSendKeyEventFromAce(int32_t keyCode, int32_t keyAction,
+                              const std::vector<int32_t>& pressedCodes);
 #endif  // defined(OHOS_INPUT_EVENTS)
 
  private:
@@ -58,6 +61,8 @@ class NWebEventHandler {
 #if defined(OHOS_INPUT_EVENTS)
   void SendKeyEventFromMMI(int32_t keyCode, int32_t keyAction);
   bool SendKeyEvent(int32_t keyCode, int32_t keyAction);
+  bool WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
+                       const std::vector<int32_t>& pressedCodes);
 #endif  // defined(OHOS_INPUT_EVENTS)
 
   CefRefPtr<CefBrowser> browser_ = nullptr;

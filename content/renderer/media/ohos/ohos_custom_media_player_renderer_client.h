@@ -110,6 +110,7 @@ class CONTENT_EXPORT OHOSCustomMediaPlayerRendererClient
   mojo::Receiver<CustomMediaPlayerRendererClientExtension> client_extension_receiver_{this};
 
   int surface_id_ = -1;
+  bool has_sent_surface_id_to_remote_ = false;
   media::Renderer::SurfaceCreatedCallback surface_created_cb_;
 
   media::Renderer::UpdatePlaybackStatusCallback update_playback_status_cb_;

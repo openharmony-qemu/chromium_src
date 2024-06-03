@@ -955,6 +955,7 @@ int NWebDelegate::Load(const std::string& url) {
   if (IsFileProtocol(file_gurl) && !IsUrlFileExist(file_gurl, url)) {
     return NWEB_INVALID_RESOURCE;
   }
+  LOG(INFO) << "NWebDelegate::Load url scheme =" << gurl.scheme();
   LOG(DEBUG) << "NWebDelegate::Load url=" << url;
   auto browser = GetBrowser();
   if (browser == nullptr) {
@@ -1359,6 +1360,14 @@ void NWebDelegate::OnOnlineRenderToForeground() {
     return;
   }
   GetBrowser()->GetHost()->OnOnlineRenderToForeground();
+}
+
+void NWebDelegate::NotifyForNextTouchEvent() {
+  TRACE_EVENT0("base", "NWebDelegate::NotifyForNextTouchEvent");
+
+  if (event_handler_ != nullptr) {
+    event_handler_->NotifyForNextTouchEvent();
+  }
 }
 
 void NWebDelegate::OnContinue() {
@@ -2430,6 +2439,15 @@ void NWebDelegate::SlideScroll(float vx, float vy) {
   }
 
   GetBrowser()->GetHost()->SlideScroll(vx, vy);
+}
+
+bool NWebDelegate::WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
+                                   const std::vector<int32_t>& pressedCodes) {
+  bool retVal = false;
+  if (event_handler_ != nullptr) {
+    retVal = event_handler_->WebSendKeyEventFromAce(keyCode, keyAction, pressedCodes);
+  }
+  return retVal;
 }
 #endif  // defined(OHOS_INPUT_EVENTS)
 

@@ -34,6 +34,7 @@
 namespace OHOS::NWeb {
 
 static constexpr char16_t DEL_CHAR = 127;
+constexpr int32_t MAX_ENTERKEYTYPE = 8;
 
 class OnTextChangedListenerImpl : public IMFTextListenerAdapter {
  public:
@@ -71,7 +72,7 @@ class OnTextChangedListenerImpl : public IMFTextListenerAdapter {
 
   void SendFunctionKey(
       std::shared_ptr<IMFAdapterFunctionKeyAdapter> functionKey) override {
-    handler_->SendEnterKeyEvent();
+    handler_->SendEnterKeyEvent(static_cast<int32_t>(functionKey->GetEnterKeyType()));
   }
 
   void SetKeyboardStatus(bool status) override {
@@ -171,7 +172,8 @@ std::shared_ptr<IMFCursorInfoAdapter> NWebInputMethodHandler::GetCursorInfo() {
   return cursorInfo;
 }
 
-IMFAdapterTextInputType TextInputModeToIMFAdapter(cef_text_input_mode_t mode) {
+IMFAdapterTextInputType NWebInputMethodHandler::TextInputModeToIMFAdapter(
+    cef_text_input_mode_t mode) {
   switch (mode) {
     case CEF_TEXT_INPUT_MODE_TEXT:
       return IMFAdapterTextInputType::TEXT;
@@ -186,11 +188,13 @@ IMFAdapterTextInputType TextInputModeToIMFAdapter(cef_text_input_mode_t mode) {
       return IMFAdapterTextInputType::NUMBER;
     case CEF_TEXT_INPUT_MODE_SEARCH:
     default:
+      type_text_flag_multi_line_ = true;
       return IMFAdapterTextInputType::TEXT;
   }
 }
 
-IMFAdapterTextInputType TextInputTypeToIMFAdapter(cef_text_input_type_t type) {
+IMFAdapterTextInputType NWebInputMethodHandler::TextInputTypeToIMFAdapter(
+    cef_text_input_type_t type) {
   switch (type) {
     case CEF_TEXT_INPUT_TYPE_TEXT:
       return IMFAdapterTextInputType::TEXT;
@@ -204,26 +208,74 @@ IMFAdapterTextInputType TextInputTypeToIMFAdapter(cef_text_input_type_t type) {
       return IMFAdapterTextInputType::PHONE;
     case CEF_TEXT_INPUT_TYPE_URL:
       return IMFAdapterTextInputType::URL;
+    case CEF_TEXT_INPUT_TYPE_TEXT_AREA:
+    case CEF_TEXT_INPUT_TYPE_CONTENT_EDITABLE:
+      type_text_flag_multi_line_ = true;
+      return IMFAdapterTextInputType::TEXT;
     default:
       return IMFAdapterTextInputType::TEXT;
   }
 }
 
+IMFAdapterEnterKeyType NWebInputMethodHandler::TextInputActionToIMFAdapter(
+    InputInfo inputInfo) {
+  if (inputInfo.input_action == CEF_TEXT_INPUT_ACTION_DEFAULT) {
+    if (inputInfo.input_mode == CEF_TEXT_INPUT_MODE_DEFAULT &&
+        inputInfo.input_type == CEF_TEXT_INPUT_TYPE_SEARCH) {
+      return IMFAdapterEnterKeyType::SEARCH;
+    } else if (type_text_flag_multi_line_) {
+      return IMFAdapterEnterKeyType::NEW_LINE;
+    } else if (inputInfo.input_flags &
+               CEF_TEXT_INPUT_FLAG_HAVE_NEXT_FOCUSABLE_ELEMENT) {
+      return IMFAdapterEnterKeyType::NEXT;
+    } else {
+      return IMFAdapterEnterKeyType::GO;
+    }
+  } else {
+    switch (inputInfo.input_action) {
+      case CEF_TEXT_INPUT_ACTION_DEFAULT:
+        return IMFAdapterEnterKeyType::UNSPECIFIED;
+      case CEF_TEXT_INPUT_ACTION_ENTER:
+        return IMFAdapterEnterKeyType::NEW_LINE;
+      case CEF_TEXT_INPUT_ACTION_DONE:
+        return IMFAdapterEnterKeyType::DONE;
+      case CEF_TEXT_INPUT_ACTION_GO:
+        return IMFAdapterEnterKeyType::GO;
+      case CEF_TEXT_INPUT_ACTION_NEXT:
+        return IMFAdapterEnterKeyType::NEXT;
+      case CEF_TEXT_INPUT_ACTION_PREVIOUS:
+        return IMFAdapterEnterKeyType::PREVIOUS;
+      case CEF_TEXT_INPUT_ACTION_SEARCH:
+        return IMFAdapterEnterKeyType::SEARCH;
+      case CEF_TEXT_INPUT_ACTION_SEND:
+        return IMFAdapterEnterKeyType::SEND;
+      default:
+        return IMFAdapterEnterKeyType::GO;
+    }
+  }
+}
+
+void NWebInputMethodHandler::ComputeEditorInfo(InputInfo inputInfo, int32_t customEnterKeyType) {
+  type_text_flag_multi_line_ = false;
+  show_keyboard_ = inputInfo.show_keyboard;
+  if (inputInfo.input_mode != CEF_TEXT_INPUT_MODE_DEFAULT &&
+      inputInfo.input_type != CEF_TEXT_INPUT_TYPE_PASSWORD) {
+    imf_input_mode_ = TextInputModeToIMFAdapter(inputInfo.input_mode);
+  } else {
+    imf_input_mode_ = TextInputTypeToIMFAdapter(inputInfo.input_type);
+  }
+  imf_input_action_ = static_cast<IMFAdapterEnterKeyType>(customEnterKeyType);
+  if (customEnterKeyType < 0 || customEnterKeyType > MAX_ENTERKEYTYPE) {
+    imf_input_action_ = TextInputActionToIMFAdapter(inputInfo);
+  }
+}
+
 void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
-                                    bool show_keyboard,
-                                    cef_text_input_mode_t input_mode,
-                                    cef_text_input_type_t input_type,
+                                    InputInfo inputInfo,
                                     bool is_need_reset_listener,
                                     int32_t enterKeyType) {
   LOG(INFO) << "NWebInputMethodHandler::Attach";
-  show_keyboard_ = show_keyboard;
-  enterKeyType_ = enterKeyType;
-  if (input_mode != CEF_TEXT_INPUT_MODE_DEFAULT &&
-      input_type != CEF_TEXT_INPUT_TYPE_PASSWORD) {
-    input_mode_ = TextInputModeToIMFAdapter(input_mode);
-  } else {
-    input_mode_ = TextInputTypeToIMFAdapter(input_type);
-  }
+  ComputeEditorInfo(inputInfo, enterKeyType);
   composing_text_.clear();
   browser_ = browser;
   if (inputmethod_adapter_ == nullptr) {
@@ -236,11 +288,8 @@ void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
 
   std::shared_ptr<NWebIMFInputAttributeAdapterImpl> inputAttribute =
       std::make_shared<NWebIMFInputAttributeAdapterImpl>();
-  inputAttribute->SetInputPattern(static_cast<int32_t>(input_mode_));
-  if (enterKeyType_ == -1) {
-    enterKeyType_ = static_cast<int32_t>(IMFAdapterEnterKeyType::DONE);
-  }
-  inputAttribute->SetEnterKeyType(enterKeyType_);
+  inputAttribute->SetInputPattern(static_cast<int32_t>(imf_input_mode_));
+  inputAttribute->SetEnterKeyType(static_cast<int32_t>(imf_input_action_));
 
   std::shared_ptr<IMFCursorInfoAdapter> cursorInfo = GetCursorInfo();
 
@@ -257,7 +306,7 @@ void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
   }
   isAttached_ = true;
   lastAttachNWebId_ = nweb_id_;
-  lastInputMode_ = input_mode_;
+  lastInputMode_ = imf_input_mode_;
 
   if (focus_status_ && focus_rect_status_) {
     if (inputmethod_adapter_) {
@@ -267,7 +316,6 @@ void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
 }
 
 bool NWebInputMethodHandler::Reattach(uint32_t nwebId, ReattachType type) {
-  LOG(INFO) << "NWebInputMethodHandler::Reattach";
   nweb_id_ = nwebId;
   if (type == ReattachType::FROM_CONTINUE) {
     if (!isNeedReattachOncontinue_ || !is_editable_node_) {
@@ -285,10 +333,6 @@ bool NWebInputMethodHandler::Reattach(uint32_t nwebId, ReattachType type) {
     isNeedReattachOnfocus_ = false;
   }
 
-  LOG(INFO) << "need to reattach input method, show_keyboard_ = "
-            << show_keyboard_ << ", \
-    reattach type = "
-            << static_cast<int>(type);
   composing_text_.clear();
   if (inputmethod_listener_ == nullptr) {
     inputmethod_listener_ = std::make_shared<OnTextChangedListenerImpl>(this);
@@ -303,8 +347,8 @@ bool NWebInputMethodHandler::Reattach(uint32_t nwebId, ReattachType type) {
 
   std::shared_ptr<NWebIMFInputAttributeAdapterImpl> inputAttribute =
       std::make_shared<NWebIMFInputAttributeAdapterImpl>();
-  inputAttribute->SetInputPattern(static_cast<int32_t>(input_mode_));
-  inputAttribute->SetEnterKeyType(enterKeyType_);
+  inputAttribute->SetInputPattern(static_cast<int32_t>(imf_input_mode_));
+  inputAttribute->SetEnterKeyType(static_cast<int32_t>(imf_input_action_));
 
   std::shared_ptr<IMFCursorInfoAdapter> cursorInfo = GetCursorInfo();
 
@@ -314,7 +358,7 @@ bool NWebInputMethodHandler::Reattach(uint32_t nwebId, ReattachType type) {
   textConfig->SetCursorInfo(cursorInfo);
   textConfig->SetWindowId(windowId_);
 
-  if (!show_keyboard_ && isAttached_ && input_mode_ != lastInputMode_) {
+  if (!show_keyboard_ && isAttached_ && imf_input_mode_ != lastInputMode_) {
     LOG(ERROR) << "do not need attach";
     inputmethod_adapter_->Close();
   }
@@ -326,7 +370,7 @@ bool NWebInputMethodHandler::Reattach(uint32_t nwebId, ReattachType type) {
   }
   isAttached_ = true;
   lastAttachNWebId_ = nwebId;
-  lastInputMode_ = input_mode_;
+  lastInputMode_ = imf_input_mode_;
 
   return show_keyboard_;
 }
@@ -396,7 +440,7 @@ void NWebInputMethodHandler::OnTextSelectionChanged(
     CefRefPtr<CefBrowser> browser,
     const CefString& selected_text,
     const CefRange& selected_range) {
-    selected_text_ = selected_text.ToString16();
+  selected_text_ = selected_text.ToString16();
 }
 
 void NWebInputMethodHandler::OnCursorUpdate(const CefRect& rect) {
@@ -435,46 +479,54 @@ void NWebInputMethodHandler::OnSelectionChanged(
 void NWebInputMethodHandler::OnImeCompositionRangeChanged(
     CefRefPtr<CefBrowser> browser,
     const CefRange& selected_range) {
-  LOG(DEBUG) << "NWebInputMethodHandler::OnImeCompositionRangeChanged" << selected_range.from <<
-    ", to: " << selected_range.to;
+  LOG(DEBUG) << "NWebInputMethodHandler::OnImeCompositionRangeChanged"
+             << selected_range.from << ", to: " << selected_range.to;
 }
 
-bool NWebInputMethodHandler::IsTextInputStateChange(const CefString& text,
-                            const CefRange& selected_range,
-                            const CefRange& compositon_range) {
+bool NWebInputMethodHandler::IsTextInputStateChange(
+    const CefString& text,
+    const CefRange& selected_range,
+    const CefRange& compositon_range) {
   if (whole_text_ != text) {
     return true;
   }
 
-  if ((selected_range.from != selected_from_)
-    || (selected_range.to != selected_to_)) {
+  if ((selected_range.from != selected_from_) ||
+      (selected_range.to != selected_to_)) {
     return true;
   }
 
-  if ((compositon_range.from != composition_range_start_)
-    || (compositon_range.to != composition_range_end_)) {
+  if ((compositon_range.from != composition_range_start_) ||
+      (compositon_range.to != composition_range_end_)) {
     return true;
   }
 
   return false;
 }
 
-void NWebInputMethodHandler::OnUpdateTextInputStateCalled(CefRefPtr<CefBrowser> browser,
-                                                          const CefString& text,
-                                                          const CefRange& selected_range,
-                                                          const CefRange& compositon_range) {
-  bool is_state_change = IsTextInputStateChange(text, selected_range, compositon_range);
+void NWebInputMethodHandler::OnUpdateTextInputStateCalled(
+    CefRefPtr<CefBrowser> browser,
+    const CefString& text,
+    const CefRange& selected_range,
+    const CefRange& compositon_range) {
+  bool is_state_change =
+      IsTextInputStateChange(text, selected_range, compositon_range);
   if (!is_state_change) {
-    LOG(DEBUG) << "NWebInputMethodHandler::OnUpdateTextInputStateCalled state is not changed";
+    LOG(DEBUG) << "NWebInputMethodHandler::OnUpdateTextInputStateCalled state "
+                  "is not changed";
     return;
   }
 
   whole_text_ = text;
-  LOG(DEBUG) << "NWebInputMethodHandler::OnUpdateTextInputStateCalled text = " << text.ToString16();
-  LOG(DEBUG) << "NWebInputMethodHandler::OnUpdateTextInputStateCalled text_length = "
-             << text.ToString16().length()
-             << ", selected_range start = " << selected_range.from << ", to = " << selected_range.to
-             << ", compositon_range start = " << compositon_range.from << ", to = " << compositon_range.to;
+  LOG(DEBUG) << "NWebInputMethodHandler::OnUpdateTextInputStateCalled text = "
+             << text.ToString16();
+  LOG(DEBUG)
+      << "NWebInputMethodHandler::OnUpdateTextInputStateCalled text_length = "
+      << text.ToString16().length()
+      << ", selected_range start = " << selected_range.from
+      << ", to = " << selected_range.to
+      << ", compositon_range start = " << compositon_range.from
+      << ", to = " << compositon_range.to;
   if (compositon_range == CefRange::InvalidRange()) {
     has_composition_ = false;
     composition_range_start_ = 0;
@@ -485,18 +537,22 @@ void NWebInputMethodHandler::OnUpdateTextInputStateCalled(CefRefPtr<CefBrowser> 
     composition_range_start_ = compositon_range.from;
     composition_range_end_ = compositon_range.to;
     int32_t preview_length = composition_range_end_ - composition_range_start_;
-    if (!whole_text_.empty() && (composition_range_end_ <= whole_text_.length())) {
-      preview_text_cache_ = whole_text_.substr(composition_range_start_, preview_length);
+    if (!whole_text_.empty() &&
+        (composition_range_end_ <= whole_text_.length())) {
+      preview_text_cache_ =
+          whole_text_.substr(composition_range_start_, preview_length);
     }
   }
-  LOG(DEBUG) << "NWebInputMethodHandler::OnUpdateTextInputStateCalled preview_text_cache_ = " << preview_text_cache_;
+  LOG(DEBUG) << "NWebInputMethodHandler::OnUpdateTextInputStateCalled "
+                "preview_text_cache_ = "
+             << preview_text_cache_;
 
   selected_from_ = selected_range.from;
   selected_to_ = selected_range.to;
 
   if (inputmethod_adapter_) {
-    inputmethod_adapter_->OnSelectionChange(
-        whole_text_, selected_from_, selected_to_);
+    inputmethod_adapter_->OnSelectionChange(whole_text_, selected_from_,
+                                            selected_to_);
   }
 
   {
@@ -573,11 +629,11 @@ void NWebInputMethodHandler::InsertTextHandlerOnUI(const std::u16string& text) {
     ime_text_composing_ = true;
     composing_text_.clear();
   }
-  LOG(DEBUG) << "NWebInputMethodHandler::InsertTextHandlerOnUI before text" << text <<
-    ", composing_text_ " << composing_text_;
+  LOG(DEBUG) << "NWebInputMethodHandler::InsertTextHandlerOnUI before text"
+             << text << ", composing_text_ " << composing_text_;
   composing_text_.append(text);
-  LOG(DEBUG) << "NWebInputMethodHandler::InsertTextHandlerOnUI after text" << text <<
-    ", composing_text_ " << composing_text_;
+  LOG(DEBUG) << "NWebInputMethodHandler::InsertTextHandlerOnUI after text"
+             << text << ", composing_text_ " << composing_text_;
   browser_->GetHost()->ImeCommitText(composing_text_,
                                      CefRange(UINT32_MAX, UINT32_MAX), 0);
 
@@ -589,31 +645,33 @@ void NWebInputMethodHandler::InsertTextHandlerOnUI(const std::u16string& text) {
   // no selection
   ime_text_composing_ = false;
   composing_text_.clear();
-  LOG(DEBUG) << "NWebInputMethodHandler::InsertTextHandlerOnUI selected_from_ " << selected_from_;
+  LOG(DEBUG) << "NWebInputMethodHandler::InsertTextHandlerOnUI selected_from_ "
+             << selected_from_;
   keyEvent.type = KEYEVENT_KEYUP;
   browser_->GetHost()->SendKeyEvent(keyEvent);
   ClearComposingStatus();
 }
 
 void NWebInputMethodHandler::ClearComposingStatus() {
-  LOG(DEBUG) << "NWebInputMethodHandler::ClearComposingStatus";
   has_composition_ = false;
   preview_text_cache_ = u"";
   composition_range_start_ = 0;
   composition_range_end_ = 0;
 }
 
-void NWebInputMethodHandler::PreviewTextHandlerOnUI(const std::u16string& text, int32_t start, int32_t end) {
-  LOG(DEBUG) << "NWebInputMethodHandler::text " << text << ", start " << start <<
-    ", end " << end;
+void NWebInputMethodHandler::PreviewTextHandlerOnUI(const std::u16string& text,
+                                                    int32_t start,
+                                                    int32_t end) {
+  LOG(DEBUG) << "NWebInputMethodHandler::text " << text << ", start " << start
+             << ", end " << end;
   {
     std::unique_lock<std::mutex> lock(textCursorMutex_);
     textCursorReady_++;
   }
 
-  LOG(DEBUG) << "NWebInputMethodHandler::preview_text_cache_ After " << text <<
-    ", composition_range_start_ " << composition_range_start_ <<
-    ", composition_range_end_ " << composition_range_end_;
+  LOG(DEBUG) << "NWebInputMethodHandler::preview_text_cache_ After " << text
+             << ", composition_range_start_ " << composition_range_start_
+             << ", composition_range_end_ " << composition_range_end_;
   std::vector<CefCompositionUnderline> underlines;
   CefCompositionUnderline underline;
   underline.range.from = 0;
@@ -629,15 +687,18 @@ void NWebInputMethodHandler::PreviewTextHandlerOnUI(const std::u16string& text, 
   if (composition_type_ == COMPOSITION_REPLACE) {
     replace_range.Set(start, end);
   }
-  CefRange selection_range(composition_cursor_index_, composition_cursor_index_);
-  LOG(DEBUG) << "NWebInputMethodHandler::underline style: " << underline.style << ", from: " << underline.range.from
-    << ", to: " << underline.range.to;
-  LOG(DEBUG) << "NWebInputMethodHandler::replace_range from " << replace_range.from <<
-    ", to " << replace_range.to;
-  LOG(DEBUG) << "NWebInputMethodHandler::selection_range from " << selection_range.from <<
-    ", to " << selection_range.to;
+  CefRange selection_range(composition_cursor_index_,
+                           composition_cursor_index_);
+  LOG(DEBUG) << "NWebInputMethodHandler::underline style: " << underline.style
+             << ", from: " << underline.range.from
+             << ", to: " << underline.range.to;
+  LOG(DEBUG) << "NWebInputMethodHandler::replace_range from "
+             << replace_range.from << ", to " << replace_range.to;
+  LOG(DEBUG) << "NWebInputMethodHandler::selection_range from "
+             << selection_range.from << ", to " << selection_range.to;
 
-  browser_->GetHost()->ImeSetComposition(text, underlines, replace_range, selection_range);
+  browser_->GetHost()->ImeSetComposition(text, underlines, replace_range,
+                                         selection_range);
 }
 
 void NWebInputMethodHandler::CancelPreviewHandlerOnUI() {
@@ -679,7 +740,9 @@ void NWebInputMethodHandler::DeleteForwardHandlerOnUI(int32_t length) {
   text_cursor_length_ = length;
   selected_from_ = selected_from_ >= whole_text_.size() ? whole_text_.size()
                                                         : selected_from_;
-  LOG(DEBUG) << "NWebInputMethodHandler::DeleteForwardHandlerOnUI selected_from_ " << selected_from_;
+  LOG(DEBUG)
+      << "NWebInputMethodHandler::DeleteForwardHandlerOnUI selected_from_ "
+      << selected_from_;
   if (whole_text_.substr(selected_from_).size() <= length) {
     text_cursor_length_ = whole_text_.substr(selected_from_).size();
     if (selected_from_ == 0) {
@@ -735,7 +798,19 @@ void NWebInputMethodHandler::DeleteBackwardHandlerOnUI(int32_t length) {
   }
 }
 
-void NWebInputMethodHandler::SendEnterKeyEvent() {
+void NWebInputMethodHandler::SendEnterKeyEvent(int32_t enterKeyType) {
+  if (browser_ && browser_->GetHost()) {
+    if (enterKeyType == static_cast<int32_t>(IMFAdapterEnterKeyType::NEXT)) {
+      browser_->GetHost()->AdvanceFocusForIME(
+          static_cast<int>(FocusType::FORWARD));
+      return;
+    } else if (enterKeyType ==
+               static_cast<int32_t>(IMFAdapterEnterKeyType::PREVIOUS)) {
+      browser_->GetHost()->AdvanceFocusForIME(
+          static_cast<int>(FocusType::BACKWARD));
+      return;
+    }
+  }
   CefKeyEvent keyEvent;
   keyEvent.windows_key_code = ui::VKEY_RETURN;
   keyEvent.native_key_code = static_cast<int>(ScanKeyCode::ENTER_SCAN_CODE);
@@ -876,14 +951,14 @@ bool NWebInputMethodHandler::GetIsEditableNode() {
 }
 
 bool NWebInputMethodHandler::HasComposition() {
-  LOG(INFO) << "NWebInputMethodHandler HasComposition = "
-            << has_composition_;
+  LOG(INFO) << "NWebInputMethodHandler HasComposition = " << has_composition_;
   return has_composition_;
 }
 int32_t NWebInputMethodHandler::GetTextIndexAtCursor() {
   std::unique_lock<std::mutex> lock(textCursorMutex_);
-  bool istextCursorReady = textCursorCv_.wait_for(
-      lock, std::chrono::milliseconds(50), [this] { return textCursorReady_ == 0; });
+  bool istextCursorReady =
+      textCursorCv_.wait_for(lock, std::chrono::milliseconds(50),
+                             [this] { return textCursorReady_ == 0; });
   textCursorReady_ = 0;
   if (!istextCursorReady) {
     LOG(ERROR) << "GetTextIndexAtCursor wait_for timeout";
@@ -891,14 +966,16 @@ int32_t NWebInputMethodHandler::GetTextIndexAtCursor() {
       return 0;
     }
   }
-  LOG(DEBUG) << "NWebInputMethodHandler::GetTextIndexAtCursor selected_to_ " << selected_to_;
+  LOG(DEBUG) << "NWebInputMethodHandler::GetTextIndexAtCursor selected_to_ "
+             << selected_to_;
   return selected_to_;
 }
 
 std::u16string NWebInputMethodHandler::GetLeftTextOfCursor(int32_t number) {
   std::unique_lock<std::mutex> lock(textCursorMutex_);
-  bool istextCursorReady = textCursorCv_.wait_for(
-      lock, std::chrono::milliseconds(50), [this] { return textCursorReady_ == 0; });
+  bool istextCursorReady =
+      textCursorCv_.wait_for(lock, std::chrono::milliseconds(50),
+                             [this] { return textCursorReady_ == 0; });
   textCursorReady_ = 0;
   if (!istextCursorReady) {
     LOG(ERROR) << "GetLeftTextOfCursor wait_for timeout";
@@ -920,8 +997,9 @@ std::u16string NWebInputMethodHandler::GetLeftTextOfCursor(int32_t number) {
 std::u16string NWebInputMethodHandler::GetRightTextOfCursor(int32_t number) {
   std::unique_lock<std::mutex> lock(textCursorMutex_);
 
-  bool istextCursorReady = textCursorCv_.wait_for(
-      lock, std::chrono::milliseconds(50), [this] { return textCursorReady_ == 0; });
+  bool istextCursorReady =
+      textCursorCv_.wait_for(lock, std::chrono::milliseconds(50),
+                             [this] { return textCursorReady_ == 0; });
   textCursorReady_ = 0;
 
   if (!istextCursorReady) {
@@ -938,8 +1016,11 @@ std::u16string NWebInputMethodHandler::GetRightTextOfCursor(int32_t number) {
   return whole_text_.substr(selectEnd, number);
 }
 
-int32_t NWebInputMethodHandler::GetCompositionTypeAndCheckInput(const std::u16string& text,
-  int32_t start, int32_t end, CompositionType& composition_type) {
+int32_t NWebInputMethodHandler::GetCompositionTypeAndCheckInput(
+    const std::u16string& text,
+    int32_t start,
+    int32_t end,
+    CompositionType& composition_type) {
   bool is_empty = text.empty();
   if (is_empty && !has_composition_) {
     LOG(ERROR) << "set null preview text when has not composition";
@@ -955,11 +1036,7 @@ int32_t NWebInputMethodHandler::GetCompositionTypeAndCheckInput(const std::u16st
       type = COMPOSITION_CURRENT;
     }
   } else if (start == end) {
-    if (is_empty) {
-      type = COMPOSITION_INVALID;
-    } else {
-      type = COMPOSITION_POSITION;
-    }
+    type = COMPOSITION_POSITION;
   } else if (start < end) {
     if (is_empty && (preview_text_cache_.length() == 1)) {
       type = COMPOSITION_DELETE;
@@ -980,15 +1057,19 @@ int32_t NWebInputMethodHandler::GetCompositionTypeAndCheckInput(const std::u16st
     case COMPOSITION_REPLACE: {
       int32_t whole_text_length = whole_text_.length();
       if (end > whole_text_length) {
-        LOG(ERROR) << "composition position is larger then current text length " <<
-          "end: " << end << ", whole_text_length: " << whole_text_length <<
-          ", preview_text_cache_ " << preview_text_cache_.length();
+        LOG(ERROR) << "composition position is larger then current text length "
+                   << "end: " << end
+                   << ", whole_text_length: " << whole_text_length
+                   << ", preview_text_cache_ " << preview_text_cache_.length();
         return ERROR;
       }
-      if (has_composition_ && !((start >= composition_range_start_) && (end <= composition_range_end_))) {
-        LOG(ERROR) << "COMPOSITION_POSITION: start is invalid when has composition, " <<
-          "start: " << start << ", end: " << end <<", composition_range_start_: " << composition_range_start_ <<
-          ", composition_range_end_: " << composition_range_end_;
+      if (has_composition_ && !((start >= composition_range_start_) &&
+                                (end <= composition_range_end_))) {
+        LOG(ERROR)
+            << "COMPOSITION_POSITION: start is invalid when has composition, "
+            << "start: " << start << ", end: " << end
+            << ", composition_range_start_: " << composition_range_start_
+            << ", composition_range_end_: " << composition_range_end_;
         return ERROR;
       }
       break;
@@ -1001,16 +1082,21 @@ int32_t NWebInputMethodHandler::GetCompositionTypeAndCheckInput(const std::u16st
   return OK;
 }
 
-int32_t NWebInputMethodHandler::UpdateCompositionInfo(const std::u16string& text, int32_t start, int32_t end) {
-  if (GetCompositionTypeAndCheckInput(text, start, end, composition_type_) != OK) {
+int32_t NWebInputMethodHandler::UpdateCompositionInfo(
+    const std::u16string& text,
+    int32_t start,
+    int32_t end) {
+  if (GetCompositionTypeAndCheckInput(text, start, end, composition_type_) !=
+      OK) {
     LOG(ERROR) << "check in put failed";
     return ERROR;
   }
 
   LOG(DEBUG) << "NWebInputMethodHandler::has_composition_ " << has_composition_;
-  LOG(DEBUG) << "NWebInputMethodHandler::preview_text_cache_ Before " << preview_text_cache_ <<
-    ", composition_range_start_ " << composition_range_start_ <<
-    ", composition_range_end_ " << composition_range_end_;
+  LOG(DEBUG) << "NWebInputMethodHandler::preview_text_cache_ Before "
+             << preview_text_cache_ << ", composition_range_start_ "
+             << composition_range_start_ << ", composition_range_end_ "
+             << composition_range_end_;
   switch (composition_type_) {
     case COMPOSITION_INVALID: {
       LOG(ERROR) << "COMPOSITION_INVALID:";
@@ -1024,10 +1110,12 @@ int32_t NWebInputMethodHandler::UpdateCompositionInfo(const std::u16string& text
     case COMPOSITION_CURRENT: {
       preview_text_cache_ = text;
       composition_cursor_index_ = text.length();
-      LOG(DEBUG) << "NWebInputMethodHandler::COMPOSITION_CURRENT: preview_text_cache_ " << preview_text_cache_ <<
-        ", composition_range_start_ " << composition_range_start_ <<
-        ", composition_range_end_ " << composition_range_end_ <<
-        ", composition_cursor_index_ " << composition_cursor_index_;
+      LOG(DEBUG)
+          << "NWebInputMethodHandler::COMPOSITION_CURRENT: preview_text_cache_ "
+          << preview_text_cache_ << ", composition_range_start_ "
+          << composition_range_start_ << ", composition_range_end_ "
+          << composition_range_end_ << ", composition_cursor_index_ "
+          << composition_cursor_index_;
       break;
     }
     case COMPOSITION_POSITION: {
@@ -1040,17 +1128,21 @@ int32_t NWebInputMethodHandler::UpdateCompositionInfo(const std::u16string& text
         }
         preview_text_cache_.insert(insert_rel_position, text);
         composition_cursor_index_ = insert_rel_position + text.length();
-        LOG(DEBUG) << "NWebInputMethodHandler::COMPOSITION_POSITION: has_composition_ preview_text_cache_ " << preview_text_cache_ <<
-        ", composition_range_start_ " << composition_range_start_ <<
-        ", composition_range_end_ " << composition_range_end_ <<
-        ", composition_cursor_index_ " << composition_cursor_index_;
+        LOG(DEBUG) << "NWebInputMethodHandler::COMPOSITION_POSITION: "
+                      "has_composition_ preview_text_cache_ "
+                   << preview_text_cache_ << ", composition_range_start_ "
+                   << composition_range_start_ << ", composition_range_end_ "
+                   << composition_range_end_ << ", composition_cursor_index_ "
+                   << composition_cursor_index_;
       } else {
         preview_text_cache_ = text;
         composition_cursor_index_ = text.length();
-        LOG(DEBUG) << "NWebInputMethodHandler::COMPOSITION_POSITION: preview_text_cache_ " << preview_text_cache_ <<
-        ", composition_range_start_ " << composition_range_start_ <<
-        ", composition_range_end_ " << composition_range_end_ <<
-        ", composition_cursor_index_ " << composition_cursor_index_;
+        LOG(DEBUG) << "NWebInputMethodHandler::COMPOSITION_POSITION: "
+                      "preview_text_cache_ "
+                   << preview_text_cache_ << ", composition_range_start_ "
+                   << composition_range_start_ << ", composition_range_end_ "
+                   << composition_range_end_ << ", composition_cursor_index_ "
+                   << composition_cursor_index_;
       }
       break;
     }
@@ -1062,20 +1154,23 @@ int32_t NWebInputMethodHandler::UpdateCompositionInfo(const std::u16string& text
           return ERROR;
         }
         int replace_length = end - start;
-        LOG(DEBUG) << "NWebInputMethodHandler::COMPOSITION_REPLACE " <<
-          ", replace_pos " << replace_pos <<
-          ", replace_length " << replace_length;
-        std::u16string replace_string = preview_text_cache_.replace(replace_pos, replace_length, text);
+        LOG(DEBUG) << "NWebInputMethodHandler::COMPOSITION_REPLACE "
+                   << ", replace_pos " << replace_pos << ", replace_length "
+                   << replace_length;
+        std::u16string replace_string =
+            preview_text_cache_.replace(replace_pos, replace_length, text);
         preview_text_cache_ = replace_string;
         composition_cursor_index_ = replace_pos + text.length();
       } else {
         preview_text_cache_ = text;
         composition_cursor_index_ = text.length();
       }
-      LOG(DEBUG) << "NWebInputMethodHandler::COMPOSITION_REPLACE: preview_text_cache_ " << preview_text_cache_ <<
-          ", composition_range_start_ " << composition_range_start_ <<
-          ", composition_range_end_ " << composition_range_end_ <<
-          ", composition_cursor_index_ " << composition_cursor_index_;
+      LOG(DEBUG)
+          << "NWebInputMethodHandler::COMPOSITION_REPLACE: preview_text_cache_ "
+          << preview_text_cache_ << ", composition_range_start_ "
+          << composition_range_start_ << ", composition_range_end_ "
+          << composition_range_end_ << ", composition_cursor_index_ "
+          << composition_cursor_index_;
       break;
     }
     default: {
@@ -1087,9 +1182,11 @@ int32_t NWebInputMethodHandler::UpdateCompositionInfo(const std::u16string& text
   return OK;
 }
 
-int32_t NWebInputMethodHandler::SetPreviewText(const std::u16string& text, int32_t start, int32_t end) {
-  LOG(DEBUG) << "NWebInputMethodHandler::SetPreviewText text " << text <<
-    ", start: " << start << ", end: " << end;
+int32_t NWebInputMethodHandler::SetPreviewText(const std::u16string& text,
+                                               int32_t start,
+                                               int32_t end) {
+  LOG(DEBUG) << "NWebInputMethodHandler::SetPreviewText text " << text
+             << ", start: " << start << ", end: " << end;
   if (UpdateCompositionInfo(std::move(text), start, end) != OK) {
     LOG(ERROR) << "update composition info failed!";
     return ERROR;
@@ -1102,18 +1199,20 @@ int32_t NWebInputMethodHandler::SetPreviewText(const std::u16string& text, int32
       browser_->GetHost()->PostTaskToUIThread(task);
     }
   } else if (composition_type_ == COMPOSITION_DELETE) {
-    LOG(DEBUG) << "NWebInputMethodHandler::COMPOSITION_DELETE selected_from_ " << selected_from_;
+    LOG(DEBUG) << "NWebInputMethodHandler::COMPOSITION_DELETE selected_from_ "
+               << selected_from_;
     // 后向删除
     if (start == selected_from_) {
       DeleteForward(1);
-    }// 前向删除
+    }  // 前向删除
     else if (end == selected_from_) {
       DeleteBackward(1);
     }
   } else {
     if (browser_ != nullptr && browser_->GetHost() != nullptr) {
-      CefRefPtr<CefTask> task = new InputMethodTask(base::BindOnce(
-          &NWebInputMethodHandler::PreviewTextHandlerOnUI, this, preview_text_cache_, start, end));
+      CefRefPtr<CefTask> task = new InputMethodTask(
+          base::BindOnce(&NWebInputMethodHandler::PreviewTextHandlerOnUI, this,
+                         preview_text_cache_, start, end));
       browser_->GetHost()->PostTaskToUIThread(task);
     }
   }
@@ -1122,8 +1221,8 @@ int32_t NWebInputMethodHandler::SetPreviewText(const std::u16string& text, int32
 
 void NWebInputMethodHandler::FinishTextPreview() {
   if (browser_ != nullptr && browser_->GetHost() != nullptr) {
-    CefRefPtr<CefTask> task = new InputMethodTask(base::BindOnce(
-        &NWebInputMethodHandler::FinishPreviewTextOnUI, this));
+    CefRefPtr<CefTask> task = new InputMethodTask(
+        base::BindOnce(&NWebInputMethodHandler::FinishPreviewTextOnUI, this));
     browser_->GetHost()->PostTaskToUIThread(task);
   }
 }

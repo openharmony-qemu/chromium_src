@@ -252,7 +252,13 @@ PasswordChangeSuccessTrackerImpl::PasswordChangeSuccessTrackerImpl(
       kTrackerVersion) {
     pref_service->SetInteger(prefs::kPasswordChangeSuccessTrackerVersion,
                              kTrackerVersion);
+#ifdef OHOS_EX_PASSWORD
+    if (!pref_service->GetList(prefs::kPasswordChangeSuccessTrackerFlows).empty()) {
+      pref_service->ClearPref(prefs::kPasswordChangeSuccessTrackerFlows);
+    }
+#else
     pref_service->ClearPref(prefs::kPasswordChangeSuccessTrackerFlows);
+#endif
   }
 }
 

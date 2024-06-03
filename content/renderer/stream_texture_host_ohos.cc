@@ -22,6 +22,7 @@
 #include "gpu/ipc/common/gpu_channel.mojom.h"
 #include "gpu/ipc/common/vulkan_ycbcr_info.h"
 #include "ipc/ipc_message_macros.h"
+#include "ipc/ipc_mojo_bootstrap.h"
 
 namespace content {
 
@@ -54,6 +55,8 @@ bool StreamTextureHost::BindToCurrentThread(Listener* listener) {
   listener_ = listener;
   if (!pending_texture_)
     return false;
+
+  IPC::ScopedAllowOffSequenceChannelAssociatedBindings allow_off_thread_binding;
 
   texture_remote_.Bind(std::move(pending_texture_));
   texture_remote_->StartListening(receiver_.BindNewEndpointAndPassRemote());

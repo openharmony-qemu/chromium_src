@@ -1119,6 +1119,9 @@ void NWebHandlerDelegate::OnNavigationEntryCommitted(
             details->GetCurrentURL().ToString(), type, details->IsMainFrame(),
             details->IsSameDocument(), details->DidReplaceEntry());
     nweb_handler_->OnNavigationEntryCommitted(web_details);
+    if (main_browser_ && main_browser_->GetHost()) {
+      main_browser_->GetHost()->OnTextSelected(false);
+    }
   }
 }
 
@@ -1585,6 +1588,37 @@ bool NWebHandlerDelegate::OnKeyEvent(CefRefPtr<CefBrowser> browser,
   return false;
 }
 
+#if defined(OHOS_INPUT_EVENTS)
+void NWebHandlerDelegate::KeyboardReDispatch(const CefKeyEvent& event,  bool isUsed) {
+  LOG(INFO) << "NWebHandlerDelegate::KeyboardReDispatch type:" << event.type
+             << ", win:" << event.windows_key_code << ", isUsed:" << isUsed;
+  if (nweb_handler_ != nullptr) {
+    int32_t action =
+        NWebInputDelegate::CefConverter("ohoskeyaction", event.type);
+    if (action == -1) {
+      return;
+    }
+    int32_t keyCode =
+        NWebInputDelegate::CefConverter("ohoskeycode", event.windows_key_code);
+    if (keyCode == -1) {
+      return;
+    }
+    std::shared_ptr<NWebKeyEvent> nwebEvent =
+        std::make_shared<NWebKeyEventImpl>(action, keyCode);
+    return nweb_handler_->KeyboardReDispatch(nwebEvent, isUsed);
+  }
+}
+
+void NWebHandlerDelegate::OnTakeFocus(CefRefPtr<CefBrowser> browser,  bool next) {
+  // Focus is triggered by pressing the tab key on the last element.
+  LOG(INFO) << "NWebHandlerDelegate::OnTakeFocus next:" << next;
+  int32_t keyCode =
+      NWebInputDelegate::CefConverter("ohoskeycode", static_cast<int32_t>(ui::VKEY_TAB));
+  std::shared_ptr<NWebKeyEvent> nwebEvent =
+      std::make_shared<NWebKeyEventImpl>(0, keyCode);
+  nweb_handler_->KeyboardReDispatch(nwebEvent, false);
+}
+#endif
 /* CefKeyboardHandler methods end */
 
 /* CefResourceRequestHandler method begin */

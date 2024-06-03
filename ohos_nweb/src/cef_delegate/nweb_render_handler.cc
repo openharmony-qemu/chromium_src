@@ -490,10 +490,14 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
     CefRefPtr<CefBrowser> browser,
     TextInputMode input_mode,
     TextInputType input_type,
+    TextInputAction input_action,
+    TextInputFlags input_flags,
     bool show_keyboard,
     bool is_need_reset_listener, const AttributesMap& attributes) {
   LOG(INFO) << "NWebRenderHandler::OnVirtualKeyboardRequested input_mode = "
             << input_mode << ", input_type = " << input_type
+            << ", input_action = " << input_action
+            << ", input_flags = " << input_flags
             << ", show_keyboard = " << show_keyboard;
 
   std::map<std::string, std::string> attributesMap;
@@ -527,7 +531,10 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
           custom_keyboard_handler_->Close();
         }
         LOG(INFO) << "WebCustomKeyboard attach system keyboard";
-        inputmethod_client_->Attach(browser, show_keyboard, input_mode, input_type, is_need_reset_listener, enterKeyType);
+        inputmethod_client_->Attach(
+            browser,
+            {show_keyboard, input_mode, input_type, input_action, input_flags},
+            is_need_reset_listener, enterKeyType);
       } else {
         if (isSystemKeyboard_) {
           LOG(INFO) << "WebCustomKeyboard before use custom keyboard, need to close system keyboard";
@@ -970,6 +977,7 @@ void NWebRenderHandler::CreateOverlay(CefRefPtr<CefBrowser> browser,
     cef_image_rect_ = cef_image_rect;
     float scale = browser->GetHost()->GetPageScaleFactor();
     auto view_port_height = browser->GetHost()->GetShrinkViewportHeight();
+    view_port_height += view_port_height > 0 ? browser->GetHost()->GetTopControlsOffset() : 0;
     handler->CreateOverlay(
         buffer,
         read_size,
@@ -989,6 +997,7 @@ void NWebRenderHandler::OnOverlayStateChanged(CefRefPtr<CefBrowser> browser,
   if (auto handler = handler_.lock()) {
     float scale = browser->GetHost()->GetPageScaleFactor();
     auto view_port_height = browser->GetHost()->GetShrinkViewportHeight();
+    view_port_height += view_port_height > 0 ? browser->GetHost()->GetTopControlsOffset() : 0;
     handler->OnOverlayStateChanged(
         (cef_image_rect_.x - cef_screen_rect.y) * scale,
         (cef_image_rect_.y - cef_screen_rect.y) * scale + view_port_height * screen_info_.display_ratio,

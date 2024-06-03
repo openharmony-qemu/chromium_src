@@ -795,6 +795,10 @@ bool NativeViewGLSurfaceEGL::Resize(const gfx::Size& size,
   DCHECK(context);
   GLSurface* surface = GLSurface::GetCurrent();
   DCHECK(surface);
+  if (context == nullptr || surface == nullptr) {
+    LOG(ERROR) << "context or surface is null";
+    return false;
+  }
   // Current surface may not be |this| if it is wrapped, but it should point to
   // the same handle.
   DCHECK_EQ(surface->GetHandle(), GetHandle());
@@ -821,6 +825,10 @@ bool NativeViewGLSurfaceEGL::Recreate() {
   DCHECK(context);
   GLSurface* surface = GLSurface::GetCurrent();
   DCHECK(surface);
+  if (context == nullptr || surface == nullptr) {
+    LOG(ERROR) << "context or surface is null";
+    return false;
+  }
   // Current surface may not be |this| if it is wrapped, but it should point to
   // the same handle.
   DCHECK_EQ(surface->GetHandle(), GetHandle());

@@ -170,6 +170,7 @@ class BASE_EXPORT TaskQueueSelector : public WorkQueueSets::Observer {
   template <typename SetOperation>
   WorkQueue* ChooseWithPriority(TaskQueue::QueuePriority priority) const {
     // Select an immediate work queue if we are starving immediate tasks.
+
     if (immediate_starvation_count_ >= g_max_delayed_starvation_tasks) {
       WorkQueue* queue =
           ChooseImmediateOnlyWithPriority<SetOperation>(priority);

@@ -72,6 +72,8 @@ class CONTENT_EXPORT OHOSCustomMediaPlayerRenderer
   void SetAttributes(base::flat_map<std::string, std::string> attributes) override;
   void SetReferrer(const std::string& referrer) override;
   void SetIsAudio(bool is_audio) override;
+  void SetPlaybackRateWithReason(double playback_rate,
+      media::ActionReason reason) override;
 
   // media::OHOSMediaPlayerBridge::Client implementation
   void OnFrameAvailable(int fd, uint32_t size, int32_t coded_width, int32_t coded_height,

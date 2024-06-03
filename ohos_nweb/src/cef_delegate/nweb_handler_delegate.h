@@ -378,6 +378,10 @@ class NWebHandlerDelegate : public CefClient,
   bool OnKeyEvent(CefRefPtr<CefBrowser> browser,
                   const CefKeyEvent& event,
                   CefEventHandle os_event) override;
+#if defined(OHOS_INPUT_EVENTS)
+  void KeyboardReDispatch(const CefKeyEvent& event,  bool isUsed) override;
+  void OnTakeFocus(CefRefPtr<CefBrowser> browser,  bool next) override;
+#endif
   /* CefKeyboardHandler methods begin */
 
   /* CefResourceRequestHandler method begin */

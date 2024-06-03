@@ -117,6 +117,8 @@ class NWebRenderHandler : public CefRenderHandler {
   void OnVirtualKeyboardRequested(CefRefPtr<CefBrowser> browser,
                                           TextInputMode input_mode,
                                           TextInputType input_type,
+                                          TextInputAction input_action,
+                                          TextInputFlags input_flags,
                                           bool show_keyboard,
                                           bool is_need_reset_listener,
                                           const AttributesMap& attributes) override;

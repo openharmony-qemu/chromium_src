@@ -54,6 +54,8 @@ class MojoRendererWrapper : public Renderer {
       base::flat_map<std::string, std::string> attributes) override;
   void SetReferrer(const std::string& referrer) override;
   void SetIsAudio(bool is_audio) override;
+  void SetPlaybackRateWithReason(double playback_rate,
+      ActionReason reason) override;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
  private:

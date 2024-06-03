@@ -66,6 +66,8 @@ std::string GetKey(const std::string& alias) {
     }
     return local_key;
   } else {
+    base::File(key_file,
+        base::File::FLAG_CREATE | base::File::FLAG_WRITE | base::File::FLAG_READ);
     std::string local_key = GenerateLocalKey(KEY_LENGTH);
 
     std::string encryptedData;

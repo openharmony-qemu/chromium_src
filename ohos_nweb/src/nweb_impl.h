@@ -245,6 +245,8 @@ class NWebImpl : public NWeb {
   void ScrollBy(float delta_x, float delta_y) override;
   void ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) override;
   void SlideScroll(float vx, float vy) override;
+  bool WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
+                       const std::vector<int32_t>& pressedCodes) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
   bool GetCertChainDerData(std::vector<std::string>& certChainData,
@@ -268,6 +270,8 @@ class NWebImpl : public NWeb {
   void OnRenderToForeground() override;
 
   void OnOnlineRenderToForeground() override;
+
+  void NotifyForNextTouchEvent() override;
 #ifdef OHOS_DRAG_DROP
   std::shared_ptr<NWebDragData> GetOrCreateDragData() override;
 #endif // #ifdef OHOS_DRAG_DROP
@@ -462,6 +466,7 @@ class NWebImpl : public NWeb {
 #ifdef OHOS_AI
   void OnTextSelected() override;
 #endif
+  static base::Lock nweb_map_lock_;
 
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
   static void EnableWholeWebPageDrawing();

@@ -147,6 +147,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   bool type_text_flag_multi_line_ = false;
   std::chrono::high_resolution_clock::time_point lastCloseInputMethodTime_;
   bool isNeedReattachOnfocus_ = false;
+  int32_t input_flags_ = 0;
 
   int textCursorReady_ = 0;
   std::mutex textCursorMutex_;

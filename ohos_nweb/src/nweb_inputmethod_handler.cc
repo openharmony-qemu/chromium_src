@@ -72,7 +72,9 @@ class OnTextChangedListenerImpl : public IMFTextListenerAdapter {
 
   void SendFunctionKey(
       std::shared_ptr<IMFAdapterFunctionKeyAdapter> functionKey) override {
-    handler_->SendEnterKeyEvent(static_cast<int32_t>(functionKey->GetEnterKeyType()));
+    if (handler_ && functionKey) {
+      handler_->SendEnterKeyEvent(static_cast<int32_t>(functionKey->GetEnterKeyType()));
+    }
   }
 
   void SetKeyboardStatus(bool status) override {
@@ -258,6 +260,7 @@ IMFAdapterEnterKeyType NWebInputMethodHandler::TextInputActionToIMFAdapter(
 void NWebInputMethodHandler::ComputeEditorInfo(InputInfo inputInfo, int32_t customEnterKeyType) {
   type_text_flag_multi_line_ = false;
   show_keyboard_ = inputInfo.show_keyboard;
+  input_flags_ = inputInfo.input_flags;
   if (inputInfo.input_mode != CEF_TEXT_INPUT_MODE_DEFAULT &&
       inputInfo.input_type != CEF_TEXT_INPUT_TYPE_PASSWORD) {
     imf_input_mode_ = TextInputModeToIMFAdapter(inputInfo.input_mode);
@@ -799,18 +802,24 @@ void NWebInputMethodHandler::DeleteBackwardHandlerOnUI(int32_t length) {
 }
 
 void NWebInputMethodHandler::SendEnterKeyEvent(int32_t enterKeyType) {
-  if (browser_ && browser_->GetHost()) {
-    if (enterKeyType == static_cast<int32_t>(IMFAdapterEnterKeyType::NEXT)) {
-      browser_->GetHost()->AdvanceFocusForIME(
-          static_cast<int>(FocusType::FORWARD));
-      return;
-    } else if (enterKeyType ==
-               static_cast<int32_t>(IMFAdapterEnterKeyType::PREVIOUS)) {
-      browser_->GetHost()->AdvanceFocusForIME(
-          static_cast<int>(FocusType::BACKWARD));
-      return;
-    }
+  if (!browser_ || !browser_->GetHost()) {
+    LOG(ERROR) << "NWebInputMethodHandler send enter key failed, browser_ is nullptr!";
+    return;
   }
+
+  if (enterKeyType == static_cast<int32_t>(IMFAdapterEnterKeyType::NEXT) &&
+      input_flags_ & CEF_TEXT_INPUT_FLAG_HAVE_NEXT_FOCUSABLE_ELEMENT) {
+    browser_->GetHost()->AdvanceFocusForIME(
+        static_cast<int>(FocusType::FORWARD));
+    return;
+  } else if (enterKeyType ==
+             static_cast<int32_t>(IMFAdapterEnterKeyType::PREVIOUS) &&
+             input_flags_ & CEF_TEXT_INPUT_FLAG_HAVE_previous_FOCUSABLE_ELEMENT) {
+    browser_->GetHost()->AdvanceFocusForIME(
+        static_cast<int>(FocusType::BACKWARD));
+    return;
+  }
+
   CefKeyEvent keyEvent;
   keyEvent.windows_key_code = ui::VKEY_RETURN;
   keyEvent.native_key_code = static_cast<int>(ScanKeyCode::ENTER_SCAN_CODE);
@@ -820,19 +829,13 @@ void NWebInputMethodHandler::SendEnterKeyEvent(int32_t enterKeyType) {
   keyEvent.character = '\r';
   keyEvent.modifiers = 0;
   keyEvent.is_system_key = false;
-  if (browser_ && browser_->GetHost()) {
-    browser_->GetHost()->SendKeyEvent(keyEvent);
-  }
+  browser_->GetHost()->SendKeyEvent(keyEvent);
 
   keyEvent.type = KEYEVENT_CHAR;
-  if (browser_ && browser_->GetHost()) {
-    browser_->GetHost()->SendKeyEvent(keyEvent);
-  }
+  browser_->GetHost()->SendKeyEvent(keyEvent);
 
   keyEvent.type = KEYEVENT_KEYUP;
-  if (browser_ && browser_->GetHost()) {
-    browser_->GetHost()->SendKeyEvent(keyEvent);
-  }
+  browser_->GetHost()->SendKeyEvent(keyEvent);
 }
 
 void NWebInputMethodHandler::MoveCursor(const IMFAdapterDirection direction) {

@@ -136,6 +136,19 @@ void NWebCustomKeyboardHandlerImpl::SendFunctionKey(int32_t key) {
     return;
   }
 
+  if (key == static_cast<int32_t>(IMFAdapterEnterKeyType::NEXT) &&
+      input_flags_ & CEF_TEXT_INPUT_FLAG_HAVE_NEXT_FOCUSABLE_ELEMENT) {
+    browser_->GetHost()->AdvanceFocusForIME(
+        static_cast<int>(FocusType::FORWARD));
+    return;
+  } else if (key ==
+             static_cast<int32_t>(IMFAdapterEnterKeyType::PREVIOUS) &&
+             input_flags_ & CEF_TEXT_INPUT_FLAG_HAVE_previous_FOCUSABLE_ELEMENT) {
+    browser_->GetHost()->AdvanceFocusForIME(
+        static_cast<int>(FocusType::BACKWARD));
+    return;
+  }
+
   CefKeyEvent keyEvent;
   keyEvent.windows_key_code = ui::VKEY_RETURN;
   keyEvent.native_key_code = static_cast<int>(ScanKeyCode::ENTER_SCAN_CODE);
@@ -153,7 +166,7 @@ void NWebCustomKeyboardHandlerImpl::SendFunctionKey(int32_t key) {
   browser_->GetHost()->SendKeyEvent(keyEvent);
 }
 
-void NWebCustomKeyboardHandlerImpl::Attach(CefRefPtr<CefBrowser> browser, bool show_keyboard) {
+void NWebCustomKeyboardHandlerImpl::Attach(CefRefPtr<CefBrowser> browser, bool show_keyboard, int32_t input_flags) {
   LOG(INFO) << "WebCustomKeyboard attach, show_keyboard = " << show_keyboard;
 
   if (isAttached_) {
@@ -163,6 +176,7 @@ void NWebCustomKeyboardHandlerImpl::Attach(CefRefPtr<CefBrowser> browser, bool s
 
   isAttached_ = true;
   browser_ = browser;
+  input_flags_ = input_flags;
   if (auto handler = nweb_handler_.lock()) {
     handler->OnCustomKeyboardAttach();
   }

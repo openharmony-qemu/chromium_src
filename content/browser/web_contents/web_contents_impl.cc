@@ -10208,9 +10208,11 @@ void WebContentsImpl::SaveOrUpdatePassword(bool is_update) {
 void WebContentsImpl::ShowAutofillPopup(
     const gfx::RectF& element_bounds,
     bool is_rtl,
-    const std::vector<autofill::Suggestion>& suggestions) {
+    const std::vector<autofill::Suggestion>& suggestions,
+    bool is_password_popup_type) {
   if (delegate_) {
-    delegate_->OnShowAutofillPopup(element_bounds, is_rtl, suggestions);
+    delegate_->OnShowAutofillPopup(element_bounds, is_rtl, suggestions,
+                                   is_password_popup_type);
   }
 }
 void WebContentsImpl::HideAutofillPopup() {

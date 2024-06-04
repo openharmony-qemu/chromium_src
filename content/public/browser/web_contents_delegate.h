@@ -313,7 +313,8 @@ class CONTENT_EXPORT WebContentsDelegate {
   virtual void OnShowAutofillPopup(
       const gfx::RectF& element_bounds,
       bool is_rtl,
-      const std::vector<autofill::Suggestion>& suggestions) {}
+      const std::vector<autofill::Suggestion>& suggestions,
+      bool is_password_popup_type) {}
   virtual void OnHideAutofillPopup() {}
 #endif
   // Allows delegates to handle keyboard events before sending to the renderer.

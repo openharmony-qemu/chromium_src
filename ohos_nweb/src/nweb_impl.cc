@@ -133,6 +133,10 @@
 #include "url/origin.h"
 #endif // defined(OHOS_WARMUP_SERVICEWORKER)
 
+#if OHOS_URL_TRUST_LIST
+#include "cef/libcef/browser/ohos_safe_browsing/ohos_url_trust_list_interface.h"
+#endif
+
 #if defined(OHOS_SITE_ISOLATION)
 extern bool g_siteIsolationMode;
 #endif
@@ -3132,3 +3136,15 @@ void NWebImpl::OnTextSelected() {
   nweb_delegate_->OnTextSelected();
 }
 #endif
+
+int NWebImpl::SetUrlTrustList(const std::string& urlTrustList) {
+#if OHOS_URL_TRUST_LIST
+  if (nweb_delegate_ == nullptr) {
+    return static_cast<int>(ohos_safe_browsing::UrlListSetResult::INIT_ERROR);
+  }
+
+  return nweb_delegate_->SetUrlTrustList(urlTrustList);
+#else
+  return -1;
+#endif
+}

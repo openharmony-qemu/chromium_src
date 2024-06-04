@@ -232,6 +232,12 @@ class BASE_EXPORT FeatureList {
     FeatureList::OverrideState GetOverrideStateByFeatureName(
         StringPiece feature_name);
 
+#if defined(OHOS_SCROLLBAR)
+    // set feature by name.
+    void SetOverrideStateByFeatureName(
+        StringPiece feature_name, OverrideState state);
+#endif
+
     // Look up the feature, and, if present, populate |params|.
     // See GetFieldTrialParams in field_trial_params.h for more documentation.
     bool GetParamsByFeatureName(StringPiece feature_name,
@@ -395,6 +401,10 @@ class BASE_EXPORT FeatureList {
   // instance, which is checked in builds with DCHECKs enabled.
   static bool IsEnabled(const Feature& feature);
 
+#if defined(OHOS_SCROLLBAR)
+  // set scroll bar resident.
+  static void SetScrollbarEnable(bool enable);
+#endif
   // Some characters are not allowed to appear in feature names or the
   // associated field trial names, as they are used as special characters for
   // command-line serialization. This function checks that the strings are ASCII
@@ -519,6 +529,11 @@ class BASE_EXPORT FeatureList {
   const base::FeatureList::OverrideEntry* GetOverrideEntryByFeatureName(
       StringPiece name) const;
 
+#if defined(OHOS_SCROLLBAR)
+  // set state by feature name.
+  void SetOverrideStateByFeatureName(
+    StringPiece feature_name, OverrideState state);
+#endif
   // Finalizes the initialization state of the FeatureList, so that no further
   // overrides can be registered. This is called by SetInstance() on the
   // singleton feature list that is being registered.

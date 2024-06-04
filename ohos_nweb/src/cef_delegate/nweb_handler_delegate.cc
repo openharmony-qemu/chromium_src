@@ -1738,7 +1738,8 @@ void NWebHandlerDelegate::OnShowAutofillPopup(
     CefRefPtr<CefBrowser> browser,
     const CefRect& bounds,
     bool right_aligned,
-    const std::vector<CefAutofillPopupItem>& menu_items) {
+    const std::vector<CefAutofillPopupItem>& menu_items,
+    bool is_password_popup_type) {
   float ratio = render_handler_->GetCefDeviceRatio();
   std::vector<std::string> label_list;
   std::vector<std::string> sublabel_list;
@@ -1751,8 +1752,15 @@ void NWebHandlerDelegate::OnShowAutofillPopup(
   if (!nweb_handler_) {
     return;
   }
-  nweb_handler_->OnShowAutofillPopup(
-    bounds.x * ratio, bounds.y * ratio + bounds.height * ratio , label_list);
+  float scale = 1.0f;
+  if (GetBrowser() && GetBrowser()->GetHost()) {
+    scale = GetBrowser()->GetHost()->Scale();
+  }
+  if (!is_password_popup_type) {
+    nweb_handler_->OnShowAutofillPopup(
+        bounds.x * ratio, bounds.y * ratio + bounds.height * ratio * scale, label_list);
+    return;
+  }
 #endif
 
 #if defined(OHOS_EX_PASSWORD)
@@ -1762,7 +1770,7 @@ void NWebHandlerDelegate::OnShowAutofillPopup(
   
   if (web_app_client_extension_listener_ != nullptr &&
       web_app_client_extension_listener_->OnShowPasswordAutofillPopup !=
-          nullptr) {
+          nullptr && is_password_popup_type) {
     web_app_client_extension_listener_->OnShowPasswordAutofillPopup(
         bounds.x * ratio, bounds.y * ratio, bounds.width * ratio,
         bounds.height * ratio, right_aligned, label_list, sublabel_list,

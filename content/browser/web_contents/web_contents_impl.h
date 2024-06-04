@@ -457,10 +457,10 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   void SaveOrUpdatePassword(bool is_update) override;
 #endif
 #if defined(OHOS_EX_PASSWORD) || (OHOS_DATALIST)
-  void ShowAutofillPopup(
-      const gfx::RectF& element_bounds,
-      bool is_rtl,
-      const std::vector<autofill::Suggestion>& suggestions) override;
+  void ShowAutofillPopup(const gfx::RectF& element_bounds,
+                         bool is_rtl,
+                         const std::vector<autofill::Suggestion>& suggestions,
+                         bool is_password_popup_type) override;
   void HideAutofillPopup() override;
 #endif
 #if defined(OHOS_EX_FORCE_ZOOM)

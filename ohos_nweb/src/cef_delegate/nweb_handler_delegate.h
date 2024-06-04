@@ -156,11 +156,11 @@ class NWebHandlerDelegate : public CefClient,
 
   // #if defined(OHOS_EX_PASSWORD)
   void ShowPasswordDialog(bool is_update, const CefString& url) override;
-  void OnShowAutofillPopup(
-      CefRefPtr<CefBrowser> browser,
-      const CefRect& bounds,
-      bool right_aligned,
-      const std::vector<CefAutofillPopupItem>& menu_items) override;
+  void OnShowAutofillPopup(CefRefPtr<CefBrowser> browser,
+                           const CefRect& bounds,
+                           bool right_aligned,
+                           const std::vector<CefAutofillPopupItem>& menu_items,
+                           bool is_password_popup_type) override;
   void OnHideAutofillPopup() override;
   // #endif
 

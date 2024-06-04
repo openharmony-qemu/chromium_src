@@ -482,6 +482,10 @@ class NWebDelegateInterface
   virtual void EnableWholeWebPageDrawing() = 0;
 #endif
 
+#if OHOS_URL_TRUST_LIST
+  virtual int SetUrlTrustList(const std::string& urlTrustList) = 0;
+#endif
+
   virtual bool IsCustomKeyboard() const = 0;
 
   virtual std::shared_ptr<NWebCustomKeyboardHandlerImpl> GetCustomKeyboardHandler() const = 0;

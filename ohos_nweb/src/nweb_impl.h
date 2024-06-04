@@ -492,6 +492,7 @@ class NWebImpl : public NWeb {
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
   static void EnableWholeWebPageDrawing();
 #endif
+  int SetUrlTrustList(const std::string& urlTrustList) override;
 
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

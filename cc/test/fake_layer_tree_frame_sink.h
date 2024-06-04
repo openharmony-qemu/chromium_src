@@ -113,7 +113,9 @@ class FakeLayerTreeFrameSink : public LayerTreeFrameSink {
   void DidAllocateSharedBitmap(base::ReadOnlySharedMemoryRegion region,
                                const viz::SharedBitmapId& id) override;
   void DidDeleteSharedBitmap(const viz::SharedBitmapId& id) override;
-
+#if defined(OHOS_UNITTESTS)
+  void TriggerVsyncImplTask() override {}
+#endif
   viz::CompositorFrame* last_sent_frame() { return last_sent_frame_.get(); }
   size_t num_sent_frames() { return num_sent_frames_; }
 

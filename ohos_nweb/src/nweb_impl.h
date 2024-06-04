@@ -182,6 +182,7 @@ class NWebImpl : public NWeb {
       int32_t direction) override;
   void SetAccessibilityState(bool state) override;
   void SuggestionSelected(int index) override;
+  void PutSpanstringConvertHtmlCallback(std::shared_ptr<NWebSpanstringConvertHtmlCallback> callback) override;
 #ifdef OHOS_SCREEN_LOCK
   void RegisterScreenLockFunction(int32_t windowId,
                                   std::shared_ptr<NWebScreenLockCallback> callback) override;

@@ -143,7 +143,7 @@ void NWebCustomKeyboardHandlerImpl::SendFunctionKey(int32_t key) {
     return;
   } else if (key ==
              static_cast<int32_t>(IMFAdapterEnterKeyType::PREVIOUS) &&
-             input_flags_ & CEF_TEXT_INPUT_FLAG_HAVE_previous_FOCUSABLE_ELEMENT) {
+             input_flags_ & CEF_TEXT_INPUT_FLAG_HAVE_PREVIOUS_FOCUSABLE_ELEMENT) {
     browser_->GetHost()->AdvanceFocusForIME(
         static_cast<int>(FocusType::BACKWARD));
     return;

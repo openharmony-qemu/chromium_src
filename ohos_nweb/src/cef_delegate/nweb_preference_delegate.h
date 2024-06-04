@@ -171,6 +171,9 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool IsBlankTargetPopupInterceptEnabled();
 #endif
   void SetNativeVideoPlayerConfig(bool enable, bool shouldOverlay) override;
+#if defined(OHOS_SCROLLBAR)
+  void PutOverlayScrollbarEnabled(bool enable) override;
+#endif
 
 #if defined(OHOS_JSPROXY)
   void PutJavaScriptOnDocumentStart(const ScriptItems& scriptItems);

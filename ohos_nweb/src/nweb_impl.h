@@ -451,6 +451,7 @@ class NWebImpl : public NWeb {
   static void SetRenderProcessMode(RenderProcessMode mode);
   static RenderProcessMode GetRenderProcessMode();
 #endif
+  static base::Lock nweb_map_lock_;
 
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

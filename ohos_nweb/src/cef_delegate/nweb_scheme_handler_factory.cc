@@ -72,6 +72,9 @@ std::string NWebSchemeHandlerFactory::GetWebTag(CefRefPtr<CefBrowser> browser) {
   int nweb_id = -1;
   nweb_id = browser->GetNWebId();
   NWebImpl* nweb = NWebImpl::FromID(nweb_id);
+  if (!nweb) {
+    return "";
+  }
   std::string web_tag = nweb->GetWebTag();
   LOG(INFO) << "scheme_handler nweb_id: " << nweb_id << " web_tag: " << web_tag;
   return web_tag;
@@ -92,6 +95,10 @@ CefRefPtr<CefResourceHandler> NWebSchemeHandlerFactory::Create(
     }
     if (scheme_handler_for_sw_->fromEts && !CEF_CURRENTLY_ON_UIT()) {
       LOG(DEBUG) << "scheme handler from ets should from UI thread";
+      return nullptr;
+    }
+    if (!scheme_handler_for_sw_->fromEts && !CEF_CURRENTLY_ON_IOT()) {
+      LOG(DEBUG) << "scheme handler not from ets should from IO thread";
       return nullptr;
     }
     ArkWeb_ResourceRequest* resource_request =
@@ -125,6 +132,11 @@ CefRefPtr<CefResourceHandler> NWebSchemeHandlerFactory::Create(
   }
   if (handler->fromEts && !CEF_CURRENTLY_ON_UIT()) {
     LOG(DEBUG) << "scheme handler from ets should from UI thread";
+    return nullptr;
+  }
+
+  if (!handler->fromEts && !CEF_CURRENTLY_ON_IOT()) {
+    LOG(DEBUG) << "scheme handler not from ets should from IO thread";
     return nullptr;
   }
   ArkWeb_ResourceRequest* resource_request =

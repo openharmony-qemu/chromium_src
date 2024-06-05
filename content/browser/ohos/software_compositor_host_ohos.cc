@@ -86,16 +86,16 @@ void SoftwareCompositorHostOhos::DumpSnapshot(std::string type) {
 }
 
 void SoftwareCompositorHostOhos::OnDrawSwCallback(WebSnapchatCallback callback,
-                                                  const char* id,
+                                                  std::string id,
                                                   bool result) {
   TRACE_EVENT0("browser", "SoftwareCompositorHostOhos::OnDrawSwCallback");
   LOG(INFO) << "OnDrawSwCallback result:" << result;
 
   if (!result) {
-    std::move(callback).Run(id, result, nullptr, 0, 0);
+    std::move(callback).Run(id.c_str(), result, nullptr, 0, 0);
     return;
   }
-  std::move(callback).Run(id, result, software_draw_shm_->shared_memory.memory(),
+  std::move(callback).Run(id.c_str(), result, software_draw_shm_->shared_memory.memory(),
                           current_.width(), current_.height());
 }
 
@@ -106,7 +106,8 @@ void SoftwareCompositorHostOhos::DemandDrawSwAsync(const char* id,
                                                    gfx::PointF offset,
                                                    WebSnapchatCallback callback) {
   TRACE_EVENT0("browser", "SoftwareCompositorHostOhos::DemandDrawSwAsync");
-  LOG(INFO) << "start DemandDrawSwAsync";
+  LOG(INFO) << "start DemandDrawSwAsync width:" << clip_width << ", height:" << clip_height;
+  std::string inputId(id);
 
   if (clip_width == 0) {
     clip_width = MAX_DRAW_SW_SIZE;
@@ -124,8 +125,8 @@ void SoftwareCompositorHostOhos::DemandDrawSwAsync(const char* id,
   if (SkImageInfo::ByteSizeOverflowed(buffer_size)) {
     LOG(ERROR) << "request snapshot size is too large make skia overflowed";
     GetUIThreadTaskRunner({})->PostTask(
-        FROM_HERE,
-        base::BindOnce(std::move(callback), id, false, nullptr, 0, 0));
+        FROM_HERE, base::BindOnce(std::move(callback), inputId.c_str(), false,
+                                  nullptr, 0, 0));
     return;
   }
 
@@ -133,8 +134,8 @@ void SoftwareCompositorHostOhos::DemandDrawSwAsync(const char* id,
   if (!software_draw_shm_) {
     LOG(ERROR) << "set shared memory error";
     GetUIThreadTaskRunner({})->PostTask(
-        FROM_HERE,
-        base::BindOnce(std::move(callback), id, false, nullptr, 0, 0));
+        FROM_HERE, base::BindOnce(std::move(callback), inputId.c_str(), false,
+                                  nullptr, 0, 0));
     return;
   }
 
@@ -146,7 +147,8 @@ void SoftwareCompositorHostOhos::DemandDrawSwAsync(const char* id,
   software_compositor_->DemandDrawSwAsync(
       std::move(params),
       base::BindOnce(&SoftwareCompositorHostOhos::OnDrawSwCallback,
-                     weak_factory_.GetWeakPtr(), std::move(callback), id));
+                     weak_factory_.GetWeakPtr(), std::move(callback),
+                     std::move(inputId)));
 }
 
 void SoftwareCompositorHostOhos::SetSharedMemory(size_t stride,

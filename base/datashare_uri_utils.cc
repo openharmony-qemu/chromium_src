@@ -18,6 +18,7 @@ File OpenDatashareUriForRead(const FilePath& datashare_uri) {
   if (!file.IsValid()) {
     LOG(WARNING) << "open datashare for read file is not valid";
   }
+  return file;
 }
 std::u16string GetFileDisplayName(const FilePath& datashare_uri) {
   std::string display_name = OHOS::NWeb::OhosAdapterHelper::GetInstance()

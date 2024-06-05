@@ -2680,6 +2680,7 @@ void NWebImpl::PrepareForPageLoad(const std::string &url,
                                   bool preconnectable,
                                   int32_t num_sockets) {
 #if defined(OHOS_NO_STATE_PREFETCH)
+  WVLOG_I("PrepareForPageLoad start.");
   predictor::PreconnectUrlInfo preconnectUrlInfo;
   preconnectUrlInfo.url = url;
   preconnectUrlInfo.num_sockets = num_sockets;

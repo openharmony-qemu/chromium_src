@@ -46,7 +46,7 @@ class SoftwareCompositorHostOhos {
                          gfx::SizeF size,
                          gfx::PointF offset,
                          WebSnapchatCallback callback);
-  void OnDrawSwCallback(WebSnapchatCallback callback, const char* id, bool result);
+  void OnDrawSwCallback(WebSnapchatCallback callback, std::string id, bool result);
   void SetSharedMemory(size_t stride, size_t buffer_size);
 
  private:

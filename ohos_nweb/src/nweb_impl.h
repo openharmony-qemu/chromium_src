@@ -491,6 +491,12 @@ class NWebImpl : public NWeb {
 
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
   static void EnableWholeWebPageDrawing();
+
+  bool WebPageSnapshot(const char* id,
+                       PixelUnit type,
+                       int width,
+                       int height,
+                       const WebSnapshotCallback callback) override;
 #endif
   int SetUrlTrustList(const std::string& urlTrustList) override;
 

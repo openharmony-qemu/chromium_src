@@ -3457,6 +3457,41 @@ void NWebDelegate::EnableWholeWebPageDrawing() {
   }
   preference_delegate_->EnableWholeWebPageDrawing();
 }
+
+bool NWebDelegate::WebPageSnapshot(const char* id,
+                                   PixelUnit type,
+                                   int width,
+                                   int height,
+                                   const WebSnapshotCallback callback) {
+  if (!GetBrowser().get()) {
+    LOG(ERROR) << "NWebDelegate::WebPageSnapshot can not get browser";
+    return false;
+  }
+
+  float ratio = render_handler_->GetVirtualPixelRatio();
+
+  switch (type) {
+    case PixelUnit::VP:
+      width = width * ratio;
+      height = height * ratio;
+      break;
+    case PixelUnit::PERCENTAGE:
+      width = -width;
+      height = -height;
+      break;
+    default:
+      LOG(INFO) << "NWebDelegate should not trans data";
+      break;
+  }
+
+  return GetBrowser()->GetHost()->WebPageSnapshot(
+      id, width, height,
+      base::BindOnce(
+          [](WebSnapshotCallback napiCallback, float ratio, const char* id,
+             bool state, void* data, int width, int height) {
+            napiCallback(id, state, ratio, data, width, height);
+          }, std::move(callback), ratio));
+}
 #endif
 
 int NWebDelegate::ScaleGestureChange(double scale, double centerX, double centerY) const {

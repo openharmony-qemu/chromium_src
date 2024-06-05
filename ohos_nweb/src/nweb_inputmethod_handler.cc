@@ -73,7 +73,10 @@ class OnTextChangedListenerImpl : public IMFTextListenerAdapter {
   void SendFunctionKey(
       std::shared_ptr<IMFAdapterFunctionKeyAdapter> functionKey) override {
     if (handler_ && functionKey) {
-      handler_->SendEnterKeyEvent(static_cast<int32_t>(functionKey->GetEnterKeyType()));
+      LOG(DEBUG) << "SendFunctionKey enterkeytype = "
+                 << static_cast<int32_t>(functionKey->GetEnterKeyType());
+      handler_->SendEnterKeyEvent(
+          static_cast<int32_t>(functionKey->GetEnterKeyType()));
     }
   }
 
@@ -224,13 +227,24 @@ IMFAdapterEnterKeyType NWebInputMethodHandler::TextInputActionToIMFAdapter(
   if (inputInfo.input_action == CEF_TEXT_INPUT_ACTION_DEFAULT) {
     if (inputInfo.input_mode == CEF_TEXT_INPUT_MODE_DEFAULT &&
         inputInfo.input_type == CEF_TEXT_INPUT_TYPE_SEARCH) {
+      LOG(DEBUG)
+          << "The tag is not set with enterkeyhint. The type of the input box "
+             "is search, so the enterkeytype is set to SEARCH.";
       return IMFAdapterEnterKeyType::SEARCH;
     } else if (type_text_flag_multi_line_) {
+      LOG(DEBUG)
+          << "The tag is not set with enterkeyhint. The input box supports "
+             "multiple lines of input, so the enterkeytype is set to NEW_LINE.";
       return IMFAdapterEnterKeyType::NEW_LINE;
     } else if (inputInfo.input_flags &
                CEF_TEXT_INPUT_FLAG_HAVE_NEXT_FOCUSABLE_ELEMENT) {
+      LOG(DEBUG)
+          << "The tag is not set with enterkeyhint. There is the next edit box "
+             "that can be focused on, so the enterkeytype is set to NEXT.";
       return IMFAdapterEnterKeyType::NEXT;
     } else {
+      LOG(DEBUG) << "The tag is not set with enterkeyhint. The above "
+                    "situations are not met, so the enterkeytype is set to GO.";
       return IMFAdapterEnterKeyType::GO;
     }
   } else {
@@ -238,18 +252,32 @@ IMFAdapterEnterKeyType NWebInputMethodHandler::TextInputActionToIMFAdapter(
       case CEF_TEXT_INPUT_ACTION_DEFAULT:
         return IMFAdapterEnterKeyType::UNSPECIFIED;
       case CEF_TEXT_INPUT_ACTION_ENTER:
+        LOG(DEBUG) << "Enterkeyhint is set to ENTER, therefore enterkeytype is "
+                      "set to NEW_LINE.";
         return IMFAdapterEnterKeyType::NEW_LINE;
       case CEF_TEXT_INPUT_ACTION_DONE:
+        LOG(DEBUG) << "Enterkeyhint is set to DONE, therefore enterkeytype is "
+                      "set to DONE.";
         return IMFAdapterEnterKeyType::DONE;
       case CEF_TEXT_INPUT_ACTION_GO:
+        LOG(DEBUG) << "Enterkeyhint is set to GO, therefore enterkeytype is "
+                      "set to GO.";
         return IMFAdapterEnterKeyType::GO;
       case CEF_TEXT_INPUT_ACTION_NEXT:
+        LOG(DEBUG) << "Enterkeyhint is set to NEXT, therefore enterkeytype is "
+                      "set to NEXT.";
         return IMFAdapterEnterKeyType::NEXT;
       case CEF_TEXT_INPUT_ACTION_PREVIOUS:
+        LOG(DEBUG) << "Enterkeyhint is set to PREVIOUS, therefore enterkeytype "
+                      "is set to PREVIOUS.";
         return IMFAdapterEnterKeyType::PREVIOUS;
       case CEF_TEXT_INPUT_ACTION_SEARCH:
+        LOG(DEBUG) << "Enterkeyhint is set to SEARCH, therefore enterkeytype "
+                      "is set to SEARCH.";
         return IMFAdapterEnterKeyType::SEARCH;
       case CEF_TEXT_INPUT_ACTION_SEND:
+        LOG(DEBUG) << "Enterkeyhint is set to SEND, therefore enterkeytype is "
+                      "set to SEND.";
         return IMFAdapterEnterKeyType::SEND;
       default:
         return IMFAdapterEnterKeyType::GO;
@@ -809,12 +837,17 @@ void NWebInputMethodHandler::SendEnterKeyEvent(int32_t enterKeyType) {
 
   if (enterKeyType == static_cast<int32_t>(IMFAdapterEnterKeyType::NEXT) &&
       input_flags_ & CEF_TEXT_INPUT_FLAG_HAVE_NEXT_FOCUSABLE_ELEMENT) {
+    LOG(DEBUG) << "NWebInputMethodHandler::SendEnterKeyEvent "
+                  "IMFAdapterEnterKeyType::NEXT";
     browser_->GetHost()->AdvanceFocusForIME(
         static_cast<int>(FocusType::FORWARD));
     return;
   } else if (enterKeyType ==
-             static_cast<int32_t>(IMFAdapterEnterKeyType::PREVIOUS) &&
-             input_flags_ & CEF_TEXT_INPUT_FLAG_HAVE_previous_FOCUSABLE_ELEMENT) {
+                 static_cast<int32_t>(IMFAdapterEnterKeyType::PREVIOUS) &&
+             input_flags_ &
+                 CEF_TEXT_INPUT_FLAG_HAVE_PREVIOUS_FOCUSABLE_ELEMENT) {
+    LOG(DEBUG) << "NWebInputMethodHandler::SendEnterKeyEvent "
+                  "IMFAdapterEnterKeyType::PREVIOUS";
     browser_->GetHost()->AdvanceFocusForIME(
         static_cast<int>(FocusType::BACKWARD));
     return;

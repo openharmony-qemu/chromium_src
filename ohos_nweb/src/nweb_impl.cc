@@ -2924,12 +2924,12 @@ RenderProcessMode NWebImpl::GetRenderProcessMode() {
 }
 #endif // OHOS_RENDER_PROCESS_MODE
 
+#if defined(OHOS_SOFTWARE_COMPOSITOR)
 // static
 void NWebImpl::EnableWholeWebPageDrawing() {
-#if defined(OHOS_SOFTWARE_COMPOSITOR)
   enable_whole_web_page_drawing = true;
-#endif
 }
+#endif
 
 }  // namespace OHOS::NWeb
 
@@ -3134,6 +3134,20 @@ void NWebImpl::OnTextSelected() {
     return;
   }
   nweb_delegate_->OnTextSelected();
+}
+#endif
+
+#ifdef OHOS_SOFTWARE_COMPOSITOR
+bool NWebImpl::WebPageSnapshot(const char* id,
+                       PixelUnit type,
+                       int width,
+                       int height,
+                       const WebSnapshotCallback callback) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E( "WebPageSnapshot failed, nweb delegate is nullptr");
+    return false;
+  }
+  return nweb_delegate_->WebPageSnapshot(id, type, width, height, callback);
 }
 #endif
 

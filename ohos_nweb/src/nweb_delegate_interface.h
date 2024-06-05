@@ -480,6 +480,12 @@ class NWebDelegateInterface
 
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
   virtual void EnableWholeWebPageDrawing() = 0;
+
+  virtual bool WebPageSnapshot(const char* id,
+                               PixelUnit type,
+                               int width,
+                               int height,
+                               const WebSnapshotCallback callback) = 0;
 #endif
 
 #if OHOS_URL_TRUST_LIST

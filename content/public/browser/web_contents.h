@@ -666,7 +666,8 @@ class WebContents : public PageNavigator,
   virtual void ShowAutofillPopup(
       const gfx::RectF& element_bounds,
       bool is_rtl,
-      const std::vector<autofill::Suggestion>& suggestions) = 0;
+      const std::vector<autofill::Suggestion>& suggestions,
+      bool is_password_popup_type) = 0;
   virtual void HideAutofillPopup() = 0;
 #endif
 

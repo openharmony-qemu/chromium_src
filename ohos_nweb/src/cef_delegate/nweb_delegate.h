@@ -452,6 +452,12 @@ bool HitNativeArea(double x, double y);
 
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
   void EnableWholeWebPageDrawing() override;
+
+  bool WebPageSnapshot(const char* id,
+                       PixelUnit type,
+                       int width,
+                       int height,
+                       const WebSnapshotCallback callback) override;
 #endif
 
 #ifdef OHOS_ITP

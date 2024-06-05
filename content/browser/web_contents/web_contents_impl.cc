@@ -3540,6 +3540,13 @@ void WebContentsImpl::RemoveRenderWidgetHostDestructionObserver(
 void WebContentsImpl::AddObserver(WebContentsObserver* observer) {
   OPTIONAL_TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("content.verbose"),
                         "WebContentsImpl::AddObserver");
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  if (!BrowserThread::CurrentlyOn(BrowserThread::UI)) {
+    GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE, base::BindOnce(&WebContentsImpl::AddObserver,weak_factory_.GetWeakPtr(), observer));
+    return;
+  }
+
   observers_.AddObserver(observer);
 }
 

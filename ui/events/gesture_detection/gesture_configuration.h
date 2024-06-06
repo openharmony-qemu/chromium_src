@@ -257,17 +257,18 @@ class GESTURE_DETECTION_EXPORT GestureConfiguration {
   float max_stylus_move_in_pixels_for_click_ = 20;
 #ifdef BUILDFLAG(IS_OHOS)
   float max_touch_move_in_pixels_for_click_ = 3;
+  // If this is too small, we currently can get single finger pinch zoom.  See
+  // https://crbug.com/376618 for details.
+  float min_scaling_span_in_pixels_ = 50;
 #else
   float max_touch_move_in_pixels_for_click_ = 15;
+  float min_scaling_span_in_pixels_ = 125;
 #endif
   float min_distance_for_pinch_scroll_in_pixels_ = 20;
   float min_fling_velocity_ = 30;
   float min_gesture_bounds_length_ = 0;
   // Only used with --compensate-for-unstable-pinch-zoom.
   float min_pinch_update_span_delta_ = 0;
-  // If this is too small, we currently can get single finger pinch zoom.  See
-  // https://crbug.com/376618 for details.
-  float min_scaling_span_in_pixels_ = 125;
   float min_swipe_velocity_ = 20;
   // TODO(https://crbug.com/353702): Disable and remove entirely when issues
   // with intermittent scroll end detection on the Pixel are resolved.

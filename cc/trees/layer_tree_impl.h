@@ -621,7 +621,6 @@ class CC_EXPORT LayerTreeImpl {
       const gfx::PointF& screen_space_point);
 
   LayerImpl* FindLayerThatIsHitByPoint(const gfx::PointF& screen_space_point);
-  LayerImpl* FindLayerThatIsHitByPointNative(const gfx::PointF& screen_space_point);
 
   LayerImpl* FindLayerThatIsHitByPointInTouchHandlerRegion(
       const gfx::PointF& screen_space_point);

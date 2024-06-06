@@ -5696,9 +5696,14 @@ void RenderFrameHostImpl::ConsumeTransientUserActivation() {
 }
 
 void RenderFrameHostImpl::ActivateUserActivation(
-    blink::mojom::UserActivationNotificationType notification_type) {
-  user_activation_state_.Activate(notification_type);
-  history_user_activation_state_.Activate();
+    blink::mojom::UserActivationNotificationType notification_type,
+    bool sticky_only) {
+  if (sticky_only) {
+    user_activation_state_.SetHasBeenActive();
+  } else {
+    user_activation_state_.Activate(notification_type);
+    history_user_activation_state_.Activate();
+  }
 }
 
 bool RenderFrameHostImpl::IsHistoryUserActivationActive() const {

@@ -3346,4 +3346,17 @@ std::string NWebDelegate::GetSelectInfo() {
   return std::string();
 }
 #endif
+
+#ifdef OHOS_DISPLAY_CUTOUT
+void NWebDelegate::OnSafeInsetsChange(int left,
+                                      int top,
+                                      int right,
+                                      int bottom) {
+  if (!GetBrowser().get()) {
+    return;
+  }
+  GetBrowser()->GetHost()->OnSafeInsetsChange(left, top, right, bottom);
+}
+#endif
+
 }  // namespace OHOS::NWeb

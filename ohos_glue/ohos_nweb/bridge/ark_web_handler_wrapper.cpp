@@ -924,4 +924,8 @@ void ArkWebHandlerWrapper::OnRenderProcessNotResponding(
 void ArkWebHandlerWrapper::OnRenderProcessResponding() {
   ark_web_handler_->OnRenderProcessResponding();
 }
+
+void ArkWebHandlerWrapper::OnViewportFitChange(ArkWebViewportFit viewportFit) {
+  ark_web_handler_->OnViewportFitChange(static_cast<int>(viewportFit));
+}
 } // namespace OHOS::ArkWeb

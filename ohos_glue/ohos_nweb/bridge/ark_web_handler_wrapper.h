@@ -31,6 +31,7 @@ using ArkWebRenderExitReason = OHOS::NWeb::RenderExitReason;
 using ArkWebDragOperation = OHOS::NWeb::NWebDragData::DragOperation;
 using ArkWebRenderProcessNotRespondingReason =
     OHOS::NWeb::RenderProcessNotRespondingReason;
+using ArkWebViewportFit = OHOS::NWeb::ViewportFit;
 
 class ArkWebHandlerWrapper : public OHOS::NWeb::NWebHandler {
 public:
@@ -636,6 +637,8 @@ public:
    *
    */
   void OnRenderProcessResponding() override;
+
+  void OnViewportFitChange(ArkWebViewportFit viewport_fit) override;
 
 private:
   ArkWebRefPtr<ArkWebHandler> ark_web_handler_;

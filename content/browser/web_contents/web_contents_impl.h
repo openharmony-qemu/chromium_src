@@ -168,6 +168,10 @@ class MediaStreamManager;
 class VideoCaptureManager;
 #endif  // defined(OHOS_WEBRTC)
 
+#ifdef OHOS_DISPLAY_CUTOUT
+class DisplayCutoutHostOhos;
+#endif
+
 namespace mojom {
 class CreateNewWindowParams;
 }  // namespace mojom
@@ -1372,7 +1376,7 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
                                  const gfx::RectF& active_rect);
 #endif
 
-#if BUILDFLAG(IS_ANDROID)
+#if defined(OHOS_DISPLAY_CUTOUT) || BUILDFLAG(IS_ANDROID)
   // Called by WebContentsAndroid to send the Display Cutout safe area to
   // DisplayCutoutHostImpl.
   void SetDisplayCutoutSafeArea(gfx::Insets insets);
@@ -2439,7 +2443,11 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
           NavigationController::UA_OVERRIDE_INHERIT;
 
   // Gets notified about changes in viewport fit events.
+#ifdef OHOS_DISPLAY_CUTOUT
+  std::unique_ptr<DisplayCutoutHostOhos> display_cutout_host_impl_;
+#else
   std::unique_ptr<DisplayCutoutHostImpl> display_cutout_host_impl_;
+#endif
 
   // Stores a set of frames that are fullscreen.
   // See https://fullscreen.spec.whatwg.org.

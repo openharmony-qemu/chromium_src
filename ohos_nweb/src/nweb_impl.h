@@ -498,6 +498,7 @@ class NWebImpl : public NWeb {
                        int height,
                        const WebSnapshotCallback callback) override;
 #endif
+  int SetUrlTrustList(const std::string& urlTrustList) override;
 
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

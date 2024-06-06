@@ -480,6 +480,10 @@ void NotifyForNextTouchEvent() override;
   void OnTextSelected() override;
 #endif
 
+#ifdef OHOS_URL_TRUST_LIST
+  int SetUrlTrustList(const std::string& urlTrustList) override;
+#endif
+
  public:
   int argc_;
   const char** argv_;

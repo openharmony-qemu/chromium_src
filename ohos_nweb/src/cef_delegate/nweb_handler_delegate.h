@@ -705,6 +705,10 @@ class NWebHandlerDelegate : public CefClient,
                            int viewport_fit) override;
 #endif
 
+#if defined(OHOS_SOFTWARE_COMPOSITOR)
+  bool IsFirstMeaningFulPainted () { return isFirstMeaningFulPainted_; }
+#endif
+
  private:
   void CopyImageToClipboard(CefRefPtr<CefImage> image);
   // List of existing browser windows. Only accessed on the CEF UI thread.
@@ -785,6 +789,9 @@ class NWebHandlerDelegate : public CefClient,
 #endif  // #ifdef OHOS_DRAG_DROP
 #if defined(OHOS_CLIPBOARD)
   bool is_rich_text_ = false;
+#endif
+#if defined(OHOS_SOFTWARE_COMPOSITOR)
+  bool isFirstMeaningFulPainted_ = false;
 #endif
   // js property name and object id
   std::unordered_map<

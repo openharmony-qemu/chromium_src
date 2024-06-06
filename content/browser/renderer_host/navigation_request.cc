@@ -1318,7 +1318,8 @@ std::unique_ptr<NavigationRequest> NavigationRequest::CreateRendererInitiated(
           /*origin_agent_cluster_left_as_default=*/true,
           /*enabled_client_hints=*/
           std::vector<network::mojom::WebClientHintsType>(),
-          /*is_cross_browsing_instance=*/false,
+          /*is_cross_site_cross_browsing_context_group=*/false,
+          /*should_have_sticky_user_activation=*/false,
           /*old_page_info=*/nullptr, /*http_response_code=*/-1,
           blink::mojom::NavigationApiHistoryEntryArrays::New(),
           /*early_hints_preloaded_resources=*/std::vector<GURL>(),
@@ -1458,7 +1459,8 @@ NavigationRequest::CreateForSynchronousRendererCommit(
           /*origin_agent_cluster_left_as_default=*/true,
           /*enabled_client_hints=*/
           std::vector<network::mojom::WebClientHintsType>(),
-          /*is_cross_browsing_instance=*/false,
+          /*is_cross_site_cross_browsing_context_group=*/false,
+          /*should_have_sticky_user_activation=*/false,
           /*old_page_info=*/nullptr, http_response_code,
           blink::mojom::NavigationApiHistoryEntryArrays::New(),
           /*early_hints_preloaded_resources=*/std::vector<GURL>(),
@@ -5529,7 +5531,7 @@ void NavigationRequest::CommitNavigation() {
 
   // For uuid-in-package: resources served from WebBundles, use the Bundle's
   // origin.
-  url::Origin origin =
+  url::Origin origin_to_commit =
       (common_params_->url.SchemeIs(url::kUuidInPackageScheme) &&
        GetWebBundleURL().is_valid())
           ? url::Origin::Create(GetWebBundleURL())
@@ -5538,7 +5540,7 @@ void NavigationRequest::CommitNavigation() {
   // instead of creating one from a URL which lacks opacity information.
   isolation_info_for_subresources_ =
       GetRenderFrameHost()->ComputeIsolationInfoForSubresourcesForPendingCommit(
-          origin, is_credentialless(), ComputeFencedFrameNonce());
+          origin_to_commit, is_credentialless(), ComputeFencedFrameNonce());
   DCHECK(!isolation_info_for_subresources_.IsEmpty());
 
   // TODO(https://crbug.com/888079): The storage key's origin is ignored at the
@@ -5564,12 +5566,12 @@ void NavigationRequest::CommitNavigation() {
           browsing_topics::ApiCallerSource::kIframeAttribute);
     }
   }
-
+  
+  RenderFrameHostImpl* old_frame_host =
+      frame_tree_node_->render_manager()->current_frame_host();
   if (!NavigationTypeUtils::IsSameDocument(common_params_->navigation_type)) {
     // We want to record this for the frame that we are navigating away from.
-    frame_tree_node_->render_manager()
-        ->current_frame_host()
-        ->RecordNavigationSuddenTerminationHandlers();
+    old_frame_host->RecordNavigationSuddenTerminationHandlers();
   }
   if (IsServedFromBackForwardCache() || IsPrerenderedPageActivation()) {
     CommitPageActivation();
@@ -5589,8 +5591,7 @@ void NavigationRequest::CommitNavigation() {
   if (!weak_self)
     return;
 
-  DCHECK(GetRenderFrameHost() ==
-             frame_tree_node_->render_manager()->current_frame_host() ||
+  DCHECK(GetRenderFrameHost() == old_frame_host ||
          GetRenderFrameHost() ==
              frame_tree_node_->render_manager()->speculative_frame_host());
 
@@ -5631,7 +5632,7 @@ void NavigationRequest::CommitNavigation() {
   }
   // Navigation requests should use the new origin as the partition origin
   // except if embedded in an outer frame.
-  url::Origin partition_origin = origin;
+  url::Origin partition_origin = origin_to_commit;
   bool is_top_level = frame_tree_node()->GetParentOrOuterDocument() == nullptr;
   if (!is_top_level) {
     partition_origin = frame_tree_node()
@@ -5640,7 +5641,7 @@ void NavigationRequest::CommitNavigation() {
                            ->GetLastCommittedOrigin();
   }
 
-  PersistOriginTrialsFromHeaders(origin, partition_origin, response(),
+  PersistOriginTrialsFromHeaders(origin_to_commit, partition_origin, response(),
                                  browser_context);
 
   // Update the reduced accept-language to commit if it's empty, and stop
@@ -5667,6 +5668,20 @@ void NavigationRequest::CommitNavigation() {
         commit_params_->reduced_accept_language, GetOriginToCommit().value(),
         response(), frame_tree_node_);
   }
+
+  // Sticky user activation should only be preserved for same-site subframe
+  // navigations. This is done to prevent newly navigated documents from
+  // re-using the sticky user activation state from the previously navigated
+  // document in the frame. We persist user activation across same-site
+  // navigations for compatibility reasons, and this does not need to match the
+  // same-site checks used in the process model. See: crbug.com/736415.
+  // TODO(crbug.com/40228985): Remove this once we find a way to reset
+  // activation unconditionally without breaking sites in practice.
+  commit_params_->should_have_sticky_user_activation =
+      !frame_tree_node_->IsMainFrame() &&
+      old_frame_host->HasStickyUserActivation() &&
+      net::SchemefulSite(old_frame_host->GetLastCommittedOrigin()) ==
+          net::SchemefulSite(origin_to_commit);
 
   // Generate a UKM source and track it on NavigationRequest. This will be
   // passed down to the blink::Document to be created, if any, and used for UKM

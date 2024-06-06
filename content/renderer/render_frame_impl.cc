@@ -989,6 +989,9 @@ void FillMiscNavigationParams(
   navigation_params->is_cross_site_cross_browsing_context_group =
       commit_params.is_cross_site_cross_browsing_context_group;
 
+  navigation_params->should_have_sticky_user_activation =
+      commit_params.should_have_sticky_user_activation;
+
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   // Only android webview uses this.
   navigation_params->grant_load_local_resources =

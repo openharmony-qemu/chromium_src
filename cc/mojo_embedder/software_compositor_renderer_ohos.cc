@@ -129,7 +129,6 @@ void SoftwareCompositorRendererOhos::BindToClient(
 void SoftwareCompositorRendererOhos::DetachFromClient() {
   registry_->UnregisterSoftwareRenderer(this);
   shared_bitmap_manager_.reset();
-  frame_sink_manager_.reset();
   root_support_.reset();
   display_client_.reset();
   display_.reset();

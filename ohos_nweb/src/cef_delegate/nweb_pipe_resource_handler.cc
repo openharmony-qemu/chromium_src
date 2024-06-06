@@ -50,11 +50,11 @@ bool NWebPipeResourceHandler::Open(CefRefPtr<CefRequest> request,
                                    CefRefPtr<CefCallback> callback) {
   if (response_) {
     handle_request = true;
-    LOG(INFO)
+    LOG(DEBUG)
         << "scheme_handler resource handler open, process data immediately.";
     return true;
   } else {
-    LOG(INFO)
+    LOG(DEBUG)
         << "scheme_handler resource handler open, will process data later.";
     handle_request = false;
     response_ready_callback_ = callback;
@@ -68,7 +68,7 @@ bool NWebPipeResourceHandler::Read(
     int& bytes_read,
     CefRefPtr<CefResourceReadCallback> callback) {
   base::AutoLock scoped_lock_(lock_);
-  LOG(INFO) << "scheme_handler read data called " << bytes_to_read;
+  LOG(DEBUG) << "scheme_handler read data called " << bytes_to_read;
   if (remain_read_) {
     LOG(ERROR) << "scheme_handler there is still a read operation that has not "
                   "been run.";
@@ -77,14 +77,14 @@ bool NWebPipeResourceHandler::Read(
   }
 
   if (finished_with_error_) {
-    LOG(INFO) << "scheme_handler this request has beed failed with error code "
+    LOG(DEBUG) << "scheme_handler this request has beed failed with error code "
               << error_code_;
     bytes_read = error_code_;
     return false;
   }
 
   if (!data_buffer_) {
-    LOG(INFO) << "scheme_handler donn't have valid buffer process data later.";
+    LOG(DEBUG) << "scheme_handler donn't have valid buffer process data later.";
     bytes_read = 0;
     last_bytes_to_read_ = bytes_to_read;
     resource_ready_callback_ = callback;
@@ -94,32 +94,32 @@ bool NWebPipeResourceHandler::Read(
   }
 
   int bytes_available = data_buffer_->offset();
-  LOG(INFO) << "scheme_handler bytes_available " << bytes_available
+  LOG(DEBUG) << "scheme_handler bytes_available " << bytes_available
             << " bytes_to_read: " << bytes_to_read << " finished:" << finished_;
   if (finished_ && bytes_available <= 0) {
     bytes_read = 0;
     return false;
   }
 
-  LOG(INFO) << "scheme_handler will read chrunk data.";
+  LOG(DEBUG) << "scheme_handler will read chrunk data.";
   int bytes_consumed =
       UnSafeReadTrunkData(data_out, bytes_to_read, bytes_read, finished_);
   if (bytes_consumed > 0) {
-    LOG(INFO) << "scheme_handler consumed " << bytes_consumed << " bytes";
+    LOG(DEBUG) << "scheme_handler consumed " << bytes_consumed << " bytes";
     bytes_read = bytes_consumed;
     return true;
   }
 
-  LOG(INFO) << "scheme_handler consumed: " << bytes_consumed
+  LOG(DEBUG) << "scheme_handler consumed: " << bytes_consumed
             << " bytes finished: " << finished_
             << " bytes_read: " << bytes_read;
   if (finished_) {
-    LOG(INFO) << "scheme_handler this request has been finished.";
+    LOG(DEBUG) << "scheme_handler this request has been finished.";
     bytes_read = 0;
     return false;
   }
 
-  LOG(INFO) << "scheme_handler donn't have enough buffer process data later.";
+  LOG(DEBUG) << "scheme_handler donn't have enough buffer process data later.";
   bytes_read = 0;
   last_bytes_to_read_ = bytes_to_read;
   resource_ready_callback_ = callback;
@@ -133,7 +133,7 @@ void NWebPipeResourceHandler::GetResponseHeaders(
     int64& response_length,
     CefString& redirectUrl) {
   base::AutoLock scoped_lock_(lock_);
-  LOG(INFO) << "scheme_handler get response headers url: "
+  LOG(DEBUG) << "scheme_handler get response headers url: "
             << response_->GetURL().ToString()
             << " status: " << response_->GetStatus()
             << " error: " << response_->GetError();
@@ -157,7 +157,7 @@ void NWebPipeResourceHandler::GetResponseHeaders(
 }
 
 void NWebPipeResourceHandler::Cancel() {
-  LOG(INFO) << "scheme_handler resource canceld.";
+  LOG(DEBUG) << "scheme_handler resource canceld.";
   canceled_ = true;
 }
 
@@ -178,7 +178,7 @@ void NWebPipeResourceHandler::DidReceiveResponse(
 void NWebPipeResourceHandler::DidReceiveData(const uint8_t* buffer,
                                              int64_t buf_len) {
   base::AutoLock scoped_lock_(lock_);
-  LOG(INFO) << "scheme_handler did receive data buf_len: " << buf_len
+  LOG(DEBUG) << "scheme_handler did receive data buf_len: " << buf_len
             << " finished: " << finished_
             << " finished_with_error: " << finished_with_error_
             << " reamain_read: " << remain_read_;
@@ -200,13 +200,13 @@ void NWebPipeResourceHandler::DidReceiveData(const uint8_t* buffer,
 
   if (remain_read_ && !canceled_) {
     int bytes_consumed = UnSafeReadTrunkData(false);
-    LOG(INFO) << "scheme_handler consumed data " << bytes_consumed;
+    LOG(DEBUG) << "scheme_handler consumed data " << bytes_consumed;
   }
 }
 
 void NWebPipeResourceHandler::DidFinish() {
   base::AutoLock scoped_lock_(lock_);
-  LOG(INFO) << "scheme_handler did finish.";
+  LOG(DEBUG) << "scheme_handler did finish.";
   finished_ = true;
   if (remain_read_) {
     UnSafeReadTrunkData(true);
@@ -228,13 +228,13 @@ bool NWebPipeResourceHandler::Skip(
     int64 bytes_to_skip,
     int64& bytes_skipped,
     CefRefPtr<CefResourceSkipCallback> callback) {
-  LOG(INFO) << "scheme_handler skip";
+  LOG(DEBUG) << "scheme_handler skip";
   bytes_skipped = -2;
   return false;
 }
 
 int NWebPipeResourceHandler::UnSafeReadTrunkData(bool flush) {
-  LOG(INFO) << "scheme_handler ReadTrunkData flush " << flush
+  LOG(DEBUG) << "scheme_handler ReadTrunkData flush " << flush
             << " data_buffer_ " << data_buffer_;
   if (!data_buffer_) {
     if (flush && resource_ready_callback_) {
@@ -245,19 +245,19 @@ int NWebPipeResourceHandler::UnSafeReadTrunkData(bool flush) {
 
   int bytes_available = data_buffer_->offset();
   if (bytes_available < kMiniumBytesToProcess && !flush) {
-    LOG(INFO) << "scheme_handler donn't have enough data.";
+    LOG(DEBUG) << "scheme_handler donn't have enough data.";
     return 0;
   }
 
-  LOG(INFO) << "scheme_handler ReadTrunkData last_bytes_to_read_ "
+  LOG(DEBUG) << "scheme_handler ReadTrunkData last_bytes_to_read_ "
             << last_bytes_to_read_ << " bytes_available " << bytes_available;
   int bytes_consumed = std::min(last_bytes_to_read_, bytes_available);
   memcpy(last_data_out_, data_buffer_->StartOfBuffer(), bytes_consumed);
   int bytes_not_consumed = bytes_available - bytes_consumed;
-  LOG(INFO) << "scheme_handler bytes not consumed " << bytes_not_consumed;
+  LOG(DEBUG) << "scheme_handler bytes not consumed " << bytes_not_consumed;
   memmove(data_buffer_->StartOfBuffer(),
           data_buffer_->StartOfBuffer() + bytes_consumed, bytes_not_consumed);
-  LOG(INFO) << "scheme_handler ReadTrunkData set offset " << bytes_not_consumed;
+  LOG(DEBUG) << "scheme_handler ReadTrunkData set offset " << bytes_not_consumed;
   data_buffer_->set_offset(bytes_not_consumed);
   resource_ready_callback_->Continue(bytes_consumed);
   remain_read_ = false;
@@ -270,7 +270,7 @@ int NWebPipeResourceHandler::UnSafeReadTrunkData(void* data_out,
                                                  bool flush) {
   int bytes_available = data_buffer_->offset();
   if (bytes_available < kMiniumBytesToProcess && !flush) {
-    LOG(INFO) << "scheme_handler lower than minium bytes to process flush "
+    LOG(DEBUG) << "scheme_handler lower than minium bytes to process flush "
               << flush;
     return 0;
   }

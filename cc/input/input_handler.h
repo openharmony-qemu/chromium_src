@@ -494,7 +494,7 @@ class CC_EXPORT InputHandler : public InputDelegateForCompositor {
 #if BUILDFLAG(IS_OHOS)
   void HandleScrollUpdateForInternalBeginFrame(const viz::BeginFrameArgs& args) override;
 
-  LayerImpl* GetLayerImpl(const gfx::Point& viewport_point);
+  LayerImpl* GetLayerImplIsHitByPoint(const gfx::Point& viewport_point);
 
   void TriggerVsyncImplTask();
 

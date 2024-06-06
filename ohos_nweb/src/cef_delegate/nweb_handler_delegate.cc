@@ -986,6 +986,9 @@ void NWebHandlerDelegate::OnLoadStart(CefRefPtr<CefBrowser> browser,
   if (frame == nullptr || !frame->IsMain()) {
     return;
   }
+#if defined(OHOS_SOFTWARE_COMPOSITOR)
+  isFirstMeaningFulPainted_ = false;
+#endif
 
   if (nweb_handler_ != nullptr) {
     nweb_handler_->OnPageLoadBegin(url.ToString());
@@ -1056,6 +1059,9 @@ void NWebHandlerDelegate::OnFirstContentfulPaint(
 void NWebHandlerDelegate::OnFirstMeaningfulPaint(
     CefRefPtr<CefFirstMeaningfulPaintDetails> details) {
   LOG(INFO) << "NWebHandlerDelegate::OnFirstMeaningfulPaint";
+#if defined(OHOS_SOFTWARE_COMPOSITOR)
+  isFirstMeaningFulPainted_ = true;
+#endif
   if (nweb_handler_ != nullptr) {
     if (!details) {
       LOG(WARNING) << "NWebHandlerDelegate::OnFirstMeaningfulPaint failed "

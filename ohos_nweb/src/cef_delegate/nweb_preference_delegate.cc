@@ -820,4 +820,17 @@ bool NWebPreferenceDelegate::GetEnableWholeWebPageDrawing() {
   return record_whole_document_;
 }
 #endif
+
+#if BUILDFLAG(IS_OHOS)
+std::string NWebPreferenceDelegate::GetSurfaceId() {
+  LOG(DEBUG)<<"[getSurfaceId] GetSurfaceId is "<<surface_id_;
+  return surface_id_;
+}
+
+void NWebPreferenceDelegate::SetSurfaceId(const std::string& surfaceId) {
+  LOG(DEBUG)<<"[getSurfaceId] SetSurfaceId is "<<surface_id_;
+  surface_id_ = surfaceId;
+}
+#endif
+
 }  // namespace OHOS::NWeb

@@ -187,6 +187,11 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool GetEnableWholeWebPageDrawing();
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+  std::string GetSurfaceId() override;
+  void SetSurfaceId(const std::string& surfaceId) override;
+#endif
+
  private:
   CefRefPtr<CefBrowser> browser_ = nullptr;
 
@@ -248,6 +253,7 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if BUILDFLAG(IS_OHOS)
   int draw_mode_{0};
   bool text_autosizing_enabled_{true};
+  std::string surface_id_{""};
 #endif
   bool enable_embed_mode_{false};
   std::string embed_tag_{"embed"};

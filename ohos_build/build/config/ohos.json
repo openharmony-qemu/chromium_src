@@ -718,6 +718,14 @@
 "dependence": "",
 "default": "true"
 },
+{ "name": "OHOS_URL_TRUST_LIST",
+"owner": "",
+"desc": "",
+"effect":"main gn blink_core other",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},
 { "name": "OHOS_USERAGENT",
 "owner": "",
 "desc": "",

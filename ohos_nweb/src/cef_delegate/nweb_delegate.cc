@@ -65,6 +65,10 @@
 #include "libcef/common/net/url_util.h"
 #include "net/base/filename_util.h"
 
+#if OHOS_URL_TRUST_LIST
+#include "cef/libcef/browser/ohos_safe_browsing/ohos_url_trust_list_interface.h"
+#endif
+
 #ifdef OHOS_EX_GET_ZOOM_LEVEL
 #include <cmath>
 #endif
@@ -3554,4 +3558,14 @@ void NWebDelegate::OnTextSelected() {
 }
 #endif
 
+#if OHOS_URL_TRUST_LIST
+int NWebDelegate::SetUrlTrustList(const std::string& urlTrustList) {
+  LOG(INFO) << "NWebDelegate::SetUrlTrustList";
+  if (!GetBrowser().get()) {
+    LOG(ERROR) << "NWebDelegate::SetUrlTrustList failed, get browser failed";
+    return static_cast<int>(ohos_safe_browsing::UrlListSetResult::INIT_ERROR);
+  }
+  return GetBrowser()->SetUrlTrustList(urlTrustList);
+}
+#endif
 }  // namespace OHOS::NWeb

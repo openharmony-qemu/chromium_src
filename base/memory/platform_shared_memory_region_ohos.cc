@@ -51,14 +51,7 @@ PlatformSharedMemoryRegion PlatformSharedMemoryRegion::Take(
     return {};
   }
 
-#if defined(OHOS_BUGFIX_CRASH)
-  if (!CheckPlatformHandlePermissionsCorrespondToMode(fd.get(), mode, size)) {
-    LOG(ERROR) << "check platform handle permission failed, fd = " << fd.get() << ", mode" \
-      << static_cast<int>(mode) << ", size = " << size;
-  }
-#else
   CHECK(CheckPlatformHandlePermissionsCorrespondToMode(fd.get(), mode, size));
-#endif
 
   return PlatformSharedMemoryRegion(std::move(fd), mode, size, guid);
 }

@@ -3468,6 +3468,16 @@ bool NWebDelegate::WebPageSnapshot(const char* id,
     return false;
   }
 
+  if (!handler_delegate_) {
+    LOG(ERROR) << "NWebDelegate::WebPageSnapshot can not get handler";
+    return false;
+  }
+
+  if (!handler_delegate_->IsFirstMeaningFulPainted()) {
+    LOG(ERROR) << "Web is not first meaningful painted, not ready for snapshot";
+    return false;
+  }
+
   float ratio = render_handler_->GetVirtualPixelRatio();
 
   switch (type) {

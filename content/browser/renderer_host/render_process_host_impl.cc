@@ -4191,21 +4191,9 @@ void RenderProcessHostImpl::Cleanup() {
     ChildProcessTerminationInfo info = GetChildTerminationInfo(false);
     info.status = base::TERMINATION_STATUS_NORMAL_TERMINATION;
     info.exit_code = 0;
-#ifndef OHOS_BUGFIX_CRASH
     for (auto& observer : observers_) {
       observer.RenderProcessExited(this, info);
     }
-#else
-    LOG(INFO)
-    << "run_renderer_in_process() value: " << run_renderer_in_process()
-    << ", within_process_died_observer_ value" << within_process_died_observer_
-    << ", (!listeners_.IsEmpty) && has_only_non_live_rfhs value: " << (!listeners_.IsEmpty()) << has_only_non_live_rfhs
-    << ", shuntdown_delay_ref_count_ value: " << shutdown_delay_ref_count_
-    << ", worker_ref_count_ value: " << worker_ref_count_
-    << ", pending_reuse_ref_count_ value: " << pending_reuse_ref_count_
-    << ", has_only_non_liv_rfhs value: " << worker_ref_count_
-    << ", IsInitializedAndNotDead() value: " << IsInitializedAndNotDead();
-#endif //OHOS_BUGFIX_CRASH
   }
   for (auto& observer : observers_)
     observer.RenderProcessHostDestroyed(this);

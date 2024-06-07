@@ -303,19 +303,19 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
 #endif
 
 #if defined(OS_OHOS)
-#define TRACE_EVENT0(category_group, name) \
-  BYTRACE_SCOPED_INIT();                   \
-  do {                                     \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {               \
-      BYTRACE_SCOPED_TRACE_EVENT(name);    \
-    }                                      \
-  } while (0);                             \
+#define TRACE_EVENT0(category_group, name)  \
+  BYTRACE_SCOPED_INIT();                    \
+  do {                                      \
+    if (IsCategoryEnable(category_group)) { \
+      BYTRACE_SCOPED_TRACE_EVENT(name);     \
+    }                                       \
+  } while (0);                              \
   INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name)
 
 #define TRACE_EVENT1(category_group, name, arg1_name, arg1_val)                 \
   BYTRACE_SCOPED_INIT();                                                        \
   do {                                                                          \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                                    \
+    if (IsCategoryEnable(category_group)) {                                     \
       BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val)); \
     }                                                                           \
   } while (0);                                                                  \
@@ -325,7 +325,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
                      arg2_val)                                                  \
   BYTRACE_SCOPED_INIT();                                                        \
   do {                                                                          \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                                    \
+    if (IsCategoryEnable(category_group)) {                                     \
       BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val,   \
                                                   arg2_name, arg2_val));        \
     }                                                                           \
@@ -336,7 +336,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
 #define TRACE_EVENT_WITH_FLOW0(category_group, name, bind_id, flow_flags) \
   BYTRACE_SCOPED_INIT();                                                  \
   do {                                                                    \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                              \
+    if (IsCategoryEnable(category_group)) {                               \
       (void) (bind_id);                                                   \
       (void) (flow_flags);                                                \
       BYTRACE_SCOPED_TRACE_EVENT(name);                                   \
@@ -349,7 +349,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
                                arg1_name, arg1_val)                             \
   BYTRACE_SCOPED_INIT();                                                        \
   do {                                                                          \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                                    \
+    if (IsCategoryEnable(category_group)) {                                     \
       (void) (bind_id);                                                         \
       (void) (flow_flags);                                                      \
       BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val)); \
@@ -362,7 +362,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
                                arg1_name, arg1_val, arg2_name, arg2_val)        \
   BYTRACE_SCOPED_INIT();                                                        \
   do {                                                                          \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                                    \
+    if (IsCategoryEnable(category_group)) {                                     \
       (void) (bind_id);                                                         \
       (void) (flow_flags);                                                      \
       BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val,   \
@@ -521,7 +521,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
 #if defined(OS_OHOS)
 #define TRACE_EVENT_BEGIN0(category_group, name)                          \
   do {                                                                    \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                              \
+    if (IsCategoryEnable(category_group)) {                               \
       StartBytrace(name);                                                 \
     }                                                                     \
   } while (0);                                                            \
@@ -530,7 +530,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
 
 #define TRACE_EVENT_BEGIN1(category_group, name, arg1_name, arg1_val)     \
   do {                                                                    \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                              \
+    if (IsCategoryEnable(category_group)) {                               \
       StartBytrace(GetStringFromArgs(name, arg1_name, arg1_val));          \
     }                                                                     \
   } while (0);                                                            \
@@ -540,7 +540,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
 #define TRACE_EVENT_BEGIN2(category_group, name, arg1_name, arg1_val,     \
                            arg2_name, arg2_val)                           \
   do {                                                                    \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                              \
+    if (IsCategoryEnable(category_group)) {                               \
       StartBytrace(GetStringFromArgs(name, arg1_name, arg1_val,            \
                                    arg2_name, arg2_val));                 \
     }                                                                     \
@@ -551,7 +551,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
 
 #define TRACE_EVENT_BEGIN_WITH_FLAGS0(category_group, name, flags) \
   do {                                                             \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                       \
+    if (IsCategoryEnable(category_group)) {                        \
       (void) (flags);                                              \
       StartBytrace(name);                                          \
     }                                                              \
@@ -561,7 +561,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
 #define TRACE_EVENT_BEGIN_WITH_FLAGS1(category_group, name, flags, arg1_name, \
                                       arg1_val)                               \
   do {                                                                        \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                                  \
+    if (IsCategoryEnable(category_group)) {                                   \
       (void) (flags);                                                         \
       StartBytrace(GetStringFromArgs(name, arg1_name, arg1_val));              \
     }                                                                         \
@@ -572,7 +572,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
 #define TRACE_EVENT_COPY_BEGIN2(category_group, name, arg1_name, arg1_val, \
                                 arg2_name, arg2_val)                       \
   do {                                                                     \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                               \
+    if (IsCategoryEnable(category_group)) {                                \
       StartBytrace(GetStringFromArgs(name, arg1_name, arg1_val,             \
                                    arg2_name, arg2_val));                  \
     }                                                                      \
@@ -711,7 +711,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
 #if defined(OS_OHOS)
 #define TRACE_EVENT_END0(category_group, name)                          \
   do {                                                                  \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                            \
+    if (IsCategoryEnable(category_group)) {                             \
       (void) (name);                                                    \
       FinishBytrace();                                                  \
     }                                                                   \
@@ -721,7 +721,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
 
 #define TRACE_EVENT_END1(category_group, name, arg1_name, arg1_val)     \
   do {                                                                  \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                            \
+    if (IsCategoryEnable(category_group)) {                             \
       (void) (name);                                                    \
       (void) (arg1_name);                                               \
       (void) (arg1_val);                                                \
@@ -734,7 +734,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
 #define TRACE_EVENT_END2(category_group, name, arg1_name, arg1_val, arg2_name, \
                          arg2_val)                                             \
   do {                                                                         \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                                   \
+    if (IsCategoryEnable(category_group)) {                                    \
       (void) (name);                                                           \
       (void) (arg1_name);                                                      \
       (void) (arg1_val);                                                       \
@@ -749,7 +749,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
 
 #define TRACE_EVENT_END_WITH_FLAGS0(category_group, name, flags) \
   do {                                                           \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                     \
+    if (IsCategoryEnable(category_group)) {                      \
       (void) (name);                                             \
       (void) (flags);                                            \
       FinishBytrace();                                           \
@@ -760,7 +760,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
 #define TRACE_EVENT_END_WITH_FLAGS1(category_group, name, flags, arg1_name,    \
                                     arg1_val)                                  \
   do {                                                                         \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                                   \
+    if (IsCategoryEnable(category_group)) {                                    \
       (void) (name);                                                           \
       (void) (arg1_name);                                                      \
       (void) (arg1_val);                                                       \
@@ -774,7 +774,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
 #define TRACE_EVENT_COPY_END2(category_group, name, arg1_name, arg1_val,       \
                               arg2_name, arg2_val)                             \
   do {                                                                         \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                                   \
+    if (IsCategoryEnable(category_group)) {                                    \
       (void) (name);                                                           \
       (void) (arg1_name);                                                      \
       (void) (arg1_val);                                                       \
@@ -897,7 +897,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
 #define TRACE_EVENT_MARK_WITH_TIMESTAMP0(category_group, name, timestamp) \
   BYTRACE_SCOPED_INIT();                                                  \
   do {                                                                    \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                              \
+    if (IsCategoryEnable(category_group)) {                               \
       (void) (timestamp);                                                 \
       BYTRACE_SCOPED_TRACE_EVENT(name);                                   \
     }                                                                     \
@@ -910,7 +910,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
                                          arg1_name, arg1_val)                    \
   BYTRACE_SCOPED_INIT();                                                         \
   do {                                                                           \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                                     \
+    if (IsCategoryEnable(category_group)) {                                      \
       (void) (timestamp);                                                        \
       BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val)); \
     }                                                                            \
@@ -923,7 +923,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
     category_group, name, timestamp, arg1_name, arg1_val, arg2_name, arg2_val)   \
   BYTRACE_SCOPED_INIT();                                                         \
   do {                                                                           \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                                     \
+    if (IsCategoryEnable(category_group)) {                                      \
       (void) (timestamp);                                                        \
       BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val,    \
                                                    arg2_name, arg2_val));        \
@@ -936,7 +936,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
 #define TRACE_EVENT_COPY_MARK(category_group, name)                      \
   BYTRACE_SCOPED_INIT();                                                 \
   do {                                                                   \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                             \
+    if (IsCategoryEnable(category_group)) {                              \
       BYTRACE_SCOPED_TRACE_EVENT(name);                                  \
     }                                                                    \
   } while (0);                                                           \
@@ -946,7 +946,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
 #define TRACE_EVENT_COPY_MARK1(category_group, name, arg1_name, arg1_val)         \
   BYTRACE_SCOPED_INIT();                                                          \
   do {                                                                            \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                                      \
+    if (IsCategoryEnable(category_group)) {                                       \
       BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val)); \
     }                                                                             \
   } while (0);                                                                    \
@@ -956,7 +956,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
 #define TRACE_EVENT_COPY_MARK_WITH_TIMESTAMP(category_group, name, timestamp)     \
   BYTRACE_SCOPED_INIT();                                                          \
   do {                                                                            \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                                      \
+    if (IsCategoryEnable(category_group)) {                                       \
       (void) (timestamp);                                                         \
       BYTRACE_SCOPED_TRACE_EVENT(name);                                           \
     }                                                                             \
@@ -1106,7 +1106,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
 #if defined(OS_OHOS)
 #define TRACE_COUNTER1(category_group, name, value)                         \
   do {                                                                      \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                                \
+    if (IsCategoryEnable(category_group)) {                                 \
       CountBytrace(name, value);                                            \
     }                                                                       \
   } while (0);                                                              \
@@ -1116,7 +1116,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
 
 #define TRACE_COUNTER_WITH_FLAG1(category_group, name, flag, value)         \
   do {                                                                      \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                                \
+    if (IsCategoryEnable(category_group)) {                                 \
       (void) (flag);                                                        \
       CountBytrace(name, value);                                            \
     }                                                                       \
@@ -1126,7 +1126,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
 
 #define TRACE_COPY_COUNTER1(category_group, name, value)                    \
   do {                                                                      \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                                \
+    if (IsCategoryEnable(category_group)) {                                 \
       CountBytrace(name, static_cast<int>(value));                          \
     }                                                                       \
   } while (0);                                                              \
@@ -1202,7 +1202,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
 #if defined(OS_OHOS)
 #define TRACE_COUNTER_WITH_TIMESTAMP1(category_group, name, timestamp, value) \
    do {                                                                       \
-    if (IsBytraceEnable() && IsCategoryEnable(category_group)) {                                                  \
+    if (IsCategoryEnable(category_group)) {                                   \
       (void) (timestamp);                                                     \
       CountBytrace(name, value);                                              \
     }                                                                         \

@@ -270,8 +270,7 @@ test("components_unittests") {
 
   if (ohos_unittests) {
     deps += [
-      "//cef:libcef_static",
-      "//ohos_nweb:cef_nweb",
+      "//cef:libcef_static"
     ]
   }
 

@@ -15,7 +15,7 @@
 using namespace OHOS::NWeb;
 
 namespace ui {
-const std::string SPAN_STRING_TAG = "openharmoney.styled-string";
+const std::string SPAN_STRING_TAG = "openharmony.styled-string";
 
 ClipboardOhosReadData::ClipboardOhosReadData(PasteRecordVector& record_vector)
     : record_vector_(record_vector) {

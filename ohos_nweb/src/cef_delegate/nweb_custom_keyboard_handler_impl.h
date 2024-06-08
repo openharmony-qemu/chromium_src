@@ -16,6 +16,7 @@
 #ifndef NWEB_CUSTOM_KEYBOARD_HANDLER_IMPL_H
 #define NWEB_CUSTOM_KEYBOARD_HANDLER_IMPL_H
 
+#include <chrono>
 #include <string>
 
 #include "cef/include/cef_browser.h"
@@ -57,6 +58,7 @@ private:
   bool isCloseFromOnblur_ = false;
   bool isCloseFromOnpause_ = false;
   int32_t input_flags_ = 0;
+  std::chrono::high_resolution_clock::time_point lastCloseInputMethodTime_;
 };
 }  // namespace OHOS::NWeb
 

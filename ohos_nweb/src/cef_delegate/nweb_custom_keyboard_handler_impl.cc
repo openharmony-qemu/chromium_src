@@ -201,6 +201,21 @@ void NWebCustomKeyboardHandlerImpl::CloseFromWebStateChange(WebCustomKeyboardSta
 
   if (!isAttached_) {
     LOG(INFO) << "WebCustomKeyboard CloseFromWebStateChange, custom keyboard is already closed, don't close again";
+    if (mode != WebCustomKeyboardState::FROM_ONPAUSE) {
+      LOG(INFO) << "WebCustomKeyboard, not from switch front and background, ingnore";
+      return;
+    }
+    auto nowTime = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> diff =
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            nowTime - lastCloseInputMethodTime_);
+    // 100: received another hide textinput event in 100ms, we set
+    // isCloseFromOnpause_ flag, onFocus miss, so need onContinue to reattach.
+    if (diff.count() < 100) {
+      isCloseFromOnpause_ = true;
+      LOG(INFO) << "WebCustomKeyboard set isCloseFromOnpause_ flag, diff = " << diff.count()
+                << "ms";
+    }
     return;
   }
 
@@ -214,6 +229,7 @@ void NWebCustomKeyboardHandlerImpl::CloseFromWebStateChange(WebCustomKeyboardSta
   if (auto handler = nweb_handler_.lock()) {
     handler->OnCustomKeyboardClose();
   }
+  lastCloseInputMethodTime_ = std::chrono::high_resolution_clock::now();
 }
 
 bool NWebCustomKeyboardHandlerImpl::AttachFromWebStateChange(WebCustomKeyboardState mode) {

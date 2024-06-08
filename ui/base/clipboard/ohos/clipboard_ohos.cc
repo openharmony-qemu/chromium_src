@@ -462,7 +462,7 @@ class ClipboardOHOSInternal {
 
       bool imgFlag = false;
       imgFlag = record->GetImgData(imgData);
-      const std::string SPAN_STRING_TAG = "openharmoney.styled-string";
+      const std::string SPAN_STRING_TAG = "openharmony.styled-string";
       std::shared_ptr<PasteCustomData> pasteCustomData = record->GetCustomData();
       if (pasteCustomData && (pasteCustomData->find(SPAN_STRING_TAG) != pasteCustomData->end())) {
         allFormat |= static_cast<int>(ClipboardInternalFormat::kHtml);

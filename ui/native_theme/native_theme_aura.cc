@@ -47,6 +47,12 @@ constexpr int kOverlayScrollbarBorderPatchWidth = 0;
 constexpr int kOverlayScrollbarCenterPatchSize = 36;
 constexpr int kOverlayScrollbarHotSize = 24;
 constexpr int kOverlayScrollbarMargin = 4;
+constexpr int kForceScrollbarActiveWidth = 8;
+constexpr int kForceScrollbarInactiveWidth = 4;
+constexpr int kForceScrollbarActiveOffset = 4;
+constexpr int kForceScrollbarInactiveOffset = 8;
+constexpr int kForceScrollbarActiveRadius = 4;
+constexpr int kForceScrollbarInactiveRadius = 3;
 #else
 // Constants for painting overlay scrollbars. Other properties needed outside
 // this painting code are defined in overlay_scrollbar_constants_aura.h.
@@ -235,8 +241,13 @@ void NativeThemeAura::PaintArrowButton(
   }
   DrawPartiallyRoundRect(canvas, rect, upper_left_radius, upper_right_radius,
                          lower_right_radius, lower_left_radius, flags);
-
+#if defined(OHOS_SCROLLBAR)
+  if (!ui::IsForceScrollbarEnabled()) {
+    PaintArrow(canvas, rect, direction, arrow_color);
+  }
+#else
   PaintArrow(canvas, rect, direction, arrow_color);
+#endif
 }
 
 void NativeThemeAura::PaintScrollbarTrack(
@@ -358,6 +369,36 @@ void NativeThemeAura::PaintScrollbarThumb(cc::PaintCanvas* canvas,
     thumb_rect.Inset(fill_insets + edge_adjust_insets);
 #endif // OHOS_SCROLLBAR
   } else {
+#if defined(OHOS_SCROLLBAR)
+    if (ui::IsForceScrollbarEnabled()) {
+      cc::PaintFlags flags;
+      SkScalar radius;
+      thumb_color = SkColorSetA(scrollbar_color, 102);
+      flags.setColor(thumb_color);
+      if (state == kHovered) {
+        radius = SkIntToScalar(kForceScrollbarActiveRadius);
+        if (part == kScrollbarVerticalThumb) {
+          thumb_rect.set_x(kForceScrollbarActiveOffset);
+          thumb_rect.set_width(kForceScrollbarActiveWidth);
+        } else {
+          thumb_rect.set_y(kForceScrollbarActiveOffset);
+          thumb_rect.set_height(kForceScrollbarActiveWidth);
+        }
+      } else {
+        radius = SkIntToScalar(kForceScrollbarInactiveRadius);
+        if (part == kScrollbarVerticalThumb) {
+          thumb_rect.set_x(kForceScrollbarInactiveOffset);
+          thumb_rect.set_width(kForceScrollbarInactiveWidth);
+        } else {
+          thumb_rect.set_y(kForceScrollbarInactiveOffset);
+          thumb_rect.set_height(kForceScrollbarInactiveWidth);
+        }
+      }
+      SkRRect r_rect = SkRRect::MakeRectXY(gfx::RectToSkRect(thumb_rect), radius, radius);
+      canvas->drawRRect(r_rect, flags);
+      return;
+    }
+#endif
     ControlColorId color_id = kScrollbarThumb;
     switch (state) {
       case NativeTheme::kDisabled:

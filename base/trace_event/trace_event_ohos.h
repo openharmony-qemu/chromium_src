@@ -34,8 +34,7 @@ struct BytraceArg {
   BytraceArgValue value;
   BytraceArgType type;
 };
-static bool isHiTraceEnable {false};
-static bool isACETraceEnable {false};
+
 void StartObserveTraceEnable();
 bool IsBytraceEnable();
 bool IsOHOSBytraceEnable();
@@ -49,11 +48,8 @@ template <class ARG1_TYPE>
 std::string GetStringWithArgs(const std::string& name,
                               const char* arg1_name,
                               ARG1_TYPE&& arg1_val) {
-  if (IsBytraceEnable() || IsOHOSBytraceEnable()) {
-    BytraceArg arg1 = GetArg(std::forward<ARG1_TYPE>(arg1_val));
-    return name + " | " + arg1_name + "=" + GetStringFromArg(arg1);
-  }
-  return "";
+  BytraceArg arg1 = GetArg(std::forward<ARG1_TYPE>(arg1_val));
+  return name + " | " + arg1_name + "=" + GetStringFromArg(arg1);
 }
  
 template <class ARG1_TYPE, class ARG2_TYPE>
@@ -62,13 +58,10 @@ std::string GetStringWithArgs(const std::string& name,
                               ARG1_TYPE&& arg1_val,
                               const char* arg2_name,
                               ARG2_TYPE&& arg2_val) {
-  if (IsBytraceEnable() || IsOHOSBytraceEnable()) {
-    BytraceArg arg1 = GetArg(std::forward<ARG1_TYPE>(arg1_val));
-    BytraceArg arg2 = GetArg(std::forward<ARG2_TYPE>(arg2_val));
-    return name + " | " + arg1_name + "=" + GetStringFromArg(arg1) + " | " +
-           arg2_name + "=" + GetStringFromArg(arg2);
-  }
-  return "";
+  BytraceArg arg1 = GetArg(std::forward<ARG1_TYPE>(arg1_val));
+  BytraceArg arg2 = GetArg(std::forward<ARG2_TYPE>(arg2_val));
+  return name + " | " + arg1_name + "=" + GetStringFromArg(arg1) + " | " +
+         arg2_name + "=" + GetStringFromArg(arg2);
 }
   
 void StartBytrace(const std::string& value);

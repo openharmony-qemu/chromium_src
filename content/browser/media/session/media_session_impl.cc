@@ -1792,13 +1792,17 @@ void MediaSessionImpl::RebuildAndNotifyMetadataChanged() {
   bool metadata_changed = metadata_ != metadata;
   if (metadata_changed)
     metadata_ = metadata;
-
+#ifndef OHOS_MEDIA_AVSESSION
   if (!images_changed && !metadata_changed)
     return;
+#endif
   for (auto& observer : observers_) {
+#ifndef OHOS_MEDIA_AVSESSION
     if (metadata_changed)
       observer->MediaSessionMetadataChanged(this->metadata_);
-
+#else
+    observer->MediaSessionMetadataChanged(this->metadata_);
+#endif
     if (images_changed)
       observer->MediaSessionImagesChanged(this->images_);
   }

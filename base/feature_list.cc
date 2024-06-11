@@ -37,6 +37,10 @@ namespace {
 // FeatureList::SetInstance(). Does not use base/memory/singleton.h in order to
 // have more control over initialization timing. Leaky.
 FeatureList* g_feature_list_instance = nullptr;
+#if defined(OHOS_SCROLLBAR)
+bool g_overlay_scrollbar = false;
+bool g_force_scrollbar = false;
+#endif
 
 // Tracks access to Feature state before FeatureList registration.
 class EarlyFeatureAccessTracker {
@@ -464,9 +468,11 @@ void FeatureList::SetScrollbarEnable(bool enable) {
       state = OVERRIDE_DISABLE_FEATURE;
     }
     g_feature_list_instance->SetOverrideStateByFeatureName("OverlayScrollbar", state);
-    LOG(DEBUG) << "set OverlayScrollbar:" << enable;
+    g_overlay_scrollbar = enable;
+    g_force_scrollbar = enable;
+    LOG(INFO) << "set Scrollbar:" << enable << " state:" << state;
   } else {
-    LOG(ERROR) << "set OverlayScrollbar error";
+    LOG(ERROR) << "set Scrollbar error";
   }
 }
 #endif
@@ -653,7 +659,14 @@ void FeatureList::FinalizeInitialization() {
 
 bool FeatureList::IsFeatureEnabled(const Feature& feature) const {
   OverrideState overridden_state = GetOverrideState(feature);
-
+  if (std::string(feature.name) == "OverlayScrollbar") {
+    LOG(INFO) << "Overlay Scrollbar:" << g_overlay_scrollbar;
+    return g_overlay_scrollbar;
+  }
+  if (std::string(feature.name) == "ForceScrollbar") {
+    LOG(INFO) << "Force Scrollbar:" << g_force_scrollbar;
+    return g_force_scrollbar;
+  }
   // If marked as OVERRIDE_USE_DEFAULT, simply return the default state below.
   if (overridden_state != OVERRIDE_USE_DEFAULT)
     return overridden_state == OVERRIDE_ENABLE_FEATURE;

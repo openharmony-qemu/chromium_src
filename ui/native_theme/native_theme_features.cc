@@ -19,12 +19,22 @@ constexpr base::FeatureState kOverlayScrollbarFeatureState =
     base::FEATURE_DISABLED_BY_DEFAULT;
 #endif
 
+#if defined(OHOS_SCROLLBAR)
+constexpr base::FeatureState kForceScrollbarFeatureState =
+    base::FEATURE_DISABLED_BY_DEFAULT;
+#endif
 // Enables or disables overlay scrollbars in Blink (i.e. web content) on Aura
 // or Linux.  The status of native UI overlay scrollbars is determined in
 // PlatformStyle::CreateScrollBar. Does nothing on Mac.
 BASE_FEATURE(kOverlayScrollbar,
              "OverlayScrollbar",
              kOverlayScrollbarFeatureState);
+
+#if defined(OHOS_SCROLLBAR)
+BASE_FEATURE(kForceScrollbar,
+             "ForceScrollbar",
+             kForceScrollbarFeatureState);
+#endif
 
 // Fluent scrollbars aim to modernize the Chromium scrollbars (both overlay
 // and non-overlay) to fit the Windows 11 Fluent design language. For now,
@@ -42,6 +52,12 @@ namespace ui {
 bool IsOverlayScrollbarEnabled() {
   return base::FeatureList::IsEnabled(features::kOverlayScrollbar);
 }
+
+#if defined(OHOS_SCROLLBAR)
+bool IsForceScrollbarEnabled() {
+  return base::FeatureList::IsEnabled(features::kForceScrollbar);
+}
+#endif
 
 bool IsFluentScrollbarEnabled() {
 // Currently, the feature is only supported on Windows. Please see more details

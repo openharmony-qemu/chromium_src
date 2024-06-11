@@ -14,6 +14,9 @@ namespace features {
 
 NATIVE_THEME_EXPORT BASE_DECLARE_FEATURE(kOverlayScrollbar);
 NATIVE_THEME_EXPORT BASE_DECLARE_FEATURE(kFluentScrollbar);
+#if defined(OHOS_SCROLLBAR)
+NATIVE_THEME_EXPORT BASE_DECLARE_FEATURE(kForceScrollbar);
+#endif
 
 }  // namespace features
 
@@ -21,6 +24,9 @@ namespace ui {
 
 NATIVE_THEME_EXPORT bool IsOverlayScrollbarEnabled();
 NATIVE_THEME_EXPORT bool IsFluentScrollbarEnabled();
+#if defined(OHOS_SCROLLBAR)
+NATIVE_THEME_EXPORT bool IsForceScrollbarEnabled();
+#endif
 
 }  // namespace ui
 

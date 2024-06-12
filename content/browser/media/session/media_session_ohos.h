@@ -66,6 +66,7 @@ class MediaSessionOHOS final
 
   bool is_playing_;
   bool is_callback_registed_;
+  bool is_initialized_;
   base::RepeatingTimer report_timer_;
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
   std::shared_ptr<OHOS::NWeb::MediaAVSessionMetadataAdapter> av_metadata_;

@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <vector>
+#include <atomic>
 
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
@@ -67,6 +68,7 @@ class MediaSessionOHOS final
   bool is_playing_;
   bool is_callback_registed_;
   bool is_initialized_;
+  std::atomic_bool is_seeking_{false};
   base::RepeatingTimer report_timer_;
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
   std::shared_ptr<OHOS::NWeb::MediaAVSessionMetadataAdapter> av_metadata_;

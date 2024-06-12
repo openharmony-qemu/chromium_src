@@ -663,6 +663,16 @@ class MEDIA_EXPORT VideoFrame : public base::RefCountedThreadSafe<VideoFrame> {
   base::TimeDelta timestamp() const { return timestamp_; }
   void set_timestamp(base::TimeDelta timestamp) { timestamp_ = timestamp; }
 
+#if BUILDFLAG(IS_OHOS)
+  bool should_skip_current_frame() {
+    return should_skip_current_frame_;
+  }
+
+  void set_skipping_current_frame(bool need_skip) {
+    should_skip_current_frame_ = need_skip;
+  }
+#endif
+
   // It uses |client| to insert a new sync token and potentially waits on an
   // older sync token. The final sync point will be used to release this
   // VideoFrame. Also returns the new sync token.
@@ -865,6 +875,10 @@ class MEDIA_EXPORT VideoFrame : public base::RefCountedThreadSafe<VideoFrame> {
 
   // Allocation which makes up |data_| planes for self-allocated frames.
   std::unique_ptr<uint8_t, base::UncheckedFreeDeleter> private_data_;
+
+#if BUILDFLAG(IS_OHOS)
+  bool should_skip_current_frame_ = false;
+#endif
 };
 
 }  // namespace media

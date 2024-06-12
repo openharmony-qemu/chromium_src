@@ -77,6 +77,7 @@ void StreamTextureHost::OnFrameWithInfoAvailable(
     const gfx::Size& coded_size,
     const gfx::Rect& visible_rect,
     absl::optional<gpu::VulkanYCbCrInfo> ycbcr_info) {
+  TRACE_EVENT0("base", "StreamTextureHost::OnFrameWithInfoAvailable.");
   if (listener_) {
     listener_->OnFrameWithInfoAvailable(mailbox, coded_size, visible_rect,
                                         ycbcr_info);
@@ -84,7 +85,7 @@ void StreamTextureHost::OnFrameWithInfoAvailable(
 }
 
 void StreamTextureHost::OnFrameAvailable() {
-  TRACE_EVENT0("base", "StreamTextureHost::OnFrameAvailable");
+  TRACE_EVENT0("base", "StreamTextureHost::OnFrameAvailable.");
   if (listener_)
     listener_->OnFrameAvailable();
 }

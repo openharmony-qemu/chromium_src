@@ -59,6 +59,8 @@ class CONTENT_EXPORT NativeTextureWrapperImpl
   // Should be safe to call from any thread.
   void ClearCBOnAnyThread() override;
 
+  void SetSkippingCurrentFrame(bool need_skip) override;
+
  private:
   NativeTextureWrapperImpl(
       bool enable_texture_copy,

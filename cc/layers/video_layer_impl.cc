@@ -176,11 +176,26 @@ void VideoLayerImpl::AppendQuads(viz::CompositorRenderPass* render_pass,
   if (is_clipped()) {
     clip_rect_opt = clip_rect();
   }
-  updater_->AppendQuads(render_pass, frame_, transform, quad_rect,
-                        visible_quad_rect, draw_properties().mask_filter_info,
-                        clip_rect_opt, contents_opaque(), draw_opacity(),
-                        GetSortingContextId());
+
 #if BUILDFLAG(IS_OHOS)
+  if (may_contain_native() && !is_native_video() &&
+      visible_quad_rect_ != gfx::Rect() &&
+      visible_quad_rect_.size() != bounds() &&
+      !frame_->should_skip_current_frame()) {
+    LOG(DEBUG) << "[NativeEmbed] visible_quad_rect_:"
+               << visible_quad_rect_.ToString() << ",bounds:"
+               << bounds().ToString() << ", frame:" << frame_;
+    frame_->set_skipping_current_frame(true);
+  }
+
+  if (!frame_->should_skip_current_frame()) {
+    updater_->AppendQuads(render_pass, frame_, transform, quad_rect,
+                          visible_quad_rect,
+                          draw_properties().mask_filter_info,
+                          clip_rect_opt, contents_opaque(), draw_opacity(),
+                          GetSortingContextId());
+  }
+
   visible_quad_rect.set_origin(
       ScreenSpaceTransform().MapPoint(visible_quad_rect.origin()));
   LOG(DEBUG) << "[NativeEmbed] visible_quad_rect:"
@@ -191,6 +206,11 @@ void VideoLayerImpl::AppendQuads(viz::CompositorRenderPass* render_pass,
     visible_quad_rect_ = visible_quad_rect;
     layer_tree_impl()->OnLayerRectUpdate(id(), visible_quad_rect);
   }
+#else
+  updater_->AppendQuads(render_pass, frame_, transform, quad_rect,
+                        visible_quad_rect, draw_properties().mask_filter_info,
+                        clip_rect_opt, contents_opaque(), draw_opacity(),
+                        GetSortingContextId());
 #endif
 }
 

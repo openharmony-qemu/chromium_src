@@ -47,7 +47,6 @@ void BrowserAccessibilityManagerOHOS::HandleFocusChanged(
     int64_t accessibilityId) {
   SendAccessibilityEvent(accessibilityId,
                          OHOS::NWeb::AccessibilityEventType::FOCUS);
-  MoveAccessibilityFocusToId(accessibilityId);
 }
 
 void BrowserAccessibilityManagerOHOS::RegisterAccessibilityIdGenerator(
@@ -176,7 +175,6 @@ void BrowserAccessibilityManagerOHOS::HandleHover(int64_t accessibilityId) {
 
   SendAccessibilityEvent(accessibilityId,
                          OHOS::NWeb::AccessibilityEventType::HOVER_ENTER_EVENT);
-  MoveAccessibilityFocusToIdAndRefocusIfNeeded(accessibilityId);
 }
 
 void BrowserAccessibilityManagerOHOS::HandleEditableTextChanged(int64_t accessibilityId)

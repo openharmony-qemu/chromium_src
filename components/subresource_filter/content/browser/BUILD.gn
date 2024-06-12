@@ -176,7 +176,6 @@ source_set("unit_tests") {
     "content_subresource_filter_throttle_manager_unittest.cc",
     "navigation_console_logger_unittest.cc",
     "ruleset_publisher_impl_unittest.cc",
-    "ruleset_service_unittest.cc",
     "subresource_filter_configuration_unittest.cc",
     "subresource_filter_content_settings_manager_unittest.cc",
     "subresource_filter_safe_browsing_activation_throttle_unittest.cc",

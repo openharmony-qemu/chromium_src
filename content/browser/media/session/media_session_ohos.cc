@@ -34,6 +34,7 @@ MediaSessionOHOS::MediaSessionOHOS(MediaSessionImpl* session)
   DCHECK(session);
   is_playing_ = false;
   is_callback_registed_ = false;
+  is_initialized_ = false;
   avsession_adapter_ =
     OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateMediaAVSessionAdapter();
   if (avsession_adapter_) {
@@ -57,6 +58,7 @@ void MediaSessionOHOS::Prepare(OHOS::NWeb::MediaAVSessionType type) {
   if (type == OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID) {
     return;
   }
+  is_initialized_ = true;
   if (avsession_adapter_->CreateAVSession(type)) {
     is_callback_registed_ = false;
     media_session_->RebuildAndNotifyMetadataChanged();
@@ -103,17 +105,22 @@ void MediaSessionOHOS::MediaSessionInfoChanged(
   if (!avsession_adapter_ || !session_info) {
     return;
   }
-  if (session_info->audio_video_states) {
-    auto session_type = GetMediaType(session_info->audio_video_states.value());
-    Prepare(session_type);
+  if (!is_initialized_) {
+    if (session_info->audio_video_states) {
+      auto session_type = GetMediaType(session_info->audio_video_states.value());
+      Prepare(session_type);
+    }
   }
+  is_playing_ = session_info->state != media_session::mojom::MediaSessionInfo::SessionState::kInactive &&
+      session_info->playback_state == media_session::mojom::MediaPlaybackState::kPlaying;
   OHOS::NWeb::MediaAVSessionPlayState playback_state;
-  if (session_info->state != media_session::mojom::MediaSessionInfo::SessionState::kInactive &&
-      session_info->playback_state == media_session::mojom::MediaPlaybackState::kPlaying) {
-    is_playing_ = true;
+  if (is_playing_) {
     playback_state = OHOS::NWeb::MediaAVSessionPlayState::STATE_PLAY;
+    if (session_info->audio_video_states) {
+      auto session_type = GetMediaType(session_info->audio_video_states.value());
+      Prepare(session_type);
+    }
   } else {
-    is_playing_ = false;
     playback_state = OHOS::NWeb::MediaAVSessionPlayState::STATE_PAUSE;
   }
   avsession_adapter_->SetPlaybackState(playback_state);

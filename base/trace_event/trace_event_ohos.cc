@@ -49,6 +49,11 @@ void StartObserveTraceEnable() {
                                     .GetSystemPropertiesInstance();
   system_properties_adapter.AttachSysPropObserver(OHOS::NWeb::PropertiesKey::PROP_HITRACE_ENABLEFLAGS,
     traceObserver.get());
+
+  if (OHOS::NWeb::OhosAdapterHelper::GetInstance().GetHiTraceAdapterInstance().IsHiTraceEnable()) {
+    traceDebugStatus = OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
+                       .GetTraceDebugEnable();
+  }
 }
 
 bool IsOHOSBytraceEnable() {
@@ -73,11 +78,7 @@ bool IsCategoryEnable(const char *category_group) {
     return false;
   }
 
-  if (traceDebugStatus) {
-    return true;
-  }
-
-  if (IsDebugCategory(category_group, DEBUG_CATEGORY)) {
+  if (traceDebugStatus || !IsDebugCategory(category_group, DEBUG_CATEGORY)) {
     return true;
   }
   return false;

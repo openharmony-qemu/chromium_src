@@ -1782,6 +1782,20 @@ void ARK_WEB_CALLBACK ark_web_nweb_register_ark_jsfunction2(
       *object_name, *method_list, *async_method_list, object_id);
 }
 
+void ARK_WEB_CALLBACK ark_web_nweb_send_touchpad_fling_event(struct _ark_web_nweb_t *self,
+                                                             double x, double y, double vx, double vy) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->SendTouchpadFlingEvent(
+      x,
+      y,
+      vx,
+      vy);
+}
+
 void ARK_WEB_CALLBACK ark_web_nweb_set_fit_content_mode(struct _ark_web_nweb_t *self,
                                                  int32_t mode) {
   ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
@@ -1800,6 +1814,15 @@ ArkWebString ARK_WEB_CALLBACK ark_web_nweb_get_select_info(
 
   // Execute
   return ArkWebNWebCppToC::Get(self)->GetSelectInfo();
+}
+
+void ARK_WEB_CALLBACK ark_web_nweb_on_online_render_to_foreground(struct _ark_web_nweb_t *self) {
+  ARK_WEB_CPPTOC_DV_LOG("capi struct is %{public}ld", (long)self);
+
+  ARK_WEB_CPPTOC_CHECK_PARAM(self, );
+
+  // Execute
+  ArkWebNWebCppToC::Get(self)->OnOnlineRenderToForeground();
 }
 
 void ARK_WEB_CALLBACK
@@ -2003,8 +2026,10 @@ ArkWebNWebCppToC::ArkWebNWebCppToC() {
   GetStruct()->terminate_render_process = ark_web_nweb_terminate_render_process;
   GetStruct()->suggestion_selected = ark_web_nweb_suggestion_selected;
   GetStruct()->register_ark_jsfunction2 = ark_web_nweb_register_ark_jsfunction2;
+  GetStruct()->send_touchpad_fling_event = ark_web_nweb_send_touchpad_fling_event;
   GetStruct()->set_fit_content_mode = ark_web_nweb_set_fit_content_mode;
   GetStruct()->get_select_info = ark_web_nweb_get_select_info;
+  GetStruct()->on_online_render_to_foreground = ark_web_nweb_on_online_render_to_foreground;
   GetStruct()->on_safe_insets_change = ark_web_nweb_on_safe_insets_change;
 }
 

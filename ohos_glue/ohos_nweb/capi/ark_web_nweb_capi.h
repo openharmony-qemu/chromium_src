@@ -514,10 +514,15 @@ typedef struct _ark_web_nweb_t {
       const ArkWebStringVector *method_list,
       const ArkWebStringVector *async_method_list, const int32_t object_id);
 
+  void(ARK_WEB_CALLBACK *send_touchpad_fling_event)(struct _ark_web_nweb_t *self,
+                                                    double x, double y, double vx, double vy);
+
   void(ARK_WEB_CALLBACK *set_fit_content_mode)(struct _ark_web_nweb_t *self,
                                         int32_t mode);
 
   ArkWebString(ARK_WEB_CALLBACK *get_select_info)(struct _ark_web_nweb_t *self);
+
+  void(ARK_WEB_CALLBACK *on_online_render_to_foreground)(struct _ark_web_nweb_t *self);
 
   void(ARK_WEB_CALLBACK* on_safe_insets_change)(struct _ark_web_nweb_t* self,
                                                 int left,

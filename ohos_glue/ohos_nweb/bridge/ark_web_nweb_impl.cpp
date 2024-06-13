@@ -913,12 +913,20 @@ void ArkWebNWebImpl::RegisterArkJSfunction(
       ArkWebStringVectorStructToClass(async_method_list), object_id);
 }
 
+void ArkWebNWebImpl::SendTouchpadFlingEvent(double x, double y, double vx, double vy) {
+  nweb_nweb_->SendTouchpadFlingEvent(x, y, vx, vy);
+}
+
 void ArkWebNWebImpl::SetFitContentMode(int32_t mode) {
   nweb_nweb_->SetFitContentMode(mode);
 }
 
 ArkWebString ArkWebNWebImpl::GetSelectInfo() {
   return ArkWebStringClassToStruct(nweb_nweb_->GetSelectInfo());
+}
+
+void ArkWebNWebImpl::OnOnlineRenderToForeground() {
+  nweb_nweb_->OnOnlineRenderToForeground();
 }
 
 void ArkWebNWebImpl::OnSafeInsetsChange(int left,

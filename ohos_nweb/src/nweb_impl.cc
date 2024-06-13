@@ -959,6 +959,9 @@ bool NWebImpl::SendKeyEvent(int32_t keyCode, int32_t keyAction) {
   return input_handler_->SendKeyEvent(keyCode, keyAction);
 }
 
+void NWebImpl::SendTouchpadFlingEvent(double x, double y, double vx, double vy) {
+}
+
 void NWebImpl::SendMouseWheelEvent(double x,
                                    double y,
                                    double deltaX,
@@ -2607,6 +2610,9 @@ std::string NWebImpl::GetSelectInfo() {
   return std::string();
 }
 #endif
+
+void NWebImpl::OnOnlineRenderToForeground() {
+}
 
 void NWebImpl::OnCreateNativeMediaPlayer(
     std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) {

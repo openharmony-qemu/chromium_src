@@ -1112,6 +1112,17 @@ public:
                              const int32_t object_id) override;
 
   /**
+   * @brief Send touchpad fling event.
+   *
+   * @param x location of x.
+   * @param y location of y.
+   * @param vx velocity of x.
+   * @param vy velocity of y.
+   */
+  /*--ark web()--*/
+  void SendTouchpadFlingEvent(double x, double y, double vx, double vy) override;
+
+  /**
    * @brief Set fit content mode.
    */
   void SetFitContentMode(int32_t mode) override;
@@ -1120,6 +1131,12 @@ public:
    * @brief Get select info.
    */
   ArkWebString GetSelectInfo() override;
+
+  /**
+    * @brief Render process switch to foreground.
+   */
+  /*--ark web()--*/
+  void OnOnlineRenderToForeground() override;
 
   /**
    * @brief Notify that safe insets change.

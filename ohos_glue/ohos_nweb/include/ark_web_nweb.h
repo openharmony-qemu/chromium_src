@@ -1275,6 +1275,17 @@ public:
       const ArkWebString &object_name, const ArkWebStringVector &method_list,
       const ArkWebStringVector &async_method_list, const int32_t object_id) = 0;
 
+    /**
+     * @brief Send touchpad fling event.
+     *
+     * @param x location of x.
+     * @param y location of y.
+     * @param vx velocity of x.
+     * @param vy velocity of y.
+     */
+    /*--ark web()--*/
+    virtual void SendTouchpadFlingEvent(double x, double y, double vx, double vy) = 0;
+
   /**
    * @brief Set fit content mode.
    */
@@ -1288,6 +1299,12 @@ public:
    */
   /*--ark web()--*/
   virtual ArkWebString GetSelectInfo() = 0;
+
+  /**
+    * @brief Online Render process switch to foreground.
+   */
+  /*--ark web()--*/
+  virtual void OnOnlineRenderToForeground() = 0;
 
   /**
    * @brief Notify that safe insets change.

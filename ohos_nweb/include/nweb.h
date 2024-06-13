@@ -1247,6 +1247,16 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
         const int32_t object_id) = 0;
 
     /**
+     * @brief Send touchpad fling event.
+     *
+     * @param x location of x.
+     * @param y location of y.
+     * @param vx velocity of x.
+     * @param vy velocity of y.
+     */
+    virtual void SendTouchpadFlingEvent(double x, double y, double vx, double vy) = 0;
+
+    /**
      * Set fit content mode.
      *
     */
@@ -1257,6 +1267,12 @@ class OHOS_NWEB_EXPORT NWeb : public std::enable_shared_from_this<NWeb> {
      *
     */
     virtual std::string GetSelectInfo() = 0;
+
+    /**
+    * @brief Render process switch to foreground.
+     */
+    /*--ark web()--*/
+    virtual void OnOnlineRenderToForeground() = 0;
 
     /**
      * @brief Notify that safe insets change.

@@ -37,10 +37,6 @@ namespace {
 // FeatureList::SetInstance(). Does not use base/memory/singleton.h in order to
 // have more control over initialization timing. Leaky.
 FeatureList* g_feature_list_instance = nullptr;
-#if defined(OHOS_SCROLLBAR)
-bool g_overlay_scrollbar = false;
-bool g_force_scrollbar = false;
-#endif
 
 // Tracks access to Feature state before FeatureList registration.
 class EarlyFeatureAccessTracker {
@@ -311,17 +307,8 @@ void FeatureList::InitializeFromCommandLine(
   // Process disabled features first, so that disabled ones take precedence over
   // enabled ones (since RegisterOverride() uses insert()).
   RegisterOverridesFromCommandLine(disable_features, OVERRIDE_DISABLE_FEATURE);
-#if defined(OHOS_SCROLLBAR)
-  if (parsed_enable_features == "OverlayScrollbar") {
-    RegisterOverridesFromCommandLine(parsed_enable_features,
-                                   OVERRIDE_DISABLE_FEATURE);
-  } else {
-#endif
-    RegisterOverridesFromCommandLine(parsed_enable_features,
+  RegisterOverridesFromCommandLine(parsed_enable_features,
                                    OVERRIDE_ENABLE_FEATURE);
-#if defined(OHOS_SCROLLBAR)
-  }
-#endif
 
   initialized_from_command_line_ = true;
 }
@@ -468,8 +455,7 @@ void FeatureList::SetScrollbarEnable(bool enable) {
       state = OVERRIDE_DISABLE_FEATURE;
     }
     g_feature_list_instance->SetOverrideStateByFeatureName("OverlayScrollbar", state);
-    g_overlay_scrollbar = enable;
-    g_force_scrollbar = enable;
+    g_feature_list_instance->SetOverrideStateByFeatureName("ForceScrollbar", state);
     LOG(INFO) << "set Scrollbar:" << enable << " state:" << state;
   } else {
     LOG(ERROR) << "set Scrollbar error";
@@ -659,14 +645,16 @@ void FeatureList::FinalizeInitialization() {
 
 bool FeatureList::IsFeatureEnabled(const Feature& feature) const {
   OverrideState overridden_state = GetOverrideState(feature);
+#if defined(OHOS_SCROLLBAR)
   if (std::string(feature.name) == "OverlayScrollbar") {
-    LOG(INFO) << "Overlay Scrollbar:" << g_overlay_scrollbar;
-    return g_overlay_scrollbar;
+    LOG(INFO) << "Overlay Scrollbar:" << overridden_state;
+    return overridden_state == OVERRIDE_ENABLE_FEATURE;
   }
   if (std::string(feature.name) == "ForceScrollbar") {
-    LOG(INFO) << "Force Scrollbar:" << g_force_scrollbar;
-    return g_force_scrollbar;
+    LOG(INFO) << "Force Scrollbar:" << overridden_state;
+    return overridden_state == OVERRIDE_DISABLE_FEATURE;
   }
+#endif
   // If marked as OVERRIDE_USE_DEFAULT, simply return the default state below.
   if (overridden_state != OVERRIDE_USE_DEFAULT)
     return overridden_state == OVERRIDE_ENABLE_FEATURE;
@@ -747,20 +735,14 @@ void FeatureList::SetOverrideStateByFeatureName(
   DCHECK(initialized_);
   DCHECK(IsValidFeatureOrFieldTrialName(feature_name)) << feature_name;
   auto it = overrides_.find(feature_name);
-  if (it != overrides_.end()) {
-    OverrideEntry entry = it->second;
-
-    // Activate the corresponding field trial, if necessary.
-    if (entry.field_trial)
-      entry.field_trial->Activate();
-
-    // TODO(asvitkine) Expand this section as more support is added.
-    LOG(DEBUG) << "overlay set change state:" << (int)state;
-    entry.overridden_state = state;
-  } else {
-    LOG(DEBUG) << "overlay set state:" << (int)state;
+  if (it == overrides_.end()) {
+    LOG(INFO) << "add feature into featurelist";
     overrides_.emplace(std::string(feature_name),
                    OverrideEntry(state, nullptr));
+    if (FieldTrialList::GetInstance()) {
+      LOG(INFO) << "update feature into fieldlist";
+      FieldTrialList::UpdateFeature();
+    }
   }
 }
 #endif
@@ -868,8 +850,16 @@ void FeatureList::RegisterOverride(StringPiece feature_name,
   // Note: The semantics of emplace() is that it does not overwrite the entry if
   // one already exists for the key. Thus, only the first override for a given
   // feature name takes effect.
+#if defined(OHOS_SCROLLBAR)
+  auto it = overrides_.find(feature_name);
+  if (it == overrides_.end()) {
+    overrides_.emplace(std::string(feature_name),
+                     OverrideEntry(overridden_state, field_trial));
+  }
+#else
   overrides_.emplace(std::string(feature_name),
                      OverrideEntry(overridden_state, field_trial));
+#endif
 }
 
 void FeatureList::GetFeatureOverridesImpl(std::string* enable_overrides,

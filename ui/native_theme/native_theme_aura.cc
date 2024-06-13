@@ -52,7 +52,7 @@ constexpr int kForceScrollbarInactiveWidth = 4;
 constexpr int kForceScrollbarActiveOffset = 4;
 constexpr int kForceScrollbarInactiveOffset = 8;
 constexpr int kForceScrollbarActiveRadius = 4;
-constexpr int kForceScrollbarInactiveRadius = 3;
+constexpr int kForceScrollbarInactiveRadius = 2;
 #else
 // Constants for painting overlay scrollbars. Other properties needed outside
 // this painting code are defined in overlay_scrollbar_constants_aura.h.
@@ -378,19 +378,19 @@ void NativeThemeAura::PaintScrollbarThumb(cc::PaintCanvas* canvas,
       if (state == kHovered) {
         radius = SkIntToScalar(kForceScrollbarActiveRadius);
         if (part == kScrollbarVerticalThumb) {
-          thumb_rect.set_x(kForceScrollbarActiveOffset);
+          thumb_rect.set_x(thumb_rect.x() + kForceScrollbarActiveOffset);
           thumb_rect.set_width(kForceScrollbarActiveWidth);
         } else {
-          thumb_rect.set_y(kForceScrollbarActiveOffset);
+          thumb_rect.set_y(thumb_rect.y() + kForceScrollbarActiveOffset);
           thumb_rect.set_height(kForceScrollbarActiveWidth);
         }
       } else {
         radius = SkIntToScalar(kForceScrollbarInactiveRadius);
         if (part == kScrollbarVerticalThumb) {
-          thumb_rect.set_x(kForceScrollbarInactiveOffset);
+          thumb_rect.set_x(thumb_rect.x() + kForceScrollbarInactiveOffset);
           thumb_rect.set_width(kForceScrollbarInactiveWidth);
         } else {
-          thumb_rect.set_y(kForceScrollbarInactiveOffset);
+          thumb_rect.set_y(thumb_rect.y() + kForceScrollbarInactiveOffset);
           thumb_rect.set_height(kForceScrollbarInactiveWidth);
         }
       }

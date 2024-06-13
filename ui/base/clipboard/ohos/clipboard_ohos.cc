@@ -453,8 +453,8 @@ class ClipboardOHOSInternal {
       return false;
     }
     PasteRecordVector record_vector = read_data_->GetPasteRecordVector();
-    if (record_vector.size() > 0) {
-      auto& record = record_vector[0];
+    const std::string SPAN_STRING_TAG = "openharmony.styled-string";
+    for (auto& record : record_vector) {
       std::shared_ptr<std::string> html = record->GetHtmlText();
       std::shared_ptr<std::string> text = record->GetPlainText();
       std::shared_ptr<ClipBoardImageDataAdapterImpl> imgData 
@@ -462,7 +462,6 @@ class ClipboardOHOSInternal {
 
       bool imgFlag = false;
       imgFlag = record->GetImgData(imgData);
-      const std::string SPAN_STRING_TAG = "openharmony.styled-string";
       std::shared_ptr<PasteCustomData> pasteCustomData = record->GetCustomData();
       if (pasteCustomData && (pasteCustomData->find(SPAN_STRING_TAG) != pasteCustomData->end())) {
         allFormat |= static_cast<int>(ClipboardInternalFormat::kHtml);

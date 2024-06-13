@@ -155,6 +155,9 @@ void MediaSessionOHOS::MediaSessionPositionChanged(
   if (!avsession_adapter_ || !position) {
     return;
   }
+  if (is_seeking_.load()) {
+    return;
+  }
   auto real_duration = position.value().duration().InMilliseconds();
   av_position_->SetDuration(real_duration);
   auto real_position = position.value().GetPosition().InMilliseconds();
@@ -182,6 +185,7 @@ void MediaSessionOHOS::Stop() {
 
 void MediaSessionOHOS::SeekTo(const int64_t millis) {
   DCHECK(media_session_);
+  is_seeking_.store(true);
   if (millis >= 0) {
     media_session_->SeekTo(base::Milliseconds(millis));
     if (is_playing_) {
@@ -193,6 +197,7 @@ void MediaSessionOHOS::SeekTo(const int64_t millis) {
   } else {
     LOG(ERROR) << "receive an illegal millis of " << millis;
   }
+  is_seeking_.store(false);
 }
 
 void MediaSessionOHOS::CheckMediaInfo() {

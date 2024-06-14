@@ -146,6 +146,11 @@ extern bool g_siteIsolationMode;
 #include "cef/libcef/browser/subresource_filter/adblock_list.h"
 #endif
 
+#ifdef OHOS_NETWORK_LOAD
+#include "base/files/file_path.h"
+#include "base/files/file_util.h"
+#endif
+
 namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
@@ -3152,6 +3157,60 @@ bool NWebImpl::WebPageSnapshot(const char* id,
 }
 #endif
 
+#ifdef OHOS_NETWORK_LOAD
+void NWebImpl::SetPathAllowingUniversalAccess(
+    const std::vector<std::string>& pathList,
+    const std::vector<std::string>& moduleName,
+    std::string& errorPath) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  if (pathList.empty()) {
+    LOG(INFO) << "SetPathAllowingUniversalAccess empty";
+    nweb_delegate_->SetPathAllowingUniversalAccess(pathList);
+    return;
+  }
+  std::vector<base::FilePath> res_dir_path_list;
+  std::vector<base::FilePath> file_dir_path_list;
+  for (auto& name: moduleName) {
+    res_dir_path_list.push_back(base::FilePath(
+      "/data/storage/el1/bundle/" + name + "/resources/resfile"));
+    file_dir_path_list.push_back(base::FilePath(
+      "/data/storage/el2/base/haps/" + name + "/files"));
+  }
+  file_dir_path_list.push_back(base::FilePath("/data/storage/el2/base/files"));
+
+  for (auto& p: pathList) {
+    base::FilePath path(p);
+    auto real_path = base::MakeAbsoluteFilePathNoResolveSymbolicLinks(path).value_or(base::FilePath());
+    if (real_path.empty()) {
+      errorPath = p;
+      return;
+    }
+    bool valid = false;
+    for (auto& res_dir: res_dir_path_list) {
+      if (res_dir.IsParent(real_path) || res_dir == real_path) {
+        valid = true;
+        break;
+      }
+    }
+    if (valid) {
+      continue;
+    }
+    for (auto& file_dir: file_dir_path_list) {
+      if (file_dir.IsParent(real_path)) {
+        valid = true;
+        break;
+      }
+    }
+    if (!valid) {
+      errorPath = p;
+      return;
+    }
+  }
+  nweb_delegate_->SetPathAllowingUniversalAccess(pathList);
+} 
+#endif
 int NWebImpl::SetUrlTrustList(const std::string& urlTrustList) {
 #if OHOS_URL_TRUST_LIST
   if (nweb_delegate_ == nullptr) {

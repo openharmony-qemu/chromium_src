@@ -571,7 +571,11 @@ bool InterfaceEndpointClient::AcceptWithResponder(
 bool InterfaceEndpointClient::SendMessage(Message* message,
                                           bool is_control_message) {
   
+#if defined(OHOS_BUGFIX_CRASH)
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+#else
   CHECK(sequence_checker_.CalledOnValidSequence());
+#endif
   DCHECK(!message->has_flag(Message::kFlagExpectsResponse));
   DCHECK(!handle_.pending_association());
 

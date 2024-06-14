@@ -129,8 +129,8 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
       IsDataBaseEnabled() ? STATE_ENABLED : STATE_DISABLED;
   // TODO(ohos): Fix allow_universal_access_from_file_urls and
   // allow_file_access_from_file_urls
-  // browser_settings.universal_access_from_file_urls =
-  //    EnableUniversalAccessFromFileURLs() ? STATE_ENABLED : STATE_DISABLED;
+  browser_settings.universal_access_from_file_urls =
+     EnableUniversalAccessFromFileURLs() ? STATE_ENABLED : STATE_DISABLED;
   // browser_settings.file_access_from_file_urls =
   //    EnableRawFileAccessFromFileURLs() ? STATE_ENABLED : STATE_DISABLED;
 #if defined(OHOS_DARKMODE)

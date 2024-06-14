@@ -128,7 +128,9 @@ void NativeTextureWrapperImpl::SetCurrentFrameInternal(
 
 void NativeTextureWrapperImpl::SetSkippingCurrentFrame(bool need_skip) {
   base::AutoLock auto_lock(current_frame_lock_);
-  current_frame_->set_skipping_current_frame(need_skip);
+  if (current_frame_) {
+    current_frame_->set_skipping_current_frame(need_skip);
+  }
 }
 
 void NativeTextureWrapperImpl::UpdateTextureSize(const gfx::Size& new_size) {

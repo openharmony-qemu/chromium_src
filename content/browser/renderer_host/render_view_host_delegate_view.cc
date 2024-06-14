@@ -53,10 +53,8 @@ void RenderViewHostDelegateView::GestureEventAck(
     blink::mojom::InputEventResultState ack_result) {}
 
 #ifdef OHOS_DISPLAY_CUTOUT
-void RenderViewHostDelegateView::OnSafeInsetsChange(int left,
-                                                    int top,
-                                                    int right,
-                                                    int bottom) {}
+void RenderViewHostDelegateView::OnSafeInsetsChange(
+    const gfx::Insets& safe_insets) {}
 #endif
 
 }  //  namespace content

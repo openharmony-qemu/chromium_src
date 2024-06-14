@@ -28,6 +28,9 @@ class Vector2d;
 #ifdef OHOS_AI
 class Point;
 #endif
+#ifdef OHOS_DISPLAY_CUTOUT
+class Insets;
+#endif
 }
 
 #if BUILDFLAG(IS_ANDROID)
@@ -161,7 +164,7 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
 #endif
 
 #ifdef OHOS_DISPLAY_CUTOUT
-  virtual void OnSafeInsetsChange(int left, int top, int right, int bottom);
+  virtual void OnSafeInsetsChange(const gfx::Insets& safe_insets);
 #endif
 
 #ifdef OHOS_AI

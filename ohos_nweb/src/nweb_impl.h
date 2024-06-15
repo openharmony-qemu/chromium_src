@@ -500,6 +500,12 @@ class NWebImpl : public NWeb {
 #endif
   int SetUrlTrustList(const std::string& urlTrustList) override;
 
+#ifdef OHOS_NETWORK_LOAD
+  void SetPathAllowingUniversalAccess(
+    const std::vector<std::string>& pathList, 
+    const std::vector<std::string>& moduleName,
+    std::string& errorPath) override;
+#endif
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

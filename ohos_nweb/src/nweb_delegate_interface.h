@@ -492,6 +492,11 @@ class NWebDelegateInterface
   virtual int SetUrlTrustList(const std::string& urlTrustList) = 0;
 #endif
 
+#ifdef OHOS_NETWORK_LOAD
+  virtual void SetPathAllowingUniversalAccess(
+      const std::vector<std::string>& pathList) = 0;
+#endif
+
   virtual bool IsCustomKeyboard() const = 0;
 
   virtual std::shared_ptr<NWebCustomKeyboardHandlerImpl> GetCustomKeyboardHandler() const = 0;

@@ -3579,4 +3579,20 @@ int NWebDelegate::SetUrlTrustList(const std::string& urlTrustList) {
   return GetBrowser()->SetUrlTrustList(urlTrustList);
 }
 #endif
+
+#ifdef OHOS_NETWORK_LOAD
+void NWebDelegate::SetPathAllowingUniversalAccess(
+    const std::vector<std::string>& pathList) {
+  if (!GetBrowser().get() || !GetBrowser()->GetHost() || !preference_delegate_) {
+    LOG(ERROR) << "NWebDelegate::SetPathAllowingUniversalAccess failed, get browser failed";
+    return;
+  }
+  preference_delegate_->PutEnableUniversalAccessFromFileURLs(pathList.size() != 0);
+  std::vector<CefString> cef_path_list;
+  std::for_each(pathList.begin(), pathList.end(), [&cef_path_list](const std::string& path){
+    cef_path_list.emplace_back(CefString(path));
+  });
+  GetBrowser()->GetHost()->SetGrantFileAccessDirs(cef_path_list);
+} 
+#endif
 }  // namespace OHOS::NWeb

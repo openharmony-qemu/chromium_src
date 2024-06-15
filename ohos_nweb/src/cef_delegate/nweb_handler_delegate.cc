@@ -26,6 +26,7 @@
 #include "cef/include/cef_parser.h"
 #include "cef/include/wrapper/cef_closure_task.h"
 #include "cef/include/wrapper/cef_helpers.h"
+#include "content/public/browser/browser_thread.h"
 #include "nweb_access_request_delegate.h"
 #include "nweb_context_menu_params_impl.h"
 #include "nweb_controller_handler_impl.h"
@@ -102,6 +103,10 @@ namespace {
 #ifdef OHOS_CSS_INPUT_TIME
 const int kEpochBeginYear = 1970;
 const int kMonthPerYear = 12;
+#endif
+
+#if defined(OHOS_SOFTWARE_COMPOSITOR)
+const int WEB_CAN_SNAPSHOT_DELAY_TIME = 1500;
 #endif
 
 ImageColorType TransformColorType(cef_color_type_t color_type) {
@@ -428,6 +433,9 @@ void NWebHandlerDelegate::OnDestroy() {
   if (event_handler_) {
     event_handler_->OnDestroy();
   }
+#if defined(OHOS_SOFTWARE_COMPOSITOR)
+  setWebPaintedTask_.Cancel();
+#endif
 }
 
 void NWebHandlerDelegate::RegisterDownLoadListener(
@@ -987,7 +995,10 @@ void NWebHandlerDelegate::OnLoadStart(CefRefPtr<CefBrowser> browser,
     return;
   }
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
-  isFirstMeaningFulPainted_ = false;
+  if (!setWebPaintedTask_.IsCancelled()) {
+    setWebPaintedTask_.Cancel();
+  }
+  isWebPaintedForSnapshot_ = false;
 #endif
 
   if (nweb_handler_ != nullptr) {
@@ -1008,6 +1019,15 @@ void NWebHandlerDelegate::OnLoadEnd(CefRefPtr<CefBrowser> browser,
     return;
   }
   LOG(INFO) << "NWebHandlerDelegate:: Mainframe OnLoadEnd";
+
+#if defined(OHOS_SOFTWARE_COMPOSITOR)
+  setWebPaintedTask_.Reset(
+      base::BindOnce(&NWebHandlerDelegate::SetWebPaintedForSnapshot,
+                     weak_factory_.GetWeakPtr()));
+  content::GetUIThreadTaskRunner({})->PostDelayedTask(
+      FROM_HERE, setWebPaintedTask_.callback(),
+      base::Milliseconds(WEB_CAN_SNAPSHOT_DELAY_TIME));
+#endif
 
   if (nweb_handler_ != nullptr) {
     nweb_handler_->OnPageLoadEnd(http_status_code, frame->GetURL().ToString());
@@ -1060,7 +1080,7 @@ void NWebHandlerDelegate::OnFirstMeaningfulPaint(
     CefRefPtr<CefFirstMeaningfulPaintDetails> details) {
   LOG(INFO) << "NWebHandlerDelegate::OnFirstMeaningfulPaint";
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
-  isFirstMeaningFulPainted_ = true;
+  isWebPaintedForSnapshot_ = true;
 #endif
   if (nweb_handler_ != nullptr) {
     if (!details) {

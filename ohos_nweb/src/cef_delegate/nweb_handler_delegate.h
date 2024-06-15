@@ -46,6 +46,10 @@
 #include "custom_media_player_impl.h"
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+#if defined(OHOS_SOFTWARE_COMPOSITOR)
+#include "base/cancelable_callback.h"
+#endif
+
 struct NativeWindow;
 
 namespace OHOS::NWeb {
@@ -706,7 +710,8 @@ class NWebHandlerDelegate : public CefClient,
 #endif
 
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
-  bool IsFirstMeaningFulPainted () { return isFirstMeaningFulPainted_; }
+  bool IsWebPaintedForSnapshot () { return isWebPaintedForSnapshot_; }
+  void SetWebPaintedForSnapshot() { isWebPaintedForSnapshot_ = true; }
 #endif
 
  private:
@@ -791,7 +796,8 @@ class NWebHandlerDelegate : public CefClient,
   bool is_rich_text_ = false;
 #endif
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
-  bool isFirstMeaningFulPainted_ = false;
+  bool isWebPaintedForSnapshot_ = false;
+  base::CancelableOnceClosure setWebPaintedTask_;
 #endif
   // js property name and object id
   std::unordered_map<
@@ -811,6 +817,8 @@ class NWebHandlerDelegate : public CefClient,
   ObjectMethodMap javascript_async_method_map_;
   std::function<void(void)> onLoadStartCallback_ = nullptr;
   std::function<void(void)> onLoadEndCallback_ = nullptr;
+
+  base::WeakPtrFactory<NWebHandlerDelegate> weak_factory_{this};
 };
 }  // namespace OHOS::NWeb
 

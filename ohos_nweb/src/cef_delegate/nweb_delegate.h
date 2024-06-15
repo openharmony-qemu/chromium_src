@@ -484,6 +484,11 @@ void NotifyForNextTouchEvent() override;
   int SetUrlTrustList(const std::string& urlTrustList) override;
 #endif
 
+#ifdef OHOS_NETWORK_LOAD
+  void SetPathAllowingUniversalAccess(
+      const std::vector<std::string>& pathList) override;
+#endif
+
  public:
   int argc_;
   const char** argv_;

@@ -3822,7 +3822,7 @@ bool RenderProcessHostImpl::FastShutdownIfPossible(size_t page_count,
   fast_shutdown_started_ = true;
 
   ChildProcessTerminationInfo info;
-  info.status = base::TERMINATION_STATUS_NORMAL_TERMINATION;
+  info.status = base::TERMINATION_STATUS_PROCESS_WAS_KILLED;
   info.exit_code = 0;
   ProcessDied(info);
   return true;

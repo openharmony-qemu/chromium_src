@@ -650,6 +650,9 @@ class BASE_EXPORT FieldTrialList {
   // For testing, sets the global instance to |instance|.
   static void RestoreInstanceForTesting(FieldTrialList* instance);
 
+#if defined(OHOS_SCROLLBAR)
+  static void UpdateFeature();
+#endif
   // Creates a list of FieldTrial::State for all FieldTrial instances.
   // StringPiece members are bound to the lifetime of the corresponding
   // FieldTrial.

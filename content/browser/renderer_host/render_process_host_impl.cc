@@ -3821,8 +3821,9 @@ bool RenderProcessHostImpl::FastShutdownIfPossible(size_t page_count,
   // died due to fast shutdown versus another cause.
   fast_shutdown_started_ = true;
 
-  ChildProcessTerminationInfo info =
-      GetChildTerminationInfo(false /* already_dead */);
+  ChildProcessTerminationInfo info;
+  info.status = base::TERMINATION_STATUS_PROCESS_WAS_KILLED;
+  info.exit_code = 0;
   ProcessDied(info);
   return true;
 }

@@ -6,6 +6,7 @@
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "content/browser/web_contents/web_contents_impl.h"
+#include "content/browser/gpu/gpu_process_host.h"
 #include "content/public/browser/browser_context.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
@@ -347,8 +348,14 @@ void OHOSCustomMediaPlayerRenderer::CreateMediaPlayer() {
     return;
   }
 
-  std::string surface_id_string = gpu::GpuSurfaceIdTracker::Get()
-      ->AcquireNativeImageSurfaceId(surface_id_);
+  content::GpuProcessHost* gpu_process_host = content::GpuProcessHost::Get();
+  if (!gpu_process_host || !gpu_process_host->gpu_host()) {
+    LOG(ERROR) << "CreateMediaPlayer failed, no gpu host";
+    std::move(init_cb_).Run(media::PIPELINE_ERROR_INITIALIZATION_FAILED);
+    return;
+  }
+  std::string surface_id_string =
+      gpu_process_host->gpu_host()->GetSurfaceId(surface_id_);
 
   MediaInfo media_info;
   media_info.embed_id = std::to_string(surface_id_);

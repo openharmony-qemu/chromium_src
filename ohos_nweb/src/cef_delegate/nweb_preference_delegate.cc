@@ -828,7 +828,7 @@ std::string NWebPreferenceDelegate::GetSurfaceId() {
 }
 
 void NWebPreferenceDelegate::SetSurfaceId(const std::string& surfaceId) {
-  LOG(DEBUG)<<"[getSurfaceId] SetSurfaceId is "<<surface_id_;
+  LOG(DEBUG)<<"[getSurfaceId] SetSurfaceId is "<<surfaceId;
   surface_id_ = surfaceId;
 }
 #endif

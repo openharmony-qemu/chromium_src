@@ -897,12 +897,19 @@ void NWebRenderHandler::OnNativeEmbedGestureEvent(
     handler->OnNativeEmbedGestureEvent(info);
   }
 }
-std::shared_ptr<NWebNativeEmbedDataInfo> CefEmbedDataToWeb(
+std::shared_ptr<NWebNativeEmbedDataInfo> NWebRenderHandler::CefEmbedDataToWeb(
     const CefRenderHandler::CefNativeEmbedData& embedData) {
   auto info = embedData.info;
+  std::string url;
+  if (auto delegate = delegate_interface_.lock()) {
+    url = delegate->GetUrl();
+  } else {
+    url = info.url;
+  }
+  LOG(DEBUG)<<"GetUrl CefEmbedDataToWeb url is "<<url;
   std::shared_ptr<NWebNativeEmbedInfoImpl> embedinfo =
       std::make_shared<NWebNativeEmbedInfoImpl>(
-          info.width, info.height, info.id, info.src, info.url, info.type,
+          info.width, info.height, info.id, info.src, url, info.type,
           info.tag, info.params, info.x, info.y);
 
   std::shared_ptr<NWebNativeEmbedDataInfoImpl> datainfo =

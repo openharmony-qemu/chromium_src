@@ -830,6 +830,14 @@ void NWebInputMethodHandler::DeleteBackwardHandlerOnUI(int32_t length) {
 }
 
 void NWebInputMethodHandler::SendEnterKeyEvent(int32_t enterKeyType) {
+  if (browser_ != nullptr && browser_->GetHost() != nullptr) {
+    CefRefPtr<CefTask> sendEnterKeyEvent_task = new InputMethodTask(base::BindOnce(
+        &NWebInputMethodHandler::SendEnterKeyEventOnUI, this, std::move(enterKeyType)));
+    browser_->GetHost()->PostTaskToUIThread(sendEnterKeyEvent_task);
+  }
+}
+
+void NWebInputMethodHandler::SendEnterKeyEventOnUI(int32_t enterKeyType) {
   if (!browser_ || !browser_->GetHost()) {
     LOG(ERROR) << "NWebInputMethodHandler send enter key failed, browser_ is nullptr!";
     return;

@@ -34,10 +34,13 @@ ClipboardOhosReadData::ClipboardOhosReadData(PasteRecordVector& record_vector)
       LOG(DEBUG) << "get paste custom data success, the length is " <<  customData.size();
       if (convert_html_callback_ == nullptr) {
         LOG(ERROR) << "the convert_html_callback is null";
+      } else {
+        std::string htmlStr =
+            convert_html_callback_->SpanstringConvertHtml(customData);
+        LOG(DEBUG) << "pasteboard spanstring to html success, the length is "
+                   << htmlStr.length();
+        htmlString.append(htmlStr);
       }
-      std::string htmlStr = convert_html_callback_->SpanstringConvertHtml(customData);
-      LOG(DEBUG) << "pasteboard spanstring to html success, the length is " <<  htmlStr.length();
-      htmlString.append(htmlStr);
     }
     if (recordVector->GetHtmlText()) {
       htmlString.append(*(recordVector->GetHtmlText()));

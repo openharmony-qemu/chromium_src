@@ -1279,6 +1279,19 @@ void FieldTrialList::InstantiateFieldTrialAllocatorIfNeeded() {
 #endif
 }
 
+#if defined(OHOS_SCROLLBAR)
+// static
+void FieldTrialList::UpdateFeature() {
+  // Add all existing features.
+  if (!global_) {
+    LOG(ERROR) << "global_ is null";
+    return;
+  }
+  FeatureList::GetInstance()->AddFeaturesToAllocator(
+      global_->field_trial_allocator_.get());
+}
+#endif
+
 // static
 void FieldTrialList::AddToAllocatorWhileLocked(
     PersistentMemoryAllocator* allocator,

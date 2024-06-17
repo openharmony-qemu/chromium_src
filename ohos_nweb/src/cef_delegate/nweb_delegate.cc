@@ -3474,8 +3474,8 @@ bool NWebDelegate::WebPageSnapshot(const char* id,
     return false;
   }
 
-  if (!handler_delegate_->IsFirstMeaningFulPainted()) {
-    LOG(ERROR) << "Web is not first meaningful painted, not ready for snapshot";
+  if (!handler_delegate_->IsWebPaintedForSnapshot()) {
+    LOG(ERROR) << "Web is not painted ready for snapshot";
     return false;
   }
 

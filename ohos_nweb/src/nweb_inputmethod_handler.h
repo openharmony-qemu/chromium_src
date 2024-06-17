@@ -115,6 +115,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   int32_t GetCompositionTypeAndCheckInput(const std::u16string& text,
     int32_t start, int32_t end, CompositionType& composition_type);
   void CancelPreviewHandlerOnUI();
+  void SendEnterKeyEventOnUI(int32_t enterKeyType);
   bool IsTextInputStateChange(const CefString& text,
                               const CefRange& selected_range,
                               const CefRange& compositon_range);

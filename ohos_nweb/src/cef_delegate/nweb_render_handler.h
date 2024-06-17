@@ -169,6 +169,7 @@ class NWebRenderHandler : public CefRenderHandler {
                          const float y,
                          const float fling_x,
                          const float fling_y) override;
+  std::shared_ptr<NWebNativeEmbedDataInfo> CefEmbedDataToWeb(const CefRenderHandler::CefNativeEmbedData& embedData);
 #endif
 
 #ifdef OHOS_EX_FREE_COPY

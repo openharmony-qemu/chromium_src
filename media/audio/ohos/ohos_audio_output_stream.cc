@@ -352,6 +352,7 @@ bool OHOSAudioOutputStream::InitRender(
     LOG(ERROR) << "OHOSAudioOutputStream::InitRender Set audio renderer "
                   "callback failed.";
     rendererCallback_.reset();
+    outputChangeCallback_.reset();
     return false;
   }
   return true;

@@ -922,4 +922,36 @@ bool BrowserAccessibilityOHOS::IsFocusable() const {
 bool BrowserAccessibilityOHOS::IsTableHeader() const {
   return ui::IsTableHeader(GetRole());
 }
+
+void BrowserAccessibilityOHOS::Scroll(const ax::mojom::Action& action) const {
+  if (GetRole() == ax::mojom::Role::kSlider) {
+    if (!IsEnabled()) {
+      return;
+    }
+    float slider_value = GetFloatAttribute(ax::mojom::FloatAttribute::kValueForRange);
+    float slider_min = GetFloatAttribute(ax::mojom::FloatAttribute::kMinValueForRange);
+    float slider_max = GetFloatAttribute(ax::mojom::FloatAttribute::kMaxValueForRange);
+    if (slider_max <= slider_min) {
+      return;
+    }
+    float slider_step = (slider_max - slider_min) / kDefaultStepTicksForSliders;
+    if (HasFloatAttribute(ax::mojom::FloatAttribute::kStepValueForRange)) {
+      slider_step = GetFloatAttribute(ax::mojom::FloatAttribute::kStepValueForRange);
+    }
+    float update_value;
+    if (ax::mojom::Action::kScrollForward == action) {
+      update_value = slider_value + slider_step;
+    } else if (ax::mojom::Action::kScrollBackward == action) {
+      update_value = slider_value - slider_step;
+    } else {
+      return;
+    }
+    update_value = std::clamp(update_value, slider_min, slider_max);
+    if (update_value != slider_value) {
+      manager()->SetValue(*this, base::NumberToString(update_value));
+    }
+  } else {
+    manager()->Scroll(*this, action);
+  }
+}
 }  // namespace content

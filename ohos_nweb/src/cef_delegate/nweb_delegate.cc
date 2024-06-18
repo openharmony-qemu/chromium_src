@@ -3121,6 +3121,12 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId,
     case AceAction::ACTION_CLEAR_FOCUS:
       accessibilityManager->SetFocus(*accessibilityManager->GetBrowserAccessibilityRoot());
       break;
+    case AceAction::ACTION_SCROLL_FORWARD:
+      node->Scroll(ax::mojom::Action::kScrollForward);
+      break;
+    case AceAction::ACTION_SCROLL_BACKWARD:
+      node->Scroll(ax::mojom::Action::kScrollBackward);
+      break;
     default:
       LOG(INFO) << "ExecuteAction unsupported action";
       break;

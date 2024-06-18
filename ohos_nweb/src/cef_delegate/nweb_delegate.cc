@@ -3075,11 +3075,12 @@ void NWebDelegate::SetAccessibilityState(cef_state_t accessibilityState) {
   if (accessibility_state_ != (accessibilityState == STATE_ENABLED)) {
     accessibility_state_ = (accessibilityState == STATE_ENABLED);
     GetBrowser()->GetHost()->SetAccessibilityState(accessibilityState);
+    manager_ = nullptr;
   }
 }
 
 void NWebDelegate::ExecuteAction(int64_t accessibilityId,
-                                 uint32_t action) const {
+                                 uint32_t action) {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
     return;
@@ -3127,19 +3128,21 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId,
 }
 
 content::BrowserAccessibilityManagerOHOS*
-NWebDelegate::GetAccessibilityManager() const {
+NWebDelegate::GetAccessibilityManager() {
   if (!accessibility_state_ || GetBrowser() == nullptr
       || GetBrowser()->GetHost() == nullptr) {
     return nullptr;
   }
   void* manager = nullptr;
-  GetBrowser()->GetHost()->GetRootBrowserAccessibilityManager(&manager);
-  auto managerOHOS = static_cast<content::BrowserAccessibilityManagerOHOS*>(manager);
-  if (managerOHOS != nullptr && managerOHOS->GetAccessibilityEventListener() == nullptr
-      && accessibility_event_listener_ != nullptr) {
-      managerOHOS->RegisterAccessibilityEventListener(accessibility_event_listener_);
+  if (!manager_) {
+    GetBrowser()->GetHost()->GetRootBrowserAccessibilityManager(&manager);
+    manager_ = static_cast<content::BrowserAccessibilityManagerOHOS*>(manager);
+    if (manager_ != nullptr && manager_->GetAccessibilityEventListener() == nullptr
+        && accessibility_event_listener_ != nullptr) {
+        manager_->RegisterAccessibilityEventListener(accessibility_event_listener_);
+    }
   }
-  return managerOHOS;
+  return manager_;
 }
 
 std::shared_ptr<NWebAccessibilityNodeInfo>
@@ -3235,7 +3238,7 @@ NWebDelegate::GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
 
 std::shared_ptr<NWebAccessibilityNodeInfo>
 NWebDelegate::PopulateAccessibilityNodeInfo(
-    const content::BrowserAccessibilityOHOS* node) const {
+    const content::BrowserAccessibilityOHOS* node) {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
     return nullptr;

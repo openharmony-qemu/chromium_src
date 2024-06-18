@@ -426,7 +426,7 @@ bool HitNativeArea(double x, double y);
  double GetBrowserZoomLevel() override;
 #endif
   void SetAccessibilityState(cef_state_t accessibility_state) override;
-  void ExecuteAction(int64_t accessibilityId, uint32_t action) const override;
+  void ExecuteAction(int64_t accessibilityId, uint32_t action) override;
   std::shared_ptr<NWebAccessibilityNodeInfo>
   GetFocusedAccessibilityNodeInfo(int64_t accessibilityId,
                                   bool isAccessibilityFocus) override;
@@ -549,7 +549,7 @@ void NotifyForNextTouchEvent() override;
   }
 
  private:
-  content::BrowserAccessibilityManagerOHOS* GetAccessibilityManager() const;
+  content::BrowserAccessibilityManagerOHOS* GetAccessibilityManager();
   void AddAccessibilityNodeInfoAttributes(
       std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
       const content::BrowserAccessibilityOHOS* node) const;
@@ -560,7 +560,7 @@ void NotifyForNextTouchEvent() override;
     std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
     const content::BrowserAccessibilityOHOS* node) const;
   std::shared_ptr<NWebAccessibilityNodeInfo>
-  PopulateAccessibilityNodeInfo(const content::BrowserAccessibilityOHOS* node) const;
+    PopulateAccessibilityNodeInfo(const content::BrowserAccessibilityOHOS* node);
   void AddAccessibilityNodeInfoActions(
     std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo) const;
 
@@ -605,6 +605,7 @@ void NotifyForNextTouchEvent() override;
   std::string richtext_data_str_ = "";
   std::shared_ptr<NWebAccessibilityEventCallback>
       accessibility_event_listener_ = nullptr;
+  content::BrowserAccessibilityManagerOHOS* manager_ = nullptr;
 };
 }  // namespace OHOS::NWeb
 #endif

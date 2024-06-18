@@ -104,6 +104,15 @@ void BrowserAccessibilityManagerOHOS::FireBlinkEvent(
       break;
     case ax::mojom::Event::kLayoutComplete:
       HandleContentChanged(accessibilityId);
+      SendAccessibilityEvent(accessibilityId,
+                             OHOS::NWeb::AccessibilityEventType::PAGE_CHANGE);
+      break;
+    case ax::mojom::Event::kLoadComplete:
+      HandleContentChanged(accessibilityId);
+      break;
+    case ax::mojom::Event::kLocationChanged:
+      SendAccessibilityEvent(accessibilityId,
+                             OHOS::NWeb::AccessibilityEventType::PAGE_CHANGE);
       break;
     default:
       break;
@@ -241,6 +250,13 @@ void BrowserAccessibilityManagerOHOS::FireGeneratedEvent(
       if (nodeOHOS->IsTextField() && GetFocus() == wrapper) {
         HandleEditableTextChanged(accessibilityId);
       }
+      break;
+    case ui::AXEventGenerator::Event::NAME_CHANGED:
+      SendAccessibilityEvent(accessibilityId, OHOS::NWeb::AccessibilityEventType::TEXT_CHANGE);
+      break;
+    case ui::AXEventGenerator::Event::SCROLL_HORIZONTAL_POSITION_CHANGED:
+    case ui::AXEventGenerator::Event::SCROLL_VERTICAL_POSITION_CHANGED:
+      SendAccessibilityEvent(accessibilityId, OHOS::NWeb::AccessibilityEventType::SCROLL_END);
       break;
     default:
       break;

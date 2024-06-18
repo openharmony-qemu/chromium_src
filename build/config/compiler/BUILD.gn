@@ -863,6 +863,10 @@ config("compiler") {
 
   if (use_safe_libcxx) {
     defines += [ "_LIBCPP_ENABLE_ASSERTIONS=1" ]
+    cflags += [
+      "-ftrivial-auto-var-init=zero",
+      "-enable-trivial-auto-var-init-zero-knowing-it-will-be-removed-from-clang",
+    ]
   }
 
   # Rust compiler flags setup.

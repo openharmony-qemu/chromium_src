@@ -431,7 +431,7 @@ class NWebDelegateInterface
 #endif
 
   virtual void SetAccessibilityState(cef_state_t accessibilityState) = 0;
-  virtual void ExecuteAction(int64_t accessibilityId, uint32_t action) const = 0;
+  virtual void ExecuteAction(int64_t accessibilityId, uint32_t action) = 0;
   virtual std::shared_ptr<NWebAccessibilityNodeInfo>
   GetFocusedAccessibilityNodeInfo(int64_t accessibilityId,
                                   bool isAccessibilityFocus) = 0;

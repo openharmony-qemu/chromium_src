@@ -82,6 +82,55 @@ void AudioRendererCallback::SetSuspendFlag(bool flag) {
   suspendFlag_ = flag;
 }
 
+AudioOutputChangeCallback::AudioOutputChangeCallback(AudioParameters params,
+                                                     bool isCommunication)
+    : params_(params), isCommunication_(isCommunication) {}
+
+AudioOutputChangeCallback::~AudioOutputChangeCallback() {}
+
+void AudioOutputChangeCallback::OnOutputDeviceChange(int32_t reason) {
+  LOG(INFO) << "AudioOutputChangeCallback::OnOutputDeviceChange reason: "
+            << reason;
+  if (reason ==
+          (int32_t)AudioAdapterDeviceChangeReason::OLD_DEVICE_UNAVALIABLE &&
+      !isCommunication_) {
+    LOG(INFO)
+        << "AudioOutputChangeCallback::OnOutputDeviceChange need stop session";
+    content::RenderFrameHost* renderFrameHost =
+        content::RenderFrameHost::FromID(params_.render_process_id(),
+                                         params_.render_frame_id());
+    auto webContent =
+        content::WebContents::FromRenderFrameHost(renderFrameHost);
+    if (!webContent) {
+      LOG(ERROR) << "AudioOutputStream get webContent failed.";
+    } else {
+      content::MediaSessionImpl* mediaSession =
+          content::MediaSessionImpl::Get(webContent);
+      if (!mediaSession) {
+        LOG(ERROR) << "AudioOutputStream get mediaSession failed.";
+      }
+      weakMediaSession_ = mediaSession->weakMediaSessionFactory_.GetWeakPtr();
+      if (!weakMediaSession_) {
+        LOG(ERROR) << "OHOSAudioOutputStream::OHOSAudioOutputStream "
+                      "weakMediaSession get failed";
+      }
+    }
+
+    if (!weakMediaSession_) {
+      LOG(ERROR) << "Try to suspend audio but get mediaSession failed";
+      return;
+    }
+    if (weakMediaSession_.get()->IsActive()) {
+      LOG(INFO) << "MediaSession is suspending the audio";
+      weakMediaSession_.get()->Suspend(
+          content::MediaSession::SuspendType::kSystem);
+      weakMediaSession_.get()->isStreamSuspended_ = true;
+    } else {
+      LOG(INFO) << "MediaSession is suspended";
+    }
+  }
+}
+
 static std::set<content::WebContents*> WEBCONTENT_SET = {};
 
 OHOSAudioOutputStream::OHOSAudioOutputStream(OHOSAudioManager* manager,
@@ -177,6 +226,13 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
     rendererCallback_.reset();
     return;
   }
+  ret = audio_renderer_->SetAudioOutputChangeCallback(outputChangeCallback_);
+  if (ret != AudioAdapterCode::AUDIO_OK) {
+    LOG(ERROR) << "OHOSAudioOutputStream::Start Set audio output change "
+                  "callback failed.";
+    outputChangeCallback_.reset();
+    return;
+  }
   Prepare(weakMediaSession_);
 
   auto it = WEBCONTENT_SET.begin();
@@ -267,31 +323,39 @@ base::TimeTicks OHOSAudioOutputStream::GetCurrentStreamTime() {
 
 bool OHOSAudioOutputStream::InitRender(
     const std::shared_ptr<AudioRendererOptionsAdapter> rendererOptions) {
-    int32_t ret = audio_renderer_->Create(rendererOptions);
-if (ret != 0) {
-  if (!audio_renderer_->Release()) {
-    LOG(ERROR) << "ohos audio render release failed.";
+  int32_t ret = audio_renderer_->Create(rendererOptions);
+  if (ret != 0) {
+    if (!audio_renderer_->Release()) {
+      LOG(ERROR) << "ohos audio render release failed.";
+    }
+    return false;
   }
-  return false;
-}
-if (!weakMediaSession_) {
-  LOG(ERROR) << "OHOSAudioOutputStream::InitRender Get mediaSession failed.";
-  return false;
-}
-rendererCallback_ =
-    std::make_shared<AudioRendererCallback>(weakMediaSession_.get());
-if (!rendererCallback_) {
-  LOG(ERROR)
-      << "OHOSAudioOutputStream::InitRender Get rendererCallback failed.";
-  return false;
-}
-if (ret != AudioAdapterCode::AUDIO_OK) {
-  LOG(ERROR) << "OHOSAudioOutputStream::InitRender Set audio renderer "
-                "callback failed.";
-  rendererCallback_.reset();
-  return false;
-}
-return true;
+  if (!weakMediaSession_) {
+    LOG(ERROR) << "OHOSAudioOutputStream::InitRender Get mediaSession failed.";
+    return false;
+  }
+  rendererCallback_ =
+      std::make_shared<AudioRendererCallback>(weakMediaSession_.get());
+  if (!rendererCallback_) {
+    LOG(ERROR)
+        << "OHOSAudioOutputStream::InitRender Get rendererCallback failed.";
+    return false;
+  }
+  outputChangeCallback_ = std::make_shared<AudioOutputChangeCallback>(
+      parameters_, isCommunication_);
+  if (!outputChangeCallback_) {
+    LOG(ERROR) << "OHOSAudioOutputStream::InitRender Get outputChangeCallback_ "
+                  "failed.";
+    return false;
+  }
+  if (ret != AudioAdapterCode::AUDIO_OK) {
+    LOG(ERROR) << "OHOSAudioOutputStream::InitRender Set audio renderer "
+                  "callback failed.";
+    rendererCallback_.reset();
+    outputChangeCallback_.reset();
+    return false;
+  }
+  return true;
 }
 
 bool OHOSAudioOutputStream::StartRender() {

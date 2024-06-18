@@ -66,6 +66,18 @@ class AudioRendererCallback : public AudioRendererCallbackAdapter {
   bool suspendFlag_ = false;
 };
 
+class AudioOutputChangeCallback : public AudioOutputChangeCallbackAdapter {
+ public:
+  AudioOutputChangeCallback(AudioParameters params, bool isCommunication);
+  ~AudioOutputChangeCallback();
+  void OnOutputDeviceChange(int32_t reason) override;
+
+ private:
+  base::WeakPtr<content::MediaSessionImpl> weakMediaSession_ = nullptr;
+  AudioParameters params_;
+  bool isCommunication_ = false;
+};
+
 class OHOSAudioOutputStream : public AudioOutputStream {
  public:
   static const int kMaxNumOfBuffersInQueue = 2;
@@ -162,6 +174,8 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   bool isSuspended_ = false;
 
   scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_;
+
+  std::shared_ptr<AudioOutputChangeCallback> outputChangeCallback_ = nullptr;
 };
 
 }  // namespace media

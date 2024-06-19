@@ -83,10 +83,12 @@ void AudioRendererCallback::SetSuspendFlag(bool flag) {
 }
 
 AudioOutputChangeCallback::AudioOutputChangeCallback(
-  const scoped_refptr<base::SingleThreadTaskRunner>& main_task_runner,
-  AudioParameters params,
-  bool isCommunication)
-    : main_task_runner_(main_task_runner), params_(params), isCommunication_(isCommunication) {}
+    const scoped_refptr<base::SingleThreadTaskRunner>& main_task_runner,
+    AudioParameters params,
+    bool isCommunication)
+    : main_task_runner_(main_task_runner),
+      params_(params),
+      isCommunication_(isCommunication) {}
 
 AudioOutputChangeCallback::~AudioOutputChangeCallback() {}
 
@@ -98,11 +100,10 @@ void AudioOutputChangeCallback::OnOutputDeviceChange(int32_t reason) {
       !isCommunication_) {
     LOG(INFO)
         << "AudioOutputChangeCallback::OnOutputDeviceChange need stop session";
-    auto OutputDeviceChangeFunc =
-      [] (AudioParameters params) {
+    auto OutputDeviceChangeFunc = [](AudioParameters params) {
       content::RenderFrameHost* renderFrameHost =
-      content::RenderFrameHost::FromID(params.render_process_id(),
-                                        params.render_frame_id());
+          content::RenderFrameHost::FromID(params.render_process_id(),
+                                           params.render_frame_id());
       auto webContent =
           content::WebContents::FromRenderFrameHost(renderFrameHost);
       if (!webContent) {
@@ -110,12 +111,13 @@ void AudioOutputChangeCallback::OnOutputDeviceChange(int32_t reason) {
         return;
       }
       content::MediaSessionImpl* mediaSession =
-        content::MediaSessionImpl::Get(webContent);
+          content::MediaSessionImpl::Get(webContent);
       if (!mediaSession) {
         LOG(ERROR) << "AudioOutputStream get mediaSession failed.";
         return;
       }
-      auto weakMediaSession = mediaSession->weakMediaSessionFactory_.GetWeakPtr();
+      auto weakMediaSession =
+          mediaSession->weakMediaSessionFactory_.GetWeakPtr();
       if (!weakMediaSession) {
         LOG(ERROR) << "OHOSAudioOutputStream::OHOSAudioOutputStream "
                       "weakMediaSession get failed";
@@ -138,8 +140,7 @@ void AudioOutputChangeCallback::OnOutputDeviceChange(int32_t reason) {
         return;
       }
       main_task_runner_->PostTask(
-        FROM_HERE,
-        base::BindOnce(OutputDeviceChangeFunc, params_));
+          FROM_HERE, base::BindOnce(OutputDeviceChangeFunc, params_));
     } else {
       OutputDeviceChangeFunc(params_);
     }

@@ -18,7 +18,6 @@
 
 #include <memory>
 #include <vector>
-#include <atomic>
 
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
@@ -53,6 +52,7 @@ class MediaSessionOHOS final
   void MediaSessionPositionChanged(
       const absl::optional<media_session::MediaPosition>& position) override;
 
+  void SetWebviewShow(bool show);
   void Resume();
   void Suspend();
   void Stop();
@@ -65,15 +65,16 @@ class MediaSessionOHOS final
   OHOS::NWeb::MediaAVSessionType GetMediaType(
     const std::vector<media_session::mojom::MediaAudioVideoState>& states);
 
+  bool is_webview_show_;
   bool is_playing_;
   bool is_callback_registed_;
   bool is_initialized_;
-  std::atomic_bool is_seeking_{false};
   base::RepeatingTimer report_timer_;
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
   std::shared_ptr<OHOS::NWeb::MediaAVSessionMetadataAdapter> av_metadata_;
   std::shared_ptr<OHOS::NWeb::MediaAVSessionPositionAdapter> av_position_;
   std::unique_ptr<OHOS::NWeb::MediaAVSessionAdapter> avsession_adapter_;
+  OHOS::NWeb::MediaAVSessionType media_type_;
   base::WeakPtrFactory<MediaSessionOHOS> weak_factory_{this};
   const raw_ptr<MediaSessionImpl, DanglingUntriaged> media_session_;
   mojo::Receiver<media_session::mojom::MediaSessionObserver> observer_receiver_{this};

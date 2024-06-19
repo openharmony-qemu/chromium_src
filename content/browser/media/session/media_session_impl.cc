@@ -1294,6 +1294,12 @@ MediaSessionImpl::NWebPlaybackState MediaSessionImpl::NWebGetState() {
     return NWebPlaybackState::STOP;
   }
 }
+
+void MediaSessionImpl::SetWebviewShow(bool show) {
+  if (session_ohos_) {
+    session_ohos_->SetWebviewShow(show);
+  }
+}
 #endif // OHOS_MEDIA_POLICY
 
 void MediaSessionImpl::SetAudioSinkId(const absl::optional<std::string>& id) {

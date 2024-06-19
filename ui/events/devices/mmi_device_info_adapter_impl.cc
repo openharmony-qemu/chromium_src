@@ -15,7 +15,7 @@
 
 #include "mmi_device_info_adapter_impl.h"
 
-struct OHOS::NWeb::MMIDeviceInfo transformToMMIDeviceInfo(
+struct OHOS::NWeb::MMIDeviceInfo TransformToMMIDeviceInfo(
     std::shared_ptr<OHOS::NWeb::MMIDeviceInfoAdapter> adapter) {
   struct OHOS::NWeb::MMIDeviceInfo info;
   if (!adapter) {

@@ -17,11 +17,10 @@
 #include "ui/events/devices/touchscreen_device.h"
 #include "ui/gfx/geometry/point3_f.h"
 
-#if BUILDFLAG(IS_OHOS)
-#include "base/location.h"
+#if defined(OHOS_INPUT_EVENTS)
 #include "base/logging.h"
-#include "base/task/single_thread_task_runner.h"
 #include "base/task/thread_pool.h"
+#include "content/public/browser/browser_thread.h"
 #endif
 
 // This macro provides the implementation for the observer notification methods.
@@ -70,7 +69,7 @@ class MMIListenerAdapterImpl : public OHOS::NWeb::MMIListenerAdapter {
       return;
     }
 
-    OHOS::NWeb::MMIDeviceInfo info = transformToMMIDeviceInfo(adapter);
+    OHOS::NWeb::MMIDeviceInfo info = TransformToMMIDeviceInfo(adapter);
     if ((info.name.find(IGNORE_MOUSE_DEVICE_NAME) != std::string::npos) &&
         (info.type & TAG_MOUSE_TYPE)) {
       LOG(INFO) << "OnDeviceAdded ignore this mouse device";
@@ -124,8 +123,7 @@ class MMIListenerAdapterImpl : public OHOS::NWeb::MMIListenerAdapter {
 // static
 DeviceDataManager* DeviceDataManager::instance_ = nullptr;
 
-DeviceDataManager::DeviceDataManager()
-    : sequenced_task_runner_(base::ThreadPool::CreateSequencedTaskRunner({})) {
+DeviceDataManager::DeviceDataManager() {
   DCHECK(!instance_);
   instance_ = this;
 #if defined(OHOS_INPUT_EVENTS)
@@ -135,7 +133,11 @@ DeviceDataManager::DeviceDataManager()
     LOG(ERROR) << "DeviceDataManager mmi_adapter_ is nullptr";
     return;
   }
-
+  sequenced_task_runner_ = content::GetUIThreadTaskRunner({});
+  if (!sequenced_task_runner_) {
+    LOG(ERROR) << "DeviceDataManager GetUIThreadTaskRunner is null";
+    return;
+  }
   dev_listener_ =
       std::make_shared<MMIListenerAdapterImpl>(sequenced_task_runner_);
   mmi_adapter_->RegisterDevListener(CHANGED_TYPE, dev_listener_);
@@ -145,35 +147,32 @@ DeviceDataManager::DeviceDataManager()
     std::shared_ptr<OHOS::NWeb::MMIDeviceInfoAdapterImpl> adapter =
         std::make_shared<OHOS::NWeb::MMIDeviceInfoAdapterImpl>();
     mmi_adapter_->GetDeviceInfo(id, adapter);
-    if (!sequenced_task_runner_) {
-      LOG(ERROR) << "DeviceDataManager ctor sequenced_task_runner is null";
-      return;
-    }
-
-    OHOS::NWeb::MMIDeviceInfo info = transformToMMIDeviceInfo(adapter);
+    OHOS::NWeb::MMIDeviceInfo info = TransformToMMIDeviceInfo(adapter);
     if ((info.name.find(IGNORE_MOUSE_DEVICE_NAME) != std::string::npos) &&
         (info.type & TAG_MOUSE_TYPE)) {
       LOG(INFO) << "DeviceDataManager ignore this mouse device";
       continue;
     }
-    sequenced_task_runner_->PostTask(
-        FROM_HERE, base::BindOnce(
-                       [](const OHOS::NWeb::MMIDeviceInfo& info,
-                          DeviceDataManager* device_data_manager) {
-                         ui::InputDevice device(
-                             info.id, ui::InputDeviceType::INPUT_DEVICE_USB,
-                             info.name);
-                         if (info.type & TAG_MOUSE_TYPE) {
-                           device_data_manager->AddMouseDevice(device);
-                         }
-                         if (info.type & TAG_TOUCHPAD_TYPE) {
-                           device_data_manager->AddTouchpadDevice(device);
-                         }
-                         if (info.type & TAG_KEYBOARD_TYPE) {
-                           device_data_manager->AddKeyboardDevice(device);
-                         }
-                       },
-                       info, base::Unretained(this)));
+
+    auto addMMIDeviceInfoFunction =
+      [] (const OHOS::NWeb::MMIDeviceInfo& deviceInfo, DeviceDataManager* device_data_manager) {
+        ui::InputDevice device(deviceInfo.id, ui::InputDeviceType::INPUT_DEVICE_USB, deviceInfo.name);
+        if (deviceInfo.type & TAG_MOUSE_TYPE) {
+          device_data_manager->AddMouseDevice(device);
+        }
+        if (deviceInfo.type & TAG_TOUCHPAD_TYPE) {
+          device_data_manager->AddTouchpadDevice(device);
+        }
+        if (deviceInfo.type & TAG_KEYBOARD_TYPE) {
+          device_data_manager->AddKeyboardDevice(device);
+        }
+      };
+    if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+      sequenced_task_runner_->PostTask(
+          FROM_HERE, base::BindOnce(addMMIDeviceInfoFunction, info, base::Unretained(this)));
+    } else {
+      addMMIDeviceInfoFunction(info, this);
+    }
   }
 #endif  // defined(OHOS_INPUT_EVENTS)
 }

@@ -87,7 +87,7 @@ class MMIDeviceInfoAdapterImpl : public MMIDeviceInfoAdapter {
 
 }  // namespace OHOS::NWeb
 
-struct OHOS::NWeb::MMIDeviceInfo transformToMMIDeviceInfo(
+struct OHOS::NWeb::MMIDeviceInfo TransformToMMIDeviceInfo(
     std::shared_ptr<OHOS::NWeb::MMIDeviceInfoAdapter> adapter);
 
 #endif  // MMI_DEVICE_INFO_ADAPTER_IMPL_H

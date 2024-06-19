@@ -1621,7 +1621,9 @@ void RenderProcessHostImpl::Refresh() {
 
     for (auto rfh_id : temp_set) {
       auto rfh = RenderFrameHostImpl::FromID(rfh_id);
-      rfh->Reload();
+      if (rfh->IsActive()) {
+        rfh->Reload();
+      }
     }
   } while (0);
 }

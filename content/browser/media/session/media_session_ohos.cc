@@ -17,6 +17,7 @@
 
 #include <chrono>
 
+#include "base/ohos/sys_info_utils.h"
 #include "base/time/time.h"
 #include "base/strings/utf_string_conversions.h"
 #include "content/browser/media/session/media_session_impl.h"
@@ -32,9 +33,11 @@ namespace content {
 MediaSessionOHOS::MediaSessionOHOS(MediaSessionImpl* session)
     : media_session_(session) {
   DCHECK(session);
+  is_webview_show_ = false;
   is_playing_ = false;
   is_callback_registed_ = false;
   is_initialized_ = false;
+  media_type_ = OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID;
   avsession_adapter_ =
     OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateMediaAVSessionAdapter();
   if (avsession_adapter_) {
@@ -59,7 +62,9 @@ void MediaSessionOHOS::Prepare(OHOS::NWeb::MediaAVSessionType type) {
     return;
   }
   is_initialized_ = true;
+  LOG(DEBUG) << "media avsession will create avsesiion";
   if (avsession_adapter_->CreateAVSession(type)) {
+    media_type_ = type;
     is_callback_registed_ = false;
     media_session_->RebuildAndNotifyMetadataChanged();
     media_session_->RebuildAndNotifyMediaPositionChanged();
@@ -68,8 +73,10 @@ void MediaSessionOHOS::Prepare(OHOS::NWeb::MediaAVSessionType type) {
     task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
     if (task_runner_) {
       auto media_avsession_callback =
-        std::make_unique<OHOSMediaAVSessionCallback>(task_runner_, weak_factory_.GetWeakPtr());
-      if (avsession_adapter_->RegistCallback(std::move(media_avsession_callback))) {
+          std::make_unique<OHOSMediaAVSessionCallback>(
+              task_runner_, weak_factory_.GetWeakPtr());
+      if (avsession_adapter_->RegistCallback(
+              std::move(media_avsession_callback))) {
         is_callback_registed_ = true;
       } else {
         LOG(ERROR) << "media avsession register callback failed";
@@ -82,7 +89,8 @@ void MediaSessionOHOS::Prepare(OHOS::NWeb::MediaAVSessionType type) {
 
 OHOS::NWeb::MediaAVSessionType MediaSessionOHOS::GetMediaType(
     const std::vector<media_session::mojom::MediaAudioVideoState>& states) {
-  OHOS::NWeb::MediaAVSessionType type = OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID;
+  OHOS::NWeb::MediaAVSessionType type =
+      OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID;
   for (auto state : states) {
     switch (state) {
       case media_session::mojom::MediaAudioVideoState::kAudioOnly:
@@ -107,17 +115,22 @@ void MediaSessionOHOS::MediaSessionInfoChanged(
   }
   if (!is_initialized_) {
     if (session_info->audio_video_states) {
-      auto session_type = GetMediaType(session_info->audio_video_states.value());
+      auto session_type =
+          GetMediaType(session_info->audio_video_states.value());
       Prepare(session_type);
     }
   }
-  is_playing_ = session_info->state != media_session::mojom::MediaSessionInfo::SessionState::kInactive &&
-      session_info->playback_state == media_session::mojom::MediaPlaybackState::kPlaying;
+  is_playing_ =
+      session_info->state !=
+          media_session::mojom::MediaSessionInfo::SessionState::kInactive &&
+      session_info->playback_state ==
+          media_session::mojom::MediaPlaybackState::kPlaying;
   OHOS::NWeb::MediaAVSessionPlayState playback_state;
   if (is_playing_) {
     playback_state = OHOS::NWeb::MediaAVSessionPlayState::STATE_PLAY;
     if (session_info->audio_video_states) {
-      auto session_type = GetMediaType(session_info->audio_video_states.value());
+      auto session_type =
+          GetMediaType(session_info->audio_video_states.value());
       Prepare(session_type);
     }
   } else {
@@ -132,11 +145,14 @@ void MediaSessionOHOS::MediaSessionMetadataChanged(
     return;
   }
   std::string title, artist, album;
-  base::UTF16ToUTF8(metadata.value().title.c_str(), metadata.value().title.length(), &title);
+  base::UTF16ToUTF8(metadata.value().title.c_str(),
+                    metadata.value().title.length(), &title);
   av_metadata_->SetTitle(title);
-  base::UTF16ToUTF8(metadata.value().artist.c_str(), metadata.value().artist.length(), &artist);
+  base::UTF16ToUTF8(metadata.value().artist.c_str(),
+                    metadata.value().artist.length(), &artist);
   av_metadata_->SetArtist(artist);
-  base::UTF16ToUTF8(metadata.value().album.c_str(), metadata.value().album.length(), &album);
+  base::UTF16ToUTF8(metadata.value().album.c_str(),
+                    metadata.value().album.length(), &album);
   av_metadata_->SetAlbum(album);
   avsession_adapter_->SetMetadata(av_metadata_);
 }
@@ -155,9 +171,6 @@ void MediaSessionOHOS::MediaSessionPositionChanged(
   if (!avsession_adapter_ || !position) {
     return;
   }
-  if (is_seeking_.load()) {
-    return;
-  }
   auto real_duration = position.value().duration().InMilliseconds();
   av_position_->SetDuration(real_duration);
   auto real_position = position.value().GetPosition().InMilliseconds();
@@ -173,6 +186,29 @@ void MediaSessionOHOS::Resume() {
   media_session_->Resume(MediaSession::SuspendType::kUI);
 }
 
+void MediaSessionOHOS::SetWebviewShow(bool show) {
+  is_webview_show_ = show;
+  if (base::ohos::IsPcDevice() ||
+      (media_type_ != OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_VIDEO)) {
+    return;
+  }
+  if (is_webview_show_) {
+    if (media_session_) {
+      media_session_->RebuildAndNotifyMediaSessionInfoChanged();
+    }
+  } else {
+    if (avsession_adapter_) {
+      media_session::mojom::MediaSessionInfoPtr current_info =
+          media_session_->GetMediaSessionInfoSync();
+      if (current_info->playback_state ==
+          media_session::mojom::MediaPlaybackState::kPlaying) {
+        Suspend();
+      }
+      avsession_adapter_->DestroyAVSession();
+    }
+  }
+}
+
 void MediaSessionOHOS::Suspend() {
   DCHECK(media_session_);
   media_session_->Suspend(MediaSession::SuspendType::kUI);
@@ -185,7 +221,6 @@ void MediaSessionOHOS::Stop() {
 
 void MediaSessionOHOS::SeekTo(const int64_t millis) {
   DCHECK(media_session_);
-  is_seeking_.store(true);
   if (millis >= 0) {
     media_session_->SeekTo(base::Milliseconds(millis));
     if (is_playing_) {
@@ -197,7 +232,6 @@ void MediaSessionOHOS::SeekTo(const int64_t millis) {
   } else {
     LOG(ERROR) << "receive an illegal millis of " << millis;
   }
-  is_seeking_.store(false);
 }
 
 void MediaSessionOHOS::CheckMediaInfo() {
@@ -217,13 +251,13 @@ OHOSMediaAVSessionCallback::OHOSMediaAVSessionCallback(
 OHOSMediaAVSessionCallback::~OHOSMediaAVSessionCallback() {}
 
 void OHOSMediaAVSessionCallback::Play() {
-  task_runner_->PostTask(
-      FROM_HERE, base::BindOnce(&MediaSessionOHOS::Resume, media_session_ohos_));
+  task_runner_->PostTask(FROM_HERE, base::BindOnce(&MediaSessionOHOS::Resume,
+                                                   media_session_ohos_));
 }
 
 void OHOSMediaAVSessionCallback::Pause() {
-  task_runner_->PostTask(
-      FROM_HERE, base::BindOnce(&MediaSessionOHOS::Suspend, media_session_ohos_));
+  task_runner_->PostTask(FROM_HERE, base::BindOnce(&MediaSessionOHOS::Suspend,
+                                                   media_session_ohos_));
 }
 
 void OHOSMediaAVSessionCallback::Stop() {
@@ -233,7 +267,8 @@ void OHOSMediaAVSessionCallback::Stop() {
 
 void OHOSMediaAVSessionCallback::SeekTo(int64_t millisTime) {
   task_runner_->PostTask(
-      FROM_HERE, base::BindOnce(&MediaSessionOHOS::SeekTo, media_session_ohos_, millisTime));
+      FROM_HERE, base::BindOnce(&MediaSessionOHOS::SeekTo, media_session_ohos_,
+                                millisTime));
 }
 
 void OHOSMediaAVSessionMetadata::SetTitle(const std::string& title) {

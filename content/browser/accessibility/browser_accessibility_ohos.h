@@ -20,6 +20,10 @@
 #include "content/browser/accessibility/browser_accessibility.h"
 
 namespace content {
+namespace {
+constexpr int kDefaultStepTicksForSliders = 20;
+}
+
 class BrowserAccessibilityManager;
 
 // A `BrowserAccessibility` object represents one node in the accessibility tree
@@ -119,6 +123,8 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
   bool IsRangeControlWithoutAriaValueText() const;
 
   bool IsTableHeader() const;
+
+  void Scroll(const ax::mojom::Action& action) const;
 
  protected:
   BrowserAccessibilityOHOS(BrowserAccessibilityManager* manager,

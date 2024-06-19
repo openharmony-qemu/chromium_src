@@ -19,6 +19,7 @@ CUR_DIR=$PWD
 ROOT_DIR="${CUR_DIR%/src*}""/src"
 # Global variables.
 BUILD_TARGET_WEBVIEW="ohos_nweb_hap"
+BUILD_TARGET_V8="v8/v8_shared:v8_shared"
 BUILD_TARGET_BROWSERSHELL="ohos_browser_shell"
 BUILD_TARGET_NATIVE="libweb_engine web_render libnweb_render chrome_crashpad_handler"
 BUILD_TARGET_BROWSER_SERVICE="ohos_nweb_ex/browser_service"
@@ -182,6 +183,9 @@ fi
 case "${build_target}" in
   "w"|"${BUILD_TARGET_WEBVIEW}")
     build_target="${BUILD_TARGET_WEBVIEW}"
+    ;;
+  "v"|"${BUILD_TARGET_V8}")
+    build_target="${BUILD_TARGET_V8}"
     ;;
   "b"|"${BUILD_TARGET_BROWSERSHELL}")
     build_target="${BUILD_TARGET_BROWSERSHELL}"

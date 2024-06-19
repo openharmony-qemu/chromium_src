@@ -739,10 +739,6 @@ void FeatureList::SetOverrideStateByFeatureName(
     LOG(INFO) << "add feature into featurelist";
     overrides_.emplace(std::string(feature_name),
                    OverrideEntry(state, nullptr));
-    if (FieldTrialList::GetInstance()) {
-      LOG(INFO) << "update feature into fieldlist";
-      FieldTrialList::UpdateFeature();
-    }
   }
 }
 #endif

@@ -54,6 +54,9 @@ void StartObserveTraceEnable() {
     traceDebugStatus = OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
                        .GetTraceDebugEnable();
   }
+  if (OHOS::NWeb::OhosAdapterHelper::GetInstance().GetHiTraceAdapterInstance().IsACETraceEnable()) {
+    isACETraceEnable = true;
+  }
 }
 
 bool IsOHOSBytraceEnable() {

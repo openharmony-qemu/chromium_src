@@ -840,7 +840,7 @@ void NWebDelegate::SendMouseEvent(int x,
   }
 #ifdef OHOS_DRAG_DROP
   if (render_handler_ != nullptr) {
-    render_handler_->SetIrregularDragBackground(true);
+    render_handler_->SetIrregularDragBackground(false);
   }
 #endif  // #ifdef OHOS_DRAG_DROP
   if (accessibility_state_ && action == MouseAction::MOVE) {

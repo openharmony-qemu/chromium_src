@@ -104,6 +104,10 @@ void AudioOutputChangeCallback::OnOutputDeviceChange(int32_t reason) {
       content::RenderFrameHost* renderFrameHost =
           content::RenderFrameHost::FromID(params.render_process_id(),
                                            params.render_frame_id());
+      if (!renderFrameHost) {
+        LOG(ERROR) << "AudioOutputStream get renderhost failed.";
+        return;
+      }
       auto webContent =
           content::WebContents::FromRenderFrameHost(renderFrameHost);
       if (!webContent) {

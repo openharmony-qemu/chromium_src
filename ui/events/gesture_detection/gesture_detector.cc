@@ -571,7 +571,7 @@ void GestureDetector::OnLongPressTimeout() {
 
 #ifdef OHOS_DRAG_DROP
 void GestureDetector::OnDragLongPressTimeout() {
-  LOG(ERROR) << "DragDrop GestureDetector::OnDragLongPressTimeout";
+  LOG(INFO) << "DragDrop GestureDetector::OnDragLongPressTimeout";
   listener_->OnDragLongPress(*current_down_event_);
 }
 #endif

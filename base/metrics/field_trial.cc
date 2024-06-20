@@ -724,9 +724,15 @@ void FieldTrialList::CreateFeaturesFromCommandLine(
         command_line.GetSwitchValueASCII(switches::kEnableFeatures),
         command_line.GetSwitchValueASCII(switches::kDisableFeatures));
   }
-
+#if defined(OHOS_SCROLLBAR)
+  LOG(INFO) << "InitializeFromSharedMemory scrollbar state_:" << global_->overlay_force_state_;
+  feature_list->InitializeFromSharedMemory(
+      global_->field_trial_allocator_.get(),
+      global_->overlay_force_state_);
+#else
   feature_list->InitializeFromSharedMemory(
       global_->field_trial_allocator_.get());
+#endif
 }
 
 #if !BUILDFLAG(IS_IOS)
@@ -1281,14 +1287,14 @@ void FieldTrialList::InstantiateFieldTrialAllocatorIfNeeded() {
 
 #if defined(OHOS_SCROLLBAR)
 // static
-void FieldTrialList::UpdateFeature() {
+void FieldTrialList::UpdateFeature(bool state) {
   // Add all existing features.
   if (!global_) {
     LOG(ERROR) << "global_ is null";
     return;
   }
-  FeatureList::GetInstance()->AddFeaturesToAllocator(
-      global_->field_trial_allocator_.get());
+  LOG(INFO) << "update scrollbar state:" << state;
+  global_->overlay_force_state_ = state;
 }
 #endif
 

@@ -15,7 +15,9 @@
 
 #include "content/browser/accessibility/browser_accessibility_manager_ohos.h"
 #include "content/browser/accessibility/browser_accessibility_ohos.h"
+#include "content/browser/web_contents/web_contents_impl.h"
 #include "content/public/browser/browser_thread.h"
+#include "ui/accessibility/ax_selection.h"
 #include "ui/gfx/geometry/point_conversions.h"
 
 namespace content {
@@ -258,9 +260,61 @@ void BrowserAccessibilityManagerOHOS::FireGeneratedEvent(
     case ui::AXEventGenerator::Event::SCROLL_VERTICAL_POSITION_CHANGED:
       SendAccessibilityEvent(accessibilityId, OHOS::NWeb::AccessibilityEventType::SCROLL_END);
       break;
+    case ui::AXEventGenerator::Event::SELECTED_CHANGED:
+      SendAccessibilityEvent(accessibilityId, 
+          OHOS::NWeb::AccessibilityEventType::SELECTED);
+      break;
+    case ui::AXEventGenerator::Event::DOCUMENT_SELECTION_CHANGED: {
+      if (ax_tree() == nullptr) {
+        break;
+      }
+      ui::AXNodeID focus_id =
+          ax_tree()->GetUnignoredSelection().focus_object_id;
+      BrowserAccessibility* focus_object = GetFromID(focus_id);
+      if (focus_object) {
+        BrowserAccessibilityOHOS* oh_focus_object =
+            static_cast<BrowserAccessibilityOHOS*>(focus_object);
+        if (oh_focus_object == nullptr) {
+          break;
+        }
+        SendAccessibilityEvent(oh_focus_object->GetAccessibilityId(),
+            OHOS::NWeb::AccessibilityEventType::TEXT_SELECTION_UPDATE);
+      }
+      break;
+    }
     default:
       break;
   }
+}
+
+void BrowserAccessibilityManagerOHOS::Copy()
+{
+  content::WebContentsImpl* web_contents_impl = 
+      static_cast<content::WebContentsImpl*>(web_contents());
+  if (web_contents_impl == nullptr) {
+    return;
+  }
+  web_contents_impl->Copy();
+}
+
+void BrowserAccessibilityManagerOHOS::Paste()
+{
+  content::WebContentsImpl* web_contents_impl = 
+      static_cast<content::WebContentsImpl*>(web_contents());
+  if (web_contents_impl == nullptr) {
+    return;
+  }
+  web_contents_impl->Paste();
+}
+
+void BrowserAccessibilityManagerOHOS::Cut()
+{
+  content::WebContentsImpl* web_contents_impl = 
+      static_cast<content::WebContentsImpl*>(web_contents());
+  if (web_contents_impl == nullptr) {
+    return;
+  }
+  web_contents_impl->Cut();
 }
 
 }  // namespace content

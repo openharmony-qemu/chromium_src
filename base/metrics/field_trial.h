@@ -651,7 +651,7 @@ class BASE_EXPORT FieldTrialList {
   static void RestoreInstanceForTesting(FieldTrialList* instance);
 
 #if defined(OHOS_SCROLLBAR)
-  static void UpdateFeature();
+  static void UpdateFeature(bool state);
 #endif
   // Creates a list of FieldTrial::State for all FieldTrial instances.
   // StringPiece members are bound to the lifetime of the corresponding
@@ -833,6 +833,10 @@ class BASE_EXPORT FieldTrialList {
 
   // Tracks whether CreateTrialsFromCommandLine() has been called.
   bool create_trials_from_command_line_called_ = false;
+
+#if defined(OHOS_SCROLLBAR)
+  bool overlay_force_state_ = false;
+#endif
 };
 
 }  // namespace base

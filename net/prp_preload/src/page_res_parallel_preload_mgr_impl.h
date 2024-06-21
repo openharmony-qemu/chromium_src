@@ -32,7 +32,7 @@ class PRParallelPreloadMgrImpl : public PRParallelPreloadMgr {
   struct PRParallelPreloadInfo {
     scoped_refptr<ResParallelPreloadCtrler> rp_preload_ctrler_;
     bool start_page_ { false };
-  }
+  };
 
   std::unordered_map<std::string, PRParallelPreloadInfo> prp_preload_info_map_;
   std::unordered_map<const void*, std::string> web_handle_pages_map_;

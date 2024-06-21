@@ -1188,7 +1188,7 @@ component("net") {
     ]
 
     deps += [
-      "//net/prp_prelaod:prp_prelaod",
+      "//net/prp_preload:prp_preload",
     ]
   }
 

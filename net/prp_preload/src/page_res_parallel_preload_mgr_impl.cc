@@ -56,7 +56,7 @@ void PRParallelPreloadMgrImpl::StartMainPage(const std::string& url,
     LOG(ERROR) << "PRPPreload.PRParallelPreloadMgrImpl::StartMainPage failed, invalid args";
     return;
   }
-  if (is_inited_) {
+  if (!is_inited_) {
     return;
   }
 
@@ -79,7 +79,7 @@ void PRParallelPreloadMgrImpl::StartMainPage(const std::string& url,
     return;
   }
 
-  auto it_web = web_handle_pages_map_,find(web_handle);
+  auto it_web = web_handle_pages_map_.find(web_handle);
   if (it_web != web_handle_pages_map_.end()) {
     if (it_web->second != url) {
         StopMainPageInternal(it_web->second);
@@ -88,7 +88,7 @@ void PRParallelPreloadMgrImpl::StartMainPage(const std::string& url,
   } else {
     web_handle_pages_map_[web_handle] = url;
   }
-  rp_preload_ctrler->Strat();
+  rp_preload_ctrler->Start();
   prp_preload_info_map_[url].rp_preload_ctrler_ = rp_preload_ctrler;
   prp_preload_info_map_[url].start_page_ = true;
 }
@@ -113,7 +113,7 @@ void PRParallelPreloadMgrImpl::StopMainPage(uint64_t addr_web_handle) {
     return;
   }
 
-  auto it_web = web_handle_pages_map_,find(web_handle);
+  auto it_web = web_handle_pages_map_.find(web_handle);
   if (it_web != web_handle_pages_map_.end()) {
     StopMainPageInternal(it_web->second);
     (void)web_handle_pages_map_.erase(it_web);
@@ -138,10 +138,10 @@ void PRParallelPreloadMgrImpl::UpdateResRequestInfo(const std::string& key,
 }
 
 void PRParallelPreloadMgrImpl::StopMainPageInternal(const std::string& url) {
-  auto it = prp_preload_info_map_.find(key);
+  auto it = prp_preload_info_map_.find(url);
   if (it != prp_preload_info_map_.end()) {
     if (it->second.start_page_) {
-      it->second.rp_preload_ctrler_->Stop(info);
+      it->second.rp_preload_ctrler_->Stop();
       it->second.start_page_ = false;
       stopped_pages_.push_back(url);
     }

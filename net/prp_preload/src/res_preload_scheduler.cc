@@ -30,21 +30,21 @@ void ResPreloadScheduler::PreloadSchedule(const std::list<std::shared_ptr<PRRequ
   }
   preload_triggered_ = true;
   info_list_ = res_req_info_list;
-  ++info_list_version_；
+  ++info_list_version_;
   socket_connected_ = 0;
   InfoIter iter = info_list_.begin();
 
   while (iter != info_list_.end()) {
     auto info = *iter;
     if (info->cache_type() != PRRequestCacheType::NEGOTIATION_CACHE ||
-      base::Time::Now().ToInternalValue() > info->Freshness_life_times()) {
+      base::Time::Now().ToInternalValue() > info->freshness_life_times()) {
       if (socket_connected_ <= SOCKET_LIMIT) {
         auto url = url::Origin::Create(info->url());
-        if (NeedToPreconnect(url.GetURL(), info->all_certificates()) && net_task_runner_ != nullptr) {
+        if (NeedToPreconnect(url.GetURL(), info->allow_credentials()) && net_task_runner_ != nullptr) {
           ++socket_connected_;
           LOG(DEBUG) << "PRPPreload.ResPreloadScheduler::PreloadSchedule preconnect " << url;
           net_task_runner_->PostTask(FROM_HERE, base::BindOnce(&network::NetworkContext::PreconnectSockets,
-                                     network_context_, 1, url.GetURL(), info->all_certificates(),
+                                     network_context_, 1, url.GetURL(), info->allow_credentials(),
                                      net::NetworkAnonymizationKey::CreateSameSite(net::SchemefulSite(url))));
         }
       } else {
@@ -88,20 +88,20 @@ void ResPreloadScheduler::PreconnectBeyondLimit(InfoIter info_iter,
 
   auto info = *info_iter;
   if (info != nullptr && (info->cache_type() != PRRequestCacheType::NEGOTIATION_CACHE ||
-      base::Time::Now().ToInternalValue() > info->Freshness_life_times())) {
+      base::Time::Now().ToInternalValue() > info->freshness_life_times())) {
     auto url = url::Origin::Create(info->url());
-    if (NeedToPreconnect(url.GetURL(), info->all_certificates()) && net_task_runner_ != nullptr) {
+    if (NeedToPreconnect(url.GetURL(), info->allow_credentials()) && net_task_runner_ != nullptr) {
       ++socket_connected_;
       LOG(DEBUG) << "PRPPreload.ResPreloadScheduler::PreconnectBeyondLimit preconnect " << url;
       net_task_runner_->PostTask(FROM_HERE, base::BindOnce(&network::NetworkContext::PreconnectSockets,
-                                 network_context_, 1, url.GetURL(), info->all_certificates(),
+                                 network_context_, 1, url.GetURL(), info->allow_credentials(),
                                  net::NetworkAnonymizationKey::CreateSameSite(net::SchemefulSite(url))));
     }
   }
   ++info_iter;
   if (sth_task_runner_ != nullptr && info_iter != info_list_.end()) {
     sth_task_runner_->PostDelayedTask(FROM_HERE,
-      base::BindOnce(ResPreloadScheduler::PreconnectBeyondLimit, weak_factory_.GetWeakPtr(),
+      base::BindOnce(&ResPreloadScheduler::PreconnectBeyondLimit, weak_factory_.GetWeakPtr(),
       info_iter, network_context_, info_list_version), base::Milliseconds(DELAYED_TIME));
   }
 }

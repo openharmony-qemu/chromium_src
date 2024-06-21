@@ -28,7 +28,7 @@ class ResParallelPreloadCtrler : public base::RefCounted<ResParallelPreloadCtrle
   void DoStart();
   void DoStop();
   void DoUpdateResRequestInfo(const std::shared_ptr<PRRequestInfo>& info);
-  void OnResRequestInfoLiast(const std::list<std::shared_ptr<PRRequestInfo>>& res_req_info_list);
+  void OnResRequestInfoList(const std::list<std::shared_ptr<PRRequestInfo>>& res_req_info_list);
   void OnTimeout();
 
   std::string url_;

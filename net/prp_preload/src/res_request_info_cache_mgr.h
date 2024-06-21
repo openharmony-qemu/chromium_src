@@ -42,7 +42,7 @@ class ResReqInfoCacheMgr : public base::RefCounted<ResReqInfoCacheMgr> {
   size_t last_flush_len_{0};
   ResRequestInfoCacheLoadedCB info_cache_loaded_cb_;
   bool is_start_{false};
-  base::WeakPtrFactory<ResParallelPreloadCtrler> weak_factory_{this};
+  base::WeakPtrFactory<ResReqInfoCacheMgr> weak_factory_{this};
 };
 
 }  // namespace ohos_prp_preload

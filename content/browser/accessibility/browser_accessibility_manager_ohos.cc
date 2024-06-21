@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "base/logging.h"
 #include "content/browser/accessibility/browser_accessibility_manager_ohos.h"
 #include "content/browser/accessibility/browser_accessibility_ohos.h"
 #include "content/browser/web_contents/web_contents_impl.h"
@@ -160,6 +161,9 @@ void BrowserAccessibilityManagerOHOS::SendAccessibilityEvent(
     int64_t accessibilityId,
     OHOS::NWeb::AccessibilityEventType eventType) {
   accessibilityId = TranslateAccessibilityId(accessibilityId);
+
+  LOG(INFO) << "SendAccessibilityEvent eventType is"
+            << static_cast<uint32_t>(eventType);
 
   if (accessibilityEventListener_ != nullptr &&
       eventType != OHOS::NWeb::AccessibilityEventType::UNKNOWN &&

@@ -3080,9 +3080,8 @@ void NWebDelegate::SetAccessibilityState(cef_state_t accessibilityState) {
 }
 
 void NWebDelegate::ExecuteAction(int64_t accessibilityId,
-                                 uint32_t action, 
-                                 const std::map<std::string, std::string>& 
-                                 actionArguments) {
+    uint32_t action, const std::map<std::string, std::string>& 
+    actionArguments) {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
     return;
@@ -3094,7 +3093,7 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId,
     return;
   }
   AceAction aceAction = static_cast<AceAction>(action);
-
+  LOG(INFO) << "NWebDelegate::ExecuteAction aceAction is" << action;
   switch (aceAction) {
     case AceAction::ACTION_CLICK:
       accessibilityManager->DoDefaultAction(*node);

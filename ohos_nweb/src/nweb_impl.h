@@ -506,7 +506,7 @@ class NWebImpl : public NWeb {
     const std::vector<std::string>& moduleName,
     std::string& errorPath) override;
 #endif
-  void performAction(int64_t accessibilityId, uint32_t action,
+  void PerformAction(int64_t accessibilityId, uint32_t action,
       const std::map<std::string, std::string>& actionArguments) override;
 
  private:

@@ -5,7 +5,7 @@
 import("//base/allocator/partition_allocator/partition_alloc.gni")
 import("//build/buildflag_header.gni")
 import("//build/config/chromeos/ui_mode.gni")
-import("..build/config/compiler/pgo/pgo.gni")
+import("//build/config/compiler/pgo/pgo.gni")
 import("//build/config/features.gni")
 import("//build/config/linux/pangocairo/pangocairo.gni")
 import("//build/config/ozone.gni")
@@ -21,14 +21,14 @@ import("//net/features.gni")
 import("//ppapi/buildflags/buildflags.gni")
 import("//printing/buildflags/buildflags.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
-import("//third_party/blink/public/pubilc_features.gni")
+import("//third_party/blink/public/public_features.gni")
 import("//tools/ipc_fuzzer/ipc_fuzzer.gni")
 
 buildflag_header("buildflags") {
-  header = "net_buildflags.h"
+  header = "buildflags.h"
 }
 
-source_set("prp_prelaod") {
+source_set("prp_preload") {
   visibility = [
     "//net:net",
     "//cef:make_pack_header_resources"
@@ -37,14 +37,13 @@ source_set("prp_prelaod") {
   configs += [
     "//build/config:precompiled_headers",
     "//content:content_implementation",
-    "//v8:external_startup_date".
+    "//v8:external_startup_data".
   ]
   defines = []
   libs = []
   frameworks = []
   ldflags = []
-  include_dirs = [ "//net/prp_prelaod/include" ]
-  sources = [ "base/trace_constants.h" ]
+  include_dirs = [ "//net/prp_preload/include" ]
 
   deps = [
     ":buildflags",
@@ -61,7 +60,7 @@ source_set("prp_prelaod") {
     "//base",
   ]
 
-  source = [
+  sources = [
     "src/disk_cache_backend_factory.cc",
     "src/disk_cache_file.cc",
     "src/page_res_parallel_preload_mgr_impl.cc",

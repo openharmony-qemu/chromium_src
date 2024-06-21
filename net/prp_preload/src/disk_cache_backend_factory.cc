@@ -10,7 +10,7 @@
 
 namespace {
 const size_t DEFAULT_PRELOAD_DISK_CACHE_BYTES = 12 * 1024 * 1024;
-const base::FilePath::CharType PRELOAD_CACHE_DIRNAME[] = FILE_PATH_LITERAL("PreloddCache");
+const base::FilePath::CharType PRELOAD_CACHE_DIRNAME[] = FILE_PATH_LITERAL("PreloadCache");
 }  // namespace
 
 namespace ohos_prp_preload {
@@ -40,7 +40,7 @@ bool DiskCacheBackendFactory::WaitInitedTimeout() {
   constexpr int32_t WAIT_INITED_TIME_OUT = 200; // 200ms
   std::mutex mutex;
   std::unique_lock<std::mutex> lk(mutex);
-  bool ret  = cv_backend_ready_.wait_until(1k,
+  bool ret = cv_backend_ready_.wait_until(lk,
     std::chrono::steady_clock::now() + std::chrono::milliseconds(WAIT_INITED_TIME_OUT),
     [&] { return is_inited_.load(); });
   return ret;

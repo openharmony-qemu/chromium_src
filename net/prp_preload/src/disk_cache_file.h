@@ -75,21 +75,21 @@ class DiskCacheReadHelper {
   EntryLoadedCallback entry_loaded_cb_;
   scoped_refptr<net::IOBufferWithSize> buf_;
   raw_ptr<disk_cache::Entry, DanglingUntriaged> entry_;
-  base::WeakPtr<DiskCacheEntry> weak_ptr_;
-  base::WeakPtrFactory<GpuDiskCacheReadHelper> weak_ptr_factory_{this};
+  base::WeakPtr<DiskCacheReadHelper> weak_ptr_;
+  base::WeakPtrFactory<DiskCacheReadHelper> weak_ptr_factory_{this};
 };
 
 class DiskCacheFile : public base::RefCounted<DiskCacheFile> {
  public:
-  DiskCacheFile::DiskCacheFile(const scoped_refptr<DiskCacheBackendFactory>& disk_cache_backend_factory,
-                               const std::string& url,
-                               const EntryLoadedCallback& entry_loaded_cb);
+  DiskCacheFile(const scoped_refptr<DiskCacheBackendFactory>& disk_cache_backend_factory,
+                const std::string& url,
+                const EntryLoadedCallback& entry_loaded_cb);
   ~DiskCacheFile() = default;
   DiskCacheFile(const DiskCacheFile&) = delete;
   DiskCacheFile& operator=(const DiskCacheFile&) = delete;
 
   void StoreInfoAsync(const std::string& entry_content);
-  bool LoadInfoAsync();
+  void LoadInfoAsync();
  private:
   friend class base::RefCounted<DiskCacheFile>;
   friend class DiskCacheEntry;

@@ -32,7 +32,7 @@ void ResReqPreloadInfoListToJson(const std::list<std::shared_ptr<PRRequestInfo>>
   }
 }
 
-void JsonToResReqPreloadInfoList(const std:string& json,
+void JsonToResReqPreloadInfoList(const std::string& json,
                                  std::list<std::shared_ptr<PRRequestInfo>>& info_list) {
   absl::optional<base::Value> json_value = base::JSONReader::Read(json);
   if (!json_value || !json_value->is_list()) {

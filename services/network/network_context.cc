@@ -1805,7 +1805,7 @@ void NetworkContext::StartMainPage(const std::string& url, uint64_t addr_web_han
 }
 
 void NetworkContext::StopMainPage(uint64_t addr_web_handle) {
-  ohos_prp_preload::PRParallelPreloadMgr::GetInstance().StartMainPage(addr_web_handle);
+  ohos_prp_preload::PRParallelPreloadMgr::GetInstance().StopMainPage(addr_web_handle);
 }
 #endif
 

@@ -37,7 +37,7 @@ class ResPreloadScheduler : public base::RefCounted<ResPreloadScheduler> {
   size_t socket_connected_ = 0;
   bool preload_triggered_ = false;
   int info_list_version_ = 0;
-  base::WeakPtrFactory<ResParallelPreloadCtrler> weak_factory_{this};
+  base::WeakPtrFactory<ResPreloadScheduler> weak_factory_{this};
 };
 
 }  // namespace ohos_prp_preload

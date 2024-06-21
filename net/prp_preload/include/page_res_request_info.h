@@ -28,12 +28,12 @@ class PRRequestInfo {
   }
   PRRequestCacheType cache_type() const { return cache_type_; }
   void set_cache_type(PRRequestCacheType cache_type) { cache_type_ = cache_type; }
-  int64_t Freshness_life_times() const { return Freshness_life_times_; }
-  void set_Freshness_life_times(int64_t Freshness_life_times) {
-    Freshness_life_times_ = Freshness_life_times;
+  int64_t freshness_life_times() const { return freshness_life_times_; }
+  void set_freshness_life_times(int64_t freshness_life_times) {
+    freshness_life_times_ = freshness_life_times;
   }
   const std::string& e_tag() const { return e_tag_; }
-  void set_e_tag(const std::string& e_tag) { ue_tag_ = e_tag; }
+  void set_e_tag(const std::string& e_tag) { e_tag_ = e_tag; }
   const std::string& last_modified() const { return last_modified_; }
   void set_last_modified(const std::string& last_modified) {
     last_modified_ = last_modified;
@@ -43,7 +43,7 @@ class PRRequestInfo {
   GURL url_ = GURL::EmptyGURL();
   bool allow_credentials_ = false;
   PRRequestCacheType cache_type_ = PRRequestCacheType::DISABLE_CACHE;
-  int64_t Freshness_life_times_ = 0;
+  int64_t freshness_life_times_ = 0;
   std::string e_tag_;
   std::string last_modified_;
 };

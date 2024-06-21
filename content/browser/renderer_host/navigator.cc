@@ -476,7 +476,7 @@ void Navigator::DidNavigate(
   FrameTreeNode* frame_tree_node = render_frame_host->frame_tree_node();
 #if BUILDFLAG(IS_OHOS)
   network::mojom::NetworkContext* network_context = frame_tree_node->current_frame_host()
-    ->GetDefaultStoragePartition()->GetNetworkContext();
+    ->GetStoragePartition()->GetNetworkContext();
   if (network_context != nullptr) {
     network_context->StartMainPage(params.url.possibly_invalid_spec(),
                                    reinterpret_cast<int64_t>(this));
@@ -740,7 +740,7 @@ void Navigator::Navigate(std::unique_ptr<NavigationRequest> request,
 
 #if BUILDFLAG(IS_OHOS)
   network::mojom::NetworkContext* network_context = frame_tree_node->current_frame_host()
-    ->GetDefaultStoragePartition()->GetNetworkContext();
+    ->GetStoragePartition()->GetNetworkContext();
   if (network_context != nullptr) {
     network_context->StartMainPage(request->common_params.url.spec(),
                                    reinterpret_cast<int64_t>(this));
@@ -1034,7 +1034,7 @@ void Navigator::OnBeginNavigation(
 
 #if BUILDFLAG(IS_OHOS)
   network::mojom::NetworkContext* network_context = frame_tree_node->current_frame_host()
-    ->GetDefaultStoragePartition()->GetNetworkContext();
+    ->GetStoragePartition()->GetNetworkContext();
   if (network_context != nullptr) {
     network_context->StartMainPage(common_params->url.spec(),
                                    reinterpret_cast<int64_t>(this));

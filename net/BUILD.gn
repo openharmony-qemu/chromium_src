@@ -1186,6 +1186,10 @@ component("net") {
       "proxy_resolution/proxy_config_service_ohos.cc",
       "proxy_resolution/proxy_config_service_ohos.h",
     ]
+
+    deps += [
+      "//net/prp_prelaod:prp_prelaod",
+    ]
   }
 
   if (is_chromeos && use_nss_certs) {

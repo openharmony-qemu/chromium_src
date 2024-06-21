@@ -118,6 +118,12 @@ struct NET_EXPORT HttpRequestInfo {
   // Use as ID to mark the cache entry when persisting. Should be a positive
   // number once set.
   absl::optional<int64_t> browser_run_id;
+
+#if BUILDFLAG(IS_OHOS)
+  bool allow_preload_record = true;
+
+  GURL main_page;
+#endif
 };
 
 }  // namespace net

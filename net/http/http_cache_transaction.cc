@@ -265,6 +265,20 @@ int HttpCache::Transaction::Start(const HttpRequestInfo* request,
 
   // We have to wait until the backend is initialized so we start the SM.
   next_state_ = STATE_GET_BACKEND;
+
+#if BUILDFLAG(IS_OHOS)
+  if (ohos_prp_preload::PRParallelPreloadMgr::GetInstance().PRParallelPreloadEnabled()) {
+    if (request_->allow_preload_record) {
+      preload_info_ = std::make_shared<ohos_prp_preload::PRRequestInfo>(request_->url,
+        request_->privacy_mode == PRIVACY_MODE_DISABLED);
+      ohos_prp_preload::PRParallelPreloadMgr::GetInstance().UpdateResRequestInfo(request_->main_page.spec(),
+        preload_info_);
+    } else {
+      ohos_prp_preload::PRParallelPreloadMgr::GetInstance().StopMainPage(request_->main_page.spec());
+    }
+  }
+#endif
+
   int rv = DoLoop(OK);
 
   // Setting this here allows us to check for the existence of a callback_ to
@@ -1992,6 +2006,29 @@ int HttpCache::Transaction::DoSuccessfulSendRequest() {
     return ERR_CACHE_AUTH_FAILURE_AFTER_READ;
   }
 
+#if BUILDFLAG(IS_OHOS)
+  if (request_->allow_preload_record &&
+      preload_info_ != nullptr &&
+      !ShouldDisableCaching(*new_response->headers)) {
+    base::TimeDelta FreshnessLifetimes = new_response->headers->
+      GetFreshnessLifetimes(new_response->response_time).freshness;
+    if (FreshnessLifetimes.is_zero()) {
+      preload_info_->set_cache_type(ohos_prp_preload::PRRequestCacheType::FORCE_CACHE);
+    } else {
+      DCHECK(FreshnessLifetimes.is_positive());
+      preload_info_->
+        set_freshness_life_times((new_response->response_time +
+                                  FreshnessLifetimes -
+                                  new_response->headers
+                                    ->GetCurrentAge(new_response->request_time,
+                                                    new_response->response_time,
+                                                    new_response->response_time)).ToInternalValue());
+      preload_info_->set_cache_type(ohos_prp_preload::PRRequestCacheType::NEGOTIATION_CACHE);
+    }
+    UpdateValidatorsInfo(*new_response->headers);
+  }
+#endif
+
   // The single-keyed cache only accepts responses with code 200 or 304.
   // Anything else is considered unusable.
   if (use_single_keyed_cache_ &&
@@ -2803,6 +2840,27 @@ int HttpCache::Transaction::BeginCacheValidation() {
 
   bool skip_validation = (required_validation == VALIDATION_NONE);
   bool needs_stale_while_revalidate_cache_update = false;
+
+#if BUILDFLAG(IS_OHOS)
+  if (request_->allow_preload_record &&
+      preload_info_ != nullptr &&
+      skip_validation) {
+    base::TimeDelta FreshnessLifetimes = response_->headers->
+      GetFreshnessLifetimes(response_->response_time).freshness;
+    if (!FreshnessLifetimes.is_zero()) {
+      DCHECK(FreshnessLifetimes.is_positive());
+      preload_info_->
+        set_freshness_life_times((response_->response_time +
+                                  FreshnessLifetimes -
+                                  response_->headers
+                                    ->GetCurrentAge(response_->request_time,
+                                                    response_->response_time,
+                                                    response_->response_time)).ToInternalValue());
+    }
+    preload_info_->set_cache_type(ohos_prp_preload::PRRequestCacheType::NEGOTIATION_CACHE);
+    UpdateValidatorsInfo(*response_->headers);
+  }
+#endif
 
   if ((effective_load_flags_ & LOAD_SUPPORT_ASYNC_REVALIDATION) &&
       required_validation == VALIDATION_ASYNCHRONOUS) {
@@ -4217,5 +4275,19 @@ void HttpCache::Transaction::EndDiskCacheAccessTimeCount(
   }
   last_disk_cache_access_start_time_ = TimeTicks();
 }
+
+#if BUILDFLAG(IS_OHOS)
+void HttpCache::Transaction::UpdateValidatorsInfo(const HttpResponseHeaders& headers) {
+  if (preload_info_ == nullptr) {
+    return;
+  }
+  std::string e_tag;
+  headers.EnumerateHeader(nullptr, "etag", &e_tag);
+  preload_info_->set_e_tag(e_tag);
+  std::string last_modified;
+  headers.EnumerateHeader(nullptr, "last-modified", &last_modified);
+  preload_info_->set_last_modified(last_modified);
+}
+#endif
 
 }  // namespace net

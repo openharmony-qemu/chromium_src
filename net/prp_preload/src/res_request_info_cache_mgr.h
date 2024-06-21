@@ -34,7 +34,7 @@ class ResReqInfoCacheMgr : public base::RefCounted<ResReqInfoCacheMgr> {
   void OnEntryLoadedCallback(const std::string& entry_content);
   void CheckFlush();
 
-  std::string url_;
+  const std::string& url_;
   scoped_refptr<base::SingleThreadTaskRunner> sth_task_runner_;
   scoped_refptr<DiskCacheFile> disk_cache_;
   std::list<std::shared_ptr<PRRequestInfo>> new_info_list_;

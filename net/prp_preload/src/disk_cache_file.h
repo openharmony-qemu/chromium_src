@@ -38,7 +38,7 @@ class DiskCacheEntry {
 
   raw_ptr<DiskCacheFile> cache_;
   OpType op_type_ = OPEN_ENTRY;
-  std::string url_;
+  const std::string& url_;
   std::string entry_content_;
   raw_ptr<disk_cache::Entry, DanglingUntriaged> entry_;
   base::WeakPtr<DiskCacheEntry> weak_ptr_;
@@ -71,7 +71,7 @@ class DiskCacheReadHelper {
 
   raw_ptr<DiskCacheFile> cache_;
   OpType op_type_ = OPEN_ENTRY;
-  std::string url_;
+  const std::string& url_;
   EntryLoadedCallback entry_loaded_cb_;
   scoped_refptr<net::IOBufferWithSize> buf_;
   raw_ptr<disk_cache::Entry, DanglingUntriaged> entry_;
@@ -100,7 +100,7 @@ class DiskCacheFile : public base::RefCounted<DiskCacheFile> {
   void EntryWriteComplete(DiskCacheEntry* entry);
 
   scoped_refptr<DiskCacheBackendFactory> disk_cache_backend_factory_;
-  std::string url_;
+  const std::string& url_;
   EntryLoadedCallback entry_loaded_cb_;
   std::unique_ptr<DiskCacheReadHelper> helper_;
   std::unique_ptr<DiskCacheEntry> entry_;

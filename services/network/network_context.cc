@@ -180,6 +180,10 @@
 #include "base/android/application_status_listener.h"
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(IS_OHOS)
+#include "net/prp_preload/include/page_res_parallel_preload_mgr.h"
+#endif // BUILDFLAG(IS_OHOS)
+
 namespace network {
 
 namespace {
@@ -1787,6 +1791,21 @@ void NetworkContext::ClearHostIP(const std::string& host_name) {
   filter_domains.insert(host_name);
   host_cache->ClearForHosts(base::BindRepeating(&MatchesDomainFilter, mojom::ClearDataFilter_Type::DELETE_MATCHES,
                             std::move(filter_domains)));
+}
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+void NetworkContext::InitPRParallelPreloadMgr() {
+  ohos_prp_preload::PRParallelPreloadMgr::GetInstance().Init(base::SingleThreadTaskRunner::GetCurrentDefault());
+}
+
+void NetworkContext::StartMainPage(const std::string& url, uint64_t addr_web_handle) {
+  ohos_prp_preload::PRParallelPreloadMgr::GetInstance().StartMainPage(url,
+    weak_factory_.GetWeakPtr(), addr_web_handle);
+}
+
+void NetworkContext::StopMainPage(uint64_t addr_web_handle) {
+  ohos_prp_preload::PRParallelPreloadMgr::GetInstance().StopMainPage(addr_web_handle);
 }
 #endif
 

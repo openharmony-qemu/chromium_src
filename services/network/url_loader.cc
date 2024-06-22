@@ -739,6 +739,11 @@ URLLoader::URLLoader(
 
   url_request_->set_has_storage_access(request.has_storage_access);
 
+#if BUILDFLAG(IS_OHOS)
+  url_request_->set_allow_preload_record(request.allow_preload_record);
+  url_request_->set_main_page(request.main_page);
+#endif
+
   url_request_->cookie_setting_overrides().PutAll(cookie_setting_overrides);
   if (request.is_outermost_main_frame &&
       network::cors::IsCorsEnabledRequestMode(request_mode_)) {

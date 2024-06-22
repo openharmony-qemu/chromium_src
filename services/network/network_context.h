@@ -412,6 +412,11 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
       uint32_t alive_time) override;
   void ClearHostIP(const std::string& host_name) override;
 #endif
+#if BUILDFLAG(IS_OHOS)
+  void InitPRParallelPreloadMgr() override;
+  void StartMainPage(const std::string& url, uint64_t addr_web_handle) override;
+  void StopMainPage(uint64_t addr_web_handle) override;
+#endif
   void CreateHostResolver(
       const absl::optional<net::DnsConfigOverrides>& config_overrides,
       mojo::PendingReceiver<mojom::HostResolver> receiver) override;

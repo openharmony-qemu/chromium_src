@@ -58,6 +58,10 @@
 #include "url/gurl.h"
 #include "url/url_util.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "services/network/public/mojom/network_context.mojom.h"
+#endif
+
 namespace content {
 
 namespace {
@@ -335,7 +339,15 @@ Navigator::Navigator(
     : controller_(browser_context, frame_tree, navigation_controller_delegate),
       delegate_(delegate) {}
 
-Navigator::~Navigator() = default;
+Navigator::~Navigator() {
+#if BUILDFLAG(IS_OHOS)
+  network::mojom::NetworkContext* network_context = controller_.GetBrowserContext()
+    ->GetDefaultStoragePartition()->GetNetworkContext();
+  if (network_context != nullptr) {
+    network_context->StopMainPage(reinterpret_cast<int64_t>(this));
+  }
+#endif
+}
 
 // static
 bool Navigator::CheckWebUIRendererDoesNotDisplayNormalURL(
@@ -462,6 +474,14 @@ void Navigator::DidNavigate(
     bool was_within_same_document) {
   DCHECK(navigation_request);
   FrameTreeNode* frame_tree_node = render_frame_host->frame_tree_node();
+#if BUILDFLAG(IS_OHOS)
+  network::mojom::NetworkContext* network_context = frame_tree_node->current_frame_host()
+    ->GetStoragePartition()->GetNetworkContext();
+  if (network_context != nullptr) {
+    network_context->StartMainPage(params.url.possibly_invalid_spec(),
+                                   reinterpret_cast<int64_t>(this));
+  }
+#endif
   FrameTree& frame_tree = frame_tree_node->frame_tree();
   DCHECK_EQ(&frame_tree, &controller_.frame_tree());
   base::WeakPtr<RenderFrameHostImpl> old_frame_host =
@@ -717,6 +737,15 @@ void Navigator::Navigate(std::unique_ptr<NavigationRequest> request,
 
   FrameTreeNode* frame_tree_node = request->frame_tree_node();
   DCHECK_EQ(&(frame_tree_node->frame_tree()), &controller_.frame_tree());
+
+#if BUILDFLAG(IS_OHOS)
+  network::mojom::NetworkContext* network_context = frame_tree_node->current_frame_host()
+    ->GetStoragePartition()->GetNetworkContext();
+  if (network_context != nullptr) {
+    network_context->StartMainPage(request->common_params().url.spec(),
+                                   reinterpret_cast<int64_t>(this));
+  }
+#endif
 
   metrics_data_ = std::make_unique<NavigationMetricsData>(
       request->common_params().navigation_start, request->common_params().url,
@@ -1002,6 +1031,15 @@ void Navigator::OnBeginNavigation(
     mojo::PendingReceiver<mojom::NavigationRendererCancellationListener>
         renderer_cancellation_listener) {
   TRACE_EVENT0("navigation", "Navigator::OnBeginNavigation");
+
+#if BUILDFLAG(IS_OHOS)
+  network::mojom::NetworkContext* network_context = frame_tree_node->current_frame_host()
+    ->GetStoragePartition()->GetNetworkContext();
+  if (network_context != nullptr) {
+    network_context->StartMainPage(common_params->url.spec(),
+                                   reinterpret_cast<int64_t>(this));
+  }
+#endif
 
   if (common_params->is_history_navigation_in_new_child_frame) {
     // Try to find a FrameNavigationEntry that matches this frame instead, based

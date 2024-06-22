@@ -854,6 +854,14 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
   }
   bool has_storage_access() const { return has_storage_access_; }
 
+#if BUILDFLAG(IS_OHOS)
+  void set_allow_preload_record(bool allow) { allow_preload_record_ = allow; }
+  bool allow_preload_record() const { return allow_preload_record_; }
+
+  void set_main_page(const GURL& url) { main_page_ = url; }
+  const GURL& main_page() const { return main_page_; }
+#endif
+
   static bool DefaultCanUseCookies();
 
   base::WeakPtr<URLRequest> GetWeakPtr();
@@ -1126,6 +1134,11 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
 
   // Idempotency of the request.
   Idempotency idempotency_ = DEFAULT_IDEMPOTENCY;
+
+#if BUILDFLAG(IS_OHOS)
+  bool allow_preload_record_ = false;
+  GURL main_page_;
+#endif
 
   THREAD_CHECKER(thread_checker_);
 

@@ -42,7 +42,7 @@ void ResRequestInfoUpdater::Stop() {
 }
 
 void ResRequestInfoUpdater::OnResRequestInfoCacheLoaded(const std::list<std::shared_ptr<PRRequestInfo>>& load_info_list) {
-  if (res_req_info_list_cb_ != nullptr) {
+  if (!res_req_info_list_cb_.is_null()) {
     res_req_info_list_cb_.Run(load_info_list);
   }
 }

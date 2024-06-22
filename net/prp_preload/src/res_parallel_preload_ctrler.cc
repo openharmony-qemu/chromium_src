@@ -87,7 +87,7 @@ void ResParallelPreloadCtrler::OnResRequestInfoList(const std::list<std::shared_
 
 void ResParallelPreloadCtrler::OnTimeout() {
   DoStop();
-  if (timeout_cb_ != nullptr) {
+  if (!timeout_cb_.is_null()) {
     timeout_cb_.Run(url_);
   }
 }

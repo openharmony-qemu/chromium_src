@@ -103,7 +103,7 @@ void ResReqInfoCacheMgr::OnEntryLoadedCallback(const std::string& entry_content)
     return;
   }
   JsonToResReqPreloadInfoList(entry_content, load_info_list_);
-  if (info_cache_loaded_cb_ != nullptr) {
+  if (!info_cache_loaded_cb_.is_null()) {
     info_cache_loaded_cb_.Run(load_info_list_);
   }
 }

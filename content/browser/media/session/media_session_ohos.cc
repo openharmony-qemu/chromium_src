@@ -202,7 +202,19 @@ void MediaSessionOHOS::SetWebviewShow(bool show) {
           media_session_->GetMediaSessionInfoSync();
       if (current_info->playback_state ==
           media_session::mojom::MediaPlaybackState::kPlaying) {
-        Suspend();
+        if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+          auto sequenced_task_runner_ = content::GetUIThreadTaskRunner({});
+          if (!sequenced_task_runner_) {
+            LOG(ERROR) << "media avsession GetUIThreadTaskRunner is null";
+            avsession_adapter_->DestroyAVSession();
+            return;
+          }
+          sequenced_task_runner_->PostTask(
+              FROM_HERE, base::BindOnce(&MediaSessionOHOS::Suspend,
+                                        base::Unretained(this)));
+        } else {
+          Suspend();
+        }
       }
       avsession_adapter_->DestroyAVSession();
     }

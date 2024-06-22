@@ -742,7 +742,7 @@ void Navigator::Navigate(std::unique_ptr<NavigationRequest> request,
   network::mojom::NetworkContext* network_context = frame_tree_node->current_frame_host()
     ->GetStoragePartition()->GetNetworkContext();
   if (network_context != nullptr) {
-    network_context->StartMainPage(request->common_params.url.spec(),
+    network_context->StartMainPage(request->common_params().url.spec(),
                                    reinterpret_cast<int64_t>(this));
   }
 #endif

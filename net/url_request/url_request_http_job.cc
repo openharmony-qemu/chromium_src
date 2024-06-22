@@ -274,6 +274,10 @@ void URLRequestHttpJob::Start() {
   request_info_.pervasive_payloads_index_for_logging =
       request_->pervasive_payloads_index_for_logging();
   request_info_.checksum = request_->expected_response_checksum();
+#if BUILDFLAG(IS_OHOS)
+  request_info_.allow_preload_record = request_->allow_preload_record();
+  request_info_.main_page = request_->main_page();
+#endif
 #if BUILDFLAG(ENABLE_REPORTING)
   request_info_.reporting_upload_depth = request_->reporting_upload_depth();
 #endif

@@ -21,6 +21,7 @@
 #include "ohos_nweb/src/cef_delegate/nweb_accessibility_utils.h"
 
 namespace content {
+class WebContentsImpl;
 // Manages a tree of BrowserAccessibility objects.
 class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
     : public BrowserAccessibilityManager {
@@ -74,6 +75,9 @@ class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
 
   void FireGeneratedEvent(ui::AXEventGenerator::Event event_type,
                           const ui::AXNode* node) override;
+  void Copy();
+  void Paste();
+  void Cut();
 
  private:
   void HandleHover(int64_t accessibilityId);

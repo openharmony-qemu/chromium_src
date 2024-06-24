@@ -586,6 +586,15 @@ bool NWebHandlerDelegate::OnProcessMessageReceived(
     return true;
   }
 
+  if (messageName == "ContentSize.Message") {
+    CefRefPtr<CefListValue> postMsgArgs = message->GetArgumentList();
+    int width = postMsgArgs->GetInt(0);
+    int height = postMsgArgs->GetInt(1);
+    float ratio = render_handler_->GetCefDeviceRatio();
+    nweb_handler_->OnRootLayerChanged(width * ratio, height * ratio);
+    return true;
+  }
+
   return false;
 }
 

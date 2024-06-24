@@ -1361,10 +1361,14 @@ bool NWebHandlerDelegate::OnBeforeBrowse(CefRefPtr<CefBrowser> browser,
           request->GetMethod().ToString(), request_headers,
           request->GetURL().ToString(), user_gesture, frame->IsMain(),
           is_redirect);
+  bool result = false;
   if (nweb_handler_ != nullptr) {
-    return nweb_handler_->OnHandleInterceptUrlLoading(nweb_request);
+    result = nweb_handler_->OnHandleInterceptUrlLoading(nweb_request);
+    LOG(DEBUG) << "NWebHandlerDelegate::OnBeforeBrowse OnHandleInterceptUrlLoading result: " << result;
+    return result;
   }
-  return false;
+  LOG(DEBUG) << "NWebHandlerDelegate::OnBeforeBrowse result: " << result;
+  return result;
 }
 
 bool NWebHandlerDelegate::OnCertificateError(CefRefPtr<CefBrowser> browser,
@@ -1515,10 +1519,14 @@ bool NWebHandlerDelegate::ShouldOverrideUrlLoading(
       std::make_shared<NWebUrlResourceRequestImpl>(
           method.ToString(), request_headers, url.ToString(), user_gesture,
           is_outermost_main_frame, is_redirect);
+  bool result = false;
   if (nweb_handler_ != nullptr) {
-    return nweb_handler_->OnHandleOverrideUrlLoading(nweb_request);
+    result = nweb_handler_->OnHandleOverrideUrlLoading(nweb_request);
+    LOG(DEBUG) << "NWebHandlerDelegate::ShouldOverrideUrlLoading OnHandleOverrideUrlLoading result: " << result;
+    return result;
   }
-  return false;
+  LOG(DEBUG) << "NWebHandlerDelegate::ShouldOverrideUrlLoading result: " << result;
+  return result;
 }
 
 bool NWebHandlerDelegate::OnOpenAppLink(

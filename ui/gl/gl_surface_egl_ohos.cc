@@ -40,8 +40,8 @@ NativeViewGLSurfaceEGLOhos::CreateNativeViewGLSurfaceEGLOhos(
         OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance();
     std::string product_model = system_properties_adapter.GetDeviceInfoProductModel();
     if (product_model == PRODUCT_MODEL_EMULATOR) {
-      LOG(INFO)  << "emulator CreateNativeViewGLSurfaceEGLOhos delay 20ms";
-      base::PlatformThread::Sleep(base::Milliseconds(20));
+      LOG(INFO)  << "emulator CreateNativeViewGLSurfaceEGLOhos delay 100ms";
+      base::PlatformThread::Sleep(base::Milliseconds(100));
     }
     void* window = NWebNativeWindowTracker::GetInstance()->GetNativeWindow(widget);
     return scoped_refptr<NativeViewGLSurfaceEGLOhos>(

@@ -3080,7 +3080,8 @@ void NWebDelegate::SetAccessibilityState(cef_state_t accessibilityState) {
 }
 
 void NWebDelegate::ExecuteAction(int64_t accessibilityId,
-                                 uint32_t action) {
+    uint32_t action, const std::map<std::string, std::string>& 
+    actionArguments) {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
     return;
@@ -3092,7 +3093,7 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId,
     return;
   }
   AceAction aceAction = static_cast<AceAction>(action);
-
+  LOG(INFO) << "NWebDelegate::ExecuteAction aceAction is" << action;
   switch (aceAction) {
     case AceAction::ACTION_CLICK:
       accessibilityManager->DoDefaultAction(*node);
@@ -3127,6 +3128,66 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId,
     case AceAction::ACTION_SCROLL_BACKWARD:
       node->Scroll(ax::mojom::Action::kScrollBackward);
       break;
+    case AceAction::ACTION_COPY:
+      accessibilityManager->Copy();
+      break;
+    case AceAction::ACTION_PASTE:
+      accessibilityManager->Paste();
+      break;
+    case AceAction::ACTION_CUT:
+      accessibilityManager->Cut();
+      break;
+    case AceAction::ACTION_SET_SELECTION: {
+      if (!node->IsTextField() || actionArguments.empty()) {
+        break;
+      }
+
+      int start = 0;
+      int end = 0;
+      auto iter = actionArguments.find("selectTextBegin");
+
+      if (iter != actionArguments.end()) {
+        std::stringstream str_start;
+        str_start << iter->second;
+        str_start >> start;
+      }
+
+      iter = actionArguments.find("selectTextEnd");
+
+      if (iter != actionArguments.end()) {
+        std::stringstream str_end;
+        str_end << iter->second;
+        str_end >> end;
+      }
+
+      accessibilityManager->SetSelection(
+          content::BrowserAccessibility::AXRange(
+              node->CreatePositionForSelectionAt(start),
+              node->CreatePositionForSelectionAt(end)));
+      break;
+    }
+    case AceAction::ACTION_SET_TEXT: {
+      if (!node->IsTextField()) {
+        break;
+      }
+      if(actionArguments.empty()) {
+        break;
+      }
+      std::string newText = "";
+      auto iter = actionArguments.find("setText");
+      if (iter != actionArguments.end()) {
+        newText = iter->second;
+      }
+      if (newText.empty()) {
+        break;
+      }
+      accessibilityManager->SetValue(*node,newText);
+      accessibilityManager->SetSelection(
+          content::BrowserAccessibility::AXRange(
+              node->CreatePositionForSelectionAt(newText.length()),
+              node->CreatePositionForSelectionAt(newText.length())));
+      break;
+    }
     default:
       LOG(INFO) << "ExecuteAction unsupported action";
       break;

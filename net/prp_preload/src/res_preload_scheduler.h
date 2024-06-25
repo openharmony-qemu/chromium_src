@@ -5,18 +5,23 @@
 #ifndef NET_PRP_PRELOAD_SRC_RES_PRELOAD_SCHEDULER_H
 #define NET_PRP_PRELOAD_SRC_RES_PRELOAD_SCHEDULER_H
 
+#include <list>
 #include "base/memory/weak_ptr.h"
 #include "base/task/thread_pool.h"
 #include "content/public/browser/browser_context.h"
 #include "services/network/network_context.h"
 #include "page_res_request_info.h"
 
+namespace net {
+class URLRequestContext;
+}  // namespace net
+
 namespace ohos_prp_preload {
 class ResPreloadScheduler : public base::RefCounted<ResPreloadScheduler> {
  public:
   ResPreloadScheduler(const scoped_refptr<base::SingleThreadTaskRunner>& sth_task_runner,
                       const scoped_refptr<base::SingleThreadTaskRunner>& net_task_runner,
-                      const base::WeakPtr<network::NetworkContext>& network_context);
+                      net::URLRequestContext* url_request_context);
   ResPreloadScheduler() = delete;
   ~ResPreloadScheduler() = default;
  
@@ -25,15 +30,16 @@ class ResPreloadScheduler : public base::RefCounted<ResPreloadScheduler> {
  private:
   using InfoIter = std::list<std::shared_ptr<PRRequestInfo>>::iterator;
   bool NeedToPreconnect(const GURL& url, bool allow_credentials);
-  void PreconnectBeyondLimit(InfoIter info_iter,
-    const base::WeakPtr<network::NetworkContext>& network_context,
-    const int info_list_version);
+  void PreconnectBeyondLimit(InfoIter info_iter, net::URLRequestContext* url_request_context
+const int info_list_version);
+  void PreconnectSocket(const GURL& original_url, bool allow_credentials);
+  GURL GetHSTSRedirect(const GURL& original_url);
 
   std::list<std::shared_ptr<PRRequestInfo>> info_list_;
   std::unordered_map<std::string, int> idle_connect_list_;
   scoped_refptr<base::SingleThreadTaskRunner> sth_task_runner_;
   scoped_refptr<base::SingleThreadTaskRunner> net_task_runner_;
-  base::WeakPtr<network::NetworkContext> network_context_;
+  raw_ptr<net::URLRequestContext> url_request_context_;
   size_t socket_connected_ = 0;
   bool preload_triggered_ = false;
   int info_list_version_ = 0;

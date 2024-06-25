@@ -606,7 +606,6 @@ void NotifyForNextTouchEvent() override;
   std::string richtext_data_str_ = "";
   std::shared_ptr<NWebAccessibilityEventCallback>
       accessibility_event_listener_ = nullptr;
-  content::BrowserAccessibilityManagerOHOS* manager_ = nullptr;
 };
 }  // namespace OHOS::NWeb
 #endif

@@ -3075,7 +3075,6 @@ void NWebDelegate::SetAccessibilityState(cef_state_t accessibilityState) {
   if (accessibility_state_ != (accessibilityState == STATE_ENABLED)) {
     accessibility_state_ = (accessibilityState == STATE_ENABLED);
     GetBrowser()->GetHost()->SetAccessibilityState(accessibilityState);
-    manager_ = nullptr;
   }
 }
 
@@ -3201,15 +3200,13 @@ NWebDelegate::GetAccessibilityManager() {
     return nullptr;
   }
   void* manager = nullptr;
-  if (!manager_) {
-    GetBrowser()->GetHost()->GetRootBrowserAccessibilityManager(&manager);
-    manager_ = static_cast<content::BrowserAccessibilityManagerOHOS*>(manager);
-    if (manager_ != nullptr && manager_->GetAccessibilityEventListener() == nullptr
-        && accessibility_event_listener_ != nullptr) {
-        manager_->RegisterAccessibilityEventListener(accessibility_event_listener_);
-    }
+  GetBrowser()->GetHost()->GetRootBrowserAccessibilityManager(&manager);
+  auto managerOHOS = static_cast<content::BrowserAccessibilityManagerOHOS*>(manager);
+  if (managerOHOS != nullptr && managerOHOS->GetAccessibilityEventListener() == nullptr
+      && accessibility_event_listener_ != nullptr) {
+      managerOHOS->RegisterAccessibilityEventListener(accessibility_event_listener_);
   }
-  return manager_;
+  return managerOHOS;
 }
 
 std::shared_ptr<NWebAccessibilityNodeInfo>

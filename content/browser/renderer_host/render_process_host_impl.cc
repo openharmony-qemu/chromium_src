@@ -5183,7 +5183,8 @@ size_t RenderProcessHost::GetActiveViewCount() {
       RenderWidgetHost::GetRenderWidgetHosts());
   while (RenderWidgetHost* widget = widgets->GetNextHost()) {
     // Count only RenderWidgetHosts in this process.
-    if (widget->GetProcess()->GetID() == GetID())
+    // #if BUILDFLAG(IS_OHOS): GetProcess() maybe null,add protection.
+    if (widget->GetProcess() && widget->GetProcess()->GetID() == GetID())
       num_active_views++;
   }
   return num_active_views;

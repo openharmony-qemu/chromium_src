@@ -48,7 +48,7 @@ void ResPreloadScheduler::PreloadSchedule(const std::list<std::shared_ptr<PRRequ
         if (NeedToPreconnect(url.GetURL(), info->allow_credentials()) && net_task_runner_ != nullptr) {
           ++socket_connected_;
           LOG(DEBUG) << "PRPPreload.ResPreloadScheduler::PreloadSchedule preconnect " << url;
-          net_task_runner_->PostTask(FROM_HERE, base::BindOnce(&network::NetworkContext::PreconnectSockets,
+          net_task_runner_->PostTask(FROM_HERE, base::BindOnce(&ResPreloadScheduler::PreconnectSocket,
                                      weak_factory_.GetWeakPtr(), url.GetURL(), info->allow_credentials()));
         }
       } else {
@@ -112,13 +112,12 @@ void ResPreloadScheduler::PreconnectBeyondLimit(InfoIter info_iter,
 void ResPreloadScheduler::PreconnectSocket(const GURL& original_url, bool allow_credentials) {
   net::NetworkAnonymizationKey key =
     net::NetworkAnonymizationKey::CreateSameSite(net::SchemefulSite(original_url));
-
   GURL url = GetHSTSRedirect(original_url);
 
   std::string user_agent;
   if (url_request_context_->http_user_agent_settings()) {
     user_agent =
-        url_request_context_->http_user_agent_settings()->GetUserAgent();
+      url_request_context_->http_user_agent_settings()->GetUserAgent();
   }
   net::HttpRequestInfo request_info;
   request_info.url = url;
@@ -136,7 +135,7 @@ void ResPreloadScheduler::PreconnectSocket(const GURL& original_url, bool allow_
   request_info.network_anonymization_key = key;
 
   net::HttpTransactionFactory* factory =
-      url_request_context_->http_transaction_factory();
+    url_request_context_->http_transaction_factory();
   net::HttpNetworkSession* session = factory->GetSession();
   net::HttpStreamFactory* http_stream_factory = session->http_stream_factory();
   http_stream_factory->PreconnectStreams(1, request_info);

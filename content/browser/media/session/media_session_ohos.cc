@@ -187,26 +187,7 @@ void MediaSessionOHOS::Resume() {
 }
 
 void MediaSessionOHOS::SetWebviewShow(bool show) {
-  is_webview_show_ = show;
-  if (base::ohos::IsPcDevice() ||
-      (media_type_ != OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_VIDEO)) {
-    return;
-  }
-  if (is_webview_show_) {
-    if (media_session_) {
-      media_session_->RebuildAndNotifyMediaSessionInfoChanged();
-    }
-  } else {
-    if (avsession_adapter_) {
-      media_session::mojom::MediaSessionInfoPtr current_info =
-          media_session_->GetMediaSessionInfoSync();
-      if (current_info->playback_state ==
-          media_session::mojom::MediaPlaybackState::kPlaying) {
-        Suspend();
-      }
-      avsession_adapter_->DestroyAVSession();
-    }
-  }
+  LOG(ERROR) << "MediaSessionOHOS::SetWebviewShow";
 }
 
 void MediaSessionOHOS::Suspend() {

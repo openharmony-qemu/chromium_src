@@ -89,13 +89,6 @@ void BackgroundTaskPolicy::OnIsVisibleChanged(const PageNode* page_node) {
             << (visible_num > 0 ? "true" : "false")
             << ", visible_page_num: " << visible_page_num_;
   MaybeChangeBackgroundTask(page_node);
-  auto webcontents = page_node->GetContentsProxy().Get();
-  content::MediaSessionImpl* mediaSession =
-      content::MediaSessionImpl::Get(webcontents);
-  if (!mediaSession || !webcontents) {
-    return;
-  }
-  mediaSession->SetWebviewShow(visible_num > 0);
 }
 
 void BackgroundTaskPolicy::OnIsMediaPlayingChanged(const PageNode* page_node) {

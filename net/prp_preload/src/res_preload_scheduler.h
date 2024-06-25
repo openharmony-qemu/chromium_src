@@ -8,8 +8,6 @@
 #include <list>
 #include "base/memory/weak_ptr.h"
 #include "base/task/thread_pool.h"
-#include "content/public/browser/browser_context.h"
-#include "services/network/network_context.h"
 #include "page_res_request_info.h"
 
 namespace net {
@@ -30,8 +28,7 @@ class ResPreloadScheduler : public base::RefCounted<ResPreloadScheduler> {
  private:
   using InfoIter = std::list<std::shared_ptr<PRRequestInfo>>::iterator;
   bool NeedToPreconnect(const GURL& url, bool allow_credentials);
-  void PreconnectBeyondLimit(InfoIter info_iter, net::URLRequestContext* url_request_context
-const int info_list_version);
+  void PreconnectBeyondLimit(InfoIter info_iter, const int info_list_version);
   void PreconnectSocket(const GURL& original_url, bool allow_credentials);
   GURL GetHSTSRedirect(const GURL& original_url);
 

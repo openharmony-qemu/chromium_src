@@ -110,6 +110,9 @@ void ResPreloadScheduler::PreconnectBeyondLimit(InfoIter info_iter,
 }
 
 void ResPreloadScheduler::PreconnectSocket(const GURL& original_url, bool allow_credentials) {
+  if (url_request_context_ == nullptr) {
+    return;
+  }
   net::NetworkAnonymizationKey key =
     net::NetworkAnonymizationKey::CreateSameSite(net::SchemefulSite(original_url));
   GURL url = GetHSTSRedirect(original_url);

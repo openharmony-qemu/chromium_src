@@ -51,6 +51,12 @@
 #include "base/command_line.h"
 #include "content/public/common/content_switches.h"
 #endif
+
+#ifdef OHOS_BFCACHE
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
+
 namespace content {
 
 class RenderProcessHostInternalObserver;
@@ -134,6 +140,22 @@ bool IsContentInjectionSupported() {
 
 WebSchedulerTrackedFeatures SupportedFeaturesImpl() {
   WebSchedulerTrackedFeatures features;
+#ifdef OHOS_BFCACHE
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableBFCache)) {
+    auto feature = blink::scheduler::StringToFeature("EenableCacheNativeEmbed");
+      if (feature.has_value()) {
+        features.Put(feature.value());
+      }
+  }
+
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableCacheMediaTakeOver)) {
+    auto feature = blink::scheduler::StringToFeature("EnableCacheMediaTakeOver");
+      if (feature.has_value()) {
+        features.Put(feature.value());
+      }
+  }
+  return features;
+#else
   if (!IsBackForwardCacheEnabled())
     return features;
 
@@ -153,6 +175,7 @@ WebSchedulerTrackedFeatures SupportedFeaturesImpl() {
     }
   }
   return features;
+#endif
 }
 
 WebSchedulerTrackedFeatures SupportedFeatures() {
@@ -242,7 +265,9 @@ constexpr WebSchedulerTrackedFeatures kAllowedFeatures(
     // main frame.
     WebSchedulerTrackedFeature::kAuthorizationHeader,
     // TODO(crbug.com/1357482): Figure out if this should be allowed.
-    WebSchedulerTrackedFeature::kWebNfc);
+    WebSchedulerTrackedFeature::kWebNfc,
+    WebSchedulerTrackedFeature::kEnableCacheNativeEmbed,
+    WebSchedulerTrackedFeature::kEnableCacheMediaTakeOver);
 
 // The BackForwardCache feature is controlled via an experiment. This function
 // returns the allowed URL list where it is enabled.
@@ -544,7 +569,6 @@ base::TimeDelta BackForwardCacheImpl::GetTimeToLiveInBackForwardCache() {
   //   the default value.
   // - Infinite if kBackForwardCacheNoTimeEviction is enabled.
   // - Default value otherwise, kDefaultTimeToLiveInBackForwardCacheInSeconds.
-
   if (base::FeatureList::IsEnabled(
           features::kBackForwardCacheTimeToLiveControl)) {
     absl::optional<int> time_to_live = GetFieldTrialParamByFeatureAsOptionalInt(
@@ -560,6 +584,16 @@ base::TimeDelta BackForwardCacheImpl::GetTimeToLiveInBackForwardCache() {
 
   return base::Seconds(kDefaultTimeToLiveInBackForwardCacheInSeconds);
 }
+
+#ifdef OHOS_BFCACHE
+base::TimeDelta BackForwardCacheImpl::ArkWebGetTimeToLiveInBackForwardCache() {
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableBFCache)) {
+    return base::Seconds(this->time_to_live_);
+  }
+
+  return base::Seconds(kDefaultTimeToLiveInBackForwardCacheInSeconds);
+}
+#endif
 
 // static
 size_t BackForwardCacheImpl::GetCacheSize() {
@@ -1087,8 +1121,17 @@ void BackForwardCacheImpl::EnforceCacheSizeLimit() {
     EnforceCacheSizeLimitInternal(GetForegroundedEntriesCacheSize(),
                                   /*foregrounded_only=*/true);
   }
-  EnforceCacheSizeLimitInternal(GetCacheSize(),
+
+#ifdef OHOS_BFCACHE
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableBFCache)) {
+    LOG(ERROR) << "BackForwardCacheImpl::" << __func__ << " " <<
+    EnforceCacheSizeLimitInternal(this->size_,
                                 /*foregrounded_only=*/false);
+    return;
+  }
+#endif
+  EnforceCacheSizeLimitInternal(GetCacheSize(),
+                              /*foregrounded_only=*/false);
 }
 
 void BackForwardCacheImpl::Prune(size_t limit) {

@@ -509,6 +509,11 @@ class NWebImpl : public NWeb {
   void PerformAction(int64_t accessibilityId, uint32_t action,
       const std::map<std::string, std::string>& actionArguments) override;
 
+#ifdef OHOS_BFCACHE
+  static void EnableBackForwardCache(bool enableNativeEmbed, bool enableMediaIntercept);
+  void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override;
+#endif
+
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

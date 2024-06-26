@@ -20,6 +20,7 @@
 #include "cef/include/cef_client.h"
 #include "cef/include/cef_dialog_handler.h"
 #include "cef/include/cef_form_handler.h"
+#include "cef/include/cef_frame_handler.h"
 #include "cef/include/cef_jsdialog_handler.h"
 #include "cef/include/cef_media_handler.h"
 #include "cef/include/cef_permission_request.h"
@@ -73,6 +74,7 @@ class NWebHandlerDelegate : public CefClient,
                             public CefKeyboardHandler,
                             public CefMediaHandler,
                             public CefFormHandler,
+                            public CefFrameHandler,
 #if defined(OHOS_PRINT)
                             public CefCookieAccessFilter,
                             public CefPrintHandler {
@@ -227,6 +229,8 @@ class NWebHandlerDelegate : public CefClient,
 #if defined(OHOS_PRINT)
   CefRefPtr<CefPrintHandler> GetPrintHandler() override;
 #endif  // defined(OHOS_PRINT)
+
+  CefRefPtr<CefFrameHandler> GetFrameHandler() override;
   /* CefClient methods end */
 
   /* CefLifeSpanHandler methods begin */
@@ -608,6 +612,12 @@ class NWebHandlerDelegate : public CefClient,
                           int device_units_per_inch) override;
 #endif  // defined(OHOS_PRINT)
   /* CefPrintHandler method end */
+
+  /* CefFrameHandler method begin */
+  void OnMainFrameChanged(CefRefPtr<CefBrowser> browser,
+                          CefRefPtr<CefFrame> old_frame,
+                          CefRefPtr<CefFrame> new_frame) override;
+  /* CefFrameHandler method end */
 
   const std::vector<std::string> GetVisitedHistory();
 

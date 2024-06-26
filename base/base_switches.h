@@ -72,7 +72,6 @@ extern const char kForTest[];
 extern const char kBundleInstallationDir[];
 extern const char kBundleName[];
 #endif
-
 }  // namespace switches
 
 #endif  // BASE_BASE_SWITCHES_H_

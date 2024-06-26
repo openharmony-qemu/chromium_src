@@ -498,6 +498,10 @@ class NWebDelegateInterface
       const std::vector<std::string>& pathList) = 0;
 #endif
 
+#ifdef OHOS_BFCACHE
+  virtual void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) = 0;
+#endif
+
   virtual bool IsCustomKeyboard() const = 0;
 
   virtual std::shared_ptr<NWebCustomKeyboardHandlerImpl> GetCustomKeyboardHandler() const = 0;

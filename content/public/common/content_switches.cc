@@ -1136,4 +1136,10 @@ const char kIpcFuzzerTestcase[] = "ipc-fuzzer-testcase";
 
 // Don't dump stuff here, follow the same order as the header.
 
+#ifdef OHOS_BFCACHE
+const char kEnableBFCache[] = "enable-bfcache";
+const char kEnableCacheNativeEmbed[] = "enable-cache-native-embed";
+const char kEnableCacheMediaTakeOver[] = "enable-cache-media-take-over";
+#endif
+
 }  // namespace switches

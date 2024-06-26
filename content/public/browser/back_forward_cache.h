@@ -10,6 +10,7 @@
 #include <set>
 
 #include "base/strings/string_piece.h"
+#include "base/time/time.h"
 #include "content/common/content_export.h"
 #include "content/public/browser/global_routing_id.h"
 #include "services/metrics/public/cpp/ukm_source_id.h"
@@ -190,6 +191,12 @@ class CONTENT_EXPORT BackForwardCache {
   // you actually should have 2 tests, one with the document cached
   // (BackForwardCache enabled), and one without.
   virtual void DisableForTesting(DisableForTestingReason reason) = 0;
+
+#ifdef OHOS_BFCACHE
+  virtual void SetCacheSize(int size) = 0;
+  virtual void SetTimeToLive(int timeToLive) = 0;
+  virtual base::TimeDelta ArkWebGetTimeToLiveInBackForwardCache() = 0;
+#endif
 
  protected:
   BackForwardCache() = default;

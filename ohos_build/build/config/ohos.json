@@ -54,6 +54,14 @@
 "dependence": "",
 "default": "true"
 },
+{ "name": "OHOS_BFCACHE",
+"owner": "gaojianhao",
+"desc": "",
+"effect":"main gn blink_core other",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},
 { "name": "OHOS_BUGFIX_CRASH",
 "owner": "",
 "desc": "",

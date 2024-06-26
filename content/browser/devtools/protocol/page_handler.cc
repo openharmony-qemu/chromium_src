@@ -1594,6 +1594,10 @@ Page::BackForwardCacheNotRestoredReason BlocklistedFeatureToProtocol(
       return Page::BackForwardCacheNotRestoredReasonEnum::Dummy;
     case WebSchedulerTrackedFeature::kAuthorizationHeader:
       return Page::BackForwardCacheNotRestoredReasonEnum::AuthorizationHeader;
+    case WebSchedulerTrackedFeature::kEnableCacheNativeEmbed:
+      return "EnableCacheNativeEmbed";
+    case WebSchedulerTrackedFeature::kEnableCacheMediaTakeOver:
+      return "EnableCacheMediaTakeOver";
   }
 }
 
@@ -1779,6 +1783,8 @@ Page::BackForwardCacheNotRestoredReasonType MapBlocklistedFeatureToType(
     case WebSchedulerTrackedFeature::kOutstandingNetworkRequestXHR:
     case WebSchedulerTrackedFeature::kWebTransport:
     case WebSchedulerTrackedFeature::kIndexedDBEvent:
+    case WebSchedulerTrackedFeature::kEnableCacheNativeEmbed:
+    case WebSchedulerTrackedFeature::kEnableCacheMediaTakeOver:
       return Page::BackForwardCacheNotRestoredReasonTypeEnum::PageSupportNeeded;
     case WebSchedulerTrackedFeature::kPortal:
     case WebSchedulerTrackedFeature::kWebNfc:

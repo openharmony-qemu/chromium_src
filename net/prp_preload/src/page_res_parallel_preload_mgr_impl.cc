@@ -49,10 +49,10 @@ void PRParallelPreloadMgrImpl::Init(const scoped_refptr<base::SingleThreadTaskRu
 }
 
 void PRParallelPreloadMgrImpl::StartMainPage(const std::string& url,
-                                             const base::WeakPtr<network::NetworkContext>& network_context,
+                                             net::URLRequestContext* url_request_context,
                                              uint64_t addr_web_handle) {
   void* web_handle = reinterpret_cast<void*>(addr_web_handle);
-  if (url.empty() || network_context == nullptr || web_handle == nullptr) {
+  if (url.empty() || url_request_context == nullptr || web_handle == nullptr) {
     LOG(ERROR) << "PRPPreload.PRParallelPreloadMgrImpl::StartMainPage failed, invalid args";
     return;
   }
@@ -71,7 +71,7 @@ void PRParallelPreloadMgrImpl::StartMainPage(const std::string& url,
   }
 
   scoped_refptr<ResParallelPreloadCtrler> rp_preload_ctrler = base::WrapRefCounted(
-    new (std::nothrow) ResParallelPreloadCtrler(url, network_context,
+    new (std::nothrow) ResParallelPreloadCtrler(url, url_request_context,
       sth_task_runner_, net_task_runner_, disk_cache_backend_factory_,
       base::BindRepeating(&PRParallelPreloadMgrImpl::OnRPPCtrlerTimeout, base::Unretained(this))));
   if (rp_preload_ctrler == nullptr) {

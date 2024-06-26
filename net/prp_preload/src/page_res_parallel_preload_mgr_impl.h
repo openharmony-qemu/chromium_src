@@ -7,7 +7,6 @@
 
 #include <mutex>
 #include <unordered_map>
-#include "services/network/network_context.h"
 #include "disk_cache_backend_factory.h"
 #include "page_res_parallel_preload_mgr.h"
 #include "res_parallel_preload_ctrler.h"
@@ -19,7 +18,7 @@ class PRParallelPreloadMgrImpl : public PRParallelPreloadMgr {
   ~PRParallelPreloadMgrImpl() = default;
   void Init(const scoped_refptr<base::SingleThreadTaskRunner>& net_task_runner) override;
   void StartMainPage(const std::string& url,
-                     const base::WeakPtr<network::NetworkContext>& network_context,
+                     net::URLRequestContext* url_request_context,
                      uint64_t addr_web_handle) override;
   void StopMainPage(const std::string& url) override;
   void StopMainPage(uint64_t addr_web_handle) override;

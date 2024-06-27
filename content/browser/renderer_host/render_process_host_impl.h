@@ -158,7 +158,10 @@ struct GlobalRenderFrameHostId;
 typedef base::Thread* (*RendererMainThreadFactoryFunction)(
     const InProcessChildThreadParams& params,
     int32_t renderer_client_id);
-
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+typedef std::map<std::string, RenderProcessHost*>
+    SharedProcessTokenToProcessMap;
+#endif
 // Implements a concrete RenderProcessHost for the browser process for talking
 // to actual renderer processes (as opposed to mocks).
 //
@@ -770,6 +773,16 @@ class CONTENT_EXPORT RenderProcessHostImpl
 #if defined(OHOS_RENDERER_ANR_DUMP)
   void dumpCurrentJavaScriptStackInMainThread(
       base::OnceCallback<void(const std::string&)> dump_callback) override;
+#endif
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+  static RenderProcessHost* GetProcessForSharedToken(
+      const std::string& shared_render_process_token);
+
+  static void RegisteProcessForSharedToken(
+      const std::string& shared_render_process_token,
+      RenderProcessHost* renderProcessHost);
+  static void RemoveFromSharedRenderProcessMap(
+      RenderProcessHost* renderProcessHost);
 #endif
  protected:
   // A proxy for our IPC::Channel that lives on the IO thread.

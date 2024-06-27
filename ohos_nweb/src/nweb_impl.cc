@@ -3219,8 +3219,7 @@ void NWebImpl::SetPathAllowingUniversalAccess(
 #endif
 
 int NWebImpl::SetUrlTrustList(const std::string& urlTrustList) {
-  std::string detailErrMsg;
-  return SetUrlTrustListWithErrMsg(urlTrustList, detailErrMsg);
+  return 0;
 }
 
 int NWebImpl::SetUrlTrustListWithErrMsg(
@@ -3230,7 +3229,7 @@ int NWebImpl::SetUrlTrustListWithErrMsg(
     return static_cast<int>(ohos_safe_browsing::UrlListSetResult::INIT_ERROR);
   }
 
-  return nweb_delegate_->SetUrlTrustList(urlTrustList, detailErrMsg);
+  return nweb_delegate_->SetUrlTrustListWithErrMsg(urlTrustList, detailErrMsg);
 #else
   return -1;
 #endif

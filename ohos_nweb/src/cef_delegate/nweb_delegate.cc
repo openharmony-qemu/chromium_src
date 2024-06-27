@@ -3637,15 +3637,15 @@ void NWebDelegate::OnTextSelected() {
 #endif
 
 #if OHOS_URL_TRUST_LIST
-int NWebDelegate::SetUrlTrustList(
+int NWebDelegate::SetUrlTrustListWithErrMsg(
   const std::string& urlTrustList, std::string& detailErrMsg) {
-  LOG(INFO) << "NWebDelegate::SetUrlTrustList";
+  LOG(INFO) << "NWebDelegate::SetUrlTrustListErrMsg";
   if (!GetBrowser().get()) {
-    LOG(ERROR) << "NWebDelegate::SetUrlTrustList failed, get browser failed";
+    LOG(ERROR) << "NWebDelegate::SetUrlTrustListWithErrMsg failed, get browser failed";
     return static_cast<int>(ohos_safe_browsing::UrlListSetResult::INIT_ERROR);
   }
   CefString detailErrMsgCef;
-  int res = GetBrowser()->SetUrlTrustList(urlTrustList, detailErrMsgCef);
+  int res = GetBrowser()->SetUrlTrustListWithErrMsg(urlTrustList, detailErrMsgCef);
   detailErrMsg = detailErrMsgCef.ToString();
   return res;
 }

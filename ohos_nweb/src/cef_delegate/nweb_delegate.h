@@ -482,7 +482,8 @@ void NotifyForNextTouchEvent() override;
 #endif
 
 #ifdef OHOS_URL_TRUST_LIST
-  int SetUrlTrustList(const std::string& urlTrustList, std::string& detailErrMsg) override;
+  int SetUrlTrustListWithErrMsg(
+    const std::string& urlTrustList, std::string& detailErrMsg) override;
 #endif
 
 #ifdef OHOS_NETWORK_LOAD

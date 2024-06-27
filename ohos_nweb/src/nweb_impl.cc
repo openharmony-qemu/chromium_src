@@ -767,6 +767,7 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
     return false;
   }
 
+  window_ = reinterpret_cast<EGLNativeWindowType>(window);
   int32_t ret =
       OHOS::NWeb::OhosAdapterHelper::GetInstance()
           .GetWindowAdapterInstance()
@@ -2570,8 +2571,17 @@ bool NWebImpl::Discard() {
     return false;
    }
 
-   return nweb_delegate_->Discard();
+  if (!nweb_delegate_->Discard()) {
+    return false;
+  }
+
+  WVLOG_D("Discard: Notify the bufferq to clean all caches");
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .GetWindowAdapterInstance()
+      .NativeWindowSurfaceCleanCacheWithPara(reinterpret_cast<void*>(window_), true);
+  return true;
 }
+
 bool NWebImpl::Restore() {
    if (nweb_delegate_ == nullptr) {
     WVLOG_E("Restore failed, nweb delegate is nullptr, nweb_id = %{public}u", nweb_id_);

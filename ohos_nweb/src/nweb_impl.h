@@ -22,6 +22,7 @@
 #include <mutex>
 #include <set>
 #include <vector>
+#include <EGL/eglplatform.h>
 #include "capi/nweb_app_client_extension_callback.h"
 #include "capi/nweb_download_delegate_callback.h"
 #include "nweb.h"
@@ -542,6 +543,7 @@ class NWebImpl : public NWeb {
   bool is_richtext_value_ = false;
 
   bool incognito_mode_ = false;
+  EGLNativeWindowType window_;
 #if defined(OHOS_SCHEME_HANDLER)
   std::string web_tag_{""};
 #endif

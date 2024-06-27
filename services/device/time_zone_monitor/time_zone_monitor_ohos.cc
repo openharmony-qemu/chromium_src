@@ -6,6 +6,7 @@
 
 #include "base/memory/ref_counted.h"
 #include "base/logging.h"
+#include "base/task/single_thread_task_runner.h"
 #include "ohos_adapter_helper.h"
 #include "time_zone_monitor.h"
 
@@ -68,6 +69,7 @@ public:
 
         event_callback_ = std::make_shared<TimezoneEventCallback>(this);
         timezoneClient->RegTimezoneEvent(event_callback_);
+        task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
 
         StartListening();
     }
@@ -103,17 +105,14 @@ public:
 private:
    friend class TimezoneEventCallback; 
    
-    void TimezoneChanged(std::shared_ptr<WebTimezoneInfo> info) {
-        LOG(DEBUG) << "receive timezone changed.";
-        std::string timezone = info->GetTzId();
-        owner_->NotifyClientsFromImpl(timezone);
-    }
+    void TimezoneChanged(std::shared_ptr<WebTimezoneInfo> info);
 
     std::shared_ptr<TimezoneEventCallbackAdapter> event_callback_;
 
     TimeZoneMonitorOhos* owner_;
     bool isListen;
     std::unique_ptr<OHOS::NWeb::DateTimeFormatAdapter> timezoneClient;
+    scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
 };
 }
 
@@ -141,6 +140,19 @@ void TimeZoneMonitorOhos::NotifyClientsFromImpl(std::string& timezone) {
 std::unique_ptr<TimeZoneMonitor> TimeZoneMonitor::Create() {
     LOG(DEBUG) << "TimeZoneMonitor Create.";
     return std::make_unique<TimeZoneMonitorOhos>();
+}
+
+void TimeZoneMonitorOhosImpl::TimezoneChanged(std::shared_ptr<WebTimezoneInfo> info) {
+    LOG(DEBUG) << "receive timezone changed.";
+    if (!task_runner_->RunsTasksInCurrentSequence()) {
+        task_runner_->PostTask(
+            FROM_HERE,
+            base::BindOnce(&TimeZoneMonitorOhosImpl::TimezoneChanged,
+                            base::Unretained(this), std::move(info)));
+        return;
+    }
+    std::string timezone = info->GetTzId();
+    owner_->NotifyClientsFromImpl(timezone);
 }
 
 }  // namespace

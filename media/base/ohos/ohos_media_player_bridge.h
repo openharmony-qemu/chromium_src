@@ -107,6 +107,7 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   GURL url_;
   bool prepared_;
   bool pending_play_;
+  bool seek_complete_;
   bool should_seek_on_prepare_;
   float volume_;
   float current_volume_ = 0;
@@ -124,7 +125,6 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
 #endif
 
   base::WeakPtrFactory<OHOSMediaPlayerBridge> weak_factory_{this};
-  int32_t seek_done_count_ = 0;
 };
 }  // namespace media
 

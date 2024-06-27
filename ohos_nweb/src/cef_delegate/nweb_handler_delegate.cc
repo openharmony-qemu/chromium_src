@@ -615,6 +615,10 @@ CefRefPtr<CefPrintHandler> NWebHandlerDelegate::GetPrintHandler() {
 CefRefPtr<CefFormHandler> NWebHandlerDelegate::GetFormHandler() {
   return this;
 }
+
+CefRefPtr<CefFrameHandler> NWebHandlerDelegate::GetFrameHandler() {
+  return this;
+}
 /* CefClient methods end */
 
 #if defined(OHOS_SCREEN_LOCK)
@@ -629,6 +633,18 @@ void NWebHandlerDelegate::SetWakeLockCallback(
   }
 }
 #endif
+
+/* CefFrameHandler method begin */
+void NWebHandlerDelegate::OnMainFrameChanged(
+    CefRefPtr<CefBrowser> browser,
+    CefRefPtr<CefFrame> old_frame,
+    CefRefPtr<CefFrame> new_frame) {
+  LOG(DEBUG) << "NWebHandlerDelegate::OnMainFrameChanged";
+  if (new_frame && browser && browser->IsValid() && preference_delegate_.get()) {
+    preference_delegate_->WebPreferencesChanged();
+  }
+}
+/* CefFrameHandler method end */
 
 /* CefLifeSpanHandler methods begin */
 void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {

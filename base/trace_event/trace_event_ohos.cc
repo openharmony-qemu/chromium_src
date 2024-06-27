@@ -23,10 +23,6 @@
 
 using OHOS::NWeb::OhosAdapterHelper;
 constexpr char DEBUG_CATEGORY[] = "disabled-";
-constexpr uint64_t HITRACE_TAG_NWEB = (1ULL << 24); // nweb trace tag
-constexpr uint64_t HITRACE_TAG_ACE = (1ULL << 39); // ohos trace tag
-static bool isHiTraceEnable = false;
-static bool isACETraceEnable = false;
 static bool traceDebugStatus = false;
 
 class TraceObserver : public OHOS::NWeb::SystemPropertiesObserver {
@@ -35,9 +31,6 @@ class TraceObserver : public OHOS::NWeb::SystemPropertiesObserver {
     ~TraceObserver() override = default;
 
     void PropertiesUpdate(const char* value) override {
-      auto status = std::atol(value);
-      isHiTraceEnable = status & HITRACE_TAG_NWEB;
-      isACETraceEnable = status & HITRACE_TAG_ACE;
       traceDebugStatus = OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
                          .GetTraceDebugEnable();
     }
@@ -47,20 +40,17 @@ void StartObserveTraceEnable() {
   traceObserver = std::make_unique<TraceObserver>();
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                                     .GetSystemPropertiesInstance();
-  system_properties_adapter.AttachSysPropObserver(OHOS::NWeb::PropertiesKey::PROP_HITRACE_ENABLEFLAGS,
+  system_properties_adapter.AttachSysPropObserver(OHOS::NWeb::PropertiesKey::PROP_DEBUG_TRACE,
     traceObserver.get());
 
-  if (OHOS::NWeb::OhosAdapterHelper::GetInstance().GetHiTraceAdapterInstance().IsHiTraceEnable()) {
-    traceDebugStatus = OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
-                       .GetTraceDebugEnable();
-  }
-  if (OHOS::NWeb::OhosAdapterHelper::GetInstance().GetHiTraceAdapterInstance().IsACETraceEnable()) {
-    isACETraceEnable = true;
-  }
+  traceDebugStatus = OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
+                      .GetTraceDebugEnable();
 }
 
 bool IsOHOSBytraceEnable() {
-  return isHiTraceEnable || isACETraceEnable;
+  return OhosAdapterHelper::GetInstance().GetHiTraceAdapterInstance()
+         .IsHiTraceEnable() || OhosAdapterHelper::GetInstance().GetHiTraceAdapterInstance()
+         .IsACETraceEnable();
 }
 
 static bool IsDebugCategory(const char* a, const char* b) {
@@ -73,7 +63,8 @@ static bool IsDebugCategory(const char* a, const char* b) {
 }
 
 bool IsCategoryEnable(const char *category_group) {
-  if (!isHiTraceEnable) {
+  if (!OhosAdapterHelper::GetInstance().GetHiTraceAdapterInstance()
+                      .IsHiTraceEnable()) {
     return false;
   }
 

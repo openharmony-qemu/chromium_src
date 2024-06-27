@@ -108,6 +108,10 @@
 #include "media/gpu/vaapi/vaapi_wrapper.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/trace_event/trace_event_ohos.h"
+#endif
+
 namespace content {
 
 namespace {
@@ -203,6 +207,9 @@ void LoadMetalShaderCacheIfNecessary() {
 
 // Main function for starting the Gpu process.
 int GpuMain(MainFunctionParams parameters) {
+#if BUILDFLAG(IS_OHOS)
+  StartObserveTraceEnable();
+#endif
   TRACE_EVENT0("gpu", "GpuMain");
   base::CurrentProcess::GetInstance().SetProcessType(
       base::CurrentProcessType::PROCESS_GPU);

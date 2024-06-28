@@ -109,6 +109,8 @@ const int kMonthPerYear = 12;
 const int WEB_CAN_SNAPSHOT_DELAY_TIME = 1500;
 #endif
 
+const int VIEW_PORT_DIFF = 5;
+
 ImageColorType TransformColorType(cef_color_type_t color_type) {
   switch (color_type) {
     case CEF_COLOR_TYPE_RGBA_8888:
@@ -590,8 +592,22 @@ bool NWebHandlerDelegate::OnProcessMessageReceived(
     CefRefPtr<CefListValue> postMsgArgs = message->GetArgumentList();
     int width = postMsgArgs->GetInt(0);
     int height = postMsgArgs->GetInt(1);
+    int viewport_width = postMsgArgs->GetInt(2);
+    int viewport_height = postMsgArgs->GetInt(3);
+
     float ratio = render_handler_->GetCefDeviceRatio();
-    nweb_handler_->OnRootLayerChanged(width * ratio, height * ratio);
+    gfx::Size current_viewport_size = render_handler_->GetSize();
+
+    if (std::abs(current_viewport_size.width() - viewport_width) <= VIEW_PORT_DIFF &&
+        std::abs(current_viewport_size.height() - viewport_height) <= VIEW_PORT_DIFF) {
+      nweb_handler_->OnRootLayerChanged(width * ratio, height * ratio);
+      render_handler_->SetContentSize(width * ratio, height * ratio);
+    } else {
+      LOG(ERROR)
+          << "Fit Content not upload layer change, current viewport width:"
+          << current_viewport_size.width()
+          << ",height:" << current_viewport_size.height();
+    }
     return true;
   }
 

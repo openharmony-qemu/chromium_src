@@ -301,6 +301,13 @@ std::list<std::string> GetArgsToDelete(
   return init_args->GetArgsToDelete();
 }
 
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+std::string GetSharedRenderProcessToken(
+    std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
+  return init_args ? init_args->GetSharedRenderProcessToken() : "";
+}
+#endif
+
 #if defined(OHOS_API_INIT_WEB_ENGINE)
 void InitialWebEngineArgs(
     std::list<std::string>& web_engine_args,
@@ -781,16 +788,26 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
   }
 
   bool is_popup = GetIsPopup(init_args);
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+  std::string shared_render_process_token =
+      GetSharedRenderProcessToken(init_args);
+#endif
   WVLOG_D("nweb create_info.init_args.is_popup: %{public}d", is_popup);
   nweb_delegate_ = NWebDelegateAdapter::CreateNWebDelegate(
       argc, argv, is_enhance_surface_, window, is_popup
 #if defined(OHOS_EX_DOWNLOAD)
-      , nweb_id_
+      ,
+      nweb_id_
 #endif
 #if defined(OHOS_INCOGNITO_MODE)
-      , create_info->GetIsIncognitoMode()
+      ,
+      create_info->GetIsIncognitoMode()
 #endif
-      );
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+      ,
+      shared_render_process_token
+#endif
+  );
   WVLOG_D("nweb create_info.incognito_mode: %{public}d",
           create_info->GetIsIncognitoMode());
   if (nweb_delegate_ == nullptr) {

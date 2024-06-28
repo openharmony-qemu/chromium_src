@@ -51,12 +51,19 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
             void* window,
             bool popup
 #if defined(OHOS_EX_DOWNLOAD)
-            , uint32_t nweb_id
+            ,
+            uint32_t nweb_id
 #endif
 #if BUILDFLAG(IS_OHOS)
-            , bool incognito_mode
+            ,
+            bool incognito_mode
 #endif
-            );
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+            ,
+            const std::string& shared_render_process_token
+#endif
+
+  );
   void OnWindowShow() override;
   void OnWindowHide() override;
   void OnOnlineRenderToForeground() override;
@@ -497,28 +504,42 @@ void NotifyForNextTouchEvent() override;
  private:
   void RunMessageLoop();
 
-
   void InitializeCef(std::string url,
                      bool is_enhance_surface,
                      void* window,
                      bool popup
 #if defined(OHOS_EX_DOWNLOAD)
-                     , uint32_t nweb_id
+                     ,
+                     uint32_t nweb_id
 #endif
 #if defined(OHOS_INCOGNITO_MODE)
-                     , bool incognito_mode
+                     ,
+                     bool incognito_mode
 #endif
-                     );
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+                     ,
+                     const std::string& shared_render_process_token
+#endif
+
+  );
 
   const CefRefPtr<CefBrowser> GetBrowser() const;
   void RequestVisitedHistory();
   bool HasBackgroundColorWithInit(int32_t& backgroundColor);
   void InitRichtextIdentifier();
 #if defined(OHOS_API_INIT_WEB_ENGINE)
-  void OnContextInitializeComplete(const std::string& url, void* windows
+  void OnContextInitializeComplete(
+      const std::string& url,
+      void* windows
 #if defined(OHOS_INCOGNITO_MODE)
-      , bool incognito_mode
+      ,
+      bool incognito_mode
 #endif
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+      ,
+      const std::string& shared_render_process_token
+#endif
+
   );
 #endif  // defined(OHOS_API_INIT_WEB_ENGINE)
 #if defined(OHOS_MSGPORT)

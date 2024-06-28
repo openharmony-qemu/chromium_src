@@ -231,6 +231,9 @@
 #ifdef OHOS_DISPLAY_CUTOUT
 #include "content/browser/display_cutout/display_cutout_host_ohos.h"
 #endif
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+#include "content/browser/renderer_host/render_process_host_impl.h"
+#endif
 
 #ifdef OHOS_ARKWEB_ADBLOCK
 #include "components/subresource_filter/content/browser/ohos_adblock_config.h"
@@ -3382,6 +3385,21 @@ void WebContentsImpl::Init(const WebContents::CreateParams& params,
   if (params.desired_renderer_state == CreateParams::kNoRendererProcess) {
     site_instance->PreventAssociationWithSpareProcess();
   }
+
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+  if (!params.shared_render_process_token.empty()) {
+    shared_render_process_token_ = params.shared_render_process_token;
+    RenderProcessHost* render_process =
+        RenderProcessHostImpl::GetProcessForSharedToken(
+            shared_render_process_token_);
+    if (render_process) {
+      site_instance->ReuseExistingProcessIfPossible(render_process);
+    } else {
+      RenderProcessHostImpl::RegisteProcessForSharedToken(
+          shared_render_process_token_, site_instance->GetProcess());
+    }
+  }
+#endif
 
   // Iniitalize the primary FrameTree.
   // Note that GetOpener() is used here to get the opener for origin
@@ -10413,5 +10431,11 @@ void WebContentsImpl::RequestExitFullscreen(const MediaPlayerId& player_id) {
 
 }
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+const std::string& WebContentsImpl::SharedRenderProcessToken() {
+  return shared_render_process_token_;
+}
+#endif
 
 }  // namespace content

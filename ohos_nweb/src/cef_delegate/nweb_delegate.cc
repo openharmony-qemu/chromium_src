@@ -419,17 +419,22 @@ void NWebDelegate::InitRichtextIdentifier() {
   }
 }
 
-
 bool NWebDelegate::Init(bool is_enhance_surface,
                         void* window,
                         bool popup
 #if defined(OHOS_EX_DOWNLOAD)
-                        , uint32_t nweb_id
+                        ,
+                        uint32_t nweb_id
 #endif
 #if defined(OHOS_INCOGNITO_MODE)
-                        , bool incognito_mode
+                        ,
+                        bool incognito_mode
 #endif
-                        ) {
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+                        ,
+                        const std::string& shared_render_process_token
+#endif
+) {
   preference_delegate_ = std::make_shared<NWebPreferenceDelegate>();
   int32_t backgroundColor;
   if (preference_delegate_ && HasBackgroundColorWithInit(backgroundColor)) {
@@ -474,15 +479,22 @@ InitRichtextIdentifier();
 
   std::string url_for_init = "";
 
-  LOG(INFO) << "NWebDelegate::Init incognito_mode:" << incognito_mode;
+  LOG(INFO) << "NWebDelegate::Init incognito_mode:" << incognito_mode
+            << "[shared]" << shared_render_process_token;
   InitializeCef(url_for_init, is_enhance_surface_, window, popup
 #if defined(OHOS_EX_DOWNLOAD)
-      , nweb_id
+                ,
+                nweb_id
 #endif
 #if defined(OHOS_INCOGNITO_MODE)
-      , incognito_mode
+                ,
+                incognito_mode
 #endif
-      );
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+                ,
+                shared_render_process_token
+#endif
+  );
   std::shared_ptr<DisplayAdapter> display =
       display_manager_adapter_->GetDefaultDisplay();
   if (display != nullptr) {
@@ -1471,6 +1483,9 @@ void NWebDelegate::InitializeCef(std::string url,
 #if defined(OHOS_INCOGNITO_MODE)
                                  , bool incognito_mode
 #endif
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+                                 , const std::string& shared_render_process_token
+#endif
                                 ) {
 #if defined(OHOS_HAP_DECOMPRESSED) || BUILDFLAG(IS_OHOS)
   bool for_browser = false;
@@ -1533,24 +1548,37 @@ void NWebDelegate::InitializeCef(std::string url,
 #if defined(OHOS_INCOGNITO_MODE)
   settings.incognito_mode = incognito_mode;
 #endif
-
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+  settings.shared_render_process_token = shared_render_process_token;
+#endif
   bool is_initialized = NWebApplication::GetDefault()->HasInitializedCef();
   if (is_initialized) {
     NWebApplication::GetDefault()->CreateBrowser(preference_delegate_, url,
                                                  handler_delegate_, window
 #if defined(OHOS_INCOGNITO_MODE)
-                                                 , incognito_mode
+                                                 ,
+                                                 incognito_mode
 #endif
-                                                 );
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+                                                 ,
+                                                 shared_render_process_token
+#endif
+    );
   } else {
     // Create browser when context initialized.
-    NWebApplication::GetDefault()->RunAfterContextInitialized(
-        base::BindOnce(&NWebDelegate::OnContextInitializeComplete,
-                       base::Unretained(this), url, window
+    NWebApplication::GetDefault()->RunAfterContextInitialized(base::BindOnce(
+        &NWebDelegate::OnContextInitializeComplete, base::Unretained(this), url,
+        window
 #if defined(OHOS_INCOGNITO_MODE)
-                       , incognito_mode
+        ,
+        incognito_mode
 #endif
-                       ));
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+        ,
+        shared_render_process_token
+#endif
+
+        ));
     NWebApplication::GetDefault()->InitializeCef(mainargs, settings);
   }
 #endif  // defined(OHOS_API_INIT_WEB_ENGINE)
@@ -2467,19 +2495,31 @@ bool NWebDelegate::WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #if defined(OHOS_API_INIT_WEB_ENGINE)
-void NWebDelegate::OnContextInitializeComplete(const std::string& url,
-                                               void* window
+void NWebDelegate::OnContextInitializeComplete(
+    const std::string& url,
+    void* window
 #if defined(OHOS_INCOGNITO_MODE)
-                                              , bool incognito_mode
+    ,
+    bool incognito_mode
 #endif
-                                               ) {
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+    ,
+    const std::string& shared_render_process_token
+
+#endif
+) {
   // Create browser after context initialzed complete.
   NWebApplication::GetDefault()->CreateBrowser(preference_delegate_, url,
                                                handler_delegate_, window
 #if defined(OHOS_INCOGNITO_MODE)
-                                               , incognito_mode
+                                               ,
+                                               incognito_mode
 #endif
-                                               );
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+                                               ,
+                                               shared_render_process_token
+#endif
+  );
 }
 #endif  // defined(OHOS_API_INIT_WEB_ENGINE)
 

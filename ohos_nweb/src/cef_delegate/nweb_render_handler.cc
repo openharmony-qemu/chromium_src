@@ -344,6 +344,17 @@ void NWebRenderHandler::Resize(uint32_t width, uint32_t height) {
   height_ = height;
 }
 
+#if BUILDFLAG(IS_OHOS)
+void NWebRenderHandler::SetContentSize(int width, int height) {
+  content_width_ = width;
+  content_height_ = height;
+}
+
+gfx::Size NWebRenderHandler::GetSize() {
+  return gfx::Size(width_, height_);
+}
+#endif
+
 void NWebRenderHandler::GetViewRect(CefRefPtr<CefBrowser> browser,
                                     CefRect& rect) {
   rect.x = 0;

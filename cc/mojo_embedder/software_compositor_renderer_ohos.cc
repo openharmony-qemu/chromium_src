@@ -150,6 +150,7 @@ void SoftwareCompositorRendererOhos::DrawAndSwapOnRenderer(
   display_->DrawAndSwap({now, now});
 
   in_software_draw_ = false;
+  SendCompositorFrameAckToClient();
 }
 
 void SoftwareCompositorRendererOhos::DemandDrawSw(SkCanvas* canvas,

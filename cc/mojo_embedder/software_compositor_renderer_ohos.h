@@ -61,7 +61,7 @@ class CC_MOJO_EMBEDDER_EXPORT SoftwareCompositorRendererOhos {
 
   void DrawAndSwapOnRenderer(viz::CompositorFrame frame);
 
-  void DemandDrawSw(SkCanvas* canvas, gfx::SizeF size, gfx::PointF offset);
+  bool DemandDrawSw(SkCanvas* canvas, gfx::SizeF size, gfx::PointF offset);
 
   void SendCompositorFrameAckToClient();
 
@@ -89,6 +89,7 @@ class CC_MOJO_EMBEDDER_EXPORT SoftwareCompositorRendererOhos {
   // Draw info
   gfx::Size size_{0, 0};
   bool in_software_draw_ = false;
+  bool software_draw_result_ = false;
   base::WeakPtrFactory<SoftwareCompositorRendererOhos> weak_ptr_factory_{this};
 };
 }  // namespace cc::mojo_embedder

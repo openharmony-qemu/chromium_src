@@ -147,13 +147,13 @@ void SoftwareCompositorRendererOhos::DrawAndSwapOnRenderer(
 
   LOG(INFO) << "SW render DrawAndSwap";
   base::TimeTicks now = base::TimeTicks::Now();
-  display_->DrawAndSwap({now, now});
-
+  bool result = display_->DrawAndSwap({now, now});
+  software_draw_result_ = result;
   in_software_draw_ = false;
   SendCompositorFrameAckToClient();
 }
 
-void SoftwareCompositorRendererOhos::DemandDrawSw(SkCanvas* canvas,
+bool SoftwareCompositorRendererOhos::DemandDrawSw(SkCanvas* canvas,
                                                   gfx::SizeF size,
                                                   gfx::PointF offset) {
   LOG(INFO) << "SW render DemandDrawSw";
@@ -166,6 +166,7 @@ void SoftwareCompositorRendererOhos::DemandDrawSw(SkCanvas* canvas,
   offset_transform.Translate(offset.x(), offset.y());
 
   client_->OnDraw(offset_transform, gfx::Rect(size_), in_software_draw_, false);
+  return software_draw_result_;
 }
 
 void SoftwareCompositorRendererOhos::SendCompositorFrameAckToClient() {

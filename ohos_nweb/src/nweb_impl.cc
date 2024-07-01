@@ -1884,6 +1884,38 @@ bool NWebImpl::WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
   }
   return input_handler_->WebSendKeyEvent(keyCode, keyAction, pressedCodes);
 }
+
+void NWebImpl::WebSendMouseWheelEvent(double x,
+                                      double y,
+                                      double deltaX,
+                                      double deltaY,
+                                      const std::vector<int32_t>& pressedCodes) {
+  if (input_handler_ == nullptr) {
+    return;
+  }
+
+  ResSchedClientAdapter::ReportScene(
+    ResSchedStatusAdapter::WEB_SCENE_ENTER, ResSchedSceneAdapter::SLIDE);
+
+#if defined(OHOS_PERFORMANCE_INC_FREQ)
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .CreateSocPerfClientAdapter()
+      ->ApplySocPerfConfigById(SOC_PERF_MOUSEWHEEL_CONFIG_ID);
+#endif
+  input_handler_->WebSendMouseWheelEvent(x, y, deltaX, deltaY, pressedCodes);
+}
+
+void NWebImpl::WebSendTouchpadFlingEvent(double x,
+                                         double y,
+                                         double vx,
+                                         double vy,
+                                         const std::vector<int32_t>& pressedCodes) {
+  if (input_handler_ == nullptr) {
+    return;
+  }
+
+  input_handler_->WebSendTouchpadFlingEvent(x, y, vx, vy, pressedCodes);
+}
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 bool NWebImpl::GetCertChainDerData(std::vector<std::string>& certChainData,

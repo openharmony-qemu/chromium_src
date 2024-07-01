@@ -416,6 +416,26 @@ uint32_t NWebInputDelegate::GetWebModifiers(int32_t keyCode, int32_t keyAction,
   return result;
 }
 
+uint32_t NWebInputDelegate::GetWebModifiersByPressedCode(
+  const std::vector<int32_t>& pressedCodes) {
+  uint32_t result = 0;
+  for (auto pCode : pressedCodes) {
+      if (pCode == static_cast<int32_t>(KeyEvent::KEYCODE_CTRL_LEFT) ||
+          pCode == static_cast<int32_t>(KeyEvent::KEYCODE_CTRL_RIGHT)) {
+        result |= EVENTFLAG_CONTROL_DOWN;
+      }
+      if (pCode == static_cast<int32_t>(KeyEvent::KEYCODE_SHIFT_LEFT) ||
+          pCode == static_cast<int32_t>(KeyEvent::KEYCODE_SHIFT_RIGHT)) {
+        result |= EVENTFLAG_SHIFT_DOWN;
+      }
+      if (pCode == static_cast<int32_t>(KeyEvent::KEYCODE_ALT_LEFT) ||
+          pCode == static_cast<int32_t>(KeyEvent::KEYCODE_ALT_RIGHT)) {
+        result |= EVENTFLAG_ALT_DOWN;
+      }
+  }
+  return result;
+}
+
 NWebInputDelegate::NWebInputDelegate() {
   keyEventHandle_.RegistInputEvent(KeyEvent::KEYCODE_CTRL_LEFT, KEY_DOWN,
                                    false);

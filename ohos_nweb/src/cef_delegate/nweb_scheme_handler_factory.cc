@@ -223,7 +223,7 @@ void NWebSchemeHandlerFactory::OnRequestStop(
 
   ArkWeb_SchemeHandler* handler = FromTag(web_tag);
   if (!handler || !handler->on_request_stop) {
-    LOG(INFO) << "scheme_handler not set handler for " << web_tag;
+    LOG(DEBUG) << "scheme_handler not set handler for " << web_tag;
     return;
   }
   handler->on_request_stop(handler, resource_request);

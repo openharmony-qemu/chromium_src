@@ -68,12 +68,15 @@ class AudioRendererCallback : public AudioRendererCallbackAdapter {
 
 class AudioOutputChangeCallback : public AudioOutputChangeCallbackAdapter {
  public:
-  AudioOutputChangeCallback(AudioParameters params, bool isCommunication);
+  AudioOutputChangeCallback(
+      const scoped_refptr<base::SingleThreadTaskRunner>& task_runner,
+      AudioParameters params,
+      bool isCommunication);
   ~AudioOutputChangeCallback();
   void OnOutputDeviceChange(int32_t reason) override;
 
  private:
-  base::WeakPtr<content::MediaSessionImpl> weakMediaSession_ = nullptr;
+  scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_ = nullptr;
   AudioParameters params_;
   bool isCommunication_ = false;
 };

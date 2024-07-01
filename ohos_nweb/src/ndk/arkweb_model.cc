@@ -67,7 +67,7 @@ ARKWEB_NDK_EXPORT void OH_ArkWeb_RunJavaScript(
 ARKWEB_NDK_EXPORT void OH_ArkWeb_RegisterJavaScriptProxy(
     const char* webTag,
     const ArkWeb_ProxyObject* proxyObject) {
-  RegisterJavaScriptProxy(webTag, proxyObject, false);
+  RegisterJavaScriptProxy(webTag, proxyObject, false, "");
 }
 
 ARKWEB_NDK_EXPORT void OH_ArkWeb_DeleteJavaScriptProxy(const char* webTag,
@@ -199,13 +199,14 @@ ARKWEB_NDK_EXPORT void OH_ArkWeb_OnDestroy(const char* webTag,
 ARKWEB_NDK_EXPORT void OH_ArkWeb_RegisterAsyncJavaScriptProxy(
     const char* webTag,
     const ArkWeb_ProxyObject* proxyObject) {
-  RegisterJavaScriptProxy(webTag, proxyObject, true);
+  RegisterJavaScriptProxy(webTag, proxyObject, true, "");
 }
 
 void RegisterJavaScriptProxy(
     const char* webTag,
     const ArkWeb_ProxyObject* proxyObject,
-    bool isAsync) {
+    bool isAsync,
+    const char* permission) {
   if (proxyObject == nullptr) {
     LOG(ERROR) << "NativeArkWeb proxy object is nullptr";
     return;
@@ -254,12 +255,20 @@ void RegisterJavaScriptProxy(
     }
 
     nwebSharedPtr->RegisterNativeArkJSFunction(
-      proxyObject->objName, methodNameList, std::move(callbackList), isAsync);
+      proxyObject->objName, methodNameList, std::move(callbackList), isAsync, permission);
   } else {
     LOG(ERROR)
         << "NativeArkWeb RegisterJavaScriptProxy get nweb null: %{public}s"
         << webTag;
   }
+}
+
+ARKWEB_NDK_EXPORT void OH_ArkWeb_RegisterJavaScriptProxyEx(const char* webTag,
+                                         const ArkWeb_ProxyObject* proxyObject,
+                                         const char* permission) {
+  RegisterJavaScriptProxy(webTag,
+                          proxyObject, false,
+                          permission);
 }
 
 #ifdef __cplusplus

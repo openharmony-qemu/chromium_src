@@ -43,7 +43,11 @@ void OH_ArkWeb_RegisterAsyncJavaScriptProxy(const char* webTag,
                                        const ArkWeb_ProxyObject* proxyObject);
 void RegisterJavaScriptProxy(const char* webTag,
                              const ArkWeb_ProxyObject* proxyObject,
-                             bool isAsync);
+                             bool isAsync,
+                             const char* permission);
+void OH_ArkWeb_RegisterJavaScriptProxyEx(const char* webTag,
+                                         const ArkWeb_ProxyObject* proxyObject,
+                                         const char* permission);
 
 #ifdef __cplusplus
 }

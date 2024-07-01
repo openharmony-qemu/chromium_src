@@ -101,6 +101,9 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void Resize(uint32_t width,
               uint32_t height,
               bool isKeyboard = false) override;
+#if defined(OHOS_INPUT_EVENTS)
+  void ResizeVisibleViewport(uint32_t width, uint32_t height, bool isKeyboard = false) override;
+#endif
   void OnTouchPress(int32_t id, double x, double y, bool from_overlay) override;
   void OnTouchRelease(int32_t id,
                       double x,
@@ -610,6 +613,10 @@ void NotifyForNextTouchEvent() override;
   uint32_t width_ = 0;
   uint32_t height_ = 0;
 #endif  // defined(OHOS_COMPOSITE_RENDER)
+#if defined(OHOS_INPUT_EVENTS)
+  uint32_t visible_width_ = 0;
+  uint32_t visible_height_ = 0;
+#endif
 
   uint32_t nweb_id_;
 

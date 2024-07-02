@@ -464,6 +464,13 @@ void PipelineController::OnTrackChangeComplete() {
 }
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void PipelineController::SetMediaPlayerState(bool is_suspend,
+                                             int suspend_type) {
+  DCHECK(thread_checker_.CalledOnValidThread());
+
+  pipeline_->SetMediaPlayerState(is_suspend, suspend_type);
+}
+
 void PipelineController::SetPlaybackRateWithReason(
     double playback_rate, ActionReason reason) {
   pipeline_->SetPlaybackRateWithReason(playback_rate, reason);

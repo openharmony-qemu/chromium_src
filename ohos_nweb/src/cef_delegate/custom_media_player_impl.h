@@ -23,6 +23,8 @@ class CustomMediaPlayerImpl : public CefCustomMediaPlayerDelegate {
   void Release() override;
   void EnterFullscreen() override;
   void ExitFullscreen() override;
+  void ResumeMediaPlayer() override;
+  void SuspendMediaPlayer(int suspend_type) override;
 
  private:
   std::shared_ptr<NWebNativeMediaPlayerBridge> bridge_;

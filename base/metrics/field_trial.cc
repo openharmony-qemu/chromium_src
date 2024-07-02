@@ -1249,9 +1249,13 @@ void FieldTrialList::InstantiateFieldTrialAllocatorIfNeeded() {
 
   AutoLock auto_lock(global_->lock_);
   // Create the allocator if not already created and add all existing trials.
-  if (global_->field_trial_allocator_ != nullptr)
+  if (global_->field_trial_allocator_ != nullptr) {
+#if defined(OHOS_SCROLLBAR)
+    FeatureList::GetInstance()->ModifyFeaturesToAllocator(
+      global_->field_trial_allocator_.get());
+#endif
     return;
-
+  }
   MappedReadOnlyRegion shm =
       ReadOnlySharedMemoryRegion::Create(kFieldTrialAllocationSize);
 

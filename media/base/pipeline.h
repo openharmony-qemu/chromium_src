@@ -269,6 +269,7 @@ class MEDIA_EXPORT Pipeline {
                       CdmAttachedCB cdm_attached_cb) = 0;
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  virtual void SetMediaPlayerState(bool is_suspend, int suspend_type) {}
   virtual void SetPlaybackRateWithReason(double playback_rate,
       ActionReason reason) {}
 #endif // OHOS_CUSTOM_VIDEO_PLAYER

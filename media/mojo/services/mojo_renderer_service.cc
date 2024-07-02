@@ -308,6 +308,9 @@ void MojoRendererService::SetMuted(bool muted) {
 void MojoRendererService::SetSurfaceId(int surface_id, const gfx::Rect& rect) {
   renderer_->SetSurfaceId(surface_id, rect);
 }
+void MojoRendererService::SetMediaPlayerState(bool is_suspend, int suspend_type) {
+  renderer_->SetMediaPlayerState(is_suspend, suspend_type);
+}
 void MojoRendererService::SetMediaSourceList(
     std::vector<mojom::MediaSourceInfoPtr> source_infos) {
   std::vector<media::Renderer::MediaSourceInfo> infos;

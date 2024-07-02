@@ -83,6 +83,7 @@ class MEDIA_EXPORT Renderer {
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
   virtual void SetSurfaceId(int surface_id, const gfx::Rect& rect);
+  virtual void SetMediaPlayerState(bool is_suspend, int suspend_type);
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
   // Associates the |cdm_context| with this Renderer for decryption (and

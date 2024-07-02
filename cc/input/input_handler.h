@@ -499,6 +499,8 @@ class CC_EXPORT InputHandler : public InputDelegateForCompositor {
   void TriggerVsyncImplTask();
 
   LayerImpl* GetLayerImplById(int id);
+
+  void SetHandledTouchEvent(bool handledTouchEvent);
 #endif
 
  private:

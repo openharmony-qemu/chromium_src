@@ -134,7 +134,8 @@ class TestLayerTreeFrameSink : public LayerTreeFrameSink,
   }
 
 #if BUILDFLAG(IS_OHOS)
-  void TriggerVsyncImplTask() override {};
+  void TriggerVsyncImplTask() override {}
+  void SetHandledTouchEvent(bool handledTouchEvent) override {}
 #endif
 
  private:

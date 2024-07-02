@@ -287,9 +287,6 @@ void AsyncLayerTreeFrameSink::OnBeginFrame(
     const viz::FrameTimingDetailsMap& timing_details,
     bool frame_ack,
     std::vector<viz::ReturnedResource> resources) {
-  if (compositor_frame_sink_ptr_) {
-    compositor_frame_sink_ptr_->OnVsyncReceived();
-  }
   if (features::IsOnBeginFrameAcksEnabled()) {
     if (frame_ack) {
       DidReceiveCompositorFrameAck(std::move(resources));
@@ -388,6 +385,12 @@ void AsyncLayerTreeFrameSink::TriggerVsyncImplTask() {
   DCHECK(compositor_frame_sink_ptr_);
 
   compositor_frame_sink_ptr_->TriggerVsyncImplTask();
+}
+
+void AsyncLayerTreeFrameSink::SetHandledTouchEvent(bool handledTouchEvent) {
+  DCHECK(compositor_frame_sink_ptr_);
+
+  compositor_frame_sink_ptr_->SetHandledTouchEvent(handledTouchEvent);
 }
 #endif
 }  // namespace mojo_embedder

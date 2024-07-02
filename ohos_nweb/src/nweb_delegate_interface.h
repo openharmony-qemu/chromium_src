@@ -415,6 +415,16 @@ class NWebDelegateInterface
 #if defined(OHOS_INPUT_EVENTS)
   virtual void SetVirtualKeyBoardArg(int32_t width, int32_t height, double keyboard) = 0;
   virtual bool ShouldVirtualKeyboardOverlay() = 0;
+  virtual void WebSendMouseWheelEvent(double x,
+                                      double y,
+                                      double deltaX,
+                                      double deltaY,
+                                      const std::vector<int32_t>& pressedCodes) = 0;
+  virtual void WebSendTouchpadFlingEvent(double x,
+                                         double y,
+                                         double vx,
+                                         double vy,
+                                         const std::vector<int32_t>& pressedCodes) = 0;
 #endif
 
 #if BUILDFLAG(IS_OHOS)

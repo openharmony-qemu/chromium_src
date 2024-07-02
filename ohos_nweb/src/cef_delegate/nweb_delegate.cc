@@ -2492,6 +2492,34 @@ bool NWebDelegate::WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
   }
   return retVal;
 }
+
+void NWebDelegate::WebSendMouseWheelEvent(double x,
+                                          double y,
+                                          double deltaX,
+                                          double deltaY,
+                                          const std::vector<int32_t>& pressedCodes) {
+  if (event_handler_ != nullptr) {
+    event_handler_->WebSendMouseWheelEvent(x / default_virtual_pixel_ratio_,
+                                           y / default_virtual_pixel_ratio_,
+                                           deltaX / default_virtual_pixel_ratio_,
+                                           deltaY / default_virtual_pixel_ratio_,
+                                           pressedCodes);
+  }
+}
+
+void NWebDelegate::WebSendTouchpadFlingEvent(double x,
+                                             double y,
+                                             double vx,
+                                             double vy,
+                                             const std::vector<int32_t>& pressedCodes) {
+  if (event_handler_ != nullptr) {
+    event_handler_->WebSendTouchpadFlingEvent(x / default_virtual_pixel_ratio_,
+                                              y / default_virtual_pixel_ratio_,
+                                              vx / default_virtual_pixel_ratio_,
+                                              vy / default_virtual_pixel_ratio_,
+                                              pressedCodes);
+  }
+}
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #if defined(OHOS_API_INIT_WEB_ENGINE)

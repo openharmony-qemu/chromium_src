@@ -42,10 +42,11 @@ class VIZ_SERVICE_EXPORT ExternalBeginFrameSourceOHOS
   static void OnVSync(int64_t timestamp, void* data);
   static void OnVSyncCallback();
   static void OnVSyncEndCallback();
-  static void TriggerVsyncImpl();
+  void TriggerVsyncImpl();
   class VSyncUserData;
   void OnVSyncImpl(int64_t timestamp, VSyncUserData* user_data);
 
+  void EmplaceVSyncImpl(int64_t timestamp, VSyncUserData* user_data);
 #if defined(OHOS_PERFORMANCE_JITTER)
   // ExternalBeginFrameSource implementation.
   void SetCurrentFrameSinkId(const FrameSinkId& frame_sink_id) override {

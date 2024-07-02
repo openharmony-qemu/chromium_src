@@ -145,13 +145,13 @@ void SetEnableLowerFrameRate(bool enabled);
 void ReportKeyThreadIds(
   const std::vector<int32_t>& thread_ids, int32_t process_id, bool is_created) override {}
 void EvictFrameBackBuffers(bool invisible);
-void OnVsyncReceived() override {}
 void UpdateVSyncFrequency(int frame_rate);
 void ResetVSyncFrequency();
 
 void SetNeedWaitForInput(bool need_wait_for_input);
 void TriggerVsync();
 void TriggerVsyncImplTask() override {}
+void SetHandledTouchEvent(bool handledTouchEvent) override {}
 #endif
 
   base::ScopedClosureRunner GetCacheBackBufferCb();

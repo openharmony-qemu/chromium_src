@@ -141,6 +141,28 @@ bool NWebInputHandler::WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
   }
   return nweb_delegate_->WebSendKeyEvent(keyCode, keyAction, pressedCodes);
 }
+
+void NWebInputHandler::WebSendMouseWheelEvent(double x,
+                                              double y,
+                                              double deltaX,
+                                              double deltaY,
+                                              const std::vector<int32_t>& pressedCodes) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->WebSendMouseWheelEvent(x, y, deltaX, deltaY, pressedCodes);
+}
+
+void NWebInputHandler::WebSendTouchpadFlingEvent(double x,
+                                                 double y,
+                                                 double vx,
+                                                 double vy,
+                                                 const std::vector<int32_t>& pressedCodes) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->WebSendTouchpadFlingEvent(x, y, vx, vy, pressedCodes);
+}
 #endif
 
 bool NWebInputHandler::SendKeyEvent(int32_t keyCode, int32_t keyAction) {

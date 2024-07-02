@@ -357,6 +357,16 @@ bool HitNativeArea(double x, double y);
   void SlideScroll(float vx, float vy) override;
   bool WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
                        const std::vector<int32_t>& pressedCodes) override;
+  void WebSendMouseWheelEvent(double x,
+                              double y,
+                              double deltaX,
+                              double deltaY,
+                              const std::vector<int32_t>& pressedCodes) override;
+  void WebSendTouchpadFlingEvent(double x,
+                                 double y,
+                                 double vx,
+                                 double vy,
+                                 const std::vector<int32_t>& pressedCodes) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #ifdef OHOS_ARKWEB_ADBLOCK

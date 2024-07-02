@@ -500,7 +500,8 @@ class NWebDelegateInterface
 #endif
 
 #if OHOS_URL_TRUST_LIST
-  virtual int SetUrlTrustList(const std::string& urlTrustList) = 0;
+  virtual int SetUrlTrustListWithErrMsg(
+    const std::string& urlTrustList, std::string& detailErrMsg) = 0;
 #endif
 
 #ifdef OHOS_NETWORK_LOAD

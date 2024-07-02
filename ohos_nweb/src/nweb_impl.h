@@ -510,6 +510,8 @@ class NWebImpl : public NWeb {
                        const WebSnapshotCallback callback) override;
 #endif
   int SetUrlTrustList(const std::string& urlTrustList) override;
+  int SetUrlTrustListWithErrMsg(
+    const std::string& urlTrustList, std::string& detailErrMsg) override;
 
 #ifdef OHOS_NETWORK_LOAD
   void SetPathAllowingUniversalAccess(

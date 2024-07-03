@@ -404,6 +404,9 @@ void DirectRenderer::DrawFrame(
 
   // If we need to redraw the frame, the whole output should be considered
   // damaged.
+#if BUILDFLAG(IS_OHOS)
+    current_frame()->damage_rect = current_frame()->root_damage_rect;
+#endif
   if (needs_full_frame_redraw)
     current_frame()->root_damage_rect = gfx::Rect(device_viewport_size);
 

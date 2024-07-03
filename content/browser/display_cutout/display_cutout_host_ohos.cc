@@ -4,6 +4,7 @@
 
 #include "content/browser/display_cutout/display_cutout_host_ohos.h"
 
+#include "base/ohos/sys_info_utils.h"
 #include "content/browser/display_cutout/display_cutout_constants.h"
 #include "content/browser/renderer_host/render_frame_host_impl.h"
 #include "content/browser/web_contents/web_contents_impl.h"
@@ -38,7 +39,14 @@ void DisplayCutoutHostOhos::DidAcquireFullscreen(RenderFrameHost* rfh) {}
 void DisplayCutoutHostOhos::DidExitFullscreen() {}
 
 void DisplayCutoutHostOhos::DidFinishNavigation(
-    NavigationHandle* navigation_handle) {}
+    NavigationHandle* navigation_handle) {
+  if (!navigation_handle->IsInPrimaryMainFrame() ||
+      navigation_handle->IsSameDocument() || !base::ohos::IsTabletDevice()) {
+    return;
+  }
+  SetCurrentRenderFrameHost(web_contents_impl_->GetPrimaryMainFrame(),
+                            blink::mojom::ViewportFit::kAuto);
+}
 
 void DisplayCutoutHostOhos::RenderFrameDeleted(RenderFrameHost* rfh) {}
 
@@ -67,7 +75,8 @@ void DisplayCutoutHostOhos::SetCurrentRenderFrameHost(
   }
 
   web_contents_impl_->NotifyViewportFitChanged(value);
-  if (value == blink::mojom::ViewportFit::kCover) {
+  if (value == blink::mojom::ViewportFit::kCover ||
+      base::ohos::IsTabletDevice()) {
     // Update the |current_rfh_| with the new frame.
     current_rfh_ = static_cast<RenderFrameHostImpl*>(rfh)->GetWeakPtr();
     // Send the current safe area to the new frame.

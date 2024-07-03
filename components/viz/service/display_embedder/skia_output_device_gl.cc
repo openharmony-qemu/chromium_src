@@ -247,9 +247,15 @@ void SkiaOutputDeviceGL::Present(const absl::optional<gfx::Rect>& update_rect,
   } else {
     gfx::SwapResult result;
     if (update_rect) {
+#if BUILDFLAG(IS_OHOS)
+      result = gl_surface_->SwapBuffersWithDamage(
+        {update_rect->x(), gl_surface_->GetSize().height() - update_rect->y() - update_rect->height(),
+        update_rect->width(), update_rect->height()}, std::move(feedback), std::move(data));
+#else
       result = gl_surface_->PostSubBuffer(
           update_rect->x(), update_rect->y(), update_rect->width(),
           update_rect->height(), std::move(feedback), std::move(data));
+#endif
     } else {
       result = gl_surface_->SwapBuffers(std::move(feedback), std::move(data));
     }

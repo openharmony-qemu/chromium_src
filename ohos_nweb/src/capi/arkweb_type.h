@@ -136,6 +136,8 @@ typedef struct {
     void (*refresh)(const char* webTag);
     /** Register the JavaScript object and async method list. */
     void (*registerAsyncJavaScriptProxy)(const char* webTag, const ArkWeb_ProxyObject* proxyObject);
+    /** Register the JavaScript object and method list with permission */
+    void (*registerJavaScriptProxyEx)(const char* webTag, const ArkWeb_ProxyObject* proxyObject, const char* permission);
 } ArkWeb_ControllerAPI;
 
 /**

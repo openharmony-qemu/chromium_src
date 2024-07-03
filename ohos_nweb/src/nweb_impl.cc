@@ -992,6 +992,10 @@ void NWebImpl::OnTouchPress(int32_t id, double x, double y, bool from_overlay) {
   ResSchedClientAdapter::ReportScene(
     ResSchedStatusAdapter::WEB_SCENE_ENTER, ResSchedSceneAdapter::CLICK, nweb_id_);
   input_handler_->OnTouchPress(id, x, y, from_overlay);
+
+  if (nweb_delegate_) {
+    nweb_delegate_->RefreshAccessibilityManagerClickEvent();
+  }
 }
 
 void NWebImpl::OnTouchRelease(int32_t id,

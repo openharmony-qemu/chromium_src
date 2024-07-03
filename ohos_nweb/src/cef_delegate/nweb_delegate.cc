@@ -3734,4 +3734,12 @@ void NWebDelegate::SetPathAllowingUniversalAccess(
   GetBrowser()->GetHost()->SetGrantFileAccessDirs(cef_path_list);
 } 
 #endif
+
+void NWebDelegate::RefreshAccessibilityManagerClickEvent() {
+  if (accessibility_state_) {
+    if (!GetAccessibilityManager()) {
+      LOG(ERROR) << "GetAccessibilityManager is null";
+    }
+  }
+}
 }  // namespace OHOS::NWeb

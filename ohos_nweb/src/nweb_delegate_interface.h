@@ -512,6 +512,7 @@ class NWebDelegateInterface
   virtual bool IsCustomKeyboard() const = 0;
 
   virtual std::shared_ptr<NWebCustomKeyboardHandlerImpl> GetCustomKeyboardHandler() const = 0;
+  virtual void RefreshAccessibilityManagerClickEvent() = 0;
 };
 }  // namespace OHOS::NWeb
 

@@ -214,7 +214,8 @@ class NWebDelegateInterface
       const std::vector<std::string>& methodName,
       std::vector<std::function<char*(std::vector<std::vector<uint8_t>>&,
                                       std::vector<size_t>&)>>&& callback,
-      bool isAsync) = 0;
+      bool isAsync,
+      const std::string& permission) = 0;
   virtual void UnRegisterNativeArkJSFunction(const char* objName) = 0;
 
 #ifdef OHOS_ARKWEB_ADBLOCK
@@ -226,7 +227,8 @@ class NWebDelegateInterface
       const std::string& object_name,
       const std::vector<std::string>& method_list,
       const std::vector<std::string>& async_method_list,
-      const int32_t object_id) const = 0;
+      const int32_t object_id,
+      const std::string& permission) const = 0;
   virtual void UnregisterArkJSfunction(
       const std::string& object_name,
       const std::vector<std::string>& method_list) const = 0;

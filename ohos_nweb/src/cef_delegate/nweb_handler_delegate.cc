@@ -758,8 +758,12 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
           method_vector.push_back(method);
         }
         if (main_browser_ && main_browser_->GetHost()) {
-          main_browser_->GetHost()->RegisterNativeJSProxy(
-              it->second.first, method_vector, it->first, false);
+          if (javascript_sync_permission_map_.find(it->first) !=
+               javascript_sync_permission_map_.end()) {
+            main_browser_->GetHost()->RegisterNativeJSProxy(
+                it->second.first, method_vector, it->first, false,
+                javascript_sync_permission_map_[it->first]);
+          }
         }
       }
       // async method
@@ -770,8 +774,12 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
           async_method_vector.push_back(method);
         }
         if (main_browser_ && main_browser_->GetHost()) {
-          main_browser_->GetHost()->RegisterNativeJSProxy(
-              it->second.first, async_method_vector, it->first, true);
+          if (javascript_async_permission_map_.find(it->first) !=
+               javascript_async_permission_map_.end()) {
+            main_browser_->GetHost()->RegisterNativeJSProxy(
+                it->second.first, async_method_vector, it->first, true,
+                javascript_async_permission_map_[it->first]);
+          }
         }
       }
     }
@@ -862,7 +870,8 @@ void NWebHandlerDelegate::SavaArkJSFunctionForPopup(
     const std::string& object_name,
     const std::vector<std::string>& method_list,
     const std::vector<std::string>& async_method_list,
-    const int32_t object_id) {
+    const int32_t object_id,
+    const std::string& permission) {
   if (method_list.empty() && async_method_list.empty()) {
     LOG(INFO) << "NWebHandlerDelegate::SavaArkJSFunctionForPopup method_list "
                  "is empty";
@@ -878,6 +887,7 @@ void NWebHandlerDelegate::SavaArkJSFunctionForPopup(
     object_pair.first = object_name;
     object_pair.second = method_set;
     javascript_sync_method_map_[object_id] = object_pair;
+    javascript_sync_permission_map_[object_id] = permission;
   }
 
   // async method
@@ -888,7 +898,8 @@ void NWebHandlerDelegate::SavaArkJSFunctionForPopup(
     }
     object_pair.first = object_name;
     object_pair.second = async_method_set;
-    javascript_sync_method_map_[object_id] = object_pair;
+    javascript_async_method_map_[object_id] = object_pair;
+    javascript_async_permission_map_[object_id] = permission;
   }
 }
 
@@ -2791,7 +2802,8 @@ void NWebHandlerDelegate::RegisterNativeJavaScriptCallBack(
     const std::string& objName,
     const std::vector<std::string>& methodName,
     std::vector<NativeJSProxyCallbackFunc>&& callback,
-    bool isAsync) {
+    bool isAsync,
+    const std::string& permission) {
   size_t size = methodName.size();
   if (size == 0) {
     LOG(ERROR) << "NWebHandlerDelegate RegisterNativeJavaScriptCallBack error: "
@@ -2804,8 +2816,10 @@ void NWebHandlerDelegate::RegisterNativeJavaScriptCallBack(
   }
   if (isAsync) {
     asyncProxyObjMap_[objName] = map;
+    asyncProxyPermissionMap_[objName] = permission;
   } else {
     syncProxyObjMap_[objName] = map;
+    syncProxyPermissionMap_[objName] = permission;
   }
 }
 

@@ -150,6 +150,8 @@ FrameEvictionManager::FrameEvictionManager()
       // If the amount of memory on the device is >= 3.5 GB, save up to 5
       // frames.
       base::SysInfo::AmountOfPhysicalMemoryMB() < 1024 * 3.5f ? 1 : 5;
+#elif BUILDFLAG(IS_OHOS)
+      std::min(10, 2 + (base::SysInfo::AmountOfPhysicalMemoryMB() / 256));
 #else
       std::min(5, 2 + (base::SysInfo::AmountOfPhysicalMemoryMB() / 256));
 #endif

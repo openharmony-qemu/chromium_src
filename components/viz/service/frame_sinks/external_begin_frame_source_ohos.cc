@@ -174,7 +174,6 @@ void ExternalBeginFrameSourceOHOS::OnVSyncImpl(int64_t timestamp,
 
 #if BUILDFLAG(IS_OHOS)
 ReportLossFrame::GetInstance()->SetVsyncPeriod(vsync_period_);
-base::ohos::SlidingObserver::GetInstance().SetVsyncPeriod(vsync_period_);
 #endif
   base::TimeDelta vsync_period(base::Nanoseconds(vsync_period_));
   base::TimeTicks frame_time = base::TimeTicks() + base::Nanoseconds(timestamp);
@@ -213,12 +212,16 @@ base::ohos::SlidingObserver::GetInstance().SetVsyncPeriod(vsync_period_);
     vsync_frequency_to_reset_ = cur_vsync_frequency;
     TRACE_EVENT1("viz", "ExternalBeginFrameSourceOHOS::OnVSyncImpl::UpdateVSyncFrequency", "VSyncFrequency",
             vsync_frequency_to_update_);
-    vsync_adapter_.SetFramePreferredRate(vsync_frequency_to_update_);
+    if(frame_sink_manager_) {
+      frame_sink_manager_->ReportVideoFrameRate(vsync_frequency_to_update_, frame_sink_id_);
+    }
   }
   if (reset_vsync_frequency_) {
     TRACE_EVENT1("viz", "ExternalBeginFrameSourceOHOS::OnVSyncImpl::ResetVSyncFrequency", "VSync",
         vsync_frequency_to_reset_);
-    vsync_adapter_.SetFramePreferredRate(vsync_frequency_to_reset_);
+    if(frame_sink_manager_) {
+      frame_sink_manager_->ReportVideoFrameRate(0, frame_sink_id_);
+    }
     reset_vsync_frequency_ = false;
   }
 }
@@ -233,6 +236,13 @@ void ExternalBeginFrameSourceOHOS::SetEnabled(bool enabled) {
   }
   TRACE_EVENT1("viz", "ExternalBeginFrameSourceOHOS::SetEnabled", "enabled",
                enabled);
+#if defined(OHOS_PERFORMANCE_JITTER)
+  if (frame_sink_manager_) {
+    TRACE_EVENT0("viz",
+                  "ExternalBeginFrameSourceOHOS::OnVSyncImpl::OnVsyncEnabled");
+      frame_sink_manager_->OnVsyncEnabled(enabled, frame_sink_id_);
+  }
+#endif
   vsync_notification_enabled_ = enabled;
   first_vsync_since_notify_enabled_ = true;
   if (vsync_notification_enabled_ && user_data_ != nullptr) {

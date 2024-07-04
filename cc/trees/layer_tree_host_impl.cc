@@ -3111,6 +3111,14 @@ void LayerTreeHostImpl::TriggerVsyncImplTask() {
 
   layer_tree_frame_sink_->TriggerVsyncImplTask();
 }
+
+void LayerTreeHostImpl::SetHandledTouchEvent(bool handledTouchEvent) {
+  if (!layer_tree_frame_sink_) {
+    return;
+  }
+
+  layer_tree_frame_sink_->SetHandledTouchEvent(handledTouchEvent);
+}
 #endif
 
 void LayerTreeHostImpl::DidFinishImplFrame(const viz::BeginFrameArgs& args) {

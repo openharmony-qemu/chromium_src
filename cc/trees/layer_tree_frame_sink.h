@@ -141,6 +141,7 @@ class CC_EXPORT LayerTreeFrameSink : public viz::SharedBitmapReporter,
 
 #if BUILDFLAG(IS_OHOS)
   virtual void TriggerVsyncImplTask() = 0;
+  virtual void SetHandledTouchEvent(bool handledTouchEvent) = 0;
 #endif
 
  protected:

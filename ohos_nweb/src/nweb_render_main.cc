@@ -19,9 +19,10 @@
 #include "include/cef_app.h"
 #include "nweb_export.h"
 #include "nweb_hilog.h"
+#include "base/process/process_handle.h"
 
 extern "C" OHOS_NWEB_EXPORT void NWebRenderMain(const char* args) {
-  WVLOG_I("NWebRenderMain start, sandbox pid=%{public}d global pid=%{public}d", getpid(), getprocpid());
+  WVLOG_I("NWebRenderMain start, sandbox pid=%{public}d global pid=%{public}d", getpid(), base::GetCurrentRealPid());
 
   std::string args_str = args;
   std::stringstream args_ss(args_str);
@@ -42,6 +43,6 @@ extern "C" OHOS_NWEB_EXPORT void NWebRenderMain(const char* args) {
   CefMainArgs main_args(argc, const_cast<char**>(argv_cstr.data()));
   (void)CefExecuteProcess(main_args, nullptr, nullptr);
 
-  WVLOG_I("NWebRenderMain end, sandbox pid=%{public}d global pid=%{public}d", getpid(), getprocpid());
+  WVLOG_I("NWebRenderMain end, sandbox pid=%{public}d global pid=%{public}d", getpid(), base::GetCurrentRealPid());
 }
  

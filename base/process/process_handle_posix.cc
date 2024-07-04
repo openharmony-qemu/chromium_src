@@ -5,6 +5,9 @@
 #include "base/process/process_handle.h"
 
 #include <unistd.h>
+#include <string.h>
+#include <dlfcn.h>
+#include "base/check.h"
 
 namespace base {
 
@@ -14,7 +17,13 @@ ProcessId GetCurrentProcId() {
 
 #if BUILDFLAG(IS_OHOS)
 ProcessId GetCurrentRealPid() {
-  return getprocpid();
+  using GetProcXid = int (*)(void);
+  static GetProcXid getProcPid = nullptr;
+  if (getProcPid == nullptr) {
+    getProcPid = reinterpret_cast<GetProcXid>(dlsym(RTLD_DEFAULT, "getprocpid"));
+    CHECK(getProcPid);
+  }
+  return getProcPid();
 }
 #endif
 

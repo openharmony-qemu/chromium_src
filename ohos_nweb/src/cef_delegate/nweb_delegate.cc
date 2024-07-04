@@ -843,13 +843,6 @@ void NWebDelegate::SendMouseEvent(int x,
     render_handler_->SetIrregularDragBackground(false);
   }
 #endif  // #ifdef OHOS_DRAG_DROP
-  if (accessibility_state_ && action == MouseAction::MOVE) {
-    auto* accessibilityManager = GetAccessibilityManager();
-    if (accessibilityManager != nullptr) {
-      gfx::PointF point(x, y);
-      accessibilityManager->OnHoverEvent(point);
-    }
-  }
 }
 
 void NWebDelegate::NotifyScreenInfoChanged(RotationType rotation,
@@ -3078,9 +3071,7 @@ void NWebDelegate::SetAccessibilityState(cef_state_t accessibilityState) {
   }
 }
 
-void NWebDelegate::ExecuteAction(int64_t accessibilityId,
-    uint32_t action, const std::map<std::string, std::string>& 
-    actionArguments) {
+void NWebDelegate::ExecuteAction(int64_t accessibilityId, uint32_t action) {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
     return;
@@ -3092,7 +3083,63 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId,
     return;
   }
   AceAction aceAction = static_cast<AceAction>(action);
-  LOG(INFO) << "NWebDelegate::ExecuteAction aceAction is" << action;
+  LOG(INFO) << "ExecuteAction(Deprecated) accessibilityId is "
+            << accessibilityId << ", action is " << action;
+  switch (aceAction) {
+    case AceAction::ACTION_CLICK:
+      accessibilityManager->DoDefaultAction(*node);
+      break;
+    case AceAction::ACTION_ACCESSIBILITY_FOCUS:
+      accessibilityManager->MoveAccessibilityFocusToId(accessibilityId);
+      break;
+    case AceAction::ACTION_CLEAR_ACCESSIBILITY_FOCUS:
+      accessibilityManager->SendAccessibilityEvent(
+          accessibilityId, AccessibilityEventType::ACCESSIBILITY_FOCUS_CLEARED);
+      if (accessibilityManager->GetAccessibilityFocusId() == accessibilityId) {
+        accessibilityManager->MoveAccessibilityFocus(
+            accessibilityManager->GetAccessibilityFocusId(), -1);
+        accessibilityManager->SetAccessibilityFocusId(-1);
+      }
+      if (accessibilityManager->GetLastHoverId() == accessibilityId) {
+        accessibilityManager->SendAccessibilityEvent(
+            accessibilityManager->GetLastHoverId(),
+            AccessibilityEventType::HOVER_EXIT_EVENT);
+        accessibilityManager->SetLastHoverId(0);
+      }
+      break;
+    case AceAction::ACTION_FOCUS:
+      accessibilityManager->SetFocus(*node);
+      break;
+    case AceAction::ACTION_CLEAR_FOCUS:
+      accessibilityManager->SetFocus(*accessibilityManager->GetBrowserAccessibilityRoot());
+      break;
+    case AceAction::ACTION_SCROLL_FORWARD:
+      node->Scroll(ax::mojom::Action::kScrollForward);
+      break;
+    case AceAction::ACTION_SCROLL_BACKWARD:
+      node->Scroll(ax::mojom::Action::kScrollBackward);
+      break;
+    default:
+      LOG(INFO) << "ExecuteAction(Deprecated) unsupported action";
+      break;
+  }
+}
+
+void NWebDelegate::ExecuteAction(int64_t accessibilityId, uint32_t action,
+    const std::map<std::string, std::string>& actionArguments) {
+  auto* accessibilityManager = GetAccessibilityManager();
+  if (accessibilityManager == nullptr) {
+    return;
+  }
+  auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
+  auto* node = content::BrowserAccessibilityOHOS::GetFromAccessibilityId(
+      accessibilityId);
+  if (node == nullptr || rootNode == nullptr || !node->IsDescendantOf(rootNode)) {
+    return;
+  }
+  AceAction aceAction = static_cast<AceAction>(action);
+  LOG(INFO) << "ExecuteAction accessibilityId is " << accessibilityId
+            << ", action is " << action;
   switch (aceAction) {
     case AceAction::ACTION_CLICK:
       accessibilityManager->DoDefaultAction(*node);
@@ -3190,6 +3237,16 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId,
     default:
       LOG(INFO) << "ExecuteAction unsupported action";
       break;
+  }
+}
+
+void NWebDelegate::SendAccessibilityHoverEvent(int x, int y) {
+  if (accessibility_state_) {
+    auto* accessibilityManager = GetAccessibilityManager();
+    if (accessibilityManager != nullptr) {
+      gfx::PointF point(x, y);
+      accessibilityManager->OnHoverEvent(point);
+    }
   }
 }
 

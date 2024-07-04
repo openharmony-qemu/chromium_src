@@ -162,8 +162,8 @@ void BrowserAccessibilityManagerOHOS::SendAccessibilityEvent(
     OHOS::NWeb::AccessibilityEventType eventType) {
   accessibilityId = TranslateAccessibilityId(accessibilityId);
 
-  LOG(INFO) << "SendAccessibilityEvent eventType is"
-            << static_cast<uint32_t>(eventType);
+  LOG(INFO) << "SendAccessibilityEvent accessibilityId is " << accessibilityId
+            << ", eventType is " << static_cast<uint32_t>(eventType);
 
   if (accessibilityEventListener_ != nullptr &&
       eventType != OHOS::NWeb::AccessibilityEventType::UNKNOWN &&

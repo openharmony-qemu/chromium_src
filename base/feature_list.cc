@@ -419,6 +419,53 @@ void FeatureList::AddFeaturesToAllocator(PersistentMemoryAllocator* allocator) {
   }
 }
 
+#if defined(OHOS_SCROLLBAR)
+void FeatureList::ModifyFeaturesToAllocator(PersistentMemoryAllocator* allocator) {
+  DCHECK(initialized_);
+  LOG(INFO) << __func__ << " scroll:" << overrides_.size();
+  PersistentMemoryAllocator::Iterator iter(allocator);
+  const FeatureEntry* entry;
+  int i = 0;
+  while ((entry = iter.GetNextOfObject<FeatureEntry>()) != nullptr) {
+    LOG(INFO) << "scroll init size:" << i++;
+    StringPiece feature_name;
+    StringPiece trial_name;
+    if (!entry->GetFeatureAndTrialName(&feature_name, &trial_name))
+      continue;
+    if (feature_name == "OverlayScrollbar" || feature_name == "ForceScrollbar") {
+      allocator->Delete(entry);
+    }
+  }
+  AddFeatureToField(allocator, "");
+}
+
+void FeatureList::AddFeatureToField(PersistentMemoryAllocator* allocator, std::string feature_name) {
+  for (const auto& override : overrides_) {
+    LOG(INFO) << "scroll name: " << override.first << " state:" << override.second.overridden_state;
+    if (override.first != "OverlayScrollbar" && override.first != "ForceScrollbar") {
+      continue;
+    }
+    Pickle pickle;
+    pickle.WriteString(override.first);
+    if (override.second.field_trial)
+      pickle.WriteString(override.second.field_trial->trial_name());
+
+    size_t total_size = sizeof(FeatureEntry) + pickle.size();
+    FeatureEntry* entry = allocator->New<FeatureEntry>(total_size);
+    if (!entry)
+      return;
+
+    entry->override_state = override.second.overridden_state;
+    entry->pickle_size = pickle.size();
+
+    char* dst = reinterpret_cast<char*>(entry) + sizeof(FeatureEntry);
+    memcpy(dst, pickle.data(), pickle.size());
+
+    allocator->MakeIterable(entry);
+  }
+}
+#endif
+
 void FeatureList::GetFeatureOverrides(std::string* enable_overrides,
                                       std::string* disable_overrides,
                                       bool include_group_name) const {
@@ -454,6 +501,9 @@ void FeatureList::SetScrollbarEnable(bool enable) {
     if (enable) {
       state = OVERRIDE_DISABLE_FEATURE;
     }
+    LOG(INFO) << "set Scrollbar:" << enable << " state:" << state;
+    g_feature_list_instance->SetOverrideStateByFeatureName("OverlayScrollbar", state);
+    g_feature_list_instance->SetOverrideStateByFeatureName("ForceScrollbar", state);
   } else {
     LOG(ERROR) << "set Scrollbar error";
   }
@@ -644,10 +694,12 @@ bool FeatureList::IsFeatureEnabled(const Feature& feature) const {
   OverrideState overridden_state = GetOverrideState(feature);
 #if defined(OHOS_SCROLLBAR)
   if (std::string(feature.name) == "OverlayScrollbar") {
-    return true;
+    LOG(INFO) << "Overlay Scrollbar:" << overridden_state << " : " << (overridden_state == OVERRIDE_ENABLE_FEATURE);
+    // OverlayScrollbar using native process.
   }
   if (std::string(feature.name) == "ForceScrollbar") {
-    return false;
+    LOG(INFO) << "Force Scrollbar:" << overridden_state << " : " << (overridden_state == OVERRIDE_DISABLE_FEATURE);
+    return overridden_state == OVERRIDE_DISABLE_FEATURE;
   }
 #endif
   // If marked as OVERRIDE_USE_DEFAULT, simply return the default state below.
@@ -731,7 +783,7 @@ void FeatureList::SetOverrideStateByFeatureName(
   DCHECK(IsValidFeatureOrFieldTrialName(feature_name)) << feature_name;
   auto it = overrides_.find(feature_name);
   if (it == overrides_.end()) {
-    LOG(DEBUG) << "overlay set state:" << state;
+    LOG(INFO) << "scroll add feature: " << feature_name << " state:" << state;
     overrides_.emplace(std::string(feature_name),
                    OverrideEntry(state, nullptr));
   }

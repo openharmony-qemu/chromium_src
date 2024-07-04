@@ -453,6 +453,7 @@ bool HitNativeArea(double x, double y);
   std::shared_ptr<NWebAccessibilityNodeInfo>
   GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
                                       int32_t direction) override;
+  void RefreshAccessibilityManagerClickEvent() override;
 
 #if defined(OHOS_WEBRTC)
   void StartCamera() override;

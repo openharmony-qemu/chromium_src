@@ -339,6 +339,10 @@ class BASE_EXPORT FeatureList {
 
   // Loops through feature overrides and serializes them all into |allocator|.
   void AddFeaturesToAllocator(PersistentMemoryAllocator* allocator);
+#if defined(OHOS_SCROLLBAR)
+  void ModifyFeaturesToAllocator(PersistentMemoryAllocator* allocator);
+  void AddFeatureToField(PersistentMemoryAllocator* allocator, std::string feature_name);
+#endif
 
   // Returns comma-separated lists of feature names (in the same format that is
   // accepted by InitializeFromCommandLine()) corresponding to features that

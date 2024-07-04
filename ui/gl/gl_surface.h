@@ -121,7 +121,11 @@ class GL_EXPORT GLSurface : public base::RefCounted<GLSurface>,
 
   // Returns whether or not the surface supports SwapBuffersWithBounds
   virtual bool SupportsSwapBuffersWithBounds();
-
+#if BUILDFLAG(IS_OHOS)
+  virtual gfx::SwapResult SwapBuffersWithDamage(const std::vector<int>& rects,
+                                                PresentationCallback callback,
+                                                gfx::FrameData data);
+#endif
   // Returns whether or not the surface supports PostSubBuffer.
   virtual bool SupportsPostSubBuffer();
 
@@ -313,6 +317,11 @@ class GL_EXPORT GLSurfaceAdapter : public GLSurface {
   bool IsOffscreen() override;
   gfx::SwapResult SwapBuffers(PresentationCallback callback,
                               gfx::FrameData data) override;
+#if BUILDFLAG(IS_OHOS)
+  gfx::SwapResult SwapBuffersWithDamage(const std::vector<int>& rects,
+                                        PresentationCallback callback,
+                                        gfx::FrameData data) override;
+#endif
   void SwapBuffersAsync(SwapCompletionCallback completion_callback,
                         PresentationCallback presentation_callback,
                         gfx::FrameData data) override;

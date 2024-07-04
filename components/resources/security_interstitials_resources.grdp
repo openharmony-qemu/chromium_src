@@ -18,5 +18,6 @@
   </if>
   <if expr="is_ohos">
     <include name="IDR_BLOCK_ERROR_OHOS_HTML" file="../security_interstitials/ohos_ui_resources/safe_browsing_ohos.html" flattenhtml="true" type="BINDATA"/>
+    <include name="URL_TRUST_LIST_ERROR_OHOS_HTML" file="../security_interstitials/ohos_ui_resources/url_trust_list_error.html" flattenhtml="true" type="BINDATA"/>
   </if>
 </grit-part>

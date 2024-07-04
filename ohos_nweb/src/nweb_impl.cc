@@ -301,6 +301,13 @@ std::list<std::string> GetArgsToDelete(
   return init_args->GetArgsToDelete();
 }
 
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+std::string GetSharedRenderProcessToken(
+    std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
+  return init_args ? init_args->GetSharedRenderProcessToken() : "";
+}
+#endif
+
 #if defined(OHOS_API_INIT_WEB_ENGINE)
 void InitialWebEngineArgs(
     std::list<std::string>& web_engine_args,
@@ -781,16 +788,26 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
   }
 
   bool is_popup = GetIsPopup(init_args);
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+  std::string shared_render_process_token =
+      GetSharedRenderProcessToken(init_args);
+#endif
   WVLOG_D("nweb create_info.init_args.is_popup: %{public}d", is_popup);
   nweb_delegate_ = NWebDelegateAdapter::CreateNWebDelegate(
       argc, argv, is_enhance_surface_, window, is_popup
 #if defined(OHOS_EX_DOWNLOAD)
-      , nweb_id_
+      ,
+      nweb_id_
 #endif
 #if defined(OHOS_INCOGNITO_MODE)
-      , create_info->GetIsIncognitoMode()
+      ,
+      create_info->GetIsIncognitoMode()
 #endif
-      );
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+      ,
+      shared_render_process_token
+#endif
+  );
   WVLOG_D("nweb create_info.incognito_mode: %{public}d",
           create_info->GetIsIncognitoMode());
   if (nweb_delegate_ == nullptr) {
@@ -975,6 +992,10 @@ void NWebImpl::OnTouchPress(int32_t id, double x, double y, bool from_overlay) {
   ResSchedClientAdapter::ReportScene(
     ResSchedStatusAdapter::WEB_SCENE_ENTER, ResSchedSceneAdapter::CLICK, nweb_id_);
   input_handler_->OnTouchPress(id, x, y, from_overlay);
+
+  if (nweb_delegate_) {
+    nweb_delegate_->RefreshAccessibilityManagerClickEvent();
+  }
 }
 
 void NWebImpl::OnTouchRelease(int32_t id,
@@ -1488,10 +1509,11 @@ void NWebImpl::RegisterNativeArkJSFunction(
     const std::string& objName,
     const std::vector<std::string>& methodName,
     std::vector<NativeJSProxyCallbackFunc>&& callback,
-    bool isAsync) {
+    bool isAsync,
+    const std::string& permission) {
   if (nweb_delegate_ != nullptr) {
     nweb_delegate_->RegisterNativeJSProxy(objName, methodName,
-                                          std::move(callback), isAsync);
+                                          std::move(callback), isAsync, permission);
   } else {
     LOG(ERROR) << "nweb_delegate_ is nullptr";
   }
@@ -1546,7 +1568,7 @@ void NWebImpl::RegisterArkJSfunction(
     return;
   }
   return nweb_delegate_->RegisterArkJSfunction(object_name, method_list,
-                                               std::vector<std::string>(), object_id);
+                                               std::vector<std::string>(), object_id, "");
 }
 
 void NWebImpl::RegisterArkJSfunction(
@@ -1559,7 +1581,21 @@ void NWebImpl::RegisterArkJSfunction(
     return;
   }
   return nweb_delegate_->RegisterArkJSfunction(object_name, method_list,
-                                               async_method_list, object_id);
+                                               async_method_list, object_id, "");
+}
+
+void NWebImpl::RegisterArkJSfunction(
+    const std::string& object_name,
+    const std::vector<std::string>& method_list,
+    const std::vector<std::string>& async_method_list,
+    const int32_t object_id,
+    const std::string& permission) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("fail to register ark js function");
+    return;
+  }
+  return nweb_delegate_->RegisterArkJSfunction(object_name, method_list,
+                                               async_method_list, object_id, permission);
 }
 
 void NWebImpl::UnregisterArkJSfunction(
@@ -1866,6 +1902,38 @@ bool NWebImpl::WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
     return false;
   }
   return input_handler_->WebSendKeyEvent(keyCode, keyAction, pressedCodes);
+}
+
+void NWebImpl::WebSendMouseWheelEvent(double x,
+                                      double y,
+                                      double deltaX,
+                                      double deltaY,
+                                      const std::vector<int32_t>& pressedCodes) {
+  if (input_handler_ == nullptr) {
+    return;
+  }
+
+  ResSchedClientAdapter::ReportScene(
+    ResSchedStatusAdapter::WEB_SCENE_ENTER, ResSchedSceneAdapter::SLIDE);
+
+#if defined(OHOS_PERFORMANCE_INC_FREQ)
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .CreateSocPerfClientAdapter()
+      ->ApplySocPerfConfigById(SOC_PERF_MOUSEWHEEL_CONFIG_ID);
+#endif
+  input_handler_->WebSendMouseWheelEvent(x, y, deltaX, deltaY, pressedCodes);
+}
+
+void NWebImpl::WebSendTouchpadFlingEvent(double x,
+                                         double y,
+                                         double vx,
+                                         double vy,
+                                         const std::vector<int32_t>& pressedCodes) {
+  if (input_handler_ == nullptr) {
+    return;
+  }
+
+  input_handler_->WebSendTouchpadFlingEvent(x, y, vx, vy, pressedCodes);
 }
 #endif  // defined(OHOS_INPUT_EVENTS)
 
@@ -3221,13 +3289,19 @@ void NWebImpl::SetPathAllowingUniversalAccess(
   nweb_delegate_->SetPathAllowingUniversalAccess(pathList);
 } 
 #endif
+
 int NWebImpl::SetUrlTrustList(const std::string& urlTrustList) {
+  return 0;
+}
+
+int NWebImpl::SetUrlTrustListWithErrMsg(
+  const std::string& urlTrustList, std::string& detailErrMsg) {
 #if OHOS_URL_TRUST_LIST
   if (nweb_delegate_ == nullptr) {
     return static_cast<int>(ohos_safe_browsing::UrlListSetResult::INIT_ERROR);
   }
 
-  return nweb_delegate_->SetUrlTrustList(urlTrustList);
+  return nweb_delegate_->SetUrlTrustListWithErrMsg(urlTrustList, detailErrMsg);
 #else
   return -1;
 #endif

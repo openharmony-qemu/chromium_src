@@ -26,6 +26,7 @@ bool g_skip_vsync = false;
 constexpr int64_t VSYNC_PERIOD_120HZ = 8333333;
 constexpr int64_t VSYNC_PERIOD_90120HZ_MID = 9800000;
 constexpr int64_t VSYNC_TIME_FOR_CALCULATION = 1000000000;
+constexpr int VSYNC_BLOCKED_TIMEOUT = 3;
 
 constexpr int VSYNC_30HZ = 30;
 constexpr int VSYNC_60HZ = 60;
@@ -122,6 +123,9 @@ void ExternalBeginFrameSourceOHOS::OnVSync(int64_t timestamp, void* data) {
   }
   if (!InputSyncLock::GetInstance().HandledTouchEvent() && InputSyncLock::GetInstance().NeedWaitForInput()) {
     on_vsync_impl_task_queue_.emplace_back(timestamp, userData);
+    userData->current_->PostDelayedTask(
+      FROM_HERE, base::BindOnce(&ExternalBeginFrameSourceOHOS::TriggerVsync,
+      userData->weak_ptr_), base::Milliseconds(VSYNC_BLOCKED_TIMEOUT));
   } else {
     userData->current_->PostTask(
       FROM_HERE, base::BindOnce(&ExternalBeginFrameSourceOHOS::OnVSyncImpl,
@@ -269,19 +273,19 @@ void ExternalBeginFrameSourceOHOS::SetNeedWaitForInput(bool need_wait_for_input)
 }
 
 void ExternalBeginFrameSourceOHOS::TriggerVsync() {
+  if (on_vsync_impl_task_queue_.empty()) {
+    InputSyncLock::GetInstance().SetHandledTouchEvent(true);
+    return;
+  }
   TriggerVsyncImpl();
 }
 
 void ExternalBeginFrameSourceOHOS::TriggerVsyncImpl() {
   TRACE_EVENT0("base", "ExternalBeginFrameSourceOHOS::TriggerVsyncImpl");
-  if (on_vsync_impl_task_queue_.empty()) {
-    InputSyncLock::GetInstance().SetHandledTouchEvent(true);
-    return;
-  }
 
   while(!on_vsync_impl_task_queue_.empty()) {
     auto& [timestamp, userData] = on_vsync_impl_task_queue_.front();
-    if (!userData->current_) {
+    if (!userData || !userData->current_) {
       LOG(ERROR) << "OnVSync data current is nullptr";
       continue;
     }

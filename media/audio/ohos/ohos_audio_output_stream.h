@@ -53,7 +53,8 @@ class AudioRendererOptions : public AudioRendererOptionsAdapter {
 
 class AudioRendererCallback : public AudioRendererCallbackAdapter {
  public:
-  AudioRendererCallback(content::MediaSessionImpl* media_session);
+  AudioRendererCallback(content::MediaSessionImpl* media_session,
+                        const scoped_refptr<base::SingleThreadTaskRunner>& task_runner);
   ~AudioRendererCallback();
   void OnSuspend() override;
   void OnResume() override;
@@ -62,18 +63,22 @@ class AudioRendererCallback : public AudioRendererCallbackAdapter {
 
  private:
   content::MediaSessionImpl* media_session_;
+  scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_ = nullptr;
   time_t intervalSinceLastSuspend_ = 0.0;
   bool suspendFlag_ = false;
 };
 
 class AudioOutputChangeCallback : public AudioOutputChangeCallbackAdapter {
  public:
-  AudioOutputChangeCallback(AudioParameters params, bool isCommunication);
+  AudioOutputChangeCallback(
+      const scoped_refptr<base::SingleThreadTaskRunner>& task_runner,
+      AudioParameters params,
+      bool isCommunication);
   ~AudioOutputChangeCallback();
   void OnOutputDeviceChange(int32_t reason) override;
 
  private:
-  base::WeakPtr<content::MediaSessionImpl> weakMediaSession_ = nullptr;
+  scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_ = nullptr;
   AudioParameters params_;
   bool isCommunication_ = false;
 };

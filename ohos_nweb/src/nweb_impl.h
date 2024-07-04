@@ -117,7 +117,8 @@ class NWebImpl : public NWeb {
       const std::string& objName,
       const std::vector<std::string>& methodName,
       std::vector<NativeJSProxyCallbackFunc>&& callback,
-      bool isAsync);
+      bool isAsync,
+      const std::string& permission);
   void UnRegisterNativeArkJSFunction(const char* objName) override;
   void RegisterNativeValideCallback(const char* webName, const NativeArkWebOnValidCallback callback) override;
   void RegisterNativeDestroyCallback(const char* webName, const NativeArkWebOnDestroyCallback callback) override;
@@ -132,6 +133,11 @@ class NWebImpl : public NWeb {
                              const std::vector<std::string>& method_list,
                              const std::vector<std::string>& async_method_list,
                              const int32_t object_id) override;
+  void RegisterArkJSfunction(const std::string& object_name,
+                             const std::vector<std::string>& method_list,
+                             const std::vector<std::string>& async_method_list,
+                             const int32_t object_id,
+                             const std::string& permission) override;
   void UnregisterArkJSfunction(
       const std::string& object_name,
       const std::vector<std::string>& method_list) override;
@@ -269,6 +275,16 @@ class NWebImpl : public NWeb {
   void SlideScroll(float vx, float vy) override;
   bool WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
                        const std::vector<int32_t>& pressedCodes) override;
+  void WebSendMouseWheelEvent(double x,
+                              double y,
+                              double deltaX,
+                              double deltaY,
+                              const std::vector<int32_t>& pressedCodes) override;
+  void WebSendTouchpadFlingEvent(double x,
+                                 double y,
+                                 double vx,
+                                 double vy,
+                                 const std::vector<int32_t>& pressedCodes) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
   bool GetCertChainDerData(std::vector<std::string>& certChainData,
@@ -500,6 +516,8 @@ class NWebImpl : public NWeb {
                        const WebSnapshotCallback callback) override;
 #endif
   int SetUrlTrustList(const std::string& urlTrustList) override;
+  int SetUrlTrustListWithErrMsg(
+    const std::string& urlTrustList, std::string& detailErrMsg) override;
 
 #ifdef OHOS_NETWORK_LOAD
   void SetPathAllowingUniversalAccess(

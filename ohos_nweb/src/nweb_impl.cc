@@ -2528,7 +2528,11 @@ void NWebImpl::PutAccessibilityIdGenerator(
   }
 }
 
-void NWebImpl::ExecuteAction(int64_t accessibilityId, uint32_t action) {}
+void NWebImpl::ExecuteAction(int64_t accessibilityId, uint32_t action) {
+  if (nweb_delegate_ != nullptr) {
+    nweb_delegate_->ExecuteAction(accessibilityId, action);
+  }
+}
 
 std::shared_ptr<NWebAccessibilityNodeInfo>
 NWebImpl::GetFocusedAccessibilityNodeInfo(int64_t accessibilityId,
@@ -3233,5 +3237,11 @@ void NWebImpl::PerformAction(int64_t accessibilityId, uint32_t action,
   const std::map<std::string, std::string>& actionArguments) {
   if (nweb_delegate_ != nullptr) {
     nweb_delegate_->ExecuteAction(accessibilityId, action, actionArguments);
+  }
+}
+
+void NWebImpl::SendAccessibilityHoverEvent(int32_t x, int32_t y) {
+  if (nweb_delegate_ != nullptr) {
+    nweb_delegate_->SendAccessibilityHoverEvent(x, y);
   }
 }

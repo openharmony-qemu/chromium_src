@@ -13,6 +13,8 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <string.h>
+#include <dlfcn.h>
 
 #include <memory>
 #include <tuple>
@@ -272,7 +274,13 @@ PlatformThreadId PlatformThread::CurrentId() {
 PlatformThreadId PlatformThread::CurrentRealId() {
   // - getproctid() is fast, since its return value is cached in pthread (in the
   //   thread control block of pthread). See gettid.c in bionic.
-  return getproctid();
+  using GetProcXid = int (*)(void);
+  static GetProcXid getProcTid = nullptr;
+  if (getProcTid == nullptr) {
+    getProcTid = reinterpret_cast<GetProcXid>(dlsym(RTLD_DEFAULT, "getproctid"));
+    CHECK(getProcTid);
+  }
+  return getProcTid();
 }
 #endif
 

@@ -151,6 +151,10 @@ extern bool g_siteIsolationMode;
 #include "base/files/file_util.h"
 #endif
 
+#ifdef OHOS_WEB_LTPO
+#include "base/ohos/ltpo/include/dynamic_frame_rate_decision.h"
+#endif
+
 namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
@@ -664,9 +668,11 @@ void NWebImpl::OnDestroy() {
 
   bool is_close_all = (--g_nweb_count) == 0 ? true : false;
   WVLOG_D("NWebImpl::OnDestroy, nweb_id = %{public}u, number = %{public}u", nweb_id_, g_nweb_count);
+#ifdef OHOS_WEB_LTPO
   if (is_close_all) {
-    OHOS::NWeb::OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetFrameRateLinkerEnable(false);
+    base::ohos::DynamicFrameRateDecision::GetInstance().SetVisible(false);
   }
+#endif
 
   if (nweb_delegate_ != nullptr) {
     nweb_delegate_->OnDestroy(is_close_all);

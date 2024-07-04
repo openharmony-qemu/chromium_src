@@ -39,15 +39,14 @@ public:
   void StopSliding();
   void StartFling();
   void OnScrollUpdate(float delta_x, float delta_y);
-
-  void SetVsyncPeriod(int64_t vsync_period);
+  void OnFlingUpdate(float velocity_x, float velocity_y);
 private:
-  float ConvertToVelocity(float delta_x, float delta_y);
+  float GetVelocity(float velocity_x, float velocity_y);
   int32_t GetPreferedFrameRate(float velocity,
     const std::vector<OHOS::NWeb::FrameRateSetting>& setting);
+  int64_t GetCurrentTimestamp();
 
 private:
-float vsync_period_ {-1};
   bool isInited_ {false};
   bool isSliding_ {false};
   bool isOffScreen_ {false};
@@ -56,6 +55,7 @@ float vsync_period_ {-1};
   std::vector<OHOS::NWeb::FrameRateSetting> offScreenSetting {};
 
   float virtual_pixel_ratio_ {-1};
+  int64_t current_timestamp_ {-1};
 };
 }  // namespace ohos
 }  // namespace base

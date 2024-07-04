@@ -417,6 +417,30 @@ void HostFrameSinkManager::OnVsyncReceived(uint32_t client_id, uint32_t sink_id)
     data.client->OnVsyncReceived();
   }
 }
+
+void HostFrameSinkManager::OnVsyncEnabled(bool enabled, uint32_t client_id, uint32_t sink_id) {
+  FrameSinkId id(client_id, sink_id);
+  auto iter = frame_sink_data_map_.find(id);
+  if (iter == frame_sink_data_map_.end())
+    return;
+
+  const FrameSinkData& data = iter->second;
+  if (data.client) {
+    data.client->OnVsyncEnabled(enabled);
+  }
+}
+
+void HostFrameSinkManager::ReportVideoFrameRate(int32_t frameRate, uint32_t client_id, uint32_t sink_id) {
+  FrameSinkId id(client_id, sink_id);
+  auto iter = frame_sink_data_map_.find(id);
+  if (iter == frame_sink_data_map_.end())
+    return;
+
+  const FrameSinkData& data = iter->second;
+  if (data.client) {
+    data.client->ReportVideoFrameRate(frameRate);
+  }
+}
 #endif
 
 uint32_t HostFrameSinkManager::CacheBackBufferForRootSink(

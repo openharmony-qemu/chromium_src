@@ -76,7 +76,7 @@ std::string NWebSchemeHandlerFactory::GetWebTag(CefRefPtr<CefBrowser> browser) {
     return "";
   }
   std::string web_tag = nweb->GetWebTag();
-  LOG(INFO) << "scheme_handler nweb_id: " << nweb_id << " web_tag: " << web_tag;
+  LOG(DEBUG) << "scheme_handler nweb_id: " << nweb_id << " web_tag: " << web_tag;
   return web_tag;
 }
 
@@ -156,7 +156,7 @@ CefRefPtr<CefResourceHandler> NWebSchemeHandlerFactory::Create(
     delete resource_handler;
     return nullptr;
   }
-  LOG(INFO) << "scheme_handler will intercept the request.";
+  LOG(DEBUG) << "scheme_handler will intercept the request.";
   return resource_handler->pipe_resource_handler;
 }
 
@@ -223,7 +223,7 @@ void NWebSchemeHandlerFactory::OnRequestStop(
 
   ArkWeb_SchemeHandler* handler = FromTag(web_tag);
   if (!handler || !handler->on_request_stop) {
-    LOG(INFO) << "scheme_handler not set handler for " << web_tag;
+    LOG(DEBUG) << "scheme_handler not set handler for " << web_tag;
     return;
   }
   handler->on_request_stop(handler, resource_request);

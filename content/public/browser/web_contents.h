@@ -291,6 +291,10 @@ class WebContents : public PageNavigator,
     // Options specific to WebContents created for picture-in-picture windows.
     absl::optional<blink::mojom::PictureInPictureWindowOptions>
         picture_in_picture_options;
+
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+    std::string shared_render_process_token;
+#endif
   };
 
   // Creates a new WebContents.

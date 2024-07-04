@@ -1549,6 +1549,9 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   void RequestEnterFullscreen(const MediaPlayerId& player_id);
   void RequestExitFullscreen(const MediaPlayerId& player_id);
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+  const std::string& SharedRenderProcessToken() override;
+#endif
 
  private:
   using FrameTreeIterationCallback = base::RepeatingCallback<void(FrameTree&)>;
@@ -2615,6 +2618,10 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
       cc::BrowserControlsState::kBoth;
 #endif
 
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+  std::string shared_render_process_token_;
+#endif
+
   // Stores the information whether last navigation was prerender activation for
   // DevTools. Set when a prerender activation completes, and cleared when
   // either DevTools is opened and consults this value or when a non-prerendered
@@ -2624,7 +2631,6 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   // Counts the number of open scopes that disallow custom cursors in this web
   // contents. Custom cursors are allowed if this is 0.
   int disallow_custom_cursor_scope_count_ = 0;
-
   base::WeakPtr<FileChooserImpl> active_file_chooser_;
 
   base::WeakPtrFactory<WebContentsImpl> loading_weak_factory_{this};

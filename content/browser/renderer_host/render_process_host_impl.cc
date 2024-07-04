@@ -345,6 +345,15 @@ std::list<RenderProcessHostCreationObserver*>& GetAllCreationObservers() {
   return *s_all_creation_observers;
 }
 
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+// the global list of all renderer processes
+SharedProcessTokenToProcessMap& GetAllSharedProcessHosts() {
+  static base::NoDestructor<SharedProcessTokenToProcessMap>
+      s_all_shared_process_hosts;
+  return *s_all_shared_process_hosts;
+}
+#endif
+
 // Returns |host|'s PID if the process is valid and "no-process" otherwise.
 std::string GetRendererPidAsString(RenderProcessHost* host) {
   if (host->GetProcess().IsValid()) {
@@ -4370,7 +4379,9 @@ void RenderProcessHostImpl::UnregisterHost(int host_id) {
       });
 
   GetAllHosts().Remove(host_id);
-
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+  RemoveFromSharedRenderProcessMap(host);
+#endif
   // Log after updating the GetAllHosts() list but before deleting the host.
   MAYBEVLOG(3) << __func__ << "(" << host_id << ")" << std::endl
                << GetCurrentHostMapDebugString(
@@ -5793,6 +5804,38 @@ void RenderProcessHostImpl::dumpCurrentJavaScriptStackInMainThread(
       [](base::OnceCallback<void(const std::string&)> callback,
          const std::string& stack) { std::move(callback).Run(stack); },
       std::move(dump_callback)));
+}
+#endif
+
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+RenderProcessHost* RenderProcessHostImpl::GetProcessForSharedToken(
+    const std::string& shared_render_process_token) {
+  SharedProcessTokenToProcessMap& processes = GetAllSharedProcessHosts();
+  auto process = processes.find(shared_render_process_token);
+  if (process == processes.end())
+    return nullptr;
+  return process->second;
+}
+
+void RenderProcessHostImpl::RegisteProcessForSharedToken(
+    const std::string& shared_render_process_token,
+    RenderProcessHost* renderProcessHost) {
+  GetAllSharedProcessHosts().emplace(shared_render_process_token,
+                                     renderProcessHost);
+}
+
+void RenderProcessHostImpl::RemoveFromSharedRenderProcessMap(
+    RenderProcessHost* renderProcessHost) {
+  SharedProcessTokenToProcessMap& processes = GetAllSharedProcessHosts();
+  if (processes.empty())
+    return;
+  auto iter = processes.begin();
+  for (; iter != processes.end(); ++iter) {
+    if (iter->second == renderProcessHost) {
+      processes.erase(iter);
+      break;
+    }
+  }
 }
 #endif
 

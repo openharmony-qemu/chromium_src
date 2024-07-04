@@ -214,7 +214,8 @@ class NWebDelegateInterface
       const std::vector<std::string>& methodName,
       std::vector<std::function<char*(std::vector<std::vector<uint8_t>>&,
                                       std::vector<size_t>&)>>&& callback,
-      bool isAsync) = 0;
+      bool isAsync,
+      const std::string& permission) = 0;
   virtual void UnRegisterNativeArkJSFunction(const char* objName) = 0;
 
 #ifdef OHOS_ARKWEB_ADBLOCK
@@ -226,7 +227,8 @@ class NWebDelegateInterface
       const std::string& object_name,
       const std::vector<std::string>& method_list,
       const std::vector<std::string>& async_method_list,
-      const int32_t object_id) const = 0;
+      const int32_t object_id,
+      const std::string& permission) const = 0;
   virtual void UnregisterArkJSfunction(
       const std::string& object_name,
       const std::vector<std::string>& method_list) const = 0;
@@ -415,6 +417,16 @@ class NWebDelegateInterface
 #if defined(OHOS_INPUT_EVENTS)
   virtual void SetVirtualKeyBoardArg(int32_t width, int32_t height, double keyboard) = 0;
   virtual bool ShouldVirtualKeyboardOverlay() = 0;
+  virtual void WebSendMouseWheelEvent(double x,
+                                      double y,
+                                      double deltaX,
+                                      double deltaY,
+                                      const std::vector<int32_t>& pressedCodes) = 0;
+  virtual void WebSendTouchpadFlingEvent(double x,
+                                         double y,
+                                         double vx,
+                                         double vy,
+                                         const std::vector<int32_t>& pressedCodes) = 0;
 #endif
 
 #if BUILDFLAG(IS_OHOS)
@@ -491,7 +503,8 @@ class NWebDelegateInterface
 #endif
 
 #if OHOS_URL_TRUST_LIST
-  virtual int SetUrlTrustList(const std::string& urlTrustList) = 0;
+  virtual int SetUrlTrustListWithErrMsg(
+    const std::string& urlTrustList, std::string& detailErrMsg) = 0;
 #endif
 
 #ifdef OHOS_NETWORK_LOAD
@@ -504,6 +517,7 @@ class NWebDelegateInterface
   virtual std::shared_ptr<NWebCustomKeyboardHandlerImpl> GetCustomKeyboardHandler() const = 0;
 
   virtual void SendAccessibilityHoverEvent(int x, int y) = 0;
+  virtual void RefreshAccessibilityManagerClickEvent() = 0;
 };
 }  // namespace OHOS::NWeb
 

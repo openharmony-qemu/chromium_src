@@ -873,8 +873,11 @@ void SkiaRenderer::BeginDrawingFrame() {
 void SkiaRenderer::FinishDrawingFrame() {
   TRACE_EVENT0("viz", "SkiaRenderer::FinishDrawingFrame");
   current_canvas_ = nullptr;
-
+#if BUILDFLAG(IS_OHOS)
+  swap_buffer_rect_ = current_frame()->damage_rect;
+#else
   swap_buffer_rect_ = current_frame()->root_damage_rect;
+#endif
 
 #if BUILDFLAG(IS_OZONE)
   MaybeScheduleBackgroundImage(current_frame()->overlay_list);
@@ -946,10 +949,15 @@ void SkiaRenderer::SwapBuffers(SwapFrameData swap_frame_data) {
   output_frame.choreographer_vsync_id = swap_frame_data.choreographer_vsync_id;
   output_frame.size = viewport_size_for_swap_buffers();
   output_frame.data.seq = swap_frame_data.seq;
+#if BUILDFLAG(IS_OHOS)
+  swap_buffer_rect_.Intersect(gfx::Rect(surface_size_for_swap_buffers()));
+  output_frame.sub_buffer_rect = swap_buffer_rect_;
+#else
   if (use_partial_swap_) {
     swap_buffer_rect_.Intersect(gfx::Rect(surface_size_for_swap_buffers()));
     output_frame.sub_buffer_rect = swap_buffer_rect_;
   }
+#endif
   if (delegated_ink_handler_ && !UsingSkiaForDelegatedInk()) {
     output_frame.delegated_ink_metadata =
         delegated_ink_handler_->TakeMetadata();

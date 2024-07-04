@@ -26,10 +26,11 @@ bool g_skip_vsync = false;
 constexpr int64_t VSYNC_PERIOD_120HZ = 8333333;
 constexpr int64_t VSYNC_PERIOD_90120HZ_MID = 9800000;
 constexpr int64_t VSYNC_TIME_FOR_CALCULATION = 1000000000;
-constexpr int VSYNC_BLOCKED_TIMEOUT = 3;
 
 constexpr int VSYNC_30HZ = 30;
 constexpr int VSYNC_60HZ = 60;
+const size_t kMaxVsyncTaskQueueSize = 20;
+constexpr int VSYNC_BLOCKED_TIMEOUT = 3;
 
 class ExternalBeginFrameSourceOHOS::VSyncUserData {
  public:
@@ -122,10 +123,12 @@ void ExternalBeginFrameSourceOHOS::OnVSync(int64_t timestamp, void* data) {
     return;
   }
   if (!InputSyncLock::GetInstance().HandledTouchEvent() && InputSyncLock::GetInstance().NeedWaitForInput()) {
-    on_vsync_impl_task_queue_.emplace_back(timestamp, userData);
+    userData->current_->PostTask(
+      FROM_HERE, base::BindOnce(&ExternalBeginFrameSourceOHOS::EmplaceVSyncImpl,
+      userData->weak_ptr_, timestamp, userData));
     userData->current_->PostDelayedTask(
-      FROM_HERE, base::BindOnce(&ExternalBeginFrameSourceOHOS::TriggerVsync,
-      userData->weak_ptr_), base::Milliseconds(VSYNC_BLOCKED_TIMEOUT));
+      FROM_HERE, base::BindOnce(&ExternalBeginFrameSourceOHOS::TriggerVsyncImpl,
+                            userData->weak_ptr_), base::Milliseconds(VSYNC_BLOCKED_TIMEOUT));
   } else {
     userData->current_->PostTask(
       FROM_HERE, base::BindOnce(&ExternalBeginFrameSourceOHOS::OnVSyncImpl,
@@ -293,6 +296,14 @@ void ExternalBeginFrameSourceOHOS::TriggerVsyncImpl() {
     FROM_HERE, base::BindOnce(&ExternalBeginFrameSourceOHOS::OnVSyncImpl,
                               userData->weak_ptr_, timestamp, userData));
     on_vsync_impl_task_queue_.pop_front();
+  }
+}
+
+void ExternalBeginFrameSourceOHOS::EmplaceVSyncImpl(int64_t timestamp, VSyncUserData* user_data)
+{
+  on_vsync_impl_task_queue_.emplace_back(timestamp, user_data);
+  if (on_vsync_impl_task_queue_.size() > kMaxVsyncTaskQueueSize) {
+    LOG(ERROR) << "on_vsync_impl_task_queue_.size() is " << on_vsync_impl_task_queue_.size();
   }
 }
 }  // namespace viz

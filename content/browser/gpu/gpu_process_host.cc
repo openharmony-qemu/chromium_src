@@ -243,10 +243,14 @@ static const char* const kSwitchNames[] = {
     switches::kDisableHighResTimer,
     switches::kRaiseTimerFrequency,
 #endif  // BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_OHOS)
+    switches::kDisableCanvasOopRasterization,
+    switches::kEnableCanvasOopRasterization,
+    switches::kOhosEnableDrDc,
+#endif
     switches::kEnableANGLEFeatures,
     switches::kDisableANGLEFeatures,
     switches::kDisableBreakpad,
-    switches::kDisableCanvasOopRasterization,
     switches::kDisableGpuRasterization,
     switches::kDisableGLExtensions,
     switches::kDisableLogging,
@@ -256,7 +260,6 @@ static const char* const kSwitchNames[] = {
     switches::kDisableWebRtcHWEncoding,
     switches::kDRMVirtualConnectorIsExternal,
     switches::kEnableBackgroundThreadPool,
-    switches::kEnableCanvasOopRasterization,
     switches::kEnableGpuRasterization,
     switches::kEnableLogging,
     switches::kDoubleBufferCompositing,

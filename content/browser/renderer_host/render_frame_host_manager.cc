@@ -981,6 +981,13 @@ void RenderFrameHostManager::UnloadOldFrame(
         back_forward_cache.GetCurrentBackForwardCacheEligibility(
             old_render_frame_host.get());
     bool can_store = bfcache_eligibility.CanStore();
+
+#if BUILDFLAG(IS_OHOS)
+    LOG(INFO) << "NativeEmbed BFCache, render frame host can_store = "
+      << can_store << ", reason = " << bfcache_eligibility.flattened_reasons.ToString() << ", render frame global id = "
+      << old_render_frame_host->GetGlobalId();
+#endif
+
     if (old_page_back_forward_cache_metrics &&
         old_page_back_forward_cache_metrics->had_form_data_associated()) {
       UMA_HISTOGRAM_ENUMERATION(

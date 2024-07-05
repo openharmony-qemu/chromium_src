@@ -4819,6 +4819,18 @@ void WebContentsImpl::OnNativeEmbedStatusUpdate(
     delegate_->OnNativeEmbedStatusUpdate(native_embed_info, state);
   }
 }
+
+void WebContentsImpl::OnRenderFrameHostEnterBackForwardCache(const GlobalRenderFrameHostId& id) {
+  if (native_web_contents_observer_) {
+    native_web_contents_observer_->OnRenderFrameHostEnterBackForwardCache(id);
+  }
+}
+
+void WebContentsImpl::OnRenderFrameHostLeaveBackForwardCache(const GlobalRenderFrameHostId& id) {
+  if (native_web_contents_observer_) {
+    native_web_contents_observer_->OnRenderFrameHostLeaveBackForwardCache(id);
+  }
+}
 #endif
 
 void WebContentsImpl::RequestMediaAccessPermission(

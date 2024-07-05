@@ -1955,6 +1955,12 @@ void RenderFrameHostImpl::DidEnterBackForwardCacheInternal() {
   GetProcess()->PauseSocketManagerForRenderFrameHost(GetGlobalId());
 #endif  // BUILDFLAG(IS_P2P_ENABLED)
 
+#if BUILDFLAG(IS_OHOS)
+  if (delegate_) {
+    delegate_->OnRenderFrameHostEnterBackForwardCache(GetGlobalId());
+  }
+#endif  // BUILDFLAG(IS_OHOS)
+
   if (auto* permission_service_context =
           PermissionServiceContext::GetForCurrentDocument(this)) {
     permission_service_context->StoreStatusAtBFCacheEntry();
@@ -1998,6 +2004,12 @@ void RenderFrameHostImpl::WillLeaveBackForwardCacheInternal() {
 #if BUILDFLAG(IS_P2P_ENABLED)
   GetProcess()->ResumeSocketManagerForRenderFrameHost(GetGlobalId());
 #endif  // BUILDFLAG(IS_P2P_ENABLED)
+
+#if BUILDFLAG(IS_OHOS)
+  if (delegate_) {
+    delegate_->OnRenderFrameHostLeaveBackForwardCache(GetGlobalId());
+  }
+#endif  // BUILDFLAG(IS_OHOS)
 }
 
 mojom::DidCommitProvisionalLoadParamsPtr
@@ -4562,6 +4574,13 @@ void RenderFrameHostImpl::CancelInitialHistoryLoad() {
 void RenderFrameHostImpl::DidChangeBackForwardCacheDisablingFeatures(
     BackForwardCacheBlockingDetails details) {
   renderer_reported_bfcache_blocking_details_ = std::move(details);
+
+#if BUILDFLAG(IS_OHOS)
+  if (GetBackForwardCacheDisablingFeatures().Has(blink::scheduler::WebSchedulerTrackedFeature::kEnableCacheNativeEmbed)) {
+    LOG(INFO) << "NativeEmbed BFCache, render frame host received NativeEmbed feature, render frame host global id = " \
+      << GetGlobalId();
+  }
+#endif
 
   MaybeEvictFromBackForwardCache();
 

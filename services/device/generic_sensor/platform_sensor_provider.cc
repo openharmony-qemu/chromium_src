@@ -27,6 +27,10 @@
 #endif  // BUILDFLAG(USE_IIOSERVICE)
 #elif BUILDFLAG(IS_LINUX) && defined(USE_UDEV)
 #include "services/device/generic_sensor/platform_sensor_provider_linux.h"
+#elif BUILDFLAG(IS_OHOS)
+#if defined(OHOS_SENSOR)
+#include "services/device/generic_sensor/platform_sensor_provider_ohos.h"
+#endif  // defined(OHOS_SENSOR)
 #endif
 
 namespace device {
@@ -51,6 +55,12 @@ std::unique_ptr<PlatformSensorProvider> PlatformSensorProvider::Create() {
 #endif  // BUILDFLAG(USE_IIOSERVICE)
 #elif BUILDFLAG(IS_LINUX) && defined(USE_UDEV)
   return std::make_unique<PlatformSensorProviderLinux>();
+#elif BUILDFLAG(IS_OHOS)
+#if defined(OHOS_SENSOR)
+  return std::make_unique<PlatformSensorProviderOHOS>();
+#else
+  return nullptr;
+#endif  // defined(OHOS_SENSOR)
 #else
   return nullptr;
 #endif

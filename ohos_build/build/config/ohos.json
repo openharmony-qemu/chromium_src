@@ -679,6 +679,14 @@
 "dependence": "",
 "default": "true"
 },
+{ "name": "OHOS_SENSOR",
+"owner": "",
+"desc": "",
+"effect":"main gn blink_core other",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},
 { "name": "OHOS_SITE_ISOLATION",
 "owner": "",
 "desc": "",

@@ -5,14 +5,18 @@
 #ifndef GPU_CONFIG_GPU_SWITCHES_H_
 #define GPU_CONFIG_GPU_SWITCHES_H_
 
+#include "build/build_config.h"
 #include "gpu/gpu_export.h"
 
 namespace switches {
 
+#if BUILDFLAG(IS_OHOS)
 GPU_EXPORT extern const char kDisableCanvasOopRasterization[];
+GPU_EXPORT extern const char kEnableCanvasOopRasterization[];
+#endif
+
 GPU_EXPORT extern const char kDisableGpuRasterization[];
 GPU_EXPORT extern const char kDisableMipmapGeneration[];
-GPU_EXPORT extern const char kEnableCanvasOopRasterization[];
 GPU_EXPORT extern const char kEnableGpuRasterization[];
 GPU_EXPORT extern const char kGpuBlocklistTestGroup[];
 GPU_EXPORT extern const char kGpuDriverBugListTestGroup[];

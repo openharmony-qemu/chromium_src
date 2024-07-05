@@ -320,6 +320,9 @@ class TestNetworkContext : public mojom::NetworkContext {
     const std::vector<std::string>& Address,
     uint32_t AliveTime) override {}
   void ClearHostIP(const std::string& HostName) override {}
+  void InitPRParallelPreloadMgr() override {}
+  void StartMainPage(const std::string& url, uint64_t addr_web_handle) override {}
+  void StopMainPage(uint64_t addr_web_handle) override {}
 #endif // OHOS_UNITTESTS
 };
 

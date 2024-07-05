@@ -114,6 +114,7 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
 #endif
 #if BUILDFLAG(IS_OHOS)
   void TriggerVsyncImplTask() override;
+  void SetHandledTouchEvent(bool handledTouchEvent) override;
 #endif
  private:
   // mojom::CompositorFrameSinkClient implementation:

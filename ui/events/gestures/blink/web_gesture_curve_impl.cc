@@ -25,6 +25,7 @@
 #endif  // BUILDFLAG(IS_WIN)
 
 #if BUILDFLAG(IS_OHOS)
+#include "base/ohos/ltpo/include/sliding_observer.h"
 #include "base/system/sys_info.h"
 #include "ohos_adapter_helper.h"
 #endif  // BUILDFLAG(IS_OHOS)
@@ -56,7 +57,7 @@ std::unique_ptr<GestureCurve> CreateDefaultPlatformCurve(
     use_native_fling_curve = true;
   }
 #endif
-  if (use_native_fling_curve && !base::SysInfo::IsLowEndDevice() && 
+  if (use_native_fling_curve && !base::SysInfo::IsLowEndDevice() &&
       (std::abs(initial_velocity.y()) > std::abs(initial_velocity.x()))) {
     LOG(DEBUG) << "WebGestureCurveImpl DUMP_FLING_CURVE initial_velocity: " << initial_velocity.y();
     auto scroller = std::make_unique<NativeScrollerOhos>();
@@ -159,10 +160,11 @@ bool WebGestureCurveImpl::Advance(double time,
   gfx::Vector2dF offset;
   bool still_active =
       curve_->ComputeScrollOffset(time_ticks, &offset, &out_current_velocity);
-  
+
   // dump curve
   LOG(DEBUG) << "WebGestureCurveImpl::Advance DUMP_FLING_CURVE time = " << time << " offset = " << offset.y() << " velocity = " << out_current_velocity.y();
-
+  base::ohos::SlidingObserver::GetInstance().OnFlingUpdate(out_current_velocity.x(),
+      out_current_velocity.y());
   out_delta_to_scroll = offset - last_offset_;
   last_offset_ = offset;
 

@@ -52,9 +52,14 @@ class NWebApplication : public CefApp,
       CefRefPtr<NWebHandlerDelegate> handler_delegate,
       void* window
 #if defined(OHOS_INCOGNITO_MODE)
-      , bool incognito_mode
+      ,
+      bool incognito_mode
 #endif
-);
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+      ,
+      const std::string& shared_render_process_token
+#endif
+  );
   void RunAfterContextInitialized(base::OnceCallback<void()> context_callback);
 #endif  // defined(OHOS_API_INIT_WEB_ENGINE)
 
@@ -92,9 +97,14 @@ void OnContextInitializedForIncognitoMode() override;
   void PopulateCreateSettings(CefRefPtr<CefCommandLine> command_line,
                               CefBrowserSettings& browser_settings
 #if defined(OHOS_INCOGNITO_MODE)
-                              , bool incognito_mode
+                              ,
+                              bool incognito_mode
 #endif
-                              );
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+                              ,
+                              const std::string& shared_render_process_token
+#endif
+  );
 
   void OnContextInitializedInternal(
 #ifdef OHOS_INCOGNITO_MODE

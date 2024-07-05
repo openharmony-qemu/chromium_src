@@ -26,6 +26,8 @@ class HostFrameSinkClient {
 #if BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_JITTER)
   virtual void OnVsync() {}
   virtual void OnVsyncReceived() {}
+  virtual void OnVsyncEnabled(bool enabled) {}
+  virtual void ReportVideoFrameRate(int32_t frameRate) {}
 #endif
 
  protected:

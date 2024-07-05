@@ -115,6 +115,7 @@ class FakeLayerTreeFrameSink : public LayerTreeFrameSink {
   void DidDeleteSharedBitmap(const viz::SharedBitmapId& id) override;
 #if defined(OHOS_UNITTESTS)
   void TriggerVsyncImplTask() override {}
+  void SetHandledTouchEvent(bool handledTouchEvent) override {}
 #endif
   viz::CompositorFrame* last_sent_frame() { return last_sent_frame_.get(); }
   size_t num_sent_frames() { return num_sent_frames_; }

@@ -8,9 +8,9 @@
 #include "base/task/thread_pool.h"
 #include "page_res_request_info.h"
 
-namespace network {
-class NetworkContext;
-}  // namespace network
+namespace net {
+class URLRequestContext;
+}  // namespace net
 
 namespace ohos_prp_preload {
 class PRParallelPreloadMgr {
@@ -20,7 +20,7 @@ class PRParallelPreloadMgr {
   virtual ~PRParallelPreloadMgr() = default;
   virtual void Init(const scoped_refptr<base::SingleThreadTaskRunner>& net_task_runner) = 0;
   virtual void StartMainPage(const std::string& url,
-                             const base::WeakPtr<network::NetworkContext>& network_context,
+                             net::URLRequestContext* url_request_context,
                              uint64_t addr_web_handle) = 0;
   virtual void StopMainPage(const std::string& url) = 0;
   virtual void StopMainPage(uint64_t addr_web_handle) = 0;

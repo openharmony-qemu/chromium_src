@@ -344,6 +344,24 @@ void NWebRenderHandler::Resize(uint32_t width, uint32_t height) {
   height_ = height;
 }
 
+#if defined(OHOS_INPUT_EVENTS)
+void NWebRenderHandler::ResizeVisibleViewport(uint32_t width, uint32_t height) {
+  visible_width_ = width;
+  visible_height_ = height;
+}
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+void NWebRenderHandler::SetContentSize(int width, int height) {
+  content_width_ = width;
+  content_height_ = height;
+}
+
+gfx::Size NWebRenderHandler::GetSize() {
+  return gfx::Size(width_, height_);
+}
+#endif
+
 void NWebRenderHandler::GetViewRect(CefRefPtr<CefBrowser> browser,
                                     CefRect& rect) {
   rect.x = 0;
@@ -364,6 +382,33 @@ void NWebRenderHandler::GetViewRect(CefRefPtr<CefBrowser> browser,
     rect.height = 1;
   }
 }
+
+#if defined(OHOS_INPUT_EVENTS)
+void NWebRenderHandler::GetVisibleViewportRect(CefRefPtr<CefBrowser> browser,
+                                               CefRect& rect) {
+  if (visible_width_ == 0 && visible_height_ == 0) {
+    GetViewRect(browser, rect);
+    return;
+  }
+  rect.x = 0;
+  rect.y = 0;
+  if (screen_info_.display_ratio <= 0) {
+    rect.width = visible_width_;
+    rect.height = visible_height_;
+  } else {
+    // Surface greater than Web compoment in case show black line.
+    rect.width = std::ceil(visible_width_ / screen_info_.display_ratio);
+    rect.height = std::ceil(visible_height_ / screen_info_.display_ratio);
+  }
+
+  if (rect.width <= 0) {
+    rect.width = 1;
+  }
+  if (rect.height <= 0) {
+    rect.height = 1;
+  }
+}
+#endif
 
 // #ifdef OHOS_SCREEN_ROTATION
 void NWebRenderHandler::SetScreenInfo(const NWebScreenInfo& screen_info) {

@@ -651,6 +651,9 @@ void NWebPreferenceDelegate::SetNativeEmbedMode(bool flag) {
   CefRefPtr<CefCommandLine> command_line = CefCommandLine::GetGlobalCommandLine();
   auto isEnableEmbed = command_line->HasSwitch(::switches::kEnableEmbedMode); 
   enable_embed_mode_ = flag && !isEnableEmbed;
+  if (enable_embed_mode_) {
+    zooming_function_enabled_ = false;
+  }
   WebPreferencesChanged();
 }
 

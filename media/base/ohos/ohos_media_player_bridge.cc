@@ -30,6 +30,7 @@ OHOSMediaPlayerBridge::OHOSMediaPlayerBridge(
       url_(url),
       prepared_(false),
       pending_play_(false),
+      seek_complete_(true),
       should_seek_on_prepare_(false),
       should_set_volume_on_prepare_(false),
       seeking_on_playback_complete_(false) {
@@ -169,7 +170,7 @@ void OHOSMediaPlayerBridge::SeekInternal(base::TimeDelta time) {
   if (ret != 0) {
     LOG(ERROR) << "Seek error::ret=" << ret;
   } else {
-    ++seek_done_count_;
+    seek_complete_ = false;
   }
 }
 
@@ -217,7 +218,7 @@ base::TimeDelta OHOSMediaPlayerBridge::GetDuration() {
 
 base::TimeDelta OHOSMediaPlayerBridge::GetMediaTime() {
   if (!player_ || !prepared_ || seeking_on_playback_complete_ ||
-      seek_done_count_) {
+      !seek_complete_) {
     return pending_seek_;
   }
 
@@ -227,9 +228,7 @@ base::TimeDelta OHOSMediaPlayerBridge::GetMediaTime() {
 }
 
 void OHOSMediaPlayerBridge::SeekDone() {
-  if (seek_done_count_ > 0) {
-    --seek_done_count_;
-  }
+  seek_complete_ = true;
 }
 
 void OHOSMediaPlayerBridge::FinishPaint(int fd) {

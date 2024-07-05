@@ -20,6 +20,7 @@
 #include "cef/include/cef_client.h"
 #include "cef/include/cef_dialog_handler.h"
 #include "cef/include/cef_form_handler.h"
+#include "cef/include/cef_frame_handler.h"
 #include "cef/include/cef_jsdialog_handler.h"
 #include "cef/include/cef_media_handler.h"
 #include "cef/include/cef_permission_request.h"
@@ -73,6 +74,7 @@ class NWebHandlerDelegate : public CefClient,
                             public CefKeyboardHandler,
                             public CefMediaHandler,
                             public CefFormHandler,
+                            public CefFrameHandler,
 #if defined(OHOS_PRINT)
                             public CefCookieAccessFilter,
                             public CefPrintHandler {
@@ -123,7 +125,8 @@ class NWebHandlerDelegate : public CefClient,
       const std::string& objName,
       const std::vector<std::string>& methodName,
       std::vector<NativeJSProxyCallbackFunc>&& callback,
-      bool isAsync);
+      bool isAsync,
+      const std::string& permission);
   void RegisterNativeLoadStartCallback(std::function<void(void)>&& callback);
   void RegisterNativeLoadEndCallback(std::function<void(void)>&& callback);
   int GetFlowbufCount(void* mem);
@@ -227,6 +230,8 @@ class NWebHandlerDelegate : public CefClient,
 #if defined(OHOS_PRINT)
   CefRefPtr<CefPrintHandler> GetPrintHandler() override;
 #endif  // defined(OHOS_PRINT)
+
+  CefRefPtr<CefFrameHandler> GetFrameHandler() override;
   /* CefClient methods end */
 
   /* CefLifeSpanHandler methods begin */
@@ -298,10 +303,10 @@ class NWebHandlerDelegate : public CefClient,
 
   void OnFirstContentfulPaint(int64_t navigationStartTick,
                               int64_t firstContentfulPaintMs) override;
-  
+
   void OnFirstMeaningfulPaint(
       CefRefPtr<CefFirstMeaningfulPaintDetails> details) override;
-  
+
   void OnLargestContentfulPaint(
       CefRefPtr<CefLargestContentfulPaintDetails> details) override;
 
@@ -558,7 +563,7 @@ class NWebHandlerDelegate : public CefClient,
       CefRefPtr<CefBrowser> browser,
       CefRefPtr<CefFrame> frame,
       const CefRect& select_bounds) override;
-  
+
   bool OnQuickMenuCommand(
       CefRefPtr<CefBrowser> browser,
       CefRefPtr<CefFrame> frame,
@@ -609,6 +614,12 @@ class NWebHandlerDelegate : public CefClient,
 #endif  // defined(OHOS_PRINT)
   /* CefPrintHandler method end */
 
+  /* CefFrameHandler method begin */
+  void OnMainFrameChanged(CefRefPtr<CefBrowser> browser,
+                          CefRefPtr<CefFrame> old_frame,
+                          CefRefPtr<CefFrame> new_frame) override;
+  /* CefFrameHandler method end */
+
   const std::vector<std::string> GetVisitedHistory();
 
   void SetNWebId(uint32_t nwebId);
@@ -656,7 +667,8 @@ class NWebHandlerDelegate : public CefClient,
   void SavaArkJSFunctionForPopup(const std::string& object_name,
                                  const std::vector<std::string>& method_list,
                                  const std::vector<std::string>& async_method_list,
-                                 const int32_t object_id);
+                                 const int32_t object_id,
+                                 const std::string& permission);
 #ifdef OHOS_DRAG_DROP
   bool IsDragEnter() const { return is_drag_enter_; }
   void SetDragEnter(bool enter) { is_drag_enter_ = enter; }
@@ -811,10 +823,15 @@ class NWebHandlerDelegate : public CefClient,
   std::unordered_map<std::string,
                      std::unordered_map<std::string, NativeJSProxyCallbackFunc>>
       asyncProxyObjMap_;
+  std::unordered_map<std::string, std::string> asyncProxyPermissionMap_;
+  std::unordered_map<std::string, std::string> syncProxyPermissionMap_;
   using MethodPair = std::pair<std::string, std::unordered_set<std::string>>;
+  using PermissionMap = std::map<int32_t, std::string>;
   using ObjectMethodMap = std::map<int32_t, MethodPair>;
   ObjectMethodMap javascript_sync_method_map_;
   ObjectMethodMap javascript_async_method_map_;
+  PermissionMap javascript_sync_permission_map_;
+  PermissionMap javascript_async_permission_map_;
   std::function<void(void)> onLoadStartCallback_ = nullptr;
   std::function<void(void)> onLoadEndCallback_ = nullptr;
 

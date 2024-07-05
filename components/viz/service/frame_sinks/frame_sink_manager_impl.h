@@ -287,6 +287,8 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
 #if BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_JITTER)
   void OnVsync(const FrameSinkId& frame_sink_id);
   void OnVsyncReceived(const FrameSinkId& frame_sink_id);
+  void OnVsyncEnabled(bool enabled, const FrameSinkId& frame_sink_id);
+  void ReportVideoFrameRate(int32_t frameRate, const FrameSinkId& frame_sink_id);
 #endif
 
 #if BUILDFLAG(IS_OHOS)

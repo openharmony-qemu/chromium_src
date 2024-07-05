@@ -255,4 +255,12 @@ interface FrameSinkManagerClient {
   // Send vsync callback to host client
   [EnableIf=ohos_performance_jitter]
   OnVsyncReceived(uint32 client_id, uint32 sink_id);
+
+  // Send vsync state to host client
+  [EnableIf=ohos_performance_jitter]
+  OnVsyncEnabled(bool enabled, uint32 client_id, uint32 sink_id);
+
+  // Send video frame rate to LTPO
+  [EnableIf=ohos_performance_jitter]
+  ReportVideoFrameRate(int32 frameRate, uint32 client_id, uint32 sink_id);
 };

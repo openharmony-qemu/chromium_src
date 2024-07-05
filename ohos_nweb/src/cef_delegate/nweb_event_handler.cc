@@ -247,6 +247,50 @@ bool NWebEventHandler::WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
 
   return true;
 }
+
+void NWebEventHandler::WebSendMouseWheelEvent(double x,
+                                              double y,
+                                              double deltaX,
+                                              double deltaY,
+                                              const std::vector<int32_t>& pressedCodes) {
+  CefMouseEvent mouseEvent;
+  mouseEvent.x = x;
+  mouseEvent.y = y;
+  mouseEvent.modifiers = NWebInputDelegate::GetWebModifiersByPressedCode(pressedCodes);
+  LOG(DEBUG) << "WebSendMouseWheelEvent modifiers = " << mouseEvent.modifiers;
+  if (!browser_ || !browser_->GetHost()) {
+    return;
+  }
+
+  double horizontalDelta;
+  double verticalDelta;
+  if (mmi_id_ > 0 && (mouseEvent.modifiers & EVENTFLAG_SHIFT_DOWN)) {
+    horizontalDelta = deltaY * input_delegate_.GetMouseWheelRatio();
+    verticalDelta = deltaX * input_delegate_.GetMouseWheelRatio();
+  } else {
+    horizontalDelta = deltaX * input_delegate_.GetMouseWheelRatio();
+    verticalDelta = deltaY * input_delegate_.GetMouseWheelRatio();
+  }
+  browser_->GetHost()->SendMouseWheelEvent(mouseEvent, horizontalDelta,
+                                           verticalDelta);
+}
+
+void NWebEventHandler::WebSendTouchpadFlingEvent(double x,
+                                                 double y,
+                                                 double vx,
+                                                 double vy,
+                                                 const std::vector<int32_t>& pressedCodes) {
+  CefMouseEvent mouseEvent;
+  mouseEvent.x = x;
+  mouseEvent.y = y;
+  mouseEvent.modifiers = NWebInputDelegate::GetWebModifiersByPressedCode(pressedCodes);
+  LOG(DEBUG) << "WebSendTouchpadFlingEvent modifiers = " << mouseEvent.modifiers;
+  if (!browser_ || !browser_->GetHost()) {
+    return;
+  }
+
+  browser_->GetHost()->SendTouchpadFlingEvent(mouseEvent, vx, vy);
+}
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 bool NWebEventHandler::SendKeyEvent(int32_t keyCode, int32_t keyAction) {

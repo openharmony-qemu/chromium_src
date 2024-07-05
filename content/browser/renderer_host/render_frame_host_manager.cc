@@ -1301,6 +1301,25 @@ RenderFrameHostManager::GetFrameHostForNavigation(
       GetSiteInstanceForNavigationRequest(request, is_same_site_getter,
                                           browsing_context_group_swap, reason);
 
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+  const std::string& shared_render_process_token =
+      delegate_->SharedRenderProcessToken();
+  if (!shared_render_process_token.empty()) {
+    RenderProcessHost* render_process =
+        RenderProcessHostImpl::GetProcessForSharedToken(
+            shared_render_process_token);
+    if (render_process) {
+      dest_site_instance->ReuseExistingProcessIfPossible(render_process);
+      LOG(DEBUG) << "[ReuseExistingProcessIfPossible]"
+                 << shared_render_process_token << "[isok]"
+                 << (render_process == dest_site_instance->GetProcess())
+                 << request->GetURL();
+    } else {
+      RenderProcessHostImpl::RegisteProcessForSharedToken(
+          shared_render_process_token, dest_site_instance->GetProcess());
+    }
+  }
+#endif
   // A subframe should always be in the same BrowsingInstance as the parent
   // (see also https://crbug.com/1107269).
   RenderFrameHostImpl* parent = frame_tree_node_->parent();

@@ -26,6 +26,7 @@
 #include "nweb_handler.h"
 #include "nweb_inputmethod_client.h"
 #include "nweb_touch_handle_state_impl.h"
+#include "ui/gfx/geometry/size.h"
 
 #ifdef OHOS_DRAG_DROP
 #include "cef/include/cef_drag_data.h"
@@ -53,6 +54,9 @@ class NWebRenderHandler : public CefRenderHandler {
   void RegisterRenderCb(std::function<void(const char*)> render_update_cb);
   void RegisterNWebHandler(std::shared_ptr<NWebHandler> handler);
   void Resize(uint32_t width, uint32_t height);
+#if defined(OHOS_INPUT_EVENTS)
+  void ResizeVisibleViewport(uint32_t width, uint32_t height);
+#endif
 #ifdef OHOS_SCREEN_ROTATION
   void SetScreenInfo(const NWebScreenInfo& screen_info);
   NWebScreenInfo& GetLastScreenInfo();
@@ -86,6 +90,9 @@ class NWebRenderHandler : public CefRenderHandler {
   /* CefRenderHandler method begin */
   void GetViewRect(CefRefPtr<CefBrowser> browser,
                    CefRect& rect) override;
+#if defined(OHOS_INPUT_EVENTS)
+  void GetVisibleViewportRect(CefRefPtr<CefBrowser> browser, CefRect& rect) override;
+#endif
   bool GetScreenInfo(CefRefPtr<CefBrowser> browser,
                      CefScreenInfo& screen_info) override;
   void OnPaint(CefRefPtr<CefBrowser> browser,
@@ -170,6 +177,8 @@ class NWebRenderHandler : public CefRenderHandler {
                          const float fling_x,
                          const float fling_y) override;
   std::shared_ptr<NWebNativeEmbedDataInfo> CefEmbedDataToWeb(const CefRenderHandler::CefNativeEmbedData& embedData);
+  void SetContentSize(int width, int height);
+  gfx::Size GetSize();
 #endif
 
 #ifdef OHOS_EX_FREE_COPY
@@ -224,6 +233,10 @@ class NWebRenderHandler : public CefRenderHandler {
   std::shared_ptr<NWebCustomKeyboardHandlerImpl> custom_keyboard_handler_ = nullptr;
   uint32_t width_ = 0;
   uint32_t height_ = 0;
+#if defined(OHOS_INPUT_EVENTS)
+  uint32_t visible_width_ = 0;
+  uint32_t visible_height_ = 0;
+#endif
   int content_height_ = 0;
   int content_width_ = 0;
   NWebScreenInfo screen_info_;

@@ -24,6 +24,7 @@
 #include "base/functional/callback.h"
 #include "base/functional/callback_helpers.h"
 #include "base/logging.h"
+#include "base/ohos/sys_info_utils.h"
 #include "cef/include/cef_task.h"
 #include "content/public/browser/browser_thread.h"
 #include "libcef/browser/thread_util.h"
@@ -241,7 +242,10 @@ IMFAdapterEnterKeyType NWebInputMethodHandler::TextInputActionToIMFAdapter(
       LOG(DEBUG)
           << "The tag is not set with enterkeyhint. There is the next edit box "
              "that can be focused on, so the enterkeytype is set to NEXT.";
-      return IMFAdapterEnterKeyType::NEXT;
+      if (!base::ohos::IsPcDevice()) {
+        return IMFAdapterEnterKeyType::NEXT;
+      }
+      return IMFAdapterEnterKeyType::GO;
     } else {
       LOG(DEBUG) << "The tag is not set with enterkeyhint. The above "
                     "situations are not met, so the enterkeytype is set to GO.";
@@ -843,22 +847,24 @@ void NWebInputMethodHandler::SendEnterKeyEventOnUI(int32_t enterKeyType) {
     return;
   }
 
-  if (enterKeyType == static_cast<int32_t>(IMFAdapterEnterKeyType::NEXT) &&
-      input_flags_ & CEF_TEXT_INPUT_FLAG_HAVE_NEXT_FOCUSABLE_ELEMENT) {
-    LOG(DEBUG) << "NWebInputMethodHandler::SendEnterKeyEvent "
-                  "IMFAdapterEnterKeyType::NEXT";
-    browser_->GetHost()->AdvanceFocusForIME(
-        static_cast<int>(FocusType::FORWARD));
-    return;
-  } else if (enterKeyType ==
-                 static_cast<int32_t>(IMFAdapterEnterKeyType::PREVIOUS) &&
-             input_flags_ &
-                 CEF_TEXT_INPUT_FLAG_HAVE_PREVIOUS_FOCUSABLE_ELEMENT) {
-    LOG(DEBUG) << "NWebInputMethodHandler::SendEnterKeyEvent "
-                  "IMFAdapterEnterKeyType::PREVIOUS";
-    browser_->GetHost()->AdvanceFocusForIME(
-        static_cast<int>(FocusType::BACKWARD));
-    return;
+  if (!base::ohos::IsPcDevice()) {
+    if (enterKeyType == static_cast<int32_t>(IMFAdapterEnterKeyType::NEXT) &&
+        input_flags_ & CEF_TEXT_INPUT_FLAG_HAVE_NEXT_FOCUSABLE_ELEMENT) {
+      LOG(DEBUG) << "NWebInputMethodHandler::SendEnterKeyEvent "
+                    "IMFAdapterEnterKeyType::NEXT";
+      browser_->GetHost()->AdvanceFocusForIME(
+          static_cast<int>(FocusType::FORWARD));
+      return;
+    } else if (enterKeyType ==
+                   static_cast<int32_t>(IMFAdapterEnterKeyType::PREVIOUS) &&
+               input_flags_ &
+                   CEF_TEXT_INPUT_FLAG_HAVE_PREVIOUS_FOCUSABLE_ELEMENT) {
+      LOG(DEBUG) << "NWebInputMethodHandler::SendEnterKeyEvent "
+                    "IMFAdapterEnterKeyType::PREVIOUS";
+      browser_->GetHost()->AdvanceFocusForIME(
+          static_cast<int>(FocusType::BACKWARD));
+      return;
+    }
   }
 
   CefKeyEvent keyEvent;

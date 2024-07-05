@@ -342,7 +342,9 @@ InputHandlerScrollResult InputHandler::ScrollUpdate(
   DCHECK(!scroll_state->data()->current_native_scrolling_element());
   OHOS_TRACE_EVENT2("cc", "InputHandler::ScrollUpdate", "dx",
                scroll_state->delta_x(), "dy", scroll_state->delta_y());
-
+#if BUILDFLAG(IS_OHOS)
+  SetHandledTouchEvent(false);
+#endif
   if (!CurrentlyScrollingNode())
     return InputHandlerScrollResult();
 
@@ -1189,6 +1191,10 @@ void InputHandler::TriggerVsyncImplTask() {
 
 LayerImpl* InputHandler::GetLayerImplById(int id) {
   return ActiveTree().LayerById(id);
+}
+
+void InputHandler::SetHandledTouchEvent(bool handledTouchEvent) {
+  compositor_delegate_->GetImplDeprecated().SetHandledTouchEvent(handledTouchEvent);
 }
 #endif
 

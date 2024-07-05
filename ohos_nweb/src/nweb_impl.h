@@ -22,6 +22,7 @@
 #include <mutex>
 #include <set>
 #include <vector>
+#include <EGL/eglplatform.h>
 #include "capi/nweb_app_client_extension_callback.h"
 #include "capi/nweb_download_delegate_callback.h"
 #include "nweb.h"
@@ -42,6 +43,7 @@ class NWebImpl : public NWeb {
 
   /* event interface */
   void Resize(uint32_t width, uint32_t height, bool isKeyboard = false) override;
+  void ResizeVisibleViewport(uint32_t width, uint32_t height, bool isKeyboard) override;
   void OnTouchPress(int32_t id, double x, double y, bool from_overlay) override;
   void OnTouchRelease(int32_t id,
                       double x,
@@ -116,7 +118,8 @@ class NWebImpl : public NWeb {
       const std::string& objName,
       const std::vector<std::string>& methodName,
       std::vector<NativeJSProxyCallbackFunc>&& callback,
-      bool isAsync);
+      bool isAsync,
+      const std::string& permission);
   void UnRegisterNativeArkJSFunction(const char* objName) override;
   void RegisterNativeValideCallback(const char* webName, const NativeArkWebOnValidCallback callback) override;
   void RegisterNativeDestroyCallback(const char* webName, const NativeArkWebOnDestroyCallback callback) override;
@@ -131,6 +134,11 @@ class NWebImpl : public NWeb {
                              const std::vector<std::string>& method_list,
                              const std::vector<std::string>& async_method_list,
                              const int32_t object_id) override;
+  void RegisterArkJSfunction(const std::string& object_name,
+                             const std::vector<std::string>& method_list,
+                             const std::vector<std::string>& async_method_list,
+                             const int32_t object_id,
+                             const std::string& permission) override;
   void UnregisterArkJSfunction(
       const std::string& object_name,
       const std::vector<std::string>& method_list) override;
@@ -268,6 +276,16 @@ class NWebImpl : public NWeb {
   void SlideScroll(float vx, float vy) override;
   bool WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
                        const std::vector<int32_t>& pressedCodes) override;
+  void WebSendMouseWheelEvent(double x,
+                              double y,
+                              double deltaX,
+                              double deltaY,
+                              const std::vector<int32_t>& pressedCodes) override;
+  void WebSendTouchpadFlingEvent(double x,
+                                 double y,
+                                 double vx,
+                                 double vy,
+                                 const std::vector<int32_t>& pressedCodes) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
   bool GetCertChainDerData(std::vector<std::string>& certChainData,
@@ -499,6 +517,8 @@ class NWebImpl : public NWeb {
                        const WebSnapshotCallback callback) override;
 #endif
   int SetUrlTrustList(const std::string& urlTrustList) override;
+  int SetUrlTrustListWithErrMsg(
+    const std::string& urlTrustList, std::string& detailErrMsg) override;
 
 #ifdef OHOS_NETWORK_LOAD
   void SetPathAllowingUniversalAccess(
@@ -508,6 +528,7 @@ class NWebImpl : public NWeb {
 #endif
   void PerformAction(int64_t accessibilityId, uint32_t action,
       const std::map<std::string, std::string>& actionArguments) override;
+  void SendAccessibilityHoverEvent(int32_t x, int32_t y) override;
 
 #ifdef OHOS_BFCACHE
   static void EnableBackForwardCache(bool enableNativeEmbed, bool enableMediaIntercept);
@@ -547,6 +568,7 @@ class NWebImpl : public NWeb {
   bool is_richtext_value_ = false;
 
   bool incognito_mode_ = false;
+  EGLNativeWindowType window_;
 #if defined(OHOS_SCHEME_HANDLER)
   std::string web_tag_{""};
 #endif

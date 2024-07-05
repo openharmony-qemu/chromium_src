@@ -47,6 +47,7 @@ constexpr int kOverlayScrollbarBorderPatchWidth = 0;
 constexpr int kOverlayScrollbarCenterPatchSize = 36;
 constexpr int kOverlayScrollbarHotSize = 24;
 constexpr int kOverlayScrollbarMargin = 4;
+constexpr int kForceScrollbarWidth = 16;
 constexpr int kForceScrollbarActiveWidth = 8;
 constexpr int kForceScrollbarInactiveWidth = 4;
 constexpr int kForceScrollbarActiveOffset = 4;
@@ -239,15 +240,27 @@ void NativeThemeAura::PaintArrowButton(
       lower_right_radius = kScrollRadius * zoom;
     }
   }
+#if defined(OHOS_SCROLLBAR)
+  if (ui::IsForceScrollbarEnabled()) {
+    gfx::Rect arrow_rect(rect);
+    if ((direction == kScrollbarDownArrow || direction == kScrollbarUpArrow)
+      && rect.width() > kForceScrollbarWidth) {
+      arrow_rect.set_x(rect.width() - kForceScrollbarWidth);
+      arrow_rect.set_width(kForceScrollbarWidth);
+    }
+    else if ((direction == kScrollbarLeftArrow || direction == kScrollbarRightArrow)
+      && rect.height() > kForceScrollbarWidth) {
+      arrow_rect.set_y(rect.height() - kForceScrollbarWidth);
+      arrow_rect.set_height(kForceScrollbarWidth);
+    }
+    DrawPartiallyRoundRect(canvas, arrow_rect, upper_left_radius, upper_right_radius,
+                         lower_right_radius, lower_left_radius, flags);
+    return;
+  }
+#endif
   DrawPartiallyRoundRect(canvas, rect, upper_left_radius, upper_right_radius,
                          lower_right_radius, lower_left_radius, flags);
-#if defined(OHOS_SCROLLBAR)
-  if (!ui::IsForceScrollbarEnabled()) {
-    PaintArrow(canvas, rect, direction, arrow_color);
-  }
-#else
   PaintArrow(canvas, rect, direction, arrow_color);
-#endif
 }
 
 void NativeThemeAura::PaintScrollbarTrack(
@@ -264,6 +277,21 @@ void NativeThemeAura::PaintScrollbarTrack(
   const SkColor track_color =
       GetControlColor(kScrollbarTrack, color_scheme, color_provider);
   flags.setColor(track_color);
+#if defined(OHOS_SCROLLBAR)
+  if (ui::IsForceScrollbarEnabled()) {
+    gfx::Rect track_rect(rect);
+    if (part == kScrollbarVerticalTrack && rect.width() > kForceScrollbarWidth) {
+      track_rect.set_x(rect.width() - kForceScrollbarWidth);
+      track_rect.set_width(kForceScrollbarWidth);
+    }
+    else if (part == kScrollbarHorizontalTrack && rect.height() > kForceScrollbarWidth) {
+      track_rect.set_y(rect.height() - kForceScrollbarWidth);
+      track_rect.set_height(kForceScrollbarWidth);
+    }
+    canvas->drawIRect(gfx::RectToSkIRect(track_rect), flags);
+    return;
+  }
+#endif
   canvas->drawIRect(gfx::RectToSkIRect(rect), flags);
 }
 
@@ -378,19 +406,23 @@ void NativeThemeAura::PaintScrollbarThumb(cc::PaintCanvas* canvas,
       if (state == kHovered) {
         radius = SkIntToScalar(kForceScrollbarActiveRadius);
         if (part == kScrollbarVerticalThumb) {
-          thumb_rect.set_x(thumb_rect.x() + kForceScrollbarActiveOffset);
+          thumb_rect.set_x(thumb_rect.x() + thumb_rect.width()
+           - kForceScrollbarActiveWidth - kForceScrollbarActiveOffset);
           thumb_rect.set_width(kForceScrollbarActiveWidth);
         } else {
-          thumb_rect.set_y(thumb_rect.y() + kForceScrollbarActiveOffset);
+          thumb_rect.set_y(thumb_rect.y() + thumb_rect.height()
+           - kForceScrollbarActiveWidth -kForceScrollbarActiveOffset);
           thumb_rect.set_height(kForceScrollbarActiveWidth);
         }
       } else {
         radius = SkIntToScalar(kForceScrollbarInactiveRadius);
         if (part == kScrollbarVerticalThumb) {
-          thumb_rect.set_x(thumb_rect.x() + kForceScrollbarInactiveOffset);
+          thumb_rect.set_x(thumb_rect.x() + thumb_rect.width()
+           - kForceScrollbarInactiveOffset);
           thumb_rect.set_width(kForceScrollbarInactiveWidth);
         } else {
-          thumb_rect.set_y(thumb_rect.y() + kForceScrollbarInactiveOffset);
+          thumb_rect.set_y(thumb_rect.y() + thumb_rect.height()
+           - kForceScrollbarInactiveOffset);
           thumb_rect.set_height(kForceScrollbarInactiveWidth);
         }
       }

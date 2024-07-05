@@ -969,11 +969,12 @@ std::shared_ptr<NWebNativeEmbedDataInfo> NWebRenderHandler::CefEmbedDataToWeb(
 void NWebRenderHandler::OnNativeEmbedLifecycleChange(
     CefRefPtr<CefBrowser> browser,
     const CefNativeEmbedData& info) {
+  auto nativeEmbedDataInfo = CefEmbedDataToWeb(info);
   if (auto delegate = delegate_interface_.lock()) {
-    delegate->UpdateNativeEmbedInfo(CefEmbedDataToWeb(info));
+    delegate->UpdateNativeEmbedInfo(nativeEmbedDataInfo);
   }
   if (auto handler = handler_.lock()) {
-    handler->OnNativeEmbedLifecycleChange(CefEmbedDataToWeb(info));
+    handler->OnNativeEmbedLifecycleChange(nativeEmbedDataInfo);
   }
 }
 #endif

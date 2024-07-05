@@ -740,6 +740,33 @@ void NWebDelegate::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
   }
 }
 
+#if defined(OHOS_INPUT_EVENTS)
+void NWebDelegate::ResizeVisibleViewport(uint32_t width, uint32_t height, bool isKeyboard) {
+  if (width == visible_width_ && height == visible_height_) {
+    return;
+  }
+
+  TRACE_EVENT2("base", "NWebDelegate::ResizeVisibleViewport", "width", width, "height",
+               height);
+  visible_width_ = width;
+  visible_height_ = height;
+
+  if (render_handler_ != nullptr) {
+    render_handler_->ResizeVisibleViewport(width, height);
+  }
+
+  auto browser = GetBrowser();
+  if (browser != nullptr && browser->GetHost() != nullptr) {
+    if (isKeyboard) {
+      browser->GetHost()->WasKeyboardResized();
+    } else {
+      browser->GetHost()->WasResized();
+    }
+    browser->GetHost()->OnTextSelected(false);
+  }
+}
+#endif
+
 void NWebDelegate::OnTouchPress(int32_t id,
                                 double x,
                                 double y,

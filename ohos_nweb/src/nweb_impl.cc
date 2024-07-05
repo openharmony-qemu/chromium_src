@@ -906,6 +906,22 @@ void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
   output_handler_->Resize(width, height);
 }
 
+void NWebImpl::ResizeVisibleViewport(uint32_t width, uint32_t height, bool isKeyboard) {
+#if defined(OHOS_INPUT_EVENTS)
+  if (width > kSurfaceMaxWidth || height > kSurfaceMaxHeight) {
+    if (draw_mode_ == 0) {
+      WVLOG_E("size too large in surface mode (%{public}u , %{public}u)", width, height);
+      return;
+    }
+  }
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("resize failed, nweb delegate is nullptr, nweb_id = %{public}u", nweb_id_);
+    return;
+  }
+  nweb_delegate_->ResizeVisibleViewport(width, height, isKeyboard);
+#endif
+}
+
 void NWebImpl::DragResize(uint32_t width, uint32_t height, uint32_t pre_height, uint32_t pre_width) {
   LOG(DEBUG) << "===== start drag resize =====";
   bool drag_bigger_height = false;

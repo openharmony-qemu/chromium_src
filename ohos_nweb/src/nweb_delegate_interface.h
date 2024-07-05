@@ -133,6 +133,9 @@ class NWebDelegateInterface
 
   /* event interface */
   virtual void Resize(uint32_t width, uint32_t height, bool isKeyboard = false) = 0;
+#if defined(OHOS_INPUT_EVENTS)
+  virtual void ResizeVisibleViewport(uint32_t width, uint32_t height, bool isKeyboard = false) = 0;
+#endif
   virtual void OnTouchPress(int32_t id,
                             double x,
                             double y,

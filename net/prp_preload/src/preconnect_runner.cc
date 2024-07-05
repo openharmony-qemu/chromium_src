@@ -21,7 +21,7 @@ void PreconnectRunner::PreconnectSocket(const GURL& original_url,
   }
   net::NetworkAnonymizationKey key =
     net::NetworkAnonymizationKey::CreateSameSite(net::SchemefulSite(original_url));
-  GURL url = GetHSTSRedirect(original_url);
+  GURL url = GetHSTSRedirect(original_url, url_request_context);
 
   std::string user_agent;
   if (url_request_context->http_user_agent_settings()) {

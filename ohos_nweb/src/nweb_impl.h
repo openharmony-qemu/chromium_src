@@ -531,7 +531,6 @@ class NWebImpl : public NWeb {
   void SendAccessibilityHoverEvent(int32_t x, int32_t y) override;
 
 #ifdef OHOS_BFCACHE
-  static void EnableBackForwardCache(bool enableNativeEmbed, bool enableMediaIntercept);
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override;
 #endif
 

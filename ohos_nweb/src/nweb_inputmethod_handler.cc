@@ -36,6 +36,7 @@ namespace OHOS::NWeb {
 
 static constexpr char16_t DEL_CHAR = 127;
 constexpr int32_t MAX_ENTERKEYTYPE = 8;
+constexpr float AVOID_OFFSET = 24.0;
 
 class OnTextChangedListenerImpl : public IMFTextListenerAdapter {
  public:
@@ -333,6 +334,9 @@ void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
   textConfig->SetInputAttribute(inputAttribute);
   textConfig->SetCursorInfo(cursorInfo);
   textConfig->SetWindowId(windowId_);
+  textConfig->SetPositionY(offset_y_);
+  textConfig->SetHeight((focus_rect_.y + focus_rect_.height + AVOID_OFFSET) *
+                        device_pixel_ratio_);
 
   if (!inputmethod_adapter_->Attach(inputmethod_listener_, show_keyboard_,
                                     textConfig, is_need_reset_listener)) {
@@ -392,6 +396,9 @@ bool NWebInputMethodHandler::Reattach(uint32_t nwebId, ReattachType type) {
   textConfig->SetInputAttribute(inputAttribute);
   textConfig->SetCursorInfo(cursorInfo);
   textConfig->SetWindowId(windowId_);
+  textConfig->SetPositionY(offset_y_);
+  textConfig->SetHeight((focus_rect_.y + focus_rect_.height + AVOID_OFFSET) *
+                        device_pixel_ratio_);
 
   if (!show_keyboard_ && isAttached_ && imf_input_mode_ != lastInputMode_) {
     LOG(ERROR) << "do not need attach";

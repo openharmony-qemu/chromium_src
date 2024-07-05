@@ -36,6 +36,14 @@ uint32_t NWebIMFTextConfigAdapterImpl::GetWindowId() {
   return window_id_;
 }
 
+double NWebIMFTextConfigAdapterImpl::GetPositionY() {
+  return position_y_;
+}
+
+double NWebIMFTextConfigAdapterImpl::GetHeight() {
+  return height_;
+}
+
 void NWebIMFTextConfigAdapterImpl::SetInputAttribute(
     std::shared_ptr<IMFInputAttributeAdapter> attribute) {
   input_attribute_ = attribute;
@@ -53,6 +61,14 @@ void NWebIMFTextConfigAdapterImpl::SetSelectionRange(
 
 void NWebIMFTextConfigAdapterImpl::SetWindowId(uint32_t id) {
   window_id_ = id;
+}
+
+void NWebIMFTextConfigAdapterImpl::SetPositionY(double positionY) {
+  position_y_ = positionY;
+}
+
+void NWebIMFTextConfigAdapterImpl::SetHeight(double height) {
+  height_ = height;
 }
 
 }  // namespace OHOS::NWeb

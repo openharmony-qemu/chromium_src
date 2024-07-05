@@ -29,8 +29,6 @@ class ResPreloadScheduler : public base::RefCounted<ResPreloadScheduler> {
   using InfoIter = std::list<std::shared_ptr<PRRequestInfo>>::iterator;
   bool NeedToPreconnect(const GURL& url, bool allow_credentials);
   void PreconnectBeyondLimit(InfoIter info_iter, const int info_list_version);
-  void PreconnectSocket(const GURL& original_url, bool allow_credentials);
-  GURL GetHSTSRedirect(const GURL& original_url);
 
   std::list<std::shared_ptr<PRRequestInfo>> info_list_;
   std::unordered_map<std::string, int> idle_connect_list_;

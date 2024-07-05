@@ -39,16 +39,28 @@ public:
 
   static DynamicFrameRateDecision& GetInstance();
 
+  void SetVisible(bool visible);
   void ReportSlidingFrameRate(int32_t frame_rate);
   void ReportDirtyRectFrameRate(int32_t frame_rate);
   void ReportVideoFrameRate(int32_t frame_rate);
-private:
+  void SetMaxFrameRateThreeSec();
+
+  void SetVsyncEnabled(bool enabled);
+  void SetHasTouchPoint(bool has_touch_point);
   void UpdateFramePreferredRate();
+private:
+  void SetFrameRateLinkerEnable(bool enabled);
+  int64_t GetCurrentTimestampMS();
 
 private:
   int32_t slidingFrameRate_ {0};
   int32_t videoFrameRate_ {0};
   int32_t curFrameRate_ {0};
+  bool visible_ {false};
+  bool has_touch_point_ {false};
+  bool frameRateLinkerEnable_ {false};
+  bool vsyncEnabled_ {false};
+  int64_t touch_up_timeStamp_ {0};
 };
 }  // namespace ohos
 }  // namespace base

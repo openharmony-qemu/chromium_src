@@ -775,6 +775,14 @@
 "dependence": "",
 "default": "true"
 },
+{ "name": "OHOS_WEB_LTPO",
+"owner": "",
+"desc": "",
+"effect":"web ltpo vsync",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},
 { "name": "OHOS_WPT",
 "owner": "",
 "desc": "",

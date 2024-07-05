@@ -243,6 +243,12 @@ class NET_EXPORT URLRequestContext final {
   void SetConnectTimeout(int seconds);
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+  base::WeakPtr<URLRequestContext> GetWeakPtr() {
+    return weak_factory_.GetWeakPtr();
+  }
+#endif
+
  private:
   friend class URLRequestContextBuilder;
 
@@ -364,6 +370,10 @@ class NET_EXPORT URLRequestContext final {
   bool require_network_isolation_key_ = false;
 
   handles::NetworkHandle bound_network_;
+
+#if BUILDFLAG(IS_OHOS)
+ base::WeakPtrFactory<URLRequestContext> weak_factory_{this};
+#endif
 
   THREAD_CHECKER(thread_checker_);
 };

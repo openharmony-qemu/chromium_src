@@ -322,7 +322,7 @@ void RendererController::OnDataSourceInitialized(
 }
 
 void RendererController::OnHlsManifestDetected() {
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   is_hls_ = true;
   UpdateRemotePlaybackAvailabilityMonitoringState();
 #else

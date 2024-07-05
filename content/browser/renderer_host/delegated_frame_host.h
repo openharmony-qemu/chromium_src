@@ -57,6 +57,8 @@ class CONTENT_EXPORT DelegatedFrameHostClient {
 #if BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_JITTER)
   virtual void OnVsync() {}
   virtual void OnVsyncReceived() {}
+  virtual void OnVsyncEnabled(bool enabled) {}
+  virtual void ReportVideoFrameRate(int32_t frameRate) {}
 #endif
 };
 
@@ -111,6 +113,8 @@ class CONTENT_EXPORT DelegatedFrameHost
 #if BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_JITTER)
   void OnVsync() override;
   void OnVsyncReceived() override;
+  void OnVsyncEnabled(bool enabled) override;
+  void ReportVideoFrameRate(int32_t frameRate) override;
 #endif
 
   // Public interface exposed to RenderWidgetHostView.

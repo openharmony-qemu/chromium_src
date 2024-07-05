@@ -51,12 +51,19 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
             void* window,
             bool popup
 #if defined(OHOS_EX_DOWNLOAD)
-            , uint32_t nweb_id
+            ,
+            uint32_t nweb_id
 #endif
 #if BUILDFLAG(IS_OHOS)
-            , bool incognito_mode
+            ,
+            bool incognito_mode
 #endif
-            );
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+            ,
+            const std::string& shared_render_process_token
+#endif
+
+  );
   void OnWindowShow() override;
   void OnWindowHide() override;
   void OnOnlineRenderToForeground() override;
@@ -94,6 +101,9 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void Resize(uint32_t width,
               uint32_t height,
               bool isKeyboard = false) override;
+#if defined(OHOS_INPUT_EVENTS)
+  void ResizeVisibleViewport(uint32_t width, uint32_t height, bool isKeyboard = false) override;
+#endif
   void OnTouchPress(int32_t id, double x, double y, bool from_overlay) override;
   void OnTouchRelease(int32_t id,
                       double x,
@@ -163,8 +173,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       const std::vector<std::string>& methodName,
       std::vector<std::function<char*(std::vector<std::vector<uint8_t>>&,
                                       std::vector<size_t>&)>>&& callback,
-      bool isAsync)
-      override;
+      bool isAsync, const std::string& permission) override;
   void UnRegisterNativeArkJSFunction(const char* objName) override;
   void RegisterNativeLoadStartCallback(
       std::function<void(void)>&& callback) override;
@@ -179,7 +188,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void RegisterArkJSfunction(const std::string& object_name,
                              const std::vector<std::string>& method_list,
                              const std::vector<std::string>& async_method_list,
-                             const int32_t object_id) const override;
+                             const int32_t object_id,
+                             const std::string& permission) const override;
 
   void UnregisterArkJSfunction(
       const std::string& object_name,
@@ -350,6 +360,16 @@ bool HitNativeArea(double x, double y);
   void SlideScroll(float vx, float vy) override;
   bool WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
                        const std::vector<int32_t>& pressedCodes) override;
+  void WebSendMouseWheelEvent(double x,
+                              double y,
+                              double deltaX,
+                              double deltaY,
+                              const std::vector<int32_t>& pressedCodes) override;
+  void WebSendTouchpadFlingEvent(double x,
+                                 double y,
+                                 double vx,
+                                 double vy,
+                                 const std::vector<int32_t>& pressedCodes) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #ifdef OHOS_ARKWEB_ADBLOCK
@@ -426,6 +446,7 @@ bool HitNativeArea(double x, double y);
  double GetBrowserZoomLevel() override;
 #endif
   void SetAccessibilityState(cef_state_t accessibility_state) override;
+  void ExecuteAction(int64_t accessibilityId, uint32_t action) override;
   void ExecuteAction(int64_t accessibilityId, uint32_t action,
       const std::map<std::string, std::string>& actionArguments) override;
   std::shared_ptr<NWebAccessibilityNodeInfo>
@@ -436,6 +457,7 @@ bool HitNativeArea(double x, double y);
   std::shared_ptr<NWebAccessibilityNodeInfo>
   GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
                                       int32_t direction) override;
+  void RefreshAccessibilityManagerClickEvent() override;
 
 #if defined(OHOS_WEBRTC)
   void StartCamera() override;
@@ -482,7 +504,8 @@ void NotifyForNextTouchEvent() override;
 #endif
 
 #ifdef OHOS_URL_TRUST_LIST
-  int SetUrlTrustList(const std::string& urlTrustList) override;
+  int SetUrlTrustListWithErrMsg(
+    const std::string& urlTrustList, std::string& detailErrMsg) override;
 #endif
 
 #ifdef OHOS_NETWORK_LOAD
@@ -501,28 +524,42 @@ void NotifyForNextTouchEvent() override;
  private:
   void RunMessageLoop();
 
-
   void InitializeCef(std::string url,
                      bool is_enhance_surface,
                      void* window,
                      bool popup
 #if defined(OHOS_EX_DOWNLOAD)
-                     , uint32_t nweb_id
+                     ,
+                     uint32_t nweb_id
 #endif
 #if defined(OHOS_INCOGNITO_MODE)
-                     , bool incognito_mode
+                     ,
+                     bool incognito_mode
 #endif
-                     );
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+                     ,
+                     const std::string& shared_render_process_token
+#endif
+
+  );
 
   const CefRefPtr<CefBrowser> GetBrowser() const;
   void RequestVisitedHistory();
   bool HasBackgroundColorWithInit(int32_t& backgroundColor);
   void InitRichtextIdentifier();
 #if defined(OHOS_API_INIT_WEB_ENGINE)
-  void OnContextInitializeComplete(const std::string& url, void* windows
+  void OnContextInitializeComplete(
+      const std::string& url,
+      void* windows
 #if defined(OHOS_INCOGNITO_MODE)
-      , bool incognito_mode
+      ,
+      bool incognito_mode
 #endif
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+      ,
+      const std::string& shared_render_process_token
+#endif
+
   );
 #endif  // defined(OHOS_API_INIT_WEB_ENGINE)
 #if defined(OHOS_MSGPORT)
@@ -552,6 +589,8 @@ void NotifyForNextTouchEvent() override;
     }
     return true;
   }
+
+  void SendAccessibilityHoverEvent(int x, int y) override;
 
  private:
   content::BrowserAccessibilityManagerOHOS* GetAccessibilityManager();
@@ -593,6 +632,10 @@ void NotifyForNextTouchEvent() override;
   uint32_t width_ = 0;
   uint32_t height_ = 0;
 #endif  // defined(OHOS_COMPOSITE_RENDER)
+#if defined(OHOS_INPUT_EVENTS)
+  uint32_t visible_width_ = 0;
+  uint32_t visible_height_ = 0;
+#endif
 
   uint32_t nweb_id_;
 

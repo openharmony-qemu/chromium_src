@@ -118,13 +118,13 @@ interface CompositorFrameSink {
   [EnableIf=is_ohos]
   ReportKeyThreadIds(array<int32> thread_ids, int32 process_id, bool is_created);
 
-  // Sent by compositor thread when vsync received and OnBeginFrame in CompositorFrameSinkClient invoked.
-  [EnableIf=is_ohos]
-  OnVsyncReceived();
-
   // Sent by compositor thread when input event has been handled.
   [EnableIf=is_ohos]
   TriggerVsyncImplTask();
+
+  // Sent by compositor thread when InputHandler::ScrollUpdate is executed.
+  [EnableIf=is_ohos]
+  SetHandledTouchEvent(bool handledTouchEvent);
 };
 
 interface CompositorFrameSinkClient {

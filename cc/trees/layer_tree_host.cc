@@ -76,9 +76,6 @@
 #include "ui/gfx/geometry/size_conversions.h"
 #include "ui/gfx/geometry/vector2d_conversions.h"
 #include "ui/gfx/presentation_feedback.h"
-#if BUILDFLAG(IS_OHOS)
-#include "cef/libcef/common/soc_perf_util.h"
-#endif
 
 namespace {
 static base::AtomicSequenceNumber s_layer_tree_host_sequence_number;
@@ -1668,9 +1665,6 @@ bool LayerTreeHost::PaintContent(const LayerList& update_layer_list) {
   DCHECK(IsMainThread());
   base::AutoReset<bool> painting(&in_paint_layer_contents_, true);
   bool did_paint_content = false;
-#if BUILDFLAG(IS_OHOS)
-  soc_perf::layer_num = update_layer_list.size();
-#endif
   for (const auto& layer : update_layer_list) {
     did_paint_content |= layer->Update();
   }

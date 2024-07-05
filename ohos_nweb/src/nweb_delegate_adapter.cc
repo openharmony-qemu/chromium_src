@@ -29,23 +29,34 @@ std::shared_ptr<NWebDelegateInterface> NWebDelegateAdapter::CreateNWebDelegate(
     void* window,
     bool popup
 #if defined(OHOS_EX_DOWNLOAD)
-    , int nweb_id
+    ,
+    int nweb_id
 #endif
 #if defined(OHOS_INCOGNITO_MODE)
-    , bool incognito_mode
+    ,
+    bool incognito_mode
 #endif
-    ) {
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+    ,
+    const std::string& shared_render_process_token
+#endif
+) {
 #if defined(USE_CEF)
   std::shared_ptr<NWebDelegate> delegate =
       std::make_shared<NWebDelegate>(argc, argv);
 
-  if (delegate == nullptr ||
-      !delegate->Init(is_enhance_surface, window, popup
+  if (delegate == nullptr || !delegate->Init(is_enhance_surface, window, popup
 #if defined(OHOS_EX_DOWNLOAD)
-      , nweb_id
+    ,
+    nweb_id
 #endif
 #if defined(OHOS_INCOGNITO_MODE)
-      , incognito_mode
+    ,
+    incognito_mode
+#endif
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+    ,
+    shared_render_process_token
 #endif
       )) {
     WVLOG_I("FAIL to create nweb delegate instance");

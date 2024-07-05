@@ -29,7 +29,7 @@
 
 namespace {
   const float kMilliMeterPerInch = 25.4;
-  const float kNanoSecondsPerSecond = 1000000000.0;
+  const float kMicroSecondPerSecond = 1000000.0;
   const int32_t kDefaultPreferedFrameRate = 120;
 }
 
@@ -38,66 +38,74 @@ namespace ohos {
 using OHOS::NWeb::FrameRateSetting;
 SlidingObserver& SlidingObserver::GetInstance()
 {
-    static base::NoDestructor<SlidingObserver> instance;
-    return *instance.get();
+  static base::NoDestructor<SlidingObserver> instance;
+  return *instance.get();
 }
 
 void SlidingObserver::Init() {
-    if (OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetProductDeviceType() !=
-        OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE) {
+  if (OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetProductDeviceType() !=
+      OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE) {
+    return;
+  }
+
+  onScreenSetting = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
+                  .GetLTPOConfig("scroll");
+  offScreenSetting = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
+                  .GetLTPOConfig("fling");
+  std::sort(onScreenSetting.begin(), onScreenSetting.end(), [](const FrameRateSetting& setting1,
+      const FrameRateSetting& setting2) { return setting1.min_ < setting2.min_; });
+  std::sort(offScreenSetting.begin(), offScreenSetting.end(), [](const FrameRateSetting& setting1,
+      const FrameRateSetting& setting2) { return setting1.min_ < setting2.min_; });
+
+  virtual_pixel_ratio_ = ui::GestureConfiguration::GetInstance()->virtual_pixel_ratio();
+  auto display_manager_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateDisplayMgrAdapter();
+  if (!display_manager_adapter) {
       return;
-    }
+  }
+  std::shared_ptr<OHOS::NWeb::DisplayAdapter> display =
+      display_manager_adapter->GetDefaultDisplay();
+  if (!display) {
+      return;
+  }
+  dpi_ = display->GetDpi();
+  if (dpi_ == 0) {
+      return;
+  }
+  isInited_ = true;
 
-    onScreenSetting = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
-                    .GetLTPOConfig("scroll");
-    offScreenSetting = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
-                    .GetLTPOConfig("fling");
-    std::sort(onScreenSetting.begin(), onScreenSetting.end(), [](const FrameRateSetting& setting1,
-        const FrameRateSetting& setting2) { return setting1.min_ < setting2.min_; });
-    std::sort(offScreenSetting.begin(), offScreenSetting.end(), [](const FrameRateSetting& setting1,
-        const FrameRateSetting& setting2) { return setting1.min_ < setting2.min_; });
-
-    virtual_pixel_ratio_ = ui::GestureConfiguration::GetInstance()->virtual_pixel_ratio();
-    auto display_manager_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateDisplayMgrAdapter();
-    if (!display_manager_adapter) {
-        return;
-    }
-    std::shared_ptr<OHOS::NWeb::DisplayAdapter> display =
-        display_manager_adapter->GetDefaultDisplay();
-    if (!display) {
-        return;
-    }
-    dpi_ = display->GetDpi();
-    if (dpi_ == 0) {
-        return;
-    }
-    isInited_ = true;
-
-    LOG(INFO) << "virtual_pixel_ratio: " << virtual_pixel_ratio_ << ", dpi " << dpi_
-      << ", onScreenSetting: " << onScreenSetting.size()  << ", offScreenSetting: " << offScreenSetting.size();
+  LOG(INFO) << "virtual_pixel_ratio: " << virtual_pixel_ratio_ << ", dpi " << dpi_
+    << ", onScreenSetting: " << onScreenSetting.size()  << ", offScreenSetting: " << offScreenSetting.size();
 }
 
 void SlidingObserver::StartSliding()
 {
-    if (!isInited_) {
-        Init();
-    }
-
-    if (isSliding_) {
-        return;
-    }
-    isSliding_ = true;
-    isOffScreen_ = false;
+  if (!isInited_) {
+      Init();
+  }
+  if (isSliding_ || !isInited_) {
+      return;
+  }
+  current_timestamp_ = GetCurrentTimestamp();
+  isSliding_ = true;
+  isOffScreen_ = false;
 }
 
 void SlidingObserver::StopSliding()
 {
-    if (!isSliding_) {
-        return;
-    }
-    isSliding_ = false;
-    isOffScreen_ = false;
-    DynamicFrameRateDecision::GetInstance().ReportSlidingFrameRate(0);
+  if (!isSliding_ || !isInited_) {
+      return;
+  }
+  current_timestamp_ = -1;
+  isSliding_ = false;
+  isOffScreen_ = false;
+  DynamicFrameRateDecision::GetInstance().ReportSlidingFrameRate(0);
+}
+
+int64_t SlidingObserver::GetCurrentTimestamp()
+{
+  auto currentTime = std::chrono::system_clock::now().time_since_epoch();
+  return std::chrono::duration_cast<std::chrono::microseconds>(currentTime)
+      .count();
 }
 
 void SlidingObserver::StartFling()
@@ -110,48 +118,53 @@ void SlidingObserver::StartFling()
 
 void SlidingObserver::OnScrollUpdate(float delta_x, float delta_y)
 {
-    if (!isSliding_) {
-        return;
-    }
-    float velocity = ConvertToVelocity(delta_x, delta_y);
-    int32_t preferredFrameRate = 0;
-    if (isOffScreen_) {
-        // off screen fling
-        preferredFrameRate = GetPreferedFrameRate(velocity, offScreenSetting);
-    } else {
-        preferredFrameRate = GetPreferedFrameRate(velocity, onScreenSetting);
-    }
-    DynamicFrameRateDecision::GetInstance().ReportSlidingFrameRate(preferredFrameRate);
+  if (!isSliding_ || isOffScreen_) {
+      return;
+  }
+  auto current_timestamp = GetCurrentTimestamp();
+
+  // unit of velocity_x is device independent pixels per seconds
+  float velocity_x = delta_x * kMicroSecondPerSecond / (current_timestamp - current_timestamp_);
+  float velocity_y = delta_y * kMicroSecondPerSecond / (current_timestamp - current_timestamp_);
+  current_timestamp_ = current_timestamp;
+  float velocity = GetVelocity(velocity_x, velocity_y);
+  int32_t preferredFrameRate =  GetPreferedFrameRate(velocity, onScreenSetting);
+  DynamicFrameRateDecision::GetInstance().ReportSlidingFrameRate(preferredFrameRate);
+}
+
+void SlidingObserver::OnFlingUpdate(float velocity_x, float velocity_y)
+{
+  if (!isSliding_ || !isOffScreen_) {
+      return;
+  }
+
+  float velocity = GetVelocity(velocity_x, velocity_y);
+  // off screen fling
+  int32_t preferredFrameRate = GetPreferedFrameRate(velocity, offScreenSetting);
+  DynamicFrameRateDecision::GetInstance().ReportSlidingFrameRate(preferredFrameRate);
 }
 
 int32_t SlidingObserver::GetPreferedFrameRate(float velocity, const std::vector<OHOS::NWeb::FrameRateSetting>& setting)
 {
-    if (setting.empty()) {
-        return kDefaultPreferedFrameRate;
-    }
-    for (auto& item : setting) {
-        if (velocity >= item.min_ && (velocity <= item.max_ || item.max_ < 0)) {
-            return item.preferredFrameRate_;
-        }
-    }
-    return kDefaultPreferedFrameRate;
+  if (setting.empty()) {
+      return kDefaultPreferedFrameRate;
+  }
+  for (auto& item : setting) {
+      if (velocity >= item.min_ && (velocity < item.max_ || item.max_ < 0)) {
+          return item.preferredFrameRate_;
+      }
+  }
+  LOG(WARNING) << "can not find proper prefered frame rate";
+  return kDefaultPreferedFrameRate;
 }
 
-float SlidingObserver::ConvertToVelocity(float  delta_x, float delta_y)
+float SlidingObserver::GetVelocity(float velocity_x, float velocity_y)
 {
-    // unit of velocity_x is device independent pixels per seconds
-    float velocity_x = delta_x / vsync_period_;
-    float velocity_y = delta_y / vsync_period_;
-    // mm per virtual pixel in mate 60, mm_per_inch/ppi_of_device * default_virtual_pixel_ratio_
-    float convertUnit = kMilliMeterPerInch / dpi_ * virtual_pixel_ratio_;
-    float velocity = std::sqrt(velocity_x * velocity_x + velocity_y * velocity_y);
-
-    LOG(DEBUG) << "velocity_x " << velocity_x << " velocity_y " << velocity_y << " velocity " << convertUnit * velocity;
-    return convertUnit * velocity;
-}
-
-void SlidingObserver::SetVsyncPeriod(int64_t vsync_period) {
-  vsync_period_ = vsync_period / kNanoSecondsPerSecond;
+   // mm per virtual pixel in phone, mm_per_inch/ppi_of_device * default_virtual_pixel_ratio_
+   float convertUnit = kMilliMeterPerInch / dpi_ * virtual_pixel_ratio_;
+   float velocity = std::sqrt(velocity_x * velocity_x + velocity_y * velocity_y);
+   LOG(DEBUG) << "velocity_x " << velocity_x << " velocity_y " << velocity_y  << " velocity " << convertUnit * velocity;
+   return convertUnit * velocity;
 }
 }  // namespace ohos
 }  // namespace base

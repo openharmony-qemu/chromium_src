@@ -724,15 +724,8 @@ void FieldTrialList::CreateFeaturesFromCommandLine(
         command_line.GetSwitchValueASCII(switches::kEnableFeatures),
         command_line.GetSwitchValueASCII(switches::kDisableFeatures));
   }
-#if defined(OHOS_SCROLLBAR)
-  LOG(INFO) << "InitializeFromSharedMemory scrollbar state_:" << global_->overlay_force_state_;
-  feature_list->InitializeFromSharedMemory(
-      global_->field_trial_allocator_.get(),
-      global_->overlay_force_state_);
-#else
   feature_list->InitializeFromSharedMemory(
       global_->field_trial_allocator_.get());
-#endif
 }
 
 #if !BUILDFLAG(IS_IOS)
@@ -1256,9 +1249,13 @@ void FieldTrialList::InstantiateFieldTrialAllocatorIfNeeded() {
 
   AutoLock auto_lock(global_->lock_);
   // Create the allocator if not already created and add all existing trials.
-  if (global_->field_trial_allocator_ != nullptr)
+  if (global_->field_trial_allocator_ != nullptr) {
+#if defined(OHOS_SCROLLBAR)
+    FeatureList::GetInstance()->ModifyFeaturesToAllocator(
+      global_->field_trial_allocator_.get());
+#endif
     return;
-
+  }
   MappedReadOnlyRegion shm =
       ReadOnlySharedMemoryRegion::Create(kFieldTrialAllocationSize);
 
@@ -1284,19 +1281,6 @@ void FieldTrialList::InstantiateFieldTrialAllocatorIfNeeded() {
   global_->readonly_allocator_region_ = std::move(shm.region);
 #endif
 }
-
-#if defined(OHOS_SCROLLBAR)
-// static
-void FieldTrialList::UpdateFeature(bool state) {
-  // Add all existing features.
-  if (!global_) {
-    LOG(ERROR) << "global_ is null";
-    return;
-  }
-  LOG(INFO) << "update scrollbar state:" << state;
-  global_->overlay_force_state_ = state;
-}
-#endif
 
 // static
 void FieldTrialList::AddToAllocatorWhileLocked(

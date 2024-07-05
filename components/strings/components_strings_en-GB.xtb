@@ -3401,6 +3401,7 @@ Additional details:
 <translation id="IDS_OHOS_BLOCK_PAGE_TITLE">Warning</translation>
 <translation id="IDS_OHOS_BLOCK_PAGE_INFO_TITLE">This page cannot be accessed.</translation>
 <translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_TITLE">Beware of online fraud.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_URL_TRUST_LIST_TITLE">This page is restricted from accessing.</translation>
 <translation id="IDS_OHOS_BLOCK_PAGE_ILLEGAL_INFO_BODY">
   According the laws and regulations and complaints, this page contains illegal or illegal content and has been stopped.
 </translation>
@@ -3409,9 +3410,6 @@ Additional details:
 </translation>
 <translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_BODY">
   The web page you visit has security risks. Please pay attention to the security of personal information and property.
-</translation>
-<translation id="IDS_OHOS_BLOCK_PAGE_TRUST_LIST_INFO_BODY">
-  Due to application restrictions, the web page you visit is not in trust list, and has been stopped.
 </translation>
 <translation id="IDS_OHOS_BLOCK_PAGE_DONT_PROCEED">BACK</translation>
 <translation id="IDS_OHOS_BLOCK_PAGE_PROCEED">CONTINUE</translation>

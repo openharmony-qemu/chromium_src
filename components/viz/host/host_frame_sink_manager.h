@@ -319,6 +319,8 @@ class VIZ_HOST_EXPORT HostFrameSinkManager
  #if BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_JITTER)
   void OnVsync(uint32_t client_id, uint32_t sink_id) override;
   void OnVsyncReceived(uint32_t client_id, uint32_t sink_id) override;
+  void OnVsyncEnabled(bool enabled, uint32_t client_id, uint32_t sink_id) override;
+  void ReportVideoFrameRate(int32_t frameRate, uint32_t client_id, uint32_t sink_id) override;
 #endif
 
   // Connections to/from FrameSinkManagerImpl.

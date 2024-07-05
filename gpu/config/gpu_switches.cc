@@ -6,8 +6,13 @@
 
 namespace switches {
 
+#if BUILDFLAG(IS_OHOS)
 // Allow commandline to determine whether use oop canvas gpu rasterization
 const char kDisableCanvasOopRasterization[] = "disable-canvas-oop-gpu-rasterization";
+
+// Allow commandline to determine whether use oop canvas gpu rasterization
+const char kEnableCanvasOopRasterization[] = "enable-canvas-oop-gpu-rasterization";
+#endif
 
 // Disable GPU rasterization, i.e. rasterize on the CPU only.
 // Overrides the kEnableGpuRasterization flag.
@@ -16,9 +21,6 @@ const char kDisableGpuRasterization[] = "disable-gpu-rasterization";
 // Disables mipmap generation in Skia. Used a workaround for select low memory
 // devices, see https://crbug.com/1138979 for details.
 const char kDisableMipmapGeneration[] = "disable-mipmap-generation";
-
-// Allow commandline to determine whether use oop canvas gpu rasterization
-const char kEnableCanvasOopRasterization[] = "enable-canvas-oop-gpu-rasterization";
 
 // Allow heuristics to determine when a layer tile should be drawn with the
 // Skia GPU backend. Only valid with GPU accelerated compositing.

@@ -622,6 +622,15 @@
 "dependence": "",
 "default": "true"
 },
+{
+"name": "OHOS_RENDER_PROCESS_SHARE",
+"owner": "",
+"desc": "",
+"effect": "main gn blink_core other",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},
 { "name": "OHOS_SCHEME_HANDLER",
 "owner": "",
 "desc": "",
@@ -770,6 +779,14 @@
 "owner": "",
 "desc": "",
 "effect":"main gn blink_core other",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},
+{ "name": "OHOS_WEB_LTPO",
+"owner": "",
+"desc": "",
+"effect":"web ltpo vsync",
 "genCommandline": "default",
 "dependence": "",
 "default": "true"

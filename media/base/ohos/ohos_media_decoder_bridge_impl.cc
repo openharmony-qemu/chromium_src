@@ -267,6 +267,10 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::FlushBridgeDecoder() {
     return DecoderAdapterCode::DECODER_ERROR;
   }
 
+  if (signal_ == nullptr) {
+    return DecoderAdapterCode::DECODER_ERROR;
+  }
+
   signal_->isDecoderFlushing_.store(true);
 
   DecoderAdapterCode ret = videoDecoder_->FlushDecoder();
@@ -291,6 +295,10 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::ResetBridgeDecoder() {
   if (videoDecoder_ == nullptr) {
     LOG(ERROR)
         << "MediaCodecDecoderBridgeImpl::ResetBridgeDecoder decoder is NULL.";
+    return DecoderAdapterCode::DECODER_ERROR;
+  }
+
+  if (signal_ == nullptr) {
     return DecoderAdapterCode::DECODER_ERROR;
   }
 
@@ -329,6 +337,11 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::ReleaseBridgeDecoder() {
 
 void MediaCodecDecoderBridgeImpl::PopInqueueDec() {
   LOG(DEBUG) << "MediaCodecDecoderBridgeImpl::PopInqueueDec";
+
+  if (signal_ == nullptr) {
+    return;
+  }
+
   signal_->inputQueue_.pop();
 }
 
@@ -421,6 +434,11 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::ReleaseOutputBuffer(
 
 void MediaCodecDecoderBridgeImpl::PopOutqueueDec() {
   LOG(DEBUG) << "MediaCodecDecoderBridgeImpl::PopOutqueueDec.";
+
+  if (signal_ == nullptr) {
+    return;
+  }
+
   signal_->outputQueue_.pop();
 }
 
@@ -461,6 +479,11 @@ void MediaCodecDecoderBridgeImpl::DestoryNativeWindow(void* window) {
 
 void CodecBridgeCallback::OnError(ErrorType errorType, int32_t errorCode) {
   LOG(ERROR) << "CodecBridgeCallback::OnError Error errorCode=" << errorCode;
+
+  if (signal_ == nullptr) {
+    return;
+  }
+
   signal_->isOnError_ = true;
   clearInputQueue(signal_->inputQueue_);
   clearOutputQueue(signal_->outputQueue_);
@@ -483,6 +506,11 @@ void CodecBridgeCallback::OnNeedInputData(
                                   std::move(buffer)));
     return;
   }
+
+  if (signal_ == nullptr) {
+    return;
+  }
+
   TRACE_EVENT0("media", "CodecBridgeCallback::OnNeedInputData");
   LOG(DEBUG)
       << "CodecBridgeCallback::OnNeedInputData Input Buffer Available, index = "
@@ -520,6 +548,10 @@ void CodecBridgeCallback::OnNeedOutputData(
 
   if (!info) {
     LOG(ERROR) << "CodecBridgeCallback::OnNeedOutputData info is NULLL";
+    return;
+  }
+
+  if (signal_ == nullptr) {
     return;
   }
 

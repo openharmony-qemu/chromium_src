@@ -2045,6 +2045,20 @@ bool NWebImpl::ScrollByWithResult(float delta_x, float delta_y) {
   }
   return nweb_delegate_->ScrollByWithResult(delta_x, delta_y);
 }
+
+void NWebImpl::ScrollToWithAnime(float x, float y, int32_t duration) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  return nweb_delegate_->ScrollToWithAnime(x, y, duration);
+}
+
+void NWebImpl::ScrollByWithAnime(float delta_x, float delta_y, int32_t duration) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  return nweb_delegate_->ScrollByWithAnime(delta_x, delta_y, duration);
+}
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 bool NWebImpl::GetCertChainDerData(std::vector<std::string>& certChainData,
@@ -3795,4 +3809,37 @@ void NWebImpl::SetSurfaceDensity(const double& density) {
     return;
   }
   nweb_delegate_->SetSurfaceDensity(density);
+}
+
+void NWebImpl::TrimMemoryByPressureLevel(int32_t memoryLevel) {
+#ifdef OHOS_PERFORMANCE_MEMORY_THRESHOLD
+  using MemoryPressureLevel = base::MemoryPressureListener::MemoryPressureLevel;
+  static constexpr int32_t kMemoryLevelModerate = 0;
+  static constexpr base::TimeDelta kNotifyGapTime = base::Seconds(3);
+  static MemoryPressureLevel last_memory_level =
+      MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_NONE;
+  static base::Time last_notify_time;
+
+  base::Time now = base::Time::Now();
+  MemoryPressureLevel memory_pressure_level;
+  if (memoryLevel == kMemoryLevelModerate) {
+    memory_pressure_level = MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_MODERATE;
+  } else {
+    memory_pressure_level = MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_CRITICAL;
+  }
+
+  if (memory_pressure_level == last_memory_level &&
+      (now - last_notify_time < kNotifyGapTime)) {
+    LOG(INFO) << "The same memory level has been notified within three seconds";
+    return;
+  }
+  last_memory_level = memory_pressure_level;
+  last_notify_time = std::move(now);
+
+  LOG(INFO) << "NWebImpl::NotifyMemoryLevel "
+            << (memoryLevel == kMemoryLevelModerate
+                    ? "MEMORY_PRESSURE_LEVEL_MODERATE"
+                    : "MEMORY_PRESSURE_LEVEL_CRITICAL");
+  base::MemoryPressureListener::NotifyMemoryPressure(memory_pressure_level);
+#endif  // OHOS_PERFORMANCE_MEMORY_THRESHOLD
 }

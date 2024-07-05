@@ -360,6 +360,8 @@ class NWebDelegateInterface
 #if defined(OHOS_GET_SCROLL_OFFSET)
   virtual void GetOverScrollOffset(float* offset_x, float* offset_y) = 0;
 #endif
+  virtual void ScrollToWithAnime(float x, float y, int32_t duration) = 0;
+  virtual void ScrollByWithAnime(float delta_x, float delta_y, int32_t duration) = 0;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #if defined(OHOS_EX_FORCE_ZOOM)

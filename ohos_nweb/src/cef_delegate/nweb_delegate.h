@@ -379,6 +379,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #if defined(OHOS_GET_SCROLL_OFFSET)
   void GetOverScrollOffset(float* offset_x, float* offset_y) override;
 #endif
+  void ScrollToWithAnime(float x, float y, int32_t duration) override;
+  void ScrollByWithAnime(float delta_x, float delta_y, int32_t duration) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #ifdef OHOS_ARKWEB_ADBLOCK

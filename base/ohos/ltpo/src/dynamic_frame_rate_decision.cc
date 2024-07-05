@@ -26,8 +26,17 @@
 
 namespace base {
 namespace ohos {
+static const int32_t kDefaultPreferedFrameRate60FPS = 60;
+static const int32_t kDefaultPreferedFrameRate120FPS = 120;
+static const int kMicrosecondsPerMillisecond = 1000;
+static const int kThreeSeconds = 3000;
+
 using OHOS::NWeb::OhosAdapterHelper;
-static const int32_t kDefaultPreferedFrameRate = 120;
+
+void UpdateTimeOutFramePreferredRate()
+{
+  DynamicFrameRateDecision::GetInstance().UpdateFramePreferredRate();
+}
 
 DynamicFrameRateDecision::DynamicFrameRateDecision()
 {}
@@ -57,18 +66,96 @@ void DynamicFrameRateDecision::ReportDirtyRectFrameRate(int32_t frame_rate)
 
 void DynamicFrameRateDecision::ReportVideoFrameRate(int32_t frame_rate)
 {
+  if (videoFrameRate_ == frame_rate) {
+    return;
+  }
+  videoFrameRate_ = frame_rate;
+  UpdateFramePreferredRate();
+}
+
+void DynamicFrameRateDecision::SetMaxFrameRateThreeSec()
+{
+  if (slidingFrameRate_ != 0) {
+    return;
+  }
+  if (!vsyncEnabled_) {
+    return;
+  }
+  LOG(DEBUG) << "SetMaxFrameRateThreeSec touch_up_timeStamp: " << touch_up_timeStamp_;
+  touch_up_timeStamp_ = GetCurrentTimestampMS();
+  base::ThreadPool::PostDelayedTask(
+    FROM_HERE,
+    base::BindOnce(UpdateTimeOutFramePreferredRate),
+    base::Milliseconds(kThreeSeconds)
+  );
 }
 
 void DynamicFrameRateDecision::UpdateFramePreferredRate()
 {
+  if (!frameRateLinkerEnable_) {
+    return;
+  }
   // invoke frame rate linker
   curFrameRate_ = std::max(slidingFrameRate_, videoFrameRate_);
   if (curFrameRate_ <= 0) {
-    curFrameRate_ = kDefaultPreferedFrameRate;
+    if (GetCurrentTimestampMS() - touch_up_timeStamp_ <= kThreeSeconds) {
+      curFrameRate_ = kDefaultPreferedFrameRate120FPS;
+    }
+    curFrameRate_ = has_touch_point_ ? kDefaultPreferedFrameRate120FPS : kDefaultPreferedFrameRate60FPS;
   }
   LOG(INFO) << "final prefered frame rate " << curFrameRate_;
-  OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetFramePreferredRate(
-    curFrameRate_ > 0 ? curFrameRate_ : kDefaultPreferedFrameRate);
+  OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetFramePreferredRate(curFrameRate_);
+}
+
+void DynamicFrameRateDecision::SetVsyncEnabled(bool enabled)
+{
+  LOG(DEBUG) << "SetVsyncEnabled" << enabled;
+  if (vsyncEnabled_ == enabled) {
+    return;
+  }
+  vsyncEnabled_ = enabled;
+  if (visible_ && vsyncEnabled_) {
+    SetFrameRateLinkerEnable(true);
+  } else {
+    SetFrameRateLinkerEnable(false);
+  }
+  UpdateFramePreferredRate();
+}
+
+void DynamicFrameRateDecision::SetHasTouchPoint(bool has_touch_point)
+{
+  has_touch_point_ = has_touch_point;
+}
+
+void DynamicFrameRateDecision::SetVisible(bool visible)
+{
+  LOG(DEBUG) << "SetVisible" << visible;
+  if (visible_ == visible) {
+    return;
+  }
+  visible_ = visible;
+  if (visible_ && vsyncEnabled_) {
+    SetFrameRateLinkerEnable(true);
+  } else {
+    SetFrameRateLinkerEnable(false);
+  }
+  UpdateFramePreferredRate();
+}
+
+void DynamicFrameRateDecision::SetFrameRateLinkerEnable(bool enabled)
+{
+  LOG(DEBUG) << "SetFrameRateLinkerEnable" << enabled;
+  if (frameRateLinkerEnable_ == enabled) {
+    return;
+  }
+  frameRateLinkerEnable_ = enabled;
+  OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetFrameRateLinkerEnable(enabled);
+}
+
+int64_t DynamicFrameRateDecision::GetCurrentTimestampMS() {
+  auto currentTime = std::chrono::system_clock::now().time_since_epoch();
+  return std::chrono::duration_cast<std::chrono::microseconds>(currentTime)
+      .count() / kMicrosecondsPerMillisecond;
 }
 }  // namespace ohos
 }  // namespace base

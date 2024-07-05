@@ -19,7 +19,7 @@ class ResPreloadScheduler : public base::RefCounted<ResPreloadScheduler> {
  public:
   ResPreloadScheduler(const scoped_refptr<base::SingleThreadTaskRunner>& sth_task_runner,
                       const scoped_refptr<base::SingleThreadTaskRunner>& net_task_runner,
-                      net::URLRequestContext* url_request_context);
+                      base::WeakPtr<net::URLRequestContext> url_request_context);
   ResPreloadScheduler() = delete;
   ~ResPreloadScheduler() = default;
  
@@ -36,7 +36,7 @@ class ResPreloadScheduler : public base::RefCounted<ResPreloadScheduler> {
   std::unordered_map<std::string, int> idle_connect_list_;
   scoped_refptr<base::SingleThreadTaskRunner> sth_task_runner_;
   scoped_refptr<base::SingleThreadTaskRunner> net_task_runner_;
-  raw_ptr<net::URLRequestContext> url_request_context_;
+  base::WeakPtr<net::URLRequestContext> url_request_context_;
   size_t socket_connected_ = 0;
   bool preload_triggered_ = false;
   int info_list_version_ = 0;

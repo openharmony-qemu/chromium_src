@@ -187,10 +187,6 @@ const int NWebPlaybackState_NONE = 0;
 static bool enable_whole_web_page_drawing = false;
 #endif
 
-#ifdef OHOS_BFCACHE
-std::vector<std::string> g_nweb_args = {};
-#endif
-
 bool GetWebOptimizationValue() {
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                                         .GetSystemPropertiesInstance();
@@ -3346,13 +3342,13 @@ void NWebImpl::SendAccessibilityHoverEvent(int32_t x, int32_t y) {
   }
 }
 
-#ifdef OHOS_BFCACHE
 void NWebImpl::SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) {
+#ifdef OHOS_BFCACHE
   if (nweb_delegate_ == nullptr) {
     WVLOG_E("fail to set back forward cache options. nweb_delegate is nullptr.");
     return;
   }
 
   nweb_delegate_->SetBackForwardCacheOptions(size, timeToLive);
-}
 #endif
+}

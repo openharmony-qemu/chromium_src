@@ -13,51 +13,108 @@
  * limitations under the License.
  */
 
-#ifndef OHOS_BFCACHE_POLICY_H_
-#define OHOS_BFCACHE_POLICY_H_
+#include "ohos_bfcache_policy.h"
 
-#include <memory>
-
-#include "base/memory/raw_ptr.h"
+#include "base/functional/bind.h"
+#include "base/memory/memory_pressure_listener.h"
+#include "base/notreached.h"
+#include "base/task/task_traits.h"
 #include "base/time/time.h"
 #include "base/timer/timer.h"
-#include "components/performance_manager/public/graph/graph.h"
-#include "components/performance_manager/public/graph/system_node.h"
+#include "components/performance_manager/public/features.h"
+#include "components/performance_manager/public/graph/frame_node.h"
+#include "components/performance_manager/public/graph/page_node.h"
+#include "components/performance_manager/public/web_contents_proxy.h"
+#include "content/public/browser/back_forward_cache.h"
+#include "content/public/browser/browser_task_traits.h"
+#include "content/public/browser/browser_thread.h"
+#include "content/public/browser/web_contents.h"
 
-namespace performance_manager {
+#include "base/logging.h"
 
-namespace mechanism {
-class BackgroundTaskHolder;
-}  // namespace mechanism
-namespace policies {
-class OHOSBFCachePolicy : public GraphOwned,
-                          public SystemNode::ObserverDefaultImpl {
- public:
-  OHOSBFCachePolicy() = default;
-  OHOSBFCachePolicy(const OHOSBFCachePolicy&) = delete;
-  OHOSBFCachePolicy(OHOSBFCachePolicy&&) = delete;
-  OHOSBFCachePolicy& operator=(const OHOSBFCachePolicy&) = delete;
-  OHOSBFCachePolicy& operator=(OHOSBFCachePolicy&&) = delete;
-  ~OHOSBFCachePolicy() override = default;
+namespace performance_manager::policies {
+bool PageMightHaveFramesInBFCache(const PageNode* page_node) {
+  // TODO(crbug.com/1211368): Use PageState when that actually works.
+  auto main_frame_nodes = page_node->GetMainFrameNodes();
+  if (main_frame_nodes.size() == 1)
+    return false;
+  for (const auto* main_frame_node : main_frame_nodes) {
+    if (!main_frame_node->IsCurrent())
+      return true;
+  }
+  return false;
+}
 
- protected:
-  using MemoryPressureLevel = base::MemoryPressureListener::MemoryPressureLevel;
+using MemoryPressureLevel = base::MemoryPressureListener::MemoryPressureLevel;
 
-  // Try to flush the BFCache associated with |page_node|. This will be a no-op
-  // if there's a pending navigation.
-  virtual void MaybeFlushBFCache(const PageNode* page_node,
-                                 MemoryPressureLevel memory_pressure_level);
+void MaybeFlushBFCacheOnUIThread(const WebContentsProxy& contents_proxy,
+                                 MemoryPressureLevel memory_pressure_level) {
+  DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
+  content::WebContents* const content = contents_proxy.Get();
+  if (!content)
+    return;
 
- private:
-  // GraphOwned implementation:
-  void OnPassedToGraph(Graph* graph) override;
-  void OnTakenFromGraph(Graph* graph) override;
+  int cache_size = -1;
+  switch (memory_pressure_level) {
+    case MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_MODERATE:
+      LOG(DEBUG) << "OHOSBFCache::MaybeFlushBFCacheOnUIThread" << " The value of memory pressure level is: MEMORY_PRESSURE_LEVEL_MODERATE";
+      cache_size = 1;
+      break;
+    case MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_CRITICAL:
+      LOG(DEBUG) << "OHOSBFCache::MaybeFlushBFCacheOnUIThread" << " The value of memory pressure level is: MEMORY_PRESSURE_LEVEL_CRITICAL";
+      cache_size = 0;
+      break;
+    default:
+      NOTREACHED();
+  }
+  // Do not flush BFCache if cache_size is negative (such as -1).
+  if (cache_size < 0)
+    return;
 
-  // SystemNodeObserver:
-  void OnMemoryPressure(MemoryPressureLevel new_level) override;
+  // Do not flush the BFCache if there's a pending navigation as this could stop
+  // it.
+  // TODO(sebmarchand): Check if this is really needed.
+  auto& navigation_controller = content->GetController();
+  if (!navigation_controller.GetPendingEntry()) {
+    LOG(DEBUG) << "OHOSBFCache::MaybeFlushBFCacheOnUIThread" << " Start to prune cache is: " << cache_size;
+    navigation_controller.GetBackForwardCache().Prune(cache_size);
+  }
+}
 
-  raw_ptr<Graph> graph_;
-};
-}  // namespace policies
-}  // namespace performance_manager
-#endif  // BOHOS_BFCACHE_POLICY_H_
+void OHOSBFCachePolicy::MaybeFlushBFCache(
+    const PageNode* page_node,
+    MemoryPressureLevel memory_pressure_level) {
+  DCHECK(page_node);
+  content::GetUIThreadTaskRunner({})->PostTask(
+      FROM_HERE,
+      base::BindOnce(&MaybeFlushBFCacheOnUIThread,
+                     page_node->GetContentsProxy(), memory_pressure_level));
+}
+
+void OHOSBFCachePolicy::OnPassedToGraph(Graph* graph) {
+  DCHECK(graph->HasOnlySystemNode());
+  graph_ = graph;
+  graph_->AddSystemNodeObserver(this);
+}
+
+void OHOSBFCachePolicy::OnTakenFromGraph(Graph* graph) {
+  graph_->RemoveSystemNodeObserver(this);
+  graph_ = nullptr;
+}
+
+void OHOSBFCachePolicy::OnMemoryPressure(MemoryPressureLevel new_level) {
+  // This shouldn't happen but add the check anyway in case the API changes.
+  if (new_level == MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_NONE) {
+    return;
+  }
+
+  // Apply the cache limit to all pages.
+  for (auto* page_node : graph_->GetAllPageNodes()) {
+    if (page_node->GetPageState() == PageNode::PageState::kActive &&
+        PageMightHaveFramesInBFCache(page_node)) {
+      MaybeFlushBFCache(page_node, new_level);
+    }
+  }
+}
+
+}  // namespace performance_manager::policies

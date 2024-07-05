@@ -54,6 +54,7 @@
 
 #ifdef OHOS_BFCACHE
 #include "base/command_line.h"
+#include "base/ohos/sys_info.utils.h"
 #include "content/public/common/content_switches.h"
 #endif
 
@@ -265,9 +266,13 @@ constexpr WebSchedulerTrackedFeatures kAllowedFeatures(
     // main frame.
     WebSchedulerTrackedFeature::kAuthorizationHeader,
     // TODO(crbug.com/1357482): Figure out if this should be allowed.
+#ifdef OHOS_BFCACHE
     WebSchedulerTrackedFeature::kWebNfc,
     WebSchedulerTrackedFeature::kEnableCacheNativeEmbed,
     WebSchedulerTrackedFeature::kEnableCacheMediaTakeOver);
+#else
+    WebSchedulerTrackedFeature::kWebNfc);
+#endif
 
 // The BackForwardCache feature is controlled via an experiment. This function
 // returns the allowed URL list where it is enabled.
@@ -545,7 +550,11 @@ BackForwardCacheImpl::BackForwardCacheImpl()
     : allowed_urls_(ParseCommaSeparatedURLs(GetAllowedURLList())),
       blocked_urls_(ParseCommaSeparatedURLs(GetBlockedURLList())),
       blocked_cgi_params_(ParseBlockedCgiParams(GetBlockedCgiParams())),
-      weak_factory_(this) {}
+      weak_factory_(this) {
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableBFCache)) {
+    this->size_ = 1;
+  }
+}
 
 BackForwardCacheImpl::~BackForwardCacheImpl() {
   Shutdown();
@@ -569,6 +578,7 @@ base::TimeDelta BackForwardCacheImpl::GetTimeToLiveInBackForwardCache() {
   //   the default value.
   // - Infinite if kBackForwardCacheNoTimeEviction is enabled.
   // - Default value otherwise, kDefaultTimeToLiveInBackForwardCacheInSeconds.
+
   if (base::FeatureList::IsEnabled(
           features::kBackForwardCacheTimeToLiveControl)) {
     absl::optional<int> time_to_live = GetFieldTrialParamByFeatureAsOptionalInt(
@@ -586,6 +596,17 @@ base::TimeDelta BackForwardCacheImpl::GetTimeToLiveInBackForwardCache() {
 }
 
 #ifdef OHOS_BFCACHE
+void BackForwardCacheImpl::SetCacheSize(int size) {
+  if (size <= 0)
+    size = 0;
+  else if (size > 50)
+    size = 50;
+
+  this->size_ = size;
+  LOG(INFO) << "BackForwardCacheImpl set backforward cache size: " << size;
+  EnforceCacheSizeLimit();
+}
+
 base::TimeDelta BackForwardCacheImpl::ArkWebGetTimeToLiveInBackForwardCache() {
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableBFCache)) {
     return base::Seconds(this->time_to_live_);
@@ -1124,7 +1145,6 @@ void BackForwardCacheImpl::EnforceCacheSizeLimit() {
 
 #ifdef OHOS_BFCACHE
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableBFCache)) {
-    LOG(ERROR) << "BackForwardCacheImpl::" << __func__ << " " <<
     EnforceCacheSizeLimitInternal(this->size_,
                                 /*foregrounded_only=*/false);
     return;
@@ -1165,6 +1185,7 @@ size_t BackForwardCacheImpl::EnforceCacheSizeLimitInternal(
       "BackForwardCache.AllSites.HistoryNavigationOutcome."
       "CountEntriesWithoutRendererAck",
       not_received_ack_count);
+  LOG(DEBUG) << "BackForwardCacheImpl now have cache size number is: " << count;
   return count;
 }
 
@@ -1499,6 +1520,10 @@ bool BackForwardCacheImpl::IsScreenReaderAllowed() {
 
 // Static
 bool BackForwardCacheImpl::IsUnloadAllowed() {
+  if (base::ohos::IsPcDevice()) {
+    LOG(ERROR) << "BackForwardCacheImpl::" << __func__ << " The using device is a PC device.";
+    return false;
+  }
   return base::FeatureList::IsEnabled(kBackForwardCacheUnloadAllowed);
 }
 

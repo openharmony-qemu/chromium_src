@@ -16,7 +16,7 @@ namespace ohos_prp_preload {
 void PreconnectRunner::PreconnectSocket(const GURL& original_url,
   bool allow_credentials,
   base::WeakPtr<net::URLRequestContext> url_request_context) {
-  if (url_request_context_ == nullptr) {
+  if (url_request_context.get() == nullptr) {
     return;
   }
   net::NetworkAnonymizationKey key =
@@ -24,9 +24,9 @@ void PreconnectRunner::PreconnectSocket(const GURL& original_url,
   GURL url = GetHSTSRedirect(original_url);
 
   std::string user_agent;
-  if (url_request_context_->http_user_agent_settings()) {
+  if (url_request_context->http_user_agent_settings()) {
     user_agent =
-      url_request_context_->http_user_agent_settings()->GetUserAgent();
+      url_request_context->http_user_agent_settings()->GetUserAgent();
   }
   net::HttpRequestInfo request_info;
   request_info.url = url;
@@ -44,7 +44,7 @@ void PreconnectRunner::PreconnectSocket(const GURL& original_url,
   request_info.network_anonymization_key = key;
 
   net::HttpTransactionFactory* factory =
-    url_request_context_->http_transaction_factory();
+    url_request_context->http_transaction_factory();
   net::HttpNetworkSession* session = factory->GetSession();
   net::HttpStreamFactory* http_stream_factory = session->http_stream_factory();
   http_stream_factory->PreconnectStreams(1, request_info);
@@ -52,9 +52,9 @@ void PreconnectRunner::PreconnectSocket(const GURL& original_url,
 
 GURL PreconnectRunner::GetHSTSRedirect(const GURL& original_url,
   base::WeakPtr<net::URLRequestContext> url_request_context) {
-  if (!url_request_context_->transport_security_state() ||
+  if (!url_request_context->transport_security_state() ||
       !original_url.SchemeIs("http") ||
-      !url_request_context_->transport_security_state()->ShouldUpgradeToSSL(
+      !url_request_context->transport_security_state()->ShouldUpgradeToSSL(
           original_url.host())) {
     return original_url;
   }

@@ -20,7 +20,7 @@ class PRParallelPreloadMgr {
   virtual ~PRParallelPreloadMgr() = default;
   virtual void Init(const scoped_refptr<base::SingleThreadTaskRunner>& net_task_runner) = 0;
   virtual void StartMainPage(const std::string& url,
-                             net::URLRequestContext* url_request_context,
+                             base::WeakPtr<net::URLRequestContext> url_request_context,
                              uint64_t addr_web_handle) = 0;
   virtual void StopMainPage(const std::string& url) = 0;
   virtual void StopMainPage(uint64_t addr_web_handle) = 0;

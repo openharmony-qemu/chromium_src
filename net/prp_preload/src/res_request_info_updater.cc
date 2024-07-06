@@ -14,7 +14,7 @@ ResRequestInfoUpdater::ResRequestInfoUpdater(const std::string& url,
   res_req_info_list_cb_(res_req_info_list_cb) {
     res_req_info_cache_mgr_ = base::WrapRefCounted(new (std::nothrow) ResReqInfoCacheMgr(url,
       sth_task_runner, disk_cache_backend_factory,
-      base::BindRepeating(&ResRequestInfoUpdater::OnResRequestInfoCacheLoaded, base::Unretained(this))));
+      base::BindRepeating(&ResRequestInfoUpdater::OnResRequestInfoCacheLoaded, weak_factory_.GetWeakPtr())));
     if (res_req_info_cache_mgr_ == nullptr) {
       LOG(ERROR) << "PRPPreload.ResRequestInfoUpdater::ResRequestInfoUpdater new ResReqInfoCacheMgr failed";
     }

@@ -1521,7 +1521,7 @@ bool BackForwardCacheImpl::IsScreenReaderAllowed() {
 // Static
 bool BackForwardCacheImpl::IsUnloadAllowed() {
   if (base::ohos::IsPcDevice()) {
-    LOG(ERROR) << "BackForwardCacheImpl::" << __func__ << " The using device is a PC device.";
+    LOG(ERROR) << "BackForwardCacheImpl::" << __func__ << " The using device is a PC device";
     return false;
   }
   return base::FeatureList::IsEnabled(kBackForwardCacheUnloadAllowed);

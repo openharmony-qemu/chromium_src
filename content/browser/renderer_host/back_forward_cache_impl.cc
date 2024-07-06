@@ -54,7 +54,7 @@
 
 #ifdef OHOS_BFCACHE
 #include "base/command_line.h"
-#include "base/ohos/sys_info.utils.h"
+#include "base/ohos/sys_info_utils.h"
 #include "content/public/common/content_switches.h"
 #endif
 
@@ -142,8 +142,8 @@ bool IsContentInjectionSupported() {
 WebSchedulerTrackedFeatures SupportedFeaturesImpl() {
   WebSchedulerTrackedFeatures features;
 #ifdef OHOS_BFCACHE
-  if (base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableBFCache)) {
-    auto feature = blink::scheduler::StringToFeature("EenableCacheNativeEmbed");
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableCacheNativeEmbed)) {
+    auto feature = blink::scheduler::StringToFeature("EnableCacheNativeEmbed");
       if (feature.has_value()) {
         features.Put(feature.value());
       }

@@ -18,8 +18,6 @@
 #include "ohos_nweb/browser/performance_manager/policies/background_task_policy.h"
 #include "ohos_nweb/browser/performance_manager/policies/ohos_bfcache_policy.h"
 
-#include "base/logging.h"
-
 namespace OHOS::NWeb {
 // static
 void NwebPerformanceManager::CreatePoliciesAndDecorators(

@@ -513,6 +513,10 @@ void NotifyForNextTouchEvent() override;
       const std::vector<std::string>& pathList) override;
 #endif
 
+#ifdef OHOS_BFCACHE
+  void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override;
+#endif
+
  public:
   int argc_;
   const char** argv_;

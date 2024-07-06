@@ -423,6 +423,12 @@ class CONTENT_EXPORT BackForwardCacheImpl
   // get restored from back/forward cache unless cookies change.
   static bool AllowStoringPagesWithCacheControlNoStore();
 
+#ifdef OHOS_BFCACHE
+  void SetCacheSize(int size) override;
+  void SetTimeToLive(int timeToLive) override { this->time_to_live_ = timeToLive; }
+  base::TimeDelta ArkWebGetTimeToLiveInBackForwardCache() override;
+#endif
+
  private:
   // Destroys all evicted frames in the BackForwardCache.
   void DestroyEvictedFrames();
@@ -625,6 +631,11 @@ class CONTENT_EXPORT BackForwardCacheImpl
   };
 
   base::WeakPtrFactory<BackForwardCacheImpl> weak_factory_;
+
+#ifdef OHOS_BFCACHE
+  int size_ = -1;
+  int time_to_live_ = 600;
+#endif
 
   // For testing:
   FRIEND_TEST_ALL_PREFIXES(BackForwardCacheMetricsTest, AllFeaturesCovered);

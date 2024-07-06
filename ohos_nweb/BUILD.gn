@@ -238,6 +238,8 @@ component("cef_nweb") {
       "browser/performance_manager/nweb_performance_manager.h",
       "browser/performance_manager/policies/background_task_policy.cc",
       "browser/performance_manager/policies/background_task_policy.h",
+      "browser/performance_manager/policies/ohos_bfcache_policy.cc",
+      "browser/performance_manager/policies/ohos_bfcache_policy.h"
     ]
   }
 

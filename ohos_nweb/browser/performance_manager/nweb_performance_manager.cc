@@ -16,6 +16,7 @@
 #include "nweb_performance_manager.h"
 #include <memory>
 #include "ohos_nweb/browser/performance_manager/policies/background_task_policy.h"
+#include "ohos_nweb/browser/performance_manager/policies/ohos_bfcache_policy.h"
 
 namespace OHOS::NWeb {
 // static
@@ -23,6 +24,8 @@ void NwebPerformanceManager::CreatePoliciesAndDecorators(
     performance_manager::Graph* graph) {
   graph->PassToGraph(
       std::make_unique<performance_manager::policies::BackgroundTaskPolicy>());
+  graph->PassToGraph(
+      std::make_unique<performance_manager::policies::OHOSBFCachePolicy>());
 }
 }  // namespace OHOS::NWeb
                           

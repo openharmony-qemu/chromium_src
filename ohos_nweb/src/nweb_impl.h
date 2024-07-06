@@ -530,6 +530,10 @@ class NWebImpl : public NWeb {
       const std::map<std::string, std::string>& actionArguments) override;
   void SendAccessibilityHoverEvent(int32_t x, int32_t y) override;
 
+#ifdef OHOS_BFCACHE
+  void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override;
+#endif
+
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

@@ -530,6 +530,29 @@ void OHOSCustomMediaPlayerRenderer::SetSurfaceId(int surface_id,
   TryCreateMediaPlayer();
 }
 
+void OHOSCustomMediaPlayerRenderer::SetMediaPlayerState(bool is_suspend,
+                                                        int suspend_type) {
+  DVLOG(1) << __func__;
+  if (!media_player_) {
+    return;
+  }
+
+  if (is_suspend) {
+    if (is_media_player_suspend_) {
+      return;
+    }
+
+    is_media_player_suspend_ = true;
+    media_player_->SuspendMediaPlayer(suspend_type);
+    return;
+  }
+
+  if (is_media_player_suspend_) {
+    is_media_player_suspend_ = false;
+    media_player_->ResumeMediaPlayer();
+  }
+}
+
 void OHOSCustomMediaPlayerRenderer::SetMediaSourceList(
     const std::vector<MediaSourceInfo>& source_infos) {
   source_infos_ = source_infos;

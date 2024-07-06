@@ -103,6 +103,7 @@ class PipelineImpl::RendererWrapper final : public DemuxerHost,
   void OnExternalVideoFrameRequest();
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void SetMediaPlayerState(bool is_suspend, int suspend_type);
   void SetPlaybackRateWithReason(double playback_rate, ActionReason reason);
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
@@ -1761,6 +1762,25 @@ void PipelineImpl::OnSuspendDone() {
 }
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void PipelineImpl::RendererWrapper::SetMediaPlayerState(
+    bool is_suspend, int suspend_type) {
+  DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
+
+  if (shared_state_.renderer) {
+    shared_state_.renderer->SetMediaPlayerState(is_suspend, suspend_type);
+  }
+}
+
+void PipelineImpl::SetMediaPlayerState(bool is_suspend,
+                                       int suspend_type) {
+  DCHECK(thread_checker_.CalledOnValidThread());
+
+  media_task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(&RendererWrapper::SetMediaPlayerState,
+                                base::Unretained(renderer_wrapper_.get()),
+                                is_suspend, suspend_type));
+}
+
 void PipelineImpl::RendererWrapper::SetPlaybackRateWithReason(
     double playback_rate, ActionReason reason) {
   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());

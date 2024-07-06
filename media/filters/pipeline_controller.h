@@ -155,6 +155,7 @@ class MEDIA_EXPORT PipelineController {
   void FireOnTrackChangeCompleteForTesting(State set_to);
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void SetMediaPlayerState(bool is_suspend, int suspend_type = 0);
   void SetPlaybackRateWithReason(double playback_rate, ActionReason reason);
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 

@@ -12,7 +12,7 @@ static constexpr base::TimeDelta MAX_CHECK_FLUSH_TO_DISK_TIME = base::Seconds(5)
 
 namespace ohos_prp_preload {
 ResParallelPreloadCtrler::ResParallelPreloadCtrler(const std::string& url,
-  net::URLRequestContext* url_request_context,
+  base::WeakPtr<net::URLRequestContext> url_request_context,
   const scoped_refptr<base::SingleThreadTaskRunner>& sth_task_runner,
   const scoped_refptr<base::SingleThreadTaskRunner>& net_task_runner,
   const scoped_refptr<DiskCacheBackendFactory>& disk_cache_backend_factory,

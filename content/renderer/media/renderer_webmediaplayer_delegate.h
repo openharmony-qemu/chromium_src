@@ -69,8 +69,14 @@ class CONTENT_EXPORT RendererWebMediaPlayerDelegate
   void OnDestruct() override;
 
   // blink::WebViewObserver overrides.
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void OnPageVisibilityChanged(
+      blink::mojom::PageVisibilityState visibility_state,
+      bool storing_in_bfcache) override;
+#else
   void OnPageVisibilityChanged(
       blink::mojom::PageVisibilityState visibility_state) override;
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 
   // Returns the number of WebMediaPlayers that are associated with this
   // delegate.

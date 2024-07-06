@@ -26,6 +26,7 @@ class ResRequestInfoUpdater : public base::RefCounted<ResRequestInfoUpdater> {
  
   scoped_refptr<ResReqInfoCacheMgr> res_req_info_cache_mgr_;
   ResRequestInfoListCB res_req_info_list_cb_;
+  base::WeakPtrFactory<ResRequestInfoUpdater> weak_factory_{this};
 };
 
 }  // namespace ohos_prp_preload

@@ -51,10 +51,10 @@ void PRParallelPreloadMgrImpl::Init(const scoped_refptr<base::SingleThreadTaskRu
 }
 
 void PRParallelPreloadMgrImpl::StartMainPage(const std::string& url,
-                                             net::URLRequestContext* url_request_context,
+                                             base::WeakPtr<net::URLRequestContext> url_request_context,
                                              uint64_t addr_web_handle) {
   void* web_handle = reinterpret_cast<void*>(addr_web_handle);
-  if (url.empty() || url_request_context == nullptr || web_handle == nullptr) {
+  if (url.empty() || web_handle == nullptr) {
     LOG(ERROR) << "PRPPreload.PRParallelPreloadMgrImpl::StartMainPage failed, invalid args";
     return;
   }
@@ -166,8 +166,13 @@ bool PRParallelPreloadMgrImpl::RecycleRPPCtrler() {
     if (it == prp_preload_info_map_.end()) {
       continue;
     }
+    auto ctrler = it->second.rp_preload_ctrler_;
     prp_preload_info_map_.erase(it);
     recycled = true;
+    sth_task_runner_->PostTask(FROM_HERE,
+      base::BindOnce([]
+        (const scoped_refptr<ResParallelPreloadCtrler>& ctrler) {},
+        ctrler));
     break;
   } while (stopped_pages_.size() > 0);
   if (!recycled) {

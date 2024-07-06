@@ -188,8 +188,14 @@ bool RendererWebMediaPlayerDelegate::IsStale(int player_id) {
   return stale_players_.count(player_id);
 }
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void RendererWebMediaPlayerDelegate::OnPageVisibilityChanged(
+    blink::mojom::PageVisibilityState visibility_state,
+    bool storing_in_bfcache) {
+#else
 void RendererWebMediaPlayerDelegate::OnPageVisibilityChanged(
     blink::mojom::PageVisibilityState visibility_state) {
+#endif
   // Treat 'hidden but painting' as 'visible', since whatever is consuming the
   // painted output (e.g., Picture in Picture), probably wants the video.
   // Otherwise, the player might optimize the video away.
@@ -213,7 +219,11 @@ void RendererWebMediaPlayerDelegate::OnPageVisibilityChanged(
 
     for (base::IDMap<Observer*>::iterator it(&id_map_); !it.IsAtEnd();
          it.Advance())
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+     it.GetCurrentValue()->OnFrameHidden(storing_in_bfcache);
+#else
       it.GetCurrentValue()->OnFrameHidden();
+#endif
 
     ScheduleUpdateTask();
   }

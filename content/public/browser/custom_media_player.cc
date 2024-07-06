@@ -17,5 +17,7 @@ void CustomMediaPlayer::SetPlaybackRate(double rate) {}
 void CustomMediaPlayer::Release() {}
 void CustomMediaPlayer::EnterFullscreen() {}
 void CustomMediaPlayer::ExitFullscreen() {}
+void CustomMediaPlayer::ResumeMediaPlayer() {}
+void CustomMediaPlayer::SuspendMediaPlayer(int suspend_type) {}
 
 } // namespace

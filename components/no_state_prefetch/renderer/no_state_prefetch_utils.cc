@@ -45,8 +45,14 @@ class MediaLoadDeferrer : public blink::WebViewObserver {
 
   // blink::WebViewObserver implementation:
   void OnDestruct() override { delete this; }
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void OnPageVisibilityChanged(
+      content::PageVisibilityState visibility_state,
+      bool storing_in_bfcache) override {
+#else
   void OnPageVisibilityChanged(
       content::PageVisibilityState visibility_state) override {
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
     if (visibility_state != content::PageVisibilityState::kVisible)
       return;
     std::move(continue_loading_cb_).Run();

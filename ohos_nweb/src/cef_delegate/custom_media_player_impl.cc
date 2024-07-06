@@ -70,5 +70,17 @@ void CustomMediaPlayerImpl::ExitFullscreen() {
     bridge_->ExitFullScreen();
   }
 }
+void CustomMediaPlayerImpl::ResumeMediaPlayer() {
+  LOG(INFO) << "CustomMediaPlayerImpl::ResumeMediaPlayer, bridge_[" << (!!bridge_) << "]";
+  if (bridge_) {
+    bridge_->ResumeMediaPlayer();
+  }
+}
+void CustomMediaPlayerImpl::SuspendMediaPlayer(int suspend_type) {
+  LOG(INFO) << "CustomMediaPlayerImpl::SuspendMediaPlayer, bridge_[" << (!!bridge_) << "]";
+  if (bridge_) {
+    bridge_->SuspendMediaPlayer(static_cast<SuspendType>(suspend_type));
+  }
+}
 
 } // namespace

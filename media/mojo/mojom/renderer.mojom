@@ -81,6 +81,9 @@ interface Renderer {
   SetSurfaceId(int32 surface_id, gfx.mojom.Rect rect);
 
   [EnableIf=ohos_custom_video_player]
+  SetMediaPlayerState(bool is_suspend, int32 suspend_type);
+
+  [EnableIf=ohos_custom_video_player]
   SetMediaSourceList(array<MediaSourceInfo> source_infos);
 
   [EnableIf=ohos_custom_video_player]

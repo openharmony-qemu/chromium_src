@@ -440,6 +440,14 @@ void MojoRenderer::SetSurfaceId(int surface_id, const gfx::Rect& rect) {
     LOG(ERROR) << "SetSurfaceId failed";
   }
 }
+void MojoRenderer::SetMediaPlayerState(bool is_suspend, int suspend_type) {
+  BindRemoteRendererIfNeeded();
+  if (remote_renderer_.is_bound()) {
+    remote_renderer_->SetMediaPlayerState(is_suspend, suspend_type);
+  } else {
+    LOG(ERROR) << "SetMediaPlayerState failed";
+  }
+}
 void MojoRenderer::SetMediaSourceList(
     const std::vector<MediaSourceInfo>& source_infos) {
   source_infos_.clear();

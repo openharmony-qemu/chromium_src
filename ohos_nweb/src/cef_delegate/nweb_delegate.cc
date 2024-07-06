@@ -965,7 +965,6 @@ int NWebDelegate::Load(const std::string& url) {
   if (IsFileProtocol(file_gurl) && !IsUrlFileExist(file_gurl, url)) {
     return NWEB_INVALID_RESOURCE;
   }
-  LOG(INFO) << "NWebDelegate::Load url scheme =" << gurl.scheme();
   LOG(DEBUG) << "NWebDelegate::Load url=" << url;
   auto browser = GetBrowser();
   if (browser == nullptr) {

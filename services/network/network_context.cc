@@ -1801,7 +1801,7 @@ void NetworkContext::InitPRParallelPreloadMgr() {
 
 void NetworkContext::StartMainPage(const std::string& url, uint64_t addr_web_handle) {
   ohos_prp_preload::PRParallelPreloadMgr::GetInstance().StartMainPage(url,
-    url_request_context(), addr_web_handle);
+    url_request_context()->GetWeakPtr(), addr_web_handle);
 }
 
 void NetworkContext::StopMainPage(uint64_t addr_web_handle) {

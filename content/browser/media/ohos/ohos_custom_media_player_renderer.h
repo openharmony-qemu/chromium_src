@@ -64,6 +64,7 @@ class CONTENT_EXPORT OHOSCustomMediaPlayerRenderer
   media::RendererType GetRendererType() override;
   void SetMuted(bool muted) override;
   void SetSurfaceId(int surface_id, const gfx::Rect& rect) override;
+  void SetMediaPlayerState(bool is_suspend, int suspend_type) override;
 
   void SetMediaSourceList(const std::vector<MediaSourceInfo>& source_infos) override;
   void SetMediaControls(bool show_media_controls,
@@ -150,6 +151,8 @@ class CONTENT_EXPORT OHOSCustomMediaPlayerRenderer
   std::vector<MediaSourceInfo> source_infos_;
 
   bool show_media_controls_ = false;
+
+  bool is_media_player_suspend_ = false;
 
   std::vector<std::string> controls_list_;
 

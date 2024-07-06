@@ -22,6 +22,8 @@ class CustomMediaPlayer {
   virtual void Release();
   virtual void EnterFullscreen();
   virtual void ExitFullscreen();
+  virtual void ResumeMediaPlayer();
+  virtual void SuspendMediaPlayer(int suspend_type);
 };
 
 } // namespace

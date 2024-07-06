@@ -76,6 +76,16 @@ source_set("generic_sensor") {
     ]
   }
 
+  if (is_ohos && (defined(ohos_sensor) && ohos_sensor)) {
+    sources += [
+      "platform_sensor_ohos.cc",
+      "platform_sensor_ohos.h",
+      "platform_sensor_provider_ohos.cc",
+      "platform_sensor_provider_ohos.h",
+    ]
+    deps += [ "//ohos_glue:ohos_adapter_glue_source" ]
+  }
+
   if (is_mac) {
     sources += [
       "platform_sensor_accelerometer_mac.cc",

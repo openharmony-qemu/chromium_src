@@ -99,7 +99,7 @@ void ResReqInfoCacheMgr::Stop() {
 }
 
 void ResReqInfoCacheMgr::OnEntryLoadedCallback(const std::string& entry_content) {
-  if (load_info_list_.size() > 0) {
+  if (load_info_list_.size() > 0 || !is_start_) {
     return;
   }
   JsonToResReqPreloadInfoList(entry_content, load_info_list_);

@@ -22,7 +22,7 @@ void DiskCacheBackendFactory::CreateBackend() {
   cache_path_ = cache_path_.Append(PRELOAD_CACHE_DIRNAME);
   LOG(DEBUG) << "PRPPreload.DiskCacheBackendFactory::CreateBackend cache path: " << cache_path_;
   disk_cache::BackendResult rv = disk_cache::CreateCacheBackend(
-    net::DISK_CACHE, net::CACHE_BACKEND_DEFAULT, /*file_operations=*/nullptr,
+    net::DISK_CACHE, net::CACHE_BACKEND_SIMPLE, /*file_operations=*/nullptr,
     cache_path_, DEFAULT_PRELOAD_DISK_CACHE_BYTES,
     disk_cache::ResetHandling::kResetOnError, /*net_log=*/nullptr,
     base::BindOnce(&DiskCacheBackendFactory::CacheCreatedCallback, this));

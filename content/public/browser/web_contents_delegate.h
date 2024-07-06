@@ -762,6 +762,14 @@ class CONTENT_EXPORT WebContentsDelegate {
   // indication that the cache will be used.
   virtual bool IsBackForwardCacheSupported();
 
+#ifdef OHOS_BFCACHE
+  // Return back_forward_cache time to live.
+  virtual int BackForwardCacheTimeToLive() { return 600; }
+
+  // Return back_forward_cache max cache size.
+  virtual int BackForwardCacheSize() { return -1; }
+#endif
+
   // Returns PreloadingEligibility::kEligible if Prerender2 (see
   // content/browser/preloading/prerender/README.md for details) is supported.
   // If it is not supported, returns the reason.

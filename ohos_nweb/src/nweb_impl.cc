@@ -3341,3 +3341,14 @@ void NWebImpl::SendAccessibilityHoverEvent(int32_t x, int32_t y) {
     nweb_delegate_->SendAccessibilityHoverEvent(x, y);
   }
 }
+
+void NWebImpl::SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) {
+#ifdef OHOS_BFCACHE
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("fail to set back forward cache options. nweb_delegate is nullptr.");
+    return;
+  }
+
+  nweb_delegate_->SetBackForwardCacheOptions(size, timeToLive);
+#endif
+}

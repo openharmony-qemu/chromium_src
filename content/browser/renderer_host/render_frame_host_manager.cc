@@ -996,6 +996,10 @@ void RenderFrameHostManager::UnloadOldFrame(
                 "old_render_frame_host", old_render_frame_host,
                 "bfcache_eligibility",
                 bfcache_eligibility.flattened_reasons.ToString());
+#ifdef OHOS_BFCACHE
+    LOG(INFO) << "RenderFrameHostManager::" << __func__ << " the value of bfcache_eligibility.flattened_reasons is:"
+              << bfcache_eligibility.flattened_reasons.ToString();
+#endif
     if (can_store) {
       auto stored_page = CollectPage(std::move(old_render_frame_host));
       auto entry =

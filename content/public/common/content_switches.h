@@ -339,6 +339,12 @@ extern const char kIpcDumpDirectory[];
 extern const char kIpcFuzzerTestcase[];
 #endif
 
+#ifdef OHOS_BFCACHE
+extern const char kEnableBFCache[];
+extern const char kEnableCacheNativeEmbed[];
+extern const char kEnableCacheMediaTakeOver[];
+#endif
+
 // DON'T ADD RANDOM STUFF HERE. Put it in the main section above in
 // alphabetical order, or in one of the ifdefs (also in order in each section).
 

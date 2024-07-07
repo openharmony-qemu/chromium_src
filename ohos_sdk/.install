@@ -1,6 +1,6 @@
 #!/bin/bash
 
-latest_version="ohos-sdk-4.0.7.5-Beta1.tar.gz"
+latest_version="ohos-sdk-5.0.0.25-Beta1.tar.gz"
 
 
 base_dir="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"

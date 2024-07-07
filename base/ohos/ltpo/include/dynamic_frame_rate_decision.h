@@ -38,17 +38,16 @@ public:
   DynamicFrameRateDecision& operator=(const DynamicFrameRateDecision&) = delete;
 
   static DynamicFrameRateDecision& GetInstance();
+  void UpdateFramePreferredRate();
 
   void SetVisible(bool visible);
   void ReportSlidingFrameRate(int32_t frame_rate);
-  void ReportDirtyRectFrameRate(int32_t frame_rate);
   void ReportVideoFrameRate(int32_t frame_rate);
-  void SetMaxFrameRateThreeSec();
 
   void SetVsyncEnabled(bool enabled);
   void SetHasTouchPoint(bool has_touch_point);
-  void UpdateFramePreferredRate();
 private:
+  void SetMaxFrameRateThreeSec();
   void SetFrameRateLinkerEnable(bool enabled);
   int64_t GetCurrentTimestampMS();
 

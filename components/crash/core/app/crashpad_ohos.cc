@@ -40,6 +40,7 @@
 #include "third_party/crashpad/crashpad/util/linux/scoped_pr_set_dumpable.h"
 #include "third_party/crashpad/crashpad/util/misc/from_pointer_cast.h"
 #include "third_party/crashpad/crashpad/util/posix/signals.h"
+#include "base/process/process_handle.h"
 
 namespace crashpad {
 namespace {
@@ -110,9 +111,10 @@ void SetExceptionInformation(siginfo_t* siginfo,
   info->thread_id = sandbox::sys_gettid();
   ProcInfo proc;
   std::unordered_map<int, int> tid_nstid_map;
-  if (GetProcStatusByPid(getprocpid(), proc) && proc.ns && GetTidMapByPid(getprocpid(), tid_nstid_map)) {
+  base::ProcessId realPid = base::GetCurrentRealPid();
+  if (GetProcStatusByPid(realPid, proc) && proc.ns && GetTidMapByPid(realPid, tid_nstid_map)) {
     LOG(INFO) << "crashpad SetExceptionInformation, crash happened, crash process real pid = " \
-      << getprocpid() << " is in pid namespace = " << proc.ns << ", need to convert tid to real pid";
+      << realPid << " is in pid namespace = " << proc.ns << ", need to convert tid to real pid";
     for (auto it : tid_nstid_map) {
       if (it.second == info->thread_id) {
         info->thread_id = it.first;

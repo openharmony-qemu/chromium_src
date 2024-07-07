@@ -412,16 +412,6 @@ config("ohosnweb_core_config") {
   include_dirs += ohos_src_includes
 }
 
-executable("web_render") {
-  configs += [
-    "//build/config/sanitizers:cfi_config",
-    ":ohosnweb_core_config",
-  ]
-
-  sources = [ "src/ohos_nweb_main.cc" ]
-  deps = [ ":nweb_hilog" ]
-}
-
 shared_library("libnweb_render") {
   configs += [ "//build/config/sanitizers:cfi_config" ]
   defines = [ "OHOS_NWEB" ]

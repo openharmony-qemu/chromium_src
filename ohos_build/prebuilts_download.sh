@@ -32,7 +32,8 @@ while [ $# -gt 0 ]; do
       WITH_TOOLCHAIN=1
     ;;
     --with-sysroot)
-      WITH_SYSROOT=1
+        WITH_SDK=1
+        WITH_SYSROOT=1
     ;;
     --with-sdk)
       WITH_SDK=1
@@ -60,6 +61,7 @@ OHPM_LINK_PATH=${SOURCE_ROOT_DIR}/src/huawei/third_party
 TOOLCHAIN_LINK_PATH=${SOURCE_ROOT_DIR}/src/third_party/ohos_ndk/toolchains
 SYSROOT_LINK_PATH=${SOURCE_ROOT_DIR}/src/third_party/ohos_ndk
 SDK_LINK_PATH=${SOURCE_ROOT_DIR}/src/ohos_sdk
+SDK_API_VERSION=12
 
 function check_version() {
   installed_version=""
@@ -139,7 +141,7 @@ function init_ohpm() {
 
 function hwcloud_download() {
   if [ -z "${TOOL_REPO}" ]; then
-    TOOL_REPO="https://repo.huaweicloud.com"
+    TOOL_REPO="https://mirrors.huaweicloud.com"
   fi
 
   download_url=${TOOL_REPO}/$1
@@ -155,7 +157,7 @@ function hwcloud_download() {
 }
 
 function download_toolchain() {
-  llvm_version="openharmony/compiler/clang/15.0.4-d1aa60/linux/clang_linux-x86_64-d1aa60-0630.tar.bz2"
+  llvm_version="openharmony/compiler/clang/15.0.4-bf8f59/linux/clang_linux-x86_64-bf8f59-20240624.tar.gz"
   version_file=${PREBUILTS_ROOT_DIR}/llvm/.version
 
   if [[ ! -d "${PREBUILTS_ROOT_DIR}/llvm" ]] || ! (check_version $version_file $llvm_version); then
@@ -163,9 +165,9 @@ function download_toolchain() {
     echo "[INFO] ready to download llvm toolchain"
     pushd ${PREBUILTS_ROOT_DIR} > /dev/null
       hwcloud_download $llvm_version $file_name
-      tar -xjf $file_name --checkpoint=10000 --checkpoint-action=echo="%T Unpacking... (%u/%n)"
+      tar -xf $file_name
       rm -rf llvm
-      mv $(basename $llvm_version .tar.bz2) llvm
+      mv $(basename $llvm_version .tar.gz) llvm
     popd > /dev/null
     ln -s "15.0.4" ${PREBUILTS_ROOT_DIR}/llvm/lib/clang/current
     echo -n "${llvm_version}" > "${version_file}"
@@ -182,8 +184,7 @@ function download_toolchain() {
 
 function download_sdk() {
   sdk_item_list=("ets" "js" "native" "previewer" "toolchains")
-  sdk_version="openharmony/os/4.0-Release/ohos-sdk-windows_linux-public.tar.gz"
-  api_version=10
+  sdk_version="openharmony/os/5.0-Beta1/ohos-sdk-windows_linux-public.tar.gz"
   version_file=${PREBUILTS_ROOT_DIR}/ohos-sdk/.version
 
   if [[ ! -d "${PREBUILTS_ROOT_DIR}/ohos-sdk" ]] || ! (check_version $version_file $sdk_version); then
@@ -191,12 +192,13 @@ function download_sdk() {
     echo "[INFO] ready to download sdk"
     pushd ${PREBUILTS_ROOT_DIR} > /dev/null
       hwcloud_download $sdk_version $file_name
-      rm -rf ohos-sdk/linux/*
-      tar -xzvf $file_name ohos-sdk/linux
+      rm -rf ohos-sdk
+      mkdir ohos-sdk
+      tar -xf $file_name -C ohos-sdk/
       pushd ohos-sdk/linux > /dev/null
         for i in ${sdk_item_list[@]}; do
           echo -ne "[INFO] Unzipping ${i}...\r"
-          unzip -q ${i}-linux-x64-*-*.zip -d "$api_version"
+          unzip -q ${i}-linux-x64-*-*.zip -d "$SDK_API_VERSION"
         done
         echo "[INFO] Unzipping finished.    "
         rm -f *.zip
@@ -204,17 +206,17 @@ function download_sdk() {
     popd > /dev/null
     echo -n "${sdk_version}" > "${version_file}"
   fi
-  if [[ -e "${SDK_LINK_PATH}/${api_version}" ]]; then
-   rm -rf ${SDK_LINK_PATH}/${api_version}
+  if [[ -e "${SDK_LINK_PATH}/${SDK_API_VERSION}" ]]; then
+   rm -rf ${SDK_LINK_PATH}/${SDK_API_VERSION}
   fi
-  mkdir -p ${SDK_LINK_PATH}/${api_version}
+  mkdir -p ${SDK_LINK_PATH}/${SDK_API_VERSION}
   echo "[INFO] link sdk"
   for i in ${sdk_item_list[@]}; do
-    ln -s ${PREBUILTS_ROOT_DIR}/ohos-sdk/linux/$api_version/${i} ${SDK_LINK_PATH}/${api_version}/${i}
+    ln -s ${PREBUILTS_ROOT_DIR}/ohos-sdk/linux/$SDK_API_VERSION/${i} ${SDK_LINK_PATH}/${SDK_API_VERSION}/${i}
   done
 
   # For compatibility with src/ohos_sdk/.install
-  echo -n "ohos-sdk-4.0.7.5-Beta1.tar.gz" > "${SDK_LINK_PATH}/.version"
+  echo -n "ohos-sdk-5.0.0.25-Beta1.tar.gz" > "${SDK_LINK_PATH}/.version"
 }
 
 function extract_sysroot() {
@@ -274,7 +276,7 @@ function main() {
 
   if [[ ${WITH_SYSROOT} -eq 1 ]]; then
     echo "[INFO] Sysroot initialization started..."
-    extract_sysroot
+    ln -s ${PREBUILTS_ROOT_DIR}/ohos-sdk/linux/${SDK_API_VERSION}/native/sysroot ${SYSROOT_LINK_PATH}/sysroot
     if [[ "$?" -ne 0 ]]; then
       echo -e "\033[31m[ERROR] Sysroot initialization failed!\033[0m"
       exit 1

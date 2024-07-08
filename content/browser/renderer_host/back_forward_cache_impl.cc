@@ -240,7 +240,14 @@ constexpr WebSchedulerTrackedFeatures kDisallowedFeatures(
     WebSchedulerTrackedFeature::kWebShare,
     WebSchedulerTrackedFeature::kWebSocket,
     WebSchedulerTrackedFeature::kWebTransport,
+#ifdef OHOS_BFCACHE
+    // Disable nativeEmbed and mediaTakeOver by default.
+    WebSchedulerTrackedFeature::kWebXR,
+    WebSchedulerTrackedFeature::kEnableCacheNativeEmbed,
+    WebSchedulerTrackedFeature::kEnableCacheMediaTakeOver);
+#else
     WebSchedulerTrackedFeature::kWebXR);
+#endif
 constexpr WebSchedulerTrackedFeatures kInjectionFeatures(
     WebSchedulerTrackedFeature::kInjectedJavascript,
     WebSchedulerTrackedFeature::kInjectedStyleSheet);
@@ -266,13 +273,7 @@ constexpr WebSchedulerTrackedFeatures kAllowedFeatures(
     // main frame.
     WebSchedulerTrackedFeature::kAuthorizationHeader,
     // TODO(crbug.com/1357482): Figure out if this should be allowed.
-#ifdef OHOS_BFCACHE
-    WebSchedulerTrackedFeature::kWebNfc,
-    WebSchedulerTrackedFeature::kEnableCacheNativeEmbed,
-    WebSchedulerTrackedFeature::kEnableCacheMediaTakeOver);
-#else
     WebSchedulerTrackedFeature::kWebNfc);
-#endif
 
 // The BackForwardCache feature is controlled via an experiment. This function
 // returns the allowed URL list where it is enabled.

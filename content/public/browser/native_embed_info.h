@@ -29,7 +29,9 @@ struct CONTENT_EXPORT NativeEmbedInfo {
   enum TagState {
     TAG_STATE_CREATE = 0,
     TAG_STATE_CHANGE = 1,
-    TAG_STATE_DESTROY = 2
+    TAG_STATE_DESTROY = 2,
+    TAG_STATE_ENTER_BFCACHE = 3,
+    TAG_STATE_LEAVE_BFCACHE = 4
   };
 
   NativeEmbedInfo();

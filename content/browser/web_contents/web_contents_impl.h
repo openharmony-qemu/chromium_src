@@ -1000,6 +1000,8 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
       override;
   void OnNativeEmbedStatusUpdate(const NativeEmbedInfo& native_embed_info,
                                  NativeEmbedInfo::TagState state) override;
+  void OnRenderFrameHostEnterBackForwardCache(const GlobalRenderFrameHostId& id) override;
+  void OnRenderFrameHostLeaveBackForwardCache(const GlobalRenderFrameHostId& id) override;
 #endif
   void RequestMediaAccessPermission(const MediaStreamRequest& request,
                                     MediaResponseCallback callback) override;

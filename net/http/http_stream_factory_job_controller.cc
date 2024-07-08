@@ -872,6 +872,10 @@ int HttpStreamFactory::JobController::DoCreateJobs() {
             net_log_.net_log());
       }
     }
+
+#if BUILDFLAG(IS_OHOS)
+    main_job_->SetFromPreload(from_preload_);
+#endif
     main_job_->Preconnect(num_streams_);
     return OK;
   }

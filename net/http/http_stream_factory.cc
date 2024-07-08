@@ -165,7 +165,12 @@ std::unique_ptr<HttpStreamRequest> HttpStreamFactory::RequestStreamInternal(
 }
 
 void HttpStreamFactory::PreconnectStreams(int num_streams,
-                                          HttpRequestInfo& request_info) {
+                                          HttpRequestInfo& request_info
+#if BUILDFLAG(IS_OHOS)
+                                          ,
+                                          bool from_preload
+#endif
+) {
   DCHECK(request_info.url.is_valid());
 
   auto job_controller = std::make_unique<JobController>(
@@ -179,6 +184,10 @@ void HttpStreamFactory::PreconnectStreams(int num_streams,
           ->delay_main_job_with_available_spdy_session,
       /*server_ssl_config=*/SSLConfig(),
       /*proxy_ssl_config=*/SSLConfig());
+#if BUILDFLAG(IS_OHOS)
+  if(from_preload)
+    job_controller->SetFromPreload(true);
+#endif
   JobController* job_controller_raw_ptr = job_controller.get();
   job_controller_set_.insert(std::move(job_controller));
   job_controller_raw_ptr->Preconnect(num_streams);

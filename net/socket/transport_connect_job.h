@@ -152,6 +152,11 @@ class NET_EXPORT_PRIVATE TransportConnectJob : public ConnectJob {
       const override;
 
   static base::TimeDelta ConnectionTimeout();
+
+#if BUILDFLAG(IS_OHOS)
+  void SetFromPreload(bool from_preload) override;
+#endif
+
 #ifdef OHOS_EX_NETWORK_CONNECTION
   void SetConnectTimeout(int timeout_override) override;
 #endif

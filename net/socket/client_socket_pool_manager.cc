@@ -102,7 +102,12 @@ int InitSocketPoolHelper(
     ClientSocketHandle* socket_handle,
     HttpNetworkSession::SocketPoolType socket_pool_type,
     CompletionOnceCallback callback,
-    const ClientSocketPool::ProxyAuthCallback& proxy_auth_callback) {
+    const ClientSocketPool::ProxyAuthCallback& proxy_auth_callback
+#if BUILDFLAG(IS_OHOS)
+    ,
+    bool from_preload = false
+#endif
+) {
   DCHECK(endpoint.IsValid());
 
   bool using_ssl = GURL::SchemeIsCryptographic(endpoint.scheme());
@@ -120,6 +125,9 @@ int InitSocketPoolHelper(
   scoped_refptr<ClientSocketPool::SocketParams> socket_params =
       CreateSocketParams(connection_group, proxy_info.proxy_server(),
                          ssl_config_for_origin, ssl_config_for_proxy);
+#if BUILDFLAG(IS_OHOS)
+  socket_params->SetFromPreload(from_preload);
+#endif
 
   ClientSocketPool* pool =
       session->GetSocketPool(socket_pool_type, proxy_info.proxy_server());
@@ -234,7 +242,12 @@ int InitSocketHandleForHttpRequest(
     const NetLogWithSource& net_log,
     ClientSocketHandle* socket_handle,
     CompletionOnceCallback callback,
-    const ClientSocketPool::ProxyAuthCallback& proxy_auth_callback) {
+    const ClientSocketPool::ProxyAuthCallback& proxy_auth_callback
+#if BUILDFLAG(IS_OHOS)
+    ,
+    bool from_preload
+#endif
+) {
   DCHECK(socket_handle);
   return InitSocketPoolHelper(
       std::move(endpoint), request_load_flags, request_priority, session,
@@ -242,7 +255,12 @@ int InitSocketHandleForHttpRequest(
       false /* is_for_websockets */, privacy_mode,
       std::move(network_anonymization_key), secure_dns_policy, socket_tag,
       net_log, 0, socket_handle, HttpNetworkSession::NORMAL_SOCKET_POOL,
-      std::move(callback), proxy_auth_callback);
+      std::move(callback), proxy_auth_callback
+#if BUILDFLAG(IS_OHOS)
+      ,
+      from_preload
+#endif
+  );
 }
 
 int InitSocketHandleForWebSocketRequest(
@@ -292,7 +310,12 @@ int PreconnectSocketsForHttpRequest(
     SecureDnsPolicy secure_dns_policy,
     const NetLogWithSource& net_log,
     int num_preconnect_streams,
-    CompletionOnceCallback callback) {
+    CompletionOnceCallback callback
+#if BUILDFLAG(IS_OHOS)
+    ,
+    bool from_preload
+#endif
+) {
   // QUIC proxies are currently not supported through this method.
   DCHECK(!proxy_info.is_quic());
 
@@ -308,7 +331,12 @@ int PreconnectSocketsForHttpRequest(
       std::move(network_anonymization_key), secure_dns_policy, SocketTag(),
       net_log, num_preconnect_streams, nullptr,
       HttpNetworkSession::NORMAL_SOCKET_POOL, std::move(callback),
-      ClientSocketPool::ProxyAuthCallback());
+      ClientSocketPool::ProxyAuthCallback()
+#if BUILDFLAG(IS_OHOS)
+          ,
+      from_preload
+#endif
+  );
 }
 
 }  // namespace net

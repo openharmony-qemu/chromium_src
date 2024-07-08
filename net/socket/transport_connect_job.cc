@@ -391,6 +391,9 @@ int TransportConnectJob::DoTransportConnect() {
   if (!ipv6_addresses.empty()) {
     ipv6_job_ = std::make_unique<TransportConnectSubJob>(
         std::move(ipv6_addresses), this, SUB_JOB_IPV6);
+#if BUILDFLAG(IS_OHOS)
+    ipv6_job_->SetFromPreload(IsFromPreload());
+#endif
     int result = ipv6_job_->Start();
     if (result != ERR_IO_PENDING)
       return HandleSubJobComplete(result, ipv6_job_.get());
@@ -407,6 +410,9 @@ int TransportConnectJob::DoTransportConnect() {
 
   DCHECK(!ipv6_job_);
   DCHECK(ipv4_job_);
+#if BUILDFLAG(IS_OHOS)
+  ipv4_job_->SetFromPreload(IsFromPreload());
+#endif
   int result = ipv4_job_->Start();
   if (result != ERR_IO_PENDING)
     return HandleSubJobComplete(result, ipv4_job_.get());
@@ -575,4 +581,15 @@ void TransportConnectJob::SetConnectTimeout(int timeout_override) {
 }
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+void TransportConnectJob::SetFromPreload(bool from_preload) {
+  ConnectJob::SetFromPreload(from_preload);
+  if (ipv4_job_) {
+    ipv4_job_->SetFromPreload(from_preload);
+  }
+  if (ipv6_job_) {
+    ipv6_job_->SetFromPreload(from_preload);
+  }
+}
+#endif
 }  // namespace net

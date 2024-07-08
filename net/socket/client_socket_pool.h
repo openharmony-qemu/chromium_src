@@ -182,12 +182,25 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
       return ssl_config_for_proxy_.get();
     }
 
+#if BUILDFLAG(IS_OHOS)
+  void SetFromPreload(bool from_preload) {
+    from_preload_ = from_preload;
+  }
+
+  bool IsFromPreload() const {
+    return from_preload_;
+  }
+#endif
    private:
     friend class base::RefCounted<SocketParams>;
     ~SocketParams();
 
     std::unique_ptr<SSLConfig> ssl_config_for_origin_;
     std::unique_ptr<SSLConfig> ssl_config_for_proxy_;
+
+#if BUILDFLAG(IS_OHOS)
+    bool from_preload_ = false;
+#endif
   };
 
   ClientSocketPool(const ClientSocketPool&) = delete;

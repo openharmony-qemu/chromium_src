@@ -97,7 +97,12 @@ int InitSocketHandleForHttpRequest(
     const NetLogWithSource& net_log,
     ClientSocketHandle* socket_handle,
     CompletionOnceCallback callback,
-    const ClientSocketPool::ProxyAuthCallback& proxy_auth_callback);
+    const ClientSocketPool::ProxyAuthCallback& proxy_auth_callback
+#if BUILDFLAG(IS_OHOS)
+    ,
+    bool from_preload = false
+#endif
+);
 
 // A helper method that uses the passed in proxy information to initialize a
 // ClientSocketHandle with the relevant socket pool. Use this method for
@@ -138,7 +143,12 @@ int PreconnectSocketsForHttpRequest(
     SecureDnsPolicy secure_dns_policy,
     const NetLogWithSource& net_log,
     int num_preconnect_streams,
-    CompletionOnceCallback callback);
+    CompletionOnceCallback callback
+    #if BUILDFLAG(IS_OHOS)
+    ,
+    bool from_preload = false
+#endif
+);
 
 }  // namespace net
 

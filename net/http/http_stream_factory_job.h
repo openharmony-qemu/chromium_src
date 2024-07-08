@@ -240,6 +240,12 @@ class HttpStreamFactory::Job
 
   NetErrorDetails* net_error_details() { return &net_error_details_; }
 
+#if BUILDFLAG(IS_OHOS)
+  void SetFromPreload(bool from_preload) {
+    from_preload_ = from_preload;
+  }
+#endif
+
  private:
   friend class test::HttpStreamFactoryJobPeer;
 
@@ -491,6 +497,10 @@ class HttpStreamFactory::Job
   std::unique_ptr<SpdySessionPool::SpdySessionRequest> spdy_session_request_;
 
   base::WeakPtrFactory<Job> ptr_factory_{this};
+
+#if BUILDFLAG(IS_OHOS)
+  bool from_preload_ = false;
+#endif
 };
 
 // Factory for creating Jobs.

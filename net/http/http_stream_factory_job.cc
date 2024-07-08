@@ -883,7 +883,12 @@ int HttpStreamFactory::Job::DoInitConnectionImpl() {
         proxy_info_, server_ssl_config_, proxy_ssl_config_,
         request_info_.privacy_mode, request_info_.network_anonymization_key,
         request_info_.secure_dns_policy, net_log_, num_streams_,
-        std::move(callback));
+        std::move(callback)
+#if BUILDFLAG(IS_OHOS)
+            ,
+        from_preload_
+#endif
+    );
   }
 
   ClientSocketPool::ProxyAuthCallback proxy_auth_callback =
@@ -915,7 +920,12 @@ int HttpStreamFactory::Job::DoInitConnectionImpl() {
       server_ssl_config_, proxy_ssl_config_, request_info_.privacy_mode,
       request_info_.network_anonymization_key, request_info_.secure_dns_policy,
       request_info_.socket_tag, net_log_, connection_.get(), io_callback_,
-      proxy_auth_callback);
+      proxy_auth_callback
+#if BUILDFLAG(IS_OHOS)
+      ,
+      from_preload_
+#endif
+  );
 }
 
 int HttpStreamFactory::Job::DoInitConnectionImplQuic() {

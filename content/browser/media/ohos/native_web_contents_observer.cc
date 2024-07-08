@@ -81,6 +81,9 @@ void NativeWebContentsObserver::RenderFrameDeleted(
 
   GlobalRenderFrameHostId frame_routing_id = render_frame_host->GetGlobalId();
 
+  LOG(DEBUG) << "NativeEmbed BFCache NativeWebContentsObserver::RenderFrameDeleted, frame_routing_id = "
+    << frame_routing_id;
+
   base::EraseIf(native_bridge_hosts_,
                 [frame_routing_id](const NativeBridgeHostImplMap::value_type&
                                        native_bridge_hosts_value_type) {
@@ -127,6 +130,8 @@ void NativeWebContentsObserver::NativeBridgeHostImpl::OnNativeBridgeAdded(
     mojo::PendingAssociatedReceiver<media::mojom::NativeBridgeObserver>
         observer,
     int32_t bridge_id) {
+  LOG(INFO) << "NativeEmbed BFCache, NativeBridgeHostImpl::OnNativeBridgeAdded, frame_routing_id_ = "
+    << frame_routing_id_;
   native_web_contents_observer_->OnNativeBridgeAdded(
       std::move(observer), MediaPlayerId(frame_routing_id_, bridge_id));
 }
@@ -190,6 +195,8 @@ void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
         ->OnNativeEmbedStatusUpdate(
             bridge_info->native_embed_info(),
             NativeEmbedInfo::TagState::TAG_STATE_DESTROY);
+
+    native_web_contents_observer_->RemoveBridgeInfo(native_bridge_id_);
   }
 }
 
@@ -227,6 +234,10 @@ void NativeWebContentsObserver::OnBridgeInfoChanged(
   }
 }
 
+void NativeWebContentsObserver::RemoveBridgeInfo(const MediaPlayerId& id) {
+  bridge_info_map_.erase(id);
+}
+
 void NativeWebContentsObserver::OnNativeBridgeObserverDisconnected(
     const MediaPlayerId& id) {
   DCHECK(native_bridge_observer_hosts_.contains(id));
@@ -248,6 +259,30 @@ void NativeWebContentsObserver::BindNativeBridgeHost(
 
   native_bridge_hosts_[frame_routing_id]->BindNativeBridgeHostReceiver(
       std::move(bridge_receiver));
+}
+
+void NativeWebContentsObserver::OnRenderFrameHostEnterBackForwardCache(const GlobalRenderFrameHostId& id) {
+  for (auto& bridge_info : bridge_info_map_) {
+    if (bridge_info.first.frame_routing_id == id && web_contents_impl()) {
+      LOG(INFO) << "NativeEmbed BFCache, NativeWebContentsObserver received render frame host enter bfcache," \
+        " GlobalId = " << id << ", native_embed_info = " << bridge_info.second->native_embed_info();
+
+      web_contents_impl()->OnNativeEmbedStatusUpdate(bridge_info.second->native_embed_info(),
+        NativeEmbedInfo::TagState::TAG_STATE_ENTER_BFCACHE);
+    }
+  }
+}
+
+void NativeWebContentsObserver::OnRenderFrameHostLeaveBackForwardCache(const GlobalRenderFrameHostId& id) {
+  for (auto& bridge_info : bridge_info_map_) {
+    if (bridge_info.first.frame_routing_id == id && web_contents_impl()) {
+      LOG(INFO) << "NativeEmbed BFCache, NativeWebContentsObserver received render frame host leave bfcache," \
+        " GlobalId = " << id << ", native_embed_info = " << bridge_info.second->native_embed_info();
+
+      web_contents_impl()->OnNativeEmbedStatusUpdate(bridge_info.second->native_embed_info(),
+        NativeEmbedInfo::TagState::TAG_STATE_LEAVE_BFCACHE);
+    }
+  }
 }
 
 void NativeWebContentsObserver::OnNativeBridgeAdded(

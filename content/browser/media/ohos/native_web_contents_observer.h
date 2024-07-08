@@ -77,6 +77,9 @@ class CONTENT_EXPORT NativeWebContentsObserver : public WebContentsObserver {
       mojo::PendingAssociatedReceiver<media::mojom::NativeBridgeHost>
           bridge_receiver);
 
+  void OnRenderFrameHostEnterBackForwardCache(const GlobalRenderFrameHostId& id);
+  void OnRenderFrameHostLeaveBackForwardCache(const GlobalRenderFrameHostId& id);
+
  private:
   class BridgeInfo;
   using BridgeInfoMap =
@@ -168,6 +171,8 @@ class CONTENT_EXPORT NativeWebContentsObserver : public WebContentsObserver {
 
   // Convenience method that casts web_contents() to a WebContentsImpl*.
   WebContentsImpl* web_contents_impl() const;
+
+  void RemoveBridgeInfo(const MediaPlayerId& id);
 
   // Tracking variables and associated wake locks for native bridge.
   BridgeInfoMap bridge_info_map_;

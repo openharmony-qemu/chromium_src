@@ -286,6 +286,8 @@ class NWebImpl : public NWeb {
                                  double vx,
                                  double vy,
                                  const std::vector<int32_t>& pressedCodes) override;
+  void ScrollToWithAnime(float x, float y, int32_t duration) override;
+  void ScrollByWithAnime(float delta_x, float delta_y, int32_t duration) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
   bool GetCertChainDerData(std::vector<std::string>& certChainData,

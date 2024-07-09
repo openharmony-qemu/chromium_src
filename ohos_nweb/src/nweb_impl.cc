@@ -1957,6 +1957,20 @@ void NWebImpl::WebSendTouchpadFlingEvent(double x,
 
   input_handler_->WebSendTouchpadFlingEvent(x, y, vx, vy, pressedCodes);
 }
+
+void NWebImpl::ScrollToWithAnime(float x, float y, int32_t duration) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  return nweb_delegate_->ScrollToWithAnime(x, y, duration);
+}
+
+void NWebImpl::ScrollByWithAnime(float delta_x, float delta_y, int32_t duration) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  return nweb_delegate_->ScrollByWithAnime(delta_x, delta_y, duration);
+}
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 bool NWebImpl::GetCertChainDerData(std::vector<std::string>& certChainData,

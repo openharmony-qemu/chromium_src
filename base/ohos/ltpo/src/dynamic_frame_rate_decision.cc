@@ -60,10 +60,6 @@ void DynamicFrameRateDecision::ReportSlidingFrameRate(int32_t frame_rate)
   UpdateFramePreferredRate();
 }
 
-void DynamicFrameRateDecision::ReportDirtyRectFrameRate(int32_t frame_rate)
-{
-}
-
 void DynamicFrameRateDecision::ReportVideoFrameRate(int32_t frame_rate)
 {
   if (videoFrameRate_ == frame_rate) {
@@ -124,7 +120,15 @@ void DynamicFrameRateDecision::SetVsyncEnabled(bool enabled)
 
 void DynamicFrameRateDecision::SetHasTouchPoint(bool has_touch_point)
 {
+  if (has_touch_point_ == has_touch_point) {
+    return;
+  }
   has_touch_point_ = has_touch_point;
+  if (has_touch_point_) {
+    UpdateFramePreferredRate();
+  } else {
+    SetMaxFrameRateThreeSec();
+  }
 }
 
 void DynamicFrameRateDecision::SetVisible(bool visible)

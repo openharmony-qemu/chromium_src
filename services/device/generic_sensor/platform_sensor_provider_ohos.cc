@@ -15,10 +15,12 @@
 
 #include "services/device/generic_sensor/platform_sensor_provider_ohos.h"
 
+#include "services/device/generic_sensor/absolute_orientation_euler_angles_fusion_algorithm_using_accelerometer_and_magnetometer.h"
 #include "services/device/generic_sensor/platform_sensor_ohos.h"
 #include "services/device/generic_sensor/platform_sensor_fusion.h"
 #include "services/device/generic_sensor/gravity_fusion_algorithm_using_accelerometer.h"
 #include "services/device/generic_sensor/linear_acceleration_fusion_algorithm_using_accelerometer.h"
+#include "services/device/generic_sensor/orientation_euler_angles_fusion_algorithm_using_quaternion.h"
 #include "services/device/generic_sensor/orientation_quaternion_fusion_algorithm_using_euler_angles.h"
 #include "services/device/generic_sensor/relative_orientation_euler_angles_fusion_algorithm_using_accelerometer.h"
 #include "services/device/generic_sensor/relative_orientation_euler_angles_fusion_algorithm_using_accelerometer_and_gyroscope.h"
@@ -105,9 +107,21 @@ void PlatformSensorProviderOHOS::CreateLinearAccelerationSensor(
 void PlatformSensorProviderOHOS::CreateAbsoluteOrientationEulerAnglesSensor(
     SensorReadingSharedBuffer* reading_buffer,
     CreateSensorCallback callback) {
-  std::move(callback).Run(
-          PlatformSensorOHOS::Create(mojom::SensorType::ABSOLUTE_ORIENTATION_EULER_ANGLES,
-                                     reading_buffer, this));
+  if (GetSensor(mojom::SensorType::ABSOLUTE_ORIENTATION_QUATERNION) != nullptr ||
+      PlatformSensorOHOS::IsSupported(mojom::SensorType::ABSOLUTE_ORIENTATION_QUATERNION)) {
+    auto sensor_fusion_algorithm =
+        std::make_unique<OrientationEulerAnglesFusionAlgorithmUsingQuaternion>(
+            true);
+    PlatformSensorFusion::Create(reading_buffer, this,
+                                 std::move(sensor_fusion_algorithm),
+                                 std::move(callback));
+  } else {
+    auto sensor_fusion_algorithm = std::make_unique<
+        AbsoluteOrientationEulerAnglesFusionAlgorithmUsingAccelerometerAndMagnetometer>();
+    PlatformSensorFusion::Create(reading_buffer, this,
+                                 std::move(sensor_fusion_algorithm),
+                                 std::move(callback));
+  }
 }
 
 void PlatformSensorProviderOHOS::CreateAbsoluteOrientationQuaternionSensor(
@@ -132,18 +146,17 @@ void PlatformSensorProviderOHOS::CreateAbsoluteOrientationQuaternionSensor(
 void PlatformSensorProviderOHOS::CreateRelativeOrientationEulerAnglesSensor(
     SensorReadingSharedBuffer* reading_buffer,
     CreateSensorCallback callback) {
-  std::unique_ptr<PlatformSensorFusionAlgorithm> sensor_fusion_algorithm;
-  if (GetSensor(mojom::SensorType::GYROSCOPE) != nullptr ||
-      PlatformSensorOHOS::IsSupported(mojom::SensorType::GYROSCOPE)) {
-    sensor_fusion_algorithm = std::make_unique<
-      RelativeOrientationEulerAnglesFusionAlgorithmUsingAccelerometerAndGyroscope>();
-  } else {
-    sensor_fusion_algorithm = std::make_unique<
-      RelativeOrientationEulerAnglesFusionAlgorithmUsingAccelerometer>();
-  }
-  PlatformSensorFusion::Create(reading_buffer, this,
+  if (GetSensor(mojom::SensorType::RELATIVE_ORIENTATION_QUATERNION) != nullptr ||
+      PlatformSensorOHOS::IsSupported(mojom::SensorType::RELATIVE_ORIENTATION_QUATERNION)) {
+    auto sensor_fusion_algorithm =
+        std::make_unique<OrientationEulerAnglesFusionAlgorithmUsingQuaternion>(
+            false);
+    PlatformSensorFusion::Create(reading_buffer, this,
                                  std::move(sensor_fusion_algorithm),
                                  std::move(callback));
+  } else {
+    std::move(callback).Run(nullptr);
+  }
 }
 
 void PlatformSensorProviderOHOS::CreateRelativeOrientationQuaternionSensor(
@@ -155,12 +168,7 @@ void PlatformSensorProviderOHOS::CreateRelativeOrientationQuaternionSensor(
   if (sensor) {
     std::move(callback).Run(std::move(sensor));
   } else {
-    auto sensor_fusion_algorithm =
-        std::make_unique<OrientationQuaternionFusionAlgorithmUsingEulerAngles>(
-            false);
-    PlatformSensorFusion::Create(reading_buffer, this,
-                                 std::move(sensor_fusion_algorithm),
-                                 std::move(callback));
+    std::move(callback).Run(nullptr);
   }
 }
 }  // namespace device

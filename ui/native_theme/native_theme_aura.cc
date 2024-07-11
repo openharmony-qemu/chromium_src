@@ -47,7 +47,6 @@ constexpr int kOverlayScrollbarBorderPatchWidth = 0;
 constexpr int kOverlayScrollbarCenterPatchSize = 36;
 constexpr int kOverlayScrollbarHotSize = 24;
 constexpr int kOverlayScrollbarMargin = 4;
-constexpr int kForceScrollbarWidth = 16;
 constexpr int kForceScrollbarActiveWidth = 8;
 constexpr int kForceScrollbarInactiveWidth = 4;
 constexpr int kForceScrollbarActiveOffset = 4;
@@ -240,24 +239,7 @@ void NativeThemeAura::PaintArrowButton(
       lower_right_radius = kScrollRadius * zoom;
     }
   }
-#if defined(OHOS_SCROLLBAR)
-  if (ui::IsForceScrollbarEnabled()) {
-    gfx::Rect arrow_rect(rect);
-    if ((direction == kScrollbarDownArrow || direction == kScrollbarUpArrow)
-      && rect.width() > kForceScrollbarWidth) {
-      arrow_rect.set_x(rect.width() - kForceScrollbarWidth);
-      arrow_rect.set_width(kForceScrollbarWidth);
-    }
-    else if ((direction == kScrollbarLeftArrow || direction == kScrollbarRightArrow)
-      && rect.height() > kForceScrollbarWidth) {
-      arrow_rect.set_y(rect.height() - kForceScrollbarWidth);
-      arrow_rect.set_height(kForceScrollbarWidth);
-    }
-    DrawPartiallyRoundRect(canvas, arrow_rect, upper_left_radius, upper_right_radius,
-                         lower_right_radius, lower_left_radius, flags);
-    return;
-  }
-#endif
+
   DrawPartiallyRoundRect(canvas, rect, upper_left_radius, upper_right_radius,
                          lower_right_radius, lower_left_radius, flags);
   PaintArrow(canvas, rect, direction, arrow_color);
@@ -277,21 +259,7 @@ void NativeThemeAura::PaintScrollbarTrack(
   const SkColor track_color =
       GetControlColor(kScrollbarTrack, color_scheme, color_provider);
   flags.setColor(track_color);
-#if defined(OHOS_SCROLLBAR)
-  if (ui::IsForceScrollbarEnabled()) {
-    gfx::Rect track_rect(rect);
-    if (part == kScrollbarVerticalTrack && rect.width() > kForceScrollbarWidth) {
-      track_rect.set_x(rect.width() - kForceScrollbarWidth);
-      track_rect.set_width(kForceScrollbarWidth);
-    }
-    else if (part == kScrollbarHorizontalTrack && rect.height() > kForceScrollbarWidth) {
-      track_rect.set_y(rect.height() - kForceScrollbarWidth);
-      track_rect.set_height(kForceScrollbarWidth);
-    }
-    canvas->drawIRect(gfx::RectToSkIRect(track_rect), flags);
-    return;
-  }
-#endif
+
   canvas->drawIRect(gfx::RectToSkIRect(rect), flags);
 }
 
@@ -403,7 +371,7 @@ void NativeThemeAura::PaintScrollbarThumb(cc::PaintCanvas* canvas,
       SkScalar radius;
       thumb_color = SkColorSetA(scrollbar_color, 102);
       flags.setColor(thumb_color);
-      if (state == kHovered) {
+      if (state == kHovered || state == kPressed) {
         radius = SkIntToScalar(kForceScrollbarActiveRadius);
         if (part == kScrollbarVerticalThumb) {
           thumb_rect.set_x(thumb_rect.x() + thumb_rect.width()
@@ -493,6 +461,20 @@ gfx::Size NativeThemeAura::GetPartSize(Part part,
       case kScrollbarVerticalThumb:
         return gfx::Size(scrollbar_width_, minimum_length);
 
+      default:
+        // TODO(bokan): We should probably make sure code using overlay
+        // scrollbars isn't asking for part sizes that don't exist.
+        // crbug.com/657159.
+        break;
+    }
+  } else {
+    switch (part) {
+      case kScrollbarDownArrow:
+      case kScrollbarUpArrow:
+         return gfx::Size(scrollbar_width_, 0);
+      case kScrollbarLeftArrow:
+      case kScrollbarRightArrow:
+        return gfx::Size(0, scrollbar_width_);
       default:
         // TODO(bokan): We should probably make sure code using overlay
         // scrollbars isn't asking for part sizes that don't exist.

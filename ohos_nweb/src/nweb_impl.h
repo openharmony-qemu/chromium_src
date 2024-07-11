@@ -532,6 +532,8 @@ class NWebImpl : public NWeb {
       const std::map<std::string, std::string>& actionArguments) override;
   void SendAccessibilityHoverEvent(int32_t x, int32_t y) override;
 
+  static void TrimMemoryByPressureLevel(int32_t memoryLevel);
+
 #ifdef OHOS_BFCACHE
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override;
 #endif

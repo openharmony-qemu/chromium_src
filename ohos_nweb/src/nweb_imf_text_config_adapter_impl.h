@@ -32,6 +32,10 @@ class NWebIMFTextConfigAdapterImpl : public IMFTextConfigAdapter {
 
   uint32_t GetWindowId() override;
 
+  double GetPositionY() override;
+
+  double GetHeight() override;
+
   void SetInputAttribute(std::shared_ptr<IMFInputAttributeAdapter> attribute);
 
   void SetCursorInfo(std::shared_ptr<IMFCursorInfoAdapter> info);
@@ -40,11 +44,17 @@ class NWebIMFTextConfigAdapterImpl : public IMFTextConfigAdapter {
 
   void SetWindowId(uint32_t id);
 
+  void SetPositionY(double positionY);
+
+  void SetHeight(double height);
+
  private:
   std::shared_ptr<IMFInputAttributeAdapter> input_attribute_ = nullptr;
   std::shared_ptr<IMFCursorInfoAdapter> cursor_info_ = nullptr;
   std::shared_ptr<IMFSelectionRangeAdapter> range_ = nullptr;
   uint32_t window_id_ = -1;
+  double position_y_ = 0;
+  double height_ = 0;
 };
 
 }  // namespace OHOS::NWeb

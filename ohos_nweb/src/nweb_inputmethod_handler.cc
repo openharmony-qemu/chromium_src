@@ -635,12 +635,14 @@ void NWebInputMethodHandler::DeleteForward(int32_t length) {
 }
 
 void NWebInputMethodHandler::SetIMEStatusOnUI(bool status) {
+  LOG(DEBUG) << "NWebInputMethodHandler::SetIMEStatusOnUI status:" << status;
   if (!status && ime_text_composing_) {
     browser_->GetHost()->ImeFinishComposingText(false);
     ime_text_composing_ = false;
     composing_text_.clear();
   }
   ime_shown_ = status;
+  isAttached_ =  status;
 }
 
 void NWebInputMethodHandler::InsertTextHandlerOnUI(const std::u16string& text) {

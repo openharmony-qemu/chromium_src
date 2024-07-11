@@ -62,7 +62,7 @@ void RenderRemoteProxy::NotifyBrowserFd(int32_t ipcFd,
       close(crashFd);
     }
   }
-  LOG(INFO) << "notify browser fd received";
+  LOG(INFO) << "Wait for AMS to return IPC fd success and wake up process";
   RenderRemoteProxy::is_browser_fd_received_ = true;
   RenderRemoteProxy::browser_fd_cv_.notify_one();
 }
@@ -108,6 +108,7 @@ void RenderRemoteProxy::NotifyBrowser(
       close(crashFd);
     }
   }
+  LOG(INFO) << "Wait for AMS to return IPC fd success and wake up process";
   RenderRemoteProxy::is_browser_fd_received_ = true;
   RenderRemoteProxy::browser_fd_cv_.notify_one();
   if (clientAdapter) {
@@ -122,6 +123,7 @@ void RenderRemoteProxy::CreateAndRegist(const base::CommandLine& command_line) {
     g_app_mgr_client_adapter =
         OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateAafwkAdapter();
     g_render_remote_proxy = std::make_shared<RenderRemoteProxy>();
+    LOG(INFO) << "Request to AMS to obtain the main process IPC fd";
     g_app_mgr_client_adapter->AttachRenderProcess(g_render_remote_proxy);
   }
 }
@@ -130,7 +132,7 @@ bool RenderRemoteProxy::WaitForBrowserFd() {
   if (is_for_test_) {
     return true;
   }
-  LOG(INFO) << "wait for browser fd start";
+  LOG(INFO) << "Wait for AMS to return the main process IPC fd";
   std::unique_lock<std::mutex> lk(browser_fd_mtx_);
   constexpr uint32_t kTimeOutDur = 10;  // milliseconds
   constexpr uint32_t kMaxWaitCount = 10;
@@ -139,18 +141,18 @@ bool RenderRemoteProxy::WaitForBrowserFd() {
     if (!browser_fd_cv_.wait_for(lk, std::chrono::milliseconds(kTimeOutDur),
                                  []() { return is_browser_fd_received_; })) {
 #if BUILDFLAG(IS_OHOS)
-      LOG(INFO) << "wait browser fd for " << wait_count * kTimeOutDur << " ms";
+      LOG(INFO) << "Retry to wait for AMS to return the main process IPC fd for " << wait_count * kTimeOutDur << " ms";
 #else
       LOG(INFO) << "retry AttachRenderProcess for " << wait_count << "time";
       g_app_mgr_client_adapter->AttachRenderProcess(g_render_remote_proxy);
 #endif
     } else {
-      LOG(INFO) << "success, wait for browser fd end";
+      LOG(INFO) << "Request to AMS to obtain the main process IPC fd successfully";
       return true;
     }
   }
-  LOG(ERROR) << "wait for browser fd timeout(" << (kTimeOutDur * kMaxWaitCount)
-             << "ms)";
+  LOG(ERROR) << "Request to AMS to obtain the main process IPC fd failed, timeout("
+             << (kTimeOutDur * kMaxWaitCount) << "ms)";
   return false;
 }
 

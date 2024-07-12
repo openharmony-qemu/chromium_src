@@ -303,6 +303,8 @@ class CONTENT_EXPORT RenderWidgetHostViewBase : public RenderWidgetHostView {
 
   virtual void DidOverscroll(const ui::DidOverscrollParams& params) {}
 
+  virtual void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) {}
+
 #if BUILDFLAG(IS_OHOS)
   virtual void DidNativeEmbedEvent(const blink::mojom::NativeEmbedTouchEventPtr& touchEvent) {}
 #endif

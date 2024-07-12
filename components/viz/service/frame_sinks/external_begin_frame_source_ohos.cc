@@ -213,6 +213,7 @@ ReportLossFrame::GetInstance()->SetVsyncPeriod(vsync_period_);
   if (update_vsync_frequency_ &&
       vsync_frequency_to_update_ != cur_vsync_frequency) {
     vsync_frequency_to_reset_ = cur_vsync_frequency;
+    LOG(DEBUG) << "ExternalBeginFrameSourceOHOS::OnVSyncImpl::UpdateVSyncFrequency vsync_frequency_to_update_: " << vsync_frequency_to_update_ << ", cur_vsync_frequency: " << cur_vsync_frequency;
     TRACE_EVENT1("viz", "ExternalBeginFrameSourceOHOS::OnVSyncImpl::UpdateVSyncFrequency", "VSyncFrequency",
             vsync_frequency_to_update_);
     if(frame_sink_manager_) {
@@ -220,6 +221,7 @@ ReportLossFrame::GetInstance()->SetVsyncPeriod(vsync_period_);
     }
   }
   if (reset_vsync_frequency_) {
+    LOG(DEBUG) << "ExternalBeginFrameSourceOHOS::OnVSyncImpl::ResetVSyncFrequency vsync_frequency_to_reset_: " << vsync_frequency_to_reset_ << ", cur_vsync_frequency: " << cur_vsync_frequency;
     TRACE_EVENT1("viz", "ExternalBeginFrameSourceOHOS::OnVSyncImpl::ResetVSyncFrequency", "VSync",
         vsync_frequency_to_reset_);
     if(frame_sink_manager_) {

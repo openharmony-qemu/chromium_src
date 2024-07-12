@@ -89,7 +89,7 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   void Prepare(base::WeakPtr<content::MediaSessionImpl> weakMediaSession);
 
-  OHOSAudioManager* manager_;
+  raw_ptr<OHOSAudioManager> manager_;
 
   AudioParameters parameters_;
 
@@ -97,7 +97,7 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   // reallocating the memory every time.
   std::unique_ptr<AudioBus> audio_bus_;
 
-  AudioSourceCallback* callback_ = nullptr;
+  raw_ptr<AudioSourceCallback> callback_ = nullptr;
 
   double volume_ = 1.0;
 

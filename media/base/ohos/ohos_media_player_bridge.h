@@ -103,7 +103,7 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   std::shared_ptr<OHOS::NWeb::IConsumerSurfaceAdapter> consumer_surface_ =
       nullptr;
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
-  Client* client_;
+  raw_ptr<Client> client_;
   GURL url_;
   bool prepared_;
   bool pending_play_;

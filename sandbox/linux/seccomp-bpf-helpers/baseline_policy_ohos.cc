@@ -15,10 +15,10 @@ struct access_token {
 struct binder_sender_info {
     struct access_token tokens;
     __u64 sender_pid_nr;
-}
+};
 #define BINDER_ENABLE_ONEWAY_SPAM_DETECTION _IOW('b', 16, __u32)
 #define BINDER_FEATURE_SET _IOWR('b', 30, __u64)
-#define BINDER_GET_SENDER_INFO _IOWR('b', 32, struct binder_sender_info)
+#define BINDER_GET_SENDER_INFO  _IOWR('b', 32, struct binder_sender_info)
 
 
 using sandbox::bpf_dsl::AllOf;

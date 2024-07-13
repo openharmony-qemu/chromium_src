@@ -151,6 +151,12 @@ void SoftwareCompositorHostOhos::DemandDrawSwAsync(const char* id,
                      std::move(inputId)));
 }
 
+void SoftwareCompositorHostOhos::DrawRect(const gfx::Rect &rect)
+{
+    LOG(INFO) << "DrawRect in SoftwareCompositorHostOhos";
+    software_compositor_->DrawRect(rect);
+}
+
 void SoftwareCompositorHostOhos::SetSharedMemory(size_t stride,
                                                  size_t buffer_size) {
   software_draw_shm_.reset();

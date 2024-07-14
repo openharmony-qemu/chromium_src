@@ -65,11 +65,11 @@ void SlidingObserver::Init() {
   std::shared_ptr<OHOS::NWeb::DisplayAdapter> display =
       display_manager_adapter->GetDefaultDisplay();
   if (!display) {
-      return;
+    return;
   }
   dpi_ = display->GetDpi();
-  if (dpi_ == 0) {
-      return;
+  if (dpi_ <= 0) {
+    return;
   }
   isInited_ = true;
 

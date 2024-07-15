@@ -1934,9 +1934,14 @@ base::TimeDelta LayerTreeImpl::CurrentBeginFrameInterval() const {
 const gfx::Rect LayerTreeImpl::ViewportRectForTilePriority() const {
   const gfx::Rect& viewport_rect_for_tile_priority =
       host_impl_->viewport_rect_for_tile_priority();
-  return viewport_rect_for_tile_priority.IsEmpty()
-             ? GetDeviceViewport()
-             : viewport_rect_for_tile_priority;
+  if (viewport_rect_for_tile_priority.IsEmpty()) {
+    const gfx::Rect& deviceViewPort = GetDeviceViewport();
+    if (deviceViewPort.height() > MAX_VIEWPORT_HEIGHT) {
+      return gfx::Rect(0, 0, deviceViewPort.width(), MAX_VIEWPORT_HEIGHT);
+    }
+    return deviceViewPort;
+  }
+  return viewport_rect_for_tile_priority;
 }
 
 std::unique_ptr<ScrollbarAnimationController>

@@ -10,6 +10,7 @@
 #if BUILDFLAG(IS_OHOS)
 #include "base/report_loss_frame.h"
 #include "base/ohos/dynamic_frame_loss_monitor.h"
+#include "base/ohos/ltpo/include/dynamic_frame_rate_decision.h"
 #include "base/ohos/ltpo/include/sliding_observer.h"
 #include "base/ohos/input_sync/input_vsync_sync_lock.h"
 #include "base/task/thread_pool.h"
@@ -217,16 +218,14 @@ ReportLossFrame::GetInstance()->SetVsyncPeriod(vsync_period_);
     TRACE_EVENT1("viz", "ExternalBeginFrameSourceOHOS::OnVSyncImpl::UpdateVSyncFrequency", "VSyncFrequency",
             vsync_frequency_to_update_);
     if(frame_sink_manager_) {
-      frame_sink_manager_->ReportVideoFrameRate(vsync_frequency_to_update_, frame_sink_id_);
+      base::ohos::DynamicFrameRateDecision::GetInstance().ReportVideoFrameRate(vsync_frequency_to_update_);
     }
   }
   if (reset_vsync_frequency_) {
     LOG(DEBUG) << "ExternalBeginFrameSourceOHOS::OnVSyncImpl::ResetVSyncFrequency vsync_frequency_to_reset_: " << vsync_frequency_to_reset_ << ", cur_vsync_frequency: " << cur_vsync_frequency;
     TRACE_EVENT1("viz", "ExternalBeginFrameSourceOHOS::OnVSyncImpl::ResetVSyncFrequency", "VSync",
         vsync_frequency_to_reset_);
-    if(frame_sink_manager_) {
-      frame_sink_manager_->ReportVideoFrameRate(0, frame_sink_id_);
-    }
+    base::ohos::DynamicFrameRateDecision::GetInstance().ReportVideoFrameRate(0);
     reset_vsync_frequency_ = false;
   }
 }
@@ -241,13 +240,7 @@ void ExternalBeginFrameSourceOHOS::SetEnabled(bool enabled) {
   }
   TRACE_EVENT1("viz", "ExternalBeginFrameSourceOHOS::SetEnabled", "enabled",
                enabled);
-#if defined(OHOS_PERFORMANCE_JITTER)
-  if (frame_sink_manager_) {
-    TRACE_EVENT0("viz",
-                  "ExternalBeginFrameSourceOHOS::OnVSyncImpl::OnVsyncEnabled");
-      frame_sink_manager_->OnVsyncEnabled(enabled, frame_sink_id_);
-  }
-#endif
+  base::ohos::DynamicFrameRateDecision::GetInstance().SetVsyncEnabled(enabled);
   vsync_notification_enabled_ = enabled;
   first_vsync_since_notify_enabled_ = true;
   if (vsync_notification_enabled_ && user_data_ != nullptr) {

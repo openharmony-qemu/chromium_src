@@ -50,6 +50,8 @@ private:
   void SetMaxFrameRateThreeSec();
   void SetFrameRateLinkerEnable(bool enabled);
   int64_t GetCurrentTimestampMS();
+  void ReportVideoFrameRateImpl(int32_t frame_rate);
+  void SetVsyncEnabledImpl(bool enabled);
 
 private:
   int32_t slidingFrameRate_ {0};
@@ -58,7 +60,7 @@ private:
   bool visible_ {false};
   bool has_touch_point_ {false};
   bool frameRateLinkerEnable_ {false};
-  bool vsyncEnabled_ {false};
+  int32_t vsynCnt_ {0};
   int64_t touch_up_timeStamp_ {0};
 };
 }  // namespace ohos

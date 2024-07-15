@@ -148,6 +148,8 @@ ChildProcessLauncherHelper::LaunchProcessOnLauncherThread(
         app_mgr_client_adapter_->SaveBrowserConnect(browser_host);
         save_browser_connect_ = true;
       }
+
+      LOG(INFO) << "Initiate a request to AMS to create a child process, child type: " << GetProcessType();
       int ret = app_mgr_client_adapter_->StartChildProcess(
           argv_ss.str(), ipc_fd, shared_fd, crash_signal_fd, render_pid, GetProcessType());
       if (ret != 0) {

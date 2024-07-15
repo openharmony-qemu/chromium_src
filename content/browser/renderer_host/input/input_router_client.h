@@ -98,6 +98,8 @@ class InputRouterClient {
 
   // Called when an invalid input event source is sent from the renderer.
   virtual void OnInvalidInputEventSource() = 0;
+
+  virtual void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) = 0;
 };
 
 } // namespace content

@@ -1935,9 +1935,9 @@ const gfx::Rect LayerTreeImpl::ViewportRectForTilePriority() const {
   const gfx::Rect& viewport_rect_for_tile_priority =
       host_impl_->viewport_rect_for_tile_priority();
   if (viewport_rect_for_tile_priority.IsEmpty()) {
-    const gfx::Rect& deviceViewPort =  GetDeviceViewport();
-    if(deviceViewPort.height() > 6000){
-      return gfx::Rect(0,0,deviceViewPort.width(),6000);
+    const gfx::Rect& deviceViewPort = GetDeviceViewport();
+    if (deviceViewPort.height() > MAX_VIEWPORT_HEIGHT) {
+      return gfx::Rect(0, 0, deviceViewPort.width(), MAX_VIEWPORT_HEIGHT);
     }
     return deviceViewPort;
   }

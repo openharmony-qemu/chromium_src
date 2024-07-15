@@ -171,7 +171,7 @@ bool SoftwareCompositorRendererOhos::DemandDrawSw(SkCanvas* canvas,
 
 void SoftwareCompositorRendererOhos::DrawRect(const gfx::Rect& rect) {
   if (client_ == nullptr) {
-    LOG(INFO) << "SW render DrawRect.";
+    LOG(ERROR) << "SW render DrawRect.";
     return;
   }
   client_->SetExternalTilePriorityConstraints(rect, gfx::Transform());

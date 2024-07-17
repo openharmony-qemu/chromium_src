@@ -1406,6 +1406,25 @@ void NWebDelegate::NotifyForNextTouchEvent() {
   }
 }
 
+void NWebDelegate::SetAutofillCallback(std::shared_ptr<NWebMessageValueCallback> callback) {
+  if (!GetBrowser().get()) {
+    return;
+  }
+
+  CefRefPtr<CefWebMessageReceiver> JsResultCb =  new CefWebMessageReceiverImpl(callback);
+  GetBrowser()->GetHost()->SetAutofillCallback(JsResultCb);
+}
+
+void NWebDelegate::FillAutofillData(std::shared_ptr<NWebMessage> data) {
+  if (!GetBrowser().get()) {
+    return;
+  }
+
+  CefRefPtr<CefValue> message = CefValue::Create();
+  ConvertNWebMsgToCefValue(data, message);
+  GetBrowser()->GetHost()->FillAutofillData(message);
+}
+
 void NWebDelegate::OnContinue() {
   LOG(DEBUG) << "NWebDelegate::OnContinue, nweb_id = " << nweb_id_;
   if (!GetBrowser().get()) {

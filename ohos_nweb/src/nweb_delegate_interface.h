@@ -92,6 +92,8 @@ class NWebDelegateInterface
   virtual void
   ResumeDownload(std::shared_ptr<NWebDownloadItem> web_download) = 0;
   virtual void NotifyForNextTouchEvent() = 0;
+  virtual void SetAutofillCallback(std::shared_ptr<NWebMessageValueCallback> callback) = 0;
+  virtual void FillAutofillData(std::shared_ptr<NWebMessage> data) = 0;
 
 #if defined(OHOS_INPUT_EVENTS)
   virtual void SetNWebDelegateInterface(

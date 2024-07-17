@@ -62,6 +62,7 @@ class NWebImpl : public NWeb {
                            double deltaX,
                            double deltaY) override;
   void SendMouseEvent(int x, int y, int button, int action, int count) override;
+  void FillAutofillData(std::shared_ptr<NWebMessage> data) override;
 
   // public api
   int Load(const std::string& url) override;
@@ -261,6 +262,7 @@ class NWebImpl : public NWeb {
   void SetEnableBlankTargetPopupIntercept(bool enableBlankTargetPopup) const;
 #endif
 
+  void SetAutofillCallback(std::shared_ptr<NWebMessageValueCallback> callback) override;
   std::shared_ptr<NWebHistoryList> GetHistoryList() override;
   std::vector<uint8_t> SerializeWebState() override;
   bool RestoreWebState(const std::vector<uint8_t>& state) override;

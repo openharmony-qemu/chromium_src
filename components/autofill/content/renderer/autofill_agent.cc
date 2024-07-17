@@ -185,8 +185,8 @@ class AutofillAgent::DeferringAutofillDriver : public mojom::AutofillDriver {
              bounding_box, autoselect_first_suggestion,
              form_element_was_clicked);
   }
-  void HidePopup() override { 
-    DeferMsg(&mojom::AutofillDriver::HidePopup); 
+  void HidePopup() override {
+    DeferMsg(&mojom::AutofillDriver::HidePopup);
   }
   void FocusNoLongerOnForm(bool had_interacted_form) override {
     DeferMsg(&mojom::AutofillDriver::FocusNoLongerOnForm, had_interacted_form);
@@ -557,7 +557,7 @@ void AutofillAgent::TextFieldDidReceiveKeyDown(const WebInputElement& element,
     LOG(INFO) << "TextFieldDidReceiveKeyDown is_popup_possibly_visible_";
     return;
   }
-  #endif 
+  #endif
 
   if (event.windows_key_code == ui::VKEY_DOWN ||
       event.windows_key_code == ui::VKEY_UP) {
@@ -727,10 +727,30 @@ void AutofillAgent::ClearPreviewedForm() {
 
 void AutofillAgent::FillFieldWithValue(FieldRendererId field_id,
                                        const std::u16string& value) {
+#if BUILDFLAG(IS_OHOS)
+  LOG(INFO) << "FillFieldWithValue";
+  if (element_.IsNull()) {
+    return;
+  }
+
+  if (field_id != FieldRendererId(element_.UniqueRendererFormControlId())) {
+    // oh supports fill multiple form fields, including unfocused field
+    WebFormElement form = element_.Form();
+    for (WebFormControlElement& element : form.GetFormControlElements()) {
+      if (element.IsNull() || FieldRendererId(element.UniqueRendererFormControlId()) != field_id) {
+        continue;
+      }
+      DoFillFieldWithValue(value, element, WebAutofillState::kAutofilled);
+      break;
+    }
+    return;
+  }
+#else
   if (element_.IsNull() ||
       field_id != FieldRendererId(element_.UniqueRendererFormControlId())) {
     return;
   }
+#endif
 
   if (form_util::IsTextAreaElementOrTextInput(element_))
     DoFillFieldWithValue(value, element_, WebAutofillState::kAutofilled);

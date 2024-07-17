@@ -1444,6 +1444,22 @@ void NWebImpl::SetPortMessageCallback(
 }
 #endif  // defined(OHOS_MSGPORT)
 
+void NWebImpl::SetAutofillCallback(std::shared_ptr<NWebMessageValueCallback> callback) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("JSAPI nweb_delegate_ its null");
+    return;
+  }
+  nweb_delegate_->SetAutofillCallback(callback);
+}
+
+void NWebImpl::FillAutofillData(std::shared_ptr<NWebMessage> data) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("JSAPI nweb_delegate_ its null");
+    return;
+  }
+  nweb_delegate_->FillAutofillData(data);
+}
+
 uint32_t NWebImpl::GetWebId() {
   return nweb_id_;
 }

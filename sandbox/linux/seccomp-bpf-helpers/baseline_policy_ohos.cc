@@ -6,6 +6,7 @@
 #include "sandbox/linux/seccomp-bpf-helpers/sigsys_handlers.h"
 #include <linux/ashmem.h>
 #include <linux/android/binder.h>
+#include <signal.h>
 
 struct access_token {
     __u64 sender_tokenid;
@@ -19,7 +20,6 @@ struct binder_sender_info {
 #define BINDER_ENABLE_ONEWAY_SPAM_DETECTION _IOW('b', 16, __u32)
 #define BINDER_FEATURE_SET _IOWR('b', 30, __u64)
 #define BINDER_GET_SENDER_INFO  _IOWR('b', 32, struct binder_sender_info)
-
 
 using sandbox::bpf_dsl::AllOf;
 using sandbox::bpf_dsl::Allow;
@@ -133,7 +133,6 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
     case __NR_mincore:
     case __NR_memfd_create:
     case __NR_faccessat:
-    case __NR_clone:
     case __NR_openat:
     case __NR_connect:
     case __NR_readlinkat:
@@ -253,6 +252,19 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
                         BINDER_FEATURE_SET, BINDER_GET_SENDER_INFO},
                     Allow())
             .Default(RestrictIoctl());
+    }
+
+    if (sysno == __NR_clone) {
+        const Arg<unsigned long> flags(0);
+ 
+        const uint64_t kMuslForkFlags = SIGCHLD;
+        const uint64_t kPthreadCreateFlags =
+            CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_THREAD |
+            CLONE_SYSVSEM | CLONE_SETTLS | CLONE_PARENT_SETTID | CLONE_CHILD_CLEARTID | CLONE_DETACHED;
+ 
+        const BoolExpr is_fork_or_pthread =
+            AnyOf(flags==kMuslForkFlags, flags == kPthreadCreateFlags);
+        return If(is_fork_or_pthread, Allow()).Else(CrashSIGSYSClone());
     }
 #endif
 

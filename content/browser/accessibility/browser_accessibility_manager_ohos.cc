@@ -24,6 +24,7 @@
 namespace content {
 const int64_t kInvalidAccessibilityId = -1;
 const int64_t kRootAccessibilityId = 0;
+constexpr int64_t kDefaultUpdateEventDelayMs = 100;
 std::function<int64_t()> g_accessibility_id_generator;
 
 BrowserAccessibilityManager* BrowserAccessibilityManager::Create(
@@ -105,18 +106,6 @@ void BrowserAccessibilityManagerOHOS::FireBlinkEvent(
     case ax::mojom::Event::kHover:
       HandleHover(accessibilityId);
       break;
-    case ax::mojom::Event::kLayoutComplete:
-      HandleContentChanged(accessibilityId);
-      SendAccessibilityEvent(accessibilityId,
-                             OHOS::NWeb::AccessibilityEventType::PAGE_CHANGE);
-      break;
-    case ax::mojom::Event::kLoadComplete:
-      HandleContentChanged(accessibilityId);
-      break;
-    case ax::mojom::Event::kLocationChanged:
-      SendAccessibilityEvent(accessibilityId,
-                             OHOS::NWeb::AccessibilityEventType::PAGE_CHANGE);
-      break;
     default:
       break;
   }
@@ -157,10 +146,38 @@ void BrowserAccessibilityManagerOHOS::MoveAccessibilityFocus(
   node->manager()->SetAccessibilityFocus(*node);
 }
 
+bool BrowserAccessibilityManagerOHOS::IsIgnoredEvent(
+    std::map<int64_t, int64_t>& lastEventFiredTimes,
+    const int64_t& accessibilityId) {
+  auto lastEventFireTimeIter = lastEventFiredTimes.find(accessibilityId);
+  auto now = std::chrono::system_clock::now();
+  auto millis = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
+  auto timestamp = millis.time_since_epoch().count();
+  if (lastEventFiredTimes.end() == lastEventFireTimeIter) {
+    lastEventFiredTimes.insert(std::make_pair(accessibilityId, timestamp));
+  } else {
+    auto interval = std::abs(timestamp - lastEventFireTimeIter->second);
+    if (interval <= kDefaultUpdateEventDelayMs) {
+      return true;
+    }
+    lastEventFireTimeIter->second = timestamp;
+  }
+  return false;
+}
+
 void BrowserAccessibilityManagerOHOS::SendAccessibilityEvent(
     int64_t accessibilityId,
     OHOS::NWeb::AccessibilityEventType eventType) {
   accessibilityId = TranslateAccessibilityId(accessibilityId);
+
+  if ((OHOS::NWeb::AccessibilityEventType::CHANGE == eventType &&
+       IsIgnoredEvent(lastContentUpdateEventFiredTimes_, accessibilityId)) ||
+      (OHOS::NWeb::AccessibilityEventType::PAGE_CHANGE == eventType &&
+       IsIgnoredEvent(lastStateUpdateEventFiredTimes_, accessibilityId)) ||
+      (OHOS::NWeb::AccessibilityEventType::SCROLL_END == eventType &&
+       IsIgnoredEvent(lastScrollEventFiredTimes_, accessibilityId))) {
+    return;
+  }
 
   LOG(INFO) << "SendAccessibilityEvent accessibilityId is " << accessibilityId
             << ", eventType is " << static_cast<uint32_t>(eventType);
@@ -265,7 +282,11 @@ void BrowserAccessibilityManagerOHOS::FireGeneratedEvent(
       break;
     case ui::AXEventGenerator::Event::SCROLL_HORIZONTAL_POSITION_CHANGED:
     case ui::AXEventGenerator::Event::SCROLL_VERTICAL_POSITION_CHANGED:
-      SendAccessibilityEvent(accessibilityId, OHOS::NWeb::AccessibilityEventType::SCROLL_END);
+      if (kRootAccessibilityId == accessibilityId) {
+        SendAccessibilityEvent(accessibilityId, OHOS::NWeb::AccessibilityEventType::PAGE_CHANGE);
+      } else {
+        SendAccessibilityEvent(accessibilityId, OHOS::NWeb::AccessibilityEventType::SCROLL_END);
+      }
       break;
     case ui::AXEventGenerator::Event::SELECTED_CHANGED:
       SendAccessibilityEvent(accessibilityId, 

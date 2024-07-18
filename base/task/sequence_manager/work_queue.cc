@@ -214,6 +214,12 @@ Task WorkQueue::TakeTaskFromWorkQueue() {
       std::string QueueDump;
       JSONWriter::Write(task_queue_->AsValue(now, false), &QueueDump);
       LOG(ERROR) << "QTL, Queue Dump: " << QueueDump;
+      const Task* immediate_back_task = task_queue_->immediate_work_queue()->GetBackTask();
+      if (immediate_back_task) {
+        std::string backTaskDump;
+        JSONWriter::Write(TaskQueueImpl::TaskAsValue(*immediate_back_task, now), &backTaskDump);
+        LOG(ERROR) << "QTL, immediate back task: " << backTaskDump;
+      }
     }
 #endif
     tasks_.MaybeShrinkQueue();

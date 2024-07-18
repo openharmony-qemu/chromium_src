@@ -942,9 +942,8 @@ void TransportClientSocketPool::CleanupIdleSocketsInGroup(
       if (idle_socket_it->socket->IsFromPreload()) {
         timeout = base::TimeDelta::FromInternalValue(
             UNUSED_PRELOAD_SOCKET_TIMEOUT_MICRO_SEC);
-        LOG(DEBUG)
-            << "TransportClientSocketPool set unused preload socket timeout to "
-            << UNUSED_PRELOAD_SOCKET_TIMEOUT_MICRO_SEC << " micro sec.";
+        LOG(DEBUG) << "PRPpreload set unused preload socket timeout to "
+                   << timeout;
       } else {
         timeout = unused_idle_socket_timeout_;
       }
@@ -970,6 +969,13 @@ void TransportClientSocketPool::CleanupIdleSocketsInGroup(
 
     if (should_clean_up) {
       DCHECK(reason_for_closing_socket);
+#if BUILDFLAG(IS_OHOS)
+      if (idle_socket_it->socket->IsFromPreload() &&
+          !idle_socket_it->socket->WasEverUsed()) {
+        LOG(DEBUG) << "PRPpreload unused preload socket cleaned. Timeout: "
+                   << timeout;
+      }
+#endif
       idle_socket_it->socket->NetLog().AddEventWithStringParams(
           NetLogEventType::SOCKET_POOL_CLOSING_SOCKET, "reason",
           reason_for_closing_socket);

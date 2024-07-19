@@ -55,12 +55,33 @@ class NetConnCallbackImpl : public OHOS::NWeb::NetConnCallback {
       const OHOS::NWeb::NetConnectSubtype& netConnectSubtype) override;
   int32_t NetConnectionPropertiesChange() override;
   int32_t NetUnavailable() override;
+  int32_t OnNetCapabilitiesChanged(
+      const std::shared_ptr<OHOS::NWeb::NetCapabilitiesAdapter> capabilities)
+      override;
+  int32_t OnNetConnectionPropertiesChanged(
+      const std::shared_ptr<OHOS::NWeb::NetConnectionPropertiesAdapter>
+          properties) override;
 
  private:
+  void ConnectionTypeChangedTo(int32_t net_id,
+                               OHOS::NWeb::NetConnectType type,
+                               OHOS::NWeb::NetConnectSubtype subtype);
+
   net::NetworkChangeNotifierPassive* network_change_notifier_posix_ = nullptr;
+  std::shared_ptr<OHOS::NWeb::NetCapabilitiesAdapter> capabilities_ = nullptr;
+  std::shared_ptr<OHOS::NWeb::NetConnectionPropertiesAdapter> properties_ =
+      nullptr;
+  int32_t net_id_ = -1;
+  OHOS::NWeb::NetConnectType type_ =
+      OHOS::NWeb::NetConnectType::CONNECTION_UNKNOWN;
+  OHOS::NWeb::NetConnectSubtype subtype_ =
+      OHOS::NWeb::NetConnectSubtype::SUBTYPE_UNKNOWN;
 };
 
 int32_t NetConnCallbackImpl::NetAvailable() {
+  LOG(INFO) << "ohos_network NetAvailable";
+  capabilities_ = nullptr;
+  properties_ = nullptr;
   return 0;
 }
 
@@ -86,14 +107,74 @@ int32_t NetConnCallbackImpl::NetConnectionPropertiesChange() {
 }
 
 int32_t NetConnCallbackImpl::NetUnavailable() {
+  LOG(INFO) << "ohos_network NetUnavailable";
+  capabilities_ = nullptr;
+  properties_ = nullptr;
   if (network_change_notifier_posix_) {
-    network_change_notifier_posix_->OnConnectionChanged(
-        net::NetworkChangeNotifier::ConnectionType::CONNECTION_NONE);
-    network_change_notifier_posix_->OnConnectionSubtypeChanged(
-        net::NetworkChangeNotifier::ConnectionType::CONNECTION_NONE,
-        net::NetworkChangeNotifier::ConnectionSubtype::SUBTYPE_NONE);
+      ConnectionTypeChangedTo(-1, OHOS::NWeb::NetConnectType::CONNECTION_NONE,
+                              OHOS::NWeb::NetConnectSubtype::SUBTYPE_NONE);
   }
   return 0;
+}
+
+
+int32_t NetConnCallbackImpl::OnNetCapabilitiesChanged(
+      const std::shared_ptr<OHOS::NWeb::NetCapabilitiesAdapter> capabilities) {
+  capabilities_ = capabilities;
+  if (capabilities_) {
+    LOG(INFO) << "ohos_network NetCapabilitiesChange, net_id "
+      << capabilities_->GetNetId() << ", connectType "
+      << (int)capabilities_->GetConnectType() << ", subtype "
+      << (int)capabilities_->GetConnectSubtype();
+  }
+  if (network_change_notifier_posix_ && capabilities_ && properties_) {
+    ConnectionTypeChangedTo(capabilities_->GetNetId(),
+                            capabilities_->GetConnectType(),
+                            capabilities_->GetConnectSubtype());
+  }
+  return 0;
+}
+
+int32_t NetConnCallbackImpl::OnNetConnectionPropertiesChanged(
+      const std::shared_ptr<OHOS::NWeb::NetConnectionPropertiesAdapter>
+          properties) {
+  properties_ = properties;
+  if (properties_) {
+    LOG(INFO) << "ohos_network NetConnectionPropertiesChange, net_id "
+              << properties_->GetNetId();
+  }
+  if (network_change_notifier_posix_ && capabilities_ && properties_) {
+    ConnectionTypeChangedTo(properties_->GetNetId(),
+                            capabilities_->GetConnectType(),
+                            capabilities_->GetConnectSubtype());
+  }
+  return 0;
+}
+
+void NetConnCallbackImpl::ConnectionTypeChangedTo(
+    int32_t net_id,
+    OHOS::NWeb::NetConnectType type,
+    OHOS::NWeb::NetConnectSubtype subtype) {
+  if (net_id_ != net_id || type_ != type) {
+    LOG(INFO) << "ohos_network ConnectionTypeChangedTo, net_id_ " << net_id_
+              << ", net_id " << net_id << ", type_ " << (int)type_ << ", type "
+              << (int)type;
+    network_change_notifier_posix_->OnConnectionChanged(
+        ConvertOhosConnTypeToNetBaseConnType(type));
+  }
+
+  if (subtype_ != subtype) {
+    LOG(INFO) << "ohos_network ConnectionTypeChangedTo, net_id_ " << net_id_
+              << "net_id " << net_id << ", subtype_ " << (int)subtype_
+              << ", subtype " << (int)subtype;
+    network_change_notifier_posix_->OnConnectionSubtypeChanged(
+        ConvertOhosConnTypeToNetBaseConnType(type),
+        ConvertOhosConnSubtypeToNetBaseConnSubtype(subtype));
+  }
+
+  net_id_ = net_id;
+  type_ = type;
+  subtype_ = subtype;
 }
 
 std::shared_ptr<NetConnCallbackImpl> g_net_connect_callback = nullptr;

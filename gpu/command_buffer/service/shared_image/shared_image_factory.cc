@@ -439,6 +439,45 @@ bool SharedImageFactory::CreateSharedImage(
   return RegisterBacking(std::move(backing));
 }
 
+#if BUILDFLAG(IS_OHOS)
+bool SharedImageFactory::CreateSharedImage(const Mailbox& mailbox,
+                                           gfx::GpuMemoryBufferHandle handle,
+                                           gfx::BufferFormat format,
+                                           gfx::BufferPlane plane,
+                                           const gfx::Size& size,
+                                           const gfx::ColorSpace& color_space,
+                                           GrSurfaceOrigin surface_origin,
+                                           SkAlphaType alpha_type,
+                                           uint32_t usage,
+                                           void* window_buffer){
+  auto si_format =
+      viz::SharedImageFormat::SinglePlane(viz::GetResourceFormat(format));
+  gfx::GpuMemoryBufferType gmb_type = handle.type;
+
+  auto* factory = GetFactoryByUsage(usage, si_format, size,
+                                    /*pixel_data=*/{}, gmb_type);
+  if (!factory) {
+    LogGetFactoryFailed(usage, si_format, gmb_type);
+    return false;
+  }
+
+  std::unique_ptr<SharedImageBacking> backing;
+  backing = factory->CreateSharedImage(
+      mailbox, std::move(handle), format, plane, size, color_space,
+      surface_origin, alpha_type, usage, window_buffer);
+  if (backing) {
+    LOG(DEBUG) << "[HeifSupport] CreateSharedImage[" << backing->GetName()
+               << "] from handle size=" << size.ToString()
+               << " usage=" << CreateLabelForSharedImageUsage(usage)
+               << " buffer_format=" << gfx::BufferFormatToString(format)
+               << " gmb_type=" << GmbTypeToString(gmb_type);
+    backing->OnWriteSucceeded();
+  }
+
+  return RegisterBacking(std::move(backing));
+}
+#endif
+
 bool SharedImageFactory::CreateSharedImage(const Mailbox& mailbox,
                                            gfx::GpuMemoryBufferHandle handle,
                                            gfx::BufferFormat format,

@@ -562,6 +562,7 @@ bool RenderViewHostImpl::CreateRenderView(
 
   // The renderer process's `blink::WebView` is owned by this lifecycle of
   // the `page_broadcast_` channel.
+  LOG(DEBUG) << "will create view";
   GetAgentSchedulingGroup().CreateView(std::move(params));
 
   // Set the bit saying we've made the `blink::WebView` in the renderer and

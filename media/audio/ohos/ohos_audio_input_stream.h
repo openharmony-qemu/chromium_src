@@ -42,7 +42,7 @@ class OHOSAudioInputStream : public AudioInputStream {
 
   ~OHOSAudioInputStream() override;
 
-  OHOSAudioManager* const manager_;
+  raw_ptr<OHOSAudioManager> const manager_;
   AudioParameters parameters_;
   std::unique_ptr<CaptureCallbackAdapter> callback_adapter_;
   scoped_refptr<OHOSAudioCapturerSource> capturer_source_;

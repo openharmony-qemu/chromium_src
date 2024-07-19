@@ -370,6 +370,8 @@ bool HitNativeArea(double x, double y);
                                  double vx,
                                  double vy,
                                  const std::vector<int32_t>& pressedCodes) override;
+  void ScrollToWithAnime(float x, float y, int32_t duration) override;
+  void ScrollByWithAnime(float delta_x, float delta_y, int32_t duration) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #ifdef OHOS_ARKWEB_ADBLOCK
@@ -458,6 +460,8 @@ bool HitNativeArea(double x, double y);
   GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
                                       int32_t direction) override;
   void RefreshAccessibilityManagerClickEvent() override;
+  void SetAutofillCallback(std::shared_ptr<NWebMessageValueCallback> callback) override;
+  void FillAutofillData(std::shared_ptr<NWebMessage> data) override;
 
 #if defined(OHOS_WEBRTC)
   void StartCamera() override;

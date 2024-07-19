@@ -63,6 +63,8 @@ class CC_MOJO_EMBEDDER_EXPORT SoftwareCompositorRendererOhos {
 
   bool DemandDrawSw(SkCanvas* canvas, gfx::SizeF size, gfx::PointF offset);
 
+  void DrawRect(const gfx::Rect& rect);
+
   void SendCompositorFrameAckToClient();
 
   bool InSoftwareDraw() { return in_software_draw_; }

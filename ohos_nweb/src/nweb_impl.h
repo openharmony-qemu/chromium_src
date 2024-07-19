@@ -62,6 +62,7 @@ class NWebImpl : public NWeb {
                            double deltaX,
                            double deltaY) override;
   void SendMouseEvent(int x, int y, int button, int action, int count) override;
+  void FillAutofillData(std::shared_ptr<NWebMessage> data) override;
 
   // public api
   int Load(const std::string& url) override;
@@ -261,6 +262,7 @@ class NWebImpl : public NWeb {
   void SetEnableBlankTargetPopupIntercept(bool enableBlankTargetPopup) const;
 #endif
 
+  void SetAutofillCallback(std::shared_ptr<NWebMessageValueCallback> callback) override;
   std::shared_ptr<NWebHistoryList> GetHistoryList() override;
   std::vector<uint8_t> SerializeWebState() override;
   bool RestoreWebState(const std::vector<uint8_t>& state) override;
@@ -286,6 +288,8 @@ class NWebImpl : public NWeb {
                                  double vx,
                                  double vy,
                                  const std::vector<int32_t>& pressedCodes) override;
+  void ScrollToWithAnime(float x, float y, int32_t duration) override;
+  void ScrollByWithAnime(float delta_x, float delta_y, int32_t duration) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
   bool GetCertChainDerData(std::vector<std::string>& certChainData,
@@ -529,6 +533,8 @@ class NWebImpl : public NWeb {
   void PerformAction(int64_t accessibilityId, uint32_t action,
       const std::map<std::string, std::string>& actionArguments) override;
   void SendAccessibilityHoverEvent(int32_t x, int32_t y) override;
+
+  static void TrimMemoryByPressureLevel(int32_t memoryLevel);
 
 #ifdef OHOS_BFCACHE
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override;

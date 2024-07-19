@@ -5,6 +5,8 @@
 #ifndef CC_TREES_LAYER_TREE_IMPL_H_
 #define CC_TREES_LAYER_TREE_IMPL_H_
 
+#define MAX_VIEWPORT_HEIGHT 9000
+
 #include <map>
 #include <memory>
 #include <set>

@@ -30,16 +30,7 @@ CodecSurfaceBundle::~CodecSurfaceBundle() {
   if (!codec_buffer_wait_coordinator_)
     return;
 
-  auto task_runner =
-      codec_buffer_wait_coordinator_->texture_owner()->task_runner();
-  if (task_runner->RunsTasksInCurrentSequence()) {
-    codec_buffer_wait_coordinator_->texture_owner()->ReleaseNativeImage();
-  } else {
-    task_runner->PostTask(
-        FROM_HERE,
-        base::BindOnce(&gpu::NativeImageTextureOwner::ReleaseNativeImage,
-                       codec_buffer_wait_coordinator_->texture_owner()));
-  }
+  codec_buffer_wait_coordinator_->texture_owner()->ReleaseNativeImage();
 }
 
 void* CodecSurfaceBundle::GetOHOSNativeWindow() const {

@@ -462,6 +462,14 @@
 "dependence": "",
 "default": "true"
 },
+{ "name": "OHOS_MIXED_CONTENT",
+"owner": "",
+"desc": "",
+"effect":"main gn blink_core other",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},
 { "name": "OHOS_MSGPORT",
 "owner": "",
 "desc": "",

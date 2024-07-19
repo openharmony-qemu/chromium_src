@@ -4,7 +4,22 @@
 #include "sandbox/linux/bpf_dsl/bpf_dsl.h"
 #include "sandbox/linux/system_headers/linux_syscalls.h"
 #include "sandbox/linux/seccomp-bpf-helpers/sigsys_handlers.h"
+#include <linux/ashmem.h>
+#include <linux/android/binder.h>
+#include <signal.h>
 
+struct access_token {
+    __u64 sender_tokenid;
+    __u64 first_tokenid;
+    __u64 reserved[2];
+};
+struct binder_sender_info {
+    struct access_token tokens;
+    __u64 sender_pid_nr;
+};
+#define BINDER_ENABLE_ONEWAY_SPAM_DETECTION _IOW('b', 16, __u32)
+#define BINDER_FEATURE_SET _IOWR('b', 30, __u64)
+#define BINDER_GET_SENDER_INFO  _IOWR('b', 32, struct binder_sender_info)
 
 using sandbox::bpf_dsl::AllOf;
 using sandbox::bpf_dsl::Allow;
@@ -118,11 +133,9 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
     case __NR_mincore:
     case __NR_memfd_create:
     case __NR_faccessat:
-    case __NR_clone:
     case __NR_openat:
     case __NR_connect:
     case __NR_readlinkat:
-    case __NR_ioctl:
     case __NR_mkdirat:
     case __NR_set_tid_address:
     case __NR_getdents64:
@@ -214,6 +227,44 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
                         advice == MADV_WIPEONFORK),
                 Allow())
             .Else(BaselinePolicy::EvaluateSyscall(sysno));
+    }
+
+    if (sysno == __NR_ioctl) {
+        const Arg<unsigned int> request(1);
+        #ifdef BINDER_IPC_32BIT
+        const unsigned int kBinderWriteRead32 = BINDER_WRITE_READ;
+        const unsigned int kBinderWriteRead64 =
+            (BINDER_WRITE_READ & ~IOCSIZE_MASK) |
+            ((sizeof(binder_write_read) * 2) << _IOC_SIZESHIFT);
+        #else
+        const unsigned int kBinderWriteRead64 = BINDER_WRITE_READ;
+        const unsigned int kBinderWriteRead32 =
+            (BINDER_WRITE_READ & ~IOCSIZE_MASK) |
+            ((sizeof(binder_write_read) / 2) << _IOC_SIZESHIFT);
+        #endif
+        return Switch(request)
+            .Cases({
+                        ASHMEM_SET_NAME, ASHMEM_GET_NAME, ASHMEM_SET_SIZE,
+                        ASHMEM_GET_SIZE, ASHMEM_SET_PROT_MASK, ASHMEM_GET_PROT_MASK,
+                        ASHMEM_PIN, ASHMEM_UNPIN, ASHMEM_GET_PIN_STATUS,
+                        kBinderWriteRead32, kBinderWriteRead64, BINDER_SET_MAX_THREADS,
+                        BINDER_THREAD_EXIT, BINDER_VERSION, BINDER_ENABLE_ONEWAY_SPAM_DETECTION,
+                        BINDER_FEATURE_SET, BINDER_GET_SENDER_INFO},
+                    Allow())
+            .Default(RestrictIoctl());
+    }
+
+    if (sysno == __NR_clone) {
+        const Arg<unsigned long> flags(0);
+ 
+        const uint64_t kMuslForkFlags = SIGCHLD;
+        const uint64_t kPthreadCreateFlags =
+            CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_THREAD |
+            CLONE_SYSVSEM | CLONE_SETTLS | CLONE_PARENT_SETTID | CLONE_CHILD_CLEARTID | CLONE_DETACHED;
+ 
+        const BoolExpr is_fork_or_pthread =
+            AnyOf(flags==kMuslForkFlags, flags == kPthreadCreateFlags);
+        return If(is_fork_or_pthread, Allow()).Else(CrashSIGSYSClone());
     }
 #endif
 

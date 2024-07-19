@@ -92,6 +92,8 @@ class NWebDelegateInterface
   virtual void
   ResumeDownload(std::shared_ptr<NWebDownloadItem> web_download) = 0;
   virtual void NotifyForNextTouchEvent() = 0;
+  virtual void SetAutofillCallback(std::shared_ptr<NWebMessageValueCallback> callback) = 0;
+  virtual void FillAutofillData(std::shared_ptr<NWebMessage> data) = 0;
 
 #if defined(OHOS_INPUT_EVENTS)
   virtual void SetNWebDelegateInterface(
@@ -344,6 +346,8 @@ class NWebDelegateInterface
   virtual void SlideScroll(float vx, float vy) = 0;
   virtual bool WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
                                const std::vector<int32_t>& pressedCodes) = 0;
+  virtual void ScrollToWithAnime(float x, float y, int32_t duration) = 0;
+  virtual void ScrollByWithAnime(float delta_x, float delta_y, int32_t duration) = 0;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #if defined(OHOS_EX_FORCE_ZOOM)

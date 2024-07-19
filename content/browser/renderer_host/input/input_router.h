@@ -49,6 +49,8 @@ class InputRouter {
   virtual void SendWheelEvent(
       const MouseWheelEventWithLatencyInfo& wheel_event) = 0;
 
+  virtual void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) = 0;
+
   using KeyboardEventCallback = base::OnceCallback<void(
       const NativeWebKeyboardEventWithLatencyInfo& event,
       blink::mojom::InputEventResultSource ack_source,

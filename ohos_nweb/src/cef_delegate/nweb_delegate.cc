@@ -1406,6 +1406,25 @@ void NWebDelegate::NotifyForNextTouchEvent() {
   }
 }
 
+void NWebDelegate::SetAutofillCallback(std::shared_ptr<NWebMessageValueCallback> callback) {
+  if (!GetBrowser().get()) {
+    return;
+  }
+
+  CefRefPtr<CefWebMessageReceiver> JsResultCb =  new CefWebMessageReceiverImpl(callback);
+  GetBrowser()->GetHost()->SetAutofillCallback(JsResultCb);
+}
+
+void NWebDelegate::FillAutofillData(std::shared_ptr<NWebMessage> data) {
+  if (!GetBrowser().get()) {
+    return;
+  }
+
+  CefRefPtr<CefValue> message = CefValue::Create();
+  ConvertNWebMsgToCefValue(data, message);
+  GetBrowser()->GetHost()->FillAutofillData(message);
+}
+
 void NWebDelegate::OnContinue() {
   LOG(DEBUG) << "NWebDelegate::OnContinue, nweb_id = " << nweb_id_;
   if (!GetBrowser().get()) {
@@ -2540,6 +2559,38 @@ void NWebDelegate::WebSendTouchpadFlingEvent(double x,
                                               vy / default_virtual_pixel_ratio_,
                                               pressedCodes);
   }
+}
+
+void NWebDelegate::ScrollToWithAnime(float x, float y, int32_t duration) {
+  if (!GetBrowser().get()) {
+    LOG(ERROR) << "JSAPI ScrollToWithAnime can not get browser";
+    return;
+  }
+  float ratio = render_handler_->GetVirtualPixelRatio();
+  if (ratio <= 0) {
+    LOG(ERROR) << "get ratio invalid: " << ratio;
+    return;
+  }
+
+  GetBrowser()->GetHost()->ScrollToWithAnime(std::round(x * ratio),
+                                             std::round(y * ratio),
+                                             duration);
+}
+
+void NWebDelegate::ScrollByWithAnime(float delta_x, float delta_y, int32_t duration) {
+  if (!GetBrowser().get()) {
+    LOG(ERROR) << "JSAPI ScrollByWithAnime can not get browser";
+    return;
+  }
+  float ratio = render_handler_->GetVirtualPixelRatio();
+  if (ratio <= 0) {
+    LOG(ERROR) << "get ratio invalid: " << ratio;
+    return;
+  }
+
+  GetBrowser()->GetHost()->ScrollByWithAnime(std::round(delta_x * ratio),
+                                             std::round(delta_y * ratio),
+                                             duration);
 }
 #endif  // defined(OHOS_INPUT_EVENTS)
 

@@ -250,14 +250,12 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
   if (ret != AudioAdapterCode::AUDIO_OK) {
     LOG(ERROR)
         << "OHOSAudioOutputStream::Start Set audio renderer callback failed.";
-    rendererCallback_.reset();
     return;
   }
   ret = audio_renderer_->SetAudioOutputChangeCallback(outputChangeCallback_);
   if (ret != AudioAdapterCode::AUDIO_OK) {
     LOG(ERROR) << "OHOSAudioOutputStream::Start Set audio output change "
                   "callback failed.";
-    outputChangeCallback_.reset();
     return;
   }
   Prepare(weakMediaSession_);

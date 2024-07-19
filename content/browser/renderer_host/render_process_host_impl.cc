@@ -3846,6 +3846,7 @@ bool RenderProcessHostImpl::FastShutdownIfPossible(size_t page_count,
   // died due to fast shutdown versus another cause.
   fast_shutdown_started_ = true;
 
+  LOG(INFO) << "Rended process: " << GetID() << " died due to fast shutdown versus another cause";
   ChildProcessTerminationInfo info;
   info.status = base::TERMINATION_STATUS_PROCESS_WAS_KILLED;
   info.exit_code = 0;
@@ -4936,6 +4937,7 @@ RenderProcessHost* RenderProcessHostImpl::GetProcessHostForSiteInstance(
     if (render_process_host) {
       site_instance->set_process_assignment(
           SiteInstanceProcessAssignment::REUSED_EXISTING_PROCESS);
+      LOG(INFO) << "Use an existing rendering process, render_process: " << render_process_host->GetID();
     }
   }
 
@@ -4958,6 +4960,9 @@ RenderProcessHost* RenderProcessHostImpl::GetProcessHostForSiteInstance(
     // RenderProcessHostFactory may not instantiate a StoragePartition, and
     // creating one here with GetStoragePartition() can run into cross-thread
     // issues as TestBrowserContext initialization is done on the main thread.
+    LOG(INFO) << "Request to create a new rendering process, current count: "
+              << RenderProcessHostImpl::GetProcessCountForLimit() << " Max: "
+              << RenderProcessHostImpl::GetMaxRendererProcessCount();
     render_process_host =
         CreateRenderProcessHost(browser_context, site_instance);
 
@@ -4989,7 +4994,6 @@ RenderProcessHost* RenderProcessHostImpl::GetProcessHostForSiteInstance(
               RenderProcessHostImpl::GetExistingBackgroundProcessHost(
                   site_instance));
       if (render_host) {
-        LOG(INFO) << "It will FastShutdownIfPossible.";
         render_host->FastShutdownIfPossible(1u, true);
       }
     }

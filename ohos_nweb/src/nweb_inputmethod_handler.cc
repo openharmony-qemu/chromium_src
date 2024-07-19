@@ -469,6 +469,7 @@ void NWebInputMethodHandler::HideTextInput(uint32_t nwebId,
 }
 
 void NWebInputMethodHandler::HideTextInputForce() {
+  LOG(INFO) << "NWebInputMethodHandler::HideTextInputForce";
   if (inputmethod_adapter_ == nullptr) {
     LOG(ERROR) << "inputmethod_adapter_ is nullptr";
     return;
@@ -642,7 +643,7 @@ void NWebInputMethodHandler::DeleteForward(int32_t length) {
 }
 
 void NWebInputMethodHandler::SetIMEStatusOnUI(bool status) {
-  LOG(DEBUG) << "NWebInputMethodHandler::SetIMEStatusOnUI status:" << status;
+  LOG(INFO) << "NWebInputMethodHandler::SetIMEStatusOnUI status:" << status;
   if (!status && ime_text_composing_) {
     browser_->GetHost()->ImeFinishComposingText(false);
     ime_text_composing_ = false;

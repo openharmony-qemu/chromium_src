@@ -64,6 +64,7 @@ class NWebInputMethodClient : public virtual CefBaseRefCounted {
                                             const CefString& text,
                                             const CefRange& selected_range,
                                             const CefRange& compositon_range) = 0;
+  virtual bool IsAttached() = 0;
 };
 }  // namespace OHOS::NWeb
 

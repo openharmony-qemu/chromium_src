@@ -579,9 +579,14 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
         if (!custom_keyboard_handler_) {
           custom_keyboard_handler_ = std::make_shared<NWebCustomKeyboardHandlerImpl>(handler_.lock());
         }
-        handler->OnInterceptKeyboardAttach(custom_keyboard_handler_, attributesMap, useSystemKeyboard, enterKeyType);
-        LOG(INFO) << "WebCustomKeyboard OnInterceptKeyboardAttach return, useSystemKeyboard = "
-          << useSystemKeyboard << ", enterKeyType = " << enterKeyType;
+        if (show_keyboard) {
+          handler->OnInterceptKeyboardAttach(custom_keyboard_handler_,
+                                             attributesMap, useSystemKeyboard,
+                                             enterKeyType);
+          LOG(INFO) << "WebCustomKeyboard OnInterceptKeyboardAttach return, "
+                       "useSystemKeyboard = "
+                    << useSystemKeyboard << ", enterKeyType = " << enterKeyType;
+        }
       }
 
       if (useSystemKeyboard) {

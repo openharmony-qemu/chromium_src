@@ -269,7 +269,7 @@ void BrowserAccessibilityManagerOHOS::FireGeneratedEvent(
       TranslateAccessibilityId(nodeOHOS->GetAccessibilityId());
 
   if (event_type != ui::AXEventGenerator::Event::SUBTREE_CREATED) {
-    HandleContentChanged(accessibilityId);
+    HandleContentChanged(kRootAccessibilityId);
   }
   switch (event_type) {
     case ui::AXEventGenerator::Event::VALUE_IN_TEXT_FIELD_CHANGED:

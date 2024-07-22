@@ -222,6 +222,10 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::FillSurfaceBuffer(
   int32_t width = configAdapter->GetWidth();
   int32_t height = configAdapter->GetHeight();
   uint8_t* dst = reinterpret_cast<uint8_t*>(buffer_adapter_->GetVirAddr());
+  if (dst == nullptr) {
+    LOG(DEBUG) << "dst is nullptr";
+    return CodecCodeAdapter::ERROR;
+  }
 
   const uint8_t* y_src = frame->data(VideoFrame::kYPlane);
   const uint8_t* u_src = frame->data(VideoFrame::kUPlane);

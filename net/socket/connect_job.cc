@@ -159,6 +159,11 @@ void ConnectJob::SetSocket(std::unique_ptr<StreamSocket> socket,
       socket->SetDnsAliases(std::move(dns_aliases.value()));
   }
   socket_ = std::move(socket);
+#if BUILDFLAG(IS_OHOS)
+  if (IsFromPreload() && socket_ != nullptr) {
+    socket_->SetFromPreload(IsFromPreload());
+  }
+#endif
 }
 
 void ConnectJob::NotifyDelegateOfCompletion(int rv) {

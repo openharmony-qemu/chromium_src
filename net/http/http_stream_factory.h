@@ -117,7 +117,13 @@ class NET_EXPORT HttpStreamFactory {
       const NetLogWithSource& net_log);
 
   // Requests that enough connections for |num_streams| be opened.
-  void PreconnectStreams(int num_streams, HttpRequestInfo& info);
+  void PreconnectStreams(int num_streams,
+                         HttpRequestInfo& info
+#if BUILDFLAG(IS_OHOS)
+                         ,
+                         bool from_preload = false
+#endif
+  );
 
   const HostMappingRules* GetHostMappingRules() const;
 

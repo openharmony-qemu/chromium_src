@@ -69,8 +69,16 @@ bool NativeViewGLSurfaceEGLOhos::Resize(const gfx::Size& size,
                                         bool has_alpha) {
   TRACE_EVENT0("gpu", "NativeViewGLSurfaceEGLOhos::Resize");
 
-  if (base::ohos::IsMobileDevice()) {
-    NativeViewGLSurfaceEGL::Resize(size, scale_factor, color_space, has_alpha);
+  auto& system_properties_adapter =
+        OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance();
+  std::string product_model = system_properties_adapter.GetDeviceInfoProductModel();
+
+  if (base::ohos::IsMobileDevice() && product_model != PRODUCT_MODEL_EMULATOR) {
+    if (NativeViewGLSurfaceEGL::Resize(size, scale_factor, color_space, has_alpha)) {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .GetWindowAdapterInstance()
+        .NativeWindowSurfaceCleanCache(reinterpret_cast<void*>(window_));
+    }
   }
 
   int32_t ret =
@@ -81,6 +89,10 @@ bool NativeViewGLSurfaceEGLOhos::Resize(const gfx::Size& size,
   if (ret != OHOS::NWeb::GSErrorCode::GSERROR_OK) {
     LOG(ERROR) << "fail to set NativeWindowHandleOpt, ret=" << ret;
     return false;
+  }
+
+  if (product_model == PRODUCT_MODEL_EMULATOR) {
+    NativeViewGLSurfaceEGL::Resize(size, scale_factor, color_space, has_alpha);
   }
 
   return true;

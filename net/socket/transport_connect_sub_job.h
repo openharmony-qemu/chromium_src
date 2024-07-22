@@ -55,6 +55,16 @@ class TransportConnectSubJob : public WebSocketEndpointLockManager::Waiter {
   // Implementation of WebSocketEndpointLockManager::EndpointWaiter.
   void GotEndpointLock() override;
 
+#if BUILDFLAG(IS_OHOS)
+  void SetFromPreload(bool from_preload) {
+    from_preload_ = from_preload;
+  }
+
+  bool IsFromPreload() const {
+    return from_preload_;
+  }
+#endif
+
  private:
   enum State {
     STATE_NONE,
@@ -81,6 +91,10 @@ class TransportConnectSubJob : public WebSocketEndpointLockManager::Waiter {
   const SubJobType type_;
 
   std::unique_ptr<StreamSocket> transport_socket_;
+
+#if BUILDFLAG(IS_OHOS)
+  bool from_preload_ = false;
+#endif
 };
 
 }  // namespace net

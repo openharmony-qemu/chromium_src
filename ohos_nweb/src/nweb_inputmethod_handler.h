@@ -92,6 +92,9 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
 #if defined(OHOS_CLIPBOARD)
   std::string GetSelectInfo();
 #endif
+  bool IsAttached() override {
+    return isAttached_;
+  }
 
  private:
   void SetIMEStatusOnUI(bool status);

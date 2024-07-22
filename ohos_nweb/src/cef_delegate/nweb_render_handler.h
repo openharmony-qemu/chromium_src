@@ -95,6 +95,8 @@ class NWebRenderHandler : public CefRenderHandler {
                    CefRect& rect) override;
 #if defined(OHOS_INPUT_EVENTS)
   void GetVisibleViewportRect(CefRefPtr<CefBrowser> browser, CefRect& rect) override;
+  void SetNeedFocusViewport(bool need);
+  void OnResizeScrollableViewport(CefRefPtr<CefBrowser> browser) override;
 #endif
   bool GetScreenInfo(CefRefPtr<CefBrowser> browser,
                      CefScreenInfo& screen_info) override;
@@ -239,6 +241,7 @@ class NWebRenderHandler : public CefRenderHandler {
 #if defined(OHOS_INPUT_EVENTS)
   uint32_t visible_width_ = 0;
   uint32_t visible_height_ = 0;
+  bool needFocusViewport_ = false;
 #endif
   int content_height_ = 0;
   int content_width_ = 0;

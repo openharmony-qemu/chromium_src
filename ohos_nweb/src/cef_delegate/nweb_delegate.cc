@@ -731,11 +731,10 @@ void NWebDelegate::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
 
   auto browser = GetBrowser();
   if (browser != nullptr && browser->GetHost() != nullptr) {
-    if (isKeyboard) {
-      browser->GetHost()->WasKeyboardResized();
-    } else {
-      browser->GetHost()->WasResized();
+    if (isKeyboard && render_handler_) {
+      render_handler_->SetNeedFocusViewport(true);
     }
+    browser->GetHost()->WasResized();
     browser->GetHost()->OnTextSelected(false);
   }
 }
@@ -757,11 +756,10 @@ void NWebDelegate::ResizeVisibleViewport(uint32_t width, uint32_t height, bool i
 
   auto browser = GetBrowser();
   if (browser != nullptr && browser->GetHost() != nullptr) {
-    if (isKeyboard) {
-      browser->GetHost()->WasKeyboardResized();
-    } else {
-      browser->GetHost()->WasResized();
+    if (isKeyboard && render_handler_) {
+      render_handler_->SetNeedFocusViewport(true);
     }
+    browser->GetHost()->WasResized();
     browser->GetHost()->OnTextSelected(false);
   }
 }

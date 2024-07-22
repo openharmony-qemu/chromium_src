@@ -398,6 +398,25 @@ void NWebRenderHandler::GetViewRect(CefRefPtr<CefBrowser> browser,
 }
 
 #if defined(OHOS_INPUT_EVENTS)
+void NWebRenderHandler::SetNeedFocusViewport(bool need) {
+  LOG(INFO) << "NWebRenderHandler::SetNeedFocusViewport needFocusViewport:" << need;
+  needFocusViewport_ = need;
+}
+
+void NWebRenderHandler::OnResizeScrollableViewport(CefRefPtr<CefBrowser> browser) {
+  LOG(INFO) << "NWebRenderHandler::OnResizeScrollableViewport needFocusViewport:" << needFocusViewport_;
+  if (needFocusViewport_) {
+    if (inputmethod_client_ && inputmethod_client_->IsAttached()) {
+      LOG(INFO) << "system keyboard is attached, scroll focused node into view";
+      browser->GetHost()->ScrollFocusedEditableNodeIntoView();
+    } else if (custom_keyboard_handler_ && custom_keyboard_handler_->IsAttached()) {
+      LOG(INFO) << "custom keyboard is attached, scroll focused node into view";
+      browser->GetHost()->ScrollFocusedEditableNodeIntoView();
+    }
+  }
+  needFocusViewport_ = false;
+}
+
 void NWebRenderHandler::GetVisibleViewportRect(CefRefPtr<CefBrowser> browser,
                                                CefRect& rect) {
   if (visible_width_ == 0 && visible_height_ == 0) {

@@ -53,6 +53,7 @@ class EVENTS_BASE_EXPORT NativeScrollerOhos : public GestureCurve {
     float value_threshold_{0.0};
     float velocity_threshold_{0.0};
     float signum_{0.0};
+    float position_threshold_{0.0};
 };
 } // namespace ui
 #endif

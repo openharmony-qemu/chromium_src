@@ -125,7 +125,7 @@ int32_t SlidingObserver::OnScrollUpdate(float delta_x, float delta_y)
   current_timestamp_ = current_timestamp;
   float velocity = GetVelocity(velocity_x, velocity_y);
   int32_t preferredFrameRate =  GetPreferedFrameRate(velocity, onScreenSetting_);
-  LOG(INFO) << "OnScrollUpdate " << slidingFrameRate_ << ", " << preferredFrameRate;
+  LOG(DEBUG) << "OnScrollUpdate " << slidingFrameRate_ << ", " << preferredFrameRate;
   if (slidingFrameRate_ == preferredFrameRate) {
     return -1;
   }
@@ -142,7 +142,7 @@ int32_t SlidingObserver::OnFlingUpdate(float velocity_x, float velocity_y)
   float velocity = GetVelocity(velocity_x, velocity_y);
   // off screen fling
   int32_t preferredFrameRate = GetPreferedFrameRate(velocity, offScreenSetting_);
-  LOG(INFO) << "OnFlingUpdate " << slidingFrameRate_ << ", " << preferredFrameRate;
+  LOG(DEBUG) << "OnFlingUpdate " << slidingFrameRate_ << ", " << preferredFrameRate;
   if (slidingFrameRate_ == preferredFrameRate) {
     return -1;
   }

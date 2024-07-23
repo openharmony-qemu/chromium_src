@@ -1402,7 +1402,6 @@ void GpuServiceImpl::SetHasTouchPoint(bool has_touch_point) {
 }
 
 void GpuServiceImpl::ReportSlidingFrameRate(int32_t frame_rate) {
-  LOG(INFO) << "zhaopf GpuServiceImpl::ReportSlidingFrameRate " << frame_rate;
   base::ohos::DynamicFrameRateDecision::GetInstance().ReportSlidingFrameRate(frame_rate);
 }
 #endif

@@ -36,10 +36,11 @@ public:
 
   void Init();
   void StartSliding();
-  void StopSliding();
+  int32_t StopSliding();
   void StartFling();
-  void OnScrollUpdate(float delta_x, float delta_y);
-  void OnFlingUpdate(float velocity_x, float velocity_y);
+  int32_t OnScrollUpdate(float delta_x, float delta_y);
+  int32_t OnFlingUpdate(float velocity_x, float velocity_y);
+
 private:
   float GetVelocity(float velocity_x, float velocity_y);
   int32_t GetPreferedFrameRate(float velocity,
@@ -51,11 +52,12 @@ private:
   bool isSliding_ {false};
   bool isOffScreen_ {false};
   int32_t dpi_ {-1};
-  std::vector<OHOS::NWeb::FrameRateSetting> onScreenSetting {};
-  std::vector<OHOS::NWeb::FrameRateSetting> offScreenSetting {};
+  std::vector<OHOS::NWeb::FrameRateSetting> onScreenSetting_ {};
+  std::vector<OHOS::NWeb::FrameRateSetting> offScreenSetting_ {};
 
   float virtual_pixel_ratio_ {-1};
   int64_t current_timestamp_ {-1};
+  int32_t slidingFrameRate_ {0};
 };
 }  // namespace ohos
 }  // namespace base

@@ -40,6 +40,20 @@ import "mojo/public/mojom/base/unguessable_token.mojom";
 [EnableIf=is_win]
 import "ui/gfx/mojom/dxgi_info.mojom";
 
+// web ltpo setting item.
+struct FrameRateSetting {
+  int32 min;
+  int32 max;
+  int32 preferredFrameRate;
+};
+
+struct LTPOConfig {
+  array<FrameRateSetting> onScreenSetting;
+  array<FrameRateSetting> offScreenSetting;
+  float virtual_pixel_ratio;
+  int32 dpi;
+};
+
 interface GpuService {
   // Tells the GPU service to create a new channel for communication with a
   // client. The GPU service responds with an IPC handle. |gpu_info| and
@@ -237,4 +251,16 @@ interface GpuService {
   Crash();
   Hang();
   ThrowJavaException();
+
+  // notify web ltpo to update frame rate when visibility changed
+  [EnableIf=is_ohos]
+  SetVisible(bool visible);
+
+  // notify web ltpo to update frame rate when touch status changed
+  [EnableIf=is_ohos]
+  SetHasTouchPoint(bool has_touch_point);
+
+  // Send vsync callback to host client
+  [EnableIf=is_ohos]
+  ReportSlidingFrameRate(int32 frame_rate);
 };

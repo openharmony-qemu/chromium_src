@@ -328,7 +328,7 @@ else
 fi
 
 cd src
-source prepare.sh $build_dir
+# source prepare.sh $build_dir
 
 time_start_for_build=$(date +%s)
 time_start_for_gn=$time_start_for_build

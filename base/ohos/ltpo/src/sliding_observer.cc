@@ -23,7 +23,6 @@
 #include "base/task/thread_pool.h"
 #include "ohos_nweb/src/sysevent/event_reporter.h"
 #include "base/trace_event/trace_event.h"
-#include "base/ohos/ltpo/include/dynamic_frame_rate_decision.h"
 #include "ohos_adapter_helper.h"
 #include "ui/events/gesture_detection/gesture_configuration.h"
 
@@ -48,16 +47,12 @@ void SlidingObserver::Init() {
     return;
   }
 
-  onScreenSetting = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
+  onScreenSetting_ = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
                   .GetLTPOConfig("scroll");
-  offScreenSetting = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
+  offScreenSetting_ = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
                   .GetLTPOConfig("fling");
-  std::sort(onScreenSetting.begin(), onScreenSetting.end(), [](const FrameRateSetting& setting1,
-      const FrameRateSetting& setting2) { return setting1.min_ < setting2.min_; });
-  std::sort(offScreenSetting.begin(), offScreenSetting.end(), [](const FrameRateSetting& setting1,
-      const FrameRateSetting& setting2) { return setting1.min_ < setting2.min_; });
-
   virtual_pixel_ratio_ = ui::GestureConfiguration::GetInstance()->virtual_pixel_ratio();
+
   auto display_manager_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateDisplayMgrAdapter();
   if (!display_manager_adapter) {
       return;
@@ -68,13 +63,13 @@ void SlidingObserver::Init() {
     return;
   }
   dpi_ = display->GetDpi();
-  if (dpi_ <= 0) {
+  if (dpi_ <= 0  || virtual_pixel_ratio_ <= 0) {
     return;
   }
   isInited_ = true;
 
   LOG(INFO) << "virtual_pixel_ratio: " << virtual_pixel_ratio_ << ", dpi " << dpi_
-    << ", onScreenSetting: " << onScreenSetting.size()  << ", offScreenSetting: " << offScreenSetting.size();
+    << ", onScreenSetting: " << onScreenSetting_.size() << ", offScreenSetting: " << offScreenSetting_.size();
 }
 
 void SlidingObserver::StartSliding()
@@ -90,15 +85,16 @@ void SlidingObserver::StartSliding()
   isOffScreen_ = false;
 }
 
-void SlidingObserver::StopSliding()
+int32_t SlidingObserver::StopSliding()
 {
   if (!isSliding_ || !isInited_) {
-      return;
+      return -1;
   }
   current_timestamp_ = -1;
   isSliding_ = false;
   isOffScreen_ = false;
-  DynamicFrameRateDecision::GetInstance().ReportSlidingFrameRate(0);
+  slidingFrameRate_ = 0;
+  return 0;
 }
 
 int64_t SlidingObserver::GetCurrentTimestamp()
@@ -116,10 +112,10 @@ void SlidingObserver::StartFling()
     isOffScreen_ = true;
 }
 
-void SlidingObserver::OnScrollUpdate(float delta_x, float delta_y)
+int32_t SlidingObserver::OnScrollUpdate(float delta_x, float delta_y)
 {
   if (!isSliding_ || isOffScreen_) {
-      return;
+      return -1;
   }
   auto current_timestamp = GetCurrentTimestamp();
 
@@ -128,20 +124,30 @@ void SlidingObserver::OnScrollUpdate(float delta_x, float delta_y)
   float velocity_y = delta_y * kMicroSecondPerSecond / (current_timestamp - current_timestamp_);
   current_timestamp_ = current_timestamp;
   float velocity = GetVelocity(velocity_x, velocity_y);
-  int32_t preferredFrameRate =  GetPreferedFrameRate(velocity, onScreenSetting);
-  DynamicFrameRateDecision::GetInstance().ReportSlidingFrameRate(preferredFrameRate);
+  int32_t preferredFrameRate =  GetPreferedFrameRate(velocity, onScreenSetting_);
+  LOG(INFO) << "OnScrollUpdate " << slidingFrameRate_ << ", " << preferredFrameRate;
+  if (slidingFrameRate_ == preferredFrameRate) {
+    return -1;
+  }
+  slidingFrameRate_ = preferredFrameRate;
+  return slidingFrameRate_;
 }
 
-void SlidingObserver::OnFlingUpdate(float velocity_x, float velocity_y)
+int32_t SlidingObserver::OnFlingUpdate(float velocity_x, float velocity_y)
 {
   if (!isSliding_ || !isOffScreen_) {
-      return;
+      return -1;
   }
 
   float velocity = GetVelocity(velocity_x, velocity_y);
   // off screen fling
-  int32_t preferredFrameRate = GetPreferedFrameRate(velocity, offScreenSetting);
-  DynamicFrameRateDecision::GetInstance().ReportSlidingFrameRate(preferredFrameRate);
+  int32_t preferredFrameRate = GetPreferedFrameRate(velocity, offScreenSetting_);
+  LOG(INFO) << "OnFlingUpdate " << slidingFrameRate_ << ", " << preferredFrameRate;
+  if (slidingFrameRate_ == preferredFrameRate) {
+    return -1;
+  }
+  slidingFrameRate_ = preferredFrameRate;
+  return slidingFrameRate_;
 }
 
 int32_t SlidingObserver::GetPreferedFrameRate(float velocity, const std::vector<OHOS::NWeb::FrameRateSetting>& setting)

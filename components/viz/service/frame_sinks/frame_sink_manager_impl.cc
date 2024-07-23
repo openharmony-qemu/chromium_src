@@ -35,6 +35,7 @@
 #include "components/viz/service/surfaces/surface.h"
 #if BUILDFLAG(IS_OHOS)
 #include "gpu/ipc/common/nweb_native_window_tracker.h"
+#include "base/ohos/ltpo/include/sliding_observer.h"
 #endif
 
 namespace viz {
@@ -909,18 +910,6 @@ void FrameSinkManagerImpl::OnVsyncReceived(const FrameSinkId& frame_sink_id) {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
   if (client_)
     client_->OnVsyncReceived(frame_sink_id.client_id(), frame_sink_id.sink_id());
-}
-
-void FrameSinkManagerImpl::OnVsyncEnabled(bool enabled, const FrameSinkId& frame_sink_id) {
-  DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
-  if (client_)
-    client_->OnVsyncEnabled(enabled, frame_sink_id.client_id(), frame_sink_id.sink_id());
-}
-
-void FrameSinkManagerImpl::ReportVideoFrameRate(int32_t frameRate, const FrameSinkId& frame_sink_id) {
-  DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
-  if (client_)
-    client_->ReportVideoFrameRate(frameRate, frame_sink_id.client_id(), frame_sink_id.sink_id());
 }
 #endif
 

@@ -20,6 +20,7 @@
 
 #include "base/logging.h"
 #include "base/no_destructor.h"
+#include "base/task/single_thread_task_runner.h"
 #include "base/task/thread_pool.h"
 #include "base/trace_event/trace_event.h"
 #include "content/public/browser/browser_thread.h"
@@ -45,6 +46,13 @@ DynamicFrameRateDecision::DynamicFrameRateDecision()
 DynamicFrameRateDecision::~DynamicFrameRateDecision()
 {}
 
+void DynamicFrameRateDecision::Init()
+{
+  if (!curent_task_runner_) {
+    curent_task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
+  }
+}
+
 DynamicFrameRateDecision& DynamicFrameRateDecision::GetInstance()
 {
     static base::NoDestructor<DynamicFrameRateDecision> instance;
@@ -53,17 +61,27 @@ DynamicFrameRateDecision& DynamicFrameRateDecision::GetInstance()
 
 void DynamicFrameRateDecision::ReportSlidingFrameRate(int32_t frame_rate)
 {
+  LOG(INFO) << "zhaopf ReportSlidingFrameRate " << frame_rate << ", " << slidingFrameRate_;
+  curent_task_runner_->PostTask(FROM_HERE, base::BindOnce(
+    &DynamicFrameRateDecision::ReportSlidingFrameRateImpl,
+    base::Unretained(this), frame_rate));
+}
+
+void DynamicFrameRateDecision::ReportSlidingFrameRateImpl(int32_t frame_rate)
+{
   // check, enable ltpo only for phone
-  if (frame_rate == slidingFrameRate_) {
+  LOG(INFO) << "zhaopf ReportSlidingFrameRateImpl 2" << frame_rate << ", " << slidingFrameRate_;
+  if (slidingFrameRate_ == frame_rate) {
     return;
   }
+  LOG(INFO) << "ReportSlidingFrameRate " << frame_rate << ", " << slidingFrameRate_;
   slidingFrameRate_ = frame_rate;
   UpdateFramePreferredRate();
 }
 
 void DynamicFrameRateDecision::ReportVideoFrameRate(int32_t frame_rate)
 {
-  content::GetUIThreadTaskRunner()->PostTask(FROM_HERE, base::BindOnce(
+  curent_task_runner_->PostTask(FROM_HERE, base::BindOnce(
     &DynamicFrameRateDecision::ReportVideoFrameRateImpl,
     base::Unretained(this), frame_rate));
 }
@@ -90,7 +108,7 @@ void DynamicFrameRateDecision::SetMaxFrameRateThreeSec()
 
   touch_up_timeStamp_ = GetCurrentTimestampMS();
   LOG(DEBUG) << "SetMaxFrameRateThreeSec touch_up_timeStamp: " << touch_up_timeStamp_;
-  content::GetUIThreadTaskRunner()->PostDelayedTask(
+  curent_task_runner_->PostDelayedTask(
     FROM_HERE,
     base::BindOnce(UpdateTimeOutFramePreferredRate),
     base::Milliseconds(kThreeSeconds)
@@ -117,13 +135,14 @@ void DynamicFrameRateDecision::UpdateFramePreferredRate()
 
 void DynamicFrameRateDecision::SetVsyncEnabled(bool enabled)
 {
-  content::GetUIThreadTaskRunner()->PostTask(FROM_HERE, base::BindOnce(
+  curent_task_runner_->PostTask(FROM_HERE, base::BindOnce(
     &DynamicFrameRateDecision::SetVsyncEnabledImpl,
     base::Unretained(this), enabled));
 }
 
 void DynamicFrameRateDecision::SetVsyncEnabledImpl(bool enabled)
 {
+  bool prevVsyncCnt = vsynCnt_;
   if (enabled) {
     vsynCnt_++;
    } else {
@@ -131,11 +150,22 @@ void DynamicFrameRateDecision::SetVsyncEnabledImpl(bool enabled)
   }
   vsynCnt_ = std::max(vsynCnt_, 0);
   LOG(DEBUG) << "SetVsyncEnabled " << enabled << ", vsynCnt_: " << vsynCnt_;
+  if ((vsynCnt_ != 0) ^ (prevVsyncCnt != 0)) {
+    return;
+  }
   SetFrameRateLinkerEnable(vsynCnt_ != 0);
   UpdateFramePreferredRate();
 }
 
 void DynamicFrameRateDecision::SetHasTouchPoint(bool has_touch_point)
+{
+  LOG(INFO) << "zhaopf SetHasTouchPoint " << has_touch_point_ << ", has_touch_point : " << has_touch_point;
+  curent_task_runner_->PostTask(FROM_HERE, base::BindOnce(
+    &DynamicFrameRateDecision::SetHasTouchPointImpl,
+    base::Unretained(this), has_touch_point));
+}
+
+void DynamicFrameRateDecision::SetHasTouchPointImpl(bool has_touch_point)
 {
   if (has_touch_point_ == has_touch_point) {
     return;
@@ -149,6 +179,13 @@ void DynamicFrameRateDecision::SetHasTouchPoint(bool has_touch_point)
 }
 
 void DynamicFrameRateDecision::SetVisible(bool visible)
+{
+  curent_task_runner_->PostTask(FROM_HERE, base::BindOnce(
+    &DynamicFrameRateDecision::SetVisibleImpl,
+    base::Unretained(this), visible));
+}
+
+void DynamicFrameRateDecision::SetVisibleImpl(bool visible)
 {
   LOG(DEBUG) << "SetVisible" << visible;
   if (visible_ == visible) {

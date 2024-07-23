@@ -17,6 +17,7 @@
 #define BASE_OHOS_DYNAMIC_FRAME_RATE_DECISION_H_
 
 #include <stdint.h>
+#include "base/task/single_thread_task_runner.h"
 
 namespace base {
 namespace ohos {
@@ -38,6 +39,7 @@ public:
   DynamicFrameRateDecision& operator=(const DynamicFrameRateDecision&) = delete;
 
   static DynamicFrameRateDecision& GetInstance();
+  void Init();
   void UpdateFramePreferredRate();
 
   void SetVisible(bool visible);
@@ -52,6 +54,9 @@ private:
   int64_t GetCurrentTimestampMS();
   void ReportVideoFrameRateImpl(int32_t frame_rate);
   void SetVsyncEnabledImpl(bool enabled);
+  void SetVisibleImpl(bool visible);
+  void ReportSlidingFrameRateImpl(int32_t frame_rate);
+  void SetHasTouchPointImpl(bool has_touch_point);
 
 private:
   int32_t slidingFrameRate_ {0};
@@ -62,6 +67,7 @@ private:
   bool frameRateLinkerEnable_ {false};
   int32_t vsynCnt_ {0};
   int64_t touch_up_timeStamp_ {0};
+  scoped_refptr<SingleThreadTaskRunner> curent_task_runner_ {};
 };
 }  // namespace ohos
 }  // namespace base

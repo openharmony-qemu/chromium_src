@@ -61,7 +61,6 @@ DynamicFrameRateDecision& DynamicFrameRateDecision::GetInstance()
 
 void DynamicFrameRateDecision::ReportSlidingFrameRate(int32_t frame_rate)
 {
-  LOG(INFO) << "zhaopf ReportSlidingFrameRate " << frame_rate << ", " << slidingFrameRate_;
   curent_task_runner_->PostTask(FROM_HERE, base::BindOnce(
     &DynamicFrameRateDecision::ReportSlidingFrameRateImpl,
     base::Unretained(this), frame_rate));
@@ -69,12 +68,10 @@ void DynamicFrameRateDecision::ReportSlidingFrameRate(int32_t frame_rate)
 
 void DynamicFrameRateDecision::ReportSlidingFrameRateImpl(int32_t frame_rate)
 {
-  // check, enable ltpo only for phone
-  LOG(INFO) << "zhaopf ReportSlidingFrameRateImpl 2" << frame_rate << ", " << slidingFrameRate_;
   if (slidingFrameRate_ == frame_rate) {
     return;
   }
-  LOG(INFO) << "ReportSlidingFrameRate " << frame_rate << ", " << slidingFrameRate_;
+  LOG(DEBUG) << "ReportSlidingFrameRate " << frame_rate << ", " << slidingFrameRate_;
   slidingFrameRate_ = frame_rate;
   UpdateFramePreferredRate();
 }
@@ -159,7 +156,6 @@ void DynamicFrameRateDecision::SetVsyncEnabledImpl(bool enabled)
 
 void DynamicFrameRateDecision::SetHasTouchPoint(bool has_touch_point)
 {
-  LOG(INFO) << "zhaopf SetHasTouchPoint " << has_touch_point_ << ", has_touch_point : " << has_touch_point;
   curent_task_runner_->PostTask(FROM_HERE, base::BindOnce(
     &DynamicFrameRateDecision::SetHasTouchPointImpl,
     base::Unretained(this), has_touch_point));
@@ -170,6 +166,7 @@ void DynamicFrameRateDecision::SetHasTouchPointImpl(bool has_touch_point)
   if (has_touch_point_ == has_touch_point) {
     return;
   }
+  LOG(DEBUG) << "SetHasTouchPoint " << has_touch_point;
   has_touch_point_ = has_touch_point;
   if (has_touch_point_) {
     UpdateFramePreferredRate();
@@ -187,10 +184,10 @@ void DynamicFrameRateDecision::SetVisible(bool visible)
 
 void DynamicFrameRateDecision::SetVisibleImpl(bool visible)
 {
-  LOG(DEBUG) << "SetVisible" << visible;
   if (visible_ == visible) {
     return;
   }
+  LOG(DEBUG) << "SetVisible " << visible;
   visible_ = visible;
   SetFrameRateLinkerEnable(visible_);
   UpdateFramePreferredRate();

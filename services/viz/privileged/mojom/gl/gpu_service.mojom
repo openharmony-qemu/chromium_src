@@ -40,20 +40,6 @@ import "mojo/public/mojom/base/unguessable_token.mojom";
 [EnableIf=is_win]
 import "ui/gfx/mojom/dxgi_info.mojom";
 
-// web ltpo setting item.
-struct FrameRateSetting {
-  int32 min;
-  int32 max;
-  int32 preferredFrameRate;
-};
-
-struct LTPOConfig {
-  array<FrameRateSetting> onScreenSetting;
-  array<FrameRateSetting> offScreenSetting;
-  float virtual_pixel_ratio;
-  int32 dpi;
-};
-
 interface GpuService {
   // Tells the GPU service to create a new channel for communication with a
   // client. The GPU service responds with an IPC handle. |gpu_info| and

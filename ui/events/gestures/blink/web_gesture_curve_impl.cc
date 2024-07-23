@@ -169,7 +169,6 @@ bool WebGestureCurveImpl::Advance(double time,
   if (auto* host = content::GpuProcessHost::Get()) {
     if (auto* host_impl = host->gpu_host()) {
       if (preferredFrameRate >= 0) {
-        LOG(INFO) << "zhaopf WebGestureCurveImpl::Advance 3 " << preferredFrameRate;
         host_impl->ReportSlidingFrameRate(preferredFrameRate);
       }
     }

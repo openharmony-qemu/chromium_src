@@ -174,7 +174,6 @@ void InputRouterImpl::SendGestureEvent(
 
     if (auto* host = GpuProcessHost::Get()) {
       if (auto* host_impl = host->gpu_host()) {
-        LOG(INFO) << "zhaopf InputRouterImpl::SendGestureEvent 3";
         host_impl->StopMonitor();
         host_impl->ReportSlidingFrameRate(preferredFrameRate);
       }

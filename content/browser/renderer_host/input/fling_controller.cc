@@ -408,16 +408,16 @@ void FlingController::EndCurrentFling(base::TimeTicks current_time) {
 
   LOG(DEBUG) << "stop web page fling";
   base::ohos::SlidingObserver::GetInstance().StopSliding();
-  TRACE_EVENT0("input", "DynamicFrameLossEvent End");
-  GetUIThreadTaskRunner({})->PostTask(
-    FROM_HERE,
-    base::BindOnce(&FlingController::DynamicFrameLossEvent,
-    weak_ptr_factory_.GetWeakPtr(), fling_string, false));
 
   if (auto* host = GpuProcessHost::Get()) {
     if (auto* host_impl = host->gpu_host()) {
       host_impl->StopMonitor();
       host_impl->ReportSlidingFrameRate(0);
+      TRACE_EVENT0("input", "DynamicFrameLossEvent End");
+      GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(&FlingController::DynamicFrameLossEvent,
+        weak_ptr_factory_.GetWeakPtr(), fling_string, false));
     }
   }
 #endif

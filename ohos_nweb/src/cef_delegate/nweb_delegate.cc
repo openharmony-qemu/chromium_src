@@ -770,10 +770,6 @@ void NWebDelegate::OnTouchPress(int32_t id,
                                 double y,
                                 bool from_overlay) {
   if (event_handler_ != nullptr) {
-    auto browser = GetBrowser();
-    if (browser != nullptr && browser->GetHost() != nullptr && !HitNativeArea(x, y)) {
-      browser->GetHost()->SetFocus(true);
-    }
     event_handler_->OnTouchPress(id, x / default_virtual_pixel_ratio_,
                                  y / default_virtual_pixel_ratio_,
                                  from_overlay);

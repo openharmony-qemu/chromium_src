@@ -59,14 +59,14 @@ private:
   void SetHasTouchPointImpl(bool has_touch_point);
 
 private:
-  int32_t slidingFrameRate_ {0};
-  int32_t videoFrameRate_ {0};
-  int32_t curFrameRate_ {0};
+  int32_t sliding_frame_rate_ {0};
+  int32_t video_frame_rate_ {0};
+  int32_t cur_frame_rate_ {0};
   bool visible_ {false};
   bool has_touch_point_ {false};
-  bool frameRateLinkerEnable_ {false};
-  int32_t vsynCnt_ {0};
-  int64_t touch_up_timeStamp_ {0};
+  bool frame_rate_linker_enable_ {false};
+  int32_t vsyn_cnt_ {0};
+  int64_t touch_up_timestamp_{0};
   scoped_refptr<SingleThreadTaskRunner> curent_task_runner_ {};
 };
 }  // namespace ohos

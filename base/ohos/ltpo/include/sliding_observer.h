@@ -48,18 +48,18 @@ private:
   int64_t GetCurrentTimestamp();
 
 private:
-  bool isInited_ {false};
-  bool isSliding_ {false};
-  bool isOffScreen_ {false};
+  bool is_inited_ {false};
+  bool is_sliding_ {false};
+  bool is_off_screen_ {false};
   int32_t dpi_ {-1};
-  std::vector<OHOS::NWeb::FrameRateSetting> onScreenSetting_ {};
-  std::vector<OHOS::NWeb::FrameRateSetting> offScreenSetting_ {};
+  std::vector<OHOS::NWeb::FrameRateSetting> on_screen_setting_ {};
+  std::vector<OHOS::NWeb::FrameRateSetting> off_screen_setting_ {};
 
   float virtual_pixel_ratio_ {-1};
   int64_t current_timestamp_ {-1};
-  int32_t slidingFrameRate_ {0};
+  int32_t sliding_frame_rate_ {0};
 };
 }  // namespace ohos
 }  // namespace base
 
-#endif  // BASE_OHOS_SLIDING_OBSERVER_H_
+#endif  // BASE_OHOS_SLIDING_OBSERVER_H_

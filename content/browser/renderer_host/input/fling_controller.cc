@@ -14,10 +14,10 @@
 #include "ui/events/gestures/blink/web_gesture_curve_impl.h"
 #if BUILDFLAG(IS_OHOS)
 #include "base/ohos/dynamic_frame_loss_monitor.h"
+#include "base/ohos/ltpo/include/sliding_observer.h"
 #include "content/browser/gpu/gpu_process_host.h"
 #include "base/report_loss_frame.h"
 #include "ohos_adapter_helper.h"
-#include "base/ohos/ltpo/include/sliding_observer.h"
 #endif
 
 using blink::WebInputEvent;
@@ -407,18 +407,19 @@ void FlingController::EndCurrentFling(base::TimeTicks current_time) {
       .FinishAsyncTrace(fling_string, 0);
 
   LOG(DEBUG) << "stop web page fling";
+  base::ohos::SlidingObserver::GetInstance().StopSliding();
+
   if (auto* host = GpuProcessHost::Get()) {
     if (auto* host_impl = host->gpu_host()) {
       host_impl->StopMonitor();
+      host_impl->ReportSlidingFrameRate(0);
       TRACE_EVENT0("input", "DynamicFrameLossEvent End");
       GetUIThreadTaskRunner({})->PostTask(
         FROM_HERE,
         base::BindOnce(&FlingController::DynamicFrameLossEvent,
-                       weak_ptr_factory_.GetWeakPtr(), fling_string, false));
+        weak_ptr_factory_.GetWeakPtr(), fling_string, false));
     }
   }
-
-  base::ohos::SlidingObserver::GetInstance().StopSliding();
 #endif
   current_fling_parameters_ = ActiveFlingParameters();
 

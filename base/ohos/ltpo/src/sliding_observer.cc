@@ -47,9 +47,9 @@ void SlidingObserver::Init() {
     return;
   }
 
-  onScreenSetting_ = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
+  on_screen_setting_ = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
                   .GetLTPOConfig("scroll");
-  offScreenSetting_ = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
+  off_screen_setting_ = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
                   .GetLTPOConfig("fling");
   virtual_pixel_ratio_ = ui::GestureConfiguration::GetInstance()->virtual_pixel_ratio();
 
@@ -66,34 +66,34 @@ void SlidingObserver::Init() {
   if (dpi_ <= 0  || virtual_pixel_ratio_ <= 0) {
     return;
   }
-  isInited_ = true;
+  is_inited_ = true;
 
   LOG(INFO) << "virtual_pixel_ratio: " << virtual_pixel_ratio_ << ", dpi " << dpi_
-    << ", onScreenSetting: " << onScreenSetting_.size() << ", offScreenSetting: " << offScreenSetting_.size();
+    << ", on_screen_setting: " << on_screen_setting_.size() << ", off_screen_setting: " << off_screen_setting_.size();
 }
 
 void SlidingObserver::StartSliding()
 {
-  if (!isInited_) {
+  if (!is_inited_) {
       Init();
   }
-  if (isSliding_ || !isInited_) {
+  if (is_sliding_ || !is_inited_) {
       return;
   }
   current_timestamp_ = GetCurrentTimestamp();
-  isSliding_ = true;
-  isOffScreen_ = false;
+  is_sliding_ = true;
+  is_off_screen_ = false;
 }
 
 int32_t SlidingObserver::StopSliding()
 {
-  if (!isSliding_ || !isInited_) {
+  if (!is_sliding_ || !is_inited_) {
       return -1;
   }
   current_timestamp_ = -1;
-  isSliding_ = false;
-  isOffScreen_ = false;
-  slidingFrameRate_ = 0;
+  is_sliding_ = false;
+  is_off_screen_ = false;
+  sliding_frame_rate_ = 0;
   return 0;
 }
 
@@ -106,15 +106,15 @@ int64_t SlidingObserver::GetCurrentTimestamp()
 
 void SlidingObserver::StartFling()
 {
-    if (!isSliding_ || !isInited_) {
+    if (!is_sliding_ || !is_inited_) {
         return;
     }
-    isOffScreen_ = true;
+    is_off_screen_ = true;
 }
 
 int32_t SlidingObserver::OnScrollUpdate(float delta_x, float delta_y)
 {
-  if (!isSliding_ || isOffScreen_) {
+  if (!is_sliding_ || is_off_screen_) {
       return -1;
   }
   auto current_timestamp = GetCurrentTimestamp();
@@ -124,30 +124,30 @@ int32_t SlidingObserver::OnScrollUpdate(float delta_x, float delta_y)
   float velocity_y = delta_y * kMicroSecondPerSecond / (current_timestamp - current_timestamp_);
   current_timestamp_ = current_timestamp;
   float velocity = GetVelocity(velocity_x, velocity_y);
-  int32_t preferredFrameRate =  GetPreferedFrameRate(velocity, onScreenSetting_);
-  LOG(DEBUG) << "OnScrollUpdate " << slidingFrameRate_ << ", " << preferredFrameRate;
-  if (slidingFrameRate_ == preferredFrameRate) {
+  int32_t preferred_frame_rate =  GetPreferedFrameRate(velocity, on_screen_setting_);
+  LOG(DEBUG) << "OnScrollUpdate " << sliding_frame_rate_ << ", " << preferred_frame_rate;
+  if (sliding_frame_rate_ == preferred_frame_rate) {
     return -1;
   }
-  slidingFrameRate_ = preferredFrameRate;
-  return slidingFrameRate_;
+  sliding_frame_rate_ = preferred_frame_rate;
+  return sliding_frame_rate_;
 }
 
 int32_t SlidingObserver::OnFlingUpdate(float velocity_x, float velocity_y)
 {
-  if (!isSliding_ || !isOffScreen_) {
+  if (!is_sliding_ || !is_off_screen_) {
       return -1;
   }
 
   float velocity = GetVelocity(velocity_x, velocity_y);
   // off screen fling
-  int32_t preferredFrameRate = GetPreferedFrameRate(velocity, offScreenSetting_);
-  LOG(DEBUG) << "OnFlingUpdate " << slidingFrameRate_ << ", " << preferredFrameRate;
-  if (slidingFrameRate_ == preferredFrameRate) {
+  int32_t preferred_frame_rate = GetPreferedFrameRate(velocity, off_screen_setting_);
+  LOG(DEBUG) << "OnFlingUpdate " << sliding_frame_rate_ << ", " << preferred_frame_rate;
+  if (sliding_frame_rate_ == preferred_frame_rate) {
     return -1;
   }
-  slidingFrameRate_ = preferredFrameRate;
-  return slidingFrameRate_;
+  sliding_frame_rate_ = preferred_frame_rate;
+  return sliding_frame_rate_;
 }
 
 int32_t SlidingObserver::GetPreferedFrameRate(float velocity, const std::vector<OHOS::NWeb::FrameRateSetting>& setting)

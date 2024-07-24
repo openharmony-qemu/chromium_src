@@ -68,11 +68,11 @@ void DynamicFrameRateDecision::ReportSlidingFrameRate(int32_t frame_rate)
 
 void DynamicFrameRateDecision::ReportSlidingFrameRateImpl(int32_t frame_rate)
 {
-  if (slidingFrameRate_ == frame_rate) {
+  if (sliding_frame_rate_ == frame_rate) {
     return;
   }
-  LOG(DEBUG) << "ReportSlidingFrameRate " << frame_rate << ", " << slidingFrameRate_;
-  slidingFrameRate_ = frame_rate;
+  LOG(DEBUG) << "ReportSlidingFrameRate " << frame_rate << ", " << sliding_frame_rate_;
+  sliding_frame_rate_ = frame_rate;
   UpdateFramePreferredRate();
 }
 
@@ -85,26 +85,26 @@ void DynamicFrameRateDecision::ReportVideoFrameRate(int32_t frame_rate)
 
 void DynamicFrameRateDecision::ReportVideoFrameRateImpl(int32_t frame_rate)
 {
-  if (videoFrameRate_ == frame_rate) {
+  if (video_frame_rate_ == frame_rate) {
     return;
   }
-  LOG(DEBUG) << "ReportVideoFrameRate " << videoFrameRate_ << ", " << frame_rate;
-  videoFrameRate_ = frame_rate;
+  LOG(DEBUG) << "ReportVideoFrameRate " << video_frame_rate_ << ", " << frame_rate;
+  video_frame_rate_ = frame_rate;
   UpdateFramePreferredRate();
 }
 
 void DynamicFrameRateDecision::SetMaxFrameRateThreeSec()
 {
-  LOG(DEBUG) << "SetMaxFrameRateThreeSec " << slidingFrameRate_;
-  if (slidingFrameRate_ != 0) {
+  LOG(DEBUG) << "SetMaxFrameRateThreeSec " << sliding_frame_rate_;
+  if (sliding_frame_rate_ != 0) {
     return;
   }
-  if (vsynCnt_ == 0) {
+  if (vsyn_cnt_ == 0) {
     return;
   }
 
-  touch_up_timeStamp_ = GetCurrentTimestampMS();
-  LOG(DEBUG) << "SetMaxFrameRateThreeSec touch_up_timeStamp: " << touch_up_timeStamp_;
+  touch_up_timestamp_= GetCurrentTimestampMS();
+  LOG(DEBUG) << "SetMaxFrameRateThreeSec touch_up_timeStamp: " << touch_up_timestamp_;
   curent_task_runner_->PostDelayedTask(
     FROM_HERE,
     base::BindOnce(UpdateTimeOutFramePreferredRate),
@@ -114,20 +114,20 @@ void DynamicFrameRateDecision::SetMaxFrameRateThreeSec()
 
 void DynamicFrameRateDecision::UpdateFramePreferredRate()
 {
-  if (!frameRateLinkerEnable_) {
+  if (!frame_rate_linker_enable_) {
     return;
   }
   // invoke frame rate linker
-  curFrameRate_ = slidingFrameRate_;
-  if (slidingFrameRate_ <= 0) {
-    curFrameRate_ = has_touch_point_ ? kDefaultPreferedFrameRate120FPS : kDefaultPreferedFrameRate60FPS;
-    if (GetCurrentTimestampMS() - touch_up_timeStamp_ < kThreeSeconds) {
-      curFrameRate_ = kDefaultPreferedFrameRate120FPS;
+  cur_frame_rate_ = sliding_frame_rate_;
+  if (sliding_frame_rate_ <= 0) {
+    cur_frame_rate_ = has_touch_point_ ? kDefaultPreferedFrameRate120FPS : kDefaultPreferedFrameRate60FPS;
+    if (GetCurrentTimestampMS() - touch_up_timestamp_< kThreeSeconds) {
+      cur_frame_rate_ = kDefaultPreferedFrameRate120FPS;
     }
   }
-  curFrameRate_ = std::max(curFrameRate_, videoFrameRate_);
-  LOG(INFO) << "final prefered frame rate " << curFrameRate_;
-  OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetFramePreferredRate(curFrameRate_);
+  cur_frame_rate_ = std::max(cur_frame_rate_, video_frame_rate_);
+  LOG(INFO) << "final prefered frame rate " << cur_frame_rate_;
+  OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetFramePreferredRate(cur_frame_rate_);
 }
 
 void DynamicFrameRateDecision::SetVsyncEnabled(bool enabled)
@@ -139,18 +139,18 @@ void DynamicFrameRateDecision::SetVsyncEnabled(bool enabled)
 
 void DynamicFrameRateDecision::SetVsyncEnabledImpl(bool enabled)
 {
-  bool prevVsyncCnt = vsynCnt_;
+  auto tmp_vsyn_cnt = vsyn_cnt_;
   if (enabled) {
-    vsynCnt_++;
+    vsyn_cnt_++;
    } else {
-    vsynCnt_--;
+    vsyn_cnt_--;
   }
-  vsynCnt_ = std::max(vsynCnt_, 0);
-  LOG(DEBUG) << "SetVsyncEnabled " << enabled << ", vsynCnt_: " << vsynCnt_;
-  if ((vsynCnt_ != 0) ^ (prevVsyncCnt != 0)) {
+  vsyn_cnt_ = std::max(vsyn_cnt_, 0);
+  LOG(DEBUG) << "SetVsyncEnabled " << enabled << ", vsyn_cnt_: " << vsyn_cnt_;
+  if ((vsyn_cnt_ != 0) ^ (tmp_vsyn_cnt != 0)) {
     return;
   }
-  SetFrameRateLinkerEnable(vsynCnt_ != 0);
+  SetFrameRateLinkerEnable(vsyn_cnt_ != 0);
   UpdateFramePreferredRate();
 }
 
@@ -196,10 +196,10 @@ void DynamicFrameRateDecision::SetVisibleImpl(bool visible)
 void DynamicFrameRateDecision::SetFrameRateLinkerEnable(bool enabled)
 {
   LOG(DEBUG) << "SetFrameRateLinkerEnable" << enabled;
-  if (frameRateLinkerEnable_ == enabled) {
+  if (frame_rate_linker_enable_ == enabled) {
     return;
   }
-  frameRateLinkerEnable_ = enabled;
+  frame_rate_linker_enable_ = enabled;
   OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetFrameRateLinkerEnable(enabled);
 }
 

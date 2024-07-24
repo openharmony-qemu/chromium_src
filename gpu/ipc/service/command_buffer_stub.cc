@@ -470,6 +470,66 @@ void CommandBufferStub::CheckCompleteWaits() {
       std::move(wait_for_token_->callback).Run(state);
       wait_for_token_.reset();
     }
+
+#if defined(OHOS_BUGFIX_CRASH)
+    if (wait_for_get_offset_) {
+      if (((wait_set_get_buffer_count_ == state.set_get_buffer_count) &&
+          gpu::CommandBuffer::InRange(wait_for_get_offset_->start,
+                                      wait_for_get_offset_->end,
+                                      state.get_offset)) ||
+         state.error != error::kNoError) {
+          ReportState();
+          std::move(wait_for_get_offset_->callback).Run(state);
+          wait_for_get_offset_.reset();
+          if (wait_for_get_offset_in_range_retry_cnt_ != 0) {
+            LOG(INFO) << "CommandBufferStub::WaitForGetOffsetInRange, retry times = "
+              << wait_for_get_offset_in_range_retry_cnt_ << " successfully";
+            wait_for_get_offset_in_range_retry_cnt_ = 0;
+          }
+      } else {
+        wait_for_get_offset_in_range_retry_cnt_++;
+        if (wait_for_get_offset_in_range_retry_cnt_ == 4) {
+          LOG(ERROR) << "CommandBufferStub::WaitForGetOffsetInRange failed, retry count = "
+          << wait_for_get_offset_in_range_retry_cnt_ << ", timeout, run callback" << ", wait_set_get_buffer_count_ = "
+          << wait_set_get_buffer_count_ << ", state.set_get_buffer_count = "
+          << state.set_get_buffer_count << ", wait_for_get_offset_->start = "
+          << wait_for_get_offset_->start << ", wait_for_get_offset_->end = "
+          << wait_for_get_offset_->end << ", state.get_offset = "
+          << state.get_offset << ", state.error" << state.error;
+          std::move(wait_for_get_offset_->callback).Run(gpu::CommandBuffer::State());
+          wait_for_get_offset_.reset();
+          wait_for_get_offset_in_range_retry_cnt_ = 0;
+        } else {
+          LOG(ERROR) << "CommandBufferStub::WaitForGetOffsetInRange failed, retry count = "
+            << wait_for_get_offset_in_range_retry_cnt_ << ", wait_set_get_buffer_count_ = "
+            << wait_set_get_buffer_count_ << ", state.set_get_buffer_count = "
+            << state.set_get_buffer_count << ", wait_for_get_offset_->start = "
+            << wait_for_get_offset_->start << ", wait_for_get_offset_->end = "
+            << wait_for_get_offset_->end << ", state.get_offset = "
+            << state.get_offset << ", state.error" << state.error;
+
+          TRACE_EVENT1("gpu", "CommandBufferStub::WaitForGetOffsetInRange", "wait_for_get_offset_in_range_retry_cnt_",
+            wait_for_get_offset_in_range_retry_cnt_);
+
+          TRACE_EVENT2("gpu", "CommandBufferStub::WaitForGetOffsetInRange", "wait_set_get_buffer_count_", wait_set_get_buffer_count_,
+            "state.set_get_buffer_count", state.set_get_buffer_count);
+
+          TRACE_EVENT2("gpu", "CommandBufferStub::WaitForGetOffsetInRange", "wait_for_get_offset_->start", wait_for_get_offset_->start,
+            "wait_for_get_offset_->end", wait_for_get_offset_->end);
+
+          TRACE_EVENT2("gpu", "CommandBufferStub::WaitForGetOffsetInRange", "state.get_offset", state.get_offset,
+            "state.error", state.error);
+
+          base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(FROM_HERE, base::BindOnce(
+            &gpu::CommandBufferStub::WaitForGetOffsetInRange, this->AsWeakPtr(),
+            wait_set_get_buffer_count_, wait_for_get_offset_->start, wait_for_get_offset_->end,
+            std::move(wait_for_get_offset_->callback)), base::Milliseconds(1000));
+
+          wait_for_get_offset_.reset();
+        }
+      }
+    }
+#else
     if (wait_for_get_offset_ &&
         (((wait_set_get_buffer_count_ == state.set_get_buffer_count) &&
           gpu::CommandBuffer::InRange(wait_for_get_offset_->start,
@@ -480,6 +540,7 @@ void CommandBufferStub::CheckCompleteWaits() {
       std::move(wait_for_get_offset_->callback).Run(state);
       wait_for_get_offset_.reset();
     }
+#endif
   }
   if (has_wait && !(wait_for_token_ || wait_for_get_offset_)) {
     // TODO(elgarawany): Replace with reset the sequence back to its default

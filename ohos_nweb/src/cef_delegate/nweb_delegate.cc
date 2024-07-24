@@ -3540,7 +3540,7 @@ NWebDelegate::PopulateAccessibilityNodeInfo(
   AddAccessibilityNodeInfoAttributes(nodeInfo, node);
   AddAccessibilityNodeInfoRect(nodeInfo, node);
   AddAccessibilityNodeInfoCollection(nodeInfo, node);
-  AddAccessibilityNodeInfoActions(nodeInfo);
+  AddAccessibilityNodeInfoActions(nodeInfo, node);
 
   return nodeInfo;
 }
@@ -3645,7 +3645,8 @@ void NWebDelegate::AddAccessibilityNodeInfoCollection(
 }
 
 void NWebDelegate::AddAccessibilityNodeInfoActions(
-    std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo) const {
+    std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
+    const content::BrowserAccessibilityOHOS* node) const {
   std::vector<uint32_t> actions = nodeInfo->GetActions();
   actions.clear();
   if (nodeInfo->GetIsClickable()) {
@@ -3668,6 +3669,26 @@ void NWebDelegate::AddAccessibilityNodeInfoActions(
   } else {
     actions.emplace_back(
         static_cast<uint32_t>(AceAction::ACTION_ACCESSIBILITY_FOCUS));
+  }
+  if (node != nullptr) {
+    if (node->IsScrollSupported()) {
+      actions.emplace_back(
+          static_cast<uint32_t>(AceAction::ACTION_SCROLL_FORWARD));
+      actions.emplace_back(
+          static_cast<uint32_t>(AceAction::ACTION_SCROLL_BACKWARD));
+    }
+    if (nodeInfo->GetIsEditable() && nodeInfo->GetIsEnabled()) {
+      actions.emplace_back(
+          static_cast<uint32_t>(AceAction::ACTION_PASTE));
+      if (node->HasNonEmptyValue()) {
+        actions.emplace_back(
+          static_cast<uint32_t>(AceAction::ACTION_SET_SELECTION));
+        actions.emplace_back(
+          static_cast<uint32_t>(AceAction::ACTION_CUT));
+        actions.emplace_back(
+          static_cast<uint32_t>(AceAction::ACTION_COPY));
+      }
+    }
   }
   nodeInfo->SetActions(actions);
 }

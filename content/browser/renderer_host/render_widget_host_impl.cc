@@ -163,6 +163,7 @@
 
 #if BUILDFLAG(IS_OHOS)
 #include "base/ohos/ltpo/include/sliding_observer.h"
+#include "content/browser/gpu/gpu_process_host.h"
 #endif
 
 using blink::DragOperationsMask;
@@ -1615,14 +1616,27 @@ void RenderWidgetHostImpl::ForwardGestureEventWithLatencyInfo(
                WebInputEvent::GetName(gesture_event.GetType()));
 
 #if BUILDFLAG(IS_OHOS)
+  int32_t preferred_frame_rate = 0;
   if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollBegin) {
-    base::ohos::SlidingObserver::GetInstance().StartSliding();
-  } else if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollEnd
-    || gesture_event.GetType() == WebInputEvent::Type::kGestureScrollEnd) {
-    base::ohos::SlidingObserver::GetInstance().StopSliding();
-  } else if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollUpdate) {
-    base::ohos::SlidingObserver::GetInstance().OnScrollUpdate(gesture_event.data.scroll_update.delta_x,
-      gesture_event.data.scroll_update.delta_y);
+      base::ohos::SlidingObserver::GetInstance().StartSliding();
+    } else if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollEnd) {
+      preferred_frame_rate = base::ohos::SlidingObserver::GetInstance().StopSliding();
+    } else if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollUpdate) {
+      preferred_frame_rate = base::ohos::SlidingObserver::GetInstance().OnScrollUpdate(gesture_event.data.scroll_update.delta_x,
+        gesture_event.data.scroll_update.delta_y);
+  }
+
+  auto* host = GpuProcessHost::Get();
+  viz::GpuHostImpl* host_impl = nullptr;
+  if (host) {
+    host_impl = host->gpu_host();
+  }
+
+  if (host_impl && preferred_frame_rate >= 0) {
+    if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollEnd
+      || gesture_event.GetType() == WebInputEvent::Type::kGestureScrollUpdate) {
+      host_impl->ReportSlidingFrameRate(preferred_frame_rate);
+    }
   }
 #endif
 

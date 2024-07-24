@@ -344,14 +344,6 @@ void DelegatedFrameHost::OnVsync() {
 void DelegatedFrameHost::OnVsyncReceived() {
   client_->OnVsyncReceived();
 }
-
-void DelegatedFrameHost::OnVsyncEnabled(bool enabled) {
-  client_->OnVsyncEnabled(enabled);
-}
-
-void DelegatedFrameHost::ReportVideoFrameRate(int32_t frameRate) {
-  client_->ReportVideoFrameRate(frameRate);
-}
 #endif
 
 // CommitPending without a target for TakeFallbackContentFrom. Since we cannot

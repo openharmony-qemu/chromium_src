@@ -923,6 +923,23 @@ bool BrowserAccessibilityOHOS::IsTableHeader() const {
   return ui::IsTableHeader(GetRole());
 }
 
+bool BrowserAccessibilityOHOS::HasNonEmptyValue() const {
+  return IsTextField() && !GetValueForControl().empty();
+}
+
+bool BrowserAccessibilityOHOS::IsScrollSupported() const {
+  if (GetRole() == ax::mojom::Role::kSlider) {
+    const std::string& html_tag =
+        GetStringAttribute(ax::mojom::StringAttribute::kHtmlTag);
+    if (html_tag != "input") {
+      return false;
+    }
+    return true;
+  } else {
+    return IsScrollable();
+  }
+}
+
 void BrowserAccessibilityOHOS::Scroll(const ax::mojom::Action& action) const {
   if (GetRole() == ax::mojom::Role::kSlider) {
     if (!IsEnabled()) {

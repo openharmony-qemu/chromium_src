@@ -694,11 +694,11 @@ bool FeatureList::IsFeatureEnabled(const Feature& feature) const {
   OverrideState overridden_state = GetOverrideState(feature);
 #if defined(OHOS_SCROLLBAR)
   if (std::string(feature.name) == "OverlayScrollbar") {
-    LOG(INFO) << "Overlay Scrollbar:" << overridden_state << " : " << (overridden_state == OVERRIDE_ENABLE_FEATURE);
+    LOG(DEBUG) << "Overlay Scrollbar:" << overridden_state << " : " << (overridden_state == OVERRIDE_ENABLE_FEATURE);
     // OverlayScrollbar using native process.
   }
   if (std::string(feature.name) == "ForceScrollbar") {
-    LOG(INFO) << "Force Scrollbar:" << overridden_state << " : " << (overridden_state == OVERRIDE_DISABLE_FEATURE);
+    LOG(DEBUG) << "Force Scrollbar:" << overridden_state << " : " << (overridden_state == OVERRIDE_DISABLE_FEATURE);
     return overridden_state == OVERRIDE_DISABLE_FEATURE;
   }
 #endif

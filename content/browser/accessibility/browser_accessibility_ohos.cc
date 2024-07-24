@@ -827,26 +827,6 @@ std::u16string BrowserAccessibilityOHOS::GetSubstringTextContentUTF16(
       break;
   }
 
-  // This is called from IsLeaf, so don't call PlatformChildCount
-  // from within this!
-  if (text.empty() && ((HasOnlyTextChildren() && !HasListMarkerChild()) ||
-                       (IsFocusable() && HasOnlyTextAndImageChildren()))) {
-    for (auto it = InternalChildrenBegin(); it != InternalChildrenEnd(); ++it) {
-      text += static_cast<BrowserAccessibilityOHOS*>(it.get())
-                  ->GetSubstringTextContentUTF16(predicate);
-      if (predicate && predicate.value().Run(text)) {
-        break;
-      }
-    }
-  }
-
-  if (text.empty() &&
-      (ui::IsLink(GetRole()) || ui::IsImageOrVideo(GetRole())) &&
-      !HasExplicitlyEmptyName()) {
-    std::u16string url = GetString16Attribute(ax::mojom::StringAttribute::kUrl);
-    text = ui::AXUrlBaseText(url);
-  }
-
   return text;
 }
 

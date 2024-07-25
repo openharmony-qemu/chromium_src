@@ -7,6 +7,11 @@
 #include "base/trace_event/trace_event.h"
 #include "ui/events/blink/blink_features.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/system/sys_info.h"
+#include "ohos_adapter_helper.h"
+#endif  // BUILDFLAG(IS_OHOS)
+
 using blink::WebGestureEvent;
 using blink::WebInputEvent;
 
@@ -41,6 +46,16 @@ gfx::Vector2dF FlingBooster::GetVelocityForFlingStart(
     // Reduce the horizontal velocity of flings.
     velocity.Scale(0.2f, 1.0f);
   }
+
+  #if BUILDFLAG(IS_OHOS)
+  if (OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetBoolParameter(
+      "web.instructionOptimize.enable", 0)) {
+    if (!base::SysInfo::IsLowEndDevice() &&
+      (std::abs(fling_start.data.fling_start.velocity_y) > std::abs(fling_start.data.fling_start.velocity_x))) {
+        velocity.Scale(1.0f, 1.5f);
+      }
+    }
+  #endif  // BUILDFLAG(IS_OHOS)
   TRACE_EVENT2("input", "FlingBooster::GetVelocityForFlingStart", "vx",
                velocity.x(), "vy", velocity.y());
 

@@ -2731,6 +2731,13 @@ void NWebHandlerDelegate::OnQuickMenuDismissed(CefRefPtr<CefBrowser> browser,
   }
 #endif
 }
+
+void HideHandleAndQuickMenuIfNecessary(bool hide) {
+  LOG(INFO) << "HideHandleAndQuickMenuIfNecessary hide:" << hide;
+  if (nweb_handler_ != nullptr) {
+    nweb_handler_->HideHandleAndQuickMenuIfNecessary(hide);
+  }
+}
 /* CefContextMenuHandler method end */
 
 /* CefFindandler method begin */

@@ -388,6 +388,12 @@ void TouchSelectionController::OnSwipeToMoveCursorEnd() {
     SetTemporarilyHidden(false);
 }
 
+#ifdef OHOS_DRAG_DROP
+void TouchSelectionController::ResetResponsePendingInputEvent() {
+  response_pending_input_event_ = INPUT_EVENT_TYPE_NONE;
+}
+#endif
+
 #ifdef OHOS_CLIPBOARD
 void  TouchSelectionController::UpdateSelectionChanged(
     const TouchSelectionDraggable& draggable) {

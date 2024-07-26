@@ -732,12 +732,7 @@ bool NWebImpl::SetVirtualDeviceRatio() {
       // Created a richtext component
       device_pixel_ratio_ = richtextDisplayRatio;
     } else {
-#if BUILDFLAG(IS_OHOS)
-      device_pixel_ratio_ = display->GetVirtualPixelRatio() *
-                            nweb_delegate_->GetBaseDisplayRatio();
-#else
       device_pixel_ratio_ = display->GetVirtualPixelRatio();
-#endif
     }
     if (device_pixel_ratio_ <= 0) {
       WVLOG_E("invalid ratio.");
@@ -3344,7 +3339,7 @@ void NWebImpl::SetPathAllowingUniversalAccess(
     }
   }
   nweb_delegate_->SetPathAllowingUniversalAccess(pathList);
-} 
+}
 #endif
 
 int NWebImpl::SetUrlTrustList(const std::string& urlTrustList) {

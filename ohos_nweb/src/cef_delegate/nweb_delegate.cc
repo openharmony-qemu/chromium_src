@@ -503,12 +503,7 @@ InitRichtextIdentifier();
       // Created a richtext component
       SetVirtualPixelRatio(richtextDisplayRatio);
     } else {
-#if BUILDFLAG(IS_OHOS)
-      SetVirtualPixelRatio(display->GetVirtualPixelRatio() *
-                           GetBaseDisplayRatio());
-#else
       SetVirtualPixelRatio(display->GetVirtualPixelRatio());
-#endif
     }
   }
 #if defined(OHOS_WEBRTC)
@@ -897,11 +892,7 @@ void NWebDelegate::NotifyScreenInfoChanged(RotationType rotation,
       // Created a richtext component
       display_ratio = richtextDisplayRatio;
     } else {
-#if BUILDFLAG(IS_OHOS)
-      display_ratio = display->GetVirtualPixelRatio() * GetBaseDisplayRatio();
-#else
       display_ratio = display->GetVirtualPixelRatio();
-#endif
     }
     if (display_ratio <= 0) {
       LOG(ERROR) << "Invalid display_ratio, display_ratio = " << display_ratio;
@@ -937,12 +928,6 @@ void NWebDelegate::SetVirtualPixelRatio(float ratio) {
   }
   ui::GestureConfiguration::GetInstance()->set_virtual_pixel_ratio(default_virtual_pixel_ratio_);
 }
-
-#if BUILDFLAG(IS_OHOS)
-float NWebDelegate::GetBaseDisplayRatio() {
-  return base_display_ratio_;
-}
-#endif
 
 std::shared_ptr<NWebPreference> NWebDelegate::GetPreference() const {
   return preference_delegate_;
@@ -1519,27 +1504,6 @@ void NWebDelegate::InitializeCef(std::string url,
                                  , const std::string& shared_render_process_token
 #endif
                                 ) {
-#if defined(OHOS_HAP_DECOMPRESSED) || BUILDFLAG(IS_OHOS)
-  bool for_browser = false;
-  std::string for_browser_cmd("--");
-  for_browser_cmd.append(::switches::kForBrowser);
-  CefMainArgs mainargs(argc_, const_cast<char**>(argv_));
-  base::CommandLine::StringVector argv;
-  for (int i = 0; i < argc_; i++) {
-    argv.push_back(argv_[i]);
-    if (!for_browser && argv_[i] == for_browser_cmd) {
-      for_browser = true;
-    }
-  }
-  if (base::ohos::IsPcDevice() && for_browser) {
-    // To achieve a similar web page display effect on HarmonyOS PC devices as
-    // on Mac devices of the same size, it is necessary to make the web page
-    // width around approximately 1512 when in full screen, making the default
-    // dpr=1.25*1.12=1.4f.
-    base_display_ratio_ = 1.12f;
-  }
-#endif
-
   if (popup) {
     LOG(DEBUG) << "pop windows";
     handler_delegate_ = NWebHandlerDelegate::Create(
@@ -1557,6 +1521,11 @@ void NWebDelegate::InitializeCef(std::string url,
 #endif
 
 #ifdef OHOS_HAP_DECOMPRESSED
+  CefMainArgs mainargs(argc_, const_cast<char**>(argv_));
+  base::CommandLine::StringVector argv;
+  for (int i = 0; i < argc_; i++) {
+    argv.push_back(argv_[i]);
+  }
   if (base::CommandLine::ForCurrentProcess()) {
     base::CommandLine cl(argv);
     base::CommandLine::ForCurrentProcess()->AppendArguments(cl, false);
@@ -3883,7 +3852,7 @@ void NWebDelegate::SetPathAllowingUniversalAccess(
     cef_path_list.emplace_back(CefString(path));
   });
   GetBrowser()->GetHost()->SetGrantFileAccessDirs(cef_path_list);
-} 
+}
 #endif
 
 void NWebDelegate::RefreshAccessibilityManagerClickEvent() {

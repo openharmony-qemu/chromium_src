@@ -408,7 +408,6 @@ void LargestContentfulPaintHandler::RecordCrossSiteSubframeTiming(
     MergeForSubframesWithAdjustedTime(
         &cross_site_subframe_contentful_paint_.Image(), new_image_candidate);
   }
-
 }
 
 void LargestContentfulPaintHandler::UpdateFirstInputOrScrollNotified(

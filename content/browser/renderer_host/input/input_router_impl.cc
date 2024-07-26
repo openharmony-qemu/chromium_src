@@ -170,12 +170,12 @@ void InputRouterImpl::SendGestureEvent(
       .CreateSocPerfClientAdapter()
       ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID, false);
     prePerfTimeStamp_ = 0;
-    auto preferred_frame_rate = base::ohos::SlidingObserver::GetInstance().StopSliding();
+    base::ohos::SlidingObserver::GetInstance().StopSliding();
 
     if (auto* host = GpuProcessHost::Get()) {
       if (auto* host_impl = host->gpu_host()) {
         host_impl->StopMonitor();
-        host_impl->ReportSlidingFrameRate(preferred_frame_rate);
+        host_impl->ReportSlidingFrameRate(0);
       }
     }
 #endif

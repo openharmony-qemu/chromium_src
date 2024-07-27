@@ -6,8 +6,10 @@
 
 #include "base/check.h"
 #include "base/logging.h"
-#include "content/renderer/render_remote_proxy.h"
+#if BUILDFLAG(IS_OHOS)
+#include "content/renderer/render_remote_proxy_ohos.h"
 #include "ohos_adapter_helper.h"
+#endif
 
 NWebNativeWindowTracker* g_instance = nullptr;
 

@@ -4677,7 +4677,9 @@ size_t RenderProcessHostImpl::GetProcessCountForLimit() {
     }
     it.Advance();
   }
+#if BUILDFLAG(IS_OHOS)
   LOG(DEBUG) << "RenderProcessHostImpl::GetProcessCount count: " << count;
+#endif
   return count - process_count_to_ignore;
 }
 

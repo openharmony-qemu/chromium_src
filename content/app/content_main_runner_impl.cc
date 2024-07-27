@@ -92,7 +92,6 @@
 #include "content/public/renderer/content_renderer_client.h"
 #include "content/public/utility/content_utility_client.h"
 #include "content/renderer/in_process_renderer_thread.h"
-#include "content/renderer/render_remote_proxy.h"
 #include "content/utility/in_process_utility_thread.h"
 #include "gin/v8_initializer.h"
 #include "media/base/media.h"
@@ -210,6 +209,10 @@
 
 #if defined(ADDRESS_SANITIZER)
 #include "base/debug/asan_service.h"
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+#include "content/renderer/render_remote_proxy_ohos.h"
 #endif
 
 namespace content {

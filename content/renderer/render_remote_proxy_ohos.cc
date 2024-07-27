@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "render_remote_proxy.h"
+#include "render_remote_proxy_ohos.h"
 
 #include <thread>
 #include "base/base_switches.h"
@@ -11,6 +11,7 @@
 #include "base/posix/global_descriptors.h"
 #include "content/public/common/content_descriptors.h"
 #include "gpu/ipc/common/nweb_native_window_tracker.h"
+#if BUILDFLAG(IS_OHOS)
 #include "ohos_adapter_helper.h"
 
 namespace content {
@@ -67,11 +68,10 @@ void RenderRemoteProxy::NotifyBrowserFd(int32_t ipcFd,
   RenderRemoteProxy::browser_fd_cv_.notify_one();
 }
 
-void RenderRemoteProxy::NotifyBrowser(
-  int32_t ipcFd, int32_t sharedFd, int32_t crashFd
-#if BUILDFLAG(IS_OHOS)
-  , std::shared_ptr<OHOS::NWeb::AafwkBrowserClientAdapter> clientAdapter
-#endif
+void RenderRemoteProxy::NotifyBrowser(int32_t ipcFd,
+                                      int32_t sharedFd,
+                                      int32_t crashFd,
+                                      std::shared_ptr<OHOS::NWeb::AafwkBrowserClientAdapter> clientAdapter
 ) {
   base::GlobalDescriptors* g_fds = base::GlobalDescriptors::GetInstance();
   if (g_fds != nullptr) {
@@ -140,12 +140,7 @@ bool RenderRemoteProxy::WaitForBrowserFd() {
   while (++wait_count <= kMaxWaitCount) {
     if (!browser_fd_cv_.wait_for(lk, std::chrono::milliseconds(kTimeOutDur),
                                  []() { return is_browser_fd_received_; })) {
-#if BUILDFLAG(IS_OHOS)
       LOG(INFO) << "Retry to wait for AMS to return the main process IPC fd for " << wait_count * kTimeOutDur << " ms";
-#else
-      LOG(INFO) << "retry AttachRenderProcess for " << wait_count << "time";
-      g_app_mgr_client_adapter->AttachRenderProcess(g_render_remote_proxy);
-#endif
     } else {
       LOG(INFO) << "Request to AMS to obtain the main process IPC fd successfully";
       return true;
@@ -157,3 +152,4 @@ bool RenderRemoteProxy::WaitForBrowserFd() {
 }
 
 }  // namespace content
+#endif

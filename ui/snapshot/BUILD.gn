@@ -100,8 +100,8 @@ test("snapshot_unittests") {
       "//content/browser/scheduler/browser_task_executor.cc",
       "//content/public/common/content_features.cc",
       "//content/public/common/content_switches.cc",
-      "//content/renderer/render_remote_proxy.cc",
-      "//content/renderer/render_remote_proxy.h"
+      "//content/renderer/render_remote_proxy_ohos.cc",
+      "//content/renderer/render_remote_proxy_ohos.h"
     ]
   }
 

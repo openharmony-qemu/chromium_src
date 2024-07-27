@@ -406,7 +406,6 @@ class NWebDelegateInterface
 #endif // defined(OHOS_SCREEN_ROTATION)
 
 #if BUILDFLAG(IS_OHOS)
-  virtual float GetBaseDisplayRatio() = 0;
   virtual void UpdateNativeEmbedInfo(std::shared_ptr<NWebNativeEmbedDataInfo> info) = 0;
 #endif
 

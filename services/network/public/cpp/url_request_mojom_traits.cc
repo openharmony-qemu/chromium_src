@@ -234,6 +234,7 @@ bool StructTraits<
       data.attribution_reporting_eligibility();
 #if BUILDFLAG(IS_OHOS)
   out->allow_preload_record = data.allow_preload_record();
+  out->is_sync_mode = data.is_sync_mode();
 #endif  //  IS_OHOS
 #if defined(OHOS_EX_DOWNLOAD)
   out->is_download_request = data.is_download_request();

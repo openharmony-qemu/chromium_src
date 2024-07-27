@@ -144,6 +144,19 @@ scoped_refptr<VideoFrame> VideoRendererAlgorithm::Render(
 
   DCHECK_GE(frame_to_render, 0);
 
+#ifdef OHOS_MEDIA
+  // if drift time is greater than 1s, then report it
+  if (selected_frame_drift.InSeconds() > 1) {
+    LOG(INFO)
+        << "OhMedia::Render Frame drift is too far: "
+        << selected_frame_drift.InMillisecondsF()
+        << "ms; max_acceptable_drift_="
+        << max_acceptable_drift_.InMillisecondsF() << "ms; ts="
+        << frame_queue_[frame_to_render].frame->timestamp().InMillisecondsF()
+        << "ms; this=" << (void*)this;
+  }
+#endif // OHOS_MEDIA
+
   // Drop some debugging information if a frame had poor cadence.
   if (cadence_estimator_.has_cadence()) {
     const ReadyFrame& last_frame_info = frame_queue_.front();

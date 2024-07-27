@@ -287,6 +287,17 @@ void LargestContentfulPaintHandler::RecordMainFrameTiming(
         largest_contentful_paint.largest_image_load_start,
         largest_contentful_paint.largest_image_load_end);
   }
+
+  int64_t lcp;
+  if(largest_contentful_paint.largest_image_paint_size >= largest_contentful_paint.largest_text_paint_size) {
+    lcp = largest_contentful_paint.largest_image_paint.value_or(::base::TimeDelta()).InMilliseconds();
+  } else {
+    lcp = largest_contentful_paint.largest_text_paint.value_or(::base::TimeDelta()).InMilliseconds();
+  }
+
+  if(lcp > 0) {
+    LOG(INFO) << "Web Load Performance LCP: " << lcp;
+  }
 }
 
 void LargestContentfulPaintHandler::RecordSubFrameTiming(

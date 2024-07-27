@@ -1122,6 +1122,7 @@ void NWebHandlerDelegate::OnFirstContentfulPaint(
     int64_t navigationStartTick,
     int64_t firstContentfulPaintMs) {
   LOG(INFO) << "NWebHandlerDelegate::OnFirstContentfulPaint";
+  LOG(INFO) << "Web Load Performance FCP: " << firstContentfulPaintMs;
   if (nweb_handler_ != nullptr) {
     nweb_handler_->OnFirstContentfulPaint(navigationStartTick,
                                           firstContentfulPaintMs);

@@ -130,8 +130,8 @@ source_set("unit_tests") {
   ]
   if (ohos_unittests) {
     sources += [
-      "//content/renderer/render_remote_proxy.cc",
-      "//content/renderer/render_remote_proxy.h"
+      "//content/renderer/render_remote_proxy_ohos.cc",
+      "//content/renderer/render_remote_proxy_ohos.h"
     ]
   }
   configs += [ "//media:media_config" ]

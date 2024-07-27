@@ -2,14 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef CONTENT_RENDERER_RENDER_REMOTE_PROXY_H_
-#define CONTENT_RENDERER_RENDER_REMOTE_PROXY_H_
+#ifndef CONTENT_RENDERER_RENDER_REMOTE_PROXY_OHOS_H_
+#define CONTENT_RENDERER_RENDER_REMOTE_PROXY_OHOS_H_
 
 #include <condition_variable>
 #include <mutex>
-#include "aafwk_render_scheduler_host_adapter.h"
-
 #include "build/build_config.h"
+
+#if BUILDFLAG(IS_OHOS)
+#include "aafwk_render_scheduler_host_adapter.h"
 
 namespace base {
 class CommandLine;
@@ -26,12 +27,11 @@ class RenderRemoteProxy : public OHOS::NWeb::AafwkRenderSchedulerHostAdapter {
                                int32_t crashFd
                                ) override;
 
-  virtual void NotifyBrowser(
-    int32_t ipcFd, int32_t sharedFd, int32_t crashFd
-#if BUILDFLAG(IS_OHOS)
-    , std::shared_ptr<OHOS::NWeb::AafwkBrowserClientAdapter> clientAdapter
-#endif // BUILDFLAG(IS_OHOS)
-  ) override;
+  virtual void NotifyBrowser(int32_t ipcFd,
+                             int32_t sharedFd,
+                             int32_t crashFd,
+                             std::shared_ptr<OHOS::NWeb::AafwkBrowserClientAdapter> clientAdapter
+                             ) override;
 
   static void CreateAndRegist(const base::CommandLine& command_line);
   static bool WaitForBrowserFd();
@@ -46,7 +46,8 @@ class RenderRemoteProxy : public OHOS::NWeb::AafwkRenderSchedulerHostAdapter {
   static bool is_browser_fd_received_;
   static bool is_for_test_;
 };
+#endif
 
 }  // namespace content
 
-#endif  // CONTENT_RENDERER_RENDER_REMOTE_PROXY_H_
+#endif  // CONTENT_RENDERER_RENDER_REMOTE_PROXY_OHOS_H_

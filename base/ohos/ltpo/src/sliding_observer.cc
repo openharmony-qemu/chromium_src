@@ -55,7 +55,7 @@ void SlidingObserver::Init() {
 
   auto display_manager_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateDisplayMgrAdapter();
   if (!display_manager_adapter) {
-      return;
+    return;
   }
   std::shared_ptr<OHOS::NWeb::DisplayAdapter> display =
       display_manager_adapter->GetDefaultDisplay();
@@ -75,10 +75,10 @@ void SlidingObserver::Init() {
 void SlidingObserver::StartSliding()
 {
   if (!is_inited_) {
-      Init();
+    Init();
   }
   if (is_sliding_ || !is_inited_) {
-      return;
+    return;
   }
   current_timestamp_ = GetCurrentTimestamp();
   is_sliding_ = true;
@@ -88,7 +88,7 @@ void SlidingObserver::StartSliding()
 int32_t SlidingObserver::StopSliding()
 {
   if (!is_sliding_ || !is_inited_) {
-      return -1;
+    return -1;
   }
   current_timestamp_ = -1;
   is_sliding_ = false;
@@ -106,16 +106,16 @@ int64_t SlidingObserver::GetCurrentTimestamp()
 
 void SlidingObserver::StartFling()
 {
-    if (!is_sliding_ || !is_inited_) {
-        return;
-    }
-    is_off_screen_ = true;
+  if (!is_sliding_ || !is_inited_) {
+    return;
+  }
+  is_off_screen_ = true;
 }
 
 int32_t SlidingObserver::OnScrollUpdate(float delta_x, float delta_y)
 {
   if (!is_sliding_ || is_off_screen_) {
-      return -1;
+    return -1;
   }
   auto current_timestamp = GetCurrentTimestamp();
 
@@ -136,7 +136,7 @@ int32_t SlidingObserver::OnScrollUpdate(float delta_x, float delta_y)
 int32_t SlidingObserver::OnFlingUpdate(float velocity_x, float velocity_y)
 {
   if (!is_sliding_ || !is_off_screen_) {
-      return -1;
+    return -1;
   }
 
   float velocity = GetVelocity(velocity_x, velocity_y);
@@ -156,9 +156,9 @@ int32_t SlidingObserver::GetPreferedFrameRate(float velocity, const std::vector<
       return kDefaultPreferedFrameRate;
   }
   for (auto& item : setting) {
-      if (velocity >= item.min_ && (velocity < item.max_ || item.max_ < 0)) {
-          return item.preferredFrameRate_;
-      }
+    if (velocity >= item.min_ && (velocity < item.max_ || item.max_ < 0)) {
+      return item.preferredFrameRate_;
+    }
   }
   LOG(WARNING) << "can not find proper prefered frame rate";
   return kDefaultPreferedFrameRate;
@@ -166,11 +166,11 @@ int32_t SlidingObserver::GetPreferedFrameRate(float velocity, const std::vector<
 
 float SlidingObserver::GetVelocity(float velocity_x, float velocity_y)
 {
-   // mm per virtual pixel in phone, mm_per_inch/ppi_of_device * default_virtual_pixel_ratio_
-   float convertUnit = kMilliMeterPerInch / dpi_ * virtual_pixel_ratio_;
-   float velocity = std::sqrt(velocity_x * velocity_x + velocity_y * velocity_y);
-   LOG(DEBUG) << "velocity_x " << velocity_x << " velocity_y " << velocity_y  << " velocity " << convertUnit * velocity;
-   return convertUnit * velocity;
+  // mm per virtual pixel in phone, mm_per_inch/ppi_of_device * default_virtual_pixel_ratio_
+  float convert_unit = kMilliMeterPerInch / dpi_ * virtual_pixel_ratio_;
+  float velocity = std::sqrt(velocity_x * velocity_x + velocity_y * velocity_y);
+  LOG(DEBUG) << "velocity_x " << velocity_x << " velocity_y " << velocity_y  << " velocity " << convert_unit * velocity;
+  return convert_unit * velocity;
 }
 }  // namespace ohos
 }  // namespace base

@@ -164,12 +164,12 @@ bool WebGestureCurveImpl::Advance(double time,
 
   // dump curve
   LOG(DEBUG) << "WebGestureCurveImpl::Advance DUMP_FLING_CURVE time = " << time << " offset = " << offset.y() << " velocity = " << out_current_velocity.y();
-  int32_t preferredFrameRate = base::ohos::SlidingObserver::GetInstance().OnFlingUpdate(out_current_velocity.x(),
+  int32_t preferred_frame_rate = base::ohos::SlidingObserver::GetInstance().OnFlingUpdate(out_current_velocity.x(),
       out_current_velocity.y());
   if (auto* host = content::GpuProcessHost::Get()) {
     if (auto* host_impl = host->gpu_host()) {
-      if (preferredFrameRate >= 0) {
-        host_impl->ReportSlidingFrameRate(preferredFrameRate);
+      if (preferred_frame_rate >= 0) {
+        host_impl->ReportSlidingFrameRate(preferred_frame_rate);
       }
     }
   }

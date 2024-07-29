@@ -77,6 +77,26 @@ class ContentPasswordManagerDriver
   void TouchToFillClosed(ShowVirtualKeyboard show_virtual_keyboard) override;
   void TriggerFormSubmission() override;
 #endif
+
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  void FillAccountSuggestion(const GURL& page_url,
+                              const std::u16string& username,
+                              const std::u16string& password);
+
+  void FillAccountSuggestion(const std::u16string& username,
+                              const std::u16string& password) override;
+
+  void OnRequestAutofill(
+      autofill::FormRendererId form_id,
+      const autofill::mojom::OhosPasswordFormAutofillState state,
+      const autofill::InputFillRequestData& username_data,
+      const autofill::InputFillRequestData& password_data) override;
+
+  void SendParsedPasswordFormToRenderer(
+      const autofill::PasswordFormFillData&
+      parsed_form_data_without_password) override;
+#endif
+
   void PreviewSuggestion(const std::u16string& username,
                          const std::u16string& password) override;
   void PreviewGenerationSuggestion(const std::u16string& password) override;

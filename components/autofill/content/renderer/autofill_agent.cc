@@ -838,6 +838,19 @@ void AutofillAgent::AcceptDataListSuggestion(
   DoFillFieldWithValue(new_value, element_, WebAutofillState::kNotFilled);
 }
 
+#if defined(OHOS_PASSWORD_AUTOFILL)
+void AutofillAgent::FillAccountSuggestion(const std::u16string& username,
+                                           const std::u16string& password) {
+  if (element_.IsNull())
+    return;
+
+  bool handled =
+      password_autofill_agent_->FillAccountSuggestion(element_,
+                                                      username, password);
+  DCHECK(handled);
+}
+#endif
+
 void AutofillAgent::FillPasswordSuggestion(const std::u16string& username,
                                            const std::u16string& password) {
   if (element_.IsNull())
@@ -1231,6 +1244,10 @@ void AutofillAgent::FormControlElementClicked(
 
 #if BUILDFLAG(IS_ANDROID)
   password_autofill_agent_->TryToShowTouchToFill(element);
+#endif
+
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  password_autofill_agent_->RequestAutofill(element);
 #endif
 
   ShowSuggestions(

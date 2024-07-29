@@ -903,12 +903,22 @@ void PasswordFormManager::Fill() {
   // filling and saving mode might be different so it is better not to cache
   // parse result, but to parse each time again.
   CHECK(observed_form());
+
   std::unique_ptr<PasswordForm> observed_password_form =
       ParseFormAndMakeLogging(*observed_form(), FormDataParser::Mode::kFilling);
   RecordMetricOnReadonly(parser_.readonly_status(), !!observed_password_form,
                          FormDataParser::Mode::kFilling);
-  if (!observed_password_form)
+  if (!observed_password_form) {
     return;
+  }
+
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  // Send Parsed PasswordForm to renderer
+  autofill::PasswordFormFillData parsed_fill_data_without_password =
+      CreatePasswordFormFillDataWithoutPasswordInfo(
+        *observed_password_form.get());
+  driver_->SendParsedPasswordFormToRenderer(parsed_fill_data_without_password);
+#endif
 
   if (observed_password_form->is_new_password_reliable && !IsBlocklisted()) {
     driver_->FormEligibleForGenerationFound({

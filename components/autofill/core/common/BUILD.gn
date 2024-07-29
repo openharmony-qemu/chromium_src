@@ -67,6 +67,12 @@ static_library("common") {
     "unique_ids.h",
   ]
 
+  # if (defined(ohos_password_autofill) && ohos_password_autofill) {
+    sources += [
+      "ohos_password_autofill_data.h",
+    ]
+  # }
+
   public_deps = [
     ":features",
     "//base",

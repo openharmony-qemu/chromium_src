@@ -20,7 +20,6 @@
 
 namespace base {
 namespace ohos {
-// dynamic frame rate
 class TouchObserver {
 public:
   TouchObserver();

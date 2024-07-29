@@ -202,6 +202,10 @@ void DemuxerManager::OnPipelineError(PipelineStatus error) {
   }
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+#if defined(OHOS_MEDIA)
+  LOG(INFO) << "OhMedia::OnError PipelineStatus = "<< (int)error.code();
+#endif // OHOS_MEDIA
+
   if (!fallback_allowed_) {
     return client_->OnError(std::move(error));
   }

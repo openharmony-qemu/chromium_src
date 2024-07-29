@@ -503,12 +503,7 @@ InitRichtextIdentifier();
       // Created a richtext component
       SetVirtualPixelRatio(richtextDisplayRatio);
     } else {
-#if BUILDFLAG(IS_OHOS)
-      SetVirtualPixelRatio(display->GetVirtualPixelRatio() *
-                           GetBaseDisplayRatio());
-#else
       SetVirtualPixelRatio(display->GetVirtualPixelRatio());
-#endif
     }
   }
 #if defined(OHOS_WEBRTC)
@@ -731,11 +726,10 @@ void NWebDelegate::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
 
   auto browser = GetBrowser();
   if (browser != nullptr && browser->GetHost() != nullptr) {
-    if (isKeyboard) {
-      browser->GetHost()->WasKeyboardResized();
-    } else {
-      browser->GetHost()->WasResized();
+    if (isKeyboard && render_handler_) {
+      render_handler_->SetNeedFocusViewport(true);
     }
+    browser->GetHost()->WasResized();
     browser->GetHost()->OnTextSelected(false);
   }
 }
@@ -757,11 +751,10 @@ void NWebDelegate::ResizeVisibleViewport(uint32_t width, uint32_t height, bool i
 
   auto browser = GetBrowser();
   if (browser != nullptr && browser->GetHost() != nullptr) {
-    if (isKeyboard) {
-      browser->GetHost()->WasKeyboardResized();
-    } else {
-      browser->GetHost()->WasResized();
+    if (isKeyboard && render_handler_) {
+      render_handler_->SetNeedFocusViewport(true);
     }
+    browser->GetHost()->WasResized();
     browser->GetHost()->OnTextSelected(false);
   }
 }
@@ -772,10 +765,6 @@ void NWebDelegate::OnTouchPress(int32_t id,
                                 double y,
                                 bool from_overlay) {
   if (event_handler_ != nullptr) {
-    auto browser = GetBrowser();
-    if (browser != nullptr && browser->GetHost() != nullptr && !HitNativeArea(x, y)) {
-      browser->GetHost()->SetFocus(true);
-    }
     event_handler_->OnTouchPress(id, x / default_virtual_pixel_ratio_,
                                  y / default_virtual_pixel_ratio_,
                                  from_overlay);
@@ -903,18 +892,14 @@ void NWebDelegate::NotifyScreenInfoChanged(RotationType rotation,
       // Created a richtext component
       display_ratio = richtextDisplayRatio;
     } else {
-#if BUILDFLAG(IS_OHOS)
-      display_ratio = display->GetVirtualPixelRatio() * GetBaseDisplayRatio();
-#else
       display_ratio = display->GetVirtualPixelRatio();
-#endif
     }
     if (display_ratio <= 0) {
       LOG(ERROR) << "Invalid display_ratio, display_ratio = " << display_ratio;
       return;
     }
-    int width = display->GetWidth() / display_ratio;
-    int height = display->GetHeight() / display_ratio;
+    int width = std::ceil(display->GetWidth() / display_ratio);
+    int height = std::ceil(display->GetHeight() / display_ratio);
 #ifdef OHOS_SCREEN_ROTATION
     bool default_portrait = display_manager_adapter_->IsDefaultPortrait();
     if (hidden_ && !isWebinitialization) {
@@ -943,12 +928,6 @@ void NWebDelegate::SetVirtualPixelRatio(float ratio) {
   }
   ui::GestureConfiguration::GetInstance()->set_virtual_pixel_ratio(default_virtual_pixel_ratio_);
 }
-
-#if BUILDFLAG(IS_OHOS)
-float NWebDelegate::GetBaseDisplayRatio() {
-  return base_display_ratio_;
-}
-#endif
 
 std::shared_ptr<NWebPreference> NWebDelegate::GetPreference() const {
   return preference_delegate_;
@@ -1525,27 +1504,6 @@ void NWebDelegate::InitializeCef(std::string url,
                                  , const std::string& shared_render_process_token
 #endif
                                 ) {
-#if defined(OHOS_HAP_DECOMPRESSED) || BUILDFLAG(IS_OHOS)
-  bool for_browser = false;
-  std::string for_browser_cmd("--");
-  for_browser_cmd.append(::switches::kForBrowser);
-  CefMainArgs mainargs(argc_, const_cast<char**>(argv_));
-  base::CommandLine::StringVector argv;
-  for (int i = 0; i < argc_; i++) {
-    argv.push_back(argv_[i]);
-    if (!for_browser && argv_[i] == for_browser_cmd) {
-      for_browser = true;
-    }
-  }
-  if (base::ohos::IsPcDevice() && for_browser) {
-    // To achieve a similar web page display effect on HarmonyOS PC devices as
-    // on Mac devices of the same size, it is necessary to make the web page
-    // width around approximately 1512 when in full screen, making the default
-    // dpr=1.25*1.12=1.4f.
-    base_display_ratio_ = 1.12f;
-  }
-#endif
-
   if (popup) {
     LOG(DEBUG) << "pop windows";
     handler_delegate_ = NWebHandlerDelegate::Create(
@@ -1563,6 +1521,11 @@ void NWebDelegate::InitializeCef(std::string url,
 #endif
 
 #ifdef OHOS_HAP_DECOMPRESSED
+  CefMainArgs mainargs(argc_, const_cast<char**>(argv_));
+  base::CommandLine::StringVector argv;
+  for (int i = 0; i < argc_; i++) {
+    argv.push_back(argv_[i]);
+  }
   if (base::CommandLine::ForCurrentProcess()) {
     base::CommandLine cl(argv);
     base::CommandLine::ForCurrentProcess()->AppendArguments(cl, false);
@@ -3542,7 +3505,7 @@ NWebDelegate::PopulateAccessibilityNodeInfo(
   AddAccessibilityNodeInfoAttributes(nodeInfo, node);
   AddAccessibilityNodeInfoRect(nodeInfo, node);
   AddAccessibilityNodeInfoCollection(nodeInfo, node);
-  AddAccessibilityNodeInfoActions(nodeInfo);
+  AddAccessibilityNodeInfoActions(nodeInfo, node);
 
   return nodeInfo;
 }
@@ -3647,7 +3610,8 @@ void NWebDelegate::AddAccessibilityNodeInfoCollection(
 }
 
 void NWebDelegate::AddAccessibilityNodeInfoActions(
-    std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo) const {
+    std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
+    const content::BrowserAccessibilityOHOS* node) const {
   std::vector<uint32_t> actions = nodeInfo->GetActions();
   actions.clear();
   if (nodeInfo->GetIsClickable()) {
@@ -3670,6 +3634,26 @@ void NWebDelegate::AddAccessibilityNodeInfoActions(
   } else {
     actions.emplace_back(
         static_cast<uint32_t>(AceAction::ACTION_ACCESSIBILITY_FOCUS));
+  }
+  if (node != nullptr) {
+    if (node->IsScrollSupported()) {
+      actions.emplace_back(
+          static_cast<uint32_t>(AceAction::ACTION_SCROLL_FORWARD));
+      actions.emplace_back(
+          static_cast<uint32_t>(AceAction::ACTION_SCROLL_BACKWARD));
+    }
+    if (nodeInfo->GetIsEditable() && nodeInfo->GetIsEnabled()) {
+      actions.emplace_back(
+          static_cast<uint32_t>(AceAction::ACTION_PASTE));
+      if (node->HasNonEmptyValue()) {
+        actions.emplace_back(
+          static_cast<uint32_t>(AceAction::ACTION_SET_SELECTION));
+        actions.emplace_back(
+          static_cast<uint32_t>(AceAction::ACTION_CUT));
+        actions.emplace_back(
+          static_cast<uint32_t>(AceAction::ACTION_COPY));
+      }
+    }
   }
   nodeInfo->SetActions(actions);
 }
@@ -3868,7 +3852,7 @@ void NWebDelegate::SetPathAllowingUniversalAccess(
     cef_path_list.emplace_back(CefString(path));
   });
   GetBrowser()->GetHost()->SetGrantFileAccessDirs(cef_path_list);
-} 
+}
 #endif
 
 void NWebDelegate::RefreshAccessibilityManagerClickEvent() {

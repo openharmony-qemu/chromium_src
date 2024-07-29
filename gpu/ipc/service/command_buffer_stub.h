@@ -338,6 +338,10 @@ class GPU_IPC_SERVICE_EXPORT CommandBufferStub
 
   mojo::AssociatedReceiver<mojom::CommandBuffer> receiver_{this};
   mojo::SharedAssociatedRemote<mojom::CommandBufferClient> client_;
+
+#if defined(OHOS_BUGFIX_CRASH)
+  uint32_t wait_for_get_offset_in_range_retry_cnt_ = 0;
+#endif
 };
 
 }  // namespace gpu

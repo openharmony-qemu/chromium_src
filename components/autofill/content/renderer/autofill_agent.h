@@ -106,6 +106,11 @@ class AutofillAgent : public content::RenderFrameObserver,
                                 const std::u16string& suggested_value) override;
   void FillPasswordSuggestion(const std::u16string& username,
                               const std::u16string& password) override;
+
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  void FillAccountSuggestion(const std::u16string& username,
+                             const std::u16string& password) override;
+#endif
   void PreviewPasswordSuggestion(const std::u16string& username,
                                  const std::u16string& password) override;
   void PreviewPasswordGenerationSuggestion(

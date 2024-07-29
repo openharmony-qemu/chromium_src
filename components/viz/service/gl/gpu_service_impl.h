@@ -386,6 +386,9 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
 #if BUILDFLAG(IS_OHOS)
   void StartMonitor() override;
   void StopMonitor() override;
+  void SetVisible(bool visible) override;
+  void SetHasTouchPoint(bool has_touch_point) override;
+  void ReportSlidingFrameRate(int32_t frame_rate) override;
 #endif
 
  private:

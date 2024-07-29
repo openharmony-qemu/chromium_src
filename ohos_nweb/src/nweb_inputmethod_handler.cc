@@ -469,6 +469,7 @@ void NWebInputMethodHandler::HideTextInput(uint32_t nwebId,
 }
 
 void NWebInputMethodHandler::HideTextInputForce() {
+  LOG(INFO) << "NWebInputMethodHandler::HideTextInputForce";
   if (inputmethod_adapter_ == nullptr) {
     LOG(ERROR) << "inputmethod_adapter_ is nullptr";
     return;
@@ -560,8 +561,6 @@ void NWebInputMethodHandler::OnUpdateTextInputStateCalled(
   }
 
   whole_text_ = text;
-  LOG(DEBUG) << "NWebInputMethodHandler::OnUpdateTextInputStateCalled text = "
-             << text.ToString16();
   LOG(DEBUG)
       << "NWebInputMethodHandler::OnUpdateTextInputStateCalled text_length = "
       << text.ToString16().length()
@@ -585,9 +584,7 @@ void NWebInputMethodHandler::OnUpdateTextInputStateCalled(
           whole_text_.substr(composition_range_start_, preview_length);
     }
   }
-  LOG(DEBUG) << "NWebInputMethodHandler::OnUpdateTextInputStateCalled "
-                "preview_text_cache_ = "
-             << preview_text_cache_;
+  LOG(DEBUG) << "NWebInputMethodHandler::OnUpdateTextInputStateCalled";
 
   selected_from_ = selected_range.from;
   selected_to_ = selected_range.to;
@@ -642,7 +639,7 @@ void NWebInputMethodHandler::DeleteForward(int32_t length) {
 }
 
 void NWebInputMethodHandler::SetIMEStatusOnUI(bool status) {
-  LOG(DEBUG) << "NWebInputMethodHandler::SetIMEStatusOnUI status:" << status;
+  LOG(INFO) << "NWebInputMethodHandler::SetIMEStatusOnUI status:" << status;
   if (!status && ime_text_composing_) {
     browser_->GetHost()->ImeFinishComposingText(false);
     ime_text_composing_ = false;
@@ -673,11 +670,7 @@ void NWebInputMethodHandler::InsertTextHandlerOnUI(const std::u16string& text) {
     ime_text_composing_ = true;
     composing_text_.clear();
   }
-  LOG(DEBUG) << "NWebInputMethodHandler::InsertTextHandlerOnUI before text"
-             << text << ", composing_text_ " << composing_text_;
   composing_text_.append(text);
-  LOG(DEBUG) << "NWebInputMethodHandler::InsertTextHandlerOnUI after text"
-             << text << ", composing_text_ " << composing_text_;
   browser_->GetHost()->ImeCommitText(composing_text_,
                                      CefRange(UINT32_MAX, UINT32_MAX), 0);
 
@@ -706,16 +699,14 @@ void NWebInputMethodHandler::ClearComposingStatus() {
 void NWebInputMethodHandler::PreviewTextHandlerOnUI(const std::u16string& text,
                                                     int32_t start,
                                                     int32_t end) {
-  LOG(DEBUG) << "NWebInputMethodHandler::text " << text << ", start " << start
-             << ", end " << end;
+  LOG(DEBUG) << "NWebInputMethodHandler start " << start << ", end " << end;
   {
     std::unique_lock<std::mutex> lock(textCursorMutex_);
     textCursorReady_++;
   }
 
-  LOG(DEBUG) << "NWebInputMethodHandler::preview_text_cache_ After " << text
-             << ", composition_range_start_ " << composition_range_start_
-             << ", composition_range_end_ " << composition_range_end_;
+  LOG(DEBUG) << "NWebInputMethodHandler::preview_text_cache_ After composition_range_start_ "
+             << composition_range_start_ << ", composition_range_end_ " << composition_range_end_;
   std::vector<CefCompositionUnderline> underlines;
   CefCompositionUnderline underline;
   underline.range.from = 0;
@@ -1152,10 +1143,8 @@ int32_t NWebInputMethodHandler::UpdateCompositionInfo(
   }
 
   LOG(DEBUG) << "NWebInputMethodHandler::has_composition_ " << has_composition_;
-  LOG(DEBUG) << "NWebInputMethodHandler::preview_text_cache_ Before "
-             << preview_text_cache_ << ", composition_range_start_ "
-             << composition_range_start_ << ", composition_range_end_ "
-             << composition_range_end_;
+  LOG(DEBUG) << "NWebInputMethodHandler:: Before composition_range_start_ " << composition_range_start_
+             << ", composition_range_end_ " << composition_range_end_;
   switch (composition_type_) {
     case COMPOSITION_INVALID: {
       LOG(ERROR) << "COMPOSITION_INVALID:";
@@ -1169,12 +1158,9 @@ int32_t NWebInputMethodHandler::UpdateCompositionInfo(
     case COMPOSITION_CURRENT: {
       preview_text_cache_ = text;
       composition_cursor_index_ = text.length();
-      LOG(DEBUG)
-          << "NWebInputMethodHandler::COMPOSITION_CURRENT: preview_text_cache_ "
-          << preview_text_cache_ << ", composition_range_start_ "
-          << composition_range_start_ << ", composition_range_end_ "
-          << composition_range_end_ << ", composition_cursor_index_ "
-          << composition_cursor_index_;
+      LOG(DEBUG) << "NWebInputMethodHandler::COMPOSITION_CURRENT: composition_range_start_ "
+                 << composition_range_start_ << ", composition_range_end_ " << composition_range_end_
+                 << ", composition_cursor_index_ " << composition_cursor_index_;
       break;
     }
     case COMPOSITION_POSITION: {
@@ -1187,21 +1173,16 @@ int32_t NWebInputMethodHandler::UpdateCompositionInfo(
         }
         preview_text_cache_.insert(insert_rel_position, text);
         composition_cursor_index_ = insert_rel_position + text.length();
-        LOG(DEBUG) << "NWebInputMethodHandler::COMPOSITION_POSITION: "
-                      "has_composition_ preview_text_cache_ "
-                   << preview_text_cache_ << ", composition_range_start_ "
-                   << composition_range_start_ << ", composition_range_end_ "
-                   << composition_range_end_ << ", composition_cursor_index_ "
-                   << composition_cursor_index_;
+        LOG(DEBUG) << "NWebInputMethodHandler::COMPOSITION_POSITION: has_composition_ "
+                   << " composition_range_start_ " << composition_range_start_
+                   << ", composition_range_end_ " << composition_range_end_
+                   << ", composition_cursor_index_ " << composition_cursor_index_;
       } else {
         preview_text_cache_ = text;
         composition_cursor_index_ = text.length();
-        LOG(DEBUG) << "NWebInputMethodHandler::COMPOSITION_POSITION: "
-                      "preview_text_cache_ "
-                   << preview_text_cache_ << ", composition_range_start_ "
-                   << composition_range_start_ << ", composition_range_end_ "
-                   << composition_range_end_ << ", composition_cursor_index_ "
-                   << composition_cursor_index_;
+        LOG(DEBUG) << "NWebInputMethodHandler::COMPOSITION_POSITION: composition_range_start_ "
+                   << composition_range_start_ << ", composition_range_end_ " << composition_range_end_
+                   << ", composition_cursor_index_ " << composition_cursor_index_;
       }
       break;
     }
@@ -1225,8 +1206,7 @@ int32_t NWebInputMethodHandler::UpdateCompositionInfo(
         composition_cursor_index_ = text.length();
       }
       LOG(DEBUG)
-          << "NWebInputMethodHandler::COMPOSITION_REPLACE: preview_text_cache_ "
-          << preview_text_cache_ << ", composition_range_start_ "
+          << "NWebInputMethodHandler::COMPOSITION_REPLACE: composition_range_start_ "
           << composition_range_start_ << ", composition_range_end_ "
           << composition_range_end_ << ", composition_cursor_index_ "
           << composition_cursor_index_;
@@ -1244,8 +1224,7 @@ int32_t NWebInputMethodHandler::UpdateCompositionInfo(
 int32_t NWebInputMethodHandler::SetPreviewText(const std::u16string& text,
                                                int32_t start,
                                                int32_t end) {
-  LOG(DEBUG) << "NWebInputMethodHandler::SetPreviewText text " << text
-             << ", start: " << start << ", end: " << end;
+  LOG(DEBUG) << "NWebInputMethodHandler::SetPreviewText start: " << start << ", end: " << end;
   if (UpdateCompositionInfo(std::move(text), start, end) != OK) {
     LOG(ERROR) << "update composition info failed!";
     return ERROR;

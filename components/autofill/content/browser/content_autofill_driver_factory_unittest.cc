@@ -122,6 +122,13 @@ class MockAutofillAgent : public mojom::AutofillAgent {
               SetFieldsEligibleForManualFilling,
               (const std::vector<FieldRendererId>& fields),
               (override));
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  MOCK_METHOD(void,
+              FillAccountSuggestion,
+              (const ::std::u16string& username,
+               const ::std::u16string& password),
+              (override));
+#endif
 
  private:
   mojo::AssociatedReceiverSet<mojom::AutofillAgent> receivers_;

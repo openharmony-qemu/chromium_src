@@ -17,6 +17,7 @@
 #define BASE_OHOS_DYNAMIC_FRAME_RATE_DECISION_H_
 
 #include <stdint.h>
+#include "base/task/single_thread_task_runner.h"
 
 namespace base {
 namespace ohos {
@@ -38,6 +39,7 @@ public:
   DynamicFrameRateDecision& operator=(const DynamicFrameRateDecision&) = delete;
 
   static DynamicFrameRateDecision& GetInstance();
+  void Init();
   void UpdateFramePreferredRate();
 
   void SetVisible(bool visible);
@@ -52,16 +54,20 @@ private:
   int64_t GetCurrentTimestampMS();
   void ReportVideoFrameRateImpl(int32_t frame_rate);
   void SetVsyncEnabledImpl(bool enabled);
+  void SetVisibleImpl(bool visible);
+  void ReportSlidingFrameRateImpl(int32_t frame_rate);
+  void SetHasTouchPointImpl(bool has_touch_point);
 
 private:
-  int32_t slidingFrameRate_ {0};
-  int32_t videoFrameRate_ {0};
-  int32_t curFrameRate_ {0};
+  int32_t sliding_frame_rate_ {0};
+  int32_t video_frame_rate_ {0};
+  int32_t cur_frame_rate_ {0};
   bool visible_ {false};
   bool has_touch_point_ {false};
-  bool frameRateLinkerEnable_ {false};
-  int32_t vsynCnt_ {0};
-  int64_t touch_up_timeStamp_ {0};
+  bool frame_rate_linker_enable_ {false};
+  int32_t vsync_cnt_ {0};
+  int64_t touch_up_timestamp_{0};
+  scoped_refptr<SingleThreadTaskRunner> curent_task_runner_ {};
 };
 }  // namespace ohos
 }  // namespace base

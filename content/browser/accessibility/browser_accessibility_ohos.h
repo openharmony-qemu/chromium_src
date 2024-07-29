@@ -124,6 +124,10 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
 
   bool IsTableHeader() const;
 
+  bool HasNonEmptyValue() const;
+
+  bool IsScrollSupported() const;
+
   void Scroll(const ax::mojom::Action& action) const;
 
  protected:

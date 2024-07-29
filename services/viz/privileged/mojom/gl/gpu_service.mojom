@@ -237,4 +237,16 @@ interface GpuService {
   Crash();
   Hang();
   ThrowJavaException();
+
+  // notify web ltpo to update frame rate when visibility changed
+  [EnableIf=is_ohos]
+  SetVisible(bool visible);
+
+  // notify web ltpo to update frame rate when touch status changed
+  [EnableIf=is_ohos]
+  SetHasTouchPoint(bool has_touch_point);
+
+  // Send vsync callback to host client
+  [EnableIf=is_ohos]
+  ReportSlidingFrameRate(int32 frame_rate);
 };

@@ -436,10 +436,6 @@ bool HitNativeArea(double x, double y);
   void SetVirtualPixelRatio(float ratio) override;
 #endif // defined(OHOS_SCREEN_ROTATION)
 
-#if BUILDFLAG(IS_OHOS)
-  float GetBaseDisplayRatio() override;
-#endif
-
 #ifdef OHOS_POST_URL
   int PostUrl(const std::string& url, const std::vector<char>& postData) override;
 #endif // defined(OHOS_POST_URL)
@@ -610,7 +606,8 @@ void NotifyForNextTouchEvent() override;
   std::shared_ptr<NWebAccessibilityNodeInfo>
     PopulateAccessibilityNodeInfo(const content::BrowserAccessibilityOHOS* node);
   void AddAccessibilityNodeInfoActions(
-    std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo) const;
+    std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
+    const content::BrowserAccessibilityOHOS* node) const;
 
   float zoom_in_factor_ = 1.25f;
   float zoom_out_factor_ = 0.8f;
@@ -644,7 +641,6 @@ void NotifyForNextTouchEvent() override;
   uint32_t nweb_id_;
 
 #if BUILDFLAG(IS_OHOS)
-  float base_display_ratio_ = 1.f;
   std::map<std::string, std::shared_ptr<NWebNativeEmbedDataInfo>> embedDataInfo_;
 #endif
 

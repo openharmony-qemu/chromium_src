@@ -331,6 +331,7 @@ void AgentSchedulingGroupHost::CreateView(mojom::CreateViewParamsPtr params) {
   DCHECK_EQ(state_, LifecycleState::kBound);
   DCHECK(process_->IsInitializedAndNotDead());
   DCHECK(mojo_remote_.is_bound());
+  LOG(DEBUG) << "AgentSchedulingGroupHost::CreateView";
   mojo_remote_.get()->CreateView(std::move(params));
 }
 

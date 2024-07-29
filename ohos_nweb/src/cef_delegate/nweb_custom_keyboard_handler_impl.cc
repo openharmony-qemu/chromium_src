@@ -258,4 +258,8 @@ bool NWebCustomKeyboardHandlerImpl::AttachFromWebStateChange(WebCustomKeyboardSt
 
   return isNeedReattach;
 }
+
+bool NWebCustomKeyboardHandlerImpl::IsAttached() {
+  return isAttached_;
+}
 }  // namespace OHOS::NWeb

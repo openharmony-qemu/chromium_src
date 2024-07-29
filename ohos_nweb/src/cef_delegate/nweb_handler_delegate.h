@@ -572,6 +572,7 @@ class NWebHandlerDelegate : public CefClient,
   void OnQuickMenuDismissed(CefRefPtr<CefBrowser> browser,
                             CefRefPtr<CefFrame> frame,
                             bool is_mouse_trigger) override;
+  void HideHandleAndQuickMenuIfNecessary(bool hide) override;
   /* CefContextMenuHandler method end */
 
   /* CefFindandler methods begin */

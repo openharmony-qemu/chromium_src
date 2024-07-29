@@ -167,6 +167,16 @@ class HttpStreamFactory::JobController
     return main_job_wait_time_;
   }
 
+#if BUILDFLAG(IS_OHOS)
+  void SetFromPreload(bool from_preload) {
+    from_preload_ = from_preload;
+  }
+
+  bool IsFromPreload() const {
+    return from_preload_;
+  }
+#endif
+
  private:
   friend class test::JobControllerPeer;
 
@@ -366,6 +376,10 @@ class HttpStreamFactory::JobController
   // At the point where a Job is irrevocably tied to |request_|, we set this.
   // It will be nulled when the |request_| is finished.
   raw_ptr<Job, DanglingUntriaged> bound_job_ = nullptr;
+
+#if BUILDFLAG(IS_OHOS)
+  bool from_preload_ = false;
+#endif
 
   State next_state_ = STATE_RESOLVE_PROXY;
   std::unique_ptr<ProxyResolutionRequest> proxy_resolve_request_;

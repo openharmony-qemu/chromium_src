@@ -824,6 +824,9 @@ int HttpNetworkTransaction::DoNotifyBeforeCreateStream() {
 }
 
 int HttpNetworkTransaction::DoCreateStream() {
+  if (request_) {
+    TRACE_EVENT1("net", "HttpNetworkTransaction::DoCreateStream", "url", request_->url.spec());
+  }
   response_.network_accessed = true;
 
   next_state_ = STATE_CREATE_STREAM_COMPLETE;
@@ -848,6 +851,9 @@ int HttpNetworkTransaction::DoCreateStream() {
 }
 
 int HttpNetworkTransaction::DoCreateStreamComplete(int result) {
+  if (request_) {
+    TRACE_EVENT1("net", "HttpNetworkTransaction::DoCreateStreamComplete", "url", request_->url.spec());
+  }
   CopyConnectionAttemptsFromStreamRequest();
   if (result == OK) {
     next_state_ = STATE_CONNECTED_CALLBACK;
@@ -1095,6 +1101,9 @@ int HttpNetworkTransaction::DoSendRequest() {
 }
 
 int HttpNetworkTransaction::DoSendRequestComplete(int result) {
+  if (request_) {
+    TRACE_EVENT1("net", "HttpNetworkTransaction::DoSendRequestComplete", "url", request_->url.spec());
+  }
   send_end_time_ = base::TimeTicks::Now();
 
   if (result == ERR_HTTP_1_1_REQUIRED ||
@@ -1117,6 +1126,9 @@ int HttpNetworkTransaction::DoReadHeadersComplete(int result) {
   // We can get a ERR_SSL_CLIENT_AUTH_CERT_NEEDED here due to SSL renegotiation.
   // Server certificate errors are impossible. Rather than reverify the new
   // server certificate, BoringSSL forbids server certificates from changing.
+  if (request_) {
+    TRACE_EVENT1("net", "HttpNetworkTransaction::DoReadHeadersComplete", "url", request_->url.spec());
+  }
   DCHECK(!IsCertificateError(result));
   if (result == ERR_SSL_CLIENT_AUTH_CERT_NEEDED) {
     DCHECK(stream_.get());
@@ -1316,6 +1328,9 @@ int HttpNetworkTransaction::DoReadBody() {
 
 int HttpNetworkTransaction::DoReadBodyComplete(int result) {
   // We are done with the Read call.
+  if (request_) {
+    TRACE_EVENT1("net", "HttpNetworkTransaction::DoReadBodyComplete", "url", request_->url.spec());
+  }
   bool done = false;
   if (result <= 0) {
     DCHECK_NE(ERR_IO_PENDING, result);

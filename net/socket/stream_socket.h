@@ -148,6 +148,14 @@ class NET_EXPORT StreamSocket : public Socket {
   // the tag would inadvertently affect other streams; calling ApplySocketTag()
   // in this case will result in CHECK(false).
   virtual void ApplySocketTag(const SocketTag& tag) = 0;
+#if BUILDFLAG(IS_OHOS)
+  virtual void SetFromPreload(bool from_preload);
+
+  virtual bool IsFromPreload() const;
+
+ private:
+  bool from_preload_ = false;
+#endif
 };
 
 }  // namespace net

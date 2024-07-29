@@ -40,6 +40,7 @@
 #include "ohos_adapter_helper.h"
 #if BUILDFLAG(IS_OHOS)
 #include "base/ohos/ltpo/include/sliding_observer.h"
+#include "content/browser/gpu/gpu_process_host.h"
 #endif
 namespace content {
 
@@ -170,6 +171,13 @@ void InputRouterImpl::SendGestureEvent(
       ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID, false);
     prePerfTimeStamp_ = 0;
     base::ohos::SlidingObserver::GetInstance().StopSliding();
+
+    if (auto* host = GpuProcessHost::Get()) {
+      if (auto* host_impl = host->gpu_host()) {
+        host_impl->StopMonitor();
+        host_impl->ReportSlidingFrameRate(0);
+      }
+    }
 #endif
   }
 #endif

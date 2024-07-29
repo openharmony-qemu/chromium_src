@@ -70,7 +70,7 @@ void NativeImageTextureGlOwner::SetFrameAvailableCallback(
   DCHECK(!is_frame_available_callback_set_);
 
   is_frame_available_callback_set_ = true;
-  native_image_->SetFrameAvailableCallback(frame_available_cb);
+  native_image_->SetFrameAvailableCallback(std::move(frame_available_cb));
 }
 
 void NativeImageTextureGlOwner::RunWhenBufferIsAvailable(

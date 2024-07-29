@@ -51,6 +51,8 @@ public:
 
   bool AttachFromWebStateChange(WebCustomKeyboardState mode);
 
+  bool IsAttached();
+
 private:
   std::weak_ptr<NWebHandler> nweb_handler_;
   CefRefPtr<CefBrowser> browser_ = nullptr;

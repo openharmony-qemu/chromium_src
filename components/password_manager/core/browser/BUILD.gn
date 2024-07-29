@@ -277,8 +277,9 @@ static_library("browser") {
     "well_known_change_password_util.h",
   ]
 
-  # ifdef OHOS_EX_PASSWORD
-  if (defined(ohos_ex_password) && ohos_ex_password) {
+  # ifdef OHOS_EX_PASSWORD || OHOS_PASSWORD_AUTOFILL
+  if ((defined(ohos_ex_password) && ohos_ex_password) ||
+      (defined(ohos_password_autofill) && ohos_password_autofill)) {
     sources += [
       "oh_sync_credentials_filter.cc",
       "oh_sync_credentials_filter.h",

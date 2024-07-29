@@ -40,6 +40,9 @@ namespace {
 // Indicate whether or not we should establish a new transport layer connection
 // after a certain timeout has passed without receiving an ACK.
 bool g_connect_backup_jobs_enabled = true;
+#if BUILDFLAG(IS_OHOS)
+constexpr int64_t UNUSED_PRELOAD_SOCKET_TIMEOUT_MICRO_SEC = 5000000;
+#endif
 
 base::Value::Dict NetLogCreateConnectJobParams(
     bool backup_job,
@@ -452,6 +455,9 @@ int TransportClientSocketPool::RequestSocketInternal(
       CreateConnectJob(group_id, request.socket_params(), proxy_server_,
                        request.proxy_annotation_tag(), request.priority(),
                        request.socket_tag(), group));
+#if BUILDFLAG(IS_OHOS)
+  connect_job->SetFromPreload(request.socket_params()->IsFromPreload());
+#endif
   connect_job->net_log().AddEvent(
       NetLogEventType::SOCKET_POOL_CONNECT_JOB_CREATED, [&] {
         return NetLogCreateConnectJobParams(false /* backup_job */, &group_id);
@@ -930,9 +936,25 @@ void TransportClientSocketPool::CleanupIdleSocketsInGroup(
   while (idle_socket_it != group->idle_sockets().end()) {
     bool should_clean_up = force;
     const char* reason_for_closing_socket = net_log_reason_utf8;
+#if BUILDFLAG(IS_OHOS)
+    base::TimeDelta timeout;
+    if (!idle_socket_it->socket->WasEverUsed()) {
+      if (idle_socket_it->socket->IsFromPreload()) {
+        timeout = base::TimeDelta::FromInternalValue(
+            UNUSED_PRELOAD_SOCKET_TIMEOUT_MICRO_SEC);
+        LOG(DEBUG) << "PRPpreload set unused preload socket timeout to "
+                   << timeout;
+      } else {
+        timeout = unused_idle_socket_timeout_;
+      }
+    } else {
+      timeout = used_idle_socket_timeout_;
+    }
+#else
     base::TimeDelta timeout = idle_socket_it->socket->WasEverUsed()
                                   ? used_idle_socket_timeout_
                                   : unused_idle_socket_timeout_;
+#endif
 
     // Timeout errors take precedence over the reason for flushing sockets in
     // the group, if applicable.
@@ -947,6 +969,13 @@ void TransportClientSocketPool::CleanupIdleSocketsInGroup(
 
     if (should_clean_up) {
       DCHECK(reason_for_closing_socket);
+#if BUILDFLAG(IS_OHOS)
+      if (idle_socket_it->socket->IsFromPreload() &&
+          !idle_socket_it->socket->WasEverUsed()) {
+        LOG(DEBUG) << "PRPpreload unused preload socket cleaned. Timeout: "
+                   << timeout;
+      }
+#endif
       idle_socket_it->socket->NetLog().AddEventWithStringParams(
           NetLogEventType::SOCKET_POOL_CLOSING_SOCKET, "reason",
           reason_for_closing_socket);

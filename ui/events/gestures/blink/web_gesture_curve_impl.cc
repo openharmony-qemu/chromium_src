@@ -26,6 +26,7 @@
 
 #if BUILDFLAG(IS_OHOS)
 #include "base/ohos/ltpo/include/sliding_observer.h"
+#include "content/browser/gpu/gpu_process_host.h"
 #include "base/system/sys_info.h"
 #include "ohos_adapter_helper.h"
 #endif  // BUILDFLAG(IS_OHOS)
@@ -163,8 +164,15 @@ bool WebGestureCurveImpl::Advance(double time,
 
   // dump curve
   LOG(DEBUG) << "WebGestureCurveImpl::Advance DUMP_FLING_CURVE time = " << time << " offset = " << offset.y() << " velocity = " << out_current_velocity.y();
-  base::ohos::SlidingObserver::GetInstance().OnFlingUpdate(out_current_velocity.x(),
+  int32_t preferred_frame_rate = base::ohos::SlidingObserver::GetInstance().OnFlingUpdate(out_current_velocity.x(),
       out_current_velocity.y());
+  if (auto* host = content::GpuProcessHost::Get()) {
+    if (auto* host_impl = host->gpu_host()) {
+      if (preferred_frame_rate >= 0) {
+        host_impl->ReportSlidingFrameRate(preferred_frame_rate);
+      }
+    }
+  }
   out_delta_to_scroll = offset - last_offset_;
   last_offset_ = offset;
 

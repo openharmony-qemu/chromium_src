@@ -100,6 +100,15 @@ class PasswordManagerDriver
   virtual void TriggerFormSubmission() {}
 #endif
 
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  virtual void FillAccountSuggestion(const std::u16string& username,
+                                      const std::u16string& password) = 0;
+
+  virtual void SendParsedPasswordFormToRenderer(
+      const autofill::PasswordFormFillData&
+      parsed_form_data_without_password) = 0;
+#endif
+
   // Tells the driver to preview filling form with the |username| and
   // |password|.
   virtual void PreviewSuggestion(const std::u16string& username,

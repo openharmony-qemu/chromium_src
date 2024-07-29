@@ -389,6 +389,9 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
   static const GURL& main_page(const network::ResourceRequest& request) {
     return request.main_page;
   }
+  static bool is_sync_mode(const network::ResourceRequest& request) {
+    return request.is_sync_mode;
+  }
 #endif  //  IS_OHOS
 #if defined(OHOS_EX_DOWNLOAD)
   static bool is_download_request(const network::ResourceRequest& request) {

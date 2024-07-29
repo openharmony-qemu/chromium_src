@@ -136,6 +136,8 @@
 #if BUILDFLAG(IS_OHOS)
 #include "base/ohos/dynamic_frame_loss_monitor.h"
 #include "gpu/ipc/common/gpu_surface_id_tracker.h"
+#include "base/ohos/ltpo/include/sliding_observer.h"
+#include "base/ohos/ltpo/include/dynamic_frame_rate_decision.h"
 #include "media/gpu/ohos/ohos_image_decode_accelerator_worker.h"
 #endif
 
@@ -1395,6 +1397,18 @@ void GpuServiceImpl::StartMonitor() {
 
 void GpuServiceImpl::StopMonitor() {
   base::ohos::DynamicFrameLossMonitor::GetInstance().StopMonitor();
+}
+
+void GpuServiceImpl::SetVisible(bool visible) {
+  base::ohos::DynamicFrameRateDecision::GetInstance().SetVisible(visible);
+}
+
+void GpuServiceImpl::SetHasTouchPoint(bool has_touch_point) {
+  base::ohos::DynamicFrameRateDecision::GetInstance().SetHasTouchPoint(has_touch_point);
+}
+
+void GpuServiceImpl::ReportSlidingFrameRate(int32_t frame_rate) {
+  base::ohos::DynamicFrameRateDecision::GetInstance().ReportSlidingFrameRate(frame_rate);
 }
 #endif
 

@@ -244,6 +244,9 @@ int TransportConnectSubJob::DoEndpointLockComplete() {
 
   // This use of base::Unretained() is safe because transport_socket_ is
   // destroyed in the destructor.
+#if BUILDFLAG(IS_OHOS)
+  transport_socket_->SetFromPreload(IsFromPreload());
+#endif
   return transport_socket_->Connect(base::BindOnce(
       &TransportConnectSubJob::OnIOComplete, base::Unretained(this)));
 }

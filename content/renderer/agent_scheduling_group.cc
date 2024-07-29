@@ -243,6 +243,7 @@ void AgentSchedulingGroup::DidUnloadRenderFrame(
 }
 
 void AgentSchedulingGroup::CreateView(mojom::CreateViewParamsPtr params) {
+  LOG(DEBUG) << "AgentSchedulingGroup::CreateView";
 #if BUILDFLAG(IS_OHOS)
   host_remote_->ReportCreateView(base::GetCurrentRealPid());
 #endif

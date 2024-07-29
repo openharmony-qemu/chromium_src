@@ -288,6 +288,9 @@ int SSLConnectJob::DoTransportConnect() {
       priority(), socket_tag(), common_connect_job_params(),
       params_->GetDirectConnectionParams(), this, &net_log(),
       std::move(endpoint_result_override));
+#if BUILDFLAG(IS_OHOS)
+  nested_connect_job_->SetFromPreload(IsFromPreload());
+#endif
 #ifdef OHOS_EX_NETWORK_CONNECTION
   nested_connect_job_->SetConnectTimeout(timeout_override_for_nested_job_);
 #endif

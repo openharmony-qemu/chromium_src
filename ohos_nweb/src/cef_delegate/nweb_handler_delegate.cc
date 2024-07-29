@@ -1122,6 +1122,7 @@ void NWebHandlerDelegate::OnFirstContentfulPaint(
     int64_t navigationStartTick,
     int64_t firstContentfulPaintMs) {
   LOG(INFO) << "NWebHandlerDelegate::OnFirstContentfulPaint";
+  LOG(INFO) << "Web Load Performance FCP: " << firstContentfulPaintMs;
   if (nweb_handler_ != nullptr) {
     nweb_handler_->OnFirstContentfulPaint(navigationStartTick,
                                           firstContentfulPaintMs);
@@ -2730,6 +2731,13 @@ void NWebHandlerDelegate::OnQuickMenuDismissed(CefRefPtr<CefBrowser> browser,
     nweb_handler_->OnQuickMenuDismissed();
   }
 #endif
+}
+
+void NWebHandlerDelegate::HideHandleAndQuickMenuIfNecessary(bool hide) {
+  LOG(INFO) << "HideHandleAndQuickMenuIfNecessary hide:" << hide;
+  if (nweb_handler_ != nullptr) {
+    nweb_handler_->HideHandleAndQuickMenuIfNecessary(hide);
+  }
 }
 /* CefContextMenuHandler method end */
 

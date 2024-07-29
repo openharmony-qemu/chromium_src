@@ -152,7 +152,7 @@ extern bool g_siteIsolationMode;
 #endif
 
 #ifdef OHOS_WEB_LTPO
-#include "base/ohos/ltpo/include/dynamic_frame_rate_decision.h"
+#include "content/browser/gpu/gpu_process_host.h"
 #endif
 
 namespace {
@@ -670,7 +670,12 @@ void NWebImpl::OnDestroy() {
   WVLOG_D("NWebImpl::OnDestroy, nweb_id = %{public}u, number = %{public}u", nweb_id_, g_nweb_count);
 #ifdef OHOS_WEB_LTPO
   if (is_close_all) {
-    base::ohos::DynamicFrameRateDecision::GetInstance().SetVisible(false);
+    // base::ohos::DynamicFrameRateDecision::GetInstance().SetVisible(false);
+    if (auto* host = GpuProcessHost::Get()) {
+      if (auto* host_impl = host->gpu_host()) {
+        host_impl->SetVisible(false);
+      }
+    }
   }
 #endif
 
@@ -727,12 +732,7 @@ bool NWebImpl::SetVirtualDeviceRatio() {
       // Created a richtext component
       device_pixel_ratio_ = richtextDisplayRatio;
     } else {
-#if BUILDFLAG(IS_OHOS)
-      device_pixel_ratio_ = display->GetVirtualPixelRatio() *
-                            nweb_delegate_->GetBaseDisplayRatio();
-#else
       device_pixel_ratio_ = display->GetVirtualPixelRatio();
-#endif
     }
     if (device_pixel_ratio_ <= 0) {
       WVLOG_E("invalid ratio.");
@@ -3339,7 +3339,7 @@ void NWebImpl::SetPathAllowingUniversalAccess(
     }
   }
   nweb_delegate_->SetPathAllowingUniversalAccess(pathList);
-} 
+}
 #endif
 
 int NWebImpl::SetUrlTrustList(const std::string& urlTrustList) {

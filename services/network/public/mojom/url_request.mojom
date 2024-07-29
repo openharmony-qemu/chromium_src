@@ -512,6 +512,9 @@ struct URLRequest {
 
   [EnableIf=is_ohos]
   url.mojom.Url main_page;
+
+  [EnableIf=is_ohos]
+  bool is_sync_mode;
 };
 
 // URLRequestBody represents body (i.e. upload data) of a HTTP request.

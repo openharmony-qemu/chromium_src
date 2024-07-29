@@ -763,6 +763,9 @@ URLLoader::URLLoader(
     return;
   }
 
+  if (url_request_) {
+    TRACE_EVENT1("loading", "URLLoader::URLLoader", "url", url_request_->url().spec());
+  }
   BeginTrustTokenOperationIfNecessaryAndThenScheduleStart(request);
 }
 
@@ -2152,6 +2155,22 @@ void URLLoader::NotifyCompleted(int error_code) {
       memory_cache_writer_->OnCompleted(status);
 
     url_loader_client_.Get()->OnComplete(status);
+
+    if (url_request_) {
+      TRACE_EVENT2("net", "URLLoader::NotifyCompleted | decodeData",
+      "url", url_request_->url().spec(),
+      "decoded_body_length", status.decoded_body_length);
+
+      TRACE_EVENT2("net", "URLLoader::NotifyCompleted | encodeData",
+      "url", url_request_->url().spec(),
+      "encoded_body_length", status.encoded_body_length);
+
+      if (url_request_->response_headers()) {
+        TRACE_EVENT2("net", "URLLoader::NotifyCompleted | responseCode",
+        "url", url_request_->url().spec(),
+        "response_code", url_request_->response_headers()->response_code());
+      }
+    }
   }
 
   DeleteSelf();

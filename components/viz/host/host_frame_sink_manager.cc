@@ -19,6 +19,9 @@
 #include "mojo/public/cpp/bindings/sync_call_restrictions.h"
 #include "services/viz/privileged/mojom/compositing/renderer_settings.mojom.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_JITTER)
+#include "third_party/ohos_ndk/includes/ohos_adapter/adapter_base.h"
+#endif
 
 namespace viz {
 
@@ -395,7 +398,6 @@ void HostFrameSinkManager::OnVsync(uint32_t client_id, uint32_t sink_id) {
   auto iter = frame_sink_data_map_.find(id);
   if (iter == frame_sink_data_map_.end())
     return;
-
   const FrameSinkData& data = iter->second;
   if (data.client) {
     data.client->OnVsync();
@@ -415,30 +417,6 @@ void HostFrameSinkManager::OnVsyncReceived(uint32_t client_id, uint32_t sink_id)
   const FrameSinkData& data = iter->second;
   if (data.client) {
     data.client->OnVsyncReceived();
-  }
-}
-
-void HostFrameSinkManager::OnVsyncEnabled(bool enabled, uint32_t client_id, uint32_t sink_id) {
-  FrameSinkId id(client_id, sink_id);
-  auto iter = frame_sink_data_map_.find(id);
-  if (iter == frame_sink_data_map_.end())
-    return;
-
-  const FrameSinkData& data = iter->second;
-  if (data.client) {
-    data.client->OnVsyncEnabled(enabled);
-  }
-}
-
-void HostFrameSinkManager::ReportVideoFrameRate(int32_t frameRate, uint32_t client_id, uint32_t sink_id) {
-  FrameSinkId id(client_id, sink_id);
-  auto iter = frame_sink_data_map_.find(id);
-  if (iter == frame_sink_data_map_.end())
-    return;
-
-  const FrameSinkData& data = iter->second;
-  if (data.client) {
-    data.client->ReportVideoFrameRate(frameRate);
   }
 }
 #endif

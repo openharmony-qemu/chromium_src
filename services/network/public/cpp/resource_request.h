@@ -200,6 +200,7 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE) ResourceRequest {
 #if BUILDFLAG(IS_OHOS)
   bool allow_preload_record = false;
   GURL main_page;
+  bool is_sync_mode = false;
 #endif
 #if defined(OHOS_EX_DOWNLOAD)
   bool is_download_request = false;

@@ -827,26 +827,6 @@ std::u16string BrowserAccessibilityOHOS::GetSubstringTextContentUTF16(
       break;
   }
 
-  // This is called from IsLeaf, so don't call PlatformChildCount
-  // from within this!
-  if (text.empty() && ((HasOnlyTextChildren() && !HasListMarkerChild()) ||
-                       (IsFocusable() && HasOnlyTextAndImageChildren()))) {
-    for (auto it = InternalChildrenBegin(); it != InternalChildrenEnd(); ++it) {
-      text += static_cast<BrowserAccessibilityOHOS*>(it.get())
-                  ->GetSubstringTextContentUTF16(predicate);
-      if (predicate && predicate.value().Run(text)) {
-        break;
-      }
-    }
-  }
-
-  if (text.empty() &&
-      (ui::IsLink(GetRole()) || ui::IsImageOrVideo(GetRole())) &&
-      !HasExplicitlyEmptyName()) {
-    std::u16string url = GetString16Attribute(ax::mojom::StringAttribute::kUrl);
-    text = ui::AXUrlBaseText(url);
-  }
-
   return text;
 }
 
@@ -921,6 +901,23 @@ bool BrowserAccessibilityOHOS::IsFocusable() const {
 
 bool BrowserAccessibilityOHOS::IsTableHeader() const {
   return ui::IsTableHeader(GetRole());
+}
+
+bool BrowserAccessibilityOHOS::HasNonEmptyValue() const {
+  return IsTextField() && !GetValueForControl().empty();
+}
+
+bool BrowserAccessibilityOHOS::IsScrollSupported() const {
+  if (GetRole() == ax::mojom::Role::kSlider) {
+    const std::string& html_tag =
+        GetStringAttribute(ax::mojom::StringAttribute::kHtmlTag);
+    if (html_tag != "input") {
+      return false;
+    }
+    return true;
+  } else {
+    return IsScrollable();
+  }
 }
 
 void BrowserAccessibilityOHOS::Scroll(const ax::mojom::Action& action) const {

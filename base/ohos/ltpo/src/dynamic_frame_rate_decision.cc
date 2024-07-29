@@ -20,6 +20,7 @@
 
 #include "base/logging.h"
 #include "base/no_destructor.h"
+#include "base/task/single_thread_task_runner.h"
 #include "base/task/thread_pool.h"
 #include "base/trace_event/trace_event.h"
 #include "content/public/browser/browser_thread.h"
@@ -45,6 +46,13 @@ DynamicFrameRateDecision::DynamicFrameRateDecision()
 DynamicFrameRateDecision::~DynamicFrameRateDecision()
 {}
 
+void DynamicFrameRateDecision::Init()
+{
+  if (!curent_task_runner_) {
+    curent_task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
+  }
+}
+
 DynamicFrameRateDecision& DynamicFrameRateDecision::GetInstance()
 {
     static base::NoDestructor<DynamicFrameRateDecision> instance;
@@ -53,44 +61,60 @@ DynamicFrameRateDecision& DynamicFrameRateDecision::GetInstance()
 
 void DynamicFrameRateDecision::ReportSlidingFrameRate(int32_t frame_rate)
 {
-  // check, enable ltpo only for phone
-  if (frame_rate == slidingFrameRate_) {
+  if (!curent_task_runner_) {
     return;
   }
-  slidingFrameRate_ = frame_rate;
+  curent_task_runner_->PostTask(FROM_HERE, base::BindOnce(
+    &DynamicFrameRateDecision::ReportSlidingFrameRateImpl,
+    base::Unretained(this), frame_rate));
+}
+
+void DynamicFrameRateDecision::ReportSlidingFrameRateImpl(int32_t frame_rate)
+{
+  if (sliding_frame_rate_ == frame_rate) {
+    return;
+  }
+  LOG(DEBUG) << "ReportSlidingFrameRate " << frame_rate << ", " << sliding_frame_rate_;
+  sliding_frame_rate_ = frame_rate;
   UpdateFramePreferredRate();
 }
 
 void DynamicFrameRateDecision::ReportVideoFrameRate(int32_t frame_rate)
 {
-  content::GetUIThreadTaskRunner()->PostTask(FROM_HERE, base::BindOnce(
+  if (!curent_task_runner_) {
+    return;
+  }
+  curent_task_runner_->PostTask(FROM_HERE, base::BindOnce(
     &DynamicFrameRateDecision::ReportVideoFrameRateImpl,
     base::Unretained(this), frame_rate));
 }
 
 void DynamicFrameRateDecision::ReportVideoFrameRateImpl(int32_t frame_rate)
 {
-  if (videoFrameRate_ == frame_rate) {
+  if (video_frame_rate_ == frame_rate) {
     return;
   }
-  LOG(DEBUG) << "ReportVideoFrameRate " << videoFrameRate_ << ", " << frame_rate;
-  videoFrameRate_ = frame_rate;
+  LOG(DEBUG) << "ReportVideoFrameRate " << video_frame_rate_ << ", " << frame_rate;
+  video_frame_rate_ = frame_rate;
   UpdateFramePreferredRate();
 }
 
 void DynamicFrameRateDecision::SetMaxFrameRateThreeSec()
 {
-  LOG(DEBUG) << "SetMaxFrameRateThreeSec " << slidingFrameRate_;
-  if (slidingFrameRate_ != 0) {
+  if (!curent_task_runner_) {
     return;
   }
-  if (vsynCnt_ == 0) {
+  LOG(DEBUG) << "SetMaxFrameRateThreeSec " << sliding_frame_rate_;
+  if (sliding_frame_rate_ != 0) {
+    return;
+  }
+  if (vsync_cnt_ == 0) {
     return;
   }
 
-  touch_up_timeStamp_ = GetCurrentTimestampMS();
-  LOG(DEBUG) << "SetMaxFrameRateThreeSec touch_up_timeStamp: " << touch_up_timeStamp_;
-  content::GetUIThreadTaskRunner()->PostDelayedTask(
+  touch_up_timestamp_= GetCurrentTimestampMS();
+  LOG(DEBUG) << "SetMaxFrameRateThreeSec touch_up_timeStamp: " << touch_up_timestamp_;
+  curent_task_runner_->PostDelayedTask(
     FROM_HERE,
     base::BindOnce(UpdateTimeOutFramePreferredRate),
     base::Milliseconds(kThreeSeconds)
@@ -99,25 +123,28 @@ void DynamicFrameRateDecision::SetMaxFrameRateThreeSec()
 
 void DynamicFrameRateDecision::UpdateFramePreferredRate()
 {
-  if (!frameRateLinkerEnable_) {
+  if (!frame_rate_linker_enable_) {
     return;
   }
   // invoke frame rate linker
-  curFrameRate_ = slidingFrameRate_;
-  if (slidingFrameRate_ <= 0) {
-    curFrameRate_ = has_touch_point_ ? kDefaultPreferedFrameRate120FPS : kDefaultPreferedFrameRate60FPS;
-    if (GetCurrentTimestampMS() - touch_up_timeStamp_ < kThreeSeconds) {
-      curFrameRate_ = kDefaultPreferedFrameRate120FPS;
+  cur_frame_rate_ = sliding_frame_rate_;
+  if (sliding_frame_rate_ <= 0) {
+    cur_frame_rate_ = has_touch_point_ ? kDefaultPreferedFrameRate120FPS : kDefaultPreferedFrameRate60FPS;
+    if (GetCurrentTimestampMS() - touch_up_timestamp_< kThreeSeconds) {
+      cur_frame_rate_ = kDefaultPreferedFrameRate120FPS;
     }
   }
-  curFrameRate_ = std::max(curFrameRate_, videoFrameRate_);
-  LOG(INFO) << "final prefered frame rate " << curFrameRate_;
-  OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetFramePreferredRate(curFrameRate_);
+  cur_frame_rate_ = std::max(cur_frame_rate_, video_frame_rate_);
+  LOG(INFO) << "final prefered frame rate " << cur_frame_rate_;
+  OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetFramePreferredRate(cur_frame_rate_);
 }
 
 void DynamicFrameRateDecision::SetVsyncEnabled(bool enabled)
 {
-  content::GetUIThreadTaskRunner()->PostTask(FROM_HERE, base::BindOnce(
+  if (!curent_task_runner_) {
+    return;
+  }
+  curent_task_runner_->PostTask(FROM_HERE, base::BindOnce(
     &DynamicFrameRateDecision::SetVsyncEnabledImpl,
     base::Unretained(this), enabled));
 }
@@ -125,21 +152,32 @@ void DynamicFrameRateDecision::SetVsyncEnabled(bool enabled)
 void DynamicFrameRateDecision::SetVsyncEnabledImpl(bool enabled)
 {
   if (enabled) {
-    vsynCnt_++;
+    vsync_cnt_++;
    } else {
-    vsynCnt_--;
+    vsync_cnt_--;
   }
-  vsynCnt_ = std::max(vsynCnt_, 0);
-  LOG(DEBUG) << "SetVsyncEnabled " << enabled << ", vsynCnt_: " << vsynCnt_;
-  SetFrameRateLinkerEnable(vsynCnt_ != 0);
+  vsync_cnt_ = std::max(vsync_cnt_, 0);
+  LOG(DEBUG) << "SetVsyncEnabled " << enabled << ", vsync_cnt_: " << vsync_cnt_;
+  SetFrameRateLinkerEnable(visible_ && (vsync_cnt_ != 0));
   UpdateFramePreferredRate();
 }
 
 void DynamicFrameRateDecision::SetHasTouchPoint(bool has_touch_point)
 {
+  if (!curent_task_runner_) {
+    return;
+  }
+  curent_task_runner_->PostTask(FROM_HERE, base::BindOnce(
+    &DynamicFrameRateDecision::SetHasTouchPointImpl,
+    base::Unretained(this), has_touch_point));
+}
+
+void DynamicFrameRateDecision::SetHasTouchPointImpl(bool has_touch_point)
+{
   if (has_touch_point_ == has_touch_point) {
     return;
   }
+  LOG(DEBUG) << "SetHasTouchPoint " << has_touch_point;
   has_touch_point_ = has_touch_point;
   if (has_touch_point_) {
     UpdateFramePreferredRate();
@@ -150,22 +188,32 @@ void DynamicFrameRateDecision::SetHasTouchPoint(bool has_touch_point)
 
 void DynamicFrameRateDecision::SetVisible(bool visible)
 {
-  LOG(DEBUG) << "SetVisible" << visible;
+  if (!curent_task_runner_) {
+    return;
+  }
+  curent_task_runner_->PostTask(FROM_HERE, base::BindOnce(
+    &DynamicFrameRateDecision::SetVisibleImpl,
+    base::Unretained(this), visible));
+}
+
+void DynamicFrameRateDecision::SetVisibleImpl(bool visible)
+{
   if (visible_ == visible) {
     return;
   }
+  LOG(DEBUG) << "SetVisible " << visible;
   visible_ = visible;
-  SetFrameRateLinkerEnable(visible_);
+  SetFrameRateLinkerEnable(visible_ && (vsync_cnt_ != 0));
   UpdateFramePreferredRate();
 }
 
 void DynamicFrameRateDecision::SetFrameRateLinkerEnable(bool enabled)
 {
-  LOG(DEBUG) << "SetFrameRateLinkerEnable" << enabled;
-  if (frameRateLinkerEnable_ == enabled) {
+  if (frame_rate_linker_enable_ == enabled) {
     return;
   }
-  frameRateLinkerEnable_ = enabled;
+  LOG(DEBUG) << "SetFrameRateLinkerEnable" << enabled;
+  frame_rate_linker_enable_ = enabled;
   OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetFrameRateLinkerEnable(enabled);
 }
 

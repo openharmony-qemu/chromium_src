@@ -175,6 +175,18 @@ void GpuHostImpl::StartMonitor() {
 void GpuHostImpl::StopMonitor() {
   gpu_service_remote_->StopMonitor();
 }
+
+void GpuHostImpl::SetVisible(bool visible) {
+  gpu_service_remote_->SetVisible(visible);
+}
+
+void GpuHostImpl::SetHasTouchPoint(bool has_touch_point) {
+  gpu_service_remote_->SetHasTouchPoint(has_touch_point);
+}
+
+void GpuHostImpl::ReportSlidingFrameRate(int32_t frame_rate) {
+  gpu_service_remote_->ReportSlidingFrameRate(frame_rate);
+}
 #endif
 
 void GpuHostImpl::SetProcessId(base::ProcessId pid) {

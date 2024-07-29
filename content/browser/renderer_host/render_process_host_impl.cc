@@ -1626,11 +1626,14 @@ void RenderProcessHostImpl::Refresh() {
   do {
     RenderProcessHostImpl* host = static_cast<RenderProcessHostImpl*>(
       it.GetCurrentValue());
+    if (!host) {
+      return;
+    }
     auto temp_set = host->render_frame_host_id_set_;
 
     for (auto rfh_id : temp_set) {
       auto rfh = RenderFrameHostImpl::FromID(rfh_id);
-      if (rfh->IsActive()) {
+      if (rfh && rfh->IsActive()) {
         rfh->Reload();
       }
     }

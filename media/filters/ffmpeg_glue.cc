@@ -7,6 +7,9 @@
 #include "base/check_op.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/notreached.h"
+#if defined(OHOS_MEDIA)
+#include "base/logging.h"
+#endif // OHOS_MEDIA
 #include "media/base/container_names.h"
 #include "media/ffmpeg/ffmpeg_common.h"
 
@@ -131,6 +134,10 @@ bool FFmpegGlue::OpenContext(bool is_local_file) {
   } else if (ret < 0) {
     return false;
   }
+
+#if defined(OHOS_MEDIA)
+  LOG(INFO) << "OhMedia::OpenContext format=" << format_context_->iformat->name;
+#endif // OHOS_MEDIA
 
   // Rely on ffmpeg's parsing if we're able to succesfully open the file.
   if (strcmp(format_context_->iformat->name, "mov,mp4,m4a,3gp,3g2,mj2") == 0)

@@ -89,6 +89,14 @@ class FakeContentPasswordManagerDriver : public mojom::PasswordManagerDriver {
   void LogFirstFillingResult(autofill::FormRendererId form_renderer_id,
                              int32_t result) override {}
 
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  void OnRequestAutofill(
+      autofill::FormRendererId form_id,
+      const autofill::mojom::OhosPasswordFormAutofillState state,
+      const autofill::InputFillRequestData& username_data,
+      const autofill::InputFillRequestData& password_data) override {}
+#endif
+
   // Records whether RecordSavePasswordProgress() gets called.
   bool called_record_save_;
   // Records data received via RecordSavePasswordProgress() call.

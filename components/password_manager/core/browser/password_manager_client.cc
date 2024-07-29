@@ -38,6 +38,21 @@ void PasswordManagerClient::ShowTouchToFill(
     autofill::mojom::SubmissionReadinessState submission_readiness) {}
 #endif
 
+#if defined(OHOS_PASSWORD_AUTOFILL)
+void PasswordManagerClient::FillAccountSuggestion(
+    const GURL& page_url,
+    const std::u16string& username,
+    const std::u16string& password) {}
+
+void PasswordManagerClient::OnRequestAutofill(
+    PasswordManagerDriver* driver,
+    const GURL& page_url,
+    autofill::FormRendererId form_id,
+    const autofill::mojom::OhosPasswordFormAutofillState state,
+    const autofill::InputFillRequestData& username_data,
+    const autofill::InputFillRequestData& password_data) {}
+#endif
+
 scoped_refptr<device_reauth::DeviceAuthenticator>
 PasswordManagerClient::GetDeviceAuthenticator() {
   return nullptr;

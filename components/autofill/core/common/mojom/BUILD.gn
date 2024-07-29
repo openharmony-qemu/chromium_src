@@ -86,6 +86,12 @@ mojom("mojo_types") {
           cpp = "::autofill::AutoselectFirstSuggestion"
           copyable_pass_by_value = true
         },
+        # OHOS_PASSWORD_AUTOFILL begin
+        {
+          mojom = "autofill.mojom.InputFillRequestData"
+          cpp = "::autofill::InputFillRequestData"
+        },
+        # OHOS_PASSWORD_AUTOFILL end
       ]
       traits_headers = [ "autofill_types_mojom_traits.h" ]
       traits_sources = [ "autofill_types_mojom_traits.cc" ]

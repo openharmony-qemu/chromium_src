@@ -203,6 +203,21 @@ class PasswordManagerClient {
       autofill::mojom::SubmissionReadinessState submission_readiness);
 #endif
 
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  virtual void FillAccountSuggestion(
+      const GURL& page_url,
+      const std::u16string& username,
+      const std::u16string& password);
+
+  virtual void OnRequestAutofill(
+      PasswordManagerDriver* driver,
+      const GURL& page_url,
+      autofill::FormRendererId form_id,
+      const autofill::mojom::OhosPasswordFormAutofillState state,
+      const autofill::InputFillRequestData& username_data,
+      const autofill::InputFillRequestData& password_data);
+#endif
+
   // Returns a pointer to a DeviceAuthenticator. Might be null if
   // BiometricAuthentication is not available for a given platform.
   virtual scoped_refptr<device_reauth::DeviceAuthenticator>

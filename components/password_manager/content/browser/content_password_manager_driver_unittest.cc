@@ -103,6 +103,12 @@ class FakePasswordAutofillAgent
               AnnotateFieldsWithParsingResult,
               (const ParsingResult&),
               (override));
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  MOCK_METHOD(void,
+              SetParsedPasswordForm,
+              (const PasswordFormFillData&),
+              (override));
+#endif
 
  private:
   void SetLoggingState(bool active) override {

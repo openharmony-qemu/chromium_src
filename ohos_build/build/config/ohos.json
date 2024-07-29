@@ -550,6 +550,14 @@
 "dependence": "",
 "default": "true"
 },
+{ "name": "OHOS_PASSWORD_AUTOFILL",
+"owner": "",
+"desc": "Support saving and autofill password though ohos autofill manager",
+"effect":"main gn blink_core other",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},
 { "name": "OHOS_PDF",
 "owner": "",
 "desc": "",

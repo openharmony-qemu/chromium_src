@@ -119,6 +119,14 @@ class PasswordAutofillManager : public autofill::AutofillPopupDelegate {
     autofill_client_ = autofill_client;
   }
 
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  bool CanFillAccountSuggestion(const GURL& page_url);
+
+  void FillAccountSuggestion(const GURL& page_url,
+                              const std::u16string& username,
+                              const std::u16string& password);
+#endif
+
  private:
   using ForPasswordField = base::StrongAlias<class ForPasswordFieldTag, bool>;
   using OffersGeneration = base::StrongAlias<class OffersGenerationTag, bool>;

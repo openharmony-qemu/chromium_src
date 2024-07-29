@@ -61,6 +61,10 @@
 #include "ui/events/keycodes/keyboard_codes.h"
 #include "url/gurl.h"
 
+#if defined(OHOS_PASSWORD_AUTOFILL)
+#include "components/autofill/core/common/ohos_password_autofill_data.h"
+#endif
+
 using blink::WebAutofillState;
 using blink::WebDocument;
 using blink::WebElement;
@@ -314,6 +318,21 @@ bool HasPasswordField(const WebLocalFrame& frame) {
                               &WebFormElement::GetFormControlElements) ||
          ContainsPasswordField(doc.UnassociatedFormControls());
 }
+
+#if defined(OHOS_PASSWORD_AUTOFILL)
+// Get placeholder of element
+std::u16string GetPlaceHolderOfInput(const WebInputElement& element) {
+  static base::NoDestructor<WebString> kPlaceholder("placeholder");
+  if (element.HasAttribute(*kPlaceholder))
+    return element.GetAttribute(*kPlaceholder).Utf16();
+
+  return std::u16string();
+}
+
+std::string GetAutocompleteAttribute(const WebInputElement& element) {
+  return element.GetAttribute("autocomplete").Utf8();
+}
+#endif
 
 // Returns the closest visible autocompletable non-password text element
 // preceding the |password_element| either in a form, if it belongs to one, or
@@ -612,6 +631,18 @@ class PasswordAutofillAgent::DeferringPasswordManagerDriver
              submission_readiness);
   }
 #endif
+
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  void OnRequestAutofill(
+      FormRendererId form_id,
+      mojom::OhosPasswordFormAutofillState state,
+      const InputFillRequestData & username_data,
+      const InputFillRequestData & password_data) override {
+    DeferMsg(&mojom::PasswordManagerDriver::OnRequestAutofill,
+             form_id, state, username_data, password_data);
+  }
+#endif
+
   void CheckSafeBrowsingReputation(const GURL& form_action,
                                    const GURL& frame_url) override {
     DeferMsg(&mojom::PasswordManagerDriver::CheckSafeBrowsingReputation,
@@ -648,6 +679,10 @@ PasswordAutofillAgent::PasswordAutofillAgent(
       sent_request_to_store_(false),
       checked_safe_browsing_reputation_(false),
       password_generation_agent_(nullptr) {
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  ohos_last_supplied_password_info_iter_ =
+      ohos_web_input_to_password_info_.end();
+#endif
   registry->AddInterface<mojom::PasswordAutofillAgent>(base::BindRepeating(
       &PasswordAutofillAgent::BindPendingReceiver, base::Unretained(this)));
 }
@@ -738,6 +773,10 @@ bool PasswordAutofillAgent::TextDidChangeInTextField(
   if (iter != web_input_to_password_info_.end()) {
     iter->second.password_was_edited_last = false;
   }
+
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  RequestAutofill(element, true);
+#endif
 
   // Show the popup with the list of available usernames.
   return ShowSuggestions(element, ShowAll(false), GenerationShowing(false));
@@ -1076,6 +1115,280 @@ bool PasswordAutofillAgent::TryToShowTouchToFill(
 }
 #endif
 
+#if defined(OHOS_PASSWORD_AUTOFILL)
+void PasswordAutofillAgent::OhosMaybeStoreFallbackData(
+    const PasswordFormFillData& form_data) {
+  if (!ohos_web_input_to_password_info_.empty())
+    return;
+  // If for some reasons elements for filling were not found (for example
+  // because they were renamed by JavaScript) then add fill data for
+  // |web_input_to_password_info_|. When the user clicks on a password field
+  // which is not a key in |web_input_to_password_info_|, the first element from
+  // |web_input_to_password_info_| will be used in
+  // PasswordAutofillAgent::FindPasswordInfoForElement to propose to fill.
+  PasswordInfo password_info;
+  password_info.fill_data = form_data;
+  ohos_web_input_to_password_info_[WebInputElement()] = password_info;
+  ohos_last_supplied_password_info_iter_ =
+      ohos_web_input_to_password_info_.begin();
+}
+
+void PasswordAutofillAgent::OhosStoreInferredInfo(
+    const PasswordFormFillData& form_data,
+    WebInputElement username_element,
+    WebInputElement password_element) {
+  WebInputElement main_element =
+      username_element.IsNull() ? password_element : username_element;
+
+  LOG(INFO) << "Store inferred filling infomation:"
+            << ", username_element null?=" << username_element.IsNull()
+            << ", password_element null?=" << password_element.IsNull();
+  PasswordInfo password_info;
+  password_info.fill_data = form_data;
+  password_info.password_field = password_element;
+  ohos_web_input_to_password_info_[main_element] = password_info;
+  ohos_last_supplied_password_info_iter_ =
+      ohos_web_input_to_password_info_.find(main_element);
+  if (!main_element.IsPasswordFieldForAutofill())
+    ohos_password_to_username_[password_element] = username_element;
+}
+
+// mojom::PasswordAutofillAgent:
+void PasswordAutofillAgent::SetParsedPasswordForm(
+    const PasswordFormFillData& form_data) {
+
+  bool username_password_fields_not_set =
+      form_data.username_element_renderer_id.is_null() &&
+      form_data.password_element_renderer_id.is_null();
+  if (username_password_fields_not_set) {
+    // No fields for filling were found during parsing, which means filling
+    // fallback case. So save data for fallback filling.
+    OhosMaybeStoreFallbackData(form_data);
+    return;
+  }
+
+  WebInputElement username_element, password_element;
+  std::tie(username_element, password_element) =
+      FindUsernamePasswordElements(form_data);
+  bool is_single_username_fill =
+      form_data.password_element_renderer_id.is_null();
+  WebElement main_element =
+      is_single_username_fill ? username_element : password_element;
+  if (main_element.IsNull()) {
+    OhosMaybeStoreFallbackData(form_data);
+    return;
+  }
+
+  OhosStoreInferredInfo(form_data, username_element, password_element);
+}
+
+bool PasswordAutofillAgent::OhosFindPasswordInfoForElement(
+    const WebInputElement& element,
+    UseFallbackData use_fallback_data,
+    WebInputElement* username_element,
+    WebInputElement* password_element,
+    PasswordInfo** password_info) {
+  DCHECK(username_element && password_element && password_info);
+  username_element->Reset();
+  password_element->Reset();
+  if (!element.IsPasswordFieldForAutofill()) {
+    *username_element = element;
+  } else {
+    *password_element = element;
+
+    // If there is a password field, but a request to the store hasn't been sent
+    // yet, then do fetch saved credentials now.
+    if (!sent_request_to_store_) {
+      SendPasswordForms(false);
+      return false;
+    }
+
+    auto iter = ohos_web_input_to_password_info_.find(element);
+    if (iter == ohos_web_input_to_password_info_.end()) {
+      PasswordToLoginMap::const_iterator password_iter =
+          ohos_password_to_username_.find(element);
+      if (password_iter == ohos_password_to_username_.end()) {
+        if (!use_fallback_data || ohos_web_input_to_password_info_.empty()) {
+          return false;
+        }
+        iter = ohos_last_supplied_password_info_iter_;
+      } else {
+        *username_element = password_iter->second;
+      }
+    }
+
+    if (iter != ohos_web_input_to_password_info_.end()) {
+      // It's a password field without corresponding username field. Try to find
+      // the username field based on visibility.
+      *username_element = FindUsernameElementPrecedingPasswordElement(
+          render_frame()->GetWebFrame(), *password_element);
+      *password_info = &iter->second;
+      return true;
+    }
+    // Otherwise |username_element| has been set above.
+  }
+
+  auto iter = ohos_web_input_to_password_info_.find(*username_element);
+  if (iter == ohos_web_input_to_password_info_.end())
+    return false;
+
+  *password_info = &iter->second;
+  if (password_element->IsNull())
+    *password_element = (*password_info)->password_field;
+
+  return true;
+}
+
+// The password filling takes effect only in the input box of the form element.
+bool PasswordAutofillAgent::RequestAutofill(
+    const WebFormControlElement& control_element, bool is_text_changed) {
+  const WebInputElement input_element =
+      control_element.DynamicTo<WebInputElement>();
+  if (input_element.IsNull())
+    return false;
+
+  WebInputElement username_element;
+  WebInputElement password_element;
+  PasswordInfo* password_info = nullptr;
+  if (!IsElementEditable(input_element) ||
+      !OhosFindPasswordInfoForElement(input_element, UseFallbackData(false),
+                                      &username_element, &password_element,
+                                      &password_info)) {
+    return false;
+  }
+
+  if (!HasDocumentWithValidFrame(input_element))
+    return false;
+
+  WebFormElement form = !password_element.IsNull() ? password_element.Form()
+                                                   : username_element.Form();
+  // A Valid FormRendererId is start from 1, use 0 as an unowned form id for
+  // FormControls outside the <form> which has no form_id.
+  FormRendererId form_id(form.IsNull() ? 0 : form.UniqueRendererFormId());
+
+  bool has_amendable_username_element = IsUsernameAmendable(
+      username_element, input_element.IsPasswordFieldForAutofill());
+  bool has_editable_password_element =
+      !password_element.IsNull() && IsElementEditable(password_element);
+  DCHECK(has_amendable_username_element || has_editable_password_element);
+
+  // Highlight the fields that are about to be filled by the user and remember
+  // the old autofill state of |username_element| and |password_element|.
+  autofill::InputFillRequestData username_data;
+  if (has_amendable_username_element) {
+    username_autofill_state_ = username_element.GetAutofillState();
+    username_element.SetAutofillState(WebAutofillState::kPreviewed);
+
+    username_data.field_renderer_id = GetFieldRendererId(username_element);
+    username_data.is_focused = !input_element.IsPasswordFieldForAutofill();
+    username_data.type = mojom::OhosInputElementType::kUsernameType;
+    username_data.bounds =
+        render_frame()->ElementBoundsInWindow(username_element);
+    username_data.value = username_element.Value().Utf16();
+    username_data.placeholder = GetPlaceHolderOfInput(username_element);
+    username_data.autocomplete_attr =
+        GetAutocompleteAttribute(username_element);
+  } else {
+    username_data.type = mojom::OhosInputElementType::kInvalid;
+  }
+
+  autofill::InputFillRequestData password_data;
+  if (has_editable_password_element) {
+    password_autofill_state_ = password_element.GetAutofillState();
+    password_element.SetAutofillState(WebAutofillState::kPreviewed);
+
+    password_data.field_renderer_id = GetFieldRendererId(password_element);
+    password_data.is_focused = !username_data.is_focused;
+    password_data.type = mojom::OhosInputElementType::kPasswordType;
+    password_data.bounds =
+        render_frame()->ElementBoundsInWindow(password_element);
+    password_data.value = password_element.Value().Utf16();
+    password_data.placeholder = GetPlaceHolderOfInput(password_element);
+    password_data.autocomplete_attr =
+        GetAutocompleteAttribute(password_element);
+  } else {
+    password_data.type = mojom::OhosInputElementType::kInvalid;
+  }
+
+  auto it = ohos_password_form_status_map_.find(*form_id);
+  if (it == ohos_password_form_status_map_.end()) {
+    ohos_password_form_status_map_[*form_id] =
+      mojom::OhosPasswordFormAutofillState::kNotRequested;
+  }
+
+  auto state = is_text_changed
+                  ? mojom::OhosPasswordFormAutofillState::kTextChanged
+                  : ohos_password_form_status_map_[*form_id];
+  GetPasswordManagerDriver().OnRequestAutofill(form_id, state,
+                                               username_data, password_data);
+
+  if (ohos_password_form_status_map_[*form_id] ==
+      mojom::OhosPasswordFormAutofillState::kNotRequested) {
+    ohos_password_form_status_map_[*form_id] =
+      mojom::OhosPasswordFormAutofillState::kHasBeenRequested;
+  }
+  return true;
+}
+
+bool PasswordAutofillAgent::FillAccountSuggestion(
+    const WebFormControlElement& control_element,
+    const std::u16string& username,
+    const std::u16string& password) {
+  // The element in context of the suggestion popup.
+  WebInputElement element = control_element.DynamicTo<WebInputElement>();
+  if (element.IsNull())
+    return false;
+
+  WebInputElement username_element;
+  WebInputElement password_element;
+  PasswordInfo* password_info = nullptr;
+  if (!OhosFindPasswordInfoForElement(element, UseFallbackData(true),
+                                      &username_element, &password_element,
+                                      &password_info) ||
+      (!password_element.IsNull() && !IsElementEditable(password_element))) {
+    LOG(INFO) << "Fill account suggestion but no username or password founded.";
+    return false;
+  }
+
+  password_info->password_was_edited_last = false;
+  if (element.IsPasswordFieldForAutofill()) {
+    password_info->password_field_suggestion_was_accepted = true;
+    password_info->password_field = password_element;
+  }
+
+  if (IsUsernameAmendable(username_element,
+                          element.IsPasswordFieldForAutofill()) &&
+      !(username.empty() && element.IsPasswordFieldForAutofill()) &&
+      username_element.Value().Utf16() != username) {
+    LOG(INFO) << "Fill username element";
+    FillField(&username_element, username);
+  }
+
+  if (!password_element.IsNull()) {
+    LOG(INFO) << "Fill password element";
+    FillPasswordFieldAndSave(&password_element, password);
+
+    // TODO(crbug.com/1319364): As Touch-To-Fill and auto-submission don't
+    // currently support filling single username fields, the code below is
+    // within |!password_element.IsNull()|. Support such fields too and move the
+    // code out the condition.
+    // If the |username_element| is visible/focusable and the |password_element|
+    // is not, trigger submission on the former as the latter unlikely has an
+    // Enter listener.
+    if (!username_element.IsNull() && username_element.IsFocusable() &&
+        !password_element.IsFocusable()) {
+      field_renderer_id_to_submit_ = GetFieldRendererId(username_element);
+    } else {
+      field_renderer_id_to_submit_ = GetFieldRendererId(password_element);
+    }
+  }
+
+  element.SetSelectionRange(element.Value().length(), element.Value().length());
+
+  return true;
+}
+#endif
+
 bool PasswordAutofillAgent::ShowSuggestions(
     const WebInputElement& element,
     ShowAll show_all,
@@ -1249,6 +1562,7 @@ void PasswordAutofillAgent::SendPasswordForms(bool only_visible) {
     logger->LogURL(Logger::STRING_SECURITY_ORIGIN,
                    GURL(origin.ToString().Utf8()));
   }
+
   if (!FrameCanAccessPasswordManager()) {
     LogMessage(logger.get(), Logger::STRING_SECURITY_ORIGIN_FAILURE);
     return;
@@ -1294,6 +1608,7 @@ void PasswordAutofillAgent::SendPasswordForms(bool only_visible) {
       forms_structure_cache_[form_structure_info.unique_renderer_id] =
           std::move(form_structure_info);
 
+      LOG(INFO) << "rdForms, for <form>, password_forms_data.push_back";
       password_forms_data.push_back(std::move(*form_data));
       continue;
     }
@@ -1326,6 +1641,7 @@ void PasswordAutofillAgent::SendPasswordForms(bool only_visible) {
       if (logger) {
         logger->LogFormData(Logger::STRING_FORM_IS_PASSWORD, *form_data);
       }
+
       password_forms_data.push_back(std::move(*form_data));
     }
   }
@@ -1433,6 +1749,7 @@ void PasswordAutofillAgent::OnProbablyFormSubmitted() {}
 // mojom::PasswordAutofillAgent:
 void PasswordAutofillAgent::SetPasswordFillData(
     const PasswordFormFillData& form_data) {
+
   std::unique_ptr<RendererSavePasswordProgressLogger> logger;
   if (logging_state_active_) {
     logger = std::make_unique<RendererSavePasswordProgressLogger>(
@@ -1680,6 +1997,13 @@ void PasswordAutofillAgent::ShowSuggestionPopup(
 }
 
 void PasswordAutofillAgent::CleanupOnDocumentShutdown() {
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  ohos_password_form_status_map_.clear();
+  ohos_web_input_to_password_info_.clear();
+  ohos_password_to_username_.clear();
+  ohos_last_supplied_password_info_iter_ =
+      ohos_web_input_to_password_info_.end();
+#endif
   web_input_to_password_info_.clear();
   password_to_username_.clear();
   last_supplied_password_info_iter_ = web_input_to_password_info_.end();

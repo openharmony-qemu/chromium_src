@@ -170,6 +170,14 @@ interface PasswordManagerDriver {
   // integer as no further interpretation of the value is necessary in the
   // browser.
   LogFirstFillingResult(FormRendererId form_renderer_id, int32 result);
+
+  // Instructs the browser to request autofill through OHOS autofill manager.
+  [EnableIf=ohos_password_autofill]
+  OnRequestAutofill(
+      FormRendererId form_renderer_id,
+      OhosPasswordFormAutofillState state,
+      InputFillRequestData username,
+      InputFillRequestData password);
 };
 
 // There is one instance of this interface per web contents in the browser

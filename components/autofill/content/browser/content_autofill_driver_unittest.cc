@@ -258,6 +258,11 @@ class FakeAutofillAgent : public mojom::AutofillAgent {
   void SetFieldsEligibleForManualFilling(
       const std::vector<FieldRendererId>& fields) override {}
 
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  void FillAccountSuggestion(const std::u16string& username,
+                             const std::u16string& password) override {}
+#endif
+
   mojo::AssociatedReceiverSet<mojom::AutofillAgent> receivers_;
 
   base::OnceClosure quit_closure_;

@@ -197,6 +197,19 @@ class PasswordAutofillAgent : public content::RenderFrameObserver,
       const blink::WebFormControlElement& control_element);
 #endif
 
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  bool RequestAutofill(const blink::WebFormControlElement& control_element,
+                       bool is_text_changed = false);
+
+  bool FillAccountSuggestion(
+      const blink::WebFormControlElement& control_element,
+      const std::u16string& username,
+      const std::u16string& password);
+
+  // mojom::PasswordAutofillAgent:
+  void SetParsedPasswordForm(const PasswordFormFillData& form_data) override;
+#endif
+
   // Shows an Autofill popup with username suggestions for |element|. If
   // |show_all| is |true|, will show all possible suggestions for that element,
   // otherwise shows suggestions based on current value of |element|.
@@ -475,6 +488,19 @@ class PasswordAutofillAgent : public content::RenderFrameObserver,
   void NotifyPasswordManagerAboutClearedForm(
       const blink::WebFormElement& cleared_form);
 
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  bool OhosFindPasswordInfoForElement(const blink::WebInputElement& element,
+                                      UseFallbackData use_fallback_data,
+                                      blink::WebInputElement* username_element,
+                                      blink::WebInputElement* password_element,
+                                      PasswordInfo** password_info);
+
+  void OhosMaybeStoreFallbackData(const PasswordFormFillData& form_data);
+
+  void OhosStoreInferredInfo(const PasswordFormFillData& form_data,
+                             blink::WebInputElement username_element,
+                             blink::WebInputElement password_element);
+#endif
   // The logins we have filled so far with their associated info.
   WebInputToPasswordInfoMap web_input_to_password_info_;
   // A (sort-of) reverse map to |web_input_to_password_info_|.
@@ -572,6 +598,20 @@ class PasswordAutofillAgent : public content::RenderFrameObserver,
   // Current state of Touch To Fill. This is reset during
   // CleanupOnDocumentShutdown.
   TouchToFillState touch_to_fill_state_ = TouchToFillState::kShouldShow;
+#endif
+
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  // The mapping between input element with parsed PasswordForm(
+  // inferred username or password).
+  WebInputToPasswordInfoMap ohos_web_input_to_password_info_;
+  // A (sort-of) reverse map to |ohos_web_input_to_password_info_|.
+  PasswordToLoginMap ohos_password_to_username_;
+  // The chronologically last insertion into |ohos_web_input_to_password_info_|.
+  WebInputToPasswordInfoMap::iterator ohos_last_supplied_password_info_iter_;
+
+  // Current ohos password autofill state of form_renderer_id.
+  std::unordered_map<std::uint64_t, mojom::OhosPasswordFormAutofillState>
+  ohos_password_form_status_map_;
 #endif
 };
 

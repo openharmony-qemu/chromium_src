@@ -76,7 +76,7 @@ enum class TypeOfVideoInFrame {
   kMaxValue = kVideo,
 };
 
-const int MAX_SURFACE_SIZE = 6000;
+const int MAX_SURFACE_SIZE = 8000;
 
 const DrawQuad::Material kNonSplittableMaterials[] = {
     // Exclude debug quads from quad splitting

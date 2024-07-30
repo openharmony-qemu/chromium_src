@@ -218,8 +218,8 @@ target(link_target_type, "renderer") {
       "media/ohos/ohos_media_player_renderer_client_factory.h",
       "media/renderer_web_native_delegate.cc",
       "media/renderer_web_native_delegate.h",
-      "render_remote_proxy.cc",
-      "render_remote_proxy.h",
+      "render_remote_proxy_ohos.cc",
+      "render_remote_proxy_ohos.h",
       "stream_texture_host_ohos.cc",
       "stream_texture_host_ohos.h",
     ]

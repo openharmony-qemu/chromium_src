@@ -19,8 +19,10 @@ namespace prerender {
 
 namespace {
 
+#if !defined(OHOS_NO_STATE_PREFETCH)
 const char kPurposeHeaderName[] = "Purpose";
 const char kPurposeHeaderValue[] = "prefetch";
+#endif  // !defined(OHOS_NO_STATE_PREFETCH)
 
 void CallCancelPrerenderForUnsupportedScheme(
     mojo::PendingRemote<prerender::mojom::PrerenderCanceler> canceler) {
@@ -65,8 +67,10 @@ void PrerenderURLLoaderThrottle::WillStartRequest(
     network::ResourceRequest* request,
     bool* defer) {
   request->load_flags |= net::LOAD_PREFETCH;
+#if !defined(OHOS_NO_STATE_PREFETCH)
   request->cors_exempt_headers.SetHeader(kPurposeHeaderName,
                                          kPurposeHeaderValue);
+#endif  // !defined(OHOS_NO_STATE_PREFETCH)
 
   request_destination_ = request->destination;
   // Abort any prerenders that spawn requests that use unsupported HTTP

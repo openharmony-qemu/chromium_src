@@ -846,6 +846,7 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
 
   inputmethod_handler_ = new NWebInputMethodHandler();
   if (!inputmethod_handler_) {
+    delete[] argv;
     WVLOG_E("inputmethod_handler_ is nullptr");
     return false;
   }

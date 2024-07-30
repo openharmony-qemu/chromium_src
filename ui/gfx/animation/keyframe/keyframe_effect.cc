@@ -7,6 +7,9 @@
 #include <algorithm>
 
 #include "base/containers/cxx20_erase.h"
+#ifdef OHOS_SCROLLBAR
+#include "base/logging.h"
+#endif
 #include "ui/gfx/animation/keyframe/animation_curve.h"
 #include "ui/gfx/animation/keyframe/keyframed_animation_curve.h"
 
@@ -16,6 +19,9 @@ namespace {
 
 static int s_next_keyframe_model_id = 1;
 static int s_next_group_id = 1;
+#ifdef OHOS_SCROLLBAR
+const int kIntervalMicroseconds = 20 * 1000;
+#endif
 
 void ReverseKeyframeModel(base::TimeTicks monotonic_time,
                           KeyframeModel* keyframe_model) {
@@ -209,6 +215,15 @@ void KeyframeEffect::TickKeyframeModel(base::TimeTicks monotonic_time,
   AnimationCurve* curve = keyframe_model->curve();
   base::TimeDelta trimmed =
       keyframe_model->TrimTimeToCurrentIteration(monotonic_time);
+#ifdef OHOS_SCROLLBAR
+  auto prev_trimmed = keyframe_model->GetPrevTrimmed();
+  auto delta = base::Microseconds(kIntervalMicroseconds);
+  LOG(DEBUG) << "scrollbar trimed:" << trimmed << " prev:" << prev_trimmed << " delta:" << delta;
+  if (trimmed - prev_trimmed > delta) {
+    trimmed = prev_trimmed + delta;
+  }
+  keyframe_model->SetPrevTrimmed(trimmed);
+#endif
   curve->Tick(trimmed, keyframe_model->TargetProperty(), keyframe_model);
 }
 

@@ -366,11 +366,10 @@ void NativeThemeAura::PaintScrollbarThumb(cc::PaintCanvas* canvas,
 #endif // OHOS_SCROLLBAR
   } else {
 #if defined(OHOS_SCROLLBAR)
-    if (ui::IsForceScrollbarEnabled()) {
-      cc::PaintFlags flags;
+      cc::PaintFlags overflags;
       SkScalar radius;
       thumb_color = SkColorSetA(scrollbar_color, 102);
-      flags.setColor(thumb_color);
+      overflags.setColor(thumb_color);
       if (state == kHovered || state == kPressed) {
         radius = SkIntToScalar(kForceScrollbarActiveRadius);
         if (part == kScrollbarVerticalThumb) {
@@ -395,10 +394,9 @@ void NativeThemeAura::PaintScrollbarThumb(cc::PaintCanvas* canvas,
         }
       }
       SkRRect r_rect = SkRRect::MakeRectXY(gfx::RectToSkRect(thumb_rect), radius, radius);
-      canvas->drawRRect(r_rect, flags);
+      canvas->drawRRect(r_rect, overflags);
       return;
-    }
-#endif
+#else
     ControlColorId color_id = kScrollbarThumb;
     switch (state) {
       case NativeTheme::kDisabled:
@@ -425,6 +423,7 @@ void NativeThemeAura::PaintScrollbarThumb(cc::PaintCanvas* canvas,
       thumb_rect.Inset(gfx::Insets::VH(kThumbPadding, extra_padding));
 
     thumb_color = GetControlColor(color_id, color_scheme, color_provider);
+#endif
   }
 
   cc::PaintFlags flags;

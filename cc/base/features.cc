@@ -70,6 +70,10 @@ BASE_FEATURE(kHudDisplayForPerformanceMetrics,
              "HudDisplayForPerformanceMetrics",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
+BASE_FEATURE(kRenderSurfaceCommonAncestorClip,
+             "RenderSurfaceCommonAncestorClip",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+
 BASE_FEATURE(kJankInjectionAblationFeature,
              "JankInjectionAblation",
              base::FEATURE_DISABLED_BY_DEFAULT);

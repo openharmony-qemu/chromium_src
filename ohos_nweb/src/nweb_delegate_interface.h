@@ -108,6 +108,10 @@ class NWebDelegateInterface
   virtual bool IsAdsBlockEnabledForCurPage() = 0;
 #endif
 
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  virtual void ProcessAutofillCancel(const std::string& fillContent) = 0;
+#endif
+
 #ifdef OHOS_EX_PASSWORD
   virtual void SetSavePasswordAutomatically(bool enable) = 0;
   virtual bool GetSavePasswordAutomatically() = 0;

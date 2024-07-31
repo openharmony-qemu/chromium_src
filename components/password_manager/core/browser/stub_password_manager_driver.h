@@ -53,6 +53,8 @@ class StubPasswordManagerDriver : public PasswordManagerDriver {
                              const std::u16string& password) override;
   void SendParsedPasswordFormToRenderer(
       const autofill::PasswordFormFillData& form_data) override;
+
+  void AutofillSurfaceClosed(bool show_virtual_keyboard) override;
 #endif
 };
 

@@ -37,6 +37,7 @@ namespace OHOS::NWeb {
 static constexpr char16_t DEL_CHAR = 127;
 constexpr int32_t MAX_ENTERKEYTYPE = 8;
 constexpr float AVOID_OFFSET = 24.0;
+const std::string AUTO_FILL_CANCEL_PRIVATE_COMMAND = "autofill.cancel";
 
 class OnTextChangedListenerImpl : public IMFTextListenerAdapter {
  public:
@@ -120,6 +121,15 @@ class OnTextChangedListenerImpl : public IMFTextListenerAdapter {
 
   void SetNeedUnderLine(bool is_need_underline) override {
     handler_->SetNeedUnderLine(is_need_underline);
+  }
+
+  void AutoFillWithIMFEvent(bool is_username,
+                            bool is_other_account,
+                            bool is_new_password,
+                            const std::string& content) override {
+    LOG(INFO) << "receive autofill event from IMF";
+    handler_->AutoFillWithIMFEvent(is_username, is_other_account,
+                                   is_new_password, content);
   }
 
  private:
@@ -343,6 +353,18 @@ void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
     LOG(ERROR) << "inputmethod_adapter_ attach failed";
     return;
   }
+
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  if (!fill_content_.empty()) {
+    if (fill_content_node_id_ == inputInfo.node_id) {
+      LOG(INFO) << "send autofill cancel fill content to IMF";
+      inputmethod_adapter_->SendPrivateCommand(AUTO_FILL_CANCEL_PRIVATE_COMMAND,
+                                               fill_content_);
+    }
+    fill_content_.clear();
+  }
+#endif
+
   isAttached_ = true;
   lastAttachNWebId_ = nweb_id_;
   lastInputMode_ = imf_input_mode_;
@@ -1268,6 +1290,31 @@ void NWebInputMethodHandler::FinishTextPreview() {
 void NWebInputMethodHandler::SetNeedUnderLine(bool is_need_underline) {
   SetNeedUnderLineOnUI(is_need_underline);
 }
+
+#if defined(OHOS_PASSWORD_AUTOFILL)
+void NWebInputMethodHandler::AutoFillWithIMFEvent(bool is_username,
+                                                  bool is_other_account,
+                                                  bool is_new_password,
+                                                  const std::string& content) {
+  if (browser_ && browser_->GetHost()) {
+    CefRefPtr<CefTask> autofill_task = new InputMethodTask(base::BindOnce(
+        &NWebInputMethodHandler::AutoFillWithIMFEventOnUI, this, is_username,
+        is_other_account, is_new_password, std::move(content)));
+    browser_->GetHost()->PostTaskToUIThread(autofill_task);
+  }
+}
+
+void NWebInputMethodHandler::AutoFillWithIMFEventOnUI(
+    bool is_username,
+    bool is_other_account,
+    bool is_new_password,
+    const std::string& content) {
+  if (browser_ && browser_->GetHost()) {
+    browser_->GetHost()->AutoFillWithIMFEvent(is_username, is_other_account,
+                                              is_new_password, content);
+  }
+}
+#endif
 
 #if defined(OHOS_CLIPBOARD)
 std::string NWebInputMethodHandler::GetSelectInfo() {

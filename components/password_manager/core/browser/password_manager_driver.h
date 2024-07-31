@@ -107,6 +107,8 @@ class PasswordManagerDriver
   virtual void SendParsedPasswordFormToRenderer(
       const autofill::PasswordFormFillData&
       parsed_form_data_without_password) = 0;
+
+  virtual void AutofillSurfaceClosed(bool show_virtual_keyboard) = 0;
 #endif
 
   // Tells the driver to preview filling form with the |username| and

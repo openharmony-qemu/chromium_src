@@ -380,6 +380,10 @@ bool HitNativeArea(double x, double y);
   bool IsAdsBlockEnabledForCurPage() override;
 #endif
 
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  void ProcessAutofillCancel(const std::string& fillContent) override;
+#endif
+
 #ifdef OHOS_EX_PASSWORD
   void SetSavePasswordAutomatically(bool enable) override;
   bool GetSavePasswordAutomatically() override;

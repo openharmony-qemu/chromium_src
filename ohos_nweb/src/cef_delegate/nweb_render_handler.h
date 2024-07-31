@@ -98,6 +98,10 @@ class NWebRenderHandler : public CefRenderHandler {
   void SetNeedFocusViewport(bool need);
   void OnResizeScrollableViewport(CefRefPtr<CefBrowser> browser) override;
 #endif
+
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  void SetFillContent(const std::string& content) override;
+#endif
   bool GetScreenInfo(CefRefPtr<CefBrowser> browser,
                      CefScreenInfo& screen_info) override;
   void OnPaint(CefRefPtr<CefBrowser> browser,
@@ -127,13 +131,9 @@ class NWebRenderHandler : public CefRenderHandler {
                                       const CefRange& selected_range) override;
 
   void OnVirtualKeyboardRequested(CefRefPtr<CefBrowser> browser,
-                                          TextInputMode input_mode,
-                                          TextInputType input_type,
-                                          TextInputAction input_action,
-                                          TextInputFlags input_flags,
-                                          bool show_keyboard,
-                                          bool is_need_reset_listener,
-                                          const AttributesMap& attributes) override;
+                                  TextInputInfo text_input_info,
+                                  bool is_need_reset_listener,
+                                  const AttributesMap& attributes) override;
 
   void GetTouchHandleSize(CefRefPtr<CefBrowser> browser,
                           cef_horizontal_alignment_t orientation,
@@ -242,6 +242,7 @@ class NWebRenderHandler : public CefRenderHandler {
   uint32_t visible_width_ = 0;
   uint32_t visible_height_ = 0;
   bool needFocusViewport_ = false;
+  int32_t node_id_ = -1;
 #endif
   int content_height_ = 0;
   int content_width_ = 0;

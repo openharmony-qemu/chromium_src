@@ -443,6 +443,14 @@ void NWebRenderHandler::GetVisibleViewportRect(CefRefPtr<CefBrowser> browser,
 }
 #endif
 
+#if defined(OHOS_PASSWORD_AUTOFILL)
+void NWebRenderHandler::SetFillContent(const std::string& content) {
+  if (inputmethod_client_) {
+    inputmethod_client_->SetFillContent(content, node_id_);
+  }
+}
+#endif
+
 // #ifdef OHOS_SCREEN_ROTATION
 void NWebRenderHandler::SetScreenInfo(const NWebScreenInfo& screen_info) {
   screen_info_ = screen_info;
@@ -566,17 +574,17 @@ void NWebRenderHandler::OnTextSelectionChanged(CefRefPtr<CefBrowser> browser,
 
 void NWebRenderHandler::OnVirtualKeyboardRequested(
     CefRefPtr<CefBrowser> browser,
-    TextInputMode input_mode,
-    TextInputType input_type,
-    TextInputAction input_action,
-    TextInputFlags input_flags,
-    bool show_keyboard,
-    bool is_need_reset_listener, const AttributesMap& attributes) {
-  LOG(INFO) << "NWebRenderHandler::OnVirtualKeyboardRequested input_mode = "
-            << input_mode << ", input_type = " << input_type
-            << ", input_action = " << input_action
-            << ", input_flags = " << input_flags
-            << ", show_keyboard = " << show_keyboard;
+    TextInputInfo text_input_info,
+    bool is_need_reset_listener,
+    const AttributesMap& attributes) {
+  LOG(INFO) << "NWebRenderHandler::OnVirtualKeyboardRequested"
+            << ", node_id = " << text_input_info.node_id
+            << ", input_mode = " << text_input_info.input_mode
+            << ", input_type = " << text_input_info.input_type
+            << ", input_action = " << text_input_info.input_action
+            << ", input_flags = " << text_input_info.input_flags
+            << ", show_keyboard = " << text_input_info.show_keyboard
+            << ", always_hide_ime = " << text_input_info.always_hide_ime;
 
   std::map<std::string, std::string> attributesMap;
   for (const auto& item : attributes) {
@@ -588,8 +596,13 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
     LOG(ERROR) << "inputmethod_client_ is nullptr.";
     return;
   }
+  if (text_input_info.node_id > 0) {
+    node_id_ = text_input_info.node_id;
+  }
 
-  if (input_mode != CEF_TEXT_INPUT_MODE_NONE) {
+  bool is_hide = (text_input_info.input_mode == CEF_TEXT_INPUT_MODE_NONE) ||
+                 text_input_info.always_hide_ime;
+  if (!is_hide) {
     auto delegate = delegate_interface_.lock();
     if (delegate && delegate->OnFocus()) {
       bool useSystemKeyboard = true;
@@ -598,7 +611,7 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
         if (!custom_keyboard_handler_) {
           custom_keyboard_handler_ = std::make_shared<NWebCustomKeyboardHandlerImpl>(handler_.lock());
         }
-        if (show_keyboard) {
+        if (text_input_info.show_keyboard) {
           handler->OnInterceptKeyboardAttach(custom_keyboard_handler_,
                                              attributesMap, useSystemKeyboard,
                                              enterKeyType);
@@ -614,10 +627,8 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
           custom_keyboard_handler_->Close();
         }
         LOG(INFO) << "WebCustomKeyboard attach system keyboard";
-        inputmethod_client_->Attach(
-            browser,
-            {show_keyboard, input_mode, input_type, input_action, input_flags},
-            is_need_reset_listener, enterKeyType);
+        inputmethod_client_->Attach(browser, text_input_info,
+                                    is_need_reset_listener, enterKeyType);
       } else {
         if (isSystemKeyboard_) {
           LOG(INFO) << "WebCustomKeyboard before use custom keyboard, need to close system keyboard";
@@ -628,7 +639,9 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
 
         if (custom_keyboard_handler_) {
           LOG(INFO) << "WebCustomKeyboard attach custom keyboard";
-          custom_keyboard_handler_->Attach(browser, show_keyboard, static_cast<int32_t>(input_flags));
+          custom_keyboard_handler_->Attach(
+              browser, text_input_info.show_keyboard,
+              static_cast<int32_t>(text_input_info.input_flags));
         }
       }
 

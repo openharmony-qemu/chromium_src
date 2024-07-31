@@ -1387,6 +1387,14 @@ bool PasswordAutofillAgent::FillAccountSuggestion(
 
   return true;
 }
+
+void PasswordAutofillAgent::AutofillSurfaceClosed(bool show_virtual_keyboard) {
+  LOG(INFO) << "AutofillSurfaceClosed, show_virtual_keyboard="
+            << show_virtual_keyboard;
+  if (show_virtual_keyboard && render_frame()) {
+    render_frame()->ShowVirtualKeyboard();
+  }
+}
 #endif
 
 bool PasswordAutofillAgent::ShowSuggestions(

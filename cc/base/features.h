@@ -50,6 +50,11 @@ CC_BASE_EXPORT BASE_DECLARE_FEATURE(kSchedulerSmoothnessForAnimatedScrolls);
 // display.
 CC_BASE_EXPORT BASE_DECLARE_FEATURE(kHudDisplayForPerformanceMetrics);
 
+// Whether RenderSurface::common_ancestor_clip_id() is used to clip to the
+// common ancestor clip when any contributing layer escapes the clip of the
+// render surface's owning effect.
+CC_BASE_EXPORT BASE_DECLARE_FEATURE(kRenderSurfaceCommonAncestorClip);
+
 // When enabled, some jank is injected to the animation/scrolling pipeline.
 CC_BASE_EXPORT BASE_DECLARE_FEATURE(kJankInjectionAblationFeature);
 

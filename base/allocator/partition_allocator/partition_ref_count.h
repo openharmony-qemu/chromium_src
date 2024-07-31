@@ -6,7 +6,9 @@
 #define BASE_ALLOCATOR_PARTITION_ALLOCATOR_PARTITION_REF_COUNT_H_
 
 #include <atomic>
+#include <bit>
 #include <cstdint>
+#include <limits>
 
 #include "base/allocator/partition_allocator/dangling_raw_ptr_checks.h"
 #include "base/allocator/partition_allocator/partition_alloc_base/compiler_specific.h"
@@ -24,6 +26,26 @@
 namespace partition_alloc::internal {
 
 #if BUILDFLAG(ENABLE_BACKUP_REF_PTR_SUPPORT)
+
+namespace {
+// Utility functions to define a bit field.
+template <typename CountType>
+static constexpr CountType SafeShift(CountType lhs, int rhs) {
+  return rhs >= std::numeric_limits<CountType>::digits ? 0 : lhs << rhs;
+}
+template <typename CountType>
+struct BitField {
+  static constexpr CountType None() { return CountType(0); }
+  static constexpr CountType Bit(int n_th) {
+    return SafeShift<CountType>(1, n_th);
+  }
+  // Mask with bits between `lo` and `hi` (both inclusive) set.
+  static constexpr CountType Mask(int lo, int hi) {
+    return (SafeShift<CountType>(1, hi + 1) - 1) &
+           ~(SafeShift<CountType>(1, lo) - 1);
+  }
+};
+}  // namespace
 
 // Special-purpose atomic reference count class used by RawPtrBackupRefImpl.
 // The least significant bit of the count is reserved for tracking the liveness
@@ -74,7 +96,14 @@ class PA_COMPONENT_EXPORT(PARTITION_ALLOC) PartitionRefCount {
   using CountType = uint64_t;
   static constexpr CountType kMemoryHeldByAllocatorBit = 0x0000'0000'0000'0001;
   static constexpr CountType kPtrCountMask = 0x0000'0000'FFFF'FFFE;
+  // The most significant bit of the refcount is reserved to prevent races with
+  // overflow detection.
+  static constexpr auto kMaxPtrCount = BitField<CountType>::Mask(1, 30);
   static constexpr CountType kUnprotectedPtrCountMask = 0xFFFF'FFFC'0000'0000;
+  // The most significant bit of the refcount is reserved to prevent races with
+  // overflow detection.
+  static constexpr auto kMaxUnprotectedPtrCount =
+      BitField<CountType>::Mask(34, 62);
   static constexpr CountType kDanglingRawPtrDetectedBit = 0x0000'0001'0000'0000;
   static constexpr CountType kNeedsMac11MallocSizeHackBit =
       0x0000'0002'0000'0000;
@@ -86,6 +115,9 @@ class PA_COMPONENT_EXPORT(PARTITION_ALLOC) PartitionRefCount {
   static constexpr CountType kMemoryHeldByAllocatorBit = 0x0000'0001;
 
   static constexpr CountType kPtrCountMask = 0x7FFF'FFFE;
+  // The most significant bit of the refcount is reserved to prevent races with
+  // overflow detection.
+  static constexpr CountType kMaxPtrCount = BitField<CountType>::Mask(1, 29);
   static constexpr CountType kUnprotectedPtrCountMask = 0x0000'0000;
   static constexpr CountType kDanglingRawPtrDetectedBit = 0x0000'0000;
   static constexpr CountType kNeedsMac11MallocSizeHackBit = 0x8000'0000;
@@ -115,11 +147,10 @@ class PA_COMPONENT_EXPORT(PARTITION_ALLOC) PartitionRefCount {
     constexpr CountType kMask = kUnprotectedPtrCountMask;
 #else
     constexpr CountType kInc = kPtrInc;
-    constexpr CountType kMask = kPtrCountMask;
 #endif
     CountType old_count = count_.fetch_add(kInc, std::memory_order_relaxed);
     // Check overflow.
-    PA_CHECK((old_count & kMask) != kMask);
+    PA_CHECK((old_count & kPtrCountMask) != kMaxPtrCount);
   }
 
   // Similar to |Acquire()|, but for raw_ptr<T, DisableDanglingPtrDetection>
@@ -130,8 +161,7 @@ class PA_COMPONENT_EXPORT(PARTITION_ALLOC) PartitionRefCount {
     CountType old_count =
         count_.fetch_add(kUnprotectedPtrInc, std::memory_order_relaxed);
     // Check overflow.
-    PA_CHECK((old_count & kUnprotectedPtrCountMask) !=
-             kUnprotectedPtrCountMask);
+    PA_CHECK((old_count & kUnprotectedPtrCountMask) != kMaxUnprotectedPtrCount);
 #else
     Acquire();
 #endif

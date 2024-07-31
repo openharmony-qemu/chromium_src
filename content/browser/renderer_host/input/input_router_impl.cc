@@ -638,11 +638,11 @@ void InputRouterImpl::FilterAndSendWebInputEvent(
                                            LegacyEvent::FLOW_INOUT,
                                        latency_info.trace_id());
               });
-  if (!(input_event.GetType() == WebInputEvent::Type::KGestureScrollUpdate || 
-      input_event.GetType() == WebInputEvent::Type::KTouchMove ||
-      input_event.GetType() == WebInputEvent::Type::KGesturePinchUpdate)) {
-    LOG(INFO) << "InputRouterImpl::FilterAndSendWebInputEvent type=" <<
-                  WebInputEvent::GetName(input_event.GetType());
+  if (!(input_event.GetType() == WebInputEvent::Type::kGestureScrollUpdate || 
+      input_event.GetType() == WebInputEvent::Type::kTouchMove ||
+      input_event.GetType() == WebInputEvent::Type::kGesturePinchUpdate)) {
+    LOG(INFO) << "InputRouterImpl::FilterAndSendWebInputEvent type=" << 
+                 WebInputEvent::GetName(input_event.GetType());
   }
   
   if (input_event.GetType() == WebInputEvent::Type::kGestureScrollUpdate) {

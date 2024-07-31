@@ -114,7 +114,7 @@ class DumpFrameObserver : public OHOS::NWeb::SystemPropertiesObserver {
 #endif
 
 namespace {
-const int MAX_SURFACE_SIZE = 6000;
+const int MAX_SURFACE_SIZE = 8000;
 
 const DrawQuad::Material kNonSplittableMaterials[] = {
     // Exclude debug quads from quad splitting

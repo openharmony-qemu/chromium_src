@@ -15,6 +15,7 @@
 #include "base/containers/flat_set.h"
 #include "base/containers/id_map.h"
 #include "base/memory/raw_ptr.h"
+#include "base/memory/weak_ptr.h"
 #include "base/timer/timer.h"
 #include "build/build_config.h"
 #include "content/browser/media/session/audio_focus_delegate.h"
@@ -327,6 +328,9 @@ class MediaSessionImpl : public MediaSession,
   // Returns the Audio Focus request ID associated with this media session.
   const base::UnguessableToken& GetRequestId() const;
 
+  // Returns a WeakPtr to `this`.
+  base::WeakPtr<MediaSessionImpl> GetWeakPtr();
+
 #if BUILDFLAG(IS_OHOS)
  public:
   std::unordered_set<media::OHOSAudioOutputStream*> activeAudioStream_;
@@ -581,6 +585,8 @@ class MediaSessionImpl : public MediaSession,
   bool should_throttle_duration_update_ = false;
 
   absl::optional<PlayerIdentifier> guarding_player_id_;
+
+  base::WeakPtrFactory<MediaSessionImpl> weak_factory_{this};
 
   WEB_CONTENTS_USER_DATA_KEY_DECL();
 };

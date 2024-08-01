@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -237,6 +237,10 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 
   bool IsFileProtocol(const GURL& gurl);
   bool IsUrlFileExist(const GURL& gurl, const std::string& url);
+
+  void ExecuteCreatePDFExt(
+      std::shared_ptr<NWebPDFConfigArgs> pdfConfig,
+      std::shared_ptr<NWebArrayBufferValueCallback> callback) override;
 
   void ExecuteJavaScriptExt(
       const int fd,

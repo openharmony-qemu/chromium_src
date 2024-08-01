@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -301,6 +301,24 @@ class CefPrecompileCallbackImpl : public CefPrecompileCallback {
   std::shared_ptr<NWebMessageValueCallback> callback_;
 
   IMPLEMENT_REFCOUNTING(CefPrecompileCallbackImpl);
+};
+
+class CefPdfValueCallbackImpl : public CefPdfValueCallback {
+ public:
+  explicit CefPdfValueCallbackImpl(
+      std::shared_ptr<NWebArrayBufferValueCallback> callback)
+      : callback_(callback) {}
+
+  void OnReceiveValue(const char* value, const long size) override {
+    if (callback_ != nullptr) {
+      callback_->OnReceiveValue(value, size);
+    }
+  }
+
+ private:
+  std::shared_ptr<NWebArrayBufferValueCallback> callback_;
+
+  IMPLEMENT_REFCOUNTING(CefPdfValueCallbackImpl);
 };
 
 class CefCacheOptionsImpl : public CefCacheOptions {
@@ -1266,6 +1284,33 @@ void NWebDelegate::ExecuteJavaScriptExt(
     runJSCallbackMap_[runJSCallbackId_] = JsResultCb;
     GetBrowser()->GetHost()->ExecuteJavaScriptExt(fd, static_cast<uint64_t>(scriptLength), JsResultCb, extention);
   }
+}
+
+void NWebDelegate::ExecuteCreatePDFExt(
+    std::shared_ptr<NWebPDFConfigArgs> pdfConfig,
+    std::shared_ptr<NWebArrayBufferValueCallback> callback) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "ExecuteCreatePDFExt can not get browser";
+    return;
+  }
+  CefPdfPrintSettings settings;
+  settings.margin_left = pdfConfig->GetMarginLeft();
+  settings.margin_right = pdfConfig->GetMarginRight();
+  settings.margin_top = pdfConfig->GetMarginTop();
+  settings.margin_bottom = pdfConfig->GetMarginBottom();
+  settings.paper_width = pdfConfig->GetWidth();
+  settings.paper_height = pdfConfig->GetHeight();
+  settings.scale = pdfConfig->GetScale();
+  if (pdfConfig->GetShouldPrintBackground()) {
+    settings.print_background = 1;
+  } else {
+    settings.print_background = 0;
+  }
+  settings.landscape = 0;
+  settings.margin_type = PDF_PRINT_MARGIN_CUSTOM;
+  CefRefPtr<CefPdfValueCallbackImpl> precompileCallback =
+      new CefPdfValueCallbackImpl(callback);
+  GetBrowser()->GetHost()->CreateToPDF(settings, precompileCallback);
 }
 
 #if defined(OHOS_MSGPORT)

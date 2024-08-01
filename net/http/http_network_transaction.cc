@@ -1328,7 +1328,10 @@ int HttpNetworkTransaction::DoReadBody() {
 
 int HttpNetworkTransaction::DoReadBodyComplete(int result) {
   // We are done with the Read call.
+#if BUILDFLAG(IS_OHOS)
   TRACE_EVENT1("net", "HttpNetworkTransaction::DoReadBodyComplete", "url", url_.spec());
+#endif
+
   bool done = false;
   if (result <= 0) {
     DCHECK_NE(ERR_IO_PENDING, result);

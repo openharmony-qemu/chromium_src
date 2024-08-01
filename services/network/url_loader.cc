@@ -1318,6 +1318,7 @@ mojom::URLResponseHeadPtr URLLoader::BuildResponseHead() const {
   response->parsed_headers =
       PopulateParsedHeaders(response->headers.get(), url_request_->url());
 
+#if BUILDFLAG(IS_OHOS)
   std::string http_version;
   if (url_request_->was_fetched_via_spdy()) {
     http_version = "http_20";
@@ -1334,6 +1335,7 @@ mojom::URLResponseHeadPtr URLLoader::BuildResponseHead() const {
     }
   }
   TRACE_EVENT2("net", "URLLoader::BuildResponseHead", "url", url_request_->url().spec(), "http", http_version);
+#endif
 
   url_request_->GetCharset(&response->charset);
   response->content_length = url_request_->GetExpectedContentSize();

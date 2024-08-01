@@ -1318,6 +1318,25 @@ mojom::URLResponseHeadPtr URLLoader::BuildResponseHead() const {
   response->parsed_headers =
       PopulateParsedHeaders(response->headers.get(), url_request_->url());
 
+#if BUILDFLAG(IS_OHOS)
+  std::string http_version;
+  if (url_request_->was_fetched_via_spdy()) {
+    http_version = "http_20";
+  } else {
+    net::HttpVersion request_http_version = url_request_->response_headers()->GetHttpVersion();
+    if (request_http_version == net::HttpVersion(0, 9)) {
+      http_version = "http_09";
+    } else if (request_http_version == net::HttpVersion(1, 0)) {
+      http_version = "http_10";
+    } else if (request_http_version == net::HttpVersion(1, 1)) {
+      http_version = "http_11";
+    } else if (request_http_version == net::HttpVersion(2, 0)) {
+      http_version = "http_20";
+    }
+  }
+  TRACE_EVENT2("net", "URLLoader::BuildResponseHead", "url", url_request_->url().spec(), "http", http_version);
+#endif
+
   url_request_->GetCharset(&response->charset);
   response->content_length = url_request_->GetExpectedContentSize();
   url_request_->GetMimeType(&response->mime_type);

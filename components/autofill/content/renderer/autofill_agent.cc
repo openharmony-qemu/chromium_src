@@ -533,7 +533,12 @@ void AutofillAgent::OnTextFieldDidChange(const WebInputElement& element) {
     return;
   }
 
+#if BUILDFLAG(IS_OHOS)
+  ShowSuggestions(element, {.autofill_on_empty_values = true,
+                            .requires_caret_at_end = true});
+#else
   ShowSuggestions(element, {.requires_caret_at_end = true});
+#endif
 
   FormData form;
   FormFieldData field;

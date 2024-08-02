@@ -413,6 +413,9 @@ class CONTENT_EXPORT RenderFrameImpl
 #if defined(OHOS_INPUT_EVENTS)
   void SetZoomLevel(float magnify_delta, const gfx::Point& anchor) override;
   void SetOverscrollMode(int mode) override;
+#if defined(OHOS_GET_SCROLL_OFFSET)
+  gfx::Vector2dF GetOverScrollOffset() override;
+#endif
 #endif  // defined(OHOS_INPUT_EVENTS)
 
   // blink::mojom::AutoplayConfigurationClient implementation:

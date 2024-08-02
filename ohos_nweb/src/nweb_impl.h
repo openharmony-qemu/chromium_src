@@ -270,6 +270,9 @@ class NWebImpl : public NWeb {
 #ifdef OHOS_PAGE_UP_DOWN
   void PageUp(bool top) override;
   void PageDown(bool bottom) override;
+#ifdef OHOS_GET_SCROLL_OFFSET
+  void GetScrollOffset(float* offset_x, float* offset_y) override;
+#endif
 #endif  // #endif OHOS_PAGE_UP_DOWN
 
 #if defined(OHOS_INPUT_EVENTS)

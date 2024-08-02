@@ -249,6 +249,28 @@ void BackgroundTaskPolicy::SetWebviewShow(const PageNode* page_node, bool show, 
   is_main_frame_url_changed_ = false;
 }
 
+void BackgroundTaskPolicy::SetWebviewShowForAudio(const PageNode* page_node, bool show, bool &ret) {
+  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession in page_node=" << page_node
+            << " show=" << (show ? 1 : 0)  << " last_avsession_page_node_=" << last_avsession_page_node_
+            << ", is_main_frame_url_changed_=" << is_main_frame_url_changed_;
+  ret = false;
+  if (page_node) {
+    auto webcontents = page_node->GetContentsProxy().Get();
+    if (webcontents) {
+      content::MediaSessionImpl* mediaSession = content::MediaSessionImpl::FromWebContents(webcontents);
+      if (mediaSession) {
+        content::GetUIThreadTaskRunner({})->PostTask(FROM_HERE,
+                                                     base::BindOnce(&content::MediaSessionImpl::SetWebviewShowForAudio,
+                                                     mediaSession->weakMediaSessionFactory_.GetWeakPtr(), show));
+        ret = true;
+      }
+    } else {
+      LOG(ERROR) << BG_TASK_TAG << __FUNCTION__ << " media avsession webcontests is null";
+    }
+  }
+  is_main_frame_url_changed_ = false;
+}
+
 //While press backward button, the page will change to a new payge, the Url will change, so this function will be called
 void BackgroundTaskPolicy::OnMainFrameUrlChanged(const PageNode* page_node) {
   LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession in page_node=" << page_node;
@@ -256,7 +278,7 @@ void BackgroundTaskPolicy::OnMainFrameUrlChanged(const PageNode* page_node) {
     LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession IsVisible="
           << (page_node->IsVisible() ? "true" : "false")
           << ", IsMediaPlaying=" << (page_node->IsMediaPlaying() ? "true" : "false")
-          << ", GetMainFrameUrl=" << (page_node->GetMainFrameUrl().spec())  ;
+          << ", IsAudible=" << (page_node->IsAudible() ? "true" : "false");
     //when backward to a playing page   1 1
     if (page_node->IsVisible() && page_node->IsMediaPlaying()) {
        bool ret = false;
@@ -273,6 +295,15 @@ void BackgroundTaskPolicy::OnMainFrameUrlChanged(const PageNode* page_node) {
          last_avsession_page_node_ = nullptr;
        }
     } else {
+    }
+
+    //when backward to a not playing page  1 0 for onlyaudio
+    if(!page_node->IsAudible()) {
+       bool ret = false;
+       SetWebviewShowForAudio(page_node, false, ret);
+       if (ret) {
+         last_avsession_page_node_ = nullptr;
+       }
     }
     is_main_frame_url_changed_ = true;
   }

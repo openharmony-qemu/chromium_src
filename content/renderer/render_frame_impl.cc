@@ -6525,6 +6525,19 @@ void RenderFrameImpl::SetOverscrollMode(int mode) {
   }
   web_frame_widget->SetOverscrollMode(mode);
 }
+
+#if defined(OHOS_GET_SCROLL_OFFSET)
+gfx::Vector2dF RenderFrameImpl::GetOverScrollOffset() {
+  gfx::Vector2dF overscroll_offset;
+  overscroll_offset.set_x(0.0f);
+  overscroll_offset.set_y(0.0f);
+  auto web_frame_widget = GetLocalRootWebFrameWidget();
+  if (!web_frame_widget) {
+    return overscroll_offset;
+  }
+  return web_frame_widget->GetOverScrollOffset();
+}
+#endif
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 }  // namespace content

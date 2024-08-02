@@ -341,6 +341,9 @@ class NWebDelegateInterface
 #ifdef OHOS_PAGE_UP_DOWN
   virtual void PageUp(bool top) = 0;
   virtual void PageDown(bool bottom) = 0;
+#ifdef OHOS_GET_SCROLL_OFFSET
+  virtual void GetScrollOffset(float* offset_x, float* offset_y) = 0;
+#endif
 #endif  // #ifdef OHOS_PAGE_UP_DOWN
 
 #if defined(OHOS_INPUT_EVENTS)
@@ -352,6 +355,9 @@ class NWebDelegateInterface
                                const std::vector<int32_t>& pressedCodes) = 0;
   virtual void ScrollToWithAnime(float x, float y, int32_t duration) = 0;
   virtual void ScrollByWithAnime(float delta_x, float delta_y, int32_t duration) = 0;
+#if defined(OHOS_GET_SCROLL_OFFSET)
+  virtual void GetOverScrollOffset(float* offset_x, float* offset_y) = 0;
+#endif
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #if defined(OHOS_EX_FORCE_ZOOM)

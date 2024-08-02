@@ -52,7 +52,7 @@ class MediaSessionOHOS final
   void MediaSessionPositionChanged(
       const absl::optional<media_session::MediaPosition>& position) override;
 
-  void SetWebviewShow(bool show);
+  bool SetWebviewShow(bool show);
   void Resume();
   void Suspend();
   void Stop();
@@ -67,9 +67,7 @@ class MediaSessionOHOS final
 
   bool is_webview_show_;
   bool is_playing_;
-  bool is_callback_registed_;
   bool is_initialized_;
-  base::RepeatingTimer report_timer_;
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
   std::shared_ptr<OHOS::NWeb::MediaAVSessionMetadataAdapter> av_metadata_;
   std::shared_ptr<OHOS::NWeb::MediaAVSessionPositionAdapter> av_position_;

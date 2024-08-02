@@ -33,28 +33,23 @@ namespace content {
 MediaSessionOHOS::MediaSessionOHOS(MediaSessionImpl* session)
     : media_session_(session) {
   DCHECK(session);
-  is_webview_show_ = false;
+
   is_playing_ = false;
-  is_callback_registed_ = false;
   is_initialized_ = false;
   media_type_ = OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID;
   avsession_adapter_ =
     OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateMediaAVSessionAdapter();
+
   if (avsession_adapter_) {
     av_metadata_ = std::make_shared<OHOSMediaAVSessionMetadata>();
     av_position_ = std::make_shared<OHOSMediaAVSessionPosition>();
     session->AddObserver(observer_receiver_.BindNewPipeAndPassRemote());
-    report_timer_.Start(FROM_HERE,
-            kReportMediaInfoInterval, this, &MediaSessionOHOS::CheckMediaInfo);
   } else {
-    LOG(ERROR) << "media avsession adapter create failed";
+    LOG(ERROR) << __FUNCTION__ <<" media avsession adapter create failed";
   }
 }
 
 MediaSessionOHOS::~MediaSessionOHOS() {
-  if (report_timer_.IsRunning()) {
-    report_timer_.Stop();
-  }
 }
 
 void MediaSessionOHOS::Prepare(OHOS::NWeb::MediaAVSessionType type) {
@@ -62,14 +57,14 @@ void MediaSessionOHOS::Prepare(OHOS::NWeb::MediaAVSessionType type) {
     return;
   }
   is_initialized_ = true;
-  LOG(DEBUG) << "media avsession will create avsesiion";
-  if (avsession_adapter_->CreateAVSession(type)) {
+  LOG(INFO) << __FUNCTION__ << "media avsession will create avsession";
+  if (avsession_adapter_ && avsession_adapter_->CreateAVSession(type)) {
     media_type_ = type;
-    is_callback_registed_ = false;
-    media_session_->RebuildAndNotifyMetadataChanged();
-    media_session_->RebuildAndNotifyMediaPositionChanged();
-  }
-  if (!is_callback_registed_) {
+    if(av_metadata_ &&
+       !av_metadata_->GetTitle().empty()) {
+      avsession_adapter_->SetMetadata(av_metadata_);
+    }
+
     task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
     if (task_runner_) {
       auto media_avsession_callback =
@@ -77,13 +72,16 @@ void MediaSessionOHOS::Prepare(OHOS::NWeb::MediaAVSessionType type) {
               task_runner_, weak_factory_.GetWeakPtr());
       if (avsession_adapter_->RegistCallback(
               std::move(media_avsession_callback))) {
-        is_callback_registed_ = true;
+        LOG(INFO) << __FUNCTION__ <<" media avsession register callback success";  
       } else {
-        LOG(ERROR) << "media avsession register callback failed";
+        LOG(ERROR) << __FUNCTION__ <<" media avsession register callback failed";
       }
     } else {
-      LOG(ERROR) << "media avsession get task runner failed";
+      LOG(ERROR) << __FUNCTION__ <<" media avsession get task runner failed";
     }
+
+    media_session_->RebuildAndNotifyMetadataChanged();
+    media_session_->RebuildAndNotifyMediaPositionChanged();
   }
 }
 
@@ -111,12 +109,17 @@ OHOS::NWeb::MediaAVSessionType MediaSessionOHOS::GetMediaType(
 void MediaSessionOHOS::MediaSessionInfoChanged(
     media_session::mojom::MediaSessionInfoPtr session_info) {
   if (!avsession_adapter_ || !session_info) {
+    LOG(ERROR) << __FUNCTION__ <<" media avsession avsession_adapter_ or session_info is null return";
     return;
   }
   if (!is_initialized_) {
     if (session_info->audio_video_states) {
       auto session_type =
           GetMediaType(session_info->audio_video_states.value());
+      if (session_type == OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID) {
+        LOG(ERROR) << __FUNCTION__ << " media avsession before Prepare return for type invalid";
+        return;
+      }
       Prepare(session_type);
     }
   }
@@ -131,6 +134,10 @@ void MediaSessionOHOS::MediaSessionInfoChanged(
     if (session_info->audio_video_states) {
       auto session_type =
           GetMediaType(session_info->audio_video_states.value());
+      if (session_type == OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID) {
+        LOG(ERROR) << __FUNCTION__ << " media avsession before Prepare return for type invalid";
+        return;
+      }
       Prepare(session_type);
     }
   } else {
@@ -142,6 +149,7 @@ void MediaSessionOHOS::MediaSessionInfoChanged(
 void MediaSessionOHOS::MediaSessionMetadataChanged(
     const absl::optional<media_session::MediaMetadata>& metadata) {
   if (!avsession_adapter_ || !metadata) {
+    LOG(ERROR) << __FUNCTION__ <<" media avsession avsession_adapter_ or metadata is null return";
     return;
   }
   std::string title, artist, album;
@@ -154,7 +162,10 @@ void MediaSessionOHOS::MediaSessionMetadataChanged(
   base::UTF16ToUTF8(metadata.value().album.c_str(),
                     metadata.value().album.length(), &album);
   av_metadata_->SetAlbum(album);
-  avsession_adapter_->SetMetadata(av_metadata_);
+  if(av_metadata_ && avsession_adapter_ && 
+      !av_metadata_->GetTitle().empty()) {
+    avsession_adapter_->SetMetadata(av_metadata_);
+  }
 }
 
 void MediaSessionOHOS::MediaSessionActionsChanged(
@@ -169,6 +180,11 @@ void MediaSessionOHOS::MediaSessionImagesChanged(
 void MediaSessionOHOS::MediaSessionPositionChanged(
     const absl::optional<media_session::MediaPosition>& position) {
   if (!avsession_adapter_ || !position) {
+    LOG(ERROR) << __FUNCTION__ << " media avsession avsession_adapter_ or position null";
+    return;
+  }
+  if (media_type_ == OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID) {
+    LOG(ERROR) << __FUNCTION__ << " media avsession return for invalid type";
     return;
   }
   auto real_duration = position.value().duration().InMilliseconds();
@@ -183,25 +199,63 @@ void MediaSessionOHOS::MediaSessionPositionChanged(
 
 void MediaSessionOHOS::Resume() {
   DCHECK(media_session_);
+  if (media_type_ == OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID) {
+    LOG(ERROR) << __FUNCTION__ << " media avsession return for invalid type";
+    return;
+  }
   media_session_->Resume(MediaSession::SuspendType::kUI);
 }
 
-void MediaSessionOHOS::SetWebviewShow(bool show) {
-  LOG(ERROR) << "MediaSessionOHOS::SetWebviewShow";
+bool MediaSessionOHOS::SetWebviewShow(bool show) {
+  bool ret = false;
+  if (media_type_ == OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID) {
+    LOG(ERROR) << __FUNCTION__ << " media avsession media_type invalid return";
+    return ret;
+  }
+  if (base::ohos::IsPcDevice() ||
+      (media_type_ != OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_VIDEO)) {
+    LOG(ERROR) << __FUNCTION__ << " media avsession IsPcDevice() or not video return  ret=" << (ret ? 1 : 0);
+    return ret;
+  }
+  if (show) {
+    if (media_session_) {
+      media_session_->RebuildAndNotifyMediaSessionInfoChanged();
+    }
+    ret = true;
+  } else {
+    if (avsession_adapter_) {
+      avsession_adapter_->DestroyAVSession();
+      media_type_ = OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID;
+      ret = true;
+    }
+  }
+  return ret;
 }
 
 void MediaSessionOHOS::Suspend() {
   DCHECK(media_session_);
+  if (media_type_ == OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID) {
+    LOG(ERROR) << __FUNCTION__ << " media avsession type invalid";
+    return;
+  }
   media_session_->Suspend(MediaSession::SuspendType::kUI);
 }
 
 void MediaSessionOHOS::Stop() {
   DCHECK(media_session_);
+  if (media_type_ == OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID) {
+    LOG(ERROR) << __FUNCTION__ << " media avsession type invalid";
+    return;
+  }
   media_session_->Stop(MediaSession::SuspendType::kUI);
 }
 
 void MediaSessionOHOS::SeekTo(const int64_t millis) {
   DCHECK(media_session_);
+  if (media_type_ == OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID) {
+    LOG(ERROR) << __FUNCTION__ << " media avsession type invalid";
+    return;
+  }
   if (millis >= 0) {
     media_session_->SeekTo(base::Milliseconds(millis));
     if (is_playing_) {
@@ -211,14 +265,8 @@ void MediaSessionOHOS::SeekTo(const int64_t millis) {
     }
     media_session_->RebuildAndNotifyMediaPositionChanged();
   } else {
-    LOG(ERROR) << "receive an illegal millis of " << millis;
+    LOG(ERROR) << __FUNCTION__ << "receive an illegal millis of " << millis;
   }
-}
-
-void MediaSessionOHOS::CheckMediaInfo() {
-  DCHECK(media_session_);
-  media_session_->RebuildAndNotifyMediaSessionInfoChanged();
-  media_session_->RebuildAndNotifyMediaPositionChanged();
 }
 
 OHOSMediaAVSessionCallback::OHOSMediaAVSessionCallback(

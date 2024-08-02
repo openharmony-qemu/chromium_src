@@ -1811,7 +1811,11 @@ void MediaSessionImpl::RebuildAndNotifyMetadataChanged() {
     if (metadata_changed)
       observer->MediaSessionMetadataChanged(this->metadata_);
 #else
-    observer->MediaSessionMetadataChanged(this->metadata_);
+    if (metadata_changed) {
+      if (observer) {
+        observer->MediaSessionMetadataChanged(this->metadata_);
+      }
+    }
 #endif
     if (images_changed)
       observer->MediaSessionImagesChanged(this->images_);

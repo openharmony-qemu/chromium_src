@@ -46,7 +46,7 @@ class PRRequestInfo {
     last_modified_ = last_modified;
   }
 
-  //for multi-thread read/write scenarios
+  // for multi-thread read/write scenarios
   CacheInfo cache_info() {
     std::lock_guard<std::mutex> cache_info_guard(cache_info_mutex_);
     return CacheInfo {cache_type_, freshness_life_times_, e_tag_, last_modified_};

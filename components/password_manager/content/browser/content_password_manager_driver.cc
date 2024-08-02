@@ -274,6 +274,13 @@ void ContentPasswordManagerDriver::FillAccountSuggestion(
     const std::u16string& password) {
   GetAutofillAgent()->FillAccountSuggestion(username, password);
 }
+
+void ContentPasswordManagerDriver::AutofillSurfaceClosed(
+    bool show_virtual_keyboard) {
+  if (const auto& agent = GetPasswordAutofillAgent()) {
+    agent->AutofillSurfaceClosed(show_virtual_keyboard);
+  }
+}
 #endif
 
 void ContentPasswordManagerDriver::SendLoggingAvailability() {

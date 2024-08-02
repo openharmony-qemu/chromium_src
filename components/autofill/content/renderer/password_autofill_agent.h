@@ -208,6 +208,8 @@ class PasswordAutofillAgent : public content::RenderFrameObserver,
 
   // mojom::PasswordAutofillAgent:
   void SetParsedPasswordForm(const PasswordFormFillData& form_data) override;
+
+  void AutofillSurfaceClosed(bool show_virtual_keyboard) override;
 #endif
 
   // Shows an Autofill popup with username suggestions for |element|. If

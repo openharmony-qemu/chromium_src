@@ -117,6 +117,10 @@ interface PasswordAutofillAgent {
   // logging the decisions made about saving the password.
   SetLoggingState(bool active);
 
+  // Called when autofill is cancelled, will try to pull up the IME soft keyboard.
+  [EnableIf=ohos_password_autofill]
+  AutofillSurfaceClosed(bool show_virtual_keyboard);
+
   // Informs the renderer that the Touch To Fill sheet has been closed.
   // Indicates whether the virtual keyboard should be shown instead.
   [EnableIf=is_android]

@@ -28,13 +28,7 @@ class NWebInputMethodClient : public virtual CefBaseRefCounted {
     FROM_ONPAUSE,
   };
 
-  struct InputInfo {
-    bool show_keyboard;
-    cef_text_input_mode_t input_mode;
-    cef_text_input_type_t input_type;
-    cef_text_input_action_t input_action;
-    cef_text_input_flags_t input_flags;
-  };
+  typedef cef_text_input_info_t InputInfo;
 
   virtual ~NWebInputMethodClient() = default;
   virtual void Attach(CefRefPtr<CefBrowser> browser,
@@ -65,6 +59,10 @@ class NWebInputMethodClient : public virtual CefBaseRefCounted {
                                             const CefRange& selected_range,
                                             const CefRange& compositon_range) = 0;
   virtual bool IsAttached() = 0;
+
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  virtual void SetFillContent(const std::string& content, int32_t node_id) = 0;
+#endif
 };
 }  // namespace OHOS::NWeb
 

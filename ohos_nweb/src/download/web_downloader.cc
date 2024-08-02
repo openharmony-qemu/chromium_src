@@ -156,6 +156,14 @@ NWebDownloadItemState WebDownload_GetItemState(int32_t nweb_id, long download_it
 #endif
 }
 
+NWebDownloadItemState WebDownload_GetItemStateByGuid(const std::string& guid) {
+#ifdef OHOS_EX_DOWNLOAD
+  return OHOS::NWeb::NWebImpl::GetDownloadItemStateByGuid(guid);
+#else
+  return NWebDownloadItemState::MAX_DOWNLOAD_STATE;
+#endif
+}
+
 void WebDownloadItem_CreateWebDownloadItem(NWebDownloadItem** download_item) {
   if (download_item) {
     *download_item = new NWebDownloadItem();

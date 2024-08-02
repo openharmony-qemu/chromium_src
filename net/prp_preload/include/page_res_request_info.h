@@ -46,16 +46,16 @@ class PRRequestInfo {
     last_modified_ = last_modified;
   }
 
-  //for multi-thread read/write scevarios
+  //for multi-thread read/write scenarios
   CacheInfo cache_info() {
-    std::lock_guard<std::mutex> cache_info_guard(cache_info_mutex);
+    std::lock_guard<std::mutex> cache_info_guard(cache_info_mutex_);
     return CacheInfo {cache_type_, freshness_life_times_, e_tag_, last_modified_};
   }
-  void set_cache_info(PRRequestCacheType cache_typ,
+  void set_cache_info(PRRequestCacheType cache_type,
                       int64_t freshness_life_times,
                       const std::string& e_tag,
                       const std::string& last_modified) {
-    std::lock_guard<std::mutex> cache_info_guard(cache_info_mutex);
+    std::lock_guard<std::mutex> cache_info_guard(cache_info_mutex_);
     cache_type_ = cache_type;
     freshness_life_times_ = freshness_life_times;
     e_tag_ = e_tag;
@@ -63,7 +63,7 @@ class PRRequestInfo {
   }
 
  private:
-  std::mutex cache_info_mutex;
+  std::mutex cache_info_mutex_;
   GURL url_ = GURL::EmptyGURL();
   bool allow_credentials_ = false;
   PRRequestCacheType cache_type_ = PRRequestCacheType::DISABLE_CACHE;

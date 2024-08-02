@@ -416,6 +416,7 @@ class NWebImpl : public NWeb {
   static void ResumeDownloadStatic(std::shared_ptr<NWebDownloadItem> download_item);
 #ifdef OHOS_EX_DOWNLOAD
   NWebDownloadItemState GetDownloadItemState(long item_id);
+  static NWebDownloadItemState GetDownloadItemStateByGuid(const std::string& guid);
 #endif
 
   bool Discard() override;

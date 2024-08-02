@@ -232,6 +232,32 @@ bool MediaSessionOHOS::SetWebviewShow(bool show) {
   return ret;
 }
 
+bool MediaSessionOHOS::SetWebviewShowForAudio(bool show) {
+  bool ret = false;
+  if (media_type_ == OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID) {
+    LOG(ERROR) << __FUNCTION__ << " media avsession media_type invalid return";
+    return ret;
+  }
+  if (base::ohos::IsPcDevice() ||
+      (media_type_ != OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_AUDIO)) {
+    LOG(ERROR) << __FUNCTION__ << " media avsession IsPcDevice() or not audio return  ret=" << (ret ? 1 : 0);
+    return ret;
+  }
+  if (show) {
+    if (media_session_) {
+      media_session_->RebuildAndNotifyMediaSessionInfoChanged();
+    }
+    ret = true;
+  } else {
+    if (avsession_adapter_) {
+      avsession_adapter_->DestroyAVSession();
+      media_type_ = OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID;
+      ret = true;
+    }
+  }
+  return ret;
+}
+
 void MediaSessionOHOS::Suspend() {
   DCHECK(media_session_);
   if (media_type_ == OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID) {

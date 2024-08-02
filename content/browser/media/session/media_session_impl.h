@@ -364,6 +364,7 @@ class MediaSessionImpl : public MediaSession,
 
   NWebPlaybackState NWebGetState();
   void SetWebviewShow(bool show);
+  void SetWebviewShowForAudio(bool show);
 
   std::unordered_set<media::OHOSAudioOutputStream*> activeAudioStream_;
   int audioResumeInterval_ = 0;

@@ -445,14 +445,13 @@ void NWebInputMethodHandler::ShowTextInput() {
 
 void NWebInputMethodHandler::HideTextInput(uint32_t nwebId,
                                            HideTextinputType hideType) {
-  LOG(INFO) << "NWebInputMethodHandler::HideTextInput";
+  LOG(INFO) << "NWebInputMethodHandler::HideTextInput, isAttached_: " << isAttached_;
   ClearComposingStatus();
   if (inputmethod_adapter_ == nullptr) {
     LOG(ERROR) << "inputmethod_adapter_ is nullptr";
     return;
   }
   if (!isAttached_) {
-    LOG(INFO) << "keyboard is not attach";
     if (hideType != HideTextinputType::FROM_ONPAUSE) {
       LOG(INFO) << "not from switch front and background, ingnore";
       return;

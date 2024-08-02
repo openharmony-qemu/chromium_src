@@ -2631,6 +2631,19 @@ NWebDownloadItemState NWebImpl::GetDownloadItemState(long item_id) {
 
   return nweb_delegate_->GetDownloadItemState(item_id);
 }
+
+// static
+NWebDownloadItemState NWebImpl::GetDownloadItemStateByGuid(const std::string& guid) {
+  LOG(DEBUG) << "get download item state " << guid;
+  CefRefPtr<CefDownloadItem> download_item = CefGetDownloadItem(guid);
+  if(!download_item){
+    LOG(ERROR) << "GetDownloadItemState failed, for download_item is nullptr, "
+               << "guid" << guid;
+    return NWebDownloadItemState::MAX_DOWNLOAD_STATE;
+  }
+
+  return NWebDownloadItem::GetNWebState(download_item);
+}
 #endif
 
 void NWebImpl::PutAccessibilityEventCallback(

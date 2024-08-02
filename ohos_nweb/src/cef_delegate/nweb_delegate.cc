@@ -2942,6 +2942,14 @@ bool NWebDelegate::IsAdsBlockEnabledForCurPage() {
 }
 #endif
 
+#if defined(OHOS_PASSWORD_AUTOFILL)
+void NWebDelegate::ProcessAutofillCancel(const std::string& fillContent) {
+  if (GetBrowser() && GetBrowser()->GetHost()) {
+    GetBrowser()->GetHost()->ProcessAutofillCancel(fillContent);
+  }
+}
+#endif
+
 #if defined(OHOS_EX_PASSWORD)
 void NWebDelegate::SaveOrUpdatePassword(bool is_update) {
   if (GetBrowser().get()) {

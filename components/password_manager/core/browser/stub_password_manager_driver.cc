@@ -84,6 +84,9 @@ void StubPasswordManagerDriver::FillAccountSuggestion(
 
 void StubPasswordManagerDriver::SendParsedPasswordFormToRenderer(
     const autofill::PasswordFormFillData& form_data) {}
+
+void StubPasswordManagerDriver::AutofillSurfaceClosed(
+    bool show_virtual_keyboard) {}
 #endif
 
 }  // namespace password_manager

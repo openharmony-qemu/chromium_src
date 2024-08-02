@@ -95,6 +95,8 @@ class ContentPasswordManagerDriver
   void SendParsedPasswordFormToRenderer(
       const autofill::PasswordFormFillData&
       parsed_form_data_without_password) override;
+
+  void AutofillSurfaceClosed(bool show_virtual_keyboard) override;
 #endif
 
   void PreviewSuggestion(const std::u16string& username,

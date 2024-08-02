@@ -89,6 +89,19 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
                                     const CefString& text,
                                     const CefRange& selected_range,
                                     const CefRange& compositon_range) override;
+
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  void AutoFillWithIMFEvent(bool is_username,
+                            bool is_other_account,
+                            bool is_new_password,
+                            const std::string& content);
+
+  void SetFillContent(const std::string& content, int32_t node_id) override {
+    fill_content_ = content;
+    fill_content_node_id_ = node_id;
+  }
+#endif
+
 #if defined(OHOS_CLIPBOARD)
   std::string GetSelectInfo();
 #endif
@@ -122,6 +135,13 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   bool IsTextInputStateChange(const CefString& text,
                               const CefRange& selected_range,
                               const CefRange& compositon_range);
+
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  void AutoFillWithIMFEventOnUI(bool is_username,
+                                bool is_other_account,
+                                bool is_new_password,
+                                const std::string& content);
+#endif
 
   static uint32_t lastAttachNWebId_;
   static IMFAdapterTextInputType lastInputMode_;
@@ -168,6 +188,11 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   int32_t composition_range_end_ = 0;
   CompositionType composition_type_ = COMPOSITION_INVALID;
   int32_t composition_cursor_index_ = 0;
+
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  std::string fill_content_;
+  int32_t fill_content_node_id_ = -1;
+#endif
   IMPLEMENT_REFCOUNTING(NWebInputMethodHandler);
 };
 

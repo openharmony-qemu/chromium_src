@@ -1454,11 +1454,21 @@ void NWebImpl::SetAutofillCallback(std::shared_ptr<NWebMessageValueCallback> cal
 }
 
 void NWebImpl::FillAutofillData(std::shared_ptr<NWebMessage> data) {
+  LOG(INFO) << "NWebImpl::FillAutofillData";
   if (nweb_delegate_ == nullptr) {
     WVLOG_E("JSAPI nweb_delegate_ its null");
     return;
   }
   nweb_delegate_->FillAutofillData(data);
+}
+
+void NWebImpl::OnAutofillCancel(const std::string& fillContent) {
+  LOG(INFO) << "NWebImpl::OnAutofillCancel";
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("JSAPI nweb_delegate_ its null");
+    return;
+  }
+  nweb_delegate_->ProcessAutofillCancel(fillContent);
 }
 
 uint32_t NWebImpl::GetWebId() {

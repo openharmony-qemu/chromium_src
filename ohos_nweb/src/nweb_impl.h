@@ -63,6 +63,7 @@ class NWebImpl : public NWeb {
                            double deltaY) override;
   void SendMouseEvent(int x, int y, int button, int action, int count) override;
   void FillAutofillData(std::shared_ptr<NWebMessage> data) override;
+  void OnAutofillCancel(const std::string& fillContent) override;
 
   // public api
   int Load(const std::string& url) override;

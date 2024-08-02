@@ -108,6 +108,11 @@ class FakePasswordAutofillAgent
               SetParsedPasswordForm,
               (const PasswordFormFillData&),
               (override));
+
+  MOCK_METHOD(void,
+              AutofillSurfaceClosed,
+              (bool show_virtual_keyboard),
+              (override));
 #endif
 
  private:

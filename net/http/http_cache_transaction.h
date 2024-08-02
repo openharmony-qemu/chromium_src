@@ -614,7 +614,7 @@ class NET_EXPORT_PRIVATE HttpCache::Transaction : public HttpTransaction {
   void EndDiskCacheAccessTimeCount(DiskCacheAccessType type);
 
 #if BUILDFLAG(IS_OHOS)
-  void UpdateValidatorsInfo(const HttpResponseHeaders& headers);
+  void UpdateCacheInfo(const HttpResponseInfo& response);
 #endif
 
   State next_state_{STATE_NONE};

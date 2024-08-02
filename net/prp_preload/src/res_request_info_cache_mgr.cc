@@ -20,10 +20,11 @@ void ResReqPreloadInfoListToJson(const std::list<std::shared_ptr<PRRequestInfo>>
     base::Value::Dict dict;
     dict.Set("url", url::Origin::Create(info->url()).GetURL().spec());
     dict.Set("allow_credentials", info->allow_credentials());
-    dict.Set("cache_type", static_cast<int>(info->cache_type()));
-    dict.Set("freshness_life_times", std::to_string(info->freshness_life_times()));
-    dict.Set("e_tag", info->e_tag());
-    dict.Set("last_modified", info->last_modified());
+    auto cache_info = info->cache_info();
+    dict.Set("cache_type", static_cast<int>(cache_info.cache_type));
+    dict.Set("freshness_life_times", std::to_string(cache_info.freshness_life_times));
+    dict.Set("e_tag", cache_info.e_tag);
+    dict.Set("last_modified", cache_info.last_modified);
     list.Append(std::move(dict));
   }
   bool write_success = base::JSONWriter::Write(list, &entry_content);

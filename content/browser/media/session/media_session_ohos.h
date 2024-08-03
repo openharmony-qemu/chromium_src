@@ -53,6 +53,7 @@ class MediaSessionOHOS final
       const absl::optional<media_session::MediaPosition>& position) override;
 
   bool SetWebviewShow(bool show);
+  bool SetWebviewShowForAudio(bool show);
   void Resume();
   void Suspend();
   void Stop();

@@ -81,6 +81,7 @@ class BackgroundTaskPolicy : public GraphObserver,
 
   void MaybeChangeBackgroundTask(const PageNode* page_node);
   void SetWebviewShow(const PageNode* page_node, bool show, bool &ret);
+  void SetWebviewShowForAudio(const PageNode* page_node, bool show, bool &ret);
   raw_ptr<const PageNode> page_node_being_removed_ = nullptr;
   std::unique_ptr<mechanism::BackgroundTaskHolder> background_task_holder_;
   bool is_request_background_task_;

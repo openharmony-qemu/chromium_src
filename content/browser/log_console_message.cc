@@ -58,13 +58,11 @@ void LogConsoleMessage(blink::mojom::ConsoleMessageLevel log_level,
     case logging::LOGGING_DEBUG:
       priority = OHOS::NWeb::LogLevelAdapter::DEBUG;
   }
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;
-  std::string message_string = converter.to_bytes(message);
-  std::string source_string = converter.to_bytes(source_id);
-  OHOS::NWeb::HiLogAdapter::PrintConsoleLog(priority, "ARKWEB-CONSOLE",
-                                            "[%{public}s:%{public}d] \"%{public}s\", source: %{public}s (%{public}d)",
-                                            "CONSOLE", line_number, message_string.c_str(), source_string.c_str(),
-                                            line_number);
+  std::ostringstream stream;
+  stream << "\"" << message << "\", source: " << source_id << " (" << line_number << ")";
+  std::string message_str(stream.str());
+  OHOS::NWeb::HiLogAdapter::PrintConsoleLog(priority, "ARKWEB-CONSOLE", "[%{public}s:%{public}d] %{public}s",
+                                            "CONSOLE", line_number, message_str.c_str());
 #else
   logging::LogMessage("CONSOLE", line_number, resolved_level).stream()
       << "\"" << message << "\", source: " << source_id << " (" << line_number

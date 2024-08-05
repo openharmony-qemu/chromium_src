@@ -853,11 +853,11 @@ const mojo::Remote<mojom::FontCacheWin>& ChildThreadImpl::GetFontCacheWin() {
 #endif
 
 #if BUILDFLAG(IS_OHOS)
-void ChildThreadImpl::ReportKeyThread(int32_t status, int32_t process_id, int32_t thread_id) {
+void ChildThreadImpl::ReportKeyThread(int32_t status, int32_t process_id, int32_t thread_id, int32_t roleAdapter) {
   using namespace OHOS::NWeb;
   if (child_process_host_)
     child_process_host_->ReportKeyThread(
-      status, process_id, thread_id, static_cast<int32_t>(ResSchedRoleAdapter::USER_INTERACT));
+      status, process_id, thread_id, roleAdapter);
 }
 #endif
 

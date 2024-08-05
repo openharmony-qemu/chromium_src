@@ -132,7 +132,7 @@ class ChildThreadImpl : public IPC::Listener, virtual public ChildThread {
   void DisconnectChildProcessHost();
 
 #if BUILDFLAG(IS_OHOS)
-  void ReportKeyThread(int32_t status, int32_t process_id, int32_t thread_id);
+  void ReportKeyThread(int32_t status, int32_t process_id, int32_t thread_id, int32_t roleAdapter);
 #endif
 
   virtual void RunServiceDeprecated(const std::string& service_name,

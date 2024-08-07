@@ -198,6 +198,11 @@ class NWebPreferenceDelegate : public NWebPreference {
   void SetAutofillCallback(CefRefPtr<CefWebMessageReceiver> callback);
 #endif
 
+#ifdef OHOS_MIXED_CONTENT
+  void EnableMixedContentAutoUpgrades(bool enable);
+  bool IsMixedContentAutoUpgradesEnabled();
+#endif
+
  private:
   CefRefPtr<CefBrowser> browser_ = nullptr;
 
@@ -291,6 +296,11 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if defined(OHOS_PASSWORD_AUTOFILL)
   CefRefPtr<CefWebMessageReceiver> autofill_callback_ = nullptr;
 #endif
+
+#ifdef OHOS_MIXED_CONTENT
+  bool enable_mixed_content_auto_upgrades_{false};
+#endif
+
 };
 }  // namespace OHOS::NWeb
 

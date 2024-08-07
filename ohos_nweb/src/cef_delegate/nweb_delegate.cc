@@ -4001,6 +4001,28 @@ void NWebDelegate::SetPathAllowingUniversalAccess(
 }
 #endif
 
+#ifdef OHOS_MIXED_CONTENT
+void NWebDelegate::EnableMixedContentAutoUpgrades(bool enable){
+  LOG(DEBUG) << "NWebDelegate::EnableMixedContentAutoUpgrades " << enable;
+  if(preference_delegate_){
+    preference_delegate_->EnableMixedContentAutoUpgrades(enable);
+  }else{
+    LOG(ERROR) << "NWebDelegate::EnableMixedContentAutoUpgrades"
+                  "get preference_delegate failed ";
+  }
+}
+
+bool NWebDelegate::IsMixedContentAutoUpgradesEnabled(){
+  if(preference_delegate_){
+    return preference_delegate_->IsMixedContentAutoUpgradesEnabled();
+  }else{
+    LOG(ERROR) << "NWebDelegate::IsMixedContentAutoUpgradesEnabled"
+                  "get preference_delegate failed ";
+  }
+  return false;
+}
+#endif
+
 void NWebDelegate::RefreshAccessibilityManagerClickEvent() {
   if (accessibility_state_) {
     if (!GetAccessibilityManager()) {

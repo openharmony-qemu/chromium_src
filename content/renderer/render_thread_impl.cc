@@ -925,6 +925,14 @@ void RenderThreadImpl::InitializeWebKit(mojo::BinderMap* binders) {
   // skia initialization code for the GPU.
   SkGraphics::SetImageGeneratorFromEncodedDataFactory(
       blink::WebImageGenerator::CreateAsSkImageGenerator);
+#if BUILDFLAG(IS_OHOS)
+  if (!compositor_task_runner_) {
+    LOG(WARNING) << "compositor task runner is nullptr";
+  } else {
+    compositor_task_runner_->PostTask(FROM_HERE,
+      base::BindOnce(&ChildProcess::ReportCompositorKeyThread, base::Unretained(ChildProcess::current()), true));
+  }
+#endif
 }
 
 void RenderThreadImpl::InitializeRenderer(

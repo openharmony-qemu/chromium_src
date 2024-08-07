@@ -240,6 +240,19 @@ class CefWebMessageReceiverImpl : public CefWebMessageReceiver {
     }
   }
 
+  bool OnMessageWithBoolResult(CefRefPtr<CefValue> message) override {
+    LOG(DEBUG) << "OnMessageWithBoolResult in nweb delegate";
+    if (callback_ != nullptr) {
+      auto data =
+          std::make_shared<OHOS::NWeb::NWebMessage>(NWebValue::Type::NONE);
+      ConvertCefValueToNWebMessage(message, data);
+      callback_->OnReceiveValue(data);
+
+      return (data && data->IsBoolean()) ? data->GetBoolean() : false;
+    }
+    return false;
+  }
+
  private:
   std::shared_ptr<NWebMessageValueCallback> callback_;
 

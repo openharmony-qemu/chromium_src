@@ -3429,6 +3429,27 @@ int NWebImpl::SetUrlTrustListWithErrMsg(
 #endif
 }
 
+#ifdef OHOS_MIXED_CONTENT
+void NWebImpl::EnableMixedContentAutoUpgrades(bool enable){
+  if(nweb_delegate_ == nullptr){
+    LOG(ERROR) << "EnableMixedContentAutoUpgrades failed,"
+                  "for nweb_delegate_ is nullptr.";
+    return;
+  }
+  nweb_delegate_->EnableMixedContentAutoUpgrades(enable);
+}
+
+bool NWebImpl::IsMixedContentAutoUpgradesEnabled(){
+  if(nweb_delegate_ == nullptr){
+    LOG(ERROR) << "IsMixedContentAutoUpgradesEnabled failed"
+                  "for nweb_delegate_ is nullptr.";
+    return false;
+  }
+
+  return nweb_delegate_->IsMixedContentAutoUpgradesEnabled();
+}
+#endif
+
 void NWebImpl::PerformAction(int64_t accessibilityId, uint32_t action,
   const std::map<std::string, std::string>& actionArguments) {
   if (nweb_delegate_ != nullptr) {

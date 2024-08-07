@@ -540,6 +540,11 @@ class NWebDelegateInterface
 
   virtual void SendAccessibilityHoverEvent(int x, int y) = 0;
   virtual void RefreshAccessibilityManagerClickEvent() = 0;
+
+#ifdef OHOS_MIXED_CONTENT
+  virtual void EnableMixedContentAutoUpgrades(bool enable) = 0;
+  virtual bool IsMixedContentAutoUpgradesEnabled() = 0;
+#endif
 };
 }  // namespace OHOS::NWeb
 

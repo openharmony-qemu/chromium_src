@@ -40,7 +40,9 @@ bool ParseAssetsOHOS(FilePath* result) {
   if (for_test) {
     *result = FilePath(bundle_path + "/entry/resources/rawfile");
   } else {
-    *result = FilePath(bundle_path + "/nweb/entry/resources/rawfile");
+    *result = DirectoryExists(FilePath(bundle_path + "/nweb")) ?
+                  FilePath(bundle_path + "/nweb/entry/resources/rawfile") :
+                  FilePath(bundle_path + "/arkweb/entry/resources/rawfile");
   }
   return true;
 }

@@ -407,12 +407,9 @@ void FlingController::EndCurrentFling(base::TimeTicks current_time) {
       .FinishAsyncTrace(fling_string, 0);
 
   LOG(DEBUG) << "stop web page fling";
-  base::ohos::SlidingObserver::GetInstance().StopSliding();
-
   if (auto* host = GpuProcessHost::Get()) {
     if (auto* host_impl = host->gpu_host()) {
       host_impl->StopMonitor();
-      host_impl->ReportSlidingFrameRate(0);
       TRACE_EVENT0("input", "DynamicFrameLossEvent End");
       GetUIThreadTaskRunner({})->PostTask(
         FROM_HERE,

@@ -18,6 +18,8 @@
 #include <chrono>
 #include <algorithm>
 
+#include "base/command_line.h"
+#include "base/base_switches.h"
 #include "base/logging.h"
 #include "base/no_destructor.h"
 #include "base/task/thread_pool.h"
@@ -29,21 +31,45 @@
 namespace {
   const float kMilliMeterPerInch = 25.4;
   const float kMicroSecondPerSecond = 1000000.0;
-  const int32_t kDefaultPreferedFrameRate = 120;
+  static const int32_t kDefaultPreferedFrameRate = 120;
+  static const int32_t STOP_FLING_LTPO = 0;
+  static const int32_t START_FLING_LTPO = 1;
+  static const int32_t STOP_ALL_FLING_LTPO = 2;
 }
 
 namespace base {
 namespace ohos {
 using OHOS::NWeb::FrameRateSetting;
-SlidingObserver& SlidingObserver::GetInstance()
-{
+SlidingObserver::~SlidingObserver() {
+  if (is_pc_ && is_ltpo_app_) {
+    OHOS::NWeb::OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetScene("WEB_LIST_FLING",
+        STOP_ALL_FLING_LTPO);
+  }
+}
+
+SlidingObserver& SlidingObserver::GetInstance(){
   static base::NoDestructor<SlidingObserver> instance;
   return *instance.get();
 }
 
 void SlidingObserver::Init() {
-  if (OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetProductDeviceType() !=
-      OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE) {
+  auto type = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetProductDeviceType();
+  if (type == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_TABLET) {
+    is_pc_ = true;
+    is_inited_ = true;
+    std::string bund_name = "";
+    const base::CommandLine& command_line =
+      *base::CommandLine::ForCurrentProcess();
+    if (command_line.HasSwitch(switches::kBundleName)) {
+      bund_name = base::CommandLine::ForCurrentProcess()->
+          GetSwitchValueASCII(switches::kBundleName);
+    }
+    is_ltpo_app_ = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
+      .IsLTPODynamicApp(bund_name);
+    LOG(DEBUG) << "bundle name is: " << bund_name << ", is_ltpo_app_: " << is_ltpo_app_;
+    return;
+  }
+  if (type != OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE) {
     return;
   }
 
@@ -74,6 +100,9 @@ void SlidingObserver::Init() {
 
 void SlidingObserver::StartSliding()
 {
+  if (is_pc_) {
+    return;
+  }
   if (!is_inited_) {
     Init();
   }
@@ -87,6 +116,14 @@ void SlidingObserver::StartSliding()
 
 int32_t SlidingObserver::StopSliding()
 {
+  if (is_pc_) {
+    if (is_ltpo_app_ && is_off_screen_) {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetScene("WEB_LIST_FLING",
+        STOP_FLING_LTPO);
+    }
+    is_off_screen_ = false;
+    return -1;
+  }
   if (!is_sliding_ || !is_inited_) {
     return -1;
   }
@@ -106,6 +143,14 @@ int64_t SlidingObserver::GetCurrentTimestamp()
 
 void SlidingObserver::StartFling()
 {
+  if (is_pc_) {
+    if (is_ltpo_app_) {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetScene("WEB_LIST_FLING",
+        START_FLING_LTPO);
+    }
+    is_off_screen_ = true;
+    return;
+  }
   if (!is_sliding_ || !is_inited_) {
     return;
   }
@@ -114,7 +159,7 @@ void SlidingObserver::StartFling()
 
 int32_t SlidingObserver::OnScrollUpdate(float delta_x, float delta_y)
 {
-  if (!is_sliding_ || is_off_screen_) {
+  if (!is_sliding_ || is_off_screen_ || is_pc_) {
     return -1;
   }
   auto current_timestamp = GetCurrentTimestamp();
@@ -135,7 +180,7 @@ int32_t SlidingObserver::OnScrollUpdate(float delta_x, float delta_y)
 
 int32_t SlidingObserver::OnFlingUpdate(float velocity_x, float velocity_y)
 {
-  if (!is_sliding_ || !is_off_screen_) {
+  if (!is_sliding_ || !is_off_screen_ || is_pc_) {
     return -1;
   }
 

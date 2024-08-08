@@ -217,6 +217,9 @@ static const MimeInfo kSecondaryMappings[] = {
     {"application/x-shockwave-flash", "swf,swl"},
     {"application/x-tar", "tar"},
     {"application/x-x509-ca-cert", "cer,crt"},
+#if defined(OHOS_EX_DOWNLOAD)
+    {"application/x-zip-compressed", "zip"},
+# endif // OHOS_EX_DOWNLOAD
     {"application/zip", "zip"},
     // This is the platform mapping on recent versions of Windows 10.
     {"audio/webm", "weba"},

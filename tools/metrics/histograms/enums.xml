@@ -78540,7 +78540,6 @@ https://www.dmtf.org/sites/default/files/standards/documents/DSP0134_2.7.1.pdf
   <int value="411" label="PYZW"/>
   <int value="412" label="ZST"/>
   <int value="413" label="IQY"/>
-  
 </enum>
 
 <enum name="SBClientDownloadIsSignedBinary">

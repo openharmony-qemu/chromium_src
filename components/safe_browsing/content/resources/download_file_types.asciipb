@@ -8,11 +8,7 @@
 ##
 ## Top level settings
 ##
-<<<<<<< Updated upstream
 version_id: 66
-=======
-version_id: 64
->>>>>>> Stashed changes
 sampled_ping_probability: 0.01
 max_archived_binaries_to_report: 10
 default_file_type {
@@ -911,17 +907,17 @@ file_types {
   uma_value: 410
   ping_setting: FULL_PING
   platform_settings {
-    platform: PLATFORM_TYPE_LINUX
+    platform: PLATFORM_LINUX
     danger_level: ALLOW_ON_USER_GESTURE
     auto_open_hint: DISALLOW_AUTO_OPEN
   }
   platform_settings {
-    platform: PLATFORM_TYPE_MAC
+    platform: PLATFORM_MAC
     danger_level: ALLOW_ON_USER_GESTURE
     auto_open_hint: DISALLOW_AUTO_OPEN
   }
   platform_settings {
-    platform: PLATFORM_TYPE_WINDOWS
+    platform: PLATFORM_WINDOWS
     danger_level: ALLOW_ON_USER_GESTURE
     auto_open_hint: DISALLOW_AUTO_OPEN
   }
@@ -931,17 +927,17 @@ file_types {
   uma_value: 411
   ping_setting: FULL_PING
   platform_settings {
-    platform: PLATFORM_TYPE_LINUX
+    platform: PLATFORM_LINUX
     danger_level: ALLOW_ON_USER_GESTURE
     auto_open_hint: DISALLOW_AUTO_OPEN
   }
   platform_settings {
-    platform: PLATFORM_TYPE_MAC
+    platform: PLATFORM_MAC
     danger_level: ALLOW_ON_USER_GESTURE
     auto_open_hint: DISALLOW_AUTO_OPEN
   }
   platform_settings {
-    platform: PLATFORM_TYPE_WINDOWS
+    platform: PLATFORM_WINDOWS
     danger_level: ALLOW_ON_USER_GESTURE
     auto_open_hint: DISALLOW_AUTO_OPEN
   }

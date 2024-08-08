@@ -68,6 +68,8 @@ private:
   int32_t vsync_cnt_ {0};
   int64_t touch_up_timestamp_{0};
   scoped_refptr<SingleThreadTaskRunner> curent_task_runner_ {};
+
+  bool is_phone_or_tablet_ {false};
 };
 }  // namespace ohos
 }  // namespace base

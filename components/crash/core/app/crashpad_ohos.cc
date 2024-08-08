@@ -343,7 +343,7 @@ bool GetHandlerPath(base::FilePath* exe_dir, base::FilePath* handler_path) {
   *handler_path = exe_dir->Append(platform_handler_path);
 
   if (!base::PathExists(*handler_path)) {
-    std::string platform_handler_path_new =  "arkweb/libs/" + platform + "/libchrome_crashpad_handler.so";
+    std::string platform_handler_path_new =  "arkwebcore/libs/" + platform + "/libchrome_crashpad_handler.so";
     *handler_path = exe_dir->Append(platform_handler_path_new);
   }
 

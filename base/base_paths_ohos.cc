@@ -42,7 +42,7 @@ bool ParseAssetsOHOS(FilePath* result) {
   } else {
     *result = DirectoryExists(FilePath(bundle_path + "/nweb")) ?
                   FilePath(bundle_path + "/nweb/entry/resources/rawfile") :
-                  FilePath(bundle_path + "/arkweb/entry/resources/rawfile");
+                  FilePath(bundle_path + "/arkwebcore/entry/resources/rawfile");
   }
   return true;
 }

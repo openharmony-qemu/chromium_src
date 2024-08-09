@@ -98,9 +98,6 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
 
   bool IsLink() const;
 
-  static BrowserAccessibilityOHOS* GetFromAccessibilityId(
-      int64_t accessibility_id);
-
   const BrowserAccessibilityOHOS* GetAccessibilityNodeByFocusMove(
       int32_t direction) const;
 

@@ -26,10 +26,6 @@
 
 namespace content {
 using namespace OHOS::NWeb;
-using AccessibilityIdMap =
-    std::unordered_map<int64_t, BrowserAccessibilityOHOS*>;
-base::LazyInstance<AccessibilityIdMap>::Leaky g_accessibility_id_map =
-    LAZY_INSTANCE_INITIALIZER;
 
 std::unique_ptr<BrowserAccessibility> BrowserAccessibility::Create(
     BrowserAccessibilityManager* manager,
@@ -42,13 +38,14 @@ BrowserAccessibilityOHOS::BrowserAccessibilityOHOS(
     BrowserAccessibilityManager* manager,
     ui::AXNode* node)
     : BrowserAccessibility(manager, node) {
-  accessibility_id_ =
-      BrowserAccessibilityManagerOHOS::GenerateAccessibilityId();
-  g_accessibility_id_map.Get()[accessibility_id_] = this;
+  if (node) {
+    accessibility_id_ = static_cast<int64_t>(node->id());
+  } else {
+    accessibility_id_ = -1;
+  }
 }
 
 BrowserAccessibilityOHOS::~BrowserAccessibilityOHOS() {
-  g_accessibility_id_map.Get().erase(accessibility_id_);
 }
 
 int64_t BrowserAccessibilityOHOS::GetAccessibilityId() const {
@@ -377,16 +374,6 @@ bool BrowserAccessibilityOHOS::IsLink() const {
 
 bool BrowserAccessibilityOHOS::IsHierarchical() const {
   return (GetRole() == ax::mojom::Role::kTree || IsHierarchicalList());
-}
-
-BrowserAccessibilityOHOS* BrowserAccessibilityOHOS::GetFromAccessibilityId(
-    int64_t accessibility_id) {
-  AccessibilityIdMap* accessibility_ids = g_accessibility_id_map.Pointer();
-  auto iter = accessibility_ids->find(accessibility_id);
-  if (iter != accessibility_ids->end())
-    return iter->second;
-
-  return nullptr;
 }
 
 bool BrowserAccessibilityOHOS::HasOnlyTextChildren() const {

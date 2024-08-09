@@ -2695,9 +2695,7 @@ void NWebImpl::PutAccessibilityEventCallback(
 
 void NWebImpl::PutAccessibilityIdGenerator(
     const AccessibilityIdGenerateFunc accessibilityIdGenerator) {
-  if (nweb_delegate_ != nullptr) {
-    nweb_delegate_->RegisterAccessibilityIdGenerator(accessibilityIdGenerator);
-  }
+	// Deprecated due to new accessibility architecture
 }
 
 void NWebImpl::ExecuteAction(int64_t accessibilityId, uint32_t action) {

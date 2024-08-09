@@ -77,8 +77,6 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void RegisterAccessibilityEventListener(
       std::shared_ptr<NWebAccessibilityEventCallback>
           accessibility_event_listener) override;
-  void RegisterAccessibilityIdGenerator(
-      const AccessibilityIdGenerateFunc accessibilityIdGenerator) const override;
   void RegisterReleaseSurfaceListener(
       std::shared_ptr<NWebReleaseSurfaceCallback> releaseSurfaceListener)
       override;

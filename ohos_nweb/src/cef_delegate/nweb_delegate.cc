@@ -920,6 +920,8 @@ void NWebDelegate::NotifyScreenInfoChanged(RotationType rotation,
     if (hidden_ && !isWebinitialization) {
       render_handler_->SetLastScreenInfo({rotation, orientation, width, height,
                                           display_ratio, default_portrait});
+      render_handler_->SetScreenInfo({rotation, orientation, width, height,
+                                      display_ratio, default_portrait});
       return;
     }
     render_handler_->SetScreenInfo({rotation, orientation, width, height,

@@ -132,6 +132,7 @@ void SoftwareCompositorRendererOhos::DetachFromClient() {
   root_support_.reset();
   display_client_.reset();
   display_.reset();
+  frame_sink_manager_ = nullptr;
 }
 
 void SoftwareCompositorRendererOhos::DrawAndSwapOnRenderer(

@@ -33,6 +33,22 @@
 
 typedef enum ArkWeb_ErrorCode {
 /*
+ * @brief Success.
+ *
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 12
+ */
+ARKWEB_SUCCESS = 0,
+
+/*
+ * @brief Init error. The WebviewController must be associated with a Web component.
+ *
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 12
+ */
+ARKWEB_INIT_ERROR = 17100001,
+
+/*
  * @brief Unknown error.
  *
  * @syscap SystemCapability.Web.Webview.Core

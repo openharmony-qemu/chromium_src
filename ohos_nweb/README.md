@@ -12,14 +12,13 @@
 
 ```bash
 gn args <output_path> # 自定义编译参数和输出路径
-autoninja -C <output_path> libweb_engine libnweb_adapter web_renderer
+autoninja -C <output_path> libarkweb_engine libarkweb_renderer
 ```
 
 nweb侧将编译得到：
 
-  - `libweb_engine.so`，包含整个chromium内核和cef框架实现
-  - `libnweb_adapter.so`，包含OHOS与web内核的对接框架在内核侧的实现
-  - `web_renderer`二进制，用于起render子进程和网络子进程
+  - `libarkweb_engine.so`，包含整个chromium内核和cef框架的实现
+  - `libarkweb_renderer.so`，包含拉起render子进程的实现
 
 上述三个文件均位于`<output_path>`路径下
 

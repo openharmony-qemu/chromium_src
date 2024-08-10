@@ -418,7 +418,7 @@ config("ohosnweb_core_config") {
   include_dirs += ohos_src_includes
 }
 
-shared_library("libnweb_render") {
+shared_library("libarkweb_render") {
   configs += [ "//build/config/sanitizers:cfi_config" ]
   defines = [ "OHOS_NWEB" ]
 
@@ -433,7 +433,7 @@ shared_library("libnweb_render") {
   deps = [
     ":nweb_hilog",
     "//cef:libcef_dll_wrapper",
-    "//cef:libweb_engine",
+    "//cef:libarkweb_engine",
     "//sandbox:sandbox",
   ]
 }

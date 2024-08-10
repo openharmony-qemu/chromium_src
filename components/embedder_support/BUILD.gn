@@ -23,6 +23,7 @@ action("make_ohos_arkweb_version") {
     "--output_file",
     rebase_path("$target_gen_dir/arkweb_version.h", root_build_dir)]
   outputs = [ "$target_gen_dir/arkweb_version.h" ]
+  deps = [ "//third_party/ohos_nweb_hap:arkwebcore_hap_app_json5" ]
 }
 
 # Target for general utilities that are only used in the browser process.

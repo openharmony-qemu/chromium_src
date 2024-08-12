@@ -171,6 +171,8 @@ class CC_EXPORT LayerTreeImpl {
 
 #if BUILDFLAG(IS_OHOS)
   void OnLayerRectUpdate(int id, const gfx::Rect& rect);
+
+  void OnLayerRectVisibleChange(int id, bool visibility);
 #endif
 
   // Tree specific methods exposed to layer-impl tree.

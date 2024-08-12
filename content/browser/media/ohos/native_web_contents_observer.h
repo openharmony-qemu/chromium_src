@@ -132,6 +132,7 @@ class CONTENT_EXPORT NativeWebContentsObserver : public WebContentsObserver {
     void OnCreateNativeSurface(media::mojom::NativeEmbedInfoPtr embed_info) override;
     void OnEmbedRectChange(const gfx::Rect& new_rect) override;
     void OnDestroyNativeSurface() override;
+    void OnLayerRectVisibleChange(bool visibility) override;
 
    private:
     // Re-use MediaPlayerId to manage frame routing_id and delegate_id.

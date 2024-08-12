@@ -22,6 +22,7 @@
 
 namespace content {
 class WebContentsImpl;
+class BrowserAccessibilityOHOS;
 // Manages a tree of BrowserAccessibility objects.
 class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
     : public BrowserAccessibilityManager {
@@ -44,10 +45,8 @@ class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
                       BrowserAccessibility* node,
                       int action_request_id) override;
 
-  static void RegisterAccessibilityIdGenerator(
-      std::function<int64_t()> accessibilityIdGenerator);
-
-  static int64_t GenerateAccessibilityId();
+  BrowserAccessibilityOHOS* GetFromAccessibilityId(
+      int64_t accessibility_id) const;
 
   void RegisterAccessibilityEventListener(
       std::shared_ptr<OHOS::NWeb::NWebAccessibilityEventCallback>

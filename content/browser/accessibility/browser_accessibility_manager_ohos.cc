@@ -25,7 +25,6 @@ namespace content {
 const int64_t kInvalidAccessibilityId = -1;
 const int64_t kRootAccessibilityId = 0;
 constexpr int64_t kDefaultUpdateEventDelayMs = 100;
-std::function<int64_t()> g_accessibility_id_generator;
 
 BrowserAccessibilityManager* BrowserAccessibilityManager::Create(
     const ui::AXTreeUpdate& initial_tree,
@@ -53,23 +52,9 @@ void BrowserAccessibilityManagerOHOS::HandleFocusChanged(
                          OHOS::NWeb::AccessibilityEventType::FOCUS);
 }
 
-void BrowserAccessibilityManagerOHOS::RegisterAccessibilityIdGenerator(
-    std::function<int64_t()> accessibilityIdGenerator) {
-  if (g_accessibility_id_generator == nullptr) {
-    g_accessibility_id_generator = accessibilityIdGenerator;
-  }
-}
-
 std::shared_ptr<OHOS::NWeb::NWebAccessibilityEventCallback>
     BrowserAccessibilityManagerOHOS::GetAccessibilityEventListener() const {
     return accessibilityEventListener_;
-}
-
-int64_t BrowserAccessibilityManagerOHOS::GenerateAccessibilityId() {
-  if (g_accessibility_id_generator != nullptr) {
-    return g_accessibility_id_generator();
-  }
-  return kInvalidAccessibilityId;
 }
 
 void BrowserAccessibilityManagerOHOS::FireFocusEvent(
@@ -136,11 +121,11 @@ bool BrowserAccessibilityManagerOHOS::MoveAccessibilityFocusToId(
 void BrowserAccessibilityManagerOHOS::MoveAccessibilityFocus(
     int64_t oldId,
     int64_t newId) const {
-  auto oldNode = BrowserAccessibilityOHOS::GetFromAccessibilityId(oldId);
+  auto oldNode = GetFromAccessibilityId(oldId);
   if (oldNode && oldNode->manager())
     oldNode->manager()->ClearAccessibilityFocus(*oldNode);
 
-  auto node = BrowserAccessibilityOHOS::GetFromAccessibilityId(newId);
+  auto node = GetFromAccessibilityId(newId);
   if (!node)
     return;
   node->manager()->SetAccessibilityFocus(*node);
@@ -191,7 +176,7 @@ void BrowserAccessibilityManagerOHOS::SendAccessibilityEvent(
 
   if (eventType == OHOS::NWeb::AccessibilityEventType::HOVER_ENTER_EVENT) {
     auto* lastHoverNode =
-        BrowserAccessibilityOHOS::GetFromAccessibilityId(lastHoverId_);
+        GetFromAccessibilityId(lastHoverId_);
     if (lastHoverNode) {
       SendAccessibilityEvent(
           lastHoverId_, OHOS::NWeb::AccessibilityEventType::HOVER_EXIT_EVENT);
@@ -343,6 +328,16 @@ void BrowserAccessibilityManagerOHOS::Cut()
     return;
   }
   web_contents_impl->Cut();
+}
+
+BrowserAccessibilityOHOS* BrowserAccessibilityManagerOHOS::GetFromAccessibilityId(
+    int64_t accessibility_id) const
+{
+  auto result = GetFromID(accessibility_id);
+  if (result) {
+    return static_cast<BrowserAccessibilityOHOS*>(result);
+  }
+  return nullptr;
 }
 
 }  // namespace content

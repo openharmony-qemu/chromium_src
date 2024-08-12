@@ -540,6 +540,12 @@ viz_source_set("unit_tests") {
     sources -= [ "display_embedder/buffer_queue_unittest.cc" ]
   }
 
+  if(ohos_unittests){
+    sources += [
+      "frame_sinks/external_begin_frame_source_ohos_unittest.cc",
+    ]   
+  }
+
   configs = [ "//third_party/khronos:khronos_headers" ]
 
   deps = [

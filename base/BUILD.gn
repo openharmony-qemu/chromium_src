@@ -3531,6 +3531,13 @@ test("base_unittests") {
     "vlog_unittest.cc",
   ]
 
+  if(ohos_unittests){
+    sources += [
+      "ohos/ltpo/src/dynamic_frame_rate_decision_unittest.cc",
+      "ohos/ltpo/src/sliding_observer_unittest.cc",
+    ]
+  }
+
   if (!is_cronet_build) {
     # location_unittest.cc fails gn check for tracing-shimmed Cronet builds.
     # Cronet buildbot do not run base_unittests, so exclusing this test
@@ -3571,6 +3578,13 @@ test("base_unittests") {
     "//third_party/icu",
     "//third_party/modp_b64",
   ]
+
+  if(ohos_unittests){
+    deps += [
+      "//content/public/common:static_switches",
+      "//ui/events:gesture_detection",
+    ]
+  }
 
   data_deps = [
     "//base/test:immediate_crash_test_helper",

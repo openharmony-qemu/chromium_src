@@ -752,6 +752,7 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
       const ContextMenuParams& params) override;
 #if defined(OHOS_CLIPBOARD)
   void MouseSelectMenuShow(bool show) override;
+  void ChangeVisibilityOfQuickMenu() override;
 #endif
 
   void RunJavaScriptDialog(RenderFrameHostImpl* render_frame_host,

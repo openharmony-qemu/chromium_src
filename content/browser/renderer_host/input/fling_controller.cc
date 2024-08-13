@@ -273,7 +273,20 @@ void FlingController::ProgressFling(base::TimeTicks current_time) {
   bool fling_is_active = fling_curve_->Advance(
       (current_time - current_fling_parameters_.start_time).InSecondsF(),
       current_fling_parameters_.velocity, delta_to_scroll);
-
+#if BUILDFLAG(IS_OHOS)
+  if ((current_time - current_fling_parameters_.start_time).InSecondsF() > 0) {
+    int32_t preferred_frame_rate = base::ohos::SlidingObserver::GetInstance().OnFlingUpdate(
+      current_fling_parameters_.velocity.x(),
+      current_fling_parameters_.velocity.y());
+    if (auto* host = content::GpuProcessHost::Get()) {
+      if (auto* host_impl = host->gpu_host()) {
+        if (preferred_frame_rate >= 0) {
+            host_impl->ReportSlidingFrameRate(preferred_frame_rate);
+        }
+      }
+    }
+  }
+#endif
   if (!fling_is_active && current_fling_parameters_.source_device !=
                               blink::WebGestureDevice::kSyntheticAutoscroll) {
     fling_booster_.Reset();

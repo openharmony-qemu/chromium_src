@@ -716,6 +716,11 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
 #if defined(OHOS_PRINT)
         main_browser_->GetHost()->SetToken(preference_delegate_->GetPrintToken());
 #endif
+#if defined(OHOS_PASSWORD_AUTOFILL)
+        main_browser_->GetHost()->SetAutofillCallback(
+            preference_delegate_->GetAutofillCallback());
+#endif
+
 #if defined(OHOS_JSPROXY)
         auto scriptItemsStart = preference_delegate_->GetJavaScriptOnDocumentStart();
         if (scriptItemsStart.size() > 0) {

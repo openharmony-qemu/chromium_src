@@ -836,4 +836,15 @@ void NWebPreferenceDelegate::SetSurfaceId(const std::string& surfaceId) {
 }
 #endif
 
+#if defined(OHOS_PASSWORD_AUTOFILL)
+CefRefPtr<CefWebMessageReceiver> NWebPreferenceDelegate::GetAutofillCallback() {
+  return autofill_callback_;
+}
+
+void NWebPreferenceDelegate::SetAutofillCallback(
+    CefRefPtr<CefWebMessageReceiver> callback) {
+  autofill_callback_ = callback;
+}
+#endif
+
 }  // namespace OHOS::NWeb

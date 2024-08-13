@@ -192,6 +192,11 @@ class NWebPreferenceDelegate : public NWebPreference {
   void SetSurfaceId(const std::string& surfaceId) override;
 #endif
 
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  CefRefPtr<CefWebMessageReceiver> GetAutofillCallback();
+  void SetAutofillCallback(CefRefPtr<CefWebMessageReceiver> callback);
+#endif
+
  private:
   CefRefPtr<CefBrowser> browser_ = nullptr;
 
@@ -280,6 +285,10 @@ class NWebPreferenceDelegate : public NWebPreference {
 
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
   bool record_whole_document_{false};
+#endif
+
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  CefRefPtr<CefWebMessageReceiver> autofill_callback_ = nullptr;
 #endif
 };
 }  // namespace OHOS::NWeb

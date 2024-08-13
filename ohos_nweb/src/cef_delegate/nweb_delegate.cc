@@ -1402,13 +1402,16 @@ void NWebDelegate::NotifyForNextTouchEvent() {
   }
 }
 
-void NWebDelegate::SetAutofillCallback(std::shared_ptr<NWebMessageValueCallback> callback) {
-  if (!GetBrowser().get()) {
-    return;
-  }
+void NWebDelegate::SetAutofillCallback(
+    std::shared_ptr<NWebMessageValueCallback> callback) {
+  CefRefPtr<CefWebMessageReceiver> JsResultCb =
+      new CefWebMessageReceiverImpl(callback);
 
-  CefRefPtr<CefWebMessageReceiver> JsResultCb =  new CefWebMessageReceiverImpl(callback);
-  GetBrowser()->GetHost()->SetAutofillCallback(JsResultCb);
+  if (GetBrowser() && GetBrowser()->GetHost()) {
+    GetBrowser()->GetHost()->SetAutofillCallback(JsResultCb);
+  } else if (preference_delegate_) {
+    preference_delegate_->SetAutofillCallback(JsResultCb);
+  }
 }
 
 void NWebDelegate::FillAutofillData(std::shared_ptr<NWebMessage> data) {

@@ -2864,12 +2864,16 @@ std::shared_ptr<NWeb> NWebImpl::GetNWeb(int32_t nweb_id) {
 void NWebImpl::SetWebTag(int32_t nweb_id, const char* web_tag) {
   OHOS::NWeb::NWebImpl* nweb = OHOS::NWeb::NWebImpl::FromID(nweb_id);
   OHOS::NWeb::ArkWebNativeObject::BindWebTagToWebInstance(nweb_id, web_tag);
-  if (!nweb) {
-    WVLOG_E("fail to find a valid nweb with %{public}d", nweb_id);
+  if (nweb) {
+    nweb->SetWebTag(std::string(web_tag));
     return;
   }
 
-  nweb->SetWebTag(std::string(web_tag));
+  if (nweb_id == -1) {
+    WVLOG_D("fail to find a valid nweb with id:%{public}d Tag:%{public}s", nweb_id, web_tag ? web_tag : " ");
+  } else {
+    WVLOG_E("fail to find a valid nweb with id:%{public}d Tag:%{public}s", nweb_id, web_tag ? web_tag : " ");
+  }
 }
 #endif
 

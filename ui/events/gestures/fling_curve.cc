@@ -19,6 +19,9 @@ namespace {
 const float kDefaultAlpha = -5.70762e+03f;
 const float kDefaultBeta = 1.72e+02f;
 const float kDefaultGamma = 3.7e+00f;
+#if BUILDFLAG(IS_OHOS)
+const int kLowDeviceAdapt = 15;
+#endif
 
 inline double GetPositionAtTime(double t) {
   return kDefaultAlpha * exp(-kDefaultGamma * t) - kDefaultBeta * t -
@@ -50,7 +53,7 @@ FlingCurve::FlingCurve(const gfx::Vector2dF& velocity,
   float max_start_velocity = std::max(fabs(velocity.x()), fabs(velocity.y()));
 #if BUILDFLAG(IS_OHOS)
   if (base::SysInfo::IsLowEndDevice()) {
-    max_start_velocity /= 15;
+    max_start_velocity /= kLowDeviceAdapt;
   }
 #endif
   if (max_start_velocity > GetVelocityAtTime(0))

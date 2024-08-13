@@ -104,7 +104,7 @@ public:
 
 private:
    friend class TimezoneEventCallback; 
-   
+
     void TimezoneChanged(std::shared_ptr<WebTimezoneInfo> info);
 
     std::shared_ptr<TimezoneEventCallbackAdapter> event_callback_;
@@ -148,7 +148,7 @@ void TimeZoneMonitorOhosImpl::TimezoneChanged(std::shared_ptr<WebTimezoneInfo> i
         task_runner_->PostTask(
             FROM_HERE,
             base::BindOnce(&TimeZoneMonitorOhosImpl::TimezoneChanged,
-                            base::Unretained(this), std::move(info)));
+                           base::Unretained(this), std::move(info)));
         return;
     }
     std::string timezone = info->GetTzId();

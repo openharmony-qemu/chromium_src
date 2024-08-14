@@ -305,7 +305,6 @@ void OhosVideoDecoder::OnCodecConfigured(
       base::SequencedTaskRunner::GetCurrentDefault());
   if (!codec_) {
     LOG(ERROR) << "codec_ is null.";
-    return;
   }
   PumpCodec();
 }

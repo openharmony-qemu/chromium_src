@@ -840,7 +840,7 @@ class CONTENT_EXPORT RenderWidgetHostImpl
   void RendererIsUnresponsive(
       base::RepeatingClosure restart_hang_monitor_timeout
 #if defined(OHOS_RENDERER_ANR_DUMP)
-      ,
+,
       content::RenderProcessNotRespondingReason reason
 #endif
   );

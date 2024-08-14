@@ -74,6 +74,8 @@ class CC_EXPORT VideoLayerImpl : public LayerImpl {
 
 #if BUILDFLAG(IS_OHOS)
   gfx::Rect visible_quad_rect_;
+
+  bool visibility_ = false;
 #endif
 };
 

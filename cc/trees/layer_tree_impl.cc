@@ -3008,6 +3008,10 @@ void LayerTreeImpl::RequestImplSideInvalidationForRerasterTiling() {
 void LayerTreeImpl::OnLayerRectUpdate(int id, const gfx::Rect& rect) {
   host_impl_->OnLayerRectUpdate(id, rect);
 }
+
+void LayerTreeImpl::OnLayerRectVisibleChange(int id, bool visibility) {
+  host_impl_->OnLayerRectVisibleChange(id, visibility);
+}
 #endif
 
 }  // namespace cc

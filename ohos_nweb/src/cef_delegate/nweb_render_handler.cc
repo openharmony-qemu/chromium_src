@@ -71,20 +71,27 @@ cef_screen_orientation_type_t ConvertOrientationType(
   }
 }
 
+enum RotationAngels {
+  ROTATION_0 = 0,
+  ROTATION_90 = 90,
+  ROTATION_180 = 180,
+  ROTATION_270 = 270,
+};
+
 uint16_t ConvertRotationAngel(OHOS::NWeb::RotationType type) {
   // Notice: 90 and 270 is reverse.
 
   switch (type) {
     case OHOS::NWeb::RotationType::ROTATION_0:
-      return 0;
+      return RotationAngels::ROTATION_0;
     case OHOS::NWeb::RotationType::ROTATION_90:
-      return 90;
+      return RotationAngels::ROTATION_90;
     case OHOS::NWeb::RotationType::ROTATION_180:
-      return 180;
+      return RotationAngels::ROTATION_180;
     case OHOS::NWeb::RotationType::ROTATION_270:
-      return 270;
+      return RotationAngels::ROTATION_270;
     default:
-      return 0;
+      return RotationAngels::ROTATION_0;
   }
 }
 }  // namespace
@@ -585,7 +592,8 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
 
   std::map<std::string, std::string> attributesMap;
   for (const auto& item : attributes) {
-    LOG(DEBUG) << "WebCustomKeyboard OnVirtualKeyboardRequested attributes, key = " << item.first.ToString() << ", value = " << item.second.ToString();
+    LOG(DEBUG) << "WebCustomKeyboard OnVirtualKeyboardRequested attributes, key = "
+                << item.first.ToString() << ", value = " << item.second.ToString();
     attributesMap.insert({item.first.ToString(), item.second.ToString()});
   }
 #if defined(OHOS_INPUT_EVENTS)
@@ -604,18 +612,17 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
     if (delegate && delegate->OnFocus()) {
       bool useSystemKeyboard = true;
       int32_t enterKeyType = -1;
-      if (auto handler = handler_.lock()) {
-        if (!custom_keyboard_handler_) {
-          custom_keyboard_handler_ = std::make_shared<NWebCustomKeyboardHandlerImpl>(handler_.lock());
-        }
-        if (text_input_info.show_keyboard) {
-          handler->OnInterceptKeyboardAttach(custom_keyboard_handler_,
-                                             attributesMap, useSystemKeyboard,
-                                             enterKeyType);
-          LOG(INFO) << "WebCustomKeyboard OnInterceptKeyboardAttach return, "
-                       "useSystemKeyboard = "
-                    << useSystemKeyboard << ", enterKeyType = " << enterKeyType;
-        }
+      auto handler = handler_.lock();
+      if (handler && !custom_keyboard_handler_) {
+        custom_keyboard_handler_ = std::make_shared<NWebCustomKeyboardHandlerImpl>(handler_.lock());
+      }
+      if (handler && text_input_info.show_keyboard) {
+        handler->OnInterceptKeyboardAttach(custom_keyboard_handler_,
+                                            attributesMap, useSystemKeyboard,
+                                            enterKeyType);
+        LOG(INFO) << "WebCustomKeyboard OnInterceptKeyboardAttach return, "
+                      "useSystemKeyboard = "
+                  << useSystemKeyboard << ", enterKeyType = " << enterKeyType;
       }
 
       if (useSystemKeyboard) {

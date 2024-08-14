@@ -94,7 +94,7 @@ ui::CopyOptionMode ScopedClipboardWriter::TransitionCopyOption(blink::mojom::Cop
 
 void ScopedClipboardWriter::WriteText(const std::u16string& text
 #if defined(OHOS_CLIPBOARD)
-                                      ,
+,
                                       const blink::mojom::CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
 ) {
@@ -114,7 +114,7 @@ void ScopedClipboardWriter::WriteHTML(const std::u16string& markup,
                                       const std::string& source_url,
                                       ClipboardContentType content_type
 #if defined(OHOS_CLIPBOARD)
-                                      ,
+,
                                       const blink::mojom::CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
                                       ) {
@@ -162,7 +162,7 @@ void ScopedClipboardWriter::WriteFilenames(const std::string& uri_list) {
 void ScopedClipboardWriter::WriteBookmark(const std::u16string& bookmark_title,
                                           const std::string& url
 #if defined(OHOS_CLIPBOARD)
-                                          ,
+,
                                           const blink::mojom::CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
                                           ) {
@@ -196,7 +196,7 @@ void ScopedClipboardWriter::WriteHyperlink(const std::u16string& anchor_text,
   WriteHTML(base::UTF8ToUTF16(html), std::string(),
             ClipboardContentType::kSanitized
 #if defined(OHOS_CLIPBOARD)
-            ,
+,
             blink::mojom::CopyOptionMode::CROSS_DEVICE
 #endif // defined(OHOS_CLIPBOARD)
             );
@@ -216,7 +216,7 @@ void ScopedClipboardWriter::WriteWebSmartPaste(
 
 void ScopedClipboardWriter::WriteImage(const SkBitmap& bitmap
 #if defined(OHOS_CLIPBOARD)
-                                       ,
+,
                                        const blink::mojom::CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
                                        ) {
@@ -231,7 +231,6 @@ void ScopedClipboardWriter::WriteImage(const SkBitmap& bitmap
   CHECK_EQ(bitmap.colorType(), kN32_SkColorType);
 
   bitmap_ = bitmap;
-  // TODO(dcheng): This is slightly less horrible than what we used to do, but
   // only very slightly less.
   SkBitmap* bitmap_pointer = &bitmap_;
   Clipboard::ObjectMapParam packed_pointer;

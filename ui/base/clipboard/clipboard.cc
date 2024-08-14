@@ -220,7 +220,7 @@ void Clipboard::DispatchPortableRepresentation(PortableFormat format,
     case PortableFormat::kText:
       WriteText(params.data[0].data(), params.data[0].size()
 #if defined(OHOS_CLIPBOARD)
-                ,
+,
                 copy_option
 #endif // defined(OHOS_CLIPBOARD)
       );
@@ -235,7 +235,7 @@ void Clipboard::DispatchPortableRepresentation(PortableFormat format,
           WriteUnsanitizedHTML(params.data[0].data(), params.data[0].size(),
                                params.data[1].data(), params.data[1].size()
 #if defined(OHOS_CLIPBOARD)
-                               ,
+,
                                copy_option
 #endif // defined(OHOS_CLIPBOARD)
                                );
@@ -245,7 +245,7 @@ void Clipboard::DispatchPortableRepresentation(PortableFormat format,
           WriteUnsanitizedHTML(params.data[0].data(), params.data[0].size(),
                                nullptr, 0
 #if defined(OHOS_CLIPBOARD)
-                               ,
+,
                                copy_option
 #endif // defined(OHOS_CLIPBOARD)
                                );
@@ -255,7 +255,7 @@ void Clipboard::DispatchPortableRepresentation(PortableFormat format,
           WriteHTML(params.data[0].data(), params.data[0].size(),
                     params.data[1].data(), params.data[1].size()
 #if defined(OHOS_CLIPBOARD)
-                    ,
+,
                     copy_option
 #endif // defined(OHOS_CLIPBOARD)
                     );
@@ -264,7 +264,7 @@ void Clipboard::DispatchPortableRepresentation(PortableFormat format,
           // size to 0.
           WriteHTML(params.data[0].data(), params.data[0].size(), nullptr, 0
 #if defined(OHOS_CLIPBOARD)
-                    ,
+,
                     copy_option
 #endif // defined(OHOS_CLIPBOARD)
           );
@@ -284,7 +284,7 @@ void Clipboard::DispatchPortableRepresentation(PortableFormat format,
       WriteBookmark(params.data[0].data(), params.data[0].size(),
                     params.data[1].data(), params.data[1].size()
 #if defined(OHOS_CLIPBOARD)
-                    ,
+,
                     copy_option
 #endif // defined(OHOS_CLIPBOARD)
                     );

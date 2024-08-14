@@ -7428,6 +7428,12 @@ void RenderFrameHostImpl::MouseSelectMenuShow(bool show) {
     delegate_->MouseSelectMenuShow(show);
   }
 }
+
+void RenderFrameHostImpl::ChangeVisibilityOfQuickMenu() {
+  if (delegate_) {
+    delegate_->ChangeVisibilityOfQuickMenu();
+  }
+}
 #endif
 
 void RenderFrameHostImpl::ShowContextMenu(

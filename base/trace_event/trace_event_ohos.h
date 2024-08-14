@@ -15,21 +15,21 @@
 
 #ifndef BASE_TRACE_EVENT_TRACE_EVENT_OHOS_H
 #define BASE_TRACE_EVENT_TRACE_EVENT_OHOS_H
- 
+
 #include <string>
 #include <utility>
- 
+
 union BytraceArgValue {
   double as_double;
   const char* as_string;
 };
- 
+
 enum BytraceArgType {
   TYPE_NUMBER,
   TYPE_STRING,
   TYPE_INVALID,
 };
- 
+
 struct BytraceArg {
   BytraceArgValue value;
   BytraceArgType type;
@@ -43,7 +43,7 @@ BytraceArg GetArg(double i);
 BytraceArg GetArg(const char* i);
 std::string GetStringFromArg(const BytraceArg& arg);
 std::string GetStringWithArgs(const std::string& name);
- 
+
 template <class ARG1_TYPE>
 std::string GetStringWithArgs(const std::string& name,
                               const char* arg1_name,
@@ -51,7 +51,7 @@ std::string GetStringWithArgs(const std::string& name,
   BytraceArg arg1 = GetArg(std::forward<ARG1_TYPE>(arg1_val));
   return name + " | " + arg1_name + "=" + GetStringFromArg(arg1);
 }
- 
+
 template <class ARG1_TYPE, class ARG2_TYPE>
 std::string GetStringWithArgs(const std::string& name,
                               const char* arg1_name,
@@ -63,7 +63,7 @@ std::string GetStringWithArgs(const std::string& name,
   return name + " | " + arg1_name + "=" + GetStringFromArg(arg1) + " | " +
          arg2_name + "=" + GetStringFromArg(arg2);
 }
-  
+
 void StartBytrace(const std::string& value);
 void FinishBytrace();
 void StartAsyncBytrace(const std::string& value, int32_t taskId);
@@ -73,7 +73,7 @@ void CountBytrace(const std::string& name, int64_t count);
 void StartOHOSBytrace(const std::string& value);
 void FinishOHOSBytrace();
 void CountOHOSBytrace(const std::string& name, int64_t count);
- 
+
 class ScopedBytrace {
  public:
   ScopedBytrace(const std::string& proc);
@@ -81,7 +81,7 @@ class ScopedBytrace {
   ~ScopedBytrace();
 
   static void SendTraceEvent(const std::string& data);
- 
+
  private:
   std::string proc_;
 };
@@ -93,28 +93,21 @@ class ScopedOHOSBytrace {
   ~ScopedOHOSBytrace();
 
   static void SendOHOSTraceEvent(const std::string& data);
- 
+
  private:
   std::string proc_;
 };
- 
+
 #define OHOS_BY_TRACE_CONNENCT(a, b) a##b
 #define OHOS_BY_TRACE_NAME2(a, b) OHOS_BY_TRACE_CONNENCT(a, b)
 #define OHOS_BY_TRACE_NAME(a) OHOS_BY_TRACE_NAME2(a, __LINE__)
- 
-#define BYTRACE_SCOPED(name, ...)            \
-  ScopedBytrace OHOS_BY_TRACE_NAME(bytrace)( \
-      GetStringWithArgs(name, ##__VA_ARGS__))
 
-#define BYTRACE_SCOPED_INIT()                \
-  ScopedBytrace OHOS_BY_TRACE_NAME(bytrace)
+#define BYTRACE_SCOPED_INIT(category_group)  \
+  ScopedBytrace OHOS_BY_TRACE_NAME(bytrace)( \
+    category_group != nullptr ? category_group : "disable-")
 
 #define BYTRACE_SCOPED_TRACE_EVENT(name)     \
   ScopedBytrace::SendTraceEvent(name)
-
-#define OHOS_BYTRACE_SCOPED(name, ...)            \
-  ScopedOHOSBytrace OHOS_BY_TRACE_NAME(bytrace)( \
-      GetStringWithArgs(name, ##__VA_ARGS__))
 
 #define OHOS_BYTRACE_SCOPED_INIT()                \
   ScopedOHOSBytrace OHOS_BY_TRACE_NAME(bytrace)

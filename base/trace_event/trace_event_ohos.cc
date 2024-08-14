@@ -145,7 +145,6 @@ void CountOHOSBytrace(const std::string& name, int64_t count) {
 }
 
 ScopedBytrace::ScopedBytrace(const std::string& proc) : proc_(proc) {
-  OhosAdapterHelper::GetInstance().GetHiTraceAdapterInstance().StartTrace(proc_);
 }
 
 void ScopedBytrace::SendTraceEvent(const std::string& data) {
@@ -155,11 +154,12 @@ void ScopedBytrace::SendTraceEvent(const std::string& data) {
 ScopedBytrace::ScopedBytrace() {}
 
 ScopedBytrace::~ScopedBytrace() {
-  OhosAdapterHelper::GetInstance().GetHiTraceAdapterInstance().FinishTrace();
+  if (IsCategoryEnable(!proc_.empty() ? proc_.c_str() : nullptr)) {
+    OhosAdapterHelper::GetInstance().GetHiTraceAdapterInstance().FinishTrace();
+  }
 }
 
 ScopedOHOSBytrace::ScopedOHOSBytrace(const std::string& proc) : proc_(proc) {
-  OhosAdapterHelper::GetInstance().GetHiTraceAdapterInstance().StartOHOSTrace(proc_);
 }
 
 void ScopedOHOSBytrace::SendOHOSTraceEvent(const std::string& data) {
@@ -169,5 +169,7 @@ void ScopedOHOSBytrace::SendOHOSTraceEvent(const std::string& data) {
 ScopedOHOSBytrace::ScopedOHOSBytrace() {}
 
 ScopedOHOSBytrace::~ScopedOHOSBytrace() {
-  OhosAdapterHelper::GetInstance().GetHiTraceAdapterInstance().FinishOHOSTrace();
+  if (IsOHOSBytraceEnable()) {
+    OhosAdapterHelper::GetInstance().GetHiTraceAdapterInstance().FinishOHOSTrace();
+  }
 }

@@ -2035,6 +2035,13 @@ void NWebImpl::ScrollByWithAnime(float delta_x, float delta_y, int32_t duration)
   }
   return nweb_delegate_->ScrollByWithAnime(delta_x, delta_y, duration);
 }
+
+bool NWebImpl::ScrollByWithResult(float delta_x, float delta_y) {
+  if (nweb_delegate_ == nullptr) {
+    return false;
+  }
+  return nweb_delegate_->ScrollByWithResult(delta_x, delta_y);
+}
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 bool NWebImpl::GetCertChainDerData(std::vector<std::string>& certChainData,

@@ -381,6 +381,14 @@ void NWebRenderHandler::SetContentSize(int width, int height) {
 gfx::Size NWebRenderHandler::GetSize() {
   return gfx::Size(width_, height_);
 }
+
+void NWebRenderHandler::SetGestureEventResult(bool result) {
+  gesture_event_result_ = result;
+}
+
+bool NWebRenderHandler::GetGestureEventResult() {
+  return gesture_event_result_;
+};
 #endif
 
 void NWebRenderHandler::GetViewRect(CefRefPtr<CefBrowser> browser,
@@ -993,6 +1001,7 @@ void NWebRenderHandler::OnNativeEmbedGestureEvent(
     info->SetScreenY(touchEvent.screenY);
     info->SetType(static_cast<OHOS::NWeb::TouchType>(touchEvent.type));
     std::shared_ptr<NWebGestureEventResult> result = std::make_shared<NWebGestureEventResultImpl>(callback);
+
     info->SetResult(result);
     handler->OnNativeEmbedGestureEvent(info);
   }

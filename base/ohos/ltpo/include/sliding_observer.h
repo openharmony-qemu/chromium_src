@@ -27,7 +27,7 @@ namespace ohos {
 class SlidingObserver {
 public:
   SlidingObserver() = default;
-  ~SlidingObserver() = default;
+  ~SlidingObserver();
 
   SlidingObserver(const SlidingObserver&) = delete;
   SlidingObserver& operator=(const SlidingObserver&) = delete;
@@ -46,6 +46,7 @@ private:
   int32_t GetPreferedFrameRate(float velocity,
     const std::vector<OHOS::NWeb::FrameRateSetting>& setting);
   int64_t GetCurrentTimestamp();
+  void UpdateFrameRateForPC();
 
 private:
   bool is_inited_ {false};
@@ -58,6 +59,10 @@ private:
   float virtual_pixel_ratio_ {-1};
   int64_t current_timestamp_ {-1};
   int32_t sliding_frame_rate_ {0};
+
+  bool is_pc_ {false};
+  bool is_ltpo_app_ {false};
+  bool is_web_list_fling_ {false};
 };
 }  // namespace ohos
 }  // namespace base

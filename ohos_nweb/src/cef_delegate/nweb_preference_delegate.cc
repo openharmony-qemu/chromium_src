@@ -763,7 +763,6 @@ NWebPreference::CopyOptionMode NWebPreferenceDelegate::GetCopyOptionMode() {
 
 void NWebPreferenceDelegate::SetNativeVideoPlayerConfig(bool enable,
                                                         bool shouldOverlay) {
-
   if (native_video_player_config_ == std::make_tuple(enable, shouldOverlay)) {
     return;
   }

@@ -91,7 +91,7 @@ void BackgroundTaskPolicy::OnIsVisibleChanged(const PageNode* page_node) {
     visible_page_num_ = 0;
   }
 
-  // switch between two tabs 
+  // switch between two tabs
   if (page_node->IsVisible()) {
     if (last_avsession_page_node_ != page_node) {
        bool ret = false;
@@ -100,9 +100,9 @@ void BackgroundTaskPolicy::OnIsVisibleChanged(const PageNode* page_node) {
          last_avsession_page_node_ = const_cast<PageNode*>(page_node);
        }
     }
-  } 
+  }
   // pause to bg
-  else if (!page_node->IsVisible() &&  !page_node->IsMediaPlaying()) { 
+  else if (!page_node->IsVisible() && !page_node->IsMediaPlaying()) {
        bool ret = false;
        SetWebviewShow(page_node, false, ret);
        if (ret) {
@@ -121,7 +121,7 @@ void BackgroundTaskPolicy::OnIsVisibleChanged(const PageNode* page_node) {
 }
 
 void BackgroundTaskPolicy::OnIsMediaPlayingChanged(const PageNode* page_node) {
-  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession page_node=" << page_node 
+  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession page_node=" << page_node
             << ", last_avsession_page_node_=" << last_avsession_page_node_
             << ", is_main_frame_url_changed_=" << is_main_frame_url_changed_;
   if (page_node == nullptr) {
@@ -158,7 +158,7 @@ void BackgroundTaskPolicy::OnIsMediaPlayingChanged(const PageNode* page_node) {
          last_avsession_page_node_ = nullptr;
        }
     }
-    //others no change 
+    //others no change
     else {
       is_main_frame_url_changed_ = false;
     }
@@ -284,11 +284,11 @@ void BackgroundTaskPolicy::OnMainFrameUrlChanged(const PageNode* page_node) {
        bool ret = false;
        SetWebviewShow(page_node, true, ret);
        if (ret) {
-         last_avsession_page_node_ = const_cast<PageNode*>(page_node);;
+         last_avsession_page_node_ = const_cast<PageNode*>(page_node);
        }
     }
     //when backward to a not playing page   1 0
-    else if(page_node->IsVisible() && !page_node->IsMediaPlaying()) {
+    else if (page_node->IsVisible() && !page_node->IsMediaPlaying()) {
        bool ret = false;
        SetWebviewShow(page_node, false, ret);
        if (ret) {
@@ -310,8 +310,9 @@ void BackgroundTaskPolicy::OnMainFrameUrlChanged(const PageNode* page_node) {
 }
 
 void BackgroundTaskPolicy::OnPageStateChanged(const PageNode* page_node,
-                        PageState old_state){
-  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession in out page_node=" << page_node << " old_state=" << (int32_t)old_state;
+                        PageState old_state) {
+  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession in out page_node=" << page_node
+            << " old_state=" << (int32_t)old_state;
 }
 
 void BackgroundTaskPolicy::OnOpenerFrameNodeChanged(const PageNode* page_node, const FrameNode* previous_opener) {
@@ -332,7 +333,8 @@ void BackgroundTaskPolicy::OnTypeChanged(const PageNode* page_node,
 
 void BackgroundTaskPolicy::OnLoadingStateChanged(const PageNode* page_node,
                             PageNode::LoadingState previous_state) {
-  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession in out page_node=" << page_node << ", previous_state=" << (int32_t)previous_state;
+  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession in out page_node=" << page_node
+            << ", previous_state=" << (int32_t)previous_state;
 }
 
 void BackgroundTaskPolicy::OnUkmSourceIdChanged(const PageNode* page_node) {

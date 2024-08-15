@@ -200,6 +200,8 @@ component("cef_nweb") {
       "src/ndk/arkweb_native_javascript_execute_callback.h",
       "src/ndk/arkweb_native_object.cc",
       "src/ndk/arkweb_native_object.h",
+      "src/ndk/arkweb_native_web_message_callback.cc",
+      "src/ndk/arkweb_native_web_message_callback.h",
     ]
   }
 

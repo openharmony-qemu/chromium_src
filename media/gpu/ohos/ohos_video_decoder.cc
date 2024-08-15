@@ -303,7 +303,9 @@ void OhosVideoDecoder::OnCodecConfigured(
           base::BindPostTaskToCurrentDefault(base::BindRepeating(
               &OhosVideoDecoder::PumpCodec, weak_factory_.GetWeakPtr()))),
       base::SequencedTaskRunner::GetCurrentDefault());
-
+  if (!codec_) {
+    LOG(ERROR) << "codec_ is null.";
+  }
   PumpCodec();
 }
 
@@ -356,7 +358,7 @@ void OhosVideoDecoder::PumpCodec() {
 
 bool OhosVideoDecoder::QueueInput() {
   if (!codec_) {
-    LOG(ERROR) << "OhosVideoDecoder::QueueInput codec_ is null";
+    LOG(DEBUG) << "OhosVideoDecoder::QueueInput codec_ is null";
     return false;
   }
   if (codec_->IsDrained() || deferred_flush_pending_) {
@@ -397,7 +399,7 @@ bool OhosVideoDecoder::QueueInput() {
 
 bool OhosVideoDecoder::DequeueOutput() {
   if (!codec_ || codec_->IsDrained()) {
-    LOG(ERROR) << "OhosVideoDecoder::DequeueOutput failed";
+    LOG(DEBUG) << "OhosVideoDecoder::DequeueOutput failed";
     return false;
   }
 

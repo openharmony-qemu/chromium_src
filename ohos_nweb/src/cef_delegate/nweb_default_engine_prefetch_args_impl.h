@@ -23,9 +23,9 @@ namespace OHOS::NWeb {
 class NWebDefaultEnginePrefetchArgsImpl : public NWebEnginePrefetchArgs {
 public:
   NWebDefaultEnginePrefetchArgsImpl(const std::string& url,
-                             const std::string& method,
-                             const std::string& formData)
-                             : url_(url), method_(method), form_data_(formData) {}
+                                    const std::string& method,
+                                    const std::string& formData)
+                                    : url_(url), method_(method), form_data_(formData) {}
 
   ~NWebDefaultEnginePrefetchArgsImpl() = default;
 

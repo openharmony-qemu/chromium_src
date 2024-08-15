@@ -671,7 +671,7 @@ void NWebPreferenceDelegate::RegisterNativeEmbedRule(const std::string& tag,
 void NWebPreferenceDelegate::SetScrollable(bool enable) {
   scroll_enabled_ = enable;
   WebPreferencesChanged();
-  if(!browser_.get()) {
+  if (!browser_.get()) {
     LOG(ERROR) << "SetScrollable failed, browser is null";
     return;
   }

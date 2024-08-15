@@ -102,7 +102,7 @@ void BackgroundTaskPolicy::OnIsVisibleChanged(const PageNode* page_node) {
     }
   }
   // pause to bg
-  else if (!page_node->IsVisible() &&  !page_node->IsMediaPlaying()) {
+  else if (!page_node->IsVisible() && !page_node->IsMediaPlaying()) {
        bool ret = false;
        SetWebviewShow(page_node, false, ret);
        if (ret) {

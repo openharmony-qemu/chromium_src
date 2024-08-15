@@ -1277,7 +1277,6 @@ bool PasswordAutofillAgent::RequestAutofill(
   autofill::InputFillRequestData username_data;
   if (has_amendable_username_element) {
     username_autofill_state_ = username_element.GetAutofillState();
-    username_element.SetAutofillState(WebAutofillState::kPreviewed);
 
     username_data.field_renderer_id = GetFieldRendererId(username_element);
     username_data.is_focused = !input_element.IsPasswordFieldForAutofill();
@@ -1295,7 +1294,6 @@ bool PasswordAutofillAgent::RequestAutofill(
   autofill::InputFillRequestData password_data;
   if (has_editable_password_element) {
     password_autofill_state_ = password_element.GetAutofillState();
-    password_element.SetAutofillState(WebAutofillState::kPreviewed);
 
     password_data.field_renderer_id = GetFieldRendererId(password_element);
     password_data.is_focused = !username_data.is_focused;

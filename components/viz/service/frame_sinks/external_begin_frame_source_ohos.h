@@ -7,10 +7,8 @@
 
 #include "base/time/time.h"
 #include "components/viz/common/frame_sinks/begin_frame_source.h"
-// #if defined(OHOS_PERFORMANCE_JITTER)
 #include "components/viz/common/surfaces/frame_sink_id.h"
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
-// #endif OHOS_PERFORMANCE_JITTER
 #include "components/viz/service/viz_service_export.h"
 #include "graphic_adapter.h"
 #include "base/containers/circular_deque.h"

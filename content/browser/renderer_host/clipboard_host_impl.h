@@ -201,13 +201,13 @@ class CONTENT_EXPORT ClipboardHostImpl
                                     mojo_base::BigBuffer data) override;
   void WriteText(const std::u16string& text
 #if defined(OHOS_CLIPBOARD)
-                 ,
+,
                  const blink::mojom::CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
   ) override;
   void WriteHtml(const std::u16string& markup, const GURL& url
 #if defined(OHOS_CLIPBOARD)
-                 ,
+,
                  const blink::mojom::CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
   ) override;
@@ -222,13 +222,13 @@ class CONTENT_EXPORT ClipboardHostImpl
   void WriteBookmark(const std::string& url,
                      const std::u16string& title
 #if defined(OHOS_CLIPBOARD)
-                     ,
+,
                      const blink::mojom::CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
                      ) override;
   void WriteImage(const SkBitmap& unsafe_bitmap
 #if defined(OHOS_CLIPBOARD)
-                  ,
+,
                   const blink::mojom::CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
   ) override;

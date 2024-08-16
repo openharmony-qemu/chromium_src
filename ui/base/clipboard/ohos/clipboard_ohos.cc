@@ -401,7 +401,7 @@ class ClipboardOHOSInternal {
     result_vector.push_back(record);
     OhosAdapterHelper::GetInstance().GetPasteBoard().SetPasteData(result_vector
 #if defined(OHOS_CLIPBOARD)
-                                                                  ,
+,
                                                                   ChangeCopyOptionMode(copy_option)
 #endif // defined(OHOS_CLIPBOARD)
     );
@@ -526,7 +526,7 @@ class ClipboardDataBuilder {
 
   static void WriteText(const char* text_data, size_t text_len
 #if defined(OHOS_CLIPBOARD)
-                        ,
+,
                         const CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
   ) {
@@ -544,7 +544,7 @@ class ClipboardDataBuilder {
                         const char* url_data,
                         size_t url_len
 #if defined(OHOS_CLIPBOARD)
-                        ,
+,
                         const CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
                         ) {
@@ -851,13 +851,13 @@ void ClipboardOHOS::WritePortableAndPlatformRepresentations(
 
 void ClipboardOHOS::WriteText(const char* text_data, size_t text_len
 #if defined(OHOS_CLIPBOARD)
-                              ,
+,
                               const CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
 ) {
   ClipboardDataBuilder::WriteText(text_data, text_len
 #if defined(OHOS_CLIPBOARD)
-                                  ,
+,
                                   copy_option
 #endif // defined(OHOS_CLIPBOARD)
   );
@@ -868,13 +868,13 @@ void ClipboardOHOS::WriteHTML(const char* markup_data,
                               const char* url_data,
                               size_t url_len
 #if defined(OHOS_CLIPBOARD)
-                              ,
+,
                               const CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
                               ) {
   ClipboardDataBuilder::WriteHTML(markup_data, markup_len, url_data, url_len
 #if defined(OHOS_CLIPBOARD)
-                                  ,
+,
                                   copy_option
 #endif // defined(OHOS_CLIPBOARD)
   );
@@ -885,13 +885,13 @@ void ClipboardOHOS::WriteUnsanitizedHTML(const char* markup_data,
                                          const char* url_data,
                                          size_t url_len
 #if defined(OHOS_CLIPBOARD)
-                                         ,
+,
                                          const CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
                                          ) {
   ClipboardDataBuilder::WriteHTML(markup_data, markup_len, url_data, url_len
 #if defined(OHOS_CLIPBOARD)
-                                  ,
+,
                                   copy_option
 #endif // defined(OHOS_CLIPBOARD)
   );
@@ -908,7 +908,7 @@ void ClipboardOHOS::WriteBookmark(const char* title_data,
                                   const char* url_data,
                                   size_t url_len
 #if defined(OHOS_CLIPBOARD)
-                                  ,
+,
                                   const CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
                                   ) {}

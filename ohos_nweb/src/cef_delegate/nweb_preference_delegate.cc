@@ -35,6 +35,12 @@ namespace OHOS::NWeb {
 constexpr int fontMinSize = 1;
 constexpr int fontMaxSize = 72;
 
+enum class WebScrollType : int32_t {
+    UNKNOWN = -1,
+    EVENT = 0,
+    POSITION
+};
+
 int ConvertCacheMode(NWebPreference::CacheModeFlag flag) {
   switch (flag) {
     case NWebPreference::CacheModeFlag::USE_CACHE_ELSE_NETWORK:
@@ -676,6 +682,26 @@ void NWebPreferenceDelegate::SetScrollable(bool enable) {
     return;
   }
   browser_->GetHost()->SetScrollable(enable);
+}
+
+void NWebPreferenceDelegate::SetScrollable(bool enable, int32_t scrollType) {
+  scroll_enabled_ = enable; 
+  if (scrollType == static_cast<int32_t>(WebScrollType::UNKNOWN)) {
+    WebPreferencesChanged();
+    if(!browser_.get()) {
+      LOG(ERROR) << "SetScrollable failed, browser is null";
+      return;
+    }
+    browser_->GetHost()->SetScrollable(enable);
+  } else if (scrollType == static_cast<int32_t>(WebScrollType::EVENT)) {
+    if(!browser_.get()) {
+      LOG(ERROR) << "SetScrollable failed, browser is null";
+      return;
+    }
+    browser_->GetHost()->SetScrollable(enable);
+  } else if (scrollType == static_cast<int32_t>(WebScrollType::POSITION)) {
+    WebPreferencesChanged();
+  }
 }
 
 bool NWebPreferenceDelegate::GetScrollable() {

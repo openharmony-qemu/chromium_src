@@ -161,7 +161,8 @@ bool WebGestureCurveImpl::Advance(double time,
       curve_->ComputeScrollOffset(time_ticks, &offset, &out_current_velocity);
 
   // dump curve
-  LOG(DEBUG) << "WebGestureCurveImpl::Advance DUMP_FLING_CURVE time = " << time << " offset = " << offset.y() << " velocity = " << out_current_velocity.y();
+  LOG(DEBUG) << "WebGestureCurveImpl::Advance DUMP_FLING_CURVE time = " << time << " offset = " << offset.y() <<
+    " velocity = " << out_current_velocity.y();
   out_delta_to_scroll = offset - last_offset_;
   last_offset_ = offset;
 

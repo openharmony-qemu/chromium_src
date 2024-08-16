@@ -55,7 +55,7 @@ class SSLManager {
       const net::SSLInfo& ssl_info,
       bool fatal
 #ifdef OHOS_NETWORK_LOAD
-      ,
+,
       const GURL& origin_url,
       const std::string& referrer
 #endif

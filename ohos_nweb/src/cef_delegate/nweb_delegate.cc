@@ -2241,7 +2241,7 @@ void NWebDelegate::UpdateLocale(const std::string& language,
   }
   bool setSuccess = OhosAdapterHelper::GetInstance().GetAudioSystemManager()
                                                     .SetLanguage(language);
-  if(!setSuccess){
+  if (!setSuccess) {
     LOG(ERROR) << "UpdateLocale SetLanguage error,language=" << language;
   }
   CefString locale = "";
@@ -3466,7 +3466,7 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId, uint32_t action,
       if (!node->IsTextField()) {
         break;
       }
-      if(actionArguments.empty()) {
+      if (actionArguments.empty()) {
         break;
       }
       std::string newText = "";
@@ -3477,7 +3477,7 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId, uint32_t action,
       if (newText.empty()) {
         break;
       }
-      accessibilityManager->SetValue(*node,newText);
+      accessibilityManager->SetValue(*node, newText);
       accessibilityManager->SetSelection(
           content::BrowserAccessibility::AXRange(
               node->CreatePositionForSelectionAt(newText.length()),

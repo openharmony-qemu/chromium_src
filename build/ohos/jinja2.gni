@@ -1,0 +1,22 @@
+# Please make sure your template file is suitable for jinja2 syntax before
+# using it.
+template("generate_file_with_jinja2") {
+  template_file = invoker.input
+  output_file = invoker.output
+
+  action(target_name) {
+    script = "//build/ohos/generate_file_by_jinja2.py"
+    inputs = [ template_file ]
+    sources = [ template_file ]
+    outputs = [ output_file ]
+    args = [
+      "--input_template=" + rebase_path(template_file, root_build_dir),
+      "--output_file=" + rebase_path(output_file, root_build_dir),
+    ]
+
+    if (defined(invoker.variables)) {
+      # variables should be extra key-value pair args.
+      args += [ "--variables=${invoker.variables}" ]
+    }
+  }
+}

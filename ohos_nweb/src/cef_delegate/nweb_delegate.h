@@ -380,6 +380,7 @@ bool HitNativeArea(double x, double y);
 #if defined(OHOS_GET_SCROLL_OFFSET)
   void GetOverScrollOffset(float* offset_x, float* offset_y) override;
 #endif
+  bool ScrollByWithResult(float delta_x, float delta_y) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #ifdef OHOS_ARKWEB_ADBLOCK
@@ -663,6 +664,8 @@ void NotifyForNextTouchEvent() override;
   bool accessibility_state_ = false;
   bool is_discarded_ = false;
   std::string richtext_data_str_ = "";
+  // The number of fingers that trigger the down event
+  int  pressing_num_ = 0;
   std::shared_ptr<NWebAccessibilityEventCallback>
       accessibility_event_listener_ = nullptr;
 };

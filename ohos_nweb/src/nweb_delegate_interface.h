@@ -356,6 +356,7 @@ class NWebDelegateInterface
                                const std::vector<int32_t>& pressedCodes) = 0;
   virtual void ScrollToWithAnime(float x, float y, int32_t duration) = 0;
   virtual void ScrollByWithAnime(float delta_x, float delta_y, int32_t duration) = 0;
+  virtual bool ScrollByWithResult(float delta_x, float delta_y) = 0;
 #if defined(OHOS_GET_SCROLL_OFFSET)
   virtual void GetOverScrollOffset(float* offset_x, float* offset_y) = 0;
 #endif

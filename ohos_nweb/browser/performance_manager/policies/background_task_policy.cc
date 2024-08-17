@@ -275,8 +275,8 @@ void BackgroundTaskPolicy::SetWebviewShowForAudio(const PageNode* page_node, boo
 void BackgroundTaskPolicy::OnMainFrameUrlChanged(const PageNode* page_node) {
   LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession in page_node=" << page_node;
   if (page_node) {
-    LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession IsVisible="
-          << (page_node->IsVisible() ? "true" : "false")
+    LOG(INFO) << BG_TASK_TAG << __FUNCTION__
+          << " media avsession IsVisible=" << (page_node->IsVisible() ? "true" : "false")
           << ", IsMediaPlaying=" << (page_node->IsMediaPlaying() ? "true" : "false")
           << ", IsAudible=" << (page_node->IsAudible() ? "true" : "false");
     //when backward to a playing page   1 1

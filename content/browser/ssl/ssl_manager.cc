@@ -123,7 +123,7 @@ void SSLManager::OnSSLCertificateError(
     const net::SSLInfo& ssl_info,
     bool fatal
 #ifdef OHOS_NETWORK_LOAD
-    ,
+,
     const GURL& origin_url,
     const std::string& referrer
 #endif
@@ -146,7 +146,7 @@ void SSLManager::OnSSLCertificateError(
       new SSLErrorHandler(web_contents, delegate, is_primary_main_frame_request,
                           url, net_error, ssl_info, fatal
 #ifdef OHOS_NETWORK_LOAD
-                          ,
+,
                           origin_url,
                           referrer
 #endif

@@ -388,7 +388,13 @@ void NWebRenderHandler::SetGestureEventResult(bool result) {
 
 bool NWebRenderHandler::GetGestureEventResult() {
   return gesture_event_result_;
-};
+}
+
+void NWebRenderHandler::StartVibraFeedback(const std::string& vibratorType) {
+  if (auto handler = handler_.lock()) {
+    handler->StartVibraFeedback(vibratorType);
+  }
+}
 #endif
 
 void NWebRenderHandler::GetViewRect(CefRefPtr<CefBrowser> browser,

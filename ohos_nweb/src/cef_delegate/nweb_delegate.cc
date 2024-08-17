@@ -798,6 +798,10 @@ void NWebDelegate::OnTouchPress(int32_t id,
                                 double y,
                                 bool from_overlay) {
   if (event_handler_ != nullptr) {
+    if (pressing_num_ < 0) {
+      pressing_num_ = 0;
+    }
+    ++pressing_num_;
     event_handler_->OnTouchPress(id, x / default_virtual_pixel_ratio_,
                                  y / default_virtual_pixel_ratio_,
                                  from_overlay);
@@ -814,6 +818,7 @@ void NWebDelegate::OnTouchRelease(int32_t id,
                                   double y,
                                   bool from_overlay) {
   if (event_handler_ != nullptr) {
+    --pressing_num_;
     event_handler_->OnTouchRelease(id, x / default_virtual_pixel_ratio_,
                                    y / default_virtual_pixel_ratio_,
                                    from_overlay);
@@ -841,6 +846,7 @@ void NWebDelegate::OnTouchMove(int32_t id,
 
 void NWebDelegate::OnTouchCancel() {
   if (event_handler_ != nullptr) {
+    --pressing_num_;
     event_handler_->OnTouchCancel();
   }
 }
@@ -850,6 +856,7 @@ void NWebDelegate::OnTouchCancelById(int32_t id,
                                      double y,
                                      bool from_overlay) {
   if (event_handler_ != nullptr) {
+    --pressing_num_;
     event_handler_->OnTouchCancelById(id, x / default_virtual_pixel_ratio_,
                                       y / default_virtual_pixel_ratio_,
                                       from_overlay);
@@ -2234,7 +2241,7 @@ void NWebDelegate::UpdateLocale(const std::string& language,
   }
   bool setSuccess = OhosAdapterHelper::GetInstance().GetAudioSystemManager()
                                                     .SetLanguage(language);
-  if(!setSuccess){
+  if (!setSuccess) {
     LOG(ERROR) << "UpdateLocale SetLanguage error,language=" << language;
   }
   CefString locale = "";
@@ -2661,6 +2668,31 @@ void NWebDelegate::GetOverScrollOffset(float* offset_x, float* offset_y) {
   GetBrowser()->GetHost()->GetOverScrollOffset(offset_x, offset_y);
 }
 #endif
+
+bool NWebDelegate::ScrollByWithResult(float delta_x, float delta_y) {
+  if (handler_delegate_ == nullptr) {
+    LOG(ERROR) << "handler_delegate_ is nullptr , ScrollByWithResult fail";
+    return false;
+  }
+  LOG(DEBUG) << "The pressing_num_ in ScrollByWithResult is" << (pressing_num_);
+  if (render_handler_ == nullptr) {
+    LOG(ERROR) << "fail to register NWebDelegateInterface client, render "
+                  "handler is nullptr";
+    return false;
+  }
+  bool isDontScroll = pressing_num_ > 0;
+  bool isIgnoreDown = render_handler_->GetGestureEventResult();
+  if (isIgnoreDown) {
+    LOG(DEBUG) << "Web is touched down but on arkui area ,so continue scroll";
+    isDontScroll = false;
+  }
+  if (isDontScroll) {
+    LOG(DEBUG) << "Web is touched down, return false";
+    return false;
+  }
+  ScrollBy(delta_x, delta_y);
+  return true;
+}
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #if defined(OHOS_API_INIT_WEB_ENGINE)
@@ -3434,7 +3466,7 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId, uint32_t action,
       if (!node->IsTextField()) {
         break;
       }
-      if(actionArguments.empty()) {
+      if (actionArguments.empty()) {
         break;
       }
       std::string newText = "";
@@ -3445,7 +3477,7 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId, uint32_t action,
       if (newText.empty()) {
         break;
       }
-      accessibilityManager->SetValue(*node,newText);
+      accessibilityManager->SetValue(*node, newText);
       accessibilityManager->SetSelection(
           content::BrowserAccessibility::AXRange(
               node->CreatePositionForSelectionAt(newText.length()),

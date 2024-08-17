@@ -425,7 +425,7 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) Clipboard
 
   virtual void WriteText(const char* text_data, size_t text_len
 #if defined(OHOS_CLIPBOARD)
-                         ,
+,
                          CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
 
@@ -436,7 +436,7 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) Clipboard
                          const char* url_data,
                          size_t url_len
 #if defined(OHOS_CLIPBOARD)
-                         ,
+,
                          CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
                          ) = 0;
@@ -446,7 +446,7 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) Clipboard
                                     const char* url_data,
                                     size_t url_len
 #if defined(OHOS_CLIPBOARD)
-                                    ,
+,
                                     CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
                                     ) = 0;
@@ -462,7 +462,7 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) Clipboard
                              const char* url_data,
                              size_t url_len
 #if defined(OHOS_CLIPBOARD)
-                             ,
+,
                              CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
                              ) = 0;

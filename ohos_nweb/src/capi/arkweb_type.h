@@ -24,6 +24,7 @@
  * @file arkweb_type.h
  *
  * @brief Defines the common types for the native ArkWeb.
+ * @kit ArkWeb
  * @library libohweb.so
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
@@ -331,6 +332,72 @@ typedef struct {
      */
     void* (*getData)(ArkWeb_WebMessagePtr webMessage, size_t* dataLength);
 } ArkWeb_WebMessageAPI;
+
+/**
+ * @brief Defines the native CookieManager API for ArkWeb.
+ * Before invoking an API, you are advised to use ARKWEB_MEMBER_MISSING to check
+ * whether the function structure has a corresponding function pointer to avoid crash
+ * caused by mismatch between the SDK and the device ROM.
+ *
+ * @since 12
+ */
+typedef struct {
+    /** The ArkWeb_CookieManagerAPI struct size. */
+    size_t size;
+
+    /**
+     * @brief Obtains the cookie value corresponding to a specified URL.
+     *
+     * @param url URL to which the cookie to be obtained belongs. A complete URL is recommended.
+     * @param incognito True indicates that the memory cookies of the webview in privacy mode are obtained,
+     *                  and false indicates that cookies in non-privacy mode are obtained.
+     * @param includeHttpOnly If true HTTP-only cookies will also be included in the cookieValue.
+     * @param cookieValue Get the cookie value corresponding to the URL.
+     * @return Fetch cookie result code.
+     *         {@link ARKWEB_SUCCESS} fetch cookie success.
+     *         {@link ARKWEB_INVALID_URL} invalid url.
+     *         {@link ARKWEB_INVALID_PARAM} cookieValue is nullptr.
+     */
+    ArkWeb_ErrorCode (*fetchCookieSync)(const char* url, bool incognito, bool includeHttpOnly, char** cookieValue);
+
+    /**
+     * @brief Sets the cookie value for a specified URL.
+     *
+     * @param url Specifies the URL to which the cookie belongs. A complete URL is recommended.
+     * @param cookieValue The value of the cookie to be set.
+     * @param incognito True indicates that cookies of the corresponding URL are set in privacy mode,
+     *                  and false indicates that cookies of the corresponding URL are set in non-privacy mode.
+     * @param includeHttpOnly If true, HTTP-only cookies can also be overwritten.
+     * @return Config cookie result code.
+     *         {@link ARKWEB_SUCCESS} config cookie success.
+     *         {@link ARKWEB_INVALID_URL} invalid url.
+     *         {@link ARKWEB_INVALID_COOKIE_VALUE} invalid cookie value.
+     */
+    ArkWeb_ErrorCode (*configCookieSync)(const char* url,
+        const char* cookieValue, bool incognito, bool includeHttpOnly);
+
+    /**
+     * @brief Check whether cookies exist.
+     *
+     * @param incognito True indicates whether cookies exist in privacy mode,
+     *                  and false indicates whether cookies exist in non-privacy mode.
+     * @return True indicates that the cookie exists, and false indicates that the cookie does not exist.
+     */
+    bool (*existCookies)(bool incognito);
+
+    /**
+     * @brief Clear all cookies.
+     *
+     * @param incognito True indicates that all memory cookies of the webview are cleared in privacy mode,
+     *                  and false indicates that persistent cookies in non-privacy mode are cleared.
+     */
+    void (*clearAllCookiesSync)(bool incognito);
+
+    /**
+     * @brief Clear all session cookies.
+     */
+    void (*clearSessionCookiesSync)();
+} ArkWeb_CookieManagerAPI;
 
 /**
  * @brief Check whether the member variables of the current struct exist.

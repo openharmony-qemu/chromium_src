@@ -98,8 +98,7 @@ void SlidingObserver::Init() {
     << ", on_screen_setting: " << on_screen_setting_.size() << ", off_screen_setting: " << off_screen_setting_.size();
 }
 
-void SlidingObserver::StartSliding()
-{
+void SlidingObserver::StartSliding() {
   if (is_pc_) {
     return;
   }
@@ -114,8 +113,7 @@ void SlidingObserver::StartSliding()
   is_off_screen_ = false;
 }
 
-int32_t SlidingObserver::StopSliding()
-{
+int32_t SlidingObserver::StopSliding() {
   if (is_pc_) {
     if (is_ltpo_app_ && is_off_screen_) {
       OHOS::NWeb::OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetScene("WEB_LIST_FLING",
@@ -134,15 +132,13 @@ int32_t SlidingObserver::StopSliding()
   return 0;
 }
 
-int64_t SlidingObserver::GetCurrentTimestamp()
-{
+int64_t SlidingObserver::GetCurrentTimestamp() {
   auto currentTime = std::chrono::system_clock::now().time_since_epoch();
   return std::chrono::duration_cast<std::chrono::microseconds>(currentTime)
       .count();
 }
 
-void SlidingObserver::StartFling()
-{
+void SlidingObserver::StartFling() {
   if (is_pc_) {
     if (is_ltpo_app_) {
       OHOS::NWeb::OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetScene("WEB_LIST_FLING",
@@ -157,8 +153,7 @@ void SlidingObserver::StartFling()
   is_off_screen_ = true;
 }
 
-int32_t SlidingObserver::OnScrollUpdate(float delta_x, float delta_y)
-{
+int32_t SlidingObserver::OnScrollUpdate(float delta_x, float delta_y) {
   if (!is_sliding_ || is_off_screen_ || is_pc_) {
     return -1;
   }
@@ -178,8 +173,7 @@ int32_t SlidingObserver::OnScrollUpdate(float delta_x, float delta_y)
   return sliding_frame_rate_;
 }
 
-int32_t SlidingObserver::OnFlingUpdate(float velocity_x, float velocity_y)
-{
+int32_t SlidingObserver::OnFlingUpdate(float velocity_x, float velocity_y) {
   if (!is_sliding_ || !is_off_screen_ || is_pc_) {
     return -1;
   }
@@ -195,8 +189,8 @@ int32_t SlidingObserver::OnFlingUpdate(float velocity_x, float velocity_y)
   return sliding_frame_rate_;
 }
 
-int32_t SlidingObserver::GetPreferedFrameRate(float velocity, const std::vector<OHOS::NWeb::FrameRateSetting>& setting)
-{
+int32_t SlidingObserver::GetPreferedFrameRate(float velocity,
+  const std::vector<OHOS::NWeb::FrameRateSetting>& setting) {
   if (setting.empty()) {
       return kDefaultPreferedFrameRate;
   }
@@ -209,8 +203,7 @@ int32_t SlidingObserver::GetPreferedFrameRate(float velocity, const std::vector<
   return kDefaultPreferedFrameRate;
 }
 
-float SlidingObserver::GetVelocity(float velocity_x, float velocity_y)
-{
+float SlidingObserver::GetVelocity(float velocity_x, float velocity_y) {
   // mm per virtual pixel in phone, mm_per_inch/ppi_of_device * default_virtual_pixel_ratio_
   float convert_unit = kMilliMeterPerInch / dpi_ * virtual_pixel_ratio_;
   float velocity = std::sqrt(velocity_x * velocity_x + velocity_y * velocity_y);

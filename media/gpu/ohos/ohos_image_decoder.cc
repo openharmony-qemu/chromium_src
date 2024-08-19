@@ -26,10 +26,10 @@ namespace media {
 namespace {
 
 // Size limitation of OHOS hardware image decoder.
-constexpr int kMaxDecodedImageWidth = 4096;
-constexpr int kMaxDecodedImageHeight = 4096;
-constexpr int kMinDecodedImageWidth = 128;
-constexpr int kMinDecodedImageHeight = 128;
+constexpr int kMaxDecodedImageWidth = 7680;
+constexpr int kMaxDecodedImageHeight = 4320;
+constexpr int kMinDecodedImageWidth = 2;
+constexpr int kMinDecodedImageHeight = 2;
 
 }  // namespace
 

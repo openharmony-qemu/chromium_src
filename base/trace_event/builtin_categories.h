@@ -110,6 +110,7 @@
   X("Java")                                                              \
   X("jni")                                                               \
   X("jpeg")                                                              \
+  X("heif")                                                              \
   X("latency")                                                           \
   X("latencyInfo")                                                       \
   X("leveldb")                                                           \

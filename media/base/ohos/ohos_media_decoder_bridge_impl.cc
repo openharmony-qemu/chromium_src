@@ -338,7 +338,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::ReleaseBridgeDecoder() {
 void MediaCodecDecoderBridgeImpl::PopInqueueDec() {
   LOG(DEBUG) << "MediaCodecDecoderBridgeImpl::PopInqueueDec";
 
-  if (signal_ == nullptr) {
+  if (signal_ == nullptr || signal_->isOnError_ || signal_->inputQueue_.empty()) {
     return;
   }
 

@@ -59,7 +59,7 @@ bool VideoCaptureDeviceFactoryOHOS::CheckAndInitCameraManager() {
     ui_task_runner_, weak_factory_.GetWeakPtr());
   auto ret = OhosAdapterHelper::GetInstance().GetCameraManagerAdapter().Create(status_callback);
   if (ret != 0) {
-    LOG(ERROR) << "create camera manager failed."
+    LOG(ERROR) << "create camera manager failed.";
     return false;
   }
   is_camera_manager_created_ = true;

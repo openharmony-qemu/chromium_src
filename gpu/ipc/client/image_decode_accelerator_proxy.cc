@@ -39,6 +39,18 @@ bool IsSupportedImageSize(
     image_size = image_data->image_size;
   DCHECK(!image_size.IsEmpty());
 
+#if BUILDFLAG(IS_OHOS)
+  auto result =
+      image_size.width() >= supported_profile.min_encoded_dimensions.width() &&
+      image_size.height() >=
+          supported_profile.min_encoded_dimensions.height() &&
+      image_size.width() <= supported_profile.max_encoded_dimensions.width() &&
+      image_size.height() <= supported_profile.max_encoded_dimensions.height();
+  if (!result) {
+    LOG(INFO) << "[HeifSupport] UnSupported image size " << image_size.ToString();
+  }
+  return result;
+#else
   return image_size.width() >=
              supported_profile.min_encoded_dimensions.width() &&
          image_size.height() >=
@@ -47,6 +59,7 @@ bool IsSupportedImageSize(
              supported_profile.max_encoded_dimensions.width() &&
          image_size.height() <=
              supported_profile.max_encoded_dimensions.height();
+#endif
 }
 
 bool IsSupportedJpegImage(
@@ -114,7 +127,11 @@ bool ImageDecodeAcceleratorProxy::IsImageSupported(
   if (image_metadata->has_embedded_color_profile)
     return false;
 
+#if BUILDFLAG(IS_OHOS)
+  static_assert(static_cast<int>(ImageDecodeAcceleratorType::kMaxValue) == 3,
+#else
   static_assert(static_cast<int>(ImageDecodeAcceleratorType::kMaxValue) == 2,
+#endif
                 "IsImageSupported() must be adapted to support all image types "
                 "in ImageDecodeAcceleratorType");
   ImageDecodeAcceleratorType image_type = ImageDecodeAcceleratorType::kUnknown;
@@ -125,6 +142,11 @@ bool ImageDecodeAcceleratorProxy::IsImageSupported(
     case cc::ImageType::kWEBP:
       image_type = ImageDecodeAcceleratorType::kWebP;
       break;
+#if BUILDFLAG(IS_OHOS)
+    case cc::ImageType::kHEIF:
+      image_type = ImageDecodeAcceleratorType::kHeif;
+      break;
+#endif
     default:
       return false;
   }
@@ -150,6 +172,10 @@ bool ImageDecodeAcceleratorProxy::IsImageSupported(
     case ImageDecodeAcceleratorType::kWebP:
       DCHECK(image_metadata->webp_is_non_extended_lossy.has_value());
       return image_metadata->webp_is_non_extended_lossy.value();
+#if BUILDFLAG(IS_OHOS)
+    case ImageDecodeAcceleratorType::kHeif:
+      return true;
+#endif
     case ImageDecodeAcceleratorType::kUnknown:
       // Should not reach due to a check above.
       NOTREACHED();

@@ -200,6 +200,11 @@ ImageDecodeAcceleratorSupportedProfileToProtocol(
     case gpu::ImageDecodeAcceleratorType::kWebP:
       image_type = SystemInfo::ImageTypeEnum::Webp;
       break;
+#if BUILDFLAG(IS_OHOS)
+    case gpu::ImageDecodeAcceleratorType::kHeif:
+      image_type = SystemInfo::ImageTypeEnum::Unknown;
+      break;
+#endif
     case gpu::ImageDecodeAcceleratorType::kUnknown:
       image_type = SystemInfo::ImageTypeEnum::Unknown;
       break;

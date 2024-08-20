@@ -77,13 +77,13 @@ void SharedImageVideoOhosNativeImage::OnContextLost() {
 class SharedImageVideoOhosNativeImage::SharedImageRepresentationGLTextureVideo
     : public GLTextureImageRepresentation {
  public:
-  SharedImageRepresentationGLTextureVideo(
-      SharedImageManager* manager,
-      SharedImageVideoOhosNativeImage* backing,
-      MemoryTypeTracker* tracker,
-      std::unique_ptr<AbstractTextureOHOS> texture)
-      : GLTextureImageRepresentation(manager, backing, tracker),
-        texture_(std::move(texture)) {}
+    SharedImageRepresentationGLTextureVideo(
+        SharedImageManager* manager,
+        SharedImageVideoOhosNativeImage* backing,
+        MemoryTypeTracker* tracker,
+        std::unique_ptr<AbstractTextureOHOS> texture)
+        : GLTextureImageRepresentation(manager, backing, tracker),
+          texture_(std::move(texture)) {}
 
   ~SharedImageRepresentationGLTextureVideo() override {
     if (!has_context()) {
@@ -124,15 +124,15 @@ class SharedImageVideoOhosNativeImage::
     SharedImageRepresentationGLTexturePassthroughVideo
     : public GLTexturePassthroughImageRepresentation {
  public:
-  SharedImageRepresentationGLTexturePassthroughVideo(
-      SharedImageManager* manager,
-      SharedImageVideoOhosNativeImage* backing,
-      MemoryTypeTracker* tracker,
-      std::unique_ptr<AbstractTextureOHOS> abstract_texture)
-      : GLTexturePassthroughImageRepresentation(manager, backing, tracker),
-        abstract_texture_(std::move(abstract_texture)),
-        passthrough_texture_(gles2::TexturePassthrough::CheckedCast(
-            abstract_texture_->GetTextureBase())) {
+    SharedImageRepresentationGLTexturePassthroughVideo(
+        SharedImageManager* manager,
+        SharedImageVideoOhosNativeImage* backing,
+        MemoryTypeTracker* tracker,
+        std::unique_ptr<AbstractTextureOHOS> abstract_texture)
+        : GLTexturePassthroughImageRepresentation(manager, backing, tracker),
+          abstract_texture_(std::move(abstract_texture)),
+          passthrough_texture_(gles2::TexturePassthrough::CheckedCast(
+              abstract_texture_->GetTextureBase())) {
     CHECK(passthrough_texture_);
   }
 
@@ -259,10 +259,10 @@ void SharedImageVideoOhosNativeImage::BeginGLReadAccess(
 class SharedImageVideoOhosNativeImage::SharedImageRepresentationOverlayVideo
     : public gpu::LegacyOverlayImageRepresentation {
  public:
-  SharedImageRepresentationOverlayVideo(gpu::SharedImageManager* manager,
-                                  SharedImageVideoOhosNativeImage* backing,
-                                  gpu::MemoryTypeTracker* tracker)
-      : gpu::LegacyOverlayImageRepresentation(manager, backing, tracker) {}
+    SharedImageRepresentationOverlayVideo(gpu::SharedImageManager* manager,
+                                    SharedImageVideoOhosNativeImage* backing,
+                                    gpu::MemoryTypeTracker* tracker)
+        : gpu::LegacyOverlayImageRepresentation(manager, backing, tracker) {}
 
   SharedImageRepresentationOverlayVideo(
     const SharedImageRepresentationOverlayVideo&) = delete;
@@ -291,8 +291,7 @@ class SharedImageVideoOhosNativeImage::SharedImageRepresentationOverlayVideo
   }
 };
 
-std::unique_ptr<gpu::LegacyOverlayImageRepresentation>
-SharedImageVideoOhosNativeImage::ProduceLegacyOverlay(
+std::unique_ptr<gpu::LegacyOverlayImageRepresentation> SharedImageVideoOhosNativeImage::ProduceLegacyOverlay(
     gpu::SharedImageManager* manager,
     gpu::MemoryTypeTracker* tracker) {
   DCHECK(gpu_main_task_runner_->RunsTasksInCurrentSequence());

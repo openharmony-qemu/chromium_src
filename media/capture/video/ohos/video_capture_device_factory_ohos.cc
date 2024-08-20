@@ -50,15 +50,20 @@ VideoCaptureDeviceFactoryOHOS::~VideoCaptureDeviceFactoryOHOS() {
   }
 }
 
-void VideoCaptureDeviceFactoryOHOS::CheckAndInitCameraManager() {
+bool VideoCaptureDeviceFactoryOHOS::CheckAndInitCameraManager() {
   if (is_camera_manager_created_) {
-    return;
+    return true;
   }
   LOG(INFO) << "Create Camera Manager.";
   auto status_callback = std::make_shared<VideoCaptureCameraStatusCallbackListenerOHOS>(
     ui_task_runner_, weak_factory_.GetWeakPtr());
-  OhosAdapterHelper::GetInstance().GetCameraManagerAdapter().Create(status_callback);
+  auto ret = OhosAdapterHelper::GetInstance().GetCameraManagerAdapter().Create(status_callback);
+  if (ret != 0) {
+    LOG(ERROR) << "create camera manager failed.";
+    return false;
+  }
   is_camera_manager_created_ = true;
+  return true;
 }
 
 int VideoCaptureDeviceFactoryOHOS::CheckDeviceId(const std::string device_id) {
@@ -79,7 +84,10 @@ VideoCaptureErrorOrDevice VideoCaptureDeviceFactoryOHOS::CreateDevice(
   LOG(INFO) << "VideoCaptureDeviceFactoryOHOS::CreateDevice id: "
             << device_descriptor.device_id;
   DCHECK(thread_checker_.CalledOnValidThread());
-  CheckAndInitCameraManager();
+  if (!CheckAndInitCameraManager()) {
+    return VideoCaptureErrorOrDevice(VideoCaptureError::
+      kVideoCaptureDeviceFactoryChromeOSCreateDeviceFailed);
+  }
   if (CheckDeviceId(device_descriptor.device_id) != kSuccessReturnValue) {
     LOG(INFO) << "device_id can not be create";
     return VideoCaptureErrorOrDevice(
@@ -95,7 +103,9 @@ VideoCaptureErrorOrDevice VideoCaptureDeviceFactoryOHOS::CreateDevice(
 void VideoCaptureDeviceFactoryOHOS::GetDevicesInfo(
     GetDevicesInfoCallback callback) {
   DCHECK(thread_checker_.CalledOnValidThread());
-  CheckAndInitCameraManager();
+  if (!CheckAndInitCameraManager()) {
+    return;
+  }
   std::vector<VideoCaptureDeviceInfo> devices_info;
 
   std::vector<std::shared_ptr<OHOS::NWeb::VideoDeviceDescriptorAdapter>> devices_desc =

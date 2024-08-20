@@ -93,7 +93,7 @@ std::unique_ptr<VizCompositorThreadType> CreateAndStartCompositorThread() {
 #if BUILDFLAG(IS_OHOS)
   using namespace OHOS::NWeb;
   auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
-    switches::kProcessType);
+      switches::kProcessType);
   if (type == switches::kGpuProcess) {
     NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
         ResSchedStatusAdapter::THREAD_CREATED,
@@ -129,7 +129,7 @@ VizCompositorThreadRunnerImpl::~VizCompositorThreadRunnerImpl() {
 #if BUILDFLAG(IS_OHOS)
   using namespace OHOS::NWeb;
   auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
-    switches::kProcessType);
+      switches::kProcessType);
   if (type == switches::kGpuProcess) {
     NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
         ResSchedStatusAdapter::THREAD_DESTROYED,
@@ -137,11 +137,11 @@ VizCompositorThreadRunnerImpl::~VizCompositorThreadRunnerImpl() {
         ResSchedRoleAdapter::IMPORTANT_DISPLAY);
   } else {
     task_runner_->PostTask(
-          FROM_HERE,
-          base::BindOnce(
-              base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread),
-              ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentRealPid(),
-              thread_->GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
+        FROM_HERE,
+        base::BindOnce(
+            base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread),
+            ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentRealPid(),
+            thread_->GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
   }
 #endif
 }

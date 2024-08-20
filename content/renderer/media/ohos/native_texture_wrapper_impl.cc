@@ -94,8 +94,6 @@ void NativeTextureWrapperImpl::CreateVideoFrame(
   // crbug.com/1028746. Since we create all the textures/abstract textures as
   // well as shared images for video to be of format RGBA, we need to use the
   // pixel format as ABGR here(which corresponds to 32bpp RGBA).
-  LOG(DEBUG) << "[NativeEmbed] create new video frame. visible_rect:"
-             << visible_rect.ToString();
   scoped_refptr<media::VideoFrame> new_frame =
       media::VideoFrame::WrapNativeTextures(
           media::PIXEL_FORMAT_ABGR, holders,
@@ -124,13 +122,6 @@ void NativeTextureWrapperImpl::SetCurrentFrameInternal(
     scoped_refptr<media::VideoFrame> video_frame) {
   base::AutoLock auto_lock(current_frame_lock_);
   current_frame_ = std::move(video_frame);
-}
-
-void NativeTextureWrapperImpl::SetSkippingCurrentFrame(bool need_skip) {
-  base::AutoLock auto_lock(current_frame_lock_);
-  if (current_frame_) {
-    current_frame_->set_skipping_current_frame(need_skip);
-  }
 }
 
 void NativeTextureWrapperImpl::UpdateTextureSize(const gfx::Size& new_size) {

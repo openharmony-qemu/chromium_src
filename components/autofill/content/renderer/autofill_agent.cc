@@ -533,7 +533,7 @@ void AutofillAgent::OnTextFieldDidChange(const WebInputElement& element) {
     return;
   }
 
-#if BUILDFLAG(IS_OHOS)
+#if defined(OHOS_AUTOFILL)
   ShowSuggestions(element, {.autofill_on_empty_values = true,
                             .requires_caret_at_end = true});
 #else
@@ -732,7 +732,7 @@ void AutofillAgent::ClearPreviewedForm() {
 
 void AutofillAgent::FillFieldWithValue(FieldRendererId field_id,
                                        const std::u16string& value) {
-#if BUILDFLAG(IS_OHOS)
+#if defined(OHOS_AUTOFILL)
   LOG(INFO) << "FillFieldWithValue";
   if (element_.IsNull()) {
     return;

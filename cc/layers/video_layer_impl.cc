@@ -87,7 +87,7 @@ bool VideoLayerImpl::WillDraw(DrawMode draw_mode,
     return false;
 
 #if BUILDFLAG(IS_OHOS)
-if (may_contain_native() && !is_native_video()) {
+if (may_contain_native()) {
   bool visibility = false;
   if(visible_layer_rect().IsEmpty()) {
     visibility = false;

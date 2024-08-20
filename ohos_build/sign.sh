@@ -19,7 +19,7 @@ root_path="."
 sdk_path="${root_path}/src/ohos_sdk"
 sign_tool_path="${sdk_path}/12/toolchains/lib"
 nosign_hap_path="${root_path}/src/out/${build_type}/ohos_nweb.hap"
-sign_hap_path="${root_path}/src/out/${build_type}/NWeb-${build_type}.hap"
+sign_hap_path="${root_path}/src/out/${build_type}/ArkWebCore-${build_type}.hap"
 profile_path="${root_path}/src/third_party/ohos_nweb_hap/signature"
 
 java -jar ${sign_tool_path}/hap-sign-tool.jar sign-profile -keyAlias "openharmony application profile release" -signAlg "SHA256withECDSA" -mode "localSign" -profileCertFile "${sign_tool_path}/OpenHarmonyProfileRelease.pem" -inFile "${profile_path}/UnsgnedReleasedProfileTemplate.json" -keystoreFile "${sign_tool_path}/OpenHarmony.p12" -outFile "openharmony_nweb.p7b" -keyPwd "123456" -keystorePwd "123456"

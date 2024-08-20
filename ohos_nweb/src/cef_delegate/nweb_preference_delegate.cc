@@ -577,6 +577,12 @@ const base::Feature webview_mixed_content_autoupgrades{
     "WebViewMixedContentAutoupgrades", base::FEATURE_DISABLED_BY_DEFAULT};
 
 bool NWebPreferenceDelegate::MixedContentAutoupgradesAllowed() {
+#ifdef OHOS_MIXED_CONTENT
+  if(enable_mixed_content_auto_upgrades_){
+    return access_mode_ == AccessMode::COMPATIBILITY_MODE;
+  }
+#endif
+
   if (base::FeatureList::IsEnabled(webview_mixed_content_autoupgrades)) {
     return access_mode_ == AccessMode::COMPATIBILITY_MODE;
   }
@@ -869,6 +875,16 @@ CefRefPtr<CefWebMessageReceiver> NWebPreferenceDelegate::GetAutofillCallback() {
 void NWebPreferenceDelegate::SetAutofillCallback(
     CefRefPtr<CefWebMessageReceiver> callback) {
   autofill_callback_ = callback;
+}
+#endif
+
+#ifdef OHOS_MIXED_CONTENT
+void NWebPreferenceDelegate::EnableMixedContentAutoUpgrades(bool enable){
+  enable_mixed_content_auto_upgrades_ = enable;
+}
+
+bool NWebPreferenceDelegate::IsMixedContentAutoUpgradesEnabled(){
+  return enable_mixed_content_auto_upgrades_;
 }
 #endif
 

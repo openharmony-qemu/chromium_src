@@ -397,7 +397,7 @@ void TouchSelectionController::ResetResponsePendingInputEvent() {
 #ifdef OHOS_CLIPBOARD
 void  TouchSelectionController::UpdateSelectionChanged(
     const TouchSelectionDraggable& draggable) {
-  if(&draggable != insertion_handle_.get()) {
+  if (&draggable != insertion_handle_.get()) {
     client_->OnSelectionEvent(SELECTION_HANDLES_UPDATEMENU);
   }
 }

@@ -73,6 +73,14 @@ class NWebEventHandler {
   bool SendKeyEvent(int32_t keyCode, int32_t keyAction);
   bool WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
                        const std::vector<int32_t>& pressedCodes);
+  bool CreateCefKeyEvent(CefKeyEvent& keyEvent,
+                         int32_t keyCode, int32_t keyAction, int32_t modifiers);
+  void SendCefKeyEvent(CefKeyEvent& keyEvent);
+  void SendCefMouseWheelEvent(double x,
+                              double y,
+                              double deltaX,
+                              double deltaY,
+                              int32_t modifiers);
 #endif  // defined(OHOS_INPUT_EVENTS)
 
   CefRefPtr<CefBrowser> browser_ = nullptr;

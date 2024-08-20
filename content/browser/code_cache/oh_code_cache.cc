@@ -230,7 +230,8 @@ bool ResponseCache::ReadMetadata() {
 
     std::sregex_iterator it(line.begin(), line.end(), pattern);
 
-    if (it != std::sregex_iterator() && it->size() == 7) {
+    int item_count = 7;
+    if (it != std::sregex_iterator() && it->size() == item_count) {
       metadata_out_->url_hash_ = (*it)[1].str();
       metadata_out_->content_length_ = (*it)[2].str();
       metadata_out_->e_tag_ = (*it)[3].str();

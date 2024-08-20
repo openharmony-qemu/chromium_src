@@ -404,11 +404,6 @@ class CC_EXPORT LayerImpl {
   void set_native_embed_id(int embedId) { native_embed_id_ = embedId; }
   int native_embed_id() const { return native_embed_id_; }
 
-#if BUILDFLAG(IS_OHOS)
-  void set_is_native_video(bool is_native_video) { is_native_video_ = is_native_video; }
-  bool is_native_video() { return is_native_video_; }
-#endif
-
   void SetNativeRect(const gfx::RectF& rect);
 
   void SetInitScale(float scale);
@@ -565,10 +560,6 @@ class CC_EXPORT LayerImpl {
   bool may_contain_native_;
 
   int native_embed_id_;
-
-#if BUILDFLAG(IS_OHOS)
-  bool is_native_video_;
-#endif
 
   TouchActionRegion touch_action_region_;
 

@@ -43,7 +43,7 @@ if (is_ohos) {
       "//media/base",
       "//url",
     ]
-    
+
     include_dirs = ohos_src_includes
     deps += [
       "//ohos_glue:ohos_adapter_glue_source",

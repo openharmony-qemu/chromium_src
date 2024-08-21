@@ -94,12 +94,6 @@ void NativeRenderClient::OnFrameAvailable() {
 }
 
 void NativeRenderClient::OnSizeChange(const gfx::Rect& rect) {
-  auto frame = native_texture_wrapper_->GetCurrentFrame();
-  if (need_skip) {
-    native_texture_wrapper_->SetSkippingCurrentFrame(true);
-    LOG(DEBUG) << "NativeEmbed OnSizeChange SetSkippingCurrentFrame:" << frame;
-  }
-
   native_texture_wrapper_->UpdateTextureSize(rect.size());
 }
 

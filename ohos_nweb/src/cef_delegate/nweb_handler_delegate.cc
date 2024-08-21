@@ -846,6 +846,10 @@ void NWebHandlerDelegate::OnBeforeClose(CefRefPtr<CefBrowser> browser) {
         .GetWindowAdapterInstance()
         .DestroyNativeWindow(window_);
     window_ = nullptr;
+    OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .GetWindowAdapterInstance()
+        .DestroyNativeWindow(popup_window_);
+    popup_window_ = nullptr;
   }
 
   // Remove from the list of existing browsers.
@@ -3471,6 +3475,21 @@ void NWebHandlerDelegate::OnRenderProcessResponding(
   }
   LOG(INFO) << "OnRenderProcessResponding";
   nweb_handler_->OnRenderProcessResponding();
+}
+
+void NWebHandlerDelegate::SetPopupSurface(void* popup_window) {
+  if (main_browser_ && main_browser_->GetHost()) {
+    if (!is_enhance_surface_) {
+      if (popup_window_ != nullptr) {
+        OHOS::NWeb::OhosAdapterHelper::GetInstance()
+            .GetWindowAdapterInstance()
+            .DestroyNativeWindow(popup_window_);
+        popup_window_ = nullptr;
+      }
+      popup_window_ = popup_window;
+      main_browser_->GetHost()->SetPopupWindow(popup_window_);
+    }
+  }
 }
 #endif
 }  // namespace OHOS::NWeb

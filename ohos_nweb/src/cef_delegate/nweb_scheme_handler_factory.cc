@@ -40,6 +40,7 @@ NWebSchemeHandlerFactory::GetOrCreateForScheme(const std::string& scheme) {
     CefRefPtr<NWebSchemeHandlerFactory> factory =
         new NWebSchemeHandlerFactory();
     CefRegisterSchemeHandlerFactory(scheme, "", factory, false);
+    CefRegisterSchemeHandlerFactory(scheme, "", factory, true);
     g_scheme_handler_factory_map[scheme] = factory;
   }
 

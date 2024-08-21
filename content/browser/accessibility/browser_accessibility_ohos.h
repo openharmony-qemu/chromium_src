@@ -127,6 +127,9 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
 
   void Scroll(const ax::mojom::Action& action) const;
 
+  static BrowserAccessibilityOHOS* GetFromAccessibilityId(
+      int64_t accessibility_id);
+
  protected:
   BrowserAccessibilityOHOS(BrowserAccessibilityManager* manager,
                            ui::AXNode* node);

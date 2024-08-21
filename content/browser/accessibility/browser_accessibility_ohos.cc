@@ -27,6 +27,11 @@
 namespace content {
 using namespace OHOS::NWeb;
 
+using AccessibilityIdMap = std::unordered_map<int64_t, BrowserAccessibilityOHOS*>;
+
+base::LazyInstance<AccessibilityIdMap>::Leaky g_accessibility_id_map =
+    LAZY_INSTANCE_INITIALIZER;
+
 std::unique_ptr<BrowserAccessibility> BrowserAccessibility::Create(
     BrowserAccessibilityManager* manager,
     ui::AXNode* node) {
@@ -38,18 +43,26 @@ BrowserAccessibilityOHOS::BrowserAccessibilityOHOS(
     BrowserAccessibilityManager* manager,
     ui::AXNode* node)
     : BrowserAccessibility(manager, node) {
-  if (node) {
-    accessibility_id_ = static_cast<int64_t>(node->id());
-  } else {
-    accessibility_id_ = -1;
-  }
+  accessibility_id_ = static_cast<int64_t>(GetUniqueId().Get());
+  g_accessibility_id_map.Get()[accessibility_id_] = this;
 }
 
 BrowserAccessibilityOHOS::~BrowserAccessibilityOHOS() {
+  g_accessibility_id_map.Get().erase(accessibility_id_);
 }
 
 int64_t BrowserAccessibilityOHOS::GetAccessibilityId() const {
   return accessibility_id_;
+}
+
+BrowserAccessibilityOHOS* BrowserAccessibilityOHOS::GetFromAccessibilityId(
+    int64_t accessibility_id) {
+  AccessibilityIdMap* unique_ids = g_accessibility_id_map.Pointer();
+  auto iter = unique_ids->find(accessibility_id);
+  if (iter != unique_ids->end())
+    return iter->second;
+
+  return nullptr;
 }
 
 bool BrowserAccessibilityOHOS::IsEnabled() const {

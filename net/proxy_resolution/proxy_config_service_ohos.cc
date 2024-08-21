@@ -211,7 +211,7 @@ void CreateStaticProxyConfig(const std::string& host,
     proxy_config.set_pac_mandatory(false);
     *config =
         ProxyConfigWithAnnotation(proxy_config, MISSING_TRAFFIC_ANNOTATION);
-  } else if (port != 0) {
+  } else if (port != 0 && !host.empty()) {
     std::string rules = base::StringPrintf("%s:%d", host.c_str(), port);
     proxy_config.proxy_rules().ParseFromString(rules);
     proxy_config.proxy_rules().bypass_rules.Clear();

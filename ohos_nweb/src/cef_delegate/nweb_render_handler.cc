@@ -845,11 +845,11 @@ bool NWebRenderHandler::StartDragging(CefRefPtr<CefBrowser> browser,
   }
 
   auto fragment = drag_data->GetFragmentText();
-  LOG(INFO) << "DragDrop drag data GetFragmentText:" << fragment.ToString();
+  LOG(INFO) << "DragDrop drag data GetFragmentText:" << fragment.length();
   auto link_url = drag_data->GetLinkURL();
-  LOG(INFO) << "DragDrop drag data GetLinkURL:" << link_url.ToString();
+  LOG(INFO) << "DragDrop drag data GetLinkURL:" << link_url.length();
   auto link_html = drag_data->GetFragmentHtml();
-  LOG(INFO) << "DragDrop drag data GetFragmentHtml:" << link_html.ToString();
+  LOG(INFO) << "DragDrop drag data GetFragmentHtml:" << link_html.length();
 
   ImageDragForFileUri(drag_data);
   CefPoint drag_touch_point(x, y);

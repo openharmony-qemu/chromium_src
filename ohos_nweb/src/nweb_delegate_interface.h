@@ -545,6 +545,8 @@ class NWebDelegateInterface
   virtual void EnableMixedContentAutoUpgrades(bool enable) = 0;
   virtual bool IsMixedContentAutoUpgradesEnabled() = 0;
 #endif
+
+  virtual void SetPopupSurface(void* popupSurface) = 0;
 };
 }  // namespace OHOS::NWeb
 

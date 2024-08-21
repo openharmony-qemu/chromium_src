@@ -3506,3 +3506,34 @@ void NWebImpl::TrimMemoryByPressureLevel(int32_t memoryLevel) {
   base::MemoryPressureListener::NotifyMemoryPressure(memory_pressure_level);
 #endif  // OHOS_PERFORMANCE_MEMORY_THRESHOLD
 }
+
+void NWebImpl::SetPopupSurface(void* popupSurface) {
+
+  uint32_t width, height;
+  output_handler_->GetWindowInfo(width, height);
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E(
+        "SetPopupSurface failed,nweb_delegate is nullptr.");
+    return;
+  }
+
+  if (output_handler_ == nullptr) {
+    WVLOG_E("SetPopupSurface failed, NWeb output handler is not ready");
+    return;
+  }
+  void* popup_window = nullptr;
+  popup_window = output_handler_->GetNativeWindowFromSurface(popupSurface);
+
+  int32_t ret = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                    .GetWindowAdapterInstance()
+                    .NativeWindowSetBufferGeometry(
+                        reinterpret_cast<void*>(popup_window), width,height);
+  if (ret == OHOS::NWeb::GSErrorCode::GSERROR_OK) {
+    WVLOG_I("popup window opt for emulator in init, result = %{public}d", ret);
+  } else {
+    WVLOG_W(
+        "popup window opt for emulator in init failed, result = %{public}d",
+        ret);
+  }
+  nweb_delegate_->SetPopupSurface(popup_window);
+}

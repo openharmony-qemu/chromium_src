@@ -117,6 +117,10 @@ class NWebRenderHandler : public CefRenderHandler {
 
   void ReleaseResizeHold(CefRefPtr<CefBrowser> browser) override;
 
+  void OnPopupSize(CefRefPtr<CefBrowser> browser, const CefRect& rect) override;
+
+  void OnPopupShow(CefRefPtr<CefBrowser> browser, bool show) override;
+
   void OnScrollOffsetChanged(CefRefPtr<CefBrowser> browser,
                              double x,
                              double y) override;

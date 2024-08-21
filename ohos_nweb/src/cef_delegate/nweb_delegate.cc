@@ -4042,4 +4042,12 @@ void NWebDelegate::SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) 
   GetBrowser()->SetBackForwardCacheOptions(size, timeToLive);
 }
 #endif
+
+void NWebDelegate::SetPopupSurface(void* popupSurface) {
+  if (handler_delegate_ == nullptr) {
+    LOG(ERROR) << "fail to set popup surface handle_delegate_ don't exist.";
+    return;
+  }
+  handler_delegate_->SetPopupSurface(popupSurface);
+}
 }  // namespace OHOS::NWeb

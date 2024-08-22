@@ -175,11 +175,23 @@ void PartitionAddressSpace::Init() {
 #else
   int regular_pool_fd = -1;
 #endif
+#if BUILDFLAG(IS_OHOS)
+  int retry_count = 5;
+  do {
+    setup_.regular_pool_base_address_ =
+        AllocPages(regular_pool_size, regular_pool_size,
+                   PageAccessibilityConfiguration(
+                       PageAccessibilityConfiguration::kInaccessible),
+                   PageTag::kPartitionAlloc, regular_pool_fd);
+    retry_count--;
+  } while (!setup_.regular_pool_base_address_ && retry_count > 0);
+#else
   setup_.regular_pool_base_address_ =
       AllocPages(regular_pool_size, regular_pool_size,
                  PageAccessibilityConfiguration(
                      PageAccessibilityConfiguration::kInaccessible),
                  PageTag::kPartitionAlloc, regular_pool_fd);
+#endif
   if (!setup_.regular_pool_base_address_) {
     HandlePoolAllocFailure();
   }
@@ -194,12 +206,26 @@ void PartitionAddressSpace::Init() {
   // is a valid pointer, and having a "forbidden zone" before the BRP pool
   // prevents such a pointer from "sneaking into" the pool.
   const size_t kForbiddenZoneSize = PageAllocationGranularity();
+#if BUILDFLAG(IS_OHOS)
+  uintptr_t base_address;
+  retry_count = 5;
+  do {
+    base_address = AllocPagesWithAlignOffset(
+        0, brp_pool_size + kForbiddenZoneSize, brp_pool_size,
+        brp_pool_size - kForbiddenZoneSize,
+        PageAccessibilityConfiguration(
+            PageAccessibilityConfiguration::kInaccessible),
+        PageTag::kPartitionAlloc, brp_pool_fd);
+    retry_count--;
+  } while (!base_address && retry_count > 0);
+#else
   uintptr_t base_address = AllocPagesWithAlignOffset(
       0, brp_pool_size + kForbiddenZoneSize, brp_pool_size,
       brp_pool_size - kForbiddenZoneSize,
       PageAccessibilityConfiguration(
           PageAccessibilityConfiguration::kInaccessible),
       PageTag::kPartitionAlloc, brp_pool_fd);
+#endif
   if (!base_address) {
     HandlePoolAllocFailure();
   }

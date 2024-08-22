@@ -40,9 +40,11 @@ class CAPTURE_EXPORT VideoCaptureDeviceFactoryOHOS
   void OnCameraStatusChanged(CameraStatusAdapter camera_status, std::string callback_device_id);
  private:
   int CheckDeviceId(const std::string device_id);
+  bool CheckAndInitCameraManager();
   scoped_refptr<base::SingleThreadTaskRunner> ui_task_runner_;
   std::shared_ptr<CameraManagerAdapter> camera_manager_adapter_;
   base::WeakPtrFactory<VideoCaptureDeviceFactoryOHOS> weak_factory_{this};
+  bool is_camera_manager_created_{false};
 };
 
 }  // namespace media

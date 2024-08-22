@@ -422,12 +422,10 @@ void FeatureList::AddFeaturesToAllocator(PersistentMemoryAllocator* allocator) {
 #if defined(OHOS_SCROLLBAR)
 void FeatureList::ModifyFeaturesToAllocator(PersistentMemoryAllocator* allocator) {
   DCHECK(initialized_);
-  LOG(INFO) << __func__ << " scroll:" << overrides_.size();
+  LOG(INFO) << "modify features";
   PersistentMemoryAllocator::Iterator iter(allocator);
   const FeatureEntry* entry;
-  int i = 0;
   while ((entry = iter.GetNextOfObject<FeatureEntry>()) != nullptr) {
-    LOG(INFO) << "scroll init size:" << i++;
     StringPiece feature_name;
     StringPiece trial_name;
     if (!entry->GetFeatureAndTrialName(&feature_name, &trial_name))
@@ -440,8 +438,8 @@ void FeatureList::ModifyFeaturesToAllocator(PersistentMemoryAllocator* allocator
 }
 
 void FeatureList::AddFeatureToField(PersistentMemoryAllocator* allocator, std::string feature_name) {
+  AutoLock lock(overrides_lock_);
   for (const auto& override : overrides_) {
-    LOG(INFO) << "scroll name: " << override.first << " state:" << override.second.overridden_state;
     if (override.first != "OverlayScrollbar" && override.first != "ForceScrollbar") {
       continue;
     }
@@ -781,9 +779,9 @@ void FeatureList::SetOverrideStateByFeatureName(
     StringPiece feature_name, OverrideState state) {
   DCHECK(initialized_);
   DCHECK(IsValidFeatureOrFieldTrialName(feature_name)) << feature_name;
+  AutoLock lock(overrides_lock_);
   auto it = overrides_.find(feature_name);
   if (it == overrides_.end()) {
-    LOG(INFO) << "scroll add feature: " << feature_name << " state:" << state;
     overrides_.emplace(std::string(feature_name),
                    OverrideEntry(state, nullptr));
   }

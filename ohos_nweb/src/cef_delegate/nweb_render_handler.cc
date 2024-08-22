@@ -544,6 +544,19 @@ void NWebRenderHandler::OnPaint(CefRefPtr<CefBrowser> browser,
   }
 }
 
+void NWebRenderHandler::OnPopupSize(CefRefPtr<CefBrowser> browser, const CefRect& rect) {
+  if (auto handler = handler_.lock()) {
+    float ratio = GetCefDeviceRatio();
+    handler->OnPopupSize(rect.x * ratio, rect.y * ratio, rect.width * ratio, rect.height * ratio);
+  }
+}
+
+void NWebRenderHandler::OnPopupShow(CefRefPtr<CefBrowser> browser, bool show) {
+  if (auto handler = handler_.lock()) {
+    handler->OnPopupShow(show);
+  }
+}
+
 void NWebRenderHandler::OnRootLayerChanged(CefRefPtr<CefBrowser> browser,
                                            int height,
                                            int width) {

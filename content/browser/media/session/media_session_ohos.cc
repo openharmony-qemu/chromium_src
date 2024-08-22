@@ -222,12 +222,10 @@ bool MediaSessionOHOS::SetWebviewShow(bool show) {
       media_session_->RebuildAndNotifyMediaSessionInfoChanged();
     }
     ret = true;
-  } else {
-    if (avsession_adapter_) {
-      avsession_adapter_->DestroyAVSession();
-      media_type_ = OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID;
-      ret = true;
-    }
+  } else if (avsession_adapter_) {
+    avsession_adapter_->DestroyAVSession();
+    media_type_ = OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID;
+    ret = true;
   }
   return ret;
 }

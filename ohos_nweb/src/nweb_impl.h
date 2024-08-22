@@ -555,6 +555,8 @@ class NWebImpl : public NWeb {
   bool IsMixedContentAutoUpgradesEnabled();
 #endif
 
+ void SetPopupSurface(void* popupSurface) override;
+
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

@@ -535,6 +535,8 @@ void NotifyForNextTouchEvent() override;
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override;
 #endif
 
+   void SetPopupSurface(void* popupSurface) override;
+
  public:
   int argc_;
   const char** argv_;

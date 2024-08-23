@@ -1013,7 +1013,7 @@ int NWebDelegate::Load(const std::string& url) {
   if (IsFileProtocol(file_gurl) && !IsUrlFileExist(file_gurl, url)) {
     return NWEB_INVALID_RESOURCE;
   }
-  LOG(DEBUG) << "NWebDelegate::Load url=" << url;
+  LOG(DEBUG) << "NWebDelegate::Load url: ***";
   auto browser = GetBrowser();
   if (browser == nullptr) {
     LOG(ERROR) << "NWebDelegate::Load browser is nullptr";

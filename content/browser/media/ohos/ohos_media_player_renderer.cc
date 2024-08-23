@@ -25,6 +25,13 @@ namespace content {
 
 namespace {
 const float kDefaultVolume = 1.0;
+enum PlaybackRate {
++    PLAYBACK_RATE_0_00 = 0,
++    PLAYBACK_RATE_1_00 = 1,
++    PLAYBACK_RATE_1_25 = 1.25,
++    PLAYBACK_RATE_1_75 = 1.75,
++    PLAYBACK_RATE_2_00 = 2
++};
 enum InterruptHint {
   INTERRUPT_HINT_NONE = 0,
   INTERRUPT_HINT_RESUME,
@@ -121,17 +128,17 @@ void OHOSMediaPlayerRenderer::StartPlayingFrom(base::TimeDelta time) {
 void OHOSMediaPlayerRenderer::SetPlaybackRate(double playback_rate) {
   if (has_error_)
     return;
-  if (playback_rate <= 0) {
+  if (playback_rate <= PLAYBACK_RATE_0_00) {
     media_player_->Pause();
   } else {
     OHOS::NWeb::PlaybackRateMode mode;
-    if (playback_rate < 1) {
+    if (playback_rate < PLAYBACK_RATE_1_00) {
       mode = OHOS::NWeb::PlaybackRateMode::SPEED_FORWARD_0_75_X;
-    } else if (playback_rate < 1.25) {
+    } else if (playback_rate < PLAYBACK_RATE_1_25) {
       mode = OHOS::NWeb::PlaybackRateMode::SPEED_FORWARD_1_00_X;
-    } else if (playback_rate < 1.75) {
+    } else if (playback_rate < PLAYBACK_RATE_1_75) {
       mode = OHOS::NWeb::PlaybackRateMode::SPEED_FORWARD_1_25_X;
-    } else if (playback_rate < 2) {
+    } else if (playback_rate < PLAYBACK_RATE_2_00) {
       mode = OHOS::NWeb::PlaybackRateMode::SPEED_FORWARD_1_75_X;
     } else {
       mode = OHOS::NWeb::PlaybackRateMode::SPEED_FORWARD_2_00_X;

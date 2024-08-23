@@ -687,27 +687,21 @@ void NWebPreferenceDelegate::SetScrollable(bool enable) {
     LOG(ERROR) << "SetScrollable failed, browser is null";
     return;
   }
-  browser_->GetHost()->SetScrollable(enable);
+  browser_->GetHost()->SetScrollable(enable, static_cast<int32_t>(WebScrollType::UNKNOWN));
 }
 
 void NWebPreferenceDelegate::SetScrollable(bool enable, int32_t scrollType) {
-  scroll_enabled_ = enable; 
-  if (scrollType == static_cast<int32_t>(WebScrollType::UNKNOWN)) {
-    WebPreferencesChanged();
-    if(!browser_.get()) {
-      LOG(ERROR) << "SetScrollable failed, browser is null";
-      return;
-    }
-    browser_->GetHost()->SetScrollable(enable);
-  } else if (scrollType == static_cast<int32_t>(WebScrollType::EVENT)) {
-    if(!browser_.get()) {
-      LOG(ERROR) << "SetScrollable failed, browser is null";
-      return;
-    }
-    browser_->GetHost()->SetScrollable(enable);
-  } else if (scrollType == static_cast<int32_t>(WebScrollType::POSITION)) {
+  scroll_enabled_ = enable;
+  if (scrollType == static_cast<int32_t>(WebScrollType::UNKNOWN) ||
+      scrollType == static_cast<int32_t>(WebScrollType::POSITION) ||
+      scroll_enabled_) {
     WebPreferencesChanged();
   }
+  if (!browser_.get()) {
+    LOG(ERROR) << "SetScrollable failed, browser is null";
+    return;
+  }
+  browser_->GetHost()->SetScrollable(enable, scrollType);
 }
 
 bool NWebPreferenceDelegate::GetScrollable() {

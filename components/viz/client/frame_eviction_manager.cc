@@ -29,11 +29,11 @@
 namespace viz {
 namespace {
 
-+#if BUILDFLAG(IS_OHOS)
-+constexpr int kOhosFramesMax = 10;
-+constexpr int kOhosFramesBase = 2;
-+constexpr int kPhysicalMemoryBlockSize = 256;
-+#endif
+#if BUILDFLAG(IS_OHOS)
+constexpr int kOhosFramesMax = 10;
+constexpr int kOhosFramesBase = 2;
+constexpr int kPhysicalMemoryBlockSize = 256;
+#endif
 const int kModeratePressurePercentage = 50;
 const int kCriticalPressurePercentage = 10;
 #if (BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_DISCARD_BG_WEBPAGE))

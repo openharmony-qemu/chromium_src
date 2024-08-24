@@ -300,17 +300,14 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
 
 #include "base/trace_event/trace_arguments.h"
 #include "base/trace_event/trace_event_ohos.h"
-#endif
 
-#if defined(OS_OHOS)
 #define TRACE_EVENT0(category_group, name)  \
   BYTRACE_SCOPED_INIT(category_group);      \
   do {                                      \
     if (IsCategoryEnable(category_group)) { \
       BYTRACE_SCOPED_TRACE_EVENT(name);     \
     }                                       \
-  } while (0);                              \
-  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name)
+  } while (0)
 
 #define TRACE_EVENT1(category_group, name, arg1_name, arg1_val)                 \
   BYTRACE_SCOPED_INIT(category_group);                                          \
@@ -318,8 +315,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
     if (IsCategoryEnable(category_group)) {                                     \
       BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val)); \
     }                                                                           \
-  } while (0);                                                                  \
-  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name, arg1_name, arg1_val)
+  } while (0)
 
 #define TRACE_EVENT2(category_group, name, arg1_name, arg1_val, arg2_name,      \
                      arg2_val)                                                  \
@@ -329,9 +325,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
       BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val,   \
                                                   arg2_name, arg2_val));        \
     }                                                                           \
-  } while (0);                                                                  \
-  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name, arg1_name, arg1_val,    \
-                                  arg2_name, arg2_val)
+  } while (0)
 
 #define TRACE_EVENT_WITH_FLOW0(category_group, name, bind_id, flow_flags) \
   BYTRACE_SCOPED_INIT(category_group);                                    \
@@ -341,9 +335,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
       (void) (flow_flags);                                                \
       BYTRACE_SCOPED_TRACE_EVENT(name);                                   \
     }                                                                     \
-  } while (0);                                                            \
-  INTERNAL_TRACE_EVENT_ADD_SCOPED_WITH_FLOW(category_group, name, bind_id,\
-                                            flow_flags)
+  } while (0)
 
 #define TRACE_EVENT_WITH_FLOW1(category_group, name, bind_id, flow_flags,       \
                                arg1_name, arg1_val)                             \
@@ -354,9 +346,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
       (void) (flow_flags);                                                      \
       BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val)); \
     }                                                                           \
-  } while (0);                                                                  \
-  INTERNAL_TRACE_EVENT_ADD_SCOPED_WITH_FLOW(category_group, name, bind_id,      \
-                                            flow_flags, arg1_name, arg1_val)
+  } while (0)
 
 #define TRACE_EVENT_WITH_FLOW2(category_group, name, bind_id, flow_flags,       \
                                arg1_name, arg1_val, arg2_name, arg2_val)        \
@@ -368,80 +358,884 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
       BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val,   \
                                                   arg2_name, arg2_val));        \
     }                                                                           \
-  } while (0);                                                                  \
-  INTERNAL_TRACE_EVENT_ADD_SCOPED_WITH_FLOW(category_group, name, bind_id,      \
-                                            flow_flags, arg1_name, arg1_val,    \
-                                            arg2_name, arg2_val)
+  } while (0)
 
 #define OHOS_TRACE_EVENT0(category_group, name) \
   OHOS_BYTRACE_SCOPED_INIT();                   \
-  do {                                     \
-    if (IsOHOSBytraceEnable()) {               \
+  do {                                          \
+    if (IsOHOSBytraceEnable()) {                \
       OHOS_BYTRACE_SCOPED_TRACE_EVENT(name);    \
-    }                                      \
-  } while (0);                             \
-  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name)
+    }                                           \
+  } while (0)
 
 #define OHOS_TRACE_EVENT1(category_group, name, arg1_name, arg1_val)                 \
   OHOS_BYTRACE_SCOPED_INIT();                                                        \
-  do {                                                                          \
-    if (IsOHOSBytraceEnable()) {                                                    \
+  do {                                                                               \
+    if (IsOHOSBytraceEnable()) {                                                     \
       OHOS_BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val)); \
-    }                                                                           \
-  } while (0);                                                                  \
-  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name, arg1_name, arg1_val)
+    }                                                                                \
+  } while (0)
 
-#define OHOS_TRACE_EVENT2(category_group, name, arg1_name, arg1_val, arg2_name,      \
+#define OHOS_TRACE_EVENT2(category_group, name, arg1_name, arg1_val, arg2_name, \
                      arg2_val)                                                  \
-  OHOS_BYTRACE_SCOPED_INIT();                                                        \
+  OHOS_BYTRACE_SCOPED_INIT();                                                   \
   do {                                                                          \
-    if (IsOHOSBytraceEnable()) {                                                    \
-      OHOS_BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val,   \
-                                                  arg2_name, arg2_val));        \
+    if (IsOHOSBytraceEnable()) {                                                \
+      OHOS_BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name,                   \
+                                                        arg1_name, arg1_val,    \
+                                                        arg2_name, arg2_val));  \
     }                                                                           \
-  } while (0);                                                                  \
-  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name, arg1_name, arg1_val,    \
-                                  arg2_name, arg2_val)
+  } while (0)
 
 #define OHOS_TRACE_EVENT_WITH_FLOW0(category_group, name, bind_id, flow_flags) \
   OHOS_BYTRACE_SCOPED_INIT();                                                  \
-  do {                                                                    \
-    if (IsOHOSBytraceEnable()) {                                              \
-      (void) (bind_id);                                                   \
-      (void) (flow_flags);                                                \
+  do {                                                                         \
+    if (IsOHOSBytraceEnable()) {                                               \
+      (void) (bind_id);                                                        \
+      (void) (flow_flags);                                                     \
       OHOS_BYTRACE_SCOPED_TRACE_EVENT(name);                                   \
+    }                                                                          \
+  } while (0)
+
+#define TRACE_EVENT_BEGIN0(category_group, name)                          \
+  do {                                                                    \
+    if (IsCategoryEnable(category_group)) {                               \
+      StartBytrace(name);                                                 \
     }                                                                     \
-  } while (0);                                                            \
-  INTERNAL_TRACE_EVENT_ADD_SCOPED_WITH_FLOW(category_group, name, bind_id,\
-                                            flow_flags)
+  } while (0)
 
-#define OHOS_TRACE_EVENT_WITH_FLOW1(category_group, name, bind_id, flow_flags,       \
-                               arg1_name, arg1_val)                             \
-  OHOS_BYTRACE_SCOPED_INIT();                                                        \
-  do {                                                                          \
-    if (IsOHOSBytraceEnable()) {                                                    \
-      (void) (bind_id);                                                         \
-      (void) (flow_flags);                                                      \
-      OHOS_BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val)); \
-    }                                                                           \
-  } while (0);                                                                  \
-  INTERNAL_TRACE_EVENT_ADD_SCOPED_WITH_FLOW(category_group, name, bind_id,      \
-                                            flow_flags, arg1_name, arg1_val)
+#define TRACE_EVENT_BEGIN1(category_group, name, arg1_name, arg1_val)     \
+  do {                                                                    \
+    if (IsCategoryEnable(category_group)) {                               \
+      StartBytrace(GetStringFromArgs(name, arg1_name, arg1_val));         \
+    }                                                                     \
+  } while (0)
 
-#define OHOS_TRACE_EVENT_WITH_FLOW2(category_group, name, bind_id, flow_flags,       \
-                               arg1_name, arg1_val, arg2_name, arg2_val)        \
-  OHOS_BYTRACE_SCOPED_INIT();                                                        \
-  do {                                                                          \
-    if (IsOHOSBytraceEnable()) {                                                    \
-      (void) (bind_id);                                                         \
-      (void) (flow_flags);                                                      \
-      OHOS_BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val,   \
-                                                  arg2_name, arg2_val));        \
-    }                                                                           \
-  } while (0);                                                                  \
-  INTERNAL_TRACE_EVENT_ADD_SCOPED_WITH_FLOW(category_group, name, bind_id,      \
-                                            flow_flags, arg1_name, arg1_val,    \
-                                            arg2_name, arg2_val)
+#define TRACE_EVENT_BEGIN2(category_group, name, arg1_name, arg1_val,     \
+                           arg2_name, arg2_val)                           \
+  do {                                                                    \
+    if (IsCategoryEnable(category_group)) {                               \
+      StartBytrace(GetStringFromArgs(name, arg1_name, arg1_val,           \
+                                   arg2_name, arg2_val));                 \
+    }                                                                     \
+  } while (0)
+
+#define TRACE_EVENT_BEGIN_WITH_FLAGS0(category_group, name, flags) \
+  do {                                                             \
+    if (IsCategoryEnable(category_group)) {                        \
+      (void) (flags);                                              \
+      StartBytrace(name);                                          \
+    }                                                              \
+  } while (0)
+
+#define TRACE_EVENT_BEGIN_WITH_FLAGS1(category_group, name, flags, arg1_name, \
+                                      arg1_val)                               \
+  do {                                                                        \
+    if (IsCategoryEnable(category_group)) {                                   \
+      (void) (flags);                                                         \
+      StartBytrace(GetStringFromArgs(name, arg1_name, arg1_val));             \
+    }                                                                         \
+  } while (0)
+
+#define TRACE_EVENT_COPY_BEGIN2(category_group, name, arg1_name, arg1_val, \
+                                arg2_name, arg2_val)                       \
+  do {                                                                     \
+    if (IsCategoryEnable(category_group)) {                                \
+      StartBytrace(GetStringFromArgs(name, arg1_name, arg1_val,            \
+                                   arg2_name, arg2_val));                  \
+    }                                                                      \
+  } while (0)
+
+#define TRACE_EVENT_END0(category_group, name)                          \
+  do {                                                                  \
+    if (IsCategoryEnable(category_group)) {                             \
+      (void) (name);                                                    \
+      FinishBytrace();                                                  \
+    }                                                                   \
+  } while (0)
+
+#define TRACE_EVENT_END1(category_group, name, arg1_name, arg1_val)     \
+  do {                                                                  \
+    if (IsCategoryEnable(category_group)) {                             \
+      (void) (name);                                                    \
+      (void) (arg1_name);                                               \
+      (void) (arg1_val);                                                \
+      FinishBytrace();                                                  \
+    }                                                                   \
+  } while (0)
+
+#define TRACE_EVENT_END2(category_group, name, arg1_name, arg1_val, arg2_name, \
+                         arg2_val)                                             \
+  do {                                                                         \
+    if (IsCategoryEnable(category_group)) {                                    \
+      (void) (name);                                                           \
+      (void) (arg1_name);                                                      \
+      (void) (arg1_val);                                                       \
+      (void) (arg2_name);                                                      \
+      (void) (arg2_val);                                                       \
+      FinishBytrace();                                                         \
+    }                                                                          \
+  } while (0)
+
+#define TRACE_EVENT_END_WITH_FLAGS0(category_group, name, flags) \
+  do {                                                           \
+    if (IsCategoryEnable(category_group)) {                      \
+      (void) (name);                                             \
+      (void) (flags);                                            \
+      FinishBytrace();                                           \
+    }                                                            \
+  } while (0)
+
+#define TRACE_EVENT_END_WITH_FLAGS1(category_group, name, flags, arg1_name,    \
+                                    arg1_val)                                  \
+  do {                                                                         \
+    if (IsCategoryEnable(category_group)) {                                    \
+      (void) (name);                                                           \
+      (void) (arg1_name);                                                      \
+      (void) (arg1_val);                                                       \
+      (void) (flags);                                                          \
+      FinishBytrace();                                                         \
+    }                                                                          \
+  } while (0)
+
+#define TRACE_EVENT_COPY_END2(category_group, name, arg1_name, arg1_val,       \
+                              arg2_name, arg2_val)                             \
+  do {                                                                         \
+    if (IsCategoryEnable(category_group)) {                                    \
+      (void) (name);                                                           \
+      (void) (arg1_name);                                                      \
+      (void) (arg1_val);                                                       \
+      (void) (arg2_name);                                                      \
+      (void) (arg2_val);                                                       \
+      FinishBytrace();                                                         \
+    }                                                                          \
+  } while (0)
+
+#define TRACE_EVENT_MARK_WITH_TIMESTAMP0(category_group, name, timestamp) \
+  BYTRACE_SCOPED_INIT(category_group);                                    \
+  do {                                                                    \
+    if (IsCategoryEnable(category_group)) {                               \
+      (void) (timestamp);                                                 \
+      BYTRACE_SCOPED_TRACE_EVENT(name);                                   \
+    }                                                                     \
+  } while (0)
+
+#define TRACE_EVENT_MARK_WITH_TIMESTAMP1(category_group, name, timestamp,        \
+                                         arg1_name, arg1_val)                    \
+  BYTRACE_SCOPED_INIT(category_group);                                           \
+  do {                                                                           \
+    if (IsCategoryEnable(category_group)) {                                      \
+      (void) (timestamp);                                                        \
+      BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val));  \
+    }                                                                            \
+  } while (0)
+
+#define TRACE_EVENT_MARK_WITH_TIMESTAMP2(                                        \
+    category_group, name, timestamp, arg1_name, arg1_val, arg2_name, arg2_val)   \
+  BYTRACE_SCOPED_INIT(category_group);                                           \
+  do {                                                                           \
+    if (IsCategoryEnable(category_group)) {                                      \
+      (void) (timestamp);                                                        \
+      BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val,    \
+                                                   arg2_name, arg2_val));        \
+    }                                                                            \
+  } while (0)
+
+#define TRACE_EVENT_COPY_MARK(category_group, name)                      \
+  BYTRACE_SCOPED_INIT(category_group);                                   \
+  do {                                                                   \
+    if (IsCategoryEnable(category_group)) {                              \
+      BYTRACE_SCOPED_TRACE_EVENT(name);                                  \
+    }                                                                    \
+  } while (0)
+
+#define TRACE_EVENT_COPY_MARK1(category_group, name, arg1_name, arg1_val)         \
+  BYTRACE_SCOPED_INIT(category_group);                                            \
+  do {                                                                            \
+    if (IsCategoryEnable(category_group)) {                                       \
+      BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val));   \
+    }                                                                             \
+  } while (0)
+
+#define TRACE_EVENT_COPY_MARK_WITH_TIMESTAMP(category_group, name, timestamp)     \
+  BYTRACE_SCOPED_INIT(category_group);                                            \
+  do {                                                                            \
+    if (IsCategoryEnable(category_group)) {                                       \
+      (void) (timestamp);                                                         \
+      BYTRACE_SCOPED_TRACE_EVENT(name);                                           \
+    }                                                                             \
+  } while (0)
+
+#define TRACE_COUNTER1(category_group, name, value)                         \
+  do {                                                                      \
+    if (IsCategoryEnable(category_group)) {                                 \
+      CountBytrace(name, value);                                            \
+    }                                                                       \
+  } while (0)
+
+#define TRACE_COUNTER_WITH_FLAG1(category_group, name, flag, value)         \
+  do {                                                                      \
+    if (IsCategoryEnable(category_group)) {                                 \
+      (void) (flag);                                                        \
+      CountBytrace(name, value);                                            \
+    }                                                                       \
+  } while (0)
+
+#define TRACE_COPY_COUNTER1(category_group, name, value)                    \
+  do {                                                                      \
+    if (IsCategoryEnable(category_group)) {                                 \
+      CountBytrace(name, static_cast<int>(value));                          \
+    }                                                                       \
+  } while (0)
+
+#define TRACE_EVENT_INSTANT0(category_group, name, scope) \
+  do {                                                    \
+    (void) scope;                                         \
+    AddBytrace(category_group, name);                     \
+  } while (0)
+
+#define TRACE_EVENT_INSTANT1(category_group, name, scope, arg1_name, arg1_val) \
+  do {                                                        \
+    (void) scope;                                             \
+    AddBytrace(category_group, name, arg1_name, arg1_val);    \
+  } while (0)
+
+#define TRACE_EVENT_INSTANT2(category_group, name, scope, arg1_name, arg1_val, \
+                             arg2_name, arg2_val)            \
+  do {                                                       \
+    (void) scope;                                            \
+    AddBytrace(category_group, name, arg1_name, arg1_val,    \
+               arg2_name, arg2_val);                         \
+  } while (0)
+
+#define TRACE_EVENT_COPY_INSTANT0(category_group, name, scope) \
+  do {                                                         \
+    (void) scope;                                              \
+    AddBytrace(category_group, name);                          \
+  } while (0)
+
+#define TRACE_EVENT_COPY_INSTANT1(category_group, name, scope, arg1_name, \
+                                  arg1_val)                   \
+  do {                                                        \
+    (void) scope;                                             \
+    AddBytrace(category_group, name, arg1_name, arg1_val);    \
+  } while (0)
+
+#define TRACE_EVENT_COPY_INSTANT2(category_group, name, scope, arg1_name, \
+                                  arg1_val, arg2_name, arg2_val) \
+  do {                                                           \
+    (void) scope;                                                \
+     AddBytrace(category_group, name, arg1_name, arg1_val,       \
+                arg2_name, arg2_val);                            \
+  } while (0)
+
+#define TRACE_EVENT_INSTANT_WITH_FLAGS0(category_group, name, scope_and_flags) \
+  do {                                                    \
+    (void) scope_and_flags;                               \
+    AddBytrace(category_group, name);                     \
+  } while (0)
+
+#define TRACE_EVENT_INSTANT_WITH_FLAGS1(category_group, name, scope_and_flags, \
+                                        arg1_name, arg1_val)  \
+  do {                                                        \
+    (void) scope_and_flags;                                   \
+    AddBytrace(category_group, name, arg1_name, arg1_val);    \
+  } while (0)
+
+#define TRACE_EVENT_INSTANT_WITH_TIMESTAMP0(category_group, name, scope, \
+                                            timestamp)    \
+  do {                                                    \
+    (void) scope;                                         \
+    AddBytrace(category_group, name, timestamp);          \
+  } while (0)
+
+#define TRACE_EVENT_INSTANT_WITH_TIMESTAMP1(category_group, name, scope,  \
+                                            timestamp, arg_name, arg_val) \
+  do {                                                                    \
+    (void) scope;                                                         \
+    AddBytrace(category_group, name, timestamp, arg_name, arg_val);       \
+  } while (0)
+
+#define TRACE_EVENT_BEGIN_WITH_ID_TID_AND_TIMESTAMP0(category_group, name, id, \
+                                                     thread_id, timestamp)     \
+  do {                                                    \
+    (void) id;                                            \
+    (void) thread_id;                                     \
+    AddBytrace(category_group, name, timestamp);          \
+  } while (0)
+
+#define TRACE_EVENT_COPY_BEGIN_WITH_ID_TID_AND_TIMESTAMP0( \
+    category_group, name, id, thread_id, timestamp)        \
+  do {                                                     \
+    (void) id;                                             \
+    (void) thread_id;                                      \
+    AddBytrace(category_group, name, timestamp);           \
+  } while (0)
+
+#define TRACE_EVENT_COPY_BEGIN_WITH_ID_TID_AND_TIMESTAMP1(               \
+    category_group, name, id, thread_id, timestamp, arg1_name, arg1_val) \
+  do {                                                                   \
+    (void) id;                                                           \
+    (void) thread_id;                                                    \
+    AddBytrace(category_group, name, timestamp, arg1_name, arg1_val);    \
+  } while (0)
+
+#define TRACE_EVENT_COPY_BEGIN_WITH_ID_TID_AND_TIMESTAMP2(                \
+    category_group, name, id, thread_id, timestamp, arg1_name, arg1_val,  \
+    arg2_name, arg2_val) \
+  do {                                                        \
+    (void) id;                                                \
+    (void) thread_id;                                         \
+    (void) timestamp;                                         \
+    AddBytrace(category_group, name, arg1_name, arg1_val,     \
+               arg2_name, arg2_val);                          \
+  } while (0)
+
+#define TRACE_EVENT_END_WITH_ID_TID_AND_TIMESTAMP0(category_group, name, id, \
+                                                   thread_id, timestamp)     \
+  do {                                                    \
+    (void) id;                                            \
+    (void) thread_id;                                     \
+    AddBytrace(category_group, name, timestamp);          \
+  } while (0)
+
+#define TRACE_EVENT_COPY_END_WITH_ID_TID_AND_TIMESTAMP0(  \
+    category_group, name, id, thread_id, timestamp)       \
+  do {                                                    \
+    (void) id;                                            \
+    (void) thread_id;                                     \
+    AddBytrace(category_group, name, timestamp);          \
+  } while (0)
+
+#define TRACE_EVENT_COPY_END_WITH_ID_TID_AND_TIMESTAMP1(                 \
+    category_group, name, id, thread_id, timestamp, arg1_name, arg1_val) \
+  do {                                                                   \
+    (void) id;                                                           \
+    (void) thread_id;                                                    \
+    AddBytrace(category_group, name, timestamp, arg1_name, arg1_val);    \
+  } while (0)
+
+#define TRACE_EVENT_COPY_END_WITH_ID_TID_AND_TIMESTAMP2(      \
+    category_group, name, id, thread_id, timestamp, arg1_name, arg1_val, \
+    arg2_name, arg2_val)                                      \
+  do {                                                        \
+    (void) id;                                                \
+    (void) thread_id;                                         \
+    (void) timestamp;                                         \
+    AddBytrace(category_group, name, arg1_name, arg1_val,     \
+               arg2_name, arg2_val);                          \
+  } while (0)
+
+#define TRACE_COUNTER2(category_group, name, value1_name, value1_val, \
+                       value2_name, value2_val)                  \
+  do {                                                           \
+    AddBytrace(category_group, name, value1_name, value1_val,    \
+               value2_name, value2_val);                         \
+  } while (0)
+
+#define TRACE_COPY_COUNTER2(category_group, name, value1_name, value1_val,  \
+                            value2_name, value2_val)             \
+  do {                                                           \
+    AddBytrace(category_group, name, value1_name, value1_val,    \
+               value2_name, value2_val);                         \
+  } while (0)
+
+#define TRACE_COUNTER_WITH_TIMESTAMP2(category_group, name, timestamp,      \
+                                      value1_name, value1_val, value2_name, \
+                                      value2_val)                \
+  do {                                                           \
+    (void) timestamp;                                            \
+    AddBytrace(category_group, name, value1_name, value1_val,    \
+               value2_name, value2_val);                         \
+  } while (0)
+
+#define TRACE_COUNTER_ID1(category_group, name, id, value) \
+  do {                                                     \
+    (void) id;                                             \
+    (void) value;                                          \
+    AddBytrace(category_group, name);                      \
+  } while (0)
+
+#define TRACE_COPY_COUNTER_ID1(category_group, name, id, value) \
+  do {                                                          \
+    (void) id;                                                  \
+    (void) value;                                               \
+    AddBytrace(category_group, name);                           \
+  } while (0)
+
+#define TRACE_COUNTER_ID2(category_group, name, id, value1_name, value1_val,  \
+                          value2_name, value2_val)               \
+  do {                                                           \
+    (void) id;                                                   \
+    AddBytrace(category_group, name, value1_name, value1_val,    \
+               value2_name, value2_val);                         \
+  } while (0)
+
+#define TRACE_COPY_COUNTER_ID2(category_group, name, id, value1_name, \
+                               value1_val, value2_name, value2_val)   \
+  do {                                                                \
+    (void) id;                                                        \
+    AddBytrace(category_group, name, value1_name, value1_val,         \
+               value2_name, value2_val);                              \
+  } while (0)
+
+#define TRACE_EVENT_SAMPLE_WITH_ID1(category_group, name, id, arg1_name, \
+                                    arg1_val)                 \
+  do {                                                        \
+    (void) id;                                                \
+    AddBytrace(category_group, name, arg1_name, arg1_val);    \
+  } while (0)
+
+#define TRACE_EVENT_ASYNC_BEGIN0(category_group, name, id) \
+  do {                                                     \
+    (void) id;                                             \
+    AddBytrace(category_group, name);                      \
+  } while (0)
+
+#define TRACE_EVENT_ASYNC_BEGIN1(category_group, name, id, arg1_name, \
+                                 arg1_val)                    \
+  do {                                                        \
+    (void) id;                                                \
+    AddBytrace(category_group, name, arg1_name, arg1_val);    \
+  } while (0)
+
+#define TRACE_EVENT_ASYNC_BEGIN2(category_group, name, id, arg1_name, \
+                                 arg1_val, arg2_name, arg2_val) \
+  do {                                                          \
+    (void) id;                                                  \
+    AddBytrace(category_group, name, arg1_name, arg1_val,       \
+               arg2_name, arg2_val);                            \
+  } while (0)
+
+#define TRACE_EVENT_COPY_ASYNC_BEGIN0(category_group, name, id) \
+  do {                                                          \
+    (void) id;                                                  \
+    AddBytrace(category_group, name);                           \
+  } while (0)
+
+#define TRACE_EVENT_COPY_ASYNC_BEGIN1(category_group, name, id, arg1_name, \
+                                      arg1_val)               \
+  do {                                                        \
+    (void) id;                                                \
+    AddBytrace(category_group, name, arg1_name, arg1_val);    \
+  } while (0)
+
+#define TRACE_EVENT_COPY_ASYNC_BEGIN2(category_group, name, id, arg1_name, \
+                                      arg1_val, arg2_name, arg2_val)       \
+  do {                                                       \
+    (void) id;                                               \
+    AddBytrace(category_group, name, arg1_name, arg1_val,    \
+               arg2_name, arg2_val);                         \
+  } while (0)
+
+#define TRACE_EVENT_ASYNC_BEGIN_WITH_TIMESTAMP0(category_group, name, id, \
+                                                timestamp) \
+  do {                                                    \
+    (void) id;                                            \
+    AddBytrace(category_group, name, timestamp);          \
+  } while (0)
+
+#define TRACE_EVENT_ASYNC_BEGIN_WITH_TIMESTAMP1(                      \
+    category_group, name, id, timestamp, arg1_name, arg1_val)         \
+  do {                                                                \
+    (void) id;                                                        \
+    AddBytrace(category_group, name, timestamp, arg1_name, arg1_val); \
+  } while (0)
+
+#define TRACE_EVENT_ASYNC_BEGIN_WITH_TIMESTAMP2(category_group, name, id,      \
+                                                timestamp, arg1_name,          \
+                                                arg1_val, arg2_name, arg2_val) \
+  do {                                                       \
+    (void) id;                                               \
+    (void) timestamp;                                        \
+    AddBytrace(category_group, name, arg1_name, arg1_val,    \
+    arg2_name, arg2_val);                                    \
+  } while (0)
+
+#define TRACE_EVENT_COPY_ASYNC_BEGIN_WITH_TIMESTAMP0(category_group, name, id, \
+                                                     timestamp) \
+  do {                                                          \
+    (void) id;                                                  \
+    AddBytrace(category_group, name, timestamp);                \
+  } while (0)
+
+#define TRACE_EVENT_ASYNC_STEP_INTO0(category_group, name, id, step) \
+  do {                                                               \
+    (void) id;                                                       \
+    (void) step;                                                     \
+    AddBytrace(category_group, name);                                \
+  } while (0)
+
+#define TRACE_EVENT_ASYNC_STEP_INTO1(category_group, name, id, step, \
+                                     arg1_name, arg1_val)            \
+  do {                                                               \
+    (void) id;                                                       \
+    (void) step;                                                     \
+    AddBytrace(category_group, name, arg1_name, arg1_val);           \
+  } while (0)
+
+#define TRACE_EVENT_ASYNC_STEP_INTO_WITH_TIMESTAMP0(category_group, name, id, \
+                                                    step, timestamp)          \
+  do {                                                    \
+    (void) id;                                            \
+    (void) step;                                          \
+    AddBytrace(category_group, name, timestamp);          \
+  } while (0)
+
+#define TRACE_EVENT_ASYNC_STEP_PAST0(category_group, name, id, step) \
+  do {                                                    \
+    (void) id;                                            \
+    (void) step;                                          \
+    AddBytrace(category_group, name);                     \
+  } while (0)
+
+#define TRACE_EVENT_ASYNC_STEP_PAST1(category_group, name, id, step, \
+                                     arg1_name, arg1_val)     \
+  do {                                                        \
+    (void) id;                                                \
+    (void) step;                                              \
+    AddBytrace(category_group, name, arg1_name, arg1_val);    \
+  } while (0)
+
+#define TRACE_EVENT_ASYNC_END0(category_group, name, id)  \
+  do {                                                    \
+    (void) id;                                            \
+    AddBytrace(category_group, name);                     \
+  } while (0)
+
+#define TRACE_EVENT_ASYNC_END1(category_group, name, id, arg1_name, arg1_val) \
+  do {                                                        \
+    (void) id;                                                \
+    AddBytrace(category_group, name, arg1_name, arg1_val);    \
+  } while (0)
+
+#define TRACE_EVENT_ASYNC_END2(category_group, name, id, arg1_name, arg1_val, \
+                               arg2_name, arg2_val)          \
+  do {                                                       \
+    (void) id;                                               \
+    AddBytrace(category_group, name, arg1_name, arg1_val,    \
+               arg2_name, arg2_val);                         \
+  } while (0)
+
+#define TRACE_EVENT_COPY_ASYNC_END0(category_group, name, id) \
+  do {                                                        \
+    (void) id;                                                \
+    AddBytrace(category_group, name);                         \
+  } while (0)
+
+#define TRACE_EVENT_COPY_ASYNC_END1(category_group, name, id, arg1_name, \
+                                    arg1_val)                 \
+  do {                                                        \
+    (void) id;                                                \
+    AddBytrace(category_group, name, arg1_name, arg1_val);    \
+  } while (0)
+
+#define TRACE_EVENT_COPY_ASYNC_END2(category_group, name, id, arg1_name, \
+                                    arg1_val, arg2_name, arg2_val) \
+  do {                                                       \
+    (void) id;                                               \
+    AddBytrace(category_group, name, arg1_name, arg1_val,    \
+               arg2_name, arg2_val);                         \
+  } while (0)
+
+#define TRACE_EVENT_ASYNC_END_WITH_TIMESTAMP0(category_group, name, id, \
+                                              timestamp)  \
+  do {                                                    \
+    (void) id;                                            \
+    AddBytrace(category_group, name, timestamp);          \
+  } while (0)
+
+#define TRACE_EVENT_ASYNC_END_WITH_TIMESTAMP1(category_group, name, id,       \
+                                              timestamp, arg1_name, arg1_val) \
+  do {                                                                        \
+    (void) id;                                                                \
+    AddBytrace(category_group, name, timestamp, arg1_name, arg1_val);         \
+  } while (0)
+
+#define TRACE_EVENT_ASYNC_END_WITH_TIMESTAMP2(category_group, name, id,       \
+                                              timestamp, arg1_name, arg1_val, \
+                                              arg2_name, arg2_val) \
+  do {                                                       \
+    (void) id;                                               \
+    (void) timestamp;                                        \
+    AddBytrace(category_group, name, arg1_name, arg1_val,    \
+               arg2_name, arg2_val);                         \
+  } while (0)
+
+#define TRACE_EVENT_COPY_ASYNC_END_WITH_TIMESTAMP0(category_group, name, id, \
+                                                   timestamp) \
+  do {                                                    \
+    (void) id;                                            \
+    AddBytrace(category_group, name, timestamp);          \
+  } while (0)
+
+#define TRACE_EVENT_NESTABLE_ASYNC_BEGIN0(category_group, name, id) \
+  do {                                                    \
+    (void) id;                                            \
+    AddBytrace(category_group, name);                     \
+  } while (0)
+
+#define TRACE_EVENT_NESTABLE_ASYNC_BEGIN1(category_group, name, id, arg1_name, \
+                                          arg1_val)           \
+  do {                                                        \
+    (void) id;                                                \
+    AddBytrace(category_group, name, arg1_name, arg1_val);    \
+  } while (0)
+
+#define TRACE_EVENT_NESTABLE_ASYNC_BEGIN2(category_group, name, id, arg1_name, \
+                                          arg1_val, arg2_name, arg2_val) \
+  do {                                                        \
+    (void) id;                                                \
+    AddBytrace(category_group, name, arg1_name, arg1_val,     \
+               arg2_name, arg2_val);                          \
+  } while (0)
+
+#define TRACE_EVENT_NESTABLE_ASYNC_BEGIN_WITH_FLAGS0(category_group, name, id, \
+                                                     flags) \
+  do {                                                      \
+    (void) id;                                              \
+    (void) flags;                                           \
+    AddBytrace(category_group, name);                       \
+  } while (0)
+
+#define TRACE_EVENT_NESTABLE_ASYNC_END0(category_group, name, id) \
+  do {                                                            \
+    (void) id;                                                    \
+    AddBytrace(category_group, name);                             \
+  } while (0)
+
+#define TRACE_EVENT_NESTABLE_ASYNC_END1(category_group, name, id, arg1_name, \
+                                        arg1_val)             \
+  do {                                                        \
+    (void) id;                                                \
+    AddBytrace(category_group, name, arg1_name, arg1_val);    \
+  } while (0)
+
+#define TRACE_EVENT_NESTABLE_ASYNC_END2(category_group, name, id, arg1_name, \
+                                        arg1_val, arg2_name, arg2_val)       \
+  do {                                                        \
+    (void) id;                                                \
+    AddBytrace(category_group, name, arg1_name, arg1_val,     \
+               arg2_name, arg2_val);                          \
+  } while (0)
+
+#define TRACE_EVENT_NESTABLE_ASYNC_END_WITH_FLAGS0(category_group, name, id, \
+                                                   flags) \
+  do {                                                    \
+    (void) id;                                            \
+    (void) flags;                                         \
+    AddBytrace(category_group, name);                     \
+  } while (0)
+
+#define TRACE_EVENT_NESTABLE_ASYNC_INSTANT0(category_group, name, id) \
+  do {                                                    \
+    (void) id;                                            \
+    AddBytrace(category_group, name);                     \
+  } while (0)
+
+#define TRACE_EVENT_NESTABLE_ASYNC_INSTANT1(category_group, name, id, \
+                                            arg1_name, arg1_val)      \
+  do {                                                        \
+    (void) id;                                                \
+    AddBytrace(category_group, name, arg1_name, arg1_val);    \
+  } while (0)
+
+#define TRACE_EVENT_NESTABLE_ASYNC_INSTANT2(                            \
+    category_group, name, id, arg1_name, arg1_val, arg2_name, arg2_val) \
+  do {                                                        \
+    (void) id;                                                \
+    AddBytrace(category_group, name, arg1_name, arg1_val,     \
+               arg2_name, arg2_val);                          \
+  } while (0)
+
+#define TRACE_EVENT_COPY_NESTABLE_ASYNC_BEGIN_WITH_TTS2(                \
+    category_group, name, id, arg1_name, arg1_val, arg2_name, arg2_val) \
+  do {                                                        \
+    (void) id;                                                \
+    AddBytrace(category_group, name, arg1_name, arg1_val,     \
+               arg2_name, arg2_val);                          \
+  } while (0)
+
+#define TRACE_EVENT_COPY_NESTABLE_ASYNC_END_WITH_TTS2(                  \
+    category_group, name, id, arg1_name, arg1_val, arg2_name, arg2_val) \
+  do {                                                        \
+    (void) id;                                                \
+    AddBytrace(category_group, name, arg1_name, arg1_val,     \
+               arg2_name, arg2_val);                          \
+  } while (0)
+
+#define TRACE_EVENT_NESTABLE_ASYNC_BEGIN_WITH_TIMESTAMP0(category_group, name, \
+                                                         id, timestamp)        \
+  do {                                                    \
+    (void) id;                                            \
+    AddBytrace(category_group, name, timestamp);          \
+  } while (0)
+
+#define TRACE_EVENT_NESTABLE_ASYNC_BEGIN_WITH_TIMESTAMP1( \
+    category_group, name, id, timestamp, arg1_name, arg1_val) \
+  do {                                                        \
+    (void) id;                                                \
+    AddBytrace(category_group, name, timestamp);              \
+  } while (0)
+
+#define TRACE_EVENT_NESTABLE_ASYNC_BEGIN_WITH_TIMESTAMP_AND_FLAGS0( \
+    category_group, name, id, timestamp, flags)           \
+  do {                                                    \
+    (void) id;                                            \
+    (void) flags;                                         \
+    AddBytrace(category_group, name, timestamp);          \
+  } while (0)
+
+#define TRACE_EVENT_NESTABLE_ASYNC_END_WITH_TIMESTAMP0(category_group, name, \
+                                                       id, timestamp)        \
+  do {                                                    \
+    (void) id;                                            \
+    AddBytrace(category_group, name, timestamp);          \
+  } while (0)
+
+#define TRACE_EVENT_NESTABLE_ASYNC_END_WITH_TIMESTAMP1(       \
+    category_group, name, id, timestamp, arg1_name, arg1_val) \
+  do {                                                        \
+    (void) id;                                                \
+    AddBytrace(category_group, name, timestamp, arg1_name, arg1_val); \
+  } while (0)
+
+#define TRACE_EVENT_NESTABLE_ASYNC_END_WITH_TIMESTAMP2(                  \
+    category_group, name, id, timestamp, arg1_name, arg1_val, arg2_name, \
+    arg2_val)                                                 \
+  do {                                                        \
+    (void) id;                                                \
+    (void) timestamp;                                         \
+    AddBytrace(category_group, name, arg1_name, arg1_val,     \
+               arg2_name, arg2_val);                          \
+  } while (0)
+
+#define TRACE_EVENT_NESTABLE_ASYNC_END_WITH_TIMESTAMP_AND_FLAGS0( \
+    category_group, name, id, timestamp, flags)           \
+  do {                                                    \
+    (void) id;                                            \
+    (void) flags;                                         \
+    AddBytrace(category_group, name, timestamp);          \
+  } while (0)
+
+#define TRACE_EVENT_NESTABLE_ASYNC_INSTANT_WITH_TIMESTAMP0( \
+    category_group, name, id, timestamp)                    \
+  do {                                                      \
+    (void) id;                                              \
+    AddBytrace(category_group, name, timestamp);            \
+  } while (0)
+
+#define TRACE_EVENT_COPY_NESTABLE_ASYNC_BEGIN0(category_group, name, id) \
+  do {                                                    \
+    (void) id;                                            \
+    AddBytrace(category_group, name);                     \
+  } while (0)
+
+#define TRACE_EVENT_COPY_NESTABLE_ASYNC_BEGIN1(category_group, name, id,   \
+                                               arg1_name, arg1_val)        \
+  do {                                                        \
+    (void) id;                                                \
+    AddBytrace(category_group, name, arg1_name, arg1_val);    \
+  } while (0)
+
+#define TRACE_EVENT_COPY_NESTABLE_ASYNC_BEGIN2(                         \
+    category_group, name, id, arg1_name, arg1_val, arg2_name, arg2_val) \
+  do {                                                        \
+    (void) id;                                                \
+    AddBytrace(category_group, name, arg1_name, arg1_val,     \
+               arg2_name, arg2_val);                          \
+  } while (0)
+
+#define TRACE_EVENT_COPY_NESTABLE_ASYNC_END0(category_group, name, id) \
+  do {                                                    \
+    (void) id;                                            \
+    AddBytrace(category_group, name);                     \
+  } while (0)
+
+#define TRACE_EVENT_COPY_NESTABLE_ASYNC_BEGIN_WITH_TIMESTAMP0( \
+    category_group, name, id, timestamp)                       \
+  do {                                                         \
+    (void) id;                                                 \
+    AddBytrace(category_group, name, timestamp);               \
+  } while (0)
+
+#define TRACE_EVENT_COPY_NESTABLE_ASYNC_BEGIN_WITH_TIMESTAMP1(        \
+    category_group, name, id, timestamp, arg1_name, arg1_val)         \
+  do {                                                                \
+    (void) id;                                                        \
+    AddBytrace(category_group, name, timestamp, arg1_name, arg1_val); \
+  } while (0)
+
+#define TRACE_EVENT_COPY_NESTABLE_ASYNC_END_WITH_TIMESTAMP0( \
+    category_group, name, id, timestamp)                     \
+  do {                                                       \
+    (void) id;                                               \
+    AddBytrace(category_group, name, timestamp);             \
+  } while (0)
+
+#define TRACE_EVENT_COPY_NESTABLE_ASYNC_END1(category_group, name, id, \
+                                             arg1_name, arg1_val)      \
+  do {                                                        \
+    (void) id;                                                \
+    AddBytrace(category_group, name, arg1_name, arg1_val);    \
+  } while (0)
+
+#define TRACE_EVENT_METADATA1(category_group, name, arg1_name, arg1_val) \
+  do {                                                                   \
+    AddBytrace(category_group, name, arg1_name, arg1_val);               \
+  } while (0)
+
+#define TRACE_EVENT_CLOCK_SYNC_RECEIVER(sync_id)          \
+  do {                                                    \
+    (void) sync_id;                                       \
+  } while (0)
+
+#define TRACE_EVENT_CLOCK_SYNC_ISSUER(sync_id, issue_ts, issue_end_ts) \
+  do {                                                    \
+    (void) sync_id;                                       \
+    (void) issue_ts                                       \
+    (void) issue_end_t                                    \
+  } while (0)
+
+#define TRACE_EVENT_OBJECT_CREATED_WITH_ID(category_group, name, id) \
+  do {                                                    \
+    (void) id;                                            \
+    AddBytrace(category_group, name);                     \
+  } while (0)
+
+#define TRACE_EVENT_OBJECT_SNAPSHOT_WITH_ID(category_group, name, id, \
+                                            snapshot)     \
+  do {                                                    \
+    (void) id;                                            \
+    (void) snapshot;                                      \
+    AddBytrace(category_group, name);                     \
+  } while (0)
+
+#define TRACE_EVENT_OBJECT_SNAPSHOT_WITH_ID_AND_TIMESTAMP( \
+    category_group, name, id, timestamp, snapshot)         \
+  do {                                                     \
+    (void) id;                                             \
+    (void) snapshot;                                       \
+    AddBytrace(category_group, name, timestamp);           \
+  } while (0)
+
+#define TRACE_EVENT_OBJECT_DELETED_WITH_ID(category_group, name, id) \
+  do {                                                               \
+    (void) id;                                                       \
+    AddBytrace(category_group, name);                                \
+  } while (0)
+
+#define TRACE_EVENT_CATEGORY_GROUP_ENABLED(category_group, ret) \
+  do {                                                          \
+    (void) category_group;                                      \
+    *ret = false;                                               \
+  } while (0)
+
+#define TRACE_EVENT_IS_NEW_TRACE(ret) \
+  do {                                \
+    *ret = false;                     \
+  } while (0)
+
 #else
 // Records a pair of begin and end events called "name" for the current
 // scope, with 0, 1 or 2 associated arguments. If the category is not
@@ -468,7 +1262,6 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
   INTERNAL_TRACE_EVENT_ADD_SCOPED_WITH_FLOW(category_group, name, bind_id,   \
                                             flow_flags, arg1_name, arg1_val, \
                                             arg2_name, arg2_val)
-#endif
 
 // Records a single event called "name" immediately, with 0, 1 or 2
 // associated arguments. If the category is not enabled, then this
@@ -518,131 +1311,6 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
       TRACE_EVENT_PHASE_INSTANT, category_group, name, timestamp,         \
       TRACE_EVENT_FLAG_NONE | scope, arg_name, arg_val)
 
-#if defined(OS_OHOS)
-#define TRACE_EVENT_BEGIN0(category_group, name)                          \
-  do {                                                                    \
-    if (IsCategoryEnable(category_group)) {                               \
-      StartBytrace(name);                                                 \
-    }                                                                     \
-  } while (0);                                                            \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_BEGIN, category_group, name, \
-                           TRACE_EVENT_FLAG_NONE);
-
-#define TRACE_EVENT_BEGIN1(category_group, name, arg1_name, arg1_val)     \
-  do {                                                                    \
-    if (IsCategoryEnable(category_group)) {                               \
-      StartBytrace(GetStringFromArgs(name, arg1_name, arg1_val));          \
-    }                                                                     \
-  } while (0);                                                            \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_BEGIN, category_group, name, \
-                           TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val)
-
-#define TRACE_EVENT_BEGIN2(category_group, name, arg1_name, arg1_val,     \
-                           arg2_name, arg2_val)                           \
-  do {                                                                    \
-    if (IsCategoryEnable(category_group)) {                               \
-      StartBytrace(GetStringFromArgs(name, arg1_name, arg1_val,            \
-                                   arg2_name, arg2_val));                 \
-    }                                                                     \
-  } while (0);                                                            \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_BEGIN, category_group, name, \
-                           TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val,    \
-                           arg2_name, arg2_val)
-
-#define TRACE_EVENT_BEGIN_WITH_FLAGS0(category_group, name, flags) \
-  do {                                                             \
-    if (IsCategoryEnable(category_group)) {                        \
-      (void) (flags);                                              \
-      StartBytrace(name);                                          \
-    }                                                              \
-  } while (0);                                                     \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_BEGIN, category_group, name, flags)
-
-#define TRACE_EVENT_BEGIN_WITH_FLAGS1(category_group, name, flags, arg1_name, \
-                                      arg1_val)                               \
-  do {                                                                        \
-    if (IsCategoryEnable(category_group)) {                                   \
-      (void) (flags);                                                         \
-      StartBytrace(GetStringFromArgs(name, arg1_name, arg1_val));              \
-    }                                                                         \
-  } while (0);                                                                \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_BEGIN, category_group, name,     \
-                           flags, arg1_name, arg1_val)
-
-#define TRACE_EVENT_COPY_BEGIN2(category_group, name, arg1_name, arg1_val, \
-                                arg2_name, arg2_val)                       \
-  do {                                                                     \
-    if (IsCategoryEnable(category_group)) {                                \
-      StartBytrace(GetStringFromArgs(name, arg1_name, arg1_val,             \
-                                   arg2_name, arg2_val));                  \
-    }                                                                      \
-  } while (0);                                                             \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_BEGIN, category_group, name,  \
-                           TRACE_EVENT_FLAG_COPY, arg1_name, arg1_val,     \
-                           arg2_name, arg2_val)
-
-#define OHOS_TRACE_EVENT_BEGIN0(category_group, name)                          \
-  do {                                                                    \
-    if (IsOHOSBytraceEnable()) {                                              \
-      StartOHOSBytrace(name);                                                 \
-    }                                                                     \
-  } while (0);                                                            \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_BEGIN, category_group, name, \
-                           TRACE_EVENT_FLAG_NONE);
-
-#define OHOS_TRACE_EVENT_BEGIN1(category_group, name, arg1_name, arg1_val)     \
-  do {                                                                    \
-    if (IsOHOSBytraceEnable()) {                                              \
-      StartOHOSBytrace(GetStringFromArgs(name, arg1_name, arg1_val));          \
-    }                                                                     \
-  } while (0);                                                            \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_BEGIN, category_group, name, \
-                           TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val)
-
-#define OHOS_TRACE_EVENT_BEGIN2(category_group, name, arg1_name, arg1_val,     \
-                           arg2_name, arg2_val)                           \
-  do {                                                                    \
-    if (IsOHOSBytraceEnable()) {                                              \
-      StartOHOSBytrace(GetStringFromArgs(name, arg1_name, arg1_val,            \
-                                   arg2_name, arg2_val));                 \
-    }                                                                     \
-  } while (0);                                                            \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_BEGIN, category_group, name, \
-                           TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val,    \
-                           arg2_name, arg2_val)
-
-#define OHOS_TRACE_EVENT_BEGIN_WITH_FLAGS0(category_group, name, flags) \
-  do {                                                             \
-    if (IsOHOSBytraceEnable()) {                                       \
-      (void) (flags);                                              \
-      StartOHOSBytrace(name);                                          \
-    }                                                              \
-  } while (0);                                                     \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_BEGIN, category_group, name, flags)
-
-#define OHOS_TRACE_EVENT_BEGIN_WITH_FLAGS1(category_group, name, flags, arg1_name, \
-                                      arg1_val)                               \
-  do {                                                                        \
-    if (IsOHOSBytraceEnable()) {                                                  \
-      (void) (flags);                                                         \
-      StartOHOSBytrace(GetStringFromArgs(name, arg1_name, arg1_val));              \
-    }                                                                         \
-  } while (0);                                                                \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_BEGIN, category_group, name,     \
-                           flags, arg1_name, arg1_val)
-
-#define OHOS_TRACE_EVENT_COPY_BEGIN2(category_group, name, arg1_name, arg1_val, \
-                                arg2_name, arg2_val)                       \
-  do {                                                                     \
-    if (IsOHOSBytraceEnable()) {                                               \
-      StartOHOSBytrace(GetStringFromArgs(name, arg1_name, arg1_val,             \
-                                   arg2_name, arg2_val));                  \
-    }                                                                      \
-  } while (0);                                                             \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_BEGIN, category_group, name,  \
-                           TRACE_EVENT_FLAG_COPY, arg1_name, arg1_val,     \
-                           arg2_name, arg2_val)
-#else
 // Records a single BEGIN event called "name" immediately, with 0, 1 or 2
 // associated arguments. If the category is not enabled, then this
 // does nothing.
@@ -670,8 +1338,6 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
   INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_BEGIN, category_group, name,  \
                            TRACE_EVENT_FLAG_COPY, arg1_name, arg1_val,     \
                            arg2_name, arg2_val)
-#endif
-
 // Similar to TRACE_EVENT_BEGINx but with a custom |timestamp| provided.
 // - |id| is used to match the _BEGIN event with the _END event.
 //   Events are considered to match if their category_group, name and id values
@@ -708,163 +1374,6 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
       timestamp, TRACE_EVENT_FLAG_COPY, arg1_name, arg1_val, arg2_name,   \
       arg2_val)
 
-#if defined(OS_OHOS)
-#define TRACE_EVENT_END0(category_group, name)                          \
-  do {                                                                  \
-    if (IsCategoryEnable(category_group)) {                             \
-      (void) (name);                                                    \
-      FinishBytrace();                                                  \
-    }                                                                   \
-  } while (0);                                                          \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category_group, name, \
-                           TRACE_EVENT_FLAG_NONE)
-
-#define TRACE_EVENT_END1(category_group, name, arg1_name, arg1_val)     \
-  do {                                                                  \
-    if (IsCategoryEnable(category_group)) {                             \
-      (void) (name);                                                    \
-      (void) (arg1_name);                                               \
-      (void) (arg1_val);                                                \
-      FinishBytrace();                                                  \
-    }                                                                   \
-  } while (0);                                                          \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category_group, name, \
-                           TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val)
- 
-#define TRACE_EVENT_END2(category_group, name, arg1_name, arg1_val, arg2_name, \
-                         arg2_val)                                             \
-  do {                                                                         \
-    if (IsCategoryEnable(category_group)) {                                    \
-      (void) (name);                                                           \
-      (void) (arg1_name);                                                      \
-      (void) (arg1_val);                                                       \
-      (void) (arg2_name);                                                      \
-      (void) (arg2_val);                                                       \
-      FinishBytrace();                                                         \
-    }                                                                          \
-  } while (0);                                                                 \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category_group, name,        \
-                           TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val,         \
-                           arg2_name, arg2_val)
-
-#define TRACE_EVENT_END_WITH_FLAGS0(category_group, name, flags) \
-  do {                                                           \
-    if (IsCategoryEnable(category_group)) {                      \
-      (void) (name);                                             \
-      (void) (flags);                                            \
-      FinishBytrace();                                           \
-    }                                                            \
-  } while (0);                                                   \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category_group, name, flags)
-
-#define TRACE_EVENT_END_WITH_FLAGS1(category_group, name, flags, arg1_name,    \
-                                    arg1_val)                                  \
-  do {                                                                         \
-    if (IsCategoryEnable(category_group)) {                                    \
-      (void) (name);                                                           \
-      (void) (arg1_name);                                                      \
-      (void) (arg1_val);                                                       \
-      (void) (flags);                                                          \
-      FinishBytrace();                                                         \
-    }                                                                          \
-  } while (0);                                                                 \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category_group, name, flags, \
-                           arg1_name, arg1_val)
-
-#define TRACE_EVENT_COPY_END2(category_group, name, arg1_name, arg1_val,       \
-                              arg2_name, arg2_val)                             \
-  do {                                                                         \
-    if (IsCategoryEnable(category_group)) {                                    \
-      (void) (name);                                                           \
-      (void) (arg1_name);                                                      \
-      (void) (arg1_val);                                                       \
-      (void) (arg2_name);                                                      \
-      (void) (arg2_val);                                                       \
-      FinishBytrace();                                                         \
-    }                                                                          \
-  } while (0);                                                                 \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category_group, name,  \
-                           TRACE_EVENT_FLAG_COPY, arg1_name, arg1_val,   \
-                           arg2_name, arg2_val)
-
-#define OHOS_TRACE_EVENT_END0(category_group, name)                          \
-  do {                                                                  \
-    if (IsOHOSBytraceEnable()) {                                            \
-      (void) (name);                                                    \
-      FinishOHOSBytrace();                                                  \
-    }                                                                   \
-  } while (0);                                                          \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category_group, name, \
-                           TRACE_EVENT_FLAG_NONE)
-
-#define OHOS_TRACE_EVENT_END1(category_group, name, arg1_name, arg1_val)     \
-  do {                                                                  \
-    if (IsOHOSBytraceEnable()) {                                            \
-      (void) (name);                                                    \
-      (void) (arg1_name);                                               \
-      (void) (arg1_val);                                                \
-      FinishOHOSBytrace();                                                  \
-    }                                                                   \
-  } while (0);                                                          \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category_group, name, \
-                           TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val)
- 
-#define OHOS_TRACE_EVENT_END2(category_group, name, arg1_name, arg1_val, arg2_name, \
-                         arg2_val)                                             \
-  do {                                                                         \
-    if (IsOHOSBytraceEnable()) {                                                   \
-      (void) (name);                                                           \
-      (void) (arg1_name);                                                      \
-      (void) (arg1_val);                                                       \
-      (void) (arg2_name);                                                      \
-      (void) (arg2_val);                                                       \
-      FinishOHOSBytrace();                                                         \
-    }                                                                          \
-  } while (0);                                                                 \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category_group, name,        \
-                           TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val,         \
-                           arg2_name, arg2_val)
-
-#define OHOS_TRACE_EVENT_END_WITH_FLAGS0(category_group, name, flags) \
-  do {                                                           \
-    if (IsOHOSBytraceEnable()) {                                     \
-      (void) (name);                                             \
-      (void) (flags);                                            \
-      FinishOHOSBytrace();                                           \
-    }                                                            \
-  } while (0);                                                   \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category_group, name, flags)
-
-#define OHOS_TRACE_EVENT_END_WITH_FLAGS1(category_group, name, flags, arg1_name,    \
-                                    arg1_val)                                  \
-  do {                                                                         \
-    if (IsOHOSBytraceEnable()) {                                                   \
-      (void) (name);                                                           \
-      (void) (arg1_name);                                                      \
-      (void) (arg1_val);                                                       \
-      (void) (flags);                                                          \
-      FinishOHOSBytrace();                                                         \
-    }                                                                          \
-  } while (0);                                                                 \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category_group, name, flags, \
-                           arg1_name, arg1_val)
-
-#define OHOS_TRACE_EVENT_COPY_END2(category_group, name, arg1_name, arg1_val,       \
-                              arg2_name, arg2_val)                             \
-  do {                                                                         \
-    if (IsOHOSBytraceEnable()) {                                                   \
-      (void) (name);                                                           \
-      (void) (arg1_name);                                                      \
-      (void) (arg1_val);                                                       \
-      (void) (arg2_name);                                                      \
-      (void) (arg2_val);                                                       \
-      FinishOHOSBytrace();                                                         \
-    }                                                                          \
-  } while (0);                                                                 \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category_group, name,  \
-                           TRACE_EVENT_FLAG_COPY, arg1_name, arg1_val,   \
-                           arg2_name, arg2_val)
-#else
 // Records a single END event for "name" immediately. If the category
 // is not enabled, then this does nothing.
 // - category and name strings must have application lifetime (statics or
@@ -891,151 +1400,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
   INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_END, category_group, name,  \
                            TRACE_EVENT_FLAG_COPY, arg1_name, arg1_val,   \
                            arg2_name, arg2_val)
-#endif
 
-#if defined(OS_OHOS)
-#define TRACE_EVENT_MARK_WITH_TIMESTAMP0(category_group, name, timestamp) \
-  BYTRACE_SCOPED_INIT(category_group);                                    \
-  do {                                                                    \
-    if (IsCategoryEnable(category_group)) {                               \
-      (void) (timestamp);                                                 \
-      BYTRACE_SCOPED_TRACE_EVENT(name);                                   \
-    }                                                                     \
-  } while (0);                                                            \
-  INTERNAL_TRACE_EVENT_ADD_WITH_TIMESTAMP(                                \
-      TRACE_EVENT_PHASE_MARK, category_group, name, timestamp,            \
-      TRACE_EVENT_FLAG_NONE)
-
-#define TRACE_EVENT_MARK_WITH_TIMESTAMP1(category_group, name, timestamp,        \
-                                         arg1_name, arg1_val)                    \
-  BYTRACE_SCOPED_INIT(category_group);                                           \
-  do {                                                                           \
-    if (IsCategoryEnable(category_group)) {                                      \
-      (void) (timestamp);                                                        \
-      BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val)); \
-    }                                                                            \
-  } while (0);                                                                   \
-  INTERNAL_TRACE_EVENT_ADD_WITH_TIMESTAMP(                                       \
-      TRACE_EVENT_PHASE_MARK, category_group, name, timestamp,                   \
-      TRACE_EVENT_FLAG_NONE)
-
-#define TRACE_EVENT_MARK_WITH_TIMESTAMP2(                                        \
-    category_group, name, timestamp, arg1_name, arg1_val, arg2_name, arg2_val)   \
-  BYTRACE_SCOPED_INIT(category_group);                                           \
-  do {                                                                           \
-    if (IsCategoryEnable(category_group)) {                                      \
-      (void) (timestamp);                                                        \
-      BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val,    \
-                                                   arg2_name, arg2_val));        \
-    }                                                                            \
-  } while (0);                                                                   \
-  INTERNAL_TRACE_EVENT_ADD_WITH_TIMESTAMP(                                       \
-      TRACE_EVENT_PHASE_MARK, category_group, name, timestamp,                   \
-      TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val, arg2_name, arg2_val)
-
-#define TRACE_EVENT_COPY_MARK(category_group, name)                      \
-  BYTRACE_SCOPED_INIT(category_group);                                   \
-  do {                                                                   \
-    if (IsCategoryEnable(category_group)) {                              \
-      BYTRACE_SCOPED_TRACE_EVENT(name);                                  \
-    }                                                                    \
-  } while (0);                                                           \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_MARK, category_group, name, \
-                           TRACE_EVENT_FLAG_COPY)
-
-#define TRACE_EVENT_COPY_MARK1(category_group, name, arg1_name, arg1_val)         \
-  BYTRACE_SCOPED_INIT(category_group);                                            \
-  do {                                                                            \
-    if (IsCategoryEnable(category_group)) {                                       \
-      BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val)); \
-    }                                                                             \
-  } while (0);                                                                    \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_MARK, category_group, name,          \
-                           TRACE_EVENT_FLAG_COPY, arg1_name, arg1_val)
-
-#define TRACE_EVENT_COPY_MARK_WITH_TIMESTAMP(category_group, name, timestamp)     \
-  BYTRACE_SCOPED_INIT(category_group);                                            \
-  do {                                                                            \
-    if (IsCategoryEnable(category_group)) {                                       \
-      (void) (timestamp);                                                         \
-      BYTRACE_SCOPED_TRACE_EVENT(name);                                           \
-    }                                                                             \
-  } while (0);                                                                    \
-  INTERNAL_TRACE_EVENT_ADD_WITH_TIMESTAMP(                                        \
-      TRACE_EVENT_PHASE_MARK, category_group, name, timestamp,                    \
-      TRACE_EVENT_FLAG_COPY)
-
-#define OHOS_TRACE_EVENT_MARK_WITH_TIMESTAMP0(category_group, name, timestamp) \
-  OHOS_BYTRACE_SCOPED_INIT();                                                  \
-  do {                                                                    \
-    if (IsOHOSBytraceEnable()) {                                              \
-      (void) (timestamp);                                                 \
-      OHOS_BYTRACE_SCOPED_TRACE_EVENT(name);                                   \
-    }                                                                     \
-  } while (0);                                                            \
-  INTERNAL_TRACE_EVENT_ADD_WITH_TIMESTAMP(                                \
-      TRACE_EVENT_PHASE_MARK, category_group, name, timestamp,            \
-      TRACE_EVENT_FLAG_NONE)
-
-#define OHOS_TRACE_EVENT_MARK_WITH_TIMESTAMP1(category_group, name, timestamp,        \
-                                         arg1_name, arg1_val)                    \
-  OHOS_BYTRACE_SCOPED_INIT();                                                         \
-  do {                                                                           \
-    if (IsOHOSBytraceEnable()) {                                                     \
-      (void) (timestamp);                                                        \
-      OHOS_BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val)); \
-    }                                                                            \
-  } while (0);                                                                   \
-  INTERNAL_TRACE_EVENT_ADD_WITH_TIMESTAMP(                                       \
-      TRACE_EVENT_PHASE_MARK, category_group, name, timestamp,                   \
-      TRACE_EVENT_FLAG_NONE)
-
-#define OHOS_TRACE_EVENT_MARK_WITH_TIMESTAMP2(                                        \
-    category_group, name, timestamp, arg1_name, arg1_val, arg2_name, arg2_val)   \
-  OHOS_BYTRACE_SCOPED_INIT();                                                         \
-  do {                                                                           \
-    if (IsOHOSBytraceEnable()) {                                                     \
-      (void) (timestamp);                                                        \
-      OHOS_BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val,    \
-                                                   arg2_name, arg2_val));        \
-    }                                                                            \
-  } while (0);                                                                   \
-  INTERNAL_TRACE_EVENT_ADD_WITH_TIMESTAMP(                                       \
-      TRACE_EVENT_PHASE_MARK, category_group, name, timestamp,                   \
-      TRACE_EVENT_FLAG_NONE, arg1_name, arg1_val, arg2_name, arg2_val)
-
-#define OHOS_TRACE_EVENT_COPY_MARK(category_group, name)                      \
-  OHOS_BYTRACE_SCOPED_INIT();                                                 \
-  do {                                                                   \
-    if (IsOHOSBytraceEnable()) {                                             \
-      OHOS_BYTRACE_SCOPED_TRACE_EVENT(name);                                  \
-    }                                                                    \
-  } while (0);                                                           \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_MARK, category_group, name, \
-                           TRACE_EVENT_FLAG_COPY)
-
-#define OHOS_TRACE_EVENT_COPY_MARK1(category_group, name, arg1_name, arg1_val)         \
-  OHOS_BYTRACE_SCOPED_INIT();                                                          \
-  do {                                                                            \
-    if (IsOHOSBytraceEnable()) {                                                      \
-      OHOS_BYTRACE_SCOPED_TRACE_EVENT(GetStringFromArgs(name, arg1_name, arg1_val)); \
-    }                                                                             \
-  } while (0);                                                                    \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_MARK, category_group, name,          \
-                           TRACE_EVENT_FLAG_COPY, arg1_name, arg1_val)
-
-#define OHOS_TRACE_EVENT_COPY_MARK_WITH_TIMESTAMP(category_group, name, timestamp)     \
-  OHOS_BYTRACE_SCOPED_INIT();                                                          \
-  do {                                                                            \
-    if (IsOHOSBytraceEnable()) {                                                      \
-      (void) (timestamp);                                                         \
-      OHOS_BYTRACE_SCOPED_TRACE_EVENT(name);                                           \
-    }                                                                             \
-  } while (0);                                                                    \
-  INTERNAL_TRACE_EVENT_ADD_WITH_TIMESTAMP(                                        \
-      TRACE_EVENT_PHASE_MARK, category_group, name, timestamp,                    \
-      TRACE_EVENT_FLAG_COPY)
-#else
 // Adds a trace event with the given |name| and |timestamp|. |timestamp| must be
 // non-null or it crashes. Use DCHECK(timestamp) before calling this to detect
 // an invalid timestamp even when tracing is not enabled, as the commit queue
@@ -1069,7 +1434,6 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
   INTERNAL_TRACE_EVENT_ADD_WITH_TIMESTAMP(                                    \
       TRACE_EVENT_PHASE_MARK, category_group, name, timestamp,                \
       TRACE_EVENT_FLAG_COPY)
-#endif
 
 // Similar to TRACE_EVENT_ENDx but with a custom |timestamp| provided.
 // - |id| is used to match the _BEGIN event with the _END event.
@@ -1103,67 +1467,6 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
       timestamp, TRACE_EVENT_FLAG_COPY, arg1_name, arg1_val, arg2_name,  \
       arg2_val)
 
-#if defined(OS_OHOS)
-#define TRACE_COUNTER1(category_group, name, value)                         \
-  do {                                                                      \
-    if (IsCategoryEnable(category_group)) {                                 \
-      CountBytrace(name, value);                                            \
-    }                                                                       \
-  } while (0);                                                              \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_COUNTER, category_group, name, \
-                           TRACE_EVENT_FLAG_NONE, "value",                  \
-                           static_cast<int>(value))
-
-#define TRACE_COUNTER_WITH_FLAG1(category_group, name, flag, value)         \
-  do {                                                                      \
-    if (IsCategoryEnable(category_group)) {                                 \
-      (void) (flag);                                                        \
-      CountBytrace(name, value);                                            \
-    }                                                                       \
-  } while (0);                                                              \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_COUNTER, category_group, name, \
-                           flag, "value", static_cast<int>(value))
-
-#define TRACE_COPY_COUNTER1(category_group, name, value)                    \
-  do {                                                                      \
-    if (IsCategoryEnable(category_group)) {                                 \
-      CountBytrace(name, static_cast<int>(value));                          \
-    }                                                                       \
-  } while (0);                                                              \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_COUNTER, category_group, name, \
-                           TRACE_EVENT_FLAG_COPY, "value",                  \
-                           static_cast<int>(value))
-
-#define OHOS_TRACE_COUNTER1(category_group, name, value)                         \
-  do {                                                                      \
-    if (IsOHOSBytraceEnable()) {                                                \
-      CountOHOSBytrace(name, value);                                            \
-    }                                                                       \
-  } while (0);                                                              \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_COUNTER, category_group, name, \
-                           TRACE_EVENT_FLAG_NONE, "value",                  \
-                           static_cast<int>(value))
-
-#define OHOS_TRACE_COUNTER_WITH_FLAG1(category_group, name, flag, value)         \
-  do {                                                                      \
-    if (IsOHOSBytraceEnable()) {                                                \
-      (void) (flag);                                                        \
-      CountOHOSBytrace(name, value);                                            \
-    }                                                                       \
-  } while (0);                                                              \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_COUNTER, category_group, name, \
-                           flag, "value", static_cast<int>(value))
-
-#define OHOS_TRACE_COPY_COUNTER1(category_group, name, value)                    \
-  do {                                                                      \
-    if (IsOHOSBytraceEnable()) {                                                \
-      CountOHOSBytrace(name, static_cast<int>(value));                          \
-    }                                                                       \
-  } while (0);                                                              \
-  INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_COUNTER, category_group, name, \
-                           TRACE_EVENT_FLAG_COPY, "value",                  \
-                           static_cast<int>(value))
-#else
 // Records the value of a counter called "name" immediately. Value
 // must be representable as a 32 bit integer.
 // - category and name strings must have application lifetime (statics or
@@ -1179,8 +1482,6 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
   INTERNAL_TRACE_EVENT_ADD(TRACE_EVENT_PHASE_COUNTER, category_group, name, \
                            TRACE_EVENT_FLAG_COPY, "value",                  \
                            static_cast<int>(value))
-#endif
-
 // Records the values of a multi-parted counter called "name" immediately.
 // The UI will treat value1 and value2 as parts of a whole, displaying their
 // values as a stacked-bar chart.
@@ -1199,29 +1500,6 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
                            static_cast<int>(value1_val), value2_name,       \
                            static_cast<int>(value2_val))
 
-#if defined(OS_OHOS)
-#define TRACE_COUNTER_WITH_TIMESTAMP1(category_group, name, timestamp, value) \
-   do {                                                                       \
-    if (IsCategoryEnable(category_group)) {                                   \
-      (void) (timestamp);                                                     \
-      CountBytrace(name, value);                                              \
-    }                                                                         \
-   } while (0);                                                               \
-   INTERNAL_TRACE_EVENT_ADD_WITH_TIMESTAMP(                                   \
-      TRACE_EVENT_PHASE_COUNTER, category_group, name, timestamp,             \
-      TRACE_EVENT_FLAG_NONE, "value", static_cast<int>(value))
-
-#define OHOS_TRACE_COUNTER_WITH_TIMESTAMP1(category_group, name, timestamp, value) \
-   do {                                                                       \
-    if (IsOHOSBytraceEnable()) {                                                  \
-      (void) (timestamp);                                                     \
-      CountOHOSBytrace(name, value);                                              \
-    }                                                                         \
-   } while (0);                                                               \
-   INTERNAL_TRACE_EVENT_ADD_WITH_TIMESTAMP(                                   \
-      TRACE_EVENT_PHASE_COUNTER, category_group, name, timestamp,             \
-      TRACE_EVENT_FLAG_NONE, "value", static_cast<int>(value))
-#else
 // Similar to TRACE_COUNTERx, but with a custom |timestamp| provided.
 // - |timestamp| must be non-null or it crashes. Use DCHECK(timestamp) before
 //   calling this to detect an invalid timestamp even when tracing is not
@@ -1230,7 +1508,6 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
   INTERNAL_TRACE_EVENT_ADD_WITH_TIMESTAMP(                                    \
       TRACE_EVENT_PHASE_COUNTER, category_group, name, timestamp,             \
       TRACE_EVENT_FLAG_NONE, "value", static_cast<int>(value))
-#endif
 
 #define TRACE_COUNTER_WITH_TIMESTAMP2(category_group, name, timestamp,      \
                                       value1_name, value1_val, value2_name, \
@@ -1715,6 +1992,7 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
     }                                                                      \
   } while (0)
 
+#endif
 // Macro for getting the real base::TimeTicks::Now() which can be overridden in
 // headless when VirtualTime is enabled.
 #define TRACE_TIME_TICKS_NOW() INTERNAL_TRACE_TIME_TICKS_NOW()

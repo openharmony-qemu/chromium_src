@@ -358,8 +358,13 @@ TEST_F(AudioOutputDeviceTest, GetOutputDeviceInfoAsync_Error) {
   task_env_.FastForwardUntilNoTasksRemain();
   EXPECT_EQ(kExpectedStatus, info.device_status());
   EXPECT_EQ(kUnauthorizedDeviceId, info.device_id());
+#if !BUILDFLAG(IS_OHOS)
   EXPECT_TRUE(
       AudioParameters::UnavailableDeviceParams().Equals(info.output_params()));
+#else
+  EXPECT_TRUE(
+      !AudioParameters::UnavailableDeviceParams().Equals(info.output_params()));
+#endif
 
   audio_device_->Stop();
   task_env_.FastForwardBy(base::TimeDelta());

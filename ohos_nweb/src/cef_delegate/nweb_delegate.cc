@@ -3994,7 +3994,7 @@ void NWebDelegate::SetPathAllowingUniversalAccess(
   }
   preference_delegate_->PutEnableUniversalAccessFromFileURLs(pathList.size() != 0);
   std::vector<CefString> cef_path_list;
-  std::for_each(pathList.begin(), pathList.end(), [&cef_path_list](const std::string& path){
+  std::for_each(pathList.begin(), pathList.end(), [&cef_path_list](const std::string& path) {
     cef_path_list.emplace_back(CefString(path));
   });
   GetBrowser()->GetHost()->SetGrantFileAccessDirs(cef_path_list);

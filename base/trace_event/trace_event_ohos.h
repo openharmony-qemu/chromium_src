@@ -19,6 +19,8 @@
 #include <string>
 #include <utility>
 
+#include "base/time/time.h"
+
 union BytraceArgValue {
   double as_double;
   const char* as_string;
@@ -73,6 +75,55 @@ void CountBytrace(const std::string& name, int64_t count);
 void StartOHOSBytrace(const std::string& value);
 void FinishOHOSBytrace();
 void CountOHOSBytrace(const std::string& name, int64_t count);
+
+inline void AddBytrace(const char* category_group, const char* name) {
+    (void) category_group;
+    (void) name;
+    return;
+}
+
+inline void AddBytrace(const char* category_group, const char* name,
+                       const base::TimeTicks& timestamp) {
+    (void) category_group;
+    (void) name;
+    (void) timestamp;
+    return;
+}
+
+template <class ARG1_TYPE>
+inline void AddBytrace(const char* category_group, const char* name,
+                       const char* arg1_name, ARG1_TYPE&& arg1_val) {
+    (void) category_group;
+    (void) name;
+    (void) arg1_name;
+    (void) arg1_val;
+    return;
+}
+
+template <class ARG1_TYPE>
+inline void AddBytrace(const char* category_group, const char* name,
+                       const base::TimeTicks& timestamp,
+                       const char* arg1_name, ARG1_TYPE&& arg1_val) {
+    (void) category_group;
+    (void) name;
+    (void) timestamp;
+    (void) arg1_name;
+    (void) arg1_val;
+    return;
+}
+
+template <class ARG1_TYPE, class ARG2_TYPE>
+inline void AddBytrace(const char* category_group, const char* name,
+                       const char* arg1_name, ARG1_TYPE&& arg1_val,
+                       const char* arg2_name, ARG2_TYPE&& arg2_val) {
+    (void) category_group;
+    (void) name;
+    (void) arg1_name;
+    (void) arg1_val;
+    (void) arg2_name;
+    (void) arg2_val;
+    return;
+}
 
 class ScopedBytrace {
  public:

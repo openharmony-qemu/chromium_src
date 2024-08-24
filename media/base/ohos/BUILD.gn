@@ -56,5 +56,4 @@ source_set("unit_tests") {
   sources = [
     "buffer_flush_config_adapter_impl_unittest.cc",
   ]
-  config += [ "//media:media_config" ]
 }

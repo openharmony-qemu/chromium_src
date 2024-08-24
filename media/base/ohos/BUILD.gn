@@ -57,7 +57,4 @@ source_set("unit_tests") {
     "buffer_flush_config_adapter_impl_unittest.cc",
   ]
   config += [ "//media:media_config" ]
-  deps = {
-    "//testing/gtest",
-  }
 }

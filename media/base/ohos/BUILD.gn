@@ -58,7 +58,6 @@ source_set("unit_tests") {
   ]
   config += [ "//media:media_config" ]
   deps = {
-    "//testing/gmock",
     "//testing/gtest",
   }
 }

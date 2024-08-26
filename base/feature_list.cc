@@ -334,11 +334,17 @@ void FeatureList::InitializeFromSharedMemory(
 }
 
 bool FeatureList::IsFeatureOverridden(const std::string& feature_name) const {
+#ifdef OHOS_SCROLLAR
+  AutoLock lock(overrides_lock_);
+#endif
   return overrides_.count(feature_name);
 }
 
 bool FeatureList::IsFeatureOverriddenFromCommandLine(
     const std::string& feature_name) const {
+#ifdef OHOS_SCROLLAR
+  AutoLock lock(overrides_lock_);
+#endif
   auto it = overrides_.find(feature_name);
   return it != overrides_.end() && !it->second.overridden_by_field_trial;
 }
@@ -346,6 +352,9 @@ bool FeatureList::IsFeatureOverriddenFromCommandLine(
 bool FeatureList::IsFeatureOverriddenFromCommandLine(
     const std::string& feature_name,
     OverrideState state) const {
+#ifdef OHOS_SCROLLAR
+  AutoLock lock(overrides_lock_);
+#endif
   auto it = overrides_.find(feature_name);
   return it != overrides_.end() && !it->second.overridden_by_field_trial &&
          it->second.overridden_state == state;
@@ -360,6 +369,20 @@ void FeatureList::AssociateReportingFieldTrial(
 
   // Only one associated field trial is supported per feature. This is generally
   // enforced server-side.
+#ifdef OHOS_SCROLLBAR
+  {
+    AutoLock lock(overrides_lock_);
+    OverrideEntry* entry = &overrides_.find(feature_name)->second;
+    if (entry->field_trial) {
+      NOTREACHED() << "Feature " << feature_name
+                 << " already has trial: " << entry->field_trial->trial_name()
+                 << ", associating trial: " << field_trial->trial_name();
+      return;
+    }
+
+    entry->field_trial = field_trial;
+  }
+#else
   OverrideEntry* entry = &overrides_.find(feature_name)->second;
   if (entry->field_trial) {
     NOTREACHED() << "Feature " << feature_name
@@ -369,6 +392,7 @@ void FeatureList::AssociateReportingFieldTrial(
   }
 
   entry->field_trial = field_trial;
+#endif
 }
 
 void FeatureList::RegisterFieldTrialOverride(const std::string& feature_name,
@@ -398,6 +422,9 @@ void FeatureList::RegisterExtraFeatureOverrides(
 void FeatureList::AddFeaturesToAllocator(PersistentMemoryAllocator* allocator) {
   DCHECK(initialized_);
 
+#if defined(OHOS_SCROLLBAR)
+  AutoLock lock(overrides_lock_);
+#endif
   for (const auto& override : overrides_) {
     Pickle pickle;
     pickle.WriteString(override.first);
@@ -758,6 +785,9 @@ FeatureList::OverrideState FeatureList::GetOverrideStateByFeatureName(
   DCHECK(initialized_);
   DCHECK(IsValidFeatureOrFieldTrialName(feature_name)) << feature_name;
 
+#ifdef OHOS_SCROLLAR
+  AutoLock lock(overrides_lock_);
+#endif
   auto it = overrides_.find(feature_name);
   if (it != overrides_.end()) {
     const OverrideEntry& entry = it->second;
@@ -800,6 +830,9 @@ FeatureList::GetOverrideEntryByFeatureName(StringPiece name) const {
   DCHECK(initialized_);
   DCHECK(IsValidFeatureOrFieldTrialName(name)) << name;
 
+#ifdef OHOS_SCROLLBAR
+  AutoLock lock(overrides_lock_);
+#endif
   auto it = overrides_.find(name);
   if (it != overrides_.end()) {
     const OverrideEntry& entry = it->second;
@@ -822,6 +855,9 @@ FieldTrial* FeatureList::GetAssociatedFieldTrialByFeatureName(
 
 bool FeatureList::HasAssociatedFieldTrialByFeatureName(StringPiece name) const {
   DCHECK(!initialized_);
+#ifdef OHOS_SCROLLBAR
+  AutoLock lock(overrides_lock_);
+#endif
   auto entry = overrides_.find(name);
   return entry != overrides_.end() && entry->second.field_trial != nullptr;
 }
@@ -911,6 +947,9 @@ void FeatureList::GetFeatureOverridesImpl(std::string* enable_overrides,
   enable_overrides->clear();
   disable_overrides->clear();
 
+#if defined(OHOS_SCROLLBAR)
+  AutoLock lock(overrides_lock_);
+#endif
   // Note: Since |overrides_| is a std::map, iteration will be in alphabetical
   // order. This is not guaranteed to users of this function, but is useful for
   // tests to assume the order.

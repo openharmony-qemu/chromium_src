@@ -487,6 +487,14 @@ source_set("base") {
       "media_drm_storage.h",
     ]
   }
+
+  if (defined(ohos_custom_video_player) && ohos_custom_video_player) {
+    sources += [
+      "action_reason.h",
+      "custom_media_url_params.cc",
+      "custom_media_url_params.h",
+    ]
+  }
 }
 
 source_set("video_facing") {
@@ -670,6 +678,20 @@ source_set("unit_tests") {
 
   if (is_mac) {
     deps += [ "//media/base/mac:unit_tests" ]
+  }
+
+  if (is_ohos) {
+    sources += [
+      "ohos/buffer_request_config_adapter_impl_unittest.cc",
+      "ohos/codec_config_para_adapter_impl_unittest.cc",
+      "ohos/decoder_format_adapter_impl_unittest.cc",
+      "ohos/ohos_media_codec_bridge_impl_unittest.cc",
+      "ohos/ohos_media_codec_util_unittest.cc",
+      "ohos/ohos_media_decoder_bridge_impl_unittest.cc",
+      "ohos/ohos_media_player_bridge_unittest.cc",
+      "ohos/ohos_media_player_callback_unittest.cc",
+      "ohos/ohos_media_player_listener_unittest.cc",
+    ]
   }
 
   if (is_win) {

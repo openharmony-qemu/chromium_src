@@ -50,3 +50,10 @@ if (is_ohos) {
     ]
   }
 }
+
+source_set("unit_tests") {
+  testonly = true
+  sources = [
+    "buffer_flush_config_adapter_impl_unittest.cc",
+  ]
+}

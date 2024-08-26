@@ -763,6 +763,7 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest, CreateOneHardwareXR30Frame) {
 
   RunUntilIdle();
 
+#if !BUILDFLAG(IS_OHOS)
   EXPECT_NE(software_frame.get(), frame.get());
   EXPECT_EQ(PIXEL_FORMAT_XR30, frame->format());
   EXPECT_EQ(1u, frame->NumTextures());
@@ -774,6 +775,9 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest, CreateOneHardwareXR30Frame) {
 
   void* memory = mock_gpu_factories_->created_memory_buffers()[0]->memory(0);
   EXPECT_EQ(as_xr30(0, 311, 0), *static_cast<uint32_t*>(memory));
+#else
+  EXPECT_EQ(software_frame.get(), frame.get());
+#endif
 }
 
 TEST_F(GpuMemoryBufferVideoFramePoolTest, CreateOneHardwareP010Frame) {
@@ -786,6 +790,7 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest, CreateOneHardwareP010Frame) {
 
   RunUntilIdle();
 
+#if !BUILDFLAG(IS_OHOS)
   EXPECT_NE(software_frame.get(), frame.get());
   EXPECT_EQ(PIXEL_FORMAT_P016LE, frame->format());
   if (GpuMemoryBufferVideoFramePool::MultiPlaneVideoSharedImagesEnabled()) {
@@ -810,6 +815,9 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest, CreateOneHardwareP010Frame) {
             uv_memory[0]);
   EXPECT_EQ(software_frame->visible_data(VideoFrame::kVPlane)[0] << 6,
             uv_memory[1]);
+#else
+  EXPECT_EQ(software_frame.get(), frame.get());
+#endif
 }
 
 TEST_F(GpuMemoryBufferVideoFramePoolTest,
@@ -883,6 +891,7 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest, CreateOneHardwareXR30FrameBT709) {
 
   RunUntilIdle();
 
+#if !BUILDFLAG(IS_OHOS)
   EXPECT_NE(software_frame.get(), frame.get());
   EXPECT_EQ(PIXEL_FORMAT_XR30, frame->format());
   EXPECT_EQ(1u, frame->NumTextures());
@@ -894,6 +903,9 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest, CreateOneHardwareXR30FrameBT709) {
 
   void* memory = mock_gpu_factories_->created_memory_buffers()[0]->memory(0);
   EXPECT_EQ(as_xr30(0, 311, 0), *static_cast<uint32_t*>(memory));
+#else
+  EXPECT_EQ(software_frame.get(), frame.get());
+#endif
 }
 
 TEST_F(GpuMemoryBufferVideoFramePoolTest, CreateOneHardwareXR30FrameBT601) {
@@ -907,6 +919,7 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest, CreateOneHardwareXR30FrameBT601) {
 
   RunUntilIdle();
 
+#if !BUILDFLAG(IS_OHOS)
   EXPECT_NE(software_frame.get(), frame.get());
   EXPECT_EQ(PIXEL_FORMAT_XR30, frame->format());
   EXPECT_EQ(1u, frame->NumTextures());
@@ -918,6 +931,9 @@ TEST_F(GpuMemoryBufferVideoFramePoolTest, CreateOneHardwareXR30FrameBT601) {
 
   void* memory = mock_gpu_factories_->created_memory_buffers()[0]->memory(0);
   EXPECT_EQ(as_xr30(0, 543, 0), *static_cast<uint32_t*>(memory));
+#else
+  EXPECT_EQ(software_frame.get(), frame.get());
+#endif
 }
 
 #if !BUILDFLAG(IS_OHOS)

@@ -467,6 +467,10 @@ test("capture_unittests") {
     "//ui/gfx:test_support",
   ]
 
+  if (ohos_unittests) {
+    deps += ["//content/public/common:static_switches"]
+  }
+
   if (is_linux || is_chromeos_lacros) {
     sources += [
       "video/linux/v4l2_capture_delegate_unittest.cc",

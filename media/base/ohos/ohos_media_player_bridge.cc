@@ -14,6 +14,7 @@
 
 namespace media {
 
+constexpr int QUEUE_SIZE = 3;
 static constexpr int PLAYER_INIT_OK = 0;
 static constexpr int PLAYER_INIT_ERROR = -1;
 
@@ -115,7 +116,7 @@ void OHOSMediaPlayerBridge::Prepare() {
   consumer_surface_->SetUserData(
       surfaceFormat,
       std::to_string(OHOS::NWeb::PixelFormatAdapter::PIXEL_FMT_RGBA_8888));
-  consumer_surface_->SetQueueSize(3);
+  consumer_surface_->SetQueueSize(QUEUE_SIZE);
   ret = player_->SetVideoSurface(consumer_surface_);
   if (ret != 0) {
     LOG(ERROR) << "SetVideoSurface error::ret=" << ret;

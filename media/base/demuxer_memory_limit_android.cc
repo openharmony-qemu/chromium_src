@@ -20,10 +20,11 @@ size_t SelectLimit(size_t default_limit,
     return default_limit;
   }
 #if !BUILDFLAG(IS_OHOS)
+  constexpr int kPhysicalMemoryLow = 512;
   // Use very low limit on 512MiB Android Go devices only.
   if (base::android::BuildInfo::GetInstance()->sdk_int() >=
           base::android::SDK_VERSION_OREO &&
-      base::SysInfo::AmountOfPhysicalMemoryMB() <= 512) {
+      base::SysInfo::AmountOfPhysicalMemoryMB() <= kPhysicalMemoryLow) {
     return very_low_limit;
   }
 #endif

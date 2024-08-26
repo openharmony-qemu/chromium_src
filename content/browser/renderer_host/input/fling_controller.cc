@@ -64,7 +64,24 @@ FlingController::FlingController(
   DCHECK(scheduler_client);
 }
 
+
+#if BUILDFLAG(IS_OHOS)
+FlingController::~FlingController() {
+  if (!fling_curve_) {
+    return;
+  }
+  LOG(DEBUG) << "stop web page fling";
+  base::ohos::SlidingObserver::GetInstance().StopSliding();
+  if (auto* host = GpuProcessHost::Get()) {
+    if (auto* host_impl = host->gpu_host()) {
+      host_impl->StopMonitor();
+      host_impl->ReportSlidingFrameRate(0);
+    }
+  }
+}
+#else
 FlingController::~FlingController() = default;
+#endif
 
 bool FlingController::ObserveAndFilterForTapSuppression(
     const GestureEventWithLatencyInfo& gesture_event) {

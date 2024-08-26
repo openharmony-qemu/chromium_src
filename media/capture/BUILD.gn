@@ -281,6 +281,8 @@ component("capture_lib") {
       "video/ohos/video_capture_common_ohos.h",
       "video/ohos/video_capture_status_callback_listener_ohos.cc",
       "video/ohos/video_capture_status_callback_listener_ohos.h",
+      "video/ohos/video_capture_params_adapter_impl.h",
+      "video/ohos/video_capture_params_adapter_impl.cc",
     ]
   }
 
@@ -519,6 +521,20 @@ test("capture_unittests") {
       "IOSurface.framework",
     ]
     deps += [ "//third_party/ocmock" ]
+  }
+
+  if (is_ohos) {
+    sources += [
+      "video/ohos/ohos_capture_delegate_unittist.cc",
+      "video/ohos/video_capture_common_ohos_unittest.cc",
+      "video/ohos/video_capture_device_factory_ohos_unittest.cc",
+      "video/ohos/video_capture_status_callback_listener_ohos_unittest.cc",
+      "video/ohos/video_capture_surface_buffer_listener_ohos_unittest.cc",
+    ]
+  }
+
+  if (ohos_unittests) {
+    deps += [ "//content/public/common:static_switches" ]
   }
 
   if (is_ios) {

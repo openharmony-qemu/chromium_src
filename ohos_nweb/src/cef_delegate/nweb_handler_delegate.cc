@@ -1212,8 +1212,8 @@ void NWebHandlerDelegate::OnRefreshAccessedHistory(
   auto pos = url1.find("?");
   url1 = url1.substr(0, pos);
   LOG(DEBUG)
-      << "NWebHandlerDelegate::OnRefreshAccessedHistory, intercepted url: ***, isReload = "
-      << isReload;
+      << "NWebHandlerDelegate::OnRefreshAccessedHistory, intercepted url = "
+      << url1 << ", isReload = " << isReload;
   if (nweb_handler_ == nullptr) {
     LOG(ERROR) << "nweb handler is null";
     return;

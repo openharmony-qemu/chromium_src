@@ -286,6 +286,10 @@ source_set("audio") {
       "ohos/ohos_audio_input_stream.h",
       "ohos/ohos_audio_capturer_source.cc",
       "ohos/ohos_audio_capturer_source.h",
+      "ohos/audio_capturer_options_adapter_impl.h",
+      "ohos/audio_capturer_options_adapter_impl.cc",
+      "ohos/buffer_desc_adapter_impl.h",
+      "ohos/buffer_desc_adapter_impl.cc",
     ]
 
     include_dirs = ohos_src_includes
@@ -524,6 +528,13 @@ source_set("unit_tests") {
       "alsa/alsa_util_unittest.cc",
       "audio_low_latency_input_output_unittest.cc",
     ]
+  }
+
+  if (is_ohos) {
+    sources += [
+      "ohos/ohos_audio_output_stream_unittest.cc",
+      "ohos/ohos_audio_manager_unittest.cc",
+      ]
   }
 }
 

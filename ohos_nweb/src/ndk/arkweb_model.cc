@@ -26,6 +26,8 @@
 #include "nweb_value.h"
 #include "nweb_value_callback.h"
 #include "arkweb_native_web_message_callback.h"
+#include "ohos_nweb/include/nweb_engine.h"
+#include "ohos_nweb/include/nweb_errors.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -649,6 +651,75 @@ ARKWEB_NDK_EXPORT void* OH_WebMessage_GetData(ArkWeb_WebMessagePtr message, size
   *dataLength = message->dataLength;
   return message->data;
 }
+
+ARKWEB_NDK_EXPORT ArkWeb_ErrorCode OH_CookieManager_FetchCookieSync(
+        const char* url, bool incognito, bool includeHttpOnly, char** cookie_value) {
+  auto cookie_manager = OHOS::NWeb::NWebEngine::GetInstance()->GetCookieManager();
+  if (!cookie_manager) {
+    LOG(ERROR) << "cookie manager is nullptr";
+    return ARKWEB_ERROR_UNKNOWN;
+  }
+
+  bool is_valid = true;
+  std::string cookie_content =
+      cookie_manager->ReturnCookieWithHttpOnly(std::string(url), is_valid, incognito, includeHttpOnly);
+  *cookie_value = new char[cookie_content.length() + 1];
+  strcpy((*cookie_value), cookie_content.c_str());
+  if (cookie_content == "" && !is_valid) {
+    return ARKWEB_INVALID_URL; 
+  }
+
+  return ARKWEB_SUCCESS;
+}
+
+ARKWEB_NDK_EXPORT ArkWeb_ErrorCode OH_CookieManager_ConfigCookieSync(
+        const char* url, const char* value, bool incognito, bool includeHttpOnly) {
+  auto cookie_manager = OHOS::NWeb::NWebEngine::GetInstance()->GetCookieManager();
+  if (!cookie_manager) {
+    LOG(ERROR) << "cookie manager is nullptr";
+    return ARKWEB_ERROR_UNKNOWN;
+  }
+
+  int result = cookie_manager->SetCookieWithHttpOnly(std::string(url), std::string(value), incognito, includeHttpOnly);
+  if (result == OHOS::NWeb::NWebErrNo::NWEB_INVALID_URL) {
+    return ARKWEB_INVALID_URL;
+  } else if (result == OHOS::NWeb::NWebErrNo::NWEB_INVALID_COOKIE_VALUE) {
+    return ARKWEB_INVALID_COOKIE_VALUE;
+  }
+
+  return ARKWEB_SUCCESS;
+}
+
+ARKWEB_NDK_EXPORT bool OH_CookieManager_ExistCookies(bool incognito) {
+  auto cookie_manager = OHOS::NWeb::NWebEngine::GetInstance()->GetCookieManager();
+  if (!cookie_manager) {
+    LOG(ERROR) << "cookie manager is nullptr";
+    return false;
+  }
+
+  return cookie_manager->ExistCookies(incognito);
+}
+
+ARKWEB_NDK_EXPORT void OH_CookieManager_ClearAllCookiesSync(bool incognito) {
+  auto cookie_manager = OHOS::NWeb::NWebEngine::GetInstance()->GetCookieManager();
+  if (!cookie_manager) {
+    LOG(ERROR) << "cookie manager is nullptr";
+    return;
+  }
+
+  cookie_manager->DeleteCookieEntirely(nullptr, incognito);
+}
+
+ARKWEB_NDK_EXPORT void OH_CookieManager_ClearSessionCookiesSync() {
+  auto cookie_manager = OHOS::NWeb::NWebEngine::GetInstance()->GetCookieManager();
+  if (!cookie_manager) {
+    LOG(ERROR) << "cookie manager is nullptr";
+    return;
+  }
+
+  cookie_manager->DeleteSessionCookies(nullptr);
+}
+
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

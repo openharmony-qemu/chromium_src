@@ -623,6 +623,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void AddAccessibilityNodeInfoActions(
     std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
     const content::BrowserAccessibilityOHOS* node) const;
+  float GetViewPointHeight() const;
 
 #if defined(OHOS_EX_NAVIGATION)
   int InsertBackForwardEntry(int index, const std::string& url) override;

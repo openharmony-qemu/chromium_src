@@ -742,10 +742,25 @@ gfx::Rect BrowserAccessibility::RelativeToAbsoluteBounds(
       clipping_behavior == ui::AXClippingBehavior::kClipped;
   bool offscreen = false;
   const BrowserAccessibility* node = this;
+#if BUILDFLAG(IS_OHOS)
+  bool first_node = true;
+#endif
   while (node) {
     BrowserAccessibilityManager* manager = node->manager();
+#if BUILDFLAG(IS_OHOS)
+    auto main_bounds = manager->ax_tree()->RelativeToTreeBounds(node->node(), gfx::RectF(),
+                                                      &offscreen, clip_bounds);
+    bounds.set_x(bounds.x() + main_bounds.x());
+    bounds.set_y(bounds.y() + main_bounds.y());
+    if (first_node) {
+      bounds.set_width(main_bounds.width());
+      bounds.set_height(main_bounds.height());
+      first_node = false;
+    }
+#elif
     bounds = manager->ax_tree()->RelativeToTreeBounds(node->node(), bounds,
                                                       &offscreen, clip_bounds);
+#endif
 
     // On some platforms we need to unapply root scroll offsets.
     if (!manager->UseRootScrollOffsetsWhenComputingBounds()) {

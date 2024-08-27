@@ -110,6 +110,23 @@ void OH_WebMessage_SetData(ArkWeb_WebMessagePtr message,
                            size_t dataLength);
 
 void* OH_WebMessage_GetData(ArkWeb_WebMessagePtr message, size_t* dataLength);
+
+ArkWeb_ErrorCode OH_CookieManager_FetchCookieSync(const char* url,
+                                                  bool incognito,
+                                                  bool includeHttpOnly,
+                                                  char** cookieValue);
+
+ArkWeb_ErrorCode OH_CookieManager_ConfigCookieSync(const char* url,
+                                                   const char* cookieValue,
+                                                   bool incognito,
+                                                   bool includeHttpOnly);
+
+bool OH_CookieManager_ExistCookies(bool incognito);
+
+void OH_CookieManager_ClearAllCookiesSync(bool incognito);
+
+void OH_CookieManager_ClearSessionCookiesSync();
+
 #ifdef __cplusplus
 }
 #endif

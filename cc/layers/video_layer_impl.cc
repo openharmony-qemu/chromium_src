@@ -115,8 +115,6 @@ if (may_contain_native()) {
               transform);
   gfx::Rect visible_quad_rect =
       occlusion_in_video_space.GetUnoccludedContentRect(bounds_quad_rect);
-  visible_quad_rect.set_origin(
-      ScreenSpaceTransform().MapPoint(visible_quad_rect.origin()));
   bounds_quad_rect.set_origin(
       ScreenSpaceTransform().MapPoint(visible_quad_rect.origin()));
   if (!bounds_quad_rect_.ApproximatelyEqual(bounds_quad_rect, 1)) {
@@ -124,7 +122,7 @@ if (may_contain_native()) {
     LOG(DEBUG) << "[NativeEmbed] visible quad rect: "
                << visible_quad_rect.ToString()
                << ", bounds quad rect: " << bounds_quad_rect.ToString();
-    layer_tree_impl()->OnLayerRectUpdate(id(), visible_quad_rect);
+    layer_tree_impl()->OnLayerRectUpdate(id(), bounds_quad_rect);
   }
 #endif
 

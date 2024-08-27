@@ -143,6 +143,7 @@ class NWebPreferenceDelegate : public NWebPreference {
   void PutOverscrollMode(int overScrollMode) override;
   int GetOverscrollMode() override;
   void SetScrollable(bool enable) override;
+  void SetScrollable(bool enable, int32_t scrollType) override;
   bool GetScrollable() override;
 #endif  // defined(OHOS_INPUT_EVENTS)
   void SetNativeEmbedMode(bool flag) override;

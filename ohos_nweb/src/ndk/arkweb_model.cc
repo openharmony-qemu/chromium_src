@@ -328,7 +328,8 @@ ARKWEB_NDK_EXPORT ArkWeb_WebMessagePortPtr* OH_ArkWeb_CreateWebMessagePorts(
       *size = 0;
       return nullptr;
     }
-    auto tag = new (std::nothrow) std::string(webTag);
+
+    char* tag = new (std::nothrow) char[std::string(webTag).size() + 1];
     if (!tag) {
       LOG(ERROR) << "NativeArkWeb CreateWebMessagePorts malloc failed";
       nwebSharedPtr->ClosePort(std::string(ports[0]));
@@ -336,8 +337,10 @@ ARKWEB_NDK_EXPORT ArkWeb_WebMessagePortPtr* OH_ArkWeb_CreateWebMessagePorts(
       *size = 0;
       return nullptr;
     }
-    wPorts[i]->webTag = (char*)tag->c_str();
-    auto portHandle = new (std::nothrow) std::string(ports[i]);
+    memcpy(tag, (char*)webTag, std::string(webTag).size() + 1);
+    wPorts[i]->webTag = tag;
+
+    char* portHandle = new (std::nothrow) char[ports[i].size() + 1];
     if (!portHandle) {
       LOG(ERROR) << "NativeArkWeb CreateWebMessagePorts malloc failed";
       nwebSharedPtr->ClosePort(std::string(ports[0]));
@@ -345,7 +348,8 @@ ARKWEB_NDK_EXPORT ArkWeb_WebMessagePortPtr* OH_ArkWeb_CreateWebMessagePorts(
       *size = 0;
       return nullptr;
     }
-    wPorts[i]->portHandle = (char*)portHandle->c_str();
+    memcpy(portHandle, (char*)(ports[i].c_str()), ports[i].size() + 1);
+    wPorts[i]->portHandle = portHandle;
   }
   *size = ports.size();
   return wPorts;
@@ -360,11 +364,11 @@ ARKWEB_NDK_EXPORT void OH_ArkWeb_DestroyWebMessagePorts(
   }
   for (unsigned int i = 0; i < size; i++) {
     if ((*port)[i] && (*port)[i]->webTag) {
-      delete (*port)[i]->webTag;
+      delete[] (*port)[i]->webTag;
       (*port)[i]->webTag = nullptr;
     }
     if ((*port)[i] && (*port)[i]->portHandle) {
-      delete (*port)[i]->portHandle;
+      delete[] (*port)[i]->portHandle;
       (*port)[i]->portHandle = nullptr;
     }
     if ((*port)[i]) {
@@ -414,7 +418,7 @@ ARKWEB_NDK_EXPORT ArkWeb_ErrorCode OH_ArkWeb_PostWebMessage(
   std::vector<std::string> ports;
   for (unsigned int i = 0; i < size; i++) {
     if (webMessagePorts[i]->portHandle) {
-      ports.push_back(webMessagePorts[i]->portHandle);
+      ports.push_back(std::string(webMessagePorts[i]->portHandle));
     }
   }
   nwebSharedPtr->PostWebMessage(std::string(name), ports,

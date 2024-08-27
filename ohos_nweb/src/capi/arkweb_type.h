@@ -348,6 +348,6 @@ typedef struct {
 #define ARKWEB_MEMBER_MISSING(s, f) (!ARKWEB_MEMBER_EXISTS(s, f) || !((s)->f))
 
 #ifdef __cplusplus
-}
+};
 #endif
 #endif // ARKWEB_TYPE_H

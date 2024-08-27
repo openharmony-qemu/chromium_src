@@ -147,19 +147,7 @@ void OHOSCaptureDelegate::OnBufferAvailable(
     LOG(ERROR) << "OnBufferAvailable params is nullptr";
     return;
   }
-
-  // back camera, rotation direction is counterclockwise. we should ajust to
-  // clockwise in chromium when camera framework modify this problem, we need to
-  // modify too
   int32_t rotation = roration_info->GetRotation();
-  if (device_descriptor_.facing == MEDIA_VIDEO_FACING_ENVIRONMENT) {
-    if (rotation == 90) {
-      rotation = 270;
-    } else if (rotation == 270) {
-      rotation = 90;
-    }
-  }
-
   if (client_ != nullptr) {
     client_->OnIncomingCapturedData(
         buffer->GetBufferAddr(), buffer->GetSize(), capture_format_,

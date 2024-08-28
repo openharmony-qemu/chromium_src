@@ -178,6 +178,7 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
   browser_settings.draw_mode = GetDrawMode();
   browser_settings.text_autosizing_enabled =
       IsTextAutosizingEnabled() ? STATE_ENABLED : STATE_DISABLED;
+  browser_settings.force_zero_layout_height = IsFitContent();
 #endif  // BUILDFLAG(IS_OHOS)
 #if defined(OHOS_CLIPBOARD)
   browser_settings.copy_option = static_cast<int>(GetCopyOptionMode());
@@ -763,6 +764,14 @@ void NWebPreferenceDelegate::PutTextAutosizingEnabled(bool flag) {
 
 bool NWebPreferenceDelegate::IsTextAutosizingEnabled() const {
   return text_autosizing_enabled_;
+}
+
+void NWebPreferenceDelegate::SetFitContent(bool value) {
+  fit_content_ = value;
+}
+
+bool NWebPreferenceDelegate::IsFitContent() const {
+  return fit_content_;
 }
 #endif
 

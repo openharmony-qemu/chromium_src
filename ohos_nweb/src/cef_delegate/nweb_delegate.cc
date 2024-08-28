@@ -2798,6 +2798,9 @@ void NWebDelegate::SetFitContentMode(int32_t mode) {
   if (GetBrowser().get()) {
     GetBrowser()->GetHost()->SetFitContentMode(mode);
   }
+  if (preference_delegate_) {
+    preference_delegate_->SetFitContent(mode);
+  }
 }
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 

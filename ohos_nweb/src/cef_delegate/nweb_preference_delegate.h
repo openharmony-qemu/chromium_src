@@ -130,6 +130,8 @@ class NWebPreferenceDelegate : public NWebPreference {
   int GetDrawMode() const;
   void PutTextAutosizingEnabled(bool enable) override;
   bool IsTextAutosizingEnabled() const;
+  void SetFitContent(bool value);
+  bool IsFitContent() const;
 #endif
 #if defined(OHOS_PRINT)
   void PutPrintToken(void* token) { token_ = token; }
@@ -265,6 +267,7 @@ class NWebPreferenceDelegate : public NWebPreference {
   int draw_mode_{0};
   bool text_autosizing_enabled_{true};
   std::string surface_id_{""};
+  bool fit_content_{false};
 #endif
   bool enable_embed_mode_{false};
   std::string embed_tag_{"embed"};

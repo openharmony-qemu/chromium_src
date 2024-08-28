@@ -10,6 +10,13 @@ assert(enable_extensions)
 
 grit("strings") {
   source = "extensions_strings.grd"
+
+  #ifdef ohos_i18n
+  if (is_ohos && ohos_i18n) {
+    all_chrome_locales += extra_locales
+  }
+
+  #endif
   outputs =
       [ "grit/extensions_strings.h" ] +
       process_file_template(all_chrome_locales,

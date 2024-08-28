@@ -80,6 +80,10 @@
 #if defined(REPORT_SYS_EVENT)
 #include "event_reporter.h"
 #endif
+
+#if OHOS_I18N
+#include "base/ohos/locale_utils.h"
+#endif
 namespace {
 static const float richtextDisplayRatio = 1.0;
 }
@@ -2244,17 +2248,13 @@ void NWebDelegate::UpdateLocale(const std::string& language,
   if (!setSuccess) {
     LOG(ERROR) << "UpdateLocale SetLanguage error,language=" << language;
   }
-  CefString locale = "";
-  if (language == "en") {
-    locale = "en-US";
-  } else if (language == "zh") {
-    locale = "zh-CN";
-  } else {
-    // Now only support zh and en.
+  std::string locale = base::ohos::ComputeLanguageByRegion(region);
+  if (locale == "") {
+    // Current system only support zh, bo, ug, en.
     return;
   }
 
-  GetBrowser()->GetHost()->UpdateLocale(locale);
+  GetBrowser()->GetHost()->UpdateLocale(CefString(locale));
 }
 #endif  // #ifdef OHOS_I18N
 

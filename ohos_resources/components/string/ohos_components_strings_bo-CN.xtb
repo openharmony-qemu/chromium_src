@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<!DOCTYPE translationbundle>
+<translationbundle lang="bo-CN">
+<translation id="IDS_OHOS_BLOCK_PAGE_TITLE">ཉེན་ཁའི་དྲན་སྐུལ།</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_INFO_TITLE">དྲ་ངོས་འདིར་ལྟ་སྤྱོད་བྱེད་མཚམས་བཞག་ཟིན།</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_ILLEGAL_INFO_BODY">བཅའ་ཁྲིམས་དང་ཁྲིམས་སྲོལ་གྱི་བླང་བྱ་དང་དེ་བཞིན་ཞུ་གཏུག་ཐེར་འདོན་གཞིར་བཟུང་། དྲ་ངོས་འདིའི་ནང་དུ་ཁྲིམས་འགལ་ལམ་སྒྲིག་འགལ་གྱི་ནང་དོན་འདུས་ཡོད། ལྟ་སྤྱོད་བྱེད་མཚམས་བཞག་ཟིན།</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_BODY">ཁྱེད་ཀྱིས་ལྟ་སྤྱོད་བྱ་རྒྱུའི་དྲ་ངོས་ལ་ཁ་བསླུས་རྒྱག་པའི་ཉེན་ཁ་ཡོད་པས། ཁྱེད་ཀྱིས་མི་སྒེར་གྱི་ཆ་འཕྲིན་དང་རྒྱུ་ནོར་གྱི་བདེ་འཇགས་ལ་ཡིད་གཟབ་གནང་རོགས།</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_BODY">ཁྱེད་ཀྱིས་ལྟ་སྤྱོད་བྱ་རྒྱུའི་དྲ་ངོས་ལ་བདེ་འཇགས་ཀྱི་ཉེན་ཁ་ཡོད་པས། ཁྱེད་ཀྱིས་མི་སྒེར་གྱི་ཆ་འཕྲིན་དང་རྒྱུ་ནོར་གྱི་བདེ་འཇགས་ལ་ཡིད་གཟབ་གནང་རོགས།</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_DONT_PROCEED">ཕྱིར་ལོག</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_PROCEED">མུ་མཐུད་དུ་ལྟ་སྤྱོད་བྱེད།</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_TITLE">དྲ་རྒྱའི་ཁ་བསླུས་ལ་དོགས་ཟོན།</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_URL_TRUST_LIST_TITLE">དྲ་ངོས་འདིར་ལྟ་སྤྱོད་བྱ་རྒྱུར་བཀག་རྒྱ་ཐེབས།</translation>
+</translationbundle>

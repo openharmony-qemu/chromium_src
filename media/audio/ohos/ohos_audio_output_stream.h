@@ -40,6 +40,8 @@ class AudioRendererOptions : public AudioRendererOptionsAdapter {
 
   int32_t GetRenderFlags() override;
 
+  int32_t GetFrameSize() override;
+
  private:
   friend class OHOSAudioOutputStream;
   AudioAdapterSamplingRate rate_;
@@ -49,31 +51,32 @@ class AudioRendererOptions : public AudioRendererOptionsAdapter {
   AudioAdapterContentType content_type_;
   AudioAdapterStreamUsage stream_usage_;
   int32_t renderer_flags_;
+  int32_t frame_size_;
 };
 
 class AudioRendererCallback : public AudioRendererCallbackAdapter {
  public:
   AudioRendererCallback(content::MediaSessionImpl* media_session,
-                        const scoped_refptr<base::SingleThreadTaskRunner>& task_runner);
+                        const scoped_refptr<base::SingleThreadTaskRunner>& task_runner,
+                        base::WeakPtr<OHOSAudioOutputStream> audio_output_stream);
   ~AudioRendererCallback();
   void OnSuspend() override;
   void OnResume() override;
-  bool GetSuspendFlag();
-  void SetSuspendFlag(bool flag);
+  int32_t OnWriteDataCallback(void* buffer, int32_t length) override;
 
  private:
   content::MediaSessionImpl* media_session_;
   scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_ = nullptr;
   time_t intervalSinceLastSuspend_ = 0.0;
-  bool suspendFlag_ = false;
+  base::WeakPtr<OHOSAudioOutputStream> audio_output_stream_ = nullptr;
 };
 
 class AudioOutputChangeCallback : public AudioOutputChangeCallbackAdapter {
  public:
   AudioOutputChangeCallback(
-      const scoped_refptr<base::SingleThreadTaskRunner>& task_runner,
-      AudioParameters params,
-      bool isCommunication);
+    const scoped_refptr<base::SingleThreadTaskRunner>& task_runner,
+    AudioParameters params,
+    bool isCommunication);
   ~AudioOutputChangeCallback();
   void OnOutputDeviceChange(int32_t reason) override;
 
@@ -85,7 +88,7 @@ class AudioOutputChangeCallback : public AudioOutputChangeCallbackAdapter {
 
 class OHOSAudioOutputStream : public AudioOutputStream {
  public:
-  static const int kMaxNumOfBuffersInQueue = 2;
+  static std::set<std::shared_ptr<AudioRendererCallback>> renderCallbackSet_;
 
   OHOSAudioOutputStream(const OHOSAudioOutputStream&) = delete;
   OHOSAudioOutputStream& operator=(const OHOSAudioOutputStream&) = delete;
@@ -106,6 +109,8 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   bool GetInterruptMode();
   void SetInterruptMode(bool audioExclusive);
   bool GetAudioExclusive();
+  void OnSuspend();
+  int32_t OnWriteData(void* buffer, int32_t length);
 
  private:
   ~OHOSAudioOutputStream() override;
@@ -121,21 +126,14 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   // Schedules |timer_| to call PumpSamples() when appropriate for the next
   // packet.
-  void SchedulePumpSamples(base::TimeTicks now);
-
-  // Called in Open();
-  bool SetupAudioBuffer();
-
-  // Called in Close();
-  void ReleaseAudioBuffer();
-
+  void SchedulePumpSamples();
   bool InitRender(const std::shared_ptr<AudioRendererOptionsAdapter> options);
 
   bool StartRender();
 
   void Prepare(base::WeakPtr<content::MediaSessionImpl> weakMediaSession);
 
-  raw_ptr<OHOSAudioManager> manager_;
+  OHOSAudioManager* manager_;
 
   AudioParameters parameters_;
 
@@ -143,20 +141,12 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   // reallocating the memory every time.
   std::unique_ptr<AudioBus> audio_bus_;
 
-  raw_ptr<AudioSourceCallback> callback_ = nullptr;
+  AudioSourceCallback* callback_ = nullptr;
 
   double volume_ = 1.0;
 
-  base::TimeTicks reference_time_;
-
-  int64_t stream_position_samples_;
-
   // Timer that's scheduled to call PumpSamples().
   base::OneShotTimer timer_;
-
-  uint8_t* audio_data_[kMaxNumOfBuffersInQueue];
-
-  int active_buffer_index_;
 
   int bytes_per_frame_;
 
@@ -181,6 +171,14 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_;
 
   std::shared_ptr<AudioOutputChangeCallback> outputChangeCallback_ = nullptr;
+
+  base::WeakPtrFactory<OHOSAudioOutputStream> weak_factory_{this};
+
+  base::Lock lock_;
+
+  bool running = false;
+
+  base::TimeDelta timePerBuffer_ = base::Microseconds(0);
 };
 
 }  // namespace media

@@ -3320,6 +3320,7 @@ test("base_unittests") {
     "memory/weak_auto_reset_unittest.cc",
     "memory/weak_ptr_unittest.cc",
     "message_loop/message_pump_glib_unittest.cc",
+    "message_loop/message_pump_ohos_unittest.cc",
     "message_loop/message_pump_unittest.cc",
     "message_loop/work_id_provider_unittest.cc",
     "metrics/bucket_ranges_unittest.cc",

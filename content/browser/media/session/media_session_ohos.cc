@@ -57,7 +57,7 @@ void MediaSessionOHOS::Prepare(OHOS::NWeb::MediaAVSessionType type) {
     return;
   }
   is_initialized_ = true;
-  LOG(INFO) << __FUNCTION__ << "media avsession will create avsession";
+  LOG(INFO) << __FUNCTION__ << " media avsession will create avsession";
   if (avsession_adapter_ && avsession_adapter_->CreateAVSession(type)) {
     media_type_ = type;
     if(av_metadata_ &&

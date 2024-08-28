@@ -214,6 +214,9 @@ LikelyFormFilling SendFillInformationToRenderer(
   WaitForUsernameReason wait_for_username_reason =
       WaitForUsernameReason::kDontWait;
   if (client->IsIncognito()) {
+#ifdef OHOS_PASSWORD_AUTOFILL
+    LOG(INFO) << "[passwordSave] current tab is incognito";
+#endif
     wait_for_username_reason = WaitForUsernameReason::kIncognitoMode;
 #if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
   } else if (client->GetPasswordFeatureManager()

@@ -5076,9 +5076,15 @@ void RenderFrameHostImpl::DetachFromProxy() {
   if (IsPendingDeletion())
     return;
 
+
   // Start pending deletion on this frame and its children.
   DeleteRenderFrame(mojom::FrameDeleteIntention::kNotMainFrame);
   StartPendingDeletionOnSubtree(PendingDeletionReason::kFrameDetach);
+#if BUILDFLAG(IS_OHOS)
+  if (!frame_tree()) {
+    return;
+  }
+#endif
   frame_tree()->FrameUnloading(GetFrameTreeNodeForUnload());
 
   // Some children with no unload handler may be eligible for immediate

@@ -3550,6 +3550,10 @@ test("base_unittests") {
     "vlog_unittest.cc",
   ]
 
+  if (is_ohos) {
+    sources += [ "base_paths_ohos_unittest.cc" ]
+  }
+
   if (!is_cronet_build) {
     # location_unittest.cc fails gn check for tracing-shimmed Cronet builds.
     # Cronet buildbot do not run base_unittests, so exclusing this test
@@ -4137,6 +4141,12 @@ test("base_unittests") {
       "trace_event/typed_macros_unittest.cc",
       "tracing/perfetto_task_runner_unittest.cc",
     ]
+
+    if (is_ohos) {
+      sources += [
+        "trace_event/trace_event_ohos_unittest.cc",
+      ]
+    }
 
     if (is_android) {
       sources += [

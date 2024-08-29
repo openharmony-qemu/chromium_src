@@ -251,6 +251,7 @@ test("compositor_unittests") {
     "throughput_tracker_unittest.cc",
     "total_animation_throughput_reporter_unittest.cc",
     "transform_animation_curve_adapter_unittest.cc",
+    "compositor_unittests.cc",
   ]
 
   if (ohos_unittests) {

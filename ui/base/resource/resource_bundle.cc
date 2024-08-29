@@ -381,7 +381,9 @@ bool ResourceBundle::LocaleDataPakExists(const std::string& locale) {
   // If the hap package is not decompressed, the directory does not exist.
   if (path.empty() || !base::PathExists(path)) {
     if (locale == "zh-CN" || locale == "en-US" || locale == "resources" ||
-        locale == "chrome_100_percent" || locale == "chrome_200_percent") {
+        locale == "bo-CN" || locale == "ug" || locale == "zh-TW" ||
+        locale == "zh-HK" || locale == "chrome_100_percent" ||
+        locale == "chrome_200_percent") {
       return true;
     } else {
       return false;

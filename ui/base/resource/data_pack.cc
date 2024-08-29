@@ -134,6 +134,14 @@ bool GetPathFromHap(ui::ResourceScaleFactor factor,
     pathHap = "resources/rawfile/locales/zh-CN.pak";
   } else if (pathStr.find("en-US.pak") != std::string::npos) {
     pathHap = "resources/rawfile/locales/en-US.pak";
+  } else if (pathStr.find("bo-CN.pak") != std::string::npos) {
+    pathHap = "resources/rawfile/locales/bo-CN.pak";
+  } else if (pathStr.find("ug.pak") != std::string::npos) {
+    pathHap = "resources/rawfile/locales/ug.pak";
+  } else if (pathStr.find("zh-TW.pak") != std::string::npos) {
+    pathHap = "resources/rawfile/locales/zh-TW.pak";
+  } else if (pathStr.find("zh-HK.pak") != std::string::npos) {
+    pathHap = "resources/rawfile/locales/zh-HK.pak";
   } else {
     pathHap = iter->second;
   }

@@ -877,6 +877,10 @@ double ProxyMain::GetPercentDroppedFrames() const {
 void ProxyMain::OnLayerRectUpdate(int id, const gfx::Rect& rect) {
   layer_tree_host_->OnLayerRectUpdate(id, rect);
 }
+
+void ProxyMain::OnLayerRectVisibleChange(int id, bool visibility) {
+  layer_tree_host_->OnLayerRectVisibleChange(id, visibility);
+}
 #endif
 
 }  // namespace cc

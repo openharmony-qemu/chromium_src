@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -236,6 +236,10 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   bool IsFileProtocol(const GURL& gurl);
   bool IsUrlFileExist(const GURL& gurl, const std::string& url);
 
+  void ExecuteCreatePDFExt(
+      std::shared_ptr<NWebPDFConfigArgs> pdfConfig,
+      std::shared_ptr<NWebArrayBufferValueCallback> callback) override;
+
   void ExecuteJavaScriptExt(
       const int fd,
       const size_t scriptLength,
@@ -376,6 +380,7 @@ bool HitNativeArea(double x, double y);
 #if defined(OHOS_GET_SCROLL_OFFSET)
   void GetOverScrollOffset(float* offset_x, float* offset_y) override;
 #endif
+  bool ScrollByWithResult(float delta_x, float delta_y) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #ifdef OHOS_ARKWEB_ADBLOCK
@@ -521,9 +526,16 @@ void NotifyForNextTouchEvent() override;
       const std::vector<std::string>& pathList) override;
 #endif
 
+#ifdef OHOS_MIXED_CONTENT
+  void EnableMixedContentAutoUpgrades(bool enable) override;
+  bool IsMixedContentAutoUpgradesEnabled() override;
+#endif
+
 #ifdef OHOS_BFCACHE
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override;
 #endif
+
+   void SetPopupSurface(void* popupSurface) override;
 
  public:
   int argc_;
@@ -659,6 +671,8 @@ void NotifyForNextTouchEvent() override;
   bool accessibility_state_ = false;
   bool is_discarded_ = false;
   std::string richtext_data_str_ = "";
+  // The number of fingers that trigger the down event
+  int  pressing_num_ = 0;
   std::shared_ptr<NWebAccessibilityEventCallback>
       accessibility_event_listener_ = nullptr;
 };

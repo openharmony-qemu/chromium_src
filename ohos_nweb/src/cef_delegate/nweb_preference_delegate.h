@@ -143,6 +143,7 @@ class NWebPreferenceDelegate : public NWebPreference {
   void PutOverscrollMode(int overScrollMode) override;
   int GetOverscrollMode() override;
   void SetScrollable(bool enable) override;
+  void SetScrollable(bool enable, int32_t scrollType) override;
   bool GetScrollable() override;
 #endif  // defined(OHOS_INPUT_EVENTS)
   void SetNativeEmbedMode(bool flag) override;
@@ -190,6 +191,16 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if BUILDFLAG(IS_OHOS)
   std::string GetSurfaceId() override;
   void SetSurfaceId(const std::string& surfaceId) override;
+#endif
+
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  CefRefPtr<CefWebMessageReceiver> GetAutofillCallback();
+  void SetAutofillCallback(CefRefPtr<CefWebMessageReceiver> callback);
+#endif
+
+#ifdef OHOS_MIXED_CONTENT
+  void EnableMixedContentAutoUpgrades(bool enable);
+  bool IsMixedContentAutoUpgradesEnabled();
 #endif
 
  private:
@@ -281,6 +292,15 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
   bool record_whole_document_{false};
 #endif
+
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  CefRefPtr<CefWebMessageReceiver> autofill_callback_ = nullptr;
+#endif
+
+#ifdef OHOS_MIXED_CONTENT
+  bool enable_mixed_content_auto_upgrades_{false};
+#endif
+
 };
 }  // namespace OHOS::NWeb
 

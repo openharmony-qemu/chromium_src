@@ -34,34 +34,23 @@ struct NWebDownloadItem {
   long received_bytes;
   int last_error_code;
 
-  char* guid;
-  char* full_path;
-  char* url;
-  char* etag;
-  char* original_url;
-  char* suggested_file_name;
-  char* content_disposition;
-  char* mime_type;
-  char* last_modified;
+  char* guid = nullptr;
+  char* full_path = nullptr;
+  char* url = nullptr;
+  char* etag = nullptr;
+  char* original_url = nullptr;
+  char* suggested_file_name = nullptr;
+  char* content_disposition = nullptr;
+  char* mime_type = nullptr;
+  char* last_modified = nullptr;
 
   int is_paused;
 
-  char* method;
-  char* received_slices;
+  char* method = nullptr;
+  char* received_slices = nullptr;
   NWebDownloadItemState state;
 
-  NWebDownloadItem()
-      : guid(nullptr),
-        full_path(nullptr),
-        url(nullptr),
-        etag(nullptr),
-        original_url(nullptr),
-        suggested_file_name(nullptr),
-        content_disposition(nullptr),
-        mime_type(nullptr),
-        last_modified(nullptr),
-        method(nullptr),
-        received_slices(nullptr) {
+  NWebDownloadItem() {
     WVLOG_I("NWebDownloadItem() is called");
   }
 
@@ -113,18 +102,7 @@ struct NWebDownloadItem {
     }
   }
 
-  NWebDownloadItem(CefRefPtr<CefDownloadItem> download_item)
-      : guid(nullptr),
-        full_path(nullptr),
-        url(nullptr),
-        etag(nullptr),
-        original_url(nullptr),
-        suggested_file_name(nullptr),
-        content_disposition(nullptr),
-        mime_type(nullptr),
-        last_modified(nullptr),
-        method(nullptr),
-        received_slices(nullptr) {
+  NWebDownloadItem(CefRefPtr<CefDownloadItem> download_item) {
     WVLOG_I("NWebDownloadItem() is called");
     nweb_id = download_item->GetNWebId();
     download_item_id = (long)download_item->GetId();

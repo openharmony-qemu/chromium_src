@@ -2021,6 +2021,15 @@ int GpuImageDecodeCache::CalculateUploadScaleMipLevel(
     if (is_clipped)
       return 0;
   }
+#if BUILDFLAG(IS_OHOS)
+  // Heif uses hardware-accelerated decode, scaling is not currently supported
+  // for hardware-accelerated decodes
+  const auto* image_metadata =
+      draw_image.paint_image().GetImageHeaderMetadata();
+  if (image_metadata && image_metadata->image_type == ImageType::kHEIF) {
+    return 0;
+  }
+#endif
 
   gfx::Size base_size = draw_image.paint_image().GetSize(aux_image);
   // Ceil our scaled size so that the mip map generated is guaranteed to be
@@ -2947,6 +2956,18 @@ GpuImageDecodeCache::CreateImageData(const DrawImage& draw_image,
       draw_image.paint_image().GetImageHeaderMetadata();
   bool can_do_hardware_accelerated_decode = false;
   bool do_hardware_accelerated_decode = false;
+#if BUILDFLAG(IS_OHOS)
+  if (image_metadata && image_metadata->image_type == ImageType::kHEIF) {
+    LOG(DEBUG) << "[HeifSupport] GpuImageDecodeCache::CreateImageData "
+                  "allow_hardware_decode "
+               << allow_hardware_decode << ", mode " << (int)mode
+               << ", upload_scale_mip_level " << upload_scale_mip_level
+               << ", has_gainmap " << has_gainmap
+               << ", CanDecodeWithHardwareAcceleration "
+               << context_->ContextSupport()->CanDecodeWithHardwareAcceleration(
+                      image_metadata);
+  }
+#endif
   if (allow_hardware_decode && mode == DecodedDataMode::kTransferCache &&
       upload_scale_mip_level == 0 && !has_gainmap &&
       context_->ContextSupport()->CanDecodeWithHardwareAcceleration(
@@ -2965,6 +2986,13 @@ GpuImageDecodeCache::CreateImageData(const DrawImage& draw_image,
       do_hardware_accelerated_decode = true;
       DCHECK(!is_bitmap_backed);
     }
+
+#if BUILDFLAG(IS_OHOS)
+    if ((image_metadata->image_type == ImageType::kHEIF)) {
+      do_hardware_accelerated_decode = true;
+      DCHECK(!is_bitmap_backed);
+    }
+#endif
 
     // Override the estimated size if we are doing hardware decode.
     if (do_hardware_accelerated_decode) {

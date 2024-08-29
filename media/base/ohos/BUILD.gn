@@ -43,10 +43,17 @@ if (is_ohos) {
       "//media/base",
       "//url",
     ]
-    
+
     include_dirs = ohos_src_includes
     deps += [
       "//ohos_glue:ohos_adapter_glue_source",
     ]
   }
+}
+
+source_set("unit_tests") {
+  testonly = true
+  sources = [
+    "buffer_flush_config_adapter_impl_unittest.cc",
+  ]
 }

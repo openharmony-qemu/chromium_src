@@ -63,8 +63,7 @@ class CodecBridgeCallback
     : public DecoderCallbackAdapter,
       public std::enable_shared_from_this<CodecBridgeCallback> {
  public:
-  explicit CodecBridgeCallback(std::shared_ptr<DecoderBridgeSignal> signal)
-      : signal_(signal) {}
+  explicit CodecBridgeCallback(std::shared_ptr<DecoderBridgeSignal> signal) : signal_(signal) {}
   virtual ~CodecBridgeCallback() = default;
 
   void OnError(ErrorType errorType, int32_t errorCode) override;
@@ -134,6 +133,7 @@ class MediaCodecDecoderBridgeImpl {
                                      const uint32_t& bufferSize,
                                      const int64_t& time);
   DecoderAdapterCode PushInbufferDecEos(const uint32_t index);
+  DecoderAdapterCode PrepareForCallback();
   void UpdateFlushToFalse() {
     signal_->isDecoderFlushing_ = false;
     return;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -266,6 +266,9 @@ class NWebDelegateInterface
       const size_t scriptLength,
       std::shared_ptr<NWebMessageValueCallback> callback,
       bool extention) = 0;
+  virtual void ExecuteCreatePDFExt(
+      std::shared_ptr<NWebPDFConfigArgs> pdfConfig,
+      std::shared_ptr<NWebArrayBufferValueCallback> callback) = 0;
 
 #if defined(OHOS_MSGPORT)
   virtual void EraseJavaScriptCallbackImpl(uint32_t id) = 0;
@@ -353,6 +356,7 @@ class NWebDelegateInterface
                                const std::vector<int32_t>& pressedCodes) = 0;
   virtual void ScrollToWithAnime(float x, float y, int32_t duration) = 0;
   virtual void ScrollByWithAnime(float delta_x, float delta_y, int32_t duration) = 0;
+  virtual bool ScrollByWithResult(float delta_x, float delta_y) = 0;
 #if defined(OHOS_GET_SCROLL_OFFSET)
   virtual void GetOverScrollOffset(float* offset_x, float* offset_y) = 0;
 #endif
@@ -536,6 +540,13 @@ class NWebDelegateInterface
 
   virtual void SendAccessibilityHoverEvent(int x, int y) = 0;
   virtual void RefreshAccessibilityManagerClickEvent() = 0;
+
+#ifdef OHOS_MIXED_CONTENT
+  virtual void EnableMixedContentAutoUpgrades(bool enable) = 0;
+  virtual bool IsMixedContentAutoUpgradesEnabled() = 0;
+#endif
+
+  virtual void SetPopupSurface(void* popupSurface) = 0;
 };
 }  // namespace OHOS::NWeb
 

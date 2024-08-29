@@ -216,13 +216,15 @@ void KeyframeEffect::TickKeyframeModel(base::TimeTicks monotonic_time,
   base::TimeDelta trimmed =
       keyframe_model->TrimTimeToCurrentIteration(monotonic_time);
 #ifdef OHOS_SCROLLBAR
-  auto prev_trimmed = keyframe_model->GetPrevTrimmed();
-  auto delta = base::Microseconds(kIntervalMicroseconds);
-  LOG(DEBUG) << "scrollbar trimed:" << trimmed << " prev:" << prev_trimmed << " delta:" << delta;
-  if (trimmed - prev_trimmed > delta) {
-    trimmed = prev_trimmed + delta;
+  if (curve->Type() == AnimationCurve::CurveType::SCROLL_OFFSET) {
+    auto prev_trimmed = keyframe_model->GetPrevTrimmed();
+    auto delta = base::Microseconds(kIntervalMicroseconds);
+    LOG(DEBUG) << "scrollbar trimed:" << trimmed << " prev:" << prev_trimmed << " delta:" << delta;
+    if (trimmed - prev_trimmed > delta) {
+      trimmed = prev_trimmed + delta;
+    }
+    keyframe_model->SetPrevTrimmed(trimmed);
   }
-  keyframe_model->SetPrevTrimmed(trimmed);
 #endif
   curve->Tick(trimmed, keyframe_model->TargetProperty(), keyframe_model);
 }

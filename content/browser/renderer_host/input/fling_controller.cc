@@ -64,7 +64,24 @@ FlingController::FlingController(
   DCHECK(scheduler_client);
 }
 
+
+#if BUILDFLAG(IS_OHOS)
+FlingController::~FlingController() {
+  if (!fling_curve_) {
+    return;
+  }
+  LOG(DEBUG) << "stop web page fling";
+  base::ohos::SlidingObserver::GetInstance().StopSliding();
+  if (auto* host = GpuProcessHost::Get()) {
+    if (auto* host_impl = host->gpu_host()) {
+      host_impl->StopMonitor();
+      host_impl->ReportSlidingFrameRate(0);
+    }
+  }
+}
+#else
 FlingController::~FlingController() = default;
+#endif
 
 bool FlingController::ObserveAndFilterForTapSuppression(
     const GestureEventWithLatencyInfo& gesture_event) {
@@ -273,7 +290,20 @@ void FlingController::ProgressFling(base::TimeTicks current_time) {
   bool fling_is_active = fling_curve_->Advance(
       (current_time - current_fling_parameters_.start_time).InSecondsF(),
       current_fling_parameters_.velocity, delta_to_scroll);
-
+#if BUILDFLAG(IS_OHOS)
+  if ((current_time - current_fling_parameters_.start_time).InSecondsF() > 0) {
+    int32_t preferred_frame_rate = base::ohos::SlidingObserver::GetInstance().OnFlingUpdate(
+      current_fling_parameters_.velocity.x(),
+      current_fling_parameters_.velocity.y());
+    if (auto* host = content::GpuProcessHost::Get()) {
+      if (auto* host_impl = host->gpu_host()) {
+        if (preferred_frame_rate >= 0) {
+            host_impl->ReportSlidingFrameRate(preferred_frame_rate);
+        }
+      }
+    }
+  }
+#endif
   if (!fling_is_active && current_fling_parameters_.source_device !=
                               blink::WebGestureDevice::kSyntheticAutoscroll) {
     fling_booster_.Reset();
@@ -407,12 +437,9 @@ void FlingController::EndCurrentFling(base::TimeTicks current_time) {
       .FinishAsyncTrace(fling_string, 0);
 
   LOG(DEBUG) << "stop web page fling";
-  base::ohos::SlidingObserver::GetInstance().StopSliding();
-
   if (auto* host = GpuProcessHost::Get()) {
     if (auto* host_impl = host->gpu_host()) {
       host_impl->StopMonitor();
-      host_impl->ReportSlidingFrameRate(0);
       TRACE_EVENT0("input", "DynamicFrameLossEvent End");
       GetUIThreadTaskRunner({})->PostTask(
         FROM_HERE,

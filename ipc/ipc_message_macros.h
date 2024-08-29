@@ -358,7 +358,7 @@
                              &member_func))                      \
       ipc_message__.set_dispatch_error();                        \
   } break;
-#endif 
+#endif
 
 #define IPC_MESSAGE_HANDLER(msg_class, member_func) \
   IPC_MESSAGE_FORWARD(msg_class, this, _IpcMessageHandlerClass::member_func)
@@ -366,7 +366,7 @@
 #if BUILDFLAG(IS_OHOS)
 #define IPC_MESSAGE_HANDLER_PARAM(msg_class, member_func) \
   IPC_MESSAGE_FORWARD_PARAM(msg_class, this, _IpcMessageHandlerClass::member_func)
-#endif 
+#endif
 
 #define IPC_MESSAGE_FORWARD_DELAY_REPLY(msg_class, obj, member_func) \
   case msg_class::ID: {                                              \

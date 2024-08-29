@@ -90,6 +90,10 @@ class CC_EXPORT ImageDecodeCache {
         return ScopedImageType::kBmp;
       case ImageType::kGIF:
         return ScopedImageType::kGif;
+#if BUILDFLAG(IS_OHOS)
+      case ImageType::kHEIF:
+        return ScopedImageType::kHeif;
+#endif
       case ImageType::kICO:
         return ScopedImageType::kIco;
       case ImageType::kJPEG:

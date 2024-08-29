@@ -170,12 +170,10 @@ void InputRouterImpl::SendGestureEvent(
       .CreateSocPerfClientAdapter()
       ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID, false);
     prePerfTimeStamp_ = 0;
-    base::ohos::SlidingObserver::GetInstance().StopSliding();
 
     if (auto* host = GpuProcessHost::Get()) {
       if (auto* host_impl = host->gpu_host()) {
         host_impl->StopMonitor();
-        host_impl->ReportSlidingFrameRate(0);
       }
     }
 #endif
@@ -638,13 +636,13 @@ void InputRouterImpl::FilterAndSendWebInputEvent(
                                            LegacyEvent::FLOW_INOUT,
                                        latency_info.trace_id());
               });
-  if (!(input_event.GetType() == WebInputEvent::Type::kGestureScrollUpdate || 
+  if (!(input_event.GetType() == WebInputEvent::Type::kGestureScrollUpdate ||
       input_event.GetType() == WebInputEvent::Type::kTouchMove ||
       input_event.GetType() == WebInputEvent::Type::kGesturePinchUpdate)) {
-    LOG(INFO) << "InputRouterImpl::FilterAndSendWebInputEvent type=" << 
+    LOG(INFO) << "InputRouterImpl::FilterAndSendWebInputEvent type=" <<
                  WebInputEvent::GetName(input_event.GetType());
   }
-  
+
   if (input_event.GetType() == WebInputEvent::Type::kGestureScrollUpdate) {
     OHOS::NWeb::ResSchedClientAdapter::ReportScene(
       OHOS::NWeb::ResSchedStatusAdapter::WEB_SCENE_ENTER, OHOS::NWeb::ResSchedSceneAdapter::SLIDE);

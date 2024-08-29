@@ -255,7 +255,7 @@ if (is_mac || is_android || is_linux || is_chromeos) {
 }
 
 if (ohos_crashpad) {
-  shared_library("chrome_crashpad_handler") {
+  shared_library("arkweb_crashpad_handler") {
     deps = [
       ":crashpad_handler_main",
     ]

@@ -632,13 +632,6 @@ void VideoResourceUpdater::ObtainFrameResources(
     return;
   }
 
-#if BUILDFLAG(IS_OHOS)
-  if (video_frame->should_skip_current_frame()) {
-    LOG(INFO) << "[NativeEmbed] ObtainFrameResources should skip current frame.";
-    return;
-  }
-#endif
-
   VideoFrameExternalResources external_resources =
       CreateExternalResourcesFromVideoFrame(video_frame);
   frame_resource_type_ = external_resources.type;

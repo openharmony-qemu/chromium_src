@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -242,6 +242,10 @@ class NWebImpl : public NWeb {
       const size_t scriptLength,
       std::shared_ptr<NWebMessageValueCallback> callback,
       bool extention) override;
+  void ExecuteCreatePDFExt(
+      std::shared_ptr<NWebPDFConfigArgs> pdfConfig,
+      std::shared_ptr<NWebArrayBufferValueCallback> callback) override;
+
 
 #if defined(OHOS_MSGPORT)
   void ExecuteJavaScript(
@@ -294,6 +298,7 @@ class NWebImpl : public NWeb {
                                  const std::vector<int32_t>& pressedCodes) override;
   void ScrollToWithAnime(float x, float y, int32_t duration) override;
   void ScrollByWithAnime(float delta_x, float delta_y, int32_t duration) override;
+  bool ScrollByWithResult (float delta_x, float delta_y) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
   bool GetCertChainDerData(std::vector<std::string>& certChainData,
@@ -544,6 +549,13 @@ class NWebImpl : public NWeb {
 #ifdef OHOS_BFCACHE
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override;
 #endif
+
+#ifdef OHOS_MIXED_CONTENT
+  void EnableMixedContentAutoUpgrades(bool enable);
+  bool IsMixedContentAutoUpgradesEnabled();
+#endif
+
+ void SetPopupSurface(void* popupSurface) override;
 
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

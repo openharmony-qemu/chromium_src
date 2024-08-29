@@ -526,7 +526,7 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
 
 #if BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_JITTER)
   void SetCurrentFrameSinkId(const viz::FrameSinkId& id);
-#endif 
+#endif
 
 #if BUILDFLAG(IS_OHOS)
 void SetEnableLowerFrameRate(bool enabled);

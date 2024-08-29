@@ -98,7 +98,11 @@ Trap::Trap() {
         "Existing signal handler when trying to install SIGSYS. SIGSYS needs "
         "to be reserved for seccomp-bpf.";
     DLOG(FATAL) << kExistingSIGSYSMsg;
+#ifdef BUILDFLAG(IS_OHOS)
+    LOG(WARNING) << kExistingSIGSYSMsg;
+#else
     LOG(ERROR) << kExistingSIGSYSMsg;
+#endif
   }
 
   // Unmask SIGSYS

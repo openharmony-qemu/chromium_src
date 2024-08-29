@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -1387,6 +1387,15 @@ void NWebImpl::ExecuteJavaScriptExt(
   nweb_delegate_->ExecuteJavaScriptExt(fd, scriptLength, callback, extention);
 }
 
+void NWebImpl::ExecuteCreatePDFExt(
+    std::shared_ptr<NWebPDFConfigArgs> pdfConfig,
+    std::shared_ptr<NWebArrayBufferValueCallback> callback) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->ExecuteCreatePDFExt(pdfConfig, callback);
+}
+
 #if defined(OHOS_MSGPORT)
 void NWebImpl::ExecuteJavaScript(
     const std::string& code,
@@ -2025,6 +2034,13 @@ void NWebImpl::ScrollByWithAnime(float delta_x, float delta_y, int32_t duration)
     return;
   }
   return nweb_delegate_->ScrollByWithAnime(delta_x, delta_y, duration);
+}
+
+bool NWebImpl::ScrollByWithResult(float delta_x, float delta_y) {
+  if (nweb_delegate_ == nullptr) {
+    return false;
+  }
+  return nweb_delegate_->ScrollByWithResult(delta_x, delta_y);
 }
 #endif  // defined(OHOS_INPUT_EVENTS)
 
@@ -2855,12 +2871,16 @@ std::shared_ptr<NWeb> NWebImpl::GetNWeb(int32_t nweb_id) {
 void NWebImpl::SetWebTag(int32_t nweb_id, const char* web_tag) {
   OHOS::NWeb::NWebImpl* nweb = OHOS::NWeb::NWebImpl::FromID(nweb_id);
   OHOS::NWeb::ArkWebNativeObject::BindWebTagToWebInstance(nweb_id, web_tag);
-  if (!nweb) {
-    WVLOG_E("fail to find a valid nweb with %{public}d", nweb_id);
+  if (nweb) {
+    nweb->SetWebTag(std::string(web_tag));
     return;
   }
 
-  nweb->SetWebTag(std::string(web_tag));
+  if (nweb_id == -1) {
+    WVLOG_D("fail to find a valid nweb with id:%{public}d Tag:%{public}s", nweb_id, web_tag ? web_tag : " ");
+  } else {
+    WVLOG_E("fail to find a valid nweb with id:%{public}d Tag:%{public}s", nweb_id, web_tag ? web_tag : " ");
+  }
 }
 #endif
 
@@ -3409,6 +3429,27 @@ int NWebImpl::SetUrlTrustListWithErrMsg(
 #endif
 }
 
+#ifdef OHOS_MIXED_CONTENT
+void NWebImpl::EnableMixedContentAutoUpgrades(bool enable){
+  if(nweb_delegate_ == nullptr){
+    LOG(ERROR) << "EnableMixedContentAutoUpgrades failed,"
+                  "for nweb_delegate_ is nullptr.";
+    return;
+  }
+  nweb_delegate_->EnableMixedContentAutoUpgrades(enable);
+}
+
+bool NWebImpl::IsMixedContentAutoUpgradesEnabled(){
+  if(nweb_delegate_ == nullptr){
+    LOG(ERROR) << "IsMixedContentAutoUpgradesEnabled failed"
+                  "for nweb_delegate_ is nullptr.";
+    return false;
+  }
+
+  return nweb_delegate_->IsMixedContentAutoUpgradesEnabled();
+}
+#endif
+
 void NWebImpl::PerformAction(int64_t accessibilityId, uint32_t action,
   const std::map<std::string, std::string>& actionArguments) {
   if (nweb_delegate_ != nullptr) {
@@ -3464,4 +3505,35 @@ void NWebImpl::TrimMemoryByPressureLevel(int32_t memoryLevel) {
                     : "MEMORY_PRESSURE_LEVEL_CRITICAL");
   base::MemoryPressureListener::NotifyMemoryPressure(memory_pressure_level);
 #endif  // OHOS_PERFORMANCE_MEMORY_THRESHOLD
+}
+
+void NWebImpl::SetPopupSurface(void* popupSurface) {
+
+  uint32_t width, height;
+  output_handler_->GetWindowInfo(width, height);
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E(
+        "SetPopupSurface failed,nweb_delegate is nullptr.");
+    return;
+  }
+
+  if (output_handler_ == nullptr) {
+    WVLOG_E("SetPopupSurface failed, NWeb output handler is not ready");
+    return;
+  }
+  void* popup_window = nullptr;
+  popup_window = output_handler_->GetNativeWindowFromSurface(popupSurface);
+
+  int32_t ret = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                    .GetWindowAdapterInstance()
+                    .NativeWindowSetBufferGeometry(
+                        reinterpret_cast<void*>(popup_window), width,height);
+  if (ret == OHOS::NWeb::GSErrorCode::GSERROR_OK) {
+    WVLOG_I("popup window opt for emulator in init, result = %{public}d", ret);
+  } else {
+    WVLOG_W(
+        "popup window opt for emulator in init failed, result = %{public}d",
+        ret);
+  }
+  nweb_delegate_->SetPopupSurface(popup_window);
 }

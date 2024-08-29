@@ -35,6 +35,12 @@ namespace OHOS::NWeb {
 constexpr int fontMinSize = 1;
 constexpr int fontMaxSize = 72;
 
+enum class WebScrollType : int32_t {
+    UNKNOWN = -1,
+    EVENT = 0,
+    POSITION
+};
+
 int ConvertCacheMode(NWebPreference::CacheModeFlag flag) {
   switch (flag) {
     case NWebPreference::CacheModeFlag::USE_CACHE_ELSE_NETWORK:
@@ -571,6 +577,12 @@ const base::Feature webview_mixed_content_autoupgrades{
     "WebViewMixedContentAutoupgrades", base::FEATURE_DISABLED_BY_DEFAULT};
 
 bool NWebPreferenceDelegate::MixedContentAutoupgradesAllowed() {
+#ifdef OHOS_MIXED_CONTENT
+  if(enable_mixed_content_auto_upgrades_){
+    return access_mode_ == AccessMode::COMPATIBILITY_MODE;
+  }
+#endif
+
   if (base::FeatureList::IsEnabled(webview_mixed_content_autoupgrades)) {
     return access_mode_ == AccessMode::COMPATIBILITY_MODE;
   }
@@ -649,7 +661,7 @@ void NWebPreferenceDelegate::PutOverscrollMode(int mode) {
 void NWebPreferenceDelegate::SetNativeEmbedMode(bool flag) {
   // Native Embed is not supported on pc device.
   CefRefPtr<CefCommandLine> command_line = CefCommandLine::GetGlobalCommandLine();
-  auto isEnableEmbed = command_line->HasSwitch(::switches::kEnableEmbedMode); 
+  auto isEnableEmbed = command_line->HasSwitch(::switches::kEnableEmbedMode);
   enable_embed_mode_ = flag && !isEnableEmbed;
   if (enable_embed_mode_) {
     zooming_function_enabled_ = false;
@@ -671,11 +683,25 @@ void NWebPreferenceDelegate::RegisterNativeEmbedRule(const std::string& tag,
 void NWebPreferenceDelegate::SetScrollable(bool enable) {
   scroll_enabled_ = enable;
   WebPreferencesChanged();
-  if(!browser_.get()) {
+  if (!browser_.get()) {
     LOG(ERROR) << "SetScrollable failed, browser is null";
     return;
   }
-  browser_->GetHost()->SetScrollable(enable);
+  browser_->GetHost()->SetScrollable(enable, static_cast<int32_t>(WebScrollType::UNKNOWN));
+}
+
+void NWebPreferenceDelegate::SetScrollable(bool enable, int32_t scrollType) {
+  scroll_enabled_ = enable;
+  if (scrollType == static_cast<int32_t>(WebScrollType::UNKNOWN) ||
+      scrollType == static_cast<int32_t>(WebScrollType::POSITION) ||
+      scroll_enabled_) {
+    WebPreferencesChanged();
+  }
+  if (!browser_.get()) {
+    LOG(ERROR) << "SetScrollable failed, browser is null";
+    return;
+  }
+  browser_->GetHost()->SetScrollable(enable, scrollType);
 }
 
 bool NWebPreferenceDelegate::GetScrollable() {
@@ -728,7 +754,7 @@ int NWebPreferenceDelegate::GetDrawMode() const {
 }
 
 void NWebPreferenceDelegate::PutTextAutosizingEnabled(bool flag) {
-  if(text_autosizing_enabled_ == flag){
+  if (text_autosizing_enabled_ == flag) {
     return;
   }
   text_autosizing_enabled_ = flag;
@@ -763,7 +789,6 @@ NWebPreference::CopyOptionMode NWebPreferenceDelegate::GetCopyOptionMode() {
 
 void NWebPreferenceDelegate::SetNativeVideoPlayerConfig(bool enable,
                                                         bool shouldOverlay) {
-
   if (native_video_player_config_ == std::make_tuple(enable, shouldOverlay)) {
     return;
   }
@@ -833,6 +858,27 @@ std::string NWebPreferenceDelegate::GetSurfaceId() {
 void NWebPreferenceDelegate::SetSurfaceId(const std::string& surfaceId) {
   LOG(DEBUG)<<"[getSurfaceId] SetSurfaceId is "<<surfaceId;
   surface_id_ = surfaceId;
+}
+#endif
+
+#if defined(OHOS_PASSWORD_AUTOFILL)
+CefRefPtr<CefWebMessageReceiver> NWebPreferenceDelegate::GetAutofillCallback() {
+  return autofill_callback_;
+}
+
+void NWebPreferenceDelegate::SetAutofillCallback(
+    CefRefPtr<CefWebMessageReceiver> callback) {
+  autofill_callback_ = callback;
+}
+#endif
+
+#ifdef OHOS_MIXED_CONTENT
+void NWebPreferenceDelegate::EnableMixedContentAutoUpgrades(bool enable){
+  enable_mixed_content_auto_upgrades_ = enable;
+}
+
+bool NWebPreferenceDelegate::IsMixedContentAutoUpgradesEnabled(){
+  return enable_mixed_content_auto_upgrades_;
 }
 #endif
 

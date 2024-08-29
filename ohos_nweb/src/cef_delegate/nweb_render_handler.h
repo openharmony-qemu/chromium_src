@@ -117,6 +117,10 @@ class NWebRenderHandler : public CefRenderHandler {
 
   void ReleaseResizeHold(CefRefPtr<CefBrowser> browser) override;
 
+  void OnPopupSize(CefRefPtr<CefBrowser> browser, const CefRect& rect) override;
+
+  void OnPopupShow(CefRefPtr<CefBrowser> browser, bool show) override;
+
   void OnScrollOffsetChanged(CefRefPtr<CefBrowser> browser,
                              double x,
                              double y) override;
@@ -183,7 +187,10 @@ class NWebRenderHandler : public CefRenderHandler {
                          const float fling_y) override;
   std::shared_ptr<NWebNativeEmbedDataInfo> CefEmbedDataToWeb(const CefRenderHandler::CefNativeEmbedData& embedData);
   void SetContentSize(int width, int height);
+  void SetGestureEventResult(bool result) override;
+  bool GetGestureEventResult();
   gfx::Size GetSize();
+  void StartVibraFeedback(const std::string& vibratorType) override;
 #endif
 
 #ifdef OHOS_EX_FREE_COPY
@@ -269,6 +276,7 @@ class NWebRenderHandler : public CefRenderHandler {
   std::weak_ptr<NWebDelegateInterface> delegate_interface_;
 #endif  // defined(OHOS_INPUT_EVENTS)
   bool isSystemKeyboard_ = true;
+  bool gesture_event_result_ = false;
 };
 }  // namespace OHOS::NWeb
 

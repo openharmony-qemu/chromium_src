@@ -130,6 +130,41 @@ void SharedImageStub::ExecuteDeferredRequest(
   }
 }
 
+#if BUILDFLAG(IS_OHOS)
+bool SharedImageStub::CreateSharedImage(const Mailbox& mailbox,
+                                        gfx::GpuMemoryBufferHandle handle,
+                                        gfx::BufferFormat format,
+                                        gfx::BufferPlane plane,
+                                        const gfx::Size& size,
+                                        const gfx::ColorSpace& color_space,
+                                        GrSurfaceOrigin surface_origin,
+                                        SkAlphaType alpha_type,
+                                        uint32_t usage,
+                                        void* window_buffer) {
+  TRACE_EVENT2("gpu", "SharedImageStub::CreateSharedImage", "width",
+               size.width(), "height", size.height());
+  if (!mailbox.IsSharedImage()) {
+    LOG(ERROR) << "[HeifSupport] SharedImageStub: Trying to create a SharedImage with a "
+                  "non-SharedImage mailbox.";
+    OnError();
+    return false;
+  }
+  if (!MakeContextCurrent()) {
+    OnError();
+    return false;
+  }
+
+  if (!factory_->CreateSharedImage(mailbox, std::move(handle), format, plane,
+                                   size, color_space, surface_origin,
+                                   alpha_type, usage, window_buffer)) {
+    LOG(ERROR) << "[HeifSupport] SharedImageStub: Unable to create shared image";
+    OnError();
+    return false;
+  }
+  return true;
+}
+#endif
+
 bool SharedImageStub::CreateSharedImage(const Mailbox& mailbox,
                                         gfx::GpuMemoryBufferHandle handle,
                                         gfx::BufferFormat format,

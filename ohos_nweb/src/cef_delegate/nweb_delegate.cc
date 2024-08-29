@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -314,6 +314,24 @@ class CefPrecompileCallbackImpl : public CefPrecompileCallback {
   std::shared_ptr<NWebMessageValueCallback> callback_;
 
   IMPLEMENT_REFCOUNTING(CefPrecompileCallbackImpl);
+};
+
+class CefPdfValueCallbackImpl : public CefPdfValueCallback {
+ public:
+  explicit CefPdfValueCallbackImpl(
+      std::shared_ptr<NWebArrayBufferValueCallback> callback)
+      : callback_(callback) {}
+
+  void OnReceiveValue(const char* value, const long size) override {
+    if (callback_ != nullptr) {
+      callback_->OnReceiveValue(value, size);
+    }
+  }
+
+ private:
+  std::shared_ptr<NWebArrayBufferValueCallback> callback_;
+
+  IMPLEMENT_REFCOUNTING(CefPdfValueCallbackImpl);
 };
 
 class CefCacheOptionsImpl : public CefCacheOptions {
@@ -780,6 +798,10 @@ void NWebDelegate::OnTouchPress(int32_t id,
                                 double y,
                                 bool from_overlay) {
   if (event_handler_ != nullptr) {
+    if (pressing_num_ < 0) {
+      pressing_num_ = 0;
+    }
+    ++pressing_num_;
     event_handler_->OnTouchPress(id, x / default_virtual_pixel_ratio_,
                                  y / default_virtual_pixel_ratio_,
                                  from_overlay);
@@ -796,6 +818,7 @@ void NWebDelegate::OnTouchRelease(int32_t id,
                                   double y,
                                   bool from_overlay) {
   if (event_handler_ != nullptr) {
+    --pressing_num_;
     event_handler_->OnTouchRelease(id, x / default_virtual_pixel_ratio_,
                                    y / default_virtual_pixel_ratio_,
                                    from_overlay);
@@ -823,6 +846,7 @@ void NWebDelegate::OnTouchMove(int32_t id,
 
 void NWebDelegate::OnTouchCancel() {
   if (event_handler_ != nullptr) {
+    --pressing_num_;
     event_handler_->OnTouchCancel();
   }
 }
@@ -832,6 +856,7 @@ void NWebDelegate::OnTouchCancelById(int32_t id,
                                      double y,
                                      bool from_overlay) {
   if (event_handler_ != nullptr) {
+    --pressing_num_;
     event_handler_->OnTouchCancelById(id, x / default_virtual_pixel_ratio_,
                                       y / default_virtual_pixel_ratio_,
                                       from_overlay);
@@ -988,7 +1013,7 @@ int NWebDelegate::Load(const std::string& url) {
   if (IsFileProtocol(file_gurl) && !IsUrlFileExist(file_gurl, url)) {
     return NWEB_INVALID_RESOURCE;
   }
-  LOG(DEBUG) << "NWebDelegate::Load url=" << url;
+  LOG(DEBUG) << "NWebDelegate::Load url: ***";
   auto browser = GetBrowser();
   if (browser == nullptr) {
     LOG(ERROR) << "NWebDelegate::Load browser is nullptr";
@@ -1285,6 +1310,33 @@ void NWebDelegate::ExecuteJavaScriptExt(
   }
 }
 
+void NWebDelegate::ExecuteCreatePDFExt(
+    std::shared_ptr<NWebPDFConfigArgs> pdfConfig,
+    std::shared_ptr<NWebArrayBufferValueCallback> callback) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "ExecuteCreatePDFExt can not get browser";
+    return;
+  }
+  CefPdfPrintSettings settings;
+  settings.margin_left = pdfConfig->GetMarginLeft();
+  settings.margin_right = pdfConfig->GetMarginRight();
+  settings.margin_top = pdfConfig->GetMarginTop();
+  settings.margin_bottom = pdfConfig->GetMarginBottom();
+  settings.paper_width = pdfConfig->GetWidth();
+  settings.paper_height = pdfConfig->GetHeight();
+  settings.scale = pdfConfig->GetScale();
+  if (pdfConfig->GetShouldPrintBackground()) {
+    settings.print_background = 1;
+  } else {
+    settings.print_background = 0;
+  }
+  settings.landscape = 0;
+  settings.margin_type = PDF_PRINT_MARGIN_CUSTOM;
+  CefRefPtr<CefPdfValueCallbackImpl> precompileCallback =
+      new CefPdfValueCallbackImpl(callback);
+  GetBrowser()->GetHost()->CreateToPDF(settings, precompileCallback);
+}
+
 #if defined(OHOS_MSGPORT)
 
 void NWebDelegate::EraseJavaScriptCallbackImpl(uint32_t id) {
@@ -1402,13 +1454,16 @@ void NWebDelegate::NotifyForNextTouchEvent() {
   }
 }
 
-void NWebDelegate::SetAutofillCallback(std::shared_ptr<NWebMessageValueCallback> callback) {
-  if (!GetBrowser().get()) {
-    return;
-  }
+void NWebDelegate::SetAutofillCallback(
+    std::shared_ptr<NWebMessageValueCallback> callback) {
+  CefRefPtr<CefWebMessageReceiver> JsResultCb =
+      new CefWebMessageReceiverImpl(callback);
 
-  CefRefPtr<CefWebMessageReceiver> JsResultCb =  new CefWebMessageReceiverImpl(callback);
-  GetBrowser()->GetHost()->SetAutofillCallback(JsResultCb);
+  if (GetBrowser() && GetBrowser()->GetHost()) {
+    GetBrowser()->GetHost()->SetAutofillCallback(JsResultCb);
+  } else if (preference_delegate_) {
+    preference_delegate_->SetAutofillCallback(JsResultCb);
+  }
 }
 
 void NWebDelegate::FillAutofillData(std::shared_ptr<NWebMessage> data) {
@@ -2186,7 +2241,7 @@ void NWebDelegate::UpdateLocale(const std::string& language,
   }
   bool setSuccess = OhosAdapterHelper::GetInstance().GetAudioSystemManager()
                                                     .SetLanguage(language);
-  if(!setSuccess){
+  if (!setSuccess) {
     LOG(ERROR) << "UpdateLocale SetLanguage error,language=" << language;
   }
   CefString locale = "";
@@ -2613,6 +2668,31 @@ void NWebDelegate::GetOverScrollOffset(float* offset_x, float* offset_y) {
   GetBrowser()->GetHost()->GetOverScrollOffset(offset_x, offset_y);
 }
 #endif
+
+bool NWebDelegate::ScrollByWithResult(float delta_x, float delta_y) {
+  if (handler_delegate_ == nullptr) {
+    LOG(ERROR) << "handler_delegate_ is nullptr , ScrollByWithResult fail";
+    return false;
+  }
+  LOG(DEBUG) << "The pressing_num_ in ScrollByWithResult is" << (pressing_num_);
+  if (render_handler_ == nullptr) {
+    LOG(ERROR) << "fail to register NWebDelegateInterface client, render "
+                  "handler is nullptr";
+    return false;
+  }
+  bool isDontScroll = pressing_num_ > 0;
+  bool isIgnoreDown = render_handler_->GetGestureEventResult();
+  if (isIgnoreDown) {
+    LOG(DEBUG) << "Web is touched down but on arkui area ,so continue scroll";
+    isDontScroll = false;
+  }
+  if (isDontScroll) {
+    LOG(DEBUG) << "Web is touched down, return false";
+    return false;
+  }
+  ScrollBy(delta_x, delta_y);
+  return true;
+}
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #if defined(OHOS_API_INIT_WEB_ENGINE)
@@ -3246,7 +3326,7 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId, uint32_t action) {
     return;
   }
   auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
-  auto* node = accessibilityManager->GetFromAccessibilityId(
+  auto* node = content::BrowserAccessibilityOHOS::GetFromAccessibilityId(
       accessibilityId);
   if (node == nullptr || rootNode == nullptr) {
     LOG(ERROR) << "ExecuteAction(Deprecated) node or rootNode is not found";
@@ -3302,7 +3382,7 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId, uint32_t action,
     return;
   }
   auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
-  auto* node = accessibilityManager->GetFromAccessibilityId(accessibilityId);
+  auto* node = content::BrowserAccessibilityOHOS::GetFromAccessibilityId(accessibilityId);
   if (node == nullptr || rootNode == nullptr) {
     LOG(ERROR) << "ExecuteAction node or rootNode is not found";
     return;
@@ -3386,7 +3466,7 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId, uint32_t action,
       if (!node->IsTextField()) {
         break;
       }
-      if(actionArguments.empty()) {
+      if (actionArguments.empty()) {
         break;
       }
       std::string newText = "";
@@ -3397,7 +3477,7 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId, uint32_t action,
       if (newText.empty()) {
         break;
       }
-      accessibilityManager->SetValue(*node,newText);
+      accessibilityManager->SetValue(*node, newText);
       accessibilityManager->SetSelection(
           content::BrowserAccessibility::AXRange(
               node->CreatePositionForSelectionAt(newText.length()),
@@ -3452,7 +3532,7 @@ NWebDelegate::GetFocusedAccessibilityNodeInfo(int64_t accessibilityId,
   if (isAccessibilityFocus) {
     auto accessibilityFocusId = accessibilityManager->GetAccessibilityFocusId();
     if (accessibilityFocusId > 0) {
-      resultNode = accessibilityManager->GetFromAccessibilityId(
+      resultNode = content::BrowserAccessibilityOHOS::GetFromAccessibilityId(
           accessibilityFocusId);
     }
   } else {
@@ -3467,7 +3547,7 @@ NWebDelegate::GetFocusedAccessibilityNodeInfo(int64_t accessibilityId,
   if (accessibilityId < 0) {
     node = static_cast<content::BrowserAccessibilityOHOS*>(rootNode);
   } else {
-    node = accessibilityManager->GetFromAccessibilityId(
+    node = content::BrowserAccessibilityOHOS::GetFromAccessibilityId(
         accessibilityId);
   }
   if (node == nullptr || !resultNode->IsDescendantOf(node)) {
@@ -3492,7 +3572,7 @@ NWebDelegate::GetAccessibilityNodeInfoById(int64_t accessibilityId) {
   if (accessibilityId < 0) {
     node = static_cast<content::BrowserAccessibilityOHOS*>(rootNode);
   } else {
-    node = accessibilityManager->GetFromAccessibilityId(
+    node = content::BrowserAccessibilityOHOS::GetFromAccessibilityId(
         accessibilityId);
   }
   if (node == nullptr) {
@@ -3519,7 +3599,7 @@ NWebDelegate::GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
     node = static_cast<content::BrowserAccessibilityOHOS*>(
         accessibilityManager->GetBrowserAccessibilityRoot());
   } else {
-    node = accessibilityManager->GetFromAccessibilityId(
+    node = content::BrowserAccessibilityOHOS::GetFromAccessibilityId(
         accessibilityId);
   }
   if (node == nullptr) {
@@ -3914,10 +3994,32 @@ void NWebDelegate::SetPathAllowingUniversalAccess(
   }
   preference_delegate_->PutEnableUniversalAccessFromFileURLs(pathList.size() != 0);
   std::vector<CefString> cef_path_list;
-  std::for_each(pathList.begin(), pathList.end(), [&cef_path_list](const std::string& path){
+  std::for_each(pathList.begin(), pathList.end(), [&cef_path_list](const std::string& path) {
     cef_path_list.emplace_back(CefString(path));
   });
   GetBrowser()->GetHost()->SetGrantFileAccessDirs(cef_path_list);
+}
+#endif
+
+#ifdef OHOS_MIXED_CONTENT
+void NWebDelegate::EnableMixedContentAutoUpgrades(bool enable){
+  LOG(DEBUG) << "NWebDelegate::EnableMixedContentAutoUpgrades " << enable;
+  if(preference_delegate_){
+    preference_delegate_->EnableMixedContentAutoUpgrades(enable);
+  }else{
+    LOG(ERROR) << "NWebDelegate::EnableMixedContentAutoUpgrades"
+                  "get preference_delegate failed ";
+  }
+}
+
+bool NWebDelegate::IsMixedContentAutoUpgradesEnabled(){
+  if(preference_delegate_){
+    return preference_delegate_->IsMixedContentAutoUpgradesEnabled();
+  }else{
+    LOG(ERROR) << "NWebDelegate::IsMixedContentAutoUpgradesEnabled"
+                  "get preference_delegate failed ";
+  }
+  return false;
 }
 #endif
 
@@ -3940,4 +4042,12 @@ void NWebDelegate::SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) 
   GetBrowser()->SetBackForwardCacheOptions(size, timeToLive);
 }
 #endif
+
+void NWebDelegate::SetPopupSurface(void* popupSurface) {
+  if (handler_delegate_ == nullptr) {
+    LOG(ERROR) << "fail to set popup surface handle_delegate_ don't exist.";
+    return;
+  }
+  handler_delegate_->SetPopupSurface(popupSurface);
+}
 }  // namespace OHOS::NWeb

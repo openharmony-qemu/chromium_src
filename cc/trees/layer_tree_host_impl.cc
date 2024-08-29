@@ -5360,6 +5360,12 @@ void LayerTreeHostImpl::OnLayerRectUpdate(int id, const gfx::Rect& rect) {
 }
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+void LayerTreeHostImpl::OnLayerRectVisibleChange(int id, bool visibility) {
+  client_->OnLayerRectVisibleChange(id, visibility);
+}
+#endif
+
 #ifdef OHOS_NWEB_EX
 void LayerTreeHostImpl::SetupScrollBy() {
   if (!input_delegate_) {

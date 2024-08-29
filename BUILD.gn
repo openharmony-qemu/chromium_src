@@ -193,6 +193,10 @@ group("gn_all") {
       ]
     }
 
+    if (is_ohos) {
+      deps += [ "//ohos_nweb/test:ohos_nweb_unittests" ]
+    }
+
     if (use_blink) {
       deps += [
         "//cc:cc_unittests",

@@ -18,6 +18,8 @@
 #include <chrono>
 #include <algorithm>
 
+#include "base/command_line.h"
+#include "base/base_switches.h"
 #include "base/logging.h"
 #include "base/no_destructor.h"
 #include "base/task/thread_pool.h"
@@ -29,21 +31,45 @@
 namespace {
   const float kMilliMeterPerInch = 25.4;
   const float kMicroSecondPerSecond = 1000000.0;
-  const int32_t kDefaultPreferedFrameRate = 120;
+  static const int32_t kDefaultPreferedFrameRate = 120;
+  static const int32_t STOP_FLING_LTPO = 0;
+  static const int32_t START_FLING_LTPO = 1;
+  static const int32_t STOP_ALL_FLING_LTPO = 2;
 }
 
 namespace base {
 namespace ohos {
 using OHOS::NWeb::FrameRateSetting;
-SlidingObserver& SlidingObserver::GetInstance()
-{
+SlidingObserver::~SlidingObserver() {
+  if (is_pc_ && is_ltpo_app_) {
+    OHOS::NWeb::OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetScene("WEB_LIST_FLING",
+        STOP_ALL_FLING_LTPO);
+  }
+}
+
+SlidingObserver& SlidingObserver::GetInstance(){
   static base::NoDestructor<SlidingObserver> instance;
   return *instance.get();
 }
 
 void SlidingObserver::Init() {
-  if (OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetProductDeviceType() !=
-      OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE) {
+  auto type = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetProductDeviceType();
+  if (type == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_TABLET) {
+    is_pc_ = true;
+    is_inited_ = true;
+    std::string bund_name = "";
+    const base::CommandLine& command_line =
+      *base::CommandLine::ForCurrentProcess();
+    if (command_line.HasSwitch(switches::kBundleName)) {
+      bund_name = base::CommandLine::ForCurrentProcess()->
+          GetSwitchValueASCII(switches::kBundleName);
+    }
+    is_ltpo_app_ = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
+      .IsLTPODynamicApp(bund_name);
+    LOG(DEBUG) << "bundle name is: " << bund_name << ", is_ltpo_app_: " << is_ltpo_app_;
+    return;
+  }
+  if (type != OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE) {
     return;
   }
 
@@ -72,8 +98,10 @@ void SlidingObserver::Init() {
     << ", on_screen_setting: " << on_screen_setting_.size() << ", off_screen_setting: " << off_screen_setting_.size();
 }
 
-void SlidingObserver::StartSliding()
-{
+void SlidingObserver::StartSliding() {
+  if (is_pc_) {
+    return;
+  }
   if (!is_inited_) {
     Init();
   }
@@ -85,8 +113,15 @@ void SlidingObserver::StartSliding()
   is_off_screen_ = false;
 }
 
-int32_t SlidingObserver::StopSliding()
-{
+int32_t SlidingObserver::StopSliding() {
+  if (is_pc_) {
+    if (is_ltpo_app_ && is_off_screen_) {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetScene("WEB_LIST_FLING",
+        STOP_FLING_LTPO);
+    }
+    is_off_screen_ = false;
+    return -1;
+  }
   if (!is_sliding_ || !is_inited_) {
     return -1;
   }
@@ -97,24 +132,29 @@ int32_t SlidingObserver::StopSliding()
   return 0;
 }
 
-int64_t SlidingObserver::GetCurrentTimestamp()
-{
+int64_t SlidingObserver::GetCurrentTimestamp() {
   auto currentTime = std::chrono::system_clock::now().time_since_epoch();
   return std::chrono::duration_cast<std::chrono::microseconds>(currentTime)
       .count();
 }
 
-void SlidingObserver::StartFling()
-{
+void SlidingObserver::StartFling() {
+  if (is_pc_) {
+    if (is_ltpo_app_) {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetScene("WEB_LIST_FLING",
+        START_FLING_LTPO);
+    }
+    is_off_screen_ = true;
+    return;
+  }
   if (!is_sliding_ || !is_inited_) {
     return;
   }
   is_off_screen_ = true;
 }
 
-int32_t SlidingObserver::OnScrollUpdate(float delta_x, float delta_y)
-{
-  if (!is_sliding_ || is_off_screen_) {
+int32_t SlidingObserver::OnScrollUpdate(float delta_x, float delta_y) {
+  if (!is_sliding_ || is_off_screen_ || is_pc_) {
     return -1;
   }
   auto current_timestamp = GetCurrentTimestamp();
@@ -133,9 +173,8 @@ int32_t SlidingObserver::OnScrollUpdate(float delta_x, float delta_y)
   return sliding_frame_rate_;
 }
 
-int32_t SlidingObserver::OnFlingUpdate(float velocity_x, float velocity_y)
-{
-  if (!is_sliding_ || !is_off_screen_) {
+int32_t SlidingObserver::OnFlingUpdate(float velocity_x, float velocity_y) {
+  if (!is_sliding_ || !is_off_screen_ || is_pc_) {
     return -1;
   }
 
@@ -150,8 +189,8 @@ int32_t SlidingObserver::OnFlingUpdate(float velocity_x, float velocity_y)
   return sliding_frame_rate_;
 }
 
-int32_t SlidingObserver::GetPreferedFrameRate(float velocity, const std::vector<OHOS::NWeb::FrameRateSetting>& setting)
-{
+int32_t SlidingObserver::GetPreferedFrameRate(float velocity,
+  const std::vector<OHOS::NWeb::FrameRateSetting>& setting) {
   if (setting.empty()) {
       return kDefaultPreferedFrameRate;
   }
@@ -164,8 +203,7 @@ int32_t SlidingObserver::GetPreferedFrameRate(float velocity, const std::vector<
   return kDefaultPreferedFrameRate;
 }
 
-float SlidingObserver::GetVelocity(float velocity_x, float velocity_y)
-{
+float SlidingObserver::GetVelocity(float velocity_x, float velocity_y) {
   // mm per virtual pixel in phone, mm_per_inch/ppi_of_device * default_virtual_pixel_ratio_
   float convert_unit = kMilliMeterPerInch / dpi_ * virtual_pixel_ratio_;
   float velocity = std::sqrt(velocity_x * velocity_x + velocity_y * velocity_y);

@@ -138,6 +138,7 @@
 #include "gpu/ipc/common/gpu_surface_id_tracker.h"
 #include "base/ohos/ltpo/include/sliding_observer.h"
 #include "base/ohos/ltpo/include/dynamic_frame_rate_decision.h"
+#include "media/gpu/ohos/ohos_image_decode_accelerator_worker.h"
 #endif
 
 namespace viz {
@@ -401,6 +402,11 @@ GpuServiceImpl::GpuServiceImpl(
   image_decode_accelerator_worker_ =
       media::VaapiImageDecodeAcceleratorWorker::Create();
 #endif  // BUILDFLAG(USE_VAAPI_IMAGE_CODECS)
+
+#if BUILDFLAG(IS_OHOS)
+  image_decode_accelerator_worker_ =
+      media::OhosImageDecodeAcceleratorWorker::Create();
+#endif
 
 #if BUILDFLAG(IS_WIN)
   if (media::SupportMediaFoundationClearPlayback()) {

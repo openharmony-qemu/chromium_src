@@ -182,6 +182,11 @@ if (is_fuchsia) {
 
 if (is_ohos) {
   import("//build/config/ohos/config.gni")
+  if (defined(ohos_nweb_ex) && ohos_nweb_ex) {
+    import("//ohos_nweb_ex/build/config/packages.gni")
+  } else {
+    import("//build/config/ohos/packages.gni")
+  }
   include_dirs = ohos_src_includes
 }
 
@@ -1135,6 +1140,10 @@ component("base") {
 
   if (use_custom_libcxx && enable_safe_libcxx && !is_debug) {
     public_deps += [ ":nodebug_assertion" ]
+  }
+
+  if (is_ohos) {
+    public_deps += [ ":ohos_package_info" ]
   }
 
   # Needed for <atomic> if using newer C++ library than sysroot, except if
@@ -2566,6 +2575,15 @@ component("base") {
   }
 }
 
+# Build flags for OHOS package infomation
+if (is_ohos) {
+  buildflag_header("ohos_package_info") {
+    header = "ohos_package_info.h"
+    header_dir = "base/ohos"
+    flags = [ "OHOS_PACKAGE_NAME=\"${ohos_package_name}\"" ]
+  }
+}
+
 # Build flags for Control Flow Integrity
 # https://www.chromium.org/developers/testing/control-flow-integrity
 buildflag_header("cfi_buildflags") {
@@ -3302,6 +3320,7 @@ test("base_unittests") {
     "memory/weak_auto_reset_unittest.cc",
     "memory/weak_ptr_unittest.cc",
     "message_loop/message_pump_glib_unittest.cc",
+    "message_loop/message_pump_ohos_unittest.cc",
     "message_loop/message_pump_unittest.cc",
     "message_loop/work_id_provider_unittest.cc",
     "metrics/bucket_ranges_unittest.cc",
@@ -3533,6 +3552,7 @@ test("base_unittests") {
 
   if(ohos_unittests){
     sources += [
+      "base_paths_ohos_unittest.cc",
       "ohos/ltpo/src/dynamic_frame_rate_decision_unittest.cc",
       "ohos/ltpo/src/sliding_observer_unittest.cc",
     ]
@@ -4132,6 +4152,12 @@ test("base_unittests") {
       "trace_event/typed_macros_unittest.cc",
       "tracing/perfetto_task_runner_unittest.cc",
     ]
+
+    if (is_ohos) {
+      sources += [
+        "trace_event/trace_event_ohos_unittest.cc",
+      ]
+    }
 
     if (is_android) {
       sources += [

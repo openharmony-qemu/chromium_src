@@ -73,7 +73,9 @@ class CC_EXPORT VideoLayerImpl : public LayerImpl {
   std::unique_ptr<media::VideoResourceUpdater> updater_;
 
 #if BUILDFLAG(IS_OHOS)
-  gfx::Rect visible_quad_rect_;
+  gfx::Rect bounds_quad_rect_;
+
+  bool visibility_ = false;
 #endif
 };
 

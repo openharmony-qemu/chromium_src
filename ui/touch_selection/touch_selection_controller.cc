@@ -201,6 +201,9 @@ void TouchSelectionController::HandleTapEvent(const gfx::PointF& location,
 void TouchSelectionController::HandleLongPressEvent(
     base::TimeTicks event_time,
     const gfx::PointF& location) {
+#ifdef OHOS_CLIPBOARD
+  is_long_press_ = true;
+#endif
   longpress_drag_selector_.OnLongPressEvent(event_time, location);
   response_pending_input_event_ = LONG_PRESS;
 }
@@ -397,13 +400,21 @@ void TouchSelectionController::ResetResponsePendingInputEvent() {
 #ifdef OHOS_CLIPBOARD
 void  TouchSelectionController::UpdateSelectionChanged(
     const TouchSelectionDraggable& draggable) {
-  if(&draggable != insertion_handle_.get()) {
+  if (&draggable != insertion_handle_.get()) {
     client_->OnSelectionEvent(SELECTION_HANDLES_UPDATEMENU);
   }
 }
 
 bool TouchSelectionController::IsLongPressDragSelectionActive() {
   return longpress_drag_selector_.IsActive();
+}
+
+bool TouchSelectionController::IsLongPressEvent() {
+  return is_long_press_;
+}
+
+void TouchSelectionController::ResetLongPressEvent() {
+  is_long_press_ = false;
 }
 #endif
 void TouchSelectionController::OnDragBegin(

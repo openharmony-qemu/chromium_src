@@ -161,6 +161,9 @@ static const MimeInfo kPrimaryMappings[] = {
     {"audio/webm", "webm"},
     {"audio/x-m4a", "m4a"},
     {"image/avif", "avif"},
+#if BUILDFLAG(IS_OHOS)
+    {"image/heif", "heif,heic,hevc"},
+#endif
     {"image/gif", "gif"},
     {"image/jpeg", "jpeg,jpg"},
     {"image/png", "png"},
@@ -667,6 +670,9 @@ static const char* const kStandardImageTypes[] = {"image/avif",
                                                   "image/bmp",
                                                   "image/cis-cod",
                                                   "image/gif",
+#if BUILDFLAG(IS_OHOS)
+                                                  "image/heif",
+#endif
                                                   "image/ief",
                                                   "image/jpeg",
                                                   "image/webp",

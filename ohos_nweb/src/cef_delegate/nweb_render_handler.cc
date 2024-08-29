@@ -46,6 +46,9 @@
 #endif  // #ifdef OHOS_AI
 
 namespace {
+#ifdef OHOS_EX_FREE_COPY
+constexpr size_t kWordSelectionOffsetSize = 2;
+#endif // OHOS_EX_FREE_COPY
 cef_screen_orientation_type_t ConvertOrientationType(
     OHOS::NWeb::DisplayOrientation type,
     bool default_portrait) {
@@ -71,20 +74,27 @@ cef_screen_orientation_type_t ConvertOrientationType(
   }
 }
 
+enum RotationAngels {
+  ROTATION_0 = 0,
+  ROTATION_90 = 90,
+  ROTATION_180 = 180,
+  ROTATION_270 = 270,
+};
+
 uint16_t ConvertRotationAngel(OHOS::NWeb::RotationType type) {
   // Notice: 90 and 270 is reverse.
 
   switch (type) {
     case OHOS::NWeb::RotationType::ROTATION_0:
-      return 0;
+      return RotationAngels::ROTATION_0;
     case OHOS::NWeb::RotationType::ROTATION_90:
-      return 90;
+      return RotationAngels::ROTATION_90;
     case OHOS::NWeb::RotationType::ROTATION_180:
-      return 180;
+      return RotationAngels::ROTATION_180;
     case OHOS::NWeb::RotationType::ROTATION_270:
-      return 270;
+      return RotationAngels::ROTATION_270;
     default:
-      return 0;
+      return RotationAngels::ROTATION_0;
   }
 }
 }  // namespace
@@ -374,6 +384,20 @@ void NWebRenderHandler::SetContentSize(int width, int height) {
 gfx::Size NWebRenderHandler::GetSize() {
   return gfx::Size(width_, height_);
 }
+
+void NWebRenderHandler::SetGestureEventResult(bool result) {
+  gesture_event_result_ = result;
+}
+
+bool NWebRenderHandler::GetGestureEventResult() {
+  return gesture_event_result_;
+}
+
+void NWebRenderHandler::StartVibraFeedback(const std::string& vibratorType) {
+  if (auto handler = handler_.lock()) {
+    handler->StartVibraFeedback(vibratorType);
+  }
+}
 #endif
 
 void NWebRenderHandler::GetViewRect(CefRefPtr<CefBrowser> browser,
@@ -385,8 +409,8 @@ void NWebRenderHandler::GetViewRect(CefRefPtr<CefBrowser> browser,
     rect.height = height_;
   } else {
     // Surface greater than Web compoment in case show black line.
-    rect.width = std::ceil(width_ / screen_info_.display_ratio);
-    rect.height = std::ceil(height_ / screen_info_.display_ratio);
+    rect.width = std::round(width_ / screen_info_.display_ratio);
+    rect.height = std::round(height_ / screen_info_.display_ratio);
   }
 
   if (rect.width <= 0) {
@@ -427,8 +451,8 @@ void NWebRenderHandler::GetVisibleViewportRect(CefRefPtr<CefBrowser> browser,
     rect.height = visible_height_;
   } else {
     // Surface greater than Web compoment in case show black line.
-    rect.width = std::ceil(visible_width_ / screen_info_.display_ratio);
-    rect.height = std::ceil(visible_height_ / screen_info_.display_ratio);
+    rect.width = std::round(visible_width_ / screen_info_.display_ratio);
+    rect.height = std::round(visible_height_ / screen_info_.display_ratio);
   }
 
   if (rect.width <= 0) {
@@ -520,6 +544,19 @@ void NWebRenderHandler::OnPaint(CefRefPtr<CefBrowser> browser,
   }
 }
 
+void NWebRenderHandler::OnPopupSize(CefRefPtr<CefBrowser> browser, const CefRect& rect) {
+  if (auto handler = handler_.lock()) {
+    float ratio = GetCefDeviceRatio();
+    handler->OnPopupSize(rect.x * ratio, rect.y * ratio, rect.width * ratio, rect.height * ratio);
+  }
+}
+
+void NWebRenderHandler::OnPopupShow(CefRefPtr<CefBrowser> browser, bool show) {
+  if (auto handler = handler_.lock()) {
+    handler->OnPopupShow(show);
+  }
+}
+
 void NWebRenderHandler::OnRootLayerChanged(CefRefPtr<CefBrowser> browser,
                                            int height,
                                            int width) {
@@ -585,7 +622,8 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
 
   std::map<std::string, std::string> attributesMap;
   for (const auto& item : attributes) {
-    LOG(DEBUG) << "WebCustomKeyboard OnVirtualKeyboardRequested attributes, key = " << item.first.ToString() << ", value = " << item.second.ToString();
+    LOG(DEBUG) << "WebCustomKeyboard OnVirtualKeyboardRequested attributes, key = "
+                << item.first.ToString() << ", value = " << item.second.ToString();
     attributesMap.insert({item.first.ToString(), item.second.ToString()});
   }
 #if defined(OHOS_INPUT_EVENTS)
@@ -604,18 +642,17 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
     if (delegate && delegate->OnFocus()) {
       bool useSystemKeyboard = true;
       int32_t enterKeyType = -1;
-      if (auto handler = handler_.lock()) {
-        if (!custom_keyboard_handler_) {
-          custom_keyboard_handler_ = std::make_shared<NWebCustomKeyboardHandlerImpl>(handler_.lock());
-        }
-        if (text_input_info.show_keyboard) {
-          handler->OnInterceptKeyboardAttach(custom_keyboard_handler_,
-                                             attributesMap, useSystemKeyboard,
-                                             enterKeyType);
-          LOG(INFO) << "WebCustomKeyboard OnInterceptKeyboardAttach return, "
-                       "useSystemKeyboard = "
-                    << useSystemKeyboard << ", enterKeyType = " << enterKeyType;
-        }
+      auto handler = handler_.lock();
+      if (handler && !custom_keyboard_handler_) {
+        custom_keyboard_handler_ = std::make_shared<NWebCustomKeyboardHandlerImpl>(handler_.lock());
+      }
+      if (handler && text_input_info.show_keyboard) {
+        handler->OnInterceptKeyboardAttach(custom_keyboard_handler_,
+                                            attributesMap, useSystemKeyboard,
+                                            enterKeyType);
+        LOG(INFO) << "WebCustomKeyboard OnInterceptKeyboardAttach return, "
+                      "useSystemKeyboard = "
+                  << useSystemKeyboard << ", enterKeyType = " << enterKeyType;
       }
 
       if (useSystemKeyboard) {
@@ -824,11 +861,11 @@ bool NWebRenderHandler::StartDragging(CefRefPtr<CefBrowser> browser,
   }
 
   auto fragment = drag_data->GetFragmentText();
-  LOG(INFO) << "DragDrop drag data GetFragmentText:" << fragment.ToString();
+  LOG(INFO) << "DragDrop drag data GetFragmentText:" << fragment.length();
   auto link_url = drag_data->GetLinkURL();
-  LOG(INFO) << "DragDrop drag data GetLinkURL:" << link_url.ToString();
+  LOG(INFO) << "DragDrop drag data GetLinkURL:" << link_url.length();
   auto link_html = drag_data->GetFragmentHtml();
-  LOG(INFO) << "DragDrop drag data GetFragmentHtml:" << link_html.ToString();
+  LOG(INFO) << "DragDrop drag data GetFragmentHtml:" << link_html.length();
 
   ImageDragForFileUri(drag_data);
   CefPoint drag_touch_point(x, y);
@@ -986,6 +1023,7 @@ void NWebRenderHandler::OnNativeEmbedGestureEvent(
     info->SetScreenY(touchEvent.screenY);
     info->SetType(static_cast<OHOS::NWeb::TouchType>(touchEvent.type));
     std::shared_ptr<NWebGestureEventResult> result = std::make_shared<NWebGestureEventResultImpl>(callback);
+
     info->SetResult(result);
     handler->OnNativeEmbedGestureEvent(info);
   }
@@ -1039,7 +1077,7 @@ void NWebRenderHandler::GetWordSelection(CefRefPtr<CefBrowser> browser,
                << static_cast<int>(offset);
     std::vector<int8_t> vec =
         handler->GetWordSelection(text.ToString(), offset);
-    if (vec.size() == 2) {
+    if (vec.size() == kWordSelectionOffsetSize) {
       select.x = vec[0];
       select.y = vec[1];
     }

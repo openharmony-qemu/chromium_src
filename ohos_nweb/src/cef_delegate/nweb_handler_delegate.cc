@@ -94,12 +94,13 @@
 #include "base/strings/string_number_conversions.h"
 #endif
 
-#define MAX_FLOWBUF_DATA_SIZE 52428800 /* 50 MB */
-#define MAX_ENTRIES 10
-#define HEADER_SIZE (MAX_ENTRIES * 8) /* 10 * (int position + int length) */
-#define INDEX_SIZE 2
 namespace OHOS::NWeb {
 namespace {
+
+const int MAX_FLOWBUF_DATA_SIZE = 52428800; /* 50 MB */
+const int MAX_ENTRIES = 10;
+const int HEADER_SIZE = (MAX_ENTRIES * 8); /* 10 * (int position + int length) */
+const int INDEX_SIZE = 2;
 
 #ifdef OHOS_CSS_INPUT_TIME
 const int kEpochBeginYear = 1970;
@@ -716,6 +717,11 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
 #if defined(OHOS_PRINT)
         main_browser_->GetHost()->SetToken(preference_delegate_->GetPrintToken());
 #endif
+#if defined(OHOS_PASSWORD_AUTOFILL)
+        main_browser_->GetHost()->SetAutofillCallback(
+            preference_delegate_->GetAutofillCallback());
+#endif
+
 #if defined(OHOS_JSPROXY)
         auto scriptItemsStart = preference_delegate_->GetJavaScriptOnDocumentStart();
         if (scriptItemsStart.size() > 0) {
@@ -840,6 +846,10 @@ void NWebHandlerDelegate::OnBeforeClose(CefRefPtr<CefBrowser> browser) {
         .GetWindowAdapterInstance()
         .DestroyNativeWindow(window_);
     window_ = nullptr;
+    OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .GetWindowAdapterInstance()
+        .DestroyNativeWindow(popup_window_);
+    popup_window_ = nullptr;
   }
 
   // Remove from the list of existing browsers.
@@ -1337,8 +1347,8 @@ void NWebHandlerDelegate::OnRefreshAccessedHistory(
   auto pos = url1.find("?");
   url1 = url1.substr(0, pos);
   LOG(DEBUG)
-      << "NWebHandlerDelegate::OnRefreshAccessedHistory, intercepted url = "
-      << url1 << ", isReload = " << isReload;
+      << "NWebHandlerDelegate::OnRefreshAccessedHistory, intercepted url: ***, isReload = "
+      << isReload;
   if (nweb_handler_ == nullptr) {
     LOG(ERROR) << "nweb handler is null";
     return;
@@ -2740,6 +2750,12 @@ void NWebHandlerDelegate::HideHandleAndQuickMenuIfNecessary(bool hide) {
     nweb_handler_->HideHandleAndQuickMenuIfNecessary(hide);
   }
 }
+
+void NWebHandlerDelegate::ChangeVisibilityOfQuickMenu() {
+  if (nweb_handler_ != nullptr) {
+    nweb_handler_->ChangeVisibilityOfQuickMenu();
+  }
+}
 /* CefContextMenuHandler method end */
 
 /* CefFindandler method begin */
@@ -3459,6 +3475,21 @@ void NWebHandlerDelegate::OnRenderProcessResponding(
   }
   LOG(INFO) << "OnRenderProcessResponding";
   nweb_handler_->OnRenderProcessResponding();
+}
+
+void NWebHandlerDelegate::SetPopupSurface(void* popup_window) {
+  if (main_browser_ && main_browser_->GetHost()) {
+    if (!is_enhance_surface_) {
+      if (popup_window_ != nullptr) {
+        OHOS::NWeb::OhosAdapterHelper::GetInstance()
+            .GetWindowAdapterInstance()
+            .DestroyNativeWindow(popup_window_);
+        popup_window_ = nullptr;
+      }
+      popup_window_ = popup_window;
+      main_browser_->GetHost()->SetPopupWindow(popup_window_);
+    }
+  }
 }
 #endif
 }  // namespace OHOS::NWeb

@@ -45,9 +45,6 @@ class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
                       BrowserAccessibility* node,
                       int action_request_id) override;
 
-  BrowserAccessibilityOHOS* GetFromAccessibilityId(
-      int64_t accessibility_id) const;
-
   void RegisterAccessibilityEventListener(
       std::shared_ptr<OHOS::NWeb::NWebAccessibilityEventCallback>
           accessibility_event_listener);
@@ -90,7 +87,7 @@ class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
 
   void HandleContentChanged(int64_t accessibilityId);
 
-  int64_t TranslateAccessibilityId(int64_t accessibilityId) const;
+  int64_t GetRootAccessibilityId() const;
 
   bool IsIgnoredEvent(std::map<int64_t, int64_t>& lastEventFiredTimes,
                        const int64_t& accessibilityId);

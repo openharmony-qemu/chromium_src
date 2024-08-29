@@ -50,6 +50,12 @@ void DynamicFrameRateDecision::Init()
 {
   if (!curent_task_runner_) {
     curent_task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
+    auto type = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetProductDeviceType();
+    if (type == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE ||
+      type == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_TABLET) {
+      is_phone_or_tablet_ = true;
+    }
+    LOG(DEBUG) << "is_phone_or_tablet_: " << is_phone_or_tablet_;
   }
 }
 
@@ -61,6 +67,9 @@ DynamicFrameRateDecision& DynamicFrameRateDecision::GetInstance()
 
 void DynamicFrameRateDecision::ReportSlidingFrameRate(int32_t frame_rate)
 {
+  if (!is_phone_or_tablet_) {
+    return;
+  }
   if (!curent_task_runner_) {
     return;
   }
@@ -81,6 +90,9 @@ void DynamicFrameRateDecision::ReportSlidingFrameRateImpl(int32_t frame_rate)
 
 void DynamicFrameRateDecision::ReportVideoFrameRate(int32_t frame_rate)
 {
+  if (!is_phone_or_tablet_) {
+    return;
+  }
   if (!curent_task_runner_) {
     return;
   }
@@ -140,6 +152,9 @@ void DynamicFrameRateDecision::UpdateFramePreferredRate()
 
 void DynamicFrameRateDecision::SetVsyncEnabled(bool enabled)
 {
+  if (!is_phone_or_tablet_) {
+    return;
+  }
   if (!curent_task_runner_) {
     return;
   }
@@ -163,6 +178,9 @@ void DynamicFrameRateDecision::SetVsyncEnabledImpl(bool enabled)
 
 void DynamicFrameRateDecision::SetHasTouchPoint(bool has_touch_point)
 {
+  if (!is_phone_or_tablet_) {
+    return;
+  }
   if (!curent_task_runner_) {
     return;
   }
@@ -187,6 +205,9 @@ void DynamicFrameRateDecision::SetHasTouchPointImpl(bool has_touch_point)
 
 void DynamicFrameRateDecision::SetVisible(bool visible)
 {
+  if (!is_phone_or_tablet_) {
+    return;
+  }
   if (!curent_task_runner_) {
     return;
   }
@@ -197,6 +218,9 @@ void DynamicFrameRateDecision::SetVisible(bool visible)
 
 void DynamicFrameRateDecision::SetVisibleImpl(bool visible)
 {
+  if (!is_phone_or_tablet_) {
+    return;
+  }
   if (visible_ == visible) {
     return;
   }

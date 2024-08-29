@@ -80,6 +80,10 @@ class GPU_IPC_SERVICE_EXPORT ImageDecodeAcceleratorStub
   void FinishCompletedDecode(uint64_t decode_release_count)
       EXCLUSIVE_LOCKS_REQUIRED(lock_);
 
+#if BUILDFLAG(IS_OHOS)
+  void ReleasePixmapData(base::WaitableEvent* finish_event);
+#endif
+
   // The |worker_| calls this when a decode is completed. |result| is enqueued
   // and |sequence_| is enabled so that ProcessCompletedDecode() picks it up.
   void OnDecodeCompleted(

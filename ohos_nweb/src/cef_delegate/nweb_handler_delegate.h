@@ -573,6 +573,7 @@ class NWebHandlerDelegate : public CefClient,
                             CefRefPtr<CefFrame> frame,
                             bool is_mouse_trigger) override;
   void HideHandleAndQuickMenuIfNecessary(bool hide) override;
+  void ChangeVisibilityOfQuickMenu() override;
   /* CefContextMenuHandler method end */
 
   /* CefFindandler methods begin */
@@ -727,6 +728,7 @@ class NWebHandlerDelegate : public CefClient,
   void SetWebPaintedForSnapshot() { isWebPaintedForSnapshot_ = true; }
 #endif
 
+ void SetPopupSurface(void* popup_window);
  private:
   void CopyImageToClipboard(CefRefPtr<CefImage> image);
   // List of existing browser windows. Only accessed on the CEF UI thread.
@@ -761,6 +763,7 @@ class NWebHandlerDelegate : public CefClient,
 
   bool is_enhance_surface_ = false;
   void* window_ = nullptr;
+  void* popup_window_ = nullptr;
 
 #if defined(OHOS_SCREEN_LOCK)
   std::shared_ptr<NWebScreenLockCallback> screen_lock_callback_ = nullptr;

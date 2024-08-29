@@ -1140,9 +1140,9 @@ void PasswordAutofillAgent::OhosStoreInferredInfo(
   WebInputElement main_element =
       username_element.IsNull() ? password_element : username_element;
 
-  LOG(INFO) << "Store inferred filling infomation:"
-            << ", username_element null?=" << username_element.IsNull()
-            << ", password_element null?=" << password_element.IsNull();
+  LOG(INFO) << "[Autofill] Store inferred filling infomation:"
+            << ", username_element is null:" << username_element.IsNull()
+            << ", password_element is null:" << password_element.IsNull();
   PasswordInfo password_info;
   password_info.fill_data = form_data;
   password_info.password_field = password_element;
@@ -1161,6 +1161,7 @@ void PasswordAutofillAgent::SetParsedPasswordForm(
       form_data.username_element_renderer_id.is_null() &&
       form_data.password_element_renderer_id.is_null();
   if (username_password_fields_not_set) {
+    LOG(INFO) << "[Autofill] Username or password fields not set";
     // No fields for filling were found during parsing, which means filling
     // fallback case. So save data for fallback filling.
     OhosMaybeStoreFallbackData(form_data);
@@ -1175,6 +1176,7 @@ void PasswordAutofillAgent::SetParsedPasswordForm(
   WebElement main_element =
       is_single_username_fill ? username_element : password_element;
   if (main_element.IsNull()) {
+    LOG(INFO) << "[Autofill] Main element element is null";
     OhosMaybeStoreFallbackData(form_data);
     return;
   }
@@ -1199,6 +1201,7 @@ bool PasswordAutofillAgent::OhosFindPasswordInfoForElement(
     // If there is a password field, but a request to the store hasn't been sent
     // yet, then do fetch saved credentials now.
     if (!sent_request_to_store_) {
+      LOG(INFO) << "[Autofill] Request to the store hasn't been sent yet";
       SendPasswordForms(false);
       return false;
     }
@@ -1251,14 +1254,17 @@ bool PasswordAutofillAgent::RequestAutofill(
   WebInputElement password_element;
   PasswordInfo* password_info = nullptr;
   if (!IsElementEditable(input_element) ||
-      !OhosFindPasswordInfoForElement(input_element, UseFallbackData(false),
+      !OhosFindPasswordInfoForElement(input_element, UseFallbackData(true),
                                       &username_element, &password_element,
                                       &password_info)) {
+    LOG(INFO) << "[Autofilll] Find no password info for autofill request";
     return false;
   }
 
-  if (!HasDocumentWithValidFrame(input_element))
+  if (!HasDocumentWithValidFrame(input_element)) {
+    LOG(INFO) << "[Autofilll] No document with valid frame for input element";
     return false;
+  }
 
   WebFormElement form = !password_element.IsNull() ? password_element.Form()
                                                    : username_element.Form();
@@ -1277,7 +1283,6 @@ bool PasswordAutofillAgent::RequestAutofill(
   autofill::InputFillRequestData username_data;
   if (has_amendable_username_element) {
     username_autofill_state_ = username_element.GetAutofillState();
-    username_element.SetAutofillState(WebAutofillState::kPreviewed);
 
     username_data.field_renderer_id = GetFieldRendererId(username_element);
     username_data.is_focused = !input_element.IsPasswordFieldForAutofill();
@@ -1295,7 +1300,6 @@ bool PasswordAutofillAgent::RequestAutofill(
   autofill::InputFillRequestData password_data;
   if (has_editable_password_element) {
     password_autofill_state_ = password_element.GetAutofillState();
-    password_element.SetAutofillState(WebAutofillState::kPreviewed);
 
     password_data.field_renderer_id = GetFieldRendererId(password_element);
     password_data.is_focused = !username_data.is_focused;
@@ -1336,8 +1340,10 @@ bool PasswordAutofillAgent::FillAccountSuggestion(
     const std::u16string& password) {
   // The element in context of the suggestion popup.
   WebInputElement element = control_element.DynamicTo<WebInputElement>();
-  if (element.IsNull())
+  if (element.IsNull()) {
+    LOG(INFO) << "[Autofilll] Fill suggestion but element is null.";
     return false;
+  }
 
   WebInputElement username_element;
   WebInputElement password_element;
@@ -1346,7 +1352,7 @@ bool PasswordAutofillAgent::FillAccountSuggestion(
                                       &username_element, &password_element,
                                       &password_info) ||
       (!password_element.IsNull() && !IsElementEditable(password_element))) {
-    LOG(INFO) << "Fill account suggestion but no username or password founded.";
+    LOG(INFO) << "[Autofill] Fill suggestion but no username or password.";
     return false;
   }
 
@@ -1360,12 +1366,14 @@ bool PasswordAutofillAgent::FillAccountSuggestion(
                           element.IsPasswordFieldForAutofill()) &&
       !(username.empty() && element.IsPasswordFieldForAutofill()) &&
       username_element.Value().Utf16() != username) {
-    LOG(INFO) << "Fill username element";
+    LOG(INFO) << "[Autofill] Fill username element:"
+              << username_element.UniqueRendererFormControlId();
     FillField(&username_element, username);
   }
 
   if (!password_element.IsNull()) {
-    LOG(INFO) << "Fill password element";
+    LOG(INFO) << "[Autofill] Fill password element:"
+              << password_element.UniqueRendererFormControlId();
     FillPasswordFieldAndSave(&password_element, password);
 
     // TODO(crbug.com/1319364): As Touch-To-Fill and auto-submission don't

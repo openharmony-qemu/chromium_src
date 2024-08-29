@@ -87,23 +87,13 @@ void NativeRenderClient::OnFrameAvailable() {
   auto frame = native_texture_wrapper_->GetCurrentFrame();
   auto unique_frame = media::VideoFrame::WrapVideoFrame(
       frame, frame->format(), frame->visible_rect(), frame->natural_size());
-  unique_frame->set_skipping_current_frame(frame->should_skip_current_frame());
   LOG(DEBUG) << "[NativeEmbed] NativeRenderClient::OnFrameAvailable frame:" << frame
              << ", coded_size:" << frame->coded_size().ToString()
-             << ",unique_frame:" << unique_frame
-             << ", should_skip_current_frame:"
-             << (int)(unique_frame->should_skip_current_frame());
+             << ",unique_frame:" << unique_frame;
   sink_->PaintSingleFrame(std::move(unique_frame));
 }
 
-void NativeRenderClient::OnSizeChange(const gfx::Rect& rect,
-                                      const bool need_skip) {
-  auto frame = native_texture_wrapper_->GetCurrentFrame();
-  if (need_skip) {
-    native_texture_wrapper_->SetSkippingCurrentFrame(true);
-    LOG(DEBUG) << "NativeEmbed OnSizeChange SetSkippingCurrentFrame:" << frame;
-  }
-
+void NativeRenderClient::OnSizeChange(const gfx::Rect& rect) {
   native_texture_wrapper_->UpdateTextureSize(rect.size());
 }
 

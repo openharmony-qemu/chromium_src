@@ -2383,6 +2383,7 @@ class CONTENT_EXPORT RenderFrameHostImpl
       const blink::UntrustworthyContextMenuParams& params) override;
 #if defined(OHOS_CLIPBOARD)
   void MouseSelectMenuShow(bool show) override;
+  void ChangeVisibilityOfQuickMenu() override;
 #endif
   void DidLoadResourceFromMemoryCache(
       const GURL& url,

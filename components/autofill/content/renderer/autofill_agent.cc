@@ -1158,9 +1158,29 @@ void AutofillAgent::DidCompleteFocusChangeInFrame() {
   SendPotentiallySubmittedFormToBrowser();
 }
 
+#if defined(OHOS_PASSWORD_AUTOFILL)
+void AutofillAgent::OhFormControlElementClicked() {
+  WebElement focused_element =
+      render_frame()->GetWebFrame()->GetDocument().FocusedElement();
+  if (!focused_element.IsNull() && focused_element.IsFormControlElement()) {
+    WebFormControlElement focused_form_control_element =
+        focused_element.To<WebFormControlElement>();
+    if (form_util::IsTextAreaElementOrTextInput(focused_form_control_element)) {
+      LOG(INFO) << "[Autofill] Mouse down triggers RequestAutofill";
+      password_autofill_agent_->RequestAutofill(focused_form_control_element);
+    }
+  }
+}
+#endif
+
 void AutofillAgent::DidReceiveLeftMouseDownOrGestureTapInNode(
     const WebNode& node) {
   DCHECK(!node.IsNull());
+
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  OhFormControlElementClicked();
+#endif
+
 #if defined(ANDROID)
   HandleFocusChangeComplete(/*focused_node_was_last_clicked=*/node.Focused());
 #else
@@ -1249,10 +1269,6 @@ void AutofillAgent::FormControlElementClicked(
 
 #if BUILDFLAG(IS_ANDROID)
   password_autofill_agent_->TryToShowTouchToFill(element);
-#endif
-
-#if defined(OHOS_PASSWORD_AUTOFILL)
-  password_autofill_agent_->RequestAutofill(element);
 #endif
 
   ShowSuggestions(

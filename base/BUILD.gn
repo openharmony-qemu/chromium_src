@@ -3556,8 +3556,12 @@ test("base_unittests") {
     "vlog_unittest.cc",
   ]
 
-  if (is_ohos) {
-    sources += [ "base_paths_ohos_unittest.cc" ]
+  if(ohos_unittests){
+    sources += [
+      "base_paths_ohos_unittest.cc",
+      "ohos/ltpo/src/dynamic_frame_rate_decision_unittest.cc",
+      "ohos/ltpo/src/sliding_observer_unittest.cc",
+    ]
   }
 
   if (!is_cronet_build) {
@@ -3600,6 +3604,13 @@ test("base_unittests") {
     "//third_party/icu",
     "//third_party/modp_b64",
   ]
+
+  if(ohos_unittests){
+    deps += [
+      "//content/public/common:static_switches",
+      "//ui/events:gesture_detection",
+    ]
+  }
 
   data_deps = [
     "//base/test:immediate_crash_test_helper",

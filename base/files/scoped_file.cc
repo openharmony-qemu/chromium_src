@@ -6,6 +6,9 @@
 
 #include "base/check.h"
 #include "build/build_config.h"
+#if BUILDFLAG(IS_OHOS)
+#include "base/logging.h"
+#endif
 
 #if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 #include <errno.h>
@@ -38,6 +41,11 @@ void ScopedFDCloseTraits::Free(int fd) {
   // failure to actually close the fd.
   if (ret != 0 && errno != EBADF)
     ret = 0;
+#endif
+#if BUILDFLAG(IS_OHOS)
+  if (ret != 0) {
+    LOG(ERROR) << "bad fd found!!! fd:" << fd;
+  }  
 #endif
 
   PCHECK(0 == ret);

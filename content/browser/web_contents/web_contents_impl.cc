@@ -10397,6 +10397,8 @@ std::unique_ptr<CustomMediaPlayer> WebContentsImpl::CreateCustomMediaPlayer(
     const MediaInfo& media_info) {
   if (delegate_) {
     return delegate_->CreateCustomMediaPlayer(std::move(listener), media_info);
+  } else {
+    LOG(WARNING) << "CreateCustomMediaPlayer failed, no delegate_";
   }
   return nullptr;
 }
@@ -10410,6 +10412,7 @@ void WebContentsImpl::RemoveCustomMediaPlayer(const MediaPlayerId& player_id,
                                               CustomMediaPlayer* player) {
   auto iter = players_.find(player_id);
   if (iter == players_.end()) {
+    LOG(WARNING) << "RemoveCustomMediaPlayer failed";
     return;
   }
   DCHECK(iter->second == player);

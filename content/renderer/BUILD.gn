@@ -35,6 +35,10 @@ target(link_target_type, "renderer") {
     "//content/renderer:content_security_policy_util_fuzzer",
   ]
 
+  if(ohos_unittests){
+    visibility += ["//gpu:gpu_unittests",]
+  }
+
   sources = [
     "accessibility/aom_content_ax_tree.cc",
     "accessibility/aom_content_ax_tree.h",

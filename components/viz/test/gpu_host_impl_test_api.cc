@@ -132,6 +132,12 @@ void GpuHostImplTestApi::SetGpuService(
   gpu_host_->gpu_service_remote_ = std::move(gpu_service);
 }
 
+#if BUILDFLAG(IS_OHOS)
+std::string GpuHostImplTestApi::GetSurfaceId(int32_t native_embed_id){
+  return gpu_host_->GetSurfaceId(native_embed_id);
+}
+#endif
+
 void GpuHostImplTestApi::HookDelegate(
     std::unique_ptr<HookDelegateBase> delegate) {
   DCHECK(delegate);

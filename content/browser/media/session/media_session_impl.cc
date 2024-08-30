@@ -1312,6 +1312,14 @@ void MediaSessionImpl::SetWebviewShowForAudio(bool show) {
     session_ohos_->SetWebviewShowForAudio(show);
   }
 }
+
+bool MediaSessionImpl::IsEndOfMedia() {
+  bool ret = false;
+  if (position_) {
+    ret = position_.value().end_of_media();
+  }
+  return ret;
+}
 #endif // OHOS_MEDIA_POLICY
 
 void MediaSessionImpl::SetAudioSinkId(const absl::optional<std::string>& id) {

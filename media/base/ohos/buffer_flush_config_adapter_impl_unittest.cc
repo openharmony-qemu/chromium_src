@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-# include "buffer_flush_config_adapter_impl.h"
-# include "gtest/gtest.h"
+#include "buffer_flush_config_adapter_impl.h"
+#include "gtest/gtest.h"
 
 namespace OHOS::NWeb {
 

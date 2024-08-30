@@ -50,7 +50,7 @@ bool NWebCookieManagerImpl::IsAcceptCookieAllowed() {
 
 void NWebCookieManagerImpl::PutAcceptCookieEnabled(bool accept) {
   if (delegate_ != nullptr) {
-    WVLOG_I("PutAcceptCookieEnabled accept: %d", accept);
+    WVLOG_I("PutAcceptCookieEnabled accept: %{public}d", accept);
     delegate_->PutAcceptCookieEnabled(accept);
   }
 }
@@ -64,7 +64,7 @@ bool NWebCookieManagerImpl::IsThirdPartyCookieAllowed() {
 
 void NWebCookieManagerImpl::PutAcceptThirdPartyCookieEnabled(bool accept) {
   if (delegate_ != nullptr) {
-    WVLOG_I("PutAcceptCookieEnabled accept: %d", accept);
+    WVLOG_I("PutAcceptCookieEnabled accept: %{public}d", accept);
     delegate_->PutAcceptThirdPartyCookieEnabled(accept);
   }
 }
@@ -78,7 +78,7 @@ bool NWebCookieManagerImpl::IsFileURLSchemeCookiesAllowed() {
 
 void NWebCookieManagerImpl::PutAcceptFileURLSchemeCookiesEnabled(bool allow) {
   if (delegate_ != nullptr) {
-    WVLOG_I("PutAcceptFileURLSchemeCookiesEnabled allow: %d", allow);
+    WVLOG_I("PutAcceptFileURLSchemeCookiesEnabled allow: %{public}d", allow);
     delegate_->PutAcceptFileURLSchemeCookiesEnabled(allow);
   }
 }

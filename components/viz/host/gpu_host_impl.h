@@ -227,6 +227,7 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost
   void SetVisible(bool visible);
   void SetHasTouchPoint(bool has_touch_point);
   void ReportSlidingFrameRate(int32_t frame_rate);
+  void SetLTPOStrategy(int32_t strategy);
 #endif
 
  private:

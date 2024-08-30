@@ -1410,6 +1410,10 @@ void GpuServiceImpl::SetHasTouchPoint(bool has_touch_point) {
 void GpuServiceImpl::ReportSlidingFrameRate(int32_t frame_rate) {
   base::ohos::DynamicFrameRateDecision::GetInstance().ReportSlidingFrameRate(frame_rate);
 }
+
+void GpuServiceImpl::SetLTPOStrategy(int32_t strategy) {
+  base::ohos::DynamicFrameRateDecision::GetInstance().SetLTPOStrategy(strategy);
+}
 #endif
 
 #if BUILDFLAG(IS_WIN)

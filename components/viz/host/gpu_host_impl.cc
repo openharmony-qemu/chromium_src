@@ -187,6 +187,10 @@ void GpuHostImpl::SetHasTouchPoint(bool has_touch_point) {
 void GpuHostImpl::ReportSlidingFrameRate(int32_t frame_rate) {
   gpu_service_remote_->ReportSlidingFrameRate(frame_rate);
 }
+
+void GpuHostImpl::SetLTPOStrategy(int32_t strategy) {
+  gpu_service_remote_->SetLTPOStrategy(strategy);
+}
 #endif
 
 void GpuHostImpl::SetProcessId(base::ProcessId pid) {

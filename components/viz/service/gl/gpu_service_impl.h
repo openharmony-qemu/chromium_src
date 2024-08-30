@@ -389,6 +389,7 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
   void SetVisible(bool visible) override;
   void SetHasTouchPoint(bool has_touch_point) override;
   void ReportSlidingFrameRate(int32_t frame_rate) override;
+  void SetLTPOStrategy(int32_t strategy) override;
 #endif
 
  private:

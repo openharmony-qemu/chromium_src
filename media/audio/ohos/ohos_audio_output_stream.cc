@@ -403,7 +403,14 @@ void OHOSAudioOutputStream::PumpSamples() {
 }
 
 void OHOSAudioOutputStream::SchedulePumpSamples(base::TimeTicks now) {
-  timer_.Start(FROM_HERE, GetCurrentStreamTime() - now,
+  // the audio syterm also have a schedule to read the data,
+  // so we need to write it faster to solve underrun problem.
+  auto maxSleepTime = base::Microseconds(10); 
+  auto sleepTime = GetCurrentStreamTime() - now;
+  if (sleepTime > maxSleepTime) {
+    sleepTime = maxSleepTime;
+  }
+  timer_.Start(FROM_HERE, sleepTime,
                base::BindOnce(&OHOSAudioOutputStream::PumpSamples,
                               base::Unretained(this)));
 }

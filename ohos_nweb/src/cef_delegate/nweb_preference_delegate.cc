@@ -314,6 +314,7 @@ void NWebPreferenceDelegate::PutIsCreateWindowsByJavaScriptAllowed(bool flag) {
 }
 
 void NWebPreferenceDelegate::PutJavaScriptEnabled(bool flag) {
+  LOG(INFO) << "Put JavaScript Enabled:" << flag;
   javascript_allowed_ = flag;
   WebPreferencesChanged();
 }

@@ -73,6 +73,7 @@ component("cef_nweb") {
 
   deps = [
     "//ohos_glue:ohos_adapter_glue_source",
+    "//ohos_nweb/libboundscheck:huawei_securec",
   ]
 
   sources = [

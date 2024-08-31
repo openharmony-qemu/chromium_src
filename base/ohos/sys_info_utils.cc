@@ -49,6 +49,10 @@ class SystemProperties {
 
   std::string os_name() { return os_name_; }
 
+  std::string os_version() { return os_version_; }
+
+  std::string base_os_name() { return base_os_name_; }
+
  private:
   friend class NoDestructor<SystemProperties>;
 
@@ -59,6 +63,8 @@ class SystemProperties {
   int32_t senior_version_;
   OHOS::NWeb::ProductDeviceType device_type_;
   std::string os_name_;
+  std::string os_version_;
+  std::string base_os_name_;
 };
 
 SystemProperties::SystemProperties()
@@ -73,7 +79,13 @@ SystemProperties::SystemProperties()
                        .GetProductDeviceType()),
       os_name_(OhosAdapterHelper::GetInstance()
                    .GetSystemPropertiesInstance()
-                   .GetUserAgentOSName()) {}
+                   .GetUserAgentOSName()),
+      os_version_(OhosAdapterHelper::GetInstance()
+                   .GetSystemPropertiesInstance()
+                   .GetUserAgentOSVersion()),
+      base_os_name_(OhosAdapterHelper::GetInstance()
+                   .GetSystemPropertiesInstance()
+                   .GetUserAgentBaseOSName()) {}
 
 }  // namespace
 
@@ -100,6 +112,14 @@ BASE_EXPORT int32_t SeniorVersion() {
 
 BASE_EXPORT std::string OsName() {
   return SystemProperties::Instance()->os_name();
+}
+
+BASE_EXPORT std::string OsVersion() {
+  return SystemProperties::Instance()->os_version();
+}
+
+BASE_EXPORT std::string BaseOsName() {
+  return SystemProperties::Instance()->base_os_name();
 }
 
 }  // namespace ohos

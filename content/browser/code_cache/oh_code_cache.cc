@@ -316,6 +316,7 @@ bool ResponseCache::DoUpdateMetadata() {
   temp_file->Lock(base::File::LockMode::kExclusive);
 
   if (!temp_file->IsValid()) {
+    CloseStream();
     return false;
   }
 

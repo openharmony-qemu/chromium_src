@@ -592,23 +592,23 @@ bool NWebHandlerDelegate::OnProcessMessageReceived(
 
   if (messageName == "ContentSize.Message") {
     CefRefPtr<CefListValue> postMsgArgs = message->GetArgumentList();
-    int width = postMsgArgs->GetInt(0);
     int height = postMsgArgs->GetInt(1);
     int viewport_width = postMsgArgs->GetInt(2);
     int viewport_height = postMsgArgs->GetInt(3);
 
-    float ratio = render_handler_->GetCefDeviceRatio();
     gfx::Size current_viewport_size = render_handler_->GetSize();
 
-    if (std::abs(current_viewport_size.width() - viewport_width) <= VIEW_PORT_DIFF &&
-        std::abs(current_viewport_size.height() - viewport_height) <= VIEW_PORT_DIFF) {
-      nweb_handler_->OnRootLayerChanged(width * ratio, height * ratio);
-      render_handler_->SetContentSize(width * ratio, height * ratio);
-    } else {
-      LOG(ERROR)
-          << "Fit Content not upload layer change, current viewport width:"
+    nweb_handler_->OnRootLayerChanged(current_viewport_size.width(), height);
+    render_handler_->SetContentSize(current_viewport_size.width(), height);
+
+    if (std::abs(current_viewport_size.width() - viewport_width) > VIEW_PORT_DIFF ||
+        std::abs(current_viewport_size.height() - viewport_height) > VIEW_PORT_DIFF) {
+        LOG(DEBUG)
+          << "current viewport is different than last, current width:"
           << current_viewport_size.width()
-          << ",height:" << current_viewport_size.height();
+          << ", height :" << current_viewport_size.height()
+          << ", last width :" << viewport_width
+          << ", height :" << viewport_height;
     }
     return true;
   }

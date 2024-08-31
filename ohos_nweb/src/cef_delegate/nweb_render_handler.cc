@@ -30,6 +30,9 @@
 
 #include "content/public/common/content_switches.h"
 #include "ohos_adapter_helper.h"
+
+#include "ohos_nweb/libboundscheck/include/securec.h"
+
 #include "res_sched_client_adapter.h"
 #include "nweb_gesture_event_result_impl.h"
 #ifdef OHOS_DRAG_DROP
@@ -536,7 +539,7 @@ void NWebRenderHandler::OnPaint(CefRefPtr<CefBrowser> browser,
     uint32_t white_frame_size = width_ * height_ * kBitsPerPixel;
     char* white_frame = new char[white_frame_size];
     const char pixel_in_white = 0xFF;
-    (void)memset(white_frame, pixel_in_white, white_frame_size);
+    (void)memset_s(white_frame, white_frame_size, pixel_in_white, white_frame_size);
     render_update_cb_(white_frame);
     delete[] white_frame;
   } else {

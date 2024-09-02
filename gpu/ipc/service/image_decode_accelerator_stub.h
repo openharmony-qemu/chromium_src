@@ -80,7 +80,7 @@ class GPU_IPC_SERVICE_EXPORT ImageDecodeAcceleratorStub
   void FinishCompletedDecode(uint64_t decode_release_count)
       EXCLUSIVE_LOCKS_REQUIRED(lock_);
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
   void ReleasePixmapData(base::WaitableEvent* finish_event);
 #endif
 

@@ -73,7 +73,7 @@ class CC_BASE_EXPORT ScopedLayerTask {
 class CC_BASE_EXPORT ScopedImageTask {
  public:
   enum ImageType { kAvif, kBmp, kGif,
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
    kHeif,
 #endif
    kIco, kJpeg, kPng, kWebP, kOther };

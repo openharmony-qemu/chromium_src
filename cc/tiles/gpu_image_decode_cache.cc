@@ -2021,7 +2021,7 @@ int GpuImageDecodeCache::CalculateUploadScaleMipLevel(
     if (is_clipped)
       return 0;
   }
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
   // Heif uses hardware-accelerated decode, scaling is not currently supported
   // for hardware-accelerated decodes
   const auto* image_metadata =
@@ -2956,7 +2956,7 @@ GpuImageDecodeCache::CreateImageData(const DrawImage& draw_image,
       draw_image.paint_image().GetImageHeaderMetadata();
   bool can_do_hardware_accelerated_decode = false;
   bool do_hardware_accelerated_decode = false;
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
   if (image_metadata && image_metadata->image_type == ImageType::kHEIF) {
     LOG(DEBUG) << "[HeifSupport] GpuImageDecodeCache::CreateImageData "
                   "allow_hardware_decode "
@@ -2987,7 +2987,7 @@ GpuImageDecodeCache::CreateImageData(const DrawImage& draw_image,
       DCHECK(!is_bitmap_backed);
     }
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
     if ((image_metadata->image_type == ImageType::kHEIF)) {
       do_hardware_accelerated_decode = true;
       DCHECK(!is_bitmap_backed);

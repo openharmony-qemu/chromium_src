@@ -27,18 +27,36 @@ using namespace OHOS::NWeb;
 
 class MockMediaCodecAdapter : public MediaCodecAdapter {
  public:
-  MOCK_METHOD(CodecCodeAdapter, CreateVideoCodecByMime, (const std::string), (override));
-  MOCK_METHOD(CodecCodeAdapter, CreateVideoCodecByName, (const std::string), (override));
-  MOCK_METHOD(CodecCodeAdapter, Configure, (const std::shared_ptr<CodecConfigParaAdapter>), (override));
+  MOCK_METHOD(CodecCodeAdapter,
+              CreateVideoCodecByMime,
+              (const std::string),
+              (override));
+  MOCK_METHOD(CodecCodeAdapter,
+              CreateVideoCodecByName,
+              (const std::string),
+              (override));
+  MOCK_METHOD(CodecCodeAdapter,
+              Configure,
+              (const std::shared_ptr<CodecConfigParaAdapter>),
+              (override));
   MOCK_METHOD(CodecCodeAdapter, Prepare, (), (override));
   MOCK_METHOD(CodecCodeAdapter, Start, (), (override));
   MOCK_METHOD(CodecCodeAdapter, Stop, (), (override));
   MOCK_METHOD(CodecCodeAdapter, RequestKeyFrameSoon, (), (override));
   MOCK_METHOD(CodecCodeAdapter, Reset, (), (override));
   MOCK_METHOD(CodecCodeAdapter, Release, (), (override));
-  MOCK_METHOD(CodecCodeAdapter, ReleaseOutputBuffer, (uint32_t, bool), (override));
-  MOCK_METHOD(CodecCodeAdapter, SetCodecCallback, (const std::shared_ptr<CodecCallbackAdapter>), (override));
-  MOCK_METHOD(std::shared_ptr<ProducerSurfaceAdapter>, CreateInputSurface, (), (override));
+  MOCK_METHOD(CodecCodeAdapter,
+              ReleaseOutputBuffer,
+              (uint32_t, bool),
+              (override));
+  MOCK_METHOD(CodecCodeAdapter,
+              SetCodecCallback,
+              (const std::shared_ptr<CodecCallbackAdapter>),
+              (override));
+  MOCK_METHOD(std::shared_ptr<ProducerSurfaceAdapter>,
+              CreateInputSurface,
+              (),
+              (override));
 };
 
 class MockBufferInfoAdapter : public BufferInfoAdapter {
@@ -57,7 +75,8 @@ class MockOhosBufferAdapter : public OhosBufferAdapter {
 class OHOSMediaCodecBridgeImplTest : public ::testing::Test {
  public:
   MockMediaCodecAdapter mock_codec_adapter;
-  OHOSMediaCodecBridgeImpl bridge_impl = OHOSMediaCodecBridgeImpl(refToMyString);
+  OHOSMediaCodecBridgeImpl bridge_impl =
+      OHOSMediaCodecBridgeImpl(refToMyString);
 };
 
 class CodecEncodeBridgeCallbackTest : public ::testing::Test {
@@ -74,18 +93,20 @@ class CodecEncodeBridgeCallbackTest : public ::testing::Test {
   EncodeOutputBuffer output_buffer_;
 };
 
-TEST_F(OHOSMediaCodecBridgeImplTest, CreateVideoEncoder){
-  std::unique_ptr<OHOSMediaCodecBridge> mediaCodecBridge = bridge_impl.CreateVideoEncoder(refToMyString);
+TEST_F(OHOSMediaCodecBridgeImplTest, CreateVideoEncoder) {
+  std::unique_ptr<OHOSMediaCodecBridge> mediaCodecBridge =
+      bridge_impl.CreateVideoEncoder(refToMyString);
   EXPECT_NE(mediaCodecBridge, nullptr);
 }
 
-TEST_F(OHOSMediaCodecBridgeImplTest, OHOSMediaCodecBridgeImpl){
+TEST_F(OHOSMediaCodecBridgeImplTest, OHOSMediaCodecBridgeImpl) {
   OHOSMediaCodecBridgeImpl kExpected = OHOSMediaCodecBridgeImpl(refToMyString);
 }
 
 TEST_F(OHOSMediaCodecBridgeImplTest, CreateVideoCodecByMime) {
   const std::string kExpectedMimetype = "invalid/mime";
-  CodecCodeAdapter result = bridge_impl.CreateVideoCodecByMime(kExpectedMimetype);
+  CodecCodeAdapter result =
+      bridge_impl.CreateVideoCodecByMime(kExpectedMimetype);
   EXPECT_EQ(result, CodecCodeAdapter::ERROR);
 }
 
@@ -101,21 +122,18 @@ TEST_F(OHOSMediaCodecBridgeImplTest, UpdateStatusAndClearCache) {
 }
 
 TEST_F(OHOSMediaCodecBridgeImplTest, Configure) {
-  CodecConfigPara kExpectedConfigure = {
-    1280, 
-    720,  
-    1000000, 
-    30.0  
-};
-  scoped_refptr<base::SequencedTaskRunner> codec_task_runner =bridge_impl.codec_task_runner_;
-  CodecCodeAdapter result =bridge_impl.Configure(kExpectedConfigure,codec_task_runner);
+  CodecConfigPara kExpectedConfigure = {1280, 720, 1000000, 30.0};
+  scoped_refptr<base::SequencedTaskRunner> codec_task_runner =
+      bridge_impl.codec_task_runner_;
+  CodecCodeAdapter result =
+      bridge_impl.Configure(kExpectedConfigure, codec_task_runner);
   EXPECT_EQ(result, CodecCodeAdapter::ERROR);
 }
 
 TEST_F(OHOSMediaCodecBridgeImplTest, TestPrepare) {
   bridge_impl.codec_adapter_ = nullptr;
   CodecCodeAdapter result = bridge_impl.Prepare();
-  ASSERT_NE(result, CodecCodeAdapter::ERROR);
+  ASSERT_EQ(result, CodecCodeAdapter::ERROR);
 }
 
 TEST_F(OHOSMediaCodecBridgeImplTest, TestStart) {

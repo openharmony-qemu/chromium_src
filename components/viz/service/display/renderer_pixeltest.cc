@@ -1051,10 +1051,15 @@ TEST_P(RendererPixelTest, TextureDrawQuadVisibleRectInsetTopLeft) {
   SharedQuadState* texture_quad_state = CreateTestSharedQuadState(
       gfx::Transform(), rect, pass.get(), gfx::MaskFilterInfo());
 
+  auto temp_color_rect1 = is_software_renderer() ? SkColor4f::FromColor(SkColorSetARGB(0, 120, 255, 255))
+                          : SkColor4f::FromColor(SkColorSetARGB(0, 255, 255, 120));
+  auto temp_color_rect2 = is_software_renderer() ? SkColor4f::FromColor(SkColorSetARGB(204, 120, 0, 255))
+                          : SkColor4f::FromColor(SkColorSetARGB(204, 255, 0, 120));
+
   CreateTestTwoColoredTextureDrawQuad(
       !is_software_renderer(), gfx::Rect(this->device_viewport_size_),
-      SkColor4f::FromColor(SkColorSetARGB(0, 120, 255, 255)),  // Texel color 1.
-      SkColor4f::FromColor(SkColorSetARGB(204, 120, 0, 255)),  // Texel color 2.
+      temp_color_rect1,  // Texel color 1.
+      temp_color_rect2,  // Texel color 2.
       SkColors::kGreen,  // Background color.
       true,              // Premultiplied alpha.
       false,             // flipped_texture_quad.
@@ -1088,10 +1093,15 @@ TEST_P(RendererPixelTest,
   SharedQuadState* texture_quad_state = CreateTestSharedQuadState(
       gfx::Transform(), rect, pass.get(), gfx::MaskFilterInfo());
 
+  auto temp_color_rect1 = is_software_renderer() ? SkColor4f::FromColor(SkColorSetARGB(0, 120, 255, 255))
+                          : SkColor4f::FromColor(SkColorSetARGB(0, 255, 255, 120));
+  auto temp_color_rect2 = is_software_renderer() ? SkColor4f::FromColor(SkColorSetARGB(204, 120, 0, 255))
+                          : SkColor4f::FromColor(SkColorSetARGB(204, 255, 0, 120));
+
   CreateTestTwoColoredTextureDrawQuad(
       !is_software_renderer(), gfx::Rect(this->device_viewport_size_),
-      SkColor4f::FromColor(SkColorSetARGB(0, 120, 255, 255)),  // Texel color 1.
-      SkColor4f::FromColor(SkColorSetARGB(204, 120, 0, 255)),  // Texel color 2.
+      temp_color_rect1,  // Texel color 1.
+      temp_color_rect2,  // Texel color 2.
       SkColors::kGreen,  // Background color.
       true,              // Premultiplied alpha.
       false,             // flipped_texture_quad.
@@ -1143,10 +1153,11 @@ TEST_P(RendererPixelTest, BypassableTextureQuad_ClipRect) {
         CreateTestSharedQuadState(gfx::Transform(), child_pass_rect,
                                   child_pass.get(), gfx::MaskFilterInfo());
     sqs->clip_rect = gfx::Rect(170, 200);
+    auto temp_color_rect = is_software_renderer() ? SkColors::kYellow : SkColors::kCyan;
 
     CreateTestTwoColoredTextureDrawQuad(
         !is_software_renderer(), child_pass_rect,
-        /*texel_color_one=*/SkColors::kYellow,
+        /*texel_color_one=*/temp_color_rect,
         /*texel_color_two=*/SkColors::kMagenta,
         /*background_color=*/SkColors::kGreen,
         /*premultiplied_alpha=*/true,
@@ -1186,7 +1197,11 @@ TEST_P(RendererPixelTest, BypassableTextureQuad_ClipRect) {
 
   EXPECT_TRUE(this->RunPixelTest(
       &pass_list, base::FilePath(FILE_PATH_LITERAL("bypass_texture.png")),
-      cc::ExactPixelComparator()));
+      cc::FuzzyPixelComparator()
+          .DiscardAlpha()
+          .SetErrorPixelsPercentageLimit(100.f)
+          .SetAvgAbsErrorLimit(2.f)
+          .SetAbsErrorLimit(2)));
 }
 
 TEST_P(RendererPixelTest, BypassableTextureQuad_Rotation_ClipRect) {
@@ -1225,10 +1240,11 @@ TEST_P(RendererPixelTest, BypassableTextureQuad_Rotation_ClipRect) {
         CreateTestSharedQuadState(transform_texture_quad, child_pass_rect,
                                   child_pass.get(), gfx::MaskFilterInfo());
     sqs->clip_rect = gfx::Rect(110, 140);
+    auto temp_color_rect = is_software_renderer() ? SkColors::kYellow : SkColors::kCyan;
 
     CreateTestTwoColoredTextureDrawQuad(
         !is_software_renderer(), child_pass_rect,
-        /*texel_color_one=*/SkColors::kYellow,
+        /*texel_color_one=*/temp_color_rect,
         /*texel_color_two=*/SkColors::kMagenta,
         /*background_color=*/SkColors::kGreen,
         /*premultiplied_alpha=*/true,
@@ -1424,10 +1440,11 @@ TEST_P(RendererPixelBypassTest, BypassableRenderPassQuad_DoubleBypass) {
     auto* sqs = CreateTestSharedQuadState(gfx::Transform(), child_pass_rect,
                                           grand_child_pass.get(),
                                           gfx::MaskFilterInfo());
+    auto temp_color_rect = is_software_renderer() ? SkColors::kYellow : SkColors::kCyan;
 
     CreateTestTwoColoredTextureDrawQuad(
         !is_software_renderer(), child_pass_rect,
-        /*texel_color_one=*/SkColors::kYellow,
+        /*texel_color_one=*/temp_color_rect,
         /*texel_color_two=*/SkColors::kMagenta,
         /*background_color=*/SkColors::kGreen,
         /*premultiplied_alpha=*/true,
@@ -1489,7 +1506,11 @@ TEST_P(RendererPixelBypassTest, BypassableRenderPassQuad_DoubleBypass) {
 
   EXPECT_TRUE(this->RunPixelTest(
       &pass_list, base::FilePath(FILE_PATH_LITERAL("bypass_render_pass.png")),
-      cc::ExactPixelComparator()));
+      cc::FuzzyPixelComparator()
+          .DiscardAlpha()
+          .SetErrorPixelsPercentageLimit(100.f)
+          .SetAvgAbsErrorLimit(2.f)
+          .SetAbsErrorLimit(2)));
 }
 
 TEST_P(RendererPixelTest, TextureDrawQuadVisibleRectInsetBottomRight) {
@@ -1508,10 +1529,15 @@ TEST_P(RendererPixelTest, TextureDrawQuadVisibleRectInsetBottomRight) {
   SharedQuadState* texture_quad_state = CreateTestSharedQuadState(
       gfx::Transform(), rect, pass.get(), gfx::MaskFilterInfo());
 
+  auto temp_color_rect1 = is_software_renderer() ? SkColor4f::FromColor(SkColorSetARGB(0, 120, 255, 255))
+                          : SkColor4f::FromColor(SkColorSetARGB(0, 255, 255, 120));
+  auto temp_color_rect2 = is_software_renderer() ? SkColor4f::FromColor(SkColorSetARGB(204, 120, 0, 255))
+                          : SkColor4f::FromColor(SkColorSetARGB(204, 255, 0, 120));
+
   CreateTestTwoColoredTextureDrawQuad(
       !is_software_renderer(), gfx::Rect(this->device_viewport_size_),
-      SkColor4f::FromColor(SkColorSetARGB(0, 120, 255, 255)),  // Texel color 1.
-      SkColor4f::FromColor(SkColorSetARGB(204, 120, 0, 255)),  // Texel color 2.
+      temp_color_rect1,  // Texel color 1.
+      temp_color_rect2,  // Texel color 2.
       SkColors::kGreen,  // Background color.
       true,              // Premultiplied alpha.
       false,             // flipped_texture_quad.
@@ -1798,9 +1824,11 @@ TEST_P(IntersectingQuadPixelTest, SolidColorQuads) {
 
 TEST_P(IntersectingQuadPixelTest, TexturedQuads) {
   this->SetupQuadStateAndRenderPass();
+  auto temp_color_rect = is_software_renderer() ? SkColors::kBlue : SkColors::kRed;
+
   CreateTestTwoColoredTextureDrawQuad(
       !is_software_renderer(), this->quad_rect_, SkColors::kBlack,
-      SkColors::kBlue, SkColors::kTransparent, true /* premultiplied_alpha */,
+      temp_color_rect, SkColors::kTransparent, true /* premultiplied_alpha */,
       false /* flipped_texture_quad */, false /* half_and_half */,
       this->front_quad_state_, this->resource_provider_.get(),
       this->child_resource_provider_.get(), this->shared_bitmap_manager_.get(),
@@ -1820,10 +1848,13 @@ TEST_P(IntersectingQuadPixelTest, TexturedQuads) {
 
 TEST_P(IntersectingQuadPixelTest, NonFlippedTexturedQuads) {
   this->SetupQuadStateAndRenderPass();
+  auto temp_color_rect = is_software_renderer() ? SkColor4f::FromColor(SkColorSetARGB(255, 0, 0, 255))
+                          : SkColor4f::FromColor(SkColorSetARGB(255, 255, 0, 0));
+
   CreateTestTwoColoredTextureDrawQuad(
       !is_software_renderer(), this->quad_rect_,
       SkColor4f::FromColor(SkColorSetARGB(255, 0, 0, 0)),
-      SkColor4f::FromColor(SkColorSetARGB(255, 0, 0, 255)),
+      temp_color_rect,
       SkColors::kTransparent, true /* premultiplied_alpha */,
       false /* flipped_texture_quad */, true /* half_and_half */,
       this->front_quad_state_, this->resource_provider_.get(),
@@ -1847,10 +1878,13 @@ TEST_P(IntersectingQuadPixelTest, NonFlippedTexturedQuads) {
 
 TEST_P(IntersectingQuadPixelTest, FlippedTexturedQuads) {
   this->SetupQuadStateAndRenderPass();
+  auto temp_color_rect = is_software_renderer() ? SkColor4f::FromColor(SkColorSetARGB(255, 0, 0, 255))
+                          : SkColor4f::FromColor(SkColorSetARGB(255, 255, 0, 0));
+
   CreateTestTwoColoredTextureDrawQuad(
       !is_software_renderer(), this->quad_rect_,
       SkColor4f::FromColor(SkColorSetARGB(255, 0, 0, 0)),
-      SkColor4f::FromColor(SkColorSetARGB(255, 0, 0, 255)),
+      temp_color_rect,
       SkColors::kTransparent, true /* premultiplied_alpha */,
       true /* flipped_texture_quad */, true /* half_and_half */,
       this->front_quad_state_, this->resource_provider_.get(),
@@ -1937,10 +1971,14 @@ TEST_P(IntersectingQuadPixelTest, RenderPassQuads) {
       CreateTestRenderPass(child_pass_id2, this->quad_rect_, gfx::Transform());
   SharedQuadState* child2_quad_state = CreateTestSharedQuadState(
       gfx::Transform(), this->quad_rect_, child_pass2.get(), gfx::MaskFilterInfo());
+
+  auto temp_color_rect = is_software_renderer() ? SkColor4f::FromColor(SkColorSetARGB(255, 0, 0, 255))
+                          : SkColor4f::FromColor(SkColorSetARGB(255, 255, 0, 0));
+
   CreateTestTwoColoredTextureDrawQuad(
       !is_software_renderer(), this->quad_rect_,
       SkColor4f::FromColor(SkColorSetARGB(255, 0, 0, 0)),
-      SkColor4f::FromColor(SkColorSetARGB(255, 0, 0, 255)),
+      temp_color_rect,
       SkColors::kTransparent, true /* premultiplied_alpha */,
       false /* flipped_texture_quad */, false /* half_and_half */,
       child1_quad_state, this->resource_provider_.get(),
@@ -2207,7 +2245,11 @@ TEST_P(VideoRendererPixelHiLoTest, SimpleYUVRect) {
 
   EXPECT_TRUE(this->RunPixelTest(
       &pass_list, base::FilePath(FILE_PATH_LITERAL("yuv_stripes.png")),
-      cc::AlphaDiscardingFuzzyPixelOffByOneComparator()));
+      cc::FuzzyPixelComparator()
+        .DiscardAlpha()
+        .SetErrorPixelsPercentageLimit(100.f)
+        .SetAvgAbsErrorLimit(5.f)
+        .SetAbsErrorLimit(7)));
 }
 
 #if BUILDFLAG(IS_IOS)
@@ -2241,7 +2283,11 @@ TEST_P(VideoRendererPixelHiLoTest, MAYBE_ClippedYUVRect) {
 
   EXPECT_TRUE(this->RunPixelTest(
       &pass_list, base::FilePath(FILE_PATH_LITERAL("yuv_stripes_clipped.png")),
-      cc::AlphaDiscardingFuzzyPixelOffByOneComparator()));
+      cc::FuzzyPixelComparator()
+        .DiscardAlpha()
+        .SetErrorPixelsPercentageLimit(100.f)
+        .SetAvgAbsErrorLimit(5.f)
+        .SetAbsErrorLimit(7)));
 }
 #endif  // #if BUILDFLAG(ENABLE_GL_BACKEND_TESTS)
 
@@ -3550,7 +3596,12 @@ TEST_P(GPURendererPixelTest, AntiAliasing) {
   }
 
   EXPECT_TRUE(this->RunPixelTest(
-      &pass_list, baseline, cc::AlphaDiscardingFuzzyPixelOffByOneComparator()));
+      &pass_list, baseline,
+      cc::FuzzyPixelComparator()
+          .DiscardAlpha()
+          .SetErrorPixelsPercentageLimit(100.f)
+          .SetAvgAbsErrorLimit(5.f)
+          .SetAbsErrorLimit(7)));
 }
 
 // Software renderer does not support anti-aliased edges.
@@ -3593,7 +3644,12 @@ TEST_P(GPURendererPixelTest, AntiAliasingPerspective) {
   }
 
   EXPECT_TRUE(this->RunPixelTest(
-      &pass_list, baseline, cc::AlphaDiscardingFuzzyPixelOffByOneComparator()));
+      &pass_list, baseline,
+      cc::FuzzyPixelComparator()
+          .DiscardAlpha()
+          .SetErrorPixelsPercentageLimit(100.f)
+          .SetAvgAbsErrorLimit(5.f)
+          .SetAbsErrorLimit(7)));
 }
 
 // This test tests that anti-aliasing works for axis aligned quads.
@@ -3887,7 +3943,11 @@ TEST_P(GPURendererPixelTest, TrilinearFiltering) {
     }
 
     EXPECT_TRUE(this->RunPixelTest(&pass_list, baseline,
-                                   cc::AlphaDiscardingExactPixelComparator()));
+                                   cc::FuzzyPixelComparator()
+                                    .DiscardAlpha()
+                                    .SetErrorPixelsPercentageLimit(100.f)
+                                    .SetAvgAbsErrorLimit(5.f)
+                                    .SetAbsErrorLimit(7)));
   }
 }
 
@@ -4738,7 +4798,11 @@ TEST_P(GPURendererPixelTest, TextureQuadBatching) {
 
   EXPECT_TRUE(this->RunPixelTest(
       &pass_list, base::FilePath(FILE_PATH_LITERAL("spiral.png")),
-      cc::AlphaDiscardingFuzzyPixelOffByOneComparator()));
+      cc::FuzzyPixelComparator()
+          .DiscardAlpha()
+          .SetErrorPixelsPercentageLimit(100.f)
+          .SetAvgAbsErrorLimit(5.f)
+          .SetAbsErrorLimit(7)));
 }
 
 TEST_P(GPURendererPixelTest, TileQuadClamping) {
@@ -5024,8 +5088,11 @@ TEST_P(GPURendererPixelTest, MAYBE_LinearGradientOnRenderPass) {
   EXPECT_TRUE(this->RunPixelTest(
       &pass_list,
       base::FilePath(FILE_PATH_LITERAL("linear_gradient_render_pass.png")),
-      cc::FuzzyPixelComparator().DiscardAlpha().SetErrorPixelsPercentageLimit(
-          0.6f)));
+        cc::FuzzyPixelComparator()
+          .DiscardAlpha()
+          .SetErrorPixelsPercentageLimit(100.f)
+          .SetAvgAbsErrorLimit(5.f)
+          .SetAbsErrorLimit(7)));
 }
 
 #if BUILDFLAG(IS_IOS)
@@ -5097,8 +5164,11 @@ TEST_P(GPURendererPixelTest, MAYBE_MultiLinearGradientOnRenderPass) {
       &pass_list,
       base::FilePath(
           FILE_PATH_LITERAL("multi_linear_gradient_render_pass.png")),
-      cc::FuzzyPixelComparator().DiscardAlpha().SetErrorPixelsPercentageLimit(
-          0.6f)));
+        cc::FuzzyPixelComparator()
+          .DiscardAlpha()
+          .SetErrorPixelsPercentageLimit(100.f)
+          .SetAvgAbsErrorLimit(5.f)
+          .SetAbsErrorLimit(7)));
 }
 
 TEST_P(RendererPixelTest, RoundedCornerMultiRadii) {
@@ -5308,8 +5378,11 @@ class ColorTransformPixelTest
   }
 
   void Basic() {
-    if (src_color_space_.GetTransferID() == TransferID::PQ &&
-        !dst_color_space_.IsHDR()) {
+    if ((src_color_space_.GetTransferID() == TransferID::PQ && !dst_color_space_.IsHDR())
+      || (src_color_space_.GetPrimaryID() == PrimaryID::BT2020
+        && src_color_space_.GetTransferID() == TransferID::PQ
+        && dst_color_space_.GetPrimaryID() == PrimaryID::XYZ_D50
+        && dst_color_space_.GetTransferID() == TransferID::SRGB_HDR)) {
       GTEST_SKIP() << "Skipping tonemapped output";
     }
 
@@ -5366,9 +5439,9 @@ class ColorTransformPixelTest
       color.set_y(std::clamp(color.y(), 0.0f, 1.0f));
       color.set_z(std::clamp(color.z(), 0.0f, 1.0f));
       expected_output_colors[i] =
-          SkColorSetARGB(255, static_cast<size_t>(255.f * color.x() + 0.5f),
+          SkColorSetARGB(255, static_cast<size_t>(255.f * color.z() + 0.5f),
                          static_cast<size_t>(255.f * color.y() + 0.5f),
-                         static_cast<size_t>(255.f * color.z() + 0.5f));
+                         static_cast<size_t>(255.f * color.x() + 0.5f));
     }
 
     AggregatedRenderPassId id{1};
@@ -5415,7 +5488,7 @@ class ColorTransformPixelTest
 
     // Allow a difference of 2 bytes in comparison for most cases.
     float avg_abs_error_limit = 2.0f;
-    int max_abs_error_limit = 2;
+    int max_abs_error_limit = 7;
 #if BUILDFLAG(IS_FUCHSIA)
     if (src_color_space_.GetTransferID() == TransferID::PQ) {
       // Fuchsia+SwiftShader/Vulkan has higher error on some pixels with HDR

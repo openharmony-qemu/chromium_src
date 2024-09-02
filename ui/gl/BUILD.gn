@@ -575,6 +575,10 @@ test("gl_unittests") {
     "gl_surface_format_unittest.cc",
     "gl_version_info_unittest.cc",
     "gpu_timing_unittest.cc",
+    "//content/browser/scheduler/browser_io_thread_delegate.cc",
+    "//content/browser/scheduler/browser_task_queues.cc",
+    "//content/browser/scheduler/browser_ui_thread_scheduler.cc",
+    "//content/browser/scheduler/browser_task_priority.cc",
   ]
 
   if (use_egl && !use_ozone) {

@@ -78,6 +78,12 @@ void AddConvertableToTraceFormat(
     base::trace_event::ConvertableToTraceFormat* value,
     perfetto::protos::pbzero::DebugAnnotation* annotation) {
   PerfettoProtoAppender proto_appender(annotation);
+#if defined(OS_OHOS)
+  // The smart pointer is first consumed by OH's trace, which may be NULL here
+  if (value == nullptr) {
+    return;
+  }
+#endif
   if (value->AppendToProto(&proto_appender)) {
     return;
   }

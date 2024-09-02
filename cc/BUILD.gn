@@ -999,6 +999,7 @@ cc_test("cc_perftests") {
     ":test_support",
     "//base",
     "//base/test:test_support",
+    "//build:blink_buildflags",
     "//cc/paint",
     "//components/viz/client",
     "//components/viz/common",

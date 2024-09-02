@@ -182,7 +182,7 @@ class COMPONENT_EXPORT(OZONE) OzonePlatform {
     bool supports_non_backed_solid_color_buffers = false;
 
     // Indicates whether the platform supports native pixmaps.
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
     bool supports_native_pixmaps = true;
 #else
     bool supports_native_pixmaps = false;

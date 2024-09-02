@@ -629,7 +629,7 @@ ServiceImageTransferCacheEntry::ServiceImageTransferCacheEntry(
 ServiceImageTransferCacheEntry& ServiceImageTransferCacheEntry::operator=(
     ServiceImageTransferCacheEntry&& other) = default;
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
 bool ServiceImageTransferCacheEntry::BuildFromRGBAHardwareDecodedImage(
     GrDirectContext* context,
     std::vector<sk_sp<SkImage>> plane_images,

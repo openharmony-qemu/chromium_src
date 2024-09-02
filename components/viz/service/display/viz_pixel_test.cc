@@ -7,6 +7,7 @@
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
 #include "ui/base/ui_base_features.h"
+#include "ui/gl/init/gl_factory.h"
 
 namespace viz {
 
@@ -26,6 +27,8 @@ VizPixelTest::VizPixelTest(RendererType type)
     : PixelTest(RenderTypeToBackend(type)), renderer_type_(type) {}
 
 void VizPixelTest::SetUp() {
+  gl::init::InitializeGLNoExtensionsOneOff(
+    /*init_bindings=*/true, /*gpu_preference=*/gl::GpuPreference::kDefault);
   switch (renderer_type_) {
     case RendererType::kSoftware:
       SetUpSoftwareRenderer();

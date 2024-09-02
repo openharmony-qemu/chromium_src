@@ -19,6 +19,10 @@
 #include "mojo/core/embedder/embedder.h"  // nogncheck
 #include "ui/base/ui_base_features.h"
 #include "ui/ozone/public/ozone_platform.h"
+#include "content/browser/scheduler/browser_io_thread_delegate.h"
+#include "content/browser/scheduler/browser_task_executor.h"
+#include "content/browser/scheduler/browser_task_priority.h"
+#include "content/browser/scheduler/browser_ui_thread_scheduler.h"
 #endif
 
 namespace {
@@ -54,7 +58,18 @@ class GlTestSuite : public base::TestSuite {
     // and GPU components.
     ui::OzonePlatform::InitParams params;
     params.single_process = true;
-
+#if defined(OHOS_UNITTESTS)
+    auto ui_sequence_manager_ =
+        base::sequence_manager::CreateUnboundSequenceManager(
+            base::sequence_manager::SequenceManager::Settings::Builder()
+            .SetPrioritySettings(content::internal::CreateBrowserTaskPrioritySettings())
+            .Build());
+    auto browser_ui_thread_scheduler =
+        content::BrowserUIThreadScheduler::CreateForTesting(ui_sequence_manager_.get());
+    content::BrowserTaskExecutor::CreateForTesting(
+        std::move(browser_ui_thread_scheduler),
+        std::make_unique<content::BrowserIOThreadDelegate>());
+#endif
     // This initialization must be done after TaskEnvironment has
     // initialized the UI thread.
     ui::OzonePlatform::InitializeForUI(params);

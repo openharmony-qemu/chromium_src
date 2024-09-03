@@ -266,6 +266,7 @@ class NWebDelegateInterface
       const size_t scriptLength,
       std::shared_ptr<NWebMessageValueCallback> callback,
       bool extention) = 0;
+  virtual void EraseCreatePDFCallbackImpl(uint32_t id) = 0;
   virtual void ExecuteCreatePDFExt(
       std::shared_ptr<NWebPDFConfigArgs> pdfConfig,
       std::shared_ptr<NWebArrayBufferValueCallback> callback) = 0;

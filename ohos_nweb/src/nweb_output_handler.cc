@@ -24,6 +24,8 @@
 #include <iomanip>
 #include <iostream>
 #include <thread>
+
+#include "base/trace_event/trace_event.h"
 #include "nweb_hilog.h"
 #include "ohos_adapter_helper.h"
 
@@ -104,8 +106,12 @@ void NWebOutputHandler::Resize(uint32_t width, uint32_t height) {
   if (width_ != width || height_ != height) {
     WVLOG_I(
         "NWeb size change from %{public}u*%{public}u to "
-        "%{public}u*%{public}u",
-        width_, height_, width, height);
+        "%{public}u*%{public}u, nweb id = %{public}u",
+        width_, height_, width, height, nweb_id_);
+    std::string trace_output_str = "origin size = " + std::to_string(width_) + "*" + std::to_string(height_) +
+      ", new size = " + std::to_string(width) + "*" + std::to_string(height) +
+      ", nweb id = " + std::to_string(nweb_id_);
+    TRACE_EVENT1("base", "NWebOutputHandler::Resize", "change info", trace_output_str.c_str());
     width_ = width;
     height_ = height;
     frame_size_ = width_ * height_ * kBitsPerPixel;

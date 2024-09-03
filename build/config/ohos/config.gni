@@ -114,7 +114,7 @@ if (is_ohos) {
     }
 
     # ohos include and libs dependencies, corresponding to gen_ohos_ndk.sh
-    ohos_src_includes = [ "$ohos_build_root/includes/ohos_adapter" ]
+    ohos_src_includes = [ "//ohos_adapter/interfaces" ]
 
     if (current_cpu == "arm") {
       ohos_libs_dir = [ "$ohos_build_root/libs" ]

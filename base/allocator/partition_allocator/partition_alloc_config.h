@@ -207,7 +207,7 @@ static_assert(sizeof(void*) == 8);
 // - Not on Android due to bot failures
 #if BUILDFLAG(PA_DCHECK_IS_ON) && BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC) && \
     PA_CONFIG(THREAD_LOCAL_TLS) && !BUILDFLAG(IS_ANDROID)
-#define PA_CONFIG_HAS_ALLOCATION_GUARD() 1
+#define PA_CONFIG_HAS_ALLOCATION_GUARD() 0
 #else
 #define PA_CONFIG_HAS_ALLOCATION_GUARD() 0
 #endif

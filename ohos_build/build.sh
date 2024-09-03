@@ -118,14 +118,14 @@ while [ "$1" != "" ]; do
       buildarg_musl="use_musl=true"
       build_dir="out/rk3568/"
       build_product_name="product_name=\"rk3568\""
-      is_heif_support=false
+      is_heif_support="heif_support=\"false\""
     ;;
     "rk3568_64")
       buildarg_cpu="target_cpu=\"arm64\""
       buildarg_musl="use_musl=true"
       build_dir="out/rk3568_64/"
       build_product_name="product_name=\"rk3568\""
-      is_heif_support=false
+      is_heif_support="heif_support=\"false\""
     ;;
     "x86_64")
       buildarg_cpu="target_cpu=\"x64\""

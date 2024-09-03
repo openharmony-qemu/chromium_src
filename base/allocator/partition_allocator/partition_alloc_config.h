@@ -207,7 +207,7 @@ static_assert(sizeof(void*) == 8);
 // - Not on Android due to bot failures
 #if BUILDFLAG(PA_DCHECK_IS_ON) && BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC) && \
     PA_CONFIG(THREAD_LOCAL_TLS) && !BUILDFLAG(IS_ANDROID)
-#define PA_CONFIG_HAS_ALLOCATION_GUARD() 0
+#define PA_CONFIG_HAS_ALLOCATION_GUARD() 1
 #else
 #define PA_CONFIG_HAS_ALLOCATION_GUARD() 0
 #endif
@@ -215,7 +215,7 @@ static_assert(sizeof(void*) == 8);
 // On Android, we have to go through emutls, since this is always a shared
 // library, so don't bother.
 #if PA_CONFIG(THREAD_LOCAL_TLS) && !BUILDFLAG(IS_ANDROID)
-#define PA_CONFIG_THREAD_CACHE_FAST_TLS() 1
+#define PA_CONFIG_THREAD_CACHE_FAST_TLS() 0
 #else
 #define PA_CONFIG_THREAD_CACHE_FAST_TLS() 0
 #endif

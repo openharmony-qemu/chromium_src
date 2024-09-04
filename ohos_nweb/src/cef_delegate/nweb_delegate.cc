@@ -1399,7 +1399,8 @@ void NWebDelegate::InitialScale(float scale) const {
 }
 
 void NWebDelegate::OnPause() {
-  LOG(DEBUG) << "NWebDelegate::OnPause, nweb_id = " << nweb_id_;
+  LOG(INFO) << "NWebDelegate::OnPause, nweb_id = " << nweb_id_;
+  TRACE_EVENT1("base", "NWebDelegate::OnPause", "nweb id = ", nweb_id_);
   if (!GetBrowser().get()) {
     return;
   }
@@ -1415,7 +1416,8 @@ void NWebDelegate::OnPause() {
 
   if (!hidden_) {
     // Set the browser as hidden.
-    LOG(DEBUG) << "NWebDelegate::OnPause set hidden, nweb_id = " << nweb_id_;
+    LOG(INFO) << "NWebDelegate::OnPause set hidden, nweb_id = " << nweb_id_;
+    TRACE_EVENT1("base", "NWebDelegate::OnPause set hidden", "nweb id = ", nweb_id_);
     GetBrowser()->GetHost()->WasHidden(true);
     hidden_ = true;
   }
@@ -1426,7 +1428,8 @@ void NWebDelegate::OnPause() {
 }
 
 void NWebDelegate::OnWindowShow() {
-  LOG(DEBUG) << "NWebDelegate::OnWindowShow";
+  TRACE_EVENT1("base", "NWebDelegate::OnWindowShow", "nweb id = ", nweb_id_);
+  LOG(INFO) << "NWebDelegate::OnWindowShow, nweb id = " << nweb_id_;
   if (!GetBrowser().get()) {
     return;
   }
@@ -1434,7 +1437,8 @@ void NWebDelegate::OnWindowShow() {
 }
 
 void NWebDelegate::OnWindowHide() {
-  LOG(DEBUG) << "NWebDelegate::OnWindowHide";
+  TRACE_EVENT1("base", "NWebDelegate::OnWindowHide", "nweb id = ", nweb_id_);
+  LOG(INFO) << "NWebDelegate::OnWindowHide, nweb id = " << nweb_id_;
   if (!GetBrowser().get()) {
     return;
   }
@@ -1442,8 +1446,8 @@ void NWebDelegate::OnWindowHide() {
 }
 
 void NWebDelegate::OnOnlineRenderToForeground() {
-  TRACE_EVENT0("base", "NWebDelegate::OnOnlineRenderToForeground");
-  LOG(DEBUG) << "NWebDelegate::OnOnlineRenderToForeground";
+  TRACE_EVENT1("base", "NWebDelegate::OnOnlineRenderToForeground", "nweb id = ", nweb_id_);
+  LOG(INFO) << "NWebDelegate::OnOnlineRenderToForeground, nweb id = " << nweb_id_;
   if (!GetBrowser().get()) {
     return;
   }
@@ -1451,7 +1455,7 @@ void NWebDelegate::OnOnlineRenderToForeground() {
 }
 
 void NWebDelegate::NotifyForNextTouchEvent() {
-  TRACE_EVENT0("base", "NWebDelegate::NotifyForNextTouchEvent");
+  TRACE_EVENT1("base", "NWebDelegate::NotifyForNextTouchEvent", "nweb id = ", nweb_id_);
 
   if (event_handler_ != nullptr) {
     event_handler_->NotifyForNextTouchEvent();
@@ -1481,13 +1485,15 @@ void NWebDelegate::FillAutofillData(std::shared_ptr<NWebMessage> data) {
 }
 
 void NWebDelegate::OnContinue() {
-  LOG(DEBUG) << "NWebDelegate::OnContinue, nweb_id = " << nweb_id_;
+  LOG(INFO) << "NWebDelegate::OnContinue, nweb_id = " << nweb_id_;
+  TRACE_EVENT1("base", "NWebDelegate::OnContinue", "nweb id = ", nweb_id_);
   if (!GetBrowser().get()) {
     return;
   }
 
   if (occluded_) {
-    LOG(DEBUG) << "NWebDelegate::OnContinue set occluded, nweb_id = " << nweb_id_;
+    LOG(INFO) << "NWebDelegate::OnContinue set occluded, nweb_id = " << nweb_id_;
+    TRACE_EVENT1("base", "NWebDelegate::OnContinue set occluded", "nweb id = ", nweb_id_);
     hidden_ = false;
     GetBrowser()->GetHost()->WasOccluded(true);
     return;
@@ -1495,7 +1501,8 @@ void NWebDelegate::OnContinue() {
 
   if (hidden_) {
     // Set the browser as visible.
-    LOG(DEBUG) << "NWebDelegate::OnContinue set unhidden, nweb_id = " << nweb_id_;
+    LOG(INFO) << "NWebDelegate::OnContinue set unhidden, nweb_id = " << nweb_id_;
+    TRACE_EVENT1("base", "NWebDelegate::OnContinue set unhidden", "nweb id = ", nweb_id_);
     GetBrowser()->GetHost()->WasHidden(false);
     if (render_handler_->IsNeedCefNotifyScreenInfoChanged()) {
       render_handler_->SetScreenInfo(render_handler_->GetLastScreenInfo());
@@ -1529,28 +1536,32 @@ void NWebDelegate::OnContinue() {
 }
 
 void NWebDelegate::OnOccluded() {
-  LOG(DEBUG) << "NWebDelegate::OnOccluded, nweb_id = " << nweb_id_;
+  LOG(INFO) << "NWebDelegate::OnOccluded, nweb_id = " << nweb_id_;
+  TRACE_EVENT1("base", "NWebDelegate::OnOccluded", "nweb id = ", nweb_id_);
   if (!GetBrowser().get()) {
     return;
   }
 
   if (!hidden_ && !occluded_) {
     // Set the browser as occluded.
-    LOG(DEBUG) << "NWebDelegate::OnOccluded set occluded, nweb_id = " << nweb_id_;
+    LOG(INFO) << "NWebDelegate::OnOccluded set occluded, nweb_id = " << nweb_id_;
+    TRACE_EVENT1("base", "NWebDelegate::OnOccluded set occluded", "nweb id = ", nweb_id_);
     GetBrowser()->GetHost()->WasOccluded(true);
   }
   occluded_ = true;
 }
 
 void NWebDelegate::OnUnoccluded() {
-  LOG(DEBUG) << "NWebDelegate::OnUnoccluded, nweb_id = " << nweb_id_;
+  LOG(INFO) << "NWebDelegate::OnUnoccluded, nweb_id = " << nweb_id_;
+  TRACE_EVENT1("base", "NWebDelegate::OnUnoccluded", "nweb id = ", nweb_id_);
   if (!GetBrowser().get()) {
     return;
   }
 
   if (!hidden_ && occluded_) {
     // Set the browser as visible.
-    LOG(DEBUG) << "NWebDelegate::OnUnoccluded set unoccluded, nweb_id = " << nweb_id_;
+    LOG(INFO) << "NWebDelegate::OnUnoccluded set unoccluded, nweb_id = " << nweb_id_;
+    TRACE_EVENT1("base", "NWebDelegate::OnUnoccluded set unoccluded", "nweb id = ", nweb_id_);
     GetBrowser()->GetHost()->WasOccluded(false);
   }
   occluded_ = false;

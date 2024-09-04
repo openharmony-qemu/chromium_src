@@ -25,7 +25,7 @@ namespace viz {
 
 class VIZ_SERVICE_EXPORT FrameDumpCopyOutputRequest : public CopyOutputRequest {
  public:
-  FrameDumpCopyOutputRequest();
+  FrameDumpCopyOutputRequest(uint64_t id, const std::string& dump_path);
   ~FrameDumpCopyOutputRequest() override = default;
 };
 }  // namespace viz

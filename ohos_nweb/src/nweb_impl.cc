@@ -980,7 +980,7 @@ void NWebImpl::SetDrawRect(int x, int y, int width, int height) {
 }
 
 void NWebImpl::SetDrawMode(int mode) {
-  WVLOG_D("NWebImpl::SetDrawMode %{public}d", mode);
+  WVLOG_I("NWebImpl::SetDrawMode %{public}d, nweb_id = %{public}u", mode, nweb_id_);
   if (draw_mode_ != mode) {
     draw_mode_ = mode;
     if (nweb_delegate_) {
@@ -997,7 +997,7 @@ bool NWebImpl::GetPendingSizeStatus() {
 }
 
 void NWebImpl::SetFitContentMode(int mode) {
-  WVLOG_D("NWebImpl::SetFitContentMode %{public}d", mode);
+  WVLOG_I("NWebImpl::SetFitContentMode %{public}d, nweb_id = %{public}u", mode, nweb_id_);
   if (nweb_delegate_) {
     nweb_delegate_->SetFitContentMode(mode);
   }
@@ -1006,8 +1006,8 @@ void NWebImpl::SetFitContentMode(int mode) {
 void NWebImpl::OnTouchPress(int32_t id, double x, double y, bool from_overlay) {
   WVLOG_D(
       "NWebImpl::OnTouchPress id=%{public}d, x=%{public}f, y=%{public}f, "
-      "from_overlay=%{public}d",
-      id, x, y, from_overlay);
+      "from_overlay=%{public}d, nweb_id = %{public}u",
+      id, x, y, from_overlay, nweb_id_);
   if (input_handler_ == nullptr) {
     return;
   }
@@ -1027,8 +1027,8 @@ void NWebImpl::OnTouchRelease(int32_t id,
                               bool from_overlay) {
   WVLOG_D(
       "NWebImpl::OnTouchRelease id=%{public}d, x=%{public}f, y=%{public}f, "
-      "from_overlay=%{public}d",
-      id, x, y, from_overlay);
+      "from_overlay=%{public}d, nweb_id = %{public}u",
+      id, x, y, from_overlay, nweb_id_);
   if (input_handler_ == nullptr) {
     return;
   }

@@ -49,7 +49,7 @@ unsigned GLInternalFormat(gfx::BufferFormat format) {
   return gl::BufferFormatToGLInternalFormat(format);
 }
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
 #define EGL_NATIVE_BUFFER_OHOS            0x34E1
 
 gl::ScopedEGLImage CreateOhosEGLImage(EGLClientBuffer egl_client_buffer) {
@@ -176,7 +176,7 @@ bool NativePixmapEGLBinding::InitializeFromNativePixmap(
     GLenum target,
     GLuint texture_id) {
   DCHECK(!pixmap_);
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
   LOG(DEBUG) << "[HeifSupport] InitializeFromNativePixmap GLInternalFormat " <<  (int)GLInternalFormat(format_)
     << ", format_ " << (int)format_ <<   ", plane_ " << (int)plane_ << ", WindowBuffer " << pixmap->GetWindowBuffer();
 #endif
@@ -190,7 +190,7 @@ bool NativePixmapEGLBinding::InitializeFromNativePixmap(
     return false;
   }
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
   egl_image_ = CreateOhosEGLImage(static_cast<EGLClientBuffer>(pixmap->GetWindowBuffer()));
   if (egl_image_ == EGL_NO_IMAGE_KHR) {
     LOG(ERROR) << "[HeifSupport] egl_image_ is EGL_NO_IMAGE_KHR.";

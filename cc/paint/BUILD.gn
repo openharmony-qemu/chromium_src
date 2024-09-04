@@ -132,6 +132,7 @@ cc_component("paint") {
 
   deps = [
     "//base",
+    "//build:enable_heif_buildflags",
     "//components/crash/core/common:crash_key",
     "//gpu/command_buffer/common:mailbox",
     "//ui/gfx/animation",

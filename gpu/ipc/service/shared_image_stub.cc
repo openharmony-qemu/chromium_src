@@ -130,7 +130,7 @@ void SharedImageStub::ExecuteDeferredRequest(
   }
 }
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
 bool SharedImageStub::CreateSharedImage(const Mailbox& mailbox,
                                         gfx::GpuMemoryBufferHandle handle,
                                         gfx::BufferFormat format,
@@ -163,7 +163,7 @@ bool SharedImageStub::CreateSharedImage(const Mailbox& mailbox,
   }
   return true;
 }
-#endif
+#endif // BUILDFLAG(ENABLE_HEIF_DECODER)
 
 bool SharedImageStub::CreateSharedImage(const Mailbox& mailbox,
                                         gfx::GpuMemoryBufferHandle handle,

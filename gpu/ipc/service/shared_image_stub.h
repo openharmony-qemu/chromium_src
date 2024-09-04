@@ -49,7 +49,7 @@ class GPU_IPC_SERVICE_EXPORT SharedImageStub : public MemoryTracker {
   SharedImageDestructionCallback GetSharedImageDestructionCallback(
       const Mailbox& mailbox);
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
   bool CreateSharedImage(const Mailbox& mailbox,
                          gfx::GpuMemoryBufferHandle handle,
                          gfx::BufferFormat format,
@@ -60,7 +60,7 @@ class GPU_IPC_SERVICE_EXPORT SharedImageStub : public MemoryTracker {
                          SkAlphaType alpha_type,
                          uint32_t usage,
                          void* window_buffer);
-#endif
+#endif // BUILDFLAG(ENABLE_HEIF_DECODER)
 
   bool CreateSharedImage(const Mailbox& mailbox,
                          gfx::GpuMemoryBufferHandle handle,

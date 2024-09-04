@@ -296,7 +296,7 @@ gpu::mojom::ImageDecodeAcceleratorType EnumTraits<
       return gpu::mojom::ImageDecodeAcceleratorType::kJpeg;
     case gpu::ImageDecodeAcceleratorType::kWebP:
       return gpu::mojom::ImageDecodeAcceleratorType::kWebP;
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
     case gpu::ImageDecodeAcceleratorType::kHeif:
       return gpu::mojom::ImageDecodeAcceleratorType::kHeif;
 #endif
@@ -317,7 +317,7 @@ bool EnumTraits<gpu::mojom::ImageDecodeAcceleratorType,
     case gpu::mojom::ImageDecodeAcceleratorType::kWebP:
       *out = gpu::ImageDecodeAcceleratorType::kWebP;
       return true;
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
     case gpu::mojom::ImageDecodeAcceleratorType::kHeif:
       *out = gpu::ImageDecodeAcceleratorType::kHeif;
       return true;

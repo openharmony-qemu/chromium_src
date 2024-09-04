@@ -215,6 +215,24 @@ class VIZ_COMMON_EXPORT CopyOutputResult {
   // Returns the color space of the image data returned by ReadRGBAPlane().
   virtual gfx::ColorSpace GetRGBAColorSpace() const;
 
+#if defined(OHOS_DFX_DUMP)
+  void SetDumpFrameId(uint64_t id) {
+    dump_frame_id_ = id;
+  }
+
+  uint64_t DumpFrameId() const {
+    return dump_frame_id_;
+  }
+
+  void SetDumpFramePath(const std::string path) {
+    dump_frame_path_ = path;
+  }
+
+  std::string DumpFramePath() const {
+    return dump_frame_path_;
+  }
+#endif
+
  protected:
   // Lock the content of SkBitmap returned from AsSkBitmap() call.
   // Return true, if lock operation is successful, implementations should
@@ -241,6 +259,10 @@ class VIZ_COMMON_EXPORT CopyOutputResult {
 
   // Cached bitmap returned by the default implementation of AsSkBitmap().
   mutable SkBitmap cached_bitmap_;
+#if defined(OHOS_DFX_DUMP)
+  uint64_t dump_frame_id_ = 0;
+  std::string dump_frame_path_ = "";
+#endif
 };
 
 // Subclass of CopyOutputResult that provides a RGBA result from an

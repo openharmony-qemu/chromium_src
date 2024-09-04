@@ -194,10 +194,11 @@ TYPED_TEST(ClipboardTest, HTMLTest) {
     ScopedClipboardWriter clipboard_writer(ClipboardBuffer::kCopyPaste);
     clipboard_writer.WriteText(plain);
 #if defined(OHOS_UNITTESTS)
-    clipboard_writer.WriteHTML(markup, url, ClipboardContentType::kSanitized, blink::mojom::CopyOptionMode::CROSS_DEVICE);
+    clipboard_writer.WriteHTML(markup, url, ClipboardContentType::kSanitized,
+                               blink::mojom::CopyOptionMode::CROSS_DEVICE);
 #else
     clipboard_writer.WriteHTML(markup, url, ClipboardContentType::kSanitized);
-#endif // OHOS_UNITTESTS
+#endif  // OHOS_UNITTESTS
   }
 
   EXPECT_THAT(this->GetAvailableTypes(ClipboardBuffer::kCopyPaste),
@@ -288,10 +289,11 @@ TYPED_TEST(ClipboardTest, MultipleBufferTest) {
   {
     ScopedClipboardWriter clipboard_writer(ClipboardBuffer::kSelection);
 #if defined(OHOS_UNITTESTS)
-    clipboard_writer.WriteHTML(markup, url, ClipboardContentType::kSanitized, blink::mojom::CopyOptionMode::CROSS_DEVICE);
+    clipboard_writer.WriteHTML(markup, url, ClipboardContentType::kSanitized,
+                               blink::mojom::CopyOptionMode::CROSS_DEVICE);
 #else
     clipboard_writer.WriteHTML(markup, url, ClipboardContentType::kSanitized);
-#endif // OHOS_UNITTESTS
+#endif  // OHOS_UNITTESTS
   }
 
   EXPECT_THAT(this->GetAvailableTypes(ClipboardBuffer::kCopyPaste),
@@ -338,10 +340,11 @@ TYPED_TEST(ClipboardTest, TrickyHTMLTest) {
     ScopedClipboardWriter clipboard_writer(ClipboardBuffer::kCopyPaste);
     clipboard_writer.WriteText(plain);
 #if defined(OHOS_UNITTESTS)
-    clipboard_writer.WriteHTML(markup, url, ClipboardContentType::kSanitized, blink::mojom::CopyOptionMode::CROSS_DEVICE);
+    clipboard_writer.WriteHTML(markup, url, ClipboardContentType::kSanitized,
+                               blink::mojom::CopyOptionMode::CROSS_DEVICE);
 #else
     clipboard_writer.WriteHTML(markup, url, ClipboardContentType::kSanitized);
-#endif // OHOS_UNITTESTS
+#endif  // OHOS_UNITTESTS
   }
 
   EXPECT_THAT(this->GetAvailableTypes(ClipboardBuffer::kCopyPaste),
@@ -373,10 +376,11 @@ TYPED_TEST(ClipboardTest, UnicodeHTMLTest) {
   {
     ScopedClipboardWriter clipboard_writer(ClipboardBuffer::kCopyPaste);
 #if defined(OHOS_UNITTESTS)
-    clipboard_writer.WriteHTML(markup, url, ClipboardContentType::kSanitized, blink::mojom::CopyOptionMode::CROSS_DEVICE);
+    clipboard_writer.WriteHTML(markup, url, ClipboardContentType::kSanitized,
+                               blink::mojom::CopyOptionMode::CROSS_DEVICE);
 #else
     clipboard_writer.WriteHTML(markup, url, ClipboardContentType::kSanitized);
-#endif // OHOS_UNITTESTS
+#endif  // OHOS_UNITTESTS
 #if BUILDFLAG(IS_ANDROID)
     // Android requires HTML and plain text representations to be written.
     clipboard_writer.WriteText(markup);
@@ -469,10 +473,11 @@ TYPED_TEST(ClipboardTest, MultiFormatTest) {
   {
     ScopedClipboardWriter clipboard_writer(ClipboardBuffer::kCopyPaste);
 #if defined(OHOS_UNITTESTS)
-    clipboard_writer.WriteHTML(markup, url, ClipboardContentType::kSanitized, blink::mojom::CopyOptionMode::CROSS_DEVICE);
+    clipboard_writer.WriteHTML(markup, url, ClipboardContentType::kSanitized,
+                               blink::mojom::CopyOptionMode::CROSS_DEVICE);
 #else
     clipboard_writer.WriteHTML(markup, url, ClipboardContentType::kSanitized);
-#endif // OHOS_UNITTESTS
+#endif  // OHOS_UNITTESTS
     clipboard_writer.WriteText(text);
   }
 

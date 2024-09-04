@@ -6,6 +6,7 @@
 
 #include "net/base/http_user_agent_settings.h"
 #include "net/base/network_anonymization_key.h"
+#include "net/base/tracing.h"
 #include "net/http/http_network_session.h"
 #include "net/http/http_transaction_factory.h"
 #include "net/http/transport_security_state.h"
@@ -20,6 +21,7 @@ void PreconnectRunner::PreconnectSocket(
   if (url_request_context.get() == nullptr) {
     return;
   }
+  TRACE_EVENT1("net", "PreconnectRunner::PreconnectSocket", "url", original_url.spec());
   net::NetworkAnonymizationKey key =
       net::NetworkAnonymizationKey::CreateSameSite(
           net::SchemefulSite(original_url));

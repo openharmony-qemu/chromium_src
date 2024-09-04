@@ -148,7 +148,7 @@ int DiskCacheReadHelper::OpenCallback(int rv) {
 
 int DiskCacheReadHelper::ReadCallback(int rv) {
   if (rv != net::OK) {
-    LOG(ERROR) << "PRPPreload.DiskCacheReadHelper::ReadCallback load cache entry failed: " << rv;
+    LOG(DEBUG) << "PRPPreload.DiskCacheReadHelper::ReadCallback load cache entry failed: " << rv;
     cache_->EntryReadComplete();
     return rv;
   }

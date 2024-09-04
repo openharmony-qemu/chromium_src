@@ -127,6 +127,9 @@ void BrowserAccessibilityManagerOHOS::MoveAccessibilityFocus(
   if (!node)
     return;
   node->manager()->SetAccessibilityFocus(*node);
+
+  if (node != node->manager()->GetBrowserAccessibilityRoot())
+    node->manager()->LoadInlineTextBoxes(*node);
 }
 
 bool BrowserAccessibilityManagerOHOS::IsIgnoredEvent(

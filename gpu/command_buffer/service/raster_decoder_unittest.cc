@@ -194,16 +194,17 @@ TEST_P(RasterDecoderManualInitTest, GetCapabilitiesNorm16) {
 }
 
 class RasterDecoderOOPTest : public testing::Test, DecoderClient {
- public:
+public:
   void SetUp() override {
-    display_ = gl::GLSurfaceTestSupport::InitializeOneOff();
+    display_ = gl::init::InitializeGLNoExtensionsOneOff(
+        /*init_bindings=*/true, /*gpu_preference=*/gl::GpuPreference::kDefault);
     gpu::GpuDriverBugWorkarounds workarounds;
 
     scoped_refptr<gl::GLShareGroup> share_group = new gl::GLShareGroup();
     scoped_refptr<gl::GLSurface> surface =
         gl::init::CreateOffscreenGLSurface(display_, gfx::Size());
     scoped_refptr<gl::GLContext> context = gl::init::CreateGLContext(
-        share_group.get(), surface.get(), gl::GLContextAttribs());
+      share_group.get(), surface.get(), gl::GLContextAttribs());
     ASSERT_TRUE(context->MakeCurrent(surface.get()));
 
     gpu_feature_info_.status_values[GPU_FEATURE_TYPE_GPU_RASTERIZATION] =

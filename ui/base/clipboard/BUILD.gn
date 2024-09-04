@@ -176,7 +176,7 @@ component("clipboard") {
     import("//build/config/ohos/config.gni")
     include_dirs = ohos_src_includes
     deps += [
-      "//ohos_glue:ohos_adapter_glue_source",
+      "//ohos_adapter:nweb_ohos_adapter",
     ]
   } else if (use_aura) {
     if (use_ozone) {

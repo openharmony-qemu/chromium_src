@@ -770,8 +770,7 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
   if (is_enhance_surface_) {
     window = create_info->GetEnhanceSurfaceInfo();
   } else {
-    window = output_handler_->GetNativeWindowFromSurface(
-        create_info->GetProducerSurface());
+    window = create_info->GetProducerSurface();
   }
 
   if (window == nullptr) {

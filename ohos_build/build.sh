@@ -57,7 +57,11 @@ buildargs="
   enable_plugins=true
   toolkit_views=false
   enable_offline_pages=false
-  media_use_ffmpeg=true"
+  media_use_ffmpeg=true
+  use_allocator_shim=false
+  use_partition_alloc_as_malloc=false
+  enable_backup_ref_ptr_support=false
+  enable_pointer_compression_support=false"
 #Add build args end
 
 buildgn=1

@@ -5,6 +5,7 @@
 #ifndef BASE_MEMORY_REF_COUNTED_H_
 #define BASE_MEMORY_REF_COUNTED_H_
 
+#include <limits>
 #include <stddef.h>
 
 #include <utility>

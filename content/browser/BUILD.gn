@@ -3337,7 +3337,7 @@ source_set("browser") {
     }  #endif  // defined(OHOS_MEDIA_AVSESSION)
 
     include_dirs = ohos_src_includes
-    deps += [ "//ohos_glue:ohos_adapter_glue_source" ]
+    deps += [ "//ohos_adapter:nweb_ohos_adapter" ]
   }
 
   if (use_aura) {

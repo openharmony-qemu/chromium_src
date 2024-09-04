@@ -21,9 +21,11 @@ import("//tools/grit/repack.gni")
 component("nweb_hilog") {
   sources = [ "src/nweb_hilog.h" ]
 
-  include_dirs = ohos_src_includes
+  include_dirs = [
+    "//ohos_adapter/interfaces",
+  ]
   deps = [
-    "//ohos_glue:ohos_adapter_glue_source",
+    "//ohos_adapter:nweb_ohos_adapter",
   ]
 }
 
@@ -72,7 +74,7 @@ component("cef_nweb") {
   ]
 
   deps = [
-    "//ohos_glue:ohos_adapter_glue_source",
+    "//ohos_adapter:nweb_ohos_adapter",
   ]
 
   sources = [
@@ -392,7 +394,7 @@ component("nweb_sources") {
   public_deps = [ "//third_party/abseil-cpp:absl" ]
 
   deps += [
-    "//ohos_glue:ohos_adapter_glue_source",
+    "//ohos_adapter:nweb_ohos_adapter",
   ]
 }
 

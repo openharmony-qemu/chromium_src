@@ -83,7 +83,7 @@ source_set("generic_sensor") {
       "platform_sensor_provider_ohos.cc",
       "platform_sensor_provider_ohos.h",
     ]
-    deps += [ "//ohos_glue:ohos_adapter_glue_source" ]
+    deps += [ "//ohos_adapter:nweb_ohos_adapter" ]
   }
 
   if (is_mac) {

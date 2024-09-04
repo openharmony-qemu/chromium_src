@@ -1184,6 +1184,25 @@ void PasswordAutofillAgent::SetParsedPasswordForm(
   OhosStoreInferredInfo(form_data, username_element, password_element);
 }
 
+bool PasswordAutofillAgent::IsPasswordAutofill(
+    const blink::WebInputElement& input_element) {
+  if (input_element.IsNull()) {
+    LOG(ERROR) << "[Autofill] input_element is null";
+    return false;
+  }
+
+  WebInputElement username_element;
+  WebInputElement password_element;
+  PasswordInfo* password_info = nullptr;
+  if (IsElementEditable(input_element) &&
+      OhosFindPasswordInfoForElement(input_element, UseFallbackData(true),
+                                     &username_element, &password_element,
+                                     &password_info)) {
+    return true;
+  }
+  return false;
+}
+
 bool PasswordAutofillAgent::OhosFindPasswordInfoForElement(
     const WebInputElement& element,
     UseFallbackData use_fallback_data,
@@ -1272,16 +1291,16 @@ bool PasswordAutofillAgent::RequestAutofill(
   // FormControls outside the <form> which has no form_id.
   FormRendererId form_id(form.IsNull() ? 0 : form.UniqueRendererFormId());
 
-  bool has_amendable_username_element = IsUsernameAmendable(
-      username_element, input_element.IsPasswordFieldForAutofill());
+  bool has_editable_username_element =
+      !username_element.IsNull() && IsElementEditable(username_element);
   bool has_editable_password_element =
       !password_element.IsNull() && IsElementEditable(password_element);
-  DCHECK(has_amendable_username_element || has_editable_password_element);
+  DCHECK(has_editable_username_element || has_editable_password_element);
 
   // Highlight the fields that are about to be filled by the user and remember
   // the old autofill state of |username_element| and |password_element|.
   autofill::InputFillRequestData username_data;
-  if (has_amendable_username_element) {
+  if (has_editable_username_element) {
     username_autofill_state_ = username_element.GetAutofillState();
 
     username_data.field_renderer_id = GetFieldRendererId(username_element);

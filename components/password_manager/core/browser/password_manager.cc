@@ -1136,12 +1136,16 @@ void PasswordManager::OnLoginSuccessful() {
   if (logger)
     logger->LogSuccessfulSubmissionIndicatorEvent(submission_event);
 
+// OH password autofill does not need to store the password in the chromium and
+// does not need to check is able to save passwords.
+#if !defined(OHOS_PASSWORD_AUTOFILL)
   bool able_to_save_passwords =
       client_->GetProfilePasswordStore()->IsAbleToSavePasswords();
   UMA_HISTOGRAM_BOOLEAN("PasswordManager.AbleToSavePasswordsOnSuccessfulLogin",
                         able_to_save_passwords);
   if (!able_to_save_passwords)
     return;
+#endif
 
   MaybeSavePasswordHash(submitted_manager);
 

@@ -83,6 +83,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
               FillAutofillData,
               (std::shared_ptr<NWebMessage> data),
               (override));
+  MOCK_METHOD(void, EraseCreatePDFCallbackImpl, (uint32_t id), (override));
   MOCK_METHOD(void,
               ExecuteCreatePDFExt,
               (std::shared_ptr<NWebPDFConfigArgs> pdfConfig,

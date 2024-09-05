@@ -85,6 +85,23 @@ class NWebDelegateTest : public ::testing::Test {
   std::shared_ptr<NWebDelegate> nweb_delegate_ = nullptr;
 };
 
+class NWebArrayBufferValueCallbackTest : public NWebArrayBufferValueCallback {
+ public:
+  void OnReceiveValue(const char* value, const long size) override {}
+};
+
+class NWebPDFConfigArgsTest : public NWebPDFConfigArgs {
+ public:
+  double GetWidth() override { return 10.0f; }
+  double GetHeight() override { return 10.0f; }
+  double GetScale() override { return 1.0f; }
+  double GetMarginTop() override { return 0.0f; }
+  double GetMarginBottom() override { return 0.0f; }
+  double GetMarginRight() override { return 0.0f; }
+  double GetMarginLeft() override { return 0.0f; }
+  bool GetShouldPrintBackground() override { return false; }
+};
+
 }  // namespace
 
 #if defined(OHOS_COMPOSITE_RENDER)
@@ -409,4 +426,14 @@ TEST_F(NWebDelegateTest, GetOverScrollOffset) {
   EXPECT_EQ(offset_y, 1);
   #endif
 }
+
+TEST_F(NWebDelegateTest, ExecuteCreatePDFExt) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  std::shared_ptr<NWebArrayBufferValueCallback> callback =
+      std::make_shared<NWebArrayBufferValueCallbackTest>();
+  std::shared_ptr<NWebPDFConfigArgs> pdfConfig =
+      std::make_shared<NWebPDFConfigArgsTest>();
+  nweb_delegate_->ExecuteCreatePDFExt(pdfConfig, callback);
+}
+
 }  // namespace OHOS::NWeb

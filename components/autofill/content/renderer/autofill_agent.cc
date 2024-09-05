@@ -1038,6 +1038,14 @@ void AutofillAgent::QueryAutofillSuggestions(
     }
   }
 
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  const WebInputElement input_element = element.DynamicTo<WebInputElement>();
+  if (password_autofill_agent_->IsPasswordAutofill(input_element)) {
+    LOG(INFO) << "[Autofill] Is password autofill, skip form fill.";
+    return;
+  }
+#endif
+
   is_popup_possibly_visible_ = true;
   GetAutofillDriver().AskForValuesToFill(form, field, field.bounds,
                                          autoselect_first_suggestion,

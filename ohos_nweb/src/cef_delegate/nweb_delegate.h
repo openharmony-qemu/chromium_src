@@ -628,6 +628,7 @@ void NotifyForNextTouchEvent() override;
   void AddAccessibilityNodeInfoActions(
     std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
     const content::BrowserAccessibilityOHOS* node) const;
+  float GetViewPointHeight() const;
 
   float zoom_in_factor_ = 1.25f;
   float zoom_out_factor_ = 0.8f;

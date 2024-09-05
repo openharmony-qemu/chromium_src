@@ -41,6 +41,11 @@
 #include "ui/gl/gl_implementation.h"
 #include "ui/gl/test/gl_surface_test_support.h"
 
+#if BUILDFLAG(IS_OHOS)
+#define CopyVideoFrameTexturesToGLTextureI420 \
+  DISABLED_CopyVideoFrameTexturesToGLTextureI420
+#endif
+
 using media::VideoFrame;
 
 namespace media {

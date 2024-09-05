@@ -382,6 +382,7 @@ class CONTENT_EXPORT RenderFrameImpl
                        const gfx::Range& range) override;
 #if defined(OHOS_CLIPBOARD)
   void MouseSelectMenuShow(bool show) override;
+  void ChangeVisibilityOfQuickMenu() override;
 #endif
   void AddMessageToConsole(blink::mojom::ConsoleMessageLevel level,
                            const std::string& message) override;

@@ -197,6 +197,7 @@ class CONTENT_EXPORT RenderFrameHostDelegate {
 
 #if defined(OHOS_CLIPBOARD)
   virtual void MouseSelectMenuShow(bool show) {}
+  virtual void ChangeVisibilityOfQuickMenu() {}
 #endif
 
   // A JavaScript alert, confirmation or prompt dialog should be shown.

@@ -454,8 +454,6 @@ class NWebDelegateInterface
 
   virtual void SetAccessibilityState(cef_state_t accessibilityState) = 0;
   virtual void ExecuteAction(int64_t accessibilityId, uint32_t action) = 0;
-  virtual void ExecuteAction(int64_t accessibilityId, uint32_t action,
-      const std::map<std::string, std::string>& actionArguments) = 0;
   virtual std::shared_ptr<NWebAccessibilityNodeInfo>
   GetFocusedAccessibilityNodeInfo(int64_t accessibilityId,
                                   bool isAccessibilityFocus) = 0;
@@ -530,7 +528,6 @@ class NWebDelegateInterface
 
   virtual std::shared_ptr<NWebCustomKeyboardHandlerImpl> GetCustomKeyboardHandler() const = 0;
 
-  virtual void SendAccessibilityHoverEvent(int x, int y) = 0;
   virtual void RefreshAccessibilityManagerClickEvent() = 0;
 };
 }  // namespace OHOS::NWeb

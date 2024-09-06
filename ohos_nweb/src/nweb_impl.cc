@@ -3383,19 +3383,6 @@ int NWebImpl::SetUrlTrustListWithErrMsg(
 #endif
 }
 
-void NWebImpl::PerformAction(int64_t accessibilityId, uint32_t action,
-  const std::map<std::string, std::string>& actionArguments) {
-  if (nweb_delegate_ != nullptr) {
-    nweb_delegate_->ExecuteAction(accessibilityId, action, actionArguments);
-  }
-}
-
-void NWebImpl::SendAccessibilityHoverEvent(int32_t x, int32_t y) {
-  if (nweb_delegate_ != nullptr) {
-    nweb_delegate_->SendAccessibilityHoverEvent(x, y);
-  }
-}
-
 void NWebImpl::SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) {
 #ifdef OHOS_BFCACHE
   if (nweb_delegate_ == nullptr) {

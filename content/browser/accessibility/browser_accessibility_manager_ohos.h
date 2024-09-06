@@ -21,7 +21,6 @@
 #include "ohos_nweb/src/cef_delegate/nweb_accessibility_utils.h"
 
 namespace content {
-class WebContentsImpl;
 // Manages a tree of BrowserAccessibility objects.
 class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
     : public BrowserAccessibilityManager {
@@ -75,9 +74,6 @@ class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
 
   void FireGeneratedEvent(ui::AXEventGenerator::Event event_type,
                           const ui::AXNode* node) override;
-  void Copy();
-  void Paste();
-  void Cut();
 
  private:
   void HandleHover(int64_t accessibilityId);
@@ -93,16 +89,9 @@ class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
 
   int64_t TranslateAccessibilityId(int64_t accessibilityId) const;
 
-  bool IsIgnoredEvent(std::map<int64_t, int64_t>& lastEventFiredTimes,
-                       const int64_t& accessibilityId);
-
   int64_t lastHoverId_ = -1;
 
   int64_t accessibilityFocusId_ = -1;
-
-  std::map<int64_t, int64_t> lastScrollEventFiredTimes_;
-  std::map<int64_t, int64_t> lastStateUpdateEventFiredTimes_;
-  std::map<int64_t, int64_t> lastContentUpdateEventFiredTimes_;
 
   std::shared_ptr<OHOS::NWeb::NWebAccessibilityEventCallback>
       accessibilityEventListener_;

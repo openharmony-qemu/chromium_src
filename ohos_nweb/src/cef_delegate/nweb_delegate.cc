@@ -3562,8 +3562,9 @@ void NWebDelegate::SendAccessibilityHoverEvent(int x, int y) {
   if (accessibility_state_) {
     auto* accessibilityManager = GetAccessibilityManager();
     if (accessibilityManager != nullptr) {
-      gfx::PointF point(x, y - GetViewPointHeight());
-      accessibilityManager->OnHoverEvent(point);
+      auto scale = accessibilityManager->GetPageScaleFactor();
+      gfx::Point point(x / scale, (y - GetViewPointHeight()) / scale);
+      accessibilityManager->HitTest(point, 0);
     }
   }
 }

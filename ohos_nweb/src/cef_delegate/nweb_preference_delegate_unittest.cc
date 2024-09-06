@@ -23,6 +23,7 @@
 #include "cef/libcef/browser/browser_info.h"
 #include "nweb.h"
 #include "nweb_preference_delegate.h"
+#include "ui/native_theme/native_theme_features.h"
 
 
 #define DEFAULT_FONT_SIZE 16
@@ -278,10 +279,10 @@ class MockCefBrowser : public CefBrowser, public CefBrowserHost {
                       CefString& targetUri) override {}
   void ClosePort(CefString& port_handle) override {}
   void DestroyAllWebMessagePorts() override {}
-  void PostPortMessage(CefString& port_handle,
+  void PostPortMessage(const CefString& port_handle,
                        CefRefPtr<CefValue> message) override {}
   void SetPortMessageCallback(
-      CefString& port_handle,
+      const CefString& port_handle,
       CefRefPtr<CefWebMessageReceiver> callback) override {}
   void GetHitData(int& type, CefString& extra_data) override {}
   void SetInitialScale(float scale) override {}
@@ -673,4 +674,10 @@ TEST(NWebPreferenceDelegateTest, WebPreferencesChanged_BrowserNull) {
 TEST(NWebPreferenceDelegateTest, SetNativeEmbedMode) {
   auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
   preference_delegate->SetNativeEmbedMode(true);
+}
+
+TEST(NWebPreferenceDelegateTest, PutOverlayScrollbarEnabled) {
+  auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+  preference_delegate->PutOverlayScrollbarEnabled(true);
+  EXPECT_FALSE(ui::IsOverlayScrollbarEnabled());
 }

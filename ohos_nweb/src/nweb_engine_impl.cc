@@ -165,8 +165,4 @@ void NWebEngineImpl::EnableWholeWebPageDrawing() {
 std::shared_ptr<NWebAdsBlockManager> NWebEngineImpl::GetAdsBlockManager() {
   return NWebAdsBlockManagerImpl::GetInstance();
 }
-
-void NWebEngineImpl::TrimMemoryByPressureLevel(int32_t memoryLevel) {
-  NWebImpl::TrimMemoryByPressureLevel(memoryLevel);
-}
 } // namespace OHOS::NWeb

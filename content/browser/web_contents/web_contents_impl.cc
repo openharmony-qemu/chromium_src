@@ -4831,6 +4831,12 @@ void WebContentsImpl::OnNativeEmbedStatusUpdate(
   }
 }
 
+void WebContentsImpl::OnLayerRectVisibilityChange(const std::string& embed_id, bool visibility) {
+  if (delegate_) {
+    delegate_->OnLayerRectVisibilityChange(embed_id, visibility);
+  }
+}
+
 void WebContentsImpl::OnRenderFrameHostEnterBackForwardCache(const GlobalRenderFrameHostId& id) {
   if (native_web_contents_observer_) {
     native_web_contents_observer_->OnRenderFrameHostEnterBackForwardCache(id);

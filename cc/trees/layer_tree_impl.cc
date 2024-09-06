@@ -3009,8 +3009,8 @@ void LayerTreeImpl::OnLayerRectUpdate(int id, const gfx::Rect& rect) {
   host_impl_->OnLayerRectUpdate(id, rect);
 }
 
-void LayerTreeImpl::OnLayerRectVisibleChange(int id, bool visibility) {
-  host_impl_->OnLayerRectVisibleChange(id, visibility);
+void LayerTreeImpl::OnLayerRectVisibilityChange(int id, bool visibility) {
+  host_impl_->OnLayerRectVisibilityChange(id, visibility);
 }
 #endif
 

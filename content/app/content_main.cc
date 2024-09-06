@@ -41,7 +41,7 @@
 #include "mojo/core/embedder/scoped_ipc_support.h"
 #include "mojo/public/cpp/platform/platform_channel.h"
 #include "mojo/public/cpp/system/dynamic_library_support.h"
-#include "ohos_nweb/libboundscheck/include/securec.h"
+#include "third_party/bounds_checking_function/include/securec.h"
 #include "sandbox/policy/sandbox_type.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
 #include "ui/base/ui_base_paths.h"

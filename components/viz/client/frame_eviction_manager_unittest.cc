@@ -88,18 +88,21 @@ TEST_F(FrameEvictionManagerTest, PeriodicCulling) {
   TestFrameEvictionManagerClient frame1{&manager}, frame2{&manager},
       frame3{&manager};
   manager.AddFrame(&frame1, false);
-  task_runner->FastForwardBy(FrameEvictionManager::kPeriodicCullingDelay / 10);
+  task_runner->FastForwardBy(FrameEvictionManager::kPeriodicCullingDelay / 2);
   manager.AddFrame(&frame2, true);
   manager.AddFrame(&frame3, false);
 
-  task_runner->FastForwardBy(FrameEvictionManager::kPeriodicCullingDelay);
+  task_runner->FastForwardBy(FrameEvictionManager::kPeriodicCullingDelay / 2);
+  manager.CullOldUnlockedFrames();
   EXPECT_FALSE(frame1.has_frame());
   EXPECT_TRUE(frame2.has_frame());
   EXPECT_TRUE(frame3.has_frame());  // Too early for this one.
   task_runner->FastForwardBy(FrameEvictionManager::kPeriodicCullingDelay);
+  manager.CullOldUnlockedFrames();
   EXPECT_FALSE(frame3.has_frame());
 
   task_runner->FastForwardBy(FrameEvictionManager::kPeriodicCullingDelay / 2);
+  manager.CullOldUnlockedFrames();
   manager.UnlockFrame(&frame2);
   EXPECT_TRUE(frame2.has_frame());
 
@@ -107,10 +110,12 @@ TEST_F(FrameEvictionManagerTest, PeriodicCulling) {
   // ScopedPause because it impacts the singleton.
   manager.Pause();
   task_runner->FastForwardBy(FrameEvictionManager::kPeriodicCullingDelay / 2);
+  manager.CullOldUnlockedFrames();
   EXPECT_TRUE(frame2.has_frame());
   manager.Unpause();
 
   task_runner->FastForwardBy(FrameEvictionManager::kPeriodicCullingDelay);
+  manager.CullOldUnlockedFrames();
   EXPECT_FALSE(frame2.has_frame());
 }
 

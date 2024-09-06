@@ -592,3 +592,9 @@ TEST_F(NWebHandlerDelegateTest, GetJavaScriptObjectMethods) {
   delegate->GetJavaScriptObjectMethods(object_id, returned_method_names);
   ASSERT_NE(delegate, nullptr);
 }
+
+TEST_F(NWebHandlerDelegateTest, SetPopupSurface) {
+  void* surface = nullptr;
+  delegate->SetPopupSurface(surface);
+  ASSERT_NE(delegate, nullptr);
+}

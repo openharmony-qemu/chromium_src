@@ -26,6 +26,9 @@
 namespace base {
 
 namespace {
+#ifdef OHOS_SCROLLBAR
+constexpr char kFeatureOverlayScrollbarName[] = "OverlayScrollbar";
+#endif
 
 constexpr char kFeatureOnByDefaultName[] = "OnByDefault";
 CONSTINIT Feature kFeatureOnByDefault(kFeatureOnByDefaultName,
@@ -689,6 +692,70 @@ TEST_F(FeatureListTest, StoreAndRetrieveAssociatedFeaturesFromSharedMemory) {
   EXPECT_EQ(associated_trial1, trial1);
   EXPECT_EQ(associated_trial2, trial2);
 }
+
+#ifdef OHOS_SCROLLBAR
+TEST_F(FeatureListTest, ModifyFeaturesToAllocatorFromSharedMemory) {
+  std::unique_ptr<base::FeatureList> feature_list(new base::FeatureList);
+
+  // Create some overrides.
+  feature_list->RegisterOverride(kFeatureOverlayScrollbarName,
+                                 FeatureList::OVERRIDE_ENABLE_FEATURE, nullptr);
+  feature_list->FinalizeInitialization();
+
+  // Create an allocator and store the overrides.
+  base::MappedReadOnlyRegion shm =
+      base::ReadOnlySharedMemoryRegion::Create(4 << 10);
+  WritableSharedPersistentMemoryAllocator allocator(std::move(shm.mapping), 1,
+                                                    "");
+  feature_list->AddFeaturesToAllocator(&allocator);
+
+  std::unique_ptr<base::FeatureList> feature_list2(new base::FeatureList);
+
+  // Check that the new feature list is empty.
+  EXPECT_FALSE(feature_list2->IsFeatureOverriddenFromCommandLine(
+      kFeatureOverlayScrollbarName, FeatureList::OVERRIDE_ENABLE_FEATURE));
+
+  feature_list2->InitializeFromSharedMemory(&allocator);
+  // Check that the new feature list now has 2 overrides.
+  EXPECT_TRUE(feature_list2->IsFeatureOverriddenFromCommandLine(
+      kFeatureOverlayScrollbarName, FeatureList::OVERRIDE_ENABLE_FEATURE));
+}
+
+TEST_F(FeatureListTest, SetOverrideStateByFeatureNameUseDefault) {
+  auto feature_list = std::make_unique<FeatureList>();
+
+  // No features are overridden from the field trails yet.
+  EXPECT_FALSE(feature_list->IsFeatureOverridden(kFeatureOverlayScrollbarName));
+
+  // Now, register a field trial to override |kFeatureOnByDefaultName| state
+  // and check that the function still returns false for that feature.
+  feature_list->RegisterFieldTrialOverride(
+      kFeatureOverlayScrollbarName, FeatureList::OVERRIDE_USE_DEFAULT,
+      FieldTrialList::CreateFieldTrial("Trial1", "A"));
+  EXPECT_TRUE(feature_list->IsFeatureOverridden(kFeatureOverlayScrollbarName));
+  FeatureList::OverrideState state = FeatureList::OVERRIDE_ENABLE_FEATURE;
+  feature_list->SetOverrideStateByFeatureName(
+      kFeatureOverlayScrollbarName, state);
+  EXPECT_TRUE(feature_list->IsFeatureOverridden(kFeatureOverlayScrollbarName));
+}
+
+TEST_F(FeatureListTest, SetScrollbarEnable) {
+  auto feature_list = std::make_unique<FeatureList>();
+
+  // No features are overridden from the field trails yet.
+  EXPECT_FALSE(feature_list->IsFeatureOverridden(kFeatureOverlayScrollbarName));
+
+  // Now, register a field trial to override |kFeatureOnByDefaultName| state
+  // and check that the function still returns false for that feature.
+  feature_list->RegisterFieldTrialOverride(
+      kFeatureOverlayScrollbarName, FeatureList::OVERRIDE_USE_DEFAULT,
+      FieldTrialList::CreateFieldTrial("Trial1", "A"));
+  EXPECT_TRUE(feature_list->IsFeatureOverridden(kFeatureOverlayScrollbarName));
+
+  feature_list->SetScrollbarEnable(true);
+  EXPECT_TRUE(feature_list->IsFeatureOverridden(kFeatureOverlayScrollbarName));
+}
+#endif
 
 #if BUILDFLAG(ENABLE_BANNED_BASE_FEATURE_PREFIX) && \
     defined(GTEST_HAS_DEATH_TEST)

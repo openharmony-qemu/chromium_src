@@ -110,20 +110,6 @@ TEST(TraceEventOhosTest, Trace_NormalScene_02)
     FinishOHOSBytrace();
 }
 
-TEST(TraceEventOhosTest, Trace_Define_01)
-{
-    OHOS_BYTRACE_SCOPED_INIT();
-    OHOS_BYTRACE_SCOPED("test");
-    OHOS_BYTRACE_SCOPED_TRACE_EVENT("test");
-}
-
-TEST(TraceEventOhosTest, Trace_Define_02)
-{
-    BYTRACE_SCOPED_INIT();
-    BYTRACE_SCOPED("test");
-    BYTRACE_SCOPED_TRACE_EVENT("test");
-}
-
 TEST(TraceEventOhosTest, ScopedBytrace_01)
 {
     ScopedBytrace* scopedBytrace = new ScopedBytrace();

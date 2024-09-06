@@ -98,7 +98,7 @@ class CC_EXPORT ProxyImpl : public LayerTreeHostImplClient,
 #if BUILDFLAG(IS_OHOS)
   void OnLayerRectUpdate(int id, const gfx::Rect& rect) override;
 
-  void OnLayerRectVisibleChange(int id, bool visibility) override;
+  void OnLayerRectVisibilityChange(int id, bool visibility) override;
 #endif
 
  private:

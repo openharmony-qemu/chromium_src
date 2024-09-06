@@ -823,6 +823,8 @@ class CONTENT_EXPORT WebContentsDelegate {
   virtual void OnNativeEmbedStatusUpdate(
       const NativeEmbedInfo& native_embed_info,
       NativeEmbedInfo::TagState state) {}
+  
+  virtual void OnLayerRectVisibilityChange(const std::string& embed_id, bool visibility) {}
 #endif
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)

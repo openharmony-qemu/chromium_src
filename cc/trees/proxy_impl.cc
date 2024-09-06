@@ -1057,10 +1057,10 @@ void ProxyImpl::OnLayerRectUpdate(int id, const gfx::Rect& rect) {
                                 proxy_main_weak_ptr_, id, rect));
 }
 
-void ProxyImpl::OnLayerRectVisibleChange(int id, bool visibility) {
+void ProxyImpl::OnLayerRectVisibilityChange(int id, bool visibility) {
   DCHECK(IsImplThread());
   MainThreadTaskRunner()->PostTask(
-      FROM_HERE, base::BindOnce(&ProxyMain::OnLayerRectVisibleChange,
+      FROM_HERE, base::BindOnce(&ProxyMain::OnLayerRectVisibilityChange,
                                 proxy_main_weak_ptr_, id, visibility));
 }
 #endif

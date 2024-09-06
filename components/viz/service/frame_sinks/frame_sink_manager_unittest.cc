@@ -744,7 +744,7 @@ TEST_F(FrameSinkManagerTest, SubmitCompositorFrameWithEvictedSurfaceId) {
   EXPECT_FALSE(GetRootCompositorFrameSinkImpl()->CurrentSurfaceId().is_valid());
   GetRootCompositorFrameSinkImpl()->SubmitCompositorFrameSync(
       local_surface_id2, MakeDefaultCompositorFrame(), absl::nullopt, 0,
-      GetRootCompositorFrameSinkImpl::SubmitCompositorFrameSyncCallback());
+      CompositorFrameSinkImpl::SubmitCompositorFrameSyncCallback());
 
   // Even though `surface_id2` was just submitted, Display should not reference
   // it because it was evicted.

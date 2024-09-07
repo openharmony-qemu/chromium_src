@@ -99,6 +99,9 @@ declare_args() {
   enable_logging_override = is_cast_media_device
 
   enable_dav1d_decoder = use_blink
+  if(is_ohos){
+    enable_dav1d_decoder = false
+  }
 
   # Enable browser managed persistent metadata storage for EME persistent
   # session and persistent usage record session.
@@ -119,7 +122,7 @@ declare_args() {
 declare_args() {
   # If overriding this to false, possibly via its component values,
   # `enable_libaom` should likely also be overriddent to false.
-  enable_av1_decoder = false
+  enable_av1_decoder = enable_dav1d_decoder
 
   # Enable HEVC/H265 demuxing. Actual decoding must be provided by the
   # platform. Always enable this for Lacros, it determines support at runtime.

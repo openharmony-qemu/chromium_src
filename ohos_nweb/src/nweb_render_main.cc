@@ -20,11 +20,43 @@
 #include "nweb_export.h"
 #include "nweb_hilog.h"
 #include "base/process/process_handle.h"
+#include <AbilityKit/native_child_process.h>
 
-extern "C" OHOS_NWEB_EXPORT void NWebRenderMain(const char* args) {
-  WVLOG_I("NWebRenderMain start, sandbox pid=%{public}d global pid=%{public}d", getpid(), base::GetCurrentRealPid());
+namespace {
+const std::string IPC_FD_NAME = "IPC_FD";
+const std::string SHARED_FD_NAME = "SHARED_FD";
+const std::string CRASH_FD_NAME = "CRASH_FD";
+const int FD_COUNTS = 3;
+} // namespace
 
-  std::string args_str = args;
+extern "C" OHOS_NWEB_EXPORT void NWebRenderMain(NativeChildProcess_Args args) {
+  WVLOG_I("NWebRenderMain start, sandbox pid=%{public}d", getpid());
+
+  std::string args_str = std::string(args.entryParams);
+  NativeChildProcess_Fd *fdNode = args.fdList.head;
+  int ipcFd = 0;
+  int sharedFd = 0;
+  int crashFd = 0;
+  for (int i = 0; i < FD_COUNTS; ++i) {
+    if (fdNode == nullptr) {
+      WVLOG_E("get render fd failed");
+      return;
+    }
+    
+    if (std::string(fdNode->fdName) == IPC_FD_NAME) {
+      ipcFd = fdNode->fd;
+    } else if (std::string(fdNode->fdName) == SHARED_FD_NAME) {
+      sharedFd = fdNode->fd;
+    } else if (std::string(fdNode->fdName) == CRASH_FD_NAME) {
+      crashFd = fdNode->fd;
+    } else {
+      WVLOG_E("unknow render fd name %{public}s", fdNode->fdName);
+      return;
+    }
+    fdNode = fdNode->next;
+  }
+  std::string fdStr = std::to_string(ipcFd) + "-" + std::to_string(sharedFd) + "-" + std::to_string(crashFd);
+
   std::stringstream args_ss(args_str);
   const char separator = '#';
   std::vector<std::string> argv_str;
@@ -41,8 +73,7 @@ extern "C" OHOS_NWEB_EXPORT void NWebRenderMain(const char* args) {
   argv_cstr.push_back(nullptr);
 
   CefMainArgs main_args(argc, const_cast<char**>(argv_cstr.data()));
-  (void)CefExecuteProcess(main_args, nullptr, nullptr);
+  (void)CefExecuteProcess(main_args, nullptr, static_cast<void*>(&fdStr));
 
-  WVLOG_I("NWebRenderMain end, sandbox pid=%{public}d global pid=%{public}d", getpid(), base::GetCurrentRealPid());
+  WVLOG_I("NWebRenderMain end, sandbox pid=%{public}d global pid=%{public}d", getpid());
 }
- 

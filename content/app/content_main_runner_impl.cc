@@ -1304,10 +1304,12 @@ bool ContentMainRunnerImpl::RunRenderRemoteProxy(
       process_type != switches::kGpuProcess) {
     return true;
   }
+#ifdef WEBVIEW_ONLY
   RenderRemoteProxy::CreateAndRegist(command_line);
   if (!RenderRemoteProxy::WaitForBrowserFd()) {
     return false;
   }
+#endif // WEBVIEW_ONLY
   return true;
 }
 #endif

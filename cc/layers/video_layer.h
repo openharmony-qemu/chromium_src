@@ -29,6 +29,11 @@ class CC_EXPORT VideoLayer : public Layer {
                                           media::VideoTransformation transform);
 #if BUILDFLAG(IS_OHOS)
   using RectChangeCallback = base::RepeatingCallback<void(const gfx::Rect&)>;
+  using RectVisibilityChangeCallback = base::RepeatingCallback<void(bool)>;
+  static scoped_refptr<VideoLayer> Create(VideoFrameProvider* provider,
+                                          media::VideoTransformation transform,
+                                          RectChangeCallback callback,
+                                          RectVisibilityChangeCallback visibilitycallback);
   static scoped_refptr<VideoLayer> Create(VideoFrameProvider* provider,
                                           media::VideoTransformation transform,
                                           RectChangeCallback callback);
@@ -44,6 +49,7 @@ class CC_EXPORT VideoLayer : public Layer {
 
 #if BUILDFLAG(IS_OHOS)
   void OnLayerRectUpdate(const gfx::Rect& rect) override;
+  void OnLayerRectVisibilityChange(bool visibility) override;
   void ResetLayerRectUpdateCallback();
 #endif
 
@@ -57,6 +63,10 @@ class CC_EXPORT VideoLayer : public Layer {
   VideoLayer(VideoFrameProvider* provider,
              media::VideoTransformation transform,
              RectChangeCallback callback);
+  VideoLayer(VideoFrameProvider* provider,
+             media::VideoTransformation transform,
+             RectChangeCallback callback,  
+             RectVisibilityChangeCallback visibilitycallback);
 #endif
   ~VideoLayer() override;
 
@@ -68,6 +78,7 @@ class CC_EXPORT VideoLayer : public Layer {
 
 #if BUILDFLAG(IS_OHOS)
   base::RepeatingCallback<void(const gfx::Rect&)> rect_change_callback_;
+  base::RepeatingCallback<void(bool)> rect_visibility_change_callback_;
 #endif
 };
 

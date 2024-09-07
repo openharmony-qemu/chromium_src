@@ -187,7 +187,7 @@ class LayerTreeHostImplClient {
 #if BUILDFLAG(IS_OHOS)
   virtual void OnLayerRectUpdate(int id, const gfx::Rect& rect) {}
 
-  virtual void OnLayerRectVisibleChange(int id, bool visibility) {}
+  virtual void OnLayerRectVisibilityChange(int id, bool visibility) {}
 #endif
 
  protected:
@@ -932,7 +932,7 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
 #if BUILDFLAG(IS_OHOS)
   void OnLayerRectUpdate(int id, const gfx::Rect& rect);
 
-  void OnLayerRectVisibleChange(int id, bool visibility);
+  void OnLayerRectVisibilityChange(int id, bool visibility);
 #endif
 
   void SetDownsampleMetricsForTesting(bool value) {

@@ -2079,10 +2079,10 @@ void LayerTreeHost::OnLayerRectUpdate(int id, const gfx::Rect& rect) {
   }
 }
 
-void LayerTreeHost::OnLayerRectVisibleChange(int id, bool visibility) {
+void LayerTreeHost::OnLayerRectVisibilityChange(int id, bool visibility) {
   DCHECK(IsMainThread());
   if (auto* layer = LayerById(id)) {
-    layer->OnLayerRectVisibleChange(visibility);
+    layer->OnLayerRectVisibilityChange(visibility);
   }
 }
 #endif

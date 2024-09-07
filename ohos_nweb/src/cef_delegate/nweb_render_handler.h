@@ -180,6 +180,8 @@ class NWebRenderHandler : public CefRenderHandler {
                     CefRefPtr<CefGestureEventCallback> callback) override;
   void OnNativeEmbedLifecycleChange(CefRefPtr<CefBrowser> browser,
                     const CefNativeEmbedData& info) override;
+  void OnNativeEmbedVisibilityChange(const std::string& embed_id, 
+                    bool visibility) override;
   bool FilterScrollEvent(CefRefPtr<CefBrowser> browser,
                          const float x,
                          const float y,

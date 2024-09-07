@@ -205,7 +205,7 @@ using StatisticsCB = base::RepeatingCallback<void(const PipelineStatistics&)>;
 
 #if BUILDFLAG(IS_OHOS)
 using RectChangedCB = base::RepeatingCallback<void(const gfx::Rect&)>;
-using RectVisibleChangedCB = base::RepeatingCallback<void(bool)>;
+using RectVisibilityChangedCB = base::RepeatingCallback<void(bool)>;
 using CreateTextureCB = base::OnceCallback<void(RectChangedCB, int)>;
 using DestroyTextureCB = base::OnceCallback<void()>;
 #endif

@@ -76,8 +76,8 @@ void AudioRendererCallback::OnSuspend() {
     main_task_runner_->PostTask(
         FROM_HERE,
         base::BindOnce(&content::MediaSessionImpl::Suspend,
-                      media_session_->weakMediaSessionFactory_.GetWeakPtr(),
-                      content::MediaSession::SuspendType::kSystem));
+                       media_session_->weakMediaSessionFactory_.GetWeakPtr(),
+                       content::MediaSession::SuspendType::kSystem));
     auto stream = audio_output_stream_.get();
     if (stream != nullptr) {
       stream->OnSuspend();
@@ -182,7 +182,7 @@ void AudioOutputChangeCallback::OnOutputDeviceChange(int32_t reason) {
 }
 
 std::map<content::WebContents*, std::vector<base::WeakPtr<OHOSAudioOutputStream>>>
-  OHOSAudioOutputStream::WEBCONTENT_MAP = {};
+  OHOSAudioOutputStream::web_content_map_ = {};
 
 OHOSAudioOutputStream::OHOSAudioOutputStream(OHOSAudioManager* manager,
                                              const AudioParameters& parameters,
@@ -214,7 +214,7 @@ OHOSAudioOutputStream::OHOSAudioOutputStream(OHOSAudioManager* manager,
   bytes_per_frame_ = parameters.GetBytesPerFrame(sample_format_);
   buffer_size_bytes_ = parameters.GetBytesPerBuffer(sample_format_);
 
-  timePerBuffer_ = AudioTimestampHelper::FramesToTime(
+  time_per_buffer_ = AudioTimestampHelper::FramesToTime(
     parameters_.frames_per_buffer(), parameters_.sample_rate());
   main_task_runner_ = content::GetUIThreadTaskRunner({});
 }
@@ -224,7 +224,7 @@ OHOSAudioOutputStream::~OHOSAudioOutputStream() {
   {
     // Ensure that OnWriteData can exit quickly and does not block the destructor.
     base::AutoLock lock(lock_);
-    running = false;
+    running_ = false;
   }
 
   // Close() must be called first.
@@ -270,14 +270,14 @@ void OHOSAudioOutputStream::Close() {
 void OHOSAudioOutputStream::SuspendOtherMediaSession(
     base::WeakPtr<content::MediaSessionImpl> weakMediaSession) {
   bool registered = false;
-  auto it = WEBCONTENT_MAP.begin();
-  while (it != WEBCONTENT_MAP.end()) {
+  auto it = web_content_map_.begin();
+  while (it != web_content_map_.end()) {
     auto otherWeakMediaSession = content::MediaSessionImpl::Get(it->first)
                                      ->weakMediaSessionFactory_.GetWeakPtr();
     auto otherMediaSession = otherWeakMediaSession.get();
     if (!otherMediaSession) {
       LOG(INFO) << "Delete invalid mediaSession.";
-      it = WEBCONTENT_MAP.erase(it);
+      it = web_content_map_.erase(it);
       continue;
     }
     if (otherMediaSession == weakMediaSession_.get()) {
@@ -306,7 +306,7 @@ void OHOSAudioOutputStream::SuspendOtherMediaSession(
   }
 
   if (!registered) {
-    WEBCONTENT_MAP.insert(std::make_pair(webContent_, std::vector<base::WeakPtr<OHOSAudioOutputStream>>()));
+    web_content_map_.insert(std::make_pair(webContent_, std::vector<base::WeakPtr<OHOSAudioOutputStream>>()));
   }
 }
 
@@ -335,7 +335,7 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
   if (StartRender()) {
     DCHECK(!timer_.IsRunning());
     callback_ = callback;
-    running = true;
+    running_ = true;
   }
 }
 
@@ -344,9 +344,9 @@ void OHOSAudioOutputStream::Stop() {
   base::AutoLock lock(lock_);
   callback_ = nullptr;
 
-  running = false;
+  running_ = false;
   timer_.Stop();
-  WEBCONTENT_MAP.erase(webContent_);
+  web_content_map_.erase(webContent_);
   if (rendererCallback_ && isSuspended_) {
     LOG(DEBUG) << "OHOSAudioOutputStream::Stop cannot continue.";
     return;
@@ -456,7 +456,7 @@ void OHOSAudioOutputStream::Prepare(
 
 void OHOSAudioOutputStream::ReportError() {
   LOG(ERROR) << "ohos audio render error happened";
-  running = false;
+  running_ = false;
   timer_.Stop();
   if (callback_) {
     callback_->OnError(AudioSourceCallback::ErrorType::kUnknown);
@@ -466,7 +466,7 @@ void OHOSAudioOutputStream::ReportError() {
 
 int32_t OHOSAudioOutputStream::OnWriteData(void* buffer, int32_t length) {
   base::AutoLock lock(lock_);
-  if (!running) {
+  if (!running_) {
     return 0;
   }
 
@@ -505,7 +505,7 @@ void OHOSAudioOutputStream::OnSuspend() {
 
 void OHOSAudioOutputStream::PumpSamples() {
   base::AutoLock lock(lock_);
-  if (!running) {
+  if (!running_) {
     LOG(INFO) << "The playback is stopped. Exit PumpSamples.";
     return;
   }
@@ -530,7 +530,7 @@ void OHOSAudioOutputStream::PumpSamples() {
 }
 
 void OHOSAudioOutputStream::SchedulePumpSamples() {
-  timer_.Start(FROM_HERE, timePerBuffer_,
+  timer_.Start(FROM_HERE, time_per_buffer_,
                base::BindOnce(&OHOSAudioOutputStream::PumpSamples,
                               base::Unretained(this)));
 }

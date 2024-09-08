@@ -89,7 +89,7 @@ class AudioOutputChangeCallback : public AudioOutputChangeCallbackAdapter {
 class OHOSAudioOutputStream : public AudioOutputStream {
  public:
   static std::map<content::WebContents*,
-    std::vector<base::WeakPtr<OHOSAudioOutputStream>>> WEBCONTENT_MAP;
+    std::vector<base::WeakPtr<OHOSAudioOutputStream>>> web_content_map_;
 
   OHOSAudioOutputStream(const OHOSAudioOutputStream&) = delete;
   OHOSAudioOutputStream& operator=(const OHOSAudioOutputStream&) = delete;
@@ -180,9 +180,9 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   base::Lock lock_;
 
-  bool running = false;
+  bool running_ = false;
 
-  base::TimeDelta timePerBuffer_ = base::Microseconds(0);
+  base::TimeDelta time_per_buffer_ = base::Microseconds(0);
 };
 
 }  // namespace media

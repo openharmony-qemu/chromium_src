@@ -88,7 +88,8 @@ class AudioOutputChangeCallback : public AudioOutputChangeCallbackAdapter {
 
 class OHOSAudioOutputStream : public AudioOutputStream {
  public:
-  static std::set<std::shared_ptr<AudioRendererCallback>> renderCallbackSet_;
+  static std::map<content::WebContents*,
+    std::vector<base::WeakPtr<OHOSAudioOutputStream>>> WEBCONTENT_MAP;
 
   OHOSAudioOutputStream(const OHOSAudioOutputStream&) = delete;
   OHOSAudioOutputStream& operator=(const OHOSAudioOutputStream&) = delete;
@@ -132,6 +133,9 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   bool StartRender();
 
   void Prepare(base::WeakPtr<content::MediaSessionImpl> weakMediaSession);
+
+  void SuspendOtherMediaSession(
+    base::WeakPtr<content::MediaSessionImpl> weakMediaSession);
 
   OHOSAudioManager* manager_;
 

@@ -363,4 +363,27 @@ TEST_F(NWebDelegateTest, OnTextSelected) {
 }
 #endif
 
+TEST_F(NWebDelegateTest, SetPopupsurface) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  nweb_delegate_->SetPopupSurface(nullptr);
+}
+
+#if defined(OHOS_INPUT_EVENTS)
+TEST_F(NWebDelegateTest, ScrollToWithAnime) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  float x = 100.0f;
+  float y = 100.0f;
+  int t = 0;
+  nweb_delegate_->ScrollToWithAnime(x, y, t);
+}
+
+TEST_F(NWebDelegateTest, ScrollByWithAnime) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  float x = 100.0f;
+  float y = 100.0f;
+  int t = 0;
+  nweb_delegate_->ScrollByWithAnime(x, y, t);
+}
+#endif  // defined(OHOS_INPUT_EVENTS)
+
 }  // namespace OHOS::NWeb

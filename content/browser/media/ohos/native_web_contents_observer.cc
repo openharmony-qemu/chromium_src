@@ -217,6 +217,16 @@ void NativeWebContentsObserver::NativeBridgeObserverHostImpl::OnEmbedRectChange(
   }
 }
 
+void NativeWebContentsObserver::NativeBridgeObserverHostImpl::OnLayerRectVisibilityChange(
+    bool visibility, int embed_id) {
+  if (!native_web_contents_observer_) {
+    return;
+  }
+
+  native_web_contents_observer_->web_contents_impl()
+          ->OnLayerRectVisibilityChange(std::to_string(embed_id), visibility);
+}
+
 // NativeWebContentsObserver
 NativeWebContentsObserver::BridgeInfo* NativeWebContentsObserver::GetBridgeInfo(
     const MediaPlayerId& id) const {

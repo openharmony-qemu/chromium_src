@@ -1025,6 +1025,14 @@ void NWebRenderHandler::OnNativeEmbedLifecycleChange(
     handler->OnNativeEmbedLifecycleChange(nativeEmbedDataInfo);
   }
 }
+
+void NWebRenderHandler::OnNativeEmbedVisibilityChange(
+    const std::string& embed_id, 
+    bool visibility) {
+  if (auto handler = handler_.lock()) {
+    handler->OnNativeEmbedVisibilityChange(embed_id, visibility);
+  }
+}
 #endif
 
 #ifdef OHOS_EX_FREE_COPY

@@ -5358,6 +5358,10 @@ std::string LayerTreeHostImpl::GetHungCommitDebugInfo() const {
 void LayerTreeHostImpl::OnLayerRectUpdate(int id, const gfx::Rect& rect) {
   client_->OnLayerRectUpdate(id, rect);
 }
+
+void LayerTreeHostImpl::OnLayerRectVisibilityChange(int id, bool visibility) {
+  client_->OnLayerRectVisibilityChange(id, visibility);
+}
 #endif
 
 #ifdef OHOS_NWEB_EX

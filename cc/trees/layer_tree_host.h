@@ -910,6 +910,8 @@ void RegisterClippedVisualViewportSelectionBounds(
 
 #if BUILDFLAG(IS_OHOS)
   void OnLayerRectUpdate(int id, const gfx::Rect& rect);
+
+  void OnLayerRectVisibilityChange(int id, bool visibility);
 #endif
 
  protected:

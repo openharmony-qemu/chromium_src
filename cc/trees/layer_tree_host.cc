@@ -2078,6 +2078,13 @@ void LayerTreeHost::OnLayerRectUpdate(int id, const gfx::Rect& rect) {
     layer->OnLayerRectUpdate(rect);
   }
 }
+
+void LayerTreeHost::OnLayerRectVisibilityChange(int id, bool visibility) {
+  DCHECK(IsMainThread());
+  if (auto* layer = LayerById(id)) {
+    layer->OnLayerRectVisibilityChange(visibility);
+  }
+}
 #endif
 
 }  // namespace cc

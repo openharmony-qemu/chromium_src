@@ -86,6 +86,23 @@ bool VideoLayerImpl::WillDraw(DrawMode draw_mode,
   if (draw_mode == DRAW_MODE_RESOURCELESS_SOFTWARE)
     return false;
 
+#if BUILDFLAG(IS_OHOS)
+  if (may_contain_native()) {
+    bool visibility = false;
+    if(visible_layer_rect().IsEmpty()) {
+      visibility = false;
+    } else {
+      visibility = true;
+    }
+    if(visibility != visibility_) {
+      visibility_ = visibility;
+      LOG(INFO) << "[NativeEmbed] rect visibility: "
+                << visibility;
+      layer_tree_impl()->OnLayerRectVisibilityChange(id(), visibility);
+    }
+  }
+#endif
+
   if (!LayerImpl::WillDraw(draw_mode, resource_provider))
     return false;
 

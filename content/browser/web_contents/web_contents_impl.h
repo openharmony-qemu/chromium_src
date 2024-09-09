@@ -1000,6 +1000,7 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
       override;
   void OnNativeEmbedStatusUpdate(const NativeEmbedInfo& native_embed_info,
                                  NativeEmbedInfo::TagState state) override;
+  void OnLayerRectVisibilityChange(const std::string& embed_id, bool visibility);
   void OnRenderFrameHostEnterBackForwardCache(const GlobalRenderFrameHostId& id) override;
   void OnRenderFrameHostLeaveBackForwardCache(const GlobalRenderFrameHostId& id) override;
 #endif

@@ -386,4 +386,27 @@ TEST_F(NWebDelegateTest, ScrollByWithAnime) {
 }
 #endif  // defined(OHOS_INPUT_EVENTS)
 
+TEST_F(NWebDelegateTest, GetScrollOffset) {
+  #ifdef OHOS_GET_SCROLL_OFFSET
+  float offset_x = 1.0f;
+  float offset_y = 1.0f;
+  ASSERT_NE(nweb_delegate_, nullptr);
+
+  nweb_delegate_->GetScrollOffset(&offset_x, &offset_y);
+  EXPECT_EQ(offset_x, 1);
+  EXPECT_EQ(offset_y, 1);
+  #endif
+}
+
+TEST_F(NWebDelegateTest, GetOverScrollOffset) {
+  #ifdef OHOS_GET_SCROLL_OFFSET
+  float offset_x = 1.0f;
+  float offset_y = 1.0f;
+  ASSERT_NE(nweb_delegate_, nullptr);
+
+  nweb_delegate_->GetOverScrollOffset(&offset_x, &offset_y);
+  EXPECT_EQ(offset_x, 1);
+  EXPECT_EQ(offset_y, 1);
+  #endif
+}
 }  // namespace OHOS::NWeb

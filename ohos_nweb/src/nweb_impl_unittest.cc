@@ -1558,4 +1558,27 @@ TEST_F(NWebImplTest, NWebImplTest_SetPopupSurface_003) {
   nweb_impl_->SetPopupSurface(surface);
 }
 
+TEST_F(NWebImplTest, GetScrollOffset) {
+  #ifdef OHOS_GET_SCROLL_OFFSET
+  float offset_x = 1.0f;
+  float offset_y = 1.0f;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->GetScrollOffset(&offset_x, &offset_y);
+  EXPECT_EQ(offset_x, 0);
+  EXPECT_EQ(offset_y, 0);
+
+  offset_x = 1.0f;
+  offset_y = 1.0f;
+  nweb_impl_->GetScrollOffset(nullptr, nullptr);
+  EXPECT_EQ(offset_x, 1);
+  EXPECT_EQ(offset_y, 1);
+
+  offset_x = 1.0f;
+  offset_y = 1.0f;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->GetScrollOffset(&offset_x, &offset_y);
+  EXPECT_EQ(offset_x, 1);
+  EXPECT_EQ(offset_y, 1);
+  #endif
+}
 }  // namespace OHOS::NWeb

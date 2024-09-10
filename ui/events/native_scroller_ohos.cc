@@ -7,7 +7,7 @@ namespace ui {
 namespace {
 constexpr float kDefaultFriction = 0.75f;
 constexpr float kFrictionScale = -4.2f;
-constexpr float kDefaultThreshold = 0.70f;
+constexpr float kDefaultThreshold = 2.0f;
 constexpr float kDefaultMultiplier = 60.0f;
 constexpr float kThresholdForFlingEnd = 1.0f;
 constexpr double Epsilon = 0.001f;

@@ -48,7 +48,7 @@ gfx::Vector2dF FlingBooster::GetVelocityForFlingStart(
   }
 
   #if BUILDFLAG(IS_OHOS)
-  if (OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetBoolParameter(
+  if (!OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetBoolParameter(
       "web.instructionOptimize.enable", 0)) {
     if (!base::SysInfo::IsLowEndDevice() &&
       (std::abs(fling_start.data.fling_start.velocity_y) > std::abs(fling_start.data.fling_start.velocity_x))) {

@@ -532,6 +532,7 @@ source_set("unit_tests") {
 
   if (is_ohos) {
     sources += [
+      "ohos/ohos_audio_capturer_source_unittest.cc",
       "ohos/ohos_audio_output_stream_unittest.cc",
       "ohos/ohos_audio_manager_unittest.cc",
       ]

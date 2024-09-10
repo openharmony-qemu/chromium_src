@@ -75,6 +75,39 @@ TEST_F(AudioOutputChangeCallbackTest, OnOutputDeviceChange) {
   change_callback_->OnOutputDeviceChange(8);
 }
 
+TEST_F(AudioOutputChangeCallbackTest, OnOutputDeviceChange001) {
+  change_callback_->isCommunication_ = false;
+  auto reason = 0;
+  reason = (int32_t)AudioAdapterDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
+  change_callback_->OnOutputDeviceChange(8);
+  EXPECT_EQ(change_callback_->isCommunication_, false);
+}
+
+TEST_F(AudioOutputChangeCallbackTest, OnOutputDeviceChange002) {
+  change_callback_->isCommunication_ = true;
+  auto reason = 0;
+  reason = (int32_t)AudioAdapterDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
+  change_callback_->OnOutputDeviceChange(8);
+  EXPECT_EQ(reason,
+            (int32_t)AudioAdapterDeviceChangeReason::OLD_DEVICE_UNAVALIABLE);
+}
+
+TEST_F(AudioOutputChangeCallbackTest, OnOutputDeviceChange003) {
+  change_callback_->isCommunication_ = true;
+  auto reason = 0;
+  reason = (int32_t)AudioAdapterDeviceChangeReason::UNKNOWN;
+  change_callback_->OnOutputDeviceChange(8);
+  EXPECT_EQ(change_callback_->isCommunication_, true);
+}
+
+TEST_F(AudioOutputChangeCallbackTest, OnOutputDeviceChange004) {
+  change_callback_->isCommunication_ = false;
+  auto reason = 0;
+  reason = (int32_t)AudioAdapterDeviceChangeReason::UNKNOWN;
+  change_callback_->OnOutputDeviceChange(8);
+  EXPECT_EQ(reason, (int32_t)AudioAdapterDeviceChangeReason::UNKNOWN);
+}
+
 TEST_F(AudioRendererOptionsTest, AudioRendererOptionsTest_GetSamplingRateTest) {
   AudioAdapterSamplingRate rate = AudioAdapterSamplingRate::SAMPLE_RATE_8000;
   options_->rate_ = rate;
@@ -118,13 +151,19 @@ TEST_F(AudioRendererOptionsTest, GetRenderFlagsTest) {
   EXPECT_EQ(ret, renderer_flags);
 }
 
-TEST_F(AudioRendererCallbackTest, OnSuspend) {
+TEST_F(AudioRendererCallbackTest, OnSuspend001) {
+  auto old_intterval = render_callback_->intervalSinceLastSuspend_;
+  render_callback_->media_session_ = nullptr;
   render_callback_->OnSuspend();
+  EXPECT_EQ(render_callback_->intervalSinceLastSuspend_, old_intterval);
 }
 
-TEST_F(AudioRendererCallbackTest, OnResume) {
+TEST_F(AudioRendererCallbackTest, OnResume001) {
+  render_callback_->media_session_ = nullptr;
   render_callback_->OnResume();
+  EXPECT_EQ(render_callback_->media_session_, nullptr);
 }
+
 
 TEST_F(AudioRendererCallbackTest, GetSuspendFlag) {
   auto ret = render_callback_->GetSuspendFlag();

@@ -139,6 +139,10 @@ class GPU_IPC_SERVICE_EXPORT CommandBufferStub
                                int32_t end,
                                WaitForStateCallback callback);
 
+#if defined(OHOS_BUGFIX_CRASH)
+  void WaitForGetOffsetInRangeTimeout();
+#endif
+
   // CommandBufferServiceClient implementation:
   CommandBatchProcessedResult OnCommandBatchProcessed() override;
   void OnParseError() override;
@@ -340,7 +344,7 @@ class GPU_IPC_SERVICE_EXPORT CommandBufferStub
   mojo::SharedAssociatedRemote<mojom::CommandBufferClient> client_;
 
 #if defined(OHOS_BUGFIX_CRASH)
-  uint32_t wait_for_get_offset_in_range_retry_cnt_ = 0;
+  base::OneShotTimer wait_for_get_offset_in_range_timer_;
 #endif
 };
 

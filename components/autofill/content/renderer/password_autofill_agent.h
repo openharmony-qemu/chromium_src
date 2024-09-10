@@ -210,6 +210,8 @@ class PasswordAutofillAgent : public content::RenderFrameObserver,
   void SetParsedPasswordForm(const PasswordFormFillData& form_data) override;
 
   void AutofillSurfaceClosed(bool show_virtual_keyboard) override;
+
+  bool IsPasswordAutofill(const blink::WebInputElement& input_element);
 #endif
 
   // Shows an Autofill popup with username suggestions for |element|. If

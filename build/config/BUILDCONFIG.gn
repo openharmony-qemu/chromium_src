@@ -49,6 +49,7 @@
 #ifdef OHOS_NWEB_EX
 declare_args() {
   ohos_nweb_ex_config_name = ""
+  heif_support = true
 }
 
 if (ohos_nweb_ex_config_name != "") {
@@ -322,6 +323,7 @@ is_mac = current_os == "mac"
 is_nacl = current_os == "nacl"
 is_win = current_os == "win" || current_os == "winuwp"
 is_ohos = current_os == "ohos"
+enable_heif_decoder = heif_support == "true"
 
 is_apple = is_ios || is_mac
 is_posix = !is_win && !is_fuchsia

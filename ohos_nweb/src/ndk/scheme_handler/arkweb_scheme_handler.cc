@@ -786,8 +786,8 @@ ARKWEB_EXPORT int32_t OH_ArkWebResourceHandler_DidReceiveData(
   }
 
   if (!buffer) {
-    LOG(ERROR) << "scheme_handler buffer is nullptr";
-    return ARKWEB_INVALID_PARAM;
+    LOG(INFO) << "scheme_handler buffer is nullptr";
+    return ARKWEB_NET_OK;
   }
   resource_handler->DidReceiveData(buffer, buf_len);
   return ARKWEB_NET_OK;

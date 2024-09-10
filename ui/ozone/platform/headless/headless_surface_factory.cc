@@ -38,7 +38,7 @@
 #include "ui/ozone/platform/headless/vulkan_implementation_headless.h"
 #endif
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
 #include "ui/gfx/linux/native_pixmap_dmabuf.h"
 #include "ui/ozone/common/native_pixmap_egl_binding.h"
 #endif
@@ -192,7 +192,7 @@ class GLOzoneEGLHeadless : public GLOzoneEGL {
   ~GLOzoneEGLHeadless() override = default;
 
   // GLOzone:
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
   bool CanImportNativePixmap() override {
     return true;
   }
@@ -287,7 +287,7 @@ scoped_refptr<gfx::NativePixmap> HeadlessSurfaceFactory::CreateNativePixmap(
   return new TestPixmap(format);
 }
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
 scoped_refptr<gfx::NativePixmap> HeadlessSurfaceFactory::CreateNativePixmapFromHandle(
       gfx::AcceleratedWidget widget,
       gfx::Size size,

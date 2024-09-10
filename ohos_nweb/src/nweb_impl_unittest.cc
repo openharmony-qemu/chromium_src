@@ -1516,4 +1516,69 @@ TEST_F(NWebImplTest, OnDestroyWithNullInitArgs) {
   nweb_impl_->OnDestroy();
   EXPECT_EQ(nweb_impl_->destroyCallback_, nullptr);
 }
+
+TEST_F(NWebImplTest, TrimMemoryByPressureLevel_001) {
+#ifdef OHOS_PERFORMANCE_MEMORY_THRESHOLD
+  int32_t memoryLevel = 0;
+  NWebImpl::TrimMemoryByPressureLevel(memoryLevel);
+  EXPECT_NE(nweb_impl_, nullptr);
+#endif  // OHOS_PERFORMANCE_MEMORY_THRESHOLD
+}
+
+TEST_F(NWebImplTest, TrimMemoryByPressureLevel_002) {
+#ifdef OHOS_PERFORMANCE_MEMORY_THRESHOLD
+  int32_t memoryLevel = 1;
+  NWebImpl::TrimMemoryByPressureLevel(memoryLevel);
+  EXPECT_NE(nweb_impl_, nullptr);
+#endif  // OHOS_PERFORMANCE_MEMORY_THRESHOLD
+}
+
+TEST_F(NWebImplTest, TrimMemoryByPressureLevel_003) {
+#ifdef OHOS_PERFORMANCE_MEMORY_THRESHOLD
+  int32_t memoryLevel = 2;
+  NWebImpl::TrimMemoryByPressureLevel(memoryLevel);
+  EXPECT_NE(nweb_impl_, nullptr);
+#endif  // OHOS_PERFORMANCE_MEMORY_THRESHOLD
+}
+
+TEST_F(NWebImplTest, NWebImplTest_SetPopupSurface_001) {
+  void* surface = nullptr;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->SetPopupSurface(surface);
+}
+
+TEST_F(NWebImplTest, NWebImplTest_SetPopupSurface_002) {
+  void* surface = nullptr;
+  nweb_impl_->output_handler_ = nullptr;
+  nweb_impl_->SetPopupSurface(surface);
+}
+
+TEST_F(NWebImplTest, NWebImplTest_SetPopupSurface_003) {
+  void* surface = nullptr;
+  nweb_impl_->SetPopupSurface(surface);
+}
+
+TEST_F(NWebImplTest, GetScrollOffset) {
+  #ifdef OHOS_GET_SCROLL_OFFSET
+  float offset_x = 1.0f;
+  float offset_y = 1.0f;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->GetScrollOffset(&offset_x, &offset_y);
+  EXPECT_EQ(offset_x, 0);
+  EXPECT_EQ(offset_y, 0);
+
+  offset_x = 1.0f;
+  offset_y = 1.0f;
+  nweb_impl_->GetScrollOffset(nullptr, nullptr);
+  EXPECT_EQ(offset_x, 1);
+  EXPECT_EQ(offset_y, 1);
+
+  offset_x = 1.0f;
+  offset_y = 1.0f;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->GetScrollOffset(&offset_x, &offset_y);
+  EXPECT_EQ(offset_x, 1);
+  EXPECT_EQ(offset_y, 1);
+  #endif
+}
 }  // namespace OHOS::NWeb

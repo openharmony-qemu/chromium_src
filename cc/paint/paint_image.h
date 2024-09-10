@@ -10,6 +10,7 @@
 
 #include "base/gtest_prod_util.h"
 #include "base/memory/scoped_refptr.h"
+#include "build/enable_heif_buildflags.h"
 #include "cc/paint/frame_metadata.h"
 #include "cc/paint/image_animation_count.h"
 #include "cc/paint/paint_export.h"
@@ -41,7 +42,7 @@ class PaintWorkletInput;
 class TextureBacking;
 
 enum class ImageType { kPNG, kJPEG, kWEBP, kGIF, kICO, kBMP, kAVIF,
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
  kHEIF,
 #endif
  kInvalid };

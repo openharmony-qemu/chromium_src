@@ -322,18 +322,50 @@ class CefPrecompileCallbackImpl : public CefPrecompileCallback {
 
 class CefPdfValueCallbackImpl : public CefPdfValueCallback {
  public:
-  explicit CefPdfValueCallbackImpl(
-      std::shared_ptr<NWebArrayBufferValueCallback> callback)
-      : callback_(callback) {}
+  CefPdfValueCallbackImpl(
+      std::shared_ptr<NWebArrayBufferValueCallback> callback,
+      uint32_t callback_id,
+      std::shared_ptr<NWebDelegateInterface> delegate)
+      : callback_(std::move(callback)),
+        callback_id_(callback_id),
+        weak_nweb_delegate_(
+            std::weak_ptr<NWebDelegateInterface>(std::move(delegate))) {}
+
+  ~CefPdfValueCallbackImpl() override = default;
+
+  void CallbackOnReceiveThread(std::shared_ptr<std::string> pdf_data) {
+    if (callback_) {
+      // Ensure callback_ is still valid before using it
+      callback_->OnReceiveValue(pdf_data->c_str(), pdf_data->size());
+    }
+    // Post this instance to UI to destroy
+    auto delegate = weak_nweb_delegate_.lock();
+    if (delegate) {
+      CEF_POST_TASK(
+          CEF_UIT,
+          base::BindOnce(&NWebDelegateInterface::EraseCreatePDFCallbackImpl,
+                         delegate, callback_id_));
+    }
+  }
 
   void OnReceiveValue(const char* value, const long size) override {
-    if (callback_ != nullptr) {
-      callback_->OnReceiveValue(value, size);
+    if (callback_) {
+      auto pdf_data = std::make_shared<std::string>(value, size);
+      base::ThreadPool::PostTask(
+          FROM_HERE, {base::MayBlock(), base::TaskPriority::HIGHEST},
+          base::BindOnce(
+              [](CefPdfValueCallbackImpl* self,
+                 std::shared_ptr<std::string> data) {
+                self->CallbackOnReceiveThread(std::move(data));
+              },
+              base::Unretained(this), std::move(pdf_data)));
     }
   }
 
  private:
   std::shared_ptr<NWebArrayBufferValueCallback> callback_;
+  uint32_t callback_id_;
+  std::weak_ptr<NWebDelegateInterface> weak_nweb_delegate_;
 
   IMPLEMENT_REFCOUNTING(CefPdfValueCallbackImpl);
 };
@@ -1314,31 +1346,53 @@ void NWebDelegate::ExecuteJavaScriptExt(
   }
 }
 
+void NWebDelegate::EraseCreatePDFCallbackImpl(uint32_t id) {
+  if (create_pdf_value_callback_map_.count(id)) {
+    create_pdf_value_callback_map_.erase(id);
+  }
+}
+
 void NWebDelegate::ExecuteCreatePDFExt(
-    std::shared_ptr<NWebPDFConfigArgs> pdfConfig,
+    std::shared_ptr<NWebPDFConfigArgs> pdf_config,
     std::shared_ptr<NWebArrayBufferValueCallback> callback) {
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
     LOG(ERROR) << "ExecuteCreatePDFExt can not get browser";
     return;
   }
   CefPdfPrintSettings settings;
-  settings.margin_left = pdfConfig->GetMarginLeft();
-  settings.margin_right = pdfConfig->GetMarginRight();
-  settings.margin_top = pdfConfig->GetMarginTop();
-  settings.margin_bottom = pdfConfig->GetMarginBottom();
-  settings.paper_width = pdfConfig->GetWidth();
-  settings.paper_height = pdfConfig->GetHeight();
-  settings.scale = pdfConfig->GetScale();
-  if (pdfConfig->GetShouldPrintBackground()) {
+  settings.margin_left = pdf_config->GetMarginLeft();
+  settings.margin_right = pdf_config->GetMarginRight();
+  settings.margin_top = pdf_config->GetMarginTop();
+  settings.margin_bottom = pdf_config->GetMarginBottom();
+  settings.paper_width = pdf_config->GetWidth();
+  settings.paper_height = pdf_config->GetHeight();
+  settings.scale = pdf_config->GetScale();
+  if (pdf_config->GetShouldPrintBackground()) {
     settings.print_background = 1;
   } else {
     settings.print_background = 0;
   }
   settings.landscape = 0;
   settings.margin_type = PDF_PRINT_MARGIN_CUSTOM;
-  CefRefPtr<CefPdfValueCallbackImpl> precompileCallback =
-      new CefPdfValueCallbackImpl(callback);
-  GetBrowser()->GetHost()->CreateToPDF(settings, precompileCallback);
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    CEF_POST_TASK(
+        CEF_UIT,
+        base::BindOnce(
+            (void (NWebDelegate::*)(
+                std::shared_ptr<NWebPDFConfigArgs> pdf_config,
+                std::shared_ptr<NWebArrayBufferValueCallback> callback)) &
+                NWebDelegate::ExecuteCreatePDFExt,
+            this, pdf_config, callback));
+    return;
+  }
+
+  if (GetBrowser().get()) {
+    create_pdf_value_callback_id_++;
+    CefRefPtr<CefPdfValueCallbackImpl> js_result_callback = new CefPdfValueCallbackImpl(
+        callback, create_pdf_value_callback_id_, shared_from_this());
+    create_pdf_value_callback_map_[create_pdf_value_callback_id_] = js_result_callback;
+    GetBrowser()->GetHost()->CreateToPDF(settings, js_result_callback);
+  }
 }
 
 #if defined(OHOS_MSGPORT)
@@ -3507,7 +3561,7 @@ void NWebDelegate::SendAccessibilityHoverEvent(int x, int y) {
   if (accessibility_state_) {
     auto* accessibilityManager = GetAccessibilityManager();
     if (accessibilityManager != nullptr) {
-      gfx::PointF point(x, y);
+      gfx::PointF point(x, y - GetViewPointHeight());
       accessibilityManager->OnHoverEvent(point);
     }
   }
@@ -3727,20 +3781,24 @@ void NWebDelegate::AddAccessibilityNodeInfoRect(
   gfx::Rect absolute_rect = node->GetUnclippedRootFrameBoundsRect(&offscreen_result);
 
   nodeInfo->SetRectX(absolute_rect.x());
-  nodeInfo->SetRectY(absolute_rect.y());
+  nodeInfo->SetRectY(absolute_rect.y() + GetViewPointHeight());
   nodeInfo->SetRectWidth(absolute_rect.width());
   nodeInfo->SetRectHeight(absolute_rect.height());
+}
 
+float NWebDelegate::GetViewPointHeight() const {
+  float height = 0.0f;
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "AddAccessibilityNodeInfoRect can not get browser";
-    return;
+    LOG(ERROR) << "GetViewPointHeight can not get browser";
+    return height;
   }
   auto viewPointHeight = GetBrowser()->GetHost()->GetShrinkViewportHeight();
   if (viewPointHeight != 0 && render_handler_ != nullptr) {
     CefScreenInfo screen_info;
     render_handler_->GetScreenInfo(GetBrowser(), screen_info);
-    nodeInfo->SetRectY(absolute_rect.y() + viewPointHeight * screen_info.device_scale_factor);
+    height = viewPointHeight * screen_info.device_scale_factor;
   }
+  return height;
 }
 
 void NWebDelegate::AddAccessibilityNodeInfoCollection(

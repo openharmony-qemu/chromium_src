@@ -98,7 +98,7 @@ if (may_contain_native()) {
     visibility_ = visibility;
     LOG(INFO) << "[NativeEmbed] rect visibility: "
                << visibility;
-    layer_tree_impl()->OnLayerRectVisibleChange(id(), visibility);
+    layer_tree_impl()->OnLayerRectVisibilityChange(id(), visibility);
   }
 }
 #endif

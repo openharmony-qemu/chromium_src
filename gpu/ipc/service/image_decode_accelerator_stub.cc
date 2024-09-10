@@ -57,14 +57,14 @@
 #include "ui/gfx/color_space.h"
 #include "ui/gfx/gpu_memory_buffer.h"
 
-#if BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(ENABLE_HEIF_DECODER)
 #include "ui/gfx/linux/native_pixmap_dmabuf.h"
 #endif
 
 namespace gpu {
 class Buffer;
 
-#if BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(ENABLE_HEIF_DECODER)
 namespace {
 
 struct CleanUpContext {
@@ -74,6 +74,7 @@ struct CleanUpContext {
   std::unique_ptr<SkiaImageRepresentation::ScopedReadAccess> skia_scoped_access;
 };
 
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
 void CleanUpResource(SkImage::ReleaseContext context) {
   auto* clean_up_context = static_cast<CleanUpContext*>(context);
   DCHECK(clean_up_context->main_task_runner->BelongsToCurrentThread());
@@ -86,6 +87,7 @@ void CleanUpResource(SkImage::ReleaseContext context) {
   clean_up_context->skia_scoped_access->ApplyBackendSurfaceEndState();
   delete clean_up_context;
 }
+#endif
 
 }  // namespace
 #endif
@@ -197,7 +199,7 @@ void ImageDecodeAcceleratorStub::ProcessCompletedDecode(
     return;
   }
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
   base::ScopedClosureRunner event_finalizer(
       base::BindOnce(&ImageDecodeAcceleratorStub::ReleasePixmapData,
                      base::Unretained(this), completed_decode->event));
@@ -423,7 +425,7 @@ void ImageDecodeAcceleratorStub::ProcessCompletedDecode(
   }
   DCHECK(notify_gl_state_changed);
   notify_gl_state_changed->RunAndReset();
-#elif BUILDFLAG(IS_OHOS)
+#elif BUILDFLAG(ENABLE_HEIF_DECODER)
   // We should notify the SharedContextState that we or Skia may have modified
   // the driver's GL state. We put this in a ScopedClosureRunner so that if we
   // return early, the SharedContextState ends up in a consistent state.
@@ -587,7 +589,7 @@ void ImageDecodeAcceleratorStub::FinishCompletedDecode(
     channel_->scheduler()->DisableSequence(sequence_);
 }
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
 void ImageDecodeAcceleratorStub::ReleasePixmapData(
     base::WaitableEvent* finish_event) {
   DCHECK(main_task_runner_->BelongsToCurrentThread());

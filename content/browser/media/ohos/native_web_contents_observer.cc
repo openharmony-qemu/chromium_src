@@ -200,24 +200,14 @@ void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
   }
 }
 
-void NativeWebContentsObserver::NativeBridgeObserverHostImpl::OnLayerRectVisibleChange(
-    bool visibility) {
+void NativeWebContentsObserver::NativeBridgeObserverHostImpl::OnLayerRectVisibilityChange(
+    bool visibility, int embed_id) {
   if (!native_web_contents_observer_) {
     return;
   }
-
-  if (auto* bridge_info =
-          native_web_contents_observer_->GetBridgeInfo(native_bridge_id_)) {
-    if(visibility) {
-      native_web_contents_observer_->web_contents_impl()
-        ->OnNativeEmbedStatusUpdate(
-            bridge_info->native_embed_info(), NativeEmbedInfo::TagState::TAG_STATE_VISIBLE);
-    } else {
-      native_web_contents_observer_->web_contents_impl()
-        ->OnNativeEmbedStatusUpdate(
-            bridge_info->native_embed_info(), NativeEmbedInfo::TagState::TAG_STATE_HIDDEN);
-    }
-  }
+  
+  native_web_contents_observer_->web_contents_impl()
+          ->OnLayerRectVisibilityChange(std::to_string(embed_id), visibility);
 }
 
 void NativeWebContentsObserver::NativeBridgeObserverHostImpl::OnEmbedRectChange(

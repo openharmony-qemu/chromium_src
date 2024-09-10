@@ -31,7 +31,7 @@
 #include "content/public/common/content_switches.h"
 #include "ohos_adapter_helper.h"
 
-#include "ohos_nweb/libboundscheck/include/securec.h"
+#include "third_party/bounds_checking_function/include/securec.h"
 
 #include "res_sched_client_adapter.h"
 #include "nweb_gesture_event_result_impl.h"
@@ -1064,6 +1064,14 @@ void NWebRenderHandler::OnNativeEmbedLifecycleChange(
   }
   if (auto handler = handler_.lock()) {
     handler->OnNativeEmbedLifecycleChange(nativeEmbedDataInfo);
+  }
+}
+
+void NWebRenderHandler::OnNativeEmbedVisibilityChange(
+    const std::string& embed_id, 
+    bool visibility) {
+  if (auto handler = handler_.lock()) {
+    handler->OnNativeEmbedVisibilityChange(embed_id, visibility);
   }
 }
 #endif

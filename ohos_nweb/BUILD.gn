@@ -73,7 +73,7 @@ component("cef_nweb") {
 
   deps = [
     "//ohos_glue:ohos_adapter_glue_source",
-    "//ohos_nweb/libboundscheck:huawei_securec",
+    "//third_party:huawei_securec",
   ]
 
   sources = [
@@ -459,6 +459,7 @@ source_set("unittests") {
     "src/ndk/scheme_handler/resource_handler_unittest.cc",
     "src/ndk/scheme_handler/resource_request_unittest.cc",
     "src/ndk/scheme_handler/response_unittest.cc",
+    "src/nweb_engine_impl_unittest.cc",
     "src/nweb_impl_unittest.cc",
     "src/nweb_input_handler_unittest.cc",
     "src/nweb_inputmethod_handler_unittest.cc",

@@ -612,4 +612,190 @@ TEST_F(OHOSCaptureDelegateTest, StartStream2) {
   EXPECT_NE(log_output.find("camera is not closed"), std::string::npos);
 }
 
+TEST_F(OHOSCaptureDelegateTest, TransToOHOSCaptrueParams) {
+  const media::VideoCaptureParams in;
+  std::shared_ptr<media::VideoCaptureParamsAdapterImpl> out = nullptr;
+  auto ret = c_delegate->TransToOHOSCaptrueParams(in, out);
+  EXPECT_EQ(ret, -1);
+}
+
+TEST_F(OHOSCaptureDelegateTest, GetUsableExposureMode1) {
+  ExposureModeAdapter exposure_mode_adapter =
+      ExposureModeAdapter::EXPOSURE_MODE_UNSUPPORTED;
+  MeteringMode exposure_mode = MeteringMode::CONTINUOUS;
+  auto ret =
+      c_delegate->GetUsableExposureMode(exposure_mode_adapter, exposure_mode);
+  EXPECT_EQ(ret, 0);
+}
+
+TEST_F(OHOSCaptureDelegateTest, GetUsableExposureMode2) {
+  ExposureModeAdapter exposure_mode_adapter =
+      ExposureModeAdapter::EXPOSURE_MODE_LOCKED;
+  MeteringMode exposure_mode = MeteringMode::NONE;
+  auto ret =
+      c_delegate->GetUsableExposureMode(exposure_mode_adapter, exposure_mode);
+  EXPECT_EQ(ret, -1);
+}
+
+TEST_F(OHOSCaptureDelegateTest, GetCurrentExposureMode1) {
+  ExposureModeAdapter exposure_mode_adapter =
+      ExposureModeAdapter::EXPOSURE_MODE_LOCKED;
+  auto ret = c_delegate->GetCurrentExposureMode(exposure_mode_adapter);
+  EXPECT_EQ(ret, MeteringMode::SINGLE_SHOT);
+}
+
+TEST_F(OHOSCaptureDelegateTest, GetCurrentExposureMode2) {
+  testing::internal::CaptureStderr();
+  int32_t a = 5;
+  ExposureModeAdapter b = (ExposureModeAdapter)a;
+  auto ret = c_delegate->GetCurrentExposureMode(b);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("not found."), std::string::npos);
+  EXPECT_EQ(ret, MeteringMode::NONE);
+}
+
+TEST_F(OHOSCaptureDelegateTest, RetrieveUserControlRange) {
+  testing::internal::CaptureStderr();
+  RangeIDAdapter rangeID = RangeIDAdapter::RANGE_ID_EXP_COMPENSATION;
+  mojom::RangePtr rangePtr = c_delegate->RetrieveUserControlRange(rangeID);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("get current caption range failed"),
+            std::string::npos);
+  mojom::RangePtr capability = mojom::Range::New();
+  EXPECT_EQ(rangePtr, capability);
+}
+
+TEST_F(OHOSCaptureDelegateTest, GetExposureState) {
+  testing::internal::CaptureStderr();
+  mojom::PhotoStatePtr photo_capabilities = mojo::CreateEmptyPhotoState();
+  c_delegate->GetExposureState(photo_capabilities);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("get exposure mode failed"), std::string::npos);
+}
+
+TEST_F(OHOSCaptureDelegateTest, OnBufferAvailable1) {
+  std::shared_ptr<CameraSurfaceAdapter> surface = nullptr;
+  std::shared_ptr<CameraSurfaceBufferAdapterMock> buffer = nullptr;
+  std::shared_ptr<CameraRotationInfoAdapterMock> roration_info = nullptr;
+  c_delegate->client_ = nullptr;
+  c_delegate->OnBufferAvailable(surface, buffer, roration_info);
+  base::TimeTicks null_time;
+  EXPECT_NE(c_delegate->first_ref_time_, null_time);
+}
+
+TEST_F(OHOSCaptureDelegateTest, OnBufferAvailable2) {
+  testing::internal::CaptureStderr();
+  std::shared_ptr<CameraSurfaceAdapter> surface = nullptr;
+  auto buffer = std::make_shared<CameraSurfaceBufferAdapterMock>();
+  auto roration_info = std::make_shared<CameraRotationInfoAdapterMock>();
+  c_delegate->OnBufferAvailable(surface, buffer, roration_info);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("OnBufferAvailable params is nullptr"),
+            std::string::npos);
+}
+
+TEST_F(OHOSCaptureDelegateTest, OnBufferAvailable3) {
+  testing::internal::CaptureStderr();
+  std::shared_ptr<CameraSurfaceBufferAdapter> buffer = nullptr;
+  auto surface = std::make_shared<CameraSurfaceAdapterMock>();
+  auto roration_info = std::make_shared<CameraRotationInfoAdapterMock>();
+  c_delegate->OnBufferAvailable(surface, buffer, roration_info);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("OnBufferAvailable params is nullptr"),
+            std::string::npos);
+}
+
+TEST_F(OHOSCaptureDelegateTest, OnBufferAvailable4) {
+  testing::internal::CaptureStderr();
+  std::shared_ptr<CameraRotationInfoAdapter> roration_info = nullptr;
+  auto surface = std::make_shared<CameraSurfaceAdapterMock>();
+  auto buffer = std::make_shared<CameraSurfaceBufferAdapterMock>();
+  c_delegate->OnBufferAvailable(surface, buffer, roration_info);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("OnBufferAvailable params is nullptr"),
+            std::string::npos);
+}
+
+TEST_F(OHOSCaptureDelegateTest, OnBufferAvailable5) {
+  testing::internal::CaptureStderr();
+  auto surface = std::make_shared<CameraSurfaceAdapterMock>();
+  auto buffer = std::make_shared<CameraSurfaceBufferAdapterMock>();
+  auto roration_info = std::make_shared<CameraRotationInfoAdapterMock>();
+  c_delegate->client_ = nullptr;
+  EXPECT_CALL(*roration_info, GetRotation()).WillRepeatedly(Return(90));
+  EXPECT_CALL(*roration_info, GetIsFlipY()).WillRepeatedly(Return(false));
+  EXPECT_CALL(*buffer, GetBufferAddr()).WillRepeatedly(Return(nullptr));
+  EXPECT_CALL(*buffer, GetSize()).WillRepeatedly(Return(0));
+  EXPECT_CALL(*surface, ReleaseBuffer(testing::_, testing::_))
+      .WillRepeatedly(Return(0));
+  c_delegate->first_ref_time_ = base::TimeTicks::Now();
+  c_delegate->OnBufferAvailable(surface, buffer, roration_info);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("OnBufferAvailable client is nullptr"),
+            std::string::npos);
+}
+
+TEST_F(OHOSCaptureDelegateTest, OnBufferAvailable6) {
+  testing::internal::CaptureStderr();
+  auto surface = std::make_shared<CameraSurfaceAdapterMock>();
+  auto buffer = std::make_shared<CameraSurfaceBufferAdapterMock>();
+  auto roration_info = std::make_shared<CameraRotationInfoAdapterMock>();
+  auto client = std::make_unique<ClientMock>();
+  c_delegate->client_ = nullptr;
+  EXPECT_CALL(*roration_info, GetRotation()).WillRepeatedly(Return(90));
+  EXPECT_CALL(*roration_info, GetIsFlipY()).WillRepeatedly(Return(false));
+  EXPECT_CALL(*buffer, GetBufferAddr()).WillRepeatedly(Return(nullptr));
+  EXPECT_CALL(*buffer, GetSize()).WillRepeatedly(Return(0));
+  EXPECT_CALL(*surface, ReleaseBuffer(testing::_, testing::_))
+      .WillRepeatedly(Return(1));
+  c_delegate->first_ref_time_ = base::TimeTicks::Now();
+  c_delegate->OnBufferAvailable(surface, buffer, roration_info);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("OnBufferAvailable ReleaseBuffer failed"),
+            std::string::npos);
+}
+
+TEST_F(OHOSCaptureDelegateTest, GetPhotoState) {
+  bool flag = false;
+  c_delegate->capture_format_.frame_size = gfx::Size(1280, 720);
+  c_delegate->is_capturing_ = false;
+  c_delegate->GetPhotoState(base::BindLambdaForTesting(
+      [&flag](mojom::PhotoStatePtr) { flag = true; }));
+  EXPECT_FALSE(flag);
+  c_delegate->is_capturing_ = true;
+  c_delegate->GetPhotoState(base::BindLambdaForTesting(
+      [&flag](mojom::PhotoStatePtr) { flag = true; }));
+  EXPECT_TRUE(flag);
+}
+
+TEST_F(OHOSCaptureDelegateTest, SetPhotoOptions) {
+  bool flag = false;
+  auto settings = media::mojom::PhotoSettings::New();
+  c_delegate->is_capturing_ = false;
+  c_delegate->SetPhotoOptions(
+      std::move(settings),
+      base::BindLambdaForTesting([&flag](bool) { flag = true; }));
+  EXPECT_FALSE(flag);
+  c_delegate->is_capturing_ = true;
+  c_delegate->SetPhotoOptions(
+      std::move(settings),
+      base::BindLambdaForTesting([&flag](bool) { flag = true; }));
+  EXPECT_TRUE(flag);
+}
+
+TEST_F(OHOSCaptureDelegateTest, StopStream) {
+  c_delegate->is_capturing_ = false;
+  EXPECT_FALSE(c_delegate->StopStream());
+  c_delegate->is_capturing_ = true;
+  EXPECT_TRUE(c_delegate->StopStream());
+}
+
+TEST_F(OHOSCaptureDelegateTest, GetFocusState) {
+  mojom::PhotoStatePtr photo_capabilities = mojo::CreateEmptyPhotoState();
+  c_delegate->GetFocusState(photo_capabilities);
+  int size = photo_capabilities->supported_focus_modes.size();
+  EXPECT_EQ(size, 0);
+  EXPECT_EQ(photo_capabilities->current_focus_mode, MeteringMode::MANUAL);
+}
+
 }  // namespace media

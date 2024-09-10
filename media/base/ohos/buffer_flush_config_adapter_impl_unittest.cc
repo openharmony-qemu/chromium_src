@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-# include "buffer_flush_config_adapter_impl.h"
-# include "gtest/gtest.h"
+#include "buffer_flush_config_adapter_impl.h"
+#include "gtest/gtest.h"
 
 namespace OHOS::NWeb {
 
@@ -54,7 +54,7 @@ TEST_F(BufferFlushConfigAdapterImplTest, GetH_ShouldReturnCorrectValue) {
 TEST_F(BufferFlushConfigAdapterImplTest,
        GetTimeStamp_ShouldReturnCorrectTimestamp) {
     int32_t expectedTimestamp = 123456789;
-    bufferFlushConfigAdapterImpl.SetTimestamp(expectedValue);
+    bufferFlushConfigAdapterImpl.SetTimestamp(expectedTimestamp);
     int32_t actualValue = bufferFlushConfigAdapterImpl.GetTimestamp();
     ASSERT_EQ(expectedTimestamp, actualValue);
 }

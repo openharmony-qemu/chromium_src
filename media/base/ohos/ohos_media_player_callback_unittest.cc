@@ -12,9 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 #include "base/test/task_environment.h"
+
 #define private public
 #include "ohos_media_player_callback.h"
 #undef private

@@ -2,6 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <stdint.h>
+#include <memory>
+#include <utility>
+#define private public
+#include "base/memory/scoped_refptr.h"
+#include "media/base/video_frame.h"
+#include "media/gpu/ohos/frame_info_helper.h"
+#include "media/gpu/ohos/video_frame_factory.h"
+#include "media/gpu/ohos/video_frame_factory_impl.cc"
+#include "ui/gfx/color_space.h"
+#undef private
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "base/memory/raw_ptr.h"
@@ -104,6 +115,16 @@ class VideoFrameFactoryImplTest : public testing::Test {
                             video_frame_params_.natural_size, output_cb_.Get());
   }
 
+ protected:
+  void SetUp() override {
+    image_provider_ = std::make_unique<MockSharedImageVideoProvider>();
+    frame_info_helper_ = std::make_unique<MockFrameInfoHelper>();
+    drdc_lock_ = base::MakeRefCounted<gpu::RefCountedLock>();
+    video_frame_factory_ = std::make_unique<VideoFrameFactoryImpl>(
+        gpu_task_runner_, gpu_preferences_, std::move(image_provider_),
+        std::move(frame_info_helper_), std::move(drdc_lock_));
+  }
+
   base::test::TaskEnvironment task_environment_;
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
   std::unique_ptr<VideoFrameFactoryImpl> impl_;
@@ -113,6 +134,12 @@ class VideoFrameFactoryImplTest : public testing::Test {
 
   base::MockCallback<VideoFrameFactory::OnceOutputCB> output_cb_;
   gpu::GpuPreferences gpu_preferences_;
+
+  scoped_refptr<base::SingleThreadTaskRunner> gpu_task_runner_;
+  std::unique_ptr<MockSharedImageVideoProvider> image_provider_;
+  std::unique_ptr<MockFrameInfoHelper> frame_info_helper_;
+  scoped_refptr<gpu::RefCountedLock> drdc_lock_;
+  std::unique_ptr<VideoFrameFactoryImpl> video_frame_factory_;
 };
 
 TEST_F(VideoFrameFactoryImplTest, Initialize) {
@@ -152,7 +179,7 @@ TEST_F(VideoFrameFactoryImplTest, CreateVideoFrame_OnFrameInfoReady) {
       image_ready_cb;
   std::unique_ptr<CodecOutputBufferRenderer> output_buffer_renderer;
   FrameInfoHelper::FrameInfo frame_info;
-
+  EXPECT_CALL(image_ready_cb, Run(_, _, _));
   impl_->CreateVideoFrame_OnFrameInfoReady(
       image_ready_cb.Get(), std::move(output_buffer_renderer), frame_info);
   EXPECT_TRUE(image_ready_cb.Get());
@@ -172,6 +199,51 @@ TEST_F(VideoFrameFactoryImplTest, CreateVideoFrame_OnImageReady) {
       thiz, output_cb_.Get(), base::TimeDelta(), natural_size, false,
       pixel_format, false, gpu_task_runner, std::move(output_buffer_renderer),
       frame_info, std::move(record));
+}
+
+TEST_F(VideoFrameFactoryImplTest,
+       AllocateTextureOwnerOnGpuThread_NullSharedContextState) {
+  scoped_refptr<gpu::SharedContextState> shared_context_state = nullptr;
+  bool init_cb_called = false;
+  VideoFrameFactory::InitCB init_cb = base::BindRepeating(
+      [](bool* called,
+         scoped_refptr<gpu::NativeImageTextureOwner> texture_owner) {
+        *called = true;
+        EXPECT_EQ(texture_owner, nullptr);
+      },
+      &init_cb_called);
+  AllocateTextureOwnerOnGpuThread(std::move(init_cb), nullptr,
+                                  shared_context_state);
+  task_environment_.RunUntilIdle();
+  EXPECT_TRUE(init_cb_called);
+  EXPECT_TRUE(init_cb.is_null());
+}
+
+TEST_F(VideoFrameFactoryImplTest, TestSetSurfaceBundle_NullSurfaceBundle) {
+  scoped_refptr<CodecSurfaceBundle> surface_bundle = nullptr;
+  video_frame_factory_->SetSurfaceBundle(surface_bundle);
+  EXPECT_EQ(video_frame_factory_->codec_buffer_wait_coordinator_, nullptr);
+}
+
+TEST_F(VideoFrameFactoryImplTest, CreateVideoFrame_InvalidConfig) {
+  int64_t id = 123;
+  scoped_refptr<CodecWrapperImpl> codec;
+  gfx::ColorSpace color_space = gfx::ColorSpace::CreateSRGB();
+  gfx::Size natural_size(-1, -1);
+  gfx::Size coded_size(-1, -1);
+  gfx::Rect visible_rect(coded_size);
+  gfx::Size size(1920, 1080);
+  base::TimeDelta timestamp;
+  auto output_buffer =
+      std::make_unique<CodecOutputBuffer>(codec, id, size, color_space);
+  scoped_refptr<VideoFrame> result_frame;
+  VideoFrameFactoryImpl::OnceOutputCB output_cb = base::BindOnce(
+      [](scoped_refptr<VideoFrame>* frame_dest,
+         scoped_refptr<VideoFrame> frame) { *frame_dest = frame; },
+      &result_frame);
+  video_frame_factory_->CreateVideoFrame(std::move(output_buffer), timestamp,
+                                         natural_size, std::move(output_cb));
+  EXPECT_EQ(result_frame, nullptr);
 }
 
 }  // namespace media

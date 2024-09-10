@@ -85,4 +85,98 @@ TEST(VideoCaptureCommonOHOSTest, TestGetSupportedFormats) {
   EXPECT_FLOAT_EQ(frameRate, 30.0f);
   EXPECT_EQ(pixelFormat, temp);
 }
+
+TEST(VideoCaptureCommonOHOSTest, GetCameraTransportType0) {
+  VideoTransportType trans_type = {};
+  auto temp = media::VideoCaptureTransportType::MACOSX_USB_OR_BUILT_IN;
+  auto result = VideoCaptureCommonOHOS::GetCameraTransportType(trans_type);
+  EXPECT_EQ(result, temp);
+}
+
+TEST(VideoCaptureCommonOHOSTest, GetCameraTransportType1) {
+  VideoTransportType trans_type = VideoTransportType::VIDEO_TRANS_TYPE_BUILD_IN;
+  auto temp = media::VideoCaptureTransportType::MACOSX_USB_OR_BUILT_IN;
+  auto result = VideoCaptureCommonOHOS::GetCameraTransportType(trans_type);
+  EXPECT_EQ(result, temp);
+}
+
+TEST(VideoCaptureCommonOHOSTest, GetCameraTransportType2) {
+  testing::internal::CaptureStderr();
+  std::string log_output1 = testing::internal::GetCapturedStderr();
+  VideoTransportType trans_type = VideoTransportType::VIDEO_TRANS_TYPE_OTHER;
+  VideoCaptureCommonOHOS::GetCameraTransportType(trans_type);
+  EXPECT_EQ(log_output1.find("concect type:"), std::string::npos);
+}
+
+TEST(VideoCaptureCommonOHOSTest, GetCameraFacingMode0) {
+  VideoFacingModeAdapter facing_mode = {};
+  auto item = FACING_MODE_MAP.find(facing_mode);
+  auto result = VideoCaptureCommonOHOS::GetCameraFacingMode(facing_mode);
+  EXPECT_EQ(result, item->second);
+}
+
+TEST(VideoCaptureCommonOHOSTest, GetCameraFacingMode1) {
+  VideoFacingModeAdapter facing_mode =
+      VideoFacingModeAdapter::FACING_ENVIRONMENT;
+  auto item = FACING_MODE_MAP.find(facing_mode);
+  auto result = VideoCaptureCommonOHOS::GetCameraFacingMode(facing_mode);
+  EXPECT_EQ(result, item->second);
+}
+
+TEST(VideoCaptureCommonOHOSTest, GetCameraFacingMode2) {
+  testing::internal::CaptureStderr();
+  std::string log_output1 = testing::internal::GetCapturedStderr();
+  VideoFacingModeAdapter facing_mode = VideoFacingModeAdapter::NUM_FACING_MODES;
+  VideoCaptureCommonOHOS::GetCameraFacingMode(facing_mode);
+  EXPECT_EQ(log_output1.find("facine mode:"), std::string::npos);
+}
+
+TEST(VideoCaptureCommonOHOSTest, GetCameraPixelFormatType0) {
+  VideoPixelFormatAdapter pixel_format = {};
+  auto temp = media::PIXEL_FORMAT_ABGR;
+  auto result = VideoCaptureCommonOHOS::GetCameraPixelFormatType(pixel_format);
+  EXPECT_EQ(result, temp);
+}
+
+TEST(VideoCaptureCommonOHOSTest, GetCameraPixelFormatType1) {
+  auto temp = media::PIXEL_FORMAT_YUV420P12;
+  VideoPixelFormatAdapter pixel_format1 = VideoPixelFormatAdapter::FORMAT_JPEG;
+  VideoCaptureCommonOHOS::GetCameraPixelFormatType(pixel_format1);
+  VideoPixelFormatAdapter pixel_format2 =
+      VideoPixelFormatAdapter::FORMAT_RGBA_8888;
+  VideoCaptureCommonOHOS::GetCameraPixelFormatType(pixel_format2);
+  VideoPixelFormatAdapter pixel_format3 =
+      VideoPixelFormatAdapter::FORMAT_UNKNOWN;
+  VideoCaptureCommonOHOS::GetCameraPixelFormatType(pixel_format3);
+  VideoPixelFormatAdapter pixel_format4 =
+      VideoPixelFormatAdapter::FORMAT_YCBCR_420_888;
+  auto result = VideoCaptureCommonOHOS::GetCameraPixelFormatType(pixel_format4);
+  EXPECT_EQ(result, temp);
+}
+
+TEST(VideoCaptureCommonOHOSTest, GetCameraPixelFormat0) {
+  auto temp = media::PIXEL_FORMAT_NV21;
+  VideoPixelFormatAdapter pixel_format = {
+      VideoPixelFormatAdapter::FORMAT_YUV_420_SP};
+  auto result = VideoCaptureCommonOHOS::GetCameraPixelFormatType(pixel_format);
+  EXPECT_EQ(result, temp);
+}
+
+TEST(VideoCaptureCommonOHOSTest, GetAdapterCameraPixelFormat0) {
+  VideoPixelFormat pixel_format = {};
+  auto item = ADPATER_PIXEL_FORMAT_MAP.find(pixel_format);
+  auto result =
+      VideoCaptureCommonOHOS::GetAdapterCameraPixelFormatType(pixel_format);
+  EXPECT_EQ(result, item->second);
+}
+
+TEST(VideoCaptureCommonOHOSTest, GetAdapterCameraPixelFormat1) {
+  testing::internal::CaptureStderr();
+  std::string log_output1 = testing::internal::GetCapturedStderr();
+  VideoPixelFormat pixel_format = {PIXEL_FORMAT_YUV420P9};
+  VideoCaptureCommonOHOS::GetAdapterCameraPixelFormatType(pixel_format);
+  EXPECT_EQ(log_output1.find("adapter camera pixel format:"),
+            std::string::npos);
+}
+
 }  // namespace media

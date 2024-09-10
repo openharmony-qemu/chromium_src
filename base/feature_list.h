@@ -505,6 +505,12 @@ class BASE_EXPORT FeatureList {
                            StoreAndRetrieveFeaturesFromSharedMemory);
   FRIEND_TEST_ALL_PREFIXES(FeatureListTest,
                            StoreAndRetrieveAssociatedFeaturesFromSharedMemory);
+#ifdef OHOS_SCROLLBAR
+  FRIEND_TEST_ALL_PREFIXES(FeatureListTest,
+                           ModifyFeaturesToAllocatorFromSharedMemory);
+  FRIEND_TEST_ALL_PREFIXES(FeatureListTest,
+                           SetOverrideStateByFeatureNameUseDefault);
+#endif
   // Allow Accessor to access GetOverrideStateByFeatureName().
   friend class Accessor;
 

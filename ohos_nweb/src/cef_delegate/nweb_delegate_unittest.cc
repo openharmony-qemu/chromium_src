@@ -363,4 +363,50 @@ TEST_F(NWebDelegateTest, OnTextSelected) {
 }
 #endif
 
+TEST_F(NWebDelegateTest, SetPopupsurface) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  nweb_delegate_->SetPopupSurface(nullptr);
+}
+
+#if defined(OHOS_INPUT_EVENTS)
+TEST_F(NWebDelegateTest, ScrollToWithAnime) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  float x = 100.0f;
+  float y = 100.0f;
+  int t = 0;
+  nweb_delegate_->ScrollToWithAnime(x, y, t);
+}
+
+TEST_F(NWebDelegateTest, ScrollByWithAnime) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  float x = 100.0f;
+  float y = 100.0f;
+  int t = 0;
+  nweb_delegate_->ScrollByWithAnime(x, y, t);
+}
+#endif  // defined(OHOS_INPUT_EVENTS)
+
+TEST_F(NWebDelegateTest, GetScrollOffset) {
+  #ifdef OHOS_GET_SCROLL_OFFSET
+  float offset_x = 1.0f;
+  float offset_y = 1.0f;
+  ASSERT_NE(nweb_delegate_, nullptr);
+
+  nweb_delegate_->GetScrollOffset(&offset_x, &offset_y);
+  EXPECT_EQ(offset_x, 1);
+  EXPECT_EQ(offset_y, 1);
+  #endif
+}
+
+TEST_F(NWebDelegateTest, GetOverScrollOffset) {
+  #ifdef OHOS_GET_SCROLL_OFFSET
+  float offset_x = 1.0f;
+  float offset_y = 1.0f;
+  ASSERT_NE(nweb_delegate_, nullptr);
+
+  nweb_delegate_->GetOverScrollOffset(&offset_x, &offset_y);
+  EXPECT_EQ(offset_x, 1);
+  EXPECT_EQ(offset_y, 1);
+  #endif
+}
 }  // namespace OHOS::NWeb

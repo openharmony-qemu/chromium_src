@@ -42,6 +42,7 @@
 
 namespace OHOS::NWeb {
 class JavaScriptResultCallbackImpl;
+class CefPdfValueCallbackImpl;
 class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
  public:
   NWebDelegate(int argc, const char* argv[]);
@@ -236,6 +237,10 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   bool IsFileProtocol(const GURL& gurl);
   bool IsUrlFileExist(const GURL& gurl, const std::string& url);
 
+  uint32_t create_pdf_value_callback_id_ = 0;
+  std::unordered_map<uint32_t, CefRefPtr<CefPdfValueCallbackImpl>>
+      create_pdf_value_callback_map_;
+  void EraseCreatePDFCallbackImpl(uint32_t id) override;
   void ExecuteCreatePDFExt(
       std::shared_ptr<NWebPDFConfigArgs> pdfConfig,
       std::shared_ptr<NWebArrayBufferValueCallback> callback) override;
@@ -628,6 +633,7 @@ void NotifyForNextTouchEvent() override;
   void AddAccessibilityNodeInfoActions(
     std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
     const content::BrowserAccessibilityOHOS* node) const;
+  float GetViewPointHeight() const;
 
   float zoom_in_factor_ = 1.25f;
   float zoom_out_factor_ = 0.8f;

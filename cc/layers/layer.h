@@ -865,7 +865,7 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
 #if BUILDFLAG(IS_OHOS)
   virtual void OnLayerRectUpdate(const gfx::Rect& rect) {}
 
-  virtual void OnLayerRectVisibleChange(bool visibility) {}
+  virtual void OnLayerRectVisibilityChange(bool visibility) {}
 #endif
 
   void SetShouldInterceptTouchEvent(bool intercept) {

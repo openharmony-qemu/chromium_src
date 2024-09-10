@@ -282,7 +282,7 @@ void ServiceTransferCache::DeleteAllEntriesForDecoder(int decoder_id) {
   }
 }
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
 bool ServiceTransferCache::CreateLockedRGBAHardwareDecodedImageEntry(
       int decoder_id,
       uint32_t entry_id,

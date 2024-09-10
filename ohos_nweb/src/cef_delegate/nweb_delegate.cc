@@ -3085,7 +3085,6 @@ void NWebDelegate::UpdateBrowserControlsHeight(int height, bool animate) {
 #if defined(OHOS_PRINT)
 void NWebDelegate::SetToken(void* token) {
   if (GetBrowser() && GetBrowser()->GetHost()) {
-    LOG(INFO) << "SetToken can not get browser";
     GetBrowser()->GetHost()->SetToken(token);
   }
 

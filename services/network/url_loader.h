@@ -408,6 +408,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   void ReadMore();
   void DidRead(int num_bytes, bool completed_synchronously);
   void NotifyCompleted(int error_code);
+  void PrintNetworkInfo();
   void OnMojoDisconnect();
   void OnResponseBodyStreamConsumerClosed(MojoResult result);
   void OnResponseBodyStreamReady(MojoResult result);

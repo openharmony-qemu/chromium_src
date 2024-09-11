@@ -89,6 +89,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
               FillAutofillData,
               (std::shared_ptr<NWebMessage> data),
               (override));
+  MOCK_METHOD(void, EraseCreatePDFCallbackImpl, (uint32_t id), (override));
   MOCK_METHOD(void,
               ExecuteCreatePDFExt,
               (std::shared_ptr<NWebPDFConfigArgs> pdfConfig,
@@ -849,6 +850,27 @@ class MockNWebCreateInfo : public NWebCreateInfo {
   MOCK_METHOD(bool, GetIsIncognitoMode, (), (override));
 };
 
+class MockNWebArrayBufferValueCallback : public NWebArrayBufferValueCallback {
+ public:
+  ~MockNWebArrayBufferValueCallback() = default;
+  MOCK_METHOD(void,
+              OnReceiveValue,
+              (const char* value, const long size),
+              (override));
+};
+
+class MockNWebPDFConfigArgs : public NWebPDFConfigArgs {
+ public:
+  MOCK_METHOD(double, GetWidth, (), (override));
+  MOCK_METHOD(double, GetHeight, (), (override));
+  MOCK_METHOD(double, GetScale, (), (override));
+  MOCK_METHOD(double, GetMarginTop, (), (override));
+  MOCK_METHOD(double, GetMarginBottom, (), (override));
+  MOCK_METHOD(double, GetMarginRight, (), (override));
+  MOCK_METHOD(double, GetMarginLeft, (), (override));
+  MOCK_METHOD(bool, GetShouldPrintBackground, (), (override));
+};
+
 class NWebImplTest : public ::testing::Test {
  public:
   static void SetUpTestCase(void);
@@ -1581,4 +1603,13 @@ TEST_F(NWebImplTest, GetScrollOffset) {
   EXPECT_EQ(offset_y, 1);
   #endif
 }
+
+TEST_F(NWebImplTest, NWebImplTest_ExecuteCreatePDFExt_001) {
+  std::shared_ptr<NWebArrayBufferValueCallback> callback =
+      std::make_shared<MockNWebArrayBufferValueCallback>();
+  std::shared_ptr<NWebPDFConfigArgs> pdfConfig =
+      std::make_shared<MockNWebPDFConfigArgs>();
+  nweb_impl_->ExecuteCreatePDFExt(pdfConfig, callback);
+}
+
 }  // namespace OHOS::NWeb

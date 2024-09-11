@@ -157,6 +157,10 @@ TouchSelectionControllerClientChildFrame::CreateDrawable() {
 
 bool TouchSelectionControllerClientChildFrame::IsCommandIdEnabled(
     int command_id) const {
+
+#ifdef OHOS_CLIPBOARD
+  command_id = ui::TouchEditable::ConvertMenuCommands(command_id);
+#endif
   bool editable = rwhv_->GetTextInputType() != ui::TEXT_INPUT_TYPE_NONE;
   bool readable = rwhv_->GetTextInputType() != ui::TEXT_INPUT_TYPE_PASSWORD;
 

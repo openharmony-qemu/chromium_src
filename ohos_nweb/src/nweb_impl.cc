@@ -155,6 +155,10 @@ extern bool g_siteIsolationMode;
 #include "content/browser/gpu/gpu_process_host.h"
 #endif
 
+#ifdef OHOS_CRASHPAD
+#include "event_reporter.h"
+#endif
+
 namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
@@ -2756,6 +2760,12 @@ void NWebImpl::SetAccessibilityState(bool state) {
                                                 : STATE_DISABLED);
   }
 }
+
+#ifdef OHOS_CRASHPAD
+void NWebImpl::SetDefaultCrashpadLogPath(const std::string& crashpadLogPath) {
+  SetTargetCrashpadLogPath(crashpadLogPath);
+}
+#endif
 
 bool NWebImpl::Discard() {
    if (nweb_delegate_ == nullptr) {

@@ -132,11 +132,22 @@ void OHOSMediaPlayerBridge::Prepare() {
 
 void OHOSMediaPlayerBridge::StartInternal() {
   if (player_ && prepared_) {
-    player_->Play();
+    if (!pause_when_perpared) {
+      player_->Play();
+    } else {
+      LOG(INFO) << "OHOSMediaPlayerBridge StartInternal start canceled, because of paused when perpared";
+      pause_when_perpared = false;
+    }
   }
 }
 
 void OHOSMediaPlayerBridge::Pause() {
+  if (player_ && (player_state_ == OHOS::NWeb::PlayerAdapter::PLAYER_INITIALIZED
+        || player_state_ == OHOS::NWeb::PlayerAdapter::PLAYER_PREPARING
+        || player_state_ == OHOS::NWeb::PlayerAdapter::PLAYER_PREPARED)) {
+    LOG(INFO) << "OHOSMediaPlayerBridge Pause when perpared!!";
+    pause_when_perpared = true;
+  }
   if (player_ && player_state_ == OHOS::NWeb::PlayerAdapter::PLAYER_STARTED) {
     int32_t ret = player_->Pause();
     if (ret != 0) {
@@ -161,7 +172,6 @@ void OHOSMediaPlayerBridge::SeekTo(base::TimeDelta time) {
     should_seek_on_prepare_ = true;
     return;
   }
-
   SeekInternal(time);
 }
 

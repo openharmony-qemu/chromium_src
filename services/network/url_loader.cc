@@ -763,9 +763,11 @@ URLLoader::URLLoader(
     return;
   }
 
+#if BUILDFLAG(IS_OHOS)
   if (url_request_) {
-    TRACE_EVENT1("loading", "URLLoader::URLLoader", "url", url_request_->url().spec());
+    TRACE_EVENT2("loading", "URLLoader::URLLoader", "url", url_request_->url().spec(), "id", request_id_);
   }
+#endif
   BeginTrustTokenOperationIfNecessaryAndThenScheduleStart(request);
 }
 
@@ -1091,10 +1093,15 @@ void URLLoader::ScheduleStart() {
         base::BindOnce(&URLLoader::ResumeStart, base::Unretained(this)));
     resource_scheduler_request_handle_->WillStartRequest(&defer);
   }
-  if (defer)
+  if (defer) {
     url_request_->LogBlockedBy("ResourceScheduler");
-  else
+  }
+  else {
+#if BUILDFLAG(IS_OHOS)
+    TRACE_EVENT1("net", "URLLoader::ScheduleStart", "id", request_id_);
     url_request_->Start();
+#endif
+  }
 }
 
 URLLoader::~URLLoader() {
@@ -1321,20 +1328,20 @@ mojom::URLResponseHeadPtr URLLoader::BuildResponseHead() const {
 #if BUILDFLAG(IS_OHOS)
   std::string http_version;
   if (url_request_->was_fetched_via_spdy()) {
-    http_version = "http_20";
+    http_version = "http/2.0";
   } else {
     net::HttpVersion request_http_version = url_request_->response_headers()->GetHttpVersion();
     if (request_http_version == net::HttpVersion(0, 9)) {
-      http_version = "http_09";
+      http_version = "http/0.9";
     } else if (request_http_version == net::HttpVersion(1, 0)) {
-      http_version = "http_10";
+      http_version = "http/1.0";
     } else if (request_http_version == net::HttpVersion(1, 1)) {
-      http_version = "http_11";
+      http_version = "http/1.1";
     } else if (request_http_version == net::HttpVersion(2, 0)) {
-      http_version = "http_20";
+      http_version = "http/2.0";
     }
   }
-  TRACE_EVENT2("net", "URLLoader::BuildResponseHead", "url", url_request_->url().spec(), "http", http_version);
+  TRACE_EVENT2("net", "URLLoader::BuildResponseHead", "http", http_version, "id", request_id_);
 #endif
 
   url_request_->GetCharset(&response->charset);
@@ -2174,26 +2181,54 @@ void URLLoader::NotifyCompleted(int error_code) {
       memory_cache_writer_->OnCompleted(status);
 
     url_loader_client_.Get()->OnComplete(status);
-
+#if BUILDFLAG(IS_OHOS)
     if (url_request_) {
-      TRACE_EVENT2("net", "URLLoader::NotifyCompleted | decodeData",
-      "url", url_request_->url().spec(),
-      "decoded_body_length", status.decoded_body_length);
-
-      TRACE_EVENT2("net", "URLLoader::NotifyCompleted | encodeData",
-      "url", url_request_->url().spec(),
-      "encoded_body_length", status.encoded_body_length);
-
       if (url_request_->response_headers()) {
-        TRACE_EVENT2("net", "URLLoader::NotifyCompleted | responseCode",
-        "url", url_request_->url().spec(),
-        "response_code", url_request_->response_headers()->response_code());
+        TRACE_EVENT2("net", "URLLoader::NotifyCompleted",
+                     "response_code", url_request_->response_headers()->response_code(),
+                     "id", request_id_);
       }
+      PrintNetworkInfo();
     }
+#endif
   }
 
   DeleteSelf();
 }
+
+#if BUILDFLAG(IS_OHOS)
+void URLLoader::PrintNetworkInfo() {
+  using namespace std;
+  net::LoadTimingInfo metrics;
+  url_request->GetLoadTimingInfo(&metrics);
+  bool socket_reused = metrics.socket_reused;
+  int64_t dns_start = metrics.connect_timing.domain_lookup_start.since_origin().InMilliseconds();
+  int64_t dns_end = metrics.connect_timing.domain_lookup_end.since_origin().InMilliseconds();
+  int64_t connect_start = metrics.connect_timing.connect_start.since_origin().InMilliseconds();
+  int64_t connect_end = metrics.connect_timing.connect_end.since_origin().InMilliseconds();
+  int64_t ssl_start = metrics.connect_timing.ssl_start.since_origin().InMilliseconds();
+  int64_t ssl_end = metrics.connect_timing.ssl_end.since_origin().InMilliseconds();
+  int64_t request_start = metrics.request_start.since_origin().InMilliseconds();
+  int64_t send_start = metrics.send_start.since_origin().InMilliseconds();
+  int64_t receive_headers_start = metrics.receive_headers_start.since_origin().InMilliseconds();
+  int64_t request_end = base::TimeTicks::Now().since_origin().InMilliseconds();
+  TRACE_EVENT2("net", "URLLoader::PrintNetworkInfo", "info",
+               "socket_reused: " + to_string(socket_reused) +
+               ",dns_start: " + to_string(dns_start) +
+               ",dns_end: " + to_string(dns_end) +
+               ",connect_start: " + to_string(connect_start) +
+               ",connect_end: " + to_string(connect_end) +
+               ",ssl_start: " + to_string(ssl_start) +
+               ",ssl_end: " + to_string(ssl_end) +
+               ",request_start: " + to_string(request_start) +
+               ",send_start: " + to_string(send_start) +
+               ",receive_headers_start: " + to_string(receive_headers_start) +
+               ",request_end: " + to_string(request_end) +
+               ",decoded_size: " + to_string(total_written_bytes_) +
+               ",encoded_size: " + to_string(url_request_->GetRawBodyBytes()),
+               "id", request_id_);
+}
+#endif
 
 void URLLoader::OnMojoDisconnect() {
   NotifyCompleted(net::ERR_FAILED);
@@ -2449,6 +2484,9 @@ bool URLLoader::HasDataPipe() const {
 
 void URLLoader::ResumeStart() {
   url_request_->LogUnblocked();
+#if BUILDFLAG(IS_OHOS)
+  TRACE_EVENT1("net", "URLLoader::ScheduleStart", "id", request_id_);
+#endif
   url_request_->Start();
 }
 

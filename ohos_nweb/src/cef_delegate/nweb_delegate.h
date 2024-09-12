@@ -370,8 +370,6 @@ bool HitNativeArea(double x, double y);
                                  double vx,
                                  double vy,
                                  const std::vector<int32_t>& pressedCodes) override;
-  void ScrollToWithAnime(float x, float y, int32_t duration) override;
-  void ScrollByWithAnime(float delta_x, float delta_y, int32_t duration) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #ifdef OHOS_ARKWEB_ADBLOCK

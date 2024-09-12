@@ -350,8 +350,6 @@ class NWebDelegateInterface
   virtual void SlideScroll(float vx, float vy) = 0;
   virtual bool WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
                                const std::vector<int32_t>& pressedCodes) = 0;
-  virtual void ScrollToWithAnime(float x, float y, int32_t duration) = 0;
-  virtual void ScrollByWithAnime(float delta_x, float delta_y, int32_t duration) = 0;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #if defined(OHOS_EX_FORCE_ZOOM)

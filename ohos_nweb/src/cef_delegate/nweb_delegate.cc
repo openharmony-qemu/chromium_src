@@ -2525,38 +2525,6 @@ void NWebDelegate::WebSendTouchpadFlingEvent(double x,
                                               pressedCodes);
   }
 }
-
-void NWebDelegate::ScrollToWithAnime(float x, float y, int32_t duration) {
-  if (!GetBrowser().get()) {
-    LOG(ERROR) << "JSAPI ScrollToWithAnime can not get browser";
-    return;
-  }
-  float ratio = render_handler_->GetVirtualPixelRatio();
-  if (ratio <= 0) {
-    LOG(ERROR) << "get ratio invalid: " << ratio;
-    return;
-  }
-
-  GetBrowser()->GetHost()->ScrollToWithAnime(std::round(x * ratio),
-                                             std::round(y * ratio),
-                                             duration);
-}
-
-void NWebDelegate::ScrollByWithAnime(float delta_x, float delta_y, int32_t duration) {
-  if (!GetBrowser().get()) {
-    LOG(ERROR) << "JSAPI ScrollByWithAnime can not get browser";
-    return;
-  }
-  float ratio = render_handler_->GetVirtualPixelRatio();
-  if (ratio <= 0) {
-    LOG(ERROR) << "get ratio invalid: " << ratio;
-    return;
-  }
-
-  GetBrowser()->GetHost()->ScrollByWithAnime(std::round(delta_x * ratio),
-                                             std::round(delta_y * ratio),
-                                             duration);
-}
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #if defined(OHOS_API_INIT_WEB_ENGINE)

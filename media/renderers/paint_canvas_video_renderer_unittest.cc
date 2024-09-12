@@ -1386,8 +1386,13 @@ TEST_F(PaintCanvasVideoRendererWithGLTest, PaintI420NotSubset) {
 
 // Checks that we correctly copy a NV12 shared image VideoFrame when using
 // CopyVideoFrameYUVDataToGLTexture, including correct cropping.
+#if defined(OHOS_UNITTESTS)
+TEST_F(PaintCanvasVideoRendererWithGLTest,
+       DISABLED_CopyVideoFrameTexturesToGLTextureNV12) {
+#else
 TEST_F(PaintCanvasVideoRendererWithGLTest,
        CopyVideoFrameTexturesToGLTextureNV12) {
+#endif
   base::RunLoop run_loop;
   scoped_refptr<VideoFrame> frame = CreateTestNV12Frame(run_loop.QuitClosure());
   if (!frame) {

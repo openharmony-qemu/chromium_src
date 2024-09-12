@@ -447,8 +447,6 @@ bool HitNativeArea(double x, double y);
 #endif
   void SetAccessibilityState(cef_state_t accessibility_state) override;
   void ExecuteAction(int64_t accessibilityId, uint32_t action) override;
-  void ExecuteAction(int64_t accessibilityId, uint32_t action,
-      const std::map<std::string, std::string>& actionArguments) override;
   std::shared_ptr<NWebAccessibilityNodeInfo>
   GetFocusedAccessibilityNodeInfo(int64_t accessibilityId,
                                   bool isAccessibilityFocus) override;
@@ -592,8 +590,6 @@ void NotifyForNextTouchEvent() override;
     return true;
   }
 
-  void SendAccessibilityHoverEvent(int x, int y) override;
-
  private:
   content::BrowserAccessibilityManagerOHOS* GetAccessibilityManager();
   void AddAccessibilityNodeInfoAttributes(
@@ -608,8 +604,7 @@ void NotifyForNextTouchEvent() override;
   std::shared_ptr<NWebAccessibilityNodeInfo>
     PopulateAccessibilityNodeInfo(const content::BrowserAccessibilityOHOS* node);
   void AddAccessibilityNodeInfoActions(
-    std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
-    const content::BrowserAccessibilityOHOS* node) const;
+    std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo) const;
 
   float zoom_in_factor_ = 1.25f;
   float zoom_out_factor_ = 0.8f;

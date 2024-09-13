@@ -201,7 +201,7 @@ bool NWebResourceHandler::ReadResourceData(void* data_out,
         std::min(bytes_to_read,
                  static_cast<int>(resource_data_len_ - resource_data_offset_));
     if (memcpy_s(data_out, static_cast<size_t>(bytes_to_read),
-      data_.c_str() + offset_, transfer_size) != EOK) {
+      dataPtr + resource_data_offset_, transfer_size) != EOK) {
       LOG(WARNING) << "intercept NWebResourceHandler::ReadResourceData memcpy failed";
     }
     resource_data_offset_ += transfer_size;

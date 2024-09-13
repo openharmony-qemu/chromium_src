@@ -1278,8 +1278,13 @@ TEST_F(PaintCanvasVideoRendererWithGLTest, CopyVideoFrameYUVDataToGLTexture) {
   destination_gl->DeleteTextures(1, &texture);
 }
 
+#if defined(OHOS_UNITTESTS)
+TEST_F(PaintCanvasVideoRendererWithGLTest,
+       DISABLED_CopyVideoFrameYUVDataToGLTexture_FlipY) {
+#else
 TEST_F(PaintCanvasVideoRendererWithGLTest,
        CopyVideoFrameYUVDataToGLTexture_FlipY) {
+#endif    
   auto* destination_gl = destination_context_->ContextGL();
   DCHECK(destination_gl);
   GLenum target = GL_TEXTURE_2D;

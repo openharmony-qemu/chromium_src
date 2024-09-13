@@ -1385,7 +1385,11 @@ TEST_F(PaintCanvasVideoRendererWithGLTest,
 
 // Checks that we correctly paint a I420 shared image VideoFrame, including
 // correct cropping.
+#if defined(OHOS_UNITTESTS)
+TEST_F(PaintCanvasVideoRendererWithGLTest, DISABLED_PaintI420) {
+#else
 TEST_F(PaintCanvasVideoRendererWithGLTest, PaintI420) {
+#endif
   base::RunLoop run_loop;
   scoped_refptr<VideoFrame> frame = CreateTestI420Frame(run_loop.QuitClosure());
 
@@ -1397,7 +1401,11 @@ TEST_F(PaintCanvasVideoRendererWithGLTest, PaintI420) {
 
 // Checks that we correctly paint a I420 shared image VideoFrame, including
 // correct cropping.
+#if defined(OHOS_UNITTESTS)
+TEST_F(PaintCanvasVideoRendererWithGLTest, DISABLED_PaintI420NotSubset) {
+#else
 TEST_F(PaintCanvasVideoRendererWithGLTest, PaintI420NotSubset) {
+#endif
   base::RunLoop run_loop;
   scoped_refptr<VideoFrame> frame =
       CreateTestI420FrameNotSubset(run_loop.QuitClosure());

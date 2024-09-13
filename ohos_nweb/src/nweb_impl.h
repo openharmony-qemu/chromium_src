@@ -473,6 +473,10 @@ class NWebImpl : public NWeb {
   double GetBrowserZoomLevel() const;
 #endif
 
+#ifdef OHOS_CRASHPAD
+  void SetDefaultCrashpadLogPath(const std::string& crashpadLogPath);
+#endif
+
 #if defined(OHOS_INCOGNITO_MODE)
   bool IsIncognitoMode() override {
     return incognito_mode_;

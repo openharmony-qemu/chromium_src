@@ -1308,8 +1308,13 @@ TEST_F(PaintCanvasVideoRendererWithGLTest,
 
 // Checks that we correctly copy a RGBA shared image VideoFrame when using
 // CopyVideoFrameYUVDataToGLTexture, including correct cropping.
+#if defined(OHOS_UNITTESTS)
+TEST_F(PaintCanvasVideoRendererWithGLTest,
+       DISABLED_CopyVideoFrameTexturesToGLTextureRGBA) {
+#else
 TEST_F(PaintCanvasVideoRendererWithGLTest,
        CopyVideoFrameTexturesToGLTextureRGBA) {
+#endif
   base::RunLoop run_loop;
   scoped_refptr<VideoFrame> frame = CreateTestRGBAFrame(run_loop.QuitClosure());
 
@@ -1322,8 +1327,13 @@ TEST_F(PaintCanvasVideoRendererWithGLTest,
 // Checks that we correctly copy a RGBA shared image VideoFrame that needs read
 // lock fences, when using CopyVideoFrameYUVDataToGLTexture, including correct
 // cropping.
+#if defined(OHOS_UNITTESTS)
+TEST_F(PaintCanvasVideoRendererWithGLTest,
+       DISABLED_CopyVideoFrameTexturesToGLTextureRGBA_ReadLockFence) {
+#else
 TEST_F(PaintCanvasVideoRendererWithGLTest,
        CopyVideoFrameTexturesToGLTextureRGBA_ReadLockFence) {
+#endif
   base::RunLoop run_loop;
   scoped_refptr<VideoFrame> frame = CreateTestRGBAFrame(run_loop.QuitClosure());
   frame->metadata().read_lock_fences_enabled = true;

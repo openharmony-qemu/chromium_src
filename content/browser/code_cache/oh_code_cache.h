@@ -154,7 +154,7 @@ class ResourceResponse : public net_service::ResourceResponse {
 
 #if BUILDFLAG(IS_OHOS)
   const std::string& GetResponseData() {static const std::string data; return data;}
-  size_t GetResponseDataBuffer(char* data) {return 0;}
+  size_t GetResponseDataBuffer(char* data, size_t dest_size) {return 0;}
   size_t GetResponseDataBufferSize() {return 0;}
 #endif
 

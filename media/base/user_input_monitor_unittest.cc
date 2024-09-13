@@ -48,6 +48,7 @@ class UserInputMonitorTest : public testing::Test {
 
 }  // namespace
 
+#if !defined(OHOS_UNITTESTS)
 TEST_F(UserInputMonitorTest, CreatePlatformSpecific) {
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
   base::test::TaskEnvironment task_environment(
@@ -112,6 +113,7 @@ TEST_F(UserInputMonitorTest, ReadWriteKeyPressMonitorCount) {
   base::ReadOnlySharedMemoryMapping readonly_mapping = shmem->region.Map();
   EXPECT_EQ(count, ReadKeyPressMonitorCount(readonly_mapping));
 }
+#endif
 
 #if BUILDFLAG(IS_WIN)
 

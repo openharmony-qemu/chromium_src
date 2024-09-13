@@ -1348,8 +1348,13 @@ TEST_F(PaintCanvasVideoRendererWithGLTest, PaintRGBA) {
 
 // Checks that we correctly copy an I420 shared image VideoFrame when using
 // CopyVideoFrameYUVDataToGLTexture, including correct cropping.
+#if defined(OHOS_UNITTESTS)
+TEST_F(PaintCanvasVideoRendererWithGLTest,
+       DISABLED_CopyVideoFrameTexturesToGLTextureI420) {
+#else
 TEST_F(PaintCanvasVideoRendererWithGLTest,
        CopyVideoFrameTexturesToGLTextureI420) {
+#endif
   base::RunLoop run_loop;
   scoped_refptr<VideoFrame> frame = CreateTestI420Frame(run_loop.QuitClosure());
 

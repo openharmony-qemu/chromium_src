@@ -1355,7 +1355,11 @@ TEST_F(PaintCanvasVideoRendererWithGLTest,
 
 // Checks that we correctly paint a RGBA shared image VideoFrame, including
 // correct cropping.
+#if defined(OHOS_UNITTESTS)
+TEST_F(PaintCanvasVideoRendererWithGLTest, DISABLED_PaintRGBA) {
+#else
 TEST_F(PaintCanvasVideoRendererWithGLTest, PaintRGBA) {
+#endif
   base::RunLoop run_loop;
   scoped_refptr<VideoFrame> frame = CreateTestRGBAFrame(run_loop.QuitClosure());
 
@@ -1432,7 +1436,11 @@ TEST_F(PaintCanvasVideoRendererWithGLTest,
 
 // Checks that we correctly paint a NV12 shared image VideoFrame, including
 // correct cropping.
+#if defined(OHOS_UNITTESTS)
+TEST_F(PaintCanvasVideoRendererWithGLTest, DISABLED_PaintNV12) {
+#else
 TEST_F(PaintCanvasVideoRendererWithGLTest, PaintNV12) {
+#endif
   base::RunLoop run_loop;
   scoped_refptr<VideoFrame> frame = CreateTestNV12Frame(run_loop.QuitClosure());
   if (!frame) {

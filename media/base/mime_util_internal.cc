@@ -400,7 +400,7 @@ void MimeUtil::AddSupportedMediaFormats() {
   CodecSet mp2t_codecs{H264, MPEG2_AAC, MPEG4_AAC, MP3};
   AddContainerWithCodecs("video/mp2t", mp2t_codecs);
 #endif  // BUILDFLAG(ENABLE_MSE_MPEG2TS_STREAM_PARSER)
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   if (base::FeatureList::IsEnabled(kCanPlayHls)) {
     // HTTP Live Streaming (HLS).
     CodecSet hls_codecs{H264,
@@ -418,7 +418,7 @@ void MimeUtil::AddSupportedMediaFormats() {
     // https://crbug.com/675552 for details and examples.
     AddContainerWithCodecs("audio/x-mpegurl", hls_codecs);
   }
-#endif  // BUILDFLAG(IS_ANDROID)
+#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 #if defined(OHOS_MEDIA)
   if (base::FeatureList::IsEnabled(kCanPlayHls)) {
     CodecSet hls_codecs{H264,

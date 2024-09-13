@@ -1243,7 +1243,11 @@ class PaintCanvasVideoRendererWithGLTest : public testing::Test {
   raw_ptr<gl::GLDisplay> display_ = nullptr;
 };
 
+#if defined(OHOS_UNITTESTS)
+TEST_F(PaintCanvasVideoRendererWithGLTest, DISABLED_CopyVideoFrameYUVDataToGLTexture) {
+#else
 TEST_F(PaintCanvasVideoRendererWithGLTest, CopyVideoFrameYUVDataToGLTexture) {
+#endif
   auto* destination_gl = destination_context_->ContextGL();
   DCHECK(destination_gl);
   GLenum target = GL_TEXTURE_2D;

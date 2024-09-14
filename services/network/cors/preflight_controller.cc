@@ -39,9 +39,35 @@
 #include "third_party/abseil-cpp/absl/types/optional.h"
 #include "url/gurl.h"
 
+#include "base/rand_util.h"
+#include "base/atomic_sequence_num.h"
+
 namespace network::cors {
 
 namespace {
+
+#if BUILDFLAG(IS_OHOS)
+int GetInitialRequestID() {
+  // Starting with a random number speculatively avoids RDH_INVALID_REQUEST_ID
+  // which are assumed to have been caused by restarting RequestID at 0 when
+  // restarting a renderer after a crash - this would cause collisions if
+  // requests from the previously crashed renderer are still active.  See
+  // https://crbug.com/614281#c61 for more details about this hypothesis.
+  //
+  // To avoid increasing the likelihood of overflowing the range of available
+  // RequestIDs, kMax is set to a relatively low value of 2^20 (rather than
+  // to something higher like 2^31).
+  const int kMin = 1 << 20;
+  const int kMax = 1 << 28;
+  return base::RandInt(kMin + 1, kMax);
+}
+
+int GenerateRequestId() {
+  static const int kInitialRequestID = GetInitialRequestID();
+  static base::AtomicSequenceNumber sequence;
+  return kInitialRequestID + sequence.GetNext();
+}
+#endif
 
 const char kLowerCaseTrue[] = "true";
 
@@ -412,9 +438,12 @@ class PreflightController::PreflightLoader final {
     }
     loader_ =
         SimpleURLLoader::Create(std::move(preflight_request), annotation_tag);
+#if BUILDFLAG(IS_OHOS)
+    loader_->SetRequestID(GenerateRequestId());
+#endif
     uint32_t options = mojom::kURLLoadOptionAsCorsPreflight;
     if (with_trusted_header_client) {
-      options |= mojom::kURLLoadOptionUseHeaderClient;
+       options |= mojom::kURLLoadOptionUseHeaderClient;
     }
     loader_->SetURLLoaderFactoryOptions(options);
 

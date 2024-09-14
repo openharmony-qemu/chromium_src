@@ -106,10 +106,6 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadFileImpl : public DownloadFile {
 
     void Initialize();
 
-#if defined(OHOS_EX_DOWNLOAD)
-    void ReleaseInputStream();
-#endif
-
     // Called after successfully reading and writing a buffer from stream.
     void OnBytesConsumed(int64_t bytes_read, int64_t bytes_written);
 

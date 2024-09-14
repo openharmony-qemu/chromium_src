@@ -34,10 +34,6 @@
 #include "components/download/internal/common/android/download_collection_bridge.h"
 #endif  // BUILDFLAG(IS_ANDROID)
 
-#if defined(OHOS_EX_DOWNLOAD)
-#include "components/download/public/common/download_task_runner.h"
-#endif
-
 namespace download {
 
 namespace {

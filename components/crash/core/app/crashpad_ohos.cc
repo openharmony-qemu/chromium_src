@@ -549,7 +549,9 @@ bool PlatformCrashpadInitialization(
   }
 
   if (browser_process) {
-    LOG(INFO) << "crashpad PlatformCrashpadInitialization, browser process init skipped";
+    LOG(INFO) << "crashpad PlatformCrashpadInitialization, browser process init";
+    HandlerStarter* starter = HandlerStarter::Get();
+    *database_path = starter->Initialize(dump_at_crash);
     return true;
   }
 

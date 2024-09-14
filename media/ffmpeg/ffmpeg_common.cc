@@ -660,6 +660,10 @@ bool AVStreamToVideoDecoderConfig(const AVStream* stream,
       profile = ProfileIDToVideoCodecProfile(codec_context->profile);
   }
 
+#if !BUILDFLAG(ENABLE_AV1_DECODER)
+  if(profile == VP8PROFILE_ANY){ return false;}
+#endif  // !BUILDFLAG(ENABLE_AV1_DECODER)
+
   void* display_matrix =
       av_stream_get_side_data(stream, AV_PKT_DATA_DISPLAYMATRIX, nullptr);
 

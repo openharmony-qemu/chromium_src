@@ -63,4 +63,63 @@ TEST(AXRolePropertiesTest, TestSupportsToggle) {
       EXPECT_FALSE(supports_toggle);
   }
 }
+
+TEST(AXRolePropertiesTest, IsControlOnOHOS) {
+  auto result = IsControlOnOHOS(ax::mojom::Role::kSplitter, true);
+  EXPECT_EQ(result, true);
+
+  result = IsControlOnOHOS(ax::mojom::Role::kSplitter, false);
+  EXPECT_EQ(result, false);
+
+  result = IsControlOnOHOS(ax::mojom::Role::kDate, false);
+  EXPECT_EQ(result, true);
+
+  result = IsControlOnOHOS(ax::mojom::Role::kDateTime, false);
+  EXPECT_EQ(result, true);
+
+  result = IsControlOnOHOS(ax::mojom::Role::kDocBackLink, false);
+  EXPECT_EQ(result, true);
+
+  result = IsControlOnOHOS(ax::mojom::Role::kDocBiblioRef, false);
+  EXPECT_EQ(result, true);
+
+  result = IsControlOnOHOS(ax::mojom::Role::kDocGlossRef, false);
+  EXPECT_EQ(result, true);
+
+  result = IsControlOnOHOS(ax::mojom::Role::kDocNoteRef, false);
+  EXPECT_EQ(result, true);
+
+  result = IsControlOnOHOS(ax::mojom::Role::kInputTime, false);
+  EXPECT_EQ(result, true);
+
+  result = IsControlOnOHOS(ax::mojom::Role::kLink, false);
+  EXPECT_EQ(result, true);
+
+  result = IsControlOnOHOS(ax::mojom::Role::kTreeItem, false);
+  EXPECT_EQ(result, true);
+
+  result = IsControlOnOHOS(ax::mojom::Role::kAlert, false);
+  EXPECT_EQ(result, false);
+
+  result = IsControlOnOHOS(ax::mojom::Role::kDialog, false);
+  EXPECT_EQ(result, false);
+
+  result = IsControlOnOHOS(ax::mojom::Role::kMenu, false);
+  EXPECT_EQ(result, false);
+
+  result = IsControlOnOHOS(ax::mojom::Role::kMenuBar, false);
+  EXPECT_EQ(result, false);
+
+  result = IsControlOnOHOS(ax::mojom::Role::kTree, false);
+  EXPECT_EQ(result, false);
+
+  result = IsControlOnOHOS(ax::mojom::Role::kUnknown, false);
+  EXPECT_EQ(result, false);
+
+  result = IsControlOnOHOS(ax::mojom::Role::kButton, false);
+  EXPECT_EQ(result, IsControl(ax::mojom::Role::kButton));
+
+  result = IsControlOnOHOS(ax::mojom::Role::kCheckBox, false);
+  EXPECT_EQ(result, IsControl(ax::mojom::Role::kCheckBox));
+}
 }  // namespace ui

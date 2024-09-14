@@ -34,6 +34,10 @@
 #include "components/download/internal/common/android/download_collection_bridge.h"
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if defined(OHOS_EX_DOWNLOAD)
+#include "components/download/public/common/download_task_runner.h"
+#endif
+
 namespace download {
 
 namespace {
@@ -79,6 +83,12 @@ DownloadFileImpl::SourceStream::~SourceStream() = default;
 void DownloadFileImpl::SourceStream::Initialize() {
   input_stream_->Initialize();
 }
+
+#if defined(OHOS_EX_DOWNLOAD)
+void DownloadFileImpl::SourceStream::ReleaseInputStream() {
+  GetIOTaskRunner()->DeleteSoon(FROM_HERE, std::move(input_stream_));
+}
+#endif
 
 void DownloadFileImpl::SourceStream::OnBytesConsumed(int64_t bytes_read,
                                                      int64_t bytes_written) {
@@ -180,6 +190,12 @@ DownloadFileImpl::~DownloadFileImpl() {
 
   TRACE_EVENT_NESTABLE_ASYNC_END0("download", "DownloadFileActive",
                                   download_id_);
+#if defined(OHOS_EX_DOWNLOAD)
+  for (auto& stream : source_streams_) {
+    CancelRequest(stream.second->offset());
+    stream.second->ReleaseInputStream();
+  }
+#endif
 }
 
 void DownloadFileImpl::Initialize(

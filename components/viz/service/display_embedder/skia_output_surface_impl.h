@@ -231,9 +231,6 @@ class VIZ_SERVICE_EXPORT SkiaOutputSurfaceImpl : public SkiaOutputSurface {
     kNoWait = 0,
     kWaitForTasksStarted = 1,
     kWaitForTasksFinished = 2,
-#if BUILDFLAG(IS_OHOS)
-    kWaitForSeconds = 3,
-#endif
   };
   void FlushGpuTasks(SyncMode sync_mode);
   // When flushing the final task to destroy |impl_on_gpu_| we need to pass in a

@@ -174,6 +174,47 @@ TEST_F(OHOSVideoEncodeAcceleratorTest, MaybeStopIOTimer) {
   EXPECT_FALSE(vea_->io_timer_.IsRunning());
 }
 
+TEST_F(OHOSVideoEncodeAcceleratorTest, MaybeStopIOTimer001) {
+  vea_->num_buffers_at_codec_ = 1;
+  vea_->pending_frames_ = {};
+  vea_->MaybeStopIOTimer();
+  EXPECT_FALSE(vea_->io_timer_.IsRunning());
+}
+
+TEST_F(OHOSVideoEncodeAcceleratorTest, MaybeStopIOTimer002) {
+  VideoPixelFormat format = VideoPixelFormat::PIXEL_FORMAT_I420;
+  const gfx::Size coded_size = gfx::Size(640, 480);
+  const gfx::Rect visible_rect = gfx::Rect(640, 480);
+  const gfx::Size natural_size = gfx::Size(640, 480);
+  base::TimeDelta timestamp = base::TimeDelta::FromInternalValue(0);
+  scoped_refptr<VideoFrame> video_frame = VideoFrame::CreateFrame(
+      format, coded_size, visible_rect, natural_size, timestamp);
+  bool frame_state = true;
+  base::Time frame_time = base::Time::Now();
+  vea_->num_buffers_at_codec_ = 1;
+  vea_->pending_frames_.push(
+      std::make_tuple(video_frame, frame_state, frame_time));
+  vea_->MaybeStopIOTimer();
+  EXPECT_FALSE(vea_->io_timer_.IsRunning());
+}
+
+TEST_F(OHOSVideoEncodeAcceleratorTest, MaybeStopIOTimer003) {
+  VideoPixelFormat format = VideoPixelFormat::PIXEL_FORMAT_I420;
+  const gfx::Size coded_size = gfx::Size(640, 480);
+  const gfx::Rect visible_rect = gfx::Rect(640, 480);
+  const gfx::Size natural_size = gfx::Size(640, 480);
+  base::TimeDelta timestamp = base::TimeDelta::FromInternalValue(0);
+  scoped_refptr<VideoFrame> video_frame = VideoFrame::CreateFrame(
+      format, coded_size, visible_rect, natural_size, timestamp);
+  bool frame_state = true;
+  base::Time frame_time = base::Time::Now();
+  vea_->num_buffers_at_codec_ = 0;
+  vea_->pending_frames_.push(
+      std::make_tuple(video_frame, frame_state, frame_time));
+  vea_->MaybeStopIOTimer();
+  EXPECT_FALSE(vea_->io_timer_.IsRunning());
+}
+
 TEST_F(OHOSVideoEncodeAcceleratorTest, UseOutputBitstreamBuffer) {
   base::UnsafeSharedMemoryRegion region =
       base::UnsafeSharedMemoryRegion::Create(1024);

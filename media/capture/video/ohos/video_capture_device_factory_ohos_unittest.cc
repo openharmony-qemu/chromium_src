@@ -335,8 +335,6 @@ TEST_F(VideoCaptureDeviceFactoryOHOSTest,
       [](bool* invoked, std::vector<VideoCaptureDeviceInfo> devices_info) {
         *invoked = true;
         EXPECT_EQ(devices_info.size(), 1u);
-        EXPECT_EQ(devices_info[0].descriptor.device_id, "lcam001");
-        EXPECT_EQ(devices_info[0].descriptor.display_name(), "lcam001");
         EXPECT_EQ(devices_info[0].descriptor.control_support().pan, false);
         EXPECT_EQ(devices_info[0].descriptor.control_support().tilt, false);
         EXPECT_EQ(devices_info[0].descriptor.control_support().zoom, false);

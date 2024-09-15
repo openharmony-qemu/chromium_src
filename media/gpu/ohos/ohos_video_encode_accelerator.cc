@@ -24,6 +24,7 @@
 #include "media/base/ohos/ohos_media_codec_util.h"
 #include "media/video/picture.h"
 #include "media_codec_adapter.h"
+#include "third_party/bounds_checking_function/include/securec.h"
 #include "third_party/libyuv/include/libyuv/convert_from.h"
 #include "ui/gl/gl_bindings.h"
 
@@ -301,7 +302,10 @@ void OHOSVideoEncodeAccelerator::DequeueOutput() {
     return;
   }
 
-  memcpy(mapping.memory(), buffer.addr, buffer.bufferSize);
+  if (memcpy_s(mapping.memory(), bitstream_buffer.size(), buffer.addr, buffer.bufferSize) != EOK) {
+    NotifyErrorStatus(
+        {EncoderStatus::Codes::kEncoderFailedEncode, "Failed to memcpy_s encoded data"});
+  }
   bool key_frame = (flag == BufferFlag::CODEC_BUFFER_FLAG_SYNC_FRAME);
   if (key_frame) {
     media_codec_->ClearKeyFrameCache();

@@ -16,7 +16,6 @@
 #define private public
 #include "media/audio/ohos/ohos_audio_capturer_source.h"
 #undef private
-
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -41,14 +40,18 @@ class AudioCapturerReadCallbackTest : public ::testing::Test {
 
 TEST_F(AudioCapturerReadCallbackTest, OnReadDataTest) {
   size_t length = 10;
-  read_callback.readDataCallback_.is_null();
+  bool result = read_callback.readDataCallback_.is_null();
   EXPECT_CALL(mock_callback, Run()).Times(1);
   read_callback.OnReadData(length);
+  EXPECT_FALSE(result);
 }
 
 TEST_F(AudioCapturerReadCallbackTest, OnReadDataNoCallbackTest) {
   size_t length = 10;
+  read_callback.readDataCallback_ = base::RepeatingCallback<void()>();
+  bool result = read_callback.readDataCallback_.is_null();
   EXPECT_CALL(mock_callback, Run()).Times(0);
   read_callback = AudioCapturerReadCallback(base::RepeatingCallback<void()>());
   read_callback.OnReadData(length);
+  EXPECT_TRUE(result);
 }

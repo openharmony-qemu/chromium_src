@@ -66,10 +66,6 @@
 #include "components/viz/service/display/dc_layer_overlay.h"
 #endif
 
-#if BUILDFLAG(IS_OHOS)
-const int kMaxTimeout = 5000;
-#endif
-
 namespace viz {
 
 namespace {
@@ -260,11 +256,7 @@ SkiaOutputSurfaceImpl::~SkiaOutputSurfaceImpl() {
   EnqueueGpuTask(std::move(task), {}, /*make_current=*/false,
                  /*need_framebuffer=*/false);
   // Flush GPU tasks and block until all tasks are finished.
-#if BUILDFLAG(IS_OHOS)
-  FlushGpuTasksWithImpl(SyncMode::kWaitForSeconds, impl_on_gpu);
-#else
   FlushGpuTasksWithImpl(SyncMode::kWaitForTasksFinished, impl_on_gpu);
-#endif
 }
 
 gpu::SurfaceHandle SkiaOutputSurfaceImpl::GetSurfaceHandle() const {
@@ -1250,13 +1242,8 @@ void SkiaOutputSurfaceImpl::FlushGpuTasksWithImpl(
           std::move(task).Run();
         }
 
-#if !BUILDFLAG(IS_OHOS)
         if (sync_mode == SyncMode::kWaitForTasksFinished)
           event->Signal();
-#else
-        if (sync_mode == SyncMode::kWaitForTasksFinished || sync_mode == SyncMode::kWaitForSeconds)
-          event->Signal();
-#endif
       },
       std::move(gpu_tasks_), sync_mode, event.get(), impl_on_gpu, make_current_,
       need_framebuffer_, post_task_timestamp);
@@ -1281,20 +1268,8 @@ void SkiaOutputSurfaceImpl::FlushGpuTasksWithImpl(
   gpu_task_sync_tokens_.clear();
   gpu_tasks_.clear();
 
-#if !BUILDFLAG(IS_OHOS)
   if (event)
     event->Wait();
-#else
-  if (event){
-    if (sync_mode == SyncMode::kWaitForSeconds) {
-      bool is_signalled = event->TimedWait(base::Milliseconds(kMaxTimeout));
-      if (!is_signalled)
-        LOG(INFO) << "SkiaOutputSurfaceImpl::FlushGpuTasksWithImpl destroy timeout >= 5s.";
-    } else {
-      event->Wait();
-    }
-  }
-#endif
 }
 
 GrBackendFormat SkiaOutputSurfaceImpl::GetGrBackendFormatForTexture(

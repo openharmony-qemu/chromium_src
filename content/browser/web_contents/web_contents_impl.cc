@@ -2030,6 +2030,7 @@ void WebContentsImpl::SetUserAgentOverride(
       frame_tree.GetMainFrame()->CancelPrerendering(PrerenderCancellationReason(
           PrerenderFinalStatus::kUaChangeRequiresReload));
     } else {
+      TRACE_EVENT0("content", "WebContentsImpl::SetUserAgentOverride");
       frame_tree.controller().Reload(ReloadType::BYPASSING_CACHE, true);
     }
   }));

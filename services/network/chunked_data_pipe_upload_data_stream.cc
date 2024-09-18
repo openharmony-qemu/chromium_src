@@ -17,7 +17,12 @@ namespace network {
 ChunkedDataPipeUploadDataStream::ChunkedDataPipeUploadDataStream(
     scoped_refptr<ResourceRequestBody> resource_request_body,
     mojo::PendingRemote<mojom::ChunkedDataPipeGetter> chunked_data_pipe_getter,
+#if defined(OHOS_SCHEME_HANDLER)
+    bool has_null_source,
+    bool get_size_when_initialize)
+#else
     bool has_null_source)
+#endif
     : net::UploadDataStream(/*is_chunked=*/true,
                             /*has_null_source=*/has_null_source,
                             resource_request_body->identifier()),
@@ -25,16 +30,24 @@ ChunkedDataPipeUploadDataStream::ChunkedDataPipeUploadDataStream(
       chunked_data_pipe_getter_(std::move(chunked_data_pipe_getter)),
       handle_watcher_(FROM_HERE,
                       mojo::SimpleWatcher::ArmingPolicy::MANUAL,
-                      base::SequencedTaskRunner::GetCurrentDefault()) {
+                      base::SequencedTaskRunner::GetCurrentDefault()),
+      has_null_source_(has_null_source),
+      get_size_when_initialize_(get_size_when_initialize) {
   // TODO(yhirano): Turn this to a DCHECK once we find the root cause of
   // https://crbug.com/1156550.
   CHECK(chunked_data_pipe_getter_.is_bound());
-  chunked_data_pipe_getter_.set_disconnect_handler(
-      base::BindOnce(&ChunkedDataPipeUploadDataStream::OnDataPipeGetterClosed,
-                     base::Unretained(this)));
-  chunked_data_pipe_getter_->GetSize(
-      base::BindOnce(&ChunkedDataPipeUploadDataStream::OnSizeReceived,
-                     base::Unretained(this)));
+  #if defined(OHOS_SCHEME_HANDLER)
+  if (!get_size_when_initialize) {
+#endif
+    chunked_data_pipe_getter_.set_disconnect_handler(
+        base::BindOnce(&ChunkedDataPipeUploadDataStream::OnDataPipeGetterClosed,
+                       base::Unretained(this)));
+    chunked_data_pipe_getter_->GetSize(
+        base::BindOnce(&ChunkedDataPipeUploadDataStream::OnSizeReceived,
+                       base::Unretained(this)));
+#if defined(OHOS_SCHEME_HANDLER)
+  }
+#endif
 }
 
 ChunkedDataPipeUploadDataStream::~ChunkedDataPipeUploadDataStream() {}
@@ -45,6 +58,16 @@ bool ChunkedDataPipeUploadDataStream::AllowHTTP1() const {
 
 int ChunkedDataPipeUploadDataStream::InitInternal(
     const net::NetLogWithSource& net_log) {
+#if defined(OHOS_SCHEME_HANDLER)
+  if (get_size_when_initialize_) {
+    chunked_data_pipe_getter_.set_disconnect_handler(
+        base::BindOnce(&ChunkedDataPipeUploadDataStream::OnDataPipeGetterClosed,
+                       base::Unretained(this)));
+    chunked_data_pipe_getter_->GetSize(
+        base::BindOnce(&ChunkedDataPipeUploadDataStream::OnSizeReceived,
+                       base::Unretained(this)));
+  }
+#endif
   // If there was an error either passed to the ReadCallback or as a result of
   // closing the DataPipeGetter pipe, fail the read.
   if (status_ != net::OK)
@@ -281,5 +304,12 @@ int ChunkedDataPipeUploadDataStream::ReadFromCacheIfNeeded(net::IOBuffer* buf,
   bytes_read_ += read_size;
   return read_size;
 }
+
+#if defined(OHOS_SCHEME_HANDLER)
+mojo::PendingRemote<mojom::ChunkedDataPipeGetter>
+ChunkedDataPipeUploadDataStream::ReleaseChunkedDataPipeGetter() {
+  return chunked_data_pipe_getter_.Unbind();
+}
+#endif
 
 }  // namespace network

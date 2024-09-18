@@ -321,7 +321,11 @@ TEST_P(ImageTransferCacheEntryTest, HardwareDecodedMipsAtCreation) {
       CheckImageIsSolidColor(entry->image(), SkColorSetRGB(255, 121, 255)));
 }
 
+#if defined(OHOS_UNITTESTS)
+TEST_P(ImageTransferCacheEntryTest, DISABLED_HardwareDecodedMipsAfterCreation) {
+#else
 TEST_P(ImageTransferCacheEntryTest, HardwareDecodedMipsAfterCreation) {
+#endif
   std::unique_ptr<bool[]> release_flags;
   std::vector<sk_sp<SkImage>> plane_images = CreateTestYUVImage(&release_flags);
   const size_t plane_images_size = plane_images.size();

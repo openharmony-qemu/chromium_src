@@ -65,6 +65,19 @@ class NWebCookieManagerImpl : public NWebCookieManager {
   void ConfigCookie(const std::string& url,
                     const std::string& value,
                     std::shared_ptr<NWebLongValueCallback> callback) override;
+  void GetCookieAsync(
+      const std::string& url,
+      bool incognitoMode,
+      std::shared_ptr<NWebStringValueCallback> callback) override;
+  int SetCookieSync(const std::string& url,
+                    const std::string& value,
+                    bool incognitoMode,
+                    bool includeHttpOnly) override;
+  void SetCookieAsync(const std::string& url,
+                      const std::string& value,
+                      bool incognitoMode,
+                      bool includeHttpOnly,
+                      std::shared_ptr<NWebLongValueCallback> callback) override;
 
  private:
   std::shared_ptr<NWebCookieManagerDelegateInterface> delegate_;

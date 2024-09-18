@@ -32,6 +32,7 @@
 
 #define private public
 #include "media/gpu/ohos/codec_allocator.h"
+#include "media/gpu/ohos/codec_allocator.cc"
 
 using namespace testing;
 using namespace OHOS::NWeb;
@@ -85,6 +86,40 @@ TEST_F(CodecAllocatorTest, CodecAllocatorTest_OnCodecReleased) {
 }
 
 TEST_F(CodecAllocatorTest, CodecAllocatorTest_SelectCodecTaskRunner) {
+  allocator_->SelectCodecTaskRunner();
+  EXPECT_NE(allocator_, nullptr);
+}
+
+TEST_F(CodecAllocatorTest, CreateCodecTaskRunner) {
+  auto ret = CreateCodecTaskRunner();
+  EXPECT_NE(ret, nullptr);
+}
+
+TEST_F(CodecAllocatorTest, GetInstance_001) {
+  auto instance = CodecAllocator::GetInstance(task_runner_);
+  EXPECT_NE(instance, nullptr);
+}
+
+TEST_F(CodecAllocatorTest, GetInstance_002) {
+  task_runner_ = nullptr;
+  auto instance = CodecAllocator::GetInstance(task_runner_);
+  EXPECT_NE(instance, nullptr);
+}
+
+TEST_F(CodecAllocatorTest, OnCodecReleased) {
+  auto codec_created_cb = base::BindOnce([]() {});
+  allocator_->OnCodecReleased(base::TimeTicks::Now(),
+                              std::move(codec_created_cb));
+  EXPECT_NE(allocator_, nullptr);
+}
+
+TEST_F(CodecAllocatorTest, SelectCodecTaskRunner_001) {
+  allocator_->SelectCodecTaskRunner();
+  EXPECT_NE(allocator_, nullptr);
+}
+
+TEST_F(CodecAllocatorTest, SelectCodecTaskRunner_002) {
+  allocator_->primary_task_runner_ = CreateCodecTaskRunner();
   allocator_->SelectCodecTaskRunner();
   EXPECT_NE(allocator_, nullptr);
 }

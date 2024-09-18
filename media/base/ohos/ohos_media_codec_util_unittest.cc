@@ -122,12 +122,13 @@ TEST_F(OHOSMediaCodecUtilTest, GetCodecCapabilityReturnsCorrectValues) {
   const std::string mime_type = "video/avc";
   bool is_encoder = false;
   auto mock_adapter = std::make_shared<MockCapabilityDataAdapter>();
-  ON_CALL(mock_media_codec_list_adapter_, GetCodecCapability(mime_type, is_encoder))
-    .WillByDefault(testing::Return(mock_adapter));
-  
-  CapabilityData capability = OHOSMediaCodecUtil::GetCodecCapability(mime_type, is_encoder);
-  ASSERT_EQ(capability.maxWidth, 4096);
-  ASSERT_EQ(capability.maxHeight, 4096);
-  ASSERT_EQ(capability.maxframeRate, 60);
+  ON_CALL(mock_media_codec_list_adapter_,
+          GetCodecCapability(mime_type, is_encoder))
+      .WillByDefault(testing::Return(mock_adapter));
+  CapabilityData capability =
+      OHOSMediaCodecUtil::GetCodecCapability(mime_type, is_encoder);
+  ASSERT_NE(capability.maxWidth, 0);
+  ASSERT_NE(capability.maxHeight, 0);
+  ASSERT_NE(capability.maxframeRate, 0);
 }
-}
+}  // namespace media

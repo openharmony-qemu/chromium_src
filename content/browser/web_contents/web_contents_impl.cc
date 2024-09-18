@@ -4810,7 +4810,7 @@ void WebContentsImpl::OnNativeEmbedStatusUpdate(
     param_list += item.first + " ";
     param_list += item.second + ", ";
   }
-  LOG(INFO) << "[NativeEmbed] OnNativeEmbedStatusUpdate "
+  LOG(DEBUG) << "[NativeEmbed] OnNativeEmbedStatusUpdate "
              << " state is " << (int)state << ", "
              << native_embed_info
              << ", params: " << param_list;

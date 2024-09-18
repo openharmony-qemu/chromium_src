@@ -73,6 +73,8 @@ DEFINE_PROTO_FUZZER(const MojoFuzzerMessages& mojo_fuzzer_messages) {
   base::RunLoop run;
   env->main_task_executor.task_runner()->PostTask(
       FROM_HERE, base::BindOnce(&FuzzMessage, mojo_fuzzer_messages, &run));
+#ifdef OHOS_FUZZ_ADAPTER
   run.Run();
+#endif
 }
 }  // namespace mojo_proto_fuzzer

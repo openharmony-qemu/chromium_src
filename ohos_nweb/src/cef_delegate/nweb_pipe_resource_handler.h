@@ -23,6 +23,7 @@
 #include "net/base/io_buffer.h"
 #include "ohos_nweb/src/capi/arkweb_scheme_handler.h"
 #include "ohos_nweb/src/cef_delegate/nweb_scheme_handler_factory.h"
+#include "url/gurl.h"
 
 namespace OHOS::NWeb {
 
@@ -92,6 +93,8 @@ class NWebPipeResourceHandler : public CefResourceHandler {
   const ArkWeb_ResourceHandler* resource_handler_{nullptr};
   CefRefPtr<OHOS::NWeb::NWebSchemeHandlerFactory> factory_;
   std::string web_tag_;
+  GURL url_;
+  bool needs_sniff_mimetype_{false};
   bool from_service_worker_{false};
   mutable base::Lock lock_;
   CefRefCount ref_count_;

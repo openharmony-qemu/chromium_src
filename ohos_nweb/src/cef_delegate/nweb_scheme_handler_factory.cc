@@ -95,11 +95,11 @@ CefRefPtr<CefResourceHandler> NWebSchemeHandlerFactory::Create(
       return nullptr;
     }
     if (scheme_handler_for_sw_->fromEts && !CEF_CURRENTLY_ON_UIT()) {
-      LOG(DEBUG) << "scheme handler from ets should from UI thread";
+      LOG(INFO) << "scheme_handler from ets should from UI thread";
       return nullptr;
     }
     if (!scheme_handler_for_sw_->fromEts && !CEF_CURRENTLY_ON_IOT()) {
-      LOG(DEBUG) << "scheme handler not from ets should from IO thread";
+      LOG(INFO) << "scheme_handler not from ets should from IO thread";
       return nullptr;
     }
     ArkWeb_ResourceRequest* resource_request =

@@ -84,6 +84,10 @@ bool NWebPipeResourceHandler::Read(
   }
 
   if (!data_buffer_) {
+    if (finished_) {
+       bytes_read = 0;
+       return false;
+    }
     LOG(DEBUG) << "scheme_handler donn't have valid buffer process data later.";
     bytes_read = 0;
     last_bytes_to_read_ = bytes_to_read;

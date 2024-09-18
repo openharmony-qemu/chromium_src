@@ -193,6 +193,12 @@ group("gn_all") {
       ]
     }
 
+    if (is_ohos) {
+      deps += [
+        "//ohos_adapter/test:ohos_adapter_unittests",
+      ]
+    }
+
     if (use_blink) {
       deps += [
         "//cc:cc_unittests",

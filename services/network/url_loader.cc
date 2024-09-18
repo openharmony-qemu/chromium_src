@@ -2188,7 +2188,10 @@ void URLLoader::NotifyCompleted(int error_code) {
                      "response_code", url_request_->response_headers()->response_code(),
                      "id", request_id_);
       }
-      PrintNetworkInfo();
+      PrintNetworkTimingInfo();
+    }
+    if (response_ && response_->headers) {
+      PrintNetworkCacheInfo();
     }
 #endif
   }
@@ -2197,35 +2200,45 @@ void URLLoader::NotifyCompleted(int error_code) {
 }
 
 #if BUILDFLAG(IS_OHOS)
-void URLLoader::PrintNetworkInfo() {
+std::string URLLoader::InMilliseconds(base::TimeTicks time) {
+  return std::to_string(time.since_origin().InMilliseconds());
+}
+
+void URLLoader::PrintNetworkTimingInfo() {
   using namespace std;
   net::LoadTimingInfo metrics;
   url_request->GetLoadTimingInfo(&metrics);
-  bool socket_reused = metrics.socket_reused;
-  int64_t dns_start = metrics.connect_timing.domain_lookup_start.since_origin().InMilliseconds();
-  int64_t dns_end = metrics.connect_timing.domain_lookup_end.since_origin().InMilliseconds();
-  int64_t connect_start = metrics.connect_timing.connect_start.since_origin().InMilliseconds();
-  int64_t connect_end = metrics.connect_timing.connect_end.since_origin().InMilliseconds();
-  int64_t ssl_start = metrics.connect_timing.ssl_start.since_origin().InMilliseconds();
-  int64_t ssl_end = metrics.connect_timing.ssl_end.since_origin().InMilliseconds();
-  int64_t request_start = metrics.request_start.since_origin().InMilliseconds();
-  int64_t send_start = metrics.send_start.since_origin().InMilliseconds();
-  int64_t receive_headers_start = metrics.receive_headers_start.since_origin().InMilliseconds();
-  int64_t request_end = base::TimeTicks::Now().since_origin().InMilliseconds();
-  TRACE_EVENT2("net", "URLLoader::PrintNetworkInfo", "info",
+  TRACE_EVENT2(TRACE_DISABLED_BY_DEFAULT("network"), "URLLoader::PrintNetworkTimingInfo", "info",
                "socket_reused: " + to_string(socket_reused) +
-               ",dns_start: " + to_string(dns_start) +
-               ",dns_end: " + to_string(dns_end) +
-               ",connect_start: " + to_string(connect_start) +
-               ",connect_end: " + to_string(connect_end) +
-               ",ssl_start: " + to_string(ssl_start) +
-               ",ssl_end: " + to_string(ssl_end) +
-               ",request_start: " + to_string(request_start) +
-               ",send_start: " + to_string(send_start) +
-               ",receive_headers_start: " + to_string(receive_headers_start) +
-               ",request_end: " + to_string(request_end) +
-               ",decoded_size: " + to_string(total_written_bytes_) +
-               ",encoded_size: " + to_string(url_request_->GetRawBodyBytes()),
+               ";dns_start: " + InMilliseconds(metrics.connect_timing.domain_lookup_start) +
+               ";dns_end: " + InMilliseconds(metrics.connect_timing.domain_lookup_end) +
+               ";connect_start: " + InMilliseconds(metrics.connect_timing.connect_start) +
+               ";connect_end: " + InMilliseconds(metrics.connect_timing.connect_end) +
+               ";ssl_start: " + InMilliseconds(metrics.connect_timing.ssl_start) +
+               ";ssl_end: " + InMilliseconds(metrics.connect_timing.ssl_end) +
+               ";request_start: " + InMilliseconds(metrics.request_start) +
+               ";send_start: " + InMilliseconds(metrics.send_start) +
+               ";receive_headers_start: " + InMilliseconds(metrics.receive_headers_start) +
+               ";request_end: " + InMilliseconds(base::TimeTicks::Now()) +
+               ";decoded_size: " + to_string(total_written_bytes_) +
+               ";encoded_size: " + to_string(url_request_->GetRawBodyBytes()) +
+               ";idempotency: " + to_string(url_request_->GetIdempotency()),
+               "id", request_id_);
+}
+
+void URLLoader::PrintNetworkCacheInfo() {
+  using namespace std;
+  base::TimeDelta age;
+  base::Time last_modified;
+  string cache_control;
+  string etag;
+  TRACE_EVENT2(TRACE_DISABLED_BY_DEFAULT("network"), "URLLoader::PrintNetworkCacheInfo", "info",
+               "age: " + (response_->headers->GetAgeValue(&age) ? to_string(age) : "unset") +
+               ";last_modified: " + (response_->headers->GetLastModifiedValue(&last_modified) ? to_string(last_modified.ToInternalValue(last_modified)) : "unset") +
+               ";cache_control: " + (response_->headers->GetNormalizedHeader("Cache-Control", &cache_control) ? cache_control : "unset") + 
+               ";etag: " + (response_->headers->GetNormalizedHeader("ETag", &etag) ? etag : "unset") +
+               ";is_zero: " + to_string(response_->headers->GetFreshnessLifetimes(response_->response_time).freshness.is_zero()) +
+               ";load_flags: " + to_string(url_request_->load_flags()),
                "id", request_id_);
 }
 #endif

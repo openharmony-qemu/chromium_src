@@ -115,7 +115,7 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE) ResourceRequest {
   bool SavesCookies() const;
 
 #if BUILDFLAG(IS_OHOS)
-  int request_id_;
+  int request_id_perf_stat_;
 #endif
 
   // See comments in network.mojom.URLRequest in url_request.mojom for details

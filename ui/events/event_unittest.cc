@@ -1134,4 +1134,18 @@ TEST(EventTest, NeverCopyTarget) {
   EXPECT_EQ(nullptr, targeted_copy2.target());
 }
 
+#ifdef OHOS_DRAG_DROP
+TEST(EventTest, EventTypeNameDRAG) {
+  base::StringPiece str = EventTypeName(EventType::ET_GESTURE_DRAG_LONG_PRESS);
+  ASSERT_EQ(str, "ET_GESTURE_DRAG_LONG_PRESS");
+}
+#endif
+
+#ifdef OHOS_AI
+TEST(EventTest, EventTypeNameCREATE) {
+  base::StringPiece str = EventTypeName(EventType::ET_GESTURE_CREATE_OVERLAY);
+  ASSERT_EQ(str, "ET_GESTURE_CREATE_OVERLAY");
+}
+#endif
+
 }  // namespace ui

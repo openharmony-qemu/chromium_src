@@ -68,7 +68,6 @@ void NWebInputHandler::OnTouchRelease(int32_t id,
     y = last_y_;
   }
   nweb_delegate_->OnTouchRelease(id, x, y, from_overlay);
-  CheckSlideNavigation(last_touch_start_x_, x);
   touch_press_id_map_.erase(id);
 }
 

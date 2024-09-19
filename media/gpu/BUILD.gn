@@ -668,6 +668,7 @@ source_set("unit_tests") {
       "ohos/codec_output_buffer_renderer_unittest.cc",
       "ohos/direct_shared_image_video_provider_unittest.cc",
       "ohos/frame_info_helper_unittest.cc",
+      "ohos/ohos_heif_image_decoder_unittest.cc",
       "ohos/ohos_image_decoder_unittest.cc",
       "ohos/ohos_video_decoder_unittest.cc",
       "ohos/ohos_video_encode_accelerator_unittest.cc",

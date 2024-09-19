@@ -654,6 +654,7 @@ if (use_blink) {
       "gesture_detection/touch_disposition_gesture_filter_unittest.cc",
       "gesture_detection/velocity_tracker_unittest.cc",
       "gestures/blink/web_gesture_curve_impl_unittest.cc",
+      "gestures/fling_curve_new_unittest.cc",
       "gestures/fling_curve_unittest.cc",
       "gestures/physics_based_fling_curve_unittest.cc",
       "keycodes/dom/keycode_converter_unittest.cc",

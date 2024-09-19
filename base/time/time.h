@@ -814,6 +814,11 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
   // `TimeDelta::FromMiseconds()` for `TimeDelta`. http://crbug.com/634507
   static constexpr Time FromInternalValue(int64_t us) { return Time(us); }
 
+#if BUILDFLAG(IS_OHOS)
+  // Returns the UTC time string parsed from base::Time
+  static std::string ToUTCString(const base::Time& time);
+#endif
+
  private:
   friend class time_internal::TimeBase<Time>;
 
@@ -870,11 +875,6 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
   // Returns the milliseconds since the Unix epoch (1970), rounding the
   // microseconds towards -infinity.
   int64_t ToRoundedDownMillisecondsSinceUnixEpoch() const;
-
-#if BUILDFLAG(IS_OHOS)
-  // Returns the UTC time string parsed from base::Time
-  static std::string ToUTCString(const base::Time& time);
-#endif
 };
 
 // Factory methods that return a TimeDelta of the given unit.

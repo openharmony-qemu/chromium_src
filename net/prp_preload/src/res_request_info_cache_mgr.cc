@@ -65,15 +65,15 @@ void JsonToResReqPreloadInfoList(const std::string& json,
     info->set_cache_type(static_cast<PRRequestCacheType>(cache_type.value()));
     const std::string* freshness_life_times_str = json_item.GetDict().FindString("freshness_life_times");
     if (!freshness_life_times_str || freshness_life_times_str->empty()) {
-      LOG(WARNING) << "PRPPreload.JsonToResReqPreloadInfoList freshness_life_times_str is none";
+      LOG(WARNING) << "PRPPreload.JsonToResReqPreloadInfoList freshness_life_times is none";
       continue;
     }
     char* end = NULL;
     errno = 0;
     int64_t freshness_life_times = std::strtoll(freshness_life_times_str->c_str(), &end, 10);
     if (errno != 0 || !end || *end ||
-        !base::IsValueInRangeForNumbericType<int64_t>(freshness_life_times)) {
-      LOG(WARNING) << "PRPPreload.JsonToResReqPreloadInfoList freshness_life_times_str is invalid";
+        !base::IsValueInRangeForNumericType<int64_t>(freshness_life_times)) {
+      LOG(WARNING) << "PRPPreload.JsonToResReqPreloadInfoList freshness_life_times is invalid";
       continue;
     }
     info->set_freshness_life_times(freshness_life_times);
@@ -83,7 +83,7 @@ void JsonToResReqPreloadInfoList(const std::string& json,
       continue;
     }
     info->set_e_tag(*e_tag);
-    const std::string* e_tag = json_item.GetDict().FindString("last_modified");
+    const std::string* last_modified = json_item.GetDict().FindString("last_modified");
     if (!last_modified) {
       LOG(WARNING) << "PRPPreload.JsonToResReqPreloadInfoList last_modified is invalid";
       continue;

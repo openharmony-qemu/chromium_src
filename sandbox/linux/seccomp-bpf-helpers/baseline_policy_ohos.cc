@@ -266,6 +266,17 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
             AnyOf(flags==kMuslForkFlags, flags == kPthreadCreateFlags);
         return If(is_fork_or_pthread, Allow()).Else(CrashSIGSYSClone());
     }
+
+    if (sysno == __NR_prctl) {
+#define PR_SET_JITFORT_OPTION 0x6a6974
+#define JITFORT_CPU_FEATURES 7
+        const Arg<int> option(0), arg(1);
+
+        return Switch(option)
+            .Cases({PR_SET_JITFORT_OPTION},
+                If(arg == JITFORT_CPU_FEATURES, Allow()).Else(CrashSIGSYSPrctl()))
+            .Default(BaselinePolicy::EvaluateSyscall(sysno));
+    }
 #endif
 
     switch(sysno) {

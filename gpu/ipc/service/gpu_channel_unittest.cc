@@ -5,12 +5,14 @@
 #include <cstddef>
 #include "command_buffer/service/ohos/native_image_texture_owner.h"
 #define private public
+#include "gpu/ipc/service/gpu_channel.cc"
 #include "gpu/ipc/service/gpu_channel.h"
 #undef private
 
 #include <stdint.h>
 
 #include "base/run_loop.h"
+#include "base/test/bind.h"
 #include "base/test/test_simple_task_runner.h"
 #include "build/build_config.h"
 #include "gpu/ipc/common/command_buffer_id.h"
@@ -380,6 +382,39 @@ TEST_F(GpuChannelTest, DestroyNativeTexture2) {
   channel->DestroyNativeTexture(native_id);
   auto found = channel->native_textures_.find(native_id);
   EXPECT_TRUE(found == channel->native_textures_.end());
+}
+
+TEST_F(GpuChannelTest, ExecuteDeferredRequest3) {
+  testing::internal::CaptureStderr();
+  auto command_buffer_request = mojom::DeferredCommandBufferRequest::New();
+  auto params = mojom::DeferredRequestParams::NewCommandBufferRequest(
+      std::move(command_buffer_request));
+  params->set_destroy_native_texture(1);
+  int32_t kClientId = 1;
+  bool is_gpu_host = true;
+  GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
+  uint32_t num = 5;
+  params->tag_ = (mojom::DeferredRequestParams::Tag)num;
+  channel->ExecuteDeferredRequest(std::move(params));
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(log_output.find("Trying to destroy a non-existent native texture"),
+            std::string::npos);
+}
+
+TEST_F(GpuChannelTest, TryCreateNativeTexture1) {
+  base::WeakPtr<GpuChannel> channel;
+  mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
+  int32_t result = TryCreateNativeTexture(channel, 1, std::move(receiver));
+  EXPECT_EQ(result, -1);
+}
+
+TEST_F(GpuChannelTest, TryCreateNativeTexture2) {
+  int32_t kClientId = 1;
+  GpuChannel* channel = CreateChannel(kClientId, false);
+  base::WeakPtr<GpuChannel> channell = channel->AsWeakPtr();
+  mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
+  int32_t result = TryCreateNativeTexture(channell, 1, std::move(receiver));
+  EXPECT_NE(result, -1);
 }
 
 }  // namespace gpu

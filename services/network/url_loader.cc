@@ -2207,9 +2207,9 @@ std::string URLLoader::InMilliseconds(base::TimeTicks time) {
 void URLLoader::PrintNetworkTimingInfo() {
   using namespace std;
   net::LoadTimingInfo metrics;
-  url_request->GetLoadTimingInfo(&metrics);
+  url_request_->GetLoadTimingInfo(&metrics);
   TRACE_EVENT2(TRACE_DISABLED_BY_DEFAULT("network"), "URLLoader::PrintNetworkTimingInfo", "info",
-               "socket_reused: " + to_string(socket_reused) +
+               "socket_reused: " + to_string(metrics.socket_reused) +
                ";dns_start: " + InMilliseconds(metrics.connect_timing.domain_lookup_start) +
                ";dns_end: " + InMilliseconds(metrics.connect_timing.domain_lookup_end) +
                ";connect_start: " + InMilliseconds(metrics.connect_timing.connect_start) +
@@ -2233,8 +2233,8 @@ void URLLoader::PrintNetworkCacheInfo() {
   string cache_control;
   string etag;
   TRACE_EVENT2(TRACE_DISABLED_BY_DEFAULT("network"), "URLLoader::PrintNetworkCacheInfo", "info",
-               "age: " + (response_->headers->GetAgeValue(&age) ? to_string(age) : "unset") +
-               ";last_modified: " + (response_->headers->GetLastModifiedValue(&last_modified) ? to_string(last_modified.ToInternalValue(last_modified)) : "unset") +
+               "age: " + (response_->headers->GetAgeValue(&age) ? to_string(age.InMilliseconds()) : "unset") +
+               ";last_modified: " + (response_->headers->GetLastModifiedValue(&last_modified) ? to_string(last_modified.ToInternalValue()) : "unset") +
                ";cache_control: " + (response_->headers->GetNormalizedHeader("Cache-Control", &cache_control) ? cache_control : "unset") + 
                ";etag: " + (response_->headers->GetNormalizedHeader("ETag", &etag) ? etag : "unset") +
                ";is_zero: " + to_string(response_->headers->GetFreshnessLifetimes(response_->response_time).freshness.is_zero()) +

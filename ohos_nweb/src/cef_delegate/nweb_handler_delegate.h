@@ -557,7 +557,8 @@ class NWebHandlerDelegate : public CefClient,
       const CefRect& select_bounds,
       CefContextMenuHandler::QuickMenuEditStateFlags edit_state_flags,
       CefRefPtr<CefRunQuickMenuCallback> callback,
-      bool is_mouse_trigger) override;
+      bool is_mouse_trigger,
+      bool is_long_press_actived) override;
 
   bool UpdateClippedSelectionBounds(
       CefRefPtr<CefBrowser> browser,

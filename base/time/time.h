@@ -816,7 +816,7 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
 
 #if BUILDFLAG(IS_OHOS)
   // Returns the UTC time string parsed from base::Time
-  static std::string ToUTCTimeString(const base::Time& time) { return ToUTCString(time) };
+  static std::string ToUTCTimeString(const base::Time& time) { return ToUTCString(time); };
 #endif
 
  private:

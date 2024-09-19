@@ -2375,6 +2375,12 @@ void RenderFrameImpl::MouseSelectMenuShow(bool show) {
     GetFrameHost()->MouseSelectMenuShow(show);
   }
 }
+
+void RenderFrameImpl::ChangeVisibilityOfQuickMenu() {
+  if (GetFrameHost()) {
+    GetFrameHost()->ChangeVisibilityOfQuickMenu();
+  }
+}
 #endif
 
 void RenderFrameImpl::AddMessageToConsole(

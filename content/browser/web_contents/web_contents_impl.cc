@@ -7404,6 +7404,12 @@ void WebContentsImpl::MouseSelectMenuShow(bool show) {
     render_view_host_delegate_view_->MouseSelectMenuShow(show);
   }
 }
+
+void WebContentsImpl::ChangeVisibilityOfQuickMenu() {
+  if (render_view_host_delegate_view_) {
+    render_view_host_delegate_view_->ChangeVisibilityOfQuickMenu();
+  }
+}
 #endif
 
 void WebContentsImpl::ShowContextMenu(

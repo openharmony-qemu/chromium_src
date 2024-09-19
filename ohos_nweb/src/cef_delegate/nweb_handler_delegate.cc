@@ -2739,6 +2739,12 @@ void NWebHandlerDelegate::HideHandleAndQuickMenuIfNecessary(bool hide) {
     nweb_handler_->HideHandleAndQuickMenuIfNecessary(hide);
   }
 }
+
+void NWebHandlerDelegate::ChangeVisibilityOfQuickMenu() {
+  if (nweb_handler_ != nullptr) {
+    nweb_handler_->ChangeVisibilityOfQuickMenu();
+  }
+}
 /* CefContextMenuHandler method end */
 
 /* CefFindandler method begin */

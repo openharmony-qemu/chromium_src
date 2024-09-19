@@ -18,14 +18,14 @@
 #include <memory>
 #include <utility>
 #include "base/test/test_mock_time_task_runner.h"
-#include "content/browser/media/session/media_session_impl.h"
-#include "gmock/gmock.h"
+#include "content/public/browser/web_contents.h"
 #include "media/audio/audio_io.h"
 #include "media/audio/audio_thread.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #define private public
 #define protected public
+#include "content/browser/media/session/media_session_impl.h"
 #include "ohos_audio_output_stream.h"
 #undef protected
 #undef private
@@ -44,6 +44,48 @@ class AudioRendererOptionsTest : public testing::Test {
 
  protected:
   std::unique_ptr<AudioRendererOptions> options_;
+};
+
+class MockAudioRendererAdapter : public AudioRendererAdapter {
+ public:
+  MOCK_METHOD(int32_t,
+              Create,
+              (const std::shared_ptr<AudioRendererOptionsAdapter> options,
+               std::string cachePath),
+              (override));
+  MOCK_METHOD(bool, Start, (), (override));
+  MOCK_METHOD(bool, Pause, (), (override));
+  MOCK_METHOD(bool, Stop, (), (override));
+  MOCK_METHOD(bool, Release, (), (override));
+  MOCK_METHOD(int32_t,
+              Write,
+              (uint8_t * buffer, size_t bufferSize),
+              (override));
+  MOCK_METHOD(int32_t, GetLatency, (uint64_t & latency), (override));
+  MOCK_METHOD(int32_t, SetVolume, (float volume), (override));
+  MOCK_METHOD(float, GetVolume, (), (override));
+  MOCK_METHOD(int32_t,
+              SetAudioRendererCallback,
+              (const std::shared_ptr<AudioRendererCallbackAdapter>& callback),
+              (override));
+  MOCK_METHOD(void, SetInterruptMode, (bool audioExclusive), ());
+  MOCK_METHOD(bool, IsRendererStateRunning, (), (override));
+  MOCK_METHOD(
+      int32_t,
+      SetAudioOutputChangeCallback,
+      (const std::shared_ptr<AudioOutputChangeCallbackAdapter>& callback),
+      (override));
+};
+
+class MockAudioThread : public AudioThread {
+ public:
+  MOCK_METHOD(void, Stop, (), (override));
+  MOCK_METHOD(bool, IsHung, (), (const, override));
+  MOCK_METHOD(base::SingleThreadTaskRunner*, GetTaskRunner, (), (override));
+  MOCK_METHOD(base::SingleThreadTaskRunner*,
+              GetWorkerTaskRunner,
+              (),
+              (override));
 };
 
 class AudioRendererCallbackTest : public ::testing::Test {
@@ -70,6 +112,105 @@ class AudioOutputChangeCallbackTest : public ::testing::Test {
   AudioParameters params_;
   std::unique_ptr<AudioOutputChangeCallback> change_callback_;
 };
+
+class MockAudioLogFactory : public AudioLogFactory {
+  MOCK_METHOD(std::unique_ptr<AudioLog>,
+              CreateAudioLog,
+              (AudioComponent component, int component_id),
+              (override));
+};
+
+class MockOHOSAudioManager : public OHOSAudioManager {
+ public:
+  MockOHOSAudioManager() : OHOSAudioManager(nullptr, nullptr) {}
+  MOCK_METHOD(AudioOutputStream*,
+              MakeLinearOutputStream,
+              (const AudioParameters& params, const LogCallback& log_callback),
+              (override));
+  MOCK_METHOD(AudioOutputStream*,
+              MakeLowLatencyOutputStream,
+              (const AudioParameters& params,
+               const std::string& device_id,
+               const LogCallback& log_callback),
+              (override));
+};
+
+class MockAudioSourceCallback : public AudioOutputStream::AudioSourceCallback {
+ public:
+  MockAudioSourceCallback() = default;
+  MOCK_METHOD(void, OnError, (ErrorType type), (override));
+};
+
+class OHOSAudioOutputStreamTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    audio_thread_ = std::move(mock_audio_thread_);
+    factory_ = std::move(mock_factory_);
+    mock_manager_ = std::make_unique<MockOHOSAudioManager>();
+    manager_ = std::move(mock_manager_);
+    parameters_ = AudioParameters();
+    audio_renderer_ = std::make_unique<MockAudioRendererAdapter>();
+    stream_ = std::make_unique<OHOSAudioOutputStream>(manager_.get(),
+                                                      parameters_, false);
+    stream_->audio_renderer_ = std::move(audio_renderer_);
+  }
+
+  std::unique_ptr<MockOHOSAudioManager> mock_manager_;
+  std::unique_ptr<OHOSAudioManager> manager_;
+  AudioParameters parameters_;
+  std::unique_ptr<OHOSAudioOutputStream> stream_;
+  std::unique_ptr<MockAudioRendererAdapter> audio_renderer_;
+  std::unique_ptr<AudioLogFactory> factory_;
+  std::unique_ptr<AudioThread> audio_thread_;
+  std::unique_ptr<MockAudioLogFactory> mock_factory_;
+  std::unique_ptr<MockAudioThread> mock_audio_thread_;
+};
+
+TEST_F(OHOSAudioOutputStreamTest, Open) {
+  auto ret = stream_->Open();
+  EXPECT_EQ(ret, false);
+}
+
+TEST_F(OHOSAudioOutputStreamTest, Close) {
+  stream_->Close();
+}
+
+TEST_F(OHOSAudioOutputStreamTest, Start) {
+  auto callback = stream_->callback_;
+  stream_->rendererCallback_ = std::shared_ptr<AudioRendererCallback>();
+  stream_->Start(callback);
+}
+
+TEST_F(OHOSAudioOutputStreamTest, Stop) {
+  stream_->Stop();
+}
+
+TEST_F(OHOSAudioOutputStreamTest, Flush) {
+  stream_->Flush();
+}
+
+TEST_F(OHOSAudioOutputStreamTest, SetVolume) {
+  stream_->SetVolume(0.5);
+}
+
+TEST_F(OHOSAudioOutputStreamTest, GetVolume) {
+  stream_->SetVolume(0.5);
+  double ret = 0.0;
+  stream_->GetVolume(&ret);
+  EXPECT_EQ(ret, 0.5);
+}
+
+TEST_F(OHOSAudioOutputStreamTest, GetInterruptMode) {
+  stream_->GetInterruptMode();
+}
+
+TEST_F(OHOSAudioOutputStreamTest, SetInterruptMode) {
+  stream_->SetInterruptMode(true);
+}
+
+TEST_F(OHOSAudioOutputStreamTest, GetCurrentStreamTime) {
+  stream_->GetCurrentStreamTime();
+}
 
 TEST_F(AudioOutputChangeCallbackTest, OnOutputDeviceChange) {
   change_callback_->OnOutputDeviceChange(8);
@@ -174,4 +315,43 @@ TEST_F(AudioRendererCallbackTest, SetSuspendFlag) {
   render_callback_->SetSuspendFlag(false);
   EXPECT_EQ(render_callback_->suspendFlag_, false);
 }
+
+TEST_F(OHOSAudioOutputStreamTest, PumpSamples) {
+  stream_->PumpSamples();
+}
+
+TEST_F(AudioRendererCallbackTest, OnSuspend01) {
+  testing::internal::CaptureStderr();
+  std::string log_output1 = testing::internal::GetCapturedStderr();
+  render_callback_->OnSuspend();
+  EXPECT_EQ(log_output1.find("AudioRendererCallback::OnSuspend"),
+            std::string::npos);
+}
+TEST_F(AudioRendererCallbackTest, OnSuspend02) {
+  testing::internal::CaptureStderr();
+  std::string log_output1 = testing::internal::GetCapturedStderr();
+  render_callback_->OnSuspend();
+  EXPECT_EQ(log_output1.find(
+                "AudioRendererCallback::OnSuspend media_session_ is null."),
+            std::string::npos);
+}
+
+TEST_F(AudioRendererCallbackTest, OnResume01) {
+  testing::internal::CaptureStderr();
+  std::string log_output1 = testing::internal::GetCapturedStderr();
+  render_callback_->OnResume();
+  EXPECT_EQ(log_output1.find(
+                "AudioRendererCallback::OnResume audioResumeInterval is"),
+            std::string::npos);
+}
+
+TEST_F(AudioRendererCallbackTest, OnResume02) {
+  testing::internal::CaptureStderr();
+  std::string log_output1 = testing::internal::GetCapturedStderr();
+  render_callback_->OnResume();
+  EXPECT_EQ(log_output1.find(
+                "AudioRendererCallback::OnResume media_session_ is null."),
+            std::string::npos);
+}
+
 }  // namespace media

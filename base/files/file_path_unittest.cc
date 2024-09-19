@@ -1539,4 +1539,33 @@ TEST_F(FilePathTest, CompareIgnoreCaseWithInvalidInput) {
 }
 #endif
 
+TEST_F(FilePathTest, IsDataShareUrl001) {
+  FilePath filepath_test;
+  FilePath::StringType url = "datashare://abbdc";
+  EXPECT_TRUE(filepath_test.IsDataShareUrl(url));
+}
+
+TEST_F(FilePathTest, IsDataShareUrl002) {
+  FilePath filepath_test;
+  FilePath::StringType url = "dataability://abbdc";
+  EXPECT_TRUE(filepath_test.IsDataShareUrl(url));
+}
+
+TEST_F(FilePathTest, IsDataShareUrl003) {
+  FilePath filepath_test;
+  FilePath::StringType url = "file://media/abbdc";
+  EXPECT_TRUE(filepath_test.IsDataShareUrl(url));
+}
+
+TEST_F(FilePathTest, IsDataShareUrl004) {
+  FilePath filepath_test;
+  FilePath::StringType url = "file://docs/abbdc";
+  EXPECT_TRUE(filepath_test.IsDataShareUrl(url));
+}
+
+TEST_F(FilePathTest, IsDataShareUrl005) {
+  FilePath filepath_test;
+  FilePath::StringType url = "abbdc";
+  EXPECT_FALSE(filepath_test.IsDataShareUrl(url));
+}
 }  // namespace base

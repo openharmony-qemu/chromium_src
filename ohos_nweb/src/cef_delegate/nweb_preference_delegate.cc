@@ -16,6 +16,7 @@
 #include "ohos_nweb/src/cef_delegate/nweb_preference_delegate.h"
 
 #include "base/logging.h"
+#include "base/trace_event/trace_event.h"
 #include "cef/include/cef_command_line.h"
 #include "cef/include/internal/cef_string.h"
 #include "cef/include/internal/cef_string_types.h"
@@ -418,6 +419,7 @@ void NWebPreferenceDelegate::PutCacheMode(CacheModeFlag flag) {
     return;
   }
 
+  TRACE_EVENT1("base", "NWebPreferenceDelegate::PutCacheMode", "flag", flag);
   browser_->GetHost()->SetCacheMode(ConvertCacheMode(flag));
 }
 

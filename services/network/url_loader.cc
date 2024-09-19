@@ -763,9 +763,11 @@ URLLoader::URLLoader(
     return;
   }
 
+#if BUILDFLAG(IS_OHOS)
   if (url_request_) {
-    TRACE_EVENT1("loading", "URLLoader::URLLoader", "url", url_request_->url().spec());
+    TRACE_EVENT2("loading", "URLLoader::URLLoader", "url", url_request_->url().spec(), "id", request_id_);
   }
+#endif
   BeginTrustTokenOperationIfNecessaryAndThenScheduleStart(request);
 }
 
@@ -1091,10 +1093,15 @@ void URLLoader::ScheduleStart() {
         base::BindOnce(&URLLoader::ResumeStart, base::Unretained(this)));
     resource_scheduler_request_handle_->WillStartRequest(&defer);
   }
-  if (defer)
+  if (defer) {
     url_request_->LogBlockedBy("ResourceScheduler");
-  else
+  }
+  else {
+#if BUILDFLAG(IS_OHOS)
+    TRACE_EVENT1("net", "URLLoader::ScheduleStart", "id", request_id_);
     url_request_->Start();
+#endif
+  }
 }
 
 URLLoader::~URLLoader() {
@@ -1321,20 +1328,20 @@ mojom::URLResponseHeadPtr URLLoader::BuildResponseHead() const {
 #if BUILDFLAG(IS_OHOS)
   std::string http_version;
   if (url_request_->was_fetched_via_spdy()) {
-    http_version = "http_20";
+    http_version = "http/2.0";
   } else {
     net::HttpVersion request_http_version = url_request_->response_headers()->GetHttpVersion();
     if (request_http_version == net::HttpVersion(0, 9)) {
-      http_version = "http_09";
+      http_version = "http/0.9";
     } else if (request_http_version == net::HttpVersion(1, 0)) {
-      http_version = "http_10";
+      http_version = "http/1.0";
     } else if (request_http_version == net::HttpVersion(1, 1)) {
-      http_version = "http_11";
+      http_version = "http/1.1";
     } else if (request_http_version == net::HttpVersion(2, 0)) {
-      http_version = "http_20";
+      http_version = "http/2.0";
     }
   }
-  TRACE_EVENT2("net", "URLLoader::BuildResponseHead", "url", url_request_->url().spec(), "http", http_version);
+  TRACE_EVENT2("net", "URLLoader::BuildResponseHead", "http", http_version, "id", request_id_);
 #endif
 
   url_request_->GetCharset(&response->charset);
@@ -2174,26 +2181,70 @@ void URLLoader::NotifyCompleted(int error_code) {
       memory_cache_writer_->OnCompleted(status);
 
     url_loader_client_.Get()->OnComplete(status);
-
+#if BUILDFLAG(IS_OHOS)
     if (url_request_) {
-      TRACE_EVENT2("net", "URLLoader::NotifyCompleted | decodeData",
-      "url", url_request_->url().spec(),
-      "decoded_body_length", status.decoded_body_length);
-
-      TRACE_EVENT2("net", "URLLoader::NotifyCompleted | encodeData",
-      "url", url_request_->url().spec(),
-      "encoded_body_length", status.encoded_body_length);
-
       if (url_request_->response_headers()) {
-        TRACE_EVENT2("net", "URLLoader::NotifyCompleted | responseCode",
-        "url", url_request_->url().spec(),
-        "response_code", url_request_->response_headers()->response_code());
+        TRACE_EVENT2("net", "URLLoader::NotifyCompleted",
+                     "response_code", url_request_->response_headers()->response_code(),
+                     "id", request_id_);
       }
+      PrintNetworkTimingInfo();
     }
+    if (response_ && response_->headers) {
+      PrintNetworkCacheInfo();
+    }
+#endif
   }
 
   DeleteSelf();
 }
+
+#if BUILDFLAG(IS_OHOS)
+std::string URLLoader::InMilliseconds(base::TimeTicks time) {
+  return std::to_string(time.since_origin().InMilliseconds());
+}
+
+void URLLoader::PrintNetworkTimingInfo() {
+  using namespace std;
+  net::LoadTimingInfo metrics;
+  url_request_->GetLoadTimingInfo(&metrics);
+  TRACE_EVENT2(TRACE_DISABLED_BY_DEFAULT("network"), "URLLoader::PrintNetworkTimingInfo", "info",
+               "socket_reused: " + to_string(metrics.socket_reused) +
+               ";dns_start: " + InMilliseconds(metrics.connect_timing.domain_lookup_start) +
+               ";dns_end: " + InMilliseconds(metrics.connect_timing.domain_lookup_end) +
+               ";connect_start: " + InMilliseconds(metrics.connect_timing.connect_start) +
+               ";connect_end: " + InMilliseconds(metrics.connect_timing.connect_end) +
+               ";ssl_start: " + InMilliseconds(metrics.connect_timing.ssl_start) +
+               ";ssl_end: " + InMilliseconds(metrics.connect_timing.ssl_end) +
+               ";request_start: " + InMilliseconds(metrics.request_start) +
+               ";send_start: " + InMilliseconds(metrics.send_start) +
+               ";receive_headers_start: " + InMilliseconds(metrics.receive_headers_start) +
+               ";request_end: " + InMilliseconds(base::TimeTicks::Now()) +
+               ";decoded_size: " + to_string(total_written_bytes_) +
+               ";encoded_size: " + to_string(url_request_->GetRawBodyBytes()) +
+               ";idempotency: " + to_string(url_request_->GetIdempotency()),
+               "id", request_id_);
+}
+
+void URLLoader::PrintNetworkCacheInfo() {
+  using namespace std;
+  using namespace base;
+  TimeDelta age;
+  Time last_modified;
+  Time expires;
+  string cache_control;
+  string etag;
+  TRACE_EVENT2(TRACE_DISABLED_BY_DEFAULT("network"), "URLLoader::PrintNetworkCacheInfo", "info",
+               "age: " + (response_->headers->GetAgeValue(&age) ? to_string(age.InMilliseconds()) : "unset") +
+               ";last_modified: " + (response_->headers->GetLastModifiedValue(&last_modified) ? Time::ToUTCTimeString(last_modified) : "unset") +
+               ";expires: " + (response_->headers->GetExpiresValue(&expires) ? Time::ToUTCTimeString(expires) : "unset") +
+               ";cache_control: " + (response_->headers->GetNormalizedHeader("Cache-Control", &cache_control) ? cache_control : "unset") + 
+               ";etag: " + (response_->headers->GetNormalizedHeader("ETag", &etag) ? etag : "unset") +
+               ";is_zero: " + to_string(response_->headers->GetFreshnessLifetimes(response_->response_time).freshness.is_zero()) +
+               ";load_flags: " + to_string(url_request_->load_flags()),
+               "id", request_id_);
+}
+#endif
 
 void URLLoader::OnMojoDisconnect() {
   NotifyCompleted(net::ERR_FAILED);
@@ -2449,6 +2500,9 @@ bool URLLoader::HasDataPipe() const {
 
 void URLLoader::ResumeStart() {
   url_request_->LogUnblocked();
+#if BUILDFLAG(IS_OHOS)
+  TRACE_EVENT1("net", "URLLoader::ScheduleStart", "id", request_id_);
+#endif
   url_request_->Start();
 }
 

@@ -71,8 +71,7 @@ void JsonToResReqPreloadInfoList(const std::string& json,
     char* end = NULL;
     errno = 0;
     int64_t freshness_life_times = std::strtoll(freshness_life_times_str->c_str(), &end, 10);
-    if (errno != 0 || !end || *end ||
-        !base::IsValueInRangeForNumericType<int64_t>(freshness_life_times)) {
+    if (errno != 0 || !end || *end) {
       LOG(WARNING) << "PRPPreload.JsonToResReqPreloadInfoList freshness_life_times is invalid";
       continue;
     }

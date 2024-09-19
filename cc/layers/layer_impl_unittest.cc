@@ -1,10 +1,24 @@
-// Copyright 2011 The Chromium Authors
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+/*
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
+#define private public
 #include "cc/layers/layer_impl.h"
+#undef private
 
 #include <algorithm>
+#include <memory>
 
 #include "base/memory/raw_ptr.h"
 #include "cc/layers/painted_scrollbar_layer_impl.h"
@@ -18,6 +32,7 @@
 #include "cc/trees/tree_synchronizer.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "ui/gfx/geometry/rect_f.h"
 #include "ui/gfx/geometry/test/geometry_util.h"
 
 namespace cc {
@@ -549,5 +564,150 @@ TEST_F(LayerImplTest, JitterTest) {
   }
 }
 
+#if defined(OHOS_UNITTESTS)
+TEST_F(LayerImplTest, NativeRect_001) {
+  host_impl()->CreatePendingTree();
+  auto* root_layer = EnsureRootLayerInPendingTree();
+  ASSERT_TRUE(root_layer);
+  root_layer->SetBounds(gfx::Size(50, 50));
+  gfx::RectF rectfTest = gfx::RectF(0, 0, 50, 50);
+  root_layer->native_rect_ = rectfTest;
+  auto layerTest = root_layer->NativeRect();
+  ASSERT_EQ(layerTest, rectfTest);
+}
+
+TEST_F(LayerImplTest, NativeRect_002) {
+  host_impl()->CreatePendingTree();
+  auto* root_layer = EnsureRootLayerInPendingTree();
+  ASSERT_TRUE(root_layer);
+  root_layer->SetBounds(gfx::Size(50, 50));
+  gfx::RectF rectfTest = gfx::RectF(0, 0, 50, 50);
+  root_layer->native_rect_ = rectfTest;
+  root_layer->may_contain_native_ = true;
+  root_layer->NativeRect();
+  ASSERT_FALSE(!root_layer->may_contain_native());
+}
+
+TEST_F(LayerImplTest, SetNativeRect_001) {
+  host_impl()->CreatePendingTree();
+  auto* root_layer = EnsureRootLayerInPendingTree();
+  ASSERT_TRUE(root_layer);
+  root_layer->SetBounds(gfx::Size(50, 50));
+  gfx::RectF rectfTest = gfx::RectF(0, 0, 50, 50);
+  root_layer->native_rect_ = rectfTest;
+  root_layer->SetNativeRect(rectfTest);
+  ASSERT_EQ(root_layer->native_rect_, rectfTest);
+}
+
+TEST_F(LayerImplTest, SetNativeRect_002) {
+  host_impl()->CreatePendingTree();
+  auto* root_layer = EnsureRootLayerInPendingTree();
+  root_layer->SetBounds(gfx::Size(50, 50));
+  gfx::RectF rectfTest1 = gfx::RectF(0, 0, 50, 50);
+  gfx::RectF rectfTest2 = gfx::RectF(0, 0, 100, 100);
+  root_layer->native_rect_ = rectfTest2;
+  root_layer->SetNativeRect(rectfTest1);
+  ASSERT_EQ(root_layer->native_rect_, rectfTest1);
+}
+
+TEST_F(LayerImplTest, SetNativeRect_003) {
+  host_impl()->CreatePendingTree();
+  auto* root_layer = EnsureRootLayerInPendingTree();
+  root_layer->SetBounds(gfx::Size(50, 50));
+  gfx::RectF rectfTest1 = gfx::RectF(0, 0, 50, 50);
+  gfx::RectF rectfTest2 = gfx::RectF(0, 0, 100, 100);
+  root_layer->native_rect_ = rectfTest2;
+  root_layer->init_scale_ = -1.0f;
+  root_layer->SetNativeRect(rectfTest1);
+  ASSERT_EQ(root_layer->native_rect_, rectfTest1);
+}
+
+TEST_F(LayerImplTest, SetNativeRect_004) {
+  host_impl()->CreatePendingTree();
+  auto* root_layer = EnsureRootLayerInPendingTree();
+  root_layer->SetBounds(gfx::Size(50, 50));
+  gfx::RectF rectfTest1 = gfx::RectF(0, 0, 50, 50);
+  gfx::RectF rectfTest2 = gfx::RectF(0, 0, 100, 100);
+  root_layer->native_rect_ = rectfTest2;
+  root_layer->scrollable_ = true;
+  root_layer->SetNativeRect(rectfTest1);
+  ASSERT_EQ(root_layer->native_rect_, rectfTest1);
+  ASSERT_TRUE(root_layer->layer_tree_impl_);
+}
+
+TEST_F(LayerImplTest, SetNativeRect_005) {
+  host_impl()->CreatePendingTree();
+  auto* root_layer = EnsureRootLayerInPendingTree();
+  root_layer->SetBounds(gfx::Size(50, 50));
+  gfx::RectF rectfTest1 = gfx::RectF(0, 0, 50, 50);
+  gfx::RectF rectfTest2 = gfx::RectF(0, 0, 100, 100);
+  root_layer->native_rect_ = rectfTest2;
+  root_layer->layer_property_changed_not_from_property_trees_ = false;
+  root_layer->SetNativeRect(rectfTest1);
+  ASSERT_EQ(root_layer->native_rect_, rectfTest1);
+  ASSERT_TRUE(root_layer->layer_property_changed_not_from_property_trees_);
+}
+
+TEST_F(LayerImplTest, SetInitScale) {
+  host_impl()->CreatePendingTree();
+  auto* root_layer = EnsureRootLayerInPendingTree();
+  ASSERT_TRUE(root_layer);
+  root_layer->SetBounds(gfx::Size(50, 50));
+  gfx::RectF rectfTest = gfx::RectF(0, 0, 50, 50);
+  root_layer->native_rect_ = rectfTest;
+  root_layer->SetInitScale(0.5);
+  ASSERT_EQ(root_layer->init_scale_, 0.5);
+}
+
+TEST_F(LayerImplTest, GetNativeRect_001) {
+  host_impl()->CreatePendingTree();
+  auto* root_layer = EnsureRootLayerInPendingTree();
+  ASSERT_TRUE(root_layer);
+  root_layer->SetBounds(gfx::Size(50, 50));
+  gfx::RectF rectfTest = gfx::RectF(0, 0, 50, 50);
+  root_layer->native_rect_ = rectfTest;
+  auto layerTest = root_layer->GetNativeRect();
+  ASSERT_FALSE(root_layer->may_contain_native());
+  ASSERT_EQ(layerTest, rectfTest);
+}
+
+TEST_F(LayerImplTest, GetNativeRect_002) {
+  host_impl()->CreatePendingTree();
+  auto* root_layer = EnsureRootLayerInPendingTree();
+  ASSERT_TRUE(root_layer);
+  root_layer->SetBounds(gfx::Size(50, 50));
+  gfx::RectF rectfTest = gfx::RectF(0, 0, 50, 50);
+  root_layer->native_rect_ = rectfTest;
+  root_layer->may_contain_native_ = true;
+  auto layerTest = root_layer->GetNativeRect();
+  ASSERT_EQ(layerTest, rectfTest);
+}
+
+TEST_F(LayerImplTest, GetNativeRect_003) {
+  host_impl()->CreatePendingTree();
+  auto* root_layer = EnsureRootLayerInPendingTree();
+  ASSERT_TRUE(root_layer);
+  root_layer->SetBounds(gfx::Size(50, 50));
+  gfx::RectF rectfTest = gfx::RectF();
+  root_layer->native_rect_ = rectfTest;
+  root_layer->may_contain_native_ = true;
+  gfx::RectF rf = root_layer->NativeRect();
+  root_layer->GetNativeRect();
+  ASSERT_TRUE(rf.IsEmpty());
+}
+
+TEST_F(LayerImplTest, GetNativeRect_004) {
+  host_impl()->CreatePendingTree();
+  auto* root_layer = EnsureRootLayerInPendingTree();
+  ASSERT_TRUE(root_layer);
+  root_layer->SetBounds(gfx::Size(50, 50));
+  gfx::RectF rectfTest = gfx::RectF(0, 0, 50, 50);
+  root_layer->native_rect_ = rectfTest;
+  root_layer->may_contain_native_ = true;
+  gfx::RectF rf = root_layer->NativeRect();
+  root_layer->GetNativeRect();
+  ASSERT_FALSE(rf.IsEmpty());
+}
+#endif  // OHOS_UNITTESTS
 }  // namespace
 }  // namespace cc

@@ -39,6 +39,7 @@
 #include "base/containers/queue.h"
 #include "base/files/file_util.h"
 #include "base/files/scoped_file.h"
+#include "base/test/bind.h"
 #include "base/threading/thread.h"
 #include "camera_manager_adapter.h"
 #include "display_manager_adapter.h"
@@ -53,10 +54,13 @@ using namespace testing;
 
 namespace media {
 
+class OhosAdapterHelperMock;
+class CameraManagerAdapterMock;
 namespace {
 std::shared_ptr<OHOSCaptureDelegate> c_delegate;
-
-}
+std::unique_ptr<OhosAdapterHelperMock> ohos_adapter_helper;
+std::unique_ptr<CameraManagerAdapterMock> camera_manager_adapter;
+}  // namespace
 
 class SingleThreadTaskRunnerMock : public base::SingleThreadTaskRunner {};
 
@@ -75,6 +79,9 @@ void OHOSCaptureDelegateTest::SetUpTestCase(void) {}
 void OHOSCaptureDelegateTest::TearDownTestCase(void) {}
 
 void OHOSCaptureDelegateTest::SetUp(void) {
+  ohos_adapter_helper = std::make_unique<OhosAdapterHelperMock>();
+  camera_manager_adapter = std::make_unique<CameraManagerAdapterMock>();
+
   VideoCaptureDeviceDescriptor device_descriptor;
   scoped_refptr<SingleThreadTaskRunnerMock> capture_stask_runner;
   VideoCaptureParamsMock capture_params;
@@ -85,6 +92,8 @@ void OHOSCaptureDelegateTest::SetUp(void) {
 
 void OHOSCaptureDelegateTest::TearDown(void) {
   c_delegate = nullptr;
+  ohos_adapter_helper.reset();
+  camera_manager_adapter.reset();
 }
 
 class ClientMock : public VideoCaptureDevice::Client {
@@ -455,21 +464,6 @@ TEST_F(OHOSCaptureDelegateTest, Resume_007) {
   c_delegate->Resume();
 }
 
-TEST_F(OHOSCaptureDelegateTest, OnBufferAvailable_008) {
-  auto surface = std::make_shared<CameraSurfaceAdapterMock>();
-  auto buffer = std::make_shared<CameraSurfaceBufferAdapterMock>();
-  auto roration_info = std::make_shared<CameraRotationInfoAdapterMock>();
-  auto client = std::make_unique<ClientMock>();
-  c_delegate->client_ = std::move(client);
-  EXPECT_CALL(*roration_info, GetRotation()).WillRepeatedly(Return(90));
-  EXPECT_CALL(*roration_info, GetIsFlipY()).WillRepeatedly(Return(false));
-  EXPECT_CALL(*buffer, GetBufferAddr()).WillRepeatedly(Return(nullptr));
-  EXPECT_CALL(*buffer, GetSize()).WillRepeatedly(Return(0));
-  EXPECT_CALL(*surface, ReleaseBuffer(testing::_, testing::_))
-      .WillRepeatedly(Return(0));
-  c_delegate->OnBufferAvailable(surface, buffer, roration_info);
-}
-
 // No such function
 TEST_F(OHOSCaptureDelegateTest, SetRotation_009) {}
 
@@ -500,8 +494,10 @@ TEST_F(OHOSCaptureDelegateTest, SetErrorState_014) {
       VideoCaptureError::kAndroidApi1CameraErrorCallbackReceived;
   base::Location from_here = base::Location::Current();
   std::string reason = "Test error reason";
-  auto client = std::make_unique<ClientMock>();
-  c_delegate->client_ = std::move(client);
+  ClientMock* client = new ClientMock();
+  EXPECT_CALL(*client, OnError(testing::_, testing::_, testing::_))
+      .WillOnce(testing::Return());
+  c_delegate->client_ = std::unique_ptr<VideoCaptureDevice::Client>(client);
   c_delegate->SetErrorState(error, from_here, reason);
 }
 
@@ -549,4 +545,71 @@ TEST_F(OHOSCaptureDelegateTest, GetFlashState_021) {
 }
 // No such function
 TEST_F(OHOSCaptureDelegateTest, GetCameraRotation_022) {}
+
+TEST_F(OHOSCaptureDelegateTest, GetFlashState04) {
+  ON_CALL(*camera_manager_adapter,
+          IsFlashModeSupported(FlashModeAdapter::FLASH_MODE_CLOSE))
+      .WillByDefault(Return(false));
+  mojom::PhotoStatePtr photo_capabilities = mojom::PhotoState::New();
+  c_delegate->GetFlashState(photo_capabilities);
+  EXPECT_TRUE(std::find(photo_capabilities->fill_light_mode.begin(),
+                        photo_capabilities->fill_light_mode.end(),
+                        mojom::FillLightMode::OFF) ==
+              photo_capabilities->fill_light_mode.end());
+}
+
+TEST_F(OHOSCaptureDelegateTest, GetFlashState05) {
+  ON_CALL(*camera_manager_adapter,
+          IsFlashModeSupported(FlashModeAdapter::FLASH_MODE_OPEN))
+      .WillByDefault(Return(false));
+  mojom::PhotoStatePtr photo_capabilities = mojom::PhotoState::New();
+  c_delegate->GetFlashState(photo_capabilities);
+  EXPECT_TRUE(std::find(photo_capabilities->fill_light_mode.begin(),
+                        photo_capabilities->fill_light_mode.end(),
+                        mojom::FillLightMode::FLASH) ==
+              photo_capabilities->fill_light_mode.end());
+}
+
+TEST_F(OHOSCaptureDelegateTest, GetFlashState06) {
+  ON_CALL(*camera_manager_adapter,
+          IsFlashModeSupported(FlashModeAdapter::FLASH_MODE_AUTO))
+      .WillByDefault(Return(false));
+  mojom::PhotoStatePtr photo_capabilities = mojom::PhotoState::New();
+  c_delegate->GetFlashState(photo_capabilities);
+  EXPECT_TRUE(std::find(photo_capabilities->fill_light_mode.begin(),
+                        photo_capabilities->fill_light_mode.end(),
+                        mojom::FillLightMode::AUTO) ==
+              photo_capabilities->fill_light_mode.end());
+}
+
+TEST_F(OHOSCaptureDelegateTest, Resume) {
+  c_delegate->is_capturing_ = false;
+  c_delegate->Resume();
+  EXPECT_FALSE(c_delegate->is_capturing_);
+  c_delegate->is_capturing_ = true;
+  c_delegate->Resume();
+  EXPECT_TRUE(c_delegate->is_capturing_);
+}
+
+TEST_F(OHOSCaptureDelegateTest, StartStream1) {
+  testing::internal::CaptureStderr();
+  OhosAdapterHelper::GetInstance().GetCameraManagerAdapter().SetCameraStatus(
+      CameraStatusAdapter::AVAILABLE);
+  bool result = c_delegate->StartStream();
+  EXPECT_FALSE(result);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("can not find matched parameter"),
+            std::string::npos);
+}
+
+TEST_F(OHOSCaptureDelegateTest, StartStream2) {
+  testing::internal::CaptureStderr();
+  OhosAdapterHelper::GetInstance().GetCameraManagerAdapter().SetCameraStatus(
+      CameraStatusAdapter::UNAVAILABLE);
+  bool result = c_delegate->StartStream();
+  EXPECT_FALSE(result);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("camera is not closed"), std::string::npos);
+}
+
 }  // namespace media

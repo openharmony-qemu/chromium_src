@@ -2,7 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <cstddef>
+#include "command_buffer/service/ohos/native_image_texture_owner.h"
+#define private public
 #include "gpu/ipc/service/gpu_channel.h"
+#undef private
 
 #include <stdint.h>
 
@@ -300,6 +304,82 @@ TEST_F(GpuChannelExitForContextLostTest,
                       GetSharedMemoryRegion(), &result, &capabilities);
   EXPECT_EQ(result, gpu::ContextResult::kTransientFailure);
   EXPECT_FALSE(channel->LookupCommandBuffer(kRouteId));
+}
+
+TEST_F(GpuChannelTest, ExecuteDeferredRequest1) {
+  mojom::DeferredRequestParamsPtr param;
+  auto params = mojom::DeferredRequestParamsPtr();
+  int32_t kClientId = 1;
+  bool is_gpu_host = true;
+  GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
+  param.ptr_ = nullptr;
+  channel->ExecuteDeferredRequest(std::move(param));
+  EXPECT_FALSE(params.get());
+}
+
+TEST_F(GpuChannelTest, ExecuteDeferredRequest2) {
+  testing::internal::CaptureStderr();
+  auto command_buffer_request = mojom::DeferredCommandBufferRequest::New();
+  auto params = mojom::DeferredRequestParams::NewCommandBufferRequest(
+      std::move(command_buffer_request));
+  params->set_destroy_native_texture(1);
+  int32_t kClientId = 1;
+  bool is_gpu_host = true;
+  GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
+  params->tag_ = mojom::DeferredRequestParams::Tag::kDestroyNativeTexture;
+  channel->ExecuteDeferredRequest(std::move(params));
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("Trying to destroy a non-existent native texture"),
+            std::string::npos);
+}
+
+TEST_F(GpuChannelTest, CreateNativeTexture1) {
+  int32_t kClientId = 1;
+  bool is_gpu_host = true;
+  GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
+  mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
+  int result = channel->CreateNativeTexture(1, std::move(receiver));
+  EXPECT_NE(result, -1);
+}
+
+TEST_F(GpuChannelTest, CreateNativeTexture2) {
+  testing::internal::CaptureStderr();
+  int32_t kClientId = 1;
+  bool is_gpu_host = true;
+  GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
+  mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
+  channel->CreateNativeTexture(1, std::move(receiver));
+  channel->CreateNativeTexture(1, std::move(receiver));
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("[NativeEmbed] Trying to create a StreamTexture "
+                            "with an existing native_id."),
+            std::string::npos);
+}
+
+TEST_F(GpuChannelTest, DestroyNativeTexture1) {
+  testing::internal::CaptureStderr();
+  int32_t kClientId = 1;
+  bool is_gpu_host = true;
+  GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
+  int32_t native_id = 10;
+  channel->DestroyNativeTexture(native_id);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(
+      log_output.find(
+          "[NativeEmbed] Trying to destroy a non-existent native texture."),
+      std::string::npos);
+}
+
+TEST_F(GpuChannelTest, DestroyNativeTexture2) {
+  int32_t kClientId = 1;
+  bool is_gpu_host = true;
+  GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
+  int32_t native_id = 1;
+  mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
+  channel->CreateNativeTexture(native_id, std::move(receiver));
+  channel->DestroyNativeTexture(native_id);
+  auto found = channel->native_textures_.find(native_id);
+  EXPECT_TRUE(found == channel->native_textures_.end());
 }
 
 }  // namespace gpu

@@ -125,6 +125,10 @@ NWebResponseDataType NWebUrlResourceResponseImpl::ResponseDataType() {
 void NWebUrlResourceResponseImpl::PutResponseReadyCallback(
     std::shared_ptr<NWebResourceReadyCallback> readyCallback) {
   readyCallback_ = readyCallback;
+  if (isDataReady_ && readyCallback_ != nullptr) {
+    readyCallback_->Continue();
+    readyCallback_ = nullptr;
+  }
 }
 
 void NWebUrlResourceResponseImpl::PutResponseDataBuffer(char* buffer, size_t bufferSize) {

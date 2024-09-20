@@ -26,12 +26,10 @@
 #include "ui/native_theme/native_theme_features.h"
 
 
-#define DEFAULT_FONT_SIZE 16
-#define DEFAULT_FIXED_FONT_SIZE 33
-#define MINIMUM_FONT_SIZE 8
-#define MINIMUM_LOGICAL_FONT_SIZE 8
-#define SETTINGS_STRING_SET(src, target) \
-  cef_string_set(src.str, src.length, &target, true)
+const int kDefaultFontSize = 16;
+const int kDefaultFixedFontSize = 33;
+const int kMinimumFontSize = 8;
+const int kMinimumLogicalFontSize = 8;
 
 using namespace testing;
 using namespace OHOS::NWeb;
@@ -116,8 +114,6 @@ class MockCefBrowser : public CefBrowser, public CefBrowserHost {
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override {}
 #endif  // BUILDFLAG(IS_OHOS)
 
-  ///////////////////////////////////////////////////////////////////////////////
-  //// HOST
   CefRefPtr<CefBrowser> GetBrowser() override;
   void CloseBrowser(bool force_close) override {}
   bool TryCloseBrowser() override { return true; }
@@ -435,26 +431,41 @@ void MockCefBrowser::SetWebPreferences(
 }
 void MockCefBrowser::UpdateBrowserSettings(
     const CefBrowserSettings& browser_settings) {
-  SETTINGS_STRING_SET(browser_settings.standard_font_family,
-                      settings_.standard_font_family);
-  SETTINGS_STRING_SET(browser_settings.fixed_font_family,
-                      settings_.fixed_font_family);
-  SETTINGS_STRING_SET(browser_settings.serif_font_family,
-                      settings_.serif_font_family);
-  SETTINGS_STRING_SET(browser_settings.sans_serif_font_family,
-                      settings_.sans_serif_font_family);
-  SETTINGS_STRING_SET(browser_settings.cursive_font_family,
-                      settings_.cursive_font_family);
-  SETTINGS_STRING_SET(browser_settings.fantasy_font_family,
-                      settings_.fantasy_font_family);
+  cef_string_set(browser_settings.standard_font_family.str,
+                 browser_settings.standard_font_family.length,
+                 &(settings_.standard_font_family),
+                 true);
+  cef_string_set(browser_settings.fixed_font_family.str,
+                 browser_settings.fixed_font_family.length,
+                 &(settings_.fixed_font_family),
+                 true);
+  cef_string_set(browser_settings.serif_font_family.str,
+                 browser_settings.serif_font_family.length,
+                 &(settings_.serif_font_family),
+                 true);
+  cef_string_set(browser_settings.sans_serif_font_family.str,
+                 browser_settings.sans_serif_font_family.length,
+                 &(settings_.sans_serif_font_family),
+                 true);
+  cef_string_set(browser_settings.cursive_font_family.str,
+                 browser_settings.cursive_font_family.length,
+                 &(settings_.cursive_font_family),
+                 true);
+  cef_string_set(browser_settings.fantasy_font_family.str,
+                 browser_settings.fantasy_font_family.length,
+                 &(settings_.fantasy_font_family),
+                 true);
 
   settings_.default_font_size = browser_settings.default_font_size;
   settings_.default_fixed_font_size = browser_settings.default_fixed_font_size;
   settings_.minimum_font_size = browser_settings.minimum_font_size;
   settings_.minimum_logical_font_size =
       browser_settings.minimum_logical_font_size;
-  SETTINGS_STRING_SET(browser_settings.default_encoding,
-                      settings_.default_encoding);
+  cef_string_set(browser_settings.default_encoding.str,
+                 browser_settings.default_encoding.length,
+                 &(settings_.default_encoding),
+                 true);
+
   settings_.javascript = browser_settings.javascript;
   settings_.image_loading = browser_settings.image_loading;
   settings_.local_storage = browser_settings.local_storage;
@@ -496,9 +507,14 @@ void MockCefBrowser::UpdateBrowserSettings(
 #if BUILDFLAG(IS_OHOS)
   settings_.native_embed_mode_enabled =
       browser_settings.native_embed_mode_enabled;
-  SETTINGS_STRING_SET(browser_settings.embed_tag, settings_.embed_tag);
-  SETTINGS_STRING_SET(browser_settings.embed_tag_type,
-                      settings_.embed_tag_type);
+  cef_string_set(browser_settings.embed_tag.str,
+                 browser_settings.embed_tag.length,
+                 &(settings_.embed_tag),
+                 true);
+  cef_string_set(browser_settings.embed_tag_type.str,
+                 browser_settings.embed_tag_type.length,
+                 &(settings_.embed_tag),
+                 true);
   settings_.draw_mode = browser_settings.draw_mode;
   settings_.text_autosizing_enabled = browser_settings.text_autosizing_enabled;
 #endif  // BUILDFLAG(IS_OHOS)
@@ -566,10 +582,10 @@ void NWebTestSetBrowserSettings(CefBrowserSettings& browser_settings) {
   cef_string_set(str.c_str(), str.length(),
                  &(browser_settings.fantasy_font_family), true);
 
-  browser_settings.default_font_size = DEFAULT_FONT_SIZE;
-  browser_settings.default_fixed_font_size = DEFAULT_FIXED_FONT_SIZE;
-  browser_settings.minimum_font_size = MINIMUM_FONT_SIZE;
-  browser_settings.minimum_logical_font_size = MINIMUM_LOGICAL_FONT_SIZE;
+  browser_settings.default_font_size = kDefaultFontSize;
+  browser_settings.default_fixed_font_size = kDefaultFixedFontSize;
+  browser_settings.minimum_font_size = kMinimumFontSize;
+  browser_settings.minimum_logical_font_size = kMinimumLogicalFontSize;
   browser_settings.initialize_at_minimum_page_scale = STATE_DISABLED;
 
   str = CefString("DefaultTextEncodingFormat");
@@ -654,12 +670,12 @@ bool NWebTestVarifyBrowserSettings(CefBrowserSettings& browser_settings,
                                    NWebPreferenceDelegate* pWeb) {
   bool result = true;
   result &= (browser_settings.default_font_size == 16);
-  result &= (browser_settings.default_font_size == DEFAULT_FONT_SIZE);
+  result &= (browser_settings.default_font_size == kDefaultFontSize);
   result &=
-      (browser_settings.default_fixed_font_size == DEFAULT_FIXED_FONT_SIZE);
-  result &= (browser_settings.minimum_font_size == MINIMUM_FONT_SIZE);
+      (browser_settings.default_fixed_font_size == kDefaultFixedFontSize);
+  result &= (browser_settings.minimum_font_size == kMinimumFontSize);
   result &=
-      (browser_settings.minimum_logical_font_size == MINIMUM_LOGICAL_FONT_SIZE);
+      (browser_settings.minimum_logical_font_size == kMinimumLogicalFontSize);
   return result;
 }
 

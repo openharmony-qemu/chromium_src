@@ -68,7 +68,7 @@ void JsonToResReqPreloadInfoList(const std::string& json,
       LOG(WARNING) << "PRPPreload.JsonToResReqPreloadInfoList freshness_life_times is none";
       continue;
     }
-    char* end = NULL;
+    char* end = nullptr;
     errno = 0;
     int64_t freshness_life_times = std::strtoll(freshness_life_times_str->c_str(), &end, 10);
     if (errno != 0 || !end || *end) {

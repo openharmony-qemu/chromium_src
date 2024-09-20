@@ -210,7 +210,7 @@ TEST_F(NWebNativeWindowTrackerTest, DestroyNativeWindow_Add) {
 
   auto window = VoidClassTest().Get();
   int32_t native_window_id = nativeWindowTrackerPtr->AddNativeWindow(window);
-  EXPECT_EQ(native_window_id, 1);
+  EXPECT_EQ(native_window_id, 4);
   nativeWindowTrackerPtr->DestroyNativeWindow(native_window_id);
   void* nativeWindow =
       nativeWindowTrackerPtr->GetNativeWindow(native_window_id);
@@ -247,6 +247,16 @@ TEST_F(NWebNativeWindowTrackerTest,
   nativeWindowTrackerPtr->DestroyNativeWindow(native_window_id);
   nativeWindow = nativeWindowTrackerPtr->GetNativeWindow(native_window_id);
   EXPECT_EQ(nativeWindow, nullptr);
+}
+
+TEST_F(NWebNativeWindowTrackerTest, GetNativeWindow001) {
+  auto nativeWindowTrackerPtr = NWebNativeWindowTracker::GetInstance();
+  ASSERT_NE(nativeWindowTrackerPtr, nullptr);
+
+  auto window = VoidClassTest().Get();
+  int32_t native_window_id = nativeWindowTrackerPtr->AddNativeWindow(window);
+  EXPECT_EQ(native_window_id, 5);
+  EXPECT_EQ(nativeWindowTrackerPtr->g_browser_client_, nullptr);
 }
 
 }  // namespace gpu

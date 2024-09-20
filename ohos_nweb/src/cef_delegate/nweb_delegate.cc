@@ -1010,6 +1010,9 @@ void NWebDelegate::SetVirtualPixelRatio(float ratio) {
     browser->GetHost()->SetVirtualPixelRatio(ratio);
   }
   ui::GestureConfiguration::GetInstance()->set_virtual_pixel_ratio(default_virtual_pixel_ratio_);
+  if (preference_delegate_) {
+    preference_delegate_->SetVirtualPixelRatio(ratio);
+  }
 }
 
 std::shared_ptr<NWebPreference> NWebDelegate::GetPreference() const {

@@ -104,6 +104,12 @@ TEST_F(AudioOutputChangeCallbackTest, OnOutputDeviceChange004) {
   EXPECT_EQ(reason, (int32_t)AudioAdapterDeviceChangeReason::UNKNOWN);
 }
 
+TEST_F(AudioOutputChangeCallbackTest, OnOutputDeviceChange005) {
+  change_callback_->OnOutputDeviceChange(2);
+  change_callback_->isCommunication_ = true;
+  ASSERT_EQ(change_callback_->main_task_runner_, nullptr);
+}
+
 TEST_F(AudioRendererOptionsTest, AudioRendererOptionsTest_GetSamplingRateTest) {
   AudioAdapterSamplingRate rate = AudioAdapterSamplingRate::SAMPLE_RATE_8000;
   options_->rate_ = rate;

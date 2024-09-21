@@ -16,7 +16,10 @@
 #include <cstddef>
 #include <memory>
 #include <utility>
+#define protected public
 #include "graphic_adapter.h"
+#include "media/base/video_frame.h"
+#undef protected
 #define private public
 #include "ohos_media_codec_bridge_impl.h"
 #undef private
@@ -29,6 +32,31 @@ std::string& refToMyString = test;
 
 namespace media {
 using namespace OHOS::NWeb;
+
+class MockProducerSurfaceAdapter : public ProducerSurfaceAdapter {
+ public:
+  MOCK_METHOD(std::shared_ptr<SurfaceBufferAdapter>,
+              RequestBuffer,
+              (int32_t&, std::shared_ptr<BufferRequestConfigAdapter>),
+              (override));
+  MOCK_METHOD(int32_t,
+              FlushBuffer,
+              (std::shared_ptr<SurfaceBufferAdapter>,
+               int32_t,
+               std::shared_ptr<BufferFlushConfigAdapter>),
+              (override));
+};
+
+class MockSurfaceBufferAdapter : public SurfaceBufferAdapter {
+ public:
+  MOCK_METHOD(int32_t, GetFileDescriptor, (), (override));
+  MOCK_METHOD(int32_t, GetWidth, (), (override));
+  MOCK_METHOD(int32_t, GetHeight, (), (override));
+  MOCK_METHOD(int32_t, GetStride, (), (override));
+  MOCK_METHOD(int32_t, GetFormat, (), (override));
+  MOCK_METHOD(uint32_t, GetSize, (), (override));
+  MOCK_METHOD(void*, GetVirAddr, (), (override));
+};
 
 class MockMediaCodecAdapter : public MediaCodecAdapter {
  public:
@@ -769,5 +797,66 @@ TEST_F(OHOSMediaCodecBridgeImplTest, RequestKeyFrameSoonTest_002) {
   bridge_impl.codec_adapter_ = std::move(mock_adapter);
   ASSERT_EQ(CodecCodeAdapter::OK,
             bridge_impl.codec_adapter_->RequestKeyFrameSoon());
+}
+
+TEST_F(OHOSMediaCodecBridgeImplTest, FillSurfaceBufferTest_001) {
+  bridge_impl.surface_ = nullptr;
+  CodecCodeAdapter result = bridge_impl.FillSurfaceBuffer(nullptr, 1);
+  ASSERT_EQ(result, CodecCodeAdapter::ERROR);
+}
+
+TEST_F(OHOSMediaCodecBridgeImplTest, FillSurfaceBufferTest_002) {
+  bridge_impl.surface_ = std::make_shared<MockProducerSurfaceAdapter>();
+  CodecCodeAdapter result = bridge_impl.FillSurfaceBuffer(nullptr, 1);
+  ASSERT_EQ(result, CodecCodeAdapter::ERROR);
+}
+
+TEST_F(OHOSMediaCodecBridgeImplTest, FillSurfaceBufferTest_003) {
+  bridge_impl.surface_ = nullptr;
+  auto layout = VideoFrameLayout::Create(VideoPixelFormat::PIXEL_FORMAT_I422A,
+                                         gfx::Size());
+  base::TimeDelta delta = base::Seconds(1);
+  scoped_refptr<VideoFrame> frame(new VideoFrame(
+      layout.value(), VideoFrame::StorageType::STORAGE_GPU_MEMORY_BUFFER,
+      gfx::Rect(), gfx::Size(), delta));
+  EXPECT_TRUE(frame);
+  CodecCodeAdapter result = bridge_impl.FillSurfaceBuffer(frame, 1);
+  ASSERT_EQ(result, CodecCodeAdapter::ERROR);
+}
+
+TEST_F(OHOSMediaCodecBridgeImplTest, FillSurfaceBufferTest_004) {
+  bridge_impl.surface_ = std::make_shared<MockProducerSurfaceAdapter>();
+  auto surface =
+      static_cast<MockProducerSurfaceAdapter*>(bridge_impl.surface_.get());
+  auto layout = VideoFrameLayout::Create(VideoPixelFormat::PIXEL_FORMAT_I422A,
+                                         gfx::Size());
+  base::TimeDelta delta = base::Seconds(1);
+  scoped_refptr<VideoFrame> frame(new VideoFrame(
+      layout.value(), VideoFrame::StorageType::STORAGE_GPU_MEMORY_BUFFER,
+      gfx::Rect(), gfx::Size(), delta));
+  EXPECT_TRUE(frame);
+  EXPECT_CALL(*surface, RequestBuffer).WillOnce(testing::Return(nullptr));
+  CodecCodeAdapter result = bridge_impl.FillSurfaceBuffer(frame, 1);
+  ASSERT_EQ(result, CodecCodeAdapter::ERROR);
+}
+
+TEST_F(OHOSMediaCodecBridgeImplTest, FillSurfaceBufferTest_005) {
+  bridge_impl.surface_ = std::make_shared<MockProducerSurfaceAdapter>();
+  auto layout = VideoFrameLayout::Create(VideoPixelFormat::PIXEL_FORMAT_I422A,
+                                         gfx::Size());
+  base::TimeDelta delta = base::Seconds(1);
+
+  scoped_refptr<VideoFrame> frame(new VideoFrame(
+      layout.value(), VideoFrame::StorageType::STORAGE_GPU_MEMORY_BUFFER,
+      gfx::Rect(), gfx::Size(), delta));
+  auto surface =
+      static_cast<MockProducerSurfaceAdapter*>(bridge_impl.surface_.get());
+  auto buffer_adapter = std::make_shared<MockSurfaceBufferAdapter>();
+  EXPECT_CALL(*buffer_adapter, GetVirAddr()).WillOnce(testing::Return(nullptr));
+  EXPECT_CALL(*buffer_adapter, GetStride()).WillOnce(testing::Return(1));
+  EXPECT_CALL(*surface, RequestBuffer)
+      .WillOnce(testing::Return(buffer_adapter));
+  CodecCodeAdapter result = bridge_impl.FillSurfaceBuffer(frame, 1);
+  ASSERT_EQ(result, CodecCodeAdapter::ERROR);
 }
 }  // namespace media

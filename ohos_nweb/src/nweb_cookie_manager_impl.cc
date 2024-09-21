@@ -88,7 +88,7 @@ void NWebCookieManagerImpl::ConfigCookie(
     const std::string& value,
     std::shared_ptr<NWebLongValueCallback> callback) {
   if (delegate_ != nullptr) {
-    delegate_->ConfigCookie(url, value, callback);
+    delegate_->ConfigCookie(url, value, false, false, callback);
   }
 }
 
@@ -104,7 +104,7 @@ void NWebCookieManagerImpl::SetCookie(
 int NWebCookieManagerImpl::SetCookie(
     const std::string& url, const std::string& value, bool incognito_mode) {
   if (delegate_ != nullptr) {
-    return delegate_->SetCookie(url, value, incognito_mode);
+    return delegate_->SetCookie(url, value, incognito_mode, false);
   }
   return NWEB_ERR;
 }
@@ -123,7 +123,7 @@ void NWebCookieManagerImpl::ReturnCookie(
     const std::string& url,
     std::shared_ptr<NWebStringValueCallback> callback) {
   if (delegate_ != nullptr) {
-    delegate_->ReturnCookie(url, callback);
+    delegate_->ReturnCookie(url, false, callback);
   }
 }
 
@@ -184,6 +184,37 @@ void NWebCookieManagerImpl::DeleteCookieEntirely(
     std::shared_ptr<NWebBoolValueCallback> callback, bool incognito_mode) {
   if (delegate_ != nullptr) {
     delegate_->DeleteCookieEntirely(callback, incognito_mode);
+  }
+}
+
+void NWebCookieManagerImpl::GetCookieAsync(
+    const std::string& url,
+    bool incognitoMode,
+    std::shared_ptr<NWebStringValueCallback> callback) {
+  if (delegate_ != nullptr) {
+    delegate_->ReturnCookie(url, incognitoMode, callback);
+  }
+}
+
+int NWebCookieManagerImpl::SetCookieSync(const std::string& url,
+                                         const std::string& value,
+                                         bool incognitoMode,
+                                         bool includeHttpOnly) {
+  if (delegate_ != nullptr) {
+    return delegate_->SetCookie(url, value, incognitoMode, includeHttpOnly);
+  }
+  return NWEB_ERR;
+}
+
+void NWebCookieManagerImpl::SetCookieAsync(
+    const std::string& url,
+    const std::string& value,
+    bool incognitoMode,
+    bool includeHttpOnly,
+    std::shared_ptr<NWebLongValueCallback> callback) {
+  if (delegate_ != nullptr) {
+    delegate_->ConfigCookie(url, value, incognitoMode, includeHttpOnly,
+                            callback);
   }
 }
 }  // namespace OHOS::NWeb

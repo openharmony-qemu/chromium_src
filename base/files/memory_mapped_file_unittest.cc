@@ -2,7 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#if defined(OHOS_UNITTESTS)
+#define private public
 #include "base/files/memory_mapped_file.h"
+#undef private
+#else  // OHOS_UNITTESTS 
+#include "base/files/memory_mapped_file.h"
+#endif  // OHOS_UNITTESTS
 
 #include <stddef.h>
 #include <stdint.h>
@@ -240,6 +246,79 @@ TEST_F(MemoryMappedFileTest, ExtendableFile) {
   EXPECT_EQ("BAZ", contents.substr(kFileSize, 3));
 }
 
+#if defined(OHOS_UNITTESTS)
+class MockOhosFileMapper : public OHOS::NWeb::OhosFileMapper {
+ public:
+  int32_t GetFd() override { return 1; }
+  int32_t GetOffset() override { return 1; }
+  std::string GetFileName() override { return "name"; }
+  bool IsCompressed() override { return true; }
+  void* GetDataPtr() override { return nullptr; }
+  size_t GetDataLen() override { return 1; }
+  bool UnzipData(uint8_t** dest, size_t& len) override { return false; }
+};
+
+TEST_F(MemoryMappedFileTest, DeleteMemoryMappedFile_001) {
+  std::shared_ptr<MemoryMappedFile> memory_mapped_file_test =
+      std::make_shared<MemoryMappedFile>();
+  memory_mapped_file_test->data_ = nullptr;
+  memory_mapped_file_test->customizeData_ = true;
+  EXPECT_FALSE((memory_mapped_file_test->data_ != nullptr) &&
+               (memory_mapped_file_test->mapper_ == nullptr));
+  memory_mapped_file_test.reset();
+}
+
+TEST_F(MemoryMappedFileTest, DeleteMemoryMappedFile_002) {
+  std::shared_ptr<MemoryMappedFile> memory_mapped_file_test =
+      std::make_shared<MemoryMappedFile>();
+  uint8_t* raw_ptr_to_array = new uint8_t[2]{0x01, 0x02};
+  memory_mapped_file_test->data_ = raw_ptr_to_array;
+  memory_mapped_file_test->customizeData_ = true;
+  memory_mapped_file_test->mapper_ = nullptr;
+  EXPECT_TRUE((memory_mapped_file_test->data_ != nullptr) &&
+              (memory_mapped_file_test->mapper_ == nullptr));
+  memory_mapped_file_test.reset();
+}
+
+TEST_F(MemoryMappedFileTest, SetOhosFileMapper_001) {
+  MemoryMappedFile memory_mapped_file_test;
+  MockOhosFileMapper mock_ohos_file_mapper;
+  std::shared_ptr<OHOS::NWeb::OhosFileMapper> mapper =
+      std::make_shared<MockOhosFileMapper>(mock_ohos_file_mapper);
+  uint8_t* raw_ptr_to_array = new uint8_t[2]{0x01, 0x02};
+  memory_mapped_file_test.data_ = raw_ptr_to_array;
+  memory_mapped_file_test.customizeData_ = true;
+  memory_mapped_file_test.mapper_ = nullptr;
+  memory_mapped_file_test.SetOhosFileMapper(mapper);
+  EXPECT_EQ(memory_mapped_file_test.data_, nullptr);
+}
+
+TEST_F(MemoryMappedFileTest, SetOhosFileMapper_002) {
+  MemoryMappedFile memory_mapped_file_test;
+  MockOhosFileMapper mock_ohos_file_mapper;
+  std::shared_ptr<OHOS::NWeb::OhosFileMapper> mapper =
+      std::make_shared<MockOhosFileMapper>(mock_ohos_file_mapper);
+  uint8_t test[2] = {0x01, 0x02};
+  memory_mapped_file_test.data_ = test;
+  memory_mapped_file_test.customizeData_ = false;
+  memory_mapped_file_test.mapper_ = nullptr;
+  memory_mapped_file_test.SetOhosFileMapper(mapper);
+  EXPECT_EQ(memory_mapped_file_test.data_, nullptr);
+}
+
+TEST_F(MemoryMappedFileTest, SetOhosFileMapper_003) {
+  MemoryMappedFile memory_mapped_file_test;
+  MockOhosFileMapper mock_ohos_file_mapper;
+  std::shared_ptr<OHOS::NWeb::OhosFileMapper> mapper =
+      std::make_shared<MockOhosFileMapper>(mock_ohos_file_mapper);
+  uint8_t test[2] = {0x01, 0x02};
+  memory_mapped_file_test.data_ = test;
+  memory_mapped_file_test.customizeData_ = true;
+  memory_mapped_file_test.mapper_ = mapper;
+  memory_mapped_file_test.SetOhosFileMapper(mapper);
+  EXPECT_EQ(memory_mapped_file_test.data_, nullptr);
+}
+#endif  // OHOS_UNITTESTS
 }  // namespace
 
 }  // namespace base

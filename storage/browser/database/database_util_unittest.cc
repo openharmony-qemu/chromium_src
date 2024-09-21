@@ -78,7 +78,7 @@ TEST(DatabaseUtilTest, CrackVfsFilePathTest002) {
   std::string origin_identifier;
   std::u16string database_name;
   std::u16string sqlite_suffix;
-  std::u16string vfs_file_name = u"example.ÖÐÎÄ/db_name.db";
+  std::u16string vfs_file_name = u"example..com/db_name.db";
   auto result = DatabaseUtil::CrackVfsFileName(vfs_file_name,
                                                      &origin_identifier, &database_name,
                                                      &sqlite_suffix);

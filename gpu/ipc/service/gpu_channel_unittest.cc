@@ -13,7 +13,13 @@
 
 #include "base/run_loop.h"
 #include "base/test/bind.h"
+#if defined(OHOS_UNITTESTS)
+#define protected public
+#endif  // OHOS_UNITTESTS
 #include "base/test/test_simple_task_runner.h"
+#if defined(OHOS_UNITTESTS)
+#undef protected
+#endif  // OHOS_UNITTESTS
 #include "build/build_config.h"
 #include "gpu/ipc/common/command_buffer_id.h"
 #include "gpu/ipc/common/gpu_channel.mojom.h"
@@ -258,8 +264,9 @@ TEST_F(GpuChannelExitForContextLostTest,
   base::RunLoop().RunUntilIdle();
 
   // If the channel is destroyed, then skip the test.
-  if (!channel_manager()->LookupChannel(kClientId))
+  if (!channel_manager()->LookupChannel(kClientId)) {
     return;
+  }
 
   // Try to create a context.
   int32_t kRouteId =
@@ -416,5 +423,87 @@ TEST_F(GpuChannelTest, TryCreateNativeTexture2) {
   int32_t result = TryCreateNativeTexture(channell, 1, std::move(receiver));
   EXPECT_NE(result, -1);
 }
+
+#if defined(OHOS_UNITTESTS)
+TEST_F(GpuChannelTest, FlushDeferredRequests1) {
+  testing::internal::CaptureStderr();
+  auto command_buffer_request = mojom::DeferredCommandBufferRequest::New();
+  auto params = mojom::DeferredRequestParams::NewCommandBufferRequest(
+      std::move(command_buffer_request));
+  params->set_destroy_native_texture(1);
+  int32_t kClientId = 1;
+  bool is_gpu_host = true;
+  GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
+  const base::UnguessableToken channel_token = base::UnguessableToken::Create();
+  const GpuPreferences gpu_preferences;
+  Scheduler* scheduler = new Scheduler(new SyncPointManager(), gpu_preferences);
+  ImageDecodeAcceleratorWorker* image_decode_accelerator_worker = nullptr;
+  scoped_refptr<base::SingleThreadTaskRunner> main_task_runner(
+      new base::TestSimpleTaskRunner());
+  GpuChannelMessageFilter gpu_filter(channel, channel_token, scheduler,
+                                     image_decode_accelerator_worker,
+                                     main_task_runner);
+  std::vector<mojom::DeferredRequestPtr> requests;
+  std::vector<SyncToken> sync_token_fences;
+  params->tag_ = mojom::DeferredRequestParams::Tag::kDestroyNativeTexture;
+  requests.push_back(mojom::DeferredRequest::New(std::move(params),
+                                                 std::move(sync_token_fences)));
+  gpu_filter.FlushDeferredRequests(std::move(requests));
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(log_output.find("Trying to destroy a non-existent nativetexture"),
+            std::string::npos);
+  delete scheduler;
+}
+
+TEST_F(GpuChannelTest, FlushDeferredRequests2) {
+  testing::internal::CaptureStderr();
+  auto command_buffer_request = mojom::DeferredCommandBufferRequest::New();
+  auto params = mojom::DeferredRequestParams::NewCommandBufferRequest(
+      std::move(command_buffer_request));
+  params->set_destroy_native_texture(1);
+  int32_t kClientId = 1;
+  bool is_gpu_host = true;
+  GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
+  const base::UnguessableToken channel_token = base::UnguessableToken::Create();
+  const GpuPreferences gpu_preferences;
+  Scheduler* scheduler = new Scheduler(new SyncPointManager(), gpu_preferences);
+  ImageDecodeAcceleratorWorker* image_decode_accelerator_worker = nullptr;
+  scoped_refptr<base::SingleThreadTaskRunner> main_task_runner(
+      new base::TestSimpleTaskRunner());
+  GpuChannelMessageFilter gpu_filter(channel, channel_token, scheduler,
+                                     image_decode_accelerator_worker,
+                                     main_task_runner);
+  std::vector<mojom::DeferredRequestPtr> requests;
+  std::vector<SyncToken> sync_token_fences;
+  uint32_t tag = 5;
+  params->tag_ = (mojom::DeferredRequestParams::Tag)tag;
+  requests.push_back(mojom::DeferredRequest::New(std::move(params),
+                                                 std::move(sync_token_fences)));
+  gpu_filter.FlushDeferredRequests(std::move(requests));
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_TRUE(requests.empty());
+  delete scheduler;
+}
+
+TEST_F(GpuChannelTest, CreateNativeTextureF2) {
+  int32_t kClientId = 1;
+  bool is_gpu_host = true;
+  GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
+  const base::UnguessableToken channel_token = base::UnguessableToken::Create();
+  const GpuPreferences gpu_preferences;
+  Scheduler* scheduler = new Scheduler(new SyncPointManager(), gpu_preferences);
+  ImageDecodeAcceleratorWorker* image_decode_accelerator_worker = nullptr;
+  scoped_refptr<base::SingleThreadTaskRunner> main_task_runner(
+      new base::TestSimpleTaskRunner());
+  GpuChannelMessageFilter gpu_filter(channel, channel_token, scheduler,
+                                     image_decode_accelerator_worker,
+                                     main_task_runner);
+  mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
+  gpu_filter.CreateNativeTexture(
+      kClientId, std::move(receiver),
+      base::BindLambdaForTesting([](int32_t value) {}));
+  EXPECT_TRUE(gpu_filter.main_task_runner_);
+}
+#endif  // OHOS_UNITTESTS
 
 }  // namespace gpu

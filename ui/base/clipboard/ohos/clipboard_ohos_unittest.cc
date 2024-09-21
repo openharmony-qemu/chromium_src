@@ -23,6 +23,7 @@
 #include "ui/base/clipboard/ohos/clipboard_ohos.cc"
 #undef private
 
+using namespace content;
 namespace ui {
 class ClipboardOHOSMock : public ClipboardOHOS {
  public:
@@ -39,6 +40,7 @@ class ClipboardOHOSTest : public ::testing::Test {
   void SetUp() override {
     clip_board_shared = std::make_shared<ClipboardOHOS>();
     clipboard_internal = std::make_shared<ClipboardOHOSInternal>();
+    paste_board_ = std::make_shared<ClipboardOHOSInternal::PasteboardObserverOhos>();
   }
 
   void TearDown() override {}
@@ -48,6 +50,7 @@ class ClipboardOHOSTest : public ::testing::Test {
   ClipboardDataBuilder clip_board_data;
   std::shared_ptr<ClipboardOHOSInternal> clipboard_internal;
   ClipboardData board_data;
+  std::shared_ptr<ClipboardOHOSInternal::PasteboardObserverOhos> paste_board_;
 };
 
 TEST_F(ClipboardOHOSTest, ReadText_001) {
@@ -652,6 +655,11 @@ TEST_F(ClipboardOHOSTest, ReadPng_001) {
   EXPECT_EQ(clip_board_ohos.clipboard_internal_->IsReadAllowed(
                 data_dst, ClipboardInternalFormat::kPng),
             true);
+}
+
+TEST_F(ClipboardOHOSTest, OnPasteboardChanged_001) {
+  paste_board_->OnPasteboardChanged();
+  EXPECT_EQ(paste_board_->clipboard_internal_, nullptr);
 }
 
 }  // namespace ui

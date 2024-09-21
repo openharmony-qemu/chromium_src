@@ -2,9 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#define  private public
 #include "ui/events/blink/blink_event_util.h"
-#undef private 
+
 #define  protected public
 #include "ui/events/gesture_detection/motion_event_generic.h"
 #undef protected

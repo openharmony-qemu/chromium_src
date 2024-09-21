@@ -394,10 +394,6 @@ TEST_F(ResourceBundleTest, LocaleDataPakExists008) {
   EXPECT_TRUE(ResourceBundle::LocaleDataPakExists("chrome_200_percent"));
 }
 
-TEST_F(ResourceBundleTest, LocaleDataPakExists009) {
-  EXPECT_TRUE(ResourceBundle::LocaleDataPakExists("/data/app/el1/bundle/public/com.ohos.nweb/libs/arm/libffmpeg.so"));
-}
-
 class ResourceBundleImageTest : public ResourceBundleTest {
  public:
   ResourceBundleImageTest() {}

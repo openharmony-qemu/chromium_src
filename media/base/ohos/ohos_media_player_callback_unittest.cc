@@ -30,7 +30,8 @@ class OHOSMediaPlayerCallbackTest : public ::testing::Test {
  protected:
   void SetUp() override {
     task_runner = base::SingleThreadTaskRunner::GetCurrentDefault();
-    media_player_callback_ = std::make_unique<OHOSMediaPlayerCallback>(task_runner,media_player);
+    media_player_callback_ =
+        std::make_unique<OHOSMediaPlayerCallback>(task_runner, media_player);
   }
 
   void TearDown() override {
@@ -45,15 +46,100 @@ class OHOSMediaPlayerCallbackTest : public ::testing::Test {
   base::test::TaskEnvironment task_environment_;
 };
 
-TEST_F(OHOSMediaPlayerCallbackTest, OnError) {
-    media_player_callback_->task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
-    OHOS::NWeb::PlayerAdapterErrorType errorType = OHOS::NWeb::PlayerAdapterErrorType::INVALID_CODE;
-    media_player_callback_->OnError(errorType);
+TEST_F(OHOSMediaPlayerCallbackTest, OnError_001) {
+  media_player_callback_->task_runner_ =
+      base::SingleThreadTaskRunner::GetCurrentDefault();
+  OHOS::NWeb::PlayerAdapterErrorType errorType =
+      OHOS::NWeb::PlayerAdapterErrorType::INVALID_CODE;
+  media_player_callback_->OnError(errorType);
+  ASSERT_TRUE(media_player_callback_);
 }
 
-TEST_F(OHOSMediaPlayerCallbackTest, TestOnInfompl) {
-  OHOS::NWeb::PlayerOnInfoType type = OHOS::NWeb::PlayerOnInfoType::INFO_TYPE_UNSET;
+TEST_F(OHOSMediaPlayerCallbackTest, OnError_002) {
+  media_player_callback_->task_runner_ =
+      base::SingleThreadTaskRunner::GetCurrentDefault();
+  OHOS::NWeb::PlayerAdapterErrorType errorType =
+      OHOS::NWeb::PlayerAdapterErrorType::UNSUPPORT_TYPE;
+  media_player_callback_->OnError(errorType);
+  ASSERT_TRUE(media_player_callback_);
+}
+
+TEST_F(OHOSMediaPlayerCallbackTest, OnError_003) {
+  media_player_callback_->task_runner_ =
+      base::SingleThreadTaskRunner::GetCurrentDefault();
+  OHOS::NWeb::PlayerAdapterErrorType errorType =
+      OHOS::NWeb::PlayerAdapterErrorType::FATAL_ERROR;
+  media_player_callback_->OnError(errorType);
+  ASSERT_TRUE(media_player_callback_);
+}
+
+TEST_F(OHOSMediaPlayerCallbackTest, TestOnInfo_001) {
+  OHOS::NWeb::PlayerOnInfoType type =
+      OHOS::NWeb::PlayerOnInfoType::INFO_TYPE_UNSET;
   int32_t extra = 1;
   int32_t value = 0;
-  media_player_callback_->OnInfo(type,extra,value);
+  media_player_callback_->OnInfo(type, extra, value);
+  EXPECT_EQ(static_cast<int>(type), -1);
+}
+
+TEST_F(OHOSMediaPlayerCallbackTest, TestOnInfo_002) {
+  OHOS::NWeb::PlayerOnInfoType type =
+      OHOS::NWeb::PlayerOnInfoType::INFO_TYPE_EOS;
+  int32_t extra = 1;
+  int32_t value = 0;
+  media_player_callback_->task_runner_ =
+      base::SingleThreadTaskRunner::GetCurrentDefault();
+  media_player_callback_->OnInfo(type, extra, value);
+  EXPECT_EQ(static_cast<int>(type), 4);
+}
+
+TEST_F(OHOSMediaPlayerCallbackTest, TestOnInfo_003) {
+  OHOS::NWeb::PlayerOnInfoType type =
+      OHOS::NWeb::PlayerOnInfoType::INFO_TYPE_STATE_CHANGE;
+  int32_t extra = 1;
+  int32_t value = 0;
+  media_player_callback_->task_runner_ =
+      base::SingleThreadTaskRunner::GetCurrentDefault();
+  media_player_callback_->OnInfo(type, extra, value);
+  EXPECT_EQ(static_cast<int>(type), 5);
+}
+
+TEST_F(OHOSMediaPlayerCallbackTest, TestOnInfo_004) {
+  OHOS::NWeb::PlayerOnInfoType type =
+      OHOS::NWeb::PlayerOnInfoType::INFO_TYPE_POSITION_UPDATE;
+  int32_t extra = 1;
+  int32_t value = 0;
+  media_player_callback_->OnInfo(type, extra, value);
+  EXPECT_EQ(static_cast<int>(type), 6);
+}
+
+TEST_F(OHOSMediaPlayerCallbackTest, TestOnInfo_005) {
+  OHOS::NWeb::PlayerOnInfoType type =
+      OHOS::NWeb::PlayerOnInfoType::INFO_TYPE_MESSAGE;
+  int32_t extra = 1;
+  int32_t value = 0;
+  media_player_callback_->OnInfo(type, extra, value);
+  EXPECT_EQ(static_cast<int>(type), 7);
+}
+
+TEST_F(OHOSMediaPlayerCallbackTest, TestOnInfo_006) {
+  OHOS::NWeb::PlayerOnInfoType type =
+      OHOS::NWeb::PlayerOnInfoType::INFO_TYPE_INTERRUPT_EVENT;
+  media_player_callback_->task_runner_ =
+      base::SingleThreadTaskRunner::GetCurrentDefault();
+  int32_t extra = 1;
+  int32_t value = 0;
+  media_player_callback_->OnInfo(type, extra, value);
+  EXPECT_EQ(static_cast<int>(type), 8);
+}
+
+TEST_F(OHOSMediaPlayerCallbackTest, TestOnInfo_007) {
+  OHOS::NWeb::PlayerOnInfoType type =
+      OHOS::NWeb::PlayerOnInfoType::INFO_TYPE_SEEKDONE;
+  media_player_callback_->task_runner_ =
+      base::SingleThreadTaskRunner::GetCurrentDefault();
+  int32_t extra = 1;
+  int32_t value = 0;
+  media_player_callback_->OnInfo(type, extra, value);
+  EXPECT_EQ(static_cast<int>(type), 1);
 }

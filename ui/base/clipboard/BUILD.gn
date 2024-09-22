@@ -272,6 +272,8 @@ source_set("clipboard_test") {
     sources += [
       "clipboard_data_unittest.cc",
       "clipboard_non_backed_unittest.cc",
+      "ohos/clipboard_ohos_unittest.cc",
+      "scoped_clipboard_writer_unittest.cc",
     ]
   }
   if (ohos_unittests) {

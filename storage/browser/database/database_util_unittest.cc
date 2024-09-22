@@ -68,7 +68,7 @@ TEST(DatabaseUtilTest, CrackVfsFilePathTest001) {
   std::string origin_identifier;
   std::u16string database_name;
   std::u16string sqlite_suffix;
-  std::u16string vfs_file_name = u"/example.com/---------.db";
+  std::u16string vfs_file_name = u"/example.com/----.d---@*b";
   auto result = DatabaseUtil::CrackVfsFileName(vfs_file_name,
                                                      &origin_identifier, &database_name,
                                                      &sqlite_suffix);
@@ -87,7 +87,7 @@ TEST(DatabaseUtilTest, CrackVfsFilePathTest002) {
 }
 
 TEST(DatabaseUtilTest, CrackVfsFilePathTest003) {
-  std::u16string vfs_file_name = u"/example.com/dbname.db";
+  std::u16string vfs_file_name = u"/http_origin_0/dbname.suffix";
   auto result = DatabaseUtil::CrackVfsFileName(vfs_file_name,
                                                      nullptr, nullptr,
                                                      nullptr);

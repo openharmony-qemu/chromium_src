@@ -20,15 +20,22 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/base/ui_base_features.h"
+#if defined(OHOS_UNITTESTS)
+#define private public
+#endif  // OHOS_UNITTESTS
 #include "ui/compositor/compositor.h"
+#if defined(OHOS_UNITTESTS)
+#undef private
+#include "cc/test/fake_layer_tree_frame_sink.h"
+#endif  // OHOS_UNITTESTS
 #include "ui/compositor/layer.h"
 #include "ui/compositor/layer_delegate.h"
 #include "ui/compositor/test/draw_waiter_for_test.h"
 #include "ui/compositor/test/in_process_context_factory.h"
 #include "ui/compositor/test/test_context_factories.h"
 
-using testing::Mock;
 using testing::_;
+using testing::Mock;
 
 namespace ui {
 namespace {
@@ -104,8 +111,7 @@ class CompositorTestWithMockedTime : public CompositorTest {
 class CompositorTestWithMessageLoop : public CompositorTest {
  public:
 #if defined(OHOS_UNITTESTS)
-  CompositorTestWithMessageLoop()
-      : task_environment_() {}
+  CompositorTestWithMessageLoop() : task_environment_() {}
 #else
   CompositorTestWithMessageLoop()
       : task_environment_(base::test::TaskEnvironment::MainThreadType::UI) {}
@@ -552,5 +558,85 @@ TEST_F(CompositorTestWithMessageLoop, AddLayerDuringUpdateVisualState) {
   child_layer.reset();
   root_layer.reset();
 }
+
+#if defined(OHOS_UNITTESTS)
+TEST_F(CompositorTestWithMessageLoop, SetCurrentFrameSinkId1) {
+  testing::internal::CaptureStderr();
+  const viz::FrameSinkId id;
+  auto frame_sink = cc::FakeLayerTreeFrameSink::Create3d();
+  mojo::AssociatedRemote<viz::mojom::DisplayPrivate> display_private;
+  mojo::PendingAssociatedReceiver<viz::mojom::DisplayPrivate> remote =
+      display_private.BindNewEndpointAndPassDedicatedReceiver();
+  compositor()->SetLayerTreeFrameSink(std::move(frame_sink),
+                                      std::move(display_private));
+  compositor()->SetCurrentFrameSinkId(id);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(
+      log_output.find("Compositor::SetCurrentDisplay display_private error"),
+      std::string::npos);
+}
+
+TEST_F(CompositorTestWithMessageLoop, SetCurrentFrameSinkId2) {
+  testing::internal::CaptureStderr();
+  const viz::FrameSinkId id;
+  compositor()->SetCurrentFrameSinkId(id);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(
+      log_output.find("Compositor::SetCurrentDisplay display_private error"),
+      std::string::npos);
+}
+
+TEST_F(CompositorTestWithMessageLoop, SetShouldFrameSubmissionBeforeDraw1) {
+  compositor()->SetShouldFrameSubmissionBeforeDraw(true);
+  EXPECT_FALSE(compositor()->display_private_);
+}
+
+TEST_F(CompositorTestWithMessageLoop, SetDrawRect1) {
+  auto frame_sink = cc::FakeLayerTreeFrameSink::Create3d();
+  mojo::AssociatedRemote<viz::mojom::DisplayPrivate> display_private;
+  mojo::PendingAssociatedReceiver<viz::mojom::DisplayPrivate> remote =
+      display_private.BindNewEndpointAndPassDedicatedReceiver();
+  compositor()->SetLayerTreeFrameSink(std::move(frame_sink),
+                                      std::move(display_private));
+  gfx::Rect rect = gfx::Rect(0, 0, 256, 256);
+  compositor()->SetDrawRect(rect);
+  EXPECT_TRUE(compositor()->display_private_);
+}
+
+TEST_F(CompositorTestWithMessageLoop, SetDrawRect2) {
+  gfx::Rect rect = gfx::Rect(0, 0, 256, 256);
+  compositor()->SetDrawRect(rect);
+  EXPECT_FALSE(compositor()->display_private_);
+}
+
+TEST_F(CompositorTestWithMessageLoop, SetDrawMode1) {
+  compositor()->drawMode_ = true;
+  bool input_mode = true;
+  compositor()->SetDrawMode(input_mode);
+  EXPECT_TRUE(compositor()->drawMode_);
+}
+
+TEST_F(CompositorTestWithMessageLoop, SetDrawMode2) {
+  auto frame_sink = cc::FakeLayerTreeFrameSink::Create3d();
+  mojo::AssociatedRemote<viz::mojom::DisplayPrivate> display_private;
+  mojo::PendingAssociatedReceiver<viz::mojom::DisplayPrivate> remote =
+      display_private.BindNewEndpointAndPassDedicatedReceiver();
+  compositor()->SetLayerTreeFrameSink(std::move(frame_sink),
+                                      std::move(display_private));
+  compositor()->drawMode_ = true;
+  bool input_mode = false;
+  compositor()->SetDrawMode(input_mode);
+  EXPECT_FALSE(compositor()->drawMode_);
+  EXPECT_TRUE(compositor()->display_private_);
+}
+
+TEST_F(CompositorTestWithMessageLoop, SetDrawMode3) {
+  compositor()->drawMode_ = true;
+  bool input_mode = false;
+  compositor()->SetDrawMode(input_mode);
+  EXPECT_FALSE(compositor()->drawMode_);
+  EXPECT_FALSE(compositor()->display_private_);
+}
+#endif  // OHOS_UNITTESTS
 
 }  // namespace ui

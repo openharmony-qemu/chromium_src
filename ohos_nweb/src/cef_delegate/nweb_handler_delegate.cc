@@ -1544,10 +1544,6 @@ void NWebHandlerDelegate::OnRenderProcessTerminated(
   ReportPageLoadErrorInfo(nweb_id_, error_type, static_cast<int>(reason),
                           error_desc);
 #endif
-
-#if defined(OHOS_CRASHPAD)
-  ReportTransferToBaseStorage();
-#endif
 }
 
 bool NWebHandlerDelegate::GetAuthCredentials(

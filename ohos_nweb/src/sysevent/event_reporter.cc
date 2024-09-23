@@ -79,13 +79,6 @@ constexpr char VIDEO_FRAME_DROPPED_DURATION[] = "VIDEO_FRAME_DROPPED_DURATION";
 constexpr char SITE_ISOLATION_MODE[] = "SITE_ISOLATION_MODE";
 constexpr char SITE_ISOLATION_STATUS[] = "SITE_ISOLATION_STATUS";
 
-// For crashpad info
-#if defined(OHOS_CRASHPAD)
-constexpr char DEFAULT_CRASHPAD_ORIGIN_LOCATION[] = "/data/storage/el2/log/crashpad/";
-constexpr char DEFAULT_CRASHPAD_TARGET_LOCATION[] = "/data/storage/el2/base/crashpad";
-static std::string crashpadTargetLocation = "/data/storage/el2/base/crashpad";
-#endif
-
 }  // namespace
 
 void ReportPageLoadStats(int instanceId,
@@ -232,78 +225,3 @@ void ReportSiteIsolationMode(const std::string site_isolation_status) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       SITE_ISOLATION_MODE, HiSysEventAdapter::EventType::BEHAVIOR, {SITE_ISOLATION_STATUS, site_isolation_status});
 }
-
-
-#if defined(OHOS_CRASHPAD)
-void MoveDirectory(const base::FilePath& from_dir,
-                   const base::FilePath& to_dir) {
-  if (!base::DirectoryExists(from_dir)) {
-    LOG(ERROR) << "Source directory does not exist: " << from_dir.value();
-    return;
-  }
-  if (!base::CreateDirectory(to_dir)) {
-    LOG(ERROR) << "Failed to create target directory: " << to_dir.value();
-    return;
-  }
-
-  // Move all files in the current directory.
-  base::FileEnumerator enumerator(from_dir, false, base::FileEnumerator::FILES);
-  for (base::FilePath path = enumerator.Next(); !path.empty();
-       path = enumerator.Next()) {
-    base::FilePath target_path = to_dir.Append(path.BaseName());
-    if (!base::Move(path, target_path)) {
-      LOG(ERROR) << "Failed to move file: " << path.value() << " to "
-                 << target_path.value();
-    } else {
-      LOG(INFO) << "Moved file: " << path.value() << " to "
-                << target_path.value();
-    }
-  }
-  // Recursively move all subdirectories.
-  base::FileEnumerator enumeratorSubDir =
-      base::FileEnumerator(from_dir, true, base::FileEnumerator::DIRECTORIES);
-  for (base::FilePath path = enumeratorSubDir.Next(); !path.empty();
-       path = enumeratorSubDir.Next()) {
-    base::FilePath target_path = to_dir.Append(path.BaseName());
-    MoveDirectory(path, target_path);
-  }
-}
-
-void SetTargetCrashpadLogPath(std::string crashpadLogPath) {
-  LOG(INFO) << "crashpadTargetLocation is " << crashpadTargetLocation
-            << " crashpadLogPath is " << crashpadLogPath;
-  crashpadTargetLocation = crashpadLogPath;
-}
-void TransferToTargetFile(const base::FilePath& from_dir,
-                          const base::FilePath& to_dir) {
-  bool isParentOrSelfPath = to_dir.IsParent(from_dir) || to_dir == from_dir;
-  if (!base::PathExists(to_dir) || isParentOrSelfPath) {
-    LOG(WARNING) << "to_dir file path is no illegal, this input to_dir is "
-                 << to_dir;
-    MoveDirectory(
-        from_dir,
-        base::FilePath(FILE_PATH_LITERAL(DEFAULT_CRASHPAD_TARGET_LOCATION)));
-    return;
-  }
-  MoveDirectory(from_dir, to_dir);
-}
-void ReportTransferToBaseStorage() {
-  LOG(INFO)
-      << "Start ReportTransferToBaseStorage .... crashpadTargetLocation is "
-      << crashpadTargetLocation;
-  if (!(base::CommandLine::ForCurrentProcess() &&
-        base::CommandLine::ForCurrentProcess()->HasSwitch(
-            switches::kForBrowser))) {
-    LOG(WARNING) << "return ReportTransferToBaseStorage fail cause brower has "
-                    "no start crashpadTargetLocation is "
-                 << crashpadTargetLocation;
-    return;
-  }
-  content::GetIOThreadTaskRunner({})->PostTask(
-      FROM_HERE,
-      base::BindOnce(
-          &TransferToTargetFile,
-          base::FilePath(FILE_PATH_LITERAL(DEFAULT_CRASHPAD_ORIGIN_LOCATION)),
-          base::FilePath(FILE_PATH_LITERAL(crashpadTargetLocation))));
-}
-#endif

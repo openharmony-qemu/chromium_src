@@ -19,13 +19,6 @@
 #include <string>
 #include <vector>
 #include "oh_web_performance_timing.h"
-#include "base/files/file_util.h"
-#include "base/files/file_enumerator.h"
-#include "base/files/file_path.h"
-#include "base/logging.h"
-#include "base/command_line.h"
-#include "content/public/common/content_switches.h"
-#include "content/public/browser/browser_thread.h"
 
 void ReportPageLoadStats(int instanceId,
                          int accessSumCount,
@@ -73,10 +66,4 @@ void ReportAudioFrameDropStats(int frameCount);
 void ReportVideoFrameDropStats(int64_t frameCount, int64_t frameDuration);
 
 void ReportSiteIsolationMode(const std::string site_isolation_status);
-
-#if defined(OHOS_CRASHPAD)
-void SetTargetCrashpadLogPath(std::string crashpadLogPath);
-void ReportTransferToBaseStorage(void);
-#endif
-
 #endif

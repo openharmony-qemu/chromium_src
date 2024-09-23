@@ -508,11 +508,6 @@ bool NWebDelegate::Init(bool is_enhance_surface,
     // background color should set when init in case of first white screen flash
     preference_delegate_->SetBackgroundColor(backgroundColor);
   }
-
-#ifdef OHOS_CRASHPAD
- ReportTransferToBaseStorage(); 
-#endif
-
 #ifdef OHOS_DRAG_DROP
   InitAppTempDir();
 #endif

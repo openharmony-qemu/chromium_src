@@ -53,13 +53,6 @@ struct BmpInfoHeader {
 };
 
 constexpr uint8_t kBitsPerPixel = 4;
-
-static int64_t GetNowTime() {
-  struct timeval start = {};
-  gettimeofday(&start, nullptr);
-  constexpr uint32_t kSecToUsec = 1000 * 1000;
-  return static_cast<int64_t>(start.tv_sec) * kSecToUsec + start.tv_usec;
-}
 }  // namespace
 
 // static
@@ -197,47 +190,6 @@ void NWebOutputHandler::StartRenderOutput() {
   }
   if (frame_info_dump_) {
     StartFrameStat();
-  }
-}
-
-void NWebOutputHandler::OnRenderUpdate(const char* buffer) {
-  if (output_frame_cb_ == nullptr) {
-    WVLOG_I("output render frame cb is not available");
-    UpdateStat(false);
-    return;
-  }
-
-  if (!output_frame_cb_(buffer, width_, height_)) {
-    WVLOG_W("render frame is not consumed");
-    UpdateStat(false);
-  } else {
-    UpdateStat(true);
-  }
-
-  if (!dump_path_.empty()) {
-    if (dump_buf_ != nullptr) {
-      std::unique_lock<std::mutex> lk(dump_mtx_);
-      memcpy(dump_buf_.get(), buffer, frame_size_);
-      dump_cv_.notify_one();
-    } else {
-      WVLOG_E("fail to dump file. dump buffer is nullptr");
-    }
-  }
-}
-
-void NWebOutputHandler::UpdateStat(bool flag) {
-  if (!frame_info_dump_) {
-    return;
-  }
-  std::unique_lock<std::mutex> lk(frame_stat_mtx_);
-  local_time_curr_ = GetNowTime();
-  if (local_time_base_ <= 0L) {
-    local_time_base_ = local_time_curr_;
-  }
-  render_count_++;
-  local_render_count_++;
-  if (!flag) {
-    frame_miss_count_++;
   }
 }
 

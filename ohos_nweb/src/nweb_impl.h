@@ -474,7 +474,8 @@ class NWebImpl : public NWeb {
 #endif
 
 #ifdef OHOS_CRASHPAD
-  void SetDefaultCrashpadLogPath(const std::string& crashpadLogPath);
+  static void SetDefaultCrashpadLogPath(const std::string& crashpad_log_path);
+  static const std::string GetDefaultCrashpadLogPath();
 #endif
 
 #if defined(OHOS_INCOGNITO_MODE)

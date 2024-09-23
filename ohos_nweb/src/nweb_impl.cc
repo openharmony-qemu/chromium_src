@@ -155,10 +155,6 @@ extern bool g_siteIsolationMode;
 #include "content/browser/gpu/gpu_process_host.h"
 #endif
 
-#ifdef OHOS_CRASHPAD
-#include "event_reporter.h"
-#endif
-
 namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
@@ -189,6 +185,10 @@ const int NWebPlaybackState_NONE = 0;
 
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
 static bool enable_whole_web_page_drawing = false;
+#endif
+
+#if defined(OHOS_CRASHPAD)
+static std::string g_crashpad_target_location = "/data/storage/el2/crashpad";
 #endif
 
 bool GetWebOptimizationValue() {
@@ -2764,8 +2764,13 @@ void NWebImpl::SetAccessibilityState(bool state) {
 }
 
 #ifdef OHOS_CRASHPAD
-void NWebImpl::SetDefaultCrashpadLogPath(const std::string& crashpadLogPath) {
-  SetTargetCrashpadLogPath(crashpadLogPath);
+void NWebImpl::SetDefaultCrashpadLogPath(const std::string& crashpad_log_path) {
+  LOG(INFO) << "g_crashpad_target_location is" << g_crashpad_target_location
+            << "crashpad_log_path is" << crashpad_log_path;
+  g_crashpad_target_location = crashpad_log_path;
+}
+const std::string NWebImpl::GetDefaultCrashpadLogPath() {
+  return g_crashpad_target_location;
 }
 #endif
 

@@ -37,7 +37,6 @@ class NWebOutputHandler
   void Init(uint32_t width, uint32_t height);
   void GetWindowInfo(uint32_t& width, uint32_t& height);
   void Resize(uint32_t width, uint32_t height);
-  void OnRenderUpdate(const char* buffer);
   void SetFrameInfoDump(bool flag);
   void StartFrameStat();
   void SetDumpPath(const std::string& path);
@@ -64,7 +63,6 @@ class NWebOutputHandler
   };
 
   void StartDumpToFile();
-  void UpdateStat(bool flag);
 
  private:
   uint32_t width_ = 0;

@@ -386,6 +386,26 @@ class NWebAppLinkCallbackImpl : public NWebAppLinkCallback {
   CefRefPtr<CefOpenAppLinkCallback> callback_ = nullptr;
 };
 
+class NWebColorChooserCallbackImpl : public NWebColorChooserCallback {
+ public:
+  explicit NWebColorChooserCallbackImpl(CefRefPtr<CefColorChooserCallback> callback)
+    : callback_(callback) {}
+
+  void Continue(int color) override {
+    if (callback_) {
+      callback_->Continue(static_cast<uint32_t>(color));
+    }
+  }
+
+  void Cancel() override {
+    if (callback_) {
+      callback_->Cancel();
+    }
+  }
+ private:
+  CefRefPtr<CefColorChooserCallback> callback_ = nullptr;
+};
+
 // static
 CefRefPtr<NWebHandlerDelegate> NWebHandlerDelegate::Create(
     std::shared_ptr<NWebPreferenceDelegate> preference_delegate,
@@ -2477,6 +2497,21 @@ void NWebHandlerDelegate::OnDateTimeChooserClose() {
   }
 
   nweb_handler_->OnDateTimeChooserClose();
+}
+
+void NWebHandlerDelegate::OnColorChooserShow(uint32_t initial_color,
+    CefRefPtr<CefColorChooserCallback> callback) {
+  if (!nweb_handler_) {
+    return;
+  }
+
+  bool result = nweb_handler_->OnColorChooserShow(initial_color,
+    std::make_shared<NWebColorChooserCallbackImpl>(callback));
+  if (!result) {
+    callback->Cancel();
+  }
+  LOG(INFO) << "NWebHandlerDelegate::OnColorChooserShow initial_color:"
+      << initial_color;
 }
 #endif  // #ifdef OHOS_CSS_INPUT_TIME
 /* CefDialogHandler method end */

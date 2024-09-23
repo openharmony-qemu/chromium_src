@@ -459,7 +459,7 @@ class CONTENT_EXPORT WebContentsDelegate {
   virtual JavaScriptDialogManager* GetJavaScriptDialogManager(
       WebContents* source);
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_MAC)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_OHOS)
   // Called when color chooser should open. Returns the opened color chooser.
   // Returns nullptr if we failed to open the color chooser. The color chooser
   // is only supported/required for Android.

@@ -61,8 +61,7 @@ bool GetNetworkListUsingGetifaddrs(NetworkInterfaceList* networks,
 
 #if BUILDFLAG(IS_OHOS)
 bool GetNetworkListUsingGetifaddrs(NetworkInterfaceList* networks,
-                                   int policy,
-                                   bool use_alternative_getifaddrs);
+                                   int policy);
 #endif
 
 }  // namespace net::internal

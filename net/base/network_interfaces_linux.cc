@@ -255,6 +255,7 @@ bool GetNetworkList(NetworkInterfaceList* networks, int policy) {
     network.type = internal::GetInterfaceConnectionType(network.name);
   return ret;
 #else
+
   const AddressMapOwnerLinux* map_owner = nullptr;
   absl::optional<internal::AddressTrackerLinux> temp_tracker;
 #if BUILDFLAG(IS_LINUX)

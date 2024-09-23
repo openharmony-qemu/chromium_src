@@ -744,7 +744,7 @@ void AutofillAgent::FillFieldWithValue(FieldRendererId field_id,
     WebFormElement form = element_.Form();
     if (form.IsNull()) {
         WebDocument document = render_frame()->GetWebFrame()->GetDocument();
-        auto fillElement = FindFormControlElementByUniqueRendererId(doc, field_id);
+        auto fillElement = FindFormControlElementByUniqueRendererId(document, field_id);
         DoFillFieldWithValue(value, fillElement, WebAutofillState::kAutofilled);
         return;
     }

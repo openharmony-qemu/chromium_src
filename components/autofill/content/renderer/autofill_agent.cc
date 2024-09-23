@@ -87,6 +87,7 @@ namespace autofill {
 
 using form_util::ExtractMask;
 using form_util::FindFormAndFieldForFormControlElement;
+using form_util::FindFormControlElementByUniqueRendererId;
 using form_util::IsElementEditable;
 using form_util::IsOwnedByFrame;
 using mojom::SubmissionSource;
@@ -741,6 +742,12 @@ void AutofillAgent::FillFieldWithValue(FieldRendererId field_id,
   if (field_id != FieldRendererId(element_.UniqueRendererFormControlId())) {
     // oh supports fill multiple form fields, including unfocused field
     WebFormElement form = element_.Form();
+    if (form.IsNull()) {
+        WebDocument document = render_frame()->GetWebFrame()->GetDocument();
+        auto fillElement = FindFormControlElementByUniqueRendererId(document, field_id);
+        DoFillFieldWithValue(value, fillElement, WebAutofillState::kAutofilled);
+        return;
+    }
     for (WebFormControlElement& element : form.GetFormControlElements()) {
       if (element.IsNull() || FieldRendererId(element.UniqueRendererFormControlId()) != field_id) {
         continue;

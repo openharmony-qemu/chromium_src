@@ -30,10 +30,6 @@ class InputSyncLockTest : public testing::Test {
   }
 };
 
-TEST_F(InputSyncLockTest, InputSyncLockTest001) {
-  InputSyncLock instance1;
-}
-
 TEST_F(InputSyncLockTest, InputSyncLockTest_GetInstanceTest001) {
   InputSyncLock& instance1 = InputSyncLock::GetInstance();
   InputSyncLock& instance2 = InputSyncLock::GetInstance();

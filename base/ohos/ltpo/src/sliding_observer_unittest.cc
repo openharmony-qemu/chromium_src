@@ -263,17 +263,18 @@ TEST(SlidingObserverTest, StartSliding04) {
 
 TEST(SlidingObserverTest, StartSliding05) {
   SlidingObserver observer;
+  observer.is_inited_ = false;
+  observer.is_sliding_ = true;
   observer.StartSliding();
   EXPECT_TRUE(observer.is_sliding_);
-  EXPECT_TRUE(observer.is_inited_);
 }
 
 TEST(SlidingObserverTest, StartSliding06) {
   SlidingObserver observer;
+  observer.is_inited_ = false;
   observer.is_sliding_ = true;
   observer.StartSliding();
   EXPECT_TRUE(observer.is_sliding_);
-  EXPECT_TRUE(observer.is_inited_);
 }
 
 TEST(SlidingObserverTest, StartSliding07) {

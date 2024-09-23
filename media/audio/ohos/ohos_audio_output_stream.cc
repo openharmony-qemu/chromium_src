@@ -289,7 +289,7 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
   if (StartRender()) {
     callback_ = callback;
     if (memset_s(audio_data_[active_buffer_index_],
-        sizeof(audio_data_[active_buffer_index_]), 0, buffer_size_bytes_) != EOK) {
+        buffer_size_bytes_, 0, buffer_size_bytes_) != EOK) {
       LOG(ERROR) << "audio data memset_s failed.";
       return;
     }

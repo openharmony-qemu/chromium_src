@@ -233,7 +233,8 @@ bool GetNetworkListUsingGetifaddrs(NetworkInterfaceList* networks,
   DCHECK(freeifaddrs);
 #elif BUILDFLAG(IS_OHOS)
 namespace internal {
-  bool GetNetworkListUsingGetifaddrs(NetworkInterfaceList* networks, int policy) {
+  bool GetNetworkListUsingGetifaddrs(NetworkInterfaceList* networks,
+                                      int policy) {
     constexpr bool use_alternative_getifaddrs = false;
 #else
 bool GetNetworkList(NetworkInterfaceList* networks, int policy) {

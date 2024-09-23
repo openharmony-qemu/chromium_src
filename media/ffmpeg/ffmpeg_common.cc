@@ -661,7 +661,9 @@ bool AVStreamToVideoDecoderConfig(const AVStream* stream,
   }
 
 #if !BUILDFLAG(ENABLE_AV1_DECODER)
-  if(profile == VP8PROFILE_ANY){ return false;}
+  if (profile == VP8PROFILE_ANY) {
+    return false;
+  }
 #endif  // !BUILDFLAG(ENABLE_AV1_DECODER)
 
   void* display_matrix =

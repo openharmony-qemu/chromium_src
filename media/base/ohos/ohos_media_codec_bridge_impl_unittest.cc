@@ -216,26 +216,6 @@ TEST_F(OHOSMediaCodecBridgeImplTest, UpdateStatusAndClearCache003) {
   EXPECT_FALSE(kExpected);
 }
 
-TEST_F(OHOSMediaCodecBridgeImplTest, UpdateStatusAndClearCache001) {
-  const bool kExpected = true;
-  bridge_impl.UpdateStatusAndClearCache(kExpected);
-  EXPECT_TRUE(kExpected);
-}
-
-TEST_F(OHOSMediaCodecBridgeImplTest, UpdateStatusAndClearCache002) {
-  const bool kExpected = false;
-  auto mock_adapter = std::make_shared<CodecEncodeBridgeCallback>(signal_);
-  bridge_impl.UpdateStatusAndClearCache(kExpected);
-  bridge_impl.cb_ = mock_adapter;
-  EXPECT_FALSE(kExpected);
-}
-
-TEST_F(OHOSMediaCodecBridgeImplTest, UpdateStatusAndClearCache003) {
-  const bool kExpected = false;
-  bridge_impl.UpdateStatusAndClearCache(kExpected);
-  EXPECT_FALSE(kExpected);
-}
-
 TEST_F(OHOSMediaCodecBridgeImplTest, Configure001) {
   CodecConfigPara kExpectedConfigure = {1280, 720, 1000000, 30.0};
   scoped_refptr<base::SequencedTaskRunner> codec_task_runner =
@@ -776,4 +756,18 @@ TEST_F(OHOSMediaCodecBridgeImplTest, DequeueOutputBufferTest0016) {
   delete[] buffer.addr;
 }
 
+TEST_F(OHOSMediaCodecBridgeImplTest, RequestKeyFrameSoonTest_001) {
+  bridge_impl.codec_adapter_ = nullptr;
+  CodecCodeAdapter result = bridge_impl.RequestKeyFrameSoon();
+  ASSERT_EQ(result, CodecCodeAdapter::ERROR);
+}
+
+TEST_F(OHOSMediaCodecBridgeImplTest, RequestKeyFrameSoonTest_002) {
+  auto mock_adapter = std::make_unique<MockMediaCodecAdapter>();
+  EXPECT_CALL(*mock_adapter, RequestKeyFrameSoon())
+      .WillOnce(::testing::Return(CodecCodeAdapter::OK));
+  bridge_impl.codec_adapter_ = std::move(mock_adapter);
+  ASSERT_EQ(CodecCodeAdapter::OK,
+            bridge_impl.codec_adapter_->RequestKeyFrameSoon());
+}
 }  // namespace media

@@ -142,6 +142,10 @@ class UI_TOUCH_SELECTION_EXPORT TouchHandle : public TouchSelectionDraggable {
   bool GetEnabled() const { return enabled_; }
 #endif
 
+#ifdef OHOS_CLIPBOARD
+  void ResetPositionAfterDragEnd();
+#endif
+
 #ifdef OHOS_EX_TOPCONTROLS
   const gfx::RectF& viewport() const { return viewport_rect_; }
 #endif

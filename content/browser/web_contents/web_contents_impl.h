@@ -2392,6 +2392,7 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 
 #if BUILDFLAG(IS_OHOS)
   std::unique_ptr<NativeWebContentsObserver> native_web_contents_observer_;
+  std::map<std::string, gfx::Rect> native_web_embed_rect_info_map_;
 #endif
 
 #if BUILDFLAG(ENABLE_PPAPI)

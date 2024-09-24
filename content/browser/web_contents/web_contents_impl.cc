@@ -1205,6 +1205,9 @@ WebContentsImpl::~WebContentsImpl() {
   // destruction of the WebContents.
   ClearWebContentsAndroid();
 #endif
+#if BUILDFLAG(IS_OHOS)
+  native_web_embed_rect_info_map_.clear();
+#endif
 
   // |save_package_| is refcounted so make sure we clear the page before
   // we toss out our reference.
@@ -4805,15 +4808,27 @@ void WebContentsImpl::CreateNativeBridgeHostForRenderFrameHost(
 void WebContentsImpl::OnNativeEmbedStatusUpdate(
     const NativeEmbedInfo& native_embed_info,
     NativeEmbedInfo::TagState state) {
-  std::string param_list;
-  for (auto& item : native_embed_info.params) {
-    param_list += item.first + " ";
-    param_list += item.second + ", ";
+  bool print_log = true;
+  if (native_web_embed_rect_info_map_.count(native_embed_info.embed_element_id)) {
+    gfx::Rect history_rect = native_web_embed_rect_info_map_[native_embed_info.embed_element_id];
+    if (history_rect.size() == native_embed_info.rect.size()) {
+      print_log = false;
+    }
+    native_web_embed_rect_info_map_[native_embed_info.embed_element_id] = native_embed_info.rect;
+  } else {
+    native_web_embed_rect_info_map_.insert(std::make_pair(native_embed_info.embed_element_id, native_embed_info.rect));
   }
-  LOG(DEBUG) << "[NativeEmbed] OnNativeEmbedStatusUpdate "
-             << " state is " << (int)state << ", "
-             << native_embed_info
-             << ", params: " << param_list;
+  if (print_log) {
+    std::string param_list;
+    for (auto& item : native_embed_info.params) {
+      param_list += item.first + " ";
+      param_list += item.second + ", ";
+    }
+    LOG(INFO) << "[NativeEmbed] OnNativeEmbedStatusUpdate "
+              << " state is " << (int)state << ", "
+              << native_embed_info
+              << ", params: " << param_list;
+  }
 
   if (delegate_) {
     delegate_->OnNativeEmbedStatusUpdate(native_embed_info, state);

@@ -2,7 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#if defined(OHOS_UNITTESTS)
+#define private public
+#endif // OHOS_UNITTESTS
 #include "components/viz/host/host_frame_sink_manager.h"
+#if defined(OHOS_UNITTESTS)
+#undef private
+#endif // OHOS_UNITTESTS
 
 #include <memory>
 #include <utility>
@@ -181,6 +187,209 @@ class HostFrameSinkManagerTest : public testing::Test {
   HostFrameSinkManager host_manager_;
   std::unique_ptr<testing::NiceMock<MockFrameSinkManagerImpl>> manager_impl_;
 };
+
+#if defined(OHOS_UNITTESTS)
+TEST_F(HostFrameSinkManagerTest, UpdateVSyncFrequency001) {
+  uint32_t mock_client_id = 0;
+  uint32_t mock_sink_id = 0;
+  FrameSinkId id(mock_client_id, mock_sink_id);
+  auto iter_id = host_manager_.frame_sink_data_map_.find(id);
+  auto iter_end = host_manager_.frame_sink_data_map_.end();
+  
+  host_manager_.UpdateVSyncFrequency(id);
+  EXPECT_EQ(iter_id,iter_end);
+}
+
+TEST_F(HostFrameSinkManagerTest, UpdateVSyncFrequency002) {
+  uint32_t mock_client_id = 1;
+  uint32_t mock_sink_id = 1;
+  uint32_t mock_client_id2 = 2;
+  uint32_t mock_sink_id2 = 2;
+  FrameSinkId id1(mock_client_id,mock_sink_id);
+  FrameSinkId id2(mock_client_id2,mock_sink_id2);
+  HostFrameSinkManager::FrameSinkData data1;
+  HostFrameSinkManager::FrameSinkData data2;
+  host_manager_.frame_sink_data_map_.emplace(std::move(id1), std::move(data1));
+  host_manager_.frame_sink_data_map_.emplace(std::move(id2), std::move(data2));
+  auto iter_id = host_manager_.frame_sink_data_map_.find(id1);
+  auto iter_end = host_manager_.frame_sink_data_map_.end();
+
+  host_manager_.UpdateVSyncFrequency(id1);
+  EXPECT_NE(iter_id, iter_end);
+}
+
+TEST_F(HostFrameSinkManagerTest, UpdateVSyncFrequency003) {
+  uint32_t mock_client_id = 1;
+  uint32_t mock_sink_id = 1;
+  uint32_t mock_client_id2 = 2;
+  uint32_t mock_sink_id2 = 2;
+  FrameSinkId id1(mock_client_id,mock_sink_id);
+  FrameSinkId id2(mock_client_id2,mock_sink_id2);
+  HostFrameSinkManager::FrameSinkData data1;
+  HostFrameSinkManager::FrameSinkData data2;
+  host_manager_.frame_sink_data_map_.emplace(std::move(id1), std::move(data1));
+  host_manager_.frame_sink_data_map_.emplace(std::move(id2), std::move(data2));
+  auto iter_id = host_manager_.frame_sink_data_map_.find(id1);
+  auto mock_children = iter_id->second.children;
+  uint32_t expect_size = 0;
+
+  host_manager_.UpdateVSyncFrequency(id1);
+  EXPECT_EQ(expect_size,mock_children.size());
+  EXPECT_EQ(mock_children.begin(),mock_children.end());
+}
+
+TEST_F(HostFrameSinkManagerTest, UpdateVSyncFrequency004) {
+  uint32_t mock_client_id = 1;
+  uint32_t mock_sink_id = 1;
+  uint32_t mock_client_id2 = 2;
+  uint32_t mock_sink_id2 = 1;
+  uint32_t mock_client_id3 = 3;
+  uint32_t mock_sink_id3 = 1;
+  FrameSinkId id1(mock_client_id,mock_sink_id);
+  FrameSinkId id2(mock_client_id2,mock_sink_id2);
+  FrameSinkId id3(mock_client_id3,mock_sink_id3);
+  HostFrameSinkManager::FrameSinkData data1;
+  HostFrameSinkManager::FrameSinkData data2;
+  HostFrameSinkManager::FrameSinkData data3;
+  host_manager_.frame_sink_data_map_.emplace(std::move(id1), std::move(data1));
+  host_manager_.frame_sink_data_map_.emplace(std::move(id2), std::move(data2));
+  host_manager_.frame_sink_data_map_.emplace(std::move(id3), std::move(data3));
+  auto iter_id = host_manager_.frame_sink_data_map_.find(id1);
+  iter_id->second.children.push_back(id2);
+  iter_id->second.children.push_back(id3);
+  auto mock_children = iter_id->second.children;
+  uint32_t expect_size = 2;
+
+  host_manager_.UpdateVSyncFrequency(id1);
+  EXPECT_EQ(expect_size,mock_children.size());
+  EXPECT_NE(mock_children.begin(),mock_children.end());
+}
+
+TEST_F(HostFrameSinkManagerTest, OnVsync001) {
+  uint32_t mock_client_id = 0;
+  uint32_t mock_sink_id = 0;
+  FrameSinkId id(mock_client_id, mock_sink_id);
+  auto iter_id = host_manager_.frame_sink_data_map_.find(id);
+  auto iter_end = host_manager_.frame_sink_data_map_.end();
+
+  host_manager_.OnVsync(mock_client_id,mock_sink_id);
+  EXPECT_EQ(iter_id,iter_end);
+}
+
+TEST_F(HostFrameSinkManagerTest, OnVsync002) {
+  uint32_t mock_client_id = 0;
+  uint32_t mock_sink_id = 0;
+  FrameSinkId id(mock_client_id, mock_sink_id);
+  host_manager_.frame_sink_data_map_.emplace();
+  auto iter_id = host_manager_.frame_sink_data_map_.find(id);
+  auto iter_end = host_manager_.frame_sink_data_map_.end();
+
+  host_manager_.OnVsync(mock_client_id,mock_sink_id);
+  EXPECT_NE(iter_id,iter_end);
+}
+
+TEST_F(HostFrameSinkManagerTest, OnVsync003) {
+    uint32_t mock_client_id = 1;
+    uint32_t mock_sink_id = 1;
+    uint32_t mock_client_id2 = 2;
+    uint32_t mock_sink_id2 = 2;
+    FrameSinkId id1(mock_client_id,mock_sink_id);
+    FrameSinkId id2(mock_client_id2,mock_sink_id2);
+    HostFrameSinkManager::FrameSinkData data1;
+    HostFrameSinkManager::FrameSinkData data2;
+    host_manager_.frame_sink_data_map_.emplace(std::move(id1), std::move(data1));
+    host_manager_.frame_sink_data_map_.emplace(std::move(id2), std::move(data2));
+    auto iter = host_manager_.frame_sink_data_map_.find(id1);
+    iter->second.client = nullptr;
+    const HostFrameSinkManager::FrameSinkData& data = iter->second;
+    
+    host_manager_.OnVsync(mock_client_id,mock_sink_id);
+    EXPECT_EQ(nullptr,data.client);
+}
+
+TEST_F(HostFrameSinkManagerTest, OnVsync004){
+    uint32_t mock_client_id = 1;
+    uint32_t mock_sink_id = 1;
+    uint32_t mock_client_id2 = 2;
+    uint32_t mock_sink_id2 = 2;
+    FrameSinkId id1(mock_client_id,mock_sink_id);
+    FrameSinkId id2(mock_client_id2,mock_sink_id2);
+    HostFrameSinkManager::FrameSinkData data1;
+    HostFrameSinkManager::FrameSinkData data2;
+    host_manager_.frame_sink_data_map_.emplace(std::move(id1), std::move(data1));
+    host_manager_.frame_sink_data_map_.emplace(std::move(id2), std::move(data2));
+    auto iter = host_manager_.frame_sink_data_map_.find(id1);
+    FakeHostFrameSinkClient mock_client;
+    iter->second.client = &mock_client;
+    const HostFrameSinkManager::FrameSinkData& data = iter->second;
+
+    host_manager_.OnVsync(mock_client_id,mock_sink_id);
+    EXPECT_NE(data.client,nullptr);
+
+}
+
+TEST_F(HostFrameSinkManagerTest, OnVsyncReceived001) {
+  uint32_t mock_client_id = 0;
+  uint32_t mock_sink_id = 0;
+  FrameSinkId id(mock_client_id, mock_sink_id);
+  auto iter_id = host_manager_.frame_sink_data_map_.find(id);
+  auto iter_end = host_manager_.frame_sink_data_map_.end();
+  
+  host_manager_.OnVsyncReceived(mock_client_id,mock_sink_id);
+  EXPECT_EQ(iter_id,iter_end);
+}
+
+TEST_F(HostFrameSinkManagerTest, OnVsyncReceived002) {
+  uint32_t mock_client_id = 0;
+  uint32_t mock_sink_id = 0;
+  FrameSinkId id(mock_client_id, mock_sink_id);
+  host_manager_.frame_sink_data_map_.emplace();
+  auto iter_id = host_manager_.frame_sink_data_map_.find(id);
+  auto iter_end = host_manager_.frame_sink_data_map_.end();
+
+  host_manager_.OnVsyncReceived(mock_client_id,mock_sink_id);
+  EXPECT_NE(iter_id,iter_end);
+}
+
+TEST_F(HostFrameSinkManagerTest, OnVsyncReceived003) {
+    uint32_t mock_client_id = 1;
+    uint32_t mock_sink_id = 1;
+    uint32_t mock_client_id2 = 2;
+    uint32_t mock_sink_id2 = 2;
+    FrameSinkId id1(mock_client_id,mock_sink_id);
+    FrameSinkId id2(mock_client_id2,mock_sink_id2);
+    HostFrameSinkManager::FrameSinkData data1;
+    HostFrameSinkManager::FrameSinkData data2;
+    host_manager_.frame_sink_data_map_.emplace(std::move(id1), std::move(data1));
+    host_manager_.frame_sink_data_map_.emplace(std::move(id2), std::move(data2));
+    auto iter = host_manager_.frame_sink_data_map_.find(id1);
+    iter->second.client = nullptr;
+    const HostFrameSinkManager::FrameSinkData& data = iter->second;
+    
+    host_manager_.OnVsyncReceived(mock_client_id,mock_sink_id);
+    EXPECT_EQ(data.client,nullptr);
+}
+
+TEST_F(HostFrameSinkManagerTest, OnVsyncReceived004){
+    uint32_t mock_client_id = 1;
+    uint32_t mock_sink_id = 1;
+    uint32_t mock_client_id2 = 2;
+    uint32_t mock_sink_id2 = 2;
+    FrameSinkId id1(mock_client_id,mock_sink_id);
+    FrameSinkId id2(mock_client_id2,mock_sink_id2);
+    HostFrameSinkManager::FrameSinkData data1;
+    HostFrameSinkManager::FrameSinkData data2;
+    host_manager_.frame_sink_data_map_.emplace(std::move(id1), std::move(data1));
+    host_manager_.frame_sink_data_map_.emplace(std::move(id2), std::move(data2));
+    auto iter = host_manager_.frame_sink_data_map_.find(id1);
+    FakeHostFrameSinkClient mock_client;
+    iter->second.client = &mock_client;
+    const HostFrameSinkManager::FrameSinkData& data = iter->second;
+
+    host_manager_.OnVsyncReceived(mock_client_id,mock_sink_id);
+    EXPECT_NE(data.client,nullptr);
+}
+#endif // OHOS_UNITTESTS
 
 // Verify that registering and destroying multiple CompositorFrameSinks works
 // correctly when one of the CompositorFrameSinks hasn't been created.

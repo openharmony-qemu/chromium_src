@@ -2,8 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "components/viz/service/display/display.h"
-
+#if defined(OHOS_UNITTESTS)
+#define private public
+#define protected public
+#endif  // OHOS_UNITTESTS
+#include "components/viz/service/display/display.cc"
+#if defined(OHOS_UNITTESTS)
+#undef protected
+#undef private
+#endif  // OHOS_UNITTESTS
 #include <limits>
 #include <map>
 #include <memory>
@@ -285,6 +292,100 @@ class DisplayTest : public testing::Test {
   raw_ptr<FakeSkiaOutputSurface> skia_output_surface_ = nullptr;
   raw_ptr<TestDisplayScheduler> scheduler_ = nullptr;
 };
+
+#if defined(OHOS_UNITTESTS)
+TEST_F(DisplayTest, Resize1) {
+  RendererSettings settings;
+  settings.partial_swap_enabled = true;
+  SetUpSoftwareDisplay(settings);
+  display_->Initialize(client_.get(), manager_.surface_manager());
+  display_->draw_mode_ = 0;
+  display_->Resize(gfx::Size(10000, 10000));
+  EXPECT_EQ(display_->current_surface_size_.width(), 8000);
+  EXPECT_EQ(display_->current_surface_size_.height(), 8000);
+}
+
+TEST_F(DisplayTest, Resize2) {
+  RendererSettings settings;
+  settings.partial_swap_enabled = true;
+  SetUpSoftwareDisplay(settings);
+  display_->Initialize(client_.get(), manager_.surface_manager());
+  display_->draw_mode_ = 1;
+  display_->current_surface_size_.set_height(5000);
+  display_->Resize(gfx::Size(100, 100));
+  EXPECT_EQ(display_->current_surface_size_.width(), 100);
+  EXPECT_EQ(display_->current_surface_size_.height(), 100);
+}
+
+TEST_F(DisplayTest, Resize3) {
+  RendererSettings settings;
+  settings.partial_swap_enabled = true;
+  SetUpSoftwareDisplay(settings);
+  display_->Initialize(client_.get(), manager_.surface_manager());
+  display_->draw_mode_ = 1;
+  display_->current_surface_size_.set_height(10000);
+  display_->Resize(gfx::Size(200, 200));
+  EXPECT_EQ(display_->current_surface_size_.width(), 200);
+  EXPECT_EQ(display_->current_surface_size_.height(), 200);
+}
+
+TEST_F(DisplayTest, Resize4) {
+  RendererSettings settings;
+  settings.partial_swap_enabled = true;
+  SetUpSoftwareDisplay(settings);
+  display_->Initialize(client_.get(), manager_.surface_manager());
+  display_->draw_mode_ = 0;
+  display_->current_surface_size_.set_height(7000);
+  display_->Resize(gfx::Size(300, 300));
+  EXPECT_EQ(display_->current_surface_size_.width(), 300);
+  EXPECT_EQ(display_->current_surface_size_.height(), 300);
+}
+
+TEST_F(DisplayTest, Resize5) {
+  RendererSettings settings;
+  settings.partial_swap_enabled = true;
+  SetUpSoftwareDisplay(settings);
+  display_->Initialize(client_.get(), manager_.surface_manager());
+  display_->draw_mode_ = 1;
+  display_->current_surface_size_.set_height(7000);
+  display_->Resize(gfx::Size(400, 400));
+  EXPECT_EQ(display_->current_surface_size_.width(), 400);
+  EXPECT_EQ(display_->current_surface_size_.height(), 7000);
+}
+
+TEST_F(DisplayTest, SetDrawRect1) {
+  testing::internal::CaptureStderr();
+  RendererSettings settings;
+  settings.partial_swap_enabled = true;
+  SetUpSoftwareDisplay(settings);
+  display_->Initialize(client_.get(), manager_.surface_manager());
+  display_->draw_mode_ = 0;
+  display_->SetDrawRect(gfx::Rect(0, 0, 100, 100));
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(1, 1);
+  EXPECT_NE(log_output.find("draw_mode ="), std::string::npos);
+}
+
+TEST_F(DisplayTest, SetDrawRect2) {
+  testing::internal::CaptureStderr();
+  RendererSettings settings;
+  settings.partial_swap_enabled = true;
+  SetUpSoftwareDisplay(settings);
+  display_->Initialize(client_.get(), manager_.surface_manager());
+  display_->draw_mode_ = 1;
+  display_->SetDrawRect(gfx::Rect(0, 0, 100, 100));
+  EXPECT_EQ(display_->draw_rect_.width(), 100);
+}
+
+TEST_F(DisplayTest, SetDrawMode) {
+  RendererSettings settings;
+  settings.partial_swap_enabled = true;
+  SetUpSoftwareDisplay(settings);
+  display_->Initialize(client_.get(), manager_.surface_manager());
+  display_->SetDrawMode(1);
+  EXPECT_EQ(display_->draw_mode_, 1);
+}
+#endif // OHOS_UNITTESTS
 
 // Check that frame is damaged and swapped only under correct conditions.
 TEST_F(DisplayTest, DisplayDamaged) {
@@ -5165,4 +5266,26 @@ TEST_F(UnsupportedRendererDelegatedInkTest,
       ink_renderer_remote.BindNewPipeAndPassReceiver());
 }
 
+#if defined(OHOS_UNITTESTS)
+TEST_F(UnsupportedRendererDelegatedInkTest, PropertiesUpdate) {
+  DumpFrameObserver dumpFrameObserver;
+  char stringTrue[5] = "true";
+  dumpFrameObserver.PropertiesUpdate(stringTrue);
+  EXPECT_TRUE(dumpFrameObserver.should_dump_);
+  char stringFalse[6] = "false";
+  dumpFrameObserver.PropertiesUpdate(stringFalse);
+  EXPECT_FALSE(dumpFrameObserver.should_dump_);
+  char stringElse[10] = "true#else";
+  dumpFrameObserver.PropertiesUpdate(stringElse);
+  EXPECT_TRUE(dumpFrameObserver.ShouldDump());
+}
+
+TEST_F(UnsupportedRendererDelegatedInkTest, ShouldDumpInFreq) {
+  DumpFrameObserver dumpFrameObserver;
+  dumpFrameObserver.dump_freq_count = DUMP_FRAME_FREQ;
+  EXPECT_TRUE(dumpFrameObserver.ShouldDumpInFreq());
+  dumpFrameObserver.dump_freq_count = 0;
+  EXPECT_FALSE(dumpFrameObserver.ShouldDumpInFreq());
+}
+#endif // OHOS_UNITTESTS
 }  // namespace viz

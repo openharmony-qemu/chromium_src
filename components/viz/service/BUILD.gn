@@ -543,6 +543,7 @@ viz_source_set("unit_tests") {
   if(ohos_unittests){
     sources += [
       "frame_sinks/external_begin_frame_source_ohos_unittest.cc",
+      "frame_sinks/root_compositor_frame_sink_impl_unittest.cc",
     ]   
   }
 

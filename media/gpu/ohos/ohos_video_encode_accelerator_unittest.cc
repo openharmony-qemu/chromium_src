@@ -110,9 +110,36 @@ class MockOHOSMediaCodecBridge : public OHOSMediaCodecBridge {
 };
 
 class MockDelegate : public base::DelayedTaskHandle::Delegate {
-public:
+ public:
   MOCK_METHOD(bool, IsValid, (), (const, override));
   MOCK_METHOD(void, CancelTask, (), (override));
+};
+
+class MockVideoClient : public VideoEncodeAccelerator::Client {
+ public:
+  MOCK_METHOD(void,
+              RequireBitstreamBuffers,
+              (unsigned int input_count,
+               const gfx::Size& input_coded_size,
+               size_t output_buffer_size),
+              (override));
+  MOCK_METHOD(void,
+              BitstreamBufferReady,
+              (int32_t bitstream_buffer_id,
+               const BitstreamBufferMetadata& metadata),
+              (override));
+  MOCK_METHOD(void,
+              NotifyError,
+              (VideoEncodeAccelerator::Error error),
+              (override));
+  MOCK_METHOD(void,
+              NotifyErrorStatus,
+              (const EncoderStatus& status),
+              (override));
+  MOCK_METHOD(void,
+              NotifyEncoderInfoChange,
+              (const VideoEncoderInfo& info),
+              (override));
 };
 
 class OHOSVideoEncodeAcceleratorTest : public ::testing::Test {
@@ -167,6 +194,34 @@ TEST_F(OHOSVideoEncodeAcceleratorTest, MaybeStartIOTimer) {
   EXPECT_FALSE(vea_->io_timer_.IsRunning());
 }
 
+TEST_F(OHOSVideoEncodeAcceleratorTest, MaybeStartIOTimer001) {
+  auto vea_ = std::make_unique<OHOSVideoEncodeAccelerator>();
+  auto delegate = std::make_unique<MockDelegate>();
+  EXPECT_NE(delegate, nullptr);
+  EXPECT_CALL(*delegate, CancelTask()).WillRepeatedly(testing::Return());
+  EXPECT_CALL(*delegate, IsValid()).WillRepeatedly(testing::Return(true));
+  vea_->io_timer_.delayed_task_handle_.delegate_ = std::move(delegate);
+  vea_->num_buffers_at_codec_ = 0;
+  EXPECT_TRUE(vea_->num_buffers_at_codec_ == 0);
+  EXPECT_TRUE(vea_->pending_frames_.empty());
+  vea_->MaybeStartIOTimer();
+  EXPECT_TRUE(vea_->io_timer_.IsRunning());
+}
+
+TEST_F(OHOSVideoEncodeAcceleratorTest, MaybeStartIOTimer002) {
+  auto vea_ = std::make_unique<OHOSVideoEncodeAccelerator>();
+  auto delegate = std::make_unique<MockDelegate>();
+  EXPECT_NE(delegate, nullptr);
+  EXPECT_CALL(*delegate, CancelTask()).WillRepeatedly(testing::Return());
+  EXPECT_CALL(*delegate, IsValid()).WillRepeatedly(testing::Return(false));
+  vea_->io_timer_.delayed_task_handle_.delegate_ = std::move(delegate);
+  vea_->num_buffers_at_codec_ = 0;
+  EXPECT_TRUE(vea_->num_buffers_at_codec_ == 0);
+  EXPECT_TRUE(vea_->pending_frames_.empty());
+  vea_->MaybeStartIOTimer();
+  ASSERT_FALSE(vea_->io_timer_.IsRunning());
+}
+
 TEST_F(OHOSVideoEncodeAcceleratorTest, MaybeStopIOTimer) {
   vea_->num_buffers_at_codec_ = 0;
   vea_->pending_frames_ = {};
@@ -215,12 +270,65 @@ TEST_F(OHOSVideoEncodeAcceleratorTest, MaybeStopIOTimer003) {
   EXPECT_FALSE(vea_->io_timer_.IsRunning());
 }
 
+TEST_F(OHOSVideoEncodeAcceleratorTest, MaybeStopIOTimer004) {
+  auto vea_ = std::make_unique<OHOSVideoEncodeAccelerator>();
+  auto delegate = std::make_unique<MockDelegate>();
+  EXPECT_NE(delegate, nullptr);
+  EXPECT_CALL(*delegate, CancelTask()).WillRepeatedly(testing::Return());
+  EXPECT_CALL(*delegate, IsValid()).WillRepeatedly(testing::Return(false));
+  vea_->io_timer_.delayed_task_handle_.delegate_ = std::move(delegate);
+  vea_->num_buffers_at_codec_ = 1;
+  EXPECT_TRUE(vea_->num_buffers_at_codec_ == 1);
+  EXPECT_TRUE(vea_->pending_frames_.empty());
+  vea_->MaybeStopIOTimer();
+  EXPECT_FALSE(vea_->io_timer_.IsRunning());
+}
+
+TEST_F(OHOSVideoEncodeAcceleratorTest, MaybeStopIOTimer005) {
+  auto vea_ = std::make_unique<OHOSVideoEncodeAccelerator>();
+  auto delegate = std::make_unique<MockDelegate>();
+  EXPECT_NE(delegate, nullptr);
+  const gfx::Size coded_size(1920, 1080);
+  const gfx::Rect visible_rect(0, 0, 1920, 1080);
+  const gfx::Size natural_size(1920, 1080);
+  base::TimeDelta timestamp = base::TimeDelta::FromInternalValue(1000);
+  scoped_refptr<VideoFrame> frame =
+      VideoFrame::CreateFrame(VideoPixelFormat::PIXEL_FORMAT_I422A, coded_size,
+                              visible_rect, natural_size, timestamp);
+  bool force_keyframe = true;
+  base::Time current_time = base::Time::Now();
+  vea_->pending_frames_.emplace(std::move(frame), force_keyframe, current_time);
+  EXPECT_CALL(*delegate, CancelTask()).WillRepeatedly(testing::Return());
+  EXPECT_CALL(*delegate, IsValid()).WillRepeatedly(testing::Return(true));
+  vea_->io_timer_.delayed_task_handle_.delegate_ = std::move(delegate);
+  vea_->num_buffers_at_codec_ = 1;
+  EXPECT_TRUE(vea_->num_buffers_at_codec_ == 1);
+  EXPECT_FALSE(vea_->pending_frames_.empty());
+  vea_->MaybeStopIOTimer();
+  EXPECT_TRUE(vea_->io_timer_.IsRunning());
+}
+
+TEST_F(OHOSVideoEncodeAcceleratorTest, MaybeStopIOTimer006) {
+  auto vea_ = std::make_unique<OHOSVideoEncodeAccelerator>();
+  auto delegate = std::make_unique<MockDelegate>();
+  EXPECT_NE(delegate, nullptr);
+  EXPECT_CALL(*delegate, CancelTask()).WillRepeatedly(testing::Return());
+  EXPECT_CALL(*delegate, IsValid()).WillRepeatedly(testing::Return(true));
+  vea_->io_timer_.delayed_task_handle_.delegate_ = std::move(delegate);
+  vea_->num_buffers_at_codec_ = 0;
+  EXPECT_TRUE(vea_->num_buffers_at_codec_ == 0);
+  EXPECT_TRUE(vea_->pending_frames_.empty());
+  vea_->MaybeStopIOTimer();
+  EXPECT_FALSE(vea_->io_timer_.IsRunning());
+}
+
 TEST_F(OHOSVideoEncodeAcceleratorTest, UseOutputBitstreamBuffer) {
   base::UnsafeSharedMemoryRegion region =
       base::UnsafeSharedMemoryRegion::Create(1024);
-  BitstreamBuffer buffer(1, region.Duplicate(), region.GetSize());
+  unsigned int id = 1;
+  BitstreamBuffer buffer(id, region.Duplicate(), region.GetSize());
   vea_->UseOutputBitstreamBuffer(std::move(buffer));
-  EXPECT_EQ(vea_->available_bitstream_buffers_.size(), 1);
+  EXPECT_EQ(vea_->available_bitstream_buffers_.size(), id);
 }
 
 TEST_F(OHOSVideoEncodeAcceleratorTest, RequestEncodingParametersChange) {
@@ -252,12 +360,14 @@ TEST_F(OHOSVideoEncodeAcceleratorTest, NotifyErrorStatus) {}
 TEST_F(OHOSVideoEncodeAcceleratorTest, QueueInput001) {
   vea_->error_occurred_ = false;
   vea_->QueueInput();
+  EXPECT_FALSE(vea_->error_occurred_);
   ASSERT_NE(vea_, nullptr);
 }
 
 TEST_F(OHOSVideoEncodeAcceleratorTest, QueueInput002) {
   vea_->error_occurred_ = true;
   vea_->QueueInput();
+  EXPECT_TRUE(vea_->error_occurred_);
   ASSERT_NE(vea_, nullptr);
 }
 
@@ -274,42 +384,108 @@ TEST_F(OHOSVideoEncodeAcceleratorTest, QueueInput003) {
   vea_->pending_frames_.emplace(std::move(frame), force_keyframe, current_time);
   vea_->error_occurred_ = true;
   vea_->QueueInput();
+  EXPECT_TRUE(vea_->error_occurred_);
   ASSERT_NE(vea_, nullptr);
+}
+
+TEST_F(OHOSVideoEncodeAcceleratorTest, QueueInput004) {
+  const gfx::Size coded_size(1920, 1080);
+  const gfx::Rect visible_rect(0, 0, 1920, 1080);
+  const gfx::Size natural_size(1920, 1080);
+  base::TimeDelta timestamp = base::TimeDelta::FromInternalValue(1000);
+  scoped_refptr<VideoFrame> frame =
+      VideoFrame::CreateFrame(VideoPixelFormat::PIXEL_FORMAT_I422A, coded_size,
+                              visible_rect, natural_size, timestamp);
+  bool force_keyframe = true;
+  base::Time current_time = base::Time::Now();
+  vea_->pending_frames_.emplace(std::move(frame), force_keyframe, current_time);
+  EXPECT_FALSE(vea_->pending_frames_.empty());
+  vea_->error_occurred_ = false;
+  auto media_codec = std::make_unique<MockOHOSMediaCodecBridge>();
+  EXPECT_CALL(*media_codec, FillSurfaceBuffer(testing::_, testing::_))
+      .WillOnce(testing::Return(CodecCodeAdapter::ERROR));
+  EXPECT_CALL(*media_codec, RequestKeyFrameSoon())
+      .WillOnce(testing::Return(CodecCodeAdapter::ERROR));
+  vea_->media_codec_ = std::move(media_codec);
+  vea_->QueueInput();
+  EXPECT_FALSE(vea_->error_occurred_);
+}
+
+TEST_F(OHOSVideoEncodeAcceleratorTest, QueueInput005) {
+  const gfx::Size coded_size(1920, 1080);
+  const gfx::Rect visible_rect(0, 0, 1920, 1080);
+  const gfx::Size natural_size(1920, 1080);
+  base::TimeDelta timestamp = base::TimeDelta::FromInternalValue(1000);
+  scoped_refptr<VideoFrame> frame =
+      VideoFrame::CreateFrame(VideoPixelFormat::PIXEL_FORMAT_I422A, coded_size,
+                              visible_rect, natural_size, timestamp);
+  bool force_keyframe = false;
+  base::Time current_time = base::Time::Now();
+  vea_->pending_frames_.emplace(std::move(frame), force_keyframe, current_time);
+  vea_->error_occurred_ = false;
+  EXPECT_FALSE(vea_->pending_frames_.empty());
+  auto media_codec = std::make_unique<MockOHOSMediaCodecBridge>();
+  EXPECT_CALL(*media_codec, FillSurfaceBuffer(testing::_, testing::_))
+      .WillOnce(testing::Return(CodecCodeAdapter::ERROR));
+  vea_->media_codec_ = std::move(media_codec);
+  vea_->QueueInput();
+  EXPECT_FALSE(vea_->error_occurred_);
+}
+
+TEST_F(OHOSVideoEncodeAcceleratorTest, QueueInput006) {
+  const gfx::Size coded_size(1920, 1080);
+  const gfx::Rect visible_rect(0, 0, 1920, 1080);
+  const gfx::Size natural_size(1920, 1080);
+  base::TimeDelta timestamp = base::TimeDelta::FromInternalValue(1000);
+  scoped_refptr<VideoFrame> frame =
+      VideoFrame::CreateFrame(VideoPixelFormat::PIXEL_FORMAT_I422A, coded_size,
+                              visible_rect, natural_size, timestamp);
+  bool force_keyframe = false;
+  base::Time current_time = base::Time::Now();
+  vea_->pending_frames_.emplace(std::move(frame), force_keyframe, current_time);
+  vea_->error_occurred_ = false;
+  EXPECT_FALSE(vea_->pending_frames_.empty());
+  auto media_codec = std::make_unique<MockOHOSMediaCodecBridge>();
+  EXPECT_CALL(*media_codec, FillSurfaceBuffer(testing::_, testing::_))
+      .WillOnce(testing::Return(CodecCodeAdapter::OK));
+  vea_->media_codec_ = std::move(media_codec);
+  vea_->QueueInput();
+  EXPECT_FALSE(vea_->error_occurred_);
 }
 
 TEST_F(OHOSVideoEncodeAcceleratorTest, DequeueOutput001) {
   vea_->error_occurred_ = true;
-  ASSERT_TRUE(vea_->error_occurred_);
   vea_->num_buffers_at_codec_ = 0;
   ASSERT_EQ(vea_->num_buffers_at_codec_, 0);
   vea_->DequeueOutput();
+  ASSERT_TRUE(vea_->error_occurred_);
   ASSERT_NE(vea_, nullptr);
 }
 
 TEST_F(OHOSVideoEncodeAcceleratorTest, DequeueOutput002) {
   vea_->error_occurred_ = false;
-  ASSERT_FALSE(vea_->error_occurred_);
   vea_->num_buffers_at_codec_ = 0;
   ASSERT_EQ(vea_->num_buffers_at_codec_, 0);
   vea_->DequeueOutput();
+  ASSERT_FALSE(vea_->error_occurred_);
   ASSERT_NE(vea_, nullptr);
 }
 
 TEST_F(OHOSVideoEncodeAcceleratorTest, DequeueOutput003) {
   vea_->error_occurred_ = false;
-  ASSERT_FALSE(vea_->error_occurred_);
   vea_->num_buffers_at_codec_ = 1;
   ASSERT_EQ(vea_->num_buffers_at_codec_, 1);
   vea_->DequeueOutput();
+  ASSERT_FALSE(vea_->error_occurred_);
   ASSERT_NE(vea_, nullptr);
 }
 
 TEST_F(OHOSVideoEncodeAcceleratorTest, DequeueOutput004) {
   vea_->error_occurred_ = false;
-  ASSERT_FALSE(vea_->error_occurred_);
   vea_->num_buffers_at_codec_ = 0;
   ASSERT_EQ(vea_->num_buffers_at_codec_, 0);
   vea_->DequeueOutput();
+  ASSERT_FALSE(vea_->error_occurred_);
   ASSERT_NE(vea_, nullptr);
 }
 
@@ -335,9 +511,41 @@ TEST_F(OHOSVideoEncodeAcceleratorTest, DequeueOutput005) {
       .WillOnce(testing::Return(CodecCodeAdapter::RETRY));
   vea_.media_codec_ = std::move(media_codec);
   vea_.DequeueOutput();
+  ASSERT_FALSE(vea_.error_occurred_);
   ASSERT_NE(&vea_, nullptr);
 }
 
+TEST_F(OHOSVideoEncodeAcceleratorTest, DequeueOutput006) {
+  int32_t id = 1;
+  size_t size = 10;
+  uint64_t offset = 0;
+  base::UnsafeSharedMemoryRegion region =
+      base::UnsafeSharedMemoryRegion::Create(size);
+  base::TimeDelta presentation_timestamp = kNoTimestamp;
+  BitstreamBuffer bitstreambuffer(id, std::move(region), size, offset,
+                                  presentation_timestamp);
+  vea_->available_bitstream_buffers_.push_back(std::move(bitstreambuffer));
+  vea_->error_occurred_ = false;
+  vea_->num_buffers_at_codec_ = 1;
+  auto media_codec = std::make_unique<MockOHOSMediaCodecBridge>();
+  EXPECT_CALL(*media_codec, DequeueOutputBuffer(testing::_, testing::_,
+                                                testing::_, testing::_))
+      .WillOnce(testing::Return(CodecCodeAdapter::ERROR));
+  vea_->media_codec_ = std::move(media_codec);
+  auto log = make_unique<MediaLog>();
+  vea_->log_ = std::move(log);
+  auto client = std::make_unique<MockVideoClient>();
+  EXPECT_CALL(*client, NotifyErrorStatus(testing::_))
+      .WillOnce(testing::Return());
+  auto client_ptr_factory =
+      std::make_unique<base::WeakPtrFactory<VideoEncodeAccelerator::Client>>(
+          client.get());
+  vea_->client_ptr_factory_ = std::move(client_ptr_factory);
+  EXPECT_FALSE(vea_->available_bitstream_buffers_.empty());
+  EXPECT_FALSE(vea_->num_buffers_at_codec_ == 0);
+  vea_->DequeueOutput();
+  ASSERT_TRUE(vea_->error_occurred_);
+}
 
 TEST_F(OHOSVideoEncodeAcceleratorTest, DequeueOutput007) {
   OHOSVideoEncodeAccelerator vea_;
@@ -352,7 +560,6 @@ TEST_F(OHOSVideoEncodeAcceleratorTest, DequeueOutput007) {
   vea_.available_bitstream_buffers_.push_back(std::move(bitstreambuffer));
   EXPECT_FALSE(vea_.available_bitstream_buffers_.empty());
   vea_.error_occurred_ = false;
-  ASSERT_FALSE(vea_.error_occurred_);
   vea_.num_buffers_at_codec_ = 1;
   ASSERT_EQ(vea_.num_buffers_at_codec_, 1);
   auto media_codec = std::make_unique<MockOHOSMediaCodecBridge>();
@@ -361,6 +568,7 @@ TEST_F(OHOSVideoEncodeAcceleratorTest, DequeueOutput007) {
       .WillOnce(testing::Return(CodecCodeAdapter::OK));
   vea_.media_codec_ = std::move(media_codec);
   vea_.DequeueOutput();
+  ASSERT_FALSE(vea_.error_occurred_);
   ASSERT_NE(&vea_, nullptr);
 }
 
@@ -408,4 +616,43 @@ TEST_F(OHOSVideoEncodeAcceleratorTest, Destroy004) {
   vea_->Destroy();
 }
 
-} //namespace media
+TEST_F(OHOSVideoEncodeAcceleratorTest, NotifyErrorStatus001) {
+  auto vea_ = std::make_unique<OHOSVideoEncodeAccelerator>();
+  EncoderStatus status(EncoderStatusTraits::Codes::kOk, "kOk");
+  status.data_ = make_unique<internal::StatusData>();
+  auto log = make_unique<MediaLog>();
+  vea_->log_ = std::move(log);
+  auto client = std::make_unique<MockVideoClient>();
+  auto client_ptr_factory =
+      std::make_unique<base::WeakPtrFactory<VideoEncodeAccelerator::Client>>(
+          client.get());
+  vea_->client_ptr_factory_ = std::move(client_ptr_factory);
+  vea_->error_occurred_ = true;
+  EXPECT_TRUE(!status.is_ok());
+  EXPECT_TRUE(vea_->log_);
+  vea_->NotifyErrorStatus(status);
+  EXPECT_TRUE(vea_->error_occurred_);
+}
+
+TEST_F(OHOSVideoEncodeAcceleratorTest, NotifyErrorStatus002) {
+  auto vea_ = std::make_unique<OHOSVideoEncodeAccelerator>();
+  EncoderStatus status(EncoderStatusTraits::Codes::kOk, "kOk");
+  status.data_ = make_unique<internal::StatusData>();
+  auto log = make_unique<MediaLog>();
+  vea_->log_ = std::move(log);
+  auto client = std::make_unique<MockVideoClient>();
+  EXPECT_CALL(*client, NotifyErrorStatus(testing::_))
+      .WillOnce(testing::Return());
+  auto client_ptr_factory =
+      std::make_unique<base::WeakPtrFactory<VideoEncodeAccelerator::Client>>(
+          client.get());
+  vea_->client_ptr_factory_ = std::move(client_ptr_factory);
+  vea_->error_occurred_ = false;
+  EXPECT_FALSE(vea_->error_occurred_);
+  EXPECT_TRUE(!status.is_ok());
+  EXPECT_TRUE(vea_->log_);
+  vea_->NotifyErrorStatus(status);
+  EXPECT_TRUE(vea_->error_occurred_);
+}
+
+}  // namespace media

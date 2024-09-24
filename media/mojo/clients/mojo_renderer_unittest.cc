@@ -22,7 +22,9 @@
 #include "media/base/test_helpers.h"
 #include "media/cdm/clear_key_cdm_common.h"
 #include "media/cdm/default_cdm_factory.h"
+#define private public
 #include "media/mojo/clients/mojo_renderer.h"
+#undef private
 #include "media/mojo/common/media_type_converters.h"
 #include "media/mojo/mojom/content_decryption_module.mojom.h"
 #include "media/mojo/mojom/renderer.mojom.h"
@@ -516,5 +518,31 @@ TEST_F(MojoRendererTest, ErrorDuringFlush) {
                       RunOnceClosure<0>()));
   Flush();
 }
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+TEST_F(MojoRendererTest, SetSurfaceId001) {
+  gfx::Rect rect(0, 0, 800, 600);
+  mojo_renderer_->SetSurfaceId(1, rect);
+  EXPECT_TRUE(mojo_renderer_->remote_renderer_.is_bound());
+}
+
+TEST_F(MojoRendererTest, SetMediaPlayerState001) {
+  mojo_renderer_->SetMediaPlayerState(true, 1);
+  EXPECT_TRUE(mojo_renderer_->remote_renderer_.is_bound());
+}
+
+TEST_F(MojoRendererTest, SetMediaSourceList001) {
+  std::vector<Renderer::MediaSourceInfo> source_infos = {};
+  mojo_renderer_->SetMediaSourceList(source_infos);
+  EXPECT_TRUE(mojo_renderer_->source_infos_.empty());
+}
+
+TEST_F(MojoRendererTest, SetMediaSourceList002) {
+  std::vector<Renderer::MediaSourceInfo> source_infos = {
+      {"source1", "format1"}, {"source2", "format2"}};
+  mojo_renderer_->SetMediaSourceList(source_infos);
+  EXPECT_FALSE(mojo_renderer_->source_infos_.empty());
+}
+#endif
 
 }  // namespace media

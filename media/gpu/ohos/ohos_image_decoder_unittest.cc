@@ -46,7 +46,7 @@ TEST(OhosImageDecoderTest, Decode_001) {
   concreteDecoder->Initialize();
   std::vector<uint8_t> imageData = {12};
   base::span<const uint8_t> encodedImage(imageData.data(), imageData.size());
-  concreteDecoder->Decode(encodedImage);
+  auto ret = concreteDecoder->Decode(encodedImage);
   ASSERT_EQ(ret,OhosImageDecodeStatus::kExecuteDecodeFailed);
 }
 

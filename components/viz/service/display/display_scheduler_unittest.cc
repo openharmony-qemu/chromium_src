@@ -2,8 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#if defined(OHOS_UNITTESTS)
+#define private public
+#define protected public
+#endif // OHOS_UNITTESTS
 #include "components/viz/service/display/display_scheduler.h"
-
+#if defined(OHOS_UNITTESTS)
+#undef protected
+#undef private
+#endif // OHOS_UNITTESTS
 #include <set>
 #include <utility>
 #include <vector>
@@ -26,6 +33,9 @@
 #include "components/viz/service/display_embedder/server_shared_bitmap_manager.h"
 #include "components/viz/test/begin_frame_args_test.h"
 #include "components/viz/test/fake_external_begin_frame_source.h"
+#if defined(OHOS_UNITTESTS)
+#include "gmock/gmock.h"
+#endif  // OHOS_UNITTESTS
 #include "testing/gtest/include/gtest/gtest.h"
 
 namespace viz {
@@ -252,6 +262,40 @@ void DisplaySchedulerTest::SetUp() {
   damage_tracker_->SetRootFrameMissingForTest(false);
   scheduler_->SetClient(&client_);
 }
+#if defined(OHOS_UNITTESTS)
+TEST_F(DisplaySchedulerTest, DesiredBeginFrameDeadlineMode) {
+  SurfaceId root_surface_id1(
+      kArbitraryFrameSinkId,
+      LocalSurfaceId(1, base::UnguessableToken::Create()));
+  SurfaceId root_surface_id2(
+      kArbitraryFrameSinkId,
+      LocalSurfaceId(2, base::UnguessableToken::Create()));
+  SurfaceId sid1(kArbitraryFrameSinkId,
+                 LocalSurfaceId(3, base::UnguessableToken::Create()));
+  scheduler_->wait_render_frame_submission_before_draw_ = true;
+  DisplayScheduler::BeginFrameDeadlineMode deadline_mode =
+      scheduler_->DesiredBeginFrameDeadlineMode();
+  EXPECT_EQ(deadline_mode, DisplayScheduler::BeginFrameDeadlineMode::kNone);
+}
+
+TEST_F(DisplaySchedulerTest, OnDisplayDamaged1) {
+  FrameSinkId frame_sink(0, 1);
+  SurfaceId root_surface_id(
+      frame_sink, LocalSurfaceId(1, base::UnguessableToken::Create()));
+  scheduler_->wait_render_frame_submission_before_draw_ = true;
+  scheduler_->OnDisplayDamaged(root_surface_id);
+  EXPECT_NE(scheduler_->wait_render_frame_submission_before_draw_, false);
+}
+
+TEST_F(DisplaySchedulerTest, OnDisplayDamaged2) {
+  FrameSinkId frame_sink(1, 1);
+  SurfaceId root_surface_id(
+      frame_sink, LocalSurfaceId(1, base::UnguessableToken::Create()));
+  scheduler_->wait_render_frame_submission_before_draw_ = true;
+  scheduler_->OnDisplayDamaged(root_surface_id);
+  EXPECT_EQ(scheduler_->wait_render_frame_submission_before_draw_, false);
+}
+#endif  // OHOS_UNITTESTS
 
 TEST_F(DisplaySchedulerTest, ResizeHasLateDeadlineUntilNewRootSurface) {
   SurfaceId root_surface_id1(
@@ -962,6 +1006,59 @@ TEST_F(DynamicDisplaySchedulerTest, DynamicBeginFrameArgsDeadline) {
             next_frame_time -
                 client_.GetEstimatedDisplayDrawTime(kVSyncInterval, 0.0));
 }
+
+#if defined(OHOS_UNITTESTS)
+class MockDisplayScheduler : public DisplayScheduler {
+ public:
+  MockDisplayScheduler(BeginFrameSource* begin_frame_source,
+                       base::SingleThreadTaskRunner* task_runner,
+                       PendingSwapParams pending_swap_params,
+                       HintSessionFactory* hint_session_factory = nullptr,
+                       bool wait_for_all_surfaces_before_draw = false)
+      : DisplayScheduler(begin_frame_source,
+                         task_runner,
+                         pending_swap_params,
+                         hint_session_factory,
+                         wait_for_all_surfaces_before_draw) {}
+  MOCK_METHOD(void, SetWaitRenderFrameSubmissionBeforeDraw, (bool value));
+};
+
+class MockSingleThreadTaskRunner : public base::SingleThreadTaskRunner {
+ public:
+  MOCK_METHOD(bool,
+              PostDelayedTask,
+              (const base::Location& location,
+               base::OnceClosure task,
+               base::TimeDelta delay),
+              (override));
+  MOCK_METHOD(bool,
+              PostNonNestableDelayedTask,
+              (const base::Location& from_here,
+               base::OnceClosure task,
+               base::TimeDelta delay),
+              ());
+  MOCK_METHOD(bool, RunsTasksInCurrentSequence, (), (const));
+};
+
+TEST_F(DisplaySchedulerTest, Set_ResetShouldFrameSubmissionBeforeDraw) {
+  StubBeginFrameSource stub_begin_frame_source;
+  std::unique_ptr<MockSingleThreadTaskRunner> mock_task_runner =
+      std::make_unique<MockSingleThreadTaskRunner>();
+  EXPECT_CALL(*mock_task_runner,
+              PostDelayedTask(testing::_, testing::_, testing::_))
+      .WillRepeatedly(testing::Return(true));
+  base::SingleThreadTaskRunner::CurrentHandleOverrideForTesting handle_override(
+      std::move(&*mock_task_runner));
+  MockDisplayScheduler mock_scheduler(&stub_begin_frame_source,
+                                      &*mock_task_runner, PendingSwapParams(1),
+                                      nullptr, false);
+  mock_scheduler.wait_render_frame_submission_before_draw_ = false;
+  mock_scheduler.SetShouldFrameSubmissionBeforeDraw(true);
+  EXPECT_TRUE(mock_scheduler.wait_render_frame_submission_before_draw_);
+  mock_scheduler.ResetShouldFrameSubmissionBeforeDraw();
+  EXPECT_FALSE(mock_scheduler.wait_render_frame_submission_before_draw_);
+}
+#endif  // OHOS_UNITTESTS
 
 }  // namespace
 }  // namespace viz

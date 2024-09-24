@@ -836,17 +836,9 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
     return false;
   }
 
-  std::weak_ptr<NWebOutputHandler> output_handler_weak(output_handler_);
-  auto render_update_cb = [output_handler_weak](const char* buffer) -> void {
-    if (!output_handler_weak.expired()) {
-      output_handler_weak.lock()->OnRenderUpdate(buffer);
-    }
-  };
-
   uint32_t width, height;
   output_handler_->GetWindowInfo(width, height);
   nweb_delegate_->Resize(width, height);
-  nweb_delegate_->RegisterRenderCb(render_update_cb);
 
   inputmethod_handler_ = new NWebInputMethodHandler();
   if (!inputmethod_handler_) {

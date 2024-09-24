@@ -419,6 +419,8 @@ class AutofillAgent : public content::RenderFrameObserver,
 
   bool was_last_action_fill_ = false;
 
+  bool is_popup_created_by_focus_change_ = false;
+
   // Timers for throttling handling of frequent events.
   base::OneShotTimer select_option_change_batch_timer_;
   base::OneShotTimer datalist_option_change_batch_timer_;

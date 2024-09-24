@@ -166,6 +166,39 @@ TEST_F(ExternalBeginFrameSourceOhosTest, ResetVSyncFrequency2) {
   EXPECT_EQ(false, begin_frame_source()->update_vsync_frequency_);
 }
 
+TEST_F(ExternalBeginFrameSourceOhosTest, OnVSync001) {
+  void* data = nullptr;
+  int64_t timestamp = 1000;
+  testing::internal::CaptureStderr();
+  begin_frame_source()->OnVSync(timestamp, data);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("OnVSync data is nullptr"), std::string::npos);
+}
+
+TEST_F(ExternalBeginFrameSourceOhosTest, UpdateVSyncFrequency001) {
+  int frame_rate = 30;
+  begin_frame_source()->UpdateVSyncFrequency(frame_rate);
+  EXPECT_EQ(30, begin_frame_source()->vsync_frequency_to_update_);
+}
+
+TEST_F(ExternalBeginFrameSourceOhosTest, UpdateVSyncFrequency002) {
+  int frame_rate = 20;
+  begin_frame_source()->UpdateVSyncFrequency(frame_rate);
+  EXPECT_EQ(30, begin_frame_source()->vsync_frequency_to_update_);
+}
+
+TEST_F(ExternalBeginFrameSourceOhosTest, UpdateVSyncFrequency003) {
+  int frame_rate = 54;
+  begin_frame_source()->UpdateVSyncFrequency(frame_rate);
+  EXPECT_EQ(50, begin_frame_source()->vsync_frequency_to_update_);
+}
+
+TEST_F(ExternalBeginFrameSourceOhosTest, UpdateVSyncFrequency004) {
+  int frame_rate = 66;
+  begin_frame_source()->UpdateVSyncFrequency(frame_rate);
+  EXPECT_EQ(60, begin_frame_source()->vsync_frequency_to_update_);
+}
+
 }  // namespace viz
 
 #endif

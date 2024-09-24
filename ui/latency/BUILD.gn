@@ -51,12 +51,16 @@ source_set("test_support") {
 }
 
 test("latency_unittests") {
-  sources = [ "latency_info_unittest.cc" ]
+  sources = [
+    "latency_info_unittest.cc",
+    "latency_tracker_unittest.cc",
+  ]
 
   deps = [
     ":latency",
     "//base",
     "//base/test:test_support",
+    "//content/public/common:static_switches",
     "//mojo/core/test:run_all_unittests",
     "//testing/gmock",
     "//testing/gtest",

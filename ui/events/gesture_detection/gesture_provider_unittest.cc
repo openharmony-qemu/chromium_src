@@ -2,7 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ui/events/gesture_detection/gesture_provider.h"
+#define private public
+#include "ui/events/gesture_detection/gesture_provider.cc"
+#undef private
 
 #include <stddef.h>
 
@@ -551,6 +553,80 @@ class GestureProviderTest : public testing::Test, public GestureProviderClient {
 
 // Verify that a DOWN has the same unique_touch_event_id and
 // primary_touch_event_id
+class MockScaleGestureDetector : public ScaleGestureDetector {
+ public:
+  MockScaleGestureDetector(const Config& config, ScaleGestureListener* listener)
+      : ScaleGestureDetector(config, listener) {}
+  MockScaleGestureDetector() : ScaleGestureDetector(Config(), nullptr) {}
+};
+
+class MockGestureProviderClient : public GestureProviderClient {
+ public:
+  void OnGestureEvent(const GestureEventData& gesture) { return; }
+};
+
+class MockMotionEvent1 : public MotionEvent {
+ public:
+  MOCK_METHOD(uint32_t, GetUniqueEventId, (), (const, override));
+  MOCK_METHOD(Action, GetAction, (), (const, override));
+  MOCK_METHOD(int, GetActionIndex, (), (const, override));
+  MOCK_METHOD(int, GetPointerId, (size_t pointer_index), (const, override));
+  MOCK_METHOD(float, GetTouchMinor, (size_t pointer_index), (const, override));
+  MOCK_METHOD(float, GetOrientation, (size_t pointer_index), (const, override));
+  MOCK_METHOD(float, GetPressure, (size_t pointer_index), (const, override));
+  MOCK_METHOD(float, GetTiltX, (size_t pointer_index), (const, override));
+  MOCK_METHOD(float, GetTiltY, (size_t pointer_index), (const, override));
+  MOCK_METHOD(float, GetTwist, (size_t pointer_index), (const, override));
+  MOCK_METHOD(float,
+              GetTangentialPressure,
+              (size_t pointer_index),
+              (const, override));
+  MOCK_METHOD(ToolType, GetToolType, (size_t pointer_index), (const, override));
+  MOCK_METHOD(int, GetButtonState, (), (const, override));
+  MOCK_METHOD(base::TimeTicks, GetEventTime, (), (const, override));
+
+  float GetX(size_t pointer_index) const { return 0; }
+  float GetY(size_t pointer_index) const { return 0; }
+  float GetRawX(size_t pointer_index) const { return 0; }
+  float GetRawY(size_t pointer_index) const { return 0; }
+  float GetTouchMajor(size_t pointer_index) const { return 0; }
+  size_t GetPointerCount() const { return 0; }
+  int GetFlags() const { return 0; }
+};
+
+class PinchGestureTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    GestureProvider::Config config;
+    client_ = std::make_unique<MockGestureProviderClient>();
+    gesture_provider_ =
+        std::make_unique<GestureProvider>(config, client_.get());
+    gesture_listener_impl_ =
+        std::make_unique<GestureProvider::GestureListenerImpl>(
+            config, client_.get(), gesture_provider_.get());
+  }
+
+  void TearDown() override {}
+
+ protected:
+  std::unique_ptr<GestureProvider::GestureListenerImpl> gesture_listener_impl_;
+  std::unique_ptr<MockGestureProviderClient> client_;
+  std::unique_ptr<GestureProvider> gesture_provider_;
+};
+
+TEST_F(PinchGestureTest, TestOnScaleFunction01) {
+  MockScaleGestureDetector mock_detector;
+  MockMotionEvent1 mock_event;
+  gesture_listener_impl_->ignore_multitouch_zoom_events_ = false;
+
+  EXPECT_CALL(mock_event, GetPointerId(testing::_))
+      .WillRepeatedly(testing::Return(0));
+  EXPECT_CALL(mock_event, GetToolType(testing::_))
+      .WillRepeatedly(testing::Return(ui::MotionEvent::ToolType::UNKNOWN));
+  bool result = gesture_listener_impl_->OnScale(mock_detector, mock_event);
+  EXPECT_TRUE(result);
+}
+
 TEST_F(GestureProviderTest, GestureTapPrimaryUniqueTouchEventId) {
   base::TimeTicks event_time = base::TimeTicks::Now();
   int motion_event_id = 6;

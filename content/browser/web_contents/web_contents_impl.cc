@@ -4809,14 +4809,14 @@ void WebContentsImpl::OnNativeEmbedStatusUpdate(
     const NativeEmbedInfo& native_embed_info,
     NativeEmbedInfo::TagState state) {
   bool print_log = true;
-  if (native_web_embed_rect_info_map_.count(native_embed_info.native_embed_id)) {
-    gfx::Rect history_rect = native_web_embed_rect_info_map_[native_embed_info.native_embed_id];
+  if (native_web_embed_rect_info_map_.count(native_embed_info.embed_element_id)) {
+    gfx::Rect history_rect = native_web_embed_rect_info_map_[native_embed_info.embed_element_id];
     if (history_rect.size() == native_embed_info.rect.size()) {
       print_log = false;
     }
-    native_web_embed_rect_info_map_[native_embed_info.native_embed_id] = native_embed_info.rect;
+    native_web_embed_rect_info_map_[native_embed_info.embed_element_id] = native_embed_info.rect;
   } else {
-    native_web_embed_rect_info_map_.insert(std::make_pair(native_embed_info.native_embed_id, native_embed_info.rect));
+    native_web_embed_rect_info_map_.insert(std::make_pair(native_embed_info.embed_element_id, native_embed_info.rect));
   }
   if (print_log) {
     std::string param_list;

@@ -384,7 +384,7 @@ void AutofillAgent::DidChangeScrollOffsetImpl(
 
 void AutofillAgent::FocusedElementChanged(const WebElement& element) {
   HidePopup();
-
+  is_popup_created_by_focus_change_ = false;
   if (element.IsNull()) {
     // Focus moved away from the last interacted form (if any) to somewhere else
     // on the page.
@@ -423,6 +423,7 @@ void AutofillAgent::FocusedElementChanged(const WebElement& element) {
         !focus_requires_scroll_;
     HandleFocusChangeComplete(
         /*focused_node_was_last_clicked=*/focused_node_was_last_clicked);
+    is_popup_created_by_focus_change_ = true;
   }
 
   if (focus_moved_to_new_form)
@@ -1194,6 +1195,15 @@ void AutofillAgent::DidReceiveLeftMouseDownOrGestureTapInNode(
 
 #if defined(OHOS_PASSWORD_AUTOFILL)
   OhFormControlElementClicked();
+#endif
+
+#if defined(OHOS_AUTOFILL)
+  if (is_popup_created_by_focus_change_) {
+      is_popup_created_by_focus_change_ = false;
+      return;
+  }
+  HidePopup();
+  HandleFocusChangeComplete(/*focused_node_was_last_clicked=*/node.Focused());
 #endif
 
 #if defined(ANDROID)

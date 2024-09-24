@@ -286,6 +286,13 @@ void VideoCaptureDeviceFactoryOHOSTest::TearDown(void) {
   v_factory = nullptr;
 }
 
+TEST_F(VideoCaptureDeviceFactoryOHOSTest, VideoCaptureDeviceFactoryOHOS_1) {
+  v_factory->is_camera_manager_created_ = {true};
+  scoped_refptr<base::SingleThreadTaskRunner> ui_task_runner;
+  v_factory.reset();
+  EXPECT_EQ(v_factory, nullptr);
+}
+
 // CreateDevice
 TEST_F(VideoCaptureDeviceFactoryOHOSTest,
        MediaVideoFactoryTest_VideoCaptureDeviceFactoryOHOS_001) {
@@ -356,6 +363,63 @@ TEST_F(VideoCaptureDeviceFactoryOHOSTest,
       .WillRepeatedly(::testing::Return(false));
   v_factory->OnCameraStatusChanged(camera_status, callback_device_id);
 }
+
+TEST_F(VideoCaptureDeviceFactoryOHOSTest,
+       MediaVideoFactoryTest_VideoCaptureDeviceFactoryOHOS_003_1) {
+  CameraStatusAdapter camera_status = CameraStatusAdapter::DISAPPEAR;
+  std::string callback_device_id = "callback_device_id";
+  auto camera_manager_adapter_mock =
+      std::make_shared<CameraManagerAdapterMock>();
+  EXPECT_CALL(*camera_manager_adapter_mock, IsExistCaptureTask())
+      .WillRepeatedly(::testing::Return(false));
+  v_factory->camera_manager_adapter_ = std::move(camera_manager_adapter_mock);
+  v_factory->OnCameraStatusChanged(camera_status, callback_device_id);
+  EXPECT_EQ(camera_status, CameraStatusAdapter::DISAPPEAR);
+  EXPECT_EQ(callback_device_id, "callback_device_id");
+}
+
+TEST_F(VideoCaptureDeviceFactoryOHOSTest,
+       MediaVideoFactoryTest_VideoCaptureDeviceFactoryOHOS_003_2) {
+  CameraStatusAdapter camera_status = CameraStatusAdapter::APPEAR;
+  std::string callback_device_id = "callback_device_id";
+  auto camera_manager_adapter_mock =
+      std::make_shared<CameraManagerAdapterMock>();
+  EXPECT_CALL(*camera_manager_adapter_mock, IsExistCaptureTask())
+      .WillRepeatedly(::testing::Return(false));
+  v_factory->camera_manager_adapter_ = std::move(camera_manager_adapter_mock);
+  v_factory->OnCameraStatusChanged(camera_status, callback_device_id);
+  EXPECT_EQ(camera_status, CameraStatusAdapter::APPEAR);
+  EXPECT_EQ(callback_device_id, "callback_device_id");
+}
+
+TEST_F(VideoCaptureDeviceFactoryOHOSTest,
+       MediaVideoFactoryTest_VideoCaptureDeviceFactoryOHOS_003_3) {
+  CameraStatusAdapter camera_status = CameraStatusAdapter::DISAPPEAR;
+  std::string callback_device_id = "callback_device";
+  auto camera_manager_adapter_mock =
+      std::make_shared<CameraManagerAdapterMock>();
+  EXPECT_CALL(*camera_manager_adapter_mock, GetCurrentDeviceId())
+      .WillRepeatedly(::testing::Return(callback_device_id));
+  v_factory->camera_manager_adapter_ = std::move(camera_manager_adapter_mock);
+  v_factory->OnCameraStatusChanged(camera_status, callback_device_id);
+  EXPECT_EQ(camera_status, CameraStatusAdapter::DISAPPEAR);
+  EXPECT_EQ(callback_device_id, "callback_device");
+}
+
+TEST_F(VideoCaptureDeviceFactoryOHOSTest,
+       MediaVideoFactoryTest_VideoCaptureDeviceFactoryOHOS_003_4) {
+  CameraStatusAdapter camera_status = CameraStatusAdapter::APPEAR;
+  std::string callback_device_id = "callback_device";
+  auto camera_manager_adapter_mock =
+      std::make_shared<CameraManagerAdapterMock>();
+  EXPECT_CALL(*camera_manager_adapter_mock, GetCurrentDeviceId())
+      .WillRepeatedly(::testing::Return(callback_device_id));
+  v_factory->camera_manager_adapter_ = std::move(camera_manager_adapter_mock);
+  v_factory->OnCameraStatusChanged(camera_status, callback_device_id);
+  EXPECT_EQ(camera_status, CameraStatusAdapter::APPEAR);
+  EXPECT_EQ(callback_device_id, "callback_device");
+}
+
 // CheckDeviceId
 TEST_F(VideoCaptureDeviceFactoryOHOSTest,
        MediaVideoFactoryTest_VideoCaptureDeviceFactoryOHOS_004) {

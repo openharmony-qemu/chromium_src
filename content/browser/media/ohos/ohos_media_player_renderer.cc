@@ -283,7 +283,7 @@ void OHOSMediaPlayerRenderer::OnPlayerSeekBack(base::TimeDelta back_time) {
     return;
   }
   LOG(INFO) << "SEEK_CLOSEST failure and seek back time: " << back_time;
-  mediaSession -> SeekTo(back_time);
+  mediaSession->SeekTo(back_time);
 }
 
 base::TimeDelta OHOSMediaPlayerRenderer::GetMediaTime() {

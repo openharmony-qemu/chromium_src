@@ -508,4 +508,28 @@ TEST(DataPackTest, Misordered) {
       {kSampleMisorderedPakContents, kSampleMisorderedPakSize}));
 }
 
+#if defined(OHOS_UNITTESTS)
+TEST(DataPackTest, GetStringPiece001) {
+  base::ScopedTempDir dir;
+  ASSERT_TRUE(dir.CreateUniqueTempDir());
+  base::FilePath data_path =
+      dir.GetPath().Append(FILE_PATH_LITERAL("sample.pak.gz"));
+  std::string compressed;
+  ASSERT_TRUE(compression::GzipCompress(
+      {kSamplePakContentsV4, kSamplePakSizeV4}, &compressed));
+  ASSERT_TRUE(base::WriteFile(data_path, compressed));
+  DataPack pack(k100Percent);
+  ASSERT_TRUE(pack.LoadFromPath(data_path));
+  uint16_t resource_id = 1;
+  DataPack::Entry* ret_target = reinterpret_cast<DataPack::Entry*>(
+      bsearch(&resource_id, pack.resource_table_, pack.resource_count_, sizeof(DataPack::Entry),
+              DataPack::Entry::CompareById));
+  DataPack::Entry* next_entry = ret_target + 1;
+  ret_target->file_offset = next_entry->file_offset+1;
+  base::StringPiece data;
+  auto result = pack.GetStringPiece(1, &data);
+  EXPECT_EQ(false, result);
+}
+#endif // OHOS_UNITTESTS
+
 }  // namespace ui

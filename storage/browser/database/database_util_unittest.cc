@@ -63,4 +63,33 @@ TEST(DatabaseUtilTest, CrackVfsFilePathTest) {
 #endif
 }
 
+#if defined(OHOS_UNITTESTS)
+TEST(DatabaseUtilTest, CrackVfsFilePathTest001) {
+  std::string origin_identifier;
+  std::u16string database_name;
+  std::u16string sqlite_suffix;
+  std::u16string vfs_file_name = u"/example.com/----.d---@*b";
+  auto result = DatabaseUtil::CrackVfsFileName(
+      vfs_file_name, &origin_identifier, &database_name, &sqlite_suffix);
+  EXPECT_EQ(false, result);
+}
+
+TEST(DatabaseUtilTest, CrackVfsFilePathTest002) {
+  std::string origin_identifier;
+  std::u16string database_name;
+  std::u16string sqlite_suffix;
+  std::u16string vfs_file_name = u"/exa\\mple..___@com/dbname.db";
+  auto result = DatabaseUtil::CrackVfsFileName(
+      vfs_file_name, &origin_identifier, &database_name, &sqlite_suffix);
+  EXPECT_EQ(false, result);
+}
+
+TEST(DatabaseUtilTest, CrackVfsFilePathTest003) {
+  std::u16string vfs_file_name = u"/http_origin_0/dbname.suffix";
+  auto result =
+      DatabaseUtil::CrackVfsFileName(vfs_file_name, nullptr, nullptr, nullptr);
+  EXPECT_EQ(true, result);
+}
+#endif // OHOS_UNITTESTS
+
 }  // namespace storage

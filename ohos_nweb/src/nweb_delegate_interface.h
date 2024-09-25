@@ -361,6 +361,7 @@ class NWebDelegateInterface
 #if defined(OHOS_GET_SCROLL_OFFSET)
   virtual void GetOverScrollOffset(float* offset_x, float* offset_y) = 0;
 #endif
+  virtual void WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent) = 0;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #if defined(OHOS_EX_FORCE_ZOOM)

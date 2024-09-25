@@ -2,7 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#if defined(OHOS_UNITTESTS)
+#define private public
 #include "ui/gfx/render_text.h"
+#undef private
+#else  // OHOS_UNITTESTS
+#include "ui/gfx/render_text.h"
+#endif  // OHOS_UNITTESTS
 
 #include <limits.h>
 #include <stddef.h>
@@ -8711,4 +8717,26 @@ TEST_F(RenderTextTest, Clusterfuzz_Issue_1193815) {
   render_text->Draw(canvas());
 }
 
+#if defined(OHOS_UNITTESTS)
+TEST_F(RenderTextTest, SetDrawStringsFlagsTest001) {
+  RenderText* render_text = GetRenderText();
+  render_text->cached_bounds_and_offset_valid_ = true;
+  render_text->SetDrawStringsFlags(0);
+  EXPECT_EQ(render_text->draw_strings_flags(), 0);
+  EXPECT_TRUE(render_text->cached_bounds_and_offset_valid_);
+}
+
+TEST_F(RenderTextTest, SetDrawStringsFlagsTest002) {
+  RenderText* render_text = GetRenderText();
+  render_text->SetDrawStringsFlags(3);
+  EXPECT_EQ(render_text->draw_strings_flags(), 3);
+}
+
+TEST_F(RenderTextTest, OnTextAttributeChanged001) {
+  RenderText* render_text = GetRenderText();
+  render_text->SetDrawStringsFlags(3);
+  render_text->OnTextAttributeChanged();
+  EXPECT_EQ(render_text->draw_strings_flags(), 3);
+}
+#endif  // OHOS_UNITTESTS
 }  // namespace gfx

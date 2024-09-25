@@ -363,6 +363,12 @@ void NWebRenderHandler::ResizeVisibleViewport(uint32_t width, uint32_t height) {
   visible_width_ = width;
   visible_height_ = height;
 }
+
+void NWebRenderHandler::StartVibraFeedback(const std::string& vibratorType) {
+  if (auto handler = handler_.lock()) {
+    handler->StartVibraFeedback(vibratorType);
+  }
+}
 #endif
 
 #if BUILDFLAG(IS_OHOS)
@@ -1027,7 +1033,7 @@ void NWebRenderHandler::OnNativeEmbedLifecycleChange(
 }
 
 void NWebRenderHandler::OnNativeEmbedVisibilityChange(
-    const std::string& embed_id, 
+    const std::string& embed_id,
     bool visibility) {
   if (auto handler = handler_.lock()) {
     handler->OnNativeEmbedVisibilityChange(embed_id, visibility);

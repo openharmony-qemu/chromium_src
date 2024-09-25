@@ -176,7 +176,7 @@ class NWebRenderHandler : public CefRenderHandler {
                     CefRefPtr<CefGestureEventCallback> callback) override;
   void OnNativeEmbedLifecycleChange(CefRefPtr<CefBrowser> browser,
                     const CefNativeEmbedData& info) override;
-  void OnNativeEmbedVisibilityChange(const std::string& embed_id, 
+  void OnNativeEmbedVisibilityChange(const std::string& embed_id,
                     bool visibility) override;
   bool FilterScrollEvent(CefRefPtr<CefBrowser> browser,
                          const float x,
@@ -186,6 +186,7 @@ class NWebRenderHandler : public CefRenderHandler {
   std::shared_ptr<NWebNativeEmbedDataInfo> CefEmbedDataToWeb(const CefRenderHandler::CefNativeEmbedData& embedData);
   void SetContentSize(int width, int height);
   gfx::Size GetSize();
+  void StartVibraFeedback(const std::string& vibratorType) override;
 #endif
 
 #ifdef OHOS_EX_FREE_COPY

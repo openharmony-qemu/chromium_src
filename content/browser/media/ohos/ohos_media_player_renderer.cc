@@ -272,6 +272,20 @@ void OHOSMediaPlayerRenderer::OnAudioStateChanged(bool isAudible) {
   }
 }
 
+void OHOSMediaPlayerRenderer::OnPlayerSeekBack(base::TimeDelta back_time) {
+  if (web_contents_ == nullptr) {
+    LOG(ERROR) << "web contents is nullptr";
+    return;
+  }
+  MediaSessionImpl* mediaSession = MediaSessionImpl::Get(web_contents_);
+  if (mediaSession == nullptr) {
+    LOG(ERROR) << "get mediaSession is nullptr";
+    return;
+  }
+  LOG(INFO) << "SEEK_CLOSEST failure and seek back time: " << back_time;
+  mediaSession->SeekTo(back_time);
+}
+
 base::TimeDelta OHOSMediaPlayerRenderer::GetMediaTime() {
   if (media_player_) {
     return media_player_->GetMediaTime();

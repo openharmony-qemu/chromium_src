@@ -539,6 +539,10 @@ test("capture_unittests") {
   }
 
   if (ohos_unittests) {
+    sources += [ "video/ohos/video_capture_device_ohos_unittest.cc" ]
+  }
+
+  if (ohos_unittests) {
     deps += [ "//content/public/common:static_switches" ]
   }
 

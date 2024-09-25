@@ -2042,6 +2042,18 @@ bool NWebImpl::ScrollByWithResult(float delta_x, float delta_y) {
   }
   return nweb_delegate_->ScrollByWithResult(delta_x, delta_y);
 }
+
+void NWebImpl::WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent) {
+  if (!input_handler_ || !mouseEvent) {
+    return;
+  }
+
+  if (mouseEvent->GetAction() == MouseAction::PRESS) {
+    ResSchedClientAdapter::ReportScene(
+      ResSchedStatusAdapter::WEB_SCENE_ENTER, ResSchedSceneAdapter::CLICK, nweb_id_);
+  }
+  input_handler_->WebSendMouseEvent(mouseEvent);
+}
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 bool NWebImpl::GetCertChainDerData(std::vector<std::string>& certChainData,

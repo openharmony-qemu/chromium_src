@@ -32,6 +32,17 @@ const std::string SPAN_STRING_TAG_ = "test";
 namespace ui {
 using namespace testing;
 
+class MOCKNWebSpanstringConvertHtmlCallback
+    : public OHOS::NWeb::NWebSpanstringConvertHtmlCallback {
+ public:
+  MOCKNWebSpanstringConvertHtmlCallback() = default;
+  ~MOCKNWebSpanstringConvertHtmlCallback() override = default;
+  MOCK_METHOD(std::string,
+              SpanstringConvertHtml,
+              (const std::vector<uint8_t>& content),
+              (override));
+};
+
 class MOCKPasteDataRecordAdapter : public OHOS::NWeb::PasteDataRecordAdapter {
  public:
   MOCKPasteDataRecordAdapter() {}
@@ -228,6 +239,41 @@ TEST_F(ClipboardOhosReadDataTest, ClipboardOhosReadData_010) {
   EXPECT_NE(myClipboardOhosReadData.html_, nullptr);
   EXPECT_NE(myClipboardOhosReadData.text_, nullptr);
   EXPECT_EQ(*(myClipboardOhosReadData.html_), "");
+  EXPECT_EQ(*(myClipboardOhosReadData.text_), "");
+}
+
+TEST_F(ClipboardOhosReadDataTest, ClipboardOhosReadData_011) {
+  OHOS::NWeb::PasteRecordVector test_;
+  std::string expected_string = "24";
+  std::shared_ptr<MOCKPasteDataRecordAdapter> paste_data_record_adapter_ =
+      std::make_shared<MOCKPasteDataRecordAdapter>();
+  std::map<std::string, std::vector<uint8_t>> customData;
+  customData[SPAN_STRING_TAG] = {
+      0x3C, 0x73, 0x70, 0x61, 0x6E, 0x3E, 0x53, 0x74, 0x79, 0x6C, 0x65, 0x64,
+      0x20, 0x74, 0x65, 0x78, 0x74, 0x3C, 0x2F, 0x73, 0x70, 0x61, 0x6E, 0x3E};
+  std::vector<uint8_t> expected_content = {
+      0x3C, 0x73, 0x70, 0x61, 0x6E, 0x3E, 0x53, 0x74, 0x79, 0x6C, 0x65, 0x64,
+      0x20, 0x74, 0x65, 0x78, 0x74, 0x3C, 0x2F, 0x73, 0x70, 0x61, 0x6E, 0x3E};
+  std::shared_ptr<OHOS::NWeb::PasteCustomData> sharedCustomData =
+      std::make_shared<OHOS::NWeb::PasteCustomData>(customData);
+  auto convert_html_callback =
+      std::make_shared<MOCKNWebSpanstringConvertHtmlCallback>();
+  EXPECT_CALL(*convert_html_callback, SpanstringConvertHtml(expected_content))
+      .WillOnce(Return(expected_string));
+  ClipboardOhosReadData::convert_html_callback_ =
+      std::move(convert_html_callback);
+  EXPECT_CALL(*paste_data_record_adapter_, GetCustomData())
+      .WillOnce(Return(sharedCustomData));
+  EXPECT_CALL(*paste_data_record_adapter_, GetHtmlText())
+      .WillOnce(Return(nullptr));
+  EXPECT_CALL(*paste_data_record_adapter_, GetPlainText())
+      .WillOnce(Return(nullptr));
+  test_.push_back(paste_data_record_adapter_);
+  OHOS::NWeb::PasteRecordVector& refToMyVector_ = test_;
+  ClipboardOhosReadData myClipboardOhosReadData(refToMyVector_);
+  EXPECT_NE(myClipboardOhosReadData.html_, nullptr);
+  EXPECT_NE(myClipboardOhosReadData.text_, nullptr);
+  EXPECT_EQ(*(myClipboardOhosReadData.html_), "24");
   EXPECT_EQ(*(myClipboardOhosReadData.text_), "");
 }
 

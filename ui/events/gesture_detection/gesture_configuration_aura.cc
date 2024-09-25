@@ -81,7 +81,11 @@ class GestureConfigurationAura : public GestureConfiguration {
     set_two_finger_tap_enabled(true);
 #endif
     set_fling_touchpad_tap_suppression_enabled(true);
+#if BUILDFLAG(IS_OHOS)
     set_fling_touchscreen_tap_suppression_enabled(false);
+#else
+    set_fling_touchscreen_tap_suppression_enabled(true);
+#endif
   }
 
   friend struct base::DefaultSingletonTraits<GestureConfigurationAura>;

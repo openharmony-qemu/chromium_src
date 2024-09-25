@@ -81,6 +81,44 @@ class MessagePumpForUITest : public ::testing::Test {
 constexpr uint64_t kTryNativeTasksBeforeIdleBit = uint64_t(1) << 32;
 }  // namespace
 
+TEST(EventHandlerFileDescriptorListenerTest, OnReadable001) {
+  MessagePumpForUI mock_message_pump_for_;
+  testing::internal::CaptureStderr();
+  mock_message_pump_for_.ohos_listener->OnReadable(-1);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("EventHandlerFileDescriptorListener error fd"),
+            std::string::npos);
+}
+
+TEST(EventHandlerFileDescriptorListenerTest, OnReadable002) {
+  MessagePumpForUI mock_message_pump_for_;
+  testing::internal::CaptureStderr();
+  mock_message_pump_for_.ohos_listener->OnReadable(0);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("EventHandlerFileDescriptorListener invalid fd:"),
+            std::string::npos);
+}
+
+TEST(EventHandlerFileDescriptorListenerTest, OnReadable003) {
+  MessagePumpForUI mock_message_pump_for_;
+  auto delayedFd = mock_message_pump_for_.delayed_fd_;
+  mock_message_pump_for_.should_abort_ = true;
+  auto delegate = std::make_unique<MockMessagePumpDelegate>();
+  mock_message_pump_for_.delegate_ = delegate.get();
+  mock_message_pump_for_.ohos_listener->OnReadable(delayedFd);
+  EXPECT_EQ(delayedFd, mock_message_pump_for_.delayed_fd_);
+}
+
+TEST(EventHandlerFileDescriptorListenerTest, OnReadable004) {
+  MessagePumpForUI mock_message_pump_for_;
+  auto nonDelayedFd = mock_message_pump_for_.non_delayed_fd_;
+  mock_message_pump_for_.should_abort_ = true;
+  auto delegate = std::make_unique<MockMessagePumpDelegate>();
+  mock_message_pump_for_.delegate_ = delegate.get();
+  mock_message_pump_for_.ohos_listener->OnReadable(nonDelayedFd);
+  EXPECT_EQ(nonDelayedFd, mock_message_pump_for_.non_delayed_fd_);
+}
+
 TEST_F(MessagePumpForUITest, Constructor) {
   EXPECT_NE(message_pump_for_ui_, nullptr);
 }

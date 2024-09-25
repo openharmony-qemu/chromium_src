@@ -3,7 +3,9 @@
 // found in the LICENSE file.
 
 #include "ui/events/event.h"
-
+#if defined(OHOS_UNITTESTS)
+#include "ui/events/event.cc"
+#endif  // OHOS_UNITTESTS
 #include <stddef.h>
 #include <stdint.h>
 
@@ -1147,5 +1149,21 @@ TEST(EventTest, EventTypeNameCREATE) {
   ASSERT_EQ(str, "ET_GESTURE_CREATE_OVERLAY");
 }
 #endif
+
+#if defined(OHOS_UNITTESTS)
+TEST(EventTypeToLatencySourceEventTypeTest,
+     EventTypeToLatencySourceEventType001) {
+  EventType type = ET_GESTURE_DRAG_LONG_PRESS;
+  EventTypeToLatencySourceEventType(type);
+  EXPECT_EQ(EventTypeToLatencySourceEventType(type), SourceEventType::UNKNOWN);
+}
+
+TEST(EventTypeToLatencySourceEventTypeTest,
+     EventTypeToLatencySourceEventType002) {
+  EventType type = ET_GESTURE_CREATE_OVERLAY;
+  EventTypeToLatencySourceEventType(type);
+  EXPECT_EQ(EventTypeToLatencySourceEventType(type), SourceEventType::UNKNOWN);
+}
+#endif // OHOS_UNITTESTS
 
 }  // namespace ui

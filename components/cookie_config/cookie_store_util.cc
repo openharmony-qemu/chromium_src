@@ -9,6 +9,10 @@
 #include "components/os_crypt/sync/os_crypt.h"
 #include "net/extras/sqlite/cookie_crypto_delegate.h"
 
+#ifdef OHOS_DFX_LOGGING
+#include "base/logging.h"
+#endif
+
 namespace cookie_config {
 
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX) || \
@@ -20,12 +24,21 @@ namespace {
 // because ChromeOS and Android already protect the entire profile contents.
 class CookieOSCryptoDelegate : public net::CookieCryptoDelegate {
  public:
+#ifdef OHOS_DFX_LOGGING
+  ~CookieOSCryptoDelegate();
+#endif
   bool ShouldEncrypt() override;
   bool EncryptString(const std::string& plaintext,
                      std::string* ciphertext) override;
   bool DecryptString(const std::string& ciphertext,
                      std::string* plaintext) override;
 };
+
+#ifdef OHOS_DFX_LOGGING
+CookieOSCryptoDelegate::~CookieOSCryptoDelegate() {
+  LOG(INFO) << "CookieOSCryptoDelegate::~CookieOSCryptoDelegate";
+}
+#endif
 
 bool CookieOSCryptoDelegate::ShouldEncrypt() {
 #if BUILDFLAG(IS_IOS)

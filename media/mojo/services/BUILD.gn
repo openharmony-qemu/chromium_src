@@ -254,6 +254,10 @@ source_set("unit_tests") {
     sources += [ "playback_events_recorder_test.cc" ]
   }
 
+  if (ohos_unittests) {
+    sources += [ "gpu_mojo_media_client_ohos_unittest.cc" ]
+  }
+
   deps = [
     ":services",
     "//base",

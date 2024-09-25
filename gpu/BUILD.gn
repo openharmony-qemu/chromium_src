@@ -687,6 +687,10 @@ test("gpu_unittests") {
     }
   }
 
+  if (ohos_unittests) {
+    sources += [ "command_buffer/service/shared_image/ozone_image_backing_factory_unittest.cc" ]
+  }
+
   if (use_dawn) {
     sources += [ "command_buffer/service/dawn_caching_interface_unittest.cc" ]
   }

@@ -388,6 +388,11 @@ gfx::Size NWebRenderHandler::GetSize() {
   return gfx::Size(width_, height_);
 }
 
+void NWebRenderHandler::GetDevicePixelSize(CefRefPtr<CefBrowser> browser, CefSize& size) {
+  size.width = width_;
+  size.height = height_;
+}
+
 void NWebRenderHandler::SetGestureEventResult(bool result) {
   gesture_event_result_ = result;
 }

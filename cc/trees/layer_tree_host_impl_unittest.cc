@@ -2,7 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#if defined(OHOS_UNITTESTS)
+#define private public
 #include "cc/trees/layer_tree_host_impl.h"
+#undef private
+#define protected public
+#include "cc/input/browser_controls_offset_manager_client.h"
+#undef proteceted
+#include "cc/input/compositor_input_interfaces.h"
+#else  // OHOS_UNITTESTS
+#include "cc/trees/layer_tree_host_impl.h"
+#endif  // OHOS_UNITTESTS
 
 #include <stddef.h>
 
@@ -120,6 +130,149 @@ using ScrollThread = cc::InputHandler::ScrollThread;
 
 namespace cc {
 namespace {
+
+#if defined(OHOS_UNITTESTS)
+class MockLayerTreeHostImplClient : public LayerTreeHostImplClient {
+ public:
+  MOCK_METHOD0(DidLoseLayerTreeFrameSinkOnImplThread, void());
+  MOCK_METHOD1(SetBeginFrameSource, void(viz::BeginFrameSource* source));
+  MOCK_METHOD0(DidReceiveCompositorFrameAckOnImplThread, void());
+  MOCK_METHOD1(OnCanDrawStateChanged, void(bool can_draw));
+  MOCK_METHOD0(NotifyReadyToActivate, void());
+  MOCK_METHOD0(IsReadyToActivate, bool());
+  MOCK_METHOD0(NotifyReadyToDraw, void());
+  MOCK_METHOD0(SetNeedsRedrawOnImplThread, void());
+  MOCK_METHOD0(SetNeedsOneBeginImplFrameOnImplThread, void());
+  MOCK_METHOD0(SetNeedsCommitOnImplThread, void());
+  MOCK_METHOD0(SetNeedsPrepareTilesOnImplThread, void());
+  MOCK_METHOD1(SetVideoNeedsBeginFrames, void(bool needs_begin_frames));
+  MOCK_METHOD1(SetDeferBeginMainFrameFromImpl,
+               void(bool defer_begin_main_frame));
+  MOCK_METHOD0(IsInsideDraw, bool());
+  MOCK_METHOD0(RenewTreePriority, void());
+  MOCK_METHOD2(PostDelayedAnimationTaskOnImplThread,
+               void(base::OnceClosure task, base::TimeDelta delay));
+  MOCK_METHOD0(DidActivateSyncTree, void());
+  MOCK_METHOD0(WillPrepareTiles, void());
+  MOCK_METHOD0(DidPrepareTiles, void());
+  MOCK_METHOD0(DidCompletePageScaleAnimationOnImplThread, void());
+  MOCK_METHOD2(OnDrawForLayerTreeFrameSink,
+               void(bool resourceless_software_draw, bool skip_draw));
+  MOCK_METHOD1(NeedsImplSideInvalidation,
+               void(bool needs_first_draw_on_activation));
+  MOCK_METHOD0(NotifyImageDecodeRequestFinished, void());
+  MOCK_METHOD1(NotifyTransitionRequestFinished, void(uint32_t sequence_id));
+  MOCK_METHOD3(DidPresentCompositorFrameOnImplThread,
+               void(uint32_t frame_token,
+                    PresentationTimeCallbackBuffer::PendingCallbacks callbacks,
+                    const viz::FrameTimingDetails& details));
+  MOCK_METHOD2(NotifyAnimationWorkletStateChange,
+               void(AnimationWorkletMutationState state,
+                    ElementListType tree_type));
+  MOCK_METHOD1(NotifyPaintWorkletStateChange,
+               void(Scheduler::PaintWorkletState state));
+  MOCK_METHOD1(NotifyThroughputTrackerResults,
+               void(CustomTrackerResults results));
+  MOCK_METHOD2(DidObserveFirstScrollDelay,
+               void(base::TimeDelta first_scroll_delay,
+                    base::TimeTicks first_scroll_timestamp));
+  MOCK_CONST_METHOD0(IsInSynchronousComposite, bool());
+  MOCK_METHOD1(FrameSinksToThrottleUpdated,
+               void(const base::flat_set<viz::FrameSinkId>& ids));
+  MOCK_METHOD0(ClearHistory, void());
+  MOCK_CONST_METHOD0(CommitDurationSampleCountForTesting, size_t());
+
+#if BUILDFLAG(IS_OHOS)
+  MOCK_METHOD2(OnLayerRectUpdate, void(int id, const gfx::Rect& rect));
+  MOCK_METHOD2(OnLayerRectVisibleChange, void(int id, bool visibility));
+#endif
+};
+
+class MockBrowserControlsOffsetManagerClient
+    : public BrowserControlsOffsetManagerClient {
+ public:
+  MOCK_CONST_METHOD0(TopControlsHeight, float());
+  MOCK_CONST_METHOD0(TopControlsMinHeight, float());
+  MOCK_CONST_METHOD0(BottomControlsHeight, float());
+  MOCK_CONST_METHOD0(BottomControlsMinHeight, float());
+  MOCK_METHOD2(SetCurrentBrowserControlsShownRatio,
+               void(float top_ratio, float bottom_ratio));
+  MOCK_CONST_METHOD0(CurrentTopControlsShownRatio, float());
+  MOCK_CONST_METHOD0(CurrentBottomControlsShownRatio, float());
+  MOCK_CONST_METHOD0(ViewportScrollOffset, gfx::PointF());
+  MOCK_METHOD0(DidChangeBrowserControlsPosition, void());
+  MOCK_CONST_METHOD0(OnlyExpandTopControlsAtPageTop, bool());
+  MOCK_CONST_METHOD0(HaveRootScrollNode, bool());
+  MOCK_METHOD0(SetNeedsCommit, void());
+
+#ifdef OHOS_EX_TOPCONTROLS
+  MOCK_METHOD0(SetupScrollBy, void());
+#endif
+};
+
+class MockInputDelegateForCompositor : public InputDelegateForCompositor {
+ public:
+  MOCK_METHOD2(ProcessCommitDeltas,
+               void(CompositorCommitData* commit_data,
+                    const MutatorHost* main_thread_mutator_host));
+  MOCK_METHOD1(TickAnimations, void(base::TimeTicks monotonic_time));
+  MOCK_METHOD0(WillShutdown, void());
+  MOCK_METHOD0(WillDraw, void());
+  MOCK_METHOD1(WillBeginImplFrame, void(const viz::BeginFrameArgs& args));
+  MOCK_METHOD0(DidCommit, void());
+  MOCK_METHOD0(DidActivatePendingTree, void());
+  MOCK_METHOD0(RootLayerStateMayHaveChanged, void());
+  MOCK_METHOD2(DidRegisterScrollbar,
+               void(ElementId scroll_element_id,
+                    ScrollbarOrientation orientation));
+  MOCK_METHOD2(DidUnregisterScrollbar,
+               void(ElementId scroll_element_id,
+                    ScrollbarOrientation orientation));
+  MOCK_METHOD0(ScrollOffsetAnimationFinished, void());
+  MOCK_METHOD1(SetPrefersReducedMotion, void(bool prefers_reduced_motion));
+  MOCK_CONST_METHOD0(IsCurrentlyScrolling, bool());
+  MOCK_CONST_METHOD0(GetActivelyScrollingType, ActivelyScrollingType());
+  MOCK_CONST_METHOD0(IsCurrentScrollMainRepainted, bool());
+#if BUILDFLAG(IS_OHOS)
+  MOCK_METHOD1(HandleScrollUpdateForInternalBeginFrame,
+               void(const viz::BeginFrameArgs& args));
+#endif
+};
+
+class MockLayerTreeFrameSink : public LayerTreeFrameSink {
+ public:
+  MockLayerTreeFrameSink(
+      scoped_refptr<viz::ContextProvider> context_provider,
+      scoped_refptr<RasterContextProviderWrapper>
+          worker_context_provider_wrapper,
+      scoped_refptr<base::SingleThreadTaskRunner> compositor_task_runner,
+      gpu::GpuMemoryBufferManager* gpu_memory_buffer_manager)
+      : LayerTreeFrameSink(context_provider,
+                           worker_context_provider_wrapper,
+                           compositor_task_runner,
+                           gpu_memory_buffer_manager) {}
+
+  MOCK_METHOD0(GetWeakPtr, base::WeakPtr<LayerTreeFrameSink>());
+  MOCK_METHOD1(BindToClient, bool(LayerTreeFrameSinkClient* client));
+  MOCK_METHOD0(DetachFromClient, void());
+  MOCK_METHOD1(SetLocalSurfaceId,
+               void(const viz::LocalSurfaceId& local_surface_id));
+  MOCK_METHOD1(Invalidate, void(bool needs_draw));
+  MOCK_METHOD2(SubmitCompositorFrame,
+               void(viz::CompositorFrame frame, bool hit_test_data_changed));
+  MOCK_METHOD2(DidNotProduceFrame,
+               void(const viz::BeginFrameAck& ack, FrameSkippedReason reason));
+  MOCK_METHOD2(DidAllocateSharedBitmap,
+               void(base::ReadOnlySharedMemoryRegion region,
+                    const viz::SharedBitmapId& id));
+  MOCK_METHOD1(DidDeleteSharedBitmap, void(const viz::SharedBitmapId& id));
+
+#if BUILDFLAG(IS_OHOS)
+  MOCK_METHOD0(TriggerVsyncImplTask, void());
+  MOCK_METHOD1(SetHandledTouchEvent, void(bool handledTouchEvent));
+#endif
+};
+#endif  // OHOS_UNITTESTS
 
 constexpr gfx::Size kDefaultLayerSize(100, 100);
 
@@ -18729,4 +18882,67 @@ TEST_P(LayerTreeHostImplBrowserControlsTest,
   EXPECT_EQ(0, host_impl_->active_tree()->CurrentTopControlsShownRatio());
   EXPECT_EQ(picture_layer->ScrollInteractionInProgress(), false);
 }
+
+#if defined(OHOS_UNITTESTS)
+TEST_F(LayerTreeHostImplTest, SetExternalTilePriorityConstraints_True) {
+  gfx::Rect viewport_rect(0, 0, 800, 600);
+  gfx::Transform transform;
+  host_impl_->is_need_draw_rect_ = true;
+  host_impl_->SetExternalTilePriorityConstraints(viewport_rect, transform);
+  EXPECT_TRUE(host_impl_->active_tree_->needs_update_draw_properties());
+}
+
+TEST_F(LayerTreeHostImplTest, HandleScrollUpdateForInternalBeginFrame_True) {
+  MockInputDelegateForCompositor raw_mock_input_delegate;
+  host_impl_->input_delegate_.reset(&raw_mock_input_delegate);
+  viz::BeginFrameArgs args;
+  EXPECT_CALL(raw_mock_input_delegate, WillShutdown())
+      .Times(testing::AtLeast(0));
+  EXPECT_CALL(raw_mock_input_delegate,
+              HandleScrollUpdateForInternalBeginFrame(testing::_))
+      .Times(1);
+  host_impl_->HandleScrollUpdateForInternalBeginFrame(args);
+  EXPECT_TRUE(host_impl_->input_delegate_);
+  host_impl_->input_delegate_.release();
+}
+
+TEST_F(LayerTreeHostImplTest, HandleScrollUpdateForInternalBeginFrame_False) {
+  host_impl_->input_delegate_ = nullptr;
+  viz::BeginFrameArgs args;
+  host_impl_->HandleScrollUpdateForInternalBeginFrame(args);
+  EXPECT_FALSE(host_impl_->input_delegate_);
+}
+
+TEST_F(LayerTreeHostImplTest, TriggerVsyncImplTask_False) {
+  MockLayerTreeFrameSink mock_layer_tree_frame_sink(nullptr, nullptr, nullptr,
+                                                    nullptr);
+  host_impl_->layer_tree_frame_sink_ = &mock_layer_tree_frame_sink;
+  EXPECT_CALL(mock_layer_tree_frame_sink, DetachFromClient())
+      .Times(testing::AtLeast(0));
+  EXPECT_CALL(mock_layer_tree_frame_sink, TriggerVsyncImplTask()).Times(1);
+  host_impl_->TriggerVsyncImplTask();
+  EXPECT_TRUE(host_impl_->layer_tree_frame_sink_);
+  host_impl_.release();
+}
+
+TEST_F(LayerTreeHostImplTest, SetHandledTouchEvent_True) {
+  host_impl_->layer_tree_frame_sink_ = nullptr;
+  host_impl_->SetHandledTouchEvent(true);
+  EXPECT_FALSE(host_impl_->layer_tree_frame_sink_);
+}
+
+TEST_F(LayerTreeHostImplTest, SetHandledTouchEvent_False) {
+  MockLayerTreeFrameSink mock_layer_tree_frame_sink(nullptr, nullptr, nullptr,
+                                                    nullptr);
+  host_impl_->layer_tree_frame_sink_ = &mock_layer_tree_frame_sink;
+  EXPECT_CALL(mock_layer_tree_frame_sink, DetachFromClient())
+      .Times(testing::AtLeast(0));
+  EXPECT_CALL(mock_layer_tree_frame_sink, DetachFromClient())
+      .Times(testing::AtLeast(0));
+  EXPECT_CALL(mock_layer_tree_frame_sink, SetHandledTouchEvent(true)).Times(1);
+  host_impl_->SetHandledTouchEvent(true);
+  EXPECT_TRUE(host_impl_->layer_tree_frame_sink_);
+  host_impl_.release();
+}
+#endif  // OHOS_UNITTESTS
 }  // namespace cc

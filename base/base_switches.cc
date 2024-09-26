@@ -187,6 +187,7 @@ const char kSchedulerBoostUrgent[] = "scheduler-boost-urgent";
 const char kForTest[] = "for-test";
 const char kBundleInstallationDir[] = "bundle-installation-dir";
 const char kBundleName[] = "bundle-name";
+const char kArkWebInstallationDir[] = "arkwebcore-installation-dir";
 #endif
 
 }  // namespace switches

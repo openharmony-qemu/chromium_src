@@ -2,7 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#if defined(OHOS_UNITTESTS)
+#define private public
 #include "media/base/pipeline_impl.h"
+#undef private
+#else
+#include "media/base/pipeline_impl.h"
+#endif
 
 #include <stddef.h>
 #include <memory>
@@ -966,6 +972,24 @@ TEST_F(PipelineImplTest, RendererErrorsReset) {
 
   base::RunLoop().RunUntilIdle();
 }
+
+#if defined(OHOS_UNITTESTS)
+TEST_F(PipelineImplTest, SetPlaybackRateWithReason002){
+  double playback_rate = 1.1;
+  ActionReason reason = ActionReason::kNormal;
+  pipeline_->SetPlaybackRateWithReason(playback_rate, reason);
+  EXPECT_TRUE(pipeline_->thread_checker_.CalledOnValidThread());
+  EXPECT_TRUE(playback_rate >= 0.0);
+}
+
+TEST_F(PipelineImplTest, SetPlaybackRateWithReason003){
+  double playback_rate = -1;
+  ActionReason reason = ActionReason::kNormal;
+  pipeline_->SetPlaybackRateWithReason(playback_rate, reason);
+  EXPECT_TRUE(pipeline_->thread_checker_.CalledOnValidThread());
+  EXPECT_TRUE(playback_rate < 0.0); 
+}
+#endif
 
 class PipelineTeardownTest : public PipelineImplTest {
  public:

@@ -421,6 +421,26 @@ TEST_F(OhosVideoDecoderTest, RunEosDecodeCb) {
   ohos_video_decoder_->RunEosDecodeCb(reset_generation);
 }
 
+TEST_F(OhosVideoDecoderTest, RunEosDecodeCb1) {
+  ASSERT_NE(ohos_video_decoder_, nullptr);
+
+  ohos_video_decoder_->reset_generation_ = 1;
+  int reset_generation = 1;
+  ohos_video_decoder_->eos_decode_cb_.Reset();
+  ohos_video_decoder_->RunEosDecodeCb(reset_generation);
+  ASSERT_TRUE(ohos_video_decoder_->eos_decode_cb_.is_null());
+}
+
+TEST_F(OhosVideoDecoderTest, RunEosDecodeCb2) {
+  ASSERT_NE(ohos_video_decoder_, nullptr);
+
+  ohos_video_decoder_->reset_generation_ = 1;
+  int reset_generation = 1;
+  ohos_video_decoder_->eos_decode_cb_ = base::DoNothing();
+  ohos_video_decoder_->RunEosDecodeCb(reset_generation);
+  ASSERT_TRUE(ohos_video_decoder_->eos_decode_cb_.is_null());
+}
+
 TEST_F(OhosVideoDecoderTest, ForwardVideoFrame) {
   ASSERT_NE(ohos_video_decoder_, nullptr);
 

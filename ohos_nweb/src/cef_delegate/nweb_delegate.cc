@@ -2761,6 +2761,21 @@ bool NWebDelegate::ScrollByWithResult(float delta_x, float delta_y) {
   ScrollBy(delta_x, delta_y);
   return true;
 }
+
+void NWebDelegate::WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent) {
+#ifdef OHOS_DRAG_DROP
+  if (event_handler_ != nullptr && (!handler_delegate_ || !handler_delegate_->IsDragEnter())) {
+#else
+  if (event_handler_ != nullptr) {
+#endif  // #ifdef OHOS_DRAG_DROP
+    event_handler_->WebSendMouseEvent(mouseEvent, default_virtual_pixel_ratio_);
+  }
+#ifdef OHOS_DRAG_DROP
+  if (render_handler_ != nullptr) {
+    render_handler_->SetIrregularDragBackground(false);
+  }
+#endif  // #ifdef OHOS_DRAG_DROP
+}
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #if defined(OHOS_API_INIT_WEB_ENGINE)

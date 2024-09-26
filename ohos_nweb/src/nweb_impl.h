@@ -299,6 +299,7 @@ class NWebImpl : public NWeb {
   void ScrollToWithAnime(float x, float y, int32_t duration) override;
   void ScrollByWithAnime(float delta_x, float delta_y, int32_t duration) override;
   bool ScrollByWithResult (float delta_x, float delta_y) override;
+  void WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
   bool GetCertChainDerData(std::vector<std::string>& certChainData,

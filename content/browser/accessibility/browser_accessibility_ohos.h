@@ -130,6 +130,14 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
   static BrowserAccessibilityOHOS* GetFromAccessibilityId(
       int64_t accessibility_id);
 
+  bool IsAccessibilityGroup() const;
+
+  bool IsIgnoredContainer() const;
+
+  int64_t GetParentId() const;
+
+  void GetChildrenIds(std::vector<int64_t>& childrenIds) const;
+
  protected:
   BrowserAccessibilityOHOS(BrowserAccessibilityManager* manager,
                            ui::AXNode* node);
@@ -142,6 +150,8 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
   bool HasOnlyTextChildren() const;
 
   bool HasOnlyTextAndImageChildren() const;
+
+  bool HasClickableChildren() const;
 
   bool HasListMarkerChild() const;
 

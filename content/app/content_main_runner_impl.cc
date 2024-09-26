@@ -887,7 +887,12 @@ int ContentMainRunnerImpl::Initialize(ContentMainParams params) {
       *base::CommandLine::ForCurrentProcess();
   std::string process_type =
       command_line.GetSwitchValueASCII(switches::kProcessType);
-
+#ifdef BUILDFLAG(IS_OHOS)
+  if (process_type == switches::kRendererProcess) {
+      std::string arkWebPath = command_line.GetSwitchValueASCII(switches::kArkWebInstallationDir);
+      OHOS::NWeb::OhosAdapterHelper::GetInstance().SetArkWebCoreHapPathOverride(arkWebPath);
+  }
+#endif
   base::allocator::PartitionAllocSupport::Get()->ReconfigureEarlyish(
       process_type);
 

@@ -71,6 +71,7 @@ extern const char kSchedulerBoostUrgent[];
 extern const char kForTest[];
 extern const char kBundleInstallationDir[];
 extern const char kBundleName[];
+extern const char kArkWebInstallationDir[];
 #endif
 
 }  // namespace switches

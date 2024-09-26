@@ -2541,6 +2541,10 @@ source_set("browser") {
       "media/ohos/native_web_contents_observer.cc",
       "media/ohos/native_web_contents_observer.h",
     ]
+
+    deps += [
+      "//third_party:huawei_securec"
+    ]
   }
 
   if (is_mac) {

@@ -542,7 +542,9 @@ viz_source_set("unit_tests") {
   if (ohos_unittests) {
     sources += [
       "display_embedder/output_surface_provider_impl_unittest.cc",
+      "frame_sinks/compositor_frame_sink_impl_unittest.cc",
       "frame_sinks/external_begin_frame_source_ohos_unittest.cc",
+      "frame_sinks/frame_sink_manager_impl_unittest.cc",
       "frame_sinks/root_compositor_frame_sink_impl_unittest.cc",
     ]
   }

@@ -65,6 +65,10 @@
 #include "ui/base/l10n/l10n_util.h"
 #include "ui/events/keycodes/keyboard_codes.h"
 
+#if defined(OHOS_PASSWORD_AUTOFILL)
+#include "base/ohos/sys_info_utils.h"
+#endif
+
 using blink::WebAutofillClient;
 using blink::WebAutofillState;
 using blink::WebAXObject;
@@ -1183,7 +1187,11 @@ void AutofillAgent::OhFormControlElementClicked() {
         focused_element.To<WebFormControlElement>();
     if (form_util::IsTextAreaElementOrTextInput(focused_form_control_element)) {
       LOG(INFO) << "[Autofill] Mouse down triggers RequestAutofill";
-      password_autofill_agent_->RequestAutofill(focused_form_control_element);
+      bool result = password_autofill_agent_->RequestAutofill(
+          focused_form_control_element);
+      if (result && base::ohos::IsPcDevice()) {
+        is_popup_possibly_visible_ = true;
+      }
     }
   }
 }

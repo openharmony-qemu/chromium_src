@@ -3569,7 +3569,7 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId, uint32_t action,
         str_offset << iter->second;
         str_offset >> offset;
       }
-      LOG(INFO) << "ExecuteAction offset is " << offset;
+      LOG(INFO) << "ExecuteAction setCursorPosition offset is " << offset;
       accessibilityManager->SetSelection(
           content::BrowserAccessibility::AXRange(
               node->CreatePositionForSelectionAt(offset),

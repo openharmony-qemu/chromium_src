@@ -102,6 +102,10 @@ namespace android {
 enum class ChildBindingState;
 }
 #endif
+#ifdef OHOS_THEME_FONT
+class File;
+class FilePath;
+#endif
 }  // namespace base
 
 namespace blink {
@@ -158,6 +162,16 @@ struct GlobalRenderFrameHostId;
 typedef base::Thread* (*RendererMainThreadFactoryFunction)(
     const InProcessChildThreadParams& params,
     int32_t renderer_client_id);
+
+#ifdef OHOS_THEME_FONT
+struct ThemeFont {
+  base::FilePath flag_path;
+  base::FilePath manifest_path;
+  base::FilePath font_path;
+  base::File font_file;
+};
+#endif
+
 #if defined(OHOS_RENDER_PROCESS_SHARE)
 typedef std::map<std::string, RenderProcessHost*>
     SharedProcessTokenToProcessMap;
@@ -784,6 +798,12 @@ class CONTENT_EXPORT RenderProcessHostImpl
   static void RemoveFromSharedRenderProcessMap(
       RenderProcessHost* renderProcessHost);
 #endif
+#ifdef OHOS_THEME_FONT
+  static ThemeFont* EnsureThemeFont();
+  static bool IsThemeFontValid();
+  void OnThemeFontChange() override;
+  void UpdateThemeFontFile(base::File theme_font_file);
+#endif
  protected:
   // A proxy for our IPC::Channel that lives on the IO thread.
   std::unique_ptr<IPC::ChannelProxy> channel_;
@@ -1292,6 +1312,10 @@ class CONTENT_EXPORT RenderProcessHostImpl
 #if BUILDFLAG(IS_ANDROID)
   // The private memory footprint of the render process.
   uint64_t private_memory_footprint_bytes_ = 0u;
+#endif
+
+#ifdef OHOS_THEME_FONT
+  static std::unique_ptr<ThemeFont> g_theme_font_;
 #endif
 
   // IOThreadHostImpl owns some IO-thread state associated with this

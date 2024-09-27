@@ -528,9 +528,9 @@ class NWebImpl : public NWeb {
 
 #ifdef OHOS_NETWORK_LOAD
   void SetPathAllowingUniversalAccess(
-    const std::vector<std::string>& pathList, 
-    const std::vector<std::string>& moduleName,
-    std::string& errorPath) override;
+      const std::vector<std::string>& pathList,
+      const std::vector<std::string>& moduleName,
+      std::string& errorPath) override;
 #endif
   void PerformAction(int64_t accessibilityId, uint32_t action,
       const std::map<std::string, std::string>& actionArguments) override;
@@ -540,6 +540,11 @@ class NWebImpl : public NWeb {
 
 #ifdef OHOS_BFCACHE
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override;
+#endif
+
+#ifdef BUILDFLAG(IS_OHOS)
+  void OnConfigurationUpdated(
+      std::shared_ptr<NWebSystemConfiguration> configuration) override;
 #endif
 
  private:

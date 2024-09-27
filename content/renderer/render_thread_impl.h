@@ -488,6 +488,10 @@ class CONTENT_EXPORT RenderThreadImpl
       bool enable_video_decode_accelerator,
       bool enable_video_encode_accelerator);
 
+#ifdef OHOS_THEME_FONT
+  void UpdateThemeFontFile(base::File theme_font) override;
+#endif
+
   scoped_refptr<discardable_memory::ClientDiscardableSharedMemoryManager>
       discardable_memory_allocator_;
 

@@ -3435,3 +3435,26 @@ void NWebImpl::TrimMemoryByPressureLevel(int32_t memoryLevel) {
   base::MemoryPressureListener::NotifyMemoryPressure(memory_pressure_level);
 #endif  // OHOS_PERFORMANCE_MEMORY_THRESHOLD
 }
+
+#ifdef BUILDFLAG(IS_OHOS)
+void NWebImpl::OnConfigurationUpdated(
+    std::shared_ptr<NWebSystemConfiguration> configuration) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_I("NWebImpl::OnConfigurationUpdated nweb_delegate_ is nullptr");
+    return;
+  }
+  // if (configuration->GetThemeFlags() &
+  //     static_cast<uint8_t>(SystemThemeFlags::THEME_FONT)) {
+#ifdef OHOS_THEME_FONT
+    for (content::RenderProcessHost::iterator host_iterator =
+             content::RenderProcessHost::AllHostsIterator();
+         !host_iterator.IsAtEnd(); host_iterator.Advance()) {
+      content::RenderProcessHost* host = host_iterator.GetCurrentValue();
+      if (host->IsInitializedAndNotDead()) {
+        host->OnThemeFontChange();
+      }
+    }
+#endif  // OHOS_THEME_FONT
+  // }
+}
+#endif  //  IS_OHOS

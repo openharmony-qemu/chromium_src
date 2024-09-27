@@ -3269,11 +3269,6 @@ void RenderWidgetHostImpl::DidOverscroll(
     view_->DidOverscroll(params);
 }
 
-void RenderWidgetHostImpl::DynamicFrameLossEvent(const std::string& sceneId, bool isStart) {
-  if (view_)
-    view_->DynamicFrameLossEvent(sceneId, isStart);
-}
-
 #if BUILDFLAG(IS_OHOS)
 void RenderWidgetHostImpl::DidNativeEmbedEvent(
       blink::mojom::NativeEmbedTouchEventPtr touchEvent) {

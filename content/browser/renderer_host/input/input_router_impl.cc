@@ -569,10 +569,6 @@ gfx::Size InputRouterImpl::GetRootWidgetViewportSize() {
   return client_->GetRootWidgetViewportSize();
 }
 
-void InputRouterImpl::DynamicFrameLossEvent(const std::string& sceneId, bool isStart) {
-  return client_->DynamicFrameLossEvent(sceneId, isStart);
-}
-
 void InputRouterImpl::SendMouseWheelEventImmediately(
     const MouseWheelEventWithLatencyInfo& wheel_event,
     MouseWheelEventQueueClient::MouseWheelEventHandledCallback

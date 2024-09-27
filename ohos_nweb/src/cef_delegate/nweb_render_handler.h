@@ -71,9 +71,6 @@ class NWebRenderHandler : public CefRenderHandler {
   void OnOverscroll(CefRefPtr<CefBrowser> browser,
                     const float x,
                     const float y) override;
-  void SendDynamicFrameLossEvent(CefRefPtr<CefBrowser> browser,
-                                 const CefString& sceneId,
-                                 bool isStart) override;
   void OnSelectionChanged(CefRefPtr<CefBrowser> browser,
                           const CefString& text,
                           const CefRange& selected_range) override;

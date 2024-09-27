@@ -279,14 +279,6 @@ void NWebRenderHandler::SetInputMethodClient(
   inputmethod_client_ = client;
 }
 
-void NWebRenderHandler::SendDynamicFrameLossEvent(CefRefPtr<CefBrowser> browser,
-                                                  const CefString& sceneId,
-                                                  bool isStart) {
-  if (auto handler = handler_.lock()) {
-    handler->ReportDynamicFrameLossEvent(sceneId, isStart);
-  }
-}
-
 #if defined(OHOS_INPUT_EVENTS)
 void NWebRenderHandler::SetNWebDelegateInterface(
     std::shared_ptr<NWebDelegateInterface> client) {

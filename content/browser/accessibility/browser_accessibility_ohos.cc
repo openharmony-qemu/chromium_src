@@ -390,11 +390,27 @@ bool BrowserAccessibilityOHOS::IsHierarchical() const {
 }
 
 bool BrowserAccessibilityOHOS::HasOnlyTextChildren() const {
-  for (auto it = InternalChildrenBegin(); it != InternalChildrenEnd(); ++it) {
-    if (!it->IsText())
+  std::vector<int64_t> childrenIds;
+  GetChildrenIds(childrenIds);
+  for (auto& childId : childrenIds) {
+    BrowserAccessibilityOHOS* child = GetFromAccessibilityId(childId);
+    if (!child->IsText() && child->GetRole() != ax::mojom::Role::kStrong) {
       return false;
+    }
   }
   return true;
+}
+
+bool BrowserAccessibilityOHOS::HasClickableChildren() const {
+  std::vector<int64_t> childrenIds;
+  GetChildrenIds(childrenIds);
+  for (auto& childId : childrenIds) {
+    BrowserAccessibilityOHOS* child = GetFromAccessibilityId(childId);
+    if (child->IsClickable()) {
+      return true;
+    }
+  }
+  return false;
 }
 
 const BrowserAccessibilityOHOS*
@@ -827,15 +843,35 @@ std::u16string BrowserAccessibilityOHOS::GetSubstringTextContentUTF16(
       break;
   }
 
+  // This is called from IsLeaf, so don't call PlatformChildCount
+  // from within this!
+  if (text.empty() && ((HasOnlyTextChildren() && !HasListMarkerChild()) ||
+                       (IsFocusable() && HasOnlyTextAndImageChildren()))) {
+    for (auto it = InternalChildrenBegin(); it != InternalChildrenEnd(); ++it) {
+      text += static_cast<BrowserAccessibilityOHOS*>(it.get())
+                  ->GetSubstringTextContentUTF16(predicate);
+      if (predicate && predicate.value().Run(text)) {
+        break;
+      }
+    }
+  }
+
+  if (text.empty() &&
+      (ui::IsLink(GetRole()) || ui::IsImageOrVideo(GetRole())) &&
+      !HasExplicitlyEmptyName()) {
+    std::u16string url = GetString16Attribute(ax::mojom::StringAttribute::kUrl);
+    text = ui::AXUrlBaseText(url);
+  }
+
   return text;
 }
 
 bool BrowserAccessibilityOHOS::HasOnlyTextAndImageChildren() const {
-  // This is called from IsLeaf, so don't call PlatformChildCount
-  // from within this!
-  for (auto it = InternalChildrenBegin(); it != InternalChildrenEnd(); ++it) {
-    BrowserAccessibility* child = it.get();
-    if (!child->IsText() && !ui::IsImageOrVideo(child->GetRole())) {
+  std::vector<int64_t> childrenIds;
+  GetChildrenIds(childrenIds);
+  for (auto& childId : childrenIds) {
+    BrowserAccessibilityOHOS* child = GetFromAccessibilityId(childId);
+    if (!child->IsText() && child->GetRole() != ax::mojom::Role::kStrong && !ui::IsImageOrVideo(child->GetRole())) {
       return false;
     }
   }
@@ -951,4 +987,54 @@ void BrowserAccessibilityOHOS::Scroll(const ax::mojom::Action& action) const {
     manager()->Scroll(*this, action);
   }
 }
+
+bool BrowserAccessibilityOHOS::IsAccessibilityGroup() const {
+  if (ui::IsLink(GetRole())) {
+    return true;
+  }
+  if (GetRole() == ax::mojom::Role::kHeading) {
+    return true;
+  }
+  if (GetRole() == ax::mojom::Role::kParagraph) {
+    return HasOnlyTextChildren();
+  }
+  return false;
+}
+
+bool BrowserAccessibilityOHOS::IsIgnoredContainer() const {
+  if (GetRole() != ax::mojom::Role::kGenericContainer) {
+    return false;
+  }
+  if (IsClickable() && !HasClickableChildren()) {
+    return false;
+  }
+  if (!PlatformChildCount()) {
+    return false;
+  }
+  return true;
+}
+
+int64_t BrowserAccessibilityOHOS::GetParentId() const {
+  BrowserAccessibilityOHOS* parent = static_cast<content::BrowserAccessibilityOHOS*>(PlatformGetParent());
+  while (parent && parent->IsIgnoredContainer()) {
+    parent = static_cast<content::BrowserAccessibilityOHOS*>(parent->PlatformGetParent());
+  }
+  if (parent) {
+    return parent->GetAccessibilityId();
+  }
+  return -1;
+}
+
+void BrowserAccessibilityOHOS::GetChildrenIds(std::vector<int64_t>& childrenIds) const {
+  for (const auto& childNode : PlatformChildren()) {
+    const content::BrowserAccessibilityOHOS& childNodeOHOS =
+        static_cast<const content::BrowserAccessibilityOHOS&>(childNode);
+    if (!childNodeOHOS.IsIgnoredContainer()) {
+      childrenIds.emplace_back(childNodeOHOS.GetAccessibilityId());
+    } else {
+      childNodeOHOS.GetChildrenIds(childrenIds);
+    }
+  }
+}
+
 }  // namespace content

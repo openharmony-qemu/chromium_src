@@ -50,6 +50,7 @@ source_set("browser") {
     "//content/test/fuzzer:first_party_set_parser_fuzzer_support",
     "//content/test/fuzzer:indexed_db_fuzzer_support",
     "//content/test/fuzzer:media_stream_dispatcher_host_mojolpm_fuzzer",
+    "//ohos_test:clipboard_fuzzer",
   ]
 
   configs += [

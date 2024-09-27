@@ -263,9 +263,7 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
 
   auto it = WEBCONTENT_SET.begin();
   while (it != WEBCONTENT_SET.end()) {
-    auto otherWeakMediaSession = content::MediaSessionImpl::Get(*it)
-                                     ->weakMediaSessionFactory_.GetWeakPtr();
-    auto otherMediaSession = otherWeakMediaSession.get();
+    auto otherMediaSession = content::MediaSessionImpl::FromWebContents(*it);
     if (!otherMediaSession) {
       it = WEBCONTENT_SET.erase(it);
       continue;
@@ -279,7 +277,7 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
       LOG(INFO) << "MediaSession is suspending the audio in other web.";
       main_task_runner_->PostTask(
           FROM_HERE,
-          base::BindOnce(&content::MediaSessionImpl::Suspend, otherWeakMediaSession,
+          base::BindOnce(&content::MediaSessionImpl::Suspend, otherMediaSession->weakMediaSessionFactory_.GetWeakPtr(),
                          content::MediaSession::SuspendType::kSystem));
     }
     it++;

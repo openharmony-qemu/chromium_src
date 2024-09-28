@@ -166,7 +166,6 @@ class CONTENT_EXPORT InputRouterImpl
   void SendGeneratedGestureScrollEvents(
       const GestureEventWithLatencyInfo& gesture_event) override;
   gfx::Size GetRootWidgetViewportSize() override;
-  void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) override;
 
   // MouseWheelEventQueueClient
   void SendMouseWheelEventImmediately(

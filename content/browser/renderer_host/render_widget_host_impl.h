@@ -1103,7 +1103,6 @@ class CONTENT_EXPORT RenderWidgetHostImpl
   void DecrementInFlightEventCount(
       blink::mojom::InputEventResultSource ack_source) override;
   void DidOverscroll(const ui::DidOverscrollParams& params) override;
-  void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) override;
 
 #if BUILDFLAG(IS_OHOS)
   void DidNativeEmbedEvent(blink::mojom::NativeEmbedTouchEventPtr touchEvent) override;

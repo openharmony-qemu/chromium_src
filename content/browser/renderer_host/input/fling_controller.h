@@ -35,8 +35,6 @@ class CONTENT_EXPORT FlingControllerEventSenderClient {
 
   // Returns the size of visible viewport in screen space, in DIPs.
   virtual gfx::Size GetRootWidgetViewportSize() = 0;
-
-  virtual void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) = 0;
 };
 
 // Interface with which the fling progress gets scheduled.
@@ -90,8 +88,6 @@ class CONTENT_EXPORT FlingController {
 
   // Used to halt an active fling progress whenever needed.
   void StopFling();
-
-  void DynamicFrameLossEvent(const std::string& sceneId, bool isStart);
 
   // The fling controller needs to observe all gesture events. It may consume
   // or filter some events.  It will return true if the event was consumed or

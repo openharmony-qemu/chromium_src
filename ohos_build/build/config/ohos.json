@@ -46,6 +46,14 @@
 "dependence": "",
 "default": "true"
 },
+{ "name": "OHOS_AUTOFILL",
+"owner": "",
+"desc": "enable ohos autofill manager",
+"effect":"main gn blink_core other",
+"genCommandline": "default",
+"dependence": "OHOS_DATALIST",
+"default": "true"
+},
 { "name": "OHOS_BACKGROUND_COLOR",
 "owner": "",
 "desc": "",
@@ -555,7 +563,7 @@
 "desc": "Support saving and autofill password though ohos autofill manager",
 "effect":"main gn blink_core other",
 "genCommandline": "default",
-"dependence": "",
+"dependence": "OHOS_AUTOFILL",
 "default": "true"
 },
 { "name": "OHOS_PDF",

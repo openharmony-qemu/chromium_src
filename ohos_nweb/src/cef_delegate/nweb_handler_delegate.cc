@@ -795,6 +795,15 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
         }
       }
     }
+#ifdef OHOS_BFCACHE
+    if (main_browser_) {
+      int cache_size = preference_delegate_->GetCacheSize();
+      int cache_time_to_live = preference_delegate_->GetTimeToLive();
+      if (cache_size != -1 && cache_time_to_live != -1) {
+        main_browser_->SetBackForwardCacheOptions(cache_size, cache_time_to_live);
+      }
+    }
+#endif
     return;
   }
 #endif  // defined(OHOS_MULTI_WINDOW)
@@ -2010,6 +2019,25 @@ void NWebHandlerDelegate::OnReceivedIcon(const void* data,
                TransformAlphaType(alpha_type));
   }
 }
+
+#ifdef OHOS_BFCACHE
+void NWebHandlerDelegate::UpdateFavicon(CefRefPtr<CefBrowser> browser) {
+  CEF_REQUIRE_UI_THREAD();
+ 
+  void* data = nullptr;
+  int color_type;
+  int alpha_type;
+  int width;
+  int height;
+  if (browser != nullptr && browser->GetHost() != nullptr
+      && browser->GetHost()->GetVisibleNavigationEntry() != nullptr) {
+    LOG(INFO) << "[Favicon] nweb_handler delegate start to update favicon.";
+    browser->GetHost()->GetVisibleNavigationEntry()->GetFavicon(&data, color_type, alpha_type, width, height);
+    SetFavicon(data, width, height, ImageColorType(color_type), ImageAlphaType(alpha_type));
+  }
+  return;
+}
+#endif // OHOS_BFCACHE
 
 void NWebHandlerDelegate::SetFavicon(const void* data,
                                      size_t width,

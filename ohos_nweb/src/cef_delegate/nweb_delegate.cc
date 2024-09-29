@@ -3569,6 +3569,26 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId, uint32_t action,
               node->CreatePositionForSelectionAt(newText.length())));
       break;
     }
+    case AceAction::ACTION_SET_CURSOR_POSITION: {
+      if (!node->IsTextField() || actionArguments.empty()) {
+        break;
+      }
+
+      int offset = 0;
+      auto iter = actionArguments.find("offset");
+
+      if (iter != actionArguments.end()) {
+        std::stringstream str_offset;
+        str_offset << iter->second;
+        str_offset >> offset;
+      }
+      LOG(INFO) << "ExecuteAction setCursorPosition offset is " << offset;
+      accessibilityManager->SetSelection(
+          content::BrowserAccessibility::AXRange(
+              node->CreatePositionForSelectionAt(offset),
+              node->CreatePositionForSelectionAt(offset)));
+      break;
+    }
     default:
       LOG(INFO) << "ExecuteAction unsupported action";
       break;

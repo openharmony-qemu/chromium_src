@@ -115,6 +115,7 @@ class AutofillAgent : public content::RenderFrameObserver,
 #if defined(OHOS_AUTOFILL)
   void OhAutoFillFormControlElementClicked(const blink::WebNode& node);
 #endif
+
   void PreviewPasswordSuggestion(const std::u16string& username,
                                  const std::u16string& password) override;
   void PreviewPasswordGenerationSuggestion(

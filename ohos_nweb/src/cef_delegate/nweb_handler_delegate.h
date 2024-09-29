@@ -630,6 +630,10 @@ class NWebHandlerDelegate : public CefClient,
 
   void SetWindowId(uint32_t window_id) { window_id_ = window_id; }
 
+#ifdef OHOS_BFCACHE
+  void UpdateFavicon(CefRefPtr<CefBrowser> browser) override;
+#endif
+
   void SetFavicon(const void* icon_data,
                   size_t width,
                   size_t height,

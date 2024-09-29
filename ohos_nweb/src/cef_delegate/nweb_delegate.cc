@@ -974,8 +974,8 @@ void NWebDelegate::NotifyScreenInfoChanged(RotationType rotation,
       LOG(ERROR) << "Invalid display_ratio, display_ratio = " << display_ratio;
       return;
     }
-    int width = std::ceil(display->GetWidth() / display_ratio);
-    int height = std::ceil(display->GetHeight() / display_ratio);
+    int width = std::round(display->GetWidth() / display_ratio);
+    int height = std::round(display->GetHeight() / display_ratio);
 #ifdef OHOS_SCREEN_ROTATION
     bool default_portrait = display_manager_adapter_->IsDefaultPortrait();
     if (hidden_ && !isWebinitialization) {

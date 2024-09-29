@@ -457,9 +457,11 @@ void AutofillAgent::FocusedElementChanged(const WebElement& element) {
     HandleFocusChangeComplete(
         /*focused_node_was_last_clicked=*/focused_node_was_last_clicked);
 #if defined(OHOS_AUTOFILL)
-    is_popup_created_by_focus_change_ = true;
-    is_need_to_created_popup_ = true;
-    created_popup_time_ = base::TimeTicks::Now();
+    if (focused_node_was_last_clicked) {
+      is_popup_created_by_focus_change_ = true;
+      is_need_to_created_popup_ = true;
+      created_popup_time_ = base::TimeTicks::Now();
+    } 
 #endif
   }
 

@@ -2647,7 +2647,8 @@ bool NWebHandlerDelegate::RunQuickMenu(
     const CefRect& select_bounds,
     CefContextMenuHandler::QuickMenuEditStateFlags edit_state_flags,
     CefRefPtr<CefRunQuickMenuCallback> callback,
-    bool is_mouse_trigger) {
+    bool is_mouse_trigger,
+    bool is_long_press_actived) {
   if (nweb_handler_ == nullptr || render_handler_ == nullptr) {
     return false;
   }
@@ -2705,6 +2706,7 @@ bool NWebHandlerDelegate::RunQuickMenu(
       end_touch_handle,
       NWebTouchHandleState::TouchHandleType::SELECTION_END_HANDLE);
   nweb_param->SetIsMouseTrigger(is_mouse_trigger);
+  nweb_param->SetIsLongPressActived(is_long_press_actived);
   return nweb_handler_->RunQuickMenu(nweb_param, nweb_callback);
 }
 

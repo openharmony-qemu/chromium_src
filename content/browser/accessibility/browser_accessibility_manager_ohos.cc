@@ -49,7 +49,6 @@ void BrowserAccessibilityManagerOHOS::HandleFocusChanged(
     int64_t accessibilityId) {
   SendAccessibilityEvent(accessibilityId,
                          OHOS::NWeb::AccessibilityEventType::FOCUS);
-  MoveAccessibilityFocusToId(accessibilityId);
 }
 
 std::shared_ptr<OHOS::NWeb::NWebAccessibilityEventCallback>

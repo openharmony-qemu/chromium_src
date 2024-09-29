@@ -4132,10 +4132,11 @@ void NWebDelegate::RefreshAccessibilityManagerClickEvent() {
 
 #ifdef OHOS_BFCACHE
 void NWebDelegate::SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) {
-  LOG(INFO) << "NWebDelegate::SetBackForwardCacheOptions param size: " << size
-            << " timeToLive: " << timeToLive;
-  if (GetBrowser()) {
-    LOG(ERROR) << "NWebDelegate::SetBackForwardCacheOptions Get browser failed.";
+  if (!GetBrowser()) {
+    if (preference_delegate_) {
+      preference_delegate_->PutBackForwardCacheOptions(size, timeToLive);
+    }
+    return;
   }
 
   GetBrowser()->SetBackForwardCacheOptions(size, timeToLive);

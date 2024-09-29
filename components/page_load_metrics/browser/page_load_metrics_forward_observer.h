@@ -95,6 +95,11 @@ class PageLoadMetricsForwardObserver final
   void OnFirstPaintAfterBackForwardCacheRestoreInPage(
       const mojom::BackForwardCacheTiming& timing,
       size_t index) override;
+#ifdef OHOS_BFCACHE
+  void OnFirstContentfulPaintAfterBackForwardCacheRestoreInPage(
+      const mojom::BackForwardCacheTiming& timing,
+      size_t index) override;
+#endif
   void OnFirstInputAfterBackForwardCacheRestoreInPage(
       const mojom::BackForwardCacheTiming& timing,
       size_t index) override;

@@ -894,4 +894,23 @@ bool NWebPreferenceDelegate::IsMixedContentAutoUpgradesEnabled(){
 }
 #endif
 
+#ifdef OHOS_BFCACHE
+void NWebPreferenceDelegate::PutBackForwardCacheOptions(int size, int time_to_live) {
+  size_ = size;
+  time_to_live_ = time_to_live;
+}
+
+int NWebPreferenceDelegate::GetCacheSize() {
+  int tmp = size_;
+  size_ = -1;
+  return tmp;
+}
+
+int NWebPreferenceDelegate::GetTimeToLive() {
+  int tmp = time_to_live_;
+  time_to_live_ = -1;
+  return tmp;
+}
+#endif // OHOS_BFCACHE
+
 }  // namespace OHOS::NWeb

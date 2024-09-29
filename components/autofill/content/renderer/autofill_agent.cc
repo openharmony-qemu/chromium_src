@@ -93,12 +93,19 @@ using mojom::SubmissionSource;
 using ShowAll = PasswordAutofillAgent::ShowAll;
 using GenerationShowing = PasswordAutofillAgent::GenerationShowing;
 using mojom::FocusedFieldType;
+#if defined(OHOS_AUTOFILL)
+using form_util::FindFormControlElementByUniqueRendererId;
+#endif
 
 namespace {
 
 // Time to wait in ms to ensure that only a single select or datalist change
 // will be acted upon, instead of multiple in close succession (debounce time).
 size_t kWaitTimeForOptionsChangesMs = 50;
+
+#if defined(OHOS_AUTOFILL)
+size_t kWaitTimeForScrollIntoViewMs = 700;
+#endif
 
 // Helper function to return EXTRACT_DATALIST if kAutofillExtractAllDatalist is
 // enabled, otherwise EXTRACT_NONE is returned.
@@ -360,12 +367,28 @@ void AutofillAgent::DidChangeScrollOffset() {
 
 void AutofillAgent::DidChangeScrollOffsetImpl(
     const WebFormControlElement& element) {
-  if (element != element_ || element.IsNull() || focus_requires_scroll_ ||
-      !is_popup_possibly_visible_ || !element.Focused()) {
+  if (element != element_ || element.IsNull() || focus_requires_scroll_ || !element.Focused()) {
     return;
   }
 
   DCHECK(IsOwnedByFrame(element, render_frame()));
+
+#if defined(OHOS_AUTOFILL)
+  const WebInputElement input_element = element.DynamicTo<WebInputElement>();
+  if (!input_element.IsNull()) {
+      auto is_password_autofill = password_autofill_agent_->IsPasswordAutofill(input_element);
+      if (is_need_to_created_popup_ && !is_password_autofill &&
+          base::TimeTicks::Now() > created_popup_time_ &&
+          base::TimeTicks::Now() < created_popup_time_ + base::Milliseconds(kWaitTimeForScrollIntoViewMs)) {
+        HidePopup();
+        HandleFocusChangeComplete(true);
+        return;
+      }
+  }
+#endif 
+  if (!is_popup_possibly_visible_) {
+      return;
+  }
 
   FormData form;
   FormFieldData field;
@@ -379,11 +402,18 @@ void AutofillAgent::DidChangeScrollOffsetImpl(
 
   // Ignore subsequent scroll offset changes.
   HidePopup();
+#if defined(OHOS_AUTOFILL)
+  is_need_to_created_popup_ = false;
+#endif
 }
 
 void AutofillAgent::FocusedElementChanged(const WebElement& element) {
   HidePopup();
 
+#if defined(OHOS_AUTOFILL)
+  is_popup_created_by_focus_change_ = false;
+  is_need_to_created_popup_ = false;
+#endif
   if (element.IsNull()) {
     // Focus moved away from the last interacted form (if any) to somewhere else
     // on the page.
@@ -422,6 +452,13 @@ void AutofillAgent::FocusedElementChanged(const WebElement& element) {
         !focus_requires_scroll_;
     HandleFocusChangeComplete(
         /*focused_node_was_last_clicked=*/focused_node_was_last_clicked);
+#if defined(OHOS_AUTOFILL)
+    if (focused_node_was_last_clicked) {
+      is_popup_created_by_focus_change_ = true;
+      is_need_to_created_popup_ = true;
+      created_popup_time_ = base::TimeTicks::Now();
+    } 
+#endif
   }
 
   if (focus_moved_to_new_form)
@@ -741,6 +778,18 @@ void AutofillAgent::FillFieldWithValue(FieldRendererId field_id,
   if (field_id != FieldRendererId(element_.UniqueRendererFormControlId())) {
     // oh supports fill multiple form fields, including unfocused field
     WebFormElement form = element_.Form();
+    if (form.IsNull()) {
+      WebDocument document = render_frame()->GetWebFrame()->GetDocument();
+      if (document.IsNull()) {
+        return;
+      }
+      auto fillElement = FindFormControlElementByUniqueRendererId(document, field_id);
+      if (fillElement.IsNull()) {
+        return;
+      }
+      DoFillFieldWithValue(value, fillElement, WebAutofillState::kAutofilled);
+      return;
+    }
     for (WebFormControlElement& element : form.GetFormControlElements()) {
       if (element.IsNull() || FieldRendererId(element.UniqueRendererFormControlId()) != field_id) {
         continue;
@@ -1158,9 +1207,35 @@ void AutofillAgent::DidCompleteFocusChangeInFrame() {
   SendPotentiallySubmittedFormToBrowser();
 }
 
+#if defined(OHOS_AUTOFILL)
+void AutofillAgent::OhAutoFillFormControlElementClicked(const WebNode& node) {
+  WebInputElement input_element = node.DynamicTo<WebInputElement>();
+  if (input_element.IsNull() || !node.Focused()) {
+      return;
+  }
+  auto is_password_autofill = password_autofill_agent_->IsPasswordAutofill(input_element);
+  if (is_password_autofill) {
+      return;
+  }
+  if (is_popup_created_by_focus_change_) {
+    is_popup_created_by_focus_change_ = false;
+    return;
+  }
+  HidePopup();
+  HandleFocusChangeComplete(/*focused_node_was_last_clicked=*/node.Focused());
+  is_need_to_created_popup_ = true;
+  created_popup_time_ = base::TimeTicks::Now();
+}
+#endif
+
 void AutofillAgent::DidReceiveLeftMouseDownOrGestureTapInNode(
     const WebNode& node) {
   DCHECK(!node.IsNull());
+
+#if defined(OHOS_AUTOFILL)
+  OhAutoFillFormControlElementClicked(node);
+#endif
+
 #if defined(ANDROID)
   HandleFocusChangeComplete(/*focused_node_was_last_clicked=*/node.Focused());
 #else

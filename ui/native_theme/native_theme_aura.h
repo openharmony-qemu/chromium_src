@@ -91,9 +91,6 @@ class NATIVE_THEME_EXPORT NativeThemeAura : public NativeThemeBase {
                                      const cc::PaintFlags& flags);
 
   bool use_overlay_scrollbars_;
-#ifdef OHOS_SCROLLBAR
-  float virtual_pixel_ratio_ = 2.0;
-#endif
 };
 
 }  // namespace ui

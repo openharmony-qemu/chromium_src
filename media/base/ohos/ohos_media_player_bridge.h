@@ -46,8 +46,6 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
     virtual void OnPlayerInterruptEvent(int32_t value) = 0;
 
     virtual void OnAudioStateChanged(bool isAudible) = 0;
-
-    virtual void OnPlayerSeekBack(base::TimeDelta back_time) = 0;
   };
 
   enum MediaErrorType {
@@ -90,7 +88,6 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   void OnVideoSizeChanged(int32_t width, int32_t height);
   void OnPlayerInterruptEvent(int32_t value);
   void SeekDone();
-  void OnSeekBack(base::TimeDelta extra_time);
 
  private:
   int32_t SetFdSource(const std::string& path);
@@ -124,9 +121,6 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   // MediaPlayer is unable to handle Seek request when playback end. We should
   // pending the SeekTo request until its playback state changed.
   bool seeking_on_playback_complete_;
-  base::TimeDelta extra_time_;
-  // It is a sign of rollback and SEEK_CLOSEST failure.
-  bool seeking_back_complete_;
 #if defined(RK3568)
   bool is_hls_;
 #endif

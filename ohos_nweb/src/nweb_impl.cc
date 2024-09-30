@@ -1906,6 +1906,34 @@ void NWebImpl::PageDown(bool bottom) {
   }
   return nweb_delegate_->PageDown(bottom);
 }
+
+#ifdef OHOS_GET_SCROLL_OFFSET
+void NWebImpl::GetScrollOffset(float* offset_x, float* offset_y) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  float scroll_offset_x = 0;
+  float scroll_offset_y = 0;
+  float overscroll_offset_x = 0;
+  float overscroll_offset_y = 0;
+  float finalOffset_x = 0;
+  float finalOffset_y = 0;
+  nweb_delegate_->GetScrollOffset(&scroll_offset_x, &scroll_offset_y);
+  #if defined(OHOS_INPUT_EVENTS)
+  nweb_delegate_->GetOverScrollOffset(&overscroll_offset_x,
+                                      &overscroll_offset_y);
+  #endif
+  finalOffset_x = scroll_offset_x + std::round(overscroll_offset_x);
+  finalOffset_y = scroll_offset_y + std::round(overscroll_offset_y);
+
+  if ((nullptr == offset_x) || (nullptr == offset_y)) {
+    LOG(ERROR) << "offset_x or offset_y is nullptr";
+    return;
+  }
+  *offset_x = finalOffset_x;
+  *offset_y = finalOffset_y;
+}
+#endif
 #endif  // #ifdef OHOS_PAGE_UP_DOWN
 
 #if defined(OHOS_INPUT_EVENTS)

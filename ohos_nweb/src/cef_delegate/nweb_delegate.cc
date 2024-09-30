@@ -2431,6 +2431,37 @@ void NWebDelegate::PageDown(bool bottom) {
   }
   GetBrowser()->GetHost()->ScrollPageUpDown(false, !bottom, height_ / scale);
 }
+
+#ifdef OHOS_GET_SCROLL_OFFSET
+void NWebDelegate::GetScrollOffset(float* offset_x, float* offset_y) {
+  if (!GetBrowser().get()) {
+    LOG(ERROR) << "JSAPI GetScrollOffset can not get browser";
+    return;
+  }
+
+  float offsetX = 0;
+  float offsetY = 0;
+  float ratio = render_handler_->GetVirtualPixelRatio();
+  if (ratio <= 0) {
+    LOG(ERROR) << "get ratio invalid: " << ratio;
+    return;
+  }
+
+  GetBrowser()->GetHost()->GetScrollOffset(&offsetX,
+                                           &offsetY);
+
+  offsetX = std::round(offsetX / ratio);
+  offsetY = std::round(offsetY / ratio);
+
+  if ((nullptr == offset_x) || (nullptr == offset_y)) {
+    LOG(ERROR) << "offset_x or offset_y is nullptr";
+    return;
+  }
+
+  *offset_x = offsetX;
+  *offset_y = offsetY;
+}
+#endif
 #endif  // #ifdef OHOS_PAGE_UP_DOWN
 
 #if defined(OHOS_INPUT_EVENTS)
@@ -2532,6 +2563,16 @@ void NWebDelegate::WebSendTouchpadFlingEvent(double x,
                                               pressedCodes);
   }
 }
+
+#if defined(OHOS_GET_SCROLL_OFFSET)
+void NWebDelegate::GetOverScrollOffset(float* offset_x, float* offset_y) {
+  if (!GetBrowser().get()) {
+    LOG(ERROR) << "JSAPI GetOverScrollOffset can not get browser";
+    return;
+  }
+  GetBrowser()->GetHost()->GetOverScrollOffset(offset_x, offset_y);
+}
+#endif
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #if defined(OHOS_API_INIT_WEB_ENGINE)

@@ -153,7 +153,7 @@ BASE_FEATURE(kV8UseLibmTrigFunctions,
 // Wasm functions. We want to remove this fallback in the future.
 BASE_FEATURE(kV8MidtierRegallocFallback,
              "V8MidtierRegallocFallback",
-             base::FEATURE_ENABLED_BY_DEFAULT);
+             base::FEATURE_DISABLED_BY_DEFAULT);
 
 // JavaScript language features.
 

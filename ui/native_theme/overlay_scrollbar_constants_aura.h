@@ -12,8 +12,7 @@ namespace ui {
 
 #ifdef OHOS_SCROLLBAR
 constexpr int kOverlayScrollbarStrokeWidth = 0;
-constexpr int kOverlayScrollbarThumbWidthPressed = 28;
-constexpr int kOverlayScrollbarThumbWidthPressedPc = 8;
+constexpr int kOverlayScrollbarThumbWidthPressed = 36;
 constexpr base::TimeDelta kOverlayScrollbarFadeDelay = base::Milliseconds(300);
 constexpr base::TimeDelta kOverlayScrollbarFadeDuration = base::Milliseconds(20);
 #else

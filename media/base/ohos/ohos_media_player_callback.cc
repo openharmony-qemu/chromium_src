@@ -50,10 +50,6 @@ void OHOSMediaPlayerCallback::OnInfo(OHOS::NWeb::PlayerOnInfoType type,
               static_cast<OHOS::NWeb::PlayerAdapter::PlayerStates>(extra)));
       break;
     case OHOS::NWeb::PlayerOnInfoType::INFO_TYPE_POSITION_UPDATE:
-      task_runner_->PostTask(
-          FROM_HERE,
-          base::BindOnce(&OHOSMediaPlayerBridge::OnSeekBack,
-                         media_player_, base::Milliseconds(extra)));
       break;
     case OHOS::NWeb::PlayerOnInfoType::INFO_TYPE_MESSAGE:
       break;

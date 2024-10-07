@@ -251,6 +251,9 @@ class CC_EXPORT Scheduler : public viz::BeginFrameObserverBase {
   // updates of new layer tree state.
   void SetDeferBeginMainFrame(bool defer_begin_main_frame);
 
+  void SetDeferInvalidationForFastMainFrame(
+           bool defer_invalidation_for_fast_main_frame);
+
   // Pausing rendering prevents new main frames and impl-side invalidations from
   // being triggered. Impl frames are drawn until any in-flight updates from the
   // main thread are drawn.

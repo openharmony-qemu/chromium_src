@@ -3446,6 +3446,19 @@ void LayerTreeHostImpl::ActivateSyncTree() {
     active_tree_->lifecycle().AdvanceTo(
         LayerTreeLifecycle::kSyncedPropertyTrees);
 
+    bool should_defer_impl_invalidation = false;
+    for (EffectTreeLayerListIterator it(pending_tree_.get());
+        it.state() != EffectTreeLayerListIterator::State::END; ++it) {
+      if (it.state() == EffectTreeLayerListIterator::State::LAYER) {
+        LayerImpl* layer = it.current_layer();
+        if (layer->ShouldDeferImplInvalidation()) {
+          should_defer_impl_invalidation = true;
+        }
+      }
+    }
+    client_->SetDeferInvalidationForFastMainFrameFromImpl(
+                 should_defer_impl_invalidation);
+
     TreeSynchronizer::PushLayerProperties(pending_tree(), active_tree());
 
     active_tree_->lifecycle().AdvanceTo(

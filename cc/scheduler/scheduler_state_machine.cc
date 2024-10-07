@@ -783,9 +783,8 @@ bool SchedulerStateMachine::ShouldDeferInvalidatingForMainFrame() const {
 
   // If we prefer to invalidate over waiting on the main frame, do the
   // invalidation now.
-  // comment out here to avoid JD flickering
-  // if (!should_defer_invalidation_for_fast_main_frame_)
-  //   return false;
+  if (!should_defer_invalidation_for_fast_main_frame_)
+    return false;
 
   // If there is a request for a main frame, then this could either be a
   // request that we need to respond to in this impl frame or its possible the

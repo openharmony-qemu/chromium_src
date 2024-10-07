@@ -129,6 +129,8 @@ class LayerTreeHostImplClient {
   virtual void SetNeedsPrepareTilesOnImplThread() = 0;
   virtual void SetVideoNeedsBeginFrames(bool needs_begin_frames) = 0;
   virtual void SetDeferBeginMainFrameFromImpl(bool defer_begin_main_frame) = 0;
+  virtual void SetDeferInvalidationForFastMainFrameFromImpl(
+                   bool defer_invalidation_for_fast_main_frame) = 0;
   virtual bool IsInsideDraw() = 0;
   virtual void RenewTreePriority() = 0;
   virtual void PostDelayedAnimationTaskOnImplThread(base::OnceClosure task,

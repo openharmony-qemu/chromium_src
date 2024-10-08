@@ -128,6 +128,20 @@ class ContentAutofillDriver : public AutofillDriver,
   void set_autofill_manager(std::unique_ptr<AutofillManager> autofill_manager) {
     autofill_manager_ = std::move(autofill_manager);
   }
+
+#if defined(OHOS_AUTOFILL)
+  void set_oh_autofill_manager(std::unique_ptr<AutofillManager> oh_autofill_manager) {
+    oh_autofill_manager_ = std::move(oh_autofill_manager);
+  }
+
+  AutofillManager* oh_autofill_manager() {
+    if (oh_autofill_manager_ == nullptr) {
+        return nullptr;
+    }
+    return oh_autofill_manager_.get();
+  }
+#endif
+
   AutofillManager* autofill_manager() { return autofill_manager_.get(); }
 
   content::RenderFrameHost* render_frame_host() { return render_frame_host_; }
@@ -342,6 +356,10 @@ class ContentAutofillDriver : public AutofillDriver,
   // AutofillManager instance via which this object drives the shared Autofill
   // code.
   std::unique_ptr<AutofillManager> autofill_manager_ = nullptr;
+
+#if defined(OHOS_AUTOFILL)
+  std::unique_ptr<AutofillManager> oh_autofill_manager_ = nullptr;
+#endif
 
   content::RenderWidgetHost::KeyPressEventCallback key_press_handler_;
 

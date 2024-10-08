@@ -38,6 +38,10 @@
 #include "ui/gfx/native_widget_types.h"
 #include "ui/gl/gl_share_group.h"
 #include "ui/gl/gpu_preference.h"
+#if BUILDFLAG(IS_OHOS)
+#include "gpu/ipc/service/stream_texture_ohos.h"
+#endif
+
 
 namespace base {
 class WaitableEvent;
@@ -204,6 +208,7 @@ class GPU_IPC_SERVICE_EXPORT GpuChannel : public IPC::Listener,
 #if BUILDFLAG(IS_OHOS)
   int32_t CreateNativeTexture(
       int32_t native_id,
+      gl::ohos::TextureOwnerMode texture_owner_mode,
       mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver);
 
   // Called by StreamTexture to remove the GpuChannel's reference to the

@@ -230,6 +230,13 @@ void ProxyImpl::SetDeferBeginMainFrameFromImpl(bool defer_begin_main_frame) {
     scheduler_->SetDeferBeginMainFrame(ShouldDeferBeginMainFrame());
 }
 
+void ProxyImpl::SetDeferInvalidationForFastMainFrameFromImpl(
+                    bool defer_invalidation_for_fast_main_frame) {
+  DCHECK(IsImplThread());
+  scheduler_->SetDeferInvalidationForFastMainFrame(
+                  defer_invalidation_for_fast_main_frame);
+}
+
 void ProxyImpl::SetNeedsRedrawOnImpl(const gfx::Rect& damage_rect) {
   DCHECK(IsImplThread());
   host_impl_->SetViewportDamage(damage_rect);

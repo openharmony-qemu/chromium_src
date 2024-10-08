@@ -3681,7 +3681,7 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
     switches::kBundleInstallationDir,
     switches::kOhSchemeHandlerCustomScheme,
     switches::kBundleName,
-    switches::kArkWebInstallationDir,
+    switches::kArkWebInstallPath,
 #endif
 #if BUILDFLAG(IS_CHROMEOS_LACROS)
     switches::kLacrosEnablePlatformHevc,

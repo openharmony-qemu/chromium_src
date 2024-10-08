@@ -889,7 +889,7 @@ int ContentMainRunnerImpl::Initialize(ContentMainParams params) {
       command_line.GetSwitchValueASCII(switches::kProcessType);
 #ifdef BUILDFLAG(IS_OHOS)
   if (process_type == switches::kRendererProcess) {
-      std::string arkWeb_path = command_line.GetSwitchValueASCII(switches::kArkWebInstallationDir);
+      std::string arkWeb_path = command_line.GetSwitchValueASCII(switches::kArkWebInstallPath);
       OHOS::NWeb::OhosAdapterHelper::GetInstance().SetArkWebCoreHapPathOverride(arkWeb_path);
   }
 #endif

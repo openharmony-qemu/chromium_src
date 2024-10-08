@@ -54,12 +54,15 @@ class MediaSessionOHOS final
 
   bool SetWebviewShow(bool show);
   bool SetWebviewShowForAudio(bool show);
+  bool SetWebviewShowForVideo(bool show);
   void Resume();
   void Suspend();
   void Stop();
   void SeekTo(const int64_t millis);
   void UpdateTimer();
 
+  bool IsEndOfMedia();
+  void SetEndOfMedia(bool end_of_media);
  private:
   void CheckMediaInfo();
   void Prepare(OHOS::NWeb::MediaAVSessionType type);
@@ -69,6 +72,7 @@ class MediaSessionOHOS final
   bool is_webview_show_;
   bool is_playing_;
   bool is_initialized_;
+  bool is_end_of_media_;
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
   std::shared_ptr<OHOS::NWeb::MediaAVSessionMetadataAdapter> av_metadata_;
   std::shared_ptr<OHOS::NWeb::MediaAVSessionPositionAdapter> av_position_;

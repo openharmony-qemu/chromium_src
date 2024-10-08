@@ -2,15 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef GPU_COMMAND_BUFFER_SERVICE_OHOS_SHARED_IMAGE_VIDEO_OHOS_H_
-#define GPU_COMMAND_BUFFER_SERVICE_OHOS_SHARED_IMAGE_VIDEO_OHOS_H_
+#ifndef GPU_COMMAND_BUFFER_SERVICE_OHOS_OHOS_VIDEO_IMAGE_BACKING_H_
+#define GPU_COMMAND_BUFFER_SERVICE_OHOS_OHOS_VIDEO_IMAGE_BACKING_H_
 
 #include <memory>
 
-#include "gpu/command_buffer/service/ohos/shared_image_backing_ohos.h"
+#include "gpu/command_buffer/service/ohos/ohos_image_backing.h"
+
 #include "gpu/gpu_gles2_export.h"
 #include "gpu/ipc/common/vulkan_ycbcr_info.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
+#include "ui/gl/ohos/native_buffer_utils.h"
 
 namespace gpu {
 struct Mailbox;
@@ -18,23 +20,25 @@ class AbstractTextureOHOS;
 class RefCountedLock;
 class StreamTextureSharedImageInterface;
 class SharedContextState;
-class NativeImageTextureOwner;
+class ScopedNativeBufferFenceSync;
 
-class GPU_GLES2_EXPORT SharedImageVideoOhos : public SharedImageBackingOhos {
+class GPU_GLES2_EXPORT OhosVideoImageBacking : public OhosImageBacking {
  public:
-  static std::unique_ptr<SharedImageVideoOhos> Create(
+  static std::unique_ptr<OhosVideoImageBacking> Create(
       const Mailbox& mailbox,
       const gfx::Size& size,
       const gfx::ColorSpace color_space,
       GrSurfaceOrigin surface_origin,
       SkAlphaType alpha_type,
+      gl::ohos::TextureOwnerMode texture_owner_mode,
       scoped_refptr<StreamTextureSharedImageInterface> stream_texture_sii,
-      scoped_refptr<SharedContextState> context_state);
+      scoped_refptr<SharedContextState> context_state,
+      scoped_refptr<RefCountedLock> drdc_lock);
 
-  ~SharedImageVideoOhos() override;
+  ~OhosVideoImageBacking() override;
 
-  SharedImageVideoOhos(const SharedImageVideoOhos&) = delete;
-  SharedImageVideoOhos& operator=(const SharedImageVideoOhos&) = delete;
+  OhosVideoImageBacking(const OhosVideoImageBacking&) = delete;
+  OhosVideoImageBacking& operator=(const OhosVideoImageBacking&) = delete;
 
   SharedImageBackingType GetType() const override;
   gfx::Rect ClearedRect() const override;
@@ -42,7 +46,7 @@ class GPU_GLES2_EXPORT SharedImageVideoOhos : public SharedImageBackingOhos {
   void Update(std::unique_ptr<gfx::GpuFence> in_fence) override;
 
  protected:
-  SharedImageVideoOhos(const Mailbox& mailbox,
+  OhosVideoImageBacking(const Mailbox& mailbox,
                        const gfx::Size& size,
                        const gfx::ColorSpace color_space,
                        GrSurfaceOrigin surface_origin,
@@ -55,4 +59,4 @@ class GPU_GLES2_EXPORT SharedImageVideoOhos : public SharedImageBackingOhos {
 
 }  // namespace gpu
 
-#endif  // GPU_COMMAND_BUFFER_SERVICE_OHOS_SHARED_IMAGE_VIDEO_OHOS_H_
+#endif  // GPU_COMMAND_BUFFER_SERVICE_OHOS_OHOS_VIDEO_IMAGE_BACKING_H_

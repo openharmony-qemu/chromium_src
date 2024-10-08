@@ -363,6 +363,8 @@ class CC_EXPORT LayerImpl {
       LayerTreeImpl* tree_impl) const;
   virtual void PushPropertiesTo(LayerImpl* layer);
 
+  virtual bool ShouldDeferImplInvalidation() const;
+
   // Internal to property tree construction (which only happens in tests on a
   // LayerImpl tree. See Layer::IsSnappedToPixelGridInTarget() for explanation,
   // as this mirrors that method.

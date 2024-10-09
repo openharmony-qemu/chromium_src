@@ -34,7 +34,8 @@ OHOSMediaPlayerBridge::OHOSMediaPlayerBridge(
       seek_complete_(true),
       should_seek_on_prepare_(false),
       should_set_volume_on_prepare_(false),
-      seeking_on_playback_complete_(false) {
+      seeking_on_playback_complete_(false),
+      seeking_back_complete_(false) {
 #if defined(RK3568)
   is_hls_ = is_hls;
 #endif
@@ -164,6 +165,7 @@ void OHOSMediaPlayerBridge::Pause() {
 
 void OHOSMediaPlayerBridge::SeekTo(base::TimeDelta time) {
   pending_seek_ = time;
+  seeking_back_complete_ = false;
 
   LOG(INFO) << "OHOSMediaPlayerBridge::SeekTo time=" << time.InMilliseconds();
   if (!prepared_) {
@@ -244,6 +246,31 @@ base::TimeDelta OHOSMediaPlayerBridge::GetMediaTime() {
 void OHOSMediaPlayerBridge::SeekDone() {
   LOG(INFO) << "OHOSMediaPlayerBridge::SeekDone()";
   seek_complete_ = true;
+}
+
+void OHOSMediaPlayerBridge::OnSeekBack(base::TimeDelta extra_time) {
+  extra_time_ = extra_time;
+  if (!player_ || pending_seek_ == base::Milliseconds(0)) {
+    return;
+  }
+  if (!seek_complete_) {
+    int32_t time = -1;
+    (void)player_->GetCurrentTime(time);
+    recording_seek_ = base::Milliseconds(time);
+    return;
+  }
+  if (seeking_back_complete_) {
+    return;
+  }
+
+  if ((recording_seek_ - extra_time_) > base::Milliseconds(500)) {
+    seeking_back_complete_ = true;
+    if (client_) {
+      client_->OnPlayerSeekBack(extra_time_);
+    }
+    LOG(INFO) << "OHOSMediaPlayerBridge::OnSeekBack() recording_time= " << recording_seek_;
+    LOG(INFO) << "OHOSMediaPlayerBridge::OnSeekBack() back_time= " << extra_time_;
+  }
 }
 
 void OHOSMediaPlayerBridge::FinishPaint(int fd) {

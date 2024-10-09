@@ -605,6 +605,9 @@ class BASE_EXPORT FeatureList {
   // doesn't modify externally visible state.
   bool CheckFeatureIdentity(const Feature& feature) const;
 
+#if defined(OHOS_SCROLLBAR)
+  mutable Lock overrides_lock_;
+#endif
   // Map from feature name to an OverrideEntry struct for the feature, if it
   // exists.
   base::flat_map<std::string, OverrideEntry> overrides_;

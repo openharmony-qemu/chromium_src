@@ -748,7 +748,7 @@ int NWebPreferenceDelegate::GetDrawMode() const {
 }
 
 void NWebPreferenceDelegate::PutTextAutosizingEnabled(bool flag) {
-  if(text_autosizing_enabled_ == flag){
+  if (text_autosizing_enabled_ == flag) {
     return;
   }
   text_autosizing_enabled_ = flag;

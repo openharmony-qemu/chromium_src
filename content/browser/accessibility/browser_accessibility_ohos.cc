@@ -394,7 +394,7 @@ bool BrowserAccessibilityOHOS::HasOnlyTextChildren() const {
   GetChildrenIds(childrenIds);
   for (auto& childId : childrenIds) {
     BrowserAccessibilityOHOS* child = GetFromAccessibilityId(childId);
-    if (!child->IsText() && child->GetRole() != ax::mojom::Role::kStrong) {
+    if (!child->IsText() && child->GetRole() != ax::mojom::Role::kStrong && !child->IsEmptyContainer()) {
       return false;
     }
   }
@@ -1009,6 +1009,19 @@ bool BrowserAccessibilityOHOS::IsIgnoredContainer() const {
     return false;
   }
   if (!PlatformChildCount()) {
+    return false;
+  }
+  return true;
+}
+
+bool BrowserAccessibilityOHOS::IsEmptyContainer() const {
+  if (GetRole() != ax::mojom::Role::kGenericContainer) {
+    return false;
+  }
+  if (IsClickable() && !HasClickableChildren()) {
+    return false;
+  }
+  if (PlatformChildCount()) {
     return false;
   }
   return true;

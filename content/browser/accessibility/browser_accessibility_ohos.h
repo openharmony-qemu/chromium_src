@@ -134,6 +134,8 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
 
   bool IsIgnoredContainer() const;
 
+  bool IsEmptyContainer() const;
+
   int64_t GetParentId() const;
 
   void GetChildrenIds(std::vector<int64_t>& childrenIds) const;

@@ -46,6 +46,9 @@
 #endif  // #ifdef OHOS_AI
 
 namespace {
+#ifdef OHOS_EX_FREE_COPY
+constexpr size_t kWordSelectionOffsetSize = 2;
+#endif // OHOS_EX_FREE_COPY
 cef_screen_orientation_type_t ConvertOrientationType(
     OHOS::NWeb::DisplayOrientation type,
     bool default_portrait) {
@@ -1045,7 +1048,7 @@ void NWebRenderHandler::GetWordSelection(CefRefPtr<CefBrowser> browser,
                << static_cast<int>(offset);
     std::vector<int8_t> vec =
         handler->GetWordSelection(text.ToString(), offset);
-    if (vec.size() == 2) {
+    if (vec.size() == kWordSelectionOffsetSize) {
       select.x = vec[0];
       select.y = vec[1];
     }

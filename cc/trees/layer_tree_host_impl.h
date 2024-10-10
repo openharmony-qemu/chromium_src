@@ -182,6 +182,9 @@ class LayerTreeHostImplClient {
 
   virtual void ClearHistory() = 0;
 
+  virtual void SetHasActiveThreadedScroll(bool is_scrolling) = 0;
+  virtual void SetWaitingForScrollEvent(bool waiting_for_scroll_event) = 0;
+
   virtual size_t CommitDurationSampleCountForTesting() const = 0;
 
 #if BUILDFLAG(IS_OHOS)
@@ -658,6 +661,7 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
   virtual void DidFinishImplFrame(const viz::BeginFrameArgs& args);
   void DidNotProduceFrame(const viz::BeginFrameAck& ack,
                           FrameSkippedReason reason);
+  void OnBeginImplFrameDeadline();
   void DidModifyTilePriorities();
   // Requests that we do not produce frames until the new viz::LocalSurfaceId
   // has been activated.

@@ -35,7 +35,6 @@
 #include "base/task/task_features.h"
 #include "base/task/thread_pool.h"
 #include "base/test/task_environment.h"
-#include "command_buffer/service/ohos/shared_image_video_ohos.h"
 #include "media/base/async_destroy_video_decoder.h"
 #include "media/base/decoder_buffer.h"
 #include "media/base/decoder_status.h"

@@ -69,6 +69,10 @@
 #include "gpu/ipc/service/dcomp_texture_win.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "gpu/ipc/service/stream_texture_ohos.h"
+#endif
+
 namespace gpu {
 
 namespace {

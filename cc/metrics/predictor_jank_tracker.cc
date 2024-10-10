@@ -175,6 +175,7 @@ void PredictorJankTracker::ReportJankyFramePercentage() {
   UMA_HISTOGRAM_PERCENTAGE(
       "Event.Jank.PredictorJankyFramePercentage",
       static_cast<int>(100 * (janky_frames_ / total_frames_)));
+
   total_frames_ = 0;
   janky_frames_ = 0;
 }

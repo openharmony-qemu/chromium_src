@@ -111,6 +111,7 @@ class CC_EXPORT SingleThreadProxy : public Proxy,
   void ScheduledActionBeginMainFrameNotExpectedUntil(
       base::TimeTicks time) override;
   void FrameIntervalUpdated(base::TimeDelta interval) override;
+  void OnBeginImplFrameDeadline() override;
   bool HasInvalidationAnimation() const override;
 
   // LayerTreeHostImplClient implementation
@@ -154,6 +155,9 @@ class CC_EXPORT SingleThreadProxy : public Proxy,
   void FrameSinksToThrottleUpdated(
       const base::flat_set<viz::FrameSinkId>& ids) override;
   void ClearHistory() override;
+  void SetHasActiveThreadedScroll(bool is_scrolling) override;
+  void SetWaitingForScrollEvent(bool waiting_for_scroll_event) override;
+
   size_t CommitDurationSampleCountForTesting() const override;
 
   void RequestNewLayerTreeFrameSink();

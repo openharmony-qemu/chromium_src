@@ -4,6 +4,8 @@
 
 #include "cc/base/features.h"
 
+#include <string>
+
 #include "base/feature_list.h"
 #include "build/build_config.h"
 #include "ui/base/ui_base_features.h"
@@ -129,4 +131,25 @@ BASE_FEATURE(kMoreAggressiveSolidColorDetection,
 BASE_FEATURE(kReducedFrameRateEstimation,
              "kReducedFrameRateEstimation",
              base::FEATURE_ENABLED_BY_DEFAULT);
+
+BASE_FEATURE(kWaitForLateScrollEvents,
+             "WaitForLateScrollEvents",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+
+const base::FeatureParam<double> kWaitForLateScrollEventsDeadlineRatio{
+    &kWaitForLateScrollEvents, "deadline_ratio", 0.333};
+
+const base::FeatureParam<std::string> kScrollEventDispatchMode(
+    &kWaitForLateScrollEvents,
+    "mode",
+    "UseScrollPredictorForDeadline");
+constexpr const char kScrollEventDispatchModeEnqueueScrollEvents[] =
+    "EnqueueScrollEvents";
+constexpr const char kScrollEventDispatchModeDispatchScrollEventsImmediately[] =
+    "DispatchScrollEventsImmediately";
+constexpr const char kScrollEventDispatchModeUseScrollPredictorForEmptyQueue[] =
+    "UseScrollPredictorForEmptyQueue";
+constexpr const char kScrollEventDispatchModeUseScrollPredictorForDeadline[] =
+    "UseScrollPredictorForDeadline";
+
 }  // namespace features

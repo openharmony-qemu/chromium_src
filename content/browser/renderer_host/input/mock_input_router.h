@@ -60,6 +60,7 @@ class MockInputRouter : public InputRouter {
   void FlushTouchEventQueue() override {}
 #if defined(OHOS_UNITTESTS)
   void SetGestureEventResult(bool result) override {}
+  void SetNativeEmbedMode(bool flag) override {}
 #endif
   bool sent_mouse_event_;
   bool sent_wheel_event_;

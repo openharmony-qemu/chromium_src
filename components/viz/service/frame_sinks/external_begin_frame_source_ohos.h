@@ -88,8 +88,6 @@ class VIZ_SERVICE_EXPORT ExternalBeginFrameSourceOHOS
   int64_t vsync_frequency_to_update_ = 30; // vsync_to_update_ >= 30 for user experience
   bool update_vsync_frequency_ = false;
   bool reset_vsync_frequency_ = false;
-
-  static base::circular_deque<std::pair<int64_t, VSyncUserData*>> on_vsync_impl_task_queue_;
 };
 }  // namespace viz
 

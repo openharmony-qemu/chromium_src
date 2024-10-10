@@ -5,7 +5,10 @@
 #ifndef CC_BASE_FEATURES_H_
 #define CC_BASE_FEATURES_H_
 
+#include <string>
+
 #include "base/feature_list.h"
+#include "base/metrics/field_trial_params.h"
 #include "build/build_config.h"
 #include "cc/base/base_export.h"
 
@@ -114,6 +117,46 @@ CC_BASE_EXPORT BASE_DECLARE_FEATURE(kMoreAggressiveSolidColorDetection);
 // Allow CC FrameRateEstimater to reduce the frame rate to half of the default
 // if the condition meets the requirement.
 CC_BASE_EXPORT BASE_DECLARE_FEATURE(kReducedFrameRateEstimation);
+
+// Currently there is a race between OnBeginFrames from the GPU process and
+// input arriving from the Browser process. Due to this we can start to produce
+// a frame while scrolling without any input events. Late arriving events are
+// then enqueued for the next VSync.
+//
+// When this feature is enabled we will use the corresponding mode definted by
+// `kScrollEventDispatchModeParamName`.
+CC_BASE_EXPORT BASE_DECLARE_FEATURE(kWaitForLateScrollEvents);
+CC_BASE_EXPORT extern const base::FeatureParam<double>
+    kWaitForLateScrollEventsDeadlineRatio;
+
+// Modes for `kWaitForLateScrollEvents` changing event dispatch. Where the
+// default is to just always enqueue scroll events.
+//
+// `kScrollEventDispatchModeNameDispatchScrollEventsImmediately` will wait for
+// `kWaitForLateScrollEventsDeadlineRatio` of the frame interval for input.
+// During this time scroll events will be dispatched immediately. At the
+// deadline we will resume frame production and enqueuing input.
+//
+// `kScrollEventDispatchModeNameUseScrollPredictorForEmptyQueue` checks when
+// we begin frame production, if the event queue is empty, we will generate a
+// new prediction and dispatch a synthetic scroll event.
+//
+// `kScrollEventDispatchModeUseScrollPredictorForDeadline` will perform the
+// same as `kScrollEventDispatchModeDispatchScrollEventsImmediately` until
+// the deadline is encountered. Instead of immediately resuming frame
+// production, we will first attempt to generate a new prediction to dispatch.
+// As in `kScrollEventDispatchModeUseScrollPredictorForEmptyQueue`. After
+// which we will resume frame production and enqueuing input.
+CC_BASE_EXPORT extern const base::FeatureParam<std::string>
+    kScrollEventDispatchMode;
+CC_BASE_EXPORT extern const char
+    kScrollEventDispatchModeEnqueueScrollEvents[];
+CC_BASE_EXPORT extern const char
+    kScrollEventDispatchModeDispatchScrollEventsImmediately[];
+CC_BASE_EXPORT extern const char
+    kScrollEventDispatchModeUseScrollPredictorForEmptyQueue[];
+CC_BASE_EXPORT extern const char
+    kScrollEventDispatchModeUseScrollPredictorForDeadline[];
 
 }  // namespace features
 

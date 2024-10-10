@@ -296,6 +296,8 @@ class LayerTreeHostImplTest : public testing::Test,
   void FrameSinksToThrottleUpdated(
       const base::flat_set<viz::FrameSinkId>& ids) override {}
   void ClearHistory() override {}
+  void SetHasActiveThreadedScroll(bool is_scrolling) override {}
+  void SetWaitingForScrollEvent(bool waiting_for_scroll_event) override {}
   size_t CommitDurationSampleCountForTesting() const override { return 0; }
   void NotifyTransitionRequestFinished(uint32_t sequence_id) override {}
   void set_reduce_memory_result(bool reduce_memory_result) {
@@ -968,6 +970,11 @@ class TestInputHandlerClient : public InputHandlerClient {
   }
   void DeliverInputForBeginFrame(const viz::BeginFrameArgs& args) override {}
   void DeliverInputForHighLatencyMode() override {}
+  void DeliverInputForDeadline() override {}
+  void DidFinishImplFrame() override {}
+  bool HasQueuedInput() const override { return false; }
+  void SetScrollEventDispatchMode(
+      InputHandlerClient::ScrollEventDispatchMode mode) override {}
 
   gfx::PointF last_set_scroll_offset() { return last_set_scroll_offset_; }
 
@@ -14375,9 +14382,8 @@ TEST_F(LayerTreeHostImplTest,
         i == 0 ? ScrollUpdateEventMetrics::ScrollUpdateType::kStarted
                : ScrollUpdateEventMetrics::ScrollUpdateType::kContinued,
         /*delta=*/10.0f, base::TimeTicks::Now(),
-        base::TimeTicks::Now() + base::Milliseconds(1),
-        /*trace_id*/ base::IdType64<class ui::LatencyInfo>(123),
-        base::TimeTicks()));
+        base::TimeTicks::Now() + base::Milliseconds(1), base::TimeTicks(),
+        /*trace_id*/ base::IdType64<class ui::LatencyInfo>(123)));
     host_impl_->active_tree()->AppendEventsMetricsFromMainThread(
         std::move(events_metrics));
 

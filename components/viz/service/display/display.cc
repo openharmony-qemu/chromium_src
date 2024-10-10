@@ -115,6 +115,7 @@ class DumpFrameObserver : public OHOS::NWeb::SystemPropertiesObserver {
 
 namespace {
 const int MAX_SURFACE_SIZE = 8000;
+const int MIN_FITCONTENT_SURFACE_SIZE = 6000;
 
 const DrawQuad::Material kNonSplittableMaterials[] = {
     // Exclude debug quads from quad splitting
@@ -520,7 +521,13 @@ void Display::Resize(const gfx::Size& size) {
   TRACE_EVENT0("viz", "Display::Resize");
 
   swapped_since_resize_ = false;
-  current_surface_size_ = newSize;
+  LOG(DEBUG) << "Display::Resize,current_surface_size is :" << current_surface_size_.ToString().c_str();
+  if (draw_mode_ &&
+      current_surface_size_.height() >= MIN_FITCONTENT_SURFACE_SIZE && current_surface_size_.height() <= MAX_SURFACE_SIZE) {
+    current_surface_size_.set_width(newSize.width());
+  } else {
+    current_surface_size_ = newSize;
+  }
 
   damage_tracker_->DisplayResized();
 }
@@ -977,7 +984,6 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
           root_render_pass->copy_requests.push_back(std::move(request));
         }
       }
-
     }
 #endif
     UMA_HISTOGRAM_COUNTS_1000(

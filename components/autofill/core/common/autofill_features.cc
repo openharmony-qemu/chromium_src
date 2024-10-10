@@ -559,15 +559,6 @@ BASE_FEATURE(kAutofillEnableAblationStudy,
              "AutofillEnableAblationStudy",
              base::FEATURE_DISABLED_BY_DEFAULT);
 // The following parameters are only effective if the study is enabled.
-const base::FeatureParam<bool> kAutofillAblationStudyEnabledForAddressesParam{
-    &kAutofillEnableAblationStudy, "enabled_for_addresses", false};
-const base::FeatureParam<bool> kAutofillAblationStudyEnabledForPaymentsParam{
-    &kAutofillEnableAblationStudy, "enabled_for_payments", false};
-// The ratio of ablation_weight_per_mille / 1000 determines the chance of
-// autofill being disabled on a given combination of site * day * browser
-// session.
-const base::FeatureParam<int> kAutofillAblationStudyAblationWeightPerMilleParam{
-    &kAutofillEnableAblationStudy, "ablation_weight_per_mille", 10};
 
 // Controls whether user tap on an element is needed to show autofill
 // suggestions. If enabled, this flag would disable android autofill suggestions
@@ -581,6 +572,16 @@ const base::FeatureParam<int> kAutofillAblationStudyAblationWeightPerMilleParam{
 BASE_FEATURE(kAutofillAndroidDisableSuggestionsOnJSFocus,
              "AutofillAndroidDisableSuggestionsOnJSFocus",
              base::FEATURE_DISABLED_BY_DEFAULT);
+
+const base::FeatureParam<bool> kAutofillAblationStudyEnabledForAddressesParam{
+    &kAutofillEnableAblationStudy, "enabled_for_addresses", false};
+const base::FeatureParam<bool> kAutofillAblationStudyEnabledForPaymentsParam{
+    &kAutofillEnableAblationStudy, "enabled_for_payments", false};
+// The ratio of ablation_weight_per_mille / 1000 determines the chance of
+// autofill being disabled on a given combination of site * day * browser
+// session.
+const base::FeatureParam<int> kAutofillAblationStudyAblationWeightPerMilleParam{
+    &kAutofillEnableAblationStudy, "ablation_weight_per_mille", 10};
 
 // If enabled, crowdsourcing considers not just the value V but also the human
 // readable text HRT of an <option value="V">HRT</option> for voting.

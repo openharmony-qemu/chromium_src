@@ -36,9 +36,13 @@
 #include <list>
 #include <mutex>
 #include <string>
+
 #include <unordered_set>
 #include <map>
+
 #include "capi/nweb_app_client_extension_callback.h"
+#include "capi/nweb_extension_callback.h"
+#include "capi/nweb_extension_api_callback.h"
 #include "nweb_download_callback.h"
 #include "nweb_javascript_result_callback.h"
 #include "nweb_value.h"
@@ -75,6 +79,7 @@ class NWebHandlerDelegate : public CefClient,
                             public CefMediaHandler,
                             public CefFormHandler,
                             public CefFrameHandler,
+                            public CefWebExtensionApiHandler,
 #if defined(OHOS_PRINT)
                             public CefCookieAccessFilter,
                             public CefPrintHandler {
@@ -160,7 +165,16 @@ class NWebHandlerDelegate : public CefClient,
 
 #if defined(OHOS_NWEB_EX)
   void UnRegisterWebAppClientExtensionListener();
+  void RegisterWebExtensionListener(
+      std::shared_ptr<NWebExtensionCallback> web_extension_listener);
+  void UnRegisterWebExtensionListener();
 #endif  // defined(OHOS_NWEB_EX)
+
+bool OnOpenURLFromTab(CefRefPtr<CefBrowser> browser,
+                      CefRefPtr<CefFrame> frame,
+                      const CefString& target_url,
+                      WindowOpenDisposition target_disposition,
+                      bool user_gesture) override;
 
   // #if defined(OHOS_EX_PASSWORD)
   void ShowPasswordDialog(bool is_update, const CefString& url) override;
@@ -232,6 +246,9 @@ class NWebHandlerDelegate : public CefClient,
 #endif  // defined(OHOS_PRINT)
 
   CefRefPtr<CefFrameHandler> GetFrameHandler() override;
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  CefRefPtr<CefWebExtensionApiHandler> GetWebExtensionApiHandler() override;
+#endif // defined(OHOS_ARKWEB_EXTENSIONS)
   /* CefClient methods end */
 
   /* CefLifeSpanHandler methods begin */
@@ -313,10 +330,10 @@ class NWebHandlerDelegate : public CefClient,
   void OnDataResubmission(CefRefPtr<CefBrowser> browser,
                           CefRefPtr<CefCallback> callback) override;
 
+  void OnSafeBrowsingCheckResult(int threat_type) override;
+
   void OnNavigationEntryCommitted(
       CefRefPtr<CefLoadCommittedDetails> details) override;
-
-  void OnSafeBrowsingCheckResult(int threat_type) override;
   /* CefLoadHandler methods end */
 
   /* CefRequestHandler methods begin */
@@ -390,7 +407,7 @@ class NWebHandlerDelegate : public CefClient,
                   CefEventHandle os_event) override;
 #if defined(OHOS_INPUT_EVENTS)
   void KeyboardReDispatch(const CefKeyEvent& event,  bool isUsed) override;
-  void OnTakeFocus(CefRefPtr<CefBrowser> browser,  bool next) override;
+  void OnTakeFocus(CefRefPtr<CefBrowser> browser, bool next) override;
 #endif
   /* CefKeyboardHandler methods begin */
 
@@ -404,6 +421,14 @@ class NWebHandlerDelegate : public CefClient,
       CefRefPtr<CefBrowser> browser,
       CefRefPtr<CefFrame> frame,
       CefRefPtr<CefRequest> request) override;
+
+  void GetResourceHandlerByIO(
+      CefRefPtr<CefBrowser> browser,
+      CefRefPtr<CefFrame> frame,
+      CefRefPtr<CefRequest> request,
+      CefRefPtr<CefInterceptCallback> callback,
+      CefRefPtr<CefSchemeHandlerFactory> scheme_factory,
+      const CefString& scheme) override;
   /* CefResourceRequestHandler method end */
 
   /* CefMediaHandler methods begin */
@@ -539,8 +564,9 @@ class NWebHandlerDelegate : public CefClient,
                       CefRefPtr<CefMenuModel> model,
                       CefRefPtr<CefRunContextMenuCallback> callback) override;
   void OnGetImageForContextNode(CefRefPtr<CefBrowser> browser,
-                                CefRefPtr<CefImage> image) override;
-  void OnGetImageFromCache(CefRefPtr<CefImage> image) override;
+                                CefRefPtr<CefImage> image,
+                                int command_id) override;
+  void OnGetImageFromCache(CefRefPtr<CefImage> image, int command_id) override;
   bool OnContextMenuCommand(
       CefRefPtr<CefBrowser> browser,
       CefRefPtr<CefFrame> frame,
@@ -574,6 +600,7 @@ class NWebHandlerDelegate : public CefClient,
                             CefRefPtr<CefFrame> frame,
                             bool is_mouse_trigger) override;
   void HideHandleAndQuickMenuIfNecessary(bool hide) override;
+  void ChangeVisibilityOfQuickMenu() override;
   /* CefContextMenuHandler method end */
 
   /* CefFindandler methods begin */
@@ -616,11 +643,11 @@ class NWebHandlerDelegate : public CefClient,
 #endif  // defined(OHOS_PRINT)
   /* CefPrintHandler method end */
 
-  /* CefFrameHandler method begin */
+  /* CefFrameHandler methods begin */
   void OnMainFrameChanged(CefRefPtr<CefBrowser> browser,
                           CefRefPtr<CefFrame> old_frame,
                           CefRefPtr<CefFrame> new_frame) override;
-  /* CefFrameHandler method end */
+  /* CefFrameHandler methods end */
 
   const std::vector<std::string> GetVisitedHistory();
 
@@ -628,6 +655,10 @@ class NWebHandlerDelegate : public CefClient,
   uint32_t GetNWebId();
 
   void SetWindowId(uint32_t window_id) { window_id_ = window_id; }
+
+#ifdef OHOS_BFCACHE
+  void UpdateFavicon(CefRefPtr<CefBrowser> browser) override;
+#endif
 
   void SetFavicon(const void* icon_data,
                   size_t width,
@@ -681,6 +712,10 @@ class NWebHandlerDelegate : public CefClient,
       const CefString& website_host, const CefString& tracker_host) override;
 #endif
 
+#if defined(OHOS_SCREEN_LOCK)
+  void SetWakeLockCallback(int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback);
+#endif
+
 #ifdef OHOS_NETWORK_LOAD
   bool OnAllCertificateError(CefRefPtr<CefBrowser> browser,
                              cef_errorcode_t cert_error,
@@ -691,10 +726,6 @@ class NWebHandlerDelegate : public CefClient,
                              bool is_fatal_error,
                              CefRefPtr<CefSSLInfo> ssl_info,
                              CefRefPtr<CefCallback> callback) override;
-#endif
-
-#if defined(OHOS_SCREEN_LOCK)
-  void SetWakeLockCallback(int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback);
 #endif
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
@@ -718,9 +749,14 @@ class NWebHandlerDelegate : public CefClient,
   void OnRenderProcessResponding(CefRefPtr<CefBrowser> browser) override;
 #endif
 
+#if defined(OHOS_NWEB_EX)
+  void OnUpdateTargetURL(CefRefPtr<CefBrowser> browser,
+                         const CefString& url) override;
+#endif
+
 #ifdef OHOS_DISPLAY_CUTOUT
   void OnViewportFitChange(CefRefPtr<CefBrowser> browser,
-                           int viewport_fit) override;
+                           int viewportFit) override;
 #endif
 
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
@@ -728,8 +764,18 @@ class NWebHandlerDelegate : public CefClient,
   void SetWebPaintedForSnapshot() { isWebPaintedForSnapshot_ = true; }
 #endif
 
+#ifdef OHOS_NWEB_EX
+  static void RegisterWebExtensionApiListener(
+      std::shared_ptr<NWebExtensionApiCallback> web_extension_api_listener);
+  static void UnRegisterWebExtensionApiListener();
+
+  // CefWebExtensionApiHandler implements
+  void OnUpdateTabUrl(int tab_id, const CefString& url) override;
+#endif
+
  private:
   void CopyImageToClipboard(CefRefPtr<CefImage> image);
+
   // List of existing browser windows. Only accessed on the CEF UI thread.
   typedef std::list<CefRefPtr<CefBrowser>> BrowserList;
   BrowserList browser_list_;
@@ -754,6 +800,11 @@ class NWebHandlerDelegate : public CefClient,
   std::shared_ptr<NWebAppClientExtensionCallback>
       web_app_client_extension_listener_ = nullptr;
   CefRefPtr<NWebInputMethodClient> input_method_client_ = nullptr;
+#ifdef OHOS_NWEB_EX
+  void OnGetImageData(CefRefPtr<CefImage> image);
+  void OnGetImageDataFromCache(CefRefPtr<CefImage> image);
+  std::shared_ptr<NWebExtensionCallback> web_extension_listener_ = nullptr;
+#endif  // if defined(OHOS_NWEB_EX)
   std::shared_ptr<NWebGeolocationCallback> callback_ = nullptr;
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
   std::shared_ptr<NWebCreateNativeMediaPlayerCallback>

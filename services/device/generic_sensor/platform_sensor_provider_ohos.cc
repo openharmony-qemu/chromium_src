@@ -14,7 +14,6 @@
  */
 
 #include "services/device/generic_sensor/platform_sensor_provider_ohos.h"
-
 #include "services/device/generic_sensor/absolute_orientation_euler_angles_fusion_algorithm_using_accelerometer_and_magnetometer.h"
 #include "services/device/generic_sensor/platform_sensor_ohos.h"
 #include "services/device/generic_sensor/platform_sensor_fusion.h"

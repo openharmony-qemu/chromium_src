@@ -5,14 +5,13 @@
 #include "gpu/config/gpu_switches.h"
 
 namespace switches {
-
 #if BUILDFLAG(IS_OHOS)
 // Allow commandline to determine whether use oop canvas gpu rasterization
 const char kDisableCanvasOopRasterization[] = "disable-canvas-oop-gpu-rasterization";
 
 // Allow commandline to determine whether use oop canvas gpu rasterization
 const char kEnableCanvasOopRasterization[] = "enable-canvas-oop-gpu-rasterization";
-#endif
+#endif // BUILDFLAG(IS_OHOS)
 
 // Disable GPU rasterization, i.e. rasterize on the CPU only.
 // Overrides the kEnableGpuRasterization flag.

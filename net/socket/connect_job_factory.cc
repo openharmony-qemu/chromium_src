@@ -117,13 +117,23 @@ std::unique_ptr<ConnectJob> ConnectJobFactory::CreateConnectJob(
     const NetworkAnonymizationKey& network_anonymization_key,
     SecureDnsPolicy secure_dns_policy,
     const CommonConnectJobParams* common_connect_job_params,
-    ConnectJob::Delegate* delegate) const {
+    ConnectJob::Delegate* delegate
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+    ,
+    bool secure_dns_only
+#endif
+) const {
   return CreateConnectJob(Endpoint(std::move(endpoint)), proxy_server,
                           proxy_annotation_tag, ssl_config_for_origin,
                           ssl_config_for_proxy, force_tunnel, privacy_mode,
                           resolution_callback, request_priority, socket_tag,
                           network_anonymization_key, secure_dns_policy,
-                          common_connect_job_params, delegate);
+                          common_connect_job_params, delegate
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+                          ,
+                          secure_dns_only
+#endif
+  );
 }
 
 std::unique_ptr<ConnectJob> ConnectJobFactory::CreateConnectJob(
@@ -165,7 +175,12 @@ std::unique_ptr<ConnectJob> ConnectJobFactory::CreateConnectJob(
     const NetworkAnonymizationKey& network_anonymization_key,
     SecureDnsPolicy secure_dns_policy,
     const CommonConnectJobParams* common_connect_job_params,
-    ConnectJob::Delegate* delegate) const {
+    ConnectJob::Delegate* delegate
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+    ,
+    bool secure_dns_only
+#endif
+) const {
   scoped_refptr<HttpProxySocketParams> http_proxy_params;
   scoped_refptr<SOCKSSocketParams> socks_params;
   base::flat_set<std::string> no_alpn_protocols;
@@ -179,7 +194,12 @@ std::unique_ptr<ConnectJob> ConnectJobFactory::CreateConnectJob(
         secure_dns_policy, resolution_callback,
         proxy_server.is_secure_http_like()
             ? SupportedProtocolsFromSSLConfig(*ssl_config_for_proxy)
-            : no_alpn_protocols);
+            : no_alpn_protocols
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+        ,
+        secure_dns_only
+#endif
+    );
 
     if (proxy_server.is_http_like()) {
       scoped_refptr<SSLSocketParams> ssl_params;
@@ -220,7 +240,12 @@ std::unique_ptr<ConnectJob> ConnectJobFactory::CreateConnectJob(
       ssl_tcp_params = base::MakeRefCounted<TransportSocketParams>(
           ToTransportEndpoint(endpoint), network_anonymization_key,
           secure_dns_policy, resolution_callback,
-          SupportedProtocolsFromSSLConfig(*ssl_config_for_origin));
+          SupportedProtocolsFromSSLConfig(*ssl_config_for_origin)
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+              ,
+          secure_dns_only
+#endif
+      );
     }
     // TODO(crbug.com/1206799): Pass `endpoint` directly (preserving scheme
     // when available)?
@@ -249,7 +274,12 @@ std::unique_ptr<ConnectJob> ConnectJobFactory::CreateConnectJob(
   DCHECK(proxy_server.is_direct());
   auto tcp_params = base::MakeRefCounted<TransportSocketParams>(
       ToTransportEndpoint(endpoint), network_anonymization_key,
-      secure_dns_policy, resolution_callback, no_alpn_protocols);
+      secure_dns_policy, resolution_callback, no_alpn_protocols
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+      ,
+      secure_dns_only
+#endif
+  );
   return transport_connect_job_factory_->Create(
       request_priority, socket_tag, common_connect_job_params, tcp_params,
       delegate, /*net_log=*/nullptr);

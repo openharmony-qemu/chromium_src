@@ -147,7 +147,7 @@ NWebDownloadItemState WebDownload_GetItemState(int32_t nweb_id, long download_it
 #ifdef OHOS_EX_DOWNLOAD
   OHOS::NWeb::NWebImpl* nweb = OHOS::NWeb::NWebImpl::FromID(nweb_id);
   if (!nweb) {
-    WVLOG_E("fail to find a nweb with %{public}d", nweb_id);
+    WVLOG_E("fail to find a nweb with %{public}d ", nweb_id);
     return NWebDownloadItemState::MAX_DOWNLOAD_STATE;
   }
   return nweb->GetDownloadItemState(download_item_id);
@@ -156,7 +156,7 @@ NWebDownloadItemState WebDownload_GetItemState(int32_t nweb_id, long download_it
 #endif
 }
 
-NWebDownloadItemState WebDownload_GetItemStateByGuid(const std::string& guid) {
+NWebDownloadItemState WebDownload_GetItemStateByGuid(const std::string& guid){
 #ifdef OHOS_EX_DOWNLOAD
   return OHOS::NWeb::NWebImpl::GetDownloadItemStateByGuid(guid);
 #else

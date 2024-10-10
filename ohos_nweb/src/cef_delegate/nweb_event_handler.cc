@@ -205,16 +205,10 @@ bool NWebEventHandler::WebSendKeyEventFromAce(int32_t keyCode, int32_t keyAction
   return WebSendKeyEvent(keyCode, keyAction, pressedCodes);
 }
 
-bool NWebEventHandler::WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
-                                       const std::vector<int32_t>& pressedCodes) {
-  LOG(DEBUG) << "WebSendKeyEvent keyCode = " << keyCode
-             << " keyAction = " << keyAction;
-  if (keyCode < 0) {
-    LOG(ERROR) << "WebSendKeyEvent obtaining invalid keyCode";
-    return false;
-  }
-  CefKeyEvent keyEvent;
-  input_delegate_.SetModifiers(keyCode, keyAction);
+bool NWebEventHandler::CreateCefKeyEvent(CefKeyEvent& keyEvent,
+                                         int32_t keyCode,
+                                         int32_t keyAction,
+                                         int32_t modifiers) {
   keyEvent.windows_key_code =
       NWebInputDelegate::CefConverter("keycode", keyCode);
   if (keyEvent.windows_key_code == -1) {
@@ -223,7 +217,7 @@ bool NWebEventHandler::WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
   }
   keyEvent.type = static_cast<cef_key_event_type_t>(
       NWebInputDelegate::CefConverter("keyaction", keyAction));
-  keyEvent.modifiers = NWebInputDelegate::GetWebModifiers(keyCode, keyAction, pressedCodes);
+  keyEvent.modifiers = modifiers;
   LOG(DEBUG) << "WebSendKeyEvent modifiers = " << keyEvent.modifiers;
   keyEvent.is_system_key = false;
   keyEvent.native_key_code =
@@ -234,6 +228,10 @@ bool NWebEventHandler::WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
       key_code, keyEvent.modifiers & EVENTFLAG_SHIFT_DOWN);
   char16_t character = ui::GetUnicodeCharacterFromXKeySym(keysym);
   keyEvent.character = keyEvent.unmodified_character = character;
+  return true;
+}
+
+void NWebEventHandler::SendCefKeyEvent(CefKeyEvent& keyEvent) {
   if (browser_ && browser_->GetHost()) {
     browser_->GetHost()->SendKeyEvent(keyEvent);
   }
@@ -244,19 +242,34 @@ bool NWebEventHandler::WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
       browser_->GetHost()->SendKeyEvent(keyEvent);
     }
   }
-
-  return true;
 }
 
-void NWebEventHandler::WebSendMouseWheelEvent(double x,
+bool NWebEventHandler::WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
+                                       const std::vector<int32_t>& pressedCodes) {
+  LOG(DEBUG) << "WebSendKeyEvent keyCode = " << keyCode
+             << " keyAction = " << keyAction;
+  if (keyCode < 0) {
+    LOG(ERROR) << "WebSendKeyEvent obtaining invalid keyCode";
+    return false;
+  }
+  CefKeyEvent keyEvent;
+  int32_t modifiers = NWebInputDelegate::GetWebModifiers(keyCode, keyAction, pressedCodes);
+  input_delegate_.SetModifiers(keyCode, keyAction);
+  if (!CreateCefKeyEvent(keyEvent, keyCode, keyAction, modifiers)) {
+    return false;
+  }
+  SendCefKeyEvent(keyEvent);
+  return true;
+}
+void NWebEventHandler::SendCefMouseWheelEvent(double x,
                                               double y,
                                               double deltaX,
                                               double deltaY,
-                                              const std::vector<int32_t>& pressedCodes) {
+                                              int32_t modifiers) {
   CefMouseEvent mouseEvent;
   mouseEvent.x = x;
   mouseEvent.y = y;
-  mouseEvent.modifiers = NWebInputDelegate::GetWebModifiersByPressedCode(pressedCodes);
+  mouseEvent.modifiers = modifiers;
   LOG(DEBUG) << "WebSendMouseWheelEvent modifiers = " << mouseEvent.modifiers;
   if (!browser_ || !browser_->GetHost()) {
     return;
@@ -273,6 +286,15 @@ void NWebEventHandler::WebSendMouseWheelEvent(double x,
   }
   browser_->GetHost()->SendMouseWheelEvent(mouseEvent, horizontalDelta,
                                            verticalDelta);
+}
+
+void NWebEventHandler::WebSendMouseWheelEvent(double x,
+                                              double y,
+                                              double deltaX,
+                                              double deltaY,
+                                              const std::vector<int32_t>& pressedCodes) {
+  int32_t modifiers = NWebInputDelegate::GetWebModifiersByPressedCode(pressedCodes);
+  SendCefMouseWheelEvent(x, y, deltaX, deltaY, modifiers);
 }
 
 void NWebEventHandler::WebSendTouchpadFlingEvent(double x,
@@ -302,35 +324,11 @@ bool NWebEventHandler::SendKeyEvent(int32_t keyCode, int32_t keyAction) {
   }
   CefKeyEvent keyEvent;
   input_delegate_.SetModifiers(keyCode, keyAction);
-  keyEvent.windows_key_code =
-      NWebInputDelegate::CefConverter("keycode", keyCode);
-  if (keyEvent.windows_key_code == -1) {
-    LOG(ERROR) << "SendKeyEvent keyCode conversion failed";
+  int32_t modifiers = input_delegate_.GetModifiers();
+  if (!CreateCefKeyEvent(keyEvent, keyCode, keyAction, modifiers)) {
     return false;
   }
-  keyEvent.type = static_cast<cef_key_event_type_t>(
-      NWebInputDelegate::CefConverter("keyaction", keyAction));
-  keyEvent.modifiers = input_delegate_.GetModifiers();
-  keyEvent.is_system_key = false;
-  keyEvent.native_key_code =
-      NWebInputDelegate::CefConverter("keyscancode", keyCode);
-  ui::KeyboardCode key_code =
-      static_cast<ui::KeyboardCode>(keyEvent.windows_key_code);
-  int keysym = ui::XKeysymForWindowsKeyCode(
-      key_code, keyEvent.modifiers & EVENTFLAG_SHIFT_DOWN);
-  char16_t character = ui::GetUnicodeCharacterFromXKeySym(keysym);
-  keyEvent.character = keyEvent.unmodified_character = character;
-  if (browser_ && browser_->GetHost()) {
-    browser_->GetHost()->SendKeyEvent(keyEvent);
-  }
-
-  if (keyEvent.type == KEYEVENT_RAWKEYDOWN) {
-    keyEvent.type = KEYEVENT_CHAR;
-    if (browser_ && browser_->GetHost()) {
-      browser_->GetHost()->SendKeyEvent(keyEvent);
-    }
-  }
-
+  SendCefKeyEvent(keyEvent);
   return true;
 }
 
@@ -339,12 +337,11 @@ void NWebEventHandler::SendTouchpadFlingEvent(double x, double y, double vx, dou
   mouseEvent.x = x;
   mouseEvent.y = y;
   mouseEvent.modifiers = input_delegate_.GetModifiers();
-
+ 
 #if defined(OHOS_INPUT_EVENTS)
   if (!browser_ || !browser_->GetHost()) {
     return;
   }
-
   browser_->GetHost()->SendTouchpadFlingEvent(mouseEvent, vx, vy);
 #endif  // defined(OHOS_INPUT_EVENTS)
 }
@@ -353,27 +350,9 @@ void NWebEventHandler::SendMouseWheelEvent(double x,
                                            double y,
                                            double deltaX,
                                            double deltaY) {
-  CefMouseEvent mouseEvent;
-  mouseEvent.x = x;
-  mouseEvent.y = y;
-  mouseEvent.modifiers = input_delegate_.GetModifiers();
-
 #if defined(OHOS_INPUT_EVENTS)
-  if (!browser_ || !browser_->GetHost()) {
-    return;
-  }
-
-  double horizontalDelta;
-  double verticalDelta;
-  if (mmi_id_ > 0 && (mouseEvent.modifiers & EVENTFLAG_SHIFT_DOWN)) {
-    horizontalDelta = deltaY * input_delegate_.GetMouseWheelRatio();
-    verticalDelta = deltaX * input_delegate_.GetMouseWheelRatio();
-  } else {
-    horizontalDelta = deltaX * input_delegate_.GetMouseWheelRatio();
-    verticalDelta = deltaY * input_delegate_.GetMouseWheelRatio();
-  }
-  browser_->GetHost()->SendMouseWheelEvent(mouseEvent, horizontalDelta,
-                                           verticalDelta);
+  int32_t modifiers = input_delegate_.GetModifiers();
+  SendCefMouseWheelEvent(x, y, deltaX, deltaY, modifiers);
 #endif  // defined(OHOS_INPUT_EVENTS)
 }
 

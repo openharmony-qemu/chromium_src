@@ -134,6 +134,9 @@ class NET_EXPORT_PRIVATE HttpCache::Transaction : public HttpTransaction {
   int Start(const HttpRequestInfo* request_info,
             CompletionOnceCallback callback,
             const NetLogWithSource& net_log) override;
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  int RestartWithSecureDnsOnly(CompletionOnceCallback callback) override;
+#endif  // OHOS_EX_HTTP_DNS_FALLBACK
   int RestartIgnoringLastError(CompletionOnceCallback callback) override;
   int RestartWithCertificate(scoped_refptr<X509Certificate> client_cert,
                              scoped_refptr<SSLPrivateKey> client_private_key,
@@ -414,6 +417,10 @@ class NET_EXPORT_PRIVATE HttpCache::Transaction : public HttpTransaction {
   // error code.
   int RestartNetworkRequest();
 
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  int RestartNetworkRequestWithSecureDnsOnly();
+#endif  // OHOS_EX_HTTP_DNS_FALLBACK
+
   // Called to restart a network transaction with a client certificate.
   // Returns network error code.
   int RestartNetworkRequestWithCertificate(
@@ -614,7 +621,7 @@ class NET_EXPORT_PRIVATE HttpCache::Transaction : public HttpTransaction {
   void EndDiskCacheAccessTimeCount(DiskCacheAccessType type);
 
 #if BUILDFLAG(IS_OHOS)
-  void UpdateValidatorsInfo(const HttpResponseHeaders& headers);
+  void UpdateCacheInfo(const HttpResponseInfo& response);
 #endif
 
   State next_state_{STATE_NONE};

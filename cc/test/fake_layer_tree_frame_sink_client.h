@@ -41,9 +41,6 @@ class FakeLayerTreeFrameSinkClient : public LayerTreeFrameSinkClient {
               const gfx::Rect& viewport,
               bool resourceless_software_draw,
               bool skip_draw) override {}
-  #if defined(OHOS_UNITTESTS)
-  void SetDrawRectState(bool isNeedDrawRect) override {}
-  #endif // OHOS_UNITTESTS
 
   int ack_count() { return ack_count_; }
 

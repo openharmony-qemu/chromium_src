@@ -144,10 +144,10 @@ def main(argv):
 
       # OHOS_ARKWEB_EXTENSIONS
       scheme = ''
-      if args.scheme == 'chrome':
-        scheme = 'chrome:'
+      if args.scheme == 'chrome' :
+         scheme = 'chrome:'
       elif args.scheme == 'arkweb':
-        scheme = 'arkweb:'
+         scheme = 'arkweb:'
       wrapper = template % {
           'content': html_content,
           'scheme': scheme,

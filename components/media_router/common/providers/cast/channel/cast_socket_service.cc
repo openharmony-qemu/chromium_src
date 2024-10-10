@@ -53,12 +53,13 @@ CastSocket* CastSocketServiceImpl::AddSocket(
     std::unique_ptr<CastSocket> socket) {
   DCHECK(task_runner_->BelongsToCurrentThread());
   DCHECK(socket);
-    CHECK(base::CheckAdd(last_channel_id_, 1).AssignIfValid(&last_channel_id_))
+  CHECK(base::CheckAdd(last_channel_id_, 1).AssignIfValid(&last_channel_id_))
       << "Overflow in channel_id!";
   socket->set_id(last_channel_id_);
+
   auto* socket_ptr = socket.get();
   CHECK(sockets_.insert(std::make_pair(last_channel_id_, std::move(socket)))
-            .second);
+	        .second);
   return socket_ptr;
 }
 

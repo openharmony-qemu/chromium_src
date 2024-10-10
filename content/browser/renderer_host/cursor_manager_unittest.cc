@@ -38,6 +38,7 @@ ui::Cursor CreateCustomCursor(int width, int height) {
   SkBitmap bitmap;
   bitmap.allocN32Pixels(width, height);
   bitmap.eraseColor(SK_ColorRED);
+
   return ui::Cursor::NewCustom(std::move(bitmap), /*hotspot=*/gfx::Point(0, 0),
                                /*image_scale_factor=*/1.0f);
 }
@@ -203,7 +204,7 @@ TEST_F(CursorManagerTest,
 
   {
     auto disallow_scope =
-          top_view_->GetCursorManager()->CreateDisallowCustomCursorScope(
+        top_view_->GetCursorManager()->CreateDisallowCustomCursorScope(
             /*max_dimension_dips=*/0);
     EXPECT_EQ(top_view_->cursor(), kCursorPointer);
   }
@@ -212,7 +213,7 @@ TEST_F(CursorManagerTest,
 }
 
 TEST_F(CursorManagerTest,
-              CustomCursorDisallowedScope_CustomCursorsAreNotAllowedAboveSizeLimit) {
+       CustomCursorDisallowedScope_CustomCursorsAreNotAllowedAboveSizeLimit) {
   const ui::Cursor kCursorCustomLarge = CreateCustomCursor(20, 50);
 
   top_view_->GetCursorManager()->UpdateCursor(top_view_, kCursorCustomLarge);
@@ -279,7 +280,8 @@ TEST_F(CursorManagerTest,
 
   {
     auto disallow_scope =
-        top_view_->GetCursorManager()->CreateDisallowCustomCursorScope();
+         top_view_->GetCursorManager()->CreateDisallowCustomCursorScope(
+            /*max_dimension_dips=*/0);
     EXPECT_EQ(top_view_->cursor(), kCursorHand);
   }
 
@@ -293,7 +295,8 @@ TEST_F(CursorManagerTest,
 
   {
     auto disallow_scope =
-        top_view_->GetCursorManager()->CreateDisallowCustomCursorScope();
+        top_view_->GetCursorManager()->CreateDisallowCustomCursorScope(
+            /*max_dimension_dips=*/0);
     EXPECT_EQ(top_view_->cursor(), kCursorHand);
 
     top_view_->GetCursorManager()->UpdateCursor(top_view_, kCursorCustom);
@@ -310,7 +313,8 @@ TEST_F(CursorManagerTest,
 
   {
     auto disallow_scope =
-        top_view_->GetCursorManager()->CreateDisallowCustomCursorScope();
+        top_view_->GetCursorManager()->CreateDisallowCustomCursorScope(
+            /*max_dimension_dips=*/0);
     EXPECT_EQ(top_view_->cursor(), kCursorPointer);
 
     top_view_->GetCursorManager()->UpdateCursor(top_view_, kCursorHand);
@@ -325,16 +329,19 @@ TEST_F(CursorManagerTest, CustomCursorDisallowedScope_MultipleScopes) {
   EXPECT_EQ(top_view_->cursor(), kCursorCustom);
 
   auto disallow_scope1 =
-      top_view_->GetCursorManager()->CreateDisallowCustomCursorScope();
+      top_view_->GetCursorManager()->CreateDisallowCustomCursorScope(
+          /*max_dimension_dips=*/0);
   auto disallow_scope2 =
-      top_view_->GetCursorManager()->CreateDisallowCustomCursorScope();
+      top_view_->GetCursorManager()->CreateDisallowCustomCursorScope(
+          /*max_dimension_dips=*/0);
   EXPECT_EQ(top_view_->cursor(), kCursorPointer);
 
   disallow_scope1.RunAndReset();
   EXPECT_EQ(top_view_->cursor(), kCursorPointer);
 
   auto disallow_scope3 =
-      top_view_->GetCursorManager()->CreateDisallowCustomCursorScope();
+      top_view_->GetCursorManager()->CreateDisallowCustomCursorScope(
+          /*max_dimension_dips=*/0);
   disallow_scope2.RunAndReset();
   EXPECT_EQ(top_view_->cursor(), kCursorPointer);
 
@@ -353,7 +360,8 @@ TEST_F(CursorManagerTest, CustomCursorDisallowedScope_CustomCursorViewFocused) {
 
   {
     auto disallow_scope =
-        top_view_->GetCursorManager()->CreateDisallowCustomCursorScope();
+        top_view_->GetCursorManager()->CreateDisallowCustomCursorScope(
+          /*max_dimension_dips=*/0);
     EXPECT_EQ(top_view_->cursor(), kCursorHand);
 
     top_view_->GetCursorManager()->UpdateViewUnderCursor(child_view.get());
@@ -376,7 +384,8 @@ TEST_F(CursorManagerTest,
 
   {
     auto disallow_scope =
-        top_view_->GetCursorManager()->CreateDisallowCustomCursorScope();
+        top_view_->GetCursorManager()->CreateDisallowCustomCursorScope(
+          /*max_dimension_dips=*/0);
     EXPECT_EQ(top_view_->cursor(), kCursorPointer);
 
     top_view_->GetCursorManager()->UpdateViewUnderCursor(top_view_);

@@ -28,6 +28,7 @@
 
 namespace base {
 namespace ohos {
+
 static const int32_t kDefaultPreferedFrameRate60FPS = 60;
 static const int32_t kDefaultPreferedFrameRate120FPS = 120;
 static const int kMicrosecondsPerMillisecond = 1000;
@@ -111,8 +112,7 @@ void DynamicFrameRateDecision::SetMaxFrameRateThreeSec()
   if (vsync_cnt_ == 0) {
     return;
   }
-
-  touch_up_timestamp_= GetCurrentTimestampMS();
+  touch_up_timestamp_ = GetCurrentTimestampMS();
   LOG(DEBUG) << "SetMaxFrameRateThreeSec touch_up_timeStamp: " << touch_up_timestamp_;
   curent_task_runner_->PostDelayedTask(
     FROM_HERE,
@@ -126,7 +126,6 @@ void DynamicFrameRateDecision::UpdateFramePreferredRate()
   if (!frame_rate_linker_enable_) {
     return;
   }
-  // invoke frame rate linker
   cur_frame_rate_ = sliding_frame_rate_;
   if (sliding_frame_rate_ <= 0) {
     cur_frame_rate_ = has_touch_point_ ? kDefaultPreferedFrameRate120FPS : kDefaultPreferedFrameRate60FPS;
@@ -152,7 +151,7 @@ void DynamicFrameRateDecision::SetVsyncEnabledImpl(bool enabled)
 {
   if (enabled) {
     vsync_cnt_++;
-   } else {
+  } else {
     vsync_cnt_--;
   }
   vsync_cnt_ = std::max(vsync_cnt_, 0);
@@ -208,10 +207,10 @@ void DynamicFrameRateDecision::SetVisibleImpl(bool visible)
 
 void DynamicFrameRateDecision::SetFrameRateLinkerEnable(bool enabled)
 {
+  LOG(DEBUG) << "SetFrameRateLinkerEnable " << enabled;
   if (frame_rate_linker_enable_ == enabled) {
     return;
   }
-  LOG(DEBUG) << "SetFrameRateLinkerEnable" << enabled;
   frame_rate_linker_enable_ = enabled;
   OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetFrameRateLinkerEnable(enabled);
 }

@@ -247,7 +247,7 @@ static const char* const kSwitchNames[] = {
     switches::kDisableCanvasOopRasterization,
     switches::kEnableCanvasOopRasterization,
     switches::kOhosEnableDrDc,
-#endif
+#endif // BUILDFLAG(IS_OHOS)
     switches::kEnableANGLEFeatures,
     switches::kDisableANGLEFeatures,
     switches::kDisableBreakpad,

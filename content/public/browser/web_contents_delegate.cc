@@ -410,4 +410,13 @@ std::unique_ptr<CustomMediaPlayer> WebContentsDelegate::CreateCustomMediaPlayer(
 }
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+void WebContentsDelegate::WebExtensionUpdateTabUrl(
+    int32_t tab_id, const GURL& url) {}
+
+int32_t WebContentsDelegate::GetTabId() {
+  return -1;
+}
+#endif
+
 }  // namespace content

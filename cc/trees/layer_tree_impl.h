@@ -67,6 +67,10 @@ class UIResourceRequest;
 class VideoFrameControllerClient;
 struct PendingPageScaleAnimation;
 
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+class ToastLayerImpl;
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+
 using UIResourceRequestQueue = std::vector<UIResourceRequest>;
 using SyncedScale = SyncedProperty<ScaleGroup>;
 using SyncedBrowserControls = SyncedProperty<AdditionGroup<float>>;
@@ -316,6 +320,14 @@ class CC_EXPORT LayerTreeImpl {
   void set_hud_layer(HeadsUpDisplayLayerImpl* layer_impl) {
     hud_layer_ = layer_impl;
   }
+
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+  const ToastLayerImpl* toast_layer() const { return toast_layer_; }
+  ToastLayerImpl* toast_layer() { return toast_layer_; }
+  void set_toast_layer(ToastLayerImpl* layer_impl) {
+    toast_layer_ = layer_impl;
+  }
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
 
   gfx::PointF TotalScrollOffset() const;
   gfx::PointF TotalMaxScrollOffset() const;
@@ -863,6 +875,11 @@ class CC_EXPORT LayerTreeImpl {
   uint64_t trace_id_ = 0;
   int is_first_frame_after_commit_tracker_;
   raw_ptr<HeadsUpDisplayLayerImpl> hud_layer_;
+
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+  raw_ptr<ToastLayerImpl> toast_layer_;
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+
   PropertyTrees property_trees_;
   SkColor4f background_color_;
 

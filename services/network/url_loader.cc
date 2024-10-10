@@ -107,6 +107,22 @@ namespace {
 // mojo::core::Core::CreateDataPipe
 constexpr size_t kBlockedBodyAllocationSize = 1;
 
+#ifdef OHOS_LOG_MESSAGE
+const char* kLoadTimingInfoEvent = "load_timing_info";
+const char* kHost = "host";
+const char* kErrorCode = "error_code";
+const char* kProtocol = "protocol";
+const char* kUseQuic = "use_quic";
+const char* kSocketReused = "socket_reused";
+const char* kDnsDurationMs = "dns_duration_ms";
+const char* kConnectDurationMs = "connect_duration_ms";
+const char* kSendStartToReceiveHeadersEndMs =
+    "send_start_to_receive_headers_end_ms";
+const char* kTotalSendBytes = "total_send_bytes";
+const char* kTotalRecvBytes = "total_recv_bytes";
+const char* kSendStartToOnComplete = "send_start_to_on_complete";
+#endif
+
 // A subclass of net::UploadBytesElementReader which owns
 // ResourceRequestBody.
 class BytesElementReader : public net::UploadBytesElementReader {
@@ -439,6 +455,86 @@ net::HttpRequestHeaders AttachCookies(const net::HttpRequestHeaders& headers,
 
 }  // namespace
 
+#ifdef OHOS_LOG_MESSAGE
+std::string BoolToString(bool value) {
+  return value ? "true" : "false";
+}
+
+std::string GetProtocol(const GURL& url, const net::HttpResponseInfo& info) {
+  std::string protocol = info.alpn_negotiated_protocol;
+  if (protocol.empty() || protocol == "unknown") {
+    if (info.was_fetched_via_spdy) {
+      protocol = "h2";
+    } else if (url.SchemeIsHTTPOrHTTPS()) {
+      protocol = "http";
+      if (info.headers) {
+        if (info.headers->GetHttpVersion() == net::HttpVersion(0, 9)) {
+          protocol = "http/0.9";
+        } else if (info.headers->GetHttpVersion() == net::HttpVersion(1, 0)) {
+          protocol = "http/1.0";
+        } else if (info.headers->GetHttpVersion() == net::HttpVersion(1, 1)) {
+          protocol = "http/1.1";
+        }
+      }
+    } else {
+      protocol = url.scheme();
+    }
+  }
+  return protocol;
+}
+
+void ReportUrlQuicInfo(net::URLRequest* url_request, int error_code) {
+  net::LoadTimingInfo load_timing_info;
+  url_request->GetLoadTimingInfo(&load_timing_info);
+  std::string host = url_request->url().host();
+  const net::HttpResponseInfo& response_info = url_request->response_info();
+  std::string protocol = GetProtocol(url_request->url(), response_info);
+  bool use_quic = false;
+  if (response_info.DidUseQuic()) {
+    use_quic = true;
+  }
+  bool socket_reused = load_timing_info.socket_reused;
+  int64_t dns_start_ms =
+      load_timing_info.connect_timing.domain_lookup_start.since_origin()
+          .InMilliseconds();
+  int64_t dns_end_ms =
+      load_timing_info.connect_timing.domain_lookup_end.since_origin()
+          .InMilliseconds();
+  int64_t dns_duration_ms = dns_end_ms - dns_start_ms;
+  int64_t connect_start_ms =
+      load_timing_info.connect_timing.connect_start.since_origin()
+          .InMilliseconds();
+  int64_t connect_end_ms =
+      load_timing_info.connect_timing.connect_end.since_origin()
+          .InMilliseconds();
+  int64_t connect_duration_ms = connect_end_ms - connect_start_ms;
+  int64_t send_start_ms =
+      load_timing_info.send_start.since_origin().InMilliseconds();
+  int64_t receive_headers_end_ms =
+      load_timing_info.receive_headers_end.since_origin().InMilliseconds();
+  int64_t send_start_to_receive_headers_end_ms =
+      receive_headers_end_ms - send_start_ms;
+  int total_send_bytes = url_request->GetTotalSentBytes();
+  int total_recv_bytes = url_request->GetTotalReceivedBytes();
+  int64_t on_complete_ms =
+      base::TimeTicks::Now().since_origin().InMilliseconds();
+  int64_t send_start_to_on_complete = on_complete_ms - send_start_ms;
+ 
+  LOG(INFO) << "event_message: " << kLoadTimingInfoEvent << " "
+            << kErrorCode << ":" << error_code << ", "
+            << kProtocol << ":" << protocol << ", "
+            << kUseQuic << ":" << use_quic << ", "
+            << kSocketReused << ":" << socket_reused << ", "
+            << kDnsDurationMs << ":" << dns_duration_ms << ", "
+            << kConnectDurationMs << ":" << connect_duration_ms << ", "
+            << kSendStartToReceiveHeadersEndMs << ":" << send_start_to_receive_headers_end_ms << ", "
+            << kTotalSendBytes << ":" << total_send_bytes << ", "
+            << kTotalRecvBytes << ":" << total_recv_bytes << ", "
+            << kSendStartToOnComplete << ":" << send_start_to_on_complete << ".";
+  LOG(DEBUG) << "event_message: " << kHost << ":" << host << ".";
+}
+#endif
+
 URLLoader::MaybeSyncURLLoaderClient::MaybeSyncURLLoaderClient(
     mojo::PendingRemote<mojom::URLLoaderClient> mojo_client,
     base::WeakPtr<mojom::URLLoaderClient> sync_client)
@@ -763,9 +859,11 @@ URLLoader::URLLoader(
     return;
   }
 
+#if BUILDFLAG(IS_OHOS)
   if (url_request_) {
     TRACE_EVENT1("loading", "URLLoader::URLLoader", "url", url_request_->url().spec());
   }
+#endif
   BeginTrustTokenOperationIfNecessaryAndThenScheduleStart(request);
 }
 
@@ -1336,7 +1434,7 @@ mojom::URLResponseHeadPtr URLLoader::BuildResponseHead() const {
   }
   TRACE_EVENT2("net", "URLLoader::BuildResponseHead", "url", url_request_->url().spec(), "http", http_version);
 #endif
-
+ 
   url_request_->GetCharset(&response->charset);
   response->content_length = url_request_->GetExpectedContentSize();
   url_request_->GetMimeType(&response->mime_type);
@@ -1743,6 +1841,13 @@ void URLLoader::ContinueOnResponseStarted() {
               coep_reporter_)) {
     CompleteBlockedResponse(net::ERR_BLOCKED_BY_RESPONSE, false,
                             blocked_reason);
+
+#ifdef OHOS_LOG_MESSAGE
+    LOG(INFO)
+        << "ContinueOnResponseStarted blocked by response, blocked_reason "
+        << static_cast<int>(*blocked_reason) << ", url: ***";
+#endif
+
     // Close the socket associated with the request, to prevent leaking
     // information.
     url_request_->AbortAndCloseConnection();
@@ -1773,8 +1878,17 @@ void URLLoader::ContinueOnResponseStarted() {
     auto decision =
         corb_analyzer_->Init(url_request_->url(), url_request_->initiator(),
                              request_mode_, *response_);
+#ifdef OHOS_LOG_MESSAGE
+    if (MaybeBlockResponseForCorb(decision)) {
+      LOG(INFO) << "ContinueOnResponseStarted blocked the request for "
+                   "Cross-Origin Read Blocking (CORB) blocked cross-origin "
+                   "response, url: ***";
+      return;
+    }
+#else
     if (MaybeBlockResponseForCorb(decision))
       return;
+#endif
   }
 
   if ((options_ & mojom::kURLLoadOptionSniffMimeType)) {
@@ -1916,8 +2030,16 @@ void URLLoader::DidRead(int num_bytes, bool completed_synchronously) {
                     corb_decision);
         }
 
+#ifdef OHOS_LOG_MESSAGE
+        if (MaybeBlockResponseForCorb(corb_decision)) {
+          LOG(INFO) << "DidRead blocked the request for Cross-Origin Read "
+                       "Blocking (CORB) blocked cross-origin response, url: ***";
+          return;
+        }
+#else
         if (MaybeBlockResponseForCorb(corb_decision))
           return;
+#endif
       }
     }
 
@@ -2102,6 +2224,13 @@ void URLLoader::CancelRequest() {
 }
 
 void URLLoader::NotifyCompleted(int error_code) {
+#ifdef OHOS_LOG_MESSAGE
+  if (url_request_->isolation_info().request_type() ==
+                        net::IsolationInfo::RequestType::kMainFrame) {
+    ReportUrlQuicInfo(url_request_.get(), error_code);
+  }
+#endif
+
   // Ensure sending the final upload progress message here, since
   // OnResponseCompleted can be called without OnResponseStarted on cancellation
   // or error cases.
@@ -2175,6 +2304,7 @@ void URLLoader::NotifyCompleted(int error_code) {
 
     url_loader_client_.Get()->OnComplete(status);
 
+#if BUILDFLAG(IS_OHOS)
     if (url_request_) {
       TRACE_EVENT2("net", "URLLoader::NotifyCompleted | decodeData",
       "url", url_request_->url().spec(),
@@ -2190,6 +2320,7 @@ void URLLoader::NotifyCompleted(int error_code) {
         "response_code", url_request_->response_headers()->response_code());
       }
     }
+#endif
   }
 
   DeleteSelf();

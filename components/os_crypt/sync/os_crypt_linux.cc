@@ -85,6 +85,21 @@ std::unique_ptr<crypto::SymmetricKey> GenerateEncryptionKey(
   return encryption_key;
 }
 
+#if defined(OHOS_ENCRYPT)
+// Generates a newly allocated SymmetricKey object compatibility with ota.
+// Ownership of the key is passed to the caller. Returns null key if a key
+// generation error occurs.
+std::unique_ptr<crypto::SymmetricKey> GenerateEncryptionKeyForOtaFail() {
+  std::unique_ptr<crypto::SymmetricKey> encryption_key(
+      crypto::SymmetricKey::Import(
+          crypto::SymmetricKey::AES,
+          crypto::ohos::get_symmetric_key_256_for_ota("nweb_data_key")));
+  DCHECK(encryption_key);
+
+  return encryption_key;
+}
+#endif // defined(OHOS_ENCRYPT)
+
 // Decrypt `ciphertext` using `encryption_key` and store the result in
 // `encryption_key`.
 #if defined(OHOS_ENCRYPT)
@@ -274,12 +289,26 @@ bool OSCryptImpl::DecryptString(const std::string& ciphertext,
 
 #if defined(OHOS_ENCRYPT)
   if (DecryptWithIv(raw_ciphertext, encryption_key, plaintext, iv)) {
+    return true;
+  } else {
+    // Retry use before second encrypted key to decrypt password
+    crypto::SymmetricKey* encryption_key_ota = GetPasswordForOtaFail();
+    if (!encryption_key_ota) {
+      VLOG(1) << "Decryption failed: could not get the key in ota";
+      return false;
+    }
+    if (DecryptWithIv(raw_ciphertext, encryption_key_ota, plaintext, iv)) {
+        LOG(INFO) << "decryption success with ota compatible key";
+        return true;
+      }
+    }
+
 #else
   if (DecryptWith(raw_ciphertext, encryption_key, plaintext)) {
-#endif
     base::UmaHistogramBoolean(kMetricDecryptedWithEmptyKey, false);
     return true;
   }
+#endif
 
   // Some clients have encrypted data with an empty key. See
   // crbug.com/1195256.
@@ -382,6 +411,16 @@ crypto::SymmetricKey* OSCryptImpl::GetPasswordV10() {
   return password_v10_cache_.get();
 }
 
+#if defined(OHOS_ENCRYPT)
+crypto::SymmetricKey* OSCryptImpl::GetPasswordForOtaFail() {
+  base::AutoLock auto_lock(OSCryptImpl::GetLock());
+  if (!password_ota_cache_.get()) {
+    password_ota_cache_ = GenerateEncryptionKeyForOtaFail();
+  }
+  return password_ota_cache_.get();
+}
+
+#endif
 // Caches and returns the password from the KeyStorage or null if there is no
 // service. Is thread-safe.
 crypto::SymmetricKey* OSCryptImpl::GetPasswordV11() {

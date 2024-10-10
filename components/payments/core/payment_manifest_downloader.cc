@@ -155,7 +155,7 @@ void PaymentManifestDownloader::DownloadWebAppManifest(
   DCHECK(UrlUtil::IsValidManifestUrl(url));
   InitiateDownload(payment_method_manifest_origin, url,
                    /*url_before_redirects=*/url,
-                   /*did_follow_redirect=*/false, Download::Type::RESPONSE_BODY,
+                   /*did_follow_redirect=*/false, Download::Type::LINK_HEADER_WITH_FALLBACK_TO_RESPONSE_BODY,
                    /*allowed_number_of_redirects=*/0, std::move(callback));
 }
 
@@ -296,6 +296,7 @@ void PaymentManifestDownloader::OnURLLoaderCompleteInternal(
   if (link_header.empty()) {
     // HTTP HEAD response has no Link header; possibly fallback to HTTP GET.
     TryFallbackToDownloadingResponseBody(final_url, std::move(download));
+    TryFallbackToDownloadingResponseBody(final_url, std::move(download));
     return;
   }
 
@@ -354,7 +355,7 @@ void PaymentManifestDownloader::OnURLLoaderCompleteInternal(
 void PaymentManifestDownloader::TryFallbackToDownloadingResponseBody(
     const GURL& url_to_download,
     std::unique_ptr<Download> download_info) {
-    if (base::FeatureList::IsEnabled(
+  if (base::FeatureList::IsEnabled(
           features::kPaymentHandlerRequireLinkHeader)) {
     // Not allowed to fallback, because the payment method manifest load must
     // have a Link header.
@@ -424,7 +425,7 @@ void PaymentManifestDownloader::InitiateDownload(
   auto resource_request = std::make_unique<network::ResourceRequest>();
   resource_request->request_initiator = request_initiator;
   resource_request->url = url;
-  
+
   switch (download_type) {
     case Download::Type::LINK_HEADER_WITH_FALLBACK_TO_RESPONSE_BODY:
       resource_request->method = net::HttpRequestHeaders::kHeadMethod;

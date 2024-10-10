@@ -931,7 +931,7 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
 
 #if BUILDFLAG(IS_OHOS)
   void OnLayerRectUpdate(int id, const gfx::Rect& rect);
-
+  
   void OnLayerRectVisibilityChange(int id, bool visibility);
 #endif
 
@@ -1363,8 +1363,8 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
   // Must be the last member to ensure this is destroyed first in the
   // destruction order and invalidates all weak pointers.
   base::WeakPtrFactory<LayerTreeHostImpl> weak_factory_{this};
-
-  bool is_need_draw_rect_ = false;
+  
+  bool isNeedDrawRect_ = false;
 };
 
 }  // namespace cc

@@ -29,6 +29,11 @@
 #include "components/prefs/scoped_user_pref_update.h"
 #include "url/gurl.h"
 
+#if defined(OHOS_EX_EXCEPTION_LIST)
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
+
 namespace content_settings {
 
 namespace {
@@ -192,8 +197,21 @@ bool DefaultProvider::SetWebsiteSetting(
 
   // The default settings may not be directly modified for OTR sessions.
   // Instead, they are synced to the main profile's setting.
-  if (is_off_the_record_)
+  if (is_off_the_record_) {
+#if defined(OHOS_EX_EXCEPTION_LIST)
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            switches::kForBrowser)) {
+      if (content_type != ContentSettingsType::COOKIES &&
+          content_type != ContentSettingsType::JAVASCRIPT) {
+        return true;
+      }
+    } else {
+      return true;
+    }
+#else
     return true;
+#endif
+  }
 
   {
     base::AutoReset<bool> auto_reset(&updating_preferences_, true);

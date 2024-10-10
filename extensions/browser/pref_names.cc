@@ -61,5 +61,11 @@ const char kPrefRegularOnlyPreferences[] = "regular_only_preferences";
 const char kPrefContentSettings[] = "content_settings";
 const char kPrefIncognitoContentSettings[] = "incognito_content_settings";
 
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+const char kExtensionsBlocklistUpdate[] = "extensions.blacklistupdate";
+const char kInstallSignature[] = "extensions.install_signature";
+const char kExternalUninstalls[] = "extensions.external_uninstalls";
+#endif
+
 }  // namespace pref_names
 }  // namespace extensions

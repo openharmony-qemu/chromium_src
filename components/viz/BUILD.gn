@@ -24,8 +24,6 @@ viz_test("viz_unittests") {
       "//content/browser/scheduler/browser_task_executor.cc",
       "//content/public/common/content_features.cc",
       "//content/public/common/content_switches.cc",
-      "//content/renderer/render_remote_proxy_ohos.cc",
-      "//content/renderer/render_remote_proxy_ohos.h"
     ]
   }
 
@@ -43,6 +41,13 @@ viz_test("viz_unittests") {
   ]
 
   data = [ "//components/test/data/viz/" ]
+
+  if (is_ohos) {
+    deps += [
+      "//cef:libcef_static",
+      "//content/public/browser:browser",
+    ]
+  }
 
   data_deps = [
     "//testing/buildbot/filters:viz_unittests_filters",

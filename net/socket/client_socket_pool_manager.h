@@ -73,6 +73,9 @@ class NET_EXPORT_PRIVATE ClientSocketPoolManager {
 #ifdef OHOS_EX_NETWORK_CONNECTION
   virtual void SetConnectTimeout(int seconds) = 0;
 #endif
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  virtual void SetConnectJobWithSecureDnsOnlyTimeout(int seconds) = 0;
+#endif
 };
 
 // A helper method that uses the passed in proxy information to initialize a
@@ -98,6 +101,11 @@ int InitSocketHandleForHttpRequest(
     ClientSocketHandle* socket_handle,
     CompletionOnceCallback callback,
     const ClientSocketPool::ProxyAuthCallback& proxy_auth_callback
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+    ,
+    bool secure_dns_only = false
+#endif
+
 #if BUILDFLAG(IS_OHOS)
     ,
     bool from_preload = false

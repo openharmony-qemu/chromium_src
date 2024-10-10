@@ -106,7 +106,7 @@ void OHOSMediaCodecBridgeImpl::UpdateStatusAndClearCache(bool is_running) {
 CodecCodeAdapter OHOSMediaCodecBridgeImpl::Configure(
     const CodecConfigPara& config,
     scoped_refptr<base::SequencedTaskRunner> codec_task_runner) {
-  LOG(INFO) << "configure codec.";
+  LOG(INFO) << "configure codec bitRate:" << config.bitRate;
   if ((codec_adapter_ == nullptr) || (cb_ == nullptr)) {
     LOG(ERROR) << "codec or callback is NULL.";
     return CodecCodeAdapter::ERROR;

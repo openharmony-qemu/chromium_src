@@ -240,7 +240,7 @@ bool NWebResourceHandler::Read(void* data_out,
     return false;
   }
 #ifdef OHOS_NETWORK_LOAD
-  LOG(DEBUG) << "intercept NWebResourceHandler::Read, responseDataType=" << static_cast<int32_t>(response_->ResponseDataType());
+  LOG(DEBUG) << "intercept NWebResourceHandler::Read, responseDataType:" << static_cast<int32_t>(response_->ResponseDataType());
   switch (response_->ResponseDataType()) {
     case NWebResponseDataType::NWEB_RESOURCE_URL_TYPE:
       return ReadResourceData(data_out, bytes_to_read, bytes_read);

@@ -5,6 +5,7 @@
 #ifndef NET_PRP_PRELOAD_INCLUDE_PAGR_RES_REQUEST_INFO_H
 #define NET_PRP_PRELOAD_INCLUDE_PAGR_RES_REQUEST_INFO_H
 
+#include <mutex>
 #include "url/gurl.h"
 
 namespace ohos_prp_preload {
@@ -12,6 +13,12 @@ enum PRRequestCacheType {
   NEGOTIATION_CACHE,
   FORCE_CACHE,
   DISABLE_CACHE,
+};
+struct CacheInfo {
+  PRRequestCacheType cache_type = PRRequestCacheType::DISABLE_CACHE;
+  int64_t freshness_life_times = 0;
+  std::string e_tag;
+  std::string last_modified;
 };
 class PRRequestInfo {
  public:
@@ -39,7 +46,24 @@ class PRRequestInfo {
     last_modified_ = last_modified;
   }
 
+  // for multi-thread read/write scenarios
+  CacheInfo cache_info() {
+    std::lock_guard<std::mutex> cache_info_guard(cache_info_mutex_);
+    return CacheInfo {cache_type_, freshness_life_times_, e_tag_, last_modified_};
+  }
+  void set_cache_info(PRRequestCacheType cache_type,
+                      int64_t freshness_life_times,
+                      const std::string& e_tag,
+                      const std::string& last_modified) {
+    std::lock_guard<std::mutex> cache_info_guard(cache_info_mutex_);
+    cache_type_ = cache_type;
+    freshness_life_times_ = freshness_life_times;
+    e_tag_ = e_tag;
+    last_modified_ = last_modified;
+  }
+
  private:
+  std::mutex cache_info_mutex_;
   GURL url_ = GURL::EmptyGURL();
   bool allow_credentials_ = false;
   PRRequestCacheType cache_type_ = PRRequestCacheType::DISABLE_CACHE;

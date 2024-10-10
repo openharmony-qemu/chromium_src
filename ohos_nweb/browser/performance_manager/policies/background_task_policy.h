@@ -80,6 +80,8 @@ class BackgroundTaskPolicy : public GraphObserver,
       absl::optional<freezing::FreezingVote> previous_vote) override;
 
   void MaybeChangeBackgroundTask(const PageNode* page_node);
+  bool IsControllable(const PageNode* page_node);
+  bool IsEndOfMedia(const PageNode* page_node);
   void SetWebviewShow(const PageNode* page_node, bool show, bool &ret);
   void SetWebviewShowForAudio(const PageNode* page_node, bool show, bool &ret);
   raw_ptr<const PageNode> page_node_being_removed_ = nullptr;

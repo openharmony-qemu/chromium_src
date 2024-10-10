@@ -329,7 +329,7 @@ void NWebCookieManagerDelegate::ReturnCookie(
   }
   CefRefPtr<ReturnCookieVisitor> visitor =
       new ReturnCookieVisitor(nullptr, callback);
-  if (!cookie_manager->VisitUrlCookies(CefString(url), false, visitor, false)) {
+  if (!cookie_manager->VisitUrlCookies(CefString(url), false, visitor, false, false)) {
     LOG(ERROR) << "VisitUrlCookies failed";
     visitor->ReturnCookieError();
     return;
@@ -348,13 +348,36 @@ std::string NWebCookieManagerDelegate::ReturnCookie(const std::string& url,
   CefRefPtr<ReturnCookieVisitor> visitor =
       new ReturnCookieVisitor(nullptr, nullptr);
   is_valid = true;
-  if (!cookie_manager->VisitUrlCookies(CefString(url), false, visitor, true)) {
+  if (!cookie_manager->VisitUrlCookies(CefString(url), false, visitor, true, false)) {
     LOG(ERROR) << "VisitUrlCookies failed";
     is_valid = false;
     return "";
   }
   return visitor->ReturnCookieLine();
 }
+
+#ifdef OHOS_COOKIE_NDK
+std::string NWebCookieManagerDelegate::ReturnCookieWithHttpOnly(const std::string& url,
+                                                                bool& is_valid,
+                                                                bool incognito_mode,
+                                                                bool includeHttpOnly) {
+  CefRefPtr<CefCookieManager> cookie_manager = incognito_mode ?
+      GetGlobalIncognitoCookieManager() : GetGlobalCookieManager();
+  if (cookie_manager == nullptr) {
+    LOG(ERROR) << "GetGlobalCookieManager failed";
+    return "";
+  }
+  CefRefPtr<ReturnCookieVisitor> visitor =
+      new ReturnCookieVisitor(nullptr, nullptr);
+  is_valid = true;
+  if (!cookie_manager->VisitUrlCookies(CefString(url), includeHttpOnly, visitor, true, true)) {
+    LOG(ERROR) << "VisitUrlCookies failed";
+    is_valid = false;
+    return "";
+  }
+  return visitor->ReturnCookieLine();
+}
+#endif
 
 bool FixInvalidGurl(const CefString& url, GURL& gurl) {
   if (!gurl.is_valid()) {
@@ -396,7 +419,7 @@ void NWebCookieManagerDelegate::ConfigCookie(
 
   if (!cookie_manager->SetCookie(CefString(gurl.spec()), cef_cookie,
                                  cookie_config_callback,
-                                 false, CefString(value))) {
+                                 false, CefString(value), false)) {
     LOG(ERROR) << "SetCookie error";
     cookie_config_callback->OnErrorCode(NWEB_INVALID_URL);
     return;
@@ -434,7 +457,7 @@ void NWebCookieManagerDelegate::SetCookie(
 
   if (!cookie_manager->SetCookie(CefString(gurl.spec()), cef_cookie,
                                  new CookieSetCallback(nullptr, callback),
-                                 false, CefString(value))) {
+                                 false, CefString(value), false)) {
     LOG(ERROR) << "SetCookie error";
     if (callback != nullptr) {
       callback->OnReceiveValue(false);
@@ -464,12 +487,43 @@ int NWebCookieManagerDelegate::SetCookie(const std::string& url,
   }
   CefRefPtr<CookieSetCallback> callback(
       new CookieSetCallback(nullptr, nullptr));
-  if (!cookie_manager->SetCookie(CefString(gurl.spec()), cef_cookie, callback, true, CefString(value))) {
+  if (!cookie_manager->SetCookie(CefString(gurl.spec()), cef_cookie, callback, true, CefString(value), false)) {
     LOG(ERROR) << "SetCookie error";
     return NWEB_INVALID_URL;
   }
   return callback->IsSetSuccess() ? NWEB_OK : NWEB_ERR;
 }
+
+#ifdef OHOS_COOKIE_NDK
+int NWebCookieManagerDelegate::SetCookieWithHttpOnly(const std::string& url,
+                                                    const std::string& value,
+                                                    bool incognito_mode,
+                                                    bool includeHttpOnly) {
+  CefRefPtr<CefCookieManager> cookie_manager = incognito_mode ?
+      GetGlobalIncognitoCookieManager() : GetGlobalCookieManager();
+  if (cookie_manager == nullptr) {
+    LOG(ERROR) << "GetGlobalCookieManager failed";
+    return NWEB_ERR;
+  }
+  CefCookie cef_cookie;
+  GURL gurl = GURL(url);
+  if (!FixInvalidGurl(url, gurl)) {
+    return NWEB_INVALID_URL;
+  }
+  if (!CefCookieManager::CreateCefCookie(CefString(gurl.spec()), CefString(value),
+                                         cef_cookie)) {
+    LOG(ERROR) << "CreateCefCookie failed";
+    return NWEB_INVALID_COOKIE_VALUE;
+  }
+  CefRefPtr<CookieSetCallback> callback(
+      new CookieSetCallback(nullptr, nullptr));
+  if (!cookie_manager->SetCookie(CefString(gurl.spec()), cef_cookie, callback, true, CefString(value), includeHttpOnly)) {
+    LOG(ERROR) << "SetCookie error";
+    return NWEB_INVALID_URL;
+  }
+  return callback->IsSetSuccess() ? NWEB_OK : NWEB_ERR;
+}
+#endif
 
 void NWebCookieManagerDelegate::ExistCookies(
     std::shared_ptr<NWebBoolValueCallback> callback) {

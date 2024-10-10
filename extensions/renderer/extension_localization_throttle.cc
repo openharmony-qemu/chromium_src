@@ -137,7 +137,7 @@ class ExtensionLocalizationURLLoader : public network::mojom::URLLoaderClient,
     if (!data_.empty()) {
       ReplaceMessages();
     }
-    
+
     auto data_producer =
         std::make_unique<mojo::DataPipeProducer>(std::move(producer_handle_));
     auto data = std::make_unique<std::string>(std::move(data_));

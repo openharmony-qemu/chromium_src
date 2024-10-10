@@ -111,16 +111,6 @@ void NWebInputHandler::OnTouchCancel() {
   touch_press_id_map_.clear();
 }
 
-void NWebInputHandler::OnTouchCancelById(int32_t id,
-                                         double x,
-                                         double y,
-                                         bool from_overlay) {
-  if (nweb_delegate_ == nullptr) {
-    return;
-  }
-  nweb_delegate_->OnTouchCancelById(id, x, y, from_overlay);
-}
-
 void NWebInputHandler::OnNavigateBack() {
   if (nweb_delegate_ == nullptr) {
     return;

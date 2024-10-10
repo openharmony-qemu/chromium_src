@@ -1757,6 +1757,7 @@ RenderFrameHostImpl::~RenderFrameHostImpl() {
   // completes. Among other things, this ensures that any `SafeRef`s from
   // `DocumentService` and `RenderFrameHostUserData` subclasses are still valid
   // when their destructors run.
+  DCHECK(document_associated_data_);
   document_associated_data_.reset();
 
   // If this was the last active frame in the SiteInstanceGroup, the
@@ -3174,13 +3175,13 @@ void RenderFrameHostImpl::RenderProcessGone(
   ResetOwnedNavigationRequests(NavigationDiscardReason::kRenderProcessGone);
   ResetLoadingState();
 
-// Also, clear any pending navigations that have been blocked while the
+  // Also, clear any pending navigations that have been blocked while the
   // embedder is processing window.open() requests.  This is consistent
   // with clearing NavigationRequests and loading state above, and it also
   // makes sense because certain parts of `pending_navigate_`, like the
   // NavigationClient remote interface, can no longer be used.
   pending_navigate_.reset();
-
+ 
   // Any future UpdateState or UpdateTitle messages from this or a recreated
   // process should be ignored until the next commit.
   set_nav_entry_id(0);
@@ -5076,9 +5077,15 @@ void RenderFrameHostImpl::DetachFromProxy() {
   if (IsPendingDeletion())
     return;
 
+
   // Start pending deletion on this frame and its children.
   DeleteRenderFrame(mojom::FrameDeleteIntention::kNotMainFrame);
   StartPendingDeletionOnSubtree(PendingDeletionReason::kFrameDetach);
+#if BUILDFLAG(IS_OHOS)
+  if (!frame_tree()) {
+    return;
+  }
+#endif
   frame_tree()->FrameUnloading(GetFrameTreeNodeForUnload());
 
   // Some children with no unload handler may be eligible for immediate
@@ -5871,6 +5878,7 @@ void RenderFrameHostImpl::DownloadURL(
   // TODO(crbug.com/1205359): We should defer the download until the
   // prerendering page is activated, and it will comply with the prerendering
   // spec.
+  LOG(INFO) << "RenderFrameHostImpl::DownloadURL";
   if (CancelPrerendering(
           PrerenderCancellationReason(PrerenderFinalStatus::kDownload))) {
     return;
@@ -7428,6 +7436,12 @@ void RenderFrameHostImpl::MouseSelectMenuShow(bool show) {
     delegate_->MouseSelectMenuShow(show);
   }
 }
+
+void RenderFrameHostImpl::ChangeVisibilityOfQuickMenu() {
+  if (delegate_) {
+    delegate_->ChangeVisibilityOfQuickMenu();
+  }
+}
 #endif
 
 void RenderFrameHostImpl::ShowContextMenu(
@@ -7444,8 +7458,8 @@ void RenderFrameHostImpl::ShowContextMenu(
   // Freshly constructed ContextMenuParams have empty `page_url` and `frame_url`
   // - populate them based on trustworthy, browser-side data.
   validated_params.page_url = GetOutermostMainFrame()->GetLastCommittedURL();
-  validated_params.frame_url = GetLastCommittedURL();
   validated_params.frame_origin = GetLastCommittedOrigin();
+  validated_params.frame_url = GetLastCommittedURL();
   validated_params.is_subframe = !!GetParentOrOuterDocument();
 
   // We don't validate |unfiltered_link_url| so that this field can be used
@@ -9716,6 +9730,13 @@ void RenderFrameHostImpl::CommitNavigation(
     blink::mojom::ServiceWorkerContainerInfoForClientPtr container_info,
     const absl::optional<blink::DocumentToken>& document_token,
     const base::UnguessableToken& devtools_navigation_token) {
+#ifdef OHOS_LOG_MESSAGE
+  if (frame_tree_node()->IsMainFrame()) {
+    LOG(INFO) << "event_message: commit navigation in main frame, routing_id: "
+              << routing_id_ << ", url: ***, " << devtools_navigation_token.ToString();
+  }
+#endif
+
   TRACE_EVENT2("navigation", "RenderFrameHostImpl::CommitNavigation",
                "navigation_request", navigation_request, "url",
                common_params->url);
@@ -13206,7 +13227,7 @@ void RenderFrameHostImpl::SendCommitNavigation(
   mojo::PendingRemote<blink::mojom::CodeCacheHost> code_cache_host;
   mojom::CookieManagerInfoPtr cookie_manager_info;
   mojom::StorageInfoPtr storage_info;
-
+  LOG(INFO) << "RenderFrameHostImpl::SendCommitNavigation";
   // Until the browser is able to compute the origin accurately in all cases
   // (see https://crbug.com/888079), this is actually just a provisional
   // `storage_key`. The final storage key is computed by the document loader
@@ -13339,6 +13360,8 @@ void RenderFrameHostImpl::SendCommitFailedNavigation(
   DCHECK_NE(GURL(), common_params->url);
   DCHECK_NE(net::OK, error_code);
   IncreaseCommitNavigationCounter();
+  LOG(INFO) << "RenderFrameHostImpl::SendCommitFailedNavigation error_code:"
+    << error_code;
   navigation_client->CommitFailedNavigation(
       std::move(common_params), std::move(commit_params),
       has_stale_copy_in_cache, error_code, extended_error_code,
@@ -13357,6 +13380,7 @@ void RenderFrameHostImpl::DidCommitNavigation(
     mojom::DidCommitProvisionalLoadParamsPtr params,
     mojom::DidCommitProvisionalLoadInterfaceParamsPtr interface_params) {
   DCHECK(params);
+  LOG(INFO) << "RenderFrameHostImpl::DidCommitNavigation";
 
   // BackForwardCacheImpl::CanStoreRenderFrameHost prevents placing the pages
   // with in-flight navigation requests in the back-forward cache and it's not
@@ -14206,7 +14230,7 @@ void RenderFrameHostImpl::
   SCOPED_CRASH_KEY_STRING32(
       "VerifyDidCommit", "base_url_fdu_type",
       GetURLTypeForCrashKey(request->common_params().base_url_for_data_url));
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   SCOPED_CRASH_KEY_BOOL("VerifyDidCommit", "data_url_empty",
                         request->commit_params().data_url_as_string.empty());
 #endif

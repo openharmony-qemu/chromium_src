@@ -200,6 +200,15 @@ void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
   }
 }
 
+void NativeWebContentsObserver::NativeBridgeObserverHostImpl::OnLayerRectVisibilityChange(
+    bool visibility, int embed_id) {
+  if (!native_web_contents_observer_) {
+    return;
+  }
+  native_web_contents_observer_->web_contents_impl()
+        ->OnLayerRectVisibilityChange(std::to_string(embed_id), visibility);
+}
+
 void NativeWebContentsObserver::NativeBridgeObserverHostImpl::OnEmbedRectChange(
     const gfx::Rect& new_rect) {
   if (!native_web_contents_observer_) {
@@ -215,16 +224,6 @@ void NativeWebContentsObserver::NativeBridgeObserverHostImpl::OnEmbedRectChange(
         ->OnNativeEmbedStatusUpdate(
             info, NativeEmbedInfo::TagState::TAG_STATE_CHANGE);
   }
-}
-
-void NativeWebContentsObserver::NativeBridgeObserverHostImpl::OnLayerRectVisibilityChange(
-    bool visibility, int embed_id) {
-  if (!native_web_contents_observer_) {
-    return;
-  }
-
-  native_web_contents_observer_->web_contents_impl()
-          ->OnLayerRectVisibilityChange(std::to_string(embed_id), visibility);
 }
 
 // NativeWebContentsObserver

@@ -444,7 +444,7 @@ DownloadItemImpl::DownloadItemImpl(DownloadItemImplDelegate* delegate,
       download_source_(info.download_source)
 #if defined(OHOS_EX_DOWNLOAD)
       ,
-      download_request_method_(info.method) 
+      request_method_(info.method)
 #endif
 {
 #if defined(OHOS_EX_DOWNLOAD)
@@ -824,7 +824,7 @@ bool DownloadItemImpl::IsTemporary() const {
 
 #if defined(OHOS_EX_DOWNLOAD)
 const std::string& DownloadItemImpl::GetRequestMethod() const {
-    return download_request_method_;
+  return request_method_;
 }
 #endif
 

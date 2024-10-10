@@ -376,7 +376,7 @@ void OHOSMediaPlayerBridge::OnBufferAvailable(
 
   int32_t coded_height;
   int32_t coded_width;
-
+ 
   // video frame height must be 32*N
   const int step_height = 32;
   // argb format video frame should divided by 4
@@ -386,8 +386,8 @@ void OHOSMediaPlayerBridge::OnBufferAvailable(
   } else {
     coded_height = (buffer->GetHeight() / step_height + 1) * step_height;
   }
-  if (buffer->GetFormat() ==
-      OHOS::NWeb::PixelFormatAdapter::PIXEL_FMT_RGBA_8888) {
+
+  if (buffer->GetFormat() == OHOS::NWeb::PixelFormatAdapter::PIXEL_FMT_RGBA_8888) {
     coded_width = buffer->GetStride() / argb_stride_step;
     coded_height = buffer->GetHeight();
   } else {

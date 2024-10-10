@@ -108,7 +108,12 @@ SurfaceFactoryOzone::CreateNativePixmapFromHandle(
     gfx::AcceleratedWidget widget,
     gfx::Size size,
     gfx::BufferFormat format,
-    gfx::NativePixmapHandle handle) {
+#if BUILDFLAG(IS_OHOS)
+      gfx::NativePixmapHandle handle,
+      void* window_buffer) {
+#else
+      gfx::NativePixmapHandle handle) {
+#endif
   return nullptr;
 }
 

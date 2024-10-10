@@ -23,7 +23,13 @@ class GFX_EXPORT NativePixmapDmaBuf : public gfx::NativePixmap {
  public:
   NativePixmapDmaBuf(const gfx::Size& size,
                      gfx::BufferFormat format,
+#if BUILDFLAG(IS_OHOS)
+                     gfx::NativePixmapHandle handle,
+                     void* window_buffer = nullptr);
+#else
                      gfx::NativePixmapHandle handle);
+#endif
+
 
   NativePixmapDmaBuf(const NativePixmapDmaBuf&) = delete;
   NativePixmapDmaBuf& operator=(const NativePixmapDmaBuf&) = delete;
@@ -46,6 +52,10 @@ class GFX_EXPORT NativePixmapDmaBuf : public gfx::NativePixmap {
                             std::vector<gfx::GpuFence> release_fences) override;
   gfx::NativePixmapHandle ExportHandle() override;
 
+#if BUILDFLAG(IS_OHOS)
+  void* GetWindowBuffer() override { return native_window_buffer_; }
+#endif
+
  protected:
   ~NativePixmapDmaBuf() override;
 
@@ -53,6 +63,9 @@ class GFX_EXPORT NativePixmapDmaBuf : public gfx::NativePixmap {
   gfx::Size size_;
   gfx::BufferFormat format_;
   gfx::NativePixmapHandle handle_;
+#if BUILDFLAG(IS_OHOS)
+  void* native_window_buffer_;
+#endif
 };
 
 }  // namespace gfx

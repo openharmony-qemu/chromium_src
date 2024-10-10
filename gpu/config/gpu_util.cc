@@ -239,8 +239,7 @@ GpuFeatureStatus GetCanvasOopRasterizationFeatureStatus(
     return kGpuFeatureStatusDisabled;
   else if (command_line.HasSwitch(switches::kEnableCanvasOopRasterization))
     return kGpuFeatureStatusEnabled;
-#endif
-
+#endif // BUILDFLAG(IS_OHOS)
   // Requires GPU rasterization
   if (GetGpuRasterizationFeatureStatus(blocklisted_features, command_line,
                                        use_swift_shader) !=

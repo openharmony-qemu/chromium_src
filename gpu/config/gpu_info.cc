@@ -76,6 +76,10 @@ const char* ImageDecodeAcceleratorTypeToString(
       return "JPEG";
     case gpu::ImageDecodeAcceleratorType::kWebP:
       return "WebP";
+#if BUILDFLAG(IS_OHOS)
+    case gpu::ImageDecodeAcceleratorType::kHeif:
+      return "Heif";
+#endif
     case gpu::ImageDecodeAcceleratorType::kUnknown:
       return "Unknown";
   }

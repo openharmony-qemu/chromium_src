@@ -189,6 +189,7 @@ class CONTENT_EXPORT FrameTreeNode : public RenderFrameHostOwner {
   void set_not_on_initial_empty_document() {
     is_on_initial_empty_document_ = false;
   }
+
   // Returns false if the frame has committed a document that is not the initial
   // empty document, or if the current document's input stream has been opened
   // with document.open(), causing the document to lose its "initial empty
@@ -644,7 +645,6 @@ class CONTENT_EXPORT FrameTreeNode : public RenderFrameHostOwner {
   void SetFocusedFrame(SiteInstanceGroup* source) override;
   void DidChangeReferrerPolicy(
       network::mojom::ReferrerPolicy referrer_policy) override;
-
   // Updates the user activation state in the browser frame tree and in the
   // frame trees in all renderer processes except the renderer for this node
   // (which initiated the update).  Returns |false| if the update tries to
@@ -788,7 +788,7 @@ class CONTENT_EXPORT FrameTreeNode : public RenderFrameHostOwner {
   // stores the srcdoc_attribute's value for re-use in history navigations.
   std::string srcdoc_value_;
 
-    // Whether this frame is still on the initial about:blank document or the
+  // Whether this frame is still on the initial about:blank document or the
   // synchronously committed about:blank document committed at frame creation,
   // and its "initial empty document"-ness is still true.
   // This will be false if either of these has happened:

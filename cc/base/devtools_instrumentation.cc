@@ -82,6 +82,11 @@ ScopedImageUploadTask::~ScopedImageUploadTask() {
     case ImageType::kGif:
       histogram_name = "Renderer4.ImageUploadTaskDurationUs.Gif";
       break;
+#if BUILDFLAG(IS_OHOS)
+    case ImageType::kHeif:
+      histogram_name = "Renderer4.ImageUploadTaskDurationUs.Heif";
+      break;
+#endif
     case ImageType::kIco:
       histogram_name = "Renderer4.ImageUploadTaskDurationUs.Ico";
       break;
@@ -131,6 +136,11 @@ ScopedImageDecodeTask::~ScopedImageDecodeTask() {
     case ImageType::kGif:
       histogram_name = "Renderer4.ImageDecodeTaskDurationUs.Gif";
       break;
+#if BUILDFLAG(IS_OHOS)
+    case ImageType::kHeif:
+      histogram_name = "Renderer4.ImageUploadTaskDurationUs.Heif";
+      break;
+#endif
     case ImageType::kIco:
       histogram_name = "Renderer4.ImageDecodeTaskDurationUs.Ico";
       break;

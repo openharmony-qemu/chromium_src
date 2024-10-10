@@ -38,6 +38,10 @@ CommitState::CommitState(const CommitState& prev)
       clipped_selection_bounds(prev.clipped_selection_bounds),
 #endif
       debug_state(prev.debug_state),
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+      extra_state(prev.extra_state),
+      toast_layer_id(prev.toast_layer_id),
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
       overscroll_behavior(prev.overscroll_behavior),
       background_color(prev.background_color),
       viewport_property_ids(prev.viewport_property_ids),

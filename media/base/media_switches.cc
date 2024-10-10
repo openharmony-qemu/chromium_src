@@ -695,9 +695,15 @@ BASE_FEATURE(kSpecCompliantCanPlayThrough,
 
 // Disables the real audio output stream after silent audio has been delivered
 // for too long. Should save quite a bit of power in the muted video case.
+#if defined(OHOS_WEBRTC)
+BASE_FEATURE(kSuspendMutedAudio,
+             "SuspendMutedAudio",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+#else
 BASE_FEATURE(kSuspendMutedAudio,
              "SuspendMutedAudio",
              base::FEATURE_ENABLED_BY_DEFAULT);
+#endif
 
 // Enables using the media history store to store media engagement metrics.
 BASE_FEATURE(kUseMediaHistoryStore,
@@ -978,6 +984,11 @@ BASE_FEATURE(kAutoplayIgnoreWebAudio,
 BASE_FEATURE(kAutoplayDisableSettings,
              "AutoplayDisableSettings",
              base::FEATURE_DISABLED_BY_DEFAULT);
+
+// Whether we should allow color space changes to flush AcceleratedVideoDecoder.
+BASE_FEATURE(kAVDColorSpaceChanges,
+             "AVDColorSpaceChanges",
+             base::FEATURE_ENABLED_BY_DEFAULT);
 
 #if BUILDFLAG(IS_ANDROID)
 // Should we allow video playback to use an overlay if it's not needed for

@@ -25,7 +25,6 @@
 #include "ui/gl/gl_bindings.h"
 #include "ui/gl/gl_gl_api_implementation.h"
 #include "ui/gl/gl_version_info.h"
-#include "base/system/sys_info.h"
 
 namespace gl {
 
@@ -371,52 +370,6 @@ ANGLEImplementation GetANGLEImplementation() {
   return g_gl_implementation.angle;
 }
 
-#if BUILDFLAG(IS_OHOS)
-std::map<std::string, GLFunctionPointerType> g_glProcAddressMap;
-void GLProcAddresMapInit()
-{
-  static bool init = false;
-  if (init == false) {
-    init = true;
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglDupNativeFenceFDANDROID", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("glClearDepth", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("glDepthRange", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglCopyMetalSharedEventANGLE", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglCreateStreamProducerD3DTextureANGLE", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglDebugMessageControlKHR", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglExportDMABUFImageMESA", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglExportDMABUFImageQueryMESA", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglExportVkImageANGLE", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglGetCompositorTimingANDROID", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglGetCompositorTimingSupportedANDROID", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglGetFrameTimestampsANDROID", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglGetFrameTimestampSupportedANDROID", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglGetMscRateANGLE", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglGetNativeClientBufferANDROID", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglGetNextFrameIdANDROID", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglGetSyncValuesCHROMIUM", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglHandleGPUSwitchANGLE", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglImageFlushExternalEXT", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglLabelObjectKHR", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglPostSubBufferNV", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglQueryDebugKHR", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglQueryDeviceAttribEXT", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglQueryDevicesEXT", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglQueryDeviceStringEXT", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglQueryDisplayAttribANGLE", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglQueryDisplayAttribEXT", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglQueryStringiANGLE", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglQuerySurfacePointerANGLE", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglReacquireHighPowerGPUANGLE", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglReleaseHighPowerGPUANGLE", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglSetBlobCacheFuncsANDROID", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglStreamConsumerGLTextureExternalAttribsNV", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglStreamPostD3DTextureANGLE", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglWaitUntilWorkScheduledANGLE", NULL));
-    LOG(INFO) << "init map szie" << g_glProcAddressMap.size();
- }
-}
-#endif
 void AddGLNativeLibrary(base::NativeLibrary library) {
   DCHECK(library);
 
@@ -429,11 +382,6 @@ void AddGLNativeLibrary(base::NativeLibrary library) {
 }
 
 void UnloadGLNativeLibraries(bool due_to_fallback) {
-#if BUILDFLAG(IS_OHOS)
- if (base::SysInfo::IsLowEndDevice()) {
-    g_glProcAddressMap.clear();
-  }
-#endif
   CleanupNativeLibraries(&due_to_fallback);
 }
 
@@ -445,46 +393,21 @@ void SetGLGetProcAddressProc(GLGetProcAddressProc proc) {
 NO_SANITIZE("cfi-icall")
 GLFunctionPointerType GetGLProcAddress(const char* name) {
   DCHECK(g_gl_implementation.gl != kGLImplementationNone);
-#if BUILDFLAG(IS_OHOS)
-  if (base::SysInfo::IsLowEndDevice()) {
-    GLProcAddresMapInit();
-    std::map<std::string, GLFunctionPointerType>::iterator iter;
-    iter = g_glProcAddressMap.find(name);
-    if (iter != g_glProcAddressMap.end()) {
-        return iter->second;
-    }
-  }
-#endif
+
   if (g_libraries) {
     for (size_t i = 0; i < g_libraries->size(); ++i) {
       GLFunctionPointerType proc = reinterpret_cast<GLFunctionPointerType>(
           base::GetFunctionPointerFromNativeLibrary((*g_libraries)[i], name));
-      if (proc) {
-        #if BUILDFLAG(IS_OHOS)
-        if (base::SysInfo::IsLowEndDevice()) {
-          g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>(name, proc));
-        }
-        #endif
+      if (proc)
         return proc;
-      }
     }
   }
   if (g_get_proc_address) {
     GLFunctionPointerType proc = g_get_proc_address(name);
-    if (proc) {
-      #if BUILDFLAG(IS_OHOS)
-      if (base::SysInfo::IsLowEndDevice()) {
-        g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>(name, proc));
-      }
-      #endif
+    if (proc)
       return proc;
-    }
   }
-  #if BUILDFLAG(IS_OHOS)
-  if (base::SysInfo::IsLowEndDevice()) {
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>(name, NULL));
-  }
-  #endif
+
   return NULL;
 }
 

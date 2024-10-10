@@ -41,6 +41,7 @@
 #include "mojo/core/embedder/scoped_ipc_support.h"
 #include "mojo/public/cpp/platform/platform_channel.h"
 #include "mojo/public/cpp/system/dynamic_library_support.h"
+#include "ohos_nweb/libboundscheck/include/securec.h"
 #include "sandbox/policy/sandbox_type.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
 #include "ui/base/ui_base_paths.h"
@@ -102,7 +103,7 @@ void SetupSignalHandlers() {
   CHECK_EQ(0, sigprocmask(SIG_SETMASK, &empty_signal_set, nullptr));
 
   struct sigaction sigact;
-  memset(&sigact, 0, sizeof(sigact));
+  (void)memset_s(&sigact, sizeof(sigact), 0, sizeof(sigact));
   sigact.sa_handler = SIG_DFL;
   static const int signals_to_reset[] = {SIGHUP,  SIGINT,  SIGQUIT, SIGILL,
                                          SIGABRT, SIGFPE,  SIGSEGV, SIGALRM,

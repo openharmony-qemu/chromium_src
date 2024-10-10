@@ -241,8 +241,11 @@ constexpr WebSchedulerTrackedFeatures kDisallowedFeatures(
     WebSchedulerTrackedFeature::kWebSocket,
     WebSchedulerTrackedFeature::kWebTransport,
 #ifdef OHOS_BFCACHE
-    // Disable nativeEmbed and mediaTakeOver by default.
     WebSchedulerTrackedFeature::kWebXR,
+    // kEnableCacheNativeEmbed can allow use native embed web pages enter BFCache
+    // and can be set by command line --enable-cache-native-embed before web engine init.
+    // kEnableCacheMediaTakeOver can allow use media take over web pages enter BFCache
+    // and can be set by command line --enable-cache-media-take-over before web engine init.
     WebSchedulerTrackedFeature::kEnableCacheNativeEmbed,
     WebSchedulerTrackedFeature::kEnableCacheMediaTakeOver);
 #else
@@ -1186,7 +1189,7 @@ size_t BackForwardCacheImpl::EnforceCacheSizeLimitInternal(
       "BackForwardCache.AllSites.HistoryNavigationOutcome."
       "CountEntriesWithoutRendererAck",
       not_received_ack_count);
-  LOG(DEBUG) << "BackForwardCacheImpl now have cache size number is: " << count;
+  LOG(DEBUG) << "BackForwardCacheImpl now have cache size number is: " << std::min(count, limit);
   return count;
 }
 
@@ -1522,7 +1525,6 @@ bool BackForwardCacheImpl::IsScreenReaderAllowed() {
 // Static
 bool BackForwardCacheImpl::IsUnloadAllowed() {
   if (base::ohos::IsPcDevice()) {
-    LOG(ERROR) << "BackForwardCacheImpl::" << __func__ << " The using device is a PC device";
     return false;
   }
   return base::FeatureList::IsEnabled(kBackForwardCacheUnloadAllowed);

@@ -30,14 +30,12 @@ const int kMicrosecondsPerMillisecond = 1000;
 
 namespace base {
 namespace ohos {
-DynamicFrameLossMonitor& DynamicFrameLossMonitor::GetInstance()
-{
+DynamicFrameLossMonitor& DynamicFrameLossMonitor::GetInstance() {
     static base::NoDestructor<DynamicFrameLossMonitor> instance;
     return *instance.get();
 }
 
-void DynamicFrameLossMonitor::StartMonitor()
-{
+void DynamicFrameLossMonitor::StartMonitor() {
   std::unique_lock<std::mutex> lock(monitor_mutex_);
   if (is_monitoring_) {
     return;
@@ -46,8 +44,7 @@ void DynamicFrameLossMonitor::StartMonitor()
   start_time_ = GetCurrentTimestampMS();
 }
 
-void DynamicFrameLossMonitor::StopMonitor()
-{
+void DynamicFrameLossMonitor::StopMonitor() {
   std::unique_lock<std::mutex> lock(monitor_mutex_);
   if (!is_monitoring_) {
     return;
@@ -57,8 +54,7 @@ void DynamicFrameLossMonitor::StopMonitor()
   ResetStatus();
 }
 
-void DynamicFrameLossMonitor::OnVsync()
-{
+void DynamicFrameLossMonitor::OnVsync() {
   std::unique_lock<std::mutex> lock(monitor_mutex_);
   if (!is_monitoring_) {
     return;
@@ -88,8 +84,7 @@ void DynamicFrameLossMonitor::OnVsync()
   max_app_seq_missed_frames_ = std::max(max_app_seq_missed_frames_, app_seq_missed_frames_);
 }
 
-void DynamicFrameLossMonitor::OnSwapBuffer()
-{
+void DynamicFrameLossMonitor::OnSwapBuffer() {
   std::unique_lock<std::mutex> lock(monitor_mutex_);
   if (!is_monitoring_) {
     return;
@@ -109,26 +104,22 @@ void DynamicFrameLossMonitor::OnSwapBuffer()
 int64_t DynamicFrameLossMonitor::GetCurrentTimestampMS() {
   auto currentTime = std::chrono::system_clock::now().time_since_epoch();
   return std::chrono::duration_cast<std::chrono::microseconds>(currentTime)
-      .count() / kMicrosecondsPerMillisecond;
+    .count() / kMicrosecondsPerMillisecond;
 }
 
-void DynamicFrameLossMonitor::Report()
-{
+void DynamicFrameLossMonitor::Report() {
   if(total_app_missed_frames_ == 0) {
     return;
   }
-#if defined(REPORT_SYS_EVENT)
   base::ThreadPool::PostTask(
     FROM_HERE,
     {base::TaskPriority::LOWEST},
     base::BindOnce(&ReportSlideJankStats, start_time_, stop_time_ - start_time_, total_app_frames_,
       total_app_missed_frames_, max_app_frametime_, max_app_seq_missed_frames_)
   );
-#endif
 }
 
-void DynamicFrameLossMonitor::ResetStatus()
-{
+void DynamicFrameLossMonitor::ResetStatus() {
   is_monitoring_ = false;
   received_first_frame_ = false;
 

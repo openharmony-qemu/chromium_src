@@ -109,6 +109,10 @@
 #include "content/public/browser/custom_media_info.h"
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+#include "content/browser/media/media_playback_policy.h"
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+
 namespace base {
 class FilePath;
 }  // namespace base
@@ -163,6 +167,7 @@ class PreloadingAttempt;
 #if BUILDFLAG(IS_OHOS)
 class NativeWebContentsObserver;
 #endif
+
 #if defined(OHOS_WEBRTC)
 class MediaStreamManager;
 class VideoCaptureManager;
@@ -217,6 +222,9 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
                                        public blink::mojom::ColorChooserFactory,
                                        public NavigationControllerDelegate,
                                        public NavigatorDelegate,
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+                                       public MediaPlaybackPolicy::Observer,
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
                                        public ui::NativeThemeObserver,
                                        public ui::ColorProviderSourceObserver {
  public:
@@ -493,17 +501,10 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 
 #if defined(OHOS_EX_FREE_COPY)
   void NotifyContextMenuWillShow() override;
-  void SelectAndCopy() override;
-  void SetShouldShowFreeCopy(bool is_selectable);
+  void ShowFreeCopyMenu() override;
+  void SetShouldShowFreeCopyMenu(bool is_selectable);
 
-  bool ShouldShowFreeCopy() override { return is_selectable_; }
-#endif
-
-#ifdef OHOS_EX_BLANK_TARGET_POPUP_INTERCEPT
-  void SetEnableBlankTargetPopupIntercept(bool enableBlankTargetPopup) override;
-  bool GetEnableBlankTargetPopupIntercept() override {
-    return enable_blank_target_popup_intercept_;
-  }
+  bool ShouldShowFreeCopyMenu() override { return is_selectable_; }
 #endif
 
 #ifdef OHOS_EX_TOPCONTROLS
@@ -752,6 +753,7 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
       const ContextMenuParams& params) override;
 #if defined(OHOS_CLIPBOARD)
   void MouseSelectMenuShow(bool show) override;
+  void ChangeVisibilityOfQuickMenu() override;
 #endif
 
   void RunJavaScriptDialog(RenderFrameHostImpl* render_frame_host,
@@ -783,6 +785,11 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
                    base::i18n::TextDirection title_direction) override;
   void UpdateTargetURL(RenderFrameHostImpl* render_frame_host,
                        const GURL& url) override;
+
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  void WebExtensionUpdateTabUrl(int32_t tab_id, const GURL& url) override;
+  int32_t GetTabId() override;
+#endif
   bool IsNeverComposited() override;
   void SetCaptureHandleConfig(
       blink::mojom::CaptureHandleConfigPtr config) override;
@@ -1380,7 +1387,7 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 
   // Called when a file selection is to be done.
   void RunFileChooser(
-      base::WeakPtr<FileChooserImpl> file_chooser,
+	  base::WeakPtr<FileChooserImpl> file_chooser,
       RenderFrameHost* render_frame_host,
       scoped_refptr<FileChooserImpl::FileSelectListenerImpl> listener,
       const blink::mojom::FileChooserParams& params);
@@ -1389,7 +1396,7 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   // chooser in directory-enumeration mode and having the user select the given
   // directory.
   void EnumerateDirectory(
-      base::WeakPtr<FileChooserImpl> file_chooser,
+	  base::WeakPtr<FileChooserImpl> file_chooser,
       RenderFrameHost* render_frame_host,
       scoped_refptr<FileChooserImpl::FileSelectListenerImpl> listener,
       const base::FilePath& directory_path);
@@ -1555,6 +1562,10 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 #if defined(OHOS_RENDER_PROCESS_SHARE)
   const std::string& SharedRenderProcessToken() override;
 #endif
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+  void OnPlaybackWithMobileDataAllowed();
+  void OnPlaybackWithMobileDataAllowedPolicyChanged() override;
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
 
  private:
   using FrameTreeIterationCallback = base::RepeatingCallback<void(FrameTree&)>;
@@ -2391,6 +2402,7 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 
 #if BUILDFLAG(IS_OHOS)
   std::unique_ptr<NativeWebContentsObserver> native_web_contents_observer_;
+  std::map<std::string,gfx::Rect> native_embed_rect_info_map_;
 #endif
 
 #if BUILDFLAG(ENABLE_PPAPI)
@@ -2608,10 +2620,6 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   bool is_selectable_;
 #endif
 
-#ifdef OHOS_EX_BLANK_TARGET_POPUP_INTERCEPT
-  bool enable_blank_target_popup_intercept_ = true;
-#endif
-
 #ifdef OHOS_EX_TOPCONTROLS
   cc::BrowserControlsState browser_controls_state_ =
       cc::BrowserControlsState::kBoth;
@@ -2646,6 +2654,11 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
   std::map<MediaPlayerId, CustomMediaPlayer*> players_;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+  base::ScopedObservation<MediaPlaybackPolicy, MediaPlaybackPolicy::Observer>
+      media_playback_policy_observation_{this};
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
 };
 
 // Dangerous methods which should never be made part of the public API, so we

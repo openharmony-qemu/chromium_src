@@ -8,7 +8,7 @@ interface WebCache {
   // Clear cache.
   ClearCache(bool on_navigation);
   [EnableIf=is_ohos]
-  // Add offline resource into MemoryCache.
+  // Add resource into MemoryCache
   AddResourceToCache(string url,
                      string origin,
                      array<uint8> resource,

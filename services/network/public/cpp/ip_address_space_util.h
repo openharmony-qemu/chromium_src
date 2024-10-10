@@ -82,7 +82,7 @@ bool COMPONENT_EXPORT(NETWORK_CPP)
 // them nor make copy of them. Parameters must outlive this struct. For example,
 // passing net::IPEndPoint() as `remote_endpoint` is invalid.
 struct COMPONENT_EXPORT(NETWORK_CPP) CalculateClientAddressSpaceParams {
-   STACK_ALLOCATED();
+  STACK_ALLOCATED();
 
  public:
   ~CalculateClientAddressSpaceParams();

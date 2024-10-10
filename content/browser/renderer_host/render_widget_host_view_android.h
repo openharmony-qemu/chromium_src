@@ -296,8 +296,14 @@ class CONTENT_EXPORT RenderWidgetHostViewAndroid
   bool OnTouchHandleEvent(const ui::MotionEvent& event);
   int GetTouchHandleHeight();
   void ResetGestureDetection();
+
+  #if defined(IS_OHOS)
+  void SetDoubleTapSupportEnabled(bool enabled) override;
+  void SetMultiTouchZoomSupportEnabled(bool enabled) override;
+  #else
   void SetDoubleTapSupportEnabled(bool enabled);
   void SetMultiTouchZoomSupportEnabled(bool enabled);
+  #endif
 
   bool SynchronizeVisualProperties(
       const cc::DeadlinePolicy& deadline_policy,
@@ -310,7 +316,10 @@ class CONTENT_EXPORT RenderWidgetHostViewAndroid
   void MoveCaret(const gfx::Point& point);
   void DismissTextHandles();
   void SetTextHandlesTemporarilyHidden(bool hide_handles);
-  void SelectAroundCaretAck(blink::mojom::SelectAroundCaretResultPtr result);
+  void SelectAroundCaretAck(int startOffset,
+                            int endOffset,
+                            int surroundingTextLength,
+                            blink::mojom::SelectAroundCaretResultPtr result);
 
   void SetSynchronousCompositorClient(SynchronousCompositorClient* client);
 

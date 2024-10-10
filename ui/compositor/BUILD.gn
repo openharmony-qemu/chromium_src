@@ -251,19 +251,8 @@ test("compositor_unittests") {
     "throughput_tracker_unittest.cc",
     "total_animation_throughput_reporter_unittest.cc",
     "transform_animation_curve_adapter_unittest.cc",
+    "compositor_unittests.cc",
   ]
-
-  if (ohos_unittests) {
-    sources += [
-      "//cef/libcef/common/soc_perf_util.cc",
-      "//content/browser/browser_thread_impl.cc",
-      "//content/browser/scheduler/browser_task_executor.cc",
-      "//content/public/common/content_features.cc",
-      "//content/public/common/content_switches.cc",
-      "//content/renderer/render_remote_proxy_ohos.cc",
-      "//content/renderer/render_remote_proxy_ohos.h"
-    ]
-  }
 
   data = [ "//ui/gfx/test/data/compositor/" ]
 
@@ -290,6 +279,12 @@ test("compositor_unittests") {
   ]
 
   data_deps = [ "//testing/buildbot/filters:compositor_unittests_filters" ]
+
+  if (is_ohos) {
+    deps += [
+      "//cef:libcef_static"
+    ]
+  }
 
   if (is_linux || is_chromeos) {
     deps += [ "//third_party/mesa_headers" ]

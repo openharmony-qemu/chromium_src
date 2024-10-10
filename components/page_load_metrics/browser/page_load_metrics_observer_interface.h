@@ -393,6 +393,11 @@ class PageLoadMetricsObserverInterface {
   virtual void OnFirstPaintAfterBackForwardCacheRestoreInPage(
       const mojom::BackForwardCacheTiming& timing,
       size_t index) = 0;
+#ifdef OHOS_BFCACHE
+  virtual void OnFirstContentfulPaintAfterBackForwardCacheRestoreInPage(
+      const mojom::BackForwardCacheTiming& timing,
+      size_t index) = 0;
+#endif
   virtual void OnFirstInputAfterBackForwardCacheRestoreInPage(
       const mojom::BackForwardCacheTiming& timing,
       size_t index) = 0;

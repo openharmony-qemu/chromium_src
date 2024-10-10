@@ -384,7 +384,7 @@ void InitializeIcuTimeZone() {
 
   icu::TimeZone::createDefault();
   std::unique_ptr<icu::TimeZone> timezone(icu::TimeZone::createTimeZone(
-    icu::UnicodeString::fromUTF8(tzid)));
+      icu::UnicodeString::fromUTF8(tzid)));
   icu::TimeZone::adoptDefault(timezone.release());
 #elif BUILDFLAG(IS_ANDROID)
   // On Android, we can't leave it up to ICU to set the default time zone

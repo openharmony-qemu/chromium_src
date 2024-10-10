@@ -14,6 +14,7 @@
 #include "ui/base/cursor/cursor.h"
 #include "ui/base/cursor/mojom/cursor_type.mojom-shared.h"
 #include "ui/gfx/geometry/skia_conversions.h"
+
 namespace content {
 
 CursorManager::CursorManager(RenderWidgetHostViewBase* root)
@@ -61,6 +62,7 @@ base::ScopedClosureRunner CursorManager::CreateDisallowCustomCursorScope(
   const ui::Cursor& target_cursor = cursor_map_[view_under_cursor_];
   const bool cursor_allowed_before = IsCursorAllowed(target_cursor);
   dimension_restrictions_.push_back(max_dimension_dips);
+
   // If the new restriction eliminates the cursor under the current view, update
   // it.
   if (cursor_allowed_before && !IsCursorAllowed(target_cursor)) {

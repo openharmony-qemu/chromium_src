@@ -120,6 +120,10 @@ HttpNetworkTransaction::HttpNetworkTransaction(RequestPriority priority,
       priority_(priority) {}
 
 HttpNetworkTransaction::~HttpNetworkTransaction() {
+#ifdef OHOS_LOG_MESSAGE
+  StopRecording();
+#endif
+
 #if BUILDFLAG(ENABLE_REPORTING)
   // If no error or success report has been generated yet at this point, then
   // this network transaction was prematurely cancelled.
@@ -159,6 +163,10 @@ int HttpNetworkTransaction::Start(const HttpRequestInfo* request_info,
                                   const NetLogWithSource& net_log) {
   if (request_info->load_flags & LOAD_ONLY_FROM_CACHE)
     return ERR_CACHE_MISS;
+
+#ifdef OHOS_LOG_MESSAGE
+  StartRecording();
+#endif
 
   DCHECK(request_info->traffic_annotation.is_valid());
   DCHECK(request_info->IsConsistent());
@@ -370,6 +378,9 @@ void HttpNetworkTransaction::DidDrainBodyForAuthRestart(bool keep_alive) {
       next_state_ = STATE_CONNECTED_CALLBACK;
     }
     stream_ = std::move(new_stream);
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+    stream_created_ = true;
+#endif
   }
 
   // Reset the other member variables.
@@ -485,6 +496,11 @@ bool HttpNetworkTransaction::GetRemoteEndpoint(IPEndPoint* endpoint) const {
 void HttpNetworkTransaction::PopulateNetErrorDetails(
     NetErrorDetails* details) const {
   *details = net_error_details_;
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  if (stream_ || next_state_ != STATE_NONE || stream_created_) {
+    details->stream_created = true;
+  }
+#endif
   if (stream_)
     stream_->PopulateNetErrorDetails(details);
 }
@@ -569,6 +585,9 @@ void HttpNetworkTransaction::OnStreamReady(const SSLConfig& used_ssl_config,
   response_.was_fetched_via_spdy = stream_request_->using_spdy();
   response_.dns_aliases = stream_->GetDnsAliases();
   SetProxyInfoInReponse(used_proxy_info, &response_);
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  stream_created_ = true;
+#endif
   OnIOComplete(OK);
 }
 
@@ -721,6 +740,14 @@ int HttpNetworkTransaction::DoLoop(int result) {
       case STATE_CREATE_STREAM_COMPLETE:
         rv = DoCreateStreamComplete(rv);
         break;
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+      case STATE_CREATE_FALLBACK_STREAM_WITH_SECURE_DNS_ONLY:
+        rv = DoCreateFallbackStreamWithSecureDnsOnly();
+        break;
+      case STATE_CREATE_FALLBACK_STREAM_WITH_SECURE_DNS_ONLY_COMPLETE:
+        rv = DoCreateFallbackStreamWithSecureDnsOnlyComplete(rv);
+        break;
+#endif
       case STATE_INIT_STREAM:
         DCHECK_EQ(OK, rv);
         rv = DoInitStream();
@@ -824,9 +851,11 @@ int HttpNetworkTransaction::DoNotifyBeforeCreateStream() {
 }
 
 int HttpNetworkTransaction::DoCreateStream() {
+#if BUILDFLAG(IS_OHOS)
   if (request_) {
     TRACE_EVENT1("net", "HttpNetworkTransaction::DoCreateStream", "url", request_->url.spec());
   }
+#endif
   response_.network_accessed = true;
 
   next_state_ = STATE_CREATE_STREAM_COMPLETE;
@@ -851,9 +880,11 @@ int HttpNetworkTransaction::DoCreateStream() {
 }
 
 int HttpNetworkTransaction::DoCreateStreamComplete(int result) {
+#if BUILDFLAG(IS_OHOS)
   if (request_) {
     TRACE_EVENT1("net", "HttpNetworkTransaction::DoCreateStreamComplete", "url", request_->url.spec());
   }
+#endif
   CopyConnectionAttemptsFromStreamRequest();
   if (result == OK) {
     next_state_ = STATE_CONNECTED_CALLBACK;
@@ -871,6 +902,78 @@ int HttpNetworkTransaction::DoCreateStreamComplete(int result) {
   stream_request_.reset();
   return result;
 }
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+int HttpNetworkTransaction::RestartWithSecureDnsOnly(
+    CompletionOnceCallback callback) {
+  DCHECK(!stream_.get());
+  DCHECK(!stream_request_.get());
+  DCHECK_EQ(STATE_NONE, next_state_);
+  if (!CheckMaxRestarts()) {
+    return ERR_TOO_MANY_RETRIES;
+  }
+
+  // Reset the other member variables.
+  // Note: this is necessary only with SSL renegotiation.
+  ResetStateForRestart();
+  next_state_ = STATE_CREATE_FALLBACK_STREAM_WITH_SECURE_DNS_ONLY;
+  int rv = DoLoop(OK);
+  if (rv == ERR_IO_PENDING) {
+    callback_ = std::move(callback);
+  }
+
+  // This always returns ERR_IO_PENDING because DoCreateStream() does, but
+  // GenerateNetworkErrorLoggingReportIfError() should be called here if any
+  // other net::Error can be returned.
+  CHECK_EQ(rv, ERR_IO_PENDING);
+  return rv;
+}
+
+int HttpNetworkTransaction::DoCreateFallbackStreamWithSecureDnsOnly() {
+  response_.network_accessed = true;
+
+  next_state_ = STATE_CREATE_FALLBACK_STREAM_WITH_SECURE_DNS_ONLY_COMPLETE;
+  // IP based pooling is only enabled on a retry after 421 Misdirected Request
+  // is received. Alternative Services are also disabled in this case (though
+  // they can also be disabled when retrying after a QUIC error).
+  if (!enable_ip_based_pooling_) {
+    DCHECK(!enable_alternative_services_);
+  }
+  if (ForWebSocketHandshake()) {
+    stream_request_ =
+        session_->http_stream_factory()->RequestWebSocketHandshakeStream(
+            *request_, priority_, server_ssl_config_, proxy_ssl_config_, this,
+            websocket_handshake_stream_base_create_helper_,
+            enable_ip_based_pooling_, enable_alternative_services_, net_log_);
+  } else {
+    stream_request_ = session_->http_stream_factory()->RequestStream(
+        *request_, priority_, server_ssl_config_, proxy_ssl_config_, this,
+        enable_ip_based_pooling_, enable_alternative_services_, net_log_);
+  }
+  CHECK(stream_request_.get());
+  return ERR_IO_PENDING;
+}
+
+int HttpNetworkTransaction::DoCreateFallbackStreamWithSecureDnsOnlyComplete(
+    int result) {
+  CopyConnectionAttemptsFromStreamRequest();
+  if (result == OK) {
+    next_state_ = STATE_CONNECTED_CALLBACK;
+    DCHECK(stream_.get());
+  } else if (result == ERR_HTTP_1_1_REQUIRED ||
+             result == ERR_PROXY_HTTP_1_1_REQUIRED) {
+    return HandleHttp11Required(result);
+  }
+
+  // Handle possible client certificate errors that may have occurred if the
+  // stream used SSL for one or more of the layers.
+  result = HandleSSLClientAuthError(result);
+
+  // At this point we are done with the stream_request_.
+  stream_request_.reset();
+  return result;
+}
+#endif  // OHOS_EX_HTTP_DNS_FALLBACK
 
 int HttpNetworkTransaction::DoInitStream() {
   DCHECK(stream_.get());
@@ -1101,9 +1204,11 @@ int HttpNetworkTransaction::DoSendRequest() {
 }
 
 int HttpNetworkTransaction::DoSendRequestComplete(int result) {
+#if BUILDFLAG(IS_OHOS)
   if (request_) {
     TRACE_EVENT1("net", "HttpNetworkTransaction::DoSendRequestComplete", "url", request_->url.spec());
   }
+#endif
   send_end_time_ = base::TimeTicks::Now();
 
   if (result == ERR_HTTP_1_1_REQUIRED ||
@@ -1123,12 +1228,17 @@ int HttpNetworkTransaction::DoReadHeaders() {
 }
 
 int HttpNetworkTransaction::DoReadHeadersComplete(int result) {
+#ifdef OHOS_LOG_MESSAGE
+  StopRecording();
+#endif
   // We can get a ERR_SSL_CLIENT_AUTH_CERT_NEEDED here due to SSL renegotiation.
   // Server certificate errors are impossible. Rather than reverify the new
   // server certificate, BoringSSL forbids server certificates from changing.
+#if BUILDFLAG(IS_OHOS)
   if (request_) {
     TRACE_EVENT1("net", "HttpNetworkTransaction::DoReadHeadersComplete", "url", request_->url.spec());
   }
+#endif
   DCHECK(!IsCertificateError(result));
   if (result == ERR_SSL_CLIENT_AUTH_CERT_NEEDED) {
     DCHECK(stream_.get());
@@ -1331,7 +1441,6 @@ int HttpNetworkTransaction::DoReadBodyComplete(int result) {
 #if BUILDFLAG(IS_OHOS)
   TRACE_EVENT1("net", "HttpNetworkTransaction::DoReadBodyComplete", "url", url_.spec());
 #endif
-
   bool done = false;
   if (result <= 0) {
     DCHECK_NE(ERR_IO_PENDING, result);
@@ -2044,5 +2153,33 @@ void HttpNetworkTransaction::RecordQuicProtocolErrorMetrics(
   base::UmaHistogramSparse(histogram + ".QuicErrorCode", *connection_error);
   base::UmaHistogramSparse(histogram + ".QuicStreamErrorCode", *stream_error);
 }
+
+#ifdef OHOS_LOG_MESSAGE
+void HttpNetworkTransaction::StartRecording() {
+  if (is_recording_) {
+    timer_.Stop();
+    timer_.Start(FROM_HERE, base::Seconds(5), this,
+                 &HttpNetworkTransaction::ReportTimeout);
+    return;
+  }
+
+  is_recording_ = true;
+  timer_.Start(FROM_HERE, base::Seconds(5), this,
+               &HttpNetworkTransaction::ReportTimeout);
+}
+
+void HttpNetworkTransaction::StopRecording() {
+  if (!is_recording_) {
+    return;
+  }
+
+  is_recording_ = false;
+  timer_.Stop();
+}
+
+void HttpNetworkTransaction::ReportTimeout() {
+  LOG(INFO) << "INFO: request had no reponse within 5 seconds. url: ***";
+}
+#endif
 
 }  // namespace net

@@ -42,7 +42,6 @@ void ResPreloadScheduler::PreloadSchedule(const std::list<std::shared_ptr<PRRequ
         auto url = url::Origin::Create(info->url());
         if (NeedToPreconnect(url.GetURL(), info->allow_credentials()) && net_task_runner_ != nullptr) {
           ++socket_connected_;
-          LOG(DEBUG) << "PRPPreload.ResPreloadScheduler::PreloadSchedule preconnect " << url;
           net_task_runner_->PostTask(FROM_HERE, base::BindOnce(&PreconnectRunner::PreconnectSocket,
                                      url.GetURL(), info->allow_credentials(), url_request_context_));
         }
@@ -54,8 +53,6 @@ void ResPreloadScheduler::PreloadSchedule(const std::list<std::shared_ptr<PRRequ
         }
         return;
       }
-    } else {
-      LOG(DEBUG) << "PRPPreload.ResPreloadScheduler::PreloadSchedule use cache " << info->url();
     }
     ++iter;
   }
@@ -91,7 +88,6 @@ void ResPreloadScheduler::PreconnectBeyondLimit(InfoIter info_iter,
     auto url = url::Origin::Create(info->url());
     if (NeedToPreconnect(url.GetURL(), info->allow_credentials()) && net_task_runner_ != nullptr) {
       ++socket_connected_;
-      LOG(DEBUG) << "PRPPreload.ResPreloadScheduler::PreconnectBeyondLimit preconnect " << url;
       net_task_runner_->PostTask(FROM_HERE, base::BindOnce(&PreconnectRunner::PreconnectSocket,
                                  url.GetURL(), info->allow_credentials(), url_request_context_));
     }

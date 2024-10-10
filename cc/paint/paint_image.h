@@ -40,7 +40,11 @@ class PaintImageGenerator;
 class PaintWorkletInput;
 class TextureBacking;
 
-enum class ImageType { kPNG, kJPEG, kWEBP, kGIF, kICO, kBMP, kAVIF, kInvalid };
+enum class ImageType { kPNG, kJPEG, kWEBP, kGIF, kICO, kBMP, kAVIF,
+#if BUILDFLAG(IS_OHOS)
+ kHEIF,
+#endif
+ kInvalid };
 
 enum class AuxImage : size_t { kDefault = 0, kGainmap = 1 };
 static constexpr std::array<AuxImage, 2> kAllAuxImages = {AuxImage::kDefault,

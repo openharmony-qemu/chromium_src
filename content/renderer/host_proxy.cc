@@ -14,7 +14,7 @@ void* HostProxy::GetSurfaceFromKernel(int32_t surface_id)
 
 void HostProxy::DestroySurfaceFromKernel(int32_t surface_id)
 {
-    NWebNativeWindowTracker::GetInstance()->DestroyNativeWindow(surface_id);
+    // NWebNativeWindowTracker::GetInstance()->DestroyNativeWindow(surface_id);
 }
 
 } // namespace content

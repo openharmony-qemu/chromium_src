@@ -99,6 +99,9 @@ declare_args() {
   enable_logging_override = is_cast_media_device
 
   enable_dav1d_decoder = use_blink
+  if(is_ohos){
+    enable_dav1d_decoder = false
+  }
 
   # Enable browser managed persistent metadata storage for EME persistent
   # session and persistent usage record session.

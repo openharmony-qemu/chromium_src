@@ -379,13 +379,21 @@ void ResolveContext::InvalidateCachesAndPerSessionData(
 
   if (!doh_server_stats_.empty())
     NotifyDohStatusObserversOfUnavailable(network_change);
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  NotifyDohStatsInit();
+#endif
 }
 
 handles::NetworkHandle ResolveContext::GetTargetNetwork() const {
   if (!url_request_context())
     return handles::kInvalidNetworkHandle;
 
+#ifdef OHOS_EX_NETWORK_CONNECTION
+  return url_request_context()->bound_network_for_dns();
+#else
   return url_request_context()->bound_network();
+#endif
 }
 
 size_t ResolveContext::FirstServerIndex(bool doh_server,
@@ -589,5 +597,26 @@ bool ResolveContext::ServerStatsToDohAvailability(
   return stats.last_failure_count < kAutomaticModeFailureLimit &&
          stats.current_connection_success;
 }
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+void ResolveContext::NotifyDohStatsInit() {
+  if (!is_https_dns_fallback_enabled_) {
+    return;
+  }
+
+  if (doh_server_stats_.empty()) {
+    return;
+  }
+
+  for (size_t i = 0; i < doh_server_stats_.size(); i++) {
+    ServerStats* stats = &doh_server_stats_[i];
+    stats->last_failure_count = 0;
+    stats->current_connection_success = true;
+    stats->last_failure = base::TimeTicks();
+    stats->last_success = base::TimeTicks();
+    LOG(INFO) << "Doh server " << i << " stats init successfully.";
+  }
+}
+#endif
 
 }  // namespace net

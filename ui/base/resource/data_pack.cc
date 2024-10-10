@@ -391,8 +391,8 @@ bool DataPack::SanityCheckFileAndRegisterResources(size_t margin_to_skip,
   // 3) Verify the entries are ordered correctly.
   for (size_t i = 0; i < resource_count_; ++i) {
     if (resource_table_[i].file_offset > resource_table_[i + 1].file_offset) {
-      LOG(ERROR) << "Data pack file corruption: " << "Entry #" << i + 1
-                 << " before Entry #" << i << ".";
+      LOG(ERROR) << "Data pack file corruption: "
+                 << "Entry #" << i + 1 << " before Entry #" << i << ".";
       return false;
     }
   }

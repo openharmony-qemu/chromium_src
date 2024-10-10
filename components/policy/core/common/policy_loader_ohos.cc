@@ -6,8 +6,11 @@
 
 #include <string>
 
+#include "base/base_paths_ohos.h"
+#include "base/files/file.h"
 #include "base/json/json_string_value_serializer.h"
 #include "base/logging.h"
+#include "base/path_service.h"
 #include "components/policy/core/common/policy_bundle.h"
 #include "components/policy/core/common/policy_load_status.h"
 #include "components/policy/core/common/policy_types.h"
@@ -15,6 +18,10 @@
 #include "ohos_adapter_helper.h"
 
 namespace policy {
+
+namespace {
+  constexpr bool kUseTestPolicies = false;
+}
 
 PolicyChangedEventCallback::PolicyChangedEventCallback(
     PolicyLoaderOhos* loader) : loader_(loader) {}
@@ -53,9 +60,45 @@ PolicyBundle PolicyLoaderOhos::Load() {
                            .GetPolicies(policies);
   LOG(INFO) << "GetPolicies error_code:" << error_code
             << ", policies:" << policies;
+
+  if (kUseTestPolicies) {
+    policies = ReadTestPolices();
+    LOG(INFO) << "ReadTestPolices policies:" << policies;
+  }
+
   PolicyBundle bundle;
   LoadOhosPolicy(policies, &bundle);
   return bundle;
+}
+
+std::string PolicyLoaderOhos::ReadTestPolices() {
+  base::FilePath data_path;
+  base::PathService::Get(base::DIR_CACHE, &data_path);
+  data_path = data_path.Append("test_polices.json");
+  LOG(INFO) << "Try to read test_polices.json from " << data_path.value();
+
+  base::File tfile(data_path, base::File::FLAG_OPEN | base::File::FLAG_READ);
+  if (!tfile.IsValid()) {
+    LOG(INFO) << "test_polices.json is invalid or not exist.";
+    return "";
+  }
+
+  std::vector<char> buffer(tfile.GetLength());
+  int bytes_read = tfile.Read(0, buffer.data(), buffer.size());
+  if (bytes_read == -1) {
+    LOG(INFO) << "Read test_polices.json failed.";
+    return "";
+  }
+
+  auto buffer_str = std::string_view(buffer.data(), buffer.size());
+  auto json = base::JSONReader::Read(
+      buffer_str, base::JSON_ALLOW_TRAILING_COMMAS);
+  if (!json.has_value()) {
+    LOG(INFO) << "Read test_polices.json failed as invalid json format.";
+    return "";
+  }
+
+  return std::string(buffer_str);
 }
 
 void PolicyLoaderOhos::LoadOhosPolicy(const std::string& json,

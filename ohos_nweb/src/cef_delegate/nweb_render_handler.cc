@@ -19,17 +19,17 @@
 #include <cerrno>
 #include <cstring>
 
-#include "base/command_line.h"
 #include "base/logging.h"
+#include "base/command_line.h"
 #include "nweb_delegate_interface.h"
 #include "nweb_touch_handle_hot_zone_impl.h"
 #include "nweb_touch_handle_state_impl.h"
-#if defined(REPORT_SYS_EVENT)
-#include "event_reporter.h"
-#endif
+
+#include "ohos_adapter_helper.h"
+
+#include "ohos_nweb/libboundscheck/include/securec.h"
 
 #include "content/public/common/content_switches.h"
-#include "ohos_adapter_helper.h"
 #include "res_sched_client_adapter.h"
 #include "nweb_gesture_event_result_impl.h"
 #ifdef OHOS_DRAG_DROP
@@ -37,6 +37,9 @@
 #include "base/files/file_util.h"
 #include "cef/libcef/common/drag_data_impl.h"
 #include "content/public/common/drop_data.h"
+#if defined(REPORT_SYS_EVENT)
+#include "event_reporter.h"
+#endif
 #include "nweb_drag_data.h"
 #include "nweb_drag_data_impl.h"
 #endif  // #ifdef OHOS_DRAG_DROP
@@ -74,20 +77,27 @@ cef_screen_orientation_type_t ConvertOrientationType(
   }
 }
 
+enum RotationAngels {
+  ROTATION_0 = 0,
+  ROTATION_90 = 90,
+  ROTATION_180 = 180,
+  ROTATION_270 = 270,
+};
+
 uint16_t ConvertRotationAngel(OHOS::NWeb::RotationType type) {
   // Notice: 90 and 270 is reverse.
 
   switch (type) {
     case OHOS::NWeb::RotationType::ROTATION_0:
-      return 0;
+      return RotationAngels::ROTATION_0;
     case OHOS::NWeb::RotationType::ROTATION_90:
-      return 90;
+      return RotationAngels::ROTATION_90;
     case OHOS::NWeb::RotationType::ROTATION_180:
-      return 180;
+      return RotationAngels::ROTATION_180;
     case OHOS::NWeb::RotationType::ROTATION_270:
-      return 270;
+      return RotationAngels::ROTATION_270;
     default:
-      return 0;
+      return RotationAngels::ROTATION_0;
   }
 }
 }  // namespace
@@ -171,17 +181,29 @@ class NWebNativeEmbedDataInfoImpl : public NWebNativeEmbedDataInfo {
   NWebNativeEmbedDataInfoImpl() = default;
   ~NWebNativeEmbedDataInfoImpl() = default;
 
-  NativeEmbedStatus GetStatus() override { return status_; }
+  NativeEmbedStatus GetStatus() override {
+    return status_;
+  }
 
-  void SetStatus(NativeEmbedStatus status) { status_ = status; }
+  void SetStatus(NativeEmbedStatus status) {
+    status_ = status;
+  }
 
-  std::string GetEmbedId() override { return embedId_; }
+  std::string GetEmbedId() override {
+    return embedId_;
+  }
 
-  void SetEmbedId(const std::string& embedId) { embedId_ = embedId; }
+  void SetEmbedId(const std::string &embedId) {
+    embedId_ = embedId;
+  }
 
-  std::string GetSurfaceId() override { return surfaceId_; }
+  std::string GetSurfaceId() override {
+    return surfaceId_;
+  }
 
-  void SetSurfaceId(const std::string& surfaceId) { surfaceId_ = surfaceId; }
+  void SetSurfaceId(const std::string &surfaceId) {
+    surfaceId_ = surfaceId;
+  }
 
   std::shared_ptr<NWebNativeEmbedInfo> GetNativeEmbedInfo() override {
     return info_;
@@ -203,41 +225,77 @@ class NWebNativeEmbedTouchEventImpl : public NWebNativeEmbedTouchEvent {
   NWebNativeEmbedTouchEventImpl() = default;
   ~NWebNativeEmbedTouchEventImpl() = default;
 
-  float GetX() override { return x_; }
+  float GetX() override {
+    return x_;
+  }
 
-  void SetX(float x) { x_ = x; }
+  void SetX(float x) {
+    x_ = x;
+  }
 
-  float GetY() override { return y_; }
+  float GetY() override {
+    return y_;
+  }
 
-  void SetY(float y) { y_ = y; }
+  void SetY(float y) {
+    y_ = y;
+  }
 
-  int32_t GetId() override { return id_; }
+  int32_t GetId() override {
+    return id_;
+  }
 
-  void SetId(int32_t id) { id_ = id; }
+  void SetId(int32_t id) {
+    id_ = id;
+  }
 
-  TouchType GetType() override { return type_; }
+  TouchType GetType() override {
+    return type_;
+  }
 
-  void SetType(TouchType type) { type_ = type; }
+  void SetType(TouchType type) {
+    type_ = type;
+  }
 
-  float GetOffsetX() override { return offsetX_; }
+  float GetOffsetX() override {
+    return offsetX_;
+  }
 
-  void SetOffsetX(float offsetX) { offsetX_ = offsetX; }
+  void SetOffsetX(float offsetX) {
+    offsetX_ = offsetX;
+  }
 
-  float GetOffsetY() override { return offsetY_; }
+  float GetOffsetY() override {
+    return offsetY_;
+  }
 
-  void SetOffsetY(float offsetY) { offsetY_ = offsetY; }
+  void SetOffsetY(float offsetY) {
+    offsetY_ = offsetY;
+  }
 
-  float GetScreenX() override { return screenX_; }
+  float GetScreenX() override {
+    return screenX_;
+  }
 
-  void SetScreenX(float screenX) { screenX_ = screenX; }
+  void SetScreenX(float screenX) {
+    screenX_ = screenX;
+  }
 
-  float GetScreenY() override { return screenY_; }
+  float GetScreenY() override {
+    return screenY_;
+  }
 
-  void SetScreenY(float screenY) { screenY_ = screenY; }
+  void SetScreenY(float screenY) {
+    screenY_ = screenY;
+  }
 
-  std::string GetEmbedId() override { return embedId_; }
+  std::string GetEmbedId() override {
+    return embedId_;
+  }
 
-  void SetEmbedId(const std::string& embedId) { embedId_ = embedId; }
+  void SetEmbedId(const std::string &embedId) {
+    embedId_ = embedId;
+  }
 
   std::shared_ptr<NWebGestureEventResult> GetResult() override { return result_;}
   void SetResult(const std::shared_ptr<NWebGestureEventResult> result) {
@@ -346,12 +404,18 @@ void NWebRenderHandler::OnEditableChanged(CefRefPtr<CefBrowser> browser,
   }
   inputmethod_client_->OnEditableChanged(browser, is_editable_node);
 }
-#endif  // #if BUILDFLAG(IS_OHOS)
+#endif // #if BUILDFLAG(IS_OHOS)
 
 void NWebRenderHandler::Resize(uint32_t width, uint32_t height) {
   width_ = width;
   height_ = height;
 }
+
+#if BUILDFLAG(IS_OHOS)
+gfx::Size NWebRenderHandler::GetSize() {
+  return gfx::Size(width_, height_);
+}
+#endif
 
 #if defined(OHOS_INPUT_EVENTS)
 void NWebRenderHandler::ResizeVisibleViewport(uint32_t width, uint32_t height) {
@@ -366,17 +430,6 @@ void NWebRenderHandler::StartVibraFeedback(const std::string& vibratorType) {
 }
 #endif
 
-#if BUILDFLAG(IS_OHOS)
-void NWebRenderHandler::SetContentSize(int width, int height) {
-  content_width_ = width;
-  content_height_ = height;
-}
-
-gfx::Size NWebRenderHandler::GetSize() {
-  return gfx::Size(width_, height_);
-}
-#endif
-
 void NWebRenderHandler::GetViewRect(CefRefPtr<CefBrowser> browser,
                                     CefRect& rect) {
   rect.x = 0;
@@ -386,8 +439,8 @@ void NWebRenderHandler::GetViewRect(CefRefPtr<CefBrowser> browser,
     rect.height = height_;
   } else {
     // Surface greater than Web compoment in case show black line.
-    rect.width = std::ceil(width_ / screen_info_.display_ratio);
-    rect.height = std::ceil(height_ / screen_info_.display_ratio);
+    rect.width = std::round(width_ / screen_info_.display_ratio);
+    rect.height = std::round(height_ / screen_info_.display_ratio);
   }
 
   if (rect.width <= 0) {
@@ -428,8 +481,8 @@ void NWebRenderHandler::GetVisibleViewportRect(CefRefPtr<CefBrowser> browser,
     rect.height = visible_height_;
   } else {
     // Surface greater than Web compoment in case show black line.
-    rect.width = std::ceil(visible_width_ / screen_info_.display_ratio);
-    rect.height = std::ceil(visible_height_ / screen_info_.display_ratio);
+    rect.width = std::round(visible_width_ / screen_info_.display_ratio);
+    rect.height = std::round(visible_height_ / screen_info_.display_ratio);
   }
 
   if (rect.width <= 0) {
@@ -458,12 +511,12 @@ void NWebRenderHandler::SetScreenInfo(const NWebScreenInfo& screen_info) {
   }
 }
 
-NWebScreenInfo& NWebRenderHandler::GetLastScreenInfo() {
-  return last_screen_info_;
-}
-
 void NWebRenderHandler::SetLastScreenInfo(const NWebScreenInfo& screen_info) {
   last_screen_info_ = screen_info;
+}
+
+NWebScreenInfo& NWebRenderHandler::GetLastScreenInfo() {
+  return last_screen_info_;
 }
 
 bool NWebRenderHandler::IsNeedCefNotifyScreenInfoChanged() {
@@ -513,7 +566,7 @@ void NWebRenderHandler::OnPaint(CefRefPtr<CefBrowser> browser,
     uint32_t white_frame_size = width_ * height_ * kBitsPerPixel;
     char* white_frame = new char[white_frame_size];
     const char pixel_in_white = 0xFF;
-    (void)memset(white_frame, pixel_in_white, white_frame_size);
+    (void)memset_s(white_frame, white_frame_size, pixel_in_white, white_frame_size);
     render_update_cb_(white_frame);
     delete[] white_frame;
   } else {
@@ -544,8 +597,8 @@ void NWebRenderHandler::OnScrollOffsetChanged(CefRefPtr<CefBrowser> browser,
     handler->OnScroll(x, y);
   }
 
-  ResSchedClientAdapter::ReportScene(ResSchedStatusAdapter::WEB_SCENE_ENTER,
-                                     ResSchedSceneAdapter::SLIDE);
+  ResSchedClientAdapter::ReportScene(
+    ResSchedStatusAdapter::WEB_SCENE_ENTER, ResSchedSceneAdapter::SLIDE);
 }
 
 int NWebRenderHandler::ContentHeight() {
@@ -586,9 +639,11 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
 
   std::map<std::string, std::string> attributesMap;
   for (const auto& item : attributes) {
-    LOG(DEBUG) << "WebCustomKeyboard OnVirtualKeyboardRequested attributes, key = " << item.first.ToString() << ", value = " << item.second.ToString();
+    LOG(DEBUG) << "WebCustomKeyboard OnVirtualKeyboardRequested attributes, key = "
+                << item.first.ToString() << ", value = " << item.second.ToString();
     attributesMap.insert({item.first.ToString(), item.second.ToString()});
   }
+
 #if defined(OHOS_INPUT_EVENTS)
   if (!inputmethod_client_) {
     LOG(ERROR) << "inputmethod_client_ is nullptr.";
@@ -605,18 +660,17 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
     if (delegate && delegate->OnFocus()) {
       bool useSystemKeyboard = true;
       int32_t enterKeyType = -1;
-      if (auto handler = handler_.lock()) {
-        if (!custom_keyboard_handler_) {
-          custom_keyboard_handler_ = std::make_shared<NWebCustomKeyboardHandlerImpl>(handler_.lock());
-        }
-        if (text_input_info.show_keyboard) {
-          handler->OnInterceptKeyboardAttach(custom_keyboard_handler_,
-                                             attributesMap, useSystemKeyboard,
-                                             enterKeyType);
-          LOG(INFO) << "WebCustomKeyboard OnInterceptKeyboardAttach return, "
-                       "useSystemKeyboard = "
-                    << useSystemKeyboard << ", enterKeyType = " << enterKeyType;
-        }
+      auto handler = handler_.lock();
+      if (handler && !custom_keyboard_handler_) {
+        custom_keyboard_handler_ = std::make_shared<NWebCustomKeyboardHandlerImpl>(handler_.lock());
+      }
+      if (handler && text_input_info.show_keyboard) {
+        handler->OnInterceptKeyboardAttach(custom_keyboard_handler_,
+                                            attributesMap, useSystemKeyboard,
+                                            enterKeyType);
+        LOG(INFO) << "WebCustomKeyboard OnInterceptKeyboardAttach return, "
+                      "useSystemKeyboard = "
+                  << useSystemKeyboard << ", enterKeyType = " << enterKeyType;
       }
 
       if (useSystemKeyboard) {
@@ -792,7 +846,7 @@ void NWebRenderHandler::ImageDragForFileUri(CefRefPtr<CefDragData> drag_data) {
       base::DeleteFile(base::FilePath(fullName));
     }
 
-    const int image_file_size_max = 10 * 1024 * 1024;  // 10M
+    const int image_file_size_max = 10 * 1024 * 1024; // 10M
     if (drag_data->GetImageFileSize() > image_file_size_max) {
       LOG(WARNING) << "DragDrop The image size exceeds 10MB";
       return;
@@ -825,11 +879,11 @@ bool NWebRenderHandler::StartDragging(CefRefPtr<CefBrowser> browser,
   }
 
   auto fragment = drag_data->GetFragmentText();
-  LOG(INFO) << "DragDrop drag data GetFragmentText:" << fragment.ToString();
+  LOG(INFO) << "DragDrop drag data GetFragmentText:" << fragment.length();
   auto link_url = drag_data->GetLinkURL();
-  LOG(INFO) << "DragDrop drag data GetLinkURL:" << link_url.ToString();
+  LOG(INFO) << "DragDrop drag data GetLinkURL:" << link_url.length();
   auto link_html = drag_data->GetFragmentHtml();
-  LOG(INFO) << "DragDrop drag data GetFragmentHtml:" << link_html.ToString();
+  LOG(INFO) << "DragDrop drag data GetFragmentHtml:" << link_html.length();
 
   ImageDragForFileUri(drag_data);
   CefPoint drag_touch_point(x, y);
@@ -936,9 +990,9 @@ void NWebRenderHandler::OnOverScrollFlingVelocity(CefRefPtr<CefBrowser> browser,
                                                   bool is_fling) {
   if (auto handler = handler_.lock()) {
     // Value multiplied by virtual pixel ratio.
-    is_fling ? handler->OnOverScrollFlingVelocity(
-                   x * screen_info_.display_ratio,
-                   y * screen_info_.display_ratio, is_fling)
+    is_fling ? handler->OnOverScrollFlingVelocity(x * screen_info_.display_ratio,
+                                       y * screen_info_.display_ratio,
+                                       is_fling)
              : handler->OnOverScrollFlingVelocity(x, y, is_fling);
   }
 }
@@ -987,6 +1041,7 @@ void NWebRenderHandler::OnNativeEmbedGestureEvent(
     info->SetScreenY(touchEvent.screenY);
     info->SetType(static_cast<OHOS::NWeb::TouchType>(touchEvent.type));
     std::shared_ptr<NWebGestureEventResult> result = std::make_shared<NWebGestureEventResultImpl>(callback);
+
     info->SetResult(result);
     handler->OnNativeEmbedGestureEvent(info);
   }
@@ -1006,13 +1061,11 @@ std::shared_ptr<NWebNativeEmbedDataInfo> NWebRenderHandler::CefEmbedDataToWeb(
           info.width, info.height, info.id, info.src, url, info.type,
           info.tag, info.params, info.x, info.y);
 
-  std::shared_ptr<NWebNativeEmbedDataInfoImpl> datainfo =
-      std::make_shared<NWebNativeEmbedDataInfoImpl>();
+  std::shared_ptr<NWebNativeEmbedDataInfoImpl> datainfo = std::make_shared<NWebNativeEmbedDataInfoImpl>();
   datainfo->SetNativeEmbedInfo(embedinfo);
   datainfo->SetEmbedId(embedData.embedId);
   datainfo->SetSurfaceId(embedData.surfaceId);
-  datainfo->SetStatus(
-      static_cast<OHOS::NWeb::NativeEmbedStatus>(embedData.status));
+  datainfo->SetStatus(static_cast<OHOS::NWeb::NativeEmbedStatus>(embedData.status));
   return datainfo;
 }
 void NWebRenderHandler::OnNativeEmbedLifecycleChange(
@@ -1033,6 +1086,19 @@ void NWebRenderHandler::OnNativeEmbedVisibilityChange(
   if (auto handler = handler_.lock()) {
     handler->OnNativeEmbedVisibilityChange(embed_id, visibility);
   }
+}
+
+void NWebRenderHandler::SetContentSize(int width, int height) {
+  content_height_ = height;
+  content_width_ = width;
+}
+
+void NWebRenderHandler::SetGestureEventResult(bool result) {
+  gesture_event_result_ = result;
+}
+
+bool NWebRenderHandler::GetGestureEventResult() {
+  return gesture_event_result_;
 }
 #endif
 
@@ -1066,7 +1132,7 @@ void NWebRenderHandler::CreateOverlay(CefRefPtr<CefBrowser> browser,
     gfx::ImageSkia image_skia = static_cast<CefImageImpl*>(cef_image.get())->AsImageSkia();
     int width = cef_image->GetWidth();
     int height = cef_image->GetHeight();
-    auto bitmap = cef_image->GetAsBitmap(1, CEF_COLOR_TYPE_RGBA_8888, CEF_ALPHA_TYPE_OPAQUE, width, height);
+    auto bitmap = cef_image->GetAsBitmap(1, CEF_COLOR_TYPE_BGRA_8888, CEF_ALPHA_TYPE_OPAQUE, width, height);
     if (!bitmap) {
       LOG(ERROR) << "NWebRenderHandler::CreateOverlay, bitmap invalid";
       return;
@@ -1093,7 +1159,7 @@ void NWebRenderHandler::CreateOverlay(CefRefPtr<CefBrowser> browser,
         read_size,
         width,
         height,
-        (cef_image_rect.x - cef_screen_rect.y) * scale,
+        (cef_image_rect.x - cef_screen_rect.x) * scale,
         (cef_image_rect.y - cef_screen_rect.y) * scale + view_port_height * screen_info_.display_ratio,
         cef_image_rect.width * scale,
         cef_image_rect.height * scale,
@@ -1109,7 +1175,7 @@ void NWebRenderHandler::OnOverlayStateChanged(CefRefPtr<CefBrowser> browser,
     auto view_port_height = browser->GetHost()->GetShrinkViewportHeight();
     view_port_height += view_port_height > 0 ? browser->GetHost()->GetTopControlsOffset() : 0;
     handler->OnOverlayStateChanged(
-        (cef_image_rect_.x - cef_screen_rect.y) * scale,
+        (cef_image_rect_.x - cef_screen_rect.x) * scale,
         (cef_image_rect_.y - cef_screen_rect.y) * scale + view_port_height * screen_info_.display_ratio,
         cef_image_rect_.width * scale,
         cef_image_rect_.height * scale);

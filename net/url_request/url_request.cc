@@ -739,6 +739,11 @@ int URLRequest::DoCancel(int error, const SSLInfo& ssl_info) {
       // Don't log an error code on ERR_ABORTED, since that's redundant.
       net_log_.AddEventWithNetErrorCode(NetLogEventType::CANCELLED,
                                         error == ERR_ABORTED ? OK : error);
+
+#ifdef OHOS_LOG_MESSAGE
+      LOG(INFO) << "DoCancel the url_request, url: ***"
+                << ", error " << error;
+#endif
     }
   }
 

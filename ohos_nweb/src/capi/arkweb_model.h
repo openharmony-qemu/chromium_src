@@ -20,6 +20,33 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+/**
+ * @brief Defines the ArkWeb_WebMessagePort that represent a HTML5 message port.
+ *
+ * @since 12
+ */
+struct ArkWeb_WebMessagePort {
+  /** The web tag. */
+  char* webTag;
+  /** The channel port. */
+  char* portHandle;
+};
+
+/**
+ * @brief Defines the ArkWeb_WebMessage.
+ *
+ * @since 12
+ */
+struct ArkWeb_WebMessage {
+  /** The data type carried in the ArkWeb_WebMessage. */
+  ArkWeb_WebMessageType webMessageType;
+
+  /** The data in ArkWeb_WebMessage. */
+  void* data;
+
+  /** The data length. */
+  size_t dataLength;
+};
 
 void OH_ArkWeb_RunJavaScript(const char* webTag,
                              const ArkWeb_JavaScriptObject* javascriptObject);
@@ -48,6 +75,53 @@ void RegisterJavaScriptProxy(const char* webTag,
 void OH_ArkWeb_RegisterJavaScriptProxyEx(const char* webTag,
                                          const ArkWeb_ProxyObject* proxyObject,
                                          const char* permission);
+ArkWeb_WebMessagePortPtr* OH_ArkWeb_CreateWebMessagePorts(const char* webTag,
+                                                          size_t* size);
+void OH_ArkWeb_DestroyWebMessagePorts(ArkWeb_WebMessagePortPtr** ports,
+                                      size_t size);
+ArkWeb_ErrorCode OH_ArkWeb_PostWebMessage(const char* webTag,
+                              const char* name,
+                              ArkWeb_WebMessagePortPtr* webMessagePorts,
+                              size_t size,
+                              const char* url);
+
+ArkWeb_ErrorCode OH_WebMessage_PostMessage(const ArkWeb_WebMessagePortPtr webMessagePort,
+                               const char* webTag,
+                               const ArkWeb_WebMessagePtr message);
+void OH_WebMessage_Close(const ArkWeb_WebMessagePortPtr webMessagePort,
+                         const char* webTag);
+void OH_WebMessage_SetMessageEventHandler(
+    const ArkWeb_WebMessagePortPtr webMessagePort,
+    const char* webTag,
+    ArkWeb_OnMessageEventHandler messageEventHandler,
+    void* userData);
+
+ArkWeb_WebMessagePtr OH_WebMessage_CreateWebMessage();
+
+void OH_WebMessage_DestroyWebMessage(ArkWeb_WebMessagePtr* message);
+
+void OH_WebMessage_SetType(ArkWeb_WebMessagePtr message,
+                           ArkWeb_WebMessageType type);
+
+ArkWeb_WebMessageType OH_WebMessage_GetType(ArkWeb_WebMessagePtr message);
+
+void OH_WebMessage_SetData(ArkWeb_WebMessagePtr message,
+                           void* data,
+                           size_t dataLength);
+
+void* OH_WebMessage_GetData(ArkWeb_WebMessagePtr message, size_t* dataLength);
+
+ArkWeb_ErrorCode OH_CookieManager_FetchCookieSync(
+        const char* url, bool incognito, bool includeHttpOnly, char** cookieValue);
+
+ArkWeb_ErrorCode OH_CookieManager_ConfigCookieSync(
+        const char* url, const char* cookieValue, bool incognito, bool includeHttpOnly);
+
+bool OH_CookieManager_ExistCookies(bool incognito);
+
+void OH_CookieManager_ClearAllCookiesSync(bool incognito);
+
+void OH_CookieManager_ClearSessionCookiesSync();
 
 #ifdef __cplusplus
 }

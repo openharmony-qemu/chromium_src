@@ -570,7 +570,7 @@ bool InterfaceEndpointClient::AcceptWithResponder(
 
 bool InterfaceEndpointClient::SendMessage(Message* message,
                                           bool is_control_message) {
-  
+
   CHECK(sequence_checker_.CalledOnValidSequence());
 
   DCHECK(!message->has_flag(Message::kFlagExpectsResponse));
@@ -861,10 +861,8 @@ void InterfaceEndpointClient::ForgetAsyncRequest(uint64_t request_id) {
 
 void InterfaceEndpointClient::InitControllerIfNecessary() {
 #ifdef OHOS_BUGFIX_CRASH
-  if (controller_ || handle_.pending_association() || !handle_.group_controller()) {
-    LOG(ERROR) << "InitControllerIfNecessary returned";
+  if (controller_ || handle_.pending_association() || !handle_.group_controller())
     return;
-  }
 #else
   if (controller_ || handle_.pending_association())
     return;

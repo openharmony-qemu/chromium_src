@@ -405,6 +405,10 @@ component("gfx") {
     deps += [ "//third_party/fontconfig" ]
   }
 
+if(ohos_unittests){
+    deps += [ "//ui/linux:linux_ui" ]
+  }
+
   if (is_apple) {
     frameworks = [ "IOSurface.framework" ]
     deps += [ "//ui/base:features" ]
@@ -876,10 +880,6 @@ test("gfx_unittests") {
   }
 
   data_deps = [ "//ui/resources:ui_test_pak_data" ]
-
-  if(ohos_unittests){
-    deps += [ "//ui/linux:linux_ui" ]
-  }
 
   if (is_apple) {
     deps += [ "//ui/resources:ui_test_pak_bundle_data" ]

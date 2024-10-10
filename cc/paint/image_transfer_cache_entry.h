@@ -150,6 +150,11 @@ class CC_PAINT_EXPORT ServiceImageTransferCacheEntry final
                                      size_t buffer_byte_size,
                                      bool needs_mips);
 
+#if BUILDFLAG(IS_OHOS)
+  bool BuildFromRGBAHardwareDecodedImage(GrDirectContext* context,
+                                         std::vector<sk_sp<SkImage>> plane_images,
+                                         size_t buffer_byte_size);
+#endif
   // ServiceTransferCacheEntry implementation:
   size_t CachedSize() const final;
   bool Deserialize(GrDirectContext* context,

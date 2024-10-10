@@ -7,7 +7,7 @@
 #include "base/check_op.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/notreached.h"
-#if defined(OHOS_MEDIA)
+#ifdef OHOS_MEDIA
 #include "base/logging.h"
 #endif // OHOS_MEDIA
 #include "media/base/container_names.h"
@@ -135,7 +135,7 @@ bool FFmpegGlue::OpenContext(bool is_local_file) {
     return false;
   }
 
-#if defined(OHOS_MEDIA)
+#ifdef OHOS_MEDIA
   LOG(INFO) << "OhMedia::OpenContext format=" << format_context_->iformat->name;
 #endif // OHOS_MEDIA
 

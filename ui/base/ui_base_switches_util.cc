@@ -20,7 +20,7 @@ bool IsElasticOverscrollEnabled() {
 // but the system default is true.
 #if BUILDFLAG(IS_APPLE)
   return true;
-#elif BUILDFLAG(IS_WIN)
+#elif BUILDFLAG(IS_WIN) || defined(OHOS_INPUT_EVENTS)
   return base::FeatureList::IsEnabled(features::kElasticOverscroll);
 #elif BUILDFLAG(IS_ANDROID)
   return base::android::BuildInfo::GetInstance()->sdk_int() >=

@@ -66,6 +66,10 @@ class NativePixmap : public base::RefCountedThreadSafe<NativePixmap> {
   // Any file descriptors in the exported handle are owned by the caller.
   virtual gfx::NativePixmapHandle ExportHandle() = 0;
 
+#if BUILDFLAG(IS_OHOS)
+  virtual void* GetWindowBuffer() { return nullptr; }
+#endif
+
  protected:
   virtual ~NativePixmap() {}
 

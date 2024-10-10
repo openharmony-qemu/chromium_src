@@ -353,9 +353,9 @@ struct COMPONENTS_DOWNLOAD_EXPORT NWebIdData : public base::SupportsUserData::Da
   void SetDisplayName(const base::FilePath& name) override;
   std::string DebugString(bool verbose) const override;
   void SimulateErrorForTesting(DownloadInterruptReason reason) override;
-#if defined(OHOS_EX_DOWNLOAD)
+  #if defined(OHOS_EX_DOWNLOAD)
   const std::string& GetRequestMethod() const;
-#endif 
+  #endif
 
   // All remaining public interfaces virtual to allow for DownloadItemImpl
   // mocks.
@@ -901,7 +901,7 @@ struct COMPONENTS_DOWNLOAD_EXPORT NWebIdData : public base::SupportsUserData::Da
       InsecureDownloadStatus::UNKNOWN;
 
 #if defined(OHOS_EX_DOWNLOAD)
-  std::string download_request_method_;
+  std::string request_method_;
 #endif
 
   THREAD_CHECKER(thread_checker_);

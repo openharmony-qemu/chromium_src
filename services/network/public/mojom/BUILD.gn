@@ -477,7 +477,7 @@ mojom("url_loader_base") {
   }
 
   if (defined(ohos_network_load) && ohos_network_load) {
-    enabled_features += ["is_ohos_network_load"]
+    enabled_features += [ "is_ohos_network_load" ]
   }
 
   # Shared by cpp_typemaps and blink_cpp_typemaps.
@@ -1323,6 +1323,13 @@ mojom("mojom") {
     "url_loader_factory.mojom",
   ]
 
+  # ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  if (defined(ohos_ex_http_dns_fallback) && ohos_ex_http_dns_fallback) {
+    sources += [ "network_config_ohos.mojom" ]
+  }
+
+  # endif
+
   public_deps = [
     ":cookies_mojom",
     ":mojom_first_party_sets",
@@ -1354,6 +1361,7 @@ mojom("mojom") {
   if (is_android || (defined(ohos_cookie) && ohos_cookie)) {
     enabled_features += [ "is_android_or_ohos_cookie" ]
   }
+
   #endif
 
   # TODO(crbug/598073): When moving the service implementation to

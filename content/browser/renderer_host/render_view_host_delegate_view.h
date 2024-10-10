@@ -60,6 +60,7 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
 
 #if defined(OHOS_CLIPBOARD)
   virtual void MouseSelectMenuShow(bool show) {}
+  virtual void ChangeVisibilityOfQuickMenu() {}
 #endif
 
   // The user started dragging content of the specified type within the

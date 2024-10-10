@@ -268,7 +268,7 @@ void CompositorFrameSinkImpl::ReportKeyThreadIds(
 
 void CompositorFrameSinkImpl::SetHandledTouchEvent(bool handledTouchEvent) {
   if (!support_ || !support_->begin_frame_source()) {
-    DLOG(ERROR) << "Compositor frame support or begin frame souce is not exist";
+    DLOG(ERROR) << "Compositor frame support or begin frame source is not exist";
     return;
   }
   InputSyncLock::GetInstance().SetHandledTouchEvent(handledTouchEvent);
@@ -283,7 +283,7 @@ int CompositorFrameSinkImpl::GetFrameRate() {
 
 void CompositorFrameSinkImpl::TriggerVsyncImplTask() {
   if (!support_ || !support_->begin_frame_source()) {
-    DLOG(ERROR) << "Compositor frame support or begin frame souce is not exist";
+    DLOG(ERROR) << "Compositor frame support or begin frame source is not exist";
     return;
   }
   support_->begin_frame_source()->TriggerVsync();

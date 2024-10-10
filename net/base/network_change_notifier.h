@@ -568,6 +568,15 @@ class NET_EXPORT NetworkChangeNotifier {
   // Returns a string equivalent to |type|.
   static const char* ConnectionTypeToString(ConnectionType type);
 
+#if BUILDFLAG(IS_OHOS)
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  static const std::vector<std::string> GetDnsServers();
+#endif
+#ifdef OHOS_EX_NETWORK_CONNECTION
+  static void BindToNetwork(int32_t network_for_dns);
+#endif
+#endif
+
   // Allows a second NetworkChangeNotifier to be created for unit testing, so
   // the test suite can create a MockNetworkChangeNotifier, but platform
   // specific NetworkChangeNotifiers can also be created for testing.  To use,
@@ -657,6 +666,14 @@ class NET_EXPORT NetworkChangeNotifier {
   virtual SystemDnsConfigChangeNotifier* GetCurrentSystemDnsConfigNotifier();
 
   virtual bool IsDefaultNetworkActiveInternal();
+#if BUILDFLAG(IS_OHOS)
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  virtual const std::vector<std::string> GetCurrentDnsServers();
+#endif
+#ifdef OHOS_EX_NETWORK_CONNECTION
+  virtual void BindDnsToNetwork(int32_t network_for_dns);
+#endif
+#endif
 
   // Broadcasts a notification to all registered observers.  Note that this
   // happens asynchronously, even for observers on the current thread, even in

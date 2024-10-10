@@ -379,7 +379,6 @@ void FeatureList::AssociateReportingFieldTrial(
                  << ", associating trial: " << field_trial->trial_name();
       return;
     }
-
     entry->field_trial = field_trial;
   }
 #else
@@ -449,7 +448,7 @@ void FeatureList::AddFeaturesToAllocator(PersistentMemoryAllocator* allocator) {
 #if defined(OHOS_SCROLLBAR)
 void FeatureList::ModifyFeaturesToAllocator(PersistentMemoryAllocator* allocator) {
   DCHECK(initialized_);
-  LOG(INFO) << "modify features";
+  LOG(INFO) << "scrollbar modify features";
   PersistentMemoryAllocator::Iterator iter(allocator);
   const FeatureEntry* entry;
   while ((entry = iter.GetNextOfObject<FeatureEntry>()) != nullptr) {
@@ -477,8 +476,10 @@ void FeatureList::AddFeatureToField(PersistentMemoryAllocator* allocator, std::s
 
     size_t total_size = sizeof(FeatureEntry) + pickle.size();
     FeatureEntry* entry = allocator->New<FeatureEntry>(total_size);
-    if (!entry)
+    if (!entry) {
+      LOG(ERROR) << "AddFeatureToField allocator error";
       return;
+    }
 
     entry->override_state = override.second.overridden_state;
     entry->pickle_size = pickle.size();
@@ -533,8 +534,8 @@ void FeatureList::SetScrollbarEnable(bool enable) {
     LOG(ERROR) << "set Scrollbar error";
   }
 }
-#endif
 
+#endif
 // static
 absl::optional<bool> FeatureList::GetStateIfOverridden(const Feature& feature) {
   if (!g_feature_list_instance) {

@@ -13,8 +13,7 @@ namespace switches {
 #if BUILDFLAG(IS_OHOS)
 GPU_EXPORT extern const char kDisableCanvasOopRasterization[];
 GPU_EXPORT extern const char kEnableCanvasOopRasterization[];
-#endif
-
+#endif // BUILDFLAG(IS_OHOS)
 GPU_EXPORT extern const char kDisableGpuRasterization[];
 GPU_EXPORT extern const char kDisableMipmapGeneration[];
 GPU_EXPORT extern const char kEnableGpuRasterization[];

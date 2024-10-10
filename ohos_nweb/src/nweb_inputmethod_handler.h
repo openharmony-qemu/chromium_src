@@ -108,6 +108,11 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   bool IsAttached() override {
     return isAttached_;
   }
+  void SetNeedReattachOnfocus() {
+    if (isAttached_) {
+      isNeedReattachOnfocus_ = true;
+    }
+  }
 
  private:
   void SetIMEStatusOnUI(bool status);

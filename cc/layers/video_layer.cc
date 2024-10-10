@@ -22,7 +22,6 @@ scoped_refptr<VideoLayer> VideoLayer::Create(
   return base::WrapRefCounted(
       new VideoLayer(provider, transform, std::move(callback)));
 }
-
 scoped_refptr<VideoLayer> VideoLayer::Create(
     VideoFrameProvider* provider,
     media::VideoTransformation transform,
@@ -44,7 +43,7 @@ VideoLayer::VideoLayer(VideoFrameProvider* provider,
 
 VideoLayer::VideoLayer(VideoFrameProvider* provider,
                        media::VideoTransformation transform,
-                       RectChangeCallback callback, 
+                       RectChangeCallback callback,
                        RectVisibilityChangeCallback visibilitycallback)
     : provider_(provider),
       transform_(transform),
@@ -59,7 +58,6 @@ void VideoLayer::OnLayerRectUpdate(const gfx::Rect& rect) {
     rect_change_callback_.Run(rect);
   }
 }
-
 void VideoLayer::OnLayerRectVisibilityChange(bool visibility) {
   if (!rect_visibility_change_callback_.is_null()) {
     rect_visibility_change_callback_.Run(visibility);

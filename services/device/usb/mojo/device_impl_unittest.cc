@@ -9,7 +9,6 @@
 
 #include <map>
 #include <memory>
-#include <numeric>
 #include <set>
 #include <string>
 #include <utility>
@@ -54,7 +53,7 @@ MATCHER_P(BufferSizeIs, size, "") {
 
 class ConfigBuilder {
  public:
-    explicit ConfigBuilder(uint8_t configuration_value)
+  explicit ConfigBuilder(uint8_t configuration_value)
       : config_(BuildUsbConfigurationInfoPtr(configuration_value,
                                              /*self_powered=*/false,
                                              /*remote_wakeup=*/false,

@@ -2383,6 +2383,7 @@ class CONTENT_EXPORT RenderFrameHostImpl
       const blink::UntrustworthyContextMenuParams& params) override;
 #if defined(OHOS_CLIPBOARD)
   void MouseSelectMenuShow(bool show) override;
+  void ChangeVisibilityOfQuickMenu() override;
 #endif
   void DidLoadResourceFromMemoryCache(
       const GURL& url,
@@ -2859,14 +2860,13 @@ class CONTENT_EXPORT RenderFrameHostImpl
   // Returns false if this document not the initial empty document, or if the
   // current document's input stream has been opened with document.open(),
   // causing the document to lose its "initial empty document" status. For more
-    // details, see the definition of `FrameTreeNode::is_initial_empty_document_`.
+  // details, see the definition of `FrameTreeNode::is_initial_empty_document_`.
   // This is implemented in the .cc file to avoid a circular dependency on
   // frame_tree_node.h.
   // TODO(https://crbug.com/1517371): Remove this function. Callers within RFHI
   // should migrate to another way of getting this information such as having a
   // caller pass it or through `owner_`.
   bool is_initial_empty_document() const;
-
 
   enum class FencedFrameStatus {
     kNotNestedInFencedFrame,

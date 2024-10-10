@@ -113,6 +113,7 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   float current_volume_ = 0;
   bool is_muted_ = false;
   bool should_set_volume_on_prepare_;
+  bool pause_when_prepared_ = false;
   base::TimeDelta duration_;
   base::TimeDelta pending_seek_;
   OHOS::NWeb::PlayerAdapter::PlayerStates player_state_;

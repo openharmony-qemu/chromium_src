@@ -671,6 +671,11 @@ void NWebPreferenceDelegate::SetNativeEmbedMode(bool flag) {
     zooming_function_enabled_ = false;
   }
   WebPreferencesChanged();
+  if (!browser_.get()) {
+    LOG(ERROR) << "SetNativeEmbedMode failed, browser is null";
+    return;
+  }
+  browser_->GetHost()->SetNativeEmbedMode(enable_embed_mode_);
 }
 
 bool NWebPreferenceDelegate::GetNativeEmbedMode() {

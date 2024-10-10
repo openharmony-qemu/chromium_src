@@ -46,6 +46,7 @@ class MockClient : public OHOSMediaPlayerBridge::Client {
   MOCK_METHOD(void, OnVideoSizeChanged, (int, int), (override));
   MOCK_METHOD(void, OnPlayerInterruptEvent, (int32_t), (override));
   MOCK_METHOD(void, OnAudioStateChanged, (bool), (override));
+  MOCK_METHOD(void, OnPlayerSeekBack, (base::TimeDelta), (override));
 };
 
 class MockPlayerAdapter : public PlayerAdapter {

@@ -46,12 +46,14 @@ struct Mailbox;
 // This class is thread safe to be used by multiple gpu threads as
 // |texture_owner_| is thread safe and all other members are only accessed on
 // gpu main thread.
-class StreamTexture : public StreamTextureSharedImageInterface,
+class StreamTexture : public RefCountedLockHelperDrDc,
+                      public StreamTextureSharedImageInterface,
                       public mojom::StreamTexture {
  public:
   static scoped_refptr<StreamTexture> Create(
       GpuChannel* channel,
       int stream_id,
+      gl::ohos::TextureOwnerMode texture_owner_mode,
       mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver);
 
   StreamTexture(const StreamTexture&) = delete;
@@ -65,6 +67,7 @@ class StreamTexture : public StreamTextureSharedImageInterface,
  private:
   StreamTexture(GpuChannel* channel,
                 int32_t route_id,
+                gl::ohos::TextureOwnerMode texture_owner_mode,
                 mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver,
                 scoped_refptr<SharedContextState> context_state);
   ~StreamTexture() override;
@@ -84,6 +87,7 @@ class StreamTexture : public StreamTextureSharedImageInterface,
   void NotifyOverlayPromotion(bool promotion, const gfx::Rect& bounds) override;
   bool RenderToOverlay() override;
   bool TextureOwnerBindsTextureOnUpdate() override;
+  std::unique_ptr<ScopedNativeBufferFenceSync> GetNativeBuffer() override;
 
   gpu::Mailbox CreateSharedImage(const gfx::Size& coded_size);
 
@@ -103,6 +107,8 @@ class StreamTexture : public StreamTextureSharedImageInterface,
 
   // Whether a new frame is available that we should update to.
   bool has_pending_frame_;
+
+  gl::ohos::TextureOwnerMode texture_owner_mode_;
 
   int native_embed_id_{-1};
 

@@ -25,8 +25,8 @@
 
 #define private public
 #define protected public
-#include "gpu/command_buffer/service/ohos/shared_image_video_ohos_native_image.cc"
-#include "gpu/command_buffer/service/ohos/shared_image_video_ohos_native_image.h"
+#include "gpu/command_buffer/service/ohos/native_image_image_backing.cc"
+#include "gpu/command_buffer/service/ohos/native_image_image_backing.h"
 #include "gpu/command_buffer/service/shared_context_state.h"
 #undef protected
 #undef private
@@ -46,6 +46,7 @@
 #include "base/test/test_simple_task_runner.h"
 #include "gpu/command_buffer/service/shared_image/shared_image_representation.h"
 #include "gpu/command_buffer/service/skia_utils.h"
+#include "gpu/command_buffer/service/ohos/scoped_native_buffer_fence_sync.h"
 
 using ::testing::_;
 
@@ -65,6 +66,7 @@ class MockStreamTextureSharedImageInterface
               (override));
   MOCK_METHOD(bool, RenderToOverlay, (), (override));
   MOCK_METHOD(bool, TextureOwnerBindsTextureOnUpdate, (), (override));
+  MOCK_METHOD(std::unique_ptr<ScopedNativeBufferFenceSync>, GetNativeBuffer, (), (override));
 };
 
 class MockGLContext : public gl::GLContext {
@@ -88,7 +90,7 @@ class MockGLContext : public gl::GLContext {
   MOCK_METHOD(void, ResetExtensions, (), (override));
 };
 
-class SharedImageVideoOhosNativeImageTest : public testing::Test {
+class NativeImageImageBackingTest : public testing::Test {
  protected:
   void SetUp() override {
     size = gfx::Size(10, 20);
@@ -104,13 +106,13 @@ class SharedImageVideoOhosNativeImageTest : public testing::Test {
     scoped_refptr<base::SingleThreadTaskRunner> task_runner(
         base::MakeRefCounted<base::TestSimpleTaskRunner>());
     base::SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner);
-    share_image_ptr = std::make_unique<SharedImageVideoOhosNativeImage>(
+    share_image_ptr = std::make_unique<NativeImageImageBacking>(
         mailbox, size, color_space, surface_origin, alpha_type,
         stream_texture_sii, shared_context_state);
     manager = std::make_unique<SharedImageManager>(
         thread_safe, display_context_on_another_thread);
     tracker = std::make_unique<MemoryTypeTracker>(memory_tracker, task_runner);
-    backing = std::make_unique<SharedImageVideoOhosNativeImage>(
+    backing = std::make_unique<NativeImageImageBacking>(
         mailbox, size, color_space, surface_origin, alpha_type,
         stream_texture_sii, shared_context_state);
   }
@@ -135,18 +137,18 @@ class SharedImageVideoOhosNativeImageTest : public testing::Test {
   base::WeakPtr<gpu::MemoryTracker::Observer> peak_memory_monitor = nullptr;
   gl::GLShareGroup* share_group_1 = new gl::GLShareGroup();
   bool created_on_compositor_gpu_thread = false;
-  std::unique_ptr<SharedImageVideoOhosNativeImage> share_image_ptr = nullptr;
+  std::unique_ptr<NativeImageImageBacking> share_image_ptr = nullptr;
   gl::GLShareGroup* share_group1;
   bool thread_safe = false;
   bool display_context_on_another_thread = false;
   std::unique_ptr<MemoryTypeTracker> tracker = nullptr;
   std::unique_ptr<SharedImageManager> manager = nullptr;
   MemoryTracker* memory_tracker = nullptr;
-  std::unique_ptr<SharedImageVideoOhosNativeImage> backing = nullptr;
+  std::unique_ptr<NativeImageImageBacking> backing = nullptr;
 };
 
-TEST_F(SharedImageVideoOhosNativeImageTest,
-       SharedImageVideoOhosNativeImageCreate) {
+TEST_F(NativeImageImageBackingTest,
+       NativeImageImageBackingCreate) {
   scoped_refptr<base::SingleThreadTaskRunner> task_runner(
       base::MakeRefCounted<base::TestSimpleTaskRunner>());
   base::SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner);
@@ -156,14 +158,14 @@ TEST_F(SharedImageVideoOhosNativeImageTest,
   EXPECT_CALL(*context, IsCurrent(NULL))
       .Times(testing::AtLeast(0))
       .WillRepeatedly(testing::Return(false));
-  auto share_image_ptr1 = std::make_shared<SharedImageVideoOhosNativeImage>(
+  auto share_image_ptr1 = std::make_shared<NativeImageImageBacking>(
       mailbox, size, color_space, surface_origin, alpha_type,
       stream_texture_sii, shared_context_state);
   EXPECT_TRUE(share_image_ptr1);
 }
 
-TEST_F(SharedImageVideoOhosNativeImageTest,
-       SharedImageVideoOhosNativeImageDelete0) {
+TEST_F(NativeImageImageBackingTest,
+       NativeImageImageBackingDelete0) {
   scoped_refptr<base::SingleThreadTaskRunner> task_runner(
       base::MakeRefCounted<base::TestSimpleTaskRunner>());
   base::SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner);
@@ -173,15 +175,15 @@ TEST_F(SharedImageVideoOhosNativeImageTest,
   EXPECT_CALL(*context, IsCurrent(NULL))
       .Times(testing::AtLeast(0))
       .WillRepeatedly(testing::Return(false));
-  auto share_image_ptr1 = std::make_shared<SharedImageVideoOhosNativeImage>(
+  auto share_image_ptr1 = std::make_shared<NativeImageImageBacking>(
       mailbox, size, color_space, surface_origin, alpha_type,
       stream_texture_sii, shared_context_state);
   share_image_ptr1.reset();
   EXPECT_FALSE(share_image_ptr1);
 }
 
-TEST_F(SharedImageVideoOhosNativeImageTest,
-       SharedImageVideoOhosNativeImageDelete1) {
+TEST_F(NativeImageImageBackingTest,
+       NativeImageImageBackingDelete1) {
   scoped_refptr<base::SingleThreadTaskRunner> task_runner(
       base::MakeRefCounted<base::TestSimpleTaskRunner>());
   base::SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner);
@@ -191,7 +193,7 @@ TEST_F(SharedImageVideoOhosNativeImageTest,
   EXPECT_CALL(*context, IsCurrent(NULL))
       .Times(testing::AtLeast(0))
       .WillRepeatedly(testing::Return(false));
-  auto share_image_ptr1 = std::make_shared<SharedImageVideoOhosNativeImage>(
+  auto share_image_ptr1 = std::make_shared<NativeImageImageBacking>(
       mailbox, size, color_space, surface_origin, alpha_type,
       stream_texture_sii, shared_context_state);
   share_image_ptr1->context_state_ = nullptr;
@@ -199,7 +201,7 @@ TEST_F(SharedImageVideoOhosNativeImageTest,
   EXPECT_FALSE(share_image_ptr1);
 }
 
-TEST_F(SharedImageVideoOhosNativeImageTest, GetEstimatedSizeForMemoryDump) {
+TEST_F(NativeImageImageBackingTest, GetEstimatedSizeForMemoryDump) {
   EXPECT_CALL(*stream_texture_sii, IsUsingGpuMemory())
       .Times(1)
       .WillRepeatedly(testing::Return(true));
@@ -213,7 +215,7 @@ TEST_F(SharedImageVideoOhosNativeImageTest, GetEstimatedSizeForMemoryDump) {
   EXPECT_NE(result, false);
 }
 
-TEST_F(SharedImageVideoOhosNativeImageTest, OnContextLost) {
+TEST_F(NativeImageImageBackingTest, OnContextLost) {
   EXPECT_CALL(*stream_texture_sii, IsUsingGpuMemory())
       .Times(testing::AtLeast(0))
       .WillRepeatedly(testing::Return(true));
@@ -227,7 +229,7 @@ TEST_F(SharedImageVideoOhosNativeImageTest, OnContextLost) {
   EXPECT_FALSE(share_image_ptr->context_state_);
 }
 
-TEST_F(SharedImageVideoOhosNativeImageTest, ProduceGLTexture) {
+TEST_F(NativeImageImageBackingTest, ProduceGLTexture) {
   EXPECT_CALL(*stream_texture_sii, HasTextureOwner())
       .Times(testing::AtLeast(0))
       .WillRepeatedly(testing::Return(false));
@@ -241,7 +243,7 @@ TEST_F(SharedImageVideoOhosNativeImageTest, ProduceGLTexture) {
   EXPECT_FALSE(result);
 }
 
-TEST_F(SharedImageVideoOhosNativeImageTest, ProduceGLTexturePassthrough) {
+TEST_F(NativeImageImageBackingTest, ProduceGLTexturePassthrough) {
   EXPECT_CALL(*stream_texture_sii, HasTextureOwner())
       .Times(testing::AtLeast(0))
       .WillRepeatedly(testing::Return(false));
@@ -256,7 +258,7 @@ TEST_F(SharedImageVideoOhosNativeImageTest, ProduceGLTexturePassthrough) {
   EXPECT_FALSE(result);
 }
 
-TEST_F(SharedImageVideoOhosNativeImageTest, ProduceSkiaGanesh) {
+TEST_F(NativeImageImageBackingTest, ProduceSkiaGanesh) {
   scoped_refptr<SharedContextState> context_state;
   EXPECT_CALL(*stream_texture_sii, HasTextureOwner())
       .Times(testing::AtLeast(0))
@@ -272,7 +274,7 @@ TEST_F(SharedImageVideoOhosNativeImageTest, ProduceSkiaGanesh) {
   EXPECT_FALSE(result);
 }
 
-TEST_F(SharedImageVideoOhosNativeImageTest, BeginGLReadAccess) {
+TEST_F(NativeImageImageBackingTest, BeginGLReadAccess) {
   const GLuint service_id = 0;
   EXPECT_CALL(*stream_texture_sii, UpdateAndBindTexImage(0))
       .Times(testing::AtLeast(0))
@@ -286,7 +288,7 @@ TEST_F(SharedImageVideoOhosNativeImageTest, BeginGLReadAccess) {
   share_image_ptr->BeginGLReadAccess(service_id);
 }
 
-TEST_F(SharedImageVideoOhosNativeImageTest, ProduceLegacyOverlay) {
+TEST_F(NativeImageImageBackingTest, ProduceLegacyOverlay) {
   EXPECT_CALL(*stream_texture_sii, HasTextureOwner())
       .Times(testing::AtLeast(0))
       .WillRepeatedly(testing::Return(false));
@@ -299,11 +301,11 @@ TEST_F(SharedImageVideoOhosNativeImageTest, ProduceLegacyOverlay) {
   share_image_ptr->ProduceLegacyOverlay(manager.get(), tracker.get());
 }
 
-TEST_F(SharedImageVideoOhosNativeImageTest, RenderToOverlay) {
+TEST_F(NativeImageImageBackingTest, RenderToOverlay) {
   std::unique_ptr<
-      SharedImageVideoOhosNativeImage::SharedImageRepresentationOverlayVideo>
+      NativeImageImageBacking::SharedImageRepresentationOverlayVideo>
       overlay_video_instance =
-          std::make_unique<SharedImageVideoOhosNativeImage::
+          std::make_unique<NativeImageImageBacking::
                                SharedImageRepresentationOverlayVideo>(
               manager.get(), backing.get(), tracker.get());
   EXPECT_CALL(*stream_texture_sii, RenderToOverlay())
@@ -318,13 +320,13 @@ TEST_F(SharedImageVideoOhosNativeImageTest, RenderToOverlay) {
   overlay_video_instance->RenderToOverlay();
 }
 
-TEST_F(SharedImageVideoOhosNativeImageTest, NotifyOverlayPromotion) {
+TEST_F(NativeImageImageBackingTest, NotifyOverlayPromotion) {
   bool promotion = false;
   const gfx::Rect bounds;
   std::unique_ptr<
-      SharedImageVideoOhosNativeImage::SharedImageRepresentationOverlayVideo>
+      NativeImageImageBacking::SharedImageRepresentationOverlayVideo>
       overlay_video_instance =
-          std::make_unique<SharedImageVideoOhosNativeImage::
+          std::make_unique<NativeImageImageBacking::
                                SharedImageRepresentationOverlayVideo>(
               manager.get(), backing.get(), tracker.get());
   EXPECT_CALL(*stream_texture_sii, NotifyOverlayPromotion(false, _))
@@ -339,11 +341,11 @@ TEST_F(SharedImageVideoOhosNativeImageTest, NotifyOverlayPromotion) {
   overlay_video_instance->NotifyOverlayPromotion(promotion, bounds);
 }
 
-TEST_F(SharedImageVideoOhosNativeImageTest, stream_image) {
+TEST_F(NativeImageImageBackingTest, stream_image) {
   std::unique_ptr<
-      SharedImageVideoOhosNativeImage::SharedImageRepresentationOverlayVideo>
+      NativeImageImageBacking::SharedImageRepresentationOverlayVideo>
       overlay_video_instance =
-          std::make_unique<SharedImageVideoOhosNativeImage::
+          std::make_unique<NativeImageImageBacking::
                                SharedImageRepresentationOverlayVideo>(
               manager.get(), backing.get(), tracker.get());
   EXPECT_CALL(*stream_texture_sii, NotifyOverlayPromotion(false, _))
@@ -358,7 +360,7 @@ TEST_F(SharedImageVideoOhosNativeImageTest, stream_image) {
   overlay_video_instance->stream_image();
 }
 
-TEST_F(SharedImageVideoOhosNativeImageTest,
+TEST_F(NativeImageImageBackingTest,
        SharedImageRepresentationGLTextureVideoDelete0) {
   scoped_refptr<base::SingleThreadTaskRunner> task_runner(
       base::MakeRefCounted<base::TestSimpleTaskRunner>());
@@ -369,9 +371,9 @@ TEST_F(SharedImageVideoOhosNativeImageTest,
   std::unique_ptr<AbstractTextureOHOS> texture =
       std::make_unique<AbstractTextureOHOS>(std::move(texture1));
   std::unique_ptr<
-      SharedImageVideoOhosNativeImage::SharedImageRepresentationGLTextureVideo>
+      NativeImageImageBacking::SharedImageRepresentationGLTextureVideo>
       shared_video_ptr =
-          std::make_unique<SharedImageVideoOhosNativeImage::
+          std::make_unique<NativeImageImageBacking::
                                SharedImageRepresentationGLTextureVideo>(
               manager.get(), backing.get(), tracker.get(), std::move(texture));
   EXPECT_CALL(*stream_texture_sii, NotifyOverlayPromotion(false, _))
@@ -384,7 +386,7 @@ TEST_F(SharedImageVideoOhosNativeImageTest,
       .Times(testing::AtLeast(0))
       .WillRepeatedly(testing::Return(false));
   auto result = std::make_unique<
-      SharedImageVideoOhosNativeImage::SharedImageRepresentationGLTextureVideo>(
+      NativeImageImageBacking::SharedImageRepresentationGLTextureVideo>(
       manager.get(), backing.get(), tracker.get(), std::move(texture));
   result.reset();
 }

@@ -15,6 +15,7 @@
 #include "base/task/single_thread_task_runner.h"
 #include "base/trace_event/trace_event.h"
 #include "gpu/command_buffer/service/abstract_texture_ohos.h"
+#include "gpu/command_buffer/service/ohos/scoped_native_buffer_fence_sync.h"
 #include "gpu/config/gpu_finch_features.h"
 #include "media/base/scoped_async_trace.h"
 #include "ui/gl/scoped_binders.h"
@@ -127,6 +128,10 @@ void* NativeImageTextureGlOwner::AquireOhosNativeWindow() const {
   } else {
     return nullptr;
   }
+}
+
+std::unique_ptr<ScopedNativeBufferFenceSync> NativeImageTextureGlOwner::GetNativeBuffer() {
+  return nullptr;
 }
 
 bool NativeImageTextureGlOwner::GetCodedSizeAndVisibleRect(

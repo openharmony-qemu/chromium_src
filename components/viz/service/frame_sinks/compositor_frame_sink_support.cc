@@ -607,7 +607,6 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
   pending_received_frame_times_.emplace(frame.metadata.frame_token, now_time);
 
   // Override the has_damage flag (ignoring invalid data from clients).
-  TRACE_EVENT1("viz", "MaybeSubmitCompositorFrame", "has_damage", frame.metadata.begin_frame_ack.has_damage);
   frame.metadata.begin_frame_ack.has_damage = true;
   DCHECK(frame.metadata.begin_frame_ack.frame_id.IsSequenceValid());
 

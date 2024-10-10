@@ -103,12 +103,6 @@ TEST_F(ExternalBeginFrameSourceOhosTest, SetNeedWaitForInput4) {
   EXPECT_EQ(true, base::ohos::InputSyncLock::GetInstance().NeedWaitForInput());
 }
 
-TEST_F(ExternalBeginFrameSourceOhosTest, TriggerVsync) {
-  // on_vsync_impl_task_queue_ is empty
-  begin_frame_source()->TriggerVsync();
-  EXPECT_EQ(true, begin_frame_source()->on_vsync_impl_task_queue_.empty());
-}
-
 TEST_F(ExternalBeginFrameSourceOhosTest, OnVSyncEndCallback1) {
   // SetNeedWaitForInput is false
   begin_frame_source()->OnVSyncEndCallback();
@@ -120,12 +114,6 @@ TEST_F(ExternalBeginFrameSourceOhosTest, OnVSyncEndCallback2) {
   begin_frame_source()->OnVSyncEndCallback();
   EXPECT_EQ(false,
             base::ohos::InputSyncLock::GetInstance().HandledTouchEvent());
-}
-
-TEST_F(ExternalBeginFrameSourceOhosTest, TriggerVsyncImpl) {
-  // on_vsync_impl_task_queue_ is empty
-  begin_frame_source()->TriggerVsyncImpl();
-  EXPECT_EQ(true, begin_frame_source()->on_vsync_impl_task_queue_.empty());
 }
 
 TEST_F(ExternalBeginFrameSourceOhosTest, UpdateVSyncFrequency1) {
@@ -467,78 +455,6 @@ TEST_F(ExternalBeginFrameSourceOhosTest, SetEnabled001) {
   begin_frame_source()->SetEnabled(enabled);
   EXPECT_NE(false, begin_frame_source()->vsync_notification_enabled_);
 }
-
-TEST_F(ExternalBeginFrameSourceOhosTest, TriggerVsync_001) {
-  scoped_refptr<base::SingleThreadTaskRunner> current =
-      base::MakeRefCounted<MockSingleThreadTaskRunner>();
-  auto mock_current = static_cast<MockSingleThreadTaskRunner*>(current.get());
-  EXPECT_CALL(*mock_current, PostDelayedTask).WillOnce(testing::Return(false));
-  base::WeakPtr<viz::ExternalBeginFrameSourceOHOS> weakPtr =
-      begin_frame_source()->weak_factory_.GetWeakPtr();
-  ExternalBeginFrameSourceOHOS::VSyncUserData* vsync_udata =
-      new ExternalBeginFrameSourceOHOS::VSyncUserData(current, weakPtr);
-  begin_frame_source()->on_vsync_impl_task_queue_.push_back(
-      std::pair<int64_t, ExternalBeginFrameSourceOHOS::VSyncUserData*>(
-          1111111, vsync_udata));
-  begin_frame_source()->TriggerVsync();
-  EXPECT_FALSE(base::ohos::InputSyncLock::GetInstance().HandledTouchEvent());
-}
-
-TEST_F(ExternalBeginFrameSourceOhosTest, TriggerVsync_002) {
-  begin_frame_source()->TriggerVsync();
-  EXPECT_TRUE(base::ohos::InputSyncLock::GetInstance().HandledTouchEvent());
-}
-
-TEST_F(ExternalBeginFrameSourceOhosTest, TriggerVsyncImpl_001) {
-  scoped_refptr<base::SingleThreadTaskRunner> current =
-      base::MakeRefCounted<MockSingleThreadTaskRunner>();
-  auto mock_current = static_cast<MockSingleThreadTaskRunner*>(current.get());
-  EXPECT_CALL(*mock_current, PostDelayedTask).WillOnce(testing::Return(false));
-  base::WeakPtr<viz::ExternalBeginFrameSourceOHOS> weakPtr =
-      begin_frame_source()->weak_factory_.GetWeakPtr();
-  ExternalBeginFrameSourceOHOS::VSyncUserData* vsync_udata =
-      new ExternalBeginFrameSourceOHOS::VSyncUserData(current, weakPtr);
-  begin_frame_source()->on_vsync_impl_task_queue_.push_back(
-      std::pair<int64_t, ExternalBeginFrameSourceOHOS::VSyncUserData*>(
-          1111111, vsync_udata));
-  begin_frame_source()->TriggerVsyncImpl();
-  EXPECT_TRUE(begin_frame_source()->on_vsync_impl_task_queue_.empty());
-}
-
-TEST_F(ExternalBeginFrameSourceOhosTest, TriggerVsyncImpl_002) {
-  begin_frame_source()->TriggerVsyncImpl();
-  EXPECT_TRUE(begin_frame_source()->on_vsync_impl_task_queue_.empty());
-}
-
-TEST_F(ExternalBeginFrameSourceOhosTest, EmplaceVSyncImpl_001) {
-  scoped_refptr<base::SingleThreadTaskRunner> current =
-      base::MakeRefCounted<MockSingleThreadTaskRunner>();
-  base::WeakPtr<viz::ExternalBeginFrameSourceOHOS> weakPtr =
-      begin_frame_source()->weak_factory_.GetWeakPtr();
-  ExternalBeginFrameSourceOHOS::VSyncUserData* vsync_udata =
-      new ExternalBeginFrameSourceOHOS::VSyncUserData(current, weakPtr);
-  begin_frame_source()->EmplaceVSyncImpl(111, vsync_udata);
-  auto& [timestamp, userData] =
-      begin_frame_source()->on_vsync_impl_task_queue_.front();
-  EXPECT_EQ(timestamp, 111);
-  EXPECT_EQ(userData, vsync_udata);
-}
-
-TEST_F(ExternalBeginFrameSourceOhosTest, EmplaceVSyncImpl_002) {
-  scoped_refptr<base::SingleThreadTaskRunner> current =
-      base::MakeRefCounted<MockSingleThreadTaskRunner>();
-
-  base::WeakPtr<viz::ExternalBeginFrameSourceOHOS> weakPtr =
-      begin_frame_source()->weak_factory_.GetWeakPtr();
-  ExternalBeginFrameSourceOHOS::VSyncUserData* vsync_udata =
-      new ExternalBeginFrameSourceOHOS::VSyncUserData(current, weakPtr);
-  for (int i = 0; i < 21; i++) {
-    begin_frame_source()->EmplaceVSyncImpl(111, vsync_udata);
-  }
-  EXPECT_LE(kMaxVsyncTaskQueueSize,
-            begin_frame_source()->on_vsync_impl_task_queue_.size());
-}
-
 }  // namespace viz
 
 #endif

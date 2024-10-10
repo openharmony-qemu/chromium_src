@@ -112,6 +112,30 @@ struct CC_EXPORT InputHandlerScrollResult {
 
 class CC_EXPORT InputHandlerClient {
  public:
+  enum class ScrollEventDispatchMode {
+    // Scroll events arriving will be enqueued to be dispatched during the next
+    // `DeliverInputForBeginFrame`.
+    kEnqueueScrollEvents,
+
+    // Scroll events arriving will be dispatched immediately, if
+    // `DeliverInputForBeginFrame` was called while scrolling, with no input
+    // events in the queue. This will occur until frame production has started,
+    // or completed.
+    kDispatchScrollEventsImmediately,
+
+    // If there are no queued events when `DeliverInputForBeginFrame` is called,
+    // while we are scrolling. We will generate a new prediction, and then
+    // dispatch a synthetic `GestureScrollUpdate` using the prediction.
+    kUseScrollPredictorForEmptyQueue,
+
+    // Will perform as `kDispatchScrollEventsImmediately` until the deadline.
+    // Instead of immediately resuming frame production, we will first attempt
+    // to generate a new prediction to dispatch. As in
+    // `kUseScrollPredictorForEmptyQueue`. After which we will resume frame
+    // production and enqueuing input.
+    kUseScrollPredictorForDeadline,
+  };
+
   InputHandlerClient(const InputHandlerClient&) = delete;
   virtual ~InputHandlerClient() = default;
 
@@ -130,6 +154,10 @@ class CC_EXPORT InputHandlerClient {
       float max_page_scale_factor) = 0;
   virtual void DeliverInputForBeginFrame(const viz::BeginFrameArgs& args) = 0;
   virtual void DeliverInputForHighLatencyMode() = 0;
+  virtual void DeliverInputForDeadline() = 0;
+  virtual void DidFinishImplFrame() = 0;
+  virtual bool HasQueuedInput() const = 0;
+  virtual void SetScrollEventDispatchMode(ScrollEventDispatchMode mode) = 0;
 #if BUILDFLAG(IS_OHOS)
   virtual void WillHandleScrollUpdateForInternalBeginFrame(const viz::BeginFrameArgs& args) {}
 #endif
@@ -480,6 +508,8 @@ class CC_EXPORT InputHandler : public InputDelegateForCompositor {
   void WillBeginImplFrame(const viz::BeginFrameArgs& args) override;
   void DidCommit() override;
   void DidActivatePendingTree() override;
+  void DidFinishImplFrame() override;
+  void OnBeginImplFrameDeadline() override;
   void RootLayerStateMayHaveChanged() override;
   void DidRegisterScrollbar(ElementId scroll_element_id,
                             ScrollbarOrientation orientation) override;
@@ -490,6 +520,7 @@ class CC_EXPORT InputHandler : public InputDelegateForCompositor {
   bool IsCurrentlyScrolling() const override;
   ActivelyScrollingType GetActivelyScrollingType() const override;
   bool IsCurrentScrollMainRepainted() const override;
+  bool HasQueuedInput() const override;
 
 #if BUILDFLAG(IS_OHOS)
   void HandleScrollUpdateForInternalBeginFrame(const viz::BeginFrameArgs& args) override;

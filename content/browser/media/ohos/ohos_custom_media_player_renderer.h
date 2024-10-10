@@ -85,6 +85,7 @@ class CONTENT_EXPORT OHOSCustomMediaPlayerRenderer
   void OnVideoSizeChanged(int width, int height) override;
   void OnPlayerInterruptEvent(int32_t value) override {}
   void OnAudioStateChanged(bool isAudible) override {}
+  void OnPlayerSeekBack(base::TimeDelta back_time) override {}
 
   // media::mojom::MediaPlayerRendererExtension implementation.
   void InitiateScopedSurfaceRequest(

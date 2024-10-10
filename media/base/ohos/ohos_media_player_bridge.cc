@@ -15,7 +15,7 @@
 namespace media {
 
 constexpr int QUEUE_SIZE = 3;
-constexpr int MAX_TOLERABLE_SEEK_ERROR = 500;
+constexpr int MAX_TOLERABLE_SEEK_ERROR = 300;
 static constexpr int PLAYER_INIT_OK = 0;
 static constexpr int PLAYER_INIT_ERROR = -1;
 
@@ -264,10 +264,12 @@ void OHOSMediaPlayerBridge::OnSeekBack(base::TimeDelta extra_time) {
     return;
   }
 
+  //When processing seek requests, there may be a maximum error of 300ms between the nearest keyframe 
+  //found by mediaplayer and the time point of seekTo
   if ((recording_seek_ - extra_time_) > base::Milliseconds(MAX_TOLERABLE_SEEK_ERROR)) {
-    seeking_back_complete_ = true;
     if (client_) {
       client_->OnPlayerSeekBack(extra_time_);
+      seeking_back_complete_ = true;
     }
     LOG(INFO) << "OHOSMediaPlayerBridge::OnSeekBack() recording_time= " << recording_seek_;
     LOG(INFO) << "OHOSMediaPlayerBridge::OnSeekBack() back_time= " << extra_time_;

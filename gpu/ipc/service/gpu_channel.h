@@ -38,10 +38,10 @@
 #include "ui/gfx/native_widget_types.h"
 #include "ui/gl/gl_share_group.h"
 #include "ui/gl/gpu_preference.h"
-#if BUILDFLAG(IS_OHOS)
-#include "gpu/ipc/service/stream_texture_ohos.h"
-#endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "ui/gl/ohos/native_buffer_utils.h"
+#endif
 
 namespace base {
 class WaitableEvent;

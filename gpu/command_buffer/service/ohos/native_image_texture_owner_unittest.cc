@@ -34,6 +34,7 @@
 #include "gpu/command_buffer/service/abstract_texture_ohos.h"
 #include "gpu/command_buffer/service/decoder_context.h"
 #include "gpu/command_buffer/service/texture_base.h"
+#include "gpu/command_buffer/service/ohos/scoped_native_buffer_fence_sync.h"
 
 namespace gpu {
 class MOCKNativeImageTextureOwner : public NativeImageTextureOwner {
@@ -64,6 +65,8 @@ class MOCKNativeImageTextureOwner : public NativeImageTextureOwner {
               (override));
   MOCK_METHOD(void, RunWhenBufferIsAvailable, (base::OnceClosure), (override));
   MOCK_METHOD(void, ReleaseResources, (), (override));
+  MOCK_METHOD(std::unique_ptr<ScopedNativeBufferFenceSync>,
+              GetNativeBuffer, (), (override));
 };
 
 class MockSharedContextState : public SharedContextState {
@@ -138,7 +141,6 @@ class NativeImageTextureOwnerTest : public testing::Test {
   void TearDown() override {}
   bool binds_texture_on_update = true;
   unsigned int service_id = 0;
-  NativeImageTextureOwner::Mode mode;
   std::unique_ptr<TextureBase> texture1 =
       std::make_unique<TextureBase>(service_id);
   std::unique_ptr<AbstractTextureOHOS> texture =

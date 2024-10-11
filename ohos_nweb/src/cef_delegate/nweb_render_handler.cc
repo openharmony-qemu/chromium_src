@@ -375,6 +375,11 @@ void NWebRenderHandler::SetContentSize(int width, int height) {
 gfx::Size NWebRenderHandler::GetSize() {
   return gfx::Size(width_, height_);
 }
+
+void NWebRenderHandler::GetDevicePixelSize(CefRefPtr<CefBrowser> browser, CefSize& size) {
+  size.width = width_;
+  size.height = height_;
+}
 #endif
 
 void NWebRenderHandler::GetViewRect(CefRefPtr<CefBrowser> browser,

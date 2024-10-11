@@ -1,4 +1,4 @@
-// Copyright 2018 The Chromium Authors
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -60,6 +60,7 @@ class SameLayerNativeBufferGLOwner::ScopedNativeBufferImpl
   raw_ptr<OhosWindowBuffer> image_;
 };
 
+#define IMAGE_BUFFER_SIZE 3
 SameLayerNativeBufferGLOwner::SameLayerNativeBufferGLOwner(
     std::unique_ptr<AbstractTextureOHOS> texture,
     scoped_refptr<SharedContextState> context_state,
@@ -73,8 +74,7 @@ SameLayerNativeBufferGLOwner::SameLayerNativeBufferGLOwner(
       surface_(gl::GLSurface::GetCurrent()) {
   DCHECK(context_);
   DCHECK(surface_);
-
-  max_images_ = 3;
+  max_images_ = IMAGE_BUFFER_SIZE;
 }
 
 SameLayerNativeBufferGLOwner::~SameLayerNativeBufferGLOwner() {
@@ -135,7 +135,6 @@ void SameLayerNativeBufferGLOwner::UpdateNativeImage() {
   int32_t return_code = 0;
   return_code =
       loader_->AcquireNativeWindowBuffer(&image->rawbuffer, &acquire_fence_fd);
-
   // If there is no new image simply return. At this point previous image will
   // still be bound to the texture.
   if (return_code != 0 || !image->rawbuffer) {
@@ -233,7 +232,6 @@ void SameLayerNativeBufferGLOwner::ReleaseRefOnImageLocked(
   image = nullptr;
   DCHECK_GT(max_images_, static_cast<int32_t>(image_refs_.size()));
   auto buffer_available_cb = std::move(buffer_available_cb_);
-
   // |buffer_available_cb| will try to acquire lock again via
   // UpdateNativeImage(), hence we need to unlock here. Note that when
   // |max_images_| is 1, this callback will always be empty here since it will

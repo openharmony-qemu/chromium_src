@@ -1,4 +1,4 @@
-// Copyright 2020 The Chromium Authors
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -197,7 +197,6 @@ class SameLayerNativeBufferImageBacking::GLTextureVideoImageRepresentation
       LOG(ERROR) << "Failed to get the hardware buffer.";
       return false;
     }
-
 
     SyncFenceWait(scoped_native_buffer_->TakeFence());
     CreateAndBindEglImageFromNativeBuffer(scoped_native_buffer_->buffer(),

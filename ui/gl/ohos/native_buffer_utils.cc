@@ -69,7 +69,6 @@ base::ScopedFD CreateEglFenceAndExportFd() {
 
 bool InsertEglFenceAndWait(base::ScopedFD acquire_fence_fd) {
   int fence_fd = acquire_fence_fd.release();
-
   // If fence_fd is -1, we do not need synchronization fence and image is ready
   // to be used immediately. Also we dont need to close any fd. Else we need to
   // create a sync fence which is used to signal when the buffer is ready to be

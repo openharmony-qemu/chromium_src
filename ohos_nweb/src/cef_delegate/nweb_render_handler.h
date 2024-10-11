@@ -180,7 +180,7 @@ class NWebRenderHandler : public CefRenderHandler {
                     CefRefPtr<CefGestureEventCallback> callback) override;
   void OnNativeEmbedLifecycleChange(CefRefPtr<CefBrowser> browser,
                     const CefNativeEmbedData& info) override;
-  void OnNativeEmbedVisibilityChange(const std::string& embed_id, 
+  void OnNativeEmbedVisibilityChange(const std::string& embed_id,
                     bool visibility) override;
   bool FilterScrollEvent(CefRefPtr<CefBrowser> browser,
                          const float x,
@@ -220,6 +220,14 @@ class NWebRenderHandler : public CefRenderHandler {
 
   std::shared_ptr<NWebCustomKeyboardHandlerImpl> GetCustomKeyboardHandler() const {
     return custom_keyboard_handler_;
+  }
+
+  uint32_t GetContentHeight() const {
+    return content_height_;
+  }
+
+  uint32_t GetContentWidth() const {
+    return content_width_;
   }
 
   std::shared_ptr<NWebTouchHandleState> GetTouchHandleState(

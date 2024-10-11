@@ -3375,3 +3375,17 @@ void NWebImpl::SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) {
   nweb_delegate_->SetBackForwardCacheOptions(size, timeToLive);
 #endif
 }
+
+void NWebImpl::SetSurfaceDensity(const double& density) {
+  device_pixel_ratio_ = density;
+  if (!inputmethod_handler_) {
+    WVLOG_E("inputmethod_handler_ is nullptr");
+    return;
+  }
+  inputmethod_handler_->SetVirtualDeviceRatio(device_pixel_ratio_);
+  if(nweb_delegate_ == nullptr) {
+    WVLOG_E("SetVirtualDeviceRatio failed, nweb_delegate is nullptr.");
+    return;
+  }
+  nweb_delegate_->SetSurfaceDensity(density);
+}

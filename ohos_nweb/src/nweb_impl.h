@@ -534,6 +534,7 @@ class NWebImpl : public NWeb {
 #ifdef OHOS_BFCACHE
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override;
 #endif
+  void SetSurfaceDensity(const double& density) override;
 
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

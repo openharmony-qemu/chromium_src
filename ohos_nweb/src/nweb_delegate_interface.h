@@ -527,6 +527,8 @@ class NWebDelegateInterface
   virtual std::shared_ptr<NWebCustomKeyboardHandlerImpl> GetCustomKeyboardHandler() const = 0;
 
   virtual void RefreshAccessibilityManagerClickEvent() = 0;
+
+  virtual void SetSurfaceDensity(const double& density) = 0;
 };
 }  // namespace OHOS::NWeb
 

@@ -517,6 +517,8 @@ void NotifyForNextTouchEvent() override;
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override;
 #endif
 
+void SetSurfaceDensity(const double& density) override;
+
  public:
   int argc_;
   const char** argv_;
@@ -650,6 +652,7 @@ void NotifyForNextTouchEvent() override;
   std::string richtext_data_str_ = "";
   std::shared_ptr<NWebAccessibilityEventCallback>
       accessibility_event_listener_ = nullptr;
+  double display_ratio_ = 0.0;
 };
 }  // namespace OHOS::NWeb
 #endif

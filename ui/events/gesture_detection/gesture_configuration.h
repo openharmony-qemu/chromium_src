@@ -238,7 +238,7 @@ class GESTURE_DETECTION_EXPORT GestureConfiguration {
   int long_press_time_in_ms_ = 500;
   float max_distance_between_taps_for_double_tap_ = 20;
 #ifdef OHOS_DRAG_DROP
-  int drag_long_press_time_in_ms_ = 800;
+  int drag_long_press_time_in_ms_ = 400;
 #endif
   // The max length of a repeated tap sequence, e.g., to support double-click
   // only this is 2, to support triple-click it's 3.

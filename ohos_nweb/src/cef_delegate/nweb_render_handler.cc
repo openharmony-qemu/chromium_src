@@ -411,12 +411,6 @@ void NWebRenderHandler::Resize(uint32_t width, uint32_t height) {
   height_ = height;
 }
 
-#if BUILDFLAG(IS_OHOS)
-gfx::Size NWebRenderHandler::GetSize() {
-  return gfx::Size(width_, height_);
-}
-#endif
-
 #if defined(OHOS_INPUT_EVENTS)
 void NWebRenderHandler::ResizeVisibleViewport(uint32_t width, uint32_t height) {
   visible_width_ = width;
@@ -1102,11 +1096,6 @@ void NWebRenderHandler::OnNativeEmbedVisibilityChange(
   if (auto handler = handler_.lock()) {
     handler->OnNativeEmbedVisibilityChange(embed_id, visibility);
   }
-}
-
-void NWebRenderHandler::SetContentSize(int width, int height) {
-  content_height_ = height;
-  content_width_ = width;
 }
 
 void NWebRenderHandler::SetGestureEventResult(bool result) {

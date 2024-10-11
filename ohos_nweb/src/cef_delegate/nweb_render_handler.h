@@ -186,6 +186,7 @@ class NWebRenderHandler : public CefRenderHandler {
   bool GetGestureEventResult();
   gfx::Size GetSize();
   void StartVibraFeedback(const std::string& vibratorType) override;
+  void GetDevicePixelSize(CefRefPtr<CefBrowser> browser, CefSize& size) override;
 #endif
 
 #ifdef OHOS_EX_FREE_COPY

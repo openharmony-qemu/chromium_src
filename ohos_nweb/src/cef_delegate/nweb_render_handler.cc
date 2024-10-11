@@ -430,6 +430,22 @@ void NWebRenderHandler::StartVibraFeedback(const std::string& vibratorType) {
 }
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+void NWebRenderHandler::SetContentSize(int width, int height) {
+  content_width_ = width;
+  content_height_ = height;
+}
+
+gfx::Size NWebRenderHandler::GetSize() {
+  return gfx::Size(width_, height_);
+}
+
+void NWebRenderHandler::GetDevicePixelSize(CefRefPtr<CefBrowser> browser, CefSize& size) {
+  size.width = width_;
+  size.height = height_;
+}
+#endif
+
 void NWebRenderHandler::GetViewRect(CefRefPtr<CefBrowser> browser,
                                     CefRect& rect) {
   rect.x = 0;

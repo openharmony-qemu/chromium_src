@@ -15,7 +15,7 @@
 
 #include "nweb_resource_handler.h"
 #include <unistd.h>
-#include <securec.h>
+#include "third_party/bounds_checking_function/include/securec.h"
 #include "base/logging.h"
 #include "base/command_line.h"
 #include "content/public/common/content_switches.h"

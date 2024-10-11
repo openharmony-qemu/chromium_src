@@ -159,7 +159,7 @@ bool DisplayDamageTracker::OnSurfaceDamaged(const SurfaceId& surface_id,
                                             const BeginFrameAck& ack) {
   bool display_damaged = false;
   TRACE_EVENT1("viz", "DisplayDamageTracker::OnSurfaceDamaged",
-               TRACE_EVENT_SCOPE_THREAD, "ack.has_damage", ack.has_damage);
+               "ack.has_damage", ack.has_damage);
   if (ack.has_damage) {
     display_damaged =
         aggregator_->NotifySurfaceDamageAndCheckForDisplayDamage(surface_id);

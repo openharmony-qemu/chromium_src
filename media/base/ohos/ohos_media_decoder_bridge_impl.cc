@@ -12,7 +12,7 @@
 #include "base/logging.h"
 #include "base/task/task_runner.h"
 #include "base/trace_event/trace_event.h"
-#incldue "third_party/bounds_checking_function/include/securec.h"
+#include "third_party/bounds_checking_function/include/securec.h"
 
 using namespace media;
 using namespace OHOS::NWeb;

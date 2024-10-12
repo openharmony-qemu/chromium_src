@@ -885,7 +885,7 @@ void BrowserAccessibilityManager::DoDefaultAction(
   action_data.target_node_id = node.GetId();
 
 #if BUILDFLAG(IS_OHOS)
-  ui::AXActionData load_text_data = data;
+  ui::AXActionData load_text_data = action_data;
   load_text_data.action = ax::mojom::Action::kLoadInlineTextBoxes;
   delegate_->AccessibilityPerformAction(load_text_data);
 #endif

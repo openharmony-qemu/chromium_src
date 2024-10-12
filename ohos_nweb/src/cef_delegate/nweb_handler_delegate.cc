@@ -18,6 +18,7 @@
 #include <sys/mman.h>
 #include <thread>
 
+#include "ohos_glue/base/include/ark_web_errno.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
 #include "base/ohos/sys_info_utils.h"
@@ -1534,10 +1535,34 @@ bool NWebHandlerDelegate::OnCertificateError(CefRefPtr<CefBrowser> browser,
   SslError error = SslErrorConvert(cert_error);
 
   CEF_REQUIRE_IO_THREAD();
+  
+  std::vector<std::string> certChainData;
+  CefRefPtr<CefX509Certificate> cert = ssl_info->GetX509Certificate();
+  CefX509Certificate::IssuerChainBinaryList der_chain_list;
+  cert->GetDEREncodedIssuerChain(der_chain_list);
+  der_chain_list.insert(der_chain_list.begin(), cert->GetDEREncoded());
+
+  for (size_t i = 0U; i < der_chain_list.size(); ++i) {
+    if (!der_chain_list[i].get()) {
+      LOG(ERROR) << "OnCertificateError Get CertChainData failed, der chain data is null, index = " << i;
+      continue;
+    }
+
+    const size_t cert_data_size = der_chain_list[i]->GetSize();
+    std::string cert_data_item;
+    cert_data_item.resize(cert_data_size);
+    der_chain_list[i]->GetData(const_cast<char*>(cert_data_item.data()), cert_data_size, 0);
+    certChainData.emplace_back(cert_data_item);
+  }
+  
   std::shared_ptr<NWebJSSslErrorResult> js_result =
       std::make_shared<NWebJSSslErrorResultImpl>(callback);
   if (nweb_handler_ != nullptr) {
-    return nweb_handler_->OnSslErrorRequestByJS(js_result, error);
+    bool flag = nweb_handler_->OnSslErrorRequestByJSV2(js_result, error, certChainData);
+    if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+      flag = nweb_handler_->OnSslErrorRequestByJS(js_result, error);
+    }
+    return flag;
   }
   return false;
 }

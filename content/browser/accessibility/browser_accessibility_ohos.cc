@@ -392,7 +392,9 @@ bool BrowserAccessibilityOHOS::IsHierarchical() const {
 bool BrowserAccessibilityOHOS::HasOnlyTextChildren() const {
   for (auto& childId : childrenIds_) {
     BrowserAccessibilityOHOS* child = GetFromAccessibilityId(childId);
-    if (!child->IsText() && child->GetRole() != ax::mojom::Role::kStrong) {
+    if (child && !child->IsText() &&
+        child->GetRole() != ax::mojom::Role::kStrong &&
+        !child->IsEmptyContainer()) {
       return false;
     }
   }
@@ -400,9 +402,10 @@ bool BrowserAccessibilityOHOS::HasOnlyTextChildren() const {
 }
 
 bool BrowserAccessibilityOHOS::HasClickableChildren() const {
-  for (auto& childId : childrenIds_) {
-    BrowserAccessibilityOHOS* child = GetFromAccessibilityId(childId);
-    if (child->IsClickable()) {
+  for (auto& childNode : PlatformChildren()) {
+    BrowserAccessibilityOHOS& childNodeOHOS =
+        static_cast<BrowserAccessibilityOHOS&>(childNode);
+    if (childNodeOHOS.IsClickable()) {
       return true;
     }
   }
@@ -865,7 +868,9 @@ std::u16string BrowserAccessibilityOHOS::GetSubstringTextContentUTF16(
 bool BrowserAccessibilityOHOS::HasOnlyTextAndImageChildren() const {
   for (auto& childId : childrenIds_) {
     BrowserAccessibilityOHOS* child = GetFromAccessibilityId(childId);
-    if (!child->IsText() && child->GetRole() != ax::mojom::Role::kStrong && !ui::IsImageOrVideo(child->GetRole())) {
+    if (child && !child->IsText() &&
+        child->GetRole() != ax::mojom::Role::kStrong &&
+        !ui::IsImageOrVideo(child->GetRole())) {
       return false;
     }
   }

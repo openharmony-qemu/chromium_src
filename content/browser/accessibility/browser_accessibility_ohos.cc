@@ -390,11 +390,9 @@ bool BrowserAccessibilityOHOS::IsHierarchical() const {
 }
 
 bool BrowserAccessibilityOHOS::HasOnlyTextChildren() const {
-  std::vector<int64_t> childrenIds;
-  GetChildrenIds(childrenIds);
-  for (auto& childId : childrenIds) {
+  for (auto& childId : childrenIds_) {
     BrowserAccessibilityOHOS* child = GetFromAccessibilityId(childId);
-    if (!child->IsText() && child->GetRole() != ax::mojom::Role::kStrong && !child->IsEmptyContainer()) {
+    if (!child->IsText() && child->GetRole() != ax::mojom::Role::kStrong) {
       return false;
     }
   }
@@ -402,9 +400,7 @@ bool BrowserAccessibilityOHOS::HasOnlyTextChildren() const {
 }
 
 bool BrowserAccessibilityOHOS::HasClickableChildren() const {
-  std::vector<int64_t> childrenIds;
-  GetChildrenIds(childrenIds);
-  for (auto& childId : childrenIds) {
+  for (auto& childId : childrenIds_) {
     BrowserAccessibilityOHOS* child = GetFromAccessibilityId(childId);
     if (child->IsClickable()) {
       return true;
@@ -413,11 +409,11 @@ bool BrowserAccessibilityOHOS::HasClickableChildren() const {
   return false;
 }
 
-const BrowserAccessibilityOHOS*
+BrowserAccessibilityOHOS*
 BrowserAccessibilityOHOS::GetAccessibilityNodeByFocusMove(
     int32_t direction) const {
-  std::list<const BrowserAccessibilityOHOS*> nodeList;
-  const BrowserAccessibilityOHOS* resultNode = nullptr;
+  std::list<BrowserAccessibilityOHOS*> nodeList;
+  BrowserAccessibilityOHOS* resultNode = nullptr;
 
   if (!manager_) {
     return resultNode;
@@ -446,18 +442,18 @@ BrowserAccessibilityOHOS::GetAccessibilityNodeByFocusMove(
 }
 
 void BrowserAccessibilityOHOS::AddFocusableNode(
-    std::list<const BrowserAccessibilityOHOS*>& nodeList) const {
-  for (const auto& childNode : PlatformChildren()) {
-    const BrowserAccessibilityOHOS& childNodeOHOS =
-        static_cast<const BrowserAccessibilityOHOS&>(childNode);
+    std::list<BrowserAccessibilityOHOS*>& nodeList) const {
+  for (auto& childNode : PlatformChildren()) {
+    BrowserAccessibilityOHOS& childNodeOHOS =
+        static_cast<BrowserAccessibilityOHOS&>(childNode);
     nodeList.emplace_back(&childNodeOHOS);
     childNodeOHOS.AddFocusableNode(nodeList);
   }
 }
 
-const BrowserAccessibilityOHOS*
+BrowserAccessibilityOHOS*
 BrowserAccessibilityOHOS::FindNodeInRelativeDirection(
-    const std::list<const BrowserAccessibilityOHOS*>& nodeList,
+    const std::list<BrowserAccessibilityOHOS*>& nodeList,
     int32_t direction) const {
   switch (direction) {
     case FocusMoveDirection::FORWARD:
@@ -471,9 +467,9 @@ BrowserAccessibilityOHOS::FindNodeInRelativeDirection(
   return nullptr;
 }
 
-const BrowserAccessibilityOHOS*
+BrowserAccessibilityOHOS*
 BrowserAccessibilityOHOS::FindNodeInAbsoluteDirection(
-    const std::list<const BrowserAccessibilityOHOS*>& nodeList,
+    const std::list<BrowserAccessibilityOHOS*>& nodeList,
     int32_t direction) const {
   ui::AXOffscreenResult offscreen_result = ui::AXOffscreenResult::kOnscreen;
   float dip_scale = manager_->device_scale_factor();
@@ -502,7 +498,7 @@ BrowserAccessibilityOHOS::FindNodeInAbsoluteDirection(
       break;
   }
 
-  const BrowserAccessibilityOHOS* nearestNode = nullptr;
+  BrowserAccessibilityOHOS* nearestNode = nullptr;
   for (const auto& nodeItem : nodeList) {
     if (nodeItem->GetAccessibilityId() == accessibility_id_ ||
         !nodeItem->PlatformGetParent()) {
@@ -520,8 +516,8 @@ BrowserAccessibilityOHOS::FindNodeInAbsoluteDirection(
   return nearestNode;
 }
 
-const BrowserAccessibilityOHOS* BrowserAccessibilityOHOS::GetNextFocusableNode(
-    const std::list<const BrowserAccessibilityOHOS*>& nodeList) const {
+BrowserAccessibilityOHOS* BrowserAccessibilityOHOS::GetNextFocusableNode(
+    const std::list<BrowserAccessibilityOHOS*>& nodeList) const {
   auto nodeItem = nodeList.begin();
   for (; nodeItem != nodeList.end(); nodeItem++) {
     if ((*nodeItem)->GetAccessibilityId() == accessibility_id_) {
@@ -541,9 +537,9 @@ const BrowserAccessibilityOHOS* BrowserAccessibilityOHOS::GetNextFocusableNode(
   return nullptr;
 }
 
-const BrowserAccessibilityOHOS*
+BrowserAccessibilityOHOS*
 BrowserAccessibilityOHOS::GetPreviousFocusableNode(
-    const std::list<const BrowserAccessibilityOHOS*>& nodeList) const {
+    const std::list<BrowserAccessibilityOHOS*>& nodeList) const {
   auto nodeItem = nodeList.rbegin();
   for (; nodeItem != nodeList.rend(); nodeItem++) {
     if ((*nodeItem)->GetAccessibilityId() == accessibility_id_) {
@@ -867,9 +863,7 @@ std::u16string BrowserAccessibilityOHOS::GetSubstringTextContentUTF16(
 }
 
 bool BrowserAccessibilityOHOS::HasOnlyTextAndImageChildren() const {
-  std::vector<int64_t> childrenIds;
-  GetChildrenIds(childrenIds);
-  for (auto& childId : childrenIds) {
+  for (auto& childId : childrenIds_) {
     BrowserAccessibilityOHOS* child = GetFromAccessibilityId(childId);
     if (!child->IsText() && child->GetRole() != ax::mojom::Role::kStrong && !ui::IsImageOrVideo(child->GetRole())) {
       return false;
@@ -1048,6 +1042,10 @@ void BrowserAccessibilityOHOS::GetChildrenIds(std::vector<int64_t>& childrenIds)
       childNodeOHOS.GetChildrenIds(childrenIds);
     }
   }
+}
+
+void BrowserAccessibilityOHOS::SetChildrenIds(const std::vector<int64_t>& childrenIds) {
+  childrenIds_ = childrenIds;
 }
 
 }  // namespace content

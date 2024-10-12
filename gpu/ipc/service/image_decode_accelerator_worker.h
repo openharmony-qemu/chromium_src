@@ -17,7 +17,7 @@
 #include "ui/gfx/buffer_types.h"
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/gpu_memory_buffer.h"
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
 #include "base/synchronization/waitable_event.h"
 #endif
 
@@ -36,7 +36,7 @@ class ImageDecodeAcceleratorWorker {
     gfx::BufferFormat buffer_format;
     size_t buffer_byte_size;
     SkYUVColorSpace yuv_color_space;
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
     void* window_buffer = nullptr;
     raw_ptr<base::WaitableEvent> event = nullptr;
 #endif
@@ -66,7 +66,7 @@ class ImageDecodeAcceleratorWorker {
                       const gfx::Size& output_size,
                       CompletedDecodeCB decode_cb) = 0;
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
   virtual void ReleaseDecodedPixelMap() = 0;
 #endif
 };

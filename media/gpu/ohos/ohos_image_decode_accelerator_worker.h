@@ -38,7 +38,7 @@ class Size;
 
 namespace media {
 
-class OhosImageDecoder;
+class OhoIsmageDecoder;
 
 using OhosImageDecoderVector = std::vector<std::unique_ptr<OhosImageDecoder>>;
 

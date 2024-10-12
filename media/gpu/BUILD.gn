@@ -186,7 +186,7 @@ component("gpu") {
     }
   }
 
-  if (is_ohos) {
+  if (enable_heif_decoder) {
     import("//build/config/ohos/config.gni")
 
     sources += [

@@ -13,6 +13,7 @@
 #include "base/atomic_sequence_num.h"
 #include "base/containers/span.h"
 #include "base/memory/raw_ptr.h"
+#include "build/enable_heif_buildflags.h"
 #include "cc/paint/target_color_params.h"
 #include "cc/paint/transfer_cache_entry.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
@@ -150,7 +151,7 @@ class CC_PAINT_EXPORT ServiceImageTransferCacheEntry final
                                      size_t buffer_byte_size,
                                      bool needs_mips);
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
   bool BuildFromRGBAHardwareDecodedImage(GrDirectContext* context,
                                          std::vector<sk_sp<SkImage>> plane_images,
                                          size_t buffer_byte_size);

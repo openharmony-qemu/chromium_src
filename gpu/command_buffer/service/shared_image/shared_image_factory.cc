@@ -439,7 +439,7 @@ bool SharedImageFactory::CreateSharedImage(
   return RegisterBacking(std::move(backing));
 }
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
 bool SharedImageFactory::CreateSharedImage(const Mailbox& mailbox,
                                            gfx::GpuMemoryBufferHandle handle,
                                            gfx::BufferFormat format,
@@ -476,7 +476,7 @@ bool SharedImageFactory::CreateSharedImage(const Mailbox& mailbox,
 
   return RegisterBacking(std::move(backing));
 }
-#endif
+#endif // BUILDFLAG(ENABLE_HEIF_DECODER)
 
 bool SharedImageFactory::CreateSharedImage(const Mailbox& mailbox,
                                            gfx::GpuMemoryBufferHandle handle,

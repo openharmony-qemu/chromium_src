@@ -9,6 +9,7 @@
 #include "media/base/audio_timestamp_helper.h"
 #include "ohos_adapter_helper.h"
 #include "ohos_nweb/src/sysevent/event_reporter.h"
+#include "third_party/bounds_checking_function/include/securec.h"
 
 namespace media {
 
@@ -287,7 +288,11 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
   WEBCONTENT_SET.insert(webContent_);
   if (StartRender()) {
     callback_ = callback;
-    memset(audio_data_[active_buffer_index_], 0, buffer_size_bytes_);
+    if (memset_s(audio_data_[active_buffer_index_],
+        buffer_size_bytes_, 0, buffer_size_bytes_) != EOK) {
+      LOG(ERROR) << "audio data memset_s failed.";
+      return;
+    }
     active_buffer_index_ = (active_buffer_index_ + 1) % kMaxNumOfBuffersInQueue;
     if (callback_) {
       DCHECK(!timer_.IsRunning());

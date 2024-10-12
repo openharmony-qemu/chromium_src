@@ -3722,7 +3722,7 @@ NWebDelegate::GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
 
 std::shared_ptr<NWebAccessibilityNodeInfo>
 NWebDelegate::PopulateAccessibilityNodeInfo(
-    const content::BrowserAccessibilityOHOS* node) {
+    content::BrowserAccessibilityOHOS* node) {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
     return nullptr;
@@ -3736,6 +3736,7 @@ NWebDelegate::PopulateAccessibilityNodeInfo(
   std::vector<int64_t> childrenIds;
   node->GetChildrenIds(childrenIds);
   nodeInfo->SetChildIds(childrenIds);
+  node->SetChildrenIds(childrenIds);
   nodeInfo->SetIsAccessibilityFocus(
       (accessibilityManager->GetAccessibilityFocusId() ==
               node->GetAccessibilityId()

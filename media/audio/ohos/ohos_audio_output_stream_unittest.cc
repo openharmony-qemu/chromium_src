@@ -192,6 +192,13 @@ TEST_F(AudioRendererCallbackTest, OnSuspend02) {
             std::string::npos);
 }
 
+TEST_F(AudioRendererCallbackTest, OnSuspend03) {
+  render_callback_->media_session_ = 0;
+  render_callback_->OnSuspend();
+  double suspend_time = render_callback_->intervalSinceLastSuspend_;
+  ASSERT_EQ(suspend_time, 0.0f);
+}
+
 TEST_F(AudioRendererCallbackTest, OnResume01) {
   testing::internal::CaptureStderr();
   std::string log_output1 = testing::internal::GetCapturedStderr();

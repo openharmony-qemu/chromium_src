@@ -630,7 +630,7 @@ void NotifyForNextTouchEvent() override;
     std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
     const content::BrowserAccessibilityOHOS* node) const;
   std::shared_ptr<NWebAccessibilityNodeInfo>
-    PopulateAccessibilityNodeInfo(const content::BrowserAccessibilityOHOS* node);
+    PopulateAccessibilityNodeInfo(content::BrowserAccessibilityOHOS* node);
   void AddAccessibilityNodeInfoActions(
     std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
     const content::BrowserAccessibilityOHOS* node) const;

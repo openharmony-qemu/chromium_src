@@ -1096,7 +1096,8 @@ TEST_F(OhosVideoDecoderTest, Decode_002) {
       std::make_shared<DecoderBridgeSignal>();
   EXPECT_CALL(*video_frame_factory_, Initialize);
   OhosVideoDecoder::DecodeCB cb = base::BindOnce([](DecoderStatus) {});
-  ohos_video_decoder_->Decode(std::move(buffer), std::move(cb));
+  ohos_video_decoder_->Decode(buffer, std::move(cb));
+  ASSERT_NE(buffer, nullptr);
 }
 
 TEST_F(OhosVideoDecoderTest, Decode_003) {

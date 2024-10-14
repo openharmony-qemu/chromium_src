@@ -18,23 +18,20 @@
 #include "base/time/time.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-
 #define protected public
 #define private public
 #include "base/memory/scoped_refptr.h"
 #include "base/memory/unsafe_shared_memory_region.h"
+#include "base/task/single_thread_task_runner.h"
+#include "base/test/test_simple_task_runner.h"
 #include "media/base/bitstream_buffer.h"
 #include "media/base/media_log.h"
 #include "media/base/ohos/ohos_media_codec_util.h"
 #include "media/base/video_codecs.h"
 #include "media/base/video_frame.h"
 #include "media/base/video_types.h"
-#define private public
-#include "base/memory/unsafe_shared_memory_region.h"
-#include "media/base/media_log.h"
 #include "media/gpu/ohos/ohos_video_encode_accelerator.h"
 #undef private
-#define protected public
 #include "media/base/media_log.h"
 #undef protected
 #include "media/video/video_encode_accelerator.h"
@@ -185,6 +182,26 @@ TEST_F(OHOSVideoEncodeAcceleratorTest, Initialize001) {
   VideoEncodeAccelerator::Config config = VideoEncodeAccelerator::Config();
   config.output_profile = VP8PROFILE_ANY;
   ASSERT_FALSE(vea_->Initialize(config, client_.get(), std::move(media_log_)));
+}
+
+TEST_F(OHOSVideoEncodeAcceleratorTest, Initialize002) {
+  scoped_refptr<base::SingleThreadTaskRunner> task_runner(
+      base::MakeRefCounted<base::TestSimpleTaskRunner>());
+  base::SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner);
+  VideoEncodeAccelerator::Config config = VideoEncodeAccelerator::Config();
+  config.output_profile = H264PROFILE_BASELINE;
+  EXPECT_FALSE(vea_->Initialize(config, client_.get(), std::move(media_log_)));
+}
+
+TEST_F(OHOSVideoEncodeAcceleratorTest, Initialize003) {
+  scoped_refptr<base::SingleThreadTaskRunner> task_runner(
+      base::MakeRefCounted<base::TestSimpleTaskRunner>());
+  base::SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner);
+  VideoEncodeAccelerator::Config config = VideoEncodeAccelerator::Config();
+  config.output_profile = H264PROFILE_MAIN;
+  config.input_visible_size = gfx::Size(1920, 1080);
+  config.bitrate = Bitrate::ConstantBitrate(static_cast<uint32_t>(500000));
+  EXPECT_TRUE(vea_->Initialize(config, client_.get(), std::move(media_log_)));
 }
 
 TEST_F(OHOSVideoEncodeAcceleratorTest, MaybeStartIOTimer) {
@@ -569,6 +586,50 @@ TEST_F(OHOSVideoEncodeAcceleratorTest, DequeueOutput007) {
   vea_.media_codec_ = std::move(media_codec);
   vea_.DequeueOutput();
   ASSERT_FALSE(vea_.error_occurred_);
+  ASSERT_NE(&vea_, nullptr);
+}
+
+TEST_F(OHOSVideoEncodeAcceleratorTest, DequeueOutput008) {
+  OHOSVideoEncodeAccelerator vea_;
+  int32_t id = 1;
+  size_t size = 512;
+  uint64_t offset = 0;
+  BufferInfo info;
+  base::UnsafeSharedMemoryRegion region =
+      base::UnsafeSharedMemoryRegion::Create(size);
+  base::TimeDelta presentation_timestamp =
+      base::Microseconds(info.presentationTimeUs);
+  BitstreamBuffer bitstreambuffer(id, std::move(region), size, offset,
+                                  presentation_timestamp);
+  vea_.available_bitstream_buffers_.push_back(std::move(bitstreambuffer));
+  vea_.frame_timestamp_map_.insert(
+      {base::Microseconds(0), base::Microseconds(100)});
+  EXPECT_FALSE(vea_.available_bitstream_buffers_.empty());
+  vea_.error_occurred_ = false;
+  vea_.num_buffers_at_codec_ = 1;
+  ASSERT_EQ(vea_.num_buffers_at_codec_, 1);
+  auto media_codec = std::make_unique<MockOHOSMediaCodecBridge>();
+  EXPECT_CALL(*media_codec, DequeueOutputBuffer(testing::_, testing::_,
+                                                testing::_, testing::_))
+      .WillOnce(testing::Invoke([](uint32_t& index, BufferInfo& info_param,
+                                   BufferFlag& flag, OhosBuffer& buffer) {
+        info_param.size = 1024;
+        return CodecCodeAdapter::OK;
+      }));
+  vea_.media_codec_ = std::move(media_codec);
+  EncoderStatus status(EncoderStatusTraits::Codes::kOk, "kOk");
+  status.data_ = make_unique<internal::StatusData>();
+  auto log = make_unique<MediaLog>();
+  vea_.log_ = std::move(log);
+  auto client = std::make_unique<MockVideoClient>();
+  EXPECT_CALL(*client, NotifyErrorStatus(testing::_))
+      .WillOnce(testing::Return());
+  auto client_ptr_factory =
+      std::make_unique<base::WeakPtrFactory<VideoEncodeAccelerator::Client>>(
+          client.get());
+  vea_.client_ptr_factory_ = std::move(client_ptr_factory);
+  vea_.DequeueOutput();
+  ASSERT_TRUE(vea_.error_occurred_);
   ASSERT_NE(&vea_, nullptr);
 }
 

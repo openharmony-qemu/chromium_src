@@ -917,17 +917,24 @@ void MediaSessionImpl::OnSystemAudioFocusRequested(bool result) {
 
 void MediaSessionImpl::OnSuspendInternal(SuspendType suspend_type,
                                          State new_state) {
+  LOG(INFO) << "MediaSessionImpl::OnSuspendInternal";
   DCHECK(!HasPepper());
 
   DCHECK(new_state == State::SUSPENDED || new_state == State::INACTIVE);
   // UI suspend cannot use State::INACTIVE.
   DCHECK(suspend_type == SuspendType::kSystem || new_state == State::SUSPENDED);
 
-  if (HasOnlyOneShotPlayers())
+  if (HasOnlyOneShotPlayers()) {
+    LOG(INFO) << "MediaSessionImpl::OnSuspendInternal, HasOnlyOneShotPlayers";
     return;
+  }
 
-  if (audio_focus_state_ != State::ACTIVE)
+
+  if (audio_focus_state_ != State::ACTIVE) {
+    LOG(INFO) << "MediaSessionImpl::OnSuspendInternal, audio_focus_state_: " << static_cast<int> (audio_focus_state_);
     return;
+  }
+
 
   switch (suspend_type) {
     case SuspendType::kUI:

@@ -703,6 +703,9 @@ void RenderThreadImpl::Init() {
 #if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
   ChildThreadImpl::SetWebkitInited();
 #endif
+#if BUILDFLAG(IS_OHOS)
+  base::PlatformThread::SetCurrentThreadType(base::ThreadType::kDisplayCritical);
+#endif
 }
 
 RenderThreadImpl::~RenderThreadImpl() {

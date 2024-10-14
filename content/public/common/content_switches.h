@@ -282,6 +282,7 @@ CONTENT_EXPORT extern const char kOhosAppApiVersion[];
 CONTENT_EXPORT extern const char kEnableMultiRendererProcess[];
 CONTENT_EXPORT extern const char kForBrowser[];
 CONTENT_EXPORT extern const char kOhosEnableDrDc[];
+CONTENT_EXPORT extern const char kEnableNwebExDownload[];
 CONTENT_EXPORT extern const char kOhosHanceSurface[];
 CONTENT_EXPORT extern const char kOhosDisableTouchEvent[];
 CONTENT_EXPORT extern const char kPasswordWaitUsername[];

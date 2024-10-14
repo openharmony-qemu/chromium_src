@@ -218,4 +218,7 @@ source_set("unit_tests") {
       "//components/strings:components_strings_grit",
     ]
   }
+  if (ohos_unittests) {
+    sources += [ "ohos_adblock_config_unittest.cc" ]
+  }
 }

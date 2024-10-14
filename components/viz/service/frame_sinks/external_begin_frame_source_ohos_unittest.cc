@@ -243,6 +243,7 @@ TEST_F(ExternalBeginFrameSourceOhosTest, UpdateVSyncFrequency004) {
   EXPECT_EQ(60, begin_frame_source()->vsync_frequency_to_update_);
 }
 
+#if defined(OHOS_UNITTESTS)
 TEST_F(ExternalBeginFrameSourceOhosTest, OnVSyncImpl001) {
   viz::ExternalBeginFrameSourceOHOS::VSyncUserData* user_data = nullptr;
   int64_t timestamp = 1000;
@@ -317,6 +318,7 @@ TEST_F(ExternalBeginFrameSourceOhosTest, OnVSyncImpl007) {
 TEST_F(ExternalBeginFrameSourceOhosTest, OnVSyncImpl008) {
   viz::ExternalBeginFrameSourceOHOS::VSyncUserData* user_data = nullptr;
   int64_t timestamp = 1000;
+  begin_frame_source()->vsync_notification_enabled_ = true;
   begin_frame_source()->update_vsync_frequency_ = false;
   begin_frame_source()->vsync_frequency_to_update_ = 1;
   begin_frame_source()->OnVSyncImpl(timestamp, user_data);
@@ -459,6 +461,55 @@ TEST_F(ExternalBeginFrameSourceOhosTest, OnVSyncImpl022) {
   begin_frame_source()->OnVSyncImpl(timestamp, user_data);
   EXPECT_EQ(false, begin_frame_source()->vsync_notification_enabled_);
 }
+
+TEST_F(ExternalBeginFrameSourceOhosTest, OnVSyncImpl023) {
+  viz::ExternalBeginFrameSourceOHOS::VSyncUserData* user_data = nullptr;
+  int64_t timestamp = 55555555;
+  begin_frame_source()->user_data_.reset(user_data);
+  begin_frame_source()->last_vsync_period_ = timestamp;
+  begin_frame_source()->pre_vsync_period_ = 22222222;
+  begin_frame_source()->vsync_period_ =
+      begin_frame_source()->vsync_adapter_.GetVSyncPeriod();
+  begin_frame_source()->OnVSyncImpl(timestamp, user_data = nullptr);
+  EXPECT_EQ(VSYNC_PERIOD_60HZ, begin_frame_source()->vsync_period_);
+}
+
+TEST_F(ExternalBeginFrameSourceOhosTest, OnVSyncImpl024) {
+  viz::ExternalBeginFrameSourceOHOS::VSyncUserData* user_data = nullptr;
+  int64_t timestamp = 55555555;
+  begin_frame_source()->user_data_.reset(user_data);
+  begin_frame_source()->last_vsync_period_ = timestamp;
+  begin_frame_source()->pre_vsync_period_ = 44444444;
+  begin_frame_source()->vsync_period_ =
+      begin_frame_source()->vsync_adapter_.GetVSyncPeriod();
+  begin_frame_source()->OnVSyncImpl(timestamp, user_data = nullptr);
+  EXPECT_EQ(VSYNC_PERIOD_90HZ, begin_frame_source()->vsync_period_);
+}
+
+TEST_F(ExternalBeginFrameSourceOhosTest, OnVSyncImpl025) {
+  viz::ExternalBeginFrameSourceOHOS::VSyncUserData* user_data = nullptr;
+  int64_t timestamp = 55555555;
+  begin_frame_source()->user_data_.reset(user_data);
+  begin_frame_source()->last_vsync_period_ = timestamp;
+  begin_frame_source()->pre_vsync_period_ = 50000000;
+  begin_frame_source()->vsync_period_ =
+      begin_frame_source()->vsync_adapter_.GetVSyncPeriod();
+  begin_frame_source()->OnVSyncImpl(timestamp, user_data = nullptr);
+  EXPECT_EQ(VSYNC_PERIOD_120HZ, begin_frame_source()->vsync_period_);
+}
+
+TEST_F(ExternalBeginFrameSourceOhosTest, OnVSyncImpl026) {
+  viz::ExternalBeginFrameSourceOHOS::VSyncUserData* user_data = nullptr;
+  int64_t timestamp = 55555555;
+  begin_frame_source()->user_data_.reset(user_data);
+  begin_frame_source()->last_vsync_period_ = timestamp;
+  begin_frame_source()->pre_vsync_period_ = 55555556;
+  begin_frame_source()->vsync_period_ =
+      begin_frame_source()->vsync_adapter_.GetVSyncPeriod();
+  begin_frame_source()->OnVSyncImpl(timestamp, user_data = nullptr);
+  EXPECT_EQ(VSYNC_PERIOD_60HZ, begin_frame_source()->vsync_period_);
+}
+#endif // OHOS_UNITTESTS
 
 TEST_F(ExternalBeginFrameSourceOhosTest, SetEnabled001) {
   bool enabled = true;

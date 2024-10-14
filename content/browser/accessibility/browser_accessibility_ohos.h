@@ -98,8 +98,7 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
 
   bool IsLink() const;
 
-  const BrowserAccessibilityOHOS* GetAccessibilityNodeByFocusMove(
-      int32_t direction) const;
+  BrowserAccessibilityOHOS* GetAccessibilityNodeByFocusMove(int32_t direction) const;
 
   float RangeMin() const;
 
@@ -140,6 +139,8 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
 
   void GetChildrenIds(std::vector<int64_t>& childrenIds) const;
 
+  void SetChildrenIds(const std::vector<int64_t>& childrenIds);
+
  protected:
   BrowserAccessibilityOHOS(BrowserAccessibilityManager* manager,
                            ui::AXNode* node);
@@ -160,21 +161,21 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
   bool IsHeadingLink() const;
 
   void AddFocusableNode(
-      std::list<const BrowserAccessibilityOHOS*>& nodeList) const;
+      std::list<BrowserAccessibilityOHOS*>& nodeList) const;
 
-  const BrowserAccessibilityOHOS* FindNodeInRelativeDirection(
-      const std::list<const BrowserAccessibilityOHOS*>& nodeList,
+  BrowserAccessibilityOHOS* FindNodeInRelativeDirection(
+      const std::list<BrowserAccessibilityOHOS*>& nodeList,
       int32_t direction) const;
 
-  const BrowserAccessibilityOHOS* FindNodeInAbsoluteDirection(
-      const std::list<const BrowserAccessibilityOHOS*>& nodeList,
+  BrowserAccessibilityOHOS* FindNodeInAbsoluteDirection(
+      const std::list<BrowserAccessibilityOHOS*>& nodeList,
       int32_t direction) const;
 
-  const BrowserAccessibilityOHOS* GetNextFocusableNode(
-      const std::list<const BrowserAccessibilityOHOS*>& nodeList) const;
+  BrowserAccessibilityOHOS* GetNextFocusableNode(
+      const std::list<BrowserAccessibilityOHOS*>& nodeList) const;
 
-  const BrowserAccessibilityOHOS* GetPreviousFocusableNode(
-      const std::list<const BrowserAccessibilityOHOS*>& nodeList) const;
+  BrowserAccessibilityOHOS* GetPreviousFocusableNode(
+      const std::list<BrowserAccessibilityOHOS*>& nodeList) const;
 
   typedef base::RepeatingCallback<bool(const std::u16string& partial)>
       EarlyExitPredicate;
@@ -223,6 +224,8 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
                               const gfx::Rect& tempBest);
 
   int64_t accessibility_id_ = -1;
+
+  std::vector<int64_t> childrenIds_;
 };
 }  // namespace content
 

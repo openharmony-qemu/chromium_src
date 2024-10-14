@@ -103,7 +103,12 @@ void TouchSelectionController::OnSelectionBoundsChanged(
                   end_.edge_end() == start.edge_start()) ||
                  (end_selection_handle_->IsActive() &&
                   end.edge_end() == start_.edge_start());
-
+#ifdef OHOS_CLIPBOARD
+    if (!need_swap) {
+      need_swap = (end_ == end && end_selection_handle_->IsActive()) ||
+                  (start_ == start && start_selection_handle_->IsActive());
+    }
+#endif
     if (need_swap)
       start_selection_handle_.swap(end_selection_handle_);
   }

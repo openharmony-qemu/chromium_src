@@ -117,7 +117,6 @@ source_set("app") {
 
   configs += extra_configs
   deps = content_app_deps + [ "//ipc" ]
-  deps += [ "//ohos_nweb/libboundscheck:huawei_securec" ]
 
   public_deps = [ ":content_main_runner_app" ]
 

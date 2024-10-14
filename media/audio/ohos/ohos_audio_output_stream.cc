@@ -464,7 +464,8 @@ void OHOSAudioOutputStream::PumpSamples() {
       reinterpret_cast<int16_t*>(audio_data_[active_buffer_index_]));
   const size_t num_filled_bytes = frames_filled * bytes_per_frame_;
   size_t bytesWritten = 0;
-  while (bytesWritten < num_filled_bytes) {
+  bool is_audio_render_state_running_ = true;
+  while ((bytesWritten < num_filled_bytes) && is_audio_render_state_running_) {
     int32_t bytesSingle =
         audio_renderer_->Write(audio_data_[active_buffer_index_] + bytesWritten,
                                num_filled_bytes - bytesWritten);
@@ -472,6 +473,7 @@ void OHOSAudioOutputStream::PumpSamples() {
       LOG(DEBUG) << "Audio renderer write audio data failed";
       if (!audio_renderer_->IsRendererStateRunning()) {
         rendererCallback_->SetSuspendFlag(true);
+        is_audio_render_state_running_ = false;
         if (!weakMediaSession_) {
           LOG(ERROR) << "Try to suspend audio but get mediaSession failed";
           ReportError();
@@ -519,7 +521,9 @@ void OHOSAudioOutputStream::PumpSamples() {
   }
 
   stream_position_samples_ += frames_filled;
-  SchedulePumpSamples(now);
+  if (is_audio_render_state_running_) {
+    SchedulePumpSamples(now);
+  }
 }
 
 void OHOSAudioOutputStream::SchedulePumpSamples(base::TimeTicks now) {

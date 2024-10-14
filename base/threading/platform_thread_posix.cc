@@ -50,6 +50,10 @@
 #include "base/allocator/partition_allocator/starscan/stack/stack.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "ohos_adapter_helper.h"
+#endif
+
 namespace base {
 
 void InitThreading();
@@ -386,6 +390,56 @@ bool PlatformThread::CanChangeThreadType(ThreadType from, ThreadType to) {
 
 namespace internal {
 
+#if BUILDFLAG(IS_OHOS)
+struct ThreadTypeToQosLevelPair {
+  ThreadType thread_type;
+  OHOS::NWeb::QosLevelAdapter qs_level;
+};
+
+struct ThreadPriorityToQosLevelPairForTest {
+  ThreadPriorityForTest priority;
+  OHOS::NWeb::QosLevelAdapter qs_level;
+};
+
+const ThreadTypeToQosLevelPair kThreadTypeToQosLevelMap[7] = {
+  {ThreadType::kBackground, OHOS::NWeb::QosLevelAdapter::NWEB_QOS_BACKGROUND},
+  {ThreadType::kUtility, OHOS::NWeb::QosLevelAdapter::NWEB_QOS_UTILITY},
+  {ThreadType::kResourceEfficient, OHOS::NWeb::QosLevelAdapter::NWEB_QOS_USER_INITIATED},
+  {ThreadType::kDefault, OHOS::NWeb::QosLevelAdapter::NWEB_QOS_USER_INITIATED},
+  {ThreadType::kCompositing, OHOS::NWeb::QosLevelAdapter::NWEB_QOS_USER_INTERACTIVE},
+  {ThreadType::kDisplayCritical, OHOS::NWeb::QosLevelAdapter::NWEB_QOS_USER_INTERACTIVE},
+  {ThreadType::kRealtimeAudio, OHOS::NWeb::QosLevelAdapter::NWEB_QOS_USER_INTERACTIVE},
+};
+
+const ThreadPriorityToQosLevelPairForTest kThreadPriorityToQosLevelMapForTest[5] = {
+  {ThreadPriorityForTest::kBackground, OHOS::NWeb::QosLevelAdapter::NWEB_QOS_BACKGROUND},
+  {ThreadPriorityForTest::kUtility, OHOS::NWeb::QosLevelAdapter::NWEB_QOS_UTILITY},
+  {ThreadPriorityForTest::kNormal, OHOS::NWeb::QosLevelAdapter::NWEB_QOS_DEFAULT},
+  {ThreadPriorityForTest::kDisplay, OHOS::NWeb::QosLevelAdapter::NWEB_QOS_DEFAULT},
+  {ThreadPriorityForTest::kRealtimeAudio, OHOS::NWeb::QosLevelAdapter::NWEB_QOS_DEADLINE_REQUEST},
+};
+
+OHOS::NWeb::QosLevelAdapter ThreadTypeToQosLevel(ThreadType thread_type) {
+  for (const auto& pair : kThreadTypeToQosLevelMap) {
+    if (pair.thread_type == thread_type) {
+      return pair.qs_level;
+    }
+  }
+  NOTREACHED() << "Unknown ThreadType";
+  return OHOS::NWeb::QosLevelAdapter::NWEB_QOS_DEFAULT;
+}
+
+ThreadPriorityForTest QosLevelToThreadPriorityForTest(OHOS::NWeb::QosLevelAdapter level) {
+  for (const auto& pair : kThreadPriorityToQosLevelMapForTest) {
+    if (pair.qs_level == level) {
+      return pair.priority;
+    }
+  }
+  return ThreadPriorityForTest::kBackground;
+}
+
+#endif
+
 void SetCurrentThreadTypeImpl(ThreadType thread_type,
                               MessagePumpType pump_type_hint) {
 #if BUILDFLAG(IS_NACL)
@@ -406,11 +460,30 @@ void SetCurrentThreadTypeImpl(ThreadType thread_type,
               << PlatformThread::CurrentId() << ") to " << nice_setting;
   }
 #endif  // BUILDFLAG(IS_NACL)
+
+#if BUILDFLAG(IS_OHOS)
+  const OHOS::NWeb::QosLevelAdapter level = internal::ThreadTypeToQosLevel(thread_type);
+  const auto current_tid = PlatformThread::CurrentId();
+  if (OHOS::NWeb::OhosAdapterHelper::GetInstance().GetQosManagerInstance().
+      SetThreadQoS(level) != 0) {
+    LOG(ERROR) << "Failed to set thread qos. thread (" << current_tid << ")";    
+  } else {
+    LOG(INFO) << "SetCurrentThread thread (" << current_tid <<
+        ") to QosLevel: " << (int)level;
+  }
+#endif
 }
 
 }  // namespace internal
 
 // static
+#if BUILDFLAG(IS_OHOS)
+ThreadPriorityForTest PlatformThread::GetCurrentThreadPriorityForTest() {
+  OHOS::NWeb::QosLevelAdapter level = OHOS::NWeb::QosLevelAdapter::NWEB_QOS_DEFAULT;
+  OHOS::NWeb::OhosAdapterHelper::GetInstance().GetQosManagerInstance().GetThreadQoS(&level);
+  return internal::QosLevelToThreadPriorityForTest(level);
+}
+#else
 ThreadPriorityForTest PlatformThread::GetCurrentThreadPriorityForTest() {
 #if BUILDFLAG(IS_NACL)
   NOTIMPLEMENTED();
@@ -427,6 +500,7 @@ ThreadPriorityForTest PlatformThread::GetCurrentThreadPriorityForTest() {
   return internal::NiceValueToThreadPriorityForTest(nice_value);  // IN-TEST
 #endif  // !BUILDFLAG(IS_NACL)
 }
+#endif
 
 #endif  // !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_FUCHSIA)
 

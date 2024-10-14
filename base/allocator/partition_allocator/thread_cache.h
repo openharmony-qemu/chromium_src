@@ -247,7 +247,7 @@ class PA_COMPONENT_EXPORT(PARTITION_ALLOC) ThreadCache {
 
   static bool IsValid(ThreadCache* tcache) {
 #if BUILDFLAG(IS_OHOS)
-    if (reinterpret_cast<uintptr_t>(tcache) < kInvalidPointer){
+    if (reinterpret_cast<uintptr_t>(tcache) < kInvalidPointer) {
       return false;
     }
 #endif

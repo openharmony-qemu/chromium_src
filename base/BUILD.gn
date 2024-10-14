@@ -1077,9 +1077,8 @@ component("base") {
   ]
 
   if (is_ohos) {
-    deps += [
-      "//ohos_glue:ohos_adapter_glue_source",
-    ]
+    deps += [ "//ohos_glue:ohos_adapter_glue_source" ]
+    deps += ["//third_party:huawei_securec" ]
   }
 
   if (report_sys_event) {

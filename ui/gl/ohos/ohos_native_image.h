@@ -49,6 +49,8 @@ class GL_EXPORT OhosNativeImage
     uint32_t* width,
     uint32_t* height);
 
+  void GetTransformMatrixV1(float mtx[16], size_t mtx_size);
+
  protected:
   explicit OhosNativeImage(
       std::unique_ptr<OHOS::NWeb::NativeImageAdapter> native_image_adapter);

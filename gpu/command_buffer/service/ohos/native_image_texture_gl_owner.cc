@@ -148,10 +148,11 @@ bool NativeImageTextureGlOwner::GetCodedSizeAndVisibleRect(
   }
 
   float mtx[16];
-  native_image_->GetTransformMatrix(mtx);
+  size_t mtx_size = sizeof(mtx) / sizeof(float);
+  native_image_->GetTransformMatrixV1(mtx, mtx_size);
 
   bool result =
-      DecomposeTransform(mtx, rotated_visible_size, coded_size, visible_rect);
+      DecomposeTransform(mtx, mtx_size, rotated_visible_size, coded_size, visible_rect);
 
   constexpr gfx::Rect kMaxRect(16536, 16536);
   gfx::Rect coded_rect(*coded_size);
@@ -183,11 +184,16 @@ bool NativeImageTextureGlOwner::GetCodedSizeAndVisibleRect(
 // static
 bool NativeImageTextureGlOwner::DecomposeTransform(
     float mtx[16],
+    size_t mtx_size,
     gfx::Size rotated_visible_size,
     gfx::Size* coded_size,
     gfx::Rect* visible_rect) {
   DCHECK(coded_size);
   DCHECK(visible_rect);
+
+  if (mtx_size != 16u) {
+    return false;
+  }
 
   if (rotated_visible_size.width() < 4 || rotated_visible_size.height() < 4) {
     *coded_size = rotated_visible_size;

@@ -222,7 +222,6 @@
 
 #if BUILDFLAG(IS_OHOS)
 #include "content/renderer/media/ohos/native_texture_factory.h"
-#include "ohos_adapter_helper.h"
 #endif
 
 #ifdef OHOS_THEME_FONT

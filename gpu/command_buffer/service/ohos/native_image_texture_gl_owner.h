@@ -40,6 +40,7 @@ class GPU_GLES2_EXPORT NativeImageTextureGlOwner
   std::unique_ptr<ScopedNativeBufferFenceSync> GetNativeBuffer() override;
 
   static bool DecomposeTransform(float matrix[16],
+                                 size_t matrix_size,
                                  gfx::Size rotated_visible_size,
                                  gfx::Size* coded_size,
                                  gfx::Rect* visible_rect);

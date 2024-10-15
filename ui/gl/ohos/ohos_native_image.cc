@@ -166,4 +166,11 @@ void OhosNativeImage::GetNativeWindowBufferSize(void* windowBuffer, uint32_t* wi
   }
   return native_image_adapter_->GetNativeWindowBufferSize(windowBuffer, width, height);
 }
+
+void OhosNativeImage::GetTransformMatrixV1(float mtx[16], size_t mtx_size) {
+  if (native_image_adapter_ == nullptr || mtx_size != 16u) {
+    return;
+  }
+  native_image_adapter_->GetTransformMatrix(mtx);
+}
 }  // namespace gl

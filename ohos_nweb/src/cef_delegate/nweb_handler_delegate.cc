@@ -95,7 +95,6 @@
 #endif
 
 #include "third_party/bounds_checking_function/include/securec.h"
-#include "base/strings/safe_sprintf.h"
 
 namespace OHOS::NWeb {
 namespace {
@@ -290,7 +289,9 @@ char* CopyCefStringToChar(const CefString& str) {
   }
   int strLen = str.size() + 1;
   char* result = new char[strLen]{0};
-  base::strings::SafeSNPrintf(result, strLen, "%s", str.ToString().c_str());
+  if (strcpy_s(result, strLen, str.ToString().c_str()) != EOF) {
+    return nullptr;
+  }
   return result;
 }
 

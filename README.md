@@ -23,7 +23,7 @@ Below is the software architecture.
    
 2. Download the full code.
 
-    repo init -u https://gitee.com/openharmony-sig/manifest -b master -m chromium.xml --no-repo-verify
+    repo init -u https://gitee.com/openharmony-tpc/manifest -b chromium -m chromium.xml --no-repo-verify
 
     repo sync -c
 

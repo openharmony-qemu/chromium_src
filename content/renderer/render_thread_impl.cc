@@ -751,6 +751,10 @@ void RenderThreadImpl::Init() {
   }
   UpdateForegroundCrashKey(
       /*foreground=*/!blink::kLaunchingProcessIsBackgrounded);
+
+#if BUILDFLAG(IS_OHOS)
+  base::PlatformThread::SetCurrentThreadType(base::ThreadType::kCompositing);
+#endif
 }
 
 RenderThreadImpl::~RenderThreadImpl() {

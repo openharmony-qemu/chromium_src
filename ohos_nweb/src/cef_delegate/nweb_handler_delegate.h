@@ -404,6 +404,14 @@ class NWebHandlerDelegate : public CefClient,
       CefRefPtr<CefBrowser> browser,
       CefRefPtr<CefFrame> frame,
       CefRefPtr<CefRequest> request) override;
+ 
+  void GetResourceHandlerByIO(
+      CefRefPtr<CefBrowser> browser,
+      CefRefPtr<CefFrame> frame,
+      CefRefPtr<CefRequest> request,
+      CefRefPtr<CefInterceptCallback> callback,
+      CefRefPtr<CefSchemeHandlerFactory> scheme_factory,
+      const CefString& scheme) override;
   /* CefResourceRequestHandler method end */
 
   /* CefMediaHandler methods begin */

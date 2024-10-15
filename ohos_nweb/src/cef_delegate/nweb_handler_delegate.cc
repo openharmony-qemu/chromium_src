@@ -27,6 +27,9 @@
 #include "cef/include/wrapper/cef_closure_task.h"
 #include "cef/include/wrapper/cef_helpers.h"
 #include "content/public/browser/browser_thread.h"
+#include "net/base/net_errors.h"
+#include "net/cookies/site_for_cookies.h"
+#include "net/cookies/static_cookie_policy.h"
 #include "nweb_access_request_delegate.h"
 #include "nweb_context_menu_params_impl.h"
 #include "nweb_controller_handler_impl.h"
@@ -58,6 +61,7 @@
 #include "nweb_url_resource_response_impl.h"
 #include "nweb_value_callback.h"
 #include "nweb_value_convert.h"
+#include "url/gurl.h"
 
 #include "ohos_adapter_helper.h"
 
@@ -1770,6 +1774,45 @@ CefRefPtr<CefResourceHandler> NWebHandlerDelegate::GetResourceHandler(
     return nullptr;
   }
 }
+
+void NWebHandlerDelegate::GetResourceHandlerByIO(
+    CefRefPtr<CefBrowser> browser,
+    CefRefPtr<CefFrame> frame,
+    CefRefPtr<CefRequest> request,
+    CefRefPtr<CefInterceptCallback> callback,
+    CefRefPtr<CefSchemeHandlerFactory> scheme_factory,
+    const CefString& scheme) {
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    content::GetUIThreadTaskRunner({})->PostTask(FROM_HERE,
+      base::BindOnce(&NWebHandlerDelegate::GetResourceHandlerByIO,
+                    this, browser, frame, request, callback,
+                    scheme_factory, scheme));
+    return;
+  }
+  if (!request) {
+    LOG(ERROR) << "NWebHandlerDelegate::GetResourceHandlerByIO request is null";
+    return;
+  }
+  CefRequest::HeaderMap cef_request_headers;
+  request->GetHeaderMap(cef_request_headers);
+  std::map<std::string, std::string> request_headers;
+  ConvertMapToHeaderMap(cef_request_headers, request_headers);
+  std::shared_ptr<NWebUrlResourceRequest> nweb_request =
+      std::make_shared<NWebUrlResourceRequestImpl>(
+          request->GetMethod().ToString(), request_headers,
+          request->GetURL().ToString(), false, request->IsMainFrame());
+  std::shared_ptr<NWebUrlResourceResponse> response =
+      std::make_shared<NWebUrlResourceResponseImpl>();
+  CefRefPtr<CefResourceHandler> resource_handler = nullptr;
+  if (nweb_handler_->OnHandleInterceptRequest(nweb_request, response)) {
+    std::string tag = "";
+    resource_handler = new NWebResourceHandler(response, tag);
+  } else if (scheme_factory) {
+    // here to get ets schemeHandler
+    resource_handler = scheme_factory->Create(browser, frame, scheme, request);
+  }
+  callback->ContinueLoad(resource_handler);
+}
 /* CefResourceRequestHandler method end */
 
 /* CefPrintHandler method begin */
@@ -2788,22 +2831,63 @@ void NWebHandlerDelegate::OnFindResult(CefRefPtr<CefBrowser> browser,
 
 /* CefResourceRequestHandler methods begin */
 
+bool AllowCookies(
+    const GURL& url,
+    const net::SiteForCookies& site_for_cookies,
+    bool block_all_cookies,
+    bool block_thirdparty_cookies) {
+  net::StaticCookiePolicy::Type policy =
+      net::StaticCookiePolicy::ALLOW_ALL_COOKIES;
+  if (block_all_cookies) {
+    policy = net::StaticCookiePolicy::BLOCK_ALL_COOKIES;
+  } else if (block_thirdparty_cookies) {
+    policy = net::StaticCookiePolicy::BLOCK_ALL_THIRD_PARTY_COOKIES;
+  } else {
+    return true;
+  }
+  return net::StaticCookiePolicy(policy).CanAccessCookies(
+             url, site_for_cookies) == net::OK;
+}
+
 bool NWebHandlerDelegate::CanSendCookie(CefRefPtr<CefBrowser> browser,
                                         CefRefPtr<CefFrame> frame,
                                         CefRefPtr<CefRequest> request,
                                         const CefCookie& cookie) {
-  return NWebEngineImpl::GetInstance()
-      ->GetCookieManager()
-      ->IsAcceptCookieAllowed();
+  auto cookie_manager = NWebEngineImpl::GetInstance()->GetCookieManager();
+  bool block_all_cookies = !cookie_manager->IsAcceptCookieAllowed();
+  bool block_thirdparty_cookies = !cookie_manager->IsThirdPartyCookieAllowed();
+  bool allow_cookies = AllowCookies(GURL(request->GetURL().ToString()),
+          net::SiteForCookies::FromUrl(
+              GURL(request->GetFirstPartyForCookies().ToString())),
+          block_all_cookies, block_thirdparty_cookies);
+  LOG(INFO) << "CanSendCookie allow_cookies: " << allow_cookies
+            << " block_all_cookies:" << block_all_cookies
+            << " block_thirdparty_cookies:" << block_thirdparty_cookies
+            << " url: " << request->GetURL().ToString()
+            << " site_for_cookies: " << request->GetFirstPartyForCookies().ToString();
+
+  return allow_cookies;
 }
 bool NWebHandlerDelegate::CanSaveCookie(CefRefPtr<CefBrowser> browser,
                                         CefRefPtr<CefFrame> frame,
                                         CefRefPtr<CefRequest> request,
                                         CefRefPtr<CefResponse> response,
                                         const CefCookie& cookie) {
-  return NWebEngineImpl::GetInstance()
-      ->GetCookieManager()
-      ->IsAcceptCookieAllowed();
+  auto cookie_manager = NWebEngineImpl::GetInstance()->GetCookieManager();
+  bool block_all_cookies = !cookie_manager->IsAcceptCookieAllowed();
+  bool block_thirdparty_cookies = !cookie_manager->IsThirdPartyCookieAllowed();
+  bool allow_cookies = AllowCookies(GURL(request->GetURL().ToString()),
+          net::SiteForCookies::FromUrl(
+              GURL(request->GetFirstPartyForCookies().ToString())),
+          block_all_cookies,
+          block_thirdparty_cookies);
+  LOG(INFO) << " CanSendCookie allow_cookies: " << allow_cookies
+            << " block_all_cookies:" << block_all_cookies
+            << " block_thirdparty_cookies:" << block_thirdparty_cookies
+            << " url: " << request->GetURL().ToString()
+            << " site_for_cookies: " << request->GetFirstPartyForCookies().ToString();
+
+  return allow_cookies;
 }
 /* CefResourceRequestHandler methods end */
 

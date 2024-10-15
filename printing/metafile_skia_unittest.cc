@@ -7,9 +7,9 @@
 #include "printing/metafile_skia.cc"
 #include "printing/metafile_skia.h"
 #undef private
-#else // OHOS_UNITTESTS
+#else  // OHOS_UNITTESTS
 #include "printing/metafile_skia.h"
-#endif // OHOS_UNITTESTS
+#endif  // OHOS_UNITTESTS
 
 #include <utility>
 
@@ -202,7 +202,6 @@ TEST(MetafileSkiaTest, TestMultiPictureDocumentTypefaces) {
 class MockSkStreamAsset : public SkStreamAsset {
  public:
   MockSkStreamAsset(size_t length) : fLength_(length), fPosition_(0) {}
-  // SkStream ·½·¨
   size_t read(void* buffer, size_t size) override {
     if (fPosition_ + size > fLength_) {
       size = fLength_ - fPosition_;
@@ -268,7 +267,8 @@ TEST(MetafileSkiaTest, OhosFinishDocument001) {
 
 TEST(MetafileSkiaTest, OhosFinishDocument002) {
   MetafileSkia metafile(mojom::SkiaDocumentType::kPDF, 1);
-  std::unique_ptr<SkStreamAsset> mock_data_stream = std::make_unique<MockSkStreamAsset>(1);
+  std::unique_ptr<SkStreamAsset> mock_data_stream =
+      std::make_unique<MockSkStreamAsset>(1);
   metafile.data_->data_stream = std::move(mock_data_stream);
   std::function<bool()> checkCancel = []() { return true; };
   auto result = metafile.OhosFinishDocument(checkCancel);
@@ -302,6 +302,44 @@ TEST(MetafileSkiaTest, OhosFinishDocument005) {
   EXPECT_EQ(nullptr, metafile.data_->recorder.getRecordingCanvas());
   EXPECT_EQ(mojom::SkiaDocumentType::kMSKP, metafile.data_->type);
   EXPECT_EQ(true, result);
+}
+
+TEST(MetafileSkiaTest, OhosFinishDocument007) {
+  MetafileSkia metafile(mojom::SkiaDocumentType::kPDF, 1);
+  metafile.data_->data_stream = nullptr;
+  std::function<bool()> checkCancel = []() { return false; };
+  auto result = metafile.OhosFinishDocument(checkCancel);
+  EXPECT_EQ(true, result);
+  EXPECT_NE(metafile.data_->data_stream, nullptr);
+}
+
+TEST(MetafileSkiaTest, OhosFinishDocument008) {
+  MetafileSkia metafile(mojom::SkiaDocumentType::kMSKP, 1);
+  metafile.data_->data_stream = nullptr;
+  std::function<bool()> checkCancel = []() { return false; };
+  auto result = metafile.OhosFinishDocument(checkCancel);
+  EXPECT_EQ(true, result);
+  EXPECT_NE(metafile.data_->data_stream, nullptr);
+}
+
+TEST(MetafileSkiaTest, OhosFinishDocument009) {
+  MetafileSkia metafile(mojom::SkiaDocumentType::kPDF, 1);
+  metafile.data_->data_stream = nullptr;
+  metafile.data_->pages.clear();
+  std::function<bool()> checkCancel = []() { return false; };
+  auto result = metafile.OhosFinishDocument(checkCancel);
+  EXPECT_EQ(true, result);
+  EXPECT_NE(metafile.data_->data_stream, nullptr);
+}
+
+TEST(MetafileSkiaTest, OhosFinishDocument010) {
+  MetafileSkia metafile(mojom::SkiaDocumentType::kPDF, 1);
+  metafile.data_->data_stream = nullptr;
+  metafile.data_->recorder.is_recording_ = false;
+  std::function<bool()> checkCancel = []() { return false; };
+  auto result = metafile.OhosFinishDocument(checkCancel);
+  EXPECT_EQ(true, result);
+  EXPECT_NE(metafile.data_->data_stream, nullptr);
 }
 #endif  // OHOS_UNITTESTS
 

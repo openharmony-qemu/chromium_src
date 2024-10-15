@@ -49,6 +49,7 @@ class ContextProvider;
 namespace cc {
 
 class CC_EXPORT ResourcePool : public base::trace_event::MemoryDumpProvider {
+ private:
   class PoolResource;
 
  public:

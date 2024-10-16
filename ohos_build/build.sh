@@ -18,7 +18,7 @@ basedir=$(dirname "$0")
 CUR_DIR=$PWD
 ROOT_DIR="${CUR_DIR%/src*}""/src"
 # Global variables.
-BUILD_TARGET_WEBVIEW="ohos_nweb_hap ohos_adapter_napi"
+BUILD_TARGET_WEBVIEW="ohos_nweb_hap"
 BUILD_TARGET_V8="v8/v8_shared:v8_shared"
 BUILD_TARGET_BROWSERSHELL="ohos_browser_shell"
 BUILD_TARGET_NATIVE="libweb_engine chrome_crashpad_handler"

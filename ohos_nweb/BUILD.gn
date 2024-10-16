@@ -395,6 +395,7 @@ component("nweb_sources") {
   public_deps = [ "//third_party/abseil-cpp:absl" ]
 
   deps += [
+    "//ohos_adapter:ohos_adapter_napi",
     "//ohos_adapter:nweb_ohos_adapter",
   ]
 }

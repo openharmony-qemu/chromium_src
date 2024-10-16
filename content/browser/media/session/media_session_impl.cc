@@ -30,6 +30,7 @@
 #include "content/public/browser/web_contents.h"
 #include "content/public/browser/web_contents_delegate.h"
 #include "content/public/common/content_client.h"
+#include "content/public/common/content_switches.h"
 #include "media/audio/audio_device_description.h"
 #include "media/base/media_content_type.h"
 #include "media/base/media_switches.h"
@@ -641,7 +642,9 @@ void MediaSessionImpl::RebuildAndNotifyMediaPositionChanged() {
 
   if (position == position_) {
   #if defined(OHOS_MEDIA_AVSESSION)
-    session_ohos_->MediaSessionPositionChanged(position);
+    if (session_ohos_) {
+      session_ohos_->MediaSessionPositionChanged(position);
+    }
   #endif  // defined(OHOS_MEDIA_AVSESSION)
     return;
   }
@@ -1002,7 +1005,10 @@ MediaSessionImpl::MediaSessionImpl(WebContents* web_contents)
   should_throttle_duration_update_ = true;
 #endif  // BUILDFLAG(IS_ANDROID)
 #if defined(OHOS_MEDIA_AVSESSION)
-  session_ohos_ = std::make_unique<MediaSessionOHOS>(this);
+  auto currentProcess = base::CommandLine::ForCurrentProcess();
+  if (currentProcess && !currentProcess->HasSwitch(switches::kForBrowser)) {
+    session_ohos_ = std::make_unique<MediaSessionOHOS>(this);
+  }
 #endif  // defined(OHOS_MEDIA_AVSESSION)
   if (web_contents && web_contents->GetPrimaryMainFrame() &&
       web_contents->GetPrimaryMainFrame()->GetView()) {

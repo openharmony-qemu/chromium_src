@@ -20,6 +20,7 @@
 
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
+#include "base/ohos/sys_info_utils.h"
 #include "base/task/thread_pool.h"
 #include "cef/include/cef_app.h"
 #include "cef/include/cef_cookie.h"
@@ -3322,7 +3323,7 @@ void NWebHandlerDelegate::RemoveTransientJavaScriptObject() {
 }
 
 bool NWebHandlerDelegate::OnTooltip(CefRefPtr<CefBrowser> browser, CefString& text) {
-  if (nweb_handler_ != nullptr) {
+  if (nweb_handler_ != nullptr && !base::ohos::IsMobileDevice()) {
     nweb_handler_->OnTooltip(text.ToString());
     return true;
   }

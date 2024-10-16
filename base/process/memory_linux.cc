@@ -105,15 +105,6 @@ bool AdjustOOMScore(ProcessId process, int score) {
   return AdjustOOMScoreHelper::AdjustOOMScore(process, score);
 }
 
-#if BUILDFLAG(IS_OZONE)
-bool UncheckedMalloc(size_t size, void** result) {
-  *result = malloc(size);
-  return *result != nullptr;
-}
-void UncheckedFree(void* ptr) {
-  free(ptr);
-}
-#else
 bool UncheckedMalloc(size_t size, void** result) {
 #if BUILDFLAG(USE_ALLOCATOR_SHIM)
   *result = allocator_shim::UncheckedAlloc(size);
@@ -124,5 +115,15 @@ bool UncheckedMalloc(size_t size, void** result) {
 #endif
   return *result != nullptr;
 }
+
+void UncheckedFree(void* ptr) {
+#if BUILDFLAG(USE_ALLOCATOR_SHIM)
+  allocator_shim::UncheckedFree(ptr);
+#elif defined(MEMORY_TOOL_REPLACES_ALLOCATOR) || !defined(LIBC_GLIBC)
+  free(ptr);
+#elif defined(LIBC_GLIBC)
+  __libc_free(ptr);
 #endif
+}
+
 }  // namespace base

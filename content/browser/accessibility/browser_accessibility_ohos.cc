@@ -778,7 +778,7 @@ std::u16string BrowserAccessibilityOHOS::GetTextContentUTF16() const {
 
 std::u16string BrowserAccessibilityOHOS::GetSubstringTextContentUTF16(
     absl::optional<EarlyExitPredicate> predicate) const {
-  if (ui::IsIframe(GetRole()))
+  if (ui::IsIframe(GetRole()) || GetRole() == ax::mojom::Role::kCell)
     return std::u16string();
 
   // First, always return the |value| attribute if this is an

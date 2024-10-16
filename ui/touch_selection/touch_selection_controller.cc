@@ -11,6 +11,7 @@
 #include "base/metrics/histogram_macros.h"
 #include "base/metrics/user_metrics.h"
 #include "base/notreached.h"
+#include "base/logging.h"
 
 namespace ui {
 namespace {
@@ -69,15 +70,38 @@ TouchSelectionController::~TouchSelectionController() {
 void TouchSelectionController::OnSelectionBoundsChanged(
     const gfx::SelectionBound& start,
     const gfx::SelectionBound& end) {
-  if (start == start_ && end_ == end)
+  if (start == start_ && end_ == end) {
+#ifdef OHOS_CLIPBOARD
+    reset_selection_temporarily_ = false;
+#endif
     return;
+  }
 
   if (start.type() == gfx::SelectionBound::EMPTY ||
-      end.type() == gfx::SelectionBound::EMPTY ||
-      !show_touch_handles_) {
+      end.type() == gfx::SelectionBound::EMPTY || !show_touch_handles_) {
+#ifdef OHOS_CLIPBOARD
+    if (active_status_ == SELECTION_ACTIVE && start_selection_handle_ &&
+        end_selection_handle_ && show_touch_handles_) {
+      if (start_selection_handle_->IsActive() ||
+          end_selection_handle_->IsActive()) {
+        LOG(INFO) << "selection temporarily hide";
+        reset_selection_temporarily_ = true;
+        return;
+      }
+    }
+    if (longpress_drag_selector_.IsDragging()) {
+      LOG(INFO) << "long selection temporarily hide";
+      reset_selection_temporarily_ = true;
+      return;
+    }
+#endif
     HideHandles();
     return;
   }
+
+#ifdef OHOS_CLIPBOARD
+  reset_selection_temporarily_ = false;
+#endif
 
   // Swap the Handles when the start and end selection points cross each other.
   if (active_status_ == SELECTION_ACTIVE) {
@@ -461,6 +485,7 @@ void TouchSelectionController::OnDragBegin(
   selection_handle_dragged_ = true;
 
 #ifdef OHOS_CLIPBOARD
+  reset_selection_temporarily_ = false;
   selection_handle_orientation_dragging_ = anchor_drag_to_selection_start_
                                                ? TouchHandleOrientation::LEFT
                                                : TouchHandleOrientation::RIGHT;
@@ -515,6 +540,10 @@ void TouchSelectionController::OnDragUpdate(
 void TouchSelectionController::OnDragEnd(
     const TouchSelectionDraggable& draggable) {
 #ifdef OHOS_CLIPBOARD
+  if (reset_selection_temporarily_) {
+    LOG(INFO) << "reset_selection_temporarily_ HideHandles";
+    HideHandles();
+  }
   selection_handle_orientation_dragging_ = TouchHandleOrientation::UNDEFINED;
 #endif
   if (&draggable == insertion_handle_.get())

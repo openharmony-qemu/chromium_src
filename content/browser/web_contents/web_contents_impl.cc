@@ -3845,7 +3845,7 @@ void WebContentsImpl::EnterFullscreenMode(
 
 #ifdef OHOS_EX_TOPCONTROLS
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kForBrowser)) {
+          switches::kEnableNwebExTopControls)) {
     controls_state_current_fullscreen_ = cc::BrowserControlsState::kBoth;
     if (auto* view = GetRenderWidgetHostView()) {
       int top_controls_offset =
@@ -3904,7 +3904,7 @@ void WebContentsImpl::ExitFullscreenMode(bool will_cause_resize) {
 
 #ifdef OHOS_EX_TOPCONTROLS
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kForBrowser)) {
+          switches::kEnableNwebExTopControls)) {
     UpdateBrowserControlsState(controls_state_fullscreen_,
                                controls_state_current_fullscreen_, false);
   }
@@ -7461,7 +7461,7 @@ void WebContentsImpl::ShowContextMenu(
 
 #if defined(OHOS_EX_FREE_COPY)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kForBrowser)) {
+          switches::kEnableNwebExFreeCopy)) {
     SetShouldShowFreeCopy(params.is_selectable);
   }
 #endif
@@ -7897,7 +7897,7 @@ void WebContentsImpl::RenderViewReady(RenderViewHost* rvh) {
 
 #ifdef OHOS_EX_TOPCONTROLS
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kForBrowser)) {
+          switches::kEnableNwebExTopControls)) {
     UpdateBrowserControlsState(browser_controls_state_,
                                cc::BrowserControlsState::kShown, false);
   }
@@ -8088,7 +8088,7 @@ void WebContentsImpl::DidStartLoading(FrameTreeNode* frame_tree_node) {
 #ifdef OHOS_EX_TOPCONTROLS
   if (frame_tree_node->IsMainFrame()) {
     if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-            switches::kForBrowser) &&
+            switches::kEnableNwebExTopControls) &&
         should_show_loading_ui) {
       UpdateBrowserControlsState(browser_controls_state_,
                                  cc::BrowserControlsState::kShown, false);

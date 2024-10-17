@@ -435,7 +435,7 @@ int NumberOfRendererRasterThreads() {
       *base::CommandLine::ForCurrentProcess();
 
 #ifdef OHOS_NWEB_EX
-  if (command_line.HasSwitch(switches::kForBrowser)){
+  if (command_line.HasSwitch(switches::kEnableNwebEx)){
     bool excludable_devices = base::CommandLine::ForCurrentProcess()->HasSwitch(
             switches::kNumRasterThreads);
     // Same with android.

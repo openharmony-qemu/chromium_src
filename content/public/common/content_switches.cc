@@ -1030,7 +1030,20 @@ const char kOhosAppApiVersion[] = "user-api-version";
 
 #if BUILDFLAG(IS_OHOS)
 const char kEnableMultiRendererProcess[] = "enable-multi-renderer-process";
-const char kForBrowser[] = "for-browser";
+const char kEnableLoggerReport[] = "enable-nweb-logger-report";
+const char kEnableMediaAvsession[] = "enable-nweb-media-avsession";
+const char kEnableNwebEx[] = "enable-nweb-ex";
+const char kEnableNwebExReportCrashpad[] = "enable-nweb-ex-report-crashpad";
+const char kEnableNwebExTopControls[] = "enable-nweb-ex-top-controls";
+const char kEnableNwebExFreeCopy[] = "enable-nweb-ex-free-copy";
+const char kEnableNwebExPermission[] = "enable-nweb-ex-permission";
+const char kEnableNwebExHttpDnsFallback[] = "enable-nweb-ex-http-dns-fallback";
+const char kEnableNwebExExceptionList[] = "enable-nweb-ex-exception-list";
+const char kEnableNwebExPassword[] = "enable-nweb-ex-password";
+const char kEnableNwebExUa[] = "enable-nweb-ex-ua";
+const char kEnableNwebExGetZoomLevel[] = "enable-nweb-ex-get-zoom-level";
+const char kEnableNwebExNetworkLoad[] = "enable-nweb-ex-network-load";
+const char kEnableNwebExBlankTargetPopup_intercept[] = "enable-nweb-ex-blank-target-popup-intercept";
 const char kOhosEnableDrDc[] = "ohos-enable-drdc";
 const char kOhosDisableTouchEvent[] = "disable-touch-event-register";
 const char kPasswordWaitUsername[] = "ohos-enable-wait-for-username";

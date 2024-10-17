@@ -260,7 +260,7 @@ LikelyFormFilling SendFillInformationToRenderer(
   bool wait_for_username =
       wait_for_username_reason != WaitForUsernameReason::kDontWait;
 #ifdef OHOS_EX_PASSWORD
-  if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(switches::kForBrowser)) {
+  if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(switches::kEnableNwebExPassword)) {
     bool excludable_devices = (*base::CommandLine::ForCurrentProcess()).HasSwitch(
             switches::kPasswordWaitUsername);
     if (!excludable_devices) {

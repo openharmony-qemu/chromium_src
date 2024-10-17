@@ -1043,7 +1043,7 @@ std::vector<ProcessedField> ProcessFields(
 #if defined(OHOS_EX_PASSWORD)
     else if (field.is_focusable) {
       if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-              switches::kForBrowser)) {
+              switches::kEnableNwebExPassword)) {
         if (is_password_visible) {
           processed_field.interactability = Interactability::kPossible;
         }

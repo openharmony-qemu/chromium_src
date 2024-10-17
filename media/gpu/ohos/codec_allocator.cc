@@ -103,7 +103,7 @@ void CodecAllocator::ReleaseMediaCodec(
     base::OnceClosure codec_released_cb) {
   DCHECK(codec);
   DCHECK(codec_released_cb);
-
+  LOG(INFO) << "CodecAllocator::ReleaseMediaCodec";
   if (!task_runner_->RunsTasksInCurrentSequence()) {
     task_runner_->PostTask(
         FROM_HERE,

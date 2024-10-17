@@ -75,7 +75,7 @@ void AudioRendererCallback::OnResume() {
     if (!main_task_runner_) {
       return;
     }
-    LOG(INFO) << "AudioRendererCallback::OnResume MediaSession Resume."
+    LOG(INFO) << "AudioRendererCallback::OnResume MediaSession Resume.";
     main_task_runner_->PostTask(
         FROM_HERE,
         base::BindOnce(&content::MediaSessionImpl::Resume,

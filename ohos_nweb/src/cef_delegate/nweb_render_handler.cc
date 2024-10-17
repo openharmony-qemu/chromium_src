@@ -641,7 +641,8 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
   bool is_hide = (text_input_info.input_mode == CEF_TEXT_INPUT_MODE_NONE) ||
                  text_input_info.always_hide_ime;
   if (!is_hide) {
-    if (is_focused_) {
+    auto delegate = delegate_interface_.lock();
+    if (is_focused_ && delegate && delegate->OnFocus()) {
       bool useSystemKeyboard = true;
       int32_t enterKeyType = -1;
       auto handler = handler_.lock();

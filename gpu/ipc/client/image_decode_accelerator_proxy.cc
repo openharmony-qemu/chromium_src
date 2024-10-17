@@ -33,6 +33,14 @@ bool IsSupportedImageSize(
     const ImageDecodeAcceleratorSupportedProfile& supported_profile) {
   DCHECK(image_data);
 
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
+  if(image_data->image_type == cc::ImageType::kHEIF) {
+    LOG(INFO) << "[HeifSupport] Heif type, no need to check size.";  
+    return true;
+  }
+
+#endif
+
   gfx::Size image_size;
   if (image_data->coded_size.has_value())
     image_size = image_data->coded_size.value();
@@ -40,18 +48,6 @@ bool IsSupportedImageSize(
     image_size = image_data->image_size;
   DCHECK(!image_size.IsEmpty());
 
-#if BUILDFLAG(ENABLE_HEIF_DECODER)
-  auto result =
-      image_size.width() >= supported_profile.min_encoded_dimensions.width() &&
-      image_size.height() >=
-          supported_profile.min_encoded_dimensions.height() &&
-      image_size.width() <= supported_profile.max_encoded_dimensions.width() &&
-      image_size.height() <= supported_profile.max_encoded_dimensions.height();
-  if (!result) {
-    LOG(INFO) << "[HeifSupport] UnSupported image size " << image_size.ToString();
-  }
-  return result;
-#else
   return image_size.width() >=
              supported_profile.min_encoded_dimensions.width() &&
          image_size.height() >=
@@ -60,7 +56,6 @@ bool IsSupportedImageSize(
              supported_profile.max_encoded_dimensions.width() &&
          image_size.height() <=
              supported_profile.max_encoded_dimensions.height();
-#endif // BUILDFLAG(ENABLE_HEIF_DECODER)
 }
 
 bool IsSupportedJpegImage(

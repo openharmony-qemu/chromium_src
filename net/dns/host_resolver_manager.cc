@@ -135,9 +135,34 @@
 #endif  // BUILDFLAG(IS_ANDROID)
 #endif  // BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 
+#if BUILDFLAG(IS_OHOS)
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+#include "base/base_switches.h"
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
+#endif
+
 namespace net {
 
 namespace {
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+const char* kSceneString[] = {"normal DNS", "ErrorRetry"};
+const char* kDnsTransactionString[] = {"local DNS", "https DNS"};
+
+void IPListToString(const std::vector<IPEndPoint>& endpoints,
+                    std::string& ipInfo) {
+  ipInfo.append("[");
+  for (size_t index = 0; index < endpoints.size(); index++) {
+    ipInfo.append(endpoints[index].address().ToString());
+    if (index < endpoints.size() - 1) {
+      ipInfo.append(", ");
+    }
+  }
+  ipInfo.append("]");
+}
+#endif
 
 // Limit the size of hostnames that will be resolved to combat issues in
 // some platform's resolvers.
@@ -755,6 +780,16 @@ class HostResolverManager::RequestImpl
         parameters_.secure_dns_policy, is_ip, source_net_log_,
         &job_key_.query_types, &job_key_.flags, &job_key_.secure_dns_mode);
 
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+    if (parameters_.only_use_secure_fallback) {
+      next_state_ = STATE_START_JOB;
+      if (resolver_->CanUseSecureDnsFallback(resolve_context())) {
+        tasks_.push_back(TaskType::SECURE_DNS_FALLBACK);
+      }
+      return OK;
+    }
+#endif
+
     // A reachability probe to determine if the network is only reachable on
     // IPv6 will be scheduled if the parameters are met for using NAT64 in place
     // of an IPv4 address.
@@ -1002,6 +1037,10 @@ class HostResolverManager::RequestImpl
                    network_anonymization_key_.ToDebugString());
           dict.Set("secure_dns_policy",
                    base::strict_cast<int>(parameters_.secure_dns_policy));
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+          dict.Set("only_use_secure_fallback",
+                   parameters_.only_use_secure_fallback);
+#endif  // OHOS_EX_HTTP_DNS_FALLBACK
           return dict;
         });
   }
@@ -1139,6 +1178,90 @@ class HostResolverManager::ProbeRequestImpl
   base::WeakPtrFactory<ProbeRequestImpl> weak_ptr_factory_{this};
 };
 
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+class HostResolverManager::WarmUpHttpDnsFallbackImpl
+    : public ResolveContext::DohStatusObserver {
+ public:
+  WarmUpHttpDnsFallbackImpl(const std::string& server_template,
+                            base::WeakPtr<ResolveContext> context,
+                            base::WeakPtr<HostResolverManager> resolver)
+      : doh_fallback_server_template_(server_template),
+        context_(std::move(context)),
+        resolver_(std::move(resolver)) {}
+
+  WarmUpHttpDnsFallbackImpl(const WarmUpHttpDnsFallbackImpl&) = delete;
+  WarmUpHttpDnsFallbackImpl& operator=(const WarmUpHttpDnsFallbackImpl&) =
+      delete;
+
+  ~WarmUpHttpDnsFallbackImpl() override {
+    if (context_) {
+      context_->UnregisterDohStatusObserver(this);
+    }
+  }
+
+  void Start() {
+    DCHECK(resolver_);
+    DCHECK(context_);
+    if (context_) {
+      context_->RegisterDohStatusObserver(this);
+    }
+  }
+
+  // ResolveContext::DohStatusObserver
+  void OnSessionChanged() override { request_.reset(); }
+
+  void OnDohServerUnavailable(bool network_change) override {
+    base::SequencedTaskRunner::GetCurrentDefault()->PostTask(
+        FROM_HERE,
+        base::BindOnce(&WarmUpHttpDnsFallbackImpl::PreDnsOfDohFallbackServer,
+                       weak_ptr_factory_.GetWeakPtr()));
+  }
+
+
+ private:
+  void PreDnsOfDohFallbackServer() {
+    DCHECK(resolver_);
+    DCHECK(context_);
+    if (request_) {
+      return;
+    }
+
+    GURL url(doh_fallback_server_template_);
+    if (!url.is_valid()) {
+      LOG(INFO) << "Pre-dns of doh-fallback server won't start, for the server "
+                   "template is invalid";
+      return;
+    }
+    HostPortPair destination = HostPortPair::FromURL(url);
+    HostResolver::ResolveHostParameters resolve_params;
+    resolve_params.secure_dns_policy = SecureDnsPolicy::kBootstrap;
+    request_ = resolver_->CreateRequest(destination, NetworkAnonymizationKey(),
+                                        NetLogWithSource(), resolve_params,
+                                        context_.get(), context_->host_cache());
+    auto result = request_->Start(base::BindOnce(
+        &WarmUpHttpDnsFallbackImpl::PreDnsOfDohFallbackServerComplete,
+        weak_ptr_factory_.GetWeakPtr()));
+    LOG(INFO) << "Pre-dns of doh-fallback server, server template "
+              << url.spec() << ", result " << result;
+    if (result != ERR_IO_PENDING) {
+      request_.reset();
+    }
+  }
+
+  void PreDnsOfDohFallbackServerComplete(int result) {
+    LOG(INFO) << "Pre-dns of doh-fallback server complete, result " << result;
+    request_.reset();
+  }
+
+  std::string doh_fallback_server_template_;
+  base::WeakPtr<ResolveContext> context_;
+  base::WeakPtr<HostResolverManager> resolver_;
+  std::unique_ptr<HostResolver::ResolveHostRequest> request_;
+
+  base::WeakPtrFactory<WarmUpHttpDnsFallbackImpl> weak_ptr_factory_{this};
+};
+#endif  // OHOS_EX_HTTP_DNS_FALLBACK
+
 //-----------------------------------------------------------------------------
 
 // Resolves the hostname using DnsTransaction, which is a full implementation of
@@ -1164,6 +1287,12 @@ class HostResolverManager::DnsTask : public base::SupportsWeakPtr<DnsTask> {
     virtual RequestPriority priority() const = 0;
 
     virtual void AddTransactionTimeQueued(base::TimeDelta time_queued) = 0;
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+    virtual void AddTransactionResultForReport(const DnsQueryType query_type,
+                                               int net_error) = 0;
+    virtual void InitReportInfoForDohFallback() = 0;
+#endif  // OHOS_EX_HTTP_DNS_FALLBACK
 
    protected:
     Delegate() = default;
@@ -1200,6 +1329,9 @@ class HostResolverManager::DnsTask : public base::SupportsWeakPtr<DnsTask> {
     }
 
     PushTransactionsNeeded(MaybeDisableAdditionalQueries(query_types));
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+    delegate_->InitReportInfoForDohFallback();
+#endif  // OHOS_EX_HTTP_DNS_FALLBACK
   }
 
   DnsTask(const DnsTask&) = delete;
@@ -1214,6 +1346,10 @@ class HostResolverManager::DnsTask : public base::SupportsWeakPtr<DnsTask> {
   }
 
   bool secure() const { return secure_; }
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  bool need_to_sniff_ip_result() { return need_to_sniff_ip_result_; }
+#endif  // OHOS_EX_HTTP_DNS_FALLBACK
 
   void StartNextTransaction() {
     DCHECK_GE(num_additional_transactions_needed(), 1);
@@ -1327,6 +1463,11 @@ class HostResolverManager::DnsTask : public base::SupportsWeakPtr<DnsTask> {
     if (types.Has(DnsQueryType::HTTPS)) {
       if (!secure_ && !client_->CanQueryAdditionalTypesViaInsecureDns()) {
         types.Remove(DnsQueryType::HTTPS);
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+      } else if (resolve_context_->IsHttpsDnsFallbackEnabled() &&
+                 !client_->CanQueryAdditionalTypesViaInsecureDns()) {
+        types.Remove(DnsQueryType::HTTPS);
+#endif
       } else {
         DCHECK(!httpssvc_metrics_);
         httpssvc_metrics_.emplace(secure_);
@@ -1346,6 +1487,9 @@ class HostResolverManager::DnsTask : public base::SupportsWeakPtr<DnsTask> {
           DnsQueryType::HTTPS, TransactionErrorBehavior::kFatalOrEmpty);
     }
 
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+    int ip_address_transactions = 0;
+#endif
     // Give AAAA/A queries a head start by pushing them to the queue first.
     constexpr DnsQueryType kHighPriorityQueries[] = {DnsQueryType::AAAA,
                                                      DnsQueryType::A};
@@ -1353,8 +1497,16 @@ class HostResolverManager::DnsTask : public base::SupportsWeakPtr<DnsTask> {
       if (query_types.Has(high_priority_query)) {
         query_types.Remove(high_priority_query);
         transactions_needed_.emplace_back(high_priority_query);
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+        ip_address_transactions ++;
+#endif
       }
     }
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+    if (!secure_ && ip_address_transactions == 2) {
+      need_to_sniff_ip_result_ = true;
+    }
+#endif
     for (DnsQueryType remaining_query : query_types) {
       if (remaining_query == DnsQueryType::HTTPS) {
         // Ignore errors for these types. In most cases treating them normally
@@ -1623,6 +1775,15 @@ class HostResolverManager::DnsTask : public base::SupportsWeakPtr<DnsTask> {
       }
     }
 
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_EX_HTTP_DNS_FALLBACK)
+    if (results.error() == OK &&
+        base::CommandLine::ForCurrentProcess()->HasSwitch(
+            switches::kForBrowser) &&
+        AnyAOrAAAATransactionRemain()) {
+      SetNotNeedMoreAttemptIPQueryType(transaction_info.type);
+    }
+#endif  // OHOS_EX_HTTP_DNS_FALLBACK
+
     saved_results_ = std::move(results);
     OnTransactionsFinished();
   }
@@ -1754,6 +1915,46 @@ class HostResolverManager::DnsTask : public base::SupportsWeakPtr<DnsTask> {
                                 &TransactionInfo::error_behavior);
   }
 
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  bool AnyAOrAAAATransactionRemain() {
+    auto is_specified_dns_query_type = [](DnsQueryType type) {
+      return type == DnsQueryType::A || type == DnsQueryType::AAAA;
+    };
+
+    return base::ranges::any_of(transactions_needed_,
+                                is_specified_dns_query_type,
+                                &TransactionInfo::type) ||
+           base::ranges::any_of(transactions_in_progress_,
+                                is_specified_dns_query_type,
+                                &TransactionInfo::type);
+  }
+
+  void RecordFailedTransactionInfo(int index,
+                                   int net_error,
+                                   DnsQueryType dns_query_type) {
+    LOG(INFO) << "The completed transaction [" << index << "] is failed "
+              << net_error << ", failedQueryType "
+              << static_cast<int>(dns_query_type) << ", host "
+              << std::string(GetHostname(host_))
+              << ", and needed tranactions num is 2";
+  }
+
+  void SetNotNeedMoreAttemptIPQueryType(DnsQueryType dns_query_type) {
+    if (!need_to_sniff_ip_result_ || (dns_query_type != DnsQueryType::A &&
+                                      dns_query_type != DnsQueryType::AAAA)) {
+      return;
+    }
+
+    for (auto& transaction_info : transactions_in_progress_) {
+      if (transaction_info.type == DnsQueryType::A ||
+          transaction_info.type == DnsQueryType::AAAA) {
+        transaction_info.transaction->SetNotNeedMoreAttemptIPQueryType(
+            transaction_info.transaction->GetType());
+      }
+    }
+  }
+#endif  // OHOS_EX_HTTP_DNS_FALLBACK
+
   void CancelNonFatalTransactions() {
     auto has_non_fatal_or_empty_error = [](const TransactionInfo& info) {
       return info.error_behavior != TransactionErrorBehavior::kFatalOrEmpty;
@@ -1776,10 +1977,39 @@ class HostResolverManager::DnsTask : public base::SupportsWeakPtr<DnsTask> {
     DCHECK_NE(OK, net_error);
     HostCache::Entry results(net_error, HostCache::Entry::SOURCE_UNKNOWN, ttl);
 
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_EX_HTTP_DNS_FALLBACK)
+    // 仅A/AAAA类型的transaction的两种情况需要调OnTransactionsFinished()并return
+    // 1）第一个transaction失败，需要等待第二个transaction
+    // 2）第一个transaction成功，第二个transaction失败
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            switches::kForBrowser) &&
+        allow_fallback) {
+      if (failed_transaction_type.has_value() &&
+          IsAddressType(failed_transaction_type.value())) {
+        DnsQueryType dns_query_type = failed_transaction_type.value();
+        delegate_->AddTransactionResultForReport(dns_query_type, net_error);
+        if (AnyAOrAAAATransactionRemain() || saved_results_) {
+          int completed_transaction_index = 1;
+          if (saved_results_) {
+            completed_transaction_index = 2;
+          }
+          RecordFailedTransactionInfo(completed_transaction_index, net_error,
+                                      dns_query_type);
+          OnTransactionsFinished();
+          return;
+        }
+      }
+    }
+    // On non-fatal errors, if any potentially fatal transactions remain, need
+    // to defer ending the task in case any of those remaining transactions end
+    // with a fatal failure.
+    else if (allow_fallback && AnyPotentiallyFatalTransactionsRemain()) {
+#else
     // On non-fatal errors, if any potentially fatal transactions remain, need
     // to defer ending the task in case any of those remaining transactions end
     // with a fatal failure.
     if (allow_fallback && AnyPotentiallyFatalTransactionsRemain()) {
+#endif  // OHOS_EX_HTTP_DNS_FALLBACK
       saved_results_ = std::move(results);
       saved_results_is_failure_ = true;
 
@@ -1964,6 +2194,10 @@ class HostResolverManager::DnsTask : public base::SupportsWeakPtr<DnsTask> {
   // task completes unsuccessfully. Used as a signal that underlying
   // transactions should timeout more quickly.
   bool fallback_available_;
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  bool need_to_sniff_ip_result_ = false;
+#endif
 
   const HostResolver::HttpsSvcbOptions https_svcb_options_;
 };
@@ -2279,6 +2513,9 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
         StartDnsTask(false /* secure */);
         break;
       case TaskType::SECURE_DNS:
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+      case TaskType::SECURE_DNS_FALLBACK:
+#endif
         StartDnsTask(true /* secure */);
         break;
       case TaskType::MDNS:
@@ -2464,6 +2701,15 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
     auto aliases = std::set<std::string>(addr_list.dns_aliases().begin(),
                                          addr_list.dns_aliases().end());
 
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+    if (dns_task_error_ != OK && net_error != OK && !tasks_.empty() &&
+        tasks_.back() == TaskType::SECURE_DNS_FALLBACK) {
+      KillDnsTask();
+      RunNextTask();
+      return;
+    }
+#endif
+
     // Source unknown because the system resolver could have gotten it from a
     // hosts file, its own cache, a DNS lookup or somewhere else.
     // Don't store the |ttl| in cache since it's not obtained from the server.
@@ -2493,6 +2739,17 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
       RunNextTask();
     }
   }
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  void InSecureCacheLookupWithoutRunTask(
+      absl::optional<HostCache::Entry>& resolved) {
+    absl::optional<HostCache::EntryStaleness> stale_info;
+    resolved = resolver_->MaybeServeFromCache(
+        host_cache_, key_.ToCacheKey(/*secure=*/false),
+        ResolveHostParameters::CacheUsage::STALE_ALLOWED, false, net_log_,
+        &stale_info);
+  }
+#endif  // OHOS_EX_HTTP_DNS_FALLBACK
 
   void StartDnsTask(bool secure) {
     DCHECK_EQ(secure, !dispatched_);
@@ -2587,6 +2844,31 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
     }
 
     base::TimeDelta duration = tick_clock_->NowTicks() - start_time;
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_EX_HTTP_DNS_FALLBACK)
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            switches::kForBrowser)) {
+      if (dns_task_->secure()) {
+        RequestImpl* req = requests_.head()->value();
+        int index = req->parameters().only_use_secure_fallback ? 1 : 0;
+        absl::optional<HostCache::Entry> insecure_resolved;
+        InSecureCacheLookupWithoutRunTask(insecure_resolved);
+        resolver_->ReportSecureFallbackDnsResult(
+            insecure_resolved, results, std::string(GetHostname(key_.host)),
+            index, duration);
+      }
+
+      if ((dns_task_->need_to_sniff_ip_result()) &&
+          (failed_transactions_type_ ==
+               DnsTransactionAddressFailedType::IPV4_ADDRESS_FAILED ||
+           failed_transactions_type_ ==
+               DnsTransactionAddressFailedType::IPV6_ADDRESS_FAILED)) {
+        int index = dns_task_->secure() ? 1 : 0;
+        resolver_->ReportDnsTransactionResult(
+            index, std::string(GetHostname(key_.host)),
+            resolved_result_for_ipv4_, resolved_result_for_ipv6_);
+      }
+    }
+#endif
     if (results.error() != OK) {
       OnDnsTaskFailure(dns_task_->AsWeakPtr(), duration, allow_fallback,
                        results, secure);
@@ -2616,6 +2898,34 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
     CompleteRequests(results, bounded_ttl, true /* allow_cache */, secure,
                      secure ? TaskType::SECURE_DNS : TaskType::DNS);
   }
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  void AddTransactionResultForReport(const DnsQueryType query_type,
+                                     int net_error) override {
+    if (query_type == DnsQueryType::A) {
+      resolved_result_for_ipv4_ = net_error;
+      failed_transactions_type_ =
+          (failed_transactions_type_ ==
+           DnsTransactionAddressFailedType::IPV6_ADDRESS_FAILED)
+              ? DnsTransactionAddressFailedType::BOTH_FAILED
+              : DnsTransactionAddressFailedType::IPV4_ADDRESS_FAILED;
+    } else if (query_type == DnsQueryType::AAAA) {
+      resolved_result_for_ipv6_ = net_error;
+      failed_transactions_type_ =
+          (failed_transactions_type_ ==
+           DnsTransactionAddressFailedType::IPV4_ADDRESS_FAILED)
+              ? DnsTransactionAddressFailedType::BOTH_FAILED
+              : DnsTransactionAddressFailedType::IPV6_ADDRESS_FAILED;
+    }
+  }
+
+  void InitReportInfoForDohFallback() override {
+    failed_transactions_type_ = DnsTransactionAddressFailedType::BOTH_OK;
+    resolved_result_for_ipv4_ = 0;
+    resolved_result_for_ipv6_ = 0;
+  }
+
+#endif  // OHOS_EX_HTTP_DNS_FALLBACK
 
   void OnIntermediateTransactionsComplete() override {
     if (dispatched_) {
@@ -2944,6 +3254,12 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
   raw_ptr<const base::TickClock> tick_clock_;
   base::TimeTicks start_time_;
 
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  int resolved_result_for_ipv4_{0};
+  int resolved_result_for_ipv6_{0};
+  DnsTransactionAddressFailedType failed_transactions_type_;
+#endif  // OHOS_EX_HTTP_DNS_FALLBACK
+
   HostResolver::HttpsSvcbOptions https_svcb_options_;
 
   NetLogWithSource net_log_;
@@ -3206,6 +3522,12 @@ void HostResolverManager::SetDnsConfigOverrides(DnsConfigOverrides overrides) {
 
 void HostResolverManager::RegisterResolveContext(ResolveContext* context) {
   registered_contexts_.AddObserver(context);
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  context->SetHttpsDnsFallbackEnabled(https_dns_fallback_enabled_);
+  if (https_dns_fallback_enabled_) {
+    WarmUpHttpsDnsFallback(context);
+  }
+#endif
   context->InvalidateCachesAndPerSessionData(
       dns_client_ ? dns_client_->GetCurrentSession() : nullptr,
       false /* network_change */);
@@ -3752,6 +4074,12 @@ void HostResolverManager::PushDnsTasks(bool system_task_allowed,
   if (system_task_allowed &&
       (no_dns_or_secure_tasks || allow_fallback_to_systemtask_))
     out_tasks->push_back(TaskType::SYSTEM);
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  if (dns_client_->CanUseSecureDnsFallbackTransactions(resolve_context)) {
+    out_tasks->push_back(TaskType::SECURE_DNS_FALLBACK);
+  }
+#endif
 }
 
 void HostResolverManager::CreateTaskSequence(
@@ -3845,6 +4173,13 @@ void HostResolverManager::CreateTaskSequence(
       // If no external source allowed, a job should not be created or started
       break;
   }
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  if (secure_dns_policy == SecureDnsPolicy::kBootstrap &&
+      out_tasks->back() == TaskType::SECURE_DNS_FALLBACK) {
+    out_tasks->pop_back();
+  }
+#endif
 
   // `HOST_RESOLVER_CANONNAME` is only supported through system resolution.
   if (job_key.flags & HOST_RESOLVER_CANONNAME) {
@@ -4262,6 +4597,13 @@ void HostResolverManager::InvalidateCaches(bool network_change) {
   }
   invalidation_in_progress_ = false;
 
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_EX_HTTP_DNS_FALLBACK)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            switches::kForBrowser)) {
+    LOG(INFO) << "Host caches has been invalidated";
+  }
+#endif
+
 #if DCHECK_IS_ON()
   // Sanity checks that invalidation does not have reentrancy issues.
   DCHECK(self_ptr);
@@ -4297,6 +4639,91 @@ std::unique_ptr<DnsProbeRunner> HostResolverManager::CreateDohProbeRunner(
   return dns_client_->GetTransactionFactory()->CreateDohProbeRunner(
       resolve_context);
 }
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+bool HostResolverManager::CanUseSecureDnsFallback(
+    ResolveContext* context) const {
+  if (!dns_client_.get()) {
+    return false;
+  }
+
+  return dns_client_->CanUseSecureDnsFallbackTransactions(context);
+}
+
+void HostResolverManager::WarmUpHttpsDnsFallback(ResolveContext* context) {
+  auto warmup_httpdns_fallback =
+      std::make_unique<WarmUpHttpDnsFallbackImpl>(
+          doh_fallback_server_template_, context->GetWeakPtr(),
+          weak_ptr_factory_.GetWeakPtr());
+  warmup_httpdns_fallback->Start();
+  warmup_httpdns_fallback_list_.push_back(
+      std::move(warmup_httpdns_fallback));
+}
+
+void HostResolverManager::SetHttpsDnsFallbackData(
+    bool enabled,
+    const std::string& server_template) {
+  https_dns_fallback_enabled_ = enabled;
+  doh_fallback_server_template_ = server_template;
+  for (auto& context : registered_contexts_) {
+    context.SetHttpsDnsFallbackEnabled(enabled);
+    warmup_httpdns_fallback_list_.clear();
+    if (enabled) {
+      WarmUpHttpsDnsFallback(&context);
+    }
+  }
+}
+
+void HostResolverManager::SetSuspectIpListAndSourceHostList(
+    const std::vector<std::string>& ip_list,
+    const std::vector<std::string>& host_list) {
+  // Todo(huawei)
+}
+
+void HostResolverManager::ReportSecureFallbackDnsResult(
+    const absl::optional<HostCache::Entry> insecure_results,
+    const HostCache::Entry& secure_fallback_results,
+    const std::string& host,
+    const int index,
+    const base::TimeDelta& duration) {
+  std::string insecure_ip_info;
+  if (insecure_results && insecure_results->ip_endpoints()) {
+    IPListToString(*(insecure_results->ip_endpoints()), insecure_ip_info);
+  } else {
+    insecure_ip_info.append("[]");
+  }
+
+  std::string secure_ip_info;
+  if (secure_fallback_results.error() == OK &&
+      secure_fallback_results.ip_endpoints()) {
+    IPListToString(*secure_fallback_results.ip_endpoints(), secure_ip_info);
+  } else {
+    secure_ip_info.append("[]");
+  }
+
+  std::ostringstream ostr;
+  ostr << "scene=" << kSceneString[index]
+       << ", udp_dns_ip_list=" << insecure_ip_info
+       << ", ip_list=" << secure_ip_info
+       << ", result=" << secure_fallback_results.error()
+       << ", duration=" << duration.InMilliseconds();
+
+  LOG(INFO) << "event_message: " << ostr.str()
+                << ", resource: " << host;
+}
+
+void HostResolverManager::ReportDnsTransactionResult(int index,
+                                                     const std::string& host,
+                                                     int result_for_ipv4,
+                                                     int result_for_ipv6) {
+  std::ostringstream ostr;
+  ostr << "dns_type=" << kDnsTransactionString[index]
+       << ", v4result=" << result_for_ipv4 << ", v6result=" << result_for_ipv6;
+
+  LOG(INFO) << "event_message: " << ostr.str()
+                << ", resource: " << host;
+}
+#endif
 
 HostResolverManager::RequestImpl::~RequestImpl() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);

@@ -41,6 +41,10 @@
 #include "ui/gfx/geometry/vector2d_f.h"
 #include "ui/gfx/overlay_transform.h"
 
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+#include "cc/debug/layer_tree_extra_state.h"
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+
 namespace cc {
 
 // CommitState and ThreadUnsafeCommitState contain all of the information from
@@ -104,6 +108,12 @@ struct CC_EXPORT CommitState {
   gfx::Rect clipped_selection_bounds;
 #endif
   LayerTreeDebugState debug_state;
+
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+  LayerTreeExtraState extra_state;
+  int toast_layer_id = Layer::INVALID_ID;
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+
   OverscrollBehavior overscroll_behavior;
   SkColor4f background_color = SkColors::kWhite;
   ViewportPropertyIds viewport_property_ids;

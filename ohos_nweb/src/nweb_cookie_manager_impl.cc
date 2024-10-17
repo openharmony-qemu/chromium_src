@@ -50,6 +50,7 @@ bool NWebCookieManagerImpl::IsAcceptCookieAllowed() {
 
 void NWebCookieManagerImpl::PutAcceptCookieEnabled(bool accept) {
   if (delegate_ != nullptr) {
+    WVLOG_I("PutAcceptCookieEnabled accept: %{public}d", accept);
     delegate_->PutAcceptCookieEnabled(accept);
   }
 }
@@ -63,6 +64,7 @@ bool NWebCookieManagerImpl::IsThirdPartyCookieAllowed() {
 
 void NWebCookieManagerImpl::PutAcceptThirdPartyCookieEnabled(bool accept) {
   if (delegate_ != nullptr) {
+    WVLOG_I("PutAcceptThirdPartyCookieEnabled accept: %{public}d", accept);
     delegate_->PutAcceptThirdPartyCookieEnabled(accept);
   }
 }
@@ -76,6 +78,7 @@ bool NWebCookieManagerImpl::IsFileURLSchemeCookiesAllowed() {
 
 void NWebCookieManagerImpl::PutAcceptFileURLSchemeCookiesEnabled(bool allow) {
   if (delegate_ != nullptr) {
+    WVLOG_I("PutAcceptFileURLSchemeCookiesEnabled allow: %{public}d", allow);
     delegate_->PutAcceptFileURLSchemeCookiesEnabled(allow);
   }
 }
@@ -106,6 +109,16 @@ int NWebCookieManagerImpl::SetCookie(
   return NWEB_ERR;
 }
 
+int NWebCookieManagerImpl::SetCookieWithHttpOnly(
+    const std::string& url, const std::string& value, bool incognito_mode, bool includeHttpOnly) {
+#ifdef OHOS_COOKIE_NDK
+  if (delegate_ != nullptr) {
+    return delegate_->SetCookieWithHttpOnly(url, value, incognito_mode, includeHttpOnly);
+  }
+#endif
+  return NWEB_ERR;
+}
+
 void NWebCookieManagerImpl::ReturnCookie(
     const std::string& url,
     std::shared_ptr<NWebStringValueCallback> callback) {
@@ -119,6 +132,16 @@ std::string NWebCookieManagerImpl::ReturnCookie(
   if (delegate_ != nullptr) {
     return delegate_->ReturnCookie(url, is_valid, incognito_mode);
   }
+  return "";
+}
+
+std::string NWebCookieManagerImpl::ReturnCookieWithHttpOnly(
+    const std::string& url, bool& is_valid, bool incognito_mode, bool includeHttpOnly) {
+#ifdef OHOS_COOKIE_NDK
+  if (delegate_ != nullptr) {
+    return delegate_->ReturnCookieWithHttpOnly(url, is_valid, incognito_mode, includeHttpOnly);
+  }
+#endif
   return "";
 }
 

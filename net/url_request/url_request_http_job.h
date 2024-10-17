@@ -107,6 +107,14 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
     kMaxValue = kSecureSetNonsecureRequest  // Keep as the last value.
   };
 
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  enum class RetryState {
+    INIT,
+    DOH_FALLBACK,
+    MAX,
+  };
+#endif
+
   typedef base::RefCountedData<bool> SharedBoolean;
 
   // Shadows URLRequestJob's version of this method so we can grab cookies.
@@ -172,6 +180,12 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
 
   IPEndPoint GetResponseRemoteEndpoint() const override;
   void NotifyURLRequestDestroyed() override;
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  bool CanRetryWithSecureDnsOnly(int net_error);
+  void RetryWithSecureDnsOnly();
+  void MaybeRetryWithSecureDnsOnly(int result);
+#endif
 
   void RecordTimer();
   void ResetTimer();
@@ -319,6 +333,11 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
   // lazily computed, and might be "nothing". We want to be able to distinguish
   // "uncomputed" from "nothing".
   absl::optional<absl::optional<CookiePartitionKey>> cookie_partition_key_;
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  int original_net_error_ = 0;
+  RetryState state_ = RetryState::INIT;
+#endif
 
   base::WeakPtrFactory<URLRequestHttpJob> weak_factory_{this};
 };

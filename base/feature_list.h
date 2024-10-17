@@ -287,9 +287,6 @@ class BASE_EXPORT FeatureList {
   // we're using to store the feature names, their override state, and the name
   // of the associated field trial.
   void InitializeFromSharedMemory(PersistentMemoryAllocator* allocator);
-#if defined(OHOS_SCROLLBAR)
-  void InitializeFromSharedMemory(PersistentMemoryAllocator* allocator, bool state);
-#endif
 
   // Returns true if the state of |feature_name| has been overridden (regardless
   // of whether the overridden value is the same as the default value) for any

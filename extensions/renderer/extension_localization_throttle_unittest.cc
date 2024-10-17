@@ -312,8 +312,10 @@ TEST_F(ExtensionLocalizationThrottleTest, Cancel) {
   auto throttle =
       ExtensionLocalizationThrottle::MaybeCreate(blink::WebURL(url));
   ASSERT_TRUE(throttle);
+
   auto delegate = std::make_unique<FakeDelegate>();
   throttle->set_delegate(delegate.get());
+
   auto response_head = network::mojom::URLResponseHead::New();
   response_head->mime_type = "text/css";
   bool defer = false;

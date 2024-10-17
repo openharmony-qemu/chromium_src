@@ -900,6 +900,10 @@ void NavigationURLLoaderImpl::OnReceiveResponse(
   // When a plugin intercepted the response, we don't want to download it.
   bool is_download =
       !head_->intercepted_by_plugin && (must_download || !known_mime_type);
+  LOG(INFO) << "is_download " << is_download
+            << " must_download " << must_download
+            << " known_mime_type " << known_mime_type
+            << " mime_type " << head_->mime_type;
 
   CallOnReceivedResponse(std::move(head_),
                          std::move(url_loader_client_endpoints), is_download);

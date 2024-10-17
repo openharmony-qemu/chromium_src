@@ -142,6 +142,18 @@ class ExtensionSystem : public KeyedService {
   // Returns whether the extension installation was finished.
   virtual bool FinishDelayedInstallationIfReady(const std::string& extension_id,
                                                 bool install_immediately) = 0;
+
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  // The original cef only supports loading and unloading extensions through the
+  //  api. However, the arkweb needs to support other internal triggers such as
+  // crx_installer or unpack_installer, so we notify the cef though these
+  // interfaces.
+  virtual void NotifyExtensionLoadedFromInternal(
+      const Extension* extension) = 0;
+  virtual void NotifyExtensionUnLoadedFromInternal(
+      const Extension* extension) = 0;
+#endif
+
 };
 
 }  // namespace extensions

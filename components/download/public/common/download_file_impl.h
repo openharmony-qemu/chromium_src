@@ -106,6 +106,10 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadFileImpl : public DownloadFile {
 
     void Initialize();
 
+#if defined(OHOS_EX_DOWNLOAD)
+    void ReleaseInputStream();
+#endif
+
     // Called after successfully reading and writing a buffer from stream.
     void OnBytesConsumed(int64_t bytes_read, int64_t bytes_written);
 
@@ -286,6 +290,13 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadFileImpl : public DownloadFile {
   // Called when a stream completes.
   void OnStreamCompleted(SourceStream* source_stream);
 
+#if defined(OHOS_EX_DOWNLOAD)
+  void OnTimeout(SourceStream* source_stream,
+                      DownloadInterruptReason reason,
+                      InputStream::StreamState stream_state,
+                      bool should_terminate);
+#endif
+
   // Notify |observer_| about the download status.
   void NotifyObserver(SourceStream* source_stream,
                       DownloadInterruptReason reason,
@@ -361,6 +372,9 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadFileImpl : public DownloadFile {
   base::TimeTicks download_start_;
   RateEstimator rate_estimator_;
   int num_active_streams_;
+#if defined(OHOS_EX_DOWNLOAD)
+  std::unique_ptr<base::OneShotTimer> download_job_timer_;
+#endif
 
   // The slices received, this is being updated when new data are written.
   std::vector<DownloadItem::ReceivedSlice> received_slices_;

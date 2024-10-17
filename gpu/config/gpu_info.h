@@ -164,7 +164,12 @@ using VideoEncodeAcceleratorSupportedProfiles =
 enum class ImageDecodeAcceleratorType {
   kUnknown = 0,
   kJpeg = 1,
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
+  kHeif = 2,
+  kWebP = 3,
+#else
   kWebP = 2,
+#endif
   kMaxValue = kWebP,
 };
 

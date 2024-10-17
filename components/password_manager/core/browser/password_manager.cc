@@ -789,6 +789,10 @@ PasswordFormManager* PasswordManager::ProvisionallySaveForm(
   if (!client_->IsSavingAndFillingEnabled(submitted_form.url)) {
     RecordProvisionalSaveFailure(
         PasswordManagerMetricsRecorder::SAVING_DISABLED, submitted_form.url);
+#ifdef OHOS_PASSWORD_AUTOFILL
+    LOG(WARNING) << "[PasswordSave] Provisionally save form failed because "
+                    "saving and filling disable.";
+#endif
     return nullptr;
   }
 
@@ -956,6 +960,10 @@ bool PasswordManager::IsAutomaticSavePromptAvailable() {
     if (logger) {
       logger->LogMessage(Logger::STRING_NO_PROVISIONAL_SAVE_MANAGER);
     }
+#ifdef OHOS_PASSWORD_AUTOFILL
+    LOG(WARNING) << "[PasswordSave] AutomaticSave prompt is not available.";
+#endif
+
     return false;
   }
 
@@ -968,8 +976,16 @@ bool PasswordManager::IsAutomaticSavePromptAvailable() {
         submitted_manager->GetURL());
     return false;
   }
+#ifdef OHOS_PASSWORD_AUTOFILL
+  bool only_for_fallback =
+      submitted_manager->GetPendingCredentials().only_for_fallback;
+  LOG(INFO) << "PasswordManager automati save prompt only_for_fallback: "
+            << only_for_fallback;
 
+  return !only_for_fallback;
+#else
   return !submitted_manager->GetPendingCredentials().only_for_fallback;
+#endif
 }
 
 bool PasswordManager::ShouldBlockPasswordForSameOriginButDifferentScheme(
@@ -994,8 +1010,12 @@ void PasswordManager::OnPasswordFormsRendered(
   if (!GetSubmittedManager())
     client_->ResetSubmissionTrackingAfterTouchToFill();
 
-  if (!IsAutomaticSavePromptAvailable())
+  if (!IsAutomaticSavePromptAvailable()) {
+#ifdef OHOS_PASSWORD_AUTOFILL
+    LOG(WARNING) << "[PasswordSave] Automatic save prompt is not availabel.";
+#endif
     return;
+  }
 
   PasswordFormManager* submitted_manager = GetSubmittedManager();
 
@@ -1006,6 +1026,10 @@ void PasswordManager::OnPasswordFormsRendered(
       logger->LogMessage(Logger::STRING_DECISION_DROP);
     submitted_manager->GetMetricsRecorder()->LogSubmitFailed();
     ResetSubmittedManager();
+#ifdef OHOS_PASSWORD_AUTOFILL
+    LOG(WARNING)
+        << "[PasswordSave] Password not saved owing to server http error";
+#endif
     return;
   }
 
@@ -1086,8 +1110,13 @@ void PasswordManager::OnLoginSuccessful() {
       submitted_form->federation_origin,
       submitted_manager->GetPendingCredentials().username_value);
   client_->NotifyOnSuccessfulLogin(submitted_form->username_value);
-  if (!client_->IsSavingAndFillingEnabled(submitted_form->url))
+  if (!client_->IsSavingAndFillingEnabled(submitted_form->url)) {
+#ifdef OHOS_PASSWORD_AUTOFILL
+    LOG(WARNING)
+        << "[PasswordSave] Login failed because saving and filling disable.";
     return;
+#endif
+  }
 
   client_->GetStoreResultFilter()->ReportFormLoginSuccess(*submitted_manager);
   // Check for leaks only if there are no muted credentials and it is not a
@@ -1107,12 +1136,16 @@ void PasswordManager::OnLoginSuccessful() {
   if (logger)
     logger->LogSuccessfulSubmissionIndicatorEvent(submission_event);
 
+// OH password autofill does not need to store the password in the chromium and
+// does not need to check is able to save passwords.
+#if !defined(OHOS_PASSWORD_AUTOFILL)
   bool able_to_save_passwords =
       client_->GetProfilePasswordStore()->IsAbleToSavePasswords();
   UMA_HISTOGRAM_BOOLEAN("PasswordManager.AbleToSavePasswordsOnSuccessfulLogin",
                         able_to_save_passwords);
   if (!able_to_save_passwords)
     return;
+#endif
 
   MaybeSavePasswordHash(submitted_manager);
 

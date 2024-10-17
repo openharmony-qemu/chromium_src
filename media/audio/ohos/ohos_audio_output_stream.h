@@ -71,9 +71,9 @@ class AudioRendererCallback : public AudioRendererCallbackAdapter {
 class AudioOutputChangeCallback : public AudioOutputChangeCallbackAdapter {
  public:
   AudioOutputChangeCallback(
-      const scoped_refptr<base::SingleThreadTaskRunner>& task_runner,
-      AudioParameters params,
-      bool isCommunication);
+    const scoped_refptr<base::SingleThreadTaskRunner>& task_runner,
+    AudioParameters params,
+    bool isCommunication);
   ~AudioOutputChangeCallback();
   void OnOutputDeviceChange(int32_t reason) override;
 
@@ -86,6 +86,7 @@ class AudioOutputChangeCallback : public AudioOutputChangeCallbackAdapter {
 class OHOSAudioOutputStream : public AudioOutputStream {
  public:
   static const int kMaxNumOfBuffersInQueue = 2;
+  static std::set<content::WebContents*> webContentSet_;
 
   OHOSAudioOutputStream(const OHOSAudioOutputStream&) = delete;
   OHOSAudioOutputStream& operator=(const OHOSAudioOutputStream&) = delete;

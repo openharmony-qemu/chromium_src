@@ -831,4 +831,9 @@ interface FrameHost {
   [EnableIf=ohos_clipboard]
   MouseSelectMenuShow(bool show);
   // #endif OHOS_CLIPBOARD
+
+  // #ifdef OHOS_CLIPBOARD
+  [EnableIf=ohos_clipboard]
+  ChangeVisibilityOfQuickMenu();
+  // #endif OHOS_CLIPBOARD
 };

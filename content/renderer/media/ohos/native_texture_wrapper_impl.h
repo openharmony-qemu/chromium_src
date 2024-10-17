@@ -58,9 +58,6 @@ class CONTENT_EXPORT NativeTextureWrapperImpl
   // Clears the |received_frame_cb| passed in Initialize().
   // Should be safe to call from any thread.
   void ClearCBOnAnyThread() override;
-
-  void SetSkippingCurrentFrame(bool need_skip) override;
-
  private:
   NativeTextureWrapperImpl(
       bool enable_texture_copy,

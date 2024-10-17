@@ -38,6 +38,11 @@
 #include "ui/ozone/platform/headless/vulkan_implementation_headless.h"
 #endif
 
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
+#include "ui/gfx/linux/native_pixmap_dmabuf.h"
+#include "ui/ozone/common/native_pixmap_egl_binding.h"
+#endif
+
 namespace ui {
 
 namespace {
@@ -187,6 +192,24 @@ class GLOzoneEGLHeadless : public GLOzoneEGL {
   ~GLOzoneEGLHeadless() override = default;
 
   // GLOzone:
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
+  bool CanImportNativePixmap() override {
+    return true;
+  }
+
+  std::unique_ptr<NativePixmapGLBinding> ImportNativePixmap(
+      scoped_refptr<gfx::NativePixmap> pixmap,
+      gfx::BufferFormat plane_format,
+      gfx::BufferPlane plane,
+      gfx::Size plane_size,
+      const gfx::ColorSpace& color_space,
+      GLenum target,
+      GLuint texture_id) override {
+    return NativePixmapEGLBinding::Create(pixmap, plane_format, plane, plane_size,
+                                          color_space, target, texture_id);
+  }
+#endif
+
   scoped_refptr<gl::GLSurface> CreateViewGLSurface(
       gl::GLDisplay* display,
       gfx::AcceleratedWidget window) override {
@@ -263,6 +286,21 @@ scoped_refptr<gfx::NativePixmap> HeadlessSurfaceFactory::CreateNativePixmap(
     absl::optional<gfx::Size> framebuffer_size) {
   return new TestPixmap(format);
 }
+
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
+scoped_refptr<gfx::NativePixmap> HeadlessSurfaceFactory::CreateNativePixmapFromHandle(
+      gfx::AcceleratedWidget widget,
+      gfx::Size size,
+      gfx::BufferFormat format,
+      gfx::NativePixmapHandle handle,
+      void* window_buffer) {
+  scoped_refptr<gfx::NativePixmapDmaBuf> pixmap =
+      base::MakeRefCounted<gfx::NativePixmapDmaBuf>(
+         size, format, std::move(handle), window_buffer);
+
+  return pixmap;
+}
+#endif
 
 void HeadlessSurfaceFactory::CheckBasePath() const {
   if (base_path_.empty())

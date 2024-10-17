@@ -120,7 +120,6 @@ class AdBlockConfig {
   std::unique_ptr<autofill::Trie<std::string>> allow_data_;
 
   PrefService* local_state_ = nullptr;
-
   base::Lock lock_;
 };
 

@@ -31,6 +31,15 @@ PageLoadMetricsForwardObserver::GetDelegate() const {
   return *null_value;
 }
 
+#ifdef OHOS_BFCACHE
+void PageLoadMetricsForwardObserver::
+    OnFirstContentfulPaintAfterBackForwardCacheRestoreInPage(
+        const mojom::BackForwardCacheTiming& timing,
+        size_t index) {
+  NOTREACHED() << "Not supported.";
+}
+#endif
+
 void PageLoadMetricsForwardObserver::SetDelegate(
     PageLoadMetricsObserverDelegate* delegate) {
   // No need to set. Ignore.

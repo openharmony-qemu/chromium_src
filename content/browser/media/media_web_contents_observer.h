@@ -156,6 +156,11 @@ class CONTENT_EXPORT MediaWebContentsObserver
   void RequestExitFullscreen(const MediaPlayerId& player_id);
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+  void AllowAllMediaPlayersPlaybackWithMobileDataExcept(
+      const MediaPlayerId& player_id);
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+
  protected:
   MediaSessionControllersManager* session_controllers_manager() {
     return session_controllers_manager_.get();
@@ -233,6 +238,10 @@ class CONTENT_EXPORT MediaWebContentsObserver
     void UpdateLayerRect(const gfx::Rect& rect) override;
     void FullscreenChanged(bool is_fullscreen) override;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+    void OnPlaybackWithMobileDataAllowed() override;
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
 
    private:
     PlayerInfo* GetPlayerInfo();

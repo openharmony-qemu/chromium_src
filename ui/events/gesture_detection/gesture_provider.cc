@@ -366,6 +366,7 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
 
     float scale = detector.GetScaleFactor();
 #ifdef BUILDFLAG(IS_OHOS)
+    LOG(DEBUG) << "GestureProvider::OnScale before filtering: "  << scale;
     if (std::abs(scale - 1) <= kPinchScaleEpsilon)
         return true;
 
@@ -375,7 +376,7 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
         scale = (last_scale_ + scale) /2;
         last_scale_ = scale;
     }
-    LOG(DEBUG) << "GestureProvider::OnScale" << scale << ", focus x = " << detector.GetFocusX()
+    LOG(DEBUG) << "GestureProvider::OnScale after filtering " << scale << ", focus x = " << detector.GetFocusX()
         << ", focus y = " << detector.GetFocusY() << ", pointer cnt = " << e.GetPointerCount();
 #else
     if (scale == 1)
@@ -1026,7 +1027,6 @@ void GestureProvider::SetDoubleTapSupportForPlatformEnabled(bool enabled) {
 void GestureProvider::SetNativeEmbedEnabled(bool enabled) {
   native_embed_enabled_ = enabled;
 }
-
 bool GestureProvider::GetNativeEmbedEnabled() {
   return native_embed_enabled_;
 }

@@ -33,6 +33,12 @@
 #include "services/network/websocket.h"
 #endif
 
+#ifdef OHOS_LOG_MESSAGE
+#include "net/base/ip_endpoint.h"
+#include "net/nqe/network_quality_estimator.h"
+#include "net/url_request/url_request_context.h"
+#endif
+
 namespace network {
 
 namespace {
@@ -148,6 +154,14 @@ int NetworkServiceNetworkDelegate::OnHeadersReceived(
   chain->AddResult(HandleClearSiteDataHeader(request, chain->CreateCallback(),
                                              original_response_headers));
 
+#ifdef OHOS_LOG_MESSAGE
+  if (original_response_headers &&
+      original_response_headers->response_code() >= 400) {
+    LOG(INFO) << "INFO: resource: ***"
+              << " error code: " << original_response_headers->response_code();
+  }
+#endif
+
   return chain->GetResult();
 }
 
@@ -162,6 +176,42 @@ void NetworkServiceNetworkDelegate::OnResponseStarted(net::URLRequest* request,
   ForwardProxyErrors(net_error);
 }
 
+#ifdef OHOS_LOG_MESSAGE
+void NetworkServiceNetworkDelegate::RecordErrorInfo(net::URLRequest* request,
+                                                    int net_error) {
+  int downlink_kbps = GetDownStreamThroughputKbps();
+  int extended_error_code = 0;
+  if (net_error == net::ERR_QUIC_PROTOCOL_ERROR) {
+    net::NetErrorDetails details;
+    request->PopulateNetErrorDetails(&details);
+    extended_error_code = details.quic_connection_error;
+  }
+  std::string error_code_info =
+      net::ExtendedErrorToString(net_error, extended_error_code);
+  base::TimeDelta duration_time =
+      base::TimeTicks::Now() - request->creation_time();
+
+  std::ostringstream ostr;
+  ostr << ", error_code " << net_error << "(" << error_code_info
+       << ", downstream throughput kbps: " << downlink_kbps
+       << ", duration_time(ms) " << duration_time.InMilliseconds();
+  LOG(INFO) << "final url: *** "
+            << ostr.str();
+}
+
+int32_t NetworkServiceNetworkDelegate::GetDownStreamThroughputKbps() {
+  if (network_context_->network_service() &&
+      network_context_->network_service()->network_quality_estimator()) {
+    return network_context_->network_service()
+        ->network_quality_estimator()
+        ->GetDownstreamThroughputKbps()
+        .value_or(0);
+  }
+
+  return 0;
+}
+#endif
+
 void NetworkServiceNetworkDelegate::OnCompleted(net::URLRequest* request,
                                                 bool started,
                                                 int net_error) {
@@ -175,6 +225,12 @@ void NetworkServiceNetworkDelegate::OnCompleted(net::URLRequest* request,
   }
 
   ForwardProxyErrors(net_error);
+
+#ifdef OHOS_LOG_MESSAGE
+  if (net_error != net::OK) {
+    RecordErrorInfo(request, net_error);
+  }
+#endif
 }
 
 void NetworkServiceNetworkDelegate::OnPACScriptError(
@@ -231,6 +287,7 @@ bool NetworkServiceNetworkDelegate::OnCanSetCookie(
           cookie, request.url(), request.site_for_cookies(),
           request.isolation_info().top_frame_origin(),
           request.cookie_setting_overrides());
+
   if (!allowed)
     return false;
   // The remaining checks do not consider setting overrides since they enforce

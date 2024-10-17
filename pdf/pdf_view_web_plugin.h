@@ -403,6 +403,10 @@ class PdfViewWebPlugin final : public PDFEngine::Client,
     return GetAccessibilityDocInfo();
   }
 
+#if BUILDFLAG(IS_OHOS)
+  bool CanPrint() const;
+#endif
+
  private:
   // Callback that runs after `LoadUrl()`. The `loader` is the loader used to
   // load the URL, and `result` is the result code for the load.

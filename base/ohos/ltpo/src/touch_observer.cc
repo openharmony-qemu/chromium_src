@@ -31,12 +31,12 @@ TouchObserver& TouchObserver::GetInstance()
 
 void TouchObserver::SetTouchUpTime(uint64_t touch_up_time)
 {
-  last_touch_up_time_ = touch_up_time;
+    last_touch_up_time_ = touch_up_time;
 }
 
 uint64_t TouchObserver::GetLastTouchUpTime()
 {
-  return last_touch_up_time_;
+    return last_touch_up_time_;
 }
 }  // namespace ohos
 }  // namespace base

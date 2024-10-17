@@ -30,6 +30,14 @@ source_set("dns") {
   ]
 
   public = []
+
+  if (defined(ohos_ex_network_connection) && ohos_ex_network_connection) {
+    defines = []
+    if (target_cpu == "arm64") {
+      defines += [ "WEBVIEW_ARM64" ]
+    }
+  }
+
   sources = [
     "address_info.cc",
     "address_info.h",
@@ -128,6 +136,12 @@ source_set("dns") {
     sources += [
       "dns_config_service_linux.cc",
       "dns_config_service_linux.h",
+    ]
+  } else if (is_ohos && defined(ohos_ex_http_dns_fallback) &&
+             ohos_ex_http_dns_fallback) {
+    sources += [
+      "dns_config_service_ohos.cc",
+      "dns_config_service_ohos.h",
     ]
   } else if (is_posix) {
     sources += [

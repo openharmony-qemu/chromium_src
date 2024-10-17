@@ -54,4 +54,3 @@ double_t NWebLargestContentfulPaintDetailsImpl::GetImageBPP() {
   return imageBPP_;
 }
 } // namespace OHOS::NWeb
-

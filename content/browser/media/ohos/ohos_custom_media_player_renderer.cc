@@ -295,6 +295,7 @@ void OHOSCustomMediaPlayerRenderer::GetCookies() {
   RenderProcessHost* host = RenderProcessHost::FromID(
       media_player_id_.frame_routing_id.child_id);
   if (!host) {
+    LOG(ERROR) << "GetCookies failed";
     return;
   }
 

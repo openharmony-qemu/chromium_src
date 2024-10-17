@@ -60,7 +60,6 @@ class WebCacheManager : public content::RenderProcessHostCreationObserver,
   void RenderProcessHostDestroyed(content::RenderProcessHost* host) override;
 
 #if BUILDFLAG(IS_OHOS)
-  // Add offline resource into MemoryCache.
   void AddResourceToCache(const std::string& url,
                           const std::string& origin,
                           const std::vector<uint8_t>& resource,

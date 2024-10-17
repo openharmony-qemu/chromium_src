@@ -216,9 +216,11 @@ bool PDFWebContentsHelper::IsCommandIdEnabled(int command_id) const {
   // TODO(wjmaclean|dsinclair): Make PDFium send readability information in the
   // selection changed message?
   bool readable = true;
+
 #ifdef OHOS_CLIPBOARD
   command_id = ui::TouchEditable::ConvertMenuCommands(command_id);
 #endif
+
   switch (command_id) {
     case ui::TouchEditable::kCopy:
       return readable && has_selection_;

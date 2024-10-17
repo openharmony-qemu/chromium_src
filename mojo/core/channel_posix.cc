@@ -254,16 +254,21 @@ void ChannelPosix::WaitForWriteOnIOThreadNoLock() {
 void ChannelPosix::ShutDownOnIOThread() {
   base::CurrentThread::Get()->RemoveDestructionObserver(this);
 
-  read_watcher_.reset();
-  write_watcher_.reset();
-  if (leak_handle_) {
-    std::ignore = socket_.release();
-  } else {
-    socket_.reset();
-  }
+  {
+    base::AutoLock lock(write_lock_);
+    reject_writes_ = true;
+    read_watcher_.reset();
+    write_watcher_.reset();
+    if (leak_handle_) {
+      std::ignore = socket_.release();
+    } else {
+      socket_.reset();
+    }
 #if BUILDFLAG(IS_IOS)
+  base::AutoLock fd_lock(fds_to_close_lock_);
   fds_to_close_.clear();
 #endif
+  }
 
   // May destroy the |this| if it was the last reference.
   self_ = nullptr;
@@ -478,7 +483,10 @@ void ChannelPosix::AcceptUpgradeOffer() {
 
 void ChannelPosix::OnWriteError(Error error) {
   DCHECK(io_task_runner_->RunsTasksInCurrentSequence());
-  DCHECK(reject_writes_);
+  DCHECK([&]() {
+    base::AutoLock lock(write_lock_);
+    return reject_writes_;
+  }());
 
   if (error == Error::kDisconnected) {
     // If we can't write because the pipe is disconnected then continue

@@ -49,6 +49,10 @@ class COMPONENTS_DOWNLOAD_EXPORT UrlDownloadHandler {
   UrlDownloadHandler(const UrlDownloadHandler&) = delete;
   UrlDownloadHandler& operator=(const UrlDownloadHandler&) = delete;
 
+#if BUILDFLAG(IS_OHOS)
+  virtual std::string GetGuid() { return ""; }
+#endif
+
   virtual ~UrlDownloadHandler() = default;
 };
 

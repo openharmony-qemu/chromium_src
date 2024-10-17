@@ -93,18 +93,6 @@ test("snapshot_unittests") {
     sources += [ "snapshot_mac_unittest.mm" ]
   }
 
-  if (ohos_unittests) {
-    sources += [
-      "//cef/libcef/common/soc_perf_util.cc",
-      "//content/browser/browser_thread_impl.cc",
-      "//content/browser/scheduler/browser_task_executor.cc",
-      "//content/public/common/content_features.cc",
-      "//content/public/common/content_switches.cc",
-      "//content/renderer/render_remote_proxy_ohos.cc",
-      "//content/renderer/render_remote_proxy_ohos.h"
-    ]
-  }
-
   deps = [
     ":snapshot",
     "//base",
@@ -119,6 +107,13 @@ test("snapshot_unittests") {
     "//ui/gfx/geometry",
     "//ui/gl",
   ]
+
+  if (is_ohos) {
+    deps += [
+      "//content/public/browser:browser",
+      "//cef:libcef_static"
+    ]
+  }
 
   data_deps = [ "//testing/buildbot/filters:snapshot_unittests_filters" ]
 

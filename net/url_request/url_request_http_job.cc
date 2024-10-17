@@ -99,6 +99,13 @@
 #include "net/android/network_library.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
+#endif
+
 namespace {
 
 base::Value::Dict CookieInclusionStatusNetLogParams(
@@ -991,8 +998,134 @@ void URLRequestHttpJob::ProcessStrictTransportSecurityHeader() {
     security_state->AddHSTSHeader(request_info_.url.host(), value);
 }
 
+#if BUILDFLAG(IS_OHOS)
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+bool URLRequestHttpJob::CanRetryWithSecureDnsOnly(int net_error) {
+  if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kForBrowser)) {
+    return false;
+  }
+
+  if (net_error == net::OK) {
+    return false;
+  }
+
+  if (request_->isolation_info().request_type() !=
+      IsolationInfo::RequestType::kMainFrame) {
+    LOG(INFO) << "DOH-Fallback request is not mainframe";
+    return false;
+  }
+
+  if (transaction_ && transaction_->GetResponseInfo() &&
+      transaction_->GetResponseInfo()
+          ->resolve_error_info.is_secure_network_error) {
+    LOG(INFO) << "DOH-Fallback won't retry for is_secure_network_error is "
+                 "true";
+    return false;
+  }
+
+  if (!request_->context()->CanUseSecureDnsFallback()) {
+    LOG(INFO) << "DOH-Fallback can't use secure dns fallback";
+    return false;
+  }
+
+  // The following net errors will retry to use httpdns to resolve the ip
+  // in the connect phase, and connect again.
+  if (net_error == net::ERR_TIMED_OUT ||
+      net_error == net::ERR_CONNECTION_CLOSED ||
+      net_error == net::ERR_CONNECTION_RESET ||
+      net_error == net::ERR_CONNECTION_REFUSED ||
+      net_error == net::ERR_CONNECTION_ABORTED ||
+      net_error == net::ERR_CONNECTION_FAILED ||
+      net_error == net::ERR_NAME_NOT_RESOLVED ||
+      net_error == net::ERR_ADDRESS_INVALID ||
+      net_error == net::ERR_ADDRESS_UNREACHABLE ||
+      net_error == net::ERR_TUNNEL_CONNECTION_FAILED ||
+      net_error == net::ERR_CONNECTION_TIMED_OUT ||
+      net_error == net::ERR_SOCKS_CONNECTION_FAILED ||
+      net_error == net::ERR_SOCKS_CONNECTION_HOST_UNREACHABLE ||
+      net_error == net::ERR_PROXY_CONNECTION_FAILED ||
+      net_error == net::ERR_NAME_RESOLUTION_FAILED ||
+      net_error == net::ERR_NETWORK_ACCESS_DENIED ||
+      net_error == net::ERR_ADDRESS_IN_USE ||
+      net_error == net::ERR_UNABLE_TO_REUSE_CONNECTION_FOR_PROXY_AUTH) {
+    net::NetErrorDetails details;
+    PopulateNetErrorDetails(&details);
+    // streamѾɹ֤dns׶ûз⣬ǲҪ.
+    if (details.stream_created) {
+      LOG(INFO) << "DOH-Fallback cann't retry with secure dns since the stream "
+                   "is created.";
+      return false;
+    }
+    return true;
+  }
+  return false;
+}
+
+void URLRequestHttpJob::RetryWithSecureDnsOnly() {
+  // If the transaction was destroyed, then the job was cancelled.
+  if (!transaction_.get()) {
+    return;
+  }
+
+  response_info_ = nullptr;
+  override_response_headers_ = nullptr;  // See https://crbug.com/801237.
+  receive_headers_end_ = base::TimeTicks();
+
+  ResetTimer();
+
+  LOG(INFO) << "DOH-Fallback will retry with secure dns only";
+  request_info_.secure_dns_only = true;
+  int rv = transaction_->RestartWithSecureDnsOnly(base::BindOnce(
+      &URLRequestHttpJob::OnStartCompleted, base::Unretained(this)));
+  if (rv == ERR_IO_PENDING) {
+    return;
+  }
+
+  // The transaction started synchronously, but we need to notify the
+  // URLRequest delegate via the message loop.
+  base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
+      FROM_HERE, base::BindOnce(&URLRequestHttpJob::OnStartCompleted,
+                                weak_factory_.GetWeakPtr(), rv));
+}
+
+void URLRequestHttpJob::MaybeRetryWithSecureDnsOnly(int result) {
+  state_ = RetryState::DOH_FALLBACK;
+  if (CanRetryWithSecureDnsOnly(result)) {
+    original_net_error_ = result;
+    RetryWithSecureDnsOnly();
+    return;
+  }
+  OnStartCompleted(result);
+}
+#endif  // OHOS_EX_HTTP_DNS_FALLBACK
+#endif  // BUILDFLAG(IS_OHOS)
+
 void URLRequestHttpJob::OnStartCompleted(int result) {
   TRACE_EVENT0(NetTracingCategory(), "URLRequestHttpJob::OnStartCompleted");
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  switch (state_) {
+    case RetryState::INIT:
+      MaybeRetryWithSecureDnsOnly(result);
+      return;
+
+    case RetryState::DOH_FALLBACK:
+      if (result == net::ERR_NAME_NOT_RESOLVED && original_net_error_) {
+        if (transaction_ && transaction_->GetResponseInfo() &&
+            transaction_->GetResponseInfo()->resolve_error_info.error !=
+                net::ERR_NAME_NOT_RESOLVED) {
+          result = original_net_error_;
+        }
+      }
+      break;
+
+    case RetryState::MAX:
+      // do nothing
+      break;
+  }
+#endif
+
   RecordTimer();
 
   // If the job is done (due to cancellation), can just ignore this

@@ -460,7 +460,7 @@ RenderFrameHost* RenderViewContextMenuBase::GetRenderFrameHost() const {
 
 void RenderViewContextMenuBase::OpenURL(const GURL& url,
                                         const GURL& referring_url,
-					const url::Origin& initiator,
+	                                    const url::Origin& initiator,
                                         WindowOpenDisposition disposition,
                                         ui::PageTransition transition) {
   OpenURLWithExtraHeaders(url, referring_url, initiator, disposition,
@@ -471,7 +471,7 @@ void RenderViewContextMenuBase::OpenURL(const GURL& url,
 void RenderViewContextMenuBase::OpenURLWithExtraHeaders(
     const GURL& url,
     const GURL& referring_url,
-    const url::Origin& initiator,
+	const url::Origin& initiator,
     WindowOpenDisposition disposition,
     ui::PageTransition transition,
     const std::string& extra_headers,
@@ -487,7 +487,7 @@ content::OpenURLParams
 RenderViewContextMenuBase::GetOpenURLParamsWithExtraHeaders(
     const GURL& url,
     const GURL& referring_url,
-    const url::Origin& initiator,
+	const url::Origin& initiator,
     WindowOpenDisposition disposition,
     ui::PageTransition transition,
     const std::string& extra_headers,

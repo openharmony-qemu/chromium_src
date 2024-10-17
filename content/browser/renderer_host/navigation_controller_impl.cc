@@ -1357,6 +1357,9 @@ bool NavigationControllerImpl::RendererDidNavigate(
     // reaching here.
     CHECK(!is_same_document_navigation);
 
+    // TODO(crbug.com/340606786): Add a check to ensure `pending_entry_` isn't
+    // pointing to `entry_replaced_by_post_commit_error_`.
+
     // Any commit while a post-commit error page is showing should put the
     // original entry back, replacing the error page's entry.  This includes
     // reloads, where the original entry was used as the pending entry and
@@ -2596,7 +2599,7 @@ void NavigationControllerImpl::SetPendingNavigationSSLError(bool error) {
     pending_entry_->set_ssl_error(error);
 }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 // static
 bool NavigationControllerImpl::ValidateDataURLAsString(
     const scoped_refptr<const base::RefCountedString>& data_url_as_string) {
@@ -3778,7 +3781,7 @@ NavigationControllerImpl::CreateNavigationEntryFromLoadParams(
     case LOAD_TYPE_DATA:
       entry->SetBaseURLForDataURL(params.base_url_for_data_url);
       entry->SetVirtualURL(params.virtual_url_for_data_url);
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
       entry->SetDataURLAsString(params.data_url_as_string);
 #endif
       entry->SetCanLoadLocalResources(params.can_load_local_resources);
@@ -3814,7 +3817,6 @@ NavigationControllerImpl::CreateNavigationRequestFromLoadParams(
   DCHECK(frame_entry);
   // All renderer-initiated navigations must have an initiator_origin.
   DCHECK(!params.is_renderer_initiated || params.initiator_origin.has_value());
-
   GURL url_to_load;
   GURL virtual_url;
 
@@ -3929,7 +3931,7 @@ NavigationControllerImpl::CreateNavigationRequestFromLoadParams(
           blink::mojom::WasActivatedOption::kUnknown,
           /*navigation_token=*/base::UnguessableToken::Create(),
           std::vector<blink::mojom::PrefetchedSignedExchangeInfoPtr>(),
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
           /*data_url_as_string=*/std::string(),
 #endif
           /*is_browser_initiated=*/!params.is_renderer_initiated,
@@ -3960,7 +3962,7 @@ NavigationControllerImpl::CreateNavigationRequestFromLoadParams(
           /*fenced_frame_properties=*/absl::nullopt,
           /*not_restored_reasons=*/nullptr,
           /*load_with_storage_access=*/false);
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   if (ValidateDataURLAsString(params.data_url_as_string)) {
     commit_params->data_url_as_string = params.data_url_as_string->data();
   }
@@ -4157,9 +4159,24 @@ void NavigationControllerImpl::LoadIfNecessary() {
                             needs_reload_type_);
 
   // Calling Reload() results in ignoring state, and not loading.
-  // Explicitly use NavigateToPendingEntry so that the renderer uses the
+  // Explicitly use NavigateToExistingPendingEntry so that the renderer uses the
   // cached state.
-  if (pending_entry_) {
+  if (entry_replaced_by_post_commit_error_) {
+    // If the current entry is a post commit error, we reload the entry it
+    // replaced instead. We leave the error entry in place until a commit
+    // replaces it, but the pending entry points to the original entry in the
+    // meantime. Note that NavigateToExistingPendingEntry is able to handle the
+    // case that pending_entry_ != entries_[pending_entry_index_].
+    // Note that this handling is similar to
+    // `NavigationControllerImpl::Reload()`.
+    pending_entry_ = entry_replaced_by_post_commit_error_.get();
+    pending_entry_index_ = GetCurrentEntryIndex();
+    NavigateToExistingPendingEntry(
+        ReloadType::NONE,
+        /*initiator_rfh=*/nullptr,
+        /*soft_navigation_heuristics_task_id=*/absl::nullopt,
+        /*navigation_api_key=*/nullptr);
+  } else if (pending_entry_) {
     NavigateToExistingPendingEntry(
         ReloadType::NONE,
         /*initiator_rfh=*/nullptr,
@@ -4770,6 +4787,67 @@ const std::string& NavigationControllerImpl::GetOriginalUrl() {
     }
   }
   return base::EmptyString();
+}
+#endif
+
+#if defined(OHOS_EX_NAVIGATION)
+NavigationController::NavigationEntryUpdateError
+NavigationControllerImpl::InsertBackForwardEntry(int index, const GURL& url) {
+  DLOG(INFO) << "InsertNavigationEntryAtFront url: " << url << "[index]"
+             << index;
+  if (index < 0 || static_cast<size_t>(index) > entries_.size()) {
+    return NavigationEntryUpdateError::ERR_WRONG_OFFSET;
+  }
+  if (GetLastCommittedEntry()->IsInitialEntry() && entries_.size() > 0) {
+    entries_.clear();
+  }
+  std::unique_ptr<NavigationEntryImpl> entry =
+      NavigationEntryImpl::FromNavigationEntry(
+          NavigationController::CreateNavigationEntry(
+              url, Referrer(), absl::nullopt, absl::nullopt,
+              ui::PAGE_TRANSITION_FORWARD_BACK, false, std::string(),
+              browser_context_, nullptr));
+  std::unique_ptr<content::NavigationEntryRestoreContext> context =
+      content::NavigationEntryRestoreContext::Create();
+  entry->SetPageState(blink::PageState::CreateFromURL(entry->GetURL()),
+                      context.get());
+  if (entries_.size() == 0) {
+    InsertOrReplaceEntry(std::move(entry), false, false, false, nullptr);
+    return NavigationEntryUpdateError::UPDATE_OK;
+  }
+
+  entries_.insert(entries_.begin() + index, std::move(entry));
+  if (index <= last_committed_entry_index_) {
+    if (pending_entry_ && pending_entry_index_ != -1) {
+      pending_entry_index_++;
+    }
+    last_committed_entry_index_++;
+  }
+
+  return NavigationEntryUpdateError::UPDATE_OK;
+}
+
+NavigationController::NavigationEntryUpdateError
+NavigationControllerImpl::UpdateNavigationEntryUrl(int index, const GURL& url) {
+  DLOG(INFO) << "UpdateNavigationEntryUrl url: " << url << "[index]" << index;
+  if (frame_tree_->IsLoadingIncludingInnerFrameTrees()) {
+    LOG(ERROR)
+        << "If the url of the entry is modified during the loading process,"
+        << " it will cause some unpredictable effects!";
+    return NavigationEntryUpdateError::ERR_OTHER;
+  }
+
+  NavigationEntryImpl* entry = GetEntryAtIndex(index);
+  if (!entry) {
+    return NavigationEntryUpdateError::ERR_WRONG_OFFSET;
+  }
+  GURL new_url = GURL(url);
+  entry->SetURL(new_url);
+  entry->SetVirtualURL(new_url);
+  entry->root_node()->frame_entry->set_committed_origin(
+      url::Origin::Create(new_url));
+  entry->SetOriginalRequestURL(new_url);
+  return NavigationEntryUpdateError::UPDATE_OK;
 }
 #endif
 

@@ -77,6 +77,7 @@ constexpr base::TimeDelta ResourcePool::kDefaultMaxFlushDelay;
 constexpr base::TimeDelta ResourcePool::kDefaultMaxExpirationDelay;
 constexpr size_t ResourcePool::kUnusedResourcesToKeep;
 #endif
+
 void ResourcePool::GpuBacking::InitOverlayCandidateAndTextureTarget(
     const viz::SharedImageFormat format,
     const gpu::Capabilities& caps,
@@ -549,9 +550,9 @@ void ResourcePool::EvictExpiredResources() {
     // EvictExpiredResources for either (a) the time when the LRU buffer expires
     // or (b) the deadline to explicitly flush previously evicted resources.
     base::TimeDelta schedule_evict_expired_resources_time =
-        std::min(GetUsageTimeForLRUResource() + resource_expiration_delay_,
+          std::min(GetUsageTimeForLRUResource() + resource_expiration_delay_,
                  flush_evicted_resources_deadline_) -
-        current_time;
+          current_time;
 #ifdef OHOS_NWEB_EX
     if (delete_unused_resources_delay_enabled_) {
       base::TimeDelta flush_evicted_resources_delay =
@@ -701,9 +702,9 @@ void ResourcePool::PoolResource::OnMemoryDump(
 }
 
 #ifdef OHOS_NWEB_EX
- void ResourcePool::EnableDeleteUnusedResourcesDelay(bool enable) {
-   delete_unused_resources_delay_enabled_ = enable;
- }
+void ResourcePool::EnableDeleteUnusedResourcesDelay(bool enable) {
+  delete_unused_resources_delay_enabled_ = enable;
+}
 #endif
 
 }  // namespace cc

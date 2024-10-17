@@ -821,6 +821,11 @@ EVENT_TYPE(SSL_CONNECT_JOB_RESTART_WITH_ECH_CONFIG_LIST)
 // and the IPv4 addresses are attempted.
 EVENT_TYPE(TRANSPORT_CONNECT_JOB_IPV6_FALLBACK)
 
+#ifdef OHOS_MULTI_IP_CONNECT
+EVENT_TYPE(TRANSPORT_MULTI_CONNECT_JOB)
+EVENT_TYPE(TRANSPORT_MULTI_CONNECT_JOB_FALLBACK)
+#endif  // OHOS_MULTI_IP_CONNECT
+
 // This event is logged whenever the ConnectJob attempts a new TCP connection.
 // association. The ConnectJob may attempt multiple addresses in parallel, so
 // this event does not log when the connection attempt succeeds or fails. The

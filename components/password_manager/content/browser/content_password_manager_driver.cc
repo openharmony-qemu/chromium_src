@@ -64,6 +64,11 @@ bool HasValidURL(content::RenderFrameHost* render_frame_host) {
   if (!url.is_valid())
     return false;
 
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  if (!url.SchemeIsHTTPOrHTTPS())
+    return false;
+#endif
+
   return password_manager::bad_message::CheckChildProcessSecurityPolicyForURL(
       render_frame_host, url,
       password_manager::BadMessageReason::CPMD_BAD_ORIGIN_FORM_SUBMITTED);

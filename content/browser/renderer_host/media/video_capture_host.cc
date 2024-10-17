@@ -123,7 +123,7 @@ VideoCaptureHost::~VideoCaptureHost() {
 #if BUILDFLAG(IS_OHOS)
   RenderProcessHost* host = RenderProcessHost::FromID(render_process_id_);
   if (host) {
-    LOG(DEBUG) << __func__ << " stop screen capture, pid: " << host->GetProcess().Pid();
+    LOG(INFO) << __func__ << " stop screen capture, pid: " << host->GetProcess().Pid();
     OHOS::NWeb::ResSchedClientAdapter::ReportScreenCapture(
       OHOS::NWeb::ResSchedStatusAdapter::SCREEN_CAPTURE_STOP, host->GetProcess().Pid());
   }
@@ -300,7 +300,7 @@ void VideoCaptureHost::Stop(const base::UnguessableToken& device_id) {
 #if BUILDFLAG(IS_OHOS)
   RenderProcessHost* host = RenderProcessHost::FromID(render_process_id_);
   if (host) {
-    LOG(DEBUG) << __func__ << " stop screen capture, pid: " << host->GetProcess().Pid();
+    LOG(INFO) << __func__ << " stop screen capture, pid: " << host->GetProcess().Pid();
     OHOS::NWeb::ResSchedClientAdapter::ReportScreenCapture(
       OHOS::NWeb::ResSchedStatusAdapter::SCREEN_CAPTURE_STOP, host->GetProcess().Pid());
   }
@@ -312,8 +312,8 @@ void VideoCaptureHost::Stop(const base::UnguessableToken& device_id) {
     device_id_to_observer_map_[device_id]->OnStateChanged(
         media::mojom::VideoCaptureResult::NewState(
             media::mojom::VideoCaptureState::STOPPED));
+    device_id_to_observer_map_.erase(controller_id);
   }
-  device_id_to_observer_map_.erase(controller_id);
 
   DeleteVideoCaptureController(controller_id, media::VideoCaptureError::kNone);
   NotifyStreamRemoved();

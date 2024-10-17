@@ -632,4 +632,36 @@ TEST_F(URLUtilTest, TestCanonicalizeIdempotencyWithLeadingControlCharacters) {
   }
 }
 
+#if BUILDFLAG(IS_OHOS)
+TEST_F(URLUtilTest, CodeCacheEnabledScheme) {
+  const char* kEmptyStringScheme = "";
+  const char* kStandardHttpScheme = "http";
+  const char* kCustomStringScheme = "abc";
+  const char* kSpecialStringScheme = "11\a113&@2";
+  EXPECT_FALSE(IsCodeCacheEnabledScheme(kEmptyStringScheme));
+  EXPECT_FALSE(IsCodeCacheEnabledScheme(kStandardHttpScheme));
+  EXPECT_FALSE(IsCodeCacheEnabledScheme(kCustomStringScheme));
+  EXPECT_FALSE(IsCodeCacheEnabledScheme(kSpecialStringScheme));
+
+  AddCodeCacheEnabledScheme(kEmptyStringScheme);
+  EXPECT_TRUE(IsCodeCacheEnabledScheme(kEmptyStringScheme));
+  EXPECT_FALSE(IsCodeCacheEnabledScheme(kStandardHttpScheme));
+  EXPECT_FALSE(IsCodeCacheEnabledScheme(kCustomStringScheme));
+  EXPECT_FALSE(IsCodeCacheEnabledScheme(kSpecialStringScheme));
+
+  AddCodeCacheEnabledScheme(kStandardHttpScheme);
+  EXPECT_TRUE(IsCodeCacheEnabledScheme(kEmptyStringScheme));
+  EXPECT_TRUE(IsCodeCacheEnabledScheme(kStandardHttpScheme));
+  EXPECT_FALSE(IsCodeCacheEnabledScheme(kCustomStringScheme));
+  EXPECT_FALSE(IsCodeCacheEnabledScheme(kSpecialStringScheme));
+
+  AddCodeCacheEnabledScheme(kCustomStringScheme);
+  AddCodeCacheEnabledScheme(kSpecialStringScheme);
+  EXPECT_TRUE(IsCodeCacheEnabledScheme(kEmptyStringScheme));
+  EXPECT_TRUE(IsCodeCacheEnabledScheme(kStandardHttpScheme));
+  EXPECT_TRUE(IsCodeCacheEnabledScheme(kCustomStringScheme));
+  EXPECT_TRUE(IsCodeCacheEnabledScheme(kSpecialStringScheme));
+}
+#endif
+
 }  // namespace url

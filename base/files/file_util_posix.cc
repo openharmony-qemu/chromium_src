@@ -670,7 +670,16 @@ bool GetTempDir(FilePath* path) {
 #endif  // BUILDFLAG(IS_OHOS)
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
-  return PathService::Get(DIR_CACHE, path);
+  if (PathService::Get(DIR_CACHE, path) && path != nullptr) {
+    *path = path->Append("Temp");
+    if (!base::PathExists(*path)) {
+      return base::CreateDirectory(*path);
+    }
+
+    return true;
+  } else {
+    return false;
+  }
 #else
   *path = FilePath("/tmp");
   return true;

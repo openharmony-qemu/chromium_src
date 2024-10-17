@@ -16,6 +16,8 @@
 #ifndef CONTENT_CONTENT_VIEW_STATICS_OHOS_H_
 #define CONTENT_CONTENT_VIEW_STATICS_OHOS_H_
 
+#include "base/check.h"
+#include "base/lazy_instance.h"
 #include "content/browser/renderer_host/render_process_host_impl.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/render_process_host_observer.h"
@@ -31,8 +33,6 @@ class SuspendedProcessWatcherOHOS : public content::RenderProcessHostObserver {
 
   void PauseWebKitShardTimersFromOHOS();
   void ResumeWebKitShardTimersFromOHOS();
-
-  static std::shared_ptr<SuspendedProcessWatcherOHOS> content_view_;
 
  private:
   std::set<int /* RenderProcessHost id */> pause_processes_;

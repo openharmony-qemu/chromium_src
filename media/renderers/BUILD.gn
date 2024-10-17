@@ -128,12 +128,6 @@ source_set("unit_tests") {
     "video_renderer_impl_unittest.cc",
     "video_resource_updater_unittest.cc",
   ]
-  if (ohos_unittests) {
-    sources += [
-      "//content/renderer/render_remote_proxy_ohos.cc",
-      "//content/renderer/render_remote_proxy_ohos.h"
-    ]
-  }
   configs += [ "//media:media_config" ]
   deps = [
     "//base",

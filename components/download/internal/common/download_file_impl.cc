@@ -34,6 +34,10 @@
 #include "components/download/internal/common/android/download_collection_bridge.h"
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if defined(OHOS_EX_DOWNLOAD)
+#include "components/download/public/common/download_task_runner.h"
+#endif
+
 namespace download {
 
 namespace {
@@ -56,6 +60,9 @@ const int kNoBytesToWrite = -1;
 // Default content length when the potential file size is not yet determined.
 const int kUnknownContentLength = -1;
 
+#if defined(OHOS_EX_DOWNLOAD)
+static constexpr base::TimeDelta kTimeout = base::Seconds(60);
+#endif
 }  // namespace
 
 DownloadFileImpl::SourceStream::SourceStream(
@@ -175,11 +182,17 @@ DownloadFileImpl::DownloadFileImpl(
   DETACH_FROM_SEQUENCE(sequence_checker_);
 }
 
+
 DownloadFileImpl::~DownloadFileImpl() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-
+  
   TRACE_EVENT_NESTABLE_ASYNC_END0("download", "DownloadFileActive",
                                   download_id_);
+#if defined(OHOS_EX_DOWNLOAD)
+  for (auto& stream : source_streams_) {
+    CancelRequest(stream.second->offset());
+  }
+#endif
 }
 
 void DownloadFileImpl::Initialize(
@@ -521,6 +534,12 @@ void DownloadFileImpl::Pause() {
   // Stop sending updates since meaningless after paused.
   if (update_timer_ && update_timer_->IsRunning())
     update_timer_->Stop();
+
+#if defined(OHOS_EX_DOWNLOAD)
+  if (download_job_timer_ && download_job_timer_->IsRunning()) {
+    download_job_timer_->Stop();
+  }
+#endif
 }
 
 void DownloadFileImpl::Resume() {
@@ -540,7 +559,11 @@ void DownloadFileImpl::StreamActive(SourceStream* source_stream,
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   if (is_paused_)
     return;
-
+#if defined(OHOS_EX_DOWNLOAD)
+  if (download_job_timer_ && download_job_timer_->IsRunning()) {
+    download_job_timer_.reset();
+  }
+#endif
   base::TimeTicks start(base::TimeTicks::Now());
   base::TimeTicks now;
   scoped_refptr<net::IOBuffer> incoming_data;
@@ -615,6 +638,13 @@ void DownloadFileImpl::StreamActive(SourceStream* source_stream,
     source_stream->RegisterDataReadyCallback(
         base::BindRepeating(&DownloadFileImpl::StreamActive, weak_factory_.GetWeakPtr(),
                    source_stream));
+#if defined(OHOS_EX_DOWNLOAD)
+    download_job_timer_ = std::make_unique<base::OneShotTimer>();
+    download_job_timer_->Start(FROM_HERE, kTimeout,
+                          base::BindOnce(&DownloadFileImpl::OnTimeout,
+                                         base::Unretained(this), source_stream, DOWNLOAD_INTERRUPT_REASON_NETWORK_DISCONNECTED,
+                                         InputStream::COMPLETE, true));
+#endif
   }
 
   if (state == InputStream::COMPLETE)
@@ -630,9 +660,21 @@ void DownloadFileImpl::StreamActive(SourceStream* source_stream,
 void DownloadFileImpl::OnStreamCompleted(SourceStream* source_stream) {
   DownloadInterruptReason reason = HandleStreamCompletionStatus(source_stream);
   SendUpdate();
-
   NotifyObserver(source_stream, reason, InputStream::COMPLETE, false);
 }
+
+#if defined(OHOS_EX_DOWNLOAD)
+void DownloadFileImpl::OnTimeout(SourceStream* source_stream,
+                                 DownloadInterruptReason reason,
+                                 InputStream::StreamState stream_state,
+                                 bool should_terminate) {
+  LOG(INFO) << "download time out";
+  if (download_job_timer_) {
+    download_job_timer_.reset();
+  }
+  NotifyObserver(source_stream, reason, stream_state, should_terminate);
+}
+#endif
 
 void DownloadFileImpl::NotifyObserver(SourceStream* source_stream,
                                       DownloadInterruptReason reason,
@@ -689,7 +731,6 @@ void DownloadFileImpl::OnDownloadCompleted() {
 
 void DownloadFileImpl::RegisterAndActivateStream(SourceStream* source_stream) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-
   source_stream->Initialize();
   // Truncate |source_stream|'s length if necessary.
   for (const auto& received_slice : received_slices_) {

@@ -6,12 +6,13 @@
 
 #include <stddef.h>
 
+#include "base/check.h"
 #include "base/command_line.h"
 #include "base/debug/crash_logging.h"
 #include "base/functional/bind.h"
+#include "base/memory/ptr_util.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/metrics/histogram_macros.h"
-#include "base/no_destructor.h"
 #include "base/notreached.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/task/thread_pool.h"
@@ -28,6 +29,10 @@
 #include "ui/native_theme/native_theme.h"
 
 namespace content {
+
+namespace {
+
+BrowserAccessibilityStateImpl* g_instance = nullptr;
 
 // Auto-disable accessibility if this many seconds elapse with user input
 // events but no accessibility API usage.
@@ -67,24 +72,35 @@ void RecordNewAccessibilityModeFlags(
 // Update the accessibility histogram 45 seconds after initialization.
 static const int ACCESSIBILITY_HISTOGRAM_DELAY_SECS = 45;
 
+}  // namespace
+
 // static
 BrowserAccessibilityState* BrowserAccessibilityState::GetInstance() {
   return BrowserAccessibilityStateImpl::GetInstance();
+}
+
+// static
+BrowserAccessibilityStateImpl* BrowserAccessibilityStateImpl::GetInstance() {
+  CHECK(g_instance);
+  return g_instance;
 }
 
 // On Android, Mac, Lacros, and Windows there are platform-specific subclasses.
 #if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_WIN) && !BUILDFLAG(IS_MAC) && \
     !BUILDFLAG(IS_CHROMEOS_LACROS)
 // static
-BrowserAccessibilityStateImpl* BrowserAccessibilityStateImpl::GetInstance() {
-  static base::NoDestructor<BrowserAccessibilityStateImpl> instance;
-  return &*instance;
+std::unique_ptr<BrowserAccessibilityStateImpl>
+BrowserAccessibilityStateImpl::Create() {
+  return base::WrapUnique(new BrowserAccessibilityStateImpl());
 }
 #endif
 
 BrowserAccessibilityStateImpl::BrowserAccessibilityStateImpl()
     : BrowserAccessibilityState(),
       histogram_delay_(base::Seconds(ACCESSIBILITY_HISTOGRAM_DELAY_SECS)) {
+  DCHECK_EQ(g_instance, nullptr);
+  g_instance = this;
+        
   force_renderer_accessibility_ =
       base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kForceRendererAccessibility);
@@ -145,6 +161,9 @@ void BrowserAccessibilityStateImpl::InitBackgroundTasks() {
 }
 
 BrowserAccessibilityStateImpl::~BrowserAccessibilityStateImpl() {
+  DCHECK_EQ(g_instance, this);
+  g_instance = nullptr;
+
   // Remove ourselves from the AXMode global observer list.
   ui::AXPlatformNode::RemoveAXModeObserver(this);
 }
@@ -301,6 +320,10 @@ void BrowserAccessibilityStateImpl::OnOtherThreadDone() {
 }
 
 void BrowserAccessibilityStateImpl::UpdateAccessibilityActivityTask() {
+  if (!g_instance) {
+    // There can be a race on shutdown since this is posted as a delayed task.
+    return;
+  }
   base::TimeTicks now = ui::EventTimeForNow();
   accessibility_last_usage_time_ = now;
   if (accessibility_active_start_time_.is_null())

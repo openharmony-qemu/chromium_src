@@ -133,15 +133,11 @@ class GL_EXPORT NativeViewGLSurfaceEGL : public GLSurfaceEGL,
   GLSurfacePresentationHelper* presentation_helper() const {
     return presentation_helper_.get();
   }
-#if BUILDFLAG(IS_OHOS)
-  gfx::SwapResult SwapBuffersWithDamage(const std::vector<int>& rects,
-                                        PresentationCallback callback,
-                                        gfx::FrameData data) override;
-#else
+
   gfx::SwapResult SwapBuffersWithDamage(const std::vector<int>& rects,
                                         PresentationCallback callback,
                                         gfx::FrameData data);
-#endif
+
  private:
   struct SwapInfo {
     bool frame_id_is_valid;

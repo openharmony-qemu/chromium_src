@@ -496,7 +496,7 @@ class CC_EXPORT ResourcePool : public base::trace_event::MemoryDumpProvider {
 #ifdef OHOS_NWEB_EX
  public:
   void EnableDeleteUnusedResourcesDelay(bool enable);
-
+ 
  private:
   bool delete_unused_resources_delay_enabled_ = false;
 #endif

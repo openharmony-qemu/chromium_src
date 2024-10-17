@@ -11,7 +11,9 @@
 #include "base/memory/ptr_util.h"
 #include "base/time/time.h"
 #include "cc/trees/layer_tree_impl.h"
-
+#if BUILDFLAG(IS_OHOS)
+#include "base/ohos/sys_info_utils.h"
+#endif
 namespace cc {
 
 std::unique_ptr<ScrollbarAnimationController>
@@ -319,7 +321,12 @@ void ScrollbarAnimationController::DidMouseMove(
     if (is_mouse_down_)
       return;
 #ifdef OHOS_SCROLLBAR
-    need_trigger_scrollbar_fade_in_ = MouseIsNearScrollbar(ScrollbarOrientation::HORIZONTAL);
+    if (base::ohos::IsPcDevice()) {
+      need_trigger_scrollbar_fade_in_ = MouseIsNearAnyScrollbar();
+    } else {
+      need_trigger_scrollbar_fade_in_ =
+          MouseIsNearScrollbar(ScrollbarOrientation::HORIZONTAL);
+    }
 #else
     need_trigger_scrollbar_fade_in_ = MouseIsNearAnyScrollbar();
 #endif // OHOS_SCROLLBAR

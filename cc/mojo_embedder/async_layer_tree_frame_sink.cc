@@ -315,7 +315,6 @@ void AsyncLayerTreeFrameSink::OnBeginFrame(
       "viz,benchmark", "Graphics.Pipeline", TRACE_ID_GLOBAL(args.trace_id),
       TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT, "step",
       "ReceiveBeginFrame", "frame_sequence", args.frame_id.sequence_number);
-  SetDrawRect(args.draw_rect);
   if (begin_frame_source_)
     begin_frame_source_->OnBeginFrame(args);
 }
@@ -362,14 +361,6 @@ void AsyncLayerTreeFrameSink::OnMojoConnectionError(
     client_->DidLoseLayerTreeFrameSink();
 }
 
-void AsyncLayerTreeFrameSink::SetDrawRect(const gfx::Rect& new_rect) {
-  if (new_rect.IsEmpty()) {
-    return;
-  }
-  client_->SetDrawRectState(true);
-  client_->SetExternalTilePriorityConstraints(new_rect, gfx::Transform());
-}
-
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
 void AsyncLayerTreeFrameSink::InitSoftwareCompositorRender(
     SoftwareCompositorRegistryOhos* registry) {
@@ -380,8 +371,6 @@ void AsyncLayerTreeFrameSink::InitSoftwareCompositorRender(
 
 #if BUILDFLAG(IS_OHOS)
 void AsyncLayerTreeFrameSink::TriggerVsyncImplTask() {
-  TRACE_EVENT1("cc", "AsyncLayerTreeFrameSink::TriggerVsyncImplTask",
-    "res", !compositor_frame_sink_ptr_);
   DCHECK(compositor_frame_sink_ptr_);
 
   compositor_frame_sink_ptr_->TriggerVsyncImplTask();

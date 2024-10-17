@@ -90,10 +90,17 @@ if (is_ohos) {
     ]
   } else {
     if (use_musl) {
-      ohos_build_root = "//third_party/ohos_ndk"
-      ohos_ndk_root = "//third_party/ohos_ndk"
-      ohos_toolchain_root = "$ohos_ndk_root/toolchains/llvm"
-      ohos_sysroot = "$ohos_ndk_root/sysroot"
+      if (current_cpu == "x64") {
+        ohos_build_root = "//third_party/ohos_ndk"
+        ohos_ndk_root = "//third_party/ohos_ndk"
+        ohos_toolchain_root = "$ohos_ndk_root/toolchains/llvm"
+        ohos_sysroot = "$ohos_ndk_root/sysroot_x86"
+      } else {
+        ohos_build_root = "//third_party/ohos_ndk"
+        ohos_ndk_root = "//third_party/ohos_ndk"
+        ohos_toolchain_root = "$ohos_ndk_root/toolchains/llvm"
+        ohos_sysroot = "$ohos_ndk_root/sysroot"
+      }
     } else {
       ohos_build_root = "//ohos_ndk_aosp"
       ohos_ndk_root = "//ohos_ndk_aosp"

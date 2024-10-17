@@ -49,6 +49,14 @@ class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
       NetworkChangeNotifier::ConnectionType connection_type,
       NetworkChangeNotifier::ConnectionSubtype connection_subtype);
 
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_EX_HTTP_DNS_FALLBACK)
+  const std::vector<std::string> GetCurrentDnsServers() override;
+#endif
+
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_EX_NETWORK_CONNECTION)
+  void BindDnsToNetwork(int network_for_dns) override;
+#endif
+
  protected:
   // NetworkChangeNotifier overrides.
   NetworkChangeNotifier::ConnectionType GetCurrentConnectionType()
@@ -89,6 +97,11 @@ class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
   std::unique_ptr<OHOS::NWeb::NetConnectAdapter> ohos_net_conn_adapter_;
 #endif
   double max_bandwidth_mbps_;  // Guarded by |lock_|.
+
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_EX_HTTP_DNS_FALLBACK)
+  mutable base::Lock dns_server_lock_;
+  std::vector<std::string> dns_servers_;
+#endif
 };
 
 }  // namespace net

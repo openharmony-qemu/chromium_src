@@ -454,6 +454,12 @@ class NET_EXPORT_PRIVATE QuicStreamFactory
   const std::set<std::string>& GetDnsAliasesForSessionKey(
       const QuicSessionKey& key) const;
 
+  // Inject a QUIC session for testing various edge cases.
+  void ActivateSessionForTesting(const url::SchemeHostPort& destination,
+                                 QuicChromiumClientSession* session);
+ 
+  void DeactivateSessionForTesting(QuicChromiumClientSession* session);
+
  private:
   class Job;
   class QuicCryptoClientConfigOwner;

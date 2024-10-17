@@ -72,7 +72,11 @@ class CC_BASE_EXPORT ScopedLayerTask {
 
 class CC_BASE_EXPORT ScopedImageTask {
  public:
-  enum ImageType { kAvif, kBmp, kGif, kIco, kJpeg, kPng, kWebP, kOther };
+  enum ImageType { kAvif, kBmp, kGif,
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
+   kHeif,
+#endif
+   kIco, kJpeg, kPng, kWebP, kOther };
 
   explicit ScopedImageTask(ImageType image_type)
       : image_type_(image_type), start_time_(base::TimeTicks::Now()) {}

@@ -290,7 +290,21 @@ VP9Decoder::DecodeResult VP9Decoder::Decode() {
       return kDecodeError;
     }
 
+    VideoColorSpace new_color_space;
+    // For VP9, container color spaces override video stream color spaces.
+    if (container_color_space_.IsSpecified()) {
+      new_color_space = container_color_space_;
+    } else if (curr_frame_hdr_->GetColorSpace().IsSpecified()) {
+      new_color_space = curr_frame_hdr_->GetColorSpace();
+    }
+
     DCHECK(!new_pic_size.IsEmpty());
+
+    bool is_color_space_change = false;
+    if (base::FeatureList::IsEnabled(kAVDColorSpaceChanges)) {
+      is_color_space_change = new_color_space.IsSpecified() &&
+                              new_color_space != picture_color_space_;
+    }
 
     const bool is_pic_size_different = new_pic_size != pic_size_;
     const bool is_pic_size_larger = new_pic_size.width() > pic_size_.width() ||
@@ -299,13 +313,15 @@ VP9Decoder::DecodeResult VP9Decoder::Decode() {
         (ignore_resolution_changes_to_smaller_for_testing_
              ? is_pic_size_larger
              : is_pic_size_different) ||
-        new_profile != profile_ || curr_frame_hdr_->bit_depth != bit_depth_;
+        new_profile != profile_ || curr_frame_hdr_->bit_depth != bit_depth_ ||
+        is_color_space_change;
 
     if (is_new_configuration_different_enough) {
       DVLOG(1) << "New profile: " << GetProfileName(new_profile)
                << ", new resolution: " << new_pic_size.ToString()
                << ", new bit depth: "
-               << base::strict_cast<int>(curr_frame_hdr_->bit_depth);
+               << base::strict_cast<int>(curr_frame_hdr_->bit_depth)
+               << ", new color space: " << new_color_space.ToString();
 
       if (!curr_frame_hdr_->IsKeyframe() &&
           !(curr_frame_hdr_->IsIntra() && pic_size_.IsEmpty())) {
@@ -335,6 +351,7 @@ VP9Decoder::DecodeResult VP9Decoder::Decode() {
       visible_rect_ = new_render_rect;
       profile_ = new_profile;
       bit_depth_ = curr_frame_hdr_->bit_depth;
+      picture_color_space_ = new_color_space;
       size_change_failure_counter_ = 0;
       return kConfigChange;
     }
@@ -350,11 +367,8 @@ VP9Decoder::DecodeResult VP9Decoder::Decode() {
 
     pic->set_decrypt_config(std::move(decrypt_config_));
 
-    // For VP9, container color spaces override video stream color spaces.
-    if (container_color_space_.IsSpecified())
-      pic->set_colorspace(container_color_space_);
-    else if (curr_frame_hdr_)
-      pic->set_colorspace(curr_frame_hdr_->GetColorSpace());
+    // Set the color space for the picture.
+    pic->set_colorspace(picture_color_space_);
 
     pic->frame_hdr = std::move(curr_frame_hdr_);
 
@@ -439,6 +453,10 @@ uint8_t VP9Decoder::GetBitDepth() const {
 
 VideoChromaSampling VP9Decoder::GetChromaSampling() const {
   return chroma_sampling_;
+}
+
+VideoColorSpace VP9Decoder::GetVideoColorSpace() const {
+  return picture_color_space_;
 }
 
 absl::optional<gfx::HDRMetadata> VP9Decoder::GetHDRMetadata() const {

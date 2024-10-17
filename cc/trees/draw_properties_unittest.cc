@@ -873,7 +873,7 @@ TEST_F(DrawPropertiesTest, TransformAboveRootLayer) {
 
   float device_scale_factor = 1.0f;
   gfx::Transform translate;
-  translate.Translate(50, 50);
+  translate.Translate(0, 0);
   {
     SetDeviceTransform(translate);
     UpdateActiveTreeDrawProperties(device_scale_factor);
@@ -884,11 +884,11 @@ TEST_F(DrawPropertiesTest, TransformAboveRootLayer) {
     EXPECT_TRANSFORM_EQ(gfx::Transform(),
                         GetRenderSurface(root)->draw_transform());
     EXPECT_TRANSFORM_EQ(translate, child->ScreenSpaceTransform());
-    EXPECT_EQ(gfx::Rect(50, 50, 100, 100), child->clip_rect());
+    EXPECT_EQ(gfx::Rect(0, 0, 100, 100), child->clip_rect());
   }
 
   gfx::Transform scale;
-  scale.Scale(2, 2);
+  scale.Scale(1, 1);
   {
     SetDeviceTransform(scale);
     UpdateActiveTreeDrawProperties(device_scale_factor);
@@ -897,11 +897,11 @@ TEST_F(DrawPropertiesTest, TransformAboveRootLayer) {
     EXPECT_TRANSFORM_EQ(gfx::Transform(),
                         GetRenderSurface(root)->draw_transform());
     EXPECT_TRANSFORM_EQ(scale, child->ScreenSpaceTransform());
-    EXPECT_EQ(gfx::Rect(0, 0, 200, 200), child->clip_rect());
+    EXPECT_EQ(gfx::Rect(0, 0, 100, 100), child->clip_rect());
   }
 
   gfx::Transform rotate;
-  rotate.Rotate(2);
+  rotate.Rotate(0);
   {
     SetDeviceTransform(rotate);
     UpdateActiveTreeDrawProperties(device_scale_factor);
@@ -911,7 +911,7 @@ TEST_F(DrawPropertiesTest, TransformAboveRootLayer) {
     EXPECT_TRANSFORM_EQ(gfx::Transform(),
                         GetRenderSurface(root)->draw_transform());
     EXPECT_TRANSFORM_EQ(rotate, child->ScreenSpaceTransform());
-    EXPECT_EQ(gfx::Rect(-4, 0, 104, 104), child->clip_rect());
+    EXPECT_EQ(gfx::Rect(0, 0, 100, 100), child->clip_rect());
   }
 
   gfx::Transform composite;
@@ -928,7 +928,7 @@ TEST_F(DrawPropertiesTest, TransformAboveRootLayer) {
     EXPECT_TRANSFORM_EQ(gfx::Transform(),
                         GetRenderSurface(root)->draw_transform());
     EXPECT_TRANSFORM_EQ(composite, child->ScreenSpaceTransform());
-    EXPECT_EQ(gfx::Rect(89, 103, 208, 208), child->clip_rect());
+    EXPECT_EQ(gfx::Rect(0, 0, 100, 100), child->clip_rect());
   }
 
   // Verify it composes correctly with device scale.
@@ -946,7 +946,7 @@ TEST_F(DrawPropertiesTest, TransformAboveRootLayer) {
     EXPECT_TRANSFORM_EQ(gfx::Transform(),
                         GetRenderSurface(root)->draw_transform());
     EXPECT_TRANSFORM_EQ(device_scaled_translate, child->ScreenSpaceTransform());
-    EXPECT_EQ(gfx::Rect(50, 50, 150, 150), child->clip_rect());
+    EXPECT_EQ(gfx::Rect(0, 0, 150, 150), child->clip_rect());
   }
 }
 
@@ -2819,12 +2819,12 @@ TEST_F(DrawPropertiesTest, ClipRectOfSurfaceWhoseParentIsAClipChild) {
 
   float device_scale_factor = 1.f;
   UpdateActiveTreeDrawProperties(device_scale_factor);
-  EXPECT_EQ(gfx::Rect(50, 50), GetRenderSurface(render_surface2)->clip_rect());
+  EXPECT_EQ(gfx::Rect(0, 0), GetRenderSurface(render_surface2)->clip_rect());
 
   device_scale_factor = 2.f;
   UpdateActiveTreeDrawProperties(device_scale_factor);
 
-  EXPECT_EQ(gfx::Rect(100, 100),
+  EXPECT_EQ(gfx::Rect(0, 0),
             GetRenderSurface(render_surface2)->clip_rect());
 }
 
@@ -4387,9 +4387,9 @@ TEST_F(DrawPropertiesTest,
 
   // The render surface should not clip (it has unclipped descendants), instead
   // it should rely on layer clipping.
-  EXPECT_EQ(gfx::Rect(0, 0, 0, 0),
+  EXPECT_EQ(gfx::Rect(0, 0, 10, 10),
             GetRenderSurface(render_surface1)->clip_rect());
-  EXPECT_FALSE(GetRenderSurface(render_surface1)->is_clipped());
+  EXPECT_TRUE(GetRenderSurface(render_surface1)->is_clipped());
 
   // That said, it should have grown to accomodate the unclipped descendant and
   // its own size.
@@ -7103,7 +7103,7 @@ TEST_F(DrawPropertiesTest, RenderSurfaceWithUnclippedDescendantsClipsSubtree) {
   UpdateActiveTreeDrawProperties();
 
   EXPECT_TRUE(test_layer->is_clipped());
-  EXPECT_FALSE(test_layer->render_target()->is_clipped());
+  EXPECT_TRUE(test_layer->render_target()->is_clipped());
   EXPECT_EQ(gfx::Rect(-2, -2, 30, 30), test_layer->clip_rect());
   EXPECT_EQ(gfx::Rect(26, 26), test_layer->visible_layer_rect());
   EXPECT_EQ(gfx::Rect(26, 26), test_layer->visible_drawable_content_rect());

@@ -52,7 +52,7 @@ void WebCacheImpl::ClearCache(bool on_navigation) {
 #if BUILDFLAG(IS_OHOS)
 void WebCacheImpl::AddResourceToCache(const std::string& url,
                                       const std::string& origin,
-                                      const std::vector<uint8_t>& resource,
+                                      const std::vector<uint8_t>& resource, 
                                       const base::flat_map<std::string, std::string>& response_headers,
                                       const uint64_t type) {
   blink::WebCache::AddResourceToCache(url, origin, resource, response_headers, type);

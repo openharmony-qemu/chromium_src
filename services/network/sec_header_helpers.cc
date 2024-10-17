@@ -166,11 +166,11 @@ std::map<std::string, std::string> GetFetchMetadataHeaders(
     bool has_user_activation,
     network::mojom::RequestDestination dest,
     const absl::optional<url::Origin>& initiator) {
- 
+
   std::map<std::string, std::string> headers;
   if (!IsUrlPotentiallyTrustworthy(target_url))
     return headers;
- 
+
   // Other requests default to `kSameOrigin`, and walk through the request's URL
   // chain to calculate the correct value.
   auto header_value = SecFetchSiteValue::kSameOrigin;
@@ -180,14 +180,14 @@ std::map<std::string, std::string> GetFetchMetadataHeaders(
     header_value = std::max(header_value, GetHeaderValueForTargetAndInitiator(
                                             target_url, initiator.value()));
   }
- 
+
   headers[kSecFetchSite] = GetSecFetchSiteHeaderString(header_value);
- 
+
   headers[kSecFetchMode] = RequestModeToString(mode);
- 
+
   if (has_user_activation)
     headers[kSecFetchUser] = "?1";
- 
+
   std::string destination_value = dest == mojom::RequestDestination::kEmpty
                                  ? "empty"
                                  : RequestDestinationToString(dest);

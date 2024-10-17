@@ -29,7 +29,8 @@ class ClipboardOhosReadData {
   size_t GetRecordVectorSize() const { return record_vector_.size(); }
   std::shared_ptr<std::string> ReadHtml();
   std::shared_ptr<std::string> ReadText() { return text_; }
-  static void SetConvertHtmlCallback(std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> callback);
+  static void SetConvertHtmlCallback(
+      std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> callback);
   ~ClipboardOhosReadData();
 
  private:

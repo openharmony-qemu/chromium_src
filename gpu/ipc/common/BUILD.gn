@@ -175,6 +175,10 @@ source_set("ipc_common_sources") {
     libs = [ "android" ]
   }
 
+  if (use_libfuzzer) {
+    cflags = [ "-DOHOS_FUZZ_COMPILE_ERROR_FIX" ]
+  }
+
   if (is_ohos) {
     sources += [
       "gpu_surface_id_tracker.cc",
@@ -337,6 +341,9 @@ mojom("interfaces") {
   }
   if (is_win || is_chromeos || is_chromeos_lacros) {
     enabled_features += [ "has_gpu_revision_info" ]
+  }
+  if (enable_heif_decoder) {
+    enable_features += [ "enable_heif_decoder" ]
   }
 
   cpp_typemaps = [

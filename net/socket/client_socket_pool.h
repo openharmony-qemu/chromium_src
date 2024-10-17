@@ -100,7 +100,12 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
     GroupId(url::SchemeHostPort destination,
             PrivacyMode privacy_mode,
             NetworkAnonymizationKey network_anonymization_key,
-            SecureDnsPolicy secure_dns_policy);
+            SecureDnsPolicy secure_dns_policy
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+            ,
+            bool secure_dns_only = false
+#endif
+    );
     GroupId(const GroupId& group_id);
 
     ~GroupId();
@@ -118,9 +123,22 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
 
     SecureDnsPolicy secure_dns_policy() const { return secure_dns_policy_; }
 
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+    bool secure_dns_only() const { return secure_dns_only_; }
+#endif  // OHOS_EX_HTTP_DNS_FALLBACK
+
     // Returns the group ID as a string, for logging.
     std::string ToString() const;
 
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+    bool operator==(const GroupId& other) const {
+      return std::tie(destination_, privacy_mode_, network_anonymization_key_,
+                      secure_dns_policy_, secure_dns_only_) ==
+             std::tie(other.destination_, other.privacy_mode_,
+                      other.network_anonymization_key_,
+                      other.secure_dns_policy_, other.secure_dns_only_);
+    }
+#else
     bool operator==(const GroupId& other) const {
       return std::tie(destination_, privacy_mode_, network_anonymization_key_,
                       secure_dns_policy_) ==
@@ -128,7 +146,17 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
                       other.network_anonymization_key_,
                       other.secure_dns_policy_);
     }
+#endif  // OHOS_EX_HTTP_DNS_FALLBACK
 
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+    bool operator<(const GroupId& other) const {
+      return std::tie(destination_, privacy_mode_, network_anonymization_key_,
+                      secure_dns_policy_, secure_dns_only_) <
+             std::tie(other.destination_, other.privacy_mode_,
+                      other.network_anonymization_key_,
+                      other.secure_dns_policy_, other.secure_dns_only_);
+    }
+#else
     bool operator<(const GroupId& other) const {
       return std::tie(destination_, privacy_mode_, network_anonymization_key_,
                       secure_dns_policy_) <
@@ -136,6 +164,7 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
                       other.network_anonymization_key_,
                       other.secure_dns_policy_);
     }
+#endif  // OHOS_EX_HTTP_DNS_FALLBACK
 
    private:
     // The endpoint of the final destination (not the proxy).
@@ -149,6 +178,10 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
 
     // Controls the Secure DNS behavior to use when creating this socket.
     SecureDnsPolicy secure_dns_policy_;
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+    bool secure_dns_only_ = false;
+#endif  // OHOS_EX_HTTP_DNS_FALLBACK
   };
 
   // Parameters that, in combination with GroupId, proxy, websocket information,
@@ -357,6 +390,10 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
   void SetConnectTimeout(int timeout_override);
   int GetConnectTimeout();
 #endif
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  void SetConnectJobWithSecureDnsOnlyTimeout(int seconds);
+  int GetConnectJobWithSecureDnsOnlyTimeout();
+#endif
 
  protected:
   ClientSocketPool(bool is_for_websockets,
@@ -379,6 +416,9 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
       ConnectJob::Delegate* delegate);
 #ifdef OHOS_EX_NETWORK_CONNECTION
   int timeout_override_{0};
+#endif
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  int connect_job_with_secure_dns_only_timeout_{15};
 #endif
 
  private:

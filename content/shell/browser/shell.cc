@@ -648,23 +648,7 @@ void Shell::ActivateContents(WebContents* contents) {
 void Shell::RunFileChooser(RenderFrameHost* render_frame_host,
                            scoped_refptr<FileSelectListener> listener,
                            const blink::mojom::FileChooserParams& params) {
-  run_file_chooser_count_++;
-  if (hold_file_chooser_) {
-    held_file_chooser_listener_ = std::move(listener);
-  } else {
-    g_platform->RunFileChooser(render_frame_host, std::move(listener), params);
-  }
-}
-
-void Shell::EnumerateDirectory(WebContents* web_contents,
-                               scoped_refptr<FileSelectListener> listener,
-                               const base::FilePath& path) {
-  run_file_chooser_count_++;
-  if (hold_file_chooser_) {
-    held_file_chooser_listener_ = std::move(listener);
-  } else {
-    listener->FileSelectionCanceled();
-  }
+  g_platform->RunFileChooser(render_frame_host, std::move(listener), params);
 }
 
 bool Shell::IsBackForwardCacheSupported() {

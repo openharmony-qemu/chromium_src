@@ -49,7 +49,7 @@ class PDFiumRange {
   std::u16string GetText() const;
 
  private:
-  PDFiumPage::ScopedUnloadPreventer page_unload_preventer_;
+  PDFiumPage::ScopedUnloadPreventer page_unload_preventer_; 
 
   // The page containing the range. Must outlive `this`.
   raw_ptr<PDFiumPage> page_;

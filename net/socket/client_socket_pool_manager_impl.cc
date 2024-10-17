@@ -91,6 +91,10 @@ ClientSocketPool* ClientSocketPoolManagerImpl::GetSocketPool(
 #ifdef OHOS_EX_NETWORK_CONNECTION
   new_pool->SetConnectTimeout(timeout_override_);
 #endif
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  new_pool->SetConnectJobWithSecureDnsOnlyTimeout(
+      connect_job_with_secure_dns_timeout_);
+#endif
 
   std::pair<SocketPoolMap::iterator, bool> ret =
       socket_pools_.insert(std::make_pair(proxy_server, std::move(new_pool)));
@@ -121,6 +125,16 @@ void ClientSocketPoolManagerImpl::SetConnectTimeout(int seconds) {
   timeout_override_ = seconds;
   for (const auto& it : socket_pools_) {
     it.second->SetConnectTimeout(seconds);
+  }
+}
+#endif
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+void ClientSocketPoolManagerImpl::SetConnectJobWithSecureDnsOnlyTimeout(
+    int seconds) {
+  connect_job_with_secure_dns_timeout_ = seconds;
+  for (const auto& it : socket_pools_) {
+    it.second->SetConnectJobWithSecureDnsOnlyTimeout(seconds);
   }
 }
 #endif

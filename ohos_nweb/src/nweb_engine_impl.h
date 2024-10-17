@@ -80,7 +80,7 @@ public:
   void ClearHostIP(const std::string &hostName) override;
   std::shared_ptr<NWebAdsBlockManager> GetAdsBlockManager() override;
 
-  void EnableWholeWebPageDrawing() override;
+  void SetWholeWebDrawing() override;
 
 private:
   std::shared_ptr<NWebDataBase> nweb_data_base_ = nullptr;

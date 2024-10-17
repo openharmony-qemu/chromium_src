@@ -289,6 +289,41 @@ int HttpCache::Transaction::Start(const HttpRequestInfo* request,
   return rv;
 }
 
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+int HttpCache::Transaction::RestartWithSecureDnsOnly(
+    CompletionOnceCallback callback) {
+  // Ensure that we only have one asynchronous call at a time.
+  DCHECK(callback_.is_null());
+
+  if (!cache_.get()) {
+    return ERR_UNEXPECTED;
+  }
+
+  int rv = RestartNetworkRequestWithSecureDnsOnly();
+  if (rv == ERR_IO_PENDING) {
+    callback_ = std::move(callback);
+  }
+
+  return rv;
+}
+
+int HttpCache::Transaction::RestartNetworkRequestWithSecureDnsOnly() {
+  DCHECK(mode_ & WRITE || mode_ == NONE);
+  DCHECK(network_trans_.get());
+  DCHECK_EQ(STATE_NONE, next_state_);
+
+  next_state_ = STATE_SEND_REQUEST_COMPLETE;
+  if (request_ != initial_request_ && custom_request_) {
+    custom_request_->secure_dns_only = true;
+  }
+  int rv = network_trans_->RestartWithSecureDnsOnly(io_callback_);
+  if (rv != ERR_IO_PENDING) {
+    return DoLoop(rv);
+  }
+  return rv;
+}
+#endif
+
 int HttpCache::Transaction::RestartIgnoringLastError(
     CompletionOnceCallback callback) {
   DCHECK(!callback.is_null());
@@ -2010,22 +2045,7 @@ int HttpCache::Transaction::DoSuccessfulSendRequest() {
   if (request_->allow_preload_record &&
       preload_info_ != nullptr &&
       !ShouldDisableCaching(*new_response->headers)) {
-    base::TimeDelta freshnessLifetimes = new_response->headers->
-      GetFreshnessLifetimes(new_response->response_time).freshness;
-    if (freshnessLifetimes.is_zero()) {
-      preload_info_->set_cache_type(ohos_prp_preload::PRRequestCacheType::FORCE_CACHE);
-    } else {
-      DCHECK(freshnessLifetimes.is_positive());
-      preload_info_->
-        set_freshness_life_times((new_response->response_time +
-                                  freshnessLifetimes -
-                                  new_response->headers
-                                    ->GetCurrentAge(new_response->request_time,
-                                                    new_response->response_time,
-                                                    new_response->response_time)).ToInternalValue());
-      preload_info_->set_cache_type(ohos_prp_preload::PRRequestCacheType::NEGOTIATION_CACHE);
-    }
-    UpdateValidatorsInfo(*new_response->headers);
+    UpdateCacheInfo(*new_response);
   }
 #endif
 
@@ -2845,20 +2865,7 @@ int HttpCache::Transaction::BeginCacheValidation() {
   if (request_->allow_preload_record &&
       preload_info_ != nullptr &&
       skip_validation) {
-    base::TimeDelta freshnessLifetimes = response_.headers->
-      GetFreshnessLifetimes(response_.response_time).freshness;
-    if (!freshnessLifetimes.is_zero()) {
-      DCHECK(freshnessLifetimes.is_positive());
-      preload_info_->
-        set_freshness_life_times((response_.response_time +
-                                  freshnessLifetimes -
-                                  response_.headers
-                                    ->GetCurrentAge(response_.request_time,
-                                                    response_.response_time,
-                                                    response_.response_time)).ToInternalValue());
-    }
-    preload_info_->set_cache_type(ohos_prp_preload::PRRequestCacheType::NEGOTIATION_CACHE);
-    UpdateValidatorsInfo(*response_.headers);
+    UpdateCacheInfo(response_);
   }
 #endif
 
@@ -4277,16 +4284,36 @@ void HttpCache::Transaction::EndDiskCacheAccessTimeCount(
 }
 
 #if BUILDFLAG(IS_OHOS)
-void HttpCache::Transaction::UpdateValidatorsInfo(const HttpResponseHeaders& headers) {
+void HttpCache::Transaction::UpdateCacheInfo(const HttpResponseInfo& response) {
   if (preload_info_ == nullptr) {
     return;
   }
+
+  ohos_prp_preload::PRRequestCacheType cache_type =
+    ohos_prp_preload::PRRequestCacheType::DISABLE_CACHE;
+  int64_t freshness_life_times = 0;
+  base::TimeDelta freshnessLifetimes = response.headers->
+      GetFreshnessLifetimes(response.response_time).freshness;
+  if (freshnessLifetimes.is_zero()) {
+    cache_type = ohos_prp_preload::PRRequestCacheType::FORCE_CACHE;
+  } else {
+    DCHECK(freshnessLifetimes.is_positive());
+    freshness_life_times = (response.response_time +
+                            freshnessLifetimes -
+                            response.headers
+                              ->GetCurrentAge(response.request_time,
+                                              response.response_time,
+                                              response.response_time)).ToInternalValue();
+    cache_type = ohos_prp_preload::PRRequestCacheType::NEGOTIATION_CACHE;
+  }
+
   std::string e_tag;
-  headers.EnumerateHeader(nullptr, "etag", &e_tag);
-  preload_info_->set_e_tag(e_tag);
+  response.headers->EnumerateHeader(nullptr, "etag", &e_tag);
+  
   std::string last_modified;
-  headers.EnumerateHeader(nullptr, "last-modified", &last_modified);
-  preload_info_->set_last_modified(last_modified);
+  response.headers->EnumerateHeader(nullptr, "last-modified", &last_modified);
+
+  preload_info_->set_cache_info(cache_type, freshness_life_times, e_tag, last_modified);
 }
 #endif
 

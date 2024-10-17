@@ -155,6 +155,7 @@ config("runtime_library") {
       if (is_asan && defined(ohos_asan) && ohos_asan) {
         libasan_file = "$ohos_toolchain_root/lib/clang/current/lib/arm-linux-ohos/libclang_rt.asan.so"
         libs += [ rebase_path(libasan_file) ]
+        dynamic_linker = "/lib/ld-musl-arm-asan.so.1"
       }
     }
 
@@ -177,6 +178,7 @@ config("runtime_library") {
       if (is_asan && defined(ohos_asan) && ohos_asan) {
         libasan_file = "$ohos_toolchain_root/lib/clang/current/lib/aarch64-linux-ohos/libclang_rt.asan.so"
         libs += [ rebase_path(libasan_file) ]
+        dynamic_linker = "/lib/ld-musl-aarch64-asan.so.1"
       }
     }
 
@@ -196,6 +198,21 @@ config("runtime_library") {
     }
 
     ldflags += [ "-Wl,--dynamic-linker,$dynamic_linker" ]
+
+    if (use_libfuzzer) {
+      fuzzer_lib_path = rebase_path(
+              "$ohos_toolchain_root/lib/clang/current/lib/aarch64-linux-ohos//libclang_rt.fuzzer_no_main.a",
+              root_build_dir)
+      ldflags += [
+        "-fsanitize=address",
+        "-shared-libasan",
+        "-Wl,--whole-archive",
+        "$fuzzer_lib_path",
+        "-Wl,--no-whole-archive",
+        "-lc++",
+      ]
+    }
+
     libs += [
       rebase_path(libclang_rt_file),
       "c",

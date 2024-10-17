@@ -85,6 +85,43 @@ std::string GetKey(const std::string& alias) {
   }
 }
 
+std::string GetKeyForOta(const std::string& alias) {
+  base::FilePath cache_path;
+  base::PathService::Get(base::DIR_CACHE, &cache_path);
+  if (cache_path.empty()) {
+    return std::string();
+  }
+  base::FilePath key_dir =
+      cache_path.Append(FILE_PATH_LITERAL(kNWebKeyStoreDir));
+  if (!base::PathExists(key_dir)) {
+    LOG(ERROR) << "create directory failed: get key for ota " << key_dir.value();
+    return std::string();
+  }
+
+  base::FilePath key_file = key_dir.Append(FILE_PATH_LITERAL(alias));
+
+  if (base::PathExists(key_file)) {
+    std::string encryptedData;
+    bool res = base::ReadFileToString(key_file, &encryptedData);
+    if (!res) {
+      return std::string();
+    }
+    std::string local_key;
+    for (int i = 0; i < COUNT_FOR_RETRY; i++) {
+      local_key = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                      .GetKeystoreAdapterInstance()
+                      .EncryptKey(alias, encryptedData);
+
+      LOG(INFO) << "get key compatibility with ota upgrade" ;
+      if (!local_key.empty()) {
+        return local_key;
+      }
+    }
+    return local_key;
+  }
+    return std::string();
+  }
+
 std::string GenerateLocalKey(size_t sz) {
   std::random_device rd;
   std::mt19937 gen{rd()};

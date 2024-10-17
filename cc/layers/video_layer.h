@@ -65,7 +65,7 @@ class CC_EXPORT VideoLayer : public Layer {
              RectChangeCallback callback);
   VideoLayer(VideoFrameProvider* provider,
              media::VideoTransformation transform,
-             RectChangeCallback callback,  
+             RectChangeCallback callback,
              RectVisibilityChangeCallback visibilitycallback);
 #endif
   ~VideoLayer() override;

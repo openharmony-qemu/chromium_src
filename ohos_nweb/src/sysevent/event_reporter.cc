@@ -48,10 +48,6 @@ constexpr char JANK_STATS_VER[] = "JANK_STATS_VER";
 constexpr char RENDER_JIT_LOCKDOWN[] = "RENDER_JIT_LOCKDOWN";
 constexpr char LOCKDOWN_MODE_STATUS[] = "JIT_LOCKDOWN_MODE";
 
-constexpr char NWEB_ID[] = "NWEB_ID";
-constexpr char PLAIN_TEXT[] = "PLAIN_TEXT";
-constexpr char LINK_URL[] = "LINK_URL";
-constexpr char HTML[] = "HTML";
 // For force zoom enable
 constexpr char FORCE_ENABLE_ZOOM[] = "FORCE_ENABLE_ZOOM";
 constexpr char ENABLE_FORCE_ZOOM_STATUS[] = "ENABLE_FORCE_ZOOM_STATUS";
@@ -75,10 +71,20 @@ constexpr char VIDEO_FRAME_DROP_STATISTICS[] = "VIDEO_FRAME_DROP_STATISTICS";
 constexpr char VIDEO_FRAME_DROPPED_COUNT[] = "VIDEO_FRAME_DROPPED_COUNT";
 constexpr char VIDEO_FRAME_DROPPED_DURATION[] = "VIDEO_FRAME_DROPPED_DURATION";
 
-// For site_isolation
+constexpr char NWEB_ID[] = "NWEB_ID";
+constexpr char PLAIN_TEXT[] = "PLAIN_TEXT";
+constexpr char LINK_URL[] = "LINK_URL";
+constexpr char HTML[] = "HTML";
+
+constexpr char DYNAMIC_FRAME_DROP_STATISTICS[] = "DYNAMIC_FRAME_DROP_STATISTICS";
+constexpr char TOTAL_APP_FRAMES[] = "TOTAL_APP_FRAMES";
+constexpr char TOTAL_APP_MISSED_FRAMES[] = "TOTAL_APP_MISSED_FRAMES";
+constexpr char MAX_APP_FRAMETIME[] = "MAX_APP_FRAMETIME";
+constexpr char MAX_APP_SEQ_MISSSED_FRAMES[] = "MAX_APP_SEQ_MISSSED_FRAMES";
+
+// For site_isolation 
 constexpr char SITE_ISOLATION_MODE[] = "SITE_ISOLATION_MODE";
 constexpr char SITE_ISOLATION_STATUS[] = "SITE_ISOLATION_STATUS";
-
 }  // namespace
 
 void ReportPageLoadStats(int instanceId,
@@ -133,25 +139,6 @@ void ReportLockdownModeStatus(void) {
       RENDER_JIT_LOCKDOWN, HiSysEventAdapter::EventType::BEHAVIOR, {LOCKDOWN_MODE_STATUS, "true"});
 }
 
-void ReportPageLoadTimeStats(OhWebPerformanceTiming loadPageTime) {
-}
-
-void ReportDragDropStatus(const std::string& eventName, int32_t id) {
-  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
-      eventName, HiSysEventAdapter::EventType::BEHAVIOR, {NWEB_ID, std::to_string(id)});
-}
-
-void ReportDragDropInfo(const std::string& eventName,
-                          int32_t id,
-                          const std::string& fragment,
-                          const std::string& linkUrl,
-                          const std::string& linkHtml) {
-  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
-      eventName, HiSysEventAdapter::EventType::BEHAVIOR,
-      {NWEB_ID, std::to_string(id), PLAIN_TEXT, std::to_string(fragment.size()),
-      LINK_URL, std::to_string(linkUrl.size()), HTML, std::to_string(linkHtml.size())});
-}
-
 void ReportForceZoomEnable(void) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       FORCE_ENABLE_ZOOM, HiSysEventAdapter::EventType::BEHAVIOR, {ENABLE_FORCE_ZOOM_STATUS, "true"});
@@ -168,8 +155,32 @@ void ReportPageDownLoadErrorInfo(long downloadId, int errorCode) {
         {DOWNLOAD_ID, std::to_string(downloadId), ERROR_CODE, std::to_string(errorCode)});
 }
 
-void ReportSlideJankStats(int64_t startTime, int64_t duration, int32_t totalAppFrames,
-  int32_t totalAppMissedFrames, int64_t maxAppFrametime, int32_t maxAppSeqMissedFrames) {
+void ReportPageLoadTimeStats(OhWebPerformanceTiming loadPageTime) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      "PAGE_LOAD_TIME", HiSysEventAdapter::EventType::STATISTIC,
+      {"NAVIGATION_ID", loadPageTime.navigation_id,
+       "NAVIGATION_START", loadPageTime.navigation_start,
+       "REDIRECT_COUNT", loadPageTime.redirect_count,
+       "REDIRECT_START", loadPageTime.redirect_start,
+       "REDIRECT_END", loadPageTime.redirect_end,
+       "FETCH_START", loadPageTime.fetch_start,
+       "WORKER_START", loadPageTime.worker_start,
+       "DOMAIN_LOOKUP_START", loadPageTime.domain_lookup_start,
+       "DOMAIN_LOOKUP_END", loadPageTime.domain_lookup_end,
+       "CONNECT_START", loadPageTime.connect_start,
+       "SECURE_CONNECT_START", loadPageTime.secure_connect_start,
+       "CONNECT_END", loadPageTime.connect_end,
+       "REQUEST_START", loadPageTime.request_start,
+       "RESPONSE_START", loadPageTime.response_start,
+       "RESPONSE_END", loadPageTime.response_end,
+       "DOM_INTERACTIVE", loadPageTime.dom_interactive,
+       "DOM_CONTENT_LOADED_EVENT_START", loadPageTime.dom_content_loaded_event_start,
+       "DOM_CONTENT_LOADED_EVENT_END", loadPageTime.dom_content_loaded_event_end,
+       "LOAD_EVENT_START", loadPageTime.load_event_start,
+       "LOAD_EVENT_END", loadPageTime.load_event_end,
+       "FIRST_PAINT", loadPageTime.first_paint,
+       "FIRST_CONTENTFUL_PAINT", loadPageTime.first_contentful_paint,
+       "LARGEST_CONTENTFUL_PAINT", loadPageTime.largest_contentful_paint});
 }
 
 void ReportAudioPlayErrorInfo(const std::string errorType,
@@ -219,6 +230,30 @@ void ReportVideoFrameDropStats(int64_t frameCount, int64_t frameDuration) {
     VIDEO_FRAME_DROP_STATISTICS, HiSysEventAdapter::EventType::STATISTIC,
     {VIDEO_FRAME_DROPPED_COUNT, std::to_string(frameCount),
      VIDEO_FRAME_DROPPED_DURATION, std::to_string(frameDuration)});
+}
+void ReportDragDropStatus(const std::string& eventName, int32_t id) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      eventName, HiSysEventAdapter::EventType::BEHAVIOR, {NWEB_ID, std::to_string(id)});
+}
+
+void ReportDragDropInfo(const std::string& eventName,
+                          int32_t id,
+                          const std::string& fragment,
+                          const std::string& linkUrl,
+                          const std::string& linkHtml) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      eventName, HiSysEventAdapter::EventType::BEHAVIOR,
+      {NWEB_ID, std::to_string(id), PLAIN_TEXT, std::to_string(fragment.size()),
+      LINK_URL, std::to_string(linkUrl.size()), HTML, std::to_string(linkHtml.size())});
+}
+
+void ReportSlideJankStats(int64_t startTime, int64_t duration, int32_t totalAppFrames,
+  int32_t totalAppMissedFrames, int64_t maxAppFrametime, int32_t maxAppSeqMissedFrames) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      DYNAMIC_FRAME_DROP_STATISTICS, HiSysEventAdapter::EventType::STATISTIC,
+      {STARTTIME, startTime, DURATION, duration, TOTAL_APP_FRAMES, totalAppFrames,
+      TOTAL_APP_MISSED_FRAMES, totalAppMissedFrames, MAX_APP_FRAMETIME, maxAppFrametime,
+      MAX_APP_SEQ_MISSSED_FRAMES, maxAppSeqMissedFrames});
 }
 
 void ReportSiteIsolationMode(const std::string site_isolation_status) {

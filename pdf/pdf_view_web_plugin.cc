@@ -118,6 +118,7 @@
 #include "v8/include/v8.h"
 
 #if BUILDFLAG(IS_OHOS)
+#include "base/ohos/sys_info_utils.h"
 #include "base/trace_event/trace_event.h"
 #include "base/command_line.h"
 #include "content/public/common/content_switches.h"
@@ -521,7 +522,13 @@ void PdfViewWebPlugin::UpdateFocus(bool focused,
   if (has_focus_ != focused) {
     engine_->UpdateFocus(focused);
     client_->UpdateTextInputState();
+
+    // Make sure `this` is still alive after the UpdateSelectionBounds() call.
+    auto weak_this = weak_factory_.GetWeakPtr();
     client_->UpdateSelectionBounds();
+    if (!weak_this) {
+      return;
+    }
   }
   has_focus_ = focused;
 
@@ -988,13 +995,21 @@ void PdfViewWebPlugin::Email(const std::string& to,
 void PdfViewWebPlugin::Print() {
   if (!engine_)
     return;
+
+#if BUILDFLAG(IS_OHOS)
+  // The printing service is temporarily supported on only 2in1 device.
   if (!(*base::CommandLine::ForCurrentProcess())
            .HasSwitch(switches::kEnablePrinting)) {
     return;
   }
+
+  const bool can_print = CanPrint();
+#else
   const bool can_print =
       engine_->HasPermission(DocumentPermission::kPrintLowQuality) ||
       engine_->HasPermission(DocumentPermission::kPrintHighQuality);
+#endif
+
   if (!can_print)
     return;
 
@@ -1529,13 +1544,6 @@ void PdfViewWebPlugin::HandleViewportMessage(const base::Value::Dict& message) {
       SendLoadingProgress(/*percentage=*/100);
     }
   }
-
-#if defined(OHOS_PDF)
-  if (!message.FindDouble("zoom")) {
-    engine_->ResetDesiredLayoutOptions();
-    return;
-  }
-#endif
 
   gfx::Vector2dF scroll_offset(*message.FindDouble("xOffset"),
                                *message.FindDouble("yOffset"));
@@ -2174,6 +2182,10 @@ void PdfViewWebPlugin::SendMetadata() {
   metadata.Set("canSerializeDocument",
                IsSaveDataSizeValid(engine_->GetLoadedByteSize()));
 
+#if BUILDFLAG(IS_OHOS)
+  metadata.Set("canPrint", CanPrint());
+#endif
+
   base::Value::Dict message;
   message.Set("type", "metadata");
   message.Set("metadataData", std::move(metadata));
@@ -2429,5 +2441,12 @@ void PdfViewWebPlugin::LoadAccessibility() {
                      weak_factory_.GetWeakPtr(), /*page_index=*/0),
       kAccessibilityPageDelay);
 }
+
+#if BUILDFLAG(IS_OHOS)
+bool PdfViewWebPlugin::CanPrint() const {
+  return engine_->HasPermission(DocumentPermission::kPrintLowQuality) ||
+         engine_->HasPermission(DocumentPermission::kPrintHighQuality);
+}
+#endif
 
 }  // namespace chrome_pdf

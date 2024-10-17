@@ -54,6 +54,9 @@
 #include "ui/gfx/video_types.h"
 #include "ui/gl/gl_enums.h"
 #include "ui/gl/trace_util.h"
+#if BUILDFLAG(IS_OHOS)
+#include "base/ohos/sys_info_utils.h"
+#endif
 
 namespace media {
 namespace {
@@ -632,13 +635,6 @@ void VideoResourceUpdater::ObtainFrameResources(
     return;
   }
 
-#if BUILDFLAG(IS_OHOS)
-  if (video_frame->should_skip_current_frame()) {
-    LOG(INFO) << "[NativeEmbed] ObtainFrameResources should skip current frame.";
-    return;
-  }
-#endif
-
   VideoFrameExternalResources external_resources =
       CreateExternalResourcesFromVideoFrame(video_frame);
   frame_resource_type_ = external_resources.type;
@@ -942,7 +938,12 @@ void VideoResourceUpdater::CopyHardwarePlane(
     gl->CopySubTextureCHROMIUM(
         src_texture_id, 0, GL_TEXTURE_2D, scope.texture_id(), 0, 0, 0, 0, 0,
         output_plane_resource_size.width(), output_plane_resource_size.height(),
-        false, false, false);
+#if BUILDFLAG(IS_OHOS)
+        base::ohos::IsEmulator(),
+#else
+        false,
+#endif
+        false, false);
   }
   gl->EndSharedImageAccessDirectCHROMIUM(src_texture_id);
   gl->DeleteTextures(1, &src_texture_id);

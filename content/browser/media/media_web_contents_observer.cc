@@ -748,6 +748,7 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
 void MediaWebContentsObserver::RequestEnterFullscreen(const MediaPlayerId& player_id) {
   const auto iter = media_player_remotes_.find(player_id);
   if (iter == media_player_remotes_.end()) {
+    LOG(WARNING) << "RequestEnterFullscreen failed";
     return;
   }
   iter->second->RequestEnterFullscreen();
@@ -756,10 +757,32 @@ void MediaWebContentsObserver::RequestEnterFullscreen(const MediaPlayerId& playe
 void MediaWebContentsObserver::RequestExitFullscreen(const MediaPlayerId& player_id) {
   const auto iter = media_player_remotes_.find(player_id);
   if (iter == media_player_remotes_.end()) {
+    LOG(WARNING) << "RequestExitFullscreen failed";
     return;
   }
   iter->second->RequestExitFullscreen();
 }
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
+    OnPlaybackWithMobileDataAllowed() {
+  media_web_contents_observer_->web_contents_impl()
+      ->OnPlaybackWithMobileDataAllowed();
+  // Notify all media players except this one.
+  media_web_contents_observer_->AllowAllMediaPlayersPlaybackWithMobileDataExcept(
+      media_player_id_);
+}
+
+void MediaWebContentsObserver::AllowAllMediaPlayersPlaybackWithMobileDataExcept(
+      const MediaPlayerId& player_id) {
+  for (auto& media_player_remote : media_player_remotes_) {
+    if (media_player_remote.first == player_id) {
+      continue;
+    }
+    media_player_remote.second->AllowPlaybackWithMobileData();
+  }
+}
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
 
 }  // namespace content

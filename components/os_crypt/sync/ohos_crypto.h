@@ -19,6 +19,8 @@ const size_t IV_SIZE = 16;
 // Get symmetric key
 std::string get_symmetric_key_256(const std::string& key_name);
 
+std::string get_symmetric_key_256_for_ota(const std::string& key_name);
+
 // Get random IV for encryption
 std::string get_iv(size_t sz = IV_SIZE);
 

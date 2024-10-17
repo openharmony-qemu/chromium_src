@@ -231,18 +231,23 @@ ChildProcessTerminationInfo ChildProcessLauncherHelper::GetTerminationInfo(
         process.process.Handle(), known_dead, &info.exit_code);
 #if BUILDFLAG(IS_OHOS)
   } else if (app_mgr_client_adapter_) {
-    int exitStatus;
-    int ret = app_mgr_client_adapter_->GetRenderProcessTerminationStatus(
-        process.process.Handle(), exitStatus);
-    if (ret != 0) {
-      LOG(ERROR) << "get render process termination status failed, ret = "
-                 << ret;
-    } else if (exitStatus < 0) {
-      LOG(ERROR)
-          << "get render process termination status success, invalid status = "
-          << exitStatus;
+    if (known_dead) {
+      LOG(INFO) << "known dead, GetTerminationInfo pid " << process.process.Handle();
+      int exitStatus;
+      int ret = app_mgr_client_adapter_->GetRenderProcessTerminationStatus(
+          process.process.Handle(), exitStatus);
+      if (ret != 0) {
+        LOG(ERROR) << "get render process termination status failed, ret = "
+                  << ret;
+      } else if (exitStatus < 0) {
+        LOG(ERROR)
+            << "get render process termination status success, invalid status = "
+            << exitStatus;
+      } else {
+        info.status = GetProcessStatusByExitCode(exitStatus);
+      }
     } else {
-      info.status = GetProcessStatusByExitCode(exitStatus);
+      info.status = base::TERMINATION_STATUS_STILL_RUNNING;
     }
 #endif
   } else if (known_dead) {
@@ -255,18 +260,51 @@ ChildProcessTerminationInfo ChildProcessLauncherHelper::GetTerminationInfo(
   return info;
 }
 
+#if BUILDFLAG(IS_OHOS)
+bool ChildProcessLauncherHelper::TerminateProcessByAppMgr(const base::Process& process)
+{
+  auto app_mgr_client_adapter =
+    OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateAafwkAdapter();
+  if (app_mgr_client_adapter == nullptr) {
+    LOG(ERROR) << "get app manager client adapter failed";
+    return false;
+  }
+
+  int exitStatus;
+  int ret = app_mgr_client_adapter->GetRenderProcessTerminationStatus(
+    process.Handle(), exitStatus);
+  if (ret != 0) {
+    LOG(ERROR) << "process termination status failed, pid " << process.Handle() <<
+      " ret " << ret;
+    return false;
+  }
+  LOG(INFO) << "terminal pid " << process.Handle() <<
+    " exitStatus " << exitStatus;
+
+  return true;
+}
+#endif
+
 // static
 bool ChildProcessLauncherHelper::TerminateProcess(const base::Process& process,
                                                   int exit_code) {
   // TODO(https://crbug.com/818244): Determine whether we should also call
   // EnsureProcessTerminated() to make sure of process-exit, and reap it.
+#if BUILDFLAG(IS_OHOS)
+  return TerminateProcessByAppMgr(process);
+#else
   return process.Terminate(exit_code, false);
+#endif
 }
 
 // static
 void ChildProcessLauncherHelper::ForceNormalProcessTerminationSync(
     ChildProcessLauncherHelper::Process process) {
   DCHECK(CurrentlyOnProcessLauncherTaskRunner());
+#if BUILDFLAG(IS_OHOS)
+  TerminateProcessByAppMgr(process.process);
+  return;
+#else
   process.process.Terminate(RESULT_CODE_NORMAL_EXIT, false);
   // On POSIX, we must additionally reap the child.
   if (process.zygote) {
@@ -276,6 +314,7 @@ void ChildProcessLauncherHelper::ForceNormalProcessTerminationSync(
   } else {
     base::EnsureProcessTerminated(std::move(process.process));
   }
+#endif
 }
 
 void ChildProcessLauncherHelper::SetProcessBackgroundedOnLauncherThread(

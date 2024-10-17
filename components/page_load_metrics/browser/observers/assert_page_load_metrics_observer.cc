@@ -312,6 +312,14 @@ void AssertPageLoadMetricsObserver::
   DCHECK(!timing.first_paint_after_back_forward_cache_restore.is_zero());
 }
 
+#ifdef OHOS_BFCACHE
+void AssertPageLoadMetricsObserver::
+    OnFirstContentfulPaintAfterBackForwardCacheRestoreInPage(
+        const page_load_metrics::mojom::BackForwardCacheTiming& timing,
+        size_t index) {
+}
+#endif
+
 void AssertPageLoadMetricsObserver::
     OnFirstInputAfterBackForwardCacheRestoreInPage(
         const page_load_metrics::mojom::BackForwardCacheTiming& timing,

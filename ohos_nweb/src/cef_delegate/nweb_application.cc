@@ -117,7 +117,6 @@ std::vector<std::string> NWebApplication::CustomSchemeCmdLineSplit(
 
 void NWebApplication::OnRegisterCustomSchemes(
     CefRawPtr<CefSchemeRegistrar> registrar) {
-  LOG(INFO) << "OnRegisterCustomSchemes";
   CefRefPtr<CefCommandLine> command_line =
       CefCommandLine::GetGlobalCommandLine();
   if (command_line->HasSwitch(::switches::kOhosCustomScheme)) {
@@ -169,6 +168,7 @@ void NWebApplication::OnContextInitialized() {
       FROM_HERE, base::BindOnce(&NWebApplication::RunWebInitedCallback, this,
                                 runWebInitedCallback));
 #endif
+
   OnContextInitializedInternal();
 }
 

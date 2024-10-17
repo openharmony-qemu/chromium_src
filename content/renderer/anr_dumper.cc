@@ -4,6 +4,7 @@
 
 #include "content/renderer/anr_dumper.h"
 #include "base/lazy_instance.h"
+#include "base/task/single_thread_task_runner.h"
 #include "content/common/child_process.mojom.h"
 #include "third_party/blink/renderer/platform/bindings/v8_per_isolate_data.h"
 #include "v8/include/v8-extension.h"
@@ -29,7 +30,8 @@ class AnrDumper::InterruptData {
   InterruptData(
       mojom::ChildProcess::dumpCurrentJavaScriptStackInMainThreadCallback
           callback)
-      : callback_(std::move(callback)) {}
+      : callback_(std::move(callback)),
+        task_runner_(base::SingleThreadTaskRunner::GetCurrentDefault()) {}
 
   InterruptData(const InterruptData&) = delete;
   InterruptData& operator=(const InterruptData&) = delete;
@@ -37,15 +39,19 @@ class AnrDumper::InterruptData {
   void RunCallback(std::ostringstream stack_trace_stream) {
     const std::string& stack_trace_stream_str = stack_trace_stream.str();
     if (stack_trace_stream_str.length() > kMaxStackLength) {
-      std::move(callback_).Run(
-          stack_trace_stream_str.substr(0, kMaxStackLength));
+      task_runner_->PostTask(
+          FROM_HERE,
+          base::BindOnce(std::move(callback_),
+                         stack_trace_stream_str.substr(0, kMaxStackLength)));
       return;
     }
-    std::move(callback_).Run(stack_trace_stream_str);
+    task_runner_->PostTask(FROM_HERE, base::BindOnce(std::move(callback_),
+                                                     stack_trace_stream_str));
   }
 
  private:
   mojom::ChildProcess::dumpCurrentJavaScriptStackInMainThreadCallback callback_;
+  const scoped_refptr<base::SequencedTaskRunner> task_runner_;
 };
 
 // Run in io thread, make sure MainThreadIsolate is inited.

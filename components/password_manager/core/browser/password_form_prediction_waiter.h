@@ -19,7 +19,11 @@ namespace password_manager {
 
 // Filling timeout for waiting for asynchronous predictions.
 constexpr base::TimeDelta kMaxFillingDelayForAsyncPredictions =
+#if defined(OHOS_PASSWORD_AUTOFILL)
+    base::Milliseconds(1);
+#else
     base::Milliseconds(500);
+#endif
 
 // Helper class for PasswordFormManager to manage outstanding asynchronous
 // prediction fetches. This issues callbacks to wait on multiple

@@ -221,6 +221,11 @@ void OutputStream::OnControllerPaused() {
   if (OutputController::will_monitor_audio_levels()) {
     DCHECK(poll_timer_.IsRunning());
     poll_timer_.Stop();
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_MEDIA_MUTE_AUDIO)
+    if (is_audible_) {
+      is_audible_ = false;
+    }
+#endif  // BUILDFLAG(IS_OHOS) && defined(OHOS_MEDIA_MUTE_AUDIO)
   }
   if (observer_)
     observer_->DidStopPlaying();
@@ -235,6 +240,11 @@ void OutputStream::OnControllerError() {
   // Stop checking the audio level to avoid using this object while it's being
   // torn down.
   poll_timer_.Stop();
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_MEDIA_MUTE_AUDIO)
+  if (is_audible_) {
+    is_audible_ = false;
+  }
+#endif  // BUILDFLAG(IS_OHOS) && defined(OHOS_MEDIA_MUTE_AUDIO)
 
   if (log_)
     log_->OnError();

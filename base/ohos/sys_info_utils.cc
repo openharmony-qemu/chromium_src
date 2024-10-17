@@ -24,6 +24,8 @@ namespace ohos {
 
 namespace {
 
+constexpr char kProductModeEmulator[] = "emulator";
+
 using namespace OHOS::NWeb;
 
 class SystemProperties {
@@ -43,11 +45,15 @@ class SystemProperties {
 
   bool is_2in1() { return device_type_ == ProductDeviceType::DEVICE_TYPE_2IN1; }
 
+  bool is_emulator() { return product_model_ == kProductModeEmulator; }
+
   int32_t major_version() { return major_version_; }
 
   int32_t senior_version() { return senior_version_; }
 
   std::string os_name() { return os_name_; }
+
+  std::string product_model() { return product_model_; }
 
  private:
   friend class NoDestructor<SystemProperties>;
@@ -59,6 +65,7 @@ class SystemProperties {
   int32_t senior_version_;
   OHOS::NWeb::ProductDeviceType device_type_;
   std::string os_name_;
+  std::string product_model_;
 };
 
 SystemProperties::SystemProperties()
@@ -73,7 +80,10 @@ SystemProperties::SystemProperties()
                        .GetProductDeviceType()),
       os_name_(OhosAdapterHelper::GetInstance()
                    .GetSystemPropertiesInstance()
-                   .GetUserAgentOSName()) {}
+                   .GetUserAgentOSName()),
+      product_model_(OhosAdapterHelper::GetInstance()
+                         .GetSystemPropertiesInstance()
+                         .GetDeviceInfoProductModel()) {}
 
 }  // namespace
 
@@ -88,6 +98,10 @@ BASE_EXPORT bool IsTabletDevice() {
 BASE_EXPORT bool IsPcDevice() {
   // 2in1 is treated as pc device on ohos platform now.
   return SystemProperties::Instance()->is_2in1();
+}
+
+BASE_EXPORT bool IsEmulator() {
+  return SystemProperties::Instance()->is_emulator();
 }
 
 BASE_EXPORT int32_t MajorVersion() {

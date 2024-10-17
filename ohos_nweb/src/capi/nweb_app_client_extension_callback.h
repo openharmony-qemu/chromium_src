@@ -19,6 +19,7 @@
 #include <map>
 #include <stddef.h>
 #include <string>
+#include "ohos_nweb/src/capi/nweb_permission_request.h"
 
 struct NWebAppClientExtensionCallback {
   size_t struct_size = sizeof(NWebAppClientExtensionCallback);
@@ -31,8 +32,10 @@ struct NWebAppClientExtensionCallback {
                                int nweb_id);
   void (*OnLoadStarted)(bool toDifferentDocument, int nweb_id);
   void (*OnActivityStateChanged)(int state, int type, int nweb_id);
+  void (*OnOpenURLFromTab)(std::string target_url, int type, bool user_gesture, int nweb_id);
   void (*OnHidePasswordAutofillPopup)(int nweb_id);
   void (*OnSaveOrUpdatePassword)(bool isUpdate, std::string url, int nweb_id);
+  void (*OnUpdateTargetURL)(std::string url, int nweb_id);
   void (*OnShowPasswordAutofillPopup)(int left,
                                       int top,
                                       int width,
@@ -49,10 +52,20 @@ struct NWebAppClientExtensionCallback {
   void (*ContentsBrowserZoomChange)(double zoom_factor,
                                     bool can_show_bubble,
                                     int nweb_id);
+
+  void (*OnPermissionRequest)(int nweb_id,
+                              std::shared_ptr<NWebPermissionRequest> request);
+
 #ifdef OHOS_ARKWEB_ADBLOCK
   void (*OnAdsBlocked)(std::string url,
                        std::map<std::string, int32_t> adsBlocked,
                        int nweb_id);
+#endif
+
+#ifdef OHOS_ITP
+  void (*OnIntelligentTrackingPreventionResult)(const std::string& host,
+                                                const std::string& trackerHost,
+                                                int nweb_id);
 #endif
 };
 

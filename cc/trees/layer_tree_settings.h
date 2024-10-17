@@ -201,7 +201,6 @@ class CC_EXPORT LayerTreeSettings {
 #ifdef OHOS_NWEB_EX
   bool enable_delete_unused_resources_delay = false;
 #endif
-
   // Whether tile resources are dropped for hidden layers. In terms of code,
   // this uses PictureLayerImpl::HasValidTilePriorities(), which may return true
   // even if the layer is not drawn. For example, if the layer is occluded it is

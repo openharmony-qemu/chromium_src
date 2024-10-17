@@ -40,7 +40,14 @@ class HeadlessSurfaceFactory : public SurfaceFactoryOzone {
       gfx::BufferFormat format,
       gfx::BufferUsage usage,
       absl::optional<gfx::Size> framebuffer_size = absl::nullopt) override;
-
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
+  scoped_refptr<gfx::NativePixmap> CreateNativePixmapFromHandle(
+      gfx::AcceleratedWidget widget,
+      gfx::Size size,
+      gfx::BufferFormat format,
+      gfx::NativePixmapHandle handle,
+      void* window_buffer) override;
+#endif
  private:
   void CheckBasePath() const;
 

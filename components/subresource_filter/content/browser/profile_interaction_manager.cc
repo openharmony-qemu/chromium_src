@@ -141,13 +141,11 @@ mojom::ActivationLevel ProfileInteractionManager::OnPageActivationComputed(
       navigation_handle->GetWebContents() &&
       navigation_handle->GetWebContents()->TrigAdBlockEnabledForSite(
           navigation_handle->GetURL())) {
-    LOG(DEBUG) << "[adblock] activation_level enabled, url:"
-               << navigation_handle->GetURL().spec();
+    LOG(DEBUG) << "[adblock] activation_level enabled, url: ***";
     effective_activation_level = mojom::ActivationLevel::kEnabled;
   } else {
     effective_activation_level = mojom::ActivationLevel::kDisabled;
-    LOG(DEBUG) << "[adblock] activation_level disabled, url:"
-               << navigation_handle->GetURL().spec();
+    LOG(DEBUG) << "[adblock] activation_level disabled, url: ***";
   }
   return effective_activation_level;
 #else

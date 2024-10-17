@@ -546,6 +546,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void EnableMediaNetworkTrafficPrompt(bool enable) override;
 #endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
 
+void SetSurfaceDensity(const double& density) override;
+
  public:
   int argc_;
   const char** argv_;
@@ -690,6 +692,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   int  pressing_num_ = 0;
   std::shared_ptr<NWebAccessibilityEventCallback>
       accessibility_event_listener_ = nullptr;
+  double display_ratio_ = 0.0;
 };
 }  // namespace OHOS::NWeb
 #endif

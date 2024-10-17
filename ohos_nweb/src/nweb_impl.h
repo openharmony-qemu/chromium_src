@@ -593,6 +593,7 @@ class NWebImpl : public NWeb {
  void PerformAction(int64_t accessibilityId, uint32_t action,
       const std::map<std::string, std::string>& actionArguments) override;
   void SendAccessibilityHoverEvent(int32_t x, int32_t y) override;
+  void SetSurfaceDensity(const double& density) override;
 
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

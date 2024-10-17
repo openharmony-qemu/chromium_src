@@ -40,6 +40,7 @@
 #include "ui/gl/scoped_binders.h"
 #include "ui/gl/scoped_make_current.h"
 namespace gpu {
+const size_t MATRIX_SIZE = 16;
 namespace {
 std::unique_ptr<AbstractTextureOHOS> CreateTexture(
     SharedContextState* context_state) {
@@ -140,7 +141,7 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform001) {
   gfx::Size rotated_visible_size(5, 5);
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
-  bool result = texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size,
+  bool result = texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size,
                                                      coded_size, visible_rect);
   EXPECT_FALSE(result);
 }
@@ -150,7 +151,7 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform002) {
   gfx::Size rotated_visible_size(1, 5);
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
-  bool result = texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size,
+  bool result = texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size,
                                                      coded_size, visible_rect);
   EXPECT_TRUE(result);
 }
@@ -160,7 +161,7 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform003) {
   gfx::Size rotated_visible_size(5, 1);
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
-  bool result = texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size,
+  bool result = texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size,
                                                      coded_size, visible_rect);
   EXPECT_TRUE(result);
 }
@@ -170,7 +171,7 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform004) {
   gfx::Size rotated_visible_size(1, 1);
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
-  bool result = texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size,
+  bool result = texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size,
                                                      coded_size, visible_rect);
   EXPECT_TRUE(result);
 }
@@ -181,10 +182,10 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform005) {
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
   mtx[0] = true;
-  texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size, coded_size,
+  texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size, coded_size,
                                        visible_rect);
   EXPECT_EQ(true, texture_gl_owner->DecomposeTransform(
-                      mtx, rotated_visible_size, coded_size, visible_rect));
+                      mtx, MATRIX_SIZE, rotated_visible_size, coded_size, visible_rect));
 }
 
 TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform006) {
@@ -193,10 +194,10 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform006) {
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
   mtx[0] = true;
-  texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size, coded_size,
+  texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size, coded_size,
                                        visible_rect);
   EXPECT_EQ(false, texture_gl_owner->DecomposeTransform(
-                       mtx, rotated_visible_size, coded_size, visible_rect));
+                       mtx, MATRIX_SIZE, rotated_visible_size, coded_size, visible_rect));
 }
 
 TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform007) {
@@ -205,10 +206,10 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform007) {
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
   mtx[0] = true;
-  texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size, coded_size,
+  texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size, coded_size,
                                        visible_rect);
   EXPECT_EQ(false, texture_gl_owner->DecomposeTransform(
-                       mtx, rotated_visible_size, coded_size, visible_rect));
+                       mtx, MATRIX_SIZE, rotated_visible_size, coded_size, visible_rect));
 }
 
 TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform008) {
@@ -217,10 +218,10 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform008) {
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
   mtx[0] = true;
-  texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size, coded_size,
+  texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size, coded_size,
                                        visible_rect);
   EXPECT_EQ(true, texture_gl_owner->DecomposeTransform(
-                      mtx, rotated_visible_size, coded_size, visible_rect));
+                      mtx, MATRIX_SIZE, rotated_visible_size, coded_size, visible_rect));
 }
 
 TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform009) {
@@ -229,10 +230,10 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform009) {
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
   mtx[0] = true;
-  texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size, coded_size,
+  texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size, coded_size,
                                        visible_rect);
   EXPECT_EQ(true, texture_gl_owner->DecomposeTransform(
-                      mtx, rotated_visible_size, coded_size, visible_rect));
+                      mtx, MATRIX_SIZE, rotated_visible_size, coded_size, visible_rect));
 }
 
 TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform010) {
@@ -241,10 +242,10 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform010) {
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
   mtx[0] = true;
-  texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size, coded_size,
+  texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size, coded_size,
                                        visible_rect);
   EXPECT_EQ(true, texture_gl_owner->DecomposeTransform(
-                      mtx, rotated_visible_size, coded_size, visible_rect));
+                      mtx, MATRIX_SIZE, rotated_visible_size, coded_size, visible_rect));
 }
 
 TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform011) {
@@ -253,10 +254,10 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform011) {
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
   mtx[0] = true;
-  texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size, coded_size,
+  texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size, coded_size,
                                        visible_rect);
   EXPECT_EQ(false, texture_gl_owner->DecomposeTransform(
-                       mtx, rotated_visible_size, coded_size, visible_rect));
+                       mtx, MATRIX_SIZE, rotated_visible_size, coded_size, visible_rect));
 }
 
 TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform012) {
@@ -265,10 +266,10 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform012) {
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
   mtx[0] = true;
-  texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size, coded_size,
+  texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size, coded_size,
                                        visible_rect);
   EXPECT_EQ(false, texture_gl_owner->DecomposeTransform(
-                       mtx, rotated_visible_size, coded_size, visible_rect));
+                       mtx, MATRIX_SIZE, rotated_visible_size, coded_size, visible_rect));
 }
 
 TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform013) {
@@ -277,10 +278,10 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform013) {
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
   mtx[0] = true;
-  texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size, coded_size,
+  texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size, coded_size,
                                        visible_rect);
   EXPECT_EQ(true, texture_gl_owner->DecomposeTransform(
-                      mtx, rotated_visible_size, coded_size, visible_rect));
+                      mtx, MATRIX_SIZE, rotated_visible_size, coded_size, visible_rect));
 }
 
 TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform014) {
@@ -289,10 +290,10 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform014) {
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
   mtx[0] = true;
-  texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size, coded_size,
+  texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size, coded_size,
                                        visible_rect);
   EXPECT_EQ(true, texture_gl_owner->DecomposeTransform(
-                      mtx, rotated_visible_size, coded_size, visible_rect));
+                      mtx, MATRIX_SIZE, rotated_visible_size, coded_size, visible_rect));
 }
 
 TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform015) {
@@ -301,10 +302,10 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform015) {
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
   mtx[0] = true;
-  texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size, coded_size,
+  texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size, coded_size,
                                        visible_rect);
   EXPECT_EQ(false, texture_gl_owner->DecomposeTransform(
-                       mtx, rotated_visible_size, coded_size, visible_rect));
+                       mtx, MATRIX_SIZE, rotated_visible_size, coded_size, visible_rect));
 }
 
 TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform016) {
@@ -313,10 +314,10 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform016) {
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
   mtx[0] = true;
-  texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size, coded_size,
+  texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size, coded_size,
                                        visible_rect);
   EXPECT_EQ(false, texture_gl_owner->DecomposeTransform(
-                       mtx, rotated_visible_size, coded_size, visible_rect));
+                       mtx, MATRIX_SIZE, rotated_visible_size, coded_size, visible_rect));
 }
 
 TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform017) {
@@ -325,10 +326,10 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform017) {
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
   mtx[0] = true;
-  texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size, coded_size,
+  texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size, coded_size,
                                        visible_rect);
   EXPECT_EQ(false, texture_gl_owner->DecomposeTransform(
-                       mtx, rotated_visible_size, coded_size, visible_rect));
+                       mtx, MATRIX_SIZE, rotated_visible_size, coded_size, visible_rect));
 }
 
 TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform018) {
@@ -337,10 +338,10 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform018) {
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
   mtx[0] = true;
-  texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size, coded_size,
+  texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size, coded_size,
                                        visible_rect);
   EXPECT_EQ(true, texture_gl_owner->DecomposeTransform(
-                      mtx, rotated_visible_size, coded_size, visible_rect));
+                      mtx, MATRIX_SIZE, rotated_visible_size, coded_size, visible_rect));
 }
 
 TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform019) {
@@ -348,7 +349,7 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform019) {
   gfx::Size rotated_visible_size(1, 1);
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
-  bool result = texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size,
+  bool result = texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size,
                                                      coded_size, visible_rect);
   EXPECT_TRUE(result);
 }
@@ -359,10 +360,10 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform020) {
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
   mtx[0] = true;
-  texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size, coded_size,
+  texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size, coded_size,
                                        visible_rect);
   EXPECT_EQ(true, texture_gl_owner->DecomposeTransform(
-                      mtx, rotated_visible_size, coded_size, visible_rect));
+                      mtx, MATRIX_SIZE, rotated_visible_size, coded_size, visible_rect));
 }
 
 TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform021) {
@@ -371,10 +372,10 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform021) {
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
   mtx[0] = true;
-  texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size, coded_size,
+  texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size, coded_size,
                                        visible_rect);
   EXPECT_EQ(false, texture_gl_owner->DecomposeTransform(
-                       mtx, rotated_visible_size, coded_size, visible_rect));
+                       mtx, MATRIX_SIZE, rotated_visible_size, coded_size, visible_rect));
 }
 
 TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform022) {
@@ -383,10 +384,10 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform022) {
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
   mtx[0] = true;
-  texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size, coded_size,
+  texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size, coded_size,
                                        visible_rect);
   EXPECT_EQ(false, texture_gl_owner->DecomposeTransform(
-                       mtx, rotated_visible_size, coded_size, visible_rect));
+                       mtx, MATRIX_SIZE, rotated_visible_size, coded_size, visible_rect));
 }
 
 TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform023) {
@@ -395,10 +396,10 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform023) {
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
   mtx[0] = true;
-  texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size, coded_size,
+  texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size, coded_size,
                                        visible_rect);
   EXPECT_EQ(true, texture_gl_owner->DecomposeTransform(
-                      mtx, rotated_visible_size, coded_size, visible_rect));
+                      mtx, MATRIX_SIZE, rotated_visible_size, coded_size, visible_rect));
 }
 
 TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform024) {
@@ -407,10 +408,10 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform024) {
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
   mtx[0] = true;
-  texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size, coded_size,
+  texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size, coded_size,
                                        visible_rect);
   EXPECT_EQ(true, texture_gl_owner->DecomposeTransform(
-                      mtx, rotated_visible_size, coded_size, visible_rect));
+                      mtx, MATRIX_SIZE, rotated_visible_size, coded_size, visible_rect));
 }
 
 TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform025) {
@@ -419,10 +420,10 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform025) {
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
   mtx[0] = true;
-  texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size, coded_size,
+  texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size, coded_size,
                                        visible_rect);
   EXPECT_EQ(true, texture_gl_owner->DecomposeTransform(
-                      mtx, rotated_visible_size, coded_size, visible_rect));
+                      mtx, MATRIX_SIZE, rotated_visible_size, coded_size, visible_rect));
 }
 
 TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform026) {
@@ -431,10 +432,10 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform026) {
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
   mtx[0] = true;
-  texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size, coded_size,
+  texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size, coded_size,
                                        visible_rect);
   EXPECT_EQ(false, texture_gl_owner->DecomposeTransform(
-                       mtx, rotated_visible_size, coded_size, visible_rect));
+                       mtx, MATRIX_SIZE, rotated_visible_size, coded_size, visible_rect));
 }
 
 TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform027) {
@@ -443,10 +444,10 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform027) {
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
   mtx[0] = true;
-  texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size, coded_size,
+  texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size, coded_size,
                                        visible_rect);
   EXPECT_EQ(false, texture_gl_owner->DecomposeTransform(
-                       mtx, rotated_visible_size, coded_size, visible_rect));
+                       mtx, MATRIX_SIZE, rotated_visible_size, coded_size, visible_rect));
 }
 
 TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform028) {
@@ -455,10 +456,10 @@ TEST_F(NativeImageTextureGlOwnerTest, DecomposeTransform028) {
   gfx::Size* coded_size = new gfx::Size(1, 1);
   gfx::Rect* visible_rect = new gfx::Rect(1, 1);
   mtx[0] = true;
-  texture_gl_owner->DecomposeTransform(mtx, rotated_visible_size, coded_size,
+  texture_gl_owner->DecomposeTransform(mtx, MATRIX_SIZE, rotated_visible_size, coded_size,
                                        visible_rect);
   EXPECT_EQ(true, texture_gl_owner->DecomposeTransform(
-                      mtx, rotated_visible_size, coded_size, visible_rect));
+                      mtx, MATRIX_SIZE, rotated_visible_size, coded_size, visible_rect));
 }
 
 }  // namespace gpu

@@ -589,7 +589,8 @@ void Scheduler::BeginImplFrameWithDeadline(const viz::BeginFrameArgs& args) {
         bmf_to_activate_threshold;
   }
   state_machine_.set_should_defer_invalidation_for_fast_main_frame(
-      main_thread_response_expected_before_deadline);
+      state_machine_.should_defer_invalidation_for_fast_main_frame() ?
+          true : main_thread_response_expected_before_deadline);
 
   BeginImplFrame(adjusted_args, now);
 }
@@ -871,6 +872,12 @@ void Scheduler::SetDeferBeginMainFrame(bool defer_begin_main_frame) {
     state_machine_.SetDeferBeginMainFrame(defer_begin_main_frame);
   }
   ProcessScheduledActions();
+}
+
+void Scheduler::SetDeferInvalidationForFastMainFrame(
+                    bool defer_invalidation_for_fast_main_frame) {
+  state_machine_.set_should_defer_invalidation_for_fast_main_frame(
+                     defer_invalidation_for_fast_main_frame);
 }
 
 void Scheduler::SetPauseRendering(bool pause_rendering) {

@@ -47,7 +47,7 @@ OhosImageDecodeStatus OhosImageDecoder::Decode(
   if (!OhosImageDecoderAdapter_->Decode(
           encoded_image.data(), encoded_image.size(), GetDecodeAllocatorType(),
           IsYuvFormat())) {
-    LOG(ERROR) << "[HeifSupport] Decode image failed."
+    LOG(ERROR) << "[HeifSupport] Decode image failed.";
     return OhosImageDecodeStatus::kExecuteDecodeFailed;
   }
   LOG(INFO) << "[HeifSupport] Decode native window buffer "

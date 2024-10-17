@@ -55,6 +55,10 @@ scoped_refptr<GLContext> CreateGLContext(GLShareGroup* share_group,
       NOTREACHED();
       return nullptr;
     default:
+      if (!compatible_surface) {
+        LOG(ERROR) << "surface is nullptr.";
+        return nullptr;
+      }
       if (compatible_surface->GetHandle() ||
           compatible_surface->IsSurfaceless()) {
         return InitializeGLContext(new GLContextEGL(share_group),
@@ -101,9 +105,11 @@ scoped_refptr<GLSurface> CreateOffscreenGLSurfaceWithFormat(
       GLDisplayEGL* display_egl = display->GetAs<gl::GLDisplayEGL>();
       if (display_egl->IsEGLSurfacelessContextSupported() &&
           (size.width() == 0 && size.height() == 0)) {
+        LOG(INFO) << "create offscreen glsurface by surfacelessEGL.";
         return InitializeGLSurfaceWithFormat(
             new SurfacelessEGL(display_egl, size), format);
       } else {
+        LOG(INFO) << "create offscreen glsurface by pbufferGL.";
         return InitializeGLSurfaceWithFormat(
             new PbufferGLSurfaceEGL(display_egl, size), format);
       }

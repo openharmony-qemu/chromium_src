@@ -4697,9 +4697,6 @@ RenderFrameImpl::MakeDidCommitProvisionalLoadParams(
   // TODO(clamy): We should add checks on navigations that commit without having
   // been asked to commit by the browser process.
   params->navigation_token = navigation_state->commit_params().navigation_token;
-#if BUILDFLAG(IS_OHOS)
-  params->headers = navigation_state->common_params().headers;
-#endif
   if (params->navigation_token.is_empty())
     params->navigation_token = base::UnguessableToken::Create();
 

@@ -172,7 +172,7 @@ struct DidCommitProvisionalLoadParams {
 
   // Additional HTTP request headers
   [Enableif=is_ohos]
-  string headers
+  string headers;
 
 // Similar to DidCommitProvisionalLoadParams, but only used for
 // FrameHost.DidCommitSameDocumentNavigation. Eventually, all parameters in

@@ -118,6 +118,7 @@
 
 #if BUILDFLAG(IS_OHOS)
 #include "cef/libcef/browser/page_load_metrics/oh_page_load_metrics_observer.h"
+#include "content/public/common/content_switches.h"
 #endif
 
 namespace content {
@@ -2021,7 +2022,8 @@ void NavigationControllerImpl::RendererDidNavigateToNewEntry(
         false);   // is_initial_entry
 #if BUILDFLAG(IS_OHOS)
     bool is_currently_error_page = rfh->IsErrorDocument();
-    if (is_currently_error_page) {
+    if (is_currently_error_page &&
+        base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kForBrowser)) {
       new_entry->set_extra_headers(params.headers);
     }
 #endif

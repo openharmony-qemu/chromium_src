@@ -2019,6 +2019,12 @@ void NavigationControllerImpl::RendererDidNavigateToNewEntry(
         params.transition, request->IsRendererInitiated(),
         nullptr,  // blob_url_loader_factory
         false);   // is_initial_entry
+#if BUILDFLAG(IS_OHOS)
+    bool is_currently_error_page = rfh->IsErrorDocument();
+    if (is_currently_error_page) {
+      new_entry->set_extra_headers(params.headers);
+    }
+#endif
 
     // Find out whether the new entry needs to update its virtual URL on URL
     // change and set up the entry accordingly. This is needed to correctly
@@ -3906,8 +3912,11 @@ NavigationControllerImpl::CreateNavigationRequestFromLoadParams(
           network::mojom::CSPDisposition::CHECK, std::vector<int>(),
           params.href_translate,
           false /* is_history_navigation_in_new_child_frame */,
+#if BUILDFLAG(IS_OHOS)
+          params.input_start, network::mojom::RequestDestination::kEmpty, "");
+#else          
           params.input_start, network::mojom::RequestDestination::kEmpty);
-
+#endif
   blink::mojom::CommitNavigationParamsPtr commit_params =
       blink::mojom::CommitNavigationParams::New(
           absl::nullopt,

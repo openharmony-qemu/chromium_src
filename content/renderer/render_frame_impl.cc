@@ -613,7 +613,11 @@ blink::mojom::CommonNavigationParamsPtr MakeCommonNavigationParams(
       info->should_check_main_world_content_security_policy,
       initiator_origin_trial_features, info->href_translate.Latin1(),
       is_history_navigation_in_new_child_frame, info->input_start,
+#if BUILDFLAG(IS_OHOS)
+      request_destination, "");
+#else
       request_destination);
+#endif
 }
 
 WebFrameLoadType NavigationTypeToLoadType(
@@ -4693,6 +4697,9 @@ RenderFrameImpl::MakeDidCommitProvisionalLoadParams(
   // TODO(clamy): We should add checks on navigations that commit without having
   // been asked to commit by the browser process.
   params->navigation_token = navigation_state->commit_params().navigation_token;
+#if BUILDFLAG(IS_OHOS)
+  params->headers = navigation_state->common_params().headers;
+#endif
   if (params->navigation_token.is_empty())
     params->navigation_token = base::UnguessableToken::Create();
 
@@ -4986,6 +4993,9 @@ void RenderFrameImpl::DidCommitNavigationInternal(
   NavigationState* navigation_state =
       DocumentState::FromDocumentLoader(frame_->GetDocumentLoader())
           ->navigation_state();
+#if BUILDFLAG(IS_OHOS)
+  std::string headers = navigation_state->common_params().headers;
+#endif
   if (same_document_params) {
     GetFrameHost()->DidCommitSameDocumentNavigation(
         std::move(params), std::move(same_document_params));

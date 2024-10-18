@@ -898,7 +898,11 @@ NavigationEntryImpl::ConstructCommonNavigationParams(
       has_user_gesture(), false /* has_text_fragment_token */,
       network::mojom::CSPDisposition::CHECK, std::vector<int>(), std::string(),
       false /* is_history_navigation_in_new_child_frame */, input_start,
+#if BUILDFLAG(IS_OHOS)
+      network::mojom::RequestDestination::kEmpty, "");
+#else
       network::mojom::RequestDestination::kEmpty);
+#endif
 }
 
 blink::mojom::CommitNavigationParamsPtr

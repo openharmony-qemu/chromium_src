@@ -1414,7 +1414,11 @@ NavigationRequest::CreateForSynchronousRendererCommit(
           std::string() /* href_translate */,
           false /* is_history_navigation_in_new_child_frame */,
           base::TimeTicks::Now() /* input_start */,
+#if BUILDFLAG(IS_OHOS)
+          network::mojom::RequestDestination::kEmpty, "");
+#else
           network::mojom::RequestDestination::kEmpty);
+#endif
   // Note that some params are set to default values (e.g. page_state set to
   // the default blink::PageState()) even if the DidCommit message that came
   // from the renderer contained relevant info that can be used to fill the
@@ -4557,6 +4561,12 @@ void NavigationRequest::OnRequestFailedInternal(
   EnterChildTraceEvent("OnRequestFailed", this, "error", status.error_code);
   SetState(WILL_FAIL_REQUEST);
   processing_navigation_throttle_ = false;
+
+#if BUILDFLAG(IS_OHOS)
+  if (common_params_ && begin_params_) {
+    common_params_->headers = begin_params_->headers;
+  }
+#endif
 
   // Ensure the pending entry also gets discarded if it has no other active
   // requests.

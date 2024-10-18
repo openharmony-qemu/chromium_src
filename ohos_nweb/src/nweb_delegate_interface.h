@@ -554,6 +554,7 @@ virtual int ScaleGestureChange(double scale, double centerX, double centerY) con
 
   virtual std::shared_ptr<NWebCustomKeyboardHandlerImpl> GetCustomKeyboardHandler() const = 0;
   virtual void RefreshAccessibilityManagerClickEvent() = 0;
+  virtual void SetSurfaceDensity(const double& density) = 0;
 
 #ifdef OHOS_MIXED_CONTENT
   virtual void EnableMixedContentAutoUpgrades(bool enable) = 0; 

@@ -51,7 +51,7 @@ AudioRendererCallback::AudioRendererCallback(
 AudioRendererCallback::~AudioRendererCallback() {}
 
 void AudioRendererCallback::OnSuspend() {
-  LOG(DEBUG) << "AudioRendererCallback::OnSuspend";
+  LOG(INFO) << "AudioRendererCallback::OnSuspend";
   if (!media_session_) {
     LOG(ERROR) << "AudioRendererCallback::OnSuspend media_session_ is null.";
     return;
@@ -62,7 +62,7 @@ void AudioRendererCallback::OnSuspend() {
 }
 
 void AudioRendererCallback::OnResume() {
-  LOG(DEBUG) << "AudioRendererCallback::OnResume audioResumeInterval is: "
+  LOG(INFO) << "AudioRendererCallback::OnResume audioResumeInterval is: "
              << std::time(nullptr) - intervalSinceLastSuspend_;
   if (!media_session_) {
     LOG(ERROR) << "AudioRendererCallback::OnResume media_session_ is null.";
@@ -75,6 +75,7 @@ void AudioRendererCallback::OnResume() {
     if (!main_task_runner_) {
       return;
     }
+    LOG(INFO) << "AudioRendererCallback::OnResume MediaSession Resume.";
     main_task_runner_->PostTask(
         FROM_HERE,
         base::BindOnce(&content::MediaSessionImpl::Resume,

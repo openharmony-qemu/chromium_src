@@ -1193,6 +1193,14 @@ LayerImpl* InputHandler::GetLayerImplById(int id) {
   return ActiveTree().LayerById(id);
 }
 
+LayerImpl* InputHandler::GetNativeLayerImpl(const gfx::Point& viewport_point) {
+  gfx::PointF device_viewport_point =
+          gfx::ScalePoint(gfx::PointF(viewport_point),
+                          compositor_delegate_->DeviceScaleFactor());
+  return ActiveTree().FindLayerThatIsHitByPointNative(device_viewport_point);
+}
+
+
 void InputHandler::SetHandledTouchEvent(bool handledTouchEvent) {
   compositor_delegate_->GetImplDeprecated().SetHandledTouchEvent(handledTouchEvent);
 }

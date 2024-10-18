@@ -373,6 +373,9 @@ class UnboundWidgetInputHandler : public blink::mojom::WidgetInputHandler {
   void SetGestureEventResult(bool result) override {
     DLOG(WARNING) << "Input request on unbound interface";
   }
+  void SetNativeEmbedMode(bool result) override {
+    DLOG(WARNING) << "Input request on unbound interface";
+  }
 #endif
 };
 

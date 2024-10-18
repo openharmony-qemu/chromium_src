@@ -170,7 +170,7 @@ struct DidCommitProvisionalLoadParams {
   mojo_base.mojom.TimeTicks? commit_navigation_end;
 
   // Additional HTTP request headers
-  [Enableif=is_ohos]
+  [EnableIf=is_ohos]
   string headers;
 };
 

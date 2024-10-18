@@ -127,6 +127,7 @@ class CONTENT_EXPORT InputRouterImpl
   
 #if BUILDFLAG(IS_OHOS)
   void SetGestureEventResult(bool result) override;
+  void SetNativeEmbedMode(bool flag) override;
 #endif
 
  private:

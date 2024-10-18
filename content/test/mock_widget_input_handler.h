@@ -286,6 +286,7 @@ class MockWidgetInputHandler : public blink::mojom::WidgetInputHandler {
                                   bool animate) override;
 #if defined(OHOS_UNITTESTS)
   void SetGestureEventResult(bool result) override {}
+  void SetNativeEmbedMode(bool flag) override {}
 #endif
   using MessageVector = std::vector<std::unique_ptr<DispatchedMessage>>;
   MessageVector GetAndResetDispatchedMessages();

@@ -501,6 +501,8 @@ class CC_EXPORT InputHandler : public InputDelegateForCompositor {
   LayerImpl* GetLayerImplById(int id);
 
   void SetHandledTouchEvent(bool handledTouchEvent);
+
+  LayerImpl* GetNativeLayerImpl(const gfx::Point& viewport_point);
 #endif
 
  private:

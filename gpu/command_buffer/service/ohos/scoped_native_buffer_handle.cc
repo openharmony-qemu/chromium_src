@@ -1,4 +1,4 @@
-// Copyright 2024 The Chromium Authors
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -76,8 +76,8 @@ ScopedNativeBufferHandle ScopedNativeBufferHandle::Clone() const {
 
 ScopedNativeBufferHandle::ScopedNativeBufferHandle(OHOSNativeBuffer buffer)
     : buffer_(buffer) {
-    LOG(ERROR) << "NATIVE_BUFFER explicit ScopedNativeBufferHandle" << __PRETTY_FUNCTION__ << "::" << __LINE__ <<"\n";              
-    CHECK(buffer);
+  LOG(ERROR) << "NATIVE_BUFFER explicit ScopedNativeBufferHandle" << __PRETTY_FUNCTION__ << "::" << __LINE__ <<"\n";
+  CHECK(buffer);
 }
 
 }  // namespace gpu

@@ -411,7 +411,8 @@ TEST_F(GpuChannelTest, ExecuteDeferredRequest3) {
 TEST_F(GpuChannelTest, TryCreateNativeTexture1) {
   base::WeakPtr<GpuChannel> channel;
   mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
-  int32_t result = TryCreateNativeTexture(channel, 1, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
+  int32_t result = TryCreateNativeTexture(channel, 1,
+    gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
   EXPECT_EQ(result, -1);
 }
 
@@ -420,7 +421,8 @@ TEST_F(GpuChannelTest, TryCreateNativeTexture2) {
   GpuChannel* channel = CreateChannel(kClientId, false);
   base::WeakPtr<GpuChannel> channell = channel->AsWeakPtr();
   mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
-  int32_t result = TryCreateNativeTexture(channell, 1, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
+  int32_t result = TryCreateNativeTexture(channell, 1,
+    gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
   EXPECT_NE(result, -1);
 }
 

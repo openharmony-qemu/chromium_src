@@ -130,11 +130,15 @@ class NWebPreferenceDelegate : public NWebPreference {
   int GetDrawMode() const;
   void PutTextAutosizingEnabled(bool enable) override;
   bool IsTextAutosizingEnabled() const;
+  void SetFitContent(bool value);
+  bool IsFitContent() const;
 #endif
+
 #if defined(OHOS_PRINT)
   void PutPrintToken(void* token) { token_ = token; }
   void* GetPrintToken() { return token_; }
 #endif
+
 #if defined(OHOS_INPUT_EVENTS)
   bool IsHorizontalScrollBarAccess() override;
   bool IsVerticalScrollBarAccess() override;
@@ -167,10 +171,6 @@ class NWebPreferenceDelegate : public NWebPreference {
   int32_t GetAudioResumeInterval();
 #endif
 
-#ifdef OHOS_EX_BLANK_TARGET_POPUP_INTERCEPT
-  void SetEnableBlankTargetPopupIntercept(bool enable);
-  bool IsBlankTargetPopupInterceptEnabled();
-#endif
   void SetNativeVideoPlayerConfig(bool enable, bool shouldOverlay) override;
 #if defined(OHOS_SCROLLBAR)
   void PutOverlayScrollbarEnabled(bool enable) override;
@@ -184,13 +184,33 @@ class NWebPreferenceDelegate : public NWebPreference {
 #endif
 
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
-  void EnableWholeWebPageDrawing();
-  bool GetEnableWholeWebPageDrawing();
+  void SetWholePageDrawing();
+  bool GetWholeWebPageDrawing();
 #endif
 
 #if BUILDFLAG(IS_OHOS)
   std::string GetSurfaceId() override;
   void SetSurfaceId(const std::string& surfaceId) override;
+#endif
+
+#ifdef OHOS_MIXED_CONTENT
+  void EnableMixedContentAutoUpgrades(bool enable);
+  bool IsMixedContentAutoUpgradesEnabled();
+#endif
+
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+  void EnableMediaNetworkTrafficPrompt(bool enable);
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+
+#ifdef OHOS_BFCACHE
+  int GetCacheSize();
+  int GetTimeToLive();
+  void PutBackForwardCacheOptions(int size, int time_to_live);
+#endif  // OHOS_BFCACHE
+
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  CefRefPtr<CefWebMessageReceiver> GetAutofillCallback();
+  void SetAutofillCallback(CefRefPtr<CefWebMessageReceiver> callback);
 #endif
 
  private:
@@ -255,6 +275,7 @@ class NWebPreferenceDelegate : public NWebPreference {
   int draw_mode_{0};
   bool text_autosizing_enabled_{true};
   std::string surface_id_{""};
+  bool fit_content_{false};
 #endif
   bool enable_embed_mode_{false};
   std::string embed_tag_{"embed"};
@@ -262,9 +283,6 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if defined(OHOS_CLIPBOARD)
   CopyOptionMode copy_option_{CopyOptionMode::CROSS_DEVICE};
 #endif // defined(OHOS_CLIPBOARD)
-#ifdef OHOS_EX_BLANK_TARGET_POPUP_INTERCEPT
-  bool enable_blank_target_popup_intercept_{true};
-#endif
   CacheModeFlag cache_mode_flag_{CacheModeFlag::USE_DEFAULT};
 #if defined(OHOS_BACKGROUND_COLOR)
   int32_t background_color_{0xffffffff};
@@ -278,9 +296,21 @@ class NWebPreferenceDelegate : public NWebPreference {
   ScriptItems script_items_start_{};
   ScriptItems script_items_end_{};
 #endif
-
-#if defined(OHOS_SOFTWARE_COMPOSITOR)
   bool record_whole_document_{false};
+#ifdef OHOS_MIXED_CONTENT
+  bool enable_mixed_content_auto_upgrades_{false};
+#endif
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+  bool enable_media_network_traffic_prompt_ = false;
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+
+#ifdef OHOS_BFCACHE
+  int size_ = -1;
+  int time_to_live_ = -1;
+#endif // OHOS_BFCACHE
+
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  CefRefPtr<CefWebMessageReceiver> autofill_callback_ = nullptr;
 #endif
 };
 }  // namespace OHOS::NWeb

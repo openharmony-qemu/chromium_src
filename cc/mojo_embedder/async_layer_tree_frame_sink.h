@@ -134,7 +134,6 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
 
   void OnMojoConnectionError(uint32_t custom_reason,
                              const std::string& description);
-  void SetDrawRect(const gfx::Rect& new_rect);
 
   bool begin_frames_paused_ = false;
   bool needs_begin_frames_ = false;
@@ -166,6 +165,7 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
   viz::LocalSurfaceId last_submitted_local_surface_id_;
   float last_submitted_device_scale_factor_ = 1.f;
   gfx::Size last_submitted_size_in_pixels_;
+  gfx::Rect last_draw_rect_;
 
   power_scheduler::FrameProductionPowerModeVoter power_mode_voter_;
 

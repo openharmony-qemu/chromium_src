@@ -49,6 +49,20 @@ unsigned GLInternalFormat(gfx::BufferFormat format) {
   return gl::BufferFormatToGLInternalFormat(format);
 }
 
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
+#define EGL_NATIVE_BUFFER_OHOS            0x34E1
+
+gl::ScopedEGLImage CreateOhosEGLImage(EGLClientBuffer egl_client_buffer) {
+  EGLint attrs[] = {
+        EGL_IMAGE_PRESERVED,
+        EGL_TRUE,
+        EGL_NONE,
+    };
+
+  return gl::MakeScopedEGLImage(EGL_NO_CONTEXT, EGL_NATIVE_BUFFER_OHOS,
+        egl_client_buffer, attrs);
+}
+#else
 EGLint FourCC(gfx::BufferFormat format) {
   switch (format) {
     case gfx::BufferFormat::R_8:
@@ -88,6 +102,7 @@ EGLint FourCC(gfx::BufferFormat format) {
   NOTREACHED();
   return 0;
 }
+#endif
 
 // Map buffer format to GL type. Return GL_NONE if no sensible mapping.
 unsigned BufferFormatToGLDataType(gfx::BufferFormat format) {
@@ -161,6 +176,10 @@ bool NativePixmapEGLBinding::InitializeFromNativePixmap(
     GLenum target,
     GLuint texture_id) {
   DCHECK(!pixmap_);
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
+  LOG(DEBUG) << "[HeifSupport] InitializeFromNativePixmap GLInternalFormat " <<  (int)GLInternalFormat(format_)
+    << ", format_ " << (int)format_ <<   ", plane_ " << (int)plane_ << ", WindowBuffer " << pixmap->GetWindowBuffer();
+#endif
   if (GLInternalFormat(format_) == GL_NONE) {
     LOG(ERROR) << "Unsupported format: " << gfx::BufferFormatToString(format_);
     return false;
@@ -171,6 +190,13 @@ bool NativePixmapEGLBinding::InitializeFromNativePixmap(
     return false;
   }
 
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
+  egl_image_ = CreateOhosEGLImage(static_cast<EGLClientBuffer>(pixmap->GetWindowBuffer()));
+  if (egl_image_ == EGL_NO_IMAGE_KHR) {
+    LOG(ERROR) << "[HeifSupport] egl_image_ is EGL_NO_IMAGE_KHR.";
+    return false;
+  }
+#else
   // Note: If eglCreateImageKHR is successful for a EGL_LINUX_DMA_BUF_EXT
   // target, the EGL will take a reference to the dma_buf.
   std::vector<EGLint> attrs;
@@ -263,6 +289,7 @@ bool NativePixmapEGLBinding::InitializeFromNativePixmap(
   egl_image_ =
       gl::MakeScopedEGLImage(EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT,
                              static_cast<EGLClientBuffer>(nullptr), &attrs[0]);
+#endif
   if (!egl_image_.get()) {
     return false;
   }

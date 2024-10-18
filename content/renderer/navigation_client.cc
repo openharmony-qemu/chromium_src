@@ -50,12 +50,12 @@ void NavigationClient::CommitNavigation(
     mojom::StorageInfoPtr storage_info,
     CommitNavigationCallback callback) {
   DCHECK(blink::IsRequestDestinationFrame(common_params->request_destination));
-
   // TODO(ahemery): The reset should be done when the navigation did commit
   // (meaning at a later stage). This is not currently possible because of
   // race conditions leading to the early deletion of NavigationRequest would
   // unexpectedly abort the ongoing navigation. Remove when the races are fixed.
   ResetDisconnectionHandler();
+  LOG(INFO) << "NavigationClient::CommitNavigation";
   render_frame_->CommitNavigation(
       std::move(common_params), std::move(commit_params),
       std::move(response_head), std::move(response_body),

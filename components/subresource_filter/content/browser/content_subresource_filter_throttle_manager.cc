@@ -233,8 +233,7 @@ void ContentSubresourceFilterThrottleManager::ReadyToCommitInFrameNavigation(
   frame_host->GetRemoteAssociatedInterfaces()->GetInterface(&agent);
 
 #ifdef OHOS_ARKWEB_ADBLOCK
-  LOG(DEBUG) << "[Adblock] ready to commit in frame navigation, url : "
-             << navigation_handle->GetURL().spec()
+  LOG(DEBUG) << "[Adblock] ready to commit in frame navigation, url : ***"
              << ", activation_level:" << activation_state.activation_level;
 #endif
 
@@ -275,8 +274,7 @@ ContentSubresourceFilterThrottleManager::ActivationStateForNextCommittedLoad(
       navigation_handle->GetURL().SchemeIsHTTPOrHTTPS() &&
       navigation_handle->GetWebContents()) {
     mojom::ActivationLevel activation_level = mojom::ActivationLevel::kDisabled;
-    LOG(DEBUG) << "[Adblock] navigation url : "
-               << navigation_handle->GetURL().spec();
+    LOG(DEBUG) << "[Adblock] navigation url : ***";
 
     subresource_filter::ActivationDecision decision;
     mojom::ActivationState state;
@@ -646,8 +644,7 @@ void ContentSubresourceFilterThrottleManager::OnPageActivationComputed(
       navigation_handle->GetURL().SchemeIsHTTPOrHTTPS() &&
       navigation_handle->GetWebContents()) {
     mojom::ActivationLevel activation_level = mojom::ActivationLevel::kDisabled;
-    LOG(DEBUG) << "[Adblock] navigation url : "
-               << navigation_handle->GetURL().spec();
+    LOG(DEBUG) << "[Adblock] navigation url : ***";
 
     subresource_filter::ActivationDecision decision;
     mojom::ActivationState state;
@@ -683,8 +680,10 @@ void ContentSubresourceFilterThrottleManager::OnPageActivationComputed(
     return;
   }
 
+#ifndef OHOS_ARKWEB_ADBLOCK
   it->second->NotifyPageActivationWithRuleset(EnsureRulesetHandle(),
                                               activation_state);
+#endif
 }
 
 void ContentSubresourceFilterThrottleManager::OnChildFrameNavigationEvaluated(
@@ -813,8 +812,7 @@ ContentSubresourceFilterThrottleManager::
         navigation_handle->IsInMainFrame() &&
         navigation_handle->GetURL().SchemeIsHTTPOrHTTPS() &&
         navigation_handle->GetWebContents()) {
-      LOG(DEBUG) << "[Adblock] navigation url: "
-                 << navigation_handle->GetURL().spec();
+      LOG(DEBUG) << "[Adblock] navigation url: ***";
 
       mojom::ActivationState state;
       state.activation_level = mojom::ActivationLevel::kEnabled;

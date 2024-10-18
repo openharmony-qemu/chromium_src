@@ -99,6 +99,17 @@ class DnsClientImpl : public DnsClient {
     return config && !config->doh_config.servers().empty();
   }
 
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  bool CanUseSecureDnsFallbackTransactions(
+      ResolveContext* context) const override {
+    if (context->IsHttpsDnsFallbackEnabled() && 
+        CanUseSecureDnsTransactions()) {
+      return context->NumAvailableDohServers(session_.get()) > 0;
+    }
+    return false;
+  }
+#endif
+
   bool CanUseInsecureDnsTransactions() const override {
     const DnsConfig* config = GetEffectiveConfig();
     return config && config->nameservers.size() > 0 && insecure_enabled_ &&

@@ -168,7 +168,12 @@ class COMPONENT_EXPORT(OZONE_BASE) SurfaceFactoryOzone {
       gfx::AcceleratedWidget widget,
       gfx::Size size,
       gfx::BufferFormat format,
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
+      gfx::NativePixmapHandle handle,
+      void* window_buffer = nullptr);
+#else
       gfx::NativePixmapHandle handle);
+#endif
 
   // A temporary solution that allows protected NativePixmap management to be
   // handled outside the Ozone platform (crbug.com/771863).

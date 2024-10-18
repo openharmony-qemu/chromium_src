@@ -24,6 +24,7 @@
  * @file arkweb_error_code.h
  *
  * @brief Declares the APIs for the ArkWeb errors.
+ * @kit ArkWeb
  * @library libohweb.so
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
@@ -33,6 +34,22 @@
 
 typedef enum ArkWeb_ErrorCode {
 /*
+ * @brief Success.
+ *
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 12
+ */
+ARKWEB_SUCCESS = 0,
+
+/*
+ * @brief Init error. The WebviewController must be associated with a Web component.
+ *
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 12
+ */
+ARKWEB_INIT_ERROR = 17100001,
+
+/*
  * @brief Unknown error.
  *
  * @syscap SystemCapability.Web.Webview.Core
@@ -40,21 +57,17 @@ typedef enum ArkWeb_ErrorCode {
  */
 ARKWEB_ERROR_UNKNOWN = 17100100,
 
-/*
- * @brief Invalid param.
- *
- * @syscap SystemCapability.Web.Webview.Core
- * @since 12
- */
+/** @error Invalid param. */
 ARKWEB_INVALID_PARAM = 17100101,
 
-/*
- * @brief Register custom schemes should be called before create any ArkWeb.
- *
- * @syscap SystemCapability.Web.Webview.Core
- * @since 12
- */
+/** @error Register custom schemes should be called before create any ArkWeb. */
 ARKWEB_SCHEME_REGISTER_FAILED = 17100102,
+
+/** @error Invalid url. */
+ARKWEB_INVALID_URL = 17100103,
+
+/** @error Invalid cookie value. */
+ARKWEB_INVALID_COOKIE_VALUE = 17100104,
 } ArkWeb_ErrorCode;
 
 #endif // ARKWEB_ERROR_CODE_H

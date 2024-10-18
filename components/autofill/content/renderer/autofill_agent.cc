@@ -356,11 +356,11 @@ void AutofillAgent::DidChangeScrollOffset() {
         ->PostTask(FROM_HERE,
                    base::BindOnce(&AutofillAgent::DidChangeScrollOffsetImpl,
                                   weak_ptr_factory_.GetWeakPtr(), element_));
-#if defined(OHOS_DATALIST)
+  #if defined(OHOS_DATALIST)
   } else if (!is_popup_possibly_visible_){
-#else
+  #else
   } else {
-#endif
+  #endif
     HidePopup();
   }
 }
@@ -570,7 +570,7 @@ void AutofillAgent::OnTextFieldDidChange(const WebInputElement& element) {
     return;
   }
 
-#if BUILDFLAG(IS_OHOS)
+#if defined(OHOS_AUTOFILL)
   ShowSuggestions(element, {.autofill_on_empty_values = true,
                             .requires_caret_at_end = true});
 #else
@@ -769,7 +769,7 @@ void AutofillAgent::ClearPreviewedForm() {
 
 void AutofillAgent::FillFieldWithValue(FieldRendererId field_id,
                                        const std::u16string& value) {
-#if BUILDFLAG(IS_OHOS)
+#if defined(OHOS_AUTOFILL)
   LOG(INFO) << "FillFieldWithValue";
   if (element_.IsNull()) {
     return;
@@ -1087,6 +1087,14 @@ void AutofillAgent::QueryAutofillSuggestions(
     }
   }
 
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  const WebInputElement input_element = element.DynamicTo<WebInputElement>();
+  if (password_autofill_agent_->IsPasswordAutofill(input_element)) {
+    LOG(INFO) << "[Autofill] Is password autofill, skip form fill.";
+    return;
+  }
+#endif
+
   is_popup_possibly_visible_ = true;
   GetAutofillDriver().AskForValuesToFill(form, field, field.bounds,
                                          autoselect_first_suggestion,
@@ -1207,6 +1215,21 @@ void AutofillAgent::DidCompleteFocusChangeInFrame() {
   SendPotentiallySubmittedFormToBrowser();
 }
 
+#if defined(OHOS_PASSWORD_AUTOFILL)
+void AutofillAgent::OhFormControlElementClicked() {
+    WebElement focused_element =
+      render_frame()->GetWebFrame()->GetDocument().FocusedElement();
+  if (!focused_element.IsNull() && focused_element.IsFormControlElement()) {
+    WebFormControlElement focused_form_control_element =
+        focused_element.To<WebFormControlElement>();
+    if (form_util::IsTextAreaElementOrTextInput(focused_form_control_element)) {
+      LOG(INFO) << "[Autofill] Mouse down triggers RequestAutofill";
+      password_autofill_agent_->RequestAutofill(focused_form_control_element);
+    }
+  }
+}
+#endif
+
 #if defined(OHOS_AUTOFILL)
 void AutofillAgent::OhAutoFillFormControlElementClicked(const WebNode& node) {
   WebInputElement input_element = node.DynamicTo<WebInputElement>();
@@ -1231,6 +1254,10 @@ void AutofillAgent::OhAutoFillFormControlElementClicked(const WebNode& node) {
 void AutofillAgent::DidReceiveLeftMouseDownOrGestureTapInNode(
     const WebNode& node) {
   DCHECK(!node.IsNull());
+
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  OhFormControlElementClicked();
+#endif()
 
 #if defined(OHOS_AUTOFILL)
   OhAutoFillFormControlElementClicked(node);
@@ -1324,10 +1351,6 @@ void AutofillAgent::FormControlElementClicked(
 
 #if BUILDFLAG(IS_ANDROID)
   password_autofill_agent_->TryToShowTouchToFill(element);
-#endif
-
-#if defined(OHOS_PASSWORD_AUTOFILL)
-  password_autofill_agent_->RequestAutofill(element);
 #endif
 
   ShowSuggestions(

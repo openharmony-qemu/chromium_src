@@ -16,19 +16,24 @@
 #include "base/task/single_thread_task_runner.h"
 #include "build/build_config.h"
 #include "components/viz/common/features.h"
-#ifdef OHOS_NWEB_EX
-#include "base/command_line.h"
-#include "content/public/common/content_switches.h"
-#endif
 #if (BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_DISCARD_BG_WEBPAGE))
 #include "base/ohos/sys_info_utils.h"
 #include "base/command_line.h"
 #include "content/public/common/content_switches.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/trace_event/trace_event.h"
+#endif
+
 namespace viz {
 namespace {
 
+#if BUILDFLAG(IS_OHOS)
+constexpr int kOhosFramesMax = 10;
+constexpr int kOhosFramesBase = 2;
+constexpr int kPhysicalMemoryBlockSize = 256;
+#endif
 const int kModeratePressurePercentage = 50;
 const int kCriticalPressurePercentage = 10;
 #if (BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_DISCARD_BG_WEBPAGE))
@@ -96,25 +101,19 @@ void FrameEvictionManager::UnlockFrame(FrameEvictionManagerClient* frame) {
 void FrameEvictionManager::RegisterUnlockedFrame(
     FrameEvictionManagerClient* frame) {
   unlocked_frames_.emplace_front(frame, clock_->NowTicks());
-#ifdef OHOS_NWEB_EX
-  if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
-           switches::kForBrowser)) {
-#endif
-    if (base::FeatureList::IsEnabled(features::kAggressiveFrameCulling)) {
-      if (!idle_frames_culling_timer_.IsRunning()) {
-        // Unretained: `idle_frames_culling_timer_` is a member of `this`, doesn't
-        // outlive it, and cancels the task in its destructor.
-        idle_frames_culling_timer_.Start(
-            FROM_HERE, kPeriodicCullingDelay,
-            base::BindRepeating(&FrameEvictionManager::CullOldUnlockedFrames,
-                                base::Unretained(this)));
-      }
+#if !BUILDFLAG(IS_OHOS)
+  if (base::FeatureList::IsEnabled(features::kAggressiveFrameCulling)) {
+    if (!idle_frames_culling_timer_.IsRunning()) {
+      // Unretained: `idle_frames_culling_timer_` is a member of `this`, doesn't
+      // outlive it, and cancels the task in its destructor.
+      idle_frames_culling_timer_.Start(
+          FROM_HERE, kPeriodicCullingDelay,
+          base::BindRepeating(&FrameEvictionManager::CullOldUnlockedFrames,
+                              base::Unretained(this)));
     }
-#ifdef OHOS_NWEB_EX
   }
 #endif
 }
-
 
 size_t FrameEvictionManager::GetMaxNumberOfSavedFrames() const {
   int percentage = 100;
@@ -151,7 +150,7 @@ FrameEvictionManager::FrameEvictionManager()
       // frames.
       base::SysInfo::AmountOfPhysicalMemoryMB() < 1024 * 3.5f ? 1 : 5;
 #elif BUILDFLAG(IS_OHOS)
-      std::min(10, 2 + (base::SysInfo::AmountOfPhysicalMemoryMB() / 256));
+      std::min(kOhosFramesMax, kOhosFramesBase + (base::SysInfo::AmountOfPhysicalMemoryMB() / kPhysicalMemoryBlockSize));
 #else
       std::min(5, 2 + (base::SysInfo::AmountOfPhysicalMemoryMB() / 256));
 #endif
@@ -196,6 +195,10 @@ void FrameEvictionManager::CullOldUnlockedFrames() {
          now - unlocked_frames_.back().second >= kPeriodicCullingDelay) {
     size_t old_size = unlocked_frames_.size();
     auto* frame = unlocked_frames_.back().first;
+#if BUILDFLAG(IS_OHOS)
+    TRACE_EVENT0("viz", "FrameEvictionManager::CullOldUnlockedFrames, evict unlocked frame because timeout");
+    LOG(INFO) << "FrameEvictionManager::CullOldUnlockedFrames, evict unlocked frame because timeout";
+#endif
     frame->EvictCurrentFrame();
     // Should remove self from list. If it's not possible, give up and try again
     // later. This should be a rare case, so don't bother rescheduling earlier

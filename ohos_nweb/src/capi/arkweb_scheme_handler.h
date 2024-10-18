@@ -31,7 +31,7 @@
 #ifndef ARKWEB_SCHEME_HANDLER_H
 #define ARKWEB_SCHEME_HANDLER_H
 
-#include "stdint.h"
+#include <cstdint>
 
 #include "arkweb_error_code.h"
 #include "arkweb_net_error_list.h"
@@ -900,6 +900,6 @@ void OH_ArkWeb_ReleaseByteArray(uint8_t* byteArray);
 
 
 #ifdef __cplusplus
-};
+}
 #endif
 #endif // ARKWEB_SCHEME_HANDLER_H

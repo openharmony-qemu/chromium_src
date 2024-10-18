@@ -46,8 +46,7 @@ std::unique_ptr<VideoDecoder> CreatePlatformVideoDecoder(
       ref_counted_lock);
 }
 
-absl::optional<SupportedVideoDecoderConfigs>
-GetPlatformSupportedVideoDecoderConfigs(
+absl::optional<SupportedVideoDecoderConfigs> GetPlatformSupportedVideoDecoderConfigs(
     gpu::GpuDriverBugWorkarounds gpu_workarounds,
     gpu::GpuPreferences gpu_preferences,
     const gpu::GPUInfo& gpu_info,

@@ -13,8 +13,9 @@
 using SetKeepScreenOn = std::function<void(bool)>;
 
 class SetKeepScreenLock {
-public:
-  SetKeepScreenLock(const SetKeepScreenOn& handle): handle_(std::move(handle)) {}
+ public:
+  SetKeepScreenLock(const SetKeepScreenOn& handle)
+      : handle_(std::move(handle)) {}
 
   int32_t count_ = 0;
 
@@ -22,7 +23,7 @@ public:
 };
 
 class SetKeepScreenLockHandle {
-public:
+ public:
   SetKeepScreenLockHandle(int32_t id, const SetKeepScreenOn& handle);
 
   void AddScreenLockHandle(int32_t id, const SetKeepScreenOn& handle);
@@ -35,7 +36,17 @@ public:
 
   bool UnLock(int32_t id);
 
-private:
+ private:
+  enum ScreenOnOffReason {
+    kRemoveLockHandle,
+    kLockWithInvalidID,
+    kLock,
+    kUnlockWithInvalidID,
+    kUnlock,
+  };
+
+  void set_screen_on(bool is_screen_on, ScreenOnOffReason reason);
+
   int32_t screen_lock_count_ = 0;
 
   int32_t screen_lock_invalid_id_count_ = 0;
@@ -57,7 +68,8 @@ class NWEB_EXPORT NWebScreenLockTracker {
 
  private:
   std::mutex screen_lock_map_lock_;
-  std::unordered_map<int32_t, std::unique_ptr<SetKeepScreenLockHandle>> screen_lock_map_;
+  std::unordered_map<int32_t, std::unique_ptr<SetKeepScreenLockHandle>>
+      screen_lock_map_;
 };
 
 #endif  // NWEB_SCREEN_LOCK_TRACKER_H

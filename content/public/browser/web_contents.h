@@ -681,14 +681,8 @@ class WebContents : public PageNavigator,
 #endif  // OHOS_EX_FORCE_ZOOM
 
 #if defined(OHOS_EX_FREE_COPY)
-  virtual void SelectAndCopy() = 0;
-  virtual bool ShouldShowFreeCopy() = 0;
-#endif
-
-#ifdef OHOS_EX_BLANK_TARGET_POPUP_INTERCEPT
-  virtual void SetEnableBlankTargetPopupIntercept(
-      bool enableBlankTargetPopup) = 0;
-  virtual bool GetEnableBlankTargetPopupIntercept() = 0;
+  virtual void ShowFreeCopyMenu() = 0;
+  virtual bool ShouldShowFreeCopyMenu() = 0;
 #endif
 
 #ifdef OHOS_EX_TOPCONTROLS
@@ -1527,6 +1521,11 @@ class WebContents : public PageNavigator,
   // navigation actually happens).
   virtual void BackNavigationLikely(PreloadingPredictor predictor,
                                     WindowOpenDisposition disposition) = 0;
+
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  virtual void WebExtensionUpdateTabUrl(int32_t tab_id, const GURL& url) = 0;
+  virtual int32_t GetTabId() = 0;
+#endif
 
   // Returns a scope object that needs to be owned by caller in order to
   // disallow custom cursors. Custom cursors whose width or height are larger

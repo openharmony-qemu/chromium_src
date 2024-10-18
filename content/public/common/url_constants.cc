@@ -54,6 +54,7 @@ const char kBlockedURL[] = "about:blank#blocked";
 #if defined(OHOS_ARKWEB_EXTENSIONS)
 const char kArkWebUIScheme[] = "arkweb";
 const char kArkWebUIResourcesURL[] = "arkweb://resources/";
+
 #endif
 
 }  // namespace content

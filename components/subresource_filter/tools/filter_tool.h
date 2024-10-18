@@ -72,9 +72,9 @@ class FilterTool {
       base::StringPiece document_origin,
       base::StringPiece url,
       base::StringPiece type,
-      bool* blocked);
+      bool blocked);
 
-  std::unique_ptr<const std::vector<const url_pattern_index::flat::CssRule*>>
+  std::unique_ptr<const std::vector<const url_pattern_index::flat::CssRule>>
   MatchCssRuleImpl(base::StringPiece document_origin, base::StringPiece url);
 #else
   const url_pattern_index::flat::UrlRule* MatchImpl(

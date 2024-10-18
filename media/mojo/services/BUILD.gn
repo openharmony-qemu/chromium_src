@@ -117,7 +117,7 @@ component("services") {
     sources += [ "gpu_mojo_media_client_mac.cc" ]
   } else if (is_win) {
     sources += [ "gpu_mojo_media_client_win.cc" ]
-  } else if (is_ohos) {
+  } else if (enable_heif_decoder) {
     sources += [ "gpu_mojo_media_client_ohos.cc" ]
   } else if (use_vaapi || use_v4l2_codec) {
     if (is_linux) {

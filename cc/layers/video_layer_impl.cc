@@ -106,6 +106,26 @@ bool VideoLayerImpl::WillDraw(DrawMode draw_mode,
   if (!LayerImpl::WillDraw(draw_mode, resource_provider))
     return false;
 
+#if BUILDFLAG(IS_OHOS)
+  gfx::Transform transform = DrawTransform();
+  gfx::Rect bounds_quad_rect(bounds());
+  Occlusion occlusion_in_video_space =
+      draw_properties()
+          .occlusion_in_content_space.GetOcclusionWithGivenDrawTransform(
+              transform);
+  gfx::Rect visible_quad_rect =
+      occlusion_in_video_space.GetUnoccludedContentRect(bounds_quad_rect);
+  bounds_quad_rect.set_origin(
+      ScreenSpaceTransform().MapPoint(visible_quad_rect.origin()));
+  if (!bounds_quad_rect_.ApproximatelyEqual(bounds_quad_rect, 1)) {
+    bounds_quad_rect_ = bounds_quad_rect;
+    LOG(DEBUG) << "[NativeEmbed] visible quad rect: "
+               << visible_quad_rect.ToString()
+               << ", bounds quad rect: " << bounds_quad_rect.ToString();
+    layer_tree_impl()->OnLayerRectUpdate(id(), bounds_quad_rect);
+  }
+#endif
+
   // Explicitly acquire and release the provider mutex so it can be held from
   // WillDraw to DidDraw. Since the compositor thread is in the middle of
   // drawing, the layer will not be destroyed before DidDraw is called.
@@ -193,42 +213,10 @@ void VideoLayerImpl::AppendQuads(viz::CompositorRenderPass* render_pass,
   if (is_clipped()) {
     clip_rect_opt = clip_rect();
   }
-
-#if BUILDFLAG(IS_OHOS)
-  if (may_contain_native() && !is_native_video() &&
-      visible_quad_rect_ != gfx::Rect() &&
-      visible_quad_rect_.size() != bounds() &&
-      !frame_->should_skip_current_frame()) {
-    LOG(DEBUG) << "[NativeEmbed] visible_quad_rect_:"
-               << visible_quad_rect_.ToString() << ",bounds:"
-               << bounds().ToString() << ", frame:" << frame_;
-    frame_->set_skipping_current_frame(true);
-  }
-
-  if (!frame_->should_skip_current_frame()) {
-    updater_->AppendQuads(render_pass, frame_, transform, quad_rect,
-                          visible_quad_rect,
-                          draw_properties().mask_filter_info,
-                          clip_rect_opt, contents_opaque(), draw_opacity(),
-                          GetSortingContextId());
-  }
-
-  visible_quad_rect.set_origin(
-      ScreenSpaceTransform().MapPoint(visible_quad_rect.origin()));
-  LOG(DEBUG) << "[NativeEmbed] visible_quad_rect:"
-             << visible_quad_rect.ToString()
-             << ", bounds_:" << bounds().ToString();
-  visible_quad_rect.set_size(bounds());
-  if (!visible_quad_rect_.ApproximatelyEqual(visible_quad_rect, 1)) {
-    visible_quad_rect_ = visible_quad_rect;
-    layer_tree_impl()->OnLayerRectUpdate(id(), visible_quad_rect);
-  }
-#else
   updater_->AppendQuads(render_pass, frame_, transform, quad_rect,
                         visible_quad_rect, draw_properties().mask_filter_info,
                         clip_rect_opt, contents_opaque(), draw_opacity(),
                         GetSortingContextId());
-#endif
 }
 
 void VideoLayerImpl::DidDraw(viz::ClientResourceProvider* resource_provider) {

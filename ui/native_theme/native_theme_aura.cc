@@ -35,7 +35,9 @@
 #if BUILDFLAG(IS_WIN)
 #include "ui/native_theme/native_theme_fluent.h"
 #endif  // BUILDFLAG(IS_WIN)
-
+#if BUILDFLAG(IS_OHOS)
+#include "base/ohos/sys_info_utils.h"
+#endif
 namespace ui {
 
 namespace {
@@ -43,10 +45,10 @@ namespace {
 #ifdef OHOS_SCROLLBAR
 constexpr int kOverlayScrollbarMinimumLength = 48;
 constexpr int kOverlayScrollbarBorderPatchWidth = 0;
-//Scrollbar's width,include hot zone(24) + visible width(8) + marginRight(4)
-constexpr int kOverlayScrollbarCenterPatchSize = 36;
-constexpr int kOverlayScrollbarHotSize = 24;
-constexpr int kOverlayScrollbarMargin = 4;
+//Scrollbar's width,include hot zone(20) + visible width(8) + marginRight(4)
+constexpr int kOverlayScrollbarHotSize = 20;
+constexpr int kOverlayScrollbarHotSizePc = 0;
+int scrollbar_hot_size_ = kOverlayScrollbarHotSize;
 constexpr int kForceScrollbarActiveWidth = 8;
 constexpr int kForceScrollbarInactiveWidth = 4;
 constexpr int kForceScrollbarActiveOffset = 4;
@@ -109,8 +111,17 @@ NativeThemeAura::NativeThemeAura(bool use_overlay_scrollbars,
 #endif
 
   if (use_overlay_scrollbars_) {
+#ifdef OHOS_SCROLLBAR
+    if (base::ohos::IsPcDevice()) {
+      scrollbar_width_ = kOverlayScrollbarThumbWidthPressedPc;
+      scrollbar_hot_size_ = kOverlayScrollbarHotSizePc;
+    } else {
+      scrollbar_width_ = kOverlayScrollbarThumbWidthPressed;
+    }
+#else
     scrollbar_width_ =
         kOverlayScrollbarThumbWidthPressed + kOverlayScrollbarStrokeWidth;
+#endif
   }
 
   // Images and alphas declarations assume the following order.
@@ -293,18 +304,19 @@ void NativeThemeAura::PaintScrollbarThumb(cc::PaintCanvas* canvas,
     cc::PaintFlags flags;
     flags.setColor(aroundColor);
     flags.setAntiAlias(true);
-    gfx::Rect aroundRRect; // Draw rect on aroundRRect's position.
-    int drawThumbThickness = kOverlayScrollbarCenterPatchSize -
-                             kOverlayScrollbarHotSize - kOverlayScrollbarMargin;
+    bool isPcDevice = base::ohos::IsPcDevice();
+    gfx::Rect aroundRRect;  // Draw rect on aroundRRect's position.
+    int drawThumbThickness = scrollbar_width_ - scrollbar_hot_size_;
     if (part == kScrollbarHorizontalThumb) {
-      aroundRRect = gfx::Rect(0, kOverlayScrollbarHotSize, thumb_rect.height(),
-                              drawThumbThickness);
+      int horizontalX = isPcDevice ? thumb_rect.x() : 0;
+      int horizontalY = isPcDevice ? thumb_rect.y() + scrollbar_hot_size_ : scrollbar_hot_size_;
+      aroundRRect = gfx::Rect(horizontalX, horizontalY, thumb_rect.width(), drawThumbThickness);
     } else {
-      aroundRRect = gfx::Rect(kOverlayScrollbarHotSize, 0, drawThumbThickness,
-                              thumb_rect.height());
+      int verticalX = isPcDevice ? thumb_rect.x() + scrollbar_hot_size_ : scrollbar_hot_size_;
+      int verticalY = isPcDevice ? thumb_rect.y() : 0;
+      aroundRRect = gfx::Rect(verticalX, verticalY, drawThumbThickness, thumb_rect.height());
     }
-
-    SkScalar radius = SkIntToScalar(drawThumbThickness/4*3);
+    SkScalar radius = SkIntToScalar(drawThumbThickness / 2);
     gfx::RRectF rounded_rect(gfx::RectF(aroundRRect), radius, radius, radius,
                              radius, radius, radius, radius, radius);
     canvas->drawRRect(static_cast<SkRRect>(rounded_rect), flags);
@@ -466,6 +478,7 @@ gfx::Size NativeThemeAura::GetPartSize(Part part,
         // crbug.com/657159.
         break;
     }
+#ifdef OHOS_SCROLLBAR
   } else {
     switch (part) {
       case kScrollbarDownArrow:
@@ -480,6 +493,7 @@ gfx::Size NativeThemeAura::GetPartSize(Part part,
         // crbug.com/657159.
         break;
     }
+#endif
   }
 
   return NativeThemeBase::GetPartSize(part, state, extra);
@@ -511,25 +525,25 @@ gfx::Size NativeThemeAura::GetNinePatchCanvasSize(Part part) const {
   DCHECK(SupportsNinePatch(part));
 
   return gfx::Size(
-      kOverlayScrollbarBorderPatchWidth * 2 + kOverlayScrollbarCenterPatchSize,
-      kOverlayScrollbarBorderPatchWidth * 2 + kOverlayScrollbarCenterPatchSize);
+      kOverlayScrollbarBorderPatchWidth * 2 + kOverlayScrollbarThumbWidthPressed,
+      kOverlayScrollbarBorderPatchWidth * 2 + kOverlayScrollbarThumbWidthPressed);
 }
 
 gfx::Rect NativeThemeAura::GetNinePatchAperture(Part part) const {
   DCHECK(SupportsNinePatch(part));
 #ifdef OHOS_SCROLLBAR
-  int drawThumbThickness = kOverlayScrollbarCenterPatchSize -
-                           kOverlayScrollbarHotSize - kOverlayScrollbarMargin;
+  int drawThumbThickness =
+      kOverlayScrollbarThumbWidthPressed - kOverlayScrollbarHotSize;
   if (part == kScrollbarHorizontalThumb) {
-    return gfx::Rect(kOverlayScrollbarBorderPatchWidth + drawThumbThickness,
-                     kOverlayScrollbarBorderPatchWidth,
-                     kOverlayScrollbarCenterPatchSize - drawThumbThickness * 2,
-                     kOverlayScrollbarCenterPatchSize);
+    return gfx::Rect(
+        drawThumbThickness, kOverlayScrollbarBorderPatchWidth,
+        kOverlayScrollbarThumbWidthPressed - drawThumbThickness * 2,
+        scrollbar_width_);
   } else {
-    return gfx::Rect(kOverlayScrollbarBorderPatchWidth,
-                     kOverlayScrollbarBorderPatchWidth + drawThumbThickness,
-                     kOverlayScrollbarCenterPatchSize,
-                     kOverlayScrollbarCenterPatchSize - drawThumbThickness * 2);
+    return gfx::Rect(
+        kOverlayScrollbarBorderPatchWidth, drawThumbThickness,
+        scrollbar_width_,
+        kOverlayScrollbarThumbWidthPressed - drawThumbThickness * 2);
   }
 #else
   return gfx::Rect(

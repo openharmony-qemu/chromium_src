@@ -105,12 +105,6 @@ void RecordModelStorageMetrics(const base::FilePath& base_store_dir) {
 
 }  // namespace
 
-// static
-PredictionModelStore* PredictionModelStore::GetInstance() {
-  static base::NoDestructor<PredictionModelStore> model_store;
-  return model_store.get();
-}
-
 PredictionModelStore::PredictionModelStore()
     : background_task_runner_(base::ThreadPool::CreateSequencedTaskRunner(
           {base::MayBlock(), base::TaskPriority::BEST_EFFORT})) {
@@ -119,19 +113,14 @@ PredictionModelStore::PredictionModelStore()
 
 PredictionModelStore::~PredictionModelStore() = default;
 
-void PredictionModelStore::Initialize(PrefService* local_state,
-                                      const base::FilePath& base_store_dir) {
+void PredictionModelStore::Initialize(const base::FilePath& base_store_dir) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-  DCHECK(local_state);
   DCHECK(!base_store_dir.empty());
 
   // Should not be initialized already.
-  DCHECK(!local_state_);
   DCHECK(base_store_dir_.empty());
 
-  local_state_ = local_state;
   base_store_dir_ = base_store_dir;
-
   PurgeInactiveModels();
 
   // Clean up any model files that were slated for deletion in previous
@@ -142,22 +131,12 @@ void PredictionModelStore::Initialize(PrefService* local_state,
       FROM_HERE, base::BindOnce(&RecordModelStorageMetrics, base_store_dir_));
 }
 
-// static
-std::unique_ptr<PredictionModelStore>
-PredictionModelStore::CreatePredictionModelStoreForTesting(
-    PrefService* local_state,
-    const base::FilePath& base_store_dir) {
-  auto store = base::WrapUnique(new PredictionModelStore());
-  store->Initialize(local_state, base_store_dir);
-  return store;
-}
-
 bool PredictionModelStore::HasModel(
     proto::OptimizationTarget optimization_target,
     const proto::ModelCacheKey& model_cache_key) const {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   auto metadata = ModelStoreMetadataEntry::GetModelMetadataEntryIfExists(
-      local_state_, optimization_target, model_cache_key);
+      GetLocalState(), optimization_target, model_cache_key);
   if (!metadata) {
     return false;
   }
@@ -171,7 +150,7 @@ bool PredictionModelStore::HasModelWithVersion(
     int64_t version) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   auto metadata = ModelStoreMetadataEntry::GetModelMetadataEntryIfExists(
-      local_state_, optimization_target, model_cache_key);
+      GetLocalState(), optimization_target, model_cache_key);
   if (!metadata) {
     return false;
   }
@@ -191,7 +170,7 @@ void PredictionModelStore::LoadModel(
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
   auto metadata = ModelStoreMetadataEntry::GetModelMetadataEntryIfExists(
-      local_state_, optimization_target, model_cache_key);
+      GetLocalState(), optimization_target, model_cache_key);
   if (!metadata) {
     std::move(callback).Run(nullptr);
     return;
@@ -275,7 +254,7 @@ void PredictionModelStore::UpdateMetadataForExistingModel(
   if (!HasModel(optimization_target, model_cache_key))
     return;
 
-  ModelStoreMetadataEntryUpdater metadata(local_state_, optimization_target,
+  ModelStoreMetadataEntryUpdater metadata(GetLocalState(), optimization_target,
                                           model_cache_key);
   auto base_model_dir = metadata.GetModelBaseDir();
   DCHECK(base_store_dir_.IsParent(*base_model_dir));
@@ -299,7 +278,7 @@ void PredictionModelStore::UpdateModel(
   DCHECK_EQ(optimization_target, model_info.optimization_target());
   DCHECK(base_store_dir_.IsParent(base_model_dir));
 
-  ModelStoreMetadataEntryUpdater metadata(local_state_, optimization_target,
+  ModelStoreMetadataEntryUpdater metadata(GetLocalState(), optimization_target,
                                           model_cache_key);
   metadata.SetVersion(model_info.version());
   metadata.SetExpiryTime(
@@ -353,7 +332,7 @@ void PredictionModelStore::UpdateModelCacheKeyMapping(
     const proto::ModelCacheKey& server_model_cache_key) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   ModelStoreMetadataEntryUpdater::UpdateModelCacheKeyMapping(
-      local_state_, optimization_target, client_model_cache_key,
+      GetLocalState(), optimization_target, client_model_cache_key,
       server_model_cache_key);
 }
 
@@ -362,18 +341,18 @@ void PredictionModelStore::RemoveModel(
     const proto::ModelCacheKey& model_cache_key,
     PredictionModelStoreModelRemovalReason model_remove_reason) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-  if (!local_state_) {
+  if (!GetLocalState()) {
     return;
   }
 
   RecordPredictionModelStoreModelRemovalVersionHistogram(model_remove_reason);
-  ModelStoreMetadataEntryUpdater metadata(local_state_, optimization_target,
+  ModelStoreMetadataEntryUpdater metadata(GetLocalState(), optimization_target,
                                           model_cache_key);
   auto base_model_dir = metadata.GetModelBaseDir();
   if (base_model_dir) {
     DCHECK(base_store_dir_.IsParent(*base_model_dir));
     ScopedDictPrefUpdate pref_update(
-        local_state_, prefs::localstate::kStoreFilePathsToDelete);
+        GetLocalState(), prefs::localstate::kStoreFilePathsToDelete);
     pref_update->Set(FilePathToString(*base_model_dir), true);
   }
   // Continue removing the metadata even if the model dirs does not exist.
@@ -382,9 +361,10 @@ void PredictionModelStore::RemoveModel(
 
 void PredictionModelStore::PurgeInactiveModels() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-  DCHECK(local_state_);
+  DCHECK(GetLocalState());
   for (const auto& expired_model_dir :
-       ModelStoreMetadataEntryUpdater::PurgeAllInactiveMetadata(local_state_)) {
+       ModelStoreMetadataEntryUpdater::PurgeAllInactiveMetadata(
+            GetLocalState())) {
     DCHECK(base_store_dir_.IsParent(expired_model_dir));
     // This is called at startup. So no need to schedule the deletion of the
     // model dirs, and instead can be deleted immediately.
@@ -395,9 +375,9 @@ void PredictionModelStore::PurgeInactiveModels() {
 
 void PredictionModelStore::CleanUpOldModelFiles() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-  DCHECK(local_state_);
+  DCHECK(GetLocalState());
   for (const auto entry :
-       local_state_->GetDict(prefs::localstate::kStoreFilePathsToDelete)) {
+       GetLocalState()->GetDict(prefs::localstate::kStoreFilePathsToDelete)) {
     auto path_to_delete = StringToFilePath(entry.first);
     DCHECK(path_to_delete);
     DCHECK(base_store_dir_.IsParent(*path_to_delete));
@@ -412,13 +392,13 @@ void PredictionModelStore::CleanUpOldModelFiles() {
 void PredictionModelStore::OnFilePathDeleted(const std::string& path_to_delete,
                                              bool success) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-  DCHECK(local_state_);
+  DCHECK(GetLocalState());
   if (!success) {
     // Try to delete again later.
     return;
   }
 
-  ScopedDictPrefUpdate pref_update(local_state_,
+  ScopedDictPrefUpdate pref_update(GetLocalState(),
                                    prefs::localstate::kStoreFilePathsToDelete);
   pref_update->Remove(path_to_delete);
 }

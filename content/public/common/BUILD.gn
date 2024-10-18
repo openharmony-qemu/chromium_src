@@ -111,6 +111,11 @@ source_set("switches") {
 
   configs += [ "//content:content_implementation" ]
 
+  if (use_libfuzzer) {
+    configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
+    configs += [ "//build/config/gcc:symbol_visibility_default" ]
+  }
+
   if (enable_ipc_fuzzer) {
     configs += [ "//tools/ipc_fuzzer:ipc_fuzzer_config" ]
   }

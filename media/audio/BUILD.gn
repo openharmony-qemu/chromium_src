@@ -486,6 +486,12 @@ source_set("unit_tests") {
     ]
   }
 
+  if (is_ohos) {
+    sources += [
+      "./ohos/audio_capturer_options_adapter_impl_unittest.cc",
+    ]
+  }
+
   if (is_chromeos_ash || is_castos || is_cast_android) {
     sources += [
       "flac_audio_handler_unittest.cc",

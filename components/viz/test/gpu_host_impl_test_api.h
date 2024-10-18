@@ -92,6 +92,10 @@ class GpuHostImplTestApi {
   void FlushRemoteForTesting();
   void SetGpuService(mojo::Remote<mojom::GpuService> gpu_service);
 
+#if BUILDFLAG(IS_OHOS)
+  std::string GetSurfaceId(int32_t native_embed_id);
+#endif
+
   // Hooks the delegate of `gpu_host_`. The hook is removed when this object
   // destructs.
   void HookDelegate(std::unique_ptr<HookDelegateBase> delegate);

@@ -24,7 +24,7 @@ class CC_EXPORT SingleScrollbarAnimationControllerThinning {
  public:
 #ifdef OHOS_SCROLLBAR
   static constexpr float kIdleThicknessScale = 0.5f;
-  static constexpr float kMouseMoveDistanceToTriggerExpand = 8.f;
+  static constexpr float kMouseMoveDistanceToTriggerExpand = 12.f;
 #else
   static constexpr float kIdleThicknessScale = 0.4f;
   static constexpr float kMouseMoveDistanceToTriggerExpand = 25.f;

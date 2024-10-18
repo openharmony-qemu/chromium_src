@@ -76,7 +76,12 @@ class NET_EXPORT_PRIVATE ConnectJobFactory {
       const NetworkAnonymizationKey& network_anonymization_key,
       SecureDnsPolicy secure_dns_policy,
       const CommonConnectJobParams* common_connect_job_params,
-      ConnectJob::Delegate* delegate) const;
+      ConnectJob::Delegate* delegate
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+      ,
+      bool secure_dns_only = false
+#endif
+  ) const;
 
   // TODO(crbug.com/1206799): Rename to discourage use except in cases where the
   // scheme is non-standard or unknown.
@@ -112,7 +117,12 @@ class NET_EXPORT_PRIVATE ConnectJobFactory {
       const NetworkAnonymizationKey& network_anonymization_key,
       SecureDnsPolicy secure_dns_policy,
       const CommonConnectJobParams* common_connect_job_params,
-      ConnectJob::Delegate* delegate) const;
+      ConnectJob::Delegate* delegate
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+      ,
+      bool secure_dns_only = false
+#endif
+  ) const;
 
   std::unique_ptr<HttpProxyConnectJob::Factory> http_proxy_connect_job_factory_;
   std::unique_ptr<SOCKSConnectJob::Factory> socks_connect_job_factory_;

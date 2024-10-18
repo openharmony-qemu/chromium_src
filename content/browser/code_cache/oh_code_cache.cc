@@ -88,6 +88,7 @@ void ResponseCache::InitCacheDirectory(base::FilePath path) {
 // static
 std::shared_ptr<ResponseCache> ResponseCache::CreateResponseCache(const std::string& url) {
   if (url.empty()) {
+    LOG(ERROR) << "Do not create response cache of empty url.";
     return nullptr;
   }
 
@@ -97,9 +98,10 @@ std::shared_ptr<ResponseCache> ResponseCache::CreateResponseCache(const std::str
   }
 
   if (!cache_dir_path_ || cache_dir_path_->empty()) {
+    LOG(ERROR) << "Create Response Cache error: cache dir path has not initialized.";
     return nullptr;
   }
-
+  
   auto response_cache = std::make_shared<ResponseCache>(url);
   response_cache->url_hash_ = std::to_string(disk_cache::simple_util::GetEntryHashKey(url));
   base::FilePath file_path(kFileTag + response_cache->url_hash_);
@@ -115,7 +117,7 @@ void ResponseCache::ClearAllCache() {
   auto cache_dir_path = cache_dir_path_.get();
 
   if (!cache_dir_path || !base::PathExists(*cache_dir_path)) {
-    LOG(ERROR) << "Cannot clear response cache. cache directory path has not initialized";
+    LOG(ERROR) << "Cannot clear response cache. cache directory path has not initailized";
     return;
   }
 
@@ -176,7 +178,7 @@ bool ResponseCache::CreateStream() {
 }
 
 bool ResponseCache::FindMetadata() {
-  TRACE_EVENT1("net", "ResponseCache::FindMetadata", "url", url_);
+  TRACE_EVENT1("net","ResponseCache::FindMetadata", "url", url_);
 
   if (cache_metadata_map_.empty()) {
     if (!CreateStream()) {
@@ -190,8 +192,8 @@ bool ResponseCache::FindMetadata() {
     CloseStream();
   }
 
-  auto  it = cache_metadata_map_.find(url_hash_);
-
+  auto it = cache_metadata_map_.find(url_hash_);
+  
   if (it == cache_metadata_map_.end()) {
     return false;
   }
@@ -201,7 +203,7 @@ bool ResponseCache::FindMetadata() {
 }
 
 bool ResponseCache::ReadContent() {
-  TRACE_EVENT1("net", "ResponseCache::ReadContent", "url", url_);
+  TRACE_EVENT1("net","ResponseCache::ReadContent", "url", url_);
 
   if (!base::PathExists(cache_file_path_)) {
     return false;
@@ -215,7 +217,7 @@ bool ResponseCache::ReadContent() {
 }
 
 bool ResponseCache::ReadMetadata() {
-  TRACE_EVENT1("net", "ResponseCache::ReadContent", "url", url_);
+  TRACE_EVENT1("net","ResponseCache::ReadMetadata", "url", url_);
 
   if (!metadata_file_stream_) {
     return false;
@@ -230,7 +232,10 @@ bool ResponseCache::ReadMetadata() {
 
     std::sregex_iterator it(line.begin(), line.end(), pattern);
 
-    if (it != std::sregex_iterator() && it->size() == 7) {
+    // Check the count of metadata.
+    // Each resource must has 7 metadata(url、response、headers...)
+    int item_count = 7;
+    if (it != std::sregex_iterator() && it->size() == item_count) {
       metadata_out_->url_hash_ = (*it)[1].str();
       metadata_out_->content_length_ = (*it)[2].str();
       metadata_out_->e_tag_ = (*it)[3].str();
@@ -275,6 +280,8 @@ NextOp ResponseCache::DoCreate() {
     return NextOp::THROW_ERROR;
   }
 
+  cache_metadata_map_.emplace(url_hash_, metadata_in_);
+
   if (!DoWriteIntoFile(cache_file_path_, response_body_in_)) {
     LOG(ERROR) << "Create new response cache failed. Reason: write content faild.";
     return NextOp::THROW_ERROR;
@@ -313,6 +320,7 @@ bool ResponseCache::DoUpdateMetadata() {
   temp_file->Lock(base::File::LockMode::kExclusive);
 
   if (!temp_file->IsValid()) {
+    CloseStream();
     return false;
   }
 
@@ -414,7 +422,7 @@ void ResourceResponse::GetResponseHeaders(int32_t request_id,
                                           std::string* charset,
                                           int64_t* content_length,
                                           HeaderMap* extra_headers) {
-  TRACE_EVENT0("net", "ResourceResponse::GetResponseHeaders");
+  TRACE_EVENT0("net","ResourceResponse::GetResponseHeaders");
   *status_code = 200;
   *reason_phrase = "OK";
   *mime_type = "text/javascript";
@@ -442,7 +450,7 @@ bool InputStream::Read(net::IOBuffer* dest,
                        int length,
                        int* bytes_read,
                        ReadCallback callback) {
-  TRACE_EVENT0("net", "InputStream::Read");
+  TRACE_EVENT0("net","InputStream::Read");
   bool has_data = false;
   int transfer_size = 0;
   if (offset_ < data_.length()) {

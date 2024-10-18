@@ -945,6 +945,25 @@ TEST(GURLTest, SchemeIsCryptographicStatic) {
   EXPECT_FALSE(GURL::SchemeIsCryptographic("ftp"));
 }
 
+#if BUILDFLAG(IS_OHOS)
+TEST(GURLTest, SchemeIsCodeCacheEnabled) {
+  GURL a("https://foo.bar.com/");
+  EXPECT_FALSE(a.SchemeIsCodeCacheEnabled());
+
+  GURL b("wss://foo.bar.com/");
+  EXPECT_FALSE(b.SchemeIsCodeCacheEnabled());
+
+  GURL c("http://foo.bar.com/");
+  EXPECT_FALSE(c.SchemeIsCodeCacheEnabled());
+
+  GURL d("blob://foo.bar.com/");
+  EXPECT_FALSE(d.SchemeIsCodeCacheEnabled());
+
+  GURL e("abc://foo.bar.com/");
+  EXPECT_FALSE(e.SchemeIsCodeCacheEnabled());
+}
+#endif
+
 TEST(GURLTest, SchemeIsBlob) {
   EXPECT_TRUE(GURL("BLOB://BAR/").SchemeIsBlob());
   EXPECT_TRUE(GURL("blob://bar/").SchemeIsBlob());

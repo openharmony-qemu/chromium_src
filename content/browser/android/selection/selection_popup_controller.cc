@@ -4,6 +4,8 @@
 
 #include "content/browser/android/selection/selection_popup_controller.h"
 
+#include <cstdlib>
+
 #include "base/android/jni_android.h"
 #include "base/android/jni_string.h"
 #include "base/android/scoped_java_ref.h"
@@ -11,6 +13,7 @@
 #include "content/browser/renderer_host/render_widget_host_view_android.h"
 #include "content/browser/web_contents/web_contents_impl.h"
 #include "content/browser/web_contents/web_contents_view_android.h"
+#include "mojo/public/cpp/bindings/message.h"
 #include "content/public/android/content_jni_headers/SelectionPopupControllerImpl_jni.h"
 #include "content/public/browser/context_menu_params.h"
 #include "third_party/blink/public/common/context_menu_data/edit_flags.h"
@@ -25,7 +28,27 @@ using base::android::JavaParamRef;
 using base::android::ScopedJavaLocalRef;
 
 namespace content {
+namespace {
+ 
+const int kMaxOffsetAdjust = 50;
+const int kMaxOffsetExtendedAdjust = 250;
 
+bool IsOffsetAdjustValid(
+    int startOffset,
+    int endOffset,
+    int surroundingTextLength,
+    const blink::mojom::SelectAroundCaretResultPtr& result) {
+  return std::abs(result->word_start_adjust) < kMaxOffsetAdjust &&
+         std::abs(result->word_end_adjust) < kMaxOffsetAdjust &&
+         std::abs(result->extended_start_adjust) < kMaxOffsetExtendedAdjust &&
+         std::abs(result->extended_end_adjust) < kMaxOffsetExtendedAdjust &&
+         startOffset + result->extended_start_adjust >= 0 &&
+         startOffset + result->extended_start_adjust <= surroundingTextLength &&
+         endOffset + result->extended_end_adjust >= 0 &&
+         endOffset + result->extended_end_adjust <= surroundingTextLength;
+}
+ 
+}  // namespace
 jlong JNI_SelectionPopupControllerImpl_Init(
     JNIEnv* env,
     const JavaParamRef<jobject>& obj,
@@ -207,18 +230,28 @@ bool SelectionPopupController::ShowSelectionMenu(
 }
 
 void SelectionPopupController::OnSelectAroundCaretAck(
+    int startOffset,
+    int endOffset,
+    int surroundingTextLength,
     blink::mojom::SelectAroundCaretResultPtr result) {
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = java_obj_.get(env);
-  if (obj.is_null())
+  if (obj.is_null()) {
     return;
+  }
   if (result.is_null()) {
     Java_SelectionPopupControllerImpl_onSelectAroundCaretFailure(env, obj);
-  } else {
-    Java_SelectionPopupControllerImpl_onSelectAroundCaretSuccess(
-        env, obj, result->extended_start_adjust, result->extended_end_adjust,
-        result->word_start_adjust, result->word_end_adjust);
+    return;
   }
+  if (!IsOffsetAdjustValid(startOffset, endOffset, surroundingTextLength,
+                           result)) {
+    mojo::ReportBadMessage("SelectAroundCaretResult's offset is invalid.");
+    return;
+  }
+
+  Java_SelectionPopupControllerImpl_onSelectAroundCaretSuccess(
+      env, obj, result->extended_start_adjust, result->extended_end_adjust,
+      result->word_start_adjust, result->word_end_adjust);
 }
 
 void SelectionPopupController::HidePopupsAndPreserveSelection() {

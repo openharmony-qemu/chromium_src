@@ -26,7 +26,7 @@ void TouchEditingControllerFactory::SetInstance(
 #ifdef OHOS_CLIPBOARD
 //static
 int TouchEditable::ConvertMenuCommands(int ohos_command_id) {
-  switch (ohos_command_id) {
+  switch(ohos_command_id) {
     case QM_EDITFLAG_CAN_CUT:
       return kCut;
     case QM_EDITFLAG_CAN_COPY:

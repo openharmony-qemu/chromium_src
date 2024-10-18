@@ -385,6 +385,7 @@ PDFiumPage::~PDFiumPage() {
 void PDFiumPage::Unload() {
   // Do not unload while in the middle of a load, or if some external source
   // expects `this` to stay loaded.
+  // Do not unload while in the middle of a load.
   if (preventing_unload_count_)
     return;
 

@@ -315,6 +315,10 @@ class NET_EXPORT_PRIVATE ConnectJob {
 #ifdef OHOS_EX_NETWORK_CONNECTION
   base::TimeDelta timeout_override_ = base::TimeDelta();
 #endif
+#ifdef OHOS_MULTI_IP_CONNECT
+  bool multi_ip_enabled_{true};
+  base::TimeDelta multi_connect_interval_time_ = base::Milliseconds(300);
+#endif
 
  private:
   virtual int ConnectInternal() = 0;

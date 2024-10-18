@@ -178,6 +178,7 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
   browser_settings.draw_mode = GetDrawMode();
   browser_settings.text_autosizing_enabled =
       IsTextAutosizingEnabled() ? STATE_ENABLED : STATE_DISABLED;
+  browser_settings.force_zero_layout_height = IsFitContent();
 #endif  // BUILDFLAG(IS_OHOS)
 #if defined(OHOS_CLIPBOARD)
   browser_settings.copy_option = static_cast<int>(GetCopyOptionMode());
@@ -209,9 +210,15 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
 #if defined(OHOS_MULTI_WINDOW)
   browser_settings.supports_multiple_windows = IsMultiWindowAccess();
 #endif // defined(OHOS_MULTI_WINDOW)
+
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
-  browser_settings.record_whole_document = GetEnableWholeWebPageDrawing();
-#endif // OHOS_SOFTWARE_COMPOSITOR
+  browser_settings.record_whole_document = GetWholeWebPageDrawing();
+#endif
+
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+  browser_settings.enable_media_network_traffic_prompt =
+      enable_media_network_traffic_prompt_;
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
 }
 
 void NWebPreferenceDelegate::SetBrowserSettingsToNetHelpers() {
@@ -314,6 +321,7 @@ void NWebPreferenceDelegate::PutIsCreateWindowsByJavaScriptAllowed(bool flag) {
 }
 
 void NWebPreferenceDelegate::PutJavaScriptEnabled(bool flag) {
+  LOG(INFO) << "Put JavaScript Enabled:" << flag;
   javascript_allowed_ = flag;
   WebPreferencesChanged();
 }
@@ -577,6 +585,11 @@ const base::Feature webview_mixed_content_autoupgrades{
     "WebViewMixedContentAutoupgrades", base::FEATURE_DISABLED_BY_DEFAULT};
 
 bool NWebPreferenceDelegate::MixedContentAutoupgradesAllowed() {
+#ifdef OHOS_MIXED_CONTENT
+  if (enable_mixed_content_auto_upgrades_) {
+    return access_mode_ == AccessMode::COMPATIBILITY_MODE;
+  }
+#endif
   if (base::FeatureList::IsEnabled(webview_mixed_content_autoupgrades)) {
     return access_mode_ == AccessMode::COMPATIBILITY_MODE;
   }
@@ -652,32 +665,10 @@ void NWebPreferenceDelegate::PutOverscrollMode(int mode) {
   browser_->GetHost()->SetOverscrollMode(mode);
 }
 
-void NWebPreferenceDelegate::SetNativeEmbedMode(bool flag) {
-  // Native Embed is not supported on pc device.
-  CefRefPtr<CefCommandLine> command_line = CefCommandLine::GetGlobalCommandLine();
-  auto isEnableEmbed = command_line->HasSwitch(::switches::kEnableEmbedMode); 
-  enable_embed_mode_ = flag && !isEnableEmbed;
-  if (enable_embed_mode_) {
-    zooming_function_enabled_ = false;
-  }
-  WebPreferencesChanged();
-}
-
-bool NWebPreferenceDelegate::GetNativeEmbedMode() {
-  return enable_embed_mode_;
-}
-
-void NWebPreferenceDelegate::RegisterNativeEmbedRule(const std::string& tag,
-                                                     const std::string& type) {
-  embed_tag_ = tag;
-  embed_tag_type_ = type;
-  WebPreferencesChanged();
-}
-
 void NWebPreferenceDelegate::SetScrollable(bool enable) {
   scroll_enabled_ = enable;
   WebPreferencesChanged();
-  if(!browser_.get()) {
+  if (!browser_.get()) {
     LOG(ERROR) << "SetScrollable failed, browser is null";
     return;
   }
@@ -703,12 +694,34 @@ bool NWebPreferenceDelegate::GetScrollable() {
 }
 #endif  // defined(OHOS_INPUT_EVENTS)
 
+void NWebPreferenceDelegate::SetNativeEmbedMode(bool flag) {
+  // Native Embed is not supported on pc device.
+  CefRefPtr<CefCommandLine> command_line = CefCommandLine::GetGlobalCommandLine();
+  auto isEnableEmbed = command_line->HasSwitch(::switches::kEnableEmbedMode);
+  enable_embed_mode_ = flag && !isEnableEmbed;
+  if (enable_embed_mode_) {
+    zooming_function_enabled_ = false;
+  }
+  WebPreferencesChanged();
+}
+
+bool NWebPreferenceDelegate::GetNativeEmbedMode() {
+  return enable_embed_mode_;
+}
+
+void NWebPreferenceDelegate::RegisterNativeEmbedRule(const std::string& tag,
+                                                     const std::string& type) {
+  embed_tag_ = tag;
+  embed_tag_type_ = type;
+  WebPreferencesChanged();
+}
+
 #if defined(OHOS_VIEWPORT)
 void NWebPreferenceDelegate::SetViewportEnable(bool enable) {
   viewport_enabled_ = enable;
   WebPreferencesChanged();
 }
-
+ 
 std::optional<bool> NWebPreferenceDelegate::GetViewportEnable() {
   return viewport_enabled_;
 }
@@ -748,7 +761,7 @@ int NWebPreferenceDelegate::GetDrawMode() const {
 }
 
 void NWebPreferenceDelegate::PutTextAutosizingEnabled(bool flag) {
-  if(text_autosizing_enabled_ == flag){
+  if (text_autosizing_enabled_ == flag) {
     return;
   }
   text_autosizing_enabled_ = flag;
@@ -758,15 +771,13 @@ void NWebPreferenceDelegate::PutTextAutosizingEnabled(bool flag) {
 bool NWebPreferenceDelegate::IsTextAutosizingEnabled() const {
   return text_autosizing_enabled_;
 }
-#endif
 
-#ifdef OHOS_EX_BLANK_TARGET_POPUP_INTERCEPT
-void NWebPreferenceDelegate::SetEnableBlankTargetPopupIntercept(bool enable) {
-  enable_blank_target_popup_intercept_ = enable;
+void NWebPreferenceDelegate::SetFitContent(bool value) {
+  fit_content_ = value;
 }
 
-bool NWebPreferenceDelegate::IsBlankTargetPopupInterceptEnabled() {
-  return enable_blank_target_popup_intercept_;
+bool NWebPreferenceDelegate::IsFitContent() const {
+  return fit_content_;
 }
 #endif
 
@@ -783,7 +794,6 @@ NWebPreference::CopyOptionMode NWebPreferenceDelegate::GetCopyOptionMode() {
 
 void NWebPreferenceDelegate::SetNativeVideoPlayerConfig(bool enable,
                                                         bool shouldOverlay) {
-
   if (native_video_player_config_ == std::make_tuple(enable, shouldOverlay)) {
     return;
   }
@@ -793,8 +803,8 @@ void NWebPreferenceDelegate::SetNativeVideoPlayerConfig(bool enable,
 
 #if defined(OHOS_SCROLLBAR)
 void NWebPreferenceDelegate::PutOverlayScrollbarEnabled(bool enable) {
-   base::FeatureList::SetScrollbarEnable(enable);
-   WebPreferencesChanged();
+  base::FeatureList::SetScrollbarEnable(enable);
+  WebPreferencesChanged();
 }
 #endif
 
@@ -835,12 +845,12 @@ ScriptItems NWebPreferenceDelegate::GetJavaScriptOnDocumentEnd() {
 #endif
 
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
-void NWebPreferenceDelegate::EnableWholeWebPageDrawing() {
-  record_whole_document_ = true;
+bool NWebPreferenceDelegate::GetWholeWebPageDrawing() {
+  return record_whole_document_;
 }
 
-bool NWebPreferenceDelegate::GetEnableWholeWebPageDrawing() {
-  return record_whole_document_;
+void NWebPreferenceDelegate::SetWholePageDrawing() {
+  record_whole_document_ = true;
 }
 #endif
 
@@ -854,6 +864,56 @@ void NWebPreferenceDelegate::SetSurfaceId(const std::string& surfaceId) {
   LOG(DEBUG)<<"[getSurfaceId] SetSurfaceId is "<<surfaceId;
   surface_id_ = surfaceId;
 }
+
+#ifdef OHOS_MIXED_CONTENT
+void NWebPreferenceDelegate::EnableMixedContentAutoUpgrades(bool enable) {
+  enable_mixed_content_auto_upgrades_ = enable;
+}
+ 
+bool NWebPreferenceDelegate::IsMixedContentAutoUpgradesEnabled() {
+  return enable_mixed_content_auto_upgrades_;
+}
 #endif
 
+#endif
+
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+void NWebPreferenceDelegate::EnableMediaNetworkTrafficPrompt(bool enable) {
+  if (enable_media_network_traffic_prompt_ == enable) {
+    return;
+  }
+  enable_media_network_traffic_prompt_ = enable;
+  WebPreferencesChanged();
+}
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+
+#ifdef OHOS_BFCACHE
+void NWebPreferenceDelegate::PutBackForwardCacheOptions(int size, int time_to_live) {
+  size_ = size;
+  time_to_live_ = time_to_live;
+}
+ 
+int NWebPreferenceDelegate::GetCacheSize() {
+  int tmp = size_;
+  size_ = -1;
+  return tmp;
+}
+ 
+int NWebPreferenceDelegate::GetTimeToLive() {
+  int tmp = time_to_live_;
+  time_to_live_ = -1;
+  return tmp;
+}
+#endif // OHOS_BFCACHE
+
+#if defined(OHOS_PASSWORD_AUTOFILL)
+CefRefPtr<CefWebMessageReceiver> NWebPreferenceDelegate::GetAutofillCallback() {
+  return autofill_callback_;
+}
+
+void NWebPreferenceDelegate::SetAutofillCallback(
+    CefRefPtr<CefWebMessageReceiver> callback) {
+  autofill_callback_ = callback;
+}
+#endif
 }  // namespace OHOS::NWeb

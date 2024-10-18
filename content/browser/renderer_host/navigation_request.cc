@@ -1140,7 +1140,6 @@ std::unique_ptr<NavigationRequest> NavigationRequest::Create(
     absl::optional<std::u16string> embedder_shared_storage_context) {
   TRACE_EVENT1("navigation", "NavigationRequest::Create", "browser_initiated",
                browser_initiated);
-
   common_params->request_destination =
       GetDestinationFromFrameTreeNode(frame_tree_node);
 
@@ -1310,7 +1309,7 @@ std::unique_ptr<NavigationRequest> NavigationRequest::CreateRendererInitiated(
           /*navigation_token=*/base::UnguessableToken::Create(),
           /*prefetched_signed_exchanges=*/
           std::vector<blink::mojom::PrefetchedSignedExchangeInfoPtr>(),
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
           /*data_url_as_string=*/std::string(),
 #endif
           /*is_browser_initiated=*/false,
@@ -1451,7 +1450,7 @@ NavigationRequest::CreateForSynchronousRendererCommit(
           /*navigation_token=*/base::UnguessableToken::Create(),
           /*prefetched_signed_exchanges=*/
           std::vector<blink::mojom::PrefetchedSignedExchangeInfoPtr>(),
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
           /*data_url_as_string=*/std::string(),
 #endif
           /*is_browser_initiated=*/false,
@@ -2257,6 +2256,7 @@ void NavigationRequest::BeginNavigation() {
     return;
   }
 
+  LOG(INFO) << "Navigation BeginNavigationImpl";
   BeginNavigationImpl();
 }
 
@@ -2441,6 +2441,15 @@ void NavigationRequest::OnFencedFrameURLMappingComplete(
 void NavigationRequest::BeginNavigationImpl() {
   base::ElapsedTimer timer;
   SetState(WILL_START_NAVIGATION);
+
+#ifdef OHOS_LOG_MESSAGE
+  if (frame_tree_node_->IsMainFrame()) {
+    LOG(INFO) << "INFO: start a navigation url: *** is_browser_initiated_: "
+              << commit_params_->is_browser_initiated
+              << " was_redirected_: " << was_redirected_;
+  }
+#endif
+
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   base::WeakPtr<NavigationRequest> this_ptr(weak_factory_.GetWeakPtr());
   bool should_override_url_loading = false;
@@ -2672,7 +2681,7 @@ void NavigationRequest::StartNavigation() {
   DCHECK(frame_tree_node_->navigation_request() == this ||
          is_synchronous_renderer_commit_);
   FrameTreeNode* frame_tree_node = frame_tree_node_;
-
+  LOG(INFO) << "NavigationRequest::StartNavigation";
   MaybeAssignInvalidPrerenderFrameTreeNodeId();
 
   // This is needed to get site URLs and assign the expected RenderProcessHost.
@@ -3914,7 +3923,6 @@ void NavigationRequest::OnResponseStarted(
   if (is_download) {
     download_policy().RecordHistogram();
   }
-
   ScopedCrashKeys crash_keys(*this);
 
   // The |loader_|'s job is finished. It must not call the NavigationRequest
@@ -5238,7 +5246,6 @@ void NavigationRequest::OnFailureChecksComplete(
 void NavigationRequest::OnWillProcessResponseChecksComplete(
     NavigationThrottle::ThrottleCheckResult result) {
   DCHECK(result.action() != NavigationThrottle::DEFER);
-
   // If the NavigationThrottles allowed the navigation to continue, have the
   // processing of the response resume in the network stack.
   if (result.action() == NavigationThrottle::PROCEED) {
@@ -5549,17 +5556,16 @@ void NavigationRequest::CommitNavigation() {
 
   // For uuid-in-package: resources served from WebBundles, use the Bundle's
   // origin.
-  url::Origin origin =
+  url::Origin origin_to_commit =
       (common_params_->url.SchemeIs(url::kUuidInPackageScheme) &&
        GetWebBundleURL().is_valid())
           ? url::Origin::Create(GetWebBundleURL())
           : GetOriginToCommit().value();
   // TODO(crbug.com/979296): Consider changing this code to copy an origin
   // instead of creating one from a URL which lacks opacity information.
-  url::Origin origin_to_commit = GetOriginToCommit().value();
   isolation_info_for_subresources_ =
       GetRenderFrameHost()->ComputeIsolationInfoForSubresourcesForPendingCommit(
-          origin, is_credentialless(), ComputeFencedFrameNonce());
+          origin_to_commit, is_credentialless(), ComputeFencedFrameNonce());
   DCHECK(!isolation_info_for_subresources_.IsEmpty());
 
   // If this is a srcdoc document, the content comes from the parent frame, so
@@ -5603,7 +5609,7 @@ void NavigationRequest::CommitNavigation() {
           browsing_topics::ApiCallerSource::kIframeAttribute);
     }
   }
-  
+
   RenderFrameHostImpl* old_frame_host =
       frame_tree_node_->render_manager()->current_frame_host();
   if (!NavigationTypeUtils::IsSameDocument(common_params_->navigation_type)) {
@@ -5669,7 +5675,7 @@ void NavigationRequest::CommitNavigation() {
   }
   // Navigation requests should use the new origin as the partition origin
   // except if embedded in an outer frame.
-  url::Origin partition_origin = origin;
+  url::Origin partition_origin = origin_to_commit;
   bool is_top_level = frame_tree_node()->GetParentOrOuterDocument() == nullptr;
   if (!is_top_level) {
     partition_origin = frame_tree_node()
@@ -5678,7 +5684,7 @@ void NavigationRequest::CommitNavigation() {
                            ->GetLastCommittedOrigin();
   }
 
-  PersistOriginTrialsFromHeaders(origin, partition_origin, response(),
+  PersistOriginTrialsFromHeaders(origin_to_commit, partition_origin, response(),
                                  browser_context);
 
   // Update the reduced accept-language to commit if it's empty, and stop
@@ -5791,7 +5797,6 @@ void NavigationRequest::CommitNavigation() {
     commit_params->prefetched_signed_exchanges =
         std::move(subresource_loader_params_->prefetched_signed_exchanges);
   }
-
   GetRenderFrameHost()->CommitNavigation(
       this, std::move(common_params), std::move(commit_params),
       std::move(response_head), std::move(response_body_),
@@ -7044,7 +7049,7 @@ void NavigationRequest::DidCommitNavigation(
     topics_url_loader_service_bind_context_->OnDidCommitNavigation(
         GetRenderFrameHost()->GetWeakDocumentPtr());
   }
-
+  
   // DO NOT ADD CODE after this.
   // UnblockPendingSubframeNavigationRequestsIfNeeded() resumes throttles, which
   // may cause the destruction of this NavigationRequest.
@@ -9064,7 +9069,7 @@ void NavigationRequest::UnblockPendingSubframeNavigationRequestsIfNeeded() {
   for (auto& throttle : subframe_history_navigation_throttles_) {
     if (throttle) {
       throttle->Resume();
-      if (!self) {
+	  if (!self) {
         return;
       }
     }
@@ -9464,6 +9469,11 @@ void NavigationRequest::CreateWebUIIfNeeded(RenderFrameHostImpl* frame_host) {
       bindings() != web_ui_->GetBindings()) {
     RecordAction(base::UserMetricsAction("ProcessSwapBindingsMismatch_RVHM"));
     base::WeakPtr<NavigationRequest> self = GetWeakPtr();
+    // Reset `controller` first before resetting `web_ui_`, since the controller
+    // still has a pointer to `web_ui_`, to avoid referencing to the already
+    // deleted  `web_ui_` object from `controller`'s destructor. See also
+    // https://crbug.com/345640549.
+    controller.reset();
     web_ui_.reset();
     // Resetting the WebUI may indirectly call content's embedders and delete
     // `this`. There are no known occurrences of it, so we assume this never

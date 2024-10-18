@@ -25,7 +25,8 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ClipboardOHOS : public Clipboard {
   // the current thread is in fact an instance of ClipboardOHOS.
   static ClipboardOHOS* GetForCurrentThread();
 
-  static void SetConvertHtmlCallback(std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> callback);
+  static void SetConvertHtmlCallback(
+      std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> callback);
   // Writes the current ClipboardData and returns the previous data.
   // The data source is expected to be set in `data`.
   std::unique_ptr<ClipboardData> WriteClipboardData(

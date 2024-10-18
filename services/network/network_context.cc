@@ -517,7 +517,7 @@ NetworkContext::NetworkContext(
 
   url_request_context_owner_ = MakeURLRequestContext(
       std::move(url_loader_factory_for_cert_net_fetcher),
-      session_cleanup_cookie_store,
+    session_cleanup_cookie_store,
       std::move(on_url_request_context_builder_configured));
   url_request_context_ = url_request_context_owner_.url_request_context.get();
 

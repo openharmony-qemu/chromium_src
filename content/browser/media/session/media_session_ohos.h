@@ -54,6 +54,7 @@ class MediaSessionOHOS final
 
   bool SetWebviewShow(bool show);
   bool SetWebviewShowForAudio(bool show);
+  
   void Resume();
   void Suspend();
   void Stop();
@@ -66,7 +67,6 @@ class MediaSessionOHOS final
   OHOS::NWeb::MediaAVSessionType GetMediaType(
     const std::vector<media_session::mojom::MediaAudioVideoState>& states);
 
-  bool is_webview_show_;
   bool is_playing_;
   bool is_initialized_;
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;

@@ -249,6 +249,12 @@ class COMPONENT_EXPORT(OS_CRYPT) OSCryptImpl {
   // For password_v11, nullptr means no backend.
   std::unique_ptr<crypto::SymmetricKey> password_v11_cache_;
 
+  // For ota password loss, nullptr means to backend.
+  std::unique_ptr<crypto::SymmetricKey> password_ota_cache_;
+
+  // Returns a cached. Is thread-safe for ota password loss.
+  crypto::SymmetricKey*  GetPasswordForOtaFail();
+
   bool is_password_v11_cached_ = false;
 
   // |config_| is used to initialise |password_v11_cache_| and then cleared.

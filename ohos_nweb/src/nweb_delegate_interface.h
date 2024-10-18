@@ -20,6 +20,7 @@
 #include <string>
 #include "capi/nweb_app_client_extension_callback.h"
 #include "capi/nweb_download_delegate_callback.h"
+#include "capi/nweb_extension_callback.h"
 #include "cef/include/cef_client.h"
 #include "cef_delegate/nweb_inputmethod_client.h"
 #include "display_manager_adapter.h"
@@ -67,14 +68,13 @@ class NWebDelegateInterface
   virtual void OnWindowShow() = 0;
   virtual void OnWindowHide() = 0;
   virtual void OnOnlineRenderToForeground() = 0;
+  virtual void NotifyForNextTouchEvent() = 0;
   virtual bool IsReady() = 0;
   virtual void OnDestroy(bool is_close_all) = 0;
   virtual void RegisterDownLoadListener(
       std::shared_ptr<NWebDownloadCallback> downloadListener) = 0;
   virtual void RegisterAccessibilityEventListener(
       std::shared_ptr<NWebAccessibilityEventCallback> accessibilityEventListener) = 0;
-  virtual void RegisterAccessibilityIdGenerator(
-      const AccessibilityIdGenerateFunc accessibilityIdGenerator) const = 0;
   virtual void RegisterReleaseSurfaceListener(
       std::shared_ptr<NWebReleaseSurfaceCallback> releaseSurfaceListener) = 0;
   virtual void RegisterNWebHandler(std::shared_ptr<NWebHandler> handler) = 0;
@@ -91,7 +91,6 @@ class NWebDelegateInterface
   virtual void StartDownload(const char *url) = 0;
   virtual void
   ResumeDownload(std::shared_ptr<NWebDownloadItem> web_download) = 0;
-  virtual void NotifyForNextTouchEvent() = 0;
   virtual void SetAutofillCallback(std::shared_ptr<NWebMessageValueCallback> callback) = 0;
   virtual void FillAutofillData(std::shared_ptr<NWebMessage> data) = 0;
 
@@ -125,11 +124,16 @@ class NWebDelegateInterface
 #if defined(OHOS_NWEB_EX)
   virtual bool CanStoreWebArchive() const = 0;
   virtual void UnRegisterWebAppClientExtensionListener() = 0;
+  virtual void RegisterWebExtensionListener(
+      std::shared_ptr<NWebExtensionCallback> web_extension_listener) = 0;
+  virtual void UnRegisterWebExtensionListener() = 0;
+  virtual void GetImageFromContextNode() = 0;
+  virtual void GetImageFromCache(const std::string& url) = 0;
 #endif  // defined(OHOS_NWEB_EX)
 
 #if defined(OHOS_EX_FREE_COPY)
-  virtual void SelectAndCopy() = 0;
-  virtual bool ShouldShowFreeCopy() = 0;
+  virtual void ShowFreeCopyMenu() = 0;
+  virtual bool ShouldShowFreeCopyMenu() = 0;
 #endif  // OHOS_EX_FREE_COPY
 
 #ifdef OHOS_EX_GET_ZOOM_LEVEL
@@ -158,6 +162,7 @@ class NWebDelegateInterface
                            bool from_overlay) = 0;
   virtual void OnTouchCancel() = 0;
   virtual void OnTouchCancelById(int32_t id, double x, double y, bool from_overlay) = 0;
+
   virtual bool SendKeyEvent(int32_t keyCode, int32_t keyAction) = 0;
   virtual void SendTouchpadFlingEvent(double x, double y, double vx, double vy) = 0;
   virtual void SendMouseWheelEvent(double x,
@@ -223,8 +228,8 @@ class NWebDelegateInterface
       const std::vector<std::string>& methodName,
       std::vector<std::function<char*(std::vector<std::vector<uint8_t>>&,
                                       std::vector<size_t>&)>>&& callback,
-      bool isAsync,
-      const std::string& permission) = 0;
+                                      bool isAsync,
+                                      const std::string& permission) = 0;
   virtual void UnRegisterNativeArkJSFunction(const char* objName) = 0;
 
 #ifdef OHOS_ARKWEB_ADBLOCK
@@ -250,8 +255,6 @@ class NWebDelegateInterface
       int32_t h5_object_id,
       const std::string& h5_method_name,
       const std::vector<std::shared_ptr<NWebValue>>& args) const = 0;
-  virtual bool Discard() = 0;
-  virtual bool Restore() = 0;
   virtual void RegisterNWebJavaScriptCallBack(
       std::shared_ptr<NWebJavaScriptResultCallBack> callback) = 0;
   virtual bool OnFocus(const FocusReason& focusReason = FocusReason::FOCUS_DEFAULT) const = 0;
@@ -341,6 +344,9 @@ class NWebDelegateInterface
 #ifdef OHOS_PAGE_UP_DOWN
   virtual void PageUp(bool top) = 0;
   virtual void PageDown(bool bottom) = 0;
+#ifdef OHOS_GET_SCROLL_OFFSET
+  virtual void GetScrollOffset(float* offset_x, float* offset_y) = 0;
+#endif
 #endif  // #ifdef OHOS_PAGE_UP_DOWN
 
 #if defined(OHOS_INPUT_EVENTS)
@@ -350,6 +356,10 @@ class NWebDelegateInterface
   virtual void SlideScroll(float vx, float vy) = 0;
   virtual bool WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
                                const std::vector<int32_t>& pressedCodes) = 0;
+  virtual bool ScrollByWithResult(float delta_x, float delta_y) = 0;
+#if defined(OHOS_GET_SCROLL_OFFSET)
+  virtual void GetOverScrollOffset(float* offset_x, float* offset_y) = 0;
+#endif
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #if defined(OHOS_EX_FORCE_ZOOM)
@@ -389,12 +399,7 @@ class NWebDelegateInterface
                                    bool isSingleCert) = 0;
 #endif
 
-  virtual void SetWindowId(uint32_t window_id);
-
-#ifdef OHOS_EX_BLANK_TARGET_POPUP_INTERCEPT
-  virtual void SetEnableBlankTargetPopupIntercept(
-      bool enableBlankTargetPopup) = 0;
-#endif
+  virtual void SetWindowId(uint32_t window_id) = 0;
 
 #if defined(OHOS_PRINT)
   virtual void SetToken(void* token) = 0;
@@ -449,9 +454,20 @@ class NWebDelegateInterface
 #if defined(OHOS_SECURITY_STATE)
   virtual int GetSecurityLevel() = 0;
 #endif
+#if defined(OHOS_EX_NAVIGATION)
+  virtual int InsertBackForwardEntry(int index, const std::string& url) = 0;
 
+  virtual int UpdateNavigationEntryUrl(int index, const std::string& url) = 0;
+
+  virtual void ClearForwardList() = 0;
+#endif
   virtual void SetAccessibilityState(cef_state_t accessibilityState) = 0;
+
   virtual void ExecuteAction(int64_t accessibilityId, uint32_t action) = 0;
+
+  virtual void ExecuteAction(int64_t accessibilityId, uint32_t action,
+      const std::map<std::string, std::string>& actionArguments) = 0;
+
   virtual std::shared_ptr<NWebAccessibilityNodeInfo>
   GetFocusedAccessibilityNodeInfo(int64_t accessibilityId,
                                   bool isAccessibilityFocus) = 0;
@@ -460,17 +476,22 @@ class NWebDelegateInterface
   virtual std::shared_ptr<NWebAccessibilityNodeInfo>
   GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
                                       int32_t direction) = 0;
-
-#if defined(OHOS_SECURE_JAVASCRIPT_PROXY)
-  virtual std::string GetLastJavascriptProxyCallingFrameUrl() = 0;
-#endif
-
+  virtual bool Discard() = 0;
+  virtual bool Restore() = 0;
 #ifdef OHOS_ITP
   virtual void EnableIntelligentTrackingPrevention(bool enable) = 0;
   virtual bool IsIntelligentTrackingPreventionEnabled() const = 0;
 #endif
 
-  virtual int ScaleGestureChange(double scale, double centerX, double centerY) const = 0;
+#if defined(OHOS_SECURE_JAVASCRIPT_PROXY)
+  virtual std::string GetLastJavascriptProxyCallingFrameUrl() = 0;
+#endif
+
+#ifdef OHOS_EX_DOWNLOAD
+  virtual NWebDownloadItemState GetDownloadItemState(long item_id) = 0;
+#endif
+
+virtual int ScaleGestureChange(double scale, double centerX, double centerY) const = 0;
 
 #if defined(OHOS_SCREEN_LOCK)
   virtual void SetWakeLockCallback(int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback) = 0;
@@ -480,10 +501,6 @@ class NWebDelegateInterface
   virtual void RegisterOnCreateNativeMediaPlayerListener(
       std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) = 0;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
-
-#ifdef OHOS_EX_DOWNLOAD
-  virtual NWebDownloadItemState GetDownloadItemState(long item_id) = 0;
-#endif
 
 #if defined(OHOS_CLIPBOARD)
   virtual void SetIsRichText(bool is_rich_text) = 0;
@@ -496,16 +513,7 @@ class NWebDelegateInterface
 
 #ifdef OHOS_AI
   virtual void OnTextSelected() = 0;
-#endif
-
-#if defined(OHOS_SOFTWARE_COMPOSITOR)
-  virtual void EnableWholeWebPageDrawing() = 0;
-
-  virtual bool WebPageSnapshot(const char* id,
-                               PixelUnit type,
-                               int width,
-                               int height,
-                               const WebSnapshotCallback callback) = 0;
+  virtual void OnDestroyImageAnalyzerOverlay() = 0;
 #endif
 
 #if OHOS_URL_TRUST_LIST
@@ -518,15 +526,43 @@ class NWebDelegateInterface
       const std::vector<std::string>& pathList) = 0;
 #endif
 
+#ifdef OHOS_ARKWEB_EXTENSIONS
+  virtual void WebExtensionTabCreated(int tab_id) = 0;
+  virtual void WebExtensionTabRemoved(int tab_id) = 0;
+  virtual void WebExtensionTabUpdated(
+      int tab_id,
+      const std::vector<std::string>& changed_property_names,
+      const std::string& url) = 0;
+#endif
+
 #ifdef OHOS_BFCACHE
   virtual void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) = 0;
 #endif
 
+#if defined(OHOS_SOFTWARE_COMPOSITOR)
+  virtual void SetWholePageDrawing() = 0;
+
+  virtual bool WebPageSnapshot(const char* id,
+                               PixelUnit type,
+                               int width,
+                               int height,
+                               const WebSnapshotCallback callback) = 0;
+#endif // OHOS_SOFTWARE_COMPOSITOR
+  virtual void SendAccessibilityHoverEvent(int x, int y) = 0;
+
   virtual bool IsCustomKeyboard() const = 0;
 
   virtual std::shared_ptr<NWebCustomKeyboardHandlerImpl> GetCustomKeyboardHandler() const = 0;
-
   virtual void RefreshAccessibilityManagerClickEvent() = 0;
+
+#ifdef OHOS_MIXED_CONTENT
+  virtual void EnableMixedContentAutoUpgrades(bool enable) = 0; 
+  virtual bool IsMixedContentAutoUpgradesEnabled() = 0;
+#endif
+
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+  virtual void EnableMediaNetworkTrafficPrompt(bool enable) = 0;
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
 };
 }  // namespace OHOS::NWeb
 

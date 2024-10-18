@@ -61,6 +61,10 @@
 #include "ui/gfx/geometry/size_conversions.h"
 #include "ui/gfx/geometry/vector2d_conversions.h"
 
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+#include "cc/layers/toast_layer_impl.h"
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+
 namespace cc {
 namespace {
 // Small helper class that saves the current viewport location as the user sees
@@ -690,6 +694,15 @@ void LayerTreeImpl::PullLayerTreePropertiesFrom(CommitState& commit_state) {
     set_hud_layer(nullptr);
   }
 
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+  if (commit_state.toast_layer_id != Layer::INVALID_ID) {
+    LayerImpl* toast_impl = LayerById(commit_state.toast_layer_id);
+    set_toast_layer(static_cast<ToastLayerImpl*>(toast_impl));
+  } else {
+    set_toast_layer(nullptr);
+  }
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+
   set_background_color(commit_state.background_color);
   set_have_scroll_event_handlers(commit_state.have_scroll_event_handlers);
   set_event_listener_properties(EventListenerClass::kTouchStartOrMove,
@@ -868,6 +881,15 @@ void LayerTreeImpl::PushPropertiesTo(LayerTreeImpl* target_tree) {
         target_tree->LayerById(hud_layer()->id())));
   else
     target_tree->set_hud_layer(nullptr);
+
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+  if (toast_layer()) {
+    target_tree->set_toast_layer(static_cast<ToastLayerImpl*>(
+        target_tree->LayerById(toast_layer()->id())));
+  } else {
+    target_tree->set_toast_layer(nullptr);
+  }
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
 
   // Note: this needs to happen after SetPropertyTrees.
   target_tree->HandleTickmarksVisibilityChange();
@@ -2397,6 +2419,13 @@ static bool PointHitsLayer(const LayerImpl* layer,
   // Skip the HUD layer.
   if (layer == layer->layer_tree_impl()->hud_layer())
     return false;
+
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+  // Skip the Toast layer.
+  if (layer == layer->layer_tree_impl()->toast_layer()) {
+    return false;
+  }
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
 
   return true;
 }

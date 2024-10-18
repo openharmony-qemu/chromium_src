@@ -749,7 +749,8 @@ bool FrameTreeNode::NotifyUserActivation(
     for (FrameTreeNode* node : frame_tree().Nodes()) {
       if (node->current_frame_host()->GetLastCommittedOrigin().IsSameOriginWith(
               current_origin)) {
-        node->current_frame_host()->ActivateUserActivation(notification_type, sticky_only);
+        node->current_frame_host()->ActivateUserActivation(notification_type,
+                                                           sticky_only);
       }
     }
   }

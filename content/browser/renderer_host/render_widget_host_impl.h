@@ -924,6 +924,7 @@ class CONTENT_EXPORT RenderWidgetHostImpl
                      const gfx::Point& touch_point) override;
   gfx::Rect GetScreenRect();
   void OnTextSelected(bool flag);
+  void OnDestroyImageAnalyzerOverlay();
 #endif
 
  protected:
@@ -1106,6 +1107,7 @@ class CONTENT_EXPORT RenderWidgetHostImpl
 
 #if BUILDFLAG(IS_OHOS)
   void DidNativeEmbedEvent(blink::mojom::NativeEmbedTouchEventPtr touchEvent) override;
+  void ReportSlidingFrameRate(const blink::WebGestureEvent& gesture_event);
 #endif
   void DidStartScrollingViewport() override;
   void OnSetCompositorAllowedTouchAction(cc::TouchAction) override {}

@@ -119,6 +119,9 @@ class CONTENT_EXPORT RenderWidgetHostViewAura
   void WasOccluded() override;
 #if BUILDFLAG(IS_OHOS)
   void EvictFrameBackBuffers(bool invisible) override {}
+
+  void SetDoubleTapSupportEnabled(bool enabled) override {}
+  void SetMultiTouchZoomSupportEnabled(bool enabled) override {}
 #endif
   gfx::Rect GetViewBounds() override;
   bool IsMouseLocked() override;

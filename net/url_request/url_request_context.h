@@ -240,7 +240,13 @@ class NET_EXPORT URLRequestContext final {
   }
 
 #ifdef OHOS_EX_NETWORK_CONNECTION
+  handles::NetworkHandle bound_network_for_dns() const { return bound_network_for_dns_; }
   void SetConnectTimeout(int seconds);
+  void BindDnsToNetwork(handles::NetworkHandle network);
+#endif
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  void SetConnectJobWithSecureDnsOnlyTimeout(int second);
+  bool CanUseSecureDnsFallback() const;
 #endif
 
 #if BUILDFLAG(IS_OHOS)
@@ -370,6 +376,10 @@ class NET_EXPORT URLRequestContext final {
   bool require_network_isolation_key_ = false;
 
   handles::NetworkHandle bound_network_;
+
+#ifdef OHOS_EX_NETWORK_CONNECTION
+  handles::NetworkHandle bound_network_for_dns_;
+#endif
 
 #if BUILDFLAG(IS_OHOS)
  base::WeakPtrFactory<URLRequestContext> weak_factory_{this};

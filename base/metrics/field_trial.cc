@@ -724,6 +724,7 @@ void FieldTrialList::CreateFeaturesFromCommandLine(
         command_line.GetSwitchValueASCII(switches::kEnableFeatures),
         command_line.GetSwitchValueASCII(switches::kDisableFeatures));
   }
+
   feature_list->InitializeFromSharedMemory(
       global_->field_trial_allocator_.get());
 }

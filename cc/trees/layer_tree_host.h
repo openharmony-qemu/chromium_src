@@ -96,6 +96,10 @@ struct CompositorCommitData;
 struct OverscrollBehavior;
 struct RenderingStats;
 
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+class ToastLayer;
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+
 // Returned from LayerTreeHost::DeferMainFrameUpdate. Automatically un-defers on
 // destruction.
 class CC_EXPORT ScopedDeferMainFrameUpdate {
@@ -692,6 +696,20 @@ void RegisterClippedVisualViewportSelectionBounds(
   }
   bool is_hud_layer(const Layer*) const;
 
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+  void UpdateToastLayer(const LayerTreeExtraState& state);
+  ToastLayer* toast_layer() {
+    DCHECK(IsMainThread());
+    return toast_layer_.get();
+  }
+  const ToastLayer* toast_layer() const {
+    DCHECK(IsMainThread());
+    return toast_layer_.get();
+  }
+  bool is_toast_layer(const Layer*) const;
+  void ShowToast(const LayerTreeExtraState& state);
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+
   virtual void SetNeedsFullTreeSync();
   void ResetNeedsFullTreeSyncForTesting();
   bool needs_full_tree_sync() const {
@@ -1053,6 +1071,9 @@ void RegisterClippedVisualViewportSelectionBounds(
   gfx::Rect visual_device_viewport_intersection_rect_;
 
   scoped_refptr<HeadsUpDisplayLayer> hud_layer_;
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+  scoped_refptr<ToastLayer> toast_layer_;
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
 
   // Layer id to Layer map.
   std::unordered_map<int, Layer*> layer_id_map_;

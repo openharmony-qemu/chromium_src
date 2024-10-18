@@ -10,8 +10,8 @@
 #if BUILDFLAG(IS_OHOS)
 #include "base/report_loss_frame.h"
 #include "base/ohos/dynamic_frame_loss_monitor.h"
-#include "base/ohos/ltpo/include/dynamic_frame_rate_decision.h"
 #include "base/ohos/ltpo/include/sliding_observer.h"
+#include "base/ohos/ltpo/include/dynamic_frame_rate_decision.h"
 #include "base/ohos/input_sync/input_vsync_sync_lock.h"
 #include "base/task/thread_pool.h"
 #include "base/ohos/ltpo/include/dynamic_frame_rate_decision.h"
@@ -39,7 +39,7 @@ class ExternalBeginFrameSourceOHOS::VSyncUserData {
   VSyncUserData(const scoped_refptr<base::SingleThreadTaskRunner>& current,
                 const base::WeakPtr<viz::ExternalBeginFrameSourceOHOS>& weakPtr)
 #if defined(OHOS_BUGFIX_CRASH)
-      : current_(current), weak_ptr_(weakPtr){
+      : current_(current), weak_ptr_(weakPtr) {
           LOG(INFO) << "VSyncUserData constructor!!!";
       }
 #else
@@ -160,6 +160,7 @@ void ExternalBeginFrameSourceOHOS::OnVSyncImpl(int64_t timestamp,
       }
     }
   }
+  LOG(DEBUG) << "ExternalBeginFrameSourceOHOS::OnVSyncImpl vsync_period_: " << vsync_period_;
   int64_t cur_vsync_frequency = 0;
   if (vsync_period_ != 0) {
     cur_vsync_frequency = (VSYNC_TIME_FOR_CALCULATION - 1) / vsync_period_ + 1;
@@ -216,14 +217,11 @@ ReportLossFrame::GetInstance()->SetVsyncPeriod(vsync_period_);
   if (update_vsync_frequency_ &&
       vsync_frequency_to_update_ != cur_vsync_frequency) {
     vsync_frequency_to_reset_ = cur_vsync_frequency;
-    LOG(DEBUG) << "ExternalBeginFrameSourceOHOS::OnVSyncImpl::UpdateVSyncFrequency vsync_frequency_to_update_: " << vsync_frequency_to_update_ << ", cur_vsync_frequency: " << cur_vsync_frequency;
     TRACE_EVENT1("viz", "ExternalBeginFrameSourceOHOS::OnVSyncImpl::UpdateVSyncFrequency", "VSyncFrequency",
             vsync_frequency_to_update_);
-
     base::ohos::DynamicFrameRateDecision::GetInstance().ReportVideoFrameRate(vsync_frequency_to_update_);
   }
   if (reset_vsync_frequency_) {
-    LOG(DEBUG) << "ExternalBeginFrameSourceOHOS::OnVSyncImpl::ResetVSyncFrequency vsync_frequency_to_reset_: " << vsync_frequency_to_reset_ << ", cur_vsync_frequency: " << cur_vsync_frequency;
     TRACE_EVENT1("viz", "ExternalBeginFrameSourceOHOS::OnVSyncImpl::ResetVSyncFrequency", "VSync",
         vsync_frequency_to_reset_);
     base::ohos::DynamicFrameRateDecision::GetInstance().ReportVideoFrameRate(0);
@@ -249,6 +247,7 @@ void ExternalBeginFrameSourceOHOS::SetEnabled(bool enabled) {
                                  ExternalBeginFrameSourceOHOS::OnVSync);
   }
 }
+
 
 void ExternalBeginFrameSourceOHOS::UpdateVSyncFrequency(int frame_rate) {
   update_vsync_frequency_ = true;
@@ -290,9 +289,9 @@ void ExternalBeginFrameSourceOHOS::TriggerVsync() {
 }
 
 void ExternalBeginFrameSourceOHOS::TriggerVsyncImpl() {
-  TRACE_EVENT0("base", "ExternalBeginFrameSourceOHOS::TriggerVsyncImpl");
-
-  while(!on_vsync_impl_task_queue_.empty()) {
+  TRACE_EVENT1("base", "ExternalBeginFrameSourceOHOS::TriggerVsyncImpl", "on_vsync_impl_task_queue_",
+    on_vsync_impl_task_queue_.size());
+  while (!on_vsync_impl_task_queue_.empty()) {
     auto& [timestamp, userData] = on_vsync_impl_task_queue_.front();
     if (!userData || !userData->current_) {
       LOG(ERROR) << "OnVSync data current is nullptr";

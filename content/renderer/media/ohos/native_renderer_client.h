@@ -46,7 +46,7 @@ class NativeRenderClient : public media::MojoRendererWrapper {
   void OnSurfaceCreated(int native_embed_id);
   void OnSurfaceDestroy();
 
-  void OnSizeChange(const gfx::Rect& rect, const bool need_skip);
+  void OnSizeChange(const gfx::Rect& rect);
 
   // Called on |compositor_task_runner_| whenever |stream_texture_wrapper_| has
   // a new frame.

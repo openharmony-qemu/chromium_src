@@ -488,7 +488,7 @@ TEST(IPAddressSpaceUtilTest,
   auto parsed_headers = ParsedHeaders::New();
   auto remote_endpoint = IPEndPoint();
   for (const auto ip_address_space : {
-           mojom::IPAddressSpace::kLookback,
+           mojom::IPAddressSpace::kLoopback,
            mojom::IPAddressSpace::kLocal,
            mojom::IPAddressSpace::kPublic,
        }) {

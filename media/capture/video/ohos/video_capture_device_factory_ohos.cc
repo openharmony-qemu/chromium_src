@@ -109,7 +109,7 @@ void VideoCaptureDeviceFactoryOHOS::GetDevicesInfo(
   std::vector<VideoCaptureDeviceInfo> devices_info;
 
   std::vector<std::shared_ptr<OHOS::NWeb::VideoDeviceDescriptorAdapter>> devices_desc =
-    OhosAdapterHelper::GetInstance().GetCameraManagerAdapter().GetDevicesInfo();
+  OhosAdapterHelper::GetInstance().GetCameraManagerAdapter().GetDevicesInfo();
 
   LOG(INFO) << "GetDevicesInfo size " << devices_desc.size();
   for (auto single_device_desc : devices_desc) {

@@ -68,6 +68,9 @@ interface MediaPlayer {
 
   [EnableIf=ohos_custom_video_player]
   RequestExitFullscreen();
+
+  [EnableIf=ohos_media_network_traffic_prompt]
+  AllowPlaybackWithMobileData();
 };
 
 // Implemented by the MediaWebContentsObserver. The remote lives in the renderer
@@ -130,6 +133,9 @@ interface MediaPlayerObserver {
 
   [EnableIf=ohos_custom_video_player]
   FullscreenChanged(bool is_fullscreen);
+
+  [EnableIf=ohos_media_network_traffic_prompt]
+  OnPlaybackWithMobileDataAllowed();
 };
 
 // Implemented by MediaWebContentsObserver::MediaPlayerHostImpl in the browser

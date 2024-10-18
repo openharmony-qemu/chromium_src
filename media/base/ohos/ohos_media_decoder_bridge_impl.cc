@@ -7,6 +7,8 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <chrono>
+#include <thread>
 #include "decoder_format_adapter_impl.h"
 
 #include "base/logging.h"
@@ -33,8 +35,7 @@ VideoBridgeCodecConfig::VideoBridgeCodecConfig() = default;
 VideoBridgeCodecConfig::~VideoBridgeCodecConfig() = default;
 
 // static
-std::unique_ptr<MediaCodecDecoderBridgeImpl>
-MediaCodecDecoderBridgeImpl::CreateVideoDecoder(
+std::unique_ptr<MediaCodecDecoderBridgeImpl> MediaCodecDecoderBridgeImpl::CreateVideoDecoder(
     const VideoBridgeCodecConfig& config) {
   LOG(INFO) << "MediaCodecDecoderBridgeImpl::CreateVideoDecoder.";
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
@@ -59,6 +60,17 @@ MediaCodecDecoderBridgeImpl::CreateVideoDecoder(
       codec_type, config.on_buffers_available_cb));
 }
 
+DecoderAdapterCode MediaCodecDecoderBridgeImpl::PrepareForCallback() {
+  if (signal_ == nullptr) {
+    signal_ = make_shared<DecoderBridgeSignal>();
+  }
+
+  if (cb_ == nullptr) {
+    cb_ = make_shared<CodecBridgeCallback>(signal_);
+  }
+  return videoDecoder_->SetCallbackDec(cb_);
+}
+
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::CreateVideoBridgeDecoderByMime(
     std::string mimetype) {
   LOG(INFO) << "MediaCodecDecoderBridgeImpl::CreateVideoBridgeDecoderByMime.";
@@ -68,19 +80,12 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::CreateVideoBridgeDecoderByMime(
   }
   DecoderAdapterCode ret = videoDecoder_->CreateVideoDecoderByMime(mimetype);
   if (ret == DecoderAdapterCode::DECODER_ERROR) {
-    LOG(ERROR) << "create decoder failed.";
+    LOG(ERROR) << "create decoder by mime failed.";
     return ret;
   }
   hasCreated_ = true;
 
-  if (signal_ == nullptr) {
-    signal_ = make_shared<DecoderBridgeSignal>();
-  }
-
-  if (cb_ == nullptr) {
-    cb_ = make_shared<CodecBridgeCallback>(signal_);
-  }
-  return videoDecoder_->SetCallbackDec(cb_);
+  return PrepareForCallback();
 }
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::CreateVideoBridgeDecoderByName(
@@ -94,19 +99,12 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::CreateVideoBridgeDecoderByName(
   DecoderAdapterCode ret =
       videoDecoder_->CreateVideoDecoderByName(name.c_str());
   if (ret == DecoderAdapterCode::DECODER_ERROR) {
-    LOG(ERROR) << "create decoder failed.";
+    LOG(ERROR) << "create decoder by name failed.";
     return ret;
   }
   hasCreated_ = true;
 
-  if (signal_ == nullptr) {
-    signal_ = make_shared<DecoderBridgeSignal>();
-  }
-
-  if (cb_ == nullptr) {
-    cb_ = make_shared<CodecBridgeCallback>(signal_);
-  }
-  return videoDecoder_->SetCallbackDec(cb_);
+  return PrepareForCallback();
 }
 
 MediaCodecDecoderBridgeImpl::MediaCodecDecoderBridgeImpl(
@@ -338,7 +336,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::ReleaseBridgeDecoder() {
 void MediaCodecDecoderBridgeImpl::PopInqueueDec() {
   LOG(DEBUG) << "MediaCodecDecoderBridgeImpl::PopInqueueDec";
 
-  if (signal_ == nullptr) {
+  if (signal_ == nullptr || signal_->isOnError_ || signal_->inputQueue_.empty()) {
     return;
   }
 
@@ -545,6 +543,7 @@ void CodecBridgeCallback::OnNeedOutputData(
                                   std::move(info), std::move(flag)));
     return;
   }
+  // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
   if (!info) {
     LOG(ERROR) << "CodecBridgeCallback::OnNeedOutputData info is NULLL";

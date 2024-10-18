@@ -507,6 +507,7 @@ void VaapiVideoDecodeAccelerator::DecodeTask() {
         // We'll get rescheduled once ProvidePictureBuffers() finishes.
         return;
       }
+
       case AcceleratedVideoDecoder::kRanOutOfStreamData:
         ReturnCurrInputBuffer_Locked();
         break;

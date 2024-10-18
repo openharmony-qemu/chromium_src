@@ -45,6 +45,7 @@ class COMPONENT_EXPORT(UI_BASE) TouchEditable
 
   static int ConvertMenuCommands(int ohos_command_id);
 #endif
+
   // TODO(b/266345972): Consider switching from local coordinates to screen
   // coordinates in this interface and see if it will simplify things.
 

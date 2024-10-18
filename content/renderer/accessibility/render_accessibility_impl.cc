@@ -400,6 +400,35 @@ void RenderAccessibilityImpl::PerformAction(const ui::AXActionData& data) {
       AXActionTargetFactory::CreateFromNodeId(document, plugin_tree_source_,
                                               data.focus_node_id);
 
+  if (target->GetType() == ui::AXActionTarget::Type::kNull) {
+    blink::WebFrame* curFrame = render_frame_->GetWebFrame()->FirstChild();
+    blink::WebFrame* middleFrame = nullptr;
+    int ilayers = 1;
+    // Child document layers max value for limit count
+    const int kLayersMax = 10;
+    while (curFrame && ilayers < kLayersMax) {
+      middleFrame = curFrame;
+      if (middleFrame->ToWebLocalFrame()) {
+        document = middleFrame->ToWebLocalFrame()->GetDocument();
+        target = AXActionTargetFactory::CreateFromNodeId(
+            document, plugin_tree_source_, data.target_node_id);
+        anchor = AXActionTargetFactory::CreateFromNodeId(
+            document, plugin_tree_source_, data.anchor_node_id);
+        focus = AXActionTargetFactory::CreateFromNodeId(
+            document, plugin_tree_source_, data.focus_node_id);
+      } else {
+        break;
+      }
+
+      if (target->GetType() == ui::AXActionTarget::Type::kNull) {
+        curFrame = middleFrame->FirstChild();
+      } else {
+        break;
+      }
+      ilayers = ilayers + 1;
+    }
+  }
+
   // Important: keep this reconciled with AXObject::PerformAction().
   // Actions shouldn't be handled in both places.
   switch (data.action) {

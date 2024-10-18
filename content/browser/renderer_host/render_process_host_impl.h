@@ -102,6 +102,10 @@ namespace android {
 enum class ChildBindingState;
 }
 #endif
+#ifdef OHOS_THEME_FONT
+class File;
+class FilePath;
+#endif
 }  // namespace base
 
 namespace blink {
@@ -158,6 +162,16 @@ struct GlobalRenderFrameHostId;
 typedef base::Thread* (*RendererMainThreadFactoryFunction)(
     const InProcessChildThreadParams& params,
     int32_t renderer_client_id);
+
+#ifdef OHOS_THEME_FONT
+struct ThemeFont {
+  base::FilePath flag_path;
+  base::FilePath manifest_path;
+  base::FilePath font_path;
+  base::File font_file;
+};
+#endif
+
 #if defined(OHOS_RENDER_PROCESS_SHARE)
 typedef std::map<std::string, RenderProcessHost*>
     SharedProcessTokenToProcessMap;
@@ -277,7 +291,7 @@ class CONTENT_EXPORT RenderProcessHostImpl
       override;
   const base::TimeTicks& GetLastInitTime() override;
   bool IsProcessBackgrounded() override;
-
+  
 #ifdef OHOS_RENDER_PROCESS_MODE
   const base::TimeTicks& ProcessBackgroundTime() override;
 #endif
@@ -575,8 +589,7 @@ class CONTENT_EXPORT RenderProcessHostImpl
   }
 
   bool is_initialized() const { return is_initialized_; }
-
-  bool is_dead() const {return is_dead_; }
+  bool is_dead() const { return is_dead_; } 
   // Ensures that this process is kept alive for the specified timeouts. This
   // delays by |unload_handler_timeout| to ensure that unload handlers have a
   // chance to execute before the process shuts down, and by
@@ -770,10 +783,19 @@ class CONTENT_EXPORT RenderProcessHostImpl
     return private_memory_footprint_bytes_;
   }
 #endif
+
 #if defined(OHOS_RENDERER_ANR_DUMP)
   void dumpCurrentJavaScriptStackInMainThread(
       base::OnceCallback<void(const std::string&)> dump_callback) override;
 #endif
+
+#ifdef OHOS_THEME_FONT
+  static ThemeFont* EnsureThemeFont();
+  static bool IsThemeFontValid();
+  void OnThemeFontChange() override;
+  void UpdateThemeFontFile(base::File theme_font_file);
+#endif
+
 #if defined(OHOS_RENDER_PROCESS_SHARE)
   static RenderProcessHost* GetProcessForSharedToken(
       const std::string& shared_render_process_token);
@@ -1292,6 +1314,10 @@ class CONTENT_EXPORT RenderProcessHostImpl
 #if BUILDFLAG(IS_ANDROID)
   // The private memory footprint of the render process.
   uint64_t private_memory_footprint_bytes_ = 0u;
+#endif
+
+#ifdef OHOS_THEME_FONT
+  static std::unique_ptr<ThemeFont> g_theme_font_;
 #endif
 
   // IOThreadHostImpl owns some IO-thread state associated with this

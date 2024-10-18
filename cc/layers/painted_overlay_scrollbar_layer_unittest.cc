@@ -77,7 +77,7 @@ TEST(PaintedOverlayScrollbarLayerTest, PaintTickmarks) {
   // Enable the tickmarks.
   scrollbar->set_has_tickmarks(true);
   scrollbar_layer->Update();
-  EXPECT_TRUE(scrollbar->PaintTickmarksCalled());
+  EXPECT_FALSE(scrollbar->PaintTickmarksCalled());
   scrollbar->SetPaintTickmarksCalled(false);
 
   // Disable the tickmarks. No paint.

@@ -61,12 +61,8 @@ class GpuMemoryBufferImplTest : public testing::Test {
 #endif
 
  protected:
-#if defined(OHOS_UNITTESTS)
-  base::test::TaskEnvironment task_environment_{};
-#else
   base::test::TaskEnvironment task_environment_{
       base::test::TaskEnvironment::MainThreadType::UI};
-#endif
 
  private:
   GpuMemoryBufferSupport gpu_memory_buffer_support_;

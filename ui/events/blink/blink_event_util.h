@@ -38,7 +38,8 @@ blink::WebTouchEvent CreateWebTouchEventFromMotionEvent(
     bool may_cause_scrolling,
     bool hovering
 #if BUILDFLAG(IS_OHOS)
-    , int32_t is_fit_content = 0 
+    ,
+    int32_t is_fit_content = 0 
 #endif
     );
 

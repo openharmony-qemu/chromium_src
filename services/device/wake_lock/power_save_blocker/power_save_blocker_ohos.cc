@@ -28,7 +28,7 @@ class PowerSaveBlocker::Delegate
   mojom::WakeLockType type_;
 };
 
-PowerSaveBlocker::Delegate::Delegate(mojom::WakeLockType type): type_(type) {}
+PowerSaveBlocker::Delegate::Delegate(mojom::WakeLockType type) : type_(type) {}
 
 void PowerSaveBlocker::Delegate::ApplyBlock(const int32_t& id) {
   switch (type_) {

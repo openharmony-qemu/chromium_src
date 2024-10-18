@@ -120,6 +120,14 @@ class NavigationController {
     // static constants.
   };
 
+#if defined(OHOS_EX_NAVIGATION)
+  enum class NavigationEntryUpdateError {
+    UPDATE_OK = 0,
+    ERR_WRONG_OFFSET = -1,
+    ERR_OTHER = -2
+  };
+#endif
+
   // Creates a navigation entry and translates the virtual url to a real one.
   // This is a general call; prefer LoadURL[WithParams] below.
   // Extra headers are separated by \n.
@@ -228,7 +236,7 @@ class NavigationController {
     // data loads.
     GURL virtual_url_for_data_url;
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
     // Used in LOAD_TYPE_DATA loads only. The real data URI is represented
     // as a string to circumvent the restriction on GURL size. This is only
     // needed to pass URLs that exceed the IPC limit (kMaxURLChars). Short
@@ -603,7 +611,14 @@ class NavigationController {
 
   // Gets the BackForwardCache for this NavigationController.
   virtual BackForwardCache& GetBackForwardCache() = 0;
-
+#if defined(OHOS_EX_NAVIGATION)
+  virtual NavigationEntryUpdateError InsertBackForwardEntry(
+      int index,
+      const GURL& url) = 0;
+  virtual NavigationEntryUpdateError UpdateNavigationEntryUrl(
+      int index,
+      const GURL& url) = 0;
+#endif
  private:
   // This interface should only be implemented inside content.
   friend class NavigationControllerImpl;

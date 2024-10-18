@@ -44,6 +44,7 @@
 #include "build/build_config.h"
 #include "sql/database_memory_dump_provider.h"
 #include "sql/initialization.h"
+#include "sql/internal_api_token.h"
 #include "sql/meta_table.h"
 #include "sql/sql_features.h"
 #include "sql/sqlite_result_code.h"
@@ -88,23 +89,29 @@ class ScopedBusyTimeout {
   raw_ptr<sqlite3> db_;
 };
 
-// Helper to "safely" enable writable_schema.  No error checking
-// because it is reasonable to just forge ahead in case of an error.
-// If turning it on fails, then most likely nothing will work, whereas
-// if turning it off fails, it only matters if some code attempts to
-// continue working with the database and tries to modify the
+// RAII-style wrapper that enables `writable_schema` until it goes out of scope.
+// No error checking on the PRAGMA statements because it is reasonable to just
+// forge ahead in case of an error. If turning it on fails, then most likely
+// nothing will work, whereas if turning it off fails, it only matters if some
+// code attempts to continue working with the database and tries to modify the
 // sqlite_schema table (none of our code does this).
 class ScopedWritableSchema {
  public:
-  explicit ScopedWritableSchema(sqlite3* db) : db_(db) {
-    sqlite3_exec(db_, "PRAGMA writable_schema=1", nullptr, nullptr, nullptr);
+  explicit ScopedWritableSchema(base::WeakPtr<Database> db)
+      : db_(std::move(db)) {
+    CHECK(db_->is_open());
+    std::ignore = db_->Execute("PRAGMA writable_schema=1");
   }
   ~ScopedWritableSchema() {
-    sqlite3_exec(db_, "PRAGMA writable_schema=0", nullptr, nullptr, nullptr);
+    // Database invalidates its WeakPtrs before closing the SQLite connection.
+    if (db_) {
+      CHECK(db_->is_open());
+      std::ignore = db_->Execute("PRAGMA writable_schema=0");
+    }
   }
 
  private:
-  raw_ptr<sqlite3> db_;
+  const base::WeakPtr<Database> db_;
 };
 
 // Raze() helper that uses SQLite's online backup API.
@@ -229,6 +236,11 @@ base::FilePath Database::SharedMemoryFilePath(const base::FilePath& db_path) {
   return base::FilePath(db_path.value() + FILE_PATH_LITERAL("-shm"));
 }
 
+base::WeakPtr<Database> Database::GetWeakPtr(InternalApiToken) {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  return weak_factory_.GetWeakPtr();
+}
+
 Database::StatementRef::StatementRef(Database* database,
                                      sqlite3_stmt* stmt,
                                      bool was_valid)
@@ -349,6 +361,11 @@ bool Database::OpenInMemory() {
   return OpenInternal(kSqliteOpenInMemoryPath, OpenMode::kInMemory);
 }
 
+void Database::DetachFromSequence() {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  DETACH_FROM_SEQUENCE(sequence_checker_);
+}
+
 bool Database::OpenTemporary(base::PassKey<Recovery>) {
   TRACE_EVENT0("sql", "Database::OpenTemporary");
 
@@ -358,6 +375,9 @@ bool Database::OpenTemporary(base::PassKey<Recovery>) {
 
 void Database::CloseInternal(bool forced) {
   TRACE_EVENT0("sql", "Database::CloseInternal");
+
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+
   // TODO(shess): Calling "PRAGMA journal_mode = DELETE" at this point
   // will delete the -journal file.  For ChromiumOS or other more
   // embedded systems, this is probably not appropriate, whereas on
@@ -399,6 +419,9 @@ void Database::CloseInternal(bool forced) {
           ->UnregisterAndDeleteDumpProviderSoon(
               std::move(memory_dump_provider_));
     }
+
+    // Invalidate any `WeakPtr`s held by scoping helpers.
+    weak_factory_.InvalidateWeakPtrs();
 
     auto sqlite_result_code = ToSqliteResultCode(sqlite3_close(db_));
 
@@ -964,6 +987,8 @@ void Database::TrimMemory() {
 bool Database::Raze() {
   TRACE_EVENT0("sql", "Database::Raze");
 
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+
   absl::optional<base::ScopedBlockingCall> scoped_blocking_call;
   InitScopedBlockingCall(FROM_HERE, &scoped_blocking_call);
 
@@ -1021,7 +1046,7 @@ bool Database::Raze() {
   // sqlite3.c lockBtree().]
   // TODO(shess): With this, "PRAGMA auto_vacuum" and "PRAGMA
   // page_size" can be used to query such a database.
-  ScopedWritableSchema writable_schema(db_);
+  ScopedWritableSchema writable_schema(weak_factory_.GetWeakPtr());
 
 #if BUILDFLAG(IS_WIN)
   // On Windows, truncate silently fails when applied to memory-mapped files.

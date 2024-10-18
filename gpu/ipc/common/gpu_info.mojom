@@ -104,6 +104,8 @@ struct VideoEncodeAcceleratorSupportedProfile {
 enum ImageDecodeAcceleratorType {
   kJpeg,
   kWebP,
+  [EnableIf=enable_heif_decoder]
+  kHeif,
   kUnknown,
 };
 

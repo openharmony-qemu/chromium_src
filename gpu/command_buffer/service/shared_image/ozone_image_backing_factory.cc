@@ -198,6 +198,44 @@ std::unique_ptr<SharedImageBacking> OzoneImageBackingFactory::CreateSharedImage(
   return backing;
 }
 
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
+std::unique_ptr<SharedImageBacking> OzoneImageBackingFactory::CreateSharedImage(
+    const Mailbox& mailbox,
+    gfx::GpuMemoryBufferHandle handle,
+    gfx::BufferFormat buffer_format,
+    gfx::BufferPlane plane,
+    const gfx::Size& size,
+    const gfx::ColorSpace& color_space,
+    GrSurfaceOrigin surface_origin,
+    SkAlphaType alpha_type,
+    uint32_t usage,
+    void* window_buffer) {
+  DCHECK_EQ(handle.type, gfx::NATIVE_PIXMAP);
+  ui::SurfaceFactoryOzone* surface_factory =
+      ui::OzonePlatform::GetInstance()->GetSurfaceFactoryOzone();
+  scoped_refptr<gfx::NativePixmap> pixmap =
+      surface_factory->CreateNativePixmapFromHandle(
+          kNullSurfaceHandle, size, buffer_format,
+          std::move(handle.native_pixmap_handle), window_buffer);
+  if (!pixmap) {
+    LOG(ERROR) << "[HeifSupport] OzoneImageBackingFactory::CreateSharedImage pixmap is null.";
+    return nullptr;
+  }
+
+  const gfx::Size plane_size = gpu::GetPlaneSize(plane, size);
+  const viz::ResourceFormat plane_format =
+      viz::GetResourceFormat(GetPlaneBufferFormat(plane, buffer_format));
+  auto backing = std::make_unique<OzoneImageBacking>(
+      mailbox, viz::SharedImageFormat::SinglePlane(plane_format), plane,
+      plane_size, color_space, surface_origin, alpha_type, usage,
+      shared_context_state_.get(), std::move(pixmap), dawn_procs_, workarounds_,
+      use_passthrough_);
+  backing->SetCleared();
+
+  return backing;
+}
+#endif // BUILDFLAG(ENABLE_HEIF_DECODER)
+
 std::unique_ptr<SharedImageBacking> OzoneImageBackingFactory::CreateSharedImage(
     const Mailbox& mailbox,
     viz::SharedImageFormat format,

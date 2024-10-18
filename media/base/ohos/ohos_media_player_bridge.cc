@@ -14,6 +14,7 @@
 
 namespace media {
 
+constexpr int QUEUE_SIZE = 3;
 static constexpr int PLAYER_INIT_OK = 0;
 static constexpr int PLAYER_INIT_ERROR = -1;
 
@@ -115,7 +116,7 @@ void OHOSMediaPlayerBridge::Prepare() {
   consumer_surface_->SetUserData(
       surfaceFormat,
       std::to_string(OHOS::NWeb::PixelFormatAdapter::PIXEL_FMT_RGBA_8888));
-  consumer_surface_->SetQueueSize(3);
+  consumer_surface_->SetQueueSize(QUEUE_SIZE);
   ret = player_->SetVideoSurface(consumer_surface_);
   if (ret != 0) {
     LOG(ERROR) << "SetVideoSurface error::ret=" << ret;
@@ -131,12 +132,25 @@ void OHOSMediaPlayerBridge::Prepare() {
 
 void OHOSMediaPlayerBridge::StartInternal() {
   if (player_ && prepared_) {
-    player_->Play();
+    if (!pause_when_prepared_) {
+      player_->Play();
+    } else {
+      LOG(INFO) << "OHOSMediaPlayerBridge StartInternal start canceled, because of paused when perpared";
+      pause_when_prepared_ = false;
+    }
   }
 }
 
 void OHOSMediaPlayerBridge::Pause() {
-  if (player_ && player_state_ == OHOS::NWeb::PlayerAdapter::PLAYER_STARTED) {
+  if ((player_ && player_state_ != OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_STARTED &&
+                  player_state_ != OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_PAUSED &&
+                  player_state_ != OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_STOPPED &&
+                  player_state_ != OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_PLAYBACK_COMPLETE) || pending_play_) {
+    LOG(INFO) << "OHOSMediaPlayerBridge Pause when perpared!!";
+    pause_when_prepared_ = true;
+  }
+  if (player_ && player_state_ == OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_STARTED) {
+    LOG(INFO) << "OHOSMediaPlayerBridge Pause successful!!";
     int32_t ret = player_->Pause();
     if (ret != 0) {
       LOG(ERROR) << "Pause error::ret=" << ret;
@@ -151,16 +165,11 @@ void OHOSMediaPlayerBridge::Pause() {
 void OHOSMediaPlayerBridge::SeekTo(base::TimeDelta time) {
   pending_seek_ = time;
 
-  if (player_state_ == OHOS::NWeb::PlayerAdapter::PLAYER_PLAYBACK_COMPLETE) {
-    seeking_on_playback_complete_ = true;
-    return;
-  }
-
+  LOG(INFO) << "OHOSMediaPlayerBridge::SeekTo time=" << time.InMilliseconds();
   if (!prepared_) {
     should_seek_on_prepare_ = true;
     return;
   }
-
   SeekInternal(time);
 }
 
@@ -223,11 +232,17 @@ base::TimeDelta OHOSMediaPlayerBridge::GetMediaTime() {
   }
 
   int32_t time = -1;
-  (void)player_->GetCurrentTime(time);
+  int32_t ret = player_->GetCurrentTime(time);
+  if (ret == 0 && time == -1) {
+    //if is livestream, return system time
+    auto system_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
+    return base::Milliseconds(system_time);
+  }
   return base::Milliseconds(time);
 }
 
 void OHOSMediaPlayerBridge::SeekDone() {
+  LOG(INFO) << "OHOSMediaPlayerBridge::SeekDone()";
   seek_complete_ = true;
 }
 
@@ -280,11 +295,13 @@ void OHOSMediaPlayerBridge::OnPlayerStateUpdate(
   if (!player_) {
     return;
   }
-
+  LOG(INFO) << "OHOSMediaPlayerBridge OnPlayerStateUpdate: from: " << static_cast<int32_t>(player_state_)
+    << ", to: " << static_cast<int32_t>(player_state);
   if (player_state_ ==
           OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_PLAYBACK_COMPLETE &&
       player_state != player_state_) {
     seeking_on_playback_complete_ = false;
+    pause_when_prepared_ = false;
   }
 
   if (player_state ==
@@ -359,7 +376,7 @@ void OHOSMediaPlayerBridge::OnBufferAvailable(
 
   int32_t coded_height;
   int32_t coded_width;
-
+ 
   // video frame height must be 32*N
   const int step_height = 32;
   // argb format video frame should divided by 4
@@ -369,8 +386,8 @@ void OHOSMediaPlayerBridge::OnBufferAvailable(
   } else {
     coded_height = (buffer->GetHeight() / step_height + 1) * step_height;
   }
-  if (buffer->GetFormat() ==
-      OHOS::NWeb::PixelFormatAdapter::PIXEL_FMT_RGBA_8888) {
+
+  if (buffer->GetFormat() == OHOS::NWeb::PixelFormatAdapter::PIXEL_FMT_RGBA_8888) {
     coded_width = buffer->GetStride() / argb_stride_step;
     coded_height = buffer->GetHeight();
   } else {

@@ -48,7 +48,7 @@ bool IsImageSizeValidForGpuMemoryBufferFormat(const gfx::Size& size,
     case gfx::BufferFormat::YUV_420_BIPLANAR:
     case gfx::BufferFormat::YUVA_420_TRIPLANAR:
     case gfx::BufferFormat::P010:
-#if BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
       // Allow odd size for CrOS.
       // TODO(https://crbug.com/1208788, https://crbug.com/1224781): Merge this
       // with the path that uses gfx::IsOddHeightMultiPlanarBuffersAllowed.

@@ -71,8 +71,15 @@ component("cef_nweb") {
     ":nweb_config",
   ]
 
+  if (use_libfuzzer) {
+    configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
+    configs += [ "//build/config/gcc:symbol_visibility_default" ]
+    cflags = [ "-DOHOS_FUZZ_COMPILE_ERROR_FIX" ]
+  }
+
   deps = [
     "//ohos_glue:ohos_adapter_glue_source",
+    "//third_party:huawei_securec",
   ]
 
   sources = [
@@ -168,8 +175,6 @@ component("cef_nweb") {
     "src/sysevent/event_reporter.h",
     "src/sysevent/oh_web_performance_timing.cc",
     "src/sysevent/oh_web_performance_timing.h",
-    "src/nweb__resize_helper.cc",
-    "src/nweb__resize_helper.h",
   ]
 
   #ifdef OHOS_SCHEME_HANDLER
@@ -193,15 +198,15 @@ component("cef_nweb") {
 
   #endif
 
-  if (defined(ohos_ndk) && ohos_ndk) {
-    sources += [
-      "src/ndk/arkweb_model.cc",
-      "src/ndk/arkweb_native_javascript_execute_callback.cc",
-      "src/ndk/arkweb_native_javascript_execute_callback.h",
-      "src/ndk/arkweb_native_object.cc",
-      "src/ndk/arkweb_native_object.h",
-    ]
-  }
+  sources += [
+    "src/ndk/arkweb_model.cc",
+    "src/ndk/arkweb_native_javascript_execute_callback.cc",
+    "src/ndk/arkweb_native_javascript_execute_callback.h",
+    "src/ndk/arkweb_native_object.cc",
+    "src/ndk/arkweb_native_object.h",
+    "src/ndk/arkweb_native_web_message_callback.cc",
+    "src/ndk/arkweb_native_web_message_callback.h",
+  ]
 
   sources += [
     "src/cef_delegate/nweb_value_convert.cc",
@@ -381,6 +386,7 @@ component("nweb_sources") {
   deps = [
     ":cef_nweb",
     ":nweb_hilog",
+    "//third_party/boringssl",
     "//ohos_glue:ohos_nweb_glue_source",
   ]
 
@@ -429,5 +435,52 @@ shared_library("libnweb_render") {
     "//cef:libcef_dll_wrapper",
     "//cef:libweb_engine",
     "//sandbox:sandbox",
+  ]
+}
+
+#################################################
+
+source_set("unittests") {
+  testonly = true
+
+  configs += [
+    ":nweb_config",
+    ":cef_nweb_config",
+  ]
+
+  include_dirs = [ "//ppapi/lib/gl/include" ]
+
+  sources = [
+    "src/cef_delegate/nweb_delegate_unittest.cc",
+    "src/cef_delegate/nweb_event_handler_unittest.cc",
+    "src/cef_delegate/nweb_handler_delegate_unittest.cc",
+    "src/cef_delegate/nweb_pipe_resource_handler_unittest.cc",
+    "src/cef_delegate/nweb_preference_delegate_unittest.cc",
+    "src/cef_delegate/nweb_render_handler_unittest.cc",
+    "src/cef_delegate/nweb_scheme_handler_factory_unittest.cc",
+    "src/ndk/scheme_handler/http_body_stream_unittest.cc",
+    "src/ndk/scheme_handler/resource_handler_unittest.cc",
+    "src/ndk/scheme_handler/resource_request_unittest.cc",
+    "src/ndk/scheme_handler/response_unittest.cc",
+    "src/nweb_impl_unittest.cc",
+    "src/nweb_input_handler_unittest.cc",
+    "src/nweb_inputmethod_handler_unittest.cc",
+    "src/set_renderer_seccomp_policy_unittest.cc",
+  ]
+
+  deps = [
+    ":nweb_sources",
+    ":cef_nweb",
+    "//third_party/boringssl",
+    "//ohos_glue:ohos_nweb_glue_source",
+    "//ohos_glue:ohos_adapter_glue_source",
+    "//third_party/boringssl",
+    "//components/web_cache/browser:browser",
+    "//cef:libcef_static",
+  ]
+
+  public_deps = [
+    "//testing/gmock",
+    "//third_party/abseil-cpp:absl",
   ]
 }

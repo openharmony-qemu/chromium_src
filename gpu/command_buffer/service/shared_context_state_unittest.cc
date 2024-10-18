@@ -9,7 +9,6 @@
 #include <string>
 #include <utility>
 
-#include "base/base_switches.h"
 #include "base/command_line.h"
 #include "base/functional/callback_helpers.h"
 #include "base/memory/ptr_util.h"
@@ -38,14 +37,6 @@ namespace gpu {
 class SharedContextStateTest : public ::testing::Test {
  public:
   SharedContextStateTest() = default;
-#if defined(OHOS_UNITTESTS) 
-  void SetUp() override {
-    base::CommandLine::ForCurrentProcess()->AppendSwitch(
-        switches::kDisableLowEndDeviceMode); 
-    base::CommandLine::ForCurrentProcess()->RemoveSwitch(
-        switches::kEnableLowEndDeviceMode);  
-  }
-#endif
 };
 
 TEST_F(SharedContextStateTest, InitFailsIfLostContext) {

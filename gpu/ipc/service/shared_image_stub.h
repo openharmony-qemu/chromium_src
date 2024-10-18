@@ -49,6 +49,19 @@ class GPU_IPC_SERVICE_EXPORT SharedImageStub : public MemoryTracker {
   SharedImageDestructionCallback GetSharedImageDestructionCallback(
       const Mailbox& mailbox);
 
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
+  bool CreateSharedImage(const Mailbox& mailbox,
+                         gfx::GpuMemoryBufferHandle handle,
+                         gfx::BufferFormat format,
+                         gfx::BufferPlane plane,
+                         const gfx::Size& size,
+                         const gfx::ColorSpace& color_space,
+                         GrSurfaceOrigin surface_origin,
+                         SkAlphaType alpha_type,
+                         uint32_t usage,
+                         void* window_buffer);
+#endif // BUILDFLAG(ENABLE_HEIF_DECODER)
+
   bool CreateSharedImage(const Mailbox& mailbox,
                          gfx::GpuMemoryBufferHandle handle,
                          gfx::BufferFormat format,

@@ -39,7 +39,9 @@ BackgroundTaskPolicy::BackgroundTaskPolicy()
       is_request_background_task_(false),
       visible_page_num_(0),
       media_playing_num_(0),
-      audio_state_num_(0) {}
+      audio_state_num_(0),
+      last_avsession_page_node_(nullptr),
+      is_main_frame_url_changed_(false) {}
 BackgroundTaskPolicy::~BackgroundTaskPolicy() = default;
 
 void BackgroundTaskPolicy::OnBeforeGraphDestroyed(Graph* graph) {
@@ -80,8 +82,7 @@ void BackgroundTaskPolicy::OnIsVisibleChanged(const PageNode* page_node) {
     LOG(ERROR) << BG_TASK_TAG << " page_node is null";
     return;
   }
-  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession IsVisible="
-            << (page_node->IsVisible() ? "true" : "false")
+  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession IsVisible=" << (page_node->IsVisible() ? "true" : "false")
             << ", IsMediaPlaying=" << (page_node->IsMediaPlaying() ? "true" : "false")
             << ", is_main_frame_url_changed_ = " << is_main_frame_url_changed_;
 
@@ -91,7 +92,7 @@ void BackgroundTaskPolicy::OnIsVisibleChanged(const PageNode* page_node) {
     visible_page_num_ = 0;
   }
 
-  // switch between two tabs 
+  // switch between two tabs
   if (page_node->IsVisible()) {
     if (last_avsession_page_node_ != page_node) {
        bool ret = false;
@@ -102,7 +103,7 @@ void BackgroundTaskPolicy::OnIsVisibleChanged(const PageNode* page_node) {
     }
   } 
   // pause to bg
-  else if (!page_node->IsVisible() &&  !page_node->IsMediaPlaying()) { 
+  else if (!page_node->IsVisible() && !page_node->IsMediaPlaying()) {
        bool ret = false;
        SetWebviewShow(page_node, false, ret);
        if (ret) {
@@ -121,7 +122,7 @@ void BackgroundTaskPolicy::OnIsVisibleChanged(const PageNode* page_node) {
 }
 
 void BackgroundTaskPolicy::OnIsMediaPlayingChanged(const PageNode* page_node) {
-  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession page_node=" << page_node 
+  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession page_node=" << page_node
             << ", last_avsession_page_node_=" << last_avsession_page_node_
             << ", is_main_frame_url_changed_=" << is_main_frame_url_changed_;
   if (page_node == nullptr) {
@@ -158,7 +159,18 @@ void BackgroundTaskPolicy::OnIsMediaPlayingChanged(const PageNode* page_node) {
          last_avsession_page_node_ = nullptr;
        }
     }
-    //others no change 
+    //when current page to end of media
+    else if (page_node->IsVisible() && !page_node->IsMediaPlaying() &&
+             (last_avsession_page_node_ == page_node) &&
+             IsEndOfMedia(page_node) &&
+             !is_main_frame_url_changed_) {
+       bool ret = false;
+       SetWebviewShow(page_node, false, ret);
+       if (ret) {
+         last_avsession_page_node_ = nullptr;
+       }
+    }
+    //others no change
     else {
       is_main_frame_url_changed_ = false;
     }
@@ -180,8 +192,9 @@ void BackgroundTaskPolicy::OnIsMediaPlayingChanged(const PageNode* page_node) {
 }
 
 void BackgroundTaskPolicy::OnIsAudibleChanged(const PageNode* page_node) {
+  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession page_node=" << page_node;
   if (page_node == nullptr) {
-    LOG(ERROR) << BG_TASK_TAG << " page_node is null";
+    LOG(ERROR) << BG_TASK_TAG << __FUNCTION__ << " page_node is null return";
     return;
   }
 
@@ -225,6 +238,36 @@ void BackgroundTaskPolicy::MaybeChangeBackgroundTask(const PageNode* page_node) 
   } else {
     LOG(INFO) << BG_TASK_TAG << " request bg task failed";
   }
+}
+
+bool BackgroundTaskPolicy::IsControllable(const PageNode* page_node) {
+  bool ret = false;
+  if (page_node) {
+    auto webcontents = page_node->GetContentsProxy().Get();
+    if (webcontents) {
+      content::MediaSessionImpl* mediaSession =
+          content::MediaSessionImpl::FromWebContents(webcontents);
+      if (mediaSession) {
+         ret = mediaSession->IsControllable();
+      }
+    }
+  }
+  return ret;
+}
+
+bool BackgroundTaskPolicy::IsEndOfMedia(const PageNode* page_node) {
+  bool ret = false;
+  if (page_node) {
+    auto webcontents = page_node->GetContentsProxy().Get();
+    if (webcontents) {
+      content::MediaSessionImpl* mediaSession =
+          content::MediaSessionImpl::FromWebContents(webcontents);
+      if (mediaSession) {
+         ret = mediaSession->IsEndOfMedia();
+      }
+    }
+  }
+  return ret;
 }
 
 void BackgroundTaskPolicy::SetWebviewShow(const PageNode* page_node, bool show, bool &ret) {
@@ -275,8 +318,8 @@ void BackgroundTaskPolicy::SetWebviewShowForAudio(const PageNode* page_node, boo
 void BackgroundTaskPolicy::OnMainFrameUrlChanged(const PageNode* page_node) {
   LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession in page_node=" << page_node;
   if (page_node) {
-    LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession IsVisible="
-          << (page_node->IsVisible() ? "true" : "false")
+    LOG(INFO) << BG_TASK_TAG << __FUNCTION__
+          << " media avsession IsVisible=" << (page_node->IsVisible() ? "true" : "false")
           << ", IsMediaPlaying=" << (page_node->IsMediaPlaying() ? "true" : "false")
           << ", IsAudible=" << (page_node->IsAudible() ? "true" : "false");
     //when backward to a playing page   1 1
@@ -284,11 +327,11 @@ void BackgroundTaskPolicy::OnMainFrameUrlChanged(const PageNode* page_node) {
        bool ret = false;
        SetWebviewShow(page_node, true, ret);
        if (ret) {
-         last_avsession_page_node_ = const_cast<PageNode*>(page_node);;
+         last_avsession_page_node_ = const_cast<PageNode*>(page_node);
        }
     }
     //when backward to a not playing page   1 0
-    else if(page_node->IsVisible() && !page_node->IsMediaPlaying()) {
+    else if (page_node->IsVisible() && !page_node->IsMediaPlaying()) {
        bool ret = false;
        SetWebviewShow(page_node, false, ret);
        if (ret) {
@@ -297,8 +340,8 @@ void BackgroundTaskPolicy::OnMainFrameUrlChanged(const PageNode* page_node) {
     } else {
     }
 
-    //when backward to a not playing page  1 0 for onlyaudio
-    if(!page_node->IsAudible()) {
+    //when backward to a not playing page   1 0 for onlyaudio
+    if (!page_node->IsAudible()) {    //0
        bool ret = false;
        SetWebviewShowForAudio(page_node, false, ret);
        if (ret) {
@@ -310,8 +353,9 @@ void BackgroundTaskPolicy::OnMainFrameUrlChanged(const PageNode* page_node) {
 }
 
 void BackgroundTaskPolicy::OnPageStateChanged(const PageNode* page_node,
-                        PageState old_state){
-  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession in out page_node=" << page_node << " old_state=" << (int32_t)old_state;
+                        PageState old_state) {
+  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession in out page_node=" << page_node
+            << " old_state=" << (int32_t)old_state;
 }
 
 void BackgroundTaskPolicy::OnOpenerFrameNodeChanged(const PageNode* page_node, const FrameNode* previous_opener) {
@@ -332,7 +376,8 @@ void BackgroundTaskPolicy::OnTypeChanged(const PageNode* page_node,
 
 void BackgroundTaskPolicy::OnLoadingStateChanged(const PageNode* page_node,
                             PageNode::LoadingState previous_state) {
-  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession in out page_node=" << page_node << ", previous_state=" << (int32_t)previous_state;
+  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession in out page_node=" << page_node
+            << ", previous_state=" << (int32_t)previous_state;
 }
 
 void BackgroundTaskPolicy::OnUkmSourceIdChanged(const PageNode* page_node) {
@@ -354,28 +399,22 @@ void BackgroundTaskPolicy::OnPageIsHoldingIndexedDBLockChanged(const PageNode* p
 void BackgroundTaskPolicy::OnMainFrameDocumentChanged(const PageNode* page_node) {
   LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession in out page_node=" << page_node;
 }
-
 void BackgroundTaskPolicy::OnHadFormInteractionChanged(const PageNode* page_node) {
   LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession in out page_node=" << page_node;
 }
-
 void BackgroundTaskPolicy::OnHadUserEditsChanged(const PageNode* page_node) {
   LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession in out page_node=" << page_node;
 }
-
 void BackgroundTaskPolicy::OnTitleUpdated(const PageNode* page_node) {
   LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession in out page_node=" << page_node;
 }
-
 void BackgroundTaskPolicy::OnFaviconUpdated(const PageNode* page_node) {
   LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession in out page_node=" << page_node;
 }
-
 void BackgroundTaskPolicy::OnAboutToBeDiscarded(const PageNode* page_node,
                           const PageNode* new_page_node) {
   LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession in out page_node=" << page_node;
 }
-
 void BackgroundTaskPolicy::OnFreezingVoteChanged(
     const PageNode* page_node,
     absl::optional<freezing::FreezingVote> previous_vote) {

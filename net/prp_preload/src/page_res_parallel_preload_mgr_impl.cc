@@ -5,6 +5,7 @@
 #include "page_res_parallel_preload_mgr_impl.h"
 
 #include "base/logging.h"
+#include "base/ohos/sys_info_utils.h"
 #include "ohos_adapter_helper.h"
 
 namespace {
@@ -18,9 +19,7 @@ PRParallelPreloadMgr& PRParallelPreloadMgr::GetInstance() {
 }
 bool PRParallelPreloadMgr::PRParallelPreloadEnabled() {
   static bool res = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetBoolParameter(
-    "web.PRPPreload.enable", false) &&
-    OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetProductDeviceType() ==
-      OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE;
+    "web.PRPPreload.enable", false) && base::ohos::IsMobileDevice();
   return res;
 }
 

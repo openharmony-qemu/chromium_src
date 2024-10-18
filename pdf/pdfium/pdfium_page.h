@@ -49,6 +49,7 @@ class PDFiumPage {
     ScopedUnloadPreventer(const ScopedUnloadPreventer& that);
     ScopedUnloadPreventer& operator=(const ScopedUnloadPreventer& that);
     ~ScopedUnloadPreventer();
+
    private:
     raw_ptr<PDFiumPage> page_;
   };

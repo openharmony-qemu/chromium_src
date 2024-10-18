@@ -254,6 +254,7 @@ class ChildProcessLauncherHelper
 
 #if BUILDFLAG(IS_OHOS)
   base::TerminationStatus GetProcessStatusByExitCode(int status);
+  static bool TerminateProcessByAppMgr(const base::Process& process);
 #endif
 
 #if BUILDFLAG(IS_ANDROID)

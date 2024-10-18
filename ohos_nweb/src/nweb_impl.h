@@ -25,12 +25,17 @@
 #include <EGL/eglplatform.h>
 #include "capi/nweb_app_client_extension_callback.h"
 #include "capi/nweb_download_delegate_callback.h"
+#include "capi/nweb_extension_api_callback.h"
 #include "nweb.h"
 #include "nweb_download_callback.h"
 #include "nweb_errors.h"
 #include "nweb_input_handler.h"
 #include "nweb_inputmethod_handler.h"
 #include "nweb_output_handler.h"
+
+// #ifdef OHOS_EX_PERMISSION
+#include "capi/nweb_permission_request.h"
+// #endif
 
 namespace OHOS::NWeb {
 class NWebImpl : public NWeb {
@@ -53,7 +58,6 @@ class NWebImpl : public NWeb {
   void OnTouchMove(const std::vector<std::shared_ptr<NWebTouchPointInfo>> &touch_point_infos,
                    bool fromOverlay = false) override;
   void OnTouchCancel() override;
-  void OnTouchCancelById(int32_t id, double x, double y, bool from_overlay) override;
   void OnNavigateBack() override;
   bool SendKeyEvent(int32_t keyCode, int32_t keyAction) override;
   void SendTouchpadFlingEvent(double x, double y, double vx, double vy) override;
@@ -136,7 +140,7 @@ class NWebImpl : public NWeb {
                              const std::vector<std::string>& method_list,
                              const std::vector<std::string>& async_method_list,
                              const int32_t object_id) override;
-  void RegisterArkJSfunction(const std::string& object_name,
+  void RegisterArkJSfunctionV2(const std::string& object_name,
                              const std::vector<std::string>& method_list,
                              const std::vector<std::string>& async_method_list,
                              const int32_t object_id,
@@ -192,6 +196,8 @@ class NWebImpl : public NWeb {
       int32_t direction) override;
   void SetAccessibilityState(bool state) override;
   void SuggestionSelected(int index) override;
+  bool Discard() override;
+  bool Restore() override;
   void PutSpanstringConvertHtmlCallback(std::shared_ptr<NWebSpanstringConvertHtmlCallback> callback) override;
 #ifdef OHOS_SCREEN_LOCK
   void RegisterScreenLockFunction(int32_t windowId,
@@ -259,9 +265,6 @@ class NWebImpl : public NWeb {
       const std::string& port_handle,
       std::shared_ptr<NWebMessageValueCallback> callback) override;
 #endif  // defined(OHOS_MSGPORT)
-#ifdef OHOS_EX_BLANK_TARGET_POPUP_INTERCEPT
-  void SetEnableBlankTargetPopupIntercept(bool enableBlankTargetPopup) const;
-#endif
 
   void SetAutofillCallback(std::shared_ptr<NWebMessageValueCallback> callback) override;
   std::shared_ptr<NWebHistoryList> GetHistoryList() override;
@@ -270,6 +273,9 @@ class NWebImpl : public NWeb {
 #ifdef OHOS_PAGE_UP_DOWN
   void PageUp(bool top) override;
   void PageDown(bool bottom) override;
+#ifdef OHOS_GET_SCROLL_OFFSET
+  void GetScrollOffset(float* offset_x, float* offset_y) override;
+#endif
 #endif  // #endif OHOS_PAGE_UP_DOWN
 
 #if defined(OHOS_INPUT_EVENTS)
@@ -289,6 +295,7 @@ class NWebImpl : public NWeb {
                                  double vx,
                                  double vy,
                                  const std::vector<int32_t>& pressedCodes) override;
+  bool ScrollByWithResult (float delta_x, float delta_y) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
   bool GetCertChainDerData(std::vector<std::string>& certChainData,
@@ -327,11 +334,11 @@ class NWebImpl : public NWeb {
   void SetToken(void* token) override;
   void* CreateWebPrintDocumentAdapter(const std::string& jobName) override;
   void SetNestedScrollMode(const NestedScrollMode& nestedScrollMode) override;
+  bool IsSafeBrowsingEnabled() override;
+  void EnableSafeBrowsing(bool enable) override;
   int GetSecurityLevel() override;
   void SetPrintBackground(bool enable) override;
   bool GetPrintBackground() override;
-  bool IsSafeBrowsingEnabled() override;
-  void EnableSafeBrowsing(bool enable) override;
   void PrecompileJavaScript(const std::string& url,
                             const std::string& script,
                             std::shared_ptr<CacheOptions>& cacheOptions,
@@ -344,10 +351,6 @@ class NWebImpl : public NWeb {
 #endif
 
   std::string GetLastJavascriptProxyCallingFrameUrl() override;
-  void DragResize(uint32_t width,
-                  uint32_t height,
-                  uint32_t pre_height,
-                  uint32_t pre_width) override;
 
 #if defined(OHOS_INPUT_EVENTS)
   void SetVirtualKeyBoardArg(int32_t width, int32_t height, double keyboard) override;
@@ -375,20 +378,28 @@ class NWebImpl : public NWeb {
 #if defined (OHOS_NWEB_EX)
   bool CanStoreWebArchive() const;
   static const std::vector<std::string>& GetCommandLineArgsForNWebEx();
-  static void InitBrowserServiceApi(std::vector<std::string>& browser_args);
+  static void InitBrowserServiceApi(std::vector<std::string>& browser_args, int32_t api_level);
   static bool GetBrowserServiceApiEnabled();
+  static int32_t GetBrowserServiceSdkAPILevel();
 
   void PutWebAppClientExtensionCallback(
       std::shared_ptr<NWebAppClientExtensionCallback>
           web_app_client_extension_listener);
   void RemoveWebAppClientExtensionCallback();
 
+  void PutWebExtensionCallback(
+      std::shared_ptr<NWebExtensionCallback> web_extension_callback);
+  void RemoveWebExtensionCallback();
+  void GetImageFromContextNode();
+  void GetImageFromCache(const std::string& url);
   void ReloadOriginalUrl() const;
   void SetBrowserUserAgentString(const std::string& user_agent);
 #endif  // defined(OHOS_NWEB_EX)
 
 #ifdef OHOS_EX_NETWORK_CONNECTION
   static void SetConnectTimeout(int32_t seconds);
+  static void BindToNetwork(int network_id);
+  static void SetConnectionTimeout(int32_t timeout);
 #endif
 
 #ifdef OHOS_EX_UA
@@ -417,9 +428,6 @@ class NWebImpl : public NWeb {
   static NWebDownloadItemState GetDownloadItemStateByGuid(const std::string& guid);
 #endif
 
-  bool Discard() override;
-  bool Restore() override;
-
   bool NeedSoftKeyboard() override;
 
   static std::shared_ptr<NWeb> GetNWeb(int32_t nweb_id);
@@ -446,8 +454,8 @@ class NWebImpl : public NWeb {
 #endif  // defined(OHOS_MULTI_WINDOW)
 
 #if defined(OHOS_EX_FREE_COPY)
-  void SelectAndCopy() const;
-  bool ShouldShowFreeCopy() const;
+  void ShowFreeCopyMenu() const;
+  bool ShouldShowFreeCopyMenu() const;
 #endif  // defined(OHOS_EX_FREE_COPY)
 
 #if defined(OHOS_EX_TOPCONTROLS)
@@ -469,16 +477,34 @@ class NWebImpl : public NWeb {
   }
 #endif
 
+#if defined(OHOS_EX_EXCEPTION_LIST)
+  static bool SetExceptionListForJavaScriptEnabled(const std::vector<std::string>& urls, bool isEnabled);
+  static bool SetExceptionListForAcceptCookie(const std::vector<std::string>& urls, bool isEnabled);
+#endif
+
+#ifdef OHOS_EX_PERMISSION
+  void Grant(NWebPermissionRequest* request,
+             int32_t resourse_id);
+  void Deny(NWebPermissionRequest* request);
+  std::string GetOrigin(NWebPermissionRequest* request);
+  int32_t GetResourceId(NWebPermissionRequest* request);
+#endif
+
+#if defined(OHOS_EX_NAVIGATION)
+  int InsertBackForwardEntry(int index, const std::string& url);
+  int UpdateNavigationEntryUrl(int index, const std::string& url);
+  void ClearForwardList();
+#endif
+
 #if defined(OHOS_SCHEME_HANDLER)
   void SetWebTag(const std::string& web_tag) { web_tag_ = web_tag; }
   std::string GetWebTag() { return web_tag_; }
 #endif
-
 #ifdef OHOS_ITP
   void EnableIntelligentTrackingPrevention(bool enable) override;
   bool IsIntelligentTrackingPreventionEnabled() const override;
   static bool IsAnyNWebIntelligentTrackingPreventionEnabled();
-#endif
+#endif  // OHOS_ITP
 
 #if defined(OHOS_CLIPBOARD)
   std::string GetSelectInfo() override;
@@ -502,17 +528,36 @@ class NWebImpl : public NWeb {
   static RenderProcessMode GetRenderProcessMode();
 #endif
 
-#ifdef OHOS_DISPLAY_CUTOUT
-  void OnSafeInsetsChange(int left, int top, int right, int bottom) override;
+#ifdef OHOS_NWEB_EX
+  static void PutWebExtensionApiCallback(
+      std::shared_ptr<NWebExtensionApiCallback> web_extension_api_callback);
+  static void RemoveWebExtensionApiCallback();
 #endif
+
+#ifdef OHOS_ARKWEB_EXTENSIONS
+  void WebExtensionTabCreated(int tab_id);
+  void WebExtensionTabRemoved(int tab_id);
+  void WebExtensionTabUpdated(
+      int tab_id,
+      const std::vector<std::string>& changed_property_names,
+      const std::string& url);
+#endif  // OHOS_ARKWEB_EXTENSIONS
 
 #ifdef OHOS_AI
   void OnTextSelected() override;
+  void OnDestroyImageAnalyzerOverlay() override;
+#endif
+  int SetUrlTrustList(const std::string& urlTrustList) override;
+  int SetUrlTrustListWithErrMsg(
+    const std::string& urlTrustList, std::string& detailErrMsg) override;
+
+#ifdef OHOS_DISPLAY_CUTOUT
+  void OnSafeInsetsChange(int left, int top, int right, int bottom) override;
 #endif
   static base::Lock nweb_map_lock_;
 
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
-  static void EnableWholeWebPageDrawing();
+  static void SetWholeWebDrawing();
 
   bool WebPageSnapshot(const char* id,
                        PixelUnit type,
@@ -520,13 +565,15 @@ class NWebImpl : public NWeb {
                        int height,
                        const WebSnapshotCallback callback) override;
 #endif
-  int SetUrlTrustList(const std::string& urlTrustList) override;
-  int SetUrlTrustListWithErrMsg(
-    const std::string& urlTrustList, std::string& detailErrMsg) override;
+
+#ifdef BUILDFLAG(IS_OHOS)
+  void OnConfigurationUpdated(
+      std::shared_ptr<NWebSystemConfiguration> configuration) override;
+#endif
 
 #ifdef OHOS_NETWORK_LOAD
   void SetPathAllowingUniversalAccess(
-    const std::vector<std::string>& pathList, 
+    const std::vector<std::string>& pathList,
     const std::vector<std::string>& moduleName,
     std::string& errorPath) override;
 #endif
@@ -535,13 +582,25 @@ class NWebImpl : public NWeb {
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override;
 #endif
 
+#ifdef OHOS_MIXED_CONTENT
+  void EnableMixedContentAutoUpgrades(bool enable);
+  bool IsMixedContentAutoUpgradesEnabled();
+#endif
+
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+  void EnableMediaNetworkTrafficPrompt(bool enable);
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+ void PerformAction(int64_t accessibilityId, uint32_t action,
+      const std::map<std::string, std::string>& actionArguments) override;
+  void SendAccessibilityHoverEvent(int32_t x, int32_t y) override;
+
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   bool InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info);
   bool SetVirtualDeviceRatio();
 #ifdef OHOS_I18N
-  void UpdateAcceptLanguageInternal();
+void UpdateAcceptLanguageInternal();
 #endif
 #if defined(OHOS_WEBRTC)
   void StopCameraSession() const;
@@ -572,6 +631,14 @@ class NWebImpl : public NWeb {
 #if defined(OHOS_SCHEME_HANDLER)
   std::string web_tag_{""};
 #endif
+
+  bool is_pause_ = false;
+  struct ReSizeType {
+    uint32_t width_ = 0;
+    uint32_t height_ = 0;
+    bool is_keyboard_ = false;
+  };
+  std::optional<ReSizeType> pending_size_ = std::nullopt;
 };
 }  // namespace OHOS::NWeb
 

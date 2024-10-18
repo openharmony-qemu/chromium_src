@@ -756,6 +756,7 @@ const base::Value* PrefService::GetPreferenceValue(
     return nullptr;
   }
 #endif
+
   const base::Value* default_value = nullptr;
   if (!pref_registry_->defaults()->GetValue(path, &default_value))
     return nullptr;

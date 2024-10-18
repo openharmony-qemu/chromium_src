@@ -399,7 +399,7 @@ class CONTENT_EXPORT NavigationControllerImpl : public NavigationController {
 
 // Returns true if the string corresponds to a valid data URL, false
 // otherwise.
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   static bool ValidateDataURLAsString(
       const scoped_refptr<const base::RefCountedString>& data_url_as_string);
 #endif
@@ -486,6 +486,12 @@ class CONTENT_EXPORT NavigationControllerImpl : public NavigationController {
   // url in the navigation API.
   void DidChangeReferrerPolicy(FrameTreeNode* node,
                                network::mojom::ReferrerPolicy referrer_policy);
+#if defined(OHOS_EX_NAVIGATION)
+  NavigationEntryUpdateError InsertBackForwardEntry(int index,
+                                                    const GURL& url) override;
+  NavigationEntryUpdateError UpdateNavigationEntryUrl(int index,
+                                                      const GURL& url) override;
+#endif
 
  private:
   friend class RestoreHelper;

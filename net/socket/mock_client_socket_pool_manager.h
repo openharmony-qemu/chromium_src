@@ -37,6 +37,9 @@ class MockClientSocketPoolManager : public ClientSocketPoolManager {
   void CloseIdleSockets(const char* net_log_reason_utf8) override;
   ClientSocketPool* GetSocketPool(const ProxyServer& proxy_server) override;
   base::Value SocketPoolInfoToValue() const override;
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  void SetConnectJobWithSecureDnsOnlyTimeout(int seconds) override {}
+#endif
 
  private:
   using ClientSocketPoolMap =

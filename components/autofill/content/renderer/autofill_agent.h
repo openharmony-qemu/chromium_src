@@ -110,6 +110,7 @@ class AutofillAgent : public content::RenderFrameObserver,
 #if defined(OHOS_PASSWORD_AUTOFILL)
   void FillAccountSuggestion(const std::u16string& username,
                              const std::u16string& password) override;
+  void OhFormControlElementClicked();
 #endif
 #if defined(OHOS_AUTOFILL)
   void OhAutoFillFormControlElementClicked(const blink::WebNode& node);

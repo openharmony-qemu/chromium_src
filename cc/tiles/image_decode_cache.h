@@ -9,6 +9,7 @@
 
 #include "base/memory/ref_counted.h"
 #include "base/notreached.h"
+#include "build/enable_heif_buildflags.h"
 #include "cc/base/devtools_instrumentation.h"
 #include "cc/cc_export.h"
 #include "cc/paint/decoded_draw_image.h"
@@ -90,6 +91,10 @@ class CC_EXPORT ImageDecodeCache {
         return ScopedImageType::kBmp;
       case ImageType::kGIF:
         return ScopedImageType::kGif;
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
+      case ImageType::kHEIF:
+        return ScopedImageType::kHeif;
+#endif
       case ImageType::kICO:
         return ScopedImageType::kIco;
       case ImageType::kJPEG:

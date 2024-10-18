@@ -296,7 +296,7 @@ void LargestContentfulPaintHandler::RecordMainFrameTiming(
   }
 
   if(lcp > 0) {
-    LOG(INFO) << "Web Load Performance LCP: " << lcp;
+    LOG(DEBUG) << "Web Load Performance LCP: " << lcp;
   }
 }
 

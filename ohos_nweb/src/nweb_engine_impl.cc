@@ -156,9 +156,9 @@ void NWebEngineImpl::ClearHostIP(const std::string &hostName) {
   NWebImpl::ClearHostIP(hostName);
 }
 
-void NWebEngineImpl::EnableWholeWebPageDrawing() {
+void NWebEngineImpl::SetWholeWebDrawing() {
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
-  NWebImpl::EnableWholeWebPageDrawing();
+  NWebImpl::SetWholeWebDrawing();
 #endif
 }
 

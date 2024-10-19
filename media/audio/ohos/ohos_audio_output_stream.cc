@@ -537,6 +537,7 @@ void OHOSAudioOutputStream::SetUpAudioSilentState()
 {
   if(!weakMediaSession_ || !audio_renderer_) {
     LOG(ERROR) << "OHOSAudioOutputStream: Try to set audio silent but get mediaSession or audioRender failed!";
+    return;
   }
   if(!isSilentMode_) {
     bool is_playing = weakMediaSession_.get()->GetPlayingState();

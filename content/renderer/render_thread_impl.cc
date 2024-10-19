@@ -314,9 +314,11 @@ void AddCrashKey(v8::CrashKeyId id, const std::string& value) {
 
 // Updates the crash key for whether this renderer is foregrounded.
 void UpdateForegroundCrashKey(bool foreground) {
+#if defined(_DEBUG)
   static auto* const crash_key = base::debug::AllocateCrashKeyString(
       "renderer_foreground", base::debug::CrashKeySize::Size32);
   base::debug::SetCrashKeyString(crash_key, foreground ? "true" : "false");
+#endif
 }
 
 scoped_refptr<viz::ContextProviderCommandBuffer> CreateOffscreenContext(

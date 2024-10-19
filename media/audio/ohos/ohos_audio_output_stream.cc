@@ -403,6 +403,8 @@ bool OHOSAudioOutputStream::StartRender() {
     ReportAudioPlayErrorInfo(errorType, errorCode, errorDesc);
     return false;
   }
+  audio_renderer_->SetAudioSilentMode(true);
+  isSilentMode_ = true;
   isSuspended_ = false;
   return true;
 }
@@ -473,6 +475,7 @@ void OHOSAudioOutputStream::PumpSamples() {
     int32_t bytesSingle =
         audio_renderer_->Write(audio_data_[active_buffer_index_] + bytesWritten,
                                num_filled_bytes - bytesWritten);
+        SetUpAudioSilentState();
     if (bytesSingle <= 0) {
       LOG(DEBUG) << "Audio renderer write audio data failed";
       if (!audio_renderer_->IsRendererStateRunning()) {
@@ -527,6 +530,22 @@ void OHOSAudioOutputStream::PumpSamples() {
   stream_position_samples_ += frames_filled;
   if (is_audio_render_state_running_) {
     SchedulePumpSamples(now);
+  }
+}
+
+void OHOSAudioOutputStream::SetUpAudioSilentState()
+{
+  if(!weakMediaSession_ || !audio_renderer_) {
+    LOG(ERROR) << "OHOSAudioOutputStream: Try to set audio silent but get mediaSession or audioRender failed!";
+  }
+  if(!isSilentMode_) {
+    bool is_playing = weakMediaSession_.get()->GetPlayingState();
+    bool is_muted = weakMediaSession_.get()->GetMuteState();
+    if(is_playing && !is_muted) {
+      LOG(INFO) << "OHOSAudioOutputStream SetAudioSilentMode false!";
+      audio_renderer_->SetAudioSilentMode(false);
+      isSilentMode_ = false;
+    }
   }
 }
 

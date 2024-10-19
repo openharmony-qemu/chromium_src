@@ -44,6 +44,9 @@ void MediaSessionController::SetMetadata(
 bool MediaSessionController::OnPlaybackStarted() {
   is_paused_ = false;
   is_playback_in_progress_ = true;
+#if defined(OHOS_MEDIA_POLICY)
+  media_session_->SetPlayingState(true);
+#endif
   return AddOrRemovePlayer();
 }
 
@@ -195,7 +198,9 @@ bool MediaSessionController::IsPictureInPictureAvailable(int player_id) const {
 
 void MediaSessionController::OnPlaybackPaused(bool reached_end_of_stream) {
   is_paused_ = true;
-
+#if defined(OHOS_MEDIA_POLICY)
+  media_session_->SetPlayingState(false);
+#endif
   if (reached_end_of_stream) {
 #if defined(OHOS_MEDIA_AVSESSION)
   if (media_session_) {

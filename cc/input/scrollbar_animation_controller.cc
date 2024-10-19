@@ -228,8 +228,8 @@ void ScrollbarAnimationController::WillUpdateScroll() {
     UpdateScrollbarState();
 #ifdef OHOS_SCROLLBAR
   if (need_thinning_animation_) {
-      vertical_controller_->DidRequestShow();
-      horizontal_controller_->DidRequestShow();
+    vertical_controller_->DidRequestShow();
+    horizontal_controller_->DidRequestShow();
   }
 #endif
 }

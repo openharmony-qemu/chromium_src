@@ -367,6 +367,7 @@ class MediaSessionImpl : public MediaSession,
   void SetWebviewShowForAudio(bool show);
   void SetWebviewShowForVideo(bool show);
   bool IsEndOfMedia();
+  void SetEndOfMedia(bool end_of_media);
   bool GetPlayingState();
   void SetPlayingState(bool playingState);
   bool GetMuteState();
@@ -375,7 +376,6 @@ class MediaSessionImpl : public MediaSession,
   int audioResumeInterval_ = 0;
   bool audioExclusive_ = true;
   bool isPlayingState_ = false;
-xiexi  
   base::WeakPtrFactory<content::MediaSessionImpl> weakMediaSessionFactory_;
 #endif // defined(OHOS_MEDIA_POLICY)
 

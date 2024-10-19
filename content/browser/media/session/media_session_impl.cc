@@ -1329,9 +1329,25 @@ void MediaSessionImpl::SetWebviewShowForVideo(bool show) {
 bool MediaSessionImpl::IsEndOfMedia() {
   bool ret = true;
   if (position_) {
-    ret = position_.value().end_of_media();
+    ret = position_->end_of_media();
+    if (ret) {
+      return ret;
+    }
+  }
+  if (session_ohos_) {
+    ret = session_ohos_->IsEndOfMedia();
+    if (ret) {
+      return ret;
+    }
   }
   return ret;
+}
+
+void MediaSessionImpl::SetEndOfMedia(bool end_of_media)
+{
+  if (session_ohos_) {
+    session_ohos_->SetEndOfMedia(end_of_media);
+  }
 }
 
 bool MediaSessionImpl::GetPlayingState()

@@ -879,7 +879,7 @@ bool NWebRenderHandler::StartDragging(CefRefPtr<CefBrowser> browser,
   LOG(INFO) << "DragDrop StartDragging received dragData from chromium start "
                "dragging callback, operation = "
             << allowed_ops << ", x = " << x << ", y = " << y;
-  if (!drag_data && !drag_data->HasImage()) {
+  if (!drag_data || !drag_data->HasImage()) {
     LOG(ERROR) << "drag data invalid";
     return false;
   }
@@ -921,11 +921,16 @@ bool NWebRenderHandler::StartDragging(CefRefPtr<CefBrowser> browser,
   if (delegete) {
     dark_mode_enable = delegete->DarkModeEnabled();
   }
-  LOG(DEBUG) << "DragDrop StartDragging darkModeEnable:" << dark_mode_enable;
+  int32_t view_port_height = 0;
+#if defined(OHOS_EX_TOPCONTROLS)
+  if (browser && browser->GetHost()) {
+    view_port_height = browser->GetHost()->GetShrinkViewportHeight();
+  }
+#endif
 
   nweb_drag_data_ = std::make_shared<NWebDragDataImpl>(
       drag_data, drag_touch_point, start_edge, end_edge,
-      screen_info_.display_ratio, usefull_selection, dark_mode_enable);
+      screen_info_.display_ratio, usefull_selection, dark_mode_enable, view_port_height, true);
 
   auto handler = handler_.lock();
   if (handler == nullptr) {

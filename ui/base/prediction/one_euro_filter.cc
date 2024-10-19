@@ -50,4 +50,4 @@ void OneEuroFilter::Reset() {
   y_filter_->Reset();
 }
 
-}  // namespace ui
+}  // namespace ui

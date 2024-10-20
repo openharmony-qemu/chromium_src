@@ -3736,6 +3736,10 @@ NWebDelegate::PopulateAccessibilityNodeInfo(
 
   std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo =
     std::make_shared<NWebAccessibilityNodeInfoImpl>();
+  if (nodeInfo == nullptr || node == nullptr) {
+    LOG(ERROR) << "PopulateAccessibilityNodeInfo nodeInfo or node is null";
+    return nullptr;
+  }
   nodeInfo->SetAccessibilityId(node->GetAccessibilityId());
   nodeInfo->SetParentId(node->GetParentId());
 

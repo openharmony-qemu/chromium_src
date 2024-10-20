@@ -991,7 +991,7 @@ bool BrowserAccessibilityOHOS::IsAccessibilityGroup() const {
   if (ui::IsLink(GetRole())) {
     return true;
   }
-  if (GetRole() == ax::mojom::Role::kHeading) {
+  if (GetRole() == ax::mojom::Role::kHeading || GetRole() == ax::mojom::Role::kStrong) {
     return true;
   }
   if (GetRole() == ax::mojom::Role::kParagraph) {

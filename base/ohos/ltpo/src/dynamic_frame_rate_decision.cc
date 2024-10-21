@@ -141,9 +141,12 @@ void DynamicFrameRateDecision::UpdateFramePreferredRate()
   // invoke frame rate linker
   cur_frame_rate_ = sliding_frame_rate_;
   if (sliding_frame_rate_ <= 0) {
-    cur_frame_rate_ = has_touch_point_ ? kDefaultPreferedFrameRate120FPS : kDefaultPreferedFrameRate60FPS;
-    if (GetCurrentTimestampMS() - touch_up_timestamp_< kThreeSeconds) {
+    if (has_touch_point_ || GetCurrentTimestampMS() - touch_up_timestamp_< kThreeSeconds) {
       cur_frame_rate_ = kDefaultPreferedFrameRate120FPS;
+    } else if (video_frame_rate_ > 0) {
+        cur_frame_rate_ = video_frame_rate_;
+    } else {
+        cur_frame_rate_ = kDefaultPreferedFrameRate60FPS;
     }
   }
   cur_frame_rate_ = std::max(cur_frame_rate_, video_frame_rate_);

@@ -2036,7 +2036,7 @@ int NWebHandlerDelegate::OnGetTopControlsHeight() {
 bool NWebHandlerDelegate::DoBrowserControlsShrinkRendererSize() {
 #if defined(OHOS_EX_TOPCONTROLS)
   if (CefCommandLine::GetGlobalCommandLine()->HasSwitch(
-          ::switches::kForBrowser) &&
+          ::switches::kEnableNwebExTopControls) &&
       top_content_offset_ > 0) {
     return true;
   }

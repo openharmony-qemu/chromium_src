@@ -37,6 +37,10 @@ class UI_TOUCH_SELECTION_EXPORT LongPressDragSelector
   bool WillHandleTouchEvent(const MotionEvent& event) override;
   bool IsActive() const override;
 
+#ifdef OHOS_CLIPBOARD
+  bool IsDragging() const override { return state_ == DRAGGING; }
+#endif
+
   // Called just prior to a longpress event being handled.
   void OnLongPressEvent(base::TimeTicks event_time,
                         const gfx::PointF& position);

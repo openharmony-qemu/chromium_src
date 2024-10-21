@@ -279,6 +279,8 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionController
 
 #ifdef OHOS_CLIPBOARD
   bool is_long_press_ = false;
+  
+  bool reset_selection_temporarily_ = false;
 #endif
 };
 

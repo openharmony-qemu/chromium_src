@@ -48,6 +48,10 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionDraggable {
 
   // Whether a drag is active OR being detected for the current touch sequence.
   virtual bool IsActive() const = 0;
+
+#ifdef OHOS_CLIPBOARD
+  virtual bool IsDragging() const { return false; }
+#endif
 };
 
 }  // namespace ui

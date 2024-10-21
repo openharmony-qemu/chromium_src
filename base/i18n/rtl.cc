@@ -204,7 +204,12 @@ TextDirection GetTextDirectionForLocaleInStartUp(const char* locale_name) {
 
   // This list needs to be updated in alphabetical order if we add more RTL
   // locales.
+#ifdef OHOS_I18N
+  static const char kRTLLanguageCodes[][3] = {"ar", "fa", "he",
+                                              "iw", "ug", "ur"};
+#else
   static const char kRTLLanguageCodes[][3] = {"ar", "fa", "he", "iw", "ur"};
+#endif
   std::vector<StringPiece> locale_split =
       SplitStringPiece(locale_name, "-_", KEEP_WHITESPACE, SPLIT_WANT_ALL);
   const StringPiece& language_code = locale_split[0];

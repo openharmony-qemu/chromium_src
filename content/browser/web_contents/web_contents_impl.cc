@@ -202,6 +202,10 @@
 #include "ui/base/device_form_factor.h"
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if defined(OHOS_I18N)
+#include "ui/base/ui_base_switches.h"
+#endif
+
 #if BUILDFLAG(ENABLE_PPAPI)
 #include "content/browser/media/session/pepper_playback_observer.h"
 #endif
@@ -242,6 +246,10 @@
 #ifdef OHOS_ARKWEB_ADBLOCK
 #include "components/subresource_filter/content/browser/ohos_adblock_config.h"
 #endif // OHOS_ARKWEB_ADBLOCK
+
+#if OHOS_I18N
+#include "base/ohos/locale_utils.h"
+#endif
 
 namespace content {
 
@@ -2004,6 +2012,9 @@ void WebContentsImpl::SetUserAgentOverride(
 
   renderer_preferences_.user_agent_override = ua_override;
 
+#ifdef OHOS_I18N
+  UpdateRenderAcceptLanguageIfNeed(renderer_preferences_.accept_languages);
+#endif
   // Send the new override string to all renderers in the current page.
   SyncRendererPrefs();
 
@@ -10503,6 +10514,29 @@ void WebContentsImpl::RequestExitFullscreen(const MediaPlayerId& player_id) {
 
 }
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+#ifdef OHOS_I18N
+void WebContentsImpl::UpdateRenderAcceptLanguageIfNeed(
+    const std::string& old_accept_language) {
+  const base::CommandLine& command_line =
+      *base::CommandLine::ForCurrentProcess();
+  if (!command_line.HasSwitch(::switches::kLang)) {
+    return;
+  }
+  std::string lang = command_line.GetSwitchValueASCII(::switches::kLang);
+  std::regex pattern("-");
+  std::smatch match;
+  if (std::regex_search(lang, match, pattern)) {
+    std::string region = match.suffix();
+    std::string current_accept_language =
+        base::ohos::ComputeLanguageByRegion(region);
+    if (current_accept_language != "" &&
+        current_accept_language != old_accept_language) {
+      renderer_preferences_.accept_languages = current_accept_language;
+    }
+  }
+}
+#endif
 
 #if defined(OHOS_RENDER_PROCESS_SHARE)
 const std::string& WebContentsImpl::SharedRenderProcessToken() {

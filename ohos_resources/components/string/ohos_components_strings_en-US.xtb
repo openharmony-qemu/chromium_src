@@ -1,0 +1,14 @@
+<?xml version="1.0" ?>
+<!DOCTYPE translationbundle>
+<translationbundle lang="en-US">
+<translation id="IDS_OHOS_BLOCK_PAGE_TITLE">Note</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_INFO_TITLE">Website blocked</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_TITLE">Beware of fraud</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_TITLE">Harmful content ahead</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_URL_TRUST_LIST_TITLE">Access restricted</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_ILLEGAL_INFO_BODY">This site can't be accessed because it contains illegal or prohibited content.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_BODY">This site may try to scam you. Please protect your personal information.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_BODY">This site is not secure. Please protect your personal information.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_DONT_PROCEED">Back</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_PROCEED">Continue</translation>
+</translationbundle>

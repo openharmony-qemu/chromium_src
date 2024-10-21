@@ -9,6 +9,7 @@
 #include "base/check_op.h"
 #include "base/command_line.h"
 #include "base/containers/contains.h"
+#include "base/datashare_uri_utils.h"
 #include "base/feature_list.h"
 #include "base/files/file_util.h"
 #include "base/memory/ptr_util.h"
@@ -22,6 +23,9 @@
 #include "content/public/common/content_switches.h"
 #include "skia/ext/skia_utils_base.h"
 #include "third_party/skia/include/core/SkBitmap.h"
+#include "third_party/skia/include/core/SkData.h"
+#include "third_party/skia/include/core/SkImage.h"
+#include "third_party/skia/include/core/SkStream.h"
 #include "ui/base/clipboard/clipboard_constants.h"
 #include "ui/base/clipboard/clipboard_data.h"
 #include "ui/base/clipboard/clipboard_format_type.h"
@@ -296,6 +300,46 @@ class ClipboardOHOSInternal {
                              colorType, alphaType, colorSpace);
   }
 
+  // Reads image from URI
+  void ReadPngByUri(std::shared_ptr<std::string> uri,
+                    Clipboard::ReadPngCallback callback) {
+    std::string uriRealPath = base::GetRealPath(base::FilePath(*uri));
+    do {
+      if (uriRealPath.empty()) {
+        LOG(ERROR) << "url is empty or not exist";
+        break;
+      }
+      std::unique_ptr<SkStream> stream =
+          SkStream::MakeFromFile(uriRealPath.c_str());
+      if (!stream) {
+        LOG(ERROR) << "Couldn't read " << uriRealPath;
+        break;
+      }
+      sk_sp<SkData> data =
+          SkData::MakeFromStream(stream.get(), stream->getLength());
+      if (!data) {
+        LOG(ERROR) << "Couldn't parse file " << uriRealPath;
+        break;
+      }
+      sk_sp<SkImage> image = SkImages::DeferredFromEncodedData(data);
+      if (!image) {
+        LOG(ERROR) << "invalid image, could not decode";
+        break;
+      }
+      SkBitmap bitmap;
+      image->asLegacyBitmap(&bitmap);
+      base::ThreadPool::PostTaskAndReplyWithResult(
+          FROM_HERE, {base::MayBlock(), base::TaskPriority::USER_BLOCKING},
+          base::BindOnce(&ClipboardData::EncodeBitmapData, std::move(bitmap)),
+          base::BindOnce(&ClipboardOHOSInternal::DidGetPng,
+                         base::Unretained(this), std::move(callback)));
+      return;
+    } while (1);
+    LOG(ERROR) << "get image by uri from pasteboard failed";
+    std::move(callback).Run(std::vector<uint8_t>());
+    return;
+  }
+
   void DidGetPng(Clipboard::ReadPngCallback callback,
       std::vector<uint8_t> result) {
     // GetPngData attempts to read from the Java Clipboard, which sometimes is
@@ -322,7 +366,12 @@ class ClipboardOHOSInternal {
             recordVector) &&
         (recordVector.size() > 0)) {
       for (auto& r : recordVector) {
-        std::shared_ptr<ClipBoardImageDataAdapterImpl> imgData = 
+        std::shared_ptr<std::string> uri = r->GetUri();
+        if (uri) {
+          ReadPngByUri(uri, std::move(callback));
+          return;
+        }
+        std::shared_ptr<ClipBoardImageDataAdapterImpl> imgData =
             std::make_shared<ClipBoardImageDataAdapterImpl>();
         if (!imgData) {
           LOG(ERROR) << "ClipBoardImageDataAdapterImpl create failed";
@@ -462,6 +511,7 @@ class ClipboardOHOSInternal {
 
       bool imgFlag = false;
       imgFlag = record->GetImgData(imgData);
+      std::shared_ptr<std::string> uri = record->GetUri();
       std::shared_ptr<PasteCustomData> pasteCustomData = record->GetCustomData();
       if (pasteCustomData && (pasteCustomData->find(SPAN_STRING_TAG) != pasteCustomData->end())) {
         allFormat |= static_cast<int>(ClipboardInternalFormat::kHtml);
@@ -472,7 +522,7 @@ class ClipboardOHOSInternal {
       if (text) {
         allFormat |= static_cast<int>(ClipboardInternalFormat::kText);
       }
-      if (imgFlag) {
+      if (imgFlag || uri) {
         allFormat |= static_cast<int>(ClipboardInternalFormat::kPng);
       }
     }

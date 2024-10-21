@@ -185,10 +185,6 @@ void BrowserAccessibilityManagerOHOS::SendAccessibilityEvent(
 }
 
 void BrowserAccessibilityManagerOHOS::HandleHover(int64_t accessibilityId) {
-  if (lastHoverId_ == accessibilityId) {
-    return;
-  }
-
   SendAccessibilityEvent(accessibilityId,
                          OHOS::NWeb::AccessibilityEventType::HOVER_ENTER_EVENT);
 }

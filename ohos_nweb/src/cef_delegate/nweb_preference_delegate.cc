@@ -198,7 +198,7 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
   browser_settings.contextmenu_customization_enabled = false;
   CefRefPtr<CefCommandLine> command_line =
       CefCommandLine::GetGlobalCommandLine();
-  if (command_line->HasSwitch(::switches::kForBrowser)) {
+  if (command_line->HasSwitch(::switches::kEnableNwebExFreeCopy)) {
     browser_settings.contextmenu_customization_enabled = true;
   }
 #endif  // OHOS_EX_FREE_COPY

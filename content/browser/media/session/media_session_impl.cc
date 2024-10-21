@@ -1013,7 +1013,7 @@ MediaSessionImpl::MediaSessionImpl(WebContents* web_contents)
 #endif  // BUILDFLAG(IS_ANDROID)
 #if defined(OHOS_MEDIA_AVSESSION)
   auto currentProcess = base::CommandLine::ForCurrentProcess();
-  if (currentProcess && !currentProcess->HasSwitch(switches::kForBrowser)) {
+  if (currentProcess && !currentProcess->HasSwitch(switches::kEnableMediaAvsession)) {
     session_ohos_ = std::make_unique<MediaSessionOHOS>(this);
   }
 #endif  // defined(OHOS_MEDIA_AVSESSION)

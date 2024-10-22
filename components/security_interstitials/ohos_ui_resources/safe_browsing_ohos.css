@@ -5,16 +5,20 @@
 }
 
 .hw-istablet {
-  background-color:#f1f3f5;
+  background-color: #f1f3f5;
 }
 
-.hw_block_page{
+.hw-ispc {
+  background-color: #f1f3f5;
+}
+
+.hw_block_page {
   position: absolute;
   width: 100%;
   display: flex;
   flex-direction: column;
   top: 50%;
-  transform: translate(0,-50%);
+  transform: translate(0, -50%);
 }
 
 .hw-istablet .hw_block_page {
@@ -22,8 +26,17 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  top: var(--ph, 1ph);
-  transform: unset;
+  top: calc(50% - env(safe-area-inset-bottom) / 2);
+  transform: translateY(-50%);
+}
+
+.hw-ispc .hw_block_page {
+  position: absolute;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  top: 50%;
+  transform: translate(0, -50%);
 }
 
 .hw-content--wrap {
@@ -36,24 +49,53 @@
   margin: unset;
 }
 
+.hw-ispc .hw-content--wrap {
+  margin: unset;
+}
+
 /* hw-block-img */
-.hw-block-img{
+.hw-block-img {
   justify-content: center;
   display: flex;
   align-items: center;
   overflow: hidden;
+  height: 120px;
+  width: 120px;
+  margin: auto;
+}
+
+.hw-istablet .hw-block-img {
+  justify-content: center;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  height: 160px;
+  width: 160px;
+  margin: auto;
+}
+
+.hw-ispc .hw-block-img {
+  justify-content: center;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  height: 240px;
+  width: 240px;
+  margin: auto;
 }
 
 .hw-block-img img {
-  width: 72px;
-  height: 72px;
   display: block;
-} 
+}
 
-.hw-istablet .hw-block-img img{
-  width: 120px;
-  height: 120px;
+.hw-istablet .hw-block-img img {
   content: url(ic_safe_browsing_error_big.svg);
+}
+
+.hw-ispc .hw-block-img img {
+  content: url(ic_safe_browsing_error_big.svg);
+  height: 240px;
+  width: 240px;
 }
 
 /*******hw-block-info*******/
@@ -63,19 +105,28 @@
 }
 
 .hw-block-info__title{
-  padding-top: 24px;
   color: #000000;
   opacity: 0.9;
   font-size: 16px;
   font-family: HwChinese-medium;
+  font-weight: 500;
   line-height: 1.6;
   word-wrap: break-word;
   max-width: 100%;
 }
 
 .hw-istablet .hw-block-info__title {
-  font-size: 24px;
-  padding-top: var(--vh, 1vh);
+  color: #000000;
+  opacity: 0.9;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.hw-ispc .hw-block-info__title {
+  color: #000000;
+  opacity: 0.9;
+  font-size: 16px;
+  font-weight: 500;
 }
 
 .hw-block-info__body{
@@ -83,15 +134,24 @@
   color: #000000;
   opacity: 0.6;
   font-size: 14px;
-  line-height: 1.6;
   font-family: sans-serif;
+  font-weight: 400;
 }
 
 .hw-istablet .hw-block-info__body {
-  font-size: 18px;
-  padding-top: 8px;
+  padding-top: 4px;
   color: #000000;
   opacity: 0.6;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.hw-pc .hw-block-info__body {
+  padding-top: 4px;
+  color: #000000;
+  opacity: 0.6;
+  font-size: 14px;
+  font-weight: 400;
 }
 
 /*******hw-block-link*******/
@@ -103,19 +163,21 @@
   display: flex;
   padding-top: 24px;
   font-size: 14px;
+  color: #0A59F7;
   font-family: HwChinese-medium;
+  font-weight: 500;
   justify-content: center;
 }
 
 .hw-istablet .hw-link {
-  padding-top: var(--vh, 1vh);
+  padding-top: 24px;
+}
+
+.hw-ispc .hw-link {
+  padding-top: 24px;
 }
 
 button {
-  height: 40px;
-  width: var(--vw, 1vw);
-  border-radius: 20px;
-  background-color:rgba(0,0,0,0.05);
   border: none;
 
 }
@@ -133,7 +195,9 @@ button > p span {
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
-  font-size: 16px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.3;
   color: #0a59f7;
 }
 
@@ -145,16 +209,19 @@ a {
   white-space: nowrap;
   overflow: hidden;
   -webkit-tap-highlight-color: transparent;
-  text-transform: uppercase;
   color: #0A59F7;
 }
 
 #hw-proceed {
-  padding-left: 16px;
+  padding-inline-start: 16px;
 }
 
 .hw-istablet #hw_proceed {
-  margin-left: 24px;
+  margin-inline-start: 24px;
+}
+
+.hw-ispc #hw_proceed {
+  margin-inline-start: 24px;
 }
 
 button:hover {
@@ -171,49 +238,107 @@ button:active {
 
 @media (prefers-color-scheme: dark) {
   .hw-istablet {
-    background-color:#202224;
+    background-color: #202224;
   }
 
-  .hw-block-info__title{
-      color: #ffffff;
-      opacity: 0.86;
+  .hw-ispc {
+    background-color: #202224;
+  }
+
+  .hw-block-info__title {
+    color: #ffffff;
+    opacity: 0.86;
+  }
+
+  .hw-istablet .hw-block-info__title {
+    color: #ffffff;
+    opacity: 0.86;
+  }
+
+  .hw-ispc .hw-block-info__title {
+    color: #ffffff;
+    opacity: 0.86;
   }
 
   .hw-block-info__body {
-      color: #ffffff;
-      opacity: 0.6;
+    color: #ffffff;
+    opacity: 0.6;
   }
 
   .hw-istablet .hw-block-info__body {
-      color: #ffffff;
-      opacity: 0.6;
+    color: #ffffff;
+    opacity: 0.6;
+  }
+
+  .hw-ispc .hw-block-info__body {
+    color: #ffffff;
+    opacity: 0.6;
   }
 
   .hw-link {
-      color: #5291ff;
+    color: #317AF7;
+  }
+
+  .hw-istablet .hw-link {
+    color: #317AF7;
+  }
+
+  .hw-ispc .hw-link {
+    color: #317AF7;
   }
 
   #hw_block_img {
-      content: url(ic_safe_browsing_error_dark.svg);
+    content: url(ic_safe_browsing_error_dark.svg);
   }
 
-  .hw-istablet .hw-block-img img{
+  .hw-istablet .hw-block-img img {
+    content: url(ic_safe_browsing_error_big_dark.svg);
+  }
+
+  .hw-ispc .hw-block-img img {
     content: url(ic_safe_browsing_error_big_dark.svg);
   }
 
   button {
-    background-color:rgba(255,255,255,0.1);
+    background-color: rgba(255, 255, 255, 0.1);
   }
 
   button:hover {
-    background-color:rgba(255,255,255,0.2);
+    background-color: rgba(255, 255, 255, 0.2);
   }
 
   button:focus {
     border: 2px solid #5291ff;
   }
-  
+
   button:active {
-    background-color: rgba(255,255,255,0.15);
+    background-color: rgba(255, 255, 255, 0.15);
+  }
+}
+
+@media (min-width: 600px) and (max-width: 1440px) {
+  .hw_block_page {
+    position: absolute;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    top: calc(50% - env(safe-area-inset-bottom) / 2);
+    transform: translateY(-50%);
+  }
+
+  .hw-block-img {
+    justify-content: center;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    height: 160px;
+    width: 160px;
+    margin: auto;
+  }
+
+  .hw-block-img img {
+    display: block;
+    width: 100%;
+    height: 100%;
   }
 }

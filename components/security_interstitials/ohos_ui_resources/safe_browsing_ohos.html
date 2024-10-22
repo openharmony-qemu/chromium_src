@@ -3,12 +3,15 @@
   <head>
     <meta charset="utf-8">
     <meta name="theme-color" content="#fff">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <link rel="stylesheet" href="safe_browsing_ohos.css">
     <script src="../core/common/resources/interstitial_common.js"></script>
     <title>$i18n{title}</title>
     <script type="text/javascript">
       var policy = parseInt('$i18n{policy}')
+      var isTablet = ('$i18n{is_tablet_device}' == '1');
+      var isPc = ('$i18n{is_pc_device}' == '1');
       var FORBIDDEN_POLICY = 3;
       var MIN_GAP = 32;
       var MIN_PADDING_GAP = 48;
@@ -17,9 +20,12 @@
       function onFillErrorPageHtml() {
         mainPanel = document.getElementById('main')
         var ua = navigator.userAgent
-        var isTablet = (ua.search("iphone") == -1) && (ua.search("Mobile") == -1)
         if (isTablet) {
           document.body.classList.add("hw-istablet");
+          document.getElementById("hw-proceed").style.display = 'none';
+          document.getElementById("hw-not-proceed").style.display = 'none';
+        } else if (isPc) {
+          document.body.classList.add("hw-ispc");
           document.getElementById("hw-proceed").style.display = 'none';
           document.getElementById("hw-not-proceed").style.display = 'none';
         } else {

@@ -2108,7 +2108,9 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 
   // A scope that disallows custom cursors has expired.
   void DisallowCustomCursorScopeExpired();
-
+#ifdef OHOS_I18N
+  void UpdateRenderAcceptLanguageIfNeed(const std::string& old_accept_language);
+#endif
   // Data for core operation ---------------------------------------------------
 
   // Delegate for notifying our owner about stuff. Not owned by us.

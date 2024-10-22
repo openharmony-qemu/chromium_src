@@ -542,35 +542,4 @@
   <message name="IDS_HTTPS_ONLY_MODE_SUBMIT_BUTTON" desc="Text for the button in the HTTPS-only mode warning that bypasses the warning and loads the page">
     Continue to site
   </message>
-
-  <!-- ohos blocking page-->
-  <if expr="is_ohos">
-  <message name="IDS_OHOS_BLOCK_PAGE_TITLE" use_name_for_id="true" desc="The title of the block page shown when the requested URL is unsafe">
-   Warning
-  </message>
-  <message name="IDS_OHOS_BLOCK_PAGE_INFO_TITLE" use_name_for_id="true" desc="The title of the block page shown when the requested URL is unavaiable">
-   This page cannot be accessed.
-  </message>
-  <message name="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_TITLE" use_name_for_id="true" desc="The title of the block page shown when the requested URL is unavaiable">
-   Beware of online fraud.
-  </message>
-  <message name="IDS_OHOS_BLOCK_PAGE_URL_TRUST_LIST_TITLE" use_name_for_id="true" desc="The title of the block page shown when the requested URL is restricted.">
-   This page is restricted from accessing.
-  </message>
-  <message name="IDS_OHOS_BLOCK_PAGE_ILLEGAL_INFO_BODY" use_name_for_id="true" desc="Message informing the user this website is illegal and cann't access it">
-   According the laws and regulations and complaints, this page contains illegal or illegal content and has been stopped.
-  </message>
-  <message name="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_BODY" use_name_for_id="true" desc="Message informing the user this website is illegal and cann't access it">
-   The web page you visit is at risk of fraud. Please pay attention to the security of personal information and property.
-  </message>
-  <message name="IDS_OHOS_BLOCK_PAGE_RISK_INFO_BODY" use_name_for_id="true" desc="Message informing the user this website is illegal and cann't access it">
-    The web page you visit has security risks. Please pay attention to the security of personal information and property.
-  </message>
-  <message name="IDS_OHOS_BLOCK_PAGE_DONT_PROCEED" use_name_for_id="true" desc="Go back">
-   BACK
-  </message>
-  <message name="IDS_OHOS_BLOCK_PAGE_PROCEED" use_name_for_id="true" desc="Continue to the site anyway">
-   CONTINUE
-  </message>
-  </if>
 </grit-part>

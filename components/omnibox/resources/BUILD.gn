@@ -8,6 +8,13 @@ import("//tools/grit/grit_rule.gni")
 grit("omnibox_pedal_synonyms") {
   source = "omnibox_pedal_synonyms.grd"
   outputs = [ "grit/omnibox_pedal_synonyms.h" ]
+
+  #ifdef ohos_i18n
+  if (is_ohos && ohos_i18n) {
+    all_chrome_locales += extra_locales
+  }
+
+  #endif
   foreach(locale, all_chrome_locales) {
     outputs += [ "omnibox_pedal_synonyms_$locale.pak" ]
   }

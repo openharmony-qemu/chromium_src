@@ -41,9 +41,9 @@ import("//build/nocompile.gni")
 import("//build/timestamp.gni")
 import("//build_overrides/build.gni")
 import("//cef/libcef/features/features.gni")
+import("//ohos_nweb/src/nweb_sysevent.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//testing/test.gni")
-import("//ohos_nweb/src/nweb_sysevent.gni")
 
 if (is_mac) {
   # Used to generate fuzzer corpus :base_mach_port_rendezvous_convert_corpus.
@@ -967,8 +967,8 @@ component("base") {
     sources += [
       "datashare_uri_utils.cc",
       "datashare_uri_utils.h",
-      "report_loss_frame.h",
       "report_loss_frame.cc",
+      "report_loss_frame.h",
     ]
   }
 
@@ -2530,26 +2530,34 @@ component("base") {
       "android/build_info.h",
       "debug/elf_reader.cc",
       "debug/elf_reader.h",
-      "memory/platform_shared_memory_region_ohos.cc",
       "memory/platform_shared_memory_mapper_ohos.cc",
+      "memory/platform_shared_memory_region_ohos.cc",
       "nix/mime_util_xdg.cc",
       "nix/mime_util_xdg.h",
       "nix/xdg_util.cc",
       "nix/xdg_util.h",
-      "system/sys_info_linux.cc",
-      "ohos/ltpo/include/dynamic_frame_rate_decision.h",
-      "ohos/ltpo/src/dynamic_frame_rate_decision.cc",
-      "ohos/ltpo/include/sliding_observer.h",
-      "ohos/ltpo/src/sliding_observer.cc",
-      "ohos/ltpo/include/touch_observer.h",
-      "ohos/ltpo/src/touch_observer.cc",
-      "ohos/input_sync/input_vsync_sync_lock.h",
-      "ohos/input_sync/input_vsync_sync_lock.cc",
-      "ohos/sys_info_utils.cc",
-      "ohos/sys_info_utils.h",
       "ohos/dynamic_frame_loss_monitor.cpp",
       "ohos/dynamic_frame_loss_monitor.h",
+      "ohos/input_sync/input_vsync_sync_lock.cc",
+      "ohos/input_sync/input_vsync_sync_lock.h",
+      "ohos/ltpo/include/dynamic_frame_rate_decision.h",
+      "ohos/ltpo/include/sliding_observer.h",
+      "ohos/ltpo/include/touch_observer.h",
+      "ohos/ltpo/src/dynamic_frame_rate_decision.cc",
+      "ohos/ltpo/src/sliding_observer.cc",
+      "ohos/ltpo/src/touch_observer.cc",
+      "ohos/sys_info_utils.cc",
+      "ohos/sys_info_utils.h",
+      "system/sys_info_linux.cc",
     ]
+
+    if (ohos_i18n) {
+      sources += [
+        "ohos/locale_utils.cc",
+        "ohos/locale_utils.h",
+      ]
+    }
+
     deps += [
       "//base/third_party/symbolize",
       "//base/third_party/xdg_mime",

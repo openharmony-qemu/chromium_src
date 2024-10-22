@@ -1001,18 +1001,10 @@ TEST_F(OhosVideoDecoderTest, OnCodecConfigured_002) {
   codec->videoDecoder_ = std::make_unique<MockMediaCodecDecoderAdapter>();
   auto videoDecoder =
       static_cast<MockMediaCodecDecoderAdapter*>(codec->videoDecoder_.get());
-  EXPECT_CALL(*videoDecoder, SetOutputSurface)
-      .WillOnce(testing::Return(OHOS::NWeb::DecoderAdapterCode::DECODER_OK));
-  EXPECT_CALL(*videoDecoder, PrepareDecoder)
-      .WillOnce(testing::Return(OHOS::NWeb::DecoderAdapterCode::DECODER_OK));
-  EXPECT_CALL(*videoDecoder, StartDecoder)
-      .WillOnce(testing::Return(OHOS::NWeb::DecoderAdapterCode::DECODER_OK));
   EXPECT_CALL(*videoDecoder, ConfigureDecoder)
       .WillOnce(testing::Return(OHOS::NWeb::DecoderAdapterCode::DECODER_OK));
   EXPECT_CALL(*videoDecoder, ReleaseDecoder)
       .WillOnce(testing::Return(OHOS::NWeb::DecoderAdapterCode::DECODER_OK));
-  EXPECT_CALL(*task_runner, RunsTasksInCurrentSequence).WillOnce(Return(false));
-  EXPECT_CALL(*task_runner, PostDelayedTask).WillOnce(Return(false));
   ohos_video_decoder_->OnCodecConfigured(std::move(surface_bundle_),
                                          std::move(codec));
 }

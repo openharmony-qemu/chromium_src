@@ -255,7 +255,6 @@ base::TimeDelta OHOSMediaPlayerBridge::GetMediaTime() {
 void OHOSMediaPlayerBridge::SeekDone() {
   LOG(INFO) << "OHOSMediaPlayerBridge::SeekDone()";
   seek_complete_ = true;
-  LOG(INFO) << "OHOSMediaPlayerBridge::SeekDone()";
 }
 
 void OHOSMediaPlayerBridge::OnSeekBack(base::TimeDelta extra_time) {

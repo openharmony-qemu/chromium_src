@@ -52,6 +52,8 @@ const size_t MAX_KEY_MAP_SIZE = 256;
 
 static base::LazyInstance<KeyCache>::Leaky inst = LAZY_INSTANCE_INITIALIZER;
 
+static base::LazyInstance<KeyCache>::Leaky inst_ota = LAZY_INSTANCE_INITIALIZER;
+
 // Return true if the key is found, otherwise false
 bool KeyCache::get_key(const std::string& key_name, std::string* key_value) {
   // Make this function synchronous
@@ -140,6 +142,13 @@ std::string _get_random(size_t sz) {
   return rn;
 }
 
+static std::string _generate_key_for_ota(const std::string& key_name) {
+  std::vector<uint8_t> key_byte_array;
+
+  std::string digest = crypto::SHA256HashString(key_name);
+  return crypto::ohos::GetKeyForOta(_hex_repr(digest));
+}
+
 std::string get_symmetric_key_256(const std::string& key_name) {
   std::string key_value;
 
@@ -152,6 +161,21 @@ std::string get_symmetric_key_256(const std::string& key_name) {
   key_value = _generate_key(key_name);
 
   inst.Get().add_key(key_name, key_value);
+  // Return the generated key
+  return key_value;
+}
+
+std::string get_symmetric_key_256_for_ota(const std::string& key_name) {
+  std::string key_value;
+
+  if (inst_ota.Get().get_key(key_name, &key_value)) {
+    // Key found
+    return key_value;
+  }
+
+  // Key not found. Generate it first
+  key_value = _generate_key_for_ota(key_name);
+  inst_ota.Get().add_key(key_name, key_value);
   // Return the generated key
   return key_value;
 }

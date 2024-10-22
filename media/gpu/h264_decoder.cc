@@ -724,11 +724,8 @@ bool H264Decoder::OutputPic(scoped_refptr<H264Picture> pic) {
   DCHECK(!pic->outputted);
   pic->outputted = true;
 
-  VideoColorSpace colorspace_for_frame = container_color_space_;
-  const H264SPS* sps = parser_.GetSPS(curr_sps_id_);
-  if (sps && sps->GetColorSpace().IsSpecified())
-    colorspace_for_frame = sps->GetColorSpace();
-  pic->set_colorspace(colorspace_for_frame);
+  // Set the color space for the picture.
+  pic->set_colorspace(picture_color_space_);
 
   if (pic->nonexisting) {
     DVLOG(4) << "Skipping output, non-existing frame_num: " << pic->frame_num;
@@ -803,13 +800,6 @@ H264Decoder::H264Accelerator::Status H264Decoder::StartNewFrame(
       frame_num != (prev_ref_frame_num_ + 1) % max_frame_num_) {
     if (!HandleFrameNumGap(frame_num))
       return H264Accelerator::Status::kFail;
-  }
-
-  if (recovery_frame_cnt_ && *recovery_frame_cnt_ >= max_frame_num_) {
-    DVLOG(1) << "Invalid recovery_frame_cnt=" << *recovery_frame_cnt_
-             << " (it must be less or equal to max_frame_num-1=" << max_frame_num_ - 1
-             << ")";
-    return H264Accelerator::Status::kFail;
   }
 
   if (!InitCurrPicture(slice_hdr))
@@ -1032,11 +1022,19 @@ bool H264Decoder::FinishPicture(scoped_refptr<H264Picture> pic) {
   DVLOG(4) << "Finishing picture frame_num: " << pic->frame_num
            << ", entries in DPB: " << dpb_.size();
   if (recovery_frame_cnt_) {
-    // This is the first picture after the recovery point SEI message. Computes
-    // the frame_num of the frame that should be output from (Spec D.2.8).
+    // This is the first picture after the recovery point SEI message. Validate
+    // `recovery_frame_cnt_` now that we are certain to have max_frame_num_.
+    if (*recovery_frame_cnt_ >= max_frame_num_) {
+      DVLOG(1) << "Invalid recovery_frame_cnt=" << *recovery_frame_cnt_
+               << " (must be less than or equal to max_frame_num-1="
+               << (max_frame_num_ - 1) << ")";
+      return false;
+    }
+
+    // Compute the frame_num of the first frame that should be output (D.2.8).
     recovery_frame_num_ =
         (*recovery_frame_cnt_ + pic->frame_num) % max_frame_num_;
-    DVLOG(3) << "recovery_frame_num_" << *recovery_frame_num_;
+    DVLOG(3) << "recovery_frame_num_=" << *recovery_frame_num_;
     recovery_frame_cnt_.reset();
   }
 
@@ -1233,19 +1231,37 @@ bool H264Decoder::ProcessSPS(int sps_id, bool* need_new_buffers) {
     return false;
   }
 
+  VideoColorSpace new_color_space;
+  // For H264, prefer the frame color space over the config.
+  if (sps && sps->GetColorSpace().IsSpecified()) {
+    new_color_space = sps->GetColorSpace();
+  } else if (container_color_space_.IsSpecified()) {
+    new_color_space = container_color_space_;
+  }
+
+  bool is_color_space_change = false;
+  if (base::FeatureList::IsEnabled(kAVDColorSpaceChanges)) {
+    is_color_space_change = new_color_space.IsSpecified() &&
+                            new_color_space != picture_color_space_;
+  }
+
   if (pic_size_ != new_pic_size || dpb_.max_num_pics() != max_dpb_size ||
-      profile_ != new_profile || bit_depth_ != new_bit_depth) {
-    if (!Flush())
+      profile_ != new_profile || bit_depth_ != new_bit_depth ||
+      is_color_space_change) {
+    if (!Flush()) {
       return false;
+    }
     DVLOG(1) << "Codec profile: " << GetProfileName(new_profile)
              << ", level: " << base::strict_cast<int>(level)
              << ", DPB size: " << max_dpb_size
              << ", Picture size: " << new_pic_size.ToString()
-             << ", bit depth: " << base::strict_cast<int>(new_bit_depth);
+             << ", bit depth: " << base::strict_cast<int>(new_bit_depth)
+             << ", color_space: " << new_color_space.ToString();
     *need_new_buffers = true;
     profile_ = new_profile;
     bit_depth_ = new_bit_depth;
     pic_size_ = new_pic_size;
+    picture_color_space_ = new_color_space;
     dpb_.set_max_num_pics(max_dpb_size);
   }
 
@@ -1599,8 +1615,9 @@ H264Decoder::DecodeResult H264Decoder::Decode() {
           SET_ERROR_AND_RETURN();
 
         bool need_new_buffers = false;
-        if (!ProcessSPS(sps_id, &need_new_buffers))
+        if (!ProcessSPS(sps_id, &need_new_buffers)) {
           SET_ERROR_AND_RETURN();
+        }
         accelerator_->ProcessSPS(
             parser_.GetSPS(sps_id),
             base::span<const uint8_t>(
@@ -1616,7 +1633,9 @@ H264Decoder::DecodeResult H264Decoder::Decode() {
           ref_pic_list_p0_.clear();
           ref_pic_list_b0_.clear();
           ref_pic_list_b1_.clear();
-
+        }
+        // Perfer config changes over color space changes.
+        if (need_new_buffers) {
           return kConfigChange;
         }
         break;
@@ -1741,6 +1760,10 @@ uint8_t H264Decoder::GetBitDepth() const {
 
 VideoChromaSampling H264Decoder::GetChromaSampling() const {
   return chroma_sampling_;
+}
+
+VideoColorSpace H264Decoder::GetVideoColorSpace() const {
+  return picture_color_space_;
 }
 
 absl::optional<gfx::HDRMetadata> H264Decoder::GetHDRMetadata() const {

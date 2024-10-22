@@ -58,6 +58,11 @@ class NET_EXPORT_PRIVATE DnsTransaction {
   virtual void Start(ResponseCallback callback) = 0;
 
   virtual void SetRequestPriority(RequestPriority priority) = 0;
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  virtual void SetNotNeedMoreAttemptIPQueryType(
+      uint16_t not_need_more_another_ip_query_type) = 0;
+#endif  // OHOS_EX_HTTP_DNS_FALLBACK
 };
 
 // Startable/Cancellable object to represent a DNS probe sequence.

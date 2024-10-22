@@ -129,6 +129,7 @@ class GESTURE_DETECTION_EXPORT GestureProvider {
   // Whether double-tap gesture detection is currently supported.
   bool double_tap_support_for_page_;
   bool double_tap_support_for_platform_;
+
   bool native_embed_enabled_ = false;
 
   const bool gesture_begin_end_types_enabled_;

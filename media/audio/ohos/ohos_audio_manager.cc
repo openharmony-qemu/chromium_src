@@ -225,7 +225,7 @@ void OHOSAudioManager::ReleaseInputStream(AudioInputStream* stream) {
 void OHOSAudioManager::SelectAudioDevice(const std::string& device_id,
                                          bool isInput) {
   if (device_id.empty()) {
-    LOG(ERROR) << "OHOSAudioManager::SelectAudioDevice device_id is empty.";
+    LOG(WARNING) << "OHOSAudioManager::SelectAudioDevice device_id is empty.";
     return;
   }
   LOG(INFO) << "OHOSAudioManager::SelectAudioDevice device_id is: "

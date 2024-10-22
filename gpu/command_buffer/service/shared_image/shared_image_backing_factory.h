@@ -84,6 +84,19 @@ class GPU_GLES2_EXPORT SharedImageBackingFactory {
       SkAlphaType alpha_type,
       uint32_t usage,
       std::string debug_label) = 0;
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
+  virtual std::unique_ptr<SharedImageBacking> CreateSharedImage(
+      const Mailbox& mailbox,
+      gfx::GpuMemoryBufferHandle handle,
+      gfx::BufferFormat format,
+      gfx::BufferPlane plane,
+      const gfx::Size& size,
+      const gfx::ColorSpace& color_space,
+      GrSurfaceOrigin surface_origin,
+      SkAlphaType alpha_type,
+      uint32_t usage,
+      void* window_buffer) { return nullptr; }
+#endif // BUILDFLAG(ENABLE_HEIF_DECODER)
 
   // Returns true if the factory is supported
   bool CanCreateSharedImage(uint32_t usage,

@@ -133,6 +133,10 @@
 #include "ui/gfx/geometry/vector2d_conversions.h"
 #include "ui/gfx/geometry/vector2d_f.h"
 
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+#include "cc/layers/toast_layer_impl.h"
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+
 namespace cc {
 namespace {
 
@@ -1274,6 +1278,10 @@ bool LayerTreeHostImpl::HasDamage() const {
       root_surface->GetDamageRect().Intersects(root_surface->content_rect());
   bool hud_wants_to_draw_ = active_tree->hud_layer() &&
                             active_tree->hud_layer()->IsAnimatingHUDContents();
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+  hud_wants_to_draw_ |= active_tree->toast_layer() &&
+                        active_tree->toast_layer()->IsAnimatingToastContents();
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
 
   return root_surface_has_visible_damage ||
          active_tree_->property_trees()->effect_tree().HasCopyRequests() ||
@@ -1355,6 +1363,13 @@ DrawResult LayerTreeHostImpl::CalculateRenderPasses(FrameData* frame) {
     viz::CompositorRenderPass* root_pass = frame->render_passes.back().get();
     root_pass->damage_rect = root_pass->output_rect;
   }
+
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+  if (active_tree_->toast_layer()) {
+    viz::CompositorRenderPass* root_pass = frame->render_passes.back().get();
+    root_pass->damage_rect = root_pass->output_rect;
+  }
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
 
   // Grab this region here before iterating layers. Taking copy requests from
   // the layers while constructing the render passes will dirty the render
@@ -2143,7 +2158,7 @@ void LayerTreeHostImpl::SetMemoryPolicyImpl(const ManagedMemoryPolicy& policy) {
 }
 
 void LayerTreeHostImpl::SetDrawRectState(bool isNeedDrawRect) {
-  is_need_draw_rect_ = isNeedDrawRect;
+  isNeedDrawRect_ = isNeedDrawRect;
 }
 
 void LayerTreeHostImpl::SetExternalTilePriorityConstraints(
@@ -2152,8 +2167,7 @@ void LayerTreeHostImpl::SetExternalTilePriorityConstraints(
   const bool tile_priority_params_changed =
       viewport_rect_for_tile_priority_ != viewport_rect;
   viewport_rect_for_tile_priority_ = viewport_rect;
-
-  if (is_need_draw_rect_ || tile_priority_params_changed) {
+  if (isNeedDrawRect_ || tile_priority_params_changed) {
     active_tree_->set_needs_update_draw_properties();
     if (pending_tree_)
       pending_tree_->set_needs_update_draw_properties();
@@ -2693,6 +2707,18 @@ viz::CompositorFrame LayerTreeHostImpl::GenerateCompositorFrame(
   }
 
   const DrawMode draw_mode = GetDrawMode();
+
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+  if (active_tree_->toast_layer()) {
+    TRACE_EVENT0("cc", "DrawLayers.UpdateToastTexture");
+    active_tree_->toast_layer()->UpdateToastTexture(
+        draw_mode, layer_tree_frame_sink_, &resource_provider_,
+        // The hud uses Gpu rasterization if the device is capable, not related
+        // to the content of the web page.
+        gpu_rasterization_status_ != GpuRasterizationStatus::OFF_DEVICE,
+        frame->render_passes);
+  }
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
 
   // Because the contents of the HUD depend on everything else in the frame, the
   // contents of its texture are updated as the last thing before the frame is

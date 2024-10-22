@@ -883,6 +883,12 @@ void BrowserAccessibilityManager::DoDefaultAction(
   ui::AXActionData action_data;
   action_data.action = ax::mojom::Action::kDoDefault;
   action_data.target_node_id = node.GetId();
+
+#if BUILDFLAG(IS_OHOS)
+  ui::AXActionData load_text_data = action_data;
+  load_text_data.action = ax::mojom::Action::kLoadInlineTextBoxes;
+  delegate_->AccessibilityPerformAction(load_text_data);
+#endif
   delegate_->AccessibilityPerformAction(action_data);
   BrowserAccessibilityStateImpl::GetInstance()->OnAccessibilityApiUsage();
 }
@@ -1649,7 +1655,8 @@ bool BrowserAccessibilityManager::IsRootFrameManager() const {
 ui::AXTreeUpdate BrowserAccessibilityManager::SnapshotAXTreeForTesting() {
   std::unique_ptr<ui::AXTreeSource<const ui::AXNode*>> tree_source(
       ax_serializable_tree()->CreateTreeSource());
-  ui::AXTreeSerializer<const ui::AXNode*> serializer(tree_source.get());
+  ui::AXTreeSerializer<const ui::AXNode*, std::vector<const ui::AXNode*>>
+      serializer(tree_source.get());
   ui::AXTreeUpdate update;
   serializer.SerializeChanges(GetRoot(), &update);
   return update;

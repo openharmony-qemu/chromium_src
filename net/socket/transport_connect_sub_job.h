@@ -55,6 +55,12 @@ class TransportConnectSubJob : public WebSocketEndpointLockManager::Waiter {
   // Implementation of WebSocketEndpointLockManager::EndpointWaiter.
   void GotEndpointLock() override;
 
+#ifdef OHOS_MULTI_IP_CONNECT
+  StreamSocket* Socket() {
+    return transport_socket_ ? transport_socket_.get() : nullptr;
+  }
+#endif  // OHOS_MULTI_IP_CONNECT
+
 #if BUILDFLAG(IS_OHOS)
   void SetFromPreload(bool from_preload) {
     from_preload_ = from_preload;

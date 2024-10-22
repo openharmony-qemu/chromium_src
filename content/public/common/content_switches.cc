@@ -1036,7 +1036,7 @@ const char kOhosDisableTouchEvent[] = "disable-touch-event-register";
 const char kPasswordWaitUsername[] = "ohos-enable-wait-for-username";
 const char kMaxNumberOfSavedFrames[] = "ohos-enable-max-number-of-saved-frames";
 const char kNumRasterThreads[] = "ohos-enable-num-raster-threads";
-const char kIsSingleRenderProcess[] = "ohos-enable-single-render-process";
+const char kIsMultiRenderProcess[] = "ohos-enable-single-render-process";
 const char kSimpleBackendIsDefault[] = "ohos-enable-simple-backend-is-default";
 const char kOHOSPersistSessionCookies[] = "ohos-enable-persist-session-cookies";
 const char kEnableEmbedMode[] = "ohos-enable-embed-mode";
@@ -1046,7 +1046,7 @@ const char kHttpCacheMaxSize[] = "ohos-enable-set-http-cache-max-size";
 const char kCookieConfigPersistSession[] = "ohos-enable-cookie-config-persist-session";
 const char kDoubleTapSupportForPlatformEnabled[] = "ohos-enable-double-tap-for-platform";
 const char kUserAgentValue[] = "ohos-user-agent-value";
-const char kIgnoreLockdownMode[] = "ohos-enable-Ignore-lockdown-mode";
+const char kIgnoreLockdownMode[] = "ohos-enable-ignore-lockdown-mode";
 const char kEnablePrinting[] = "ohos-enable-printing";
 const char kOhosHttpCacheSimple[] = "ohos-enable-http-cache-simple";
 const char kCalcTabletMode[] = "ohos-enable-calc-tablet-mode";
@@ -1062,9 +1062,7 @@ const char kOhosHanceSurface[] = "ohos-enhance-surface";
 #ifdef OHOS_NETWORK_LOAD
 const char kOhosCustomScheme[] = "ohos-custom-scheme";
 #endif
-#ifdef OHOS_SCHEME_HANDLER
 const char kOhSchemeHandlerCustomScheme[] = "ohos-scheme-handler-custom-scheme";
-#endif
 #endif
 
 #if BUILDFLAG(IS_WIN)

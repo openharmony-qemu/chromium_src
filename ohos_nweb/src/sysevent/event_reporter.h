@@ -37,22 +37,7 @@ void ReportJankStats(int64_t startTime, int duration, std::vector<uint16_t> jank
 void ReportLockdownModeStatus(void);
 
 void ReportPageLoadTimeStats(OhWebPerformanceTiming loadPageTime);
-void ReportDragDropStatus(const std::string& eventName, int32_t id);
 
-void ReportDragDropInfo(const std::string& eventName,
-                          int32_t id,
-                          const std::string& fragment,
-                          const std::string& linkUrl,
-                          const std::string& linkHtml);
-void ReportForceZoomEnable(void);
-
-void ReportOpenPrivateMode(void);
-
-void ReportPageDownLoadErrorInfo(long downloadId, int errorCode);
-
-void ReportSlideJankStats(int64_t startTime, int64_t duration, int32_t totalAppFrames,
-  int32_t totalAppMissedFrames, int64_t maxAppFrametime, int32_t maxAppSeqMissedFrames);
-  
 void ReportAudioPlayErrorInfo(const std::string errorType,
                               int errorCode,
                               const std::string errorDesc);
@@ -64,6 +49,23 @@ void ReportVideoPlayErrorInfo(const std::string errorType,
 void ReportAudioFrameDropStats(int frameCount);
 
 void ReportVideoFrameDropStats(int64_t frameCount, int64_t frameDuration);
+
+void ReportDragDropStatus(const std::string& eventName, int32_t id);
+
+void ReportDragDropInfo(const std::string& eventName,
+                          int32_t id,
+                          const std::string& fragment,
+                          const std::string& linkUrl,
+                          const std::string& linkHtml);
+
+void ReportForceZoomEnable(void);
+
+void ReportOpenPrivateMode(void);
+
+void ReportPageDownLoadErrorInfo(long downloadId, int errorCode);
+
+void ReportSlideJankStats(int64_t startTime, int64_t duration, int32_t totalAppFrames,
+  int32_t totalAppMissedFrames, int64_t maxAppFrametime, int32_t maxAppSeqMissedFrames);
 
 void ReportSiteIsolationMode(const std::string site_isolation_status);
 #endif

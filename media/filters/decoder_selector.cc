@@ -305,8 +305,8 @@ template <DemuxerStream::Type StreamType>
 void DecoderSelector<StreamType>::OnDecoderInitializeDone(
     DecoderStatus status) {
   DCHECK(decoder_);
-#if defined(OHOS_MEDIA)
-  LOG(WARNING) << "OhMedia::OnDecoderInitializeDone"
+#ifdef OHOS_MEDIA
+  LOG(WARNING) << "OhMedia::OnDecoderInitializeDone "
                << decoder_->GetDecoderType()
                << " success=" << static_cast<int>(status.code());
 #else

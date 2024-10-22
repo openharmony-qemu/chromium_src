@@ -13,6 +13,7 @@
 #include "ohos_adapter_helper.h"
 
 #include "base/logging.h"
+#include "third_party/bounds_checking_function/include/securec.h"
 
 namespace media {
 using namespace OHOS::NWeb;
@@ -106,7 +107,7 @@ void OHOSMediaCodecBridgeImpl::UpdateStatusAndClearCache(bool is_running) {
 CodecCodeAdapter OHOSMediaCodecBridgeImpl::Configure(
     const CodecConfigPara& config,
     scoped_refptr<base::SequencedTaskRunner> codec_task_runner) {
-  LOG(INFO) << "configure codec.";
+  LOG(INFO) << "configure codec bitRate:" << config.bitRate;
   if ((codec_adapter_ == nullptr) || (cb_ == nullptr)) {
     LOG(ERROR) << "codec or callback is NULL.";
     return CodecCodeAdapter::ERROR;
@@ -241,21 +242,31 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::FillSurfaceBuffer(
   int32_t y_cnt = height;
   int32_t u_cnt = height / SAMPLE_RATIO;
   int32_t v_cnt = height / SAMPLE_RATIO;
+  
   // copy Y
   for (int32_t i = 0; i < y_cnt; i++) {
-    memcpy(dst, y_src, width);
+    if (memcpy_s(dst, stride, y_src, width) != EOK) {
+      LOG(ERROR) << "copy Y memcpy_s failed";
+      return CodecCodeAdapter::ERROR;
+    }
     dst += stride;
     y_src += src_y_stride;
   }
   // copy U
   for (int32_t i = 0; i < u_cnt; i++) {
-    memcpy(dst, u_src, width / SAMPLE_RATIO);
+    if (memcpy_s(dst, stride / SAMPLE_RATIO, u_src, width / SAMPLE_RATIO) != EOK) {
+      LOG(ERROR) << "copy U memcpy_s failed";
+      return CodecCodeAdapter::ERROR;
+    }
     dst += stride / SAMPLE_RATIO;
     u_src += src_u_stride;
   }
   // copy V
   for (int32_t i = 0; i < v_cnt; i++) {
-    memcpy(dst, v_src, width / SAMPLE_RATIO);
+    if (memcpy_s(dst, stride / SAMPLE_RATIO, v_src, width / SAMPLE_RATIO) != EOK) {
+      LOG(ERROR) << "copy V memcpy_s failed";
+      return CodecCodeAdapter::ERROR;
+    }
     dst += stride / SAMPLE_RATIO;
     v_src += src_v_stride;
   }
@@ -333,8 +344,12 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::DequeueOutputBuffer(
         ReleaseOutputBuffer(config_data.index, false);
         return CodecCodeAdapter::ERROR;
       }
-      memcpy(config_data_cache_.config_data_addr, config_data.buffer_data.addr,
-             config_data_cache_.config_data_size);
+      if (memcpy_s(config_data_cache_.config_data_addr, config_data_cache_.config_data_size,
+                   config_data.buffer_data.addr, config_data.buffer_data.bufferSize) != EOK) {
+        LOG(ERROR) << "config data memcpy_s failed";
+        ReleaseOutputBuffer(config_data.index, false);
+        return CodecCodeAdapter::ERROR;
+      }
       ReleaseOutputBuffer(config_data.index, false);
     }
     uint32_t config_data_size = config_data_cache_.config_data_size;
@@ -361,8 +376,18 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::DequeueOutputBuffer(
     LOG(DEBUG) << "DequeueOutputBuffer handle keyframe : configSize: "
                << config_data_size << ", buffersize: " << buffer.bufferSize
                << ", mergeFrame Size: " << merge_frame_data.bufferSize;
-    memcpy(keyframe_addr_, config_data_addr, config_data_size);
-    memcpy(keyframe_addr_ + config_data_size, buffer.addr, buffer.bufferSize);
+    if (memcpy_s(keyframe_addr_, merge_frame_data.bufferSize, config_data_addr, config_data_size) != EOK) {
+      LOG(ERROR) << "keyframe_addr_ memcpy_s failed";
+      ClearConfigDataCache();
+      PopOutQueue();
+      return CodecCodeAdapter::ERROR;
+    }
+    if (memcpy_s(keyframe_addr_ + config_data_size, buffer.bufferSize, buffer.addr, buffer.bufferSize) != EOK) {
+      LOG(ERROR) << "keyframe_addr_ + config_data_size memcpy failed";
+      ClearConfigDataCache();
+      PopOutQueue();
+      return CodecCodeAdapter::ERROR;
+    }
     merge_frame_data.addr = keyframe_addr_;
     info = merge_frame_info;
     buffer = merge_frame_data;

@@ -57,16 +57,16 @@ void ArkWeb_HttpBodyStream_::Init(
         this, stream_init_callback_in));
     return;
   }
-  
+
   this->stream_init_callback = stream_init_callback_in;
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post_data_stream is nullptr.";
     return;
   }
-
+ 
   post_data_stream->Init(this);
 }
-
+ 
 void ArkWeb_HttpBodyStream_::SetUserData(void* user_data_in) {
   if (!user_data_in) {
     LOG(ERROR) << "scheme_handler set a nullptr.";
@@ -74,76 +74,76 @@ void ArkWeb_HttpBodyStream_::SetUserData(void* user_data_in) {
   }
   user_data = user_data_in;
 }
-
+ 
 void* ArkWeb_HttpBodyStream_::GetUserData() const {
   return user_data;
 }
-
+ 
 void ArkWeb_HttpBodyStream_::Read(void* buffer, int64_t buf_len) const {
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post_data_stream is nullptr.";
     return;
   }
-
+ 
   if (!buffer) {
     LOG(ERROR) << "scheme_hadnler read buffer is nullptr.";
   }
-
+ 
   post_data_stream->Read(buffer, buf_len,
                          const_cast<ArkWeb_HttpBodyStream*>(this));
 }
-
+ 
 int64_t ArkWeb_HttpBodyStream_::GetSize() const {
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post_data_stream is nullptr.";
     return -1;
   }
-
+ 
   return post_data_stream->GetSize();
 }
-
+ 
 int64_t ArkWeb_HttpBodyStream_::GetPosition() const {
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post_data_stream is nullptr.";
     return -1;
   }
-
+ 
   return post_data_stream->GetPosition();
 }
-
+ 
 bool ArkWeb_HttpBodyStream_::IsChunked() const {
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post_data_stream is nullptr.";
     return false;
   }
-
+ 
   return post_data_stream->IsChunked();
 }
-
+ 
 bool ArkWeb_HttpBodyStream_::IsEOF() const {
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post_data_stream is nullptr.";
     return false;
   }
-
+ 
   return post_data_stream->IsEOF();
 }
-
+ 
 bool ArkWeb_HttpBodyStream_::IsInMemory() const {
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post_data_stream is nullptr.";
     return false;
   }
-
+ 
   return post_data_stream->IsInMemory();
 }
-
+ 
 void ArkWeb_HttpBodyStream_::OnInitComplete(int rv) {
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post_data_stream is nullptr.";
     return;
   }
-
+ 
   if (!stream_init_callback) {
     LOG(ERROR) << "scheme_handler stream_init_callback is nullptr.";
     return;
@@ -155,20 +155,20 @@ void ArkWeb_HttpBodyStream_::OnInitComplete(int rv) {
         this, rv));
     return;
   }
-
+ 
   stream_init_callback(this, static_cast<ArkWeb_NetError>(rv));
 }
-
+ 
 void ArkWeb_HttpBodyStream_::OnReadComplete(char* buffer, int bytes_read) {
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post_data_stream is nullptr.";
   }
-
+ 
   if (!read_callback) {
     LOG(ERROR) << "scheme_handler read callback is nullptr.";
     return;
   }
-
+  
   if (!CEF_CURRENTLY_ON_UIT() && is_ets_) {
     CEF_POST_TASK(CEF_UIT,
       base::BindOnce(&ArkWeb_HttpBodyStream_::OnReadComplete,

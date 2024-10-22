@@ -149,6 +149,12 @@ BASE_FEATURE(kV8UseLibmTrigFunctions,
              "V8UseLibmTrigFunctions",
              base::FEATURE_ENABLED_BY_DEFAULT);
 
+// The currently enabled fallback to the mid-tier register allocator for huge
+// Wasm functions. We want to remove this fallback in the future.
+BASE_FEATURE(kV8MidtierRegallocFallback,
+             "V8MidtierRegallocFallback",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
 // JavaScript language features.
 
 // Enables the Symbols-as-WeakMap-keys proposal.

@@ -9,17 +9,17 @@
 #include <signal.h>
 
 struct access_token {
-    __u64 sender_tokenid;
-    __u64 first_tokenid;
-    __u64 reserved[2];
+	__u64 sender_tokenid;
+	__u64 first_tokenid;
+	__u64 reserved[2];
 };
 struct binder_sender_info {
-    struct access_token tokens;
-    __u64 sender_pid_nr;
+	struct access_token tokens;
+	__u64 sender_pid_nr;
 };
 #define BINDER_ENABLE_ONEWAY_SPAM_DETECTION _IOW('b', 16, __u32)
 #define BINDER_FEATURE_SET _IOWR('b', 30, __u64)
-#define BINDER_GET_SENDER_INFO  _IOWR('b', 32, struct binder_sender_info)
+#define BINDER_GET_SENDER_INFO	_IOWR('b', 32, struct binder_sender_info)
 
 using sandbox::bpf_dsl::AllOf;
 using sandbox::bpf_dsl::Allow;
@@ -139,6 +139,7 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
     case __NR_mkdirat:
     case __NR_set_tid_address:
     case __NR_getdents64:
+    case __NR_getrandom:
     case __NR_prlimit64:
     case __NR_sched_setscheduler:
     case __NR_sched_getscheduler:
@@ -184,6 +185,7 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
     case __NR_getrlimit:
     case __NR_newfstatat:
     case __NR_fstatfs:
+    case __NR_mmap:
 #endif
 
     override_and_allow = true;
@@ -256,15 +258,26 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
 
     if (sysno == __NR_clone) {
         const Arg<unsigned long> flags(0);
- 
+
         const uint64_t kMuslForkFlags = SIGCHLD;
         const uint64_t kPthreadCreateFlags =
             CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_THREAD |
             CLONE_SYSVSEM | CLONE_SETTLS | CLONE_PARENT_SETTID | CLONE_CHILD_CLEARTID | CLONE_DETACHED;
- 
+
         const BoolExpr is_fork_or_pthread =
             AnyOf(flags==kMuslForkFlags, flags == kPthreadCreateFlags);
         return If(is_fork_or_pthread, Allow()).Else(CrashSIGSYSClone());
+    }
+
+    if (sysno == __NR_prctl) {
+#define PR_SET_JITFORT_OPTION 0x6a6974
+#define JITFORT_CPU_FEATURES 7
+        const Arg<int> option(0), arg(1);
+
+        return Switch(option)
+            .Cases({PR_SET_JITFORT_OPTION},
+                If(arg == JITFORT_CPU_FEATURES, Allow()).Else(CrashSIGSYSPrctl()))
+            .Default(BaselinePolicy::EvaluateSyscall(sysno));
     }
 #endif
 

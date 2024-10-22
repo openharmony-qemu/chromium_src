@@ -619,6 +619,7 @@ network::mojom::NetworkService* GetNetworkService() {
         if (!file.IsValid()) {
           LOG(ERROR) << "Failed opening NetLog: " << log_path.value();
         } else {
+          LOG(INFO) << "opened NetLog: " << log_path.value();
           (*g_network_service_remote)
               ->StartNetLog(
                   std::move(file),

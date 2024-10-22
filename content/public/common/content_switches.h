@@ -287,7 +287,7 @@ CONTENT_EXPORT extern const char kOhosDisableTouchEvent[];
 CONTENT_EXPORT extern const char kPasswordWaitUsername[];
 CONTENT_EXPORT extern const char kMaxNumberOfSavedFrames[];
 CONTENT_EXPORT extern const char kNumRasterThreads[];
-CONTENT_EXPORT extern const char kIsSingleRenderProcess[];
+CONTENT_EXPORT extern const char kIsMultiRenderProcess[];
 CONTENT_EXPORT extern const char kSimpleBackendIsDefault[];
 CONTENT_EXPORT extern const char kOHOSPersistSessionCookies[];
 CONTENT_EXPORT extern const char kEnableEmbedMode[];
@@ -302,7 +302,6 @@ CONTENT_EXPORT extern const char kEnablePrinting[];
 CONTENT_EXPORT extern const char kOhosHttpCacheSimple[];
 CONTENT_EXPORT extern const char kCalcTabletMode[];
 CONTENT_EXPORT extern const char kDisableNonAdvancedSecurityMode[];
-
 #ifdef OHOS_ARKWEB_ADBLOCK
 CONTENT_EXPORT extern const char kOhosSubresourceFilter[];
 #endif
@@ -310,9 +309,7 @@ CONTENT_EXPORT extern const char kOhosSubresourceFilter[];
 #ifdef OHOS_NETWORK_LOAD
 CONTENT_EXPORT extern const char kOhosCustomScheme[];
 #endif
-#ifdef OHOS_SCHEME_HANDLER
 CONTENT_EXPORT extern const char kOhSchemeHandlerCustomScheme[];
-#endif
 #endif
 
 #if BUILDFLAG(IS_WIN)

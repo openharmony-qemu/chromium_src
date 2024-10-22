@@ -88,7 +88,11 @@ network::mojom::URLLoaderFactoryParamsPtr CreateParams(
     // --disable-web-security also disables Cross-Origin Read Blocking (CORB).
     params->is_corb_enabled = false;
   } else if (allow_universal_access_from_file_urls &&
+#ifndef OHOS_NETWORK_LOAD
              origin.scheme() == url::kFileScheme) {
+#else
+             (origin.scheme() == url::kFileScheme || origin.scheme() == url::kResourcesScheme)) {
+#endif
     // allow_universal_access_from_file_urls disables CORB (via
     // |is_corb_enabled|) and CORS (via |disable_web_security|) for requests
     // made from a file: |origin|.

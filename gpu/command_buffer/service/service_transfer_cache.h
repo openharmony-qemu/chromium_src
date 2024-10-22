@@ -85,6 +85,16 @@ class GPU_GLES2_EXPORT ServiceTransferCache
       size_t buffer_byte_size,
       bool needs_mips);
 
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
+  bool CreateLockedRGBAHardwareDecodedImageEntry(
+      int decoder_id,
+      uint32_t entry_id,
+      ServiceDiscardableHandle handle,
+      GrDirectContext* context,
+      std::vector<sk_sp<SkImage>> plane_images,
+      size_t buffer_byte_size);
+#endif
+
   void PurgeMemory(
       base::MemoryPressureListener::MemoryPressureLevel memory_pressure_level);
 

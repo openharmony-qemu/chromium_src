@@ -313,9 +313,6 @@ class PDFEngine {
   virtual void ZoomUpdated(double new_zoom_level) = 0;
   virtual void RotateClockwise() = 0;
   virtual void RotateCounterclockwise() = 0;
-#if defined(OHOS_PDF)
-  virtual void ResetDesiredLayoutOptions() = 0;
-#endif
   virtual bool IsReadOnly() const = 0;
   virtual void SetReadOnly(bool enable) = 0;
   virtual void SetDocumentLayout(DocumentLayout::PageSpread page_spread) = 0;

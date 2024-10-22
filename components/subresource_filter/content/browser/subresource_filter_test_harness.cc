@@ -81,8 +81,8 @@ void SubresourceFilterTestHarness::SetUp() {
   //    blocking task runner and this it is the current thread task runner.
 
 #ifdef OHOS_ARKWEB_ADBLOCK
-  base::ScopedTempDir unindex_dir;
-  ASSERT_TRUE(unindex_dir.CreateUniqueTempDir());
+  base::ScopedTempDir unindex_dir
+      : ASSERT_TRUE(unindex_dir.CreateUniqueTempDir());
 
   ruleset_service_ = std::make_unique<RulesetService>(
       &pref_service_, base::SingleThreadTaskRunner::GetCurrentDefault(),

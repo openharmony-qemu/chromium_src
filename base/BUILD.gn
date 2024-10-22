@@ -1077,9 +1077,8 @@ component("base") {
   ]
 
   if (is_ohos) {
-    deps += [
-      "//ohos_glue:ohos_adapter_glue_source",
-    ]
+    deps += [ "//ohos_glue:ohos_adapter_glue_source" ]
+    deps += ["//third_party:huawei_securec" ]
   }
 
   if (report_sys_event) {
@@ -3302,6 +3301,7 @@ test("base_unittests") {
     "memory/weak_auto_reset_unittest.cc",
     "memory/weak_ptr_unittest.cc",
     "message_loop/message_pump_glib_unittest.cc",
+    "message_loop/message_pump_ohos_unittest.cc",
     "message_loop/message_pump_unittest.cc",
     "message_loop/work_id_provider_unittest.cc",
     "metrics/bucket_ranges_unittest.cc",
@@ -3530,6 +3530,10 @@ test("base_unittests") {
     "version_unittest.cc",
     "vlog_unittest.cc",
   ]
+
+  if (is_ohos) {
+    sources += [ "base_paths_ohos_unittest.cc" ]
+  }
 
   if (!is_cronet_build) {
     # location_unittest.cc fails gn check for tracing-shimmed Cronet builds.
@@ -4118,6 +4122,12 @@ test("base_unittests") {
       "trace_event/typed_macros_unittest.cc",
       "tracing/perfetto_task_runner_unittest.cc",
     ]
+
+    if (is_ohos) {
+      sources += [
+        "trace_event/trace_event_ohos_unittest.cc",
+      ]
+    }
 
     if (is_android) {
       sources += [

@@ -108,7 +108,7 @@ std::unique_ptr<VideoEncodeAccelerator> CreateFuchsiaVEA() {
 }
 #endif
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
 std::unique_ptr<VideoEncodeAccelerator> CreateOHOSVEA() {
   return base::WrapUnique<VideoEncodeAccelerator>(
       new OHOSVideoEncodeAccelerator());
@@ -158,7 +158,7 @@ std::vector<VEAFactoryFunction> GetVEAFactoryFunctions(
     vea_factory_functions.push_back(base::BindRepeating(&CreateFuchsiaVEA));
   }
 #endif
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
   vea_factory_functions.push_back(base::BindRepeating(&CreateOHOSVEA));
 #endif
   return vea_factory_functions;

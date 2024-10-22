@@ -581,8 +581,17 @@ bool NWebDragDataImpl::SetPixelMapSetting(const void* data, size_t len, int widt
 }
 
 void NWebDragDataImpl::GetDragStartPosition(int& x, int& y) {
-  x = drag_image_origin_point_.x;
-  y = drag_image_origin_point_.y;
+  if (drag_data_ && drag_data_->IsImageFileContents()) {
+    x = drag_image_origin_point_.x - ToOhCoordinate(IMAGE_EXPAND_PADDING);
+    y = drag_image_origin_point_.y - ToOhCoordinate(IMAGE_EXPAND_PADDING);
+  } else {
+    x = drag_image_origin_point_.x - ToOhCoordinate(TEXT_PADDING + EXPAND_PADDING);
+    y = drag_image_origin_point_.y - ToOhCoordinate(TEXT_PADDING + EXPAND_PADDING);
+    int32_t width = drag_clip_width_ + ToOhCoordinate(TEXT_PADDING) * DOUBLE_RATIO;
+    if (width < ToOhCoordinate(IMAGE_MIN_WIDTH)) {
+      x = static_cast<int32_t>(x - (ToOhCoordinate(IMAGE_MIN_WIDTH) - width) / DOUBLE_RATIO);
+    }
+  }
 }
 
 bool NWebDragDataImpl::IsSingleImageContent() {

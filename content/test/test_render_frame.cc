@@ -223,6 +223,7 @@ class MockFrameHost : public mojom::FrameHost {
 #endif
 #if defined(OHOS_UNITTESTS)
   void MouseSelectMenuShow(bool show) override {}
+  void ChangeVisibilityOfQuickMenu() override {}
 #endif // OHOS_UNITTESTS
  private:
   mojom::DidCommitProvisionalLoadParamsPtr last_commit_params_;

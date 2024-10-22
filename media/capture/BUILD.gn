@@ -523,6 +523,20 @@ test("capture_unittests") {
     deps += [ "//third_party/ocmock" ]
   }
 
+  if (is_ohos) {
+    sources += [
+      "video/ohos/ohos_capture_delegate_unittist.cc",
+      "video/ohos/video_capture_common_ohos_unittest.cc",
+      "video/ohos/video_capture_device_factory_ohos_unittest.cc",
+      "video/ohos/video_capture_status_callback_listener_ohos_unittest.cc",
+      "video/ohos/video_capture_surface_buffer_listener_ohos_unittest.cc",
+    ]
+  }
+
+  if (ohos_unittests) {
+    deps += [ "//content/public/common:static_switches" ]
+  }
+
   if (is_ios) {
     deps += [ "//media:unit_tests_bundle_data" ]
   }

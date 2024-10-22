@@ -42,7 +42,6 @@ void StartObserveTraceEnable() {
                                     .GetSystemPropertiesInstance();
   system_properties_adapter.AttachSysPropObserver(OHOS::NWeb::PropertiesKey::PROP_DEBUG_TRACE,
     traceObserver.get());
-
   traceDebugStatus = OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
                       .GetTraceDebugEnable();
 }

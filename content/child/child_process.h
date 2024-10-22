@@ -97,6 +97,9 @@ class CONTENT_EXPORT ChildProcess {
   // on the main thread.
   static ChildProcess* current();
 
+#if BUILDFLAG(IS_OHOS)
+  void ReportCompositorKeyThread(bool is_created);
+#endif
  private:
 #if BUILDFLAG(IS_OHOS)
   void ReportIoThreadStatus(bool is_created);

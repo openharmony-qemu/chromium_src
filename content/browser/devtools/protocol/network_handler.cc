@@ -1034,8 +1034,8 @@ NetworkHandler::NetworkHandler(
       host_id_(host_id),
       devtools_token_(devtools_token),
       io_context_(io_context),
-      allow_file_access_(allow_file_access),
-      client_is_trusted_(client_is_trusted),	
+	  allow_file_access_(allow_file_access),
+      client_is_trusted_(client_is_trusted),
       browser_context_(nullptr),
       storage_partition_(nullptr),
       host_(nullptr),
@@ -1046,7 +1046,7 @@ NetworkHandler::NetworkHandler(
       bypass_service_worker_(false),
       cache_disabled_(false),
       update_loader_factories_callback_(
-          std::move(update_loader_factories_callback)) {
+      std::move(update_loader_factories_callback)) {
   DCHECK(io_context_);
   static bool have_configured_service_worker_context = false;
   if (have_configured_service_worker_context)

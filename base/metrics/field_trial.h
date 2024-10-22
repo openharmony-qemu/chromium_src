@@ -830,10 +830,6 @@ class BASE_EXPORT FieldTrialList {
 
   // Tracks whether CreateTrialsFromCommandLine() has been called.
   bool create_trials_from_command_line_called_ = false;
-
-#if defined(OHOS_SCROLLBAR)
-  bool overlay_force_state_ = false;
-#endif
 };
 
 }  // namespace base

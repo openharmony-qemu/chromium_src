@@ -11,6 +11,7 @@
 #include "base/metrics/histogram_macros.h"
 #include "base/metrics/user_metrics.h"
 #include "base/notreached.h"
+#include "base/logging.h"
 
 namespace ui {
 namespace {
@@ -69,15 +70,38 @@ TouchSelectionController::~TouchSelectionController() {
 void TouchSelectionController::OnSelectionBoundsChanged(
     const gfx::SelectionBound& start,
     const gfx::SelectionBound& end) {
-  if (start == start_ && end_ == end)
+  if (start == start_ && end_ == end) {
+#ifdef OHOS_CLIPBOARD
+    reset_selection_temporarily_ = false;
+#endif
     return;
+  }
 
   if (start.type() == gfx::SelectionBound::EMPTY ||
-      end.type() == gfx::SelectionBound::EMPTY ||
-      !show_touch_handles_) {
+      end.type() == gfx::SelectionBound::EMPTY || !show_touch_handles_) {
+#ifdef OHOS_CLIPBOARD
+    if (active_status_ == SELECTION_ACTIVE && start_selection_handle_ &&
+        end_selection_handle_ && show_touch_handles_) {
+      if (start_selection_handle_->IsActive() ||
+          end_selection_handle_->IsActive()) {
+        LOG(INFO) << "selection temporarily hide";
+        reset_selection_temporarily_ = true;
+        return;
+      }
+    }
+    if (longpress_drag_selector_.IsDragging()) {
+      LOG(INFO) << "long selection temporarily hide";
+      reset_selection_temporarily_ = true;
+      return;
+    }
+#endif
     HideHandles();
     return;
   }
+
+#ifdef OHOS_CLIPBOARD
+  reset_selection_temporarily_ = false;
+#endif
 
   // Swap the Handles when the start and end selection points cross each other.
   if (active_status_ == SELECTION_ACTIVE) {
@@ -400,7 +424,7 @@ void TouchSelectionController::ResetResponsePendingInputEvent() {
 #ifdef OHOS_CLIPBOARD
 void  TouchSelectionController::UpdateSelectionChanged(
     const TouchSelectionDraggable& draggable) {
-  if(&draggable != insertion_handle_.get()) {
+  if (&draggable != insertion_handle_.get()) {
     client_->OnSelectionEvent(SELECTION_HANDLES_UPDATEMENU);
   }
 }
@@ -460,6 +484,13 @@ void TouchSelectionController::OnDragBegin(
     base::RecordAction(base::UserMetricsAction("SelectionChanged"));
   selection_handle_dragged_ = true;
 
+#ifdef OHOS_CLIPBOARD
+  reset_selection_temporarily_ = false;
+  selection_handle_orientation_dragging_ = anchor_drag_to_selection_start_
+                                               ? TouchHandleOrientation::LEFT
+                                               : TouchHandleOrientation::RIGHT;
+#endif
+
   // When moving the handle we want to move only the extent point. Before doing
   // so we must make sure that the base point is set correctly.
   client_->SelectBetweenCoordinates(base, extent);
@@ -474,7 +505,16 @@ void TouchSelectionController::OnDragUpdate(
   gfx::Vector2dF line_offset = anchor_drag_to_selection_start_
                                    ? GetStartLineOffset()
                                    : GetEndLineOffset();
+#ifdef OHOS_CLIPBOARD
+  gfx::PointF line_position;
+  if (selection_handle_orientation_dragging_ == TouchHandleOrientation::LEFT) {
+    line_position = drag_position - line_offset;
+  } else {
+    line_position = drag_position + line_offset;
+  }
+#else
   gfx::PointF line_position = drag_position + line_offset;
+#endif
   if (&draggable == insertion_handle_.get())
     client_->MoveCaret(line_position);
   else
@@ -499,10 +539,26 @@ void TouchSelectionController::OnDragUpdate(
 
 void TouchSelectionController::OnDragEnd(
     const TouchSelectionDraggable& draggable) {
+#ifdef OHOS_CLIPBOARD
+  if (reset_selection_temporarily_) {
+    LOG(INFO) << "reset_selection_temporarily_ HideHandles";
+    HideHandles();
+  }
+  selection_handle_orientation_dragging_ = TouchHandleOrientation::UNDEFINED;
+#endif
   if (&draggable == insertion_handle_.get())
     client_->OnSelectionEvent(INSERTION_HANDLE_DRAG_STOPPED);
-  else
+  else {
+#ifdef OHOS_CLIPBOARD
+    if (&draggable == start_selection_handle_.get()) {
+      start_selection_handle_->ResetPositionAfterDragEnd();
+    }
+    if (&draggable == end_selection_handle_.get()) {
+      end_selection_handle_->ResetPositionAfterDragEnd();
+    }
+#endif
     client_->OnSelectionEvent(SELECTION_HANDLE_DRAG_STOPPED);
+  }
 }
 
 bool TouchSelectionController::IsWithinTapSlop(

@@ -490,7 +490,7 @@ void ClipboardHostImpl::ReadCustomData(ui::ClipboardBuffer clipboard_buffer,
 
 void ClipboardHostImpl::WriteText(const std::u16string& text
 #if defined(OHOS_CLIPBOARD)
-                                  ,
+,
                                   const blink::mojom::CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
                                   ) {
@@ -499,7 +499,7 @@ void ClipboardHostImpl::WriteText(const std::u16string& text
       base::BindOnce(&ui::ScopedClipboardWriter::WriteText,
                      base::Unretained(clipboard_writer_.get()), text
 #if defined(OHOS_CLIPBOARD)
-                     ,
+,
                      copy_option
 #endif // defined(OHOS_CLIPBOARD)
                      ));
@@ -508,7 +508,7 @@ void ClipboardHostImpl::WriteText(const std::u16string& text
 void ClipboardHostImpl::WriteHtml(const std::u16string& markup,
                                   const GURL& url
 #if defined(OHOS_CLIPBOARD)
-                                  ,
+,
                                   const blink::mojom::CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
                                   ) {
@@ -518,7 +518,7 @@ void ClipboardHostImpl::WriteHtml(const std::u16string& markup,
                      base::Unretained(clipboard_writer_.get()), markup,
                      url.spec(), ui::ClipboardContentType::kSanitized
 #if defined(OHOS_CLIPBOARD)
-                     ,
+,
                      copy_option
 #endif // defined(OHOS_CLIPBOARD)
                      ));
@@ -551,13 +551,13 @@ void ClipboardHostImpl::WriteCustomData(
 void ClipboardHostImpl::WriteBookmark(const std::string& url,
                                       const std::u16string& title
 #if defined(OHOS_CLIPBOARD)
-                                      ,
+,
                                       const blink::mojom::CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
                                       ) {
   clipboard_writer_->WriteBookmark(title, url
 #if defined(OHOS_CLIPBOARD)
-                                   ,
+,
                                    copy_option
 #endif // defined(OHOS_CLIPBOARD)
   );
@@ -565,13 +565,13 @@ void ClipboardHostImpl::WriteBookmark(const std::string& url,
 
 void ClipboardHostImpl::WriteImage(const SkBitmap& bitmap
 #if defined(OHOS_CLIPBOARD)
-                                   ,
+,
                                    const blink::mojom::CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
 ) {
   clipboard_writer_->WriteImage(bitmap
 #if defined(OHOS_CLIPBOARD)
-                                ,
+,
                                 copy_option
 #endif // defined(OHOS_CLIPBOARD)
   );

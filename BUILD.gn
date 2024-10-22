@@ -125,6 +125,9 @@ group("gn_all") {
         "//ohos_nweb_ex/test:ohos_nweb_ex_unittests",
         "//third_party/ohos_nweb_hap",
       ]
+    deps += [
+      "//ohos_test",
+    ]
     }  # endif // OHOS_NWEB_EX
 
     if (defined(enable_ohos_nweb_hap) && enable_ohos_nweb_hap) {
@@ -191,6 +194,10 @@ group("gn_all") {
         "//chrome/test:unit_tests",
         "//ui/accessibility:accessibility_unittests",
       ]
+    }
+
+    if (is_ohos) {
+      deps += [ "//ohos_nweb/test:ohos_nweb_unittests" ]
     }
 
     if (use_blink) {

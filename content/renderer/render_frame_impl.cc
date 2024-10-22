@@ -613,7 +613,11 @@ blink::mojom::CommonNavigationParamsPtr MakeCommonNavigationParams(
       info->should_check_main_world_content_security_policy,
       initiator_origin_trial_features, info->href_translate.Latin1(),
       is_history_navigation_in_new_child_frame, info->input_start,
+#if BUILDFLAG(IS_OHOS)
+      request_destination, "");
+#else
       request_destination);
+#endif
 }
 
 WebFrameLoadType NavigationTypeToLoadType(
@@ -2375,6 +2379,12 @@ void RenderFrameImpl::MouseSelectMenuShow(bool show) {
     GetFrameHost()->MouseSelectMenuShow(show);
   }
 }
+
+void RenderFrameImpl::ChangeVisibilityOfQuickMenu() {
+  if (GetFrameHost()) {
+    GetFrameHost()->ChangeVisibilityOfQuickMenu();
+  }
+}
 #endif
 
 void RenderFrameImpl::AddMessageToConsole(
@@ -2576,7 +2586,6 @@ void RenderFrameImpl::CommitNavigation(
   // `origin_to_commit` must only be set on failed navigations.
   CHECK(!commit_params->origin_to_commit);
   LogCommitHistograms(commit_params->commit_sent, is_main_frame_);
-
   AssertNavigationCommits assert_navigation_commits(
       this, kMayReplaceInitialEmptyDocument);
 
@@ -2635,7 +2644,7 @@ void RenderFrameImpl::CommitNavigation(
   // - The actual data: URL will be saved in the document's DocumentState to
   // later be returned as the `url` in DidCommitProvisionalLoadParams.
   bool should_handle_data_url_as_string = false;
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   should_handle_data_url_as_string |=
       is_main_frame_ && !commit_params->data_url_as_string.empty();
 #endif
@@ -3086,7 +3095,7 @@ void RenderFrameImpl::CommitSameDocumentNavigation(
     // should keep the base URL as document URL.
     bool use_base_url_for_data_url =
         !navigation_state->common_params().base_url_for_data_url.is_empty();
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
     use_base_url_for_data_url |=
         !navigation_state->commit_params().data_url_as_string.empty();
 #endif
@@ -3702,6 +3711,13 @@ void RenderFrameImpl::DidCommitNavigation(
                "RenderFrameImpl::didStartProvisionalLoad", "id", routing_id_,
                "url", document_loader->GetUrl().GetString().Utf8());
 
+#ifdef OHOS_LOG_MESSAGE
+  if (IsMainFrame()) {
+    LOG(WARNING) << "event_message: page load start, routing_id: "
+                 << routing_id_ << ", url: ***";
+  }
+#endif
+
   // Install factories as early as possible - it needs to happen before the
   // newly committed document starts any subresource fetches.  In particular,
   // this needs to happen before invoking
@@ -3946,6 +3962,13 @@ void RenderFrameImpl::DidDispatchDOMContentLoadedEvent() {
   for (auto& observer : observers_)
     observer.DidDispatchDOMContentLoadedEvent();
 
+#ifdef OHOS_LOG_MESSAGE
+  if (IsMainFrame()) {
+    LOG(WARNING) << "event_message: content load finished, routing_id: "
+                 << routing_id_ << ", url: ***";
+  }
+#endif
+
   // Check whether we have new encoding name.
   UpdateEncoding(frame_, frame_->View()->PageEncoding().Utf8());
 }
@@ -3963,6 +3986,13 @@ void RenderFrameImpl::RunScriptsAtDocumentIdle() {
 void RenderFrameImpl::DidHandleOnloadEvents() {
   for (auto& observer : observers_)
     observer.DidHandleOnloadEvents();
+
+#ifdef OHOS_LOG_MESSAGE
+  if (IsMainFrame()) {
+    LOG(WARNING) << "event_message: page load finished, routing_id: "
+                 << routing_id_ << ", url: ***";
+  }
+#endif
 }
 
 void RenderFrameImpl::DidFinishLoad() {
@@ -4442,6 +4472,7 @@ void RenderFrameImpl::DidCreateScriptContext(v8::Local<v8::Context> context,
 #else
     blink::WebV8Features::EnableMojoJS(context, true);
 #endif
+
     if (mojo_js_features_) {
       if (mojo_js_features_->file_system_access)
         blink::WebV8Features::EnableMojoJSFileSystemAccessHelper(context, true);
@@ -4501,6 +4532,13 @@ blink::WebString RenderFrameImpl::UserAgentOverride() {
                                    ->GetRendererPreferences()
                                    .user_agent_override.ua_string_override);
   }
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_USERAGENT)
+  else if (GetWebView()->MainFrame()->IsWebRemoteFrame()) {
+    return WebString::FromUTF8(GetWebView()
+                                   ->GetRendererPreferences()
+                                   .user_agent_override.ua_string_override);
+  }
+#endif
 
   return blink::WebString();
 }
@@ -4786,7 +4824,12 @@ RenderFrameImpl::MakeDidCommitProvisionalLoadParams(
 
   bool requires_universal_access = false;
   const bool file_scheme_with_universal_access =
+#ifndef OHOS_NETWORK_LOAD
       params->origin.scheme() == url::kFileScheme &&
+#else
+      (params->origin.scheme() == url::kFileScheme ||
+      params->origin.scheme() == url::kResourcesScheme) &&
+#endif
       GetBlinkPreferences().allow_universal_access_from_file_urls;
 
   // Standard URLs must match the reported origin, when it is not unique.
@@ -4947,6 +4990,9 @@ void RenderFrameImpl::DidCommitNavigationInternal(
   NavigationState* navigation_state =
       DocumentState::FromDocumentLoader(frame_->GetDocumentLoader())
           ->navigation_state();
+#if BUILDFLAG(IS_OHOS)
+  std::string headers = navigation_state->common_params().headers;
+#endif
   if (same_document_params) {
     GetFrameHost()->DidCommitSameDocumentNavigation(
         std::move(params), std::move(same_document_params));
@@ -5015,7 +5061,14 @@ blink::mojom::CommitResult RenderFrameImpl::PrepareForHistoryNavigationCommit(
     // If this is marked as a same document load but we haven't committed
     // anything, we can't proceed with the load. The browser shouldn't let this
     // happen.
+#if defined(OHOS_BUGFIX_CRASH)
+    if (GetWebFrame()->GetCurrentHistoryItem().IsNull()) {
+      LOG(ERROR) << "RenderFrameImpl::PrepareForHistoryNavigationCommit abort";
+      return blink::mojom::CommitResult::Aborted;
+    }
+#else
     CHECK(!GetWebFrame()->GetCurrentHistoryItem().IsNull());
+#endif
 
     // Additionally, if the current history item's document sequence number
     // doesn't match the one sent from the browser, it is possible that this
@@ -5264,6 +5317,7 @@ void RenderFrameImpl::BeginNavigation(
   // that will end up in a different tab/window, and BeginNavigation handles
   // everything else.
   if (info->navigation_policy == blink::kWebNavigationPolicyDownload) {
+    LOG(INFO) << "download url from rfh";
     mojo::PendingRemote<blink::mojom::BlobURLToken> blob_url_token =
         CloneBlobURLToken(info->blob_url_token);
 
@@ -5919,7 +5973,7 @@ void RenderFrameImpl::DecodeDataURL(
     GURL* base_url) {
   // A loadData request with a specified base URL.
   GURL data_url = common_params.url;
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   if (!commit_params.data_url_as_string.empty()) {
 #if DCHECK_IS_ON()
     {

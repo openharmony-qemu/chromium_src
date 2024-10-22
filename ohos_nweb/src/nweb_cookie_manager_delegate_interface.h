@@ -36,12 +36,24 @@ class NWebCookieManagerDelegateInterface {
   virtual std::string ReturnCookie(const std::string &url,
                                    bool &is_valid,
                                    bool incognito_mode) = 0;
+#ifdef OHOS_COOKIE_NDK
+  virtual std::string ReturnCookieWithHttpOnly(const std::string &url,
+                                               bool &is_valid,
+                                               bool incognito_mode,
+                                               bool includeHttpOnly) = 0;
+#endif
   virtual void SetCookie(const std::string& url,
                          const std::string& value,
                          std::shared_ptr<NWebBoolValueCallback> callback) = 0;
   virtual int SetCookie(const std::string &url,
                         const std::string &value,
                         bool incognito_mode) = 0;
+#ifdef OHOS_COOKIE_NDK
+  virtual int SetCookieWithHttpOnly(const std::string &url,
+                                   const std::string &value,
+                                   bool incognito_mode,
+                                   bool includeHttpOnly) = 0;
+#endif
   virtual void ExistCookies(
       std::shared_ptr<NWebBoolValueCallback> callback) = 0;
   virtual bool ExistCookies(bool incognito_mode) = 0;

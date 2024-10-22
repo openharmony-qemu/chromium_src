@@ -77,6 +77,11 @@
 #include "ui/gfx/geometry/vector2d_conversions.h"
 #include "ui/gfx/presentation_feedback.h"
 
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+#include "cc/layers/toast_layer.h"
+#include "cc/layers/toast_layer_impl.h"
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+
 namespace {
 static base::AtomicSequenceNumber s_layer_tree_host_sequence_number;
 static base::AtomicSequenceNumber s_image_decode_sequence_number;
@@ -926,6 +931,10 @@ bool LayerTreeHost::DoUpdateLayers() {
   TRACE_EVENT1("cc,benchmark", "LayerTreeHost::DoUpdateLayers",
                "source_frame_number", SourceFrameNumber());
 
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+  UpdateToastLayer(pending_commit_state()->extra_state);
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+
   UpdateHudLayer(pending_commit_state()->debug_state.ShouldCreateHudLayer());
 
   // In layer lists mode, the cc property trees are built directly and do not
@@ -952,6 +961,17 @@ bool LayerTreeHost::DoUpdateLayers() {
       hud_layer()->set_property_tree_sequence_number(
           root_layer()->property_tree_sequence_number());
     }
+
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+    if (toast_layer() && root_layer()) {
+      toast_layer()->SetTransformTreeIndex(root_layer()->transform_tree_index());
+      toast_layer()->SetEffectTreeIndex(root_layer()->effect_tree_index());
+      toast_layer()->SetClipTreeIndex(root_layer()->clip_tree_index());
+      toast_layer()->SetScrollTreeIndex(root_layer()->scroll_tree_index());
+      toast_layer()->set_property_tree_sequence_number(
+          root_layer()->property_tree_sequence_number());
+    }
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
   }
 
 #if DCHECK_IS_ON()
@@ -1299,6 +1319,13 @@ void LayerTreeHost::SetRootLayer(scoped_refptr<Layer> new_root_layer) {
     WaitForProtectedSequenceCompletion();
     hud_layer()->RemoveFromParent();
   }
+
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+  if (toast_layer()) {
+    WaitForProtectedSequenceCompletion();
+    toast_layer()->RemoveFromParent();
+  }
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
 
   // Reset gpu rasterization tracking.
   // This flag is sticky until a new tree comes along.
@@ -1745,6 +1772,12 @@ bool LayerTreeHost::is_hud_layer(const Layer* layer) const {
   return hud_layer() == layer;
 }
 
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+bool LayerTreeHost::is_toast_layer(const Layer* layer) const {
+  return toast_layer() == layer;
+}
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+
 void LayerTreeHost::SetNeedsFullTreeSync() {
   pending_commit_state()->needs_full_tree_sync = true;
   property_trees()->set_needs_rebuild(true);
@@ -2086,5 +2119,39 @@ void LayerTreeHost::OnLayerRectVisibilityChange(int id, bool visibility) {
   }
 }
 #endif
+
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+void LayerTreeHost::UpdateToastLayer(const LayerTreeExtraState& state) {
+  if (!state.ShowToast()) {
+    return;
+  }
+  if (!toast_layer()) {
+    toast_layer_ = ToastLayer::Create();
+    pending_commit_state()->toast_layer_id = toast_layer()->id();
+  }
+  if (root_layer() && !toast_layer()->parent()) {
+    root_layer()->AddChild(toast_layer());
+  }
+  toast_layer()->UpdateLocationAndSize(
+      pending_commit_state()->device_viewport_rect.size(),
+      pending_commit_state()->device_scale_factor);
+
+  toast_layer()->UpdateToastInfo(
+      pending_commit_state()->extra_state);
+}
+
+void LayerTreeHost::ShowToast(const LayerTreeExtraState& state) {
+  if (!state.ShowToast()) {
+    return;
+  }
+  LOG(INFO) << "LayerTreeHost::ShowToast(" << *state.ToastMessage() << ")";
+  if (LayerTreeExtraState::Equal(pending_commit_state()->extra_state, state)) {
+    return;
+  }
+
+  pending_commit_state()->extra_state = state;
+  SetNeedsCommit();
+}
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
 
 }  // namespace cc

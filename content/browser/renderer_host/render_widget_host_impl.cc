@@ -794,7 +794,7 @@ void RenderWidgetHostImpl::RendererWidgetCreated(bool for_frame_widget) {
 }
 
 void RenderWidgetHostImpl::Init() {
-    // Note that this may be called after a renderer crash. In this case, we can
+  // Note that this may be called after a renderer crash. In this case, we can
   // just exit early, as there is nothing else to do.  Note that
   // `waiting_for_init_` should've already been reset to false in that case.
   if (!renderer_widget_created_) {
@@ -803,7 +803,6 @@ void RenderWidgetHostImpl::Init() {
   }
 
   DCHECK(waiting_for_init_);
-
   waiting_for_init_ = false;
 
   // These two methods avoid running while we are `waiting_for_init_`, so we
@@ -1616,28 +1615,7 @@ void RenderWidgetHostImpl::ForwardGestureEventWithLatencyInfo(
                WebInputEvent::GetName(gesture_event.GetType()));
 
 #if BUILDFLAG(IS_OHOS)
-  int32_t preferred_frame_rate = 0;
-  if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollBegin) {
-      base::ohos::SlidingObserver::GetInstance().StartSliding();
-    } else if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollEnd) {
-      base::ohos::SlidingObserver::GetInstance().StopSliding();
-    } else if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollUpdate) {
-      preferred_frame_rate = base::ohos::SlidingObserver::GetInstance().OnScrollUpdate(gesture_event.data.scroll_update.delta_x,
-        gesture_event.data.scroll_update.delta_y);
-  }
-
-  auto* host = GpuProcessHost::Get();
-  viz::GpuHostImpl* host_impl = nullptr;
-  if (host) {
-    host_impl = host->gpu_host();
-  }
-
-  if (host_impl && preferred_frame_rate >= 0) {
-    if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollEnd
-      || gesture_event.GetType() == WebInputEvent::Type::kGestureScrollUpdate) {
-      host_impl->ReportSlidingFrameRate(preferred_frame_rate);
-    }
-  }
+  ReportSlidingFrameRate(gesture_event);
 #endif
 
   // This is used to auto-disable accessibility if we detect user input
@@ -2744,6 +2722,10 @@ gfx::Rect RenderWidgetHostImpl::GetScreenRect() {
 void RenderWidgetHostImpl::OnTextSelected(bool flag) {
   blink_frame_widget_->OnTextSelected(flag);
 }
+
+void RenderWidgetHostImpl::OnDestroyImageAnalyzerOverlay() {
+  blink_frame_widget_->OnDestroyImageAnalyzerOverlay();
+}
 #endif
 
 // static
@@ -3274,6 +3256,31 @@ void RenderWidgetHostImpl::DidNativeEmbedEvent(
       blink::mojom::NativeEmbedTouchEventPtr touchEvent) {
   if (view_)
     view_->DidNativeEmbedEvent(touchEvent);
+}
+
+void RenderWidgetHostImpl::ReportSlidingFrameRate(const blink::WebGestureEvent& gesture_event) {
+  int32_t preferred_frame_rate = 0;
+  if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollBegin) {
+    base::ohos::SlidingObserver::GetInstance().StartSliding();
+  } else if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollEnd) {
+    base::ohos::SlidingObserver::GetInstance().StopSliding();
+  } else if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollUpdate) {
+    preferred_frame_rate = base::ohos::SlidingObserver::GetInstance().OnScrollUpdate(
+      gesture_event.data.scroll_update.delta_x, gesture_event.data.scroll_update.delta_y);
+  }
+
+  auto* host = GpuProcessHost::Get();
+  viz::GpuHostImpl* host_impl = nullptr;
+  if (host) {
+    host_impl = host->gpu_host();
+  }
+
+  if (host_impl && preferred_frame_rate >= 0) {
+    if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollEnd
+      || gesture_event.GetType() == WebInputEvent::Type::kGestureScrollUpdate) {
+      host_impl->ReportSlidingFrameRate(preferred_frame_rate);
+    }
+  }
 }
 #endif
 void RenderWidgetHostImpl::DidStopFlinging() {

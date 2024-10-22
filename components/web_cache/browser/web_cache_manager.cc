@@ -101,6 +101,7 @@ void WebCacheManager::AddResourceToCache(const std::string& url,
                                          const int type) {
   if (web_cache_services_.size() != 1) {
     LOG(ERROR) << "Add resource to MemoryCache failed. No render service or in multiple render services mode.";
+    return;
   }
 
   auto service = web_cache_services_.begin();

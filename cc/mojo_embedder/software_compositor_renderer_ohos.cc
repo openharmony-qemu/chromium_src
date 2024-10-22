@@ -132,6 +132,7 @@ void SoftwareCompositorRendererOhos::DetachFromClient() {
   root_support_.reset();
   display_client_.reset();
   display_.reset();
+  frame_sink_manager_ = nullptr;
 }
 
 void SoftwareCompositorRendererOhos::DrawAndSwapOnRenderer(
@@ -149,6 +150,7 @@ void SoftwareCompositorRendererOhos::DrawAndSwapOnRenderer(
   base::TimeTicks now = base::TimeTicks::Now();
   bool result = display_->DrawAndSwap({now, now});
   software_draw_result_ = result;
+
   in_software_draw_ = false;
   SendCompositorFrameAckToClient();
 }

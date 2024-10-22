@@ -263,7 +263,7 @@ TEST(SourceStreamToDataPipeCallbackTest, CompletionCallbackAfterDestructed) {
       base::BindLambdaForTesting([&](int result) { callback_called = true; }));
   net::CompletionOnceCallback callback = source_ptr->TakeCompletionCallback();
   adapter.reset();
-  
+
   // Test that calling `callback` after deleting `adapter` must not cause UAF
   // (crbug.com/1511085).
   std::move(callback).Run(net::ERR_FAILED);

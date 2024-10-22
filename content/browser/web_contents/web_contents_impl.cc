@@ -224,6 +224,10 @@
 #include "content/browser/ohos/date_time_chooser_ohos.h"
 #endif  // #ifdef OHOS_CSS_INPUT_TIME
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+#include "components/subresource_filter/content/browser/ohos_adblock_config.h"
+#endif
+
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
 #include "content/public/browser/custom_media_player_listener.h"
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
@@ -564,6 +568,11 @@ class JavaScriptDialogDismissNotifier {
 
   ~JavaScriptDialogDismissNotifier() {
     for (auto& callback : callbacks_) {
+#if BUILDFLAG(IS_OHOS)
+      if (callback.is_null()) {
+        continue;
+      }
+#endif
       std::move(callback).Run();
     }
   }
@@ -967,11 +976,10 @@ class WebContentsOfBrowserContext : public base::SupportsUserData::Data {
           env, web_contents_with_dangling_ptr_to_browser_context);
 #endif  // BUILDFLAG(IS_ANDROID)
 
-      NOTREACHED()
+      CHECK(false)
           << "BrowserContext is getting destroyed without first closing all "
           << "WebContents (for more info see https://crbug.com/1376879#c44); "
           << "creator = " << creator;
-      base::debug::DumpWithoutCrashing();
     }
   }
 
@@ -1101,6 +1109,10 @@ WebContentsImpl::WebContentsImpl(BrowserContext* browser_context)
     star_scan_load_observer_ = std::make_unique<StarScanLoadObserver>(this);
   }
 #endif  // BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC) && BUILDFLAG(USE_STARSCAN)
+
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+  media_playback_policy_observation_.Observe(MediaPlaybackPolicy::Instance());
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
 }
 
 WebContentsImpl::~WebContentsImpl() {
@@ -1204,6 +1216,9 @@ WebContentsImpl::~WebContentsImpl() {
   // For simplicity, destroy the Java WebContents before we notify of the
   // destruction of the WebContents.
   ClearWebContentsAndroid();
+#endif
+#if BUILDFLAG(IS_OHOS)
+  native_embed_rect_info_map_.clear();
 #endif
 
   // |save_package_| is refcounted so make sure we clear the page before
@@ -3141,6 +3156,11 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences() {
 #endif
   GetContentClient()->browser()->OverrideWebkitPrefs(this, &prefs);
 
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+  prefs.playback_with_mobile_data_allowed =
+      MediaPlaybackPolicy::Instance()->IsPlaybacWithMobileDataAllowed();
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+
   return prefs;
 }
 
@@ -3855,7 +3875,12 @@ void WebContentsImpl::ExitFullscreenMode(bool will_cause_resize) {
     static_cast<RenderWidgetHostViewBase*>(view)->ExitFullscreenMode();
 
   if (delegate_) {
+    // This may spin the message loop and destroy this object crbug.com/1506535
+    base::WeakPtr<WebContentsImpl> weak_ptr = weak_factory_.GetWeakPtr();
     delegate_->ExitFullscreenModeForTab(this);
+    if (!weak_ptr) {
+      return;
+    }
 
     if (keyboard_lock_widget_)
       delegate_->CancelKeyboardLockRequest(this);
@@ -4805,15 +4830,27 @@ void WebContentsImpl::CreateNativeBridgeHostForRenderFrameHost(
 void WebContentsImpl::OnNativeEmbedStatusUpdate(
     const NativeEmbedInfo& native_embed_info,
     NativeEmbedInfo::TagState state) {
-  std::string param_list;
-  for (auto& item : native_embed_info.params) {
-    param_list += item.first + " ";
-    param_list += item.second + ", ";
+  bool print_log = true;
+  if (native_embed_rect_info_map_.count(native_embed_info.embed_element_id)) {
+    gfx::Rect history_rect = native_embed_rect_info_map_[native_embed_info.embed_element_id];
+    if (history_rect.size() == native_embed_info.rect.size()) {
+      print_log = false;
+    }
+    native_embed_rect_info_map_[native_embed_info.embed_element_id] = native_embed_info.rect;
+  } else {
+    native_embed_rect_info_map_.insert(std::make_pair(native_embed_info.embed_element_id, native_embed_info.rect));
   }
-  LOG(INFO) << "[NativeEmbed] OnNativeEmbedStatusUpdate "
+  if (print_log) {
+    std::string param_list;
+    for (auto& item : native_embed_info.params) {
+      param_list += item.first + " ";
+      param_list += item.second + ", ";
+    }
+    LOG(INFO) << "[NativeEmbed] OnNativeEmbedStatusUpdate "
              << " state is " << (int)state << ", "
              << native_embed_info
              << ", params: " << param_list;
+  }
 
   if (delegate_) {
     delegate_->OnNativeEmbedStatusUpdate(native_embed_info, state);
@@ -6848,7 +6885,7 @@ void WebContentsImpl::OnPageScaleFactorChanged(PageImpl& source) {
 }
 
 void WebContentsImpl::EnumerateDirectory(
-    base::WeakPtr<FileChooserImpl> file_chooser,
+	base::WeakPtr<FileChooserImpl> file_chooser,
     RenderFrameHost* render_frame_host,
     scoped_refptr<FileChooserImpl::FileSelectListenerImpl> listener,
     const base::FilePath& directory_path) {
@@ -7404,6 +7441,12 @@ void WebContentsImpl::MouseSelectMenuShow(bool show) {
     render_view_host_delegate_view_->MouseSelectMenuShow(show);
   }
 }
+
+void WebContentsImpl::ChangeVisibilityOfQuickMenu() {
+  if (render_view_host_delegate_view_) {
+    render_view_host_delegate_view_->ChangeVisibilityOfQuickMenu();
+  }
+}
 #endif
 
 void WebContentsImpl::ShowContextMenu(
@@ -7429,7 +7472,7 @@ void WebContentsImpl::ShowContextMenu(
 #if defined(OHOS_EX_FREE_COPY)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kForBrowser)) {
-    SetShouldShowFreeCopy(params.is_selectable);
+    SetShouldShowFreeCopyMenu(params.is_selectable);
   }
 #endif
 
@@ -7488,11 +7531,11 @@ void WebContentsImpl::RunJavaScriptDialog(
   // http://crbug.com/728276
   base::ScopedClosureRunner fullscreen_block = ForSecurityDropFullscreen();
 
-  auto callback =
-      base::BindOnce(&WebContentsImpl::OnDialogClosed, base::Unretained(this),
-                     render_frame_host->GetProcess()->GetID(),
-                     render_frame_host->GetRoutingID(),
-                     std::move(response_callback), std::move(fullscreen_block));
+  auto callback = base::BindOnce(
+      &WebContentsImpl::OnDialogClosed, weak_factory_.GetWeakPtr(),
+      render_frame_host->GetProcess()->GetID(),
+      render_frame_host->GetRoutingID(), std::move(response_callback),
+      std::move(fullscreen_block));
 
   std::vector<protocol::PageHandler*> page_handlers =
       protocol::PageHandler::EnabledForWebContents(this);
@@ -7597,11 +7640,11 @@ void WebContentsImpl::RunBeforeUnloadConfirm(
   // http://crbug.com/728276
   base::ScopedClosureRunner fullscreen_block = ForSecurityDropFullscreen();
 
-  auto callback =
-      base::BindOnce(&WebContentsImpl::OnDialogClosed, base::Unretained(this),
-                     render_frame_host->GetProcess()->GetID(),
-                     render_frame_host->GetRoutingID(),
-                     std::move(response_callback), std::move(fullscreen_block));
+  auto callback = base::BindOnce(
+      &WebContentsImpl::OnDialogClosed, weak_factory_.GetWeakPtr(),
+      render_frame_host->GetProcess()->GetID(),
+      render_frame_host->GetRoutingID(), std::move(response_callback),
+      std::move(fullscreen_block));
 
   std::vector<protocol::PageHandler*> page_handlers =
       protocol::PageHandler::EnabledForWebContents(this);
@@ -7642,7 +7685,7 @@ void WebContentsImpl::RunBeforeUnloadConfirm(
 }
 
 void WebContentsImpl::RunFileChooser(
-    base::WeakPtr<FileChooserImpl> file_chooser,
+	base::WeakPtr<FileChooserImpl> file_chooser,
     RenderFrameHost* render_frame_host,
     scoped_refptr<FileChooserImpl::FileSelectListenerImpl> listener,
     const blink::mojom::FileChooserParams& params) {
@@ -8341,6 +8384,22 @@ void WebContentsImpl::UpdateTargetURL(RenderFrameHostImpl* render_frame_host,
   if (delegate_)
     delegate_->UpdateTargetURL(this, url);
 }
+
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+void WebContentsImpl::WebExtensionUpdateTabUrl(
+    int32_t tab_id, const GURL& url) {
+  OPTIONAL_TRACE_EVENT2("content", "WebContentsImpl::WebExtensionUpdateTabUrl",
+                        "tab_id", tab_id, "url", url);
+  if (delegate_)
+    delegate_->WebExtensionUpdateTabUrl(tab_id, url);
+}
+
+int32_t WebContentsImpl::GetTabId() {
+  if (delegate_)
+     return delegate_->GetTabId();
+  return -1;
+}
+#endif
 
 bool WebContentsImpl::ShouldRouteMessageEvent(
     RenderFrameHostImpl* target_rfh) const {
@@ -10166,7 +10225,8 @@ void WebContentsImpl::AboutToBeDiscarded(WebContents* new_contents) {
                              new_contents);
 }
 
-base::ScopedClosureRunner WebContentsImpl::CreateDisallowCustomCursorScope(int max_dimension_dips) {
+base::ScopedClosureRunner WebContentsImpl::CreateDisallowCustomCursorScope(
+    int max_dimension_dips) {
   auto* render_widget_host_base = GetPrimaryMainFrame()
                                       ->GetRenderWidgetHost()
                                       ->GetRenderWidgetHostViewBase();
@@ -10302,6 +10362,7 @@ void WebContentsImpl::ShowAutofillPopup(
                                    is_password_popup_type);
   }
 }
+
 void WebContentsImpl::HideAutofillPopup() {
   // notify ui to dismiss hideAutofillPopup
   if (delegate_) {
@@ -10310,28 +10371,18 @@ void WebContentsImpl::HideAutofillPopup() {
 }
 #endif
 #ifdef OHOS_EX_FREE_COPY
-void WebContentsImpl::SelectAndCopy() {
+void WebContentsImpl::ShowFreeCopyMenu() {
   auto* input_handler = GetFocusedFrameWidgetInputHandler();
   if (!input_handler) {
     return;
   }
-  input_handler->SelectAndCopy();
+  input_handler->ShowFreeCopyMenu();
 }
 
-void WebContentsImpl::SetShouldShowFreeCopy(bool is_selectable) {
+void WebContentsImpl::SetShouldShowFreeCopyMenu(bool is_selectable) {
   is_selectable_ = is_selectable;
 }
 #endif  // OHOS_EX_FREE_COPY
-
-#ifdef OHOS_EX_BLANK_TARGET_POPUP_INTERCEPT
-void WebContentsImpl::SetEnableBlankTargetPopupIntercept(
-    bool enableBlankTargetPopup) {
-  if (enable_blank_target_popup_intercept_ != enableBlankTargetPopup) {
-    enable_blank_target_popup_intercept_ = enableBlankTargetPopup;
-    OnWebPreferencesChanged();
-  }
-}
-#endif
 
 #if defined(OHOS_WEBRTC)
 void WebContentsImpl::StartCamera(int nWebID) {
@@ -10397,6 +10448,8 @@ std::unique_ptr<CustomMediaPlayer> WebContentsImpl::CreateCustomMediaPlayer(
     const MediaInfo& media_info) {
   if (delegate_) {
     return delegate_->CreateCustomMediaPlayer(std::move(listener), media_info);
+  } else {
+    LOG(WARNING) << "CreateCustomMediaPlayer failed, no delegate_";
   }
   return nullptr;
 }
@@ -10410,6 +10463,7 @@ void WebContentsImpl::RemoveCustomMediaPlayer(const MediaPlayerId& player_id,
                                               CustomMediaPlayer* player) {
   auto iter = players_.find(player_id);
   if (iter == players_.end()) {
+    LOG(WARNING) << "RemoveCustomMediaPlayer failed";
     return;
   }
   DCHECK(iter->second == player);
@@ -10455,5 +10509,26 @@ const std::string& WebContentsImpl::SharedRenderProcessToken() {
   return shared_render_process_token_;
 }
 #endif
+
+#ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+void WebContentsImpl::OnPlaybackWithMobileDataAllowed() {
+  LOG(INFO) << "OnPlaybackWithMobileDataAllowed";
+  MediaPlaybackPolicy::Instance()->AllowPlaybacWithMobileData();
+}
+
+void WebContentsImpl::OnPlaybackWithMobileDataAllowedPolicyChanged() {
+  if (web_preferences_->playback_with_mobile_data_allowed ==
+      MediaPlaybackPolicy::Instance()->IsPlaybacWithMobileDataAllowed()) {
+    return;
+  }
+  web_preferences_->playback_with_mobile_data_allowed =
+      MediaPlaybackPolicy::Instance()->IsPlaybacWithMobileDataAllowed();
+  NotifyPreferencesChanged();
+
+  MediaPlayerId nonexistent(GlobalRenderFrameHostId(), -1);
+  media_web_contents_observer_->
+      AllowAllMediaPlayersPlaybackWithMobileDataExcept(nonexistent);
+}
+#endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
 
 }  // namespace content

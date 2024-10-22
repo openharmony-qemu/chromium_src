@@ -149,6 +149,23 @@ int ThrottlingNetworkTransaction::Start(const net::HttpRequestInfo* request,
   return Throttle(true, result);
 }
 
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+int ThrottlingNetworkTransaction::RestartWithSecureDnsOnly(
+    net::CompletionOnceCallback callback) {
+  if (CheckFailed()) {
+    return net::ERR_INTERNET_DISCONNECTED;
+  }
+  if (!interceptor_) {
+    return network_transaction_->RestartWithSecureDnsOnly(std::move(callback));
+  }
+
+  callback_ = std::move(callback);
+  int result = network_transaction_->RestartWithSecureDnsOnly(base::BindOnce(
+      &ThrottlingNetworkTransaction::IOCallback, base::Unretained(this), true));
+  return Throttle(true, result);
+}
+#endif
+
 int ThrottlingNetworkTransaction::RestartIgnoringLastError(
     net::CompletionOnceCallback callback) {
   if (CheckFailed())

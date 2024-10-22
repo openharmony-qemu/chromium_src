@@ -57,6 +57,12 @@ source_set("browser") {
     "//content:content_implementation",
     "//v8:external_startup_data",
   ]
+
+  if (use_libfuzzer) {
+    configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
+    configs += [ "//build/config/gcc:symbol_visibility_default" ]
+  }
+
   defines = []
   libs = []
   frameworks = []
@@ -3238,6 +3244,8 @@ source_set("browser") {
       "webauth/virtual_fido_discovery_factory.h",
 
       # The Document Picture-in-Picture API is not implemented on Android.
+      "picture_in_picture/document_picture_in_picture_navigation_throttle.cc",
+      "picture_in_picture/document_picture_in_picture_navigation_throttle.h",
       "picture_in_picture/document_picture_in_picture_window_controller_impl.cc",
       "picture_in_picture/document_picture_in_picture_window_controller_impl.h",
     ]
@@ -3303,7 +3311,7 @@ source_set("browser") {
         "ohos/content_view_statics_ohos.cc",
         "ohos/content_view_statics_ohos.h",
       ]
-    }  #endif  // defined(OHOS_SUSPEND_ALL_TIMERS)
+    }
 
     #if defined(OHOS_WPT)
     if (defined(ohos_wpt) && ohos_wpt) {
@@ -3477,6 +3485,13 @@ source_set("browser") {
       "devtools/protocol/native_profiling_handler.cc",
       "devtools/protocol/native_profiling_handler.h",
       "profiling_utils.cc",
+    ]
+  }
+
+  if (defined(ohos_media_network_traffic_prompt) && ohos_media_network_traffic_prompt) {
+    sources += [
+      "media/media_playback_policy.cc",
+      "media/media_playback_policy.h",
     ]
   }
 }

@@ -74,6 +74,7 @@ class NWebApplication : public CefApp,
 
   /* CefBrowserProcessHandler methods begin */
   void OnContextInitialized() override;
+
   CefRefPtr<CefClient> GetDefaultClient() override;
 #ifdef OHOS_NETWORK_LOAD
   void OnBeforeChildProcessLaunch(
@@ -81,7 +82,7 @@ class NWebApplication : public CefApp,
 #endif
 
 #ifdef OHOS_INCOGNITO_MODE
-void OnContextInitializedForIncognitoMode() override;
+    void OnContextInitializedForIncognitoMode() override;
 #endif
   /* CefBrowserProcessHandler methods end */
 
@@ -111,6 +112,7 @@ void OnContextInitializedForIncognitoMode() override;
       bool incognito_mode = false
 #endif
   );
+
 #ifdef OHOS_NETWORK_LOAD
   std::vector<std::string> CustomSchemeCmdLineSplit(std::string str,
                                                     const char split);

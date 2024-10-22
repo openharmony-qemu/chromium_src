@@ -39,12 +39,20 @@ class NWebCookieManagerImpl : public NWebCookieManager {
   std::string ReturnCookie(const std::string &url,
                            bool &is_valid,
                            bool incognito_mode) override;
+  std::string ReturnCookieWithHttpOnly(const std::string& url,
+                           bool& is_valid,
+                           bool incognito_mode,
+                           bool includeHttpOnly) override;
   void SetCookie(const std::string& url,
                  const std::string& value,
                  std::shared_ptr<NWebBoolValueCallback> callback) override;
   int SetCookie(const std::string &url,
                 const std::string &value,
                 bool incognito_mode) override;
+  int SetCookieWithHttpOnly(const std::string &url,
+                const std::string &value,
+                bool incognito_mode,
+                bool includeHttpOnly) override;
   void ExistCookies(std::shared_ptr<NWebBoolValueCallback> callback) override;
   bool ExistCookies(bool incognito_mode) override;
   void Store(std::shared_ptr<NWebBoolValueCallback> callback) override;

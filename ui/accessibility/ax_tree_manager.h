@@ -16,9 +16,10 @@ namespace ui {
 class AXNode;
 class AXTreeManagerMap;
 
-// Abstract interface for a class that owns an AXTree and manages its
-// connections to other AXTrees in the same page or desktop (parent and child
-// trees).
+// Interface for a class that owns an AXTree and manages its connections
+// to other AXTrees in the same page or desktop (parent and child trees)
+// as well as a mapping of AXNode's by ID for supporting `GetNodeFromTree`
+// and related methods.
 //
 // Note, the tree manager may be created for a tree which has unknown (not
 // valid) tree id. A such tree is not registered with the tree map and thus
@@ -37,6 +38,9 @@ class AX_EXPORT AXTreeManager : public AXTreeObserver {
   // For testing only, register a function to be called when focus changes
   // in any AXTreeManager.
   static void SetFocusChangeCallbackForTesting(base::RepeatingClosure callback);
+
+  AXTreeManager();
+  explicit AXTreeManager(std::unique_ptr<AXTree> tree);
 
   AXTreeManager(const AXTreeManager&) = delete;
   AXTreeManager& operator=(const AXTreeManager&) = delete;
@@ -86,6 +90,10 @@ class AX_EXPORT AXTreeManager : public AXTreeObserver {
   // Returns AXTreeIDUnknown if this tree doesn't have a parent tree.
   virtual AXTreeID GetParentTreeID() const;
 
+  // Whether this manager can access platform nodes. Defaults to false
+  // and is overridden in `AXPlatformTreeManager` to return true.
+  virtual bool IsPlatformTreeManager() const;
+
   // Returns the AXNode that is at the root of the current tree.
   AXNode* GetRoot() const;
 
@@ -130,9 +138,6 @@ class AX_EXPORT AXTreeManager : public AXTreeObserver {
       const std::vector<AXTreeObserver::Change>& changes) override;
 
  protected:
-  AXTreeManager();
-  explicit AXTreeManager(std::unique_ptr<AXTree> tree);
-
   virtual AXTreeManager* GetParentManager() const;
 
   // Return the last node that had focus, no searching.

@@ -20,10 +20,11 @@ void ResReqPreloadInfoListToJson(const std::list<std::shared_ptr<PRRequestInfo>>
     base::Value::Dict dict;
     dict.Set("url", url::Origin::Create(info->url()).GetURL().spec());
     dict.Set("allow_credentials", info->allow_credentials());
-    dict.Set("cache_type", static_cast<int>(info->cache_type()));
-    dict.Set("freshness_life_times", std::to_string(info->freshness_life_times()));
-    dict.Set("e_tag", info->e_tag());
-    dict.Set("last_modified", info->last_modified());
+    auto cache_info = info->cache_info();
+    dict.Set("cache_type", static_cast<int>(cache_info.cache_type));
+    dict.Set("freshness_life_times", std::to_string(cache_info.freshness_life_times));
+    dict.Set("e_tag", cache_info.e_tag);
+    dict.Set("last_modified", cache_info.last_modified);
     list.Append(std::move(dict));
   }
   bool write_success = base::JSONWriter::Write(list, &entry_content);
@@ -90,11 +91,12 @@ void JsonToResReqPreloadInfoList(const std::string& json,
     info_list.push_back(info);
   }
 }
+
 ResReqInfoCacheMgr::ResReqInfoCacheMgr(const std::string& url,
   const scoped_refptr<base::SingleThreadTaskRunner>& sth_task_runner,
   const scoped_refptr<DiskCacheBackendFactory>& disk_cache_backend_factory,
   const ResRequestInfoCacheLoadedCB& info_cache_cb) :
-    url_(url), sth_task_runner_(sth_task_runner), info_cache_loaded_cb_(info_cache_cb) {
+    sth_task_runner_(sth_task_runner), info_cache_loaded_cb_(info_cache_cb) {
       disk_cache_ = base::WrapRefCounted(new (std::nothrow) DiskCacheFile(disk_cache_backend_factory, url,
         base::BindRepeating(&ResReqInfoCacheMgr::OnEntryLoadedCallback, weak_factory_.GetWeakPtr())));
       if (disk_cache_ == nullptr) {
@@ -149,7 +151,7 @@ void ResReqInfoCacheMgr::OnEntryLoadedCallback(const std::string& entry_content)
 
 void ResReqInfoCacheMgr::CheckFlush() {
   if (!is_start_) {
-    LOG(DEBUG) << "PRPPreload.ResReqInfoCacheMgr::CheckFlush no need to flush" << url_;
+    LOG(DEBUG) << "PRPPreload.ResReqInfoCacheMgr::CheckFlush no need to flush";
     return;
   }
   if (last_flush_len_ < new_info_list_.size()) {

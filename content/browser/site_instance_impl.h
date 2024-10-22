@@ -482,6 +482,12 @@ class CONTENT_EXPORT SiteInstanceImpl final : public SiteInstance {
   // Sets the process for `this`, creating a SiteInstanceGroup if necessary.
   void SetProcessForTesting(RenderProcessHost* process);
 
+  // Set a callback to be run from this SiteInstance's destructor. Used only in
+  // tests.
+  void set_destruction_callback_for_testing(base::OnceClosure callback) {
+    destruction_callback_for_testing_ = std::move(callback);
+  }
+
  private:
   friend class BrowsingInstance;
   friend class SiteInstanceGroupManager;
@@ -625,6 +631,9 @@ class CONTENT_EXPORT SiteInstanceImpl final : public SiteInstance {
   // Keeps track of whether we need to verify that the StoragePartition
   // information does not change when `site_info_` is set.
   bool verify_storage_partition_info_ = false;
+
+  // Test-only callback to run when this SiteInstance is destroyed.
+  base::OnceClosure destruction_callback_for_testing_;
 };
 
 }  // namespace content

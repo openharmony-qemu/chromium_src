@@ -298,6 +298,10 @@ class ChildThreadImpl::IOThreadState
       BindReceiver(std::move(receiver));
   }
 
+#if defined(OHOS_RENDERER_ANR_DUMP)
+  void SetWebkitInited() { webkit_inited_ = true; }
+#endif
+
  private:
   friend class base::RefCountedThreadSafe<IOThreadState>;
 
@@ -342,6 +346,10 @@ class ChildThreadImpl::IOThreadState
 #if defined(OHOS_RENDERER_ANR_DUMP)
   void dumpCurrentJavaScriptStackInMainThread(
       dumpCurrentJavaScriptStackInMainThreadCallback callback) override {
+    if (!webkit_inited_) {
+      std::move(callback).Run("");
+      return;
+    }
     AnrDumper::GetInstance()->DumpCurrentJavaScriptStack(std::move(callback));
   }
 #endif
@@ -472,6 +480,9 @@ class ChildThreadImpl::IOThreadState
   // Binding requests which should be handled by |interface_binders|, but which
   // have been queued because |allow_interface_binders_| is still |false|.
   std::vector<mojo::GenericPendingReceiver> pending_binding_requests_;
+#if defined(OHOS_RENDERER_ANR_DUMP)
+  bool webkit_inited_ = false;
+#endif
 };
 
 ChildThread* ChildThread::Get() {
@@ -853,11 +864,11 @@ const mojo::Remote<mojom::FontCacheWin>& ChildThreadImpl::GetFontCacheWin() {
 #endif
 
 #if BUILDFLAG(IS_OHOS)
-void ChildThreadImpl::ReportKeyThread(int32_t status, int32_t process_id, int32_t thread_id) {
+void ChildThreadImpl::ReportKeyThread(int32_t status, int32_t process_id, int32_t thread_id, int32_t roleAdapter) {
   using namespace OHOS::NWeb;
   if (child_process_host_)
     child_process_host_->ReportKeyThread(
-      status, process_id, thread_id, static_cast<int32_t>(ResSchedRoleAdapter::USER_INTERACT));
+      status, process_id, thread_id, roleAdapter);
 }
 #endif
 
@@ -927,12 +938,12 @@ void ChildThreadImpl::DisconnectChildProcessHost() {
 void ChildThreadImpl::RunServiceDeprecated(
     const std::string& service_name,
     mojo::ScopedMessagePipeHandle service_pipe) {
-  DLOG(ERROR) << "Ignoring unhandled request to run service: " << service_name;
+  LOG(ERROR) << "Ignoring unhandled request to run service: " << service_name;
 }
 
 void ChildThreadImpl::BindServiceInterface(
     mojo::GenericPendingReceiver receiver) {
-  DLOG(ERROR) << "Ignoring unhandled request to bind service interface: "
+  LOG(ERROR) << "Ignoring unhandled request to bind service interface: "
               << *receiver.interface_name();
 }
 
@@ -969,6 +980,14 @@ void ChildThreadImpl::OnMemoryPressureFromBrowserReceived(
   }
   // Forward the notification to the registry of MemoryPressureListeners.
   base::MemoryPressureListener::NotifyMemoryPressure(level);
+}
+#endif
+
+#if defined(OHOS_RENDERER_ANR_DUMP)
+void ChildThreadImpl::SetWebkitInited() {
+  ChildThreadImpl::GetIOTaskRunner()->PostTask(
+      FROM_HERE,
+      base::BindOnce(&IOThreadState::SetWebkitInited, io_thread_state_));
 }
 #endif
 

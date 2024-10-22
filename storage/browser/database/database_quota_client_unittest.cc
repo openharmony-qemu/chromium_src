@@ -35,7 +35,6 @@
 #include "storage/browser/database/database_util.h"
 #include "storage/browser/quota/quota_manager.h"
 #include "storage/browser/quota/quota_manager_proxy.h"
-#include "storage/browser/quota/special_storage_policy.h"
 #include "storage/browser/test/mock_special_storage_policy.h"
 #include "storage/common/database/database_identifier.h"
 #include "testing/gmock/include/gmock/gmock-matchers.h"
@@ -54,14 +53,11 @@ static const blink::mojom::StorageType kTemp =
 // Mocks DatabaseTracker methods used by DatabaseQuotaClient.
 class MockDatabaseTracker : public DatabaseTracker {
  public:
-  MockDatabaseTracker(
-      const base::FilePath& path,
-      bool is_incognito,
-      scoped_refptr<QuotaManagerProxy> quota_manager_proxy,
-      scoped_refptr<SpecialStoragePolicy> special_storage_policy)
+  MockDatabaseTracker(const base::FilePath& path,
+                      bool is_incognito,
+                      scoped_refptr<QuotaManagerProxy> quota_manager_proxy)
       : DatabaseTracker(path,
                         is_incognito,
-                        std::move(special_storage_policy),
                         std::move(quota_manager_proxy),
                         DatabaseTracker::CreatePassKey()) {}
 
@@ -150,9 +146,8 @@ class DatabaseQuotaClientTest : public testing::TestWithParam<bool> {
       : kStorageKeyA(
             blink::StorageKey::CreateFromStringForTesting("http://host")),
         kStorageKeyB(
-            blink::StorageKey::CreateFromStringForTesting("http://host:8000")),
-        special_storage_policy_(
-            base::MakeRefCounted<MockSpecialStoragePolicy>()) {}
+            blink::StorageKey::CreateFromStringForTesting("http://host:8000")) {
+  }
   ~DatabaseQuotaClientTest() override = default;
 
   DatabaseQuotaClientTest(const DatabaseQuotaClientTest&) = delete;
@@ -166,8 +161,7 @@ class DatabaseQuotaClientTest : public testing::TestWithParam<bool> {
         /*quota_change_callback=*/base::DoNothing(), special_storage_policy_,
         GetQuotaSettingsFunc());
     mock_tracker_ = base::MakeRefCounted<MockDatabaseTracker>(
-        data_dir_.GetPath(), is_incognito(), quota_manager_->proxy(),
-        special_storage_policy_);
+        data_dir_.GetPath(), is_incognito(), quota_manager_->proxy());
   }
 
   void TearDown() override {

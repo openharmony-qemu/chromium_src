@@ -590,7 +590,11 @@ test("gpu_unittests") {
     "ipc/service/gpu_channel_test_common.h",
     "ipc/service/gpu_watchdog_thread_unittest.cc",
   ]
-  
+
+  if(ohos_unittests){
+    sources += ["ipc/common/nweb_native_window_tracker_unittest.cc",]
+  }
+
   if (enable_validating_command_decoder && !ohos_unittests) {
     sources += [
       "command_buffer/service/gles2_cmd_decoder_unittest.cc",
@@ -735,7 +739,7 @@ test("gpu_unittests") {
   }
 
   if (ohos_unittests) {
-    deps += ["//content/public/common:static_switches"]
+    deps += ["//content/renderer"]
   }
 
   if (is_android) {

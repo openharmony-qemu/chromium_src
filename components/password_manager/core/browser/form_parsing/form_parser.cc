@@ -923,6 +923,10 @@ void SetFields(const SignificantFields& significant_fields,
     password_form->username_value = GetFieldValue(*significant_fields.username);
     password_form->username_element_renderer_id =
         significant_fields.username->unique_renderer_id;
+#if defined(OHOS_PASSWORD_AUTOFILL)
+    LOG(INFO) << "[Autofill] username renderer_id:"
+              << *password_form->username_element_renderer_id;
+#endif
   }
 
   if (significant_fields.password) {
@@ -930,6 +934,10 @@ void SetFields(const SignificantFields& significant_fields,
     password_form->password_value = GetFieldValue(*significant_fields.password);
     password_form->password_element_renderer_id =
         significant_fields.password->unique_renderer_id;
+#if defined(OHOS_PASSWORD_AUTOFILL)
+    LOG(INFO) << "[Autofill] password renderer_id:"
+              << *password_form->password_element_renderer_id;
+#endif
   }
 
   if (significant_fields.new_password) {
@@ -938,6 +946,10 @@ void SetFields(const SignificantFields& significant_fields,
         GetFieldValue(*significant_fields.new_password);
     password_form->new_password_element_renderer_id =
         significant_fields.new_password->unique_renderer_id;
+#if defined(OHOS_PASSWORD_AUTOFILL)
+    LOG(INFO) << "[Autofill] new-password renderer_id:"
+              << *password_form->new_password_element_renderer_id;
+#endif
   }
 
   if (significant_fields.confirmation_password) {
@@ -948,6 +960,10 @@ void SetFields(const SignificantFields& significant_fields,
         significant_fields.confirmation_password->name;
     password_form->confirmation_password_element_renderer_id =
         significant_fields.confirmation_password->unique_renderer_id;
+#if defined(OHOS_PASSWORD_AUTOFILL)
+    LOG(INFO) << "[Autofill] confirmation-password renderer_id:"
+              << *password_form->confirmation_password_element_renderer_id;
+#endif
   }
 }
 
@@ -1081,6 +1097,10 @@ std::unique_ptr<PasswordForm> AssemblePasswordForm(
   if (!significant_fields.HasPasswords() &&
       !significant_fields.is_single_username &&
       !significant_fields.accepts_webauthn_credentials) {
+#if defined(OHOS_PASSWORD_AUTOFILL)
+    LOG(INFO) << "[Autofill] Is single username:"
+              << significant_fields.is_single_username;
+#endif
     return nullptr;
   }
 
@@ -1231,6 +1251,9 @@ std::unique_ptr<PasswordForm> FormDataParser::Parse(const FormData& form_data,
     for (const auto& field : processed_fields) {
       if (field.accepts_webauthn_credentials) {
         significant_fields.accepts_webauthn_credentials = true;
+#if defined(OHOS_PASSWORD_AUTOFILL)
+        LOG(INFO) << "[Autofill] Accepts webauthn credentials : true";
+#endif
         break;
       }
     }
@@ -1239,6 +1262,10 @@ std::unique_ptr<PasswordForm> FormDataParser::Parse(const FormData& form_data,
   base::UmaHistogramEnumeration("PasswordManager.UsernameDetectionMethod",
                                 method);
 
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  LOG(INFO) << "[Autofill] Username detection method:"
+            << static_cast<int>(method);
+#endif
   return AssemblePasswordForm(
       form_data, significant_fields, std::move(all_alternative_passwords),
       std::move(all_alternative_usernames), predictions_);

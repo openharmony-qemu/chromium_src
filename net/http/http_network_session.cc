@@ -424,4 +424,10 @@ void HttpNetworkSession::SetConnectTimeout(int seconds) {
   websocket_socket_pool_manager_->SetConnectTimeout(seconds);
 }
 #endif
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+void HttpNetworkSession::SetConnectJobWithSecureDnsOnlyTimeout(int seconds) {
+  normal_socket_pool_manager_->SetConnectJobWithSecureDnsOnlyTimeout(seconds);
+}
+#endif
 }  // namespace net

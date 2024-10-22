@@ -20,8 +20,8 @@ namespace prerender {
 namespace {
 
 #if !defined(OHOS_NO_STATE_PREFETCH)
-const char kPurposeHeaderName[] = "Purpose";
-const char kPurposeHeaderValue[] = "prefetch";
+  const char kPurposeHeaderName[] = "Purpose";
+  const char kPurposeHeaderValue[] = "prefetch";
 #endif  // !defined(OHOS_NO_STATE_PREFETCH)
 
 void CallCancelPrerenderForUnsupportedScheme(
@@ -67,6 +67,7 @@ void PrerenderURLLoaderThrottle::WillStartRequest(
     network::ResourceRequest* request,
     bool* defer) {
   request->load_flags |= net::LOAD_PREFETCH;
+
 #if !defined(OHOS_NO_STATE_PREFETCH)
   request->cors_exempt_headers.SetHeader(kPurposeHeaderName,
                                          kPurposeHeaderValue);

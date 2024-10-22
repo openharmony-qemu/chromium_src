@@ -161,6 +161,7 @@ MEDIA_EXPORT extern const base::FeatureParam<base::TimeDelta>
 MEDIA_EXPORT BASE_DECLARE_FEATURE(kAutoplayIgnoreWebAudio);
 MEDIA_EXPORT BASE_DECLARE_FEATURE(kAutoplayDisableSettings);
 MEDIA_EXPORT BASE_DECLARE_FEATURE(kBresenhamCadence);
+MEDIA_EXPORT BASE_DECLARE_FEATURE(kAVDColorSpaceChanges);
 
 // NOTE: callers should always use the free functions in
 // /media/cast/encoding/encoding_support.h instead of accessing these features

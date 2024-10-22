@@ -90,7 +90,8 @@ struct RenderProcessPriority {
                         ChildProcessImportance importance
 #endif
 #ifdef OHOS_RENDER_PROCESS_MODE
-                        , base::TimeTicks background_time
+                        ,
+                        base::TimeTicks background_time
 #endif
                         )
       : visible(visible),

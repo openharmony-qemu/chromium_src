@@ -320,6 +320,9 @@ class NET_EXPORT HttpNetworkSession {
 #ifdef OHOS_EX_NETWORK_CONNECTION
   void SetConnectTimeout(int seconds);
 #endif
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  void SetConnectJobWithSecureDnsOnlyTimeout(int seconds);
+#endif
 
  private:
   friend class HttpNetworkSessionPeer;

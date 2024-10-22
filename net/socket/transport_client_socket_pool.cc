@@ -33,6 +33,14 @@
 #include "net/traffic_annotation/network_traffic_annotation.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(IS_OHOS)
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+#include "base/base_switches.h"
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
+#endif
+
 namespace net {
 
 namespace {
@@ -463,8 +471,16 @@ int TransportClientSocketPool::RequestSocketInternal(
         return NetLogCreateConnectJobParams(false /* backup_job */, &group_id);
       });
 #ifdef OHOS_EX_NETWORK_CONNECTION
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  if (group_id.secure_dns_only()) {
+    connect_job->SetConnectTimeout(connect_job_with_secure_dns_only_timeout_);
+  } else {
+    connect_job->SetConnectTimeout(timeout_override_);
+  }
+#else
   connect_job.get()->SetConnectTimeout(timeout_override_);
-#endif
+#endif  // OHOS_EX_HTTP_DNS_FALLBACK
+#endif  // OHOS_EX_NETWORK_CONNECTION
 
   int rv = connect_job->Connect();
   if (rv == ERR_IO_PENDING) {
@@ -1000,7 +1016,20 @@ TransportClientSocketPool::Group* TransportClientSocketPool::GetOrCreateGroup(
 
 void TransportClientSocketPool::RemoveGroup(const GroupId& group_id) {
   auto it = group_map_.find(group_id);
+
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_EX_HTTP_DNS_FALLBACK)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kForBrowser)) {
+    if (it == group_map_.end()) {
+      LOG(ERROR) << "the group of this group_id is empty";
+      return;
+    }
+  } else {
+    CHECK(it != group_map_.end());
+  }
+#else
   CHECK(it != group_map_.end());
+#endif
 
   RemoveGroup(it);
 }
@@ -1653,8 +1682,17 @@ void TransportClientSocketPool::Group::OnBackupJobTimerFired(
       });
   ConnectJob* backup_job = owned_backup_job.get();
 #ifdef OHOS_EX_NETWORK_CONNECTION
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  if (group_id.secure_dns_only()) {
+    backup_job->SetConnectTimeout(
+        client_socket_pool_->GetConnectJobWithSecureDnsOnlyTimeout());
+  } else {
+    backup_job->SetConnectTimeout(client_socket_pool_->GetConnectTimeout());
+  }
+#else
   backup_job->SetConnectTimeout(client_socket_pool_->GetConnectTimeout());
-#endif
+#endif  // OHOS_EX_HTTP_DNS_FALLBACK
+#endif  // OHOS_EX_NETWORK_CONNECTION
   AddJob(std::move(owned_backup_job), false);
   client_socket_pool_->connecting_socket_count_++;
   int rv = backup_job->Connect();

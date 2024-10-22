@@ -14,12 +14,12 @@
  */
 
 #include "nweb_inputmethod_handler.h"
-#include <codecvt>
 #include "nweb_imf_cursor_info_adapter_impl.h"
 #include "nweb_imf_input_attribute_adapter_impl.h"
 #include "nweb_imf_selection_range_adapter_impl.h"
 #include "nweb_imf_text_config_adapter_impl.h"
 
+#include <codecvt>
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
 #include "base/functional/callback_helpers.h"
@@ -616,7 +616,7 @@ void NWebInputMethodHandler::OnUpdateTextInputStateCalled(
 
   {
     std::unique_lock<std::mutex> lock(textCursorMutex_);
-    whole_text_ = text;
+    whole_text_ = text.ToString16();
     textCursorReady_ = 0;
     textCursorCv_.notify_all();
   }

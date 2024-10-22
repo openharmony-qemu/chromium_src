@@ -111,6 +111,9 @@ void OHOSAudioCapturerSource::Stop() {
 
 void OHOSAudioCapturerSource::ReadData() {
   base::AutoLock lock(callback_lock_);
+  if (!capturer_) {
+    return;
+  }
   std::shared_ptr<OHOS::NWeb::BufferDescAdapterImpl> bufferDesc =
       std::make_shared<OHOS::NWeb::BufferDescAdapterImpl>();
 

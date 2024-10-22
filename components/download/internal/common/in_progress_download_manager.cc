@@ -479,7 +479,11 @@ void InProgressDownloadManager::StartDownload(
            DOWNLOAD_INTERRUPT_REASON_SERVER_CROSS_ORIGIN_REDIRECT)) {
     if (delegate_ && delegate_->InterceptDownload(*info)) {
       if (cancel_request_callback)
+#if BUILDFLAG(IS_OHOS)
+        std::move(cancel_request_callback).Run(false, absl::nullopt);
+#else
         std::move(cancel_request_callback).Run(false);
+#endif
       GetIOTaskRunner()->DeleteSoon(FROM_HERE, std::move(stream));
       return;
     }
@@ -535,7 +539,11 @@ void InProgressDownloadManager::StartDownloadWithItem(
     // removed after it was resumed. Ignore. If the download is cancelled
     // while resuming, then also ignore the request.
     if (cancel_request_callback)
+#if BUILDFLAG(IS_OHOS)
+      std::move(cancel_request_callback).Run(false, absl::nullopt);
+#else
       std::move(cancel_request_callback).Run(false);
+#endif
     // The ByteStreamReader lives and dies on the download sequence.
     if (info->result == DOWNLOAD_INTERRUPT_REASON_NONE)
       GetIOTaskRunner()->DeleteSoon(FROM_HERE, std::move(stream));
@@ -685,8 +693,24 @@ void InProgressDownloadManager::AddInProgressDownloadForTest(
 
 void InProgressDownloadManager::CancelUrlDownload(
     UrlDownloadHandlerID downloader,
+#if BUILDFLAG(IS_OHOS)
+    bool user_cancel,
+    absl::optional<std::string> guid) {
+  for (auto ptr = url_download_handlers_.begin();
+       ptr != url_download_handlers_.end(); ++ptr) {
+    if (reinterpret_cast<UrlDownloadHandlerID>(ptr->get()) == downloader) {
+      std::string saved_guid = ptr->get()->GetGuid();
+      if (guid.has_value() && !saved_guid.empty() && guid != saved_guid) {
+        return;
+      }
+      url_download_handlers_.erase(ptr);
+      return;
+    }
+  }
+#else
     bool user_cancel) {
   OnUrlDownloadStopped(reinterpret_cast<UrlDownloadHandlerID>(downloader));
+#endif
 }
 
 }  // namespace download

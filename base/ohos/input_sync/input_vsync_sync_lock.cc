@@ -19,6 +19,7 @@
 #include <chrono>
 #include "base/no_destructor.h"
 #include "base/logging.h"
+#include "base/trace_event/trace_event.h"
 
 namespace base  {
 namespace ohos {
@@ -37,6 +38,8 @@ void InputSyncLock::SetNeedWaitForInput(bool need_wait_for_input)
     if (need_wait_for_input_.load() == need_wait_for_input) {
         return;
     }
+    TRACE_EVENT1("base", "InputSyncLock::SetNeedWaitForInput", "need_wait_for_input",
+        need_wait_for_input);
     need_wait_for_input_.store(need_wait_for_input);
 }
 
@@ -47,6 +50,8 @@ bool InputSyncLock::NeedWaitForInput()
 
 void InputSyncLock::SetHandledTouchEvent(bool handled_touch_event)
 {
+    TRACE_EVENT1("base", "InputSyncLock::SetHandledTouchEvent", "handled_touch_event",
+        handled_touch_event);
     handled_touch_event_.store(handled_touch_event);
 }
 

@@ -43,12 +43,8 @@ class GpuMemoryBufferFactoryTest : public testing::Test {
 #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OZONE)
 
  protected:
-#if defined(OHOS_UNITTESTS)
-  base::test::TaskEnvironment task_environment_{};
-#else
   base::test::TaskEnvironment task_environment_{
       base::test::TaskEnvironment::MainThreadType::UI};
-#endif
 
   GpuMemoryBufferFactoryType factory_;
   raw_ptr<gl::GLDisplay> display_ = nullptr;

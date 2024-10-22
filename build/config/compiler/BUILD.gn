@@ -867,7 +867,7 @@ config("compiler") {
       "-ftrivial-auto-var-init=zero",
       "-enable-trivial-auto-var-init-zero-knowing-it-will-be-removed-from-clang",
     ]
-  }
+  }  
 
   # Rust compiler flags setup.
   # ---------------------------

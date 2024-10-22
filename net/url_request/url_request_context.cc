@@ -265,6 +265,39 @@ void URLRequestContext::SetConnectTimeout(int seconds) {
   }
   network_session->SetConnectTimeout(seconds);
 }
+
+void URLRequestContext::BindDnsToNetwork(handles::NetworkHandle network) {
+  HttpTransactionFactory* transaction_factory = http_transaction_factory();
+  if (!transaction_factory) {
+    return;
+  }
+  HttpNetworkSession* network_session = transaction_factory->GetSession();
+  if (!network_session) {
+    return;
+  }
+  network_session->CloseAllConnections(ERR_NETWORK_CHANGED, "bind dns");
+  bound_network_for_dns_ = network;
+}
 #endif
 
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+void URLRequestContext::SetConnectJobWithSecureDnsOnlyTimeout(int second) {
+  HttpTransactionFactory* transaction_factory = http_transaction_factory();
+  if (!transaction_factory) {
+    return;
+  }
+  HttpNetworkSession* network_session = transaction_factory->GetSession();
+  if (!network_session) {
+    return;
+  }
+  network_session->SetConnectJobWithSecureDnsOnlyTimeout(second);
+}
+
+bool URLRequestContext::CanUseSecureDnsFallback() const {
+  if (!host_resolver()) {
+    return false;
+  }
+  return host_resolver()->CanUseSecureDnsFallback();
+}
+#endif
 }  // namespace net

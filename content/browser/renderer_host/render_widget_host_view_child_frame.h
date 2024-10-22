@@ -95,6 +95,9 @@ class CONTENT_EXPORT RenderWidgetHostViewChildFrame
   void WasOccluded() override;
 #if BUILDFLAG(IS_OHOS)
   void EvictFrameBackBuffers(bool) override {}
+
+  void SetDoubleTapSupportEnabled(bool enabled) override {}
+  void SetMultiTouchZoomSupportEnabled(bool enabled) override {}
 #endif
   gfx::Rect GetViewBounds() override;
   gfx::Size GetVisibleViewportSize() override;

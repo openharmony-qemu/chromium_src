@@ -27,6 +27,12 @@
 
 #if BUILDFLAG(IS_OHOS)
 #include "base/logging.h"
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+#include "base/base_switches.h"
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#include "net/dns/public/dns_protocol.h"
+#endif
 #endif
 
 namespace {
@@ -61,6 +67,7 @@ class NetConnCallbackImpl : public OHOS::NWeb::NetConnCallback {
   int32_t OnNetConnectionPropertiesChanged(
       const std::shared_ptr<OHOS::NWeb::NetConnectionPropertiesAdapter>
           properties) override;
+  void BindDnsToNetwork(int32_t network_for_dns);
 
  private:
   void ConnectionTypeChangedTo(int32_t net_id,
@@ -72,6 +79,7 @@ class NetConnCallbackImpl : public OHOS::NWeb::NetConnCallback {
   std::shared_ptr<OHOS::NWeb::NetConnectionPropertiesAdapter> properties_ =
       nullptr;
   int32_t net_id_ = -1;
+  int32_t network_for_dns_ = -1;
   OHOS::NWeb::NetConnectType type_ =
       OHOS::NWeb::NetConnectType::CONNECTION_UNKNOWN;
   OHOS::NWeb::NetConnectSubtype subtype_ =
@@ -88,6 +96,7 @@ int32_t NetConnCallbackImpl::NetAvailable() {
 int32_t NetConnCallbackImpl::NetCapabilitiesChange(
     const OHOS::NWeb::NetConnectType& netConnectType,
     const OHOS::NWeb::NetConnectSubtype& netConnectSubtype) {
+  LOG(INFO) << "ohos_network NetCapabilitiesChange " << static_cast<int>(netConnectType);
   if (network_change_notifier_posix_) {
     network_change_notifier_posix_->OnConnectionChanged(
         ConvertOhosConnTypeToNetBaseConnType(netConnectType));
@@ -151,21 +160,36 @@ int32_t NetConnCallbackImpl::OnNetConnectionPropertiesChanged(
   return 0;
 }
 
+void NetConnCallbackImpl::BindDnsToNetwork(int32_t network_for_dns) {
+  LOG(INFO)
+      << "NetConnCallbackImpl::BindDnsToNetwork, network_for_dns "
+      << network_for_dns;
+  network_for_dns_ = network_for_dns;
+}
+
 void NetConnCallbackImpl::ConnectionTypeChangedTo(
     int32_t net_id,
     OHOS::NWeb::NetConnectType type,
     OHOS::NWeb::NetConnectSubtype subtype) {
+  if (network_for_dns_ != -1 && net_id != network_for_dns_) {
+    LOG(INFO)
+        << "ohos_network ConnectionTypeChangedTo ret, net_id "
+        << net_id << ", network_for_dns_ " << network_for_dns_;
+    return;
+  }
+
   if (net_id_ != net_id || type_ != type) {
     LOG(INFO) << "ohos_network ConnectionTypeChangedTo, net_id_ " << net_id_
               << ", net_id " << net_id << ", type_ " << (int)type_ << ", type "
-              << (int)type;
+              << (int)type << ", network_for_dns_ " << network_for_dns_;
+    network_change_notifier_posix_->OnIPAddressChanged();
     network_change_notifier_posix_->OnConnectionChanged(
         ConvertOhosConnTypeToNetBaseConnType(type));
   }
 
   if (subtype_ != subtype) {
     LOG(INFO) << "ohos_network ConnectionTypeChangedTo, net_id_ " << net_id_
-              << "net_id " << net_id << ", subtype_ " << (int)subtype_
+              << ", net_id " << net_id << ", subtype_ " << (int)subtype_
               << ", subtype " << (int)subtype;
     network_change_notifier_posix_->OnConnectionSubtypeChanged(
         ConvertOhosConnTypeToNetBaseConnType(type),
@@ -246,6 +270,21 @@ void NetworkChangeNotifierPassive::OnConnectionChanged(
     base::AutoLock scoped_lock(lock_);
     connection_type_ = connection_type;
   }
+
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_EX_HTTP_DNS_FALLBACK)
+  std::vector<std::string> dns_servers;
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+        switches::kForBrowser)) {
+    if (ohos_net_conn_adapter_) {
+      dns_servers = ohos_net_conn_adapter_->GetDnsServers();
+    }
+  }
+  {
+    base::AutoLock scoped_lock(dns_server_lock_);
+    dns_servers_ = std::move(dns_servers);
+  }
+#endif
+
   NetworkChangeNotifier::NotifyObserversOfConnectionTypeChange();
 }
 
@@ -304,5 +343,21 @@ NetworkChangeNotifierPassive::NetworkChangeCalculatorParamsPassive() {
 #endif
   return params;
 }
+
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_EX_HTTP_DNS_FALLBACK)
+const std::vector<std::string>
+NetworkChangeNotifierPassive::GetCurrentDnsServers() {
+  base::AutoLock scoped_lock(dns_server_lock_);
+  return dns_servers_;
+}
+#endif
+
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_EX_NETWORK_CONNECTION)
+void NetworkChangeNotifierPassive::BindDnsToNetwork(int32_t network_for_dns) {
+  if (g_net_connect_callback) {
+    g_net_connect_callback->BindDnsToNetwork(network_for_dns);
+  }
+}
+#endif
 
 }  // namespace net

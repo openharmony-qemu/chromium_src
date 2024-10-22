@@ -2029,6 +2029,20 @@ const std::set<std::string>& QuicStreamFactory::GetDnsAliasesForSessionKey(
   return it->second;
 }
 
+void QuicStreamFactory::ActivateSessionForTesting(
+    const url::SchemeHostPort& destination,
+    QuicChromiumClientSession* session) {
+  all_sessions_.emplace(session, QuicStreamFactory::QuicSessionAliasKey(
+                                     destination, session->quic_session_key()));
+  ActivateSession(all_sessions_[session], session, std::set<std::string>());
+}
+ 
+void QuicStreamFactory::DeactivateSessionForTesting(
+    QuicChromiumClientSession* session) {
+  OnSessionGoingAway(session);
+  all_sessions_.erase(session);
+}
+
 bool QuicStreamFactory::HasMatchingIpSession(
     const QuicSessionAliasKey& key,
     const std::vector<IPEndPoint>& ip_endpoints,

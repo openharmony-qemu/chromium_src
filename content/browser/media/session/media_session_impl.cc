@@ -30,6 +30,7 @@
 #include "content/public/browser/web_contents.h"
 #include "content/public/browser/web_contents_delegate.h"
 #include "content/public/common/content_client.h"
+#include "content/public/common/content_switches.h"
 #include "media/audio/audio_device_description.h"
 #include "media/base/media_content_type.h"
 #include "media/base/media_switches.h"
@@ -641,7 +642,9 @@ void MediaSessionImpl::RebuildAndNotifyMediaPositionChanged() {
 
   if (position == position_) {
   #if defined(OHOS_MEDIA_AVSESSION)
-    session_ohos_->MediaSessionPositionChanged(position);
+    if (session_ohos_) {
+      session_ohos_->MediaSessionPositionChanged(position);
+    }
   #endif  // defined(OHOS_MEDIA_AVSESSION)
     return;
   }
@@ -917,17 +920,24 @@ void MediaSessionImpl::OnSystemAudioFocusRequested(bool result) {
 
 void MediaSessionImpl::OnSuspendInternal(SuspendType suspend_type,
                                          State new_state) {
+  LOG(INFO) << "MediaSessionImpl::OnSuspendInternal";
   DCHECK(!HasPepper());
 
   DCHECK(new_state == State::SUSPENDED || new_state == State::INACTIVE);
   // UI suspend cannot use State::INACTIVE.
   DCHECK(suspend_type == SuspendType::kSystem || new_state == State::SUSPENDED);
 
-  if (HasOnlyOneShotPlayers())
+  if (HasOnlyOneShotPlayers()) {
+    LOG(INFO) << "MediaSessionImpl::OnSuspendInternal, HasOnlyOneShotPlayers";
     return;
+  }
 
-  if (audio_focus_state_ != State::ACTIVE)
+
+  if (audio_focus_state_ != State::ACTIVE) {
+    LOG(INFO) << "MediaSessionImpl::OnSuspendInternal, audio_focus_state_: " << static_cast<int> (audio_focus_state_);
     return;
+  }
+
 
   switch (suspend_type) {
     case SuspendType::kUI:
@@ -1002,7 +1012,10 @@ MediaSessionImpl::MediaSessionImpl(WebContents* web_contents)
   should_throttle_duration_update_ = true;
 #endif  // BUILDFLAG(IS_ANDROID)
 #if defined(OHOS_MEDIA_AVSESSION)
-  session_ohos_ = std::make_unique<MediaSessionOHOS>(this);
+  auto currentProcess = base::CommandLine::ForCurrentProcess();
+  if (currentProcess && !currentProcess->HasSwitch(switches::kForBrowser)) {
+    session_ohos_ = std::make_unique<MediaSessionOHOS>(this);
+  }
 #endif  // defined(OHOS_MEDIA_AVSESSION)
   if (web_contents && web_contents->GetPrimaryMainFrame() &&
       web_contents->GetPrimaryMainFrame()->GetView()) {
@@ -1266,20 +1279,6 @@ void MediaSessionImpl::EnterPictureInPicture() {
       normal_players_.begin()->first.player_id);
 }
 
-void MediaSessionImpl::ExitPictureInPicture() {
-  if (ShouldRouteAction(
-          media_session::mojom::MediaSessionAction::kExitPictureInPicture)) {
-    DidReceiveAction(
-        media_session::mojom::MediaSessionAction::kExitPictureInPicture);
-    return;
-  }
-
-  // There should be one and only one player when we exit picture-in-picture.
-  DCHECK_EQ(normal_players_.size(), 1u);
-  normal_players_.begin()->first.observer->OnExitPictureInPicture(
-      normal_players_.begin()->first.player_id);
-}
-
 #ifdef OHOS_MEDIA_POLICY
 MediaSessionImpl::NWebPlaybackState MediaSessionImpl::NWebGetState() {
   if (GetMediaAudioVideoStates().empty()) {
@@ -1296,17 +1295,41 @@ MediaSessionImpl::NWebPlaybackState MediaSessionImpl::NWebGetState() {
 }
 
 void MediaSessionImpl::SetWebviewShow(bool show) {
+  bool ret = false;
   if (session_ohos_) {
-    session_ohos_->SetWebviewShow(show);
+    ret = session_ohos_->SetWebviewShow(show);
   }
 }
 
 void MediaSessionImpl::SetWebviewShowForAudio(bool show) {
+  bool ret = false;
   if (session_ohos_) {
-    session_ohos_->SetWebviewShowForAudio(show);
+    ret = session_ohos_->SetWebviewShowForAudio(show);
   }
 }
+
+bool MediaSessionImpl::IsEndOfMedia() {
+  bool ret = false;
+  if (position_) {
+    ret = position_.value().end_of_media();
+  }
+  return ret;
+}
 #endif // OHOS_MEDIA_POLICY
+
+void MediaSessionImpl::ExitPictureInPicture() {
+  if (ShouldRouteAction(
+          media_session::mojom::MediaSessionAction::kExitPictureInPicture)) {
+    DidReceiveAction(
+        media_session::mojom::MediaSessionAction::kExitPictureInPicture);
+    return;
+  }
+
+  // There should be one and only one player when we exit picture-in-picture.
+  DCHECK_EQ(normal_players_.size(), 1u);
+  normal_players_.begin()->first.observer->OnExitPictureInPicture(
+      normal_players_.begin()->first.player_id);
+}
 
 void MediaSessionImpl::SetAudioSinkId(const absl::optional<std::string>& id) {
   audio_device_id_for_origin_ = id;

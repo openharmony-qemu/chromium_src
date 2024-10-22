@@ -38,6 +38,7 @@ void *NWebNativeWindowTracker::GetNativeWindow(int32_t native_window_id)
     base::AutoLock lock(window_map_lock_);
     auto it = native_window_map_.find(native_window_id);
     if (it == native_window_map_.end()) {
+        #ifndef OHOS_FUZZ_COMPILE_ERROR_FIX
         LOG(DEBUG) << __FUNCTION__
                    << "Cann't get for native_window id = " << native_window_id;
         std::shared_ptr<content::RenderRemoteProxy> g_render_remote_proxy =
@@ -51,8 +52,10 @@ void *NWebNativeWindowTracker::GetNativeWindow(int32_t native_window_id)
                 return window;
             }
         }
+        #endif
         return nullptr;
     }
+
     LOG(DEBUG) << __FUNCTION__
                << "Get for native_window id = " << native_window_id;
     return it->second;

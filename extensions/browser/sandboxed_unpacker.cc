@@ -418,6 +418,8 @@ void SandboxedUnpacker::Unzip(const base::FilePath& crx_path,
 
   DCHECK(crx_path.DirName() == temp_dir_.GetPath());
 
+  LOG(INFO) << "SandboxedUnpacker::Unzip, crx_path=" << crx_path.value()
+            << ", unzipped_dir=" << unzipped_dir.value();
   ZipFileInstaller::Create(unpacker_io_task_runner_,
                            base::BindOnce(&SandboxedUnpacker::UnzipDone, this))
       ->LoadFromZipFileInDir(crx_path, unzipped_dir);
@@ -429,6 +431,7 @@ void SandboxedUnpacker::UnzipDone(const base::FilePath& zip_file,
   DCHECK(unpacker_io_task_runner_->RunsTasksInCurrentSequence());
 
   if (!error.empty()) {
+    LOG(INFO) << "Unzip has error:" << error;
     ReportFailure(SandboxedUnpackerFailureReason::UNZIP_FAILED,
                   l10n_util::GetStringUTF16(IDS_EXTENSION_PACKAGE_UNZIP_ERROR));
     return;

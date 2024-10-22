@@ -123,7 +123,7 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ClipboardNonBacked
       std::unique_ptr<DataTransferEndpoint> data_src) override;
   void WriteText(const char* text_data, size_t text_len
 #if defined(OHOS_CLIPBOARD)
-                 ,
+,
                  const CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
   ) override;
@@ -132,7 +132,7 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ClipboardNonBacked
                  const char* url_data,
                  size_t url_len
 #if defined(OHOS_CLIPBOARD)
-                 ,
+,
                  const CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
                  ) override;
@@ -141,7 +141,7 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ClipboardNonBacked
                             const char* url_data,
                             size_t url_len
 #if defined(OHOS_CLIPBOARD)
-                            ,
+,
                             const CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
                             ) override;
@@ -153,7 +153,7 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ClipboardNonBacked
                      const char* url_data,
                      size_t url_len
 #if defined(OHOS_CLIPBOARD)
-                     ,
+,
                      const CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
                      ) override;

@@ -548,6 +548,7 @@ ARKWEB_EXPORT void OH_ArkWeb_DestroyResponse(ArkWeb_Response* response) {
     return;
   }
   delete response;
+  response = nullptr;
 }
 
 ARKWEB_EXPORT int32_t OH_ArkWebResponse_SetUrl(ArkWeb_Response* response,

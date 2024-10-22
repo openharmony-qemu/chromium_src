@@ -410,6 +410,7 @@ scoped_refptr<VideoFrame> VideoFrame::WrapNativeTextures(
 
   scoped_refptr<VideoFrame> frame =
       new VideoFrame(*layout, storage, visible_rect, natural_size, timestamp);
+
   memcpy(&frame->mailbox_holders_, mailbox_holders,
          sizeof(frame->mailbox_holders_));
   frame->mailbox_holders_and_gmb_release_cb_ =

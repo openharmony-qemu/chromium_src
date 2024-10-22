@@ -22,6 +22,8 @@
 
 namespace content {
 // Manages a tree of BrowserAccessibility objects.
+class WebContentsImpl;
+class BrowserAccessibilityOHOS;
 class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
     : public BrowserAccessibilityManager {
  public:
@@ -42,11 +44,6 @@ class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
   void FireBlinkEvent(ax::mojom::Event event_type,
                       BrowserAccessibility* node,
                       int action_request_id) override;
-
-  static void RegisterAccessibilityIdGenerator(
-      std::function<int64_t()> accessibilityIdGenerator);
-
-  static int64_t GenerateAccessibilityId();
 
   void RegisterAccessibilityEventListener(
       std::shared_ptr<OHOS::NWeb::NWebAccessibilityEventCallback>
@@ -74,6 +71,9 @@ class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
 
   void FireGeneratedEvent(ui::AXEventGenerator::Event event_type,
                           const ui::AXNode* node) override;
+  void Copy();
+  void Paste();
+  void Cut();
 
  private:
   void HandleHover(int64_t accessibilityId);
@@ -87,11 +87,18 @@ class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
 
   void HandleContentChanged(int64_t accessibilityId);
 
-  int64_t TranslateAccessibilityId(int64_t accessibilityId) const;
+  int64_t GetRootAccessibilityId() const;
+
+  bool IsIgnoredEvent(std::map<int64_t, int64_t>& lastEventFiredTimes,
+                       const int64_t& accessibilityId);
 
   int64_t lastHoverId_ = -1;
 
   int64_t accessibilityFocusId_ = -1;
+
+  std::map<int64_t, int64_t> lastScrollEventFiredTimes_;
+  std::map<int64_t, int64_t> lastStateUpdateEventFiredTimes_;
+  std::map<int64_t, int64_t> lastContentUpdateEventFiredTimes_;
 
   std::shared_ptr<OHOS::NWeb::NWebAccessibilityEventCallback>
       accessibilityEventListener_;

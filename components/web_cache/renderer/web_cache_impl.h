@@ -47,7 +47,7 @@ class WebCacheImpl : public mojom::WebCache {
 
 #if BUILDFLAG(IS_OHOS)
   // mojom::WebCache methods:
-  // Add offline resource into memory cache.
+  // Add resource into MemoryCache
   void AddResourceToCache(const std::string& url,
                           const std::string& origin,
                           const std::vector<uint8_t>& resource,

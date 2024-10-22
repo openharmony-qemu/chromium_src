@@ -20,6 +20,10 @@
 #include "nweb_hilog.h"
 #include "services/network/network_service.h"
 
+#ifdef OHOS_EX_NETWORK_CONNECTION
+#include "nweb_impl.h"
+#endif
+
 namespace OHOS::NWeb {
 
 void NWebDownloadManagerImpl::SetHttpDns(
@@ -42,15 +46,7 @@ void NWebDownloadManagerImpl::SetHttpDns(
 void NWebDownloadManagerImpl::SetConnectionTimeout(const int &timeout) {
 #if defined(OHOS_EX_NETWORK_CONNECTION)
   net_service::NetHelpers::connection_timeout = timeout;
-  if (content::GetNetworkService() != nullptr) {
-    content::GetNetworkService()->SetConnectTimeout(
-        net_service::NetHelpers::connection_timeout);
-
-    WVLOG_I("set connection timeout value in NetHelpers is: %{public}d",
-            net_service::NetHelpers::connection_timeout);
-  } else {
-    WVLOG_E("net_work_service is nullptr");
-  }
+  NWebImpl::SetConnectionTimeout(timeout);
 #endif // OHOS_EX_NETWORK_CONNECTION
 }
 

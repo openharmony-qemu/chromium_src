@@ -543,7 +543,6 @@ bool PlatformCrashpadInitialization(
   }
 
   if (browser_process) {
-    LOG(INFO) << "crashpad PlatformCrashpadInitialization, browser process init skipped";
     return true;
   }
 

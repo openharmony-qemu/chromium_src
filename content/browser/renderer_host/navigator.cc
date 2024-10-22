@@ -514,7 +514,7 @@ void Navigator::DidNavigate(
     delegate_->DidNavigateMainFramePreCommit(frame_tree_node,
                                              was_within_same_document);
   }
-  
+
   // Store this information before DidNavigateFrame() potentially swaps RFHs.
   url::Origin old_frame_origin = old_frame_host->GetLastCommittedOrigin();
 

@@ -46,7 +46,7 @@ class NWebResourceHandler : public CefResourceHandler {
 
   const std::string& GetResponseData() override;
 
-  size_t GetResponseDataBuffer(char* data) override;
+  size_t GetResponseDataBuffer(char* data, size_t dest_size) override;
 
   size_t GetResponseDataBufferSize() override;
 

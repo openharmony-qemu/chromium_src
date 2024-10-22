@@ -28,6 +28,9 @@ COMPONENT_EXPORT(OS_CRYPT)
 std::string GetKey(const std::string& alias);
 
 COMPONENT_EXPORT(OS_CRYPT)
+std::string GetKeyForOta(const std::string& alias);
+
+COMPONENT_EXPORT(OS_CRYPT)
 std::string GenerateLocalKey(size_t key_size);
 
 }  // namespace ohos

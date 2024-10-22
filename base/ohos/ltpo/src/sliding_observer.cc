@@ -20,6 +20,7 @@
 
 #include "base/logging.h"
 #include "base/no_destructor.h"
+#include "base/ohos/sys_info_utils.h"
 #include "base/task/thread_pool.h"
 #include "ohos_nweb/src/sysevent/event_reporter.h"
 #include "base/trace_event/trace_event.h"
@@ -27,9 +28,9 @@
 #include "ui/events/gesture_detection/gesture_configuration.h"
 
 namespace {
-  const float kMilliMeterPerInch = 25.4;
-  const float kMicroSecondPerSecond = 1000000.0;
-  const int32_t kDefaultPreferedFrameRate = 120;
+ const float kMilliMeterPerInch = 25.4;
+ const float kMicroSecondPerSecond = 1000000.0;
+ static const int32_t kDefaultPreferedFrameRate = 120;
 }
 
 namespace base {
@@ -37,13 +38,12 @@ namespace ohos {
 using OHOS::NWeb::FrameRateSetting;
 SlidingObserver& SlidingObserver::GetInstance()
 {
-  static base::NoDestructor<SlidingObserver> instance;
-  return *instance.get();
+    static base::NoDestructor<SlidingObserver> instance;
+    return *instance.get();
 }
 
 void SlidingObserver::Init() {
-  if (OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetProductDeviceType() !=
-      OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE) {
+  if (!base::ohos::IsMobileDevice()) {
     return;
   }
 
@@ -55,7 +55,7 @@ void SlidingObserver::Init() {
 
   auto display_manager_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateDisplayMgrAdapter();
   if (!display_manager_adapter) {
-    return;
+      return;
   }
   std::shared_ptr<OHOS::NWeb::DisplayAdapter> display =
       display_manager_adapter->GetDefaultDisplay();
@@ -63,17 +63,16 @@ void SlidingObserver::Init() {
     return;
   }
   dpi_ = display->GetDpi();
-  if (dpi_ <= 0  || virtual_pixel_ratio_ <= 0) {
+  if (dpi_ <= 0 || virtual_pixel_ratio_ <= 0) {
     return;
   }
   is_inited_ = true;
 
-  LOG(INFO) << "virtual_pixel_ratio: " << virtual_pixel_ratio_ << ", dpi " << dpi_
+  LOG(INFO) << "virtual_pixel_ratio: " << virtual_pixel_ratio_ << ", dpi: " << dpi_
     << ", on_screen_setting: " << on_screen_setting_.size() << ", off_screen_setting: " << off_screen_setting_.size();
 }
 
-void SlidingObserver::StartSliding()
-{
+void SlidingObserver::StartSliding() {
   if (!is_inited_) {
     Init();
   }
@@ -85,8 +84,7 @@ void SlidingObserver::StartSliding()
   is_off_screen_ = false;
 }
 
-int32_t SlidingObserver::StopSliding()
-{
+int32_t SlidingObserver::StopSliding() {
   if (!is_sliding_ || !is_inited_) {
     return -1;
   }
@@ -97,15 +95,13 @@ int32_t SlidingObserver::StopSliding()
   return 0;
 }
 
-int64_t SlidingObserver::GetCurrentTimestamp()
-{
+int64_t SlidingObserver::GetCurrentTimestamp() {
   auto currentTime = std::chrono::system_clock::now().time_since_epoch();
   return std::chrono::duration_cast<std::chrono::microseconds>(currentTime)
       .count();
 }
 
-void SlidingObserver::StartFling()
-{
+void SlidingObserver::StartFling() {
   if (!is_sliding_ || !is_inited_) {
     return;
   }
@@ -133,9 +129,8 @@ int32_t SlidingObserver::OnScrollUpdate(float delta_x, float delta_y)
   return sliding_frame_rate_;
 }
 
-int32_t SlidingObserver::OnFlingUpdate(float velocity_x, float velocity_y)
-{
-  if (!is_sliding_ || !is_off_screen_) {
+int32_t SlidingObserver::OnFlingUpdate(float velocity_x, float velocity_y) {
+if (!is_sliding_ || !is_off_screen_) {
     return -1;
   }
 
@@ -150,8 +145,8 @@ int32_t SlidingObserver::OnFlingUpdate(float velocity_x, float velocity_y)
   return sliding_frame_rate_;
 }
 
-int32_t SlidingObserver::GetPreferedFrameRate(float velocity, const std::vector<OHOS::NWeb::FrameRateSetting>& setting)
-{
+int32_t SlidingObserver::GetPreferedFrameRate(float velocity,
+  const std::vector<OHOS::NWeb::FrameRateSetting>& setting) {
   if (setting.empty()) {
       return kDefaultPreferedFrameRate;
   }
@@ -160,15 +155,15 @@ int32_t SlidingObserver::GetPreferedFrameRate(float velocity, const std::vector<
       return item.preferredFrameRate_;
     }
   }
-  LOG(WARNING) << "can not find proper prefered frame rate";
+  LOG(WARNING) << "can not find proper prfered frame rate";
   return kDefaultPreferedFrameRate;
 }
 
-float SlidingObserver::GetVelocity(float velocity_x, float velocity_y)
-{
+float SlidingObserver::GetVelocity(float velocity_x, float velocity_y) {
   // mm per virtual pixel in phone, mm_per_inch/ppi_of_device * default_virtual_pixel_ratio_
   float convert_unit = kMilliMeterPerInch / dpi_ * virtual_pixel_ratio_;
   float velocity = std::sqrt(velocity_x * velocity_x + velocity_y * velocity_y);
+
   LOG(DEBUG) << "velocity_x " << velocity_x << " velocity_y " << velocity_y  << " velocity " << convert_unit * velocity;
   return convert_unit * velocity;
 }

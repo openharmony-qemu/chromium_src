@@ -17,4 +17,3 @@ export function mojoString16ToString(str16: String16): string {
 export function stringToMojoUrl(s: string): Url {
   return {url: s};
 }
-

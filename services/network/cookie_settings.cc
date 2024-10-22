@@ -373,5 +373,4 @@ bool CookieSettings::IsAllowedByTopLevelStorageAccessGrant(
       url, first_party_url, top_level_storage_access_grants_);
   return match && match->GetContentSetting() == CONTENT_SETTING_ALLOW;
 }
-
 }  // namespace network

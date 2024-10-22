@@ -66,6 +66,7 @@ class URLPattern {
 #if defined(OHOS_ARKWEB_EXTENSIONS)
     SCHEME_ARKWEBUI = 1 << 11,
 #endif
+
     // IMPORTANT!
     // SCHEME_ALL will match every scheme, including chrome://, chrome-
     // extension://, about:, etc. Because this has lots of security

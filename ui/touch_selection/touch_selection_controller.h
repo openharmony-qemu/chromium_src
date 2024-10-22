@@ -258,6 +258,10 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionController
   // between lines.
   bool anchor_drag_to_selection_start_;
 
+#ifdef OHOS_CLIPBOARD
+  TouchHandleOrientation selection_handle_orientation_dragging_ = TouchHandleOrientation::UNDEFINED;
+#endif
+
   // Longpress drag allows direct manipulation of longpress-initiated selection.
   LongPressDragSelector longpress_drag_selector_;
 
@@ -275,6 +279,8 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionController
 
 #ifdef OHOS_CLIPBOARD
   bool is_long_press_ = false;
+  
+  bool reset_selection_temporarily_ = false;
 #endif
 };
 

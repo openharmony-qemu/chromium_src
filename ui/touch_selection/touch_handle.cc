@@ -200,6 +200,11 @@ bool TouchHandle::WillHandleTouchEvent(const MotionEvent& event) {
       touch_down_position_ = touch_point;
       touch_drag_offset_ = focus_bottom_ - touch_down_position_;
       touch_down_time_ = event.GetEventTime();
+#ifdef OHOS_CLIPBOARD
+      if (orientation_ == TouchHandleOrientation::LEFT) {
+        touch_drag_offset_ = focus_bottom_ - touch_down_position_;
+      }
+#endif
       BeginDrag();
     } break;
 
@@ -325,6 +330,16 @@ void TouchHandle::UpdateHandleLayout() {
 #endif
   drawable_->SetOrigin(ComputeHandleOrigin());
 }
+
+#ifdef OHOS_CLIPBOARD
+void TouchHandle::ResetPositionAfterDragEnd() {
+  if (!is_visible_ || !drawable_) {
+    return;
+  }
+
+  drawable_->SetOrigin(ComputeHandleOrigin());
+}
+#endif
 
 void TouchHandle::SetTransparent() {
   SetAlpha(0.f);

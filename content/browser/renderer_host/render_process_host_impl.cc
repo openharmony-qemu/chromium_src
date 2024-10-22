@@ -296,6 +296,11 @@
 #include "base/ohos/sys_info_utils.h"
 #endif
 
+#ifdef OHOS_THEME_FONT
+#include "base/files/file.h"
+#include "base/json/json_reader.h"
+#endif
+
 // VLOG additional statements in Fuchsia release builds.
 #if BUILDFLAG(IS_FUCHSIA)
 #define MAYBEVLOG VLOG
@@ -1270,6 +1275,7 @@ BASE_FEATURE(kCheckNoNewRefCountsWhenRphDeletingSoon,
 #ifdef OHOS_RENDER_PROCESS_MODE
 static constexpr char kExtensionScheme[] = "chrome-extension";
 constexpr int kSingleRenderProcessCount = 1;
+constexpr int kMinMultipleRenderProcessCount = 5;
 #endif
 }  // namespace
 
@@ -1384,6 +1390,7 @@ class RenderProcessHostImpl::IOThreadHostImpl : public mojom::ChildProcessHost {
 #if BUILDFLAG(IS_OHOS)
   void ReportKeyThread(int32_t status, int32_t process_id, int32_t thread_id, int32_t role) override {
     using namespace OHOS::NWeb;
+    LOG(INFO) << "TEST0324 ReportKeyThread pid = " << process_id << ", tid = " << thread_id << ", role = " << role;
     ResSchedClientAdapter::ReportKeyThread(
       static_cast<ResSchedStatusAdapter>(status), process_id, thread_id, static_cast<ResSchedRoleAdapter>(role));
   }
@@ -1447,7 +1454,8 @@ size_t RenderProcessHost::GetMaxRendererProcessCount() {
 
   if (g_max_renderer_count_override)
 #ifdef OHOS_RENDER_PROCESS_MODE
-    return g_max_renderer_count_override * 0.9;
+    return std::max(kMinMultipleRenderProcessCount,
+                    (int)(g_max_renderer_count_override * 0.9));
 #else
     return g_max_renderer_count_override;
 #endif
@@ -1558,8 +1566,8 @@ size_t RenderProcessHost::GetOffTheRecordRenderProcessCount() {
   size_t count = 0;
   while (!it.IsAtEnd()) {
     RenderProcessHost* host = it.GetCurrentValue();
-    if (host->GetBrowserContext()->IsOffTheRecord() &&
-        !static_cast<RenderProcessHostImpl*>(host)->is_dead()) {
+    if (host->GetBrowserContext()->IsOffTheRecord() && 
+      !static_cast<RenderProcessHostImpl*>(host)->is_dead()) {
       count++;
     }
     it.Advance();
@@ -3585,7 +3593,9 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
     switches::kTraceToConsole,
     switches::kUseFakeCodecForPeerConnection,
     switches::kUseFakeUIForMediaStream,
+#if !BUILDFLAG(IS_OHOS)
     switches::kUseMobileUserAgent,
+#endif
     switches::kV,
     switches::kVideoCaptureUseGpuMemoryBuffer,
     switches::kVideoThreads,
@@ -3625,7 +3635,9 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
     // should also be added to
     // chrome/browser/ash/login/chrome_restart_request.cc.
     cc::switches::kCCScrollAnimationDurationForTesting,
+#if !BUILDFLAG(IS_OHOS)
     cc::switches::kCheckDamageEarly,
+#endif
     cc::switches::kDisableCheckerImaging,
     cc::switches::kDisableCompositedAntialiasing,
     cc::switches::kDisableThreadedAnimation,
@@ -3679,8 +3691,9 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
 #if BUILDFLAG(IS_OHOS)
     switches::kForTest,
     switches::kBundleInstallationDir,
-    switches::kOhSchemeHandlerCustomScheme,
     switches::kBundleName,
+    switches::kOhSchemeHandlerCustomScheme,
+    switches::kEnablePrinting,
 #endif
 #if BUILDFLAG(IS_CHROMEOS_LACROS)
     switches::kLacrosEnablePlatformHevc,
@@ -3851,7 +3864,7 @@ bool RenderProcessHostImpl::FastShutdownIfPossible(size_t page_count,
 
   LOG(INFO) << "Rended process: " << GetID() << " died due to fast shutdown versus another cause";
   ChildProcessTerminationInfo info;
-  info.status = base::TERMINATION_STATUS_PROCESS_WAS_KILLED;
+  info.status = base::TERMINATION_STATUS_NORMAL_TERMINATION;
   info.exit_code = 0;
   ProcessDied(info);
   return true;
@@ -3949,6 +3962,12 @@ void RenderProcessHostImpl::OnChannelConnected(int32_t peer_pid) {
   // be responsible for 1) deciding when the refresh happens and 2) pushing the
   // updated salt to all the child processes.
   child_process_->SetPseudonymizationSalt(GetPseudonymizationSalt());
+
+#ifdef OHOS_THEME_FONT
+  if (auto* theme_font = EnsureThemeFont()) {
+    UpdateThemeFontFile(theme_font->font_file.Duplicate());
+  }
+#endif
 }
 
 void RenderProcessHostImpl::OnChannelError() {
@@ -4681,7 +4700,8 @@ size_t RenderProcessHostImpl::GetProcessCountForLimit() {
     it.Advance();
   }
 #if BUILDFLAG(IS_OHOS)
-  LOG(DEBUG) << "RenderProcessHostImpl::GetProcessCount count: " << count;
+  LOG(DEBUG) << "RenderProcessHostImpl::GetProcessCount count: " << count
+             << ", process_count_to_ignore:" << process_count_to_ignore;
 #endif
   return count - process_count_to_ignore;
 }
@@ -4693,11 +4713,11 @@ bool RenderProcessHost::ShouldTryToUseExistingProcessHost(
   if (run_renderer_in_process())
     return true;
 
-  // NOTE: Sometimes it's necessary to create more render processes than
-  //       GetMaxRendererProcessCount(), for instance when we want to create
-  //       a renderer process for a browser context that has no existing
-  //       renderers. This is OK in moderation, since the
-  //       GetMaxRendererProcessCount() is conservative.
+    // NOTE: Sometimes it's necessary to create more render processes than
+    //       GetMaxRendererProcessCount(), for instance when we want to create
+    //       a renderer process for a browser context that has no existing
+    //       renderers. This is OK in moderation, since the
+    //       GetMaxRendererProcessCount() is conservative.
   size_t process_count = RenderProcessHostImpl::GetProcessCountForLimit();
   if (process_count >= GetMaxRendererProcessCount()) {
     MAYBEVLOG(4) << __func__
@@ -4746,7 +4766,7 @@ RenderProcessHost* RenderProcessHostImpl::GetExistingProcessHost(
 #ifdef OHOS_RENDER_PROCESS_MODE
 // static
 RenderProcessHost* RenderProcessHostImpl::GetExistingBackgroundProcessHost(
-      SiteInstanceImpl* site_instance) {
+    SiteInstanceImpl* site_instance) {
   // First figure out which existing renderers we can use.
   RenderProcessHost* longest_background_host;
   base::TimeDelta longest_duration;
@@ -4759,9 +4779,12 @@ RenderProcessHost* RenderProcessHostImpl::GetExistingBackgroundProcessHost(
                                       .spare_render_process_host()) {
       continue;
     }
-    if (iter.GetCurrentValue()->IsProcessBackgrounded()) {
+
+    if (iter.GetCurrentValue()->IsProcessBackgrounded() &&
+        static_cast<RenderProcessHostImpl*>(iter.GetCurrentValue())
+            ->AreAllRefCountsZero()) {
       base::TimeDelta background_duration = current_time -
-        iter.GetCurrentValue()->ProcessBackgroundTime();
+          iter.GetCurrentValue()->ProcessBackgroundTime();
       if (background_duration >= longest_duration) {
         longest_background_host = iter.GetCurrentValue();
         longest_duration = background_duration;
@@ -4771,10 +4794,12 @@ RenderProcessHost* RenderProcessHostImpl::GetExistingBackgroundProcessHost(
 
   // Now pick a longest time in background renderer.
   if (longest_background_host) {
-    LOG(INFO) <<  __func__ << ": Found one background render host.";
+    LOG(INFO) << __func__ << ": Found one background render process host.";
     return longest_background_host;
   }
 
+  LOG(WARNING) << __func__
+               << ": It has no background render process host to shutdown.";
   return nullptr;
 }
 
@@ -5133,6 +5158,12 @@ void RenderProcessHostImpl::ProcessDied(
 
   child_process_launcher_.reset();
   is_dead_ = true;
+#if defined(OHOS_RENDER_PROCESS_SHARE)
+  RenderProcessHost* host = GetAllHosts().Lookup(GetID());
+  if (host) {
+    RemoveFromSharedRenderProcessMap(host);
+  }
+#endif
   // Make sure no IPCs or mojo calls from the old process get dispatched after
   // it has died.
   ResetIPC();
@@ -5361,8 +5392,8 @@ void RenderProcessHostImpl::UpdateProcessPriority() {
                      : ChildProcessImportance::MODERATE /* importance */
 #endif
 #ifdef OHOS_RENDER_PROCESS_MODE
-      ,
-      base::TimeTicks::Now()
+        ,
+        base::TimeTicks::Now()
 #endif
     );
     DCHECK_EQ(!foregrounded, priority.is_background());
@@ -5397,6 +5428,8 @@ void RenderProcessHostImpl::UpdateProcessPriority() {
     }
 #else
     child_process_launcher_->SetProcessBackgrounded(priority_.is_background());
+    LOG(DEBUG) << "RenderProcessHostImpl::UpdateProcessPriority has been is_background:"
+               << priority_.is_background() << "host id:" << GetID();
 #endif
   }
 
@@ -5816,6 +5849,127 @@ void RenderProcessHostImpl::dumpCurrentJavaScriptStackInMainThread(
 }
 #endif
 
+#ifdef OHOS_THEME_FONT
+const base::FilePath::CharType kAppThemePathA[] =
+    FILE_PATH_LITERAL("/data/themes/a/app");
+const base::FilePath::CharType kAppThemePathB[] =
+    FILE_PATH_LITERAL("/data/themes/b/app");
+const base::FilePath::CharType kAppThemeFontsDirName[] =
+    FILE_PATH_LITERAL("fonts");
+const base::FilePath::CharType kAppThemeFlagFileName[] =
+    FILE_PATH_LITERAL("flag");
+const base::FilePath::CharType kAppThemeFontsManifest[] =
+    FILE_PATH_LITERAL("manifest.json");
+
+std::unique_ptr<ThemeFont> RenderProcessHostImpl::g_theme_font_ = nullptr;
+
+// static
+bool RenderProcessHostImpl::IsThemeFontValid() {
+  if (!g_theme_font_ || !base::PathExists(g_theme_font_->flag_path) ||
+      !base::PathExists(g_theme_font_->manifest_path) ||
+      !base::PathExists(g_theme_font_->font_path) ||
+      !g_theme_font_->font_file.IsValid()) {
+    return false;
+  }
+
+  return true;
+}
+
+// static
+ThemeFont* RenderProcessHostImpl::EnsureThemeFont() {
+  if (IsThemeFontValid()) {
+    return g_theme_font_.get();
+  }
+
+  g_theme_font_.reset();
+
+  base::FilePath theme_path(kAppThemePathA);
+  base::FilePath theme_font_path = theme_path.Append(kAppThemeFontsDirName);
+  if (!base::PathExists(
+          base::FilePath(kAppThemePathA).Append(kAppThemeFlagFileName))) {
+    if (!base::PathExists(
+            base::FilePath(kAppThemePathB).Append(kAppThemeFlagFileName))) {
+      LOG(DEBUG) << "[themefont] flag file occurs error";
+      return nullptr;
+    }
+    theme_path = base::FilePath(base::FilePath(kAppThemePathB));
+    theme_font_path = theme_path.Append(kAppThemeFontsDirName);
+  }
+
+  std::string input_json;
+  base::FilePath manifest_path(theme_font_path.Append(kAppThemeFontsManifest));
+  if (!base::PathExists(manifest_path) ||
+      !base::ReadFileToString(manifest_path, &input_json) ||
+      input_json.empty()) {
+    LOG(DEBUG) << "[themefont] manifest file occurs error";
+    return nullptr;
+  }
+
+  auto parsed_json = base::JSONReader::ReadAndReturnValueWithError(input_json);
+  if (!parsed_json.has_value() || !parsed_json->is_dict()) {
+    LOG(ERROR) << "[themefont] manifest file occurs error:"
+               << parsed_json.error().message;
+    return nullptr;
+  }
+  // Two example for the manifest.json:
+  // {"id":"0","origin":"online","ttfFileSrc":"/absolute/path/themefont.ttf"}
+  // {"id":"1","origin":"preset","ttfFileSrc":"/absolute/path/default.ttf"}
+  const base::Value::Dict& dict = parsed_json->GetDict();
+  const std::string* origin = dict.FindString("origin");
+  if (!origin || origin->empty()) {
+    LOG(ERROR) << "[themefont] manifest file has no origin tag";
+    return nullptr;
+  }
+  if (*origin != std::string("online")) {
+    LOG(DEBUG) << "[themefont] manifest file's origin tag is not online";
+    return nullptr;
+  }
+
+  const std::string* absolte_font_path = dict.FindString("ttfFileSrc");
+  if (!absolte_font_path || absolte_font_path->empty()) {
+    LOG(ERROR) << "[themefont] manifest file has no ttfFileSrc tag";
+    return nullptr;
+  }
+
+  base::FilePath font_path =
+      theme_font_path.Append(base::FilePath(*absolte_font_path).BaseName());
+  if (!base::PathExists(font_path)) {
+    LOG(ERROR) << "[themefont] font file not exist:" << font_path.value();
+    return nullptr;
+  }
+
+  base::File font_file(font_path,
+                       base::File::FLAG_OPEN | base::File::FLAG_READ);
+  if (!font_file.IsValid()) {
+    LOG(ERROR) << "[themefont] font file not valid";
+    return nullptr;
+  }
+
+  base::FilePath flag_path = theme_path.Append(kAppThemeFlagFileName);
+  g_theme_font_ = std::make_unique<ThemeFont>();
+  g_theme_font_->flag_path = flag_path;
+  g_theme_font_->manifest_path = manifest_path;
+  g_theme_font_->font_path = font_path;
+  g_theme_font_->font_file = std::move(font_file);
+
+  LOG(INFO) << "[themefont] valid font:" << font_path;
+
+  return g_theme_font_.get();
+}
+
+void RenderProcessHostImpl::OnThemeFontChange() {
+  if (auto* theme_font = EnsureThemeFont()) {
+    UpdateThemeFontFile(theme_font->font_file.Duplicate());
+  } else {
+    UpdateThemeFontFile(base::File());
+  }
+}
+
+void RenderProcessHostImpl::UpdateThemeFontFile(base::File theme_font_file) {
+  GetRendererInterface()->UpdateThemeFontFile(std::move(theme_font_file));
+}
+#endif  // OHOS_THEME_FONT
+
 #if defined(OHOS_RENDER_PROCESS_SHARE)
 RenderProcessHost* RenderProcessHostImpl::GetProcessForSharedToken(
     const std::string& shared_render_process_token) {
@@ -5847,5 +6001,4 @@ void RenderProcessHostImpl::RemoveFromSharedRenderProcessMap(
   }
 }
 #endif
-
 }  // namespace content

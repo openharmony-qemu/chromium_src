@@ -68,7 +68,7 @@ class MMIListenerAdapterImpl : public OHOS::NWeb::MMIListenerAdapter {
       LOG(ERROR) << "OnDeviceAdded sequenced_task_runner is null";
       return;
     }
-
+    
     OHOS::NWeb::MMIDeviceInfo info = TransformToMMIDeviceInfo(adapter);
     if ((info.name.find(IGNORE_MOUSE_DEVICE_NAME) != std::string::npos) &&
         (info.type & TAG_MOUSE_TYPE)) {

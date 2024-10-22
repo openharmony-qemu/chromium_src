@@ -110,7 +110,12 @@ class AutofillAgent : public content::RenderFrameObserver,
 #if defined(OHOS_PASSWORD_AUTOFILL)
   void FillAccountSuggestion(const std::u16string& username,
                              const std::u16string& password) override;
+  void OhFormControlElementClicked();
 #endif
+#if defined(OHOS_AUTOFILL)
+  void OhAutoFillFormControlElementClicked(const blink::WebNode& node);
+#endif
+
   void PreviewPasswordSuggestion(const std::u16string& username,
                                  const std::u16string& password) override;
   void PreviewPasswordGenerationSuggestion(
@@ -417,6 +422,12 @@ class AutofillAgent : public content::RenderFrameObserver,
   std::unique_ptr<DeferringAutofillDriver> deferring_autofill_driver_;
 
   bool was_last_action_fill_ = false;
+
+#if defined(OHOS_AUTOFILL)
+  bool is_popup_created_by_focus_change_ = false;
+  bool is_need_to_created_popup_ = false;
+  base::TimeTicks created_popup_time_ = base::TimeTicks::Now();
+#endif
 
   // Timers for throttling handling of frequent events.
   base::OneShotTimer select_option_change_batch_timer_;

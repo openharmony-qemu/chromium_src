@@ -278,8 +278,8 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) Clipboard
                         const DataTransferEndpoint* data_dst,
                         std::string* result) const = 0;
 #if defined(OHOS_CLIPBOARD)
-  virtual bool HasPasteData() const;
-#endif // defined(OHOS_CLIPBOARD)
+   virtual bool HasPasteData() const;
+#endif   // defined(OHOS_CLIPBOARD)
   // Returns an estimate of the time the clipboard was last updated.  If the
   // time is unknown, returns Time::Time().
   virtual base::Time GetLastModifiedTime() const;
@@ -425,7 +425,7 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) Clipboard
 
   virtual void WriteText(const char* text_data, size_t text_len
 #if defined(OHOS_CLIPBOARD)
-                         ,
+,
                          CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
 
@@ -436,7 +436,7 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) Clipboard
                          const char* url_data,
                          size_t url_len
 #if defined(OHOS_CLIPBOARD)
-                         ,
+,
                          CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
                          ) = 0;
@@ -446,7 +446,7 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) Clipboard
                                     const char* url_data,
                                     size_t url_len
 #if defined(OHOS_CLIPBOARD)
-                                    ,
+,
                                     CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
                                     ) = 0;
@@ -462,7 +462,7 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) Clipboard
                              const char* url_data,
                              size_t url_len
 #if defined(OHOS_CLIPBOARD)
-                             ,
+,
                              CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
                              ) = 0;

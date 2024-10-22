@@ -310,11 +310,11 @@ ExtensionNavigationThrottle::WillStartOrRedirectRequest() {
   // be allowed, even if the target |url| is not web-accessible.  See also:
   // - https://crbug.com/662602
   // - similar checks in extensions::ResourceRequestPolicy::CanRequestResource
-  if (initiator_origin.scheme() == content::kChromeUIScheme ||
+  if (initiator_origin.scheme() == content::kChromeUIScheme
 #if defined(OHOS_ARKWEB_EXTENSIONS)
-      initiator_origin.scheme() == content::kArkWebUIScheme ||
+      || initiator_origin.scheme() == content::kArkWebUIScheme
 #endif
-      initiator_origin.scheme() == content::kChromeDevToolsScheme ||
+      || initiator_origin.scheme() == content::kChromeDevToolsScheme ||
       ExtensionsBrowserClient::Get()->ShouldSchemeBypassNavigationChecks(
           initiator_origin.scheme())) {
     return content::NavigationThrottle::PROCEED;

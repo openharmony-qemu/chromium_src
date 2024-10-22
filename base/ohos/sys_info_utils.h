@@ -31,6 +31,8 @@ BASE_EXPORT bool IsTabletDevice();
 
 BASE_EXPORT bool IsPcDevice();
 
+BASE_EXPORT bool IsEmulator();
+
 BASE_EXPORT int32_t MajorVersion();
 
 BASE_EXPORT int32_t SeniorVersion();

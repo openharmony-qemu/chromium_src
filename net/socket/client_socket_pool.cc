@@ -80,14 +80,24 @@ ClientSocketPool::GroupId::GroupId(
     url::SchemeHostPort destination,
     PrivacyMode privacy_mode,
     NetworkAnonymizationKey network_anonymization_key,
-    SecureDnsPolicy secure_dns_policy)
+    SecureDnsPolicy secure_dns_policy
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+    ,
+    bool secure_dns_only
+#endif
+    )
     : destination_(std::move(destination)),
       privacy_mode_(privacy_mode),
       network_anonymization_key_(
           NetworkAnonymizationKey::IsPartitioningEnabled()
               ? std::move(network_anonymization_key)
               : NetworkAnonymizationKey()),
-      secure_dns_policy_(secure_dns_policy) {
+      secure_dns_policy_(secure_dns_policy)
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+      ,
+      secure_dns_only_(secure_dns_only)
+#endif
+{
   DCHECK(destination_.IsValid());
 
   // ClientSocketPool only expected to be used for HTTP/HTTPS/WS/WSS cases, and
@@ -128,6 +138,12 @@ std::string ClientSocketPool::GroupId::ToString() const {
       result = "dns_bootstrap/" + result;
       break;
   }
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  if (secure_dns_only_) {
+    result = "sdo/" + result;
+  }
+#endif  // OHOS_EX_HTTP_DNS_FALLBACK
 
   return result;
 }
@@ -208,7 +224,12 @@ std::unique_ptr<ConnectJob> ClientSocketPool::CreateConnectJob(
       socket_params->ssl_config_for_proxy(), is_for_websockets_,
       group_id.privacy_mode(), resolution_callback, request_priority,
       socket_tag, group_id.network_anonymization_key(),
-      group_id.secure_dns_policy(), common_connect_job_params_, delegate);
+      group_id.secure_dns_policy(), common_connect_job_params_, delegate
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+      ,
+      group_id.secure_dns_only()
+#endif
+  );
 }
 
 #ifdef OHOS_EX_NETWORK_CONNECTION
@@ -221,4 +242,13 @@ int ClientSocketPool::GetConnectTimeout() {
 }
 #endif
 
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+void ClientSocketPool::SetConnectJobWithSecureDnsOnlyTimeout(int seconds) {
+  connect_job_with_secure_dns_only_timeout_ = seconds;
+}
+
+int ClientSocketPool::GetConnectJobWithSecureDnsOnlyTimeout() {
+  return connect_job_with_secure_dns_only_timeout_;
+}
+#endif
 }  // namespace net

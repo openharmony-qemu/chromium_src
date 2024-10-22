@@ -334,7 +334,7 @@ void FeatureList::InitializeFromSharedMemory(
 }
 
 bool FeatureList::IsFeatureOverridden(const std::string& feature_name) const {
-#ifdef OHOS_SCROLLAR
+#ifdef OHOS_SCROLLBAR
   AutoLock lock(overrides_lock_);
 #endif
   return overrides_.count(feature_name);
@@ -342,7 +342,7 @@ bool FeatureList::IsFeatureOverridden(const std::string& feature_name) const {
 
 bool FeatureList::IsFeatureOverriddenFromCommandLine(
     const std::string& feature_name) const {
-#ifdef OHOS_SCROLLAR
+#ifdef OHOS_SCROLLBAR
   AutoLock lock(overrides_lock_);
 #endif
   auto it = overrides_.find(feature_name);
@@ -352,7 +352,7 @@ bool FeatureList::IsFeatureOverriddenFromCommandLine(
 bool FeatureList::IsFeatureOverriddenFromCommandLine(
     const std::string& feature_name,
     OverrideState state) const {
-#ifdef OHOS_SCROLLAR
+#ifdef OHOS_SCROLLBAR
   AutoLock lock(overrides_lock_);
 #endif
   auto it = overrides_.find(feature_name);
@@ -785,7 +785,7 @@ FeatureList::OverrideState FeatureList::GetOverrideStateByFeatureName(
   DCHECK(initialized_);
   DCHECK(IsValidFeatureOrFieldTrialName(feature_name)) << feature_name;
 
-#ifdef OHOS_SCROLLAR
+#ifdef OHOS_SCROLLBAR
   AutoLock lock(overrides_lock_);
 #endif
   auto it = overrides_.find(feature_name);

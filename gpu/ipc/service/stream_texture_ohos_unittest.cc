@@ -274,7 +274,7 @@ TEST_F(StreamTextureOhosTest, Create) {
   GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
   mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
   scoped_refptr<StreamTexture> StreamTexture =
-      StreamTexture::Create(channel, 1, std::move(receiver));
+      StreamTexture::Create(channel, 1, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
   EXPECT_NE(StreamTexture, nullptr);
 }
 
@@ -319,7 +319,7 @@ TEST_F(StreamTextureOhosTest, OnFrameAvailable_001) {
   GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
   mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
   scoped_refptr<StreamTexture> StreamTexture =
-      StreamTexture::Create(channel, 1, std::move(receiver));
+      StreamTexture::Create(channel, 1, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
   StreamTexture->OnFrameAvailable();
   EXPECT_FALSE(StreamTexture->client_);
   EXPECT_TRUE(StreamTexture->native_texture_owner_);
@@ -332,7 +332,7 @@ TEST_F(StreamTextureOhosTest, OnFrameAvailable_002) {
   GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
   mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
   scoped_refptr<StreamTexture> StreamTexture =
-      StreamTexture::Create(channel, 1, std::move(receiver));
+      StreamTexture::Create(channel, 1, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
   mojo::PendingAssociatedRemote<mojom::StreamTextureClient> pending_bar;
   mojo::PendingAssociatedReceiver<mojom::StreamTextureClient> bar_receiver =
       pending_bar.InitWithNewEndpointAndPassReceiver();
@@ -349,7 +349,7 @@ TEST_F(StreamTextureOhosTest, OnFrameAvailable_003) {
   GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
   mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
   scoped_refptr<StreamTexture> StreamTexture =
-      StreamTexture::Create(channel, 1, std::move(receiver));
+      StreamTexture::Create(channel, 1, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
   StreamTexture->OnFrameAvailable();
   EXPECT_FALSE(StreamTexture->client_);
   EXPECT_TRUE(StreamTexture->native_texture_owner_);
@@ -362,7 +362,7 @@ TEST_F(StreamTextureOhosTest, OnFrameAvailable_004) {
   GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
   mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
   scoped_refptr<StreamTexture> StreamTexture =
-      StreamTexture::Create(channel, 1, std::move(receiver));
+      StreamTexture::Create(channel, 1, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
   StreamTexture->native_texture_owner_ = nullptr;
   StreamTexture->OnFrameAvailable();
   EXPECT_FALSE(StreamTexture->client_);
@@ -376,7 +376,7 @@ TEST_F(StreamTextureOhosTest, OnFrameAvailable_005) {
   GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
   mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
   scoped_refptr<StreamTexture> StreamTexture =
-      StreamTexture::Create(channel, 1, std::move(receiver));
+      StreamTexture::Create(channel, 1, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
   StreamTexture->OnFrameAvailable();
   EXPECT_FALSE(StreamTexture->client_);
   EXPECT_TRUE(StreamTexture->native_texture_owner_);
@@ -389,7 +389,7 @@ TEST_F(StreamTextureOhosTest, OnFrameAvailable_006) {
   GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
   mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
   scoped_refptr<StreamTexture> StreamTexture =
-      StreamTexture::Create(channel, 1, std::move(receiver));
+      StreamTexture::Create(channel, 1, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
   StreamTexture->channel_ = nullptr;
   StreamTexture->OnFrameAvailable();
   EXPECT_FALSE(StreamTexture->client_);
@@ -403,7 +403,7 @@ TEST_F(StreamTextureOhosTest, OnFrameAvailable_007) {
   GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
   mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
   scoped_refptr<StreamTexture> StreamTexture =
-      StreamTexture::Create(channel, 1, std::move(receiver));
+      StreamTexture::Create(channel, 1, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
   mojo::PendingAssociatedRemote<mojom::StreamTextureClient> pending_bar;
   mojo::PendingAssociatedReceiver<mojom::StreamTextureClient> bar_receiver =
       pending_bar.InitWithNewEndpointAndPassReceiver();
@@ -418,7 +418,7 @@ TEST_F(StreamTextureOhosTest, RunCallback_001) {
   GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
   mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
   scoped_refptr<StreamTexture> streamtexture =
-      StreamTexture::Create(channel, 1, std::move(receiver));
+      StreamTexture::Create(channel, 1, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
   scoped_refptr<base::SingleThreadTaskRunner> task_runner =
       base::MakeRefCounted<MockSingleThreadTaskRunner>();
   auto mock_task_runner =
@@ -437,7 +437,7 @@ TEST_F(StreamTextureOhosTest, RunCallback_002) {
   GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
   mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
   scoped_refptr<StreamTexture> streamtexture =
-      StreamTexture::Create(channel, 1, std::move(receiver));
+      StreamTexture::Create(channel, 1, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
   scoped_refptr<base::SingleThreadTaskRunner> task_runner =
       base::MakeRefCounted<MockSingleThreadTaskRunner>();
   auto mock_task_runner =
@@ -456,7 +456,7 @@ TEST_F(StreamTextureOhosTest, RunCallback_003) {
   GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
   mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
   scoped_refptr<StreamTexture> streamtexture =
-      StreamTexture::Create(channel, 1, std::move(receiver));
+      StreamTexture::Create(channel, 1, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
   scoped_refptr<base::SingleThreadTaskRunner> task_runner =
       base::MakeRefCounted<MockSingleThreadTaskRunner>();
   auto mock_task_runner =
@@ -476,7 +476,7 @@ TEST_F(StreamTextureOhosTest, UpdateRotatedVisibleSize_001) {
   GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
   mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
   scoped_refptr<StreamTexture> streamtexture =
-      StreamTexture::Create(channel, 1, std::move(receiver));
+      StreamTexture::Create(channel, 1, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
   streamtexture->rotated_visible_size_ = rotated_visible_size;
   streamtexture->UpdateRotatedVisibleSize(rotated_visible_size);
   EXPECT_FALSE(streamtexture->rotated_visible_size_.IsEmpty());
@@ -489,7 +489,7 @@ TEST_F(StreamTextureOhosTest, UpdateRotatedVisibleSize_002) {
   GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
   mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
   scoped_refptr<StreamTexture> streamtexture =
-      StreamTexture::Create(channel, 1, std::move(receiver));
+      StreamTexture::Create(channel, 1, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
   streamtexture->UpdateRotatedVisibleSize(rotated_visible_size);
   EXPECT_TRUE(streamtexture->rotated_visible_size_.IsEmpty());
 }
@@ -501,7 +501,7 @@ TEST_F(StreamTextureOhosTest, UpdateRotatedVisibleSize_003) {
   GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
   mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
   scoped_refptr<StreamTexture> streamtexture =
-      StreamTexture::Create(channel, 1, std::move(receiver));
+      StreamTexture::Create(channel, 1, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
   streamtexture->rotated_visible_size_ = rotated_visible_size;
   streamtexture->has_pending_frame_ = true;
   streamtexture->UpdateRotatedVisibleSize(rotated_visible_size);
@@ -515,7 +515,7 @@ TEST_F(StreamTextureOhosTest, UpdateRotatedVisibleSize_004) {
   GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
   mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
   scoped_refptr<StreamTexture> streamtexture =
-      StreamTexture::Create(channel, 1, std::move(receiver));
+      StreamTexture::Create(channel, 1, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
   streamtexture->rotated_visible_size_ = rotated_visible_size;
   streamtexture->has_pending_frame_ = true;
   streamtexture->UpdateRotatedVisibleSize(rotated_visible_size);
@@ -528,7 +528,7 @@ TEST_F(StreamTextureOhosTest, NativeEmbedID_001) {
   GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
   mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
   scoped_refptr<StreamTexture> streamtexture =
-      StreamTexture::Create(channel, 1, std::move(receiver));
+      StreamTexture::Create(channel, 1, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
   EXPECT_EQ(streamtexture->native_embed_id_, -1);
   int result = streamtexture->NativeEmbedID();
   EXPECT_EQ(result, 1);
@@ -540,7 +540,7 @@ TEST_F(StreamTextureOhosTest, NativeEmbedID_002) {
   GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
   mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
   scoped_refptr<StreamTexture> streamtexture =
-      StreamTexture::Create(channel, 1, std::move(receiver));
+      StreamTexture::Create(channel, 1, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
   streamtexture->native_embed_id_ = 0;
   int result = streamtexture->NativeEmbedID();
   EXPECT_EQ(result, 0);

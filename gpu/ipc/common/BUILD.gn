@@ -343,7 +343,7 @@ mojom("interfaces") {
     enabled_features += [ "has_gpu_revision_info" ]
   }
   if (enable_heif_decoder) {
-    enable_features += [ "enable_heif_decoder" ]
+    enabled_features += [ "enable_heif_decoder" ]
   }
 
   cpp_typemaps = [

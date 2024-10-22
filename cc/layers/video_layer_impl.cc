@@ -88,6 +88,25 @@ bool VideoLayerImpl::WillDraw(DrawMode draw_mode,
 
   if (!LayerImpl::WillDraw(draw_mode, resource_provider))
     return false;
+  
+#if BUILDFLAG(IS_OHOS)
+  gfx::Transform transform = DrawTransform();
+  gfx::Rect quad_rect(bounds());
+  Occlusion occlusion_in_video_space =
+      draw_properties()
+          .occlusion_in_content_space.GetOcclusionWithGivenDrawTransform(
+              transform);
+  gfx::Rect visible_quad_rect =
+      occlusion_in_video_space.GetUnoccludedContentRect(quad_rect);
+  visible_quad_rect.set_origin(
+      ScreenSpaceTransform().MapPoint(visible_quad_rect.origin()));   
+  if (!visible_quad_rect_.ApproximatelyEqual(visible_quad_rect, 1)) {
+    visible_quad_rect_ = visible_quad_rect;
+    LOG(DEBUG) << "[NativeEmbed] visible_quad_rect:"
+             << visible_quad_rect.ToString();
+    layer_tree_impl()->OnLayerRectUpdate(id(), visible_quad_rect);
+  }
+#endif
 
   // Explicitly acquire and release the provider mutex so it can be held from
   // WillDraw to DidDraw. Since the compositor thread is in the middle of
@@ -196,16 +215,6 @@ void VideoLayerImpl::AppendQuads(viz::CompositorRenderPass* render_pass,
                           GetSortingContextId());
   }
 
-  visible_quad_rect.set_origin(
-      ScreenSpaceTransform().MapPoint(visible_quad_rect.origin()));
-  LOG(DEBUG) << "[NativeEmbed] visible_quad_rect:"
-             << visible_quad_rect.ToString()
-             << ", bounds_:" << bounds().ToString();
-  visible_quad_rect.set_size(bounds());
-  if (!visible_quad_rect_.ApproximatelyEqual(visible_quad_rect, 1)) {
-    visible_quad_rect_ = visible_quad_rect;
-    layer_tree_impl()->OnLayerRectUpdate(id(), visible_quad_rect);
-  }
 #else
   updater_->AppendQuads(render_pass, frame_, transform, quad_rect,
                         visible_quad_rect, draw_properties().mask_filter_info,

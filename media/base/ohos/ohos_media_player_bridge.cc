@@ -180,7 +180,7 @@ void OHOSMediaPlayerBridge::SeekInternal(base::TimeDelta time) {
   if (seeking_back_complete_) {
     ret = player_->Seek(time.InMilliseconds(),
                               OHOS::NWeb::PlayerSeekMode::SEEK_PREVIOUS_SYNC);
-    LOF(INFO) << "OHOSMediaPlayerBridge::SeekTo mode=1";    
+    LOG(INFO) << "OHOSMediaPlayerBridge::SeekTo mode=1";    
   } else {
     ret = player_->Seek(time.InMilliseconds(),
                               OHOS::NWeb::PlayerSeekMode::SEEK_CLOSEST);

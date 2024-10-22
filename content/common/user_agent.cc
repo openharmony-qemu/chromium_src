@@ -231,7 +231,7 @@ std::string GetDistVersion() {
   int versionPartthree;
   std::string os_version = base::ohos::OsVersion();
   int ret = sscanf_s(os_version.c_str(), "%d.%d.%d",
-      &versionPartOne, &versionPartTwo, &versionPartthree, sizeof(versionPartOne));
+      &versionPartOne, &versionPartTwo, &versionPartthree);
   if (ret <= 0){
     return dist_version;
   }

@@ -3542,7 +3542,7 @@ NWebDelegate::GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
 
 std::shared_ptr<NWebAccessibilityNodeInfo>
 NWebDelegate::PopulateAccessibilityNodeInfo(
-    const content::BrowserAccessibilityOHOS* node) {
+    content::BrowserAccessibilityOHOS* node) {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
     return nullptr;
@@ -3550,24 +3550,17 @@ NWebDelegate::PopulateAccessibilityNodeInfo(
 
   std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo =
     std::make_shared<NWebAccessibilityNodeInfoImpl>();
+  if (nodeInfo == nullptr || node == nullptr) {
+    LOG(ERROR) << "PopulateAccessibilityNodeInfo nodeInfo or node is null";
+    return nullptr;
+  }
   nodeInfo->SetAccessibilityId(node->GetAccessibilityId());
-  nodeInfo->SetParentId(-1);
-  bool isRoot = !node->PlatformGetParent();
-  if (!isRoot) {
-    auto* parentNode = static_cast<content::BrowserAccessibilityOHOS*>(
-        node->PlatformGetParent());
-    if (parentNode) {
-      nodeInfo->SetParentId(parentNode->GetAccessibilityId());
-    }
-  }
+  nodeInfo->SetParentId(node->GetParentId());
 
-  std::vector<int64_t> childIds;
-  for (const auto& childNode : node->PlatformChildren()) {
-    const content::BrowserAccessibilityOHOS& childNodeOHOS =
-        static_cast<const content::BrowserAccessibilityOHOS&>(childNode);
-    childIds.emplace_back(childNodeOHOS.GetAccessibilityId());
-  }
-  nodeInfo->SetChildIds(childIds);
+  std::vector<int64_t> childrenIds;
+  node->GetChildrenIds(childrenIds);
+  nodeInfo->SetChildIds(childrenIds);
+  node->SetChildrenIds(childrenIds);
   nodeInfo->SetIsAccessibilityFocus(
       (accessibilityManager->GetAccessibilityFocusId() ==
               node->GetAccessibilityId()
@@ -3631,6 +3624,7 @@ void NWebDelegate::AddAccessibilityNodeInfoAttributes(
     nodeInfo->SetRangeInfoMax(0.0f);
     nodeInfo->SetRangeInfoCurrent(0.0f);
   }
+  nodeInfo->SetIsAccessibilityGroup(node->IsAccessibilityGroup());
 }
 
 void NWebDelegate::AddAccessibilityNodeInfoRect(

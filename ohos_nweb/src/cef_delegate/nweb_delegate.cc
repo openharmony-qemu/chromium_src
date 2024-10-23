@@ -3389,6 +3389,26 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId, uint32_t action,
               node->CreatePositionForSelectionAt(newText.length())));
       break;
     }
+    case AceAction::ACTION_SET_CURSOR_POSITION: {
+      if (!node->IsTextField() || actionArguments.empty()) {
+        break;
+      }
+
+      int offset = 0;
+      auto iter = actionArguments.find("offset");
+
+      if (iter != actionArguments.end()) {
+        std::stringstream str_offset;
+        str_offset << iter->second;
+        str_offset >> offset;
+      }
+      LOG(INFO) << "ExecuteAction setCursorPosition offset is " << offset;
+      accessibilityManager->SetSelection(
+          content::BrowserAccessibility::AXRange(
+              node->CreatePositionForSelectionAt(offset),
+              node->CreatePositionForSelectionAt(offset)));
+      break;
+    }
     default:
       LOG(INFO) << "ExecuteAction unsupported action";
       break;
@@ -3399,8 +3419,9 @@ void NWebDelegate::SendAccessibilityHoverEvent(int x, int y) {
   if (accessibility_state_) {
     auto* accessibilityManager = GetAccessibilityManager();
     if (accessibilityManager != nullptr) {
-      gfx::PointF point(x, y);
-      accessibilityManager->OnHoverEvent(point);
+      auto scale = accessibilityManager->GetPageScaleFactor();
+      gfx::Point point(x / scale, (y - GetViewPointHeight()) / scale);
+      accessibilityManager->HitTest(point, 0);
     }
   }
 }
@@ -3619,20 +3640,24 @@ void NWebDelegate::AddAccessibilityNodeInfoRect(
   gfx::Rect absolute_rect = node->GetUnclippedRootFrameBoundsRect(&offscreen_result);
 
   nodeInfo->SetRectX(absolute_rect.x());
-  nodeInfo->SetRectY(absolute_rect.y());
+  nodeInfo->SetRectY(absolute_rect.y() + GetViewPointHeight());
   nodeInfo->SetRectWidth(absolute_rect.width());
   nodeInfo->SetRectHeight(absolute_rect.height());
+}
 
+float NWebDelegate::GetViewPointHeight() const {
+  float height = 0.0f;
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "AddAccessibilityNodeInfoRect can not get browser";
-    return;
+    LOG(ERROR) << "GetViewPointHeight can not get browser";
+    return height;
   }
   auto viewPointHeight = GetBrowser()->GetHost()->GetShrinkViewportHeight();
   if (viewPointHeight != 0 && render_handler_ != nullptr) {
     CefScreenInfo screen_info;
     render_handler_->GetScreenInfo(GetBrowser(), screen_info);
-    nodeInfo->SetRectY(absolute_rect.y() + viewPointHeight * screen_info.device_scale_factor);
+    height = viewPointHeight * screen_info.device_scale_factor;
   }
+  return height;
 }
 
 void NWebDelegate::AddAccessibilityNodeInfoCollection(

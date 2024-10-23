@@ -92,6 +92,7 @@ enum class AceAction : uint32_t {
   ACTION_SELECT,
   ACTION_SET_SELECTION,
   ACTION_CLEAR_SELECTION,
+  ACTION_SET_CURSOR_POSITION,
 };
 
 enum class AceTextCategory {

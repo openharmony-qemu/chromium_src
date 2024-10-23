@@ -889,5 +889,9 @@ void InputRouterImpl::UpdateTouchAckTimeoutEnabled() {
 void InputRouterImpl::SetGestureEventResult(bool result) {
   client_->GetWidgetInputHandler()->SetGestureEventResult(result);
 }
+
+void InputRouterImpl::SetNativeEmbedMode(bool flag) {
+  client_->GetWidgetInputHandler()->SetNativeEmbedMode(flag);
+}
 #endif
 }  // namespace content

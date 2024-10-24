@@ -139,6 +139,15 @@ class NWebRenderHandler : public CefRenderHandler {
                                   bool is_need_reset_listener,
                                   const AttributesMap& attributes) override;
 
+#if defined(OHOS_INPUT_EVENTS)
+  void HandleKeyboardAttach(CefRefPtr<CefBrowser> browser,
+                            const TextInputInfo& text_input_info,
+                            bool is_need_reset_listener,
+                            const std::map<std::string, std::string>& attributesMap);
+  
+  void HandleKeyboardDetach();
+#endif
+
   void GetTouchHandleSize(CefRefPtr<CefBrowser> browser,
                           cef_horizontal_alignment_t orientation,
                           CefSize& size) override;

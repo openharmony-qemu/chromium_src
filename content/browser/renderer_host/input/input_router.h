@@ -114,6 +114,8 @@ class InputRouter {
 
 #if BUILDFLAG(IS_OHOS)
   virtual void SetGestureEventResult(bool result) = 0;
+
+  virtual void SetNativeEmbedMode(bool flag) = 0;
 #endif
 };
 

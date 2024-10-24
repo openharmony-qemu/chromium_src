@@ -18,17 +18,10 @@
 
 #include <stdint.h>
 #include "base/task/single_thread_task_runner.h"
+#include "base/ohos/ltpo/include/ltpo_strategy.h"
 
 namespace base {
 namespace ohos {
-struct DynamicFrameRateState {
-  bool enabled_ {false};
-  bool dynamicState_ {false};
-  int32_t onScreenSlidingRate_ {0};
-  int32_t offScreenSlidingRate_ {0};
-  int32_t dirtyAreaRate_ {0};
-};
-
 // dynamic frame rate
 class DynamicFrameRateDecision {
 public:
@@ -48,6 +41,7 @@ public:
 
   void SetVsyncEnabled(bool enabled);
   void SetHasTouchPoint(bool has_touch_point);
+  void SetLTPOStrategy(int32_t strategy);
 private:
   void SetMaxFrameRateThreeSec();
   void SetFrameRateLinkerEnable(bool enabled);
@@ -57,6 +51,7 @@ private:
   void SetVisibleImpl(bool visible);
   void ReportSlidingFrameRateImpl(int32_t frame_rate);
   void SetHasTouchPointImpl(bool has_touch_point);
+  void SetLTPOStrategyImpl(int32_t strategy);
 
 private:
   int32_t sliding_frame_rate_ {0};
@@ -69,7 +64,7 @@ private:
   int64_t touch_up_timestamp_{0};
   scoped_refptr<SingleThreadTaskRunner> curent_task_runner_ {};
 
-  bool is_phone_or_tablet_ {false};
+  LTPOStrategy strategy_ {LTPOStrategy::DISABLED};
 };
 }  // namespace ohos
 }  // namespace base

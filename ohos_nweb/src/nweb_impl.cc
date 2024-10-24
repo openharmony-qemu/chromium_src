@@ -155,6 +155,10 @@ extern bool g_siteIsolationMode;
 #include "content/browser/gpu/gpu_process_host.h"
 #endif
 
+#ifdef OHOS_USERAGENT
+#include "components/embedder_support/user_agent_utils.h"
+#endif
+
 namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
@@ -3112,6 +3116,11 @@ void NWebImpl::ClearIntelligentTrackingPreventionBypassingList() {
   ohos_anti_tracking::ThirdPartyCookieAccessPolicy::GetInstance()->
       ClearITPBypassingList();
 #endif
+}
+
+// static
+std::string NWebImpl::GetDefaultUserAgent() {
+  return embedder_support::GetUserAgent();
 }
 
 int NWebImpl::ScaleGestureChange(double scale, double centerX, double centerY) {

@@ -848,6 +848,12 @@ bool MediaSessionImpl::HasPepper() const {
   return !pepper_players_.empty();
 }
 
+#if BUILDFLAG(IS_OHOS)
+bool MediaSessionImpl::HasOnlyOneShotPlayersPublic() const {
+  return HasOnlyOneShotPlayers();
+}
+#endif //BUILDFLAG(IS_OHOS)
+
 bool MediaSessionImpl::HasOnlyOneShotPlayers() const {
   return !one_shot_players_.empty() && normal_players_.empty() &&
          pepper_players_.empty();

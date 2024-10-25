@@ -134,6 +134,15 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool IsFitContent() const;
 #endif
 
+#if defined(OHOS_MULTI_WINDOW)
+  float GetVirtualPixelRatio() {
+    return virtual_pixel_ratio_;
+  }
+  void SetVirtualPixelRatio(float ratio) {
+    virtual_pixel_ratio_ = ratio;
+  }
+#endif
+
 #if defined(OHOS_PRINT)
   void PutPrintToken(void* token) { token_ = token; }
   void* GetPrintToken() { return token_; }
@@ -259,6 +268,9 @@ class NWebPreferenceDelegate : public NWebPreference {
 #ifdef OHOS_SCROLLBAR
   uint32_t scrollbar_color_{0};
 #endif // OHOS_SCROLLBAR
+#if defined(OHOS_MULTI_WINDOW)
+  float virtual_pixel_ratio_ = 2.0;
+#endif
 #if defined(OHOS_PRINT)
   void* token_ = nullptr;
 #endif

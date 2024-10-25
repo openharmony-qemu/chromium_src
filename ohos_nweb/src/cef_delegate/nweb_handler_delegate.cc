@@ -752,6 +752,8 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
     }
     if (main_browser_ && main_browser_->GetHost()) {
       if (preference_delegate_.get()) {
+        main_browser_->GetHost()->SetVirtualPixelRatio(
+            preference_delegate_->GetVirtualPixelRatio());
         main_browser_->GetHost()->PutUserAgent(
             preference_delegate_->UserAgent());
 #if defined(OHOS_BACKGROUND_COLOR)

@@ -704,6 +704,10 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
   void StopCreateOverlayGesture() {
     gesture_detector_.StopCreateOverlayGesture();
   }
+
+  void OnAITextSelected() {
+    gesture_detector_.OnAITextSelected();
+  }
 #endif
 
   GestureEventData CreateGesture(const GestureEventDetails& details,
@@ -1003,6 +1007,12 @@ void GestureProvider::ResetDetection(bool is_lost_focus) {
       MotionEvent::Action::CANCEL, base::TimeTicks::Now(), PointerProperties(),
       is_lost_focus);
   OnTouchEvent(generic_cancel_event);
+}
+#endif
+
+#ifdef OHOS_AI
+void GestureProvider::OnAITextSelected() {
+  gesture_listener_->OnAITextSelected();
 }
 #endif
 

@@ -581,6 +581,10 @@ void GestureDetector::OnCreateOverlayTimeout() {
   LOG(INFO) << "GestureDetector::OnCreateOverlayTimeout";
   listener_->OnCreateOverlay(*current_down_event_);
 }
+
+void GestureDetector::OnAITextSelected() {
+  StopDragLongPressGesture();
+}
 #endif
 
 void GestureDetector::OnTapTimeout() {

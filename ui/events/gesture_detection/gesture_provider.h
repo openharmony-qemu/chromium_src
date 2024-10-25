@@ -73,6 +73,10 @@ class GESTURE_DETECTION_EXPORT GestureProvider {
   void ResetDetection(bool is_lost_focus);
 #endif
 
+#ifdef OHOS_AI
+  void OnAITextSelected();
+#endif
+
   // Reset any active gesture detection, including detection of timeout-based
   // events (e.g., double-tap or delayed tap) for which the pointer has already
   // been released.

@@ -44,7 +44,7 @@ class GESTURE_DETECTION_EXPORT GestureDetector {
     base::TimeDelta draglongpress_timeout = base::Milliseconds(1500);
 #endif
 #ifdef OHOS_AI
-    base::TimeDelta createoverlay_timeout = base::Milliseconds(150);
+    base::TimeDelta createoverlay_timeout = base::Milliseconds(50);
 #endif
     base::TimeDelta showpress_timeout = base::Milliseconds(180);
     base::TimeDelta double_tap_timeout = base::Milliseconds(300);
@@ -156,6 +156,7 @@ class GESTURE_DETECTION_EXPORT GestureDetector {
 #endif
 #ifdef OHOS_AI
   void StopCreateOverlayGesture();
+  void OnAITextSelected();
 #endif
   // Returns the event storing the initial position of the pointer with given
   // pointer ID. This returns nullptr if the source event isn't

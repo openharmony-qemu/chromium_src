@@ -28,12 +28,16 @@
 #include "arkweb_native_web_message_callback.h"
 #include "ohos_nweb/include/nweb_engine.h"
 #include "ohos_nweb/include/nweb_errors.h"
+#include "cef/libcef/browser/javascript/oh_gin_javascript_bridge_dispatcher_host.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
 
 #define ARKWEB_NDK_EXPORT __attribute__((visibility("default")))
+#define ARK_WEB_NO_SANITIZE __attribute__((no_sanitize("cfi-icall", "cfi")))
+
+static std::shared_mutex g_LastCallingFrameUrlLock;
 
 ARKWEB_NDK_EXPORT void OH_ArkWeb_RunJavaScript(
     const char* webTag,
@@ -718,6 +722,15 @@ ARKWEB_NDK_EXPORT void OH_CookieManager_ClearSessionCookiesSync() {
   }
 
   cookie_manager->DeleteSessionCookies(nullptr);
+}
+
+ARKWEB_NDK_EXPORT const char* OH_ArkWeb_GetLastJavascriptProxyCallingFrameUrl() {
+  std::unique_lock<std::shared_mutex> lock(g_LastCallingFrameUrlLock);
+  std::string last_calling_frame_url;
+
+  last_calling_frame_url = NWEB::OhGinJavascriptBridgeDispatcherHost::GetLastCallingFrameUrlTLS();
+
+  return last_calling_frame_url.c_str();
 }
 
 #ifdef __cplusplus

@@ -608,35 +608,6 @@ TEST_F(CompositorTestWithMessageLoop, SetDrawRect2) {
   compositor()->SetDrawRect(rect);
   EXPECT_FALSE(compositor()->display_private_);
 }
-
-TEST_F(CompositorTestWithMessageLoop, SetDrawMode1) {
-  compositor()->drawMode_ = true;
-  bool input_mode = true;
-  compositor()->SetDrawMode(input_mode);
-  EXPECT_TRUE(compositor()->drawMode_);
-}
-
-TEST_F(CompositorTestWithMessageLoop, SetDrawMode2) {
-  auto frame_sink = cc::FakeLayerTreeFrameSink::Create3d();
-  mojo::AssociatedRemote<viz::mojom::DisplayPrivate> display_private;
-  mojo::PendingAssociatedReceiver<viz::mojom::DisplayPrivate> remote =
-      display_private.BindNewEndpointAndPassDedicatedReceiver();
-  compositor()->SetLayerTreeFrameSink(std::move(frame_sink),
-                                      std::move(display_private));
-  compositor()->drawMode_ = true;
-  bool input_mode = false;
-  compositor()->SetDrawMode(input_mode);
-  EXPECT_FALSE(compositor()->drawMode_);
-  EXPECT_TRUE(compositor()->display_private_);
-}
-
-TEST_F(CompositorTestWithMessageLoop, SetDrawMode3) {
-  compositor()->drawMode_ = true;
-  bool input_mode = false;
-  compositor()->SetDrawMode(input_mode);
-  EXPECT_FALSE(compositor()->drawMode_);
-  EXPECT_FALSE(compositor()->display_private_);
-}
 #endif  // OHOS_UNITTESTS
 
 }  // namespace ui

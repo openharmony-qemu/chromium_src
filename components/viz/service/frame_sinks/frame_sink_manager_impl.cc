@@ -793,6 +793,10 @@ void FrameSinkManagerImpl::EvictFrameBackBuffers(
 
   auto root_it = root_sink_map_.find(root_frame_sink_id);
   if (root_it != root_sink_map_.end()) {
+    if (!root_it->second) {
+      LOG(ERROR) << "RootCompositorFrameSinkImpl is null";
+      return;
+    }
     root_it->second->EvictFrameBackBuffers(invisible);
   }
 }

@@ -351,7 +351,6 @@ void Compositor::SetLayerTreeFrameSink(
     display_private_->SetDisplayColorMatrix(
         gfx::SkM44ToTransform(display_color_matrix_));
     display_private_->SetOutputIsSecure(output_is_secure_);
-    display_private_->SetDrawMode(drawMode_);
     if (has_vsync_params_) {
       display_private_->SetDisplayVSyncParameters(vsync_timebase_,
                                                   vsync_interval_);
@@ -475,13 +474,10 @@ void Compositor::SetDrawRect(const gfx::Rect& new_rect) {
 }
 
 void Compositor::SetDrawMode(const int32_t& mode) {
-  if (drawMode_ != mode) {
-    drawMode_ = mode;
-    if (display_private_) {
-      TRACE_EVENT0("viz", "Compositor::SetDrawMode");
-      mojo::SyncCallRestrictions::ScopedAllowSyncCall scoped_allow_sync_call;
-      display_private_->SetDrawMode(drawMode_);
-    }
+  if (display_private_) {
+    TRACE_EVENT0("viz", "Compositor::SetDrawMode");
+    mojo::SyncCallRestrictions::ScopedAllowSyncCall scoped_allow_sync_call;
+    display_private_->SetDrawMode(mode);
   }
 }
 #endif  // defined(OHOS_COMPOSITE_RENDER)

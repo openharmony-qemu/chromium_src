@@ -981,11 +981,9 @@ void NWebImpl::SetDrawRect(int x, int y, int width, int height) {
 
 void NWebImpl::SetDrawMode(int mode) {
   WVLOG_I("NWebImpl::SetDrawMode %{public}d, nweb_id = %{public}u", mode, nweb_id_);
-  if (draw_mode_ != mode) {
-    draw_mode_ = mode;
-    if (nweb_delegate_) {
-      nweb_delegate_->SetDrawMode(draw_mode_);
-    }
+  draw_mode_ = mode;
+  if (nweb_delegate_) {
+    nweb_delegate_->SetDrawMode(draw_mode_);
   }
 }
 

@@ -391,6 +391,9 @@ bool OHOSAudioOutputStream::InitRender(
 }
 
 bool OHOSAudioOutputStream::StartRender() {
+  audio_renderer_->SetAudioSilentMode(true);
+  LOG(INFO) << "OHOSAudioOutputStream SetAudioSilentMode true";
+  isSilentMode_ = true;
   if (!audio_renderer_->Start()) {
     LOG(ERROR) << "ohos audio render start failed";
     if (!audio_renderer_->Release()) {
@@ -403,8 +406,6 @@ bool OHOSAudioOutputStream::StartRender() {
     ReportAudioPlayErrorInfo(errorType, errorCode, errorDesc);
     return false;
   }
-  audio_renderer_->SetAudioSilentMode(true);
-  isSilentMode_ = true;
   isSuspended_ = false;
   return true;
 }
@@ -541,7 +542,7 @@ void OHOSAudioOutputStream::SetUpAudioSilentState()
     LOG(ERROR) << "OHOSAudioOutputStream: Try to set audio silent but get mediaSession or audioRender failed!";
     return;
   }
-  if(!isSilentMode_) {
+  if(isSilentMode_) {
     bool is_playing = weakMediaSession_.get()->GetPlayingState();
     bool is_muted = weakMediaSession_.get()->GetMuteState();
     if(is_playing && !is_muted) {

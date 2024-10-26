@@ -705,8 +705,14 @@ void InputHandler::SetSynchronousInputHandlerRootScrollOffset(
                "offset_x", root_content_offset.x(), "offset_y",
                root_content_offset.y());
 
+#if BUILDFLAG(IS_OHOS)
+  gfx::Vector2dF physical_delta =
+      gfx::Vector2dF(root_content_offset.x(), root_content_offset.y());
+#else
   gfx::Vector2dF physical_delta =
       root_content_offset - GetViewport().TotalScrollOffset();
+#endif
+
   physical_delta.Scale(ActiveTree().page_scale_factor_for_scroll());
 
   bool changed = !GetViewport()

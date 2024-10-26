@@ -35,7 +35,6 @@ extern "C" {
 #endif  // __cplusplus
 
 #define ARKWEB_NDK_EXPORT __attribute__((visibility("default")))
-#define ARK_WEB_NO_SANITIZE __attribute__((no_sanitize("cfi-icall", "cfi")))
 
 static std::shared_mutex g_LastCallingFrameUrlLock;
 
@@ -725,7 +724,6 @@ ARKWEB_NDK_EXPORT void OH_CookieManager_ClearSessionCookiesSync() {
 }
 
 ARKWEB_NDK_EXPORT const char* OH_ArkWeb_GetLastJavascriptProxyCallingFrameUrl() {
-  std::unique_lock<std::shared_mutex> lock(g_LastCallingFrameUrlLock);
   std::string last_calling_frame_url;
 
   last_calling_frame_url = NWEB::OhGinJavascriptBridgeDispatcherHost::GetLastCallingFrameUrlTLS();

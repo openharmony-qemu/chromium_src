@@ -64,9 +64,12 @@ void VideoLayer::OnLayerRectVisibilityChange(bool visibility) {
   }
 }
 
-void VideoLayer::ResetLayerRectUpdateCallback() {
+void VideoLayer::ResetLayerRectCallback() {
   if (!rect_change_callback_.is_null()) {
     rect_change_callback_.Reset();
+  }
+  if (!rect_visibility_change_callback_.is_null()) {
+    rect_visibility_change_callback_.Reset();
   }
 }
 #endif

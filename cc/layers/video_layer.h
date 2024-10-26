@@ -50,7 +50,7 @@ class CC_EXPORT VideoLayer : public Layer {
 #if BUILDFLAG(IS_OHOS)
   void OnLayerRectUpdate(const gfx::Rect& rect) override;
   void OnLayerRectVisibilityChange(bool visibility) override;
-  void ResetLayerRectUpdateCallback();
+  void ResetLayerRectCallback();
 #endif
 
   // Clears |provider_| to ensure it is not used after destruction.

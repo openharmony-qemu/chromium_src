@@ -376,6 +376,9 @@ class UnboundWidgetInputHandler : public blink::mojom::WidgetInputHandler {
   void SetNativeEmbedMode(bool result) override {
     DLOG(WARNING) << "Input request on unbound interface";
   }
+  void ScrollBy(float delta_x, float delta_y) override {
+    DLOG(WARNING) << "Input request on unbound interface";
+  }
 #endif
 };
 

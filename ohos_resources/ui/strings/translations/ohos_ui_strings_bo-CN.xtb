@@ -1,0 +1,5 @@
+<?xml version="1.0" ?>
+<!DOCTYPE translationbundle>
+<translationbundle lang="bo-CN">
+<translation id="IDS_OHOS_WEBPAGE_ERR_SEARCH_NOTE">དྲ་ཚིགས་ནི་ <ph name="ERROR_URL"/> ཡིན། དྲ་ངོས་ལ་གནས་སྐབས་རིང་སྦྲེལ་མི་ཐུབ་པའམ། ཡང་ན་དེ་དྲ་ཚིགས་གསར་པར་གཏན་དུ་སྤོས་ཟིན་པ་ཡིན་སྲིད།</translation>
+</translationbundle>

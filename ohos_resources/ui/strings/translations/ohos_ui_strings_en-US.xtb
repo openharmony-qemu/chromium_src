@@ -1,0 +1,5 @@
+<?xml version="1.0" ?>
+<!DOCTYPE translationbundle>
+<translationbundle lang="en-US">
+<translation id="IDS_OHOS_WEBPAGE_ERR_SEARCH_NOTE">The webpage at <ph name="ERROR_URL"/> may be temporarily down, or it may have been permanently moved to another web address.</translation>
+</translationbundle>

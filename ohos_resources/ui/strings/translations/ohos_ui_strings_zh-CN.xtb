@@ -1,0 +1,5 @@
+<?xml version="1.0" ?>
+<!DOCTYPE translationbundle>
+<translationbundle lang="zh-CN">
+<translation id="IDS_OHOS_WEBPAGE_ERR_SEARCH_NOTE">网址为 <ph name="ERROR_URL"/> 网页可能暂时无法连接，或者它已永久性地移动到了新网址</translation>
+</translationbundle>

@@ -724,11 +724,7 @@ ARKWEB_NDK_EXPORT void OH_CookieManager_ClearSessionCookiesSync() {
 }
 
 ARKWEB_NDK_EXPORT const char* OH_ArkWeb_GetLastJavascriptProxyCallingFrameUrl() {
-  std::string last_calling_frame_url;
-
-  last_calling_frame_url = NWEB::OhGinJavascriptBridgeDispatcherHost::GetLastCallingFrameUrlTLS();
-
-  return last_calling_frame_url.c_str();
+  return NWEB::OhGinJavascriptBridgeDispatcherHost::GetLastCallingFrameUrlTLS();
 }
 
 #ifdef __cplusplus

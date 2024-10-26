@@ -1,0 +1,5 @@
+<?xml version="1.0" ?>
+<!DOCTYPE translationbundle>
+<translationbundle lang="zh-TW">
+<translation id="IDS_OHOS_WEBPAGE_ERR_SEARCH_NOTE">網址為 <ph name="ERROR_URL"/> 的網頁可能暫時無法連線，或者已永久移動至新網址</translation>
+</translationbundle>

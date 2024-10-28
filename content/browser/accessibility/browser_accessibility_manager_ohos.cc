@@ -163,8 +163,18 @@ void BrowserAccessibilityManagerOHOS::SendAccessibilityEvent(
     return;
   }
  
+  if (accessibilityEventListener_ == nullptr) {
+    auto rootManager =
+        static_cast<BrowserAccessibilityManagerOHOS*>(GetManagerForRootFrame());
+    if (rootManager != nullptr) {
+      accessibilityEventListener_ =
+          rootManager->GetAccessibilityEventListener();
+    }
+  }
+
   LOG(INFO) << "SendAccessibilityEvent accessibilityId is " << accessibilityId
-            << ", eventType is " << static_cast<uint32_t>(eventType);
+            << ", eventType is " << static_cast<uint32_t>(eventType)
+            << ", listener_ is " << (accessibilityEventListener_ != nullptr);
 
   if (accessibilityEventListener_ != nullptr &&
       eventType != OHOS::NWeb::AccessibilityEventType::UNKNOWN &&

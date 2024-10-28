@@ -213,6 +213,23 @@ public:
 
   bool GetIsPluralLineSupported() override;
 
+  void SetIsAccessibilityGroup(bool accessibility_group);
+
+  bool GetIsAccessibilityGroup() override;
+
+  void SetAccessibilityLevel(const std::string& accessibility_level);
+
+  std::string GetAccessibilityLevel() override;
+
+  void SetAccessibilityDescription(
+      const std::string& accessibility_description);
+
+  std::string GetAccessibilityDescription() override;
+
+  void SetAccessibilityText(const std::string& accessibility_text);
+
+  std::string GetAccessibilityText() override;
+
 private:
   int64_t accessibility_id_ = -1;
   size_t item_counts_ = 0;
@@ -228,6 +245,9 @@ private:
   std::string content_;
   std::string error_;
   std::string description_info_;
+  std::string accessibility_level_;
+  std::string accessibility_description_;
+  std::string accessibility_text_;
   std::vector<int64_t> child_ids_;
   int64_t parent_id_ = -1;
   int32_t grid_rows_ = -1;
@@ -263,6 +283,7 @@ private:
   bool content_invalid_ : 1;
   bool deletable_ : 1;
   bool accessibility_focus_ : 1;
+  bool accessibility_group_ : 1;
 };
 
 } // namespace OHOS::NWeb

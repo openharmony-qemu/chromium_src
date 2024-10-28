@@ -333,6 +333,26 @@ std::string GetSharedRenderProcessToken(
 }
 #endif
 
+#if defined(OHOS_SCROLLBAR)
+float GetVirtualPixelRatioForScrollbar() {
+  auto display_manager_adapter =
+      OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateDisplayMgrAdapter();
+  if (display_manager_adapter == nullptr) {
+    LOG(ERROR) << "display_manager_adapter is nullptr";
+    return -1;
+  }
+  std::shared_ptr<OHOS::NWeb::DisplayAdapter> display =
+      display_manager_adapter->GetDefaultDisplay();
+  if (display == nullptr) {
+    LOG(ERROR) << "display is nullptr";
+    return -1;
+  }
+  float ratio = display->GetVirtualPixelRatio();
+  LOG(DEBUG) << "GetVirtualPixelRatio ratio:" << std::to_string(ratio);
+  return ratio;
+}
+#endif
+
 #if defined(OHOS_API_INIT_WEB_ENGINE)
 void InitialWebEngineArgs(
     std::list<std::string>& web_engine_args,
@@ -355,6 +375,12 @@ void InitialWebEngineArgs(
       "--browser-subprocess-path=/system/bin/web_render");
   web_engine_args.emplace_back("--zygote-cmd-prefix=/system/bin/web_render");
   web_engine_args.emplace_back("--remote-debugging-port=9222");
+#if defined(OHOS_SCROLLBAR)
+  float ratio = GetVirtualPixelRatioForScrollbar();
+  if (ratio > 0) {
+    web_engine_args.emplace_back("--virtual-pixel-ratio=" + std::to_string(ratio));
+  }
+#endif
   web_engine_args.emplace_back("--enable-touch-drag-drop");
   web_engine_args.emplace_back("--gpu-rasterization-msaa-sample-count=1");
   // enable aggressive domstorage flushing to minimize data loss

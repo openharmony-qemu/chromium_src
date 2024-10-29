@@ -289,6 +289,7 @@ class MockWidgetInputHandler : public blink::mojom::WidgetInputHandler {
   void SetNativeEmbedMode(bool flag) override {}
   void AttachSoftwareCompositorOhos(::mojo::PendingReceiver<::blink::mojom::SoftwareCompositorOhos>
   compositor_request) override {}
+  void ScrollBy(float delta_x, float delta_y) override {}
 #endif
   using MessageVector = std::vector<std::unique_ptr<DispatchedMessage>>;
   MessageVector GetAndResetDispatchedMessages();

@@ -460,8 +460,8 @@ void OHOSAudioOutputStream::PumpSamples() {
       reinterpret_cast<int16_t*>(audio_data_[active_buffer_index_]));
   const size_t num_filled_bytes = frames_filled * bytes_per_frame_;
   size_t bytesWritten = 0;
-  bool is_audio_render_state_running_ = true;
-  while ((bytesWritten < num_filled_bytes) && is_audio_render_state_running_) {
+  bool writeFailed = false;
+  while (bytesWritten < num_filled_bytes) {
     int32_t bytesSingle =
         audio_renderer_->Write(audio_data_[active_buffer_index_] + bytesWritten,
                                num_filled_bytes - bytesWritten);
@@ -469,7 +469,7 @@ void OHOSAudioOutputStream::PumpSamples() {
       LOG(DEBUG) << "Audio renderer write audio data failed";
       if (!audio_renderer_->IsRendererStateRunning()) {
         rendererCallback_->SetSuspendFlag(true);
-        is_audio_render_state_running_ = false;
+        writeFailed = true;
         if (!weakMediaSession_) {
           LOG(ERROR) << "Try to suspend audio but get mediaSession failed";
           ReportError();
@@ -517,9 +517,11 @@ void OHOSAudioOutputStream::PumpSamples() {
   }
 
   stream_position_samples_ += frames_filled;
-  if (is_audio_render_state_running_) {
-    SchedulePumpSamples(now);
+  if (writeFailed && weakMediaSession_ && weakMediaSession_.get()->HasOnlyOneShotPlayersPublic()) {
+    LOG(INFO) << "OHOSAudioOutputStream::PumpSamples OneShotPlayers write failed";
+    return;
   }
+  SchedulePumpSamples(now);
 }
 
 void OHOSAudioOutputStream::SchedulePumpSamples(base::TimeTicks now) {

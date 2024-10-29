@@ -124,6 +124,19 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
 
   bool IsScrollSupported() const;
 
+  bool CanScrollForward() const;
+  bool CanScrollBackward() const;
+  bool CanScrollUp() const;
+  bool CanScrollDown() const;
+  bool CanScrollLeft() const;
+  bool CanScrollRight() const;
+  int GetScrollX() const;
+  int GetScrollY() const;
+  int GetMinScrollX() const;
+  int GetMinScrollY() const;
+  int GetMaxScrollX() const;
+  int GetMaxScrollY() const;
+
   void Scroll(const ax::mojom::Action& action) const;
 
   static BrowserAccessibilityOHOS* GetFromAccessibilityId(

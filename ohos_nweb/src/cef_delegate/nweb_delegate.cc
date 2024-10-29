@@ -3559,7 +3559,6 @@ NWebDelegate::PopulateAccessibilityNodeInfo(
   }
   nodeInfo->SetAccessibilityId(node->GetAccessibilityId());
   nodeInfo->SetParentId(node->GetParentId());
-
   std::vector<int64_t> childrenIds;
   node->GetChildrenIds(childrenIds);
   nodeInfo->SetChildIds(childrenIds);

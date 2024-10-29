@@ -440,5 +440,4 @@ void NWebAccessibilityNodeInfoImpl::SetAccessibilityText(
 std::string NWebAccessibilityNodeInfoImpl::GetAccessibilityText() {
   return accessibility_text_;
 }
-
 } // namespace OHOS::NWeb

@@ -1714,6 +1714,7 @@ void NavigationControllerImpl::UpdateNavigationEntryDetails(
       (request ? request->GetSubresourceWebBundleNavigationInfo() : nullptr),
       ComputePolicyContainerPoliciesForFrameEntry(
           rfh, request && request->IsSameDocument(),
+          request ? request->DidEncounterError() : false,
           request ? request->common_params().url : params.url));
 
   if (rfh->GetParent()) {
@@ -2139,6 +2140,7 @@ void NavigationControllerImpl::RendererDidNavigateNewSubframe(
       request->common_params().initiator_origin;
   std::unique_ptr<PolicyContainerPolicies> policy_container_policies =
       ComputePolicyContainerPoliciesForFrameEntry(rfh, is_same_document,
+                                                  request->DidEncounterError(),
                                                   request->GetURL());
   bool protect_url_in_app_history = false;
   if (is_same_document) {
@@ -4190,7 +4192,14 @@ std::unique_ptr<PolicyContainerPolicies>
 NavigationControllerImpl::ComputePolicyContainerPoliciesForFrameEntry(
     RenderFrameHostImpl* rfh,
     bool is_same_document,
+    bool navigation_encountered_error,
     const GURL& url) {
+  if (navigation_encountered_error) {
+    // We should never reload the policy container of an error page from
+    // history, see https://crbug.com/364773822.
+    return nullptr;
+  }
+
   if (is_same_document) {
     // TODO(https://crbug.com/524208): Remove this nullptr check when we can
     // ensure we always have a FrameNavigationEntry here.

@@ -224,6 +224,9 @@
 #include "content/renderer/media/ohos/native_texture_factory.h"
 #endif
 
+#ifdef OHOS_I18N
+#include "ui/base/resource/resource_bundle.h"
+#endif
 namespace content {
 
 namespace {
@@ -1952,6 +1955,27 @@ void RenderThreadImpl::OnMemoryPressureFromBrowserReceived(
   blink::RequestUserLevelMemoryPressureSignal();
 }
 
+#endif
+
+#ifdef OHOS_I18N
+void RenderThreadImpl::NotifyLocaleChanged(const std::string& locale) {
+  if (!ui::ResourceBundle::HasSharedInstance() ||
+      !ui::ResourceBundle::LocaleDataPakExists(locale)) {
+    LOG(ERROR) << "render thread update locale failed";
+    return;
+  }
+  std::string origin_locale =
+      ui::ResourceBundle::GetSharedInstance().GetLoadedLocaleForTesting();
+  if (origin_locale == locale) {
+    LOG(WARNING) << "render thread no need to update locale";
+    return;
+  }
+  std::string result =
+      ui::ResourceBundle::GetSharedInstance().ReloadLocaleResources(locale);
+  if (result.empty()) {
+    LOG(ERROR) << "CefFrameImpl update locale failed";
+  }
+}
 #endif
 
 }  // namespace content

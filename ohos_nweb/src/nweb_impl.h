@@ -116,10 +116,18 @@ class NWebImpl : public NWeb {
       const char* objName,
       const std::vector<std::shared_ptr<NWebJsProxyCallback>> &callbacks) override;
   using NativeJSProxyCallbackFunc = std::function<char*(std::vector<std::vector<uint8_t>>&, std::vector<size_t>&)>;
+  using NativeJSProxyCallbackFuncWithResult = std::function<std::shared_ptr<OHOS::NWeb::NWebValue>(
+      std::vector<std::vector<uint8_t>>&, std::vector<size_t>&)>;
   void RegisterNativeArkJSFunction(
       const std::string& objName,
       const std::vector<std::string>& methodName,
       std::vector<NativeJSProxyCallbackFunc>&& callback,
+      bool isAsync,
+      const std::string& permission);
+  void RegisterNativeArkJSFunctionWithResult(
+      const std::string& objName,
+      const std::vector<std::string>& methodName,
+      std::vector<NativeJSProxyCallbackFuncWithResult>&& callback,
       bool isAsync,
       const std::string& permission);
   void UnRegisterNativeArkJSFunction(const char* objName) override;

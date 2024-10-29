@@ -2084,8 +2084,8 @@ void NWebDelegate::RegisterArkJSfunction(
       LOG(INFO) << "NWebDelegate::RegisterArkJSfunction popup case, the "
                    "object_name is "
                 << object_name.c_str();
-      handler_delegate_->SavaArkJSFunctionForPopup(object_name, method_list,
-                                                   async_method_list, object_id, permission);
+      handler_delegate_->SavaArkJSFunctionForPopup(
+          object_name, method_list, async_method_list, object_id, permission);
     }
     return;
   } else if (!GetBrowser()) {
@@ -2094,8 +2094,8 @@ void NWebDelegate::RegisterArkJSfunction(
                << object_name.c_str();
     return;
   } else {
-    GetBrowser()->GetHost()->RegisterArkJSfunction(object_name, method_vector,
-                                                   async_method_vector, object_id, permission);
+    GetBrowser()->GetHost()->RegisterArkJSfunction(
+        object_name, method_vector, async_method_vector, object_id, permission);
   }
 }
 
@@ -2120,10 +2120,11 @@ void NWebDelegate::UnregisterArkJSfunction(
 
 void NWebDelegate::RegisterNativeArkJSFunction(
     const char* objName,
-    const std::vector<std::shared_ptr<NWebJsProxyCallback>> &callbacks) {
+    const std::vector<std::shared_ptr<NWebJsProxyCallback>>& callbacks) {
   if (!CEF_CURRENTLY_ON_UIT()) {
     CEF_POST_TASK(CEF_UIT,
-      base::BindOnce(&NWebDelegate::RegisterNativeArkJSFunction, this, objName, callbacks));
+                  base::BindOnce(&NWebDelegate::RegisterNativeArkJSFunction,
+                                 this, objName, callbacks));
     return;
   }
 
@@ -2134,7 +2135,8 @@ void NWebDelegate::RegisterNativeArkJSFunction(
   }
   if (GetBrowser() && GetBrowser()->GetHost()) {
     GetBrowser()->GetHost()->RegisterArkJSfunction(objName, method_vector,
-                                                   std::vector<CefString>(), kDefaultWebNativeProxy, "");
+                                                   std::vector<CefString>(),
+                                                   kDefaultWebNativeProxy, "");
   } else {
     LOG(ERROR) << "browser or host is null";
   }
@@ -2148,9 +2150,10 @@ void NWebDelegate::RegisterNativeJSProxy(
     bool isAsync,
     const std::string& permission) {
   if (!CEF_CURRENTLY_ON_UIT()) {
-    CEF_POST_TASK(CEF_UIT,
-                  base::BindOnce(&NWebDelegate::RegisterNativeJSProxy, this,
-                                 objName, methodName, std::move(callback), isAsync, permission));
+    CEF_POST_TASK(
+        CEF_UIT,
+        base::BindOnce(&NWebDelegate::RegisterNativeJSProxy, this, objName,
+                       methodName, std::move(callback), isAsync, permission));
     return;
   }
 
@@ -2159,8 +2162,8 @@ void NWebDelegate::RegisterNativeJSProxy(
     return;
   }
 
-  handler_delegate_->RegisterNativeJavaScriptCallBack(objName, methodName,
-                                                      std::move(callback), isAsync, permission);
+  handler_delegate_->RegisterNativeJavaScriptCallBack(
+      objName, methodName, std::move(callback), isAsync, permission);
 
   size_t size = methodName.size();
   std::vector<CefString> method_vector;
@@ -2168,8 +2171,45 @@ void NWebDelegate::RegisterNativeJSProxy(
     method_vector.push_back(methodName[i]);
   }
   if (GetBrowser() && GetBrowser()->GetHost()) {
-    GetBrowser()->GetHost()->RegisterNativeJSProxy(objName, method_vector,
-                                                   kDefaultWebNativeProxy, isAsync, permission);
+    GetBrowser()->GetHost()->RegisterNativeJSProxy(
+        objName, method_vector, kDefaultWebNativeProxy, isAsync, permission);
+  } else {
+    LOG(ERROR) << "browser or host is null";
+  }
+}
+
+void NWebDelegate::RegisterNativeJSProxyWithResult(
+    const std::string& objName,
+    const std::vector<std::string>& methodName,
+    std::vector<std::function<std::shared_ptr<OHOS::NWeb::NWebValue>(
+        std::vector<std::vector<uint8_t>>&,
+        std::vector<size_t>&)>>&& callback,
+    bool isAsync,
+    const std::string& permission) {
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    CEF_POST_TASK(CEF_UIT,
+                  base::BindOnce(&NWebDelegate::RegisterNativeJSProxyWithResult,
+                                 this, objName, methodName, std::move(callback),
+                                 isAsync, permission));
+    return;
+  }
+
+  if (handler_delegate_ == nullptr) {
+    LOG(ERROR) << "handler_delegate_ is nullptr";
+    return;
+  }
+
+  handler_delegate_->RegisterNativeJavaScriptCallBackWithResult(
+      objName, methodName, std::move(callback), isAsync, permission);
+
+  size_t size = methodName.size();
+  std::vector<CefString> method_vector;
+  for (size_t i = 0; i < size; i++) {
+    method_vector.push_back(methodName[i]);
+  }
+  if (GetBrowser() && GetBrowser()->GetHost()) {
+    GetBrowser()->GetHost()->RegisterNativeJSProxy(
+        objName, method_vector, kDefaultWebNativeProxy, isAsync, permission);
   } else {
     LOG(ERROR) << "browser or host is null";
   }
@@ -2178,7 +2218,8 @@ void NWebDelegate::RegisterNativeJSProxy(
 void NWebDelegate::UnRegisterNativeArkJSFunction(const char* objName) {
   if (!CEF_CURRENTLY_ON_UIT()) {
     CEF_POST_TASK(CEF_UIT,
-      base::BindOnce(&NWebDelegate::UnRegisterNativeArkJSFunction, this, objName));
+                  base::BindOnce(&NWebDelegate::UnRegisterNativeArkJSFunction,
+                                 this, objName));
     return;
   }
 
@@ -2211,7 +2252,7 @@ void NWebDelegate::RegisterNativeLoadEndCallback(
 void NWebDelegate::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
   if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
     GetBrowser()->GetHost()->RemoveJavaScriptOnDocumentStart();
-    for (auto item: scriptItems) {
+    for (auto item : scriptItems) {
       CefString script = item.first;
       std::vector<CefString> scriptRules;
       for (std::string rule : item.second) {
@@ -2254,7 +2295,7 @@ void NWebDelegate::CallH5Function(
 void NWebDelegate::JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) {
   if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
     GetBrowser()->GetHost()->RemoveJavaScriptOnDocumentEnd();
-    for (auto item: scriptItems) {
+    for (auto item : scriptItems) {
       CefString script = item.first;
       std::vector<CefString> scriptRules;
       for (std::string rule : item.second) {

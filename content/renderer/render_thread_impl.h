@@ -405,6 +405,9 @@ class CONTENT_EXPORT RenderThreadImpl
   void RecordAction(const base::UserMetricsAction& action) override;
   void RecordComputedAction(const std::string& action) override;
 
+#ifdef OHOS_I18N
+  void NotifyLocaleChanged(const std::string& update_locale) override;
+#endif
 #if BUILDFLAG(IS_ANDROID)
   // ChildThreadImpl
   void OnMemoryPressureFromBrowserReceived(

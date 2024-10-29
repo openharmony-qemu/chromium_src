@@ -357,6 +357,10 @@ class MediaSessionImpl : public MediaSession,
   base::WeakPtr<MediaSessionImpl> GetWeakPtr();
 
   CONTENT_EXPORT bool HasImageCacheForTest(const GURL& image_url) const;
+  
+#if BUILDFLAG(IS_OHOS)
+  bool HasOnlyOneShotPlayersPublic() const;
+#endif //BUILDFLAG(IS_OHOS)
 
 #if defined(OHOS_MEDIA_POLICY)
  public:

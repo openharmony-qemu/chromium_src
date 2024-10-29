@@ -182,6 +182,11 @@ if (is_fuchsia) {
 
 if (is_ohos) {
   import("//build/config/ohos/config.gni")
+  if (defined(ohos_nweb_ex) && ohos_nweb_ex) {
+    import("//ohos_nweb_ex/build/config/packages.gni")
+  } else {
+    import("//build/config/ohos/packages.gni")
+  }
   include_dirs = ohos_src_includes
 }
 
@@ -1134,6 +1139,10 @@ component("base") {
 
   if (use_custom_libcxx && enable_safe_libcxx && !is_debug) {
     public_deps += [ ":nodebug_assertion" ]
+  }
+
+  if (is_ohos) {
+    public_deps += [ ":ohos_package_info" ]
   }
 
   # Needed for <atomic> if using newer C++ library than sysroot, except if
@@ -2570,6 +2579,15 @@ component("base") {
       defines += [ "USE_SYMBOLIZE" ]
       deps += [ "//base/third_party/symbolize" ]
     }
+  }
+}
+
+# Build flags for OHOS package infomation
+if (is_ohos) {
+  buildflag_header("ohos_package_info") {
+    header = "ohos_package_info.h"
+    header_dir = "base/ohos"
+    flags = [ "OHOS_PACKAGE_NAME=\"${ohos_package_name}\"" ]
   }
 }
 

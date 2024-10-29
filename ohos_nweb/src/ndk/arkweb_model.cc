@@ -21,11 +21,11 @@
 
 #include "arkweb_native_javascript_execute_callback.h"
 #include "arkweb_native_object.h"
+#include "arkweb_native_web_message_callback.h"
 #include "base/logging.h"
 #include "nweb_web_message.h"
 #include "nweb_value.h"
 #include "nweb_value_callback.h"
-#include "arkweb_native_web_message_callback.h"
 #include "ohos_nweb/include/nweb_engine.h"
 #include "ohos_nweb/include/nweb_errors.h"
 #include "cef/libcef/browser/javascript/oh_gin_javascript_bridge_dispatcher_host.h"
@@ -35,8 +35,7 @@ extern "C" {
 #endif  // __cplusplus
 
 #define ARKWEB_NDK_EXPORT __attribute__((visibility("default")))
-
-static std::shared_mutex g_LastCallingFrameUrlLock;
+#define ARK_WEB_NO_SANITIZE __attribute__((no_sanitize("cfi-icall", "cfi")))
 
 ARKWEB_NDK_EXPORT void OH_ArkWeb_RunJavaScript(
     const char* webTag,
@@ -111,7 +110,7 @@ ARKWEB_NDK_EXPORT void OH_ArkWeb_Refresh(const char* webTag) {
   }
 }
 
-ARKWEB_NDK_EXPORT void OH_ArkWeb_OnControllerAttached(
+ARK_WEB_NO_SANITIZE ARKWEB_NDK_EXPORT void OH_ArkWeb_OnControllerAttached(
     const char* webTag,
     ArkWeb_OnComponentCallback callback,
     void* userData) {
@@ -135,7 +134,7 @@ ARKWEB_NDK_EXPORT void OH_ArkWeb_OnControllerAttached(
       });
 }
 
-ARKWEB_NDK_EXPORT void OH_ArkWeb_OnPageBegin(
+ARK_WEB_NO_SANITIZE ARKWEB_NDK_EXPORT void OH_ArkWeb_OnPageBegin(
     const char* webTag,
     ArkWeb_OnComponentCallback callback,
     void* userData) {
@@ -159,7 +158,7 @@ ARKWEB_NDK_EXPORT void OH_ArkWeb_OnPageBegin(
       });
 }
 
-ARKWEB_NDK_EXPORT void OH_ArkWeb_OnPageEnd(const char* webTag,
+ARK_WEB_NO_SANITIZE ARKWEB_NDK_EXPORT void OH_ArkWeb_OnPageEnd(const char* webTag,
                                            ArkWeb_OnComponentCallback callback,
                                            void* userData) {
   if (callback == nullptr) {
@@ -182,7 +181,7 @@ ARKWEB_NDK_EXPORT void OH_ArkWeb_OnPageEnd(const char* webTag,
       });
 }
 
-ARKWEB_NDK_EXPORT void OH_ArkWeb_OnDestroy(const char* webTag,
+ARK_WEB_NO_SANITIZE ARKWEB_NDK_EXPORT void OH_ArkWeb_OnDestroy(const char* webTag,
                                            ArkWeb_OnComponentCallback callback,
                                            void* userData) {
   if (callback == nullptr) {
@@ -211,13 +210,18 @@ ARKWEB_NDK_EXPORT void OH_ArkWeb_RegisterAsyncJavaScriptProxy(
   RegisterJavaScriptProxy(webTag, proxyObject, true, "");
 }
 
-void RegisterJavaScriptProxy(
+ARK_WEB_NO_SANITIZE void RegisterJavaScriptProxy(
     const char* webTag,
     const ArkWeb_ProxyObject* proxyObject,
     bool isAsync,
     const char* permission) {
   if (proxyObject == nullptr) {
     LOG(ERROR) << "NativeArkWeb proxy object is nullptr";
+    return;
+  }
+
+  if (proxyObject->objName == nullptr) {
+    LOG(ERROR) << "NativeArkWeb proxy object name is nullptr";
     return;
   }
 
@@ -656,7 +660,7 @@ ARKWEB_NDK_EXPORT void* OH_WebMessage_GetData(ArkWeb_WebMessagePtr message, size
 }
 
 ARKWEB_NDK_EXPORT ArkWeb_ErrorCode OH_CookieManager_FetchCookieSync(
-        const char* url, bool incognito, bool includeHttpOnly, char** cookie_value) {
+        const char* url, bool incognito,bool includeHttpOnly, char** cookie_value) {
   auto cookie_manager = OHOS::NWeb::NWebEngine::GetInstance()->GetCookieManager();
   if (!cookie_manager) {
     LOG(ERROR) << "cookie manager is nullptr";
@@ -666,6 +670,10 @@ ARKWEB_NDK_EXPORT ArkWeb_ErrorCode OH_CookieManager_FetchCookieSync(
   bool is_valid = true;
   std::string cookie_content =
       cookie_manager->ReturnCookieWithHttpOnly(std::string(url), is_valid, incognito, includeHttpOnly);
+  if (cookie_value == nullptr) {
+    return ARKWEB_INVALID_PARAM;
+  }
+
   *cookie_value = new char[cookie_content.length() + 1];
   strcpy((*cookie_value), cookie_content.c_str());
   if (cookie_content == "" && !is_valid) {

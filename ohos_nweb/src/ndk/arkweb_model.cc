@@ -28,7 +28,9 @@
 #include "arkweb_native_web_message_callback.h"
 #include "ohos_nweb/include/nweb_engine.h"
 #include "ohos_nweb/include/nweb_errors.h"
+#ifdef OHOS_LASTCALLING_FRAME_URL_TLS
 #include "cef/libcef/browser/javascript/oh_gin_javascript_bridge_dispatcher_host.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -722,7 +724,9 @@ ARKWEB_NDK_EXPORT void OH_CookieManager_ClearSessionCookiesSync() {
 }
 
 ARKWEB_NDK_EXPORT const char* OH_ArkWeb_GetLastJavascriptProxyCallingFrameUrl() {
+#ifdef OHOS_LASTCALLING_FRAME_URL_TLS
   return NWEB::OhGinJavascriptBridgeDispatcherHost::GetLastCallingFrameUrlTLS();
+#endif
 }
 
 #ifdef __cplusplus

@@ -3708,9 +3708,11 @@ void NWebDelegate::AddAccessibilityNodeInfoActions(
         static_cast<uint32_t>(AceAction::ACTION_ACCESSIBILITY_FOCUS));
   }
   if (node != nullptr) {
-    if (node->IsScrollSupported()) {
+    if (node->CanScrollForward()) {
       actions.emplace_back(
           static_cast<uint32_t>(AceAction::ACTION_SCROLL_FORWARD));
+    }
+    if (node->CanScrollBackward()) {
       actions.emplace_back(
           static_cast<uint32_t>(AceAction::ACTION_SCROLL_BACKWARD));
     }

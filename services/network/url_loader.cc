@@ -2184,8 +2184,12 @@ void URLLoader::NotifyCompleted(int error_code) {
 #if BUILDFLAG(IS_OHOS)
     if (url_request_) {
       if (url_request_->response_headers()) {
+        const net::HttpResponseHeaders* response_headers =
+        raw_response_headers_ && enable_reporting_raw_headers_
+          ? raw_response_headers_.get()
+          : url_request_->response_headers();
         TRACE_EVENT2("net", "URLLoader::NotifyCompleted",
-                     "response_code", url_request_->response_headers()->response_code(),
+                     "response_code", response_headers()->response_code(),
                      "id", request_id_);
       }
       PrintNetworkTimingInfo();
@@ -2241,6 +2245,7 @@ void URLLoader::PrintNetworkCacheInfo() {
                ";cache_control: " + (response_->headers->GetNormalizedHeader("Cache-Control", &cache_control) ? cache_control : "unset") + 
                ";etag: " + (response_->headers->GetNormalizedHeader("ETag", &etag) ? etag : "unset") +
                ";is_zero: " + to_string(response_->headers->GetFreshnessLifetimes(response_->response_time).freshness.is_zero()) +
+               ";was_fetched_via_cache: " + to_string(response_->was_fetched_via_cache) +
                ";load_flags: " + to_string(url_request_->load_flags()),
                "id", request_id_);
 }

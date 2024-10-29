@@ -430,14 +430,6 @@
 "dependence": "",
 "default": "true"
 },
-{"name": "OHOS_LASTCALLING_FRAME_URL_TLS",
-"owner": "xiaye",
-"desc": "",
-"effect":"main gn blink_core other",
-"genCommandline": "default",
-"dependence": "",
-"default": "true"
-},
 { "name": "OHOS_LOAD_PER",
 "owner": "",
 "desc": "",

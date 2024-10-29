@@ -61,6 +61,7 @@ class MockInputRouter : public InputRouter {
 #if defined(OHOS_UNITTESTS)
   void SetGestureEventResult(bool result) override {}
   void SetNativeEmbedMode(bool flag) override {}
+  void ScrollBy(float delta_x, float delta_y) override {}
 #endif
   bool sent_mouse_event_;
   bool sent_wheel_event_;

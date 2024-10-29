@@ -300,6 +300,10 @@ void BrowserAccessibilityManagerOHOS::FireGeneratedEvent(
       }
       break;
     }
+    case ui::AXEventGenerator::Event::LIVE_REGION_NODE_CHANGED: {
+      SendAccessibilityEvent(accessibilityId, OHOS::NWeb::AccessibilityEventType::SELECTED);
+      break;
+    }
     default:
       break;
   }

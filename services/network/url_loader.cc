@@ -2189,7 +2189,7 @@ void URLLoader::NotifyCompleted(int error_code) {
             ? raw_response_headers_.get()
             : url_request_->response_headers();
         TRACE_EVENT2("net", "URLLoader::NotifyCompleted",
-                     "response_code", response_headers()->response_code(),
+                     "response_code", response_headers->response_code(),
                      "id", request_id_);
       }
       PrintNetworkTimingInfo();

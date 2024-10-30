@@ -946,6 +946,80 @@ bool BrowserAccessibilityOHOS::IsScrollSupported() const {
   }
 }
 
+bool BrowserAccessibilityOHOS::CanScrollForward() const {
+  if (GetRole() == ax::mojom::Role::kSlider) {
+    const std::string& html_tag =
+        GetStringAttribute(ax::mojom::StringAttribute::kHtmlTag);
+    if (html_tag != "input")
+      return false;
+
+    float value = GetFloatAttribute(ax::mojom::FloatAttribute::kValueForRange);
+    float max = GetFloatAttribute(ax::mojom::FloatAttribute::kMaxValueForRange);
+    return value < max;
+  } else {
+    return CanScrollRight() || CanScrollDown();
+  }
+}
+
+bool BrowserAccessibilityOHOS::CanScrollBackward() const {
+  if (GetRole() == ax::mojom::Role::kSlider) {
+    const std::string& html_tag =
+        GetStringAttribute(ax::mojom::StringAttribute::kHtmlTag);
+    if (html_tag != "input")
+      return false;
+
+    float value = GetFloatAttribute(ax::mojom::FloatAttribute::kValueForRange);
+    float min = GetFloatAttribute(ax::mojom::FloatAttribute::kMinValueForRange);
+    return value > min;
+  } else {
+    return CanScrollLeft() || CanScrollUp();
+  }
+}
+
+bool BrowserAccessibilityOHOS::CanScrollUp() const {
+  return GetScrollY() > GetMinScrollY() && IsScrollable();
+}
+
+bool BrowserAccessibilityOHOS::CanScrollDown() const {
+  return GetScrollY() < GetMaxScrollY() && IsScrollable();
+}
+
+bool BrowserAccessibilityOHOS::CanScrollLeft() const {
+  return GetScrollX() > GetMinScrollX() && IsScrollable();
+}
+
+bool BrowserAccessibilityOHOS::CanScrollRight() const {
+  return GetScrollX() < GetMaxScrollX() && IsScrollable();
+}
+
+int BrowserAccessibilityOHOS::GetScrollX() const {
+  int value = 0;
+  GetIntAttribute(ax::mojom::IntAttribute::kScrollX, &value);
+  return value;
+}
+
+int BrowserAccessibilityOHOS::GetScrollY() const {
+  int value = 0;
+  GetIntAttribute(ax::mojom::IntAttribute::kScrollY, &value);
+  return value;
+}
+
+int BrowserAccessibilityOHOS::GetMinScrollX() const {
+  return GetIntAttribute(ax::mojom::IntAttribute::kScrollXMin);
+}
+
+int BrowserAccessibilityOHOS::GetMinScrollY() const {
+  return GetIntAttribute(ax::mojom::IntAttribute::kScrollYMin);
+}
+
+int BrowserAccessibilityOHOS::GetMaxScrollX() const {
+  return GetIntAttribute(ax::mojom::IntAttribute::kScrollXMax);
+}
+
+int BrowserAccessibilityOHOS::GetMaxScrollY() const {
+  return GetIntAttribute(ax::mojom::IntAttribute::kScrollYMax);
+}
+
 void BrowserAccessibilityOHOS::Scroll(const ax::mojom::Action& action) const {
   if (GetRole() == ax::mojom::Role::kSlider) {
     if (!IsEnabled()) {

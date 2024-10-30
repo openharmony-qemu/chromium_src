@@ -445,8 +445,8 @@ void NWebRenderHandler::GetViewRect(CefRefPtr<CefBrowser> browser,
     rect.height = height_;
   } else {
     // Surface greater than Web compoment in case show black line.
-    rect.width = std::round(width_ / screen_info_.display_ratio);
-    rect.height = std::round(height_ / screen_info_.display_ratio);
+    rect.width = std::ceil(width_ / screen_info_.display_ratio);
+    rect.height = std::ceil(height_ / screen_info_.display_ratio);
   }
 
   if (rect.width <= 0) {
@@ -487,8 +487,8 @@ void NWebRenderHandler::GetVisibleViewportRect(CefRefPtr<CefBrowser> browser,
     rect.height = visible_height_;
   } else {
     // Surface greater than Web compoment in case show black line.
-    rect.width = std::round(visible_width_ / screen_info_.display_ratio);
-    rect.height = std::round(visible_height_ / screen_info_.display_ratio);
+    rect.width = std::ceil(visible_width_ / screen_info_.display_ratio);
+    rect.height = std::ceil(visible_height_ / screen_info_.display_ratio);
   }
 
   if (rect.width <= 0) {

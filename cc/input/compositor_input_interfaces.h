@@ -53,6 +53,8 @@ class InputDelegateForCompositor {
   virtual void WillBeginImplFrame(const viz::BeginFrameArgs& args) = 0;
   virtual void DidCommit() = 0;
   virtual void DidActivatePendingTree() = 0;
+  virtual void DidFinishImplFrame() = 0;
+  virtual void OnBeginImplFrameDeadline() = 0;
 
   // Called when the state of the "root layer" may have changed from outside
   // the input system. The state includes: scroll offset, scrollable size,
@@ -96,6 +98,10 @@ class InputDelegateForCompositor {
   // TODO(skobes): Combine IsCurrentlyScrolling, GetActivelyScrollingType, and
   // IsCurrentScrollMainRepainted into a single method returning everything.
   virtual bool IsCurrentScrollMainRepainted() const = 0;
+
+  // Returns true if there are input events queued to be dispatched at the start
+  // of the next frame.
+  virtual bool HasQueuedInput() const = 0;
 
 #if BUILDFLAG(IS_OHOS)
   virtual void HandleScrollUpdateForInternalBeginFrame(const viz::BeginFrameArgs& args) {}

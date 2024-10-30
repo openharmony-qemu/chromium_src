@@ -87,8 +87,8 @@ void PassthroughTouchEventQueue::SendTouchCancelEventForTouchEvent(
 
 void PassthroughTouchEventQueue::QueueEvent(
     const TouchEventWithLatencyInfo& event) {
-  TRACE_EVENT0("input", "PassthroughTouchEventQueue::QueueEvent");
   PreFilterResult filter_result = FilterBeforeForwarding(event.event);
+  TRACE_EVENT1("input", "PassthroughTouchEventQueue::QueueEvent", "FilteredResult", filter_result);
   bool should_forward_touch_event =
       filter_result == PreFilterResult::kUnfiltered;
   UMA_HISTOGRAM_ENUMERATION("Event.Touch.FilteredAtPassthroughQueue",

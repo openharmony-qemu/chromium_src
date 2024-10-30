@@ -427,6 +427,7 @@ class CONTENT_EXPORT BackForwardCacheImpl
   void SetCacheSize(int size) override;
   void SetTimeToLive(int timeToLive) override { this->time_to_live_ = timeToLive; }
   base::TimeDelta ArkWebGetTimeToLiveInBackForwardCache() override;
+  size_t GetStoredEntriesNumber() override;
 #endif
 
  private:

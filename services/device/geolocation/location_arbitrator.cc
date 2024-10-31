@@ -49,12 +49,14 @@ bool LocationArbitrator::HasPermissionBeenGrantedForTest() const {
 }
 
 void LocationArbitrator::OnPermissionGranted() {
+  base::AutoLock lock(lock_);
   is_permission_granted_ = true;
   for (const auto& provider : providers_)
     provider->OnPermissionGranted();
 }
 
 void LocationArbitrator::StartProvider(bool enable_high_accuracy) {
+  base::AutoLock lock(lock_);
   is_running_ = true;
   enable_high_accuracy_ = enable_high_accuracy;
 
@@ -65,6 +67,7 @@ void LocationArbitrator::StartProvider(bool enable_high_accuracy) {
 }
 
 void LocationArbitrator::DoStartProviders() {
+  base::AutoLock lock(lock_);
   if (providers_.empty()) {
     // If no providers are available, we report an error to avoid
     // callers waiting indefinitely for a reply.
@@ -91,6 +94,7 @@ void LocationArbitrator::StopProvider() {
 
 void LocationArbitrator::RegisterProvider(
     std::unique_ptr<LocationProvider> provider) {
+  base::AutoLock lock(lock_);
   if (!provider)
     return;
   provider->SetUpdateCallback(base::BindRepeating(
@@ -101,6 +105,7 @@ void LocationArbitrator::RegisterProvider(
 }
 
 void LocationArbitrator::RegisterProviders() {
+  base::AutoLock lock(lock_);
   if (custom_location_provider_getter_) {
     auto custom_provider = custom_location_provider_getter_.Run();
     if (custom_provider) {
@@ -122,6 +127,10 @@ void LocationArbitrator::RegisterProviders() {
 void LocationArbitrator::OnLocationUpdate(
     const LocationProvider* provider,
     mojom::GeopositionResultPtr new_result) {
+  base::AutoLock lock(lock_);
+  if (!is_running_) {
+    return;
+  }
   DCHECK(new_result);
   DCHECK(new_result->is_error() ||
          new_result->is_position() &&
@@ -136,6 +145,7 @@ void LocationArbitrator::OnLocationUpdate(
 }
 
 const mojom::GeopositionResult* LocationArbitrator::GetPosition() {
+  base::AutoLock lock(lock_);
   return result_.get();
 }
 
@@ -149,6 +159,7 @@ std::unique_ptr<LocationProvider>
 LocationArbitrator::NewNetworkLocationProvider(
     scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,
     const std::string& api_key) {
+  base::AutoLock lock(lock_);
   DCHECK(url_loader_factory);
 #if BUILDFLAG(IS_ANDROID)
   // Android uses its own SystemLocationProvider.
@@ -162,6 +173,7 @@ LocationArbitrator::NewNetworkLocationProvider(
 
 std::unique_ptr<LocationProvider>
 LocationArbitrator::NewSystemLocationProvider() {
+  base::AutoLock lock(lock_);
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
   return nullptr;
 #else

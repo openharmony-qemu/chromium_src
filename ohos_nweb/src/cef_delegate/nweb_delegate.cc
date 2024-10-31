@@ -84,6 +84,11 @@
 #if OHOS_I18N
 #include "base/ohos/locale_utils.h"
 #endif
+
+#ifdef OHOS_SECURE_JAVASCRIPT_PROXY
+#include "cef/libcef/browser/javascript/oh_gin_javascript_bridge_dispatcher_host.h"
+#endif
+
 namespace {
 static const float richtextDisplayRatio = 1.0;
 }
@@ -3934,12 +3939,7 @@ void NWebDelegate::SetWakeLockCallback(
 
 #if defined(OHOS_SECURE_JAVASCRIPT_PROXY)
 std::string NWebDelegate::GetLastJavascriptProxyCallingFrameUrl() {
-  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "GetLastJavascriptProxyCallingFrameUrl can not get browser";
-    return "";
-  }
-
-  return GetBrowser()->GetHost()->GetLastJavascriptProxyCallingFrameUrl();
+  return NWEB::OhGinJavascriptBridgeDispatcherHost::GetLastCallingFrameUrlTLS();
 }
 #endif
 

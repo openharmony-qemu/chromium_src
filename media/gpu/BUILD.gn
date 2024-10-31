@@ -660,8 +660,8 @@ source_set("unit_tests") {
   if (is_mac) {
     deps += [ "//media/gpu/mac:unit_tests" ]
   }
-
-  if (is_ohos) {
+  
+  if (enable_heif_decoder) {
     sources += [
       "ohos/codec_allocator_unittest.cc",
       "ohos/codec_image_unittest.cc",

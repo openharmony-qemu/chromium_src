@@ -119,6 +119,7 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   bool pause_when_prepared_ = false;
   base::TimeDelta duration_;
   base::TimeDelta pending_seek_;
+  base::TimeDelta recording_seek_;
   OHOS::NWeb::PlayerAdapter::PlayerStates player_state_;
 
   // MediaPlayer is unable to handle Seek request when playback end. We should

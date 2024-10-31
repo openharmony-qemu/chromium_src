@@ -50,6 +50,7 @@ source_set("browser") {
     "//content/test/fuzzer:first_party_set_parser_fuzzer_support",
     "//content/test/fuzzer:indexed_db_fuzzer_support",
     "//content/test/fuzzer:media_stream_dispatcher_host_mojolpm_fuzzer",
+    "//ohos_test:clipboard_fuzzer",
   ]
 
   configs += [
@@ -2540,6 +2541,10 @@ source_set("browser") {
       "code_cache/oh_code_cache.h",
       "media/ohos/native_web_contents_observer.cc",
       "media/ohos/native_web_contents_observer.h",
+    ]
+
+    deps += [
+      "//third_party:huawei_securec"
     ]
   }
 

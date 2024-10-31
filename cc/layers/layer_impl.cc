@@ -438,6 +438,10 @@ void LayerImpl::PushPropertiesTo(LayerImpl* layer) {
   layer->SetShouldInterceptTouchEvent(ShouldInterceptTouchEvent());
 }
 
+bool LayerImpl::ShouldDeferImplInvalidation() const {
+  return false;
+}
+
 bool LayerImpl::IsAffectedByPageScale() const {
   TransformTree& transform_tree = GetTransformTree();
   return transform_tree.Node(transform_tree_index())

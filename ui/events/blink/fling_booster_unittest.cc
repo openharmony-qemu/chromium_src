@@ -372,8 +372,8 @@ TEST_F(FlingBoosterTest, GetInstance001) {
   OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance() =
       *real;
   Vector2dF fling_velocity = fling_booster_.GetVelocityForFlingStart(
-      CreateFlingStart(Vector2dF(0, 1000)));
-  EXPECT_EQ(Vector2dF(0, 1000), fling_velocity);
+      CreateFlingStart(Vector2dF(0, 1500)));
+  EXPECT_EQ(Vector2dF(0, 2250), fling_velocity);
 }
 #endif  // OHOS_UNITTESTS
 }  // namespace test

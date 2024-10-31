@@ -122,6 +122,8 @@ struct VIZ_COMMON_EXPORT TransferableResource {
   // true.
   bool is_overlay_candidate = false;
 
+  bool enable_defer_impl_invalidation_workaround = false;
+
   // This defines when the display compositor returns resources. Clients may use
   // different synchronization types based on their needs.
   SynchronizationType synchronization_type = SynchronizationType::kSyncToken;

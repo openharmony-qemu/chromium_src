@@ -49,6 +49,14 @@ bool TextureLayerImpl::IsSnappedToPixelGridInTarget() {
   return true;
 }
 
+bool TextureLayerImpl::ShouldDeferImplInvalidation() const {
+  if (!transferable_resource_.enable_defer_impl_invalidation_workaround)
+    return false;
+ 
+  TRACE_EVENT0("cc", "TextureLayerImpl::ShouldDeferImplInvalidation");
+  return true;
+}
+
 void TextureLayerImpl::PushPropertiesTo(LayerImpl* layer) {
   LayerImpl::PushPropertiesTo(layer);
   TextureLayerImpl* texture_layer = static_cast<TextureLayerImpl*>(layer);

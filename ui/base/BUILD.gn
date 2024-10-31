@@ -1021,6 +1021,7 @@ test("ui_base_unittests") {
       "//content/browser/scheduler/browser_task_executor.cc",
       "//content/public/common/content_features.cc",
       "//content/public/common/content_switches.cc",
+      "pointer/pointer_device_linux_unittest.cc",
     ]
   }
   if (is_mac) {

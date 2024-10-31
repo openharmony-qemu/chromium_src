@@ -386,6 +386,7 @@ bool HitNativeArea(double x, double y);
   void GetOverScrollOffset(float* offset_x, float* offset_y) override;
 #endif
   bool ScrollByWithResult(float delta_x, float delta_y) override;
+  void WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #ifdef OHOS_ARKWEB_ADBLOCK
@@ -629,7 +630,7 @@ void NotifyForNextTouchEvent() override;
     std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
     const content::BrowserAccessibilityOHOS* node) const;
   std::shared_ptr<NWebAccessibilityNodeInfo>
-    PopulateAccessibilityNodeInfo(const content::BrowserAccessibilityOHOS* node);
+    PopulateAccessibilityNodeInfo(content::BrowserAccessibilityOHOS* node);
   void AddAccessibilityNodeInfoActions(
     std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
     const content::BrowserAccessibilityOHOS* node) const;

@@ -18,6 +18,7 @@
 #include <sys/mman.h>
 #include <thread>
 
+#include "ohos_glue/base/include/ark_web_errno.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
 #include "base/ohos/sys_info_utils.h"
@@ -28,6 +29,9 @@
 #include "cef/include/wrapper/cef_closure_task.h"
 #include "cef/include/wrapper/cef_helpers.h"
 #include "content/public/browser/browser_thread.h"
+#include "net/base/net_errors.h"
+#include "net/cookies/site_for_cookies.h"
+#include "net/cookies/static_cookie_policy.h"
 #include "nweb_access_request_delegate.h"
 #include "nweb_context_menu_params_impl.h"
 #include "nweb_controller_handler_impl.h"
@@ -59,6 +63,7 @@
 #include "nweb_url_resource_response_impl.h"
 #include "nweb_value_callback.h"
 #include "nweb_value_convert.h"
+#include "url/gurl.h"
 
 #include "ohos_adapter_helper.h"
 
@@ -95,7 +100,6 @@
 #endif
 
 #include "third_party/bounds_checking_function/include/securec.h"
-#include "base/strings/safe_sprintf.h"
 
 namespace OHOS::NWeb {
 namespace {
@@ -290,7 +294,9 @@ char* CopyCefStringToChar(const CefString& str) {
   }
   int strLen = str.size() + 1;
   char* result = new char[strLen]{0};
-  base::strings::SafeSNPrintf(result, strLen, "%s", str.ToString().c_str());
+  if (strcpy_s(result, strLen, str.ToString().c_str()) != EOF) {
+    return nullptr;
+  }
   return result;
 }
 
@@ -795,6 +801,15 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
         }
       }
     }
+#ifdef OHOS_BFCACHE
+    if (main_browser_) {
+      int cache_size = preference_delegate_->GetCacheSize();
+      int cache_time_to_live = preference_delegate_->GetTimeToLive();
+      if (cache_size != -1 && cache_time_to_live != -1) {
+        main_browser_->SetBackForwardCacheOptions(cache_size, cache_time_to_live);
+      }
+    }
+#endif
     return;
   }
 #endif  // defined(OHOS_MULTI_WINDOW)
@@ -1440,10 +1455,34 @@ bool NWebHandlerDelegate::OnCertificateError(CefRefPtr<CefBrowser> browser,
   SslError error = SslErrorConvert(cert_error);
 
   CEF_REQUIRE_IO_THREAD();
+  
+  std::vector<std::string> certChainData;
+  CefRefPtr<CefX509Certificate> cert = ssl_info->GetX509Certificate();
+  CefX509Certificate::IssuerChainBinaryList der_chain_list;
+  cert->GetDEREncodedIssuerChain(der_chain_list);
+  der_chain_list.insert(der_chain_list.begin(), cert->GetDEREncoded());
+
+  for (size_t i = 0U; i < der_chain_list.size(); ++i) {
+    if (!der_chain_list[i].get()) {
+      LOG(ERROR) << "OnCertificateError Get CertChainData failed, der chain data is null, index = " << i;
+      continue;
+    }
+
+    const size_t cert_data_size = der_chain_list[i]->GetSize();
+    std::string cert_data_item;
+    cert_data_item.resize(cert_data_size);
+    der_chain_list[i]->GetData(const_cast<char*>(cert_data_item.data()), cert_data_size, 0);
+    certChainData.emplace_back(cert_data_item);
+  }
+  
   std::shared_ptr<NWebJSSslErrorResult> js_result =
       std::make_shared<NWebJSSslErrorResultImpl>(callback);
   if (nweb_handler_ != nullptr) {
-    return nweb_handler_->OnSslErrorRequestByJS(js_result, error);
+    bool flag = nweb_handler_->OnSslErrorRequestByJSV2(js_result, error, certChainData);
+    if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+      flag = nweb_handler_->OnSslErrorRequestByJS(js_result, error);
+    }
+    return flag;
   }
   return false;
 }
@@ -1766,6 +1805,45 @@ CefRefPtr<CefResourceHandler> NWebHandlerDelegate::GetResourceHandler(
     return nullptr;
   }
 }
+
+void NWebHandlerDelegate::GetResourceHandlerByIO(
+    CefRefPtr<CefBrowser> browser,
+    CefRefPtr<CefFrame> frame,
+    CefRefPtr<CefRequest> request,
+    CefRefPtr<CefInterceptCallback> callback,
+    CefRefPtr<CefSchemeHandlerFactory> scheme_factory,
+    const CefString& scheme) {
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    content::GetUIThreadTaskRunner({})->PostTask(FROM_HERE,
+      base::BindOnce(&NWebHandlerDelegate::GetResourceHandlerByIO,
+                    this, browser, frame, request, callback,
+                    scheme_factory, scheme));
+    return;
+  }
+  if (!request) {
+    LOG(ERROR) << "NWebHandlerDelegate::GetResourceHandlerByIO request is null";
+    return;
+  }
+  CefRequest::HeaderMap cef_request_headers;
+  request->GetHeaderMap(cef_request_headers);
+  std::map<std::string, std::string> request_headers;
+  ConvertMapToHeaderMap(cef_request_headers, request_headers);
+  std::shared_ptr<NWebUrlResourceRequest> nweb_request =
+      std::make_shared<NWebUrlResourceRequestImpl>(
+          request->GetMethod().ToString(), request_headers,
+          request->GetURL().ToString(), false, request->IsMainFrame());
+  std::shared_ptr<NWebUrlResourceResponse> response =
+      std::make_shared<NWebUrlResourceResponseImpl>();
+  CefRefPtr<CefResourceHandler> resource_handler = nullptr;
+  if (nweb_handler_->OnHandleInterceptRequest(nweb_request, response)) {
+    std::string tag = "";
+    resource_handler = new NWebResourceHandler(response, tag);
+  } else if (scheme_factory) {
+    // here to get ets schemeHandler
+    resource_handler = scheme_factory->Create(browser, frame, scheme, request);
+  }
+  callback->ContinueLoad(resource_handler);
+}
 /* CefResourceRequestHandler method end */
 
 /* CefPrintHandler method begin */
@@ -1983,7 +2061,7 @@ int NWebHandlerDelegate::OnGetTopControlsHeight() {
 bool NWebHandlerDelegate::DoBrowserControlsShrinkRendererSize() {
 #if defined(OHOS_EX_TOPCONTROLS)
   if (CefCommandLine::GetGlobalCommandLine()->HasSwitch(
-          ::switches::kForBrowser) &&
+          ::switches::kEnableNwebExTopControls) &&
       top_content_offset_ > 0) {
     return true;
   }
@@ -2010,6 +2088,25 @@ void NWebHandlerDelegate::OnReceivedIcon(const void* data,
                TransformAlphaType(alpha_type));
   }
 }
+
+#ifdef OHOS_BFCACHE
+void NWebHandlerDelegate::UpdateFavicon(CefRefPtr<CefBrowser> browser) {
+  CEF_REQUIRE_UI_THREAD();
+ 
+  void* data = nullptr;
+  int color_type;
+  int alpha_type;
+  int width;
+  int height;
+  if (browser != nullptr && browser->GetHost() != nullptr
+      && browser->GetHost()->GetVisibleNavigationEntry() != nullptr) {
+    LOG(INFO) << "[Favicon] nweb_handler delegate start to update favicon.";
+    browser->GetHost()->GetVisibleNavigationEntry()->GetFavicon(&data, color_type, alpha_type, width, height);
+    SetFavicon(data, width, height, ImageColorType(color_type), ImageAlphaType(alpha_type));
+  }
+  return;
+}
+#endif // OHOS_BFCACHE
 
 void NWebHandlerDelegate::SetFavicon(const void* data,
                                      size_t width,
@@ -2786,22 +2883,63 @@ void NWebHandlerDelegate::OnFindResult(CefRefPtr<CefBrowser> browser,
 
 /* CefResourceRequestHandler methods begin */
 
+bool AllowCookies(
+    const GURL& url,
+    const net::SiteForCookies& site_for_cookies,
+    bool block_all_cookies,
+    bool block_thirdparty_cookies) {
+  net::StaticCookiePolicy::Type policy =
+      net::StaticCookiePolicy::ALLOW_ALL_COOKIES;
+  if (block_all_cookies) {
+    policy = net::StaticCookiePolicy::BLOCK_ALL_COOKIES;
+  } else if (block_thirdparty_cookies) {
+    policy = net::StaticCookiePolicy::BLOCK_ALL_THIRD_PARTY_COOKIES;
+  } else {
+    return true;
+  }
+  return net::StaticCookiePolicy(policy).CanAccessCookies(
+             url, site_for_cookies) == net::OK;
+}
+
 bool NWebHandlerDelegate::CanSendCookie(CefRefPtr<CefBrowser> browser,
                                         CefRefPtr<CefFrame> frame,
                                         CefRefPtr<CefRequest> request,
                                         const CefCookie& cookie) {
-  return NWebEngineImpl::GetInstance()
-      ->GetCookieManager()
-      ->IsAcceptCookieAllowed();
+  auto cookie_manager = NWebEngineImpl::GetInstance()->GetCookieManager();
+  bool block_all_cookies = !cookie_manager->IsAcceptCookieAllowed();
+  bool block_thirdparty_cookies = !cookie_manager->IsThirdPartyCookieAllowed();
+  bool allow_cookies = AllowCookies(GURL(request->GetURL().ToString()),
+          net::SiteForCookies::FromUrl(
+              GURL(request->GetFirstPartyForCookies().ToString())),
+          block_all_cookies, block_thirdparty_cookies);
+  LOG(INFO) << "CanSendCookie allow_cookies: " << allow_cookies
+            << " block_all_cookies:" << block_all_cookies
+            << " block_thirdparty_cookies:" << block_thirdparty_cookies
+            << " url: " << request->GetURL().ToString()
+            << " site_for_cookies: " << request->GetFirstPartyForCookies().ToString();
+
+  return allow_cookies;
 }
 bool NWebHandlerDelegate::CanSaveCookie(CefRefPtr<CefBrowser> browser,
                                         CefRefPtr<CefFrame> frame,
                                         CefRefPtr<CefRequest> request,
                                         CefRefPtr<CefResponse> response,
                                         const CefCookie& cookie) {
-  return NWebEngineImpl::GetInstance()
-      ->GetCookieManager()
-      ->IsAcceptCookieAllowed();
+  auto cookie_manager = NWebEngineImpl::GetInstance()->GetCookieManager();
+  bool block_all_cookies = !cookie_manager->IsAcceptCookieAllowed();
+  bool block_thirdparty_cookies = !cookie_manager->IsThirdPartyCookieAllowed();
+  bool allow_cookies = AllowCookies(GURL(request->GetURL().ToString()),
+          net::SiteForCookies::FromUrl(
+              GURL(request->GetFirstPartyForCookies().ToString())),
+          block_all_cookies,
+          block_thirdparty_cookies);
+  LOG(INFO) << " CanSendCookie allow_cookies: " << allow_cookies
+            << " block_all_cookies:" << block_all_cookies
+            << " block_thirdparty_cookies:" << block_thirdparty_cookies
+            << " url: " << request->GetURL().ToString()
+            << " site_for_cookies: " << request->GetFirstPartyForCookies().ToString();
+
+  return allow_cookies;
 }
 /* CefResourceRequestHandler methods end */
 

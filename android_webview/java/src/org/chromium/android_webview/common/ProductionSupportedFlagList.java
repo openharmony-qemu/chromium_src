@@ -422,6 +422,9 @@ public final class ProductionSupportedFlagList {
             Flag.baseFeature(NetworkServiceFeatures.ATTRIBUTION_REPORTING_CROSS_APP_WEB,
                     "Enable attribution reporting to cross the app/web barrier by letting "
                             + "the WebView use OS-level attribution."),
+            Flag.baseFeature(CcFeatures.WAIT_FOR_LATE_SCROLL_EVENTS,
+                    "While scrolling, attempts to wait for late arriving input events before"
+                            + " rendering."),
             // Add new commandline switches and features above. The final entry should have a
             // trailing comma for cleaner diffs.
     };

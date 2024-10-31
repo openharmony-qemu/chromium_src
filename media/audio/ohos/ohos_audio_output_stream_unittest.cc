@@ -104,6 +104,12 @@ TEST_F(AudioOutputChangeCallbackTest, OnOutputDeviceChange004) {
   EXPECT_EQ(reason, (int32_t)AudioAdapterDeviceChangeReason::UNKNOWN);
 }
 
+TEST_F(AudioOutputChangeCallbackTest, OnOutputDeviceChange005) {
+  change_callback_->OnOutputDeviceChange(2);
+  change_callback_->isCommunication_ = true;
+  ASSERT_EQ(change_callback_->main_task_runner_, nullptr);
+}
+
 TEST_F(AudioRendererOptionsTest, AudioRendererOptionsTest_GetSamplingRateTest) {
   AudioAdapterSamplingRate rate = AudioAdapterSamplingRate::SAMPLE_RATE_8000;
   options_->rate_ = rate;
@@ -184,6 +190,13 @@ TEST_F(AudioRendererCallbackTest, OnSuspend02) {
   EXPECT_EQ(log_output1.find(
                 "AudioRendererCallback::OnSuspend media_session_ is null."),
             std::string::npos);
+}
+
+TEST_F(AudioRendererCallbackTest, OnSuspend03) {
+  render_callback_->media_session_ = 0;
+  render_callback_->OnSuspend();
+  double suspend_time = render_callback_->intervalSinceLastSuspend_;
+  ASSERT_EQ(suspend_time, 0.0f);
 }
 
 TEST_F(AudioRendererCallbackTest, OnResume01) {

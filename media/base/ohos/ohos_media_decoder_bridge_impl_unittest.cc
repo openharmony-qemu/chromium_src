@@ -14,7 +14,6 @@
  */
 
 #include "base/functional/callback_helpers.h"
-#include "gtest/gtest.h"
 #define private public
 #include "ohos_media_decoder_bridge_impl.h"
 #undef private
@@ -173,6 +172,10 @@ public:
   MOCK_METHOD(std::unique_ptr<OhosImageDecoderAdapter>, CreateOhosImageDecoderAdapter, (), (override));
   MOCK_METHOD(std::unique_ptr<SensorAdapter>, CreateSensorAdapter, (), (override));
   MOCK_METHOD(void, SetArkWebCoreHapPathOverride, (const std::string&), (override));
+  MOCK_METHOD(OhosNativeBufferAdapter&,
+              GetOhosNativeBufferAdapter,
+              (),
+              (override));
 
   static MockOhosAdapterHelper& GetInstance() {
     static MockOhosAdapterHelper instance;
@@ -219,6 +222,18 @@ public:
   MOCK_METHOD(void, SetFrameRate, (double frameRate), (override));
 };
 
+class InheritBufferInfoAdapter : public BufferInfoAdapter {
+ public:
+  int64_t GetPresentationTimeUs() override { return 100; }
+  int32_t GetSize() override { return 1; }
+  int32_t GetOffset() override { return 0; }
+};
+
+class InheritOhosBufferAdapter : public OhosBufferAdapter {
+ public:
+  uint8_t* GetAddr() override { return nullptr; }
+  uint32_t GetBufferSize() override { return 8; }
+};
 class MediaCodecDecoderBridgeImplTest : public ::testing::Test {
 protected:
   void SetUp() override {
@@ -234,7 +249,6 @@ protected:
     bridge_->signal_ = signal_;
     callback_ = std::make_shared<CodecBridgeCallback>(signal_);
 
-    ohos_adapter_helper_mocks_ = std::make_shared<NiceMock<MockOhosAdapterHelper>>();
     ON_CALL(*ohos_adapter_helper_mock_, GetSystemPropertiesInstance())
         .WillByDefault(ReturnRef(system_properties_adapter_mock_));
     ON_CALL(system_properties_adapter_mock_, GetDeviceInfoProductModel())
@@ -284,6 +298,14 @@ TEST_F(MediaCodecDecoderBridgeImplTest, CreateVideoDecoder1) {
   config.on_buffers_available_cb = base::DoNothing();
   auto bridge_impl = MediaCodecDecoderBridgeImpl::CreateVideoDecoder(config);
   ASSERT_NE(bridge_impl, nullptr);
+}
+
+TEST_F(MediaCodecDecoderBridgeImplTest, CreateVideoDecoder2) {
+  VideoBridgeCodecConfig config;
+  config.codec = media::VideoCodec::kAV1;
+  config.on_buffers_available_cb = base::DoNothing();
+  auto bridge_impl = MediaCodecDecoderBridgeImpl::CreateVideoDecoder(config);
+  ASSERT_EQ(bridge_impl, nullptr);
 }
 
 TEST_F(MediaCodecDecoderBridgeImplTest, PrepareForCallback) {
@@ -347,6 +369,19 @@ TEST_F(MediaCodecDecoderBridgeImplTest, CreateVideoBridgeDecoderByMime2) {
   ASSERT_TRUE(result == DecoderAdapterCode::DECODER_OK);
 }
 
+TEST_F(MediaCodecDecoderBridgeImplTest, CreateVideoBridgeDecoderByMime3) {
+  std::string codec_name = "video/h264";
+  auto mock_media_player_ = make_unique<MockMediaCodecDecoderAdapter>();
+  EXPECT_CALL(*mock_media_player_, CreateVideoDecoderByMime(codec_name))
+      .WillOnce(Return(DecoderAdapterCode::DECODER_ERROR));
+  EXPECT_CALL(*mock_media_player_, ReleaseDecoder()).Times(1);
+
+  bridge_->videoDecoder_ = std::move(mock_media_player_);
+  DecoderAdapterCode result =
+      bridge_->CreateVideoBridgeDecoderByMime(codec_name);
+  EXPECT_EQ(result, DecoderAdapterCode::DECODER_ERROR);
+}
+
 TEST_F(MediaCodecDecoderBridgeImplTest, CreateVideoBridgeDecoderByName) {
   mock_adapter_ = std::make_unique<NiceMock<MockMediaCodecDecoderAdapter>>();
   bridge_ = std::make_unique<MediaCodecDecoderBridgeImpl>("video/avc");
@@ -376,6 +411,19 @@ TEST_F(MediaCodecDecoderBridgeImplTest, CreateVideoBridgeDecoderByName2) {
   DecoderAdapterCode result =
       bridge_->CreateVideoBridgeDecoderByName(codec_name);
   ASSERT_TRUE(result == DecoderAdapterCode::DECODER_OK);
+}
+
+TEST_F(MediaCodecDecoderBridgeImplTest, CreateVideoBridgeDecoderByName3) {
+  std::string codec_name = "video/h264";
+  auto mock_media_player_ = make_unique<MockMediaCodecDecoderAdapter>();
+  EXPECT_CALL(*mock_media_player_, CreateVideoDecoderByName(codec_name))
+      .WillOnce(Return(DecoderAdapterCode::DECODER_ERROR));
+  EXPECT_CALL(*mock_media_player_, ReleaseDecoder()).Times(1);
+  bridge_->videoDecoder_ = std::move(mock_media_player_);
+
+  DecoderAdapterCode result =
+      bridge_->CreateVideoBridgeDecoderByName(codec_name);
+  EXPECT_EQ(result, DecoderAdapterCode::DECODER_ERROR);
 }
 
 TEST_F(MediaCodecDecoderBridgeImplTest, ConfigureBridgeDecoder) {
@@ -990,9 +1038,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest, OnNeedInputData) {
   callback_->decoder_callback_task_runner_ = task_runner;
   callback_->on_buffers_available_cb_ = base::DoNothing();
   uint32_t index = 1;
-  auto mock_buffer = make_shared<NiceMock<OHOS::NWeb::OhosBufferAdapter>>();
-  EXPECT_CALL(*mock_buffer, GetAddr()).WillOnce(Return(nullptr));
-  EXPECT_CALL(*mock_buffer, GetBufferSize()).WillOnce(Return(0));
+  auto mock_buffer = make_shared<InheritOhosBufferAdapter>();
 
   callback_->OnNeedInputData(index, mock_buffer);
   thread.Stop();
@@ -1053,7 +1099,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest, OnNeedInputData4) {
   callback_->decoder_callback_task_runner_ = &mock_task_runner_;
   callback_->on_buffers_available_cb_ = base::DoNothing();
   uint32_t index = 1;
-  auto mock_buffer = make_shared<NiceMock<OHOS::NWeb::OhosBufferAdapter>>();
+  auto mock_buffer = make_shared<InheritOhosBufferAdapter>();
 
   callback_->OnNeedInputData(index, mock_buffer);
   ASSERT_TRUE(signal_->inputQueue_.empty());
@@ -1067,12 +1113,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest, OnNeedOutputData) {
   callback_->on_buffers_available_cb_ = base::DoNothing();
   uint32_t index = 1;
   BufferFlag flag = BufferFlag::CODEC_BUFFER_FLAG_CODEC_DATA;
-  auto mock_info = make_shared<NiceMock<OHOS::NWeb::BufferInfoAdapter>>();
-  EXPECT_CALL(*mock_info, GetSize()).WillOnce(Return(1));
-  EXPECT_CALL(*mock_info, GetOffset()).WillOnce(Return(0));
-  EXPECT_CALL(*mock_info, GetPresentationTimeUs())
-      .Times(2)
-      .WillRepeatedly(Return(100));
+  auto mock_info = make_shared<InheritBufferInfoAdapter>();
 
   callback_->OnNeedOutputData(index, mock_info, flag);
   thread.Stop();
@@ -1090,7 +1131,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest, OnNeedOutputData1) {
   callback_->on_buffers_available_cb_ = base::DoNothing();
   uint32_t index = 1;
   BufferFlag flag = BufferFlag::CODEC_BUFFER_FLAG_CODEC_DATA;
-  auto mock_info = make_shared<NiceMock<OHOS::NWeb::BufferInfoAdapter>>();
+  auto mock_info = make_shared<InheritBufferInfoAdapter>();
 
   callback_->OnNeedOutputData(index, mock_info, flag);
   ASSERT_TRUE(signal_->outputQueue_.empty());
@@ -1119,7 +1160,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest, OnNeedOutputData3) {
   callback_->on_buffers_available_cb_ = base::DoNothing();
   uint32_t index = 1;
   BufferFlag flag = BufferFlag::CODEC_BUFFER_FLAG_CODEC_DATA;
-  auto mock_info = make_shared<NiceMock<OHOS::NWeb::BufferInfoAdapter>>();
+  auto mock_info = make_shared<InheritBufferInfoAdapter>();
   callback_->signal_ = nullptr;
 
   callback_->OnNeedOutputData(index, mock_info, flag);
@@ -1135,12 +1176,12 @@ TEST_F(MediaCodecDecoderBridgeImplTest, OnNeedOutputData4) {
   callback_->on_buffers_available_cb_ = base::DoNothing();
   uint32_t index = 1;
   BufferFlag flag = BufferFlag::CODEC_BUFFER_FLAG_CODEC_DATA;
-  auto mock_info = make_shared<NiceMock<OHOS::NWeb::BufferInfoAdapter>>();
-  EXPECT_CALL(*mock_info, GetPresentationTimeUs()).WillOnce(Return(100));
+  auto mock_info = make_shared<InheritBufferInfoAdapter>();
+
   callback_->signal_->isDecoderFlushing_.store(true);
 
   callback_->OnNeedOutputData(index, mock_info, flag);
   thread.Stop();
   ASSERT_TRUE(signal_->outputQueue_.empty());
 }
-}
+}  // namespace media

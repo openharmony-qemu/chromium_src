@@ -139,6 +139,15 @@ class NWebRenderHandler : public CefRenderHandler {
                                   bool is_need_reset_listener,
                                   const AttributesMap& attributes) override;
 
+#if defined(OHOS_INPUT_EVENTS)
+  void HandleKeyboardAttach(CefRefPtr<CefBrowser> browser,
+                            const TextInputInfo& text_input_info,
+                            bool is_need_reset_listener,
+                            const std::map<std::string, std::string>& attributesMap);
+  
+  void HandleKeyboardDetach();
+#endif
+
   void GetTouchHandleSize(CefRefPtr<CefBrowser> browser,
                           cef_horizontal_alignment_t orientation,
                           CefSize& size) override;
@@ -180,7 +189,7 @@ class NWebRenderHandler : public CefRenderHandler {
                     CefRefPtr<CefGestureEventCallback> callback) override;
   void OnNativeEmbedLifecycleChange(CefRefPtr<CefBrowser> browser,
                     const CefNativeEmbedData& info) override;
-  void OnNativeEmbedVisibilityChange(const std::string& embed_id, 
+  void OnNativeEmbedVisibilityChange(const std::string& embed_id,
                     bool visibility) override;
   bool FilterScrollEvent(CefRefPtr<CefBrowser> browser,
                          const float x,
@@ -193,6 +202,7 @@ class NWebRenderHandler : public CefRenderHandler {
   bool GetGestureEventResult();
   gfx::Size GetSize();
   void StartVibraFeedback(const std::string& vibratorType) override;
+  void GetDevicePixelSize(CefRefPtr<CefBrowser> browser, CefSize& size) override;
 #endif
 
 #ifdef OHOS_EX_FREE_COPY
@@ -219,6 +229,14 @@ class NWebRenderHandler : public CefRenderHandler {
 
   std::shared_ptr<NWebCustomKeyboardHandlerImpl> GetCustomKeyboardHandler() const {
     return custom_keyboard_handler_;
+  }
+
+  uint32_t GetContentHeight() const {
+    return content_height_;
+  }
+
+  uint32_t GetContentWidth() const {
+    return content_width_;
   }
 
   std::shared_ptr<NWebTouchHandleState> GetTouchHandleState(
@@ -252,6 +270,7 @@ class NWebRenderHandler : public CefRenderHandler {
   uint32_t visible_height_ = 0;
   bool needFocusViewport_ = false;
   int32_t node_id_ = -1;
+  bool is_focused_ = false;
 #endif
   int content_height_ = 0;
   int content_width_ = 0;

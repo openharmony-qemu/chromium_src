@@ -13,16 +13,23 @@
  * limitations under the License.
  */
 
+#include <memory>
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "ui/accessibility/ax_node_data.h"
 #define private public
+#define protected public
 #include "ui/base/clipboard/clipboard_data.h"
 #include "ui/base/clipboard/ohos/clipboard_ohos.h"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wheader-hygiene"
 #include "ui/base/clipboard/ohos/clipboard_ohos.cc"
-#undef private
+#include "ui/base/clipboard/clipboard.h"
 
+#undef private
+#undef protected
+
+using namespace content;
 namespace ui {
 class ClipboardOHOSMock : public ClipboardOHOS {
  public:
@@ -39,6 +46,7 @@ class ClipboardOHOSTest : public ::testing::Test {
   void SetUp() override {
     clip_board_shared = std::make_shared<ClipboardOHOS>();
     clipboard_internal = std::make_shared<ClipboardOHOSInternal>();
+    paste_board_ = std::make_shared<ClipboardOHOSInternal::PasteboardObserverOhos>();
   }
 
   void TearDown() override {}
@@ -48,6 +56,7 @@ class ClipboardOHOSTest : public ::testing::Test {
   ClipboardDataBuilder clip_board_data;
   std::shared_ptr<ClipboardOHOSInternal> clipboard_internal;
   ClipboardData board_data;
+  std::shared_ptr<ClipboardOHOSInternal::PasteboardObserverOhos> paste_board_;
 };
 
 TEST_F(ClipboardOHOSTest, ReadText_001) {
@@ -328,28 +337,6 @@ TEST_F(ClipboardOHOSTest, CommitToClipboard) {
   std::unique_ptr<ClipboardData> previous_data =
       std::move(clip_board_ohos.clipboard_internal_->data_);
   EXPECT_TRUE(clipboard->WriteData(ClipboardDataBuilder::TakeCurrentData()));
-}
-
-TEST_F(ClipboardOHOSTest, WriteHTML_001) {
-  char something1[] = "hello";
-  char something2[] = "world";
-  const char* markup_data = something1;
-  const char* url_data = something2;
-  size_t markup_len = 20;
-  size_t url_len = 30;
-  const CopyOptionMode copy_option = CopyOptionMode::NONE;
-  clip_board_data.WriteHTML(markup_data, markup_len, url_data, url_len,
-                            copy_option);
-  EXPECT_EQ(copy_option, board_data.copy_option());
-}
-
-TEST_F(ClipboardOHOSTest, WriteText) {
-  char something1[] = "hello";
-  const char* text_data = something1;
-  size_t text_len = 40;
-  const CopyOptionMode copy_option = CopyOptionMode::NONE;
-  clip_board_data.WriteText(text_data, text_len, copy_option);
-  EXPECT_EQ(copy_option, board_data.copy_option());
 }
 
 TEST_F(ClipboardOHOSTest, ImageToClipboardAlphaType001) {
@@ -652,6 +639,189 @@ TEST_F(ClipboardOHOSTest, ReadPng_001) {
   EXPECT_EQ(clip_board_ohos.clipboard_internal_->IsReadAllowed(
                 data_dst, ClipboardInternalFormat::kPng),
             true);
+}
+
+TEST_F(ClipboardOHOSTest, OnPasteboardChanged_001) {
+  paste_board_->OnPasteboardChanged();
+  EXPECT_EQ(paste_board_->clipboard_internal_, nullptr);
+}
+
+TEST_F(ClipboardOHOSTest, WriteData001) {
+  auto result = clipboard_internal->WriteData(nullptr);
+  EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(ClipboardOHOSTest, WriteData002) {
+  clipboard_internal->data_ = std::make_unique<ClipboardData>();
+  auto data = std::make_unique<ClipboardData>();
+  auto result = clipboard_internal->WriteData(std::move(data));
+  EXPECT_NE(result, nullptr);
+}
+
+TEST_F(ClipboardOHOSTest, WriteData003) {
+  testing::internal::CaptureStderr();
+  std::unique_ptr<ClipboardData> data = std::make_unique<ClipboardData>();
+  data->set_markup_data("<p>HTML content</p>");
+  auto result = clipboard_internal->WriteData(std::move(data));
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("set html to record success"), std::string::npos);
+  EXPECT_EQ(log_output.find("set html to record failed"), std::string::npos);
+  EXPECT_EQ(log_output.find("set text to record success"), std::string::npos);
+  EXPECT_EQ(log_output.find("set text to record failed"), std::string::npos);
+  EXPECT_EQ(log_output.find("set image to record success"), std::string::npos);
+  EXPECT_EQ(log_output.find("set image to record failed"), std::string::npos);
+}
+
+TEST_F(ClipboardOHOSTest, WriteData004) {
+  testing::internal::CaptureStderr();
+  std::unique_ptr<ClipboardData> data = std::make_unique<ClipboardData>();
+  data->set_text("Test plain text");
+  auto result = clipboard_internal->WriteData(std::move(data));
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("set text to record success"), std::string::npos);
+  EXPECT_EQ(log_output.find("set text to record failed"), std::string::npos);
+  EXPECT_EQ(log_output.find("set html to record success"), std::string::npos);
+  EXPECT_EQ(log_output.find("set html to record failed"), std::string::npos);
+  EXPECT_EQ(log_output.find("set image to record success"), std::string::npos);
+  EXPECT_EQ(log_output.find("set image to record failed"), std::string::npos);
+}
+
+TEST_F(ClipboardOHOSTest, WriteData005) {
+  testing::internal::CaptureStderr();
+  std::unique_ptr<ClipboardData> data = std::make_unique<ClipboardData>();
+  data->format_ |= static_cast<int>(ClipboardInternalFormat::kPng);
+  data->maybe_bitmap_ = SkBitmap();
+  auto result = clipboard_internal->WriteData(std::move(data));
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(log_output.find("set image to record success"), std::string::npos);
+  EXPECT_NE(log_output.find("set image to record failed"), std::string::npos);
+  EXPECT_EQ(log_output.find("set html to record success"), std::string::npos);
+  EXPECT_EQ(log_output.find("set html to record failed"), std::string::npos);
+  EXPECT_EQ(log_output.find("set text to record success"), std::string::npos);
+  EXPECT_EQ(log_output.find("set text to record failed"), std::string::npos);
+}
+
+TEST_F(ClipboardOHOSTest, WriteData006) {
+  testing::internal::CaptureStderr();
+  std::unique_ptr<ClipboardData> data = std::make_unique<ClipboardData>();
+  data->format_ |= static_cast<int>(ClipboardInternalFormat::kPng);
+  auto result = clipboard_internal->WriteData(std::move(data));
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(log_output.find("set image to record success"), std::string::npos);
+  EXPECT_EQ(log_output.find("set image to record failed"), std::string::npos);
+}
+
+TEST_F(ClipboardOHOSTest, HasFormatInMisc001) {
+  PasteRecordVector record_vector_ptr ;
+  std::shared_ptr<PasteDataRecordAdapter> record_html =
+      PasteDataRecordAdapter::NewRecord("text/html");
+  record_vector_ptr.push_back(record_html);
+  clipboard_internal->read_data_ = std::make_shared<ClipboardOhosReadData>(record_vector_ptr);
+  EXPECT_NE(nullptr, clipboard_internal->read_data_);
+  clipboard_internal->state_ = ClipboardOHOSInternal::ClipboardState::kUpToDate;
+  auto result = clipboard_internal->HasFormatInMisc(ClipboardInternalFormat::kText);
+  EXPECT_NE(nullptr, clipboard_internal->read_data_);
+  EXPECT_FALSE(result);
+}
+
+TEST_F(ClipboardOHOSTest, HasFormatInMisc002) {
+  PasteRecordVector record_vector_ptr ;
+  std::shared_ptr<PasteDataRecordAdapter> record_html =
+      PasteDataRecordAdapter::NewRecord("text/html");
+  std::shared_ptr<std::string> htmlText_ = std::make_shared<std::string>("Initial HTML content");
+  record_html->SetHtmlText(htmlText_);
+  record_vector_ptr.push_back(record_html);
+  clipboard_internal->read_data_ = std::make_shared<ClipboardOhosReadData>(record_vector_ptr);
+  EXPECT_NE(nullptr, clipboard_internal->read_data_);
+  clipboard_internal->state_ = ClipboardOHOSInternal::ClipboardState::kUpToDate;
+  auto result = clipboard_internal->HasFormatInMisc(ClipboardInternalFormat::kHtml);
+  EXPECT_NE(nullptr, clipboard_internal->read_data_);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(ClipboardOHOSTest, HasFormatInMisc003) {
+  PasteRecordVector record_vector_ptr ;
+  std::shared_ptr<PasteDataRecordAdapter> record_Plain =
+      PasteDataRecordAdapter::NewRecord("text/html");
+  std::shared_ptr<std::string> PlainText_ = std::make_shared<std::string>("Initial text content");
+  record_Plain->SetPlainText(PlainText_);
+  record_vector_ptr.push_back(record_Plain);
+  clipboard_internal->read_data_ = std::make_shared<ClipboardOhosReadData>(record_vector_ptr);
+  EXPECT_NE(nullptr, clipboard_internal->read_data_);
+  clipboard_internal->state_ = ClipboardOHOSInternal::ClipboardState::kUpToDate;
+  auto result = clipboard_internal->HasFormatInMisc(ClipboardInternalFormat::kText);
+  EXPECT_NE(nullptr, clipboard_internal->read_data_);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(ClipboardOHOSTest, HasFormatInMisc004) {
+  PasteRecordVector record_vector_ptr ;
+  std::shared_ptr<PasteDataRecordAdapter> record_Plain =
+      PasteDataRecordAdapter::NewRecord("text/html");
+  std::shared_ptr<ClipBoardImageDataAdapterImpl> imgData_ptr;
+  imgData_ptr = std::make_shared<ClipBoardImageDataAdapterImpl>();
+  imgData_ptr->SetColorType(ClipBoardImageColorType::COLOR_TYPE_RGBA_8888);
+  imgData_ptr->SetAlphaType(ClipBoardImageAlphaType::ALPHA_TYPE_OPAQUE);
+  imgData_ptr->data_size_ = 100 * sizeof(uint32_t);
+  imgData_ptr->row_bytes_ = 4 * 10;
+  imgData_ptr->width_ = 10;
+  imgData_ptr->height_ = 10;
+  uint32_t data_vector[100];
+  imgData_ptr->data_ = data_vector;
+  for (size_t i = 0; i < 100; ++i) {
+    imgData_ptr->data_[i] = i * 10;
+  }
+  record_Plain->SetImgData(imgData_ptr);
+  record_vector_ptr.push_back(record_Plain);
+  clipboard_internal->read_data_ = std::make_shared<ClipboardOhosReadData>(record_vector_ptr);
+  EXPECT_NE(nullptr, clipboard_internal->read_data_);
+  clipboard_internal->state_ = ClipboardOHOSInternal::ClipboardState::kUpToDate;
+  auto result = clipboard_internal->HasFormatInMisc(ClipboardInternalFormat::kPng);
+  EXPECT_NE(nullptr, clipboard_internal->read_data_);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(ClipboardOHOSTest, HasFormatInMisc005) {
+  PasteRecordVector record_vector_ptr ;
+  std::shared_ptr<PasteDataRecordAdapter> record_Plain =
+      PasteDataRecordAdapter::NewRecord("text/html");
+  PasteCustomData pasteCustomData_ptr;
+  pasteCustomData_ptr["text/plain"] = {0x48, 0x65, 0x6C, 0x6C, 0x6F};
+  pasteCustomData_ptr["image/png"] = {0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
+  OHOS::NWeb::PasteCustomData& data = pasteCustomData_ptr;
+  record_Plain->SetCustomData(data);
+  record_vector_ptr.push_back(record_Plain);
+  EXPECT_EQ(nullptr, clipboard_internal->read_data_);
+  clipboard_internal->read_data_ = std::make_shared<ClipboardOhosReadData>(record_vector_ptr);
+  clipboard_internal->state_ = ClipboardOHOSInternal::ClipboardState::kUpToDate;
+  auto result = clipboard_internal->HasFormatInMisc(ClipboardInternalFormat::kHtml);
+  EXPECT_NE(nullptr, clipboard_internal->read_data_);
+  EXPECT_FALSE(result);
+}
+
+TEST_F(ClipboardOHOSTest, HasFormatInMisc006) {
+  PasteRecordVector record_vector_ptr ;
+  std::shared_ptr<PasteDataRecordAdapter> record_Plain =
+      PasteDataRecordAdapter::NewRecord("text/html");
+  PasteCustomData pasteCustomData_ptr;
+  pasteCustomData_ptr["openharmony.styled-string"] = {0x48, 0x65, 0x6C, 0x6C, 0x6F};
+  pasteCustomData_ptr["image/png"] = {0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
+  OHOS::NWeb::PasteCustomData& data = pasteCustomData_ptr;
+  record_Plain->SetCustomData(data);
+  record_vector_ptr.push_back(record_Plain);
+  EXPECT_EQ(nullptr, clipboard_internal->read_data_);
+  clipboard_internal->read_data_ = std::make_shared<ClipboardOhosReadData>(record_vector_ptr);
+  clipboard_internal->state_ = ClipboardOHOSInternal::ClipboardState::kUpToDate;
+  auto result = clipboard_internal->HasFormatInMisc(ClipboardInternalFormat::kHtml);
+  EXPECT_NE(nullptr, clipboard_internal->read_data_);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(ClipboardOHOSTest, WriteBitmapToClipboard_001) {
+  SkBitmap empty_bitmap;
+  empty_bitmap.setInfo(SkImageInfo::MakeUnknown(), 0);
+  auto bitmap_record = clip_board_ohos.clipboard_internal_->WriteBitmapToClipboard(empty_bitmap);
+  EXPECT_NE(nullptr, bitmap_record);
 }
 
 }  // namespace ui

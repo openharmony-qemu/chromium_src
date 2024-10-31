@@ -671,16 +671,6 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
     return native_embed_id_.Read(*this);
   }
 
-#if BUILDFLAG(IS_OHOS)
-  void SetIsNativeVideo(bool is_native_video) {
-    is_native_video_.Write(*this) = is_native_video;
-  }
-
-  bool is_native_video() {
-    return is_native_video_.Read(*this);
-  }
-#endif
-
   void SetNativeRect(const gfx::RectF& rect) { native_rect_ = rect; }
 
   // Stable identifier for clients. See comment in cc/paint/element_id.h.
@@ -1224,10 +1214,6 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
 #endif
 
   ProtectedSequenceReadable<int> native_embed_id_{0};
-
-#if BUILDFLAG(IS_OHOS)
-  ProtectedSequenceReadable<bool> is_native_video_{false};
-#endif
 
   gfx::RectF native_rect_;
   ProtectedSequenceWritable<std::unique_ptr<LayerDebugInfo>> debug_info_;

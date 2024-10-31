@@ -106,6 +106,13 @@ enum class AceTextCategory {
   INPUT_TYPE_PHONENUMBER
 };
 
+enum class AccessibilityScrollType : int32_t {
+    SCROLL_DEFAULT = -1, // no parameter trans, do not add enum before
+    SCROLL_HALF = 0,
+    SCROLL_FULL = 1,
+    SCROLL_MAX_TYPE = SCROLL_FULL, // for check parameter, do not add enum after
+};
+
 const int32_t WEIGHTED_VALUE = 13;
 
 }  // namespace OHOS::NWeb

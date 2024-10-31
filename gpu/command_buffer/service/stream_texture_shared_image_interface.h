@@ -13,6 +13,9 @@
 #include "gpu/gpu_gles2_export.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gl/gl_bindings.h"
+#if BUILDFLAG(IS_OHOS)
+#include "gpu/command_buffer/service/ohos/scoped_native_buffer_fence_sync.h"
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
 namespace base::android {
@@ -78,6 +81,10 @@ class GPU_GLES2_EXPORT StreamTextureSharedImageInterface
 #if BUILDFLAG(IS_ANDROID)
   virtual std::unique_ptr<base::android::ScopedHardwareBufferFenceSync>
   GetAHardwareBuffer() = 0;
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+  virtual std::unique_ptr<ScopedNativeBufferFenceSync> GetNativeBuffer() = 0;
 #endif
 
  protected:

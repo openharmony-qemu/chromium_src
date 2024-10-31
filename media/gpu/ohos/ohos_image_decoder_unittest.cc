@@ -18,7 +18,6 @@
 #include "media/gpu/ohos/ohos_image_decoder.h"
 #undef private
 #include "base/logging.h"
-#include "media/gpu/ohos/ohos_image_decoder.cc"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 

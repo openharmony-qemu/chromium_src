@@ -120,6 +120,57 @@ void OhosNativeImage::OnFrameAvailableListener(void* context) {
   }
   nativeImage->frame_available_cb_.Run();
 }
+scoped_refptr<OhosNativeImage> OhosNativeImage::Create() {
+  auto nativeImageAdapter =
+      OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateNativeImageAdapter();
+  if (nativeImageAdapter == nullptr) {
+    return nullptr;
+  }
+  nativeImageAdapter->NewNativeImage();
+  return new OhosNativeImage(std::move(nativeImageAdapter));
+}
 
+const int32_t IMAGE_READ_ERR = 1;
+int32_t OhosNativeImage::AcquireNativeWindowBuffer(
+  void** windowBuffer,
+  int* acquireFenceFd)
+{
+  if (native_image_adapter_ == nullptr) {
+    return IMAGE_READ_ERR;
+  }
+  return native_image_adapter_->AcquireNativeWindowBuffer(windowBuffer, acquireFenceFd);
+}
 
+int32_t OhosNativeImage::GetNativeBuffer(
+  void* windowBuffer,
+  void** nativeBuffer)
+{
+  if (native_image_adapter_ == nullptr) {
+    return IMAGE_READ_ERR;
+  }
+  return native_image_adapter_->GetNativeBuffer(windowBuffer, nativeBuffer);
+}
+
+int32_t OhosNativeImage::ReleaseNativeWindowBuffer(void* windowBuffer, int fenceFd)
+{
+  if (native_image_adapter_ == nullptr) {
+    return IMAGE_READ_ERR;
+  }
+  return native_image_adapter_->ReleaseNativeWindowBuffer(windowBuffer, fenceFd);
+}
+
+void OhosNativeImage::GetNativeWindowBufferSize(void* windowBuffer, uint32_t* width, uint32_t* height)
+{
+  if (native_image_adapter_ == nullptr) {
+    return;
+  }
+  return native_image_adapter_->GetNativeWindowBufferSize(windowBuffer, width, height);
+}
+
+void OhosNativeImage::GetTransformMatrixV1(float mtx[16], size_t mtx_size) {
+  if (native_image_adapter_ == nullptr || mtx_size != 16u) {
+    return;
+  }
+  native_image_adapter_->GetTransformMatrix(mtx);
+}
 }  // namespace gl

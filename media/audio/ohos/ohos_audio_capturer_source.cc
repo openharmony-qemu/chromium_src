@@ -165,6 +165,7 @@ void OHOSAudioCapturerSource::NotifyCaptureStarted() {
 
 void OHOSAudioCapturerSource::ReportError(const std::string& message) {
   DCHECK(capturer_task_runner_->BelongsToCurrentThread());
+  LOG(INFO) << "OHOSAudioCapturerSource::ReportError";
   main_task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&OHOSAudioCapturerSource::NotifyCaptureError,
                                 weak_factory_.GetWeakPtr(), message));

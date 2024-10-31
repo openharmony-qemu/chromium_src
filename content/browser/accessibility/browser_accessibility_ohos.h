@@ -98,8 +98,7 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
 
   bool IsLink() const;
 
-  const BrowserAccessibilityOHOS* GetAccessibilityNodeByFocusMove(
-      int32_t direction) const;
+  BrowserAccessibilityOHOS* GetAccessibilityNodeByFocusMove(int32_t direction) const;
 
   float RangeMin() const;
 
@@ -125,10 +124,35 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
 
   bool IsScrollSupported() const;
 
+  bool CanScrollForward() const;
+  bool CanScrollBackward() const;
+  bool CanScrollUp() const;
+  bool CanScrollDown() const;
+  bool CanScrollLeft() const;
+  bool CanScrollRight() const;
+  int GetScrollX() const;
+  int GetScrollY() const;
+  int GetMinScrollX() const;
+  int GetMinScrollY() const;
+  int GetMaxScrollX() const;
+  int GetMaxScrollY() const;
+
   void Scroll(const ax::mojom::Action& action) const;
 
   static BrowserAccessibilityOHOS* GetFromAccessibilityId(
       int64_t accessibility_id);
+
+  bool IsAccessibilityGroup() const;
+
+  bool IsIgnoredContainer() const;
+
+  bool IsEmptyContainer() const;
+
+  int64_t GetParentId() const;
+
+  void GetChildrenIds(std::vector<int64_t>& childrenIds) const;
+
+  void SetChildrenIds(const std::vector<int64_t>& childrenIds);
 
  protected:
   BrowserAccessibilityOHOS(BrowserAccessibilityManager* manager,
@@ -143,26 +167,28 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
 
   bool HasOnlyTextAndImageChildren() const;
 
+  bool HasClickableChildren() const;
+
   bool HasListMarkerChild() const;
 
   bool IsHeadingLink() const;
 
   void AddFocusableNode(
-      std::list<const BrowserAccessibilityOHOS*>& nodeList) const;
+      std::list<BrowserAccessibilityOHOS*>& nodeList) const;
 
-  const BrowserAccessibilityOHOS* FindNodeInRelativeDirection(
-      const std::list<const BrowserAccessibilityOHOS*>& nodeList,
+  BrowserAccessibilityOHOS* FindNodeInRelativeDirection(
+      const std::list<BrowserAccessibilityOHOS*>& nodeList,
       int32_t direction) const;
 
-  const BrowserAccessibilityOHOS* FindNodeInAbsoluteDirection(
-      const std::list<const BrowserAccessibilityOHOS*>& nodeList,
+  BrowserAccessibilityOHOS* FindNodeInAbsoluteDirection(
+      const std::list<BrowserAccessibilityOHOS*>& nodeList,
       int32_t direction) const;
 
-  const BrowserAccessibilityOHOS* GetNextFocusableNode(
-      const std::list<const BrowserAccessibilityOHOS*>& nodeList) const;
+  BrowserAccessibilityOHOS* GetNextFocusableNode(
+      const std::list<BrowserAccessibilityOHOS*>& nodeList) const;
 
-  const BrowserAccessibilityOHOS* GetPreviousFocusableNode(
-      const std::list<const BrowserAccessibilityOHOS*>& nodeList) const;
+  BrowserAccessibilityOHOS* GetPreviousFocusableNode(
+      const std::list<BrowserAccessibilityOHOS*>& nodeList) const;
 
   typedef base::RepeatingCallback<bool(const std::u16string& partial)>
       EarlyExitPredicate;
@@ -211,6 +237,8 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
                               const gfx::Rect& tempBest);
 
   int64_t accessibility_id_ = -1;
+
+  std::vector<int64_t> childrenIds_;
 };
 }  // namespace content
 

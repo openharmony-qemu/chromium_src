@@ -198,7 +198,7 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
   browser_settings.contextmenu_customization_enabled = false;
   CefRefPtr<CefCommandLine> command_line =
       CefCommandLine::GetGlobalCommandLine();
-  if (command_line->HasSwitch(::switches::kForBrowser)) {
+  if (command_line->HasSwitch(::switches::kEnableNwebExFreeCopy)) {
     browser_settings.contextmenu_customization_enabled = true;
   }
 #endif  // OHOS_EX_FREE_COPY
@@ -671,6 +671,11 @@ void NWebPreferenceDelegate::SetNativeEmbedMode(bool flag) {
     zooming_function_enabled_ = false;
   }
   WebPreferencesChanged();
+  if (!browser_.get()) {
+    LOG(ERROR) << "SetNativeEmbedMode failed, browser is null";
+    return;
+  }
+  browser_->GetHost()->SetNativeEmbedMode(enable_embed_mode_);
 }
 
 bool NWebPreferenceDelegate::GetNativeEmbedMode() {
@@ -893,5 +898,24 @@ bool NWebPreferenceDelegate::IsMixedContentAutoUpgradesEnabled(){
   return enable_mixed_content_auto_upgrades_;
 }
 #endif
+
+#ifdef OHOS_BFCACHE
+void NWebPreferenceDelegate::PutBackForwardCacheOptions(int size, int time_to_live) {
+  size_ = size;
+  time_to_live_ = time_to_live;
+}
+
+int NWebPreferenceDelegate::GetCacheSize() {
+  int tmp = size_;
+  size_ = -1;
+  return tmp;
+}
+
+int NWebPreferenceDelegate::GetTimeToLive() {
+  int tmp = time_to_live_;
+  time_to_live_ = -1;
+  return tmp;
+}
+#endif // OHOS_BFCACHE
 
 }  // namespace OHOS::NWeb

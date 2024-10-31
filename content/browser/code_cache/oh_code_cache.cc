@@ -451,7 +451,11 @@ bool InputStream::Read(net::IOBuffer* dest,
   int transfer_size = 0;
   if (offset_ < data_.length()) {
     transfer_size = std::min(length, static_cast<int>(data_.length() - offset_));
-    memcpy(dest->data(), data_.c_str() + offset_, transfer_size);
+    if (memcpy_s(dest->data(), static_cast<size_t>(length), data_.c_str() + offset_, transfer_size) != EOK) {
+      LOG(WARNING) << "InputStream::Read memcpy failed";
+      *bytes_read = net::ERR_FAILED;
+      return false;
+    }
     offset_ += transfer_size;
     *bytes_read = transfer_size;
     has_data = true;

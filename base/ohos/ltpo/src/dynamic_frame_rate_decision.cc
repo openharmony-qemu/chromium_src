@@ -41,7 +41,8 @@ void UpdateTimeOutFramePreferredRate()
 }
 
 DynamicFrameRateDecision::DynamicFrameRateDecision()
-{}
+{
+}
 
 DynamicFrameRateDecision::~DynamicFrameRateDecision()
 {}
@@ -50,12 +51,6 @@ void DynamicFrameRateDecision::Init()
 {
   if (!curent_task_runner_) {
     curent_task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
-    auto type = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetProductDeviceType();
-    if (type == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE ||
-      type == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_TABLET) {
-      is_phone_or_tablet_ = true;
-    }
-    LOG(DEBUG) << "is_phone_or_tablet_: " << is_phone_or_tablet_;
   }
 }
 
@@ -67,7 +62,7 @@ DynamicFrameRateDecision& DynamicFrameRateDecision::GetInstance()
 
 void DynamicFrameRateDecision::ReportSlidingFrameRate(int32_t frame_rate)
 {
-  if (!is_phone_or_tablet_) {
+  if (strategy_ != LTPOStrategy::HGM_FLING && strategy_ != LTPOStrategy::ALL) {
     return;
   }
   if (!curent_task_runner_) {
@@ -90,7 +85,7 @@ void DynamicFrameRateDecision::ReportSlidingFrameRateImpl(int32_t frame_rate)
 
 void DynamicFrameRateDecision::ReportVideoFrameRate(int32_t frame_rate)
 {
-  if (!is_phone_or_tablet_) {
+  if (strategy_ != LTPOStrategy::ALL) {
     return;
   }
   if (!curent_task_runner_) {
@@ -113,9 +108,6 @@ void DynamicFrameRateDecision::ReportVideoFrameRateImpl(int32_t frame_rate)
 
 void DynamicFrameRateDecision::SetMaxFrameRateThreeSec()
 {
-  if (!curent_task_runner_) {
-    return;
-  }
   LOG(DEBUG) << "SetMaxFrameRateThreeSec " << sliding_frame_rate_;
   if (sliding_frame_rate_ != 0) {
     return;
@@ -141,9 +133,12 @@ void DynamicFrameRateDecision::UpdateFramePreferredRate()
   // invoke frame rate linker
   cur_frame_rate_ = sliding_frame_rate_;
   if (sliding_frame_rate_ <= 0) {
-    cur_frame_rate_ = has_touch_point_ ? kDefaultPreferedFrameRate120FPS : kDefaultPreferedFrameRate60FPS;
-    if (GetCurrentTimestampMS() - touch_up_timestamp_< kThreeSeconds) {
+    if (has_touch_point_ || GetCurrentTimestampMS() - touch_up_timestamp_< kThreeSeconds) {
       cur_frame_rate_ = kDefaultPreferedFrameRate120FPS;
+    } else if (video_frame_rate_ > 0) {
+        cur_frame_rate_ = video_frame_rate_;
+    } else {
+        cur_frame_rate_ = kDefaultPreferedFrameRate60FPS;
     }
   }
   cur_frame_rate_ = std::max(cur_frame_rate_, video_frame_rate_);
@@ -152,9 +147,6 @@ void DynamicFrameRateDecision::UpdateFramePreferredRate()
 
 void DynamicFrameRateDecision::SetVsyncEnabled(bool enabled)
 {
-  if (!is_phone_or_tablet_) {
-    return;
-  }
   if (!curent_task_runner_) {
     return;
   }
@@ -178,7 +170,7 @@ void DynamicFrameRateDecision::SetVsyncEnabledImpl(bool enabled)
 
 void DynamicFrameRateDecision::SetHasTouchPoint(bool has_touch_point)
 {
-  if (!is_phone_or_tablet_) {
+  if (strategy_ != LTPOStrategy::ALL) {
     return;
   }
   if (!curent_task_runner_) {
@@ -203,9 +195,29 @@ void DynamicFrameRateDecision::SetHasTouchPointImpl(bool has_touch_point)
   }
 }
 
+void DynamicFrameRateDecision::SetLTPOStrategy(int32_t strategy)
+{
+  LOG(INFO) << "DynamicFrameRateDecision::SetLTPOStrategy " << strategy;
+  if (!curent_task_runner_) {
+    return;
+  }
+  curent_task_runner_->PostTask(FROM_HERE, base::BindOnce(
+    &DynamicFrameRateDecision::SetLTPOStrategyImpl,
+    base::Unretained(this), strategy));
+}
+
+void DynamicFrameRateDecision::SetLTPOStrategyImpl(int32_t strategy)
+{
+  LOG(DEBUG) << "SetLTPOStrategyImpl " << strategy;
+  if (strategy < 0) {
+    return;
+  }
+  strategy_ = static_cast<LTPOStrategy>(strategy);
+}
+
 void DynamicFrameRateDecision::SetVisible(bool visible)
 {
-  if (!is_phone_or_tablet_) {
+  if (strategy_ != LTPOStrategy::HGM_FLING && strategy_ != LTPOStrategy::ALL) {
     return;
   }
   if (!curent_task_runner_) {
@@ -218,7 +230,7 @@ void DynamicFrameRateDecision::SetVisible(bool visible)
 
 void DynamicFrameRateDecision::SetVisibleImpl(bool visible)
 {
-  if (!is_phone_or_tablet_) {
+  if (strategy_ != LTPOStrategy::HGM_FLING && strategy_ != LTPOStrategy::ALL) {
     return;
   }
   if (visible_ == visible) {

@@ -249,4 +249,8 @@ interface GpuService {
   // Send vsync callback to host client
   [EnableIf=is_ohos]
   ReportSlidingFrameRate(int32 frame_rate);
+
+  // Set ltpo strategy to gpu process
+  [EnableIf=is_ohos]
+  SetLTPOStrategy(int32 strategy);
 };

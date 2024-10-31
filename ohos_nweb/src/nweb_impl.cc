@@ -155,6 +155,10 @@ extern bool g_siteIsolationMode;
 #include "content/browser/gpu/gpu_process_host.h"
 #endif
 
+#ifdef OHOS_USERAGENT
+#include "components/embedder_support/user_agent_utils.h"
+#endif
+
 namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
@@ -2042,6 +2046,18 @@ bool NWebImpl::ScrollByWithResult(float delta_x, float delta_y) {
   }
   return nweb_delegate_->ScrollByWithResult(delta_x, delta_y);
 }
+
+void NWebImpl::WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent) {
+  if (!input_handler_ || !mouseEvent) {
+    return;
+  }
+
+  if (mouseEvent->GetAction() == MouseAction::PRESS) {
+    ResSchedClientAdapter::ReportScene(
+      ResSchedStatusAdapter::WEB_SCENE_ENTER, ResSchedSceneAdapter::CLICK, nweb_id_);
+  }
+  input_handler_->WebSendMouseEvent(mouseEvent);
+}
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 bool NWebImpl::GetCertChainDerData(std::vector<std::string>& certChainData,
@@ -3100,6 +3116,11 @@ void NWebImpl::ClearIntelligentTrackingPreventionBypassingList() {
   ohos_anti_tracking::ThirdPartyCookieAccessPolicy::GetInstance()->
       ClearITPBypassingList();
 #endif
+}
+
+// static
+std::string NWebImpl::GetDefaultUserAgent() {
+  return embedder_support::GetUserAgent();
 }
 
 int NWebImpl::ScaleGestureChange(double scale, double centerX, double centerY) {

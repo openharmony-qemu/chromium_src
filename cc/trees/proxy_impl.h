@@ -118,6 +118,8 @@ class CC_EXPORT ProxyImpl : public LayerTreeHostImplClient,
   void SetNeedsCommitOnImplThread() override;
   void SetVideoNeedsBeginFrames(bool needs_begin_frames) override;
   void SetDeferBeginMainFrameFromImpl(bool defer_begin_main_frame) override;
+  void SetDeferInvalidationForFastMainFrameFromImpl(
+           bool defer_invalidation_for_fast_main_frame) override;
   bool IsInsideDraw() override;
   void RenewTreePriority() override;
   void PostDelayedAnimationTaskOnImplThread(base::OnceClosure task,
@@ -147,6 +149,8 @@ class CC_EXPORT ProxyImpl : public LayerTreeHostImplClient,
   bool IsInSynchronousComposite() const override;
   void FrameSinksToThrottleUpdated(
       const base::flat_set<viz::FrameSinkId>& id) override;
+  void SetHasActiveThreadedScroll(bool is_scrolling) override;
+  void SetWaitingForScrollEvent(bool waiting_for_scroll_event) override;
 
   // SchedulerClient implementation
   bool WillBeginImplFrame(const viz::BeginFrameArgs& args) override;
@@ -170,6 +174,7 @@ class CC_EXPORT ProxyImpl : public LayerTreeHostImplClient,
   void ScheduledActionBeginMainFrameNotExpectedUntil(
       base::TimeTicks time) override;
   void FrameIntervalUpdated(base::TimeDelta interval) override {}
+  void OnBeginImplFrameDeadline() override;
   bool HasInvalidationAnimation() const override;
 #if BUILDFLAG(IS_OHOS)
   void HandleScrollUpdateForInternalBeginFrame(const viz::BeginFrameArgs& args) override;

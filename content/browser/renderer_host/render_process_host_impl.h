@@ -784,6 +784,11 @@ class CONTENT_EXPORT RenderProcessHostImpl
   static void RemoveFromSharedRenderProcessMap(
       RenderProcessHost* renderProcessHost);
 #endif
+
+#ifdef OHOS_I18N
+  void NotifyLocaleChanged(const std::string& update_locale);
+#endif
+
  protected:
   // A proxy for our IPC::Channel that lives on the IO thread.
   std::unique_ptr<IPC::ChannelProxy> channel_;

@@ -496,7 +496,7 @@ int NWebCookieManagerDelegate::SetCookie(const std::string& url,
   CefRefPtr<CookieSetCallback> callback(
       new CookieSetCallback(nullptr, nullptr));
   if (!cookie_manager->SetCookie(CefString(gurl.spec()), cef_cookie, callback,
-                                 false, CefString(value), includeHttpOnly)) {
+                                 true, CefString(value), includeHttpOnly)) {
     LOG(ERROR) << "SetCookie error";
     return NWEB_INVALID_URL;
   }

@@ -535,6 +535,7 @@ test("capture_unittests") {
       "video/ohos/video_capture_device_factory_ohos_unittest.cc",
       "video/ohos/video_capture_status_callback_listener_ohos_unittest.cc",
       "video/ohos/video_capture_surface_buffer_listener_ohos_unittest.cc",
+      "video/video_capture_system_impl_unittest.cc",
     ]
   }
 

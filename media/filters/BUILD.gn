@@ -421,4 +421,11 @@ source_set("unit_tests") {
     # Direct dependency required to inherit config.
     deps += [ "//third_party/ffmpeg" ]
   }
+
+  if (ohos_unittests) {
+    sources += [
+      "demuxer_manager_unittest.cc",
+      "native_pipeline_controller_unittest.cc",
+    ]
+  }
 }

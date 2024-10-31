@@ -31,8 +31,6 @@ constexpr int64_t VSYNC_TIME_FOR_CALCULATION = 1000000000;
 
 constexpr int VSYNC_30HZ = 30;
 constexpr int VSYNC_60HZ = 60;
-const size_t kMaxVsyncTaskQueueSize = 20;
-constexpr int VSYNC_BLOCKED_TIMEOUT = 3;
 
 class ExternalBeginFrameSourceOHOS::VSyncUserData {
  public:
@@ -58,9 +56,6 @@ class ExternalBeginFrameSourceOHOS::VSyncUserData {
   const scoped_refptr<base::SingleThreadTaskRunner>& current_;
   base::WeakPtr<viz::ExternalBeginFrameSourceOHOS> weak_ptr_;
 };
-
-base::circular_deque<std::pair<int64_t, ExternalBeginFrameSourceOHOS::VSyncUserData*>>
-  ExternalBeginFrameSourceOHOS::on_vsync_impl_task_queue_ {};
 
 ExternalBeginFrameSourceOHOS::ExternalBeginFrameSourceOHOS(
     uint32_t restart_id,
@@ -125,18 +120,9 @@ void ExternalBeginFrameSourceOHOS::OnVSync(int64_t timestamp, void* data) {
     LOG(ERROR) << "OnVSync data current is nullptr";
     return;
   }
-  if (!InputSyncLock::GetInstance().HandledTouchEvent() && InputSyncLock::GetInstance().NeedWaitForInput()) {
-    userData->current_->PostTask(
-      FROM_HERE, base::BindOnce(&ExternalBeginFrameSourceOHOS::EmplaceVSyncImpl,
-      userData->weak_ptr_, timestamp, userData));
-    userData->current_->PostDelayedTask(
-      FROM_HERE, base::BindOnce(&ExternalBeginFrameSourceOHOS::TriggerVsyncImpl,
-                            userData->weak_ptr_), base::Milliseconds(VSYNC_BLOCKED_TIMEOUT));
-  } else {
-    userData->current_->PostTask(
+  userData->current_->PostTask(
       FROM_HERE, base::BindOnce(&ExternalBeginFrameSourceOHOS::OnVSyncImpl,
       userData->weak_ptr_, timestamp, userData));
-  }
 }
 
 void ExternalBeginFrameSourceOHOS::OnVSyncImpl(int64_t timestamp,
@@ -282,34 +268,11 @@ void ExternalBeginFrameSourceOHOS::SetNeedWaitForInput(bool need_wait_for_input)
 }
 
 void ExternalBeginFrameSourceOHOS::TriggerVsync() {
-  if (on_vsync_impl_task_queue_.empty()) {
-    InputSyncLock::GetInstance().SetHandledTouchEvent(true);
-    return;
-  }
-  TriggerVsyncImpl();
 }
 
 void ExternalBeginFrameSourceOHOS::TriggerVsyncImpl() {
-  TRACE_EVENT0("base", "ExternalBeginFrameSourceOHOS::TriggerVsyncImpl");
-
-  while(!on_vsync_impl_task_queue_.empty()) {
-    auto& [timestamp, userData] = on_vsync_impl_task_queue_.front();
-    if (!userData || !userData->current_) {
-      LOG(ERROR) << "OnVSync data current is nullptr";
-      continue;
-    }
-    userData->current_->PostTask(
-    FROM_HERE, base::BindOnce(&ExternalBeginFrameSourceOHOS::OnVSyncImpl,
-                              userData->weak_ptr_, timestamp, userData));
-    on_vsync_impl_task_queue_.pop_front();
-  }
 }
 
-void ExternalBeginFrameSourceOHOS::EmplaceVSyncImpl(int64_t timestamp, VSyncUserData* user_data)
-{
-  on_vsync_impl_task_queue_.emplace_back(timestamp, user_data);
-  if (on_vsync_impl_task_queue_.size() > kMaxVsyncTaskQueueSize) {
-    LOG(ERROR) << "on_vsync_impl_task_queue_.size() is " << on_vsync_impl_task_queue_.size();
-  }
+void ExternalBeginFrameSourceOHOS::EmplaceVSyncImpl(int64_t timestamp, VSyncUserData* user_data) {
 }
 }  // namespace viz

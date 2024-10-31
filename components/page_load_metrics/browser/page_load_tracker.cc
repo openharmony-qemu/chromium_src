@@ -108,6 +108,9 @@ void DispatchEventsAfterBackForwardCacheRestore(
              ->first_paint_after_back_forward_cache_restore.is_zero())) {
       observer->OnFirstPaintAfterBackForwardCacheRestoreInPage(*new_timings[i],
                                                                i);
+#ifdef OHOS_BFCACHE
+      observer->OnFirstContentfulPaintAfterBackForwardCacheRestoreInPage(*new_timings[i], i);
+#endif
     }
 
     auto request_animation_frames =

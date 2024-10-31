@@ -12,6 +12,7 @@
 #include "base/logging.h"
 #include "base/task/task_runner.h"
 #include "base/trace_event/trace_event.h"
+#include "third_party/bounds_checking_function/include/securec.h"
 
 using namespace media;
 using namespace OHOS::NWeb;
@@ -387,7 +388,11 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBuffer(
   size_t inputSize = bufferSize >= data_size ? data_size : bufferSize;
   LOG(DEBUG) << "MediaCodecDecoderBridgeImpl::QueueInputBuffer bufferSize: "
              << bufferSize << " " << data_size;
-  memcpy(buffer.addr, data, inputSize);
+  if (memcpy_s(buffer.addr, bufferSize, data, inputSize) != EOK) {
+    LOG(ERROR)
+        << "MediaCodecDecoderBridgeImpl::QueueInputBuffer memcpy failed.";
+    return DecoderAdapterCode::DECODER_ERROR;
+  } 
   DecoderAdapterCode ret = PushInbufferDec(index, inputSize, presentation_time);
 
   PopInqueueDec();

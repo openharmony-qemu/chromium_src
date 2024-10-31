@@ -19,6 +19,7 @@
 #include "base/logging.h"
 #include "base/command_line.h"
 #include "content/public/common/content_switches.h"
+#include "net/base/net_errors.h"
 #include "nweb_touch_handle_hot_zone_impl.h"
 #include "ohos_adapter_helper.h"
 
@@ -101,6 +102,8 @@ bool NWebResourceHandler::ReadStringData(void* data_out,
         std::min(bytes_to_read, static_cast<int>(data_.length() - offset_));
     if (memcpy_s(data_out, static_cast<size_t>(bytes_to_read), data_.c_str() + offset_, transfer_size) != EOK) {
       LOG(WARNING) << "intercept NWebResourceHandler::ReadStringData memcpy failed";
+      bytes_read = net::ERR_FAILED;
+      return false;
     }
     offset_ += transfer_size;
 
@@ -203,6 +206,8 @@ bool NWebResourceHandler::ReadResourceData(void* data_out,
     if (memcpy_s(data_out, static_cast<size_t>(bytes_to_read),
       dataPtr + resource_data_offset_, transfer_size) != EOK) {
       LOG(WARNING) << "intercept NWebResourceHandler::ReadResourceData memcpy failed";
+      bytes_read = net::ERR_FAILED;
+      return false;
     }
     resource_data_offset_ += transfer_size;
     bytes_read = transfer_size;

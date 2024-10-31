@@ -14,6 +14,7 @@
 #include "base/functional/callback_forward.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
+#include "base/synchronization/lock.h"
 #include "base/time/time.h"
 #include "services/device/geolocation/geolocation_provider_impl.h"
 #include "services/device/geolocation/network_location_provider.h"
@@ -119,6 +120,7 @@ class LocationArbitrator : public LocationProvider {
   // The current best estimate of our position, or `nullptr` if no estimate has
   // been received.
   mojom::GeopositionResultPtr result_;
+  base::Lock lock_;
 };
 
 // Factory functions for the various types of location provider to abstract

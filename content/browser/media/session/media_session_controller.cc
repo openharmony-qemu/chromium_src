@@ -44,10 +44,14 @@ void MediaSessionController::SetMetadata(
 bool MediaSessionController::OnPlaybackStarted() {
   is_paused_ = false;
   is_playback_in_progress_ = true;
+#if defined(OHOS_MEDIA_POLICY)
+  media_session_->SetPlayingState(true);
+#endif
   return AddOrRemovePlayer();
 }
 
 void MediaSessionController::OnSuspend(int player_id) {
+  LOG(INFO) << "MediaSessionController::OnSuspend, player_id: " << player_id;
   DCHECK_EQ(player_id_, player_id);
   // TODO(crbug.com/953645): Set triggered_by_user to true ONLY if that action
   // was actually triggered by user as this will activate the frame.
@@ -194,8 +198,15 @@ bool MediaSessionController::IsPictureInPictureAvailable(int player_id) const {
 
 void MediaSessionController::OnPlaybackPaused(bool reached_end_of_stream) {
   is_paused_ = true;
-
+#if defined(OHOS_MEDIA_POLICY)
+  media_session_->SetPlayingState(false);
+#endif
   if (reached_end_of_stream) {
+#if defined(OHOS_MEDIA_AVSESSION)
+  if (media_session_) {
+    media_session_->SetEndOfMedia(reached_end_of_stream);
+  }
+#endif // defined(OHOS_MEDIA_AVSESSION)
     is_playback_in_progress_ = false;
     AddOrRemovePlayer();
   }

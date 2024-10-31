@@ -31,6 +31,7 @@
 #include "mojo/public/cpp/bindings/pending_associated_receiver.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/size.h"
+#include "ui/gl/ohos/native_buffer_utils.h"
 
 namespace gpu {
 class ClientSharedImageInterface;
@@ -138,7 +139,7 @@ class CONTENT_EXPORT NativeTextureFactory
   // gpu::StreamTexture and returns its route_id. If this route_id is invalid
   // nullptr is returned. If the route_id is valid it returns
   // NativeTextureProxy object.
-  ScopedNativeTextureProxy CreateProxy();
+  ScopedNativeTextureProxy CreateProxy(gl::ohos::TextureOwnerMode texture_owner_mode);
 
   // Returns true if the NativeTextureFactory's channel is lost.
   bool IsLost() const;

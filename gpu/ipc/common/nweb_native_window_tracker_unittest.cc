@@ -4,7 +4,9 @@
 
 #include "build/build_config.h"
 #if BUILDFLAG(IS_OHOS)
+#define private public
 #include "nweb_native_window_tracker.h"
+#undef private
 #include "testing/gtest/include/gtest/gtest.h"
 
 namespace gpu {
@@ -207,10 +209,10 @@ TEST_F(NWebNativeWindowTrackerTest, DestroyNativeWindow_NoAddExtremeId) {
 TEST_F(NWebNativeWindowTrackerTest, DestroyNativeWindow_Add) {
   auto nativeWindowTrackerPtr = NWebNativeWindowTracker::GetInstance();
   ASSERT_NE(nativeWindowTrackerPtr, nullptr);
-
+  nativeWindowTrackerPtr->next_native_window_id_=1;
   auto window = VoidClassTest().Get();
   int32_t native_window_id = nativeWindowTrackerPtr->AddNativeWindow(window);
-  EXPECT_EQ(native_window_id, 4);
+  EXPECT_EQ(native_window_id, 1);
   nativeWindowTrackerPtr->DestroyNativeWindow(native_window_id);
   void* nativeWindow =
       nativeWindowTrackerPtr->GetNativeWindow(native_window_id);
@@ -252,10 +254,10 @@ TEST_F(NWebNativeWindowTrackerTest,
 TEST_F(NWebNativeWindowTrackerTest, GetNativeWindow001) {
   auto nativeWindowTrackerPtr = NWebNativeWindowTracker::GetInstance();
   ASSERT_NE(nativeWindowTrackerPtr, nullptr);
-
+  nativeWindowTrackerPtr->next_native_window_id_=1;
   auto window = VoidClassTest().Get();
   int32_t native_window_id = nativeWindowTrackerPtr->AddNativeWindow(window);
-  EXPECT_EQ(native_window_id, 5);
+  ASSERT_EQ(native_window_id,1);
   EXPECT_EQ(nativeWindowTrackerPtr->g_browser_client_, nullptr);
 }
 

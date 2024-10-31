@@ -13,6 +13,7 @@
 #include "gpu/command_buffer/service/decoder_context.h"
 #include "gpu/command_buffer/service/feature_info.h"
 #include "gpu/command_buffer/service/ohos/native_image_texture_gl_owner.h"
+#include "gpu/command_buffer/service/ohos/same_layer_native_buffer_gl_owner.h"
 #include "gpu/command_buffer/service/texture_base.h"
 #include "ui/gl/scoped_binders.h"
 #include "ui/gl/scoped_make_current.h"
@@ -80,10 +81,19 @@ NativeImageTextureOwner::~NativeImageTextureOwner() {
 // static
 scoped_refptr<NativeImageTextureOwner> NativeImageTextureOwner::Create(
     scoped_refptr<SharedContextState> context_state,
-    Mode mode) {
+    gl::ohos::TextureOwnerMode mode,
+    scoped_refptr<RefCountedLock> drdc_lock) {
   auto texture = CreateTexture(context_state.get());
-  return new NativeImageTextureGlOwner(std::move(texture),
-                                       std::move(context_state));
+  switch (mode) {
+    case gl::ohos::TextureOwnerMode::kSameLayerNativeBuffer:
+      return new SameLayerNativeBufferGLOwner(
+          std::move(texture), std::move(context_state), std::move(drdc_lock));
+    case gl::ohos::TextureOwnerMode::kNativeImageTexture:
+      return new NativeImageTextureGlOwner(std::move(texture),
+                                           std::move(context_state));
+    default:
+      return nullptr;
+  }
 }
 
 GLuint NativeImageTextureOwner::GetTextureId() const {

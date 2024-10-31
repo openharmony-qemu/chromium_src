@@ -228,7 +228,7 @@ void MaybeAppendManagePasswordsEntry(
 
 #if defined(OHOS_EX_PASSWORD)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kForBrowser)) {
+          switches::kEnableNwebExPassword)) {
     return;
   }
 #endif

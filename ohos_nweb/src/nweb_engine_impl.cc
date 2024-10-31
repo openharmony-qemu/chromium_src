@@ -116,6 +116,10 @@ void NWebEngineImpl::ClearIntelligentTrackingPreventionBypassingList() {
 #endif
 }
 
+std::string NWebEngineImpl::GetDefaultUserAgent() {
+  return NWebImpl::GetDefaultUserAgent();
+}
+
 void NWebEngineImpl::PauseAllTimers() {
   NWebImpl::PauseAllTimers();
 }

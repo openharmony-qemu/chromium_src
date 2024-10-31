@@ -5852,4 +5852,24 @@ void RenderProcessHostImpl::RemoveFromSharedRenderProcessMap(
 }
 #endif
 
+#ifdef OHOS_I18N
+void RenderProcessHostImpl::NotifyLocaleChanged(
+    const std::string& update_locale) {
+  GetRendererInterface()->NotifyLocaleChanged(update_locale);
+}
+
+// static
+void RenderProcessHost::OnLocaleChangedToRenderer(
+    const std::string& update_locale) {
+  iterator iter(AllHostsIterator());
+  while (!iter.IsAtEnd()) {
+    RenderProcessHostImpl* host =
+        static_cast<RenderProcessHostImpl*>(iter.GetCurrentValue());
+    if (host && host->IsInitializedAndNotDead()) {
+      host->NotifyLocaleChanged(update_locale);
+    }
+    iter.Advance();
+  }
+}
+#endif
 }  // namespace content

@@ -24,7 +24,6 @@
 #include "gpu/GLES2/gl2extchromium.h"
 #include "gpu/command_buffer/client/shared_image_interface.h"
 #include "gpu/command_buffer/common/shared_image_usage.h"
-#include "base/task/bind_post_task.h"
 
 namespace {
 // Non-member function to allow it to run even after this class is deleted.
@@ -41,9 +40,11 @@ namespace content {
 
 NativeTextureWrapperImpl::NativeTextureWrapperImpl(
     bool enable_texture_copy,
+    gl::ohos::TextureOwnerMode texture_owner_mode,
     scoped_refptr<NativeTextureFactory> factory,
     scoped_refptr<base::SingleThreadTaskRunner> main_task_runner)
     : enable_texture_copy_(enable_texture_copy),
+      texture_owner_mode_(texture_owner_mode),
       factory_(factory),
       main_task_runner_(main_task_runner) {}
 
@@ -60,10 +61,11 @@ NativeTextureWrapperImpl::~NativeTextureWrapperImpl() {
 
 media::ScopedNativeTextureWrapper NativeTextureWrapperImpl::Create(
     bool enable_texture_copy,
+    gl::ohos::TextureOwnerMode texture_owner_mode,
     scoped_refptr<NativeTextureFactory> factory,
     scoped_refptr<base::SingleThreadTaskRunner> main_task_runner) {
   return media::ScopedNativeTextureWrapper(new NativeTextureWrapperImpl(
-      enable_texture_copy, factory, main_task_runner));
+      enable_texture_copy, texture_owner_mode, factory, main_task_runner));
 }
 
 scoped_refptr<media::VideoFrame> NativeTextureWrapperImpl::GetCurrentFrame() {
@@ -176,7 +178,7 @@ void NativeTextureWrapperImpl::InitializeOnMainThread(
     return;
   }
 
-  native_texture_proxy_ = factory_->CreateProxy();
+  native_texture_proxy_ = factory_->CreateProxy(texture_owner_mode_);
   if (!native_texture_proxy_) {
     std::move(init_cb).Run(false);
     return;

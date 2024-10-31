@@ -15,6 +15,7 @@
 namespace media {
 
 constexpr int QUEUE_SIZE = 3;
+constexpr int MAX_TOLERABLE_SEEK_ERROR = 300;
 static constexpr int PLAYER_INIT_OK = 0;
 static constexpr int PLAYER_INIT_ERROR = -1;
 
@@ -144,7 +145,9 @@ void OHOSMediaPlayerBridge::StartInternal() {
 
 void OHOSMediaPlayerBridge::Pause() {
   if ((player_ && player_state_ != OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_STARTED &&
-       player_state_ != OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_PLAYBACK_COMPLETE) || pending_play_) {
+                  player_state_ != OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_PAUSED &&
+                  player_state_ != OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_STOPPED &&
+                  player_state_ != OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_PLAYBACK_COMPLETE) || pending_play_) {
     LOG(INFO) << "OHOSMediaPlayerBridge Pause when perpared!!";
     pause_when_prepared_ = true;
   }
@@ -166,11 +169,6 @@ void OHOSMediaPlayerBridge::SeekTo(base::TimeDelta time) {
   seeking_back_complete_ = false;
 
   LOG(INFO) << "OHOSMediaPlayerBridge::SeekTo time=" << time.InMilliseconds();
-  if (player_state_ == OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_PLAYBACK_COMPLETE) {
-    seeking_on_playback_complete_ = true;
-    return;
-  }
-
   if (!prepared_) {
     should_seek_on_prepare_ = true;
     return;
@@ -237,7 +235,12 @@ base::TimeDelta OHOSMediaPlayerBridge::GetMediaTime() {
   }
 
   int32_t time = -1;
-  (void)player_->GetCurrentTime(time);
+  int32_t ret = player_->GetCurrentTime(time);
+  if (ret == 0 && time == -1) {
+    //if is livestream, return system time
+    auto system_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
+    return base::Milliseconds(system_time);
+  }
   return base::Milliseconds(time);
 }
 
@@ -251,16 +254,25 @@ void OHOSMediaPlayerBridge::OnSeekBack(base::TimeDelta extra_time) {
   if (!player_ || pending_seek_ == base::Milliseconds(0)) {
     return;
   }
+  if (!seek_complete_) {
+    int32_t time = -1;
+    (void)player_->GetCurrentTime(time);
+    recording_seek_ = base::Milliseconds(time);
+    return;
+  }
   if (seeking_back_complete_) {
     return;
   }
 
-  if ((pending_seek_ - extra_time_) > base::Milliseconds(1)) {
-    seeking_back_complete_ = true;
+  //When processing seek requests, there may be a maximum error of 300ms between the nearest keyframe 
+  //found by mediaplayer and the time point of seekTo
+  if ((recording_seek_ - extra_time_) > base::Milliseconds(MAX_TOLERABLE_SEEK_ERROR)) {
     if (client_) {
       client_->OnPlayerSeekBack(extra_time_);
+      seeking_back_complete_ = true;
     }
-    LOG(INFO) << "OHOSMediaPlayerBridge::OnSeekBack() back_time=" << extra_time_;
+    LOG(INFO) << "OHOSMediaPlayerBridge::OnSeekBack() recording_time= " << recording_seek_;
+    LOG(INFO) << "OHOSMediaPlayerBridge::OnSeekBack() back_time= " << extra_time_;
   }
 }
 

@@ -19,6 +19,18 @@
 #undef private
 #undef protected
 
+#if defined(OHOS_UNITTESTS)
+#define private public
+#include "base/message_loop/message_pump.h"
+#undef private
+#include <memory>
+#include <mutex>
+#include "third_party/ohos_ndk/includes/ohos_adapter/event_handler_adapter.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_web_data_base_adapter.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/pasteboard_client_adapter.h"
+#endif // OHOS_UNITTESTS
+
 #include "base/message_loop/message_pump_type.h"
 #include "base/run_loop.h"
 #include "base/test/task_environment.h"
@@ -54,6 +66,23 @@ class MockMessagePumpDelegate : public MessagePump::Delegate {
   MOCK_METHOD(MessagePump::Delegate::NextWorkInfo, DoWork, (), (override));
   MOCK_METHOD(bool, DoIdleWork, (), (override));
 };
+
+#if defined(OHOS_UNITTESTS)
+class MockEventHandlerAdapter : public OHOS::NWeb::EventHandlerAdapter {
+ public:
+  MOCK_METHOD(bool,
+              AddFileDescriptorListener,
+              (int32_t fileDescriptor,
+               uint32_t events,
+               const std::shared_ptr<OHOS::NWeb::EventHandlerFDListenerAdapter>
+                   listener),
+              (override));
+  MOCK_METHOD(void,
+              RemoveFileDescriptorListener,
+              (int32_t fileDescriptor),
+              (override));
+};
+#endif // OHOS_UNITTESTS
 
 class MessagePumpForUITest : public ::testing::Test {
  protected:
@@ -544,4 +573,54 @@ TEST_F(MessagePumpForUITest, DeConstructor) {
   EXPECT_EQ(message_pump_for_ui_, nullptr);
 }
 
+#if defined(OHOS_UNITTESTS)
+TEST_F(MessagePumpForUITest, MessagePumpForUI_EventNonDelayedFd) {
+  std::unique_ptr<OHOS::NWeb::EventHandlerAdapter> ohos_event_handler_adapter_;
+  base::MessagePumpForUI message_ui;
+  EXPECT_NE(message_ui.non_delayed_fd_, -1);
+}
+
+TEST_F(MessagePumpForUITest, MessagePumpForUI_EventDelayedFd) {
+  std::unique_ptr<OHOS::NWeb::EventHandlerAdapter> ohos_event_handler_adapter_ =
+      std::make_unique<MockEventHandlerAdapter>();
+  base::MessagePumpForUI message_ui;
+  EXPECT_NE(message_ui.delayed_fd_, -1);
+}
+
+TEST_F(MessagePumpForUITest, MessagePumpForUI_IfAllFalse) {
+  std::unique_ptr<OHOS::NWeb::EventHandlerAdapter> ohos_event_handler_adapter_ =
+      std::make_unique<MockEventHandlerAdapter>();
+  base::MessagePumpForUI message_ui;
+  message_ui.non_delayed_fd_ = -1;
+  message_ui.delayed_fd_ = -1;
+  auto ohos_listener = std::make_shared<MockEventHandlerAdapter>();
+  message_ui.ohos_event_handler_adapter_->AddFileDescriptorListener(
+      0, OHOS::NWeb::EventHandlerAdapter::INPUT_EVENT,
+      message_ui.ohos_listener);
+  message_ui.ohos_event_handler_adapter_->AddFileDescriptorListener(
+      0, OHOS::NWeb::EventHandlerAdapter::INPUT_EVENT,
+      message_ui.ohos_listener);
+  EXPECT_TRUE(
+      !message_ui.ohos_event_handler_adapter_->AddFileDescriptorListener(
+          0, OHOS::NWeb::EventHandlerAdapter::INPUT_EVENT,
+          message_ui.ohos_listener));
+  EXPECT_TRUE(
+      !message_ui.ohos_event_handler_adapter_->AddFileDescriptorListener(
+          0, OHOS::NWeb::EventHandlerAdapter::INPUT_EVENT,
+          message_ui.ohos_listener));
+}
+
+TEST_F(MessagePumpForUITest, OnDelayedLooperCallback) {
+  std::unique_ptr<OHOS::NWeb::EventHandlerAdapter> ohos_event_handler_adapter_;
+  base::MessagePumpForUI message_ui;
+  errno = EAGAIN;
+  message_ui.non_delayed_fd_ = -1;
+  message_ui.delayed_fd_ = -1;
+  MockMessagePumpDelegate mock_delegate_;
+  message_ui.delegate_ = &mock_delegate_;
+  EXPECT_CALL(mock_delegate_, DoWork).Times(testing::AtLeast(1));
+  message_ui.OnDelayedLooperCallback();
+  EXPECT_TRUE(message_ui.delegate_);
+}
+#endif // OHOS_UNITTESTS
 }  // namespace base

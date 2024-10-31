@@ -159,13 +159,14 @@ void NetConnCallbackImpl::ConnectionTypeChangedTo(
     LOG(INFO) << "ohos_network ConnectionTypeChangedTo, net_id_ " << net_id_
               << ", net_id " << net_id << ", type_ " << (int)type_ << ", type "
               << (int)type;
+    network_change_notifier_posix_->OnIPAddressChanged();
     network_change_notifier_posix_->OnConnectionChanged(
         ConvertOhosConnTypeToNetBaseConnType(type));
   }
 
   if (subtype_ != subtype) {
     LOG(INFO) << "ohos_network ConnectionTypeChangedTo, net_id_ " << net_id_
-              << "net_id " << net_id << ", subtype_ " << (int)subtype_
+              << ", net_id " << net_id << ", subtype_ " << (int)subtype_
               << ", subtype " << (int)subtype;
     network_change_notifier_posix_->OnConnectionSubtypeChanged(
         ConvertOhosConnTypeToNetBaseConnType(type),

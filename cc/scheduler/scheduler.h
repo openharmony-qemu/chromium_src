@@ -88,6 +88,7 @@ class SchedulerClient {
   virtual void ScheduledActionBeginMainFrameNotExpectedUntil(
       base::TimeTicks time) = 0;
   virtual void FrameIntervalUpdated(base::TimeDelta interval) = 0;
+  virtual void OnBeginImplFrameDeadline() = 0;
 
   // Functions used for reporting animation targeting UMA, crbug.com/758439.
   virtual bool HasInvalidationAnimation() const = 0;
@@ -251,6 +252,9 @@ class CC_EXPORT Scheduler : public viz::BeginFrameObserverBase {
   // updates of new layer tree state.
   void SetDeferBeginMainFrame(bool defer_begin_main_frame);
 
+  void SetDeferInvalidationForFastMainFrame(
+           bool defer_invalidation_for_fast_main_frame);
+
   // Pausing rendering prevents new main frames and impl-side invalidations from
   // being triggered. Impl frames are drawn until any in-flight updates from the
   // main thread are drawn.
@@ -265,6 +269,14 @@ class CC_EXPORT Scheduler : public viz::BeginFrameObserverBase {
       perfetto::protos::pbzero::ChromeCompositorSchedulerState* state) const;
 
   void SetVideoNeedsBeginFrames(bool video_needs_begin_frames);
+
+  // When `SetIsScrolling` notifies of a scroll, and when
+  // `SetWaitingForScrollEvent` notifies that we do not yet have input to
+  // process, we will prioritize BeginImplFrameDeadlineMode::SCROLL over that of
+  // BeginImplFrameDeadlineMode::IMMEDIATE, BeginImplFrameDeadlineMode::REGULAR,
+  // and BeginImplFrameDeadlineMode::LATE.
+  void SetIsScrolling(bool is_scrolling);
+  void SetWaitingForScrollEvent(bool waiting_for_scroll_event);
 
   const viz::BeginFrameSource* begin_frame_source() const {
     return begin_frame_source_;

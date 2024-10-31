@@ -549,7 +549,8 @@ blink::WebNativeBridge* MediaFactory::CreateWebNativeBridge(
   auto native_factory = std::make_unique<NativeRendererClientFactory>(
       render_thread->compositor_task_runner(),
       base::BindRepeating(
-          &NativeTextureWrapperImpl::Create, true /*enable_texture_copy*/,
+          &NativeTextureWrapperImpl::Create, false /*enable_texture_copy*/,
+          gl::ohos::TextureOwnerMode::kSameLayerNativeBuffer,
           render_thread->GetNativeTexureFactory(),
           render_frame_->GetTaskRunner(blink::TaskType::kInternalMedia)));
 
@@ -648,10 +649,10 @@ MediaFactory::CreateRendererFactorySelector(
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
   auto ohos_custom_media_player_factory =
       std::make_unique<OHOSCustomMediaPlayerRendererClientFactory>(
-          render_thread->compositor_task_runner(),
-          CreateMojoRendererFactory(),
+          render_thread->compositor_task_runner(), CreateMojoRendererFactory(),
           base::BindRepeating(
               &NativeTextureWrapperImpl::Create, true,
+              gl::ohos::TextureOwnerMode::kNativeImageTexture,
               render_thread->GetNativeTexureFactory(),
               render_frame_->GetTaskRunner(blink::TaskType::kInternalMedia)));
   factory_selector->AddFactory(RendererType::kOHOSCustomMediaPlayer,

@@ -192,7 +192,7 @@ bool LocationArbitrator::IsNewPositionBetter(
     bool from_same_provider) const {
   // Updates location_info if it's better than what we currently have,
   // or if it's a newer update from the same provider.
-  if (old_result.is_error()) {
+  if (old_result.is_error() || !old_result.get_position()) {
     // Older location wasn't locked.
     return true;
   }

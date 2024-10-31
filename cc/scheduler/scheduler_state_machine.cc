@@ -71,6 +71,8 @@ const char* SchedulerStateMachine::BeginImplFrameDeadlineModeToString(
       return "BeginImplFrameDeadlineMode::NONE";
     case BeginImplFrameDeadlineMode::IMMEDIATE:
       return "BeginImplFrameDeadlineMode::IMMEDIATE";
+    case BeginImplFrameDeadlineMode::WAIT_FOR_SCROLL:
+      return "BeginImplFrameDeadlineMode::WAIT_FOR_SCROLL";
     case BeginImplFrameDeadlineMode::REGULAR:
       return "BeginImplFrameDeadlineMode::REGULAR";
     case BeginImplFrameDeadlineMode::LATE:
@@ -93,6 +95,8 @@ perfetto::protos::pbzero::ChromeCompositorSchedulerState::
       return pbzeroSchedulerState::DEADLINE_MODE_NONE;
     case BeginImplFrameDeadlineMode::IMMEDIATE:
       return pbzeroSchedulerState::DEADLINE_MODE_IMMEDIATE;
+    case BeginImplFrameDeadlineMode::WAIT_FOR_SCROLL:
+      return pbzeroSchedulerState::DEADLINE_MODE_WAIT_FOR_SCROLL;
     case BeginImplFrameDeadlineMode::REGULAR:
       return pbzeroSchedulerState::DEADLINE_MODE_REGULAR;
     case BeginImplFrameDeadlineMode::LATE:
@@ -618,6 +622,13 @@ bool SchedulerStateMachine::ShouldSendBeginMainFrame() const {
   if (IsDrawThrottled() && !just_submitted_in_deadline)
     return false;
 
+  // We should wait for scroll events to arrive before sending the
+  // BeginMainFrame. So that the most up to date scroll positions are available
+  // for main-thread effects.
+  if (ShouldWaitForScrollEvent()) {
+    return false;
+  }
+
   return true;
 }
 
@@ -783,9 +794,8 @@ bool SchedulerStateMachine::ShouldDeferInvalidatingForMainFrame() const {
 
   // If we prefer to invalidate over waiting on the main frame, do the
   // invalidation now.
-  // comment out here to avoid JD flickering
-  // if (!should_defer_invalidation_for_fast_main_frame_)
-  //   return false;
+  if (!should_defer_invalidation_for_fast_main_frame_)
+    return false;
 
   // If there is a request for a main frame, then this could either be a
   // request that we need to respond to in this impl frame or its possible the
@@ -1284,6 +1294,7 @@ void SchedulerStateMachine::OnBeginImplFrame(const viz::BeginFrameId& frame_id,
   did_commit_during_frame_ = false;
   did_invalidate_layer_tree_frame_sink_ = false;
   did_perform_impl_side_invalidation_ = false;
+  waiting_for_scroll_event_ = false;
 }
 
 void SchedulerStateMachine::OnBeginImplFrameDeadline() {
@@ -1324,6 +1335,10 @@ SchedulerStateMachine::CurrentBeginImplFrameDeadlineMode() const {
     // We do not want to wait for a deadline because we're waiting for full
     // pipeline to be flushed for headless.
     return BeginImplFrameDeadlineMode::BLOCKED;
+  } else if (ShouldWaitForScrollEvent()) {
+    // We are scrolling but have not received a scroll event for this begin
+    // frame. We want to wait before attempting to draw.
+    return BeginImplFrameDeadlineMode::WAIT_FOR_SCROLL;
   } else if (ShouldTriggerBeginImplFrameDeadlineImmediately()) {
     // We are ready to draw a new active tree immediately because there's no
     // commit expected or we're prioritizing active tree latency.
@@ -1337,6 +1352,23 @@ SchedulerStateMachine::CurrentBeginImplFrameDeadlineMode() const {
     // waiting for a new active tree.
     return BeginImplFrameDeadlineMode::LATE;
   }
+}
+
+bool SchedulerStateMachine::ShouldWaitForScrollEvent() const {
+  // We only apply this mode during frame production
+  if (begin_impl_frame_state_ != BeginImplFrameState::INSIDE_BEGIN_FRAME) {
+    return false;
+  }
+  // Once the deadline has been triggered, we should stop waiting.
+  if (begin_impl_frame_state_ == BeginImplFrameState::INSIDE_DEADLINE) {
+    return false;
+  }
+  // We are scrolling but have not received a scroll event for this begin frame.
+  if (settings_.scroll_deadline_mode_enabled && is_scrolling_ &&
+      waiting_for_scroll_event_) {
+    return true;
+  }
+  return false;
 }
 
 bool SchedulerStateMachine::ShouldTriggerBeginImplFrameDeadlineImmediately()

@@ -280,8 +280,22 @@ CONTENT_EXPORT extern const char kOhosAppApiVersion[];
 
 #if BUILDFLAG(IS_OHOS)
 CONTENT_EXPORT extern const char kEnableMultiRendererProcess[];
-CONTENT_EXPORT extern const char kForBrowser[];
+CONTENT_EXPORT extern const char kEnableLoggerReport[];
+CONTENT_EXPORT extern const char kEnableMediaAvsession[];
+CONTENT_EXPORT extern const char kEnableNwebEx[];
+CONTENT_EXPORT extern const char kEnableNwebExReportCrashpad[];
+CONTENT_EXPORT extern const char kEnableNwebExTopControls[];
+CONTENT_EXPORT extern const char kEnableNwebExFreeCopy[];
+CONTENT_EXPORT extern const char kEnableNwebExPermission[];
+CONTENT_EXPORT extern const char kEnableNwebExHttpDnsFallback[];
+CONTENT_EXPORT extern const char kEnableNwebExExceptionList[];
+CONTENT_EXPORT extern const char kEnableNwebExPassword[];
+CONTENT_EXPORT extern const char kEnableNwebExUa[];
+CONTENT_EXPORT extern const char kEnableNwebExGetZoomLevel[];
+CONTENT_EXPORT extern const char kEnableNwebExNetworkLoad[];
+CONTENT_EXPORT extern const char kEnableNwebExBlankTargetPopup_intercept[];
 CONTENT_EXPORT extern const char kOhosEnableDrDc[];
+CONTENT_EXPORT extern const char kEnableNwebExDownload[];
 CONTENT_EXPORT extern const char kOhosHanceSurface[];
 CONTENT_EXPORT extern const char kOhosDisableTouchEvent[];
 CONTENT_EXPORT extern const char kPasswordWaitUsername[];

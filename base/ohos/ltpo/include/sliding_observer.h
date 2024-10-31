@@ -20,13 +20,13 @@
 #include <vector>
 #include "adapter_base.h"
 #include "system_properties_adapter.h"
-
+#include "base/ohos/ltpo/include/ltpo_strategy.h"
 namespace base {
 namespace ohos {
 // dynamic frame rate
 class SlidingObserver {
 public:
-  SlidingObserver() = default;
+  SlidingObserver();
   ~SlidingObserver();
 
   SlidingObserver(const SlidingObserver&) = delete;
@@ -34,7 +34,6 @@ public:
 
   static SlidingObserver& GetInstance();
 
-  void Init();
   void StartSliding();
   int32_t StopSliding();
   void StartFling();
@@ -63,6 +62,7 @@ private:
   bool is_pc_ {false};
   bool is_ltpo_app_ {false};
   bool is_web_list_fling_ {false};
+  LTPOStrategy strategy_ {LTPOStrategy::DISABLED};
 };
 }  // namespace ohos
 }  // namespace base

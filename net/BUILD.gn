@@ -1238,7 +1238,7 @@ component("net") {
     ]
   }
 
-  if (is_chromeos) {
+  if (is_chromeos || (is_ohos && defined(ohos_file_upload) && ohos_file_upload)) {
     deps += [ "//third_party/xdg_shared_mime_info" ]
   }
 

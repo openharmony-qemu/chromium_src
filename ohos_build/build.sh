@@ -228,7 +228,7 @@ if [ $buildccache = 1 ]; then
   if [ $buildcount = 0 ]; then
     buildcount=64
   fi
-  GN_ARGS="cc_wrapper=\"ccache\" clang_use_chrome_plugins=false linux_use_bundled_binutils=false"
+  GN_ARGS="cc_wrapper=\"ccache\" clang_use_chrome_plugins=false"
   export CCACHE_CPP2=yes
 fi
 
@@ -294,8 +294,7 @@ if [ ${with_nweb_ex} -eq 1 -a ${artifact_mode} -eq 1 ]; then
     exit 1
   fi
   buildargs="${buildargs}
-    ohos_nweb_ex_config_name=\"//${build_dir}${BUILD_CONFIG_NAME}\"
-    "
+    ohos_nweb_ex_config_name=\"//${build_dir}${BUILD_CONFIG_NAME}\""
 else
   echo "ROOT_DIR ${ROOT_DIR}"
   echo "build_dir ${build_dir}"
@@ -326,8 +325,7 @@ else
     exit 1
   fi
   buildargs="${buildargs}
-    ohos_nweb_ex_config_name=\"//${build_dir}${BUILD_CONFIG_NAME}\"
-    "
+    ohos_nweb_ex_config_name=\"//${build_dir}${BUILD_CONFIG_NAME}\""
 fi
 
 cd src
@@ -337,10 +335,12 @@ time_start_for_build=$(date +%s)
 time_start_for_gn=$time_start_for_build
 
 if [ $buildgn = 1 ]; then
-  echo "generating args list: $buildargs $GN_ARGS"
+  echo -e "generating args list: $buildargs \n  $GN_ARGS"
   third_party/depot_tools/gn gen $build_dir --export-compile-commands --args="$buildargs $buildarg_cpu $buildarg_musl $build_sysroot $build_product_name $is_heif_support $GN_ARGS symbol_level=$SYMBOL_LEVEL"
 fi
 time_end_for_gn=$(date +%s)
+
+echo -e "\nBuild Directory: $build_dir \nBuild Targets: ${build_target} \n"
 
 third_party/depot_tools/ninja -C $build_dir -j$buildcount ${build_target}
 time_end_for_build=$(date +%s)

@@ -335,7 +335,7 @@ BackForwardCacheTestDelegate* g_bfcache_disabled_test_observer = nullptr;
 void RestoreBrowserControlsState(RenderFrameHostImpl* cached_rfh) {
 #ifdef OHOS_EX_TOPCONTROLS
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kForBrowser)) {
+          switches::kEnableNwebExTopControls)) {
     return;
   }
 #endif

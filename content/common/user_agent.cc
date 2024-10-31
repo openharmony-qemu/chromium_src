@@ -36,6 +36,8 @@
 #include "content/public/common/content_switches.h"
 #endif
 
+#include "third_party/bounds_checking_function/include/securec.h"
+
 namespace content {
 
 namespace {
@@ -228,7 +230,7 @@ std::string GetDistVersion() {
   int versionPartTwo;
   int versionPartthree;
   std::string os_version = base::ohos::OsVersion();
-  int ret = sscanf(os_version.c_str(), "%d.%d.%d",
+  int ret = sscanf_s(os_version.c_str(), "%d.%d.%d",
       &versionPartOne, &versionPartTwo, &versionPartthree);
   if (ret <= 0){
     return dist_version;

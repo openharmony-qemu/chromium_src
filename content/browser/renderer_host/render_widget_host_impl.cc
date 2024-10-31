@@ -373,6 +373,12 @@ class UnboundWidgetInputHandler : public blink::mojom::WidgetInputHandler {
   void SetGestureEventResult(bool result) override {
     DLOG(WARNING) << "Input request on unbound interface";
   }
+  void SetNativeEmbedMode(bool result) override {
+    DLOG(WARNING) << "Input request on unbound interface";
+  }
+  void ScrollBy(float delta_x, float delta_y) override {
+    DLOG(WARNING) << "Input request on unbound interface";
+  }
 #endif
 };
 
@@ -1722,17 +1728,6 @@ void RenderWidgetHostImpl::ForwardGestureEventWithLatencyInfo(
       gesture_with_latency.event, &gesture_with_latency.latency,
       &gesture_with_latency.event.GetModifiableEventLatencyMetadata());
   input_router_->SendGestureEvent(gesture_with_latency);
-
-#if BUILDFLAG(IS_OHOS)
-  if (send_internal_begin_frame && gesture_event.GetType() == blink::WebInputEvent::Type::kGestureScrollUpdate &&
-      view_) {
-    TRACE_EVENT0("input", "RenderWidgetHostImpl::SendInternalBeginFrame");
-    send_internal_begin_frame = false;
-    view_->SendInternalBeginFrame();
-  } else if (gesture_event.GetType() == blink::WebInputEvent::Type::kGestureScrollEnd) {
-    send_internal_begin_frame = true;
-  }
-#endif
 }
 
 void RenderWidgetHostImpl::ForwardTouchEventWithLatencyInfo(

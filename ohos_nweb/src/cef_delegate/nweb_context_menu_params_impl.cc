@@ -406,4 +406,10 @@ std::string NWebContextMenuParamsImpl::GetSelectionText() {
   return std::string();
 }
 
+void NWebContextMenuParamsImpl::GetImageRect(int& x, int& y, int& w, int& h) {
+  if (params_ != nullptr) {
+    params_->GetImageRect(x, y, w, h);
+  }
+}
+
 }  // namespace OHOS::NWeb

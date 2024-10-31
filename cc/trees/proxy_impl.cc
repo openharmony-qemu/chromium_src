@@ -230,6 +230,13 @@ void ProxyImpl::SetDeferBeginMainFrameFromImpl(bool defer_begin_main_frame) {
     scheduler_->SetDeferBeginMainFrame(ShouldDeferBeginMainFrame());
 }
 
+void ProxyImpl::SetDeferInvalidationForFastMainFrameFromImpl(
+                    bool defer_invalidation_for_fast_main_frame) {
+  DCHECK(IsImplThread());
+  scheduler_->SetDeferInvalidationForFastMainFrame(
+                  defer_invalidation_for_fast_main_frame);
+}
+
 void ProxyImpl::SetNeedsRedrawOnImpl(const gfx::Rect& damage_rect) {
   DCHECK(IsImplThread());
   host_impl_->SetViewportDamage(damage_rect);
@@ -328,6 +335,14 @@ bool ProxyImpl::IsInSynchronousComposite() const {
 void ProxyImpl::FrameSinksToThrottleUpdated(
     const base::flat_set<viz::FrameSinkId>& ids) {
   NOTREACHED();
+}
+
+void ProxyImpl::SetHasActiveThreadedScroll(bool is_scrolling) {
+  scheduler_->SetIsScrolling(is_scrolling);
+}
+
+void ProxyImpl::SetWaitingForScrollEvent(bool waiting_for_scroll_event) {
+  scheduler_->SetWaitingForScrollEvent(waiting_for_scroll_event);
 }
 
 void ProxyImpl::NotifyReadyToCommitOnImpl(
@@ -918,6 +933,11 @@ void ProxyImpl::ScheduledActionBeginMainFrameNotExpectedUntil(
   MainThreadTaskRunner()->PostTask(
       FROM_HERE, base::BindOnce(&ProxyMain::BeginMainFrameNotExpectedUntil,
                                 proxy_main_weak_ptr_, time));
+}
+
+void ProxyImpl::OnBeginImplFrameDeadline() {
+  DCHECK(IsImplThread());
+  host_impl_->OnBeginImplFrameDeadline();
 }
 
 DrawResult ProxyImpl::DrawInternal(bool forced_draw) {

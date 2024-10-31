@@ -114,11 +114,12 @@ bool TryRegisterOverlayStateObserver(
 int32_t TryCreateNativeTexture(
     base::WeakPtr<GpuChannel> channel,
     int32_t native_id,
+    gl::ohos::TextureOwnerMode texture_owner_mode,
     mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver) {
   if (!channel) {
     return -1;
   }
-  channel->CreateNativeTexture(native_id, std::move(receiver));
+  channel->CreateNativeTexture(native_id, texture_owner_mode, std::move(receiver));
   return channel->current_native_embed_id(native_id);
 }
 #endif
@@ -201,6 +202,7 @@ class GPU_IPC_SERVICE_EXPORT GpuChannelMessageFilter
 #if BUILDFLAG(IS_OHOS)
   void CreateNativeTexture(
       int32_t native_id,
+      int32_t texture_owner_mode,
       mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver,
       CreateNativeTextureCallback callback) override;
 #endif
@@ -521,6 +523,7 @@ void GpuChannelMessageFilter::RegisterOverlayStateObserver(
 #if BUILDFLAG(IS_OHOS)
 void GpuChannelMessageFilter::CreateNativeTexture(
     int32_t native_id,
+    int32_t texture_owner_mode,
     mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver,
     CreateNativeTextureCallback callback) {
   base::AutoLock auto_lock(gpu_channel_lock_);
@@ -532,7 +535,8 @@ void GpuChannelMessageFilter::CreateNativeTexture(
   main_task_runner_->PostTaskAndReplyWithResult(
       FROM_HERE,
       base::BindOnce(&TryCreateNativeTexture, gpu_channel_->AsWeakPtr(),
-                     native_id, std::move(receiver)),
+                     native_id, (gl::ohos::TextureOwnerMode)texture_owner_mode,
+                     std::move(receiver)),
       std::move(callback));
 }
 #endif
@@ -1104,6 +1108,7 @@ void GpuChannel::RegisterSysmemBufferCollection(
 #if BUILDFLAG(IS_OHOS)
 int32_t GpuChannel::CreateNativeTexture(
     int32_t native_id,
+    gl::ohos::TextureOwnerMode texture_owner_mode,
     mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver) {
   auto found = native_textures_.find(native_id);
   if (found != native_textures_.end()) {
@@ -1112,7 +1117,7 @@ int32_t GpuChannel::CreateNativeTexture(
     return -1;
   }
   scoped_refptr<StreamTexture> native_texture =
-      StreamTexture::Create(this, native_id, std::move(receiver));
+      StreamTexture::Create(this, native_id, texture_owner_mode, std::move(receiver));
 
   if (!native_texture) {
     return -1;

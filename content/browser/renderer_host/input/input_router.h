@@ -114,6 +114,10 @@ class InputRouter {
 
 #if BUILDFLAG(IS_OHOS)
   virtual void SetGestureEventResult(bool result) = 0;
+
+  virtual void SetNativeEmbedMode(bool flag) = 0;
+
+  virtual void ScrollBy(float delta_x, float delta_y) = 0;
 #endif
 };
 

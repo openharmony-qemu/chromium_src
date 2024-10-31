@@ -106,6 +106,11 @@ class AssertPageLoadMetricsObserver final
   void OnFirstPaintAfterBackForwardCacheRestoreInPage(
       const page_load_metrics::mojom::BackForwardCacheTiming& timing,
       size_t index) override;
+#ifdef OHOS_BFCACHE
+  void OnFirstContentfulPaintAfterBackForwardCacheRestoreInPage(
+      const page_load_metrics::mojom::BackForwardCacheTiming& timing,
+      size_t index) override;
+#endif
   void OnFirstInputAfterBackForwardCacheRestoreInPage(
       const page_load_metrics::mojom::BackForwardCacheTiming& timing,
       size_t index) override;

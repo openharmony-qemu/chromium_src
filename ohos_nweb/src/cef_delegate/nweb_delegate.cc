@@ -84,6 +84,11 @@
 #if OHOS_I18N
 #include "base/ohos/locale_utils.h"
 #endif
+
+#ifdef OHOS_SECURE_JAVASCRIPT_PROXY
+#include "cef/libcef/browser/javascript/oh_gin_javascript_bridge_dispatcher_host.h"
+#endif
+
 namespace {
 static const float richtextDisplayRatio = 1.0;
 }
@@ -787,13 +792,19 @@ void NWebDelegate::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
   height_ = height;
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 
+  uint32_t content_height = 0;
+  uint32_t content_width = 0;
   if (render_handler_ != nullptr) {
     render_handler_->Resize(width, height);
+    content_height = render_handler_->GetContentHeight();
+    content_width = render_handler_->GetContentWidth();
   }
 
   auto browser = GetBrowser();
   if (browser != nullptr && browser->GetHost() != nullptr) {
-    if (isKeyboard) {
+    // Trigger ScrollFocusedEditableNodeIntoView when the page content does not
+    // exceed one screen and the keyboard is hidden.
+    if (isKeyboard || (content_height <= height && content_width <= width)) {
       browser->GetHost()->WasKeyboardResized();
     } else {
       browser->GetHost()->WasResized();
@@ -2761,6 +2772,21 @@ bool NWebDelegate::ScrollByWithResult(float delta_x, float delta_y) {
   ScrollBy(delta_x, delta_y);
   return true;
 }
+
+void NWebDelegate::WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent) {
+#ifdef OHOS_DRAG_DROP
+  if (event_handler_ != nullptr && (!handler_delegate_ || !handler_delegate_->IsDragEnter())) {
+#else
+  if (event_handler_ != nullptr) {
+#endif  // #ifdef OHOS_DRAG_DROP
+    event_handler_->WebSendMouseEvent(mouseEvent, default_virtual_pixel_ratio_);
+  }
+#ifdef OHOS_DRAG_DROP
+  if (render_handler_ != nullptr) {
+    render_handler_->SetIrregularDragBackground(false);
+  }
+#endif  // #ifdef OHOS_DRAG_DROP
+}
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #if defined(OHOS_API_INIT_WEB_ENGINE)
@@ -3554,6 +3580,26 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId, uint32_t action,
               node->CreatePositionForSelectionAt(newText.length())));
       break;
     }
+    case AceAction::ACTION_SET_CURSOR_POSITION: {
+      if (!node->IsTextField() || actionArguments.empty()) {
+        break;
+      }
+
+      int offset = 0;
+      auto iter = actionArguments.find("offset");
+
+      if (iter != actionArguments.end()) {
+        std::stringstream str_offset;
+        str_offset << iter->second;
+        str_offset >> offset;
+      }
+      LOG(INFO) << "ExecuteAction setCursorPosition offset is " << offset;
+      accessibilityManager->SetSelection(
+          content::BrowserAccessibility::AXRange(
+              node->CreatePositionForSelectionAt(offset),
+              node->CreatePositionForSelectionAt(offset)));
+      break;
+    }
     default:
       LOG(INFO) << "ExecuteAction unsupported action";
       break;
@@ -3687,7 +3733,7 @@ NWebDelegate::GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
 
 std::shared_ptr<NWebAccessibilityNodeInfo>
 NWebDelegate::PopulateAccessibilityNodeInfo(
-    const content::BrowserAccessibilityOHOS* node) {
+    content::BrowserAccessibilityOHOS* node) {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
     return nullptr;
@@ -3695,24 +3741,17 @@ NWebDelegate::PopulateAccessibilityNodeInfo(
 
   std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo =
     std::make_shared<NWebAccessibilityNodeInfoImpl>();
+  if (nodeInfo == nullptr || node == nullptr) {
+    LOG(ERROR) << "PopulateAccessibilityNodeInfo nodeInfo or node is null";
+    return nullptr;
+  }
   nodeInfo->SetAccessibilityId(node->GetAccessibilityId());
-  nodeInfo->SetParentId(-1);
-  bool isRoot = !node->PlatformGetParent();
-  if (!isRoot) {
-    auto* parentNode = static_cast<content::BrowserAccessibilityOHOS*>(
-        node->PlatformGetParent());
-    if (parentNode) {
-      nodeInfo->SetParentId(parentNode->GetAccessibilityId());
-    }
-  }
+  nodeInfo->SetParentId(node->GetParentId());
 
-  std::vector<int64_t> childIds;
-  for (const auto& childNode : node->PlatformChildren()) {
-    const content::BrowserAccessibilityOHOS& childNodeOHOS =
-        static_cast<const content::BrowserAccessibilityOHOS&>(childNode);
-    childIds.emplace_back(childNodeOHOS.GetAccessibilityId());
-  }
-  nodeInfo->SetChildIds(childIds);
+  std::vector<int64_t> childrenIds;
+  node->GetChildrenIds(childrenIds);
+  nodeInfo->SetChildIds(childrenIds);
+  node->SetChildrenIds(childrenIds);
   nodeInfo->SetIsAccessibilityFocus(
       (accessibilityManager->GetAccessibilityFocusId() ==
               node->GetAccessibilityId()
@@ -3776,6 +3815,7 @@ void NWebDelegate::AddAccessibilityNodeInfoAttributes(
     nodeInfo->SetRangeInfoMax(0.0f);
     nodeInfo->SetRangeInfoCurrent(0.0f);
   }
+  nodeInfo->SetIsAccessibilityGroup(node->IsAccessibilityGroup());
 }
 
 void NWebDelegate::AddAccessibilityNodeInfoRect(
@@ -3857,9 +3897,11 @@ void NWebDelegate::AddAccessibilityNodeInfoActions(
         static_cast<uint32_t>(AceAction::ACTION_ACCESSIBILITY_FOCUS));
   }
   if (node != nullptr) {
-    if (node->IsScrollSupported()) {
+    if (node->CanScrollForward()) {
       actions.emplace_back(
           static_cast<uint32_t>(AceAction::ACTION_SCROLL_FORWARD));
+    }
+    if (node->CanScrollBackward()) {
       actions.emplace_back(
           static_cast<uint32_t>(AceAction::ACTION_SCROLL_BACKWARD));
     }
@@ -3897,12 +3939,7 @@ void NWebDelegate::SetWakeLockCallback(
 
 #if defined(OHOS_SECURE_JAVASCRIPT_PROXY)
 std::string NWebDelegate::GetLastJavascriptProxyCallingFrameUrl() {
-  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "GetLastJavascriptProxyCallingFrameUrl can not get browser";
-    return "";
-  }
-
-  return GetBrowser()->GetHost()->GetLastJavascriptProxyCallingFrameUrl();
+  return NWEB::OhGinJavascriptBridgeDispatcherHost::GetLastCallingFrameUrlTLS();
 }
 #endif
 
@@ -4108,10 +4145,11 @@ void NWebDelegate::RefreshAccessibilityManagerClickEvent() {
 
 #ifdef OHOS_BFCACHE
 void NWebDelegate::SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) {
-  LOG(INFO) << "NWebDelegate::SetBackForwardCacheOptions param size: " << size
-            << " timeToLive: " << timeToLive;
-  if (GetBrowser()) {
-    LOG(ERROR) << "NWebDelegate::SetBackForwardCacheOptions Get browser failed.";
+  if (!GetBrowser()) {
+    if (preference_delegate_) {
+      preference_delegate_->PutBackForwardCacheOptions(size, timeToLive);
+    }
+    return;
   }
 
   GetBrowser()->SetBackForwardCacheOptions(size, timeToLive);

@@ -531,6 +531,31 @@ uint32_t NWebInputDelegate::GetModifiers(cef_mouse_button_type_t button) {
   return result;
 }
 
+uint32_t NWebInputDelegate::GetWebMouseModifiersByPressedCode(cef_mouse_button_type_t button,
+                                                              const std::vector<int32_t>& pressedCodes) {
+  uint32_t result = GetWebModifiersByPressedCode(pressedCodes);
+  switch (button) {
+    case MBT_LEFT:
+      result |= EVENTFLAG_LEFT_MOUSE_BUTTON;
+      break;
+    case MBT_MIDDLE:
+      result |= EVENTFLAG_MIDDLE_MOUSE_BUTTON;
+      break;
+    case MBT_RIGHT:
+      result |= EVENTFLAG_RIGHT_MOUSE_BUTTON;
+      break;
+    case MBT_BACK:
+      result |= EVENTFLAG_BACK_MOUSE_BUTTON;
+      break;
+    case MBT_FORWARD:
+      result |= EVENTFLAG_FORWARD_MOUSE_BUTTON;
+      break;
+    default:
+      break;
+  }
+  return result;
+}
+
 bool NWebInputDelegate::IsMMIKeyEvent(int32_t keyCode) {
   auto item = find(mmiKeyEvent.begin(), mmiKeyEvent.end(), keyCode);
   if (item == mmiKeyEvent.end()) {

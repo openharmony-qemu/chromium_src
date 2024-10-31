@@ -137,6 +137,8 @@ component("gl") {
     sources += [
       "gl_surface_egl_ohos.cc",
       "gl_surface_egl_ohos.h",
+      "ohos/native_buffer_utils.cc",
+      "ohos/native_buffer_utils.h",
       "ohos/ohos_native_image.cc",
       "ohos/ohos_native_image.h",
       "ohos/frame_available_listener_impl.cc",

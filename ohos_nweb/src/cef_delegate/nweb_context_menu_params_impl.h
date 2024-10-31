@@ -41,6 +41,7 @@ class NWebContextMenuParamsImpl : public NWebContextMenuParams {
   ContextMenuInputFieldType GetInputFieldType() override;
   ContextMenuSourceType GetSourceType() override;
   std::string GetSelectionText() override;
+  void GetImageRect(int& x, int& y, int& w, int& h) override;
 
  private:
   CefRefPtr<CefContextMenuParams> params_;

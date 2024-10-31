@@ -12,6 +12,9 @@
 #include "ui/gl/gl_bindings.h"
 #include "ui/gl/gl_surface_egl.h"
 #include "ui/gl/scoped_binders.h"
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
+#include "ui/gl/ohos/native_buffer_utils.h"
+#endif
 
 namespace ui {
 
@@ -49,20 +52,7 @@ unsigned GLInternalFormat(gfx::BufferFormat format) {
   return gl::BufferFormatToGLInternalFormat(format);
 }
 
-#if BUILDFLAG(ENABLE_HEIF_DECODER)
-#define EGL_NATIVE_BUFFER_OHOS            0x34E1
-
-gl::ScopedEGLImage CreateOhosEGLImage(EGLClientBuffer egl_client_buffer) {
-  EGLint attrs[] = {
-        EGL_IMAGE_PRESERVED,
-        EGL_TRUE,
-        EGL_NONE,
-    };
-
-  return gl::MakeScopedEGLImage(EGL_NO_CONTEXT, EGL_NATIVE_BUFFER_OHOS,
-        egl_client_buffer, attrs);
-}
-#else
+#if !BUILDFLAG(ENABLE_HEIF_DECODER)
 EGLint FourCC(gfx::BufferFormat format) {
   switch (format) {
     case gfx::BufferFormat::R_8:
@@ -191,7 +181,8 @@ bool NativePixmapEGLBinding::InitializeFromNativePixmap(
   }
 
 #if BUILDFLAG(ENABLE_HEIF_DECODER)
-  egl_image_ = CreateOhosEGLImage(static_cast<EGLClientBuffer>(pixmap->GetWindowBuffer()));
+  egl_image_ = gl::ohos::CreateEGLImage(
+      static_cast<EGLClientBuffer>(pixmap->GetWindowBuffer()));
   if (egl_image_ == EGL_NO_IMAGE_KHR) {
     LOG(ERROR) << "[HeifSupport] egl_image_ is EGL_NO_IMAGE_KHR.";
     return false;

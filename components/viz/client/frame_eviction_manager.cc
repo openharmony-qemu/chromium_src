@@ -103,7 +103,7 @@ void FrameEvictionManager::RegisterUnlockedFrame(
   unlocked_frames_.emplace_front(frame, clock_->NowTicks());
 #ifdef OHOS_NWEB_EX
   if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
-           switches::kForBrowser)) {
+           switches::kEnableNwebEx)) {
 #endif
     if (base::FeatureList::IsEnabled(features::kAggressiveFrameCulling)) {
       if (!idle_frames_culling_timer_.IsRunning()) {

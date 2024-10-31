@@ -48,6 +48,26 @@ class MockNativeImageAdapter : public OHOS::NWeb::NativeImageAdapter {
               (override));
   MOCK_METHOD(int32_t, UnsetOnFrameAvailableListener, (), (override));
   MOCK_METHOD(void, DestroyNativeImage, (), (override));
+  MOCK_METHOD(void, NewNativeImage, (), (override));
+  MOCK_METHOD(int32_t,
+              AcquireNativeWindowBuffer,
+              (void** windowBuffer, int* acquireFenceFd),
+              (override));
+  MOCK_METHOD(int32_t,
+              GetNativeBuffer,
+              (void* windowBuffer, void** nativeBuffer),
+              (override));
+  MOCK_METHOD(int32_t,
+              ReleaseNativeWindowBuffer,
+              (void* windowBuffer,
+              int fenceFd),
+              (override));
+  MOCK_METHOD(void,
+              GetNativeWindowBufferSize,
+              (void* windowBuffer,
+              uint32_t* width,
+              uint32_t* height),
+              (override));
 };
 
 class MockFrameAvailableListener : public FrameAvailableListener {

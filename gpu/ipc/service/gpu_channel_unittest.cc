@@ -347,7 +347,7 @@ TEST_F(GpuChannelTest, CreateNativeTexture1) {
   bool is_gpu_host = true;
   GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
   mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
-  int result = channel->CreateNativeTexture(1, std::move(receiver));
+  int result = channel->CreateNativeTexture(1, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
   EXPECT_NE(result, -1);
 }
 
@@ -357,8 +357,8 @@ TEST_F(GpuChannelTest, CreateNativeTexture2) {
   bool is_gpu_host = true;
   GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
   mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
-  channel->CreateNativeTexture(1, std::move(receiver));
-  channel->CreateNativeTexture(1, std::move(receiver));
+  channel->CreateNativeTexture(1, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
+  channel->CreateNativeTexture(1, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
   std::string log_output = testing::internal::GetCapturedStderr();
   EXPECT_NE(log_output.find("[NativeEmbed] Trying to create a StreamTexture "
                             "with an existing native_id."),
@@ -385,7 +385,7 @@ TEST_F(GpuChannelTest, DestroyNativeTexture2) {
   GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
   int32_t native_id = 1;
   mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
-  channel->CreateNativeTexture(native_id, std::move(receiver));
+  channel->CreateNativeTexture(native_id, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
   channel->DestroyNativeTexture(native_id);
   auto found = channel->native_textures_.find(native_id);
   EXPECT_TRUE(found == channel->native_textures_.end());
@@ -411,7 +411,8 @@ TEST_F(GpuChannelTest, ExecuteDeferredRequest3) {
 TEST_F(GpuChannelTest, TryCreateNativeTexture1) {
   base::WeakPtr<GpuChannel> channel;
   mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
-  int32_t result = TryCreateNativeTexture(channel, 1, std::move(receiver));
+  int32_t result = TryCreateNativeTexture(channel, 1,
+    gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
   EXPECT_EQ(result, -1);
 }
 
@@ -420,7 +421,8 @@ TEST_F(GpuChannelTest, TryCreateNativeTexture2) {
   GpuChannel* channel = CreateChannel(kClientId, false);
   base::WeakPtr<GpuChannel> channell = channel->AsWeakPtr();
   mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
-  int32_t result = TryCreateNativeTexture(channell, 1, std::move(receiver));
+  int32_t result = TryCreateNativeTexture(channell, 1,
+    gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
   EXPECT_NE(result, -1);
 }
 
@@ -500,7 +502,7 @@ TEST_F(GpuChannelTest, CreateNativeTextureF2) {
                                      main_task_runner);
   mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
   gpu_filter.CreateNativeTexture(
-      kClientId, std::move(receiver),
+      kClientId, 1, std::move(receiver),
       base::BindLambdaForTesting([](int32_t value) {}));
   EXPECT_TRUE(gpu_filter.main_task_runner_);
 }

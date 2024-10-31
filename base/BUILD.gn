@@ -3642,6 +3642,12 @@ test("base_unittests") {
   if (!is_ios) {
     sources += [ "allocator/partition_allocator/tagging_unittest.cc" ]
   }
+  
+  if(ohos_unittests){
+    sources += [
+      "memory/platform_shared_memory_mapper_ohos_unittests.cc",
+    ]
+  }
 
   data = [
     "test/data/",

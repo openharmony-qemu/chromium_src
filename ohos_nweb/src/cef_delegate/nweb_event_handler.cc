@@ -313,6 +313,67 @@ void NWebEventHandler::WebSendTouchpadFlingEvent(double x,
 
   browser_->GetHost()->SendTouchpadFlingEvent(mouseEvent, vx, vy);
 }
+
+void NWebEventHandler::WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent,
+                                         float ratio) {
+  if (!mouseEvent) {
+    return;
+  }
+  CefMouseEvent mouseInfo;
+  mouseInfo.x = mouseEvent->GetX() / ratio;
+  mouseInfo.y = mouseEvent->GetY() / ratio;
+#ifdef OHOS_EX_TOPCONTROLS
+  if (browser_ && browser_->GetHost()) {
+    mouseInfo.y -= browser_->GetHost()->GetShrinkViewportHeight();
+  }
+#endif
+  cef_mouse_button_type_t buttonType = static_cast<cef_mouse_button_type_t>(
+      NWebInputDelegate::CefConverter("mousebutton", mouseEvent->GetButton()));
+  mouseInfo.modifiers = NWebInputDelegate::GetWebMouseModifiersByPressedCode(buttonType,
+    mouseEvent->GetPressKeyCodes());
+  LOG(DEBUG) << "WebSendMouseEvent x: " << mouseInfo.x << " y: " << mouseInfo.y
+             << " modifiers: " << mouseInfo.modifiers;
+  if (NWebInputDelegate::IsMouseLeave(mouseEvent->GetAction())) {
+    is_in_web_ = false;
+  } else if (NWebInputDelegate::IsMouseEnter(mouseEvent->GetAction())) {
+    is_in_web_ = true;
+  }
+  if (browser_ && browser_->GetHost()) {
+    if (NWebInputDelegate::IsMouseDown(mouseEvent->GetAction())) {
+      previous_action_ = mouseEvent->GetAction();
+      previous_button_ = buttonType;
+#ifdef OHOS_CLIPBOARD
+      if (buttonType == MBT_LEFT) {
+        browser_->GetHost()->SetFocus(true);
+      }
+#endif  // #ifdef OHOS_CLIPBOARD
+      browser_->GetHost()->SendMouseClickEvent(mouseInfo, buttonType, false,
+                                               mouseEvent->GetClickNum());
+    } else if (NWebInputDelegate::IsMouseUp(mouseEvent->GetAction())) {
+       previous_action_ = mouseEvent->GetAction();
+       previous_button_ = buttonType;
+      browser_->GetHost()->SendMouseClickEvent(mouseInfo, buttonType, true, 1);
+      if (!is_in_web_) {
+        browser_->GetHost()->SendMouseMoveEvent(mouseInfo, true);
+      }
+    } else if (NWebInputDelegate::IsMouseMove(mouseEvent->GetAction())) {
+      if (last_mouse_x_ == mouseInfo.x && last_mouse_y_ == mouseInfo.y) {
+        LOG(DEBUG) << "no change in coordinates, cancel mouse move event";
+        return;
+      }
+
+      last_mouse_x_ = mouseInfo.x;
+      last_mouse_y_ = mouseInfo.y;
+      browser_->GetHost()->SendMouseMoveEvent(mouseInfo, false);
+    } else if (NWebInputDelegate::IsMouseLeave(mouseEvent->GetAction())) {
+      if (NWebInputDelegate::IsMouseUp(previous_action_) || previous_button_ == MBT_RIGHT) {
+        browser_->GetHost()->SendMouseMoveEvent(mouseInfo, true);
+      }
+    } else {
+      LOG(DEBUG) << "mouse event action: " << mouseEvent->GetAction();
+    }
+  }
+}
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 bool NWebEventHandler::SendKeyEvent(int32_t keyCode, int32_t keyAction) {

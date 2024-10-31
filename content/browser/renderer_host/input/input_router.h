@@ -113,7 +113,7 @@ class InputRouter {
   virtual void FlushTouchEventQueue() = 0;
 
 #if BUILDFLAG(IS_OHOS)
-  virtual void SetGestureEventResult(bool result) = 0;
+  virtual void SetGestureEventResult(bool result, bool stopPropagation) = 0;
 
   virtual void SetNativeEmbedMode(bool flag) = 0;
 #endif

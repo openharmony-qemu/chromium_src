@@ -59,7 +59,7 @@ class MockInputRouter : public InputRouter {
   void WaitForInputProcessed(base::OnceClosure callback) override {}
   void FlushTouchEventQueue() override {}
 #if defined(OHOS_UNITTESTS)
-  void SetGestureEventResult(bool result) override {}
+  void SetGestureEventResult(bool result, bool stopPropagation) override {}
   void SetNativeEmbedMode(bool flag) override {}
 #endif
   bool sent_mouse_event_;

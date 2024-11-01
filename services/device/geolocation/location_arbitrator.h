@@ -120,7 +120,9 @@ class LocationArbitrator : public LocationProvider {
   // The current best estimate of our position, or `nullptr` if no estimate has
   // been received.
   mojom::GeopositionResultPtr result_;
+#if BUILDFLAG(IS_OHOS)
   base::Lock lock_;
+#endif
 };
 
 // Factory functions for the various types of location provider to abstract

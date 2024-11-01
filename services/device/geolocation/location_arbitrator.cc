@@ -142,7 +142,6 @@ void LocationArbitrator::OnLocationUpdate(
 }
 
 const mojom::GeopositionResult* LocationArbitrator::GetPosition() {
-  base::AutoLock lock(lock_);
   return result_.get();
 }
 

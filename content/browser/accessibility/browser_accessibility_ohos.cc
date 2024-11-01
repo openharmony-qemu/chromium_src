@@ -390,6 +390,18 @@ bool BrowserAccessibilityOHOS::HasOnlyTextChildren() const {
   return true;
 }
 
+bool BrowserAccessibilityOHOS::HasOnlyDirectTextChildren() const {
+  for (auto& childNode : PlatformChildren()) {
+    BrowserAccessibilityOHOS& childNodeOHOS =
+        static_cast<BrowserAccessibilityOHOS&>(childNode);
+    if (childNodeOHOS.IsText() &&
+        childNodeOHOS.GetRole() != ax::mojom::Role::kStrong) {
+      return false;
+    }
+  }
+  return true;
+}
+
 bool BrowserAccessibilityOHOS::HasClickableChildren() const {
   for (auto& childNode : PlatformChildren()) {
     BrowserAccessibilityOHOS& childNodeOHOS =
@@ -1062,6 +1074,9 @@ bool BrowserAccessibilityOHOS::IsAccessibilityGroup() const {
   if (GetRole() == ax::mojom::Role::kParagraph) {
     return HasOnlyTextChildren();
   }
+  if (GetRole() == ax::mojom::Role::kGenericContainer) {
+    return HasOnlyDirectTextChildren();
+  }
   return false;
 }
 
@@ -1073,6 +1088,9 @@ bool BrowserAccessibilityOHOS::IsIgnoredContainer() const {
     return false;
   }
   if (!PlatformChildCount()) {
+    return false;
+  }
+  if (PlatformChildCount() && HasOnlyDirectTextChildren()) {
     return false;
   }
   return true;

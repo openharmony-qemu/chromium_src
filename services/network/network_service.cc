@@ -712,7 +712,7 @@ void NetworkService::ConfigureStubHostResolver(
   // the full config with default.
   overrides = net::DnsConfigOverrides::CreateOverridingEverythingWithDefaults();
 #else
-  // webviewʹDohҪȡȡDns name servers
+  // 如果是webview或使能Doh，则不需要获取获取Dns name servers
   if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
           ::switches::kForBrowser) ||
       secure_dns_mode != net::SecureDnsMode::kOff) {
@@ -1150,7 +1150,7 @@ void NetworkService::SetHttpsDnsHostResolver(
       allow_enable_http_dns_fallback, false);
 
   net::DnsConfigOverrides overrides;
-  // HTTP DNS FALLBACKȥʹܣҪȡDns name servers
+  // 如果HTTP DNS FALLBACK去使能，则不需要获取Dns name servers
   if (!allow_enable_http_dns_fallback) {
     overrides =
         net::DnsConfigOverrides::CreateOverridingEverythingWithDefaults();

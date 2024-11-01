@@ -1556,7 +1556,7 @@ class DnsTransactionImpl : public DnsTransaction,
       return false;
 
 #ifdef OHOS_EX_HTTP_DNS_FALLBACK
-    // AAAA/A͵ǰҪ鿴A/AAAA͵Ƿɹ,ɹ,˴ͲҪ
+    // AAAA/A类型的请求在重试前需要查看A/AAAA类型的请求是否成功,如果成功,此处就不需要重试了
     if (not_need_more_attempt_query_type_ == qtype_) {
       return false;
     }

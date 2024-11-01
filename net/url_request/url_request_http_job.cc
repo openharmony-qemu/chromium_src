@@ -1051,7 +1051,7 @@ bool URLRequestHttpJob::CanRetryWithSecureDnsOnly(int net_error) {
       net_error == net::ERR_UNABLE_TO_REUSE_CONNECTION_FOR_PROXY_AUTH) {
     net::NetErrorDetails details;
     PopulateNetErrorDetails(&details);
-    // streamѾɹ֤dns׶ûз⣬ǲҪ.
+    // 如果stream已经创建成功。证明dns阶段没有发生问题，所以我们不需要重试.
     if (details.stream_created) {
       LOG(INFO) << "DOH-Fallback cann't retry with secure dns since the stream "
                    "is created.";

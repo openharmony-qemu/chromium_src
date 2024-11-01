@@ -169,7 +169,7 @@ struct DidCommitProvisionalLoadParams {
   // Timestamp of when this frame committed its navigation.
   mojo_base.mojom.TimeTicks? commit_navigation_end;
 
-  // Additional HTTP request headers
+  // Additional HTTP request headers.
   [EnableIf=is_ohos]
   string headers;
 };

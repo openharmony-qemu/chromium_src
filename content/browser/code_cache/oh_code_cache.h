@@ -25,6 +25,7 @@
 #include "net/disk_cache/simple/simple_util.h"
 #include "cef/libcef/browser/net_service/stream_reader_url_loader.h"
 #include "base/trace_event/trace_event.h"
+#include "third_party/bounds_checking_function/include/securec.h"
 
 namespace oh_code_cache {
 

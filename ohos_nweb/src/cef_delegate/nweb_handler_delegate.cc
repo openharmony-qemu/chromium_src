@@ -113,6 +113,8 @@
 #include "base/strings/string_number_conversions.h"
 #endif
 
+#include "third_party/bounds_checking_function/include/securec.h"
+
 namespace OHOS::NWeb {
 namespace {
 
@@ -2270,7 +2272,10 @@ bool NWebHandlerDelegate::OnCursorChange(
       LOG(ERROR) << "OnCursorChange make_unique failed";
       return false;
     }
-    memcpy((char*)buff.get(), custom_cursor_info.buffer, len);
+    if (memcpy_s((char*)buff.get(), len, custom_cursor_info.buffer, len) != EOK) {
+      LOG(ERROR) << "OnCursorChange memcpy_s failed";
+      return false;
+    }
     std::shared_ptr<NWebCursorInfo> info =
         std::make_shared<NWebCursorInfoImpl>(custom_cursor_info.hotspot.x,
                                              custom_cursor_info.hotspot.y,

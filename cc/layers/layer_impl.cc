@@ -73,9 +73,6 @@ LayerImpl::LayerImpl(LayerTreeImpl* tree_impl,
       is_inner_viewport_scroll_layer_(false),
       may_contain_native_(false),
       native_embed_id_(false),
-#if BUILDFLAG(IS_OHOS)
-      is_native_video_(false),
-#endif
       background_color_(SkColors::kTransparent),
       safe_opaque_background_color_(SkColors::kTransparent),
       transform_tree_index_(kInvalidPropertyNodeId),
@@ -405,10 +402,6 @@ void LayerImpl::PushPropertiesTo(LayerImpl* layer) {
   layer->scroll_tree_index_ = scroll_tree_index_;
   layer->may_contain_native_ = may_contain_native_;
   layer->native_embed_id_ = native_embed_id_;
-
-#if BUILDFLAG(IS_OHOS)
-  layer->is_native_video_ = is_native_video_;
-#endif
 
   if (needs_show_scrollbars_)
     layer->needs_show_scrollbars_ = needs_show_scrollbars_;

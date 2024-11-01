@@ -50,8 +50,6 @@ class MEDIA_EXPORT NativeTextureWrapper {
   // Should be safe to call from any thread.
   virtual void ClearCBOnAnyThread() = 0;
 
-  virtual void SetSkippingCurrentFrame(bool need_skip) = 0;
-
   struct Deleter {
     inline void operator()(NativeTextureWrapper* ptr) const { ptr->Destroy(); }
   };

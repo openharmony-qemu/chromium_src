@@ -83,6 +83,7 @@ void LocationArbitrator::StopProvider() {
   // Reset the reference location state (provider+result)
   // so that future starts use fresh locations from
   // the newly constructed providers.
+  base::AutoLock lock(lock_);
   position_provider_ = nullptr;
   result_.reset();
 

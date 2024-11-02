@@ -809,7 +809,6 @@ void NWebDelegate::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
     } else {
       browser->GetHost()->WasResized();
     }
-    browser->GetHost()->OnTextSelected(false);
   }
 }
 
@@ -835,7 +834,6 @@ void NWebDelegate::ResizeVisibleViewport(uint32_t width, uint32_t height, bool i
     } else {
       browser->GetHost()->WasResized();
     }
-    browser->GetHost()->OnTextSelected(false);
   }
 }
 #endif

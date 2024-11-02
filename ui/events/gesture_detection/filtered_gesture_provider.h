@@ -67,6 +67,10 @@ class GESTURE_DETECTION_EXPORT FilteredGestureProvider final
   void ResetDetection(bool is_lost_focus);
 #endif
 
+#ifdef OHOS_AI
+  void OnAITextSelected();
+#endif
+
   // Methods delegated to |gesture_provider_|.
   void ResetDetection();
   void SetMultiTouchZoomSupportEnabled(bool enabled);

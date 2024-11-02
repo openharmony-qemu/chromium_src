@@ -24,6 +24,11 @@
 
 namespace base {
 namespace ohos {
+#ifdef OHOS_SCROLLBAR
+BASE_EXPORT float GetPixelRatio();
+
+BASE_EXPORT void SetPixelRatio(float ratio);
+#endif
 
 BASE_EXPORT bool IsMobileDevice();
 

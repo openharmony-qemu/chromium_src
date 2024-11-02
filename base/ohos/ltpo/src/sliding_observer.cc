@@ -207,5 +207,22 @@ float SlidingObserver::GetVelocity(float velocity_x, float velocity_y) {
   LOG(DEBUG) << "velocity_x " << velocity_x << " velocity_y " << velocity_y  << " velocity " << convert_unit * velocity;
   return convert_unit * velocity;
 }
+
+void SlidingObserver::OnDisplayInfoChange() {
+  LOG(INFO) << "SlidingObserver::OnDisplayInfoChange";
+  if (!is_inited_) {
+    return;
+  }
+  auto display_manager_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateDisplayMgrAdapter();
+  if (!display_manager_adapter) {
+      return;
+  }
+  std::shared_ptr<OHOS::NWeb::DisplayAdapter> display =
+      display_manager_adapter->GetDefaultDisplay();
+  if (!display) {
+    return;
+  }
+  dpi_ = display->GetDpi();
+}
 }  // namespace ohos
 }  // namespace base

@@ -164,7 +164,7 @@ void DynamicFrameRateDecision::SetVsyncEnabledImpl(bool enabled)
   }
   vsync_cnt_ = std::max(vsync_cnt_, 0);
   LOG(DEBUG) << "SetVsyncEnabled " << enabled << ", vsync_cnt_: " << vsync_cnt_;
-  SetFrameRateLinkerEnable(visible_ && (vsync_cnt_ != 0));
+  SetFrameRateLinkerEnable((!nwebVisibleSet_.empty()) && (vsync_cnt_ != 0));
   UpdateFramePreferredRate();
 }
 
@@ -215,30 +215,33 @@ void DynamicFrameRateDecision::SetLTPOStrategyImpl(int32_t strategy)
   strategy_ = static_cast<LTPOStrategy>(strategy);
 }
 
-void DynamicFrameRateDecision::SetVisible(bool visible)
+void DynamicFrameRateDecision::SetVisible(int nweb_id, bool visible)
 {
+  LOG(DEBUG) << "zhaopf1  DynamicFrameRateDecision::SetVisiblen web_id: " << nweb_id << ", visible " << visible;
   if (strategy_ != LTPOStrategy::HGM_FLING && strategy_ != LTPOStrategy::ALL) {
     return;
   }
   if (!curent_task_runner_) {
     return;
   }
+  LOG(DEBUG) << "zhaopf2  DynamicFrameRateDecision::SetVisiblen web_id: " << nweb_id << ", visible " << visible;
   curent_task_runner_->PostTask(FROM_HERE, base::BindOnce(
     &DynamicFrameRateDecision::SetVisibleImpl,
-    base::Unretained(this), visible));
+    base::Unretained(this), nweb_id, visible));
 }
 
-void DynamicFrameRateDecision::SetVisibleImpl(bool visible)
+void DynamicFrameRateDecision::SetVisibleImpl(int nweb_id, bool visible)
 {
   if (strategy_ != LTPOStrategy::HGM_FLING && strategy_ != LTPOStrategy::ALL) {
     return;
   }
-  if (visible_ == visible) {
-    return;
+  if (visible) {
+    nwebVisibleSet_.insert(nweb_id);
+  } else {
+    nwebVisibleSet_.erase(nweb_id);
   }
-  LOG(DEBUG) << "SetVisible " << visible;
-  visible_ = visible;
-  SetFrameRateLinkerEnable(visible_ && (vsync_cnt_ != 0));
+  LOG(DEBUG) << "SetVisible " << (!nwebVisibleSet_.empty());
+  SetFrameRateLinkerEnable((!nwebVisibleSet_.empty()) && (vsync_cnt_ != 0));
   UpdateFramePreferredRate();
 }
 

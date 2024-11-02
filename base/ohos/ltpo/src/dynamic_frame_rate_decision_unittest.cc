@@ -31,7 +31,7 @@ class DynamicFrameRateDecisionTest : public DynamicFrameRateDecision {
   DynamicFrameRateDecisionTest() = default;
 };
 
-TEST(DynamicFrameRateDecisionTest, Init) 
+TEST(DynamicFrameRateDecisionTest, Init)
 {
   test::TaskEnvironment task_environment;
   DynamicFrameRateDecision dynamixFrameRateDecision;
@@ -55,21 +55,21 @@ TEST(DynamicFrameRateDecisionTest, UpdateFramePreferredRate002)
 {
   //Assign dynamixFrameRateDecision.frame_rate_linker_enable_ a value of true
   DynamicFrameRateDecision dynamixFrameRateDecision;
-  dynamixFrameRateDecision.frame_rate_linker_enable_ = true; 
+  dynamixFrameRateDecision.frame_rate_linker_enable_ = true;
   dynamixFrameRateDecision.UpdateFramePreferredRate();
   if(dynamixFrameRateDecision.GetCurrentTimestampMS() - dynamixFrameRateDecision.touch_up_timestamp_< 3000) {
     EXPECT_TRUE(dynamixFrameRateDecision.cur_frame_rate_ == 120);
   }
   else {
     EXPECT_TRUE(dynamixFrameRateDecision.cur_frame_rate_ == 60);
-  } 
+  }
 }
 
 TEST(DynamicFrameRateDecisionTest, UpdateFramePreferredRate003)
 {
   //Assign dynamixFrameRateDecision.frame_rate_linker_enable_ a value of true
   DynamicFrameRateDecision dynamixFrameRateDecision;
-  dynamixFrameRateDecision.frame_rate_linker_enable_ = true; 
+  dynamixFrameRateDecision.frame_rate_linker_enable_ = true;
   //Assign dynamixFrameRateDecision.sliding_frame_rate_ a value of 10
   dynamixFrameRateDecision.sliding_frame_rate_ = 10;
   dynamixFrameRateDecision.UpdateFramePreferredRate();
@@ -81,7 +81,7 @@ TEST(DynamicFrameRateDecisionTest, UpdateFramePreferredRate004)
 {
   //Assign dynamixFrameRateDecision.frame_rate_linker_enable_ a value of true
   DynamicFrameRateDecision dynamixFrameRateDecision;
-  dynamixFrameRateDecision.frame_rate_linker_enable_ = true; 
+  dynamixFrameRateDecision.frame_rate_linker_enable_ = true;
   //Assign dynamixFrameRateDecision.sliding_frame_rate_ a value of 100
   dynamixFrameRateDecision.sliding_frame_rate_ = 100;
   dynamixFrameRateDecision.UpdateFramePreferredRate();
@@ -93,7 +93,7 @@ TEST(DynamicFrameRateDecisionTest, UpdateFramePreferredRate005)
 {
   //Assign dynamixFrameRateDecision.frame_rate_linker_enable_ a value of true
   DynamicFrameRateDecision dynamixFrameRateDecision;
-  dynamixFrameRateDecision.frame_rate_linker_enable_ = true; 
+  dynamixFrameRateDecision.frame_rate_linker_enable_ = true;
   //Assign dynamixFrameRateDecision.sliding_frame_rate_ a value of -10
   dynamixFrameRateDecision.sliding_frame_rate_ = -10;
   dynamixFrameRateDecision.UpdateFramePreferredRate();
@@ -102,14 +102,14 @@ TEST(DynamicFrameRateDecisionTest, UpdateFramePreferredRate005)
   }
   else {
     EXPECT_TRUE(dynamixFrameRateDecision.cur_frame_rate_ == 60);
-  } 
+  }
 }
 
 TEST(DynamicFrameRateDecisionTest, UpdateFramePreferredRate006)
 {
   //Assign dynamixFrameRateDecision.frame_rate_linker_enable_ a value of true
   DynamicFrameRateDecision dynamixFrameRateDecision;
-  dynamixFrameRateDecision.frame_rate_linker_enable_ = true; 
+  dynamixFrameRateDecision.frame_rate_linker_enable_ = true;
   //Assign dynamixFrameRateDecision.video_frame_rate_ a value of 10
   dynamixFrameRateDecision.video_frame_rate_ = 10;
   dynamixFrameRateDecision.UpdateFramePreferredRate();
@@ -118,14 +118,14 @@ TEST(DynamicFrameRateDecisionTest, UpdateFramePreferredRate006)
   }
   else {
     EXPECT_TRUE(dynamixFrameRateDecision.cur_frame_rate_ == 60);
-  } 
+  }
 }
 
 TEST(DynamicFrameRateDecisionTest, UpdateFramePreferredRate007)
 {
   //Assign dynamixFrameRateDecision.frame_rate_linker_enable_ a value of true
   DynamicFrameRateDecision dynamixFrameRateDecision;
-  dynamixFrameRateDecision.frame_rate_linker_enable_ = true; 
+  dynamixFrameRateDecision.frame_rate_linker_enable_ = true;
   //Assign dynamixFrameRateDecision.video_frame_rate_ a value of 70
   dynamixFrameRateDecision.video_frame_rate_ = 70;
   dynamixFrameRateDecision.UpdateFramePreferredRate();
@@ -134,14 +134,14 @@ TEST(DynamicFrameRateDecisionTest, UpdateFramePreferredRate007)
   }
   else {
     EXPECT_TRUE(dynamixFrameRateDecision.cur_frame_rate_ == 70);
-  } 
+  }
 }
 
 TEST(DynamicFrameRateDecisionTest, UpdateFramePreferredRate008)
 {
   //Assign dynamixFrameRateDecision.frame_rate_linker_enable_ a value of true
   DynamicFrameRateDecision dynamixFrameRateDecision;
-  dynamixFrameRateDecision.frame_rate_linker_enable_ = true; 
+  dynamixFrameRateDecision.frame_rate_linker_enable_ = true;
   //Assign dynamixFrameRateDecision.video_frame_rate_ a value of 200
   dynamixFrameRateDecision.video_frame_rate_ = 200;
   dynamixFrameRateDecision.UpdateFramePreferredRate();
@@ -153,8 +153,8 @@ TEST(DynamicFrameRateDecisionTest, UpdateFramePreferredRate009)
 {
   //Assign dynamixFrameRateDecision.frame_rate_linker_enable_ a value of true
   DynamicFrameRateDecision dynamixFrameRateDecision;
-  dynamixFrameRateDecision.frame_rate_linker_enable_ = true; 
-  //Assign dynamixFrameRateDecision.video_frame_rate_ a value of 60 
+  dynamixFrameRateDecision.frame_rate_linker_enable_ = true;
+  //Assign dynamixFrameRateDecision.video_frame_rate_ a value of 60
   dynamixFrameRateDecision.video_frame_rate_ = 60;
   dynamixFrameRateDecision.sliding_frame_rate_ = 10;
   dynamixFrameRateDecision.UpdateFramePreferredRate();
@@ -165,7 +165,7 @@ TEST(DynamicFrameRateDecisionTest, UpdateFramePreferredRate009)
 TEST(DynamicFrameRateDecisionTest, UpdateFramePreferredRate010)
 {
   DynamicFrameRateDecision dynamixFrameRateDecision;
-  dynamixFrameRateDecision.frame_rate_linker_enable_ = true; 
+  dynamixFrameRateDecision.frame_rate_linker_enable_ = true;
   //Assign dynamixFrameRateDecision.sliding_frame_rate_ a value of 80
   dynamixFrameRateDecision.video_frame_rate_ = 10;
   dynamixFrameRateDecision.sliding_frame_rate_ = 80;
@@ -181,9 +181,9 @@ TEST(DynamicFrameRateDecisionTest, SetVisible001)
   dynamixFrameRateDecision.curent_task_runner_ = nullptr;
   EXPECT_EQ(nullptr,dynamixFrameRateDecision.curent_task_runner_);
   bool measuring_param = true;
-  dynamixFrameRateDecision.SetVisible(measuring_param);
+  dynamixFrameRateDecision.SetVisible(0, measuring_param);
   //dynamixFrameRateDecision.visible_ is false
-  EXPECT_TRUE(dynamixFrameRateDecision.visible_ == false);
+  EXPECT_TRUE(dynamixFrameRateDecision.nwebVisibleSet_.empty());
 }
 
 TEST(DynamicFrameRateDecisionTest, SetVisible002)
@@ -193,9 +193,9 @@ TEST(DynamicFrameRateDecisionTest, SetVisible002)
   dynamixFrameRateDecision.curent_task_runner_ = nullptr;
   EXPECT_EQ(nullptr,dynamixFrameRateDecision.curent_task_runner_);
   bool measuring_param = false;
-  dynamixFrameRateDecision.SetVisible(measuring_param);
+  dynamixFrameRateDecision.SetVisible(0, measuring_param);
   //dynamixFrameRateDecision.visible_ is false
-  EXPECT_TRUE(dynamixFrameRateDecision.visible_ == false);
+  EXPECT_TRUE(dynamixFrameRateDecision.nwebVisibleSet_.empty());
 }
 
 TEST(DynamicFrameRateDecisionTest, SetVisible003)
@@ -206,10 +206,10 @@ TEST(DynamicFrameRateDecisionTest, SetVisible003)
   dynamixFrameRateDecision.Init();
   EXPECT_NE(nullptr,dynamixFrameRateDecision.curent_task_runner_);
   bool measuring_param = true;
-  dynamixFrameRateDecision.SetVisible(measuring_param);
+  dynamixFrameRateDecision.SetVisible(0, measuring_param);
   task_environment.RunUntilIdle();
   //dynamixFrameRateDecision.visible_ is true
-  EXPECT_TRUE(dynamixFrameRateDecision.visible_ == true);
+  EXPECT_FALSE(dynamixFrameRateDecision.nwebVisibleSet_.empty());
 }
 
 TEST(DynamicFrameRateDecisionTest, SetVisible004)
@@ -219,10 +219,10 @@ TEST(DynamicFrameRateDecisionTest, SetVisible004)
   dynamixFrameRateDecision.Init();
   EXPECT_NE(nullptr,dynamixFrameRateDecision.curent_task_runner_);
   bool measuring_param = false;
-  dynamixFrameRateDecision.SetVisible(measuring_param);
+  dynamixFrameRateDecision.SetVisible(0, measuring_param);
   task_environment.RunUntilIdle();
   //dynamixFrameRateDecision.visible_ is false
-  EXPECT_TRUE(dynamixFrameRateDecision.visible_ == false);
+  EXPECT_TRUE(dynamixFrameRateDecision.nwebVisibleSet_.empty());
 }
 
 
@@ -261,7 +261,7 @@ TEST(DynamicFrameRateDecisionTest, ReportSlidingFrameRate003)
   //The incoming argument is -10
   dynamixFrameRateDecision.ReportSlidingFrameRate(measuring_param);
   //dynamixFrameRateDecision.sliding_frame_rate_ is 0
-  EXPECT_TRUE(dynamixFrameRateDecision.sliding_frame_rate_ == 0);   
+  EXPECT_TRUE(dynamixFrameRateDecision.sliding_frame_rate_ == 0);
 }
 
 TEST(DynamicFrameRateDecisionTest, ReportSlidingFrameRate004)
@@ -344,7 +344,7 @@ TEST(DynamicFrameRateDecisionTest, ReportVideoFrameRate001)
   EXPECT_EQ(nullptr,dynamixFrameRateDecision.curent_task_runner_);
   int32_t measuring_param = 0;
   dynamixFrameRateDecision.ReportVideoFrameRate(measuring_param);
-  //The incoming argument is 0, dynamixFrameRateDecision.video_frame_rate_ is 0 
+  //The incoming argument is 0, dynamixFrameRateDecision.video_frame_rate_ is 0
   EXPECT_TRUE(dynamixFrameRateDecision.video_frame_rate_ == 0);
 }
 
@@ -355,7 +355,7 @@ TEST(DynamicFrameRateDecisionTest, ReportVideoFrameRate002)
   EXPECT_EQ(nullptr,dynamixFrameRateDecision.curent_task_runner_);
   int32_t measuring_param = 10;
   dynamixFrameRateDecision.ReportVideoFrameRate(measuring_param);
-  //The incoming argument is 10, dynamixFrameRateDecision.video_frame_rate_ is 0 
+  //The incoming argument is 10, dynamixFrameRateDecision.video_frame_rate_ is 0
   EXPECT_TRUE(dynamixFrameRateDecision.video_frame_rate_ == 0);
 }
 
@@ -366,7 +366,7 @@ TEST(DynamicFrameRateDecisionTest, ReportVideoFrameRate003)
   EXPECT_EQ(nullptr,dynamixFrameRateDecision.curent_task_runner_);
   int32_t measuring_param = -10;
   dynamixFrameRateDecision.ReportVideoFrameRate(measuring_param);
-  //The incoming argument is -10, dynamixFrameRateDecision.video_frame_rate_ is 0 
+  //The incoming argument is -10, dynamixFrameRateDecision.video_frame_rate_ is 0
   EXPECT_TRUE(dynamixFrameRateDecision.video_frame_rate_ == 0);
 }
 
@@ -380,7 +380,7 @@ TEST(DynamicFrameRateDecisionTest, ReportVideoFrameRate004)
   int32_t measuring_param = -10;
   dynamixFrameRateDecision.ReportVideoFrameRate(measuring_param);
   task_environment.RunUntilIdle();
-  //The incoming argument is -10, dynamixFrameRateDecision.video_frame_rate_ is -10 
+  //The incoming argument is -10, dynamixFrameRateDecision.video_frame_rate_ is -10
   EXPECT_TRUE(dynamixFrameRateDecision.video_frame_rate_ == measuring_param);
 }
 
@@ -393,7 +393,7 @@ TEST(DynamicFrameRateDecisionTest, ReportVideoFrameRate005)
   int32_t measuring_param = 0;
   dynamixFrameRateDecision.ReportVideoFrameRate(measuring_param);
   task_environment.RunUntilIdle();
-  //The incoming argument is 0, dynamixFrameRateDecision.video_frame_rate_ is 0 
+  //The incoming argument is 0, dynamixFrameRateDecision.video_frame_rate_ is 0
   EXPECT_TRUE(dynamixFrameRateDecision.video_frame_rate_ == measuring_param);
 }
 
@@ -406,7 +406,7 @@ TEST(DynamicFrameRateDecisionTest, ReportVideoFrameRate006)
   int32_t measuring_param = 10;
   dynamixFrameRateDecision.ReportVideoFrameRate(measuring_param);
   task_environment.RunUntilIdle();
-  //The incoming argument is 10, dynamixFrameRateDecision.video_frame_rate_ is 10 
+  //The incoming argument is 10, dynamixFrameRateDecision.video_frame_rate_ is 10
   EXPECT_TRUE(dynamixFrameRateDecision.video_frame_rate_ == measuring_param);
 }
 
@@ -419,7 +419,7 @@ TEST(DynamicFrameRateDecisionTest, ReportVideoFrameRate007)
   int32_t measuring_param = 1000;
   dynamixFrameRateDecision.ReportVideoFrameRate(measuring_param);
   task_environment.RunUntilIdle();
-  //The incoming argument is 1000, dynamixFrameRateDecision.video_frame_rate_ is 1000 
+  //The incoming argument is 1000, dynamixFrameRateDecision.video_frame_rate_ is 1000
   EXPECT_TRUE(dynamixFrameRateDecision.video_frame_rate_ == measuring_param);
 }
 
@@ -432,7 +432,7 @@ TEST(DynamicFrameRateDecisionTest, ReportVideoFrameRate008)
   int32_t measuring_param = -1000;
   dynamixFrameRateDecision.ReportVideoFrameRate(measuring_param);
   task_environment.RunUntilIdle();
-  //The incoming argument is -1000, dynamixFrameRateDecision.video_frame_rate_ is -1000 
+  //The incoming argument is -1000, dynamixFrameRateDecision.video_frame_rate_ is -1000
   EXPECT_TRUE(dynamixFrameRateDecision.video_frame_rate_ == measuring_param);
 }
 
@@ -458,7 +458,7 @@ TEST(DynamicFrameRateDecisionTest, SetVsyncEnabled002)
   //dynamixFrameRateDecision.vsync_cnt_ is 0
   EXPECT_TRUE(dynamixFrameRateDecision.vsync_cnt_ == 0);
 }
-    
+
 
 TEST(DynamicFrameRateDecisionTest, SetVsyncEnabled003)
 {

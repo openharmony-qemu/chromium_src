@@ -39,6 +39,7 @@ public:
   void StartFling();
   int32_t OnScrollUpdate(float delta_x, float delta_y);
   int32_t OnFlingUpdate(float velocity_x, float velocity_y);
+  void OnDisplayInfoChange();
 
 private:
   float GetVelocity(float velocity_x, float velocity_y);

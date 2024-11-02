@@ -176,8 +176,8 @@ void GpuHostImpl::StopMonitor() {
   gpu_service_remote_->StopMonitor();
 }
 
-void GpuHostImpl::SetVisible(bool visible) {
-  gpu_service_remote_->SetVisible(visible);
+void GpuHostImpl::SetVisible(int32_t nweb_id, bool visible) {
+  gpu_service_remote_->SetVisible(nweb_id, visible);
 }
 
 void GpuHostImpl::SetHasTouchPoint(bool has_touch_point) {

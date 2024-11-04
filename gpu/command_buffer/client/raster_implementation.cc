@@ -28,6 +28,7 @@
 #include "base/trace_event/memory_dump_manager.h"
 #include "base/trace_event/process_memory_dump.h"
 #include "base/trace_event/trace_event.h"
+#include "base/feature_list.h"
 #include "build/build_config.h"
 #include "cc/paint/decode_stashing_image_provider.h"
 #include "cc/paint/display_item_list.h"
@@ -89,6 +90,10 @@ namespace gpu {
 namespace raster {
 
 namespace {
+
+BASE_FEATURE(kDisableErrorHandlingForReadback,
+             "kDisableErrorHandlingForReadback",
+             base::FEATURE_DISABLED_BY_DEFAULT);
 
 const uint32_t kMaxTransferCacheEntrySizeForTransferBuffer = 1024;
 const size_t kMaxImmediateDeletedPaintCachePaths = 1024;
@@ -1439,7 +1444,7 @@ SyncToken RasterImplementation::ScheduleImageDecode(
   return decode_sync_token;
 }
 
-void RasterImplementation::ReadbackImagePixelsINTERNAL(
+bool RasterImplementation::ReadbackImagePixelsINTERNAL(
     const gpu::Mailbox& source_mailbox,
     const SkImageInfo& dst_info,
     GLuint dst_row_bytes,
@@ -1477,9 +1482,10 @@ void RasterImplementation::ReadbackImagePixelsINTERNAL(
 
   if (!scoped_shared_memory->valid()) {
     // Note, that this runs callback out of order.
-    if (readback_done)
+    if (readback_done) {
       std::move(readback_done).Run(/*success=*/false);
-    return;
+    }
+    return false;
   }
 
   GLint shm_id = scoped_shared_memory->shm_id();
@@ -1535,12 +1541,15 @@ void RasterImplementation::ReadbackImagePixelsINTERNAL(
   } else {
     WaitForCmd();
 
-    if (!*readback_result)
-      return;
+    if (!*readback_result) {
+      return false;
+    }
 
     memcpy(dst_pixels, static_cast<uint8_t*>(shm_address) + pixels_offset,
            dst_size);
   }
+
+  return true;
 }
 
 void RasterImplementation::OnAsyncARGBReadbackDone(
@@ -1619,7 +1628,7 @@ void RasterImplementation::ReadbackARGBPixelsAsync(
                               std::move(readback_done), out);
 }
 
-void RasterImplementation::ReadbackImagePixels(
+bool RasterImplementation::ReadbackImagePixels(
     const gpu::Mailbox& source_mailbox,
     const SkImageInfo& dst_info,
     GLuint dst_row_bytes,
@@ -1628,9 +1637,10 @@ void RasterImplementation::ReadbackImagePixels(
     int plane_index,
     void* dst_pixels) {
   TRACE_EVENT0("gpu", "RasterImplementation::ReadbackImagePixels");
-  ReadbackImagePixelsINTERNAL(source_mailbox, dst_info, dst_row_bytes, src_x,
-                              src_y, plane_index,
-                              base::OnceCallback<void(bool)>(), dst_pixels);
+  return ReadbackImagePixelsINTERNAL(
+             source_mailbox, dst_info, dst_row_bytes, src_x, src_y, plane_index,
+             base::OnceCallback<void(bool)>(), dst_pixels) ||
+         base::FeatureList::IsEnabled(kDisableErrorHandlingForReadback);
 }
 
 void RasterImplementation::ReadbackYUVPixelsAsync(

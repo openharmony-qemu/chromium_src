@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// Based on frame_info_helper.cc originally written by
+// Copyright 2019 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 #include "media/gpu/ohos/frame_info_helper.h"
 
 #include "base/memory/raw_ptr.h"

@@ -370,7 +370,7 @@ class UnboundWidgetInputHandler : public blink::mojom::WidgetInputHandler {
     NOTREACHED() << "Input request on unbound interface";
   }
 #if BUILDFLAG(IS_OHOS)
-  void SetGestureEventResult(bool result) override {
+  void SetGestureEventResult(bool result, bool stopPropagation) override {
     DLOG(WARNING) << "Input request on unbound interface";
   }
   void SetNativeEmbedMode(bool result) override {

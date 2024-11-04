@@ -76,7 +76,6 @@ ScopedNativeBufferHandle ScopedNativeBufferHandle::Clone() const {
 
 ScopedNativeBufferHandle::ScopedNativeBufferHandle(OHOSNativeBuffer buffer)
     : buffer_(buffer) {
-  LOG(ERROR) << "NATIVE_BUFFER explicit ScopedNativeBufferHandle" << __PRETTY_FUNCTION__ << "::" << __LINE__ <<"\n";
   CHECK(buffer);
 }
 

@@ -906,15 +906,11 @@ void NWebPreferenceDelegate::PutBackForwardCacheOptions(int size, int time_to_li
 }
 
 int NWebPreferenceDelegate::GetCacheSize() {
-  int tmp = size_;
-  size_ = -1;
-  return tmp;
+  return size_;
 }
 
 int NWebPreferenceDelegate::GetTimeToLive() {
-  int tmp = time_to_live_;
-  time_to_live_ = -1;
-  return tmp;
+  return time_to_live_;
 }
 #endif // OHOS_BFCACHE
 

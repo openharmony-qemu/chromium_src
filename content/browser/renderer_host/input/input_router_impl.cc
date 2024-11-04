@@ -888,8 +888,8 @@ void InputRouterImpl::UpdateTouchAckTimeoutEnabled() {
 }
 
 #if BUILDFLAG(IS_OHOS)
-void InputRouterImpl::SetGestureEventResult(bool result) {
-  client_->GetWidgetInputHandler()->SetGestureEventResult(result);
+void InputRouterImpl::SetGestureEventResult(bool result, bool stopPropagation) {
+  client_->GetWidgetInputHandler()->SetGestureEventResult(result, stopPropagation);
 }
 
 void InputRouterImpl::SetNativeEmbedMode(bool flag) {

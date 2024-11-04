@@ -1301,25 +1301,46 @@ MediaSessionImpl::NWebPlaybackState MediaSessionImpl::NWebGetState() {
 }
 
 void MediaSessionImpl::SetWebviewShow(bool show) {
-  bool ret = false;
   if (session_ohos_) {
-    ret = session_ohos_->SetWebviewShow(show);
+    session_ohos_->SetWebviewShow(show);
   }
 }
 
 void MediaSessionImpl::SetWebviewShowForAudio(bool show) {
-  bool ret = false;
   if (session_ohos_) {
-    ret = session_ohos_->SetWebviewShowForAudio(show);
+    session_ohos_->SetWebviewShowForAudio(show);
+  }
+}
+
+void MediaSessionImpl::SetWebviewShowForVideo(bool show) {
+  if (session_ohos_) {
+    session_ohos_->SetWebviewShowForVideo(show);
   }
 }
 
 bool MediaSessionImpl::IsEndOfMedia() {
-  bool ret = false;
+  bool ret = true;
   if (position_) {
-    ret = position_.value().end_of_media();
+    ret = position_->end_of_media();
+    if (ret) {
+      return ret;
+    }
+  }
+
+  if (session_ohos_) {
+    ret = session_ohos_->IsEndOfMedia();
+    if (ret) {
+      return ret;
+    }
   }
   return ret;
+}
+
+void MediaSessionImpl::SetEndOfMedia(bool end_of_media)
+{
+  if (session_ohos_) {
+    session_ohos_->SetEndOfMedia(end_of_media);
+  }
 }
 #endif // OHOS_MEDIA_POLICY
 

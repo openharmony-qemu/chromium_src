@@ -91,9 +91,11 @@ namespace raster {
 
 namespace {
 
+// TODO(crbug.com/40058879): Disable this work-around, once call-sites are
+// handling failures correctly.
 BASE_FEATURE(kDisableErrorHandlingForReadback,
              "kDisableErrorHandlingForReadback",
-             base::FEATURE_DISABLED_BY_DEFAULT);
+             base::FEATURE_ENABLED_BY_DEFAULT);
 
 const uint32_t kMaxTransferCacheEntrySizeForTransferBuffer = 1024;
 const size_t kMaxImmediateDeletedPaintCachePaths = 1024;

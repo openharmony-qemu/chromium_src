@@ -26,6 +26,15 @@ constexpr int kDefaultStepTicksForSliders = 20;
 
 class BrowserAccessibilityManager;
 
+enum class ScrollDirection {
+    FORWARD = 0,
+    BACKWARD,
+    UP,
+    DOWN,
+    LEFT,
+    RIGHT
+};
+
 // A `BrowserAccessibility` object represents one node in the accessibility tree
 // on the browser side. It wraps an `AXNode` and assists in exposing
 // web-specific information from the node. It's owned by a
@@ -153,6 +162,8 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
   void GetChildrenIds(std::vector<int64_t>& childrenIds) const;
 
   void SetChildrenIds(const std::vector<int64_t>& childrenIds);
+
+  bool Scroll(ScrollDirection direction, bool is_page_scroll) const;
 
  protected:
   BrowserAccessibilityOHOS(BrowserAccessibilityManager* manager,

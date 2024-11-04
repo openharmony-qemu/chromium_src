@@ -176,6 +176,8 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
 
   bool HasOnlyTextChildren() const;
 
+  bool HasOnlyDirectTextChildren() const;
+
   bool HasOnlyTextAndImageChildren() const;
 
   bool HasClickableChildren() const;

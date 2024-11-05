@@ -64,7 +64,9 @@ class CC_EXPORT SingleScrollbarAnimationControllerThinning {
   void UpdateThumbThicknessScale();
 
   void DidScrollUpdate();
-
+#ifdef OHOS_SCROLLBAR 
+  void DidRequestShow();
+#endif
   void DidMouseDown();
   void DidMouseUp();
   void DidMouseLeave();

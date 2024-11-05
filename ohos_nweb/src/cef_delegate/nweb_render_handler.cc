@@ -340,7 +340,6 @@ void NWebRenderHandler::OnCursorUpdate(CefRefPtr<CefBrowser> browser,
 
 void NWebRenderHandler::SetFocusStatus(bool focus_status) {
   if (inputmethod_client_) {
-    is_focused_ = focus_status;
     inputmethod_client_->SetFocusStatus(focus_status);
   }
 }
@@ -643,7 +642,8 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
                  text_input_info.always_hide_ime;
   if (!is_hide) {
     auto delegate = delegate_interface_.lock();
-    if (is_focused_ && delegate && delegate->OnFocus()) {
+    bool is_focused = inputmethod_client_->GetFocusStatus();
+    if (is_focused && delegate && delegate->OnFocus()) {
       HandleKeyboardAttach(browser, text_input_info, is_need_reset_listener,
                            attributesMap);
     }

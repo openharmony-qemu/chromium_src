@@ -275,6 +275,12 @@ void BrowserAccessibilityManagerOHOS::FireGeneratedEvent(
       }
       SendAccessibilityEvent(accessibilityId, OHOS::NWeb::AccessibilityEventType::SCROLL_END);
       break;
+    case ui::AXEventGenerator::Event::OTHER_ATTRIBUTE_CHANGED:
+      if (GetRootAccessibilityId() == accessibilityId) {
+        LoadInlineTextBoxes(*nodeOHOS);
+        SendAccessibilityEvent(accessibilityId, OHOS::NWeb::AccessibilityEventType::PAGE_CHANGE);
+      }
+      break;
     case ui::AXEventGenerator::Event::SELECTED_CHANGED:
       if (nodeOHOS->IsSelected()) {
         MoveAccessibilityFocusToId(accessibilityId);

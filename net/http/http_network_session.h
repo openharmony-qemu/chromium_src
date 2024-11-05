@@ -324,6 +324,10 @@ class NET_EXPORT HttpNetworkSession {
   void SetConnectJobWithSecureDnsOnlyTimeout(int seconds);
 #endif
 
+#ifdef OHOS_LOGGER_REPORT
+  bool is_strict_log_mode();
+#endif  // OHOS_LOGGER_REPORT
+
  private:
   friend class HttpNetworkSessionPeer;
 
@@ -345,6 +349,9 @@ class NET_EXPORT HttpNetworkSession {
 #endif
   const raw_ptr<ProxyResolutionService> proxy_resolution_service_;
   const raw_ptr<SSLConfigService> ssl_config_service_;
+#if defined(OHOS_LOGGER_REPORT)
+  bool is_strict_log_mode_ = false;
+#endif  // OHOS_LOGGER_REPORT
 
   HttpAuthCache http_auth_cache_;
   SSLClientSessionCache ssl_client_session_cache_;

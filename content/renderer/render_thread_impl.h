@@ -405,6 +405,11 @@ class CONTENT_EXPORT RenderThreadImpl
   void RecordAction(const base::UserMetricsAction& action) override;
   void RecordComputedAction(const std::string& action) override;
 
+#if defined(OHOS_LOGGER_REPORT)
+  void OnChannelConnected(int32_t peer_pid) override;
+  void OnChannelListenError() override;
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
   // ChildThreadImpl
   void OnMemoryPressureFromBrowserReceived(

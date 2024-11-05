@@ -208,6 +208,11 @@ const int NWebPlaybackState_NONE = 0;
 static bool set_whole_page_drawing = false;
 #endif
 
+#ifdef OHOS_LOGGER_REPORT
+std::shared_ptr<NWebLoggerCallback> g_logger_callback;
+#endif
+bool g_logger_callback_initialized = false;
+
 bool GetWebOptimizationValue() {
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                                         .GetSystemPropertiesInstance();
@@ -661,6 +666,12 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
 #endif
 #endif
 
+  if (!g_logger_callback_initialized) {
+    g_logger_callback_initialized = true;
+#ifdef OHOS_LOGGER_REPORT
+    NWebHandlerDelegate::RegisterLoggerCallback(g_logger_callback);
+#endif
+  }
   return true;
 }
 
@@ -2796,6 +2807,19 @@ void NWebImpl::SetAccessibilityState(bool state) {
                                                 : STATE_DISABLED);
   }
 }
+
+#ifdef OHOS_LOGGER_REPORT
+void NWebImpl::PutLoggerCallback(
+    std::shared_ptr<NWebLoggerCallback> logger_callback) {
+  WVLOG_D("put logger callback");
+  g_logger_callback = logger_callback;
+}
+
+void NWebImpl::RemoveLoggerCallback() {
+  WVLOG_D("remove logger callback");
+  NWebHandlerDelegate::UnRegisterLoggerCallback();
+}
+#endif
 
 #if defined(OHOS_EX_NETWORK_CONNECTION)
 // static

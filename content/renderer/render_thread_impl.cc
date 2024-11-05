@@ -229,6 +229,10 @@
 #include "third_party/skia/include/core/SkFontMgr.h"
 #endif  // OHOS_THEME_FONT
 
+#ifdef OHOS_LOGGER_REPORT
+// #include "third_party/crashpad/crashpad/client/annotation.h"
+#include "content/renderer/logger_report.h" 
+#endif
 namespace content {
 
 namespace {
@@ -556,6 +560,110 @@ int32_t GetClientIdFromCommandLine() {
                     &client_id);
   return client_id;
 }
+
+#if defined(OHOS_LOGGER_REPORT)
+const base::TimeDelta kMaxIPCLoginInterval = base::Milliseconds(5);
+base::TimeTicks g_last_renderer_log_sent_time[logging::PRIORITY_DEBUG];
+bool g_has_renderer_log_dropped[logging::PRIORITY_DEBUG] = {false};
+
+// Report renderer log on main thread because ReportRendererLog only can
+// be called on MainThread, we cann't get the RenderThreadImpl when
+// RenderThreadImpl::current() called from other threads due to it's a
+// pointer in tls.
+void ReportRendererLogOnMainThread(int policy, const std::string& msg) {
+  const base::TimeTicks now = base::TimeTicks::Now();
+  if ((now - g_last_renderer_log_sent_time[policy]) < kMaxIPCLoginInterval) {
+    if (!g_has_renderer_log_dropped[policy]) {
+      g_has_renderer_log_dropped[policy] = true;
+      std::string drop_info_msg;
+      drop_info_msg.append(
+          "Renderer ipc logging is too frequently, some subsequent logs will "
+          "be dropped. ");
+      drop_info_msg.append(msg);
+      EventLog::ReportRendererLog(policy, drop_info_msg);
+    }
+  } else {
+    g_has_renderer_log_dropped[policy] = false;
+    EventLog::ReportRendererLog(policy, msg);
+    g_last_renderer_log_sent_time[policy] = base::TimeTicks::Now();
+  }
+}
+
+// Handle the FATAL message before crash.
+bool HandleFatalMessageForCrashpad(int severity,
+                                   const char* file,
+                                   int line,
+                                   size_t message_start,
+                                   const std::string& string) {
+  // Only handle FATAL.
+  if (severity != logging::LOG_FATAL) {
+    return false;
+  }
+
+  // In case of an out-of-memory condition, this code could be reentered when
+  // constructing and storing the key. Using a static is not thread-safe, but if
+  // multiple threads are in the process of a fatal crash at the same time, this
+  // should work.
+  static bool guarded = false;
+  if (guarded) {
+    return false;
+  }
+  base::AutoReset<bool> guard(&guarded, true);
+
+  // Only log last path component.  This matches logging.cc.
+  if (file) {
+    const char* slash = strrchr(file, '/');
+    if (slash) {
+      file = slash + 1;
+    }
+  }
+
+  CHECK_LE(message_start, string.size());
+  // std::string message = base::StringPrintf("%s:%d: %s", file, line,
+  //                                          string.c_str() + message_start);
+  // static crashpad::StringAnnotation<512> crash_key("LOG_FATAL");
+  // crash_key.Set(message);
+
+  // Rather than including the code to force the crash here, allow the caller to
+  // do it.
+  return false;
+}
+
+bool RenderProcessLogMessageHandler(int severity,
+                                    const char* file,
+                                    int line,
+                                    size_t message_start,
+                                    const std::string& str) {
+  logging::LogPriority priority = logging::LOGGING_VERBOSE;
+  switch (severity) {
+    case logging::LOGGING_FEEDBACK:
+      priority = logging::LOGGING_FEEDBACK;
+      break;
+    case logging::LOGGING_URL:
+      priority = logging::LOGGING_URL;
+      break;
+    default:
+      break;
+  }
+
+  HandleFatalMessageForCrashpad(severity, file, line, message_start, str);
+
+#if DCHECK_IS_ON()
+  // For unittests.
+  //  Some threads are not allowed to access 'g_main_task_runner.Get()'.
+  //  See 'void AssertSingletonAllowed()' in file
+  //  'base/threading/thread_restrictions.cc'.
+#else
+  if (severity >= logging::LOG_WARNING && severity != logging::LOGGING_FATAL) {
+    RenderThreadImpl::DeprecatedGetMainTaskRunner()->PostTask(
+        FROM_HERE, base::BindOnce(ReportRendererLogOnMainThread, priority, str));
+    return true;
+  }
+#endif
+  return false;
+}
+#endif  // OHOS_LOGGER_REPORT
+
 }  // anonymous namespace
 
 // Multi-process mode.
@@ -1966,6 +2074,35 @@ void RenderThreadImpl::OnMemoryPressureFromBrowserReceived(
 void RenderThreadImpl::UpdateThemeFontFile(base::File theme_font) {
   blink::FontCache::Get().Invalidate();
   SkFontMgr::RefDefault()->InvalidateThemeFont(theme_font.GetPlatformFile());
+}
+#endif
+
+#if defined(OHOS_LOGGER_REPORT)
+void RenderThreadImpl::OnChannelListenError() {
+  if ((*base::CommandLine::ForCurrentProcess())
+          .HasSwitch(switches::kForBrowser)) {
+    if (logging::GetLogMessageHandler()) {
+      logging::SetLogMessageHandler(nullptr);
+      LOG(INFO) << "remove log message handler for "
+                << base::GetCurrentProcId();
+    }
+  }
+
+  ChildThreadImpl::OnChannelListenError();
+}
+
+void RenderThreadImpl::OnChannelConnected(int32_t peer_pid) {
+  if ((*base::CommandLine::ForCurrentProcess())
+          .HasSwitch(switches::kForBrowser)) {
+    if (!logging::GetLogMessageHandler()) {
+      logging::SetLogMessageHandler(RenderProcessLogMessageHandler);
+    } else {
+      LOG(INFO) << "maybe you runs in single process mode, log message handler "
+                   "had been setted by other";
+    }
+  }
+
+  ChildThreadImpl::OnChannelConnected(peer_pid);
 }
 #endif
 

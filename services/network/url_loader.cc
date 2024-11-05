@@ -99,6 +99,12 @@
 #include "third_party/abseil-cpp/absl/types/optional.h"
 #include "url/origin.h"
 
+#ifdef OHOS_LOGGER_REPORT
+#include "content/public/common/content_switches.h"
+#include "base/command_line.h"
+#include "url/ohos/log_utils.h"
+#endif
+
 namespace network {
 
 namespace {
@@ -1848,6 +1854,17 @@ void URLLoader::ContinueOnResponseStarted() {
         << static_cast<int>(*blocked_reason) << ", url: ***";
 #endif
 
+#ifdef OHOS_LOGGER_REPORT
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            ::switches::kForBrowser)) {
+    if (!is_strict_log_mode_) {
+      LOG(URL)
+            << "ContinueOnResponseStarted blocked by response, blocked_reason "
+            << static_cast<int>(*blocked_reason) << ", url: "
+            << url::LogUtils::ConvertUrl(url_request_->url().spec());
+    }
+  }
+#endif
     // Close the socket associated with the request, to prevent leaking
     // information.
     url_request_->AbortAndCloseConnection();
@@ -1883,6 +1900,14 @@ void URLLoader::ContinueOnResponseStarted() {
       LOG(INFO) << "ContinueOnResponseStarted blocked the request for "
                    "Cross-Origin Read Blocking (CORB) blocked cross-origin "
                    "response, url: ***";
+#ifdef OHOS_LOGGER_REPORT
+      if (!is_strict_log_mode_) {
+        LOG(URL) << "ContinueOnResponseStarted blocked the request for "
+                    "Cross-Origin Read Blocking (CORB) blocked cross-origin "
+                    "response, url: "
+                 << url::LogUtils::ConvertUrl(url_request_->url().spec());
+      }
+#endif
       return;
     }
 #else
@@ -2034,6 +2059,17 @@ void URLLoader::DidRead(int num_bytes, bool completed_synchronously) {
         if (MaybeBlockResponseForCorb(corb_decision)) {
           LOG(INFO) << "DidRead blocked the request for Cross-Origin Read "
                        "Blocking (CORB) blocked cross-origin response, url: ***";
+#ifdef OHOS_LOGGER_REPORT
+          if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+                  ::switches::kForBrowser)) {
+            if (!is_strict_log_mode_) {
+              LOG_FEEDBACK(INFO) << "DidRead blocked the request for Cross-Origin Read Blocking (CORB) blocked cross-origin response, url: ***";
+              LOG(URL) << "DidRead blocked the request for Cross-Origin Read "
+                          "Blocking (CORB) blocked cross-origin response, url: "
+                       << url::LogUtils::ConvertUrl(url_request_->url().spec());
+            }
+          }
+#endif
           return;
         }
 #else

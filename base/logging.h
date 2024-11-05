@@ -364,6 +364,21 @@ typedef bool (*LogMessageHandlerFunction)(int severity,
 BASE_EXPORT void SetLogMessageHandler(LogMessageHandlerFunction handler);
 BASE_EXPORT LogMessageHandlerFunction GetLogMessageHandler();
 
+#ifdef OHOS_LOGGER_REPORT
+typedef void (*LoggerCallbackFunction)(int severity,
+    const std::string& tag, int policy, const std::string& str);
+BASE_EXPORT void SetLoggerCallbackToBase(LoggerCallbackFunction loggerCallback);    
+#endif
+
+#if defined(OHOS_LOGGER_REPORT)
+using LogPriority = int;
+constexpr LogPriority PRIORITY_INFO = 0;
+constexpr LogPriority PRIORITY_WARNING = 1;
+constexpr LogPriority PRIORITY_ERROR = 2;
+constexpr LogPriority PRIORITY_FATAL = 3;
+constexpr LogPriority PRIORITY_DEBUG = 4;
+#endif
+
 using LogSeverity = int;
 constexpr LogSeverity LOGGING_VERBOSE = -1;  // This is level 1 verbosity
 // Note: the log severities are used to index into the array of names,
@@ -376,6 +391,13 @@ constexpr LogSeverity LOGGING_FATAL = 3;
 constexpr LogSeverity LOGGING_DEBUG = 4;
 constexpr LogSeverity LOGGING_NUM_SEVERITIES = 5;
 // #endif
+
+#if defined(OHOS_LOGGER_REPORT)
+constexpr LogSeverity LOGGING_FEEDBACK = 6;
+constexpr LogSeverity LOGGING_TEST = 7;
+constexpr LogSeverity LOGGING_URL = 8; 
+#endif
+
 // LOGGING_DFATAL is LOGGING_FATAL in DCHECK-enabled builds, ERROR in normal
 // mode.
 #if DCHECK_IS_ON()
@@ -430,6 +452,33 @@ constexpr LogSeverity LOG_DFATAL = LOGGING_DFATAL;
   ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_DCHECK, \
                        ##__VA_ARGS__)
 
+#if defined(OHOS_LOGGER_REPORT)
+#define COMPACT_GOOGLE_LOG_EX_RENDERER(ClassName, ...)                  \
+  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_RENDERER, \
+                       ##__VA_ARGS__)
+#define COMPACT_GOOGLE_LOG_EX_FEEDBACK(ClassName, ...)                  \
+  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_FEEDBACK, \
+                       ##__VA_ARGS__)
+#define COMPACT_GOOGLE_LOG_EX_URL(ClassName, ...)                  \
+  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_URL, \
+                       ##__VA_ARGS__)
+#define COMPACT_GOOGLE_LOG_EX_FEEDBACK_INFO(ClassName, ...)             \
+  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_FEEDBACK, \
+                       ::logging::PRIORITY_INFO, ##__VA_ARGS__)       
+#define COMPACT_GOOGLE_LOG_EX_FEEDBACK_DEBUG(ClassName, ...)             \
+  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_FEEDBACK, \
+                       ::logging::PRIORITY_DEBUG, ##__VA_ARGS__)   
+#define COMPACT_GOOGLE_LOG_EX_FEEDBACK_WARNING(ClassName, ...)             \
+  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_FEEDBACK, \
+                       ::logging::PRIORITY_WARNING, ##__VA_ARGS__)   
+#define COMPACT_GOOGLE_LOG_EX_FEEDBACK_ERROR(ClassName, ...)             \
+  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_FEEDBACK, \
+                       ::logging::PRIORITY_ERROR, ##__VA_ARGS__)
+#define COMPACT_GOOGLE_LOG_EX_FEEDBACK_FATAL(ClassName, ...)             \
+  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_FEEDBACK, \
+                       ::logging::PRIORITY_FATAL, ##__VA_ARGS__)                     
+#endif  // OHOS_LOGGER_REPORT
+
 // #if defined(OHOS_DFX_LOGGING).
 #define COMPACT_GOOGLE_LOG_DEBUG COMPACT_GOOGLE_LOG_EX_DEBUG(LogMessage)
 // #endif
@@ -439,6 +488,17 @@ constexpr LogSeverity LOG_DFATAL = LOGGING_DFATAL;
 #define COMPACT_GOOGLE_LOG_FATAL COMPACT_GOOGLE_LOG_EX_FATAL(LogMessage)
 #define COMPACT_GOOGLE_LOG_DFATAL COMPACT_GOOGLE_LOG_EX_DFATAL(LogMessage)
 #define COMPACT_GOOGLE_LOG_DCHECK COMPACT_GOOGLE_LOG_EX_DCHECK(LogMessage)
+
+#if defined(OHOS_LOGGER_REPORT)
+#define COMPACT_GOOGLE_LOG_RENDERER COMPACT_GOOGLE_LOG_EX_RENDERER(LogMessage)
+#define COMPACT_GOOGLE_LOG_FEEDBACK COMPACT_GOOGLE_LOG_EX_FEEDBACK(LogMessage)
+#define COMPACT_GOOGLE_LOG_URL COMPACT_GOOGLE_LOG_EX_URL(LogMessage)
+#define COMPACT_GOOGLE_LOG_FEEDBACK_INFO COMPACT_GOOGLE_LOG_EX_FEEDBACK_INFO(LogMessage)
+#define COMPACT_GOOGLE_LOG_FEEDBACK_WARNING COMPACT_GOOGLE_LOG_EX_FEEDBACK_WARNING(LogMessage)
+#define COMPACT_GOOGLE_LOG_FEEDBACK_ERROR COMPACT_GOOGLE_LOG_EX_FEEDBACK_ERROR(LogMessage)
+#define COMPACT_GOOGLE_LOG_FEEDBACK_FATAL COMPACT_GOOGLE_LOG_EX_FEEDBACK_FATAL(LogMessage)
+#define COMPACT_GOOGLE_LOG_FEEDBACK_DEBUG COMPACT_GOOGLE_LOG_EX_FEEDBACK_DEBUG(LogMessage)
+#endif  // OHOS_LOGGER_REPORT
 
 #if BUILDFLAG(IS_WIN)
 // wingdi.h defines ERROR to be 0. When we call LOG(ERROR), it gets
@@ -527,6 +587,11 @@ BASE_EXPORT int GetDisableAllVLogLevel();
 #define LOG(severity) LAZY_STREAM(LOG_STREAM(severity), LOG_IS_ON(severity))
 #define LOG_IF(severity, condition) \
   LAZY_STREAM(LOG_STREAM(severity), LOG_IS_ON(severity) && (condition))
+
+#ifdef OHOS_LOGGER_REPORT
+#define LOG_FEEDBACK(level) LAZY_STREAM(LOG_FEEDBACK_STREAM(level), LOG_IS_ON(level))
+#define LOG_FEEDBACK_STREAM(level) COMPACT_GOOGLE_LOG_FEEDBACK_ ## level.stream()
+#endif
 
 // The VLOG macros log with negative verbosities.
 #define VLOG_STREAM(verbose_level) \
@@ -657,6 +722,11 @@ class BASE_EXPORT LogMessage {
   // Used for LOG(severity).
   LogMessage(const char* file, int line, LogSeverity severity);
 
+#ifdef OHOS_LOGGER_REPORT
+  // Used for LOG(severity, level).
+  LogMessage(const char* file, int line, LogSeverity severity, LogPriority priority);
+#endif
+
   // Used for CHECK().  Implied severity = LOGGING_FATAL.
   LogMessage(const char* file, int line, const char* condition);
   LogMessage(const LogMessage&) = delete;
@@ -685,6 +755,11 @@ class BASE_EXPORT LogMessage {
   const int line_;
 #if BUILDFLAG(IS_OHOS)
   std::string tag_;
+#endif
+
+#ifdef OHOS_LOGGER_REPORT
+  LogPriority priority_;
+  std::string ohos_tag_;
 #endif
   // This is useful since the LogMessage class uses a lot of Win32 calls
   // that will lose the value of GLE and the code that called the log function

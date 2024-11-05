@@ -79,6 +79,10 @@
 #include "net/reporting/reporting_service.h"
 #endif  // BUILDFLAG(ENABLE_REPORTING)
 
+#ifdef OHOS_LOGGER_REPORT
+#include "url/ohos/log_utils.h"
+#endif
+
 namespace net {
 
 namespace {
@@ -2179,6 +2183,12 @@ void HttpNetworkTransaction::StopRecording() {
 
 void HttpNetworkTransaction::ReportTimeout() {
   LOG(INFO) << "INFO: request had no reponse within 5 seconds. url: ***";
+#ifdef OHOS_LOGGER_REPORT
+  if (!session_->is_strict_log_mode()) {
+    LOG(URL) << "request had no reponse within 5 seconds. url: "
+             << url::LogUtils::ConvertUrl(url_.spec());
+  }
+#endif
 }
 #endif
 

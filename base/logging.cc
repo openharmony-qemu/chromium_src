@@ -693,6 +693,17 @@ LogMessageHandlerFunction GetLogMessageHandler() {
   return g_log_message_handler;
 }
 
+#ifdef OHOS_LOGGER_REPORT
+LoggerCallbackFunction g_logger_callback = nullptr;
+void SetLoggerCallbackToBase(LoggerCallbackFunction loggerCallback) {
+  g_logger_callback = loggerCallback;
+}
+
+// LoggerCallbackFunction GetLoggerCallback() {
+//   return 
+// }
+#endif
+
 #if !defined(NDEBUG)
 // Displays a message box to the user with the error message in it.
 // Used for fatal messages, where we close the app simultaneously.
@@ -730,6 +741,13 @@ LogMessage::LogMessage(const char* file, int line, const char* condition)
   stream_ << "Check failed: " << condition << ". ";
 }
 
+#ifdef OHOS_LOGGER_REPORT
+LogMessage::LogMessage(const char* file, int line, LogSeverity severity, LogPriority priority)
+    : severity_(severity), file_(file), line_(line), priority_(priority) {
+  Init(file, line);
+}
+#endif
+
 LogMessage::~LogMessage() {
   size_t stack_start = stream_.str().length();
 #if !defined(OFFICIAL_BUILD) && !BUILDFLAG(IS_NACL) && !defined(__UCLIBC__) && \
@@ -761,7 +779,11 @@ LogMessage::~LogMessage() {
       file_, line_,
       std::string(base::StringPiece(str_newline).substr(message_start_)));
 
-  if (severity_ == LOGGING_FATAL)
+  if (severity_ == LOGGING_FATAL
+  #ifdef OHOS_LOGGER_REPORT
+    || priority_ == PRIORITY_FATAL
+  #endif
+  )
     SetLogFatalCrashKey(this);
 
   // Give any log message handler first dibs on the message.
@@ -921,6 +943,22 @@ LogMessage::~LogMessage() {
                                    LogSeverityToFuchsiaLogSeverity(severity_));
 #endif  // BUILDFLAG(IS_FUCHSIA)
   }
+#if defined(OHOS_LOGGER_REPORT)
+  if (g_logger_callback != nullptr) {
+    LogSeverity policys = LOGGING_VERBOSE;
+    switch (severity_) {
+      case LOGGING_FEEDBACK:
+        policys = LOGGING_FEEDBACK;
+        break;
+      case LOGGING_URL:
+        policys = LOGGING_URL;
+        priority_ = PRIORITY_INFO;
+        break;
+    }
+    g_logger_callback(priority_, ohos_tag_, policys, str_newline);
+    return;
+  } 
+#endif
 
   if (ShouldLogToStderr(severity_)) {
     // Not using fwrite() here, as there are crashes on Windows when CRT calls
@@ -1014,8 +1052,14 @@ void LogMessage::Init(const char* file, int line) {
   if (tagStart == base::StringPiece::npos) {
     tag_ = std::string("chromium");
     filename = message;
+#ifdef OHOS_LOGGER_REPORT
+    ohos_tag_ = std::string("mainprocess");
+#endif
   } else {
     tag_ = std::string(message.substr(0, tagStart));
+#ifdef OHOS_LOGGER_REPORT
+    ohos_tag_ = std::string(message.substr(0, tagStart));
+#endif
     filename = message.substr(tagStart + 1, message.size() - tagStart);
   }
 #else

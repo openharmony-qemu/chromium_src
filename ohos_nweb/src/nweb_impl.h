@@ -547,6 +547,13 @@ class NWebImpl : public NWeb {
   void OnTextSelected() override;
   void OnDestroyImageAnalyzerOverlay() override;
 #endif
+
+#ifdef OHOS_LOGGER_REPORT
+  static void PutLoggerCallback(
+      std::shared_ptr<NWebLoggerCallback> logger_callback);
+  static void RemoveLoggerCallback();
+#endif
+
   int SetUrlTrustList(const std::string& urlTrustList) override;
   int SetUrlTrustListWithErrMsg(
     const std::string& urlTrustList, std::string& detailErrMsg) override;

@@ -430,4 +430,10 @@ void HttpNetworkSession::SetConnectJobWithSecureDnsOnlyTimeout(int seconds) {
   normal_socket_pool_manager_->SetConnectJobWithSecureDnsOnlyTimeout(seconds);
 }
 #endif
+#ifdef OHOS_LOGGER_REPORT
+bool HttpNetworkSession::is_strict_log_mode() {
+  return is_strict_log_mode_;
+}
+#endif
+
 }  // namespace net

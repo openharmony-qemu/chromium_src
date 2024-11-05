@@ -301,6 +301,10 @@
 #include "content/browser/renderer_host/render_view_host_delegate_view.h"
 #endif
 
+#if defined(OHOS_LOGGER_REPORT)
+#include "url/ohos/log_utils.h"
+#endif
+
 namespace features {
 BASE_FEATURE(kDisableFrameNameUpdateOnNonCurrentRenderFrameHost,
              "DisableFrameNameUpdateOnNonCurrentRenderFrameHost",
@@ -9734,6 +9738,14 @@ void RenderFrameHostImpl::CommitNavigation(
   if (frame_tree_node()->IsMainFrame()) {
     LOG(INFO) << "event_message: commit navigation in main frame, routing_id: "
               << routing_id_ << ", url: ***, " << devtools_navigation_token.ToString();
+#ifdef OHOS_LOGGER_REPORT
+    if (!GetProcess()->GetBrowserContext()->IsOffTheRecord()) {
+      LOG(URL)
+          << "event_message: commit navigation in main frame, routing_id: "
+          << routing_id_ << ", url: "
+          << url::LogUtils::ConvertUrl(common_params->url.possibly_invalid_spec());
+    }
+#endif
   }
 #endif
 

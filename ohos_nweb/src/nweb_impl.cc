@@ -1601,6 +1601,20 @@ void NWebImpl::RegisterNativeArkJSFunction(
   }
 }
 
+void NWebImpl::RegisterNativeArkJSFunctionWithResult(
+    const std::string& objName,
+    const std::vector<std::string>& methodName,
+    std::vector<NativeJSProxyCallbackFuncWithResult>&& callback,
+    bool isAsync,
+    const std::string& permission) {
+  if (nweb_delegate_ != nullptr) {
+    nweb_delegate_->RegisterNativeJSProxyWithResult(objName, methodName,
+                                          std::move(callback), isAsync, permission);
+  } else {
+    LOG(ERROR) << "nweb_delegate_ is nullptr";
+  }
+}
+
 void NWebImpl::UnRegisterNativeArkJSFunction(const char* objName) {
   if (nweb_delegate_ != nullptr) {
     nweb_delegate_->UnRegisterNativeArkJSFunction(objName);

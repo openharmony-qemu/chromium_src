@@ -223,6 +223,12 @@ class NWebDelegateInterface
                                       std::vector<size_t>&)>>&& callback,
       bool isAsync,
       const std::string& permission) = 0;
+  virtual void RegisterNativeJSProxyWithResult(
+      const std::string& objName,
+      const std::vector<std::string>& methodName,
+      std::vector<std::function<std::shared_ptr<OHOS::NWeb::NWebValue>(
+          std::vector<std::vector<uint8_t>>&, std::vector<size_t>&)>>&& callback,
+      bool isAsync, const std::string& permission) = 0;
   virtual void UnRegisterNativeArkJSFunction(const char* objName) = 0;
 
 #ifdef OHOS_ARKWEB_ADBLOCK

@@ -35,6 +35,7 @@ MediaSessionOHOS::MediaSessionOHOS(MediaSessionImpl* session)
   DCHECK(session);
 
   is_playing_ = false;
+  is_end_of_media_ = false;
   is_initialized_ = false;
   media_type_ = OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID;
   avsession_adapter_ =
@@ -256,6 +257,31 @@ bool MediaSessionOHOS::SetWebviewShowForAudio(bool show) {
   return ret;
 }
 
+bool MediaSessionOHOS::SetWebviewShowForVideo(bool show) {
+  bool ret = false;
+  if (media_type_ == OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID) {
+    LOG(WARNING) << __FUNCTION__ << " media avsession media_type invalid return";
+    return ret;
+  }
+  if (media_type_ != OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_VIDEO) {
+    LOG(ERROR) << __FUNCTION__ << " media avsession not audio return  ret=" << (ret ? 1 : 0);
+    return ret;
+  }
+  if (show) {
+    if (media_session_) {
+      media_session_->RebuildAndNotifyMediaSessionInfoChanged();
+    }
+    ret = true;
+  } else {
+    if (avsession_adapter_) {
+      avsession_adapter_->DestroyAVSession();
+      media_type_ = OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID;
+      ret = true;
+    }
+  }
+  return ret;
+}
+
 void MediaSessionOHOS::Suspend() {
   DCHECK(media_session_);
   if (media_type_ == OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID) {
@@ -291,6 +317,16 @@ void MediaSessionOHOS::SeekTo(const int64_t millis) {
   } else {
     LOG(ERROR) << __FUNCTION__ << "receive an illegal millis of " << millis;
   }
+}
+
+bool MediaSessionOHOS::IsEndOfMedia()
+{
+  return is_end_of_media_;
+}
+
+void MediaSessionOHOS::SetEndOfMedia(bool end_of_media)
+{
+  is_end_of_media_ = end_of_media;
 }
 
 OHOSMediaAVSessionCallback::OHOSMediaAVSessionCallback(

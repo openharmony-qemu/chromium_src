@@ -197,6 +197,11 @@ void MediaSessionController::OnPlaybackPaused(bool reached_end_of_stream) {
   is_paused_ = true;
 
   if (reached_end_of_stream) {
+#if defined(OHOS_MEDIA_AVSESSION)
+  if (media_session_) {
+    media_session_->SetEndOfMedia(reached_end_of_stream);
+  }
+#endif // defined(OHOS_MEDIA_AVSESSION)
     is_playback_in_progress_ = false;
     AddOrRemovePlayer();
   }

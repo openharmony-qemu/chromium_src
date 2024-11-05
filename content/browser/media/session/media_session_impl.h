@@ -357,7 +357,7 @@ class MediaSessionImpl : public MediaSession,
   base::WeakPtr<MediaSessionImpl> GetWeakPtr();
 
   CONTENT_EXPORT bool HasImageCacheForTest(const GURL& image_url) const;
-  
+
 #if BUILDFLAG(IS_OHOS)
   bool HasOnlyOneShotPlayersPublic() const;
 #endif //BUILDFLAG(IS_OHOS)
@@ -369,7 +369,9 @@ class MediaSessionImpl : public MediaSession,
   NWebPlaybackState NWebGetState();
   void SetWebviewShow(bool show);
   void SetWebviewShowForAudio(bool show);
+  void SetWebviewShowForVideo(bool show);
   bool IsEndOfMedia();
+  void SetEndOfMedia(bool end_of_media);
 
   std::unordered_set<media::OHOSAudioOutputStream*> activeAudioStream_;
   int audioResumeInterval_ = 0;

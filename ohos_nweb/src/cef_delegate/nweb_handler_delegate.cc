@@ -295,6 +295,7 @@ char* CopyCefStringToChar(const CefString& str) {
   int strLen = str.size() + 1;
   char* result = new char[strLen]{0};
   if (strcpy_s(result, strLen, str.ToString().c_str()) != EOF) {
+    delete[] result;
     return nullptr;
   }
   return result;

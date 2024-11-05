@@ -287,6 +287,7 @@ class MockWidgetInputHandler : public blink::mojom::WidgetInputHandler {
 #if defined(OHOS_UNITTESTS)
   void SetGestureEventResult(bool result) override {}
   void SetNativeEmbedMode(bool flag) override {}
+  void ScrollBy(float delta_x, float delta_y) override {}
 #endif
   using MessageVector = std::vector<std::unique_ptr<DispatchedMessage>>;
   MessageVector GetAndResetDispatchedMessages();

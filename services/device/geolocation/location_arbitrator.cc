@@ -55,6 +55,9 @@ void LocationArbitrator::OnPermissionGranted() {
 }
 
 void LocationArbitrator::StartProvider(bool enable_high_accuracy) {
+#if BUILDFLAG(IS_OHOS)
+  base::AutoLock lock(lock_);
+#endif
   is_running_ = true;
   enable_high_accuracy_ = enable_high_accuracy;
 
@@ -82,6 +85,9 @@ void LocationArbitrator::StopProvider() {
   // Reset the reference location state (provider+result)
   // so that future starts use fresh locations from
   // the newly constructed providers.
+#if BUILDFLAG(IS_OHOS)
+  base::AutoLock lock(lock_);
+#endif
   position_provider_ = nullptr;
   result_.reset();
 
@@ -122,6 +128,9 @@ void LocationArbitrator::RegisterProviders() {
 void LocationArbitrator::OnLocationUpdate(
     const LocationProvider* provider,
     mojom::GeopositionResultPtr new_result) {
+#if BUILDFLAG(IS_OHOS)
+  base::AutoLock lock(lock_);
+#endif
   DCHECK(new_result);
   DCHECK(new_result->is_error() ||
          new_result->is_position() &&

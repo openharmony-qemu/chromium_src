@@ -625,6 +625,9 @@ void ContentAutofillDriver::UnsetKeyPressHandlerCallback() {
 }
 
 void ContentAutofillDriver::SetShouldSuppressKeyboardCallback(bool suppress) {
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  LOG(INFO) << "set the keyboard suppressd=" << (suppress ? "true" : "false");
+#endif
   should_suppress_keyboard_ = suppress;
 }
 

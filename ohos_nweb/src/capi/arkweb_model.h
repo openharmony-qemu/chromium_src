@@ -48,6 +48,22 @@ struct ArkWeb_WebMessage {
   size_t dataLength;
 };
 
+/**
+ * @brief Defines the ArkWeb_WebMessage.
+ *
+ * @since 14
+ */
+struct ArkWeb_JavaScriptValue {
+  /** The data type carried in the ArkWeb_WebMessage. */
+  ArkWeb_JavaScriptValueType type;
+
+  /** The data in ArkWeb_WebMessage. */
+  void* data;
+
+  /** The data length. */
+  size_t dataLength;
+};
+
 void OH_ArkWeb_RunJavaScript(const char* webTag,
                              const ArkWeb_JavaScriptObject* javascriptObject);
 void OH_ArkWeb_RegisterJavaScriptProxy(const char* webTag,
@@ -66,28 +82,28 @@ void OH_ArkWeb_OnPageEnd(const char* webTag,
 void OH_ArkWeb_OnDestroy(const char* webTag,
                          ArkWeb_OnComponentCallback callback,
                          void* userData);
-void OH_ArkWeb_RegisterAsyncJavaScriptProxy(const char* webTag,
-                                       const ArkWeb_ProxyObject* proxyObject);
+void OH_ArkWeb_RegisterAsyncJavaScriptProxy(
+    const char* webTag,
+    const ArkWeb_ProxyObject* proxyObject);
 void RegisterJavaScriptProxy(const char* webTag,
                              const ArkWeb_ProxyObject* proxyObject,
                              bool isAsync,
                              const char* permission);
-void OH_ArkWeb_RegisterJavaScriptProxyEx(const char* webTag,
-                                         const ArkWeb_ProxyObject* proxyObject,
-                                         const char* permission);
 ArkWeb_WebMessagePortPtr* OH_ArkWeb_CreateWebMessagePorts(const char* webTag,
                                                           size_t* size);
 void OH_ArkWeb_DestroyWebMessagePorts(ArkWeb_WebMessagePortPtr** ports,
                                       size_t size);
-ArkWeb_ErrorCode OH_ArkWeb_PostWebMessage(const char* webTag,
-                              const char* name,
-                              ArkWeb_WebMessagePortPtr* webMessagePorts,
-                              size_t size,
-                              const char* url);
+ArkWeb_ErrorCode OH_ArkWeb_PostWebMessage(
+    const char* webTag,
+    const char* name,
+    ArkWeb_WebMessagePortPtr* webMessagePorts,
+    size_t size,
+    const char* url);
 
-ArkWeb_ErrorCode OH_WebMessage_PostMessage(const ArkWeb_WebMessagePortPtr webMessagePort,
-                               const char* webTag,
-                               const ArkWeb_WebMessagePtr message);
+ArkWeb_ErrorCode OH_WebMessage_PostMessage(
+    const ArkWeb_WebMessagePortPtr webMessagePort,
+    const char* webTag,
+    const ArkWeb_WebMessagePtr message);
 void OH_WebMessage_Close(const ArkWeb_WebMessagePortPtr webMessagePort,
                          const char* webTag);
 void OH_WebMessage_SetMessageEventHandler(
@@ -129,6 +145,25 @@ void OH_CookieManager_ClearSessionCookiesSync();
 
 const char* OH_ArkWeb_GetLastJavascriptProxyCallingFrameUrl();
 
+void OH_ArkWeb_RegisterJavaScriptProxyEx(
+    const char* webTag,
+    const ArkWeb_ProxyObjectWithResult* proxyObject,
+    const char* permission);
+
+void OH_ArkWeb_RegisterAsyncJavaScriptProxyEx(
+    const char* webTag,
+    const ArkWeb_ProxyObject* proxyObject,
+    const char* permission);
+
+void RegisterJavaScriptProxyEx(const char* webTag,
+                               const ArkWeb_ProxyObjectWithResult* proxyObject,
+                               bool isAsync,
+                               const char* permission);
+
+ArkWeb_JavaScriptValuePtr OH_JavaScript_CreateJavaScriptValue(
+    ArkWeb_JavaScriptValueType type,
+    void* data,
+    size_t dataLength);
 #ifdef __cplusplus
 }
 #endif

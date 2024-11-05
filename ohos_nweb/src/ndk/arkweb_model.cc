@@ -31,6 +31,57 @@
 #include "cef/libcef/browser/javascript/oh_gin_javascript_bridge_dispatcher_host.h"
 
 #ifdef __cplusplus
+
+std::function<std::shared_ptr<OHOS::NWeb::NWebValue>(
+        std::vector<std::vector<uint8_t>>&, std::vector<size_t>&)> CreateProxyCallback(
+            ArkWeb_OnJavaScriptProxyCallbackWithResult callback, std::string tag, void* data) {
+  return [cb = callback,
+          webTag = std::string(tag),
+          userData = data](
+              std::vector<std::vector<uint8_t>>& dataList,
+              std::vector<size_t>& dataSize) ->
+                std::shared_ptr<OHOS::NWeb::NWebValue> {
+    if (cb) {
+      size_t size = dataList.size();
+      std::vector<ArkWeb_JavaScriptBridgeData> dataVector(size);
+      for (size_t i = 0; i < size; i++) {
+        ArkWeb_JavaScriptBridgeData data = {.buffer = dataList[i].data(),
+                                            .size = dataSize[i]};
+        dataVector[i] = data;
+      }
+      ArkWeb_JavaScriptValuePtr result =
+          cb(webTag.c_str(), dataVector.data(), size, userData);
+      std::shared_ptr<OHOS::NWeb::NWebValue> nwebValue =
+          std::make_shared<OHOS::NWeb::NWebValue>(OHOS::NWeb::NWebValue::Type::NONE);
+      if (!result) {
+        WVLOG_D("native return nullptr");
+        return nullptr;
+      }
+      if (result->type == ArkWeb_JavaScriptValueType::ARKWEB_JAVASCRIPT_BOOL) {
+        WVLOG_D("result is bool type");
+        bool boolVal = (*(bool*)(result->data));
+        delete (bool*)(result->data);
+        delete result;
+        nwebValue->SetType(OHOS::NWeb::NWebValue::Type::BOOLEAN);
+        nwebValue->SetBoolean(boolVal);
+      } else if (result->type == ArkWeb_JavaScriptValueType::ARKWEB_JAVASCRIPT_STRING) {
+        WVLOG_D("result is string type");
+        std::string strVal = std::string(((char*)(result->data)));
+        delete[] (char*)(result->data);
+        delete result;
+        nwebValue->SetType(OHOS::NWeb::NWebValue::Type::STRING);
+        nwebValue->SetString(strVal);
+      } else {
+        WVLOG_D("native return nullptr");
+        return nullptr;
+      }
+      return nwebValue;
+    }
+    WVLOG_D("native return nullptr");
+    return nullptr;
+  };
+}
+
 extern "C" {
 #endif  // __cplusplus
 
@@ -260,9 +311,13 @@ void RegisterJavaScriptProxy(
       };
       callbackList[i] = std::move(proxyCallback);
     }
-
-    nwebSharedPtr->RegisterNativeArkJSFunction(
-      proxyObject->objName, methodNameList, std::move(callbackList), isAsync, permission);
+    if (permission) {
+      nwebSharedPtr->RegisterNativeArkJSFunction(
+        proxyObject->objName, methodNameList, std::move(callbackList), isAsync, permission);
+    } else {
+      nwebSharedPtr->RegisterNativeArkJSFunction(
+        proxyObject->objName, methodNameList, std::move(callbackList), isAsync, "");
+    }
   } else {
     LOG(ERROR)
         << "NativeArkWeb RegisterJavaScriptProxy get nweb null: %{public}s"
@@ -270,13 +325,6 @@ void RegisterJavaScriptProxy(
   }
 }
 
-ARKWEB_NDK_EXPORT void OH_ArkWeb_RegisterJavaScriptProxyEx(const char* webTag,
-                                         const ArkWeb_ProxyObject* proxyObject,
-                                         const char* permission) {
-  RegisterJavaScriptProxy(webTag,
-                          proxyObject, false,
-                          permission);
-}
 
 ARKWEB_NDK_EXPORT ArkWeb_WebMessagePortPtr* OH_ArkWeb_CreateWebMessagePorts(
     const char* webTag,
@@ -667,7 +715,7 @@ ARKWEB_NDK_EXPORT ArkWeb_ErrorCode OH_CookieManager_FetchCookieSync(
   *cookie_value = new char[cookie_content.length() + 1];
   strcpy((*cookie_value), cookie_content.c_str());
   if (cookie_content == "" && !is_valid) {
-    return ARKWEB_INVALID_URL; 
+    return ARKWEB_INVALID_URL;
   }
 
   return ARKWEB_SUCCESS;
@@ -723,6 +771,128 @@ ARKWEB_NDK_EXPORT void OH_CookieManager_ClearSessionCookiesSync() {
 
 ARKWEB_NDK_EXPORT const char* OH_ArkWeb_GetLastJavascriptProxyCallingFrameUrl() {
   return NWEB::OhGinJavascriptBridgeDispatcherHost::GetLastCallingFrameUrlTLS();
+}
+
+void RegisterJavaScriptProxyEx(
+    const char* webTag,
+    const ArkWeb_ProxyObjectWithResult* proxyObject,
+    bool isAsync,
+    const char* permission) {
+  if (proxyObject == nullptr) {
+    LOG(ERROR) << "NativeArkWeb proxy object is nullptr";
+    return;
+  }
+
+  if (proxyObject->objName == nullptr) {
+    LOG(ERROR) << "NativeArkWeb proxy object name is nullptr";
+    return;
+  }
+
+  auto webObjectPtr =
+      OHOS::NWeb::ArkWebNativeObject::GetWebInstanceByWebTag(webTag);
+  if (!webObjectPtr) {
+    LOG(ERROR) << "NativeArkWeb object pointer is nullptr";
+    return;
+  }
+
+  if (auto nwebSharedPtr = webObjectPtr->GetWebSharedPtr()) {
+    int32_t size = proxyObject->size;
+    std::vector<std::function<std::shared_ptr<OHOS::NWeb::NWebValue>(
+        std::vector<std::vector<uint8_t>>&, std::vector<size_t>&)>>
+            callbackList(size);
+    const ArkWeb_ProxyMethodWithResult* methodList = proxyObject->methodList;
+    if (methodList == nullptr) {
+      LOG(ERROR) << "NativeArkWeb method list is nullptr";
+      return;
+    }
+
+    std::vector<std::string> methodNameList(size);
+    for (int32_t i = 0; i < size; i++) {
+      auto methodNameObject = methodList[i];
+      methodNameList[i] = methodNameObject.methodName;
+      auto proxyCallback = CreateProxyCallback(
+            methodNameObject.callback, std::string(webTag), methodNameObject.userData);
+      callbackList[i] = std::move(proxyCallback);
+    }
+    if (permission) {
+      nwebSharedPtr->RegisterNativeArkJSFunctionWithResult(
+        proxyObject->objName, methodNameList, std::move(callbackList), isAsync, permission);
+    } else {
+      nwebSharedPtr->RegisterNativeArkJSFunctionWithResult(
+        proxyObject->objName, methodNameList, std::move(callbackList), isAsync, "");
+    }
+  } else {
+    LOG(ERROR)
+        << "NativeArkWeb RegisterJavaScriptProxy get nweb null: %{public}s"
+        << webTag;
+  }
+}
+
+ARKWEB_NDK_EXPORT void OH_ArkWeb_RegisterJavaScriptProxyEx(
+    const char* webTag,
+    const ArkWeb_ProxyObjectWithResult* proxyObject,
+    const char* permission) {
+  if (!webTag || !proxyObject) {
+    return;
+  }
+
+  RegisterJavaScriptProxyEx(webTag, proxyObject, false, permission);
+}
+
+ARKWEB_NDK_EXPORT void OH_ArkWeb_RegisterAsyncJavaScriptProxyEx(
+    const char* webTag,
+    const ArkWeb_ProxyObject* proxyObject,
+    const char* permission) {
+  if (!webTag || !proxyObject) {
+    return;
+  }
+
+  RegisterJavaScriptProxy(webTag, proxyObject, true, permission);
+}
+
+ARKWEB_NDK_EXPORT ArkWeb_JavaScriptValuePtr OH_JavaScript_CreateJavaScriptValue(
+  ArkWeb_JavaScriptValueType type, void* data, size_t dataLength) {
+  ArkWeb_JavaScriptValuePtr value = new (std::nothrow) ArkWeb_JavaScriptValue();
+  if (!value) {
+    LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue malloc failed";
+    return nullptr;
+  }
+
+  if (!data) {
+    LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue nullptr error";
+    return nullptr;
+  }
+
+  if (dataLength == 0) {
+    LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue data size error";
+    return nullptr;
+  }
+
+  if (type == ArkWeb_JavaScriptValueType::ARKWEB_JAVASCRIPT_NONE) {
+    LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue type none";
+    return nullptr;
+  }
+
+  if (type == ArkWeb_JavaScriptValueType::ARKWEB_JAVASCRIPT_BOOL &&
+      dataLength != 1) {
+    LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue type bool length error";
+    return nullptr;
+  }
+
+  char* destination = new (std::nothrow) char[dataLength];
+
+  if (!destination) {
+    LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue malloc failed";
+    delete value;
+    return nullptr;
+  }
+
+  memcpy(destination, (char*)data, dataLength);
+  value->data = (void*)destination;
+  value->dataLength = dataLength;
+  value->type = type;
+
+  return value;
 }
 
 #ifdef __cplusplus

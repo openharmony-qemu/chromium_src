@@ -217,14 +217,12 @@ void DynamicFrameRateDecision::SetLTPOStrategyImpl(int32_t strategy)
 
 void DynamicFrameRateDecision::SetVisible(int nweb_id, bool visible)
 {
-  LOG(DEBUG) << "zhaopf1  DynamicFrameRateDecision::SetVisiblen web_id: " << nweb_id << ", visible " << visible;
   if (strategy_ != LTPOStrategy::HGM_FLING && strategy_ != LTPOStrategy::ALL) {
     return;
   }
   if (!curent_task_runner_) {
     return;
   }
-  LOG(DEBUG) << "zhaopf2  DynamicFrameRateDecision::SetVisiblen web_id: " << nweb_id << ", visible " << visible;
   curent_task_runner_->PostTask(FROM_HERE, base::BindOnce(
     &DynamicFrameRateDecision::SetVisibleImpl,
     base::Unretained(this), nweb_id, visible));

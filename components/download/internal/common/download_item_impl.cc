@@ -67,6 +67,10 @@
 #if BUILDFLAG(IS_ANDROID)
 #include "components/download/internal/common/android/download_collection_bridge.h"
 #endif  // BUILDFLAG(IS_ANDROID)
+#ifdef OHOS_EX_DOWNLOAD
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif // OHOS_EX_DOWNLOAD
 
 namespace download {
 
@@ -2078,6 +2082,9 @@ void DownloadItemImpl::InterruptWithPartialState(
             << " bytes_so_far:" << bytes_so_far
             << " hash_state:" << (hash_state ? "Valid" : "Invalid")
             << " this=" << DebugString(true);
+#ifdef OHOS_EX_DOWNLOAD
+  bool need_auto_resume = false;
+#endif // OHOS_EX_DOWNLOAD
 
   // Somewhat counter-intuitively, it is possible for us to receive an
   // interrupt after we've already been interrupted.  The generation of
@@ -2129,6 +2136,16 @@ void DownloadItemImpl::InterruptWithPartialState(
       last_reason_ = reason;
 
       ResumeMode resume_mode = GetResumeMode();
+#ifdef OHOS_EX_DOWNLOAD
+      if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebExDownload) && state_ == TARGET_RESOLVED_INTERNAL) {
+        resume_mode = ResumeMode::IMMEDIATE_CONTINUE;
+        need_auto_resume = true;
+        LOG(INFO) << "DownloadItemImpl::InterruptWithPartialState need_auto_resume: "
+                  << need_auto_resume << ", last_reason_: " << last_reason_
+                  << ", state_: " << state_ << ", guid: " << GetGuid();
+      }
+#endif // OHOS_EX_DOWNLOAD
       ReleaseDownloadFile(resume_mode != ResumeMode::IMMEDIATE_CONTINUE &&
                           resume_mode != ResumeMode::USER_CONTINUE);
     } break;
@@ -2208,6 +2225,13 @@ void DownloadItemImpl::InterruptWithPartialState(
   DCHECK_EQ(last_reason_, reason);
   TransitionTo(INTERRUPTED_INTERNAL);
   delegate_->DownloadInterrupted(this);
+
+#ifdef OHOS_EX_DOWNLOAD
+  if (need_auto_resume) {
+    AutoResume();
+    return;
+  }
+#endif // OHOS_EX_DOWNLOAD
 
   AutoResumeIfValid();
 }
@@ -2456,6 +2480,16 @@ void DownloadItemImpl::SetFullPath(const base::FilePath& new_path) {
 
   destination_info_.current_path = new_path;
 }
+
+#ifdef OHOS_EX_DOWNLOAD
+void DownloadItemImpl::AutoResume() {
+  DVLOG(20) << __func__ << "() " << DebugString(true);
+  DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+
+  auto_resume_count_++;
+  ResumeInterruptedDownload(ResumptionRequestSource::AUTOMATIC);
+}
+#endif // OHOS_EX_DOWNLOAD
 
 void DownloadItemImpl::AutoResumeIfValid() {
   DVLOG(20) << __func__ << "() " << DebugString(true);

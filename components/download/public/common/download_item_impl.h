@@ -692,6 +692,10 @@ struct COMPONENTS_DOWNLOAD_EXPORT NWebIdData : public base::SupportsUserData::Da
 
   void AutoResumeIfValid();
 
+#ifdef OHOS_EX_DOWNLOAD
+  void AutoResume();
+#endif // OHOS_EX_DOWNLOAD
+
   enum class ResumptionRequestSource { AUTOMATIC, USER };
   void ResumeInterruptedDownload(ResumptionRequestSource source);
 

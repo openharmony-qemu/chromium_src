@@ -1032,6 +1032,7 @@ const char kOhosAppApiVersion[] = "user-api-version";
 const char kEnableMultiRendererProcess[] = "enable-multi-renderer-process";
 const char kForBrowser[] = "for-browser";
 const char kOhosEnableDrDc[] = "ohos-enable-drdc";
+const char kEnableNwebExDownload[] = "enable-nweb-ex-download";
 const char kOhosDisableTouchEvent[] = "disable-touch-event-register";
 const char kPasswordWaitUsername[] = "ohos-enable-wait-for-username";
 const char kMaxNumberOfSavedFrames[] = "ohos-enable-max-number-of-saved-frames";

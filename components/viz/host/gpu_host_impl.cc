@@ -320,6 +320,11 @@ std::string GpuHostImpl::GetSurfaceId(int32_t native_embed_id){
   gpu_service_remote_->GetSurfaceId(native_embed_id, &surface_id);
   return surface_id;
 }
+
+void GpuHostImpl::DestroyNativeWindow(uint32_t native_window_id){
+  LOG(DEBUG) << "destroy native window id = " << native_window_id;
+  gpu_service_remote_->DestroyNativeWindow(native_window_id);
+}
 #endif
 
 void GpuHostImpl::SetChannelDiskCacheHandle(

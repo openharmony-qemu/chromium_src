@@ -10262,28 +10262,51 @@ void WebContentsImpl::ClearContextMenu() {
 #endif //OHOS_DRAG_DROP
 
 #ifdef OHOS_ARKWEB_ADBLOCK
-bool WebContentsImpl::TrigAdBlockEnabledForSite(GURL url) {
-  if (!IsAdsBlockEnabled()) {
-    base::AutoLock locker(lock_);
-    enable_adblock_for_site_ = false;
+void WebContentsImpl::EnableAdsBlock(bool enable) {
+  LOG(INFO) << "enable adblock: " << enable;
+
+  blink::RendererPreferences* prefs = GetMutableRendererPrefs();
+  if (prefs != NULL && prefs->is_global_adblock_enabled != enable) {
+    prefs->is_global_adblock_enabled = enable;
+    SyncRendererPrefs();
+  }
+}
+
+bool WebContentsImpl::IsAdsBlockEnabled() {
+  blink::RendererPreferences* prefs = GetMutableRendererPrefs();
+  if (prefs == NULL) {
     return false;
   }
+  return prefs->is_global_adblock_enabled;
+}
 
-  if (!OHOS::adblock::AdBlockConfig::GetInstance()->IsAdblockEnabledForUrl(
-          url)) {
-    base::AutoLock locker(lock_);
-    enable_adblock_for_site_ = false;
-    return false;
+void WebContentsImpl::TrigAdBlockEnabledForSiteFromUi(
+    const std::string& main_frame_url) {
+
+  // add FrameTreeNode info
+  RenderFrameHostImpl* rfh = GetPrimaryMainFrame();
+  if (!rfh) {
+    LOG(ERROR) << "[AdBlock] main render frame null";
+    return;
   }
 
-  base::AutoLock locker(lock_);
-  enable_adblock_for_site_ = true;
-  return true;
+  int main_frame_tree_node_id = rfh->GetFrameTreeNodeId();
+  if (!delegate_) {
+    return;
+  }
+
+  if (!(delegate_->TrigAdBlockEnabledForSiteFromUi(main_frame_url,
+                                                   main_frame_tree_node_id))) {
+    LOG(INFO) << "[AdBlock] trigger adblock switch with rule list";
+    bool enable =
+        OHOS::adblock::AdBlockConfig::GetInstance()->IsAdblockEnabledForUrl(
+            GURL(main_frame_url));
+    SetAdBlockEnabledForSite(enable, main_frame_tree_node_id);
+  }
 }
 
 bool WebContentsImpl::IsAdsBlockEnabledForCurPage() {
-  base::AutoLock locker(lock_);
-  return enable_adblock_for_site_;
+  return GetAdblockEnabledForSite();
 }
 
 void WebContentsImpl::OnAdsBlocked(
@@ -10299,6 +10322,62 @@ void WebContentsImpl::OnAdsBlocked(
   }
 }
 
+void WebContentsImpl::UpdateAdBlockEnabledToRender(bool site_adblock_enabled) {
+  RenderFrameHostImpl* pending_main_frame =
+      GetRenderManager()->speculative_frame_host();
+
+  if (pending_main_frame) {
+    pending_main_frame->UpdateAdBlockEnabledToRender(site_adblock_enabled);
+  } else {
+    RenderFrameHostImpl* rfh = GetPrimaryMainFrame();
+    if (rfh) {
+      rfh->UpdateAdBlockEnabledToRender(site_adblock_enabled);
+    }
+  }
+}
+
+bool WebContentsImpl::GetAdblockEnabledForSite() {
+  RenderFrameHost* rfh = GetPrimaryMainFrame();
+  if (rfh == nullptr) {
+    return false;
+  }
+  content::FrameTreeNode* node =
+      static_cast<content::RenderFrameHostImpl*>(rfh)->frame_tree_node();
+  if (node == nullptr) {
+    return false;
+  }
+  return node->is_adblock_enabled();
+}
+
+void WebContentsImpl::SetAdBlockEnabledForSite(bool is_adblock_enabled,
+                                               int main_frame_tree_node_id) {
+  content::RenderFrameHost* rfh = GetPrimaryMainFrame();
+  if (!rfh) {
+    LOG(ERROR) << "[AdBlock] SetAdBlockEnabledForSite main frame null";
+    return;
+  }
+  content::FrameTreeNode* node =
+      static_cast<content::RenderFrameHostImpl*>(rfh)->frame_tree_node();
+
+  if (!node) {
+    LOG(ERROR) << "[AdBlock] SetAdBlockEnabledForSite frame tree node null";
+    return;
+  }
+
+  // check FrameTreeNode id
+  if (node->frame_tree_node_id() != main_frame_tree_node_id) {
+    LOG(INFO) << "[AdBlock] Not set adblock enabled enabled "
+                 "switch owing to frame tree node id changed";
+    return;
+  }
+  LOG(INFO) << "[Adblock] set adblock switch for site, frame tree node id:"
+            << node->frame_tree_node_id()
+            << "  adblock switch from UI: " << is_adblock_enabled;
+  node->set_adblock_enabled(is_adblock_enabled);
+
+  // send to render
+  UpdateAdBlockEnabledToRender(is_adblock_enabled);
+}
 #endif
 
 #ifdef OHOS_EX_PASSWORD

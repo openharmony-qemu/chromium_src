@@ -135,6 +135,9 @@ IPC_STRUCT_TRAITS_BEGIN(blink::RendererPreferences)
 #if BUILDFLAG(IS_OZONE)
   IPC_STRUCT_TRAITS_MEMBER(selection_clipboard_buffer_available)
 #endif
+#ifdef OHOS_ARKWEB_ADBLOCK
+  IPC_STRUCT_TRAITS_MEMBER(is_global_adblock_enabled)
+#endif  // OHOS_ARKWEB_ADBLOCK
 IPC_STRUCT_TRAITS_END()
 
 IPC_ENUM_TRAITS_MAX_VALUE(content::DropData::Kind,

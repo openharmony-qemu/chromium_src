@@ -695,6 +695,15 @@ class NWebHandlerDelegate : public CefClient,
       const std::vector<std::string>& async_method_list,
       const int32_t object_id,
       const std::string& permission);
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  void SaveGlobalAdsBlock(bool enable);
+
+  bool TrigAdBlockEnabledForSiteFromUi(CefRefPtr<CefBrowser> browser,
+                                       const CefString& url,
+                                       int main_frame_tree_node_id) override;
+#endif
+
 #ifdef OHOS_DRAG_DROP
   bool IsDragEnter() const { return is_drag_enter_; }
   void SetDragEnter(bool enter) { is_drag_enter_ = enter; }
@@ -870,6 +879,10 @@ class NWebHandlerDelegate : public CefClient,
   PermissionMap javascript_async_permission_map_;
   std::function<void(void)> onLoadStartCallback_ = nullptr;
   std::function<void(void)> onLoadEndCallback_ = nullptr;
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+      bool is_global_adblock_enabled_ = false;
+#endif
 
   base::WeakPtrFactory<NWebHandlerDelegate> weak_factory_{this};
 };

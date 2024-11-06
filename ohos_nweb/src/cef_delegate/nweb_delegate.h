@@ -399,6 +399,8 @@ bool HitNativeArea(double x, double y);
   void EnableAdsBlock(bool enable) override;
   bool IsAdsBlockEnabled() override;
   bool IsAdsBlockEnabledForCurPage() override;
+  void SetAdBlockEnabledForSite(bool is_adblock_enabled,
+                                int main_frame_tree_node_id) override;
 #endif
 
 #if defined(OHOS_PASSWORD_AUTOFILL)

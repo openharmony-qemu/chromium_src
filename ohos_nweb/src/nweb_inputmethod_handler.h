@@ -60,6 +60,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
                           const CefString& text,
                           const CefRange& selected_range) override;
   void SetFocusStatus(bool focus_status) override;
+  bool GetFocusStatus() override;
   void OnEditableChanged(CefRefPtr<CefBrowser> browser,
                          bool is_editable_node) override;
   bool GetIsEditableNode() override;

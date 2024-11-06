@@ -1010,6 +1010,10 @@ void NWebInputMethodHandler::SetFocusStatus(bool focus_status) {
   focus_status_ = focus_status;
 }
 
+bool NWebInputMethodHandler::GetFocusStatus() {
+  return focus_status_;
+}
+
 void NWebInputMethodHandler::OnEditableChanged(CefRefPtr<CefBrowser> browser,
                                                bool is_editable_node) {
   is_editable_node_ = is_editable_node;

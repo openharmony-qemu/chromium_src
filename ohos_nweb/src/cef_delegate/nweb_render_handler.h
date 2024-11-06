@@ -270,7 +270,6 @@ class NWebRenderHandler : public CefRenderHandler {
   uint32_t visible_height_ = 0;
   bool needFocusViewport_ = false;
   int32_t node_id_ = -1;
-  bool is_focused_ = false;
 #endif
   int content_height_ = 0;
   int content_width_ = 0;

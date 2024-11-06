@@ -278,6 +278,7 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool vertical_scrollBar_access_{true};
   int overscroll_mode_{0};
   bool scroll_enabled_{true};
+  bool setting_scroll_enabled_{true};
 #endif  // defined(OHOS_INPUT_EVENTS)
 #if defined(OHOS_VIEWPORT)
   std::optional<bool> viewport_enabled_;

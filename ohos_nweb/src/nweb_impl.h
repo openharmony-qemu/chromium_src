@@ -226,6 +226,8 @@ class NWebImpl : public NWeb {
   bool IsAdsBlockEnabledForCurPage() override;
   static bool IsAnyNWebAdblockEnabled();
   void UpdateAdblockEasyListRules(long adBlockEasyListVersion);
+  void SetAdBlockEnabledForSite(bool is_adblock_enabled,
+                                int main_frame_tree_node_id);
 #endif
 
 #if defined(OHOS_EX_PASSWORD)

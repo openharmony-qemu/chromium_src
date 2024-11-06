@@ -185,10 +185,7 @@ bool DocumentSubresourceFilter::HasDocumentTypeOption(
 void DocumentSubresourceFilter::DidMatchCssRule(const GURL& document_url,
                                                 const std::string& dom_path,
                                                 // unsigned rule_line_num,
-                                                bool is_for_report
-                                                // ,
-                                                // bool is_fixed_adblock
-) {
+                                                bool is_for_report) {
   std::string tmp = document_url.spec() + "##" + dom_path;
 
   if (!GetDidFinishLoad() && is_for_report) {

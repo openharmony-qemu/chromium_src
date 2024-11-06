@@ -1166,6 +1166,8 @@ class CONTENT_EXPORT RenderFrameImpl
 
 #ifdef OHOS_ARKWEB_ADBLOCK
   void DidSubresourceFiltered() override;
+  void OnUpdateAdBlockEnabledToRender(bool site_adblock_enabled) override;
+  bool GetGlobalAdblockEnabled() override;
 #endif
 
 #if BUILDFLAG(IS_OHOS)

@@ -3195,7 +3195,14 @@ bool NWebDelegate::GetPrintBackground() {
 #ifdef OHOS_ARKWEB_ADBLOCK
 void NWebDelegate::EnableAdsBlock(bool enable) {
   LOG(INFO) << "NWebDelegate::EnableAdsBlock " << enable;
-  if (GetBrowser().get()) {
+  if (is_popup_ready_) {
+    if (handler_delegate_) {
+      LOG(INFO) << "[ADBLOCK] NWebDelegate::EnableAdsBlock popup case, the "
+                   "adblock switch is " << enable;
+      handler_delegate_->SaveGlobalAdsBlock(enable);
+    }
+    return;
+  } else if (GetBrowser().get()) {
     GetBrowser()->EnableAdsBlock(enable);
   }
 }
@@ -3212,6 +3219,15 @@ bool NWebDelegate::IsAdsBlockEnabledForCurPage() {
     return GetBrowser()->IsAdsBlockEnabledForCurPage();
   }
   return false;
+}
+
+void NWebDelegate::SetAdBlockEnabledForSite(bool is_adblock_enabled,
+                                            int main_frame_tree_node_id) {
+  LOG(INFO) << "NWebDelegate::SetAdBlockEnabledForSite " << is_adblock_enabled;
+  if (GetBrowser().get()) {
+    GetBrowser()->SetAdBlockEnabledForSite(is_adblock_enabled,
+                                           main_frame_tree_node_id);
+  }
 }
 #endif
 

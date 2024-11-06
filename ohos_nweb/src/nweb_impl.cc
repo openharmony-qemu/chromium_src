@@ -2618,6 +2618,16 @@ void NWebImpl::EnableAdsBlock(bool enable) {
   nweb_delegate_->EnableAdsBlock(enable);
 }
 
+void NWebImpl::SetAdBlockEnabledForSite(bool is_adblock_enabled,
+                                        int main_frame_tree_node_id) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  LOG(DEBUG) << "[adblock] SetAdBlockEnabledForSite called from ui";
+  nweb_delegate_->SetAdBlockEnabledForSite(is_adblock_enabled,
+                                           main_frame_tree_node_id);
+}
+
 // static
 bool NWebImpl::IsAnyNWebAdblockEnabled() {
   NWebMap* map = g_nweb_map.Pointer();

@@ -801,6 +801,11 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
           }
         }
       }
+#ifdef OHOS_ARKWEB_ADBLOCK
+      if (main_browser_ && main_browser_->GetHost()) {
+        main_browser_->EnableAdsBlock(is_global_adblock_enabled_);
+      }
+#endif
     }
 #ifdef OHOS_BFCACHE
     if (main_browser_) {
@@ -897,6 +902,29 @@ void NWebHandlerDelegate::NotifyPopupWindowResult(bool result) {
   }
   popupWindowCallback_ = nullptr;
 }
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+void NWebHandlerDelegate::SaveGlobalAdsBlock(bool enable) {
+  is_global_adblock_enabled_ = enable;
+}
+
+bool NWebHandlerDelegate::TrigAdBlockEnabledForSiteFromUi(
+    CefRefPtr<CefBrowser> browser,
+    const CefString& url,
+    int main_frame_tree_node_id) {
+  LOG(DEBUG) << "[adblock] TrigAdBlockEnabledForSiteFromUi url = ***";
+
+  if (web_app_client_extension_listener_ != nullptr &&
+      web_app_client_extension_listener_->TrigAdBlockEnabledForSiteFromUi !=
+          nullptr) {
+    return web_app_client_extension_listener_->TrigAdBlockEnabledForSiteFromUi(
+        url, main_frame_tree_node_id,
+        web_app_client_extension_listener_->nweb_id);
+  }
+
+  return false;
+}
+#endif
 
 void NWebHandlerDelegate::SavaArkJSFunctionForPopup(
     const std::string& object_name,

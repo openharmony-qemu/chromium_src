@@ -52,14 +52,14 @@ TEST_F(BufferDescAdapterImplTest, GetBufLength_ShouldReturnNonZero)
 {
     size_t expectedBufLength = 10;
     bufferDescAdapterImpl->SetBufLength(expectedBufLength);
-    size_t actualBufLength = bufferDescAdapterImpl->GetDataLength();
+    size_t actualBufLength = bufferDescAdapterImpl->GetBufLength();
     EXPECT_EQ(actualBufLength, expectedBufLength);
 }
 
 TEST_F(BufferDescAdapterImplTest, GetBufLength_ShouldReturnMaxValue)
 {
     bufferDescAdapterImpl->SetBufLength(SIZE_MAX);
-    size_t actualBufLength = bufferDescAdapterImpl->GetDataLength();
+    size_t actualBufLength = bufferDescAdapterImpl->GetBufLength();
     EXPECT_EQ(actualBufLength, SIZE_MAX);
 }
 

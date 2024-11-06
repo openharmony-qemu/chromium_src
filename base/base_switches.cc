@@ -124,6 +124,11 @@ const char kVModule[] = "vmodule";
 // Will wait for 60 seconds for a debugger to come to attach to the process.
 const char kWaitForDebugger[] = "wait-for-debugger";
 
+#ifdef OHOS_SCROLLBAR
+// virtual pixel ratio for ohos scrollbar
+const char kPixelRatio[] = "virtual-pixel-ratio";
+#endif
+
 #if BUILDFLAG(IS_WIN)
 // Disable high-resolution timer on Windows.
 const char kDisableHighResTimer[] = "disable-highres-timer";

@@ -3681,6 +3681,9 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
 #if BUILDFLAG(IS_OZONE)
     switches::kOzonePlatform,
 #endif
+#ifdef OHOS_SCROLLBAR
+    switches::kPixelRatio,
+#endif
 #if defined(ENABLE_IPC_FUZZER)
     switches::kIpcDumpDirectory,
     switches::kIpcFuzzerTestcase,

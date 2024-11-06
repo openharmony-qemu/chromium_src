@@ -178,6 +178,18 @@ WebDocumentSubresourceFilterImpl::GetUserDomPathSelectors(
   }
   return filter_.GetUserDomPathSelectors(document_url, !need_generic_selectors);
 }
+
+void WebDocumentSubresourceFilterImpl::set_activation_state(bool enabled) {
+  if (enabled) {
+    LOG(WARNING) << "[AdBlock] set activation level to enable";
+    activation_state_.activation_level = mojom::ActivationLevel::kEnabled;
+    filter_.set_activation_state(activation_state_);
+  } else {
+    LOG(WARNING) << "[AdBlock] set activation level to disable";
+    activation_state_.activation_level = mojom::ActivationLevel::kDisabled;
+    filter_.set_activation_state(activation_state_);
+  }
+}
 #endif
 
 WebLoadPolicy

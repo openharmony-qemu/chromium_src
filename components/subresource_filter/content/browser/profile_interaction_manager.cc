@@ -26,6 +26,11 @@
 #include "components/subresource_filter/content/browser/ads_blocked_infobar_delegate.h"
 #endif
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+#include "content/browser/renderer_host/frame_tree_node.h"
+#include "content/browser/renderer_host/render_frame_host_impl.h"
+#endif  // OHOS_ARKWEB_ADBLOCK
+
 namespace subresource_filter {
 
 ProfileInteractionManager::ProfileInteractionManager(
@@ -132,22 +137,28 @@ mojom::ActivationLevel ProfileInteractionManager::OnPageActivationComputed(
     mojom::ActivationLevel initial_activation_level,
     ActivationDecision* decision) {
 #ifdef OHOS_ARKWEB_ADBLOCK
+  LOG(DEBUG) << "[Adblock] OnPageActivationComputed url : ***";
   DCHECK(IsInSubresourceFilterRoot(navigation_handle));
 
   mojom::ActivationLevel effective_activation_level = initial_activation_level;
-  if (navigation_handle && !navigation_handle->IsDownload() &&
-      navigation_handle->GetURL().SchemeIsHTTPOrHTTPS() &&
-      navigation_handle->IsInMainFrame() &&
-      navigation_handle->GetWebContents() &&
-      navigation_handle->GetWebContents()->TrigAdBlockEnabledForSite(
-          navigation_handle->GetURL())) {
-    LOG(DEBUG) << "[adblock] activation_level enabled, url:"
-               << navigation_handle->GetURL().spec();
-    effective_activation_level = mojom::ActivationLevel::kEnabled;
+  const GURL& url(navigation_handle->GetURL());
+  if (url.SchemeIsHTTPOrHTTPS()) {
+    effective_activation_level =
+        subresource_filter::mojom::ActivationLevel::kEnabled;
+  }
+
+  content::RenderFrameHost* rfh = navigation_handle->GetRenderFrameHost();
+
+  if (rfh == NULL) {
+    return subresource_filter::mojom::ActivationLevel::kDisabled;
   } else {
-    effective_activation_level = mojom::ActivationLevel::kDisabled;
-    LOG(DEBUG) << "[adblock] activation_level disabled, url:"
-               << navigation_handle->GetURL().spec();
+    content::FrameTreeNode* node =
+        static_cast<content::RenderFrameHostImpl*>(rfh)->frame_tree_node();
+
+    if (node == NULL || !node->is_adblock_enabled() ||
+        !navigation_handle->GetWebContents()->IsAdsBlockEnabled()) {
+      return subresource_filter::mojom::ActivationLevel::kDisabled;
+    }
   }
   return effective_activation_level;
 #else

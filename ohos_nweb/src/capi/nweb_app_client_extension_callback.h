@@ -53,6 +53,10 @@ struct NWebAppClientExtensionCallback {
   void (*OnAdsBlocked)(std::string url,
                        std::map<std::string, int32_t> adsBlocked,
                        int nweb_id);
+
+  bool (*TrigAdBlockEnabledForSiteFromUi)(std::string url,
+                                          int main_frame_tree_node_id,
+                                          int nweb_id);
 #endif
 };
 

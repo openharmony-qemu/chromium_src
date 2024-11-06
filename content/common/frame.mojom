@@ -501,6 +501,11 @@ interface Frame {
   // browser process must make sure that `remote` satisifes the same process
   // isolation policy.
   SetResourceCache(pending_remote<blink.mojom.ResourceCache> remote);
+
+  // #ifdef OHOS_ARKWEB_ADBLOCK
+  [EnableIf=ohos_arkweb_adblock]
+  OnUpdateAdBlockEnabledToRender(bool site_adblock_enabled);
+  // #endif
 };
 
 // Implemented by the frame (e.g. renderer processes).

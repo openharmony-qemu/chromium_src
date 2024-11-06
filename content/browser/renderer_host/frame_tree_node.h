@@ -686,6 +686,22 @@ class CONTENT_EXPORT FrameTreeNode : public RenderFrameHostOwner {
           receiver) override;
 #endif
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+  void set_adblock_enabled(bool is_adblock_enabled) {
+    is_adblock_enabled_ = is_adblock_enabled;
+  }
+
+  void set_adblock_enabled_last_committed(bool is_adblock_enabled) {
+    is_adblock_enabled_last_committed_ = is_adblock_enabled;
+  }
+
+  bool is_adblock_enabled() { return is_adblock_enabled_; }
+
+  bool is_adblock_enabled_last_committed() {
+    return is_adblock_enabled_last_committed_;
+  }
+#endif
+
  private:
   friend class CSPEmbeddedEnforcementUnitTest;
   FRIEND_TEST_ALL_PREFIXES(SitePerProcessPermissionsPolicyBrowserTest,
@@ -887,6 +903,11 @@ class CONTENT_EXPORT FrameTreeNode : public RenderFrameHostOwner {
   // before the RenderFrameHostManager's destructor runs.  See also
   // https://crbug.com/1157988.
   RenderFrameHostManager render_manager_;
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  bool is_adblock_enabled_ = false;
+  bool is_adblock_enabled_last_committed_ = false;
+#endif
 };
 
 }  // namespace content

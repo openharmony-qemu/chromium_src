@@ -104,6 +104,9 @@ class NWebDelegateInterface
   virtual bool IsAdsBlockEnabled() = 0;
 
   virtual bool IsAdsBlockEnabledForCurPage() = 0;
+
+  virtual void SetAdBlockEnabledForSite(bool is_adblock_enabled,
+                                        int main_frame_tree_node_id) = 0;
 #endif
 
 #if defined(OHOS_PASSWORD_AUTOFILL)

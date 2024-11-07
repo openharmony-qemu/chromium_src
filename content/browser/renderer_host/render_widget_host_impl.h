@@ -922,7 +922,7 @@ class CONTENT_EXPORT RenderWidgetHostImpl
   void CreateOverlay(const SkBitmap& bitmap,
                      const gfx::Rect& image_rect,
                      const gfx::Point& touch_point) override;
-  gfx::Rect GetScreenRect();
+  gfx::Rect GetImageRect();
   void OnTextSelected(bool flag);
 #endif
 

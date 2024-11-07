@@ -171,8 +171,7 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
 #ifdef OHOS_AI
   virtual void CreateOverlay(const gfx::ImageSkia& image,
                              const gfx::Rect& image_rect,
-                             const gfx::Point& touch_point,
-                             const gfx::Rect& screen_rect) {}
+                             const gfx::Point& touch_point) {}
 #endif
 
  protected:

@@ -394,7 +394,7 @@ bool BrowserAccessibilityOHOS::HasOnlyDirectTextChildren() const {
   for (auto& childNode : PlatformChildren()) {
     BrowserAccessibilityOHOS& childNodeOHOS =
         static_cast<BrowserAccessibilityOHOS&>(childNode);
-    if (childNodeOHOS.IsText() &&
+    if (!childNodeOHOS.IsText() &&
         childNodeOHOS.GetRole() != ax::mojom::Role::kStrong) {
       return false;
     }

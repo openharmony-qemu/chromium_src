@@ -762,6 +762,7 @@ class NWebHandlerDelegate : public CefClient,
 #endif
 
  void SetPopupSurface(void* popup_window);
+ void SetTransformHint(uint32_t rotation);
  private:
   void CopyImageToClipboard(CefRefPtr<CefImage> image);
   // List of existing browser windows. Only accessed on the CEF UI thread.

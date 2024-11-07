@@ -313,7 +313,7 @@ void GpuHostImpl::SetChannelClientPid(int client_id,
 }
 
 #if BUILDFLAG(IS_OHOS)
-std::string GpuHostImpl::GetSurfaceId(int32_t native_embed_id){
+std::string GpuHostImpl::GetSurfaceId(int32_t native_embed_id) {
   LOG(DEBUG) << "get surface id = " << native_embed_id;
   mojo::SyncCallRestrictions::ScopedAllowSyncCall allow_sync;
   std::string surface_id = "";
@@ -321,9 +321,14 @@ std::string GpuHostImpl::GetSurfaceId(int32_t native_embed_id){
   return surface_id;
 }
 
-void GpuHostImpl::DestroyNativeWindow(uint32_t native_window_id){
+void GpuHostImpl::DestroyNativeWindow(uint32_t native_window_id) {
   LOG(DEBUG) << "destroy native window id = " << native_window_id;
   gpu_service_remote_->DestroyNativeWindow(native_window_id);
+}
+
+void GpuHostImpl::SetTransformHint(uint32_t rotation, uint32_t window_id) {
+  LOG(DEBUG) << "SetTransformHint angle: " << rotation;
+  gpu_service_remote_->SetTransformHint(rotation, window_id);
 }
 #endif
 

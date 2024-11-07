@@ -3937,6 +3937,10 @@ void NWebDelegate::SetWakeLockCallback(
 
 #if defined(OHOS_SECURE_JAVASCRIPT_PROXY)
 std::string NWebDelegate::GetLastJavascriptProxyCallingFrameUrl() {
+  if (!NWEB::OhGinJavascriptBridgeDispatcherHost::GetLastCallingFrameUrlTLS()) {
+    return "";
+  }
+
   return NWEB::OhGinJavascriptBridgeDispatcherHost::GetLastCallingFrameUrlTLS();
 }
 #endif

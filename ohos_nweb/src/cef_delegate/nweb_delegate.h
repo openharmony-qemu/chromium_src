@@ -357,7 +357,7 @@ void PrecompileJavaScript(const std::string& url,
                           std::shared_ptr<NWebMessageValueCallback> callback) override;
 void UpdateNativeEmbedInfo(std::shared_ptr<NWebNativeEmbedDataInfo> info) override;
 bool HitNativeArea(double x, double y);
-void SetTransformHint(uint32_t rotation);
+void SetTransformHint(uint32_t rotation) override;
 #endif
 
 #ifdef OHOS_PAGE_UP_DOWN

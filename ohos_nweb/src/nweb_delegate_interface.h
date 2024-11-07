@@ -430,6 +430,7 @@ class NWebDelegateInterface
 
 #if BUILDFLAG(IS_OHOS)
   virtual void UpdateNativeEmbedInfo(std::shared_ptr<NWebNativeEmbedDataInfo> info) = 0;
+  virtual void SetTransformHint(uint32_t rotation) = 0;
 #endif
 
 #ifdef OHOS_EX_TOPCONTROLS

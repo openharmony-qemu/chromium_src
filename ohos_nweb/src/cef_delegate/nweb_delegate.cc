@@ -3452,6 +3452,13 @@ void NWebDelegate::UpdateNativeEmbedInfo(std::shared_ptr<NWebNativeEmbedDataInfo
     }
   }
 }
+
+void NWebDelegate::SetTransformHint(uint32_t rotation)
+{
+  if (handler_delegate_) {
+    handler_delegate_->SetTransformHint(rotation);
+  }
+}
 #endif
 
 void NWebDelegate::RegisterAccessibilityEventListener(

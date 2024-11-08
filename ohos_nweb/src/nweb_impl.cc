@@ -3624,3 +3624,9 @@ void NWebImpl::SetPopupSurface(void* popupSurface) {
   }
   nweb_delegate_->SetPopupSurface(popup_window);
 }
+
+void NWebImpl::SetTransformHint(uint32_t rotation) {
+  if (nweb_delegate_) {
+    nweb_delegate_->SetTransformHint(rotation);
+  }
+}

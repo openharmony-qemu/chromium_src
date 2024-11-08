@@ -33,7 +33,15 @@ buildflag_header("branding_buildflags") {
 
 buildflag_header("blink_buildflags") {
   header = "blink_buildflags.h"
-  flags = [ "USE_BLINK=$use_blink" ]
+  flags = [ 
+            "ENABLE_HEIF_DECODER=$enable_heif_decoder", 
+            "USE_BLINK=$use_blink", 
+          ]
+}
+
+buildflag_header("enable_heif_buildflags") {
+  header = "enable_heif_buildflags.h"
+  flags = [ "ENABLE_HEIF_DECODER=$enable_heif_decoder" ]
 }
 
 buildflag_header("chromecast_buildflags") {
@@ -50,8 +58,8 @@ buildflag_header("chromeos_buildflags") {
   header = "chromeos_buildflags.h"
 
   flags = [
+    "ENABLE_HEIF_DECODER=$enable_heif_decoder",
     "IS_CHROMEOS_DEVICE=$is_chromeos_device",
-
     "IS_CHROMEOS_LACROS=$is_chromeos_lacros",
     "IS_CHROMEOS_ASH=$is_chromeos_ash",
     "IS_CHROMEOS_WITH_HW_DETAILS=$is_chromeos_with_hw_details",

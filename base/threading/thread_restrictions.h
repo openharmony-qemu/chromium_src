@@ -144,6 +144,9 @@ class ScopedAllowBlockingForProfile;
 class CefCookieManagerImpl;
 #endif // defined(OHOS_COOKIE)
 
+#if defined(OHOS_MSGPORT)
+class CefBrowserHostBase;
+#endif
 namespace base {
 class File;
 class FilePath;
@@ -655,6 +658,9 @@ class BASE_EXPORT [[maybe_unused, nodiscard]] ScopedAllowBlocking {
   friend class weblayer::ContentBrowserClientImpl;
   friend class weblayer::ProfileImpl;
   friend class weblayer::WebLayerPathProvider;
+#if defined(OHOS_MSGPORT)
+  friend class ::CefBrowserHostBase;
+#endif
 #if BUILDFLAG(IS_MAC)
   friend class printing::PrintBackendServiceImpl;
 #endif

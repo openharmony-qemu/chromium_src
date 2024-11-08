@@ -37,6 +37,8 @@ class GL_EXPORT NativeViewGLSurfaceEGLOhos : public NativeViewGLSurfaceEGL {
   
  private:
   EGLNativeWindowType window_;
+  bool enable_debug_backgroound_color_ = false;
+  bool is_first_swapbuffers_ = true;
 };
 
 }  // namespace gl

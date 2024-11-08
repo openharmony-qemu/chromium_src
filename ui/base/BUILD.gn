@@ -990,6 +990,7 @@ test("ui_base_unittests") {
     "models/simple_combobox_model_unittest.cc",
     "models/simple_menu_model_unittest.cc",
     "models/tree_node_iterator_unittest.cc",
+    "pointer/touch_editing_controller_unittest.cc",
     "pointer/touch_ui_controller_unittest.cc",
     "prediction/empty_filter_unittests.cc",
     "prediction/input_filter_unittest_helpers.cc",
@@ -1020,6 +1021,7 @@ test("ui_base_unittests") {
       "//content/browser/scheduler/browser_task_executor.cc",
       "//content/public/common/content_features.cc",
       "//content/public/common/content_switches.cc",
+      "pointer/pointer_device_linux_unittest.cc",
     ]
   }
   if (is_mac) {

@@ -9,9 +9,9 @@
 #include "base/memory/ref_counted_delete_on_sequence.h"
 #include "base/task/single_thread_task_runner.h"
 #include "gpu/command_buffer/service/ref_counted_lock.h"
+#include "gpu/command_buffer/service/ohos/ohos_video_image_backing.h"
 #include "gpu/command_buffer/service/shared_context_state.h"
 #include "gpu/gpu_gles2_export.h"
-#include "shared_image_video_ohos.h"
 #include "ui/gl/gl_bindings.h"
 #include "ui/gl/gl_context.h"
 #include "ui/gl/gl_image.h"
@@ -19,24 +19,17 @@
 
 namespace gpu {
 class AbstractTextureOHOS;
+class ScopedNativeBufferFenceSync;
 class TextureBase;
 
 class GPU_GLES2_EXPORT NativeImageTextureOwner
     : public base::RefCountedDeleteOnSequence<NativeImageTextureOwner>,
       public SharedContextState::ContextLostObserver {
  public:
-  enum class Mode {
-    kAImageReaderInsecure,
-    kAImageReaderInsecureMultithreaded,
-    kAImageReaderInsecureSurfaceControl,
-    kAImageReaderSecureSurfaceControl,
-    kSurfaceTextureInsecure,
-    kOhosSurfaceTexture
-  };
-
   static scoped_refptr<NativeImageTextureOwner> Create(
       scoped_refptr<SharedContextState> context_state,
-      Mode mode = Mode::kOhosSurfaceTexture);
+      gl::ohos::TextureOwnerMode mode,
+      scoped_refptr<RefCountedLock> drdc_lock);
 
   NativeImageTextureOwner(const NativeImageTextureOwner&) = delete;
   NativeImageTextureOwner& operator=(const NativeImageTextureOwner&) = delete;
@@ -68,6 +61,8 @@ class GPU_GLES2_EXPORT NativeImageTextureOwner
 
   virtual void RunWhenBufferIsAvailable(base::OnceClosure callback) = 0;
 
+  virtual std::unique_ptr<ScopedNativeBufferFenceSync> GetNativeBuffer() = 0;
+
   bool binds_texture_on_update() const { return binds_texture_on_update_; }
 
   void OnContextLost() override;
@@ -90,8 +85,8 @@ class GPU_GLES2_EXPORT NativeImageTextureOwner
   };
 
   NativeImageTextureOwner(bool binds_texture_on_update,
-               std::unique_ptr<AbstractTextureOHOS> texture,
-               scoped_refptr<SharedContextState> context_state);
+                          std::unique_ptr<AbstractTextureOHOS> texture,
+                          scoped_refptr<SharedContextState> context_state);
   ~NativeImageTextureOwner() override;
 
   virtual void ReleaseResources() = 0;
@@ -100,7 +95,7 @@ class GPU_GLES2_EXPORT NativeImageTextureOwner
 
  private:
   NativeImageTextureOwner(bool binds_texture_on_update,
-               std::unique_ptr<AbstractTextureOHOS> texture);
+                          std::unique_ptr<AbstractTextureOHOS> texture);
 
   const bool binds_texture_on_update_;
 

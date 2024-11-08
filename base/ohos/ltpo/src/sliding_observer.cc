@@ -41,9 +41,11 @@ namespace base {
 namespace ohos {
 using OHOS::NWeb::FrameRateSetting;
 SlidingObserver::~SlidingObserver() {
-  if (is_pc_ && is_ltpo_app_) {
-    OHOS::NWeb::OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetScene("WEB_LIST_FLING",
+  if (is_ltpo_app_) {
+    if (strategy_ == LTPOStrategy::APS_FLING) {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetScene("WEB_LIST_FLING",
         STOP_ALL_FLING_LTPO);
+    }
   }
 }
 
@@ -52,10 +54,15 @@ SlidingObserver& SlidingObserver::GetInstance(){
   return *instance.get();
 }
 
-void SlidingObserver::Init() {
-  auto type = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetProductDeviceType();
-  if (type == OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_TABLET) {
-    is_pc_ = true;
+SlidingObserver::SlidingObserver() {
+  strategy_ = static_cast<LTPOStrategy>(OHOS::NWeb::OhosAdapterHelper::GetInstance().
+    GetSystemPropertiesInstance().GetLTPOStrategy());
+  LOG(DEBUG) << "SlidingObserver strategy: " << static_cast<int>(strategy_);
+  if (strategy_ == LTPOStrategy::DISABLED) {
+    return;
+  }
+
+  if (strategy_ == LTPOStrategy::APS_FLING) {
     is_inited_ = true;
     std::string bund_name = "";
     const base::CommandLine& command_line =
@@ -67,9 +74,6 @@ void SlidingObserver::Init() {
     is_ltpo_app_ = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
       .IsLTPODynamicApp(bund_name);
     LOG(DEBUG) << "bundle name is: " << bund_name << ", is_ltpo_app_: " << is_ltpo_app_;
-    return;
-  }
-  if (type != OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE) {
     return;
   }
 
@@ -99,13 +103,10 @@ void SlidingObserver::Init() {
 }
 
 void SlidingObserver::StartSliding() {
-  if (is_pc_) {
+  if (!is_inited_) {
     return;
   }
-  if (!is_inited_) {
-    Init();
-  }
-  if (is_sliding_ || !is_inited_) {
+  if (is_sliding_) {
     return;
   }
   current_timestamp_ = GetCurrentTimestamp();
@@ -114,16 +115,14 @@ void SlidingObserver::StartSliding() {
 }
 
 int32_t SlidingObserver::StopSliding() {
-  if (is_pc_) {
+  if (!is_inited_ || !is_sliding_) {
+    return -1;
+  }
+  if (strategy_ == LTPOStrategy::APS_FLING) {
     if (is_ltpo_app_ && is_off_screen_) {
       OHOS::NWeb::OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetScene("WEB_LIST_FLING",
         STOP_FLING_LTPO);
     }
-    is_off_screen_ = false;
-    return -1;
-  }
-  if (!is_sliding_ || !is_inited_) {
-    return -1;
   }
   current_timestamp_ = -1;
   is_sliding_ = false;
@@ -139,22 +138,20 @@ int64_t SlidingObserver::GetCurrentTimestamp() {
 }
 
 void SlidingObserver::StartFling() {
-  if (is_pc_) {
-    if (is_ltpo_app_) {
-      OHOS::NWeb::OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetScene("WEB_LIST_FLING",
-        START_FLING_LTPO);
-    }
-    is_off_screen_ = true;
+  if (!is_inited_ || !is_sliding_) {
     return;
   }
-  if (!is_sliding_ || !is_inited_) {
-    return;
+  if (strategy_ == LTPOStrategy::APS_FLING) {
+     if (is_ltpo_app_) {
+       OHOS::NWeb::OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetScene("WEB_LIST_FLING",
+         START_FLING_LTPO);
+     }
   }
   is_off_screen_ = true;
 }
 
 int32_t SlidingObserver::OnScrollUpdate(float delta_x, float delta_y) {
-  if (!is_sliding_ || is_off_screen_ || is_pc_) {
+  if (!is_sliding_ || is_off_screen_ || strategy_ == LTPOStrategy::APS_FLING) {
     return -1;
   }
   auto current_timestamp = GetCurrentTimestamp();
@@ -174,7 +171,7 @@ int32_t SlidingObserver::OnScrollUpdate(float delta_x, float delta_y) {
 }
 
 int32_t SlidingObserver::OnFlingUpdate(float velocity_x, float velocity_y) {
-  if (!is_sliding_ || !is_off_screen_ || is_pc_) {
+  if (!is_sliding_ || !is_off_screen_ || strategy_ == LTPOStrategy::APS_FLING) {
     return -1;
   }
 
@@ -209,6 +206,23 @@ float SlidingObserver::GetVelocity(float velocity_x, float velocity_y) {
   float velocity = std::sqrt(velocity_x * velocity_x + velocity_y * velocity_y);
   LOG(DEBUG) << "velocity_x " << velocity_x << " velocity_y " << velocity_y  << " velocity " << convert_unit * velocity;
   return convert_unit * velocity;
+}
+
+void SlidingObserver::OnDisplayInfoChange() {
+  LOG(INFO) << "SlidingObserver::OnDisplayInfoChange";
+  if (!is_inited_) {
+    return;
+  }
+  auto display_manager_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateDisplayMgrAdapter();
+  if (!display_manager_adapter) {
+      return;
+  }
+  std::shared_ptr<OHOS::NWeb::DisplayAdapter> display =
+      display_manager_adapter->GetDefaultDisplay();
+  if (!display) {
+    return;
+  }
+  dpi_ = display->GetDpi();
 }
 }  // namespace ohos
 }  // namespace base

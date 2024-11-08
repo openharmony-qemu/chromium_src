@@ -16,6 +16,7 @@
 #include "nweb_engine_impl.h"
 #include "cef/libcef/browser/devtools/devtools_manager_delegate.h"
 #include "nweb_adsblock_manager_impl.h"
+#include "nweb_api_level.h"
 #include "nweb_cookie_manager_impl.h"
 #include "nweb_data_base_impl.h"
 #include "nweb_download_manager_impl.h"
@@ -115,6 +116,10 @@ void NWebEngineImpl::ClearIntelligentTrackingPreventionBypassingList() {
 #endif
 }
 
+std::string NWebEngineImpl::GetDefaultUserAgent() {
+  return NWebImpl::GetDefaultUserAgent();
+}
+
 void NWebEngineImpl::PauseAllTimers() {
   NWebImpl::PauseAllTimers();
 }
@@ -169,4 +174,23 @@ std::shared_ptr<NWebAdsBlockManager> NWebEngineImpl::GetAdsBlockManager() {
 void NWebEngineImpl::TrimMemoryByPressureLevel(int32_t memoryLevel) {
   NWebImpl::TrimMemoryByPressureLevel(memoryLevel);
 }
+
+void NWebEngineImpl::SetArkWebRomApiLevel(int apiLevel) {
+  romApiLevel_ = apiLevel;
+  WVLOG_I("rom api level is %{public}d", romApiLevel_);
+}
+
+int NWebEngineImpl::GetArkWebRomApiLevel() {
+  return romApiLevel_;
+}
+
+int NWebEngineImpl::GetArkWebCoreApiLevel() {
+  return ARKWEB_CORE_API_LEVEL;
+}
+
+// static
+bool NWebEngineImpl::CheckArkWebRomApiLevel(int apiLevel) {
+  return g_nweb_engine_impl->GetArkWebRomApiLevel() >= apiLevel;
+}
+
 } // namespace OHOS::NWeb

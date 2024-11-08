@@ -24,6 +24,7 @@
  * @file arkweb_type.h
  *
  * @brief Defines the common types for the native ArkWeb.
+ * @kit ArkWeb
  * @library libohweb.so
  * @syscap SystemCapability.Web.Webview.Core
  * @since 12
@@ -68,11 +69,32 @@ typedef enum ArkWeb_WebMessageType {
 } ArkWeb_WebMessageType;
 
 /**
+ * @brief Defines the data type carried in a ArkWeb_JavaScriptValue.
+ *
+ * @since 14
+ */
+typedef enum ArkWeb_JavaScriptValueType {
+    /** Represent error data */
+    ARKWEB_JAVASCRIPT_NONE = 0,
+    /** The data carried in the ArkWeb_JavaScriptValue is string. */
+    ARKWEB_JAVASCRIPT_STRING,
+    /** The data carried in the ArkWeb_JavaScriptValue is bool. */
+    ARKWEB_JAVASCRIPT_BOOL
+} ArkWeb_JavaScriptValueType;
+
+/**
  * @brief Defines the ArkWeb_WebMessage.
  *
  * @since 12
  */
 typedef struct ArkWeb_WebMessage* ArkWeb_WebMessagePtr;
+
+/**
+ * @brief Defines the ArkWeb_JavaScriptValuePtr.
+ *
+ * @since 14
+ */
+typedef struct ArkWeb_JavaScriptValue* ArkWeb_JavaScriptValuePtr;
 
 /**
  * @brief Defines the javascript callback of the native ArkWeb.
@@ -88,6 +110,19 @@ typedef void (*ArkWeb_OnJavaScriptCallback)(
  * @since 12
  */
 typedef void (*ArkWeb_OnJavaScriptProxyCallback)(
+    const char* webTag, const ArkWeb_JavaScriptBridgeData* dataArray, size_t arraySize, void* userData);
+
+/**
+ * @brief Defines the JavaScript proxy callback of the native ArkWeb.
+ *
+ * @param webTag The name of the web component.
+ * @param dataArray The JavaScript bridge data array from HTML.
+ * @param arraySize The number of elements in the array.
+ * @param userData The data set by user.
+ *
+ * @since 14
+ */
+typedef ArkWeb_JavaScriptValuePtr (*ArkWeb_OnJavaScriptProxyCallbackWithResult)(
     const char* webTag, const ArkWeb_JavaScriptBridgeData* dataArray, size_t arraySize, void* userData);
 
 /**
@@ -148,6 +183,20 @@ typedef struct {
 } ArkWeb_ProxyMethod;
 
 /**
+ * @brief Defines the JavaScript proxy method with a return value.
+ *
+ * @since 14
+ */
+typedef struct {
+    /** The method of the application side JavaScript object participating in the registration. */
+    const char* methodName;
+    /** The callback function with a return value registered by developer is called back when HTML side uses. */
+    ArkWeb_OnJavaScriptProxyCallbackWithResult callback;
+    /** The user data to set. */
+    void* userData;
+} ArkWeb_ProxyMethodWithResult;
+
+/**
  * @brief Defines the javascript proxy registered object.
  *
  * @since 12
@@ -160,6 +209,20 @@ typedef struct {
     /** The size of the methodList. */
     size_t size;
 } ArkWeb_ProxyObject;
+
+/**
+ * @brief Defines the JavaScript proxy registered object with methodList that has a return value.
+ *
+ * @since 14
+ */
+typedef struct {
+    /** The name of the registered object. */
+    const char* objName;
+    /** The JavaScript proxy registered method object list with a callback function that has a return value */
+    const ArkWeb_ProxyMethodWithResult* methodList;
+    /** The size of the methodList. */
+    size_t size;
+} ArkWeb_ProxyObjectWithResult;
 
 /**
  * @brief Defines the controller API for native ArkWeb.
@@ -206,13 +269,48 @@ typedef struct {
      * @param name Name of the message to be sent.
      * @param size The quantity of message ports.
      * @param url Indicates the URI for receiving the message.
-     * @return Web message result code
+     * @return Post web message result code.
      *         {@link ARKWEB_SUCCESS} post web message success.
      *         {@link ARKWEB_INVALID_PARAM} the parameter verification fails.
      *         {@link ARKWEB_INIT_ERROR} no web associated with this webTag.
      */
     ArkWeb_ErrorCode (*postWebMessage)(
         const char* webTag, const char* name, ArkWeb_WebMessagePortPtr* webMessagePorts, size_t size, const char* url);
+
+    /**
+     * @brief Get the url of the last frame that calls the JavaScriptProxy.
+     *        This should be call on the thread which JavaScriptProxy called.
+     *
+     * @return The url of the last frame that calls the JavaScriptProxy.
+     * @since 14
+     */
+    const char* (*getLastJavascriptProxyCallingFrameUrl)();
+
+    /**
+     * @brief Register the JavaScript object and method list, the method is callback function that has a return value.
+     *
+     * @param webTag The name of the web component.
+     * @param proxyObject The JavaScript object to register, the object has callback functions with return value.
+     * @param permission The JSON string, which defaults to null, is used to configure the permission control for
+     * JSBridge, allowing for the definition of URL whitelists at the object and method levels.
+     *
+     * @since 14
+     */
+    void (*registerJavaScriptProxyEx)(const char* webTag, const ArkWeb_ProxyObjectWithResult* proxyObject,
+        const char* permission);
+
+    /**
+     * @brief Register the JavaScript object and async method list.
+     *
+     * @param webTag The name of the web component.
+     * @param proxyObject The JavaScript object to register.
+     * @param permission The JSON string, which defaults to null, is used to configure the permission control
+     * for JSBridge, allowing for the definition of URL whitelists at the object and method levels.
+     *
+     * @since 14
+     */
+    void (*registerAsyncJavaScriptProxyEx)(const char* webTag, const ArkWeb_ProxyObject* proxyObject,
+        const char* permission);
 } ArkWeb_ControllerAPI;
 
 /**
@@ -250,7 +348,7 @@ typedef struct {
      * @param webMessagePort The ArkWeb_WebMessagePort.
      * @param webTag The name of the web component.
      * @param webMessage The ArkWeb_WebMessage to send.
-     * @return Web message result code
+     * @return Post message result code.
      *         {@link ARKWEB_SUCCESS} post message success.
      *         {@link ARKWEB_INVALID_PARAM} the parameter verification fails.
      *         {@link ARKWEB_INIT_ERROR} no web associated with this webTag.
@@ -333,6 +431,96 @@ typedef struct {
 } ArkWeb_WebMessageAPI;
 
 /**
+ * @brief Defines the native CookieManager API for ArkWeb.
+ * Before invoking an API, you are advised to use ARKWEB_MEMBER_MISSING to check
+ * whether the function structure has a corresponding function pointer to avoid crash
+ * caused by mismatch between the SDK and the device ROM.
+ *
+ * @since 12
+ */
+typedef struct {
+    /** The ArkWeb_CookieManagerAPI struct size. */
+    size_t size;
+
+    /**
+     * @brief Obtains the cookie value corresponding to a specified URL.
+     *
+     * @param url URL to which the cookie to be obtained belongs. A complete URL is recommended.
+     * @param incognito True indicates that the memory cookies of the webview in privacy mode are obtained,
+     *                  and false indicates that cookies in non-privacy mode are obtained.
+     * @param includeHttpOnly If true HTTP-only cookies will also be included in the cookieValue.
+     * @param cookieValue Get the cookie value corresponding to the URL.
+     * @return Fetch cookie result code.
+     *         {@link ARKWEB_SUCCESS} fetch cookie success.
+     *         {@link ARKWEB_INVALID_URL} invalid url.
+     *         {@link ARKWEB_INVALID_PARAM} cookieValue is nullptr.
+     */
+    ArkWeb_ErrorCode (*fetchCookieSync)(const char* url, bool incognito, bool includeHttpOnly, char** cookieValue);
+
+    /**
+     * @brief Sets the cookie value for a specified URL.
+     *
+     * @param url Specifies the URL to which the cookie belongs. A complete URL is recommended.
+     * @param cookieValue The value of the cookie to be set.
+     * @param incognito True indicates that cookies of the corresponding URL are set in privacy mode,
+     *                  and false indicates that cookies of the corresponding URL are set in non-privacy mode.
+     * @param includeHttpOnly If true, HTTP-only cookies can also be overwritten.
+     * @return Config cookie result code.
+     *         {@link ARKWEB_SUCCESS} config cookie success.
+     *         {@link ARKWEB_INVALID_URL} invalid url.
+     *         {@link ARKWEB_INVALID_COOKIE_VALUE} invalid cookie value.
+     */
+    ArkWeb_ErrorCode (*configCookieSync)(const char* url,
+        const char* cookieValue, bool incognito, bool includeHttpOnly);
+
+    /**
+     * @brief Check whether cookies exist.
+     *
+     * @param incognito True indicates whether cookies exist in privacy mode,
+     *                  and false indicates whether cookies exist in non-privacy mode.
+     * @return True indicates that the cookie exists, and false indicates that the cookie does not exist.
+     */
+    bool (*existCookies)(bool incognito);
+
+    /**
+     * @brief Clear all cookies.
+     *
+     * @param incognito True indicates that all memory cookies of the webview are cleared in privacy mode,
+     *                  and false indicates that persistent cookies in non-privacy mode are cleared.
+     */
+    void (*clearAllCookiesSync)(bool incognito);
+
+    /**
+     * @brief Clear all session cookies.
+     */
+    void (*clearSessionCookiesSync)();
+} ArkWeb_CookieManagerAPI;
+
+/**
+ * @brief Defines the native JavaScriptValue API for ArkWeb.
+ * Before invoking an API, you are advised to use ARKWEB_MEMBER_MISSING to check
+ * whether the function structure has a corresponding function pointer to avoid crash
+ * caused by mismatch between the SDK and the device ROM.
+ *
+ * @since 14
+ */
+typedef struct {
+    /** The ArkWeb_JavaScriptValueAPI struct size. */
+    size_t size;
+
+    /**
+     * @brief Create the JavaScript value responding to HTML.
+     *
+     * @param type The type of ArkWeb_JavaScriptValue.
+     * @param data The data buffer of ArkWeb_JavaScriptValue.
+     * @param dataLength The length of data buffer.
+     * @return ArkWeb_JavaScriptValuePtr created by ArkWeb, the memory of ArkWeb_JavaScriptValue
+     * is managed by ArkWeb itself.
+     */
+    ArkWeb_JavaScriptValuePtr (*createJavaScriptValue)(ArkWeb_JavaScriptValueType type, void* data, size_t dataLength);
+} ArkWeb_JavaScriptValueAPI;
+
+/**
  * @brief Check whether the member variables of the current struct exist.
  *
  * @since 12
@@ -348,6 +536,6 @@ typedef struct {
 #define ARKWEB_MEMBER_MISSING(s, f) (!ARKWEB_MEMBER_EXISTS(s, f) || !((s)->f))
 
 #ifdef __cplusplus
-}
+};
 #endif
 #endif // ARKWEB_TYPE_H

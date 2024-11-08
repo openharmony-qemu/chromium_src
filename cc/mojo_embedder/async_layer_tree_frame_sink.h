@@ -175,6 +175,9 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
   std::unique_ptr<SoftwareCompositorRendererOhos> software_renderer_ohos_;
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+  bool is_first_submit_ = true;
+#endif
 };
 
 }  // namespace mojo_embedder

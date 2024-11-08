@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// Based on codec_image.h originally written by
+// Copyright 2017 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 #ifndef MEDIA_GPU_OHOS_CODEC_IMAGE_H_
 #define MEDIA_GPU_OHOS_CODEC_IMAGE_H_
 
@@ -46,6 +51,9 @@ class MEDIA_GPU_EXPORT CodecImage
   void NotifyOverlayPromotion(bool promotion, const gfx::Rect& bounds) override;
   bool RenderToOverlay() override;
   bool TextureOwnerBindsTextureOnUpdate() override;
+  std::unique_ptr<gpu::ScopedNativeBufferFenceSync> GetNativeBuffer() override {
+    return nullptr;
+  }
 
   bool was_rendered_to_front_buffer() const {
     return output_buffer_renderer_

@@ -189,6 +189,8 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost
   void SetChannelClientPid(int client_id, base::ProcessId client_pid);
 #if BUILDFLAG(IS_OHOS)
   std::string GetSurfaceId(int32_t native_embed_id);
+  void DestroyNativeWindow(uint32_t native_window_id);
+  void SetTransformHint(uint32_t rotation, uint32_t window_id);
 #endif
   void SetChannelDiskCacheHandle(int client_id,
                                  const gpu::GpuDiskCacheHandle& handle);
@@ -224,9 +226,10 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost
 #if BUILDFLAG(IS_OHOS)
   void StartMonitor();
   void StopMonitor();
-  void SetVisible(bool visible);
+  void SetVisible(int nweb_id, bool visible);
   void SetHasTouchPoint(bool has_touch_point);
   void ReportSlidingFrameRate(int32_t frame_rate);
+  void SetLTPOStrategy(int32_t strategy);
 #endif
 
  private:

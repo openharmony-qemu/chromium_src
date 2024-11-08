@@ -311,8 +311,9 @@ bool GestureDetector::OnTouchEvent(const MotionEvent& ev,
         timeout_handler_->StartTimeout(SHORT_PRESS);
         timeout_handler_->StartTimeout(LONG_PRESS);
 #ifdef OHOS_DRAG_DROP
-      if (draglongpress_enabled_)
-        timeout_handler_->StartTimeout(DRAG_LONG_PRESS);
+        if (draglongpress_enabled_) {
+          timeout_handler_->StartTimeout(DRAG_LONG_PRESS);
+        }
 #endif
       }
 
@@ -580,6 +581,10 @@ void GestureDetector::OnDragLongPressTimeout() {
 void GestureDetector::OnCreateOverlayTimeout() {
   LOG(INFO) << "GestureDetector::OnCreateOverlayTimeout";
   listener_->OnCreateOverlay(*current_down_event_);
+}
+
+void GestureDetector::OnAITextSelected() {
+  StopDragLongPressGesture();
 }
 #endif
 

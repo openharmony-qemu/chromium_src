@@ -230,7 +230,10 @@ bool ResponseCache::ReadMetadata() {
 
     std::sregex_iterator it(line.begin(), line.end(), pattern);
 
-    if (it != std::sregex_iterator() && it->size() == 7) {
+    // Check the count of metadata.
+    // Each resource must has 7 metadata(url、response、headers...)
+    int item_count = 7;
+    if (it != std::sregex_iterator() && it->size() == item_count) {
       metadata_out_->url_hash_ = (*it)[1].str();
       metadata_out_->content_length_ = (*it)[2].str();
       metadata_out_->e_tag_ = (*it)[3].str();
@@ -313,6 +316,7 @@ bool ResponseCache::DoUpdateMetadata() {
   temp_file->Lock(base::File::LockMode::kExclusive);
 
   if (!temp_file->IsValid()) {
+    CloseStream();
     return false;
   }
 
@@ -447,7 +451,11 @@ bool InputStream::Read(net::IOBuffer* dest,
   int transfer_size = 0;
   if (offset_ < data_.length()) {
     transfer_size = std::min(length, static_cast<int>(data_.length() - offset_));
-    memcpy(dest->data(), data_.c_str() + offset_, transfer_size);
+    if (memcpy_s(dest->data(), static_cast<size_t>(length), data_.c_str() + offset_, transfer_size) != EOK) {
+      LOG(WARNING) << "InputStream::Read memcpy failed";
+      *bytes_read = net::ERR_FAILED;
+      return false;
+    }
     offset_ += transfer_size;
     *bytes_read = transfer_size;
     has_data = true;

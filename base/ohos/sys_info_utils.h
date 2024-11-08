@@ -24,6 +24,11 @@
 
 namespace base {
 namespace ohos {
+#ifdef OHOS_SCROLLBAR
+BASE_EXPORT float GetPixelRatio();
+
+BASE_EXPORT void SetPixelRatio(float ratio);
+#endif
 
 BASE_EXPORT bool IsMobileDevice();
 
@@ -36,6 +41,10 @@ BASE_EXPORT int32_t MajorVersion();
 BASE_EXPORT int32_t SeniorVersion();
 
 BASE_EXPORT std::string OsName();
+
+BASE_EXPORT std::string OsVersion();
+
+BASE_EXPORT std::string BaseOsName();
 
 
 }  // namespace ohos

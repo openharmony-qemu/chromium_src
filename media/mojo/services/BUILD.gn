@@ -117,7 +117,7 @@ component("services") {
     sources += [ "gpu_mojo_media_client_mac.cc" ]
   } else if (is_win) {
     sources += [ "gpu_mojo_media_client_win.cc" ]
-  } else if (is_ohos) {
+  } else if (enable_heif_decoder) {
     sources += [ "gpu_mojo_media_client_ohos.cc" ]
   } else if (use_vaapi || use_v4l2_codec) {
     if (is_linux) {
@@ -252,6 +252,10 @@ source_set("unit_tests") {
 
   if (enable_playback_events_recorder) {
     sources += [ "playback_events_recorder_test.cc" ]
+  }
+
+  if (ohos_unittests) {
+    sources += [ "gpu_mojo_media_client_ohos_unittest.cc" ]
   }
 
   deps = [

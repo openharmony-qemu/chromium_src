@@ -55,11 +55,19 @@ class VIZ_COMMON_EXPORT CopyOutputRequest {
   using CopyOutputRequestCallback =
       base::OnceCallback<void(std::unique_ptr<CopyOutputResult> result)>;
 
+#if defined(OHOS_DFX_DUMP)
+  // Creates new CopyOutputRequest. I420_PLANES format returned via
+  // kNativeTextures is currently not supported.
+  CopyOutputRequest(ResultFormat result_format,
+                    ResultDestination result_destination,
+                    CopyOutputRequestCallback result_callback, uint64_t id = 0, const std::string& dump_path = "");
+#else
   // Creates new CopyOutputRequest. I420_PLANES format returned via
   // kNativeTextures is currently not supported.
   CopyOutputRequest(ResultFormat result_format,
                     ResultDestination result_destination,
                     CopyOutputRequestCallback result_callback);
+#endif
 
   CopyOutputRequest(const CopyOutputRequest&) = delete;
   CopyOutputRequest& operator=(const CopyOutputRequest&) = delete;
@@ -176,6 +184,10 @@ class VIZ_COMMON_EXPORT CopyOutputRequest {
   absl::optional<gfx::Rect> result_selection_;
 
   absl::optional<BlitRequest> blit_request_;
+#if defined(OHOS_DFX_DUMP)
+  uint64_t dump_frame_id_ = 0;
+  std::string dump_frame_path_ = "";
+#endif
 };
 
 }  // namespace viz

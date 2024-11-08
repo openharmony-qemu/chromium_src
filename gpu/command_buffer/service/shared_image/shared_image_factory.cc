@@ -319,7 +319,7 @@ bool SharedImageFactory::CreateSharedImage(const Mailbox& mailbox,
       alpha_type, usage, std::move(debug_label), IsSharedBetweenThreads(usage));
 
   if (backing) {
-    DVLOG(1) << "CreateSharedImage[" << backing->GetName()
+    LOG(DEBUG) << "CreateSharedImage[" << backing->GetName()
              << "] size=" << size.ToString()
              << " usage=" << CreateLabelForSharedImageUsage(usage)
              << " format=" << format.ToString();
@@ -358,7 +358,7 @@ bool SharedImageFactory::CreateSharedImage(const Mailbox& mailbox,
                                             surface_origin, alpha_type, usage,
                                             std::move(debug_label), data);
   if (backing) {
-    DVLOG(1) << "CreateSharedImagePixels[" << backing->GetName()
+    LOG(DEBUG) << "CreateSharedImagePixels[" << backing->GetName()
              << "] with pixels size=" << size.ToString()
              << " usage=" << CreateLabelForSharedImageUsage(usage)
              << " format=" << format.ToString();
@@ -428,7 +428,7 @@ bool SharedImageFactory::CreateSharedImage(
   }
 
   if (backing) {
-    DVLOG(1) << "CreateSharedImageWithBuffer[" << backing->GetName()
+    LOG(DEBUG) << "CreateSharedImageWithBuffer[" << backing->GetName()
              << "] size=" << size.ToString()
              << " usage=" << CreateLabelForSharedImageUsage(usage)
              << " format=" << format.ToString()
@@ -439,7 +439,7 @@ bool SharedImageFactory::CreateSharedImage(
   return RegisterBacking(std::move(backing));
 }
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
 bool SharedImageFactory::CreateSharedImage(const Mailbox& mailbox,
                                            gfx::GpuMemoryBufferHandle handle,
                                            gfx::BufferFormat format,
@@ -476,7 +476,7 @@ bool SharedImageFactory::CreateSharedImage(const Mailbox& mailbox,
 
   return RegisterBacking(std::move(backing));
 }
-#endif
+#endif // BUILDFLAG(ENABLE_HEIF_DECODER)
 
 bool SharedImageFactory::CreateSharedImage(const Mailbox& mailbox,
                                            gfx::GpuMemoryBufferHandle handle,
@@ -533,7 +533,7 @@ bool SharedImageFactory::CreateSharedImage(const Mailbox& mailbox,
   }
 
   if (backing) {
-    DVLOG(1) << "CreateSharedImage[" << backing->GetName()
+    LOG(DEBUG) << "CreateSharedImage[" << backing->GetName()
              << "] from handle size=" << size.ToString()
              << " usage=" << CreateLabelForSharedImageUsage(usage)
              << " buffer_format=" << gfx::BufferFormatToString(format)

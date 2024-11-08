@@ -129,6 +129,8 @@ class LayerTreeHostImplClient {
   virtual void SetNeedsPrepareTilesOnImplThread() = 0;
   virtual void SetVideoNeedsBeginFrames(bool needs_begin_frames) = 0;
   virtual void SetDeferBeginMainFrameFromImpl(bool defer_begin_main_frame) = 0;
+  virtual void SetDeferInvalidationForFastMainFrameFromImpl(
+                   bool defer_invalidation_for_fast_main_frame) = 0;
   virtual bool IsInsideDraw() = 0;
   virtual void RenewTreePriority() = 0;
   virtual void PostDelayedAnimationTaskOnImplThread(base::OnceClosure task,
@@ -182,12 +184,15 @@ class LayerTreeHostImplClient {
 
   virtual void ClearHistory() = 0;
 
+  virtual void SetHasActiveThreadedScroll(bool is_scrolling) = 0;
+  virtual void SetWaitingForScrollEvent(bool waiting_for_scroll_event) = 0;
+
   virtual size_t CommitDurationSampleCountForTesting() const = 0;
 
 #if BUILDFLAG(IS_OHOS)
   virtual void OnLayerRectUpdate(int id, const gfx::Rect& rect) {}
 
-  virtual void OnLayerRectVisibleChange(int id, bool visibility) {}
+  virtual void OnLayerRectVisibilityChange(int id, bool visibility) {}
 #endif
 
  protected:
@@ -660,6 +665,7 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
   virtual void DidFinishImplFrame(const viz::BeginFrameArgs& args);
   void DidNotProduceFrame(const viz::BeginFrameAck& ack,
                           FrameSkippedReason reason);
+  void OnBeginImplFrameDeadline();
   void DidModifyTilePriorities();
   // Requests that we do not produce frames until the new viz::LocalSurfaceId
   // has been activated.
@@ -932,7 +938,7 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
 #if BUILDFLAG(IS_OHOS)
   void OnLayerRectUpdate(int id, const gfx::Rect& rect);
 
-  void OnLayerRectVisibleChange(int id, bool visibility);
+  void OnLayerRectVisibilityChange(int id, bool visibility);
 #endif
 
   void SetDownsampleMetricsForTesting(bool value) {

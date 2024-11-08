@@ -83,6 +83,7 @@ source_set("unittests") {
 
   sources = [
     "input_device_unittest.cc",
+    "mmi_device_info_adapter_impl_unittest.cc",
     "touchscreen_device_unittest.cc",
   ]
 

@@ -529,6 +529,14 @@ source_set("unit_tests") {
       "audio_low_latency_input_output_unittest.cc",
     ]
   }
+
+  if (is_ohos) {
+    sources += [
+      "ohos/ohos_audio_capturer_source_unittest.cc",
+      "ohos/ohos_audio_output_stream_unittest.cc",
+      "ohos/ohos_audio_manager_unittest.cc",
+      ]
+  }
 }
 
 fuzzer_test("wav_audio_handler_fuzzer") {

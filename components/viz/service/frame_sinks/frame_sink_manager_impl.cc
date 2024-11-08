@@ -246,12 +246,6 @@ void FrameSinkManagerImpl::DestroyCompositorFrameSink(
     const FrameSinkId& frame_sink_id,
     DestroyCompositorFrameSinkCallback callback) {
   // when destroy web tab, destroy window
-#if BUILDFLAG(IS_OHOS)
-  if (frame_sink_id.client_id() == 0) {
-    LOG(DEBUG) << "DestroyCompositorFrameSink nweb id = " << frame_sink_id.sink_id();
-    NWebNativeWindowTracker::GetInstance()->DestroyNativeWindow(frame_sink_id.sink_id());
-  }
-#endif
   sink_map_.erase(frame_sink_id);
   root_sink_map_.erase(frame_sink_id);
   std::move(callback).Run();
@@ -799,6 +793,10 @@ void FrameSinkManagerImpl::EvictFrameBackBuffers(
 
   auto root_it = root_sink_map_.find(root_frame_sink_id);
   if (root_it != root_sink_map_.end()) {
+    if (!root_it->second) {
+      LOG(ERROR) << "RootCompositorFrameSinkImpl is null";
+      return;
+    }
     root_it->second->EvictFrameBackBuffers(invisible);
   }
 }

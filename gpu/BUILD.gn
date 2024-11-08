@@ -507,6 +507,7 @@ test("gpu_unittests") {
     "command_buffer/common/unittest_main.cc",
     "command_buffer/common/webgpu_cmd_format_test.cc",
     "command_buffer/common/webgpu_cmd_format_test_autogen.h",
+    "command_buffer/service/abstract_texture_ohos_unittest.cc",
     "command_buffer/service/buffer_manager_unittest.cc",
     "command_buffer/service/client_service_map_unittest.cc",
     "command_buffer/service/command_buffer_service_unittest.cc",
@@ -535,6 +536,8 @@ test("gpu_unittests") {
     "command_buffer/service/mailbox_manager_unittest.cc",
     "command_buffer/service/memory_program_cache_unittest.cc",
     "command_buffer/service/multi_draw_manager_unittest.cc",
+    "command_buffer/service/ohos/native_image_texture_owner_unittest.cc",
+    "command_buffer/service/ohos/native_image_image_backing_unittest.cc",
     "command_buffer/service/passthrough_program_cache_unittest.cc",
     "command_buffer/service/program_cache_unittest.cc",
     "command_buffer/service/program_manager_unittest.cc",
@@ -573,6 +576,7 @@ test("gpu_unittests") {
     "config/gpu_control_list_unittest.cc",
     "config/gpu_control_list_version_unittest.cc",
     "config/gpu_driver_bug_list_unittest.cc",
+    "config/gpu_finch_features_unittest.cc",
     "config/gpu_info_collector_unittest.cc",
     "config/gpu_info_unittest.cc",
     "config/gpu_preferences_unittest.cc",
@@ -588,8 +592,17 @@ test("gpu_unittests") {
     "ipc/host/gpu_disk_cache_unittest.cc",
     "ipc/service/gpu_channel_test_common.cc",
     "ipc/service/gpu_channel_test_common.h",
+    "ipc/service/gpu_channel_unittest.cc",
     "ipc/service/gpu_watchdog_thread_unittest.cc",
   ]
+  
+  if (ohos_unittests) {
+    sources += [
+      "command_buffer/service/ohos/native_image_texture_gl_owner_unittest.cc",
+      "ipc/common/nweb_native_window_tracker_unittest.cc",
+      "ipc/service/stream_texture_ohos_unittest.cc",
+    ]
+  }
   
   if (enable_validating_command_decoder && !ohos_unittests) {
     sources += [
@@ -669,7 +682,6 @@ test("gpu_unittests") {
       "command_buffer/service/gles2_cmd_decoder_passthrough_unittest_drawing.cc",
       "command_buffer/service/gles2_cmd_decoder_passthrough_unittest_framebuffers.cc",
       "command_buffer/service/gles2_cmd_decoder_passthrough_unittest_textures.cc",
-      "ipc/service/gpu_channel_unittest.cc",
     ]
 
     if (!is_ios) {
@@ -677,6 +689,10 @@ test("gpu_unittests") {
       # a dependency on iOS. See //base/test:test_support.
       sources += [ "ipc/service/gpu_channel_manager_unittest.cc" ]
     }
+  }
+
+  if (ohos_unittests) {
+    sources += [ "command_buffer/service/shared_image/ozone_image_backing_factory_unittest.cc" ]
   }
 
   if (use_dawn) {
@@ -735,7 +751,7 @@ test("gpu_unittests") {
   }
 
   if (ohos_unittests) {
-    deps += ["//content/public/common:static_switches"]
+    deps += ["//content/renderer"]
   }
 
   if (is_android) {

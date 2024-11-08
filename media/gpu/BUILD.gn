@@ -186,7 +186,7 @@ component("gpu") {
     }
   }
 
-  if (is_ohos) {
+  if (enable_heif_decoder) {
     import("//build/config/ohos/config.gni")
 
     sources += [
@@ -659,6 +659,21 @@ source_set("unit_tests") {
 
   if (is_mac) {
     deps += [ "//media/gpu/mac:unit_tests" ]
+  }
+  
+  if (enable_heif_decoder) {
+    sources += [
+      "ohos/codec_allocator_unittest.cc",
+      "ohos/codec_image_unittest.cc",
+      "ohos/codec_output_buffer_renderer_unittest.cc",
+      "ohos/direct_shared_image_video_provider_unittest.cc",
+      "ohos/frame_info_helper_unittest.cc",
+      "ohos/ohos_heif_image_decoder_unittest.cc",
+      "ohos/ohos_image_decoder_unittest.cc",
+      "ohos/ohos_video_decoder_unittest.cc",
+      "ohos/ohos_video_encode_accelerator_unittest.cc",
+      "ohos/video_frame_factory_impl_unittest.cc",
+    ]
   }
 
   if (is_win || use_vaapi) {

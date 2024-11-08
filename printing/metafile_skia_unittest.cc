@@ -2,7 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#if defined(OHOS_UNITTESTS)
+#define private public
+#include "printing/metafile_skia.cc"
 #include "printing/metafile_skia.h"
+#undef private
+#else  // OHOS_UNITTESTS
+#include "printing/metafile_skia.h"
+#endif  // OHOS_UNITTESTS
 
 #include <utility>
 
@@ -190,5 +197,150 @@ TEST(MetafileSkiaTest, TestMultiPictureDocumentTypefaces) {
     EXPECT_EQ(typefaces.size(), kNumTypefaces);
   }
 }
+
+#if defined(OHOS_UNITTESTS)
+class MockSkStreamAsset : public SkStreamAsset {
+ public:
+  MockSkStreamAsset(size_t length) : fLength_(length), fPosition_(0) {}
+  size_t read(void* buffer, size_t size) override {
+    if (fPosition_ + size > fLength_) {
+      size = fLength_ - fPosition_;
+    }
+    std::memset(buffer, 'A', size);
+    fPosition_ += size;
+    return size;
+  }
+
+  bool isAtEnd() const override { return fPosition_ >= fLength_; }
+
+  bool rewind() override {
+    fPosition_ = 0;
+    return true;
+  }
+
+  bool hasPosition() const override { return true; }
+
+  size_t getPosition() const override { return fPosition_; }
+
+  bool seek(size_t position) override {
+    if (position <= fLength_) {
+      fPosition_ = position;
+      return true;
+    }
+    return false;
+  }
+
+  bool move(long offset) override {
+    size_t newPosition = fPosition_ + offset;
+    if (newPosition <= fLength_) {
+      fPosition_ = newPosition;
+      return true;
+    }
+    return false;
+  }
+
+  size_t getLength() const override { return fLength_; }
+
+  SkStreamAsset* onDuplicate() const override {
+    return new MockSkStreamAsset(fLength_);
+  }
+
+  SkStreamAsset* onFork() const override {
+    return new MockSkStreamAsset(fLength_, fPosition_);
+  }
+
+ private:
+  MockSkStreamAsset(size_t length, size_t position)
+      : fLength_(length), fPosition_(position) {}
+
+  size_t fLength_;
+  size_t fPosition_;
+};
+
+TEST(MetafileSkiaTest, OhosFinishDocument001) {
+  MetafileSkia metafile(mojom::SkiaDocumentType::kPDF, 1);
+  metafile.data_->data_stream = nullptr;
+  std::function<bool()> checkCancel = []() { return true; };
+  auto result = metafile.OhosFinishDocument(checkCancel);
+  EXPECT_EQ(true, result);
+}
+
+TEST(MetafileSkiaTest, OhosFinishDocument002) {
+  MetafileSkia metafile(mojom::SkiaDocumentType::kPDF, 1);
+  std::unique_ptr<SkStreamAsset> mock_data_stream =
+      std::make_unique<MockSkStreamAsset>(1);
+  metafile.data_->data_stream = std::move(mock_data_stream);
+  std::function<bool()> checkCancel = []() { return true; };
+  auto result = metafile.OhosFinishDocument(checkCancel);
+  EXPECT_EQ(false, result);
+}
+
+TEST(MetafileSkiaTest, OhosFinishDocument003) {
+  MetafileSkia metafile(mojom::SkiaDocumentType::kPDF, 1);
+  metafile.data_->recorder.is_recording_ = false;
+  std::function<bool()> checkCancel = []() { return true; };
+  auto result = metafile.OhosFinishDocument(checkCancel);
+  EXPECT_EQ(nullptr, metafile.data_->recorder.getRecordingCanvas());
+  EXPECT_EQ(true, result);
+}
+
+TEST(MetafileSkiaTest, OhosFinishDocument004) {
+  MetafileSkia metafile(mojom::SkiaDocumentType::kPDF, 1);
+  metafile.data_->recorder.is_recording_ = false;
+  std::function<bool()> checkCancel = []() { return true; };
+  auto result = metafile.OhosFinishDocument(checkCancel);
+  EXPECT_EQ(nullptr, metafile.data_->recorder.getRecordingCanvas());
+  EXPECT_EQ(mojom::SkiaDocumentType::kPDF, metafile.data_->type);
+  EXPECT_EQ(true, result);
+}
+
+TEST(MetafileSkiaTest, OhosFinishDocument005) {
+  MetafileSkia metafile(mojom::SkiaDocumentType::kMSKP, 1);
+  metafile.data_->recorder.is_recording_ = false;
+  std::function<bool()> checkCancel = []() { return true; };
+  auto result = metafile.OhosFinishDocument(checkCancel);
+  EXPECT_EQ(nullptr, metafile.data_->recorder.getRecordingCanvas());
+  EXPECT_EQ(mojom::SkiaDocumentType::kMSKP, metafile.data_->type);
+  EXPECT_EQ(true, result);
+}
+
+TEST(MetafileSkiaTest, OhosFinishDocument007) {
+  MetafileSkia metafile(mojom::SkiaDocumentType::kPDF, 1);
+  metafile.data_->data_stream = nullptr;
+  std::function<bool()> checkCancel = []() { return false; };
+  auto result = metafile.OhosFinishDocument(checkCancel);
+  EXPECT_EQ(true, result);
+  EXPECT_NE(metafile.data_->data_stream, nullptr);
+}
+
+TEST(MetafileSkiaTest, OhosFinishDocument008) {
+  MetafileSkia metafile(mojom::SkiaDocumentType::kMSKP, 1);
+  metafile.data_->data_stream = nullptr;
+  std::function<bool()> checkCancel = []() { return false; };
+  auto result = metafile.OhosFinishDocument(checkCancel);
+  EXPECT_EQ(true, result);
+  EXPECT_NE(metafile.data_->data_stream, nullptr);
+}
+
+TEST(MetafileSkiaTest, OhosFinishDocument009) {
+  MetafileSkia metafile(mojom::SkiaDocumentType::kPDF, 1);
+  metafile.data_->data_stream = nullptr;
+  metafile.data_->pages.clear();
+  std::function<bool()> checkCancel = []() { return false; };
+  auto result = metafile.OhosFinishDocument(checkCancel);
+  EXPECT_EQ(true, result);
+  EXPECT_NE(metafile.data_->data_stream, nullptr);
+}
+
+TEST(MetafileSkiaTest, OhosFinishDocument010) {
+  MetafileSkia metafile(mojom::SkiaDocumentType::kPDF, 1);
+  metafile.data_->data_stream = nullptr;
+  metafile.data_->recorder.is_recording_ = false;
+  std::function<bool()> checkCancel = []() { return false; };
+  auto result = metafile.OhosFinishDocument(checkCancel);
+  EXPECT_EQ(true, result);
+  EXPECT_NE(metafile.data_->data_stream, nullptr);
+}
+#endif  // OHOS_UNITTESTS
 
 }  // namespace printing

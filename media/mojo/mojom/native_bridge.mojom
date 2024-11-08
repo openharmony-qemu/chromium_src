@@ -33,7 +33,7 @@ interface NativeBridgeObserver {
   OnCreateNativeSurface(NativeEmbedInfo embed_info);
   OnEmbedRectChange(gfx.mojom.Rect rect);
   OnDestroyNativeSurface();
-  OnLayerRectVisibleChange(bool visibility);
+  OnLayerRectVisibilityChange(bool visibility, int32 embed_id);
 };
 
 // Implemented by NativeWebContentsObserver::NativeBridgeHostImpl in the browser

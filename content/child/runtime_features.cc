@@ -46,6 +46,8 @@
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/build_info.h"
+#elif defined(OHOS_DISPLAY_CUTOUT) && BUILDFLAG(IS_OHOS)
+#include "base/ohos/sys_info_utils.h"
 #endif
 
 #if BUILDFLAG(ENABLE_VR)
@@ -108,7 +110,9 @@ void SetRuntimeFeatureDefaultsForPlatform(
     WebRuntimeFeatures::EnableDisplayCutoutAPI(true);
   }
 #elif defined(OHOS_DISPLAY_CUTOUT) && BUILDFLAG(IS_OHOS)
-  WebRuntimeFeatures::EnableDisplayCutoutAPI(true);
+  if (!base::ohos::IsPcDevice()) {
+    WebRuntimeFeatures::EnableDisplayCutoutAPI(true);
+  }
 #endif
 
 #if BUILDFLAG(IS_ANDROID)

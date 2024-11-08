@@ -18,6 +18,7 @@
 #include <sys/mman.h>
 #include <thread>
 
+#include "ohos_glue/base/include/ark_web_errno.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
 #include "base/ohos/sys_info_utils.h"
@@ -28,6 +29,9 @@
 #include "cef/include/wrapper/cef_closure_task.h"
 #include "cef/include/wrapper/cef_helpers.h"
 #include "content/public/browser/browser_thread.h"
+#include "net/base/net_errors.h"
+#include "net/cookies/site_for_cookies.h"
+#include "net/cookies/static_cookie_policy.h"
 #include "nweb_access_request_delegate.h"
 #include "nweb_context_menu_params_impl.h"
 #include "nweb_controller_handler_impl.h"
@@ -59,6 +63,8 @@
 #include "nweb_url_resource_response_impl.h"
 #include "nweb_value_callback.h"
 #include "nweb_value_convert.h"
+#include "url/gurl.h"
+#include "content/browser/gpu/gpu_process_host.h"
 
 #include "ohos_adapter_helper.h"
 
@@ -93,6 +99,8 @@
 #ifdef OHOS_ARKWEB_ADBLOCK
 #include "base/strings/string_number_conversions.h"
 #endif
+
+#include "third_party/bounds_checking_function/include/securec.h"
 
 namespace OHOS::NWeb {
 namespace {
@@ -287,7 +295,10 @@ char* CopyCefStringToChar(const CefString& str) {
   }
   int strLen = str.size() + 1;
   char* result = new char[strLen]{0};
-  strncpy(result, str.ToString().c_str(), strLen);
+  if (strcpy_s(result, strLen, str.ToString().c_str()) != EOK) {
+    delete[] result;
+    return nullptr;
+  }
   return result;
 }
 
@@ -592,23 +603,23 @@ bool NWebHandlerDelegate::OnProcessMessageReceived(
 
   if (messageName == "ContentSize.Message") {
     CefRefPtr<CefListValue> postMsgArgs = message->GetArgumentList();
-    int width = postMsgArgs->GetInt(0);
     int height = postMsgArgs->GetInt(1);
     int viewport_width = postMsgArgs->GetInt(2);
     int viewport_height = postMsgArgs->GetInt(3);
 
-    float ratio = render_handler_->GetCefDeviceRatio();
     gfx::Size current_viewport_size = render_handler_->GetSize();
 
-    if (std::abs(current_viewport_size.width() - viewport_width) <= VIEW_PORT_DIFF &&
-        std::abs(current_viewport_size.height() - viewport_height) <= VIEW_PORT_DIFF) {
-      nweb_handler_->OnRootLayerChanged(width * ratio, height * ratio);
-      render_handler_->SetContentSize(width * ratio, height * ratio);
-    } else {
-      LOG(ERROR)
-          << "Fit Content not upload layer change, current viewport width:"
+    nweb_handler_->OnRootLayerChanged(current_viewport_size.width(), height);
+    render_handler_->SetContentSize(current_viewport_size.width(), height);
+
+    if (std::abs(current_viewport_size.width() - viewport_width) > VIEW_PORT_DIFF ||
+        std::abs(current_viewport_size.height() - viewport_height) > VIEW_PORT_DIFF) {
+        LOG(DEBUG)
+          << "current viewport is different than last, current width:"
           << current_viewport_size.width()
-          << ",height:" << current_viewport_size.height();
+          << ", height :" << current_viewport_size.height()
+          << ", last width :" << viewport_width
+          << ", height :" << viewport_height;
     }
     return true;
   }
@@ -702,6 +713,8 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
     }
     if (main_browser_ && main_browser_->GetHost()) {
       if (preference_delegate_.get()) {
+        main_browser_->GetHost()->SetVirtualPixelRatio(
+            preference_delegate_->GetVirtualPixelRatio());
         main_browser_->GetHost()->PutUserAgent(
             preference_delegate_->UserAgent());
 #if defined(OHOS_BACKGROUND_COLOR)
@@ -789,7 +802,21 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
           }
         }
       }
+#ifdef OHOS_ARKWEB_ADBLOCK
+      if (main_browser_ && main_browser_->GetHost()) {
+        main_browser_->EnableAdsBlock(is_global_adblock_enabled_);
+      }
+#endif
     }
+#ifdef OHOS_BFCACHE
+    if (main_browser_) {
+      int cache_size = preference_delegate_->GetCacheSize();
+      int cache_time_to_live = preference_delegate_->GetTimeToLive();
+      if (cache_size != -1 && cache_time_to_live != -1) {
+        main_browser_->SetBackForwardCacheOptions(cache_size, cache_time_to_live);
+      }
+    }
+#endif
     return;
   }
 #endif  // defined(OHOS_MULTI_WINDOW)
@@ -842,10 +869,16 @@ void NWebHandlerDelegate::OnBeforeClose(CefRefPtr<CefBrowser> browser) {
       releaseSurfaceListener_->ReleaseSurface();
     }
   } else {
+    content::GpuProcessHost* host = content::GpuProcessHost::Get();
+    host->gpu_host()->DestroyNativeWindow(main_browser_->GetAcceleratedWidget(false));
     OHOS::NWeb::OhosAdapterHelper::GetInstance()
         .GetWindowAdapterInstance()
         .DestroyNativeWindow(window_);
     window_ = nullptr;
+    OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .GetWindowAdapterInstance()
+        .DestroyNativeWindow(popup_window_);
+    popup_window_ = nullptr;
   }
 
   // Remove from the list of existing browsers.
@@ -872,6 +905,29 @@ void NWebHandlerDelegate::NotifyPopupWindowResult(bool result) {
   }
   popupWindowCallback_ = nullptr;
 }
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+void NWebHandlerDelegate::SaveGlobalAdsBlock(bool enable) {
+  is_global_adblock_enabled_ = enable;
+}
+
+bool NWebHandlerDelegate::TrigAdBlockEnabledForSiteFromUi(
+    CefRefPtr<CefBrowser> browser,
+    const CefString& url,
+    int main_frame_tree_node_id) {
+  LOG(DEBUG) << "[adblock] TrigAdBlockEnabledForSiteFromUi url = ***";
+
+  if (web_app_client_extension_listener_ != nullptr &&
+      web_app_client_extension_listener_->TrigAdBlockEnabledForSiteFromUi !=
+          nullptr) {
+    return web_app_client_extension_listener_->TrigAdBlockEnabledForSiteFromUi(
+        url, main_frame_tree_node_id,
+        web_app_client_extension_listener_->nweb_id);
+  }
+
+  return false;
+}
+#endif
 
 void NWebHandlerDelegate::SavaArkJSFunctionForPopup(
     const std::string& object_name,
@@ -1062,7 +1118,6 @@ void NWebHandlerDelegate::OnLoadStart(CefRefPtr<CefBrowser> browser,
 
   if (nweb_handler_ != nullptr) {
     nweb_handler_->OnPageLoadBegin(url.ToString());
-    browser->GetHost()->OnTextSelected(false);
   }
 
   if (onLoadStartCallback_) {
@@ -1209,9 +1264,6 @@ void NWebHandlerDelegate::OnNavigationEntryCommitted(
             details->GetCurrentURL().ToString(), type, details->IsMainFrame(),
             details->IsSameDocument(), details->DidReplaceEntry());
     nweb_handler_->OnNavigationEntryCommitted(web_details);
-    if (main_browser_ && main_browser_->GetHost()) {
-      main_browser_->GetHost()->OnTextSelected(false);
-    }
   }
 }
 
@@ -1343,8 +1395,8 @@ void NWebHandlerDelegate::OnRefreshAccessedHistory(
   auto pos = url1.find("?");
   url1 = url1.substr(0, pos);
   LOG(DEBUG)
-      << "NWebHandlerDelegate::OnRefreshAccessedHistory, intercepted url = "
-      << url1 << ", isReload = " << isReload;
+      << "NWebHandlerDelegate::OnRefreshAccessedHistory, intercepted url: ***, isReload = "
+      << isReload;
   if (nweb_handler_ == nullptr) {
     LOG(ERROR) << "nweb handler is null";
     return;
@@ -1431,10 +1483,34 @@ bool NWebHandlerDelegate::OnCertificateError(CefRefPtr<CefBrowser> browser,
   SslError error = SslErrorConvert(cert_error);
 
   CEF_REQUIRE_IO_THREAD();
+
+  std::vector<std::string> certChainData;
+  CefRefPtr<CefX509Certificate> cert = ssl_info->GetX509Certificate();
+  CefX509Certificate::IssuerChainBinaryList der_chain_list;
+  cert->GetDEREncodedIssuerChain(der_chain_list);
+  der_chain_list.insert(der_chain_list.begin(), cert->GetDEREncoded());
+
+  for (size_t i = 0U; i < der_chain_list.size(); ++i) {
+    if (!der_chain_list[i].get()) {
+      LOG(ERROR) << "OnCertificateError Get CertChainData failed, der chain data is null, index = " << i;
+      continue;
+    }
+
+    const size_t cert_data_size = der_chain_list[i]->GetSize();
+    std::string cert_data_item;
+    cert_data_item.resize(cert_data_size);
+    der_chain_list[i]->GetData(const_cast<char*>(cert_data_item.data()), cert_data_size, 0);
+    certChainData.emplace_back(cert_data_item);
+  }
+
   std::shared_ptr<NWebJSSslErrorResult> js_result =
       std::make_shared<NWebJSSslErrorResultImpl>(callback);
   if (nweb_handler_ != nullptr) {
-    return nweb_handler_->OnSslErrorRequestByJS(js_result, error);
+    bool flag = nweb_handler_->OnSslErrorRequestByJSV2(js_result, error, certChainData);
+    if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+      flag = nweb_handler_->OnSslErrorRequestByJS(js_result, error);
+    }
+    return flag;
   }
   return false;
 }
@@ -1757,6 +1833,45 @@ CefRefPtr<CefResourceHandler> NWebHandlerDelegate::GetResourceHandler(
     return nullptr;
   }
 }
+
+void NWebHandlerDelegate::GetResourceHandlerByIO(
+    CefRefPtr<CefBrowser> browser,
+    CefRefPtr<CefFrame> frame,
+    CefRefPtr<CefRequest> request,
+    CefRefPtr<CefInterceptCallback> callback,
+    CefRefPtr<CefSchemeHandlerFactory> scheme_factory,
+    const CefString& scheme) {
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    content::GetUIThreadTaskRunner({})->PostTask(FROM_HERE,
+      base::BindOnce(&NWebHandlerDelegate::GetResourceHandlerByIO,
+                    this, browser, frame, request, callback,
+                    scheme_factory, scheme));
+    return;
+  }
+  if (!request) {
+    LOG(ERROR) << "NWebHandlerDelegate::GetResourceHandlerByIO request is null";
+    return;
+  }
+  CefRequest::HeaderMap cef_request_headers;
+  request->GetHeaderMap(cef_request_headers);
+  std::map<std::string, std::string> request_headers;
+  ConvertMapToHeaderMap(cef_request_headers, request_headers);
+  std::shared_ptr<NWebUrlResourceRequest> nweb_request =
+      std::make_shared<NWebUrlResourceRequestImpl>(
+          request->GetMethod().ToString(), request_headers,
+          request->GetURL().ToString(), false, request->IsMainFrame());
+  std::shared_ptr<NWebUrlResourceResponse> response =
+      std::make_shared<NWebUrlResourceResponseImpl>();
+  CefRefPtr<CefResourceHandler> resource_handler = nullptr;
+  if (nweb_handler_->OnHandleInterceptRequest(nweb_request, response)) {
+    std::string tag = "";
+    resource_handler = new NWebResourceHandler(response, tag);
+  } else if (scheme_factory) {
+    // here to get ets schemeHandler
+    resource_handler = scheme_factory->Create(browser, frame, scheme, request);
+  }
+  callback->ContinueLoad(resource_handler);
+}
 /* CefResourceRequestHandler method end */
 
 /* CefPrintHandler method begin */
@@ -1974,7 +2089,7 @@ int NWebHandlerDelegate::OnGetTopControlsHeight() {
 bool NWebHandlerDelegate::DoBrowserControlsShrinkRendererSize() {
 #if defined(OHOS_EX_TOPCONTROLS)
   if (CefCommandLine::GetGlobalCommandLine()->HasSwitch(
-          ::switches::kForBrowser) &&
+          ::switches::kEnableNwebExTopControls) &&
       top_content_offset_ > 0) {
     return true;
   }
@@ -2001,6 +2116,25 @@ void NWebHandlerDelegate::OnReceivedIcon(const void* data,
                TransformAlphaType(alpha_type));
   }
 }
+
+#ifdef OHOS_BFCACHE
+void NWebHandlerDelegate::UpdateFavicon(CefRefPtr<CefBrowser> browser) {
+  CEF_REQUIRE_UI_THREAD();
+
+  void* data = nullptr;
+  int color_type;
+  int alpha_type;
+  int width;
+  int height;
+  if (browser != nullptr && browser->GetHost() != nullptr
+      && browser->GetHost()->GetVisibleNavigationEntry() != nullptr) {
+    LOG(INFO) << "[Favicon] nweb_handler delegate start to update favicon.";
+    browser->GetHost()->GetVisibleNavigationEntry()->GetFavicon(&data, color_type, alpha_type, width, height);
+    SetFavicon(data, width, height, ImageColorType(color_type), ImageAlphaType(alpha_type));
+  }
+  return;
+}
+#endif // OHOS_BFCACHE
 
 void NWebHandlerDelegate::SetFavicon(const void* data,
                                      size_t width,
@@ -2132,7 +2266,10 @@ bool NWebHandlerDelegate::OnCursorChange(
       LOG(ERROR) << "OnCursorChange make_unique failed";
       return false;
     }
-    memcpy((char*)buff.get(), custom_cursor_info.buffer, len);
+    if (memcpy_s((char*)buff.get(), len, custom_cursor_info.buffer, len) != EOK) {
+      LOG(ERROR) << "OnCursorChange memcpy_s failed";
+      return false;
+    }
     std::shared_ptr<NWebCursorInfo> info =
         std::make_shared<NWebCursorInfoImpl>(custom_cursor_info.hotspot.x,
                                              custom_cursor_info.hotspot.y,
@@ -2654,7 +2791,8 @@ bool NWebHandlerDelegate::RunQuickMenu(
     const CefRect& select_bounds,
     CefContextMenuHandler::QuickMenuEditStateFlags edit_state_flags,
     CefRefPtr<CefRunQuickMenuCallback> callback,
-    bool is_mouse_trigger) {
+    bool is_mouse_trigger,
+    bool is_long_press_actived) {
   if (nweb_handler_ == nullptr || render_handler_ == nullptr) {
     return false;
   }
@@ -2712,6 +2850,7 @@ bool NWebHandlerDelegate::RunQuickMenu(
       end_touch_handle,
       NWebTouchHandleState::TouchHandleType::SELECTION_END_HANDLE);
   nweb_param->SetIsMouseTrigger(is_mouse_trigger);
+  nweb_param->SetIsLongPressActived(is_long_press_actived);
   return nweb_handler_->RunQuickMenu(nweb_param, nweb_callback);
 }
 
@@ -2772,22 +2911,63 @@ void NWebHandlerDelegate::OnFindResult(CefRefPtr<CefBrowser> browser,
 
 /* CefResourceRequestHandler methods begin */
 
+bool AllowCookies(
+    const GURL& url,
+    const net::SiteForCookies& site_for_cookies,
+    bool block_all_cookies,
+    bool block_thirdparty_cookies) {
+  net::StaticCookiePolicy::Type policy =
+      net::StaticCookiePolicy::ALLOW_ALL_COOKIES;
+  if (block_all_cookies) {
+    policy = net::StaticCookiePolicy::BLOCK_ALL_COOKIES;
+  } else if (block_thirdparty_cookies) {
+    policy = net::StaticCookiePolicy::BLOCK_ALL_THIRD_PARTY_COOKIES;
+  } else {
+    return true;
+  }
+  return net::StaticCookiePolicy(policy).CanAccessCookies(
+             url, site_for_cookies) == net::OK;
+}
+
 bool NWebHandlerDelegate::CanSendCookie(CefRefPtr<CefBrowser> browser,
                                         CefRefPtr<CefFrame> frame,
                                         CefRefPtr<CefRequest> request,
                                         const CefCookie& cookie) {
-  return NWebEngineImpl::GetInstance()
-      ->GetCookieManager()
-      ->IsAcceptCookieAllowed();
+  auto cookie_manager = NWebEngineImpl::GetInstance()->GetCookieManager();
+  bool block_all_cookies = !cookie_manager->IsAcceptCookieAllowed();
+  bool block_thirdparty_cookies = !cookie_manager->IsThirdPartyCookieAllowed();
+  bool allow_cookies = AllowCookies(GURL(request->GetURL().ToString()),
+          net::SiteForCookies::FromUrl(
+              GURL(request->GetFirstPartyForCookies().ToString())),
+          block_all_cookies, block_thirdparty_cookies);
+  LOG(INFO) << "CanSendCookie allow_cookies: " << allow_cookies
+            << " block_all_cookies:" << block_all_cookies
+            << " block_thirdparty_cookies:" << block_thirdparty_cookies
+            << " url: " << request->GetURL().ToString()
+            << " site_for_cookies: " << request->GetFirstPartyForCookies().ToString();
+
+  return allow_cookies;
 }
 bool NWebHandlerDelegate::CanSaveCookie(CefRefPtr<CefBrowser> browser,
                                         CefRefPtr<CefFrame> frame,
                                         CefRefPtr<CefRequest> request,
                                         CefRefPtr<CefResponse> response,
                                         const CefCookie& cookie) {
-  return NWebEngineImpl::GetInstance()
-      ->GetCookieManager()
-      ->IsAcceptCookieAllowed();
+  auto cookie_manager = NWebEngineImpl::GetInstance()->GetCookieManager();
+  bool block_all_cookies = !cookie_manager->IsAcceptCookieAllowed();
+  bool block_thirdparty_cookies = !cookie_manager->IsThirdPartyCookieAllowed();
+  bool allow_cookies = AllowCookies(GURL(request->GetURL().ToString()),
+          net::SiteForCookies::FromUrl(
+              GURL(request->GetFirstPartyForCookies().ToString())),
+          block_all_cookies,
+          block_thirdparty_cookies);
+  LOG(INFO) << " CanSendCookie allow_cookies: " << allow_cookies
+            << " block_all_cookies:" << block_all_cookies
+            << " block_thirdparty_cookies:" << block_thirdparty_cookies
+            << " url: " << request->GetURL().ToString()
+            << " site_for_cookies: " << request->GetFirstPartyForCookies().ToString();
+
+  return allow_cookies;
 }
 /* CefResourceRequestHandler methods end */
 
@@ -2836,10 +3016,51 @@ void NWebHandlerDelegate::RegisterNativeJavaScriptCallBack(
     map[methodName[i]] = callback[i];
   }
   if (isAsync) {
+    if (auto async_it = asyncProxyObjWithResultMap_.find(objName);
+      async_it != asyncProxyObjWithResultMap_.end()) {
+      asyncProxyObjWithResultMap_.erase(objName);
+    }
     asyncProxyObjMap_[objName] = map;
     asyncProxyPermissionMap_[objName] = permission;
   } else {
+    if (auto async_it = syncProxyObjWithResultMap_.find(objName);
+      async_it != syncProxyObjWithResultMap_.end()) {
+      syncProxyObjWithResultMap_.erase(objName);
+    }
     syncProxyObjMap_[objName] = map;
+    syncProxyPermissionMap_[objName] = permission;
+  }
+}
+
+void NWebHandlerDelegate::RegisterNativeJavaScriptCallBackWithResult(
+    const std::string& objName,
+    const std::vector<std::string>& methodName,
+    std::vector<NativeJSProxyCallbackFuncWithResult>&& callback,
+    bool isAsync,
+    const std::string& permission) {
+  size_t size = methodName.size();
+  if (size == 0) {
+    LOG(ERROR) << "NWebHandlerDelegate RegisterNativeJavaScriptCallBack error: "
+                  "empty methods list";
+    return;
+  }
+  std::unordered_map<std::string, NativeJSProxyCallbackFuncWithResult> map;
+  for (size_t i = 0; i < size; i++) {
+    map[methodName[i]] = callback[i];
+  }
+  if (isAsync) {
+    if (auto async_it = asyncProxyObjMap_.find(objName);
+        async_it != asyncProxyObjMap_.end()) {
+      asyncProxyObjMap_.erase(objName);
+    }
+    asyncProxyObjWithResultMap_[objName] = map;
+    asyncProxyPermissionMap_[objName] = permission;
+  } else {
+    if (auto sync_it = syncProxyObjMap_.find(objName);
+        sync_it != syncProxyObjMap_.end()) {
+      syncProxyObjMap_.erase(objName);
+    }
+    syncProxyObjWithResultMap_[objName] = map;
     syncProxyPermissionMap_[objName] = permission;
   }
 }
@@ -2906,6 +3127,7 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNew(
   }
 
   NativeJSProxyCallbackFunc callback = nullptr;
+  NativeJSProxyCallbackFuncWithResult CallbackWithResult = nullptr;
   auto it = asyncProxyObjMap_.find(object_name);
   if (it != asyncProxyObjMap_.end()) {
     auto& methodMap = it->second;
@@ -2929,8 +3151,32 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNew(
     }
   }
 
-  if (callback == nullptr) {
-    LOG(DEBUG) << "Processing sync native proxy result failed, "
+  if (auto iter = asyncProxyObjWithResultMap_.find(object_name);
+      iter != asyncProxyObjWithResultMap_.end()) {
+    auto& methodMap = iter->second;
+    auto methodIt = methodMap.find(method);
+    if (methodIt != methodMap.end()) {
+      LOG(DEBUG) << "Processing async native proxy result, "
+                 << "method name: " << method.ToString();
+      CallbackWithResult = methodMap[method];
+    }
+  }
+
+  if (CallbackWithResult == nullptr) {
+    auto iter = syncProxyObjWithResultMap_.find(object_name);
+    if (iter != syncProxyObjWithResultMap_.end()) {
+      auto& methodMap = iter->second;
+      auto methodIt = methodMap.find(method);
+      if (methodIt != methodMap.end()) {
+        LOG(DEBUG) << "Processing sync native proxy result, "
+                   << "method name: " << method.ToString();
+        CallbackWithResult = methodMap[method];
+      }
+    }
+  }
+
+  if (callback == nullptr && CallbackWithResult == nullptr) {
+    LOG(DEBUG) << "Processing native proxy result failed, "
                << "method not found, name: "
                << method.ToString();
     return 1;
@@ -2970,12 +3216,22 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNew(
     }
   }
 
-  char* callbackResult = callback(dataList, dataSize);
-  if (callbackResult) {
-    result->SetString(0, callbackResult);
-  } else {
-    LOG(INFO) << "native return nullptr, just set null string to result";
-    result->SetNull(0);
+  if (callback) {
+    char* callbackResult = callback(dataList, dataSize);
+    if (callbackResult) {
+      result->SetString(0, callbackResult);
+    } else {
+      LOG(INFO) << "native return nullptr, just set null string to result";
+      result->SetNull(0);
+    }
+  } else if (CallbackWithResult) {
+    std::shared_ptr<OHOS::NWeb::NWebValue> callbackResult = CallbackWithResult(dataList, dataSize);
+    if (callbackResult) {
+      ParseNWebValueToValue(callbackResult, result);
+    } else {
+      LOG(DEBUG) << "native return nullptr, just set null string to result";
+      result->SetNull(0);
+    }
   }
 
   return 0;
@@ -2986,10 +3242,16 @@ int NWebHandlerDelegate::ProcessNativeProxyResult(
     const CefString& method,
     const CefString& object_name,
     CefRefPtr<CefListValue> result) {
-  if (auto it = syncProxyObjMap_.find(object_name); it != syncProxyObjMap_.end()) {
+  if (auto it = syncProxyObjWithResultMap_.find(object_name); it != syncProxyObjWithResultMap_.end()) {
     ProcessNativeProxyResultNew(args, method, object_name, result);
     return 0;
-  } else if (auto async_it = asyncProxyObjMap_.find(object_name); async_it != asyncProxyObjMap_.end()) {
+  } else if (auto async_it = asyncProxyObjWithResultMap_.find(object_name); async_it != asyncProxyObjWithResultMap_.end()) {
+    ProcessNativeProxyResultNew(args, method, object_name, result);
+    return 0;
+  } else if (auto it_with_result = syncProxyObjMap_.find(object_name); it_with_result != syncProxyObjMap_.end()) {
+    ProcessNativeProxyResultNew(args, method, object_name, result);
+    return 0;
+  } else if (auto async_it_with_result = asyncProxyObjMap_.find(object_name); async_it_with_result != asyncProxyObjMap_.end()) {
     ProcessNativeProxyResultNew(args, method, object_name, result);
     return 0;
   }
@@ -3472,5 +3734,27 @@ void NWebHandlerDelegate::OnRenderProcessResponding(
   LOG(INFO) << "OnRenderProcessResponding";
   nweb_handler_->OnRenderProcessResponding();
 }
+
+void NWebHandlerDelegate::SetPopupSurface(void* popup_window) {
+  if (main_browser_ && main_browser_->GetHost()) {
+    if (!is_enhance_surface_) {
+      if (popup_window_ != nullptr) {
+        OHOS::NWeb::OhosAdapterHelper::GetInstance()
+            .GetWindowAdapterInstance()
+            .DestroyNativeWindow(popup_window_);
+        popup_window_ = nullptr;
+      }
+      popup_window_ = popup_window;
+      main_browser_->GetHost()->SetPopupWindow(popup_window_);
+    }
+  }
+}
 #endif
+
+void NWebHandlerDelegate::SetTransformHint(uint32_t rotation) {
+  content::GpuProcessHost* host = content::GpuProcessHost::Get();
+  if (main_browser_ && host && host->gpu_host()) {
+    host->gpu_host()->SetTransformHint(rotation, main_browser_->GetAcceleratedWidget(false));
+  }
+}
 }  // namespace OHOS::NWeb

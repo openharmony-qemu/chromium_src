@@ -42,6 +42,7 @@
 
 namespace OHOS::NWeb {
 class JavaScriptResultCallbackImpl;
+class CefPdfValueCallbackImpl;
 class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
  public:
   NWebDelegate(int argc, const char* argv[]);
@@ -172,6 +173,12 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       std::vector<std::function<char*(std::vector<std::vector<uint8_t>>&,
                                       std::vector<size_t>&)>>&& callback,
       bool isAsync, const std::string& permission) override;
+  void RegisterNativeJSProxyWithResult(
+      const std::string& objName,
+      const std::vector<std::string>& methodName,
+      std::vector<std::function<std::shared_ptr<OHOS::NWeb::NWebValue>(
+          std::vector<std::vector<uint8_t>>&, std::vector<size_t>&)>>&& callback,
+      bool isAsync, const std::string& permission) override;
   void UnRegisterNativeArkJSFunction(const char* objName) override;
   void RegisterNativeLoadStartCallback(
       std::function<void(void)>&& callback) override;
@@ -236,6 +243,10 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   bool IsFileProtocol(const GURL& gurl);
   bool IsUrlFileExist(const GURL& gurl, const std::string& url);
 
+  uint32_t create_pdf_value_callback_id_ = 0;
+  std::unordered_map<uint32_t, CefRefPtr<CefPdfValueCallbackImpl>>
+      create_pdf_value_callback_map_;
+  void EraseCreatePDFCallbackImpl(uint32_t id) override;
   void ExecuteCreatePDFExt(
       std::shared_ptr<NWebPDFConfigArgs> pdfConfig,
       std::shared_ptr<NWebArrayBufferValueCallback> callback) override;
@@ -346,6 +357,7 @@ void PrecompileJavaScript(const std::string& url,
                           std::shared_ptr<NWebMessageValueCallback> callback) override;
 void UpdateNativeEmbedInfo(std::shared_ptr<NWebNativeEmbedDataInfo> info) override;
 bool HitNativeArea(double x, double y);
+void SetTransformHint(uint32_t rotation) override;
 #endif
 
 #ifdef OHOS_PAGE_UP_DOWN
@@ -381,12 +393,15 @@ bool HitNativeArea(double x, double y);
   void GetOverScrollOffset(float* offset_x, float* offset_y) override;
 #endif
   bool ScrollByWithResult(float delta_x, float delta_y) override;
+  void WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #ifdef OHOS_ARKWEB_ADBLOCK
   void EnableAdsBlock(bool enable) override;
   bool IsAdsBlockEnabled() override;
   bool IsAdsBlockEnabledForCurPage() override;
+  void SetAdBlockEnabledForSite(bool is_adblock_enabled,
+                                int main_frame_tree_node_id) override;
 #endif
 
 #if defined(OHOS_PASSWORD_AUTOFILL)
@@ -465,6 +480,7 @@ bool HitNativeArea(double x, double y);
                                   bool isAccessibilityFocus) override;
   std::shared_ptr<NWebAccessibilityNodeInfo>
   GetAccessibilityNodeInfoById(int64_t accessibilityId) override;
+  bool GetAccessibilityVisible(int64_t accessibilityId) override;
   std::shared_ptr<NWebAccessibilityNodeInfo>
   GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
                                       int32_t direction) override;
@@ -526,9 +542,16 @@ void NotifyForNextTouchEvent() override;
       const std::vector<std::string>& pathList) override;
 #endif
 
+#ifdef OHOS_MIXED_CONTENT
+  void EnableMixedContentAutoUpgrades(bool enable) override;
+  bool IsMixedContentAutoUpgradesEnabled() override;
+#endif
+
 #ifdef OHOS_BFCACHE
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override;
 #endif
+
+   void SetPopupSurface(void* popupSurface) override;
 
  public:
   int argc_;
@@ -617,10 +640,13 @@ void NotifyForNextTouchEvent() override;
     std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
     const content::BrowserAccessibilityOHOS* node) const;
   std::shared_ptr<NWebAccessibilityNodeInfo>
-    PopulateAccessibilityNodeInfo(const content::BrowserAccessibilityOHOS* node);
+    PopulateAccessibilityNodeInfo(content::BrowserAccessibilityOHOS* node);
   void AddAccessibilityNodeInfoActions(
     std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
     const content::BrowserAccessibilityOHOS* node) const;
+  float GetViewPointHeight() const;
+  int32_t GetArgumentByKey(const std::map<std::string, std::string>& actionArguments,
+    const std::string& checkKey) const;
 
   float zoom_in_factor_ = 1.25f;
   float zoom_out_factor_ = 0.8f;

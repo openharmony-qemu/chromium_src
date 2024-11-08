@@ -305,6 +305,14 @@ void NWebQuickMenuParamsImpl::SetIsMouseTrigger(bool is_mouse_trigger) {
   is_mouse_trigger_ = is_mouse_trigger;
 }
 
+void NWebQuickMenuParamsImpl::SetIsLongPressActived(bool is_long_press_actived) {
+  is_long_press_actived_ = is_long_press_actived;
+}
+
+bool NWebQuickMenuParamsImpl::GetIsLongPressActived() {
+  return is_long_press_actived_;
+}
+
 std::shared_ptr<NWebTouchHandleState>
 NWebQuickMenuParamsImpl::GetTouchHandleState(
     NWebTouchHandleState::TouchHandleType type) {
@@ -396,6 +404,12 @@ std::string NWebContextMenuParamsImpl::GetSelectionText() {
     return params_->GetSelectionText().ToString();
   }
   return std::string();
+}
+
+void NWebContextMenuParamsImpl::GetImageRect(int& x, int& y, int& w, int& h) {
+  if (params_ != nullptr) {
+    params_->GetImageRect(x, y, w, h);
+  }
 }
 
 }  // namespace OHOS::NWeb

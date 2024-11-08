@@ -1138,6 +1138,11 @@
   "ohos_nweb_ex/overrides/ui/strings/ohos_nweb_ex_strings.grd": {
     "messages": [5000],
   },
+  
+  #For ohos_i18n
+  "ohos_resources/components/ohos_components_strings.grd": {
+    "messages": [5020],
+  },
 
   # END "everything else" section.
   # Everything but chrome/, components/, content/, and ios/

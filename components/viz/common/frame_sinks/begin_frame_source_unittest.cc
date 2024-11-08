@@ -771,18 +771,19 @@ TEST_F(ExternalBeginFrameSourceTest, OnBeginFrameChecksBeginFrameContinuity) {
 }
 
 TEST_F(ExternalBeginFrameSourceTest, GetMissedBeginFrameArgs) {
+  int64_t now = (base::TimeTicks::Now()).ToInternalValue();
   BeginFrameArgs args = CreateBeginFrameArgsForTesting(BEGINFRAME_FROM_HERE, 0,
-                                                       2, 10000, 10100, 100);
+                                                       2, now + 10000, now + 10100, 100);
   source_->OnBeginFrame(args);
 
   EXPECT_BEGIN_FRAME_SOURCE_PAUSED(*obs_, false);
-  EXPECT_BEGIN_FRAME_USED_MISSED(*obs_, 0, 2, 10000, 10100, 100);
+  EXPECT_BEGIN_FRAME_USED_MISSED(*obs_, 0, 2, now + 10000, now + 10100, 100);
   source_->AddObserver(obs_.get());
   source_->RemoveObserver(obs_.get());
 
   // Out of order frame_time. This might not be valid but still shouldn't
   // cause a DCHECK in ExternalBeginFrameSource code.
-  args = CreateBeginFrameArgsForTesting(BEGINFRAME_FROM_HERE, 0, 2, 9999, 10100,
+  args = CreateBeginFrameArgsForTesting(BEGINFRAME_FROM_HERE, 0, 2, now + 9999, now + 10100,
                                         101);
   source_->OnBeginFrame(args);
 

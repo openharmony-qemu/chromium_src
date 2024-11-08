@@ -40,7 +40,10 @@ extern const char kWaitForDebugger[];
 extern const char kDisableHighResTimer[];
 extern const char kDisableUsbKeyboardDetect[];
 #endif
-
+#ifdef OHOS_SCROLLBAR
+// virtual pixel ratio for ohos scrollbar
+extern const char kPixelRatio[];
+#endif
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
 extern const char kDisableDevShmUsage[];
 #endif
@@ -71,6 +74,7 @@ extern const char kSchedulerBoostUrgent[];
 extern const char kForTest[];
 extern const char kBundleInstallationDir[];
 extern const char kBundleName[];
+extern const char kArkWebInstallPath[];
 #endif
 
 }  // namespace switches

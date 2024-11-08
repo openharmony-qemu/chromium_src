@@ -32,11 +32,9 @@ AudioManagerDeviceChangeCallback::AudioManagerDeviceChangeCallback(
 AudioManagerDeviceChangeCallback::~AudioManagerDeviceChangeCallback() {}
 
 void AudioManagerDeviceChangeCallback::OnDeviceChange() {
+  // this callback listens the all device change event,
+  // web don't need to deal with it.
   LOG(INFO) << "AudioManagerDeviceChangeCallback::OnDeviceChange";
-  outputDeviceChangeListenerCallback_.Run();
-  if (auto* monitor = base::SystemMonitor::Get()) {
-    monitor->ProcessDevicesChanged(base::SystemMonitor::DEVTYPE_AUDIO);
-  }
 }
 
 std::unique_ptr<AudioManager> CreateAudioManager(
@@ -227,7 +225,7 @@ void OHOSAudioManager::ReleaseInputStream(AudioInputStream* stream) {
 void OHOSAudioManager::SelectAudioDevice(const std::string& device_id,
                                          bool isInput) {
   if (device_id.empty()) {
-    LOG(ERROR) << "OHOSAudioManager::SelectAudioDevice device_id is empty.";
+    LOG(WARNING) << "OHOSAudioManager::SelectAudioDevice device_id is empty.";
     return;
   }
   LOG(INFO) << "OHOSAudioManager::SelectAudioDevice device_id is: "

@@ -68,7 +68,6 @@ void NWebInputHandler::OnTouchRelease(int32_t id,
     y = last_y_;
   }
   nweb_delegate_->OnTouchRelease(id, x, y, from_overlay);
-  CheckSlideNavigation(last_touch_start_x_, x);
   touch_press_id_map_.erase(id);
 }
 
@@ -162,6 +161,13 @@ void NWebInputHandler::WebSendTouchpadFlingEvent(double x,
     return;
   }
   nweb_delegate_->WebSendTouchpadFlingEvent(x, y, vx, vy, pressedCodes);
+}
+
+void NWebInputHandler::WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->WebSendMouseEvent(mouseEvent);
 }
 #endif
 

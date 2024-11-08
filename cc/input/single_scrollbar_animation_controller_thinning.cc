@@ -268,6 +268,14 @@ void SingleScrollbarAnimationControllerThinning::UpdateThumbThicknessScale() {
   ApplyThumbThicknessScale(ThumbThicknessScaleByMouseDistanceToScrollbar());
 }
 
+#ifdef OHOS_SCROLLBAR
+void SingleScrollbarAnimationControllerThinning::DidRequestShow() {
+  if (thickness_change_ == AnimationChange::NONE) {
+    UpdateThumbThicknessScale();
+  }
+}
+ 
+#endif
 void SingleScrollbarAnimationControllerThinning::ApplyThumbThicknessScale(
     float thumb_thickness_scale) {
   for (auto* scrollbar : client_->ScrollbarsFor(scroll_element_id_)) {

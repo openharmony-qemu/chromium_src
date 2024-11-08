@@ -55,6 +55,7 @@ cc_component("base") {
   deps = [
     "//base",
     "//base/third_party/dynamic_annotations",
+    "//build:enable_heif_buildflags",
     "//skia",
     "//ui/base:features",
     "//ui/gfx/animation",

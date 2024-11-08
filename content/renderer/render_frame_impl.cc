@@ -2604,6 +2604,10 @@ void RenderFrameImpl::CommitNavigation(
       std::move(navigation_client_impl_), request_id,
       was_initiated_in_this_frame);
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+  bool site_adblock_enabled = commit_params->site_adblock_enabled;
+#endif  // OHOS_ARKWEB_ADBLOCK
+
   // Check if the navigation being committed originated as a client redirect.
   bool is_client_redirect =
       !!(common_params->transition & ui::PAGE_TRANSITION_CLIENT_REDIRECT);
@@ -2735,6 +2739,13 @@ void RenderFrameImpl::CommitNavigation(
 
   // Common case - fill navigation params from provided information and commit.
   std::move(commit_with_params).Run(std::move(navigation_params));
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  if (is_main_frame_) {
+    // All subframes share the main frame's adblock switch
+    OnUpdateAdBlockEnabledToRender(site_adblock_enabled);
+  }
+#endif  // OHOS_ARKWEB_ADBLOCK
 }
 
 void RenderFrameImpl::CommitNavigationWithParams(
@@ -3999,6 +4010,32 @@ void RenderFrameImpl::DidSubresourceFiltered() {
   }
 }
 
+bool RenderFrameImpl::GetGlobalAdblockEnabled() {
+  return GetRendererPreferences().is_global_adblock_enabled;
+}
+
+void RenderFrameImpl::OnUpdateAdBlockEnabledToRender(
+    bool site_adblock_enabled) {
+  // send switch to render by RenderViewImpl
+  if (GetWebView()) {
+    LOG(INFO) << "[Adblock] render frame update adblock:"
+              << site_adblock_enabled;
+    GetWebView()->OnSetAdBlockEnable(site_adblock_enabled);
+  }
+
+  if (!frame_) {
+    return;
+  }
+  WebDocumentLoader* document_loader = frame_->GetDocumentLoader();
+  if (!document_loader) {
+    return;
+  }
+  blink::WebDocumentSubresourceFilter* filter =
+      document_loader->GetWebSubresourceFilter();
+  if (filter) {
+    filter->set_activation_state(site_adblock_enabled);
+  }
+}
 #endif // OHOS_ARKWEB_ADBLOCK
 
 void RenderFrameImpl::DidFinishSameDocumentNavigation(
@@ -6545,5 +6582,4 @@ gfx::Vector2dF RenderFrameImpl::GetOverScrollOffset() {
 }
 #endif
 #endif  // defined(OHOS_INPUT_EVENTS)
-
 }  // namespace content

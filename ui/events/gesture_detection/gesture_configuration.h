@@ -231,14 +231,19 @@ class GESTURE_DETECTION_EXPORT GestureConfiguration {
   bool stylus_scale_enabled_ = false;
   bool gesture_begin_end_types_enabled_ = false;
 
+#ifdef BUILDFLAG(IS_OHOS)
+  base::TimeDelta short_press_time_ = base::Milliseconds(300);
+  int long_press_time_in_ms_ = 400;
+#else
   base::TimeDelta short_press_time_ = base::Milliseconds(400);
   // TODO(https://crbug.com/1294244): All time fields here should be of type
   // |base::TimeDiff| instead of |int|.
 
   int long_press_time_in_ms_ = 500;
+#endif
   float max_distance_between_taps_for_double_tap_ = 20;
 #ifdef OHOS_DRAG_DROP
-  int drag_long_press_time_in_ms_ = 800;
+  int drag_long_press_time_in_ms_ = 400;
 #endif
   // The max length of a repeated tap sequence, e.g., to support double-click
   // only this is 2, to support triple-click it's 3.

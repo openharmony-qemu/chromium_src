@@ -34,6 +34,10 @@
 #include "cef/libcef/common/net/scheme_registration.h"
 #endif
 
+#ifdef defined(OHOS_NWEB_EX) && defined(OHOS_CRASHPAD)
+#include "ohos_nweb_ex/overrides/ohos_nweb/src/cef_delegate/custom_crashpad_handler.h"
+#endif
+
 namespace {
 #if defined(OHOS_API_INIT_WEB_ENGINE)
   CefRefPtr<OHOS::NWeb::NWebApplication> g_application = nullptr;
@@ -88,6 +92,10 @@ void NWebApplication::InitializeCef(const CefMainArgs& mainargs,
   }
 }
 #endif  // defined(OHOS_API_INIT_WEB_ENGINE)
+
+#ifdef defined(OHOS_NWEB_EX) && defined(OHOS_CRASHPAD)
+OHOS::NWeb::ReportCrashpadFiles(NWebImpl::GetDefaultCrashpadLogPath());
+#endif
 
 /* CefApp methods begin */
 CefRefPtr<CefBrowserProcessHandler>

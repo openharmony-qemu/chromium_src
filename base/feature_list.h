@@ -505,6 +505,12 @@ class BASE_EXPORT FeatureList {
                            StoreAndRetrieveFeaturesFromSharedMemory);
   FRIEND_TEST_ALL_PREFIXES(FeatureListTest,
                            StoreAndRetrieveAssociatedFeaturesFromSharedMemory);
+#ifdef OHOS_SCROLLBAR
+  FRIEND_TEST_ALL_PREFIXES(FeatureListTest,
+                           ModifyFeaturesToAllocatorFromSharedMemory);
+  FRIEND_TEST_ALL_PREFIXES(FeatureListTest,
+                           SetOverrideStateByFeatureNameUseDefault);
+#endif
   // Allow Accessor to access GetOverrideStateByFeatureName().
   friend class Accessor;
 
@@ -605,6 +611,9 @@ class BASE_EXPORT FeatureList {
   // doesn't modify externally visible state.
   bool CheckFeatureIdentity(const Feature& feature) const;
 
+#if defined(OHOS_SCROLLBAR)
+  mutable Lock overrides_lock_;
+#endif
   // Map from feature name to an OverrideEntry struct for the feature, if it
   // exists.
   base::flat_map<std::string, OverrideEntry> overrides_;

@@ -8,6 +8,13 @@ import("//tools/grit/repack.gni")
 
 grit("strings") {
   source = "../bluetooth_strings.grd"
+
+  #ifdef ohos_i18n
+  if (is_ohos && ohos_i18n) {
+    all_chrome_locales += extra_locales
+  }
+
+  #endif
   outputs =
       [ "grit/bluetooth_strings.h" ] +
       process_file_template(all_chrome_locales,

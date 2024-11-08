@@ -613,6 +613,7 @@ source_set("unit_tests") {
     "data_buffer_unittest.cc",
     "decoder_buffer_queue_unittest.cc",
     "decoder_buffer_unittest.cc",
+    "decoder_unittest.cc",
     "decrypt_config_unittest.cc",
     "djb2_unittest.cc",
     "fake_audio_worker_unittest.cc",
@@ -632,6 +633,7 @@ source_set("unit_tests") {
     "ranges_unittest.cc",
     "reentrancy_checker_unittest.cc",
     "renderer_factory_selector_unittest.cc",
+    "renderer_unittest.cc",
     "seekable_buffer_unittest.cc",
     "serial_runner_unittest.cc",
     "silent_sink_suspender_unittest.cc",
@@ -678,6 +680,20 @@ source_set("unit_tests") {
 
   if (is_mac) {
     deps += [ "//media/base/mac:unit_tests" ]
+  }
+
+  if (is_ohos) {
+    sources += [
+      "ohos/buffer_request_config_adapter_impl_unittest.cc",
+      "ohos/codec_config_para_adapter_impl_unittest.cc",
+      "ohos/decoder_format_adapter_impl_unittest.cc",
+      "ohos/ohos_media_codec_bridge_impl_unittest.cc",
+      "ohos/ohos_media_codec_util_unittest.cc",
+      "ohos/ohos_media_decoder_bridge_impl_unittest.cc",
+      "ohos/ohos_media_player_bridge_unittest.cc",
+      "ohos/ohos_media_player_callback_unittest.cc",
+      "ohos/ohos_media_player_listener_unittest.cc",
+    ]
   }
 
   if (is_win) {

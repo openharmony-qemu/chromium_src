@@ -370,7 +370,13 @@ class UnboundWidgetInputHandler : public blink::mojom::WidgetInputHandler {
     NOTREACHED() << "Input request on unbound interface";
   }
 #if BUILDFLAG(IS_OHOS)
-  void SetGestureEventResult(bool result) override {
+  void SetGestureEventResult(bool result, bool stopPropagation) override {
+    DLOG(WARNING) << "Input request on unbound interface";
+  }
+  void SetNativeEmbedMode(bool result) override {
+    DLOG(WARNING) << "Input request on unbound interface";
+  }
+  void ScrollBy(float delta_x, float delta_y) override {
     DLOG(WARNING) << "Input request on unbound interface";
   }
 #endif
@@ -1722,17 +1728,6 @@ void RenderWidgetHostImpl::ForwardGestureEventWithLatencyInfo(
       gesture_with_latency.event, &gesture_with_latency.latency,
       &gesture_with_latency.event.GetModifiableEventLatencyMetadata());
   input_router_->SendGestureEvent(gesture_with_latency);
-
-#if BUILDFLAG(IS_OHOS)
-  if (send_internal_begin_frame && gesture_event.GetType() == blink::WebInputEvent::Type::kGestureScrollUpdate &&
-      view_) {
-    TRACE_EVENT0("input", "RenderWidgetHostImpl::SendInternalBeginFrame");
-    send_internal_begin_frame = false;
-    view_->SendInternalBeginFrame();
-  } else if (gesture_event.GetType() == blink::WebInputEvent::Type::kGestureScrollEnd) {
-    send_internal_begin_frame = true;
-  }
-#endif
 }
 
 void RenderWidgetHostImpl::ForwardTouchEventWithLatencyInfo(
@@ -2062,6 +2057,12 @@ void RenderWidgetHostImpl::DragTargetDragOver(
     base::OnceCallback<void(ui::mojom::DragOperation)> callback) {
   // TODO(https://crbug.com/1102769): Replace with a for_frame() check.
   if (blink_frame_widget_) {
+#if defined(OHOS_BUGFIX_CRASH)
+    if (!blink_frame_widget_.internal_state()){
+      LOG(ERROR) << "render widget internal is empty when drag over";
+      return;
+    }
+#endif
     blink_frame_widget_->DragTargetDragOver(
         ConvertWindowPointToViewport(client_point), screen_point,
         operations_allowed, key_modifiers,
@@ -2732,13 +2733,13 @@ void RenderWidgetHostImpl::CreateOverlay(const SkBitmap& bitmap,
   RenderViewHostDelegateView* view = delegate_->GetDelegateView();
   float scale = GetScaleFactorForView(GetView());
   gfx::ImageSkia image = gfx::ImageSkia::CreateFromBitmap(bitmap, scale);
-  view->CreateOverlay(image, image_rect, touch_point, GetScreenRect());
+  view->CreateOverlay(image, image_rect, touch_point);
 }
 
-gfx::Rect RenderWidgetHostImpl::GetScreenRect() {
-  gfx::Rect screen_rect;
-  blink_frame_widget_->GetScreenRect(&screen_rect);
-  return screen_rect;
+gfx::Rect RenderWidgetHostImpl::GetImageRect() {
+  gfx::Rect image_rect;
+  blink_frame_widget_->GetImageRect(&image_rect);
+  return image_rect;
 }
 
 void RenderWidgetHostImpl::OnTextSelected(bool flag) {

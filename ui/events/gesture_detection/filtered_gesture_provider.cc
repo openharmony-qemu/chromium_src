@@ -83,6 +83,12 @@ void FilteredGestureProvider::ResetDetection(bool is_lost_focus) {
 }
 #endif
 
+#ifdef OHOS_AI
+void FilteredGestureProvider::OnAITextSelected() {
+  gesture_provider_->OnAITextSelected();
+}
+#endif
+
 void FilteredGestureProvider::ResetDetection() {
   gesture_provider_->ResetDetection();
 }

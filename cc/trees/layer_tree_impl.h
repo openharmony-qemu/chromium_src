@@ -174,7 +174,7 @@ class CC_EXPORT LayerTreeImpl {
 #if BUILDFLAG(IS_OHOS)
   void OnLayerRectUpdate(int id, const gfx::Rect& rect);
 
-  void OnLayerRectVisibleChange(int id, bool visibility);
+  void OnLayerRectVisibilityChange(int id, bool visibility);
 #endif
 
   // Tree specific methods exposed to layer-impl tree.
@@ -625,6 +625,7 @@ class CC_EXPORT LayerTreeImpl {
       const gfx::PointF& screen_space_point);
 
   LayerImpl* FindLayerThatIsHitByPoint(const gfx::PointF& screen_space_point);
+  LayerImpl* FindLayerThatIsHitByPointNative(const gfx::PointF& screen_space_point);
 
   LayerImpl* FindLayerThatIsHitByPointInTouchHandlerRegion(
       const gfx::PointF& screen_space_point);

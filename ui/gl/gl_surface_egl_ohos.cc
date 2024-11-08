@@ -13,6 +13,10 @@
 
 namespace gl {
 
+namespace {
+constexpr uint32_t kMaxSwapInterval = 16;
+}
+
 const std::string PRODUCT_MODEL_EMULATOR = "emulator";
 
 scoped_refptr<gl::NativeViewGLSurfaceEGLOhos>
@@ -54,12 +58,44 @@ NativeViewGLSurfaceEGLOhos::CreateNativeViewGLSurfaceEGLOhos(
 NativeViewGLSurfaceEGLOhos::NativeViewGLSurfaceEGLOhos(
     GLDisplayEGL* display,
     EGLNativeWindowType window)
-    : NativeViewGLSurfaceEGL(display, window, nullptr), window_(window) {}
+    : NativeViewGLSurfaceEGL(display, window, nullptr), window_(window) {
+  enable_debug_backgroound_color_ =
+    OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetBoolParameter(
+      "web.debug.eglSwapBuffersBackgroundColor", false);
+  if (enable_debug_backgroound_color_) {
+    LOG(INFO) << "NativeViewGLSurfaceEGLOhos:: enable debug background color," \
+      " The rendering output will be replaced with green.";
+  }
+}
 
 gfx::SwapResult NativeViewGLSurfaceEGLOhos::SwapBuffers(
     PresentationCallback callback,
     gfx::FrameData data) {
-  auto result = NativeViewGLSurfaceEGL::SwapBuffers(std::move(callback),data);
+  if (enable_debug_backgroound_color_) {
+    glClearColor(0.0, 1.0, 0.0, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+  }
+
+  if (is_first_swapbuffers_) {
+    is_first_swapbuffers_ = false;
+    LOG(INFO) << "web render log: first call SwapBuffers, width = " << NativeViewGLSurfaceEGL::GetSize().width()
+      << ", higth = " << NativeViewGLSurfaceEGL::GetSize().height();
+  }
+
+  auto start = std::chrono::high_resolution_clock::now();
+
+  auto result = NativeViewGLSurfaceEGL::SwapBuffers(std::move(callback), data);
+
+  auto end = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+  if (duration > kMaxSwapInterval) {
+    LOG(WARNING) << "web render log: eglSwapBuffers cost time = " << duration << "ms";
+  }
+
+  if (result == gfx::SwapResult::SWAP_FAILED) {
+    LOG(ERROR) << "web render log: SwapBuffers failed, width = " << NativeViewGLSurfaceEGL::GetSize().width() <<
+      ", height = " << NativeViewGLSurfaceEGL::GetSize().height();
+  }
   return result;
 }
 
@@ -74,11 +110,7 @@ bool NativeViewGLSurfaceEGLOhos::Resize(const gfx::Size& size,
   std::string product_model = system_properties_adapter.GetDeviceInfoProductModel();
 
   if (base::ohos::IsMobileDevice() && product_model != PRODUCT_MODEL_EMULATOR) {
-    if (NativeViewGLSurfaceEGL::Resize(size, scale_factor, color_space, has_alpha)) {
-      OHOS::NWeb::OhosAdapterHelper::GetInstance()
-        .GetWindowAdapterInstance()
-        .NativeWindowSurfaceCleanCache(reinterpret_cast<void*>(window_));
-    }
+    NativeViewGLSurfaceEGL::Resize(size, scale_factor, color_space, has_alpha);
   }
 
   int32_t ret =

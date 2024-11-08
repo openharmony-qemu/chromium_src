@@ -483,6 +483,56 @@ TEST_F(FilePathTest, IsAbsoluteOrNetwork) {
   }
 }
 
+TEST_F(FilePathTest, IsAbsolute) {
+  const struct {
+    FilePath::StringPieceType input;
+    bool expected_is_absolute;
+  } cases[] = {
+    { FPL(""),       false},
+    { FPL("a"),      false },
+    { FPL("c:"),     false },
+    { FPL("c:a"),    false },
+    { FPL("a/b"),    false },
+    { FPL("//"),     true },
+    { FPL("//a"),    true },
+    { FPL("c:a/b"),  false },
+    { FPL("?:/a"),   false },
+    { FPL("/"),      true },
+    { FPL("/a"),     true },
+    { FPL("/."),     true },
+    { FPL("/.."),    true },
+    { FPL("c:/"),    false },
+  };
+
+  for (size_t i = 0; i < std::size(cases); ++i) {
+    FilePath input(cases[i].input);
+    bool observed_is_absolute = input.IsAbsolute();
+    EXPECT_EQ(cases[i].expected_is_absolute, observed_is_absolute) <<
+              "i: " << i << ", input: " << input.value();
+  }
+
+  FilePath input_true("datashare://abc");
+  bool input_true_absolute = input_true.IsAbsolute();
+  EXPECT_TRUE(input_true_absolute);
+}
+
+TEST_F(FilePathTest, IsDataShareUri) {
+    FilePath input_datashare("datashare://abc");
+    EXPECT_TRUE(input_datashare.IsDataShareUri());
+
+    FilePath input_dataability("dataability://abc");
+    EXPECT_TRUE(input_dataability.IsDataShareUri());
+
+    FilePath input_media("file://media/abc");
+    EXPECT_TRUE(input_media.IsDataShareUri());
+
+    FilePath input_docs("file://media/abc");
+    EXPECT_TRUE(input_docs.IsDataShareUri());
+
+    FilePath input_false("abc::/def");
+    EXPECT_FALSE(input_false.IsDataShareUri());
+}
+
 TEST_F(FilePathTest, PathComponentsTest) {
   const struct UnaryTestData cases[] = {
     { FPL("//foo/bar/baz/"),          FPL("|//|foo|bar|baz")},
@@ -1489,4 +1539,33 @@ TEST_F(FilePathTest, CompareIgnoreCaseWithInvalidInput) {
 }
 #endif
 
+TEST_F(FilePathTest, IsDataShareUrl001) {
+  FilePath filepath_test;
+  FilePath::StringType url = "datashare://abbdc";
+  EXPECT_TRUE(filepath_test.IsDataShareUrl(url));
+}
+
+TEST_F(FilePathTest, IsDataShareUrl002) {
+  FilePath filepath_test;
+  FilePath::StringType url = "dataability://abbdc";
+  EXPECT_TRUE(filepath_test.IsDataShareUrl(url));
+}
+
+TEST_F(FilePathTest, IsDataShareUrl003) {
+  FilePath filepath_test;
+  FilePath::StringType url = "file://media/abbdc";
+  EXPECT_TRUE(filepath_test.IsDataShareUrl(url));
+}
+
+TEST_F(FilePathTest, IsDataShareUrl004) {
+  FilePath filepath_test;
+  FilePath::StringType url = "file://docs/abbdc";
+  EXPECT_TRUE(filepath_test.IsDataShareUrl(url));
+}
+
+TEST_F(FilePathTest, IsDataShareUrl005) {
+  FilePath filepath_test;
+  FilePath::StringType url = "abbdc";
+  EXPECT_FALSE(filepath_test.IsDataShareUrl(url));
+}
 }  // namespace base

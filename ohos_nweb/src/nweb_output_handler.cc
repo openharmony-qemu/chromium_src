@@ -24,6 +24,8 @@
 #include <iomanip>
 #include <iostream>
 #include <thread>
+
+#include "base/trace_event/trace_event.h"
 #include "nweb_hilog.h"
 #include "ohos_adapter_helper.h"
 
@@ -53,13 +55,6 @@ struct BmpInfoHeader {
 };
 
 constexpr uint8_t kBitsPerPixel = 4;
-
-static int64_t GetNowTime() {
-  struct timeval start = {};
-  gettimeofday(&start, nullptr);
-  constexpr uint32_t kSecToUsec = 1000 * 1000;
-  return static_cast<int64_t>(start.tv_sec) * kSecToUsec + start.tv_usec;
-}
 }  // namespace
 
 // static
@@ -104,8 +99,12 @@ void NWebOutputHandler::Resize(uint32_t width, uint32_t height) {
   if (width_ != width || height_ != height) {
     WVLOG_I(
         "NWeb size change from %{public}u*%{public}u to "
-        "%{public}u*%{public}u",
-        width_, height_, width, height);
+        "%{public}u*%{public}u, nweb id = %{public}u",
+        width_, height_, width, height, nweb_id_);
+    std::string trace_output_str = "origin size = " + std::to_string(width_) + "*" + std::to_string(height_) +
+      ", new size = " + std::to_string(width) + "*" + std::to_string(height) +
+      ", nweb id = " + std::to_string(nweb_id_);
+    TRACE_EVENT1("base", "NWebOutputHandler::Resize", "change info", trace_output_str.c_str());
     width_ = width;
     height_ = height;
     frame_size_ = width_ * height_ * kBitsPerPixel;
@@ -197,47 +196,6 @@ void NWebOutputHandler::StartRenderOutput() {
   }
   if (frame_info_dump_) {
     StartFrameStat();
-  }
-}
-
-void NWebOutputHandler::OnRenderUpdate(const char* buffer) {
-  if (output_frame_cb_ == nullptr) {
-    WVLOG_I("output render frame cb is not available");
-    UpdateStat(false);
-    return;
-  }
-
-  if (!output_frame_cb_(buffer, width_, height_)) {
-    WVLOG_W("render frame is not consumed");
-    UpdateStat(false);
-  } else {
-    UpdateStat(true);
-  }
-
-  if (!dump_path_.empty()) {
-    if (dump_buf_ != nullptr) {
-      std::unique_lock<std::mutex> lk(dump_mtx_);
-      memcpy(dump_buf_.get(), buffer, frame_size_);
-      dump_cv_.notify_one();
-    } else {
-      WVLOG_E("fail to dump file. dump buffer is nullptr");
-    }
-  }
-}
-
-void NWebOutputHandler::UpdateStat(bool flag) {
-  if (!frame_info_dump_) {
-    return;
-  }
-  std::unique_lock<std::mutex> lk(frame_stat_mtx_);
-  local_time_curr_ = GetNowTime();
-  if (local_time_base_ <= 0L) {
-    local_time_base_ = local_time_curr_;
-  }
-  render_count_++;
-  local_render_count_++;
-  if (!flag) {
-    frame_miss_count_++;
   }
 }
 

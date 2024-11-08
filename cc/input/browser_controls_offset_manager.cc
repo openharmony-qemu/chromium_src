@@ -214,7 +214,7 @@ void BrowserControlsOffsetManager::UpdateBrowserControlsState(
 
 #ifdef OHOS_EX_TOPCONTROLS
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kForBrowser) &&
+          switches::kEnableNwebExTopControls) &&
       !animate) {
     client_->SetupScrollBy();
   }

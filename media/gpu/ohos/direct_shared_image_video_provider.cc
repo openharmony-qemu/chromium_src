@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// Based on direct_shared_image_video_provider.cc originally written by
+// Copyright 2019 The Chromium Authors All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 #include "media/gpu/ohos/direct_shared_image_video_provider.h"
 
 #include <memory>
@@ -17,7 +22,7 @@
 #include "base/task/single_thread_task_runner.h"
 #include "gpu/command_buffer/service/abstract_texture.h"
 #include "gpu/command_buffer/service/mailbox_manager.h"
-#include "gpu/command_buffer/service/ohos/shared_image_video_ohos.h"
+#include "gpu/command_buffer/service/ohos/ohos_video_image_backing.h"
 #include "gpu/command_buffer/service/shared_image/shared_image_factory.h"
 #include "gpu/command_buffer/service/texture_manager.h"
 #include "gpu/ipc/service/command_buffer_stub.h"
@@ -180,9 +185,11 @@ bool GpuSharedImageVideoFactory::CreateImageInternal(
     LOG(ERROR) << "GpuSharedImageVideoFactory: Unable to get a shared context.";
     return false;
   }
-  auto shared_image = gpu::SharedImageVideoOhos::Create(
+  auto shared_image = gpu::OhosVideoImageBacking::Create(
       mailbox, coded_size, spec.color_space, kTopLeft_GrSurfaceOrigin,
-      kPremul_SkAlphaType, std::move(image), std::move(shared_context));
+      kPremul_SkAlphaType,
+      gl::ohos::TextureOwnerMode::kNativeImageTexture,
+      std::move(image), std::move(shared_context), std::move(drdc_lock));
   DCHECK(stub_->channel()->gpu_channel_manager()->shared_image_manager());
   stub_->channel()->shared_image_stub()->factory()->RegisterBacking(
       std::move(shared_image));

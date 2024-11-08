@@ -83,21 +83,21 @@ void ReportLossFrame::Record() {
   TRACE_EVENT2("base", "WEBVIEW::JANK_STATS_APP", "DURATION", duration, "LOSS_FRAME", loss_frame);
 
   size_t type = JANK_FREQ_EXCEED_FRAME;
-  if (loss_frame < 6) {
+  if (loss_frame < MAX_OF_FIRST_INTERVAL) {
     type = JANK_FREQ_6_FRAME;
-  } else if (loss_frame < 15) {
+  } else if (loss_frame < MAX_OF_SECOND_INTERVAL) {
     type = JANK_FREQ_15_FRAME;
-  } else if (loss_frame < 20) {
+  } else if (loss_frame < MAX_OF_THIRD_INTERVAL) {
     type = JANK_FREQ_20_FRAME;
-  } else if (loss_frame < 36) {
+  } else if (loss_frame < MAX_OF_FOURTH_INTERVAL) {
     type = JANK_FREQ_36_FRAME;
-  } else if (loss_frame < 48) {
+  } else if (loss_frame < MAX_OF_FIFTH_INTERVAL) {
     type = JANK_FREQ_48_FRAME;
-  } else if (loss_frame < 60) {
+  } else if (loss_frame < MAX_OF_SIXTH_INTERVAL) {
     type = JANK_FREQ_60_FRAME;
-  } else if (loss_frame < 120) {
+  } else if (loss_frame < MAX_OF_SEVENTH_INTERVAL) {
     type = JANK_FREQ_120_FRAME;
-  } else if (loss_frame < 180) {
+  } else if (loss_frame < MAX_OF_EIGHTTH_INTERVAL) {
     type = JANK_FREQ_180_FRAME;
   }
 

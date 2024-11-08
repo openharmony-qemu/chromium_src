@@ -116,10 +116,18 @@ class NWebImpl : public NWeb {
       const char* objName,
       const std::vector<std::shared_ptr<NWebJsProxyCallback>> &callbacks) override;
   using NativeJSProxyCallbackFunc = std::function<char*(std::vector<std::vector<uint8_t>>&, std::vector<size_t>&)>;
+  using NativeJSProxyCallbackFuncWithResult = std::function<std::shared_ptr<OHOS::NWeb::NWebValue>(
+      std::vector<std::vector<uint8_t>>&, std::vector<size_t>&)>;
   void RegisterNativeArkJSFunction(
       const std::string& objName,
       const std::vector<std::string>& methodName,
       std::vector<NativeJSProxyCallbackFunc>&& callback,
+      bool isAsync,
+      const std::string& permission);
+  void RegisterNativeArkJSFunctionWithResult(
+      const std::string& objName,
+      const std::vector<std::string>& methodName,
+      std::vector<NativeJSProxyCallbackFuncWithResult>&& callback,
       bool isAsync,
       const std::string& permission);
   void UnRegisterNativeArkJSFunction(const char* objName) override;
@@ -187,6 +195,7 @@ class NWebImpl : public NWeb {
       bool isAccessibilityFocus) override;
   std::shared_ptr<NWebAccessibilityNodeInfo> GetAccessibilityNodeInfoById(
       int64_t accessibilityId) override;
+  bool GetAccessibilityVisible(int64_t accessibilityId) override;
   std::shared_ptr<NWebAccessibilityNodeInfo> GetAccessibilityNodeInfoByFocusMove(
       int64_t accessibilityId,
       int32_t direction) override;
@@ -217,6 +226,8 @@ class NWebImpl : public NWeb {
   bool IsAdsBlockEnabledForCurPage() override;
   static bool IsAnyNWebAdblockEnabled();
   void UpdateAdblockEasyListRules(long adBlockEasyListVersion);
+  void SetAdBlockEnabledForSite(bool is_adblock_enabled,
+                                int main_frame_tree_node_id);
 #endif
 
 #if defined(OHOS_EX_PASSWORD)
@@ -299,6 +310,7 @@ class NWebImpl : public NWeb {
   void ScrollToWithAnime(float x, float y, int32_t duration) override;
   void ScrollByWithAnime(float delta_x, float delta_y, int32_t duration) override;
   bool ScrollByWithResult (float delta_x, float delta_y) override;
+  void WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
   bool GetCertChainDerData(std::vector<std::string>& certChainData,
@@ -473,6 +485,11 @@ class NWebImpl : public NWeb {
   double GetBrowserZoomLevel() const;
 #endif
 
+#ifdef OHOS_CRASHPAD
+  static void SetDefaultCrashpadLogPath(const std::string& crashpad_log_path);
+  static const std::string GetDefaultCrashpadLogPath();
+#endif
+
 #if defined(OHOS_INCOGNITO_MODE)
   bool IsIncognitoMode() override {
     return incognito_mode_;
@@ -501,6 +518,7 @@ class NWebImpl : public NWeb {
   static void RemoveIntelligentTrackingPreventionBypassingList(
       const std::vector<std::string>& hosts);
   static void ClearIntelligentTrackingPreventionBypassingList();
+  static std::string GetDefaultUserAgent();
   static void WarmupServiceWorker(const std::string &url);
 
   int ScaleGestureChange(double scale, double centerX, double centerY) override;
@@ -549,6 +567,14 @@ class NWebImpl : public NWeb {
 #ifdef OHOS_BFCACHE
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override;
 #endif
+
+#ifdef OHOS_MIXED_CONTENT
+  void EnableMixedContentAutoUpgrades(bool enable);
+  bool IsMixedContentAutoUpgradesEnabled();
+#endif
+
+ void SetPopupSurface(void* popupSurface) override;
+ void SetTransformHint(uint32_t rotation) override;
 
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

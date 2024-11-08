@@ -15,6 +15,7 @@
 #include "base/stl_util.h"
 #include "base/strings/stringprintf.h"
 #include "base/threading/thread_restrictions.h"
+#include "third_party/bounds_checking_function/include/securec.h"
 
 #if defined(USE_SYMBOLIZE)
 #include "base/posix/eintr_wrapper.h"
@@ -235,7 +236,7 @@ bool EnableInProcessStackDumping() {
   // with SIGPIPE ignored as well.
   // TODO(phajdan.jr): De-duplicate this SIGPIPE code.
   struct sigaction action;
-  memset(&action, 0, sizeof(action));
+  memset_s(&action, sizeof(action), 0, sizeof(action));
   action.sa_handler = SIG_IGN;
   sigemptyset(&action.sa_mask);
   return (sigaction(SIGPIPE, &action, NULL) == 0);

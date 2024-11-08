@@ -39,6 +39,7 @@ OhosHeifImageDecoder::ExportAsNativePixmapDmaBuf(
     OhosImageDecodeStatus* status) {
   auto* window_buffer = GetOhosImageDecoderAdapter()->GetNativeWindowBuffer();
   if (!window_buffer) {
+    LOG(ERROR) << "OhosHeifImageDecoder::ExportAsNativePixmapDmaBuf windows buffer is nullptr";
     *status = OhosImageDecodeStatus::kInvalidWindowBuffer;
     return nullptr;
   }

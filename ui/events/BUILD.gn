@@ -646,6 +646,7 @@ if (use_blink) {
       "event_unittest.cc",
       "gesture_detection/bitset_32_unittest.cc",
       "gesture_detection/filtered_gesture_provider_unittest.cc",
+      "gesture_detection/gesture_detector_unittest.cc",
       "gesture_detection/gesture_event_data_packet_unittest.cc",
       "gesture_detection/gesture_provider_unittest.cc",
       "gesture_detection/motion_event_buffer_unittest.cc",
@@ -654,12 +655,14 @@ if (use_blink) {
       "gesture_detection/touch_disposition_gesture_filter_unittest.cc",
       "gesture_detection/velocity_tracker_unittest.cc",
       "gestures/blink/web_gesture_curve_impl_unittest.cc",
+      "gestures/fling_curve_new_unittest.cc",
       "gestures/fling_curve_unittest.cc",
       "gestures/physics_based_fling_curve_unittest.cc",
       "keycodes/dom/keycode_converter_unittest.cc",
       "keycodes/keyboard_code_conversion_unittest.cc",
       "mobile_scroller_unittest.cc",
       "mojom/mojom_traits_unittest.cc",
+      "native_scroller_ohos_unittest.cc",
       "platform/platform_event_source_unittest.cc",
       "scoped_target_handler_unittest.cc",
       "test/scoped_event_waiter_unittest.cc",
@@ -702,6 +705,14 @@ if (use_blink) {
       "//ui/gfx/ipc/geometry",
     ]
 
+    if (ohos_unittests) {
+      sources += [
+        "//content/browser/browser_thread_impl.cc",
+        "//content/browser/scheduler/browser_task_executor.cc",
+        "//content/public/common/content_switches.cc",
+        "//content/public/common/content_features.cc"
+      ]
+    }
     if (is_android) {
       sources += [ "android/motion_event_android_unittest.cc" ]
       deps += [ "//ui/android:ui_full_java" ]

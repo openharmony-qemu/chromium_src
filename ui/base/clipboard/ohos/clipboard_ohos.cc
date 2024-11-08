@@ -9,6 +9,7 @@
 #include "base/check_op.h"
 #include "base/command_line.h"
 #include "base/containers/contains.h"
+#include "base/datashare_uri_utils.h"
 #include "base/feature_list.h"
 #include "base/files/file_util.h"
 #include "base/memory/ptr_util.h"
@@ -22,6 +23,9 @@
 #include "content/public/common/content_switches.h"
 #include "skia/ext/skia_utils_base.h"
 #include "third_party/skia/include/core/SkBitmap.h"
+#include "third_party/skia/include/core/SkData.h"
+#include "third_party/skia/include/core/SkImage.h"
+#include "third_party/skia/include/core/SkStream.h"
 #include "ui/base/clipboard/clipboard_constants.h"
 #include "ui/base/clipboard/clipboard_data.h"
 #include "ui/base/clipboard/clipboard_format_type.h"
@@ -322,21 +326,7 @@ class ClipboardOHOSInternal {
             recordVector) &&
         (recordVector.size() > 0)) {
       for (auto& r : recordVector) {
-        std::shared_ptr<ClipBoardImageDataAdapterImpl> imgData = 
-            std::make_shared<ClipBoardImageDataAdapterImpl>();
-        if (!imgData) {
-          LOG(ERROR) << "ClipBoardImageDataAdapterImpl create failed";
-          return;
-        }
-        if (!r->GetImgData(imgData)) {
-          continue;
-        }
-        SkImageInfo skImageInfo = MakeSkImageInfoFromPixelMap(imgData);
-        SkPixmap pixmap(skImageInfo, imgData->GetData(), imgData->GetRowBytes());
-        if (!img.installPixels(pixmap)) {
-          LOG(ERROR) << "installPixels failed";
-          continue;
-        } else {
+        if (ReadPngRecordInner(r, img)) {
           base::ThreadPool::PostTaskAndReplyWithResult(
             FROM_HERE, {base::MayBlock(), base::TaskPriority::USER_BLOCKING},
             base::BindOnce(&ClipboardData::EncodeBitmapData, std::move(img)),
@@ -462,6 +452,7 @@ class ClipboardOHOSInternal {
 
       bool imgFlag = false;
       imgFlag = record->GetImgData(imgData);
+      std::shared_ptr<std::string> uri = record->GetUri();
       std::shared_ptr<PasteCustomData> pasteCustomData = record->GetCustomData();
       if (pasteCustomData && (pasteCustomData->find(SPAN_STRING_TAG) != pasteCustomData->end())) {
         allFormat |= static_cast<int>(ClipboardInternalFormat::kHtml);
@@ -472,11 +463,67 @@ class ClipboardOHOSInternal {
       if (text) {
         allFormat |= static_cast<int>(ClipboardInternalFormat::kText);
       }
-      if (imgFlag) {
+      if (imgFlag || uri) {
         allFormat |= static_cast<int>(ClipboardInternalFormat::kPng);
       }
     }
     return allFormat & static_cast<int>(format);
+  }
+
+  bool ReadPngRecordInner(const std::shared_ptr<PasteDataRecordAdapter>& record,
+                          SkBitmap& img) {
+    auto imgData = std::make_shared<ClipBoardImageDataAdapterImpl>();
+    if (!imgData) {
+      LOG(ERROR) << "ClipBoardImageDataAdapterImpl create failed";
+      return false;
+    }
+
+    if (record->GetImgData(imgData)) {
+      SkImageInfo skImageInfo = MakeSkImageInfoFromPixelMap(imgData);
+      SkPixmap pixmap(skImageInfo, imgData->GetData(), imgData->GetRowBytes());
+      if (!img.installPixels(pixmap)) {
+        LOG(ERROR) << "installPixels failed";
+        return false;
+      }
+      return true;
+    }
+    return ReadPngByUri(record->GetUri(), img);
+  }
+
+  // Reads image from URI
+  bool ReadPngByUri(const std::shared_ptr<std::string>& uri, SkBitmap& img) {
+    if (!uri || uri->empty()) {
+      return false;
+    }
+
+    std::string uriRealPath = base::GetRealPath(base::FilePath(*uri));
+    if (uriRealPath.empty()) {
+      LOG(ERROR) << "uri real path is empty";
+      return false;
+    }
+    std::unique_ptr<SkStream> stream =
+        SkStream::MakeFromFile(uriRealPath.c_str());
+    if (!stream) {
+      LOG(ERROR) << "Couldn't read current uriRealPath";
+      return false;
+    }
+    sk_sp<SkData> data =
+        SkData::MakeFromStream(stream.get(), stream->getLength());
+    if (!data) {
+      LOG(ERROR) << "Couldn't parse stream file";
+      return false;
+    }
+    sk_sp<SkImage> image = SkImages::DeferredFromEncodedData(data);
+    if (!image) {
+      LOG(ERROR) << "invalid image, could not decode";
+      return false;
+    }
+
+    if (!image->asLegacyBitmap(&img)) {
+      LOG(ERROR) << "uri image store bitmap failed";
+      return false;
+    }
+    return true;
   }
 
   std::shared_ptr<ClipBoardImageDataAdapter> WriteBitmapToClipboard(

@@ -77,6 +77,7 @@ class CONTENT_EXPORT OHOSMediaPlayerRenderer
   void OnUpdateAudioMutingState(bool muted);
   void OnWebContentsDestroyed();
   void OnAudioStateChanged(bool isAudible) override;
+  void OnPlayerSeekBack(base::TimeDelta back_time) override;
 
   // media::mojom::MediaPlayerRendererExtension implementation.
   //

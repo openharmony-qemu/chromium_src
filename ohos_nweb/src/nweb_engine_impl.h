@@ -56,6 +56,8 @@ public:
 
   void ClearIntelligentTrackingPreventionBypassingList() override;
 
+  std::string GetDefaultUserAgent() override;
+
   void PauseAllTimers() override;
 
   void ResumeAllTimers() override;
@@ -84,7 +86,16 @@ public:
 
   void TrimMemoryByPressureLevel(int32_t memoryLevel) override;
 
+  void SetArkWebRomApiLevel(int apiLevel) override;
+
+  int GetArkWebRomApiLevel();
+
+  int GetArkWebCoreApiLevel() override;
+
+  static bool CheckArkWebRomApiLevel(int apiLevel);
+
 private:
+  int romApiLevel_ = 0;
   std::shared_ptr<NWebDataBase> nweb_data_base_ = nullptr;
   std::shared_ptr<NWebWebStorage> nweb_web_storage_ = nullptr;
   std::shared_ptr<NWebDownloadManager> nweb_download_manager_ = nullptr;

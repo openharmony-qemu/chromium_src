@@ -27,9 +27,9 @@ scoped_refptr<VideoLayer> VideoLayer::Create(
     VideoFrameProvider* provider,
     media::VideoTransformation transform,
     RectChangeCallback callback,
-    RectVisibleChangeCallback visiblecallback) {
+    RectVisibilityChangeCallback visibilitycallback) {
   return base::WrapRefCounted(
-      new VideoLayer(provider, transform, std::move(callback), std::move(visiblecallback)));
+      new VideoLayer(provider, transform, std::move(callback), std::move(visibilitycallback)));
 }
 
 VideoLayer::VideoLayer(VideoFrameProvider* provider,
@@ -45,11 +45,11 @@ VideoLayer::VideoLayer(VideoFrameProvider* provider,
 VideoLayer::VideoLayer(VideoFrameProvider* provider,
                        media::VideoTransformation transform,
                        RectChangeCallback callback,
-                       RectVisibleChangeCallback visiblecallback)
+                       RectVisibilityChangeCallback visibilitycallback)
     : provider_(provider),
       transform_(transform),
       rect_change_callback_(std::move(callback)),
-      rect_visible_change_callback_(std::move(visiblecallback)) {
+      rect_visibility_change_callback_(std::move(visibilitycallback)) {
   SetMayContainVideo(true);
   DCHECK(provider_.Read(*this));
 }
@@ -60,15 +60,18 @@ void VideoLayer::OnLayerRectUpdate(const gfx::Rect& rect) {
   }
 }
 
-void VideoLayer::OnLayerRectVisibleChange(bool visibility) {
-  if (!rect_visible_change_callback_.is_null()) {
-    rect_visible_change_callback_.Run(visibility);
+void VideoLayer::OnLayerRectVisibilityChange(bool visibility) {
+  if (!rect_visibility_change_callback_.is_null()) {
+    rect_visibility_change_callback_.Run(visibility);
   }
 }
 
-void VideoLayer::ResetLayerRectUpdateCallback() {
+void VideoLayer::ResetLayerRectCallback() {
   if (!rect_change_callback_.is_null()) {
     rect_change_callback_.Reset();
+  }
+  if (!rect_visibility_change_callback_.is_null()) {
+    rect_visibility_change_callback_.Reset();
   }
 }
 #endif

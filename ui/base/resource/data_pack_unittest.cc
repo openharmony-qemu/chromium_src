@@ -2,7 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#define private public
 #include "ui/base/resource/data_pack.h"
+#undef private
 
 #include <stddef.h>
 #include <stdint.h>
@@ -30,6 +32,75 @@ class DataPackTest
  public:
   DataPackTest() {}
 };
+
+TEST(DataPackTest, GetPathFromHap001) {
+  base::ScopedTempDir dir;
+  ASSERT_TRUE(dir.CreateUniqueTempDir());
+  base::FilePath data_path =
+      dir.GetPath().Append(FILE_PATH_LITERAL("sample.pak"));
+  DataPack pack(k300Percent);
+  auto result_ = pack.LoadFromPath(data_path);
+  EXPECT_EQ(false, result_);
+}
+
+TEST(DataPackTest, GetPathFromHap002) {
+  base::ScopedTempDir dir;
+  ASSERT_TRUE(dir.CreateUniqueTempDir());
+  base::FilePath data_path =
+      dir.GetPath().Append(FILE_PATH_LITERAL("sample.pak"));
+  DataPack pack(k300Percent);
+  auto result_ = pack.LoadFromPath(data_path);
+  EXPECT_EQ(false, result_);
+}
+
+TEST(DataPackTest, GetPathFromHap003) {
+  base::ScopedTempDir dir;
+  ASSERT_TRUE(dir.CreateUniqueTempDir());
+  base::FilePath data_path =
+      dir.GetPath().Append(FILE_PATH_LITERAL("zh-CN.pak"));
+  DataPack pack(k100Percent);
+  auto result_ = pack.LoadFromPath(data_path);
+  EXPECT_EQ(true, result_);
+}
+
+TEST(DataPackTest, GetPathFromHap004) {
+  base::ScopedTempDir dir;
+  ASSERT_TRUE(dir.CreateUniqueTempDir());
+  base::FilePath data_path =
+      dir.GetPath().Append(FILE_PATH_LITERAL("bo-CN.pak"));
+  DataPack pack(k100Percent);
+  auto result_ = pack.LoadFromPath(data_path);
+  EXPECT_EQ(false, result_);
+}
+
+TEST(DataPackTest, GetPathFromHap005) {
+  base::ScopedTempDir dir;
+  ASSERT_TRUE(dir.CreateUniqueTempDir());
+  base::FilePath data_path = dir.GetPath().Append(FILE_PATH_LITERAL("ug.pak"));
+  DataPack pack(k100Percent);
+  auto result_ = pack.LoadFromPath(data_path);
+  EXPECT_EQ(false, result_);
+}
+
+TEST(DataPackTest, GetPathFromHap006) {
+  base::ScopedTempDir dir;
+  ASSERT_TRUE(dir.CreateUniqueTempDir());
+  base::FilePath data_path =
+      dir.GetPath().Append(FILE_PATH_LITERAL("zh-TW.pak"));
+  DataPack pack(k100Percent);
+  auto result_ = pack.LoadFromPath(data_path);
+  EXPECT_EQ(false, result_);
+}
+
+TEST(DataPackTest, GetPathFromHap007) {
+  base::ScopedTempDir dir;
+  ASSERT_TRUE(dir.CreateUniqueTempDir());
+  base::FilePath data_path =
+      dir.GetPath().Append(FILE_PATH_LITERAL("zh-HK.pak"));
+  DataPack pack(k100Percent);
+  auto result_ = pack.LoadFromPath(data_path);
+  EXPECT_EQ(false, result_);
+}
 
 TEST(DataPackTest, LoadFromPath) {
   base::ScopedTempDir dir;
@@ -62,6 +133,70 @@ TEST(DataPackTest, LoadFromPath) {
   // Try looking up an invalid key.
   ASSERT_FALSE(pack.HasResource(140));
   ASSERT_FALSE(pack.GetStringPiece(140, &data));
+}
+
+TEST(DataPackTest, LoadFromPath001) {
+  base::ScopedTempDir dir;
+  ASSERT_TRUE(dir.CreateUniqueTempDir());
+  base::FilePath data_path;
+  auto is_empty = data_path.empty();
+  EXPECT_EQ(true, is_empty);
+  auto is_pathExists = base::PathExists(data_path);
+  EXPECT_EQ(false, is_pathExists);
+  DataPack pack(k100Percent);
+  auto result = pack.LoadFromPath(data_path);
+  EXPECT_EQ(true, result);
+}
+
+TEST(DataPackTest, LoadFromPath002) {
+  base::ScopedTempDir dir;
+  ASSERT_TRUE(dir.CreateUniqueTempDir());
+  base::FilePath data_path =
+      dir.GetPath().Append(FILE_PATH_LITERAL("sample.pak"));
+  DataPack pack(k300Percent);
+  auto is_empty = data_path.empty();
+  EXPECT_EQ(false, is_empty);
+  auto is_pathExists = base::PathExists(data_path);
+  EXPECT_EQ(false, is_pathExists);
+  auto result = pack.LoadFromPath(data_path);
+  EXPECT_EQ(false, result);
+}
+
+TEST(DataPackTest, LoadFromPath003) {
+  base::ScopedTempDir dir;
+  ASSERT_TRUE(dir.CreateUniqueTempDir());
+  base::FilePath data_path = dir.GetPath().Append(FILE_PATH_LITERAL(""));
+  DataPack pack(k300Percent);
+  auto is_empty = data_path.empty();
+  EXPECT_EQ(false, is_empty);
+  auto is_pathExists = base::PathExists(data_path);
+  EXPECT_EQ(true, is_pathExists);
+  auto result = pack.LoadFromPath(data_path);
+  EXPECT_EQ(false, result);
+}
+
+TEST(DataPackTest, LoadFromPath004) {
+  base::ScopedTempDir dir;
+  ASSERT_TRUE(dir.CreateUniqueTempDir());
+  base::FilePath data_path =
+      dir.GetPath().Append(FILE_PATH_LITERAL("zh-HK.pak"));
+  DataPack pack(k100Percent);
+  auto is_empty = data_path.empty();
+  EXPECT_EQ(false, is_empty);
+  auto result = pack.LoadFromPath(data_path);
+  EXPECT_EQ(false, result);
+}
+
+TEST(DataPackTest, LoadFromPath005) {
+  base::ScopedTempDir dir;
+  ASSERT_TRUE(dir.CreateUniqueTempDir());
+  base::FilePath data_path =
+      dir.GetPath().Append(FILE_PATH_LITERAL("zh-CN.pak"));
+  DataPack pack(k100Percent);
+  auto is_empty = data_path.empty();
+  EXPECT_EQ(false, is_empty);
+  auto result = pack.LoadFromPath(data_path);
+  EXPECT_EQ(true, result);
 }
 
 TEST(DataPackTest, LoadFromPathCompressed) {
@@ -372,5 +507,29 @@ TEST(DataPackTest, Misordered) {
   ASSERT_FALSE(pack.LoadFromBuffer(
       {kSampleMisorderedPakContents, kSampleMisorderedPakSize}));
 }
+
+#if defined(OHOS_UNITTESTS)
+TEST(DataPackTest, GetStringPiece001) {
+  base::ScopedTempDir dir;
+  ASSERT_TRUE(dir.CreateUniqueTempDir());
+  base::FilePath data_path =
+      dir.GetPath().Append(FILE_PATH_LITERAL("sample.pak.gz"));
+  std::string compressed;
+  ASSERT_TRUE(compression::GzipCompress(
+      {kSamplePakContentsV4, kSamplePakSizeV4}, &compressed));
+  ASSERT_TRUE(base::WriteFile(data_path, compressed));
+  DataPack pack(k100Percent);
+  ASSERT_TRUE(pack.LoadFromPath(data_path));
+  uint16_t resource_id = 1;
+  DataPack::Entry* ret_target = reinterpret_cast<DataPack::Entry*>(
+      bsearch(&resource_id, pack.resource_table_, pack.resource_count_, sizeof(DataPack::Entry),
+              DataPack::Entry::CompareById));
+  DataPack::Entry* next_entry = ret_target + 1;
+  ret_target->file_offset = next_entry->file_offset+1;
+  base::StringPiece data;
+  auto result = pack.GetStringPiece(1, &data);
+  EXPECT_EQ(false, result);
+}
+#endif // OHOS_UNITTESTS
 
 }  // namespace ui

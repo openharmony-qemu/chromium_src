@@ -73,6 +73,7 @@ double OHOSAudioInputStream::GetMaxVolume() {
 }
 
 void OHOSAudioInputStream::SetVolume(double volume) {
+  LOG(INFO) << "OHOSAudioInputStream::SetVolume volume is:" << volume;
   capturer_source_->SetVolume(volume);
   volume_ = volume;
 }

@@ -240,9 +240,14 @@ void DeviceService::BindHidManager(
   if (IsLaCrOS() && !HidManagerImpl::IsHidServiceTesting()) {
     BindLaCrOSHidManager(std::move(receiver));
   } else {
+#if defined(OHOS_BUGFIX_CRASH)
+    // OHOS platform functions is not implemented.
+    LOG(INFO) << "OHOS don't support hid_device.";
+#else
     if (!hid_manager_)
       hid_manager_ = std::make_unique<HidManagerImpl>();
     hid_manager_->AddReceiver(std::move(receiver));
+#endif  // defined(OHOS_BUGFIX_CRASH)
   }
 }
 #endif

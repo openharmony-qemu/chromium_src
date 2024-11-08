@@ -23,7 +23,14 @@ NWebGestureEventResultImpl::NWebGestureEventResultImpl(
 
 void NWebGestureEventResultImpl::SetGestureEventResult(bool result) {
   if (callback_ != nullptr && !has_put_) {
-    callback_->ContinueTask(result);
+    callback_->ContinueTask(result, true);
+    has_put_ = true;
+  }
+}
+
+void NWebGestureEventResultImpl::SetGestureEventResultV2(bool result, bool stopPropagation) {
+  if (callback_ != nullptr && !has_put_) {
+    callback_->ContinueTask(result, stopPropagation);
     has_put_ = true;
   }
 }

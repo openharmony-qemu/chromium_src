@@ -103,7 +103,12 @@ void TouchSelectionController::OnSelectionBoundsChanged(
                   end_.edge_end() == start.edge_start()) ||
                  (end_selection_handle_->IsActive() &&
                   end.edge_end() == start_.edge_start());
-
+#ifdef OHOS_CLIPBOARD
+    if (!need_swap) {
+      need_swap = (end_ == end && end_selection_handle_->IsActive()) ||
+                  (start_ == start && start_selection_handle_->IsActive());
+    }
+#endif
     if (need_swap)
       start_selection_handle_.swap(end_selection_handle_);
   }
@@ -201,6 +206,9 @@ void TouchSelectionController::HandleTapEvent(const gfx::PointF& location,
 void TouchSelectionController::HandleLongPressEvent(
     base::TimeTicks event_time,
     const gfx::PointF& location) {
+#ifdef OHOS_CLIPBOARD
+  is_long_press_ = true;
+#endif
   longpress_drag_selector_.OnLongPressEvent(event_time, location);
   response_pending_input_event_ = LONG_PRESS;
 }
@@ -397,7 +405,7 @@ void TouchSelectionController::ResetResponsePendingInputEvent() {
 #ifdef OHOS_CLIPBOARD
 void  TouchSelectionController::UpdateSelectionChanged(
     const TouchSelectionDraggable& draggable) {
-  if(&draggable != insertion_handle_.get()) {
+  if (&draggable != insertion_handle_.get()) {
     client_->OnSelectionEvent(SELECTION_HANDLES_UPDATEMENU);
   }
 }
@@ -405,7 +413,16 @@ void  TouchSelectionController::UpdateSelectionChanged(
 bool TouchSelectionController::IsLongPressDragSelectionActive() {
   return longpress_drag_selector_.IsActive();
 }
+
+bool TouchSelectionController::IsLongPressEvent() {
+  return is_long_press_;
+}
+
+void TouchSelectionController::ResetLongPressEvent() {
+  is_long_press_ = false;
+}
 #endif
+
 void TouchSelectionController::OnDragBegin(
     const TouchSelectionDraggable& draggable,
     const gfx::PointF& drag_position) {
@@ -449,6 +466,11 @@ void TouchSelectionController::OnDragBegin(
     base::RecordAction(base::UserMetricsAction("SelectionChanged"));
   selection_handle_dragged_ = true;
 
+#ifdef OHOS_CLIPBOARD
+  selection_handle_orientation_dragging_ =
+    anchor_drag_to_selection_start_ ? TouchHandleOrientation::LEFT : TouchHandleOrientation::RIGHT;
+#endif
+
   // When moving the handle we want to move only the extent point. Before doing
   // so we must make sure that the base point is set correctly.
   client_->SelectBetweenCoordinates(base, extent);
@@ -463,7 +485,16 @@ void TouchSelectionController::OnDragUpdate(
   gfx::Vector2dF line_offset = anchor_drag_to_selection_start_
                                    ? GetStartLineOffset()
                                    : GetEndLineOffset();
+#ifdef OHOS_CLIPBOARD
+  gfx::PointF line_position;
+  if (selection_handle_orientation_dragging_ == TouchHandleOrientation::LEFT) {
+    line_position = drag_position - line_offset;
+  } else {
+    line_position = drag_position + line_offset;
+  }
+#else
   gfx::PointF line_position = drag_position + line_offset;
+#endif
   if (&draggable == insertion_handle_.get())
     client_->MoveCaret(line_position);
   else
@@ -488,10 +519,22 @@ void TouchSelectionController::OnDragUpdate(
 
 void TouchSelectionController::OnDragEnd(
     const TouchSelectionDraggable& draggable) {
+#ifdef OHOS_CLIPBOARD
+  selection_handle_orientation_dragging_ = TouchHandleOrientation::UNDEFINED;
+#endif
   if (&draggable == insertion_handle_.get())
     client_->OnSelectionEvent(INSERTION_HANDLE_DRAG_STOPPED);
-  else
+  else {
+#ifdef OHOS_CLIPBOARD
+    if (&draggable == start_selection_handle_.get()) {
+      start_selection_handle_->ResetPositionAfterDragEnd();
+    }
+    if (&draggable == end_selection_handle_.get()) {
+      end_selection_handle_->ResetPositionAfterDragEnd();
+    }
+#endif
     client_->OnSelectionEvent(SELECTION_HANDLE_DRAG_STOPPED);
+  }
 }
 
 bool TouchSelectionController::IsWithinTapSlop(

@@ -148,6 +148,8 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
 #if BUILDFLAG(IS_OHOS)
   void GetSurfaceId(int32_t native_embed_id,
                     GetSurfaceIdCallback callback) override;
+  void DestroyNativeWindow(uint32_t native_window_id) override;
+  void SetTransformHint(uint32_t rotation, uint32_t window_id) override;
 #endif
   void SetChannelDiskCacheHandle(
       int32_t client_id,
@@ -386,9 +388,10 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
 #if BUILDFLAG(IS_OHOS)
   void StartMonitor() override;
   void StopMonitor() override;
-  void SetVisible(bool visible) override;
+  void SetVisible(int32_t nweb_id, bool visible) override;
   void SetHasTouchPoint(bool has_touch_point) override;
   void ReportSlidingFrameRate(int32_t frame_rate) override;
+  void SetLTPOStrategy(int32_t strategy) override;
 #endif
 
  private:

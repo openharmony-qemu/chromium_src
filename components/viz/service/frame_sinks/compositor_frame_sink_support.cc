@@ -44,6 +44,7 @@ namespace {
   static uint32_t g_firstScrollingFrame = 0;
   static bool g_isScrolling = false;
   constexpr int g_scrolledFrameCount = 30;
+  constexpr int g_milliSecondSize = 1000;
 #endif
 
 void RecordShouldSendBeginFrame(const std::string& reason) {
@@ -754,7 +755,7 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
   }
   int64_t diff_time = frames_time_stamps_.back() - frames_time_stamps_.front();
   if (diff_time != 0) {
-    estimated_frame_rate_ = 1000 * frames_time_stamps_.size() / diff_time;
+    estimated_frame_rate_ = g_milliSecondSize * frames_time_stamps_.size() / diff_time;
   }
 #endif
 

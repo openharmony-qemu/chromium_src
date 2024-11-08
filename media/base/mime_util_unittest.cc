@@ -37,7 +37,7 @@ const bool kUsePropCodecs = false;
 // all cases except for when paired with the Opus codec.
 const char kTestMimeType[] = "foo/foo";
 
-#if BUILDFLAG(IS_ANDROID) && BUILDFLAG(USE_PROPRIETARY_CODECS)
+#if (BUILDFLAG(IS_ANDROID) && BUILDFLAG(USE_PROPRIETARY_CODECS)) || (BUILDFLAG(IS_OHOS) && BUILDFLAG(USE_PROPRIETARY_CODECS))
 // HLS is supported on Android API level 14 and higher and Chrome supports
 // API levels 15 and higher, so HLS is always supported on Android.
 const bool kHlsSupported = true;

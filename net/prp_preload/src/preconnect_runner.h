@@ -20,7 +20,8 @@ class PreconnectRunner {
  public:
   static void PreconnectSocket(const GURL& original_url,
     bool allow_credentials,
-    base::WeakPtr<net::URLRequestContext> url_request_context);
+    base::WeakPtr<net::URLRequestContext> url_request_context，
+    const net::NetworkAnonymizationKey& networkAnonymizationKey);
   static GURL GetHSTSRedirect(const GURL& original_url,
     base::WeakPtr<net::URLRequestContext> url_request_context);
  private:

@@ -6,6 +6,7 @@
 #define NET_PRP_PRELOAD_SRC_PRECONNECT_RUNNER_H
 
 #include "base/memory/weak_ptr.h"
+#include "net/base/network_anonymization_key.h"
 
 namespace net {
 class URLRequestContext;

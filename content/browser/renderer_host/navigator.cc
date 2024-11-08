@@ -477,9 +477,11 @@ void Navigator::DidNavigate(
 #if BUILDFLAG(IS_OHOS)
   network::mojom::NetworkContext* network_context = frame_tree_node->current_frame_host()
     ->GetStoragePartition()->GetNetworkContext();
-  if (network_context != nullptr) {
-    network_context->StartMainPage(params.url.possibly_invalid_spec(),
-                                   reinterpret_cast<int64_t>(this));
+  if (network_context != nullptr && frame_tree_node->current_frame_host() != nullptr) {
+    const net::NetworkAnonymizationKey networkAnonymizationKey = 
+      GetNetworkAnonymizationKey(frame_tree_node, navigation_request.get());
+    network_context->StartMainPage(params.url.possibly_invalid_spec(), networkAnonymizationKey,
+      reinterpret_cast<int64_t>(this));
   }
 #endif
   FrameTree& frame_tree = frame_tree_node->frame_tree();
@@ -741,9 +743,11 @@ void Navigator::Navigate(std::unique_ptr<NavigationRequest> request,
 #if BUILDFLAG(IS_OHOS)
   network::mojom::NetworkContext* network_context = frame_tree_node->current_frame_host()
     ->GetStoragePartition()->GetNetworkContext();
-  if (network_context != nullptr) {
-    network_context->StartMainPage(request->common_params().url.spec(),
-                                   reinterpret_cast<int64_t>(this));
+  if (network_context != nullptr && frame_tree_node->current_frame_host() != nullptr) {
+    const net::NetworkAnonymizationKey networkAnonymizationKey = 
+      GetNetworkAnonymizationKey(frame_tree_node, navigation_request.get());
+    network_context->StartMainPage(params.url.possibly_invalid_spec(), networkAnonymizationKey,
+      reinterpret_cast<int64_t>(this));
   }
 #endif
 
@@ -1032,15 +1036,6 @@ void Navigator::OnBeginNavigation(
         renderer_cancellation_listener) {
   TRACE_EVENT0("navigation", "Navigator::OnBeginNavigation");
 
-#if BUILDFLAG(IS_OHOS)
-  network::mojom::NetworkContext* network_context = frame_tree_node->current_frame_host()
-    ->GetStoragePartition()->GetNetworkContext();
-  if (network_context != nullptr) {
-    network_context->StartMainPage(common_params->url.spec(),
-                                   reinterpret_cast<int64_t>(this));
-  }
-#endif
-
   if (common_params->is_history_navigation_in_new_child_frame) {
     // Try to find a FrameNavigationEntry that matches this frame instead, based
     // on the frame's unique name.  If this can't be found, fall back to the
@@ -1126,6 +1121,17 @@ void Navigator::OnBeginNavigation(
         base::TimeTicks::Now() -
         navigation_request->common_params().navigation_start);
   }
+
+#if BUILDFLAG(IS_OHOS)
+  network::mojom::NetworkContext* network_context = frame_tree_node->current_frame_host()
+    ->GetStoragePartition()->GetNetworkContext();
+  if (network_context != nullptr && frame_tree_node->current_frame_host() != nullptr) {
+    const net::NetworkAnonymizationKey networkAnonymizationKey = 
+      GetNetworkAnonymizationKey(frame_tree_node, navigation_request.get());
+    network_context->StartMainPage(params.url.possibly_invalid_spec(), networkAnonymizationKey,
+      reinterpret_cast<int64_t>(this));
+  }
+#endif
 
   // For main frames, NavigationHandle will be created after the call to
   // |DidStartMainFrameNavigation|, so it receives the most up to date pending
@@ -1420,5 +1426,16 @@ Navigator::GetNavigationEntryForRendererInitiatedNavigation(
 
   return controller_.GetPendingEntry();
 }
+
+#if BUILDFLAG(IS_OHOS)
+  network::mojom::NetworkContext* network_context = frame_tree_node->current_frame_host()
+    ->GetStoragePartition()->GetNetworkContext();
+  if (network_context != nullptr && frame_tree_node->current_frame_host() != nullptr) {
+    const net::NetworkAnonymizationKey networkAnonymizationKey = 
+      GetNetworkAnonymizationKey(frame_tree_node, navigation_request.get());
+    network_context->StartMainPage(params.url.possibly_invalid_spec(), networkAnonymizationKey,
+      reinterpret_cast<int64_t>(this));
+  }
+#endif
 
 }  // namespace content

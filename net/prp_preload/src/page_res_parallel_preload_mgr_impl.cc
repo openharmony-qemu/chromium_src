@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "base/command_line.h"
+#include "net/base/features.h"
 #include "page_res_parallel_preload_mgr_impl.h"
 
 #include "base/logging.h"
@@ -18,9 +20,9 @@ PRParallelPreloadMgr& PRParallelPreloadMgr::GetInstance() {
 }
 bool PRParallelPreloadMgr::PRParallelPreloadEnabled() {
   static bool res = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetBoolParameter(
-    "web.PRPPreload.enable", false) &&
-    OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetProductDeviceType() ==
-      OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE;
+    "web.PRPPreload.enable", false);
+    // && OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetProductDeviceType() ==
+    //   OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE;
   return res;
 }
 
@@ -51,6 +53,7 @@ void PRParallelPreloadMgrImpl::Init(const scoped_refptr<base::SingleThreadTaskRu
 }
 
 void PRParallelPreloadMgrImpl::StartMainPage(const std::string& url,
+                                             const net::NetworkAnonymizationKey& networkAnonymizationKey,
                                              base::WeakPtr<net::URLRequestContext> url_request_context,
                                              uint64_t addr_web_handle) {
   void* web_handle = reinterpret_cast<void*>(addr_web_handle);
@@ -73,7 +76,7 @@ void PRParallelPreloadMgrImpl::StartMainPage(const std::string& url,
   }
 
   scoped_refptr<ResParallelPreloadCtrler> rp_preload_ctrler = base::WrapRefCounted(
-    new (std::nothrow) ResParallelPreloadCtrler(url, url_request_context,
+    new (std::nothrow) ResParallelPreloadCtrler(url, networkAnonymizationKey, url_request_context,
       sth_task_runner_, net_task_runner_, disk_cache_backend_factory_,
       base::BindRepeating(&PRParallelPreloadMgrImpl::OnRPPCtrlerTimeout, base::Unretained(this))));
   if (rp_preload_ctrler == nullptr) {

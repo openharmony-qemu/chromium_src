@@ -354,4 +354,10 @@ BASE_FEATURE(kAddressTrackerLinuxIsProxied,
              base::FEATURE_ENABLED_BY_DEFAULT);
 #endif  // BUILDFLAG(IS_LINUX)
 
+#if BUILDFLAG(IS_OHOS)
+BASE_FEATURE(kEnableNetworkPreload,
+             "EnableNetworkPreload",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+#endif  // BUILDFLAG(IS_OHOS)
+
 }  // namespace net::features

@@ -1382,7 +1382,7 @@ interface NetworkContext {
   InitPRParallelPreloadMgr();
 
   [EnableIf=is_ohos]
-  StartMainPage(string url, uint64 addr_web_handle);
+  StartMainPage(string url, NetworkAnonymizationKey& networkAnonymizationKey, uint64 addr_web_handle);
 
   [EnableIf=is_ohos]
   StopMainPage(uint64 addr_web_handle);

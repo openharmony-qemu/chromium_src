@@ -814,6 +814,11 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
   // `TimeDelta::FromMiseconds()` for `TimeDelta`. http://crbug.com/634507
   static constexpr Time FromInternalValue(int64_t us) { return Time(us); }
 
+#if BUILDFLAG(IS_OHOS)
+  // Returns the UTC time string parsed from base::Time
+  static std::string ToUTCTimeString(const base::Time& time) { return ToUTCString(time); };
+#endif
+
  private:
   friend class time_internal::TimeBase<Time>;
 

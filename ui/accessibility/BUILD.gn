@@ -308,6 +308,7 @@ test("accessibility_unittests") {
     ":accessibility",
     ":test_support",
     "//base/test:test_support",
+    "//content/public/common:static_switches",
     "//ipc",
     "//mojo/core/embedder",
     "//mojo/core/test:test_support",

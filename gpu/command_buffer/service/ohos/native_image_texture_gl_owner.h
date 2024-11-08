@@ -10,16 +10,18 @@
 #include "base/threading/thread_checker.h"
 #include "gpu/command_buffer/service/ohos/native_image_texture_owner.h"
 #include "gpu/gpu_export.h"
-#include "shared_image_video_ohos.h"
+#include "ohos_video_image_backing.h"
 #include "ui/gl/ohos/ohos_native_image.h"
 
 namespace gpu {
+class ScopedNativeBufferFenceSync;
 
 class GPU_GLES2_EXPORT NativeImageTextureGlOwner
     : public NativeImageTextureOwner {
  public:
   NativeImageTextureGlOwner(const NativeImageTextureGlOwner&) = delete;
-  NativeImageTextureGlOwner& operator=(const NativeImageTextureGlOwner&) = delete;
+  NativeImageTextureGlOwner& operator=(const NativeImageTextureGlOwner&) =
+      delete;
 
   gl::GLContext* GetContext() const override;
   gl::GLSurface* GetSurface() const override;
@@ -35,6 +37,13 @@ class GPU_GLES2_EXPORT NativeImageTextureGlOwner
                                   gfx::Rect* visible_rect) override;
 
   void RunWhenBufferIsAvailable(base::OnceClosure callback) override;
+  std::unique_ptr<ScopedNativeBufferFenceSync> GetNativeBuffer() override;
+
+  static bool DecomposeTransform(float matrix[16],
+                                 size_t matrix_size,
+                                 gfx::Size rotated_visible_size,
+                                 gfx::Size* coded_size,
+                                 gfx::Rect* visible_rect);
 
  protected:
   void ReleaseResources() override;
@@ -45,11 +54,6 @@ class GPU_GLES2_EXPORT NativeImageTextureGlOwner
   NativeImageTextureGlOwner(std::unique_ptr<AbstractTextureOHOS> texture,
                             scoped_refptr<SharedContextState> context_state);
   ~NativeImageTextureGlOwner() override;
-
-  static bool DecomposeTransform(float matrix[16],
-                                 gfx::Size rotated_visible_size,
-                                 gfx::Size* coded_size,
-                                 gfx::Rect* visible_rect);
 
   scoped_refptr<gl::OhosNativeImage> native_image_;
 

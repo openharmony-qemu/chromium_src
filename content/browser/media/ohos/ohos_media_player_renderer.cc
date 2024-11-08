@@ -25,13 +25,18 @@ namespace content {
 
 namespace {
 const float kDefaultVolume = 1.0;
+constexpr double kPlaybackRateLevel0 = 0;
+constexpr double kPlaybackRateLevel1 = 1;
+constexpr double kPlaybackRateLevel2 = 1.25;
+constexpr double kPlaybackRateLevel3 = 1.75;
+constexpr double kPlaybackRateLevel4 = 2;
 enum InterruptHint {
-  INTERRUPT_HINT_NONE = 0,
-  INTERRUPT_HINT_RESUME,
-  INTERRUPT_HINT_PAUSE,
-  INTERRUPT_HINT_STOP,
-  INTERRUPT_HINT_DUCK,
-  INTERRUPT_HINT_UNDUCK
+    INTERRUPT_HINT_NONE = 0,
+    INTERRUPT_HINT_RESUME,
+    INTERRUPT_HINT_PAUSE,
+    INTERRUPT_HINT_STOP,
+    INTERRUPT_HINT_DUCK,
+    INTERRUPT_HINT_UNDUCK
 };
 }  // namespace
 
@@ -121,17 +126,17 @@ void OHOSMediaPlayerRenderer::StartPlayingFrom(base::TimeDelta time) {
 void OHOSMediaPlayerRenderer::SetPlaybackRate(double playback_rate) {
   if (has_error_)
     return;
-  if (playback_rate <= 0) {
+  if (playback_rate <= kPlaybackRateLevel0) {
     media_player_->Pause();
   } else {
     OHOS::NWeb::PlaybackRateMode mode;
-    if (playback_rate < 1) {
+    if (playback_rate < kPlaybackRateLevel1) {
       mode = OHOS::NWeb::PlaybackRateMode::SPEED_FORWARD_0_75_X;
-    } else if (playback_rate < 1.25) {
+    } else if (playback_rate < kPlaybackRateLevel2) {
       mode = OHOS::NWeb::PlaybackRateMode::SPEED_FORWARD_1_00_X;
-    } else if (playback_rate < 1.75) {
+    } else if (playback_rate < kPlaybackRateLevel3) {
       mode = OHOS::NWeb::PlaybackRateMode::SPEED_FORWARD_1_25_X;
-    } else if (playback_rate < 2) {
+    } else if (playback_rate < kPlaybackRateLevel4) {
       mode = OHOS::NWeb::PlaybackRateMode::SPEED_FORWARD_1_75_X;
     } else {
       mode = OHOS::NWeb::PlaybackRateMode::SPEED_FORWARD_2_00_X;
@@ -265,6 +270,20 @@ void OHOSMediaPlayerRenderer::OnAudioStateChanged(bool isAudible) {
     web_contents_impl->DelMediaPlayerAudibleCount();
     web_contents_->OnAudioStateChanged();
   }
+}
+
+void OHOSMediaPlayerRenderer::OnPlayerSeekBack(base::TimeDelta back_time) {
+  if (web_contents_ == nullptr) {
+    LOG(ERROR) << "web contents is nullptr";
+    return;
+  }
+  MediaSessionImpl* mediaSession = MediaSessionImpl::Get(web_contents_);
+  if (mediaSession == nullptr) {
+    LOG(ERROR) << "get mediaSession is nullptr";
+    return;
+  }
+  LOG(INFO) << "SEEK_CLOSEST failure and seek back time: " << back_time;
+  mediaSession->SeekTo(back_time);
 }
 
 base::TimeDelta OHOSMediaPlayerRenderer::GetMediaTime() {

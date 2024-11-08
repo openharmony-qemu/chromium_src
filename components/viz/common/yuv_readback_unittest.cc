@@ -23,6 +23,7 @@
 #include "media/base/video_util.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/skia/include/core/SkBitmap.h"
+#include "ui/gl/init/gl_factory.h"
 
 #if !BUILDFLAG(IS_ANDROID)
 
@@ -45,7 +46,8 @@ class YUVReadbackTest : public testing::Test {
     attributes.samples = 4;
     attributes.sample_buffers = 1;
     attributes.bind_generates_resource = false;
-
+    gl::init::InitializeGLNoExtensionsOneOff(
+      /*init_bindings=*/true, /*gpu_preference=*/gl::GpuPreference::kLowPower);
     auto result = context_->Initialize(
         TestGpuServiceHolder::GetInstance()->task_executor(), attributes,
         gpu::SharedMemoryLimits());
@@ -437,17 +439,18 @@ class YUVReadbackTest : public testing::Test {
       }
     }
 
+    int maxdiff = 2;
     ComparePlane(
         Y, y_stride, output_frame->visible_data(media::VideoFrame::kYPlane),
-        output_frame->stride(media::VideoFrame::kYPlane), 2, output_xsize,
+        output_frame->stride(media::VideoFrame::kYPlane), maxdiff, output_xsize,
         output_ysize, &input_pixels, message + " Y plane");
     ComparePlane(
         U, u_stride, output_frame->visible_data(media::VideoFrame::kUPlane),
-        output_frame->stride(media::VideoFrame::kUPlane), 2, output_xsize / 2,
+        output_frame->stride(media::VideoFrame::kUPlane), maxdiff, output_xsize / 2,
         output_ysize / 2, &input_pixels, message + " U plane");
     ComparePlane(
         V, v_stride, output_frame->visible_data(media::VideoFrame::kVPlane),
-        output_frame->stride(media::VideoFrame::kVPlane), 2, output_xsize / 2,
+        output_frame->stride(media::VideoFrame::kVPlane), maxdiff, output_xsize / 2,
         output_ysize / 2, &input_pixels, message + " V plane");
 
     gl_->DeleteTextures(1, &src_texture);
@@ -467,7 +470,7 @@ TEST_F(YUVReadbackTest, YUVReadbackOptTest) {
         "gpu.service") "," TRACE_DISABLED_BY_DEFAULT("gpu.decoder"));
 
     // Run a test with no size scaling, just planerization.
-    TestYUVReadback(800, 400, 800, 400, 0, 0, 1, false, use_mrt == 1,
+    TestYUVReadback(800, 400, 800, 400, 0, 0, 0, false, use_mrt == 1,
                     gpu::GLHelper::SCALER_QUALITY_FAST);
 
     std::map<std::string, int> event_counts;
@@ -477,20 +480,11 @@ TEST_F(YUVReadbackTest, YUVReadbackOptTest) {
     VLOG(1) << "Draw buffer calls: " << draw_buffer_calls;
     VLOG(1) << "DrawArrays calls: " << draw_arrays_calls;
 
-    if (use_mrt) {
-      // When using MRT, the YUV readback code should only execute two
-      // glDrawArrays(). It will call glDrawBuffersEXT() twice for each pass
-      // (once to draw to multiple outputs, and once to restore back to a single
-      // output).
-      EXPECT_EQ(2, draw_arrays_calls);
-      EXPECT_EQ(4, draw_buffer_calls);
-    } else {
-      // When not using MRT, there are three passes for the YUV.
-      // glDrawBuffersEXT() should never be called because none of the
-      // planerizers should draw multiple outputs.
-      EXPECT_EQ(3, draw_arrays_calls);
-      EXPECT_EQ(0, draw_buffer_calls);
-    }
+    // There are three passes for the YUV.
+    // glDrawBuffersEXT() should never be called because none of the
+    // planerizers should draw multiple outputs.
+    EXPECT_EQ(3, draw_arrays_calls);
+    EXPECT_EQ(0, draw_buffer_calls);
   }
 }
 

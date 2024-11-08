@@ -85,7 +85,7 @@ class GPU_GLES2_EXPORT ServiceTransferCache
       size_t buffer_byte_size,
       bool needs_mips);
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
   bool CreateLockedRGBAHardwareDecodedImageEntry(
       int decoder_id,
       uint32_t entry_id,

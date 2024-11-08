@@ -137,6 +137,8 @@ component("gl") {
     sources += [
       "gl_surface_egl_ohos.cc",
       "gl_surface_egl_ohos.h",
+      "ohos/native_buffer_utils.cc",
+      "ohos/native_buffer_utils.h",
       "ohos/ohos_native_image.cc",
       "ohos/ohos_native_image.h",
       "ohos/frame_available_listener_impl.cc",
@@ -575,6 +577,7 @@ test("gl_unittests") {
     "gl_surface_format_unittest.cc",
     "gl_version_info_unittest.cc",
     "gpu_timing_unittest.cc",
+    "ohos/ohos_native_image_unittests.cc",
   ]
 
   if (use_egl && !use_ozone) {
@@ -621,6 +624,15 @@ test("gl_unittests") {
     "//ui/platform_window",
     "//ui/platform_window:platform_impls",
   ]
+
+  if (ohos_unittests) {
+    sources += [
+      "//content/browser/scheduler/browser_io_thread_delegate.cc",
+      "//content/browser/scheduler/browser_task_queues.cc",
+      "//content/browser/scheduler/browser_ui_thread_scheduler.cc",
+      "//content/browser/scheduler/browser_task_priority.cc",
+    ]
+  }
 
   if (use_vaapi) {
     # gl_image_gl_texture_unittest.cc cannot easily be made to run as part of

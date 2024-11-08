@@ -440,6 +440,7 @@ test("capture_unittests") {
     "content/capture_resolution_chooser_unittest.cc",
     "content/smooth_event_sampler_unittest.cc",
     "content/video_capture_oracle_unittest.cc",
+    "mojom/video_capture_types_mojom_traits_unittest.cc",
     "run_all_unittests.cc",
     "video/fake_video_capture_device_unittest.cc",
     "video/file_video_capture_device_unittest.cc",
@@ -466,6 +467,10 @@ test("capture_unittests") {
     "//third_party/libyuv:libyuv",
     "//ui/gfx:test_support",
   ]
+
+  if (ohos_unittests) {
+    deps += ["//content/public/common:static_switches"]
+  }
 
   if (is_linux || is_chromeos_lacros) {
     sources += [
@@ -521,6 +526,25 @@ test("capture_unittests") {
       "IOSurface.framework",
     ]
     deps += [ "//third_party/ocmock" ]
+  }
+
+  if (is_ohos) {
+    sources += [
+      "video/ohos/ohos_capture_delegate_unittist.cc",
+      "video/ohos/video_capture_common_ohos_unittest.cc",
+      "video/ohos/video_capture_device_factory_ohos_unittest.cc",
+      "video/ohos/video_capture_status_callback_listener_ohos_unittest.cc",
+      "video/ohos/video_capture_surface_buffer_listener_ohos_unittest.cc",
+      "video/video_capture_system_impl_unittest.cc",
+    ]
+  }
+
+  if (ohos_unittests) {
+    sources += [ "video/ohos/video_capture_device_ohos_unittest.cc" ]
+  }
+
+  if (ohos_unittests) {
+    deps += [ "//content/public/common:static_switches" ]
   }
 
   if (is_ios) {

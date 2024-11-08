@@ -1,17 +1,6 @@
-/*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Copyright (c) 2023 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "content/browser/accessibility/browser_accessibility_ohos.h"
 #include <codecvt>
@@ -27,6 +16,11 @@
 namespace content {
 using namespace OHOS::NWeb;
 
+using AccessibilityIdMap = std::unordered_map<int64_t, BrowserAccessibilityOHOS*>;
+
+base::LazyInstance<AccessibilityIdMap>::Leaky g_accessibility_id_map =
+    LAZY_INSTANCE_INITIALIZER;
+
 std::unique_ptr<BrowserAccessibility> BrowserAccessibility::Create(
     BrowserAccessibilityManager* manager,
     ui::AXNode* node) {
@@ -38,18 +32,26 @@ BrowserAccessibilityOHOS::BrowserAccessibilityOHOS(
     BrowserAccessibilityManager* manager,
     ui::AXNode* node)
     : BrowserAccessibility(manager, node) {
-  if (node) {
-    accessibility_id_ = static_cast<int64_t>(node->id());
-  } else {
-    accessibility_id_ = -1;
-  }
+  accessibility_id_ = static_cast<int64_t>(GetUniqueId().Get());
+  g_accessibility_id_map.Get()[accessibility_id_] = this;
 }
 
 BrowserAccessibilityOHOS::~BrowserAccessibilityOHOS() {
+  g_accessibility_id_map.Get().erase(accessibility_id_);
 }
 
 int64_t BrowserAccessibilityOHOS::GetAccessibilityId() const {
   return accessibility_id_;
+}
+
+BrowserAccessibilityOHOS* BrowserAccessibilityOHOS::GetFromAccessibilityId(
+    int64_t accessibility_id) {
+  AccessibilityIdMap* unique_ids = g_accessibility_id_map.Pointer();
+  auto iter = unique_ids->find(accessibility_id);
+  if (iter != unique_ids->end())
+    return iter->second;
+
+  return nullptr;
 }
 
 bool BrowserAccessibilityOHOS::IsEnabled() const {
@@ -377,18 +379,45 @@ bool BrowserAccessibilityOHOS::IsHierarchical() const {
 }
 
 bool BrowserAccessibilityOHOS::HasOnlyTextChildren() const {
-  for (auto it = InternalChildrenBegin(); it != InternalChildrenEnd(); ++it) {
-    if (!it->IsText())
+  for (auto& childId : childrenIds_) {
+    BrowserAccessibilityOHOS* child = GetFromAccessibilityId(childId);
+    if (child && !child->IsText() &&
+        child->GetRole() != ax::mojom::Role::kStrong &&
+        !child->IsEmptyContainer()) {
       return false;
+    }
   }
   return true;
 }
 
-const BrowserAccessibilityOHOS*
+bool BrowserAccessibilityOHOS::HasOnlyDirectTextChildren() const {
+  for (auto& childNode : PlatformChildren()) {
+    BrowserAccessibilityOHOS& childNodeOHOS =
+        static_cast<BrowserAccessibilityOHOS&>(childNode);
+    if (!childNodeOHOS.IsText() &&
+        childNodeOHOS.GetRole() != ax::mojom::Role::kStrong) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool BrowserAccessibilityOHOS::HasClickableChildren() const {
+  for (auto& childNode : PlatformChildren()) {
+    BrowserAccessibilityOHOS& childNodeOHOS =
+        static_cast<BrowserAccessibilityOHOS&>(childNode);
+    if (childNodeOHOS.IsClickable()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+BrowserAccessibilityOHOS*
 BrowserAccessibilityOHOS::GetAccessibilityNodeByFocusMove(
     int32_t direction) const {
-  std::list<const BrowserAccessibilityOHOS*> nodeList;
-  const BrowserAccessibilityOHOS* resultNode = nullptr;
+  std::list<BrowserAccessibilityOHOS*> nodeList;
+  BrowserAccessibilityOHOS* resultNode = nullptr;
 
   if (!manager_) {
     return resultNode;
@@ -417,18 +446,18 @@ BrowserAccessibilityOHOS::GetAccessibilityNodeByFocusMove(
 }
 
 void BrowserAccessibilityOHOS::AddFocusableNode(
-    std::list<const BrowserAccessibilityOHOS*>& nodeList) const {
-  for (const auto& childNode : PlatformChildren()) {
-    const BrowserAccessibilityOHOS& childNodeOHOS =
-        static_cast<const BrowserAccessibilityOHOS&>(childNode);
+    std::list<BrowserAccessibilityOHOS*>& nodeList) const {
+  for (auto& childNode : PlatformChildren()) {
+    BrowserAccessibilityOHOS& childNodeOHOS =
+        static_cast<BrowserAccessibilityOHOS&>(childNode);
     nodeList.emplace_back(&childNodeOHOS);
     childNodeOHOS.AddFocusableNode(nodeList);
   }
 }
 
-const BrowserAccessibilityOHOS*
+BrowserAccessibilityOHOS*
 BrowserAccessibilityOHOS::FindNodeInRelativeDirection(
-    const std::list<const BrowserAccessibilityOHOS*>& nodeList,
+    const std::list<BrowserAccessibilityOHOS*>& nodeList,
     int32_t direction) const {
   switch (direction) {
     case FocusMoveDirection::FORWARD:
@@ -442,9 +471,9 @@ BrowserAccessibilityOHOS::FindNodeInRelativeDirection(
   return nullptr;
 }
 
-const BrowserAccessibilityOHOS*
+BrowserAccessibilityOHOS*
 BrowserAccessibilityOHOS::FindNodeInAbsoluteDirection(
-    const std::list<const BrowserAccessibilityOHOS*>& nodeList,
+    const std::list<BrowserAccessibilityOHOS*>& nodeList,
     int32_t direction) const {
   ui::AXOffscreenResult offscreen_result = ui::AXOffscreenResult::kOnscreen;
   float dip_scale = manager_->device_scale_factor();
@@ -473,7 +502,7 @@ BrowserAccessibilityOHOS::FindNodeInAbsoluteDirection(
       break;
   }
 
-  const BrowserAccessibilityOHOS* nearestNode = nullptr;
+  BrowserAccessibilityOHOS* nearestNode = nullptr;
   for (const auto& nodeItem : nodeList) {
     if (nodeItem->GetAccessibilityId() == accessibility_id_ ||
         !nodeItem->PlatformGetParent()) {
@@ -491,8 +520,8 @@ BrowserAccessibilityOHOS::FindNodeInAbsoluteDirection(
   return nearestNode;
 }
 
-const BrowserAccessibilityOHOS* BrowserAccessibilityOHOS::GetNextFocusableNode(
-    const std::list<const BrowserAccessibilityOHOS*>& nodeList) const {
+BrowserAccessibilityOHOS* BrowserAccessibilityOHOS::GetNextFocusableNode(
+    const std::list<BrowserAccessibilityOHOS*>& nodeList) const {
   auto nodeItem = nodeList.begin();
   for (; nodeItem != nodeList.end(); nodeItem++) {
     if ((*nodeItem)->GetAccessibilityId() == accessibility_id_) {
@@ -512,9 +541,9 @@ const BrowserAccessibilityOHOS* BrowserAccessibilityOHOS::GetNextFocusableNode(
   return nullptr;
 }
 
-const BrowserAccessibilityOHOS*
+BrowserAccessibilityOHOS*
 BrowserAccessibilityOHOS::GetPreviousFocusableNode(
-    const std::list<const BrowserAccessibilityOHOS*>& nodeList) const {
+    const std::list<BrowserAccessibilityOHOS*>& nodeList) const {
   auto nodeItem = nodeList.rbegin();
   for (; nodeItem != nodeList.rend(); nodeItem++) {
     if ((*nodeItem)->GetAccessibilityId() == accessibility_id_) {
@@ -750,8 +779,10 @@ std::u16string BrowserAccessibilityOHOS::GetTextContentUTF16() const {
 
 std::u16string BrowserAccessibilityOHOS::GetSubstringTextContentUTF16(
     absl::optional<EarlyExitPredicate> predicate) const {
-  if (ui::IsIframe(GetRole()))
+  if (ui::IsIframe(GetRole()) || GetRole() == ax::mojom::Role::kCell ||
+      GetRole() == ax::mojom::Role::kRootWebArea) {
     return std::u16string();
+  }
 
   // First, always return the |value| attribute if this is an
   // input field.
@@ -814,15 +845,35 @@ std::u16string BrowserAccessibilityOHOS::GetSubstringTextContentUTF16(
       break;
   }
 
+  // This is called from IsLeaf, so don't call PlatformChildCount
+  // from within this!
+  if (text.empty() && ((HasOnlyTextChildren() && !HasListMarkerChild()) ||
+                       (IsFocusable() && HasOnlyTextAndImageChildren()))) {
+    for (auto it = InternalChildrenBegin(); it != InternalChildrenEnd(); ++it) {
+      text += static_cast<BrowserAccessibilityOHOS*>(it.get())
+                  ->GetSubstringTextContentUTF16(predicate);
+      if (predicate && predicate.value().Run(text)) {
+        break;
+      }
+    }
+  }
+
+  if (text.empty() &&
+      (ui::IsLink(GetRole()) || ui::IsImageOrVideo(GetRole())) &&
+      !HasExplicitlyEmptyName()) {
+    std::u16string url = GetString16Attribute(ax::mojom::StringAttribute::kUrl);
+    text = ui::AXUrlBaseText(url);
+  }
+
   return text;
 }
 
 bool BrowserAccessibilityOHOS::HasOnlyTextAndImageChildren() const {
-  // This is called from IsLeaf, so don't call PlatformChildCount
-  // from within this!
-  for (auto it = InternalChildrenBegin(); it != InternalChildrenEnd(); ++it) {
-    BrowserAccessibility* child = it.get();
-    if (!child->IsText() && !ui::IsImageOrVideo(child->GetRole())) {
+  for (auto& childId : childrenIds_) {
+    BrowserAccessibilityOHOS* child = GetFromAccessibilityId(childId);
+    if (child && !child->IsText() &&
+        child->GetRole() != ax::mojom::Role::kStrong &&
+        !ui::IsImageOrVideo(child->GetRole())) {
       return false;
     }
   }
@@ -907,6 +958,80 @@ bool BrowserAccessibilityOHOS::IsScrollSupported() const {
   }
 }
 
+bool BrowserAccessibilityOHOS::CanScrollForward() const {
+  if (GetRole() == ax::mojom::Role::kSlider) {
+    const std::string& html_tag =
+        GetStringAttribute(ax::mojom::StringAttribute::kHtmlTag);
+    if (html_tag != "input")
+      return false;
+
+    float value = GetFloatAttribute(ax::mojom::FloatAttribute::kValueForRange);
+    float max = GetFloatAttribute(ax::mojom::FloatAttribute::kMaxValueForRange);
+    return value < max;
+  } else {
+    return CanScrollRight() || CanScrollDown();
+  }
+}
+
+bool BrowserAccessibilityOHOS::CanScrollBackward() const {
+  if (GetRole() == ax::mojom::Role::kSlider) {
+    const std::string& html_tag =
+        GetStringAttribute(ax::mojom::StringAttribute::kHtmlTag);
+    if (html_tag != "input")
+      return false;
+
+    float value = GetFloatAttribute(ax::mojom::FloatAttribute::kValueForRange);
+    float min = GetFloatAttribute(ax::mojom::FloatAttribute::kMinValueForRange);
+    return value > min;
+  } else {
+    return CanScrollLeft() || CanScrollUp();
+  }
+}
+
+bool BrowserAccessibilityOHOS::CanScrollUp() const {
+  return GetScrollY() > GetMinScrollY() && IsScrollable();
+}
+
+bool BrowserAccessibilityOHOS::CanScrollDown() const {
+  return GetScrollY() < GetMaxScrollY() && IsScrollable();
+}
+
+bool BrowserAccessibilityOHOS::CanScrollLeft() const {
+  return GetScrollX() > GetMinScrollX() && IsScrollable();
+}
+
+bool BrowserAccessibilityOHOS::CanScrollRight() const {
+  return GetScrollX() < GetMaxScrollX() && IsScrollable();
+}
+
+int BrowserAccessibilityOHOS::GetScrollX() const {
+  int value = 0;
+  GetIntAttribute(ax::mojom::IntAttribute::kScrollX, &value);
+  return value;
+}
+
+int BrowserAccessibilityOHOS::GetScrollY() const {
+  int value = 0;
+  GetIntAttribute(ax::mojom::IntAttribute::kScrollY, &value);
+  return value;
+}
+
+int BrowserAccessibilityOHOS::GetMinScrollX() const {
+  return GetIntAttribute(ax::mojom::IntAttribute::kScrollXMin);
+}
+
+int BrowserAccessibilityOHOS::GetMinScrollY() const {
+  return GetIntAttribute(ax::mojom::IntAttribute::kScrollYMin);
+}
+
+int BrowserAccessibilityOHOS::GetMaxScrollX() const {
+  return GetIntAttribute(ax::mojom::IntAttribute::kScrollXMax);
+}
+
+int BrowserAccessibilityOHOS::GetMaxScrollY() const {
+  return GetIntAttribute(ax::mojom::IntAttribute::kScrollYMax);
+}
+
 void BrowserAccessibilityOHOS::Scroll(const ax::mojom::Action& action) const {
   if (GetRole() == ax::mojom::Role::kSlider) {
     if (!IsEnabled()) {
@@ -938,4 +1063,135 @@ void BrowserAccessibilityOHOS::Scroll(const ax::mojom::Action& action) const {
     manager()->Scroll(*this, action);
   }
 }
+
+bool BrowserAccessibilityOHOS::IsAccessibilityGroup() const {
+  if (ui::IsLink(GetRole())) {
+    return true;
+  }
+  if (GetRole() == ax::mojom::Role::kHeading || GetRole() == ax::mojom::Role::kStrong) {
+    return true;
+  }
+  if (GetRole() == ax::mojom::Role::kParagraph) {
+    return HasOnlyTextChildren();
+  }
+  if (GetRole() == ax::mojom::Role::kGenericContainer) {
+    return HasOnlyDirectTextChildren();
+  }
+  return false;
+}
+
+bool BrowserAccessibilityOHOS::IsIgnoredContainer() const {
+  if (GetRole() != ax::mojom::Role::kGenericContainer || IsScrollable()) {
+    return false;
+  }
+  if (IsClickable() && !HasClickableChildren()) {
+    return false;
+  }
+  if (!PlatformChildCount()) {
+    return false;
+  }
+  if (PlatformChildCount() && HasOnlyDirectTextChildren()) {
+    return false;
+  }
+  return true;
+}
+
+bool BrowserAccessibilityOHOS::IsEmptyContainer() const {
+  if (GetRole() != ax::mojom::Role::kGenericContainer) {
+    return false;
+  }
+  if (IsClickable() && !HasClickableChildren()) {
+    return false;
+  }
+  if (PlatformChildCount()) {
+    return false;
+  }
+  return true;
+}
+
+int64_t BrowserAccessibilityOHOS::GetParentId() const {
+  BrowserAccessibilityOHOS* parent = static_cast<content::BrowserAccessibilityOHOS*>(PlatformGetParent());
+  while (parent && parent->IsIgnoredContainer()) {
+    parent = static_cast<content::BrowserAccessibilityOHOS*>(parent->PlatformGetParent());
+  }
+  if (parent) {
+    return parent->GetAccessibilityId();
+  }
+  return -1;
+}
+
+void BrowserAccessibilityOHOS::GetChildrenIds(std::vector<int64_t>& childrenIds) const {
+  for (const auto& childNode : PlatformChildren()) {
+    const content::BrowserAccessibilityOHOS& childNodeOHOS =
+        static_cast<const content::BrowserAccessibilityOHOS&>(childNode);
+    if (!childNodeOHOS.IsIgnoredContainer()) {
+      childrenIds.emplace_back(childNodeOHOS.GetAccessibilityId());
+    } else {
+      childNodeOHOS.GetChildrenIds(childrenIds);
+    }
+  }
+}
+
+void BrowserAccessibilityOHOS::SetChildrenIds(const std::vector<int64_t>& childrenIds) {
+  childrenIds_ = childrenIds;
+}
+
+bool BrowserAccessibilityOHOS::Scroll(ScrollDirection direction, bool is_page_scroll) const {
+  int x_initial = GetIntAttribute(ax::mojom::IntAttribute::kScrollX);
+  int x_min = GetIntAttribute(ax::mojom::IntAttribute::kScrollXMin);
+  int x_max = GetIntAttribute(ax::mojom::IntAttribute::kScrollXMax);
+  int y_initial = GetIntAttribute(ax::mojom::IntAttribute::kScrollY);
+  int y_min = GetIntAttribute(ax::mojom::IntAttribute::kScrollYMin);
+  int y_max = GetIntAttribute(ax::mojom::IntAttribute::kScrollYMax);
+
+  // Figure out the bounding box of the visible portion of this scrollable
+  // view so we know how much to scroll by.
+  gfx::Rect bounds = GetClippedRootFrameBoundsRect();
+
+  // Scroll by 50% of one page, or 100% for page scrolls.
+  int page_x, page_y;
+  if (is_page_scroll) {
+    page_x = std::max(bounds.width(), 1);
+    page_y = std::max(bounds.height(), 1);
+  } else {
+    page_x = std::max(bounds.width() / 2, 1);
+    page_y = std::max(bounds.height() / 2, 1);
+  }
+
+  if (direction == ScrollDirection::FORWARD)
+    direction = y_max > y_min ? ScrollDirection::DOWN : ScrollDirection::RIGHT;
+  if (direction == ScrollDirection::BACKWARD)
+    direction = y_max > y_min ? ScrollDirection::UP : ScrollDirection::LEFT;
+
+  int x = x_initial;
+  int y = y_initial;
+  switch (direction) {
+    case ScrollDirection::UP:
+      if (y_initial == y_min)
+        return false;
+      y = std::clamp(y_initial - page_y, y_min, y_max);
+      break;
+    case ScrollDirection::DOWN:
+      if (y_initial == y_max)
+        return false;
+      y = std::clamp(y_initial + page_y, y_min, y_max);
+      break;
+    case ScrollDirection::LEFT:
+      if (x_initial == x_min)
+        return false;
+      x = std::clamp(x_initial - page_x, x_min, x_max);
+      break;
+    case ScrollDirection::RIGHT:
+      if (x_initial == x_max)
+        return false;
+      x = std::clamp(x_initial + page_x, x_min, x_max);
+      break;
+    default:
+      NOTREACHED();
+  }
+
+  manager()->SetScrollOffset(*this, gfx::Point(x, y));
+  return true;
+}
+
 }  // namespace content

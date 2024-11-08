@@ -202,6 +202,10 @@
 #include "ui/base/device_form_factor.h"
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if defined(OHOS_I18N)
+#include "ui/base/ui_base_switches.h"
+#endif
+
 #if BUILDFLAG(ENABLE_PPAPI)
 #include "content/browser/media/session/pepper_playback_observer.h"
 #endif
@@ -238,6 +242,10 @@
 #ifdef OHOS_ARKWEB_ADBLOCK
 #include "components/subresource_filter/content/browser/ohos_adblock_config.h"
 #endif // OHOS_ARKWEB_ADBLOCK
+
+#if OHOS_I18N
+#include "base/ohos/locale_utils.h"
+#endif
 
 namespace content {
 
@@ -1205,6 +1213,9 @@ WebContentsImpl::~WebContentsImpl() {
   // destruction of the WebContents.
   ClearWebContentsAndroid();
 #endif
+#if BUILDFLAG(IS_OHOS)
+  native_web_embed_rect_info_map_.clear();
+#endif
 
   // |save_package_| is refcounted so make sure we clear the page before
   // we toss out our reference.
@@ -1989,6 +2000,9 @@ void WebContentsImpl::SetUserAgentOverride(
 
   renderer_preferences_.user_agent_override = ua_override;
 
+#ifdef OHOS_I18N
+  UpdateRenderAcceptLanguageIfNeed(renderer_preferences_.accept_languages);
+#endif
   // Send the new override string to all renderers in the current page.
   SyncRendererPrefs();
 
@@ -2019,6 +2033,7 @@ void WebContentsImpl::SetUserAgentOverride(
       frame_tree.GetMainFrame()->CancelPrerendering(PrerenderCancellationReason(
           PrerenderFinalStatus::kUaChangeRequiresReload));
     } else {
+      TRACE_EVENT0("content", "WebContentsImpl::SetUserAgentOverride");
       frame_tree.controller().Reload(ReloadType::BYPASSING_CACHE, true);
     }
   }));
@@ -3830,7 +3845,7 @@ void WebContentsImpl::EnterFullscreenMode(
 
 #ifdef OHOS_EX_TOPCONTROLS
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kForBrowser)) {
+          switches::kEnableNwebExTopControls)) {
     controls_state_current_fullscreen_ = cc::BrowserControlsState::kBoth;
     if (auto* view = GetRenderWidgetHostView()) {
       int top_controls_offset =
@@ -3889,7 +3904,7 @@ void WebContentsImpl::ExitFullscreenMode(bool will_cause_resize) {
 
 #ifdef OHOS_EX_TOPCONTROLS
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kForBrowser)) {
+          switches::kEnableNwebExTopControls)) {
     UpdateBrowserControlsState(controls_state_fullscreen_,
                                controls_state_current_fullscreen_, false);
   }
@@ -4805,18 +4820,36 @@ void WebContentsImpl::CreateNativeBridgeHostForRenderFrameHost(
 void WebContentsImpl::OnNativeEmbedStatusUpdate(
     const NativeEmbedInfo& native_embed_info,
     NativeEmbedInfo::TagState state) {
-  std::string param_list;
-  for (auto& item : native_embed_info.params) {
-    param_list += item.first + " ";
-    param_list += item.second + ", ";
+  bool print_log = true;
+  if (native_web_embed_rect_info_map_.count(native_embed_info.embed_element_id)) {
+    gfx::Rect history_rect = native_web_embed_rect_info_map_[native_embed_info.embed_element_id];
+    if (history_rect.size() == native_embed_info.rect.size()) {
+      print_log = false;
+    }
+    native_web_embed_rect_info_map_[native_embed_info.embed_element_id] = native_embed_info.rect;
+  } else {
+    native_web_embed_rect_info_map_.insert(std::make_pair(native_embed_info.embed_element_id, native_embed_info.rect));
   }
-  LOG(INFO) << "[NativeEmbed] OnNativeEmbedStatusUpdate "
-             << " state is " << (int)state << ", "
-             << native_embed_info
-             << ", params: " << param_list;
+  if (print_log) {
+    std::string param_list;
+    for (auto& item : native_embed_info.params) {
+      param_list += item.first + " ";
+      param_list += item.second + ", ";
+    }
+    LOG(INFO) << "[NativeEmbed] OnNativeEmbedStatusUpdate "
+              << " state is " << (int)state << ", "
+              << native_embed_info
+              << ", params: " << param_list;
+  }
 
   if (delegate_) {
     delegate_->OnNativeEmbedStatusUpdate(native_embed_info, state);
+  }
+}
+
+void WebContentsImpl::OnLayerRectVisibilityChange(const std::string& embed_id, bool visibility) {
+  if (delegate_) {
+    delegate_->OnLayerRectVisibilityChange(embed_id, visibility);
   }
 }
 
@@ -7428,7 +7461,7 @@ void WebContentsImpl::ShowContextMenu(
 
 #if defined(OHOS_EX_FREE_COPY)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kForBrowser)) {
+          switches::kEnableNwebExFreeCopy)) {
     SetShouldShowFreeCopy(params.is_selectable);
   }
 #endif
@@ -7864,7 +7897,7 @@ void WebContentsImpl::RenderViewReady(RenderViewHost* rvh) {
 
 #ifdef OHOS_EX_TOPCONTROLS
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kForBrowser)) {
+          switches::kEnableNwebExTopControls)) {
     UpdateBrowserControlsState(browser_controls_state_,
                                cc::BrowserControlsState::kShown, false);
   }
@@ -8055,7 +8088,7 @@ void WebContentsImpl::DidStartLoading(FrameTreeNode* frame_tree_node) {
 #ifdef OHOS_EX_TOPCONTROLS
   if (frame_tree_node->IsMainFrame()) {
     if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-            switches::kForBrowser) &&
+            switches::kEnableNwebExTopControls) &&
         should_show_loading_ui) {
       UpdateBrowserControlsState(browser_controls_state_,
                                  cc::BrowserControlsState::kShown, false);
@@ -10229,28 +10262,51 @@ void WebContentsImpl::ClearContextMenu() {
 #endif //OHOS_DRAG_DROP
 
 #ifdef OHOS_ARKWEB_ADBLOCK
-bool WebContentsImpl::TrigAdBlockEnabledForSite(GURL url) {
-  if (!IsAdsBlockEnabled()) {
-    base::AutoLock locker(lock_);
-    enable_adblock_for_site_ = false;
+void WebContentsImpl::EnableAdsBlock(bool enable) {
+  LOG(INFO) << "enable adblock: " << enable;
+
+  blink::RendererPreferences* prefs = GetMutableRendererPrefs();
+  if (prefs != NULL && prefs->is_global_adblock_enabled != enable) {
+    prefs->is_global_adblock_enabled = enable;
+    SyncRendererPrefs();
+  }
+}
+
+bool WebContentsImpl::IsAdsBlockEnabled() {
+  blink::RendererPreferences* prefs = GetMutableRendererPrefs();
+  if (prefs == NULL) {
     return false;
   }
+  return prefs->is_global_adblock_enabled;
+}
 
-  if (!OHOS::adblock::AdBlockConfig::GetInstance()->IsAdblockEnabledForUrl(
-          url)) {
-    base::AutoLock locker(lock_);
-    enable_adblock_for_site_ = false;
-    return false;
+void WebContentsImpl::TrigAdBlockEnabledForSiteFromUi(
+    const std::string& main_frame_url) {
+
+  // add FrameTreeNode info
+  RenderFrameHostImpl* rfh = GetPrimaryMainFrame();
+  if (!rfh) {
+    LOG(ERROR) << "[AdBlock] main render frame null";
+    return;
   }
 
-  base::AutoLock locker(lock_);
-  enable_adblock_for_site_ = true;
-  return true;
+  int main_frame_tree_node_id = rfh->GetFrameTreeNodeId();
+  if (!delegate_) {
+    return;
+  }
+
+  if (!(delegate_->TrigAdBlockEnabledForSiteFromUi(main_frame_url,
+                                                   main_frame_tree_node_id))) {
+    LOG(INFO) << "[AdBlock] trigger adblock switch with rule list";
+    bool enable =
+        OHOS::adblock::AdBlockConfig::GetInstance()->IsAdblockEnabledForUrl(
+            GURL(main_frame_url));
+    SetAdBlockEnabledForSite(enable, main_frame_tree_node_id);
+  }
 }
 
 bool WebContentsImpl::IsAdsBlockEnabledForCurPage() {
-  base::AutoLock locker(lock_);
-  return enable_adblock_for_site_;
+  return GetAdblockEnabledForSite();
 }
 
 void WebContentsImpl::OnAdsBlocked(
@@ -10266,6 +10322,62 @@ void WebContentsImpl::OnAdsBlocked(
   }
 }
 
+void WebContentsImpl::UpdateAdBlockEnabledToRender(bool site_adblock_enabled) {
+  RenderFrameHostImpl* pending_main_frame =
+      GetRenderManager()->speculative_frame_host();
+
+  if (pending_main_frame) {
+    pending_main_frame->UpdateAdBlockEnabledToRender(site_adblock_enabled);
+  } else {
+    RenderFrameHostImpl* rfh = GetPrimaryMainFrame();
+    if (rfh) {
+      rfh->UpdateAdBlockEnabledToRender(site_adblock_enabled);
+    }
+  }
+}
+
+bool WebContentsImpl::GetAdblockEnabledForSite() {
+  RenderFrameHost* rfh = GetPrimaryMainFrame();
+  if (rfh == nullptr) {
+    return false;
+  }
+  content::FrameTreeNode* node =
+      static_cast<content::RenderFrameHostImpl*>(rfh)->frame_tree_node();
+  if (node == nullptr) {
+    return false;
+  }
+  return node->is_adblock_enabled();
+}
+
+void WebContentsImpl::SetAdBlockEnabledForSite(bool is_adblock_enabled,
+                                               int main_frame_tree_node_id) {
+  content::RenderFrameHost* rfh = GetPrimaryMainFrame();
+  if (!rfh) {
+    LOG(ERROR) << "[AdBlock] SetAdBlockEnabledForSite main frame null";
+    return;
+  }
+  content::FrameTreeNode* node =
+      static_cast<content::RenderFrameHostImpl*>(rfh)->frame_tree_node();
+
+  if (!node) {
+    LOG(ERROR) << "[AdBlock] SetAdBlockEnabledForSite frame tree node null";
+    return;
+  }
+
+  // check FrameTreeNode id
+  if (node->frame_tree_node_id() != main_frame_tree_node_id) {
+    LOG(INFO) << "[AdBlock] Not set adblock enabled enabled "
+                 "switch owing to frame tree node id changed";
+    return;
+  }
+  LOG(INFO) << "[Adblock] set adblock switch for site, frame tree node id:"
+            << node->frame_tree_node_id()
+            << "  adblock switch from UI: " << is_adblock_enabled;
+  node->set_adblock_enabled(is_adblock_enabled);
+
+  // send to render
+  UpdateAdBlockEnabledToRender(is_adblock_enabled);
+}
 #endif
 
 #ifdef OHOS_EX_PASSWORD
@@ -10397,6 +10509,8 @@ std::unique_ptr<CustomMediaPlayer> WebContentsImpl::CreateCustomMediaPlayer(
     const MediaInfo& media_info) {
   if (delegate_) {
     return delegate_->CreateCustomMediaPlayer(std::move(listener), media_info);
+  } else {
+    LOG(WARNING) << "CreateCustomMediaPlayer failed, no delegate_";
   }
   return nullptr;
 }
@@ -10410,6 +10524,7 @@ void WebContentsImpl::RemoveCustomMediaPlayer(const MediaPlayerId& player_id,
                                               CustomMediaPlayer* player) {
   auto iter = players_.find(player_id);
   if (iter == players_.end()) {
+    LOG(WARNING) << "RemoveCustomMediaPlayer failed";
     return;
   }
   DCHECK(iter->second == player);
@@ -10449,6 +10564,29 @@ void WebContentsImpl::RequestExitFullscreen(const MediaPlayerId& player_id) {
 
 }
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+#ifdef OHOS_I18N
+void WebContentsImpl::UpdateRenderAcceptLanguageIfNeed(
+    const std::string& old_accept_language) {
+  const base::CommandLine& command_line =
+      *base::CommandLine::ForCurrentProcess();
+  if (!command_line.HasSwitch(::switches::kLang)) {
+    return;
+  }
+  std::string lang = command_line.GetSwitchValueASCII(::switches::kLang);
+  std::regex pattern("-");
+  std::smatch match;
+  if (std::regex_search(lang, match, pattern)) {
+    std::string region = match.suffix();
+    std::string current_accept_language =
+        base::ohos::ComputeLanguageByRegion(region);
+    if (current_accept_language != "" &&
+        current_accept_language != old_accept_language) {
+      renderer_preferences_.accept_languages = current_accept_language;
+    }
+  }
+}
+#endif
 
 #if defined(OHOS_RENDER_PROCESS_SHARE)
 const std::string& WebContentsImpl::SharedRenderProcessToken() {

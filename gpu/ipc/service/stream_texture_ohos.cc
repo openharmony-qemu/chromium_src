@@ -11,6 +11,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * Based on stream_texture_android.cc originally written by
+ * Copyright 2013 The Chromium Authors
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
  */
 
 #include "gpu/ipc/service/stream_texture_ohos.h"
@@ -21,14 +26,16 @@
 #include "base/task/single_thread_task_runner.h"
 #include "gpu/command_buffer/service/context_state.h"
 #include "gpu/command_buffer/service/mailbox_manager.h"
+#include "gpu/command_buffer/service/ohos/ohos_video_image_backing.h"
 #include "gpu/command_buffer/service/scheduler.h"
 #include "gpu/command_buffer/service/scheduler_task_runner.h"
 #include "gpu/command_buffer/service/shared_context_state.h"
-#include "gpu/command_buffer/service/ohos/shared_image_video_ohos.h"
 #include "gpu/command_buffer/service/shared_image/shared_image_backing.h"
 #include "gpu/command_buffer/service/shared_image/shared_image_factory.h"
+#include "gpu/config/gpu_finch_features.h"
 #include "gpu/ipc/common/command_buffer_id.h"
 #include "gpu/ipc/common/gpu_channel.mojom.h"
+#include "gpu/ipc/common/gpu_surface_id_tracker.h"
 #include "gpu/ipc/service/gpu_channel.h"
 #include "gpu/ipc/service/gpu_channel_manager.h"
 #include "ui/gfx/color_space.h"
@@ -36,8 +43,6 @@
 #include "ui/gl/gl_context.h"
 #include "ui/gl/scoped_binders.h"
 #include "ui/gl/scoped_make_current.h"
-#include "gpu/ipc/common/gpu_surface_id_tracker.h"
-
 namespace gpu {
 namespace {
 
@@ -53,12 +58,17 @@ std::unique_ptr<ui::ScopedMakeCurrent> MakeCurrent(
   return scoped_make_current;
 }
 
+scoped_refptr<gpu::RefCountedLock> CreateDrDcLockIfNeeded() {
+  return base::MakeRefCounted<gpu::RefCountedLock>();
+}
+
 }  // namespace
 
 // static
 scoped_refptr<StreamTexture> StreamTexture::Create(
     GpuChannel* channel,
     int stream_id,
+    gl::ohos::TextureOwnerMode texture_owner_mode,
     mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver) {
   LOG(INFO) << "[NativeEmbed] StreamTexture::Create.";
   ContextResult result;
@@ -66,11 +76,13 @@ scoped_refptr<StreamTexture> StreamTexture::Create(
       channel->gpu_channel_manager()->GetSharedContextState(&result);
   if (result != ContextResult::kSuccess)
     return nullptr;
+
   auto scoped_make_current = MakeCurrent(context_state.get());
   if (scoped_make_current && !scoped_make_current->IsContextCurrent())
     return nullptr;
-  return new StreamTexture(channel, stream_id, std::move(receiver),
-                           std::move(context_state));
+
+  return new StreamTexture(channel, stream_id, texture_owner_mode,
+                           std::move(receiver), std::move(context_state));
 }
 
 // static
@@ -90,11 +102,16 @@ void StreamTexture::RunCallback(
 StreamTexture::StreamTexture(
     GpuChannel* channel,
     int32_t route_id,
+    gl::ohos::TextureOwnerMode texture_owner_mode,
     mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver,
     scoped_refptr<SharedContextState> context_state)
-    : native_texture_owner_(NativeImageTextureOwner::Create(
-          context_state)),
+    : RefCountedLockHelperDrDc(CreateDrDcLockIfNeeded()),
+      native_texture_owner_(NativeImageTextureOwner::Create(
+          context_state,
+          texture_owner_mode,
+          GetDrDcLock())),
       has_pending_frame_(false),
+      texture_owner_mode_(texture_owner_mode),
       channel_(channel),
       route_id_(route_id),
       context_state_(std::move(context_state)),
@@ -172,21 +189,24 @@ void StreamTexture::OnFrameAvailable() {
   DCHECK_CALLED_ON_VALID_THREAD(gpu_main_thread_checker_);
   has_pending_frame_ = true;
 
-  if (!client_ || !native_texture_owner_ || !channel_)
+  if (!client_ || !native_texture_owner_ || !channel_) {
     return;
+  }
 
   // We haven't received size for first time yet from the MediaPlayer we will
   // defer this sending OnFrameAvailable till then.
-  if (rotated_visible_size_.IsEmpty())
+  if (rotated_visible_size_.IsEmpty()) {
     return;
+  }
 
+  TRACE_EVENT2("base", __FILE__, "func", __func__, "line", __LINE__);
   native_texture_owner_->UpdateNativeImage();
   has_pending_frame_ = false;
 
   gfx::Rect visible_rect;
   gfx::Size coded_size;
-  if (!native_texture_owner_->GetCodedSizeAndVisibleRect(rotated_visible_size_,
-                                                  &coded_size, &visible_rect)) {
+  if (!native_texture_owner_->GetCodedSizeAndVisibleRect(
+          rotated_visible_size_, &coded_size, &visible_rect)) {
     // if we failed to get right size fallback to visible size.
     coded_size = rotated_visible_size_;
     visible_rect = gfx::Rect(coded_size);
@@ -224,10 +244,10 @@ gpu::Mailbox StreamTexture::CreateSharedImage(const gfx::Size& coded_size) {
 
   auto scoped_make_current = MakeCurrent(context_state_.get());
   auto mailbox = gpu::Mailbox::GenerateForSharedImage();
-
-  auto shared_image = SharedImageVideoOhos::Create(
+  auto shared_image = OhosVideoImageBacking::Create(
       mailbox, coded_size, gfx::ColorSpace::CreateSRGB(),
-      kTopLeft_GrSurfaceOrigin, kPremul_SkAlphaType, this, context_state_);
+      kTopLeft_GrSurfaceOrigin, kPremul_SkAlphaType,
+      texture_owner_mode_, this, context_state_, GetDrDcLock());
   channel_->shared_image_stub()->factory()->RegisterBacking(
       std::move(shared_image));
 
@@ -244,8 +264,15 @@ void StreamTexture::UpdateRotatedVisibleSize(
   // It's possible that first OnUpdateRotatedVisibleSize will come after first
   // OnFrameAvailable. We delay sending OnFrameWithInfoAvailable if it comes
   // first so now it's time to send it.
-  if (was_empty && has_pending_frame_)
+  if (was_empty && has_pending_frame_) {
     OnFrameAvailable();
+  }
+}
+
+std::unique_ptr<ScopedNativeBufferFenceSync> StreamTexture::GetNativeBuffer() {
+  DCHECK(native_texture_owner_);
+
+  return native_texture_owner_->GetNativeBuffer();
 }
 
 int StreamTexture::NativeEmbedID() {
@@ -253,9 +280,10 @@ int StreamTexture::NativeEmbedID() {
     uint64_t id;
     native_texture_owner_->GetSurfaceId(&id);
     std::string native_surface_id = std::to_string(id);
-    native_embed_id_ = gpu::GpuSurfaceIdTracker::Get()->AddSurfaceForNativeWidget(
-        gpu::GpuSurfaceIdTracker::SurfaceRecord(gfx::kNullAcceleratedWidget,
-                                              native_surface_id));
+    native_embed_id_ =
+        gpu::GpuSurfaceIdTracker::Get()->AddSurfaceForNativeWidget(
+            gpu::GpuSurfaceIdTracker::SurfaceRecord(gfx::kNullAcceleratedWidget,
+                                                    native_surface_id));
   }
   return native_embed_id_;
 }

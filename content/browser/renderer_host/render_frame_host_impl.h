@@ -2951,6 +2951,10 @@ class CONTENT_EXPORT RenderFrameHostImpl
   // subframes.
   void RecordNavigationSuddenTerminationHandlers();
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+  void UpdateAdBlockEnabledToRender(bool site_adblock_enabled);
+#endif
+
  protected:
   friend class RenderFrameHostFactory;
 

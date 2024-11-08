@@ -57,7 +57,7 @@ bool ArkWebNativeObject::FireValidCallback() {
   }
 
   if (!validCallback_) {
-    LOG(ERROR) << "NativeArkWeb valid callback is nullptr";
+    LOG(WARNING) << "NativeArkWeb valid callback is nullptr";
     return false;
   }
   validCallback_();
@@ -66,7 +66,7 @@ bool ArkWebNativeObject::FireValidCallback() {
 
 bool ArkWebNativeObject::FireLoadStartCallback() {
   if (!loadStartCallback_) {
-    LOG(ERROR) << "NativeArkWeb load start callback is nullptr";
+    LOG(WARNING) << "NativeArkWeb load start callback is nullptr";
     return false;
   }
   loadStartCallback_();
@@ -75,7 +75,7 @@ bool ArkWebNativeObject::FireLoadStartCallback() {
 
 bool ArkWebNativeObject::FireLoadEndCallback() {
   if (!loadEndCallback_) {
-    LOG(ERROR) << "NativeArkWeb load end callback is nullptr";
+    LOG(WARNING) << "NativeArkWeb load end callback is nullptr";
     return false;
   }
   loadEndCallback_();

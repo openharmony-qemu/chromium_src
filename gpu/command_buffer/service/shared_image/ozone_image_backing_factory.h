@@ -77,7 +77,7 @@ class GPU_GLES2_EXPORT OzoneImageBackingFactory
       uint32_t usage,
       std::string debug_label) override;
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
   std::unique_ptr<SharedImageBacking> CreateSharedImage(
       const Mailbox& mailbox,
       gfx::GpuMemoryBufferHandle handle,
@@ -89,7 +89,7 @@ class GPU_GLES2_EXPORT OzoneImageBackingFactory
       SkAlphaType alpha_type,
       uint32_t usage,
       void* window_buffer) override;
-#endif
+#endif // BUILDFLAG(ENABLE_HEIF_DECODER)
 
   bool IsSupported(uint32_t usage,
                    viz::SharedImageFormat format,

@@ -104,6 +104,9 @@ class NWebDelegateInterface
   virtual bool IsAdsBlockEnabled() = 0;
 
   virtual bool IsAdsBlockEnabledForCurPage() = 0;
+
+  virtual void SetAdBlockEnabledForSite(bool is_adblock_enabled,
+                                        int main_frame_tree_node_id) = 0;
 #endif
 
 #if defined(OHOS_PASSWORD_AUTOFILL)
@@ -223,6 +226,12 @@ class NWebDelegateInterface
                                       std::vector<size_t>&)>>&& callback,
       bool isAsync,
       const std::string& permission) = 0;
+  virtual void RegisterNativeJSProxyWithResult(
+      const std::string& objName,
+      const std::vector<std::string>& methodName,
+      std::vector<std::function<std::shared_ptr<OHOS::NWeb::NWebValue>(
+          std::vector<std::vector<uint8_t>>&, std::vector<size_t>&)>>&& callback,
+      bool isAsync, const std::string& permission) = 0;
   virtual void UnRegisterNativeArkJSFunction(const char* objName) = 0;
 
 #ifdef OHOS_ARKWEB_ADBLOCK
@@ -266,6 +275,7 @@ class NWebDelegateInterface
       const size_t scriptLength,
       std::shared_ptr<NWebMessageValueCallback> callback,
       bool extention) = 0;
+  virtual void EraseCreatePDFCallbackImpl(uint32_t id) = 0;
   virtual void ExecuteCreatePDFExt(
       std::shared_ptr<NWebPDFConfigArgs> pdfConfig,
       std::shared_ptr<NWebArrayBufferValueCallback> callback) = 0;
@@ -360,6 +370,7 @@ class NWebDelegateInterface
 #if defined(OHOS_GET_SCROLL_OFFSET)
   virtual void GetOverScrollOffset(float* offset_x, float* offset_y) = 0;
 #endif
+  virtual void WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent) = 0;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #if defined(OHOS_EX_FORCE_ZOOM)
@@ -419,6 +430,7 @@ class NWebDelegateInterface
 
 #if BUILDFLAG(IS_OHOS)
   virtual void UpdateNativeEmbedInfo(std::shared_ptr<NWebNativeEmbedDataInfo> info) = 0;
+  virtual void SetTransformHint(uint32_t rotation) = 0;
 #endif
 
 #ifdef OHOS_EX_TOPCONTROLS
@@ -469,6 +481,7 @@ class NWebDelegateInterface
                                   bool isAccessibilityFocus) = 0;
   virtual std::shared_ptr<NWebAccessibilityNodeInfo>
   GetAccessibilityNodeInfoById(int64_t accessibilityId) = 0;
+  virtual bool GetAccessibilityVisible(int64_t accessibilityId) = 0;
   virtual std::shared_ptr<NWebAccessibilityNodeInfo>
   GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
                                       int32_t direction) = 0;
@@ -540,6 +553,13 @@ class NWebDelegateInterface
 
   virtual void SendAccessibilityHoverEvent(int x, int y) = 0;
   virtual void RefreshAccessibilityManagerClickEvent() = 0;
+
+#ifdef OHOS_MIXED_CONTENT
+  virtual void EnableMixedContentAutoUpgrades(bool enable) = 0;
+  virtual bool IsMixedContentAutoUpgradesEnabled() = 0;
+#endif
+
+  virtual void SetPopupSurface(void* popupSurface) = 0;
 };
 }  // namespace OHOS::NWeb
 

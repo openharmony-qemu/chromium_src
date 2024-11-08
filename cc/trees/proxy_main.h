@@ -89,7 +89,7 @@ class CC_EXPORT ProxyMain : public Proxy {
 #if BUILDFLAG(IS_OHOS)
   void OnLayerRectUpdate(int id, const gfx::Rect& rect);
 
-  void OnLayerRectVisibleChange(int id, bool visibility);
+  void OnLayerRectVisibilityChange(int id, bool visibility);
 #endif
 
  private:

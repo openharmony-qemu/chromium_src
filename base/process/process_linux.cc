@@ -211,6 +211,7 @@ bool Process::IsProcessBackgrounded() const {
 }
 
 bool Process::SetProcessBackgrounded(bool background) {
+#if !BUILDFLAG(IS_OHOS)
   DCHECK(IsValid());
 
 #if BUILDFLAG(IS_CHROMEOS)
@@ -230,6 +231,9 @@ bool Process::SetProcessBackgrounded(bool background) {
   int result = setpriority(PRIO_PROCESS, static_cast<id_t>(process_), priority);
   DPCHECK(result == 0);
   return result == 0;
+#else
+  return true;
+#endif //!BUILDFLAG(IS_OHOS)
 }
 
 #if BUILDFLAG(IS_CHROMEOS)

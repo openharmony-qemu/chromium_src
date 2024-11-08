@@ -521,7 +521,6 @@ viz_source_set("unit_tests") {
     "frame_sinks/begin_frame_tracker_unittest.cc",
     "frame_sinks/compositor_frame_sink_support_unittest.cc",
     "frame_sinks/frame_sink_bundle_impl_unittest.cc",
-    "frame_sinks/frame_sink_manager_unittest.cc",
     "frame_sinks/surface_references_unittest.cc",
     "frame_sinks/surface_synchronization_unittest.cc",
     "frame_sinks/video_capture/frame_sink_video_capturer_impl_unittest.cc",
@@ -538,6 +537,16 @@ viz_source_set("unit_tests") {
 
   if (!use_aura && !is_mac) {
     sources -= [ "display_embedder/buffer_queue_unittest.cc" ]
+  }
+
+  if (ohos_unittests) {
+    sources += [
+      "display_embedder/output_surface_provider_impl_unittest.cc",
+      "frame_sinks/compositor_frame_sink_impl_unittest.cc",
+      "frame_sinks/external_begin_frame_source_ohos_unittest.cc",
+      "frame_sinks/frame_sink_manager_impl_unittest.cc",
+      "frame_sinks/root_compositor_frame_sink_impl_unittest.cc",
+    ]
   }
 
   configs = [ "//third_party/khronos:khronos_headers" ]

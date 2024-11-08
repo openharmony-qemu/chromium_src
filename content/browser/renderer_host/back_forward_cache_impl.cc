@@ -335,7 +335,7 @@ BackForwardCacheTestDelegate* g_bfcache_disabled_test_observer = nullptr;
 void RestoreBrowserControlsState(RenderFrameHostImpl* cached_rfh) {
 #ifdef OHOS_EX_TOPCONTROLS
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kForBrowser)) {
+          switches::kEnableNwebExTopControls)) {
     return;
   }
 #endif
@@ -535,6 +535,9 @@ void BackForwardCacheImpl::Entry::WriteIntoTrace(
 void BackForwardCacheImpl::RenderProcessBackgroundedChanged(
     RenderProcessHostImpl* host) {
   EnforceCacheSizeLimit();
+#ifdef OHOS_BFCACHE
+  LOG(DEBUG) << "[BFCACHE]" << " Now stored entries number is: " << GetStoredEntriesNumber();
+#endif
 }
 
 BackForwardCacheTestDelegate::BackForwardCacheTestDelegate() {
@@ -604,8 +607,9 @@ void BackForwardCacheImpl::SetCacheSize(int size) {
     size = 50;
 
   this->size_ = size;
-  LOG(INFO) << "BackForwardCacheImpl set backforward cache size: " << size;
   EnforceCacheSizeLimit();
+  LOG(INFO) << "[BFCACHE] set backforward cache size: " << size
+            << " Now stored entries number is: " << GetStoredEntriesNumber();
 }
 
 base::TimeDelta BackForwardCacheImpl::ArkWebGetTimeToLiveInBackForwardCache() {
@@ -614,6 +618,10 @@ base::TimeDelta BackForwardCacheImpl::ArkWebGetTimeToLiveInBackForwardCache() {
   }
 
   return base::Seconds(kDefaultTimeToLiveInBackForwardCacheInSeconds);
+}
+
+size_t BackForwardCacheImpl::GetStoredEntriesNumber() {
+  return entries_.size();
 }
 #endif
 
@@ -1128,6 +1136,9 @@ void BackForwardCacheImpl::StoreEntry(
   entries_.push_front(std::move(entry));
   AddProcessesForEntry(*entries_.front());
   EnforceCacheSizeLimit();
+#ifdef OHOS_BFCACHE
+  LOG(DEBUG) << "[BFCACHE] " << __func__ << " Now stored entries number is: " << GetStoredEntriesNumber();
+#endif
 }
 
 void BackForwardCacheImpl::EnforceCacheSizeLimit() {
@@ -1186,7 +1197,6 @@ size_t BackForwardCacheImpl::EnforceCacheSizeLimitInternal(
       "BackForwardCache.AllSites.HistoryNavigationOutcome."
       "CountEntriesWithoutRendererAck",
       not_received_ack_count);
-  LOG(DEBUG) << "BackForwardCacheImpl now have cache size number is: " << count;
   return count;
 }
 
@@ -1226,6 +1236,9 @@ std::unique_ptr<BackForwardCacheImpl::Entry> BackForwardCacheImpl::RestoreEntry(
 
   RestoreBrowserControlsState(entry->render_frame_host());
 
+#ifdef OHOS_BFCACHE
+  LOG(DEBUG) << "[BFCACHE] " << __func__ << " Now stored entries number is: " << GetStoredEntriesNumber();
+#endif
   return entry;
 }
 
@@ -1417,6 +1430,10 @@ void BackForwardCacheImpl::DestroyEvictedFrames() {
     }
     return false;
   });
+
+#ifdef OHOS_BFCACHE
+  LOG(DEBUG) << "[BFCACHE] " << __func__ << " Now stored entries number is: " << GetStoredEntriesNumber();
+#endif
 }
 
 bool BackForwardCacheImpl::IsAllowed(const GURL& current_url) {

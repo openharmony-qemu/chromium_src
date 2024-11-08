@@ -212,7 +212,10 @@ void TraceValue::Append(unsigned char type,
       this->as_convertable->AppendAsTraceFormat(out);
       break;
     case TRACE_VALUE_TYPE_PROTO:
+    // OHOS not support TRACE_VALUE_TYPE_PROTO at this times.
+    #if !BUILDFLAG(IS_OHOS)
       DCHECK(as_json);
+    #endif
       // Typed protobuf arguments aren't representable in JSON.
       *out += "\"Unsupported (crbug.com/1225176)\"";
       break;

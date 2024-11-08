@@ -180,6 +180,8 @@ void DemuxerManager::RestartClientForHLS() {
 void DemuxerManager::RestartClientForPrimitive() {
   if (client_) {
     client_->RestartForPrimitive();
+  } else {
+    LOG(WARNING) << "RestartClientForPrimitive failed";
   }
 }
 #endif // OHOS_CUSTOM_VIDEO_PLAYER

@@ -211,6 +211,7 @@ test("media_unittests") {
     "//media/test:run_all_unittests",
     "//media/video:unit_tests",
     "//media/webrtc:unit_tests",
+    "//media/base/ohos:unit_tests"
   ]
 
   data = [

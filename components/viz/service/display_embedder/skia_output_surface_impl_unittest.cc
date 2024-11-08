@@ -27,6 +27,7 @@
 #include "ui/gfx/geometry/skia_conversions.h"
 #include "ui/gfx/gpu_fence_handle.h"
 #include "ui/gl/gl_implementation.h"
+#include "ui/gl/init/gl_factory.h"
 
 namespace viz {
 namespace {
@@ -42,6 +43,8 @@ class SkiaOutputSurfaceImplTest : public testing::Test {
   ~SkiaOutputSurfaceImplTest() override;
 
   GpuServiceImpl* GetGpuService() {
+    gl::init::InitializeGLNoExtensionsOneOff(
+      /*init_bindings=*/true, /*gpu_preference=*/gl::GpuPreference::kDefault);
     return TestGpuServiceHolder::GetInstance()->gpu_service();
   }
 

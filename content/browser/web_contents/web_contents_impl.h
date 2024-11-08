@@ -437,24 +437,25 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 #endif  // #ifdef OHOS_CLIPBOARD
 
 #ifdef OHOS_ARKWEB_ADBLOCK
-  bool TrigAdBlockEnabledForSite(GURL url) override;
+  void TrigAdBlockEnabledForSiteFromUi(
+      const std::string& main_frame_url) override;
 
-  void EnableAdsBlock(bool enable) override {
-    LOG(INFO) << "enable adblock: " << enable;
-    base::AutoLock locker(lock_);
-    enable_adblock_ = enable;
-  }
+  void EnableAdsBlock(bool enable) override;
 
-  bool IsAdsBlockEnabled() override {
-    base::AutoLock locker(lock_);
-    return enable_adblock_;
-  }
+  bool IsAdsBlockEnabled() override;
 
   bool IsAdsBlockEnabledForCurPage() override;
 
   void OnAdsBlocked(const std::string& main_frame_url,
                     const std::map<std::string, int32_t>& subresource_blocked,
                     bool is_site_first_report) override;
+
+  void UpdateAdBlockEnabledToRender(bool site_adblock_enabled) override;
+
+  void SetAdBlockEnabledForSite(bool is_adblock_enabled,
+                                int main_frame_tree_node_id) override;
+
+  bool GetAdblockEnabledForSite() override;
 #endif
 
 #if defined(OHOS_EX_PASSWORD)
@@ -1002,6 +1003,7 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   void OnNativeEmbedStatusUpdate(const NativeEmbedInfo& native_embed_info,
                                  NativeEmbedInfo::TagState state) override;
   void OnRenderFrameHostEnterBackForwardCache(const GlobalRenderFrameHostId& id) override;
+  void OnLayerRectVisibilityChange(const std::string& embed_id, bool visibility);
   void OnRenderFrameHostLeaveBackForwardCache(const GlobalRenderFrameHostId& id) override;
 #endif
   void RequestMediaAccessPermission(const MediaStreamRequest& request,
@@ -2097,7 +2099,9 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 
   // A scope that disallows custom cursors has expired.
   void DisallowCustomCursorScopeExpired();
-
+#ifdef OHOS_I18N
+  void UpdateRenderAcceptLanguageIfNeed(const std::string& old_accept_language);
+#endif
   // Data for core operation ---------------------------------------------------
 
   // Delegate for notifying our owner about stuff. Not owned by us.
@@ -2391,6 +2395,7 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 
 #if BUILDFLAG(IS_OHOS)
   std::unique_ptr<NativeWebContentsObserver> native_web_contents_observer_;
+  std::map<std::string, gfx::Rect> native_web_embed_rect_info_map_;
 #endif
 
 #if BUILDFLAG(ENABLE_PPAPI)
@@ -2587,13 +2592,6 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   std::string user_agent_{""};
 #endif  // OHOS_EX_UA
 
-#ifdef OHOS_ARKWEB_ADBLOCK
-  mutable base::Lock lock_;
-
-  bool enable_adblock_ = false;
-
-  bool enable_adblock_for_site_ = false;
-#endif
 
 #if defined(OHOS_EX_PASSWORD)
   bool save_password_ = true;

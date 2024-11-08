@@ -12,6 +12,7 @@
 #include "base/logging.h"
 #include "base/task/task_runner.h"
 #include "base/trace_event/trace_event.h"
+#include "third_party/bounds_checking_function/include/securec.h"
 
 using namespace media;
 using namespace OHOS::NWeb;
@@ -33,8 +34,7 @@ VideoBridgeCodecConfig::VideoBridgeCodecConfig() = default;
 VideoBridgeCodecConfig::~VideoBridgeCodecConfig() = default;
 
 // static
-std::unique_ptr<MediaCodecDecoderBridgeImpl>
-MediaCodecDecoderBridgeImpl::CreateVideoDecoder(
+std::unique_ptr<MediaCodecDecoderBridgeImpl> MediaCodecDecoderBridgeImpl::CreateVideoDecoder(
     const VideoBridgeCodecConfig& config) {
   LOG(INFO) << "MediaCodecDecoderBridgeImpl::CreateVideoDecoder.";
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
@@ -59,6 +59,17 @@ MediaCodecDecoderBridgeImpl::CreateVideoDecoder(
       codec_type, config.on_buffers_available_cb));
 }
 
+DecoderAdapterCode MediaCodecDecoderBridgeImpl::PrepareForCallback() {
+  if (signal_ == nullptr) {
+    signal_ = make_shared<DecoderBridgeSignal>();
+  }
+
+  if (cb_ == nullptr) {
+    cb_ = make_shared<CodecBridgeCallback>(signal_);
+  }
+  return videoDecoder_->SetCallbackDec(cb_);
+}
+
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::CreateVideoBridgeDecoderByMime(
     std::string mimetype) {
   LOG(INFO) << "MediaCodecDecoderBridgeImpl::CreateVideoBridgeDecoderByMime.";
@@ -68,19 +79,12 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::CreateVideoBridgeDecoderByMime(
   }
   DecoderAdapterCode ret = videoDecoder_->CreateVideoDecoderByMime(mimetype);
   if (ret == DecoderAdapterCode::DECODER_ERROR) {
-    LOG(ERROR) << "create decoder failed.";
+    LOG(ERROR) << "create decoder by mime failed.";
     return ret;
   }
   hasCreated_ = true;
 
-  if (signal_ == nullptr) {
-    signal_ = make_shared<DecoderBridgeSignal>();
-  }
-
-  if (cb_ == nullptr) {
-    cb_ = make_shared<CodecBridgeCallback>(signal_);
-  }
-  return videoDecoder_->SetCallbackDec(cb_);
+  return PrepareForCallback();
 }
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::CreateVideoBridgeDecoderByName(
@@ -94,19 +98,12 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::CreateVideoBridgeDecoderByName(
   DecoderAdapterCode ret =
       videoDecoder_->CreateVideoDecoderByName(name.c_str());
   if (ret == DecoderAdapterCode::DECODER_ERROR) {
-    LOG(ERROR) << "create decoder failed.";
+    LOG(ERROR) << "create decoder by name failed.";
     return ret;
   }
   hasCreated_ = true;
 
-  if (signal_ == nullptr) {
-    signal_ = make_shared<DecoderBridgeSignal>();
-  }
-
-  if (cb_ == nullptr) {
-    cb_ = make_shared<CodecBridgeCallback>(signal_);
-  }
-  return videoDecoder_->SetCallbackDec(cb_);
+  return PrepareForCallback();
 }
 
 MediaCodecDecoderBridgeImpl::MediaCodecDecoderBridgeImpl(
@@ -391,7 +388,11 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBuffer(
   size_t inputSize = bufferSize >= data_size ? data_size : bufferSize;
   LOG(DEBUG) << "MediaCodecDecoderBridgeImpl::QueueInputBuffer bufferSize: "
              << bufferSize << " " << data_size;
-  memcpy(buffer.addr, data, inputSize);
+  if (memcpy_s(buffer.addr, bufferSize, data, inputSize) != EOK) {
+    LOG(ERROR)
+        << "MediaCodecDecoderBridgeImpl::QueueInputBuffer memcpy failed.";
+    return DecoderAdapterCode::DECODER_ERROR;
+  } 
   DecoderAdapterCode ret = PushInbufferDec(index, inputSize, presentation_time);
 
   PopInqueueDec();

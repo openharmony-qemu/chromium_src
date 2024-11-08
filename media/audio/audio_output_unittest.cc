@@ -32,6 +32,10 @@
 #include "media/base/media_switches.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "media/audio/ohos/ohos_audio_manager.h"
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
 #include "media/audio/android/audio_manager_android.h"
 #endif
@@ -69,6 +73,9 @@ class AudioOutputTest : public testing::TestWithParam<bool> {
           reinterpret_cast<AudioManagerAndroid*>(audio_manager_.get())
               ->IsUsingAAudioForTesting();
     }
+#endif
+#if BUILDFLAG(IS_OHOS)
+    should_use_aaudio_ = GetParam();
 #endif
     base::RunLoop().RunUntilIdle();
   }
@@ -225,7 +232,11 @@ TEST_P(AudioOutputTest, VolumeControl) {
 
 // The test parameter is only relevant on Android. It controls whether or not we
 // allow the use of AAudio.
+#if BUILDFLAG(IS_OHOS)
+INSTANTIATE_TEST_SUITE_P(Base, AudioOutputTest, testing::Values(true));
+#else
 INSTANTIATE_TEST_SUITE_P(Base, AudioOutputTest, testing::Values(false));
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
 // Run tests with AAudio enabled. On Android P and below, these tests should not

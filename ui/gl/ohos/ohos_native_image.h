@@ -32,6 +32,25 @@ class GL_EXPORT OhosNativeImage
   void* AquireOhosNativeWindow();
   static void OnFrameAvailableListener(void* context);
 
+  static scoped_refptr<OhosNativeImage> Create();
+
+  int32_t AcquireNativeWindowBuffer(
+    void** windowBuffer,
+    int* acquireFenceFd);
+
+  int32_t GetNativeBuffer(
+    void* windowBuffer,
+    void** nativeBuffer);
+
+  int32_t ReleaseNativeWindowBuffer(void* windowBuffer, int fenceFd);
+
+  void GetNativeWindowBufferSize(
+    void* windowBuffer,
+    uint32_t* width,
+    uint32_t* height);
+
+  void GetTransformMatrixV1(float mtx[16], size_t mtx_size);
+
  protected:
   explicit OhosNativeImage(
       std::unique_ptr<OHOS::NWeb::NativeImageAdapter> native_image_adapter);

@@ -22,6 +22,7 @@
 #include "gpu/command_buffer/common/mailbox.h"
 #include "media/base/native_texture_wrapper.h"
 #include "media/base/video_frame.h"
+#include "ui/gl/ohos/native_buffer_utils.h"
 
 namespace content {
 
@@ -32,6 +33,7 @@ class CONTENT_EXPORT NativeTextureWrapperImpl
   // making sure it is correctly set on |current_frame_|, for webview scenarios.
   static media::ScopedNativeTextureWrapper Create(
       bool enable_texture_copy,
+      gl::ohos::TextureOwnerMode texture_owner_mode,
       scoped_refptr<NativeTextureFactory> factory,
       scoped_refptr<base::SingleThreadTaskRunner> main_task_runner);
 
@@ -59,11 +61,10 @@ class CONTENT_EXPORT NativeTextureWrapperImpl
   // Should be safe to call from any thread.
   void ClearCBOnAnyThread() override;
 
-  void SetSkippingCurrentFrame(bool need_skip) override;
-
  private:
   NativeTextureWrapperImpl(
       bool enable_texture_copy,
+      gl::ohos::TextureOwnerMode texture_owner_mode,
       scoped_refptr<NativeTextureFactory> factory,
       scoped_refptr<base::SingleThreadTaskRunner> main_task_runner);
   ~NativeTextureWrapperImpl() override;
@@ -84,6 +85,7 @@ class CONTENT_EXPORT NativeTextureWrapperImpl
   void SetCurrentFrameInternal(scoped_refptr<media::VideoFrame> video_frame);
 
   bool enable_texture_copy_;
+  gl::ohos::TextureOwnerMode texture_owner_mode_;
 
   // Object for calling back the compositor thread to repaint the video when a
   // frame is available. It should be bound to |compositor_task_runner_|.

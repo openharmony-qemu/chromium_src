@@ -49,6 +49,14 @@ class SystemProperties {
 
   std::string os_name() { return os_name_; }
 
+  std::string os_version() { return os_version_; }
+
+  std::string base_os_name() { return base_os_name_; }
+
+#ifdef OHOS_SCROLLBAR
+  float get_pixel_ratio() { return virtual_pixel_ratio_;}
+  void set_pixel_ratio(float ratio) { virtual_pixel_ratio_ = ratio;}
+#endif
  private:
   friend class NoDestructor<SystemProperties>;
 
@@ -59,6 +67,11 @@ class SystemProperties {
   int32_t senior_version_;
   OHOS::NWeb::ProductDeviceType device_type_;
   std::string os_name_;
+  std::string os_version_;
+  std::string base_os_name_;
+#ifdef OHOS_SCROLLBAR
+  float virtual_pixel_ratio_ = 2.0;
+#endif
 };
 
 SystemProperties::SystemProperties()
@@ -73,9 +86,25 @@ SystemProperties::SystemProperties()
                        .GetProductDeviceType()),
       os_name_(OhosAdapterHelper::GetInstance()
                    .GetSystemPropertiesInstance()
-                   .GetUserAgentOSName()) {}
+                   .GetUserAgentOSName()),
+      os_version_(OhosAdapterHelper::GetInstance()
+                   .GetSystemPropertiesInstance()
+                   .GetUserAgentOSVersion()),
+      base_os_name_(OhosAdapterHelper::GetInstance()
+                   .GetSystemPropertiesInstance()
+                   .GetUserAgentBaseOSName()) {}
 
 }  // namespace
+
+#ifdef OHOS_SCROLLBAR
+BASE_EXPORT float GetPixelRatio() {
+  return SystemProperties::Instance()->get_pixel_ratio();
+}
+
+BASE_EXPORT void SetPixelRatio(float ratio) {
+  SystemProperties::Instance()->set_pixel_ratio(ratio);
+}
+#endif
 
 BASE_EXPORT bool IsMobileDevice() {
   return SystemProperties::Instance()->is_mobile();
@@ -100,6 +129,14 @@ BASE_EXPORT int32_t SeniorVersion() {
 
 BASE_EXPORT std::string OsName() {
   return SystemProperties::Instance()->os_name();
+}
+
+BASE_EXPORT std::string OsVersion() {
+  return SystemProperties::Instance()->os_version();
+}
+
+BASE_EXPORT std::string BaseOsName() {
+  return SystemProperties::Instance()->base_os_name();
 }
 
 }  // namespace ohos

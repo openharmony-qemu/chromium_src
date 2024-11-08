@@ -43,6 +43,7 @@
 #include "ui/gfx/color_transform.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/size.h"
+#include "ui/gl/init/gl_factory.h"
 
 namespace viz {
 namespace {
@@ -404,6 +405,8 @@ class SkiaReadbackPixelTestRGBA : public SkiaReadbackPixelTest,
   }
 
   void SetUp() override {
+    gl::init::InitializeGLNoExtensionsOneOff(
+      /*init_bindings=*/true, /*gpu_preference=*/gl::GpuPreference::kDefault);
     SkiaReadbackPixelTest::SetUpReadbackPixeltest(GetParam());
   }
 };
@@ -587,6 +590,8 @@ class SkiaReadbackPixelTestNV12WithBlit
   }
 
   void SetUp() override {
+    gl::init::InitializeGLNoExtensionsOneOff(
+      /*init_bindings=*/true, /*gpu_preference=*/gl::GpuPreference::kDefault);
     SkiaReadbackPixelTest::SetUpReadbackPixeltest(std::get<0>(GetParam()));
   }
 

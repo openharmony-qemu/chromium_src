@@ -19,6 +19,7 @@
 #include "ohos_adapter_helper.h"
 #include "ohos_nweb/src/ndk/scheme_handler/resource_handler.h"
 #include "ohos_nweb/src/ndk/scheme_handler/resource_request.h"
+#include "net/base/mime_sniffer.h"
 
 namespace OHOS::NWeb {
 
@@ -43,7 +44,14 @@ NWebPipeResourceHandler::NWebPipeResourceHandler(
       resource_handler_(resource_handler),
       factory_(factory),
       web_tag_(web_tag),
-      from_service_worker_(from_service_worker) {}
+      from_service_worker_(from_service_worker) {
+  char* url = nullptr;
+  resource_request->GetUrl(&url);
+  if (url) {
+    url_ = GURL(url);
+    delete url;
+  }
+}
 
 bool NWebPipeResourceHandler::Open(CefRefPtr<CefRequest> request,
                                    bool& handle_request,
@@ -84,6 +92,10 @@ bool NWebPipeResourceHandler::Read(
   }
 
   if (!data_buffer_) {
+    if (finished_) {
+       bytes_read = 0;
+       return false;
+    }
     LOG(DEBUG) << "scheme_handler donn't have valid buffer process data later.";
     bytes_read = 0;
     last_bytes_to_read_ = bytes_to_read;
@@ -170,8 +182,14 @@ void NWebPipeResourceHandler::DidReceiveResponse(
   }
 
   response_ = response;
+  if (response_->GetMimeType().ToString() == "") {
+    needs_sniff_mimetype_ = true;
+    return;
+  }
+
   if (response_ready_callback_) {
     response_ready_callback_->Continue();
+    response_ready_callback_ = nullptr;
   }
 }
 
@@ -198,6 +216,23 @@ void NWebPipeResourceHandler::DidReceiveData(const uint8_t* buffer,
   memcpy(data_buffer_->data(), buffer, buf_len);
   data_buffer_->set_offset(data_buffer_->offset() + buf_len);
 
+  if (needs_sniff_mimetype_) {
+    size_t data_length = data_buffer_->offset();
+    if (data_length > net::kMaxBytesToSniff)
+      data_length = net::kMaxBytesToSniff;
+    std::string new_type;
+    net::SniffMimeType(
+        base::StringPiece(data_buffer_->StartOfBuffer(), data_length),
+        url_, std::string(),
+        net::ForceSniffFileUrlsForHtml::kDisabled, &new_type);
+    response_->SetMimeType(new_type);
+    needs_sniff_mimetype_ = false;
+    if (response_ready_callback_) {
+      response_ready_callback_->Continue();
+      response_ready_callback_ = nullptr;
+    }
+  }
+
   if (remain_read_ && !canceled_) {
     int bytes_consumed = UnSafeReadTrunkData(false);
     LOG(DEBUG) << "scheme_handler consumed data " << bytes_consumed;
@@ -208,6 +243,10 @@ void NWebPipeResourceHandler::DidFinish() {
   base::AutoLock scoped_lock_(lock_);
   LOG(DEBUG) << "scheme_handler did finish.";
   finished_ = true;
+  if (response_ready_callback_) {
+    response_ready_callback_->Continue();
+    response_ready_callback_ = nullptr;
+  }
   if (remain_read_) {
     UnSafeReadTrunkData(true);
   }
@@ -218,6 +257,10 @@ void NWebPipeResourceHandler::DidFailWithError(int error_code) {
   finished_ = true;
   finished_with_error_ = true;
   error_code_ = error_code;
+  if (response_ready_callback_) {
+    response_ready_callback_->Continue();
+    response_ready_callback_ = nullptr;
+  }
   if (remain_read_) {
     remain_read_ = false;
     resource_ready_callback_->Continue(error_code);

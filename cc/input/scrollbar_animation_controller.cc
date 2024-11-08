@@ -226,10 +226,22 @@ void ScrollbarAnimationController::UpdateScrollbarState() {
 void ScrollbarAnimationController::WillUpdateScroll() {
   if (show_scrollbars_on_scroll_gesture_)
     UpdateScrollbarState();
+#ifdef OHOS_SCROLLBAR
+  if (need_thinning_animation_) {
+    vertical_controller_->DidRequestShow();
+    horizontal_controller_->DidRequestShow();
+  }
+#endif
 }
 
 void ScrollbarAnimationController::DidRequestShow() {
   UpdateScrollbarState();
+#ifdef OHOS_SCROLLBAR
+   if (need_thinning_animation_) {
+    vertical_controller_->DidRequestShow();
+    horizontal_controller_->DidRequestShow();
+  }
+#endif
 }
 
 void ScrollbarAnimationController::UpdateTickmarksVisibility(bool show) {

@@ -366,6 +366,34 @@ TEST_F(ResourceBundleTest, LocaleDataPakExists) {
   EXPECT_FALSE(ResourceBundle::LocaleDataPakExists("not_a_real_locale"));
 }
 
+TEST_F(ResourceBundleTest, LocaleDataPakExists002) {
+  EXPECT_TRUE(ResourceBundle::LocaleDataPakExists("resources"));
+}
+
+TEST_F(ResourceBundleTest, LocaleDataPakExists003) {
+  EXPECT_TRUE(ResourceBundle::LocaleDataPakExists("bo-CN"));
+}
+
+TEST_F(ResourceBundleTest, LocaleDataPakExists004) {
+  EXPECT_TRUE(ResourceBundle::LocaleDataPakExists("ug"));
+}
+
+TEST_F(ResourceBundleTest, LocaleDataPakExists005) {
+  EXPECT_TRUE(ResourceBundle::LocaleDataPakExists("zh-TW"));
+}
+
+TEST_F(ResourceBundleTest, LocaleDataPakExists006) {
+  EXPECT_TRUE(ResourceBundle::LocaleDataPakExists("zh-HK"));
+}
+
+TEST_F(ResourceBundleTest, LocaleDataPakExists007) {
+  EXPECT_TRUE(ResourceBundle::LocaleDataPakExists("chrome_100_percent"));
+}
+
+TEST_F(ResourceBundleTest, LocaleDataPakExists008) {
+  EXPECT_TRUE(ResourceBundle::LocaleDataPakExists("chrome_200_percent"));
+}
+
 class ResourceBundleImageTest : public ResourceBundleTest {
  public:
   ResourceBundleImageTest() {}

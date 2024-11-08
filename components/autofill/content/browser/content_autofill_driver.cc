@@ -362,6 +362,12 @@ void ContentAutofillDriver::FormSubmitted(
         }
         target->autofill_manager_->OnFormSubmitted(
             WithNewVersion(form), known_success, submission_source);
+#if defined(OHOS_AUTOFILL)
+        if (target->oh_autofill_manager_) {
+          target->oh_autofill_manager_->OnFormSubmitted(
+              WithNewVersion(form), known_success, submission_source);
+        }
+#endif
       });
 }
 
@@ -382,6 +388,12 @@ void ContentAutofillDriver::TextFieldDidChange(const FormData& raw_form,
          base::TimeTicks timestamp) {
         target->autofill_manager_->OnTextFieldDidChange(
             WithNewVersion(form), field, bounding_box, timestamp);
+#if defined(OHOS_AUTOFILL)
+        if (target->oh_autofill_manager_) {
+          target->oh_autofill_manager_->OnTextFieldDidChange(
+              WithNewVersion(form), field, bounding_box, timestamp);
+        }
+#endif
       });
 }
 
@@ -444,6 +456,13 @@ void ContentAutofillDriver::AskForValuesToFill(
         target->autofill_manager_->OnAskForValuesToFill(
             WithNewVersion(form), field, bounding_box,
             autoselect_first_suggestion, form_element_was_clicked);
+#if defined(OHOS_AUTOFILL)
+        if (target->oh_autofill_manager_) {
+          target->oh_autofill_manager_->OnAskForValuesToFill(
+              WithNewVersion(form), field, bounding_box,
+              autoselect_first_suggestion, form_element_was_clicked);
+        }
+#endif
       });
 }
 
@@ -454,6 +473,11 @@ void ContentAutofillDriver::HidePopup() {
     DCHECK(!target->IsPrerendering())
         << "We should never affect UI while prerendering";
     target->autofill_manager_->OnHidePopup();
+#if defined(OHOS_AUTOFILL)
+    if (target->oh_autofill_manager_) {
+      target->oh_autofill_manager_->OnHidePopup();
+    }
+#endif
   });
 }
 
@@ -575,6 +599,11 @@ void ContentAutofillDriver::Reset() {
   submitted_forms_.clear();
   autofill_router_->UnregisterDriver(this);
   autofill_manager_->Reset();
+#if defined(OHOS_AUTOFILL)
+  if (oh_autofill_manager_) {
+    oh_autofill_manager_->Reset();
+  }
+#endif
 }
 
 const mojo::AssociatedRemote<mojom::AutofillAgent>&
@@ -596,6 +625,9 @@ void ContentAutofillDriver::UnsetKeyPressHandlerCallback() {
 }
 
 void ContentAutofillDriver::SetShouldSuppressKeyboardCallback(bool suppress) {
+#if defined(OHOS_PASSWORD_AUTOFILL)
+  LOG(INFO) << "set the keyboard suppressd=" << (suppress ? "true" : "false");
+#endif
   should_suppress_keyboard_ = suppress;
 }
 

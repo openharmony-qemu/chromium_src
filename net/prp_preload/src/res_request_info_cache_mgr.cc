@@ -43,12 +43,51 @@ void JsonToResReqPreloadInfoList(const std::string& json,
 
   for (const auto& json_item : json_value->GetList()) {
     auto info = std::make_shared<PRRequestInfo>();
-    info->set_url(GURL(*json_item.GetDict().FindString("url")));
-    info->set_allow_credentials(*json_item.GetDict().FindBool("allow_credentials"));
-    info->set_cache_type(static_cast<PRRequestCacheType>(*json_item.GetDict().FindInt("cache_type")));
-    info->set_freshness_life_times(std::stoll(*json_item.GetDict().FindString("freshness_life_times")));
-    info->set_e_tag(*json_item.GetDict().FindString("e_tag"));
-    info->set_last_modified(*json_item.GetDict().FindString("last_modified"));
+    const std::string* url = json_item.GetDict().FindString("url");
+    if (!url || url->empty()) {
+      LOG(WARNING) << "PRPPreload.JsonToResReqPreloadInfoList url is invalid";
+      continue;
+    }
+    info->set_url(GURL(*url));
+    const absl::optional<bool> allow_credentials = json_item.GetDict().FindBool("allow_credentials");
+    if (!allow_credentials.has_value()) {
+      LOG(WARNING) << "PRPPreload.JsonToResReqPreloadInfoList allow_credentials is invalid";
+      continue;
+    }
+    info->set_allow_credentials(allow_credentials.value());
+    const absl::optional<int> cache_type = json_item.GetDict().FindInt("cache_type");
+    if (!cache_type.has_value() ||
+        cache_type.value() < PRRequestCacheType::NEGOTIATION_CACHE ||
+        cache_type.value() > PRRequestCacheType::DISABLE_CACHE) {
+      LOG(WARNING) << "PRPPreload.JsonToResReqPreloadInfoList cache_type is invalid";
+      continue;
+    }
+    info->set_cache_type(static_cast<PRRequestCacheType>(cache_type.value()));
+    const std::string* freshness_life_times_str = json_item.GetDict().FindString("freshness_life_times");
+    if (!freshness_life_times_str || freshness_life_times_str->empty()) {
+      LOG(WARNING) << "PRPPreload.JsonToResReqPreloadInfoList freshness_life_times is none";
+      continue;
+    }
+    char* end = nullptr;
+    errno = 0;
+    int64_t freshness_life_times = std::strtoll(freshness_life_times_str->c_str(), &end, 10);
+    if (errno != 0 || !end || *end) {
+      LOG(WARNING) << "PRPPreload.JsonToResReqPreloadInfoList freshness_life_times is invalid";
+      continue;
+    }
+    info->set_freshness_life_times(freshness_life_times);
+    const std::string* e_tag = json_item.GetDict().FindString("e_tag");
+    if (!e_tag) {
+      LOG(WARNING) << "PRPPreload.JsonToResReqPreloadInfoList e_tag is invalid";
+      continue;
+    }
+    info->set_e_tag(*e_tag);
+    const std::string* last_modified = json_item.GetDict().FindString("last_modified");
+    if (!last_modified) {
+      LOG(WARNING) << "PRPPreload.JsonToResReqPreloadInfoList last_modified is invalid";
+      continue;
+    }
+    info->set_last_modified(*last_modified);
     info_list.push_back(info);
   }
 }
@@ -113,7 +152,7 @@ void ResReqInfoCacheMgr::OnEntryLoadedCallback(const std::string& entry_content)
 
 void ResReqInfoCacheMgr::CheckFlush() {
   if (!is_start_) {
-    LOG(DEBUG) << "PRPPreload.ResReqInfoCacheMgr::CheckFlush no need to flush" << url_;
+    LOG(DEBUG) << "PRPPreload.ResReqInfoCacheMgr::CheckFlush no need to flush";
     return;
   }
   if (last_flush_len_ < new_info_list_.size()) {

@@ -2187,14 +2187,15 @@ bool SurfaceAggregator::NotifySurfaceDamageAndCheckForDisplayDamage(
   }
 
   auto it = damage_ranges_.find(surface_id.frame_sink_id());
-  if (it == damage_ranges_.end())
+  if (it == damage_ranges_.end()) {
+    TRACE_EVENT0("viz", "damage_ranges_.end() not find");
     return false;
-
+  }
   for (const SurfaceRange& surface_range : it->second) {
     if (surface_range.IsInRangeInclusive(surface_id))
       return true;
   }
-
+  TRACE_EVENT0("viz", "damage not find");
   return false;
 }
 

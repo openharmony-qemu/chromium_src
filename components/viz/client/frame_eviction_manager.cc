@@ -29,6 +29,11 @@
 namespace viz {
 namespace {
 
+#if BUILDFLAG(IS_OHOS)
+constexpr int kOhosFramesMax = 10;
+constexpr int kOhosFramesBase = 2;
+constexpr int kPhysicalMemoryBlockSize = 256;
+#endif
 const int kModeratePressurePercentage = 50;
 const int kCriticalPressurePercentage = 10;
 #if (BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_DISCARD_BG_WEBPAGE))
@@ -98,7 +103,7 @@ void FrameEvictionManager::RegisterUnlockedFrame(
   unlocked_frames_.emplace_front(frame, clock_->NowTicks());
 #ifdef OHOS_NWEB_EX
   if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
-           switches::kForBrowser)) {
+           switches::kEnableNwebEx)) {
 #endif
     if (base::FeatureList::IsEnabled(features::kAggressiveFrameCulling)) {
       if (!idle_frames_culling_timer_.IsRunning()) {
@@ -151,7 +156,7 @@ FrameEvictionManager::FrameEvictionManager()
       // frames.
       base::SysInfo::AmountOfPhysicalMemoryMB() < 1024 * 3.5f ? 1 : 5;
 #elif BUILDFLAG(IS_OHOS)
-      std::min(10, 2 + (base::SysInfo::AmountOfPhysicalMemoryMB() / 256));
+      std::min(kOhosFramesMax, kOhosFramesBase + (base::SysInfo::AmountOfPhysicalMemoryMB() / kPhysicalMemoryBlockSize));
 #else
       std::min(5, 2 + (base::SysInfo::AmountOfPhysicalMemoryMB() / 256));
 #endif

@@ -34,18 +34,31 @@ class NWebCookieManagerDelegate : public NWebCookieManagerDelegateInterface {
   void PutAcceptThirdPartyCookieEnabled(bool accept) override;
   bool IsFileURLSchemeCookiesAllowed() override;
   void PutAcceptFileURLSchemeCookiesEnabled(bool allow) override;
-  void ReturnCookie(
-      const std::string& url,
-      std::shared_ptr<NWebStringValueCallback> callback) override;
+  void ReturnCookie(const std::string& url,
+                    bool incognitoMode,
+                    std::shared_ptr<NWebStringValueCallback> callback) override;
   std::string ReturnCookie(const std::string& url,
                            bool& is_valid,
                            bool incognito_mode) override;
+#ifdef OHOS_COOKIE_NDK
+  std::string ReturnCookieWithHttpOnly(const std::string &url,
+                                       bool &is_valid,
+                                       bool incognito_mode,
+                                       bool includeHttpOnly) override;
+#endif
   void SetCookie(const std::string& url,
                  const std::string& value,
                  std::shared_ptr<NWebBoolValueCallback> callback) override;
-  int SetCookie(const std::string &url,
-                const std::string &value,
-                bool incognito_mode) override;
+  int SetCookie(const std::string& url,
+                const std::string& value,
+                bool incognito_mode,
+                bool includeHttpOnly) override;
+#ifdef OHOS_COOKIE_NDK
+  int SetCookieWithHttpOnly(const std::string &url,
+                            const std::string &value,
+                            bool incognito_mode,
+                            bool includeHttpOnly) override;
+#endif
   void ExistCookies(std::shared_ptr<NWebBoolValueCallback> callback) override;
   bool ExistCookies(bool incognito_mode) override;
   void Store(std::shared_ptr<NWebBoolValueCallback> callback) override;
@@ -57,6 +70,8 @@ class NWebCookieManagerDelegate : public NWebCookieManagerDelegateInterface {
       bool incognito_mode) override;
   void ConfigCookie(const std::string& url,
                     const std::string& value,
+                    bool incognitoMode,
+                    bool includeHttpOnly,
                     std::shared_ptr<NWebLongValueCallback> callback) override;
 
  private:

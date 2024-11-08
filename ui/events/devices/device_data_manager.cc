@@ -127,8 +127,7 @@ DeviceDataManager::DeviceDataManager() {
   DCHECK(!instance_);
   instance_ = this;
 #if defined(OHOS_INPUT_EVENTS)
-  mmi_adapter_ =
-      OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateMMIAdapter();
+  mmi_adapter_ = OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateMMIAdapter();
   if (mmi_adapter_ == nullptr) {
     LOG(ERROR) << "DeviceDataManager mmi_adapter_ is nullptr";
     return;
@@ -138,8 +137,7 @@ DeviceDataManager::DeviceDataManager() {
     LOG(ERROR) << "DeviceDataManager GetUIThreadTaskRunner is null";
     return;
   }
-  dev_listener_ =
-      std::make_shared<MMIListenerAdapterImpl>(sequenced_task_runner_);
+  dev_listener_ = std::make_shared<MMIListenerAdapterImpl>(sequenced_task_runner_);
   mmi_adapter_->RegisterDevListener(CHANGED_TYPE, dev_listener_);
   std::vector<int32_t> device_ids;
   mmi_adapter_->GetDeviceIds(device_ids);

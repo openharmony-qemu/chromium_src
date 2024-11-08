@@ -339,12 +339,20 @@ void LayerTreeHostImpl::DidUpdatePinchZoom() {
 
 void LayerTreeHostImpl::DidStartScroll() {
   scroll_affects_scroll_handler_ = active_tree()->have_scroll_event_handlers();
+  if (!settings().single_thread_proxy_scheduler) {
+    client_->SetHasActiveThreadedScroll(true);
+  }
   client_->RenewTreePriority();
 }
 
 void LayerTreeHostImpl::DidEndScroll() {
   scroll_affects_scroll_handler_ = false;
   current_scroll_did_checkerboard_large_area_ = false;
+
+  if (!settings().single_thread_proxy_scheduler) {
+    client_->SetHasActiveThreadedScroll(false);
+    client_->SetWaitingForScrollEvent(false);
+  }
 
 #if BUILDFLAG(IS_ANDROID)
   if (render_frame_metadata_observer_) {
@@ -3032,6 +3040,11 @@ void LayerTreeHostImpl::
 }
 
 bool LayerTreeHostImpl::WillBeginImplFrame(const viz::BeginFrameArgs& args) {
+  if (!settings().single_thread_proxy_scheduler) {
+    client_->SetWaitingForScrollEvent(input_delegate_ &&
+                                      input_delegate_->IsCurrentlyScrolling() &&
+                                      !input_delegate_->HasQueuedInput());
+  }
   impl_thread_phase_ = ImplThreadPhase::INSIDE_IMPL_FRAME;
   current_begin_frame_tracker_.Start(args);
   frame_trackers_.NotifyBeginImplFrame(args);
@@ -3125,6 +3138,9 @@ void LayerTreeHostImpl::DidFinishImplFrame(const viz::BeginFrameArgs& args) {
   frame_trackers_.NotifyFrameEnd(current_begin_frame_tracker_.Current(), args);
   impl_thread_phase_ = ImplThreadPhase::IDLE;
   current_begin_frame_tracker_.Finish();
+  if (input_delegate_) {
+    input_delegate_->DidFinishImplFrame();
+  }
 }
 
 void LayerTreeHostImpl::DidNotProduceFrame(const viz::BeginFrameAck& ack,
@@ -3149,6 +3165,13 @@ void LayerTreeHostImpl::DidNotProduceFrame(const viz::BeginFrameAck& ack,
       frame_trackers_.NotifyImplFrameCausedNoDamage(ack);
     }
   }
+}
+
+void LayerTreeHostImpl::OnBeginImplFrameDeadline() {
+  if (!input_delegate_) {
+    return;
+  }
+  input_delegate_->OnBeginImplFrameDeadline();
 }
 
 void LayerTreeHostImpl::SynchronouslyInitializeAllTiles() {
@@ -3445,6 +3468,19 @@ void LayerTreeHostImpl::ActivateSyncTree() {
     pending_tree_->PushPropertyTreesTo(active_tree_.get());
     active_tree_->lifecycle().AdvanceTo(
         LayerTreeLifecycle::kSyncedPropertyTrees);
+
+    bool should_defer_impl_invalidation = false;
+    for (EffectTreeLayerListIterator it(pending_tree_.get());
+        it.state() != EffectTreeLayerListIterator::State::END; ++it) {
+      if (it.state() == EffectTreeLayerListIterator::State::LAYER) {
+        LayerImpl* layer = it.current_layer();
+        if (layer->ShouldDeferImplInvalidation()) {
+          should_defer_impl_invalidation = true;
+        }
+      }
+    }
+    client_->SetDeferInvalidationForFastMainFrameFromImpl(
+                 should_defer_impl_invalidation);
 
     TreeSynchronizer::PushLayerProperties(pending_tree(), active_tree());
 
@@ -4196,8 +4232,12 @@ void LayerTreeHostImpl::DidScrollContent(ElementId element_id, bool animated) {
   // We may wish to prioritize smoothness over raster when the user is
   // interacting with content, but this needs to be evaluated only for direct
   // user scrolls, not for programmatic scrolls.
-  if (input_delegate_->IsCurrentlyScrolling())
+  if (input_delegate_->IsCurrentlyScrolling()) {
+    if (!settings().single_thread_proxy_scheduler) {
+      client_->SetWaitingForScrollEvent(false);
+    }
     client_->RenewTreePriority();
+  }
 
   if (!animated) {
     // SetNeedsRedraw is only called in non-animated cases since an animation
@@ -5358,11 +5398,9 @@ std::string LayerTreeHostImpl::GetHungCommitDebugInfo() const {
 void LayerTreeHostImpl::OnLayerRectUpdate(int id, const gfx::Rect& rect) {
   client_->OnLayerRectUpdate(id, rect);
 }
-#endif
 
-#if BUILDFLAG(IS_OHOS)
-void LayerTreeHostImpl::OnLayerRectVisibleChange(int id, bool visibility) {
-  client_->OnLayerRectVisibleChange(id, visibility);
+void LayerTreeHostImpl::OnLayerRectVisibilityChange(int id, bool visibility) {
+  client_->OnLayerRectVisibilityChange(id, visibility);
 }
 #endif
 

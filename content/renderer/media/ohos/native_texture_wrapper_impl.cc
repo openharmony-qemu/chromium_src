@@ -24,7 +24,6 @@
 #include "gpu/GLES2/gl2extchromium.h"
 #include "gpu/command_buffer/client/shared_image_interface.h"
 #include "gpu/command_buffer/common/shared_image_usage.h"
-#include "base/task/bind_post_task.h"
 
 namespace {
 // Non-member function to allow it to run even after this class is deleted.
@@ -41,9 +40,11 @@ namespace content {
 
 NativeTextureWrapperImpl::NativeTextureWrapperImpl(
     bool enable_texture_copy,
+    gl::ohos::TextureOwnerMode texture_owner_mode,
     scoped_refptr<NativeTextureFactory> factory,
     scoped_refptr<base::SingleThreadTaskRunner> main_task_runner)
     : enable_texture_copy_(enable_texture_copy),
+      texture_owner_mode_(texture_owner_mode),
       factory_(factory),
       main_task_runner_(main_task_runner) {}
 
@@ -60,10 +61,11 @@ NativeTextureWrapperImpl::~NativeTextureWrapperImpl() {
 
 media::ScopedNativeTextureWrapper NativeTextureWrapperImpl::Create(
     bool enable_texture_copy,
+    gl::ohos::TextureOwnerMode texture_owner_mode,
     scoped_refptr<NativeTextureFactory> factory,
     scoped_refptr<base::SingleThreadTaskRunner> main_task_runner) {
   return media::ScopedNativeTextureWrapper(new NativeTextureWrapperImpl(
-      enable_texture_copy, factory, main_task_runner));
+      enable_texture_copy, texture_owner_mode, factory, main_task_runner));
 }
 
 scoped_refptr<media::VideoFrame> NativeTextureWrapperImpl::GetCurrentFrame() {
@@ -94,8 +96,6 @@ void NativeTextureWrapperImpl::CreateVideoFrame(
   // crbug.com/1028746. Since we create all the textures/abstract textures as
   // well as shared images for video to be of format RGBA, we need to use the
   // pixel format as ABGR here(which corresponds to 32bpp RGBA).
-  LOG(DEBUG) << "[NativeEmbed] create new video frame. visible_rect:"
-             << visible_rect.ToString();
   scoped_refptr<media::VideoFrame> new_frame =
       media::VideoFrame::WrapNativeTextures(
           media::PIXEL_FORMAT_ABGR, holders,
@@ -124,13 +124,6 @@ void NativeTextureWrapperImpl::SetCurrentFrameInternal(
     scoped_refptr<media::VideoFrame> video_frame) {
   base::AutoLock auto_lock(current_frame_lock_);
   current_frame_ = std::move(video_frame);
-}
-
-void NativeTextureWrapperImpl::SetSkippingCurrentFrame(bool need_skip) {
-  base::AutoLock auto_lock(current_frame_lock_);
-  if (current_frame_) {
-    current_frame_->set_skipping_current_frame(need_skip);
-  }
 }
 
 void NativeTextureWrapperImpl::UpdateTextureSize(const gfx::Size& new_size) {
@@ -185,7 +178,7 @@ void NativeTextureWrapperImpl::InitializeOnMainThread(
     return;
   }
 
-  native_texture_proxy_ = factory_->CreateProxy();
+  native_texture_proxy_ = factory_->CreateProxy(texture_owner_mode_);
   if (!native_texture_proxy_) {
     std::move(init_cb).Run(false);
     return;

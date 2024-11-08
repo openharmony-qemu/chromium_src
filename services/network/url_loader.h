@@ -408,6 +408,11 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   void ReadMore();
   void DidRead(int num_bytes, bool completed_synchronously);
   void NotifyCompleted(int error_code);
+#if BUILDFLAG(IS_OHOS)
+  std::string InMilliseconds(base::TimeTicks time);
+  void PrintNetworkTimingInfo();
+  void PrintNetworkCacheInfo();
+#endif
   void OnMojoDisconnect();
   void OnResponseBodyStreamConsumerClosed(MojoResult result);
   void OnResponseBodyStreamReady(MojoResult result);

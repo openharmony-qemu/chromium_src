@@ -65,9 +65,6 @@ struct SameSizeAsLayer : public base::RefCounted<SameSizeAsLayer>,
   gfx::Vector2dF offset;
   unsigned bitfields;
   int native_embed_id_;
-#if BUILDFLAG(IS_OHOS)
-  bool is_native_video_;
-#endif
   gfx::RectF native_rect_;
   raw_ptr<void> debug_info;
 
@@ -1486,11 +1483,6 @@ void Layer::PushPropertiesTo(LayerImpl* layer,
   layer->set_may_contain_video(may_contain_video());
   layer->set_may_contain_native(may_contain_native());
   layer->set_native_embed_id(native_embed_id());
-
-#if BUILDFLAG(IS_OHOS)
-   layer->set_is_native_video(is_native_video());
-#endif
-
   layer->SetNativeRect(native_rect_);
   layer->SetTouchActionRegion(inputs.touch_action_region);
   layer->SetContentsOpaque(inputs.contents_opaque);

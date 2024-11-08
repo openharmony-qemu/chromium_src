@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// Based on audio_output_stream_fuchsia.h originally written by
+// Copyright 2017 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 #ifndef MEDIA_AUDIO_OHOS_AUDIO_OUTPUT_STREAM_H_
 #define MEDIA_AUDIO_OHOS_AUDIO_OUTPUT_STREAM_H_
 
@@ -129,11 +134,16 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   // Called in Close();
   void ReleaseAudioBuffer();
 
+  // Call to set audio_render silentMode
+  void SetUpAudioSilentState();
+
   bool InitRender(const std::shared_ptr<AudioRendererOptionsAdapter> options);
 
   bool StartRender();
 
   void Prepare(base::WeakPtr<content::MediaSessionImpl> weakMediaSession);
+
+  void GetMediaSessionFromWebContent();
 
   raw_ptr<OHOSAudioManager> manager_;
 
@@ -177,6 +187,8 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   bool audioExclusive_ = false;
 
   bool isSuspended_ = false;
+
+  bool isSilentMode_ = false;
 
   scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_;
 

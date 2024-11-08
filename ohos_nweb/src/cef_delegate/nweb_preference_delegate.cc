@@ -16,6 +16,7 @@
 #include "ohos_nweb/src/cef_delegate/nweb_preference_delegate.h"
 
 #include "base/logging.h"
+#include "base/trace_event/trace_event.h"
 #include "cef/include/cef_command_line.h"
 #include "cef/include/internal/cef_string.h"
 #include "cef/include/internal/cef_string_types.h"
@@ -38,7 +39,6 @@ constexpr int fontMaxSize = 72;
 enum class WebScrollType : int32_t {
     UNKNOWN = -1,
     EVENT = 0,
-    POSITION
 };
 
 int ConvertCacheMode(NWebPreference::CacheModeFlag flag) {
@@ -164,7 +164,7 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
       !IsHorizontalScrollBarAccess() ? STATE_ENABLED : STATE_DISABLED;
   browser_settings.hide_vertical_scrollbars =
       !IsVerticalScrollBarAccess() ? STATE_ENABLED : STATE_DISABLED;
-  browser_settings.scroll_enabled = GetScrollable();
+  browser_settings.scroll_enabled = setting_scroll_enabled_;
 #endif  // defined(OHOS_INPUT_EVENTS)
 #if BUILDFLAG(IS_OHOS)
   browser_settings.native_embed_mode_enabled =
@@ -178,6 +178,7 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
   browser_settings.draw_mode = GetDrawMode();
   browser_settings.text_autosizing_enabled =
       IsTextAutosizingEnabled() ? STATE_ENABLED : STATE_DISABLED;
+  browser_settings.force_zero_layout_height = IsFitContent();
 #endif  // BUILDFLAG(IS_OHOS)
 #if defined(OHOS_CLIPBOARD)
   browser_settings.copy_option = static_cast<int>(GetCopyOptionMode());
@@ -196,7 +197,7 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
   browser_settings.contextmenu_customization_enabled = false;
   CefRefPtr<CefCommandLine> command_line =
       CefCommandLine::GetGlobalCommandLine();
-  if (command_line->HasSwitch(::switches::kForBrowser)) {
+  if (command_line->HasSwitch(::switches::kEnableNwebExFreeCopy)) {
     browser_settings.contextmenu_customization_enabled = true;
   }
 #endif  // OHOS_EX_FREE_COPY
@@ -314,6 +315,7 @@ void NWebPreferenceDelegate::PutIsCreateWindowsByJavaScriptAllowed(bool flag) {
 }
 
 void NWebPreferenceDelegate::PutJavaScriptEnabled(bool flag) {
+  LOG(INFO) << "Put JavaScript Enabled:" << flag;
   javascript_allowed_ = flag;
   WebPreferencesChanged();
 }
@@ -416,6 +418,7 @@ void NWebPreferenceDelegate::PutCacheMode(CacheModeFlag flag) {
     return;
   }
 
+  TRACE_EVENT1("base", "NWebPreferenceDelegate::PutCacheMode", "flag", flag);
   browser_->GetHost()->SetCacheMode(ConvertCacheMode(flag));
 }
 
@@ -577,6 +580,12 @@ const base::Feature webview_mixed_content_autoupgrades{
     "WebViewMixedContentAutoupgrades", base::FEATURE_DISABLED_BY_DEFAULT};
 
 bool NWebPreferenceDelegate::MixedContentAutoupgradesAllowed() {
+#ifdef OHOS_MIXED_CONTENT
+  if(enable_mixed_content_auto_upgrades_){
+    return access_mode_ == AccessMode::COMPATIBILITY_MODE;
+  }
+#endif
+
   if (base::FeatureList::IsEnabled(webview_mixed_content_autoupgrades)) {
     return access_mode_ == AccessMode::COMPATIBILITY_MODE;
   }
@@ -655,12 +664,17 @@ void NWebPreferenceDelegate::PutOverscrollMode(int mode) {
 void NWebPreferenceDelegate::SetNativeEmbedMode(bool flag) {
   // Native Embed is not supported on pc device.
   CefRefPtr<CefCommandLine> command_line = CefCommandLine::GetGlobalCommandLine();
-  auto isEnableEmbed = command_line->HasSwitch(::switches::kEnableEmbedMode); 
+  auto isEnableEmbed = command_line->HasSwitch(::switches::kEnableEmbedMode);
   enable_embed_mode_ = flag && !isEnableEmbed;
   if (enable_embed_mode_) {
     zooming_function_enabled_ = false;
   }
   WebPreferencesChanged();
+  if (!browser_.get()) {
+    LOG(ERROR) << "SetNativeEmbedMode failed, browser is null";
+    return;
+  }
+  browser_->GetHost()->SetNativeEmbedMode(enable_embed_mode_);
 }
 
 bool NWebPreferenceDelegate::GetNativeEmbedMode() {
@@ -681,27 +695,23 @@ void NWebPreferenceDelegate::SetScrollable(bool enable) {
     LOG(ERROR) << "SetScrollable failed, browser is null";
     return;
   }
-  browser_->GetHost()->SetScrollable(enable);
+  browser_->GetHost()->SetScrollable(enable, static_cast<int32_t>(WebScrollType::UNKNOWN));
 }
 
 void NWebPreferenceDelegate::SetScrollable(bool enable, int32_t scrollType) {
-  scroll_enabled_ = enable; 
+  scroll_enabled_ = enable;
+  setting_scroll_enabled_ = enable;
   if (scrollType == static_cast<int32_t>(WebScrollType::UNKNOWN)) {
     WebPreferencesChanged();
-    if(!browser_.get()) {
-      LOG(ERROR) << "SetScrollable failed, browser is null";
-      return;
-    }
-    browser_->GetHost()->SetScrollable(enable);
   } else if (scrollType == static_cast<int32_t>(WebScrollType::EVENT)) {
-    if(!browser_.get()) {
-      LOG(ERROR) << "SetScrollable failed, browser is null";
-      return;
-    }
-    browser_->GetHost()->SetScrollable(enable);
-  } else if (scrollType == static_cast<int32_t>(WebScrollType::POSITION)) {
+    setting_scroll_enabled_ = true;
     WebPreferencesChanged();
   }
+  if (!browser_.get()) {
+    LOG(ERROR) << "SetScrollable failed, browser is null";
+    return;
+  }
+  browser_->GetHost()->SetScrollable(enable, scrollType);
 }
 
 bool NWebPreferenceDelegate::GetScrollable() {
@@ -754,7 +764,7 @@ int NWebPreferenceDelegate::GetDrawMode() const {
 }
 
 void NWebPreferenceDelegate::PutTextAutosizingEnabled(bool flag) {
-  if(text_autosizing_enabled_ == flag){
+  if (text_autosizing_enabled_ == flag) {
     return;
   }
   text_autosizing_enabled_ = flag;
@@ -763,6 +773,14 @@ void NWebPreferenceDelegate::PutTextAutosizingEnabled(bool flag) {
 
 bool NWebPreferenceDelegate::IsTextAutosizingEnabled() const {
   return text_autosizing_enabled_;
+}
+
+void NWebPreferenceDelegate::SetFitContent(bool value) {
+  fit_content_ = value;
+}
+
+bool NWebPreferenceDelegate::IsFitContent() const {
+  return fit_content_;
 }
 #endif
 
@@ -871,5 +889,30 @@ void NWebPreferenceDelegate::SetAutofillCallback(
   autofill_callback_ = callback;
 }
 #endif
+
+#ifdef OHOS_MIXED_CONTENT
+void NWebPreferenceDelegate::EnableMixedContentAutoUpgrades(bool enable){
+  enable_mixed_content_auto_upgrades_ = enable;
+}
+
+bool NWebPreferenceDelegate::IsMixedContentAutoUpgradesEnabled(){
+  return enable_mixed_content_auto_upgrades_;
+}
+#endif
+
+#ifdef OHOS_BFCACHE
+void NWebPreferenceDelegate::PutBackForwardCacheOptions(int size, int time_to_live) {
+  size_ = size;
+  time_to_live_ = time_to_live;
+}
+
+int NWebPreferenceDelegate::GetCacheSize() {
+  return size_;
+}
+
+int NWebPreferenceDelegate::GetTimeToLive() {
+  return time_to_live_;
+}
+#endif // OHOS_BFCACHE
 
 }  // namespace OHOS::NWeb

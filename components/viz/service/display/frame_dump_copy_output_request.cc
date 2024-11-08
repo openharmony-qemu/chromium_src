@@ -31,19 +31,22 @@ namespace {
   const std::string DUMP_FILE_PRE = "web_frame_";
   const std::string DUMP_FILE_TYPE = ".png";
   const int MAX_DUMP_FRAME_SIZE = 1000;
-  static int64_t g_dump_frame_id = 0;
 }
 
-FrameDumpCopyOutputRequest::FrameDumpCopyOutputRequest(): CopyOutputRequest(
+FrameDumpCopyOutputRequest::FrameDumpCopyOutputRequest(uint64_t id, const std::string& dump_path) : CopyOutputRequest(
             ResultFormat::RGBA,
             ResultDestination::kSystemMemory,
             base::BindOnce([](std::unique_ptr<CopyOutputResult> result) {
-              if (g_dump_frame_id >= MAX_DUMP_FRAME_SIZE)
-                g_dump_frame_id = 0;
+              uint64_t dump_frame_id = result->DumpFrameId() % MAX_DUMP_FRAME_SIZE;
+              std::string dump_frame_path = DUMP_FILE_PATH;
+              std::string debug_dump_path = result->DumpFramePath();
+              if (!(debug_dump_path.empty())) {
+                dump_frame_path = debug_dump_path;
+              }
               std::string filename;
-              filename.append(DUMP_FILE_PATH);
+              filename.append(dump_frame_path);
               filename.append(DUMP_FILE_PRE);
-              filename.append(std::to_string(g_dump_frame_id));
+              filename.append(std::to_string(dump_frame_id));
               filename.append(DUMP_FILE_TYPE); 
               SkFILEWStream file(filename.c_str());
               SkBitmap bitmap = result->ScopedAccessSkBitmap().bitmap();
@@ -52,9 +55,8 @@ FrameDumpCopyOutputRequest::FrameDumpCopyOutputRequest(): CopyOutputRequest(
               opts.fZLibLevel = 6;
               bool res = SkPngEncoder::Encode(&file, bitmap.pixmap(), opts);
               if (!res) {
-                  LOG(ERROR) << "frame dump png file error, frame id " << g_dump_frame_id;
+                LOG(ERROR) << "frame dump png file error, filename = " << filename;
               }
-              g_dump_frame_id++;
-            })) {
+            }), id, dump_path) {
             }
 }  // namespace viz

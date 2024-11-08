@@ -1578,6 +1578,13 @@ test("content_browsertests") {
     "../test/url_loader_interceptor_browsertest.cc",
   ]
 
+  if(ohos_unittests){
+    sources += [
+      "../renderer/host_proxy_unittest.cc",
+      "../renderer/render_remote_proxy_ohos_unittest.cc",
+    ]
+  }
+  
   if (is_linux) {
     sources += [ "../browser/network/address_map_linux_browsertest.cc" ]
   }

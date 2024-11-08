@@ -232,10 +232,6 @@ class FrameSinkBundleImplTest : public testing::Test {
                                    client_receiver_.BindNewPipeAndPassRemote());
   }
 
-  ~FrameSinkBundleImplTest() override {
-    manager_.UnregisterBeginFrameSource(&begin_frame_source_);
-  }
-
   void IssueOnBeginFrame() {
     begin_frame_source_.TestOnBeginFrame(
         begin_frame_source_.CreateBeginFrameArgs(BEGINFRAME_FROM_HERE));

@@ -117,7 +117,7 @@ CompositorGpuThread::~CompositorGpuThread() {
 #if BUILDFLAG(IS_OHOS)
   using namespace OHOS::NWeb;
   auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
-    switches::kProcessType);
+      switches::kProcessType);
   if (type == switches::kGpuProcess) {
     NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
         ResSchedStatusAdapter::THREAD_DESTROYED,
@@ -125,11 +125,11 @@ CompositorGpuThread::~CompositorGpuThread() {
         ResSchedRoleAdapter::IMPORTANT_DISPLAY);
   } else {
     task_runner()->PostTask(
-      FROM_HERE,
-      base::BindOnce(
-          base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread),
-          ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentRealPid(),
-          GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
+        FROM_HERE,
+        base::BindOnce(
+            base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread),
+            ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentRealPid(),
+            GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
   }
 #endif
 
@@ -234,8 +234,8 @@ CompositorGpuThread::GetSharedContextState() {
 
   // Initialize Skia.
   if (!shared_context_state->InitializeSkia(
-          gpu_preferences, workarounds, gpu_channel_manager_->gr_shader_cache(),
-          /*activity_flags=*/nullptr, /*progress_reporter=*/nullptr)) {
+      gpu_preferences, workarounds, gpu_channel_manager_->gr_shader_cache(),
+      /*activity_flags=*/nullptr, /*progress_reporter=*/nullptr)) {
     LOG(ERROR) << "Failed to Initialize Skia for DrDC SharedContextState";
   }
   shared_context_state_ = std::move(shared_context_state);
@@ -255,7 +255,7 @@ bool CompositorGpuThread::Initialize() {
 #if BUILDFLAG(IS_OHOS)
   using namespace OHOS::NWeb;
   auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
-    switches::kProcessType);
+      switches::kProcessType);
   if (type == switches::kGpuProcess) {
     NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
         ResSchedStatusAdapter::THREAD_CREATED,
@@ -263,11 +263,11 @@ bool CompositorGpuThread::Initialize() {
         ResSchedRoleAdapter::IMPORTANT_DISPLAY);
   } else {
     task_runner()->PostTask(
-      FROM_HERE,
-      base::BindOnce(
-          base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread),
-          ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentRealPid(),
-          GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
+        FROM_HERE,
+        base::BindOnce(
+            base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread),
+            ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentRealPid(),
+            GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
   }
 #endif
   return init_succeeded_;

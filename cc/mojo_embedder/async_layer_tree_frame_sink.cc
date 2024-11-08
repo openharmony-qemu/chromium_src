@@ -203,6 +203,14 @@ void AsyncLayerTreeFrameSink::SubmitCompositorFrame(
     last_hit_test_data_ = *hit_test_region_list;
   }
 
+#if BUILDFLAG(IS_OHOS)
+  if (is_first_submit_) {
+    is_first_submit_ = false;
+    LOG(INFO) << "web render log: first call SubmitCompositorFrame, local_surface_id = "
+      << local_surface_id_.ToString();
+  }
+#endif
+
   if (last_submitted_local_surface_id_ != local_surface_id_) {
     last_submitted_local_surface_id_ = local_surface_id_;
     last_submitted_device_scale_factor_ = frame.device_scale_factor();

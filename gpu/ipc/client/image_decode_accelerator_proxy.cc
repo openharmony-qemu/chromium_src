@@ -12,6 +12,7 @@
 #include "base/containers/contains.h"
 #include "base/notreached.h"
 #include "base/ranges/algorithm.h"
+#include "build/enable_heif_buildflags.h"
 #include "cc/paint/paint_image.h"
 #include "gpu/command_buffer/common/constants.h"
 #include "gpu/config/gpu_info.h"
@@ -32,6 +33,13 @@ bool IsSupportedImageSize(
     const ImageDecodeAcceleratorSupportedProfile& supported_profile) {
   DCHECK(image_data);
 
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
+  if(image_data->image_type == cc::ImageType::kHEIF) {
+    LOG(INFO) << "[HeifSupport] Heif type, no need to check size."; 
+    return true;
+  }
+#endif
+
   gfx::Size image_size;
   if (image_data->coded_size.has_value())
     image_size = image_data->coded_size.value();
@@ -39,18 +47,6 @@ bool IsSupportedImageSize(
     image_size = image_data->image_size;
   DCHECK(!image_size.IsEmpty());
 
-#if BUILDFLAG(IS_OHOS)
-  auto result =
-      image_size.width() >= supported_profile.min_encoded_dimensions.width() &&
-      image_size.height() >=
-          supported_profile.min_encoded_dimensions.height() &&
-      image_size.width() <= supported_profile.max_encoded_dimensions.width() &&
-      image_size.height() <= supported_profile.max_encoded_dimensions.height();
-  if (!result) {
-    LOG(INFO) << "[HeifSupport] UnSupported image size " << image_size.ToString();
-  }
-  return result;
-#else
   return image_size.width() >=
              supported_profile.min_encoded_dimensions.width() &&
          image_size.height() >=
@@ -59,7 +55,6 @@ bool IsSupportedImageSize(
              supported_profile.max_encoded_dimensions.width() &&
          image_size.height() <=
              supported_profile.max_encoded_dimensions.height();
-#endif
 }
 
 bool IsSupportedJpegImage(
@@ -127,7 +122,7 @@ bool ImageDecodeAcceleratorProxy::IsImageSupported(
   if (image_metadata->has_embedded_color_profile)
     return false;
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
   static_assert(static_cast<int>(ImageDecodeAcceleratorType::kMaxValue) == 3,
 #else
   static_assert(static_cast<int>(ImageDecodeAcceleratorType::kMaxValue) == 2,
@@ -142,11 +137,11 @@ bool ImageDecodeAcceleratorProxy::IsImageSupported(
     case cc::ImageType::kWEBP:
       image_type = ImageDecodeAcceleratorType::kWebP;
       break;
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
     case cc::ImageType::kHEIF:
       image_type = ImageDecodeAcceleratorType::kHeif;
       break;
-#endif
+#endif // BUILDFLAG(ENABLE_HEIF_DECODER)
     default:
       return false;
   }
@@ -172,7 +167,7 @@ bool ImageDecodeAcceleratorProxy::IsImageSupported(
     case ImageDecodeAcceleratorType::kWebP:
       DCHECK(image_metadata->webp_is_non_extended_lossy.has_value());
       return image_metadata->webp_is_non_extended_lossy.value();
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
     case ImageDecodeAcceleratorType::kHeif:
       return true;
 #endif

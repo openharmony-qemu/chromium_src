@@ -75,7 +75,7 @@ interface SubresourceFilterHost {
   // #ifdef OHOS_ARKWEB_ADBLOCK
   // This is sent to a RenderFrameHost in the browser after a document load is
   // finished
-  // [EnableIf=ohos_arkweb_adblock]
+  [EnableIf=ohos_arkweb_adblock]
   SetStatisticsAfterDocumentLoad(DocumentLoadStatistics statistics);
   // #endif // OHOS_ARKWEB_ADBLOCK
 };
@@ -141,7 +141,7 @@ interface UserSubresourceFilterHost {
 
   // This is sent to a RenderFrameHost in the browser after a document load is
   // finished
-  // [EnableIf=ohos_arkweb_adblock]
+  [EnableIf=ohos_arkweb_adblock]
   UserSetStatisticsAfterDocumentLoad(DocumentLoadStatistics statistics);
 };
 // #endif

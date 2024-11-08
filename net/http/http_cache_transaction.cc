@@ -2563,6 +2563,10 @@ int HttpCache::Transaction::DoCacheReadData() {
     DCHECK(InWriters() || entry_->TransactionInReaders(this));
   }
 
+#if BUILDFLAG(IS_OHOS)
+  TRACE_EVENT1("net", "HttpCache::Transaction::DoCacheReadData",
+               "url", request_->url.spec());
+#endif
   TRACE_EVENT_WITH_FLOW2(
       "net", "HttpCacheTransaction::DoCacheReadData", TRACE_ID_LOCAL(trace_id_),
       TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT, "read_offset",

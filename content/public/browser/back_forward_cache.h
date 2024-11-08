@@ -196,6 +196,7 @@ class CONTENT_EXPORT BackForwardCache {
   virtual void SetCacheSize(int size) = 0;
   virtual void SetTimeToLive(int timeToLive) = 0;
   virtual base::TimeDelta ArkWebGetTimeToLiveInBackForwardCache() = 0;
+  virtual size_t GetStoredEntriesNumber() = 0;
 #endif
 
  protected:

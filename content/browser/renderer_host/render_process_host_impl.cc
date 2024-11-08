@@ -3669,6 +3669,9 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
 #if BUILDFLAG(IS_OZONE)
     switches::kOzonePlatform,
 #endif
+#ifdef OHOS_SCROLLBAR
+    switches::kPixelRatio,
+#endif
 #if defined(ENABLE_IPC_FUZZER)
     switches::kIpcDumpDirectory,
     switches::kIpcFuzzerTestcase,
@@ -3681,6 +3684,7 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
     switches::kBundleInstallationDir,
     switches::kOhSchemeHandlerCustomScheme,
     switches::kBundleName,
+    switches::kArkWebInstallPath,
 #endif
 #if BUILDFLAG(IS_CHROMEOS_LACROS)
     switches::kLacrosEnablePlatformHevc,
@@ -3849,7 +3853,7 @@ bool RenderProcessHostImpl::FastShutdownIfPossible(size_t page_count,
   // died due to fast shutdown versus another cause.
   fast_shutdown_started_ = true;
 
-  LOG(INFO) << "Rended process: " << GetID() << " died due to fast shutdown versus another cause";
+  LOG(INFO) << "Rended process: " << GetProcess().Handle() << " died due to fast shutdown versus another cause";
   ChildProcessTerminationInfo info;
   info.status = base::TERMINATION_STATUS_PROCESS_WAS_KILLED;
   info.exit_code = 0;
@@ -4942,7 +4946,8 @@ RenderProcessHost* RenderProcessHostImpl::GetProcessHostForSiteInstance(
     if (render_process_host) {
       site_instance->set_process_assignment(
           SiteInstanceProcessAssignment::REUSED_EXISTING_PROCESS);
-      LOG(INFO) << "Use an existing rendering process, render_process: " << render_process_host->GetID();
+      LOG(INFO) << "Use an existing rendering process, render_process: "
+                << render_process_host->GetProcess().Handle();
     }
   }
 
@@ -4999,6 +5004,8 @@ RenderProcessHost* RenderProcessHostImpl::GetProcessHostForSiteInstance(
               RenderProcessHostImpl::GetExistingBackgroundProcessHost(
                   site_instance));
       if (render_host) {
+        LOG(INFO) << "Try fast shutdown idle render process: "
+                  << render_host->GetProcess().Handle() << " in the background.";
         render_host->FastShutdownIfPossible(1u, true);
       }
     }
@@ -5848,4 +5855,24 @@ void RenderProcessHostImpl::RemoveFromSharedRenderProcessMap(
 }
 #endif
 
+#ifdef OHOS_I18N
+void RenderProcessHostImpl::NotifyLocaleChanged(
+    const std::string& update_locale) {
+  GetRendererInterface()->NotifyLocaleChanged(update_locale);
+}
+
+// static
+void RenderProcessHost::OnLocaleChangedToRenderer(
+    const std::string& update_locale) {
+  iterator iter(AllHostsIterator());
+  while (!iter.IsAtEnd()) {
+    RenderProcessHostImpl* host =
+        static_cast<RenderProcessHostImpl*>(iter.GetCurrentValue());
+    if (host && host->IsInitializedAndNotDead()) {
+      host->NotifyLocaleChanged(update_locale);
+    }
+    iter.Advance();
+  }
+}
+#endif
 }  // namespace content

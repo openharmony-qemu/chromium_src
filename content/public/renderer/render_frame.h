@@ -249,6 +249,10 @@ class CONTENT_EXPORT RenderFrame : public IPC::Listener,
   virtual blink::scheduler::WebAgentGroupScheduler&
   GetAgentGroupScheduler() = 0;
 
+#ifdef OHOS_ARKWEB_ADBLOCK
+  virtual bool GetGlobalAdblockEnabled() = 0;
+#endif  // OHOS_ARKWEB_ADBLOCK
+
  protected:
   ~RenderFrame() override {}
 

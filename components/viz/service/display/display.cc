@@ -84,21 +84,32 @@ class DumpFrameObserver : public OHOS::NWeb::SystemPropertiesObserver {
     ~DumpFrameObserver() override = default;
 
     void PropertiesUpdate(const char* value) override {
+      dump_param_list_.clear();
       if (strcmp(value, "true") == 0) {
         should_dump_ = true;
       } else if (strcmp(value, "false") == 0) {
         should_dump_ = false;
       } else {
-        LOG(ERROR) << "sys prop observer return value is invalid";
+        std::string str_value = std::string(value);
+        std::stringstream origin_str(str_value);
+        std::string item_str;
+        while (std::getline(origin_str, item_str, '#')) {
+          dump_param_list_.emplace_back(item_str);
+        }
       }
     }
 
     bool ShouldDump() {
-      return should_dump_;
+      return should_dump_ || (dump_param_list_.size() > 0 && dump_param_list_[0] == "true");
     }
 
     bool ShouldDumpInFreq() {
-      if (dump_freq_count == DUMP_FRAME_FREQ) {
+      int32_t dumpFreq = DUMP_FRAME_FREQ;
+      if (dump_param_list_.size() > 1) {
+        dumpFreq = std::stoi(dump_param_list_[1]);
+      }
+
+      if (dump_freq_count == dumpFreq) {
         dump_freq_count = 0;
         return true;
       } else {
@@ -107,15 +118,27 @@ class DumpFrameObserver : public OHOS::NWeb::SystemPropertiesObserver {
       }
     }
 
+    std::string DumpPath() {
+      if (dump_param_list_.size() > 2) {
+        return dump_param_list_[2];
+      }
+
+      return "";
+    }
+
  private:
     bool should_dump_ = false;
     int dump_freq_count = 0;
+    std::vector<std::string> dump_param_list_;
 };
 #endif
 
 namespace {
 const int MAX_SURFACE_SIZE = 8000;
 const int MIN_FITCONTENT_SURFACE_SIZE = 6000;
+#if defined(OHOS_DFX_DUMP)
+static uint64_t g_dump_frame_id = 0;
+#endif
 
 const DrawQuad::Material kNonSplittableMaterials[] = {
     // Exclude debug quads from quad splitting
@@ -978,7 +1001,8 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
 #if defined(OHOS_DFX_DUMP)
     if (dump_frame_observer_ && dump_frame_observer_->ShouldDump()) {
       if (dump_frame_observer_->ShouldDumpInFreq()) {
-        auto request = std::make_unique<FrameDumpCopyOutputRequest>();
+        auto request = std::make_unique<FrameDumpCopyOutputRequest>(++g_dump_frame_id,
+          dump_frame_observer_->DumpPath());
         auto& root_render_pass = frame.render_pass_list.back();
         if (root_render_pass) {
           root_render_pass->copy_requests.push_back(std::move(request));

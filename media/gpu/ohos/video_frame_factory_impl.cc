@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// Based on video_frame_factory_impl.cc originally written by
+// Copyright 2017 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 #include "media/gpu/ohos/video_frame_factory_impl.h"
 
 #include <memory>
@@ -39,10 +44,10 @@ static void AllocateTextureOwnerOnGpuThread(
     return;
   }
 
-  std::move(init_cb).Run(
-      gpu::NativeImageTextureOwner::Create(
-        shared_context_state,
-        gpu::NativeImageTextureOwner::Mode::kOhosSurfaceTexture));
+  std::move(init_cb).Run(gpu::NativeImageTextureOwner::Create(
+      shared_context_state,
+      gl::ohos::TextureOwnerMode::kNativeImageTexture,
+      std::move(drdc_lock)));
 }
 
 }  // namespace

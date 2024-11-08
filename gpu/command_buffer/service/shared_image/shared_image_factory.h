@@ -87,7 +87,7 @@ class GPU_GLES2_EXPORT SharedImageFactory {
                          SkAlphaType alpha_type,
                          uint32_t usage,
                          std::string debug_label);
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
   bool CreateSharedImage(const Mailbox& mailbox,
                          gfx::GpuMemoryBufferHandle handle,
                          gfx::BufferFormat format,
@@ -97,7 +97,7 @@ class GPU_GLES2_EXPORT SharedImageFactory {
                          GrSurfaceOrigin surface_origin,
                          SkAlphaType alpha_type,
                          uint32_t usage,void* window_buffer);
-#endif
+#endif // BUILDFLAG(ENABLE_HEIF_DECODER)
   bool UpdateSharedImage(const Mailbox& mailbox);
   bool UpdateSharedImage(const Mailbox& mailbox,
                          std::unique_ptr<gfx::GpuFence> in_fence);

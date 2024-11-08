@@ -67,7 +67,11 @@ enum class AccessibilityEventType : int32_t {
   ACCESSIBILITY_FOCUSED = 0x00008000,
   ACCESSIBILITY_FOCUS_CLEARED = 0x00010000,
   TEXT_MOVE_UNIT = 0x00020000,
+  REQUEST_FOCUS = 0x00800000,
   SCROLL_START = 0x01000000,
+  PAGE_CLOSE = 0x08000000,
+  ANNOUNCE_FOR_ACCESSIBILITY = 0x10000000,
+  PAGE_OPEN = 0x20000000,
   UNKNOWN,
 };
 
@@ -92,6 +96,7 @@ enum class AceAction : uint32_t {
   ACTION_SELECT,
   ACTION_SET_SELECTION,
   ACTION_CLEAR_SELECTION,
+  ACTION_SET_CURSOR_POSITION,
 };
 
 enum class AceTextCategory {
@@ -103,6 +108,13 @@ enum class AceTextCategory {
   INPUT_TYPE_NUMBER,
   INPUT_TYPE_PASSWORD,
   INPUT_TYPE_PHONENUMBER
+};
+
+enum class AccessibilityScrollType : int32_t {
+    SCROLL_DEFAULT = -1, // no parameter trans, do not add enum before
+    SCROLL_HALF = 0,
+    SCROLL_FULL = 1,
+    SCROLL_MAX_TYPE = SCROLL_FULL, // for check parameter, do not add enum after
 };
 
 const int32_t WEIGHTED_VALUE = 13;

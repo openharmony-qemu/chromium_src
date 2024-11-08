@@ -848,6 +848,12 @@ bool MediaSessionImpl::HasPepper() const {
   return !pepper_players_.empty();
 }
 
+#if BUILDFLAG(IS_OHOS)
+bool MediaSessionImpl::HasOnlyOneShotPlayersPublic() const {
+  return HasOnlyOneShotPlayers();
+}
+#endif //BUILDFLAG(IS_OHOS)
+
 bool MediaSessionImpl::HasOnlyOneShotPlayers() const {
   return !one_shot_players_.empty() && normal_players_.empty() &&
          pepper_players_.empty();
@@ -920,17 +926,24 @@ void MediaSessionImpl::OnSystemAudioFocusRequested(bool result) {
 
 void MediaSessionImpl::OnSuspendInternal(SuspendType suspend_type,
                                          State new_state) {
+  LOG(INFO) << "MediaSessionImpl::OnSuspendInternal";
   DCHECK(!HasPepper());
 
   DCHECK(new_state == State::SUSPENDED || new_state == State::INACTIVE);
   // UI suspend cannot use State::INACTIVE.
   DCHECK(suspend_type == SuspendType::kSystem || new_state == State::SUSPENDED);
 
-  if (HasOnlyOneShotPlayers())
+  if (HasOnlyOneShotPlayers()) {
+    LOG(INFO) << "MediaSessionImpl::OnSuspendInternal, HasOnlyOneShotPlayers";
     return;
+  }
 
-  if (audio_focus_state_ != State::ACTIVE)
+
+  if (audio_focus_state_ != State::ACTIVE) {
+    LOG(INFO) << "MediaSessionImpl::OnSuspendInternal, audio_focus_state_: " << static_cast<int> (audio_focus_state_);
     return;
+  }
+
 
   switch (suspend_type) {
     case SuspendType::kUI:
@@ -1006,7 +1019,7 @@ MediaSessionImpl::MediaSessionImpl(WebContents* web_contents)
 #endif  // BUILDFLAG(IS_ANDROID)
 #if defined(OHOS_MEDIA_AVSESSION)
   auto currentProcess = base::CommandLine::ForCurrentProcess();
-  if (currentProcess && !currentProcess->HasSwitch(switches::kForBrowser)) {
+  if (currentProcess && !currentProcess->HasSwitch(switches::kEnableMediaAvsession)) {
     session_ohos_ = std::make_unique<MediaSessionOHOS>(this);
   }
 #endif  // defined(OHOS_MEDIA_AVSESSION)
@@ -1312,6 +1325,52 @@ void MediaSessionImpl::SetWebviewShowForAudio(bool show) {
     session_ohos_->SetWebviewShowForAudio(show);
   }
 }
+
+void MediaSessionImpl::SetWebviewShowForVideo(bool show) {
+  if (session_ohos_) {
+    session_ohos_->SetWebviewShowForVideo(show);
+  }
+}
+
+bool MediaSessionImpl::IsEndOfMedia() {
+  bool ret = true;
+  if (position_) {
+    ret = position_->end_of_media();
+    if (ret) {
+      return ret;
+    }
+  }
+  if (session_ohos_) {
+    ret = session_ohos_->IsEndOfMedia();
+    if (ret) {
+      return ret;
+    }
+  }
+  return ret;
+}
+
+void MediaSessionImpl::SetEndOfMedia(bool end_of_media)
+{
+  if (session_ohos_) {
+    session_ohos_->SetEndOfMedia(end_of_media);
+  }
+}
+
+bool MediaSessionImpl::GetPlayingState()
+{
+  return isPlayingState_;
+}
+
+void MediaSessionImpl::SetPlayingState(bool playingState)
+{
+  isPlayingState_ = playingState;
+}
+
+bool MediaSessionImpl::GetMuteState()
+{
+  return is_muted_;
+}
+
 #endif // OHOS_MEDIA_POLICY
 
 void MediaSessionImpl::SetAudioSinkId(const absl::optional<std::string>& id) {

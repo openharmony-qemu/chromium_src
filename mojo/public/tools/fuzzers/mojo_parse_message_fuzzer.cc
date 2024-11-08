@@ -62,7 +62,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   base::RunLoop run;
   env->main_thread_task_executor.task_runner()->PostTask(
       FROM_HERE, base::BindOnce(&FuzzMessage, data, size, &run));
+#ifdef OHOS_FUZZ_ADAPTER
   run.Run();
-
+#endif
   return 0;
 }

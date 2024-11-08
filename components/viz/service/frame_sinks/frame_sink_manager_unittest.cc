@@ -25,6 +25,7 @@
 #include "mojo/public/cpp/bindings/associated_remote.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "components/viz/common/features.h"
 
 namespace viz {
 namespace {
@@ -108,6 +109,22 @@ class FrameSinkManagerTest : public testing::Test {
       EXPECT_EQ(interval, manager_.support_map_[id]->begin_frame_interval_);
     }
   }
+
+  void MyEvictSurfaces(const std::vector<SurfaceId>& surface_ids) {
+  for (const SurfaceId& surface_id : surface_ids) {
+    auto it = manager_.support_map_.find(surface_id.frame_sink_id());
+    if (it == manager_.support_map_.end())
+      continue;
+    if (!it->second->is_root())
+      continue;
+    auto root_it = manager_.root_sink_map_.find(surface_id.frame_sink_id());
+    if (root_it != manager_.root_sink_map_.end()){
+      root_it->second->DidEvictSurface(surface_id);
+    }
+  }
+  if (base::FeatureList::IsEnabled(features::kEagerSurfaceGarbageCollection))
+    manager_.surface_manager_.GarbageCollectSurfaces();
+}
 
   // testing::Test implementation.
   void TearDown() override {
@@ -677,7 +694,7 @@ TEST_F(FrameSinkManagerTest, EvictRootSurfaceId) {
   GetRootCompositorFrameSinkImpl()->SubmitCompositorFrame(
       local_surface_id, MakeDefaultCompositorFrame(), absl::nullopt, 0);
   EXPECT_EQ(surface_id, GetRootCompositorFrameSinkImpl()->CurrentSurfaceId());
-  manager_.EvictSurfaces({surface_id});
+  MyEvictSurfaces({surface_id});
   EXPECT_FALSE(GetRootCompositorFrameSinkImpl()->CurrentSurfaceId().is_valid());
   manager_.InvalidateFrameSinkId(kFrameSinkIdRoot);
 }
@@ -700,7 +717,7 @@ TEST_F(FrameSinkManagerTest, EvictNewerRootSurfaceId) {
   allocator.GenerateId();
   const LocalSurfaceId next_local_surface_id =
       allocator.GetCurrentLocalSurfaceId();
-  manager_.EvictSurfaces({{kFrameSinkIdRoot, next_local_surface_id}});
+  MyEvictSurfaces({{kFrameSinkIdRoot, next_local_surface_id}});
   EXPECT_FALSE(GetRootCompositorFrameSinkImpl()->CurrentSurfaceId().is_valid());
   manager_.InvalidateFrameSinkId(kFrameSinkIdRoot);
 }
@@ -723,10 +740,11 @@ TEST_F(FrameSinkManagerTest, SubmitCompositorFrameWithEvictedSurfaceId) {
   GetRootCompositorFrameSinkImpl()->SubmitCompositorFrame(
       local_surface_id, MakeDefaultCompositorFrame(), absl::nullopt, 0);
   EXPECT_EQ(surface_id, GetRootCompositorFrameSinkImpl()->CurrentSurfaceId());
-  manager_.EvictSurfaces({surface_id, surface_id2});
+  MyEvictSurfaces({surface_id, surface_id2});
   EXPECT_FALSE(GetRootCompositorFrameSinkImpl()->CurrentSurfaceId().is_valid());
-  GetRootCompositorFrameSinkImpl()->SubmitCompositorFrame(
-      local_surface_id2, MakeDefaultCompositorFrame(), absl::nullopt, 0);
+  GetRootCompositorFrameSinkImpl()->SubmitCompositorFrameSync(
+      local_surface_id2, MakeDefaultCompositorFrame(), absl::nullopt, 0,
+      CompositorFrameSinkImpl::SubmitCompositorFrameSyncCallback());
 
   // Even though `surface_id2` was just submitted, Display should not reference
   // it because it was evicted.

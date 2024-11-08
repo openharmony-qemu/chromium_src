@@ -581,7 +581,6 @@ void NWebInputMethodHandler::OnUpdateTextInputStateCalled(
     return;
   }
 
-  whole_text_ = text;
   LOG(DEBUG)
       << "NWebInputMethodHandler::OnUpdateTextInputStateCalled text_length = "
       << text.ToString16().length()
@@ -599,10 +598,10 @@ void NWebInputMethodHandler::OnUpdateTextInputStateCalled(
     composition_range_start_ = compositon_range.from;
     composition_range_end_ = compositon_range.to;
     int32_t preview_length = composition_range_end_ - composition_range_start_;
-    if (!whole_text_.empty() &&
-        (composition_range_end_ <= whole_text_.length())) {
+    if (!text.ToString16().empty() &&
+        (composition_range_end_ <= text.ToString16().length())) {
       preview_text_cache_ =
-          whole_text_.substr(composition_range_start_, preview_length);
+          text.ToString16().substr(composition_range_start_, preview_length);
     }
   }
   LOG(DEBUG) << "NWebInputMethodHandler::OnUpdateTextInputStateCalled";
@@ -611,12 +610,13 @@ void NWebInputMethodHandler::OnUpdateTextInputStateCalled(
   selected_to_ = selected_range.to;
 
   if (inputmethod_adapter_) {
-    inputmethod_adapter_->OnSelectionChange(whole_text_, selected_from_,
+    inputmethod_adapter_->OnSelectionChange(text.ToString16(), selected_from_,
                                             selected_to_);
   }
 
   {
     std::unique_lock<std::mutex> lock(textCursorMutex_);
+    whole_text_ = text;
     textCursorReady_ = 0;
     textCursorCv_.notify_all();
   }
@@ -671,6 +671,7 @@ void NWebInputMethodHandler::SetIMEStatusOnUI(bool status) {
 }
 
 void NWebInputMethodHandler::InsertTextHandlerOnUI(const std::u16string& text) {
+  LOG(INFO) << "NWebInputMethodHandler::InsertTextHandlerOnUI text length:" << text.length();
   if (text.empty()) {
     LOG(ERROR) << "insert text empty!";
     return;
@@ -1008,6 +1009,10 @@ void NWebInputMethodHandler::SetFocusStatus(bool focus_status) {
     }
   }
   focus_status_ = focus_status;
+}
+
+bool NWebInputMethodHandler::GetFocusStatus() {
+  return focus_status_;
 }
 
 void NWebInputMethodHandler::OnEditableChanged(CefRefPtr<CefBrowser> browser,

@@ -1340,7 +1340,12 @@ std::unique_ptr<NavigationRequest> NavigationRequest::CreateRendererInitiated(
           base::flat_map<::blink::mojom::RuntimeFeatureState, bool>(),
           /*fenced_frame_properties=*/absl::nullopt,
           /*not_restored_reasons=*/nullptr,
-          /*load_with_storage_access=*/load_with_storage_access);
+          /*load_with_storage_access=*/load_with_storage_access
+#ifdef OHOS_ARKWEB_ADBLOCK
+          ,
+          false /* site_adblock_enabled */
+#endif          // OHOS_ARKWEB_ADBLOCK
+      );
 
   // CreateRendererInitiated() should only be triggered when the navigation is
   // initiated by a frame in the same process.
@@ -1481,7 +1486,12 @@ NavigationRequest::CreateForSynchronousRendererCommit(
           base::flat_map<::blink::mojom::RuntimeFeatureState, bool>(),
           /*fenced_frame_properties=*/absl::nullopt,
           /*not_restored_reasons=*/nullptr,
-          /*load_with_storage_access=*/false);
+          /*load_with_storage_access=*/false
+#ifdef OHOS_ARKWEB_ADBLOCK
+          ,
+          false /* site_adblock_enabled */
+#endif          // OHOS_ARKWEB_ADBLOCK
+      );
   blink::mojom::BeginNavigationParamsPtr begin_params =
       blink::mojom::BeginNavigationParams::New();
   std::unique_ptr<NavigationRequest> navigation_request(new NavigationRequest(
@@ -3302,6 +3312,16 @@ void NavigationRequest::OnRequestRedirected(
   // on a SiteInstance that already has a process.
   RenderProcessHost* expected_process =
       site_instance->HasProcess() ? site_instance->GetProcess() : nullptr;
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  if (frame_tree_node_->IsMainFrame() &&
+      common_params_->url.SchemeIsHTTPOrHTTPS()) {
+    LOG(INFO) << "[AdBlock] Redirect to ***"
+              << ", try to get adblock switch from UI.";
+    GetContentClient()->browser()->UpdateAdBlockEnabledForSite(
+        frame_tree_node_->current_frame_host(), common_params_->url);
+  }
+#endif  // OHOS_ARKWEB_ADBLOCK
 
   WillRedirectRequest(common_params_->referrer->url, expected_process);
 }
@@ -5264,6 +5284,13 @@ void NavigationRequest::OnWillProcessResponseChecksComplete(
           frame_tree_node_->navigator().controller().GetBrowserContext();
       DownloadManagerImpl* download_manager = static_cast<DownloadManagerImpl*>(
           browser_context->GetDownloadManager());
+#ifdef OHOS_ARKWEB_ADBLOCK
+      // Download maybe start request in the same frame_tree_node and will not
+      // commit navigation, restore the last committed adblock switch here.
+
+      frame_tree_node_->set_adblock_enabled(
+          frame_tree_node_->is_adblock_enabled_last_committed());
+#endif  // OHOS_ARKWEB_ADBLOCK
       download_manager->InterceptNavigation(
           std::move(resource_request), redirect_chain_, response_head_.Clone(),
           std::move(response_body_), std::move(url_loader_client_endpoints_),
@@ -5603,7 +5630,7 @@ void NavigationRequest::CommitNavigation() {
           browsing_topics::ApiCallerSource::kIframeAttribute);
     }
   }
-  
+
   RenderFrameHostImpl* old_frame_host =
       frame_tree_node_->render_manager()->current_frame_host();
   if (!NavigationTypeUtils::IsSameDocument(common_params_->navigation_type)) {
@@ -5791,6 +5818,17 @@ void NavigationRequest::CommitNavigation() {
     commit_params->prefetched_signed_exchanges =
         std::move(subresource_loader_params_->prefetched_signed_exchanges);
   }
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  LOG(DEBUG) << "[Adblock] CommitNavigation url : ***";
+  // Cache the adblock enabled value for the download case.
+  bool adblock_enabled = frame_tree_node_->is_adblock_enabled();
+  frame_tree_node_->set_adblock_enabled_last_committed(adblock_enabled);
+
+  if (frame_tree_node_->IsMainFrame()) {
+    commit_params->site_adblock_enabled = adblock_enabled;
+  }
+#endif  // OHOS_ARKWEB_ADBLOCK
 
   GetRenderFrameHost()->CommitNavigation(
       this, std::move(common_params), std::move(commit_params),
@@ -9464,6 +9502,11 @@ void NavigationRequest::CreateWebUIIfNeeded(RenderFrameHostImpl* frame_host) {
       bindings() != web_ui_->GetBindings()) {
     RecordAction(base::UserMetricsAction("ProcessSwapBindingsMismatch_RVHM"));
     base::WeakPtr<NavigationRequest> self = GetWeakPtr();
+    // Reset `controller` first before resetting `web_ui_`, since the controller
+    // still has a pointer to `web_ui_`, to avoid referencing to the already
+    // deleted  `web_ui_` object from `controller`'s destructor. See also
+    // https://crbug.com/345640549.
+    controller.reset();
     web_ui_.reset();
     // Resetting the WebUI may indirectly call content's embedders and delete
     // `this`. There are no known occurrences of it, so we assume this never

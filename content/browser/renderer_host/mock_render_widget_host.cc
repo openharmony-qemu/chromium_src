@@ -25,7 +25,8 @@ void MockRenderWidgetHost::OnTouchEventAck(
 
 void MockRenderWidgetHost::DisableGestureDebounce() {
   input_router_ = std::make_unique<InputRouterImpl>(
-      this, this, fling_scheduler_.get(), InputRouter::Config());
+      static_cast<RenderWidgetHostImpl*>(this), static_cast<RenderWidgetHostImpl*>(this),
+      fling_scheduler_.get(), InputRouter::Config());
 }
 
 void MockRenderWidgetHost::ExpectForceEnableZoom(bool enable) {
@@ -37,7 +38,7 @@ void MockRenderWidgetHost::ExpectForceEnableZoom(bool enable) {
 }
 
 void MockRenderWidgetHost::SetupForInputRouterTest() {
-  input_router_ = std::make_unique<MockInputRouter>(this);
+  input_router_ = std::make_unique<MockInputRouter>(static_cast<RenderWidgetHostImpl*>(this));
 }
 
 // static
@@ -87,7 +88,7 @@ MockRenderWidgetHost::MockRenderWidgetHost(
                            /*renderer_initiated_creation=*/false,
                            std::make_unique<FrameTokenMessageQueue>()),
       new_content_rendering_timeout_fired_(false),
-      fling_scheduler_(std::make_unique<FlingScheduler>(this)) {
+      fling_scheduler_(std::make_unique<FlingScheduler>(static_cast<RenderWidgetHostImpl*>(this))) {
   acked_touch_event_type_ = blink::WebInputEvent::Type::kUndefined;
   mojo::AssociatedRemote<blink::mojom::WidgetHost> blink_widget_host;
   BindWidgetInterfaces(

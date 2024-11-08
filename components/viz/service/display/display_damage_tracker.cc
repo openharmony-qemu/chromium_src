@@ -158,6 +158,8 @@ void DisplayDamageTracker::OnSurfaceMarkedForDestruction(
 bool DisplayDamageTracker::OnSurfaceDamaged(const SurfaceId& surface_id,
                                             const BeginFrameAck& ack) {
   bool display_damaged = false;
+  TRACE_EVENT1("viz", "DisplayDamageTracker::OnSurfaceDamaged",
+               "ack.has_damage", ack.has_damage);
   if (ack.has_damage) {
     display_damaged =
         aggregator_->NotifySurfaceDamageAndCheckForDisplayDamage(surface_id);
@@ -167,7 +169,9 @@ bool DisplayDamageTracker::OnSurfaceDamaged(const SurfaceId& surface_id,
     if (display_damaged)
       surfaces_to_ack_on_next_draw_.push_back(surface_id);
   }
-
+  TRACE_EVENT2("viz", "DisplayDamageTracker::OnSurfaceDamaged",
+               "adisplay_damaged", display_damaged,
+               "surface_id ?= root_surface_id_", (surface_id == root_surface_id_));
   if (surface_id == root_surface_id_)
     UpdateRootFrameMissing();
 

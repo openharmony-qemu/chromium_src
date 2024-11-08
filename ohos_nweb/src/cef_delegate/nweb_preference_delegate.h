@@ -130,7 +130,19 @@ class NWebPreferenceDelegate : public NWebPreference {
   int GetDrawMode() const;
   void PutTextAutosizingEnabled(bool enable) override;
   bool IsTextAutosizingEnabled() const;
+  void SetFitContent(bool value);
+  bool IsFitContent() const;
 #endif
+
+#if defined(OHOS_MULTI_WINDOW)
+  float GetVirtualPixelRatio() {
+    return virtual_pixel_ratio_;
+  }
+  void SetVirtualPixelRatio(float ratio) {
+    virtual_pixel_ratio_ = ratio;
+  }
+#endif
+
 #if defined(OHOS_PRINT)
   void PutPrintToken(void* token) { token_ = token; }
   void* GetPrintToken() { return token_; }
@@ -198,6 +210,17 @@ class NWebPreferenceDelegate : public NWebPreference {
   void SetAutofillCallback(CefRefPtr<CefWebMessageReceiver> callback);
 #endif
 
+#ifdef OHOS_MIXED_CONTENT
+  void EnableMixedContentAutoUpgrades(bool enable);
+  bool IsMixedContentAutoUpgradesEnabled();
+#endif
+
+#ifdef OHOS_BFCACHE
+  int GetCacheSize();
+  int GetTimeToLive();
+  void PutBackForwardCacheOptions(int size, int time_to_live);
+#endif  // OHOS_BFCACHE
+
  private:
   CefRefPtr<CefBrowser> browser_ = nullptr;
 
@@ -244,6 +267,9 @@ class NWebPreferenceDelegate : public NWebPreference {
 #ifdef OHOS_SCROLLBAR
   uint32_t scrollbar_color_{0};
 #endif // OHOS_SCROLLBAR
+#if defined(OHOS_MULTI_WINDOW)
+  float virtual_pixel_ratio_ = 2.0;
+#endif
 #if defined(OHOS_PRINT)
   void* token_ = nullptr;
 #endif
@@ -252,6 +278,7 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool vertical_scrollBar_access_{true};
   int overscroll_mode_{0};
   bool scroll_enabled_{true};
+  bool setting_scroll_enabled_{true};
 #endif  // defined(OHOS_INPUT_EVENTS)
 #if defined(OHOS_VIEWPORT)
   std::optional<bool> viewport_enabled_;
@@ -260,6 +287,7 @@ class NWebPreferenceDelegate : public NWebPreference {
   int draw_mode_{0};
   bool text_autosizing_enabled_{true};
   std::string surface_id_{""};
+  bool fit_content_{false};
 #endif
   bool enable_embed_mode_{false};
   std::string embed_tag_{"embed"};
@@ -291,6 +319,15 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if defined(OHOS_PASSWORD_AUTOFILL)
   CefRefPtr<CefWebMessageReceiver> autofill_callback_ = nullptr;
 #endif
+
+#ifdef OHOS_MIXED_CONTENT
+  bool enable_mixed_content_auto_upgrades_{false};
+#endif
+
+#ifdef OHOS_BFCACHE
+  int size_ = -1;
+  int time_to_live_ = -1;
+#endif // OHOS_BFCACHE
 };
 }  // namespace OHOS::NWeb
 

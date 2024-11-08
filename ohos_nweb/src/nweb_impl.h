@@ -574,6 +574,7 @@ class NWebImpl : public NWeb {
 #endif
 
  void SetPopupSurface(void* popupSurface) override;
+ void SetTransformHint(uint32_t rotation) override;
 
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

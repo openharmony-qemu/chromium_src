@@ -1112,6 +1112,12 @@ void GpuServiceImpl::DestroyNativeWindow(uint32_t native_window_id)
   LOG(DEBUG) << "DestroyNativeWindow native_window_id: " << native_window_id;
   NWebNativeWindowTracker::GetInstance()->DestroyNativeWindow(native_window_id);
 }
+
+void GpuServiceImpl::SetTransformHint(uint32_t rotation, uint32_t window_id)
+{
+  void* window = NWebNativeWindowTracker::GetInstance()->GetNativeWindow(window_id);
+  OHOS::NWeb::OhosAdapterHelper::GetInstance().GetWindowAdapterInstance().SetTransformHint(rotation, window);
+}
 #endif
 
 void GpuServiceImpl::SetChannelDiskCacheHandle(

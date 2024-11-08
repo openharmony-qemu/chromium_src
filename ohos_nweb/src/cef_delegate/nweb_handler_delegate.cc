@@ -3750,4 +3750,11 @@ void NWebHandlerDelegate::SetPopupSurface(void* popup_window) {
   }
 }
 #endif
+
+void NWebHandlerDelegate::SetTransformHint(uint32_t rotation) {
+  content::GpuProcessHost* host = content::GpuProcessHost::Get();
+  if (main_browser_ && host && host->gpu_host()) {
+    host->gpu_host()->SetTransformHint(rotation, main_browser_->GetAcceleratedWidget(false));
+  }
+}
 }  // namespace OHOS::NWeb

@@ -2024,7 +2024,7 @@ int HttpCache::Transaction::DoSuccessfulSendRequest() {
                                                     new_response->response_time)).ToInternalValue());
       preload_info_->set_cache_type(ohos_prp_preload::PRRequestCacheType::NEGOTIATION_CACHE);
     }
-    UpdateCacheInfo(*new_response);
+    UpdateValidatorsInfo(*new_response->headers);
   }
 #endif
 
@@ -2855,7 +2855,7 @@ int HttpCache::Transaction::BeginCacheValidation() {
                                              response_->response_time)).ToInternalValue());
     }
     preload_info_->set_cache_type(ohos_prp_preload::PRRequestCacheType::NEGOTIATION_CACHE);
-    UpdateCacheInfo(response_);
+    UpdateValidatorsInfo(*response_->headers);
   }
 #endif
 

@@ -1428,14 +1428,13 @@ Navigator::GetNavigationEntryForRendererInitiatedNavigation(
 }
 
 #if BUILDFLAG(IS_OHOS)
-  network::mojom::NetworkContext* network_context = frame_tree_node->current_frame_host()
-    ->GetStoragePartition()->GetNetworkContext();
-  if (network_context != nullptr && frame_tree_node->current_frame_host() != nullptr) {
-    const net::NetworkAnonymizationKey networkAnonymizationKey = 
-      GetNetworkAnonymizationKey(frame_tree_node, navigation_request.get());
-    network_context->StartMainPage(params.url.possibly_invalid_spec(), networkAnonymizationKey,
-      reinterpret_cast<int64_t>(this));
-  }
+const net::NetworkAnonymizationKey Navigator::GetNetworkAnonymizationKey(
+    FrameTreeNode* frame_tree_node,
+    NavigationRequest* navigation_request) {
+  return frame_tree_node->current_frame_host()->ComputeIsolationInfoForNavigation(
+    navigation_request->common_params().url, navigation_request->is_credentialless(),
+    navigation_request->ComputeFencedFrameNonce()).network_anonymization_key();
+}
 #endif
 
 }  // namespace content

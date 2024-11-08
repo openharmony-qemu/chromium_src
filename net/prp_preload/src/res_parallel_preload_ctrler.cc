@@ -87,7 +87,7 @@ void ResParallelPreloadCtrler::OnResRequestInfoList(
     return;
   }
   res_preload_scheduler_->PreloadSchedule(res_req_info_list, networkAnonymizationKey);
-  }
+}
 
 void ResParallelPreloadCtrler::OnTimeout() {
   DoStop();

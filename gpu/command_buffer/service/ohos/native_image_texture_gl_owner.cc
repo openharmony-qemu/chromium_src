@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// Based on surface_texture_gl_owner.cc originally written by
+// Copyright 2017 The Chromium Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 #include "gpu/command_buffer/service/ohos/native_image_texture_gl_owner.h"
 
 #include "base/check_op.h"

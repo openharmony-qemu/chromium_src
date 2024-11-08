@@ -502,6 +502,7 @@ class LoginHandlerDelegate {
     WebContents* web_contents = web_contents_getter_.Run();
     if (!web_contents) {
       OnAuthCredentials(absl::nullopt);
+      return;
     }
 
     // WeakPtr is not strictly necessary here due to OnRequestCancelled.

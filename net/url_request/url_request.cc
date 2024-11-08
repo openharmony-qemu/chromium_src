@@ -744,6 +744,10 @@ int URLRequest::DoCancel(int error, const SSLInfo& ssl_info) {
       LOG(INFO) << "DoCancel the url_request, url: ***"
                 << ", error " << error;
 #endif
+#ifdef OHOS_LOGGER_REPORT
+      LOG_FEEDBACK(INFO) << "DoCancel the url_request, url: ***"
+                         << ", error " << error;
+#endif
     }
   }
 

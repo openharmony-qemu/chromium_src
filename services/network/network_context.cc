@@ -2951,4 +2951,9 @@ void NetworkContext::CreateTrustedUrlLoaderFactoryForNetworkService(
                          std::move(url_loader_factory_params));
 }
 
+#if defined(OHOS_LOGGER_REPORT)
+bool NetworkContext::IsStrictLogMode() const {
+  return params_ && params_->is_strict_log_mode;
+}
+#endif  // OHOS_LOGGER_REPORT
 }  // namespace network

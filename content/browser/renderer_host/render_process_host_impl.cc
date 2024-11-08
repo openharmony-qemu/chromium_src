@@ -301,6 +301,10 @@
 #include "base/json/json_reader.h"
 #endif
 
+#ifdef OHOS_LOGGER_REPORT
+#include "content/public/common/content_switches.h"
+#include "base/ohos/logger.h"
+#endif
 // VLOG additional statements in Fuchsia release builds.
 #if BUILDFLAG(IS_FUCHSIA)
 #define MAYBEVLOG VLOG
@@ -3971,6 +3975,17 @@ void RenderProcessHostImpl::OnChannelConnected(int32_t peer_pid) {
     UpdateThemeFontFile(theme_font->font_file.Duplicate());
   }
 #endif
+
+#ifdef OHOS_LOGGER_REPORT
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kForBrowser)) {
+    // LOG(URL) only be called at no privacy mode.The variable of whether the 
+    // mode is private or not named g_is_strict_log_mode_ is passed to the 
+    // child process to help child process judge whether the LOG(URL) can be
+    // called.
+    child_process_->SetStrictLogMode(GetBrowserContext()->IsOffTheRecord());
+  }
+#endif
 }
 
 void RenderProcessHostImpl::OnChannelError() {
@@ -5761,6 +5776,13 @@ void RenderProcessHostImpl::OnBindHostReceiver(
   GetContentClient()->browser()->BindHostReceiverForRenderer(
       this, std::move(receiver));
 }
+
+#if defined(OHOS_LOGGER_REPORT)
+void RenderProcessHostImpl::ReportRendererLog(int policy,
+                                              const std::string& msg) {
+  ohos::logger::ReportRendererLog(policy, msg);
+}
+#endif
 
 // static
 void RenderProcessHost::InterceptBindHostReceiverForTesting(

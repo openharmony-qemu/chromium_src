@@ -648,6 +648,10 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
     return &cache_transparency_settings_;
   }
 
+#if defined(OHOS_LOGGER_REPORT)
+  bool IsStrictLogMode() const;
+#endif  // OHOS_LOGGER_REPORT
+
  private:
   URLRequestContextOwner MakeURLRequestContext(
       mojo::PendingRemote<mojom::URLLoaderFactory>

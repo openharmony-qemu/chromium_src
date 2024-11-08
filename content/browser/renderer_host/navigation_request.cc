@@ -199,6 +199,9 @@
 #include "content/public/browser/web_contents_delegate.h"
 #endif
 
+#if defined(OHOS_LOGGER_REPORT)
+#include "url/ohos/log_utils.h"
+#endif
 namespace content {
 
 namespace {
@@ -2451,6 +2454,21 @@ void NavigationRequest::BeginNavigationImpl() {
     LOG(INFO) << "INFO: start a navigation url: *** is_browser_initiated_: "
               << commit_params_->is_browser_initiated
               << " was_redirected_: " << was_redirected_;
+#ifdef OHOS_LOGGER_REPORT
+    bool is_incognito = false;
+    WebContents* web_contents = WebContents::FromFrameTreeNodeId(
+        frame_tree_node_->frame_tree_node_id());
+    if (web_contents && web_contents->GetBrowserContext()) {
+      is_incognito = web_contents->GetBrowserContext()->IsOffTheRecord();
+    }
+    if (!is_incognito) {
+      LOG(URL) << "start a navigation url: "
+               << url::LogUtils::ConvertUrl(common_params_->url.spec())
+               << " is_browser_initiated_: "
+               << commit_params_->is_browser_initiated
+               << " was_redirected_: " << was_redirected_;
+    }
+#endif
   }
 #endif
 

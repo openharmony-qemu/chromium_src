@@ -99,6 +99,15 @@ component("url") {
       "//third_party/icu",
     ]
   }
+
+  #ifdef OHOS_LOGGER_REPORT
+  if (defined(ohos_logger_report) && ohos_logger_report) {
+    sources += [
+      "ohos/log_utils.cc",
+      "ohos/log_utils.h",
+    ]
+  }
+  #endif // OHOS_LOGGER_REPORT
 }
 
 if (is_android || is_robolectric) {

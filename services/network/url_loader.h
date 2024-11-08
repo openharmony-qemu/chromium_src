@@ -251,6 +251,10 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   bool AllowCookies(const GURL& url,
                     const net::SiteForCookies& site_for_cookies) const;
 
+#ifdef OHOS_LOGGER_REPORT
+  void SetStrictLogMode(bool value) { is_strict_log_mode_ = value; }
+#endif  // OHOS_LOGGER_REPORT
+
   const net::HttpRequestHeaders& custom_proxy_pre_cache_headers() const {
     return custom_proxy_pre_cache_headers_;
   }
@@ -670,6 +674,10 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   // Indicates whether fetch upload streaming is allowed/rejected over H/1.
   // Even if this is false but there is a QUIC/H2 stream, the upload is allowed.
   const bool allow_http1_for_streaming_upload_;
+
+#ifdef OHOS_LOGGER_REPORT
+  bool is_strict_log_mode_ = false;
+#endif  // OHOS_LOGGER_REPORT
 
   bool emitted_devtools_raw_request_ = false;
   bool emitted_devtools_raw_response_ = false;

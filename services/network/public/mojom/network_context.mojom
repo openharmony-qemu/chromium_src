@@ -567,6 +567,11 @@ struct NetworkContextParams {
   // TODO(crbug.com/1228178): This flag is intended to be temporary and to be
   // removed (always enabled) in the future.
   bool acam_preflight_spec_conformant = true;
+
+  // #ifdef OHOS_LOGGER_REPORT
+  [EnableIf=ohos_logger_report]
+  bool is_strict_log_mode = true;
+  // #endif OHOS_LOGGER_REPORT
 };
 
 struct NetworkConditions {

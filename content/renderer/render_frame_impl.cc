@@ -257,6 +257,12 @@
 #include "cef/libcef/renderer/javascript/oh_gin_javascript_bridge_dispatcher.h"
 #endif
 
+#ifdef OHOS_LOGGER_REPORT
+#include "content/public/common/content_switches.h"
+#include "base/command_line.h"
+#include "url/ohos/log_utils.h"
+#endif
+
 using base::Time;
 using blink::ContextMenuData;
 using blink::WebContentDecryptionModule;
@@ -3715,6 +3721,20 @@ void RenderFrameImpl::DidCommitNavigation(
   if (IsMainFrame()) {
     LOG(WARNING) << "event_message: page load start, routing_id: "
                  << routing_id_ << ", url: ***";
+#ifdef OHOS_LOGGER_REPORT
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            switches::kForBrowser)) {
+      bool is_strict_log_mode = true;
+      if (GetWebView()) {
+        is_strict_log_mode = GetWebView()->IsStrictLogMode();
+      }
+      if (!is_strict_log_mode) {
+        LOG(URL) << "event_message: page load start, routing_id: "
+                 << routing_id_ << ", url: "
+                 << url::LogUtils::ConvertUrl(document_loader->GetUrl().GetString().Utf8());
+      }
+    }
+#endif
   }
 #endif
 
@@ -3968,6 +3988,24 @@ void RenderFrameImpl::DidDispatchDOMContentLoadedEvent() {
                  << routing_id_ << ", url: ***";
   }
 #endif
+#if defined(OHOS_LOGGER_REPORT)
+  if (IsMainFrame()) {
+    LOG_FEEDBACK(WARNING) << "event_message: content load finished, routing_id: "
+                          << routing_id_ << ", url: ***";
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            switches::kForBrowser)) {
+      bool is_strict_log_mode = true;
+      if (GetWebView()) {
+        is_strict_log_mode = GetWebView()->IsStrictLogMode();
+      }
+      if (!is_strict_log_mode) {
+        LOG(URL) << "event_message: content load finished, routing_id: "
+                 << routing_id_ << ", url: "
+                 << url::LogUtils::ConvertUrl(GetLoadingUrl().spec());
+      }
+    }
+  }
+#endif  // OHOS_LOGGER_REPORT
 
   // Check whether we have new encoding name.
   UpdateEncoding(frame_, frame_->View()->PageEncoding().Utf8());
@@ -3991,6 +4029,20 @@ void RenderFrameImpl::DidHandleOnloadEvents() {
   if (IsMainFrame()) {
     LOG(WARNING) << "event_message: page load finished, routing_id: "
                  << routing_id_ << ", url: ***";
+#ifdef OHOS_LOGGER_REPORT
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            switches::kForBrowser)) {
+      bool is_strict_log_mode = true;
+      if (GetWebView()) {
+        is_strict_log_mode = GetWebView()->IsStrictLogMode();
+      }
+      if (!is_strict_log_mode) {
+        LOG(URL) << "event_message: page load finished, routing_id: "
+                 << routing_id_ << ", url: " 
+                 << url::LogUtils::ConvertUrl(GetLoadingUrl().spec());
+      }
+    }
+#endif
   }
 #endif
 }

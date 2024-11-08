@@ -482,6 +482,10 @@ class NET_EXPORT HostCache {
   // Creates a default cache.
   static std::unique_ptr<HostCache> CreateDefaultCache();
 
+#ifdef OHOS_LOGGER_REPORT
+  std::vector<IPEndPoint> LookupByHost(url::SchemeHostPort destination);
+#endif  // OHOS_LOGGER_REPORT
+
  private:
   FRIEND_TEST_ALL_PREFIXES(HostCacheTest, NoCache);
 

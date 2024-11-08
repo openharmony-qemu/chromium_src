@@ -1254,6 +1254,32 @@ bool HostCache::HasActivePin(const Entry& entry) {
          entry.network_changes() == network_changes();
 }
 
+#ifdef OHOS_LOGGER_REPORT
+std::vector<IPEndPoint> HostCache::LookupByHost(url::SchemeHostPort destination) {
+  if (!IsValidHostname(destination.host())) {
+    return std::vector<IPEndPoint>();
+  }
+
+  DnsQueryType query_type = DnsQueryType::UNSPECIFIED;
+  HostResolverFlags flags = HOST_RESOLVER_DEFAULT_FAMILY_SET_DUE_TO_NO_IPV6;
+  HostResolverSource source = HostResolverSource::ANY;
+  Key key(destination, query_type, flags, source, NetworkAnonymizationKey());
+  const std::pair<const HostCache::Key, HostCache::Entry>* cache_result =
+      Lookup(key, base::TimeTicks::Now(), true);
+  if (!cache_result || !cache_result->second.ip_endpoints() ||
+      cache_result->second.ip_endpoints()->empty()) {
+    key.host_resolver_flags = 0;
+    const std::pair<const HostCache::Key, HostCache::Entry>* cache_result_new =
+        Lookup(key, base::TimeTicks::Now(), true);
+    if (!cache_result_new || !cache_result_new->second.ip_endpoints() ||
+        cache_result_new->second.ip_endpoints()->empty()) {
+      return std::vector<IPEndPoint>();
+    }
+    return *(cache_result_new->second.ip_endpoints());
+  }
+  return *(cache_result->second.ip_endpoints());
+}
+#endif  // OHOS_LOGGER_REPORT
 }  // namespace net
 
 // Debug logging support

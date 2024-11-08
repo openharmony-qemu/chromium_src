@@ -39,6 +39,12 @@
 #include "net/url_request/url_request_context.h"
 #endif
 
+#ifdef OHOS_LOGGER_REPORT
+#include "url/ohos/log_utils.h"
+#include "content/public/common/content_switches.h"
+#include "base/command_line.h"
+#endif
+
 namespace network {
 
 namespace {
@@ -159,6 +165,12 @@ int NetworkServiceNetworkDelegate::OnHeadersReceived(
       original_response_headers->response_code() >= 400) {
     LOG(INFO) << "INFO: resource: ***"
               << " error code: " << original_response_headers->response_code();
+#ifdef OHOS_LOGGER_REPORT
+    if (!network_context_->IsStrictLogMode()) {
+      LOG(URL) << "resource : " << url::LogUtils::ConvertUrl(request->url().spec())
+               << " error code: " << original_response_headers->response_code();
+    }
+#endif
   }
 #endif
 
@@ -197,6 +209,22 @@ void NetworkServiceNetworkDelegate::RecordErrorInfo(net::URLRequest* request,
        << ", duration_time(ms) " << duration_time.InMilliseconds();
   LOG(INFO) << "final url: *** "
             << ostr.str();
+#ifdef OHOS_LOGGER_REPORT
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+                  ::switches::kForBrowser)) {
+    if (!network_context_->IsStrictLogMode()) {
+      std::string url_info = request->url().spec();
+      const size_t url_print_len = 1024;
+      if (url_info.length() > url_print_len) {
+        url_info = url_info.substr(0, url_print_len);
+        url_info.append("...");
+      }
+      LOG_FEEDBACK(INFO) << "final url: *** " << ostr.str();
+      LOG(URL) << "final url " << url::LogUtils::ConvertUrl(url_info) << ostr.str();
+    }
+  }
+#endif
+
 }
 
 int32_t NetworkServiceNetworkDelegate::GetDownStreamThroughputKbps() {

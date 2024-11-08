@@ -2716,13 +2716,13 @@ void RenderWidgetHostImpl::CreateOverlay(const SkBitmap& bitmap,
   RenderViewHostDelegateView* view = delegate_->GetDelegateView();
   float scale = GetScaleFactorForView(GetView());
   gfx::ImageSkia image = gfx::ImageSkia::CreateFromBitmap(bitmap, scale);
-  view->CreateOverlay(image, image_rect, touch_point, GetScreenRect());
+  view->CreateOverlay(image, image_rect, touch_point);
 }
 
-gfx::Rect RenderWidgetHostImpl::GetScreenRect() {
-  gfx::Rect screen_rect;
-  blink_frame_widget_->GetScreenRect(&screen_rect);
-  return screen_rect;
+gfx::Rect RenderWidgetHostImpl::GetImageRect() {
+  gfx::Rect image_rect;
+  blink_frame_widget_->GetImageRect(&image_rect);
+  return image_rect;
 }
 
 void RenderWidgetHostImpl::OnTextSelected(bool flag) {

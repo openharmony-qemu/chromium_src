@@ -379,7 +379,8 @@ ALWAYS_INLINE void ShimAlignedFree(void* address, void* context) {
 }  // extern "C"
 
 #if !BUILDFLAG(IS_WIN) && \
-    !(BUILDFLAG(IS_APPLE) && !BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC))
+    !(BUILDFLAG(IS_APPLE) && !BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC)) && \
+    !BUILDFLAG(IS_OHOS)
 // Cpp symbols (new / delete) should always be routed through the shim layer
 // except on Windows and macOS (except for PartitionAlloc-Everywhere) where the
 // malloc intercept is deep enough that it also catches the cpp calls.

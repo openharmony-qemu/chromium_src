@@ -2057,6 +2057,12 @@ void RenderWidgetHostImpl::DragTargetDragOver(
     base::OnceCallback<void(ui::mojom::DragOperation)> callback) {
   // TODO(https://crbug.com/1102769): Replace with a for_frame() check.
   if (blink_frame_widget_) {
+#if defined(OHOS_BUGFIX_CRASH)
+    if (!blink_frame_widget_.internal_state()){
+      LOG(ERROR) << "render widget internal is empty when drag over";
+      return;
+    }
+#endif
     blink_frame_widget_->DragTargetDragOver(
         ConvertWindowPointToViewport(client_point), screen_point,
         operations_allowed, key_modifiers,

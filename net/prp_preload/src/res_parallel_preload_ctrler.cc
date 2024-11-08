@@ -12,14 +12,16 @@ static constexpr base::TimeDelta MAX_CHECK_FLUSH_TO_DISK_TIME = base::Seconds(5)
 
 namespace ohos_prp_preload {
 ResParallelPreloadCtrler::ResParallelPreloadCtrler(const std::string& url,
+  const net::NetworkAnonymizationKey& networkAnonymizationKey,
   base::WeakPtr<net::URLRequestContext> url_request_context,
   const scoped_refptr<base::SingleThreadTaskRunner>& sth_task_runner,
   const scoped_refptr<base::SingleThreadTaskRunner>& net_task_runner,
   const scoped_refptr<DiskCacheBackendFactory>& disk_cache_backend_factory,
   const RPPCtrlerTimeoutCB& timeout_cb) :
-    url_(url), sth_task_runner_(sth_task_runner), timeout_cb_(timeout_cb) {
+    url_(url), networkAnonymizationKey_(networkAnonymizationKey),
+    sth_task_runner_(sth_task_runner), timeout_cb_(timeout_cb) {
   res_req_info_updater_ = base::WrapRefCounted(new (std::nothrow) ResRequestInfoUpdater(
-    url_, sth_task_runner, disk_cache_backend_factory,
+    url_, networkAnonymizationKey_, sth_task_runner, disk_cache_backend_factory,
     base::BindRepeating(&ResParallelPreloadCtrler::OnResRequestInfoList, weak_factory_.GetWeakPtr())));
   if (res_req_info_updater_ == nullptr) {
     LOG(ERROR) << "PRPPreload.ResParallelPreloadCtrler::ResParallelPreloadCtrler new ResRequestInfoUpdater failed";
@@ -78,12 +80,14 @@ void ResParallelPreloadCtrler::DoUpdateResRequestInfo(const std::shared_ptr<PRRe
   res_req_info_updater_->UpdateResRequestInfo(info);
 }
 
-void ResParallelPreloadCtrler::OnResRequestInfoList(const std::list<std::shared_ptr<PRRequestInfo>>& res_req_info_list) {
+void ResParallelPreloadCtrler::OnResRequestInfoList(
+  const std::list<std::shared_ptr<PRRequestInfo>>& res_req_info_list,
+  const net::NetworkAnonymizationKey& networkAnonymizationKey) {
   if ((res_req_info_updater_ == nullptr) || (res_preload_scheduler_ == nullptr)) {
     return;
   }
-  res_preload_scheduler_->PreloadSchedule(res_req_info_list);
-}
+  res_preload_scheduler_->PreloadSchedule(res_req_info_list, networkAnonymizationKey);
+  }
 
 void ResParallelPreloadCtrler::OnTimeout() {
   DoStop();

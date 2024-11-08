@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// Based on gpu_mojo_media_client_android.cc originally written by
+// Copyright 2021 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 #include "media/mojo/services/gpu_mojo_media_client.h"
 
 #include "base/memory/ptr_util.h"

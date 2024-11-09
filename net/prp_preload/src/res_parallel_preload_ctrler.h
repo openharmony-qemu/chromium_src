@@ -34,7 +34,7 @@ class ResParallelPreloadCtrler : public base::RefCounted<ResParallelPreloadCtrle
   void OnTimeout();
 
   std::string url_;
-  const net::NetworkAnonymizationKey& networkAnonymizationKey_,
+  const net::NetworkAnonymizationKey& networkAnonymizationKey_;
   scoped_refptr<base::SingleThreadTaskRunner> sth_task_runner_;
   scoped_refptr<ResRequestInfoUpdater> res_req_info_updater_;
   scoped_refptr<ResPreloadScheduler> res_preload_scheduler_;

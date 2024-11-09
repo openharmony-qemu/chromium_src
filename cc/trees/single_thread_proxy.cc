@@ -931,6 +931,25 @@ void SingleThreadProxy::ClearHistory() {
     scheduler_on_impl_thread_->ClearHistory();
 }
 
+void SingleThreadProxy::SetHasActiveThreadedScroll(bool is_scrolling) {
+  // Some tests use `SingleThreadProxy` however they are setup with
+  // `LayerTreeSettings.single_thread_proxy_scheduler` true. Meaning we are in
+  // a mixed state. This is done to support `CompositeImmediatelyForTest`.
+  //
+  // We do not want to run the checks while in this state. We only create
+  // `scheduler_on_impl_thread_` when properly created with
+  // `single_thread_proxy_scheduler`.
+  if (scheduler_on_impl_thread_) {
+    NOTREACHED();
+  }
+}
+void SingleThreadProxy::SetWaitingForScrollEvent(
+    bool waiting_for_scroll_event) {
+  if (scheduler_on_impl_thread_) {
+    NOTREACHED();
+  }
+}
+
 size_t SingleThreadProxy::CommitDurationSampleCountForTesting() const {
   DCHECK(scheduler_on_impl_thread_);
   return scheduler_on_impl_thread_
@@ -996,6 +1015,10 @@ void SingleThreadProxy::ScheduledActionSendBeginMainFrame(
 void SingleThreadProxy::FrameIntervalUpdated(base::TimeDelta interval) {
   DebugScopedSetImplThread impl(task_runner_provider_);
   single_thread_client_->FrameIntervalUpdated(interval);
+}
+
+void SingleThreadProxy::OnBeginImplFrameDeadline() {
+  host_impl_->OnBeginImplFrameDeadline();
 }
 
 void SingleThreadProxy::SendBeginMainFrameNotExpectedSoon() {

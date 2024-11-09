@@ -337,6 +337,14 @@ void ProxyImpl::FrameSinksToThrottleUpdated(
   NOTREACHED();
 }
 
+void ProxyImpl::SetHasActiveThreadedScroll(bool is_scrolling) {
+  scheduler_->SetIsScrolling(is_scrolling);
+}
+
+void ProxyImpl::SetWaitingForScrollEvent(bool waiting_for_scroll_event) {
+  scheduler_->SetWaitingForScrollEvent(waiting_for_scroll_event);
+}
+
 void ProxyImpl::NotifyReadyToCommitOnImpl(
     CompletionEvent* completion_event,
     std::unique_ptr<CommitState> commit_state,
@@ -925,6 +933,11 @@ void ProxyImpl::ScheduledActionBeginMainFrameNotExpectedUntil(
   MainThreadTaskRunner()->PostTask(
       FROM_HERE, base::BindOnce(&ProxyMain::BeginMainFrameNotExpectedUntil,
                                 proxy_main_weak_ptr_, time));
+}
+
+void ProxyImpl::OnBeginImplFrameDeadline() {
+  DCHECK(IsImplThread());
+  host_impl_->OnBeginImplFrameDeadline();
 }
 
 DrawResult ProxyImpl::DrawInternal(bool forced_draw) {

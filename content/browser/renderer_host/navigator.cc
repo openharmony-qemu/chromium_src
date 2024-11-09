@@ -745,8 +745,8 @@ void Navigator::Navigate(std::unique_ptr<NavigationRequest> request,
     ->GetStoragePartition()->GetNetworkContext();
   if (network_context != nullptr && frame_tree_node->current_frame_host() != nullptr) {
     const net::NetworkAnonymizationKey networkAnonymizationKey = 
-      GetNetworkAnonymizationKey(frame_tree_node, navigation_request.get());
-    network_context->StartMainPage(params.url.possibly_invalid_spec(), networkAnonymizationKey,
+      GetNetworkAnonymizationKey(frame_tree_node, request.get());
+    network_context->StartMainPage(request->common_params().url().spec(), networkAnonymizationKey,
       reinterpret_cast<int64_t>(this));
   }
 #endif
@@ -1127,8 +1127,8 @@ void Navigator::OnBeginNavigation(
     ->GetStoragePartition()->GetNetworkContext();
   if (network_context != nullptr && frame_tree_node->current_frame_host() != nullptr) {
     const net::NetworkAnonymizationKey networkAnonymizationKey = 
-      GetNetworkAnonymizationKey(frame_tree_node, navigation_request.get());
-    network_context->StartMainPage(params.url.possibly_invalid_spec(), networkAnonymizationKey,
+      GetNetworkAnonymizationKey(frame_tree_node, navigation_request);
+    network_context->StartMainPage(navigation_request->common_params().url().spec(), networkAnonymizationKey,
       reinterpret_cast<int64_t>(this));
   }
 #endif

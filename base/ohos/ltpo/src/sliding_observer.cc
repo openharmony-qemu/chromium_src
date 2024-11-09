@@ -41,11 +41,10 @@ namespace base {
 namespace ohos {
 using OHOS::NWeb::FrameRateSetting;
 SlidingObserver::~SlidingObserver() {
-  if (is_ltpo_app_) {
-    if (strategy_ == LTPOStrategy::APS_FLING) {
-      OHOS::NWeb::OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetScene("WEB_LIST_FLING",
-        STOP_ALL_FLING_LTPO);
-    }
+  if (strategy_ == LTPOStrategy::APS_FLING) {
+    OHOS::NWeb::OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetScene(
+      "WEB_LIST_FLING",
+      STOP_ALL_FLING_LTPO);
   }
 }
 
@@ -64,16 +63,6 @@ SlidingObserver::SlidingObserver() {
 
   if (strategy_ == LTPOStrategy::APS_FLING) {
     is_inited_ = true;
-    std::string bund_name = "";
-    const base::CommandLine& command_line =
-      *base::CommandLine::ForCurrentProcess();
-    if (command_line.HasSwitch(switches::kBundleName)) {
-      bund_name = base::CommandLine::ForCurrentProcess()->
-          GetSwitchValueASCII(switches::kBundleName);
-    }
-    is_ltpo_app_ = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
-      .IsLTPODynamicApp(bund_name);
-    LOG(DEBUG) << "bundle name is: " << bund_name << ", is_ltpo_app_: " << is_ltpo_app_;
     return;
   }
 
@@ -81,19 +70,22 @@ SlidingObserver::SlidingObserver() {
                   .GetLTPOConfig("scroll");
   off_screen_setting_ = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
                   .GetLTPOConfig("fling");
-  virtual_pixel_ratio_ = ui::GestureConfiguration::GetInstance()->virtual_pixel_ratio();
 
   auto display_manager_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateDisplayMgrAdapter();
   if (!display_manager_adapter) {
+    LOG(ERROR) << "display_manager_adapter is nullptr";
     return;
   }
   std::shared_ptr<OHOS::NWeb::DisplayAdapter> display =
       display_manager_adapter->GetDefaultDisplay();
   if (!display) {
+    LOG(ERROR) << "display is nullptr";
     return;
   }
   dpi_ = display->GetDpi();
+  virtual_pixel_ratio_ = display->GetVirtualPixelRatio();
   if (dpi_ <= 0  || virtual_pixel_ratio_ <= 0) {
+    LOG(ERROR) << "dpi_: " << dpi_ << ", virtual_pixel_ratio_: " << virtual_pixel_ratio_;
     return;
   }
   is_inited_ = true;
@@ -119,8 +111,9 @@ int32_t SlidingObserver::StopSliding() {
     return -1;
   }
   if (strategy_ == LTPOStrategy::APS_FLING) {
-    if (is_ltpo_app_ && is_off_screen_) {
-      OHOS::NWeb::OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetScene("WEB_LIST_FLING",
+    if (is_off_screen_) {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetScene(
+        "WEB_LIST_FLING",
         STOP_FLING_LTPO);
     }
   }
@@ -142,10 +135,9 @@ void SlidingObserver::StartFling() {
     return;
   }
   if (strategy_ == LTPOStrategy::APS_FLING) {
-     if (is_ltpo_app_) {
-       OHOS::NWeb::OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetScene("WEB_LIST_FLING",
-         START_FLING_LTPO);
-     }
+    OHOS::NWeb::OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetScene(
+      "WEB_LIST_FLING",
+      START_FLING_LTPO);
   }
   is_off_screen_ = true;
 }
@@ -222,7 +214,12 @@ void SlidingObserver::OnDisplayInfoChange() {
   if (!display) {
     return;
   }
-  dpi_ = display->GetDpi();
+  auto dpi = display->GetDpi();
+  auto ratio = display->GetVirtualPixelRatio();
+  if (dpi_ > 0 || ratio > 0) {
+    dpi_ = dpi;
+    virtual_pixel_ratio_ = ratio;
+  }
 }
 }  // namespace ohos
 }  // namespace base

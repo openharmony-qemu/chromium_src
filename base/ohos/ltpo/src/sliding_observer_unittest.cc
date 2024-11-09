@@ -32,36 +32,6 @@ public:
   ~SlidingObserverTest() = default;
 };
 
-TEST(SlidingObserverTest, SlidingObserver001) {
-  SlidingObserver observer;
-  observer.~SlidingObserver();
-  EXPECT_EQ(observer.is_pc_, observer.is_ltpo_app_);
-}
-
-TEST(SlidingObserverTest, SlidingObserver002) {
-  SlidingObserver observer;
-  observer.is_pc_ = true;
-  observer.~SlidingObserver();
-  EXPECT_EQ(true, observer.is_pc_);
-  EXPECT_EQ(false, observer.is_ltpo_app_);
-}
-
-TEST(SlidingObserverTest, SlidingObserver003) {
-  SlidingObserver observer;
-  observer.is_ltpo_app_ = true;
-  observer.~SlidingObserver();
-  EXPECT_EQ(false, observer.is_pc_);
-  EXPECT_EQ(true, observer.is_ltpo_app_);
-}
-
-TEST(SlidingObserverTest, SlidingObserver004) {
-  SlidingObserver observer;
-  observer.is_pc_ = true;
-  observer.is_ltpo_app_ = true;
-  observer.~SlidingObserver();
-  EXPECT_EQ(observer.is_pc_, observer.is_ltpo_app_);
-}
-
 TEST(SlidingObserverTest, GetVelocity001) {
   SlidingObserver observer;
   static base::NoDestructor<SlidingObserver> instance;
@@ -193,8 +163,8 @@ TEST(SlidingObserverTest, Init05) {
 TEST(SlidingObserverTest, Init06) {
   SlidingObserver observer;
   auto type_ = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                                .GetSystemPropertiesInstance().GetProductDeviceType();  
-  EXPECT_EQ(type_,OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE);                  
+                                .GetSystemPropertiesInstance().GetProductDeviceType();
+  EXPECT_EQ(type_, OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE);
   observer.Init();
   EXPECT_TRUE(observer.is_inited_);
 }
@@ -202,11 +172,10 @@ TEST(SlidingObserverTest, Init06) {
 TEST(SlidingObserverTest, Init007) {
   SlidingObserver observer;
   auto type_ = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                                .GetSystemPropertiesInstance().GetProductDeviceType();  
-  EXPECT_EQ(type_,OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE);                  
+                                .GetSystemPropertiesInstance().GetProductDeviceType();
+  EXPECT_EQ(type_, OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE);
   observer.Init();
   EXPECT_TRUE(observer.is_inited_);
-  EXPECT_FALSE(observer.is_ltpo_app_);
 }
 
 TEST(SlidingObserverTest, StartSliding01) {
@@ -298,7 +267,7 @@ TEST(SlidingObserverTest, StartSliding08) {
 
 TEST(SlidingObserverTest, StartSliding09) {
   SlidingObserver observer;
-  observer.is_pc_ = true;
+  observer.strategy_ = LTPOStrategy::APS_FLING;
   observer.StartSliding();
   EXPECT_FALSE(observer.is_sliding_);
   EXPECT_FALSE(observer.is_off_screen_);
@@ -403,8 +372,7 @@ TEST(SlidingObserverTest, StopSlidingTest08) {
 
 TEST(SlidingObserverTest, StopSlidingTest09) {
   SlidingObserver observer;
-  observer.is_pc_ = true;
-  observer.is_ltpo_app_ = false;
+  observer.strategy_ = LTPOStrategy::APS_FLING;
   observer.is_off_screen_ = false;
   int32_t result = observer.StopSliding();
   EXPECT_FALSE(observer.is_off_screen_);
@@ -413,8 +381,7 @@ TEST(SlidingObserverTest, StopSlidingTest09) {
 
 TEST(SlidingObserverTest, StopSlidingTest10) {
   SlidingObserver observer;
-  observer.is_pc_ = true;
-  observer.is_ltpo_app_ = true;
+  observer.strategy_ = LTPOStrategy::APS_FLING;
   observer.is_off_screen_ = true;
   int32_t result = observer.StopSliding();
   EXPECT_FALSE(observer.is_off_screen_);
@@ -503,22 +470,14 @@ TEST(SlidingObserverTest, StartFlingTest08) {
 
 TEST(SlidingObserverTest, StartFlingTest09) {
   SlidingObserver observer;
-  observer.is_pc_ = true;
-  observer.is_ltpo_app_ = false;
   observer.StartFling();
   EXPECT_TRUE(observer.is_off_screen_);
-  EXPECT_FALSE(observer.is_ltpo_app_);
-  EXPECT_TRUE(observer.is_pc_);
 }
 
 TEST(SlidingObserverTest, StartFlingTest10) {
   SlidingObserver observer;
-  observer.is_pc_ = true;
-  observer.is_ltpo_app_ = true;
   observer.StartFling();
   EXPECT_TRUE(observer.is_off_screen_);
-  EXPECT_TRUE(observer.is_ltpo_app_);
-  EXPECT_TRUE(observer.is_pc_);
 }
 
 TEST(SlidingObserverTest, OnScrollUpdateTest01) {
@@ -640,42 +599,42 @@ TEST(SlidingObserverTest, OnFlingUpdateTest04) {
 TEST(SlidingObserverTest, OnScrollUpdateTest001) {
   SlidingObserver observer;
   observer.is_sliding_ = false, observer.is_off_screen_ = true,
-  observer.is_pc_ = true;
+  observer.strategy_ = LTPOStrategy::APS_FLING;
   EXPECT_EQ(observer.OnScrollUpdate(20, 20), -1);
 }
 
 TEST(SlidingObserverTest, OnScrollUpdateTest002) {
   SlidingObserver observer;
   observer.is_sliding_ = false, observer.is_off_screen_ = false,
-  observer.is_pc_ = false;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
   EXPECT_EQ(observer.OnScrollUpdate(20, 20), -1);
 }
 
 TEST(SlidingObserverTest, OnScrollUpdateTest003) {
   SlidingObserver observer;
   observer.is_sliding_ = false, observer.is_off_screen_ = true,
-  observer.is_pc_ = false;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
   EXPECT_EQ(observer.OnScrollUpdate(20, 20), -1);
 }
 
 TEST(SlidingObserverTest, OnScrollUpdateTest004) {
   SlidingObserver observer;
   observer.is_sliding_ = true, observer.is_off_screen_ = true,
-  observer.is_pc_ = false;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
   EXPECT_EQ(observer.OnScrollUpdate(20, 20), -1);
 }
 
 TEST(SlidingObserverTest, OnScrollUpdateTest005) {
   SlidingObserver observer;
   observer.is_sliding_ = true, observer.is_off_screen_ = false,
-  observer.is_pc_ = true;
+  observer.strategy_ = LTPOStrategy::APS_FLING;
   EXPECT_EQ(observer.OnScrollUpdate(20, 20), -1);
 }
 
 TEST(SlidingObserverTest, OnScrollUpdateTest006) {
   SlidingObserver observer;
   observer.is_sliding_ = true, observer.is_off_screen_ = false,
-  observer.is_pc_ = false;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
   observer.sliding_frame_rate_ = 120;
   std::vector<OHOS::NWeb::FrameRateSetting> settings = {
       {0.0f, 3000.0f, 30},
@@ -687,7 +646,7 @@ TEST(SlidingObserverTest, OnScrollUpdateTest006) {
 TEST(SlidingObserverTest, OnScrollUpdateTest007) {
   SlidingObserver observer;
   observer.is_sliding_ = true, observer.is_off_screen_ = false,
-  observer.is_pc_ = false;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
   observer.sliding_frame_rate_ = 120;
   std::vector<OHOS::NWeb::FrameRateSetting> settings = {
       {0.0f, 3000.0f, 30},
@@ -699,7 +658,7 @@ TEST(SlidingObserverTest, OnScrollUpdateTest007) {
 TEST(SlidingObserverTest, OnScrollUpdateTest008) {
   SlidingObserver observer;
   observer.is_sliding_ = true, observer.is_off_screen_ = false,
-  observer.is_pc_ = false;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
   observer.sliding_frame_rate_ = 60;
   std::vector<OHOS::NWeb::FrameRateSetting> settings = {
       {0.0f, 3000.0f, 60},
@@ -711,42 +670,42 @@ TEST(SlidingObserverTest, OnScrollUpdateTest008) {
 TEST(SlidingObserverTest, OnFlingUpdateTest001) {
   SlidingObserver observer;
   observer.is_sliding_ = false, observer.is_off_screen_ = false,
-  observer.is_pc_ = true;
+  observer.strategy_ = LTPOStrategy::APS_FLING;
   EXPECT_EQ(observer.OnFlingUpdate(20, 20), -1);
 }
 
 TEST(SlidingObserverTest, OnFlingUpdateTest002) {
   SlidingObserver observer;
   observer.is_sliding_ = false, observer.is_off_screen_ = true,
-  observer.is_pc_ = false;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
   EXPECT_EQ(observer.OnFlingUpdate(20, 20), -1);
 }
 
 TEST(SlidingObserverTest, OnFlingUpdateTest003) {
   SlidingObserver observer;
   observer.is_sliding_ = false, observer.is_off_screen_ = false,
-  observer.is_pc_ = false;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
   EXPECT_EQ(observer.OnFlingUpdate(20, 20), -1);
 }
 
 TEST(SlidingObserverTest, OnFlingUpdateTest004) {
   SlidingObserver observer;
   observer.is_sliding_ = true, observer.is_off_screen_ = false,
-  observer.is_pc_ = false;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
   EXPECT_EQ(observer.OnFlingUpdate(20, 20), -1);
 }
 
 TEST(SlidingObserverTest, OnFlingUpdateTest005) {
   SlidingObserver observer;
   observer.is_sliding_ = true, observer.is_off_screen_ = true,
-  observer.is_pc_ = true;
+  observer.strategy_ = LTPOStrategy::APS_FLING;
   EXPECT_EQ(observer.OnFlingUpdate(20, 20), -1);
 }
 
 TEST(SlidingObserverTest, OnFlingUpdateTest006) {
   SlidingObserver observer;
   observer.is_sliding_ = true, observer.is_off_screen_ = true,
-  observer.is_pc_ = false;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
   observer.sliding_frame_rate_ = 120;
   std::vector<OHOS::NWeb::FrameRateSetting> settings = {
       {0.0f, 3000.0f, 30},
@@ -758,7 +717,7 @@ TEST(SlidingObserverTest, OnFlingUpdateTest006) {
 TEST(SlidingObserverTest, OnFlingUpdateTest007) {
   SlidingObserver observer;
   observer.is_sliding_ = true, observer.is_off_screen_ = true,
-  observer.is_pc_ = false;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
   observer.sliding_frame_rate_ = 120;
   std::vector<OHOS::NWeb::FrameRateSetting> settings = {
       {0.0f, 3000.0f, 30},
@@ -770,7 +729,7 @@ TEST(SlidingObserverTest, OnFlingUpdateTest007) {
 TEST(SlidingObserverTest, OnFlingUpdateTest008) {
   SlidingObserver observer;
   observer.is_sliding_ = true, observer.is_off_screen_ = true,
-  observer.is_pc_ = false;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
   observer.sliding_frame_rate_ = 60;
   std::vector<OHOS::NWeb::FrameRateSetting> settings = {
       {0.0f, 3000.0f, 60},

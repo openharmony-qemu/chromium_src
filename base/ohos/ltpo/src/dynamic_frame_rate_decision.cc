@@ -50,6 +50,7 @@ DynamicFrameRateDecision::~DynamicFrameRateDecision()
 void DynamicFrameRateDecision::Init()
 {
   if (!curent_task_runner_) {
+    LOG(INFO) << "start init curent_task_runner_";
     curent_task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
   }
 }
@@ -62,9 +63,6 @@ DynamicFrameRateDecision& DynamicFrameRateDecision::GetInstance()
 
 void DynamicFrameRateDecision::ReportSlidingFrameRate(int32_t frame_rate)
 {
-  if (strategy_ != LTPOStrategy::HGM_FLING && strategy_ != LTPOStrategy::ALL) {
-    return;
-  }
   if (!curent_task_runner_) {
     return;
   }
@@ -75,6 +73,9 @@ void DynamicFrameRateDecision::ReportSlidingFrameRate(int32_t frame_rate)
 
 void DynamicFrameRateDecision::ReportSlidingFrameRateImpl(int32_t frame_rate)
 {
+  if (strategy_ != LTPOStrategy::HGM_FLING && strategy_ != LTPOStrategy::ALL) {
+    return;
+  }
   if (sliding_frame_rate_ == frame_rate) {
     return;
   }
@@ -85,9 +86,6 @@ void DynamicFrameRateDecision::ReportSlidingFrameRateImpl(int32_t frame_rate)
 
 void DynamicFrameRateDecision::ReportVideoFrameRate(int32_t frame_rate)
 {
-  if (strategy_ != LTPOStrategy::ALL) {
-    return;
-  }
   if (!curent_task_runner_) {
     return;
   }
@@ -98,6 +96,9 @@ void DynamicFrameRateDecision::ReportVideoFrameRate(int32_t frame_rate)
 
 void DynamicFrameRateDecision::ReportVideoFrameRateImpl(int32_t frame_rate)
 {
+  if (strategy_ != LTPOStrategy::ALL) {
+    return;
+  }
   if (video_frame_rate_ == frame_rate) {
     return;
   }
@@ -170,9 +171,6 @@ void DynamicFrameRateDecision::SetVsyncEnabledImpl(bool enabled)
 
 void DynamicFrameRateDecision::SetHasTouchPoint(bool has_touch_point)
 {
-  if (strategy_ != LTPOStrategy::ALL) {
-    return;
-  }
   if (!curent_task_runner_) {
     return;
   }
@@ -183,6 +181,9 @@ void DynamicFrameRateDecision::SetHasTouchPoint(bool has_touch_point)
 
 void DynamicFrameRateDecision::SetHasTouchPointImpl(bool has_touch_point)
 {
+  if (strategy_ != LTPOStrategy::ALL) {
+    return;
+  }
   if (has_touch_point_ == has_touch_point) {
     return;
   }
@@ -217,10 +218,9 @@ void DynamicFrameRateDecision::SetLTPOStrategyImpl(int32_t strategy)
 
 void DynamicFrameRateDecision::SetVisible(int nweb_id, bool visible)
 {
-  if (strategy_ != LTPOStrategy::HGM_FLING && strategy_ != LTPOStrategy::ALL) {
-    return;
-  }
   if (!curent_task_runner_) {
+    LOG(WARNING) << "curent_task_runner_ is nullptr, try to start init";
+    Init();
     return;
   }
   curent_task_runner_->PostTask(FROM_HERE, base::BindOnce(

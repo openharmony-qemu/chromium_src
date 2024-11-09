@@ -44,6 +44,7 @@
 #include "content/public/common/content_switches.h"
 #include "gpu/ipc/common/nweb_native_window_tracker.h"
 #include "res_sched_client_adapter.h"
+#include "base/ohos/ltpo/include/dynamic_frame_rate_decision.h"
 #endif
 
 namespace viz {
@@ -107,6 +108,10 @@ std::unique_ptr<VizCompositorThreadType> CreateAndStartCompositorThread() {
             ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentRealPid(),
             thread->GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
   }
+  thread->task_runner()->PostTask(
+      FROM_HERE,
+      base::BindOnce(&base::ohos::DynamicFrameRateDecision::Init,
+          base::Unretained(&base::ohos::DynamicFrameRateDecision::GetInstance())));
 #endif
 
   return thread;

@@ -60,8 +60,6 @@ private:
   int64_t current_timestamp_ {-1};
   int32_t sliding_frame_rate_ {0};
 
-  bool is_pc_ {false};
-  bool is_ltpo_app_ {false};
   bool is_web_list_fling_ {false};
   LTPOStrategy strategy_ {LTPOStrategy::DISABLED};
 };

@@ -2850,9 +2850,9 @@ int HttpCache::Transaction::BeginCacheValidation() {
     if (freshnessLifetimes.is_zero()) {
       DCHECK(freshnessLifetimes.is_positive());
       preload_info_->set_freshness_life_times((response_.response_time + freshnessLifetimes -
-            response_.headers->GetCurrentAge(response_->request_time,
-                                             response_->response_time,
-                                             response_->response_time)).ToInternalValue());
+            response_.headers->GetCurrentAge(response_.request_time,
+                                             response_.response_time,
+                                             response_.response_time)).ToInternalValue());
     }
     preload_info_->set_cache_type(ohos_prp_preload::PRRequestCacheType::NEGOTIATION_CACHE);
     UpdateValidatorsInfo(*response_.headers);

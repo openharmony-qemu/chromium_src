@@ -92,6 +92,9 @@ class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
   bool IsIgnoredEvent(std::map<int64_t, int64_t>& lastEventFiredTimes,
                        const int64_t& accessibilityId);
 
+  bool IsFrequentlyEvent(std::map<int64_t, int64_t>& lastEventFiredTimes,
+                         int64_t intervalMs, const int64_t& accessibilityId);
+
   int64_t lastHoverId_ = -1;
 
   int64_t accessibilityFocusId_ = -1;
@@ -99,6 +102,7 @@ class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
   std::map<int64_t, int64_t> lastScrollEventFiredTimes_;
   std::map<int64_t, int64_t> lastStateUpdateEventFiredTimes_;
   std::map<int64_t, int64_t> lastContentUpdateEventFiredTimes_;
+  std::map<int64_t, int64_t> lastHoverEnterEventFiredTimes_;
 
   std::shared_ptr<OHOS::NWeb::NWebAccessibilityEventCallback>
       accessibilityEventListener_;

@@ -136,6 +136,7 @@
 #if BUILDFLAG(IS_OHOS)
 #include "base/ohos/dynamic_frame_loss_monitor.h"
 #include "gpu/ipc/common/gpu_surface_id_tracker.h"
+#include "gpu/ipc/common/nweb_native_window_tracker.h"
 #include "base/ohos/ltpo/include/sliding_observer.h"
 #include "base/ohos/ltpo/include/dynamic_frame_rate_decision.h"
 #if BUILDFLAG(ENABLE_HEIF_DECODER)
@@ -1104,6 +1105,12 @@ void GpuServiceImpl::GetSurfaceId(int32_t native_embed_id, GetSurfaceIdCallback 
   std::string res = gpu::GpuSurfaceIdTracker::Get()->AcquireNativeImageSurfaceId(native_embed_id);
   LOG(DEBUG) << "GetSurfaceId native_embed_id: " << native_embed_id << ", getSurfaceId: " << res;
   std::move(callback).Run(res);
+}
+
+void GpuServiceImpl::DestroyNativeWindow(uint32_t native_window_id)
+{
+  LOG(DEBUG) << "DestroyNativeWindow native_window_id: " << native_window_id;
+  NWebNativeWindowTracker::GetInstance()->DestroyNativeWindow(native_window_id);
 }
 #endif
 

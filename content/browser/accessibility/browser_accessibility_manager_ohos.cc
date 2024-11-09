@@ -272,9 +272,8 @@ void BrowserAccessibilityManagerOHOS::FireGeneratedEvent(
     case ui::AXEventGenerator::Event::SCROLL_VERTICAL_POSITION_CHANGED:
       if (GetRootAccessibilityId() == accessibilityId) {
         SendAccessibilityEvent(accessibilityId, OHOS::NWeb::AccessibilityEventType::PAGE_CHANGE);
-      } else {
-        SendAccessibilityEvent(accessibilityId, OHOS::NWeb::AccessibilityEventType::SCROLL_END);
       }
+      SendAccessibilityEvent(accessibilityId, OHOS::NWeb::AccessibilityEventType::SCROLL_END);
       break;
     case ui::AXEventGenerator::Event::OTHER_ATTRIBUTE_CHANGED:
       if (GetRootAccessibilityId() == accessibilityId) {

@@ -462,6 +462,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
                                   bool isAccessibilityFocus) override;
   std::shared_ptr<NWebAccessibilityNodeInfo>
   GetAccessibilityNodeInfoById(int64_t accessibilityId) override;
+  bool GetAccessibilityVisible(int64_t accessibilityId) override;
   std::shared_ptr<NWebAccessibilityNodeInfo>
   GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
                                       int32_t direction) override;
@@ -626,6 +627,8 @@ void SetSurfaceDensity(const double& density) override;
     std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
     const content::BrowserAccessibilityOHOS* node) const;
   float GetViewPointHeight() const;
+  int32_t GetArgumentByKey(const std::map<std::string, std::string>& actionArguments,
+    const std::string& checkKey) const;
 
 #if defined(OHOS_EX_NAVIGATION)
   int InsertBackForwardEntry(int index, const std::string& url) override;

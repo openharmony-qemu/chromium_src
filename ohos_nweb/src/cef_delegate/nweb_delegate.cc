@@ -3327,11 +3327,26 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId, uint32_t action,
       accessibilityManager->SetFocus(*accessibilityManager->GetBrowserAccessibilityRoot());
       break;
     case AceAction::ACTION_SCROLL_FORWARD:
-      node->Scroll(ax::mojom::Action::kScrollForward);
+    case AceAction::ACTION_SCROLL_BACKWARD: {
+      int32_t argument = GetArgumentByKey(actionArguments,"scrolltype");
+      AccessibilityScrollType scrollType;
+      switch (argument) {
+        case 0:
+          scrollType = AccessibilityScrollType::SCROLL_HALF;
+          break;
+        case 1:
+          scrollType = AccessibilityScrollType::SCROLL_FULL;
+          break;
+        default:
+          scrollType = AccessibilityScrollType::SCROLL_DEFAULT;
+          break;
+      }
+      node->Scroll(aceAction == AceAction::ACTION_SCROLL_FORWARD ?
+        content::ScrollDirection::FORWARD : content::ScrollDirection::BACKWARD,
+        scrollType != AccessibilityScrollType::SCROLL_HALF);
+      node->manager()->LoadInlineTextBoxes(*node);
       break;
-    case AceAction::ACTION_SCROLL_BACKWARD:
-      node->Scroll(ax::mojom::Action::kScrollBackward);
-      break;
+    }
     case AceAction::ACTION_COPY:
       accessibilityManager->Copy();
       break;
@@ -3509,6 +3524,32 @@ NWebDelegate::GetAccessibilityNodeInfoById(int64_t accessibilityId) {
     return nullptr;
   }
   return PopulateAccessibilityNodeInfo(node);
+}
+
+bool NWebDelegate::GetAccessibilityVisible(int64_t accessibilityId) {
+  auto* accessibilityManager = GetAccessibilityManager();
+  if (accessibilityManager == nullptr) {
+    return true;
+  }
+  auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
+  if (rootNode == nullptr) {
+    LOG(ERROR) << "GetAccessibilityVisible rootNode is not found";
+    return true;
+  }
+  content::BrowserAccessibilityOHOS* node = nullptr;
+  if (accessibilityId < 0) {
+    node = static_cast<content::BrowserAccessibilityOHOS*>(rootNode);
+  } else {
+    node = content::BrowserAccessibilityOHOS::GetFromAccessibilityId(
+        accessibilityId);
+  }
+  if (node == nullptr) {
+    LOG(ERROR) << "GetAccessibilityNodeInfoById node is not found";
+    return true;
+  }
+  ui::AXOffscreenResult offscreen_result = ui::AXOffscreenResult::kOnscreen;
+  node->GetUnclippedRootFrameBoundsRect(&offscreen_result);
+  return offscreen_result == ui::AXOffscreenResult::kOnscreen;
 }
 
 std::shared_ptr<NWebAccessibilityNodeInfo>
@@ -4104,4 +4145,17 @@ void NWebDelegate::SetSurfaceDensity(const double& density) {
   }
 }
 #endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+
+int32_t NWebDelegate::GetArgumentByKey(const std::map<std::string, std::string>& actionArguments,
+  const std::string& checkKey) const
+{
+    auto iter = actionArguments.find(checkKey);
+    int32_t argument = -1; // -1:default value
+    if (iter != actionArguments.end()) {
+        std::stringstream strArguments;
+        strArguments << iter->second;
+        strArguments >> argument;
+    }
+    return argument;
+}
 }  // namespace OHOS::NWeb

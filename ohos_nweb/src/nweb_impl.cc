@@ -2817,6 +2817,13 @@ NWebImpl::GetAccessibilityNodeInfoById(int64_t accessibilityId) {
   return nullptr;
 }
 
+bool NWebImpl::GetAccessibilityVisible(int64_t accessibilityId) {
+  if (nweb_delegate_ != nullptr) {
+    return nweb_delegate_->GetAccessibilityVisible(accessibilityId);
+  }
+  return true;
+}
+
 std::shared_ptr<NWebAccessibilityNodeInfo>
 NWebImpl::GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
                                               int32_t direction) {

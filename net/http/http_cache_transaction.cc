@@ -2020,7 +2020,7 @@ int HttpCache::Transaction::DoSuccessfulSendRequest() {
                                   freshnessLifetimes -
                                   new_response->headers
                                     ->GetCurrentAge(new_response->request_time,
-                                                    new_response->response->time,
+                                                    new_response->response_time,
                                                     new_response->response_time)).ToInternalValue());
       preload_info_->set_cache_type(ohos_prp_preload::PRRequestCacheType::NEGOTIATION_CACHE);
     }
@@ -2851,11 +2851,11 @@ int HttpCache::Transaction::BeginCacheValidation() {
       DCHECK(freshnessLifetimes.is_positive());
       preload_info_->set_freshness_life_times((response_.response_time + freshnessLifetimes -
             response_.headers->GetCurrentAge(response_->request_time,
-                                             response_->response->time,
+                                             response_->response_time,
                                              response_->response_time)).ToInternalValue());
     }
     preload_info_->set_cache_type(ohos_prp_preload::PRRequestCacheType::NEGOTIATION_CACHE);
-    UpdateValidatorsInfo(*response_->headers);
+    UpdateValidatorsInfo(*response_.headers);
   }
 #endif
 
@@ -4308,8 +4308,8 @@ void HttpCache::Transaction::UpdateCacheInfo(const HttpResponseInfo& response) {
 #endif
 
 #if BUILDFLAG(IS_OHOS)
-void HttpCache::Transaction::UpdateValidatorsInfo(const HttpResponseHeader& headers) {
-  if (preload_info_ = nullptr) {
+void HttpCache::Transaction::UpdateValidatorsInfo(const HttpResponseHeaders& headers) {
+  if (preload_info_ == nullptr) {
     return;
   }
   std::string e_tag;

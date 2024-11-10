@@ -3104,7 +3104,7 @@ void StoragePartitionImpl::InitNetworkContext() {
 #if BUILDFLAG(IS_OHOS)
     base::FilePath cachePath;
     base::PathService::Get(base::DIR_CACHE, &cachePath);
-    network::mojom::NetworkContext* network_context = GetContextClient()->browser()->GetSystemNetworkContext();
+    network::mojom::NetworkContext* network_context = GetContentClient()->browser()->GetSystemNetworkContext();
     if (network_context != nullptr) {
       network_context->InitPRParallelPreloadMgr();
     }

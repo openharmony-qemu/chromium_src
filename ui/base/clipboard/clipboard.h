@@ -179,6 +179,10 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) Clipboard
   // Clear the clipboard data.
   virtual void Clear(ClipboardBuffer buffer) = 0;
 
+#if defined(OHOS_CLIPBOARD)
+  virtual void OnClipboardDataGuard(bool status) {}
+#endif
+
   // TODO(huangdarwin): Rename to ReadAvailablePortableFormatNames().
   // Includes all sanitized types.
   // Also, includes pickled types by splitting them out of the pickled format.

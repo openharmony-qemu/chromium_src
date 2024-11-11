@@ -50,6 +50,7 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ClipboardOHOS : public Clipboard {
                          ClipboardBuffer buffer,
                          const DataTransferEndpoint* data_dst) const override;
   void Clear(ClipboardBuffer buffer) override;
+  void OnClipboardDataGuard(bool status) override;
   void ReadAvailableTypes(ClipboardBuffer buffer,
                           const DataTransferEndpoint* data_dst,
                           std::vector<std::u16string>* types) const override;

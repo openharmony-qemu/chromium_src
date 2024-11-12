@@ -24,6 +24,7 @@
 #include "ui/gfx/color_space.h"
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/gpu_fence_handle.h"
+#include "ui/gl/android/egl_fence_utils.h"
 #include "ui/gl/ohos/native_buffer_utils.h"
 
 
@@ -209,7 +210,7 @@ class SameLayerNativeBufferImageBacking::GLTextureVideoImageRepresentation
     TRACE_EVENT0("gpu",
                  "SameLayerNativeBufferImageBacking::"
                  "GLTextureVideoImageRepresentation::EndAccess");
-    base::ScopedFD sync_fd = gl::ohos::CreateEglFenceAndExportFd();
+    base::ScopedFD sync_fd = gl::CreateEglFenceAndExportFd();
 
     scoped_native_buffer_->SetReadFence(std::move(sync_fd));
     base::AutoLockMaybe auto_lock(GetDrDcLockPtr());

@@ -149,6 +149,9 @@ void OHOSCaptureDelegate::OnBufferAvailable(
   }
   int32_t rotation = roration_info->GetRotation();
   if (client_ != nullptr) {
+#if defined(OHOS_WEBRTC)
+    capture_format_.stride = buffer->GetStride();
+#endif    
     client_->OnIncomingCapturedData(
         buffer->GetBufferAddr(), buffer->GetSize(), capture_format_,
         gfx::ColorSpace(), rotation, roration_info->GetIsFlipY() /* flip_y */,

@@ -1964,6 +1964,7 @@ void NWebImpl::GetScrollOffset(float* offset_x, float* offset_y) {
 #if defined(OHOS_INPUT_EVENTS)
 void NWebImpl::ScrollTo(float x, float y) {
   if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "ScrollTo nweb_delegate_ is nullptr";
     return;
   }
   return nweb_delegate_->ScrollTo(x, y);
@@ -1971,6 +1972,7 @@ void NWebImpl::ScrollTo(float x, float y) {
 
 void NWebImpl::ScrollBy(float delta_x, float delta_y) {
   if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "ScrollBy nweb_delegate_ is nullptr";
     return;
   }
   return nweb_delegate_->ScrollBy(delta_x, delta_y);
@@ -1978,6 +1980,7 @@ void NWebImpl::ScrollBy(float delta_x, float delta_y) {
 
 void NWebImpl::ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) {
   if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "ScrollByRefScreen nweb_delegate_ is nullptr";
     return;
   }
   return nweb_delegate_->ScrollByRefScreen(delta_x, delta_y, vx, vy);
@@ -1985,6 +1988,7 @@ void NWebImpl::ScrollByRefScreen(float delta_x, float delta_y, float vx, float v
 
 void NWebImpl::SlideScroll(float vx, float vy) {
   if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "SlideScroll nweb_delegate_ is nullptr";
     return;
   }
   return nweb_delegate_->SlideScroll(vx, vy);
@@ -1993,6 +1997,7 @@ void NWebImpl::SlideScroll(float vx, float vy) {
 bool NWebImpl::WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
                                const std::vector<int32_t>& pressedCodes) {
   if (input_handler_ == nullptr) {
+    LOG(ERROR) << "WebSendKeyEvent input_handler_ is nullptr";
     return false;
   }
   return input_handler_->WebSendKeyEvent(keyCode, keyAction, pressedCodes);
@@ -2004,6 +2009,7 @@ void NWebImpl::WebSendMouseWheelEvent(double x,
                                       double deltaY,
                                       const std::vector<int32_t>& pressedCodes) {
   if (input_handler_ == nullptr) {
+    LOG(ERROR) << "WebSendMouseWheelEvent input_handler_ is nullptr";
     return;
   }
 
@@ -2024,6 +2030,7 @@ void NWebImpl::WebSendTouchpadFlingEvent(double x,
                                          double vy,
                                          const std::vector<int32_t>& pressedCodes) {
   if (input_handler_ == nullptr) {
+    LOG(ERROR) << "WebSendTouchpadFlingEvent input_handler_ is nullptr";
     return;
   }
 
@@ -2032,6 +2039,7 @@ void NWebImpl::WebSendTouchpadFlingEvent(double x,
 
 void NWebImpl::ScrollToWithAnime(float x, float y, int32_t duration) {
   if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "ScrollToWithAnime nweb_delegate_ is nullptr";
     return;
   }
   return nweb_delegate_->ScrollToWithAnime(x, y, duration);
@@ -2039,6 +2047,7 @@ void NWebImpl::ScrollToWithAnime(float x, float y, int32_t duration) {
 
 void NWebImpl::ScrollByWithAnime(float delta_x, float delta_y, int32_t duration) {
   if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "ScrollByWithAnime nweb_delegate_ is nullptr";
     return;
   }
   return nweb_delegate_->ScrollByWithAnime(delta_x, delta_y, duration);
@@ -2046,6 +2055,7 @@ void NWebImpl::ScrollByWithAnime(float delta_x, float delta_y, int32_t duration)
 
 bool NWebImpl::ScrollByWithResult(float delta_x, float delta_y) {
   if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "ScrollByWithResult nweb_delegate_ is nullptr";
     return false;
   }
   return nweb_delegate_->ScrollByWithResult(delta_x, delta_y);

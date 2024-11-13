@@ -1597,6 +1597,14 @@ void NWebDelegate::OnContinue() {
   is_onPause_ = false;
 }
 
+void NWebDelegate::WebComponentsBlur() {
+  LOG(INFO) << "NWebDelegate::WebComponentsBlur, nweb_id = " << nweb_id_;
+  if (!GetBrowser().get()) {
+    return;
+  }
+  GetBrowser()->GetHost()->SetFocusOnWeb();
+}
+
 void NWebDelegate::OnOccluded() {
   LOG(INFO) << "NWebDelegate::OnOccluded, nweb_id = " << nweb_id_;
   TRACE_EVENT1("base", "NWebDelegate::OnOccluded", "nweb id = ", nweb_id_);

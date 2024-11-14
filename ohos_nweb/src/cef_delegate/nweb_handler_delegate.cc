@@ -2724,10 +2724,16 @@ bool NWebHandlerDelegate::RunContextMenu(
   if (!nweb_handler_ || !render_handler_) {
     return false;
   }
-  LOG(INFO) << "NWebHandlerDelegate RunContextMenu ";
+  int32_t view_port_height = 0;
+#if defined(OHOS_EX_TOPCONTROLS)
+  if (browser && browser->GetHost()) {
+    view_port_height = browser->GetHost()->GetShrinkViewportHeight();
+  }
+#endif
+  LOG(INFO) << "NWebHandlerDelegate RunContextMenu view_port_height:" << view_port_height;
   std::shared_ptr<NWebContextMenuParams> nweb_param =
       std::make_shared<NWebContextMenuParamsImpl>(
-          params, render_handler_->GetVirtualPixelRatio());
+          params, render_handler_->GetVirtualPixelRatio(), view_port_height);
   std::shared_ptr<NWebContextMenuCallback> nweb_callback =
       std::make_shared<NWebContextMenuCallbackImpl>(callback);
   if (input_method_client_) {

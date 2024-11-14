@@ -145,6 +145,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void InitialScale(float scale) const override;
   void OnPause() override;
   void OnContinue() override;
+  void WebComponentsBlur() override;
   void OnOccluded() override;
   void OnUnoccluded() override;
   void SetEnableLowerFrameRate(bool enabled) override;

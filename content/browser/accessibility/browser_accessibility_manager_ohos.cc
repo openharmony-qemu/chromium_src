@@ -50,8 +50,10 @@ void BrowserAccessibilityManagerOHOS::HandleFocusChanged(
     int64_t accessibilityId) {
   SendAccessibilityEvent(accessibilityId,
                          OHOS::NWeb::AccessibilityEventType::FOCUS);
-  SendAccessibilityEvent(accessibilityId,
-                         OHOS::NWeb::AccessibilityEventType::REQUEST_FOCUS);
+  if (accessibilityFocusId_ != accessibilityId) {
+    SendAccessibilityEvent(accessibilityId,
+                           OHOS::NWeb::AccessibilityEventType::REQUEST_FOCUS);
+  }
 }
 
 std::shared_ptr<OHOS::NWeb::NWebAccessibilityEventCallback>
@@ -308,8 +310,10 @@ void BrowserAccessibilityManagerOHOS::FireGeneratedEvent(
       break;
     case ui::AXEventGenerator::Event::SELECTED_CHANGED:
       if (nodeOHOS->IsSelected()) {
-        MoveAccessibilityFocusToId(accessibilityId);
         SendAccessibilityEvent(accessibilityId, OHOS::NWeb::AccessibilityEventType::SELECTED);
+        if (accessibilityId != accessibilityFocusId_) {
+          SendAccessibilityEvent(accessibilityId, OHOS::NWeb::AccessibilityEventType::REQUEST_FOCUS);
+        }
       }
       break;
     case ui::AXEventGenerator::Event::DOCUMENT_SELECTION_CHANGED: {

@@ -1087,10 +1087,7 @@ bool BrowserAccessibilityOHOS::IsIgnoredContainer() const {
   if (IsClickable() && !HasClickableChildren()) {
     return false;
   }
-  if (!PlatformChildCount()) {
-    return false;
-  }
-  if (PlatformChildCount() && HasOnlyDirectTextChildren()) {
+  if (!PlatformChildCount() || HasOnlyDirectTextChildren()) {
     return false;
   }
   return true;

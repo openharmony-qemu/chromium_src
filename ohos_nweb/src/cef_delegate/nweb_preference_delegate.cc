@@ -165,6 +165,7 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
   browser_settings.hide_vertical_scrollbars =
       !IsVerticalScrollBarAccess() ? STATE_ENABLED : STATE_DISABLED;
   browser_settings.scroll_enabled = setting_scroll_enabled_;
+  browser_settings.blur_enabled = GetBlurEnable();
 #endif  // defined(OHOS_INPUT_EVENTS)
 #if BUILDFLAG(IS_OHOS)
   browser_settings.native_embed_mode_enabled =
@@ -696,6 +697,15 @@ void NWebPreferenceDelegate::SetScrollable(bool enable) {
     return;
   }
   browser_->GetHost()->SetScrollable(enable, static_cast<int32_t>(WebScrollType::UNKNOWN));
+}
+
+void NWebPreferenceDelegate::SetBlurOnKeyboardHideMode(int enable) {
+  blur_enabled_ = enable;
+  WebPreferencesChanged();
+}
+
+int NWebPreferenceDelegate::GetBlurEnable() {
+  return blur_enabled_;
 }
 
 void NWebPreferenceDelegate::SetScrollable(bool enable, int32_t scrollType) {

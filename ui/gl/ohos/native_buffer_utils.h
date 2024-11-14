@@ -28,8 +28,6 @@ GL_EXPORT int GetEGLClientBufferFromNativeBuffer(void* ohos_native_buffer,
 
 GL_EXPORT void FreeEGLClientBuffer(EGLClientBuffer egl_client_buffer);
 
-GL_EXPORT base::ScopedFD CreateEglFenceAndExportFd();
-
 GL_EXPORT bool InsertEglFenceAndWait(base::ScopedFD acquire_fence_fd);
 
 }  // namespace ohos

@@ -27,6 +27,11 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionMenuClient {
   virtual ~TouchSelectionMenuClient();
 
   virtual bool IsCommandIdEnabled(int command_id) const = 0;
+#if defined(OHOS_CLIPBOARD)
+  virtual bool IsCommandIdEnabled(int command_id, int32_t edit_flags) const {
+    return IsCommandIdEnabled(command_id);
+  }
+#endif
   virtual void ExecuteCommand(int command_id, int event_flags) = 0;
 
   // Called when the quick menu needs to run a context menu. Depending on the

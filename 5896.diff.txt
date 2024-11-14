@@ -1,0 +1,119 @@
+diff --git a/content/renderer/media/media_factory.cc b/content/renderer/media/media_factory.cc
+index b4ad2263b90ad031039d79053197aad603c972e7..e3e0c833539bd72233192e5305d289a47ee30f61 100644
+--- a/content/renderer/media/media_factory.cc
++++ b/content/renderer/media/media_factory.cc
+@@ -135,6 +135,7 @@
+ #endif  // BUILDFLAG(IS_WIN)
+ 
+ #if BUILDFLAG(IS_OHOS)
++#include "base/ohos/sys_info_utils.h"
+ #include "content/renderer/media/ohos/native_renderer_client_factory.h"
+ #include "content/renderer/media/ohos/native_texture_wrapper_impl.h"
+ #include "content/renderer/media/ohos/ohos_media_player_renderer_client_factory.h"
+@@ -546,11 +547,14 @@ blink::WebNativeBridge* MediaFactory::CreateWebNativeBridge(
+   }
+ 
+   auto factory_selector = std::make_unique<media::RendererFactorySelector>();
++  gl::ohos::TextureOwnerMode texture_owner_mode = base::ohos::IsEmulator() ? 
++      gl::ohos::TextureOwnerMode::kNativeImageTexture :
++      gl::ohos::TextureOwnerMode::kSameLayerNativeBuffer;
+   auto native_factory = std::make_unique<NativeRendererClientFactory>(
+       render_thread->compositor_task_runner(),
+       base::BindRepeating(
+-          &NativeTextureWrapperImpl::Create, false /*enable_texture_copy*/,
+-          gl::ohos::TextureOwnerMode::kSameLayerNativeBuffer,
++          &NativeTextureWrapperImpl::Create, base::ohos::IsEmulator() /*enable_texture_copy*/,
++          texture_owner_mode,
+           render_thread->GetNativeTexureFactory(),
+           render_frame_->GetTaskRunner(blink::TaskType::kInternalMedia)));
+ 
+diff --git a/gpu/command_buffer/service/ohos/same_layer_native_buffer_image_backing.cc b/gpu/command_buffer/service/ohos/same_layer_native_buffer_image_backing.cc
+index c2c7743af0ee658c7c08d2e0436a74f8b732b265..88930607cc7d0855d83155fc4ef8849ca7f7c25d 100644
+--- a/gpu/command_buffer/service/ohos/same_layer_native_buffer_image_backing.cc
++++ b/gpu/command_buffer/service/ohos/same_layer_native_buffer_image_backing.cc
+@@ -24,6 +24,7 @@
+ #include "ui/gfx/color_space.h"
+ #include "ui/gfx/geometry/size.h"
+ #include "ui/gfx/gpu_fence_handle.h"
++#include "ui/gl/android/egl_fence_utils.h"
+ #include "ui/gl/ohos/native_buffer_utils.h"
+ 
+ 
+@@ -209,7 +210,7 @@ class SameLayerNativeBufferImageBacking::GLTextureVideoImageRepresentation
+     TRACE_EVENT0("gpu",
+                  "SameLayerNativeBufferImageBacking::"
+                  "GLTextureVideoImageRepresentation::EndAccess");
+-    base::ScopedFD sync_fd = gl::ohos::CreateEglFenceAndExportFd();
++    base::ScopedFD sync_fd = gl::CreateEglFenceAndExportFd();
+ 
+     scoped_native_buffer_->SetReadFence(std::move(sync_fd));
+     base::AutoLockMaybe auto_lock(GetDrDcLockPtr());
+diff --git a/ui/gl/BUILD.gn b/ui/gl/BUILD.gn
+index e45ee7c3ecd8379a71a8fe35f076ef63ac7ab81d..ce4812f68f6b87ef6ea4cbf25a4249424884333d 100644
+--- a/ui/gl/BUILD.gn
++++ b/ui/gl/BUILD.gn
+@@ -241,6 +241,13 @@ component("gl") {
+       ]
+     }
+ 
++    if (is_ohos) {
++      sources += [
++        "android/egl_fence_utils.cc",
++        "android/egl_fence_utils.h",
++      ]
++    }
++
+     if (is_android) {
+       sources += [
+         "android/egl_fence_utils.cc",
+diff --git a/ui/gl/ohos/native_buffer_utils.cc b/ui/gl/ohos/native_buffer_utils.cc
+index 81dc0694f6262f05478a24c355776fd8c0a49a89..d2f22f9350336be9fb98661217b972c0e8486fb6 100644
+--- a/ui/gl/ohos/native_buffer_utils.cc
++++ b/ui/gl/ohos/native_buffer_utils.cc
+@@ -40,33 +40,6 @@ void FreeEGLClientBuffer(EGLClientBuffer egl_client_buffer) {
+       .FreeEGLBuffer(egl_client_buffer);
+ }
+ 
+-base::ScopedFD CreateEglFenceAndExportFd() {
+-  if (!gl::GLSurfaceEGL::GetGLDisplayEGL()
+-           ->IsAndroidNativeFenceSyncSupported()) {
+-    LOG(ERROR) << "Unable to support native fence!";
+-    return base::ScopedFD();
+-  }
+-
+-  EGLSyncKHR sync = EGL_NO_SYNC_KHR;
+-  EGLDisplay display = eglGetCurrentDisplay();
+-  if (display != EGL_NO_DISPLAY) {
+-    sync = eglCreateSyncKHR(display, EGL_SYNC_NATIVE_FENCE_ANDROID, nullptr);
+-  }
+-
+-  if (sync == EGL_NO_SYNC_KHR) {
+-    LOG(ERROR) << "Unable to get EGLSyncKHR.";
+-    return base::ScopedFD();
+-  }
+-
+-  const EGLint sync_fd = eglDupNativeFenceFDANDROID(display, sync);
+-  if (sync_fd < 0) {
+-    LOG(ERROR) << "Unable to get a gpu fence.";
+-    return base::ScopedFD();
+-  }
+-
+-  return base::ScopedFD(sync_fd);
+-}
+-
+ bool InsertEglFenceAndWait(base::ScopedFD acquire_fence_fd) {
+   int fence_fd = acquire_fence_fd.release();
+   // If fence_fd is -1, we do not need synchronization fence and image is ready
+diff --git a/ui/gl/ohos/native_buffer_utils.h b/ui/gl/ohos/native_buffer_utils.h
+index 6b23dd1e96fc7187057f37693f8071c4ee994c57..9d4b5e5d5c7596a6fae0af359e7cf9838c8291a9 100644
+--- a/ui/gl/ohos/native_buffer_utils.h
++++ b/ui/gl/ohos/native_buffer_utils.h
+@@ -28,8 +28,6 @@ GL_EXPORT int GetEGLClientBufferFromNativeBuffer(void* ohos_native_buffer,
+ 
+ GL_EXPORT void FreeEGLClientBuffer(EGLClientBuffer egl_client_buffer);
+ 
+-GL_EXPORT base::ScopedFD CreateEglFenceAndExportFd();
+-
+ GL_EXPORT bool InsertEglFenceAndWait(base::ScopedFD acquire_fence_fd);
+ 
+ }  // namespace ohos

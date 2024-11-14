@@ -215,8 +215,12 @@ bool NWebEventHandler::CreateCefKeyEvent(CefKeyEvent& keyEvent,
     LOG(ERROR) << "WebSendKeyEvent keyCode conversion failed";
     return false;
   }
-  keyEvent.type = static_cast<cef_key_event_type_t>(
-      NWebInputDelegate::CefConverter("keyaction", keyAction));
+  int type = NWebInputDelegate::CefConverter("keyaction", keyAction);
+  if (type == -1) {
+    LOG(ERROR) << "keyaction conversion failed, keyAction:" << keyAction;
+    return false;
+  }
+  keyEvent.type = static_cast<cef_key_event_type_t>(type);
   keyEvent.modifiers = modifiers;
   LOG(DEBUG) << "WebSendKeyEvent modifiers = " << keyEvent.modifiers;
   keyEvent.is_system_key = false;

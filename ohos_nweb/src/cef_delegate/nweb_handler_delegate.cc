@@ -1118,6 +1118,7 @@ void NWebHandlerDelegate::OnLoadStart(CefRefPtr<CefBrowser> browser,
 
   if (nweb_handler_ != nullptr) {
     nweb_handler_->OnPageLoadBegin(url.ToString());
+    browser->GetHost()->OnTextSelected(false);
   }
 
   if (onLoadStartCallback_) {
@@ -1264,6 +1265,9 @@ void NWebHandlerDelegate::OnNavigationEntryCommitted(
             details->GetCurrentURL().ToString(), type, details->IsMainFrame(),
             details->IsSameDocument(), details->DidReplaceEntry());
     nweb_handler_->OnNavigationEntryCommitted(web_details);
+    if (main_browser_ && main_browser_->GetHost()) {
+      main_browser_->GetHost()->OnTextSelected(false);
+    }
   }
 }
 

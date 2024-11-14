@@ -381,7 +381,10 @@ void InitialWebEngineArgs(
   web_engine_args.emplace_back("--zygote-cmd-prefix=/system/bin/web_render");
   web_engine_args.emplace_back("--remote-debugging-port=9222");
 #if defined(OHOS_SCROLLBAR)
-  float ratio = GetVirtualPixelRatioForScrollbar();
+  static float ratio = -1.0f;
+  if (ratio < 0) {
+    ratio = GetVirtualPixelRatioForScrollbar();
+  }
   if (ratio > 0) {
     web_engine_args.emplace_back("--virtual-pixel-ratio=" + std::to_string(ratio));
   }

@@ -564,8 +564,10 @@ void GpuServiceImpl::InitializeWithHost(
     // The global callback is reset from the dtor. So Unretained() here is safe.
     // Note that the callback can be called from any thread. Consequently, the
     // callback cannot use a WeakPtr.
+#if !BUILDFLAG(IS_OHOS)
     GetLogMessageManager()->InstallPostInitializeLogHandler(base::BindRepeating(
         &GpuServiceImpl::RecordLogMessage, base::Unretained(this)));
+#endif
   }
 
   if (!sync_point_manager) {

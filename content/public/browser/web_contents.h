@@ -1548,6 +1548,9 @@ class WebContents : public PageNavigator,
 #ifdef OHOS_DRAG_DROP
   virtual void ClearContextMenu() = 0;
 #endif //OHOS_DRAG_DROP
+#ifdef OHOS_CLIPBOARD
+  virtual int32_t GetEditFlags() { return 0; }
+#endif
  private:
   // This interface should only be implemented inside content.
   friend class WebContentsImpl;

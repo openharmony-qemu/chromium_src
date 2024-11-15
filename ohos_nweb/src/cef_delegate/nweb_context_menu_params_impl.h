@@ -25,7 +25,7 @@ class NWebContextMenuParamsImpl : public NWebContextMenuParams {
  public:
   explicit NWebContextMenuParamsImpl(
     CefRefPtr<CefContextMenuParams> params,
-    float virutal_device_ratio);
+    float virutal_device_ratio, int32_t view_port_height);
   int32_t GetXCoord() override;
   int32_t GetYCoord() override;
   int32_t GetContextMenuTypeFlags() override;
@@ -46,6 +46,7 @@ class NWebContextMenuParamsImpl : public NWebContextMenuParams {
  private:
   CefRefPtr<CefContextMenuParams> params_;
   float virutal_device_ratio_ = 1.0;
+  int32_t view_port_height_ = 0;
 };
 
 class NWebQuickMenuParamsImpl : public NWebQuickMenuParams {

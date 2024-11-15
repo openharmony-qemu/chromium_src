@@ -23,6 +23,11 @@ void PreconnectRunner::PreconnectSocket(
     return;
   }
   net::NetworkAnonymizationKey key = networkAnonymizationKey;
+  if (base::ohos::IsMobileDevice() == false ) {
+    key = net::NetworkAnonymizationKey::CreateSameSite(
+        net::SchemefulSite(original_url));
+  }
+
   GURL url = GetHSTSRedirect(original_url, url_request_context);
 
   std::string user_agent;
@@ -43,9 +48,8 @@ void PreconnectRunner::PreconnectSocket(
     request_info.load_flags = net::LOAD_DO_NOT_SAVE_COOKIES;
     request_info.privacy_mode = net::PRIVACY_MODE_ENABLED;
   }
-  if (base::ohos::IsMobileDevice() == false ) {
-    request_info.network_anonymization_key = key;
-  }
+  
+  request_info.network_anonymization_key = key;
 
   net::HttpTransactionFactory* factory =
       url_request_context->http_transaction_factory();

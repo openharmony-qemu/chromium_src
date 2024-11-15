@@ -283,6 +283,10 @@ class AutofillAgent : public content::RenderFrameObserver,
   void OnTextFieldDidChange(const blink::WebInputElement& element);
   void DidChangeScrollOffsetImpl(const blink::WebFormControlElement& element);
 
+#if defined(OHOS_AUTOFILL)
+  bool OhAutoFillDidChangeScrollOffset();
+#endif
+
   // Shows the autofill suggestions for |element|. This call is asynchronous
   // and may or may not lead to the showing of a suggestion popup (no popup is
   // shown if there are no available suggestions).
@@ -427,6 +431,7 @@ class AutofillAgent : public content::RenderFrameObserver,
   bool is_popup_created_by_focus_change_ = false;
   bool is_need_to_created_popup_ = false;
   base::TimeTicks created_popup_time_ = base::TimeTicks::Now();
+  base::OneShotTimer autofill_scroll_timer_;
 #endif
 
   // Timers for throttling handling of frequent events.

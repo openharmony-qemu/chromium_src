@@ -22,7 +22,7 @@ void PreconnectRunner::PreconnectSocket(
   if (url_request_context.get() == nullptr) {
     return;
   }
-  net::NetworkAnonymizationKey key = networkAnonymizationKey；
+  net::NetworkAnonymizationKey key = networkAnonymizationKey;
   GURL url = GetHSTSRedirect(original_url, url_request_context);
 
   std::string user_agent;

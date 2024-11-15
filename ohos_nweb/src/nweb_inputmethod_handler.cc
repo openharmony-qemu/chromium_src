@@ -679,7 +679,6 @@ void NWebInputMethodHandler::SetIMEStatusOnUI(bool status) {
     composing_text_.clear();
   }
   ime_shown_ = status;
-  isAttached_ =  status;
 }
 
 void NWebInputMethodHandler::WebBlurKeyboardHideOnUI() {

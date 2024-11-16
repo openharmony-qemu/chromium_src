@@ -637,6 +637,7 @@ void NWebDragDataImpl::ClearImageFileNames() {
     if (drag_data_->IsReadOnly()) {
       drag_data_->SetReadOnly(false);
       drag_data_->ClearFilenames();
+      drag_data_->ResetFileContents();
       drag_data_->SetReadOnly(true);
     } else {
       drag_data_->ClearFilenames();

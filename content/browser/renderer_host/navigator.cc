@@ -1126,7 +1126,7 @@ void Navigator::OnBeginNavigation(
   network::mojom::NetworkContext* network_context = frame_tree_node->current_frame_host()
     ->GetStoragePartition()->GetNetworkContext();
   if (network_context != nullptr) {
-    const net::NetworkAnonymizationKey networkAnonymizationKey = 
+    const net::NetworkAnonymizationKey networkAnonymizationKey =  
       GetNetworkAnonymizationKey(frame_tree_node, navigation_request);
     network_context->StartMainPage(navigation_request->common_params().url.spec(), networkAnonymizationKey,
       reinterpret_cast<int64_t>(this));

@@ -21,8 +21,6 @@ PRParallelPreloadMgr& PRParallelPreloadMgr::GetInstance() {
 bool PRParallelPreloadMgr::PRParallelPreloadEnabled() {
   static bool res = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetBoolParameter(
     "web.PRPPreload.enable", false);
-    // && OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetProductDeviceType() ==
-    //   OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE;
   return res;
 }
 

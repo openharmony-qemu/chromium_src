@@ -788,19 +788,13 @@ void NWebDelegate::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
   height_ = height;
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 
-  uint32_t content_height = 0;
-  uint32_t content_width = 0;
   if (render_handler_ != nullptr) {
     render_handler_->Resize(width, height);
-    content_height = render_handler_->GetContentHeight();
-    content_width = render_handler_->GetContentWidth();
   }
 
   auto browser = GetBrowser();
   if (browser != nullptr && browser->GetHost() != nullptr) {
-    // Trigger ScrollFocusedEditableNodeIntoView when the page content does not
-    // exceed one screen and the keyboard is hidden.
-    if (isKeyboard || (content_height <= height && content_width <= width)) {
+    if (isKeyboard) {
       browser->GetHost()->WasKeyboardResized();
     } else {
       browser->GetHost()->WasResized();

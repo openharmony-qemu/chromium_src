@@ -531,10 +531,16 @@ bool NativeThemeAura::SupportsNinePatch(Part part) const {
 
 gfx::Size NativeThemeAura::GetNinePatchCanvasSize(Part part) const {
   DCHECK(SupportsNinePatch(part));
+#ifdef OHOS_SCROLLBAR
   float ratio = base::ohos::GetPixelRatio();
   return gfx::Size(
-      (kOverlayScrollbarBorderPatchWidth * 2 + kOverlayScrollbarThumbWidthPressed) * ratio,
-      (kOverlayScrollbarBorderPatchWidth * 2 + kOverlayScrollbarThumbWidthPressed) * ratio);
+      (kOverlayScrollbarBorderPatchWidth * 2 + scrollbar_width_) * ratio,
+      (kOverlayScrollbarBorderPatchWidth * 2 + scrollbar_width_) * ratio);
+#else
+  return gfx::Size(
+      kOverlayScrollbarBorderPatchWidth * 2 + kOverlayScrollbarCenterPatchSize,
+      kOverlayScrollbarBorderPatchWidth * 2 + kOverlayScrollbarCenterPatchSize);
+#endif // OHOS_SCROLLBAR
 }
 
 gfx::Rect NativeThemeAura::GetNinePatchAperture(Part part) const {
@@ -542,13 +548,13 @@ gfx::Rect NativeThemeAura::GetNinePatchAperture(Part part) const {
 #ifdef OHOS_SCROLLBAR
   float ratio = base::ohos::GetPixelRatio();
   if (part == kScrollbarHorizontalThumb) {
-    return gfx::Rect(kOverlayScrollbarThumbWidthPressed * ratio / 2,
+    return gfx::Rect(scrollbar_width_ * ratio / 2,
                      kOverlayScrollbarBorderPatchWidth * ratio,
                      (int)ratio,
                      scrollbar_width_ * ratio);
   } else {
     return gfx::Rect(kOverlayScrollbarBorderPatchWidth* ratio,
-                     kOverlayScrollbarThumbWidthPressed * ratio / 2,
+                     scrollbar_width_ * ratio / 2,
                      scrollbar_width_ * ratio,
                      (int)ratio);
   }

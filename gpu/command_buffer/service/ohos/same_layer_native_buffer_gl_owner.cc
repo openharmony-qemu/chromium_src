@@ -16,7 +16,7 @@
 
 #include "gpu/command_buffer/service/ohos/same_layer_native_buffer_gl_owner.h"
 
-#include <stdint.h>
+#include <cstdint>
 
 #include "base/debug/alias.h"
 #include "base/debug/dump_without_crashing.h"

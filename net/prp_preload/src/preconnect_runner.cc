@@ -23,7 +23,7 @@ void PreconnectRunner::PreconnectSocket(
     return;
   }
   net::NetworkAnonymizationKey key = networkAnonymizationKey;
-  if (base::ohos::IsMobileDevice() == false ) {
+  if (base::ohos::IsMobileDevice() == true ) {
     key = net::NetworkAnonymizationKey::CreateSameSite(
         net::SchemefulSite(original_url));
   }

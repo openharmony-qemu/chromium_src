@@ -241,6 +241,13 @@ component("gl") {
       ]
     }
 
+    if (is_ohos) {
+      sources += [
+        "android/egl_fence_utils.cc",
+        "android/egl_fence_utils.h",
+      ]
+    }
+
     if (is_android) {
       sources += [
         "android/egl_fence_utils.cc",

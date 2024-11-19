@@ -1528,11 +1528,23 @@ RenderFrameHostManager::GetFrameHostForNavigation(
         CHECK(navigation_rfh->web_ui());
       }
 
+#if defined(OHOS_BUGFIX_CRASH)
+    // Maybe the speculative rfh has beed crash
+    if (speculative_render_frame_host_->IsRenderFrameLive()) {
+      CommitPending(std::move(speculative_render_frame_host_), nullptr,
+        request->browsing_context_group_swap().ShouldClearProxiesOnCommit());
+      request->SetAssociatedRFHType(
+        NavigationRequest::AssociatedRenderFrameHostType::CURRENT);
+    } else {
+      base::debug::DumpWithoutCrashing();
+    }
+#else
       CommitPending(
           std::move(speculative_render_frame_host_), nullptr,
           request->browsing_context_group_swap().ShouldClearProxiesOnCommit());
       request->SetAssociatedRFHType(
           NavigationRequest::AssociatedRenderFrameHostType::CURRENT);
+#endif
     }
   }
   DCHECK(navigation_rfh &&

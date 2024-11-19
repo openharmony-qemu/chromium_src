@@ -144,7 +144,7 @@ class NWebRenderHandler : public CefRenderHandler {
                             const TextInputInfo& text_input_info,
                             bool is_need_reset_listener,
                             const std::map<std::string, std::string>& attributesMap);
-  
+
   void HandleKeyboardDetach();
 #endif
 
@@ -228,14 +228,6 @@ class NWebRenderHandler : public CefRenderHandler {
 
   std::shared_ptr<NWebCustomKeyboardHandlerImpl> GetCustomKeyboardHandler() const {
     return custom_keyboard_handler_;
-  }
-
-  uint32_t GetContentHeight() const {
-    return content_height_;
-  }
-
-  uint32_t GetContentWidth() const {
-    return content_width_;
   }
 
   std::shared_ptr<NWebTouchHandleState> GetTouchHandleState(

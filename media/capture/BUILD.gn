@@ -284,9 +284,6 @@ component("capture_lib") {
       "video/ohos/video_capture_params_adapter_impl.h",
       "video/ohos/video_capture_params_adapter_impl.cc",
     ]
-    if (product_name == "rk3568") {
-      defines += [ "RK3568" ]
-    }
   }
 
   if (is_chromeos_ash) {

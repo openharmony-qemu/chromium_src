@@ -384,11 +384,7 @@ void VideoCaptureDeviceClient::OnIncomingCapturedData(
   if (libyuv::ConvertToI420(
           data, length, y_plane_data, yplane_stride, u_plane_data,
           uv_plane_stride, v_plane_data, uv_plane_stride, crop_x, crop_y,
-#if !defined(RK3568) && defined(OHOS_WEBRTC)
-          format.stride,
-#else
           format.frame_size.width(),
-#endif
           (flip ? -1 : 1) * format.frame_size.height(), new_unrotated_width,
           new_unrotated_height, rotation_mode, fourcc_format) != 0) {
     LOG(DEBUG) << "Failed to convert buffer's pixel format to I420 from "

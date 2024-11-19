@@ -290,9 +290,6 @@ struct CAPTURE_EXPORT VideoCaptureFormat {
   }
 
   gfx::Size frame_size;
-#if defined(OHOS_WEBRTC)
-  int stride;
-#endif
   float frame_rate;
   VideoPixelFormat pixel_format;
 };

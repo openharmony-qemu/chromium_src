@@ -26,42 +26,42 @@ namespace ohos {
 // dynamic frame rate
 class SlidingObserver {
 public:
-  SlidingObserver();
-  ~SlidingObserver();
+    SlidingObserver();
+    ~SlidingObserver();
 
-  SlidingObserver(const SlidingObserver&) = delete;
-  SlidingObserver& operator=(const SlidingObserver&) = delete;
+    SlidingObserver(const SlidingObserver&) = delete;
+    SlidingObserver& operator=(const SlidingObserver&) = delete;
 
-  static SlidingObserver& GetInstance();
+    static SlidingObserver& GetInstance();
 
-  void StartSliding();
-  int32_t StopSliding();
-  void StartFling();
-  int32_t OnScrollUpdate(float delta_x, float delta_y);
-  int32_t OnFlingUpdate(float velocity_x, float velocity_y);
-  void OnDisplayInfoChange();
-
-private:
-  float GetVelocity(float velocity_x, float velocity_y);
-  int32_t GetPreferedFrameRate(float velocity,
-    const std::vector<OHOS::NWeb::FrameRateSetting>& setting);
-  int64_t GetCurrentTimestamp();
-  void UpdateFrameRateForPC();
+    void StartSliding();
+    int32_t StopSliding();
+    void StartFling();
+    int32_t OnScrollUpdate(float delta_x, float delta_y);
+    int32_t OnFlingUpdate(float velocity_x, float velocity_y);
+    void OnDisplayInfoChange();
 
 private:
-  bool is_inited_ {false};
-  bool is_sliding_ {false};
-  bool is_off_screen_ {false};
-  int32_t dpi_ {-1};
-  std::vector<OHOS::NWeb::FrameRateSetting> on_screen_setting_ {};
-  std::vector<OHOS::NWeb::FrameRateSetting> off_screen_setting_ {};
+    float GetVelocity(float velocity_x, float velocity_y);
+    int32_t GetPreferedFrameRate(float velocity,
+        const std::vector<OHOS::NWeb::FrameRateSetting>& setting);
+    int64_t GetCurrentTimestamp();
+    void UpdateFrameRateForPC();
 
-  float virtual_pixel_ratio_ {-1};
-  int64_t current_timestamp_ {-1};
-  int32_t sliding_frame_rate_ {0};
+private:
+    bool is_inited_ {false};
+    bool is_sliding_ {false};
+    bool is_off_screen_ {false};
+    int32_t dpi_ {-1};
+    std::vector<OHOS::NWeb::FrameRateSetting> on_screen_setting_ {};
+    std::vector<OHOS::NWeb::FrameRateSetting> off_screen_setting_ {};
 
-  bool is_web_list_fling_ {false};
-  LTPOStrategy strategy_ {LTPOStrategy::DISABLED};
+    float virtual_pixel_ratio_ {-1};
+    int64_t current_timestamp_ {-1};
+    int32_t sliding_frame_rate_ {0};
+
+    bool is_web_list_fling_ {false};
+    LTPOStrategy strategy_ {LTPOStrategy::DISABLED};
 };
 }  // namespace ohos
 }  // namespace base

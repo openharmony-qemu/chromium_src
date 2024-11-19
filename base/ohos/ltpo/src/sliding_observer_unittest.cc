@@ -161,21 +161,21 @@ TEST(SlidingObserverTest, Init05) {
 }
 
 TEST(SlidingObserverTest, Init06) {
-  SlidingObserver observer;
-  auto type_ = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                                .GetSystemPropertiesInstance().GetProductDeviceType();
-  EXPECT_EQ(type_, OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE);
-  observer.Init();
-  EXPECT_TRUE(observer.is_inited_);
+    SlidingObserver observer;
+    auto type_ = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .GetSystemPropertiesInstance().GetProductDeviceType();
+    EXPECT_EQ(type_, OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE);
+    observer.Init();
+    EXPECT_TRUE(observer.is_inited_);
 }
 
 TEST(SlidingObserverTest, Init007) {
-  SlidingObserver observer;
-  auto type_ = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                                .GetSystemPropertiesInstance().GetProductDeviceType();
-  EXPECT_EQ(type_, OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE);
-  observer.Init();
-  EXPECT_TRUE(observer.is_inited_);
+    SlidingObserver observer;
+    auto type_ = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .GetSystemPropertiesInstance().GetProductDeviceType();
+    EXPECT_EQ(type_, OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE);
+    observer.Init();
+    EXPECT_TRUE(observer.is_inited_);
 }
 
 TEST(SlidingObserverTest, StartSliding01) {

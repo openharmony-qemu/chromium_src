@@ -19,10 +19,10 @@
 namespace base {
 namespace ohos {
 enum class LTPOStrategy {
-  DISABLED = 0,
-  APS_FLING = 1,
-  HGM_FLING = 2,
-  ALL = 3
+    DISABLED = 0,
+    APS_FLING = 1,
+    HGM_FLING = 2,
+    ALL = 3
 };
 }  // namespace ohos
 }  // namespace base

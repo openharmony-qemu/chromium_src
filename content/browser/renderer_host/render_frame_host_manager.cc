@@ -1531,10 +1531,11 @@ RenderFrameHostManager::GetFrameHostForNavigation(
 #if defined(OHOS_BUGFIX_CRASH)
     // Maybe the speculative rfh has beed crash
     if (speculative_render_frame_host_->IsRenderFrameLive()) {
-      CommitPending(std::move(speculative_render_frame_host_), nullptr,
-        request->browsing_context_group_swap().ShouldClearProxiesOnCommit());
+      CommitPending(
+          std::move(speculative_render_frame_host_), nullptr,
+          request->browsing_context_group_swap().ShouldClearProxiesOnCommit());
       request->SetAssociatedRFHType(
-        NavigationRequest::AssociatedRenderFrameHostType::CURRENT);
+          NavigationRequest::AssociatedRenderFrameHostType::CURRENT);
     } else {
       base::debug::DumpWithoutCrashing();
     }

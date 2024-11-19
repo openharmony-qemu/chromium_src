@@ -149,7 +149,7 @@ void OHOSCaptureDelegate::OnBufferAvailable(
   }
   int32_t rotation = roration_info->GetRotation();
   if (client_ != nullptr) {
-#if defined(OHOS_WEBRTC)
+#if !defined(RK3568) && defined(OHOS_WEBRTC)
     capture_format_.stride = buffer->GetStride();
 #endif
     client_->OnIncomingCapturedData(

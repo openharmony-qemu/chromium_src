@@ -384,7 +384,7 @@ void VideoCaptureDeviceClient::OnIncomingCapturedData(
   if (libyuv::ConvertToI420(
           data, length, y_plane_data, yplane_stride, u_plane_data,
           uv_plane_stride, v_plane_data, uv_plane_stride, crop_x, crop_y,
-#if defined(OHOS_WEBRTC)
+#if !defined(RK3568) && defined(OHOS_WEBRTC)
           format.stride,
 #else
           format.frame_size.width(),

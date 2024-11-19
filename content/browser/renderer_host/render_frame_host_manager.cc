@@ -1529,7 +1529,7 @@ RenderFrameHostManager::GetFrameHostForNavigation(
       }
 
 #if defined(OHOS_BUGFIX_CRASH)
-    // Maybe the speculative rfh has beed crash
+    // Maybe the speculative rfh has been crash
     if (speculative_render_frame_host_->IsRenderFrameLive()) {
       CommitPending(
           std::move(speculative_render_frame_host_), nullptr,

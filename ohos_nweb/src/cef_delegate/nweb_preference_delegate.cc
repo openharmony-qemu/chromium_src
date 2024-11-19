@@ -148,12 +148,12 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
   browser_settings.javascript_can_open_windows_automatically =
       IsCreateWindowsByJavaScriptAllowed();
   browser_settings.text_size_percent = ZoomingForTextFactor();
-  browser_settings.allow_running_insecure_content = STATE_ENABLED;
-    //   RunningInsecureContentAllowed() ? STATE_ENABLED : STATE_DISABLED;
-  browser_settings.strict_mixed_content_checking = STATE_DISABLED;
-    //   UseStricMixedContentCheckingAllowed() ? STATE_ENABLED : STATE_DISABLED;
-  browser_settings.allow_mixed_content_upgrades = STATE_ENABLED;
-    //   MixedContentAutoupgradesAllowed() ? STATE_ENABLED : STATE_DISABLED;
+  browser_settings.allow_running_insecure_content =
+      RunningInsecureContentAllowed() ? STATE_ENABLED : STATE_DISABLED;
+  browser_settings.strict_mixed_content_checking =
+      UseStricMixedContentCheckingAllowed() ? STATE_ENABLED : STATE_DISABLED;
+  browser_settings.allow_mixed_content_upgrades =
+      MixedContentAutoupgradesAllowed() ? STATE_ENABLED : STATE_DISABLED;
   browser_settings.geolocation_enabled = GeolocationAllowed();
   browser_settings.supports_double_tap_zoom = ZoomingfunctionEnabled();
   browser_settings.supports_multi_touch_zoom = ZoomingfunctionEnabled();

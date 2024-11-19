@@ -148,7 +148,7 @@ void OHOSCaptureDelegate::OnBufferAvailable(
     return;
   }
   int32_t rotation = roration_info->GetRotation();
-  if (client_ != nullptr) {    
+  if (client_ != nullptr) {
     client_->OnIncomingCapturedData(
         buffer->GetBufferAddr(), buffer->GetSize(), capture_format_,
         gfx::ColorSpace(), rotation, roration_info->GetIsFlipY() /* flip_y */,

@@ -318,6 +318,15 @@ void NWebEventHandler::WebSendTouchpadFlingEvent(double x,
   browser_->GetHost()->SendTouchpadFlingEvent(mouseEvent, vx, vy);
 }
 
+#if defined(OHOS_INPUT_EVENTS)
+void NWebEventHandler::WebUpdateModifiers(CefMouseEvent& mouseInfo, const cef_mouse_button_type_t& buttonType) {
+  if (NWebInputDelegate::IsMouseDown(previous_action_) && previous_button_ != buttonType) {
+    mouseInfo.modifiers |= NWebInputDelegate::GetMouseButtonModifiers(
+        static_cast<cef_mouse_button_type_t>(previous_action_));
+  }
+}
+#endif
+
 void NWebEventHandler::WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent,
                                          float ratio) {
   if (!mouseEvent) {
@@ -365,7 +374,9 @@ void NWebEventHandler::WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebM
         LOG(DEBUG) << "no change in coordinates, cancel mouse move event";
         return;
       }
-
+#if defined(OHOS_INPUT_EVENTS)
+      WebUpdateModifiers(mouseInfo, buttonType);
+#endif
       last_mouse_x_ = mouseInfo.x;
       last_mouse_y_ = mouseInfo.y;
       browser_->GetHost()->SendMouseMoveEvent(mouseInfo, false);

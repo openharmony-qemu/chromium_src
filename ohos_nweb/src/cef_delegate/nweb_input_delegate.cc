@@ -381,6 +381,24 @@ const std::unordered_map<std::string, std::unordered_map<int, int>>
         {"ohoskeyaction", ohosKeyActionConverter},
 };
 
+uint32_t NWebInputDelegate::GetMouseButtonModifiers(const cef_mouse_button_type_t& button) {
+  switch (button) {
+    case MBT_LEFT:
+      return EVENTFLAG_LEFT_MOUSE_BUTTON;
+    case MBT_MIDDLE:
+      return EVENTFLAG_MIDDLE_MOUSE_BUTTON;
+    case MBT_RIGHT:
+      return EVENTFLAG_RIGHT_MOUSE_BUTTON;
+    case MBT_BACK:
+      return EVENTFLAG_BACK_MOUSE_BUTTON;
+    case MBT_FORWARD:
+      return EVENTFLAG_FORWARD_MOUSE_BUTTON;
+    default:
+      break;
+  }
+  return 0;
+}
+
 uint32_t NWebInputDelegate::GetWebModifiers(int32_t keyCode, int32_t keyAction,
                                             const std::vector<int32_t>& pressedCodes) {
   uint32_t result = 0;
@@ -507,53 +525,12 @@ uint32_t NWebInputDelegate::GetModifiers() {
 }
 
 uint32_t NWebInputDelegate::GetModifiers(cef_mouse_button_type_t button) {
-  uint32_t result = GetModifiers();
-
-  switch (button) {
-    case MBT_LEFT:
-      result |= EVENTFLAG_LEFT_MOUSE_BUTTON;
-      break;
-    case MBT_MIDDLE:
-      result |= EVENTFLAG_MIDDLE_MOUSE_BUTTON;
-      break;
-    case MBT_RIGHT:
-      result |= EVENTFLAG_RIGHT_MOUSE_BUTTON;
-      break;
-    case MBT_BACK:
-      result |= EVENTFLAG_BACK_MOUSE_BUTTON;
-      break;
-    case MBT_FORWARD:
-      result |= EVENTFLAG_FORWARD_MOUSE_BUTTON;
-      break;
-    default:
-      break;
-  }
-  return result;
+  return (GetModifiers() | GetMouseButtonModifiers(button));
 }
 
 uint32_t NWebInputDelegate::GetWebMouseModifiersByPressedCode(cef_mouse_button_type_t button,
                                                               const std::vector<int32_t>& pressedCodes) {
-  uint32_t result = GetWebModifiersByPressedCode(pressedCodes);
-  switch (button) {
-    case MBT_LEFT:
-      result |= EVENTFLAG_LEFT_MOUSE_BUTTON;
-      break;
-    case MBT_MIDDLE:
-      result |= EVENTFLAG_MIDDLE_MOUSE_BUTTON;
-      break;
-    case MBT_RIGHT:
-      result |= EVENTFLAG_RIGHT_MOUSE_BUTTON;
-      break;
-    case MBT_BACK:
-      result |= EVENTFLAG_BACK_MOUSE_BUTTON;
-      break;
-    case MBT_FORWARD:
-      result |= EVENTFLAG_FORWARD_MOUSE_BUTTON;
-      break;
-    default:
-      break;
-  }
-  return result;
+  return (GetWebModifiersByPressedCode(pressedCodes) | GetMouseButtonModifiers(button));
 }
 
 bool NWebInputDelegate::IsMMIKeyEvent(int32_t keyCode) {

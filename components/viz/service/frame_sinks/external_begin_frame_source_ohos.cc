@@ -80,7 +80,6 @@ ExternalBeginFrameSourceOHOS::ExternalBeginFrameSourceOHOS(
 #if BUILDFLAG(IS_OHOS)
   vsync_adapter_.SetOnVsyncCallback(ExternalBeginFrameSourceOHOS::OnVSyncCallback);
   vsync_adapter_.SetOnVsyncEndCallback(ExternalBeginFrameSourceOHOS::OnVSyncEndCallback);
-  base::ohos::DynamicFrameRateDecision::GetInstance().Init();
 #endif
 }
 

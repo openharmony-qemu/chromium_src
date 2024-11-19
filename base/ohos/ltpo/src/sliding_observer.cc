@@ -51,19 +51,22 @@ void SlidingObserver::Init() {
                   .GetLTPOConfig("scroll");
   off_screen_setting_ = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
                   .GetLTPOConfig("fling");
-  virtual_pixel_ratio_ = ui::GestureConfiguration::GetInstance()->virtual_pixel_ratio();
 
   auto display_manager_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateDisplayMgrAdapter();
   if (!display_manager_adapter) {
+      LOG(ERROR) << "display_manager_adapter is nullptr";
       return;
   }
   std::shared_ptr<OHOS::NWeb::DisplayAdapter> display =
       display_manager_adapter->GetDefaultDisplay();
   if (!display) {
+    LOG(ERROR) << "display is nullptr";
     return;
   }
   dpi_ = display->GetDpi();
+  virtual_pixel_ratio_ = display->GetVirtualPixelRatio();
   if (dpi_ <= 0 || virtual_pixel_ratio_ <= 0) {
+    LOG(ERROR) << "dpi_: " << dpi_ << ", virtual_pixel_ratio_: " << virtual_pixel_ratio_;
     return;
   }
   is_inited_ = true;

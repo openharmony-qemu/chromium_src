@@ -50,6 +50,7 @@ DynamicFrameRateDecision::~DynamicFrameRateDecision()
 void DynamicFrameRateDecision::Init()
 {
   if (!curent_task_runner_) {
+    LOG(INFO) << "start init curent_task_runner_";
     curent_task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
   }
 }
@@ -187,6 +188,8 @@ void DynamicFrameRateDecision::SetHasTouchPointImpl(bool has_touch_point)
 void DynamicFrameRateDecision::SetVisible(bool visible)
 {
   if (!curent_task_runner_) {
+    LOG(WARNING) << "curent_task_runner_ is nullptr, try to start init";
+    Init();
     return;
   }
   curent_task_runner_->PostTask(FROM_HERE, base::BindOnce(

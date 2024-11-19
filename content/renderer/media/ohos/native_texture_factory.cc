@@ -154,7 +154,8 @@ NativeTextureFactory::NativeTextureFactory(
 
 NativeTextureFactory::~NativeTextureFactory() = default;
 
-ScopedNativeTextureProxy NativeTextureFactory::CreateProxy() {
+ScopedNativeTextureProxy NativeTextureFactory::CreateProxy(
+    gl::ohos::TextureOwnerMode texture_owner_mode) {
   // Send a StreamTexture receiver down to the GPU process. This will be bound
   // to a concrete StreamTexture impl there.
   int32_t native_id = channel_->GenerateRouteID();
@@ -162,7 +163,8 @@ ScopedNativeTextureProxy NativeTextureFactory::CreateProxy() {
   mojo::PendingAssociatedRemote<gpu::mojom::StreamTexture> remote;
   int32_t native_embed_id = -1;
   channel_->GetGpuChannel().CreateNativeTexture(
-      native_id, remote.InitWithNewEndpointAndPassReceiver(), &native_embed_id);
+      native_id, (int32_t)texture_owner_mode,
+      remote.InitWithNewEndpointAndPassReceiver(), &native_embed_id);
   if (native_embed_id == -1) {
     DLOG(ERROR) << "[NativeEmbed] Fail to create NativeTexture.";
     return ScopedNativeTextureProxy();

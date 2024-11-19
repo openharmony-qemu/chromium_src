@@ -51,6 +51,9 @@ class MEDIA_GPU_EXPORT CodecImage
   void NotifyOverlayPromotion(bool promotion, const gfx::Rect& bounds) override;
   bool RenderToOverlay() override;
   bool TextureOwnerBindsTextureOnUpdate() override;
+  std::unique_ptr<gpu::ScopedNativeBufferFenceSync> GetNativeBuffer() override {
+    return nullptr;
+  }
 
   bool was_rendered_to_front_buffer() const {
     return output_buffer_renderer_

@@ -137,6 +137,8 @@ component("gl") {
     sources += [
       "gl_surface_egl_ohos.cc",
       "gl_surface_egl_ohos.h",
+      "ohos/native_buffer_utils.cc",
+      "ohos/native_buffer_utils.h",
       "ohos/ohos_native_image.cc",
       "ohos/ohos_native_image.h",
       "ohos/frame_available_listener_impl.cc",
@@ -236,6 +238,13 @@ component("gl") {
       sources += [
         "gl_angle_util_vulkan.cc",
         "gl_angle_util_vulkan.h",
+      ]
+    }
+
+    if (is_ohos) {
+      sources += [
+        "android/egl_fence_utils.cc",
+        "android/egl_fence_utils.h",
       ]
     }
 

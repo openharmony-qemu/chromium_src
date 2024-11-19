@@ -1,8 +1,20 @@
-// Copyright 2021 The Chromium Authors
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+/*
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-#include "gpu/command_buffer/service/ohos/shared_image_video_ohos_native_image.h"
+
+#include "gpu/command_buffer/service/ohos/native_image_image_backing.h"
 
 #include <utility>
 
@@ -26,7 +38,7 @@
 
 namespace gpu {
 
-SharedImageVideoOhosNativeImage::SharedImageVideoOhosNativeImage(
+NativeImageImageBacking::NativeImageImageBacking(
     const Mailbox& mailbox,
     const gfx::Size& size,
     const gfx::ColorSpace color_space,
@@ -34,7 +46,7 @@ SharedImageVideoOhosNativeImage::SharedImageVideoOhosNativeImage(
     SkAlphaType alpha_type,
     scoped_refptr<StreamTextureSharedImageInterface> stream_texture_sii,
     scoped_refptr<SharedContextState> context_state)
-    : SharedImageVideoOhos(mailbox,
+    : OhosVideoImageBacking(mailbox,
                            size,
                            color_space,
                            surface_origin,
@@ -49,7 +61,7 @@ SharedImageVideoOhosNativeImage::SharedImageVideoOhosNativeImage(
   context_state_->AddContextLostObserver(this);
 }
 
-SharedImageVideoOhosNativeImage::~SharedImageVideoOhosNativeImage() {
+NativeImageImageBacking::~NativeImageImageBacking() {
   DCHECK(gpu_main_task_runner_->RunsTasksInCurrentSequence());
 
   if (context_state_) {
@@ -60,13 +72,13 @@ SharedImageVideoOhosNativeImage::~SharedImageVideoOhosNativeImage() {
   stream_texture_sii_.reset();
 }
 
-size_t SharedImageVideoOhosNativeImage::GetEstimatedSizeForMemoryDump() const {
+size_t NativeImageImageBacking::GetEstimatedSizeForMemoryDump() const {
   DCHECK(gpu_main_task_runner_->RunsTasksInCurrentSequence());
 
   return stream_texture_sii_->IsUsingGpuMemory() ? GetEstimatedSize() : 0;
 }
 
-void SharedImageVideoOhosNativeImage::OnContextLost() {
+void NativeImageImageBacking::OnContextLost() {
   DCHECK(gpu_main_task_runner_->RunsTasksInCurrentSequence());
 
   stream_texture_sii_->ReleaseResources();
@@ -74,12 +86,12 @@ void SharedImageVideoOhosNativeImage::OnContextLost() {
   context_state_ = nullptr;
 }
 
-class SharedImageVideoOhosNativeImage::SharedImageRepresentationGLTextureVideo
+class NativeImageImageBacking::SharedImageRepresentationGLTextureVideo
     : public GLTextureImageRepresentation {
  public:
     SharedImageRepresentationGLTextureVideo(
         SharedImageManager* manager,
-        SharedImageVideoOhosNativeImage* backing,
+      NativeImageImageBacking* backing,
         MemoryTypeTracker* tracker,
         std::unique_ptr<AbstractTextureOHOS> texture)
         : GLTextureImageRepresentation(manager, backing, tracker),
@@ -109,7 +121,7 @@ class SharedImageVideoOhosNativeImage::SharedImageRepresentationGLTextureVideo
     DCHECK(mode == GL_SHARED_IMAGE_ACCESS_MODE_READ_CHROMIUM);
 
     auto* video_backing =
-        static_cast<SharedImageVideoOhosNativeImage*>(backing());
+        static_cast<NativeImageImageBacking*>(backing());
     video_backing->BeginGLReadAccess(texture_->service_id());
     return true;
   }
@@ -120,13 +132,13 @@ class SharedImageVideoOhosNativeImage::SharedImageRepresentationGLTextureVideo
   std::unique_ptr<AbstractTextureOHOS> texture_;
 };
 
-class SharedImageVideoOhosNativeImage::
+class NativeImageImageBacking::
     SharedImageRepresentationGLTexturePassthroughVideo
     : public GLTexturePassthroughImageRepresentation {
  public:
     SharedImageRepresentationGLTexturePassthroughVideo(
         SharedImageManager* manager,
-        SharedImageVideoOhosNativeImage* backing,
+      NativeImageImageBacking* backing,
         MemoryTypeTracker* tracker,
         std::unique_ptr<AbstractTextureOHOS> abstract_texture)
         : GLTexturePassthroughImageRepresentation(manager, backing, tracker),
@@ -157,7 +169,7 @@ class SharedImageVideoOhosNativeImage::
     DCHECK(mode == GL_SHARED_IMAGE_ACCESS_MODE_READ_CHROMIUM);
 
     auto* video_backing =
-        static_cast<SharedImageVideoOhosNativeImage*>(backing());
+        static_cast<NativeImageImageBacking*>(backing());
     video_backing->BeginGLReadAccess(passthrough_texture_->service_id());
     return true;
   }
@@ -169,98 +181,98 @@ class SharedImageVideoOhosNativeImage::
   scoped_refptr<gles2::TexturePassthrough> passthrough_texture_;
 };
 
-std::unique_ptr<GLTextureImageRepresentation>
-SharedImageVideoOhosNativeImage::ProduceGLTexture(SharedImageManager* manager,
-                                                  MemoryTypeTracker* tracker) {
-  DCHECK(gpu_main_task_runner_->RunsTasksInCurrentSequence());
+ std::unique_ptr<GLTextureImageRepresentation>
+ NativeImageImageBacking::ProduceGLTexture(SharedImageManager* manager,
+                                                   MemoryTypeTracker* tracker) {
+   DCHECK(gpu_main_task_runner_->RunsTasksInCurrentSequence());
 
-  if (!stream_texture_sii_->HasTextureOwner())
-    return nullptr;
+   if (!stream_texture_sii_->HasTextureOwner())
+     return nullptr;
 
-  auto texture = GenAbstractTexture(/*passthrough=*/false);
-  if (!texture)
-    return nullptr;
+   auto texture = GenAbstractTexture(/*passthrough=*/false);
+   if (!texture)
+     return nullptr;
 
-  DCHECK(stream_texture_sii_->TextureOwnerBindsTextureOnUpdate());
-  texture->BindToServiceId(stream_texture_sii_->GetTextureBase()->service_id());
+   DCHECK(stream_texture_sii_->TextureOwnerBindsTextureOnUpdate());
+   texture->BindToServiceId(stream_texture_sii_->GetTextureBase()->service_id());
 
-  return std::make_unique<SharedImageRepresentationGLTextureVideo>(
-      manager, this, tracker, std::move(texture));
-}
+   return std::make_unique<SharedImageRepresentationGLTextureVideo>(
+       manager, this, tracker, std::move(texture));
+ }
 
-std::unique_ptr<GLTexturePassthroughImageRepresentation>
-SharedImageVideoOhosNativeImage::ProduceGLTexturePassthrough(
-    SharedImageManager* manager,
-    MemoryTypeTracker* tracker) {
-  DCHECK(gpu_main_task_runner_->RunsTasksInCurrentSequence());
+ std::unique_ptr<GLTexturePassthroughImageRepresentation>
+ NativeImageImageBacking::ProduceGLTexturePassthrough(
+     SharedImageManager* manager,
+     MemoryTypeTracker* tracker) {
+   DCHECK(gpu_main_task_runner_->RunsTasksInCurrentSequence());
 
-  if (!stream_texture_sii_->HasTextureOwner())
-    return nullptr;
+   if (!stream_texture_sii_->HasTextureOwner())
+     return nullptr;
 
-  auto texture = GenAbstractTexture(/*passthrough=*/true);
-  if (!texture)
-    return nullptr;
+   auto texture = GenAbstractTexture(/*passthrough=*/true);
+   if (!texture)
+     return nullptr;
 
-  DCHECK(stream_texture_sii_->TextureOwnerBindsTextureOnUpdate());
-  texture->BindToServiceId(stream_texture_sii_->GetTextureBase()->service_id());
+   DCHECK(stream_texture_sii_->TextureOwnerBindsTextureOnUpdate());
+   texture->BindToServiceId(stream_texture_sii_->GetTextureBase()->service_id());
 
-  return std::make_unique<SharedImageRepresentationGLTexturePassthroughVideo>(
-      manager, this, tracker, std::move(texture));
-}
+   return std::make_unique<SharedImageRepresentationGLTexturePassthroughVideo>(
+       manager, this, tracker, std::move(texture));
+ }
 
-std::unique_ptr<SkiaGaneshImageRepresentation>
-SharedImageVideoOhosNativeImage::ProduceSkiaGanesh(
-    SharedImageManager* manager,
-    MemoryTypeTracker* tracker,
-    scoped_refptr<SharedContextState> context_state) {
-  DCHECK(gpu_main_task_runner_->RunsTasksInCurrentSequence());
-  DCHECK(context_state);
+ std::unique_ptr<SkiaGaneshImageRepresentation>
+ NativeImageImageBacking::ProduceSkiaGanesh(
+     SharedImageManager* manager,
+     MemoryTypeTracker* tracker,
+     scoped_refptr<SharedContextState> context_state) {
+   DCHECK(gpu_main_task_runner_->RunsTasksInCurrentSequence());
+   DCHECK(context_state);
 
-  if (!stream_texture_sii_->HasTextureOwner())
-    return nullptr;
+   if (!stream_texture_sii_->HasTextureOwner())
+     return nullptr;
 
-  if (!context_state->GrContextIsGL()) {
-    DCHECK(false);
-    return nullptr;
-  }
+   if (!context_state->GrContextIsGL()) {
+     DCHECK(false);
+     return nullptr;
+   }
 
-  DCHECK(context_state->GrContextIsGL());
-  auto* texture_base = stream_texture_sii_->GetTextureBase();
-  DCHECK(texture_base);
-  const bool passthrough =
-      (texture_base->GetType() == gpu::TextureBase::Type::kPassthrough);
+   DCHECK(context_state->GrContextIsGL());
+   auto* texture_base = stream_texture_sii_->GetTextureBase();
+   DCHECK(texture_base);
+   const bool passthrough =
+       (texture_base->GetType() == gpu::TextureBase::Type::kPassthrough);
 
-  auto texture = GenAbstractTexture(passthrough);
-  if (!texture)
-    return nullptr;
+   auto texture = GenAbstractTexture(passthrough);
+   if (!texture)
+     return nullptr;
 
-  DCHECK(stream_texture_sii_->TextureOwnerBindsTextureOnUpdate());
-  texture->BindToServiceId(stream_texture_sii_->GetTextureBase()->service_id());
+   DCHECK(stream_texture_sii_->TextureOwnerBindsTextureOnUpdate());
+   texture->BindToServiceId(stream_texture_sii_->GetTextureBase()->service_id());
 
-  std::unique_ptr<gpu::GLTextureImageRepresentationBase> gl_representation;
-  if (passthrough) {
-    gl_representation =
-        std::make_unique<SharedImageRepresentationGLTexturePassthroughVideo>(
-            manager, this, tracker, std::move(texture));
-  } else {
-    gl_representation = std::make_unique<SharedImageRepresentationGLTextureVideo>(
-        manager, this, tracker, std::move(texture));
-  }
-  return SkiaGLImageRepresentation::Create(std::move(gl_representation),
-                                           std::move(context_state), manager,
-                                           this, tracker);
-}
+   std::unique_ptr<gpu::GLTextureImageRepresentationBase> gl_representation;
+   if (passthrough) {
+     gl_representation =
+         std::make_unique<SharedImageRepresentationGLTexturePassthroughVideo>(
+             manager, this, tracker, std::move(texture));
+   } else {
+     gl_representation = std::make_unique<SharedImageRepresentationGLTextureVideo>(
+         manager, this, tracker, std::move(texture));
+   }
+   return SkiaGLImageRepresentation::Create(std::move(gl_representation),
+                                            std::move(context_state), manager,
+                                            this, tracker);
+ }
 
-void SharedImageVideoOhosNativeImage::BeginGLReadAccess(
+void NativeImageImageBacking::BeginGLReadAccess(
     const GLuint service_id) {
   stream_texture_sii_->UpdateAndBindTexImage(service_id);
 }
 
-class SharedImageVideoOhosNativeImage::SharedImageRepresentationOverlayVideo
+class NativeImageImageBacking::SharedImageRepresentationOverlayVideo
     : public gpu::LegacyOverlayImageRepresentation {
  public:
     SharedImageRepresentationOverlayVideo(gpu::SharedImageManager* manager,
-                                    SharedImageVideoOhosNativeImage* backing,
+                                        NativeImageImageBacking* backing,
                                     gpu::MemoryTypeTracker* tracker)
         : gpu::LegacyOverlayImageRepresentation(manager, backing, tracker) {}
 
@@ -285,13 +297,13 @@ class SharedImageVideoOhosNativeImage::SharedImageRepresentationOverlayVideo
  private:
   StreamTextureSharedImageInterface* stream_image() {
     auto* video_backing =
-        static_cast<SharedImageVideoOhosNativeImage*>(backing());
+        static_cast<NativeImageImageBacking*>(backing());
     DCHECK(video_backing);
     return video_backing->stream_texture_sii_.get();
   }
 };
 
-std::unique_ptr<gpu::LegacyOverlayImageRepresentation> SharedImageVideoOhosNativeImage::ProduceLegacyOverlay(
+std::unique_ptr<gpu::LegacyOverlayImageRepresentation> NativeImageImageBacking::ProduceLegacyOverlay(
     gpu::SharedImageManager* manager,
     gpu::MemoryTypeTracker* tracker) {
   DCHECK(gpu_main_task_runner_->RunsTasksInCurrentSequence());

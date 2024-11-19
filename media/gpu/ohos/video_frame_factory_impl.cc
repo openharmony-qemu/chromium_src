@@ -44,10 +44,10 @@ static void AllocateTextureOwnerOnGpuThread(
     return;
   }
 
-  std::move(init_cb).Run(
-      gpu::NativeImageTextureOwner::Create(
-        shared_context_state,
-        gpu::NativeImageTextureOwner::Mode::kOhosSurfaceTexture));
+  std::move(init_cb).Run(gpu::NativeImageTextureOwner::Create(
+      shared_context_state,
+      gl::ohos::TextureOwnerMode::kNativeImageTexture,
+      std::move(drdc_lock)));
 }
 
 }  // namespace

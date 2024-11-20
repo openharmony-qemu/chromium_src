@@ -354,41 +354,42 @@ class ClipboardOHOSInternal {
 #if defined(OHOS_CLIPBOARD)
     CopyOptionMode copy_option = currentData->copy_option();
 #endif // defined(OHOS_CLIPBOARD)
-    std::shared_ptr<PasteDataRecordAdapter> record =
-        PasteDataRecordAdapter::NewRecord("text/html");
     if (HasFormat(ClipboardInternalFormat::kHtml)) {
-      std::shared_ptr<std::string> html =
-          std::make_shared<std::string>(currentData->markup_data());
-      if (record->SetHtmlText(html)) {
-        LOG(INFO) << "set html to record success";
-      } else {
-        LOG(ERROR) << "set html to record failed";
-      }
-    }
-
-    if (HasFormat(ClipboardInternalFormat::kText)) {
-      std::shared_ptr<std::string> text =
-          std::make_shared<std::string>(currentData->text());
+      auto html = std::make_shared<std::string>(currentData->markup_data());
+      auto text = HasFormat(ClipboardInternalFormat::kText)
+                      ? std::make_shared<std::string>(currentData->text())
+                      : nullptr;
+      std::shared_ptr<PasteDataRecordAdapter> record =
+          PasteDataRecordAdapter::NewRecord("text/html", html, text);
+      LOG(INFO) << "set html " << (text ? "and text " : "") << "to record success";
+      result_vector.push_back(record);
+    } else if (HasFormat(ClipboardInternalFormat::kText)) {
+      std::shared_ptr<PasteDataRecordAdapter> record =
+          PasteDataRecordAdapter::NewRecord("text/plain");
+      auto text = std::make_shared<std::string>(currentData->text());
       if (record->SetPlainText(text)) {
         LOG(INFO) << "set text to record success";
+        result_vector.push_back(record);
       } else {
         LOG(ERROR) << "set text to record failed";
       }
     }
 
     if (HasFormat(ClipboardInternalFormat::kPng)) {
+      std::shared_ptr<PasteDataRecordAdapter> record =
+          PasteDataRecordAdapter::NewRecord("pixelMap");
       auto bitmap = currentData->GetBitmapIfPngNotEncoded();
       if (bitmap.has_value()) {
         auto bitmap_record = WriteBitmapToClipboard(bitmap.value());
         if (record->SetImgData(bitmap_record)) {
           LOG(INFO) << "set image to record success";
+          result_vector.push_back(record);
         } else {
           LOG(ERROR) << "set image to record failed";
         }
       }
     }
 
-    result_vector.push_back(record);
     OhosAdapterHelper::GetInstance().GetPasteBoard().SetPasteData(result_vector
 #if defined(OHOS_CLIPBOARD)
 ,

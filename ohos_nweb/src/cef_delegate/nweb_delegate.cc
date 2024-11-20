@@ -3855,12 +3855,24 @@ NWebDelegate::PopulateAccessibilityNodeInfo(
     return nullptr;
   }
   nodeInfo->SetAccessibilityId(node->GetAccessibilityId());
-  nodeInfo->SetParentId(node->GetParentId());
+  nodeInfo->SetParentId(-1);
+  bool isRoot = !node->PlatformGetParent();
+  if (!isRoot) {
+    auto* parentNode = static_cast<content::BrowserAccessibilityOHOS*>(
+        node->PlatformGetParent());
+    if (parentNode) {
+      nodeInfo->SetParentId(parentNode->GetAccessibilityId());
+    }
+  }
 
-  std::vector<int64_t> childrenIds;
-  node->GetChildrenIds(childrenIds);
-  nodeInfo->SetChildIds(childrenIds);
-  node->SetChildrenIds(childrenIds);
+  std::vector<int64_t> childIds;
+  for (const auto& childNode : node->PlatformChildren()) {
+    const content::BrowserAccessibilityOHOS& childNodeOHOS =
+        static_cast<const content::BrowserAccessibilityOHOS&>(childNode);
+    childIds.emplace_back(childNodeOHOS.GetAccessibilityId());
+  }
+  nodeInfo->SetChildIds(childIds);
+
   nodeInfo->SetIsAccessibilityFocus(
       (accessibilityManager->GetAccessibilityFocusId() ==
               node->GetAccessibilityId()

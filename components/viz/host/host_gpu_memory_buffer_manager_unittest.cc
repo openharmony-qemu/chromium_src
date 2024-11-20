@@ -111,7 +111,7 @@ class TestGpuService : public mojom::GpuService {
   #if defined(OHOS_UNITTESTS)
   void StartMonitor() override{}
   void StopMonitor() override{}
-  void SetVisible(bool visible) override {}
+  void SetVisible(int32_t nweb_id, bool visible) override {}
   void SetHasTouchPoint(bool has_touch_point) override {}
   void ReportSlidingFrameRate(int32_t frame_rate) override {}
   #endif

@@ -17,6 +17,7 @@
 #define BASE_OHOS_DYNAMIC_FRAME_RATE_DECISION_H_
 
 #include <stdint.h>
+#include <set>
 #include "base/task/single_thread_task_runner.h"
 
 namespace base {
@@ -42,7 +43,7 @@ public:
   void Init();
   void UpdateFramePreferredRate();
 
-  void SetVisible(bool visible);
+  void SetVisible(int nweb_id, bool visible);
   void ReportSlidingFrameRate(int32_t frame_rate);
   void ReportVideoFrameRate(int32_t frame_rate);
 
@@ -54,7 +55,7 @@ private:
   int64_t GetCurrentTimestampMS();
   void ReportVideoFrameRateImpl(int32_t frame_rate);
   void SetVsyncEnabledImpl(bool enabled);
-  void SetVisibleImpl(bool visible);
+  void SetVisibleImpl(int nweb_id, bool visible);
   void ReportSlidingFrameRateImpl(int32_t frame_rate);
   void SetHasTouchPointImpl(bool has_touch_point);
 
@@ -62,12 +63,12 @@ private:
   int32_t sliding_frame_rate_ {0};
   int32_t video_frame_rate_ {0};
   int32_t cur_frame_rate_ {0};
-  bool visible_ {false};
   bool has_touch_point_ {false};
   bool frame_rate_linker_enable_ {false};
   int32_t vsync_cnt_ {0};
   int64_t touch_up_timestamp_{0};
   scoped_refptr<SingleThreadTaskRunner> curent_task_runner_ {};
+  std::set<int32_t> nwebVisibleSet_ {};
 };
 }  // namespace ohos
 }  // namespace base

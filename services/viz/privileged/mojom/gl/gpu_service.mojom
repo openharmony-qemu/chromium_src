@@ -242,7 +242,7 @@ interface GpuService {
 
   // notify web ltpo to update frame rate when visibility changed
   [EnableIf=is_ohos]
-  SetVisible(bool visible);
+  SetVisible(int32 nweb_id, bool visible);
 
   // notify web ltpo to update frame rate when touch status changed
   [EnableIf=is_ohos]

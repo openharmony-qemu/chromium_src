@@ -1408,8 +1408,8 @@ void GpuServiceImpl::StopMonitor() {
   base::ohos::DynamicFrameLossMonitor::GetInstance().StopMonitor();
 }
 
-void GpuServiceImpl::SetVisible(bool visible) {
-  base::ohos::DynamicFrameRateDecision::GetInstance().SetVisible(visible);
+void GpuServiceImpl::SetVisible(int32_t nweb_id, bool visible) {
+  base::ohos::DynamicFrameRateDecision::GetInstance().SetVisible(nweb_id, visible);
 }
 
 void GpuServiceImpl::SetHasTouchPoint(bool has_touch_point) {

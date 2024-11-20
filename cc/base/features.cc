@@ -142,7 +142,7 @@ const base::FeatureParam<double> kWaitForLateScrollEventsDeadlineRatio{
 const base::FeatureParam<std::string> kScrollEventDispatchMode(
     &kWaitForLateScrollEvents,
     "mode",
-    "UseScrollPredictorForDeadline");
+    "DispatchScrollEventsImmediately");
 constexpr const char kScrollEventDispatchModeEnqueueScrollEvents[] =
     "EnqueueScrollEvents";
 constexpr const char kScrollEventDispatchModeDispatchScrollEventsImmediately[] =

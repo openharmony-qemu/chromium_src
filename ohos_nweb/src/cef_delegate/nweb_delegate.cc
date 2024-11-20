@@ -3467,12 +3467,6 @@ void NWebDelegate::SetTransformHint(uint32_t rotation)
 }
 #endif
 
-void NWebDelegate::RegisterAccessibilityEventListener(
-    std::shared_ptr<NWebAccessibilityEventCallback>
-        accessibility_event_listener) {
-  accessibility_event_listener_ = accessibility_event_listener;
-}
-
 void NWebDelegate::SetAccessibilityState(cef_state_t accessibilityState) {
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
     LOG(ERROR) << "SetAccessibilityState can not get browser";
@@ -3708,12 +3702,7 @@ NWebDelegate::GetAccessibilityManager() {
   }
   void* manager = nullptr;
   GetBrowser()->GetHost()->GetRootBrowserAccessibilityManager(&manager);
-  auto managerOHOS = static_cast<content::BrowserAccessibilityManagerOHOS*>(manager);
-  if (managerOHOS != nullptr && managerOHOS->GetAccessibilityEventListener() == nullptr
-      && accessibility_event_listener_ != nullptr) {
-      managerOHOS->RegisterAccessibilityEventListener(accessibility_event_listener_);
-  }
-  return managerOHOS;
+  return static_cast<content::BrowserAccessibilityManagerOHOS*>(manager);
 }
 
 std::shared_ptr<NWebAccessibilityNodeInfo>

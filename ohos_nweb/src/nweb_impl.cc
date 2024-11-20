@@ -2777,15 +2777,12 @@ NWebDownloadItemState NWebImpl::GetDownloadItemStateByGuid(const std::string& gu
 void NWebImpl::PutAccessibilityEventCallback(
     std::shared_ptr<NWebAccessibilityEventCallback>
         accessibilityEventListener) {
-  if (nweb_delegate_ != nullptr) {
-    nweb_delegate_->RegisterAccessibilityEventListener(
-        accessibilityEventListener);
-  }
+  // Deprecated due to new accessibility architecture
 }
 
 void NWebImpl::PutAccessibilityIdGenerator(
     const AccessibilityIdGenerateFunc accessibilityIdGenerator) {
-	// Deprecated due to new accessibility architecture
+  // Deprecated due to new accessibility architecture
 }
 
 void NWebImpl::ExecuteAction(int64_t accessibilityId, uint32_t action) {

@@ -406,6 +406,12 @@ void NWebRenderHandler::StartVibraFeedback(const std::string& vibratorType) {
     handler->StartVibraFeedback(vibratorType);
   }
 }
+
+void NWebRenderHandler::OnAccessibilityEvent(int64_t accessibilityId, int32_t eventType) {
+  if (auto handler = handler_.lock()) {
+    handler->OnAccessibilityEvent(accessibilityId, eventType);
+  }
+}
 #endif
 
 void NWebRenderHandler::GetViewRect(CefRefPtr<CefBrowser> browser,

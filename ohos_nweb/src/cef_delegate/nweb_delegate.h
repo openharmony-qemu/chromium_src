@@ -75,9 +75,6 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
           web_app_client_extension_listener) override;
   void RegisterDownLoadListener(
       std::shared_ptr<NWebDownloadCallback> downloadListener) override;
-  void RegisterAccessibilityEventListener(
-      std::shared_ptr<NWebAccessibilityEventCallback>
-          accessibility_event_listener) override;
   void RegisterReleaseSurfaceListener(
       std::shared_ptr<NWebReleaseSurfaceCallback> releaseSurfaceListener)
       override;
@@ -693,8 +690,6 @@ void NotifyForNextTouchEvent() override;
   std::string richtext_data_str_ = "";
   // The number of fingers that trigger the down event
   int  pressing_num_ = 0;
-  std::shared_ptr<NWebAccessibilityEventCallback>
-      accessibility_event_listener_ = nullptr;
 };
 }  // namespace OHOS::NWeb
 #endif

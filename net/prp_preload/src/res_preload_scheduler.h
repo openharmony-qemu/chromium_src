@@ -9,6 +9,7 @@
 #include "base/memory/weak_ptr.h"
 #include "base/task/thread_pool.h"
 #include "page_res_request_info.h"
+#include "net/base/network_anonymization_key.h"
 
 namespace net {
 class URLRequestContext;
@@ -23,12 +24,14 @@ class ResPreloadScheduler : public base::RefCounted<ResPreloadScheduler> {
   ResPreloadScheduler() = delete;
   ~ResPreloadScheduler() = default;
  
-  void PreloadSchedule(const std::list<std::shared_ptr<PRRequestInfo>>& res_req_info_list);
+  void PreloadSchedule(const std::list<std::shared_ptr<PRRequestInfo>>& res_req_info_list,
+    const net::NetworkAnonymizationKey& networkAnonymizationKey);
   void StopPreload();
  private:
   using InfoIter = std::list<std::shared_ptr<PRRequestInfo>>::iterator;
   bool NeedToPreconnect(const GURL& url, bool allow_credentials);
-  void PreconnectBeyondLimit(InfoIter info_iter, const int info_list_version);
+  void PreconnectBeyondLimit(InfoIter info_iter, const int info_list_version,
+    const net::NetworkAnonymizationKey& networkAnonymizationKey);
 
   std::list<std::shared_ptr<PRRequestInfo>> info_list_;
   std::unordered_map<std::string, int> idle_connect_list_;

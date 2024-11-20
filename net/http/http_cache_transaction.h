@@ -615,6 +615,7 @@ class NET_EXPORT_PRIVATE HttpCache::Transaction : public HttpTransaction {
 
 #if BUILDFLAG(IS_OHOS)
   void UpdateCacheInfo(const HttpResponseInfo& response);
+  void UpdateValidatorsInfo(const HttpResponseHeaders& headers);
 #endif
 
   State next_state_{STATE_NONE};

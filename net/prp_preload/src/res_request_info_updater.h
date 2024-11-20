@@ -9,10 +9,12 @@
 
 namespace ohos_prp_preload {
 using ResRequestInfoListCB =
-  base::RepeatingCallback<void(const std::list<std::shared_ptr<PRRequestInfo>>& res_req_info_list)>;
+  base::RepeatingCallback<void(const std::list<std::shared_ptr<PRRequestInfo>>& res_req_info_list,
+    const net::NetworkAnonymizationKey& networkAnonymizationKey)>;
 class ResRequestInfoUpdater : public base::RefCounted<ResRequestInfoUpdater> {
  public:
   ResRequestInfoUpdater(const std::string& url,
+                        const net::NetworkAnonymizationKey& networkAnonymizationKey,
                         const scoped_refptr<base::SingleThreadTaskRunner>& sth_task_runner,
                         const scoped_refptr<DiskCacheBackendFactory>& disk_cache_backend_factory,
                         const ResRequestInfoListCB& res_req_info_list_cb);
@@ -22,7 +24,8 @@ class ResRequestInfoUpdater : public base::RefCounted<ResRequestInfoUpdater> {
   void UpdateResRequestInfo(const std::shared_ptr<PRRequestInfo>& info);
   void Stop();
  private:
-  void OnResRequestInfoCacheLoaded(const std::list<std::shared_ptr<PRRequestInfo>>& load_info_list);
+  void OnResRequestInfoCacheLoaded(const std::list<std::shared_ptr<PRRequestInfo>>& load_info_list,
+    const net::NetworkAnonymizationKey& networkAnonymizationKey);
  
   scoped_refptr<ResReqInfoCacheMgr> res_req_info_cache_mgr_;
   ResRequestInfoListCB res_req_info_list_cb_;

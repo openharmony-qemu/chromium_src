@@ -120,7 +120,7 @@ class ClipboardOHOSInternal {
     PasteboardObserverOhos() = default;
     void OnPasteboardChanged() override {
       if (clipboard_internal_) {
-        LOG(ERROR) << "Inform Clipboard Changed";
+        LOG(INFO) << "Inform Clipboard Changed";
         clipboard_internal_->SetClipboardState(ClipboardState::kOutOfDate);
       }
     }
@@ -186,11 +186,28 @@ class ClipboardOHOSInternal {
     }
   }
 
-  void UpdateClipboardData() {
-    if (state_ == ClipboardState::kUpToDate) {
-      LOG(ERROR) << "No need to update Clipboard";
+  void SetOutOfDateAfterRead() {
+    if (is_data_guard_enabled_) {
       return;
     }
+    LOG(INFO) << "set out of data after read";
+    state_ = ClipboardState::kOutOfDate;
+  }
+
+  void OnClipboardDataGuard(bool status) {
+    LOG(INFO) << "set clipboard data guard=" << status;
+    is_data_guard_enabled_ = status;
+    if (!is_data_guard_enabled_) {
+      SetOutOfDateAfterRead();
+    }
+  }
+
+  void UpdateClipboardData() {
+    if (state_ == ClipboardState::kUpToDate) {
+      LOG(DEBUG) << "No need to update Clipboard";
+      return;
+    }
+    LOG(INFO) << "Update clipboard data, state=" << static_cast<int>(state_);
 
     read_data_ = nullptr;
     PasteRecordVector record_vector;
@@ -209,7 +226,7 @@ class ClipboardOHOSInternal {
   // Reads text from the ClipboardData.
   void ReadText(std::u16string* result) {
     UpdateClipboardData();
-    state_ = ClipboardState::kOutOfDate;
+    SetOutOfDateAfterRead();
     if (!read_data_) {
       return;
     }
@@ -234,7 +251,7 @@ class ClipboardOHOSInternal {
     *fragment_end = 0;
 
     UpdateClipboardData();
-    state_ = ClipboardState::kOutOfDate;
+    SetOutOfDateAfterRead();
     if (!read_data_) {
       return;
     }
@@ -316,24 +333,26 @@ class ClipboardOHOSInternal {
     if (!HasFormatInMisc(ClipboardInternalFormat::kPng)) {
       LOG(ERROR) << "no bitMap format in pasteboard";
       std::move(callback).Run(std::vector<uint8_t>());
-      state_ = ClipboardState::kOutOfDate;
+      SetOutOfDateAfterRead();
       return;
     }
-    state_ = ClipboardState::kOutOfDate;
+    SetOutOfDateAfterRead();
+
+    if (!read_data_) {
+      LOG(ERROR) << "read_data is null";
+      std::move(callback).Run(std::vector<uint8_t>());
+      return;
+    }
     SkBitmap img;
-    PasteRecordVector recordVector;
-    if (OhosAdapterHelper::GetInstance().GetPasteBoard().GetPasteData(
-            recordVector) &&
-        (recordVector.size() > 0)) {
-      for (auto& r : recordVector) {
-        if (ReadPngRecordInner(r, img)) {
-          base::ThreadPool::PostTaskAndReplyWithResult(
+    PasteRecordVector record_vector = read_data_->GetPasteRecordVector();
+    for (const auto& r : record_vector) {
+      if (ReadPngRecordInner(r, img)) {
+        base::ThreadPool::PostTaskAndReplyWithResult(
             FROM_HERE, {base::MayBlock(), base::TaskPriority::USER_BLOCKING},
             base::BindOnce(&ClipboardData::EncodeBitmapData, std::move(img)),
             base::BindOnce(&ClipboardOHOSInternal::DidGetPng, base::Unretained(this),
                           std::move(callback)));
-          return;
-        }
+        return;
       }
     }
     LOG(ERROR) << "get image from pasteboard failed";
@@ -554,9 +573,12 @@ class ClipboardOHOSInternal {
   std::shared_ptr<ClipboardOhosReadData> read_data_ = nullptr;
   std::unique_ptr<OHOS::NWeb::OhosResourceAdapter> resource_adapter_ = nullptr;
   static std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> convert_html_callback_;
+
+  bool is_data_guard_enabled_ = false;
 };
 
-std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> ClipboardOHOSInternal::convert_html_callback_ = nullptr;
+std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback>
+    ClipboardOHOSInternal::convert_html_callback_ = nullptr;
 
 class ClipboardDataBuilder {
  public:
@@ -756,6 +778,12 @@ void ClipboardOHOS::Clear(ClipboardBuffer buffer) {
   clipboard_internal_->Clear();
 }
 
+void ClipboardOHOS::OnClipboardDataGuard(bool status) {
+  if (clipboard_internal_) {
+    clipboard_internal_->OnClipboardDataGuard(status);
+  }
+}
+
 void ClipboardOHOS::ReadAvailableTypes(
     ClipboardBuffer buffer,
     const DataTransferEndpoint* data_dst,
@@ -786,11 +814,18 @@ void ClipboardOHOS::ReadAvailableTypes(
         clipboard_internal_->GetData()->custom_data_data().c_str(),
         clipboard_internal_->GetData()->custom_data_data().size(), types);
   }
+
+  std::ostringstream typesSumStream;
+  for (const auto& str : *types) {
+    typesSumStream << " " << base::UTF16ToUTF8(str);
+  }
+  LOG(INFO) << "clipboard available types =" << typesSumStream.str();
 }
 
 void ClipboardOHOS::ReadText(ClipboardBuffer buffer,
                              const DataTransferEndpoint* data_dst,
                              std::u16string* result) const {
+  LOG(INFO) << "start read text";
   DCHECK(CalledOnValidThread());
   if (!clipboard_internal_->IsReadAllowed(data_dst,
                                           ClipboardInternalFormat::kText)) {
@@ -813,6 +848,7 @@ void ClipboardOHOS::ReadHTML(ClipboardBuffer buffer,
                              std::string* src_url,
                              uint32_t* fragment_start,
                              uint32_t* fragment_end) const {
+  LOG(INFO) << "start read html";
   DCHECK(CalledOnValidThread());
 
   if (!clipboard_internal_->IsReadAllowed(data_dst,

@@ -648,8 +648,7 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
                  text_input_info.always_hide_ime;
   if (!is_hide) {
     auto delegate = delegate_interface_.lock();
-    bool is_focused = inputmethod_client_->GetFocusStatus();
-    if (is_focused && delegate && delegate->OnFocus()) {
+    if (delegate && delegate->OnFocus()) {
       HandleKeyboardAttach(browser, text_input_info, is_need_reset_listener,
                            attributesMap);
     }

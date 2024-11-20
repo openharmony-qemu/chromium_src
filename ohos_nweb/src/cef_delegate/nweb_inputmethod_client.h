@@ -48,7 +48,6 @@ class NWebInputMethodClient : public virtual CefBaseRefCounted {
                                   const CefString& text,
                                   const CefRange& selected_range) = 0;
   virtual void SetFocusStatus(bool focus_status) = 0;
-  virtual bool GetFocusStatus() = 0;
   virtual void OnEditableChanged(CefRefPtr<CefBrowser> browser,
                                  bool is_editable_node) = 0;
   virtual bool GetIsEditableNode() = 0;

@@ -28,6 +28,7 @@
 #include "base/metrics/histogram_functions.h"
 #include "base/no_destructor.h"
 #include "base/observer_list.h"
+#include "base/path_service.h"
 #include "base/run_loop.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/single_thread_task_runner.h"
@@ -499,6 +500,10 @@ class LoginHandlerDelegate {
     }
 
     WebContents* web_contents = web_contents_getter_.Run();
+    if (!web_contents) {
+      OnAuthCredentials(absl::nullopt);
+      return;
+    }
 
     // WeakPtr is not strictly necessary here due to OnRequestCancelled.
     creating_login_delegate_ = true;
@@ -550,6 +555,12 @@ void OnAuthRequiredContinuation(
     mojo::PendingRemote<network::mojom::AuthChallengeResponder>
         auth_challenge_responder,
     base::RepeatingCallback<WebContents*(void)> web_contents_getter) {
+  if (!web_contents_getter || !web_contents_getter.Run()) {
+    mojo::Remote<network::mojom::AuthChallengeResponder>
+        auth_challenge_responder_remote(std::move(auth_challenge_responder));
+    auth_challenge_responder_remote->OnAuthCredentials(absl::nullopt);
+    return;
+  }
   new LoginHandlerDelegate(
       std::move(auth_challenge_responder), std::move(web_contents_getter),
       auth_info, is_request_for_primary_main_frame, process_id, request_id, url,
@@ -3090,6 +3101,14 @@ void StoragePartitionImpl::InitNetworkContext() {
   cert_verifier::mojom::CertVerifierCreationParamsPtr
       cert_verifier_creation_params =
           cert_verifier::mojom::CertVerifierCreationParams::New();
+#if BUILDFLAG(IS_OHOS)
+    base::FilePath cachePath;
+    base::PathService::Get(base::DIR_CACHE, &cachePath);
+    network::mojom::NetworkContext* network_context = GetContentClient()->browser()->GetSystemNetworkContext();
+    if (network_context != nullptr) {
+      network_context->InitPRParallelPreloadMgr();
+    }
+#endif
   if (!GetContentClient()->browser()->ConfigureNetworkContextParams(
       browser_context_, is_in_memory(), relative_partition_path_,
       context_params.get(), cert_verifier_creation_params.get())) {

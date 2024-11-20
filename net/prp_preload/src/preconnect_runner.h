@@ -6,6 +6,7 @@
 #define NET_PRP_PRELOAD_SRC_PRECONNECT_RUNNER_H
 
 #include "base/memory/weak_ptr.h"
+#include "net/base/network_anonymization_key.h"
 
 namespace net {
 class URLRequestContext;
@@ -19,7 +20,8 @@ class PreconnectRunner {
  public:
   static void PreconnectSocket(const GURL& original_url,
     bool allow_credentials,
-    base::WeakPtr<net::URLRequestContext> url_request_context);
+    base::WeakPtr<net::URLRequestContext> url_request_context,
+    const net::NetworkAnonymizationKey& networkAnonymizationKey);
   static GURL GetHSTSRedirect(const GURL& original_url,
     base::WeakPtr<net::URLRequestContext> url_request_context);
  private:

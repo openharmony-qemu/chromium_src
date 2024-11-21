@@ -364,6 +364,7 @@ component("nweb_sources") {
     "src/nweb_imf_selection_range_adapter_impl.h",
     "src/nweb_imf_text_config_adapter_impl.cc",
     "src/nweb_imf_text_config_adapter_impl.h",
+    "src/nweb_render_main.cc",
   ]
 
   #if defined(OHOS_NAVIGATION)
@@ -394,42 +395,7 @@ component("nweb_sources") {
   public_deps = [ "//third_party/abseil-cpp:absl" ]
 
   deps += [
+    "//ohos_adapter:ohos_adapter_napi",
     "//ohos_adapter:nweb_ohos_adapter",
-  ]
-}
-
-#################################################
-
-config("ohosnweb_core_config") {
-  defines = [
-    "OHOS_NWEB",
-    "OS_OHOS",
-  ]
-
-  include_dirs = [
-    "//cef",
-    "//cef/include",
-  ]
-
-  include_dirs += ohos_src_includes
-}
-
-shared_library("libnweb_render") {
-  configs += [ "//build/config/sanitizers:cfi_config" ]
-  defines = [ "OHOS_NWEB" ]
-
-  include_dirs = [ "include" ]
-  include_dirs += ohos_src_includes
-
-  sources = [
-    "src/nweb_render_main.cc",
-    "src/set_renderer_seccomp_policy.cc",
-  ]
-
-  deps = [
-    ":nweb_hilog",
-    "//cef:libcef_dll_wrapper",
-    "//cef:libweb_engine",
-    "//sandbox:sandbox",
   ]
 }

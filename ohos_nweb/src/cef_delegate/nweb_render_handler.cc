@@ -340,7 +340,6 @@ void NWebRenderHandler::OnCursorUpdate(CefRefPtr<CefBrowser> browser,
 
 void NWebRenderHandler::SetFocusStatus(bool focus_status) {
   if (inputmethod_client_) {
-    is_focused_ = focus_status;
     inputmethod_client_->SetFocusStatus(focus_status);
   }
 }
@@ -438,7 +437,13 @@ void NWebRenderHandler::SetNeedFocusViewport(bool need) {
 
 void NWebRenderHandler::OnResizeScrollableViewport(CefRefPtr<CefBrowser> browser) {
   LOG(INFO) << "NWebRenderHandler::OnResizeScrollableViewport needFocusViewport:" << needFocusViewport_;
-  browser->GetHost()->ScrollFocusedEditableNodeIntoView();
+    if (inputmethod_client_ && inputmethod_client_->IsAttached()) {
+      LOG(INFO) << "system keyboard is attached, scroll focused node into view";
+      browser->GetHost()->ScrollFocusedEditableNodeIntoView();
+    } else if (custom_keyboard_handler_ && custom_keyboard_handler_->IsAttached()) {
+      LOG(INFO) << "custom keyboard is attached, scroll focused node into view";
+      browser->GetHost()->ScrollFocusedEditableNodeIntoView();
+    }
 }
 
 void NWebRenderHandler::GetVisibleViewportRect(CefRefPtr<CefBrowser> browser,
@@ -643,7 +648,8 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
                  text_input_info.always_hide_ime;
   if (!is_hide) {
     auto delegate = delegate_interface_.lock();
-    if (is_focused_ && delegate && delegate->OnFocus()) {
+    bool is_focused = inputmethod_client_->GetFocusStatus();
+    if (is_focused && delegate && delegate->OnFocus()) {
       HandleKeyboardAttach(browser, text_input_info, is_need_reset_listener,
                            attributesMap);
     }
@@ -1121,8 +1127,7 @@ void NWebRenderHandler::GetWordSelection(CefRefPtr<CefBrowser> browser,
 void NWebRenderHandler::CreateOverlay(CefRefPtr<CefBrowser> browser,
                                       CefRefPtr<CefImage> cef_image,
                                       const CefRect& cef_image_rect,
-                                      const CefPoint& cef_touch_point,
-                                      const CefRect& cef_screen_rect) {
+                                      const CefPoint& cef_touch_point) {
   if (auto handler = handler_.lock()) {
     gfx::ImageSkia image_skia = static_cast<CefImageImpl*>(cef_image.get())->AsImageSkia();
     int width = cef_image->GetWidth();
@@ -1145,7 +1150,6 @@ void NWebRenderHandler::CreateOverlay(CefRefPtr<CefBrowser> browser,
       return;
     }
 
-    cef_image_rect_ = cef_image_rect;
     float scale = browser->GetHost()->GetPageScaleFactor();
     auto view_port_height = browser->GetHost()->GetShrinkViewportHeight();
     view_port_height += view_port_height > 0 ? browser->GetHost()->GetTopControlsOffset() : 0;
@@ -1154,26 +1158,25 @@ void NWebRenderHandler::CreateOverlay(CefRefPtr<CefBrowser> browser,
         read_size,
         width,
         height,
-        (cef_image_rect.x - cef_screen_rect.y) * scale,
-        (cef_image_rect.y - cef_screen_rect.y) * scale + view_port_height * screen_info_.display_ratio,
-        cef_image_rect.width * scale,
-        cef_image_rect.height * scale,
+        cef_image_rect.x,
+        cef_image_rect.y + view_port_height * screen_info_.display_ratio,
+        cef_image_rect.width,
+        cef_image_rect.height,
         cef_touch_point.x * scale,
         cef_touch_point.y * scale);
   }
 }
 
 void NWebRenderHandler::OnOverlayStateChanged(CefRefPtr<CefBrowser> browser,
-                                              const CefRect& cef_screen_rect) {
+                                              const CefRect& cef_image_rect) {
   if (auto handler = handler_.lock()) {
-    float scale = browser->GetHost()->GetPageScaleFactor();
     auto view_port_height = browser->GetHost()->GetShrinkViewportHeight();
     view_port_height += view_port_height > 0 ? browser->GetHost()->GetTopControlsOffset() : 0;
     handler->OnOverlayStateChanged(
-        (cef_image_rect_.x - cef_screen_rect.y) * scale,
-        (cef_image_rect_.y - cef_screen_rect.y) * scale + view_port_height * screen_info_.display_ratio,
-        cef_image_rect_.width * scale,
-        cef_image_rect_.height * scale);
+        cef_image_rect.x,
+        cef_image_rect.y + view_port_height * screen_info_.display_ratio,
+        cef_image_rect.width,
+        cef_image_rect.height);
   }
 }
 #endif

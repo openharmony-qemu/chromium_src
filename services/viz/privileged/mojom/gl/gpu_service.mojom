@@ -62,6 +62,10 @@ interface GpuService {
   [EnableIf=is_ohos, Sync] GetSurfaceId(int32 native_embed_id)
       => (string surfaceId);
 
+  [EnableIf=is_ohos] DestroyNativeWindow(uint32 native_window_id);
+
+  [EnableIf=is_ohos] SetTransformHint(uint32 rotation, uint32 window_id);
+
   // Tells the GPU service an assigned cache handle. Note that for each type of
   // handle per client only one unique handle is expected.
   SetChannelDiskCacheHandle(int32 client_id,
@@ -240,7 +244,7 @@ interface GpuService {
 
   // notify web ltpo to update frame rate when visibility changed
   [EnableIf=is_ohos]
-  SetVisible(bool visible);
+  SetVisible(int32 nweb_id, bool visible);
 
   // notify web ltpo to update frame rate when touch status changed
   [EnableIf=is_ohos]

@@ -60,12 +60,14 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
                           const CefString& text,
                           const CefRange& selected_range) override;
   void SetFocusStatus(bool focus_status) override;
+  bool GetFocusStatus() override;
   void OnEditableChanged(CefRefPtr<CefBrowser> browser,
                          bool is_editable_node) override;
   bool GetIsEditableNode() override;
 
   bool Reattach(uint32_t nwebId, ReattachType type);
   void SetIMEStatus(bool status);
+  void WebBlurKeyboardHide();
   void InsertText(const std::u16string& text);
   void DeleteBackward(int32_t length);
   void DeleteForward(int32_t length);
@@ -116,6 +118,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
 
  private:
   void SetIMEStatusOnUI(bool status);
+  void WebBlurKeyboardHideOnUI();
   void InsertTextHandlerOnUI(const std::u16string& text);
   void DeleteBackwardHandlerOnUI(int32_t length);
   void DeleteForwardHandlerOnUI(int32_t length);

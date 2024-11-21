@@ -64,6 +64,7 @@
 #include "nweb_value_callback.h"
 #include "nweb_value_convert.h"
 #include "url/gurl.h"
+#include "content/browser/gpu/gpu_process_host.h"
 
 #include "ohos_adapter_helper.h"
 
@@ -294,7 +295,8 @@ char* CopyCefStringToChar(const CefString& str) {
   }
   int strLen = str.size() + 1;
   char* result = new char[strLen]{0};
-  if (strcpy_s(result, strLen, str.ToString().c_str()) != EOF) {
+  if (strcpy_s(result, strLen, str.ToString().c_str()) != EOK) {
+    delete[] result;
     return nullptr;
   }
   return result;
@@ -800,6 +802,11 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
           }
         }
       }
+#ifdef OHOS_ARKWEB_ADBLOCK
+      if (main_browser_ && main_browser_->GetHost()) {
+        main_browser_->EnableAdsBlock(is_global_adblock_enabled_);
+      }
+#endif
     }
 #ifdef OHOS_BFCACHE
     if (main_browser_) {
@@ -862,6 +869,8 @@ void NWebHandlerDelegate::OnBeforeClose(CefRefPtr<CefBrowser> browser) {
       releaseSurfaceListener_->ReleaseSurface();
     }
   } else {
+    content::GpuProcessHost* host = content::GpuProcessHost::Get();
+    host->gpu_host()->DestroyNativeWindow(main_browser_->GetAcceleratedWidget(false));
     OHOS::NWeb::OhosAdapterHelper::GetInstance()
         .GetWindowAdapterInstance()
         .DestroyNativeWindow(window_);
@@ -896,6 +905,29 @@ void NWebHandlerDelegate::NotifyPopupWindowResult(bool result) {
   }
   popupWindowCallback_ = nullptr;
 }
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+void NWebHandlerDelegate::SaveGlobalAdsBlock(bool enable) {
+  is_global_adblock_enabled_ = enable;
+}
+
+bool NWebHandlerDelegate::TrigAdBlockEnabledForSiteFromUi(
+    CefRefPtr<CefBrowser> browser,
+    const CefString& url,
+    int main_frame_tree_node_id) {
+  LOG(DEBUG) << "[adblock] TrigAdBlockEnabledForSiteFromUi url = ***";
+
+  if (web_app_client_extension_listener_ != nullptr &&
+      web_app_client_extension_listener_->TrigAdBlockEnabledForSiteFromUi !=
+          nullptr) {
+    return web_app_client_extension_listener_->TrigAdBlockEnabledForSiteFromUi(
+        url, main_frame_tree_node_id,
+        web_app_client_extension_listener_->nweb_id);
+  }
+
+  return false;
+}
+#endif
 
 void NWebHandlerDelegate::SavaArkJSFunctionForPopup(
     const std::string& object_name,
@@ -1455,7 +1487,7 @@ bool NWebHandlerDelegate::OnCertificateError(CefRefPtr<CefBrowser> browser,
   SslError error = SslErrorConvert(cert_error);
 
   CEF_REQUIRE_IO_THREAD();
-  
+
   std::vector<std::string> certChainData;
   CefRefPtr<CefX509Certificate> cert = ssl_info->GetX509Certificate();
   CefX509Certificate::IssuerChainBinaryList der_chain_list;
@@ -1474,7 +1506,7 @@ bool NWebHandlerDelegate::OnCertificateError(CefRefPtr<CefBrowser> browser,
     der_chain_list[i]->GetData(const_cast<char*>(cert_data_item.data()), cert_data_size, 0);
     certChainData.emplace_back(cert_data_item);
   }
-  
+
   std::shared_ptr<NWebJSSslErrorResult> js_result =
       std::make_shared<NWebJSSslErrorResultImpl>(callback);
   if (nweb_handler_ != nullptr) {
@@ -2092,7 +2124,7 @@ void NWebHandlerDelegate::OnReceivedIcon(const void* data,
 #ifdef OHOS_BFCACHE
 void NWebHandlerDelegate::UpdateFavicon(CefRefPtr<CefBrowser> browser) {
   CEF_REQUIRE_UI_THREAD();
- 
+
   void* data = nullptr;
   int color_type;
   int alpha_type;
@@ -2692,10 +2724,16 @@ bool NWebHandlerDelegate::RunContextMenu(
   if (!nweb_handler_ || !render_handler_) {
     return false;
   }
-  LOG(INFO) << "NWebHandlerDelegate RunContextMenu ";
+  int32_t view_port_height = 0;
+#if defined(OHOS_EX_TOPCONTROLS)
+  if (browser && browser->GetHost()) {
+    view_port_height = browser->GetHost()->GetShrinkViewportHeight();
+  }
+#endif
+  LOG(INFO) << "NWebHandlerDelegate RunContextMenu view_port_height:" << view_port_height;
   std::shared_ptr<NWebContextMenuParams> nweb_param =
       std::make_shared<NWebContextMenuParamsImpl>(
-          params, render_handler_->GetVirtualPixelRatio());
+          params, render_handler_->GetVirtualPixelRatio(), view_port_height);
   std::shared_ptr<NWebContextMenuCallback> nweb_callback =
       std::make_shared<NWebContextMenuCallbackImpl>(callback);
   if (input_method_client_) {
@@ -2988,10 +3026,51 @@ void NWebHandlerDelegate::RegisterNativeJavaScriptCallBack(
     map[methodName[i]] = callback[i];
   }
   if (isAsync) {
+    if (auto async_it = asyncProxyObjWithResultMap_.find(objName);
+      async_it != asyncProxyObjWithResultMap_.end()) {
+      asyncProxyObjWithResultMap_.erase(objName);
+    }
     asyncProxyObjMap_[objName] = map;
     asyncProxyPermissionMap_[objName] = permission;
   } else {
+    if (auto async_it = syncProxyObjWithResultMap_.find(objName);
+      async_it != syncProxyObjWithResultMap_.end()) {
+      syncProxyObjWithResultMap_.erase(objName);
+    }
     syncProxyObjMap_[objName] = map;
+    syncProxyPermissionMap_[objName] = permission;
+  }
+}
+
+void NWebHandlerDelegate::RegisterNativeJavaScriptCallBackWithResult(
+    const std::string& objName,
+    const std::vector<std::string>& methodName,
+    std::vector<NativeJSProxyCallbackFuncWithResult>&& callback,
+    bool isAsync,
+    const std::string& permission) {
+  size_t size = methodName.size();
+  if (size == 0) {
+    LOG(ERROR) << "NWebHandlerDelegate RegisterNativeJavaScriptCallBack error: "
+                  "empty methods list";
+    return;
+  }
+  std::unordered_map<std::string, NativeJSProxyCallbackFuncWithResult> map;
+  for (size_t i = 0; i < size; i++) {
+    map[methodName[i]] = callback[i];
+  }
+  if (isAsync) {
+    if (auto async_it = asyncProxyObjMap_.find(objName);
+        async_it != asyncProxyObjMap_.end()) {
+      asyncProxyObjMap_.erase(objName);
+    }
+    asyncProxyObjWithResultMap_[objName] = map;
+    asyncProxyPermissionMap_[objName] = permission;
+  } else {
+    if (auto sync_it = syncProxyObjMap_.find(objName);
+        sync_it != syncProxyObjMap_.end()) {
+      syncProxyObjMap_.erase(objName);
+    }
+    syncProxyObjWithResultMap_[objName] = map;
     syncProxyPermissionMap_[objName] = permission;
   }
 }
@@ -3058,6 +3137,7 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNew(
   }
 
   NativeJSProxyCallbackFunc callback = nullptr;
+  NativeJSProxyCallbackFuncWithResult CallbackWithResult = nullptr;
   auto it = asyncProxyObjMap_.find(object_name);
   if (it != asyncProxyObjMap_.end()) {
     auto& methodMap = it->second;
@@ -3081,8 +3161,32 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNew(
     }
   }
 
-  if (callback == nullptr) {
-    LOG(DEBUG) << "Processing sync native proxy result failed, "
+  if (auto iter = asyncProxyObjWithResultMap_.find(object_name);
+      iter != asyncProxyObjWithResultMap_.end()) {
+    auto& methodMap = iter->second;
+    auto methodIt = methodMap.find(method);
+    if (methodIt != methodMap.end()) {
+      LOG(DEBUG) << "Processing async native proxy result, "
+                 << "method name: " << method.ToString();
+      CallbackWithResult = methodMap[method];
+    }
+  }
+
+  if (CallbackWithResult == nullptr) {
+    auto iter = syncProxyObjWithResultMap_.find(object_name);
+    if (iter != syncProxyObjWithResultMap_.end()) {
+      auto& methodMap = iter->second;
+      auto methodIt = methodMap.find(method);
+      if (methodIt != methodMap.end()) {
+        LOG(DEBUG) << "Processing sync native proxy result, "
+                   << "method name: " << method.ToString();
+        CallbackWithResult = methodMap[method];
+      }
+    }
+  }
+
+  if (callback == nullptr && CallbackWithResult == nullptr) {
+    LOG(DEBUG) << "Processing native proxy result failed, "
                << "method not found, name: "
                << method.ToString();
     return 1;
@@ -3122,12 +3226,22 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNew(
     }
   }
 
-  char* callbackResult = callback(dataList, dataSize);
-  if (callbackResult) {
-    result->SetString(0, callbackResult);
-  } else {
-    LOG(INFO) << "native return nullptr, just set null string to result";
-    result->SetNull(0);
+  if (callback) {
+    char* callbackResult = callback(dataList, dataSize);
+    if (callbackResult) {
+      result->SetString(0, callbackResult);
+    } else {
+      LOG(INFO) << "native return nullptr, just set null string to result";
+      result->SetNull(0);
+    }
+  } else if (CallbackWithResult) {
+    std::shared_ptr<OHOS::NWeb::NWebValue> callbackResult = CallbackWithResult(dataList, dataSize);
+    if (callbackResult) {
+      ParseNWebValueToValue(callbackResult, result);
+    } else {
+      LOG(DEBUG) << "native return nullptr, just set null string to result";
+      result->SetNull(0);
+    }
   }
 
   return 0;
@@ -3138,10 +3252,16 @@ int NWebHandlerDelegate::ProcessNativeProxyResult(
     const CefString& method,
     const CefString& object_name,
     CefRefPtr<CefListValue> result) {
-  if (auto it = syncProxyObjMap_.find(object_name); it != syncProxyObjMap_.end()) {
+  if (auto it = syncProxyObjWithResultMap_.find(object_name); it != syncProxyObjWithResultMap_.end()) {
     ProcessNativeProxyResultNew(args, method, object_name, result);
     return 0;
-  } else if (auto async_it = asyncProxyObjMap_.find(object_name); async_it != asyncProxyObjMap_.end()) {
+  } else if (auto async_it = asyncProxyObjWithResultMap_.find(object_name); async_it != asyncProxyObjWithResultMap_.end()) {
+    ProcessNativeProxyResultNew(args, method, object_name, result);
+    return 0;
+  } else if (auto it_with_result = syncProxyObjMap_.find(object_name); it_with_result != syncProxyObjMap_.end()) {
+    ProcessNativeProxyResultNew(args, method, object_name, result);
+    return 0;
+  } else if (auto async_it_with_result = asyncProxyObjMap_.find(object_name); async_it_with_result != asyncProxyObjMap_.end()) {
     ProcessNativeProxyResultNew(args, method, object_name, result);
     return 0;
   }
@@ -3640,4 +3760,11 @@ void NWebHandlerDelegate::SetPopupSurface(void* popup_window) {
   }
 }
 #endif
+
+void NWebHandlerDelegate::SetTransformHint(uint32_t rotation) {
+  content::GpuProcessHost* host = content::GpuProcessHost::Get();
+  if (main_browser_ && host && host->gpu_host()) {
+    host->gpu_host()->SetTransformHint(rotation, main_browser_->GetAcceleratedWidget(false));
+  }
+}
 }  // namespace OHOS::NWeb

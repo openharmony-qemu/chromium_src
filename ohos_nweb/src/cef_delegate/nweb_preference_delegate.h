@@ -157,6 +157,8 @@ class NWebPreferenceDelegate : public NWebPreference {
   void SetScrollable(bool enable) override;
   void SetScrollable(bool enable, int32_t scrollType) override;
   bool GetScrollable() override;
+  void SetBlurOnKeyboardHideMode(int enable) override;
+  int GetBlurEnable();
 #endif  // defined(OHOS_INPUT_EVENTS)
   void SetNativeEmbedMode(bool flag) override;
   bool GetNativeEmbedMode() override;
@@ -278,6 +280,8 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool vertical_scrollBar_access_{true};
   int overscroll_mode_{0};
   bool scroll_enabled_{true};
+  bool setting_scroll_enabled_{true};
+  int blur_enabled_;
 #endif  // defined(OHOS_INPUT_EVENTS)
 #if defined(OHOS_VIEWPORT)
   std::optional<bool> viewport_enabled_;

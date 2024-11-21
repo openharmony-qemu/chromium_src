@@ -428,6 +428,32 @@ std::string NWebDragDataImpl::GetFragmentHtml()
   return drag_data_->GetFragmentHtml();
 }
 
+bool IsTransparent(const SkBitmap& bitmap) {
+    if (bitmap.isNull()) {
+        return false;
+    }
+
+    if (bitmap.colorType() != kRGBA_8888_SkColorType && bitmap.colorType() != kBGRA_8888_SkColorType) {
+        return false;
+    }
+
+    const SkColor* pixels = static_cast<const SkColor*>(bitmap.getPixels());
+    if (!pixels) {
+        return false;
+    }
+
+    for (int y = 0; y < bitmap.height(); ++y) {
+        for (int x = 0; x < bitmap.width(); ++x) {
+            SkColor pixel = pixels[y * bitmap.rowBytes() / sizeof(SkColor) + x];
+            if (SkColorGetA(pixel) != 0) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 bool NWebDragDataImpl::GetPixelMapSetting(const void** data, size_t& len, int& width, int& height) {
   if (!drag_data_) {
     return false;
@@ -446,9 +472,18 @@ bool NWebDragDataImpl::GetPixelMapSetting(const void** data, size_t& len, int& w
   }
 
   SkBitmap out_bitmap;
-  GenerateOhosDragBitmapFromOrigin(*image_bitmap, out_bitmap, width, height);
+  width = image_bitmap->width();
+  height = image_bitmap->height();
+  bool isTransparent = IsTransparent(*image_bitmap);
+  if (!isTransparent && width != 0 && height != 0) {
+    GenerateOhosDragBitmapFromOrigin(*image_bitmap, out_bitmap, width, height);
+  } else {
+    out_bitmap = *image_bitmap;
+  }
+
   LOG(INFO) << "bitmap color type = " << static_cast<int>(out_bitmap.colorType()) << ", alpha type = " \
-    << static_cast<int>(out_bitmap.alphaType()) << "out_bitmap.computeByteSize() = " << out_bitmap.computeByteSize();
+    << static_cast<int>(out_bitmap.alphaType()) << "out_bitmap.computeByteSize() = " << out_bitmap.computeByteSize()
+    << ", isTransparent = " << isTransparent;
   auto bitmap = CefBinaryValue::Create(out_bitmap.getPixels(), out_bitmap.computeByteSize());
   if (!bitmap) {
     LOG(ERROR) << "drag data bitmap invalid";
@@ -637,6 +672,7 @@ void NWebDragDataImpl::ClearImageFileNames() {
     if (drag_data_->IsReadOnly()) {
       drag_data_->SetReadOnly(false);
       drag_data_->ClearFilenames();
+      drag_data_->ResetFileContents();
       drag_data_->SetReadOnly(true);
     } else {
       drag_data_->ClearFilenames();

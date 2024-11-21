@@ -86,6 +86,7 @@ class NWebImpl : public NWeb {
   void InitialScale(float scale) override;
   void OnPause() override;
   void OnContinue() override;
+  void WebComponentsBlur() override;
   void OnOccluded() override;
   void OnUnoccluded() override;
   void SetEnableLowerFrameRate(bool enabled) override;
@@ -116,10 +117,18 @@ class NWebImpl : public NWeb {
       const char* objName,
       const std::vector<std::shared_ptr<NWebJsProxyCallback>> &callbacks) override;
   using NativeJSProxyCallbackFunc = std::function<char*(std::vector<std::vector<uint8_t>>&, std::vector<size_t>&)>;
+  using NativeJSProxyCallbackFuncWithResult = std::function<std::shared_ptr<OHOS::NWeb::NWebValue>(
+      std::vector<std::vector<uint8_t>>&, std::vector<size_t>&)>;
   void RegisterNativeArkJSFunction(
       const std::string& objName,
       const std::vector<std::string>& methodName,
       std::vector<NativeJSProxyCallbackFunc>&& callback,
+      bool isAsync,
+      const std::string& permission);
+  void RegisterNativeArkJSFunctionWithResult(
+      const std::string& objName,
+      const std::vector<std::string>& methodName,
+      std::vector<NativeJSProxyCallbackFuncWithResult>&& callback,
       bool isAsync,
       const std::string& permission);
   void UnRegisterNativeArkJSFunction(const char* objName) override;
@@ -187,6 +196,7 @@ class NWebImpl : public NWeb {
       bool isAccessibilityFocus) override;
   std::shared_ptr<NWebAccessibilityNodeInfo> GetAccessibilityNodeInfoById(
       int64_t accessibilityId) override;
+  bool GetAccessibilityVisible(int64_t accessibilityId) override;
   std::shared_ptr<NWebAccessibilityNodeInfo> GetAccessibilityNodeInfoByFocusMove(
       int64_t accessibilityId,
       int32_t direction) override;
@@ -217,6 +227,8 @@ class NWebImpl : public NWeb {
   bool IsAdsBlockEnabledForCurPage() override;
   static bool IsAnyNWebAdblockEnabled();
   void UpdateAdblockEasyListRules(long adBlockEasyListVersion);
+  void SetAdBlockEnabledForSite(bool is_adblock_enabled,
+                                int main_frame_tree_node_id);
 #endif
 
 #if defined(OHOS_EX_PASSWORD)
@@ -563,6 +575,7 @@ class NWebImpl : public NWeb {
 #endif
 
  void SetPopupSurface(void* popupSurface) override;
+ void SetTransformHint(uint32_t rotation) override;
 
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

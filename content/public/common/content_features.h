@@ -360,6 +360,10 @@ CONTENT_EXPORT BASE_DECLARE_FEATURE(kMacWebContentsOcclusion);
 CONTENT_EXPORT BASE_DECLARE_FEATURE(kWebRtcPipeWireCapturer);
 #endif  // defined(WEBRTC_USE_PIPEWIRE)
 
+#if BUILDFLAG(IS_OHOS)
+CONTENT_EXPORT BASE_DECLARE_FEATURE(kEnableNetworkPreload);
+#endif
+
 // DON'T ADD RANDOM STUFF HERE. Put it in the main section above in
 // alphabetical order, or in one of the ifdefs (also in order in each section).
 

@@ -144,7 +144,7 @@ class NWebRenderHandler : public CefRenderHandler {
                             const TextInputInfo& text_input_info,
                             bool is_need_reset_listener,
                             const std::map<std::string, std::string>& attributesMap);
-  
+
   void HandleKeyboardDetach();
 #endif
 
@@ -216,10 +216,9 @@ class NWebRenderHandler : public CefRenderHandler {
   void CreateOverlay(CefRefPtr<CefBrowser> browser,
                      CefRefPtr<CefImage> cef_image,
                      const CefRect& cef_image_rect,
-                     const CefPoint& cef_touch_point,
-                     const CefRect& cef_screen_rect) override;
+                     const CefPoint& cef_touch_point) override;
   void OnOverlayStateChanged(CefRefPtr<CefBrowser> browser,
-                             const CefRect& cef_screen_rect) override;
+                             const CefRect& cef_image_rect) override;
 #endif
   /* CefRenderHandler method end */
 
@@ -229,14 +228,6 @@ class NWebRenderHandler : public CefRenderHandler {
 
   std::shared_ptr<NWebCustomKeyboardHandlerImpl> GetCustomKeyboardHandler() const {
     return custom_keyboard_handler_;
-  }
-
-  uint32_t GetContentHeight() const {
-    return content_height_;
-  }
-
-  uint32_t GetContentWidth() const {
-    return content_width_;
   }
 
   std::shared_ptr<NWebTouchHandleState> GetTouchHandleState(
@@ -270,7 +261,6 @@ class NWebRenderHandler : public CefRenderHandler {
   uint32_t visible_height_ = 0;
   bool needFocusViewport_ = false;
   int32_t node_id_ = -1;
-  bool is_focused_ = false;
 #endif
   int content_height_ = 0;
   int content_width_ = 0;
@@ -288,10 +278,6 @@ class NWebRenderHandler : public CefRenderHandler {
   bool is_irregular_drag_background_ = true;
   bool select_all_ = false;
 #endif // #ifdef OHOS_DRAG_DROP
-
-#ifdef OHOS_AI
-  CefRect cef_image_rect_;
-#endif
 
 #if defined(OHOS_INPUT_EVENTS)
   std::weak_ptr<NWebDelegateInterface> delegate_interface_;

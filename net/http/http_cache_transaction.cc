@@ -2007,10 +2007,24 @@ int HttpCache::Transaction::DoSuccessfulSendRequest() {
   }
 
 #if BUILDFLAG(IS_OHOS)
-  if (request_->allow_preload_record &&
-      preload_info_ != nullptr &&
+  if (request_->allow_preload_record && preload_info_ != nullptr &&
       !ShouldDisableCaching(*new_response->headers)) {
-    UpdateCacheInfo(*new_response);
+    base::TimeDelta freshnessLifetimes = new_response->headers->
+      GetFreshnessLifetimes(new_response->response_time).freshness;
+    if (freshnessLifetimes.is_zero()) {
+      preload_info_->set_cache_type(ohos_prp_preload::PRRequestCacheType::FORCE_CACHE);
+    } else {
+      DCHECK(freshnessLifetimes.is_positive());
+      preload_info_->
+        set_freshness_life_times((new_response->response_time +
+                                  freshnessLifetimes -
+                                  new_response->headers
+                                    ->GetCurrentAge(new_response->request_time,
+                                                    new_response->response_time,
+                                                    new_response->response_time)).ToInternalValue());
+      preload_info_->set_cache_type(ohos_prp_preload::PRRequestCacheType::NEGOTIATION_CACHE);
+    }
+    UpdateValidatorsInfo(*new_response->headers);
   }
 #endif
 
@@ -2831,10 +2845,17 @@ int HttpCache::Transaction::BeginCacheValidation() {
   bool needs_stale_while_revalidate_cache_update = false;
 
 #if BUILDFLAG(IS_OHOS)
-  if (request_->allow_preload_record &&
-      preload_info_ != nullptr &&
-      skip_validation) {
-    UpdateCacheInfo(response_);
+  if (request_->allow_preload_record && preload_info_ != nullptr && skip_validation) {
+    base::TimeDelta freshnessLifetimes = response_.headers->GetFreshnessLifetimes(response_.response_time).freshness;
+    if (freshnessLifetimes.is_zero()) {
+      DCHECK(freshnessLifetimes.is_positive());
+      preload_info_->set_freshness_life_times((response_.response_time + freshnessLifetimes -
+            response_.headers->GetCurrentAge(response_.request_time,
+                                             response_.response_time,
+                                             response_.response_time)).ToInternalValue());
+    }
+    preload_info_->set_cache_type(ohos_prp_preload::PRRequestCacheType::NEGOTIATION_CACHE);
+    UpdateValidatorsInfo(*response_.headers);
   }
 #endif
 
@@ -4283,6 +4304,20 @@ void HttpCache::Transaction::UpdateCacheInfo(const HttpResponseInfo& response) {
   response.headers->EnumerateHeader(nullptr, "last-modified", &last_modified);
 
   preload_info_->set_cache_info(cache_type, freshness_life_times, e_tag, last_modified);
+}
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+void HttpCache::Transaction::UpdateValidatorsInfo(const HttpResponseHeaders& headers) {
+  if (preload_info_ == nullptr) {
+    return;
+  }
+  std::string e_tag;
+  headers.EnumerateHeader(nullptr, "etag", &e_tag);
+  preload_info_->set_e_tag(e_tag);
+  std::string last_modified;
+  headers.EnumerateHeader(nullptr, "last-modified", &last_modified);
+  preload_info_->set_last_modified(last_modified);
 }
 #endif
 

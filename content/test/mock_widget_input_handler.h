@@ -285,7 +285,7 @@ class MockWidgetInputHandler : public blink::mojom::WidgetInputHandler {
                                   cc::BrowserControlsState current,
                                   bool animate) override;
 #if defined(OHOS_UNITTESTS)
-  void SetGestureEventResult(bool result) override {}
+  void SetGestureEventResult(bool result, bool stopPropagation) override {}
   void SetNativeEmbedMode(bool flag) override {}
   void AttachSoftwareCompositorOhos(::mojo::PendingReceiver<::blink::mojom::SoftwareCompositorOhos>
   compositor_request) override {}

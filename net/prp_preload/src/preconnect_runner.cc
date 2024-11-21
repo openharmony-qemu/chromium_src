@@ -4,6 +4,7 @@
 
 #include "preconnect_runner.h"
 
+#include "base/ohos/sys_info_utils.h"
 #include "net/base/http_user_agent_settings.h"
 #include "net/base/network_anonymization_key.h"
 #include "net/http/http_network_session.h"
@@ -16,13 +17,17 @@ namespace ohos_prp_preload {
 void PreconnectRunner::PreconnectSocket(
     const GURL& original_url,
     bool allow_credentials,
-    base::WeakPtr<net::URLRequestContext> url_request_context) {
+    base::WeakPtr<net::URLRequestContext> url_request_context,
+    const net::NetworkAnonymizationKey& networkAnonymizationKey) {
   if (url_request_context.get() == nullptr) {
     return;
   }
-  net::NetworkAnonymizationKey key =
-      net::NetworkAnonymizationKey::CreateSameSite(
-          net::SchemefulSite(original_url));
+  net::NetworkAnonymizationKey key = networkAnonymizationKey;
+  if (base::ohos::IsMobileDevice() == true ) {
+    key = net::NetworkAnonymizationKey::CreateSameSite(
+        net::SchemefulSite(original_url));
+  }
+
   GURL url = GetHSTSRedirect(original_url, url_request_context);
 
   std::string user_agent;
@@ -43,6 +48,7 @@ void PreconnectRunner::PreconnectSocket(
     request_info.load_flags = net::LOAD_DO_NOT_SAVE_COOKIES;
     request_info.privacy_mode = net::PRIVACY_MODE_ENABLED;
   }
+  
   request_info.network_anonymization_key = key;
 
   net::HttpTransactionFactory* factory =

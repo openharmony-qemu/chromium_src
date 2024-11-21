@@ -102,6 +102,8 @@ class WebDocumentSubresourceFilterImpl
   std::unique_ptr<std::vector<std::string>> GetUserDomPathSelectors(
       const blink::WebURL& document_url,
       bool need_generic_selectors) override;
+
+  void set_activation_state(bool enabled) override;
 #endif  // OHOS_ARKWEB_ADBLOCK
 
   LoadPolicy GetLoadPolicyForWebSocketConnect(

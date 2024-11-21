@@ -58836,6 +58836,7 @@ from previous Chrome versions.
   <int value="-1851980281" label="TabGroupsCollapse:enabled"/>
   <int value="-1850155382" label="EnablePerfettoSystemTracing:enabled"/>
   <int value="-1849706663" label="enable-password-force-saving:disabled"/>
+  <int value="-1848910029" label="EnableNetworkPreload::disabled"/>
   <int value="-1847835522" label="disable-touch-adjustment"/>
   <int value="-1847776781"
       label="enable-loading-ipc-optimization-for-small-resources"/>
@@ -65086,6 +65087,7 @@ from previous Chrome versions.
   <int value="1519067750" label="ActionableContentSettings:disabled"/>
   <int value="1520181151" label="PrintServerScaling:disabled"/>
   <int value="1520754417" label="ConfirmationChip:enabled"/>
+  <int value="1522865654" label="EnableNetworkPreload:enabled"/>
   <int value="1524178643" label="AppServiceExternalProtocol:enabled"/>
   <int value="1524631783" label="CrOSLateBootCrasSplitAlsaUSBInternal:enabled"/>
   <int value="1526489044" label="NtpRealboxMatchSearchboxTheme:disabled"/>

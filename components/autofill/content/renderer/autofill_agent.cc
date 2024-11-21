@@ -347,11 +347,46 @@ void AutofillAgent::DidDispatchDOMContentLoadedEvent() {
   ProcessForms();
 }
 
+#if defined(OHOS_AUTOFILL)
+bool AutofillAgent::OhAutoFillDidChangeScrollOffset() {
+  const WebInputElement input_element = element_.DynamicTo<WebInputElement>();
+  if (input_element.IsNull()) {
+    return false;
+  }
+  auto is_password_autofill = password_autofill_agent_->IsPasswordAutofill(input_element);
+  if (is_need_to_created_popup_ && !is_password_autofill &&
+      base::TimeTicks::Now() > created_popup_time_ &&
+      base::TimeTicks::Now() < created_popup_time_ + base::Milliseconds(kWaitTimeForScrollIntoViewMs)) {
+    if (autofill_scroll_timer_.IsRunning()) {
+      autofill_scroll_timer_.AbandonAndStop();
+    }
+    autofill_scroll_timer_.Start(
+      FROM_HERE, base::Milliseconds(50),
+      base::BindOnce(
+        [](base::WeakPtr<AutofillAgent> self) {
+          if (!self) {
+            return;
+          }
+          self->HidePopup();
+          self->HandleFocusChangeComplete(true);
+        }, weak_ptr_factory_.GetWeakPtr()));
+    return true;
+  }
+  return false;
+}
+#endif
+
 void AutofillAgent::DidChangeScrollOffset() {
   if (element_.IsNull())
     return;
 
   if (!focus_requires_scroll_) {
+#if defined(OHOS_AUTOFILL)
+    if (OhAutoFillDidChangeScrollOffset()) {
+      return;
+    }
+#endif
+
     // Post a task here since scroll offset may change during layout.
     // (https://crbug.com/804886)
     weak_ptr_factory_.InvalidateWeakPtrs();
@@ -371,28 +406,12 @@ void AutofillAgent::DidChangeScrollOffset() {
 
 void AutofillAgent::DidChangeScrollOffsetImpl(
     const WebFormControlElement& element) {
-  if (element != element_ || element.IsNull() || focus_requires_scroll_ || !element.Focused()) {
+  if (element != element_ || element.IsNull() || focus_requires_scroll_ ||
+      !is_popup_possibly_visible_ || !element.Focused()) {
     return;
   }
 
   DCHECK(IsOwnedByFrame(element, render_frame()));
-
-#if defined(OHOS_AUTOFILL)
-  const WebInputElement input_element = element.DynamicTo<WebInputElement>();
-  if (!input_element.IsNull()) {
-      auto is_password_autofill = password_autofill_agent_->IsPasswordAutofill(input_element);
-      if (is_need_to_created_popup_ && !is_password_autofill &&
-          base::TimeTicks::Now() > created_popup_time_ &&
-          base::TimeTicks::Now() < created_popup_time_ + base::Milliseconds(kWaitTimeForScrollIntoViewMs)) {
-        HidePopup();
-        HandleFocusChangeComplete(true);
-        return;
-      }
-  }
-#endif 
-  if (!is_popup_possibly_visible_) {
-      return;
-  }
 
   FormData form;
   FormFieldData field;

@@ -121,10 +121,20 @@ class NWebHandlerDelegate : public CefClient,
   using NativeJSProxyCallbackFunc =
       std::function<char*(std::vector<std::vector<uint8_t>>&,
                           std::vector<size_t>&)>;
+  using NativeJSProxyCallbackFuncWithResult =
+      std::function<std::shared_ptr<OHOS::NWeb::NWebValue>(
+          std::vector<std::vector<uint8_t>>&,
+          std::vector<size_t>&)>;
   void RegisterNativeJavaScriptCallBack(
       const std::string& objName,
       const std::vector<std::string>& methodName,
       std::vector<NativeJSProxyCallbackFunc>&& callback,
+      bool isAsync,
+      const std::string& permission);
+  void RegisterNativeJavaScriptCallBackWithResult(
+      const std::string& objName,
+      const std::vector<std::string>& methodName,
+      std::vector<NativeJSProxyCallbackFuncWithResult>&& callback,
       bool isAsync,
       const std::string& permission);
   void RegisterNativeLoadStartCallback(std::function<void(void)>&& callback);
@@ -404,7 +414,7 @@ class NWebHandlerDelegate : public CefClient,
       CefRefPtr<CefBrowser> browser,
       CefRefPtr<CefFrame> frame,
       CefRefPtr<CefRequest> request) override;
- 
+
   void GetResourceHandlerByIO(
       CefRefPtr<CefBrowser> browser,
       CefRefPtr<CefFrame> frame,
@@ -679,11 +689,21 @@ class NWebHandlerDelegate : public CefClient,
   // #endif
 
   // save ark js function for window.open
-  void SavaArkJSFunctionForPopup(const std::string& object_name,
-                                 const std::vector<std::string>& method_list,
-                                 const std::vector<std::string>& async_method_list,
-                                 const int32_t object_id,
-                                 const std::string& permission);
+  void SavaArkJSFunctionForPopup(
+      const std::string& object_name,
+      const std::vector<std::string>& method_list,
+      const std::vector<std::string>& async_method_list,
+      const int32_t object_id,
+      const std::string& permission);
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  void SaveGlobalAdsBlock(bool enable);
+
+  bool TrigAdBlockEnabledForSiteFromUi(CefRefPtr<CefBrowser> browser,
+                                       const CefString& url,
+                                       int main_frame_tree_node_id) override;
+#endif
+
 #ifdef OHOS_DRAG_DROP
   bool IsDragEnter() const { return is_drag_enter_; }
   void SetDragEnter(bool enter) { is_drag_enter_ = enter; }
@@ -742,6 +762,7 @@ class NWebHandlerDelegate : public CefClient,
 #endif
 
  void SetPopupSurface(void* popup_window);
+ void SetTransformHint(uint32_t rotation);
  private:
   void CopyImageToClipboard(CefRefPtr<CefImage> image);
   // List of existing browser windows. Only accessed on the CEF UI thread.
@@ -837,9 +858,17 @@ class NWebHandlerDelegate : public CefClient,
   std::unordered_map<std::string,
                      std::unordered_map<std::string, NativeJSProxyCallbackFunc>>
       syncProxyObjMap_;
+  std::unordered_map<
+      std::string,
+      std::unordered_map<std::string, NativeJSProxyCallbackFuncWithResult>>
+      syncProxyObjWithResultMap_;
   std::unordered_map<std::string,
                      std::unordered_map<std::string, NativeJSProxyCallbackFunc>>
       asyncProxyObjMap_;
+  std::unordered_map<
+      std::string,
+      std::unordered_map<std::string, NativeJSProxyCallbackFuncWithResult>>
+      asyncProxyObjWithResultMap_;
   std::unordered_map<std::string, std::string> asyncProxyPermissionMap_;
   std::unordered_map<std::string, std::string> syncProxyPermissionMap_;
   using MethodPair = std::pair<std::string, std::unordered_set<std::string>>;
@@ -851,6 +880,10 @@ class NWebHandlerDelegate : public CefClient,
   PermissionMap javascript_async_permission_map_;
   std::function<void(void)> onLoadStartCallback_ = nullptr;
   std::function<void(void)> onLoadEndCallback_ = nullptr;
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+      bool is_global_adblock_enabled_ = false;
+#endif
 
   base::WeakPtrFactory<NWebHandlerDelegate> weak_factory_{this};
 };

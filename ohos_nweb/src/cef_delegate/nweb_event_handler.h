@@ -82,6 +82,7 @@ class NWebEventHandler {
                               double deltaX,
                               double deltaY,
                               int32_t modifiers);
+  void WebUpdateModifiers(CefMouseEvent& mouseInfo, const cef_mouse_button_type_t& buttonType);
 #endif  // defined(OHOS_INPUT_EVENTS)
 
   CefRefPtr<CefBrowser> browser_ = nullptr;

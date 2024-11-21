@@ -320,6 +320,26 @@ std::string GetSharedRenderProcessToken(
 }
 #endif
 
+#if defined(OHOS_SCROLLBAR)
+float GetVirtualPixelRatioForScrollbar() {
+  auto display_manager_adapter =
+      OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateDisplayMgrAdapter();
+  if (display_manager_adapter == nullptr) {
+    LOG(ERROR) << "display_manager_adapter is nullptr";
+    return -1;
+  }
+  std::shared_ptr<OHOS::NWeb::DisplayAdapter> display =
+      display_manager_adapter->GetDefaultDisplay();
+  if (display == nullptr) {
+    LOG(ERROR) << "display is nullptr";
+    return -1;
+  }
+  float ratio = display->GetVirtualPixelRatio();
+  LOG(DEBUG) << "GetVirtualPixelRatio ratio:" << std::to_string(ratio);
+  return ratio;
+}
+#endif
+
 #if defined(OHOS_API_INIT_WEB_ENGINE)
 void InitialWebEngineArgs(
     std::list<std::string>& web_engine_args,
@@ -342,6 +362,15 @@ void InitialWebEngineArgs(
       "--browser-subprocess-path=/system/bin/web_render");
   web_engine_args.emplace_back("--zygote-cmd-prefix=/system/bin/web_render");
   web_engine_args.emplace_back("--remote-debugging-port=9222");
+#if defined(OHOS_SCROLLBAR)
+  static float ratio = -1.0f;
+  if (ratio < 0) {
+    ratio = GetVirtualPixelRatioForScrollbar();
+  }
+  if (ratio > 0) {
+    web_engine_args.emplace_back("--virtual-pixel-ratio=" + std::to_string(ratio));
+  }
+#endif
   web_engine_args.emplace_back("--enable-touch-drag-drop");
   web_engine_args.emplace_back("--gpu-rasterization-msaa-sample-count=1");
   // enable aggressive domstorage flushing to minimize data loss
@@ -981,11 +1010,9 @@ void NWebImpl::SetDrawRect(int x, int y, int width, int height) {
 
 void NWebImpl::SetDrawMode(int mode) {
   WVLOG_I("NWebImpl::SetDrawMode %{public}d, nweb_id = %{public}u", mode, nweb_id_);
-  if (draw_mode_ != mode) {
-    draw_mode_ = mode;
-    if (nweb_delegate_) {
-      nweb_delegate_->SetDrawMode(draw_mode_);
-    }
+  draw_mode_ = mode;
+  if (nweb_delegate_) {
+    nweb_delegate_->SetDrawMode(draw_mode_);
   }
 }
 
@@ -1317,6 +1344,16 @@ void NWebImpl::OnContinue() {
   }
 }
 
+void NWebImpl::WebComponentsBlur() {
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "nweb_delegate_ is nullptr.";
+    return;
+  }
+
+  LOG(INFO) << "NWebImpl::WebComponentsBlur, Gesture back blur on.";
+  nweb_delegate_->WebComponentsBlur();
+}
+
 void NWebImpl::OnOccluded() {
   if (!GetWebOptimizationValue()) {
     LOG(DEBUG) << "WebOptimization disabled.";
@@ -1571,6 +1608,20 @@ void NWebImpl::RegisterNativeArkJSFunction(
     const std::string& permission) {
   if (nweb_delegate_ != nullptr) {
     nweb_delegate_->RegisterNativeJSProxy(objName, methodName,
+                                          std::move(callback), isAsync, permission);
+  } else {
+    LOG(ERROR) << "nweb_delegate_ is nullptr";
+  }
+}
+
+void NWebImpl::RegisterNativeArkJSFunctionWithResult(
+    const std::string& objName,
+    const std::vector<std::string>& methodName,
+    std::vector<NativeJSProxyCallbackFuncWithResult>&& callback,
+    bool isAsync,
+    const std::string& permission) {
+  if (nweb_delegate_ != nullptr) {
+    nweb_delegate_->RegisterNativeJSProxyWithResult(objName, methodName,
                                           std::move(callback), isAsync, permission);
   } else {
     LOG(ERROR) << "nweb_delegate_ is nullptr";
@@ -2580,6 +2631,16 @@ void NWebImpl::EnableAdsBlock(bool enable) {
   nweb_delegate_->EnableAdsBlock(enable);
 }
 
+void NWebImpl::SetAdBlockEnabledForSite(bool is_adblock_enabled,
+                                        int main_frame_tree_node_id) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  LOG(DEBUG) << "[adblock] SetAdBlockEnabledForSite called from ui";
+  nweb_delegate_->SetAdBlockEnabledForSite(is_adblock_enabled,
+                                           main_frame_tree_node_id);
+}
+
 // static
 bool NWebImpl::IsAnyNWebAdblockEnabled() {
   NWebMap* map = g_nweb_map.Pointer();
@@ -2752,6 +2813,13 @@ NWebImpl::GetAccessibilityNodeInfoById(int64_t accessibilityId) {
     return nweb_delegate_->GetAccessibilityNodeInfoById(accessibilityId);
   }
   return nullptr;
+}
+
+bool NWebImpl::GetAccessibilityVisible(int64_t accessibilityId) {
+  if (nweb_delegate_ != nullptr) {
+    return nweb_delegate_->GetAccessibilityVisible(accessibilityId);
+  }
+  return true;
 }
 
 std::shared_ptr<NWebAccessibilityNodeInfo>
@@ -3568,4 +3636,10 @@ void NWebImpl::SetPopupSurface(void* popupSurface) {
         ret);
   }
   nweb_delegate_->SetPopupSurface(popup_window);
+}
+
+void NWebImpl::SetTransformHint(uint32_t rotation) {
+  if (nweb_delegate_) {
+    nweb_delegate_->SetTransformHint(rotation);
+  }
 }

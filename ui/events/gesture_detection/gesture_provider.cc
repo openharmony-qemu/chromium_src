@@ -139,11 +139,6 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
   GestureListenerImpl& operator=(const GestureListenerImpl&) = delete;
 
   void OnTouchEvent(const MotionEvent& event) {
-  #if BUILDFLAG(IS_OHOS)
-    if (gesture_provider_->GetNativeEmbedEnabled()) {
-      return;
-    }
-  #endif
     const bool in_scale_gesture = IsScaleGestureDetectionInProgress();
     snap_scroll_controller_.SetSnapScrollMode(
         event, in_scale_gesture, EffectiveSlopDistance(event, config_));
@@ -704,6 +699,10 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
   void StopCreateOverlayGesture() {
     gesture_detector_.StopCreateOverlayGesture();
   }
+
+  void OnAITextSelected() {
+    gesture_detector_.OnAITextSelected();
+  }
 #endif
 
   GestureEventData CreateGesture(const GestureEventDetails& details,
@@ -1003,6 +1002,12 @@ void GestureProvider::ResetDetection(bool is_lost_focus) {
       MotionEvent::Action::CANCEL, base::TimeTicks::Now(), PointerProperties(),
       is_lost_focus);
   OnTouchEvent(generic_cancel_event);
+}
+#endif
+
+#ifdef OHOS_AI
+void GestureProvider::OnAITextSelected() {
+  gesture_listener_->OnAITextSelected();
 }
 #endif
 

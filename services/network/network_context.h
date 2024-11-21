@@ -414,7 +414,8 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
 #endif
 #if BUILDFLAG(IS_OHOS)
   void InitPRParallelPreloadMgr() override;
-  void StartMainPage(const std::string& url, uint64_t addr_web_handle) override;
+  void StartMainPage(const std::string& url, 
+    const net::NetworkAnonymizationKey& networkAnonymizationKey, uint64_t addr_web_handle) override;
   void StopMainPage(uint64_t addr_web_handle) override;
 #endif
   void CreateHostResolver(

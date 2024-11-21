@@ -217,4 +217,11 @@ void MockClipboardHost::WriteUnsanitizedCustomFormat(
 void MockClipboardHost::WriteStringToFindPboard(const std::u16string& text) {}
 #endif
 
+#if defined(OHOS_CLIPBOARD)
+void MockClipboardHost::OnClipboardDataGuard(
+    bool status,
+    OnClipboardDataGuardCallback callback) {
+  std::move(callback).Run();
+}
+#endif
 }  // namespace content

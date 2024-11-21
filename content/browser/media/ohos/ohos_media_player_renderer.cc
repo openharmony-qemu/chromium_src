@@ -49,7 +49,7 @@ OHOSMediaPlayerRenderer::OHOSMediaPlayerRenderer(
     : client_extension_(std::move(client_extension_remote)),
       has_error_(false),
       volume_(kDefaultVolume),
-      web_contents_(web_contents),
+      web_contents_(web_contents->GetWeakPtr()),
       renderer_extension_receiver_(this,
                                    std::move(renderer_extension_receiver)) {
   WebContentsImpl* web_contents_impl =
@@ -224,11 +224,11 @@ void OHOSMediaPlayerRenderer::OnWebContentsDestroyed() {
 }
 
 void OHOSMediaPlayerRenderer::OnPlayerInterruptEvent(int32_t value) {
-  if (web_contents_ == nullptr) {
+  if (web_contents_.get() == nullptr) {
     LOG(ERROR) << "web contents is nullptr";
     return;
   }
-  MediaSessionImpl* mediaSession = MediaSessionImpl::Get(web_contents_);
+  MediaSessionImpl* mediaSession = MediaSessionImpl::Get(web_contents_.get());
   if (mediaSession == nullptr) {
     LOG(ERROR) << "get mediaSession is nullptr";
     return;
@@ -261,23 +261,27 @@ void OHOSMediaPlayerRenderer::UpdateVolume() {
 }
 
 void OHOSMediaPlayerRenderer::OnAudioStateChanged(bool isAudible) {
+  if (web_contents_.get() == nullptr) {
+    LOG(ERROR) << "web contents is nullptr";
+    return;
+  }
   WebContentsImpl* web_contents_impl =
-      static_cast<WebContentsImpl*>(web_contents_);
+      static_cast<WebContentsImpl*>(web_contents_.get());
   if (isAudible) {
     web_contents_impl->AddMediaPlayerAudibleCount();
-    web_contents_->OnAudioStateChanged();
+    web_contents_.get()->OnAudioStateChanged();
   } else {
     web_contents_impl->DelMediaPlayerAudibleCount();
-    web_contents_->OnAudioStateChanged();
+    web_contents_.get()->OnAudioStateChanged();
   }
 }
 
 void OHOSMediaPlayerRenderer::OnPlayerSeekBack(base::TimeDelta back_time) {
-  if (web_contents_ == nullptr) {
+  if (web_contents_.get() == nullptr) {
     LOG(ERROR) << "web contents is nullptr";
     return;
   }
-  MediaSessionImpl* mediaSession = MediaSessionImpl::Get(web_contents_);
+  MediaSessionImpl* mediaSession = MediaSessionImpl::Get(web_contents_.get());
   if (mediaSession == nullptr) {
     LOG(ERROR) << "get mediaSession is nullptr";
     return;

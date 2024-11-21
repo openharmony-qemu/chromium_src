@@ -1259,6 +1259,11 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
       const WebContentsObserver::MediaPlayerInfo& media_info,
       const MediaPlayerId& id,
       WebContentsObserver::MediaStoppedReason reason);
+#if BUILDFLAG(IS_OHOS)
+  void MediaPlayerGone(
+      const WebContentsObserver::MediaPlayerInfo& media_info,
+      const MediaPlayerId& id);
+#endif
   // This will be called before playback is started, check
   // GetCurrentlyPlayingVideoCount if you need this when playback starts.
   void MediaResized(const gfx::Size& size, const MediaPlayerId& id);

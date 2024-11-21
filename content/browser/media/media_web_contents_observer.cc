@@ -86,6 +86,12 @@ class MediaWebContentsObserver::PlayerInfo {
 
   bool IsAudible() const { return has_audio_ && is_playing_ && !muted_; }
 
+#if BUILDFLAG(IS_OHOS)
+  void SetIsPlayerGone() {
+    NotifyPlayerGone();
+  }
+#endif
+
   GlobalRenderFrameHostId GetHostId() { return id_.frame_routing_id; }
 
  private:
@@ -118,6 +124,15 @@ class MediaWebContentsObserver::PlayerInfo {
                                                           notification_mode);
     }
   }
+
+#if BUILDFLAG(IS_OHOS)
+  void NotifyPlayerGone() {
+    if (observer_ && observer_->web_contents_impl()) {
+      observer_->web_contents_impl()->MediaPlayerGone(
+          WebContentsObserver::MediaPlayerInfo(has_video_, has_audio_), id_);  
+    }  
+  }
+#endif
 
   const MediaPlayerId id_;
   const raw_ptr<MediaWebContentsObserver> observer_;
@@ -496,6 +511,16 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnMediaPaused(
 
   NotifyAudioStreamMonitorIfNeeded();
 }
+
+#if BUILDFLAG(IS_OHOS)
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnMediaPlayerGone() {
+  PlayerInfo* player_info = GetPlayerInfo();
+  if (!player_info)
+    return;      
+  
+  player_info->SetIsPlayerGone();
+}
+#endif
 
 void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
     NotifyAudioStreamMonitorIfNeeded() {

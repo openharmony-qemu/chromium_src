@@ -62,6 +62,7 @@
 #include "nweb_value_callback.h"
 #include "nweb_value_convert.h"
 #include "url/gurl.h"
+#include "content/browser/gpu/gpu_process_host.h"
 
 #include "ohos_adapter_helper.h"
 
@@ -859,6 +860,10 @@ void NWebHandlerDelegate::OnBeforeClose(CefRefPtr<CefBrowser> browser) {
       releaseSurfaceListener_->ReleaseSurface();
     }
   } else {
+    content::GpuProcessHost* host = content::GpuProcessHost::Get();
+    if (host !=nullptr && host->gpu_host() !=nullptr && main_browser_ != nullptr) {
+        host->gpu_host()->DestroyNativeWindow(main_browser_->GetAcceleratedWidget());
+    }
     OHOS::NWeb::OhosAdapterHelper::GetInstance()
         .GetWindowAdapterInstance()
         .DestroyNativeWindow(window_);

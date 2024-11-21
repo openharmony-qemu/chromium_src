@@ -598,9 +598,6 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   void Delete() override;
   void SelectAll() override;
   void CollapseSelection() override;
-#ifdef OHOS_CLIPBOARD
-  int32_t GetEditFlags() override;
-#endif
   void ScrollToTopOfDocument() override;
   void ScrollToBottomOfDocument() override;
   void Replace(const std::u16string& word) override;

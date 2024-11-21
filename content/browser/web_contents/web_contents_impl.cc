@@ -5455,20 +5455,6 @@ void WebContentsImpl::SelectAll() {
   RecordAction(base::UserMetricsAction("SelectAll"));
 }
 
-#ifdef OHOS_CLIPBOARD
-int32_t WebContentsImpl::GetEditFlags() {
-  OPTIONAL_TRACE_EVENT0("content", "WebContentsImpl::GetEditFlags");
-  auto* input_handler = GetFocusedFrameWidgetInputHandler();
-  if (!input_handler)
-    return 0;
-
-  last_interaction_time_ = ui::EventTimeForNow();
-  int32_t edit_flags = 0;
-  input_handler->GetEditFlags(&edit_flags);
-  return edit_flags;
-}
-#endif
-
 void WebContentsImpl::CollapseSelection() {
   OPTIONAL_TRACE_EVENT0("content", "WebContentsImpl::CollapseSelection");
   auto* input_handler = GetFocusedFrameWidgetInputHandler();

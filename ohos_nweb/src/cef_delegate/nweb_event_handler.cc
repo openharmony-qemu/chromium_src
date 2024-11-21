@@ -215,8 +215,12 @@ bool NWebEventHandler::CreateCefKeyEvent(CefKeyEvent& keyEvent,
     LOG(ERROR) << "WebSendKeyEvent keyCode conversion failed";
     return false;
   }
-  keyEvent.type = static_cast<cef_key_event_type_t>(
-      NWebInputDelegate::CefConverter("keyaction", keyAction));
+  int type = NWebInputDelegate::CefConverter("keyaction", keyAction);
+  if (type == -1) {
+    LOG(ERROR) << "keyaction conversion failed, keyAction:" << keyAction;
+    return false;
+  }
+  keyEvent.type = static_cast<cef_key_event_type_t>(type);
   keyEvent.modifiers = modifiers;
   LOG(DEBUG) << "WebSendKeyEvent modifiers = " << keyEvent.modifiers;
   keyEvent.is_system_key = false;
@@ -314,6 +318,15 @@ void NWebEventHandler::WebSendTouchpadFlingEvent(double x,
   browser_->GetHost()->SendTouchpadFlingEvent(mouseEvent, vx, vy);
 }
 
+#if defined(OHOS_INPUT_EVENTS)
+void NWebEventHandler::WebUpdateModifiers(CefMouseEvent& mouseInfo, const cef_mouse_button_type_t& buttonType) {
+  if (NWebInputDelegate::IsMouseDown(previous_action_) && previous_button_ != buttonType) {
+    mouseInfo.modifiers |= NWebInputDelegate::GetMouseButtonModifiers(
+        static_cast<cef_mouse_button_type_t>(previous_action_));
+  }
+}
+#endif
+
 void NWebEventHandler::WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent,
                                          float ratio) {
   if (!mouseEvent) {
@@ -361,7 +374,9 @@ void NWebEventHandler::WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebM
         LOG(DEBUG) << "no change in coordinates, cancel mouse move event";
         return;
       }
-
+#if defined(OHOS_INPUT_EVENTS)
+      WebUpdateModifiers(mouseInfo, buttonType);
+#endif
       last_mouse_x_ = mouseInfo.x;
       last_mouse_y_ = mouseInfo.y;
       browser_->GetHost()->SendMouseMoveEvent(mouseInfo, false);

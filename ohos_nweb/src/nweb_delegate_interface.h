@@ -104,6 +104,9 @@ class NWebDelegateInterface
   virtual bool IsAdsBlockEnabled() = 0;
 
   virtual bool IsAdsBlockEnabledForCurPage() = 0;
+
+  virtual void SetAdBlockEnabledForSite(bool is_adblock_enabled,
+                                        int main_frame_tree_node_id) = 0;
 #endif
 
 #if defined(OHOS_PASSWORD_AUTOFILL)
@@ -192,6 +195,7 @@ class NWebDelegateInterface
   virtual void InitialScale(float scale) const = 0;
   virtual void OnPause() = 0;
   virtual void OnContinue() = 0;
+  virtual void WebComponentsBlur() = 0;
   virtual void OnOccluded() = 0;
   virtual void OnUnoccluded() = 0;
   virtual void SetEnableLowerFrameRate(bool enabled) = 0;
@@ -223,6 +227,12 @@ class NWebDelegateInterface
                                       std::vector<size_t>&)>>&& callback,
       bool isAsync,
       const std::string& permission) = 0;
+  virtual void RegisterNativeJSProxyWithResult(
+      const std::string& objName,
+      const std::vector<std::string>& methodName,
+      std::vector<std::function<std::shared_ptr<OHOS::NWeb::NWebValue>(
+          std::vector<std::vector<uint8_t>>&, std::vector<size_t>&)>>&& callback,
+      bool isAsync, const std::string& permission) = 0;
   virtual void UnRegisterNativeArkJSFunction(const char* objName) = 0;
 
 #ifdef OHOS_ARKWEB_ADBLOCK
@@ -421,6 +431,7 @@ class NWebDelegateInterface
 
 #if BUILDFLAG(IS_OHOS)
   virtual void UpdateNativeEmbedInfo(std::shared_ptr<NWebNativeEmbedDataInfo> info) = 0;
+  virtual void SetTransformHint(uint32_t rotation) = 0;
 #endif
 
 #ifdef OHOS_EX_TOPCONTROLS
@@ -471,6 +482,7 @@ class NWebDelegateInterface
                                   bool isAccessibilityFocus) = 0;
   virtual std::shared_ptr<NWebAccessibilityNodeInfo>
   GetAccessibilityNodeInfoById(int64_t accessibilityId) = 0;
+  virtual bool GetAccessibilityVisible(int64_t accessibilityId) = 0;
   virtual std::shared_ptr<NWebAccessibilityNodeInfo>
   GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
                                       int32_t direction) = 0;

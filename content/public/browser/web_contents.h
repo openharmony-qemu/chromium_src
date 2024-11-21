@@ -645,7 +645,8 @@ class WebContents : public PageNavigator,
 #endif
 
 #ifdef OHOS_ARKWEB_ADBLOCK
-  virtual bool TrigAdBlockEnabledForSite(GURL url) = 0;
+  virtual void TrigAdBlockEnabledForSiteFromUi(
+      const std::string& main_frame_url) = 0;
 
   virtual void EnableAdsBlock(bool enable) = 0;
 
@@ -656,6 +657,13 @@ class WebContents : public PageNavigator,
       const std::string& main_frame_url,
       const std::map<std::string, int32_t>& subresource_blocked,
       bool is_site_first_report) = 0;
+
+  virtual void UpdateAdBlockEnabledToRender(bool site_adblock_enabled) = 0;
+
+  virtual bool GetAdblockEnabledForSite() = 0;
+
+  virtual void SetAdBlockEnabledForSite(bool is_adblock_enabled,
+                                        int main_frame_tree_node_id) = 0;
 #endif
 
 #if defined(OHOS_EX_PASSWORD)
@@ -1540,6 +1548,9 @@ class WebContents : public PageNavigator,
 #ifdef OHOS_DRAG_DROP
   virtual void ClearContextMenu() = 0;
 #endif //OHOS_DRAG_DROP
+#ifdef OHOS_CLIPBOARD
+  virtual int32_t GetEditFlags() { return 0; }
+#endif
  private:
   // This interface should only be implemented inside content.
   friend class WebContentsImpl;

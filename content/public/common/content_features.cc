@@ -741,7 +741,12 @@ BASE_FEATURE(kMojoDedicatedThread,
 // Enables/disables the video capture service.
 BASE_FEATURE(kMojoVideoCapture,
              "MojoVideoCapture",
-             base::FEATURE_ENABLED_BY_DEFAULT);
+#if BUILDFLAG(IS_OHOS)
+            base::FEATURE_DISABLED_BY_DEFAULT
+#else
+            base::FEATURE_ENABLED_BY_DEFAULT
+#endif
+);
 
 // A secondary switch used in combination with kMojoVideoCapture.
 // This is intended as a kill switch to allow disabling the service on
@@ -749,7 +754,12 @@ BASE_FEATURE(kMojoVideoCapture,
 // via a command-line argument.
 BASE_FEATURE(kMojoVideoCaptureSecondary,
              "MojoVideoCaptureSecondary",
-             base::FEATURE_ENABLED_BY_DEFAULT);
+#if BUILDFLAG(IS_OHOS)
+            base::FEATURE_DISABLED_BY_DEFAULT
+#else
+            base::FEATURE_ENABLED_BY_DEFAULT
+#endif
+);
 
 // When NavigationNetworkResponseQueue is enabled, the browser will schedule
 // some tasks related to navigation network responses in a kHighest priority
@@ -1116,7 +1126,7 @@ BASE_FEATURE(kRunVideoCaptureServiceInBrowserProcess,
 // Linux or ChromeOS, as it requires platform authenticator support.
 BASE_FEATURE(kSecurePaymentConfirmation,
              "SecurePaymentConfirmationBrowser",
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT

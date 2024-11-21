@@ -647,6 +647,9 @@ void InputRouterImpl::FilterAndSendWebInputEvent(
     OHOS::NWeb::ResSchedClientAdapter::ReportScene(
       OHOS::NWeb::ResSchedStatusAdapter::WEB_SCENE_ENTER, OHOS::NWeb::ResSchedSceneAdapter::SLIDE);
   }
+  if (input_event.GetType() == WebInputEvent::Type::kTouchStart) {
+    native_result_ = false;
+  }
 
   output_stream_validator_.Validate(input_event);
   blink::mojom::InputEventResultState filtered_state =
@@ -685,7 +688,9 @@ void InputRouterImpl::FilterAndSendWebInputEvent(
                   input_router->client_->OnInvalidInputEventSource();
                 return;
               }
-
+              if (input_router && input_router->GetNativeResult()) {
+                state = blink::mojom::InputEventResultState::kConsumed;
+              }
               std::move(callback).Run(
                   source, latency, state, std::move(overscroll),
                   std::move(touch_action), std::move(scroll_result_data));
@@ -888,8 +893,9 @@ void InputRouterImpl::UpdateTouchAckTimeoutEnabled() {
 }
 
 #if BUILDFLAG(IS_OHOS)
-void InputRouterImpl::SetGestureEventResult(bool result) {
-  client_->GetWidgetInputHandler()->SetGestureEventResult(result);
+void InputRouterImpl::SetGestureEventResult(bool result, bool stopPropagation) {
+  native_result_ = result;
+  client_->GetWidgetInputHandler()->SetGestureEventResult(result, stopPropagation);
 }
 
 void InputRouterImpl::SetNativeEmbedMode(bool flag) {

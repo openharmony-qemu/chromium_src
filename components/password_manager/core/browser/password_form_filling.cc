@@ -218,7 +218,7 @@ LikelyFormFilling SendFillInformationToRenderer(
     LOG(INFO) << "[passwordSave] current tab is incognito";
 #endif
     wait_for_username_reason = WaitForUsernameReason::kIncognitoMode;
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
   } else if (client->GetPasswordFeatureManager()
                  ->IsBiometricAuthenticationBeforeFillingEnabled()) {
     wait_for_username_reason = WaitForUsernameReason::kBiometricAuthentication;
@@ -259,15 +259,9 @@ LikelyFormFilling SendFillInformationToRenderer(
 
   bool wait_for_username =
       wait_for_username_reason != WaitForUsernameReason::kDontWait;
-#ifdef OHOS_EX_PASSWORD
-  if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(switches::kEnableNwebExPassword)) {
-    bool excludable_devices = (*base::CommandLine::ForCurrentProcess()).HasSwitch(
-            switches::kPasswordWaitUsername);
-    if (!excludable_devices) {
-      wait_for_username = true;
-    }
-  }
-#endif // defined(OHOS_EX_PASSWORD)
+#ifdef OHOS_PASSWORD_AUTOFILL
+  wait_for_username = true;
+#endif // defined(OHOS_PASSWORD_AUTOFILL)
 
 #else
   bool wait_for_username = true;

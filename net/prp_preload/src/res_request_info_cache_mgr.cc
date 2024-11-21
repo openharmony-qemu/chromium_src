@@ -92,9 +92,11 @@ void JsonToResReqPreloadInfoList(const std::string& json,
   }
 }
 ResReqInfoCacheMgr::ResReqInfoCacheMgr(const std::string& url,
+  const net::NetworkAnonymizationKey& networkAnonymizationKey,
   const scoped_refptr<base::SingleThreadTaskRunner>& sth_task_runner,
   const scoped_refptr<DiskCacheBackendFactory>& disk_cache_backend_factory,
   const ResRequestInfoCacheLoadedCB& info_cache_cb) :
+    url_(url), networkAnonymizationKey_(networkAnonymizationKey),
     sth_task_runner_(sth_task_runner), info_cache_loaded_cb_(info_cache_cb) {
       disk_cache_ = base::WrapRefCounted(new (std::nothrow) DiskCacheFile(disk_cache_backend_factory, url,
         base::BindRepeating(&ResReqInfoCacheMgr::OnEntryLoadedCallback, weak_factory_.GetWeakPtr())));
@@ -144,13 +146,13 @@ void ResReqInfoCacheMgr::OnEntryLoadedCallback(const std::string& entry_content)
   }
   JsonToResReqPreloadInfoList(entry_content, load_info_list_);
   if (!info_cache_loaded_cb_.is_null()) {
-    info_cache_loaded_cb_.Run(load_info_list_);
+    info_cache_loaded_cb_.Run(load_info_list_, networkAnonymizationKey_);
   }
 }
 
 void ResReqInfoCacheMgr::CheckFlush() {
   if (!is_start_) {
-    LOG(DEBUG) << "PRPPreload.ResReqInfoCacheMgr::CheckFlush no need to flush";
+    LOG(DEBUG) << "PRPPreload.ResReqInfoCacheMgr::CheckFlush no need to flush" << url_;
     return;
   }
   if (last_flush_len_ < new_info_list_.size()) {

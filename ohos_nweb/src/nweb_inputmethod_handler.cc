@@ -87,6 +87,10 @@ class OnTextChangedListenerImpl : public IMFTextListenerAdapter {
     handler_->SetIMEStatus(status);
   }
 
+  void KeyboardUpperRightCornerHide() override {
+    handler_->WebBlurKeyboardHide();
+  }
+
   void MoveCursor(const IMFAdapterDirection direction) override {
     if (direction == IMFAdapterDirection::NONE) {
       LOG(ERROR) << "NWebInputMethodHandler::MoveCursor got none direction";
@@ -630,6 +634,14 @@ void NWebInputMethodHandler::SetIMEStatus(bool status) {
   }
 }
 
+void NWebInputMethodHandler::WebBlurKeyboardHide() {
+  if (browser_ != nullptr && browser_->GetHost() != nullptr) {
+    CefRefPtr<CefTask> task = new InputMethodTask(base::BindOnce(
+        &NWebInputMethodHandler::WebBlurKeyboardHideOnUI, this));
+    browser_->GetHost()->PostTaskToUIThread(task);
+  }
+}
+
 void NWebInputMethodHandler::InsertText(const std::u16string& text) {
   if (text.empty()) {
     LOG(ERROR) << "insert text empty!";
@@ -667,10 +679,15 @@ void NWebInputMethodHandler::SetIMEStatusOnUI(bool status) {
     composing_text_.clear();
   }
   ime_shown_ = status;
-  isAttached_ =  status;
+}
+
+void NWebInputMethodHandler::WebBlurKeyboardHideOnUI() {
+  LOG(INFO) << "NWebInputMethodHandler::WebBlurKeyboardHideOnUI" ;
+  browser_->GetHost()->SetFocusOnWeb();
 }
 
 void NWebInputMethodHandler::InsertTextHandlerOnUI(const std::u16string& text) {
+  LOG(INFO) << "NWebInputMethodHandler::InsertTextHandlerOnUI text length:" << text.length();
   if (text.empty()) {
     LOG(ERROR) << "insert text empty!";
     return;
@@ -1008,6 +1025,10 @@ void NWebInputMethodHandler::SetFocusStatus(bool focus_status) {
     }
   }
   focus_status_ = focus_status;
+}
+
+bool NWebInputMethodHandler::GetFocusStatus() {
+  return focus_status_;
 }
 
 void NWebInputMethodHandler::OnEditableChanged(CefRefPtr<CefBrowser> browser,

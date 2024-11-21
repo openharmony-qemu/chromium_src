@@ -40,33 +40,6 @@ void FreeEGLClientBuffer(EGLClientBuffer egl_client_buffer) {
       .FreeEGLBuffer(egl_client_buffer);
 }
 
-base::ScopedFD CreateEglFenceAndExportFd() {
-  if (!gl::GLSurfaceEGL::GetGLDisplayEGL()
-           ->IsAndroidNativeFenceSyncSupported()) {
-    LOG(ERROR) << "Unable to support native fence!";
-    return base::ScopedFD();
-  }
-
-  EGLSyncKHR sync = EGL_NO_SYNC_KHR;
-  EGLDisplay display = eglGetCurrentDisplay();
-  if (display != EGL_NO_DISPLAY) {
-    sync = eglCreateSyncKHR(display, EGL_SYNC_NATIVE_FENCE_ANDROID, nullptr);
-  }
-
-  if (sync == EGL_NO_SYNC_KHR) {
-    LOG(ERROR) << "Unable to get EGLSyncKHR.";
-    return base::ScopedFD();
-  }
-
-  const EGLint sync_fd = eglDupNativeFenceFDANDROID(display, sync);
-  if (sync_fd < 0) {
-    LOG(ERROR) << "Unable to get a gpu fence.";
-    return base::ScopedFD();
-  }
-
-  return base::ScopedFD(sync_fd);
-}
-
 bool InsertEglFenceAndWait(base::ScopedFD acquire_fence_fd) {
   int fence_fd = acquire_fence_fd.release();
   // If fence_fd is -1, we do not need synchronization fence and image is ready

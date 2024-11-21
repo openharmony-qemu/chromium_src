@@ -180,6 +180,18 @@ void ClipboardHostImpl::ReadAvailableTypes(
   std::move(callback).Run(types);
 }
 
+#if defined(OHOS_CLIPBOARD)
+void ClipboardHostImpl::OnClipboardDataGuard(
+    bool status,
+    OnClipboardDataGuardCallback callback) {
+  ui::Clipboard* clipboard = ui::Clipboard::GetForCurrentThread();
+  if (clipboard) {
+    clipboard->OnClipboardDataGuard(status);
+  }
+  std::move(callback).Run();
+}
+#endif
+
 void ClipboardHostImpl::IsFormatAvailable(blink::mojom::ClipboardFormat format,
                                           ui::ClipboardBuffer clipboard_buffer,
                                           IsFormatAvailableCallback callback) {

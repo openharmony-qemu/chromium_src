@@ -39,7 +39,6 @@ constexpr int fontMaxSize = 72;
 enum class WebScrollType : int32_t {
     UNKNOWN = -1,
     EVENT = 0,
-    POSITION
 };
 
 int ConvertCacheMode(NWebPreference::CacheModeFlag flag) {
@@ -165,7 +164,8 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
       !IsHorizontalScrollBarAccess() ? STATE_ENABLED : STATE_DISABLED;
   browser_settings.hide_vertical_scrollbars =
       !IsVerticalScrollBarAccess() ? STATE_ENABLED : STATE_DISABLED;
-  browser_settings.scroll_enabled = GetScrollable();
+  browser_settings.scroll_enabled = setting_scroll_enabled_;
+  browser_settings.blur_enabled = GetBlurEnable();
 #endif  // defined(OHOS_INPUT_EVENTS)
 #if BUILDFLAG(IS_OHOS)
   browser_settings.native_embed_mode_enabled =
@@ -699,11 +699,22 @@ void NWebPreferenceDelegate::SetScrollable(bool enable) {
   browser_->GetHost()->SetScrollable(enable, static_cast<int32_t>(WebScrollType::UNKNOWN));
 }
 
+void NWebPreferenceDelegate::SetBlurOnKeyboardHideMode(int enable) {
+  blur_enabled_ = enable;
+  WebPreferencesChanged();
+}
+
+int NWebPreferenceDelegate::GetBlurEnable() {
+  return blur_enabled_;
+}
+
 void NWebPreferenceDelegate::SetScrollable(bool enable, int32_t scrollType) {
   scroll_enabled_ = enable;
-  if (scrollType == static_cast<int32_t>(WebScrollType::UNKNOWN) ||
-      scrollType == static_cast<int32_t>(WebScrollType::POSITION) ||
-      scroll_enabled_) {
+  setting_scroll_enabled_ = enable;
+  if (scrollType == static_cast<int32_t>(WebScrollType::UNKNOWN)) {
+    WebPreferencesChanged();
+  } else if (scrollType == static_cast<int32_t>(WebScrollType::EVENT)) {
+    setting_scroll_enabled_ = true;
     WebPreferencesChanged();
   }
   if (!browser_.get()) {
@@ -906,15 +917,11 @@ void NWebPreferenceDelegate::PutBackForwardCacheOptions(int size, int time_to_li
 }
 
 int NWebPreferenceDelegate::GetCacheSize() {
-  int tmp = size_;
-  size_ = -1;
-  return tmp;
+  return size_;
 }
 
 int NWebPreferenceDelegate::GetTimeToLive() {
-  int tmp = time_to_live_;
-  time_to_live_ = -1;
-  return tmp;
+  return time_to_live_;
 }
 #endif // OHOS_BFCACHE
 

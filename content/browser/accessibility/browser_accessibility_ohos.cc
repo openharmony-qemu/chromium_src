@@ -17,6 +17,9 @@ namespace content {
 using namespace OHOS::NWeb;
 
 using AccessibilityIdMap = std::unordered_map<int64_t, BrowserAccessibilityOHOS*>;
+namespace {
+constexpr int NUMBER_TWO = 2;
+}
 
 base::LazyInstance<AccessibilityIdMap>::Leaky g_accessibility_id_map =
     LAZY_INSTANCE_INITIALIZER;
@@ -384,6 +387,18 @@ bool BrowserAccessibilityOHOS::HasOnlyTextChildren() const {
     if (child && !child->IsText() &&
         child->GetRole() != ax::mojom::Role::kStrong &&
         !child->IsEmptyContainer()) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool BrowserAccessibilityOHOS::HasOnlyDirectTextChildren() const {
+  for (auto& childNode : PlatformChildren()) {
+    BrowserAccessibilityOHOS& childNodeOHOS =
+        static_cast<BrowserAccessibilityOHOS&>(childNode);
+    if (!childNodeOHOS.IsText() &&
+        childNodeOHOS.GetRole() != ax::mojom::Role::kStrong) {
       return false;
     }
   }
@@ -1062,17 +1077,20 @@ bool BrowserAccessibilityOHOS::IsAccessibilityGroup() const {
   if (GetRole() == ax::mojom::Role::kParagraph) {
     return HasOnlyTextChildren();
   }
+  if (GetRole() == ax::mojom::Role::kGenericContainer) {
+    return HasOnlyDirectTextChildren();
+  }
   return false;
 }
 
 bool BrowserAccessibilityOHOS::IsIgnoredContainer() const {
-  if (GetRole() != ax::mojom::Role::kGenericContainer) {
+  if (GetRole() != ax::mojom::Role::kGenericContainer || IsScrollable()) {
     return false;
   }
   if (IsClickable() && !HasClickableChildren()) {
     return false;
   }
-  if (!PlatformChildCount()) {
+  if (!PlatformChildCount() || HasOnlyTextChildren()) {
     return false;
   }
   return true;
@@ -1116,6 +1134,65 @@ void BrowserAccessibilityOHOS::GetChildrenIds(std::vector<int64_t>& childrenIds)
 
 void BrowserAccessibilityOHOS::SetChildrenIds(const std::vector<int64_t>& childrenIds) {
   childrenIds_ = childrenIds;
+}
+
+bool BrowserAccessibilityOHOS::Scroll(ScrollDirection direction, bool is_page_scroll) const {
+  int x_initial = GetIntAttribute(ax::mojom::IntAttribute::kScrollX);
+  int x_min = GetIntAttribute(ax::mojom::IntAttribute::kScrollXMin);
+  int x_max = GetIntAttribute(ax::mojom::IntAttribute::kScrollXMax);
+  int y_initial = GetIntAttribute(ax::mojom::IntAttribute::kScrollY);
+  int y_min = GetIntAttribute(ax::mojom::IntAttribute::kScrollYMin);
+  int y_max = GetIntAttribute(ax::mojom::IntAttribute::kScrollYMax);
+
+  // Figure out the bounding box of the visible portion of this scrollable
+  // view so we know how much to scroll by.
+  gfx::Rect bounds = GetClippedRootFrameBoundsRect();
+
+  // Scroll by 50% of one page, or 100% for page scrolls.
+  int page_x = 0;
+  int page_y = 0;
+  if (is_page_scroll) {
+    page_x = std::max(bounds.width(), 1);
+    page_y = std::max(bounds.height(), 1);
+  } else {
+    page_x = std::max(bounds.width() / NUMBER_TWO, 1);
+    page_y = std::max(bounds.height() / NUMBER_TWO, 1);
+  }
+
+  if (direction == ScrollDirection::FORWARD)
+    direction = y_max > y_min ? ScrollDirection::DOWN : ScrollDirection::RIGHT;
+  if (direction == ScrollDirection::BACKWARD)
+    direction = y_max > y_min ? ScrollDirection::UP : ScrollDirection::LEFT;
+
+  int x = x_initial;
+  int y = y_initial;
+  switch (direction) {
+    case ScrollDirection::UP:
+      if (y_initial == y_min)
+        return false;
+      y = std::clamp(y_initial - page_y, y_min, y_max);
+      break;
+    case ScrollDirection::DOWN:
+      if (y_initial == y_max)
+        return false;
+      y = std::clamp(y_initial + page_y, y_min, y_max);
+      break;
+    case ScrollDirection::LEFT:
+      if (x_initial == x_min)
+        return false;
+      x = std::clamp(x_initial - page_x, x_min, x_max);
+      break;
+    case ScrollDirection::RIGHT:
+      if (x_initial == x_max)
+        return false;
+      x = std::clamp(x_initial + page_x, x_min, x_max);
+      break;
+    default:
+      NOTREACHED();
+  }
+
+  manager()->SetScrollOffset(*this, gfx::Point(x, y));
+  return true;
 }
 
 }  // namespace content

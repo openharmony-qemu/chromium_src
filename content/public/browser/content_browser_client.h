@@ -2493,6 +2493,11 @@ class CONTENT_EXPORT ContentBrowserClient {
   // in RenderFrameHostImpl. Currently in Chrome, this is true for all
   // extension origins.
   virtual bool ShouldUseFirstPartyStorageKey(const url::Origin& origin);
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  virtual void UpdateAdBlockEnabledForSite(RenderFrameHost* rfh,
+                                           const GURL& gurl) {}
+#endif
 };
 
 }  // namespace content

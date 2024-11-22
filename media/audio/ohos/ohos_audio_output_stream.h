@@ -193,6 +193,8 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_;
 
   std::shared_ptr<AudioOutputChangeCallback> outputChangeCallback_ = nullptr;
+
+  FILE *dumpFile_ = nullptr;
 };
 
 }  // namespace media

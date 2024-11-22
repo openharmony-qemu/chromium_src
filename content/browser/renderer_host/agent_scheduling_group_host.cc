@@ -377,7 +377,7 @@ void AgentSchedulingGroupHost::DidUnloadRenderFrame(
 #if BUILDFLAG(IS_OHOS)
 void AgentSchedulingGroupHost::ReportCreateView(int32_t process_id) {
   OHOS::NWeb::ResSchedClientAdapter::ReportProcessInUse(process_id);
-  if (base::ohos::IsPcDevice() || base::ohos::IsTableDevice()) {
+  if (base::ohos::IsPcDevice() || base::ohos::IsTabletDevice()) {
     OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(OHOS::NWeb::ResSchedStatusAdapter::THREAD_CREATED,
       process_id, process_id, OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_DISPLAY);
   }

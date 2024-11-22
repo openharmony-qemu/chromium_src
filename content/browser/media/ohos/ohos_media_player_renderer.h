@@ -118,7 +118,7 @@ class CONTENT_EXPORT OHOSMediaPlayerRenderer
 
   bool initialized_ = false;
 
-  WebContents* web_contents_ = nullptr;
+  base::WeakPtr<WebContents> web_contents_ = nullptr;
 
   time_t intervalSinceLastSuspend_;
 

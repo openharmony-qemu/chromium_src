@@ -60,7 +60,6 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
                           const CefString& text,
                           const CefRange& selected_range) override;
   void SetFocusStatus(bool focus_status) override;
-  bool GetFocusStatus() override;
   void OnEditableChanged(CefRefPtr<CefBrowser> browser,
                          bool is_editable_node) override;
   bool GetIsEditableNode() override;
@@ -143,6 +142,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   bool IsTextInputStateChange(const CefString& text,
                               const CefRange& selected_range,
                               const CefRange& compositon_range);
+  bool AttachToSystemIME(bool is_need_reset_listener);
 
 #if defined(OHOS_PASSWORD_AUTOFILL)
   void AutoFillWithIMFEventOnUI(bool is_username,
@@ -180,6 +180,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   std::chrono::high_resolution_clock::time_point lastCloseInputMethodTime_;
   bool isNeedReattachOnfocus_ = false;
   int32_t input_flags_ = 0;
+  int32_t input_node_id_ = -1;
 
   int textCursorReady_ = 0;
   std::mutex textCursorMutex_;

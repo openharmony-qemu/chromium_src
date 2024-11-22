@@ -308,6 +308,7 @@ void NWebInputMethodHandler::ComputeEditorInfo(InputInfo inputInfo, int32_t cust
   type_text_flag_multi_line_ = false;
   show_keyboard_ = inputInfo.show_keyboard;
   input_flags_ = inputInfo.input_flags;
+  input_node_id_ = inputInfo.node_id;
   if (inputInfo.input_mode != CEF_TEXT_INPUT_MODE_DEFAULT &&
       inputInfo.input_type != CEF_TEXT_INPUT_TYPE_PASSWORD) {
     imf_input_mode_ = TextInputModeToIMFAdapter(inputInfo.input_mode);
@@ -320,17 +321,16 @@ void NWebInputMethodHandler::ComputeEditorInfo(InputInfo inputInfo, int32_t cust
   }
 }
 
-void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
-                                    InputInfo inputInfo,
-                                    bool is_need_reset_listener,
-                                    int32_t enterKeyType) {
-  LOG(INFO) << "NWebInputMethodHandler::Attach";
-  ComputeEditorInfo(inputInfo, enterKeyType);
-  composing_text_.clear();
-  browser_ = browser;
+bool NWebInputMethodHandler::AttachToSystemIME(bool is_need_reset_listener) {
   if (inputmethod_adapter_ == nullptr) {
     LOG(ERROR) << "inputmethod_adapter_ is nullptr";
-    return;
+    return false;
+  }
+  if (!focus_status_) {
+    LOG(INFO) << "Do not attach the IME in the unfocused status, will reattach "
+                 "after focused";
+    isNeedReattachOnfocus_ = true;
+    return false;
   }
   if (inputmethod_listener_ == nullptr) {
     inputmethod_listener_ = std::make_shared<OnTextChangedListenerImpl>(this);
@@ -355,12 +355,12 @@ void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
   if (!inputmethod_adapter_->Attach(inputmethod_listener_, show_keyboard_,
                                     textConfig, is_need_reset_listener)) {
     LOG(ERROR) << "inputmethod_adapter_ attach failed";
-    return;
+    return false;
   }
 
 #if defined(OHOS_PASSWORD_AUTOFILL)
   if (!fill_content_.empty()) {
-    if (fill_content_node_id_ == inputInfo.node_id) {
+    if (fill_content_node_id_ == input_node_id_) {
       LOG(INFO) << "send autofill cancel fill content to IMF";
       inputmethod_adapter_->SendPrivateCommand(AUTO_FILL_CANCEL_PRIVATE_COMMAND,
                                                fill_content_);
@@ -368,19 +368,36 @@ void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
     fill_content_.clear();
   }
 #endif
+  return true;
+}
 
+void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
+                                    InputInfo inputInfo,
+                                    bool is_need_reset_listener,
+                                    int32_t enterKeyType) {
+  LOG(INFO) << "NWebInputMethodHandler::Attach";
+  ComputeEditorInfo(inputInfo, enterKeyType);
+  composing_text_.clear();
+  browser_ = browser;
+
+  if (!AttachToSystemIME(is_need_reset_listener)) {
+    return;
+  }
   isAttached_ = true;
   lastAttachNWebId_ = nweb_id_;
   lastInputMode_ = imf_input_mode_;
 
   if (focus_status_ && focus_rect_status_) {
     if (inputmethod_adapter_) {
-      inputmethod_adapter_->OnCursorUpdate(cursorInfo);
+      inputmethod_adapter_->OnCursorUpdate(GetCursorInfo());
     }
   }
 }
 
 bool NWebInputMethodHandler::Reattach(uint32_t nwebId, ReattachType type) {
+  LOG(INFO) << "Trigger reattach, nwebId=" << nwebId << ", source="
+            << (type == ReattachType::FROM_ONFOCUS ? "focus" : "continue")
+            << ", editable=" << is_editable_node_;
   nweb_id_ = nwebId;
   if (type == ReattachType::FROM_CONTINUE) {
     if (!isNeedReattachOncontinue_ || !is_editable_node_) {
@@ -399,41 +416,13 @@ bool NWebInputMethodHandler::Reattach(uint32_t nwebId, ReattachType type) {
   }
 
   composing_text_.clear();
-  if (inputmethod_listener_ == nullptr) {
-    inputmethod_listener_ = std::make_shared<OnTextChangedListenerImpl>(this);
-  }
   ClearComposingStatus();
-
-  if (!show_keyboard_ && !isAttached_) {
-    inputmethod_adapter_->HideTextInput();
-    inputmethod_adapter_->Close();
-    return false;
-  }
-
-  std::shared_ptr<NWebIMFInputAttributeAdapterImpl> inputAttribute =
-      std::make_shared<NWebIMFInputAttributeAdapterImpl>();
-  inputAttribute->SetInputPattern(static_cast<int32_t>(imf_input_mode_));
-  inputAttribute->SetEnterKeyType(static_cast<int32_t>(imf_input_action_));
-
-  std::shared_ptr<IMFCursorInfoAdapter> cursorInfo = GetCursorInfo();
-
-  std::shared_ptr<NWebIMFTextConfigAdapterImpl> textConfig =
-      std::make_shared<NWebIMFTextConfigAdapterImpl>();
-  textConfig->SetInputAttribute(inputAttribute);
-  textConfig->SetCursorInfo(cursorInfo);
-  textConfig->SetWindowId(windowId_);
-  textConfig->SetPositionY(offset_y_);
-  textConfig->SetHeight((focus_rect_.y + focus_rect_.height + AVOID_OFFSET) *
-                        device_pixel_ratio_);
-
   if (!show_keyboard_ && isAttached_ && imf_input_mode_ != lastInputMode_) {
     LOG(ERROR) << "do not need attach";
     inputmethod_adapter_->Close();
   }
 
-  if (!inputmethod_adapter_->Attach(inputmethod_listener_, show_keyboard_,
-                                    textConfig, false)) {
-    LOG(ERROR) << "inputmethod_adapter_ attach failed";
+  if (!AttachToSystemIME(false)) {
     return false;
   }
   isAttached_ = true;
@@ -1025,10 +1014,6 @@ void NWebInputMethodHandler::SetFocusStatus(bool focus_status) {
     }
   }
   focus_status_ = focus_status;
-}
-
-bool NWebInputMethodHandler::GetFocusStatus() {
-  return focus_status_;
 }
 
 void NWebInputMethodHandler::OnEditableChanged(CefRefPtr<CefBrowser> browser,

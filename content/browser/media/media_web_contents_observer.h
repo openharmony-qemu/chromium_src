@@ -211,6 +211,9 @@ class CONTENT_EXPORT MediaWebContentsObserver
     // media::mojom::MediaPlayerObserver implementation.
     void OnMediaPlaying() override;
     void OnMediaPaused(bool stream_ended) override;
+#if BUILDFLAG(IS_OHOS)
+    void OnMediaPlayerGone() override;
+#endif
     void OnMutedStatusChanged(bool muted) override;
     void OnMediaMetadataChanged(
         bool has_audio,

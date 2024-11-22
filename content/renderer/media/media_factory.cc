@@ -135,7 +135,7 @@
 #endif  // BUILDFLAG(IS_WIN)
 
 #if BUILDFLAG(IS_OHOS)
-#include "base/ohos/sys_info_utils.h"
+#include "base/system/sys_info.h"
 #include "content/renderer/media/ohos/native_renderer_client_factory.h"
 #include "content/renderer/media/ohos/native_texture_wrapper_impl.h"
 #include "content/renderer/media/ohos/ohos_media_player_renderer_client_factory.h"

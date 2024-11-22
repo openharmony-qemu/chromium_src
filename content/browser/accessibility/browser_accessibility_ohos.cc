@@ -124,7 +124,8 @@ bool BrowserAccessibilityOHOS::IsSelected() const {
 }
 
 bool BrowserAccessibilityOHOS::IsScrollable() const {
-  return GetBoolAttribute(ax::mojom::BoolAttribute::kScrollable);
+  return GetBoolAttribute(ax::mojom::BoolAttribute::kScrollable) || 
+      (GetMaxScrollX() != 0) || (GetMaxScrollY() != 0);
 }
 
 bool BrowserAccessibilityOHOS::ShouldExposeValueAsName() const {
@@ -382,38 +383,28 @@ bool BrowserAccessibilityOHOS::IsHierarchical() const {
 }
 
 bool BrowserAccessibilityOHOS::HasOnlyTextChildren() const {
-  for (auto& childId : childrenIds_) {
-    BrowserAccessibilityOHOS* child = GetFromAccessibilityId(childId);
-    if (child && !child->IsText() &&
-        child->GetRole() != ax::mojom::Role::kStrong &&
-        !child->IsEmptyContainer()) {
+  for (auto it = InternalChildrenBegin(); it != InternalChildrenEnd(); ++it) {
+    if (!it->IsText() && it->GetRole() != ax::mojom::Role::kStrong) {
       return false;
     }
   }
   return true;
 }
 
-bool BrowserAccessibilityOHOS::HasOnlyDirectTextChildren() const {
-  for (auto& childNode : PlatformChildren()) {
-    BrowserAccessibilityOHOS& childNodeOHOS =
-        static_cast<BrowserAccessibilityOHOS&>(childNode);
-    if (!childNodeOHOS.IsText() &&
-        childNodeOHOS.GetRole() != ax::mojom::Role::kStrong) {
+bool BrowserAccessibilityOHOS::HasOnlyTextAndContainerChildren() const {
+  for (auto it = InternalChildrenBegin(); it != InternalChildrenEnd(); ++it) {
+    if (!it->IsText() && it->GetRole() != ax::mojom::Role::kStrong &&
+        it->GetRole() != ax::mojom::Role::kGenericContainer) {
       return false;
+    }
+    if (it->GetRole() == ax::mojom::Role::kGenericContainer) {
+      BrowserAccessibilityOHOS* child = static_cast<BrowserAccessibilityOHOS*>(it.get());
+      if (!child->HasOnlyTextAndContainerChildren()) {
+        return false;
+      }
     }
   }
   return true;
-}
-
-bool BrowserAccessibilityOHOS::HasClickableChildren() const {
-  for (auto& childNode : PlatformChildren()) {
-    BrowserAccessibilityOHOS& childNodeOHOS =
-        static_cast<BrowserAccessibilityOHOS&>(childNode);
-    if (childNodeOHOS.IsClickable()) {
-      return true;
-    }
-  }
-  return false;
 }
 
 BrowserAccessibilityOHOS*
@@ -851,7 +842,8 @@ std::u16string BrowserAccessibilityOHOS::GetSubstringTextContentUTF16(
   // This is called from IsLeaf, so don't call PlatformChildCount
   // from within this!
   if (text.empty() && ((HasOnlyTextChildren() && !HasListMarkerChild()) ||
-                       (IsFocusable() && HasOnlyTextAndImageChildren()))) {
+                       (IsFocusable() && HasOnlyTextAndImageChildren()) ||
+                       (GetRole() == ax::mojom::Role::kParagraph && HasOnlyTextAndContainerChildren()))) {
     for (auto it = InternalChildrenBegin(); it != InternalChildrenEnd(); ++it) {
       text += static_cast<BrowserAccessibilityOHOS*>(it.get())
                   ->GetSubstringTextContentUTF16(predicate);
@@ -872,11 +864,10 @@ std::u16string BrowserAccessibilityOHOS::GetSubstringTextContentUTF16(
 }
 
 bool BrowserAccessibilityOHOS::HasOnlyTextAndImageChildren() const {
-  for (auto& childId : childrenIds_) {
-    BrowserAccessibilityOHOS* child = GetFromAccessibilityId(childId);
-    if (child && !child->IsText() &&
-        child->GetRole() != ax::mojom::Role::kStrong &&
-        !ui::IsImageOrVideo(child->GetRole())) {
+    for (auto it = InternalChildrenBegin(); it != InternalChildrenEnd(); ++it) {
+    BrowserAccessibility* child = it.get();
+    if (!child->IsText() && child->GetRole() != ax::mojom::Role::kStrong
+        && !ui::IsImageOrVideo(child->GetRole())) {
       return false;
     }
   }
@@ -1075,65 +1066,12 @@ bool BrowserAccessibilityOHOS::IsAccessibilityGroup() const {
     return true;
   }
   if (GetRole() == ax::mojom::Role::kParagraph) {
-    return HasOnlyTextChildren();
+    return HasOnlyTextChildren() || HasOnlyTextAndContainerChildren();
   }
   if (GetRole() == ax::mojom::Role::kGenericContainer) {
-    return HasOnlyDirectTextChildren();
+    return HasOnlyTextChildren();
   }
   return false;
-}
-
-bool BrowserAccessibilityOHOS::IsIgnoredContainer() const {
-  if (GetRole() != ax::mojom::Role::kGenericContainer || IsScrollable()) {
-    return false;
-  }
-  if (IsClickable() && !HasClickableChildren()) {
-    return false;
-  }
-  if (!PlatformChildCount() || HasOnlyTextChildren()) {
-    return false;
-  }
-  return true;
-}
-
-bool BrowserAccessibilityOHOS::IsEmptyContainer() const {
-  if (GetRole() != ax::mojom::Role::kGenericContainer) {
-    return false;
-  }
-  if (IsClickable() && !HasClickableChildren()) {
-    return false;
-  }
-  if (PlatformChildCount()) {
-    return false;
-  }
-  return true;
-}
-
-int64_t BrowserAccessibilityOHOS::GetParentId() const {
-  BrowserAccessibilityOHOS* parent = static_cast<content::BrowserAccessibilityOHOS*>(PlatformGetParent());
-  while (parent && parent->IsIgnoredContainer()) {
-    parent = static_cast<content::BrowserAccessibilityOHOS*>(parent->PlatformGetParent());
-  }
-  if (parent) {
-    return parent->GetAccessibilityId();
-  }
-  return -1;
-}
-
-void BrowserAccessibilityOHOS::GetChildrenIds(std::vector<int64_t>& childrenIds) const {
-  for (const auto& childNode : PlatformChildren()) {
-    const content::BrowserAccessibilityOHOS& childNodeOHOS =
-        static_cast<const content::BrowserAccessibilityOHOS&>(childNode);
-    if (!childNodeOHOS.IsIgnoredContainer()) {
-      childrenIds.emplace_back(childNodeOHOS.GetAccessibilityId());
-    } else {
-      childNodeOHOS.GetChildrenIds(childrenIds);
-    }
-  }
-}
-
-void BrowserAccessibilityOHOS::SetChildrenIds(const std::vector<int64_t>& childrenIds) {
-  childrenIds_ = childrenIds;
 }
 
 bool BrowserAccessibilityOHOS::Scroll(ScrollDirection direction, bool is_page_scroll) const {

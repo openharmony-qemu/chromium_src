@@ -50,15 +50,10 @@ void BrowserAccessibilityManagerOHOS::HandleFocusChanged(
     int64_t accessibilityId) {
   SendAccessibilityEvent(accessibilityId,
                          OHOS::NWeb::AccessibilityEventType::FOCUS);
-  if (accessibilityFocusId_ != accessibilityId) {
+  if (accessibilityId != accessibilityFocusId_ && accessibilityId != GetRootAccessibilityId()) {
     SendAccessibilityEvent(accessibilityId,
                            OHOS::NWeb::AccessibilityEventType::REQUEST_FOCUS);
   }
-}
-
-std::shared_ptr<OHOS::NWeb::NWebAccessibilityEventCallback>
-    BrowserAccessibilityManagerOHOS::GetAccessibilityEventListener() const {
-    return accessibilityEventListener_;
 }
 
 void BrowserAccessibilityManagerOHOS::FireFocusEvent(
@@ -94,15 +89,15 @@ void BrowserAccessibilityManagerOHOS::FireBlinkEvent(
     case ax::mojom::Event::kHover:
       HandleHover(accessibilityId);
       break;
+    case ax::mojom::Event::kTreeChanged:
+      if (GetRootAccessibilityId() == accessibilityId) {
+        SendAccessibilityEvent(accessibilityId,
+                               OHOS::NWeb::AccessibilityEventType::PAGE_CHANGE);
+      }
+      break;
     default:
       break;
   }
-}
-
-void BrowserAccessibilityManagerOHOS::RegisterAccessibilityEventListener(
-    std::shared_ptr<OHOS::NWeb::NWebAccessibilityEventCallback>
-        accessibilityEventListener) {
-  accessibilityEventListener_ = accessibilityEventListener;
 }
 
 bool BrowserAccessibilityManagerOHOS::MoveAccessibilityFocusToId(
@@ -161,31 +156,20 @@ void BrowserAccessibilityManagerOHOS::SendAccessibilityEvent(
     OHOS::NWeb::AccessibilityEventType eventType) {
   if ((OHOS::NWeb::AccessibilityEventType::CHANGE == eventType &&
        IsIgnoredEvent(lastContentUpdateEventFiredTimes_, accessibilityId)) ||
-      (OHOS::NWeb::AccessibilityEventType::PAGE_CHANGE == eventType &&
-       IsIgnoredEvent(lastStateUpdateEventFiredTimes_, accessibilityId)) ||
       (OHOS::NWeb::AccessibilityEventType::SCROLL_END == eventType &&
        IsIgnoredEvent(lastScrollEventFiredTimes_, accessibilityId))) {
     return;
   }
 
-  if (accessibilityEventListener_ == nullptr) {
-    auto rootManager =
-        static_cast<BrowserAccessibilityManagerOHOS*>(GetManagerForRootFrame());
-    if (rootManager != nullptr) {
-      accessibilityEventListener_ =
-          rootManager->GetAccessibilityEventListener();
-    }
-  }
-
   LOG(INFO) << "SendAccessibilityEvent accessibilityId is " << accessibilityId
-            << ", eventType is " << static_cast<uint32_t>(eventType)
-            << ", listener_ is " << (accessibilityEventListener_ != nullptr);
+            << ", eventType is " << static_cast<uint32_t>(eventType);
 
-  if (accessibilityEventListener_ != nullptr &&
-      eventType != OHOS::NWeb::AccessibilityEventType::UNKNOWN &&
-      accessibilityId != kInvalidAccessibilityId) {
-    accessibilityEventListener_->OnAccessibilityEvent(
-        accessibilityId, static_cast<uint32_t>(eventType));
+  if (eventType != OHOS::NWeb::AccessibilityEventType::UNKNOWN &&
+      accessibilityId != kInvalidAccessibilityId && delegate_ != nullptr) {
+    auto renderFrameHost = delegate_->AccessibilityRenderFrameHost();
+    if (renderFrameHost != nullptr) {
+      renderFrameHost->SendAccessibilityEvent(accessibilityId, static_cast<int32_t>(eventType));
+    }
   }
 
   if (eventType == OHOS::NWeb::AccessibilityEventType::HOVER_ENTER_EVENT) {
@@ -338,6 +322,11 @@ void BrowserAccessibilityManagerOHOS::FireGeneratedEvent(
       SendAccessibilityEvent(accessibilityId, OHOS::NWeb::AccessibilityEventType::SELECTED);
       break;
     }
+    case ui::AXEventGenerator::Event::SUBTREE_CREATED:
+      if (GetRootAccessibilityId() == accessibilityId) {
+        SendAccessibilityEvent(accessibilityId, OHOS::NWeb::AccessibilityEventType::PAGE_OPEN);
+      }
+      break;
     default:
       break;
   }

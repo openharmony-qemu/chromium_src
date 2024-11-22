@@ -24,6 +24,7 @@
 #include "ipc/ipc_message.h"
 #if BUILDFLAG(IS_OHOS)
 #include "res_sched_client_adapter.h"
+#include "base/ohos/sys_info_utils.h"
 #endif
 #include "third_party/blink/public/mojom/shared_storage/shared_storage_worklet_service.mojom.h"
 
@@ -376,8 +377,10 @@ void AgentSchedulingGroupHost::DidUnloadRenderFrame(
 #if BUILDFLAG(IS_OHOS)
 void AgentSchedulingGroupHost::ReportCreateView(int32_t process_id) {
   OHOS::NWeb::ResSchedClientAdapter::ReportProcessInUse(process_id);
-  OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(OHOS::NWeb::ResSchedStatusAdapter::THREAD_CREATED,
-    process_id, process_id, OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+  if (base::ohos::IsPcDevice() || base::ohos::IsTableDevice()) {
+    OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(OHOS::NWeb::ResSchedStatusAdapter::THREAD_CREATED,
+      process_id, process_id, OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+  }
 }
 #endif
 

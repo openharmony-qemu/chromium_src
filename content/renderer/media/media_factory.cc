@@ -547,7 +547,7 @@ blink::WebNativeBridge* MediaFactory::CreateWebNativeBridge(
   }
 
   auto factory_selector = std::make_unique<media::RendererFactorySelector>();
-  gl::ohos::TextureOwnerMode texture_owner_mode = base::SysInfo::IsLowEndDevice() ? 
+  gl::ohos::TextureOwnerMode texture_owner_mode = base::SysInfo::IsLowEndDevice() ?
       gl::ohos::TextureOwnerMode::kNativeImageTexture :
       gl::ohos::TextureOwnerMode::kSameLayerNativeBuffer;
   auto native_factory = std::make_unique<NativeRendererClientFactory>(

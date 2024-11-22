@@ -15,6 +15,8 @@
 #include "build/build_config.h"
 #include "build/util/chromium_git_revision.h"
 
+#include "third_party/bounds_checking_function/include/securec.h"
+
 #if BUILDFLAG(IS_MAC)
 #include "base/mac/mac_util.h"
 #endif
@@ -221,6 +223,33 @@ std::string GetCpuBitness() {
 #endif
 }
 
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_USERAGENT)
+std::string GetDistVersion() {
+  std::string dist_version;
+  int versionPartOne;
+  int versionPartTwo;
+  int versionPartthree;
+  std::string os_version = base::ohos::OsVersion();
+  if (os_version.find('.') != std::string::npos) {
+    int ret = sscanf_s(os_version.c_str(), "%d.%d.%d",
+        &versionPartOne, &versionPartTwo, &versionPartthree);
+    if (ret <= 0){
+      return dist_version;
+    }
+    base::StringAppendF(&dist_version, "%d.%d",
+                        versionPartOne, versionPartTwo);
+    return dist_version;
+  } else {
+    versionPartOne = os_version[0] - '0';
+    versionPartTwo = os_version[1] - '0';
+    versionPartThree= os_version[2] - '0';
+    base::StringAppendF(&dist_version, "%d.%d",
+                        versionPartOne, versionPartTwo);
+    return dist_version;
+  }
+}
+#endif
+
 std::string GetOSVersion(IncludeAndroidBuildNumber include_android_build_number,
                          IncludeAndroidModel include_android_model) {
   std::string os_version;
@@ -253,12 +282,23 @@ std::string GetOSVersion(IncludeAndroidBuildNumber include_android_build_number,
 
   int32_t ohos_major_version = base::ohos::MajorVersion();
   int32_t ohos_senior_version = base::ohos::SeniorVersion();
-  std::string os_name = base::ohos::OsName();
-  os_name = os_name.empty() ? "OpenHarmony" : os_name;
-  std::string ohos_version_str;
-  base::StringAppendF(&ohos_version_str, "%s; %s %d.%d", 
-    device_type_string.c_str(), os_name.c_str(),
-    ohos_major_version, ohos_senior_version);
+  std::string dist_os_name = base::ohos::OsName();
+  std::string base_os_name = base::ohos::BaseOsName();
+  std::string ohos_fullname_str;
+  if (base_os_name.empty() || ohos_major_version == -1 || ohos_senior_version == -1) {
+    std::string base_os_name_default = "OpenHarmony";
+    base::StringAppendF(&ohos_fullname_str, "%s; %s", 
+      device_type_string.c_str(), base_os_name_default.c_str());
+  } else {
+    base::StringAppendF(&ohos_fullname_str, "%s; %s %d.%d", 
+      device_type_string.c_str(), base_os_name.c_str(),
+      ohos_major_version, ohos_senior_version);
+  }
+  std::string dist_version = GetDistVersion();
+  if (!dist_version.empty() && !dist_os_name.empty() && dist_os_name != base_os_name) {
+    base::StringAppendF(&ohos_fullname_str, "; %s %s",
+      dist_os_name.c_str(), dist_version.c_str());
+  }
 #endif
 #if BUILDFLAG(IS_ANDROID)
   std::string android_version_str = base::SysInfo::OperatingSystemVersion();
@@ -281,7 +321,7 @@ std::string GetOSVersion(IncludeAndroidBuildNumber include_android_build_number,
                       "%s%s", android_version_str.c_str(),
                       android_info_str.c_str()
 #elif BUILDFLAG(IS_OHOS) && defined(OHOS_USERAGENT)
-                      "%s", ohos_version_str.c_str()
+                      "%s", ohos_fullname_str.c_str()
 #else
                       ""
 #endif

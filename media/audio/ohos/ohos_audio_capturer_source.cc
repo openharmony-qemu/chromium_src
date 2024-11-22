@@ -3,6 +3,9 @@
 // found in the LICENSE file.
 
 #include "media/audio/ohos/ohos_audio_capturer_source.h"
+
+#include <ctime>
+
 #include "base/command_line.h"
 #include "base/location.h"
 #include "base/logging.h"
@@ -11,6 +14,7 @@
 #include "chrome/common/chrome_switches.h"
 #include "media/audio/ohos/audio_capturer_options_adapter_impl.h"
 #include "media/audio/ohos/buffer_desc_adapter_impl.h"
+#include "media/audio/ohos/audio_dump.h"
 #include "media/base/audio_parameters.h"
 #include "ohos_adapter_helper.h"
 
@@ -70,6 +74,12 @@ void OHOSAudioCapturerSource::Initialize(
 
   capturer_->Create(capturerOptions);
   capturer_->GetFrameCount(frameCount_);
+  time_t now = time(nullptr);
+  std::string dumpFileName = std::to_string(now) + "_" +
+      std::to_string(params_.sample_rate()) + "_" +
+      std::to_string(params_.channels()) + "_" +
+      std::to_string(1) + "_capturer_in.pcm";
+  DumpFileUtil::OpenDumpFile(dumpFileName, &dumpFile_);
 }
 
 void OHOSAudioCapturerSource::Start() {
@@ -107,6 +117,7 @@ void OHOSAudioCapturerSource::Stop() {
     LOG(ERROR) << "OHOSAudioCapturerSource::Stop stop failed";
     ReportError("Stop OHOS audio capturer failed");
   }
+  DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
 void OHOSAudioCapturerSource::ReadData() {
@@ -131,6 +142,7 @@ void OHOSAudioCapturerSource::ReadData() {
       static_cast<int>(frameCount_));
   if (callback_) {
     callback_->Capture(audio_bus.get(), timeStamp, 1.0, false);
+    DumpFileUtil::WriteDumpFile(dumpFile_, bufferDesc->GetBuffer(), bufferDesc->GetBufLength());
   }
   capturer_->Enqueue(bufferDesc);
 }

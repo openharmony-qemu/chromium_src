@@ -153,16 +153,6 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
 
   bool IsAccessibilityGroup() const;
 
-  bool IsIgnoredContainer() const;
-
-  bool IsEmptyContainer() const;
-
-  int64_t GetParentId() const;
-
-  void GetChildrenIds(std::vector<int64_t>& childrenIds) const;
-
-  void SetChildrenIds(const std::vector<int64_t>& childrenIds);
-
   bool Scroll(ScrollDirection direction, bool is_page_scroll) const;
 
  protected:
@@ -176,11 +166,9 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
 
   bool HasOnlyTextChildren() const;
 
-  bool HasOnlyDirectTextChildren() const;
+  bool HasOnlyTextAndContainerChildren() const;
 
   bool HasOnlyTextAndImageChildren() const;
-
-  bool HasClickableChildren() const;
 
   bool HasListMarkerChild() const;
 
@@ -250,8 +238,6 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
                               const gfx::Rect& tempBest);
 
   int64_t accessibility_id_ = -1;
-
-  std::vector<int64_t> childrenIds_;
 };
 }  // namespace content
 

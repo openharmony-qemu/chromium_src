@@ -65,7 +65,7 @@ bool RealTimePolicyEngine::CanPerformFullURLLookup(
   if (is_off_the_record)
     return false;
 
-  // |variations_service| can be nullptr in tests.
+  // |variations_service| can be nullptr during shutdown and in tests.
   if (variations_service &&
       IsInExcludedCountry(variations_service->GetStoredPermanentCountry()))
     return false;

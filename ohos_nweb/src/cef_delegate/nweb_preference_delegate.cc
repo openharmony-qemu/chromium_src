@@ -826,8 +826,13 @@ void NWebPreferenceDelegate::SetNativeVideoPlayerConfig(bool enable,
 
 #if defined(OHOS_SCROLLBAR)
 void NWebPreferenceDelegate::PutOverlayScrollbarEnabled(bool enable) {
-   base::FeatureList::SetScrollbarEnable(enable);
-   WebPreferencesChanged();
+  bool overlay_scrollbar_enable = enable;
+  if (IsFitContent()) {
+    LOG(DEBUG) << "Fit content and set overlayscrollbar false";
+    overlay_scrollbar_enable = false;
+  }
+  base::FeatureList::SetScrollbarEnable(overlay_scrollbar_enable);
+  WebPreferencesChanged();
 }
 #endif
 

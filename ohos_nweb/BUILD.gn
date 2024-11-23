@@ -339,6 +339,8 @@ component("nweb_sources") {
     "src/nweb_download_manager_impl.h",
     "src/nweb_engine_impl.cc",
     "src/nweb_engine_impl.h",
+    "src/nweb_file_writer_cleaner.cc",
+    "src/nweb_file_writer_cleaner.h",
     "src/nweb_hilog.h",
     "src/nweb_impl.cc",
     "src/nweb_impl.h",

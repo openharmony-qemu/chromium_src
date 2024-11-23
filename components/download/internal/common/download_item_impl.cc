@@ -2138,12 +2138,14 @@ void DownloadItemImpl::InterruptWithPartialState(
       ResumeMode resume_mode = GetResumeMode();
 #ifdef OHOS_EX_DOWNLOAD
       if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kEnableNwebExDownload) && state_ == TARGET_RESOLVED_INTERNAL) {
+          switches::kEnableNwebExDownload) && state_ == TARGET_RESOLVED_INTERNAL &&
+          !IsPaused()) {
         resume_mode = ResumeMode::IMMEDIATE_CONTINUE;
         need_auto_resume = true;
         LOG(INFO) << "DownloadItemImpl::InterruptWithPartialState need_auto_resume: "
                   << need_auto_resume << ", last_reason_: " << last_reason_
-                  << ", state_: " << state_ << ", guid: " << GetGuid();
+                  << ", state_: " << state_ << ", guid: " << GetGuid()
+                  << ", isPause: " << IsPaused();
       }
 #endif // OHOS_EX_DOWNLOAD
       ReleaseDownloadFile(resume_mode != ResumeMode::IMMEDIATE_CONTINUE &&
@@ -2227,7 +2229,7 @@ void DownloadItemImpl::InterruptWithPartialState(
   delegate_->DownloadInterrupted(this);
 
 #ifdef OHOS_EX_DOWNLOAD
-  if (need_auto_resume) {
+  if (need_auto_resume && !IsPaused()) {
     AutoResume();
     return;
   }

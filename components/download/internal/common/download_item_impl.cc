@@ -2137,14 +2137,12 @@ void DownloadItemImpl::InterruptWithPartialState(
 
       ResumeMode resume_mode = GetResumeMode();
 #ifdef OHOS_EX_DOWNLOAD
-      if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kEnableNwebExDownload) && state_ == TARGET_RESOLVED_INTERNAL) {
+      if (CheckIsNeedAutoResume(reason)) {
         resume_mode = ResumeMode::IMMEDIATE_CONTINUE;
         need_auto_resume = true;
-        LOG(INFO) << "DownloadItemImpl::InterruptWithPartialState need_auto_resume: "
-                  << need_auto_resume << ", last_reason_: " << last_reason_
-                  << ", state_: " << state_ << ", guid: " << GetGuid();
       }
+      LOG(INFO) << "DownloadItemImpl::InterruptWithPartialState "
+                << "need_auto_resume: " << need_auto_resume;
 #endif // OHOS_EX_DOWNLOAD
       ReleaseDownloadFile(resume_mode != ResumeMode::IMMEDIATE_CONTINUE &&
                           resume_mode != ResumeMode::USER_CONTINUE);
@@ -2482,6 +2480,20 @@ void DownloadItemImpl::SetFullPath(const base::FilePath& new_path) {
 }
 
 #ifdef OHOS_EX_DOWNLOAD
+bool DownloadItemImpl::CheckIsNeedAutoResume(DownloadInterruptReason reason) {
+  LOG(INFO) << "DownloadItemImpl::CheckIsNeedAutoResume last_reason_: "
+            << last_reason_ << ", auto_resume_count_: " << auto_resume_count_
+            << ", state_: " << state_ << ", guid: " << GetGuid()
+            << ", isPause: " << IsPaused();
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      switches::kEnableNwebExDownload) && state_ == TARGET_RESOLVED_INTERNAL &&
+      !IsPaused() && !IsCancellation(reason) &&
+      auto_resume_count_ <= kMaxAutoResumeAttempts) {
+    return true;
+  }
+  return false;
+}
+
 void DownloadItemImpl::AutoResume() {
   DVLOG(20) << __func__ << "() " << DebugString(true);
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);

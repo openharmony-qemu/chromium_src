@@ -4,8 +4,11 @@
 
 #include "media/audio/ohos/ohos_audio_output_stream.h"
 
+#include <ctime>
+
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
+#include "media/audio/ohos/audio_dump.h"
 #include "media/base/audio_timestamp_helper.h"
 #include "ohos_adapter_helper.h"
 #include "ohos_nweb/src/sysevent/event_reporter.h"
@@ -264,6 +267,12 @@ bool OHOSAudioOutputStream::Open() {
     return false;
   }
   active_buffer_index_ = 0;
+  time_t now = time(nullptr);
+  std::string dumpFileName = std::to_string(now) + "_" +
+      std::to_string(parameters_.sample_rate()) + "_" +
+      std::to_string(parameters_.channels()) + "_" +
+      std::to_string(1) + "_output_write.pcm";
+  DumpFileUtil::OpenDumpFile(dumpFileName, &dumpFile_);
   return true;
 }
 
@@ -272,6 +281,7 @@ void OHOSAudioOutputStream::Close() {
   Stop();
   ReleaseAudioBuffer();
   manager_->ReleaseOutputStream(this);
+  DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
 void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
@@ -551,6 +561,10 @@ void OHOSAudioOutputStream::PumpSamples() {
       }
       break;
     }
+    DumpFileUtil::WriteDumpFile(
+        dumpFile_, audio_data_[active_buffer_index_] + bytesWritten,
+        num_filled_bytes - bytesWritten
+    );
     bytesWritten += bytesSingle;
   }
 

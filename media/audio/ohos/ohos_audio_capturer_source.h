@@ -70,6 +70,7 @@ class MEDIA_EXPORT OHOSAudioCapturerSource final : public AudioCapturerSource {
   std::shared_ptr<AudioCapturerReadCallback> audioCapturerReadCallback_ =
       nullptr;
   base::WeakPtrFactory<OHOSAudioCapturerSource> weak_factory_{this};
+  FILE *dumpFile_ = nullptr;
 };
 
 }  // namespace media

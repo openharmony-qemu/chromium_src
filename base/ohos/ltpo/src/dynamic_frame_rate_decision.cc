@@ -237,7 +237,7 @@ void DynamicFrameRateDecision::SetVisibleImpl(int nweb_id, bool visible)
     } else {
         nwebVisibleSet_.erase(nweb_id);
     }
-    LOG(DEBUG) << "SetVisible " << (!nwebVisibleSet_.empty());
+    LOG(DEBUG) << "visible web component size is: " << nwebVisibleSet_.size();
     SetFrameRateLinkerEnable((!nwebVisibleSet_.empty()) && (vsync_cnt_ != 0));
     UpdateFramePreferredRate();
 }

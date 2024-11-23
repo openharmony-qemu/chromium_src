@@ -290,6 +290,8 @@ source_set("audio") {
       "ohos/audio_capturer_options_adapter_impl.cc",
       "ohos/buffer_desc_adapter_impl.h",
       "ohos/buffer_desc_adapter_impl.cc",
+      "ohos/audio_dump.h",
+      "ohos/audio_dump.cc",
     ]
 
     include_dirs = ohos_src_includes

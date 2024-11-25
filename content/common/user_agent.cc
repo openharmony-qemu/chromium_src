@@ -230,6 +230,7 @@ std::string GetDistVersion() {
   int versionPartTwo;
   int versionPartthree;
   std::string os_version = base::ohos::OsVersion();
+<<<<<<< HEAD
   if (os_version.find('.') != std::string::npos) {
     int ret = sscanf_s(os_version.c_str(), "%d.%d.%d",
         &versionPartOne, &versionPartTwo, &versionPartthree);
@@ -247,6 +248,16 @@ std::string GetDistVersion() {
                         versionPartOne, versionPartTwo);
     return dist_version;
   }
+=======
+  int ret = sscanf_s(os_version.c_str(), "%d.%d.%d",
+      &versionPartOne, &versionPartTwo, &versionPartthree);
+  if (ret <= 0){
+    return dist_version;
+  }
+  base::StringAppendF(&dist_version, "%d.%d",
+                      versionPartOne, versionPartTwo);
+  return dist_version;
+>>>>>>> d8f2a05f436a152125f5113430295362a354bee7
 }
 #endif
 

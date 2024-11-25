@@ -554,7 +554,8 @@ blink::WebNativeBridge* MediaFactory::CreateWebNativeBridge(
   auto native_factory = std::make_unique<NativeRendererClientFactory>(
       render_thread->compositor_task_runner(),
       base::BindRepeating(
-          &NativeTextureWrapperImpl::Create, base::ohos::IsEmulator() || base::SysInfo::IsLowEndDevice() /*enable_texture_copy*/,
+          &NativeTextureWrapperImpl::Create,
+          base::ohos::IsEmulator() || base::SysInfo::IsLowEndDevice() /*enable_texture_copy*/,
           texture_owner_mode,
           render_thread->GetNativeTexureFactory(),
           render_frame_->GetTaskRunner(blink::TaskType::kInternalMedia)));

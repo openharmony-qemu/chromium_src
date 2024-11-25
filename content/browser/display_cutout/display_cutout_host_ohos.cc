@@ -38,15 +38,7 @@ void DisplayCutoutHostOhos::DidAcquireFullscreen(RenderFrameHost* rfh) {}
 
 void DisplayCutoutHostOhos::DidExitFullscreen() {}
 
-void DisplayCutoutHostOhos::DidFinishNavigation(
-    NavigationHandle* navigation_handle) {
-  if (!navigation_handle->IsInPrimaryMainFrame() ||
-      navigation_handle->IsSameDocument() || !base::ohos::IsTabletDevice()) {
-    return;
-  }
-  SetCurrentRenderFrameHost(web_contents_impl_->GetPrimaryMainFrame(),
-                            blink::mojom::ViewportFit::kAuto);
-}
+void DisplayCutoutHostOhos::DidFinishNavigation(NavigationHandle* navigation_handle) {}
 
 void DisplayCutoutHostOhos::RenderFrameDeleted(RenderFrameHost* rfh) {}
 
@@ -75,8 +67,7 @@ void DisplayCutoutHostOhos::SetCurrentRenderFrameHost(
   }
 
   web_contents_impl_->NotifyViewportFitChanged(value);
-  if (value == blink::mojom::ViewportFit::kCover ||
-      base::ohos::IsTabletDevice()) {
+  if (value == blink::mojom::ViewportFit::kCover) {
     // Update the |current_rfh_| with the new frame.
     current_rfh_ = static_cast<RenderFrameHostImpl*>(rfh)->GetWeakPtr();
     // Send the current safe area to the new frame.

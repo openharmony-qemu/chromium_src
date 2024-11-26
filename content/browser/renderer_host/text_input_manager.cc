@@ -232,6 +232,15 @@ void TextInputManager::UpdateTextInputState(
     active_view_ = nullptr;
 
   NotifyObserversAboutInputStateUpdate(view, changed);
+
+#ifdef OHOS_CLIPBOARD
+  if (text_selection_map_.find(view) != text_selection_map_.end() &&
+      text_input_state.value.has_value() && text_selection_map_[view].text().empty()) {
+    LOG(INFO) << "update text_input_state_map_ text value";
+    text_selection_map_[view].SetSelection(text_input_state.value.value(),
+        text_selection_map_[view].offset(), text_selection_map_[view].range());
+  }
+#endif
 }
 
 void TextInputManager::ImeCancelComposition(RenderWidgetHostViewBase* view) {

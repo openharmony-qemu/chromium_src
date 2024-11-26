@@ -1347,10 +1347,7 @@ void PictureLayerImpl::UpdateTilingsForRasterScaleAndTranslation(
   high_res->set_resolution(HIGH_RESOLUTION);
 
   if (layer_tree_impl()->settings().commit_to_active_tree &&
-       IsDirectlyCompositedImage()) {
-    // On the pending tree, drop any tilings that are non-ideal since we don't
-    // need them to activate anyway.
-
+      IsDirectlyCompositedImage()) {
     // For DirectlyCompositedImages, if we recomputed a new raster scale, we
     // should drop the non-ideal ones if we're committing to the active tree.
     // Otherwise a non-ideal scale that is _larger_ than the HIGH_RESOLUTION

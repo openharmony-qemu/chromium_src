@@ -110,6 +110,9 @@ source_set("capture_device_specific") {
 
 component("capture_lib") {
   defines = [ "CAPTURE_IMPLEMENTATION" ]
+  if (is_ohos && product_name == "rk3568") {
+    defines += [ "RK3568_CAPTURE" ]
+  }
   sources = [
     "video/create_video_capture_device_factory.cc",
     "video/create_video_capture_device_factory.h",

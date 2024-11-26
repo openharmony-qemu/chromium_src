@@ -2721,6 +2721,8 @@ bool NWebDelegate::WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
   bool retVal = false;
   if (event_handler_ != nullptr) {
     retVal = event_handler_->WebSendKeyEventFromAce(keyCode, keyAction, pressedCodes);
+  } else {
+    LOG(ERROR) << "WebSendKeyEvent event_handler_ is nullptr";
   }
   return retVal;
 }
@@ -2736,6 +2738,8 @@ void NWebDelegate::WebSendMouseWheelEvent(double x,
                                            deltaX / default_virtual_pixel_ratio_,
                                            deltaY / default_virtual_pixel_ratio_,
                                            pressedCodes);
+  } else {
+    LOG(ERROR) << "WebSendMouseWheelEvent event_handler_ is nullptr";
   }
 }
 
@@ -2750,6 +2754,8 @@ void NWebDelegate::WebSendTouchpadFlingEvent(double x,
                                               vx / default_virtual_pixel_ratio_,
                                               vy / default_virtual_pixel_ratio_,
                                               pressedCodes);
+  } else {
+    LOG(ERROR) << "WebSendTouchpadFlingEvent event_handler_ is nullptr";
   }
 }
 

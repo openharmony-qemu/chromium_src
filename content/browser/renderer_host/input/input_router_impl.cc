@@ -655,8 +655,13 @@ void InputRouterImpl::FilterAndSendWebInputEvent(
   blink::mojom::InputEventResultState filtered_state =
       client_->FilterInputEvent(input_event, latency_info);
   if (WasHandled(filtered_state)) {
+#if defined(IS_OHOS)
+    TRACE_EVENT1("input", "InputEventFiltered",
+                 InputEventResultStateToString(filtered_state));
+#else
     TRACE_EVENT_INSTANT0("input", "InputEventFiltered",
                          TRACE_EVENT_SCOPE_THREAD);
+#endif
     if (filtered_state != blink::mojom::InputEventResultState::kUnknown) {
       std::move(callback).Run(blink::mojom::InputEventResultSource::kBrowser,
                               latency_info, filtered_state, nullptr, nullptr,

@@ -1571,43 +1571,33 @@ void NWebHandlerDelegate::OnRenderProcessTerminated(
   }
 
   RenderExitReason reason;
-#if defined(REPORT_SYS_EVENT)
   std::string error_desc = "";
-#endif
   switch (status) {
     case TS_ABNORMAL_TERMINATION:
       reason = RenderExitReason::PROCESS_ABNORMAL_TERMINATION;
-#if defined(REPORT_SYS_EVENT)
       error_desc = "Pprocess abnormal termination";
-#endif
       break;
     case TS_PROCESS_WAS_KILLED:
       reason = RenderExitReason::PROCESS_WAS_KILLED;
-#if defined(REPORT_SYS_EVENT)
       error_desc = "process was killed";
-#endif
       break;
     case TS_PROCESS_CRASHED:
       reason = RenderExitReason::PROCESS_CRASHED;
-#if defined(REPORT_SYS_EVENT)
       error_desc = "process crashed";
-#endif
       break;
     case TS_PROCESS_OOM:
       reason = RenderExitReason::PROCESS_OOM;
-#if defined(REPORT_SYS_EVENT)
       error_desc = "process out of memory";
-#endif
       break;
     default:
       reason = RenderExitReason::PROCESS_EXIT_UNKNOWN;
-#if defined(REPORT_SYS_EVENT)
-      error_desc = "process exit unkonow";
-#endif
+      error_desc = "process exit unknown";
       break;
   }
 
-  LOG(INFO) << "render process exit, reason = " << static_cast<int>(reason);
+  LOG(INFO) << "NWebId: " << nweb_id_
+            << " render process exit, reason = " << static_cast<int>(reason)
+            << " reason info = " << error_desc;
   nweb_handler_->OnRenderExited(reason);
 
 #if defined(REPORT_SYS_EVENT)

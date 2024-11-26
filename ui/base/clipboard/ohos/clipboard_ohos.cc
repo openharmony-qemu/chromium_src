@@ -292,7 +292,7 @@ class ClipboardOHOSInternal {
     SkColorType colorType = PixelFormatToSkColorType(imgData);
     SkAlphaType alphaType = AlphaTypeToSkAlphaType(imgData);
     sk_sp<SkColorSpace> colorSpace = SkColorSpace::MakeSRGB();
-    return SkImageInfo::Make(imgData->GetWidth(), imgData->GetHeight(), 
+    return SkImageInfo::Make(imgData->GetWidth(), imgData->GetHeight(),
                              colorType, alphaType, colorSpace);
   }
 
@@ -322,7 +322,7 @@ class ClipboardOHOSInternal {
             recordVector) &&
         (recordVector.size() > 0)) {
       for (auto& r : recordVector) {
-        std::shared_ptr<ClipBoardImageDataAdapterImpl> imgData = 
+        std::shared_ptr<ClipBoardImageDataAdapterImpl> imgData =
             std::make_shared<ClipBoardImageDataAdapterImpl>();
         if (!imgData) {
           LOG(ERROR) << "ClipBoardImageDataAdapterImpl create failed";
@@ -366,7 +366,10 @@ class ClipboardOHOSInternal {
 #endif // defined(OHOS_CLIPBOARD)
     std::shared_ptr<PasteDataRecordAdapter> record =
         PasteDataRecordAdapter::NewRecord("text/html");
-    if (HasFormat(ClipboardInternalFormat::kHtml)) {
+    bool is_has_html = HasFormat(ClipboardInternalFormat::kHtml);
+    bool is_has_text = HasFormat(ClipboardInternalFormat::kText);
+    bool is_has_png = HasFormat(ClipboardInternalFormat::kPng);
+    if (is_has_html) {
       std::shared_ptr<std::string> html =
           std::make_shared<std::string>(currentData->markup_data());
       if (record->SetHtmlText(html)) {
@@ -374,9 +377,12 @@ class ClipboardOHOSInternal {
       } else {
         LOG(ERROR) << "set html to record failed";
       }
+    } else if (is_has_text && !is_has_png) {
+      LOG(INFO) << "set text when no html and no png";
+      record = PasteDataRecordAdapter::NewRecord("text/plain");
     }
 
-    if (HasFormat(ClipboardInternalFormat::kText)) {
+    if (is_has_text) {
       std::shared_ptr<std::string> text =
           std::make_shared<std::string>(currentData->text());
       if (record->SetPlainText(text)) {
@@ -386,7 +392,7 @@ class ClipboardOHOSInternal {
       }
     }
 
-    if (HasFormat(ClipboardInternalFormat::kPng)) {
+    if (is_has_png) {
       auto bitmap = currentData->GetBitmapIfPngNotEncoded();
       if (bitmap.has_value()) {
         auto bitmap_record = WriteBitmapToClipboard(bitmap.value());
@@ -457,8 +463,8 @@ class ClipboardOHOSInternal {
     for (auto& record : record_vector) {
       std::shared_ptr<std::string> html = record->GetHtmlText();
       std::shared_ptr<std::string> text = record->GetPlainText();
-      std::shared_ptr<ClipBoardImageDataAdapterImpl> imgData 
-        = std::make_shared<ClipBoardImageDataAdapterImpl>();   
+      std::shared_ptr<ClipBoardImageDataAdapterImpl> imgData
+        = std::make_shared<ClipBoardImageDataAdapterImpl>();
 
       bool imgFlag = false;
       imgFlag = record->GetImgData(imgData);
@@ -481,10 +487,10 @@ class ClipboardOHOSInternal {
 
   std::shared_ptr<ClipBoardImageDataAdapter> WriteBitmapToClipboard(
       const SkBitmap& bitmap) {
-    std::shared_ptr<ClipBoardImageDataAdapterImpl> imageInfo 
+    std::shared_ptr<ClipBoardImageDataAdapterImpl> imageInfo
       = std::make_shared<ClipBoardImageDataAdapterImpl>();
     if (!imageInfo) {
-      LOG(ERROR) << "WriteBitmapToClipboard ClipBoardImageDataAdapterImpl create failed"; 
+      LOG(ERROR) << "WriteBitmapToClipboard ClipBoardImageDataAdapterImpl create failed";
       return nullptr;
     }
     imageInfo->SetColorType(ImageToClipboardColorType(bitmap.colorType()));

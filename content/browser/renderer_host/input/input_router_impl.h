@@ -126,8 +126,9 @@ class CONTENT_EXPORT InputRouterImpl
   bool IsFlingActiveForTest();
   
 #if BUILDFLAG(IS_OHOS)
-  void SetGestureEventResult(bool result) override;
+  void SetGestureEventResult(bool result, bool stopPropagation) override;
   void SetNativeEmbedMode(bool flag) override;
+  bool GetNativeResult() { return native_result_; }
 #endif
 
  private:
@@ -279,6 +280,10 @@ class CONTENT_EXPORT InputRouterImpl
   InputEventStreamValidator output_stream_validator_;
 
   float device_scale_factor_;
+
+#if BUILDFLAG(IS_OHOS)
+  bool native_result_ = false;
+#endif
 
   // Last touch position relative to screen. Used to compute movementX/Y.
   base::flat_map<int, gfx::Point> global_touch_position_;

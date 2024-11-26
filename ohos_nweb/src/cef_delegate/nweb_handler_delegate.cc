@@ -1796,6 +1796,11 @@ void NWebHandlerDelegate::OnTakeFocus(CefRefPtr<CefBrowser> browser,  bool next)
       std::make_shared<NWebKeyEventImpl>(0, keyCode);
   nweb_handler_->KeyboardReDispatch(nwebEvent, false);
 }
+
+bool NWebHandlerDelegate::IsCurrentFocus()
+{
+  return nweb_handler_ ? nweb_handler_->IsCurrentFocus() : false;
+}
 #endif
 /* CefKeyboardHandler methods end */
 
@@ -2314,6 +2319,7 @@ bool NWebHandlerDelegate::OnSetFocus(CefRefPtr<CefBrowser> browser,
                                      FocusSource source) {
   if (nweb_handler_ != nullptr) {
 #ifdef OHOS_FOCUS
+    LOG(INFO) << "NWebHandlerDelegate::OnSetFocus report arkweb get focus , source = " << source;
     if (!nweb_handler_->OnFocus(static_cast<NWebFocusSource>(source))) {
       LOG(DEBUG) << "nweb_handler request focus unsuccessful, need't to set "
                     "focus, source = "

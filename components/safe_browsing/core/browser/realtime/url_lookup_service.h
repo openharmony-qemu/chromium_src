@@ -65,7 +65,8 @@ class RealTimeUrlLookupService : public RealTimeUrlLookupServiceBase {
       const ClientConfiguredForTokenFetchesCallback&
           client_token_config_callback,
       bool is_off_the_record,
-      variations::VariationsService* variations_service,
+      base::RepeatingCallback<variations::VariationsService*()>
+          variations_service_getter,
       ReferrerChainProvider* referrer_chain_provider);
 
   RealTimeUrlLookupService(const RealTimeUrlLookupService&) = delete;
@@ -144,9 +145,10 @@ class RealTimeUrlLookupService : public RealTimeUrlLookupServiceBase {
   // The timestamp that real time URL lookup is enabled.
   double url_lookup_enabled_timestamp_;
 
-  // Unowned. For checking whether real-time checks can be enabled in a given
-  // location.
-  raw_ptr<variations::VariationsService, DanglingUntriaged> variations_;
+  // Callback used to fetch the variations service to check whether real-time
+  // checks can be enabled in a given location.
+  base::RepeatingCallback<variations::VariationsService*()>
+      variations_service_getter_;
 
   // Bypasses the check for probability when sending Protego sample pings.
   // Only for unit tests.

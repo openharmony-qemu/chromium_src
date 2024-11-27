@@ -313,6 +313,27 @@ void NWebEventHandler::WebSendTouchpadFlingEvent(double x,
 
   browser_->GetHost()->SendTouchpadFlingEvent(mouseEvent, vx, vy);
 }
+
+bool NWebEventHandler::SendKeyboardEvent(
+    const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent>& keyboardEvent) {
+  if (!keyboardEvent) {
+    return false;
+  }
+  if (keyboardEvent->GetKeyCode() < 0) {
+    LOG(ERROR) << "SendKeyboardEvent obtaining invalid keyCode";
+    return false;
+  }
+  CefKeyEvent keyEvent;
+  int32_t modifiers =  NWebInputDelegate::GetModifiersByKeyEvent(keyboardEvent);
+  if (!CreateCefKeyEvent(keyEvent,
+                        keyboardEvent->GetKeyCode(),
+                        keyboardEvent->GetAction(),
+                        modifiers)) {
+    return false;
+  }
+  SendCefKeyEvent(keyEvent);
+  return true;
+}
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 bool NWebEventHandler::SendKeyEvent(int32_t keyCode, int32_t keyAction) {

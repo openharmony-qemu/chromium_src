@@ -436,6 +436,25 @@ uint32_t NWebInputDelegate::GetWebModifiersByPressedCode(
   return result;
 }
 
+uint32_t NWebInputDelegate::GetModifiersByKeyEvent(
+    const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent>& keyboardEvent) {
+  uint32_t result = 0;
+  if (!keyboardEvent) {
+    return result;
+  }
+  result = GetWebModifiers(keyboardEvent->GetKeyCode(), keyboardEvent->GetAction(), keyboardEvent->GetPressKeyCodes());
+  if (keyboardEvent->GetKeyCode() == KeyEvent::KEYCODE_CAPS_LOCK) {
+    if (!keyboardEvent->IsEnableCapsLock()) {
+      result |= EVENTFLAG_CAPS_LOCK_ON;
+    }
+  } else {
+    if (keyboardEvent->IsEnableCapsLock()) {
+      result |= EVENTFLAG_CAPS_LOCK_ON;
+    }
+  }
+  return result;
+}
+
 NWebInputDelegate::NWebInputDelegate() {
   keyEventHandle_.RegistInputEvent(KeyEvent::KEYCODE_CTRL_LEFT, KEY_DOWN,
                                    false);

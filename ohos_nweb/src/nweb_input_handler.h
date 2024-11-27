@@ -58,6 +58,8 @@ class NWebInputHandler {
                                  double vx,
                                  double vy,
                                  const std::vector<int32_t>& pressedCodes);
+  bool SendKeyboardEvent(
+      const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent>& keyboardEvent);
 #endif
  private:
   void CheckSlideNavigation(int16_t start_x, int16_t end_x);

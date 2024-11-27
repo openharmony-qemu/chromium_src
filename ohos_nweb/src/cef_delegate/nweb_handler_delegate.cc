@@ -727,6 +727,11 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
         main_browser_->GetHost()->SetAudioResumeInterval(
             preference_delegate_->GetAudioResumeInterval());
 #endif
+#ifdef OHOS_RENDERER_ANR_DUMP
+        if (popup_window_) {
+          SetPopupSurface(popup_window_);
+        }
+#endif
 #if defined(OHOS_PRINT)
         main_browser_->GetHost()->SetToken(preference_delegate_->GetPrintToken());
 #endif
@@ -3756,7 +3761,7 @@ void NWebHandlerDelegate::OnRenderProcessResponding(
 void NWebHandlerDelegate::SetPopupSurface(void* popup_window) {
   if (main_browser_ && main_browser_->GetHost()) {
     if (!is_enhance_surface_) {
-      if (popup_window_ != nullptr) {
+      if (popup_window_ != nullptr && popup_window_ != popup_window) {
         OHOS::NWeb::OhosAdapterHelper::GetInstance()
             .GetWindowAdapterInstance()
             .DestroyNativeWindow(popup_window_);
@@ -3765,6 +3770,8 @@ void NWebHandlerDelegate::SetPopupSurface(void* popup_window) {
       popup_window_ = popup_window;
       main_browser_->GetHost()->SetPopupWindow(popup_window_);
     }
+  } else {
+    popup_window_ = popup_window;
   }
 }
 #endif

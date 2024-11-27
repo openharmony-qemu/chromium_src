@@ -310,6 +310,7 @@ class NWebImpl : public NWeb {
                                  const std::vector<int32_t>& pressedCodes) override;
   void ScrollToWithAnime(float x, float y, int32_t duration) override;
   void ScrollByWithAnime(float delta_x, float delta_y, int32_t duration) override;
+  bool SendKeyboardEvent(const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent>& keyboardEvent) override;
   bool ScrollByWithResult (float delta_x, float delta_y) override;
   void WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent) override;
 #endif  // defined(OHOS_INPUT_EVENTS)

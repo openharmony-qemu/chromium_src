@@ -50,7 +50,7 @@ OHGetAddrInfoForNetwork GetOHGetAddrInfoForNetwork() {
   base::FilePath file("/system/lib/ndk/libnet_connection.so");
 #endif
   void* dl = dlopen(file.value().c_str(), RTLD_NOW);
-  return dl == null ? null : reinterpret_cast<OHGetAddrInfoForNetwork>(
+  return dl == nullptr ? nullptr : reinterpret_cast<OHGetAddrInfoForNetwork>(
       dlsym(dl, "OH_NetConn_GetAddrInfo"));
 }
 
@@ -61,7 +61,7 @@ OHFreeDnsResult GetOHFreeDnsResult() {
   base::FilePath file("/system/lib/ndk/libnet_connection.so");
 #endif
   void* dl = dlopen(file.value().c_str(), RTLD_NOW);
-  return dl == null ? null : reinterpret_cast<OHFreeDnsResult>(
+  return dl == nullptr ? nullptr : reinterpret_cast<OHFreeDnsResult>(
       dlsym(dl, "OH_NetConn_FreeDnsResult"));
 }
 #endif

@@ -441,6 +441,10 @@ NWebHandlerDelegate::NWebHandlerDelegate(
 }
 
 void NWebHandlerDelegate::OnDestroy() {
+#if defined(OHOS_JSPROXY)
+  RemoveTransientJavaScriptObject();
+#endif
+
   if (main_browser_) {
     main_browser_->GetHost()->CloseBrowser(true);
     main_browser_ = nullptr;

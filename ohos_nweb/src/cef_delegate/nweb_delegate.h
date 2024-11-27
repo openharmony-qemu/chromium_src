@@ -390,6 +390,7 @@ void SetTransformHint(uint32_t rotation) override;
 #if defined(OHOS_GET_SCROLL_OFFSET)
   void GetOverScrollOffset(float* offset_x, float* offset_y) override;
 #endif
+  bool SendKeyboardEvent(const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent>& keyboardEvent) override;
   bool ScrollByWithResult(float delta_x, float delta_y) override;
   void WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent) override;
 #endif  // defined(OHOS_INPUT_EVENTS)

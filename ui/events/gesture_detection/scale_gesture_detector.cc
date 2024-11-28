@@ -12,6 +12,7 @@
 #include "base/check.h"
 #include "ui/events/gesture_detection/motion_event.h"
 #include "ui/events/gesture_detection/scale_gesture_listeners.h"
+#include "base/ohos/sys_info_utils.h"
 
 using base::TimeTicks;
 
@@ -26,6 +27,9 @@ const float kScaleFactor = .5f;
 // proportioned).
 const float kSlopEpsilon = .05f;
 
+#ifdef BUILDFLAG(IS_OHOS)
+const float kSlopFactor = 7;
+#endif
 }  // namespace
 
 // Note: These constants were taken directly from the default (unscaled)
@@ -62,6 +66,10 @@ ScaleGestureDetector::ScaleGestureDetector(const Config& config,
   DCHECK(listener_);
 
   span_slop_ = config.span_slop;
+#ifdef BUILDFLAG(IS_OHOS)
+  if (base::ohos::IsPcDevice())
+    span_slop_ = config.span_slop * kSlopFactor;
+#endif
   min_span_ = config.min_scaling_span;
 }
 

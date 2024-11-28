@@ -40,6 +40,7 @@ class MockOhosImageDecoderAdapter : public OHOS::NWeb::OhosImageDecoderAdapter {
               Decode,
               (const uint8_t*, uint32_t, OHOS::NWeb::AllocatorType, bool),
               ());
+  MOCK_METHOD(void*, GetDecodeData, (), ());
 };
 
 class MockOhosHeifImageDecoder : public OhosHeifImageDecoder {

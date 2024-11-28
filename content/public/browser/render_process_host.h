@@ -831,6 +831,10 @@ class CONTENT_EXPORT RenderProcessHost : public IPC::Sender,
   static size_t GetOffTheRecordRenderProcessCount();
 #endif
 
+#ifdef OHOS_I18N
+  static void OnLocaleChangedToRenderer(const std::string& update_locale);
+#endif
+
 #ifdef OHOS_RENDER_PROCESS_MODE
   static void SetRenderProcessMode(RenderProcessMode mode);
   static RenderProcessMode render_process_mode();

@@ -193,6 +193,11 @@ interface Renderer {
   [EnableIf=is_android]
   SetAttributionReportingSupport(network.mojom.AttributionSupport attribution_support);
 
+  //#ifdef OHOS_I18N
+  [EnableIf=ohos_i18n]
+  NotifyLocaleChanged(string update_locale);
+  //#endif
+
   // Notify renderer that theme font has been changed.
   // OHOS_THEME_FONT
   [EnableIf=ohos_theme_font]

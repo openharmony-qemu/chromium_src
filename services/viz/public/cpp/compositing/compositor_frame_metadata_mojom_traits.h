@@ -91,7 +91,7 @@ struct StructTraits<viz::mojom::CompositorFrameMetadataDataView,
       const viz::CompositorFrameMetadata& metadata) {
     return metadata.is_actively_scrolling;
   }
-  
+
   static SkColor4f root_background_color(
       const viz::CompositorFrameMetadata& metadata) {
     return metadata.root_background_color;

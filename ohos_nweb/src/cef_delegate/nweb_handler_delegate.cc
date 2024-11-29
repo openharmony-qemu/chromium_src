@@ -712,6 +712,9 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
       event_handler_->SetBrowser(main_browser_);
     }
     if (main_browser_ && main_browser_->GetHost()) {
+      if (popup_window_) {
+        SetPopupSurface(popup_window_);
+      }
       if (preference_delegate_.get()) {
         main_browser_->GetHost()->SetVirtualPixelRatio(
             preference_delegate_->GetVirtualPixelRatio());
@@ -726,11 +729,6 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
             preference_delegate_->GetAudioExclusive());
         main_browser_->GetHost()->SetAudioResumeInterval(
             preference_delegate_->GetAudioResumeInterval());
-#endif
-#ifdef OHOS_RENDERER_ANR_DUMP
-        if (popup_window_) {
-          SetPopupSurface(popup_window_);
-        }
 #endif
 #if defined(OHOS_PRINT)
         main_browser_->GetHost()->SetToken(preference_delegate_->GetPrintToken());
@@ -3747,6 +3745,7 @@ void NWebHandlerDelegate::OnRenderProcessResponding(
   LOG(INFO) << "OnRenderProcessResponding";
   nweb_handler_->OnRenderProcessResponding();
 }
+#endif
 
 void NWebHandlerDelegate::SetPopupSurface(void* popup_window) {
   if (main_browser_ && main_browser_->GetHost()) {
@@ -3764,7 +3763,6 @@ void NWebHandlerDelegate::SetPopupSurface(void* popup_window) {
     popup_window_ = popup_window;
   }
 }
-#endif
 
 void NWebHandlerDelegate::SetTransformHint(uint32_t rotation) {
   content::GpuProcessHost* host = content::GpuProcessHost::Get();

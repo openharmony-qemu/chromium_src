@@ -33,9 +33,6 @@ base::TimeDelta ComputeAdpfTarget(const BeginFrameArgs& args) {
 }
 
 bool DrawImmediatelyWhenInteractive() {
-  if (!base::ohos::IsPcDevice()) {
-    return false;
-  }
   return features::ShouldDrawImmediatelyWhenInteractive();
 }
 

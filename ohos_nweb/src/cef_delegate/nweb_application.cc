@@ -21,6 +21,7 @@
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/common/content_switches.h"
+#include "nweb_file_writer_cleaner.h"
 #include "nweb_handler_delegate.h"
 #include "nweb_impl.h"
 
@@ -70,10 +71,13 @@ bool NWebApplication::HasInitializedCef() {
 
 void NWebApplication::InitializeCef(const CefMainArgs& mainargs,
                                     const CefSettings& settings) {
+  LOG(INFO) << "NWebApplication::InitializeCef.";
   if (is_initialized) {
     LOG(INFO) << "has initialized cef.";
     return;
   }
+  // get download Temp directory.
+  NwebFileWriterCleaner::GetDeletePendingFiles();
   int exitcode =
       CefExecuteProcess(mainargs, NWebApplication::GetDefault(), NULL);
   if (exitcode >= 0) {
@@ -85,6 +89,8 @@ void NWebApplication::InitializeCef(const CefMainArgs& mainargs,
     LOG(ERROR) << "CefInitialize failed";
   } else {
     is_initialized = true;
+    // delete download Temp directory.
+    NwebFileWriterCleaner::DeleteDownloadTempDir();
   }
 }
 #endif  // defined(OHOS_API_INIT_WEB_ENGINE)

@@ -660,7 +660,7 @@ void Surface::UpdateActivationDependencies(
       !current_frame.metadata.is_actively_scrolling;
 
   if (!should_block_on_dependencies) {
-      return;
+    return;
   }
 
   base::flat_set<SurfaceAllocationGroup*> new_blocking_allocation_groups;

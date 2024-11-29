@@ -122,14 +122,6 @@ BASE_EXPORT std::string BaseOsName() {
   return SystemProperties::Instance()->base_os_name();
 }
 
-BASE_EXPORT std::string OsVersion() {
-  return SystemProperties::Instance()->os_version();
-}
-
-BASE_EXPORT std::string BaseOsName() {
-  return SystemProperties::Instance()->base_os_name();
-}
-
 }  // namespace ohos
 
 }  // namespace base

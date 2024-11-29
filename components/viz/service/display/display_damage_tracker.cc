@@ -148,12 +148,12 @@ bool DisplayDamageTracker::HasPendingSurfaces(
 }
 
 bool DisplayDamageTracker::HasDamageDueToActiveScroller() {
-    for (auto& entry : surface_states_) {
-        if (entry.second.last_is_actively_scrolling) {
-            return true;
-        }
+  for (auto& entry : surface_states_) {
+    if (entry.second.last_is_actively_scrolling) {
+      return true;
     }
-    return false;
+  }
+  return false;
 }
 
 void DisplayDamageTracker::OnSurfaceMarkedForDestruction(

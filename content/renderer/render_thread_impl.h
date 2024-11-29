@@ -410,6 +410,10 @@ class CONTENT_EXPORT RenderThreadImpl
   void OnChannelListenError() override;
 #endif
 
+#ifdef OHOS_I18N
+  void NotifyLocaleChanged(const std::string& update_locale) override;
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
   // ChildThreadImpl
   void OnMemoryPressureFromBrowserReceived(

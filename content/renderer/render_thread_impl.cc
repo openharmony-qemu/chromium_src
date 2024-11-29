@@ -233,6 +233,10 @@
 // #include "third_party/crashpad/crashpad/client/annotation.h"
 #include "content/renderer/logger_report.h" 
 #endif
+
+#ifdef OHOS_I18N
+#include "ui/base/resource/resource_bundle.h"
+#endif //OHOS_I18N
 namespace content {
 
 namespace {
@@ -2103,6 +2107,27 @@ void RenderThreadImpl::OnChannelConnected(int32_t peer_pid) {
   }
 
   ChildThreadImpl::OnChannelConnected(peer_pid);
+}
+#endif
+
+#ifdef OHOS_I18N
+void RenderThreadImpl::NotifyLocaleChanged(const std::string& locale) {
+  if (!ui::ResourceBundle::HasSharedInstance() ||
+      !ui::ResourceBundle::LocaleDataPakExists(locale)) {
+    LOG(ERROR) << "render thread update locale failed";
+    return;
+  }
+  std::string origin_locale =
+      ui::ResourceBundle::GetSharedInstance().GetLoadedLocaleForTesting();
+  if (origin_locale == locale) {
+    LOG(WARNING) << "render thread no need to update locale";
+    return;
+  }
+  std::string result =
+      ui::ResourceBundle::GetSharedInstance().ReloadLocaleResources(locale);
+  if (result.empty()) {
+    LOG(ERROR) << "CefFrameImpl update locale failed";
+  }
 }
 #endif
 

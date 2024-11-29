@@ -1014,7 +1014,7 @@ TEST_F(DynamicDisplaySchedulerTest, DynamicBeginFrameArgsDeadline) {
 class ImmediateInteractiveDrawTest : public DisplaySchedulerTest {
  public:
   ImmediateInteractiveDrawTest();
-  ~ImmediateInteractiveDrawTest() overrides = default;
+  ~ImmediateInteractiveDrawTest() override = default;
 
  private:
   base::test::ScopedFeatureList scoped_feature_list_;
@@ -1024,6 +1024,7 @@ ImmediateInteractiveDrawTest::ImmediateInteractiveDrawTest() {
   scoped_feature_list_.InitAndEnableFeature(
       features::kDrawImmediatelyWhenInteractive);
 }
+
 TEST_F(ImmediateInteractiveDrawTest, DoNotWaitWhenInteracting) {
   SurfaceId root_surface_id(
       kArbitraryFrameSinkId,

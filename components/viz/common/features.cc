@@ -416,8 +416,8 @@ bool IsOnBeginFrameAcksEnabled() {
 }
 
 bool ShouldDrawImmediatelyWhenInteractive() {
-    return base::FeatureList::IsEnabled(
-        features::kDrawImmediatelyWhenInteractive);
+  return base::FeatureList::IsEnabled(
+      features::kDrawImmediatelyWhenInteractive);
 }
 
 }  // namespace features

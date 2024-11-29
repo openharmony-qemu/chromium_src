@@ -16,7 +16,7 @@ ProcessId GetCurrentProcId() {
 }
 
 #if BUILDFLAG(IS_OHOS)
-ProcessId GetCurrentRealPid() {
+NO_SANITIZE("cfi-icall") ProcessId GetCurrentRealPid() {
   using GetProcXid = int (*)(void);
   static GetProcXid getProcPid = nullptr;
   if (getProcPid == nullptr) {

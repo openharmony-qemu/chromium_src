@@ -7,6 +7,7 @@
 #include "base/functional/bind.h"
 #include "base/run_loop.h"
 #include "base/test/scoped_feature_list.h"
+#include "base/test/simple_test_tick_clock.h"
 #include "cc/test/scheduler_test_common.h"
 #include "components/viz/common/features.h"
 #include "components/viz/common/frame_sinks/copy_output_result.h"
@@ -40,6 +41,7 @@ class SurfaceTest : public testing::Test {
             FrameSinkManagerImpl::InitParams(&shared_bitmap_manager_)) {}
 
  protected:
+  std::unique_ptr<base::SimpleTestTickClock> now_src_;
   ServerSharedBitmapManager shared_bitmap_manager_;
   FrameSinkManagerImpl frame_sink_manager_;
 };
@@ -327,17 +329,17 @@ class ImmediateActivationSurfaceTest
   base::test::ScopedFeatureList scoped_feature_list_;
 };
 
-INSTANTIATE_TEST_SUITE_P(All, ImmediateActivationSurfaceTest, test::Bool());
+INSTANTIATE_TEST_SUITE_P(All, ImmediateActivationSurfaceTest, testing::Bool());
 
 // Checks that submitting a compositor frame with a dependency always results in
-// activation dependencies if we have no interaction
+// activation dependencies if we have no interaction.
 TEST_P(ImmediateActivationSurfaceTest, WithNoInteraction) {
   constexpr gfx::Rect output_rect(100, 100);
   SurfaceManager* surface_manager = frame_sink_manager_.surface_manager();
 
   auto root_support = std::make_unique<CompositorFrameSinkSupport>(
       nullptr, &frame_sink_manager_, kArbitraryFrameSinkId,
-      /*is_root*/true);
+      /*is_root=*/true);
   TestSurfaceIdAllocator root_surface_id(kArbitraryFrameSinkId);
 
   auto child_support = std::make_unique<CompositorFrameSinkSupport>(
@@ -347,14 +349,14 @@ TEST_P(ImmediateActivationSurfaceTest, WithNoInteraction) {
   // Submit a root frame with one SurfaceDrawQuad. The SurfaceDrawQuad embeds
   // |child_support| as it would with an OOPIF.
   SurfaceRange surface_range(child_surface_id);
-  auto root_render_pass = 
+  auto root_render_pass =
       RenderPassBuilder(CompositorRenderPassId{1}, output_rect)
           .AddSurfaceQuad(output_rect, surface_range)
           .Build();
 
   {
-    CompositoFrame frame = MakeCompositorFrame(root_render_pass->DeepCopy());
-    frame,metadata.activation_dependencies.push_back(child_surface_id);
+    CompositorFrame frame = MakeCompositorFrame(root_render_pass->DeepCopy());
+    frame.metadata.activation_dependencies.push_back(child_surface_id);
     frame.metadata.deadline =
         FrameDeadline(Now(), 4u, BeginFrameArgs::DefaultInterval(), false);
     EXPECT_THAT(frame.metadata.referenced_surfaces,
@@ -363,7 +365,7 @@ TEST_P(ImmediateActivationSurfaceTest, WithNoInteraction) {
                                         std::move(frame));
   }
 
-  Surface* surface = surface_manager->GetSurfceForId(root_surface_id);
+  Surface* surface = surface_manager->GetSurfaceForId(root_surface_id);
   EXPECT_FALSE(surface->activation_dependencies().empty());
 }
 
@@ -375,7 +377,7 @@ TEST_P(ImmediateActivationSurfaceTest, WithInteraction) {
 
   auto root_support = std::make_unique<CompositorFrameSinkSupport>(
       nullptr, &frame_sink_manager_, kArbitraryFrameSinkId,
-      /*is_root*/true);
+      /*is_root=*/true);
   TestSurfaceIdAllocator root_surface_id(kArbitraryFrameSinkId);
 
   auto child_support = std::make_unique<CompositorFrameSinkSupport>(
@@ -385,14 +387,14 @@ TEST_P(ImmediateActivationSurfaceTest, WithInteraction) {
   // Submit a root frame with one SurfaceDrawQuad. The SurfaceDrawQuad embeds
   // |child_support| as it would with an OOPIF.
   SurfaceRange surface_range(child_surface_id);
-  auto root_render_pass = 
+  auto root_render_pass =
       RenderPassBuilder(CompositorRenderPassId{1}, output_rect)
           .AddSurfaceQuad(output_rect, surface_range)
           .Build();
 
   {
-    CompositoFrame frame = MakeCompositorFrame(root_render_pass->DeepCopy());
-    frame,metadata.activation_dependencies.push_back(child_surface_id);
+    CompositorFrame frame = MakeCompositorFrame(root_render_pass->DeepCopy());
+    frame.metadata.activation_dependencies.push_back(child_surface_id);
     frame.metadata.deadline =
         FrameDeadline(Now(), 4u, BeginFrameArgs::DefaultInterval(), false);
     frame.metadata.is_actively_scrolling = true;
@@ -402,7 +404,7 @@ TEST_P(ImmediateActivationSurfaceTest, WithInteraction) {
                                         std::move(frame));
   }
 
-  Surface* surface = surface_manager->GetSurfceForId(root_surface_id);
+  Surface* surface = surface_manager->GetSurfaceForId(root_surface_id);
   EXPECT_EQ(surface->activation_dependencies().empty(), GetParam());
 }
 

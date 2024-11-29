@@ -1009,6 +1009,21 @@ TEST_F(DynamicDisplaySchedulerTest, DynamicBeginFrameArgsDeadline) {
                 client_.GetEstimatedDisplayDrawTime(kVSyncInterval, 0.0));
 }
 
+// Tests the DisplayScheduler when we enable drawing immediately when
+// interactive.
+class ImmediateInteractiveDrawTest : public DisplaySchedulerTest {
+ public:
+  ImmediateInteractiveDrawTest();
+  ~ImmediateInteractiveDrawTest() overrides = default;
+
+ private:
+  base::test::ScopedFeatureList scoped_feature_list_;
+};
+
+ImmediateInteractiveDrawTest::ImmediateInteractiveDrawTest() {
+  scoped_feature_list_.InitAndEnableFeature(
+      features::kDrawImmediatelyWhenInteractive);
+}
 TEST_F(ImmediateInteractiveDrawTest, DoNotWaitWhenInteracting) {
   SurfaceId root_surface_id(
       kArbitraryFrameSinkId,
@@ -1058,14 +1073,14 @@ TEST_F(ImmediateInteractiveDrawTest, WaitWhenNotInteracting) {
   BeginFrameAck ack = AckForCurrentBeginFrame();
   ack.has_damage = true;
   bool display_damaged = true;
-  bool is_actively_scrolling = true;
+  bool is_actively_scrolling = false;
   damage_tracker_->SurfaceDamagedForTest(sid1, ack, display_damaged,
                                          is_actively_scrolling);
 
   // Since the damage was not related to active scrolling, we should not be
   // attempting to draw immediately.
   EXPECT_TRUE(scheduler_->has_pending_surfaces());
-  EXPECT_EQ(base::TimeTicks(),
+  EXPECT_LT(base::TimeTicks(),
             scheduler_->DesiredBeginFrameDeadlineTimeForTest());
 }
 

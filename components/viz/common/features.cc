@@ -259,6 +259,16 @@ BASE_FEATURE(kOnBeginFrameAllowLateAcks,
              "OnBeginFrameAllowLateAcks",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
+// If enabled, surface activation and draw do not block on dependencies.
+BASE_FEATURE(kDrawImmediatelyWhenInteractive,
+             "DrawImmediatelyWhenInteractive",
+#if BUILDFLAG(IS_OHOS)
+             base::FEATURE_ENABLED_BY_DEFAULT
+#else
+             base::FEATURE_DISABLED_BY_DEFAULT
+#endif
+);
+
 bool IsDelegatedCompositingEnabled() {
   return base::FeatureList::IsEnabled(kDelegatedCompositing);
 }
@@ -403,6 +413,11 @@ bool ShouldRendererAllocateImages() {
 
 bool IsOnBeginFrameAcksEnabled() {
   return base::FeatureList::IsEnabled(features::kOnBeginFrameAcks);
+}
+
+bool ShouldDrawImmediatelyWhenInteractive() {
+    return base::FeatureList::IsEnabled(
+        features::kDrawImmediatelyWhenInteractive);
 }
 
 }  // namespace features

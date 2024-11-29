@@ -30,7 +30,7 @@ base::TimeDelta ComputeAdpfTarget(const BeginFrameArgs& args) {
 }
 
 bool DrawImmediatelyWhenInteractive() {
-    return features::ShouldDrawImmediatelyWhenInteractive();
+  return features::ShouldDrawImmediatelyWhenInteractive();
 }
 
 }  // namespace

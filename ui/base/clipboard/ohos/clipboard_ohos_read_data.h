@@ -29,7 +29,9 @@ class ClipboardOhosReadData {
   size_t GetRecordVectorSize() const { return record_vector_.size(); }
   std::shared_ptr<std::string> ReadHtml();
   std::shared_ptr<std::string> ReadText() { return text_; }
-  static void SetConvertHtmlCallback(std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> callback);
+  std::vector<std::vector<uint8_t>> ReadCustomDatas() { return custom_datas_; }
+  static void SetConvertHtmlCallback(
+      std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> callback);
   ~ClipboardOhosReadData();
 
  private:
@@ -37,6 +39,8 @@ class ClipboardOhosReadData {
   void SaveImgFile(const std::string& old_uri,
                    std::string& new_uri,
                    uint32_t token_id);
+  void ReadCustomDataFromRecord(
+      const std::shared_ptr<OHOS::NWeb::PasteCustomData>& custom_data);
 
   OHOS::NWeb::PasteRecordVector record_vector_;
   bool has_been_read_html_ = false;
@@ -45,6 +49,7 @@ class ClipboardOhosReadData {
   bool is_in_app_ = false;
   std::shared_ptr<std::string> html_ = nullptr;
   std::shared_ptr<std::string> text_ = nullptr;
+  std::vector<std::vector<uint8_t>> custom_datas_;
   static std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> convert_html_callback_;
 };
 }  // namespace ui

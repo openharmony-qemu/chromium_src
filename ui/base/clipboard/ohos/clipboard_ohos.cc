@@ -176,6 +176,19 @@ class ClipboardOHOSInternal {
     return HasFormatInMisc(format);
   }
 
+  void ReadAvailableCustomDataTypes(std::vector<std::u16string>* types) const {
+    if (!read_data_) {
+      LOG(ERROR) << "read_data is null";
+      return;
+    }
+    auto custom_datas = read_data_->ReadCustomDatas();
+    for (const auto& data : custom_datas) {
+      if (!data.empty()) {
+        ReadCustomDataTypes(data.data(), data.size(), types);
+      }
+    }
+  }
+
   void SetClipboardState(ClipboardState state) {
     if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
       content::GetUIThreadTaskRunner({})->PostTask(
@@ -359,6 +372,31 @@ class ClipboardOHOSInternal {
     std::move(callback).Run(std::vector<uint8_t>());
   }
 
+  // Reads data of type |type| from the ClipboardOhosReadData.
+  void ReadCustomData(const std::u16string& type, std::u16string* result) {
+    if (!result) {
+      return;
+    }
+    result->clear();
+
+    UpdateClipboardData();
+    SetOutOfDateAfterRead();
+    if (!read_data_) {
+      LOG(ERROR) << "read_data is null";
+      return;
+    }
+    auto custom_datas = read_data_->ReadCustomDatas();
+    for (const auto& data : custom_datas) {
+      if (!data.empty()) {
+        ReadCustomDataForType(data.data(), data.size(), type, result);
+        if (!result->empty()) {
+          return;
+        }
+      }
+    }
+    LOG(INFO) << "no specified custom data in clipbaord";
+  }
+
   // Writes |data| to the ClipboardData and returns the previous data.
   std::unique_ptr<ClipboardData> WriteData(
       std::unique_ptr<ClipboardData> data) {
@@ -410,6 +448,19 @@ class ClipboardOHOSInternal {
         } else {
           LOG(ERROR) << "set image to record failed";
         }
+      }
+    }
+
+    if (HasFormat(ClipboardInternalFormat::kCustom)) {
+      auto custom_data = currentData->custom_data_data();
+      std::vector<uint8_t> custom_data_vector(custom_data.begin(),
+                                              custom_data.end());
+      OHOS::NWeb::PasteCustomData custom_data_map = {
+          {kMimeTypeOHOSCustomData, custom_data_vector}};
+      if (record->SetCustomData(custom_data_map)) {
+        LOG(INFO) << "set custom data to record success";
+      } else {
+        LOG(ERROR) << "set custom data to record failed";
       }
     }
 
@@ -490,6 +541,9 @@ class ClipboardOHOSInternal {
       }
       if (imgFlag || uri) {
         allFormat |= static_cast<int>(ClipboardInternalFormat::kPng);
+      }
+      if (!(read_data_->ReadCustomDatas().empty())) {
+        allFormat |= static_cast<int>(ClipboardInternalFormat::kCustom);
       }
     }
     return allFormat & static_cast<int>(format);
@@ -813,11 +867,8 @@ void ClipboardOHOS::ReadAvailableTypes(
     types->push_back(base::UTF8ToUTF16(kMimeTypePNG));
   }
   if (clipboard_internal_->IsFormatAvailable(
-          ClipboardInternalFormat::kCustom) &&
-      clipboard_internal_->GetData()) {
-    ReadCustomDataTypes(
-        clipboard_internal_->GetData()->custom_data_data().c_str(),
-        clipboard_internal_->GetData()->custom_data_data().size(), types);
+          ClipboardInternalFormat::kCustom)) {
+    clipboard_internal_->ReadAvailableCustomDataTypes(types);
   }
 
   std::ostringstream typesSumStream;
@@ -896,7 +947,15 @@ void ClipboardOHOS::ReadCustomData(ClipboardBuffer buffer,
                                    const std::u16string& type,
                                    const DataTransferEndpoint* data_dst,
                                    std::u16string* result) const {
+  LOG(INFO) << "start read custom data, type = " << type;
   DCHECK(CalledOnValidThread());
+  if (!clipboard_internal_->IsReadAllowed(data_dst,
+                                          ClipboardInternalFormat::kCustom)) {
+    return;
+  }
+
+  RecordRead(ClipboardFormatMetric::kCustomData);
+  clipboard_internal_->ReadCustomData(type, result);
 }
 
 void ClipboardOHOS::ReadFilenames(ClipboardBuffer buffer,
@@ -1014,7 +1073,9 @@ void ClipboardOHOS::WriteBitmap(const SkBitmap& bitmap) {
 
 void ClipboardOHOS::WriteData(const ClipboardFormatType& format,
                               const char* data_data,
-                              size_t data_len) {}
+                              size_t data_len) {
+  ClipboardDataBuilder::WriteData(format.GetName(), data_data, data_len);
+}
 
 bool ClipboardOHOS::HasPasteData() const {
   return OhosAdapterHelper::GetInstance().GetPasteBoard().HasPasteData();

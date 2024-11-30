@@ -10315,7 +10315,7 @@ void WebContentsImpl::TrigAdBlockEnabledForSiteFromUi(
     bool enable =
         OHOS::adblock::AdBlockConfig::GetInstance()->IsAdblockEnabledForUrl(
             GURL(main_frame_url));
-    SetAdBlockEnabledForSite(enable, main_frame_tree_node_id);
+    SetAdBlockEnabledForSite(enable && IsAdsBlockEnabled(), main_frame_tree_node_id);
   }
 }
 

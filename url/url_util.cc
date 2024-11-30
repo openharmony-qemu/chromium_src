@@ -132,7 +132,9 @@ struct SchemeRegistry {
 #endif
 
 #if BUILDFLAG(IS_OHOS)
-  std::vector<std::string> code_cache_enabled_schemes = {};
+  std::vector<std::string> code_cache_enabled_schemes = {
+      kFileScheme,
+  };
 #endif
 
   bool allow_non_standard_schemes = false;
@@ -719,6 +721,10 @@ bool IsCodeCacheEnabledScheme(const std::string& scheme) {
     }
   }
   return false;
+}
+
+const std::vector<std::string>& GetCodeCacheEnabledSchemes() {
+    return GetSchemeRegistry().code_cache_enabled_schemes;
 }
 #endif
 

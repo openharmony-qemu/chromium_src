@@ -40,6 +40,8 @@
 #include "capi/nweb_download_delegate_callback.h"
 #endif  //  OHOS_EX_DOWNLOAD
 
+struct OpenDevToolsParam;
+
 namespace OHOS::NWeb {
 class JavaScriptResultCallbackImpl;
 class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
@@ -549,6 +551,11 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
 
 void SetSurfaceDensity(const double& density) override;
+
+  void OpenDevtoolsWith(
+      std::shared_ptr<NWebDelegateInterface> nweb_delegate,
+      std::unique_ptr<OpenDevToolsParam> param) override;
+  void CloseDevtools() override;
 
  public:
   int argc_;

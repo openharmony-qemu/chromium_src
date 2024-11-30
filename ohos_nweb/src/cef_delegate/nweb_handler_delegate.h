@@ -791,6 +791,8 @@ bool OnOpenURLFromTab(CefRefPtr<CefBrowser> browser,
   void logUrl(const CefString& url) override;
 #endif
 
+  void OnRequestOpenDevTools();
+
  private:
   void CopyImageToClipboard(CefRefPtr<CefImage> image);
 

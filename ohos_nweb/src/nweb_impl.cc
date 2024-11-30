@@ -176,6 +176,9 @@ extern bool g_siteIsolationMode;
 #include "content/browser/gpu/gpu_process_host.h"
 #endif
 
+
+#include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
+
 namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
@@ -2482,6 +2485,28 @@ void NWebImpl::PutWebExtensionApiCallback(
 void NWebImpl::RemoveWebExtensionApiCallback() {
   WVLOG_I("unreqister web extension api listener");
   NWebHandlerDelegate::UnRegisterWebExtensionApiListener();
+}
+
+void NWebImpl::OpenDevtools(std::unique_ptr<OpenDevToolsParam> param) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(WARNING) << "OpenDevtools failed, no nweb_delegate";
+    return;
+  }
+  int32_t devtools_nweb_id = param->nweb_id;
+  NWebImpl* nweb = NWebImpl::FromID(devtools_nweb_id);
+  if (!nweb) {
+    LOG(WARNING) << "OpenDevtools failed, no nweb";
+    return;
+  }
+  nweb_delegate_->OpenDevtoolsWith(nweb->nweb_delegate_, std::move(param));
+}
+
+void NWebImpl::CloseDevtools() {
+  if (nweb_delegate_ == nullptr) {
+    LOG(WARNING) << "CloseDevtools failed, no nweb_delegate";
+    return;
+  }
+  nweb_delegate_->CloseDevtools();
 }
 #endif  // defined(OHOS_NWEB_EX)
 

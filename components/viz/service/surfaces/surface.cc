@@ -15,10 +15,14 @@
 #include "base/containers/contains.h"
 #include "base/containers/cxx20_erase.h"
 #include "base/metrics/histogram_functions.h"
+#if BUILDFLAG(IS_OHOS)
+#include "base/ohos/sys_info_utils.h"
+#endif
 #include "base/ranges/algorithm.h"
 #include "base/time/tick_clock.h"
 #include "base/trace_event/trace_event.h"
 #include "base/trace_event/traced_value.h"
+#include "components/viz/common/features.h"
 #include "components/viz/common/quads/compositor_render_pass.h"
 #include "components/viz/common/resources/returned_resource.h"
 #include "components/viz/common/resources/transferable_resource.h"
@@ -49,6 +53,13 @@ void RequestCopyOfOutputOnRenderPass(std::unique_ptr<CopyOutputRequest> request,
                   });
   }
   render_pass.copy_requests.push_back(std::move(request));
+}
+
+bool ShouldBlockActivationOnDependenciesWhenInteractive() {
+  if (!base::ohos::IsPcDevice()) {
+    return true;
+  }
+  return !features::ShouldDrawImmediatelyWhenInteractive();
 }
 
 }  // namespace
@@ -649,6 +660,14 @@ void Surface::UpdateActivationDependencies(
   // out the activation dependencies since the frame will activate immediately.
   if (current_frame.metadata.deadline.IsZero())
     return;
+
+  bool should_block_on_dependencies =
+      ShouldBlockActivationOnDependenciesWhenInteractive() ||
+      !current_frame.metadata.is_actively_scrolling;
+
+  if (!should_block_on_dependencies) {
+    return;
+  }
 
   base::flat_set<SurfaceAllocationGroup*> new_blocking_allocation_groups;
   std::vector<SurfaceId> new_activation_dependencies;

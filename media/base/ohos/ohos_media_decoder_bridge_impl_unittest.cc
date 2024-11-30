@@ -97,6 +97,7 @@ public:
   MOCK_METHOD(int32_t, GetLTPOStrategy, (), (override)); 
   MOCK_METHOD(std::string, GetUserAgentBaseOSName, (), (override));
   MOCK_METHOD(std::string, GetUserAgentOSVersion, (), (override));
+  MOCK_METHOD(std::string, GetCompatibleDeviceType, (), (override));
 };
 
 class MockWindowAdapter : public WindowAdapter {

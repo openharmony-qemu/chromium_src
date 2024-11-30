@@ -261,6 +261,8 @@ void ContentPasswordManagerDriver::OnRequestAutofill(
     return;
 
   // Remove sensitive information before sending to external systems.
+  if (!GetLastCommittedURL().is_valid())
+    return;
   GURL page_origin = url::Origin::Create(GetLastCommittedURL()).GetURL();
   client_->OnRequestAutofill(this, page_origin, form_id, state,
                              username_data, password_data);

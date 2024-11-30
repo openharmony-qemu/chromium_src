@@ -209,6 +209,12 @@ void BackgroundTaskPolicy::OnIsAudibleChanged(const PageNode* page_node) {
 }
 
 void BackgroundTaskPolicy::MaybeChangeBackgroundTask(const PageNode* page_node) {
+  LOG(INFO) << "BackgroundTaskPolicy::MaybeChangeBackgroundTask "
+      << " page_node=" << page_node
+      << " visible_page_num_: " << visible_page_num_
+      << " media_playing_num_: " << media_playing_num_
+      << " audio_state_num_: " << audio_state_num_
+      << " is_request_background_task_: " << is_request_background_task_;
   RequestBackgroundTaskReason reason =
       RequestBackgroundTaskReason::NO_CHANGE_BG_TASK;
   if (is_request_background_task_ &&

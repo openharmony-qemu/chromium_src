@@ -40,6 +40,8 @@
 #include "capi/nweb_download_delegate_callback.h"
 #endif  //  OHOS_EX_DOWNLOAD
 
+struct OpenDevToolsParam;
+
 namespace OHOS::NWeb {
 class JavaScriptResultCallbackImpl;
 class CefPdfValueCallbackImpl;
@@ -552,6 +554,11 @@ void NotifyForNextTouchEvent() override;
 #endif
 
    void SetPopupSurface(void* popupSurface) override;
+
+  void OpenDevtoolsWith(
+      std::shared_ptr<NWebDelegateInterface> nweb_delegate,
+      std::unique_ptr<OpenDevToolsParam> param) override;
+  void CloseDevtools() override;
 
  public:
   int argc_;

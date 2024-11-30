@@ -32,6 +32,8 @@
 #include "nweb_inputmethod_handler.h"
 #include "nweb_output_handler.h"
 
+struct OpenDevToolsParam;
+
 namespace OHOS::NWeb {
 class NWebImpl : public NWeb {
  public:
@@ -408,6 +410,8 @@ class NWebImpl : public NWeb {
 
   void ReloadOriginalUrl() const;
   void SetBrowserUserAgentString(const std::string& user_agent);
+  void OpenDevtools(std::unique_ptr<OpenDevToolsParam> param);
+  void CloseDevtools();
 #endif  // defined(OHOS_NWEB_EX)
 
 #ifdef OHOS_EX_NETWORK_CONNECTION

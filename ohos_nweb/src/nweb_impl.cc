@@ -3177,6 +3177,7 @@ int NWebImpl::GetSecurityLevel() {
 #endif
 }
 
+#if BUILDFLAG(IS_OHOS)
 bool NWebImpl::IsSafeBrowsingEnabled() {
   if (nweb_delegate_ == nullptr) {
     return false;
@@ -3192,6 +3193,14 @@ void NWebImpl::EnableSafeBrowsing(bool enable) {
 
   return nweb_delegate_->EnableSafeBrowsing(enable);
 }
+
+void NWebImpl::EnableSafeBrowsingDetection(bool enable, bool strictMode) const {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->EnableSafeBrowsingDetection(enable, strictMode);
+}
+#endif
 
 void NWebImpl::StartCamera() {
 #if defined(OHOS_WEBRTC)

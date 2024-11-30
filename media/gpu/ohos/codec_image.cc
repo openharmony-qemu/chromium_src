@@ -84,6 +84,8 @@ bool CodecImage::HasTextureOwner() const {
 }
 
 gpu::TextureBase* CodecImage::GetTextureBase() const {
+  if (!texture_owner())
+    return nullptr;
   return texture_owner()->GetTextureBase();
 }
 

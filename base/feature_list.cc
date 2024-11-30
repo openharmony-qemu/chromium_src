@@ -371,18 +371,8 @@ void FeatureList::AssociateReportingFieldTrial(
   // enforced server-side.
 #ifdef OHOS_SCROLLBAR
   {
-    AutoLock lock(overrides_lock_);
-    OverrideEntry* entry = &overrides_.find(feature_name)->second;
-    if (entry->field_trial) {
-      NOTREACHED() << "Feature " << feature_name
-                 << " already has trial: " << entry->field_trial->trial_name()
-                 << ", associating trial: " << field_trial->trial_name();
-      return;
-    }
-
-    entry->field_trial = field_trial;
-  }
-#else
+  AutoLock lock(overrides_lock_);
+#endif
   OverrideEntry* entry = &overrides_.find(feature_name)->second;
   if (entry->field_trial) {
     NOTREACHED() << "Feature " << feature_name
@@ -392,6 +382,8 @@ void FeatureList::AssociateReportingFieldTrial(
   }
 
   entry->field_trial = field_trial;
+#ifdef OHOS_SCROLLBAR
+  }
 #endif
 }
 

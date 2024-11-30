@@ -36,7 +36,8 @@ HitTestManager::HitTestManager(SurfaceManager* surface_manager)
 HitTestManager::~HitTestManager() = default;
 
 bool HitTestManager::OnSurfaceDamaged(const SurfaceId& surface_id,
-                                      const BeginFrameAck& ack) {
+                                      const BeginFrameAck& ack,
+                                      bool is_actively_scrolling) {
   return false;
 }
 

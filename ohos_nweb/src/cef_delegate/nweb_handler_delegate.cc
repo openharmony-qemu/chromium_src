@@ -727,6 +727,11 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
         main_browser_->GetHost()->SetAudioResumeInterval(
             preference_delegate_->GetAudioResumeInterval());
 #endif
+#ifdef OHOS_RENDERER_ANR_DUMP
+        if (popup_window_) {
+          SetPopupSurface(popup_window_);
+        }
+#endif
 #if defined(OHOS_PRINT)
         main_browser_->GetHost()->SetToken(preference_delegate_->GetPrintToken());
 #endif
@@ -870,7 +875,9 @@ void NWebHandlerDelegate::OnBeforeClose(CefRefPtr<CefBrowser> browser) {
     }
   } else {
     content::GpuProcessHost* host = content::GpuProcessHost::Get();
-    host->gpu_host()->DestroyNativeWindow(main_browser_->GetAcceleratedWidget(false));
+    if (host != nullptr && host->gpu_host() != nullptr && main_browser_ != nullptr) {
+      host->gpu_host()->DestroyNativeWindow(main_browser_->GetAcceleratedWidget(false));
+    }
     OHOS::NWeb::OhosAdapterHelper::GetInstance()
         .GetWindowAdapterInstance()
         .DestroyNativeWindow(window_);
@@ -1571,43 +1578,33 @@ void NWebHandlerDelegate::OnRenderProcessTerminated(
   }
 
   RenderExitReason reason;
-#if defined(REPORT_SYS_EVENT)
   std::string error_desc = "";
-#endif
   switch (status) {
     case TS_ABNORMAL_TERMINATION:
       reason = RenderExitReason::PROCESS_ABNORMAL_TERMINATION;
-#if defined(REPORT_SYS_EVENT)
       error_desc = "Pprocess abnormal termination";
-#endif
       break;
     case TS_PROCESS_WAS_KILLED:
       reason = RenderExitReason::PROCESS_WAS_KILLED;
-#if defined(REPORT_SYS_EVENT)
       error_desc = "process was killed";
-#endif
       break;
     case TS_PROCESS_CRASHED:
       reason = RenderExitReason::PROCESS_CRASHED;
-#if defined(REPORT_SYS_EVENT)
       error_desc = "process crashed";
-#endif
       break;
     case TS_PROCESS_OOM:
       reason = RenderExitReason::PROCESS_OOM;
-#if defined(REPORT_SYS_EVENT)
       error_desc = "process out of memory";
-#endif
       break;
     default:
       reason = RenderExitReason::PROCESS_EXIT_UNKNOWN;
-#if defined(REPORT_SYS_EVENT)
-      error_desc = "process exit unkonow";
-#endif
+      error_desc = "process exit unknown";
       break;
   }
 
-  LOG(INFO) << "render process exit, reason = " << static_cast<int>(reason);
+  LOG(INFO) << "NWebId: " << nweb_id_
+            << " render process exit, reason = " << static_cast<int>(reason)
+            << " reason info = " << error_desc;
   nweb_handler_->OnRenderExited(reason);
 
 #if defined(REPORT_SYS_EVENT)
@@ -1795,6 +1792,11 @@ void NWebHandlerDelegate::OnTakeFocus(CefRefPtr<CefBrowser> browser,  bool next)
   std::shared_ptr<NWebKeyEvent> nwebEvent =
       std::make_shared<NWebKeyEventImpl>(0, keyCode);
   nweb_handler_->KeyboardReDispatch(nwebEvent, false);
+}
+
+bool NWebHandlerDelegate::IsCurrentFocus()
+{
+  return nweb_handler_ ? nweb_handler_->IsCurrentFocus() : false;
 }
 #endif
 /* CefKeyboardHandler methods end */
@@ -2314,6 +2316,7 @@ bool NWebHandlerDelegate::OnSetFocus(CefRefPtr<CefBrowser> browser,
                                      FocusSource source) {
   if (nweb_handler_ != nullptr) {
 #ifdef OHOS_FOCUS
+    LOG(INFO) << "NWebHandlerDelegate::OnSetFocus report arkweb get focus , source = " << source;
     if (!nweb_handler_->OnFocus(static_cast<NWebFocusSource>(source))) {
       LOG(DEBUG) << "nweb_handler request focus unsuccessful, need't to set "
                     "focus, source = "
@@ -3748,7 +3751,7 @@ void NWebHandlerDelegate::OnRenderProcessResponding(
 void NWebHandlerDelegate::SetPopupSurface(void* popup_window) {
   if (main_browser_ && main_browser_->GetHost()) {
     if (!is_enhance_surface_) {
-      if (popup_window_ != nullptr) {
+      if (popup_window_ != nullptr && popup_window_ != popup_window) {
         OHOS::NWeb::OhosAdapterHelper::GetInstance()
             .GetWindowAdapterInstance()
             .DestroyNativeWindow(popup_window_);
@@ -3757,6 +3760,8 @@ void NWebHandlerDelegate::SetPopupSurface(void* popup_window) {
       popup_window_ = popup_window;
       main_browser_->GetHost()->SetPopupWindow(popup_window_);
     }
+  } else {
+    popup_window_ = popup_window;
   }
 }
 #endif

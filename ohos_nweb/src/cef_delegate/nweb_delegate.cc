@@ -1464,6 +1464,7 @@ void NWebDelegate::OnPause() {
   }
 
   // Remove focus from the browser.
+  LOG(INFO) << "NWebDelegate::OnPause set web blur, nweb_id = " << nweb_id_;
   GetBrowser()->GetHost()->SetFocus(false);
 
 #if defined(OHOS_INPUT_EVENTS)
@@ -1584,13 +1585,18 @@ void NWebDelegate::OnContinue() {
   }
 
   // Give focus to the browser.
+#if defined(OHOS_INPUT_EVENTS)
   if (handler_delegate_ && handler_delegate_->GetContinueNeedFocus()) {
     if (is_onPause_) {
       GetBrowser()->GetHost()->SetFocus(true);
       handler_delegate_->SetContinueNeedFocus(false);
     }
+  } else if (handler_delegate_ && handler_delegate_->IsCurrentFocus()) {
+    LOG(INFO) << "NWebDelegate::OnContinue set web core focus, nweb_id = " << nweb_id_;
+    GetBrowser()->GetHost()->SetFocus(true);
   }
   is_onPause_ = false;
+#endif
 }
 
 void NWebDelegate::WebComponentsBlur() {
@@ -2328,6 +2334,7 @@ bool NWebDelegate::OnFocus(const FocusReason& focusReason) const {
 
 #ifdef OHOS_FOCUS
   if (handler_delegate_ && !handler_delegate_->GetFocusState()) {
+    LOG(INFO) << "NWebDelegate::OnFocus set web focus, nweb_id = " << nweb_id_;
     GetBrowser()->GetHost()->SetFocus(true);
   }
 #endif  // #ifdef OHOS_FOCUS
@@ -2344,6 +2351,7 @@ void NWebDelegate::OnBlur() const {
 
 #ifdef OHOS_FOCUS
   if (handler_delegate_ && handler_delegate_->GetFocusState()) {
+    LOG(INFO) << "NWebDelegate::OnBlur set web blur, nweb_id = " << nweb_id_;
     handler_delegate_->SetFocusState(false);
     GetBrowser()->GetHost()->SetFocus(false);
 #if defined(OHOS_INPUT_EVENTS)
@@ -2713,6 +2721,8 @@ bool NWebDelegate::WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
   bool retVal = false;
   if (event_handler_ != nullptr) {
     retVal = event_handler_->WebSendKeyEventFromAce(keyCode, keyAction, pressedCodes);
+  } else {
+    LOG(ERROR) << "WebSendKeyEvent event_handler_ is nullptr";
   }
   return retVal;
 }
@@ -2728,6 +2738,8 @@ void NWebDelegate::WebSendMouseWheelEvent(double x,
                                            deltaX / default_virtual_pixel_ratio_,
                                            deltaY / default_virtual_pixel_ratio_,
                                            pressedCodes);
+  } else {
+    LOG(ERROR) << "WebSendMouseWheelEvent event_handler_ is nullptr";
   }
 }
 
@@ -2742,6 +2754,8 @@ void NWebDelegate::WebSendTouchpadFlingEvent(double x,
                                               vx / default_virtual_pixel_ratio_,
                                               vy / default_virtual_pixel_ratio_,
                                               pressedCodes);
+  } else {
+    LOG(ERROR) << "WebSendTouchpadFlingEvent event_handler_ is nullptr";
   }
 }
 

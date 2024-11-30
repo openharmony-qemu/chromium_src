@@ -123,10 +123,23 @@ DownloadInterruptReason BaseFile::Initialize(
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   DCHECK(!detached_);
 
+#ifdef OHOS_DOWNLOAD
+  base::FilePath save_directory;
+  if (default_directory.empty()) {
+    base::GetTempDir(&save_directory);
+    save_directory = save_directory.AppendASCII("Download");
+    if (!base::DirectoryExists(save_directory)) {
+      base::CreateDirectory(save_directory);
+    }
+  } else {
+    save_directory = default_directory;
+  }
+#endif
+
   if (full_path.empty()) {
     base::FilePath temp_file;
-    if ((default_directory.empty() ||
-         !base::CreateTemporaryFileInDir(default_directory, &temp_file)) &&
+    if ((save_directory.empty() ||
+         !base::CreateTemporaryFileInDir(save_directory, &temp_file)) &&
         !base::CreateTemporaryFile(&temp_file)) {
       return LogInterruptReason("Unable to create", 0,
                                 DOWNLOAD_INTERRUPT_REASON_FILE_FAILED);

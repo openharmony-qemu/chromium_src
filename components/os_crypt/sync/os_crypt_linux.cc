@@ -47,6 +47,8 @@ constexpr size_t kIVBlockSizeAES128 = 16;
 #if defined(OHOS_ENCRYPT)
 // Size of initialization vectore for GCM
 const size_t kIVSizeAESGCM = 12;
+
+constexpr char kDdataKeyAlias[] = "nweb_data_key";
 #endif
 // Prefixes for cypher text returned by obfuscation version.  We prefix the
 // ciphertext with this string so that future data migration can detect
@@ -72,7 +74,7 @@ std::unique_ptr<crypto::SymmetricKey> GenerateEncryptionKey(
   std::unique_ptr<crypto::SymmetricKey> encryption_key(
       crypto::SymmetricKey::Import(
           crypto::SymmetricKey::AES,
-          crypto::ohos::get_symmetric_key_256("nweb_data_key")));
+          crypto::ohos::get_symmetric_key_256(kDdataKeyAlias)));
 #else
   // Create an encryption key from our password and salt.
   std::unique_ptr<crypto::SymmetricKey> encryption_key(

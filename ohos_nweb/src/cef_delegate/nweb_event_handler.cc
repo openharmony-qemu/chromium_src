@@ -22,6 +22,7 @@
 #include "cef/include/base/cef_macros.h"
 #include "cef/include/internal/cef_types.h"
 #include "cef/include/internal/cef_types_wrappers.h"
+#include "cef_delegate/nweb_delegate.h"
 
 #include "base/trace_event/common/trace_event_common.h"
 #include "base/trace_event/trace_event.h"
@@ -236,15 +237,15 @@ bool NWebEventHandler::CreateCefKeyEvent(CefKeyEvent& keyEvent,
 }
 
 void NWebEventHandler::SendCefKeyEvent(CefKeyEvent& keyEvent) {
-  if (browser_ && browser_->GetHost()) {
-    browser_->GetHost()->SendKeyEvent(keyEvent);
+  if (!browser_ || !browser_->GetHost()) {
+    LOG(ERROR) << "SendCefKeyEvent browser_ or Host is nullptr, browser_: " << !browser_;
+    return;
   }
+  browser_->GetHost()->SendKeyEvent(keyEvent);
 
   if (keyEvent.type == KEYEVENT_RAWKEYDOWN) {
     keyEvent.type = KEYEVENT_CHAR;
-    if (browser_ && browser_->GetHost()) {
-      browser_->GetHost()->SendKeyEvent(keyEvent);
-    }
+    browser_->GetHost()->SendKeyEvent(keyEvent);
   }
 }
 
@@ -260,6 +261,7 @@ bool NWebEventHandler::WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
   int32_t modifiers = NWebInputDelegate::GetWebModifiers(keyCode, keyAction, pressedCodes);
   input_delegate_.SetModifiers(keyCode, keyAction);
   if (!CreateCefKeyEvent(keyEvent, keyCode, keyAction, modifiers)) {
+    LOG(ERROR) << "WebSendKeyEvent create key event failed";
     return false;
   }
   SendCefKeyEvent(keyEvent);
@@ -276,6 +278,7 @@ void NWebEventHandler::SendCefMouseWheelEvent(double x,
   mouseEvent.modifiers = modifiers;
   LOG(DEBUG) << "WebSendMouseWheelEvent modifiers = " << mouseEvent.modifiers;
   if (!browser_ || !browser_->GetHost()) {
+    LOG(ERROR) << "SendCefMouseWheelEvent browser_ or Host is nullptr, browser_: " << !browser_;
     return;
   }
 
@@ -288,6 +291,9 @@ void NWebEventHandler::SendCefMouseWheelEvent(double x,
     horizontalDelta = deltaX * input_delegate_.GetMouseWheelRatio();
     verticalDelta = deltaY * input_delegate_.GetMouseWheelRatio();
   }
+
+  LOG(DEBUG) << "SendCefMouseWheelEvent Axis deltaX: " << horizontalDelta
+             << " deltaY: " << verticalDelta;
   browser_->GetHost()->SendMouseWheelEvent(mouseEvent, horizontalDelta,
                                            verticalDelta);
 }
@@ -312,6 +318,7 @@ void NWebEventHandler::WebSendTouchpadFlingEvent(double x,
   mouseEvent.modifiers = NWebInputDelegate::GetWebModifiersByPressedCode(pressedCodes);
   LOG(DEBUG) << "WebSendTouchpadFlingEvent modifiers = " << mouseEvent.modifiers;
   if (!browser_ || !browser_->GetHost()) {
+    LOG(ERROR) << "WebSendTouchpadFlingEvent browser_ or host is nullptr, browser_: " << !browser_;
     return;
   }
 
@@ -402,6 +409,7 @@ bool NWebEventHandler::SendKeyEvent(int32_t keyCode, int32_t keyAction) {
   input_delegate_.SetModifiers(keyCode, keyAction);
   int32_t modifiers = input_delegate_.GetModifiers();
   if (!CreateCefKeyEvent(keyEvent, keyCode, keyAction, modifiers)) {
+    LOG(ERROR) << "SendKeyEvent create key event failed";
     return false;
   }
   SendCefKeyEvent(keyEvent);
@@ -416,6 +424,7 @@ void NWebEventHandler::SendTouchpadFlingEvent(double x, double y, double vx, dou
 
 #if defined(OHOS_INPUT_EVENTS)
   if (!browser_ || !browser_->GetHost()) {
+    LOG(ERROR) << "SendTouchpadFlingEvent browser_ or host is nullptr, browser_: " << !browser_;
     return;
   }
 
@@ -494,6 +503,8 @@ void NWebEventHandler::SendMouseEvent(int x,
 void NWebEventHandler::NotifyForNextTouchEvent() {
   if (browser_ && browser_->GetHost()) {
     browser_->GetHost()->NotifyForNextTouchEvent();
+  } else {
+    LOG(ERROR) << "NotifyForNextTouchEvent browser_ or host is nullptr, browser_: " << !browser_;
   }
 }
 }  // namespace OHOS::NWeb

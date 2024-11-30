@@ -401,6 +401,7 @@ class NWebHandlerDelegate : public CefClient,
 #if defined(OHOS_INPUT_EVENTS)
   void KeyboardReDispatch(const CefKeyEvent& event,  bool isUsed) override;
   void OnTakeFocus(CefRefPtr<CefBrowser> browser,  bool next) override;
+  bool IsCurrentFocus();
 #endif
   /* CefKeyboardHandler methods begin */
 

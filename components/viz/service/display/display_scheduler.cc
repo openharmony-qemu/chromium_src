@@ -13,6 +13,9 @@
 #include "base/task/delay_policy.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/trace_event/trace_event.h"
+#if BUILDFLAG(IS_OHOS)
+#include "base/ohos/sys_info_utils.h"
+#endif
 #include "components/viz/common/features.h"
 #include "components/viz/service/performance_hint/hint_session.h"
 
@@ -27,6 +30,10 @@ base::TimeDelta ComputeAdpfTarget(const BeginFrameArgs& args) {
     return deadline.latch_delta * 3 / 4;
   }
   return base::Milliseconds(12);
+}
+
+bool DrawImmediatelyWhenInteractive() {
+  return base::ohos::IsPcDevice() && features::ShouldDrawImmediatelyWhenInteractive();
 }
 
 }  // namespace
@@ -450,8 +457,15 @@ DisplayScheduler::DesiredBeginFrameDeadlineMode() const {
     return BeginFrameDeadlineMode::kLate;
   }
 
+  // Only wait if we actually have pending surfaces and we're not forcing draw
+  // due to scrolling.
+  bool wait_for_pending_surfaces =
+      has_pending_surfaces_ &&
+      !(DrawImmediatelyWhenInteractive() &&
+        damage_tracker_->HasDamageDueToActiveScroller());
+
   bool all_surfaces_ready =
-      !has_pending_surfaces_ && damage_tracker_->IsRootSurfaceValid() &&
+      !wait_for_pending_surfaces && damage_tracker_->IsRootSurfaceValid() &&
       !damage_tracker_->expecting_root_surface_damage_because_of_resize();
 
   // When no draw is needed, only allow an early deadline in full-pipe mode.

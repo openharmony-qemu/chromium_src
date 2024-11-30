@@ -15,8 +15,6 @@
 #include "build/build_config.h"
 #include "build/util/chromium_git_revision.h"
 
-#include "third_party/bounds_checking_function/include/securec.h"
-
 #if BUILDFLAG(IS_MAC)
 #include "base/mac/mac_util.h"
 #endif
@@ -230,7 +228,7 @@ std::string GetDistVersion() {
   int versionPartTwo;
   int versionPartthree;
   std::string os_version = base::ohos::OsVersion();
-  int ret = sscanf_s(os_version.c_str(), "%d.%d.%d",
+  int ret = sscanf(os_version.c_str(), "%d.%d.%d",
       &versionPartOne, &versionPartTwo, &versionPartthree);
   if (ret <= 0) {
     return dist_version;

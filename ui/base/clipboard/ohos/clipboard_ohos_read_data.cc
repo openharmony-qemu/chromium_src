@@ -10,6 +10,7 @@
 #include "base/files/file_util.h"
 #include "base/logging.h"
 #include "third_party/icu/source/i18n/unicode/regex.h"
+#include "ui/base/clipboard/clipboard_constants.h"
 #include "url/gurl.h"
 
 using namespace OHOS::NWeb;
@@ -42,6 +43,7 @@ ClipboardOhosReadData::ClipboardOhosReadData(PasteRecordVector& record_vector)
         htmlString.append(htmlStr);
       }
     }
+    ReadCustomDataFromRecord(pasteCustomData);
     if (recordVector->GetHtmlText()) {
       htmlString.append(*(recordVector->GetHtmlText()));
     }
@@ -69,6 +71,17 @@ std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> ClipboardOhosRead
 void ClipboardOhosReadData::SetConvertHtmlCallback(
     std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> callback) {
   convert_html_callback_ = callback;
+}
+
+void ClipboardOhosReadData::ReadCustomDataFromRecord(
+    const std::shared_ptr<OHOS::NWeb::PasteCustomData>& custom_data) {
+  if (!custom_data) {
+    return;
+  }
+  if (auto it = custom_data->find(kMimeTypeOHOSCustomData);
+      it != custom_data->end()) {
+    custom_datas_.push_back(it->second);
+  }
 }
 
 ClipboardOhosReadData::~ClipboardOhosReadData() {}

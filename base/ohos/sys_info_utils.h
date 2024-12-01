@@ -44,6 +44,10 @@ BASE_EXPORT int32_t SeniorVersion();
 
 BASE_EXPORT std::string OsName();
 
+BASE_EXPORT std::string OsVersion();
+
+BASE_EXPORT std::string BaseOsName();
+
 
 }  // namespace ohos
 }  // namespace base

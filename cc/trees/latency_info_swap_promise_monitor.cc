@@ -23,7 +23,7 @@ bool AddRenderingScheduledComponent(ui::LatencyInfo* latency_info,
   if (latency_info->FindLatency(type, nullptr))
     return false;
   latency_info->AddLatencyNumber(type);
-  std::string trace_content_ = "event_type: " + std::to_string(static_cast<int>(latency_info->source_event_type()))+
+  std::string trace_content_ = "event_type: " + std::to_string(static_cast<int>(latency_info->source_event_type())) +
       " ,step: " + "INPUT_EVENT_LATENCY_RENDERING_SCHEDULED_IMPL_COMPONENT";
   OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
                     std::to_string(latency_info->trace_id()), "trace_content", trace_content_);

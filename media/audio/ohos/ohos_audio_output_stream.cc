@@ -595,13 +595,14 @@ void OHOSAudioOutputStream::SetUpAudioSilentState()
     bool is_muted = weakMediaSession_.get()->GetMuteState();
     if(is_playing && !is_muted) {
       audio_renderer_->SetAudioSilentMode(false);
-      LOG(INFO) << "OHOSAudioOutputStream SetAudioSilentMode false!";      
+      LOG(INFO) << "OHOSAudioOutputStream SetAudioSilentMode false!";
       isSilentMode_ = false;
     }
   }
 }
 
-bool OHOSAudioOutputStream::IsPreloadMediaMode() {
+bool OHOSAudioOutputStream::IsPreloadMediaMode()
+{
   bool isPreloadMode = false;
   if (!weakMediaSession_) {
     return isPreloadMode;

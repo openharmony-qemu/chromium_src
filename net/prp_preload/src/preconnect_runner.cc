@@ -24,7 +24,6 @@ void PreconnectRunner::PreconnectSocket(
   }
   net::NetworkAnonymizationKey key = 
       net::NetworkAnonymizationKey::CreateSameSite(net::SchemefulSite(original_url));
-  }
   if (base::ohos::IsPcDevice() == true ) {
     key = networkAnonymizationKey;
   }

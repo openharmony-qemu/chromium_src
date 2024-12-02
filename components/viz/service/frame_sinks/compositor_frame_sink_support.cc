@@ -943,6 +943,9 @@ void CompositorFrameSinkSupport::OnBeginFrame(const BeginFrameArgs& args) {
                            TRACE_ID_GLOBAL(adjusted_args.trace_id),
                            TRACE_EVENT_FLAG_FLOW_OUT, "step",
                            "IssueBeginFrame");
+    OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                      std::to_string(adjusted_args.trace_id), "step", "IssueBeginFrame");
+                      
     adjusted_args.frames_throttled_since_last = frames_throttled_since_last_;
     frames_throttled_since_last_ = 0;
 

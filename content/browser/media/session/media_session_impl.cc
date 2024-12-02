@@ -1371,11 +1371,13 @@ bool MediaSessionImpl::GetMuteState()
   return is_muted_;
 }
 
-void MediaSessionImpl::SetSessionState(MediaSessionImpl::NWebMediaSessionState sessionState) {
+void MediaSessionImpl::SetSessionState(MediaSessionImpl::NWebMediaSessionState sessionState)
+{
   sessionState_ = sessionState;
 }
 
-MediaSessionImpl::NWebMediaSessionState MediaSessionImpl::GetSessionState() {
+MediaSessionImpl::NWebMediaSessionState MediaSessionImpl::GetSessionState()
+{
   return sessionState_;
 }
 

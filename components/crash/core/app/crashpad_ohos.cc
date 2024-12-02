@@ -493,7 +493,7 @@ bool g_is_browser = false;
 // TODO(jperaza): This might be simplified to have both the browser and child
 // processes use CRASHPAD_SIMULATE_CRASH() if CrashpadClient allows injecting
 // the Chromium specific SandboxedHandler.
-void DumpWithoutCrashing() {
+NO_SANITIZE("cfi-icall") void DumpWithoutCrashing() {
   if (g_is_browser) {
     CRASHPAD_SIMULATE_CRASH();
   } else {

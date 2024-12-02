@@ -433,9 +433,11 @@ bool OHOSAudioOutputStream::InitRender(
 }
 
 bool OHOSAudioOutputStream::StartRender() {
-  audio_renderer_->SetAudioSilentMode(true);
-  LOG(INFO) << "OHOSAudioOutputStream SetAudioSilentMode true";
-  isSilentMode_ = true;
+  if (IsPreloadMediaMode()) {
+    audio_renderer_->SetAudioSilentMode(true);
+    LOG(INFO) << "OHOSAudioOutputStream SetAudioSilentMode true";
+    isSilentMode_ = true;
+  }
   if (!audio_renderer_->Start()) {
     LOG(ERROR) << "ohos audio render start failed";
     if (!audio_renderer_->Release()) {
@@ -592,11 +594,25 @@ void OHOSAudioOutputStream::SetUpAudioSilentState()
     bool is_playing = weakMediaSession_.get()->GetPlayingState();
     bool is_muted = weakMediaSession_.get()->GetMuteState();
     if(is_playing && !is_muted) {
-      LOG(INFO) << "OHOSAudioOutputStream SetAudioSilentMode false!";
       audio_renderer_->SetAudioSilentMode(false);
+      LOG(INFO) << "OHOSAudioOutputStream SetAudioSilentMode false!";      
       isSilentMode_ = false;
     }
   }
+}
+
+bool OHOSAudioOutputStream::IsPreloadMediaMode() {
+  bool isPreloadMode = false;
+  if (!weakMediaSession_) {
+    return isPreloadMode;
+  }
+
+  content::MediaSessionImpl::NWebMediaSessionState sessionState = weakMediaSession_.get()->GetSessionState();
+  LOG(INFO) << "OHOSAudioOutputStream sessionState:" << static_cast<uint32_t>(sessionState);
+  if (sessionState == content::MediaSessionImpl::NWebMediaSessionState::NONEED) {
+    isPreloadMode = true;
+  }
+  return isPreloadMode;
 }
 
 void OHOSAudioOutputStream::SchedulePumpSamples(base::TimeTicks now) {

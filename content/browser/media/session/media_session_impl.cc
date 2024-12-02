@@ -1371,6 +1371,14 @@ bool MediaSessionImpl::GetMuteState()
   return is_muted_;
 }
 
+void MediaSessionImpl::SetSessionState(MediaSessionImpl::NWebMediaSessionState sessionState) {
+  sessionState_ = sessionState;
+}
+
+MediaSessionImpl::NWebMediaSessionState MediaSessionImpl::GetSessionState() {
+  return sessionState_;
+}
+
 #endif // OHOS_MEDIA_POLICY
 
 void MediaSessionImpl::SetAudioSinkId(const absl::optional<std::string>& id) {

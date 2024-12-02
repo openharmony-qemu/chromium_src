@@ -280,13 +280,13 @@ bool MediaSessionController::IsMediaSessionNeeded() const {
 }
 
 #if defined(OHOS_MEDIA_POLICY)
-void MediaSessionController::SetSessionStateNeed(nool isNeedMediaSession)
+void MediaSessionController::SetSessionStateNeed(bool isNeedMediaSession)
 {
   if (!media_session_) {
     return;
   }
   if (media_content_type_ == media::MediaContentType::OneShot) {
-    LOG(INFO) << "MediaSessionController contentType is shot, don't control mediaSession";
+    LOG(INFO) << "MediaSessionController contentType is oneShot, don't control mediaSession";
     return;
   }
   if (isNeedMediaSession) {

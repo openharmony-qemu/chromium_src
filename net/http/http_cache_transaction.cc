@@ -4283,18 +4283,4 @@ void HttpCache::Transaction::UpdateCacheInfo(const HttpResponseInfo& response) {
 }
 #endif
 
-#if BUILDFLAG(IS_OHOS)
-void HttpCache::Transaction::UpdateValidatorsInfo(const HttpResponseHeaders& headers) {
-  if (preload_info_ == nullptr) {
-    return;
-  }
-  std::string e_tag;
-  headers.EnumerateHeader(nullptr, "etag", &e_tag);
-  preload_info_->set_e_tag(e_tag);
-  std::string last_modified;
-  headers.EnumerateHeader(nullptr, "last-modified", &last_modified);
-  preload_info_->set_last_modified(last_modified);
-}
-#endif
-
 }  // namespace net

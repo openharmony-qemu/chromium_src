@@ -96,7 +96,7 @@ ResReqInfoCacheMgr::ResReqInfoCacheMgr(const std::string& url,
   const scoped_refptr<base::SingleThreadTaskRunner>& sth_task_runner,
   const scoped_refptr<DiskCacheBackendFactory>& disk_cache_backend_factory,
   const ResRequestInfoCacheLoadedCB& info_cache_cb) :
-    url_(url), networkAnonymizationKey_(networkAnonymizationKey),
+    networkAnonymizationKey_(networkAnonymizationKey),
     sth_task_runner_(sth_task_runner), info_cache_loaded_cb_(info_cache_cb) {
       disk_cache_ = base::WrapRefCounted(new (std::nothrow) DiskCacheFile(disk_cache_backend_factory, url,
         base::BindRepeating(&ResReqInfoCacheMgr::OnEntryLoadedCallback, weak_factory_.GetWeakPtr())));

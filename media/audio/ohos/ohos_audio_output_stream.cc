@@ -279,9 +279,9 @@ bool OHOSAudioOutputStream::Open() {
 void OHOSAudioOutputStream::Close() {
   LOG(INFO) << "OHOSAudioOutputStream::Close";
   Stop();
+  DumpFileUtil::CloseDumpFile(&dumpFile_);
   ReleaseAudioBuffer();
   manager_->ReleaseOutputStream(this);
-  DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
 void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {

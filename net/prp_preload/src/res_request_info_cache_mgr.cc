@@ -152,7 +152,7 @@ void ResReqInfoCacheMgr::OnEntryLoadedCallback(const std::string& entry_content)
 
 void ResReqInfoCacheMgr::CheckFlush() {
   if (!is_start_) {
-    LOG(DEBUG) << "PRPPreload.ResReqInfoCacheMgr::CheckFlush no need to flush" << url_;
+    LOG(DEBUG) << "PRPPreload.ResReqInfoCacheMgr::CheckFlush no need to flush";
     return;
   }
   if (last_flush_len_ < new_info_list_.size()) {

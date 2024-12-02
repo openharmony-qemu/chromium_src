@@ -397,6 +397,8 @@ void LayerTreeImpl::GenerateCompositorFrame(
                          TRACE_ID_GLOBAL(args.trace_id),
                          TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT,
                          "step", "GenerateCompositorFrame");
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                    std::to_string(args.trace_id), "step", "GenerateCompositorFrame");
 
   for (auto& resource_request :
        ui_resource_manager_.TakeUIResourcesRequests()) {

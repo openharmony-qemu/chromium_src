@@ -795,6 +795,8 @@ void ProxyImpl::ScheduledActionSendBeginMainFrame(
     TRACE_EVENT_WITH_FLOW1(
         "viz,benchmark", "Graphics.Pipeline", TRACE_ID_GLOBAL(args.trace_id),
         TRACE_EVENT_FLAG_FLOW_IN, "step", "SendBeginMainFrame");
+    OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                      std::to_string(args.trace_id), "step", "SendBeginMainFrame");
     TRACE_EVENT_WITH_FLOW0("viz,benchmark",
                            "MainFrame.SendBeginMainFrameOnImpl",
                            TRACE_ID_LOCAL(begin_main_frame_state->trace_id),

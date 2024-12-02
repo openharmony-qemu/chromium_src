@@ -173,6 +173,9 @@ void AsyncLayerTreeFrameSink::SubmitCompositorFrame(
       "SubmitCompositorFrame", "local_surface_id",
       local_surface_id_.ToString());
 
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                    std::to_string(frame.metadata.begin_frame_ack.trace_id), "step", "SubmitCompositorFrame");
+
   if (local_surface_id_ == last_submitted_local_surface_id_) {
     DCHECK_EQ(last_submitted_device_scale_factor_, frame.device_scale_factor());
     DCHECK_EQ(last_submitted_size_in_pixels_.height(),
@@ -324,6 +327,8 @@ void AsyncLayerTreeFrameSink::OnBeginFrame(
       TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT, "step",
       "ReceiveBeginFrame", "frame_sequence", args.frame_id.sequence_number);
   SetDrawRect(args.draw_rect);
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                    std::to_string(args.trace_id), "step", "ReceiveBeginFrame");
   if (begin_frame_source_)
     begin_frame_source_->OnBeginFrame(args);
 }

@@ -1078,7 +1078,12 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
     ui::LatencyInfo::TraceIntermediateFlowEvents(
         frame.latency_info,
         perfetto::protos::pbzero::ChromeLatencyInfo::STEP_DRAW_AND_SWAP);
-
+    for (auto& latency : metadata.latency_info) {
+      std::string trace_content_ = "event_type: " + std::to_string(static_cast<int>(latency.source_event_type())) +
+          " ,step: " + "STEP_DRAW_AND_SWAP";
+      OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
+                        std::to_string(latency.trace_id()), "trace_content", trace_content_);
+    }
     IssueDisplayRenderingStatsEvent();
     DirectRenderer::SwapFrameData swap_frame_data;
     swap_frame_data.latency_info = std::move(frame.latency_info);

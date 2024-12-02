@@ -137,6 +137,9 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   // Call to set audio_render silentMode
   void SetUpAudioSilentState();
 
+  // Call to determine whether media is preload
+  bool IsPreloadMediaMode();
+
   bool InitRender(const std::shared_ptr<AudioRendererOptionsAdapter> options);
 
   bool StartRender();

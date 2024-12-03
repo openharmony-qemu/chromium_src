@@ -494,7 +494,15 @@ class NWebDelegateInterface
   virtual bool IsIntelligentTrackingPreventionEnabled() const = 0;
 #endif
 
-  virtual int ScaleGestureChange(double scale, double centerX, double centerY) const = 0;
+  virtual int ScaleGestureChange(double scale,
+                                 double centerX,
+                                 double centerY) const = 0;
+
+  virtual int ScaleGestureChangeV2(int type,
+                                   double scale,
+                                   double originScale,
+                                   double centerX,
+                                   double centerY) const = 0;
 
 #if defined(OHOS_SCREEN_LOCK)
   virtual void SetWakeLockCallback(int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback) = 0;

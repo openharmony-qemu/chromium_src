@@ -280,7 +280,7 @@ bool MediaSessionController::IsMediaSessionNeeded() const {
 }
 
 #if defined(OHOS_MEDIA_POLICY)
-void MediaSessionController::SetSessionStateNeed(bool isNeedMediaSession)
+void MediaSessionController::SetSessionStateIfNeed(bool isNeedMediaSession)
 {
   if (!media_session_) {
     return;
@@ -302,7 +302,7 @@ void MediaSessionController::SetSessionStateNeed(bool isNeedMediaSession)
 bool MediaSessionController::AddOrRemovePlayer() {
   const bool needs_session = IsMediaSessionNeeded();
 #if defined(OHOS_MEDIA_POLICY)
-  SetSessionStateNeed(needs_session);
+  SetSessionStateIfNeed(needs_session);
 #endif
   if (needs_session) {
     // Attempt to add a session even if we already have one.  MediaSession

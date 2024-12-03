@@ -256,6 +256,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       bool extention) override;
 
   int ScaleGestureChange(double scale, double centerX, double centerY) const override;
+  
+  int ScaleGestureChangeV2(int type, double scale, double originScale, double centerX, double centerY) const override;
 
 #if defined(OHOS_MSGPORT)
   uint32_t runJSCallbackId_ = 0;

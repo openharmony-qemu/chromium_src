@@ -3199,7 +3199,8 @@ std::string NWebImpl::GetDefaultUserAgent() {
 }
 
 int NWebImpl::ScaleGestureChange(double scale, double centerX, double centerY) {
-  LOG(INFO) << "NWebImpl::ScaleGestureChange scale:" << scale << " centerX: " << centerX << " centerY: " << centerY;
+  LOG(DEBUG) << "NWebImpl::ScaleGestureChange scale:" << scale
+             << " centerX: " << centerX << " centerY: " << centerY;
   if (nweb_delegate_ == nullptr) {
     LOG(ERROR) << "nweb_delegate_ is nullptr.";
     return NWEB_ERR;
@@ -3649,4 +3650,19 @@ void NWebImpl::SetTransformHint(uint32_t rotation) {
   if (nweb_delegate_) {
     nweb_delegate_->SetTransformHint(rotation);
   }
+}
+
+int NWebImpl::ScaleGestureChangeV2(int type,
+                                   double scale,
+                                   double originScale,
+                                   double centerX,
+                                   double centerY) {
+  LOG(DEBUG) << "NWebImpl::ScaleGestureChangeV2 type:" << type
+             << " scale:" << scale << " originScale: " << originScale
+             << " centerX: " << centerX << " centerY: " << centerY;
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "nweb_delegate_ is nullptr.";
+    return NWEB_ERR;
+  }
+  return nweb_delegate_->ScaleGestureChangeV2(type, scale, originScale, centerX, centerY);
 }

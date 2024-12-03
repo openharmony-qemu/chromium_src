@@ -4142,19 +4142,6 @@ bool NWebDelegate::WebPageSnapshot(const char* id,
 #endif
 
 int NWebDelegate::ScaleGestureChange(double scale, double centerX, double centerY) const {
-  LOG(DEBUG) << "NWebDelegate::ScaleGestureChange";
-  if (!preference_delegate_) {
-    LOG(ERROR) << "preference_delegate_ get fail";
-    return NWEB_ERR;
-  }
-  if (!preference_delegate_->ZoomingfunctionEnabled()) {
-    return NWEB_FUNCTION_NOT_ENABLE;
-  }
-  if (!GetBrowser().get()) {
-    LOG(ERROR) << "NWebDelegate::ScaleGestrueChange can not get browser";
-    return NWEB_ERR;
-  }
-  GetBrowser()->GetHost()->ZoomBy(scale, centerX * 2, centerY * 2);
   return NWEB_OK;
 }
 
@@ -4298,5 +4285,29 @@ int32_t NWebDelegate::GetArgumentByKey(const std::map<std::string, std::string>&
         strArguments >> argument;
     }
     return argument;
+}
+
+int NWebDelegate::ScaleGestureChangeV2(int type,
+                                       double scale,
+                                       double originScale,
+                                       double centerX,
+                                       double centerY) const {
+  LOG(DEBUG) << "NWebDelegate::ScaleGestureChangeV2";
+  if (!preference_delegate_) {
+    LOG(ERROR) << "preference_delegate_ get fail";
+    return NWEB_ERR;
+  }
+  if (!preference_delegate_->ZoomingfunctionEnabled()) {
+    return NWEB_FUNCTION_NOT_ENABLE;
+  }
+  if (!GetBrowser().get()) {
+    LOG(ERROR) << "NWebDelegate::ScaleGestureChangeV2 can not get browser";
+    return NWEB_ERR;
+  }
+
+  GetBrowser()->GetHost()->ScaleGestureChangeV2(
+      type, scale, originScale, centerX / default_virtual_pixel_ratio_,
+      centerY / default_virtual_pixel_ratio_);
+  return NWEB_OK;
 }
 }  // namespace OHOS::NWeb

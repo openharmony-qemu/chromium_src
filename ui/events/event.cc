@@ -438,7 +438,7 @@ MouseEvent::MouseEvent(const PlatformEvent& native_event)
   std::string trace_content_ = "event_type: " + std::to_string(static_cast<int>(latency()->source_event_type())) +
       " ,step: " + "INPUT_EVENT_LATENCY_ORIGINAL_COMPONENT";
   OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
-                    std::to_string(llatency()->trace_id()), "trace_content", trace_content_);
+                    std::to_string(latency()->trace_id()), "trace_content", trace_content_);
 
   latency()->AddLatencyNumber(INPUT_EVENT_LATENCY_UI_COMPONENT);
   InitializeNative();
@@ -462,7 +462,7 @@ MouseEvent::MouseEvent(EventType type,
   std::string trace_content_ = "event_type: " + std::to_string(static_cast<int>(latency()->source_event_type())) +
       " ,step: " + "INPUT_EVENT_LATENCY_UI_COMPONENT";
   OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
-                    std::to_string(llatency()->trace_id()), "trace_content", trace_content_);
+                    std::to_string(latency()->trace_id()), "trace_content", trace_content_);
   if (this->type() == ET_MOUSE_MOVED && IsAnyButton())
     SetType(ET_MOUSE_DRAGGED);
 }

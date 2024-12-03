@@ -232,13 +232,13 @@ void SkiaOutputDevice::FinishSwapBuffers(
     // as part of the critical flow so emit a flow step.
     ui::LatencyInfo::TraceIntermediateFlowEvents(
         frame.latency_info, ChromeLatencyInfo::STEP_FINISHED_SWAP_BUFFERS);
-    for (auto& latency : metadata.latency_info) {
+    for (auto& latency : frame.latency_info) {
       std::string trace_content_ = "event_type: " + std::to_string(static_cast<int>(latency.source_event_type())) +
           " ,step: " + "STEP_FINISHED_SWAP_BUFFERS";
       OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
                         std::to_string(latency.trace_id()), "trace_content", trace_content_);
     }
-    
+
     latency_tracker_runner_->PostTask(
         FROM_HERE,
         base::BindOnce(&ReportLatency, params.swap_response.timings,

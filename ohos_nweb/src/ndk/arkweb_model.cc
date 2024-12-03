@@ -160,7 +160,7 @@ ARKWEB_NDK_EXPORT void OH_ArkWeb_Refresh(const char* webTag) {
   }
 }
 
-ARKWEB_NDK_EXPORT void OH_ArkWeb_OnControllerAttached(
+NO_SANITIZE("cfi-icall") ARKWEB_NDK_EXPORT void OH_ArkWeb_OnControllerAttached(
     const char* webTag,
     ArkWeb_OnComponentCallback callback,
     void* userData) {
@@ -184,7 +184,7 @@ ARKWEB_NDK_EXPORT void OH_ArkWeb_OnControllerAttached(
       });
 }
 
-ARKWEB_NDK_EXPORT void OH_ArkWeb_OnPageBegin(
+NO_SANITIZE("cfi-icall") ARKWEB_NDK_EXPORT void OH_ArkWeb_OnPageBegin(
     const char* webTag,
     ArkWeb_OnComponentCallback callback,
     void* userData) {
@@ -208,9 +208,9 @@ ARKWEB_NDK_EXPORT void OH_ArkWeb_OnPageBegin(
       });
 }
 
-ARKWEB_NDK_EXPORT void OH_ArkWeb_OnPageEnd(const char* webTag,
-                                           ArkWeb_OnComponentCallback callback,
-                                           void* userData) {
+NO_SANITIZE("cfi-icall") ARKWEB_NDK_EXPORT void OH_ArkWeb_OnPageEnd(const char* webTag,
+    ArkWeb_OnComponentCallback callback,
+    void* userData) {
   if (callback == nullptr) {
     LOG(ERROR) << "NativeArkWeb OnPageEnd callback is nullptr";
     return;
@@ -231,9 +231,9 @@ ARKWEB_NDK_EXPORT void OH_ArkWeb_OnPageEnd(const char* webTag,
       });
 }
 
-ARKWEB_NDK_EXPORT void OH_ArkWeb_OnDestroy(const char* webTag,
-                                           ArkWeb_OnComponentCallback callback,
-                                           void* userData) {
+NO_SANITIZE("cfi-icall") ARKWEB_NDK_EXPORT void OH_ArkWeb_OnDestroy(const char* webTag,
+    ArkWeb_OnComponentCallback callback,
+    void* userData) {
   if (callback == nullptr) {
     LOG(ERROR) << "NativeArkWeb OnDestroy callback is nullptr";
     return;
@@ -260,7 +260,7 @@ ARKWEB_NDK_EXPORT void OH_ArkWeb_RegisterAsyncJavaScriptProxy(
   RegisterJavaScriptProxy(webTag, proxyObject, true, "");
 }
 
-void RegisterJavaScriptProxy(
+NO_SANITIZE("cfi-icall") void RegisterJavaScriptProxy(
     const char* webTag,
     const ArkWeb_ProxyObject* proxyObject,
     bool isAsync,

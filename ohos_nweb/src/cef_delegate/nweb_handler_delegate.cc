@@ -2080,7 +2080,7 @@ void NWebHandlerDelegate::OnTopControlsChanged(float top_controls_offset,
 #endif
 }
 
-int NWebHandlerDelegate::OnGetTopControlsHeight() {
+NO_SANITIZE("cfi-icall") int NWebHandlerDelegate::OnGetTopControlsHeight() {
 #if defined(OHOS_EX_TOPCONTROLS)
   if (web_app_client_extension_listener_ == nullptr ||
       web_app_client_extension_listener_->OnGetTopControlsHeight == nullptr) {

@@ -341,7 +341,7 @@ void ChannelPosix::OnFileCanWriteWithoutBlocking(int fd) {
 // ASAP on the I/O thread.
 bool ChannelPosix::WriteNoLock(MessageView message_view) {
 #if BUILDFLAG(IS_OHOS)
-  if (socket_.is_valid()) {
+  if (!socket_.is_valid()) {
     return false;
   }
 #endif  // BUILDFLAG(IS_OHOS)

@@ -135,6 +135,7 @@
 #endif  // BUILDFLAG(IS_WIN)
 
 #if BUILDFLAG(IS_OHOS)
+#include "base/system/sys_info.h"
 #include "base/ohos/sys_info_utils.h"
 #include "content/renderer/media/ohos/native_renderer_client_factory.h"
 #include "content/renderer/media/ohos/native_texture_wrapper_impl.h"
@@ -547,13 +548,14 @@ blink::WebNativeBridge* MediaFactory::CreateWebNativeBridge(
   }
 
   auto factory_selector = std::make_unique<media::RendererFactorySelector>();
-  gl::ohos::TextureOwnerMode texture_owner_mode = base::ohos::IsEmulator() ?
+  gl::ohos::TextureOwnerMode texture_owner_mode = base::ohos::IsEmulator() || base::SysInfo::IsLowEndDevice() ?
       gl::ohos::TextureOwnerMode::kNativeImageTexture :
       gl::ohos::TextureOwnerMode::kSameLayerNativeBuffer;
   auto native_factory = std::make_unique<NativeRendererClientFactory>(
       render_thread->compositor_task_runner(),
       base::BindRepeating(
-          &NativeTextureWrapperImpl::Create, base::ohos::IsEmulator() /*enable_texture_copy*/,
+          &NativeTextureWrapperImpl::Create,
+          base::ohos::IsEmulator() || base::SysInfo::IsLowEndDevice() /*enable_texture_copy*/,
           texture_owner_mode,
           render_thread->GetNativeTexureFactory(),
           render_frame_->GetTaskRunner(blink::TaskType::kInternalMedia)));

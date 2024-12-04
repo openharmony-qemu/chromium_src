@@ -38,6 +38,7 @@ void MediaSessionController::SetMetadata(
   has_audio_ = has_audio;
   has_video_ = has_video;
   media_content_type_ = media_content_type;
+  LOG(INFO) << "MediaSessionController mediaContentType is:" << static_cast<uint32_t>(media_content_type_);
   AddOrRemovePlayer();
 }
 
@@ -46,6 +47,7 @@ bool MediaSessionController::OnPlaybackStarted() {
   is_playback_in_progress_ = true;
 #if defined(OHOS_MEDIA_POLICY)
   media_session_->SetPlayingState(true);
+  LOG(INFO) << "MediaSessionController OnPlaybackStarted SetPlayingState true";
 #endif
   return AddOrRemovePlayer();
 }
@@ -200,6 +202,7 @@ void MediaSessionController::OnPlaybackPaused(bool reached_end_of_stream) {
   is_paused_ = true;
 #if defined(OHOS_MEDIA_POLICY)
   media_session_->SetPlayingState(false);
+  LOG(INFO) << "MediaSessionController OnPlaybackStarted SetPlayingState false";
 #endif
   if (reached_end_of_stream) {
 #if defined(OHOS_MEDIA_AVSESSION)
@@ -276,9 +279,31 @@ bool MediaSessionController::IsMediaSessionNeeded() const {
   return has_audio_ && !web_contents_->IsAudioMuted();
 }
 
+#if defined(OHOS_MEDIA_POLICY)
+void MediaSessionController::SetSessionStateIfNeed(bool isNeedMediaSession)
+{
+  if (!media_session_) {
+    return;
+  }
+  if (media_content_type_ == media::MediaContentType::OneShot) {
+    LOG(INFO) << "MediaSessionController contentType is oneShot, don't control mediaSession";
+    return;
+  }
+  if (isNeedMediaSession) {
+    LOG(INFO) << "MediaSessionController media has mediaSession";
+    media_session_->SetSessionState(MediaSessionImpl::NWebMediaSessionState::NEED);
+  } else {
+    LOG(INFO) << "MediaSessionController media is preloading, has no mediaSession";
+    media_session_->SetSessionState(MediaSessionImpl::NWebMediaSessionState::NONEED);
+  }
+}
+#endif
+
 bool MediaSessionController::AddOrRemovePlayer() {
   const bool needs_session = IsMediaSessionNeeded();
-
+#if defined(OHOS_MEDIA_POLICY)
+  SetSessionStateIfNeed(needs_session);
+#endif
   if (needs_session) {
     // Attempt to add a session even if we already have one.  MediaSession
     // expects AddPlayer() to be called after OnPlaybackPaused() to reactivate

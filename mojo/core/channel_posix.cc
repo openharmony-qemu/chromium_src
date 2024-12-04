@@ -392,6 +392,9 @@ bool ChannelPosix::WriteNoLock(MessageView message_view) {
         }
       }
     } else {
+#if BUILDFLAG(IS_OHOS)
+      CHECK(socket_.is_valid());
+#endif  // BUILDFLAG(IS_OHOS)
       result = SocketWrite(socket_.get(), message_view.data(),
                            message_view.data_num_bytes());
     }

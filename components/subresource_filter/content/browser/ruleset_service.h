@@ -64,7 +64,7 @@ class RulesetServiceClient {
  public:
   RulesetServiceClient() {}
   virtual ~RulesetServiceClient() {}
-  virtual void OnDeleteRulesetFile();
+  virtual void OnDeleteRulesetFile() = 0;
 
  private:
 };

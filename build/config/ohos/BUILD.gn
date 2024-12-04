@@ -178,6 +178,10 @@ config("runtime_library") {
         libasan_file = "$ohos_toolchain_root/lib/clang/current/lib/aarch64-linux-ohos/libclang_rt.asan.so"
         libs += [ rebase_path(libasan_file) ]
       }
+      if (using_sanitizer && is_ohos) {
+        libusan_file = "$ohos_toolchain_root/lib/clang/current/lib/aarch64-linux-ohos/libclang_rt.ubsan_standalone.so"
+        libs += [ rebase_path(libusan_file) ]
+      }
     }
 
     if (current_cpu == "x64") {

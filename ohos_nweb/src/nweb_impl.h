@@ -523,6 +523,7 @@ class NWebImpl : public NWeb {
   static void WarmupServiceWorker(const std::string &url);
 
   int ScaleGestureChange(double scale, double centerX, double centerY) override;
+  int ScaleGestureChangeV2(int type, double scale, double originScale, double centerX, double centerY) override;
   static void SetHostIP(const std::string &hostName, const std::string &address, int32_t aliveTime);
   static void ClearHostIP(const std::string &hostName);
 

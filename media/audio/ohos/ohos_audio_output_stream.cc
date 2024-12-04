@@ -611,13 +611,13 @@ bool OHOSAudioOutputStream::IsPreloadOrMutedMediaMode()
   bool is_muted = weakMediaSession_.get()->GetMuteState();
   LOG(INFO) << "OHOSAudioOutputStream sessionState:" << static_cast<uint32_t>(sessionState) << ", mutedMode:" << is_muted;
 
-  bool isPreloadMode = false;
+  bool is_preload = false;
   if (sessionState == content::MediaSessionImpl::NWebMediaSessionState::NOINITIAL) {
     return false;
   } else if (sessionState == content::MediaSessionImpl::NWebMediaSessionState::NONEED) {
-    isPreloadMode = true;
+    is_preload = true;
   }
-  return isPreloadMode || is_muted;
+  return is_preload || is_muted;
 }
 
 void OHOSAudioOutputStream::SchedulePumpSamples(base::TimeTicks now) {

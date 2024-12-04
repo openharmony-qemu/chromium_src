@@ -380,12 +380,16 @@ void VideoCaptureDeviceClient::OnIncomingCapturedData(
   }
 #endif  // BUILDFLAG(IS_CHROMEOS_ASH)
 
+#if !defined(RK3568_CAPTURE) && defined(OHOS_WEBRTC)
+  int stride = format.stride > format.frame_size.width() ? format.stride : format.frame_size.width();
+#endif
+
   // libyuv::ConvertToI420 use Rec601 to convert RGB to YUV.
   if (libyuv::ConvertToI420(
           data, length, y_plane_data, yplane_stride, u_plane_data,
           uv_plane_stride, v_plane_data, uv_plane_stride, crop_x, crop_y,
 #if !defined(RK3568_CAPTURE) && defined(OHOS_WEBRTC)
-          format.stride,
+          stride,
 #else
           format.frame_size.width(),
 #endif

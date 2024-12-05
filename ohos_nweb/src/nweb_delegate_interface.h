@@ -448,23 +448,18 @@ class NWebDelegateInterface
 #if defined(OHOS_INPUT_EVENTS)
   virtual void SetVirtualKeyBoardArg(int32_t width, int32_t height, double keyboard) = 0;
   virtual bool ShouldVirtualKeyboardOverlay() = 0;
-  virtual void WebSendMouseWheelEvent(double x,
-                                      double y,
-                                      double deltaX,
-                                      double deltaY,
+  virtual void WebSendMouseWheelEvent(double x, double y,
+                                      double deltaX, double deltaY,
                                       const std::vector<int32_t>& pressedCodes) = 0;
-  virtual void WebSendTouchpadFlingEvent(double x,
-                                         double y,
-                                         double vx,
-                                         double vy,
+  virtual void WebSendTouchpadFlingEvent(double x, double y,
+                                         double vx, double vy,
                                          const std::vector<int32_t>& pressedCodes) = 0;
 #endif
 
 #if BUILDFLAG(IS_OHOS)
   virtual bool IsSafeBrowsingEnabled() = 0;
   virtual void EnableSafeBrowsing(bool enable) = 0;
-  virtual void PrecompileJavaScript(const std::string& url,
-                                    const std::string& script,
+  virtual void PrecompileJavaScript(const std::string& url, const std::string& script,
                                     std::shared_ptr<CacheOptions>& cacheOptions,
                                     std::shared_ptr<NWebMessageValueCallback> callback) = 0;
 #endif
@@ -535,10 +530,8 @@ class NWebDelegateInterface
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
   virtual void EnableWholeWebPageDrawing() = 0;
 
-  virtual bool WebPageSnapshot(const char* id,
-                               PixelUnit type,
-                               int width,
-                               int height,
+  virtual bool WebPageSnapshot(const char* id, PixelUnit type,
+                               int width, int height,
                                const WebSnapshotCallback callback) = 0;
 #endif
 

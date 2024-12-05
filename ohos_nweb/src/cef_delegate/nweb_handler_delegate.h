@@ -765,6 +765,11 @@ class NWebHandlerDelegate : public CefClient,
   void SetWebPaintedForSnapshot() { isWebPaintedForSnapshot_ = true; }
 #endif
 
+#ifdef OHOS_EX_PULL_TO_REFRESH
+  bool OnPullToRefreshAction(int action) override;
+  void OnPullToRefreshPull(float offset_x, float offset_y) override;
+#endif
+
  void SetPopupSurface(void* popup_window);
  void SetTransformHint(uint32_t rotation);
 

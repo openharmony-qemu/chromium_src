@@ -145,7 +145,10 @@ class NWebHandlerDelegate : public CefClient,
                                   const CefString& method,
                                   const CefString& object_name,
                                   CefRefPtr<CefListValue> result);
-
+  int ProcessNativeProxyResultNewForReturnValue(CefRefPtr<CefListValue> args,
+                                  const CefString& method,
+                                  const CefString& object_name,
+                                  CefRefPtr<CefListValue> result);
   int ProcessNativeProxyResultNewFlowbuf(CefRefPtr<CefListValue> args,
                                   const CefString& method,
                                   const CefString& object_name,

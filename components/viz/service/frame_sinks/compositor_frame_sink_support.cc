@@ -15,6 +15,7 @@
 #include "base/ranges/algorithm.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/time/time.h"
+#include "base/trace_event/common/trace_event_common.h"
 #include "build/build_config.h"
 #include "cc/base/features.h"
 #include "components/power_scheduler/power_mode.h"
@@ -568,6 +569,9 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
       TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT, "step",
       "ReceiveCompositorFrame", "FrameSinkId", frame_sink_id_.ToString());
 
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                    std::to_string(frame.metadata.begin_frame_ack.trace_id), "step", "ReceiveCompositorFrame");
+
   DCHECK(local_surface_id.is_valid());
   DCHECK(!frame.render_pass_list.empty());
   DCHECK(!frame.size_in_pixels().IsEmpty());
@@ -622,6 +626,10 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
     if (latency.latency_components().size() > 0) {
       latency.AddLatencyNumberWithTimestamp(
           ui::DISPLAY_COMPOSITOR_RECEIVED_FRAME_COMPONENT, now_time);
+      std::string trace_content_ = "event_type: " + std::to_string(static_cast<int>(latency.source_event_type())) +
+          " ,step: " + "DISPLAY_COMPOSITOR_RECEIVED_FRAME_COMPONENT";
+      OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
+                        std::to_string(latency.trace_id()), "trace_content", trace_content_);
     }
   }
 
@@ -935,6 +943,9 @@ void CompositorFrameSinkSupport::OnBeginFrame(const BeginFrameArgs& args) {
                            TRACE_ID_GLOBAL(adjusted_args.trace_id),
                            TRACE_EVENT_FLAG_FLOW_OUT, "step",
                            "IssueBeginFrame");
+    OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                      std::to_string(adjusted_args.trace_id), "step", "IssueBeginFrame");
+                      
     adjusted_args.frames_throttled_since_last = frames_throttled_since_last_;
     frames_throttled_since_last_ = 0;
 

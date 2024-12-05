@@ -1611,6 +1611,8 @@ DrawResult LayerTreeHostImpl::PrepareToDraw(FrameData* frame) {
                          TRACE_ID_GLOBAL(CurrentBeginFrameArgs().trace_id),
                          TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT,
                          "step", "GenerateRenderPass");
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                    std::to_string(CurrentBeginFrameArgs().trace_id), "step", "GenerateRenderPass");
   if (input_delegate_)
     input_delegate_->WillDraw();
 
@@ -2663,6 +2665,9 @@ viz::CompositorFrame LayerTreeHostImpl::GenerateCompositorFrame(
                          TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT,
                          "step", "GenerateCompositorFrame");
 
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                    std::to_string(CurrentBeginFrameArgs().trace_id), "step", "GenerateCompositorFrame");
+
   rendering_stats_instrumentation_->IncrementFrameCount(1);
 
   memory_history_->SaveEntry(tile_manager_.memory_stats_from_last_assign());
@@ -2826,11 +2831,21 @@ viz::CompositorFrame LayerTreeHostImpl::GenerateCompositorFrame(
     for (auto& latency : metadata.latency_info) {
       latency.AddLatencyNumberWithTimestamp(
           ui::INPUT_EVENT_LATENCY_RENDERER_SWAP_COMPONENT, draw_time);
+      std::string trace_content_ = "event_type: " + std::to_string(static_cast<int>(latency.source_event_type())) +
+          " ,step: " + "INPUT_EVENT_LATENCY_RENDERER_SWAP_COMPONENT";
+      OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
+                        std::to_string(latency.trace_id()), "trace_content", trace_content_);
     }
   }
   ui::LatencyInfo::TraceIntermediateFlowEvents(
       metadata.latency_info,
       perfetto::protos::pbzero::ChromeLatencyInfo::STEP_SWAP_BUFFERS);
+  for (auto& latency : metadata.latency_info) {
+    std::string trace_content_ = "event_type: " + std::to_string(static_cast<int>(latency.source_event_type())) +
+        " ,step: " + "STEP_SWAP_BUFFERS";
+    OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
+                      std::to_string(latency.trace_id()), "trace_content", trace_content_);
+  }
 
   // Collect all resource ids in the render passes into a single array.
   std::vector<viz::ResourceId> resources;

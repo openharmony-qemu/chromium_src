@@ -337,6 +337,7 @@ void NWebEventHandler::WebUpdateModifiers(CefMouseEvent& mouseInfo, const cef_mo
 void NWebEventHandler::WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent,
                                          float ratio) {
   if (!mouseEvent) {
+    LOG(INFO) << "WebSendMouseEvent mouseEvent is NULL";
     return;
   }
   CefMouseEvent mouseInfo;
@@ -351,7 +352,7 @@ void NWebEventHandler::WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebM
       NWebInputDelegate::CefConverter("mousebutton", mouseEvent->GetButton()));
   mouseInfo.modifiers = NWebInputDelegate::GetWebMouseModifiersByPressedCode(buttonType,
     mouseEvent->GetPressKeyCodes());
-  LOG(DEBUG) << "WebSendMouseEvent x: " << mouseInfo.x << " y: " << mouseInfo.y
+  LOG(INFO) << "WebSendMouseEvent x: " << mouseInfo.x << " y: " << mouseInfo.y
              << " modifiers: " << mouseInfo.modifiers;
   if (NWebInputDelegate::IsMouseLeave(mouseEvent->GetAction())) {
     is_in_web_ = false;
@@ -378,7 +379,7 @@ void NWebEventHandler::WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebM
       }
     } else if (NWebInputDelegate::IsMouseMove(mouseEvent->GetAction())) {
       if (last_mouse_x_ == mouseInfo.x && last_mouse_y_ == mouseInfo.y) {
-        LOG(DEBUG) << "no change in coordinates, cancel mouse move event";
+        LOG(INFO) << "no change in coordinates, cancel mouse move event";
         return;
       }
 #if defined(OHOS_INPUT_EVENTS)
@@ -392,7 +393,7 @@ void NWebEventHandler::WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebM
         browser_->GetHost()->SendMouseMoveEvent(mouseInfo, true);
       }
     } else {
-      LOG(DEBUG) << "mouse event action: " << mouseEvent->GetAction();
+      LOG(INFO) << "mouse event action: " << mouseEvent->GetAction();
     }
   }
 }

@@ -19,12 +19,12 @@ import("//device/vr/buildflags/buildflags.gni")
 import("//gpu/vulkan/features.gni")
 import("//media/media_options.gni")
 import("//net/features.gni")
+import("//ohos_nweb/src/nweb_sysevent.gni")
 import("//ppapi/buildflags/buildflags.gni")
 import("//printing/buildflags/buildflags.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//third_party/blink/public/public_features.gni")
 import("//tools/ipc_fuzzer/ipc_fuzzer.gni")
-import("//ohos_nweb/src/nweb_sysevent.gni")
 if (is_mac) {
   import("//content/public/app/mac_helpers.gni")
 }
@@ -2548,9 +2548,7 @@ source_set("browser") {
       "media/ohos/native_web_contents_observer.h",
     ]
 
-    deps += [
-      "//third_party:huawei_securec"
-    ]
+    deps += [ "//third_party:huawei_securec" ]
   }
 
   if (is_mac) {
@@ -3338,6 +3336,7 @@ source_set("browser") {
         "media/ohos/ohos_custom_media_player_renderer.h",
       ]
     }
+
     #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
     #if defined(OHOS_MEDIA_AVSESSION)
@@ -3347,6 +3346,14 @@ source_set("browser") {
         "media/session/media_session_ohos.h",
       ]
     }  #endif  // defined(OHOS_MEDIA_AVSESSION)
+
+    #if defined(OHOS_EX_PULL_TO_REFRESH)
+    if (defined(ohos_ex_pull_to_refresh) && ohos_ex_pull_to_refresh) {
+      sources += [
+        "ohos/overscroll_controller_ohos.cc",
+        "ohos/overscroll_controller_ohos.h",
+      ]
+    }  #endif  // defined(OHOS_EX_PULL_TO_REFRESH)
 
     include_dirs = ohos_src_includes
     deps += [ "//ohos_glue:ohos_adapter_glue_source" ]

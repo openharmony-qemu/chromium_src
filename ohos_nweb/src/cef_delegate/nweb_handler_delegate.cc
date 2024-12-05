@@ -2125,6 +2125,28 @@ bool NWebHandlerDelegate::DoBrowserControlsShrinkRendererSize() {
 }
 // #endif OHOS_EX_TOPCONTROLS
 
+#ifdef OHOS_EX_PULL_TO_REFRESH
+bool NWebHandlerDelegate::OnPullToRefreshAction(int action) {
+  if (web_app_client_extension_listener_ == nullptr ||
+      web_app_client_extension_listener_->OnPullToRefreshAction == nullptr) {
+    return false;
+  }
+
+  return web_app_client_extension_listener_->OnPullToRefreshAction(
+      action, web_app_client_extension_listener_->nweb_id);
+}
+
+void NWebHandlerDelegate::OnPullToRefreshPull(float offset_x, float offset_y) {
+  if (web_app_client_extension_listener_ == nullptr ||
+      web_app_client_extension_listener_->OnPullToRefreshPull == nullptr) {
+    return;
+  }
+
+  web_app_client_extension_listener_->OnPullToRefreshPull(
+      offset_x, offset_y, web_app_client_extension_listener_->nweb_id);
+}
+#endif
+
 void NWebHandlerDelegate::OnReceivedIcon(const void* data,
                                          size_t width,
                                          size_t height,

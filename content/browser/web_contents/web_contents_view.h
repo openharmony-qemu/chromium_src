@@ -123,6 +123,10 @@ class CONTENT_EXPORT WebContentsView {
 #if defined(OHOS_EX_TOPCONTROLS)
   virtual void UpdateBrowserControlsHeight(int, bool) {}
 #endif
+
+#if defined(OHOS_EX_PULL_TO_REFRESH)
+  virtual void DidStopRefresh() {}
+#endif
 };
 
 // Factory function to create `WebContentsView`s. Implemented in the platform

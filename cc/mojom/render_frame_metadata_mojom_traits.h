@@ -166,6 +166,10 @@ struct COMPONENT_EXPORT(CC_SHARED_MOJOM_TRAITS)
       const cc::RenderFrameMetadata& metadata) {
     return metadata.root_layer_size;
   }
+
+  static bool root_overflow_y_hidden(const cc::RenderFrameMetadata& metadata) {
+    return metadata.root_overflow_y_hidden;
+  }
 #endif
 
 #ifdef OHOS_CLIPBOARD

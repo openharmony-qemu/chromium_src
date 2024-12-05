@@ -6416,6 +6416,12 @@ void WebContentsImpl::DidFinishNavigation(NavigationHandle* navigation_handle) {
       NotifyTitleUpdateForEntry(entry);
     }
   }
+
+#if defined(OHOS_EX_PULL_TO_REFRESH)
+  if (navigation_handle->IsInPrimaryMainFrame() && view_) {
+    view_->DidStopRefresh();
+  }
+#endif
 }
 
 void WebContentsImpl::DidFailLoadWithError(

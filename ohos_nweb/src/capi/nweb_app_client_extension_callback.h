@@ -93,6 +93,10 @@ struct NWebAppClientExtensionCallback {
       NWebMediaPlayerController* media_player_controller,
       const char* media_info);
 #endif // OHOS_VIDEO_ASSISTANT
+#ifdef OHOS_EX_PULL_TO_REFRESH
+  bool (*OnPullToRefreshAction)(int action, int nweb_id);
+  void (*OnPullToRefreshPull)(float offset_x, float offset_y, int nweb_id);
+#endif
 };
 
 #endif  // OHOS_NWEB_SRC_NWEB_APP_CLIENT_EXTENSION_CALLBACK_H_

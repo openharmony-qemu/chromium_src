@@ -1728,6 +1728,10 @@ void RenderWidgetHostImpl::ForwardGestureEventWithLatencyInfo(
       gesture_with_latency.event, &gesture_with_latency.latency,
       &gesture_with_latency.event.GetModifiableEventLatencyMetadata());
   input_router_->SendGestureEvent(gesture_with_latency);
+  std::string trace_content_ = "event_type: " + std::to_string(static_cast<int>(latency.source_event_type())) +
+      " ,step: " + "START";
+  OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
+                    std::to_string(latency.trace_id()), "trace_content", trace_content_);
 }
 
 void RenderWidgetHostImpl::ForwardTouchEventWithLatencyInfo(

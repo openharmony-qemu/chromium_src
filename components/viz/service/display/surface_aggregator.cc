@@ -713,6 +713,8 @@ void SurfaceAggregator::EmitSurfaceContent(
       TRACE_ID_GLOBAL(frame.metadata.begin_frame_ack.trace_id),
       TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT, "step",
       "SurfaceAggregation", "display_trace", display_trace_id_);
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                    std::to_string(frame.metadata.begin_frame_ack.trace_id), "step", "SurfaceAggregation");
 
   const gfx::Rect& surface_quad_visible_rect = surface_quad->visible_rect;
   if (ignore_undamaged) {
@@ -1991,7 +1993,8 @@ AggregatedFrame SurfaceAggregator::Aggregate(
       TRACE_ID_GLOBAL(root_surface_frame.metadata.begin_frame_ack.trace_id),
       TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT, "step",
       "SurfaceAggregation", "display_trace", display_trace_id_);
-
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                    std::to_string(root_surface_frame.metadata.begin_frame_ack.trace_id), "step", "SurfaceAggregation");
   AggregatedFrame frame;
   frame.top_controls_visible_height =
       root_surface_frame.metadata.top_controls_visible_height;

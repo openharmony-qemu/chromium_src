@@ -312,6 +312,8 @@ bool FrameSinkImpl::DoBeginFrame(const viz::BeginFrameArgs& begin_frame_args) {
                            TRACE_ID_GLOBAL(begin_frame_args.trace_id),
                            TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT,
                            "step", "SubmitCompositorFrame");
+    OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                      std::to_string(begin_frame_args.trace_id), "step", "SubmitCompositorFrame");
     frame_sink_->SubmitCompositorFrame(
         local_surface_id_, std::move(frame),
         send_new_hit_test_region_list ? hit_test_region_list_ : absl::nullopt,

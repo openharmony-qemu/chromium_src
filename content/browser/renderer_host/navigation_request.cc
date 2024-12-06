@@ -7178,6 +7178,8 @@ void NavigationRequest::UpdateLocalNetworkRequestPolicy() {
     // The content browser client decided to make an exception for this URL.
     local_network_request_policy_ =
         network::mojom::LocalNetworkRequestPolicy::kAllow;
+    LOG(INFO) << "NavigationRequest::UpdateLocalNetworkRequestPolicy local_network_request_policy_ "
+      << static_cast<int>(local_network_request_policy_);
     return;
   }
 
@@ -7198,11 +7200,15 @@ void NavigationRequest::UpdateLocalNetworkRequestPolicy() {
             kPrivateNetworkAccessNonSecureContextsAllowedDeprecationTrial);
     local_network_request_policy_ =
         network::mojom::LocalNetworkRequestPolicy::kAllow;
+    LOG(INFO) << "NavigationRequest::UpdateLocalNetworkRequestPolicy local_network_request_policy_ "
+      << static_cast<int>(local_network_request_policy_);
     return;
   }
 
   local_network_request_policy_ = DerivePrivateNetworkRequestPolicy(
       policies, PrivateNetworkRequestContext::kSubresource);
+  LOG(INFO) << "NavigationRequest::UpdateLocalNetworkRequestPolicy local_network_request_policy_ " 
+      << static_cast<int>(local_network_request_policy_);
 }
 
 std::vector<blink::mojom::WebFeature>

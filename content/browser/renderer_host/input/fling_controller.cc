@@ -62,7 +62,6 @@ FlingController::FlingController(
       clock_(base::DefaultTickClock::GetInstance()) {
   DCHECK(event_sender_client);
   DCHECK(scheduler_client);
-  OHOS::NWeb::OhosAdapterHelper::GetInstance().GetFlingOptimizationAdapter().GetIsWebFlingOpt();
 }
 
 

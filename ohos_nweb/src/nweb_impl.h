@@ -32,6 +32,8 @@
 #include "nweb_inputmethod_handler.h"
 #include "nweb_output_handler.h"
 
+struct OpenDevToolsParam;
+
 namespace OHOS::NWeb {
 class NWebImpl : public NWeb {
  public:
@@ -310,6 +312,7 @@ class NWebImpl : public NWeb {
                                  const std::vector<int32_t>& pressedCodes) override;
   void ScrollToWithAnime(float x, float y, int32_t duration) override;
   void ScrollByWithAnime(float delta_x, float delta_y, int32_t duration) override;
+  bool SendKeyboardEvent(const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent>& keyboardEvent) override;
   bool ScrollByWithResult (float delta_x, float delta_y) override;
   void WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
@@ -408,6 +411,8 @@ class NWebImpl : public NWeb {
 
   void ReloadOriginalUrl() const;
   void SetBrowserUserAgentString(const std::string& user_agent);
+  void OpenDevtools(std::unique_ptr<OpenDevToolsParam> param);
+  void CloseDevtools();
 #endif  // defined(OHOS_NWEB_EX)
 
 #ifdef OHOS_EX_NETWORK_CONNECTION
@@ -523,6 +528,7 @@ class NWebImpl : public NWeb {
   static void WarmupServiceWorker(const std::string &url);
 
   int ScaleGestureChange(double scale, double centerX, double centerY) override;
+  int ScaleGestureChangeV2(int type, double scale, double originScale, double centerX, double centerY) override;
   static void SetHostIP(const std::string &hostName, const std::string &address, int32_t aliveTime);
   static void ClearHostIP(const std::string &hostName);
 

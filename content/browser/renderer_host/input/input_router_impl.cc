@@ -5,6 +5,7 @@
 #include "content/browser/renderer_host/input/input_router_impl.h"
 
 #include <math.h>
+#include <string>
 
 #include <utility>
 
@@ -636,6 +637,12 @@ void InputRouterImpl::FilterAndSendWebInputEvent(
                                            LegacyEvent::FLOW_INOUT,
                                        latency_info.trace_id());
               });
+
+  std::string trace_content_ = "event_type: " + std::to_string(static_cast<int>(latency_info.source_event_type())) +
+      " ,step: " + "STEP_SEND_INPUT_EVENT_UI";
+  OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
+                    std::to_string(latency_info.trace_id()), "trace_content", trace_content_);
+                    
   if (!(input_event.GetType() == WebInputEvent::Type::kGestureScrollUpdate ||
       input_event.GetType() == WebInputEvent::Type::kTouchMove ||
       input_event.GetType() == WebInputEvent::Type::kGesturePinchUpdate)) {

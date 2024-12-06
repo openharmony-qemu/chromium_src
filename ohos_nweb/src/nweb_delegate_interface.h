@@ -37,6 +37,8 @@
 
 #include "cef_delegate/nweb_custom_keyboard_handler_impl.h"
 
+struct OpenDevToolsParam;
+
 namespace OHOS::NWeb {
 class NWebValue;
 
@@ -369,6 +371,7 @@ class NWebDelegateInterface
 #if defined(OHOS_GET_SCROLL_OFFSET)
   virtual void GetOverScrollOffset(float* offset_x, float* offset_y) = 0;
 #endif
+  virtual bool SendKeyboardEvent(const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent>& keyboardEvent) = 0;
   virtual void WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent) = 0;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
@@ -446,23 +449,18 @@ class NWebDelegateInterface
 #if defined(OHOS_INPUT_EVENTS)
   virtual void SetVirtualKeyBoardArg(int32_t width, int32_t height, double keyboard) = 0;
   virtual bool ShouldVirtualKeyboardOverlay() = 0;
-  virtual void WebSendMouseWheelEvent(double x,
-                                      double y,
-                                      double deltaX,
-                                      double deltaY,
+  virtual void WebSendMouseWheelEvent(double x, double y,
+                                      double deltaX, double deltaY,
                                       const std::vector<int32_t>& pressedCodes) = 0;
-  virtual void WebSendTouchpadFlingEvent(double x,
-                                         double y,
-                                         double vx,
-                                         double vy,
+  virtual void WebSendTouchpadFlingEvent(double x, double y,
+                                         double vx, double vy,
                                          const std::vector<int32_t>& pressedCodes) = 0;
 #endif
 
 #if BUILDFLAG(IS_OHOS)
   virtual bool IsSafeBrowsingEnabled() = 0;
   virtual void EnableSafeBrowsing(bool enable) = 0;
-  virtual void PrecompileJavaScript(const std::string& url,
-                                    const std::string& script,
+  virtual void PrecompileJavaScript(const std::string& url, const std::string& script,
                                     std::shared_ptr<CacheOptions>& cacheOptions,
                                     std::shared_ptr<NWebMessageValueCallback> callback) = 0;
 #endif
@@ -494,7 +492,15 @@ class NWebDelegateInterface
   virtual bool IsIntelligentTrackingPreventionEnabled() const = 0;
 #endif
 
-  virtual int ScaleGestureChange(double scale, double centerX, double centerY) const = 0;
+  virtual int ScaleGestureChange(double scale,
+                                 double centerX,
+                                 double centerY) const = 0;
+
+  virtual int ScaleGestureChangeV2(int type,
+                                   double scale,
+                                   double originScale,
+                                   double centerX,
+                                   double centerY) const = 0;
 
 #if defined(OHOS_SCREEN_LOCK)
   virtual void SetWakeLockCallback(int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback) = 0;
@@ -525,10 +531,8 @@ class NWebDelegateInterface
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
   virtual void EnableWholeWebPageDrawing() = 0;
 
-  virtual bool WebPageSnapshot(const char* id,
-                               PixelUnit type,
-                               int width,
-                               int height,
+  virtual bool WebPageSnapshot(const char* id, PixelUnit type,
+                               int width, int height,
                                const WebSnapshotCallback callback) = 0;
 #endif
 
@@ -559,6 +563,11 @@ class NWebDelegateInterface
 #endif
 
   virtual void SetPopupSurface(void* popupSurface) = 0;
+
+  virtual void OpenDevtoolsWith(
+      std::shared_ptr<NWebDelegateInterface> nweb_delegate,
+      std::unique_ptr<OpenDevToolsParam> param) = 0;
+  virtual void CloseDevtools() = 0;
 };
 }  // namespace OHOS::NWeb
 

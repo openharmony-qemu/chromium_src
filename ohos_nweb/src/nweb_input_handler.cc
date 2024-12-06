@@ -163,6 +163,14 @@ void NWebInputHandler::WebSendTouchpadFlingEvent(double x,
   nweb_delegate_->WebSendTouchpadFlingEvent(x, y, vx, vy, pressedCodes);
 }
 
+bool NWebInputHandler::SendKeyboardEvent(
+    const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent>& keyboardEvent) {
+  if (nweb_delegate_ == nullptr) {
+    return false;
+  }
+  return nweb_delegate_->SendKeyboardEvent(keyboardEvent);
+}
+
 void NWebInputHandler::WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent) {
   if (nweb_delegate_ == nullptr) {
     return;

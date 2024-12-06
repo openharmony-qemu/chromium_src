@@ -64,6 +64,10 @@ void OutputSurface::UpdateLatencyInfoOnSwap(
     latency.AddLatencyNumberWithTimestamp(
         ui::INPUT_EVENT_LATENCY_FRAME_SWAP_COMPONENT,
         response.timings.swap_end);
+    std::string trace_content_ = "event_type: " + std::to_string(static_cast<int>(latency.source_event_type())) +
+        " ,step: " + "INPUT_EVENT_GPU_SWAP_BUFFER_COMPONENT & INPUT_EVENT_LATENCY_FRAME_SWAP_COMPONENT";
+    OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
+                      std::to_string(latency.trace_id()), "trace_content", trace_content_);
   }
 }
 

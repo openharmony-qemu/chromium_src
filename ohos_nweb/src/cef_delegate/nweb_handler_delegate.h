@@ -145,7 +145,10 @@ class NWebHandlerDelegate : public CefClient,
                                   const CefString& method,
                                   const CefString& object_name,
                                   CefRefPtr<CefListValue> result);
-
+  int ProcessNativeProxyResultNewForReturnValue(CefRefPtr<CefListValue> args,
+                                  const CefString& method,
+                                  const CefString& object_name,
+                                  CefRefPtr<CefListValue> result);
   int ProcessNativeProxyResultNewFlowbuf(CefRefPtr<CefListValue> args,
                                   const CefString& method,
                                   const CefString& object_name,
@@ -764,6 +767,9 @@ class NWebHandlerDelegate : public CefClient,
 
  void SetPopupSurface(void* popup_window);
  void SetTransformHint(uint32_t rotation);
+
+  void OnRequestOpenDevTools();
+
  private:
   void CopyImageToClipboard(CefRefPtr<CefImage> image);
   // List of existing browser windows. Only accessed on the CEF UI thread.

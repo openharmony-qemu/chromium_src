@@ -325,6 +325,43 @@ private:
 #if defined(OHOS_MULTI_WINDOW)
 const char kOffScreenFrameRate[] = "off-screen-frame-rate";
 #endif  // defined(OHOS_MULTI_WINDOW)
+
+void ParseNativeProxyArgs(CefRefPtr<CefListValue> args,
+                          std::vector<std::vector<uint8_t>>& dataList,
+                          std::vector<size_t>& dataSize) {
+  size_t argsSize = args->GetSize();
+
+  for (size_t i = 0; i < argsSize; i++) {
+    CefValueType type = args->GetType(i);
+    CefRefPtr<CefValue> value = args->GetValue(i);
+    if (!value) {
+      LOG(ERROR) << "value is nullptr";
+      continue;
+    }
+
+    if (type == VTYPE_STRING) {
+      auto argString = value->GetString().ToString();
+      size_t size = argString.size();
+
+      dataList[i] = std::vector<uint8_t>(argString.begin(), argString.end());
+      dataSize[i] = size;
+    } else if (type == VTYPE_BINARY) {
+      auto argBinary = value->GetBinary();
+      size_t size = argBinary->GetSize();
+
+      std::vector<uint8_t> data(size);
+      argBinary->GetData(&data[0], size, 0);
+
+      dataList[i] = std::move(data);
+      dataSize[i] = size;
+    } else {
+      std::string jsonString =
+          CefWriteJSON(value, JSON_WRITER_OMIT_BINARY_VALUES);
+      dataList[i] = std::vector<uint8_t>(jsonString.begin(), jsonString.end());
+      dataSize[i] = jsonString.size();
+    }
+  }
+}
 }  // namespace
 
 class NWebDateTimeSuggestionImpl : public NWebDateTimeSuggestion {
@@ -441,6 +478,10 @@ NWebHandlerDelegate::NWebHandlerDelegate(
 }
 
 void NWebHandlerDelegate::OnDestroy() {
+#if defined(OHOS_JSPROXY)
+  RemoveTransientJavaScriptObject();
+#endif
+
   if (main_browser_) {
     main_browser_->GetHost()->CloseBrowser(true);
     main_browser_ = nullptr;
@@ -712,6 +753,9 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
       event_handler_->SetBrowser(main_browser_);
     }
     if (main_browser_ && main_browser_->GetHost()) {
+      if (popup_window_) {
+        SetPopupSurface(popup_window_);
+      }
       if (preference_delegate_.get()) {
         main_browser_->GetHost()->SetVirtualPixelRatio(
             preference_delegate_->GetVirtualPixelRatio());
@@ -726,11 +770,6 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
             preference_delegate_->GetAudioExclusive());
         main_browser_->GetHost()->SetAudioResumeInterval(
             preference_delegate_->GetAudioResumeInterval());
-#endif
-#ifdef OHOS_RENDERER_ANR_DUMP
-        if (popup_window_) {
-          SetPopupSurface(popup_window_);
-        }
 #endif
 #if defined(OHOS_PRINT)
         main_browser_->GetHost()->SetToken(preference_delegate_->GetPrintToken());
@@ -2078,7 +2117,7 @@ void NWebHandlerDelegate::OnTopControlsChanged(float top_controls_offset,
 #endif
 }
 
-int NWebHandlerDelegate::OnGetTopControlsHeight() {
+NO_SANITIZE("cfi-icall") int NWebHandlerDelegate::OnGetTopControlsHeight() {
 #if defined(OHOS_EX_TOPCONTROLS)
   if (web_app_client_extension_listener_ == nullptr ||
       web_app_client_extension_listener_->OnGetTopControlsHeight == nullptr) {
@@ -3140,7 +3179,7 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNew(
   }
 
   NativeJSProxyCallbackFunc callback = nullptr;
-  NativeJSProxyCallbackFuncWithResult CallbackWithResult = nullptr;
+
   auto it = asyncProxyObjMap_.find(object_name);
   if (it != asyncProxyObjMap_.end()) {
     auto& methodMap = it->second;
@@ -3163,6 +3202,40 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNew(
       }
     }
   }
+
+  if (callback == nullptr) {
+    LOG(DEBUG) << "Processing sync native proxy result failed, "
+               << "method not found, name: "
+               << method.ToString();
+    return 1;
+  }
+  size_t argsSize = args->GetSize();
+  std::vector<std::vector<uint8_t>> dataList(argsSize);
+  std::vector<size_t> dataSize(argsSize);
+
+  ParseNativeProxyArgs(args, dataList, dataSize);
+
+  char* callbackResult = callback(dataList, dataSize);
+  if (callbackResult) {
+    result->SetString(0, callbackResult);
+  } else {
+    LOG(INFO) << "native return nullptr, just set null string to result";
+    result->SetNull(0);
+  }
+  return 0;
+}
+
+int NWebHandlerDelegate::ProcessNativeProxyResultNewForReturnValue(
+    CefRefPtr<CefListValue> args,
+    const CefString& method,
+    const CefString& object_name,
+    CefRefPtr<CefListValue> result) {
+  if (!args) {
+    LOG(ERROR) << "args is nullptr";
+    return 1;
+  }
+
+  NativeJSProxyCallbackFuncWithResult CallbackWithResult = nullptr;
 
   if (auto iter = asyncProxyObjWithResultMap_.find(object_name);
       iter != asyncProxyObjWithResultMap_.end()) {
@@ -3188,7 +3261,7 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNew(
     }
   }
 
-  if (callback == nullptr && CallbackWithResult == nullptr) {
+  if (CallbackWithResult == nullptr) {
     LOG(DEBUG) << "Processing native proxy result failed, "
                << "method not found, name: "
                << method.ToString();
@@ -3197,54 +3270,14 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNew(
   size_t argsSize = args->GetSize();
   std::vector<std::vector<uint8_t>> dataList(argsSize);
   std::vector<size_t> dataSize(argsSize);
+  ParseNativeProxyArgs(args, dataList, dataSize);
 
-  for (size_t i = 0; i < argsSize; i++) {
-    CefValueType type = args->GetType(i);
-    CefRefPtr<CefValue> value = args->GetValue(i);
-    if (!value) {
-      LOG(ERROR) << "value is nullptr";
-      continue;
-    }
-
-    if (type == VTYPE_STRING) {
-      auto argString = value->GetString().ToString();
-      size_t size = argString.size();
-
-      dataList[i] = std::vector<uint8_t>(argString.begin(), argString.end());
-      dataSize[i] = size;
-    } else if (type == VTYPE_BINARY) {
-      auto argBinary = value->GetBinary();
-      size_t size = argBinary->GetSize();
-
-      std::vector<uint8_t> data(size);
-      argBinary->GetData(&data[0], size, 0);
-
-      dataList[i] = std::move(data);
-      dataSize[i] = size;
-    } else {
-      std::string jsonString =
-          CefWriteJSON(value, JSON_WRITER_OMIT_BINARY_VALUES);
-      dataList[i] = std::vector<uint8_t>(jsonString.begin(), jsonString.end());
-      dataSize[i] = jsonString.size();
-    }
-  }
-
-  if (callback) {
-    char* callbackResult = callback(dataList, dataSize);
-    if (callbackResult) {
-      result->SetString(0, callbackResult);
-    } else {
-      LOG(INFO) << "native return nullptr, just set null string to result";
-      result->SetNull(0);
-    }
-  } else if (CallbackWithResult) {
-    std::shared_ptr<OHOS::NWeb::NWebValue> callbackResult = CallbackWithResult(dataList, dataSize);
-    if (callbackResult) {
-      ParseNWebValueToValue(callbackResult, result);
-    } else {
-      LOG(DEBUG) << "native return nullptr, just set null string to result";
-      result->SetNull(0);
-    }
+  std::shared_ptr<OHOS::NWeb::NWebValue> callbackResult = CallbackWithResult(dataList, dataSize);
+  if (callbackResult) {
+    ParseNWebValueToValue(callbackResult, result);
+  } else {
+    LOG(DEBUG) << "native return nullptr, just set null string to result";
+    result->SetNull(0);
   }
 
   return 0;
@@ -3256,16 +3289,28 @@ int NWebHandlerDelegate::ProcessNativeProxyResult(
     const CefString& object_name,
     CefRefPtr<CefListValue> result) {
   if (auto it = syncProxyObjWithResultMap_.find(object_name); it != syncProxyObjWithResultMap_.end()) {
-    ProcessNativeProxyResultNew(args, method, object_name, result);
+    if (ProcessNativeProxyResultNew(args, method, object_name, result) == 1) {
+      ProcessNativeProxyResultNewForReturnValue(args, method, object_name, result);
+    }
     return 0;
-  } else if (auto async_it = asyncProxyObjWithResultMap_.find(object_name); async_it != asyncProxyObjWithResultMap_.end()) {
-    ProcessNativeProxyResultNew(args, method, object_name, result);
+  } else if (auto async_it = asyncProxyObjWithResultMap_.find(object_name);
+      async_it != asyncProxyObjWithResultMap_.end()) {
+    if (ProcessNativeProxyResultNew(args, method, object_name, result) == 1) {
+      ProcessNativeProxyResultNewForReturnValue(args, method, object_name,
+                                                result);
+    }
     return 0;
   } else if (auto it_with_result = syncProxyObjMap_.find(object_name); it_with_result != syncProxyObjMap_.end()) {
-    ProcessNativeProxyResultNew(args, method, object_name, result);
+    if (ProcessNativeProxyResultNew(args, method, object_name, result) == 1) {
+      ProcessNativeProxyResultNewForReturnValue(args, method, object_name,
+                                                result);
+    }
     return 0;
-  } else if (auto async_it_with_result = asyncProxyObjMap_.find(object_name); async_it_with_result != asyncProxyObjMap_.end()) {
-    ProcessNativeProxyResultNew(args, method, object_name, result);
+  } else if (auto async_it_with_result = asyncProxyObjMap_.find(object_name);
+      async_it_with_result != asyncProxyObjMap_.end()) {
+    if (ProcessNativeProxyResultNew(args, method, object_name, result) == 1) {
+      ProcessNativeProxyResultNewForReturnValue(args, method, object_name, result);
+    }
     return 0;
   }
 
@@ -3747,6 +3792,7 @@ void NWebHandlerDelegate::OnRenderProcessResponding(
   LOG(INFO) << "OnRenderProcessResponding";
   nweb_handler_->OnRenderProcessResponding();
 }
+#endif
 
 void NWebHandlerDelegate::SetPopupSurface(void* popup_window) {
   if (main_browser_ && main_browser_->GetHost()) {
@@ -3764,7 +3810,6 @@ void NWebHandlerDelegate::SetPopupSurface(void* popup_window) {
     popup_window_ = popup_window;
   }
 }
-#endif
 
 void NWebHandlerDelegate::SetTransformHint(uint32_t rotation) {
   content::GpuProcessHost* host = content::GpuProcessHost::Get();
@@ -3772,4 +3817,18 @@ void NWebHandlerDelegate::SetTransformHint(uint32_t rotation) {
     host->gpu_host()->SetTransformHint(rotation, main_browser_->GetAcceleratedWidget(false));
   }
 }
+
+void NWebHandlerDelegate::OnRequestOpenDevTools() {
+  if (!web_app_client_extension_listener_) {
+    LOG(WARNING) << "OnRequestOpenDevTools failed, no listener";
+    return;
+  }
+  if (!web_app_client_extension_listener_->OnRequestOpenDevTools) {
+    LOG(WARNING) << "OnRequestOpenDevTools failed, no function";
+    return;
+  }
+  web_app_client_extension_listener_->OnRequestOpenDevTools(
+      web_app_client_extension_listener_->nweb_id);
+}
+
 }  // namespace OHOS::NWeb

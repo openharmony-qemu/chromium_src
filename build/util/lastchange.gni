@@ -16,7 +16,7 @@ if (use_dummy_lastchange) {
 }
 
 if (is_ohos) {
-  exec_script("lastchange.py", 
+  exec_script("lastchange.py",
         [
           "-o",
           rebase_path(lastchange_file),

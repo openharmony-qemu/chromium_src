@@ -63,6 +63,7 @@ class NWebEventHandler {
                                  double vx,
                                  double vy,
                                  const std::vector<int32_t>& pressedCodes);
+  bool SendKeyboardEvent(const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent>& keyboardEvent);
   void WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent, float ratio);
 #endif  // defined(OHOS_INPUT_EVENTS)
 

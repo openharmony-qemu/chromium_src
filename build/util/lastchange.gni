@@ -15,7 +15,7 @@ if (use_dummy_lastchange) {
   lastchange_file = "//build/util/LASTCHANGE"
 }
 
-if (is_ohso) {
+if (is_ohos) {
   exec_script("lastchange.py", 
         [
           "-o",

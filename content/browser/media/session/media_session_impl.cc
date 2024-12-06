@@ -1342,6 +1342,32 @@ void MediaSessionImpl::SetEndOfMedia(bool end_of_media)
     session_ohos_->SetEndOfMedia(end_of_media);
   }
 }
+
+bool MediaSessionImpl::GetPlayingState()
+{
+  return isPlayingState_;
+}
+
+void MediaSessionImpl::SetPlayingState(bool playingState)
+{
+  isPlayingState_ = playingState;
+}
+
+bool MediaSessionImpl::GetMuteState()
+{
+  return is_muted_;
+}
+
+void MediaSessionImpl::SetSessionState(MediaSessionImpl::NWebMediaSessionState sessionState)
+{
+  sessionState_ = sessionState;
+}
+
+MediaSessionImpl::NWebMediaSessionState MediaSessionImpl::GetSessionState()
+{
+  return sessionState_;
+}
+
 #endif // OHOS_MEDIA_POLICY
 
 void MediaSessionImpl::ExitPictureInPicture() {

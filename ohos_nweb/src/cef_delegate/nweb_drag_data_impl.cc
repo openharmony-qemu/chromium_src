@@ -18,6 +18,7 @@
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
 #include "base/logging.h"
+#include "base/trace_event/trace_event.h"
 #include "cef/libcef/common/drag_data_impl.h"
 #include "content/public/common/drop_data.h"
 #include "ohos_nweb/include/nweb.h"
@@ -476,6 +477,7 @@ bool NWebDragDataImpl::GetPixelMapSetting(const void** data, size_t& len, int& w
   height = image_bitmap->height();
   bool isTransparent = IsTransparent(*image_bitmap);
   if (!isTransparent && width != 0 && height != 0) {
+    TRACE_EVENT0("base", "NWebDragDataImpl::GenerateOhosDragBitmapFromOrigin");
     GenerateOhosDragBitmapFromOrigin(*image_bitmap, out_bitmap, width, height);
   } else {
     out_bitmap = *image_bitmap;

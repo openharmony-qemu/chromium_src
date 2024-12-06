@@ -2107,6 +2107,13 @@ void NWebImpl::ScrollByWithAnime(float delta_x, float delta_y, int32_t duration)
   return nweb_delegate_->ScrollByWithAnime(delta_x, delta_y, duration);
 }
 
+bool NWebImpl::SendKeyboardEvent(const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent>& keyboardEvent) {
+  if (input_handler_ == nullptr) {
+    return false;
+  }
+  return input_handler_->SendKeyboardEvent(keyboardEvent);
+}
+
 bool NWebImpl::ScrollByWithResult(float delta_x, float delta_y) {
   if (nweb_delegate_ == nullptr) {
     LOG(ERROR) << "ScrollByWithResult nweb_delegate_ is nullptr";

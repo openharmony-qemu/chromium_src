@@ -19,6 +19,7 @@
 #include <unordered_map>
 #include <vector>
 #include "cef/include/internal/cef_types.h"
+#include "nweb.h"
 #include "nweb_inputevent_handler.h"
 #include "ui/events/keycodes/keyboard_codes_posix.h"
 
@@ -38,6 +39,7 @@ class NWebInputDelegate {
   static uint32_t GetWebModifiersByPressedCode(const std::vector<int32_t>& pressedCodes);
   static uint32_t GetWebMouseModifiersByPressedCode(cef_mouse_button_type_t button,
                                                     const std::vector<int32_t>& pressedCodes);
+  static uint32_t GetModifiersByKeyEvent(const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent>& keyboardEvent);
   void SetModifiers(int keyCode, int keyAction);
   uint32_t GetModifiers();
   uint32_t GetModifiers(cef_mouse_button_type_t button);

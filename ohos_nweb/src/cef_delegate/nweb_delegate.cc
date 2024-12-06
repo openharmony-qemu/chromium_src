@@ -85,6 +85,12 @@
 #include "base/ohos/locale_utils.h"
 #endif
 
+#include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
+#include "ohos_nweb/src/cef_delegate/nweb_devtools_message_handler_impl.h"
+#ifdef OHOS_DEVTOOLS
+#include "cef/include/cef_devtools_message_handler_delegate.h"
+#endif // OHOS_DEVTOOLS
+
 namespace {
 static const float richtextDisplayRatio = 1.0;
 }
@@ -2801,6 +2807,14 @@ void NWebDelegate::GetOverScrollOffset(float* offset_x, float* offset_y) {
 }
 #endif
 
+bool NWebDelegate::SendKeyboardEvent(const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent>& keyboardEvent) {
+  bool retVal = false;
+  if (event_handler_ != nullptr) {
+    retVal = event_handler_->SendKeyboardEvent(keyboardEvent);
+  }
+  return retVal;
+}
+
 bool NWebDelegate::ScrollByWithResult(float delta_x, float delta_y) {
   if (handler_delegate_ == nullptr) {
     LOG(ERROR) << "handler_delegate_ is nullptr , ScrollByWithResult fail";
@@ -4142,19 +4156,6 @@ bool NWebDelegate::WebPageSnapshot(const char* id,
 #endif
 
 int NWebDelegate::ScaleGestureChange(double scale, double centerX, double centerY) const {
-  LOG(DEBUG) << "NWebDelegate::ScaleGestureChange";
-  if (!preference_delegate_) {
-    LOG(ERROR) << "preference_delegate_ get fail";
-    return NWEB_ERR;
-  }
-  if (!preference_delegate_->ZoomingfunctionEnabled()) {
-    return NWEB_FUNCTION_NOT_ENABLE;
-  }
-  if (!GetBrowser().get()) {
-    LOG(ERROR) << "NWebDelegate::ScaleGestrueChange can not get browser";
-    return NWEB_ERR;
-  }
-  GetBrowser()->GetHost()->ZoomBy(scale, centerX * 2, centerY * 2);
   return NWEB_OK;
 }
 
@@ -4299,4 +4300,60 @@ int32_t NWebDelegate::GetArgumentByKey(const std::map<std::string, std::string>&
     }
     return argument;
 }
+
+int NWebDelegate::ScaleGestureChangeV2(int type,
+                                       double scale,
+                                       double originScale,
+                                       double centerX,
+                                       double centerY) const {
+  LOG(DEBUG) << "NWebDelegate::ScaleGestureChangeV2";
+  if (!preference_delegate_) {
+    LOG(ERROR) << "preference_delegate_ get fail";
+    return NWEB_ERR;
+  }
+  if (!preference_delegate_->ZoomingfunctionEnabled()) {
+    return NWEB_FUNCTION_NOT_ENABLE;
+  }
+  if (!GetBrowser().get()) {
+    LOG(ERROR) << "NWebDelegate::ScaleGestureChangeV2 can not get browser";
+    return NWEB_ERR;
+  }
+
+  GetBrowser()->GetHost()->ScaleGestureChangeV2(
+      type, scale, originScale, centerX / default_virtual_pixel_ratio_,
+      centerY / default_virtual_pixel_ratio_);
+  return NWEB_OK;
+}
+
+void NWebDelegate::OpenDevtoolsWith(
+      std::shared_ptr<NWebDelegateInterface> nweb_delegate,
+      std::unique_ptr<OpenDevToolsParam> param) {
+  LOG(INFO) << "NWebDelegate::OpenDevtoolsWith";
+  if (!GetBrowser() || !GetBrowser()->GetHost()) {
+    LOG(INFO) << "OpenDevtoolsWith failed, no browser host";
+    return;
+  }
+  NWebDelegate* devtools_delegate =
+      static_cast<NWebDelegate*>(nweb_delegate.get());
+
+#ifdef OHOS_DEVTOOLS
+  auto devtools_message_handler = CefRefPtr<NWebDevToolsMessageHandlerImpl>(
+      new NWebDevToolsMessageHandlerImpl(std::move(param->handler)));
+
+  CefPoint inspect_element_at(param->point.x, param->point.y);
+  GetBrowser()->GetHost()->ShowDevToolsWith(
+      devtools_delegate->GetBrowser()->GetHost(),
+      devtools_message_handler, inspect_element_at);
+#endif // OHOS_DEVTOOLS
+}
+
+void NWebDelegate::CloseDevtools() {
+  LOG(INFO) << "NWebDelegate::CloseDevtools";
+  if (!GetBrowser() || !GetBrowser()->GetHost()) {
+    LOG(INFO) << "CloseDevtools failed, no browser host";
+    return;
+  }
+  GetBrowser()->GetHost()->CloseDevTools();
+}
+
 }  // namespace OHOS::NWeb

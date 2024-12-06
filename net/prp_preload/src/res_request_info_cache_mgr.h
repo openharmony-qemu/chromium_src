@@ -37,7 +37,6 @@ class ResReqInfoCacheMgr : public base::RefCounted<ResReqInfoCacheMgr> {
   void OnEntryLoadedCallback(const std::string& entry_content);
   void CheckFlush();
 
-  const std::string& url_;
   const net::NetworkAnonymizationKey& networkAnonymizationKey_;
   scoped_refptr<base::SingleThreadTaskRunner> sth_task_runner_;
   scoped_refptr<DiskCacheFile> disk_cache_;

@@ -340,6 +340,11 @@ void ChannelPosix::OnFileCanWriteWithoutBlocking(int fd) {
 // cannot be written, it's queued and a wait is initiated to write the message
 // ASAP on the I/O thread.
 bool ChannelPosix::WriteNoLock(MessageView message_view) {
+#if BUILDFLAG(IS_OHOS)
+  if (!socket_.is_valid()) {
+    return false;
+  }
+#endif  // BUILDFLAG(IS_OHOS)
   size_t bytes_written = 0;
   std::vector<PlatformHandleInTransit> handles = message_view.TakeHandles();
   size_t num_handles = handles.size();

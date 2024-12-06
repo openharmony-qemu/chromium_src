@@ -159,6 +159,8 @@ extern bool g_siteIsolationMode;
 #include "components/embedder_support/user_agent_utils.h"
 #endif
 
+#include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
+
 namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
@@ -455,25 +457,25 @@ std::shared_ptr<NWeb> NWebImpl::CreateNWeb(
     StartObserveTraceEnable();
   }
   uint32_t nweb_id = ++current_nweb_id;
-  TRACE_EVENT1("NWebImpl", "NWebImpl | CreateNWeb", "nweb_id", nweb_id);
-  WVLOG_I("creating nweb %{public}u, size %{public}u*%{public}u", nweb_id,
-          create_info->GetWidth(), create_info->GetHeight());
   bool is_enhance_surface =
       GetIsEnhanceSurface(create_info->GetEngineInitArgs());
-  WVLOG_I("creating nweb use enhance surface %{public}d", is_enhance_surface);
+  WVLOG_I("CreateNWeb NWebId: %{public}u, size %{public}u*%{public}u, enhance surface %{public}d",
+          nweb_id, create_info->GetWidth(), create_info->GetHeight(), is_enhance_surface);
+  TRACE_EVENT1("NWebImpl", "NWebImpl | CreateNWeb", "nweb_id", nweb_id);
   std::shared_ptr<NWebImpl> nweb = std::make_shared<NWebImpl>(nweb_id);
   if (nweb == nullptr) {
-    WVLOG_E("fail to create nweb instance");
+    WVLOG_E("CreateNWeb create nweb instance failed, because no memory");
     return nullptr;
   }
 
   if (!nweb->Init(create_info)) {
-    WVLOG_E("fail to init nweb");
+    WVLOG_E("CreateNWeb init nweb failed");
     return nullptr;
   }
 
   nweb->AddNWebToMap(nweb_id, nweb);
   ++g_nweb_count;
+  WVLOG_E("CreateNWeb NWebId: %{public}u successfully", nweb_id);
 #if defined(REPORT_SYS_EVENT)
   // Report nweb instance count
   if (g_nweb_count > g_nweb_max_count) {
@@ -634,6 +636,7 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
         return callback->Handle(buffer, width, height);
       });
   if (output_handler_ == nullptr) {
+    WVLOG_E("Init nweb failed, output_handler_ is nullptr");
     return false;
   }
 
@@ -650,12 +653,13 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
   ProcessInitArgs(create_info->GetEngineInitArgs());
 
   if (!InitWebEngine(create_info)) {
-    WVLOG_E("web engine init fail");
+    WVLOG_E("Init nweb failed, web engine init failed");
     return false;
   }
 
   input_handler_ = NWebInputHandler::Create(nweb_delegate_);
   if (input_handler_ == nullptr) {
+    WVLOG_E("Init nweb failed, input_handler_ is nullptr");
     return false;
   }
 
@@ -688,7 +692,7 @@ void NWebImpl::OnDestroy() {
     destroyCallback_ = nullptr;
   } else if (nativeDestroyCallback_) {
     nativeDestroyCallback_();
-   }
+  }
 
   if (g_nweb_count == 0) {
     return;
@@ -719,11 +723,15 @@ void NWebImpl::OnDestroy() {
   if (nweb_delegate_ != nullptr) {
     nweb_delegate_->OnDestroy(is_close_all);
     nweb_delegate_ = nullptr;
+  } else {
+    WVLOG_W("NWebImpl::OnDestroy, nweb_delegate_ is nullptr");
   }
 
   if (input_handler_ != nullptr) {
     input_handler_->OnDestroy();
     input_handler_ = nullptr;
+  } else {
+    WVLOG_W("NWebImpl::OnDestroy, input_handler_ is nullptr");
   }
 
 #ifdef OHOS_NETWORK_PROXY
@@ -782,12 +790,12 @@ bool NWebImpl::SetVirtualDeviceRatio() {
 
 bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
   if (output_handler_ == nullptr) {
-    WVLOG_E("fail to init web engine, NWeb output handler is not ready");
+    WVLOG_E("Init web engine failed, NWeb output handler is not ready");
     return false;
   }
 
   if (web_engine_args_.empty()) {
-    WVLOG_E("fail to init web engine args");
+    WVLOG_E("Init web engine failed, args is empty");
     return false;
   }
 
@@ -812,7 +820,7 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
   }
 
   if (window == nullptr) {
-    WVLOG_E("fail to init web engine, get native window from surface failed");
+    WVLOG_E("Init web engine failed, get native window from surface failed");
     delete[] argv;
     return false;
   }
@@ -825,9 +833,9 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
                                  create_info->GetWidth(), create_info->GetHeight());
 
   if (ret == OHOS::NWeb::GSErrorCode::GSERROR_OK) {
-      WVLOG_I("native window opt for emulator in init, result = %{public}d", ret);
+      WVLOG_I("Init web engine, native window opt for emulator in init, result = %{public}d", ret);
   } else {
-      WVLOG_W("native window opt for emulator in init failed, result = %{public}d", ret);
+      WVLOG_W("Init web engine, native window opt for emulator in init failed, result = %{public}d", ret);
   }
 
   bool is_popup = GetIsPopup(init_args);
@@ -854,7 +862,7 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
   WVLOG_D("nweb create_info.incognito_mode: %{public}d",
           create_info->GetIsIncognitoMode());
   if (nweb_delegate_ == nullptr) {
-    WVLOG_E("fail to create nweb delegate of web engine");
+    WVLOG_E("Init web engine failed, create nweb delegate failed");
     delete[] argv;
     return false;
   }
@@ -864,7 +872,7 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
 #endif
 
   if (!SetVirtualDeviceRatio()) {
-    WVLOG_E("fail to set virtual device ratio");
+    WVLOG_E("Init web engine failed, set virtual device ratio failed");
     delete[] argv;
     return false;
   }
@@ -876,7 +884,7 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
   inputmethod_handler_ = new NWebInputMethodHandler();
   if (!inputmethod_handler_) {
     delete[] argv;
-    WVLOG_E("inputmethod_handler_ is nullptr");
+    WVLOG_E("Init web engine failed, inputmethod_handler_ is nullptr");
     return false;
   }
   nweb_delegate_->SetInputMethodClient(inputmethod_handler_);
@@ -890,7 +898,6 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
     nweb_delegate_->EnableWholeWebPageDrawing();
   }
 #endif
-
 
 #ifdef OHOS_I18N
   UpdateAcceptLanguageInternal();
@@ -2100,6 +2107,13 @@ void NWebImpl::ScrollByWithAnime(float delta_x, float delta_y, int32_t duration)
   return nweb_delegate_->ScrollByWithAnime(delta_x, delta_y, duration);
 }
 
+bool NWebImpl::SendKeyboardEvent(const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent>& keyboardEvent) {
+  if (input_handler_ == nullptr) {
+    return false;
+  }
+  return input_handler_->SendKeyboardEvent(keyboardEvent);
+}
+
 bool NWebImpl::ScrollByWithResult(float delta_x, float delta_y) {
   if (nweb_delegate_ == nullptr) {
     LOG(ERROR) << "ScrollByWithResult nweb_delegate_ is nullptr";
@@ -2487,6 +2501,28 @@ void NWebImpl::RemoveWebAppClientExtensionCallback() {
   }
 
   nweb_delegate_->UnRegisterWebAppClientExtensionListener();
+}
+
+void NWebImpl::OpenDevtools(std::unique_ptr<OpenDevToolsParam> param) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(WARNING) << "OpenDevtools failed, no nweb_delegate";
+    return;
+  }
+  int32_t devtools_nweb_id = param->nweb_id;
+  NWebImpl* nweb = NWebImpl::FromID(devtools_nweb_id);
+  if (!nweb) {
+    LOG(WARNING) << "OpenDevtools failed, no nweb";
+    return;
+  }
+  nweb_delegate_->OpenDevtoolsWith(nweb->nweb_delegate_, std::move(param));
+}
+
+void NWebImpl::CloseDevtools() {
+  if (nweb_delegate_ == nullptr) {
+    LOG(WARNING) << "CloseDevtools failed, no nweb_delegate";
+    return;
+  }
+  nweb_delegate_->CloseDevtools();
 }
 #endif  // defined(OHOS_NWEB_EX)
 
@@ -3199,7 +3235,8 @@ std::string NWebImpl::GetDefaultUserAgent() {
 }
 
 int NWebImpl::ScaleGestureChange(double scale, double centerX, double centerY) {
-  LOG(INFO) << "NWebImpl::ScaleGestureChange scale:" << scale << " centerX: " << centerX << " centerY: " << centerY;
+  LOG(DEBUG) << "NWebImpl::ScaleGestureChange scale:" << scale
+             << " centerX: " << centerX << " centerY: " << centerY;
   if (nweb_delegate_ == nullptr) {
     LOG(ERROR) << "nweb_delegate_ is nullptr.";
     return NWEB_ERR;
@@ -3649,4 +3686,19 @@ void NWebImpl::SetTransformHint(uint32_t rotation) {
   if (nweb_delegate_) {
     nweb_delegate_->SetTransformHint(rotation);
   }
+}
+
+int NWebImpl::ScaleGestureChangeV2(int type,
+                                   double scale,
+                                   double originScale,
+                                   double centerX,
+                                   double centerY) {
+  LOG(DEBUG) << "NWebImpl::ScaleGestureChangeV2 type:" << type
+             << " scale:" << scale << " originScale: " << originScale
+             << " centerX: " << centerX << " centerY: " << centerY;
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "nweb_delegate_ is nullptr.";
+    return NWEB_ERR;
+  }
+  return nweb_delegate_->ScaleGestureChangeV2(type, scale, originScale, centerX, centerY);
 }

@@ -599,6 +599,10 @@ class NWebImpl : public NWeb {
   void OnConfigurationUpdated(
       std::shared_ptr<NWebSystemConfiguration> configuration) override;
 #endif
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+ bool NeedToFireBeforeUnloadOrUnloadEvents();
+ void DispatchBeforeUnload();
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

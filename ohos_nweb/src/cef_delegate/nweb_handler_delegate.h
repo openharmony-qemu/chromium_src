@@ -781,6 +781,10 @@ class NWebHandlerDelegate : public CefClient,
 
   void OnRequestOpenDevTools();
 
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+ void OnBeforeUnloadFired(CefRefPtr<CefBrowser> browser,
+                          bool proceed) override;
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
  private:
   void CopyImageToClipboard(CefRefPtr<CefImage> image);
   // List of existing browser windows. Only accessed on the CEF UI thread.

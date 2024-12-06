@@ -4374,5 +4374,20 @@ void NWebDelegate::CloseDevtools() {
   }
   GetBrowser()->GetHost()->CloseDevTools();
 }
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+bool NWebDelegate::NeedToFireBeforeUnloadOrUnloadEvents() {
+  if (GetBrowser().get()) {
+    return GetBrowser()->NeedToFireBeforeUnloadOrUnloadEvents();
+  }
+  return false;
+}
+
+void NWebDelegate::DispatchBeforeUnload() {
+  LOG(INFO) << "NWebDelegate::DispatchBeforeUnload";
+  if (GetBrowser().get()) {
+    GetBrowser()->DispatchBeforeUnload();
+  }
+}
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
 }  // namespace OHOS::NWeb

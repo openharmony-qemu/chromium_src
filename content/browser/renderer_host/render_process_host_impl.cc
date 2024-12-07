@@ -3800,17 +3800,17 @@ bool RenderProcessHostImpl::FastShutdownIfPossible(size_t page_count,
   // Do not shut down the process if there are active or pending views other
   // than the ones we're shutting down.
   if (page_count && page_count != (GetActiveViewCount() + pending_views_)) {
-    LOG(DEBUG) << "Discard failed; there are active or pending views";
+    LOG(INFO) << "Discard failed; there are active or pending views";
     return false;
   }
 
   if (run_renderer_in_process()) {
-    LOG(DEBUG) << "Discard failed; Single process mode";
+    LOG(INFO) << "Discard failed; Single process mode";
     return false;  // Single process mode never shuts down the renderer.
   }
 
   if (!child_process_launcher_.get()) {
-    LOG(DEBUG) << "Discard failed; Render process hasn't started or is probably crashed";
+    LOG(INFO) << "Discard failed; Render process hasn't started or is probably crashed";
     return false;  // Render process hasn't started or is probably crashed.
   }
 
@@ -3820,7 +3820,7 @@ bool RenderProcessHostImpl::FastShutdownIfPossible(size_t page_count,
   // the window is small, it's unlikely that the web page has much
   // state that will be lost by not calling its unload handlers properly.
   if (!skip_unload_handlers && !SuddenTerminationAllowed()) {
-    LOG(DEBUG) << "Discard failed; there's an unload listener";
+    LOG(INFO) << "Discard failed; there's an unload listener";
     return false;
   }
 
@@ -3828,24 +3828,24 @@ bool RenderProcessHostImpl::FastShutdownIfPossible(size_t page_count,
   if (keep_alive_ref_count_ != 0) {
     CHECK(!base::FeatureList::IsEnabled(
         blink::features::kKeepAliveInBrowserMigration));
-    LOG(DEBUG) << "Discard failed; keep_alive_ref_count_ != 0";
+    LOG(INFO) << "Discard failed; keep_alive_ref_count_ != 0";
     return false;
   }
 
   if (worker_ref_count_ != 0) {
-    LOG(DEBUG) << "Discard failed; worker_ref_count_ != 0";
+    LOG(INFO) << "Discard failed; worker_ref_count_ != 0";
     return false;
   }
 
   if (pending_reuse_ref_count_ != 0) {
-    LOG(DEBUG) << "Discard failed; pending_reuse_ref_count_ != 0";
+    LOG(INFO) << "Discard failed; pending_reuse_ref_count_ != 0";
     return false;
   }
 
   // TODO(wjmaclean): This is probably unnecessary, but let's remove it in a
   // separate CL to be safe.
   if (shutdown_delay_ref_count_ != 0) {
-    LOG(DEBUG) << "Discard failed; shutdown_delay_ref_count_ != 0";
+    LOG(INFO) << "Discard failed; shutdown_delay_ref_count_ != 0";
     return false;
   }
 

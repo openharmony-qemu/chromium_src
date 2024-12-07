@@ -80,8 +80,8 @@ std::unique_ptr<blink::WebCoalescedInputEvent> ScaleEvent(
       std::vector<std::unique_ptr<WebInputEvent>>(), latency_info);
 }
 #if BUILDFLAG(IS_OHOS)
-constexpr uint64_t GESTURE_MOVE_PERIOD = 250000000;
-const int SOC_PERF_SLIDE_NORMAL_CONFIG_ID = 10025;
+constexpr uint64_t GESTURE_MOVE_PERIOD = 300000000;
+const int SOC_PERF_SLIDE_NORMAL_CONFIG_ID = 10012;
 #endif
 }  // namespace
 

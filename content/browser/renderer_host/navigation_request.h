@@ -1364,7 +1364,9 @@ class CONTENT_EXPORT NavigationRequest
       NavigationThrottle::ThrottleCheckResult result);
   void OnWillCommitWithoutUrlLoaderChecksComplete(
       NavigationThrottle::ThrottleCheckResult result);
-
+#ifdef OHOS_EX_UA
+  void RemoveUserAgentHeaderForDevTools(bool devtools_useragent_override);
+#endif
   // Runs CommitDeferringConditions.
   //
   // For prerendered page activation, this is called at the beginning of the

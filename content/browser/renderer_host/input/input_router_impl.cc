@@ -123,6 +123,9 @@ void InputRouterImpl::SendMouseEvent(
     std::move(event_result_callback)
         .Run(mouse_event, blink::mojom::InputEventResultSource::kBrowser,
              blink::mojom::InputEventResultState::kIgnored);
+#if defined(IS_OHOS)
+  LOG(INFO) << "mouse event suppressed!";
+#endif
     return;
   }
 
@@ -663,6 +666,7 @@ void InputRouterImpl::FilterAndSendWebInputEvent(
       client_->FilterInputEvent(input_event, latency_info);
   if (WasHandled(filtered_state)) {
 #if defined(IS_OHOS)
+    LOG(INFO) << "event was filtered for " << InputEventResultStateToString(filtered_state);
     TRACE_EVENT1("input", "InputEventFiltered",
                  InputEventResultStateToString(filtered_state));
 #else
@@ -762,6 +766,10 @@ void InputRouterImpl::MouseEventHandled(
   TRACE_EVENT2("input", "InputRouterImpl::MouseEventHandled", "type",
                WebInputEvent::GetName(event.event.GetType()), "ack",
                InputEventResultStateToString(state));
+#if defined(IS_OHOS)
+  LOG(INFO) << "InputRouterImpl::MouseEventHandled type:" << WebInputEvent::GetName(event.event.GetType())
+            << " ack " << InputEventResultStateToString(state);
+#endif
 
   if (source != blink::mojom::InputEventResultSource::kBrowser)
     client_->DecrementInFlightEventCount(source);
@@ -780,6 +788,10 @@ void InputRouterImpl::TouchEventHandled(
   TRACE_EVENT2("input", "InputRouterImpl::TouchEventHandled", "type",
                WebInputEvent::GetName(touch_event.event.GetType()), "ack",
                InputEventResultStateToString(state));
+#if defined(IS_OHOS)
+  LOG(INFO) << "InputRouterImpl::TouchEventHandled type:" << WebInputEvent::GetName(event.event.GetType())
+            << " ack " << InputEventResultStateToString(state);
+#endif
   if (source != blink::mojom::InputEventResultSource::kBrowser)
     client_->DecrementInFlightEventCount(source);
   touch_event.latency.AddNewLatencyFrom(latency);

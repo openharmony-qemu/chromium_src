@@ -123,6 +123,7 @@ void OH_CookieManager_ClearAllCookiesSync(bool incognito);
 
 void OH_CookieManager_ClearSessionCookiesSync();
 
+const char* OH_ArkWeb_GetLastJavascriptProxyCallingFrameUrl();
 #ifdef __cplusplus
 }
 #endif

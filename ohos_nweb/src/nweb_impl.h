@@ -90,6 +90,7 @@ class NWebImpl : public NWeb {
   void InitialScale(float scale) override;
   void OnPause() override;
   void OnContinue() override;
+  void WebComponentsBlur() override;
   void OnOccluded() override;
   void OnUnoccluded() override;
   void SetEnableLowerFrameRate(bool enabled) override;

@@ -199,6 +199,7 @@ class NWebDelegateInterface
   virtual void InitialScale(float scale) const = 0;
   virtual void OnPause() = 0;
   virtual void OnContinue() = 0;
+  virtual void WebComponentsBlur() = 0;
   virtual void OnOccluded() = 0;
   virtual void OnUnoccluded() = 0;
   virtual void SetEnableLowerFrameRate(bool enabled) = 0;

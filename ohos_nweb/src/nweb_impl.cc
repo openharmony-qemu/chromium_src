@@ -364,6 +364,10 @@ void InitialWebEngineArgs(
       "--browser-subprocess-path=/system/bin/web_render");
   web_engine_args.emplace_back("--zygote-cmd-prefix=/system/bin/web_render");
   web_engine_args.emplace_back("--remote-debugging-port=9222");
+  web_engine_args.emplace_back("--enable-touch-drag-drop");
+#if defined(OHOS_INPUT_EVENTS)
+  web_engine_args.emplace_back("--enable-smooth-scrolling");
+#endif
 #if defined(OHOS_SCROLLBAR)
   static float ratio = -1.0f;
   if (ratio < 0) {
@@ -373,7 +377,6 @@ void InitialWebEngineArgs(
     web_engine_args.emplace_back("--virtual-pixel-ratio=" + std::to_string(ratio));
   }
 #endif
-  web_engine_args.emplace_back("--enable-touch-drag-drop");
   web_engine_args.emplace_back("--gpu-rasterization-msaa-sample-count=1");
   // enable aggressive domstorage flushing to minimize data loss
   // http://crbug.com/479767

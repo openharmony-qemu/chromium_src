@@ -561,7 +561,7 @@ class NWebImpl : public NWeb {
 
 #ifdef OHOS_NETWORK_LOAD
   void SetPathAllowingUniversalAccess(
-    const std::vector<std::string>& pathList, 
+    const std::vector<std::string>& pathList,
     const std::vector<std::string>& moduleName,
     std::string& errorPath) override;
 #endif
@@ -582,6 +582,11 @@ class NWebImpl : public NWeb {
 
  void SetPopupSurface(void* popupSurface) override;
  void SetTransformHint(uint32_t rotation) override;
+
+#ifdef BUILDFLAG(IS_OHOS)
+  void OnConfigurationUpdated(
+      std::shared_ptr<NWebSystemConfiguration> configuration) override;
+#endif
 
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

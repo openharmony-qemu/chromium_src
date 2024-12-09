@@ -395,9 +395,6 @@ void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
 }
 
 bool NWebInputMethodHandler::Reattach(uint32_t nwebId, ReattachType type) {
-  LOG(INFO) << "Trigger reattach, nwebId=" << nwebId << ", source="
-            << (type == ReattachType::FROM_ONFOCUS ? "focus" : "continue")
-            << ", editable=" << is_editable_node_;
   nweb_id_ = nwebId;
   if (type == ReattachType::FROM_CONTINUE) {
     if (!isNeedReattachOncontinue_ || !is_editable_node_) {
@@ -415,6 +412,8 @@ bool NWebInputMethodHandler::Reattach(uint32_t nwebId, ReattachType type) {
     isNeedReattachOnfocus_ = false;
   }
 
+  LOG(INFO) << "Trigger reattach, nwebId=" << nwebId << ", source="
+            << (type == ReattachType::FROM_ONFOCUS ? "focus" : "continue");
   composing_text_.clear();
   ClearComposingStatus();
   if (!show_keyboard_ && isAttached_ && imf_input_mode_ != lastInputMode_) {

@@ -783,6 +783,14 @@
 "dependence": "",
 "default": "true"
 },
+{   "name": "OHOS_THEME_FONT",
+    "owner": "",
+    "desc": "",
+    "effect":"main gn blink_core other",
+    "genCommandline": "",
+    "dependence": "",
+    "default": "true"
+},
 { "name": "OHOS_UNITTESTS",
 "owner": "",
 "desc": "",

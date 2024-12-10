@@ -46,6 +46,7 @@ bool RenderFrameMetadata::operator==(const RenderFrameMetadata& other) const {
 #if BUILDFLAG(IS_OHOS)
          scrollable_viewport_size == other.scrollable_viewport_size &&
          root_layer_size == other.root_layer_size &&
+         root_overflow_y_hidden == other.root_overflow_y_hidden &&
 #endif
 #if BUILDFLAG(IS_ANDROID)
          bottom_controls_height == other.bottom_controls_height &&

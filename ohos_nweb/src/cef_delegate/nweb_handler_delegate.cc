@@ -2355,7 +2355,6 @@ bool NWebHandlerDelegate::OnSetFocus(CefRefPtr<CefBrowser> browser,
                                      FocusSource source) {
   if (nweb_handler_ != nullptr) {
 #ifdef OHOS_FOCUS
-    LOG(INFO) << "NWebHandlerDelegate::OnSetFocus report arkweb get focus , source = " << source;
     if (!nweb_handler_->OnFocus(static_cast<NWebFocusSource>(source))) {
       LOG(DEBUG) << "nweb_handler request focus unsuccessful, need't to set "
                     "focus, source = "

@@ -1339,6 +1339,16 @@ void NWebImpl::OnContinue() {
   }
 }
 
+void NWebImpl::WebComponentsBlur() {
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "nweb_delegate_ is nullptr.";
+    return;
+  }
+
+  LOG(INFO) << "NWebImpl::WebComponentsBlur, Gesture back blur on.";
+  nweb_delegate_->WebComponentsBlur();
+}
+
 void NWebImpl::OnOccluded() {
   if (!GetWebOptimizationValue()) {
     LOG(DEBUG) << "WebOptimization disabled.";

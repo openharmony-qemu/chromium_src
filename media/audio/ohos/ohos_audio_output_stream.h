@@ -45,6 +45,8 @@ class AudioRendererOptions : public AudioRendererOptionsAdapter {
 
   int32_t GetRenderFlags() override;
 
+  AudioAdapterConcurrencyMode GetConcurrencyMode() override;
+
  private:
   friend class OHOSAudioOutputStream;
   AudioAdapterSamplingRate rate_;
@@ -54,6 +56,7 @@ class AudioRendererOptions : public AudioRendererOptionsAdapter {
   AudioAdapterContentType content_type_;
   AudioAdapterStreamUsage stream_usage_;
   int32_t renderer_flags_;
+  AudioAdapterConcurrencyMode concurrency_mode_;
 };
 
 class AudioRendererCallback : public AudioRendererCallbackAdapter {

@@ -66,7 +66,7 @@ constexpr int kOverlayScrollbarMinimumLength = 32;
 // color. This prevents color interpolation between the patches.
 constexpr int kOverlayScrollbarBorderPatchWidth = 2;
 constexpr int kOverlayScrollbarCenterPatchSize = 1;
-#endif // OHOS_SCROLLBAR 
+#endif // OHOS_SCROLLBAR
 
 const SkScalar kScrollRadius =
     1;  // select[multiple] radius+width are set in css
@@ -475,12 +475,14 @@ gfx::Size NativeThemeAura::GetPartSize(Part part,
     constexpr int minimum_length =
         kOverlayScrollbarMinimumLength + 2 * kOverlayScrollbarStrokeWidth;
 
+#ifdef OHOS_SCROLLBAR
+    float ratio = base::ohos::GetPixelRatio();
     // Aura overlay scrollbars need a slight tweak from the base sizes.
     switch (part) {
       case kScrollbarHorizontalThumb:
-        return gfx::Size(minimum_length, scrollbar_width_);
+        return gfx::Size(minimum_length * ratio, scrollbar_width_);
       case kScrollbarVerticalThumb:
-        return gfx::Size(scrollbar_width_, minimum_length);
+        return gfx::Size(scrollbar_width_, minimum_length * ratio);
 
       default:
         // TODO(bokan): We should probably make sure code using overlay
@@ -497,11 +499,23 @@ gfx::Size NativeThemeAura::GetPartSize(Part part,
       case kScrollbarRightArrow:
         return gfx::Size(0, scrollbar_width_);
       default:
+        break;
+    }
+#else
+    // Aura overlay scrollbars need a slight tweak from the base sizes.
+    switch (part) {
+      case kScrollbarHorizontalThumb:
+        return gfx::Size(minimum_length, scrollbar_width_);
+      case kScrollbarVerticalThumb:
+        return gfx::Size(scrollbar_width_, minimum_length);
+
+      default:
         // TODO(bokan): We should probably make sure code using overlay
         // scrollbars isn't asking for part sizes that don't exist.
         // crbug.com/657159.
         break;
     }
+#endif
   }
 
   return NativeThemeBase::GetPartSize(part, state, extra);

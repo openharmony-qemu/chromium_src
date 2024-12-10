@@ -781,6 +781,11 @@ bool OnOpenURLFromTab(CefRefPtr<CefBrowser> browser,
   void OnUpdateTabUrl(int tab_id, const CefString& url) override;
 #endif
 
+#ifdef OHOS_EX_PULL_TO_REFRESH
+  bool OnPullToRefreshAction(int action) override;
+  void OnPullToRefreshPull(float offset_x, float offset_y) override;
+#endif
+
 #ifdef OHOS_LOGGER_REPORT
   static void RegisterLoggerCallback(
       std::shared_ptr<NWebLoggerCallback> logger_callback);

@@ -2469,6 +2469,12 @@ RenderFrameMetadata LayerTreeHostImpl::MakeRenderFrameMetadata(
 #if BUILDFLAG(IS_OHOS)
   metadata.scrollable_viewport_size = active_tree_->ScrollableViewportSize();
   metadata.root_layer_size = active_tree_->ScrollableSize();
+  if (InnerViewportScrollNode()) {
+    DCHECK(OuterViewportScrollNode());
+    metadata.root_overflow_y_hidden =
+        !OuterViewportScrollNode()->user_scrollable_vertical ||
+        !InnerViewportScrollNode()->user_scrollable_vertical;
+  }
 #endif
 
 #ifdef OHOS_CLIPBOARD

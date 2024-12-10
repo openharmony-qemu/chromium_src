@@ -180,6 +180,7 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
   browser_settings.text_autosizing_enabled =
       IsTextAutosizingEnabled() ? STATE_ENABLED : STATE_DISABLED;
   browser_settings.force_zero_layout_height = IsFitContent();
+  browser_settings.font_weight_scale = GetFontWeightScale();
 #endif  // BUILDFLAG(IS_OHOS)
 #if defined(OHOS_CLIPBOARD)
   browser_settings.copy_option = static_cast<int>(GetCopyOptionMode());
@@ -791,6 +792,16 @@ void NWebPreferenceDelegate::SetFitContent(bool value) {
 
 bool NWebPreferenceDelegate::IsFitContent() const {
   return fit_content_;
+}
+
+void NWebPreferenceDelegate::SetFontWeightScale(float size) {
+  LOG(INFO) << "set fontWeightScale = " << size;
+  font_weight_scale_ = size;
+  WebPreferencesChanged();
+}
+
+float NWebPreferenceDelegate::GetFontWeightScale() const {
+  return font_weight_scale_;
 }
 #endif
 

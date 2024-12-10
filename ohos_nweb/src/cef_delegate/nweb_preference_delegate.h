@@ -132,6 +132,8 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool IsTextAutosizingEnabled() const;
   void SetFitContent(bool value);
   bool IsFitContent() const;
+  void SetFontWeightScale(float size) override;
+  float GetFontWeightScale() const;
 #endif
 
 #if defined(OHOS_MULTI_WINDOW)
@@ -291,6 +293,7 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool text_autosizing_enabled_{true};
   std::string surface_id_{""};
   bool fit_content_{false};
+  float font_weight_scale_ = 1.0f;
 #endif
   bool enable_embed_mode_{false};
   std::string embed_tag_{"embed"};

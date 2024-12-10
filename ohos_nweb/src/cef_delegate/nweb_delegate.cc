@@ -1470,7 +1470,6 @@ void NWebDelegate::OnPause() {
   }
 
   // Remove focus from the browser.
-  LOG(INFO) << "NWebDelegate::OnPause set web blur, nweb_id = " << nweb_id_;
   GetBrowser()->GetHost()->SetFocus(false);
 
 #if defined(OHOS_INPUT_EVENTS)

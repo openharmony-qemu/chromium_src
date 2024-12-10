@@ -33,6 +33,7 @@
 #include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/blink/public/mojom/favicon/favicon_url.mojom.h"
 #include "third_party/blink/public/mojom/mediasession/media_session.mojom.h"
+#include "media/base/media_content_type.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/scoped_java_ref.h"
@@ -375,6 +376,8 @@ class MediaSessionImpl : public MediaSession,
   bool GetPlayingState();
   void SetPlayingState(bool playingState);
   bool GetMuteState();
+  void SetMediaContentType(media::MediaContentType media_content_type) { media_content_type_ = media_content_type; }
+  media::MediaContentType getMediaContentType() { return media_content_type_; }
 
   std::unordered_set<media::OHOSAudioOutputStream*> activeAudioStream_;
   int audioResumeInterval_ = 0;
@@ -618,6 +621,10 @@ class MediaSessionImpl : public MediaSession,
     // Cache of images that have been requested by clients.
     base::flat_map<GURL, SkBitmap> image_cache_;
   };
+
+#if defined(OHOS_MEDIA_POLICY)
+  media::MediaContentType media_content_type_;
+#endif
 
   // Returns the PageData for the specified |page|.
   PageData& GetPageData(content::Page& page) const;

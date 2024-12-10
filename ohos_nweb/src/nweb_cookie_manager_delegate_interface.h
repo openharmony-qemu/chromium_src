@@ -32,6 +32,7 @@ class NWebCookieManagerDelegateInterface {
   virtual void PutAcceptFileURLSchemeCookiesEnabled(bool allow) = 0;
   virtual void ReturnCookie(
       const std::string& url,
+      bool incognitoMode,
       std::shared_ptr<NWebStringValueCallback> callback) = 0;
   virtual std::string ReturnCookie(const std::string &url,
                                    bool &is_valid,
@@ -45,9 +46,10 @@ class NWebCookieManagerDelegateInterface {
   virtual void SetCookie(const std::string& url,
                          const std::string& value,
                          std::shared_ptr<NWebBoolValueCallback> callback) = 0;
-  virtual int SetCookie(const std::string &url,
-                        const std::string &value,
-                        bool incognito_mode) = 0;
+  virtual int SetCookie(const std::string& url,
+                        const std::string& value,
+                        bool incognito_mode,
+                        bool includeHttpOnly) = 0;
 #ifdef OHOS_COOKIE_NDK
   virtual int SetCookieWithHttpOnly(const std::string &url,
                                    const std::string &value,
@@ -64,9 +66,12 @@ class NWebCookieManagerDelegateInterface {
   virtual void DeleteCookieEntirely(
       std::shared_ptr<NWebBoolValueCallback> callback,
       bool incognito_mode) = 0;
-  virtual void ConfigCookie(const std::string& url,
-                            const std::string& value,
-                            std::shared_ptr<NWebLongValueCallback> callback) = 0;
+  virtual void ConfigCookie(
+      const std::string& url,
+      const std::string& value,
+      bool incognitoMode,
+      bool includeHttpOnly,
+      std::shared_ptr<NWebLongValueCallback> callback) = 0;
 };
 }  // namespace OHOS::NWeb
 #endif

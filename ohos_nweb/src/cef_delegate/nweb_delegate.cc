@@ -2466,7 +2466,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
 #if defined(REPORT_SYS_EVENT)
         ReportDragDropStatus("DRAG_ENTER", GetBrowser()->GetNWebId());
 #endif
-        LOG(INFO) << "DragDrop event DRAG_ENTER SendDragEvent enter, send dragdata to chromium webId:"
+        LOG(DEBUG) << "DragDrop event DRAG_ENTER SendDragEvent enter, send dragdata to chromium webId:"
                   << GetBrowser()->GetNWebId();
         handler_delegate_->SetDragEnter(true);
         ClearDragData();
@@ -2478,7 +2478,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
       }
       break;
     case DelegateDragAction::DRAG_LEAVE:
-      LOG(INFO) << "DragDrop event SendDragEvent leave webId:" << GetBrowser()->GetNWebId();
+      LOG(DEBUG) << "DragDrop event SendDragEvent leave webId:" << GetBrowser()->GetNWebId();
 #if defined(REPORT_SYS_EVENT)
       ReportDragDropStatus("DRAG_LEAVE", GetBrowser()->GetNWebId());
 #endif
@@ -2492,7 +2492,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
     case DelegateDragAction::DRAG_DROP:
       event.modifiers = EVENTFLAG_NONE;
       handler_delegate_->SetDragEnter(false);
-      LOG(INFO) << "DragDrop event SendDragEvent drop webId:" << GetBrowser()->GetNWebId();
+      LOG(DEBUG) << "DragDrop event SendDragEvent drop webId:" << GetBrowser()->GetNWebId();
       if (render_handler_) {
         auto drag_data1 = render_handler_->GetDragData();
         auto fragment1 = drag_data1->GetFragmentText();
@@ -2516,7 +2516,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
 #endif
       handler_delegate_->SetDragEnter(false);
       ClearDragData();
-      LOG(INFO) << "DragDrop event SendDragEvent end webId:" << GetBrowser()->GetNWebId();
+      LOG(DEBUG) << "DragDrop event SendDragEvent end webId:" << GetBrowser()->GetNWebId();
       GetBrowser()->GetHost()->DragSourceEndedAt(event.x, event.y,
                                                  DRAG_OPERATION_COPY);
       GetBrowser()->GetHost()->DragSourceSystemDragEnded();
@@ -2524,11 +2524,11 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
     case DelegateDragAction::DRAG_CANCEL:
       handler_delegate_->SetDragEnter(false);
       ClearDragData();
-      LOG(INFO) << "DragDrop event SendDragEvent cancel webId:" << GetBrowser()->GetNWebId();
+      LOG(DEBUG) << "DragDrop event SendDragEvent cancel webId:" << GetBrowser()->GetNWebId();
       GetBrowser()->GetHost()->DragSourceSystemDragEnded();
       break;
     default:
-      LOG(INFO) << "invalid drag action";
+      LOG(DEBUG) << "invalid drag action";
       break;
   }
 #endif  // OHOS_DRAG_DROP
@@ -2846,13 +2846,6 @@ void NWebDelegate::WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebMouse
   if (event_handler_ != nullptr) {
 #endif  // #ifdef OHOS_DRAG_DROP
     event_handler_->WebSendMouseEvent(mouseEvent, default_virtual_pixel_ratio_);
-  } else {
-#ifdef OHOS_DRAG_DROP
-    LOG(INFO) << "Mouse Event dropped! event_handler is " << !!event_handler_
-              << " handler_delegate is " << !handler_delegate_;
-#else
-    LOG(INFO) << "Mouse Event dropped! event_handler is " << !!event_handler_;
-#endif  // #ifdef OHOS_DRAG_DROP
   }
 #ifdef OHOS_DRAG_DROP
   if (render_handler_ != nullptr) {

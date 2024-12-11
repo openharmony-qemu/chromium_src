@@ -156,14 +156,7 @@ void RenderWidgetTargeter::FindTargetAndDispatch(
   if (!requests_.empty()) {
     auto& request = requests_.back();
     if (request.MergeEventIfPossible(event))
-#if defined(IS_OHOS)
-    {
-      LOG(INFO) << "merge input events";
       return;
-    }
-#else
-    return;
-#endif
   }
 
   TargetingRequest request(root_view->GetWeakPtr(), event, latency);

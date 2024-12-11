@@ -687,6 +687,13 @@ void NWebInputMethodHandler::InsertTextHandlerOnUI(const std::u16string& text) {
 
   CefKeyEvent keyEvent;
   keyEvent.windows_key_code = ui::VKEY_PROCESSKEY;
+  // keycode conversion for single char input on PC
+  if (base::ohos::IsPcDevice() && text.length() == 1) {
+    char16_t firstChar = text[0];
+    if (keycode_map.count(firstChar) > 0) {
+      keyEvent.windows_key_code = keycode_map[firstChar];
+    }
+  }
   keyEvent.modifiers = 0;
   keyEvent.is_system_key = false;
   keyEvent.type = KEYEVENT_RAWKEYDOWN;

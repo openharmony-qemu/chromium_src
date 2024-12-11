@@ -2308,6 +2308,18 @@ void NWebHandlerDelegate::OnScaleChanged(CefRefPtr<CefBrowser> browser,
 #endif  // #ifdef OHOS_PAGE_UP_DOWN
 }
 
+void NWebHandlerDelegate::OnScaleInited(CefRefPtr<CefBrowser> browser,
+                                         float page_scale_factor) {
+  if (!render_handler_) {
+    LOG(ERROR) << "render handler is nullptr";
+    return;
+  }
+#ifdef OHOS_PAGE_UP_DOWN
+  LOG(INFO) << "OnScaleInited scale: " << page_scale_factor;
+  scale_ = page_scale_factor;
+#endif  // #ifdef OHOS_PAGE_UP_DOWN
+}
+
 #if defined(OHOS_INPUT_EVENTS)
 bool NWebHandlerDelegate::OnCursorChange(
     CefRefPtr<CefBrowser> browser,

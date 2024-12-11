@@ -629,6 +629,11 @@ void NotifyForNextTouchEvent() override;
 
   void SendAccessibilityHoverEvent(int x, int y) override;
 
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+  bool NeedToFireBeforeUnloadOrUnloadEvents() override;
+  void DispatchBeforeUnload() override;
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
+
  private:
   content::BrowserAccessibilityManagerOHOS* GetAccessibilityManager();
   void AddAccessibilityNodeInfoAttributes(

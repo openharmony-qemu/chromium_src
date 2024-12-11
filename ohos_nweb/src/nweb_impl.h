@@ -577,6 +577,11 @@ class NWebImpl : public NWeb {
  void SetPopupSurface(void* popupSurface) override;
  void SetTransformHint(uint32_t rotation) override;
 
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+ bool NeedToFireBeforeUnloadOrUnloadEvents();
+ void DispatchBeforeUnload();
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
+
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

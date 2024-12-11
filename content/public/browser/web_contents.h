@@ -1551,6 +1551,10 @@ class WebContents : public PageNavigator,
 #ifdef OHOS_CLIPBOARD
   virtual int32_t GetEditFlags() { return 0; }
 #endif
+
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+  virtual void OnBeforeUnloadFired(bool proceed) = 0;
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
  private:
   // This interface should only be implemented inside content.
   friend class WebContentsImpl;

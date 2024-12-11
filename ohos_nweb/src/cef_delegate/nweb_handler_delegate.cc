@@ -3769,4 +3769,16 @@ void NWebHandlerDelegate::SetTransformHint(uint32_t rotation) {
     host->gpu_host()->SetTransformHint(rotation, main_browser_->GetAcceleratedWidget(false));
   }
 }
+
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+void NWebHandlerDelegate::OnBeforeUnloadFired(CefRefPtr<CefBrowser> browser,
+                                              bool proceed) {
+  if (web_app_client_extension_listener_ != nullptr &&
+      web_app_client_extension_listener_->OnBeforeUnloadFired != nullptr) {
+    web_app_client_extension_listener_->OnBeforeUnloadFired(
+        proceed, web_app_client_extension_listener_->nweb_id);
+  }
+}
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
+
 }  // namespace OHOS::NWeb

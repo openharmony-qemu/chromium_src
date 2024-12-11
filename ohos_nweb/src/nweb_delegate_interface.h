@@ -561,6 +561,11 @@ class NWebDelegateInterface
 #endif
 
   virtual void SetPopupSurface(void* popupSurface) = 0;
+
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+  virtual bool NeedToFireBeforeUnloadOrUnloadEvents() = 0;
+  virtual void DispatchBeforeUnload() = 0;
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
 };
 }  // namespace OHOS::NWeb
 

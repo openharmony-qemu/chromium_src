@@ -1097,6 +1097,11 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
       last_top_controls_visible_height_ = *frame.top_controls_visible_height;
     }
 
+    swap_frame_data.swap_trace_id = swapped_trace_id_;
+
+    OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+      std::to_string(swap_frame_data.swap_trace_id), "step", "SendBufferSwap");
+
 #if BUILDFLAG(IS_APPLE)
     swap_frame_data.ca_layer_error_code =
         overlay_processor_->GetCALayerErrorCode();
@@ -1162,6 +1167,10 @@ void Display::DidReceiveSwapBuffersAck(
   // have been done in DrawAndSwap(), and should not be popped until
   // DidReceiveSwapBuffersAck.
   DCHECK(!pending_presentation_group_timings_.empty());
+
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+      std::to_string(params.swap_trace_id), "step", "SwapBufferAck");
+
 
   if (params.swap_response.result ==
       gfx::SwapResult::SWAP_NAK_RECREATE_BUFFERS) {

@@ -216,11 +216,14 @@ void SkiaOutputDevice::FinishSwapBuffers(
     const gpu::Mailbox& primary_plane_mailbox) {
   DCHECK(!pending_swaps_.empty());
 
+  OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
+      std::to_string(frame.data.swap_trace_id), "step", "FinishBufferSwap");
+
   auto release_fence = std::move(result.release_fence);
   const gpu::SwapBuffersCompleteParams& params =
-      pending_swaps_.front().Complete(std::move(result), damage_area,
-                                      std::move(released_overlays),
-                                      primary_plane_mailbox);
+      pending_swaps_.front().Complete(
+          std::move(result), damage_area, std::move(released_overlays),
+          primary_plane_mailbox, frame.data.swap_trace_id);
 
   did_swap_buffer_complete_callback_.Run(params, size,
                                          std::move(release_fence));
@@ -311,7 +314,8 @@ const gpu::SwapBuffersCompleteParams& SkiaOutputDevice::SwapInfo::Complete(
     gfx::SwapCompletionResult result,
     const absl::optional<gfx::Rect>& damage_rect,
     std::vector<gpu::Mailbox> released_overlays,
-    const gpu::Mailbox& primary_plane_mailbox) {
+    const gpu::Mailbox& primary_plane_mailbox,
+    int64_t swap_trace_id) {
   params_.swap_response.result = result.swap_result;
   params_.swap_response.timings.swap_end = base::TimeTicks::Now();
   params_.frame_buffer_damage_area = damage_rect;
@@ -320,6 +324,8 @@ const gpu::SwapBuffersCompleteParams& SkiaOutputDevice::SwapInfo::Complete(
 
   params_.primary_plane_mailbox = primary_plane_mailbox;
   params_.released_overlays = std::move(released_overlays);
+
+  params_.swap_trace_id = swap_trace_id;
   return params_;
 }
 

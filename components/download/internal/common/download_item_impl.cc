@@ -2343,6 +2343,7 @@ bool DownloadItemImpl::IsDownloadReadyForCompletion(
 
 void DownloadItemImpl::TransitionTo(DownloadInternalState new_state) {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+  LOG(INFO) << "DownloadItemImpl::TransitionTo " << state_ << " to " << new_state;
 
   if (state_ == new_state)
     return;

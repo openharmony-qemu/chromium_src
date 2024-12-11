@@ -2293,7 +2293,8 @@ void NWebHandlerDelegate::OnScaleInited(CefRefPtr<CefBrowser> browser,
     return;
   }
 #ifdef OHOS_PAGE_UP_DOWN
-  scale_ = new_page_scale_factor;
+  LOG(INFO) << "OnScaleInited scale: " << page_scale_factor;
+  scale_ = page_scale_factor;
 #endif  // #ifdef OHOS_PAGE_UP_DOWN
 }
 

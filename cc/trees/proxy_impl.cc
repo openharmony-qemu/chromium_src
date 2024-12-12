@@ -62,17 +62,30 @@ class ScopedCommitCompletionEvent {
       CompletionEvent* event,
       base::TimeTicks start_time,
       base::SingleThreadTaskRunner* main_thread_task_runner,
+      // cherry-pick from google begin
+      // https://chromium-review.googlesource.com/c/chromium/src/+/4546241
+      bool notify_main,
+      // cherry-pick from google end
       base::WeakPtr<ProxyMain> proxy_main_weak_ptr)
       : event_(event),
         commit_timestamps_({start_time, base::TimeTicks()}),
         main_thread_task_runner_(main_thread_task_runner),
+        // cherry-pick from google begin
+        // https://chromium-review.googlesource.com/c/chromium/src/+/4546241
+        notify_main_(notify_main),
+        // cherry-pick from google end
         proxy_main_weak_ptr_(proxy_main_weak_ptr) {}
   ScopedCommitCompletionEvent(const ScopedCommitCompletionEvent&) = delete;
   ~ScopedCommitCompletionEvent() {
     event_.ExtractAsDangling()->Signal();
+    // cherry-pick from google begin
+    // https://chromium-review.googlesource.com/c/chromium/src/+/4546241
+    if (notify_main_) {
     main_thread_task_runner_->PostTask(
         FROM_HERE, base::BindOnce(&ProxyMain::DidCompleteCommit,
                                   proxy_main_weak_ptr_, commit_timestamps_));
+    }
+    // cherry-pick from google end
   }
   ScopedCommitCompletionEvent& operator=(const ScopedCommitCompletionEvent&) =
       delete;
@@ -85,6 +98,10 @@ class ScopedCommitCompletionEvent {
   raw_ptr<CompletionEvent> event_;
   CommitTimestamps commit_timestamps_;
   raw_ptr<base::SingleThreadTaskRunner> main_thread_task_runner_;
+  // cherry-pick from google begin
+  // https://chromium-review.googlesource.com/c/chromium/src/+/4546241
+  bool notify_main_;
+  // cherry-pick from google end
   base::WeakPtr<ProxyMain> proxy_main_weak_ptr_;
 };
 
@@ -374,8 +391,15 @@ void ProxyImpl::NotifyReadyToCommitOnImpl(
   // variable on the call stack of the main thread. If NonBlockingCommit is
   // enabled, then the commit timestamps are transmitted back to the main thread
   // by ScopedCommitCompletionEvent.
-  DCHECK_NE((bool)commit_timestamps,
-            base::FeatureList::IsEnabled(features::kNonBlockingCommit));
+
+  // cherry-pick from google begin
+  // https://chromium-review.googlesource.com/c/chromium/src/+/4546241
+  // DCHECK_NE((bool)commit_timestamps,
+  //          base::FeatureList::IsEnabled(features::kNonBlockingCommit));
+  DCHECK_EQ((bool)commit_timestamps,
+           task_runner_provider_->IsMainThreadBlocked());
+  // cherry-pick from google end  
+
   base::TimeTicks start_time = base::TimeTicks::Now();
   if (commit_timestamps)
     commit_timestamps->start = start_time;
@@ -399,6 +423,10 @@ void ProxyImpl::NotifyReadyToCommitOnImpl(
   data_for_commit_ = std::make_unique<DataForCommit>(
       std::make_unique<ScopedCommitCompletionEvent>(
           completion_event, start_time, MainThreadTaskRunner(),
+          // cherry-pick from google begin
+          // https://chromium-review.googlesource.com/c/chromium/src/+/4546241
+          /*notify_main*/!commit_timestamps,
+          // cherry-pick from google end
           proxy_main_weak_ptr_),
       std::move(commit_state), unsafe_state, commit_timestamps);
   hung_commit_timer_.Start(

@@ -64,7 +64,10 @@ class FakeProxy : public Proxy {
                                    base::OnceClosure callback) override {}
   double GetPercentDroppedFrames() const override;
   void SetPauseRendering(bool pause_rendering) override {}
-
+  // cherry-pick from google begin
+  // https://chromium-review.googlesource.com/c/chromium/src/+/4546241
+  void SetInputResponsePending() override {}
+  // cherry-pick from google end
  private:
   raw_ptr<LayerTreeHost> layer_tree_host_;
 };

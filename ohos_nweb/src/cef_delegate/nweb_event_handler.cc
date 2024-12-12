@@ -383,11 +383,6 @@ void NWebEventHandler::WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebM
     if (NWebInputDelegate::IsMouseDown(mouseEvent->GetAction())) {
       previous_action_ = mouseEvent->GetAction();
       previous_button_ = buttonType;
-#ifdef OHOS_CLIPBOARD
-      if (buttonType == MBT_LEFT) {
-        browser_->GetHost()->SetFocus(true);
-      }
-#endif  // #ifdef OHOS_CLIPBOARD
       browser_->GetHost()->SendMouseClickEvent(mouseInfo, buttonType, false,
                                                mouseEvent->GetClickNum());
     } else if (NWebInputDelegate::IsMouseUp(mouseEvent->GetAction())) {

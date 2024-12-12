@@ -2096,8 +2096,8 @@ void NWebDelegate::RegisterArkJSfunction(
       handler_delegate_->SavaArkJSFunctionForPopup(
           object_name, method_list, async_method_list, object_id, permission);
     }
-    return;
-  } else if (!GetBrowser()) {
+  }
+  if (!GetBrowser()) {
     LOG(ERROR) << "NWebDelegate::RegisterArkJSfunction fail due to "
                   "GetBrowser() return null, the object_name is "
                << object_name.c_str();

@@ -366,6 +366,14 @@
 "dependence": "",
 "default": "true"
 },
+{ "name": "OHOS_GET_SCROLL_OFFSET",
+"owner": "",
+"desc": "",
+"effect":"main gn blink_core other",
+"genCommandline": "default",
+"dependence": "",
+"default": "true"
+},
 { "name": "OHOS_HAP_DECOMPRESSED",
 "owner": "",
 "desc": "",

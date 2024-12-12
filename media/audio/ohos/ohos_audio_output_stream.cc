@@ -485,6 +485,7 @@ void OHOSAudioOutputStream::PumpSamples() {
             if (!audio_renderer_->Start()) {
               LOG(ERROR) << "Restarted audioStream but failed";
             }
+            writeFailed = false;
             isSuspended_ = false;
             break;
           }

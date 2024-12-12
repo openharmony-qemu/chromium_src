@@ -373,6 +373,15 @@ bool TouchSelectionController::WillHandleTouchEventImpl(
         (event_pos - GetEndPosition()).LengthSquared()) {
       return start_selection_handle_->WillHandleTouchEvent(event);
     }
+    
+#ifdef OHOS_CLIPBOARD
+    if(!end_selection_handle_.GetVisible() &&
+    start_selection_handle_.GetVisible()){
+      LOG(INFO) << "Handle selection event, start is visible end is not visible.";
+      return start_selection_handle_->WillHandleTouchEvent(event);
+    }
+#endif
+
     return end_selection_handle_->WillHandleTouchEvent(event);
   }
 

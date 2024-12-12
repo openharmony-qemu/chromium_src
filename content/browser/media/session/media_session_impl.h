@@ -33,7 +33,9 @@
 #include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/blink/public/mojom/favicon/favicon_url.mojom.h"
 #include "third_party/blink/public/mojom/mediasession/media_session.mojom.h"
+#if defined(OHOS_MEDIA_POLICY)
 #include "media/base/media_content_type.h"
+#endif // defined(OHOS_MEDIA_POLICY)
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/scoped_java_ref.h"

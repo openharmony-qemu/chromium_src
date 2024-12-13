@@ -38,6 +38,8 @@
 
 #include "cef_delegate/nweb_custom_keyboard_handler_impl.h"
 
+struct OpenDevToolsParam;
+
 namespace OHOS::NWeb {
 class NWebValue;
 
@@ -566,6 +568,11 @@ virtual int ScaleGestureChange(double scale, double centerX, double centerY) con
 #ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
   virtual void EnableMediaNetworkTrafficPrompt(bool enable) = 0;
 #endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+
+  virtual void OpenDevtoolsWith(
+      std::shared_ptr<NWebDelegateInterface> nweb_delegate,
+      std::unique_ptr<OpenDevToolsParam> param) = 0;
+  virtual void CloseDevtools() = 0;
 };
 }  // namespace OHOS::NWeb
 

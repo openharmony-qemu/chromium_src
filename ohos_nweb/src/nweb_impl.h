@@ -37,6 +37,8 @@
 #include "capi/nweb_permission_request.h"
 // #endif
 
+struct OpenDevToolsParam;
+
 namespace OHOS::NWeb {
 class NWebImpl : public NWeb {
  public:
@@ -396,6 +398,8 @@ class NWebImpl : public NWeb {
   void GetImageFromCache(const std::string& url);
   void ReloadOriginalUrl() const;
   void SetBrowserUserAgentString(const std::string& user_agent);
+  void OpenDevtools(std::unique_ptr<OpenDevToolsParam> param);
+  void CloseDevtools();
 #endif  // defined(OHOS_NWEB_EX)
 
 #ifdef OHOS_EX_NETWORK_CONNECTION

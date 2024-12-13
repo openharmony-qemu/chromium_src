@@ -3831,4 +3831,17 @@ void NWebHandlerDelegate::logUrl(const CefString& url) {
 }
 #endif
 
+void NWebHandlerDelegate::OnRequestOpenDevTools() {
+  if (!web_app_client_extension_listener_) {
+    LOG(WARNING) << "OnRequestOpenDevTools failed, no listener";
+    return;
+  }
+  if (!web_app_client_extension_listener_->OnRequestOpenDevTools) {
+    LOG(WARNING) << "OnRequestOpenDevTools failed, no function";
+    return;
+  }
+  web_app_client_extension_listener_->OnRequestOpenDevTools(
+      web_app_client_extension_listener_->nweb_id);
+}
+
 }  // namespace OHOS::NWeb

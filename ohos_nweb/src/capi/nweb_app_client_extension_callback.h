@@ -67,6 +67,8 @@ struct NWebAppClientExtensionCallback {
                                                 const std::string& trackerHost,
                                                 int nweb_id);
 #endif
+
+  void (*OnRequestOpenDevTools)(int32_t nweb_id);
 };
 
 #endif  // OHOS_NWEB_SRC_NWEB_APP_CLIENT_EXTENSION_CALLBACK_H_

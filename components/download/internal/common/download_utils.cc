@@ -168,6 +168,10 @@ void OnInterMediateUriCreated(LocalPathCallback callback,
 }
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if defined(OHOS_EX_DOWNLOAD)
+  static FileRenameOptions gFileRenameOptions = FileRenameOptions::RENAME_AND_UNIQUIFY_MODE;
+#endif // OHOS_EX_DOWNLOAD
+
 }  // namespace
 
 const uint32_t DownloadItem::kInvalidId = 0;
@@ -804,5 +808,16 @@ void DetermineLocalPath(DownloadItem* download,
 #endif  // BUILDFLAG(IS_ANDROID)
   std::move(callback).Run(virtual_path, base::FilePath());
 }
+
+#if defined(OHOS_EX_DOWNLOAD)
+void SetFileRenameOptions(FileRenameOptions options) {
+  LOG(INFO) << "SetFileRenameOptions to options: " << (int)options;
+  gFileRenameOptions = options;
+}
+
+FileRenameOptions GetFileRenameOptions() {
+  return gFileRenameOptions;
+}
+#endif
 
 }  // namespace download

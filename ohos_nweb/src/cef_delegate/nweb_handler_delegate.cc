@@ -713,6 +713,10 @@ void NWebHandlerDelegate::OnMainFrameChanged(
   if (new_frame && browser && browser->IsValid() && preference_delegate_.get()) {
     preference_delegate_->WebPreferencesChanged();
   }
+  if (nweb_handler_) {
+    nweb_handler_->OnCursorChange(
+      OHOS::NWeb::CursorType::CT_POINTER, std::make_shared<NWebCursorInfoImpl>());
+  }
 }
 /* CefFrameHandler method end */
 

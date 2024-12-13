@@ -10,8 +10,8 @@
 #ifndef OHOS_CAPTURE_DELEGATE_H_
 #define OHOS_CAPTURE_DELEGATE_H_
 
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 
 #include <memory>
 #include <string>

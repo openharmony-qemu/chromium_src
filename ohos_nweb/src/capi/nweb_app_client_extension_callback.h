@@ -17,7 +17,7 @@
 #define OHOS_NWEB_SRC_NWEB_APP_CLIENT_EXTENSION_CALLBACK_H_
 
 #include <map>
-#include <stddef.h>
+#include <cstddef>
 #include <string>
 
 struct NWebAppClientExtensionCallback {

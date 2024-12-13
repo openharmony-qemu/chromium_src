@@ -4,7 +4,7 @@
 
 #include "media/capture/video/ohos/ohos_capture_delegate.h"
 
-#include <stddef.h>
+#include <cstddef>
 
 #include <utility>
 

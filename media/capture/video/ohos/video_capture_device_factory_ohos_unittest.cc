@@ -17,9 +17,9 @@
 #include "media/capture/video/ohos/video_capture_device_factory_ohos.h"
 #undef private
 
-#include <errno.h>
+#include <cerrno>
 #include <fcntl.h>
-#include <stdint.h>
+#include <cstdint>
 #include <sys/ioctl.h>
 #include "gmock/gmock.h"
 

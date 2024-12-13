@@ -365,18 +365,27 @@ class MediaSessionImpl : public MediaSession,
 #if defined(OHOS_MEDIA_POLICY)
  public:
   enum NWebPlaybackState { NONE, PLAYING, PAUSED, STOP };
-
+  enum NWebMediaSessionState { NOINITIAL, NONEED, NEED };
   NWebPlaybackState NWebGetState();
+
   void SetWebviewShow(bool show);
   void SetWebviewShowForAudio(bool show);
   void SetWebviewShowForVideo(bool show);
   bool IsEndOfMedia();
   void SetEndOfMedia(bool end_of_media);
+  bool GetPlayingState();
+  void SetPlayingState(bool playingState);
+  bool GetMuteState();
+
+  void SetSessionState(NWebMediaSessionState sessionState);
+  NWebMediaSessionState GetSessionState();
 
   std::unordered_set<media::OHOSAudioOutputStream*> activeAudioStream_;
   int audioResumeInterval_ = 0;
   bool audioExclusive_ = true;
+  bool isPlayingState_ = false;
   base::WeakPtrFactory<content::MediaSessionImpl> weakMediaSessionFactory_;
+  NWebMediaSessionState sessionState_ = NWebMediaSessionState::NOINITIAL;
 #endif // defined(OHOS_MEDIA_POLICY)
 
  private:

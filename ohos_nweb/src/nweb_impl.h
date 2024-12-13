@@ -480,6 +480,11 @@ class NWebImpl : public NWeb {
   void UpdateBrowserControlsHeight(int height, bool animate);
 #endif
 
+#ifdef OHOS_EX_REFRESH_IFRAME
+  bool WebExtensionContextMenuIsIframe();
+  void WebExtensionContextMenuReloadFocusedFrame();
+#endif
+
 #ifdef OHOS_EX_GET_ZOOM_LEVEL
   static void SetDefaultBrowserZoomLevel(double zoom_factor);
   void SetBrowserZoomLevel(double zoom_factor) const;
@@ -555,7 +560,7 @@ class NWebImpl : public NWeb {
 
 #ifdef OHOS_NETWORK_LOAD
   void SetPathAllowingUniversalAccess(
-    const std::vector<std::string>& pathList, 
+    const std::vector<std::string>& pathList,
     const std::vector<std::string>& moduleName,
     std::string& errorPath) override;
 #endif

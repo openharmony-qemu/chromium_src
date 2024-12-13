@@ -552,6 +552,11 @@ void NotifyForNextTouchEvent() override;
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override;
 #endif
 
+#ifdef OHOS_EX_REFRESH_IFRAME
+  bool WebExtensionContextMenuIsIframe() override;
+  void WebExtensionContextMenuReloadFocusedFrame() override;
+#endif
+
    void SetPopupSurface(void* popupSurface) override;
 
  public:

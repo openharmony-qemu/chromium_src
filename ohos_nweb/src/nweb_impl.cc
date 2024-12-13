@@ -25,6 +25,7 @@
 #include "base/lazy_instance.h"
 #include "base/logging.h"
 #include "base/report_loss_frame.h"
+#include "base/ohos/sys_info_utils.h"
 
 #ifdef OHOS_PERFORMANCE_MEMORY_THRESHOLD
 #include "base/memory/memory_pressure_listener.h"
@@ -359,7 +360,9 @@ void InitialWebEngineArgs(
   web_engine_args.emplace_back("--no-sandbox");
   web_engine_args.emplace_back("--use-mobile-user-agent");
   web_engine_args.emplace_back("--enable-gpu-rasterization");
-  web_engine_args.emplace_back("--enable-viewport");
+  if (!base::ohos::IsPcDevice()) {
+    web_engine_args.emplace_back("--enable-viewport");
+  }
   web_engine_args.emplace_back(
       "--browser-subprocess-path=/system/bin/web_render");
   web_engine_args.emplace_back("--zygote-cmd-prefix=/system/bin/web_render");

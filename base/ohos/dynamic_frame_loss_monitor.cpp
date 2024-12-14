@@ -118,6 +118,9 @@ void DynamicFrameLossMonitor::Report() {
     base::BindOnce(&ReportSlideJankStats, start_time_, stop_time_ - start_time_, total_app_frames_,
       total_app_missed_frames_, max_app_frametime_, max_app_seq_missed_frames_)
   );
+  TRACE_EVENT1("base", "WEBVIEW::DYNAMIC_FRAME_DROP_STATISTICS", "info",
+    "StartTime: " + std::to_string(start_time_) + ", Duration: " + std::to_string(stop_time_ - start_time_) +
+    ", MaxAppFrametime: " + std::to_string(max_app_frametime_));
 #endif
 }
 

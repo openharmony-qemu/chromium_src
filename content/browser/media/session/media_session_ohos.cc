@@ -295,7 +295,7 @@ OHOSMediaAVSessionCallback::~OHOSMediaAVSessionCallback() {}
 
 void OHOSMediaAVSessionCallback::Play() {
   if (!media_session_ohos_) {
-      return;
+    return;
   }
   task_runner_->PostTask(FROM_HERE, base::BindOnce(&MediaSessionOHOS::SetPauseByAvsession,
                                                    media_session_ohos_, false));
@@ -303,7 +303,7 @@ void OHOSMediaAVSessionCallback::Play() {
 
 void OHOSMediaAVSessionCallback::Pause() {
   if (!media_session_ohos_) {
-      return;
+    return;
   }
   task_runner_->PostTask(FROM_HERE, base::BindOnce(&MediaSessionOHOS::SetPauseByAvsession,
                                                    media_session_ohos_, true));
@@ -311,7 +311,7 @@ void OHOSMediaAVSessionCallback::Pause() {
 
 void OHOSMediaAVSessionCallback::Stop() {
   if (!media_session_ohos_) {
-      return;
+    return;
   }
   task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&MediaSessionOHOS::Stop, media_session_ohos_));
@@ -319,7 +319,7 @@ void OHOSMediaAVSessionCallback::Stop() {
 
 void OHOSMediaAVSessionCallback::SeekTo(int64_t millisTime) {
   if (!media_session_ohos_) {
-      return;
+    return;
   }
   task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&MediaSessionOHOS::SeekTo, media_session_ohos_,

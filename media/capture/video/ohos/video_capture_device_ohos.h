@@ -10,7 +10,7 @@
 #ifndef MEDIA_CAPTURE_VIDEO_OHOS_VIDEO_CAPTURE_DEVICE_OHOS_H_
 #define MEDIA_CAPTURE_VIDEO_OHOS_VIDEO_CAPTURE_DEVICE_OHOS_H_
 
-#include <stdint.h>
+#include <cstdint>
 
 #include <memory>
 #include <vector>

@@ -4,7 +4,7 @@
 
 #include "media/capture/video/ohos/video_capture_device_ohos.h"
 
-#include <stddef.h>
+#include <cstddef>
 
 #include <utility>
 

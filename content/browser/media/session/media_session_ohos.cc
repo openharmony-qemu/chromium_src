@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
++666
 #include "content/browser/media/session/media_session_ohos.h"
 
 #include <chrono>
@@ -253,7 +253,7 @@ void MediaSessionOHOS::SetEndOfMedia(bool end_of_media)
   is_end_of_media_ = end_of_media;
 }
 
-bool MediaSessionOHOS::IsPauseByAvesession() {
+bool MediaSessionOHOS::IsPauseByAvsession() {
     return is_avsession_pause_cmd_;
 }
 
@@ -267,10 +267,11 @@ void MediaSessionOHOS::SetWebviewShow(bool show, bool is_special_for_audio) {
     return;
   }
   if (is_special_for_audio) {
-    if(media_type_ != OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_AUDIO)) {
+    if(media_type_ != OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_AUDIO) {
       LOG(ERROR) << __FUNCTION__ << " media avsession media_type is not audio return";
       return;
-  }      
+    }
+  }
   if (show) {
     if (media_session_) {
       media_session_->RebuildAndNotifyMediaSessionInfoChanged();

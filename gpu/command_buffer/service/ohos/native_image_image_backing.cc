@@ -56,8 +56,10 @@ NativeImageImageBacking::~NativeImageImageBacking() {
     context_state_->RemoveContextLostObserver(this);
   }
   context_state_.reset();
-  stream_texture_sii_->ReleaseResources();
-  stream_texture_sii_.reset();
+  if (stream_texture_sii != nullptr) {
+    stream_texture_sii_->ReleaseResources();
+    stream_texture_sii_.reset();
+  }
 }
 
 size_t NativeImageImageBacking::GetEstimatedSizeForMemoryDump() const {

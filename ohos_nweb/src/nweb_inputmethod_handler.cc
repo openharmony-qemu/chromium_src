@@ -25,6 +25,7 @@
 #include "base/functional/callback_helpers.h"
 #include "base/logging.h"
 #include "base/ohos/sys_info_utils.h"
+#include "base/strings/utf_string_conversion_utils.h"
 #include "cef/include/cef_task.h"
 #include "content/public/browser/browser_thread.h"
 #include "libcef/browser/thread_util.h"
@@ -1329,8 +1330,8 @@ void NWebInputMethodHandler::AutoFillWithIMFEventOnUI(
 
 #if defined(OHOS_CLIPBOARD)
 std::string NWebInputMethodHandler::GetSelectInfo() {
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;
-  return converter.to_bytes(selected_text_);
+  std::string selected_str = base::UTF16ToUTF8(selected_text_);
+  return selected_str;
 }
 #endif
 

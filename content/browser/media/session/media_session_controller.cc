@@ -51,7 +51,7 @@ bool MediaSessionController::OnPlaybackStarted() {
 #if defined(OHOS_MEDIA_POLICY)
   if (media_session_) {
     media_session_->SetPlayingState(true);
-    media_session_->setPauseByAvsession(false);
+    media_session_->SetPauseByAvsession(false);
   }
   LOG(INFO) << "MediaSessionController OnPlaybackStarted SetPlayingState true";
 #endif
@@ -282,7 +282,7 @@ bool MediaSessionController::IsMediaSessionNeeded() const {
 
 #if defined(OHOS_MEDIA_AVSESSION)
   if (media_content_type_ == media::MediaContentType::Transient) {
-      LOG(INFO) << _func_ << ", media_content_type_: media::MediaContentType::Transient";
+      LOG(INFO) << __func__<< ", media_content_type_: media::MediaContentType::Transient";
       return false;
   }
 #endif // defined(OHOS_MEDIA_AVSESSION)

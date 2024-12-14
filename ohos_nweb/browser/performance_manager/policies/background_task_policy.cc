@@ -80,7 +80,7 @@ void BackgroundTaskPolicy::OnIsVisibleChanged(const PageNode* page_node) {
     LOG(ERROR) << BG_TASK_TAG << " page_node is null";
     return;
   }
-  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession IsVisible="
+  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << ", media avsession IsVisible="
             << (page_node->IsVisible() ? "true" : "false")
             << ", IsMediaPlaying=" << (page_node->IsMediaPlaying() ? "true" : "false")
             << ", is_main_frame_url_changed_ = " << is_main_frame_url_changed_;
@@ -359,7 +359,7 @@ void BackgroundTaskPolicy::OnMainFrameUrlChanged(const PageNode* page_node) {
     // when backward to a not playing page  1 0 for onlyaudio
     if (!page_node->IsAudible()) {
       bool ret = false;
-      SetWebviewShowForAudio(page_node, false, false, ret);
+      SetWebviewShow(page_node, false, false, ret);
       if (ret) {
         last_avsession_page_node_ = nullptr;
       }

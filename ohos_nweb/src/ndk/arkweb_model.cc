@@ -28,6 +28,7 @@
 #include "nweb_value_callback.h"
 #include "ohos_nweb/include/nweb_engine.h"
 #include "ohos_nweb/include/nweb_errors.h"
+#include "cef/libcef/browser/javascript/oh_gin_javascript_bridge_dispatcher_host.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -729,6 +730,13 @@ ARKWEB_NDK_EXPORT void OH_CookieManager_ClearSessionCookiesSync() {
   cookie_manager->DeleteSessionCookies(nullptr);
 }
 
+ARKWEB_NDK_EXPORT const char* OH_ArkWeb_GetLastJavascriptProxyCallingFrameUrl() {
+  if (!NWEB::OhGinJavascriptBridgeDispatcherHost::GetLastCallingFrameUrlTLS()) {
+    return "";
+  }
+
+  return NWEB::OhGinJavascriptBridgeDispatcherHost::GetLastCallingFrameUrlTLS();
+}
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

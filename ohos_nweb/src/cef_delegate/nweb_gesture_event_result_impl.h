@@ -26,6 +26,7 @@ class NWebGestureEventResultImpl : public NWebGestureEventResult {
   explicit NWebGestureEventResultImpl(CefRefPtr<CefGestureEventCallback> callback);
   ~NWebGestureEventResultImpl() = default;
   void SetGestureEventResult(bool result) override;
+  void SetGestureEventResultV2(bool result, bool stopPropagation) override;
 
  private:
   CefRefPtr<CefGestureEventCallback> callback_;

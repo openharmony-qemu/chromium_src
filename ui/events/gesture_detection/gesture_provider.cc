@@ -139,11 +139,6 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
   GestureListenerImpl& operator=(const GestureListenerImpl&) = delete;
 
   void OnTouchEvent(const MotionEvent& event) {
-  #if BUILDFLAG(IS_OHOS)
-    if (gesture_provider_->GetNativeEmbedEnabled()) {
-      return;
-    }
-  #endif
     const bool in_scale_gesture = IsScaleGestureDetectionInProgress();
     snap_scroll_controller_.SetSnapScrollMode(
         event, in_scale_gesture, EffectiveSlopDistance(event, config_));

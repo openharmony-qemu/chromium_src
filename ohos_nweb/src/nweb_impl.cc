@@ -176,6 +176,9 @@ extern bool g_siteIsolationMode;
 #include "content/browser/gpu/gpu_process_host.h"
 #endif
 
+#ifdef OHOS_USERAGENT
+#include "components/embedder_support/user_agent_utils.h"
+#endif
 
 #include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
 
@@ -3370,6 +3373,11 @@ std::string NWebImpl::GetLastJavascriptProxyCallingFrameUrl() {
 #else
   return "";
 #endif
+}
+
+// static
+std::string NWebImpl::GetDefaultUserAgent() {
+  return embedder_support::GetUserAgent();
 }
 
 int NWebImpl::ScaleGestureChange(double scale, double centerX, double centerY) {

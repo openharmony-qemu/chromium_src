@@ -523,6 +523,7 @@ class NWebImpl : public NWeb {
   static void RemoveIntelligentTrackingPreventionBypassingList(
       const std::vector<std::string>& hosts);
   static void ClearIntelligentTrackingPreventionBypassingList();
+  static std::string GetDefaultUserAgent();
   static void WarmupServiceWorker(const std::string &url);
 
   int ScaleGestureChange(double scale, double centerX, double centerY) override;

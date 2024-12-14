@@ -1102,6 +1102,19 @@ void GpuServiceImpl::GetSurfaceId(int32_t native_embed_id, GetSurfaceIdCallback 
 void GpuServiceImpl::DestroyNativeWindow(uint32_t native_window_id)
 {
     LOG(DEBUG) << "DestroyNativeWindow native_window_id: " << native_window_id;
+    auto runner = compositor_gpu_task_runner();
+    if (runner) {
+      runner->PostTask(
+        FROM_HERE, base::BindOnce(&GpuServiceImpl::DestroyNativeWindowInner,
+                                  weak_ptr_, native_window_id));
+    } else {
+      LOG(ERROR) << "compositor gpu task runner is nullptr";
+    }
+}
+
+void GpuServiceImpl::DestroyNativeWindowInner(uint32_t native_window_id)
+{
+    LOG(DEBUG) << "DestroyNativeWindow native_window_id: " << native_window_id;
     NWebNativeWindowTracker::GetInstance()->DestroyNativeWindow(native_window_id);
 }
 #endif

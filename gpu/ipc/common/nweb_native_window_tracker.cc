@@ -63,7 +63,11 @@ void NWebNativeWindowTracker::DestroyNativeWindow(int32_t native_window_id)
     base::AutoLock lock(window_map_lock_);
     auto it = native_window_map_.find(native_window_id);
     if (it != native_window_map_.end()) {
+        auto window = it->second;
         native_window_map_.erase(native_window_id);
+        OHOS::NWeb::OhosAdapterHelper::GetInstance()
+            .GetWindowAdapterInstance()
+            .DestroyNativeWindow(window);
         LOG(DEBUG) << __FUNCTION__
                    << "Destroy native_window id = " << native_window_id;
     }

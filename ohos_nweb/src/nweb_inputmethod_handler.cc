@@ -25,7 +25,7 @@
 #include "base/functional/callback_helpers.h"
 #include "base/logging.h"
 #include "base/ohos/sys_info_utils.h"
-#include "base/strings/utf_string_conversion_utils.h"
+#include "base/strings/utf_string_conversions.h"
 #include "cef/include/cef_task.h"
 #include "content/public/browser/browser_thread.h"
 #include "libcef/browser/thread_util.h"

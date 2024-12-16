@@ -92,10 +92,8 @@ bool SoftwareOutputSurface::IsDisplayedAsOverlayPlane() const {
 void SoftwareOutputSurface::SwapBuffersCallback(base::TimeTicks swap_time,
                                                 int64_t swap_trace_id,
                                                 const gfx::Size& pixel_size) {
-
-  OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
-        std::to_string(swap_trace_id), "step", "FinistBufferSwap");
-
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+        std::to_string(swap_trace_id), "step", "FinishBufferSwap");
 
   latency_tracker_.OnGpuSwapBuffersCompleted(
       std::move(stored_latency_info_.front()));

@@ -2127,7 +2127,7 @@ void SkiaOutputSurfaceImplOnGpu::PostSubmit(
 
     DCHECK(!frame->sub_buffer_rect || capabilities().supports_post_sub_buffer);
 
-    OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
+    OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
         std::to_string(frame->data.swap_trace_id), "step", "FinishBufferSwap");
 
     output_device_->Present(frame->sub_buffer_rect, buffer_presented_callback_,

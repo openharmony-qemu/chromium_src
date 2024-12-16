@@ -216,7 +216,7 @@ void SkiaOutputDevice::FinishSwapBuffers(
     const gpu::Mailbox& primary_plane_mailbox) {
   DCHECK(!pending_swaps_.empty());
 
-  OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
       std::to_string(frame.data.swap_trace_id), "step", "FinishBufferSwap");
 
   auto release_fence = std::move(result.release_fence);

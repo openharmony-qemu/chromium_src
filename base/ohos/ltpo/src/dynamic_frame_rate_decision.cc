@@ -136,9 +136,10 @@ void DynamicFrameRateDecision::UpdateFramePreferredRate()
     } else {
         cur_frame_rate_ = kDefaultPreferedFrameRate60FPS;
     }
+    cur_frame_rate_ = std::max(cur_frame_rate_, video_frame_rate_);
+    TRACE_EVENT1("base", "DynamicFrameRateDecision::UpdateFramePreferredRate", "cur_frame_rate", cur_frame_rate_);
+    OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetFramePreferredRate(cur_frame_rate_);
   }
-  cur_frame_rate_ = std::max(cur_frame_rate_, video_frame_rate_);
-  OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetFramePreferredRate(cur_frame_rate_);
 }
 
 void DynamicFrameRateDecision::SetVsyncEnabled(bool enabled)

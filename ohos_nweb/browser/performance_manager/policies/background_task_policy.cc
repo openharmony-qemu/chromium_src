@@ -277,7 +277,7 @@ bool BackgroundTaskPolicy::IsEndOfMedia(const PageNode* page_node)
 }
 
 bool BackgroundTaskPolicy::IsPauseByAvsession(const PageNode* page_node) {
-  bool ret == false;
+  bool ret = false;
   if (!page_node) {
     return ret;
   }
@@ -308,7 +308,7 @@ void BackgroundTaskPolicy::SetWebviewShow(const PageNode* page_node,
     is_main_frame_url_changed_ = false;
     return;
   }
-  auto web_contents = page_node->GetContentsProxy.Get();
+  auto web_contents = page_node->GetContentsProxy().Get();
   if (!web_contents) {
     LOG(ERROR) << BG_TASK_TAG << __FUNCTION__ << "web_contents is null";
     is_main_frame_url_changed_ = false;
@@ -349,7 +349,7 @@ void BackgroundTaskPolicy::OnMainFrameUrlChanged(const PageNode* page_node) {
     // when backward to a not playing page   1 0
     else if (page_node->IsVisible() && !page_node->IsMediaPlaying()) {
       bool ret = false;
-      SetWebviewShowForVideo(page_node, false, false, ret);
+      SetWebviewShow(page_node, false, false, ret);
       if (ret) {
         last_avsession_page_node_ = nullptr;
       }

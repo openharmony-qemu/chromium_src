@@ -162,7 +162,7 @@ void InputRouterImpl::SendGestureEvent(
     prePerfTimeStamp_ = timeStamp_;
     LOG(DEBUG) << "InputRouterImpl::SendGestureEvent type=kGestureScrollUpdate success";
     client_->GetWidgetInputHandler()->TryStartFling();
-    if (base::ohos::IsPcDevice) {
+    if (base::ohos::IsPcDevice()) {
       OHOS::NWeb::OhosAdapterHelper::GetInstance()
         .CreateSocPerfClientAdapter()
         ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID_PC, true);
@@ -175,7 +175,7 @@ void InputRouterImpl::SendGestureEvent(
              WebInputEvent::Type::kGestureScrollEnd) {
     LOG(INFO) << "InputRouterImpl::SendGestureEvent type=kGestureScrollEnd";
     client_->GetWidgetInputHandler()->TryFinishFling();
-    if (base::ohos::IsPcDevice) {
+    if (base::ohos::IsPcDevice()) {
       OHOS::NWeb::OhosAdapterHelper::GetInstance()
         .CreateSocPerfClientAdapter()
         ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID_PC, false);

@@ -56,7 +56,7 @@ NativeImageImageBacking::~NativeImageImageBacking() {
     context_state_->RemoveContextLostObserver(this);
   }
   context_state_.reset();
-  if (stream_texture_sii != nullptr) {
+  if (stream_texture_sii_ != nullptr) {
     stream_texture_sii_->ReleaseResources();
     stream_texture_sii_.reset();
   }

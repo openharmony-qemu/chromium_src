@@ -71,11 +71,13 @@ FlingController::~FlingController() {
     return;
   }
   LOG(DEBUG) << "stop web page fling";
-  base::ohos::SlidingObserver::GetInstance().StopSliding();
+  auto frame_rate = base::ohos::SlidingObserver::GetInstance().StopFling();
   if (auto* host = GpuProcessHost::Get()) {
     if (auto* host_impl = host->gpu_host()) {
       host_impl->StopMonitor();
-      host_impl->ReportSlidingFrameRate(0);
+      if (frame_rate >= 0) {
+        host_impl->ReportSlidingFrameRate(frame_rate);
+      }
     }
   }
 }
@@ -437,9 +439,13 @@ void FlingController::EndCurrentFling(base::TimeTicks current_time) {
       .FinishAsyncTrace(fling_string, 0);
 
   LOG(DEBUG) << "stop web page fling";
+  auto frame_rate = base::ohos::SlidingObserver::GetInstance().StopFling();
   if (auto* host = GpuProcessHost::Get()) {
     if (auto* host_impl = host->gpu_host()) {
       host_impl->StopMonitor();
+      if (frame_rate >= 0) {
+        host_impl->ReportSlidingFrameRate(frame_rate);
+      }
       TRACE_EVENT0("input", "DynamicFrameLossEvent End");
       GetUIThreadTaskRunner({})->PostTask(
         FROM_HERE,

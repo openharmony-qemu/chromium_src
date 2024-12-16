@@ -111,7 +111,19 @@ void SlidingObserver::StartSliding()
 
 int32_t SlidingObserver::StopSliding()
 {
-    if (!is_inited_ || !is_sliding_) {
+    if (!is_inited_ || !is_sliding_ || is_off_screen_) {
+        return -1;
+    }
+    current_timestamp_ = -1;
+    is_sliding_ = false;
+    is_off_screen_ = false;
+    sliding_frame_rate_ = 0;
+    return 0;
+}
+
+int32_t SlidingObserver::StopFling()
+{
+    if (!is_inited_ || !is_sliding_ || !is_off_screen_) {
         return -1;
     }
     if (strategy_ == LTPOStrategy::APS_FLING) {

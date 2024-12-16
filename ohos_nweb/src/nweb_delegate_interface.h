@@ -562,6 +562,11 @@ class NWebDelegateInterface
 
   virtual void SetPopupSurface(void* popupSurface) = 0;
 
+#ifdef OHOS_EX_REFRESH_IFRAME
+  virtual bool WebExtensionContextMenuIsIframe() = 0;
+  virtual void WebExtensionContextMenuReloadFocusedFrame() = 0;
+#endif
+
 #if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
   virtual bool NeedToFireBeforeUnloadOrUnloadEvents() = 0;
   virtual void DispatchBeforeUnload() = 0;

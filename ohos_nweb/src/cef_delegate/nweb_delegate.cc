@@ -4285,6 +4285,26 @@ int32_t NWebDelegate::GetArgumentByKey(const std::map<std::string, std::string>&
     return argument;
 }
 
+#ifdef OHOS_EX_REFRESH_IFRAME
+bool NWebDelegate::WebExtensionContextMenuIsIframe()
+{
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "get browser failed or get host failed";
+    return false;
+  }
+  return GetBrowser()->GetHost()->IsIframe();
+}
+
+void NWebDelegate::WebExtensionContextMenuReloadFocusedFrame()
+{
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "get browser failed or get host failed";
+    return;
+  }
+  return GetBrowser()->GetHost()->ReloadFocusedFrame();
+}
+#endif
+
 #if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
 bool NWebDelegate::NeedToFireBeforeUnloadOrUnloadEvents() {
   if (GetBrowser().get()) {

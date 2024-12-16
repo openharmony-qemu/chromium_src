@@ -109,6 +109,7 @@ size_t kWaitTimeForOptionsChangesMs = 50;
 
 #if defined(OHOS_AUTOFILL)
 size_t kWaitTimeForScrollIntoViewMs = 700;
+size_t kWaitTimeForRequestAutoFillMs = 50;
 #endif
 
 // Helper function to return EXTRACT_DATALIST if kAutofillExtractAllDatalist is
@@ -361,7 +362,7 @@ bool AutofillAgent::OhAutoFillDidChangeScrollOffset() {
       autofill_scroll_timer_.AbandonAndStop();
     }
     autofill_scroll_timer_.Start(
-      FROM_HERE, base::Milliseconds(50),
+      FROM_HERE, base::Milliseconds(kWaitTimeForRequestAutoFillMs),
       base::BindOnce(
         [](base::WeakPtr<AutofillAgent> self) {
           if (!self) {

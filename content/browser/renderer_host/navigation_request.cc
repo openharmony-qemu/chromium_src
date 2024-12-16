@@ -4758,6 +4758,15 @@ NavigationRequest::ComputeErrorPageProcess() {
   return ErrorPageProcess::kDestinationProcess;
 }
 
+#ifdef OHOS_EX_UA
+void NavigationRequest::RemoveUserAgentHeaderForDevTools(bool devtools_useragent_override) {
+  if (devtools_useragent_override && base::CommandLine::ForCurrentProcess()->HasSwitch(
+      switches::kEnableNwebExUa)) {
+    modified_request_headers_.RemoveHeader(net::HttpRequestHeaders::kUserAgent);
+  }
+}
+#endif
+
 void NavigationRequest::OnStartChecksComplete(
     NavigationThrottle::ThrottleCheckResult result) {
   DCHECK(result.action() != NavigationThrottle::DEFER);
@@ -4849,6 +4858,9 @@ void NavigationRequest::OnStartChecksComplete(
   // Merge headers with embedder's headers.
   net::HttpRequestHeaders headers;
   headers.AddHeadersFromString(begin_params_->headers);
+#ifdef OHOS_EX_UA
+  RemoveUserAgentHeaderForDevTools(devtools_user_agent_override_);
+#endif
   headers.MergeFrom(TakeModifiedRequestHeaders());
   begin_params_->headers = headers.ToString();
 

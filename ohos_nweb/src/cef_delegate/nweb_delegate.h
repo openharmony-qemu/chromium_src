@@ -203,6 +203,11 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void JavaScriptOnDocumentStart(const ScriptItems& scriptItems) override;
   void JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) override;
 
+  void JavaScriptOnDocumentStartByOrder(const ScriptItems& scriptItems,
+      const ScriptItemsByOrder& scriptItemsByOrder) override;
+  void JavaScriptOnDocumentEndByOrder(const ScriptItems& scriptItems,
+      const ScriptItemsByOrder& scriptItemsByOrder) override;
+
   bool Discard() override;
   bool Restore() override;
 
@@ -258,7 +263,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       bool extention) override;
 
   int ScaleGestureChange(double scale, double centerX, double centerY) const override;
-  
+
   int ScaleGestureChangeV2(int type, double scale, double originScale, double centerX, double centerY) const override;
 
 #if defined(OHOS_MSGPORT)

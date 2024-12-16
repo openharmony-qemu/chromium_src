@@ -767,6 +767,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
 
   MOCK_METHOD(void, SendAccessibilityHoverEvent, (int x, int y), (override));
   MOCK_METHOD(void, RefreshAccessibilityManagerClickEvent, (), (override));
+
 #ifdef OHOS_EX_REFRESH_IFRAME
   MOCK_METHOD(void, WebExtensionContextMenuIsIframe, (), (override));
   MOCK_METHOD(bool, WebExtensionContextMenuReloadFocusedFrame, (), (override));
@@ -776,6 +777,16 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(bool, NeedToFireBeforeUnloadOrUnloadEvents, (), (override));
   MOCK_METHOD(void, DispatchBeforeUnload, (), (override));
 #endif
+
+  MOCK_METHOD(void,
+              JavaScriptOnDocumentStartByOrder,
+              (const ScriptItems& ScriptItems, const ScriptItemsByOrder& ScriptItemsByOrder),
+              (override));
+
+  MOCK_METHOD(void,
+              JavaScriptOnDocumentEndByOrder,
+              (const ScriptItems& ScriptItems, const ScriptItemsByOrder& ScriptItemsByOrder),
+              (override));
 };
 
 class MockNWebTouchPointInfo : public NWebTouchPointInfo {

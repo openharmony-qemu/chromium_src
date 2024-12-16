@@ -860,16 +860,36 @@ void NWebPreferenceDelegate::PutJavaScriptOnDocumentStart(const ScriptItems& scr
   script_items_start_ = scriptItems;
 }
 
+void NWebPreferenceDelegate::PutJavaScriptOnDocumentStartByOrder(const ScriptItems& scriptItems,
+      const ScriptItemsByOrder& scriptItemsByOrder) {
+  script_items_start_ = scriptItems;
+  script_items_start_by_order_ = scriptItemsByOrder;
+}
+
 ScriptItems NWebPreferenceDelegate::GetJavaScriptOnDocumentStart() {
   return script_items_start_;
+}
+
+ScriptItemsByOrder NWebPreferenceDelegate::GetJavaScriptOnDocumentStartByOrder() {
+  return script_items_start_by_order_;
 }
 
 void NWebPreferenceDelegate::PutJavaScriptOnDocumentEnd(const ScriptItems& scriptItems) {
   script_items_end_ = scriptItems;
 }
 
+void NWebPreferenceDelegate::PutJavaScriptOnDocumentEndByOrder(const ScriptItems& scriptItems,
+      const ScriptItemsByOrder& scriptItemsByOrder) {
+  script_items_end_ = scriptItems;
+  script_items_end_by_order_ = scriptItemsByOrder;
+}
+
 ScriptItems NWebPreferenceDelegate::GetJavaScriptOnDocumentEnd() {
   return script_items_end_;
+}
+
+ScriptItemsByOrder NWebPreferenceDelegate::GetJavaScriptOnDocumentEndByOrder() {
+  return script_items_end_by_order_;
 }
 #endif
 

@@ -723,6 +723,58 @@ void NWebHandlerDelegate::OnMainFrameChanged(
 /* CefFrameHandler method end */
 
 /* CefLifeSpanHandler methods begin */
+void NWebHandlerDelegate::InjectJsToWebInner(
+    JsRunTime time,
+    ScriptItems& scriptItems,
+    ScriptItemsByOrder& scriptItemsByOrder) {
+  if (time == JsRunTime::Start) {
+    scriptItems = preference_delegate_->GetJavaScriptOnDocumentStart();
+    scriptItemsByOrder = preference_delegate_->GetJavaScriptOnDocumentStartByOrder();
+    if (scriptItems.size() <= 0) {
+      return;
+    }
+    main_browser_->GetHost()->RemoveJavaScriptOnDocumentStart();
+  } else if (time == JsRunTime::End) {
+    scriptItems = preference_delegate_->GetJavaScriptOnDocumentEnd();
+    scriptItemsByOrder = preference_delegate_->GetJavaScriptOnDocumentEndByOrder();
+    if (scriptItems.size() <= 0) {
+      return;
+    }
+    main_browser_->GetHost()->RemoveJavaScriptOnDocumentEnd();
+  }
+
+  if (scriptItemsByOrder.size() <= 0) {
+    for (const auto& item: scriptItems) {
+      scriptItemsByOrder.push_back(item.first);
+    }
+  }
+}
+
+void NWebHandlerDelegate::InjectJsToWeb(JsRunTime time) {
+  ScriptItems scriptItems;
+  ScriptItemsByOrder scriptItemsByOrder;
+
+  InjectJsToWebInner(time, scriptItems, scriptItemsByOrder);
+
+  for (const auto& item: scriptItemsByOrder) {
+    if (scriptItems.find(item) == scriptItems.end()) {
+        continue;
+    }
+    CefString script = item;
+    std::vector<CefString> scriptRules;
+    for (const std::string& rule : scriptItems[item]) {
+      CefString cefRule;
+      cefRule.FromString(rule);
+      scriptRules.push_back(cefRule);
+    }
+    if (time == JsRunTime::Start) {
+      main_browser_->GetHost()->JavaScriptOnDocumentStart(script, scriptRules);
+    } else if (time == JsRunTime::End) {
+      main_browser_->GetHost()->JavaScriptOnDocumentEnd(script, scriptRules);
+    }
+  }
+}
+
 void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
   LOG(INFO) << "NWebHandlerDelegate::OnAfterCreated IsPopup "
             << browser->IsPopup();
@@ -786,35 +838,8 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
 #endif
 
 #if defined(OHOS_JSPROXY)
-        auto scriptItemsStart = preference_delegate_->GetJavaScriptOnDocumentStart();
-        if (scriptItemsStart.size() > 0) {
-          main_browser_->GetHost()->RemoveJavaScriptOnDocumentStart();
-          for (const auto& item: scriptItemsStart) {
-            CefString script = item.first;
-            std::vector<CefString> scriptRules;
-            for (const std::string& rule : item.second) {
-              CefString cefRule;
-              cefRule.FromString(rule);
-              scriptRules.push_back(cefRule);
-            }
-            main_browser_->GetHost()->JavaScriptOnDocumentStart(script, scriptRules);
-          }
-        }
-
-        auto scriptItemsEnd = preference_delegate_->GetJavaScriptOnDocumentEnd();
-        if (scriptItemsEnd.size() > 0) {
-          main_browser_->GetHost()->RemoveJavaScriptOnDocumentEnd();
-          for (const auto& item: scriptItemsEnd) {
-            CefString script = item.first;
-            std::vector<CefString> scriptRules;
-            for (const std::string& rule : item.second) {
-              CefString cefRule;
-              cefRule.FromString(rule);
-              scriptRules.push_back(cefRule);
-            }
-            main_browser_->GetHost()->JavaScriptOnDocumentEnd(script, scriptRules);
-          }
-        }
+        InjectJsToWeb(JsRunTime::Start);
+        InjectJsToWeb(JsRunTime::End);
 #endif
       }
       main_browser_->GetHost()->SetNativeWindow(window_);

@@ -320,6 +320,11 @@ class CONTENT_EXPORT ContentRendererClient {
   // This method may invalidate the frame.
   virtual void RunScriptsAtDocumentEnd(RenderFrame* render_frame) {}
 
+#if defined(OHOS_JSPROXY)
+  // Notifies that the head element is ready in the frame's document.
+  virtual void RunScriptsAtHeadReady(RenderFrame* render_frame) {}
+#endif
+
   // Notifies that the window.onload event is about to fire.
   // This method may invalidate the frame.
   virtual void RunScriptsAtDocumentIdle(RenderFrame* render_frame) {}

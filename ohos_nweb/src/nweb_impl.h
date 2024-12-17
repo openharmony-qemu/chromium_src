@@ -300,6 +300,8 @@ class NWebImpl : public NWeb {
                                  double vy,
                                  const std::vector<int32_t>& pressedCodes) override;
   bool ScrollByWithResult (float delta_x, float delta_y) override;
+  void ScrollToWithAnime(float x, float y, int32_t duration) override;
+  void ScrollByWithAnime(float delta_x, float delta_y, int32_t duration) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
   bool GetCertChainDerData(std::vector<std::string>& certChainData,
@@ -608,6 +610,7 @@ class NWebImpl : public NWeb {
       const std::map<std::string, std::string>& actionArguments) override;
   void SendAccessibilityHoverEvent(int32_t x, int32_t y) override;
   void SetSurfaceDensity(const double& density) override;
+  static void TrimMemoryByPressureLevel(int32_t memoryLevel);
 
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

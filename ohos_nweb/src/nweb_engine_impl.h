@@ -84,6 +84,8 @@ public:
 
   void SetWholeWebDrawing() override;
 
+  void TrimMemoryByPressureLevel(int32_t MemoryLevel) override;
+
 private:
   std::shared_ptr<NWebDataBase> nweb_data_base_ = nullptr;
   std::shared_ptr<NWebWebStorage> nweb_web_storage_ = nullptr;

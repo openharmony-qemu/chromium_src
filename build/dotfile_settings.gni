@@ -39,5 +39,6 @@ build_dotfile_settings = {
     "//build/toolchain/win/win_toolchain_data.gni",
     "//build/toolchain/zos/BUILD.gn",
     "//build/util/branding.gni",
+    "//build/util/lastchange.gni", # ohos add to generate last change when build
   ]
 }

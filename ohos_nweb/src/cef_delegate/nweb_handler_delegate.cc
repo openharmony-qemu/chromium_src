@@ -713,6 +713,12 @@ void NWebHandlerDelegate::OnMainFrameChanged(
   if (new_frame && browser && browser->IsValid() && preference_delegate_.get()) {
     preference_delegate_->WebPreferencesChanged();
   }
+
+  if (nweb_handler_) {
+    nweb_handler_->OnCursorChange(
+      OHOS::NWeb::CursorType::CT_POINTER, std::make_shared<NWebCursorInfoImpl>());
+    nweb_handler_->OnQuickMenuDismissed();
+  }
 }
 /* CefFrameHandler method end */
 
@@ -2144,6 +2150,28 @@ bool NWebHandlerDelegate::DoBrowserControlsShrinkRendererSize() {
 }
 // #endif OHOS_EX_TOPCONTROLS
 
+#ifdef OHOS_EX_PULL_TO_REFRESH
+bool NWebHandlerDelegate::OnPullToRefreshAction(int action) {
+  if (web_app_client_extension_listener_ == nullptr ||
+      web_app_client_extension_listener_->OnPullToRefreshAction == nullptr) {
+    return false;
+  }
+
+  return web_app_client_extension_listener_->OnPullToRefreshAction(
+      action, web_app_client_extension_listener_->nweb_id);
+}
+
+void NWebHandlerDelegate::OnPullToRefreshPull(float offset_x, float offset_y) {
+  if (web_app_client_extension_listener_ == nullptr ||
+      web_app_client_extension_listener_->OnPullToRefreshPull == nullptr) {
+    return;
+  }
+
+  web_app_client_extension_listener_->OnPullToRefreshPull(
+      offset_x, offset_y, web_app_client_extension_listener_->nweb_id);
+}
+#endif
+
 void NWebHandlerDelegate::OnReceivedIcon(const void* data,
                                          size_t width,
                                          size_t height,
@@ -2286,6 +2314,18 @@ void NWebHandlerDelegate::OnScaleChanged(CefRefPtr<CefBrowser> browser,
 #endif  // #ifdef OHOS_PAGE_UP_DOWN
 }
 
+void NWebHandlerDelegate::OnScaleInited(CefRefPtr<CefBrowser> browser,
+                                         float page_scale_factor) {
+  if (!render_handler_) {
+    LOG(ERROR) << "render handler is nullptr";
+    return;
+  }
+#ifdef OHOS_PAGE_UP_DOWN
+  LOG(INFO) << "OnScaleInited scale: " << page_scale_factor;
+  scale_ = page_scale_factor;
+#endif  // #ifdef OHOS_PAGE_UP_DOWN
+}
+
 #if defined(OHOS_INPUT_EVENTS)
 bool NWebHandlerDelegate::OnCursorChange(
     CefRefPtr<CefBrowser> browser,
@@ -2355,13 +2395,11 @@ bool NWebHandlerDelegate::OnSetFocus(CefRefPtr<CefBrowser> browser,
                                      FocusSource source) {
   if (nweb_handler_ != nullptr) {
 #ifdef OHOS_FOCUS
-    LOG(INFO) << "NWebHandlerDelegate::OnSetFocus report arkweb get focus , source = " << source;
     if (!nweb_handler_->OnFocus(static_cast<NWebFocusSource>(source))) {
-      LOG(DEBUG) << "nweb_handler request focus unsuccessful, need't to set "
-                    "focus, source = "
-                 << source;
       return true;
     }
+    LOG(INFO) << "nweb_handler request focus successful, source = "
+              << source << ", nweb_id = " << nweb_id_;
     focusState_ = true;
 #endif  // OHOS_FOCUS
   }

@@ -13,6 +13,11 @@
  * limitations under the License.
  */
 
+// Based on find_helper.cc originally written by
+// Copyright 2012 The Chromium Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 #include "nweb_find_delegate.h"
 #include "cef/include/cef_browser.h"
 #include "nweb_find_callback.h"

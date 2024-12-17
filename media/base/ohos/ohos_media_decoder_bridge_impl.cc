@@ -392,7 +392,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBuffer(
     LOG(ERROR)
         << "MediaCodecDecoderBridgeImpl::QueueInputBuffer memcpy failed.";
     return DecoderAdapterCode::DECODER_ERROR;
-  } 
+  }
   DecoderAdapterCode ret = PushInbufferDec(index, inputSize, presentation_time);
 
   PopInqueueDec();

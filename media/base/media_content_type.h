@@ -21,6 +21,9 @@ enum class MediaContentType {
   // Type indicating that a player is a Pepper instance. MediaSession may duck
   // the player instead of pausing it.
   Pepper,
+#if defined(OHOS_MEDIA_POLICY)
+  Snippet,
+#endif // defined(OHOS_MEDIA_POLICY)
   // Type indicating that a player cannot be controlled. MediaSession will take
   // audio focus when the player joins but will not let it respond to audio
   // focus changes.

@@ -905,7 +905,12 @@ void RegisterClippedVisualViewportSelectionBounds(
   [[nodiscard]] base::AutoReset<bool> SimulateSyncingDeltasForTesting() {
     return base::AutoReset<bool>(&syncing_deltas_for_test_, true);
   }
-
+  // cherry-pick from google begin
+  // https://chromium-review.googlesource.com/c/chromium/src/+/4546241
+  bool WaitedForCommitForTesting() const {
+    return waited_for_protected_sequence_;
+  }
+  // cherry-pick from google end
   void IncrementVisualUpdateDuration(base::TimeDelta visual_update_duration);
 
 #if BUILDFLAG(IS_OHOS)

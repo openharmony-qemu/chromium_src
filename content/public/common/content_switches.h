@@ -326,6 +326,9 @@ CONTENT_EXPORT extern const char kOhosCustomScheme[];
 #endif
 #ifdef OHOS_SCHEME_HANDLER
 CONTENT_EXPORT extern const char kOhSchemeHandlerCustomScheme[];
+#ifdef OHOS_EX_PULL_TO_REFRESH
+CONTENT_EXPORT extern const char kEnableNwebExPullToRefresh[];
+#endif
 #endif
 #endif
 

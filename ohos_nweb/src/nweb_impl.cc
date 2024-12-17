@@ -25,6 +25,7 @@
 #include "base/lazy_instance.h"
 #include "base/logging.h"
 #include "base/report_loss_frame.h"
+#include "base/ohos/sys_info_utils.h"
 
 #ifdef OHOS_PERFORMANCE_MEMORY_THRESHOLD
 #include "base/memory/memory_pressure_listener.h"
@@ -359,11 +360,17 @@ void InitialWebEngineArgs(
   web_engine_args.emplace_back("--no-sandbox");
   web_engine_args.emplace_back("--use-mobile-user-agent");
   web_engine_args.emplace_back("--enable-gpu-rasterization");
-  web_engine_args.emplace_back("--enable-viewport");
+  if (!base::ohos::IsPcDevice()) {
+    web_engine_args.emplace_back("--enable-viewport");
+  }
   web_engine_args.emplace_back(
       "--browser-subprocess-path=/system/bin/web_render");
   web_engine_args.emplace_back("--zygote-cmd-prefix=/system/bin/web_render");
   web_engine_args.emplace_back("--remote-debugging-port=9222");
+  web_engine_args.emplace_back("--enable-touch-drag-drop");
+#if defined(OHOS_INPUT_EVENTS)
+  web_engine_args.emplace_back("--enable-smooth-scrolling");
+#endif
 #if defined(OHOS_SCROLLBAR)
   static float ratio = -1.0f;
   if (ratio < 0) {
@@ -373,7 +380,6 @@ void InitialWebEngineArgs(
     web_engine_args.emplace_back("--virtual-pixel-ratio=" + std::to_string(ratio));
   }
 #endif
-  web_engine_args.emplace_back("--enable-touch-drag-drop");
   web_engine_args.emplace_back("--gpu-rasterization-msaa-sample-count=1");
   // enable aggressive domstorage flushing to minimize data loss
   // http://crbug.com/479767
@@ -3486,6 +3492,30 @@ void NWebImpl::OnTextSelected() {
   nweb_delegate_->OnTextSelected();
 }
 #endif
+
+
+#ifdef BUILDFLAG(IS_OHOS)
+void NWebImpl::OnConfigurationUpdated(
+    std::shared_ptr<NWebSystemConfiguration> configuration) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_I("NWebImpl::OnConfigurationUpdated nweb_delegate_ is nullptr");
+    return;
+  }
+  if (configuration->GetThemeFlags() &
+      static_cast<uint8_t>(SystemThemeFlags::THEME_FONT)) {
+#ifdef OHOS_THEME_FONT
+    for (content::RenderProcessHost::iterator host_iterator =
+             content::RenderProcessHost::AllHostsIterator();
+         !host_iterator.IsAtEnd(); host_iterator.Advance()) {
+      content::RenderProcessHost* host = host_iterator.GetCurrentValue();
+      if (host->IsInitializedAndNotDead()) {
+        host->OnThemeFontChange();
+      }
+    }
+#endif  // OHOS_THEME_FONT
+  }
+}
+#endif  //  IS_OHOS
 
 #ifdef OHOS_SOFTWARE_COMPOSITOR
 bool NWebImpl::WebPageSnapshot(const char* id,

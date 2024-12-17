@@ -267,6 +267,10 @@ void AsyncLayerTreeFrameSink::DidNotProduceFrame(const viz::BeginFrameAck& ack,
                          TRACE_ID_GLOBAL(ack.trace_id),
                          TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT,
                          "step", "DidNotProduceFrame", "reason", reason);
+  std::string trace_content = "step: DidNotProduceFrame, reason: " + std::to_string(static_cast<int32_t>(reason));
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+      std::to_string(ack.trace_id), "trace_content", trace_content);
+
   bool frame_completed = reason == FrameSkippedReason::kNoDamage;
   bool waiting_on_main = reason == FrameSkippedReason::kWaitingOnMain;
   power_mode_voter_.OnFrameSkipped(frame_completed, waiting_on_main);
@@ -315,6 +319,8 @@ void AsyncLayerTreeFrameSink::OnBeginFrame(
                            TRACE_ID_GLOBAL(args.trace_id),
                            TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT,
                            "step", "ReceiveBeginFrameDiscard");
+    OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+      std::to_string(args.trace_id), "step", "ReceiveBeginFrameDiscard");
     // We had a race with SetNeedsBeginFrame(false) and still need to let the
     // sink know that we didn't use this BeginFrame. OnBeginFrame() can also be
     // called to deliver presentation feedback.

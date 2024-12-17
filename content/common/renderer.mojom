@@ -8,6 +8,7 @@ import "content/common/agent_scheduling_group.mojom";
 import "content/common/native_types.mojom";
 import "ipc/ipc.mojom";
 import "mojo/public/mojom/base/generic_pending_receiver.mojom";
+import "mojo/public/mojom/base/file.mojom";
 import "mojo/public/mojom/base/time.mojom";
 import "services/network/public/mojom/network_types.mojom";
 import "services/network/public/mojom/attribution.mojom";
@@ -191,6 +192,11 @@ interface Renderer {
  // Set whether web or OS-level Attribution Reporting is supported.
   [EnableIf=is_android]
   SetAttributionReportingSupport(network.mojom.AttributionSupport attribution_support);
+
+  // Notify renderer that theme font has been changed.
+  // OHOS_THEME_FONT
+  [EnableIf=ohos_theme_font]
+  UpdateThemeFontFile(mojo_base.mojom.File? theme_font);
 
   //#ifdef OHOS_I18N
   [EnableIf=ohos_i18n]

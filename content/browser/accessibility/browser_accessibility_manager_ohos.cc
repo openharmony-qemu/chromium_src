@@ -91,6 +91,7 @@ void BrowserAccessibilityManagerOHOS::FireBlinkEvent(
       break;
     case ax::mojom::Event::kTreeChanged:
     case ax::mojom::Event::kLocationChanged:
+    case ax::mojom::Event::kLayoutComplete:
       if (GetRootAccessibilityId() == accessibilityId) {
         SendAccessibilityEvent(accessibilityId,
                                OHOS::NWeb::AccessibilityEventType::PAGE_CHANGE);

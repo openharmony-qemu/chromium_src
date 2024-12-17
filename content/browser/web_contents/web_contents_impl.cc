@@ -6362,6 +6362,12 @@ void WebContentsImpl::DidFinishNavigation(NavigationHandle* navigation_handle) {
       NotifyTitleUpdateForEntry(entry);
     }
   }
+
+#if defined(OHOS_EX_PULL_TO_REFRESH)
+  if (navigation_handle->IsInPrimaryMainFrame() && view_) {
+    view_->DidStopRefresh();
+  }
+#endif
 }
 
 void WebContentsImpl::DidFailLoadWithError(
@@ -10590,14 +10596,17 @@ void WebContentsImpl::UpdateRenderAcceptLanguageIfNeed(
   std::string lang = command_line.GetSwitchValueASCII(::switches::kLang);
   std::regex pattern("-");
   std::smatch match;
+  std::string current_accept_language;
   if (std::regex_search(lang, match, pattern)) {
     std::string region = match.suffix();
-    std::string current_accept_language =
+    current_accept_language =
         base::ohos::ComputeLanguageByRegion(region);
+    } else {
+      current_accept_language = base::ohos::ComputeLanguageByRegion("");
+    }
     if (current_accept_language != "" &&
         current_accept_language != old_accept_language) {
       renderer_preferences_.accept_languages = current_accept_language;
-    }
   }
 }
 #endif

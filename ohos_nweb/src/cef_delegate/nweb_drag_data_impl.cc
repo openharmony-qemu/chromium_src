@@ -18,6 +18,7 @@
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
 #include "base/logging.h"
+#include "base/trace_event/trace_event.h"
 #include "cef/libcef/common/drag_data_impl.h"
 #include "content/public/common/drop_data.h"
 #include "ohos_nweb/include/nweb.h"
@@ -53,6 +54,7 @@ namespace {
   constexpr int IMAGE_EXPAND_PADDING = 11;
   constexpr int IMAGE_SHADOW_COLOR = 0xA0000000;
   constexpr int IMAGE_SHADOW_DY = 3;
+  constexpr int DEFAULT_MIN_HEIGHT_THRESHOLD = 2;
 }
 
 namespace OHOS::NWeb {
@@ -168,7 +170,11 @@ SkPath NWebDragDataImpl::GetShadowPath(int width, int height) {
     return out_path;
   }
 
-  bool is_oneline = ((start_edge_top_.y == end_edge_top_.y) && (start_edge_bottom_.y == end_edge_bottom_.y));
+  auto ohMinHeightThreshold = ToOhCoordinate(DEFAULT_MIN_HEIGHT_THRESHOLD);
+  bool is_oneline = ((start_edge_top_.y == end_edge_top_.y) && (start_edge_bottom_.y == end_edge_bottom_.y)) ||
+    (std::abs(start_edge_bottom_.y - start_edge_top_.y - drag_clip_height_) < ohMinHeightThreshold &&
+    drag_clip_height_ > ohMinHeightThreshold);
+
   bool is_both_out_clip_region = (start_edge_top_.y < 0) &&
     (std::abs(end_edge_bottom_.y - (drag_image_origin_point_.y + drag_clip_height_)) > ToOhCoordinate(WEIRD_PADDING));
   bool is_start_line_compelete = (start_edge_top_.y >= 0) &&
@@ -476,6 +482,7 @@ bool NWebDragDataImpl::GetPixelMapSetting(const void** data, size_t& len, int& w
   height = image_bitmap->height();
   bool isTransparent = IsTransparent(*image_bitmap);
   if (!isTransparent && width != 0 && height != 0) {
+    TRACE_EVENT0("base", "NWebDragDataImpl::GenerateOhosDragBitmapFromOrigin");
     GenerateOhosDragBitmapFromOrigin(*image_bitmap, out_bitmap, width, height);
   } else {
     out_bitmap = *image_bitmap;

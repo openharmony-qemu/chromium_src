@@ -1470,7 +1470,6 @@ void NWebDelegate::OnPause() {
   }
 
   // Remove focus from the browser.
-  LOG(INFO) << "NWebDelegate::OnPause set web blur, nweb_id = " << nweb_id_;
   GetBrowser()->GetHost()->SetFocus(false);
 
 #if defined(OHOS_INPUT_EVENTS)
@@ -2097,8 +2096,8 @@ void NWebDelegate::RegisterArkJSfunction(
       handler_delegate_->SavaArkJSFunctionForPopup(
           object_name, method_list, async_method_list, object_id, permission);
     }
-    return;
-  } else if (!GetBrowser()) {
+  }
+  if (!GetBrowser()) {
     LOG(ERROR) << "NWebDelegate::RegisterArkJSfunction fail due to "
                   "GetBrowser() return null, the object_name is "
                << object_name.c_str();

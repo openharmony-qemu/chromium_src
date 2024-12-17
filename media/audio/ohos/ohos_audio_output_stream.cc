@@ -46,6 +46,10 @@ int32_t AudioRendererOptions::GetRenderFlags() {
   return renderer_flags_;
 }
 
+AudioAdapterConcurrencyMode AudioRendererOptions::GetConcurrencyMode() {
+  return concurrency_mode_;
+}
+
 AudioRendererCallback::AudioRendererCallback(
     content::MediaSessionImpl* media_session,
     const scoped_refptr<base::SingleThreadTaskRunner>& task_runner)
@@ -259,6 +263,15 @@ bool OHOSAudioOutputStream::Open() {
           ? AudioAdapterStreamUsage::STREAM_USAGE_VOICE_COMMUNICATION
           : AudioAdapterStreamUsage::STREAM_USAGE_MEDIA;
   rendererOptions->renderer_flags_ = 0;
+  rendererOptions->concurrency_mode_ = AudioAdapterConcurrencyMode::INVALID;
+  if (weakMediaSession_) {
+    media::MediaContentType contentType = weakMediaSession_.get()->getMediaContentType();
+    if (contentType == media::MediaContentType::Transient) {
+      rendererOptions->concurrency_mode_ = AudioAdapterConcurrencyMode::DUCK_OTHERS;
+    } else if (contentType == media::MediaContentType::Snippet) {
+      rendererOptions->concurrency_mode_ = AudioAdapterConcurrencyMode::PAUSE_OTHERS;
+    }
+  }
 
   if (!InitRender(rendererOptions)) {
     return false;
@@ -541,6 +554,7 @@ void OHOSAudioOutputStream::PumpSamples() {
             if (!audio_renderer_->Start()) {
               LOG(ERROR) << "Restarted audioStream but failed";
             }
+            writeFailed = false;
             isSuspended_ = false;
             break;
           }

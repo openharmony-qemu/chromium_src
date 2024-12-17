@@ -35,6 +35,9 @@ void MediaSessionController::SetMetadata(
     bool has_audio,
     bool has_video,
     media::MediaContentType media_content_type) {
+#if defined(OHOS_MEDIA_POLICY)
+  media_session_->SetMediaContentType(media_content_type);
+#endif
   has_audio_ = has_audio;
   has_video_ = has_video;
   media_content_type_ = media_content_type;
@@ -46,7 +49,10 @@ bool MediaSessionController::OnPlaybackStarted() {
   is_paused_ = false;
   is_playback_in_progress_ = true;
 #if defined(OHOS_MEDIA_POLICY)
-  media_session_->SetPlayingState(true);
+  if (media_session_) {
+    media_session_->SetPlayingState(true);
+    media_session_->SetPauseByAvsession(false);
+  }
   LOG(INFO) << "MediaSessionController OnPlaybackStarted SetPlayingState true";
 #endif
   return AddOrRemovePlayer();
@@ -205,14 +211,14 @@ void MediaSessionController::OnPlaybackPaused(bool reached_end_of_stream) {
   LOG(INFO) << "MediaSessionController OnPlaybackStarted SetPlayingState false";
 #endif
   if (reached_end_of_stream) {
+    is_playback_in_progress_ = false;
+    AddOrRemovePlayer();
+  }
 #if defined(OHOS_MEDIA_AVSESSION)
   if (media_session_) {
     media_session_->SetEndOfMedia(reached_end_of_stream);
   }
 #endif // defined(OHOS_MEDIA_AVSESSION)
-    is_playback_in_progress_ = false;
-    AddOrRemovePlayer();
-  }
 
   // We check for suspension here since the renderer may issue its own pause
   // in response to or while a pause from the browser is in flight.
@@ -273,6 +279,13 @@ bool MediaSessionController::IsMediaSessionNeeded() const {
 
   if (!is_playback_in_progress_)
     return false;
+
+#if defined(OHOS_MEDIA_AVSESSION)
+  if (media_content_type_ == media::MediaContentType::Transient) {
+      LOG(INFO) << __func__<< ", media_content_type_: media::MediaContentType::Transient";
+      return false;
+  }
+#endif // defined(OHOS_MEDIA_AVSESSION)
 
   // We want to make sure we do not request audio focus on a muted tab as it
   // would break user expectations by pausing/ducking other playbacks.

@@ -97,3 +97,38 @@ fuzzer_test("nweb_delegate_fuzzer") {
     "//ohos_nweb:nweb_sources",
   ]
 }
+
+fuzzer_test("native_loader_fuzzer") {
+  sources = [
+    "fuzztest/native_loader_fuzzer.cc",
+  ]
+  include_dirs = [
+    "//third_party/blink",
+    "//cef",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//content/public/common",
+    "ohos_nweb:cef_nweb",
+    "ohos_nweb:nweb_sources",
+  ]
+}
+
+fuzzer_test("html_plugin_element_fuzzer") {
+  sources = [
+    "fuzztest/html_plugin_element_fuzzer.cc",
+  ]
+  include_dirs = [
+    "//cef",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//content/public/common",
+    "ohos_nweb:cef_nweb",
+    "ohos_nweb:nweb_sources",
+  ]
+}

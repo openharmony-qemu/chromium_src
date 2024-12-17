@@ -52,7 +52,7 @@ class NWebDelegateTest : public ::testing::Test {
     argc_ = 0;
     if (argv_) {
       delete[] argv_;
-      argv_ = NULL;
+      argv_ = nullptr;
     }
   }
 
@@ -78,7 +78,7 @@ class NWebDelegateTest : public ::testing::Test {
 
  private:
   int argc_ = 0;
-  char** argv_ = NULL;
+  char** argv_ = nullptr;
   std::list<std::string> web_engine_args_;
 
  public:

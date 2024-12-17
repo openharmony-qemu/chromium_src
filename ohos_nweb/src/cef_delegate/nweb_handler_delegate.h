@@ -469,6 +469,8 @@ class NWebHandlerDelegate : public CefClient,
   void OnScaleChanged(CefRefPtr<CefBrowser> browser,
                       float old_page_scale_factor,
                       float new_page_scale_factor) override;
+  void OnScaleInited(CefRefPtr<CefBrowser> browser,
+                      float page_scale_factor) override;
   void OnContentsBrowserZoomChange(double zoom_factor,
                                    bool can_show_bubble) override;
 #if defined(OHOS_INPUT_EVENTS)
@@ -763,6 +765,11 @@ class NWebHandlerDelegate : public CefClient,
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
   bool IsWebPaintedForSnapshot () { return isWebPaintedForSnapshot_; }
   void SetWebPaintedForSnapshot() { isWebPaintedForSnapshot_ = true; }
+#endif
+
+#ifdef OHOS_EX_PULL_TO_REFRESH
+  bool OnPullToRefreshAction(int action) override;
+  void OnPullToRefreshPull(float offset_x, float offset_y) override;
 #endif
 
  void SetPopupSurface(void* popup_window);

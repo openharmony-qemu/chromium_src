@@ -33,6 +33,9 @@
 #include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/blink/public/mojom/favicon/favicon_url.mojom.h"
 #include "third_party/blink/public/mojom/mediasession/media_session.mojom.h"
+#if defined(OHOS_MEDIA_POLICY)
+#include "media/base/media_content_type.h"
+#endif // defined(OHOS_MEDIA_POLICY)
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/scoped_java_ref.h"
@@ -368,14 +371,16 @@ class MediaSessionImpl : public MediaSession,
   enum NWebMediaSessionState { NOINITIAL, NONEED, NEED };
   NWebPlaybackState NWebGetState();
   
-  void SetWebviewShow(bool show);
-  void SetWebviewShowForAudio(bool show);
-  void SetWebviewShowForVideo(bool show);
   bool IsEndOfMedia();
   void SetEndOfMedia(bool end_of_media);
   bool GetPlayingState();
   void SetPlayingState(bool playingState);
   bool GetMuteState();
+  bool IsPauseByAvsession();
+  void SetPauseByAvsession(bool is_pause);
+  void SetWebviewShow(bool show, bool is_special_for_audio);
+  void SetMediaContentType(media::MediaContentType media_content_type) { media_content_type_ = media_content_type; }
+  media::MediaContentType getMediaContentType() { return media_content_type_; }
 
   void SetSessionState(NWebMediaSessionState sessionState);
   NWebMediaSessionState GetSessionState();
@@ -623,6 +628,10 @@ class MediaSessionImpl : public MediaSession,
     // Cache of images that have been requested by clients.
     base::flat_map<GURL, SkBitmap> image_cache_;
   };
+
+#if defined(OHOS_MEDIA_POLICY)
+  media::MediaContentType media_content_type_;
+#endif
 
   // Returns the PageData for the specified |page|.
   PageData& GetPageData(content::Page& page) const;

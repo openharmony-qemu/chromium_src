@@ -17,7 +17,7 @@
 #define OHOS_NWEB_SRC_NWEB_APP_CLIENT_EXTENSION_CALLBACK_H_
 
 #include <map>
-#include <stddef.h>
+#include <cstddef>
 #include <string>
 
 struct NWebAppClientExtensionCallback {
@@ -60,6 +60,11 @@ struct NWebAppClientExtensionCallback {
 #endif
 
   void (*OnRequestOpenDevTools)(int32_t nweb_id);
+
+#ifdef OHOS_EX_PULL_TO_REFRESH
+  bool (*OnPullToRefreshAction)(int action, int nweb_id);
+  void (*OnPullToRefreshPull)(float offset_x, float offset_y, int nweb_id);
+#endif
 };
 
 #endif  // OHOS_NWEB_SRC_NWEB_APP_CLIENT_EXTENSION_CALLBACK_H_

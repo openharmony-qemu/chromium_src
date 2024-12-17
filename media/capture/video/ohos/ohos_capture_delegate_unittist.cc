@@ -17,12 +17,12 @@
 #define private public
 #include "media/capture/video/ohos/ohos_capture_delegate.h"
 
-#include <stddef.h>
+#include <cstddef>
 
 #include <utility>
 
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 #include "base/functional/bind.h"
 #include "base/task/single_thread_task_runner.h"
 #include "build/build_config.h"

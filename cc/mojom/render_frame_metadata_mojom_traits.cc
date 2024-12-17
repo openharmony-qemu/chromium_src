@@ -46,6 +46,9 @@ bool StructTraits<
   out->root_overflow_y_hidden = data.root_overflow_y_hidden();
   out->has_transparent_background = data.has_transparent_background();
 #endif
+#if BUILDFLAG(IS_OHOS)
+  out->root_overflow_y_hidden = data.root_overflow_y_hidden();
+#endif
   return data.ReadRootScrollOffset(&out->root_scroll_offset) &&
          data.ReadSelection(&out->selection) &&
          data.ReadDelegatedInkMetadata(&out->delegated_ink_metadata) &&

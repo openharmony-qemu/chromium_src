@@ -111,6 +111,10 @@ class CC_EXPORT ProxyMain : public Proxy {
   bool RequestedAnimatePending() override;
   void SetDeferMainFrameUpdate(bool defer_main_frame_update) override;
   void SetPauseRendering(bool pause_rendering) override;
+  // cherry-pick from google begin
+  // https://chromium-review.googlesource.com/c/chromium/src/+/4546241
+  void SetInputResponsePending() override;
+  // cherry-pick from google end
   bool StartDeferringCommits(base::TimeDelta timeout,
                              PaintHoldingReason reason) override;
   void StopDeferringCommits(PaintHoldingCommitTrigger) override;
@@ -181,6 +185,10 @@ class CC_EXPORT ProxyMain : public Proxy {
   absl::optional<PaintHoldingReason> paint_holding_reason_;
 
   bool pause_rendering_;
+  // cherry-pick from google begin
+  // https://chromium-review.googlesource.com/c/chromium/src/+/4546241
+  bool block_on_next_commit_ = false;
+  // cherry-pick from google end
 
   // Only used when defer_commits_ is active and must be set in such cases.
   base::TimeTicks commits_restart_time_;

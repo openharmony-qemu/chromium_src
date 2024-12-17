@@ -48,6 +48,7 @@ BASE_EXPORT std::string OsVersion();
 
 BASE_EXPORT std::string BaseOsName();
 
+BASE_EXPORT std::string ApiVersion();
 
 }  // namespace ohos
 }  // namespace base

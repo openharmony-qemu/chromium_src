@@ -16,9 +16,10 @@
 #ifndef OHOS_NWEB_SRC_NWEB_APP_CLIENT_EXTENSION_CALLBACK_H_
 #define OHOS_NWEB_SRC_NWEB_APP_CLIENT_EXTENSION_CALLBACK_H_
 
-#include <map>
 #include <cstddef>
+#include <map>
 #include <string>
+#include "ohos_nweb/src/capi/nweb_icon_size.h"
 
 struct NWebAppClientExtensionCallback {
   size_t struct_size = sizeof(NWebAppClientExtensionCallback);
@@ -29,6 +30,11 @@ struct NWebAppClientExtensionCallback {
                                int color_type,
                                int alpha_type,
                                int nweb_id);
+  void (*OnTouchIconUrlWithSizesReceived)(const char* image_url,
+                                          bool precomposed,
+                                          const IconSize* sizes,
+                                          size_t sizes_count,
+                                          int nweb_id);
   void (*OnLoadStarted)(bool toDifferentDocument, int nweb_id);
   void (*OnActivityStateChanged)(int state, int type, int nweb_id);
   void (*OnHidePasswordAutofillPopup)(int nweb_id);

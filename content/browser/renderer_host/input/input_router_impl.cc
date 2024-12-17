@@ -679,7 +679,7 @@ void InputRouterImpl::FilterAndSendWebInputEvent(
   blink::mojom::InputEventResultState filtered_state =
       client_->FilterInputEvent(input_event, latency_info);
   if (WasHandled(filtered_state)) {
-#if BUILDFLAG(IS_OHOS)
+#if defined(IS_OHOS)
     LOG(INFO) << "event was filtered for " << InputEventResultStateToString(filtered_state);
     TRACE_EVENT1("input", "InputEventFiltered",
                  InputEventResultStateToString(filtered_state));

@@ -39,7 +39,6 @@
 #include <string>
 #include <unordered_set>
 #include "capi/nweb_app_client_extension_callback.h"
-#include "capi/nweb_extension_callback.h"
 #include "capi/nweb_icon_size.h"
 #include "nweb_download_callback.h"
 #include "nweb_javascript_result_callback.h"

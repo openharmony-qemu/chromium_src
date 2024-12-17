@@ -51,12 +51,13 @@ constexpr int kOverlayScrollbarHotSize = 20;
 constexpr int kOverlayScrollbarHotSizePc = 0;
 constexpr float kOverlayScrollbarCornerRatio = 1.2f;
 int scrollbar_hot_size_ = kOverlayScrollbarHotSize;
-constexpr int kForceScrollbarActiveWidth = 8;
-constexpr int kForceScrollbarInactiveWidth = 4;
-constexpr int kForceScrollbarActiveOffset = 4;
-constexpr int kForceScrollbarInactiveOffset = 8;
-constexpr int kForceScrollbarActiveRadius = 4;
-constexpr int kForceScrollbarInactiveRadius = 2;
+// 1 vp = 1.5 * px
+constexpr int kForceScrollbarActiveWidth = 12;      // 8 * 1.5
+constexpr int kForceScrollbarInactiveWidth = 6;     // 4 * 1.5
+constexpr int kForceScrollbarActiveOffset = 6;      // 4 * 1.5
+constexpr int kForceScrollbarInactiveOffset = 12;   // 8 * 1.5
+constexpr int kForceScrollbarActiveRadius = 6;      // 4 * 1.5
+constexpr int kForceScrollbarInactiveRadius = 3;    // 2 * 1.5
 #else
 // Constants for painting overlay scrollbars. Other properties needed outside
 // this painting code are defined in overlay_scrollbar_constants_aura.h.

@@ -1004,8 +1004,22 @@ void RenderFrameHostManager::UnloadOldFrame(
                 "bfcache_eligibility",
                 bfcache_eligibility.flattened_reasons.ToString());
 #ifdef OHOS_BFCACHE
-    LOG(INFO) << "RenderFrameHostManager::" << __func__ << " the value of bfcache_eligibility.flattened_reasons is:"
-              << bfcache_eligibility.flattened_reasons.ToString();
+  // make sure when size_equals zero, and time_to_live_equals zero page do not enter bfcache
+  if (back_forward_cache.ArkWebGetCacheSize() <= 0) {
+    can_store = false;
+    LOG(INFO) << "[BFCACHE]" << _func_ << "can_store:"
+      << can_store << "bfcache_eligibitity.flattened_reasons:"
+      << "No: cache limit.";
+  } else if (back_forward_cache.ArkWebGetTimeToLive() <= 0) {
+    can_store = false;
+    LOG(INFO) << "[BFCACHE]" << _func_ << " can_store: "
+      << can_store << "bfcache_eligibitity.flattened_reasons:"
+      << "No: timeout";
+  } else {
+    LOG(INFO) << "[BFCACHE]" << _func_ << " can_store: "
+      << can_store << "bfcache_eligibitity.flattened_reasons:"
+      << bfcache_eligibitity.flattened_reasons.ToString();
+  }
 #endif
     if (can_store) {
       auto stored_page = CollectPage(std::move(old_render_frame_host));

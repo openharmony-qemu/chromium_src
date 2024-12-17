@@ -1626,7 +1626,7 @@ void RenderWidgetHostImpl::ForwardGestureEventWithLatencyInfo(
   if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollBegin) {
       base::ohos::SlidingObserver::GetInstance().StartSliding();
     } else if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollEnd) {
-      base::ohos::SlidingObserver::GetInstance().StopSliding();
+      preferred_frame_rate = base::ohos::SlidingObserver::GetInstance().StopSliding();
     } else if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollUpdate) {
       preferred_frame_rate = base::ohos::SlidingObserver::GetInstance().OnScrollUpdate(gesture_event.data.scroll_update.delta_x,
         gesture_event.data.scroll_update.delta_y);

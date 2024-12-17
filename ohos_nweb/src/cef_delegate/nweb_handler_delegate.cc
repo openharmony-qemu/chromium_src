@@ -3805,6 +3805,49 @@ NWebHandlerDelegate::OnCreateCustomMediaPlayer(
 }
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+void NWebHandlerDelegate::OnShowToast(double duration, const CefString& toast) {
+#if defined(OHOS_VIDEO_ASSISTANT)
+  if (!web_app_client_extension_listener_) {
+    LOG(WARNING) << "application extension listener is nullptr";
+    return;
+  }
+
+  if (!web_app_client_extension_listener_->OnShowToast) {
+    LOG(WARNING) << "show toast callback is nullptr";
+    return;
+  }
+
+  web_app_client_extension_listener_->OnShowToast(
+      web_app_client_extension_listener_->nweb_id, duration,
+      toast.ToString().c_str());
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+}
+
+void NWebHandlerDelegate::OnShowVideoAssistant(
+    const CefString& videoAssistantItems) {
+#if defined(OHOS_VIDEO_ASSISTANT)
+  if (!web_app_client_extension_listener_) {
+    LOG(WARNING) << "application extension listener is nullptr";
+    return;
+  }
+
+  if (!web_app_client_extension_listener_->OnShowVideoAssistant) {
+    LOG(WARNING) << "show video assistant callback is nullptr";
+    return;
+  }
+
+  web_app_client_extension_listener_->OnShowVideoAssistant(
+      web_app_client_extension_listener_->nweb_id,
+      videoAssistantItems.ToString().c_str());
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+}
+
+void NWebHandlerDelegate::OnReportStatisticLog(const CefString& content) {
+#if defined(OHOS_VIDEO_ASSISTANT)
+  NWebImpl::OnReportStatisticLog(content.ToString());
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+}
+
 #if defined(OHOS_RENDERER_ANR_DUMP)
 void NWebHandlerDelegate::OnRenderProcessNotResponding(
     CefRefPtr<CefBrowser> browser,

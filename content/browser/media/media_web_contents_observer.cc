@@ -789,4 +789,41 @@ void MediaWebContentsObserver::RequestExitFullscreen(const MediaPlayerId& player
 }
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+void MediaWebContentsObserver::SetPlaybackRate(double playback_rate,
+                                               const MediaPlayerId& player_id) {
+  const auto iter = media_player_remotes_.find(player_id);
+  if (iter == media_player_remotes_.end()) {
+    return;
+  }
+
+  iter->second->SetPlaybackRate(playback_rate);
+}
+
+void MediaWebContentsObserver::RequestFullScreen(
+    bool enable,
+    const MediaPlayerId& player_id) {
+  const auto iter = media_player_remotes_.find(player_id);
+  if (iter == media_player_remotes_.end()) {
+    return;
+  }
+
+  if (enable) {
+    iter->second->RequestEnterFullscreen();
+  } else {
+    iter->second->RequestExitFullscreen();
+  }
+}
+
+void MediaWebContentsObserver::RequestDownloadUrl(
+    const MediaPlayerId& player_id) {
+  const auto iter = media_player_remotes_.find(player_id);
+  if (iter == media_player_remotes_.end()) {
+    return;
+  }
+
+  iter->second->RequestDownloadUrl();
+}
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+
 }  // namespace content

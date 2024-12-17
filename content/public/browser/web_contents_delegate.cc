@@ -410,4 +410,14 @@ std::unique_ptr<CustomMediaPlayer> WebContentsDelegate::CreateCustomMediaPlayer(
 }
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+void WebContentsDelegate::OnShowToast(double duration,
+                                      const std::string& toast) {}
+
+void WebContentsDelegate::OnShowVideoAssistant(
+    const std::string& videoAssistantItems) {}
+
+void WebContentsDelegate::OnReportStatisticLog(const std::string& content) {}
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+
 }  // namespace content

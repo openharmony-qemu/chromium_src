@@ -4169,6 +4169,26 @@ void NWebDelegate::RegisterOnCreateNativeMediaPlayerListener(
 }
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+void NWebDelegate::EnableVideoAssistant(bool enable) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "failed to get host when enable video assistant";
+    return;
+  }
+
+  GetBrowser()->GetHost()->EnableVideoAssistant(enable);
+}
+
+void NWebDelegate::ExecuteVideoAssistantFunction(const std::string& cmd_id) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "failed to get host when execute video assistant function";
+    return;
+  }
+
+  GetBrowser()->GetHost()->ExecuteVideoAssistantFunction(cmd_id);
+}
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+
 #if defined(OHOS_CLIPBOARD)
 void NWebDelegate::SetIsRichText(bool is_rich_text) {
   if (!handler_delegate_) {

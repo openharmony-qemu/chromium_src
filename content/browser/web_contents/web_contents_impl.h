@@ -1559,6 +1559,15 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   void RequestEnterFullscreen(const MediaPlayerId& player_id);
   void RequestExitFullscreen(const MediaPlayerId& player_id);
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+#if defined(OHOS_VIDEO_ASSISTANT)
+  void EnableVideoAssistant(bool enable) override;
+  void ExecuteVideoAssistantFunction(const std::string& cmdId) override;
+  void OnShowToast(double duration, const std::string& toast);
+  void OnShowVideoAssistant(const std::string& videoAssistantItems);
+  void OnReportStatisticLog(const std::string& content);
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+
 #if defined(OHOS_RENDER_PROCESS_SHARE)
   const std::string& SharedRenderProcessToken() override;
 #endif

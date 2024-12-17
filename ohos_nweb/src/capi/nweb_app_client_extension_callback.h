@@ -65,6 +65,11 @@ struct NWebAppClientExtensionCallback {
   bool (*OnPullToRefreshAction)(int action, int nweb_id);
   void (*OnPullToRefreshPull)(float offset_x, float offset_y, int nweb_id);
 #endif
+
+  void (*OnShowToast)(int32_t nweb_id, double duration, const char* toast);
+
+  void (*OnShowVideoAssistant)(int32_t nweb_id,
+                               const char* video_assistant_items);
 };
 
 #endif  // OHOS_NWEB_SRC_NWEB_APP_CLIENT_EXTENSION_CALLBACK_H_

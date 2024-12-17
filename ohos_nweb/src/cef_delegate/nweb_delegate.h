@@ -620,6 +620,11 @@ void NotifyForNextTouchEvent() override;
       std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) override;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+  void EnableVideoAssistant(bool enable) override;
+  void ExecuteVideoAssistantFunction(const std::string& cmd_id) override;
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+
   std::shared_ptr<NWebCustomKeyboardHandlerImpl> GetCustomKeyboardHandler() const override {
     if (render_handler_) {
       return render_handler_->GetCustomKeyboardHandler();

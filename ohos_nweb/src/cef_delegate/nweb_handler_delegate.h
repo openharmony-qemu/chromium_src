@@ -745,6 +745,10 @@ class NWebHandlerDelegate : public CefClient,
       const CefCustomMediaInfo& media_info) override;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+  void OnShowToast(double duration, const CefString& toast) override;
+  void OnShowVideoAssistant(const CefString& videoAssistantItems) override;
+  void OnReportStatisticLog(const CefString& content) override;
+
 #if defined(OHOS_CLIPBOARD)
   void SetIsRichText(bool is_rich_text) { is_rich_text_ = is_rich_text; }
 #endif

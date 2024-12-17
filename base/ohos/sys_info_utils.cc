@@ -16,6 +16,7 @@
 #include "base/ohos/sys_info_utils.h"
 
 #include "base/threading/scoped_blocking_call.h"
+#include "base/logging.h"
 #include "ohos_adapter_helper.h"
 #include "ui/base/clipboard/clipboard.h"
 
@@ -25,6 +26,8 @@ namespace ohos {
 namespace {
 
 constexpr char kProductModeEmulator[] = "emulator";
+constexpr char kCompatiblePhone[] = "Phone";
+constexpr char kCompatibleTablet[] = "Tablet";
 
 using namespace OHOS::NWeb;
 
@@ -61,6 +64,14 @@ class SystemProperties {
 
   std::string api_version() { return api_version_; }
 
+  std::string compatible_device_type() { return compatible_type_; }
+
+  bool is_compatible_mode() {
+    LOG(INFO) << "systemProperties compatible type is " << compatible_type_.c_str();
+    return is_2in1() &&
+           (compatible_type_ == kCompatiblePhone || compatible_type_ == kCompatibleTablet);
+  }
+
 #ifdef OHOS_SCROLLBAR
   float get_pixel_ratio() { return virtual_pixel_ratio_;}
   void set_pixel_ratio(float ratio) { virtual_pixel_ratio_ = ratio;}
@@ -79,6 +90,7 @@ class SystemProperties {
   std::string base_os_name_;
   std::string product_model_;
   std::string api_version_;
+  std::string compatible_type_;
 #ifdef OHOS_SCROLLBAR
   float virtual_pixel_ratio_ = 2.0;
 #endif
@@ -108,7 +120,10 @@ SystemProperties::SystemProperties()
                          .GetDeviceInfoProductModel()),
       api_version_(OhosAdapterHelper::GetInstance()
                          .GetSystemPropertiesInstance()
-                         .GetDeviceInfoApiVersion()) {}
+                         .GetDeviceInfoApiVersion()),
+      compatible_type_(OhosAdapterHelper::GetInstance()
+                         .GetSystemPropertiesInstance()
+                         .GetCompatibleDeviceType()) {}
 }  // namespace
 
 #ifdef OHOS_SCROLLBAR
@@ -160,6 +175,14 @@ BASE_EXPORT std::string BaseOsName() {
 
 BASE_EXPORT std::string ApiVersion() {
   return SystemProperties::Instance()->api_version();
+}
+
+BASE_EXPORT std::string CompatibleDeviceType() {
+  return SystemProperties::Instance()->compatible_device_type();
+}
+
+BASE_EXPORT bool IsCompatibleMode() {
+  return SystemProperties::Instance()->is_compatible_mode();
 }
 
 }  // namespace ohos

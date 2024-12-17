@@ -376,6 +376,10 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   void SetNWebId(int nWebID) override;
 #endif  // defined(OHOS_WEBRTC)
 
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  void StopScreenCapture(const std::string &sessionid) override;
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+
   // WebContents ------------------------------------------------------
   WebContentsDelegate* GetDelegate() override;
   void SetDelegate(WebContentsDelegate* delegate) override;

@@ -473,6 +473,27 @@ void VideoCaptureController::StopSession(
   }
 }
 
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+media::VideoCaptureError VideoCaptureController::StopScreenCapture(
+    const base::UnguessableToken& session_id) {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+  std::ostringstream string_stream;
+  string_stream << "VideoCaptureController::StopScreenCapture: session_id = "
+                << session_id;
+  EmitLogMessage(string_stream.str(), 1);
+
+  ControllerClient *client = FindClient(session_id, controller_clients_);
+
+  if (client) {
+    client->session_closed = true;
+    client->event_handler->OnEnded(client->controller_id);
+    return media::VideoCaptureError::kNone;
+  } else {
+    return media::VideoCaptureError::kScreenCaptureKitFailedStopCapture;
+  }
+}
+#endif // defined(OHOS_EX_SCREEN_CAPTURE)
+
 void VideoCaptureController::ReturnBuffer(
     const VideoCaptureControllerID& id,
     VideoCaptureControllerEventHandler* event_handler,

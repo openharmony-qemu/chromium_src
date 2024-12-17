@@ -10520,6 +10520,19 @@ void WebContentsImpl::SetNWebId(int nWebID) {
 }
 #endif  // defined(OHOS_WEBRTC)
 
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+void WebContentsImpl::StopScreenCapture(const std::string& sessionid) {
+  auto media_stream_manager =
+      BrowserMainLoop::GetInstance()->media_stream_manager();
+  if (!media_stream_manager) {
+    LOG(ERROR) << "media_stream_manager null";
+    return;
+  }
+
+  media_stream_manager->StopScreenCapture(sessionid);
+}
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
 std::unique_ptr<CustomMediaPlayer> WebContentsImpl::CreateCustomMediaPlayer(
     std::unique_ptr<CustomMediaPlayerListener> listener,

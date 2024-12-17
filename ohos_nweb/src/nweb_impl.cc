@@ -3115,6 +3115,34 @@ void NWebImpl::CloseCamera() {
 #endif  // defined(OHOS_WEBRTC)
 }
 
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+void NWebImpl::StopScreenCapture(const char* sessionid) {
+  if (sessionid == nullptr) {
+    WVLOG_E("StopScreenCapture sessionid is null");
+    return;
+  }
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("StopScreenCapture nweb_delegate_ is null");
+    return;
+  }
+  nweb_delegate_->StopScreenCapture(sessionid);
+}
+
+void NWebImpl::PutWebScreenCaptureDelegateCallback(
+    std::shared_ptr<NWebScreenCaptureDelegateCallback> callback) {
+
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E(
+        "set web screen capture delegate callback failed, nweb delegate is nullptr, "
+        "nweb_id = %{public}u",
+        nweb_id_);
+    return;
+  }
+
+  nweb_delegate_->RegisterScreenCaptureDelegateListener(callback);
+}
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+
 std::string NWebImpl::GetLastJavascriptProxyCallingFrameUrl() {
 #if defined(OHOS_SECURE_JAVASCRIPT_PROXY)
   if (nweb_delegate_ == nullptr) {

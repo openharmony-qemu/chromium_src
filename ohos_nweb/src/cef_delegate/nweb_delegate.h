@@ -493,7 +493,14 @@ void SetTransformHint(uint32_t rotation) override;
   void StartCamera() override;
   void StopCamera() override;
   void CloseCamera() override;
+
 #endif  // defined(OHOS_WEBRTC)
+
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  void StopScreenCapture(const char* sessionid) override;
+  void RegisterScreenCaptureDelegateListener(
+      std::shared_ptr<NWebScreenCaptureDelegateCallback> listener) override;
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 
 #if defined(OHOS_SCREEN_LOCK)
   void SetWakeLockCallback(int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback) override;

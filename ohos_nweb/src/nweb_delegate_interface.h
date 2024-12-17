@@ -30,6 +30,7 @@
 #include "nweb_handler.h"
 #include "nweb_preference.h"
 #include "nweb_web_message.h"
+#include "capi/nweb_screencapture_delegate_callback.h"
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
 #include "nweb_native_media_player.h"
@@ -350,6 +351,13 @@ class NWebDelegateInterface
   virtual void CloseCamera() = 0;
 #endif  // defined(OHOS_WEBRTC)
 
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  virtual void StopScreenCapture(const char* sessionid) = 0;
+  virtual void RegisterScreenCaptureDelegateListener(
+      std::shared_ptr<NWebScreenCaptureDelegateCallback>
+          screenCaptureDelegateListener) = 0;
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+ 
 #ifdef OHOS_PAGE_UP_DOWN
   virtual void PageUp(bool top) = 0;
   virtual void PageDown(bool bottom) = 0;

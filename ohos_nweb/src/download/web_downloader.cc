@@ -17,6 +17,7 @@
 
 #include "ohos_nweb/src/capi/nweb_c_api.h"
 #include "ohos_nweb/src/capi/nweb_download_delegate_callback.h"
+#include "ohos_nweb/src/capi/nweb_screencapture_delegate_callback.h"
 #include "ohos_nweb/src/nweb_hilog.h"
 #include "ohos_nweb/src/nweb_impl.h"
 #if defined(REPORT_SYS_EVENT)
@@ -446,6 +447,58 @@ void DestroyDownloadItemCallbackWrapper(
   }
   return;
 }
+
+void WebScreenCapture_CreateScreenCaptureDelegateCallback(
+    NWebScreenCaptureDelegateCallback **callback) {
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  if (callback) {
+    *callback = new NWebScreenCaptureDelegateCallback();
+  }
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+}
+
+void WebScreenCapture_SetScreenCaptureOnStateChange(
+    NWebScreenCaptureDelegateCallback *callback,
+    OnSrceenCaptureOnStateChange fun) {
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  if (callback) {
+    ((NWebScreenCaptureDelegateCallback *)callback)->OnStateChange = fun;
+  }
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+}
+
+void WebScreenCapture_PutScreenCaptureCallback(
+    NWebScreenCaptureDelegateCallback *callback, int32_t nweb_id) {
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  OHOS::NWeb::NWebImpl *nweb = OHOS::NWeb::NWebImpl::FromID(nweb_id);
+  if (!nweb) {
+    WVLOG_E("fail to find a nweb with %{public}d ", nweb_id);
+    return;
+  }
+  if (!callback) {
+    WVLOG_E("invalid callback");
+    return;
+  }
+  nweb->PutWebScreenCaptureDelegateCallback(
+      std::make_shared<NWebScreenCaptureDelegateCallback>(*callback));
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+}
+
+void WebScreenCapture_StopScreenCapture(int32_t nweb_id, const char* sessionid) {
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  OHOS::NWeb::NWebImpl *nweb = OHOS::NWeb::NWebImpl::FromID(nweb_id);
+  if (!nweb) {
+    WVLOG_E("fail to find a nweb with %{public}d ", nweb_id);
+    return;
+  }
+  if (!sessionid) {
+    WVLOG_E("sessionid is null");
+    return;
+  }
+  nweb->StopScreenCapture(sessionid);
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+}
+
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

@@ -31,6 +31,7 @@
 #include "nweb_input_handler.h"
 #include "nweb_inputmethod_handler.h"
 #include "nweb_output_handler.h"
+#include "capi/nweb_screencapture_delegate_callback.h"
 
 namespace OHOS::NWeb {
 class NWebImpl : public NWeb {
@@ -331,6 +332,13 @@ class NWebImpl : public NWeb {
   void StartCamera() override;
   void StopCamera() override;
   void CloseCamera() override;
+
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  void StopScreenCapture(const char* sessionid);
+  void PutWebScreenCaptureDelegateCallback(
+      std::shared_ptr<NWebScreenCaptureDelegateCallback> callback);
+#endif // defined(OHOS_EX_SCREEN_CAPTURE)
+
   void OnRenderToBackground() override;
   void OnRenderToForeground() override;
 

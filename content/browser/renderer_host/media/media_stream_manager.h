@@ -69,6 +69,14 @@ class PermissionControllerImpl;
 
 enum TransferState { KEPT_ALIVE, GOT_OPEN_DEVICE };
 
+enum ScreenCaptureState{
+    SCREEN_CAPTURE_OPENED = 0,
+    SCREEN_CAPTURE_STOPED,
+    SCREEN_CAPTURE_ABORTED,
+    SCREEN_CAPTURE_STOP_SUCCESS,
+    SCREEN_CAPTURE_STOP_FAILURE
+};
+
 struct TransferStatus {
   TransferState state;
   base::TimeTicks start_time;
@@ -127,6 +135,9 @@ class CONTENT_EXPORT MediaStreamManager
   // Callback for testing.
   using GenerateStreamTestCallback =
       base::OnceCallback<bool(const blink::StreamControls&)>;
+
+  using ScreenCaptureCallback =
+      base::RepeatingCallback<void(int32_t nweb_id, const char* sessionid, int32_t code)>;
 
   // Adds |message| to native logs for outstanding device requests, for use by
   // render processes hosts whose corresponding render processes are requesting
@@ -447,6 +458,14 @@ class CONTENT_EXPORT MediaStreamManager
       std::unique_ptr<media::mojom::VideoCaptureHost> host,
       mojo::PendingReceiver<media::mojom::VideoCaptureHost> receiver);
   size_t num_video_capture_hosts() const { return video_capture_hosts_.size(); }
+
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  static void SetScreenCaptureDelegateCallback(ScreenCaptureCallback callback);
+  static void SendScreenCaptureStateToNative(int32_t nweb_id, const std::string& sessionid, int32_t state);
+  static ScreenCaptureCallback screen_capture_callback_;
+  void StopScreenCapture(const std::string& sessionid);
+  void SendScreenCaptureState(const std::string& sessionid,  int32_t state);
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 
  private:
   friend class MediaStreamManagerTest;
@@ -814,6 +833,11 @@ class CONTENT_EXPORT MediaStreamManager
   mojo::UniqueReceiverSet<media::mojom::VideoCaptureHost> video_capture_hosts_;
 
   GenerateStreamTestCallback generate_stream_test_callback_;
+
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  std::map<std::string, int> nWebId_;
+  mutable std::mutex NWebIdMutex_;
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 };
 
 }  // namespace content

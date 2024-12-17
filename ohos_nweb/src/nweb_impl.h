@@ -32,6 +32,10 @@
 #include "nweb_inputmethod_handler.h"
 #include "nweb_output_handler.h"
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+#include "capi/nweb_statistic_callback.h"
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+
 struct OpenDevToolsParam;
 
 namespace OHOS::NWeb {
@@ -415,6 +419,13 @@ class NWebImpl : public NWeb {
   void CloseDevtools();
 #endif  // defined(OHOS_NWEB_EX)
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+  void EnableVideoAssistant(bool enable);
+  void ExecuteVideoAssistantFunction(const std::string& cmd_id);
+  static void OnReportStatisticLog(const std::string& content);
+  static void SetOnReportStatisticLogCallback(OnReportStatisticLogFunc func);
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+
 #ifdef OHOS_EX_NETWORK_CONNECTION
   static void SetConnectTimeout(int32_t seconds);
 #endif
@@ -625,6 +636,10 @@ class NWebImpl : public NWeb {
 #if defined(OHOS_SCHEME_HANDLER)
   std::string web_tag_{""};
 #endif
+
+#if defined(OHOS_VIDEO_ASSISTANT)
+  static OnReportStatisticLogFunc on_report_statistic_log_callback_;
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
 };
 }  // namespace OHOS::NWeb
 

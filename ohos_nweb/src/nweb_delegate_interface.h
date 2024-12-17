@@ -511,6 +511,11 @@ class NWebDelegateInterface
       std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) = 0;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+  virtual void EnableVideoAssistant(bool enable) = 0;
+  virtual void ExecuteVideoAssistantFunction(const std::string& cmd_id) = 0;
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+
 #ifdef OHOS_EX_DOWNLOAD
   virtual NWebDownloadItemState GetDownloadItemState(long item_id) = 0;
 #endif

@@ -10585,6 +10585,40 @@ void WebContentsImpl::RequestExitFullscreen(const MediaPlayerId& player_id) {
 }
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+void WebContentsImpl::EnableVideoAssistant(bool enable) {}
+
+void WebContentsImpl::ExecuteVideoAssistantFunction(const std::string& cmdId) {}
+
+void WebContentsImpl::OnShowToast(double duration, const std::string& toast) {
+  if (!delegate_) {
+    LOG(ERROR) << "delegate is nullptr when notify to show toast";
+    return;
+  }
+
+  delegate_->OnShowToast(duration, toast);
+}
+
+void WebContentsImpl::OnShowVideoAssistant(
+    const std::string& videoAssistantItems) {
+  if (!delegate_) {
+    LOG(ERROR) << "delegate is nullptr when notify to show video assistant";
+    return;
+  }
+
+  delegate_->OnShowVideoAssistant(videoAssistantItems);
+}
+
+void WebContentsImpl::OnReportStatisticLog(const std::string& content) {
+  if (!delegate_) {
+    LOG(ERROR) << "delegate is nullptr when notify to report statistic log";
+    return;
+  }
+
+  delegate_->OnReportStatisticLog(content);
+}
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+
 #ifdef OHOS_I18N
 void WebContentsImpl::UpdateRenderAcceptLanguageIfNeed(
     const std::string& old_accept_language) {

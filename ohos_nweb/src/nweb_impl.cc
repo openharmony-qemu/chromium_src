@@ -162,6 +162,11 @@ extern bool g_siteIsolationMode;
 
 #include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+OnReportStatisticLogFunc
+    OHOS::NWeb::NWebImpl::on_report_statistic_log_callback_ = nullptr;
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+
 namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
@@ -2531,6 +2536,35 @@ void NWebImpl::CloseDevtools() {
   nweb_delegate_->CloseDevtools();
 }
 #endif  // defined(OHOS_NWEB_EX)
+
+#if defined(OHOS_VIDEO_ASSISTANT)
+void NWebImpl::EnableVideoAssistant(bool enable) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(WARNING) << "nweb delegate is nullptr when enable video assistant";
+    return;
+  }
+  nweb_delegate_->EnableVideoAssistant(enable);
+}
+
+void NWebImpl::ExecuteVideoAssistantFunction(const std::string& cmd_id) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(WARNING)
+        << "nweb delegate is nullptr when execute video assistant function";
+    return;
+  }
+  nweb_delegate_->ExecuteVideoAssistantFunction(cmd_id);
+}
+
+void NWebImpl::OnReportStatisticLog(const std::string& content) {
+  if (on_report_statistic_log_callback_) {
+    on_report_statistic_log_callback_(content.c_str());
+  }
+}
+
+void NWebImpl::SetOnReportStatisticLogCallback(OnReportStatisticLogFunc func) {
+  on_report_statistic_log_callback_ = func;
+}
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
 
 #ifdef OHOS_EX_NETWORK_CONNECTION
 // static

@@ -13,6 +13,7 @@
 #include "base/command_line.h"
 #include "base/functional/bind.h"
 #include "base/metrics/histogram_macros.h"
+#include "base/ohos/sys_info_utils.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/task/sequenced_task_runner.h"
 #include "content/browser/renderer_host/input/gesture_event_queue.h"
@@ -80,8 +81,9 @@ std::unique_ptr<blink::WebCoalescedInputEvent> ScaleEvent(
       std::vector<std::unique_ptr<WebInputEvent>>(), latency_info);
 }
 #if BUILDFLAG(IS_OHOS)
-constexpr uint64_t GESTURE_MOVE_PERIOD = 300000000;
-const int SOC_PERF_SLIDE_NORMAL_CONFIG_ID = 10012;
+constexpr uint64_t GESTURE_MOVE_PERIOD = 250000000;
+const int SOC_PERF_SLIDE_NORMAL_CONFIG_ID = 10025;
+const int SOC_PERF_SLIDE_NORMAL_CONFIG_ID_PC = 10012;
 #endif
 }  // namespace
 
@@ -160,16 +162,28 @@ void InputRouterImpl::SendGestureEvent(
     prePerfTimeStamp_ = timeStamp_;
     LOG(DEBUG) << "InputRouterImpl::SendGestureEvent type=kGestureScrollUpdate success";
     client_->GetWidgetInputHandler()->TryStartFling();
-    OHOS::NWeb::OhosAdapterHelper::GetInstance()
-      .CreateSocPerfClientAdapter()
-      ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID, true);
+    if (base::ohos::IsPcDevice()) {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .CreateSocPerfClientAdapter()
+        ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID_PC, true);
+    } else {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .CreateSocPerfClientAdapter()
+        ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID, true);
+    }
   } else if (gesture_event.event.GetType() ==
              WebInputEvent::Type::kGestureScrollEnd) {
     LOG(INFO) << "InputRouterImpl::SendGestureEvent type=kGestureScrollEnd";
     client_->GetWidgetInputHandler()->TryFinishFling();
-    OHOS::NWeb::OhosAdapterHelper::GetInstance()
-      .CreateSocPerfClientAdapter()
-      ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID, false);
+    if (base::ohos::IsPcDevice()) {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .CreateSocPerfClientAdapter()
+        ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID_PC, false);
+    } else {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .CreateSocPerfClientAdapter()
+        ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID, false);
+    }
     prePerfTimeStamp_ = 0;
 
     if (auto* host = GpuProcessHost::Get()) {

@@ -6,6 +6,9 @@
 
 #include "base/functional/bind.h"
 #include "base/observer_list.h"
+#if BUILDFLAG(IS_OHOS)
+#include "base/ohos/sys_info_utils.h"
+#endif
 #include "components/zoom/zoom_event_manager.h"
 #include "components/zoom/zoom_observer.h"
 #include "content/public/browser/browser_thread.h"
@@ -344,6 +347,11 @@ void ZoomController::RenderFrameHostChanged(
 }
 
 void ZoomController::OnPageScaleFactorChanged(float page_scale_factor) {
+#if BUILDFLAG(IS_OHOS)
+  if (base::ohos::IsTabletDevice()) {
+    return;
+  }
+#endif
   const bool is_one = page_scale_factor == 1.f;
   if (is_one != last_page_scale_factor_was_one_) {
     // We send a no-op zoom change to inform observers that PageScaleFactorIsOne

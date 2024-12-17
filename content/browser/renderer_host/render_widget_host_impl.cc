@@ -1540,7 +1540,14 @@ void RenderWidgetHostImpl::ForwardMouseEventWithLatencyInfo(
   }
 
   if (IsIgnoringInputEvents())
+#if BUILDFLAG(IS_OHOS)
+  {
+    LOG(INFO) << "ignore input events";
     return;
+  }
+#else
+    return;
+#endif
 
   auto* touch_emulator = GetExistingTouchEmulator();
   if (touch_emulator &&
@@ -3471,8 +3478,27 @@ void RenderWidgetHostImpl::OnTouchEventAck(
 }
 
 bool RenderWidgetHostImpl::IsIgnoringInputEvents() const {
+#if BUILDFLAG(IS_OHOS)
+  if (agent_scheduling_group_->GetProcess()->IsBlocked()) {
+    LOG(INFO) << "IsIgnoringInputEvents for gpu blocked";
+    return true;
+  }
+
+  if (!delegate_) {
+    LOG(INFO) << "IsIgnoringInputEvents for delegate_ null";
+    return true;
+  }
+
+  if (delegate_->ShouldIgnoreInputEvents()) {
+    LOG(INFO) << "IsIgnoringInputEvents for ShouldIgnoreInputEvents";
+    return true;
+  }
+
+  return false;
+#else
   return agent_scheduling_group_->GetProcess()->IsBlocked() || !delegate_ ||
          delegate_->ShouldIgnoreInputEvents();
+#endif
 }
 
 bool RenderWidgetHostImpl::GotResponseToLockMouseRequest(
@@ -3553,6 +3579,9 @@ void RenderWidgetHostImpl::GotResponseToForceRedraw(int snapshot_id) {
 }
 
 void RenderWidgetHostImpl::DetachDelegate() {
+#if BUILDFLAG(IS_OHOS)
+  LOG(INFO) << "RenderWidgetHostImpl DetachDelegate";
+#endif
   delegate_ = nullptr;
   latency_tracker_.reset_delegate();
 }

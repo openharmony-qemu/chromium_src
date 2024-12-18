@@ -4375,4 +4375,24 @@ void NWebDelegate::CloseDevtools() {
   GetBrowser()->GetHost()->CloseDevTools();
 }
 
+#ifdef OHOS_EX_REFRESH_IFRAME
+bool NWebDelegate::WebExtensionContextMenuIsIframe()
+{
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "get browser failed or get host failed";
+    return false;
+  }
+  return GetBrowser()->GetHost()->IsIframe();
+}
+
+void NWebDelegate::WebExtensionContextMenuReloadFocusedFrame()
+{
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "get browser failed or get host failed";
+    return;
+  }
+  return GetBrowser()->GetHost()->ReloadFocusedFrame();
+}
+#endif
+
 }  // namespace OHOS::NWeb

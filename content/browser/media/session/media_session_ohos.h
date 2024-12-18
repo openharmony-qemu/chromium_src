@@ -23,6 +23,7 @@
 #include "base/memory/weak_ptr.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/timer/timer.h"
+#include "content/browser/media/session/media_session_impl.h"
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "services/media_session/public/mojom/media_session.mojom.h"
 
@@ -52,9 +53,6 @@ class MediaSessionOHOS final
   void MediaSessionPositionChanged(
       const absl::optional<media_session::MediaPosition>& position) override;
 
-  bool SetWebviewShow(bool show);
-  bool SetWebviewShowForAudio(bool show);
-  bool SetWebviewShowForVideo(bool show);
   void Resume();
   void Suspend();
   void Stop();
@@ -63,6 +61,10 @@ class MediaSessionOHOS final
 
   bool IsEndOfMedia();
   void SetEndOfMedia(bool end_of_media);
+  bool IsPauseByAvsession();
+  void SetPauseByAvsession(bool is_pause);
+  void SetWebviewShow(bool show, bool is_special_for_audio);
+
  private:
   void CheckMediaInfo();
   void Prepare(OHOS::NWeb::MediaAVSessionType type);
@@ -72,6 +74,7 @@ class MediaSessionOHOS final
   bool is_playing_;
   bool is_initialized_;
   bool is_end_of_media_;
+  bool is_avsession_pause_cmd_{false};
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
   std::shared_ptr<OHOS::NWeb::MediaAVSessionMetadataAdapter> av_metadata_;
   std::shared_ptr<OHOS::NWeb::MediaAVSessionPositionAdapter> av_position_;

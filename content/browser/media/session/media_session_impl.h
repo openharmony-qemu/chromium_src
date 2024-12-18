@@ -368,14 +368,14 @@ class MediaSessionImpl : public MediaSession,
   enum NWebMediaSessionState { NOINITIAL, NONEED, NEED };
   NWebPlaybackState NWebGetState();
 
-  void SetWebviewShow(bool show);
-  void SetWebviewShowForAudio(bool show);
-  void SetWebviewShowForVideo(bool show);
   bool IsEndOfMedia();
   void SetEndOfMedia(bool end_of_media);
   bool GetPlayingState();
   void SetPlayingState(bool playingState);
   bool GetMuteState();
+  bool IsPauseByAvsession();
+  void SetPauseByAvsession(bool is_pause);
+  void SetWebviewShow(bool show, bool is_special_for_audio);
 
   void SetSessionState(NWebMediaSessionState sessionState);
   NWebMediaSessionState GetSessionState();

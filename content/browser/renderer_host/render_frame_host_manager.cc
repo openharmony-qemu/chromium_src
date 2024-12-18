@@ -1008,17 +1008,17 @@ void RenderFrameHostManager::UnloadOldFrame(
   if (back_forward_cache.ArkWebGetCacheSize() <= 0) {
     can_store = false;
     LOG(INFO) << "[BFCACHE]" << _func_ << "can_store:"
-      << can_store << "bfcache_eligibitity.flattened_reasons:"
+      << can_store << "bfcache_eligibility.flattened_reasons:"
       << "No: cache limit.";
   } else if (back_forward_cache.ArkWebGetTimeToLive() <= 0) {
     can_store = false;
     LOG(INFO) << "[BFCACHE]" << _func_ << " can_store: "
-      << can_store << "bfcache_eligibitity.flattened_reasons:"
-      << "No: timeout";
+      << can_store << "bfcache_eligibility.flattened_reasons:"
+      << "No: timeout.";
   } else {
     LOG(INFO) << "[BFCACHE]" << _func_ << " can_store: "
-      << can_store << "bfcache_eligibitity.flattened_reasons:"
-      << bfcache_eligibitity.flattened_reasons.ToString();
+      << can_store << "bfcache_eligibility.flattened_reasons:"
+      << bfcache_eligibility.flattened_reasons.ToString();
   }
 #endif
     if (can_store) {

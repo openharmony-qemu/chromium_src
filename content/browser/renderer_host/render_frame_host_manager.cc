@@ -1007,16 +1007,16 @@ void RenderFrameHostManager::UnloadOldFrame(
   // make sure when size_equals zero, and time_to_live_equals zero page do not enter bfcache
   if (back_forward_cache.ArkWebGetCacheSize() <= 0) {
     can_store = false;
-    LOG(INFO) << "[BFCACHE]" << _func_ << "can_store:"
+    LOG(INFO) << "[BFCACHE]" << __func__ << "can_store:" 
       << can_store << "bfcache_eligibility.flattened_reasons:"
       << "No: cache limit.";
   } else if (back_forward_cache.ArkWebGetTimeToLive() <= 0) {
     can_store = false;
-    LOG(INFO) << "[BFCACHE]" << _func_ << " can_store: "
+    LOG(INFO) << "[BFCACHE]" << __func__ << " can_store: "
       << can_store << "bfcache_eligibility.flattened_reasons:"
       << "No: timeout.";
   } else {
-    LOG(INFO) << "[BFCACHE]" << _func_ << " can_store: "
+    LOG(INFO) << "[BFCACHE]" << __func__ << " can_store: "
       << can_store << "bfcache_eligibility.flattened_reasons:"
       << bfcache_eligibility.flattened_reasons.ToString();
   }

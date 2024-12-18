@@ -1300,24 +1300,6 @@ MediaSessionImpl::NWebPlaybackState MediaSessionImpl::NWebGetState() {
   }
 }
 
-void MediaSessionImpl::SetWebviewShow(bool show) {
-  if (session_ohos_) {
-    session_ohos_->SetWebviewShow(show);
-  }
-}
-
-void MediaSessionImpl::SetWebviewShowForAudio(bool show) {
-  if (session_ohos_) {
-    session_ohos_->SetWebviewShowForAudio(show);
-  }
-}
-
-void MediaSessionImpl::SetWebviewShowForVideo(bool show) {
-  if (session_ohos_) {
-    session_ohos_->SetWebviewShowForVideo(show);
-  }
-}
-
 bool MediaSessionImpl::IsEndOfMedia() {
   bool ret = true;
   if (position_) {
@@ -1356,6 +1338,26 @@ void MediaSessionImpl::SetPlayingState(bool playingState)
 bool MediaSessionImpl::GetMuteState()
 {
   return is_muted_;
+}
+
+bool MediaSessionImpl::IsPauseByAvsession() {
+    bool ret = false;
+    if (session_ohos_) {
+        ret = session_ohos_->IsPauseByAvsession();
+    }
+    return ret;
+}
+
+void MediaSessionImpl::SetPauseByAvsession(bool is_pause) {
+    if (session_ohos_) {
+        session_ohos_->SetPauseByAvsession(is_pause);
+    }
+}
+
+void MediaSessionImpl::SetWebviewShow(bool show, bool is_special_for_audio) {
+    if (session_ohos_) {
+        session_ohos_->SetWebviewShow(show, is_special_for_audio);
+    }
 }
 
 void MediaSessionImpl::SetSessionState(MediaSessionImpl::NWebMediaSessionState sessionState)

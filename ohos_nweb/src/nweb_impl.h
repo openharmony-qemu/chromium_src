@@ -451,6 +451,7 @@ class NWebImpl : public NWeb {
   void StartDownload(const char* url);
   void ResumeDownload(std::shared_ptr<NWebDownloadItem>);
   static void ResumeDownloadStatic(std::shared_ptr<NWebDownloadItem> download_item);
+  static void SetFileRenameOption(const int file_rename_option);
 #ifdef OHOS_EX_DOWNLOAD
   NWebDownloadItemState GetDownloadItemState(long item_id);
   static NWebDownloadItemState GetDownloadItemStateByGuid(const std::string& guid);

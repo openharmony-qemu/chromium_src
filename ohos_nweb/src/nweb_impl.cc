@@ -3008,6 +3008,12 @@ void NWebImpl::ResumeDownloadStatic(
                     web_download->received_slices);
 }
 
+// static
+void NWebImpl::SetFileRenameOption(const int file_rename_option) {
+  WVLOG_I("NWebImpl::SetFileRenameOption: option: %{public}d", file_rename_option);
+  CefSetFileRenameOption(file_rename_option);
+}
+
 #if defined(OHOS_EX_TOPCONTROLS)
 void NWebImpl::UpdateBrowserControlsState(int constraints,
                                           int current,

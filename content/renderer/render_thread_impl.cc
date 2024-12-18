@@ -221,6 +221,7 @@
 #endif
 
 #if BUILDFLAG(IS_OHOS)
+#include "base/ohos/sys_info_utils.h"
 #include "content/renderer/media/ohos/native_texture_factory.h"
 #endif
 
@@ -596,6 +597,8 @@ void RenderThreadImpl::Init() {
   // When UseCommonSelectPopup is enabled, the internal popup menu should be
   // used.
   if (!features::IsUseCommonSelectPopupEnabled())
+#elif BUILDFLAG(IS_OHOS)
+  if (!base::ohos::IsPcDevice())
 #endif
     blink::WebView::SetUseExternalPopupMenus(true);
 #endif

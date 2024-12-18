@@ -771,6 +771,11 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void, WebExtensionContextMenuIsIframe, (), (override));
   MOCK_METHOD(bool, WebExtensionContextMenuReloadFocusedFrame, (), (override));
 #endif
+
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+  MOCK_METHOD(bool, NeedToFireBeforeUnloadOrUnloadEvents, (), (override));
+  MOCK_METHOD(void, DispatchBeforeUnload, (), (override));
+#endif
 };
 
 class MockNWebTouchPointInfo : public NWebTouchPointInfo {

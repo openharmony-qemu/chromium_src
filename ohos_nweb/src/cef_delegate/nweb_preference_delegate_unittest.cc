@@ -56,6 +56,8 @@ class MockCefBrowser : public CefBrowser, public CefBrowserHost {
   bool IsSame(CefRefPtr<CefBrowser> that) override { return false; }
   bool IsPopup() override { return false; }
   bool HasDocument() override { return false; }
+  bool NeedToFireBeforeUnloadOrUnloadEvents() override { return false; }
+  void DispatchBeforeUnload() override {}
   CefRefPtr<CefFrame> GetMainFrame() override { return nullptr; }
   CefRefPtr<CefFrame> GetFocusedFrame() override { return nullptr; }
   CefRefPtr<CefFrame> GetFrame(int64 identifier) override { return nullptr; }

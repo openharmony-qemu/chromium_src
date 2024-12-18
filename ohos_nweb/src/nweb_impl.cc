@@ -373,9 +373,6 @@ void InitialWebEngineArgs(
   web_engine_args.emplace_back("--zygote-cmd-prefix=/system/bin/web_render");
   web_engine_args.emplace_back("--remote-debugging-port=9222");
   web_engine_args.emplace_back("--enable-touch-drag-drop");
-#if defined(OHOS_INPUT_EVENTS)
-  web_engine_args.emplace_back("--enable-smooth-scrolling");
-#endif
 #if defined(OHOS_SCROLLBAR)
   static float ratio = -1.0f;
   if (ratio < 0) {

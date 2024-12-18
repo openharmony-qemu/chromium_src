@@ -227,7 +227,10 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadFileImpl : public DownloadFile {
     UNIQUIFY = 1 << 0,  // If there's already a file on disk that conflicts with
                         // |new_path|, try to create a unique file by appending
                         // a uniquifier.
-    ANNOTATE_WITH_SOURCE_INFORMATION = 1 << 1
+    ANNOTATE_WITH_SOURCE_INFORMATION = 1 << 1,
+  #if defined(OHOS_EX_DOWNLOAD)
+  OVERWRITE = 10 << 1 // Donn't uniquify and annotate.
+  #endif // OHOS_EX_DOWNLOAD
   };
 
   struct RenameParameters {

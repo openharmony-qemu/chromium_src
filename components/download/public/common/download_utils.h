@@ -33,6 +33,13 @@ struct DownloadCreateInfo;
 struct DownloadSaveInfo;
 class DownloadUrlParameters;
 
+#if defined(OHOS_EX_DOWNLOAD)
+enum FileRenameOptions {
+    RENAME_AND_UNIQUIFY_MODE = 1,
+    OVERWRITE_MODE = 2,
+};
+#endif
+
 // Used to check if the URL is safe. For most cases, this is
 // ChildProcessSecurityPolicy::CanRequestURL.
 using URLSecurityPolicy =
@@ -46,6 +53,12 @@ HandleRequestCompletionStatus(net::Error error_code,
                               net::CertStatus cert_status,
                               bool is_partial_request,
                               DownloadInterruptReason abort_reason);
+
+#if defined(OHOS_EX_DOWNLOAD)
+COMPONENTS_DOWNLOAD_EXPORT FileRenameOptions GetFileRenameOptions();
+
+COMPONENTS_DOWNLOAD_EXPORT void SetFileRenameOptions(FileRenameOptions options);
+#endif // difined(OHOS_EX_DOWNLOAD)
 
 // Parse the HTTP server response code.
 // If |fetch_error_body| is true, most of HTTP response codes will be accepted

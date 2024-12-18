@@ -203,7 +203,7 @@ CodecWrapperImpl::QueueStatus CodecWrapperImpl::QueueInputBuffer(
       elided_eos_pending_ = true;
     } else {
       auto res = codec_->QueueInputBufferEOS();
-      TRACE_EVENT1("media", "CodecWrapperImpl::QueueInputBufferEOS End", "result", status);
+      TRACE_EVENT1("media", "QueueInputBufferEOS End", "result", status);
       if (res == DecoderAdapterCode::DECODER_RETRY) {
         return QueueStatus::kTryAgainLater;
       }

@@ -34,11 +34,12 @@
 #include <condition_variable>
 #include <functional>
 #include <list>
+#include <map>
 #include <mutex>
 #include <string>
 #include <unordered_set>
-#include <map>
 #include "capi/nweb_app_client_extension_callback.h"
+#include "capi/nweb_icon_size.h"
 #include "nweb_download_callback.h"
 #include "nweb_javascript_result_callback.h"
 #include "nweb_value.h"
@@ -458,6 +459,10 @@ class NWebHandlerDelegate : public CefClient,
                          size_t height,
                          cef_color_type_t color_type,
                          cef_alpha_type_t alpha_type) override;
+void OnTouchIconUrlWithSizesReceived(
+    const CefString& image_url,
+    bool precomposed,
+    const std::vector<IconSize>& sizes) override;
   void OnReceivedTouchIconUrl(CefRefPtr<CefBrowser> browser,
                               const CefString& icon_url,
                               bool precomposed) override;

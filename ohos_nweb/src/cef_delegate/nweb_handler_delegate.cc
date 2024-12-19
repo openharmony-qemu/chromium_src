@@ -2272,6 +2272,23 @@ void NWebHandlerDelegate::OnReceivedIconUrl(const CefString& image_url,
   }
 }
 
+void NWebHandlerDelegate::OnTouchIconUrlWithSizesReceived(
+    const CefString& image_url,
+    bool precomposed,
+    const std::vector<IconSize>& sizes) {
+  if (!web_app_client_extension_listener_ ||
+      !web_app_client_extension_listener_->OnTouchIconUrlWithSizesReceived) {
+    return;
+  }
+
+  char* c_image_url = CopyCefStringToChar(image_url);
+
+  web_app_client_extension_listener_->OnTouchIconUrlWithSizesReceived(
+      c_image_url, precomposed, sizes.data(), sizes.size(),
+      web_app_client_extension_listener_->nweb_id);
+  delete[] c_image_url;
+}
+
 void NWebHandlerDelegate::OnReceivedTouchIconUrl(CefRefPtr<CefBrowser> browser,
                                                  const CefString& icon_url,
                                                  bool precomposed) {

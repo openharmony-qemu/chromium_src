@@ -15,7 +15,7 @@ const int kSnippetContentDurationSecs = 60;
 
 MediaContentType DurationToMediaContentType(base::TimeDelta duration) {
 #if defined(OHOS_MEDIA_POLICY)
-  if (duration > base::Seconds(kMinimumContentDurationSecs) && 
+  if (duration > base::Seconds(kMinimumContentDurationSecs) &&
       duration <= base::Seconds(kSnippetContentDurationSecs)) {
        return MediaContentType::Snippet;
   }

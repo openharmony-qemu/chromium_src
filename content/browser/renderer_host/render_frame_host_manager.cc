@@ -1005,7 +1005,7 @@ void RenderFrameHostManager::UnloadOldFrame(
                 bfcache_eligibility.flattened_reasons.ToString());
 #ifdef OHOS_BFCACHE
   // make sure when size_equals zero, and time_to_live_equals zero page do not enter bfcache
-  if (back_forward_cache.GetCacheSize() <= 0 || back_forward_cache.GetTimeToLive() <= 0) {
+  if (back_forward_cache.ArkWebGetCacheSize() <= 0 || back_forward_cache.ArkWebGetTimeToLive() <= 0) {
     can_store = false;
   }
   LOG(INFO) << "[BFCACHE]" << __func__ << " can_store: "

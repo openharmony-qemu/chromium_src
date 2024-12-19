@@ -61,6 +61,8 @@ class SystemProperties {
 
   std::string api_version() { return api_version_; }
 
+  std::string compatible_device_type() { return compatible_device_type_; }
+
 #ifdef OHOS_SCROLLBAR
   float get_pixel_ratio() { return virtual_pixel_ratio_;}
   void set_pixel_ratio(float ratio) { virtual_pixel_ratio_ = ratio;}
@@ -79,6 +81,7 @@ class SystemProperties {
   std::string base_os_name_;
   std::string product_model_;
   std::string api_version_;
+  std::string compatible_device_type_;
 #ifdef OHOS_SCROLLBAR
   float virtual_pixel_ratio_ = 2.0;
 #endif
@@ -108,7 +111,10 @@ SystemProperties::SystemProperties()
                          .GetDeviceInfoProductModel()),
       api_version_(OhosAdapterHelper::GetInstance()
                          .GetSystemPropertiesInstance()
-                         .GetDeviceInfoApiVersion()) {}
+                         .GetDeviceInfoApiVersion()),
+      compatible_device_type_(OhosAdapterHelper::GetInstance()
+                             .GetSystemPropertiesInstance()
+                             .GetCompatibleDeviceType()) {}
 }  // namespace
 
 #ifdef OHOS_SCROLLBAR
@@ -160,6 +166,10 @@ BASE_EXPORT std::string BaseOsName() {
 
 BASE_EXPORT std::string ApiVersion() {
   return SystemProperties::Instance()->api_version();
+}
+
+BASE_EXPORT std::string CompatibleDeviceType() {
+  return SystemProperties::Instance()->compatible_device_type();
 }
 
 }  // namespace ohos

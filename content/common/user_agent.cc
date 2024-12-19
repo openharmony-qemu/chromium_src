@@ -5,6 +5,7 @@
 #include "content/public/common/user_agent.h"
 
 #include <stdint.h>
+#include <atomic>
 
 #include "base/containers/contains.h"
 #include "base/logging.h"
@@ -14,7 +15,6 @@
 #include "base/system/sys_info.h"
 #include "build/build_config.h"
 #include "build/util/chromium_git_revision.h"
-#include "ohos_adapter_helper.h"
 
 #if BUILDFLAG(IS_MAC)
 #include "base/mac/mac_util.h"
@@ -242,6 +242,9 @@ std::string GetDistVersion() {
 }
 #endif
 
+std::atomic<bool> is_compatible_type_setted{false};
+static std::string compatible_device_type;
+
 std::string GetOSVersion(IncludeAndroidBuildNumber include_android_build_number,
                          IncludeAndroidModel include_android_model) {
   std::string os_version;
@@ -272,18 +275,17 @@ std::string GetOSVersion(IncludeAndroidBuildNumber include_android_build_number,
     device_type_string = command_line->GetSwitchValueASCII(::switches::kUserAgentValue);
   }
 
-  std::string compatible_device_type = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                                            .GetSystemPropertiesInstance()
-                                            .GetCompatibleDeviceType();
-  if (!compatible_device_type.empty()) {
+  if (!is_compatible_type_setted) {
+    compatible_device_type = base::ohos::CompatibleDeviceType();
     if (compatible_device_type == "Phone" ||
         compatible_device_type == "PC" ||
         compatible_device_type == "Tablet") {
-      LOG(INFO) << "compatible device type is: " << compatible_device_type;
+      LOG(DEBUG) << "compatible device type is: " << compatible_device_type;
       device_type_string = compatible_device_type;
     } else {
-      LOG(INFO) << "unknown compatible device type: " << compatible_device_type;
+      LOG(DEBUG) << "unknown compatible device type: " << compatible_device_type;
     }
+    is_compatible_type_setted = true;
   }
 
   int32_t ohos_major_version = base::ohos::MajorVersion();
@@ -495,9 +497,11 @@ std::string BuildUserAgentFromOSAndProduct(const std::string& os_info,
 #if BUILDFLAG(IS_OHOS) && defined(OHOS_USERAGENT)
   std::string product_string = "";
 
-  std::string compatible_device_type = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                                            .GetSystemPropertiesInstance()
-                                            .GetCompatibleDeviceType();
+  if (!is_compatible_type_setted) {
+    compatible_device_type = base::ohos::CompatibleDeviceType();
+    is_compatible_type_setted = true;
+  }
+
   base::StringAppendF(&product_string, " ArkWeb/%s", ARKWEB_VERSION);
   if (base::ohos::IsMobileDevice()) {
     product_string += " Mobile";

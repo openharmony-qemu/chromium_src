@@ -569,6 +569,11 @@ class NWebDelegateInterface
 
   virtual void SetPopupSurface(void* popupSurface) = 0;
 
+#ifdef OHOS_EX_REFRESH_IFRAME
+  virtual bool WebExtensionContextMenuIsIframe() = 0;
+  virtual void WebExtensionContextMenuReloadFocusedFrame() = 0;
+#endif
+
   virtual void OpenDevtoolsWith(
       std::shared_ptr<NWebDelegateInterface> nweb_delegate,
       std::unique_ptr<OpenDevToolsParam> param) = 0;

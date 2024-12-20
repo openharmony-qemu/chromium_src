@@ -1596,8 +1596,9 @@ void NWebDelegate::OnContinue() {
       GetBrowser()->GetHost()->SetFocus(true);
       handler_delegate_->SetContinueNeedFocus(false);
     }
-  } else if (handler_delegate_ && handler_delegate_->IsCurrentFocus()) {
-    LOG(INFO) << "NWebDelegate::OnContinue set web core focus, nweb_id = " << nweb_id_;
+  } else if (handler_delegate_ && !handler_delegate_->GetFocusState() &&
+             handler_delegate_->IsCurrentFocus()) {
+    handler_delegate_->SetFocusState(true);
     GetBrowser()->GetHost()->SetFocus(true);
   }
   is_onPause_ = false;

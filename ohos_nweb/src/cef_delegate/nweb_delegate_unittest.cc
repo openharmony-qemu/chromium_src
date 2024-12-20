@@ -436,4 +436,16 @@ TEST_F(NWebDelegateTest, ExecuteCreatePDFExt) {
   nweb_delegate_->ExecuteCreatePDFExt(pdfConfig, callback);
 }
 
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+TEST_F(NWebDelegateTest, NeedToFireBeforeUnloadOrUnloadEvents) {
+  auto result = nweb_delegate_->NeedToFireBeforeUnloadOrUnloadEvents();
+  EXPECT_FALSE(result);
+}
+#endif
+
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+TEST_F(NWebDelegateTest, DispatchBeforeUnload) {
+  nweb_delegate_->DispatchBeforeUnload();
+}
+#endif
 }  // namespace OHOS::NWeb

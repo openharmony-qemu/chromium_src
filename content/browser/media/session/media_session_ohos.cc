@@ -267,7 +267,7 @@ void MediaSessionOHOS::SetWebviewShow(bool show, bool is_special_for_audio) {
     return;
   }
   if (is_special_for_audio) {
-    if(media_type_ != OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_AUDIO) {
+    if (media_type_ != OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_AUDIO) {
       LOG(ERROR) << __FUNCTION__ << " media avsession media_type is not audio return";
       return;
     }

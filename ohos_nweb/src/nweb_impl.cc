@@ -3789,3 +3789,19 @@ int NWebImpl::ScaleGestureChangeV2(int type,
   }
   return nweb_delegate_->ScaleGestureChangeV2(type, scale, originScale, centerX, centerY);
 }
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+bool NWebImpl::NeedToFireBeforeUnloadOrUnloadEvents() {
+  if (nweb_delegate_ == nullptr) {
+    return false;
+  }
+  return nweb_delegate_->NeedToFireBeforeUnloadOrUnloadEvents();
+}
+
+void NWebImpl::DispatchBeforeUnload() {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->DispatchBeforeUnload();
+}
+
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD

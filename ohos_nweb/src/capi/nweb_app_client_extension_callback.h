@@ -76,6 +76,9 @@ struct NWebAppClientExtensionCallback {
 
   void (*OnShowVideoAssistant)(int32_t nweb_id,
                                const char* video_assistant_items);
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+  void (*OnBeforeUnloadFired)(bool proceed, int nweb_id);
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
 };
 
 #endif  // OHOS_NWEB_SRC_NWEB_APP_CLIENT_EXTENSION_CALLBACK_H_

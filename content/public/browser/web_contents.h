@@ -1553,6 +1553,9 @@ class WebContents : public PageNavigator,
 #ifdef OHOS_DRAG_DROP
   virtual void ClearContextMenu() = 0;
 #endif //OHOS_DRAG_DROP
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+  virtual void OnBeforeUnloadFired(bool proceed) = 0;
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
  private:
   // This interface should only be implemented inside content.
   friend class WebContentsImpl;

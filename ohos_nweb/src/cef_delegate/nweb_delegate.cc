@@ -4381,6 +4381,21 @@ void NWebDelegate::CloseDevtools() {
   }
   GetBrowser()->GetHost()->CloseDevTools();
 }
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+bool NWebDelegate::NeedToFireBeforeUnloadOrUnloadEvents() {
+  if (GetBrowser().get()) {
+    return GetBrowser()->NeedToFireBeforeUnloadOrUnloadEvents();
+  }
+  return false;
+}
+
+void NWebDelegate::DispatchBeforeUnload() {
+  LOG(INFO) << "NWebDelegate::DispatchBeforeUnload";
+  if (GetBrowser().get()) {
+    GetBrowser()->DispatchBeforeUnload();
+  }
+}
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
 #ifdef OHOS_EX_REFRESH_IFRAME
 bool NWebDelegate::WebExtensionContextMenuIsIframe()

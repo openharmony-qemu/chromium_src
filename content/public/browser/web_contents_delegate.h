@@ -844,6 +844,9 @@ class CONTENT_EXPORT WebContentsDelegate {
   virtual void OnShowVideoAssistant(const std::string& videoAssistantItems);
   virtual void OnReportStatisticLog(const std::string& content);
 #endif  // defined(OHOS_VIDEO_ASSISTANT)
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+  virtual void OnBeforeUnloadFired(bool proceed) {}
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
  protected:
   virtual ~WebContentsDelegate();

@@ -565,6 +565,11 @@ void NotifyForNextTouchEvent() override;
       std::unique_ptr<OpenDevToolsParam> param) override;
   void CloseDevtools() override;
 
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+  bool NeedToFireBeforeUnloadOrUnloadEvents() override;
+  void DispatchBeforeUnload() override;
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
+
  public:
   int argc_;
   const char** argv_;

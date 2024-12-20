@@ -8,9 +8,18 @@ namespace media {
 
 namespace {
 const int kMinimumContentDurationSecs = 5;
+#if defined(OHOS_MEDIA_POLICY)
+const int kSnippetContentDurationSecs = 60;
+#endif // defined(OHOS_MEDIA_POLICY)
 }  // anonymous namespace
 
 MediaContentType DurationToMediaContentType(base::TimeDelta duration) {
+#if defined(OHOS_MEDIA_POLICY)
+  if (duration > base::Seconds(kMinimumContentDurationSecs) &&
+      duration <= base::Seconds(kSnippetContentDurationSecs)) {
+       return MediaContentType::Snippet;
+  }
+#endif // defined(OHOS_MEDIA_POLICY)
   // A zero duration indicates that the duration is unknown. "Persistent" type
   // should be used in this case.
   return (duration.is_zero() ||

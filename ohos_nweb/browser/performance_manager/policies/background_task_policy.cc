@@ -150,8 +150,7 @@ void BackgroundTaskPolicy::OnIsMediaPlayingChanged(const PageNode* page_node) {
          last_avsession_page_node_ = nullptr;
        }
     }
-    // when change another page, and new page is not a playing page
-    // pause action will not go this way
+    // when change another page, and new page is not a playing page, pause action will not go this way
     else if (page_node->IsVisible() && !page_node->IsMediaPlaying() && is_main_frame_url_changed_) {
        bool ret = false;
        SetWebviewShow(page_node, false, false, ret);
@@ -321,8 +320,7 @@ void BackgroundTaskPolicy::SetWebviewShow(const PageNode* page_node,
   is_main_frame_url_changed_ = false;
 }
 
-// While press backward button, the page will change to a new payge,
-// the Url will change, so this function will be called
+// While press backward button, the page will change to a new page, the Url will change, this function will be called
 void BackgroundTaskPolicy::OnMainFrameUrlChanged(const PageNode* page_node) {
   LOG(INFO) << BG_TASK_TAG << __FUNCTION__
             << ", media avsession in page_node=" << page_node;

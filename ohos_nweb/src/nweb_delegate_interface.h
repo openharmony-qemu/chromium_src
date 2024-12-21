@@ -588,10 +588,16 @@ class NWebDelegateInterface
       std::shared_ptr<NWebDelegateInterface> nweb_delegate,
       std::unique_ptr<OpenDevToolsParam> param) = 0;
   virtual void CloseDevtools() = 0;
+
 #if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
   virtual bool NeedToFireBeforeUnloadOrUnloadEvents() = 0;
   virtual void DispatchBeforeUnload() = 0;
 #endif // OHOS_DISPATCH_BEFORE_UNLOAD
+
+  virtual void JavaScriptOnDocumentStartByOrder(const ScriptItems& ScriptItems,
+      const ScriptItemsByOrder& ScriptItemsByOrder) = 0;
+  virtual void JavaScriptOnDocumentEndByOrder(const ScriptItems& ScriptItems,
+      const ScriptItemsByOrder& ScriptItemsByOrder) = 0;
 };
 }  // namespace OHOS::NWeb
 

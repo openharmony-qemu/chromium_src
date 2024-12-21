@@ -781,6 +781,16 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(bool, NeedToFireBeforeUnloadOrUnloadEvents, (), (override));
   MOCK_METHOD(void, DispatchBeforeUnload, (), (override));
 #endif
+
+  MOCK_METHOD(void,
+              JavaScriptOnDocumentStartByOrder,
+              (const ScriptItems& ScriptItems, const ScriptItemsByOrder& ScriptItemsByOrder),
+              (override));
+
+  MOCK_METHOD(void,
+              JavaScriptOnDocumentEndByOrder,
+              (const ScriptItems& ScriptItems, const ScriptItemsByOrder& ScriptItemsByOrder),
+              (override));
 };
 
 class MockNWebTouchPointInfo : public NWebTouchPointInfo {

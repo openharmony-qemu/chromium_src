@@ -2299,6 +2299,54 @@ void NWebDelegate::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
   }
 }
 
+void NWebDelegate::JavaScriptOnDocumentStartByOrder(const ScriptItems& scriptItems,
+    const ScriptItemsByOrder& scriptItemsByOrder) {
+  if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
+    GetBrowser()->GetHost()->RemoveJavaScriptOnDocumentStart();
+    for (const auto& item : scriptItemsByOrder) {
+      if (scriptItems.find(item) == scriptItems.end()) {
+        continue;
+      }
+      CefString script = item;
+      std::vector<CefString> scriptRules;
+      for (const std::string& rule : scriptItems.at(item)) {
+        CefString cefRule;
+        cefRule.FromString(rule);
+        scriptRules.push_back(cefRule);
+      }
+      GetBrowser()->GetHost()->JavaScriptOnDocumentStart(script, scriptRules);
+    }
+  } else if (preference_delegate_) {
+    preference_delegate_->PutJavaScriptOnDocumentStartByOrder(scriptItems, scriptItemsByOrder);
+  } else {
+    LOG(ERROR) << "JavaScriptOnDocumentStartByOrder has failed";
+  }
+}
+
+void NWebDelegate::JavaScriptOnDocumentEndByOrder(const ScriptItems& scriptItems,
+    const ScriptItemsByOrder& scriptItemsByOrder) {
+  if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
+    GetBrowser()->GetHost()->RemoveJavaScriptOnDocumentEnd();
+    for (const auto& item : scriptItemsByOrder) {
+      if (scriptItems.find(item) == scriptItems.end()) {
+        continue;
+      }
+      CefString script = item;
+      std::vector<CefString> scriptRules;
+      for (const std::string& rule : scriptItems.at(item)) {
+        CefString cefRule;
+        cefRule.FromString(rule);
+        scriptRules.push_back(cefRule);
+      }
+      GetBrowser()->GetHost()->JavaScriptOnDocumentEnd(script, scriptRules);
+    }
+  } else if (preference_delegate_) {
+    preference_delegate_->PutJavaScriptOnDocumentEndByOrder(scriptItems, scriptItemsByOrder);
+  } else {
+    LOG(ERROR) << "JavaScriptOnDocumentEndByOrder has failed";
+  }
+}
+
 void NWebDelegate::CallH5Function(
     int32_t routing_id,
     int32_t h5_object_id,

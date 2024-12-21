@@ -1745,6 +1745,22 @@ void NWebImpl::JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) {
   return nweb_delegate_->JavaScriptOnDocumentEnd(scriptItems);
 }
 
+void NWebImpl::JavaScriptOnDocumentStartByOrder(const ScriptItems& scriptItems,
+    const ScriptItemsByOrder& scriptItemsByOrder) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  return nweb_delegate_->JavaScriptOnDocumentStartByOrder(scriptItems, scriptItemsByOrder);
+}
+
+void NWebImpl::JavaScriptOnDocumentEndByOrder(const ScriptItems& scriptItems,
+    const ScriptItemsByOrder& scriptItemsByOrder) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  return nweb_delegate_->JavaScriptOnDocumentEndByOrder(scriptItems, scriptItemsByOrder);
+}
+
 void NWebImpl::CallH5Function(
     int32_t routing_id,
     int32_t h5_object_id,

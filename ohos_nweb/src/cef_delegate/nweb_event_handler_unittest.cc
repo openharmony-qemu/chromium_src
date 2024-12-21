@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include <gmock/gmock.h> 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <memory>
 
@@ -640,6 +640,8 @@ class MockCefBrowser : public CefBrowser {
     return 0;
   }
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override {}
+  bool NeedToFireBeforeUnloadOrUnloadEvents() override { return false; }
+  void DispatchBeforeUnload() override {}
 #endif  // BUILDFLAG(IS_OHOS)
  private:
   CefRefPtr<CefBrowserHost> host_;

@@ -327,6 +327,7 @@ component("nweb_sources") {
     "include/nweb_value_callback.h",
     "src/capi/nweb_app_client_extension_callback.h",
     "src/capi/nweb_devtools_message_handler.h",
+    "src/capi/nweb_statistic_callback.h",
     "src/capi/nweb_storage_extension_callback.h",
     "src/nweb_adsblock_manager_impl.cc",
     "src/nweb_adsblock_manager_impl.h",

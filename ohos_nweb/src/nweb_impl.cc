@@ -162,6 +162,11 @@ extern bool g_siteIsolationMode;
 
 #include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+OnReportStatisticLogFunc
+    OHOS::NWeb::NWebImpl::on_report_statistic_log_callback_ = nullptr;
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+
 namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
@@ -368,9 +373,6 @@ void InitialWebEngineArgs(
   web_engine_args.emplace_back("--zygote-cmd-prefix=/system/bin/web_render");
   web_engine_args.emplace_back("--remote-debugging-port=9222");
   web_engine_args.emplace_back("--enable-touch-drag-drop");
-#if defined(OHOS_INPUT_EVENTS)
-  web_engine_args.emplace_back("--enable-smooth-scrolling");
-#endif
 #if defined(OHOS_SCROLLBAR)
   static float ratio = -1.0f;
   if (ratio < 0) {
@@ -1743,6 +1745,22 @@ void NWebImpl::JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) {
   return nweb_delegate_->JavaScriptOnDocumentEnd(scriptItems);
 }
 
+void NWebImpl::JavaScriptOnDocumentStartByOrder(const ScriptItems& scriptItems,
+    const ScriptItemsByOrder& scriptItemsByOrder) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  return nweb_delegate_->JavaScriptOnDocumentStartByOrder(scriptItems, scriptItemsByOrder);
+}
+
+void NWebImpl::JavaScriptOnDocumentEndByOrder(const ScriptItems& scriptItems,
+    const ScriptItemsByOrder& scriptItemsByOrder) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  return nweb_delegate_->JavaScriptOnDocumentEndByOrder(scriptItems, scriptItemsByOrder);
+}
+
 void NWebImpl::CallH5Function(
     int32_t routing_id,
     int32_t h5_object_id,
@@ -2532,6 +2550,35 @@ void NWebImpl::CloseDevtools() {
 }
 #endif  // defined(OHOS_NWEB_EX)
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+void NWebImpl::EnableVideoAssistant(bool enable) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(WARNING) << "nweb delegate is nullptr when enable video assistant";
+    return;
+  }
+  nweb_delegate_->EnableVideoAssistant(enable);
+}
+
+void NWebImpl::ExecuteVideoAssistantFunction(const std::string& cmd_id) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(WARNING)
+        << "nweb delegate is nullptr when execute video assistant function";
+    return;
+  }
+  nweb_delegate_->ExecuteVideoAssistantFunction(cmd_id);
+}
+
+void NWebImpl::OnReportStatisticLog(const std::string& content) {
+  if (on_report_statistic_log_callback_) {
+    on_report_statistic_log_callback_(content.c_str());
+  }
+}
+
+void NWebImpl::SetOnReportStatisticLogCallback(OnReportStatisticLogFunc func) {
+  on_report_statistic_log_callback_ = func;
+}
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+
 #ifdef OHOS_EX_NETWORK_CONNECTION
 // static
 void NWebImpl::SetConnectTimeout(int32_t seconds) {
@@ -2964,6 +3011,26 @@ void NWebImpl::SetDefaultBrowserZoomLevel(double zoom_factor) {
 }
 #endif
 
+#ifdef OHOS_EX_REFRESH_IFRAME
+bool NWebImpl::WebExtensionContextMenuIsIframe()
+{
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "nullptr nweb_delegate_";
+    return false;
+  }
+  return nweb_delegate_->WebExtensionContextMenuIsIframe();
+}
+
+void NWebImpl::WebExtensionContextMenuReloadFocusedFrame()
+{
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "nullptr nweb_delegate_";
+    return;
+  }
+  return nweb_delegate_->WebExtensionContextMenuReloadFocusedFrame();
+}
+#endif
+
 // static
 void NWebImpl::ResumeDownloadStatic(
     std::shared_ptr<NWebDownloadItem> web_download) {
@@ -2972,6 +3039,12 @@ void NWebImpl::ResumeDownloadStatic(
                     web_download->total_bytes, web_download->etag,
                     web_download->mime_type, web_download->last_modified,
                     web_download->received_slices);
+}
+
+// static
+void NWebImpl::SetFileRenameOption(const int file_rename_option) {
+  WVLOG_I("NWebImpl::SetFileRenameOption: option: %{public}d", file_rename_option);
+  CefSetFileRenameOption(file_rename_option);
 }
 
 #if defined(OHOS_EX_TOPCONTROLS)
@@ -3732,3 +3805,19 @@ int NWebImpl::ScaleGestureChangeV2(int type,
   }
   return nweb_delegate_->ScaleGestureChangeV2(type, scale, originScale, centerX, centerY);
 }
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+bool NWebImpl::NeedToFireBeforeUnloadOrUnloadEvents() {
+  if (nweb_delegate_ == nullptr) {
+    return false;
+  }
+  return nweb_delegate_->NeedToFireBeforeUnloadOrUnloadEvents();
+}
+
+void NWebImpl::DispatchBeforeUnload() {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->DispatchBeforeUnload();
+}
+
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD

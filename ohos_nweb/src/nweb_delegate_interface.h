@@ -511,6 +511,11 @@ class NWebDelegateInterface
       std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) = 0;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+  virtual void EnableVideoAssistant(bool enable) = 0;
+  virtual void ExecuteVideoAssistantFunction(const std::string& cmd_id) = 0;
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+
 #ifdef OHOS_EX_DOWNLOAD
   virtual NWebDownloadItemState GetDownloadItemState(long item_id) = 0;
 #endif
@@ -564,10 +569,25 @@ class NWebDelegateInterface
 
   virtual void SetPopupSurface(void* popupSurface) = 0;
 
+#ifdef OHOS_EX_REFRESH_IFRAME
+  virtual bool WebExtensionContextMenuIsIframe() = 0;
+  virtual void WebExtensionContextMenuReloadFocusedFrame() = 0;
+#endif
+
   virtual void OpenDevtoolsWith(
       std::shared_ptr<NWebDelegateInterface> nweb_delegate,
       std::unique_ptr<OpenDevToolsParam> param) = 0;
   virtual void CloseDevtools() = 0;
+
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+  virtual bool NeedToFireBeforeUnloadOrUnloadEvents() = 0;
+  virtual void DispatchBeforeUnload() = 0;
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
+
+  virtual void JavaScriptOnDocumentStartByOrder(const ScriptItems& ScriptItems,
+      const ScriptItemsByOrder& ScriptItemsByOrder) = 0;
+  virtual void JavaScriptOnDocumentEndByOrder(const ScriptItems& ScriptItems,
+      const ScriptItemsByOrder& ScriptItemsByOrder) = 0;
 };
 }  // namespace OHOS::NWeb
 

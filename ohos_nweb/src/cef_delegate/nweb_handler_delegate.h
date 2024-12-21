@@ -34,11 +34,12 @@
 #include <condition_variable>
 #include <functional>
 #include <list>
+#include <map>
 #include <mutex>
 #include <string>
 #include <unordered_set>
-#include <map>
 #include "capi/nweb_app_client_extension_callback.h"
+#include "capi/nweb_icon_size.h"
 #include "nweb_download_callback.h"
 #include "nweb_javascript_result_callback.h"
 #include "nweb_value.h"
@@ -458,6 +459,10 @@ class NWebHandlerDelegate : public CefClient,
                          size_t height,
                          cef_color_type_t color_type,
                          cef_alpha_type_t alpha_type) override;
+void OnTouchIconUrlWithSizesReceived(
+    const CefString& image_url,
+    bool precomposed,
+    const std::vector<IconSize>& sizes) override;
   void OnReceivedTouchIconUrl(CefRefPtr<CefBrowser> browser,
                               const CefString& icon_url,
                               bool precomposed) override;
@@ -745,6 +750,10 @@ class NWebHandlerDelegate : public CefClient,
       const CefCustomMediaInfo& media_info) override;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+  void OnShowToast(double duration, const CefString& toast) override;
+  void OnShowVideoAssistant(const CefString& videoAssistantItems) override;
+  void OnReportStatisticLog(const CefString& content) override;
+
 #if defined(OHOS_CLIPBOARD)
   void SetIsRichText(bool is_rich_text) { is_rich_text_ = is_rich_text; }
 #endif
@@ -777,7 +786,20 @@ class NWebHandlerDelegate : public CefClient,
 
   void OnRequestOpenDevTools();
 
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+ void OnBeforeUnloadFired(CefRefPtr<CefBrowser> browser,
+                          bool proceed) override;
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
  private:
+  enum class JsRunTime {
+    Start = 0,
+    End = 1
+  };
+  void InjectJsToWeb(JsRunTime time);
+  void InjectJsToWebInner(
+      JsRunTime time,
+      ScriptItems& scriptItems,
+      ScriptItemsByOrder& scriptItemsByOrder);
   void CopyImageToClipboard(CefRefPtr<CefImage> image);
   // List of existing browser windows. Only accessed on the CEF UI thread.
   typedef std::list<CefRefPtr<CefBrowser>> BrowserList;

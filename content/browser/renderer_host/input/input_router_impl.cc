@@ -125,6 +125,9 @@ void InputRouterImpl::SendMouseEvent(
     std::move(event_result_callback)
         .Run(mouse_event, blink::mojom::InputEventResultSource::kBrowser,
              blink::mojom::InputEventResultState::kIgnored);
+#if BUILDFLAG(IS_OHOS)
+  LOG(INFO) << "mouse event suppressed!";
+#endif
     return;
   }
 
@@ -677,6 +680,7 @@ void InputRouterImpl::FilterAndSendWebInputEvent(
       client_->FilterInputEvent(input_event, latency_info);
   if (WasHandled(filtered_state)) {
 #if defined(IS_OHOS)
+    LOG(INFO) << "event was filtered for " << InputEventResultStateToString(filtered_state);
     TRACE_EVENT1("input", "InputEventFiltered",
                  InputEventResultStateToString(filtered_state));
 #else
@@ -764,6 +768,20 @@ void InputRouterImpl::KeyboardEventHandled(
   // TODO(jdduke): crbug.com/274029 - Make ack-triggered shutdown async.
 }
 
+#if BUILDFLAG(IS_OHOS)
+static bool FilterLogEvent(WebInputEvent::Type type) {
+  switch (type) {
+    case WebInputEvent::Type::kMouseUp:
+    case WebInputEvent::Type::kMouseDown:
+    case WebInputEvent::Type::kTouchStart:
+    case WebInputEvent::Type::kTouchEnd:
+      return true;
+    default:
+      return false;
+  }
+}
+#endif
+
 void InputRouterImpl::MouseEventHandled(
     const MouseEventWithLatencyInfo& event,
     MouseEventCallback event_result_callback,
@@ -776,6 +794,11 @@ void InputRouterImpl::MouseEventHandled(
   TRACE_EVENT2("input", "InputRouterImpl::MouseEventHandled", "type",
                WebInputEvent::GetName(event.event.GetType()), "ack",
                InputEventResultStateToString(state));
+#if BUILDFLAG(IS_OHOS)
+  if (FilterLogEvent(event.event.GetType()))
+    LOG(INFO) << "InputRouterImpl::MouseEventHandled type:" << WebInputEvent::GetName(event.event.GetType())
+              << " ack " << InputEventResultStateToString(state);
+#endif
 
   if (source != blink::mojom::InputEventResultSource::kBrowser)
     client_->DecrementInFlightEventCount(source);
@@ -794,6 +817,11 @@ void InputRouterImpl::TouchEventHandled(
   TRACE_EVENT2("input", "InputRouterImpl::TouchEventHandled", "type",
                WebInputEvent::GetName(touch_event.event.GetType()), "ack",
                InputEventResultStateToString(state));
+#if BUILDFLAG(IS_OHOS)
+  if (FilterLogEvent(touch_event.event.GetType()))
+    LOG(INFO) << "InputRouterImpl::TouchEventHandled type:" << WebInputEvent::GetName(touch_event.event.GetType())
+              << " ack " << InputEventResultStateToString(state);
+#endif
   if (source != blink::mojom::InputEventResultSource::kBrowser)
     client_->DecrementInFlightEventCount(source);
   touch_event.latency.AddNewLatencyFrom(latency);

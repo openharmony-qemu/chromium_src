@@ -8728,6 +8728,9 @@ void WebContentsImpl::BeforeUnloadFiredFromRenderManager(
   observers_.NotifyObservers(&WebContentsObserver::BeforeUnloadFired, proceed);
   if (delegate_)
     delegate_->BeforeUnloadFired(this, proceed, proceed_to_fire_unload);
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+  OnBeforeUnloadFired(*proceed_to_fire_unload);
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
   // Note: |this| might be deleted at this point.
 }
 
@@ -10585,6 +10588,40 @@ void WebContentsImpl::RequestExitFullscreen(const MediaPlayerId& player_id) {
 }
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+void WebContentsImpl::EnableVideoAssistant(bool enable) {}
+
+void WebContentsImpl::ExecuteVideoAssistantFunction(const std::string& cmdId) {}
+
+void WebContentsImpl::OnShowToast(double duration, const std::string& toast) {
+  if (!delegate_) {
+    LOG(ERROR) << "delegate is nullptr when notify to show toast";
+    return;
+  }
+
+  delegate_->OnShowToast(duration, toast);
+}
+
+void WebContentsImpl::OnShowVideoAssistant(
+    const std::string& videoAssistantItems) {
+  if (!delegate_) {
+    LOG(ERROR) << "delegate is nullptr when notify to show video assistant";
+    return;
+  }
+
+  delegate_->OnShowVideoAssistant(videoAssistantItems);
+}
+
+void WebContentsImpl::OnReportStatisticLog(const std::string& content) {
+  if (!delegate_) {
+    LOG(ERROR) << "delegate is nullptr when notify to report statistic log";
+    return;
+  }
+
+  delegate_->OnReportStatisticLog(content);
+}
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+
 #ifdef OHOS_I18N
 void WebContentsImpl::UpdateRenderAcceptLanguageIfNeed(
     const std::string& old_accept_language) {
@@ -10616,5 +10653,13 @@ const std::string& WebContentsImpl::SharedRenderProcessToken() {
   return shared_render_process_token_;
 }
 #endif
+
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+void WebContentsImpl::OnBeforeUnloadFired(bool proceed) {
+  if (delegate_) {
+    delegate_->OnBeforeUnloadFired(proceed);
+  }
+}
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
 }  // namespace content

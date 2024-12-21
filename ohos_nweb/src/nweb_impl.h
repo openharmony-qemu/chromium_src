@@ -32,6 +32,10 @@
 #include "nweb_inputmethod_handler.h"
 #include "nweb_output_handler.h"
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+#include "capi/nweb_statistic_callback.h"
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+
 struct OpenDevToolsParam;
 
 namespace OHOS::NWeb {
@@ -389,6 +393,10 @@ class NWebImpl : public NWeb {
   int PostUrl(const std::string& url, const std::vector<char>& postData) override;
   void JavaScriptOnDocumentStart(const ScriptItems& scriptItems) override;
   void JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) override;
+  void JavaScriptOnDocumentStartByOrder(const ScriptItems& scriptItems,
+      const ScriptItemsByOrder& scriptItemsByOrder) override;
+  void JavaScriptOnDocumentEndByOrder(const ScriptItems& scriptItems,
+      const ScriptItemsByOrder& scriptItemsByOrder) override;
   // For NWebEx
   static NWebImpl* FromID(int32_t nweb_id);
   static std::shared_ptr<NWebImpl> GetNWebSharedPtr(int32_t nweb_id);
@@ -415,6 +423,13 @@ class NWebImpl : public NWeb {
   void CloseDevtools();
 #endif  // defined(OHOS_NWEB_EX)
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+  void EnableVideoAssistant(bool enable);
+  void ExecuteVideoAssistantFunction(const std::string& cmd_id);
+  static void OnReportStatisticLog(const std::string& content);
+  static void SetOnReportStatisticLogCallback(OnReportStatisticLogFunc func);
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+
 #ifdef OHOS_EX_NETWORK_CONNECTION
   static void SetConnectTimeout(int32_t seconds);
 #endif
@@ -440,6 +455,7 @@ class NWebImpl : public NWeb {
   void StartDownload(const char* url);
   void ResumeDownload(std::shared_ptr<NWebDownloadItem>);
   static void ResumeDownloadStatic(std::shared_ptr<NWebDownloadItem> download_item);
+  static void SetFileRenameOption(const int file_rename_option);
 #ifdef OHOS_EX_DOWNLOAD
   NWebDownloadItemState GetDownloadItemState(long item_id);
   static NWebDownloadItemState GetDownloadItemStateByGuid(const std::string& guid);
@@ -483,6 +499,11 @@ class NWebImpl : public NWeb {
                                   int current,
                                   bool animate) const;
   void UpdateBrowserControlsHeight(int height, bool animate);
+#endif
+
+#ifdef OHOS_EX_REFRESH_IFRAME
+  bool WebExtensionContextMenuIsIframe();
+  void WebExtensionContextMenuReloadFocusedFrame();
 #endif
 
 #ifdef OHOS_EX_GET_ZOOM_LEVEL
@@ -587,6 +608,10 @@ class NWebImpl : public NWeb {
   void OnConfigurationUpdated(
       std::shared_ptr<NWebSystemConfiguration> configuration) override;
 #endif
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+ bool NeedToFireBeforeUnloadOrUnloadEvents();
+ void DispatchBeforeUnload();
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
@@ -625,6 +650,10 @@ class NWebImpl : public NWeb {
 #if defined(OHOS_SCHEME_HANDLER)
   std::string web_tag_{""};
 #endif
+
+#if defined(OHOS_VIDEO_ASSISTANT)
+  static OnReportStatisticLogFunc on_report_statistic_log_callback_;
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
 };
 }  // namespace OHOS::NWeb
 

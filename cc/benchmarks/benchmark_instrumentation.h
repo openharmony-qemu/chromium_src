@@ -30,15 +30,11 @@ const char kDoBeginFrame[] = "ProxyMain::BeginMainFrame";
 
 class ScopedBeginFrameTask {
  public:
-  ScopedBeginFrameTask(const char* event_name, unsigned int begin_frame_id)
-      : event_name_(event_name) {
-    TRACE_EVENT_BEGIN1(internal::Category(), event_name_,
-                       internal::kBeginFrameId, begin_frame_id);
+  ScopedBeginFrameTask(const char* event_name, unsigned int begin_frame_id) {
+    // waiting for fix
+    event_name_ = event_name;
   }
   ScopedBeginFrameTask(const ScopedBeginFrameTask&) = delete;
-  ~ScopedBeginFrameTask() {
-    TRACE_EVENT_END0(internal::Category(), event_name_);
-  }
 
   ScopedBeginFrameTask& operator=(const ScopedBeginFrameTask&) = delete;
 

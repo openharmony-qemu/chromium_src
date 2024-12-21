@@ -64,13 +64,14 @@ class SystemProperties {
 
   std::string api_version() { return api_version_; }
 
-  std::string compatible_device_type() { return compatible_type_; }
+  std::string compatible_device_type() { return compatible_device_type_; }
 
   bool is_compatible_mode() {
-    LOG(INFO) << "systemProperties compatible type is " << compatible_type_.c_str();
+    LOG(INFO) << "systemProperties compatible type is " << compatible_device_type_.c_str();
     return is_2in1() &&
-           (compatible_type_ == kCompatiblePhone || compatible_type_ == kCompatibleTablet);
+           (compatible_device_type_ == kCompatiblePhone || compatible_device_type_ == kCompatibleTablet);
   }
+
 
 #ifdef OHOS_SCROLLBAR
   float get_pixel_ratio() { return virtual_pixel_ratio_;}
@@ -90,7 +91,7 @@ class SystemProperties {
   std::string base_os_name_;
   std::string product_model_;
   std::string api_version_;
-  std::string compatible_type_;
+  std::string compatible_device_type_;
 #ifdef OHOS_SCROLLBAR
   float virtual_pixel_ratio_ = 2.0;
 #endif
@@ -121,9 +122,9 @@ SystemProperties::SystemProperties()
       api_version_(OhosAdapterHelper::GetInstance()
                          .GetSystemPropertiesInstance()
                          .GetDeviceInfoApiVersion()),
-      compatible_type_(OhosAdapterHelper::GetInstance()
-                         .GetSystemPropertiesInstance()
-                         .GetCompatibleDeviceType()) {}
+      compatible_device_type_(OhosAdapterHelper::GetInstance()
+                             .GetSystemPropertiesInstance()
+                             .GetCompatibleDeviceType()) {}
 }  // namespace
 
 #ifdef OHOS_SCROLLBAR

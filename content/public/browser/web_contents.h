@@ -832,6 +832,11 @@ class WebContents : public PageNavigator,
   virtual bool IsAudioMuted() = 0;
   virtual void SetAudioMuted(bool mute) = 0;
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+  virtual void EnableVideoAssistant(bool enable) = 0;
+  virtual void ExecuteVideoAssistantFunction(const std::string& cmdId) = 0;
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+
 #if defined(OHOS_MEDIA_POLICY)
   //Set whether to the HTML play can be used to control media
   virtual void SetHtmlPlayEnabled(bool enabled) = 0;
@@ -1548,6 +1553,9 @@ class WebContents : public PageNavigator,
 #ifdef OHOS_DRAG_DROP
   virtual void ClearContextMenu() = 0;
 #endif //OHOS_DRAG_DROP
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+  virtual void OnBeforeUnloadFired(bool proceed) = 0;
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
  private:
   // This interface should only be implemented inside content.
   friend class WebContentsImpl;

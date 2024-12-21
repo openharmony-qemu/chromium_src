@@ -839,6 +839,15 @@ class CONTENT_EXPORT WebContentsDelegate {
       const MediaInfo& media_info);
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+  virtual void OnShowToast(double duration, const std::string& toast);
+  virtual void OnShowVideoAssistant(const std::string& videoAssistantItems);
+  virtual void OnReportStatisticLog(const std::string& content);
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+  virtual void OnBeforeUnloadFired(bool proceed) {}
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
+
  protected:
   virtual ~WebContentsDelegate();
 

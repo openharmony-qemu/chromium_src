@@ -1095,4 +1095,30 @@ void VideoCaptureManager::BindSessionIdToNWebId(
 }
 #endif  // defined(OHOS_WEBRTC)
 
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+media::VideoCaptureError VideoCaptureManager::StopScreenCapture(const std::string& session_id) {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+  std::lock_guard<std::mutex> lock(NWebIdMutex_);
+  absl::optional<base::Token> token = base::Token::FromString(session_id);
+  if (!token.has_value()) {
+    return media::VideoCaptureError::kScreenCaptureKitFailedStopCapture;
+  }
+
+  absl::optional<base::UnguessableToken> unguessable_token =
+      base::UnguessableToken::Deserialize(token->high(), token->low());
+  auto session_it = sessions_.find(unguessable_token.value());
+  if (session_it == sessions_.end()) {
+    return media::VideoCaptureError::kScreenCaptureKitFailedStopCapture;
+  }
+
+  auto videoCaptureController =
+      LookupControllerBySessionId(unguessable_token.value());
+  if (videoCaptureController == nullptr) {
+    return media::VideoCaptureError::kScreenCaptureKitFailedStopCapture;
+  } else {
+    return videoCaptureController->StopScreenCapture(unguessable_token.value());  
+  }
+}
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+
 }  // namespace content

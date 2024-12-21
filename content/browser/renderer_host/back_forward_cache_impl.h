@@ -425,7 +425,9 @@ class CONTENT_EXPORT BackForwardCacheImpl
 
 #ifdef OHOS_BFCACHE
   void SetCacheSize(int size) override;
+  int ArkWebGetCacheSize() override { return size_; }
   void SetTimeToLive(int timeToLive) override { this->time_to_live_ = timeToLive; }
+  int ArkWebGetTimeToLive() override { return time_to_live_; }
   base::TimeDelta ArkWebGetTimeToLiveInBackForwardCache() override;
   size_t GetStoredEntriesNumber() override;
 #endif

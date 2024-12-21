@@ -16,6 +16,7 @@
 #include "base/ohos/sys_info_utils.h"
 
 #include "base/threading/scoped_blocking_call.h"
+#include "base/logging.h"
 #include "ohos_adapter_helper.h"
 #include "ui/base/clipboard/clipboard.h"
 
@@ -25,6 +26,8 @@ namespace ohos {
 namespace {
 
 constexpr char kProductModeEmulator[] = "emulator";
+constexpr char kCompatiblePhone[] = "Phone";
+constexpr char kCompatibleTablet[] = "Tablet";
 
 using namespace OHOS::NWeb;
 
@@ -62,6 +65,13 @@ class SystemProperties {
   std::string api_version() { return api_version_; }
 
   std::string compatible_device_type() { return compatible_device_type_; }
+
+  bool is_compatible_mode() {
+    LOG(INFO) << "systemProperties compatible type is " << compatible_device_type_.c_str();
+    return is_2in1() &&
+           (compatible_device_type_ == kCompatiblePhone || compatible_device_type_ == kCompatibleTablet);
+  }
+
 
 #ifdef OHOS_SCROLLBAR
   float get_pixel_ratio() { return virtual_pixel_ratio_;}
@@ -170,6 +180,10 @@ BASE_EXPORT std::string ApiVersion() {
 
 BASE_EXPORT std::string CompatibleDeviceType() {
   return SystemProperties::Instance()->compatible_device_type();
+}
+
+BASE_EXPORT bool IsCompatibleMode() {
+  return SystemProperties::Instance()->is_compatible_mode();
 }
 
 }  // namespace ohos

@@ -52,6 +52,8 @@ BASE_EXPORT std::string ApiVersion();
 
 BASE_EXPORT std::string CompatibleDeviceType();
 
+BASE_EXPORT bool IsCompatibleMode();
+
 }  // namespace ohos
 }  // namespace base
 

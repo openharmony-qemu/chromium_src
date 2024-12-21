@@ -1616,8 +1616,9 @@ void NWebDelegate::OnContinue() {
       GetBrowser()->GetHost()->SetFocus(true);
       handler_delegate_->SetContinueNeedFocus(false);
     }
-  } else if (handler_delegate_ && handler_delegate_->IsCurrentFocus()) {
-    LOG(INFO) << "NWebDelegate::OnContinue set web core focus, nweb_id = " << nweb_id_;
+  } else if (handler_delegate_ && !handler_delegate_->GetFocusState() &&
+             handler_delegate_->IsCurrentFocus()) {
+    handler_delegate_->SetFocusState(true);
     GetBrowser()->GetHost()->SetFocus(true);
   }
   is_onPause_ = false;
@@ -2486,7 +2487,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
 #if defined(REPORT_SYS_EVENT)
         ReportDragDropStatus("DRAG_ENTER", GetBrowser()->GetNWebId());
 #endif
-        LOG(DEBUG) << "DragDrop event DRAG_ENTER SendDragEvent enter, send dragdata to chromium webId:"
+        LOG(INFO) << "DragDrop event DRAG_ENTER SendDragEvent enter, send dragdata to chromium webId:"
                   << GetBrowser()->GetNWebId();
         handler_delegate_->SetDragEnter(true);
         ClearDragData();
@@ -2498,7 +2499,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
       }
       break;
     case DelegateDragAction::DRAG_LEAVE:
-      LOG(DEBUG) << "DragDrop event SendDragEvent leave webId:" << GetBrowser()->GetNWebId();
+      LOG(INFO) << "DragDrop event SendDragEvent leave webId:" << GetBrowser()->GetNWebId();
 #if defined(REPORT_SYS_EVENT)
       ReportDragDropStatus("DRAG_LEAVE", GetBrowser()->GetNWebId());
 #endif
@@ -2512,7 +2513,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
     case DelegateDragAction::DRAG_DROP:
       event.modifiers = EVENTFLAG_NONE;
       handler_delegate_->SetDragEnter(false);
-      LOG(DEBUG) << "DragDrop event SendDragEvent drop webId:" << GetBrowser()->GetNWebId();
+      LOG(INFO) << "DragDrop event SendDragEvent drop webId:" << GetBrowser()->GetNWebId();
       if (render_handler_) {
         auto drag_data1 = render_handler_->GetDragData();
         auto fragment1 = drag_data1->GetFragmentText();
@@ -2536,7 +2537,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
 #endif
       handler_delegate_->SetDragEnter(false);
       ClearDragData();
-      LOG(DEBUG) << "DragDrop event SendDragEvent end webId:" << GetBrowser()->GetNWebId();
+      LOG(INFO) << "DragDrop event SendDragEvent end webId:" << GetBrowser()->GetNWebId();
       GetBrowser()->GetHost()->DragSourceEndedAt(event.x, event.y,
                                                  DRAG_OPERATION_COPY);
       GetBrowser()->GetHost()->DragSourceSystemDragEnded();
@@ -2544,11 +2545,11 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
     case DelegateDragAction::DRAG_CANCEL:
       handler_delegate_->SetDragEnter(false);
       ClearDragData();
-      LOG(DEBUG) << "DragDrop event SendDragEvent cancel webId:" << GetBrowser()->GetNWebId();
+      LOG(INFO) << "DragDrop event SendDragEvent cancel webId:" << GetBrowser()->GetNWebId();
       GetBrowser()->GetHost()->DragSourceSystemDragEnded();
       break;
     default:
-      LOG(DEBUG) << "invalid drag action";
+      LOG(INFO) << "invalid drag action";
       break;
   }
 #endif  // OHOS_DRAG_DROP
@@ -2866,6 +2867,13 @@ void NWebDelegate::WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebMouse
   if (event_handler_ != nullptr) {
 #endif  // #ifdef OHOS_DRAG_DROP
     event_handler_->WebSendMouseEvent(mouseEvent, default_virtual_pixel_ratio_);
+  } else {
+#ifdef OHOS_DRAG_DROP
+    LOG(INFO) << "Mouse Event dropped! event_handler is " << !!event_handler_
+              << " handler_delegate is " << !handler_delegate_;
+#else
+    LOG(INFO) << "Mouse Event dropped! event_handler is " << !!event_handler_;
+#endif  // #ifdef OHOS_DRAG_DROP
   }
 #ifdef OHOS_DRAG_DROP
   if (render_handler_ != nullptr) {
@@ -4418,5 +4426,40 @@ void NWebDelegate::CloseDevtools() {
   }
   GetBrowser()->GetHost()->CloseDevTools();
 }
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+bool NWebDelegate::NeedToFireBeforeUnloadOrUnloadEvents() {
+  if (GetBrowser().get()) {
+    return GetBrowser()->NeedToFireBeforeUnloadOrUnloadEvents();
+  }
+  return false;
+}
+
+void NWebDelegate::DispatchBeforeUnload() {
+  LOG(INFO) << "NWebDelegate::DispatchBeforeUnload";
+  if (GetBrowser().get()) {
+    GetBrowser()->DispatchBeforeUnload();
+  }
+}
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
+
+#ifdef OHOS_EX_REFRESH_IFRAME
+bool NWebDelegate::WebExtensionContextMenuIsIframe()
+{
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "get browser failed or get host failed";
+    return false;
+  }
+  return GetBrowser()->GetHost()->IsIframe();
+}
+
+void NWebDelegate::WebExtensionContextMenuReloadFocusedFrame()
+{
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "get browser failed or get host failed";
+    return;
+  }
+  return GetBrowser()->GetHost()->ReloadFocusedFrame();
+}
+#endif
 
 }  // namespace OHOS::NWeb

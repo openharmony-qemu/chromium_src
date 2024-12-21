@@ -298,6 +298,8 @@ void OHOSMediaAVSessionCallback::Play() {
   if (!media_session_ohos_) {
     return;
   }
+  task_runner_->PostTask(FROM_HERE, base::BindOnce(&MediaSessionOHOS::Resume,
+                                                   media_session_ohos_));
   task_runner_->PostTask(FROM_HERE, base::BindOnce(&MediaSessionOHOS::SetPauseByAvsession,
                                                    media_session_ohos_, false));
 }
@@ -306,6 +308,8 @@ void OHOSMediaAVSessionCallback::Pause() {
   if (!media_session_ohos_) {
     return;
   }
+  task_runner_->PostTask(FROM_HERE, base::BindOnce(&MediaSessionOHOS::Suspend,
+                                                   media_session_ohos_));
   task_runner_->PostTask(FROM_HERE, base::BindOnce(&MediaSessionOHOS::SetPauseByAvsession,
                                                    media_session_ohos_, true));
 }

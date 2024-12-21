@@ -373,9 +373,6 @@ void InitialWebEngineArgs(
   web_engine_args.emplace_back("--zygote-cmd-prefix=/system/bin/web_render");
   web_engine_args.emplace_back("--remote-debugging-port=9222");
   web_engine_args.emplace_back("--enable-touch-drag-drop");
-#if defined(OHOS_INPUT_EVENTS)
-  web_engine_args.emplace_back("--enable-smooth-scrolling");
-#endif
 #if defined(OHOS_SCROLLBAR)
   static float ratio = -1.0f;
   if (ratio < 0) {
@@ -2998,6 +2995,26 @@ void NWebImpl::SetDefaultBrowserZoomLevel(double zoom_factor) {
 }
 #endif
 
+#ifdef OHOS_EX_REFRESH_IFRAME
+bool NWebImpl::WebExtensionContextMenuIsIframe()
+{
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "nullptr nweb_delegate_";
+    return false;
+  }
+  return nweb_delegate_->WebExtensionContextMenuIsIframe();
+}
+
+void NWebImpl::WebExtensionContextMenuReloadFocusedFrame()
+{
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "nullptr nweb_delegate_";
+    return;
+  }
+  return nweb_delegate_->WebExtensionContextMenuReloadFocusedFrame();
+}
+#endif
+
 // static
 void NWebImpl::ResumeDownloadStatic(
     std::shared_ptr<NWebDownloadItem> web_download) {
@@ -3800,3 +3817,19 @@ int NWebImpl::ScaleGestureChangeV2(int type,
   }
   return nweb_delegate_->ScaleGestureChangeV2(type, scale, originScale, centerX, centerY);
 }
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+bool NWebImpl::NeedToFireBeforeUnloadOrUnloadEvents() {
+  if (nweb_delegate_ == nullptr) {
+    return false;
+  }
+  return nweb_delegate_->NeedToFireBeforeUnloadOrUnloadEvents();
+}
+
+void NWebImpl::DispatchBeforeUnload() {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->DispatchBeforeUnload();
+}
+
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD

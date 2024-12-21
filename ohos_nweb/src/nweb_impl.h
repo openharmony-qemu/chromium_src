@@ -507,6 +507,11 @@ class NWebImpl : public NWeb {
   void UpdateBrowserControlsHeight(int height, bool animate);
 #endif
 
+#ifdef OHOS_EX_REFRESH_IFRAME
+  bool WebExtensionContextMenuIsIframe();
+  void WebExtensionContextMenuReloadFocusedFrame();
+#endif
+
 #ifdef OHOS_EX_GET_ZOOM_LEVEL
   static void SetDefaultBrowserZoomLevel(double zoom_factor);
   void SetBrowserZoomLevel(double zoom_factor) const;
@@ -609,6 +614,10 @@ class NWebImpl : public NWeb {
   void OnConfigurationUpdated(
       std::shared_ptr<NWebSystemConfiguration> configuration) override;
 #endif
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+ bool NeedToFireBeforeUnloadOrUnloadEvents();
+ void DispatchBeforeUnload();
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

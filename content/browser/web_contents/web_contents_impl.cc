@@ -8728,6 +8728,9 @@ void WebContentsImpl::BeforeUnloadFiredFromRenderManager(
   observers_.NotifyObservers(&WebContentsObserver::BeforeUnloadFired, proceed);
   if (delegate_)
     delegate_->BeforeUnloadFired(this, proceed, proceed_to_fire_unload);
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+  OnBeforeUnloadFired(*proceed_to_fire_unload);
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
   // Note: |this| might be deleted at this point.
 }
 
@@ -10666,5 +10669,13 @@ const std::string& WebContentsImpl::SharedRenderProcessToken() {
   return shared_render_process_token_;
 }
 #endif
+
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+void WebContentsImpl::OnBeforeUnloadFired(bool proceed) {
+  if (delegate_) {
+    delegate_->OnBeforeUnloadFired(proceed);
+  }
+}
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
 }  // namespace content

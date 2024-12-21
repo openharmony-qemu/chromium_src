@@ -777,6 +777,16 @@ class MockNWebDelegate : public NWebDelegateInterface {
 #ifdef OHOS_EX_SCREEN_CAPTURE
   MOCK_METHOD(void, StopScreenCapture, (const char* session_id), (override));
 #endif
+
+#ifdef OHOS_EX_REFRESH_IFRAME
+  MOCK_METHOD(void, WebExtensionContextMenuIsIframe, (), (override));
+  MOCK_METHOD(bool, WebExtensionContextMenuReloadFocusedFrame, (), (override));
+#endif
+
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+  MOCK_METHOD(bool, NeedToFireBeforeUnloadOrUnloadEvents, (), (override));
+  MOCK_METHOD(void, DispatchBeforeUnload, (), (override));
+#endif  // OHOS_DISPATCH_BEFORE_UNLOAD
 };
 
 class MockNWebDragEvent : public NWebDragEvent {
@@ -1616,4 +1626,38 @@ TEST_F(NWebImplTest, NWebImplTest_ExecuteCreatePDFExt_001) {
   nweb_impl_->ExecuteCreatePDFExt(pdfConfig, callback);
 }
 
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+TEST_F(NWebImplTest, NeedToFireBeforeUnloadOrUnloadEvents_001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  auto result = nweb_impl_->NeedToFireBeforeUnloadOrUnloadEvents();
+  EXPECT_FALSE(result);
+}
+#endif  // OHOS_DISPATCH_BEFORE_UNLOAD
+
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+TEST_F(NWebImplTest, NeedToFireBeforeUnloadOrUnloadEvents_002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, NeedToFireBeforeUnloadOrUnloadEvents())
+      .WillOnce(Return(true));
+  auto result = nweb_impl_->NeedToFireBeforeUnloadOrUnloadEvents();
+  EXPECT_TRUE(result);
+}
+#endif  // OHOS_DISPATCH_BEFORE_UNLOAD
+
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+TEST_F(NWebImplTest, DispatchBeforeUnload_001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->DispatchBeforeUnload();
+  EXPECT_FALSE(nweb_impl_->nweb_delegate_);
+}
+#endif  // OHOS_DISPATCH_BEFORE_UNLOAD
+
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+TEST_F(NWebImplTest, DispatchBeforeUnload_002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, DispatchBeforeUnload()).Times(1);
+  nweb_impl_->DispatchBeforeUnload();
+  EXPECT_TRUE(nweb_impl_->nweb_delegate_);
+}
+#endif  // OHOS_DISPATCH_BEFORE_UNLOAD
 }  // namespace OHOS::NWeb

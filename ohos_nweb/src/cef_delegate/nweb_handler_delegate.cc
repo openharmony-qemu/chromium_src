@@ -2272,6 +2272,23 @@ void NWebHandlerDelegate::OnReceivedIconUrl(const CefString& image_url,
   }
 }
 
+void NWebHandlerDelegate::OnTouchIconUrlWithSizesReceived(
+    const CefString& image_url,
+    bool precomposed,
+    const std::vector<IconSize>& sizes) {
+  if (!web_app_client_extension_listener_ ||
+      !web_app_client_extension_listener_->OnTouchIconUrlWithSizesReceived) {
+    return;
+  }
+
+  char* c_image_url = CopyCefStringToChar(image_url);
+
+  web_app_client_extension_listener_->OnTouchIconUrlWithSizesReceived(
+      c_image_url, precomposed, sizes.data(), sizes.size(),
+      web_app_client_extension_listener_->nweb_id);
+  delete[] c_image_url;
+}
+
 void NWebHandlerDelegate::OnReceivedTouchIconUrl(CefRefPtr<CefBrowser> browser,
                                                  const CefString& icon_url,
                                                  bool precomposed) {
@@ -3911,5 +3928,15 @@ void NWebHandlerDelegate::OnRequestOpenDevTools() {
   web_app_client_extension_listener_->OnRequestOpenDevTools(
       web_app_client_extension_listener_->nweb_id);
 }
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+void NWebHandlerDelegate::OnBeforeUnloadFired(CefRefPtr<CefBrowser> browser,
+                                              bool proceed) {
+  if (web_app_client_extension_listener_ != nullptr &&
+      web_app_client_extension_listener_->OnBeforeUnloadFired != nullptr) {
+    web_app_client_extension_listener_->OnBeforeUnloadFired(
+        proceed, web_app_client_extension_listener_->nweb_id);
+  }
+}
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
 }  // namespace OHOS::NWeb

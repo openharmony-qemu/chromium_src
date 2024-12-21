@@ -938,7 +938,6 @@ void MediaSessionImpl::OnSuspendInternal(SuspendType suspend_type,
     return;
   }
 
-
   if (audio_focus_state_ != State::ACTIVE) {
     LOG(INFO) << "MediaSessionImpl::OnSuspendInternal, audio_focus_state_: " << static_cast<int> (audio_focus_state_);
     return;

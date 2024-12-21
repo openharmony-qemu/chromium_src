@@ -78,14 +78,7 @@ class BASE_EXPORT TaskAnnotator {
   void RunTask(perfetto::StaticString event_name,
                PendingTask& pending_task,
                Args&&... args) {
-    TRACE_EVENT(
-        "toplevel", event_name,
-        [&](perfetto::EventContext& ctx) {
-          EmitTaskLocation(ctx, pending_task);
-          MaybeEmitIncomingTaskFlow(ctx, pending_task);
-          MaybeEmitIPCHashAndDelay(ctx, pending_task);
-        },
-        std::forward<Args>(args)...);
+    // to add trace
     RunTaskImpl(pending_task);
   }
 

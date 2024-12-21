@@ -35,7 +35,7 @@ ArkWeb_HttpBodyStream_::ArkWeb_HttpBodyStream_(
   }
 
   if (!resource_request->cef_request->GetUploadStream()) {
-    LOG(ERROR) << "scheme_handler upload stream is nullptr";
+    LOG(DEBUG) << "scheme_handler upload stream is nullptr";
     return;
   }
 

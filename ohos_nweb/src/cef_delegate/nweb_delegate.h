@@ -560,12 +560,21 @@ void NotifyForNextTouchEvent() override;
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override;
 #endif
 
+#ifdef OHOS_EX_REFRESH_IFRAME
+  bool WebExtensionContextMenuIsIframe() override;
+  void WebExtensionContextMenuReloadFocusedFrame() override;
+#endif
    void SetPopupSurface(void* popupSurface) override;
 
   void OpenDevtoolsWith(
       std::shared_ptr<NWebDelegateInterface> nweb_delegate,
       std::unique_ptr<OpenDevToolsParam> param) override;
   void CloseDevtools() override;
+
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+  bool NeedToFireBeforeUnloadOrUnloadEvents() override;
+  void DispatchBeforeUnload() override;
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
  public:
   int argc_;

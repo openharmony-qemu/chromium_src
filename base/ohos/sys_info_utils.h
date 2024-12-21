@@ -50,6 +50,8 @@ BASE_EXPORT std::string BaseOsName();
 
 BASE_EXPORT std::string ApiVersion();
 
+BASE_EXPORT std::string CompatibleDeviceType();
+
 }  // namespace ohos
 }  // namespace base
 

@@ -359,6 +359,15 @@
     "default": "true"
 },
 {
+    "name": "OHOS_EX_SCREEN_CAPTURE",
+    "owner": "",
+    "desc": "",
+    "effect": "main gn blink_core other",
+    "genCommandline": "default",
+    "dependence": "",
+    "default": "true"
+},
+{
     "name": "OHOS_FAVICON",
     "owner": "wanghui",
     "desc": "",

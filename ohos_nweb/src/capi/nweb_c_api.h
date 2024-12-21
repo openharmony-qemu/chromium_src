@@ -37,14 +37,23 @@ enum NWebDownloadItemState {
     MAX_DOWNLOAD_STATE,
 };
 
+enum NWebSrceenCaptureState {
+    OPENED = 0,
+    STOPED,
+    ABORTED,
+    STOPED_SUCCESS,
+    STOPED_FAILURE,
+};
 
 typedef struct NWebDownloadDelegateCallback WebDownloadDelegateCallback;
 typedef struct NWebBeforeDownloadCallbackWrapper WebBeforeDownloadCallbackWrapper;
 typedef struct NWebDownloadItemCallbackWrapper WebDownloadItemCallbackWrapper;
 typedef struct NWebDownloadItem NWebDownloadItem;
+typedef struct NWebScreenCaptureDelegateCallback WebScreenCaptureDelegateCallback;
 
 typedef void (*OnDownloadBeforeStart)(NWebDownloadItem *download_item, WebBeforeDownloadCallbackWrapper *wrapper);
 typedef void (*OnDownloadDidUpdate)(NWebDownloadItem *download_item, WebDownloadItemCallbackWrapper *wrapper);
+typedef void (*OnSrceenCaptureOnStateChange)(int32_t nweb_id, const char* session_id, int32_t code);
 
 // / WebDownloader functions.
 NWEB_EXPORT void WebDownloadManager_PutDownloadCallback(WebDownloadDelegateCallback *callback);
@@ -142,6 +151,14 @@ NWEB_EXPORT int WebDownloadItem_NWebId(const NWebDownloadItem *download_item);
 NWEB_EXPORT void DestroyBeforeDownloadCallbackWrapper(WebBeforeDownloadCallbackWrapper *wrapper);
 
 NWEB_EXPORT void DestroyDownloadItemCallbackWrapper(WebDownloadItemCallbackWrapper *wrapper);
+
+NWEB_EXPORT void  WebScreenCapture_CreateScreenCaptureDelegateCallback(WebScreenCaptureDelegateCallback **callback);
+
+NWEB_EXPORT void  WebScreenCapture_SetScreenCaptureOnStateChange(WebScreenCaptureDelegateCallback *callback, OnSrceenCaptureOnStateChange fun);
+
+NWEB_EXPORT void  WebScreenCapture_PutScreenCaptureCallback(WebScreenCaptureDelegateCallback *callback, int32_t nweb_id);
+
+NWEB_EXPORT void  WebScreenCapture_StopScreenCapture(int32_t nweb_id, const char* session_id);
 
 #ifdef __cplusplus
 }

@@ -768,6 +768,10 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void, SendAccessibilityHoverEvent, (int x, int y), (override));
   MOCK_METHOD(void, RefreshAccessibilityManagerClickEvent, (), (override));
 
+#ifdef OHOS_EX_SCREEN_CAPTURE
+  MOCK_METHOD(void, StopScreenCapture, (const char* session_id), (override));
+#endif
+
 #ifdef OHOS_EX_REFRESH_IFRAME
   MOCK_METHOD(void, WebExtensionContextMenuIsIframe, (), (override));
   MOCK_METHOD(bool, WebExtensionContextMenuReloadFocusedFrame, (), (override));

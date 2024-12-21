@@ -22,6 +22,9 @@
 #if defined(REPORT_SYS_EVENT)
 #include "event_reporter.h"
 #endif
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+#include "ohos_nweb/src/capi/nweb_screencapture_delegate_callback.h"
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 
 #ifdef __cplusplus
 extern "C" {
@@ -446,6 +449,58 @@ void DestroyDownloadItemCallbackWrapper(
   }
   return;
 }
+
+void WebScreenCapture_CreateScreenCaptureDelegateCallback(
+    NWebScreenCaptureDelegateCallback **callback) {
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  if (callback) {
+    *callback = new NWebScreenCaptureDelegateCallback();
+  }
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+}
+
+void WebScreenCapture_SetScreenCaptureOnStateChange(
+    NWebScreenCaptureDelegateCallback *callback,
+    OnSrceenCaptureOnStateChange fun) {
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  if (callback) {
+    ((NWebScreenCaptureDelegateCallback *)callback)->OnStateChange = fun;
+  }
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+}
+
+void WebScreenCapture_PutScreenCaptureCallback(
+    NWebScreenCaptureDelegateCallback *callback, int32_t nweb_id) {
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  OHOS::NWeb::NWebImpl *nweb = OHOS::NWeb::NWebImpl::FromID(nweb_id);
+  if (!nweb) {
+    WVLOG_E("fail to find a nweb with %{public}d ", nweb_id);
+    return;
+  }
+  if (!callback) {
+    WVLOG_E("invalid callback");
+    return;
+  }
+  nweb->PutWebScreenCaptureDelegateCallback(
+      std::make_shared<NWebScreenCaptureDelegateCallback>(*callback));
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+}
+
+void WebScreenCapture_StopScreenCapture(int32_t nweb_id, const char* session_id) {
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  OHOS::NWeb::NWebImpl *nweb = OHOS::NWeb::NWebImpl::FromID(nweb_id);
+  if (!nweb) {
+    WVLOG_E("fail to find a nweb with %{public}d ", nweb_id);
+    return;
+  }
+  if (!session_id) {
+    WVLOG_E("session_id is null");
+    return;
+  }
+  nweb->StopScreenCapture(session_id);
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+}
+
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

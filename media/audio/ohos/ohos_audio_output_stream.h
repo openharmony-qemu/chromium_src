@@ -114,6 +114,7 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   bool GetInterruptMode();
   void SetInterruptMode(bool audioExclusive);
   bool GetAudioExclusive();
+  void FlushData();
 
  private:
   ~OHOSAudioOutputStream() override;

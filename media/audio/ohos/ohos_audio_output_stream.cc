@@ -591,7 +591,8 @@ void OHOSAudioOutputStream::PumpSamples() {
   }
 
   stream_position_samples_ += frames_filled;
-  if (writeFailed && weakMediaSession_ && weakMediaSession_.get()->HasOnlyOneShotPlayersPublic()) {
+  if (writeFailed && weakMediaSession_ && (weakMediaSession_.get()->HasOnlyOneShotPlayersPublic() ||
+      weakMediaSession_.get()->GetSessionState() == content::MediaSessionImpl::NWebMediaSessionState::NOINITIAL)) {
     LOG(INFO) << "OHOSAudioOutputStream::PumpSamples OneShotPlayers write failed";
     return;
   }

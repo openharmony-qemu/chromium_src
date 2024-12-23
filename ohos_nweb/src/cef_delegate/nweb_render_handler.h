@@ -150,6 +150,7 @@ class NWebRenderHandler : public CefRenderHandler {
   void UpdateDragCursor(CefRefPtr<CefBrowser> browser,
                         DragOperation operation) override;
   void ImageDragForFileUri(CefRefPtr<CefDragData> drag_data);
+  void GetVisibleRectToWeb(int& visibleX, int& visibleY, int& visibleWidth, int& visibleHeight) override;
   bool StartDragging(CefRefPtr<CefBrowser> browser,
                      CefRefPtr<CefDragData> drag_data,
                      DragOperationsMask allowed_ops,

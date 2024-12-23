@@ -364,6 +364,8 @@ void NWebEventHandler::WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebM
   CefMouseEvent mouseInfo;
   mouseInfo.x = mouseEvent->GetX() / ratio;
   mouseInfo.y = mouseEvent->GetY() / ratio;
+  mouseInfo.raw_x = mouseEvent->GetRawX();
+  mouseInfo.raw_y = mouseEvent->GetRawY();
 #ifdef OHOS_EX_TOPCONTROLS
   if (browser_ && browser_->GetHost()) {
     mouseInfo.y -= browser_->GetHost()->GetShrinkViewportHeight();

@@ -203,6 +203,7 @@ CodecWrapperImpl::QueueStatus CodecWrapperImpl::QueueInputBuffer(
       elided_eos_pending_ = true;
     } else {
       auto res = codec_->QueueInputBufferEOS();
+      TRACE_EVENT1("media", "QueueInputBufferEOS End", "result", res);
       if (res == DecoderAdapterCode::DECODER_RETRY) {
         return QueueStatus::kTryAgainLater;
       }
@@ -214,6 +215,7 @@ CodecWrapperImpl::QueueStatus CodecWrapperImpl::QueueInputBuffer(
 
   status = codec_->QueueInputBuffer(buffer.data(), buffer.data_size(),
                                     buffer.timestamp().ToInternalValue());
+  TRACE_EVENT1("media", "CodecWrapperImpl::QueueInputBuffer End", "result", status);
   switch (status) {
     case DecoderAdapterCode::DECODER_OK:
       state_ = State::kRunning;
@@ -251,11 +253,13 @@ CodecWrapperImpl::DequeueStatus CodecWrapperImpl::DequeueOutputBuffer(
     uint32_t index = 0;
     bool eos = false;
     auto status = codec_->DequeueOutputBuffer(presentation_time, index, eos);
+    TRACE_EVENT1("media", "CodecWrapperImpl::DequeueOutputBuffer End", "result", status);
     switch (status) {
       case DecoderAdapterCode::DECODER_OK: {
         if (eos) {
           state_ = State::kDrained;
-          codec_->ReleaseOutputBuffer(index, false);
+          auto result = codec_->ReleaseOutputBuffer(index, false);
+          TRACE_EVENT1("media", "ReleaseOutputBuffer End", "result", result);
           if (end_of_stream)
             *end_of_stream = true;
           return DequeueStatus::kOk;
@@ -266,6 +270,7 @@ CodecWrapperImpl::DequeueStatus CodecWrapperImpl::DequeueOutputBuffer(
 
         OHOS::NWeb::DecoderFormat format;
         auto result = codec_->GetOutputFormatBridgeDecoder(format);
+        TRACE_EVENT1("media", "GetOutputFormatBridgeDecoder End", "result", result);
         LOG(DEBUG) << "CodecWrapperImpl::DequeueOutputBuffer "
                       "des width: "
                    << format.width << ", height: " << format.height;

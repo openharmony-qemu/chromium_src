@@ -1108,7 +1108,10 @@ void GpuServiceImpl::DestroyNativeWindow(uint32_t native_window_id)
         FROM_HERE, base::BindOnce(&GpuServiceImpl::DestroyNativeWindowInner,
                                   weak_ptr_, native_window_id));
     } else {
-      LOG(ERROR) << "compositor gpu task runner is nullptr";
+      LOG(DEBUG) << "compositor gpu task runner is nullptr";
+      main_runner_->PostTask(
+        FROM_HERE, base::BindOnce(&GpuServiceImpl::DestroyNativeWindowInner,
+                                  weak_ptr_, native_window_id));
     }
 }
 

@@ -2909,6 +2909,18 @@ void RenderWidgetHostImpl::AutoscrollEnd() {
       cancel_event, ui::LatencyInfo(ui::SourceEventType::OTHER));
 }
 
+#ifdef OHOS_DRAG_DROP
+void RenderWidgetHostImpl::GetVisibleRectToWeb(GetVisibleRectToWebCallback callback) {
+  RenderViewHostDelegateView* view = delegate_->GetDelegateView();
+  if (!view || !GetView()) {
+    std::move(callback).Run(gfx::Rect());
+    return;
+  }
+  auto rect = view->GetVisibleRectToWeb();
+  std::move(callback).Run(rect);
+}
+#endif
+
 void RenderWidgetHostImpl::StartDragging(
     blink::mojom::DragDataPtr drag_data,
     blink::DragOperationsMask drag_operations_mask,

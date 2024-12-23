@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -252,6 +252,10 @@ class NWebImpl : public NWeb {
       const size_t scriptLength,
       std::shared_ptr<NWebMessageValueCallback> callback,
       bool extention) override;
+  void ExecuteCreatePDFExt(
+      std::shared_ptr<NWebPDFConfigArgs> pdfConfig,
+      std::shared_ptr<NWebArrayBufferValueCallback> callback) override;
+
 
 #if defined(OHOS_MSGPORT)
   void ExecuteJavaScript(
@@ -431,6 +435,7 @@ class NWebImpl : public NWeb {
   void StartDownload(const char* url);
   void ResumeDownload(std::shared_ptr<NWebDownloadItem>);
   static void ResumeDownloadStatic(std::shared_ptr<NWebDownloadItem> download_item);
+  static void SetFileRenameOption(const int file_rename_option);
 #ifdef OHOS_EX_DOWNLOAD
   NWebDownloadItemState GetDownloadItemState(long item_id);
   static NWebDownloadItemState GetDownloadItemStateByGuid(const std::string& guid);

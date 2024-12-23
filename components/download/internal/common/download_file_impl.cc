@@ -23,6 +23,7 @@
 #include "components/download/public/common/download_destination_observer.h"
 #include "components/download/public/common/download_features.h"
 #include "components/download/public/common/download_interrupt_reasons_utils.h"
+#include "components/download/public/common/download_utils.h"
 #include "components/download/public/common/download_stats.h"
 #include "crypto/secure_hash.h"
 #include "crypto/sha2.h"
@@ -356,8 +357,15 @@ void DownloadFileImpl::RenameAndUniquify(const base::FilePath& full_path,
     return;
   }
 #endif  // BUILDFLAG(IS_ANDROID)
+
+  RenameOption rename_options = UNIQUIFY;
+#if defined(OHOS_EX_DOWNLOAD)
+  if (GetFileRenameOptions() == FileRenameOptions::OVERWRITE_MODE) {
+    rename_options = OVERWRITE;
+  }
+#endif // OHOS_EX_DOWNLOAD
   std::unique_ptr<RenameParameters> parameters(
-      new RenameParameters(UNIQUIFY, full_path, std::move(callback)));
+      new RenameParameters(rename_options, full_path, std::move(callback)));
   RenameWithRetryInternal(std::move(parameters));
 }
 

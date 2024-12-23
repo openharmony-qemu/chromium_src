@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -1423,6 +1423,15 @@ void NWebImpl::ExecuteJavaScriptExt(
     return;
   }
   nweb_delegate_->ExecuteJavaScriptExt(fd, scriptLength, callback, extention);
+}
+
+void NWebImpl::ExecuteCreatePDFExt(
+    std::shared_ptr<NWebPDFConfigArgs> pdfConfig,
+    std::shared_ptr<NWebArrayBufferValueCallback> callback) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->ExecuteCreatePDFExt(pdfConfig, callback);
 }
 
 #if defined(OHOS_MSGPORT)
@@ -2999,6 +3008,12 @@ void NWebImpl::ResumeDownloadStatic(
                     web_download->total_bytes, web_download->etag,
                     web_download->mime_type, web_download->last_modified,
                     web_download->received_slices);
+}
+
+// static
+void NWebImpl::SetFileRenameOption(const int file_rename_option) {
+  WVLOG_I("NWebImpl::SetFileRenameOption: option: %{public}d", file_rename_option);
+  CefSetFileRenameOption(file_rename_option);
 }
 
 #if defined(OHOS_EX_TOPCONTROLS)

@@ -35,6 +35,9 @@ void MediaSessionController::SetMetadata(
     bool has_audio,
     bool has_video,
     media::MediaContentType media_content_type) {
+#if defined(OHOS_MEDIA_POLICY)
+  media_session_->SetMediaContentType(media_content_type);
+#endif
   has_audio_ = has_audio;
   has_video_ = has_video;
   media_content_type_ = media_content_type;

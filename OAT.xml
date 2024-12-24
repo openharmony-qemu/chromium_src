@@ -1,0 +1,732 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Copyright (c) 2021 Huawei Device Co., Ltd.
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+
+    This is the configuration file template for OpenHarmony OSS Audit Tool, please copy it to your
+project root dir and modify it refer to OpenHarmony/tools_oat/README.
+    All configurations in this file will be merged to OAT-Default.xml, if you have any questions or
+concerns, please create issue in OpenHarmony/tools_oat and @jalenchen or chenyaxun.
+
+    licensefile:
+    1.If the project don't have "LICENSE" in root dir, please define all the license files in this
+project in , OAT will check license files according to this rule.
+
+    policylist:
+    1. policy: If the OAT-Default.xml policies do not meet your requirements, please add policies here.
+    2. policyitem: The fields type, name, path, desc is required, and the fields rule, group,
+filefilter is optional,the default value is:
+    <policyitem type="" name="" path="" desc="" rule="may" group="defaultGroup"
+filefilter="defaultPolicyFilter"/>
+    3. policyitem type:
+        "compatibility" is used to check license compatibility in the specified path;
+        "license" is used to check source license header in the specified path;
+        "copyright" is used to check source copyright header in the specified path;
+        "import" is used to check source dependency in the specified path, such as import ... ,include ...
+        "filetype" is used to check file type in the specified path, supported file types: archive, binary
+        "filename" is used to check whether the specified file exists in the specified path(projectroot
+means the root dir of the project), supported file names: LICENSE, README, README.OpenSource
+    4. policyitem name: This field is used for define the license, copyright, "*" means match all, the
+"!" prefix means could not match this value. For example, "!GPL" means can not use GPL license.
+    5. policyitem path: This field is used for define the source file scope to apply this policyitem,
+the "!" prefix means exclude the files. For example, "!.*/lib/.*" means files in lib dir will be
+exclude while process this policyitem.
+    6. policyitem rule and group: These two fields are used together to merge policy results. "may"
+policyitems in the same group means any one in this group passed, the result will be passed.
+    7. policyitem filefilter: Used to bind filefilter which define filter rules.
+    7. policyitem desc: Used to describe the reason of this policy item, committers will check this
+while merging the code.
+    8. filefilter: Filter rules, the type filename is used to filter file name, the type filepath is
+used to filter file path.
+
+    Note:If the text contains special characters, please escape them according to the following rules:
+    " == &quot;
+    & == &amp;
+    ' == &apos;
+    < == &lt;
+    > == &gt;
+-->
+
+<configuration>
+    <oatconfig>
+        <licensefile>LICENSE</licensefile>
+        <policylist>
+            <policy name="projectPolicy" desc="The LICENSE is not standardized">
+            </policy>
+        </policylist>
+        <filefilterlist>
+            <filefilter name="defaultPolicyFilter"
+                desc="Filters for compatibility,license header policies">
+                <filteritem type="filepath" name=".*README.chromium" desc="chromium的开源软件元数据文件" />
+                <filteritem type="filepath" name="ohos_sdk/.install" desc="OHOS自研shell文件，默认不加license" />
+                <filteritem type="filepath" name="content/test/data/browsing_data/media_license.html" desc="chromium原生文件无license" />
+                <filteritem type="filepath" name="media/learning/impl/DEPS" desc="chromium原生文件无license" />
+                <filteritem type="filepath" name="components/policy_strings.grdp" desc="chromium原生文件无license" />
+                <filteritem type="filepath" name="tools/binary_size/libsupersize/testdata/AndroidManifest_AlwaysInstalled.xml" desc="chromium原生文件无license" />
+                <filteritem type="filepath" name="tools/binary_size/libsupersize/testdata/AndroidManifest_OnDemand.xml" desc="chromium原生文件无license" />
+                <filteritem type="filepath" name="android_webview/java/strings/translations/android_webview_strings_sv.xtb" desc="chromium原生文件无license" />
+                <filteritem type="filepath" name="android_webview/java/strings/translations/android_webview_strings_da.xtb" desc="chromium原生文件无license" />
+                <filteritem type="filepath" name="content/browser/aggregation_service/DEPS" desc="chromium原生文件无license" />
+                <filteritem type="filepath" name="tools/tests/OWNERS" desc="chromium原生文件无license" />
+                <filteritem type="filepath" name="native_client_sdk/src/doc/_project.yaml" desc="chromium原生文件无license" />
+                <filteritem type="filepath" name="tools/win/ChromeDebug/ChromeDebug/source.extension.vsixmanifest" desc="chromium原生文件无license" />
+                <filteritem type="filepath" name="chromeos/ash/components/policy/OWNERS" desc="chromium原生文件无license" />
+                <filteritem type="filepath" name="components/policy/ENTERPRISE_POLICY_OWNERS" desc="chromium原生文件无license" />
+                <filteritem type="filepath" name="components/policy/resources/templates/OWNERS" desc="chromium原生文件无license" />
+                <filteritem type="filepath" name="components/policy/OWNERS" desc="chromium原生文件无license" />
+                <filteritem type="filepath" name="ipc/SECURITY_OWNERS" desc="chromium原生文件无license" />
+                <filteritem type="filepath" name="components/policy/resources/templates/policy_definitions/PluginVm/PluginVmAllowed.yaml" desc="chromium原生文件无license" />
+                <filteritem type="filepath" name="components/policy/tools/OWNERS" desc="chromium原生文件无license" />
+                <filteritem type="filepath" name="components/policy/resources/templates/policy_definitions/PluginVm/PluginVmLicenseKey.yaml" desc="chromium原生文件无license" />
+                <filteritem type="filepath" name="components/policy/resources/templates/policy_definitions/PluginVm/UserPluginVmAllowed.yaml" desc="chromium原生文件无license" />
+                <filteritem type="filepath" name="components/policy/resources/templates/policy_definitions/SafeBrowsing/RealTimeDownloadProtectionRequestAllowed.yaml" desc="chromium原生文件无license" />
+                <filteritem type="filepath" name="components/policy/resources/templates/policy_definitions/PluginVm/policy_atomic_groups.yaml" desc="chromium原生文件无license" />
+                <filteritem type="filepath" name="docs/enterprise/OWNERS" desc="chromium原生文件无license" />
+            </filefilter>
+            <filefilter name="defaultFilter">
+                <filteritem type="filepath" name="url/third_party/mozilla/LICENSE.txt" desc="该文件的许可证为BSD-3-Clause" />
+                <filteritem type="filepath" name="courgette/third_party/bsdiff/LICENCE" desc="该文件的许可证为BSD-3-Clause" />
+                <filteritem type="filepath" name="build/linux/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="ios/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="test/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="net/data/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="android_webview/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="ui/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="browser_ui/widget/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/embedder_support/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/infobars/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/browser_ui/styles/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/browser_ui/site_settings/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="base/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/blocked_content/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/javascript_dialogs/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/browser_ui/media/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/media_router/browser/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/omnibox/browser/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/permissions/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="buildtools/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="translate/content/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/webrtc/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="content/public/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="chromecast/browser/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/browser_ui/settings/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/browser_ui/strings/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/webapps/browser/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="remoting/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="build/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="content/shell/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="content/test/data/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="net/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="tools/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/autofill/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/browser_ui/styles/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="components/browser_ui/widget/android/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="native_client_sdk/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="remoting/host/installer/mac/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="ui/resources/default_200_percent/mac/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="ui/resources/default_100_percent/mac/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="remoting/host/mac/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="tools/mac/.*" desc="经确认，该文件不会使用"/>
+                <filteritem type="filepath" name="base/third_party/xdg_user_dirs/.*" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="services/proxy_resolver/pac_js_library.h" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="net/third_party/.*" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="net/base/registry_controlled_domains/.*" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="buildtools/third_party/.*" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="base/third_party/valgrind/.*" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="media/test/data/.*" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="tools/win/ChromeDebug/ChromeDebug/ChromeDebug.vsct" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="base/third_party/.*" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="ppapi/lib/gl/include/.*" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="ui/base/x/.*" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="url/third_party/mozilla/url_parse.cc" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="net/cookies/parsed_cookie.cc" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="net/cookies/canonical_cookie.cc" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="net/cookies/cookie_monster.cc" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="net/http/http_chunked_decoder.cc" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="net/http/http_chunked_decoder.h" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="content/browser/storage_partition_impl_unittest.cc" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="ui/display/win/screen_win_unittest.cc" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="content/browser/browsing_data/browsing_data_remover_impl_unittest.cc" desc="经确认，该文件不会使用" />
+                <filteritem type="filepath" name="build/xcode_binaries.yaml" desc="经确认，该文件不会使用" />
+            </filefilter>
+             <filefilter name="binaryFileTypePolicyFilter" >
+                <filteritem type="filepath" name="ohos_sdk/OpenHarmonyApplication.pem" desc="ohos自研二进制文件" />
+                <filteritem type="filepath" name="ash/components/arc/test/data/icons/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ash/app_list/resources/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ash/login/resources/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ash/webui/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ash/public/cpp/resources/unscaled_resources/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/resources/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/translate/content/android/java/res/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/viz/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/invalidation/images/InvalidationService.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/performance_manager/doc/overview.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/sync/driver/resources/star_small.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/security_interstitials/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/services/print_compositor/ipc_flow_diagram.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/neterror/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/cronet/ios/cronet_consumer/Default.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/browser/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/app/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/child/dwrite_font_proxy/blink_dwrite_call_flow.dot.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/shell/resources/brokenCanvas.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/images/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/security/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/speed/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/testing/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/accessibility/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/ui/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/media/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/process/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/navigation-request-navigation-state.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/enterprise/extension_query_sample.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="fuchsia/engine/test/data/favicon2.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="fuchsia/engine/test/data/favicon.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="headless/test/data/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="pdf/test/data/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="pdf/pdfium/fuzzers/corpora/pdf_codec_png/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="printing/test/data/pdf_cg/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="remoting/ios/app/resources/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="remoting/resources/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/test/data/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="skia/ext/data/vectorcanvastest/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/accessibility/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/chromeos/resources/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/file_manager/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/resources/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/views/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/webui/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/gfx/test/data/compositor/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="extensions/browser/resources/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="weblayer/browser/java/res/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="weblayer/shell/android/shell_apk/res/drawable-mdpi/avatar_sunglasses.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="weblayer/test/data/favicon.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="base/test/data/file_util/red.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="base/allocator/partition_allocator/dot/super-page.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="extensions/test/data/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="headless/test/data/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/chrome_extensions/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/perf/page_sets/tough_canvas_cases/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/stats_viewer/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/grit/grit/testdata/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/binary_size/libsupersize/viewer/static/splash.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/win/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/translation/testdata/.*png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="courgette/generation.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="courgette/application.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="figures/Web-architecture.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="figures/Web-architecture_ZH.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="net/docs/url_request.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="net/docs/pools.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="mojo/core/doc/layering.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="cc/animation/images/new-animation.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="media/mojo/renderer_extension_diagram.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="mojo/docs/mojolpm-fuzzer-structure.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ppapi/tests/extensions/load_unload/ext_icon.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="chromecast/app/resources/shell_speaker_icon.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="testing/gtest_ios/Default.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/design/sandbox_top_diagram.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/render-frame-host-lifecycle-state.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/feed/response.binarypb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ash/shortcut_viewer/strings/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ash/webui/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ash/strings/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/strings/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="chromeos/strings/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/policy/resources/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="remoting/resources/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="cloud_print/virtual_driver/win/install/resources/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="media_router/browser/android/java/strings/translations/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="device/fido/strings/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/strings/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/accessibility/extensions/strings/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/chromeos/translations/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/strings/translations/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="weblayer/browser/java/translations/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/omnibox/resources/translations/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="extensions/strings/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/media_router/browser/android/java/strings/translations/.*xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/cbor/reader_fuzzer_corpus/.*" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="mojo/public/tools/fuzzers/message_corpus/.*mojomsg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/neterror/resources/sounds/.*mp3" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/accessibility/html/sfx.mp3" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/browser/devtools/devtools_protocol_encoding_cbor_fuzzer_corpus/.*" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/browser/indexed_db/fuzzer_corpus/encoded_indexed_db_key_path/.*" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/.*pem" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="extensions/test/data/.*pem" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/sxg/.*pem" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/python/google/httpd_config/httpd2.pem" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/python/google/httpd_config/root_ca_cert.pem" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="base/test/data/tzdata/icu/44/le/.*res" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="extensions/test/data/.*crx" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/accessibility/extensions/chromevoxclassic/cvox2/background/earcons/.*wav" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/media/.*wav" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/media/.*webm" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/gpu/vc/.*webm" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="fuchsia/engine/test/data/.*webm" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/zucchini/testdata/.*exe" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="base/test/data/pe_image_reader/.*exe" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/viz/test/data/render_pass_data/top_real_world_desktop/.*zip" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="extensions/test/data/content_hash_fetcher/.*zip" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/site_isolation/.*zip" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/ad_tagging/.*zip" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/gpu/mediapipe_zip/.*zip" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="omponents/test/data/unzip_service/.*zip" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/viz/test/data/render_pass_data/.*zip" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/crx_file/sample.zip" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/unzip_service/.*zip" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="extensions/test/data/content_hash_fetcher/manifest_mislabeled_script/source.zip" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="build/toolchain/win/.*sha1" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/zucchini/.*sha1" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="buildtools/win/clang-format.exe.sha1" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/traffic_annotation/bin/win32/traffic_annotation_auditor.exe.sha1" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/crx_file/.*crx3" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ash/display/test_data/.*icc" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/gzip-content.svgz" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="net/third_party/.*crl" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/accessibility/extensions/chromevoxclassic/chromevox/background/earcons/.*ogg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ash/webui/camera_app_ui/resources/sounds/.*ogg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/media/.*ogg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="weblayer/test/data/test_audio.ogg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="pdf/test/data/.*pdf" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="pdf/pdfium/fuzzers/corpora/.*pdf" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/browser/indexed_db/docs/.*pdf" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/ad_tagging/test.pdf" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/.*pdf" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/media/.*mp4" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="remoting/resources/.*webp" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/.*webp" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/webui/resources/roboto/.*woff2" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/ad_tagging/font.woff2" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/perf/page_sets/simple_canvas/resources/.*woff2" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="testing/libfuzzer/fuzzers/woff2_corpus/.*woff2" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/perf/testdata/.*dat" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/web_bundle/.*har" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/web_package/.*har" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="base/test/data/file_util/.*bin" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/dom_distiller/core/data/.*bin" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="media/formats/mp4/h264_annex_b_fuzz_corpus/.*bin" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/language/content/browser/ulp_language_code_locator/.*bin" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="fuchsia/engine/test/data/.*bin" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/zucchini/fuzzers/testdata/raw_or_ztf_gen_fuzzer/.*bin" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/language/content/browser/ulp_language_code_locator/.*bin" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/accessibility/fuzz_corpus/.*bin" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/download/.*bin" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/omnibox/.*bin" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="base/test/data/.*dll" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/zucchini/fuzzers/testdata/.*dll" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/zucchini/fuzzers/testdata/old_eventlog_provider.dll" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/autofill/heuristics/output/.*out" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/cast_certificate/testsuite/testsuite1.pb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/safe_browsing/content/resources/empty_file_type_policy.pb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/paint_preview/PaintPreviewTestService/wikipedia/proto.pb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="chromeos/test/data/smart_dim/20181115_example_preprocessor_config.pb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/web_bundle/.*wbn" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/web_package/.*wbn" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="pdf/pdfium/fuzzers/corpora/pdf_codec_tiff/not_kitty.tiff" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/webp_transcode/test_small.tiff" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/download-test1.lib" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/download/download-test.lib" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/media/bear_pcm_s24be.mov" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/media/bear_pcm_s16be.mov" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/media/bear.flac" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/sxg/.*cbor" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/fuzzer_corpus/signed_exchange_certificate_chain_data/wildcard_example.org.public.pem.cbor" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/gpu/mediapipe/.*wasm" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/interest_group/multiply.wasm" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/file_manager/image_loader/piex/piex.out.wasm" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ash/webui/camera_app_ui/resources/js/lib/ffmpeg.wasm" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/ui/ui_devtools/images/.*gif" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="pdf/pdfium/fuzzers/corpora/pdf_codec_gif/not_kitty.gif" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="headless/test/data/.*gif" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/perf/page_sets/key_idle_power_cases/animated-10color.gif" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="fuchsia/engine/test/data/1x1.gif" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/resources/cursors/.*cur" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/media/.*avi" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/media/.*ogv" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="printing/test/data/emf/test4.emf" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/printing/unsorted_custompapers.plist" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/.*ico" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/gfx/.*ico" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/binary_size/libsupersize/viewer/static/.*ico" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/grit/grit/testdata/.*ico" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="cloud_print/virtual_driver/win/install/resources/.*ico" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/win/ChromeDebug/ChromeDebug/Resources/.*ico" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="remoting/resources/.*ico" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/web_test/renderer/resources/fonts/.*ttf" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="headless/test/data/.*ttf" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ash/keyboard/ui/resources/.*ttf" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/.*ttf" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="skia/ext/data/test_fonts/.*ttf" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/.*ttf" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/sxg/.*sxg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/shell/app/app.icns" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="native_client/src/untrusted/irt_stub/libppapi.so" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ppapi/native_client/src/untrusted/irt_stub/libppapi.so" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/zucchini/fuzzers/testdata/imposed_ensemble_matcher_fuzzer/seed.asciipb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/accessibility/extensions/colorenhancer/res/cvd-128.xcf" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/origin_trials/eftest.key" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/origin_trials/eftest2.key" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="net/tools/testserver/dist/_ssl.pyd" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="net/tools/testserver/dist/_socket.pyd" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/download/gzip-content.gz" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="extensions/test/data/extension_with_gzipped_locales/_locales/.*gz" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/.*jpg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="remoting/ios/app/resources/Assets.xcassets/.*jpg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/accessibility/browser/figures/.*jpg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/images/.*jpg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/security/.*jpg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/speed/.*jpg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/testing/.*jpg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/ui/.*jpg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="docs/accessibility/browser/images/cover_flow.jpg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/test/data/.*jpg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="pdf/pdfium/fuzzers/corpora/pdf_codec_jpeg/not_kitty.jpg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/.*jpg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/binary_size/libsupersize/testdata/mock_apk/assets/.*pak" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/grit/grit/testdata/resources.pak" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ppapi/native_client/src/untrusted/irt_stub/libppapi.a" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/binary_size/libsupersize/testdata/mock_source_directory/out/Release/obj/third_party/WebKit.a" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/gpu/mediapipe/face_mesh_test/face_mesh.binarypb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/cast_channel/fuzz_corpus/cast_message0" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/browser/indexed_db/fuzzer_corpus/encoded_indexed_db_key/encoded_date_key" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/cast_channel/fuzz_corpus/cast_message2" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/update_client/jebgalgnebhfojomionfpkfelancnnkf/component1.dll" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/zucchini/fuzzers/testdata/patch_fuzzer/empty.zuc" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="native_client_sdk/src/libraries/xray/xray.odt" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/crx_file/valid.crx2" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/.*tflite" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/indexeddb/missing_sst/file__0.indexeddb.leveldb/000008.sst" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/.*3gp" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="net/data/ssl/certificates/treadclimber.sctlist" desc="Binary file screening" />
+                <filteritem type="filepath" name="net/data/url_request_unittest/BullRunSpeech.txt.deflate" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/services/storage/test_data/legacy_dom_storage_database.localstorage" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="native_client_sdk/src/tools/lib/tests/data/test.bc" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="net/data/filter_unittests/google.br" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="pdf/pdfium/fuzzers/corpora/pdf_jpx/not_kitty.jp2" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="courgette/testdata/.*exe" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="courgette/testdata/chrome64-1-2.v1.bsdiff" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="courgette/testdata/elf-.*" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="courgette/testdata/.*dll" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="courgette/testdata/setup1-setup2.v1.bsdiff" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/service_worker/created_by_origin_impl/Database/MANIFEST-000001" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="device/fido/response_data_fuzzer_corpus/get_assertion_response_corpus" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="device/fido/response_data_fuzzer_corpus/make_credential_response_corpus" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="device/fido/response_data_fuzzer_corpus/register1" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="device/fido/response_data_fuzzer_corpus/sign0" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="device/fido/response_data_fuzzer_corpus/sign1" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="extensions/test/data/bigfile" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="sql/test/data/recovery_387868" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="testing/libfuzzer/fuzzers/flatbuffers_corpus/monsterdata_test.mon" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="testing/scripts/variations_smoke_test_data/webview_test_seed" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/luci-go/isolate" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/luci-go/swarming" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/win/ChromeDebug/LowLevel/.*cs" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ui/display/util/fuzz_corpus/.*" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/browser/indexed_db/fuzzer_corpus/indexed_db_key/date_type" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/browser/indexed_db/fuzzer_corpus/indexed_db_key/binary_type" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/browser/indexed_db/fuzzer_corpus/indexed_db_key/array_type" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/update_client/.*crx" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/update_client/.*crx3" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/update_client/.*bin" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/update_client/ihfokbkgjpifnbbojhneepfflplebdkc/ihfokbkgjpifnbbojhneepfflplebdkc_2/a_changing_binary_file" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/update_client/ihfokbkgjpifnbbojhneepfflplebdkc/ihfokbkgjpifnbbojhneepfflplebdkc_1to2_bad/f3" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/update_client/ihfokbkgjpifnbbojhneepfflplebdkc/ihfokbkgjpifnbbojhneepfflplebdkc_1to2/f1" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/indexeddb/corrupt_leveldb/file__0.indexeddb.leveldb/MANIFEST-000002" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/update_client/ihfokbkgjpifnbbojhneepfflplebdkc/ihfokbkgjpifnbbojhneepfflplebdkc_1/a_changing_binary_file" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ios/testing/data/http_server_files/redchair.usdz" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="net/data/spdy_tests/examples_07.hpack" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/skia_goldctl/linux/goldctl" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="build/android/chromium-debug.keystore" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/android/SelfConsumingObject.dex" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/indexeddb/migration_from_0/file__0.indexeddb.leveldb/MANIFEST-000002" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="ios/chrome/test/data/voice/test_sound.m4a" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="media/base/android/java/res/raw/empty.wav" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/binary_size/libsupersize/testdata/mock_source_directory/out/Release/obj/third_party/ffmpeg/libffmpeg_internal.a" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/paint_preview/PaintPreviewTestService/wikipedia/.*skp" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/indexeddb/schema_version_123456/file__0.indexeddb.leveldb/MANIFEST-000002" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/stats_viewer/Properties/Settings.settings" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/indexeddb/v3_migration_test/file__0.indexeddb.blob/1/00/5" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="cloud_print/virtual_driver/win/install/inf/gcp_driver.inf" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/cache_storage/padding_v2/0430f1a484a0ea6d8de562488c5fbeec0111d16f/676288ed-4de0-44af-97d6-dbd75b07a8a3/index-dir/the-real-index" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/traffic_annotation/bin/linux64/traffic_annotation_auditor" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/ad_tagging/bear-320x240-video-only.webm" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="weblayer/test/data/bear.webm" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="headless/test/data/protocol/emulation/resources/video.webm" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/autofill/automated_integration/testdata/Default/Web Data" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="pdf/pdfium/fuzzers/corpora/pdf_codec_bmp/not_kitty.bmp" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/win/ChromeDebug/.*snk" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/binary_size/libsupersize/testdata/mock_source_directory/third_party/gvr-android-sdk/libgvr_shim_static_arm.a" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/hid/fuzz_corpus/report0" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/hid/fuzz_corpus/report1" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/hid/fuzz_corpus/report2" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/hid/fuzz_corpus/report3" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/hid/fuzz_corpus/report4" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/indexeddb/crbug899446/file__0.indexeddb.leveldb/MANIFEST-000001" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/indexeddb/missing_sst/file__0.indexeddb.leveldb/MANIFEST-000007" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/indexeddb/ssv_version_987654/file__0.indexeddb.leveldb/MANIFEST-000002" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/indexeddb/v3_migration_test/file__0.indexeddb.leveldb/MANIFEST-000001" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/indexeddb/crbug899446_noai/file__0.indexeddb.leveldb/MANIFEST-000001" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/history/HistoryNoDuration" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/history/HistoryNoSource" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/history/History_with_starred" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/cache_storage/padding_v2/0430f1a484a0ea6d8de562488c5fbeec0111d16f/676288ed-4de0-44af-97d6-dbd75b07a8a3/4bfb34f348c2269e_0" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/value_store/MANIFEST-000004" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/cache_storage/padding_v2/0430f1a484a0ea6d8de562488c5fbeec0111d16f/676288ed-4de0-44af-97d6-dbd75b07a8a3/index" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="native_client_sdk/src/doc/reference/ideas.rst" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="native_client_sdk/src/tools/lib/tests/data/test.pexe" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/resultdb/result_adapter" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/usb/fuzz_corpus/descriptor0" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/usb/fuzz_corpus/descriptor1" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/usb/fuzz_corpus/descriptor2" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/usb/fuzz_corpus/descriptor3" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/usb/fuzz_corpus/descriptor4" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/usb/fuzz_corpus/descriptor5" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/usb/fuzz_corpus/descriptor6" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/usb/fuzz_corpus/descriptor7" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/usb/fuzz_corpus/webusb_descriptors_unittest_example" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="services/device/usb/fuzz_corpus/usb_string_descriptors_example" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="buildtools/linux64/clang-format" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="buildtools/linux64/gn" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/payments/content/utility/payment_web_app_manifest_fuzzer_corpus/input26" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/update_client/ihfokbkgjpifnbbojhneepfflplebdkc/ihfokbkgjpifnbbojhneepfflplebdkc_2/a_changing_binary_file" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="media/midi/fuzz/corpus/.*" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="media/midi/fuzz/usb_midi_descriptor_corpus/.*" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filename" name="*.png" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filename" name="*.bin" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filename" name="*.xtb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filename" name="*.zip" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filename" name="*.webm" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filename" name="*.wav" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filename" name="*.o" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filename" name="*.jpg" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filename" name="*.gif" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filename" name="*.puff" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filename" name="*.dex" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="buildtools/reclient/bootstrap" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="testing/libfuzzer/fuzzers/woff2_corpus/fd14c502730b85e8b9c078ecd5b309d1e6c0a6d1" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="buildtools/reclient/dumpstats" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/media_router/common/providers/cast/certificate/testsuite/testsuite1.pb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/interest_group/auction_only.har" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="buildtools/reclient/logdump" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/media_router/common/providers/cast/channel/fuzz_corpus/cast_message0" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/optimization_guide/invalid_model.crx3" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="buildtools/reclient/reclientreport" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/device_signals/TestApp.app/Contents/MacOS/TestApp" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/cache_storage/storage_key/0430f1a484a0ea6d8de562488c5fbeec0111d16f/ba31f73b-95e8-44fb-a273-265e7e76f5ab/3767fbd3edc759b5_0" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/interest_group/auction_only.wbn" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="buildtools/reclient/remotetool" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/media_router/common/providers/cast/channel/fuzz_corpus/cast_message2" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="buildtools/reclient/reproxy" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/cache_storage/invalid_bucket_id/0430f1a484a0ea6d8de562488c5fbeec0111d16f/ba31f73b-95e8-44fb-a273-265e7e76f5ab/3767fbd3edc759b5_0" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="buildtools/reclient/reproxystatus" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/safe_browsing/client_model.pb" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="buildtools/reclient/rewrapper" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/media/bear_corp.flac" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="testing/libfuzzer/fuzzers/woff2_corpus/6df91fe5cbca947ae7b7b43d4cd4a861213fae9f" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="buildtools/reclient/rpl2cloudtrace" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="buildtools/reclient/rpl2trace" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="buildtools/reclient/scandeps_server" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="components/test/data/device_signals/UnsignedApp.app/Contents/MacOS/UnsignedApp" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="content/test/data/site_isolation/nosniff.png.octet-stream" desc="chromium原生二进制文件,不会使用" />
+                <filteritem type="filepath" name="tools/perf/page_sets/maps_perf_test/load_dataset" desc="chromium原生二进制文件,不会使用" />
+                </filefilter>
+        </filefilterlist>
+        <licensematcherlist>
+            <licensematcher name="Khronos License" desc="">
+                <licensetext name="
+              Permission is hereby granted, free of charge, to any person obtaining a
+                ** copy of this software and/or associated documentation files (the
+                ** &quot;Materials&quot;), to deal in the Materials without restriction, including
+                ** without limitation the rights to use, copy, modify, merge, publish,
+                ** distribute, sublicense, and/or sell copies of the Materials, and to
+                ** permit persons to whom the Materials are furnished to do so, subject to
+                ** the following conditions:
+                **
+                ** The above copyright notice and this permission notice shall be included
+                ** in all copies or substantial portions of the Materials.
+                **
+                ** THE MATERIALS ARE PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND,
+                ** EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+                ** MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+                ** IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+                ** CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+                ** TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+                ** MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
+            " desc="" />
+            </licensematcher>
+            <licensematcher name="LicenseRef-scancode-mit-synopsys" desc="">
+                <licensetext name="
+                    This package is a JavaScript porting of `wcwidth()` implementation
+                    [by Markus Kuhn](http://www.cl.cam.ac.uk/~mgk25/ucs/wcwidth.c).
+
+                    Permission is hereby granted, free of charge, to any person obtaining a copy of
+                    this software and associated documentation files (the &quot;Software&quot;), to deal in
+                    the Software without restriction, including without limitation the rights to
+                    use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+                    of the Software, and to permit persons to whom the Software is furnished to do
+                    so, subject to the following conditions:
+
+                    The above copyright notice and this permission notice shall be included in all
+                    copies or substantial portions of the Software.
+
+
+                    THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+                    INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+                    FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR
+                    OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+                    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+                    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+                    BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+                    IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+                    ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+                    POSSIBILITY OF SUCH DAMAGE.
+            " desc="" />
+            </licensematcher>
+            <licensematcher name="ISC" desc="">
+                <licensetext name="
+                    Permission to use, copy, modify, and/or distribute this
+                    software for any purpose with or without fee is hereby
+                    granted, provided that the above copyright notice and this
+                    permission notice appear in all copies.
+
+                    THE SOFTWARE IS PROVIDED &quot;AS IS&quot; AND NPM DISCLAIMS ALL
+                    WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL
+                    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO
+                    EVENT SHALL NPM BE LIABLE FOR ANY SPECIAL, DIRECT,
+                    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+                    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+                    WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+                    TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE
+                    USE OR PERFORMANCE OF THIS SOFTWARE.
+            " desc="" />
+                <licensetext name="
+                    Permission to use, copy, modify, and/or distribute this software for
+                    any purpose with or without fee is hereby granted, provided that the
+                    above copyright notice and this permission notice appear in all copies.
+
+                    THE SOFTWARE IS PROVIDED &quot;AS IS&quot; AND THE COPYRIGHT HOLDER DISCLAIMS
+                    ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
+                    WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+                    COPYRIGHT HOLDER BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR
+                    CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+                    OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
+                    OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE
+                    USE OR PERFORMANCE OF THIS SOFTWARE.
+            " desc="" />
+            </licensematcher>
+            <licensematcher name="BSD-3-Clause" desc="">
+                <licensetext name="
+                * Redistribution and use in source and binary forms, with or without
+                * modification, are permitted provided that the following conditions
+                * are met:
+                * 1. Redistributions of source code must retain the above copyright
+                *    notice, and the entire permission notice in its entirety,
+                *    including the disclaimer of warranties.
+                * 2. Redistributions in binary form must reproduce the above copyright
+                *    notice, this list of conditions and the following disclaimer in the
+                *    documentation and/or other materials provided with the distribution.
+                * 3. The name of the author may not be used to endorse or promote
+                *    products derived from this software without specific prior
+                *    written permission.
+                *
+                * THIS SOFTWARE IS PROVIDED &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED
+                * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+                * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE, ALL OF
+                * WHICH ARE HEREBY DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE
+                * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+                * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+                * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+                * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+                * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+                * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+                * USE OF THIS SOFTWARE, EVEN IF NOT ADVISED OF THE POSSIBILITY OF SUCH
+                * DAMAGE.
+            " desc="" />
+            </licensematcher>
+            <licensematcher name="MIT" desc="">
+                <licensetext name="
+                * All Rights Reserved.
+                *
+                * Permission is hereby granted, free of charge, to any person obtaining
+                * a copy of this software and associated documentation files (the
+                * &quot;Software&quot;), to deal in the Software without restriction, including
+                * without limitation on the rights to use, copy, modify, merge,
+                * publish, distribute, sublicense, and/or sell copies of the Software,
+                * and to permit persons to whom the Software is furnished to do so,
+                * subject to the following conditions:
+                *
+                * The above copyright notice and this permission notice (including the
+                * next paragraph) shall be included in all copies or substantial
+                * portions of the Software.
+                *
+                * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND,
+                * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+                * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+                * NON-INFRINGEMENT.  IN NO EVENT SHALL RED HAT AND/OR THEIR SUPPLIERS
+                * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+                * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+                * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+                * SOFTWARE.
+            " desc="" />
+            <licensetext name="
+                * MIT LICENSE
+            " desc="" />
+            <licensetext name="
+                /* MIT license */
+            " desc="" />
+            <licensetext name="
+                // MIT License
+            " desc="" />
+            <licensetext name="
+                * MIT LICENSE
+            " desc="" />
+            </licensematcher>
+            <licensematcher name="NCSA" desc="">
+                <licensetext name="
+                #                     The LLVM Compiler Infrastructure
+                #
+                # This file is distributed under the University of Illinois Open Source
+                # License. See LICENSE.TXT for details.
+            " desc="" />
+            </licensematcher>
+            <licensematcher name="SGI-B-2.0" desc="">
+                <licensetext name="
+                * This document is licensed under the SGI Free Software B License Version
+                * 2.0. For details, see http://oss.sgi.com/projects/FreeB/ .
+            " desc="" />
+            </licensematcher>
+            <licensematcher name="CC-PDDC" desc="">
+                <licensetext name="
+                * This software is Public Domain. To view a copy of the public domain dedication,
+                * visit http://creativecommons.org/licenses/publicdomain/ or send a letter to
+                * Creative Commons, 559 Nathan Abbott Way, Stanford, California 94305, USA.
+                *
+                * I ask and expect, but do not require, that all derivative works contain an
+                * attribution similar to:
+                *  Parts developed by Adam Langley &lt;agl@imperialviolet.org&gt;
+                *
+                * You may wish to replace the word &quot;Parts&quot; with something else depending on
+                * the amount of original code.
+                *
+                * (Derivative works does not include programs which link against, run or include
+                * the source verbatim in their source distributions)
+                " desc="" />
+            </licensematcher>
+        </licensematcherlist>
+    </oatconfig>
+</configuration>

@@ -780,7 +780,9 @@ void OnTouchIconUrlWithSizesReceived(
   bool OnPullToRefreshAction(int action) override;
   void OnPullToRefreshPull(float offset_x, float offset_y) override;
 #endif
-
+#if defined(OHOS_MULTI_WINDOW)
+ void OnActivateContent() override;
+#endif
  void SetPopupSurface(void* popup_window);
  void SetTransformHint(uint32_t rotation);
 

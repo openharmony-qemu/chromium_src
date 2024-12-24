@@ -377,7 +377,7 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 #endif  // defined(OHOS_WEBRTC)
 
 #if defined(OHOS_EX_SCREEN_CAPTURE)
-  void StopScreenCapture(const std::string &session_id) override;
+  void StopScreenCapture(int32_t nweb_id, const std::string& session_id) override;
 #endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 
   // WebContents ------------------------------------------------------

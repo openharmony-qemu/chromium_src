@@ -3001,13 +3001,13 @@ void NWebDelegate::CloseCamera() {
 #endif  // defined(OHOS_WEBRTC)
 
 #if defined(OHOS_EX_SCREEN_CAPTURE)
-void NWebDelegate::StopScreenCapture(const char *session_id) {
+void NWebDelegate::StopScreenCapture(int32_t nweb_id, const char* session_id) {
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
     LOG(ERROR) << "StopScreenCapture can not get browser";
     return;
   }
 
-  GetBrowser()->GetHost()->StopScreenCapture(CefString(session_id));
+  GetBrowser()->GetHost()->StopScreenCapture(nweb_id, CefString(session_id));
 }
 
 void NWebDelegate::RegisterScreenCaptureDelegateListener(

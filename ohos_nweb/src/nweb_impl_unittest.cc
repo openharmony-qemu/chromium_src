@@ -775,7 +775,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void, RefreshAccessibilityManagerClickEvent, (), (override));
 
 #ifdef OHOS_EX_SCREEN_CAPTURE
-  MOCK_METHOD(void, StopScreenCapture, (const char* session_id), (override));
+  MOCK_METHOD(void, StopScreenCapture, (int32_t nweb_id, const char* session_id), (override));
 #endif
 
 #ifdef OHOS_EX_REFRESH_IFRAME

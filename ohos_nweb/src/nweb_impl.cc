@@ -3218,7 +3218,7 @@ void NWebImpl::CloseCamera() {
 }
 
 #if defined(OHOS_EX_SCREEN_CAPTURE)
-void NWebImpl::StopScreenCapture(const char* session_id) {
+void NWebImpl::StopScreenCapture(int32_t nweb_id, const char* session_id) {
   if (session_id == nullptr) {
     WVLOG_E("StopScreenCapture session_id is null");
     return;
@@ -3227,7 +3227,7 @@ void NWebImpl::StopScreenCapture(const char* session_id) {
     WVLOG_E("StopScreenCapture nweb_delegate_ is null");
     return;
   }
-  nweb_delegate_->StopScreenCapture(session_id);
+  nweb_delegate_->StopScreenCapture(nweb_id, session_id);
 }
 
 void NWebImpl::PutWebScreenCaptureDelegateCallback(

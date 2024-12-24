@@ -354,7 +354,7 @@ class NWebDelegateInterface
 #endif  // defined(OHOS_WEBRTC)
 
 #if defined(OHOS_EX_SCREEN_CAPTURE)
-  virtual void StopScreenCapture(const char* session_id) = 0;
+  virtual void StopScreenCapture(int32_t nweb_id, const char* session_id) = 0;
   virtual void RegisterScreenCaptureDelegateListener(
       std::shared_ptr<NWebScreenCaptureDelegateCallback>
           screenCaptureDelegateListener) = 0;

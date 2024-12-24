@@ -912,9 +912,28 @@ void RenderWidgetHostViewChildFrame::TakeFallbackContentFrom(
   // This method only makes sense for top-level views.
 }
 
+#if defined(OHOS_INPUT_EVENTS)
+bool RenderWidgetHostViewChildFrame::GetScrollable() {
+  if (!frame_connector_)
+    return true;
+
+  auto* root_view = frame_connector_->GetRootRenderWidgetHostView();
+  if (root_view && !root_view->GetScrollable()) {
+    return false;
+  }
+  return true;
+}
+#endif
+
 blink::mojom::InputEventResultState
 RenderWidgetHostViewChildFrame::FilterInputEvent(
     const blink::WebInputEvent& input_event) {
+#if defined(OHOS_INPUT_EVENTS)
+  if (!GetScrollable() && input_event.GetType() ==
+          blink::WebInputEvent::Type::kGestureScrollUpdate) {
+      return blink::mojom::InputEventResultState::kConsumed;
+  }
+#endif
   // A child renderer should never receive a GesturePinch event. Pinch events
   // can still be targeted to a child, but they must be processed without
   // sending the pinch event to the child (e.g. touchpad pinch synthesizes

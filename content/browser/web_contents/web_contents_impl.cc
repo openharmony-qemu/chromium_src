@@ -2642,12 +2642,17 @@ bool WebContentsImpl::NeedToFireBeforeUnloadOrUnloadEvents() {
   if (!notify_disconnection_)
     return false;
 
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+  // The return value of NeedToFireBeforeUnloadOrUnloadEvents will not be saved
+  // after receiving a ClosePage ACK.
+#else
   // Don't fire if the main frame indicates that beforeunload and unload have
   // already executed (e.g., after receiving a ClosePage ACK) or should be
   // ignored.
   if (GetPrimaryMainFrame()->IsPageReadyToBeClosed()) {
     return false;
   }
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
   // Check whether any frame in the frame tree needs to run beforeunload or
   // unload-time event handlers.

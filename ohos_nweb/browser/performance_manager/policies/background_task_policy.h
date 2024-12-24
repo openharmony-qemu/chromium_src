@@ -80,11 +80,10 @@ class BackgroundTaskPolicy : public GraphObserver,
       absl::optional<freezing::FreezingVote> previous_vote) override;
 
   void MaybeChangeBackgroundTask(const PageNode* page_node);
-  void SetWebviewShow(const PageNode* page_node, bool show, bool &ret);
-  void SetWebviewShowForAudio(const PageNode* page_node, bool show, bool &ret);
-  void SetWebviewShowForVideo(const PageNode* page_node, bool show, bool &ret);
   bool IsControllable(const PageNode* page_node);
   bool IsEndOfMedia(const PageNode* page_node);
+  bool IsPauseByAvsession(const PageNode* page_node);
+  void SetWebviewShow(const PageNode* page_node, bool show, bool is_special_for_audio, bool &ret);
   raw_ptr<const PageNode> page_node_being_removed_ = nullptr;
   std::unique_ptr<mechanism::BackgroundTaskHolder> background_task_holder_;
   bool is_request_background_task_;

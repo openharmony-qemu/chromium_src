@@ -6,6 +6,10 @@
 
 #include "build/build_config.h"
 
+#ifdef OHOS_DRAG_DROP
+#include "ui/gfx/geometry/rect.h"
+#endif
+
 namespace content {
 
 #if BUILDFLAG(IS_ANDROID)
@@ -55,6 +59,12 @@ void RenderViewHostDelegateView::GestureEventAck(
 #ifdef OHOS_DISPLAY_CUTOUT
 void RenderViewHostDelegateView::OnSafeInsetsChange(
     const gfx::Insets& safe_insets) {}
+#endif
+
+#ifdef OHOS_DRAG_DROP
+gfx::Rect RenderViewHostDelegateView::GetVisibleRectToWeb() {
+    return gfx::Rect();
+}
 #endif
 
 }  //  namespace content

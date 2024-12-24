@@ -32,7 +32,7 @@ class NWebDragDataImpl : public NWebDragData {
   NWebDragDataImpl(CefRefPtr<CefDragData> drag_data, CefPoint& drag_touch_point,
     std::vector<CefPoint>& start_edge, std::vector<CefPoint>& end_edge,
     float device_pixel_ratio, bool is_useful_selection,
-    bool dark_mode_enable, int32_t view_port_height, bool is_drag_new_style = false);
+    bool dark_mode_enable, bool is_drag_new_style = false);
   ~NWebDragDataImpl() = default;
 
   // get the link URL that is being dragged.
@@ -110,7 +110,6 @@ class NWebDragDataImpl : public NWebDragData {
   float device_pixel_ratio_ = 0;
   bool is_useful_selection_ = true;
   bool dark_mode_enable_ = false;
-  int32_t view_port_height_ = 0;
   bool is_drag_new_style_ = false;
 };
 }  // namespace OHOS::NWeb

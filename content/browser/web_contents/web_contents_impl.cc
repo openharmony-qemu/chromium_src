@@ -10403,6 +10403,20 @@ void WebContentsImpl::SetAdBlockEnabledForSite(bool is_adblock_enabled,
 }
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+void WebContentsImpl::EnableSafeBrowsingDetection(bool enable,
+                                                  bool strictMode) {
+  if (is_safe_browsing_enabled_ != enable) {
+    LOG(INFO) << "EnableSafeBrowsingDetection enable " << enable;
+    is_safe_browsing_enabled_ = enable;
+  }
+  if (safe_browsing_strict_mode_ != strictMode) {
+    LOG(INFO) << "EnableSafeBrowsingDetection strictMode " << strictMode;
+    safe_browsing_strict_mode_ = strictMode;
+  }
+}
+#endif
+
 #ifdef OHOS_EX_PASSWORD
 void WebContentsImpl::PromptSaveOrUpdatePassword(
     bool is_update,

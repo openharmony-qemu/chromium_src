@@ -372,6 +372,7 @@ class NWebImpl : public NWeb {
   bool GetPrintBackground() override;
   bool IsSafeBrowsingEnabled() override;
   void EnableSafeBrowsing(bool enable) override;
+  void EnableSafeBrowsingDetection(bool enable, bool strictMode) const;
   void PrecompileJavaScript(const std::string& url,
                             const std::string& script,
                             std::shared_ptr<CacheOptions>& cacheOptions,

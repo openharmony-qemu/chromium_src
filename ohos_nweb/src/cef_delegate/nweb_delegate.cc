@@ -3533,6 +3533,17 @@ void NWebDelegate::EnableSafeBrowsing(bool enable) {
 
 }
 
+void NWebDelegate::EnableSafeBrowsingDetection(bool enable, bool strictMode) {
+  LOG(DEBUG) << "NWebDelegate::EnableSafeBrowsingDetection. enable is "
+             << enable << ", strictMode is " << strictMode;
+  if (GetBrowser() == nullptr) {
+    LOG(ERROR) << "NWebDelegate::EnableSafeBrowsingDetection failed.";
+    return;
+  }
+
+  GetBrowser()->EnableSafeBrowsingDetection(enable, strictMode);
+}
+
 void NWebDelegate::PrecompileJavaScript(const std::string& url,
                                         const std::string& script,
                                         std::shared_ptr<CacheOptions>& cacheOptions,

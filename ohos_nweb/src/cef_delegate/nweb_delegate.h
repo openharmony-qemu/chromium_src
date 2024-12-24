@@ -358,6 +358,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #ifdef BUILDFLAG(IS_OHOS)
 bool IsSafeBrowsingEnabled() override;
 void EnableSafeBrowsing(bool enable) override;
+void EnableSafeBrowsingDetection(bool enable, bool strictMode) override;
 void PrecompileJavaScript(const std::string& url,
                           const std::string& script,
                           std::shared_ptr<CacheOptions>& cacheOptions,

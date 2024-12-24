@@ -666,6 +666,11 @@ class WebContents : public PageNavigator,
                                         int main_frame_tree_node_id) = 0;
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+  virtual void EnableSafeBrowsingDetection(bool enable, bool strictMode) = 0;
+  virtual bool IsSafeBrowsingDetectionEnabled() = 0;
+#endif
+
 #if defined(OHOS_EX_PASSWORD)
   virtual void SetSavePasswordAutomatically(bool enable) = 0;
   virtual bool GetSavePasswordAutomatically() = 0;

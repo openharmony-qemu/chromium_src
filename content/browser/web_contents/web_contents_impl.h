@@ -462,6 +462,14 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   bool GetAdblockEnabledForSite() override;
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+  void EnableSafeBrowsingDetection(bool enable, bool strictMode) override;
+
+  bool IsSafeBrowsingDetectionEnabled() override {
+    return is_safe_browsing_enabled_;
+  }
+#endif
+
 #if defined(OHOS_EX_PASSWORD)
   void SetSavePasswordAutomatically(bool enable) override {
     LOG(INFO) << "set save password automatically: " << enable;
@@ -2418,6 +2426,8 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 #if BUILDFLAG(IS_OHOS)
   std::unique_ptr<NativeWebContentsObserver> native_web_contents_observer_;
   std::map<std::string, gfx::Rect> native_web_embed_rect_info_map_;
+  bool is_safe_browsing_enabled_ = true;
+  bool safe_browsing_strict_mode_ = false;
 #endif
 
 #if BUILDFLAG(ENABLE_PPAPI)

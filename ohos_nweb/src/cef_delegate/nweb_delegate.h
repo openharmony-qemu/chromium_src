@@ -142,6 +142,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void ExecuteJavaScript(const std::string& code) const override;
   void PutBackgroundColor(int color) const override;
   void InitialScale(float scale) const override;
+  void PutOptimizeParserBudgetEnabled(bool enable) const override;
   void OnPause() override;
   void OnContinue() override;
   void WebComponentsBlur() override;

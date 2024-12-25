@@ -1483,6 +1483,13 @@ void NWebDelegate::InitialScale(float scale) const {
   }
 }
 
+void NWebDelegate::PutOptimizeParserBudgetEnabled(bool enable) const {
+  LOG(DEBUG) << "NWebDelegate::PutOptimizeParserBudgetEnabled";
+  if (GetBrowser().get()) {
+    GetBrowser()->GetHost()->SetOptimizeParserBudgetEnabled(enable);
+  }
+}
+
 void NWebDelegate::OnPause() {
   LOG(INFO) << "NWebDelegate::OnPause, nweb_id = " << nweb_id_;
   TRACE_EVENT1("base", "NWebDelegate::OnPause", "nweb id = ", nweb_id_);

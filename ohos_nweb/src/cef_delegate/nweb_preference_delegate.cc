@@ -214,6 +214,10 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
   browser_settings.record_whole_document = GetEnableWholeWebPageDrawing();
 #endif // OHOS_SOFTWARE_COMPOSITOR
+
+#ifdef OHOS_ACTIVE_POLICY
+  browser_settings.delay_for_background_tab_freezing = GetDelayDurationForBackgroundTabFreezing();
+#endif
 }
 
 void NWebPreferenceDelegate::SetBrowserSettingsToNetHelpers() {
@@ -951,4 +955,18 @@ int NWebPreferenceDelegate::GetTimeToLive() {
 }
 #endif // OHOS_BFCACHE
 
+#ifdef OHOS_ACTIVE_POLICY
+void NWebPreferenceDelegate::SetDelayDurationForBackgroundTabFreezing(
+  int64_t delay_for_background_tab_freezing) {
+  if (delay_for_background_tab_freezing_ == delay_for_background_tab_freezing) {
+    return;
+  }
+  delay_for_background_tab_freezing_ = delay_for_background_tab_freezing;
+  WebPreferencesChanged();
+}
+
+int64_t NWebPreferenceDelegate::GetDelayDurationForBackgroundTabFreezing() {
+  return delay_for_background_tab_freezing_;
+}
+#endif
 }  // namespace OHOS::NWeb

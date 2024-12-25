@@ -229,6 +229,11 @@ class NWebPreferenceDelegate : public NWebPreference {
   void PutBackForwardCacheOptions(int size, int time_to_live);
 #endif  // OHOS_BFCACHE
 
+#ifdef OHOS_ACTIVE_POLICY
+  void SetDelayDurationForBackgroundTabFreezing(int64_t delay_for_background_tab_freezing);
+  int64_t GetDelayDurationForBackgroundTabFreezing();
+#endif
+
  private:
   CefRefPtr<CefBrowser> browser_ = nullptr;
 
@@ -339,6 +344,10 @@ class NWebPreferenceDelegate : public NWebPreference {
   int size_ = -1;
   int time_to_live_ = -1;
 #endif // OHOS_BFCACHE
+
+#ifdef OHOS_ACTIVE_POLICY
+  int64_t delay_for_background_tab_freezing_ = -1;
+#endif
 };
 }  // namespace OHOS::NWeb
 

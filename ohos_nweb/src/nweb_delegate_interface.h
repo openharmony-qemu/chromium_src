@@ -96,6 +96,10 @@ class NWebDelegateInterface
   virtual void SetAutofillCallback(std::shared_ptr<NWebMessageValueCallback> callback) = 0;
   virtual void FillAutofillData(std::shared_ptr<NWebMessage> data) = 0;
 
+#ifdef OHOS_ACTIVE_POLICY
+  virtual void SetDelayDurationForBackgroundTabFreezing(int64_t delay) = 0;
+#endif
+
 #if defined(OHOS_INPUT_EVENTS)
   virtual void SetNWebDelegateInterface(
       std::shared_ptr<NWebDelegateInterface> client) = 0;

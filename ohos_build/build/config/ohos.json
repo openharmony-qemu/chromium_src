@@ -1,4 +1,13 @@
 {
+    "name": "OHOS_ACTIVE_POLICY",
+    "owner": "",
+    "desc": "",
+    "effect": "main gn blink_core other",
+    "genCommandline": "default",
+    "dependence": "",
+    "default": "true"
+},
+{
     "name": "OHOS_AI",
     "owner": "",
     "desc": "",

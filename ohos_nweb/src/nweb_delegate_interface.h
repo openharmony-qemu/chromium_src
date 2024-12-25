@@ -202,6 +202,7 @@ class NWebDelegateInterface
   virtual void ExecuteJavaScript(const std::string& code) const = 0;
   virtual void PutBackgroundColor(int color) const = 0;
   virtual void InitialScale(float scale) const = 0;
+  virtual void PutOptimizeParserBudgetEnabled(bool enable) const = 0;
   virtual void OnPause() = 0;
   virtual void OnContinue() = 0;
   virtual void WebComponentsBlur() = 0;

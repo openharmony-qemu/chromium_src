@@ -93,6 +93,7 @@ class NWebImpl : public NWeb {
   void ExecuteJavaScript(const std::string& code) override;
   void PutBackgroundColor(int color) override;
   void InitialScale(float scale) override;
+  void PutOptimizeParserBudgetEnabled(bool enable) override;
   void OnPause() override;
   void OnContinue() override;
   void WebComponentsBlur() override;

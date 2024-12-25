@@ -69,7 +69,11 @@ NWebUrlResourceResponseImpl::ResponseHeaders() {
 
 void NWebUrlResourceResponseImpl::PutResponseStateAndStatuscode(
     int status_code, const std::string &reason_phrase) {
-  status_code_ = status_code;
+  if (IsSupportedStatusCode(status_code)) {
+    status_code_ = status_code;
+  } else {
+    status_code_ = net_failed_;
+  }
   reason_phrase_ = reason_phrase;
 }
 
@@ -95,6 +99,22 @@ bool NWebUrlResourceResponseImpl::ResponseDataStatus() {
 
 bool NWebUrlResourceResponseImpl::ResponseIsFileHandle() {
   return isFileFd_;
+}
+
+bool NWebUrlResourceResponseImpl::IsSupportedStatusCode(int status_code) {
+  if (status_code >= kMinStatusCode_ && status_code <= kMaxStatusCode_) {
+    return true;
+  }
+ 
+  switch (status_code) {
+#define NET_ERROR(label, value) \
+  case value:                   \
+    return true;
+#include "net/base/net_error_list.h"
+#undef NET_ERROR
+    default:
+      return false;
+  }
 }
 
 void NWebUrlResourceResponseImpl::PutResponseFileHandle(int fd) {

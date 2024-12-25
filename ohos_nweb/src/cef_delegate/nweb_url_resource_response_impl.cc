@@ -69,7 +69,11 @@ NWebUrlResourceResponseImpl::ResponseHeaders() {
 
 void NWebUrlResourceResponseImpl::PutResponseStateAndStatuscode(
     int status_code, const std::string &reason_phrase) {
-  status_code_ = status_code;
+  if (IsSupportedStatusCode(status_code)) {
+    status_code_ = status_code;
+  } else {
+    status_code_ = net_failed_;
+  }
   reason_phrase_ = reason_phrase;
 }
 

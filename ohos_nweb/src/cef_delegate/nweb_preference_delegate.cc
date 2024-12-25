@@ -790,6 +790,7 @@ bool NWebPreferenceDelegate::IsTextAutosizingEnabled() const {
 
 void NWebPreferenceDelegate::SetFitContent(bool value) {
   fit_content_ = value;
+  WebPreferencesChanged();
 }
 
 bool NWebPreferenceDelegate::IsFitContent() const {

@@ -11,7 +11,9 @@
 #include "base/metrics/histogram_macros.h"
 #include "base/metrics/user_metrics.h"
 #include "base/notreached.h"
+#ifdef OHOS_CLIPBOARD
 #include "base/logging.h"
+#endif
 
 namespace ui {
 namespace {

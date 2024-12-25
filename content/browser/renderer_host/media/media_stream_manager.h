@@ -74,8 +74,6 @@ enum ScreenCaptureState {
   SCREEN_CAPTURE_OPENED = 0,
   SCREEN_CAPTURE_STOPED,
   SCREEN_CAPTURE_ABORTED,
-  SCREEN_CAPTURE_STOP_SUCCESS,
-  SCREEN_CAPTURE_STOP_FAILURE
 };
 #endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 
@@ -467,7 +465,7 @@ class CONTENT_EXPORT MediaStreamManager
   static void SetScreenCaptureDelegateCallback(ScreenCaptureCallback callback);
   static void SendScreenCaptureStateToNative(int32_t nweb_id, const std::string& session_id, int32_t state);
   static ScreenCaptureCallback screen_capture_callback_;
-  void StopScreenCapture(const std::string& session_id);
+  void StopScreenCapture(int32_t nweb_id, const std::string& session_id);
   void SendScreenCaptureState(const std::string& session_id,  int32_t state);
 #endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 

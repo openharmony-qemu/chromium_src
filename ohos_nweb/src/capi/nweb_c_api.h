@@ -41,8 +41,6 @@ enum NWebSrceenCaptureState {
     OPENED = 0,
     STOPED,
     ABORTED,
-    STOPED_SUCCESS,
-    STOPED_FAILURE,
 };
 
 typedef struct NWebDownloadDelegateCallback WebDownloadDelegateCallback;

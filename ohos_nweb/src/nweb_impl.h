@@ -343,7 +343,7 @@ class NWebImpl : public NWeb {
   void CloseCamera() override;
 
 #if defined(OHOS_EX_SCREEN_CAPTURE)
-  void StopScreenCapture(const char* session_id);
+  void StopScreenCapture(int32_t nweb_id, const char* session_id);
   void PutWebScreenCaptureDelegateCallback(
       std::shared_ptr<NWebScreenCaptureDelegateCallback> callback);
 #endif // defined(OHOS_EX_SCREEN_CAPTURE)

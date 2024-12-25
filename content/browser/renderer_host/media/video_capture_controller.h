@@ -105,10 +105,6 @@ class CONTENT_EXPORT VideoCaptureController
   // prematurely closed.
   void StopSession(const base::UnguessableToken& session_id);
 
-#if defined(OHOS_EX_SCREEN_CAPTURE)
-  media::VideoCaptureError StopScreenCapture(const base::UnguessableToken& session_id);
-#endif // defined(OHOS_EX_SCREEN_CAPTURE)
-
   // Return a buffer with id |buffer_id| previously given in
   // VideoCaptureControllerEventHandler::OnBufferReady.
   // If the consumer provided resource utilization

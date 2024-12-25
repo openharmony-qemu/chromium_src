@@ -10541,7 +10541,7 @@ void WebContentsImpl::SetNWebId(int nWebID) {
 #endif  // defined(OHOS_WEBRTC)
 
 #if defined(OHOS_EX_SCREEN_CAPTURE)
-void WebContentsImpl::StopScreenCapture(const std::string& session_id) {
+void WebContentsImpl::StopScreenCapture(int32_t nweb_id, const std::string& session_id) {
   if(!BrowserMainLoop::GetInstance()){
     LOG(ERROR) << "BrowserMainLoop null";
     return;
@@ -10552,7 +10552,7 @@ void WebContentsImpl::StopScreenCapture(const std::string& session_id) {
     LOG(ERROR) << "media_stream_manager null";
     return;
   }
-  media_stream_manager->StopScreenCapture(session_id);
+  media_stream_manager->StopScreenCapture(nweb_id, session_id);
 }
 #endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 

@@ -4613,18 +4613,22 @@ void MediaStreamManager::SetScreenCaptureDelegateCallback(
   screen_capture_callback_ = std::move(callback);
 }
 
-void MediaStreamManager::StopScreenCapture(const std::string& session_id) {
+void MediaStreamManager::StopScreenCapture(int32_t nweb_id, const std::string& session_id) {
   if (!video_capture_manager_) {
     LOG(ERROR) << "videoCaptureManager null";
     return;
   }
 
-  media::VideoCaptureError ret = video_capture_manager_->StopScreenCapture(session_id);
-  if (ret == media::VideoCaptureError::kNone) {
-    SendScreenCaptureState(session_id, SCREEN_CAPTURE_STOP_SUCCESS);
+  std::lock_guard<std::mutex> lock(nweb_id_mutex_);
+  auto nweb_id_it = nweb_id_maps_.find(session_id);
+  if (nweb_id_it == nweb_id_maps_.end()) {
+    return;
   } else {
-    SendScreenCaptureState(session_id, SCREEN_CAPTURE_STOP_FAILURE);
+    if (nweb_id_it->second != nweb_id) {
+      return;
+    }
   }
+  video_capture_manager_->StopScreenCapture(session_id);
 }
 
 void MediaStreamManager::SendScreenCaptureState(const std::string& session_id,

@@ -497,7 +497,7 @@ void WebScreenCapture_StopScreenCapture(int32_t nweb_id, const char* session_id)
     WVLOG_E("session_id is null");
     return;
   }
-  nweb->StopScreenCapture(session_id);
+  nweb->StopScreenCapture(nweb_id, session_id);
 #endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 }
 

@@ -504,7 +504,7 @@ void SetTransformHint(uint32_t rotation) override;
 #endif  // defined(OHOS_WEBRTC)
 
 #if defined(OHOS_EX_SCREEN_CAPTURE)
-  void StopScreenCapture(const char* session_id) override;
+  void StopScreenCapture(int32_t nweb_id, const char* session_id) override;
   void RegisterScreenCaptureDelegateListener(
       std::shared_ptr<NWebScreenCaptureDelegateCallback> listener) override;
 #endif  // defined(OHOS_EX_SCREEN_CAPTURE)

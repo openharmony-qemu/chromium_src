@@ -2215,22 +2215,32 @@ void NWebHandlerDelegate::OnReceivedIcon(const void* data,
   }
 }
 
+
 #ifdef OHOS_BFCACHE
 void NWebHandlerDelegate::UpdateFavicon(CefRefPtr<CefBrowser> browser) {
   CEF_REQUIRE_UI_THREAD();
+
+  if (!browser || !browser->GetHost() ||
+      !browser->GetHost()->GetVisibleNavigationEntry()) {
+    return;
+  }
+  LOG(INFO) << "[Favicon] nweb_handler delegate start to update favicon.";
 
   void* data = nullptr;
   int color_type;
   int alpha_type;
   int width;
   int height;
-  if (browser != nullptr && browser->GetHost() != nullptr
-      && browser->GetHost()->GetVisibleNavigationEntry() != nullptr) {
-    LOG(INFO) << "[Favicon] nweb_handler delegate start to update favicon.";
-    browser->GetHost()->GetVisibleNavigationEntry()->GetFavicon(&data, color_type, alpha_type, width, height);
-    SetFavicon(data, width, height, ImageColorType(color_type), ImageAlphaType(alpha_type));
+  browser->GetHost()->GetVisibleNavigationEntry()->GetFavicon(
+      &data, color_type, alpha_type, width, height);
+  SetFavicon(data, width, height, ImageColorType(color_type),
+             ImageAlphaType(alpha_type));
+
+  if (data && nweb_handler_) {
+    nweb_handler_->OnPageIcon(data, width, height, ImageColorType(color_type),
+                              ImageAlphaType(alpha_type));
+    return;
   }
-  return;
 }
 #endif // OHOS_BFCACHE
 

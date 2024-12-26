@@ -120,7 +120,7 @@ struct NWebDownloadItem {
     std::string original_url_ = download_item->GetOriginalUrl().ToString();
     original_url = strdup(original_url_.c_str());
     std::string content_disposition_ =
-        download_item->GetContentDisposition().ToString();
+        download_item->GetContentDisposition()->GetStdString();
     content_disposition = strdup(content_disposition_.c_str());
     std::string mime_type_ = download_item->GetMimeType().ToString();
     mime_type = strdup(mime_type_.c_str());

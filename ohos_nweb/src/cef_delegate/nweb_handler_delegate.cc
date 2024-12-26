@@ -1713,7 +1713,7 @@ void NWebHandlerDelegate::OnBeforeDownload(
     download_listener_->OnDownloadStart(
         download_item->GetURL().ToString(),
         browser->GetHost()->DefaultUserAgent(),
-        download_item->GetContentDisposition().ToString(),
+        download_item->GetContentDisposition()->GetStdString(),
         download_item->GetMimeType().ToString(),
         download_item->GetTotalBytes());
   }

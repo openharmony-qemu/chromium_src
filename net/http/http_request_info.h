@@ -13,6 +13,7 @@
 #include "net/base/network_anonymization_key.h"
 #include "net/base/network_isolation_key.h"
 #include "net/base/privacy_mode.h"
+#include "net/base/prp_preload_buildflags.h"
 #include "net/base/request_priority.h"
 #include "net/dns/public/secure_dns_policy.h"
 #include "net/http/http_request_headers.h"
@@ -119,10 +120,10 @@ struct NET_EXPORT HttpRequestInfo {
   // number once set.
   absl::optional<int64_t> browser_run_id;
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_OHOS_PRPP)
   bool allow_preload_record = true;
 
-  GURL main_page;
+  GURL main_url;
 #endif
 };
 

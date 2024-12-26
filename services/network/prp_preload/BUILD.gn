@@ -4,17 +4,16 @@
 
 import("//build/buildflag_header.gni")
 
-buildflag_header("buildflags") {
-  header = "buildflags.h"
-}
-
 source_set("prp_preload") {
   visibility = [
-    "//net:net",
-    "//cef:make_pack_header_resources"
+    "//services/network:network_service",
+    "//services/network:tests",
   ]
 
-  include_dirs = [ "//net/prp_preload/include" ]
+  include_dirs = [
+    "//services/network/prp_preload/include",
+    "//services/network/prp_preload/include/preload_runner",
+  ]
 
   deps = [
     "//base",
@@ -24,9 +23,12 @@ source_set("prp_preload") {
   sources = [
     "src/disk_cache_backend_factory.cc",
     "src/disk_cache_file.cc",
+    "src/disk_cache_info_parser.cc",
     "src/page_res_parallel_preload_mgr_impl.cc",
+    "src/preload_runner/preconnect_runner.cc",
+    "src/preload_runner/prpp_request_loader_factory_impl.cc",
+    "src/preload_runner/prpp_request_loader_impl.cc",
     "src/res_parallel_preload_ctrler.cc",
-    "src/preconnect_runner.cc",
     "src/res_preload_scheduler.cc",
     "src/res_request_info_cache_mgr.cc",
     "src/res_request_info_updater.cc",

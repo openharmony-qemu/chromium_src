@@ -284,6 +284,10 @@ void CorsURLLoaderFactory::CreateLoaderAndStart(
     const ResourceRequest& resource_request,
     mojo::PendingRemote<mojom::URLLoaderClient> client,
     const net::MutableNetworkTrafficAnnotationTag& traffic_annotation) {
+#if BUILDFLAG(IS_OHOS)
+  // for prp_preload performance tools, kernel request
+  TRACE_EVENT1("net", "CorsURLLoaderFactory::CreateLoaderAndStart", "id", request_id);
+#endif
   debug::ScopedResourceRequestCrashKeys request_crash_keys(resource_request);
   SCOPED_CRASH_KEY_NUMBER("net", "traffic_annotation_hash",
                           traffic_annotation.unique_id_hash_code);

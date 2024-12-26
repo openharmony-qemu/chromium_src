@@ -124,6 +124,17 @@ class NET_EXPORT URLRequestContext final {
       const absl::optional<net::NetLogSource> net_log_source =
           absl::nullopt) const;
 
+#if BUILDFLAG(IS_OHOS_PRPP)
+  std::shared_ptr<URLRequest> CreateRequestForPrpp(
+      const GURL& url,
+      RequestPriority priority,
+      URLRequest::Delegate* delegate,
+      NetworkTrafficAnnotationTag traffic_annotation,
+      bool is_for_websockets = false,
+      const absl::optional<net::NetLogSource> net_log_source =
+          absl::nullopt) const;
+#endif
+
   NetLog* net_log() const { return net_log_; }
 
   HostResolver* host_resolver() const { return host_resolver_.get(); }

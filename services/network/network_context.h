@@ -34,6 +34,7 @@
 #include "mojo/public/cpp/bindings/remote_set.h"
 #include "mojo/public/cpp/bindings/unique_receiver_set.h"
 #include "net/base/network_isolation_key.h"
+#include "net/base/prp_preload_buildflags.h"
 #include "net/cert/cert_verifier.h"
 #include "net/cert/cert_verify_result.h"
 #include "net/cookies/cookie_setting_override.h"
@@ -412,11 +413,12 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
       uint32_t alive_time) override;
   void ClearHostIP(const std::string& host_name) override;
 #endif
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_OHOS_PRPP)
   void InitPRParallelPreloadMgr() override;
-  void StartMainPage(const std::string& url, 
-    const net::NetworkAnonymizationKey& networkAnonymizationKey, uint64_t addr_web_handle) override;
-  void StopMainPage(uint64_t addr_web_handle) override;
+  void StartPage(const std::string& url, uint64_t addr_web_handle,
+    StartPageCallback page_origin_cb) override;
+  void StopPage(uint64_t addr_web_handle) override;
+  void SetParam(mojom::URLLoaderFactoryParamsPtr params) override;
 #endif
   void CreateHostResolver(
       const absl::optional<net::DnsConfigOverrides>& config_overrides,

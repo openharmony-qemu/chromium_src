@@ -33,6 +33,7 @@
 #include "net/base/net_export.h"
 #include "net/base/network_delegate.h"
 #include "net/base/proxy_server.h"
+#include "net/base/prp_preload_buildflags.h"
 #include "net/base/request_priority.h"
 #include "net/base/upload_progress.h"
 #include "net/cookies/canonical_cookie.h"
@@ -57,6 +58,11 @@
 #include "third_party/abseil-cpp/absl/types/optional.h"
 #include "url/gurl.h"
 #include "url/origin.h"
+
+#if BUILDFLAG(IS_OHOS_PRPP)
+#include "net/base/page_res_request_info.h"
+#include "net/http/http_transaction.h"
+#endif
 
 namespace net {
 
@@ -854,12 +860,24 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
   }
   bool has_storage_access() const { return has_storage_access_; }
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_OHOS_PRPP)
+  void set_update_res_request_info_callback(HttpTransaction::UpdateResRequestInfoCallback callback) {
+    update_res_request_info_callback_ = callback;
+  }
+  HttpTransaction::UpdateResRequestInfoCallback update_res_request_info_callback() {
+    return update_res_request_info_callback_;
+  }
+
   void set_allow_preload_record(bool allow) { allow_preload_record_ = allow; }
   bool allow_preload_record() const { return allow_preload_record_; }
 
-  void set_main_page(const GURL& url) { main_page_ = url; }
-  const GURL& main_page() const { return main_page_; }
+  void set_main_url(const GURL& url) { main_url_ = url; }
+  const GURL& main_url() const { return main_url_; }
+
+  void set_preload_info(const std::shared_ptr<ohos_prp_preload::PRRequestInfo>& preload_info) {
+    preload_info_ = preload_info;
+  }
+  std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info() const { return preload_info_; }
 #endif
 
   static bool DefaultCanUseCookies();
@@ -1135,9 +1153,11 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
   // Idempotency of the request.
   Idempotency idempotency_ = DEFAULT_IDEMPOTENCY;
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_OHOS_PRPP)
+  HttpTransaction::UpdateResRequestInfoCallback update_res_request_info_callback_;
   bool allow_preload_record_ = false;
-  GURL main_page_;
+  GURL main_url_;
+  std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info_;
 #endif
 
   THREAD_CHECKER(thread_checker_);

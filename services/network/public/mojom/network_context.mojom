@@ -801,6 +801,11 @@ struct URLLoaderFactoryParams {
   // Lists all the cookie setting overrides that should be specified on
   // each URLRequest.
   CookieSettingOverrides cookie_setting_overrides;
+  [EnableIf=is_ohos_prpp]
+  string main_url = "";
+
+  [EnableIf=is_ohos_prpp]
+  uint64 addr_web_handle;
 };
 
 // Callback interface for NetworkContext when routing identifiers aren't
@@ -1378,14 +1383,17 @@ interface NetworkContext {
   [EnableIf=ohos_custom_dns]
   ClearHostIP(string HostName);
 
-  [EnableIf=is_ohos]
+  [EnableIf=is_ohos_prpp]
   InitPRParallelPreloadMgr();
 
-  [EnableIf=is_ohos]
-  StartMainPage(string url, NetworkAnonymizationKey networkAnonymizationKey, uint64 addr_web_handle);
+  [EnableIf=is_ohos_prpp]
+  StartPage(string url, uint64 addr_web_handle) => (string page_origin_url);
 
-  [EnableIf=is_ohos]
-  StopMainPage(uint64 addr_web_handle);
+  [EnableIf=is_ohos_prpp]
+  StopPage(uint64 addr_web_handle);
+
+  [EnableIf=is_ohos_prpp]
+  SetParam(URLLoaderFactoryParams params);
 
   // Creates a HostResolver interface that can be passed to code/processes
   // without direct access to NetworkContext to make ResolveHost requests.

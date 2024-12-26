@@ -2,11 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "preconnect_runner.h"
+#include "services/network/prp_preload/src/preload_runner/preconnect_runner.h"
 
-#include "base/ohos/sys_info_utils.h"
 #include "net/base/http_user_agent_settings.h"
-#include "net/base/network_anonymization_key.h"
 #include "net/http/http_network_session.h"
 #include "net/http/http_transaction_factory.h"
 #include "net/http/transport_security_state.h"
@@ -17,15 +15,10 @@ namespace ohos_prp_preload {
 void PreconnectRunner::PreconnectSocket(
     const GURL& original_url,
     bool allow_credentials,
-    base::WeakPtr<net::URLRequestContext> url_request_context,
-    const net::NetworkAnonymizationKey& networkAnonymizationKey) {
+    const net::NetworkAnonymizationKey& network_anonymization_key,
+    base::WeakPtr<net::URLRequestContext> url_request_context) {
   if (url_request_context.get() == nullptr) {
     return;
-  }
-  net::NetworkAnonymizationKey key = 
-      net::NetworkAnonymizationKey::CreateSameSite(net::SchemefulSite(original_url));
-  if (base::ohos::IsPcDevice() == true ) {
-    key = networkAnonymizationKey;
   }
 
   GURL url = GetHSTSRedirect(original_url, url_request_context);
@@ -48,8 +41,8 @@ void PreconnectRunner::PreconnectSocket(
     request_info.load_flags = net::LOAD_DO_NOT_SAVE_COOKIES;
     request_info.privacy_mode = net::PRIVACY_MODE_ENABLED;
   }
-  
-  request_info.network_anonymization_key = key;
+
+  request_info.network_anonymization_key = network_anonymization_key;
 
   net::HttpTransactionFactory* factory =
       url_request_context->http_transaction_factory();

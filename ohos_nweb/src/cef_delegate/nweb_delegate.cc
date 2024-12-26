@@ -1546,6 +1546,14 @@ void NWebDelegate::NotifyForNextTouchEvent() {
   }
 }
 
+#ifdef OHOS_ACTIVE_POLICY
+void NWebDelegate::SetDelayDurationForBackgroundTabFreezing(int64_t delay) {
+    if (preference_delegate_) {
+        preference_delegate_->SetDelayDurationForBackgroundTabFreezing(delay);
+    }
+}
+#endif
+
 void NWebDelegate::SetAutofillCallback(
     std::shared_ptr<NWebMessageValueCallback> callback) {
   CefRefPtr<CefWebMessageReceiver> JsResultCb =

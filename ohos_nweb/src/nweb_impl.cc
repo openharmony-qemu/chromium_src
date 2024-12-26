@@ -454,6 +454,8 @@ void InitialWebEngineArgs(
 
 namespace OHOS::NWeb {
 
+bool NWebImpl::disableWebActivePolicy_ = false;
+
 // static
 std::shared_ptr<NWeb> NWebImpl::CreateNWeb(
     std::shared_ptr<NWebCreateInfo> create_info) {
@@ -2364,6 +2366,26 @@ void NWebImpl::NotifyForNextTouchEvent() {
     return;
   }
   nweb_delegate_->NotifyForNextTouchEvent();
+}
+
+bool NWebImpl::IsActivePolicyDisable() {
+  return disableWebActivePolicy_;
+}
+
+void NWebImpl::DisableWebActivePolicy() {
+  WVLOG_I("NWebImpl DisableWebActivePolicy");
+  disableWebActivePolicy_ = true;
+}
+
+void NWebImpl::SetDelayDurationForBackgroundTabFreezing(int64_t delay)
+{
+#ifdef OHOS_ACTIVE_POLICY
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("SetDelayDurationForBackgroundTabFreezing nweb delegate is null");
+    return;
+  }
+  nweb_delegate_->SetDelayDurationForBackgroundTabFreezing(delay);
+#endif
 }
 
 #if BUILDFLAG(IS_OHOS)

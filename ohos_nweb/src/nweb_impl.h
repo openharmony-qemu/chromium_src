@@ -354,6 +354,13 @@ class NWebImpl : public NWeb {
   void OnOnlineRenderToForeground() override;
 
   void NotifyForNextTouchEvent() override;
+
+  bool IsActivePolicyDisable() override;
+
+  static void DisableWebActivePolicy();
+
+  void SetDelayDurationForBackgroundTabFreezing(int64_t delay);
+
 #ifdef OHOS_DRAG_DROP
   std::shared_ptr<NWebDragData> GetOrCreateDragData() override;
 #endif // #ifdef OHOS_DRAG_DROP
@@ -665,6 +672,7 @@ class NWebImpl : public NWeb {
 #if defined(OHOS_VIDEO_ASSISTANT)
   static OnReportStatisticLogFunc on_report_statistic_log_callback_;
 #endif  // defined(OHOS_VIDEO_ASSISTANT)
+  static bool disableWebActivePolicy_;
 };
 }  // namespace OHOS::NWeb
 

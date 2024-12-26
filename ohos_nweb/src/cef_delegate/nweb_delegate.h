@@ -543,6 +543,10 @@ void SetTransformHint(uint32_t rotation) override;
 
 void NotifyForNextTouchEvent() override;
 
+#ifdef OHOS_ACTIVE_POLICY
+void SetDelayDurationForBackgroundTabFreezing(int64_t delay) override;
+#endif
+
 #ifdef OHOS_AI
   void OnTextSelected() override;
 #endif

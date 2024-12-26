@@ -439,6 +439,10 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
 
   void GetDawnInfoOnMain(GetDawnInfoCallback callback);
 
+#if BUILDFLAG(IS_OHOS)
+  void DestroyNativeWindowInner(uint32_t native_window_id);
+#endif
+
   scoped_refptr<base::SingleThreadTaskRunner> main_runner_;
   scoped_refptr<base::SingleThreadTaskRunner> io_runner_;
 

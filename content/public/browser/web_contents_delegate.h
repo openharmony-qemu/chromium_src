@@ -329,6 +329,10 @@ class CONTENT_EXPORT WebContentsDelegate {
       bool is_password_popup_type) {}
   virtual void OnHideAutofillPopup() {}
 #endif
+
+#if defined(OHOS_MULTI_WINDOW)
+  virtual void OnActivateContent() {}
+#endif
   // Allows delegates to handle keyboard events before sending to the renderer.
   // See enum for description of return values.
   virtual KeyboardEventProcessingResult PreHandleKeyboardEvent(

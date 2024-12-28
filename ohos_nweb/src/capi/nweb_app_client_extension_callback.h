@@ -66,7 +66,9 @@ struct NWebAppClientExtensionCallback {
 #endif
 
   void (*OnRequestOpenDevTools)(int32_t nweb_id);
-
+#if defined(OHOS_MULTI_WINDOW)
+  void (*OnActivateContent)(int nweb_id);
+#endif
 #ifdef OHOS_EX_PULL_TO_REFRESH
   bool (*OnPullToRefreshAction)(int action, int nweb_id);
   void (*OnPullToRefreshPull)(float offset_x, float offset_y, int nweb_id);

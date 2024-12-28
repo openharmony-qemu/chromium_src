@@ -3963,6 +3963,20 @@ void NWebHandlerDelegate::OnRequestOpenDevTools() {
   web_app_client_extension_listener_->OnRequestOpenDevTools(
       web_app_client_extension_listener_->nweb_id);
 }
+
+#if defined(OHOS_MULTI_WINDOW)
+void NWebHandlerDelegate::OnActivateContent() {
+  if (web_app_client_extension_listener_ == nullptr ||
+      web_app_client_extension_listener_->OnActivateContent == nullptr) {
+    LOG(ERROR)<< "The web_app_client_extension_listener onActivateContent is null";
+    return;
+  }
+  LOG(INFO)<< "Handler delegate to extension listener onActivateContent";
+  web_app_client_extension_listener_->OnActivateContent(
+      web_app_client_extension_listener_->nweb_id);
+}
+#endif
+
 #if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
 void NWebHandlerDelegate::OnBeforeUnloadFired(CefRefPtr<CefBrowser> browser,
                                               bool proceed) {

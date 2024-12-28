@@ -138,6 +138,7 @@ std::shared_ptr<PRPPRequestLoader> PRPPRequestLoaderFactoryImpl::GetPRPPReqLoade
 	return nullptr;
   }
   (void)prpp_req_loaders_.erase(it);
+  LOG(DEBUG) << "PRPPreload.PRPPRequestLoaderFactoryImpl::GetPRPPReqLoader find loader success";
   return loader;
 }
 

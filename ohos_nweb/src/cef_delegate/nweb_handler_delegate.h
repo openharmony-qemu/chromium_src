@@ -859,7 +859,6 @@ void OnTouchIconUrlWithSizesReceived(
 #endif
   uint32_t window_id_ = 0;
   bool focusState_ = false;
-  static int32_t popIndex_;
   CefRefPtr<CefCallback> popupWindowCallback_ = nullptr;
 
 #if defined(OHOS_NWEB_EX)

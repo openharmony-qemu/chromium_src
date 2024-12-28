@@ -12,12 +12,19 @@
 #include "net/base/load_states.h"
 #include "net/base/net_error_details.h"
 #include "net/base/net_export.h"
+#include "net/base/prp_preload_buildflags.h"
 #include "net/base/request_priority.h"
 #include "net/base/upload_progress.h"
 #include "net/http/http_raw_request_headers.h"
 #include "net/http/http_response_headers.h"
 #include "net/socket/connection_attempts.h"
 #include "net/websockets/websocket_handshake_stream_base.h"
+
+#if BUILDFLAG(IS_OHOS_PRPP)
+namespace ohos_prp_preload {
+class PRRequestInfo;
+}
+#endif
 
 namespace net {
 
@@ -59,6 +66,12 @@ class NET_EXPORT_PRIVATE HttpTransaction {
   using ConnectedCallback =
       base::RepeatingCallback<int(const TransportInfo& info,
                                   CompletionOnceCallback callback)>;
+
+#if BUILDFLAG(IS_OHOS_PRPP)
+  using UpdateResRequestInfoCallback =
+      base::RepeatingCallback<void(const std::string& key,
+      const std::shared_ptr<ohos_prp_preload::PRRequestInfo>& info)>;
+#endif
 
   // Stops any pending IO and destroys the transaction object.
   virtual ~HttpTransaction() = default;
@@ -219,6 +232,13 @@ class NET_EXPORT_PRIVATE HttpTransaction {
   // byte of the response body has been read, as the connection is no longer in
   // use at that point.
   virtual void CloseConnectionOnDestruction() = 0;
+
+#if BUILDFLAG(IS_OHOS_PRPP)
+  virtual void SetUpdateResRequestInfoCallback(
+    HttpTransaction::UpdateResRequestInfoCallback callback) { }
+  virtual void SetPreloadInfo(
+    const std::shared_ptr<ohos_prp_preload::PRRequestInfo>& preload_info) { }
+#endif
 };
 
 }  // namespace net

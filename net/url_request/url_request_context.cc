@@ -131,6 +131,20 @@ std::unique_ptr<URLRequest> URLRequestContext::CreateRequest(
       traffic_annotation, is_for_websockets, net_log_source);
 }
 
+#if BUILDFLAG(IS_OHOS_PRPP)
+std::shared_ptr<URLRequest> URLRequestContext::CreateRequestForPrpp(
+    const GURL& url,
+    RequestPriority priority,
+    URLRequest::Delegate* delegate,
+    NetworkTrafficAnnotationTag traffic_annotation,
+    bool is_for_websockets,
+    const absl::optional<net::NetLogSource> net_log_source) const {
+  return std::make_shared<URLRequest>(
+      base::PassKey<URLRequestContext>(), url, priority, delegate, this,
+      traffic_annotation, is_for_websockets, net_log_source);
+}
+#endif
+
 void URLRequestContext::AssertNoURLRequests() const {
   int num_requests = url_requests_->size();
   if (num_requests != 0) {

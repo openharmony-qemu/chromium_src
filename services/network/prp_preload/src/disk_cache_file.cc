@@ -7,7 +7,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "disk_cache_file.h"
+#include "services/network/prp_preload/src/disk_cache_file.h"
 
 #include "base/logging.h"
 
@@ -24,7 +24,7 @@ DiskCacheEntry::~DiskCacheEntry() {
     entry_ = nullptr;
   }
 }
-  
+
 void DiskCacheEntry::Cache() {
   OnOpComplete(net::OK);
 }
@@ -154,6 +154,9 @@ int DiskCacheReadHelper::OpenCallback(int rv) {
 int DiskCacheReadHelper::ReadCallback(int rv) {
   if (rv != net::OK) {
     LOG(DEBUG) << "PRPPreload.DiskCacheReadHelper::ReadCallback load cache entry failed: " << rv;
+    if (!entry_loaded_cb_.is_null()) {
+      entry_loaded_cb_.Run(std::string());
+    }
     cache_->EntryReadComplete();
     return rv;
   }
@@ -166,8 +169,14 @@ int DiskCacheReadHelper::ReadCallback(int rv) {
 }
 
 int DiskCacheReadHelper::IOComplete(int rv) {
-  if (rv && buf_ != nullptr && rv == buf_->size() && !entry_loaded_cb_.is_null()) {
-    entry_loaded_cb_.Run(std::string(buf_->data(), buf_->size()));
+  if (rv && buf_ != nullptr && rv == buf_->size()) {
+    if (!entry_loaded_cb_.is_null()) {
+      entry_loaded_cb_.Run(std::string(buf_->data(), buf_->size()));
+    }
+  } else {
+    if (!entry_loaded_cb_.is_null()) {
+      entry_loaded_cb_.Run(std::string());
+    }
   }
 
   cache_->EntryReadComplete();
@@ -181,7 +190,7 @@ DiskCacheFile::DiskCacheFile(const scoped_refptr<DiskCacheBackendFactory>& disk_
 
 void DiskCacheFile::StoreInfoAsync(const std::string& entry_content) {
   if (!disk_cache_backend_factory_->WaitInitedTimeout()) {
-    LOG(ERROR) << "PRPPreload.DiskCacheFile::StoreInfoAsync backend not ready";
+    LOG(WARNING) << "PRPPreload.DiskCacheFile::StoreInfoAsync backend not ready";
     return;
   }
   entry_ = std::make_unique<DiskCacheEntry>(this, url_, entry_content);

@@ -26,6 +26,7 @@
 #include "mojo/public/cpp/system/simple_watcher.h"
 #include "net/base/load_states.h"
 #include "net/base/network_delegate.h"
+#include "net/base/prp_preload_buildflags.h"
 #include "net/base/transport_info.h"
 #include "net/cookies/cookie_setting_override.h"
 #include "net/traffic_annotation/network_traffic_annotation.h"
@@ -59,6 +60,11 @@
 #include "services/network/upload_progress_tracker.h"
 #include "services/network/url_loader_context.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
+
+#if BUILDFLAG(IS_OHOS_PRPP)
+#include "services/network/prp_preload/include/preload_runner/prpp_request_loader.h"
+#include "services/network/prp_preload/include/preload_runner/prpp_request_loader_factory.h"
+#endif
 
 namespace net {
 class HttpResponseHeaders;
@@ -169,7 +175,14 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
       bool third_party_cookies_enabled,
       net::CookieSettingOverrides cookie_setting_overrides,
       const CacheTransparencySettings* cache_transparency_settings,
-      std::unique_ptr<AttributionRequestHelper> attribution_request_helper);
+      std::unique_ptr<AttributionRequestHelper> attribution_request_helper
+#if BUILDFLAG(IS_OHOS_PRPP)
+      ,
+      std::shared_ptr<ohos_prp_preload::PRPPRequestLoader> prpp_loader,
+      const std::string& org_main_url,
+      std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info
+#endif
+      );
 
   URLLoader(const URLLoader&) = delete;
   URLLoader& operator=(const URLLoader&) = delete;
@@ -519,7 +532,11 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   const int keepalive_request_size_;
   const bool keepalive_;
   const bool do_not_prompt_for_login_;
+#if BUILDFLAG(IS_OHOS_PRPP)
+  std::shared_ptr<net::URLRequest> url_request_;
+#else
   std::unique_ptr<net::URLRequest> url_request_;
+#endif
   mojo::Receiver<mojom::URLLoader> receiver_;
   mojo::Receiver<mojom::AuthChallengeResponder>
       auth_challenge_responder_receiver_{this};
@@ -689,6 +706,30 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   std::vector<network::mojom::CookieAccessDetailsPtr> cookie_access_details_;
 
   const bool provide_data_use_updates_;
+
+#if BUILDFLAG(IS_OHOS_PRPP)
+  void UpdateResRequestInfo(
+      const std::string& key,
+      const std::shared_ptr<ohos_prp_preload::PRRequestInfo>& info);
+  void InitUrlRequestForRollback(
+      URLLoaderContext& context,
+      const ResourceRequest& request,
+      const net::NetworkTrafficAnnotationTag& traffic_annotation,
+      bool third_party_cookies_enabled,
+      net::CookieSettingOverrides cookie_setting_overrides,
+      const std::string& org_main_url,
+      std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info);
+  void SetUrlRequestForPRPP(
+      const ResourceRequest& request,
+      const std::shared_ptr<net::URLRequest>& url_request,
+      const std::string& org_main_url,
+      std::shared_ptr<ohos_prp_preload::PRRequestInfo>& preload_info);
+  void RollbackFromPPRP();
+  std::shared_ptr<ohos_prp_preload::PRPPRequestLoader> prpp_loader_ { nullptr };
+  bool redirect_updated_ { false };
+  bool already_update_info_ { false };
+  std::shared_ptr<net::URLRequest> url_request_rollback_;
+#endif
 
   base::WeakPtrFactory<URLLoader> weak_ptr_factory_{this};
 };

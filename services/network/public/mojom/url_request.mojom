@@ -507,11 +507,14 @@ struct URLRequest {
   [EnableIf=ohos_ex_download]
   bool is_download_request;
 
-  [EnableIf=is_ohos]
+  [EnableIf=is_ohos_prpp]
   bool allow_preload_record;
 
-  [EnableIf=is_ohos]
-  url.mojom.Url main_page;
+  [EnableIf=is_ohos_prpp]
+  url.mojom.Url main_url;
+
+  [EnableIf=is_ohos_prpp]
+  bool is_preflight;
 
   [EnableIf=is_ohos]
   bool is_sync_mode;

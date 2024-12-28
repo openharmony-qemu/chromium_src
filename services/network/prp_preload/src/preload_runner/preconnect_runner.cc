@@ -4,6 +4,7 @@
 
 #include "services/network/prp_preload/src/preload_runner/preconnect_runner.h"
 
+#include "base/logging.h"
 #include "net/base/http_user_agent_settings.h"
 #include "net/http/http_network_session.h"
 #include "net/http/http_transaction_factory.h"
@@ -48,6 +49,7 @@ void PreconnectRunner::PreconnectSocket(
       url_request_context->http_transaction_factory();
   net::HttpNetworkSession* session = factory->GetSession();
   net::HttpStreamFactory* http_stream_factory = session->http_stream_factory();
+  LOG(DEBUG) << "PRPPreload.PreconnectRunner::PreconnectSocket start";
   http_stream_factory->PreconnectStreams(1, request_info, true);
 }
 

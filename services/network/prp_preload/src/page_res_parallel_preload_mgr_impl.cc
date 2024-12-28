@@ -89,7 +89,7 @@ void PRParallelPreloadMgrImpl::StartPage(const std::string& url,
 	", current page num = " << prp_preload_info_map_.size() << ", web_handle_valid = " << !web_handle;
   if (url.empty() || web_handle == nullptr ||
       !is_inited_ || prp_preload_info_map_.size() >= MAX_PAGE_COUNT) {
-	LOG(WARNING) << "PRPPreload.PRParallelPreloadMgrImpl::StartPage failed";
+	LOG(DEBUG) << "PRPPreload.PRParallelPreloadMgrImpl::StartPage failed";
 	SAFE_RUN_GET_ISOLATION_CB(callback, CANCEL_ORIGIN);
 	return;
   }

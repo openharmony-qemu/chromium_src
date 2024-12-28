@@ -32,8 +32,11 @@ void PRPPRequestLoaderFactoryImpl::CreateReqLoaderAndStart(const std::shared_ptr
 	  "invalid context or info";
 	return;
   }
-
-  only_send_reuse_request_ = only_send_reuse_request;
+  
+  if (!has_set_only_send_reuse_request_) {
+    has_set_only_send_reuse_request_ = true;
+    only_send_reuse_request_ = only_send_reuse_request;
+  }
 
   std::string sub_url = info->url().spec();
   if (requests_already_start_set_.find(sub_url) != requests_already_start_set_.end()) {
@@ -110,7 +113,7 @@ std::shared_ptr<PRPPRequestLoader> PRPPRequestLoaderFactoryImpl::GetPRPPReqLoade
 	it = prpp_req_loaders_.find(sub_url);
   }
   if (it == prpp_req_loaders_.end()) {
-	LOG(WARNING) << "PRPPreload.PRPPRequestLoaderFactoryImpl::GetPRPPReqLoader not find";
+	LOG(DEBUG) << "PRPPreload.PRPPRequestLoaderFactoryImpl::GetPRPPReqLoader not find";
 	(void)requests_already_start_set_.emplace(sub_url);
 	if (dynamic_urls_.find(sub_url) != dynamic_urls_.end() && only_send_reuse_request_) {
 	  req_info_binding->set_preload_flag(PRPP_FLAGS_VISIBLE);

@@ -737,6 +737,10 @@ void NWebHandlerDelegate::OnMainFrameChanged(
   if (new_frame && browser && browser->IsValid() && preference_delegate_.get()) {
     preference_delegate_->WebPreferencesChanged();
   }
+
+  if (nweb_handler_) {
+    nweb_handler_->OnQuickMenuDismissed();
+  }
 }
 /* CefFrameHandler methods end */
 

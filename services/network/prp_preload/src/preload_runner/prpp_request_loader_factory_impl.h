@@ -62,6 +62,7 @@ private:
   std::unordered_map<std::string, net::HttpRequestHeaders> can_reuse_headers_map_;
   std::unordered_map<std::string, std::list<std::shared_ptr<PRRequestInfo>>> pending_prpp_loader_list_;
   std::set<std::string> need_record_header_urls_; // key of can_reuse_headers_map_
+  bool has_set_only_send_reuse_request_ { false };
   bool only_send_reuse_request_ { false };
   std::set<std::string> dynamic_urls_;
 };

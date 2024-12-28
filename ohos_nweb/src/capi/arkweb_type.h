@@ -71,7 +71,7 @@ typedef enum ArkWeb_WebMessageType {
 /**
  * @brief Defines the data type carried in a ArkWeb_JavaScriptValue.
  *
- * @since 14
+ * @since 16
  */
 typedef enum ArkWeb_JavaScriptValueType {
     /** Represent error data */
@@ -92,7 +92,7 @@ typedef struct ArkWeb_WebMessage* ArkWeb_WebMessagePtr;
 /**
  * @brief Defines the ArkWeb_JavaScriptValuePtr.
  *
- * @since 14
+ * @since 16
  */
 typedef struct ArkWeb_JavaScriptValue* ArkWeb_JavaScriptValuePtr;
 
@@ -120,7 +120,7 @@ typedef void (*ArkWeb_OnJavaScriptProxyCallback)(
  * @param arraySize The number of elements in the array.
  * @param userData The data set by user.
  *
- * @since 14
+ * @since 16
  */
 typedef ArkWeb_JavaScriptValuePtr (*ArkWeb_OnJavaScriptProxyCallbackWithResult)(
     const char* webTag, const ArkWeb_JavaScriptBridgeData* dataArray, size_t arraySize, void* userData);
@@ -185,7 +185,7 @@ typedef struct {
 /**
  * @brief Defines the JavaScript proxy method with a return value.
  *
- * @since 14
+ * @since 16
  */
 typedef struct {
     /** The method of the application side JavaScript object participating in the registration. */
@@ -213,7 +213,7 @@ typedef struct {
 /**
  * @brief Defines the JavaScript proxy registered object with methodList that has a return value.
  *
- * @since 14
+ * @since 16
  */
 typedef struct {
     /** The name of the registered object. */
@@ -294,7 +294,7 @@ typedef struct {
      * @param permission The JSON string, which defaults to null, is used to configure the permission control for
      * JSBridge, allowing for the definition of URL whitelists at the object and method levels.
      *
-     * @since 14
+     * @since 16
      */
     void (*registerJavaScriptProxyEx)(const char* webTag, const ArkWeb_ProxyObjectWithResult* proxyObject,
         const char* permission);
@@ -307,7 +307,7 @@ typedef struct {
      * @param permission The JSON string, which defaults to null, is used to configure the permission control
      * for JSBridge, allowing for the definition of URL whitelists at the object and method levels.
      *
-     * @since 14
+     * @since 16
      */
     void (*registerAsyncJavaScriptProxyEx)(const char* webTag, const ArkWeb_ProxyObject* proxyObject,
         const char* permission);
@@ -502,7 +502,7 @@ typedef struct {
  * whether the function structure has a corresponding function pointer to avoid crash
  * caused by mismatch between the SDK and the device ROM.
  *
- * @since 14
+ * @since 16
  */
 typedef struct {
     /** The ArkWeb_JavaScriptValueAPI struct size. */

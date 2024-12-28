@@ -129,6 +129,9 @@ config("skia_config") {
       }
     }
   }
+  if (enable_heif_decoder) {
+    defines += [ "SK_HAS_HEIF_LIBRARY" ]
+  }
 }
 
 # Internal-facing config for Skia library code.
@@ -379,6 +382,10 @@ component("skia") {
     deps += [ "//third_party/wuffs" ]
   } else {
     sources += skia_no_encode_jpeg_srcs
+  }
+
+  if (enable_heif_decoder) {
+    sources += [ "//third_party/skia/src/codec/SkHeifCodec.cpp" ]
   }
 
   if (skia_support_xmp) {

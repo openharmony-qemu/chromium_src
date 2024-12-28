@@ -103,7 +103,7 @@ void ResPreloadScheduler::SchedulePreloads(const PRPPPreconnectInfoList& preconn
     if (!on_page_origin_cb_.is_null()) {
       net_task_runner_->PostTask(FROM_HERE, base::BindOnce(on_page_origin_cb_, url_, CANCEL_ORIGIN));
     }
-    LOG(WARNING) << "PRPPreload.ResPreloadScheduler::SchedulePreloads invalid tree or no TYPE_PAGE_ORIGIN";
+    LOG(DEBUG) << "PRPPreload.ResPreloadScheduler::SchedulePreloads invalid tree or no TYPE_PAGE_ORIGIN";
     return;
   }
 

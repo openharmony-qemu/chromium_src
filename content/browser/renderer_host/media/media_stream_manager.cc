@@ -3674,27 +3674,27 @@ void MediaStreamManager::PostVideoCaptureSessionBind(blink::mojom::MediaStreamTy
   }
 
 #if defined(OHOS_WEBRTC)
-      if (stream_type == MediaStreamType::DEVICE_VIDEO_CAPTURE) {
-        auto* web_contents = static_cast<WebContentsImpl*>(
-          WebContentsImpl::FromRenderFrameHostID(process_id, frame_id));
-        if (web_contents) {
-          video_capture_manager()->BindSessionIdToNWebId(
-            session_id, web_contents->GetNWebId());
-        }
-      }
+  if (stream_type == MediaStreamType::DEVICE_VIDEO_CAPTURE) {
+    auto* web_contents = static_cast<WebContentsImpl*>(
+      WebContentsImpl::FromRenderFrameHostID(process_id, frame_id));
+    if (web_contents) {
+      video_capture_manager()->BindSessionIdToNWebId(
+        session_id, web_contents->GetNWebId());
+    }
+  }
 #endif  // defined(OHOS_WEBRTC)
 
 #if defined(OHOS_EX_SCREEN_CAPTURE)
-      if (stream_type == MediaStreamType::DISPLAY_VIDEO_CAPTURE ||
-          stream_type == MediaStreamType::DISPLAY_VIDEO_CAPTURE_THIS_TAB ||
-          stream_type == MediaStreamType::DISPLAY_VIDEO_CAPTURE_SET) {
-        auto* web_contents = static_cast<WebContentsImpl*>(
-          WebContentsImpl::FromRenderFrameHostID(process_id, frame_id));
-        if (web_contents) {
-            std::lock_guard<std::mutex> lock(nweb_id_mutex_);
-            nweb_id_maps_[session_id.ToString()] = web_contents->GetNWebId();
-        }
-      }
+  if (stream_type == MediaStreamType::DISPLAY_VIDEO_CAPTURE ||
+      stream_type == MediaStreamType::DISPLAY_VIDEO_CAPTURE_THIS_TAB ||
+      stream_type == MediaStreamType::DISPLAY_VIDEO_CAPTURE_SET) {
+    auto* web_contents = static_cast<WebContentsImpl*>(
+      WebContentsImpl::FromRenderFrameHostID(process_id, frame_id));
+    if (web_contents) {
+        std::lock_guard<std::mutex> lock(nweb_id_mutex_);
+        nweb_id_maps_[session_id.ToString()] = web_contents->GetNWebId();
+    }
+  }
 #endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 }
 #endif

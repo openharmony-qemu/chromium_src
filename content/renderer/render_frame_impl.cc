@@ -2737,15 +2737,15 @@ void RenderFrameImpl::CommitNavigation(
     return;
   }
 
-  // Common case - fill navigation params from provided information and commit.
-  std::move(commit_with_params).Run(std::move(navigation_params));
-
 #ifdef OHOS_ARKWEB_ADBLOCK
   if (is_main_frame_) {
     // All subframes share the main frame's adblock switch
     OnUpdateAdBlockEnabledToRender(site_adblock_enabled);
   }
 #endif  // OHOS_ARKWEB_ADBLOCK
+
+  // Common case - fill navigation params from provided information and commit.
+  std::move(commit_with_params).Run(std::move(navigation_params));
 }
 
 void RenderFrameImpl::CommitNavigationWithParams(

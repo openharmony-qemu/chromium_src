@@ -194,18 +194,20 @@ OHOSAudioOutputStream::OHOSAudioOutputStream(OHOSAudioManager* manager,
 
 void OHOSAudioOutputStream::GetMediaSessionFromWebContent() {
   auto GetMediaSessionFunc =
-      [](AudioParameters parameters, content::WebContents* web_contents,
+      [](AudioParameters parameters, base::WeakPtr<content::WebContents>* web_contents_out,
          base::WeakPtr<content::MediaSessionImpl>* media_session_out) {
         content::RenderFrameHost* render_frame_host =
             content::RenderFrameHost::FromID(parameters.render_process_id(),
                                              parameters.render_frame_id());
-        web_contents =
+        content::WebContents* web_contents =
             content::WebContents::FromRenderFrameHost(render_frame_host);
         if (!web_contents) {
           LOG(ERROR) << __func__
                      << ": AudioOutputStream get webContent failed.";
+          *web_contents_out = nullptr;
           return;
         }
+        *web_contents_out = web_contents->GetWeakPtr();
         content::MediaSessionImpl* media_session =
             content::MediaSessionImpl::Get(web_contents);
         if (!media_session) {
@@ -223,10 +225,10 @@ void OHOSAudioOutputStream::GetMediaSessionFromWebContent() {
     }
     main_task_runner_->PostTask(
         FROM_HERE, base::BindOnce(GetMediaSessionFunc, parameters_,
-                                  base::Unretained(webContent_),
+                                  base::Unretained(&webContent_),
                                   base::Unretained(&weakMediaSession_)));
   } else {
-    GetMediaSessionFunc(parameters_, webContent_, &weakMediaSession_);
+    GetMediaSessionFunc(parameters_, &webContent_, &weakMediaSession_);
   }
 }
 
@@ -332,7 +334,7 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
     it++;
   }
 
-  WEBCONTENT_SET.insert(webContent_);
+  WEBCONTENT_SET.insert(webContent_.get());
   if (StartRender()) {
     callback_ = callback;
     if (memset_s(audio_data_[active_buffer_index_],
@@ -356,7 +358,7 @@ void OHOSAudioOutputStream::Stop() {
     reference_time_ = base::TimeTicks();
   }
   timer_.Stop();
-  WEBCONTENT_SET.erase(webContent_);
+  WEBCONTENT_SET.erase(webContent_.get());
   if (rendererCallback_ && rendererCallback_->GetSuspendFlag()) {
     LOG(DEBUG) << "OHOSAudioOutputStream::Stop cannot continue.";
     return;

@@ -183,7 +183,7 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   std::unique_ptr<AudioRendererAdapter> audio_renderer_;
 
-  content::WebContents* webContent_ = nullptr;
+  base::WeakPtr<content::WebContents> webContent_ = nullptr;
 
   base::WeakPtr<content::MediaSessionImpl> weakMediaSession_ = nullptr;
 

@@ -63,6 +63,11 @@
 #include "net/ssl/ssl_cert_request_info.h"
 #include "net/ssl/ssl_config_service.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/logging.h"
+#include "ohos_adapter_helper.h"
+#endif
+
 using base::Time;
 using base::TimeTicks;
 
@@ -2109,6 +2114,19 @@ int HttpCache::Transaction::DoUpdateCachedResponse() {
   response_.restricted_prefetch = new_response_->restricted_prefetch;
   response_.ssl_info = new_response_->ssl_info;
   response_.dns_aliases = new_response_->dns_aliases;
+
+#if BUILDFLAG(IS_OHOS)
+  if (new_response_->headers->response_code() == HTTP_NOT_MODIFIED) {
+    static bool res = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                          .GetSystemPropertiesInstance()
+                          .GetBoolParameter("web.304CodeCache.enable", false);
+    if (res) {
+      LOG(DEBUG) << "HttpCache::Transaction::DoUpdateCachedResponse set "
+                    "response code: HTTP_NOT_MODIFIED";
+      response_.code_cache_valid = true;
+    }
+  }
+#endif
 
   // Be careful never to set single_keyed_cache_entry_unusable back to false
   // from true.

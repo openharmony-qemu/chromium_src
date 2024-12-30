@@ -341,6 +341,10 @@ class NET_EXPORT HttpResponseHeaders
   // Write a representation of this object into tracing proto.
   void WriteIntoTrace(perfetto::TracedValue context) const;
 
+#if BUILDFLAG(IS_OHOS)
+  void SetResponseCode(int code) { response_code_ = code; }
+#endif
+
  private:
   friend class base::RefCountedThreadSafe<HttpResponseHeaders>;
 

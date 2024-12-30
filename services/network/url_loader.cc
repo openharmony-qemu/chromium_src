@@ -1410,6 +1410,7 @@ mojom::URLResponseHeadPtr URLLoader::BuildResponseHead() const {
       PopulateParsedHeaders(response->headers.get(), url_request_->url());
 
 #if BUILDFLAG(IS_OHOS)
+  response->code_cache_valid = url_request_->is_code_cache_valid();
   std::string http_version;
   if (url_request_->was_fetched_via_spdy()) {
     http_version = "http/2.0";

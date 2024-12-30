@@ -132,7 +132,7 @@ bool CreateThread(size_t stack_size,
   // Ensure that PartitionAddressSpace::Init is executed on the main thread
   // to avoid concurrency issues.
   static bool partitionAddressSpaceInit = false;
-  if ((!partitionAddressSpaceInit) && (getpid() == getpid())) {
+  if ((!partitionAddressSpaceInit) && (getpid() == gettid())) {
     partition_alloc::internal::PartitionAddressSpace::Init();
     partitionAddressSpaceInit = true;
   }

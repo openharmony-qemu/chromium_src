@@ -81,7 +81,7 @@ std::string NWebSchemeHandlerFactory::GetWebTag(CefRefPtr<CefBrowser> browser) {
   return web_tag;
 }
 
-CefRefPtr<CefResourceHandler> NWebSchemeHandlerFactory::Create(
+NO_SANITIZE("cfi-icall") CefRefPtr<CefResourceHandler> NWebSchemeHandlerFactory::Create(
     CefRefPtr<CefBrowser> browser,
     CefRefPtr<CefFrame> frame,
     const CefString& scheme_name,
@@ -208,7 +208,7 @@ ArkWeb_SchemeHandler* NWebSchemeHandlerFactory::FromTag(
   return nullptr;
 }
 
-void NWebSchemeHandlerFactory::OnRequestStop(
+NO_SANITIZE("cfi-icall") void NWebSchemeHandlerFactory::OnRequestStop(
     const ArkWeb_ResourceRequest* resource_request,
     const std::string& web_tag,
     bool from_service_worker) {

@@ -53,7 +53,7 @@ void NWebDownloadHandlerDelegate::RegisterWebDownloadDelegateListener(
 }
 
 /* CefDownloadHandler methods begin */
-void NWebDownloadHandlerDelegate::OnBeforeDownload(
+NO_SANITIZE("cfi-icall") void NWebDownloadHandlerDelegate::OnBeforeDownload(
     CefRefPtr<CefBrowser> browser,
     CefRefPtr<CefDownloadItem> download_item,
     const CefString& suggested_name,
@@ -83,7 +83,7 @@ void NWebDownloadHandlerDelegate::OnBeforeDownload(
   }
 }
 
-void NWebDownloadHandlerDelegate::OnDownloadUpdated(
+NO_SANITIZE("cfi-icall") void NWebDownloadHandlerDelegate::OnDownloadUpdated(
     CefRefPtr<CefBrowser> browser,
     CefRefPtr<CefDownloadItem> download_item,
     CefRefPtr<CefDownloadItemCallback> callback) {

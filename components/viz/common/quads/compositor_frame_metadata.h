@@ -87,8 +87,8 @@ class VIZ_COMMON_EXPORT CompositorFrameMetadata {
 
 #if defined(REPORT_SYS_EVENT)
   // For video frame drop sysevent report
-  int64_t dropped_frame_count = 0;
-  int64_t dropped_frame_duration = 0;
+  uint32_t dropped_frame_count = 0;
+  uint64_t dropped_frame_duration = 0;
 #endif
 
   bool may_contain_video = false;

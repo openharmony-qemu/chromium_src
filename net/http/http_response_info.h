@@ -273,6 +273,11 @@ class NET_EXPORT HttpResponseInfo {
   absl::optional<int64_t> browser_run_id;
 
   static std::string ConnectionInfoToString(ConnectionInfo connection_info);
+
+#if BUILDFLAG(IS_OHOS)
+  // Valid when response status code is 304
+  bool code_cache_valid = false;
+#endif
 };
 
 }  // namespace net

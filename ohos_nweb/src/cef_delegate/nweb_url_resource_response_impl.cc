@@ -101,22 +101,6 @@ bool NWebUrlResourceResponseImpl::ResponseIsFileHandle() {
   return isFileFd_;
 }
 
-bool NWebUrlResourceResponseImpl::IsSupportedStatusCode(int status_code) {
-  if (status_code >= kMinStatusCode_ && status_code <= kMaxStatusCode_) {
-    return true;
-  }
- 
-  switch (status_code) {
-#define NET_ERROR(label, value) \
-  case value:                   \
-    return true;
-#include "net/base/net_error_list.h"
-#undef NET_ERROR
-    default:
-      return false;
-  }
-}
-
 void NWebUrlResourceResponseImpl::PutResponseFileHandle(int fd) {
   dataType_ = NWebResponseDataType::NWEB_FILE_TYPE;
   fd_ = fd;

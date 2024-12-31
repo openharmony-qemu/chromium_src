@@ -154,9 +154,6 @@ public:
   size_t GetResponseDataBufferSize() override;
 
 private:
-  static bool IsSupportedStatusCode(int status_code);
-
-private:
   std::string mime_type_;
   std::string encoding_;
   int status_code_ = 200;
@@ -171,9 +168,6 @@ private:
   std::shared_ptr<NWebResourceReadyCallback> readyCallback_ = nullptr;
   char* buffer_;
   size_t bufferSize_ = 0;
-  const int net_failed_ = -2;
-  static const int kMinStatusCode_ = 100;
-  static const int kMaxStatusCode_ = 599;
 };
 
 } // namespace OHOS::NWeb

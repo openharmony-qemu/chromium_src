@@ -454,7 +454,6 @@ CefRefPtr<NWebHandlerDelegate> NWebHandlerDelegate::Create(
   return handler_delegate;
 }
 
-int32_t NWebHandlerDelegate::popIndex_ = 0;
 NWebHandlerDelegate::NWebHandlerDelegate(
     std::shared_ptr<NWebPreferenceDelegate> preference_delegate,
     CefRefPtr<NWebRenderHandler> render_handler,
@@ -1064,19 +1063,17 @@ bool NWebHandlerDelegate::OnPreBeforePopup(
   switch (target_disposition) {
     case WOD_NEW_WINDOW:
     case WOD_NEW_POPUP: {
-      popIndex_++;
       popupWindowCallback_ = callback;
       std::shared_ptr<NWebControllerHandler> handler =
-          std::make_shared<NWebControllerHandlerImpl>(popIndex_, true);
+          std::make_shared<NWebControllerHandlerImpl>(nweb_id_, true);
       nweb_handler_->OnWindowNewByJS(target_url, true, user_gesture, handler);
       return false;
     }
     case WOD_NEW_BACKGROUND_TAB:
     case WOD_NEW_FOREGROUND_TAB: {
-      popIndex_++;
       popupWindowCallback_ = callback;
       std::shared_ptr<NWebControllerHandler> handler =
-          std::make_shared<NWebControllerHandlerImpl>(popIndex_, true);
+          std::make_shared<NWebControllerHandlerImpl>(nweb_id_, true);
       nweb_handler_->OnWindowNewByJS(target_url, false, user_gesture, handler);
       return false;
     }
@@ -1119,7 +1116,7 @@ bool NWebHandlerDelegate::OnBeforePopup(
           return true;
         }
         std::shared_ptr<NWebControllerHandler> handler =
-            std::make_shared<NWebControllerHandlerImpl>(popIndex_, false);
+            std::make_shared<NWebControllerHandlerImpl>(nweb_id_, false);
         nweb_handler_->OnWindowNewByJS(target_url, true, user_gesture, handler);
         if (extra_info) {
           extra_info->SetInt("nweb_id", handler->GetNWebHandlerId());

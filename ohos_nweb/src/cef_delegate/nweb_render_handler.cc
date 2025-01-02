@@ -31,6 +31,7 @@
 #ifdef OHOS_DRAG_DROP
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
+#include "base/ohos/sys_info_utils.h"
 #include "cef/libcef/common/drag_data_impl.h"
 #include "content/public/common/drop_data.h"
 #if defined(REPORT_SYS_EVENT)
@@ -928,9 +929,13 @@ bool NWebRenderHandler::StartDragging(CefRefPtr<CefBrowser> browser,
   }
 #endif
 
+  bool is_drag_new_style = true;
+  if (base::ohos::IsTabletDevice() || base::ohos::IsPcDevice()) {
+    is_drag_new_style = false;
+  }
   nweb_drag_data_ = std::make_shared<NWebDragDataImpl>(
       drag_data, drag_touch_point, start_edge, end_edge,
-      screen_info_.display_ratio, usefull_selection, dark_mode_enable, view_port_height, true);
+      screen_info_.display_ratio, usefull_selection, dark_mode_enable, view_port_height, is_drag_new_style);
 
   auto handler = handler_.lock();
   if (handler == nullptr) {

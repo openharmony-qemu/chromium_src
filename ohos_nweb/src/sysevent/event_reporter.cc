@@ -214,11 +214,11 @@ void ReportAudioFrameDropStats(int frameCount) {
     {AUDIO_BLANK_FRAME_COUNT, std::to_string(frameCount)});
 }
 
-void ReportVideoFrameDropStats(int64_t frameCount, int64_t frameDuration) {
+void ReportVideoFrameDropStats(uint32_t frameCount, uint64_t frameDuration) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
     VIDEO_FRAME_DROP_STATISTICS, HiSysEventAdapter::EventType::STATISTIC,
-    {VIDEO_FRAME_DROPPED_COUNT, std::to_string(frameCount),
-     VIDEO_FRAME_DROPPED_DURATION, std::to_string(frameDuration)});
+    {VIDEO_FRAME_DROPPED_COUNT, frameCount,
+     VIDEO_FRAME_DROPPED_DURATION, frameDuration});
 }
 
 void ReportSiteIsolationMode(const std::string site_isolation_status) {

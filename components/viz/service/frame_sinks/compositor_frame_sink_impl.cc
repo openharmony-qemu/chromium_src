@@ -156,8 +156,8 @@ void CompositorFrameSinkImpl::SubmitCompositorFrame(
     absl::optional<HitTestRegionList> hit_test_region_list,
     uint64_t submit_time) {
 #if defined(REPORT_SYS_EVENT)
-  auto count = frame.metadata.dropped_frame_count;
-  auto duration = frame.metadata.dropped_frame_duration;
+  uint32_t count = static_cast<uint32_t>(frame.metadata.dropped_frame_count);
+  uint64_t duration = static_cast<uint64_t>(frame.metadata.dropped_frame_duration);
   if (!!count && !!duration) {
     ReportVideoFrameDropStats(count, duration);
   }

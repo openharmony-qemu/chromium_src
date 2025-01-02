@@ -179,7 +179,7 @@ void NWebApplication::OnContextInitialized() {
 }
 
 #ifdef OHOS_INIT_CALLBACK
-void NWebApplication::RunWebInitedCallback(WebRunInitedCallback* callback)
+NO_SANITIZE("cfi-vcall") void NWebApplication::RunWebInitedCallback(WebRunInitedCallback* callback)
 {
   if (callback != nullptr) {
     callback->RunInitedCallback();

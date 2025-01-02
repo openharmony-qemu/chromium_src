@@ -180,6 +180,10 @@ config("runtime_library") {
         libs += [ rebase_path(libasan_file) ]
         dynamic_linker = "/lib/ld-musl-aarch64-asan.so.1"
       }
+      if (using_sanitizer && is_ohos) {
+        libusan_file = "$ohos_toolchain_root/lib/clang/current/lib/aarch64-linux-ohos/libclang_rt.ubsan_standalone.so"
+        libs += [ rebase_path(libusan_file) ]
+      }
     }
 
     if (current_cpu == "x64") {

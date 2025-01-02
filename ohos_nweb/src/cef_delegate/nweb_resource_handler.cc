@@ -95,7 +95,9 @@ bool NWebResourceHandler::ReadStringData(void* data_out,
   bool has_data = false;
   bytes_read = 0;
 
-  data_ = response_->ResponseData();
+  if (data_.empty()) {
+    data_ = response_->ResponseData();
+  }
   if (offset_ < data_.length()) {
     // Copy the next block of data into the buffer.
     int transfer_size =

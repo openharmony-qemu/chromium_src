@@ -40,6 +40,8 @@
 #include "capi/nweb_download_delegate_callback.h"
 #endif  //  OHOS_EX_DOWNLOAD
 
+struct OpenDevToolsParam;
+
 namespace OHOS::NWeb {
 class JavaScriptResultCallbackImpl;
 class CefPdfValueCallbackImpl;
@@ -201,6 +203,11 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void JavaScriptOnDocumentStart(const ScriptItems& scriptItems) override;
   void JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) override;
 
+  void JavaScriptOnDocumentStartByOrder(const ScriptItems& scriptItems,
+      const ScriptItemsByOrder& scriptItemsByOrder) override;
+  void JavaScriptOnDocumentEndByOrder(const ScriptItems& scriptItems,
+      const ScriptItemsByOrder& scriptItemsByOrder) override;
+
   bool Discard() override;
   bool Restore() override;
 
@@ -256,6 +263,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       bool extention) override;
 
   int ScaleGestureChange(double scale, double centerX, double centerY) const override;
+
+  int ScaleGestureChangeV2(int type, double scale, double originScale, double centerX, double centerY) const override;
 
 #if defined(OHOS_MSGPORT)
   uint32_t runJSCallbackId_ = 0;
@@ -349,6 +358,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #ifdef BUILDFLAG(IS_OHOS)
 bool IsSafeBrowsingEnabled() override;
 void EnableSafeBrowsing(bool enable) override;
+void EnableSafeBrowsingDetection(bool enable, bool strictMode) override;
 void PrecompileJavaScript(const std::string& url,
                           const std::string& script,
                           std::shared_ptr<CacheOptions>& cacheOptions,
@@ -390,6 +400,7 @@ void SetTransformHint(uint32_t rotation) override;
 #if defined(OHOS_GET_SCROLL_OFFSET)
   void GetOverScrollOffset(float* offset_x, float* offset_y) override;
 #endif
+  bool SendKeyboardEvent(const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent>& keyboardEvent) override;
   bool ScrollByWithResult(float delta_x, float delta_y) override;
   void WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent) override;
 #endif  // defined(OHOS_INPUT_EVENTS)
@@ -492,6 +503,12 @@ void SetTransformHint(uint32_t rotation) override;
   void CloseCamera() override;
 #endif  // defined(OHOS_WEBRTC)
 
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  void StopScreenCapture(int32_t nweb_id, const char* session_id) override;
+  void RegisterScreenCaptureDelegateListener(
+      std::shared_ptr<NWebScreenCaptureDelegateCallback> listener) override;
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+
 #if defined(OHOS_SCREEN_LOCK)
   void SetWakeLockCallback(int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback) override;
 #endif
@@ -526,6 +543,10 @@ void SetTransformHint(uint32_t rotation) override;
 
 void NotifyForNextTouchEvent() override;
 
+#ifdef OHOS_ACTIVE_POLICY
+void SetDelayDurationForBackgroundTabFreezing(int64_t delay) override;
+#endif
+
 #ifdef OHOS_AI
   void OnTextSelected() override;
 #endif
@@ -549,7 +570,21 @@ void NotifyForNextTouchEvent() override;
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override;
 #endif
 
+#ifdef OHOS_EX_REFRESH_IFRAME
+  bool WebExtensionContextMenuIsIframe() override;
+  void WebExtensionContextMenuReloadFocusedFrame() override;
+#endif
    void SetPopupSurface(void* popupSurface) override;
+
+  void OpenDevtoolsWith(
+      std::shared_ptr<NWebDelegateInterface> nweb_delegate,
+      std::unique_ptr<OpenDevToolsParam> param) override;
+  void CloseDevtools() override;
+
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+  bool NeedToFireBeforeUnloadOrUnloadEvents() override;
+  void DispatchBeforeUnload() override;
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
  public:
   int argc_;
@@ -609,6 +644,11 @@ void NotifyForNextTouchEvent() override;
   void RegisterOnCreateNativeMediaPlayerListener(
       std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) override;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+#if defined(OHOS_VIDEO_ASSISTANT)
+  void EnableVideoAssistant(bool enable) override;
+  void ExecuteVideoAssistantFunction(const std::string& cmd_id) override;
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
 
   std::shared_ptr<NWebCustomKeyboardHandlerImpl> GetCustomKeyboardHandler() const override {
     if (render_handler_) {

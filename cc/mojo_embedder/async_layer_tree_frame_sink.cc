@@ -173,6 +173,9 @@ void AsyncLayerTreeFrameSink::SubmitCompositorFrame(
       "SubmitCompositorFrame", "local_surface_id",
       local_surface_id_.ToString());
 
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                    std::to_string(frame.metadata.begin_frame_ack.trace_id), "step", "SubmitCompositorFrame");
+
   if (local_surface_id_ == last_submitted_local_surface_id_) {
     DCHECK_EQ(last_submitted_device_scale_factor_, frame.device_scale_factor());
     DCHECK_EQ(last_submitted_size_in_pixels_.height(),
@@ -264,6 +267,10 @@ void AsyncLayerTreeFrameSink::DidNotProduceFrame(const viz::BeginFrameAck& ack,
                          TRACE_ID_GLOBAL(ack.trace_id),
                          TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT,
                          "step", "DidNotProduceFrame", "reason", reason);
+  std::string trace_content = "step: DidNotProduceFrame, reason: " + std::to_string(static_cast<int32_t>(reason));
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+      std::to_string(ack.trace_id), "trace_content", trace_content);
+
   bool frame_completed = reason == FrameSkippedReason::kNoDamage;
   bool waiting_on_main = reason == FrameSkippedReason::kWaitingOnMain;
   power_mode_voter_.OnFrameSkipped(frame_completed, waiting_on_main);
@@ -312,6 +319,8 @@ void AsyncLayerTreeFrameSink::OnBeginFrame(
                            TRACE_ID_GLOBAL(args.trace_id),
                            TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT,
                            "step", "ReceiveBeginFrameDiscard");
+    OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+      std::to_string(args.trace_id), "step", "ReceiveBeginFrameDiscard");
     // We had a race with SetNeedsBeginFrame(false) and still need to let the
     // sink know that we didn't use this BeginFrame. OnBeginFrame() can also be
     // called to deliver presentation feedback.
@@ -324,6 +333,8 @@ void AsyncLayerTreeFrameSink::OnBeginFrame(
       TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT, "step",
       "ReceiveBeginFrame", "frame_sequence", args.frame_id.sequence_number);
   SetDrawRect(args.draw_rect);
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                    std::to_string(args.trace_id), "step", "ReceiveBeginFrame");
   if (begin_frame_source_)
     begin_frame_source_->OnBeginFrame(args);
 }

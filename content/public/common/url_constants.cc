@@ -12,7 +12,11 @@ namespace content {
 // Before adding new chrome schemes please check with security@chromium.org.
 // There are security implications associated with introducing new schemes.
 const char kChromeDevToolsScheme[] = "devtools";
+#if (BUILDFLAG(IS_OHOS) && defined(OHOS_DEVTOOLS))
+const char kChromeErrorScheme[] = "arkweb-error";
+#else
 const char kChromeErrorScheme[] = "chrome-error";
+#endif
 const char kChromeUIScheme[] = "chrome";
 const char kChromeUIUntrustedScheme[] = "chrome-untrusted";
 const char kViewSourceScheme[] = "view-source";
@@ -48,7 +52,11 @@ const char kChromeUIWebRTCInternalsHost[] = "webrtc-internals";
 
 // This error URL is loaded in normal web renderer processes, so it should not
 // have a chrome:// scheme that might let it be confused with a WebUI page.
+#if (BUILDFLAG(IS_OHOS) && defined(OHOS_DEVTOOLS))
+const char kUnreachableWebDataURL[] = "arkweb-error://webdata/";
+#else
 const char kUnreachableWebDataURL[] = "chrome-error://chromewebdata/";
+#endif
 
 const char kBlockedURL[] = "about:blank#blocked";
 #if defined(OHOS_ARKWEB_EXTENSIONS)

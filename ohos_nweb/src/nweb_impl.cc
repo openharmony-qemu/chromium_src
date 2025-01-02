@@ -25,6 +25,7 @@
 #include "base/lazy_instance.h"
 #include "base/logging.h"
 #include "base/report_loss_frame.h"
+#include "base/ohos/sys_info_utils.h"
 
 #ifdef OHOS_PERFORMANCE_MEMORY_THRESHOLD
 #include "base/memory/memory_pressure_listener.h"
@@ -158,6 +159,13 @@ extern bool g_siteIsolationMode;
 #ifdef OHOS_USERAGENT
 #include "components/embedder_support/user_agent_utils.h"
 #endif
+
+#include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
+
+#if defined(OHOS_VIDEO_ASSISTANT)
+OnReportStatisticLogFunc
+    OHOS::NWeb::NWebImpl::on_report_statistic_log_callback_ = nullptr;
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
 
 namespace {
 uint32_t g_nweb_count = 0;
@@ -357,11 +365,14 @@ void InitialWebEngineArgs(
   web_engine_args.emplace_back("--no-sandbox");
   web_engine_args.emplace_back("--use-mobile-user-agent");
   web_engine_args.emplace_back("--enable-gpu-rasterization");
-  web_engine_args.emplace_back("--enable-viewport");
+  if (!base::ohos::IsPcDevice() || base::ohos::IsCompatibleMode()) {
+    web_engine_args.emplace_back("--enable-viewport");
+  }
   web_engine_args.emplace_back(
       "--browser-subprocess-path=/system/bin/web_render");
   web_engine_args.emplace_back("--zygote-cmd-prefix=/system/bin/web_render");
   web_engine_args.emplace_back("--remote-debugging-port=9222");
+  web_engine_args.emplace_back("--enable-touch-drag-drop");
 #if defined(OHOS_SCROLLBAR)
   static float ratio = -1.0f;
   if (ratio < 0) {
@@ -371,7 +382,6 @@ void InitialWebEngineArgs(
     web_engine_args.emplace_back("--virtual-pixel-ratio=" + std::to_string(ratio));
   }
 #endif
-  web_engine_args.emplace_back("--enable-touch-drag-drop");
   web_engine_args.emplace_back("--gpu-rasterization-msaa-sample-count=1");
   // enable aggressive domstorage flushing to minimize data loss
   // http://crbug.com/479767
@@ -444,6 +454,8 @@ void InitialWebEngineArgs(
 
 namespace OHOS::NWeb {
 
+bool NWebImpl::disableWebActivePolicy_ = false;
+
 // static
 std::shared_ptr<NWeb> NWebImpl::CreateNWeb(
     std::shared_ptr<NWebCreateInfo> create_info) {
@@ -455,25 +467,25 @@ std::shared_ptr<NWeb> NWebImpl::CreateNWeb(
     StartObserveTraceEnable();
   }
   uint32_t nweb_id = ++current_nweb_id;
-  TRACE_EVENT1("NWebImpl", "NWebImpl | CreateNWeb", "nweb_id", nweb_id);
-  WVLOG_I("creating nweb %{public}u, size %{public}u*%{public}u", nweb_id,
-          create_info->GetWidth(), create_info->GetHeight());
   bool is_enhance_surface =
       GetIsEnhanceSurface(create_info->GetEngineInitArgs());
-  WVLOG_I("creating nweb use enhance surface %{public}d", is_enhance_surface);
+  WVLOG_I("CreateNWeb NWebId: %{public}u, size %{public}u*%{public}u, enhance surface %{public}d",
+          nweb_id, create_info->GetWidth(), create_info->GetHeight(), is_enhance_surface);
+  TRACE_EVENT1("NWebImpl", "NWebImpl | CreateNWeb", "nweb_id", nweb_id);
   std::shared_ptr<NWebImpl> nweb = std::make_shared<NWebImpl>(nweb_id);
   if (nweb == nullptr) {
-    WVLOG_E("fail to create nweb instance");
+    WVLOG_E("CreateNWeb create nweb instance failed, because no memory");
     return nullptr;
   }
 
   if (!nweb->Init(create_info)) {
-    WVLOG_E("fail to init nweb");
+    WVLOG_E("CreateNWeb init nweb failed");
     return nullptr;
   }
 
   nweb->AddNWebToMap(nweb_id, nweb);
   ++g_nweb_count;
+  WVLOG_E("CreateNWeb NWebId: %{public}u successfully", nweb_id);
 #if defined(REPORT_SYS_EVENT)
   // Report nweb instance count
   if (g_nweb_count > g_nweb_max_count) {
@@ -634,6 +646,7 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
         return callback->Handle(buffer, width, height);
       });
   if (output_handler_ == nullptr) {
+    WVLOG_E("Init nweb failed, output_handler_ is nullptr");
     return false;
   }
 
@@ -650,12 +663,13 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
   ProcessInitArgs(create_info->GetEngineInitArgs());
 
   if (!InitWebEngine(create_info)) {
-    WVLOG_E("web engine init fail");
+    WVLOG_E("Init nweb failed, web engine init failed");
     return false;
   }
 
   input_handler_ = NWebInputHandler::Create(nweb_delegate_);
   if (input_handler_ == nullptr) {
+    WVLOG_E("Init nweb failed, input_handler_ is nullptr");
     return false;
   }
 
@@ -688,7 +702,7 @@ void NWebImpl::OnDestroy() {
     destroyCallback_ = nullptr;
   } else if (nativeDestroyCallback_) {
     nativeDestroyCallback_();
-   }
+  }
 
   if (g_nweb_count == 0) {
     return;
@@ -719,11 +733,15 @@ void NWebImpl::OnDestroy() {
   if (nweb_delegate_ != nullptr) {
     nweb_delegate_->OnDestroy(is_close_all);
     nweb_delegate_ = nullptr;
+  } else {
+    WVLOG_W("NWebImpl::OnDestroy, nweb_delegate_ is nullptr");
   }
 
   if (input_handler_ != nullptr) {
     input_handler_->OnDestroy();
     input_handler_ = nullptr;
+  } else {
+    WVLOG_W("NWebImpl::OnDestroy, input_handler_ is nullptr");
   }
 
 #ifdef OHOS_NETWORK_PROXY
@@ -782,12 +800,12 @@ bool NWebImpl::SetVirtualDeviceRatio() {
 
 bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
   if (output_handler_ == nullptr) {
-    WVLOG_E("fail to init web engine, NWeb output handler is not ready");
+    WVLOG_E("Init web engine failed, NWeb output handler is not ready");
     return false;
   }
 
   if (web_engine_args_.empty()) {
-    WVLOG_E("fail to init web engine args");
+    WVLOG_E("Init web engine failed, args is empty");
     return false;
   }
 
@@ -812,7 +830,7 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
   }
 
   if (window == nullptr) {
-    WVLOG_E("fail to init web engine, get native window from surface failed");
+    WVLOG_E("Init web engine failed, get native window from surface failed");
     delete[] argv;
     return false;
   }
@@ -825,9 +843,9 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
                                  create_info->GetWidth(), create_info->GetHeight());
 
   if (ret == OHOS::NWeb::GSErrorCode::GSERROR_OK) {
-      WVLOG_I("native window opt for emulator in init, result = %{public}d", ret);
+      WVLOG_I("Init web engine, native window opt for emulator in init, result = %{public}d", ret);
   } else {
-      WVLOG_W("native window opt for emulator in init failed, result = %{public}d", ret);
+      WVLOG_W("Init web engine, native window opt for emulator in init failed, result = %{public}d", ret);
   }
 
   bool is_popup = GetIsPopup(init_args);
@@ -854,7 +872,7 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
   WVLOG_D("nweb create_info.incognito_mode: %{public}d",
           create_info->GetIsIncognitoMode());
   if (nweb_delegate_ == nullptr) {
-    WVLOG_E("fail to create nweb delegate of web engine");
+    WVLOG_E("Init web engine failed, create nweb delegate failed");
     delete[] argv;
     return false;
   }
@@ -864,7 +882,7 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
 #endif
 
   if (!SetVirtualDeviceRatio()) {
-    WVLOG_E("fail to set virtual device ratio");
+    WVLOG_E("Init web engine failed, set virtual device ratio failed");
     delete[] argv;
     return false;
   }
@@ -876,7 +894,7 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
   inputmethod_handler_ = new NWebInputMethodHandler();
   if (!inputmethod_handler_) {
     delete[] argv;
-    WVLOG_E("inputmethod_handler_ is nullptr");
+    WVLOG_E("Init web engine failed, inputmethod_handler_ is nullptr");
     return false;
   }
   nweb_delegate_->SetInputMethodClient(inputmethod_handler_);
@@ -890,7 +908,6 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
     nweb_delegate_->EnableWholeWebPageDrawing();
   }
 #endif
-
 
 #ifdef OHOS_I18N
   UpdateAcceptLanguageInternal();
@@ -1730,6 +1747,22 @@ void NWebImpl::JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) {
   return nweb_delegate_->JavaScriptOnDocumentEnd(scriptItems);
 }
 
+void NWebImpl::JavaScriptOnDocumentStartByOrder(const ScriptItems& scriptItems,
+    const ScriptItemsByOrder& scriptItemsByOrder) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  return nweb_delegate_->JavaScriptOnDocumentStartByOrder(scriptItems, scriptItemsByOrder);
+}
+
+void NWebImpl::JavaScriptOnDocumentEndByOrder(const ScriptItems& scriptItems,
+    const ScriptItemsByOrder& scriptItemsByOrder) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  return nweb_delegate_->JavaScriptOnDocumentEndByOrder(scriptItems, scriptItemsByOrder);
+}
+
 void NWebImpl::CallH5Function(
     int32_t routing_id,
     int32_t h5_object_id,
@@ -2011,6 +2044,7 @@ void NWebImpl::GetScrollOffset(float* offset_x, float* offset_y) {
 #if defined(OHOS_INPUT_EVENTS)
 void NWebImpl::ScrollTo(float x, float y) {
   if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "ScrollTo nweb_delegate_ is nullptr";
     return;
   }
   return nweb_delegate_->ScrollTo(x, y);
@@ -2018,6 +2052,7 @@ void NWebImpl::ScrollTo(float x, float y) {
 
 void NWebImpl::ScrollBy(float delta_x, float delta_y) {
   if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "ScrollBy nweb_delegate_ is nullptr";
     return;
   }
   return nweb_delegate_->ScrollBy(delta_x, delta_y);
@@ -2025,6 +2060,7 @@ void NWebImpl::ScrollBy(float delta_x, float delta_y) {
 
 void NWebImpl::ScrollByRefScreen(float delta_x, float delta_y, float vx, float vy) {
   if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "ScrollByRefScreen nweb_delegate_ is nullptr";
     return;
   }
   return nweb_delegate_->ScrollByRefScreen(delta_x, delta_y, vx, vy);
@@ -2032,6 +2068,7 @@ void NWebImpl::ScrollByRefScreen(float delta_x, float delta_y, float vx, float v
 
 void NWebImpl::SlideScroll(float vx, float vy) {
   if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "SlideScroll nweb_delegate_ is nullptr";
     return;
   }
   return nweb_delegate_->SlideScroll(vx, vy);
@@ -2040,6 +2077,7 @@ void NWebImpl::SlideScroll(float vx, float vy) {
 bool NWebImpl::WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
                                const std::vector<int32_t>& pressedCodes) {
   if (input_handler_ == nullptr) {
+    LOG(ERROR) << "WebSendKeyEvent input_handler_ is nullptr";
     return false;
   }
   return input_handler_->WebSendKeyEvent(keyCode, keyAction, pressedCodes);
@@ -2051,6 +2089,7 @@ void NWebImpl::WebSendMouseWheelEvent(double x,
                                       double deltaY,
                                       const std::vector<int32_t>& pressedCodes) {
   if (input_handler_ == nullptr) {
+    LOG(ERROR) << "WebSendMouseWheelEvent input_handler_ is nullptr";
     return;
   }
 
@@ -2071,6 +2110,7 @@ void NWebImpl::WebSendTouchpadFlingEvent(double x,
                                          double vy,
                                          const std::vector<int32_t>& pressedCodes) {
   if (input_handler_ == nullptr) {
+    LOG(ERROR) << "WebSendTouchpadFlingEvent input_handler_ is nullptr";
     return;
   }
 
@@ -2079,6 +2119,7 @@ void NWebImpl::WebSendTouchpadFlingEvent(double x,
 
 void NWebImpl::ScrollToWithAnime(float x, float y, int32_t duration) {
   if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "ScrollToWithAnime nweb_delegate_ is nullptr";
     return;
   }
   return nweb_delegate_->ScrollToWithAnime(x, y, duration);
@@ -2086,13 +2127,22 @@ void NWebImpl::ScrollToWithAnime(float x, float y, int32_t duration) {
 
 void NWebImpl::ScrollByWithAnime(float delta_x, float delta_y, int32_t duration) {
   if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "ScrollByWithAnime nweb_delegate_ is nullptr";
     return;
   }
   return nweb_delegate_->ScrollByWithAnime(delta_x, delta_y, duration);
 }
 
+bool NWebImpl::SendKeyboardEvent(const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent>& keyboardEvent) {
+  if (input_handler_ == nullptr) {
+    return false;
+  }
+  return input_handler_->SendKeyboardEvent(keyboardEvent);
+}
+
 bool NWebImpl::ScrollByWithResult(float delta_x, float delta_y) {
   if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "ScrollByWithResult nweb_delegate_ is nullptr";
     return false;
   }
   return nweb_delegate_->ScrollByWithResult(delta_x, delta_y);
@@ -2318,6 +2368,26 @@ void NWebImpl::NotifyForNextTouchEvent() {
   nweb_delegate_->NotifyForNextTouchEvent();
 }
 
+bool NWebImpl::IsActivePolicyDisable() {
+  return disableWebActivePolicy_;
+}
+
+void NWebImpl::DisableWebActivePolicy() {
+  WVLOG_I("NWebImpl DisableWebActivePolicy");
+  disableWebActivePolicy_ = true;
+}
+
+void NWebImpl::SetDelayDurationForBackgroundTabFreezing(int64_t delay)
+{
+#ifdef OHOS_ACTIVE_POLICY
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("SetDelayDurationForBackgroundTabFreezing nweb delegate is null");
+    return;
+  }
+  nweb_delegate_->SetDelayDurationForBackgroundTabFreezing(delay);
+#endif
+}
+
 #if BUILDFLAG(IS_OHOS)
 void NWebImpl::SetWindowId(uint32_t window_id) {
   if (nweb_delegate_ == nullptr) {
@@ -2478,7 +2548,58 @@ void NWebImpl::RemoveWebAppClientExtensionCallback() {
 
   nweb_delegate_->UnRegisterWebAppClientExtensionListener();
 }
+
+void NWebImpl::OpenDevtools(std::unique_ptr<OpenDevToolsParam> param) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(WARNING) << "OpenDevtools failed, no nweb_delegate";
+    return;
+  }
+  int32_t devtools_nweb_id = param->nweb_id;
+  NWebImpl* nweb = NWebImpl::FromID(devtools_nweb_id);
+  if (!nweb) {
+    LOG(WARNING) << "OpenDevtools failed, no nweb";
+    return;
+  }
+  nweb_delegate_->OpenDevtoolsWith(nweb->nweb_delegate_, std::move(param));
+}
+
+void NWebImpl::CloseDevtools() {
+  if (nweb_delegate_ == nullptr) {
+    LOG(WARNING) << "CloseDevtools failed, no nweb_delegate";
+    return;
+  }
+  nweb_delegate_->CloseDevtools();
+}
 #endif  // defined(OHOS_NWEB_EX)
+
+#if defined(OHOS_VIDEO_ASSISTANT)
+void NWebImpl::EnableVideoAssistant(bool enable) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(WARNING) << "nweb delegate is nullptr when enable video assistant";
+    return;
+  }
+  nweb_delegate_->EnableVideoAssistant(enable);
+}
+
+void NWebImpl::ExecuteVideoAssistantFunction(const std::string& cmd_id) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(WARNING)
+        << "nweb delegate is nullptr when execute video assistant function";
+    return;
+  }
+  nweb_delegate_->ExecuteVideoAssistantFunction(cmd_id);
+}
+
+void NWebImpl::OnReportStatisticLog(const std::string& content) {
+  if (on_report_statistic_log_callback_) {
+    on_report_statistic_log_callback_(content.c_str());
+  }
+}
+
+void NWebImpl::SetOnReportStatisticLogCallback(OnReportStatisticLogFunc func) {
+  on_report_statistic_log_callback_ = func;
+}
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
 
 #ifdef OHOS_EX_NETWORK_CONNECTION
 // static
@@ -2912,6 +3033,26 @@ void NWebImpl::SetDefaultBrowserZoomLevel(double zoom_factor) {
 }
 #endif
 
+#ifdef OHOS_EX_REFRESH_IFRAME
+bool NWebImpl::WebExtensionContextMenuIsIframe()
+{
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "nullptr nweb_delegate_";
+    return false;
+  }
+  return nweb_delegate_->WebExtensionContextMenuIsIframe();
+}
+
+void NWebImpl::WebExtensionContextMenuReloadFocusedFrame()
+{
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "nullptr nweb_delegate_";
+    return;
+  }
+  return nweb_delegate_->WebExtensionContextMenuReloadFocusedFrame();
+}
+#endif
+
 // static
 void NWebImpl::ResumeDownloadStatic(
     std::shared_ptr<NWebDownloadItem> web_download) {
@@ -2920,6 +3061,12 @@ void NWebImpl::ResumeDownloadStatic(
                     web_download->total_bytes, web_download->etag,
                     web_download->mime_type, web_download->last_modified,
                     web_download->received_slices);
+}
+
+// static
+void NWebImpl::SetFileRenameOption(const int file_rename_option) {
+  WVLOG_I("NWebImpl::SetFileRenameOption: option: %{public}d", file_rename_option);
+  CefSetFileRenameOption(file_rename_option);
 }
 
 #if defined(OHOS_EX_TOPCONTROLS)
@@ -3052,6 +3199,7 @@ int NWebImpl::GetSecurityLevel() {
 #endif
 }
 
+#if BUILDFLAG(IS_OHOS)
 bool NWebImpl::IsSafeBrowsingEnabled() {
   if (nweb_delegate_ == nullptr) {
     return false;
@@ -3067,6 +3215,14 @@ void NWebImpl::EnableSafeBrowsing(bool enable) {
 
   return nweb_delegate_->EnableSafeBrowsing(enable);
 }
+
+void NWebImpl::EnableSafeBrowsingDetection(bool enable, bool strictMode) const {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->EnableSafeBrowsingDetection(enable, strictMode);
+}
+#endif
 
 void NWebImpl::StartCamera() {
 #if defined(OHOS_WEBRTC)
@@ -3091,6 +3247,34 @@ void NWebImpl::CloseCamera() {
   }
 #endif  // defined(OHOS_WEBRTC)
 }
+
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+void NWebImpl::StopScreenCapture(int32_t nweb_id, const char* session_id) {
+  if (session_id == nullptr) {
+    WVLOG_E("StopScreenCapture session_id is null");
+    return;
+  }
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("StopScreenCapture nweb_delegate_ is null");
+    return;
+  }
+  nweb_delegate_->StopScreenCapture(nweb_id, session_id);
+}
+
+void NWebImpl::PutWebScreenCaptureDelegateCallback(
+    std::shared_ptr<NWebScreenCaptureDelegateCallback> callback) {
+
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E(
+        "set web screen capture delegate callback failed, nweb delegate is nullptr, "
+        "nweb_id = %{public}u",
+        nweb_id_);
+    return;
+  }
+
+  nweb_delegate_->RegisterScreenCaptureDelegateListener(callback);
+}
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 
 std::string NWebImpl::GetLastJavascriptProxyCallingFrameUrl() {
 #if defined(OHOS_SECURE_JAVASCRIPT_PROXY)
@@ -3189,7 +3373,8 @@ std::string NWebImpl::GetDefaultUserAgent() {
 }
 
 int NWebImpl::ScaleGestureChange(double scale, double centerX, double centerY) {
-  LOG(INFO) << "NWebImpl::ScaleGestureChange scale:" << scale << " centerX: " << centerX << " centerY: " << centerY;
+  LOG(DEBUG) << "NWebImpl::ScaleGestureChange scale:" << scale
+             << " centerX: " << centerX << " centerY: " << centerY;
   if (nweb_delegate_ == nullptr) {
     LOG(ERROR) << "nweb_delegate_ is nullptr.";
     return NWEB_ERR;
@@ -3440,6 +3625,30 @@ void NWebImpl::OnTextSelected() {
 }
 #endif
 
+
+#ifdef BUILDFLAG(IS_OHOS)
+void NWebImpl::OnConfigurationUpdated(
+    std::shared_ptr<NWebSystemConfiguration> configuration) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_I("NWebImpl::OnConfigurationUpdated nweb_delegate_ is nullptr");
+    return;
+  }
+  if (configuration->GetThemeFlags() &
+      static_cast<uint8_t>(SystemThemeFlags::THEME_FONT)) {
+#ifdef OHOS_THEME_FONT
+    for (content::RenderProcessHost::iterator host_iterator =
+             content::RenderProcessHost::AllHostsIterator();
+         !host_iterator.IsAtEnd(); host_iterator.Advance()) {
+      content::RenderProcessHost* host = host_iterator.GetCurrentValue();
+      if (host->IsInitializedAndNotDead()) {
+        host->OnThemeFontChange();
+      }
+    }
+#endif  // OHOS_THEME_FONT
+  }
+}
+#endif  //  IS_OHOS
+
 #ifdef OHOS_SOFTWARE_COMPOSITOR
 bool NWebImpl::WebPageSnapshot(const char* id,
                        PixelUnit type,
@@ -3640,3 +3849,34 @@ void NWebImpl::SetTransformHint(uint32_t rotation) {
     nweb_delegate_->SetTransformHint(rotation);
   }
 }
+
+int NWebImpl::ScaleGestureChangeV2(int type,
+                                   double scale,
+                                   double originScale,
+                                   double centerX,
+                                   double centerY) {
+  LOG(DEBUG) << "NWebImpl::ScaleGestureChangeV2 type:" << type
+             << " scale:" << scale << " originScale: " << originScale
+             << " centerX: " << centerX << " centerY: " << centerY;
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "nweb_delegate_ is nullptr.";
+    return NWEB_ERR;
+  }
+  return nweb_delegate_->ScaleGestureChangeV2(type, scale, originScale, centerX, centerY);
+}
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+bool NWebImpl::NeedToFireBeforeUnloadOrUnloadEvents() {
+  if (nweb_delegate_ == nullptr) {
+    return false;
+  }
+  return nweb_delegate_->NeedToFireBeforeUnloadOrUnloadEvents();
+}
+
+void NWebImpl::DispatchBeforeUnload() {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->DispatchBeforeUnload();
+}
+
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD

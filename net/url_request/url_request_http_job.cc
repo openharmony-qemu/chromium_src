@@ -99,6 +99,10 @@
 #include "net/android/network_library.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS_PRPP)
+#include "net/base/page_res_request_info.h"
+#endif
+
 namespace {
 
 base::Value::Dict CookieInclusionStatusNetLogParams(
@@ -274,9 +278,9 @@ void URLRequestHttpJob::Start() {
   request_info_.pervasive_payloads_index_for_logging =
       request_->pervasive_payloads_index_for_logging();
   request_info_.checksum = request_->expected_response_checksum();
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_OHOS_PRPP)
   request_info_.allow_preload_record = request_->allow_preload_record();
-  request_info_.main_page = request_->main_page();
+  request_info_.main_url = request_->main_url();
 #endif
 #if BUILDFLAG(ENABLE_REPORTING)
   request_info_.reporting_upload_depth = request_->reporting_upload_depth();
@@ -592,6 +596,13 @@ void URLRequestHttpJob::StartTransactionInternal() {
 
       if (!throttling_entry_.get() ||
           !throttling_entry_->ShouldRejectRequest(*request_)) {
+#if BUILDFLAG(IS_OHOS_PRPP)
+        if (!request_->update_res_request_info_callback().is_null() && request_->preload_info()) {
+          request_->preload_info()->InitInfoFromUrlRequest(*request_);
+          transaction_->SetUpdateResRequestInfoCallback(request_->update_res_request_info_callback());
+          transaction_->SetPreloadInfo(request_->preload_info());
+        }
+#endif
         rv = transaction_->Start(
             &request_info_,
             base::BindOnce(&URLRequestHttpJob::OnStartCompleted,

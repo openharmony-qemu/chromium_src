@@ -36,6 +36,8 @@ BASE_EXPORT bool IsTabletDevice();
 
 BASE_EXPORT bool IsPcDevice();
 
+BASE_EXPORT bool IsEmulator();
+
 BASE_EXPORT int32_t MajorVersion();
 
 BASE_EXPORT int32_t SeniorVersion();
@@ -46,6 +48,11 @@ BASE_EXPORT std::string OsVersion();
 
 BASE_EXPORT std::string BaseOsName();
 
+BASE_EXPORT std::string ApiVersion();
+
+BASE_EXPORT std::string CompatibleDeviceType();
+
+BASE_EXPORT bool IsCompatibleMode();
 
 }  // namespace ohos
 }  // namespace base

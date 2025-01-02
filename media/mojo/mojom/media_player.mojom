@@ -68,6 +68,12 @@ interface MediaPlayer {
 
   [EnableIf=ohos_custom_video_player]
   RequestExitFullscreen();
+
+  [EnableIf=ohos_video_assistant]
+  SetPlaybackRate(double playback_rate);
+
+  [EnableIf=ohos_video_assistant]
+  RequestDownloadUrl();
 };
 
 // Implemented by the MediaWebContentsObserver. The remote lives in the renderer

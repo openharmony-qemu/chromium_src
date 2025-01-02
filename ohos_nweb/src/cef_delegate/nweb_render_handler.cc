@@ -38,6 +38,7 @@
 #ifdef OHOS_DRAG_DROP
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
+#include "base/ohos/sys_info_utils.h"
 #include "cef/libcef/common/drag_data_impl.h"
 #include "content/public/common/drop_data.h"
 #include "nweb_drag_data.h"
@@ -876,6 +877,16 @@ void NWebRenderHandler::ImageDragForFileUri(CefRefPtr<CefDragData> drag_data) {
   }
 }
 
+void NWebRenderHandler::GetVisibleRectToWeb(
+    int& visibleX, int& visibleY, int& visibleWidth, int& visibleHeight) {
+  auto handler = handler_.lock();
+  if (handler == nullptr) {
+    LOG(ERROR) << "can't get strong ptr with handler";
+    return;
+  }
+  handler->GetVisibleRectToWeb(visibleX, visibleY, visibleWidth, visibleHeight);
+}
+
 // chromium内核上报的拖拽数据
 bool NWebRenderHandler::StartDragging(CefRefPtr<CefBrowser> browser,
                                       CefRefPtr<CefDragData> drag_data,
@@ -927,17 +938,14 @@ bool NWebRenderHandler::StartDragging(CefRefPtr<CefBrowser> browser,
   if (delegete) {
     dark_mode_enable = delegete->DarkModeEnabled();
   }
-  int32_t view_port_height = 0;
-#if defined(OHOS_EX_TOPCONTROLS)
-  if (browser && browser->GetHost()) {
-    view_port_height = browser->GetHost()->GetShrinkViewportHeight();
-  }
-#endif
 
+  bool is_drag_new_style = true;
+  if (base::ohos::IsTabletDevice() || base::ohos::IsPcDevice()) {
+    is_drag_new_style = false;
+  }
   nweb_drag_data_ = std::make_shared<NWebDragDataImpl>(
       drag_data, drag_touch_point, start_edge, end_edge,
-      screen_info_.display_ratio, usefull_selection, dark_mode_enable, view_port_height, true);
-
+      screen_info_.display_ratio, usefull_selection, dark_mode_enable, is_drag_new_style);
   auto handler = handler_.lock();
   if (handler == nullptr) {
     LOG(ERROR) << "can't get strong ptr with handler";

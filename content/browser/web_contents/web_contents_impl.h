@@ -376,6 +376,10 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   void SetNWebId(int nWebID) override;
 #endif  // defined(OHOS_WEBRTC)
 
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  void StopScreenCapture(int32_t nweb_id, const std::string& session_id) override;
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+
   // WebContents ------------------------------------------------------
   WebContentsDelegate* GetDelegate() override;
   void SetDelegate(WebContentsDelegate* delegate) override;
@@ -456,6 +460,14 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
                                 int main_frame_tree_node_id) override;
 
   bool GetAdblockEnabledForSite() override;
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+  void EnableSafeBrowsingDetection(bool enable, bool strictMode) override;
+
+  bool IsSafeBrowsingDetectionEnabled() override {
+    return is_safe_browsing_enabled_;
+  }
 #endif
 
 #if defined(OHOS_EX_PASSWORD)
@@ -1559,9 +1571,22 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   void RequestEnterFullscreen(const MediaPlayerId& player_id);
   void RequestExitFullscreen(const MediaPlayerId& player_id);
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+#if defined(OHOS_VIDEO_ASSISTANT)
+  void EnableVideoAssistant(bool enable) override;
+  void ExecuteVideoAssistantFunction(const std::string& cmdId) override;
+  void OnShowToast(double duration, const std::string& toast);
+  void OnShowVideoAssistant(const std::string& videoAssistantItems);
+  void OnReportStatisticLog(const std::string& content);
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+
 #if defined(OHOS_RENDER_PROCESS_SHARE)
   const std::string& SharedRenderProcessToken() override;
 #endif
+
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+  void OnBeforeUnloadFired(bool proceed) override;
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
  private:
   using FrameTreeIterationCallback = base::RepeatingCallback<void(FrameTree&)>;
@@ -2401,6 +2426,8 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 #if BUILDFLAG(IS_OHOS)
   std::unique_ptr<NativeWebContentsObserver> native_web_contents_observer_;
   std::map<std::string, gfx::Rect> native_web_embed_rect_info_map_;
+  bool is_safe_browsing_enabled_ = true;
+  bool safe_browsing_strict_mode_ = false;
 #endif
 
 #if BUILDFLAG(ENABLE_PPAPI)

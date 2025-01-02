@@ -142,6 +142,7 @@ void DynamicFrameRateDecision::UpdateFramePreferredRate()
         }
     }
     cur_frame_rate_ = std::max(cur_frame_rate_, video_frame_rate_);
+    TRACE_EVENT1("base", "DynamicFrameRateDecision::UpdateFramePreferredRate", "cur_frame_rate", cur_frame_rate_);
     OhosAdapterHelper::GetInstance().GetVSyncAdapter().SetFramePreferredRate(cur_frame_rate_);
 }
 
@@ -237,7 +238,7 @@ void DynamicFrameRateDecision::SetVisibleImpl(int nweb_id, bool visible)
     } else {
         nwebVisibleSet_.erase(nweb_id);
     }
-    LOG(DEBUG) << "SetVisible " << (!nwebVisibleSet_.empty());
+    LOG(DEBUG) << "visible web component size is: " << nwebVisibleSet_.size();
     SetFrameRateLinkerEnable((!nwebVisibleSet_.empty()) && (vsync_cnt_ != 0));
     UpdateFramePreferredRate();
 }

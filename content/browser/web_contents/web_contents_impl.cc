@@ -2642,12 +2642,17 @@ bool WebContentsImpl::NeedToFireBeforeUnloadOrUnloadEvents() {
   if (!notify_disconnection_)
     return false;
 
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+  // The return value of NeedToFireBeforeUnloadOrUnloadEvents will not be saved
+  // after receiving a ClosePage ACK.
+#else
   // Don't fire if the main frame indicates that beforeunload and unload have
   // already executed (e.g., after receiving a ClosePage ACK) or should be
   // ignored.
   if (GetPrimaryMainFrame()->IsPageReadyToBeClosed()) {
     return false;
   }
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
   // Check whether any frame in the frame tree needs to run beforeunload or
   // unload-time event handlers.
@@ -3870,7 +3875,12 @@ void WebContentsImpl::ExitFullscreenMode(bool will_cause_resize) {
     static_cast<RenderWidgetHostViewBase*>(view)->ExitFullscreenMode();
 
   if (delegate_) {
+    // This may spin the message loop and destroy this object crbug.com/1506535
+    base::WeakPtr<WebContentsImpl> weak_ptr = weak_factory_.GetWeakPtr();
     delegate_->ExitFullscreenModeForTab(this);
+    if (!weak_ptr) {
+      return;
+    }
 
     if (keyboard_lock_widget_)
       delegate_->CancelKeyboardLockRequest(this);
@@ -6357,6 +6367,12 @@ void WebContentsImpl::DidFinishNavigation(NavigationHandle* navigation_handle) {
       NotifyTitleUpdateForEntry(entry);
     }
   }
+
+#if defined(OHOS_EX_PULL_TO_REFRESH)
+  if (navigation_handle->IsInPrimaryMainFrame() && view_) {
+    view_->DidStopRefresh();
+  }
+#endif
 }
 
 void WebContentsImpl::DidFailLoadWithError(
@@ -8717,6 +8733,9 @@ void WebContentsImpl::BeforeUnloadFiredFromRenderManager(
   observers_.NotifyObservers(&WebContentsObserver::BeforeUnloadFired, proceed);
   if (delegate_)
     delegate_->BeforeUnloadFired(this, proceed, proceed_to_fire_unload);
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+  OnBeforeUnloadFired(*proceed_to_fire_unload);
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
   // Note: |this| might be deleted at this point.
 }
 
@@ -10310,7 +10329,7 @@ void WebContentsImpl::TrigAdBlockEnabledForSiteFromUi(
     bool enable =
         OHOS::adblock::AdBlockConfig::GetInstance()->IsAdblockEnabledForUrl(
             GURL(main_frame_url));
-    SetAdBlockEnabledForSite(enable, main_frame_tree_node_id);
+    SetAdBlockEnabledForSite(enable && IsAdsBlockEnabled(), main_frame_tree_node_id);
   }
 }
 
@@ -10386,6 +10405,20 @@ void WebContentsImpl::SetAdBlockEnabledForSite(bool is_adblock_enabled,
 
   // send to render
   UpdateAdBlockEnabledToRender(is_adblock_enabled);
+}
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+void WebContentsImpl::EnableSafeBrowsingDetection(bool enable,
+                                                  bool strictMode) {
+  if (is_safe_browsing_enabled_ != enable) {
+    LOG(INFO) << "EnableSafeBrowsingDetection enable " << enable;
+    is_safe_browsing_enabled_ = enable;
+  }
+  if (safe_browsing_strict_mode_ != strictMode) {
+    LOG(INFO) << "EnableSafeBrowsingDetection strictMode " << strictMode;
+    safe_browsing_strict_mode_ = strictMode;
+  }
 }
 #endif
 
@@ -10512,6 +10545,22 @@ void WebContentsImpl::SetNWebId(int nWebID) {
 }
 #endif  // defined(OHOS_WEBRTC)
 
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+void WebContentsImpl::StopScreenCapture(int32_t nweb_id, const std::string& session_id) {
+  if(!BrowserMainLoop::GetInstance()){
+    LOG(ERROR) << "BrowserMainLoop null";
+    return;
+  }
+  auto media_stream_manager =
+      BrowserMainLoop::GetInstance()->media_stream_manager();
+  if (!media_stream_manager) {
+    LOG(ERROR) << "media_stream_manager null";
+    return;
+  }
+  media_stream_manager->StopScreenCapture(nweb_id, session_id);
+}
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
 std::unique_ptr<CustomMediaPlayer> WebContentsImpl::CreateCustomMediaPlayer(
     std::unique_ptr<CustomMediaPlayerListener> listener,
@@ -10574,6 +10623,40 @@ void WebContentsImpl::RequestExitFullscreen(const MediaPlayerId& player_id) {
 }
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+void WebContentsImpl::EnableVideoAssistant(bool enable) {}
+
+void WebContentsImpl::ExecuteVideoAssistantFunction(const std::string& cmdId) {}
+
+void WebContentsImpl::OnShowToast(double duration, const std::string& toast) {
+  if (!delegate_) {
+    LOG(ERROR) << "delegate is nullptr when notify to show toast";
+    return;
+  }
+
+  delegate_->OnShowToast(duration, toast);
+}
+
+void WebContentsImpl::OnShowVideoAssistant(
+    const std::string& videoAssistantItems) {
+  if (!delegate_) {
+    LOG(ERROR) << "delegate is nullptr when notify to show video assistant";
+    return;
+  }
+
+  delegate_->OnShowVideoAssistant(videoAssistantItems);
+}
+
+void WebContentsImpl::OnReportStatisticLog(const std::string& content) {
+  if (!delegate_) {
+    LOG(ERROR) << "delegate is nullptr when notify to report statistic log";
+    return;
+  }
+
+  delegate_->OnReportStatisticLog(content);
+}
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+
 #ifdef OHOS_I18N
 void WebContentsImpl::UpdateRenderAcceptLanguageIfNeed(
     const std::string& old_accept_language) {
@@ -10585,14 +10668,17 @@ void WebContentsImpl::UpdateRenderAcceptLanguageIfNeed(
   std::string lang = command_line.GetSwitchValueASCII(::switches::kLang);
   std::regex pattern("-");
   std::smatch match;
+  std::string current_accept_language;
   if (std::regex_search(lang, match, pattern)) {
     std::string region = match.suffix();
-    std::string current_accept_language =
+    current_accept_language =
         base::ohos::ComputeLanguageByRegion(region);
+    } else {
+      current_accept_language = base::ohos::ComputeLanguageByRegion("");
+    }
     if (current_accept_language != "" &&
         current_accept_language != old_accept_language) {
       renderer_preferences_.accept_languages = current_accept_language;
-    }
   }
 }
 #endif
@@ -10602,5 +10688,13 @@ const std::string& WebContentsImpl::SharedRenderProcessToken() {
   return shared_render_process_token_;
 }
 #endif
+
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+void WebContentsImpl::OnBeforeUnloadFired(bool proceed) {
+  if (delegate_) {
+    delegate_->OnBeforeUnloadFired(proceed);
+  }
+}
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
 }  // namespace content

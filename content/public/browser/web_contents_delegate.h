@@ -329,6 +329,10 @@ class CONTENT_EXPORT WebContentsDelegate {
       bool is_password_popup_type) {}
   virtual void OnHideAutofillPopup() {}
 #endif
+
+#if defined(OHOS_MULTI_WINDOW)
+  virtual void OnActivateContent() {}
+#endif
   // Allows delegates to handle keyboard events before sending to the renderer.
   // See enum for description of return values.
   virtual KeyboardEventProcessingResult PreHandleKeyboardEvent(
@@ -838,6 +842,15 @@ class CONTENT_EXPORT WebContentsDelegate {
       std::unique_ptr<CustomMediaPlayerListener> listener,
       const MediaInfo& media_info);
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+#if defined(OHOS_VIDEO_ASSISTANT)
+  virtual void OnShowToast(double duration, const std::string& toast);
+  virtual void OnShowVideoAssistant(const std::string& videoAssistantItems);
+  virtual void OnReportStatisticLog(const std::string& content);
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+  virtual void OnBeforeUnloadFired(bool proceed) {}
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
  protected:
   virtual ~WebContentsDelegate();

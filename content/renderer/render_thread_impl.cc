@@ -221,8 +221,14 @@
 #endif
 
 #if BUILDFLAG(IS_OHOS)
+#include "base/ohos/sys_info_utils.h"
 #include "content/renderer/media/ohos/native_texture_factory.h"
 #endif
+
+#ifdef OHOS_THEME_FONT
+#include "third_party/blink/renderer/platform/fonts/font_cache.h"
+#include "third_party/skia/include/core/SkFontMgr.h"
+#endif  // OHOS_THEME_FONT
 
 #ifdef OHOS_I18N
 #include "ui/base/resource/resource_bundle.h"
@@ -591,6 +597,8 @@ void RenderThreadImpl::Init() {
   // When UseCommonSelectPopup is enabled, the internal popup menu should be
   // used.
   if (!features::IsUseCommonSelectPopupEnabled())
+#elif BUILDFLAG(IS_OHOS)
+  if (!base::ohos::IsPcDevice())
 #endif
     blink::WebView::SetUseExternalPopupMenus(true);
 #endif
@@ -1954,6 +1962,13 @@ void RenderThreadImpl::OnMemoryPressureFromBrowserReceived(
   }
   blink::RequestUserLevelMemoryPressureSignal();
 }
+
+#ifdef OHOS_THEME_FONT
+void RenderThreadImpl::UpdateThemeFontFile(base::File theme_font) {
+  blink::FontCache::Get().Invalidate();
+  SkFontMgr::RefDefault()->InvalidateThemeFont(theme_font.GetPlatformFile());
+}
+#endif
 
 #endif
 

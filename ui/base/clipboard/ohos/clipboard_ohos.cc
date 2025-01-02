@@ -176,6 +176,19 @@ class ClipboardOHOSInternal {
     return HasFormatInMisc(format);
   }
 
+  void ReadAvailableCustomDataTypes(std::vector<std::u16string>* types) const {
+    if (!read_data_) {
+      LOG(ERROR) << "read_data is null";
+      return;
+    }
+    auto custom_datas = read_data_->ReadCustomDatas();
+    for (const auto& data : custom_datas) {
+      if (!data.empty()) {
+        ReadCustomDataTypes(data.data(), data.size(), types);
+      }
+    }
+  }
+
   void SetClipboardState(ClipboardState state) {
     if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
       content::GetUIThreadTaskRunner({})->PostTask(
@@ -313,7 +326,7 @@ class ClipboardOHOSInternal {
     SkColorType colorType = PixelFormatToSkColorType(imgData);
     SkAlphaType alphaType = AlphaTypeToSkAlphaType(imgData);
     sk_sp<SkColorSpace> colorSpace = SkColorSpace::MakeSRGB();
-    return SkImageInfo::Make(imgData->GetWidth(), imgData->GetHeight(), 
+    return SkImageInfo::Make(imgData->GetWidth(), imgData->GetHeight(),
                              colorType, alphaType, colorSpace);
   }
 
@@ -359,6 +372,31 @@ class ClipboardOHOSInternal {
     std::move(callback).Run(std::vector<uint8_t>());
   }
 
+  // Reads data of type |type| from the ClipboardOhosReadData.
+  void ReadCustomData(const std::u16string& type, std::u16string* result) {
+    if (!result) {
+      return;
+    }
+    result->clear();
+
+    UpdateClipboardData();
+    SetOutOfDateAfterRead();
+    if (!read_data_) {
+      LOG(ERROR) << "read_data is null";
+      return;
+    }
+    auto custom_datas = read_data_->ReadCustomDatas();
+    for (const auto& data : custom_datas) {
+      if (!data.empty()) {
+        ReadCustomDataForType(data.data(), data.size(), type, result);
+        if (!result->empty()) {
+          return;
+        }
+      }
+    }
+    LOG(INFO) << "no specified custom data in clipbaord";
+  }
+
   // Writes |data| to the ClipboardData and returns the previous data.
   std::unique_ptr<ClipboardData> WriteData(
       std::unique_ptr<ClipboardData> data) {
@@ -373,42 +411,60 @@ class ClipboardOHOSInternal {
 #if defined(OHOS_CLIPBOARD)
     CopyOptionMode copy_option = currentData->copy_option();
 #endif // defined(OHOS_CLIPBOARD)
-    if (HasFormat(ClipboardInternalFormat::kHtml)) {
-      auto html = std::make_shared<std::string>(currentData->markup_data());
-      auto text = HasFormat(ClipboardInternalFormat::kText)
-                      ? std::make_shared<std::string>(currentData->text())
-                      : nullptr;
-      std::shared_ptr<PasteDataRecordAdapter> record =
-          PasteDataRecordAdapter::NewRecord("text/html", html, text);
-      LOG(INFO) << "set html " << (text ? "and text " : "") << "to record success";
-      result_vector.push_back(record);
-    } else if (HasFormat(ClipboardInternalFormat::kText)) {
-      std::shared_ptr<PasteDataRecordAdapter> record =
-          PasteDataRecordAdapter::NewRecord("text/plain");
-      auto text = std::make_shared<std::string>(currentData->text());
+    std::shared_ptr<PasteDataRecordAdapter> record =
+        PasteDataRecordAdapter::NewRecord("text/html");
+    bool is_has_html = HasFormat(ClipboardInternalFormat::kHtml);
+    bool is_has_text = HasFormat(ClipboardInternalFormat::kText);
+    bool is_has_png = HasFormat(ClipboardInternalFormat::kPng);
+    if (is_has_html) {
+      std::shared_ptr<std::string> html =
+          std::make_shared<std::string>(currentData->markup_data());
+      if (record->SetHtmlText(html)) {
+        LOG(INFO) << "set html to record success";
+      } else {
+        LOG(ERROR) << "set html to record failed";
+      }
+    } else if (is_has_text && !is_has_png) {
+      LOG(INFO) << "set text when no html and no png";
+      record = PasteDataRecordAdapter::NewRecord("text/plain");
+    }
+
+    if (is_has_text) {
+      std::shared_ptr<std::string> text =
+          std::make_shared<std::string>(currentData->text());
       if (record->SetPlainText(text)) {
         LOG(INFO) << "set text to record success";
-        result_vector.push_back(record);
       } else {
         LOG(ERROR) << "set text to record failed";
       }
     }
 
-    if (HasFormat(ClipboardInternalFormat::kPng)) {
-      std::shared_ptr<PasteDataRecordAdapter> record =
-          PasteDataRecordAdapter::NewRecord("pixelMap");
+    if (is_has_png) {
       auto bitmap = currentData->GetBitmapIfPngNotEncoded();
       if (bitmap.has_value()) {
         auto bitmap_record = WriteBitmapToClipboard(bitmap.value());
         if (record->SetImgData(bitmap_record)) {
           LOG(INFO) << "set image to record success";
-          result_vector.push_back(record);
         } else {
           LOG(ERROR) << "set image to record failed";
         }
       }
     }
 
+    if (HasFormat(ClipboardInternalFormat::kCustom)) {
+      auto custom_data = currentData->custom_data_data();
+      std::vector<uint8_t> custom_data_vector(custom_data.begin(),
+                                              custom_data.end());
+      OHOS::NWeb::PasteCustomData custom_data_map = {
+          {kMimeTypeOHOSCustomData, custom_data_vector}};
+      if (record->SetCustomData(custom_data_map)) {
+        LOG(INFO) << "set custom data to record success";
+      } else {
+        LOG(ERROR) << "set custom data to record failed";
+      }
+    }
+
+    result_vector.push_back(record);
     OhosAdapterHelper::GetInstance().GetPasteBoard().SetPasteData(result_vector
 #if defined(OHOS_CLIPBOARD)
 ,
@@ -467,8 +523,8 @@ class ClipboardOHOSInternal {
     for (auto& record : record_vector) {
       std::shared_ptr<std::string> html = record->GetHtmlText();
       std::shared_ptr<std::string> text = record->GetPlainText();
-      std::shared_ptr<ClipBoardImageDataAdapterImpl> imgData 
-        = std::make_shared<ClipBoardImageDataAdapterImpl>();   
+      std::shared_ptr<ClipBoardImageDataAdapterImpl> imgData
+        = std::make_shared<ClipBoardImageDataAdapterImpl>();
 
       bool imgFlag = false;
       imgFlag = record->GetImgData(imgData);
@@ -485,6 +541,9 @@ class ClipboardOHOSInternal {
       }
       if (imgFlag || uri) {
         allFormat |= static_cast<int>(ClipboardInternalFormat::kPng);
+      }
+      if (!(read_data_->ReadCustomDatas().empty())) {
+        allFormat |= static_cast<int>(ClipboardInternalFormat::kCustom);
       }
     }
     return allFormat & static_cast<int>(format);
@@ -548,10 +607,10 @@ class ClipboardOHOSInternal {
 
   std::shared_ptr<ClipBoardImageDataAdapter> WriteBitmapToClipboard(
       const SkBitmap& bitmap) {
-    std::shared_ptr<ClipBoardImageDataAdapterImpl> imageInfo 
+    std::shared_ptr<ClipBoardImageDataAdapterImpl> imageInfo
       = std::make_shared<ClipBoardImageDataAdapterImpl>();
     if (!imageInfo) {
-      LOG(ERROR) << "WriteBitmapToClipboard ClipBoardImageDataAdapterImpl create failed"; 
+      LOG(ERROR) << "WriteBitmapToClipboard ClipBoardImageDataAdapterImpl create failed";
       return nullptr;
     }
     imageInfo->SetColorType(ImageToClipboardColorType(bitmap.colorType()));
@@ -808,11 +867,8 @@ void ClipboardOHOS::ReadAvailableTypes(
     types->push_back(base::UTF8ToUTF16(kMimeTypePNG));
   }
   if (clipboard_internal_->IsFormatAvailable(
-          ClipboardInternalFormat::kCustom) &&
-      clipboard_internal_->GetData()) {
-    ReadCustomDataTypes(
-        clipboard_internal_->GetData()->custom_data_data().c_str(),
-        clipboard_internal_->GetData()->custom_data_data().size(), types);
+          ClipboardInternalFormat::kCustom)) {
+    clipboard_internal_->ReadAvailableCustomDataTypes(types);
   }
 
   std::ostringstream typesSumStream;
@@ -891,7 +947,15 @@ void ClipboardOHOS::ReadCustomData(ClipboardBuffer buffer,
                                    const std::u16string& type,
                                    const DataTransferEndpoint* data_dst,
                                    std::u16string* result) const {
+  LOG(INFO) << "start read custom data, type = " << type;
   DCHECK(CalledOnValidThread());
+  if (!clipboard_internal_->IsReadAllowed(data_dst,
+                                          ClipboardInternalFormat::kCustom)) {
+    return;
+  }
+
+  RecordRead(ClipboardFormatMetric::kCustomData);
+  clipboard_internal_->ReadCustomData(type, result);
 }
 
 void ClipboardOHOS::ReadFilenames(ClipboardBuffer buffer,
@@ -1009,7 +1073,9 @@ void ClipboardOHOS::WriteBitmap(const SkBitmap& bitmap) {
 
 void ClipboardOHOS::WriteData(const ClipboardFormatType& format,
                               const char* data_data,
-                              size_t data_len) {}
+                              size_t data_len) {
+  ClipboardDataBuilder::WriteData(format.GetName(), data_data, data_len);
+}
 
 bool ClipboardOHOS::HasPasteData() const {
   return OhosAdapterHelper::GetInstance().GetPasteBoard().HasPasteData();

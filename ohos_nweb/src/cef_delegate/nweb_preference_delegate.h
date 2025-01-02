@@ -192,9 +192,15 @@ class NWebPreferenceDelegate : public NWebPreference {
 
 #if defined(OHOS_JSPROXY)
   void PutJavaScriptOnDocumentStart(const ScriptItems& scriptItems);
+  void PutJavaScriptOnDocumentStartByOrder(const ScriptItems& scriptItems,
+      const ScriptItemsByOrder& scriptItemsByOrder);
   ScriptItems GetJavaScriptOnDocumentStart();
+  ScriptItemsByOrder GetJavaScriptOnDocumentStartByOrder();
   void PutJavaScriptOnDocumentEnd(const ScriptItems& scriptItems);
+  void PutJavaScriptOnDocumentEndByOrder(const ScriptItems& scriptItems,
+      const ScriptItemsByOrder& scriptItemsByOrder);
   ScriptItems GetJavaScriptOnDocumentEnd();
+  ScriptItemsByOrder GetJavaScriptOnDocumentEndByOrder();
 #endif
 
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
@@ -222,6 +228,11 @@ class NWebPreferenceDelegate : public NWebPreference {
   int GetTimeToLive();
   void PutBackForwardCacheOptions(int size, int time_to_live);
 #endif  // OHOS_BFCACHE
+
+#ifdef OHOS_ACTIVE_POLICY
+  void SetDelayDurationForBackgroundTabFreezing(int64_t delay_for_background_tab_freezing);
+  int64_t GetDelayDurationForBackgroundTabFreezing();
+#endif
 
  private:
   CefRefPtr<CefBrowser> browser_ = nullptr;
@@ -313,6 +324,8 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if defined(OHOS_JSPROXY)
   ScriptItems script_items_start_{};
   ScriptItems script_items_end_{};
+  ScriptItemsByOrder script_items_start_by_order_;
+  ScriptItemsByOrder script_items_end_by_order_;
 #endif
 
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
@@ -331,6 +344,10 @@ class NWebPreferenceDelegate : public NWebPreference {
   int size_ = -1;
   int time_to_live_ = -1;
 #endif // OHOS_BFCACHE
+
+#ifdef OHOS_ACTIVE_POLICY
+  int64_t delay_for_background_tab_freezing_ = -1;
+#endif
 };
 }  // namespace OHOS::NWeb
 

@@ -4,7 +4,7 @@
 
 #include "media/capture/video/ohos/ohos_capture_delegate.h"
 
-#include <stddef.h>
+#include <cstddef>
 
 #include <utility>
 
@@ -149,6 +149,9 @@ void OHOSCaptureDelegate::OnBufferAvailable(
   }
   int32_t rotation = roration_info->GetRotation();
   if (client_ != nullptr) {
+#if !defined(RK3568_CAPTURE) && defined(OHOS_WEBRTC)
+    capture_format_.stride = buffer->GetStride();
+#endif
     client_->OnIncomingCapturedData(
         buffer->GetBufferAddr(), buffer->GetSize(), capture_format_,
         gfx::ColorSpace(), rotation, roration_info->GetIsFlipY() /* flip_y */,

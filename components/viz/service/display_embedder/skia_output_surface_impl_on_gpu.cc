@@ -19,6 +19,7 @@
 #include "base/task/bind_post_task.h"
 #include "base/threading/thread_checker.h"
 #include "base/time/time.h"
+#include "base/trace_event/typed_macros.h"
 #include "build/build_config.h"
 #include "components/viz/common/features.h"
 #include "components/viz/common/frame_sinks/blit_request.h"
@@ -2125,6 +2126,10 @@ void SkiaOutputSurfaceImplOnGpu::PostSubmit(
     output_device_->SchedulePrimaryPlane(output_surface_plane_);
 
     DCHECK(!frame->sub_buffer_rect || capabilities().supports_post_sub_buffer);
+
+    OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+        std::to_string(frame->data.swap_trace_id), "step", "FinishBufferSwap");
+
     output_device_->Present(frame->sub_buffer_rect, buffer_presented_callback_,
                             std::move(*frame));
   }

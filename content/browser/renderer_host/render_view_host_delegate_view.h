@@ -45,6 +45,10 @@ class RenderWidgetHostImpl;
 struct ContextMenuParams;
 struct DropData;
 
+#ifdef OHOS_EX_PULL_TO_REFRESH
+class WebContents;
+#endif
+
 // This class provides a way for the RenderViewHost to reach out to its
 // delegate's view.
 class CONTENT_EXPORT RenderViewHostDelegateView {
@@ -61,6 +65,10 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
 #if defined(OHOS_CLIPBOARD)
   virtual void MouseSelectMenuShow(bool show) {}
   virtual void ChangeVisibilityOfQuickMenu() {}
+#endif
+
+#ifdef OHOS_DRAG_DROP
+  virtual gfx::Rect GetVisibleRectToWeb();
 #endif
 
   // The user started dragging content of the specified type within the
@@ -172,6 +180,10 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
   virtual void CreateOverlay(const gfx::ImageSkia& image,
                              const gfx::Rect& image_rect,
                              const gfx::Point& touch_point) {}
+#endif
+
+#ifdef OHOS_EX_PULL_TO_REFRESH
+  virtual WebContents* GetWebContents() { return nullptr; }
 #endif
 
  protected:

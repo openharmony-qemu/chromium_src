@@ -392,9 +392,9 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBuffer(
     LOG(ERROR)
         << "MediaCodecDecoderBridgeImpl::QueueInputBuffer memcpy failed.";
     return DecoderAdapterCode::DECODER_ERROR;
-  } 
+  }
   DecoderAdapterCode ret = PushInbufferDec(index, inputSize, presentation_time);
-
+  TRACE_EVENT0("media", "PushInbufferDec End");
   PopInqueueDec();
   return ret;
 }
@@ -415,7 +415,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBufferEOS() {
   }
   uint32_t index = signal_->inputQueue_.front().inputBufferIndex;
   DecoderAdapterCode ret = PushInbufferDecEos(index);
-
+  TRACE_EVENT0("media", "PushInbufferDecEos End");
   PopInqueueDec();
   isRunning_.store(false);
   return ret;

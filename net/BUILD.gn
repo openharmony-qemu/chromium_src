@@ -122,6 +122,12 @@ buildflag_header("cronet_buildflags") {
   flags = [ "CRONET_BUILD=$is_cronet_build" ]
 }
 
+buildflag_header("prp_preload_buildflags") {
+  header = "prp_preload_buildflags.h"
+  header_dir = "net/base"
+  flags = [ "IS_OHOS_PRPP=$enable_prp_preload" ]
+}
+
 component("net") {
   sources = [
     "base/address_family.cc",
@@ -1080,6 +1086,7 @@ component("net") {
   deps = [
     ":cronet_buildflags",
     ":net_deps",
+    ":prp_preload_buildflags",
     "//build:chromeos_buildflags",
     "//net/data/ssl/chrome_root_store:gen_root_store_inc",
     "//net/http:transport_security_state_generated_files",
@@ -1187,7 +1194,12 @@ component("net") {
       "proxy_resolution/proxy_config_service_ohos.h",
     ]
 
-    deps += [ "//net/prp_preload:prp_preload" ]
+    if (enable_prp_preload) {
+      sources += [
+        "base/page_res_request_info.cc",
+        "base/page_res_request_info.h",
+      ]
+    }
   }
 
   if (is_chromeos && use_nss_certs) {

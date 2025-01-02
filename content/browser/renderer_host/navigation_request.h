@@ -1214,6 +1214,13 @@ class CONTENT_EXPORT NavigationRequest
   // navigation.
   ErrorPageProcess ComputeErrorPageProcess();
 
+#if BUILDFLAG(IS_OHOS_PRPP)
+  uint64_t GetAddrWebHandle() { return addr_web_handle_; }
+  network::mojom::NetworkContext* GetNetworkContext() const;
+  void StartPage(uint64_t addr_web_handle);
+  void OnGetIsolation(const std::string& origin);
+#endif
+
  private:
   friend class NavigationRequestTest;
 
@@ -1364,7 +1371,9 @@ class CONTENT_EXPORT NavigationRequest
       NavigationThrottle::ThrottleCheckResult result);
   void OnWillCommitWithoutUrlLoaderChecksComplete(
       NavigationThrottle::ThrottleCheckResult result);
-
+#ifdef OHOS_EX_UA
+  void RemoveUserAgentHeaderForDevTools(bool devtools_useragent_override);
+#endif
   // Runs CommitDeferringConditions.
   //
   // For prerendered page activation, this is called at the beginning of the
@@ -2573,6 +2582,10 @@ class CONTENT_EXPORT NavigationRequest
   // been picked for the navigation, the WebUI object will be moved to be owned
   // by the RenderFrameHost.
   std::unique_ptr<WebUIImpl> web_ui_;
+
+#if BUILDFLAG(IS_OHOS_PRPP)
+  uint64_t addr_web_handle_;
+#endif
 
   base::WeakPtrFactory<NavigationRequest> weak_factory_{this};
 };

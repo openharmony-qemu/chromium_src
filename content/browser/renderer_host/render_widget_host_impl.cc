@@ -1540,7 +1540,14 @@ void RenderWidgetHostImpl::ForwardMouseEventWithLatencyInfo(
   }
 
   if (IsIgnoringInputEvents())
+#if BUILDFLAG(IS_OHOS)
+  {
+    LOG(INFO) << "ignore input events";
     return;
+  }
+#else
+    return;
+#endif
 
   auto* touch_emulator = GetExistingTouchEmulator();
   if (touch_emulator &&
@@ -1626,7 +1633,7 @@ void RenderWidgetHostImpl::ForwardGestureEventWithLatencyInfo(
   if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollBegin) {
       base::ohos::SlidingObserver::GetInstance().StartSliding();
     } else if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollEnd) {
-      base::ohos::SlidingObserver::GetInstance().StopSliding();
+      preferred_frame_rate = base::ohos::SlidingObserver::GetInstance().StopSliding();
     } else if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollUpdate) {
       preferred_frame_rate = base::ohos::SlidingObserver::GetInstance().OnScrollUpdate(gesture_event.data.scroll_update.delta_x,
         gesture_event.data.scroll_update.delta_y);
@@ -1728,6 +1735,10 @@ void RenderWidgetHostImpl::ForwardGestureEventWithLatencyInfo(
       gesture_with_latency.event, &gesture_with_latency.latency,
       &gesture_with_latency.event.GetModifiableEventLatencyMetadata());
   input_router_->SendGestureEvent(gesture_with_latency);
+  std::string trace_content_ = "event_type: " + std::to_string(static_cast<int>(latency.source_event_type())) +
+      " ,step: " + "START";
+  OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
+                    std::to_string(latency.trace_id()), "trace_content", trace_content_);
 }
 
 void RenderWidgetHostImpl::ForwardTouchEventWithLatencyInfo(
@@ -2898,6 +2909,18 @@ void RenderWidgetHostImpl::AutoscrollEnd() {
       cancel_event, ui::LatencyInfo(ui::SourceEventType::OTHER));
 }
 
+#ifdef OHOS_DRAG_DROP
+void RenderWidgetHostImpl::GetVisibleRectToWeb(GetVisibleRectToWebCallback callback) {
+  RenderViewHostDelegateView* view = delegate_->GetDelegateView();
+  if (!view || !GetView()) {
+    std::move(callback).Run(gfx::Rect());
+    return;
+  }
+  auto rect = view->GetVisibleRectToWeb();
+  std::move(callback).Run(rect);
+}
+#endif
+
 void RenderWidgetHostImpl::StartDragging(
     blink::mojom::DragDataPtr drag_data,
     blink::DragOperationsMask drag_operations_mask,
@@ -3467,8 +3490,27 @@ void RenderWidgetHostImpl::OnTouchEventAck(
 }
 
 bool RenderWidgetHostImpl::IsIgnoringInputEvents() const {
+#if BUILDFLAG(IS_OHOS)
+  if (agent_scheduling_group_->GetProcess()->IsBlocked()) {
+    LOG(INFO) << "IsIgnoringInputEvents for gpu blocked";
+    return true;
+  }
+
+  if (!delegate_) {
+    LOG(INFO) << "IsIgnoringInputEvents for delegate_ null";
+    return true;
+  }
+
+  if (delegate_->ShouldIgnoreInputEvents()) {
+    LOG(INFO) << "IsIgnoringInputEvents for ShouldIgnoreInputEvents";
+    return true;
+  }
+
+  return false;
+#else
   return agent_scheduling_group_->GetProcess()->IsBlocked() || !delegate_ ||
          delegate_->ShouldIgnoreInputEvents();
+#endif
 }
 
 bool RenderWidgetHostImpl::GotResponseToLockMouseRequest(
@@ -3549,6 +3591,9 @@ void RenderWidgetHostImpl::GotResponseToForceRedraw(int snapshot_id) {
 }
 
 void RenderWidgetHostImpl::DetachDelegate() {
+#if BUILDFLAG(IS_OHOS)
+  LOG(INFO) << "RenderWidgetHostImpl DetachDelegate";
+#endif
   delegate_ = nullptr;
   latency_tracker_.reset_delegate();
 }

@@ -80,7 +80,7 @@ void BackgroundTaskPolicy::OnIsVisibleChanged(const PageNode* page_node) {
     LOG(ERROR) << BG_TASK_TAG << " page_node is null";
     return;
   }
-  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession IsVisible="
+  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << ", media avsession IsVisible="
             << (page_node->IsVisible() ? "true" : "false")
             << ", IsMediaPlaying=" << (page_node->IsMediaPlaying() ? "true" : "false")
             << ", is_main_frame_url_changed_ = " << is_main_frame_url_changed_;
@@ -95,7 +95,7 @@ void BackgroundTaskPolicy::OnIsVisibleChanged(const PageNode* page_node) {
   if (page_node->IsVisible()) {
     if (last_avsession_page_node_ != page_node) {
        bool ret = false;
-       SetWebviewShow(page_node, true, ret);
+       SetWebviewShow(page_node, true, false, ret);
        if (ret) {
          last_avsession_page_node_ = const_cast<PageNode*>(page_node);
        }
@@ -103,13 +103,12 @@ void BackgroundTaskPolicy::OnIsVisibleChanged(const PageNode* page_node) {
   }
   // pause to bg
   else if (!page_node->IsVisible() && !page_node->IsMediaPlaying()) {
-       bool ret = false;
-       SetWebviewShow(page_node, false, ret);
-       if (ret) {
-         last_avsession_page_node_ = nullptr;
-       }
-  }
-  else {
+    bool ret = false;
+    SetWebviewShow(page_node, false, false, ret);
+    if (ret) {
+        last_avsession_page_node_ = nullptr;
+    }
+  } else {
     is_main_frame_url_changed_ = false;
   }
   LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession IsVisibleChanged: "
@@ -125,52 +124,52 @@ void BackgroundTaskPolicy::OnIsMediaPlayingChanged(const PageNode* page_node) {
             << ", last_avsession_page_node_=" << last_avsession_page_node_
             << ", is_main_frame_url_changed_=" << is_main_frame_url_changed_;
   if (page_node == nullptr) {
-    LOG(ERROR) << BG_TASK_TAG << " medai avsession page_node is null";
+    LOG(ERROR) << BG_TASK_TAG << " media avsession page_node is null";
     return;
   }
   if (page_node) {
-    LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession IsVisible="
-          << (page_node->IsVisible() ? "true" : "false")
-          << ", IsMediaPlaying="
-          << (page_node->IsMediaPlaying() ? "true" : "false");
-    //when status change to playing
+    LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << ", media avsession IsVisible="
+              << (page_node->IsVisible() ? "true" : "false")
+              << ", IsMediaPlaying="
+              << (page_node->IsMediaPlaying() ? "true" : "false");
+    // when status change to playing
     if (page_node->IsVisible() && page_node->IsMediaPlaying()) {
        bool ret = false;
-       SetWebviewShow(page_node, true, ret);
+       SetWebviewShow(page_node, true, false, ret);
        if (ret) {
          last_avsession_page_node_ = const_cast<PageNode*>(page_node);
        }
     }
-    //when playing to background
-    else if (!page_node->IsVisible() && !page_node->IsMediaPlaying()) {
+    // when playing to background
+    else if (!page_node->IsVisible() && !page_node->IsMediaPlaying() && !IsPauseByAvsession(page_node)) {
        bool ret = false;
-       SetWebviewShow(page_node, false, ret);
+       SetWebviewShow(page_node, false, false, ret);
        if (ret) {
          last_avsession_page_node_ = nullptr;
        }
     }
-    //when change another page, and new page is not a playing page
-    //pause action will not go this way
+    // when change another page, and new page is not a playing page
+    // pause action will not go this way
     else if (page_node->IsVisible() && !page_node->IsMediaPlaying() && is_main_frame_url_changed_) {
        bool ret = false;
-       SetWebviewShow(page_node, false, ret);
+       SetWebviewShow(page_node, false, false, ret);
        if (ret) {
          last_avsession_page_node_ = nullptr;
        }
     }
-    //when current page to end of media 
+    // when current page to end of media 
     else if (page_node->IsVisible() && !page_node->IsMediaPlaying() &&
              (last_avsession_page_node_ == page_node) &&
              IsEndOfMedia(page_node) &&
              !is_main_frame_url_changed_) {
        LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession current page to end of media.";
        bool ret = false;
-       SetWebviewShow(page_node, false, ret);
+       SetWebviewShow(page_node, false, false, ret);
        if (ret) {
          last_avsession_page_node_ = nullptr;
        }
     }
-    //others no change
+    // others no change
     else {
       is_main_frame_url_changed_ = false;
     }
@@ -181,13 +180,13 @@ void BackgroundTaskPolicy::OnIsMediaPlayingChanged(const PageNode* page_node) {
   if (media_playing_num_ < 0) {
     media_playing_num_ = 0;
   }
-  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession OnIsMediaPlayingChanged "
-          << (page_node->IsMediaPlaying() ? "true" : "false")
-          << " page_node=" << page_node
-          << ", media_playing_num: " << media_playing_num_
-          << " visible_page_num_=" << visible_page_num_
-          << " page_node->IsVisible=" << (page_node->IsVisible() ? "true" : "false")
-          << " last_avsession_page_node_=" << last_avsession_page_node_;
+  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << ", media avsession OnIsMediaPlayingChanged "
+            << (page_node->IsMediaPlaying() ? "true" : "false")
+            << " page_node=" << page_node
+            << ", media_playing_num: " << media_playing_num_
+            << " visible_page_num_=" << visible_page_num_
+            << " page_node->IsVisible=" << (page_node->IsVisible() ? "true" : "false")
+            << " last_avsession_page_node_=" << last_avsession_page_node_;
   MaybeChangeBackgroundTask(page_node);
 }
 
@@ -209,6 +208,12 @@ void BackgroundTaskPolicy::OnIsAudibleChanged(const PageNode* page_node) {
 }
 
 void BackgroundTaskPolicy::MaybeChangeBackgroundTask(const PageNode* page_node) {
+  LOG(INFO) << "BackgroundTaskPolicy::MaybeChangeBackgroundTask "
+      << " page_node=" << page_node
+      << " visible_page_num_: " << visible_page_num_
+      << " media_playing_num_: " << media_playing_num_
+      << " audio_state_num_: " << audio_state_num_
+      << " is_request_background_task_: " << is_request_background_task_;
   RequestBackgroundTaskReason reason =
       RequestBackgroundTaskReason::NO_CHANGE_BG_TASK;
   if (is_request_background_task_ &&
@@ -271,105 +276,93 @@ bool BackgroundTaskPolicy::IsEndOfMedia(const PageNode* page_node)
   return ret;
 }
 
-void BackgroundTaskPolicy::SetWebviewShow(const PageNode* page_node, bool show, bool &ret) {
-  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession in page_node=" << page_node
-            << " show=" << (show ? 1 : 0)  << " last_avsession_page_node_=" << last_avsession_page_node_
+bool BackgroundTaskPolicy::IsPauseByAvsession(const PageNode* page_node) {
+  bool ret = false;
+  if (!page_node) {
+    return ret;
+  }
+  auto web_contents = page_node->GetContentsProxy().Get();
+  if (!web_contents) {
+    return ret;
+  }
+  content::MediaSessionImpl* media_session =
+    content::MediaSessionImpl::FromWebContents(web_contents);
+  if (media_session) {
+    ret = media_session->IsPauseByAvsession();
+  }
+  return ret;
+}
+
+void BackgroundTaskPolicy::SetWebviewShow(const PageNode* page_node,
+                                          bool show,
+                                          bool is_special_for_audio,
+                                          bool &ret) {
+  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << ", in page_node=" << page_node
+            << ", show=" << (show ? 1 : 0)
+            << ", is_special_for_audio=" << (is_special_for_audio ? 1 : 0)
+            << ", last_avsession_page_node_=" << last_avsession_page_node_
             << ", is_main_frame_url_changed_=" << is_main_frame_url_changed_;
   ret = false;
-  if (page_node) {
-    auto webcontents = page_node->GetContentsProxy().Get();
-    if (webcontents) {
-      content::MediaSessionImpl* mediaSession = content::MediaSessionImpl::FromWebContents(webcontents);
-      if (mediaSession) {
-        content::GetUIThreadTaskRunner({})->PostTask(FROM_HERE,
-                                                     base::BindOnce(&content::MediaSessionImpl::SetWebviewShow,
-                                                     mediaSession->weakMediaSessionFactory_.GetWeakPtr(), show));
-        ret = true;
-      }
-    } else {
-      LOG(ERROR) << BG_TASK_TAG << __FUNCTION__ << " media avsession webcontests is null";
-    }
+  if (!page_node) {
+    LOG(ERROR) << BG_TASK_TAG << __FUNCTION__ << "page_node is null";
+    is_main_frame_url_changed_ = false;
+    return;
+  }
+  auto web_contents = page_node->GetContentsProxy().Get();
+  if (!web_contents) {
+    LOG(ERROR) << BG_TASK_TAG << __FUNCTION__ << "web_contents is null";
+    is_main_frame_url_changed_ = false;
+    return;
+  }
+  content::MediaSessionImpl* media_session =
+    content::MediaSessionImpl::FromWebContents(web_contents);
+  if (media_session) {
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(&content::MediaSessionImpl::SetWebviewShow,
+                       media_session->weakMediaSessionFactory_.GetWeakPtr(),
+                       show, is_special_for_audio));
+    ret = true;
   }
   is_main_frame_url_changed_ = false;
 }
 
-void BackgroundTaskPolicy::SetWebviewShowForAudio(const PageNode* page_node, bool show, bool &ret) {
-  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession in page_node=" << page_node
-            << " show=" << (show ? 1 : 0)  << " last_avsession_page_node_=" << last_avsession_page_node_
-            << ", is_main_frame_url_changed_=" << is_main_frame_url_changed_;
-  ret = false;
-  if (page_node) {
-    auto webcontents = page_node->GetContentsProxy().Get();
-    if (webcontents) {
-      content::MediaSessionImpl* mediaSession = content::MediaSessionImpl::FromWebContents(webcontents);
-      if (mediaSession) {
-        content::GetUIThreadTaskRunner({})->PostTask(FROM_HERE,
-                                                     base::BindOnce(&content::MediaSessionImpl::SetWebviewShowForAudio,
-                                                     mediaSession->weakMediaSessionFactory_.GetWeakPtr(), show));
-        ret = true;
-      }
-    } else {
-      LOG(ERROR) << BG_TASK_TAG << __FUNCTION__ << " media avsession webcontests is null";
-    }
-  }
-  is_main_frame_url_changed_ = false;
-}
-
-void BackgroundTaskPolicy::SetWebviewShowForVideo(const PageNode* page_node, bool show, bool &ret) {
-  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession in page_node=" << page_node
-            << " show=" << (show ? 1 : 0)  << " last_avsession_page_node_=" << last_avsession_page_node_
-            << ", is_main_frame_url_changed_=" << is_main_frame_url_changed_;
-  ret = false;
-  if (page_node) {
-    auto webcontents = page_node->GetContentsProxy().Get();
-    if (webcontents) {
-      content::MediaSessionImpl* mediaSession = content::MediaSessionImpl::FromWebContents(webcontents);
-      if (mediaSession) {
-        content::GetUIThreadTaskRunner({})->PostTask(FROM_HERE,
-                                                     base::BindOnce(&content::MediaSessionImpl::SetWebviewShowForVideo,
-                                                     mediaSession->weakMediaSessionFactory_.GetWeakPtr(), show));
-        ret = true;
-      }
-    } else {
-      LOG(ERROR) << BG_TASK_TAG << __FUNCTION__ << " media avsession webcontests is null";
-    }
-  }
-  is_main_frame_url_changed_ = false;
-}
-
-//While press backward button, the page will change to a new payge, the Url will change, so this function will be called
+// While press backward button, the page will change to a new payge,
+// the Url will change, so this function will be called
 void BackgroundTaskPolicy::OnMainFrameUrlChanged(const PageNode* page_node) {
-  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession in page_node=" << page_node;
+  LOG(INFO) << BG_TASK_TAG << __FUNCTION__
+            << ", media avsession in page_node=" << page_node;
   if (page_node) {
-    LOG(INFO) << BG_TASK_TAG << __FUNCTION__
-          << " media avsession IsVisible=" << (page_node->IsVisible() ? "true" : "false")
-          << ", IsMediaPlaying=" << (page_node->IsMediaPlaying() ? "true" : "false")
-          << ", IsAudible=" << (page_node->IsAudible() ? "true" : "false");
-    //when backward to a playing page   1 1
+    LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << ", media avsession IsVisible="
+              << (page_node->IsVisible() ? "true" : "false")
+              << ", IsMediaPlaying="
+              << (page_node->IsMediaPlaying() ? "true" : "false")
+              << ", IsAudible=" << (page_node->IsAudible() ? "true" : "false");
+    // when backward to a playing page   1 1
     if (page_node->IsVisible() && page_node->IsMediaPlaying()) {
-       bool ret = false;
-       SetWebviewShow(page_node, true, ret);
-       if (ret) {
-         last_avsession_page_node_ = const_cast<PageNode*>(page_node);
-       }
+      bool ret = false;
+      SetWebviewShow(page_node, true, false, ret);
+      if (ret) {
+        last_avsession_page_node_ = const_cast<PageNode*>(page_node);
+      }
     }
-    //when backward to a not playing page   1 0
+    // when backward to a not playing page   1 0
     else if (page_node->IsVisible() && !page_node->IsMediaPlaying()) {
-       bool ret = false;
-       SetWebviewShowForVideo(page_node, false, ret);
-       if (ret) {
-         last_avsession_page_node_ = nullptr;
-       }
+      bool ret = false;
+      SetWebviewShow(page_node, false, false, ret);
+      if (ret) {
+        last_avsession_page_node_ = nullptr;
+      }
     } else {
     }
 
-    //when backward to a not playing page  1 0 for onlyaudio
-    if(!page_node->IsAudible()) {
-       bool ret = false;
-       SetWebviewShowForAudio(page_node, false, ret);
-       if (ret) {
-         last_avsession_page_node_ = nullptr;
-       }
+    // when backward to a not playing page  1 0 for onlyaudio
+    if (!page_node->IsAudible()) {
+      bool ret = false;
+      SetWebviewShow(page_node, false, false, ret);
+      if (ret) {
+        last_avsession_page_node_ = nullptr;
+      }
     }
     is_main_frame_url_changed_ = true;
   }

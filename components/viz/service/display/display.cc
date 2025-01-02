@@ -1078,7 +1078,12 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
     ui::LatencyInfo::TraceIntermediateFlowEvents(
         frame.latency_info,
         perfetto::protos::pbzero::ChromeLatencyInfo::STEP_DRAW_AND_SWAP);
-
+    for (auto& latency : frame.latency_info) {
+      std::string trace_content_ = "event_type: " + std::to_string(static_cast<int>(latency.source_event_type())) +
+          " ,step: " + "STEP_DRAW_AND_SWAP";
+      OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
+                        std::to_string(latency.trace_id()), "trace_content", trace_content_);
+    }
     IssueDisplayRenderingStatsEvent();
     DirectRenderer::SwapFrameData swap_frame_data;
     swap_frame_data.latency_info = std::move(frame.latency_info);
@@ -1091,6 +1096,11 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
           *frame.top_controls_visible_height;
       last_top_controls_visible_height_ = *frame.top_controls_visible_height;
     }
+
+    swap_frame_data.swap_trace_id = swapped_trace_id_;
+
+    OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+      std::to_string(swap_frame_data.swap_trace_id), "step", "SendBufferSwap");
 
 #if BUILDFLAG(IS_APPLE)
     swap_frame_data.ca_layer_error_code =
@@ -1157,6 +1167,10 @@ void Display::DidReceiveSwapBuffersAck(
   // have been done in DrawAndSwap(), and should not be popped until
   // DidReceiveSwapBuffersAck.
   DCHECK(!pending_presentation_group_timings_.empty());
+
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+      std::to_string(params.swap_trace_id), "step", "SwapBufferAck");
+
 
   if (params.swap_response.result ==
       gfx::SwapResult::SWAP_NAK_RECREATE_BUFFERS) {

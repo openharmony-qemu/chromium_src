@@ -144,6 +144,7 @@ class UI_TOUCH_SELECTION_EXPORT TouchHandle : public TouchSelectionDraggable {
 
 #ifdef OHOS_CLIPBOARD
   void ResetPositionAfterDragEnd();
+  bool GetVisible() const { return is_visible_; }
 #endif
 
 #ifdef OHOS_EX_TOPCONTROLS

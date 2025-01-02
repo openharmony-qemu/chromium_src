@@ -25,8 +25,9 @@ namespace performance_manager::policies {
 bool PageMightHaveFramesInBFCache(const PageNode* page_node) {
   // TODO(crbug.com/1211368): Use PageState when that actually works.
   auto main_frame_nodes = page_node->GetMainFrameNodes();
-  if (main_frame_nodes.size() == 1)
+  if (main_frame_nodes.size() == 1) {
     return false;
+  }
   for (const auto* main_frame_node : main_frame_nodes) {
     if (!main_frame_node->IsCurrent())
       return true;
@@ -40,8 +41,9 @@ void MaybeFlushBFCacheOnUIThread(const WebContentsProxy& contents_proxy,
                                  MemoryPressureLevel memory_pressure_level) {
   DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
   content::WebContents* const content = contents_proxy.Get();
-  if (!content)
+  if (!content) {
     return;
+  }
 
   int cache_size = -1;
   switch (memory_pressure_level) {
@@ -57,8 +59,9 @@ void MaybeFlushBFCacheOnUIThread(const WebContentsProxy& contents_proxy,
       NOTREACHED();
   }
   // Do not flush BFCache if cache_size is negative (such as -1).
-  if (cache_size < 0)
+  if (cache_size < 0) {
     return;
+  }
 
   // Do not flush the BFCache if there's a pending navigation as this could stop
   // it.

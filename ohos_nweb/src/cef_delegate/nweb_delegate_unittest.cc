@@ -52,7 +52,7 @@ class NWebDelegateTest : public ::testing::Test {
     argc_ = 0;
     if (argv_) {
       delete[] argv_;
-      argv_ = NULL;
+      argv_ = nullptr;
     }
   }
 
@@ -78,7 +78,7 @@ class NWebDelegateTest : public ::testing::Test {
 
  private:
   int argc_ = 0;
-  char** argv_ = NULL;
+  char** argv_ = nullptr;
   std::list<std::string> web_engine_args_;
 
  public:
@@ -436,4 +436,16 @@ TEST_F(NWebDelegateTest, ExecuteCreatePDFExt) {
   nweb_delegate_->ExecuteCreatePDFExt(pdfConfig, callback);
 }
 
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+TEST_F(NWebDelegateTest, NeedToFireBeforeUnloadOrUnloadEvents) {
+  auto result = nweb_delegate_->NeedToFireBeforeUnloadOrUnloadEvents();
+  EXPECT_FALSE(result);
+}
+#endif
+
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+TEST_F(NWebDelegateTest, DispatchBeforeUnload) {
+  nweb_delegate_->DispatchBeforeUnload();
+}
+#endif
 }  // namespace OHOS::NWeb

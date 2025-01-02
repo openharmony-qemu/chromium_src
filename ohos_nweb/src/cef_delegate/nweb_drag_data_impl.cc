@@ -18,6 +18,7 @@
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
 #include "base/logging.h"
+#include "base/trace_event/trace_event.h"
 #include "cef/libcef/common/drag_data_impl.h"
 #include "content/public/common/drop_data.h"
 #include "ohos_nweb/include/nweb.h"
@@ -53,6 +54,7 @@ namespace {
   constexpr int IMAGE_EXPAND_PADDING = 11;
   constexpr int IMAGE_SHADOW_COLOR = 0xA0000000;
   constexpr int IMAGE_SHADOW_DY = 3;
+  constexpr int DEFAULT_MIN_HEIGHT_THRESHOLD = 2;
 }
 
 namespace OHOS::NWeb {
@@ -168,12 +170,19 @@ SkPath NWebDragDataImpl::GetShadowPath(int width, int height) {
     return out_path;
   }
 
-  bool is_oneline = ((start_edge_top_.y == end_edge_top_.y) && (start_edge_bottom_.y == end_edge_bottom_.y));
+  auto ohMinHeightThreshold = ToOhCoordinate(DEFAULT_MIN_HEIGHT_THRESHOLD);
+  bool is_oneline = ((start_edge_top_.y == end_edge_top_.y) && (start_edge_bottom_.y == end_edge_bottom_.y)) ||
+    (std::abs(start_edge_bottom_.y - start_edge_top_.y - drag_clip_height_) < ohMinHeightThreshold &&
+    drag_clip_height_ > ohMinHeightThreshold);
+
   bool is_both_out_clip_region = (start_edge_top_.y < 0) &&
     (std::abs(end_edge_bottom_.y - (drag_image_origin_point_.y + drag_clip_height_)) > ToOhCoordinate(WEIRD_PADDING));
   bool is_start_line_compelete = (start_edge_top_.y >= 0) &&
     (std::abs(start_edge_top_.x - drag_image_origin_point_.x) < ToOhCoordinate(DEFAULT_MARGIN + ADD_BOUND_RECT_RATIO));
   is_start_line_compelete = is_start_line_compelete || (start_edge_top_.y < 0);
+  is_start_line_compelete = is_start_line_compelete ||
+    (std::abs(start_edge_top_.y - drag_image_origin_point_.y) > ToOhCoordinate(WEIRD_PADDING));
+
   bool is_end_line_compelete = (std::abs(end_edge_bottom_.y - (drag_image_origin_point_.y + drag_clip_height_)) <= ToOhCoordinate(WEIRD_PADDING)) &&
     (std::abs(drag_image_origin_point_.x + drag_clip_width_ - end_edge_bottom_.x) < ToOhCoordinate(DEFAULT_MARGIN + ADD_BOUND_RECT_RATIO));
   is_end_line_compelete = is_end_line_compelete ||
@@ -348,7 +357,7 @@ NWebDragDataImpl::NWebDragDataImpl(CefRefPtr<CefDragData> drag_data)
 
 NWebDragDataImpl::NWebDragDataImpl(CefRefPtr<CefDragData> drag_data, CefPoint& drag_touch_point,
     std::vector<CefPoint>& start_edge, std::vector<CefPoint>& end_edge, float device_pixel_ratio,
-    bool is_useful_selection, bool dark_mode_enable, int32_t view_port_height, bool is_drag_new_style)
+    bool is_useful_selection, bool dark_mode_enable, bool is_drag_new_style)
     : drag_data_(drag_data), is_useful_selection_(is_useful_selection) {
   device_pixel_ratio_ = device_pixel_ratio;
   if (device_pixel_ratio_ <= 0) {
@@ -356,7 +365,6 @@ NWebDragDataImpl::NWebDragDataImpl(CefRefPtr<CefDragData> drag_data, CefPoint& d
     return;
   }
   dark_mode_enable_ = dark_mode_enable;
-  view_port_height_ = view_port_height;
   is_drag_new_style_ = is_drag_new_style;
 
   if (drag_data_) {
@@ -476,6 +484,7 @@ bool NWebDragDataImpl::GetPixelMapSetting(const void** data, size_t& len, int& w
   height = image_bitmap->height();
   bool isTransparent = IsTransparent(*image_bitmap);
   if (!isTransparent && width != 0 && height != 0) {
+    TRACE_EVENT0("base", "NWebDragDataImpl::GenerateOhosDragBitmapFromOrigin");
     GenerateOhosDragBitmapFromOrigin(*image_bitmap, out_bitmap, width, height);
   } else {
     out_bitmap = *image_bitmap;
@@ -627,12 +636,6 @@ void NWebDragDataImpl::GetDragStartPosition(int& x, int& y) {
     if (width < ToOhCoordinate(IMAGE_MIN_WIDTH)) {
       x = static_cast<int32_t>(x - (ToOhCoordinate(IMAGE_MIN_WIDTH) - width) / DOUBLE_RATIO);
     }
-  }
-  if (x < 0) {
-    x = 0;
-  }
-  if (y < ToOhCoordinate(view_port_height_)) {
-    y = ToOhCoordinate(view_port_height_);
   }
 }
 

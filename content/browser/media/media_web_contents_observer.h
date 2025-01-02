@@ -156,6 +156,12 @@ class CONTENT_EXPORT MediaWebContentsObserver
   void RequestExitFullscreen(const MediaPlayerId& player_id);
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+  void SetPlaybackRate(double playback_rate, const MediaPlayerId& player_id);
+  void RequestFullScreen(bool enable, const MediaPlayerId& player_id);
+  void RequestDownloadUrl(const MediaPlayerId& player_id);
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+
  protected:
   MediaSessionControllersManager* session_controllers_manager() {
     return session_controllers_manager_.get();

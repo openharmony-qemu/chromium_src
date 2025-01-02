@@ -35,7 +35,7 @@ ArkWeb_HttpBodyStream_::ArkWeb_HttpBodyStream_(
   }
 
   if (!resource_request->cef_request->GetUploadStream()) {
-    LOG(ERROR) << "scheme_handler upload stream is nullptr";
+    LOG(DEBUG) << "scheme_handler upload stream is nullptr";
     return;
   }
 
@@ -138,7 +138,7 @@ bool ArkWeb_HttpBodyStream_::IsInMemory() const {
   return post_data_stream->IsInMemory();
 }
 
-void ArkWeb_HttpBodyStream_::OnInitComplete(int rv) {
+NO_SANITIZE("cfi-icall") void ArkWeb_HttpBodyStream_::OnInitComplete(int rv) {
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post_data_stream is nullptr.";
     return;
@@ -159,7 +159,8 @@ void ArkWeb_HttpBodyStream_::OnInitComplete(int rv) {
   stream_init_callback(this, static_cast<ArkWeb_NetError>(rv));
 }
 
-void ArkWeb_HttpBodyStream_::OnReadComplete(char* buffer, int bytes_read) {
+NO_SANITIZE("cfi-icall") void ArkWeb_HttpBodyStream_::OnReadComplete(
+    char* buffer, int bytes_read) {
   if (!post_data_stream) {
     LOG(ERROR) << "scheme_handler post_data_stream is nullptr.";
   }

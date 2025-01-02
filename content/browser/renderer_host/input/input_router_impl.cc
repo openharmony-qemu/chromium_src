@@ -5,6 +5,7 @@
 #include "content/browser/renderer_host/input/input_router_impl.h"
 
 #include <math.h>
+#include <string>
 
 #include <utility>
 
@@ -12,6 +13,7 @@
 #include "base/command_line.h"
 #include "base/functional/bind.h"
 #include "base/metrics/histogram_macros.h"
+#include "base/ohos/sys_info_utils.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/task/sequenced_task_runner.h"
 #include "content/browser/renderer_host/input/gesture_event_queue.h"
@@ -81,6 +83,7 @@ std::unique_ptr<blink::WebCoalescedInputEvent> ScaleEvent(
 #if BUILDFLAG(IS_OHOS)
 constexpr uint64_t GESTURE_MOVE_PERIOD = 250000000;
 const int SOC_PERF_SLIDE_NORMAL_CONFIG_ID = 10025;
+const int SOC_PERF_SLIDE_NORMAL_CONFIG_ID_PC = 10012;
 #endif
 }  // namespace
 
@@ -122,6 +125,9 @@ void InputRouterImpl::SendMouseEvent(
     std::move(event_result_callback)
         .Run(mouse_event, blink::mojom::InputEventResultSource::kBrowser,
              blink::mojom::InputEventResultState::kIgnored);
+#if BUILDFLAG(IS_OHOS)
+  LOG(INFO) << "mouse event suppressed!";
+#endif
     return;
   }
 
@@ -159,16 +165,28 @@ void InputRouterImpl::SendGestureEvent(
     prePerfTimeStamp_ = timeStamp_;
     LOG(DEBUG) << "InputRouterImpl::SendGestureEvent type=kGestureScrollUpdate success";
     client_->GetWidgetInputHandler()->TryStartFling();
-    OHOS::NWeb::OhosAdapterHelper::GetInstance()
-      .CreateSocPerfClientAdapter()
-      ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID, true);
+    if (base::ohos::IsPcDevice()) {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .CreateSocPerfClientAdapter()
+        ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID_PC, true);
+    } else {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .CreateSocPerfClientAdapter()
+        ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID, true);
+    }
   } else if (gesture_event.event.GetType() ==
              WebInputEvent::Type::kGestureScrollEnd) {
     LOG(INFO) << "InputRouterImpl::SendGestureEvent type=kGestureScrollEnd";
     client_->GetWidgetInputHandler()->TryFinishFling();
-    OHOS::NWeb::OhosAdapterHelper::GetInstance()
-      .CreateSocPerfClientAdapter()
-      ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID, false);
+    if (base::ohos::IsPcDevice()) {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .CreateSocPerfClientAdapter()
+        ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID_PC, false);
+    } else {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .CreateSocPerfClientAdapter()
+        ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID, false);
+    }
     prePerfTimeStamp_ = 0;
 
     if (auto* host = GpuProcessHost::Get()) {
@@ -636,6 +654,12 @@ void InputRouterImpl::FilterAndSendWebInputEvent(
                                            LegacyEvent::FLOW_INOUT,
                                        latency_info.trace_id());
               });
+
+  std::string trace_content_ = "event_type: " + std::to_string(static_cast<int>(latency_info.source_event_type())) +
+      " ,step: " + "STEP_SEND_INPUT_EVENT_UI";
+  OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
+                    std::to_string(latency_info.trace_id()), "trace_content", trace_content_);
+                    
   if (!(input_event.GetType() == WebInputEvent::Type::kGestureScrollUpdate ||
       input_event.GetType() == WebInputEvent::Type::kTouchMove ||
       input_event.GetType() == WebInputEvent::Type::kGesturePinchUpdate)) {
@@ -655,8 +679,14 @@ void InputRouterImpl::FilterAndSendWebInputEvent(
   blink::mojom::InputEventResultState filtered_state =
       client_->FilterInputEvent(input_event, latency_info);
   if (WasHandled(filtered_state)) {
+#if defined(IS_OHOS)
+    LOG(INFO) << "event was filtered for " << InputEventResultStateToString(filtered_state);
+    TRACE_EVENT1("input", "InputEventFiltered",
+                 InputEventResultStateToString(filtered_state));
+#else
     TRACE_EVENT_INSTANT0("input", "InputEventFiltered",
                          TRACE_EVENT_SCOPE_THREAD);
+#endif
     if (filtered_state != blink::mojom::InputEventResultState::kUnknown) {
       std::move(callback).Run(blink::mojom::InputEventResultSource::kBrowser,
                               latency_info, filtered_state, nullptr, nullptr,
@@ -738,6 +768,20 @@ void InputRouterImpl::KeyboardEventHandled(
   // TODO(jdduke): crbug.com/274029 - Make ack-triggered shutdown async.
 }
 
+#if BUILDFLAG(IS_OHOS)
+static bool FilterLogEvent(WebInputEvent::Type type) {
+  switch (type) {
+    case WebInputEvent::Type::kMouseUp:
+    case WebInputEvent::Type::kMouseDown:
+    case WebInputEvent::Type::kTouchStart:
+    case WebInputEvent::Type::kTouchEnd:
+      return true;
+    default:
+      return false;
+  }
+}
+#endif
+
 void InputRouterImpl::MouseEventHandled(
     const MouseEventWithLatencyInfo& event,
     MouseEventCallback event_result_callback,
@@ -750,6 +794,11 @@ void InputRouterImpl::MouseEventHandled(
   TRACE_EVENT2("input", "InputRouterImpl::MouseEventHandled", "type",
                WebInputEvent::GetName(event.event.GetType()), "ack",
                InputEventResultStateToString(state));
+#if BUILDFLAG(IS_OHOS)
+  if (FilterLogEvent(event.event.GetType()))
+    LOG(INFO) << "InputRouterImpl::MouseEventHandled type:" << WebInputEvent::GetName(event.event.GetType())
+              << " ack " << InputEventResultStateToString(state);
+#endif
 
   if (source != blink::mojom::InputEventResultSource::kBrowser)
     client_->DecrementInFlightEventCount(source);
@@ -768,6 +817,11 @@ void InputRouterImpl::TouchEventHandled(
   TRACE_EVENT2("input", "InputRouterImpl::TouchEventHandled", "type",
                WebInputEvent::GetName(touch_event.event.GetType()), "ack",
                InputEventResultStateToString(state));
+#if BUILDFLAG(IS_OHOS)
+  if (FilterLogEvent(touch_event.event.GetType()))
+    LOG(INFO) << "InputRouterImpl::TouchEventHandled type:" << WebInputEvent::GetName(touch_event.event.GetType())
+              << " ack " << InputEventResultStateToString(state);
+#endif
   if (source != blink::mojom::InputEventResultSource::kBrowser)
     client_->DecrementInFlightEventCount(source);
   touch_event.latency.AddNewLatencyFrom(latency);

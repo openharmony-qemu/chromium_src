@@ -104,6 +104,9 @@ class TestRenderWidgetHostView : public RenderWidgetHostViewBase,
   void EnsureSurfaceSynchronizedForWebTest() override;
 #if defined(OHOS_UNITTESTS)
   void EvictFrameBackBuffers(bool invisible) override {}
+  bool GetScrollable() override {
+    return true;
+  }
 #endif
 
   // RenderWidgetHostViewBase:

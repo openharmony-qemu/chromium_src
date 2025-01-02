@@ -296,6 +296,11 @@
 #include "base/ohos/sys_info_utils.h"
 #endif
 
+#ifdef OHOS_THEME_FONT
+#include "base/files/file.h"
+#include "base/json/json_reader.h"
+#endif
+
 // VLOG additional statements in Fuchsia release builds.
 #if BUILDFLAG(IS_FUCHSIA)
 #define MAYBEVLOG VLOG
@@ -3800,17 +3805,17 @@ bool RenderProcessHostImpl::FastShutdownIfPossible(size_t page_count,
   // Do not shut down the process if there are active or pending views other
   // than the ones we're shutting down.
   if (page_count && page_count != (GetActiveViewCount() + pending_views_)) {
-    LOG(DEBUG) << "Discard failed; there are active or pending views";
+    LOG(INFO) << "Discard failed; there are active or pending views";
     return false;
   }
 
   if (run_renderer_in_process()) {
-    LOG(DEBUG) << "Discard failed; Single process mode";
+    LOG(INFO) << "Discard failed; Single process mode";
     return false;  // Single process mode never shuts down the renderer.
   }
 
   if (!child_process_launcher_.get()) {
-    LOG(DEBUG) << "Discard failed; Render process hasn't started or is probably crashed";
+    LOG(INFO) << "Discard failed; Render process hasn't started or is probably crashed";
     return false;  // Render process hasn't started or is probably crashed.
   }
 
@@ -3820,7 +3825,7 @@ bool RenderProcessHostImpl::FastShutdownIfPossible(size_t page_count,
   // the window is small, it's unlikely that the web page has much
   // state that will be lost by not calling its unload handlers properly.
   if (!skip_unload_handlers && !SuddenTerminationAllowed()) {
-    LOG(DEBUG) << "Discard failed; there's an unload listener";
+    LOG(INFO) << "Discard failed; there's an unload listener";
     return false;
   }
 
@@ -3828,24 +3833,24 @@ bool RenderProcessHostImpl::FastShutdownIfPossible(size_t page_count,
   if (keep_alive_ref_count_ != 0) {
     CHECK(!base::FeatureList::IsEnabled(
         blink::features::kKeepAliveInBrowserMigration));
-    LOG(DEBUG) << "Discard failed; keep_alive_ref_count_ != 0";
+    LOG(INFO) << "Discard failed; keep_alive_ref_count_ != 0";
     return false;
   }
 
   if (worker_ref_count_ != 0) {
-    LOG(DEBUG) << "Discard failed; worker_ref_count_ != 0";
+    LOG(INFO) << "Discard failed; worker_ref_count_ != 0";
     return false;
   }
 
   if (pending_reuse_ref_count_ != 0) {
-    LOG(DEBUG) << "Discard failed; pending_reuse_ref_count_ != 0";
+    LOG(INFO) << "Discard failed; pending_reuse_ref_count_ != 0";
     return false;
   }
 
   // TODO(wjmaclean): This is probably unnecessary, but let's remove it in a
   // separate CL to be safe.
   if (shutdown_delay_ref_count_ != 0) {
-    LOG(DEBUG) << "Discard failed; shutdown_delay_ref_count_ != 0";
+    LOG(INFO) << "Discard failed; shutdown_delay_ref_count_ != 0";
     return false;
   }
 
@@ -3953,6 +3958,12 @@ void RenderProcessHostImpl::OnChannelConnected(int32_t peer_pid) {
   // be responsible for 1) deciding when the refresh happens and 2) pushing the
   // updated salt to all the child processes.
   child_process_->SetPseudonymizationSalt(GetPseudonymizationSalt());
+
+#ifdef OHOS_THEME_FONT
+  if (auto* theme_font = EnsureThemeFont()) {
+    UpdateThemeFontFile(theme_font->font_file.Duplicate());
+  }
+#endif
 }
 
 void RenderProcessHostImpl::OnChannelError() {
@@ -5822,6 +5833,128 @@ void RenderProcessHostImpl::dumpCurrentJavaScriptStackInMainThread(
       std::move(dump_callback)));
 }
 #endif
+
+#ifdef OHOS_THEME_FONT
+const base::FilePath::CharType kAppThemePathA[] =
+    FILE_PATH_LITERAL("/data/themes/a/app");
+const base::FilePath::CharType kAppThemePathB[] =
+    FILE_PATH_LITERAL("/data/themes/b/app");
+const base::FilePath::CharType kAppThemeFontsDirName[] =
+    FILE_PATH_LITERAL("fonts");
+const base::FilePath::CharType kAppThemeFlagFileName[] =
+    FILE_PATH_LITERAL("flag");
+const base::FilePath::CharType kAppThemeFontsManifest[] =
+    FILE_PATH_LITERAL("manifest.json");
+
+std::unique_ptr<ThemeFont> RenderProcessHostImpl::g_theme_font_ = nullptr;
+
+// static
+bool RenderProcessHostImpl::IsThemeFontValid() {
+  if (!g_theme_font_ || !base::PathExists(g_theme_font_->flag_path) ||
+      !base::PathExists(g_theme_font_->manifest_path) ||
+      !base::PathExists(g_theme_font_->font_path) ||
+      !g_theme_font_->font_file.IsValid()) {
+    return false;
+  }
+
+  return true;
+}
+
+// static
+ThemeFont* RenderProcessHostImpl::EnsureThemeFont() {
+  if (IsThemeFontValid()) {
+    return g_theme_font_.get();
+  }
+
+  g_theme_font_.reset();
+
+  base::FilePath theme_path(kAppThemePathA);
+  base::FilePath theme_font_path = theme_path.Append(kAppThemeFontsDirName);
+  if (!base::PathExists(
+          base::FilePath(kAppThemePathA).Append(kAppThemeFlagFileName))) {
+    if (!base::PathExists(
+            base::FilePath(kAppThemePathB).Append(kAppThemeFlagFileName))) {
+      LOG(DEBUG) << "[themefont] flag file occurs error";
+      return nullptr;
+    }
+    theme_path = base::FilePath(base::FilePath(kAppThemePathB));
+    theme_font_path = theme_path.Append(kAppThemeFontsDirName);
+  }
+
+  std::string input_json;
+  base::FilePath manifest_path(theme_font_path.Append(kAppThemeFontsManifest));
+  if (!base::PathExists(manifest_path) ||
+      !base::ReadFileToString(manifest_path, &input_json) ||
+      input_json.empty()) {
+    LOG(DEBUG) << "[themefont] manifest file occurs error";
+    return nullptr;
+  }
+
+  auto parsed_json = base::JSONReader::ReadAndReturnValueWithError(input_json);
+  if (!parsed_json.has_value() || !parsed_json->is_dict()) {
+    LOG(ERROR) << "[themefont] manifest file occurs error:"
+               << parsed_json.error().message;
+    return nullptr;
+  }
+  // Two example for the manifest.json:
+  // {"id":"0","origin":"online","ttfFileSrc":"/absolute/path/themefont.ttf"}
+  // {"id":"1","origin":"preset","ttfFileSrc":"/absolute/path/default.ttf"}
+  const base::Value::Dict& dict = parsed_json->GetDict();
+  const std::string* origin = dict.FindString("origin");
+  if (!origin || origin->empty()) {
+    LOG(ERROR) << "[themefont] manifest file has no origin tag";
+    return nullptr;
+  }
+  if (*origin != std::string("online")) {
+    LOG(DEBUG) << "[themefont] manifest file's origin tag is not online";
+    return nullptr;
+  }
+
+  const std::string* absolte_font_path = dict.FindString("ttfFileSrc");
+  if (!absolte_font_path || absolte_font_path->empty()) {
+    LOG(ERROR) << "[themefont] manifest file has no ttfFileSrc tag";
+    return nullptr;
+  }
+
+  base::FilePath font_path =
+      theme_font_path.Append(base::FilePath(*absolte_font_path).BaseName());
+  if (!base::PathExists(font_path)) {
+    LOG(ERROR) << "[themefont] font file not exist:" << font_path.value();
+    return nullptr;
+  }
+
+  base::File font_file(font_path,
+                       base::File::FLAG_OPEN | base::File::FLAG_READ);
+  if (!font_file.IsValid()) {
+    LOG(ERROR) << "[themefont] font file not valid";
+    return nullptr;
+  }
+
+  base::FilePath flag_path = theme_path.Append(kAppThemeFlagFileName);
+  g_theme_font_ = std::make_unique<ThemeFont>();
+  g_theme_font_->flag_path = flag_path;
+  g_theme_font_->manifest_path = manifest_path;
+  g_theme_font_->font_path = font_path;
+  g_theme_font_->font_file = std::move(font_file);
+
+  LOG(INFO) << "[themefont] valid font:" << font_path;
+
+  return g_theme_font_.get();
+}
+
+void RenderProcessHostImpl::OnThemeFontChange() {
+  if (auto* theme_font = EnsureThemeFont()) {
+    UpdateThemeFontFile(theme_font->font_file.Duplicate());
+  } else {
+    UpdateThemeFontFile(base::File());
+  }
+}
+
+void RenderProcessHostImpl::UpdateThemeFontFile(base::File theme_font_file) {
+  GetRendererInterface()->UpdateThemeFontFile(std::move(theme_font_file));
+}
+#endif  // OHOS_THEME_FONT
+
 
 #if defined(OHOS_RENDER_PROCESS_SHARE)
 RenderProcessHost* RenderProcessHostImpl::GetProcessForSharedToken(

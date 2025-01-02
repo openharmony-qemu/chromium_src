@@ -85,6 +85,12 @@
 #include "base/ohos/locale_utils.h"
 #endif
 
+#include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
+#include "ohos_nweb/src/cef_delegate/nweb_devtools_message_handler_impl.h"
+#ifdef OHOS_DEVTOOLS
+#include "cef/include/cef_devtools_message_handler_delegate.h"
+#endif // OHOS_DEVTOOLS
+
 namespace {
 static const float richtextDisplayRatio = 1.0;
 }
@@ -282,6 +288,26 @@ class StoreWebArchiveResultCallbackImpl
 
   IMPLEMENT_REFCOUNTING(StoreWebArchiveResultCallbackImpl);
 };
+
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+class ScreenCaptureCallbackImpl
+    : public CefScreenCaptureCallback {
+ public:
+  ScreenCaptureCallbackImpl(
+      std::shared_ptr<NWebScreenCaptureDelegateCallback> callback)
+      : callback_(callback) {}
+  void OnStateChange(int32_t nweb_id, const CefString& session_id, int32_t code) override {
+    if (callback_ != nullptr) {
+      callback_->OnStateChange(nweb_id, session_id.ToString().c_str(), code);
+    }
+  }
+
+ private:
+  std::shared_ptr<NWebScreenCaptureDelegateCallback> callback_;
+
+  IMPLEMENT_REFCOUNTING(ScreenCaptureCallbackImpl);
+};
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 
 class GetImagesCallbackImpl : public CefGetImagesCallback {
  public:
@@ -1521,6 +1547,14 @@ void NWebDelegate::NotifyForNextTouchEvent() {
   }
 }
 
+#ifdef OHOS_ACTIVE_POLICY
+void NWebDelegate::SetDelayDurationForBackgroundTabFreezing(int64_t delay) {
+    if (preference_delegate_) {
+        preference_delegate_->SetDelayDurationForBackgroundTabFreezing(delay);
+    }
+}
+#endif
+
 void NWebDelegate::SetAutofillCallback(
     std::shared_ptr<NWebMessageValueCallback> callback) {
   CefRefPtr<CefWebMessageReceiver> JsResultCb =
@@ -1585,13 +1619,19 @@ void NWebDelegate::OnContinue() {
   }
 
   // Give focus to the browser.
+#if defined(OHOS_INPUT_EVENTS)
   if (handler_delegate_ && handler_delegate_->GetContinueNeedFocus()) {
     if (is_onPause_) {
       GetBrowser()->GetHost()->SetFocus(true);
       handler_delegate_->SetContinueNeedFocus(false);
     }
+  } else if (handler_delegate_ && !handler_delegate_->GetFocusState() &&
+             handler_delegate_->IsCurrentFocus()) {
+    handler_delegate_->SetFocusState(true);
+    GetBrowser()->GetHost()->SetFocus(true);
   }
   is_onPause_ = false;
+#endif
 }
 
 void NWebDelegate::WebComponentsBlur() {
@@ -2086,8 +2126,8 @@ void NWebDelegate::RegisterArkJSfunction(
       handler_delegate_->SavaArkJSFunctionForPopup(
           object_name, method_list, async_method_list, object_id, permission);
     }
-    return;
-  } else if (!GetBrowser()) {
+  }
+  if (!GetBrowser()) {
     LOG(ERROR) << "NWebDelegate::RegisterArkJSfunction fail due to "
                   "GetBrowser() return null, the object_name is "
                << object_name.c_str();
@@ -2268,6 +2308,54 @@ void NWebDelegate::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
   }
 }
 
+void NWebDelegate::JavaScriptOnDocumentStartByOrder(const ScriptItems& scriptItems,
+    const ScriptItemsByOrder& scriptItemsByOrder) {
+  if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
+    GetBrowser()->GetHost()->RemoveJavaScriptOnDocumentStart();
+    for (const auto& item : scriptItemsByOrder) {
+      if (scriptItems.find(item) == scriptItems.end()) {
+        continue;
+      }
+      CefString script = item;
+      std::vector<CefString> scriptRules;
+      for (const std::string& rule : scriptItems.at(item)) {
+        CefString cefRule;
+        cefRule.FromString(rule);
+        scriptRules.push_back(cefRule);
+      }
+      GetBrowser()->GetHost()->JavaScriptOnDocumentStart(script, scriptRules);
+    }
+  } else if (preference_delegate_) {
+    preference_delegate_->PutJavaScriptOnDocumentStartByOrder(scriptItems, scriptItemsByOrder);
+  } else {
+    LOG(ERROR) << "JavaScriptOnDocumentStartByOrder has failed";
+  }
+}
+
+void NWebDelegate::JavaScriptOnDocumentEndByOrder(const ScriptItems& scriptItems,
+    const ScriptItemsByOrder& scriptItemsByOrder) {
+  if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
+    GetBrowser()->GetHost()->RemoveJavaScriptOnDocumentEnd();
+    for (const auto& item : scriptItemsByOrder) {
+      if (scriptItems.find(item) == scriptItems.end()) {
+        continue;
+      }
+      CefString script = item;
+      std::vector<CefString> scriptRules;
+      for (const std::string& rule : scriptItems.at(item)) {
+        CefString cefRule;
+        cefRule.FromString(rule);
+        scriptRules.push_back(cefRule);
+      }
+      GetBrowser()->GetHost()->JavaScriptOnDocumentEnd(script, scriptRules);
+    }
+  } else if (preference_delegate_) {
+    preference_delegate_->PutJavaScriptOnDocumentEndByOrder(scriptItems, scriptItemsByOrder);
+  } else {
+    LOG(ERROR) << "JavaScriptOnDocumentEndByOrder has failed";
+  }
+}
+
 void NWebDelegate::CallH5Function(
     int32_t routing_id,
     int32_t h5_object_id,
@@ -2329,6 +2417,7 @@ bool NWebDelegate::OnFocus(const FocusReason& focusReason) const {
 
 #ifdef OHOS_FOCUS
   if (handler_delegate_ && !handler_delegate_->GetFocusState()) {
+    LOG(INFO) << "NWebDelegate::OnFocus set web focus, nweb_id = " << nweb_id_;
     GetBrowser()->GetHost()->SetFocus(true);
   }
 #endif  // #ifdef OHOS_FOCUS
@@ -2345,6 +2434,7 @@ void NWebDelegate::OnBlur() const {
 
 #ifdef OHOS_FOCUS
   if (handler_delegate_ && handler_delegate_->GetFocusState()) {
+    LOG(INFO) << "NWebDelegate::OnBlur set web blur, nweb_id = " << nweb_id_;
     handler_delegate_->SetFocusState(false);
     GetBrowser()->GetHost()->SetFocus(false);
 #if defined(OHOS_INPUT_EVENTS)
@@ -2454,7 +2544,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
 #if defined(REPORT_SYS_EVENT)
         ReportDragDropStatus("DRAG_ENTER", GetBrowser()->GetNWebId());
 #endif
-        LOG(DEBUG) << "DragDrop event DRAG_ENTER SendDragEvent enter, send dragdata to chromium webId:"
+        LOG(INFO) << "DragDrop event DRAG_ENTER SendDragEvent enter, send dragdata to chromium webId:"
                   << GetBrowser()->GetNWebId();
         handler_delegate_->SetDragEnter(true);
         ClearDragData();
@@ -2466,7 +2556,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
       }
       break;
     case DelegateDragAction::DRAG_LEAVE:
-      LOG(DEBUG) << "DragDrop event SendDragEvent leave webId:" << GetBrowser()->GetNWebId();
+      LOG(INFO) << "DragDrop event SendDragEvent leave webId:" << GetBrowser()->GetNWebId();
 #if defined(REPORT_SYS_EVENT)
       ReportDragDropStatus("DRAG_LEAVE", GetBrowser()->GetNWebId());
 #endif
@@ -2480,7 +2570,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
     case DelegateDragAction::DRAG_DROP:
       event.modifiers = EVENTFLAG_NONE;
       handler_delegate_->SetDragEnter(false);
-      LOG(DEBUG) << "DragDrop event SendDragEvent drop webId:" << GetBrowser()->GetNWebId();
+      LOG(INFO) << "DragDrop event SendDragEvent drop webId:" << GetBrowser()->GetNWebId();
       if (render_handler_) {
         auto drag_data1 = render_handler_->GetDragData();
         auto fragment1 = drag_data1->GetFragmentText();
@@ -2504,7 +2594,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
 #endif
       handler_delegate_->SetDragEnter(false);
       ClearDragData();
-      LOG(DEBUG) << "DragDrop event SendDragEvent end webId:" << GetBrowser()->GetNWebId();
+      LOG(INFO) << "DragDrop event SendDragEvent end webId:" << GetBrowser()->GetNWebId();
       GetBrowser()->GetHost()->DragSourceEndedAt(event.x, event.y,
                                                  DRAG_OPERATION_COPY);
       GetBrowser()->GetHost()->DragSourceSystemDragEnded();
@@ -2512,11 +2602,11 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
     case DelegateDragAction::DRAG_CANCEL:
       handler_delegate_->SetDragEnter(false);
       ClearDragData();
-      LOG(DEBUG) << "DragDrop event SendDragEvent cancel webId:" << GetBrowser()->GetNWebId();
+      LOG(INFO) << "DragDrop event SendDragEvent cancel webId:" << GetBrowser()->GetNWebId();
       GetBrowser()->GetHost()->DragSourceSystemDragEnded();
       break;
     default:
-      LOG(DEBUG) << "invalid drag action";
+      LOG(INFO) << "invalid drag action";
       break;
   }
 #endif  // OHOS_DRAG_DROP
@@ -2714,6 +2804,8 @@ bool NWebDelegate::WebSendKeyEvent(int32_t keyCode, int32_t keyAction,
   bool retVal = false;
   if (event_handler_ != nullptr) {
     retVal = event_handler_->WebSendKeyEventFromAce(keyCode, keyAction, pressedCodes);
+  } else {
+    LOG(ERROR) << "WebSendKeyEvent event_handler_ is nullptr";
   }
   return retVal;
 }
@@ -2729,6 +2821,8 @@ void NWebDelegate::WebSendMouseWheelEvent(double x,
                                            deltaX / default_virtual_pixel_ratio_,
                                            deltaY / default_virtual_pixel_ratio_,
                                            pressedCodes);
+  } else {
+    LOG(ERROR) << "WebSendMouseWheelEvent event_handler_ is nullptr";
   }
 }
 
@@ -2743,6 +2837,8 @@ void NWebDelegate::WebSendTouchpadFlingEvent(double x,
                                               vx / default_virtual_pixel_ratio_,
                                               vy / default_virtual_pixel_ratio_,
                                               pressedCodes);
+  } else {
+    LOG(ERROR) << "WebSendTouchpadFlingEvent event_handler_ is nullptr";
   }
 }
 
@@ -2788,6 +2884,14 @@ void NWebDelegate::GetOverScrollOffset(float* offset_x, float* offset_y) {
 }
 #endif
 
+bool NWebDelegate::SendKeyboardEvent(const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent>& keyboardEvent) {
+  bool retVal = false;
+  if (event_handler_ != nullptr) {
+    retVal = event_handler_->SendKeyboardEvent(keyboardEvent);
+  }
+  return retVal;
+}
+
 bool NWebDelegate::ScrollByWithResult(float delta_x, float delta_y) {
   if (handler_delegate_ == nullptr) {
     LOG(ERROR) << "handler_delegate_ is nullptr , ScrollByWithResult fail";
@@ -2820,6 +2924,13 @@ void NWebDelegate::WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebMouse
   if (event_handler_ != nullptr) {
 #endif  // #ifdef OHOS_DRAG_DROP
     event_handler_->WebSendMouseEvent(mouseEvent, default_virtual_pixel_ratio_);
+  } else {
+#ifdef OHOS_DRAG_DROP
+    LOG(INFO) << "Mouse Event dropped! event_handler is " << !!event_handler_
+              << " handler_delegate is " << !handler_delegate_;
+#else
+    LOG(INFO) << "Mouse Event dropped! event_handler is " << !!event_handler_;
+#endif  // #ifdef OHOS_DRAG_DROP
   }
 #ifdef OHOS_DRAG_DROP
   if (render_handler_ != nullptr) {
@@ -2897,6 +3008,30 @@ void NWebDelegate::CloseCamera() {
   GetBrowser()->GetHost()->CloseCamera();
 }
 #endif  // defined(OHOS_WEBRTC)
+
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+void NWebDelegate::StopScreenCapture(int32_t nweb_id, const char* session_id) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "StopScreenCapture can not get browser";
+    return;
+  }
+
+  GetBrowser()->GetHost()->StopScreenCapture(nweb_id, CefString(session_id));
+}
+
+void NWebDelegate::RegisterScreenCaptureDelegateListener(
+    std::shared_ptr<NWebScreenCaptureDelegateCallback> listener) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "RegisterScreenCaptureDelegateListener can not get browser";
+    return;
+  }
+
+  CefRefPtr<ScreenCaptureCallbackImpl> screenCaptureCb =
+      new ScreenCaptureCallbackImpl(listener);
+  GetBrowser()->GetHost()->RegisterScreenCaptureDelegateListener(
+      screenCaptureCb);
+}
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 
 #if defined(OHOS_COMPOSITE_RENDER)
 void NWebDelegate::SetShouldFrameSubmissionBeforeDraw(bool should) {
@@ -3405,6 +3540,17 @@ void NWebDelegate::EnableSafeBrowsing(bool enable) {
 
   GetBrowser()->EnableSafeBrowsing(enable);
 
+}
+
+void NWebDelegate::EnableSafeBrowsingDetection(bool enable, bool strictMode) {
+  LOG(DEBUG) << "NWebDelegate::EnableSafeBrowsingDetection. enable is "
+             << enable << ", strictMode is " << strictMode;
+  if (GetBrowser() == nullptr) {
+    LOG(ERROR) << "NWebDelegate::EnableSafeBrowsingDetection failed.";
+    return;
+  }
+
+  GetBrowser()->EnableSafeBrowsingDetection(enable, strictMode);
 }
 
 void NWebDelegate::PrecompileJavaScript(const std::string& url,
@@ -4129,19 +4275,6 @@ bool NWebDelegate::WebPageSnapshot(const char* id,
 #endif
 
 int NWebDelegate::ScaleGestureChange(double scale, double centerX, double centerY) const {
-  LOG(DEBUG) << "NWebDelegate::ScaleGestureChange";
-  if (!preference_delegate_) {
-    LOG(ERROR) << "preference_delegate_ get fail";
-    return NWEB_ERR;
-  }
-  if (!preference_delegate_->ZoomingfunctionEnabled()) {
-    return NWEB_FUNCTION_NOT_ENABLE;
-  }
-  if (!GetBrowser().get()) {
-    LOG(ERROR) << "NWebDelegate::ScaleGestrueChange can not get browser";
-    return NWEB_ERR;
-  }
-  GetBrowser()->GetHost()->ZoomBy(scale, centerX * 2, centerY * 2);
   return NWEB_OK;
 }
 
@@ -4155,6 +4288,26 @@ void NWebDelegate::RegisterOnCreateNativeMediaPlayerListener(
   handler_delegate_->RegisterOnCreateNativeMediaPlayerListener(std::move(callback));
 }
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+#if defined(OHOS_VIDEO_ASSISTANT)
+void NWebDelegate::EnableVideoAssistant(bool enable) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "failed to get host when enable video assistant";
+    return;
+  }
+
+  GetBrowser()->GetHost()->EnableVideoAssistant(enable);
+}
+
+void NWebDelegate::ExecuteVideoAssistantFunction(const std::string& cmd_id) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "failed to get host when execute video assistant function";
+    return;
+  }
+
+  GetBrowser()->GetHost()->ExecuteVideoAssistantFunction(cmd_id);
+}
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
 
 #if defined(OHOS_CLIPBOARD)
 void NWebDelegate::SetIsRichText(bool is_rich_text) {
@@ -4286,4 +4439,95 @@ int32_t NWebDelegate::GetArgumentByKey(const std::map<std::string, std::string>&
     }
     return argument;
 }
+
+int NWebDelegate::ScaleGestureChangeV2(int type,
+                                       double scale,
+                                       double originScale,
+                                       double centerX,
+                                       double centerY) const {
+  LOG(DEBUG) << "NWebDelegate::ScaleGestureChangeV2";
+  if (!preference_delegate_) {
+    LOG(ERROR) << "preference_delegate_ get fail";
+    return NWEB_ERR;
+  }
+  if (!preference_delegate_->ZoomingfunctionEnabled()) {
+    return NWEB_FUNCTION_NOT_ENABLE;
+  }
+  if (!GetBrowser().get()) {
+    LOG(ERROR) << "NWebDelegate::ScaleGestureChangeV2 can not get browser";
+    return NWEB_ERR;
+  }
+
+  GetBrowser()->GetHost()->ScaleGestureChangeV2(
+      type, scale, originScale, centerX / default_virtual_pixel_ratio_,
+      centerY / default_virtual_pixel_ratio_);
+  return NWEB_OK;
+}
+
+void NWebDelegate::OpenDevtoolsWith(
+      std::shared_ptr<NWebDelegateInterface> nweb_delegate,
+      std::unique_ptr<OpenDevToolsParam> param) {
+  LOG(INFO) << "NWebDelegate::OpenDevtoolsWith";
+  if (!GetBrowser() || !GetBrowser()->GetHost()) {
+    LOG(INFO) << "OpenDevtoolsWith failed, no browser host";
+    return;
+  }
+  NWebDelegate* devtools_delegate =
+      static_cast<NWebDelegate*>(nweb_delegate.get());
+
+#ifdef OHOS_DEVTOOLS
+  auto devtools_message_handler = CefRefPtr<NWebDevToolsMessageHandlerImpl>(
+      new NWebDevToolsMessageHandlerImpl(std::move(param->handler)));
+
+  CefPoint inspect_element_at(param->point.x, param->point.y);
+  GetBrowser()->GetHost()->ShowDevToolsWith(
+      devtools_delegate->GetBrowser()->GetHost(),
+      devtools_message_handler, inspect_element_at);
+#endif // OHOS_DEVTOOLS
+}
+
+void NWebDelegate::CloseDevtools() {
+  LOG(INFO) << "NWebDelegate::CloseDevtools";
+  if (!GetBrowser() || !GetBrowser()->GetHost()) {
+    LOG(INFO) << "CloseDevtools failed, no browser host";
+    return;
+  }
+  GetBrowser()->GetHost()->CloseDevTools();
+}
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+bool NWebDelegate::NeedToFireBeforeUnloadOrUnloadEvents() {
+  if (GetBrowser().get()) {
+    return GetBrowser()->NeedToFireBeforeUnloadOrUnloadEvents();
+  }
+  return false;
+}
+
+void NWebDelegate::DispatchBeforeUnload() {
+  LOG(INFO) << "NWebDelegate::DispatchBeforeUnload";
+  if (GetBrowser().get()) {
+    GetBrowser()->DispatchBeforeUnload();
+  }
+}
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
+
+#ifdef OHOS_EX_REFRESH_IFRAME
+bool NWebDelegate::WebExtensionContextMenuIsIframe()
+{
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "get browser failed or get host failed";
+    return false;
+  }
+  return GetBrowser()->GetHost()->IsIframe();
+}
+
+void NWebDelegate::WebExtensionContextMenuReloadFocusedFrame()
+{
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "get browser failed or get host failed";
+    return;
+  }
+  return GetBrowser()->GetHost()->ReloadFocusedFrame();
+}
+#endif
+
 }  // namespace OHOS::NWeb

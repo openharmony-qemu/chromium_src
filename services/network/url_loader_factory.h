@@ -10,6 +10,7 @@
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "mojo/public/cpp/bindings/remote.h"
+#include "net/base/prp_preload_buildflags.h"
 #include "net/traffic_annotation/network_traffic_annotation.h"
 #include "services/network/public/cpp/corb/corb_api.h"
 #include "services/network/public/mojom/cookie_access_observer.mojom.h"
@@ -19,6 +20,10 @@
 #include "services/network/public/mojom/url_loader_factory.mojom.h"
 #include "services/network/public/mojom/url_loader_network_service_observer.mojom.h"
 #include "services/network/url_loader_context.h"
+
+#if BUILDFLAG(IS_OHOS_PRPP)
+#include "services/network/prp_preload/include/preload_runner/prpp_request_loader_factory.h"
+#endif
 
 namespace network {
 
@@ -143,6 +148,10 @@ class URLLoaderFactory : public mojom::URLLoaderFactory,
 
   base::OneShotTimer update_load_info_timer_;
   bool waiting_on_load_state_ack_ = false;
+
+#if BUILDFLAG(IS_OHOS_PRPP)
+    base::WeakPtr<ohos_prp_preload::PRPPRequestLoaderFactory> weak_prpp_req_loader_fac_;
+#endif
 };
 
 }  // namespace network

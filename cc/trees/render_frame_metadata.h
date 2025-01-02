@@ -133,6 +133,7 @@ class CC_EXPORT RenderFrameMetadata {
 #if BUILDFLAG(IS_OHOS)
   gfx::SizeF scrollable_viewport_size;
   gfx::SizeF root_layer_size;
+  bool root_overflow_y_hidden = false;
 #endif
 
 #if BUILDFLAG(IS_ANDROID)

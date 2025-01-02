@@ -30,12 +30,17 @@
 #include "nweb_handler.h"
 #include "nweb_preference.h"
 #include "nweb_web_message.h"
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+#include "capi/nweb_screencapture_delegate_callback.h"
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
 #include "nweb_native_media_player.h"
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
 #include "cef_delegate/nweb_custom_keyboard_handler_impl.h"
+
+struct OpenDevToolsParam;
 
 namespace OHOS::NWeb {
 class NWebValue;
@@ -90,6 +95,10 @@ class NWebDelegateInterface
   virtual void NotifyForNextTouchEvent() = 0;
   virtual void SetAutofillCallback(std::shared_ptr<NWebMessageValueCallback> callback) = 0;
   virtual void FillAutofillData(std::shared_ptr<NWebMessage> data) = 0;
+
+#ifdef OHOS_ACTIVE_POLICY
+  virtual void SetDelayDurationForBackgroundTabFreezing(int64_t delay) = 0;
+#endif
 
 #if defined(OHOS_INPUT_EVENTS)
   virtual void SetNWebDelegateInterface(
@@ -234,8 +243,7 @@ class NWebDelegateInterface
   virtual void UnRegisterNativeArkJSFunction(const char* objName) = 0;
 
 #ifdef OHOS_ARKWEB_ADBLOCK
-  virtual void UpdateAdblockEasyListRules(
-      long adBlockEasyListVersion) = 0;
+  virtual void UpdateAdblockEasyListRules(long adBlockEasyListVersion) = 0;
 #endif
 
   virtual void RegisterArkJSfunction(
@@ -348,6 +356,13 @@ class NWebDelegateInterface
   virtual void CloseCamera() = 0;
 #endif  // defined(OHOS_WEBRTC)
 
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  virtual void StopScreenCapture(int32_t nweb_id, const char* session_id) = 0;
+  virtual void RegisterScreenCaptureDelegateListener(
+      std::shared_ptr<NWebScreenCaptureDelegateCallback>
+          screenCaptureDelegateListener) = 0;
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+ 
 #ifdef OHOS_PAGE_UP_DOWN
   virtual void PageUp(bool top) = 0;
   virtual void PageDown(bool bottom) = 0;
@@ -369,6 +384,7 @@ class NWebDelegateInterface
 #if defined(OHOS_GET_SCROLL_OFFSET)
   virtual void GetOverScrollOffset(float* offset_x, float* offset_y) = 0;
 #endif
+  virtual bool SendKeyboardEvent(const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent>& keyboardEvent) = 0;
   virtual void WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent) = 0;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
@@ -446,23 +462,19 @@ class NWebDelegateInterface
 #if defined(OHOS_INPUT_EVENTS)
   virtual void SetVirtualKeyBoardArg(int32_t width, int32_t height, double keyboard) = 0;
   virtual bool ShouldVirtualKeyboardOverlay() = 0;
-  virtual void WebSendMouseWheelEvent(double x,
-                                      double y,
-                                      double deltaX,
-                                      double deltaY,
+  virtual void WebSendMouseWheelEvent(double x, double y,
+                                      double deltaX, double deltaY,
                                       const std::vector<int32_t>& pressedCodes) = 0;
-  virtual void WebSendTouchpadFlingEvent(double x,
-                                         double y,
-                                         double vx,
-                                         double vy,
+  virtual void WebSendTouchpadFlingEvent(double x, double y,
+                                         double vx, double vy,
                                          const std::vector<int32_t>& pressedCodes) = 0;
 #endif
 
 #if BUILDFLAG(IS_OHOS)
   virtual bool IsSafeBrowsingEnabled() = 0;
   virtual void EnableSafeBrowsing(bool enable) = 0;
-  virtual void PrecompileJavaScript(const std::string& url,
-                                    const std::string& script,
+  virtual void EnableSafeBrowsingDetection(bool enable, bool strictMode) = 0;
+  virtual void PrecompileJavaScript(const std::string& url, const std::string& script,
                                     std::shared_ptr<CacheOptions>& cacheOptions,
                                     std::shared_ptr<NWebMessageValueCallback> callback) = 0;
 #endif
@@ -494,7 +506,15 @@ class NWebDelegateInterface
   virtual bool IsIntelligentTrackingPreventionEnabled() const = 0;
 #endif
 
-  virtual int ScaleGestureChange(double scale, double centerX, double centerY) const = 0;
+  virtual int ScaleGestureChange(double scale,
+                                 double centerX,
+                                 double centerY) const = 0;
+
+  virtual int ScaleGestureChangeV2(int type,
+                                   double scale,
+                                   double originScale,
+                                   double centerX,
+                                   double centerY) const = 0;
 
 #if defined(OHOS_SCREEN_LOCK)
   virtual void SetWakeLockCallback(int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback) = 0;
@@ -504,6 +524,11 @@ class NWebDelegateInterface
   virtual void RegisterOnCreateNativeMediaPlayerListener(
       std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) = 0;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+#if defined(OHOS_VIDEO_ASSISTANT)
+  virtual void EnableVideoAssistant(bool enable) = 0;
+  virtual void ExecuteVideoAssistantFunction(const std::string& cmd_id) = 0;
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
 
 #ifdef OHOS_EX_DOWNLOAD
   virtual NWebDownloadItemState GetDownloadItemState(long item_id) = 0;
@@ -525,10 +550,8 @@ class NWebDelegateInterface
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
   virtual void EnableWholeWebPageDrawing() = 0;
 
-  virtual bool WebPageSnapshot(const char* id,
-                               PixelUnit type,
-                               int width,
-                               int height,
+  virtual bool WebPageSnapshot(const char* id, PixelUnit type,
+                               int width, int height,
                                const WebSnapshotCallback callback) = 0;
 #endif
 
@@ -559,6 +582,26 @@ class NWebDelegateInterface
 #endif
 
   virtual void SetPopupSurface(void* popupSurface) = 0;
+
+#ifdef OHOS_EX_REFRESH_IFRAME
+  virtual bool WebExtensionContextMenuIsIframe() = 0;
+  virtual void WebExtensionContextMenuReloadFocusedFrame() = 0;
+#endif
+
+  virtual void OpenDevtoolsWith(
+      std::shared_ptr<NWebDelegateInterface> nweb_delegate,
+      std::unique_ptr<OpenDevToolsParam> param) = 0;
+  virtual void CloseDevtools() = 0;
+
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+  virtual bool NeedToFireBeforeUnloadOrUnloadEvents() = 0;
+  virtual void DispatchBeforeUnload() = 0;
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
+
+  virtual void JavaScriptOnDocumentStartByOrder(const ScriptItems& ScriptItems,
+      const ScriptItemsByOrder& ScriptItemsByOrder) = 0;
+  virtual void JavaScriptOnDocumentEndByOrder(const ScriptItems& ScriptItems,
+      const ScriptItemsByOrder& ScriptItemsByOrder) = 0;
 };
 }  // namespace OHOS::NWeb
 

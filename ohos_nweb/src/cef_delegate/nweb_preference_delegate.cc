@@ -214,6 +214,10 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
   browser_settings.record_whole_document = GetEnableWholeWebPageDrawing();
 #endif // OHOS_SOFTWARE_COMPOSITOR
+
+#ifdef OHOS_ACTIVE_POLICY
+  browser_settings.delay_for_background_tab_freezing = GetDelayDurationForBackgroundTabFreezing();
+#endif
 }
 
 void NWebPreferenceDelegate::SetBrowserSettingsToNetHelpers() {
@@ -666,7 +670,7 @@ void NWebPreferenceDelegate::SetNativeEmbedMode(bool flag) {
   // Native Embed is not supported on pc device.
   CefRefPtr<CefCommandLine> command_line = CefCommandLine::GetGlobalCommandLine();
   auto isEnableEmbed = command_line->HasSwitch(::switches::kEnableEmbedMode);
-  enable_embed_mode_ = flag && !isEnableEmbed;
+  enable_embed_mode_ = flag && (!isEnableEmbed || base::ohos::IsCompatibleMode());
   if (enable_embed_mode_) {
     zooming_function_enabled_ = false;
   }
@@ -787,6 +791,7 @@ bool NWebPreferenceDelegate::IsTextAutosizingEnabled() const {
 
 void NWebPreferenceDelegate::SetFitContent(bool value) {
   fit_content_ = value;
+  WebPreferencesChanged();
 }
 
 bool NWebPreferenceDelegate::IsFitContent() const {
@@ -826,8 +831,13 @@ void NWebPreferenceDelegate::SetNativeVideoPlayerConfig(bool enable,
 
 #if defined(OHOS_SCROLLBAR)
 void NWebPreferenceDelegate::PutOverlayScrollbarEnabled(bool enable) {
-   base::FeatureList::SetScrollbarEnable(enable);
-   WebPreferencesChanged();
+  bool overlay_scrollbar_enable = enable;
+  if (IsFitContent()) {
+    LOG(DEBUG) << "Fit content and set overlayscrollbar false";
+    overlay_scrollbar_enable = false;
+  }
+  base::FeatureList::SetScrollbarEnable(overlay_scrollbar_enable);
+  WebPreferencesChanged();
 }
 #endif
 
@@ -854,16 +864,36 @@ void NWebPreferenceDelegate::PutJavaScriptOnDocumentStart(const ScriptItems& scr
   script_items_start_ = scriptItems;
 }
 
+void NWebPreferenceDelegate::PutJavaScriptOnDocumentStartByOrder(const ScriptItems& scriptItems,
+      const ScriptItemsByOrder& scriptItemsByOrder) {
+  script_items_start_ = scriptItems;
+  script_items_start_by_order_ = scriptItemsByOrder;
+}
+
 ScriptItems NWebPreferenceDelegate::GetJavaScriptOnDocumentStart() {
   return script_items_start_;
+}
+
+ScriptItemsByOrder NWebPreferenceDelegate::GetJavaScriptOnDocumentStartByOrder() {
+  return script_items_start_by_order_;
 }
 
 void NWebPreferenceDelegate::PutJavaScriptOnDocumentEnd(const ScriptItems& scriptItems) {
   script_items_end_ = scriptItems;
 }
 
+void NWebPreferenceDelegate::PutJavaScriptOnDocumentEndByOrder(const ScriptItems& scriptItems,
+      const ScriptItemsByOrder& scriptItemsByOrder) {
+  script_items_end_ = scriptItems;
+  script_items_end_by_order_ = scriptItemsByOrder;
+}
+
 ScriptItems NWebPreferenceDelegate::GetJavaScriptOnDocumentEnd() {
   return script_items_end_;
+}
+
+ScriptItemsByOrder NWebPreferenceDelegate::GetJavaScriptOnDocumentEndByOrder() {
+  return script_items_end_by_order_;
 }
 #endif
 
@@ -925,4 +955,18 @@ int NWebPreferenceDelegate::GetTimeToLive() {
 }
 #endif // OHOS_BFCACHE
 
+#ifdef OHOS_ACTIVE_POLICY
+void NWebPreferenceDelegate::SetDelayDurationForBackgroundTabFreezing(
+  int64_t delay_for_background_tab_freezing) {
+  if (delay_for_background_tab_freezing_ == delay_for_background_tab_freezing) {
+    return;
+  }
+  delay_for_background_tab_freezing_ = delay_for_background_tab_freezing;
+  WebPreferencesChanged();
+}
+
+int64_t NWebPreferenceDelegate::GetDelayDurationForBackgroundTabFreezing() {
+  return delay_for_background_tab_freezing_;
+}
+#endif
 }  // namespace OHOS::NWeb

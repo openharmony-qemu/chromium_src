@@ -144,6 +144,10 @@ bool GestureEventQueue::ShouldForwardForBounceReduction(
 
 void GestureEventQueue::ForwardGestureEvent(
     const GestureEventWithLatencyInfo& gesture_event) {
+#if defined(IS_OHOS)
+  TRACE_EVENT0("input", "GestureEventQueue::ForwardGestureEvent");
+#endif
+
   // GFS and GFC should have been filtered in PassToFlingController to get
   // handled by fling controller.
   DCHECK_NE(gesture_event.event.GetType(),

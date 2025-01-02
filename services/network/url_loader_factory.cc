@@ -38,6 +38,10 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(IS_OHOS_PRPP)
+#include "services/network/prp_preload/include/page_res_parallel_preload_mgr.h"
+#endif
+
 namespace network {
 
 namespace {
@@ -362,6 +366,28 @@ void URLLoaderFactory::CreateLoaderAndStartWithSyncClient(
         context_->network_service()->trust_token_key_commitments());
   }
 
+#if BUILDFLAG(IS_OHOS_PRPP)
+  std::shared_ptr<ohos_prp_preload::PRPPRequestLoader> prpp_loader = nullptr;
+  std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info =
+      std::make_shared<ohos_prp_preload::PRRequestInfo>();
+  preload_info->set_preload_flag(ohos_prp_preload::PRPP_FLAGS_NONE);
+  if (!resource_request.main_url.spec().empty() &&
+      ohos_prp_preload::PRParallelPreloadMgr::GetInstance()
+        .GetPRParallelPreloadMode() ==
+        ohos_prp_preload::PRPPreloadMode::PRELOAD) {
+    if (!weak_prpp_req_loader_fac_.get()) {
+      weak_prpp_req_loader_fac_ =
+        ohos_prp_preload::PRParallelPreloadMgr::GetInstance()
+          .GetRequestLoaderFactory(resource_request.main_url.spec());
+    }
+
+    if (weak_prpp_req_loader_fac_.get()) {
+      prpp_loader = weak_prpp_req_loader_fac_.get()->GetPRPPReqLoader(
+        *this, resource_request, preload_info);
+    }
+  }
+#endif
+
   auto loader = std::make_unique<URLLoader>(
       *this,
       base::BindOnce(&cors::CorsURLLoaderFactory::DestroyURLLoader,
@@ -376,7 +402,14 @@ void URLLoaderFactory::CreateLoaderAndStartWithSyncClient(
       std::move(accept_ch_frame_observer), third_party_cookies_enabled,
       params_->cookie_setting_overrides,
       context_->cache_transparency_settings(),
-      std::move(attribution_request_helper));
+      std::move(attribution_request_helper)
+#if BUILDFLAG(IS_OHOS_PRPP)
+      ,
+      prpp_loader,
+      weak_prpp_req_loader_fac_.get() ? weak_prpp_req_loader_fac_.get()->GetMainUrl() : "",
+      preload_info
+#endif
+      );
 
   if (context_->GetMemoryCache())
     loader->SetMemoryCache(context_->GetMemoryCache()->GetWeakPtr());

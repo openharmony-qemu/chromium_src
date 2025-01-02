@@ -3343,6 +3343,9 @@ void MediaStreamManager::Opened(
       }
     }
   }
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  SendScreenCaptureState(capture_session_id.ToString(), SCREEN_CAPTURE_OPENED);
+#endif // defined(OHOS_EX_SCREEN_CAPTURE)
 }
 
 void MediaStreamManager::HandleRequestDone(const std::string& label,
@@ -3383,6 +3386,16 @@ void MediaStreamManager::Closed(
   SendLogMessage(base::StringPrintf("Closed({stream_type=%s}, {session_id=%s})",
                                     StreamTypeToString(stream_type),
                                     capture_session_id.ToString().c_str()));
+
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  SendScreenCaptureState(capture_session_id.ToString(), SCREEN_CAPTURE_STOPED);
+  std::lock_guard<std::mutex> lock(nweb_id_mutex_);
+  auto nweb_id_it = nweb_id_maps_.find(capture_session_id.ToString());
+  if (nweb_id_it == nweb_id_maps_.end()) {
+    return;
+  }
+  nweb_id_maps_.erase(nweb_id_it);
+#endif // defined(OHOS_EX_SCREEN_CAPTURE)
 }
 
 void MediaStreamManager::DevicesEnumerated(
@@ -3432,6 +3445,10 @@ void MediaStreamManager::Aborted(
   SendLogMessage(base::StringPrintf(
       "Aborted({stream_type=%s}, {session_id=%s})",
       StreamTypeToString(stream_type), capture_session_id.ToString().c_str()));
+
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  SendScreenCaptureState(capture_session_id.ToString(), SCREEN_CAPTURE_ABORTED);
+#endif // defined(OHOS_EX_SCREEN_CAPTURE)
   StopDevice(stream_type, capture_session_id);
 }
 
@@ -3600,17 +3617,10 @@ void MediaStreamManager::HandleAccessRequestResponse(
       }
       device.set_session_id(GetDeviceManager(device.type)->Open(device));
 
-#if defined(OHOS_WEBRTC)
-      if (device.type == MediaStreamType::DEVICE_VIDEO_CAPTURE) {
-        auto* web_contents = static_cast<WebContentsImpl*>(
-            WebContentsImpl::FromRenderFrameHostID(
-                request->GetTargetProcessId(), request->GetTargetFrameId()));
-        if (web_contents) {
-          video_capture_manager()->BindSessionIdToNWebId(
-              device.session_id(), web_contents->GetNWebId());
-        }
-      }
-#endif  // defined(OHOS_WEBRTC)
+#if BUILDFLAG(IS_OHOS)
+  PostVideoCaptureSessionBind(device.type, device.session_id(),
+    request->GetTargetProcessId(), request->GetTargetFrameId());
+#endif
 
       TranslateDeviceIdToSourceId(request, &device);
       SetRequestDevice(
@@ -3650,6 +3660,44 @@ void MediaStreamManager::HandleAccessRequestResponse(
     HandleRequestDone(label, request);
   }
 }
+
+#if BUILDFLAG(IS_OHOS)
+void MediaStreamManager::PostVideoCaptureSessionBind(blink::mojom::MediaStreamType stream_type,
+  media::VideoCaptureSessionId session_id, int process_id, int frame_id) {
+  if (!BrowserThread::CurrentlyOn(BrowserThread::UI)) {
+    GetUIThreadTaskRunner({})->PostTask(
+      FROM_HERE,
+      base::BindOnce(&MediaStreamManager::PostVideoCaptureSessionBind,
+                    base::Unretained(this), stream_type,
+                    session_id, process_id, frame_id));
+    return;
+  }
+
+#if defined(OHOS_WEBRTC)
+  if (stream_type == MediaStreamType::DEVICE_VIDEO_CAPTURE) {
+    auto* web_contents = static_cast<WebContentsImpl*>(
+      WebContentsImpl::FromRenderFrameHostID(process_id, frame_id));
+    if (web_contents) {
+      video_capture_manager()->BindSessionIdToNWebId(
+        session_id, web_contents->GetNWebId());
+    }
+  }
+#endif  // defined(OHOS_WEBRTC)
+
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  if (stream_type == MediaStreamType::DISPLAY_VIDEO_CAPTURE ||
+      stream_type == MediaStreamType::DISPLAY_VIDEO_CAPTURE_THIS_TAB ||
+      stream_type == MediaStreamType::DISPLAY_VIDEO_CAPTURE_SET) {
+    auto* web_contents = static_cast<WebContentsImpl*>(
+      WebContentsImpl::FromRenderFrameHostID(process_id, frame_id));
+    if (web_contents) {
+        std::lock_guard<std::mutex> lock(nweb_id_mutex_);
+        nweb_id_maps_[session_id.ToString()] = web_contents->GetNWebId();
+    }
+  }
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+}
+#endif
 
 void MediaStreamManager::HandleChangeSourceRequestResponse(
     const std::string& label,
@@ -4565,4 +4613,65 @@ std::unique_ptr<MediaStreamUIProxy> MediaStreamManager::MakeFakeUIProxy(
   return fake_ui;
 }
 
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+// static
+MediaStreamManager::ScreenCaptureCallback MediaStreamManager::screen_capture_callback_;
+// static
+void MediaStreamManager::SetScreenCaptureDelegateCallback(
+    ScreenCaptureCallback callback) {
+  if (!BrowserThread::CurrentlyOn(BrowserThread::IO)) {
+    GetIOThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(&MediaStreamManager::SetScreenCaptureDelegateCallback,
+                       std::move(callback)));
+    return;
+  }
+    
+  screen_capture_callback_ = std::move(callback);
+}
+
+void MediaStreamManager::StopScreenCapture(int32_t nweb_id, const std::string& session_id) {
+  if (!video_capture_manager_) {
+    LOG(ERROR) << "videoCaptureManager null";
+    return;
+  }
+
+  std::lock_guard<std::mutex> lock(nweb_id_mutex_);
+  auto nweb_id_it = nweb_id_maps_.find(session_id);
+  if (nweb_id_it == nweb_id_maps_.end()) {
+    return;
+  } else {
+    if (nweb_id_it->second != nweb_id) {
+      return;
+    }
+  }
+  video_capture_manager_->StopScreenCapture(session_id);
+}
+
+void MediaStreamManager::SendScreenCaptureState(const std::string& session_id,
+                                                int32_t state) {
+  std::lock_guard<std::mutex> lock(nweb_id_mutex_);
+  auto nweb_id_it = nweb_id_maps_.find(session_id);
+  if (nweb_id_it == nweb_id_maps_.end()) {
+    return;
+  }
+  MediaStreamManager::SendScreenCaptureStateToNative(nweb_id_it->second, session_id, state);
+}
+
+// static
+void MediaStreamManager::SendScreenCaptureStateToNative(int32_t nweb_id,
+    const std::string& session_id, int32_t state) {
+  if (!BrowserThread::CurrentlyOn(BrowserThread::UI)) {
+    GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(&MediaStreamManager::SendScreenCaptureStateToNative,
+                       nweb_id, session_id, state));
+    return;
+  }
+
+  if (!screen_capture_callback_.is_null()) {
+    screen_capture_callback_.Run(nweb_id, session_id.c_str(), state);
+  }
+}
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 }  // namespace content

@@ -90,6 +90,8 @@ void BrowserAccessibilityManagerOHOS::FireBlinkEvent(
       HandleHover(accessibilityId);
       break;
     case ax::mojom::Event::kTreeChanged:
+    case ax::mojom::Event::kLocationChanged:
+    case ax::mojom::Event::kLayoutComplete:
       if (GetRootAccessibilityId() == accessibilityId) {
         SendAccessibilityEvent(accessibilityId,
                                OHOS::NWeb::AccessibilityEventType::PAGE_CHANGE);
@@ -285,12 +287,6 @@ void BrowserAccessibilityManagerOHOS::FireGeneratedEvent(
         SendAccessibilityEvent(accessibilityId, OHOS::NWeb::AccessibilityEventType::PAGE_CHANGE);
       }
       SendAccessibilityEvent(accessibilityId, OHOS::NWeb::AccessibilityEventType::SCROLL_END);
-      break;
-    case ui::AXEventGenerator::Event::OTHER_ATTRIBUTE_CHANGED:
-      if (GetRootAccessibilityId() == accessibilityId) {
-        LoadInlineTextBoxes(*nodeOHOS);
-        SendAccessibilityEvent(accessibilityId, OHOS::NWeb::AccessibilityEventType::PAGE_CHANGE);
-      }
       break;
     case ui::AXEventGenerator::Event::SELECTED_CHANGED:
       if (nodeOHOS->IsSelected()) {

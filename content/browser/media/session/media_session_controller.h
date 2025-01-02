@@ -116,6 +116,11 @@ class CONTENT_EXPORT MediaSessionController
  private:
   bool IsMediaSessionNeeded() const;
 
+#if defined(OHOS_MEDIA_POLICY)
+  // Set whether to the HTML play can be used to  control media
+  void SetSessionStateIfNeed(bool isNeedMediaSession);
+#endif
+
   // Determines whether a session is needed and adds or removes the player
   // accordingly.
   bool AddOrRemovePlayer();

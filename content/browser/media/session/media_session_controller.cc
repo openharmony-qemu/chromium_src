@@ -35,9 +35,13 @@ void MediaSessionController::SetMetadata(
     bool has_audio,
     bool has_video,
     media::MediaContentType media_content_type) {
+#if defined(OHOS_MEDIA_POLICY)
+  media_session_->SetMediaContentType(media_content_type);
+#endif
   has_audio_ = has_audio;
   has_video_ = has_video;
   media_content_type_ = media_content_type;
+  LOG(INFO) << "MediaSessionController mediaContentType is:" << static_cast<uint32_t>(media_content_type_);
   AddOrRemovePlayer();
 }
 
@@ -45,7 +49,11 @@ bool MediaSessionController::OnPlaybackStarted() {
   is_paused_ = false;
   is_playback_in_progress_ = true;
 #if defined(OHOS_MEDIA_POLICY)
-  media_session_->SetPlayingState(true);
+  if (media_session_) {
+    media_session_->SetPlayingState(true);
+    media_session_->SetPauseByAvsession(false);
+  }
+  LOG(INFO) << "MediaSessionController OnPlaybackStarted SetPlayingState true";
 #endif
   return AddOrRemovePlayer();
 }
@@ -200,16 +208,17 @@ void MediaSessionController::OnPlaybackPaused(bool reached_end_of_stream) {
   is_paused_ = true;
 #if defined(OHOS_MEDIA_POLICY)
   media_session_->SetPlayingState(false);
+  LOG(INFO) << "MediaSessionController OnPlaybackStarted SetPlayingState false";
 #endif
   if (reached_end_of_stream) {
+    is_playback_in_progress_ = false;
+    AddOrRemovePlayer();
+  }
 #if defined(OHOS_MEDIA_AVSESSION)
   if (media_session_) {
     media_session_->SetEndOfMedia(reached_end_of_stream);
   }
 #endif // defined(OHOS_MEDIA_AVSESSION)
-    is_playback_in_progress_ = false;
-    AddOrRemovePlayer();
-  }
 
   // We check for suspension here since the renderer may issue its own pause
   // in response to or while a pause from the browser is in flight.
@@ -271,14 +280,43 @@ bool MediaSessionController::IsMediaSessionNeeded() const {
   if (!is_playback_in_progress_)
     return false;
 
+#if defined(OHOS_MEDIA_AVSESSION)
+  if (media_content_type_ == media::MediaContentType::Transient) {
+      LOG(INFO) << __func__<< ", media_content_type_: media::MediaContentType::Transient";
+      return false;
+  }
+#endif // defined(OHOS_MEDIA_AVSESSION)
+
   // We want to make sure we do not request audio focus on a muted tab as it
   // would break user expectations by pausing/ducking other playbacks.
   return has_audio_ && !web_contents_->IsAudioMuted();
 }
 
+#if defined(OHOS_MEDIA_POLICY)
+void MediaSessionController::SetSessionStateIfNeed(bool isNeedMediaSession)
+{
+  if (!media_session_) {
+    return;
+  }
+  if (media_content_type_ == media::MediaContentType::OneShot) {
+    LOG(INFO) << "MediaSessionController contentType is oneShot, don't control mediaSession";
+    return;
+  }
+  if (isNeedMediaSession) {
+    LOG(INFO) << "MediaSessionController media has mediaSession";
+    media_session_->SetSessionState(MediaSessionImpl::NWebMediaSessionState::NEED);
+  } else {
+    LOG(INFO) << "MediaSessionController media is preloading, has no mediaSession";
+    media_session_->SetSessionState(MediaSessionImpl::NWebMediaSessionState::NONEED);
+  }
+}
+#endif
+
 bool MediaSessionController::AddOrRemovePlayer() {
   const bool needs_session = IsMediaSessionNeeded();
-
+#if defined(OHOS_MEDIA_POLICY)
+  SetSessionStateIfNeed(needs_session);
+#endif
   if (needs_session) {
     // Attempt to add a session even if we already have one.  MediaSession
     // expects AddPlayer() to be called after OnPlaybackPaused() to reactivate

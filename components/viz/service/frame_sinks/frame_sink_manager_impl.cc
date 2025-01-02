@@ -780,8 +780,9 @@ void FrameSinkManagerImpl::StopThrottlingAllFrameSinks() {
 
 #if BUILDFLAG(IS_OHOS)
 void FrameSinkManagerImpl::SendInternalBeginFrame(const FrameSinkId& id) {
-  if (root_sink_map_[id]) {
-    root_sink_map_[id]->SendInternalBeginFrame();
+  auto it = root_sink_map_.find(id);
+  if (it != root_sink_map_.end()) {
+    it->second->SendInternalBeginFrame();
   }
 }
 
@@ -950,14 +951,16 @@ void FrameSinkManagerImpl::ResetVSyncFrequency(const FrameSinkId& frame_sink_id)
 }
 
 void FrameSinkManagerImpl::SetNeedWaitForInput(const FrameSinkId& frame_sink_id, bool need_wait_for_input) {
-  if (root_sink_map_[frame_sink_id]) {
-    root_sink_map_[frame_sink_id]->SetNeedWaitForInput(need_wait_for_input);
+  auto it = root_sink_map_.find(frame_sink_id);
+  if (it != root_sink_map_.end()) {
+    it->second->SetNeedWaitForInput(need_wait_for_input);
   }
 }
 
 void FrameSinkManagerImpl::TriggerVsync(const FrameSinkId& frame_sink_id) {
-  if (root_sink_map_[frame_sink_id]) {
-    root_sink_map_[frame_sink_id]->TriggerVsync();
+  auto it = root_sink_map_.find(frame_sink_id);
+  if (it != root_sink_map_.end()) {
+    it->second->TriggerVsync();
   }
 }
 #endif

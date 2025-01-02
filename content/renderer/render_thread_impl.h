@@ -467,6 +467,11 @@ class CONTENT_EXPORT RenderThreadImpl
 #if BUILDFLAG(IS_OHOS)
   void SetDrawMode(int mode, base::PassKey<AgentSchedulingGroup>);
 #endif
+
+#ifdef OHOS_THEME_FONT
+  void UpdateThemeFontFile(base::File theme_font) override;
+#endif
+
   void OnMemoryPressure(
       base::MemoryPressureListener::MemoryPressureLevel memory_pressure_level);
 

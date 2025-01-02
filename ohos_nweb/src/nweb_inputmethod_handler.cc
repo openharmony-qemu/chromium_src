@@ -25,6 +25,7 @@
 #include "base/functional/callback_helpers.h"
 #include "base/logging.h"
 #include "base/ohos/sys_info_utils.h"
+#include "base/strings/utf_string_conversions.h"
 #include "cef/include/cef_task.h"
 #include "content/public/browser/browser_thread.h"
 #include "libcef/browser/thread_util.h"
@@ -395,9 +396,6 @@ void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
 }
 
 bool NWebInputMethodHandler::Reattach(uint32_t nwebId, ReattachType type) {
-  LOG(INFO) << "Trigger reattach, nwebId=" << nwebId << ", source="
-            << (type == ReattachType::FROM_ONFOCUS ? "focus" : "continue")
-            << ", editable=" << is_editable_node_;
   nweb_id_ = nwebId;
   if (type == ReattachType::FROM_CONTINUE) {
     if (!isNeedReattachOncontinue_ || !is_editable_node_) {
@@ -415,6 +413,8 @@ bool NWebInputMethodHandler::Reattach(uint32_t nwebId, ReattachType type) {
     isNeedReattachOnfocus_ = false;
   }
 
+  LOG(INFO) << "Trigger reattach, nwebId=" << nwebId << ", source="
+            << (type == ReattachType::FROM_ONFOCUS ? "focus" : "continue");
   composing_text_.clear();
   ClearComposingStatus();
   if (!show_keyboard_ && isAttached_ && imf_input_mode_ != lastInputMode_) {
@@ -688,6 +688,13 @@ void NWebInputMethodHandler::InsertTextHandlerOnUI(const std::u16string& text) {
 
   CefKeyEvent keyEvent;
   keyEvent.windows_key_code = ui::VKEY_PROCESSKEY;
+  // keycode conversion for single char input on PC
+  if (base::ohos::IsPcDevice() && text.length() == 1) {
+    char16_t firstChar = text[0];
+    if (keycode_map.count(firstChar) > 0) {
+      keyEvent.windows_key_code = keycode_map[firstChar];
+    }
+  }
   keyEvent.modifiers = 0;
   keyEvent.is_system_key = false;
   keyEvent.type = KEYEVENT_RAWKEYDOWN;
@@ -1323,8 +1330,8 @@ void NWebInputMethodHandler::AutoFillWithIMFEventOnUI(
 
 #if defined(OHOS_CLIPBOARD)
 std::string NWebInputMethodHandler::GetSelectInfo() {
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;
-  return converter.to_bytes(selected_text_);
+  std::string selected_str = base::UTF16ToUTF8(selected_text_);
+  return selected_str;
 }
 #endif
 

@@ -241,6 +241,10 @@ class CONTENT_EXPORT VideoCaptureManager
                              int nWebId);
 #endif  // defined(OHOS_WEBRTC)
 
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  void StopScreenCapture(const std::string& session_id);
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+
  private:
   class CaptureDeviceStartRequest;
 
@@ -292,7 +296,7 @@ class CONTENT_EXPORT VideoCaptureManager
   // Finds a VideoCaptureController for the indicated |capture_session_id|,
   // creating a fresh one if necessary. Returns nullptr if said
   // |capture_session_id| is invalid.
-  VideoCaptureController* GetOrCreateController(
+  scoped_refptr<VideoCaptureController> GetOrCreateController(
       const media::VideoCaptureSessionId& capture_session_id,
       const media::VideoCaptureParams& params);
 
@@ -304,7 +308,7 @@ class CONTENT_EXPORT VideoCaptureManager
   // request to start the device on the device thread unless there is
   // another request pending start.
   void QueueStartDevice(const media::VideoCaptureSessionId& session_id,
-                        VideoCaptureController* controller,
+                        scoped_refptr<VideoCaptureController> controller,
                         const media::VideoCaptureParams& params);
   void DoStopDevice(VideoCaptureController* controller);
   void ProcessDeviceStartRequestQueue();

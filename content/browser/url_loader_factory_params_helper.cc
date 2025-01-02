@@ -64,7 +64,13 @@ network::mojom::URLLoaderFactoryParamsPtr CreateParams(
     network::mojom::TrustTokenOperationPolicyVerdict
         trust_token_redemption_policy,
     net::CookieSettingOverrides cookie_setting_overrides,
-    base::StringPiece debug_tag) {
+    base::StringPiece debug_tag
+#if BUILDFLAG(IS_OHOS_PRPP)
+    ,
+    const GURL& main_url = GURL(),
+    uint64_t addr_web_handle = 0
+#endif
+    ) {
   DCHECK(process);
 
   network::mojom::URLLoaderFactoryParamsPtr params =
@@ -119,6 +125,11 @@ network::mojom::URLLoaderFactoryParamsPtr CreateParams(
 
   params->debug_tag = std::string(debug_tag);
 
+#if BUILDFLAG(IS_OHOS_PRPP)
+  params->main_url = main_url.spec();
+  params->addr_web_handle = addr_web_handle;
+#endif
+
   return params;
 }
 
@@ -139,7 +150,13 @@ URLLoaderFactoryParamsHelper::CreateForFrame(
     network::mojom::TrustTokenOperationPolicyVerdict
         trust_token_redemption_policy,
     net::CookieSettingOverrides cookie_setting_overrides,
-    base::StringPiece debug_tag) {
+    base::StringPiece debug_tag
+#if BUILDFLAG(IS_OHOS_PRPP)
+    ,
+    const GURL& main_url,
+    uint64_t addr_web_handle
+#endif
+    ) {
   return CreateParams(
       process,
       frame_origin,  // origin
@@ -154,7 +171,13 @@ URLLoaderFactoryParamsHelper::CreateForFrame(
       frame->CreateURLLoaderNetworkObserver(),
       NetworkServiceDevToolsObserver::MakeSelfOwned(frame->frame_tree_node()),
       trust_token_issuance_policy, trust_token_redemption_policy,
-      cookie_setting_overrides, debug_tag);
+      cookie_setting_overrides, debug_tag
+#if BUILDFLAG(IS_OHOS_PRPP)
+      ,
+      main_url,
+      addr_web_handle
+#endif
+      );
 }
 
 // static

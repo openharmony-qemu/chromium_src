@@ -99,6 +99,11 @@
 #include "third_party/abseil-cpp/absl/types/optional.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(IS_OHOS_PRPP)
+#include "base/functional/callback.h"
+#include "services/network/prp_preload/include/page_res_parallel_preload_mgr.h"
+#endif
+
 namespace network {
 
 namespace {
@@ -106,6 +111,11 @@ namespace {
 // Cannot use 0, because this means "default" in
 // mojo::core::Core::CreateDataPipe
 constexpr size_t kBlockedBodyAllocationSize = 1;
+
+#if BUILDFLAG(IS_OHOS_PRPP)
+const std::string SECURITY_URL =
+  "https://lfbrowsertestelbnew.hwcloudtest.cn/security/v1/oh/securityurls";
+#endif
 
 // A subclass of net::UploadBytesElementReader which owns
 // ResourceRequestBody.
@@ -488,7 +498,14 @@ URLLoader::URLLoader(
     bool third_party_cookies_enabled,
     net::CookieSettingOverrides cookie_setting_overrides,
     const CacheTransparencySettings* cache_transparency_settings,
-    std::unique_ptr<AttributionRequestHelper> attribution_request_helper)
+    std::unique_ptr<AttributionRequestHelper> attribution_request_helper
+#if BUILDFLAG(IS_OHOS_PRPP)
+    ,
+    std::shared_ptr<ohos_prp_preload::PRPPRequestLoader> prpp_loader,
+    const std::string& org_main_url,
+    std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info
+#endif
+    )
     : url_request_context_(context.GetUrlRequestContext()),
       network_context_client_(context.GetNetworkContextClient()),
       delete_callback_(std::move(delete_callback)),
@@ -577,10 +594,40 @@ URLLoader::URLLoader(
   }
   receiver_.set_disconnect_handler(
       base::BindOnce(&URLLoader::OnMojoDisconnect, base::Unretained(this)));
+#if BUILDFLAG(IS_OHOS_PRPP)
+  if (prpp_loader.get()) {
+    prpp_loader_ = prpp_loader;
+    url_request_ = prpp_loader_->GetURLRequest();
+    prpp_loader_->SetRequestDelegate(this);
+    prpp_loader_->SetRequestHeadersCallback(base::BindRepeating(
+        &URLLoader::SetRawRequestHeadersAndNotify, base::Unretained(this)));
+    if (devtools_request_id()) {
+      prpp_loader_->SetResponseHeadersCallback(base::BindRepeating(
+          &URLLoader::SetRawResponseHeaders, base::Unretained(this)));
+    }
+    prpp_loader_->SetEarlyResponseHeadersCallback(base::BindRepeating(
+        &URLLoader::NotifyEarlyResponse, base::Unretained(this)));
+    if (prpp_loader_->StartReplay()) {
+      InitUrlRequestForRollback(
+          context, request, traffic_annotation, third_party_cookies_enabled,
+          cookie_setting_overrides, org_main_url, preload_info);
+      return;
+    }
+    prpp_loader_->SetRequestDelegate(nullptr);
+    prpp_loader_ = nullptr;
+  }
+  if (preload_info->only_send_reuse_request() &&
+      preload_info->preload_flag() == ohos_prp_preload::PRPP_FLAGS_NONE) {
+    preload_info->set_preload_flag(ohos_prp_preload::PRPP_FLAGS_URL_DYNAMIC);
+  }
+  url_request_ = url_request_context_->CreateRequestForPrpp(
+      GURL(request.url), request.priority, this, traffic_annotation,
+      /*is_for_websockets=*/false, request.net_log_create_info);
+#else
   url_request_ = url_request_context_->CreateRequest(
       GURL(request.url), request.priority, this, traffic_annotation,
       /*is_for_websockets=*/false, request.net_log_create_info);
-
+#endif
   url_request_->set_method(request.method);
   url_request_->set_site_for_cookies(request.site_for_cookies);
   if (ShouldForceIgnoreSiteForCookies(request))
@@ -739,9 +786,8 @@ URLLoader::URLLoader(
 
   url_request_->set_has_storage_access(request.has_storage_access);
 
-#if BUILDFLAG(IS_OHOS)
-  url_request_->set_allow_preload_record(request.allow_preload_record);
-  url_request_->set_main_page(request.main_page);
+#if BUILDFLAG(IS_OHOS_PRPP)
+  SetUrlRequestForPRPP(request, url_request_, org_main_url, preload_info);
 #endif
 
   url_request_->cookie_setting_overrides().PutAll(cookie_setting_overrides);
@@ -950,6 +996,14 @@ void URLLoader::BeginTrustTokenOperationIfNecessaryAndThenScheduleStart(
     BeginAttributionIfNecessaryAndThenScheduleStart();
     return;
   }
+
+#if BUILDFLAG(IS_OHOS)
+  // for prp_preload performance tools, trust token request
+  TRACE_EVENT1(
+      "net",
+      "URLLoader::BeginTrustTokenOperationIfNecessaryAndThenScheduleStart",
+      "id", request_id_);
+#endif
 
   // Trust token operations other than signing cannot be served from cache
   // because it needs to send the server the Trust Tokens request header and
@@ -1177,6 +1231,20 @@ void URLLoader::FollowRedirect(
 
 void URLLoader::SetPriority(net::RequestPriority priority,
                             int32_t intra_priority_value) {
+#if BUILDFLAG(IS_OHOS_PRPP)
+  // "4" means blink::mojom::ResourceType::kImage. here not depend blink.
+  if ((resource_type_ == 4) && (priority >= net::MEDIUM) && url_request_ &&
+      url_request_->preload_info() &&
+      (url_request_->preload_info()->preload_flag() ==
+      ohos_prp_preload::PRPP_FLAGS_NONE)) {
+    url_request_->preload_info()->or_preload_flag(
+      ohos_prp_preload::PRPP_FLAGS_VISIBLE);
+    if (already_update_info_) {
+      ohos_prp_preload::PRParallelPreloadMgr::GetInstance().UpdateResRequestInfo(
+        url_request_->url().spec(), url_request_->preload_info());
+    }
+  }
+#endif
   if (url_request_ && resource_scheduler_client_) {
     resource_scheduler_client_->ReprioritizeRequest(
         url_request_.get(), priority, intra_priority_value);
@@ -1318,14 +1386,31 @@ int URLLoader::OnConnected(net::URLRequest* url_request,
 
 mojom::URLResponseHeadPtr URLLoader::BuildResponseHead() const {
   auto response = mojom::URLResponseHead::New();
-
+#if BUILDFLAG(IS_OHOS_PRPP)
+  net::LoadTimingInfo load_timing_info = net::LoadTimingInfo();
+  if (prpp_loader_.get()) {
+    prpp_loader_->GetLoadTimingInfo(&load_timing_info);
+    if (url_request_->was_cached()) {
+      response->request_time = url_request_->request_time();
+      response->response_time = url_request_->response_time();
+    } else {
+      response->request_time = load_timing_info.request_start_time;
+      response->response_time = base::Time::Now();
+    }
+  } else {
+    response->request_time = url_request_->request_time();
+    response->response_time = url_request_->response_time();
+  }
+#else
   response->request_time = url_request_->request_time();
   response->response_time = url_request_->response_time();
+#endif
   response->headers = url_request_->response_headers();
   response->parsed_headers =
       PopulateParsedHeaders(response->headers.get(), url_request_->url());
 
 #if BUILDFLAG(IS_OHOS)
+  response->code_cache_valid = url_request_->is_code_cache_valid();
   std::string http_version;
   if (url_request_->was_fetched_via_spdy()) {
     http_version = "http/2.0";
@@ -1374,10 +1459,18 @@ mojom::URLResponseHeadPtr URLLoader::BuildResponseHead() const {
       break;
     }
   }
-
+#if BUILDFLAG(IS_OHOS_PRPP)
+  if (is_load_timing_enabled_) {
+    if (prpp_loader_.get()) {
+      prpp_loader_->GetLoadTimingInfo(&response->load_timing);
+    } else {
+      url_request_->GetLoadTimingInfo(&response->load_timing);
+    }
+  }
+#else
   if (is_load_timing_enabled_)
     url_request_->GetLoadTimingInfo(&response->load_timing);
-
+#endif
   if (url_request_->ssl_info().cert.get()) {
     response->ct_policy_compliance =
         url_request_->ssl_info().ct_policy_compliance;
@@ -1388,8 +1481,15 @@ mojom::URLResponseHeadPtr URLLoader::BuildResponseHead() const {
       response->ssl_info = url_request_->ssl_info();
     }
   }
-
+#if BUILDFLAG(IS_OHOS_PRPP)
+  if (prpp_loader_.get()) {
+    response->request_start = load_timing_info.request_start;
+  } else {
+    response->request_start = url_request_->creation_time();
+  }
+#else
   response->request_start = url_request_->creation_time();
+#endif
   response->response_start = base::TimeTicks::Now();
   response->encoded_data_length = url_request_->GetTotalReceivedBytes();
   response->auth_challenge_info = url_request_->auth_challenge_info();
@@ -1417,6 +1517,10 @@ void URLLoader::OnReceivedRedirect(net::URLRequest* url_request,
   DCHECK(url_request == url_request_.get());
 
   DCHECK(!deferred_redirect_url_);
+#if BUILDFLAG(IS_OHOS)
+  // for prp_preload performance tools, redirect request
+  TRACE_EVENT1("net", "URLLoader::OnReceivedRedirect", "id", request_id_);
+#endif
   deferred_redirect_url_ = std::make_unique<GURL>(redirect_info.new_url);
 
   // Send the redirect response to the client, allowing them to inspect it and
@@ -1483,6 +1587,16 @@ void URLLoader::OnReceivedRedirect(net::URLRequest* url_request,
   // Ensure that the redirect target is not treated as a pervasive payload.
   url_request_->set_expected_response_checksum(std::string());
 
+#if BUILDFLAG(IS_OHOS_PRPP)
+  if (url_request_->main_url().spec().empty() &&
+      !redirect_info.new_url.spec().empty() &&
+      redirect_info.new_url.spec() != url_request_->url().spec()) {
+    ohos_prp_preload::PRParallelPreloadMgr::GetInstance().UpdateRedirectUrl(
+      url_request_->url().spec(), redirect_info.new_url.spec(),
+      redirect_updated_);
+    redirect_updated_ = true;
+  }
+#endif
   RedirectAttributionIfNecessaryAndThenContinueOnReceiveRedirect(
       redirect_info, std::move(response));
 }
@@ -1567,6 +1681,11 @@ void URLLoader::OnAuthRequired(net::URLRequest* url_request,
 
   DCHECK(!auth_challenge_responder_receiver_.is_bound());
 
+#if BUILDFLAG(IS_OHOS)
+  // for prp_preload performance tools,auth required request
+  TRACE_EVENT1("net", "URLLoader::OnAuthRequired", "id", request_id_);
+#endif
+
   url_loader_network_observer_->OnAuthRequired(
       fetch_window_id_, request_id_, url_request_->url(), first_auth_attempt_,
       auth_info, url_request->response_headers(),
@@ -1597,6 +1716,10 @@ void URLLoader::OnCertificateRequested(net::URLRequest* unused,
   // Set up mojo endpoints for ClientCertificateResponder and bind to the
   // Receiver. This enables us to receive messages regarding the client
   // certificate selection.
+#if BUILDFLAG(IS_OHOS)
+  // for prp_preload performance tools, certificate request
+  TRACE_EVENT1("net", "URLLoader::OnCertificateRequested", "id", request_id_);
+#endif
   url_loader_network_observer_->OnCertificateRequested(
       fetch_window_id_, cert_info,
       client_cert_responder_receiver_.BindNewPipeAndPassRemote());
@@ -1636,6 +1759,19 @@ void URLLoader::
 
 void URLLoader::OnResponseStarted(net::URLRequest* url_request, int net_error) {
   DCHECK(url_request == url_request_.get());
+#if BUILDFLAG(IS_OHOS_PRPP)
+  if (prpp_loader_.get() && (net_error == ohos_prp_preload::PRPP_ERROR) &&
+      !has_received_response_) {
+    // roll-back
+    LOG(DEBUG) << "PRPPreload.URLLoader::OnResponseStarted roll-back from prpp";
+    prpp_loader_->ClearLoaderCallback(devtools_request_id().has_value());
+    prpp_loader_ = nullptr;
+    base::SequencedTaskRunner::GetCurrentDefault()->PostTask(
+      FROM_HERE, base::BindOnce(&URLLoader::RollbackFromPPRP,
+                                weak_ptr_factory_.GetWeakPtr()));
+    return;
+  }
+#endif
   has_received_response_ = true;
 
   // Use `true` to force sending the cookie accessed update now. This is because
@@ -1839,9 +1975,22 @@ void URLLoader::ReadMore() {
   auto buf = base::MakeRefCounted<NetToMojoIOBuffer>(
       pending_write_.get(), pending_write_buffer_offset_);
   read_in_progress_ = true;
+#if BUILDFLAG(IS_OHOS_PRPP)
+  int bytes_read = 0;
+  if (prpp_loader_.get()) {
+    bytes_read = prpp_loader_->Read(
+        buf.get(), static_cast<int>(pending_write_buffer_size_ -
+                                    pending_write_buffer_offset_));
+  } else {
+    bytes_read = url_request_->Read(
+        buf.get(), static_cast<int>(pending_write_buffer_size_ -
+                                    pending_write_buffer_offset_));
+  }
+#else
   int bytes_read = url_request_->Read(
       buf.get(), static_cast<int>(pending_write_buffer_size_ -
                                   pending_write_buffer_offset_));
+#endif
   if (bytes_read != net::ERR_IO_PENDING) {
     DidRead(bytes_read, true);
     // |this| may have been deleted.
@@ -2183,6 +2332,12 @@ void URLLoader::NotifyCompleted(int error_code) {
     url_loader_client_.Get()->OnComplete(status);
 #if BUILDFLAG(IS_OHOS)
     if (url_request_) {
+#if BUILDFLAG(IS_OHOS_PRPP)
+      if (url_request_->preload_info()) {
+        url_request_->preload_info()->set_request_end_time(
+            base::Time::Now().ToInternalValue());
+      }
+#endif
       if (url_request_->response_headers()) {
         const net::HttpResponseHeaders* response_headers =
           raw_response_headers_ && enable_reporting_raw_headers_
@@ -2199,6 +2354,12 @@ void URLLoader::NotifyCompleted(int error_code) {
     }
 #endif
   }
+
+#if BUILDFLAG(IS_OHOS_PRPP)
+  if (prpp_loader_.get()) {
+    prpp_loader_->ClearLoaderCallback(devtools_request_id().has_value());
+  }
+#endif
 
   DeleteSelf();
 }
@@ -2334,6 +2495,11 @@ void URLLoader::NotifyEarlyResponse(
 
 void URLLoader::SetRawRequestHeadersAndNotify(
     net::HttpRawRequestHeaders headers) {
+#if BUILDFLAG(IS_OHOS)
+  // for prp_preload performance tools, real network request
+  TRACE_EVENT1("net", "URLLoader::SetRawRequestHeadersAndNotify", "id",
+               request_id_);
+#endif
   // If we have seen_raw_request_headers_, then don't notify DevTools to prevent
   // duplicate ExtraInfo events.
   if (!seen_raw_request_headers_ && devtools_observer_ &&
@@ -2382,7 +2548,15 @@ void URLLoader::DispatchOnRawRequest(
   seen_raw_request_headers_ = true;
 
   net::LoadTimingInfo load_timing_info;
+#if BUILDFLAG(IS_OHOS_PRPP)
+  if (prpp_loader_.get()) {
+    prpp_loader_->GetLoadTimingInfo(&load_timing_info);
+  } else {
+    url_request_->GetLoadTimingInfo(&load_timing_info);
+  }
+#else
   url_request_->GetLoadTimingInfo(&load_timing_info);
+#endif
 
   emitted_devtools_raw_request_ = true;
 
@@ -2898,5 +3072,252 @@ bool URLLoader::CoepAllowCredentials(const GURL& url) {
   // [spec]: 5. Return false.
   return false;
 }
+
+#if BUILDFLAG(IS_OHOS_PRPP)
+void URLLoader::UpdateResRequestInfo(
+    const std::string& key,
+    const std::shared_ptr<ohos_prp_preload::PRRequestInfo>& info) {
+  // "4" means blink::mojom::ResourceType::kImage. here not depend blink.
+  if ((info->preload_flag() != ohos_prp_preload::PRPP_FLAGS_NONE) ||
+      (resource_type_ == 4)) {
+    already_update_info_ = true;
+    ohos_prp_preload::PRParallelPreloadMgr::GetInstance().UpdateResRequestInfo(
+        key, info);
+  }
+}
+
+void URLLoader::InitUrlRequestForRollback(
+    URLLoaderContext& context,
+    const ResourceRequest& request,
+    const net::NetworkTrafficAnnotationTag& traffic_annotation,
+    bool third_party_cookies_enabled,
+    net::CookieSettingOverrides cookie_setting_overrides,
+    const std::string& org_main_url,
+    std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info) {
+  url_request_rollback_ = url_request_context_->CreateRequestForPrpp(
+      GURL(request.url), request.priority, this, traffic_annotation,
+      /*is_for_websockets=*/false, request.net_log_create_info);
+  url_request_rollback_->set_method(request.method);
+  url_request_rollback_->set_site_for_cookies(request.site_for_cookies);
+  if (ShouldForceIgnoreSiteForCookies(request)) {
+    url_request_rollback_->set_force_ignore_site_for_cookies(true);
+  }
+  if (!request.navigation_redirect_chain.empty()) {
+    DCHECK_EQ(request.mode, mojom::RequestMode::kNavigate);
+    url_request_rollback_->SetURLChain(request.navigation_redirect_chain);
+  }
+  url_request_rollback_->SetReferrer(request.referrer.GetAsReferrer().spec());
+  url_request_rollback_->set_referrer_policy(request.referrer_policy);
+  url_request_rollback_->set_upgrade_if_insecure(request.upgrade_if_insecure);
+  auto isolation_info = GetIsolationInfo(
+      factory_params_->isolation_info,
+      factory_params_->automatically_assign_isolation_info, request);
+  if (isolation_info) {
+    url_request_rollback_->set_isolation_info(isolation_info.value());
+  }
+  if (context.ShouldRequireNetworkIsolationKey()) {
+    DCHECK(!url_request_rollback_->isolation_info().IsEmpty());
+  }
+  if (ShouldForceIgnoreTopFramePartyForCookies()) {
+    url_request_rollback_->set_force_ignore_top_frame_party_for_cookies(true);
+  }
+
+  // When a service worker forwards a navigation request it uses the
+  // service worker's IsolationInfo.  This causes the cookie code to fail
+  // to send SameSite=Lax cookies for main-frame navigations passed through
+  // a service worker.  To fix this we check to see if the original destination
+  // of the request was a main frame document and then set a flag indicating
+  // SameSite cookies should treat it as a main frame navigation.
+
+  if (request.mode == mojom::RequestMode::kNavigate &&
+      request.destination == mojom::RequestDestination::kEmpty &&
+      request.original_destination == mojom::RequestDestination::kDocument) {
+    url_request_rollback_->set_force_main_frame_for_same_site_cookies(true);
+  }
+
+  if (factory_params_->disable_secure_dns ||
+      (request.trusted_params &&
+       request.trusted_params->disable_secure_dns)) {
+    url_request_rollback_->SetSecureDnsPolicy(net::SecureDnsPolicy::kDisable);
+  }
+
+  // |cors_exempt_headers| must be merged here to avoid breaking CORS checks.
+  // They are non-empty when the values are given by the UA code, therefore
+  // they should be ignored by CORS checks.
+  net::HttpRequestHeaders merged_headers = request.headers;
+  merged_headers.MergeFrom(request.cors_exempt_headers);
+
+  // This should be ensured by the CorsURLLoaderFactory(), which is called
+  // before URLLoaders are created.
+  DCHECK(AreRequestHeadersSafe(merged_headers));
+
+  url_request_rollback_->SetExtraRequestHeaders(merged_headers);
+  url_request_rollback_->SetUserData(kUserDataKey,
+                                     std::make_unique<UnownedPointer>(this));
+  url_request_rollback_->set_accepted_stream_types(
+      request.devtools_accepted_stream_types);
+
+  if (request.trusted_params) {
+    has_user_activation_ = request.trusted_params->has_user_activation;
+    allow_cookies_from_browser_ =
+        request.trusted_params->allow_cookies_from_browser;
+  }
+
+  // Store any cookies passed from the browser process to later attach them to
+  // the request.
+  if (allow_cookies_from_browser_) {
+    cookies_from_browser_ =
+        GetCookiesFromHeaders(request.headers, request.cors_exempt_headers);
+  }
+
+  throttling_token_ = network::ScopedThrottlingToken::MaybeCreate(
+      url_request_rollback_->net_log().source().id,
+      request.throttling_profile_id);
+
+  url_request_rollback_->set_initiator(request.request_initiator);
+  SetFetchMetadataHeaders(url_request_rollback_.get(), request_mode_,
+                          has_user_activation_, request_destination_, nullptr,
+                          *factory_params_, *origin_access_list_);
+
+  SetAttributionReportingHeaders(*url_request_rollback_, request);
+  if (request.update_first_party_url_on_redirect) {
+    url_request_rollback_->set_first_party_url_policy(
+        net::RedirectInfo::FirstPartyURLPolicy::UPDATE_URL_ON_REDIRECT);
+  }
+
+  int request_load_flags = request.load_flags;
+
+  if (cache_transparency_settings_ &&
+      cache_transparency_settings_->pervasive_payloads_enabled()) {
+    auto index = cache_transparency_settings_->GetIndexForURL(request.url);
+    if (index.has_value()) {
+      // Remember that a pervasive payload was found so we can annotate the
+      // URLLoaderCompletionStatus with it later.
+      pervasive_payload_requested_ = true;
+      url_request_rollback_->set_pervasive_payloads_index_for_logging(
+          index.value());
+      base::UmaHistogramCustomCounts("Network.CacheTransparency2.URLMatched",
+                                     index.value(), 1, 323, 323);
+      DVLOG(2) << "Found pervasive payload: " << request.url.spec();
+    }
+  }
+  if (cache_transparency_settings_ &&
+      cache_transparency_settings_->cache_transparency_enabled() &&
+      third_party_cookies_enabled &&
+      !(options_ & (mojom::kURLLoadOptionBlockThirdPartyCookies |
+                    mojom::kURLLoadOptionBlockAllCookies))) {
+    auto checksum =
+        cache_transparency_settings_->GetChecksumForURL(request.url);
+    if (checksum.has_value()) {
+      CacheTransparencyCacheNotUsedReason cache_not_used_reason =
+          CacheTransparencyCacheNotUsedReason::kTryingSingleKeyedCache;
+      if (request.method != net::HttpRequestHeaders::kGetMethod) {
+        cache_not_used_reason =
+            CacheTransparencyCacheNotUsedReason::kIncompatibleRequestType;
+      } else if (HasFlagsIncompatibleWithSingleKeyedCache(request_load_flags)) {
+        cache_not_used_reason =
+            CacheTransparencyCacheNotUsedReason::kIncompatibleRequestLoadFlags;
+      } else if (HasHeadersIncompatibleWithSingleKeyedCache(request.headers)) {
+        cache_not_used_reason =
+            CacheTransparencyCacheNotUsedReason::kIncompatibleRequestHeaders;
+      } else {
+        url_request_rollback_->set_expected_response_checksum(checksum.value());
+      }
+      base::UmaHistogramEnumeration("Network.CacheTransparency.CacheNotUsed",
+                                    cache_not_used_reason);
+    }
+  }
+  url_request_rollback_->SetLoadFlags(request_load_flags);
+  url_request_rollback_->SetPriorityIncremental(request.priority_incremental);
+  SetRequestCredentials(request.url);
+  url_request_rollback_->SetRequestHeadersCallback(base::BindRepeating(
+      &URLLoader::SetRawRequestHeadersAndNotify, base::Unretained(this)));
+  if (devtools_request_id()) {
+    url_request_rollback_->SetResponseHeadersCallback(base::BindRepeating(
+        &URLLoader::SetRawResponseHeaders, base::Unretained(this)));
+  }
+
+  url_request_rollback_->SetEarlyResponseHeadersCallback(base::BindRepeating(
+      &URLLoader::NotifyEarlyResponse, base::Unretained(this)));
+  if (keepalive_ && keepalive_statistics_recorder_) {
+    keepalive_statistics_recorder_->OnLoadStarted(
+        *factory_params_->top_frame_id, keepalive_request_size_);
+  }
+
+  if (request.net_log_reference_info) {
+    // Log source object that created the request, if avairable.
+    url_request_rollback_->net_log().AddEventReferencingSource(
+        net::NetLogEventType::CREATED_BY,
+        request.net_log_reference_info.value());
+  }
+  url_request_rollback_->set_has_storage_access(request.has_storage_access);
+
+  // add for prpp
+  SetUrlRequestForPRPP(request, url_request_rollback_, org_main_url,
+                        preload_info);
+  // end for prpp
+  url_request_rollback_->cookie_setting_overrides().PutAll(
+      cookie_setting_overrides);
+
+  if (request.is_outermost_main_frame &&
+      network::cors::IsCorsEnabledRequestMode(request_mode_)) {
+    url_request_rollback_->cookie_setting_overrides().Put(
+        net::CookieSettingOverride::kTopLevelStorageAccessGrantEligible);
+  }
+
+  // The `kStorageAccessGrantEligible` override will be applied (in-place) by
+  // individual request jobs as appropriate, but should not be present
+  // initially.
+  DCHECK(!url_request_rollback_->cookie_setting_overrides().Has(
+      net::CookieSettingOverride::kStorageAccessGrantEligible));
+}
+
+void URLLoader::SetUrlRequestForPRPP(
+    const ResourceRequest& request,
+    const std::shared_ptr<net::URLRequest>& url_request,
+    const std::string& org_main_url,
+    std::shared_ptr<ohos_prp_preload::PRRequestInfo>& preload_info) {
+  if (ohos_prp_preload::PRParallelPreloadMgr::GetInstance()
+      .GetPRParallelPreloadMode() ==
+      ohos_prp_preload::PRPPreloadMode::NONE) {
+    return;
+  }
+  if (!request.main_url.spec().empty() &&
+      request.main_url.spec() != request.url.spec() &&
+      (request.url.spec() != SECURITY_URL)) {
+    ohos_prp_preload::LoaderInfo loader_info {
+        corb_detachable_,
+        resource_type_,
+        keepalive_,
+        do_not_prompt_for_login_,
+        static_cast<int>(request_mode_),
+        static_cast<int>(request_credentials_mode_),
+        static_cast<int>(request_destination_)};
+    preload_info->set_loader_info(loader_info);
+    url_request->set_update_res_request_info_callback(base::BindRepeating(
+        &URLLoader::UpdateResRequestInfo, weak_ptr_factory_.GetWeakPtr()));
+    if (request.allow_preload_record) {
+      preload_info->or_preload_flag(ohos_prp_preload::PRPP_FLAGS_VISIBLE);
+    }
+    if (request.is_preflight) {
+      preload_info->set_type(
+          ohos_prp_preload::PRRequestInfoType::TYPE_PAGE_PREFLIGHT);
+    }
+    preload_info->set_request_start_time(base::Time::Now().ToInternalValue());
+    url_request->set_preload_info(preload_info);
+    url_request->set_allow_preload_record(request.allow_preload_record);
+    if (!org_main_url.empty() && org_main_url != request.main_url.spec()) {
+      url_request->set_main_url(GURL(org_main_url));
+    } else {
+          url_request->set_main_url(request.main_url);
+    }
+  }
+}
+void URLLoader::RollbackFromPPRP() {
+  url_request_ = url_request_rollback_;
+  url_request_rollback_ = nullptr;
+  BeginAttributionIfNecessaryAndThenScheduleStart();
+}
+#endif
 
 }  // namespace network

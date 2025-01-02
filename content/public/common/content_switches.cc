@@ -1078,6 +1078,11 @@ const char kOhosCustomScheme[] = "ohos-custom-scheme";
 #endif
 #ifdef OHOS_SCHEME_HANDLER
 const char kOhSchemeHandlerCustomScheme[] = "ohos-scheme-handler-custom-scheme";
+
+#ifdef OHOS_EX_PULL_TO_REFRESH
+const char kEnableNwebExPullToRefresh[] = "enable-nweb-ex-pull-to-refresh";
+#endif
+
 #endif
 #endif
 

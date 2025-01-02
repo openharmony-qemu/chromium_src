@@ -374,6 +374,11 @@ void SingleThreadProxy::SetPauseRendering(bool pause_rendering) {
   scheduler_on_impl_thread_->SetPauseRendering(pause_rendering_);
 }
 
+  // cherry-pick from google begin
+  // https://chromium-review.googlesource.com/c/chromium/src/+/4546241
+  void SingleThreadProxy::SetInputResponsePending() {}
+  // cherry-pick from google end
+
 bool SingleThreadProxy::StartDeferringCommits(base::TimeDelta timeout,
                                               PaintHoldingReason reason) {
   DCHECK(task_runner_provider_->IsMainThread());

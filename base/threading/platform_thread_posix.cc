@@ -127,6 +127,18 @@ bool CreateThread(size_t stack_size,
   DCHECK(thread_handle);
   base::InitThreading();
 
+#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC) && BUILDFLAG(USE_STARSCAN) && BUILDFLAG(HAS_64_BIT_POINTERS)
+  // Ensure that PartitionAddressSpace::Init is executed on the main thread
+  // to avoid concurrency issues.
+  static bool partitionAddressSpaceInit = false;
+  if ((!partitionAddressSpaceInit) && (getpid() == gettid())) {
+    partition_alloc::internal::PartitionAddressSpace::Init();
+    partitionAddressSpaceInit = true;
+  }
+#endif
+#endif
+
   pthread_attr_t attributes;
   pthread_attr_init(&attributes);
 

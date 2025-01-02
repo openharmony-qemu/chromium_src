@@ -137,7 +137,7 @@ std::string NWebDownloadHandlerDelegate::GenerateSuggestedFilename(
       preference_delegate_ ? preference_delegate_->DefaultTextEncodingFormat() :
       (nweb ? nweb->GetPreference()->DefaultTextEncodingFormat() : "utf-8");
   LOG(INFO) << "GenerateSuggestedFilename mime_type: " << sniffed_mime_type
-            << "default_charset: " << default_charset;
+            << ", default_charset: " << default_charset;
   GURL gurl(download_item->GetURL().ToString());
   base::FilePath generated_filename = net::GenerateFileName(
       gurl, download_item->GetContentDisposition()->GetStdString(), default_charset,

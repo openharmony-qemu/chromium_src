@@ -80,6 +80,10 @@ class CC_EXPORT SurfaceLayerImpl : public LayerImpl {
   void AsValueInto(base::trace_event::TracedValue* dict) const override;
   const char* LayerTypeAsString() const override;
 
+#ifdef OHOS_VIDEO_ASSISTANT
+  void OnLayerBoundsUpdate(gfx::Rect visible_quad_rect);
+#endif // OHOS_VIDEO_ASSISTANT
+
   UpdateSubmissionStateCB update_submission_state_callback_;
   viz::SurfaceRange surface_range_;
   absl::optional<uint32_t> deadline_in_frames_;
@@ -93,6 +97,9 @@ class CC_EXPORT SurfaceLayerImpl : public LayerImpl {
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
   gfx::Rect visible_quad_rect_;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+#ifdef OHOS_VIDEO_ASSISTANT
+  gfx::Rect layer_bounds_;
+#endif // OHOS_VIDEO_ASSISTANT
 };
 
 }  // namespace cc

@@ -91,6 +91,9 @@ class CC_EXPORT ProxyMain : public Proxy {
 
   void OnLayerRectVisibilityChange(int id, bool visibility);
 #endif
+#ifdef OHOS_VIDEO_ASSISTANT
+  void OnLayerBoundsUpdate(int id, const gfx::Rect& bounds);
+#endif // OHOS_VIDEO_ASSISTANT
 
  private:
   // Proxy implementation.

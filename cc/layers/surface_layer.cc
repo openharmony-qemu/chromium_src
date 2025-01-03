@@ -203,5 +203,16 @@ void SurfaceLayer::OnLayerRectUpdate(const gfx::Rect& rect) {
   }
 }
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+#ifdef OHOS_VIDEO_ASSISTANT
+void SurfaceLayer::SetLayerBoundsChangeCallback(
+    LayerBoundsChangeCallback callback) {
+  layer_bounds_change_callback_ = std::move(callback);
+}
+void SurfaceLayer::OnLayerBoundsUpdate(const gfx::Rect& bounds) {
+  if (layer_bounds_change_callback_) {
+    layer_bounds_change_callback_.Run(bounds);
+  }
+}
+#endif // OHOS_VIDEO_ASSISTANT
 
 }  // namespace cc

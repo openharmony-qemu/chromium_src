@@ -100,6 +100,9 @@ class CC_EXPORT ProxyImpl : public LayerTreeHostImplClient,
 
   void OnLayerRectVisibilityChange(int id, bool visibility) override;
 #endif
+#ifdef OHOS_VIDEO_ASSISTANT
+  void OnLayerBoundsUpdate(int id, const gfx::Rect& bounds) override;
+#endif // OHOS_VIDEO_ASSISTANT
 
  private:
   // LayerTreeHostImplClient implementation

@@ -950,7 +950,7 @@
     "effect": "main gn blink_core other",
     "genCommandline": "default",
     "dependence": "",
-    "default": "true"
+    "default": "false"
 },
 {
     "name": "OHOS_VIEWPORT",

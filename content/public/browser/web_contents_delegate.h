@@ -46,6 +46,10 @@
 #include "content/public/browser/native_embed_info.h"
 #endif
 
+#ifdef OHOS_VIDEO_ASSISTANT
+#include "media/mojo/mojom/media_player.mojom-forward.h"
+#endif // OHOS_VIDEO_ASSISTANT
+
 class GURL;
 
 namespace base {
@@ -84,6 +88,9 @@ class CustomMediaPlayerListener;
 struct MediaInfo;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+#ifdef OHOS_VIDEO_ASSISTANT
+class VideoAssistant;
+#endif // OHOS_VIDEO_ASSISTANT
 }  // namespace content
 
 namespace device {
@@ -844,6 +851,15 @@ class CONTENT_EXPORT WebContentsDelegate {
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
 #if defined(OHOS_VIDEO_ASSISTANT)
+  virtual std::unique_ptr<VideoAssistant> CreateVideoAssistant();
+  virtual void PopluateVideoAssistantConfig(
+      const std::string& url,
+      media::mojom::VideoAssistantConfigPtr& config);
+  virtual void OnVideoPlaying(
+      media::mojom::VideoAttributesForVASTPtr video_attributes);
+  virtual void OnUpdateVideoAttributes(
+      media::mojom::VideoAttributesForVASTPtr video_attributes);
+
   virtual void OnShowToast(double duration, const std::string& toast);
   virtual void OnShowVideoAssistant(const std::string& videoAssistantItems);
   virtual void OnReportStatisticLog(const std::string& content);

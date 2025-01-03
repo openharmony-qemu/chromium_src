@@ -96,6 +96,10 @@
 #include "ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_browser_ua_config.h"
 #endif
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+#include "ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_browser_engine_cloud_config.h"
+#endif
+
 #ifdef OHOS_EX_GET_ZOOM_LEVEL
 #include "third_party/blink/public/common/page/page_zoom.h"
 #include "chrome/browser/ui/zoom/chrome_zoom_level_prefs.h"
@@ -2639,6 +2643,13 @@ void NWebImpl::SetBrowserUA(const std::string& ua_name) {
   nweb_ex::AlloyBrowserUAConfig::GetInstance()->SetBrowserUA(ua_name);
 }
 #endif  // OHOS_EX_UA
+
+#if defined(OHOS_VIDEO_ASSISTANT)
+// static
+void NWebImpl::UpdateBrowserEngineConfig(const std::string& file_path, const std::string& version) {
+  nweb_ex::AlloyBrowserEngineCloudConfig::GetInstance()->UpdateBrowserEngineCloudConfig(file_path, version);
+}
+#endif
 
 #if defined(OHOS_I18N)
 void NWebImpl::UpdateAcceptLanguageInternal() {

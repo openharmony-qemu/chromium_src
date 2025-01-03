@@ -157,6 +157,7 @@ class CONTENT_EXPORT MediaWebContentsObserver
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
 #if defined(OHOS_VIDEO_ASSISTANT)
+  bool IsMediaPlaying(const MediaPlayerId& player_id);
   void SetPlaybackRate(double playback_rate, const MediaPlayerId& player_id);
   void RequestFullScreen(bool enable, const MediaPlayerId& player_id);
   void RequestDownloadUrl(const MediaPlayerId& player_id);
@@ -193,6 +194,10 @@ class CONTENT_EXPORT MediaWebContentsObserver
         mojo::PendingAssociatedReceiver<media::mojom::MediaPlayerObserver>
             media_player_observer,
         int32_t player_id) override;
+#ifdef OHOS_VIDEO_ASSISTANT
+    void RequestVideoAssistantConfig(
+        RequestVideoAssistantConfigCallback callback) override;
+#endif // OHOS_VIDEO_ASSISTANT
 
    private:
     GlobalRenderFrameHostId frame_routing_id_;
@@ -242,6 +247,14 @@ class CONTENT_EXPORT MediaWebContentsObserver
     void UpdateLayerRect(const gfx::Rect& rect) override;
     void FullscreenChanged(bool is_fullscreen) override;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+#ifdef OHOS_VIDEO_ASSISTANT
+    void OnVideoPlaying(
+        media::mojom::VideoAttributesForVASTPtr video_attributes) override;
+    void OnUpdateVideoAttributes(
+        media::mojom::VideoAttributesForVASTPtr video_attributes) override;
+    void OnVideoDestroyed() override;
+#endif // OHOS_VIDEO_ASSISTANT
 
    private:
     PlayerInfo* GetPlayerInfo();

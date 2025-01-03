@@ -2546,6 +2546,18 @@ source_set("browser") {
     deps += [ "//third_party:huawei_securec" ]
   }
 
+  #ifdef OHOS_VIDEO_ASSISTANT
+  if (defined(ohos_video_assistant) && ohos_video_assistant) {
+    sources += [
+      "media/video_assistant/video_assistant.cc",
+      "media/video_assistant/video_assistant.h",
+    ]
+    deps += [
+      "//ohos_nweb_ex/overrides/ui/strings",
+    ]
+  }
+  #endif OHOS_VIDEO_ASSISTANT
+
   if (is_mac) {
     sources += [
       "../app_shim_remote_cocoa/ns_view_bridge_factory_impl.mm",

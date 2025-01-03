@@ -247,6 +247,10 @@
 #include "base/ohos/locale_utils.h"
 #endif
 
+#ifdef OHOS_VIDEO_ASSISTANT
+#include "content/browser/media/video_assistant/video_assistant.h"
+#endif // OHOS_VIDEO_ASSISTANT
+
 namespace content {
 
 namespace {
@@ -1109,6 +1113,10 @@ WebContentsImpl::WebContentsImpl(BrowserContext* browser_context)
     star_scan_load_observer_ = std::make_unique<StarScanLoadObserver>(this);
   }
 #endif  // BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC) && BUILDFLAG(USE_STARSCAN)
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  video_assistant_ = std::make_unique<VideoAssistant>();
+#endif // OHOS_VIDEO_ASSISTANT
 }
 
 WebContentsImpl::~WebContentsImpl() {
@@ -1444,6 +1452,15 @@ void WebContentsImpl::SetDelegate(WebContentsDelegate* delegate) {
   // Re-read values from the new delegate and apply them.
   if (view_)
     view_->SetOverscrollControllerEnabled(CanOverscrollContent());
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  if (delegate_) {
+    video_assistant_ = delegate_->CreateVideoAssistant();
+  }
+  if (!video_assistant_) {
+    video_assistant_ = std::make_unique<VideoAssistant>();
+  }
+#endif // OHOS_VIDEO_ASSISTANT
 }
 
 RenderFrameHostImpl* WebContentsImpl::GetPrimaryMainFrame() {
@@ -1986,7 +2003,6 @@ void WebContentsImpl::SetUserAgentOverride(
   user_agent_ = ua_override.ua_string_override;
   UpdateOverridingUserAgent();
 
-  // DTS2023022711784
   // 子进程打开新窗口时，会先创建delayed_load_url_params_，等到加载url时直接使用
   // delayed_load_url_params_的值创建NavigationRequest。其override_user_agent默认值是
   // UA_OVERRIDE_FALSE，故这里也要更新。
@@ -3160,6 +3176,12 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences() {
     prefs.viewport_meta_enabled = true;
 #endif
   GetContentClient()->browser()->OverrideWebkitPrefs(this, &prefs);
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  prefs.video_assistant_enabled = video_assistant_
+      ? video_assistant_->Enabled()
+      : false;
+#endif // OHOS_VIDEO_ASSISTANT
 
   return prefs;
 }
@@ -6284,6 +6306,11 @@ void WebContentsImpl::DidFinishNavigation(NavigationHandle* navigation_handle) {
     if (navigation_handle->IsInPrimaryMainFrame() &&
         !navigation_handle->IsSameDocument()) {
       was_ever_audible_ = false;
+#ifdef OHOS_VIDEO_ASSISTANT
+      if (video_assistant_) {
+        video_assistant_->DidFinishNavigation();
+      }
+#endif // OHOS_VIDEO_ASSISTANT
     }
 
     // Clear the stored prerender activation result if this is not a prerender
@@ -9616,6 +9643,12 @@ void WebContentsImpl::MediaEffectivelyFullscreenChanged(bool is_fullscreen) {
 void WebContentsImpl::MediaDestroyed(const MediaPlayerId& id) {
   OPTIONAL_TRACE_EVENT0("content", "WebContentsImpl::MediaDestroyed");
   observers_.NotifyObservers(&WebContentsObserver::MediaDestroyed, id);
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  if (video_assistant_) {
+    video_assistant_->OnVideoDestroyed(id);
+  }
+#endif // OHOS_VIDEO_ASSISTANT
 }
 
 int WebContentsImpl::GetCurrentlyPlayingVideoCount() {
@@ -10624,9 +10657,17 @@ void WebContentsImpl::RequestExitFullscreen(const MediaPlayerId& player_id) {
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
 #if defined(OHOS_VIDEO_ASSISTANT)
-void WebContentsImpl::EnableVideoAssistant(bool enable) {}
+void WebContentsImpl::EnableVideoAssistant(bool enable) {
+  if (video_assistant_->Enabled() == enable) {
+    return;
+  }
+  video_assistant_->EnableVideoAssistant(enable);
+  OnWebPreferencesChanged();
+}
 
-void WebContentsImpl::ExecuteVideoAssistantFunction(const std::string& cmdId) {}
+void WebContentsImpl::ExecuteVideoAssistantFunction(const std::string& cmdId) {
+  video_assistant_->ExecuteVideoAssistantFunction(cmdId);
+}
 
 void WebContentsImpl::OnShowToast(double duration, const std::string& toast) {
   if (!delegate_) {
@@ -10696,5 +10737,29 @@ void WebContentsImpl::OnBeforeUnloadFired(bool proceed) {
   }
 }
 #endif // OHOS_DISPATCH_BEFORE_UNLOAD
+
+#ifdef OHOS_VIDEO_ASSISTANT
+void WebContentsImpl::PopluateVideoAssistantConfig(
+    media::mojom::VideoAssistantConfigPtr& config) {
+  if (delegate_) {
+    delegate_->PopluateVideoAssistantConfig(
+        GetLastCommittedURL().DeprecatedGetOriginAsURL().spec(), config);
+    video_assistant_->UpdateVideoAssistantConfig(config);
+  }
+}
+void WebContentsImpl::OnVideoPlaying(
+    media::mojom::VideoAttributesForVASTPtr video_attributes,
+    const MediaPlayerId& id) {
+  video_assistant_->OnVideoPlaying(std::move(video_attributes), id);
+}
+void WebContentsImpl::OnUpdateVideoAttributes(
+    media::mojom::VideoAttributesForVASTPtr video_attributes,
+    const MediaPlayerId& id) {
+  video_assistant_->OnUpdateVideoAttributes(std::move(video_attributes), id);
+}
+void WebContentsImpl::OnVideoDestroyed(const MediaPlayerId& id) {
+  video_assistant_->OnVideoDestroyed(id);
+}
+#endif // OHOS_VIDEO_ASSISTANT
 
 }  // namespace content

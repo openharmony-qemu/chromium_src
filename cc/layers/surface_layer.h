@@ -65,6 +65,11 @@ class CC_EXPORT SurfaceLayer : public Layer {
   using RectChangeCallback = base::RepeatingCallback<void(const gfx::Rect&)>;
   void SetVideoRectChangeCallback(RectChangeCallback callback);
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+#ifdef OHOS_VIDEO_ASSISTANT
+  using LayerBoundsChangeCallback =
+      base::RepeatingCallback<void(const gfx::Rect&)>;
+  void SetLayerBoundsChangeCallback(LayerBoundsChangeCallback callback);
+#endif // OHOS_VIDEO_ASSISTANT
 
   // Layer overrides.
   std::unique_ptr<LayerImpl> CreateLayerImpl(
@@ -76,6 +81,9 @@ class CC_EXPORT SurfaceLayer : public Layer {
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
   void OnLayerRectUpdate(const gfx::Rect& rect) override;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+#ifdef OHOS_VIDEO_ASSISTANT
+  void OnLayerBoundsUpdate(const gfx::Rect& bounds) override;
+#endif // OHOS_VIDEO_ASSISTANT
 
   const viz::SurfaceId& surface_id() const {
     return surface_range_.Read(*this).end();
@@ -126,6 +134,9 @@ class CC_EXPORT SurfaceLayer : public Layer {
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
   RectChangeCallback video_rect_change_callback_;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+#ifdef OHOS_VIDEO_ASSISTANT
+  LayerBoundsChangeCallback layer_bounds_change_callback_;
+#endif // OHOS_VIDEO_ASSISTANT
 };
 
 }  // namespace cc

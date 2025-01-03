@@ -4494,6 +4494,31 @@ void NWebDelegate::CloseDevtools() {
   }
   GetBrowser()->GetHost()->CloseDevTools();
 }
+
+#if defined(OHOS_VIDEO_ASSISTANT)
+void NWebDelegate::EnableVideoAssistant(bool enable) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    if (!handler_delegate_) {
+      LOG(ERROR) << "failed to enable video assistant, handler delegate is null";
+      return;
+    }
+    handler_delegate_->EnableVideoAssistant(enable);
+    return;
+  }
+
+  GetBrowser()->GetHost()->EnableVideoAssistant(enable);
+}
+
+void NWebDelegate::ExecuteVideoAssistantFunction(const std::string& cmd_id) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "failed to get host when execute video assistant function";
+    return;
+  }
+
+  GetBrowser()->GetHost()->ExecuteVideoAssistantFunction(cmd_id);
+}
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+
 #if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
 bool NWebDelegate::NeedToFireBeforeUnloadOrUnloadEvents() {
   if (GetBrowser().get()) {

@@ -919,6 +919,10 @@ void RegisterClippedVisualViewportSelectionBounds(
   void OnLayerRectVisibilityChange(int id, bool visibility);
 #endif
 
+#ifdef OHOS_VIDEO_ASSISTANT
+  void OnLayerBoundsUpdate(int id, const gfx::Rect& bounds);
+#endif // OHOS_VIDEO_ASSISTANT
+
  protected:
   LayerTreeHost(InitParams params, CompositorMode mode);
 

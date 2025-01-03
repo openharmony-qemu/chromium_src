@@ -643,6 +643,10 @@ void MediaWebContentsObserver::OnMediaPlayerObserverDisconnected(
     const MediaPlayerId& player_id) {
   DCHECK(media_player_observer_hosts_.contains(player_id));
   media_player_observer_hosts_.erase(player_id);
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  web_contents_impl()->OnVideoDestroyed(player_id);
+#endif // OHOS_VIDEO_ASSISTANT
 }
 
 device::mojom::WakeLock* MediaWebContentsObserver::GetAudioWakeLock() {
@@ -790,6 +794,11 @@ void MediaWebContentsObserver::RequestExitFullscreen(const MediaPlayerId& player
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
 #if defined(OHOS_VIDEO_ASSISTANT)
+bool MediaWebContentsObserver::IsMediaPlaying(const MediaPlayerId& player_id) {
+  auto player_info = GetPlayerInfo(player_id);
+  return player_info && player_info->is_playing();
+}
+
 void MediaWebContentsObserver::SetPlaybackRate(double playback_rate,
                                                const MediaPlayerId& player_id) {
   const auto iter = media_player_remotes_.find(player_id);
@@ -825,5 +834,38 @@ void MediaWebContentsObserver::RequestDownloadUrl(
   iter->second->RequestDownloadUrl();
 }
 #endif  // defined(OHOS_VIDEO_ASSISTANT)
+
+#ifdef OHOS_VIDEO_ASSISTANT
+void MediaWebContentsObserver::MediaPlayerHostImpl::
+    RequestVideoAssistantConfig(
+        RequestVideoAssistantConfigCallback callback) {
+  LOG(INFO) << "RequestVideoAssistantConfig";
+  auto config = media::mojom::VideoAssistantConfig::New(true, true,
+      media::mojom::VideoAssistantDownloadButton::kDownloadPerPage);
+  auto* web_contents_impl = media_web_contents_observer_->web_contents_impl();
+  web_contents_impl->PopluateVideoAssistantConfig(config);
+  std::move(callback).Run(std::move(config));
+}
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
+    OnVideoPlaying(
+        media::mojom::VideoAttributesForVASTPtr video_attributes) {
+  LOG(INFO) << "OnVideoPlaying";
+  media_web_contents_observer_->web_contents_impl()->OnVideoPlaying(
+      std::move(video_attributes), media_player_id_);
+}
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
+    OnUpdateVideoAttributes(
+        media::mojom::VideoAttributesForVASTPtr video_attributes) {
+  LOG(INFO) << "OnUpdateVideoAttributes";
+  media_web_contents_observer_->web_contents_impl()->OnUpdateVideoAttributes(
+      std::move(video_attributes), media_player_id_);
+}
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
+    OnVideoDestroyed() {
+  LOG(INFO) << "OnVideoDestroyed";
+  media_web_contents_observer_->web_contents_impl()->OnVideoDestroyed(
+      media_player_id_);
+}
+#endif // OHOS_VIDEO_ASSISTANT
 
 }  // namespace content

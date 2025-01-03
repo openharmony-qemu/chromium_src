@@ -5428,6 +5428,12 @@ void LayerTreeHostImpl::OnLayerRectVisibilityChange(int id, bool visibility) {
 }
 #endif
 
+#ifdef OHOS_VIDEO_ASSISTANT
+void LayerTreeHostImpl::OnLayerBoundsUpdate(int id, const gfx::Rect& bounds) {
+  client_->OnLayerBoundsUpdate(id, bounds);
+}
+#endif // OHOS_VIDEO_ASSISTANT
+
 #ifdef OHOS_NWEB_EX
 void LayerTreeHostImpl::SetupScrollBy() {
   if (!input_delegate_) {

@@ -194,6 +194,9 @@ class LayerTreeHostImplClient {
 
   virtual void OnLayerRectVisibilityChange(int id, bool visibility) {}
 #endif
+#ifdef OHOS_VIDEO_ASSISTANT
+  virtual void OnLayerBoundsUpdate(int id, const gfx::Rect& bounds) {}
+#endif // OHOS_VIDEO_ASSISTANT
 
  protected:
   virtual ~LayerTreeHostImplClient() = default;
@@ -940,6 +943,9 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
 
   void OnLayerRectVisibilityChange(int id, bool visibility);
 #endif
+#ifdef OHOS_VIDEO_ASSISTANT
+  void OnLayerBoundsUpdate(int id, const gfx::Rect& bounds);
+#endif // OHOS_VIDEO_ASSISTANT
 
   void SetDownsampleMetricsForTesting(bool value) {
     downsample_metrics_ = value;

@@ -212,6 +212,9 @@ void SurfaceLayerImpl::AppendQuads(viz::CompositorRenderPass* render_pass,
   // |surface_range_| more than once.
   deadline_in_frames_ = 0u;
 
+#ifdef OHOS_VIDEO_ASSISTANT
+  OnLayerBoundsUpdate(visible_quad_rect);
+#endif // OHOS_VIDEO_ASSISTANT
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
    visible_quad_rect.set_origin(
         ScreenSpaceTransform().MapPoint(visible_quad_rect.origin()));
@@ -334,4 +337,14 @@ const char* SurfaceLayerImpl::LayerTypeAsString() const {
   return "cc::SurfaceLayerImpl";
 }
 
+#ifdef OHOS_VIDEO_ASSISTANT
+void SurfaceLayerImpl::OnLayerBoundsUpdate(gfx::Rect visible_quad_rect) {
+  gfx::Rect layer_bounds =
+      ScreenSpaceTransform().MapRect(visible_quad_rect);
+  if (!layer_bounds_.ApproximatelyEqual(layer_bounds, 1)) {
+    layer_bounds_ = layer_bounds;
+    layer_tree_impl()->OnLayerBoundsUpdate(id(), layer_bounds);
+  }
+}
+#endif // OHOS_VIDEO_ASSISTANT
 }  // namespace cc

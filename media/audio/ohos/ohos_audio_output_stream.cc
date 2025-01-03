@@ -597,14 +597,14 @@ void OHOSAudioOutputStream::PumpSamples() {
 
 void OHOSAudioOutputStream::SetUpAudioSilentState()
 {
-  if(!weakMediaSession_ || !audio_renderer_) {
+  if (!weakMediaSession_ || !audio_renderer_) {
     LOG(ERROR) << "OHOSAudioOutputStream: Try to set audio silent but get mediaSession or audioRender failed!";
     return;
   }
-  if(isSilentMode_) {
+  if (isSilentMode_) {
     bool is_playing = weakMediaSession_.get()->GetPlayingState();
     bool is_muted = weakMediaSession_.get()->GetMuteState();
-    if(is_playing && !is_muted) {
+    if (is_playing && !is_muted) {
       audio_renderer_->SetAudioSilentMode(false);
       LOG(INFO) << "OHOSAudioOutputStream SetAudioSilentMode false!";
       isSilentMode_ = false;

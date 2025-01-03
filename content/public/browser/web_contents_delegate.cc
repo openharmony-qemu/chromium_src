@@ -23,6 +23,10 @@
 #include "third_party/blink/public/common/security/protocol_handler_security_level.h"
 #include "third_party/blink/public/mojom/mediastream/media_stream.mojom.h"
 #include "ui/gfx/geometry/rect.h"
+#ifdef OHOS_VIDEO_ASSISTANT
+#include "content/browser/media/video_assistant/video_assistant.h"
+#include "media/mojo/mojom/media_player.mojom.h"
+#endif // OHOS_VIDEO_ASSISTANT
 
 namespace content {
 
@@ -419,5 +423,18 @@ void WebContentsDelegate::OnShowVideoAssistant(
 
 void WebContentsDelegate::OnReportStatisticLog(const std::string& content) {}
 #endif  // defined(OHOS_VIDEO_ASSISTANT)
+
+#ifdef OHOS_VIDEO_ASSISTANT
+std::unique_ptr<VideoAssistant> WebContentsDelegate::CreateVideoAssistant() {
+  return std::make_unique<VideoAssistant>();
+}
+void WebContentsDelegate::PopluateVideoAssistantConfig(
+    const std::string& url,
+    media::mojom::VideoAssistantConfigPtr& config) {}
+void WebContentsDelegate::OnVideoPlaying(
+    media::mojom::VideoAttributesForVASTPtr video_attributes) {}
+void WebContentsDelegate::OnUpdateVideoAttributes(
+    media::mojom::VideoAttributesForVASTPtr video_attributes) {}
+#endif // OHOS_VIDEO_ASSISTANT
 
 }  // namespace content

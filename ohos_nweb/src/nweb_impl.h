@@ -463,6 +463,10 @@ class NWebImpl : public NWeb {
   static void SetBrowserUA(const std::string& ua_name);
 #endif  // OHOS_EX_UA
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+  static void UpdateBrowserEngineConfig(const std::string& file_path, const std::string& version);
+#endif
+
 #if defined(OHOS_EX_FORCE_ZOOM)
   void SetForceEnableZoom(bool forceEnableZoom) const;
   bool GetForceEnableZoom() const;

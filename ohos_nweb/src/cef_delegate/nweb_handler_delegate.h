@@ -788,6 +788,10 @@ void OnTouchIconUrlWithSizesReceived(
 
   void OnRequestOpenDevTools();
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+  void EnableVideoAssistant(bool enable);
+#endif // OHOS_VIDEO_ASSISTANT
+
 #if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
  void OnBeforeUnloadFired(CefRefPtr<CefBrowser> browser,
                           bool proceed) override;
@@ -921,6 +925,9 @@ void OnTouchIconUrlWithSizesReceived(
 #ifdef OHOS_ARKWEB_ADBLOCK
       bool is_global_adblock_enabled_ = false;
 #endif
+#if defined(OHOS_VIDEO_ASSISTANT)
+  std::optional<bool> video_assistant_enabled_;
+#endif // OHOS_VIDEO_ASSISTANT
 
   base::WeakPtrFactory<NWebHandlerDelegate> weak_factory_{this};
 };

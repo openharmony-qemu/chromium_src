@@ -188,6 +188,10 @@ class PepperPlaybackObserver;
 class CustomMediaPlayerListener;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+#ifdef OHOS_VIDEO_ASSISTANT
+class VideoAssistant;
+#endif // OHOS_VIDEO_ASSISTANT
+
 // CreatedWindow holds the WebContentsImpl and target url between IPC calls to
 // CreateNewWindow and ShowCreatedWindow.
 struct CONTENT_EXPORT CreatedWindow {
@@ -1588,6 +1592,18 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   void OnBeforeUnloadFired(bool proceed) override;
 #endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
+#ifdef OHOS_VIDEO_ASSISTANT
+  void PopluateVideoAssistantConfig(
+      media::mojom::VideoAssistantConfigPtr& config);
+  void OnVideoPlaying(
+      media::mojom::VideoAttributesForVASTPtr video_attributes,
+      const MediaPlayerId& id);
+  void OnUpdateVideoAttributes(
+      media::mojom::VideoAttributesForVASTPtr video_attributes,
+      const MediaPlayerId& id);
+  void OnVideoDestroyed(const MediaPlayerId& id);
+#endif // OHOS_VIDEO_ASSISTANT
+
  private:
   using FrameTreeIterationCallback = base::RepeatingCallback<void(FrameTree&)>;
   using RenderViewHostIterationCallback =
@@ -2676,6 +2692,10 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
   std::map<MediaPlayerId, CustomMediaPlayer*> players_;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  std::unique_ptr<VideoAssistant> video_assistant_;
+#endif // OHOS_VIDEO_ASSISTANT
 };
 
 // Dangerous methods which should never be made part of the public API, so we

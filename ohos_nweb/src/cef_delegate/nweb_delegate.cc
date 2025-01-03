@@ -644,6 +644,7 @@ void NWebDelegate::RegisterWebDownloadDelegateListener(
 }
 
 void NWebDelegate::StartDownload(const char* url) {
+  LOG(INFO) << "NWebDelegate::StartDownload";
   if (handler_delegate_ == nullptr) {
     LOG(ERROR) << "fail to start download, NWEB handler is nullptr";
     return;
@@ -656,7 +657,7 @@ void NWebDelegate::StartDownload(const char* url) {
 
 void NWebDelegate::ResumeDownload(
     std::shared_ptr<NWebDownloadItem> web_download) {
-  LOG(DEBUG) << "NWebDelegate::ResumeDownload";
+  LOG(INFO) << "NWebDelegate::ResumeDownload";
   auto browser = GetBrowser();
 
   if (web_download == nullptr) {

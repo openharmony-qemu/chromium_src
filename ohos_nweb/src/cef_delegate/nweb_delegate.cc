@@ -296,7 +296,7 @@ class ScreenCaptureCallbackImpl
   ScreenCaptureCallbackImpl(
       std::shared_ptr<NWebScreenCaptureDelegateCallback> callback)
       : callback_(callback) {}
-  void OnStateChange(int32_t nweb_id, const CefString& session_id, int32_t code) override {
+  NO_SANITIZE("cfi-icall") void OnStateChange(int32_t nweb_id, const CefString& session_id, int32_t code) override {
     if (callback_ != nullptr) {
       callback_->OnStateChange(nweb_id, session_id.ToString().c_str(), code);
     }

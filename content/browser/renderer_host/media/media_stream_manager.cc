@@ -3692,7 +3692,12 @@ void MediaStreamManager::PostVideoCaptureSessionBind(blink::mojom::MediaStreamTy
       WebContentsImpl::FromRenderFrameHostID(process_id, frame_id));
     if (web_contents) {
         std::lock_guard<std::mutex> lock(nweb_id_mutex_);
-        nweb_id_maps_[session_id.ToString()] = web_contents->GetNWebId();
+        std::string session_id_str = session_id.ToString();
+        auto nweb_id_it = nweb_id_maps_.find(session_id_str);
+        if (nweb_id_it == nweb_id_maps_.end()) {
+          PopSessionIdState(web_contents->GetNWebId(), session_id_str);
+        }
+        nweb_id_maps_[session_id_str] = web_contents->GetNWebId();
     }
   }
 #endif  // defined(OHOS_EX_SCREEN_CAPTURE)
@@ -4653,6 +4658,10 @@ void MediaStreamManager::SendScreenCaptureState(const std::string& session_id,
   std::lock_guard<std::mutex> lock(nweb_id_mutex_);
   auto nweb_id_it = nweb_id_maps_.find(session_id);
   if (nweb_id_it == nweb_id_maps_.end()) {
+    SessionIdState session_id_state;
+    session_id_state.session_id = session_id;
+    session_id_state.state = static_cast<ScreenCaptureState>(state);
+    session_id_state_.push_back(session_id_state);
     return;
   }
   MediaStreamManager::SendScreenCaptureStateToNative(nweb_id_it->second, session_id, state);
@@ -4671,6 +4680,18 @@ void MediaStreamManager::SendScreenCaptureStateToNative(int32_t nweb_id,
 
   if (!screen_capture_callback_.is_null()) {
     screen_capture_callback_.Run(nweb_id, session_id.c_str(), state);
+  }
+}
+
+void MediaStreamManager::PopSessionIdState(int32_t nweb_id, const std::string& session_id) {
+  for (auto state_it = session_id_state_.begin(); state_it != session_id_state_.end();) {
+    if (state_it->session_id == session_id) {
+      MediaStreamManager::SendScreenCaptureStateToNative(nweb_id, state_it->session_id,
+                                                         state_it->state);
+      state_it = session_id_state_.erase(state_it);
+    } else {
+      state_it++;
+    }
   }
 }
 #endif  // defined(OHOS_EX_SCREEN_CAPTURE)

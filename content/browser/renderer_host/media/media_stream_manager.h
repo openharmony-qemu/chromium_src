@@ -75,6 +75,11 @@ enum ScreenCaptureState {
   SCREEN_CAPTURE_STOPED,
   SCREEN_CAPTURE_ABORTED,
 };
+
+struct SessionIdState {
+  std::string session_id;
+  ScreenCaptureState state;
+};
 #endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 
 struct TransferStatus {
@@ -467,6 +472,7 @@ class CONTENT_EXPORT MediaStreamManager
   static ScreenCaptureCallback screen_capture_callback_;
   void StopScreenCapture(int32_t nweb_id, const std::string& session_id);
   void SendScreenCaptureState(const std::string& session_id,  int32_t state);
+  void PopSessionIdState(int32_t nweb_id, const std::string& session_id);
 #endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 
  private:
@@ -844,6 +850,7 @@ class CONTENT_EXPORT MediaStreamManager
 #if defined(OHOS_EX_SCREEN_CAPTURE)
   std::map<std::string, int> nweb_id_maps_;
   mutable std::mutex nweb_id_mutex_;
+  std::list<SessionIdState> session_id_state_;
 #endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 };
 

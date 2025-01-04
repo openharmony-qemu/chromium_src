@@ -165,12 +165,12 @@ bool StructTraits<
     network::debug::SetDeserializationCrashKeyString("referrer");
     return false;
   }
-#if BUILDFLAG(IS_OHOS_PRPP)
-  if (!data.ReadMainUrl(&out->main_url)) {
-    network::debug::SetDeserializationCrashKeyString("main_url");
+#if BUILDFLAG(IS_OHOS)
+  if (!data.ReadMainPage(&out->main_page)) {
+    network::debug::SetDeserializationCrashKeyString("main_page");
     return false;
   }
-#endif  //  IS_OHOS_PRPP
+#endif  //  IS_OHOS
   if (!data.ReadReferrerPolicy(&out->referrer_policy) ||
       !data.ReadHeaders(&out->headers) ||
       !data.ReadCorsExemptHeaders(&out->cors_exempt_headers) ||
@@ -233,12 +233,9 @@ bool StructTraits<
   out->attribution_reporting_eligibility =
       data.attribution_reporting_eligibility();
 #if BUILDFLAG(IS_OHOS)
+  out->allow_preload_record = data.allow_preload_record();
   out->is_sync_mode = data.is_sync_mode();
 #endif  //  IS_OHOS
-#if BUILDFLAG(IS_OHOS_PRPP)
-  out->allow_preload_record = data.allow_preload_record();
-  out->is_preflight = data.is_preflight();
-#endif  //  IS_OHOS_PRPP
 #if defined(OHOS_EX_DOWNLOAD)
   out->is_download_request = data.is_download_request();
 #endif  //  OHOS_EX_DOWNLOAD

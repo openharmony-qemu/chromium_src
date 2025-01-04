@@ -98,7 +98,6 @@ public:
   MOCK_METHOD(std::string, GetUserAgentBaseOSName, (), (override));
   MOCK_METHOD(std::string, GetUserAgentOSVersion, (), (override));
   MOCK_METHOD(std::string, GetCompatibleDeviceType, (), (override));
-  MOCK_METHOD(std::string, GetPRPPreloadMode, (), (override));
 };
 
 class MockWindowAdapter : public WindowAdapter {

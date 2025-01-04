@@ -198,9 +198,6 @@
 #if defined(OHOS_RENDERER_ANR_DUMP)
 #include "content/public/browser/web_contents_delegate.h"
 #endif
-#if BUILDFLAG(IS_OHOS_PRPP)
-#include "mojo/public/cpp/bindings/callback_helpers.h"
-#endif
 
 namespace content {
 
@@ -218,10 +215,6 @@ base::TimeDelta g_commit_timeout = kDefaultCommitTimeout;
 #if BUILDFLAG(IS_ANDROID)
 // Timeout for locking the compositor at the beginning of navigation.
 constexpr base::TimeDelta kCompositorLockTimeout = base::Milliseconds(150);
-#endif
-
-#if BUILDFLAG(IS_OHOS_PRPP)
-const std::string ORIGIN = "origin.DEFAULT";
 #endif
 
 // crbug.com/954271: This feature is a part of an ablation study which makes
@@ -5854,12 +5847,7 @@ void NavigationRequest::CommitNavigation() {
       std::move(url_loader_client_endpoints_),
       std::move(subresource_loader_params_), std::move(subresource_overrides_),
       std::move(service_worker_container_info), document_token_,
-      devtools_navigation_token_
-#if BUILDFLAG(IS_OHOS_PRPP)
-      ,
-      addr_web_handle_
-#endif
-      );
+      devtools_navigation_token_);
   UpdateNavigationHandleTimingsOnCommitSent();
 
   // Give SpareRenderProcessHostManager a heads-up about the most recently used
@@ -9548,73 +9536,4 @@ void NavigationRequest::CreateWebUIIfNeeded(RenderFrameHostImpl* frame_host) {
   web_ui_->SetController(std::move(controller));
 }
 
-#if BUILDFLAG(IS_OHOS_PRPP)
-network::mojom::NetworkContext* NavigationRequest::GetNetworkContext() const
-{
-  if (!common_params_) {
-    LOG(DEBUG) << "PRPPreload.NavigationRequest::GetNetworkContext, no common_params";
-    return nullptr;
-  }
-  if (common_params_->url.spec() == "about:blank") {
-    LOG(DEBUG) << "PRPPreload.NavigationRequest::GetNetworkContext, blank page not need";
-    return nullptr;
-  }
-  if (!frame_tree_node_) {
-    LOG(DEBUG) << "PRPPreload.NavigationRequest::GetNetworkContext, no frame_tree_node";
-    return nullptr;
-  }
-  if (!frame_tree_node_->IsMainFrame()) {
-    LOG(DEBUG) << "PRPPreload.NavigationRequest::GetNetworkContext, not main frame";
-    return nullptr;
-  }
-  if (!frame_tree_node_->current_frame_host()) {
-    LOG(DEBUG) << "PRPPreload.NavigationRequest::GetNetworkContext, no current_frame_host";
-    return nullptr;
-  }
-  if (!frame_tree_node_->current_frame_host()->GetStoragePartition()) {
-    LOG(DEBUG) << "PRPPreload.NavigationRequest::GetNetworkContext, no storage_partition";
-    return nullptr;
-  }
-
-  return frame_tree_node_->current_frame_host()->GetStoragePartition()->GetNetworkContext();
-}
-
-using StartPageCallback__ = base::OnceCallback<void(const std::string&)>;
-void NavigationRequest::StartPage(uint64_t addr_web_handle)
-{
-  network::mojom::NetworkContext* network_context = GetNetworkContext();
-  if (!network_context) {
-    return;
-  }
-
-  addr_web_handle_ = addr_web_handle;
-  network_context->StartPage(common_params_->url.spec(), addr_web_handle_,
-    mojo::WrapCallbackWithDefaultInvokeIfNotRun(base::BindOnce(&NavigationRequest::OnGetIsolation,
-    weak_factory_.GetWeakPtr()), ORIGIN));
-}
-
-void NavigationRequest::OnGetIsolation(const std::string& origin)
-{
-  if (origin.starts_with(ORIGIN)) {
-    LOG(DEBUG) << "PRPPreload.NavigationRequest::OnGetIsolation, canceled";
-    return;
-  }
-
-  network::mojom::NetworkContext* network_context = GetNetworkContext();
-  if (!network_context) {
-    return;
-  }
-
-  url::Origin url_origin = url::Origin::Create(GURL(origin));
-  net::IsolationInfo prp_isolation =
-    frame_tree_node_->current_frame_host()->ComputeIsolationInfoForSubresourcesForPendingCommit(
-      url_origin, is_credentialless(), ComputeFencedFrameNonce());
-  network::mojom::URLLoaderFactoryParamsPtr params = network::mojom::URLLoaderFactoryParams::New();
-  if (params) {
-    params->isolation_info = prp_isolation;
-    params->main_url = common_params_->url.spec();
-    network_context->SetParam(std::move(params));
-  }
-}
-#endif
 }  // namespace content

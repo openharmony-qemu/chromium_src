@@ -100,7 +100,6 @@
 #include "mojo/public/cpp/system/data_pipe.h"
 #include "net/base/isolation_info.h"
 #include "net/base/network_isolation_key.h"
-#include "net/base/prp_preload_buildflags.h"
 #include "net/cookies/cookie_setting_override.h"
 #include "net/net_buildflags.h"
 #include "ppapi/buildflags/buildflags.h"
@@ -1466,12 +1465,7 @@ class CONTENT_EXPORT RenderFrameHostImpl
           subresource_overrides,
       blink::mojom::ServiceWorkerContainerInfoForClientPtr container_info,
       const absl::optional<blink::DocumentToken>& document_token,
-      const base::UnguessableToken& devtools_navigation_token
-#if BUILDFLAG(IS_OHOS_PRPP)
-      ,
-      uint64_t addr_web_handle
-#endif
-      );
+      const base::UnguessableToken& devtools_navigation_token);
 
   // Indicates that a navigation failed and that this RenderFrame should display
   // an error page.

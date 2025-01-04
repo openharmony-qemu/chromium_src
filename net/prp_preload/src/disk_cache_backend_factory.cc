@@ -2,10 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "services/network/prp_preload/src/disk_cache_backend_factory.h"
+#include "disk_cache_backend_factory.h"
 
 #include "base/logging.h"
 #include "base/path_service.h"
+#include "net/base/io_buffer.h"
 
 namespace {
 const size_t DEFAULT_PRELOAD_DISK_CACHE_BYTES = 12 * 1024 * 1024;
@@ -15,10 +16,11 @@ const base::FilePath::CharType PRELOAD_CACHE_DIRNAME[] = FILE_PATH_LITERAL("Prel
 namespace ohos_prp_preload {
 void DiskCacheBackendFactory::CreateBackend() {
   if (!base::PathService::Get(base::DIR_CACHE, &cache_path_)) {
-    LOG(WARNING) << "PRPPreload.DiskCacheBackendFactory::CreateBackend get cache path failed";
+    LOG(ERROR) << "PRPPreload.DiskCacheBackendFactory::CreateBackend get cache path failed";
     return;
   }
   cache_path_ = cache_path_.Append(PRELOAD_CACHE_DIRNAME);
+  LOG(DEBUG) << "PRPPreload.DiskCacheBackendFactory::CreateBackend cache path success";
   disk_cache::BackendResult rv = disk_cache::CreateCacheBackend(
     net::DISK_CACHE, net::CACHE_BACKEND_SIMPLE, /*file_operations=*/nullptr,
     cache_path_, DEFAULT_PRELOAD_DISK_CACHE_BYTES,
@@ -36,7 +38,8 @@ bool DiskCacheBackendFactory::WaitInitedTimeout() {
     return true;
   }
   constexpr int32_t WAIT_INITED_TIME_OUT = 200; // 200ms
-  std::unique_lock<std::mutex> lk(fac_mutex_);
+  std::mutex mutex;
+  std::unique_lock<std::mutex> lk(mutex);
   bool ret = cv_backend_ready_.wait_until(lk,
     std::chrono::steady_clock::now() + std::chrono::milliseconds(WAIT_INITED_TIME_OUT),
     [&] { return is_inited_.load(); });

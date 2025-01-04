@@ -37,8 +37,8 @@
 #include "net/socket/connection_attempts.h"
 #include "net/websockets/websocket_handshake_stream_base.h"
 
-#if BUILDFLAG(IS_OHOS_PRPP)
-#include "net/base/page_res_request_info.h"
+#if BUILDFLAG(IS_OHOS)
+#include "net/prp_preload/include/page_res_parallel_preload_mgr.h"
 #endif
 
 namespace crypto {
@@ -613,18 +613,9 @@ class NET_EXPORT_PRIVATE HttpCache::Transaction : public HttpTransaction {
   void BeginDiskCacheAccessTimeCount();
   void EndDiskCacheAccessTimeCount(DiskCacheAccessType type);
 
-#if BUILDFLAG(IS_OHOS_PRPP)
-  void SetUpdateResRequestInfoCallback(
-      HttpTransaction::UpdateResRequestInfoCallback callback) override {
-    update_res_request_info_callback_ = std::move(callback);
-  }
-
-  void SetPreloadInfo(
-      const std::shared_ptr<ohos_prp_preload::PRRequestInfo>& preload_info) override {
-    preload_info_ = preload_info;
-  }
-
+#if BUILDFLAG(IS_OHOS)
   void UpdateCacheInfo(const HttpResponseInfo& response);
+  void UpdateValidatorsInfo(const HttpResponseHeaders& headers);
 #endif
 
   State next_state_{STATE_NONE};
@@ -764,9 +755,8 @@ class NET_EXPORT_PRIVATE HttpCache::Transaction : public HttpTransaction {
   // True if the Transaction is currently processing the DoLoop.
   bool in_do_loop_ = false;
 
-#if BUILDFLAG(IS_OHOS_PRPP)
+#if BUILDFLAG(IS_OHOS)
   std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info_;
-  HttpTransaction::UpdateResRequestInfoCallback update_res_request_info_callback_;
 #endif
 
   base::WeakPtrFactory<Transaction> weak_factory_{this};

@@ -14,7 +14,6 @@
 #include "base/unguessable_token.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "net/base/isolation_info.h"
-#include "net/base/prp_preload_buildflags.h"
 #include "net/base/request_priority.h"
 #include "net/cookies/site_for_cookies.h"
 #include "net/filter/source_stream.h"
@@ -203,12 +202,9 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE) ResourceRequest {
   mojom::AttributionReportingEligibility attribution_reporting_eligibility =
       mojom::AttributionReportingEligibility::kUnset;
 #if BUILDFLAG(IS_OHOS)
-  bool is_sync_mode = false;
-#endif
-#if BUILDFLAG(IS_OHOS_PRPP)
   bool allow_preload_record = false;
-  GURL main_url;
-  bool is_preflight = false;
+  GURL main_page;
+  bool is_sync_mode = false;
 #endif
 #if defined(OHOS_EX_DOWNLOAD)
   bool is_download_request = false;

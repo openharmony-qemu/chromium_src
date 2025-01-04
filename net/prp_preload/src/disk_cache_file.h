@@ -2,10 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SERVICES_NETWORK_PRP_PRELOAD_SRC_DISK_CACHE_FILE_H
-#define SERVICES_NETWORK_PRP_PRELOAD_SRC_DISK_CACHE_FILE_H
+#ifndef NET_PRP_PRELOAD_SRC_DISK_CACHE_FILE_H
+#define NET_PRP_PRELOAD_SRC_DISK_CACHE_FILE_H
 
-#include "services/network/prp_preload/src/disk_cache_backend_factory.h"
+#include <string>
+#include "disk_cache_backend_factory.h"
+#include "net/base/io_buffer.h"
 
 namespace ohos_prp_preload {
 class DiskCacheFile;
@@ -106,4 +108,4 @@ class DiskCacheFile : public base::RefCounted<DiskCacheFile> {
 
 }  // namespace ohos_prp_preload
 
-#endif  // SERVICES_NETWORK_PRP_PRELOAD_SRC_DISK_CACHE_FILE_H
+#endif  // NET_PRP_PRELOAD_SRC_DISK_CACHE_FILE_H

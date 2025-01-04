@@ -180,9 +180,9 @@
 #include "base/android/application_status_listener.h"
 #endif  // BUILDFLAG(IS_ANDROID)
 
-#if BUILDFLAG(IS_OHOS_PRPP)
-#include "services/network/prp_preload/include/page_res_parallel_preload_mgr.h"
-#endif // BUILDFLAG(IS_OHOS_PRPP)
+#if BUILDFLAG(IS_OHOS)
+#include "net/prp_preload/include/page_res_parallel_preload_mgr.h"
+#endif // BUILDFLAG(IS_OHOS)
 
 namespace network {
 
@@ -717,29 +717,9 @@ void NetworkContext::CreateURLLoaderFactory(
     mojo::PendingReceiver<mojom::URLLoaderFactory> receiver,
     mojom::URLLoaderFactoryParamsPtr params,
     scoped_refptr<ResourceSchedulerClient> resource_scheduler_client) {
-#if BUILDFLAG(IS_OHOS_PRPP)
-  if (ohos_prp_preload::PRParallelPreloadMgr::GetInstance().GetPRParallelPreloadMode() !=
-      ohos_prp_preload::PRPPreloadMode::PRELOAD || !params) {
-#endif
   url_loader_factories_.emplace(std::make_unique<cors::CorsURLLoaderFactory>(
       this, std::move(params), std::move(resource_scheduler_client),
       std::move(receiver), &cors_origin_access_list_));
-#if BUILDFLAG(IS_OHOS_PRPP)
-    return;
-  }
-  auto main_url = params->main_url;
-  auto addr_web_handle = params->addr_web_handle;
-  net::IsolationInfo isolation_info(params->isolation_info);
-  auto url_loader_factory = std::make_unique<cors::CorsURLLoaderFactory>(
-      this, std::move(params), std::move(resource_scheduler_client),
-      std::move(receiver), &cors_origin_access_list_);
-  url_loader_factories_.emplace(std::move(url_loader_factory));
-  if (addr_web_handle != 0 && !main_url.empty()) {
-    if (isolation_info.frame_origin().has_value()) {
-      ohos_prp_preload::PRParallelPreloadMgr::GetInstance().SetPageOrigin(main_url, isolation_info);
-    }
-  }
-#endif
 }
 
 void NetworkContext::CreateURLLoaderFactoryForCertNetFetcher(
@@ -1814,23 +1794,19 @@ void NetworkContext::ClearHostIP(const std::string& host_name) {
 }
 #endif
 
-#if BUILDFLAG(IS_OHOS_PRPP)
+#if BUILDFLAG(IS_OHOS)
 void NetworkContext::InitPRParallelPreloadMgr() {
   ohos_prp_preload::PRParallelPreloadMgr::GetInstance().Init(base::SingleThreadTaskRunner::GetCurrentDefault());
 }
 
-void NetworkContext::StartPage(const std::string& url, uint64_t addr_web_handle,
-    StartPageCallback page_origin_cb) {
-  ohos_prp_preload::PRParallelPreloadMgr::GetInstance().StartPage(url,
-    url_request_context()->GetWeakPtr(), weak_factory_.GetWeakPtr(), addr_web_handle, std::move(page_origin_cb));
+void NetworkContext::StartMainPage(const std::string& url,
+  const net::NetworkAnonymizationKey& networkAnonymizationKey, uint64_t addr_web_handle) {
+  ohos_prp_preload::PRParallelPreloadMgr::GetInstance().StartMainPage(url,
+    networkAnonymizationKey, url_request_context()->GetWeakPtr(), addr_web_handle);
 }
 
-void NetworkContext::StopPage(uint64_t addr_web_handle) {
-  ohos_prp_preload::PRParallelPreloadMgr::GetInstance().StopPage(addr_web_handle);
-}
-
-void NetworkContext::SetParam(mojom::URLLoaderFactoryParamsPtr params) {
-  ohos_prp_preload::PRParallelPreloadMgr::GetInstance().SetURLLoaderFactoryParam(std::move(params));
+void NetworkContext::StopMainPage(uint64_t addr_web_handle) {
+  ohos_prp_preload::PRParallelPreloadMgr::GetInstance().StopMainPage(addr_web_handle);
 }
 #endif
 

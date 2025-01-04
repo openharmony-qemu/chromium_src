@@ -383,21 +383,16 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
     return request.attribution_reporting_eligibility;
   }
 #if BUILDFLAG(IS_OHOS)
+  static bool allow_preload_record(const network::ResourceRequest& request) {
+    return request.allow_preload_record;
+  }
+  static const GURL& main_page(const network::ResourceRequest& request) {
+    return request.main_page;
+  }
   static bool is_sync_mode(const network::ResourceRequest& request) {
     return request.is_sync_mode;
   }
 #endif  //  IS_OHOS
-#if BUILDFLAG(IS_OHOS_PRPP)
-  static bool allow_preload_record(const network::ResourceRequest& request) {
-    return request.allow_preload_record;
-  }
-  static const GURL& main_url(const network::ResourceRequest& request) {
-    return request.main_url;
-  }
-  static bool is_preflight(const network::ResourceRequest& request) {
-    return request.is_preflight;
-  }
-#endif  //  IS_OHOS_PRPP
 #if defined(OHOS_EX_DOWNLOAD)
   static bool is_download_request(const network::ResourceRequest& request) {
     return request.is_download_request;

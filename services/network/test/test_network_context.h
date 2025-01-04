@@ -321,12 +321,8 @@ class TestNetworkContext : public mojom::NetworkContext {
     uint32_t AliveTime) override {}
   void ClearHostIP(const std::string& HostName) override {}
   void InitPRParallelPreloadMgr() override {}
-  void StartPage(
-      const std::string& url,
-      uint64_t addr_web_handle,
-      StartPageCallback page_origin_cb) override {}
-  void StopPage(uint64_t addr_web_handle) override {}
-  void SetParam(mojom::URLLoaderFactoryParamsPtr params) override {}
+  void StartMainPage(const std::string& url, uint64_t addr_web_handle) override {}
+  void StopMainPage(uint64_t addr_web_handle) override {}
 #endif // OHOS_UNITTESTS
 };
 

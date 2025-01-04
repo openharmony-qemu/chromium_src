@@ -8,16 +8,11 @@
 #include "base/strings/string_piece.h"
 #include "content/common/content_export.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
-#include "net/base/prp_preload_buildflags.h"
 #include "services/network/public/mojom/cross_origin_embedder_policy.mojom-forward.h"
 #include "services/network/public/mojom/early_hints.mojom-forward.h"
 #include "services/network/public/mojom/network_context.mojom.h"
 #include "services/network/public/mojom/url_loader.mojom-shared.h"
 #include "url/origin.h"
-
-#if BUILDFLAG(IS_OHOS_PRPP)
-#include "url/gurl.h"
-#endif
 
 namespace net {
 class IsolationInfo;
@@ -64,13 +59,7 @@ class URLLoaderFactoryParamsHelper {
       network::mojom::TrustTokenOperationPolicyVerdict
           trust_token_redemption_policy,
       net::CookieSettingOverrides cookie_setting_overrides,
-      base::StringPiece debug_tag
-#if BUILDFLAG(IS_OHOS_PRPP)
-      ,
-      const GURL& main_url = GURL(),
-      uint64_t addr_web_handle = 0
-#endif
-      );
+      base::StringPiece debug_tag);
 
   // Creates URLLoaderFactoryParams to be used by |isolated_world_origin| hosted
   // within the |frame|.

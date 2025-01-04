@@ -784,10 +784,6 @@ void CorsURLLoader::StartRequest() {
 
   // Since we're doing a preflight, we won't reuse the original request. Cancel
   // it now to free up the socket.
-#if BUILDFLAG(IS_OHOS)
-  // for prp_preload performance tools, preflight request
-  TRACE_EVENT1("net", "CorsURLLoader::StartRequest", "id", request_id_);
-#endif
   network_loader_.reset();
 
   context_->cors_preflight_controller()->PerformPreflightCheck(

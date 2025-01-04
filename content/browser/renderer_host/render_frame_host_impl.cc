@@ -1196,10 +1196,6 @@ class RenderFrameHostImpl::SubresourceLoaderFactoriesConfig {
   static SubresourceLoaderFactoriesConfig ForPendingNavigation(
       NavigationRequest& navigation_request) {
     SubresourceLoaderFactoriesConfig result;
-#if BUILDFLAG(IS_OHOS_PRPP)
-    result.main_url_ = navigation_request.common_params().url;
-    result.addr_web_handle_ = navigation_request.GetAddrWebHandle();
-#endif
     result.origin_ = navigation_request.GetOriginToCommit().value();
     result.client_security_state_ =
         navigation_request.BuildClientSecurityState();
@@ -1289,10 +1285,6 @@ class RenderFrameHostImpl::SubresourceLoaderFactoriesConfig {
       const SubresourceLoaderFactoriesConfig&) = delete;
 
   const url::Origin& origin() const { return origin_; }
-#if BUILDFLAG(IS_OHOS_PRPP)
-  const GURL& main_url() const { return main_url_; }
-  uint64_t addr_web_handle() const { return addr_web_handle_; }
-#endif
   const net::IsolationInfo& isolation_info() const { return isolation_info_; }
 
   network::mojom::ClientSecurityStatePtr GetClientSecurityState() const {
@@ -1328,10 +1320,6 @@ class RenderFrameHostImpl::SubresourceLoaderFactoriesConfig {
   // Private constructor - please go through the static For... methods.
   SubresourceLoaderFactoriesConfig() = default;
 
-#if BUILDFLAG(IS_OHOS_PRPP)
-  GURL main_url_;
-  uint64_t addr_web_handle_;
-#endif
   url::Origin origin_;
   net::IsolationInfo isolation_info_;
   network::mojom::ClientSecurityStatePtr client_security_state_;
@@ -9747,12 +9735,7 @@ void RenderFrameHostImpl::CommitNavigation(
         subresource_overrides,
     blink::mojom::ServiceWorkerContainerInfoForClientPtr container_info,
     const absl::optional<blink::DocumentToken>& document_token,
-    const base::UnguessableToken& devtools_navigation_token
-#if BUILDFLAG(IS_OHOS_PRPP)
-    ,
-    uint64_t addr_web_handle
-#endif
-    ) {
+    const base::UnguessableToken& devtools_navigation_token) {
   TRACE_EVENT2("navigation", "RenderFrameHostImpl::CommitNavigation",
                "navigation_request", navigation_request, "url",
                common_params->url);
@@ -10972,13 +10955,7 @@ RenderFrameHostImpl::CreateURLLoaderFactoryParamsForMainWorld(
       config.GetClientSecurityState(), config.GetCoepReporter(), GetProcess(),
       config.trust_token_issuance_policy(),
       config.trust_token_redemption_policy(), config.cookie_setting_overrides(),
-      debug_tag
-#if BUILDFLAG(IS_OHOS_PRPP)
-      ,
-      config.main_url(),
-      config.addr_web_handle()
-#endif
-      );
+      debug_tag);
 }
 
 bool RenderFrameHostImpl::CreateNetworkServiceDefaultFactoryAndObserve(

@@ -304,7 +304,6 @@ component("network_service") {
     "//mojo/public/cpp/system",
     "//net",
     "//net:extras",
-    "//net:prp_preload_buildflags",
     "//services/network/attribution",
     "//services/network/first_party_sets:first_party_sets_manager",
     "//services/network/public/cpp",
@@ -323,10 +322,6 @@ component("network_service") {
       ":network_sandbox_hook",
       "//sandbox/linux:sandbox_services",  # TODO(crbug.com/1312224): remove.
     ]
-  }
-
-  if (enable_prp_preload) {
-    deps += [ "//services/network/prp_preload:prp_preload", ]
   }
 
   public_deps = [ "//services/network/public/cpp:buildflags" ]
@@ -515,7 +510,6 @@ source_set("tests") {
     "//mojo/public/cpp/test_support:test_utils",
     "//net",
     "//net:extras",
-    "//net:prp_preload_buildflags",
     "//net:quic_test_tools",
     "//net:simple_quic_tools",
     "//net:test_support",
@@ -544,10 +538,6 @@ source_set("tests") {
       "sct_auditing/sct_auditing_reporter_unittest.cc",
     ]
     deps += [ "//components/certificate_transparency" ]
-  }
-
-  if (enable_prp_preload) {
-    deps += [ "//services/network/prp_preload:prp_preload", ]
   }
 
   if (use_blink) {

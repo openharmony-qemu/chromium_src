@@ -480,10 +480,6 @@ mojom("url_loader_base") {
     enabled_features += ["is_ohos_network_load"]
   }
 
-  if (enable_prp_preload) {
-    enabled_features += [ "is_ohos_prpp" ]
-  }
-
   # Shared by cpp_typemaps and blink_cpp_typemaps.
   shared_typemaps = [
     {
@@ -1375,10 +1371,6 @@ mojom("mojom") {
       "p2p.mojom",
       "p2p_trusted.mojom",
     ]
-  }
-
-  if (enable_prp_preload) {
-    enabled_features += [ "is_ohos_prpp" ]
   }
 
   has_dchecks = is_debug || dcheck_always_on

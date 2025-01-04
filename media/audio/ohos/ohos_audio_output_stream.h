@@ -139,7 +139,7 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   void ReleaseAudioBuffer();
 
   // Call to set audio_render silentMode
-  void SetUpAudioSilentState();
+  void SetUpAudioSilentState(int32_t bytesSingle);
 
   // Call to determine whether media is preload
   bool IsPreloadOrMutedMediaMode();
@@ -196,6 +196,8 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   bool isSuspended_ = false;
 
   bool isSilentMode_ = false;
+
+  size_t silentFrameNum_ = 0;
 
   scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_;
 

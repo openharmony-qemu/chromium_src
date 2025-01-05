@@ -943,7 +943,6 @@ void MediaSessionImpl::OnSuspendInternal(SuspendType suspend_type,
     return;
   }
 
-
   switch (suspend_type) {
     case SuspendType::kUI:
       uma_helper_.RecordSessionSuspended(MediaSessionSuspendedSource::kUI);

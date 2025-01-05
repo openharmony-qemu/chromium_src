@@ -23,13 +23,17 @@ FileSelectorParamsImpl::FileSelectorParamsImpl(
     const std::string& title,
     const std::vector<CefString>& accept_type,
     const std::string& default_filename,
-    bool is_capture)
+    bool is_capture,
+    const std::vector<CefString>& mime_type)
     : mode_(mode),
       title_(title),
       default_filename_(default_filename),
       is_capture_(is_capture) {
   for (auto& c : accept_type) {
     accept_type_.push_back(c.ToString());
+  }
+  for (auto& c : mime_type) {
+    mime_type_.push_back(c.ToString());
   }
 }
 
@@ -51,6 +55,10 @@ const AcceptTypeList FileSelectorParamsImpl::AcceptType() {
 
 bool FileSelectorParamsImpl::IsCapture() {
   return is_capture_;
+}
+
+const AcceptTypeList FileSelectorParamsImpl::MimeType() {
+  return mime_type_;
 }
 
 void FileSelectorCallbackImpl::OnReceiveValue(const std::vector<std::string>& value) {

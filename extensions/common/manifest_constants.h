@@ -181,6 +181,9 @@ extern const char kKeybindingPlatformDefault[];
 extern const char kKeybindingPlatformLinux[];
 extern const char kKeybindingPlatformMac[];
 extern const char kKeybindingPlatformWin[];
+#if BUILDFLAG(IS_OHOS)
+extern const char kKeybindingPlatformOhos[];
+#endif
 extern const char kKeyAlt[];
 extern const char kKeyShift[];
 extern const char kKeyCommand[];

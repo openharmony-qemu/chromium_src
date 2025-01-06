@@ -180,6 +180,9 @@ const char kKeybindingPlatformDefault[] = "default";
 const char kKeybindingPlatformLinux[] = "linux";
 const char kKeybindingPlatformMac[] = "mac";
 const char kKeybindingPlatformWin[] = "windows";
+#if BUILDFLAG(IS_OHOS)
+const char kKeybindingPlatformOhos[] = "ohos";
+#endif
 const char kKeyAlt[] = "Alt";
 const char kKeyComma[] = "Comma";
 const char kKeyCommand[] = "Command";

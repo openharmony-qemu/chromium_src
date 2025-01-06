@@ -79,6 +79,7 @@ bool NWebDevToolsMessageHandlerImpl::ShowFileChooser(
     const CefString& default_file_path,
     const std::vector<CefString>& accept_filters,
     bool capture,
+    const std::vector<CefString>& mime_filters,
     CefRefPtr<CefFileDialogCallback> callback) {
   if (!handler_) {
     LOG(INFO) << "ShowFileChooser failed, handler_ is null";
@@ -109,7 +110,7 @@ bool NWebDevToolsMessageHandlerImpl::ShowFileChooser(
   std::shared_ptr<NWebFileSelectorParams> param =
       std::make_shared<FileSelectorParamsImpl>(
           file_mode, file_selector_title, accept_filters,
-          default_file_path.ToString(), capture);
+          default_file_path.ToString(), capture, mime_filters);
   std::shared_ptr<NWebStringVectorValueCallback> file_path_callback =
       std::make_shared<FileSelectorCallbackImpl>(callback);
   if (!CheckValid(handler_.get(), &handler_->show_file_chooser)) {

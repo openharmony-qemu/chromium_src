@@ -176,6 +176,23 @@ OHOSAudioOutputStream::OHOSAudioOutputStream(OHOSAudioManager* manager,
       parameters_(parameters),
       audio_bus_(AudioBus::Create(parameters)),
       isCommunication_(isCommunication) {
+  content::RenderFrameHost* renderFrameHost = content::RenderFrameHost::FromID(
+      parameters_.render_process_id(), parameters_.render_frame_id());
+  webContent_ = content::WebContents::FromRenderFrameHost(renderFrameHost);
+  if (!webContent_) {
+    LOG(ERROR) << "AudioOutputStream get webContent failed.";
+  } else {
+    content::MediaSessionImpl* mediaSession =
+        content::MediaSessionImpl::Get(webContent_);
+    if (!mediaSession) {
+      LOG(ERROR) << "AudioOutputStream get mediaSession failed.";
+    } else {
+      weakMediaSession_ = mediaSession->weakMediaSessionFactory_.GetWeakPtr();
+      if (!weakMediaSession_) {
+        LOG(ERROR) << "OHOSAudioOutputStream::OHOSAudioOutputStream weakMediaSession get failed";
+      }
+    }
+  }
   audio_renderer_ =
       OhosAdapterHelper::GetInstance().CreateAudioRendererAdapter();
   sample_format_ = kSampleFormatS16;
@@ -186,50 +203,6 @@ OHOSAudioOutputStream::OHOSAudioOutputStream(OHOSAudioManager* manager,
     audio_data_[i] = nullptr;
   }
   main_task_runner_ = content::GetUIThreadTaskRunner({});
-  GetMediaSessionFromWebContent();
-  if (!weakMediaSession_) {
-    LOG(ERROR) << __func__ << " weakMediaSession get failed";
-  }
-}
-
-void OHOSAudioOutputStream::GetMediaSessionFromWebContent() {
-  auto GetMediaSessionFunc =
-      [](AudioParameters parameters, base::WeakPtr<content::WebContents>* web_contents_out,
-         base::WeakPtr<content::MediaSessionImpl>* media_session_out) {
-        content::RenderFrameHost* render_frame_host =
-            content::RenderFrameHost::FromID(parameters.render_process_id(),
-                                             parameters.render_frame_id());
-        content::WebContents* web_contents =
-            content::WebContents::FromRenderFrameHost(render_frame_host);
-        if (!web_contents) {
-          LOG(ERROR) << __func__
-                     << ": AudioOutputStream get webContent failed.";
-          *web_contents_out = nullptr;
-          return;
-        }
-        *web_contents_out = web_contents->GetWeakPtr();
-        content::MediaSessionImpl* media_session =
-            content::MediaSessionImpl::Get(web_contents);
-        if (!media_session) {
-          LOG(ERROR) << "AudioOutputStream get mediaSession failed.";
-          *media_session_out = nullptr;
-          return;
-        }
-        *media_session_out =
-            media_session->weakMediaSessionFactory_.GetWeakPtr();
-      };
-  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
-    if (!main_task_runner_) {
-      LOG(ERROR) << __func__ << ":, main_tast_runner_ is nullptr";
-      return;
-    }
-    main_task_runner_->PostTask(
-        FROM_HERE, base::BindOnce(GetMediaSessionFunc, parameters_,
-                                  base::Unretained(&webContent_),
-                                  base::Unretained(&weakMediaSession_)));
-  } else {
-    GetMediaSessionFunc(parameters_, &webContent_, &weakMediaSession_);
-  }
 }
 
 OHOSAudioOutputStream::~OHOSAudioOutputStream() {
@@ -334,7 +307,7 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
     it++;
   }
 
-  WEBCONTENT_SET.insert(webContent_.get());
+  WEBCONTENT_SET.insert(webContent_);
   if (StartRender()) {
     callback_ = callback;
     if (memset_s(audio_data_[active_buffer_index_],
@@ -358,7 +331,7 @@ void OHOSAudioOutputStream::Stop() {
     reference_time_ = base::TimeTicks();
   }
   timer_.Stop();
-  WEBCONTENT_SET.erase(webContent_.get());
+  WEBCONTENT_SET.erase(webContent_);
   if (rendererCallback_ && rendererCallback_->GetSuspendFlag()) {
     LOG(DEBUG) << "OHOSAudioOutputStream::Stop cannot continue.";
     return;

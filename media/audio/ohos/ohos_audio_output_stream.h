@@ -150,8 +150,6 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   void Prepare(base::WeakPtr<content::MediaSessionImpl> weakMediaSession);
 
-  void GetMediaSessionFromWebContent();
-
   raw_ptr<OHOSAudioManager> manager_;
 
   AudioParameters parameters_;
@@ -183,7 +181,7 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   std::unique_ptr<AudioRendererAdapter> audio_renderer_;
 
-  base::WeakPtr<content::WebContents> webContent_ = nullptr;
+  content::WebContents* webContent_ = nullptr;
 
   base::WeakPtr<content::MediaSessionImpl> weakMediaSession_ = nullptr;
 

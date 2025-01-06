@@ -1697,6 +1697,14 @@ void NWebImpl::RegisterNativeLoadEndCallback(std::function<void(void)>&& callbac
   }
 }
 
+void NWebImpl::RegisterNativeScrollCallback(std::function<void(double, double)>&& callback) {
+  if (nweb_delegate_ != nullptr) {
+    nweb_delegate_->RegisterNativeScrollCallback(std::move(callback));
+  } else {
+    LOG(ERROR) << "nweb_delegate_ is nullptr";
+  }
+}
+
 void NWebImpl::RegisterArkJSfunction(
     const std::string& object_name,
     const std::vector<std::string>& method_list,

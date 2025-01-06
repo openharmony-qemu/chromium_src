@@ -147,6 +147,7 @@ class NWebImpl : public NWeb {
   void RegisterNativeDestroyCallback(std::function<void(void)>&& callback);
   void RegisterNativeLoadStartCallback(std::function<void(void)>&& callback);
   void RegisterNativeLoadEndCallback(std::function<void(void)>&& callback);
+  void RegisterNativeScrollCallback(std::function<void(double, double)>&& callback);
 
   void RegisterArkJSfunction(const std::string& object_name,
                              const std::vector<std::string>& method_list,

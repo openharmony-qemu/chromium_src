@@ -278,6 +278,11 @@ CefRefPtr<NWebRenderHandler> NWebRenderHandler::Create() {
   return renderHandler;
 }
 
+void NWebRenderHandler::RegisterNativeScrollCallback(
+    std::function<void(double, double)>&& callback) {
+  on_scroll_cb_ = std::move(callback);
+}
+
 void NWebRenderHandler::RegisterRenderCb(
     std::function<void(const char*)> render_update_cb) {
   render_update_cb_ = render_update_cb;
@@ -593,6 +598,10 @@ void NWebRenderHandler::OnScrollOffsetChanged(CefRefPtr<CefBrowser> browser,
                                               double y) {
   if (auto handler = handler_.lock()) {
     handler->OnScroll(x, y);
+  }
+
+  if (on_scroll_cb_) {
+    on_scroll_cb_(x, y);
   }
 
   ResSchedClientAdapter::ReportScene(ResSchedStatusAdapter::WEB_SCENE_ENTER,

@@ -51,6 +51,7 @@ class NWebRenderHandler : public CefRenderHandler {
   NWebRenderHandler() = default;
   ~NWebRenderHandler() = default;
 
+  void RegisterNativeScrollCallback(std::function<void(double, double)>&& callback);
   void RegisterRenderCb(std::function<void(const char*)> render_update_cb);
   void RegisterNWebHandler(std::shared_ptr<NWebHandler> handler);
   void Resize(uint32_t width, uint32_t height);
@@ -286,6 +287,8 @@ class NWebRenderHandler : public CefRenderHandler {
 #endif  // defined(OHOS_INPUT_EVENTS)
   bool isSystemKeyboard_ = true;
   bool gesture_event_result_ = false;
+
+  std::function<void(double, double)> on_scroll_cb_ = nullptr;
 };
 }  // namespace OHOS::NWeb
 

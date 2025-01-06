@@ -26,6 +26,7 @@ class ArkWebNativeObject final
     : public std::enable_shared_from_this<ArkWebNativeObject> {
  public:
   using ArkWebLifeTimeFunc = std::function<void(void)>;
+  using ArkWebScrollFunc = std::function<void(double, double)>;
   explicit ArkWebNativeObject(const char* webTag) : webTag_(webTag) {}
   ~ArkWebNativeObject() = default;
   void SetValidCallback(ArkWebLifeTimeFunc&& callback) {
@@ -41,9 +42,13 @@ class ArkWebNativeObject final
   void SetDestroyCallback(ArkWebLifeTimeFunc&& callback) {
     destroyCallback_ = std::move(callback);
   }
+  void SetScrollCallback(ArkWebScrollFunc&& callback) {
+    scrollCallback_ = std::move(callback);
+  }
   bool FireLoadStartCallback();
   bool FireLoadEndCallback();
   bool FireDestroyCallback();
+  bool FireScrollCallback(double x, double y);
   bool SetWebWeakPtr(std::shared_ptr<NWebImpl>& nwebSharedPtr);
   std::shared_ptr<NWebImpl> GetWebSharedPtr();
   std::weak_ptr<ArkWebNativeObject> GetWeakPtr();
@@ -58,6 +63,7 @@ class ArkWebNativeObject final
   ArkWebLifeTimeFunc loadStartCallback_ = nullptr;
   ArkWebLifeTimeFunc loadEndCallback_ = nullptr;
   ArkWebLifeTimeFunc destroyCallback_ = nullptr;
+  ArkWebScrollFunc scrollCallback_ = nullptr;
   std::weak_ptr<NWebImpl> nwebWeakPtr_;
 };
 }  // namespace OHOS::NWeb

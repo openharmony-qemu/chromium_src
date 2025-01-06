@@ -2295,6 +2295,15 @@ void NWebDelegate::RegisterNativeLoadEndCallback(
   }
 }
 
+void NWebDelegate::RegisterNativeScrollCallback(
+    std::function<void(double, double)>&& callback) {
+  if (render_handler_ != nullptr) {
+    render_handler_->RegisterNativeScrollCallback(std::move(callback));
+  } else {
+    LOG(ERROR) << "render_handler_ is nullptr";
+  }
+}
+
 #if defined(OHOS_JSPROXY)
 void NWebDelegate::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
   if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {

@@ -133,6 +133,18 @@ typedef ArkWeb_JavaScriptValuePtr (*ArkWeb_OnJavaScriptProxyCallbackWithResult)(
 typedef void (*ArkWeb_OnComponentCallback)(const char* webTag, void* userData);
 
 /**
+ * @brief Defines the scroll callback of the native ArkWeb.
+ *
+ * @param webTag The name of the web component.
+ * @param userData The data set by user.
+ * @param x X-axis scrolling offset.
+ * @param y Y-axis scrolling offset.
+ *
+ * @since 16
+ */
+typedef void (*ArkWeb_OnScrollCallback)(const char* webTag, void* userData, double x, double y);
+
+/**
  * @brief Defines the ArkWeb_WebMessagePort that represent a HTML5 message port.
  *
  * @since 12

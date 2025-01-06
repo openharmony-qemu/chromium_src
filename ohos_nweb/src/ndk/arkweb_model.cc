@@ -255,6 +255,30 @@ NO_SANITIZE("cfi-icall") ARKWEB_NDK_EXPORT void OH_ArkWeb_OnDestroy(const char* 
       });
 }
 
+NO_SANITIZE("cfi-icall") ARKWEB_NDK_EXPORT bool OH_ArkWeb_OnScroll(const char* webTag,
+    ArkWeb_OnScrollCallback callback,
+    void* userData) {
+  if (callback == nullptr) {
+    LOG(ERROR) << "NativeArkWeb OnScroll callback is nullptr";
+    return false;
+  }
+  auto webObjectPtr =
+      OHOS::NWeb::ArkWebNativeObject::GetWebInstanceByWebTag(webTag);
+  if (!webObjectPtr) {
+    LOG(ERROR) << "NativeArkWeb web object pointer is nullptr";
+    return false;
+  }
+  webObjectPtr->SetScrollCallback(
+      [cb = callback, webTag = std::string(webTag), userData](double x, double y) {
+        if (!cb) {
+          LOG(ERROR) << "NativeArkWeb OnScroll callback is nullptr";
+          return;
+        }
+        cb(webTag.c_str(), userData, x, y);
+      });
+  return true;
+}
+
 ARKWEB_NDK_EXPORT void OH_ArkWeb_RegisterAsyncJavaScriptProxy(
     const char* webTag,
     const ArkWeb_ProxyObject* proxyObject) {

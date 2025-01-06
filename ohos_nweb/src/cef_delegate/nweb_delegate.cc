@@ -4296,7 +4296,7 @@ void NWebDelegate::SetSurfaceDensity(const double& density) {
       display_manager_adapter_->GetDefaultDisplay();
   LOG(INFO) << "SetSurfaceDensity: " << density;
   if (display != nullptr) {
-    NotifyScreenInfoChanged(display->GetRotation(), display->GetDisplayOrientation(), true);
+    NotifyScreenInfoChanged(display->GetRotation(), display->GetDisplayOrientation(), false);
   }
 }
 #endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT

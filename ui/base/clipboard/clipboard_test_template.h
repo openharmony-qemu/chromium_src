@@ -194,7 +194,8 @@ TYPED_TEST(ClipboardTest, HTMLTest) {
     ScopedClipboardWriter clipboard_writer(ClipboardBuffer::kCopyPaste);
     clipboard_writer.WriteText(plain);
 #if defined(OHOS_UNITTESTS)
-    clipboard_writer.WriteHTML(markup, url, ClipboardContentType::kSanitized, blink::mojom::CopyOptionMode::CROSS_DEVICE);
+    clipboard_writer.WriteHTML(markup, url, ClipboardContentType::kSanitized,
+                               blink::mojom::CopyOptionMode::CROSS_DEVICE);
 #else
     clipboard_writer.WriteHTML(markup, url, ClipboardContentType::kSanitized);
 #endif // OHOS_UNITTESTS

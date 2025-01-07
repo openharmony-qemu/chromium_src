@@ -107,7 +107,6 @@ void SoftwareCompositorHostOhos::DemandDrawSwAsync(const char* id,
                                                    WebSnapchatCallback callback) {
   TRACE_EVENT0("browser", "SoftwareCompositorHostOhos::DemandDrawSwAsync");
   LOG(INFO) << "start DemandDrawSwAsync width:" << clip_width << ", height:" << clip_height;
-  std::string inputId(id);
 
   if (clip_width == 0) {
     clip_width = MAX_DRAW_SW_SIZE;
@@ -125,7 +124,7 @@ void SoftwareCompositorHostOhos::DemandDrawSwAsync(const char* id,
   if (SkImageInfo::ByteSizeOverflowed(buffer_size)) {
     LOG(ERROR) << "request snapshot size is too large make skia overflowed";
     GetUIThreadTaskRunner({})->PostTask(
-        FROM_HERE, base::BindOnce(std::move(callback), inputId.c_str(), false,
+        FROM_HERE, base::BindOnce(std::move(callback), id, false,
                                   nullptr, 0, 0));
     return;
   }
@@ -134,7 +133,7 @@ void SoftwareCompositorHostOhos::DemandDrawSwAsync(const char* id,
   if (!software_draw_shm_) {
     LOG(ERROR) << "set shared memory error";
     GetUIThreadTaskRunner({})->PostTask(
-        FROM_HERE, base::BindOnce(std::move(callback), inputId.c_str(), false,
+        FROM_HERE, base::BindOnce(std::move(callback), id, false,
                                   nullptr, 0, 0));
     return;
   }
@@ -143,6 +142,7 @@ void SoftwareCompositorHostOhos::DemandDrawSwAsync(const char* id,
       blink::mojom::SoftwareCompositorDemandDrawSwParams::New();
   params->size = current_;
   params->offset = offset;
+  std::string inputId(id);
 
   software_compositor_->DemandDrawSwAsync(
       std::move(params),

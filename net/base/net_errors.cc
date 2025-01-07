@@ -46,7 +46,7 @@ std::string ErrorToShortString(int error) {
 #include "net/base/net_error_list.h"
 #undef NET_ERROR
   default:
-#if !BUILDFALG(IS_OHOS)
+#if !BUILDFLAG(IS_OHOS)
     NOTREACHED();
 #else
     LOG(ERROR) << "event_message: not support error code" << error;

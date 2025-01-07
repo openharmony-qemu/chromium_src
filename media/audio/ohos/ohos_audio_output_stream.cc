@@ -514,7 +514,7 @@ void OHOSAudioOutputStream::PumpSamples() {
               base::BindOnce(&content::MediaSessionImpl::Suspend, weakMediaSession_,
                              content::MediaSession::SuspendType::kSystem));
         } else {
-          LOG(INFO) << "MediaSession is suspended";
+          LOG(DEBUG) << "MediaSession is suspended";
           isSuspended_ = true;
         }
       } else {

@@ -401,8 +401,8 @@ void RenderAccessibilityImpl::PerformAction(const ui::AXActionData& data) {
                                               data.focus_node_id);
 
   if(target->GetType() == ui::AXActionTarget::Type::kNull){
-    blink::WebFrame * curFrame = render_frame_->GetWebFrame()->FirstChild();
-    blink::WebFrame * middleFrame = nullptr;
+    blink::WebFrame* curFrame = render_frame_->GetWebFrame()->FirstChild();
+    blink::WebFrame* middleFrame = nullptr;
     int ilayers = 1;
     //Child document layers max value for limit count
     const int iLayersMax = 10;

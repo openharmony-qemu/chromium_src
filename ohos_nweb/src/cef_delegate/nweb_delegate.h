@@ -151,6 +151,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   std::shared_ptr<NWebPreference> GetPreference() const override;
   std::string Title() override;
   std::shared_ptr<HitTestResult> GetHitTestResult() const override;
+  std::shared_ptr<HitTestResult> GetLastHitTestResult() const override;
   int PageLoadProgress() override;
   float Scale() override;
   int Load(const std::string& url,

@@ -164,6 +164,13 @@ ArkWeb_JavaScriptValuePtr OH_JavaScript_CreateJavaScriptValue(
     ArkWeb_JavaScriptValueType type,
     void* data,
     size_t dataLength);
+
+ArkWeb_ErrorCode OH_NativeArkWeb_LoadData(const char* webTag,
+                                          const char* data,
+                                          const char* mimeType,
+                                          const char* encoding,
+                                          const char* baseUrl,
+                                          const char* historyUrl);
 #ifdef __cplusplus
 }
 #endif

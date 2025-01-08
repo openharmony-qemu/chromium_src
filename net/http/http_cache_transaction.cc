@@ -2119,7 +2119,7 @@ int HttpCache::Transaction::DoUpdateCachedResponse() {
   if (new_response_->headers->response_code() == HTTP_NOT_MODIFIED) {
     static bool res = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                           .GetSystemPropertiesInstance()
-                          .GetBoolParameter("web.304CodeCache.enable", false);
+                          .GetBoolParameter("web.304CodeCache.enable", true);
     if (res) {
       LOG(DEBUG) << "HttpCache::Transaction::DoUpdateCachedResponse set "
                     "response code: HTTP_NOT_MODIFIED";

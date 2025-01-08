@@ -3,8 +3,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// Based on codec_image.cc originally written by
-// Copyright (c) 2012 The Chromium Authors. All rights reserved.
+// Based on platform_shared_memory_mapper_android.cc originally written by
+// Copyright (c) 2022 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 

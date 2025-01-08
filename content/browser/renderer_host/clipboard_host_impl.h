@@ -202,7 +202,12 @@ class CONTENT_EXPORT ClipboardHostImpl
       const std::u16string& format,
       ReadUnsanitizedCustomFormatCallback callback) override;
   void WriteUnsanitizedCustomFormat(const std::u16string& format,
-                                    mojo_base::BigBuffer data) override;
+                                    mojo_base::BigBuffer data
+#if defined(OHOS_CLIPBOARD)
+,
+                     const blink::mojom::CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+                     ) override;
   void WriteText(const std::u16string& text
 #if defined(OHOS_CLIPBOARD)
 ,
@@ -222,7 +227,12 @@ class CONTENT_EXPORT ClipboardHostImpl
 #endif // defined(OHOS_CLIPBOARD)
   ) override;
   void WriteCustomData(
-      const base::flat_map<std::u16string, std::u16string>& data) override;
+      const base::flat_map<std::u16string, std::u16string>& data
+#if defined(OHOS_CLIPBOARD)
+,
+                     const blink::mojom::CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+                     ) override;
   void WriteBookmark(const std::string& url,
                      const std::u16string& title
 #if defined(OHOS_CLIPBOARD)

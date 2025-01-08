@@ -15,6 +15,7 @@
 #include "base/memory/ptr_util.h"
 #include "base/no_destructor.h"
 #include "base/notreached.h"
+#include "base/pickle.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/synchronization/lock.h"
 #include "base/task/thread_pool.h"
@@ -102,6 +103,42 @@ ClipBoardImageColorType ImageToClipboardColorType(SkColorType color_type) {
   }
 }
 
+void ReadCustomDataIntoMap(
+    const void* data,
+    size_t data_length,
+    std::unordered_map<std::string, std::string>* result) {
+  base::Pickle pickle(reinterpret_cast<const char*>(data), data_length);
+  base::PickleIterator iter(pickle);
+
+  uint32_t size = 0;
+  if (!iter.ReadUInt32(&size))
+    return;
+
+  for (uint32_t i = 0; i < size; ++i) {
+    std::string type;
+    if (!iter.ReadString(&type)) {
+      // Data is corrupt, return an empty map.
+      result->clear();
+      return;
+    }
+    auto insert_result = result->insert({type, std::string()});
+    if (!iter.ReadString(&insert_result.first->second)) {
+      // Data is corrupt, return an empty map.
+      result->clear();
+      return;
+    }
+  }
+}
+
+void WriteCustomDataToPickle(
+    const std::unordered_map<std::string, std::string>& data,
+    base::Pickle* pickle) {
+  pickle->WriteUInt32(data.size());
+  for (const auto& it : data) {
+    pickle->WriteString(it.first);
+    pickle->WriteString(it.second);
+  }
+}
 }  // namespace
 
 Clipboard* Clipboard::Create() {
@@ -177,15 +214,10 @@ class ClipboardOHOSInternal {
   }
 
   void ReadAvailableCustomDataTypes(std::vector<std::u16string>* types) const {
-    if (!read_data_) {
-      LOG(ERROR) << "read_data is null";
-      return;
-    }
-    auto custom_datas = read_data_->ReadCustomDatas();
-    for (const auto& data : custom_datas) {
-      if (!data.empty()) {
-        ReadCustomDataTypes(data.data(), data.size(), types);
-      }
+    std::string data;
+    ReadCustomDataFromReadData(kMimeTypeWebCustomData, &data);
+    if (!data.empty()) {
+      ReadCustomDataTypes(data.data(), data.size(), types);
     }
   }
 
@@ -381,20 +413,26 @@ class ClipboardOHOSInternal {
 
     UpdateClipboardData();
     SetOutOfDateAfterRead();
-    if (!read_data_) {
-      LOG(ERROR) << "read_data is null";
-      return;
-    }
-    auto custom_datas = read_data_->ReadCustomDatas();
-    for (const auto& data : custom_datas) {
-      if (!data.empty()) {
-        ReadCustomDataForType(data.data(), data.size(), type, result);
-        if (!result->empty()) {
-          return;
-        }
+    std::string data;
+    ReadCustomDataFromReadData(kMimeTypeWebCustomData, &data);
+    if (!data.empty()) {
+      ReadCustomDataForType(data.data(), data.size(), type, result);
+      if (!result->empty()) {
+        return;
       }
     }
     LOG(INFO) << "no specified custom data in clipbaord";
+  }
+
+  void ReadData(const std::string& type, std::string* result) {
+    if (!result) {
+      return;
+    }
+    result->clear();
+
+    UpdateClipboardData();
+    SetOutOfDateAfterRead();
+    ReadCustomDataFromReadData(type, result);
   }
 
   // Writes |data| to the ClipboardData and returns the previous data.
@@ -452,9 +490,12 @@ class ClipboardOHOSInternal {
     }
 
     if (HasFormat(ClipboardInternalFormat::kCustom)) {
-      auto custom_data = currentData->custom_data_data();
-      std::vector<uint8_t> custom_data_vector(custom_data.begin(),
-                                              custom_data.end());
+      base::Pickle pickle;
+      WriteCustomDataToPickle(currentData->GetCustomDataMap(), &pickle);
+      std::vector<uint8_t> custom_data_vector;
+      custom_data_vector.resize(pickle.size());
+      memcpy(const_cast<uint8_t*>(&custom_data_vector.front()),
+             pickle.data(), pickle.size());
       OHOS::NWeb::PasteCustomData custom_data_map = {
           {kMimeTypeOHOSCustomData, custom_data_vector}};
       if (record->SetCustomData(custom_data_map)) {
@@ -605,6 +646,28 @@ class ClipboardOHOSInternal {
     return true;
   }
 
+  void ReadCustomDataFromReadData(std::string type, std::string* result) const {
+    if (!result) {
+      return;
+    }
+    if (!read_data_) {
+      LOG(ERROR) << "read_data is null";
+      return;
+    }
+    auto custom_datas = read_data_->ReadCustomDatas();
+    for (const auto& data : custom_datas) {
+      if (!data.empty()) {
+        std::unordered_map<std::string, std::string> custom_data_map;
+        ReadCustomDataIntoMap(data.data(), data.size(), &custom_data_map);
+        auto it = custom_data_map.find(type);
+        if (it != custom_data_map.end()) {
+          *result = it->second;
+          return;
+        }
+      }
+    }
+  }
+
   std::shared_ptr<ClipBoardImageDataAdapter> WriteBitmapToClipboard(
       const SkBitmap& bitmap) {
     std::shared_ptr<ClipBoardImageDataAdapterImpl> imageInfo
@@ -700,6 +763,13 @@ class ClipboardDataBuilder {
     ClipboardData* data = GetCurrentData();
     if (data) {
       data->SetCustomData(format, std::string(data_data, data_len));
+    }
+  }
+
+  static void SetCopyOptionMode(CopyOptionMode copy_option) {
+    ClipboardData* data = GetCurrentData();
+    if (data) {
+      data->set_copy_option(copy_option);
     }
   }
 
@@ -973,7 +1043,14 @@ void ClipboardOHOS::ReadBookmark(const DataTransferEndpoint* data_dst,
 void ClipboardOHOS::ReadData(const ClipboardFormatType& format,
                              const DataTransferEndpoint* data_dst,
                              std::string* result) const {
+  LOG(INFO) << "start read data, type = " << format.GetName();
   DCHECK(CalledOnValidThread());
+  if (!clipboard_internal_->IsReadAllowed(data_dst, absl::nullopt)) {
+    return;
+  }
+
+  RecordRead(ClipboardFormatMetric::kData);
+  clipboard_internal_->ReadData(format.GetName(), result);
 }
 
 bool ClipboardOHOS::IsSelectionBufferAvailable() const {
@@ -1079,6 +1156,10 @@ void ClipboardOHOS::WriteData(const ClipboardFormatType& format,
 
 bool ClipboardOHOS::HasPasteData() const {
   return OhosAdapterHelper::GetInstance().GetPasteBoard().HasPasteData();
+}
+
+void ClipboardOHOS::SetCopyOptionMode(CopyOptionMode copy_option) {
+  ClipboardDataBuilder::SetCopyOptionMode(copy_option);
 }
 
 }  // namespace ui

@@ -156,7 +156,12 @@ void MockClipboardHost::WriteSmartPasteMarker(::blink::mojom::CopyOptionMode cop
 }
 
 void MockClipboardHost::WriteCustomData(
-    const base::flat_map<std::u16string, std::u16string>& data) {
+    const base::flat_map<std::u16string, std::u16string>& data
+#if defined(OHOS_CLIPBOARD)
+    ,
+    const blink::mojom::CopyOptionMode copy_option
+#endif  // defined(OHOS_CLIPBOARD)
+) {
   if (needs_reset_)
     Reset();
   for (auto& it : data)
@@ -201,7 +206,12 @@ void MockClipboardHost::ReadUnsanitizedCustomFormat(
 
 void MockClipboardHost::WriteUnsanitizedCustomFormat(
     const std::u16string& format,
-    mojo_base::BigBuffer data) {
+    mojo_base::BigBuffer data
+#if defined(OHOS_CLIPBOARD)
+    ,
+    const blink::mojom::CopyOptionMode copy_option
+#endif  // defined(OHOS_CLIPBOARD)
+) {
   if (needs_reset_)
     Reset();
   // Simulate the underlying platform copying this data.

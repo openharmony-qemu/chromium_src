@@ -152,11 +152,6 @@ class GFX_KEYFRAME_ANIMATION_EXPORT KeyframeModel {
   KeyframeModel::Phase CalculatePhaseForTesting(
       base::TimeDelta local_time) const;
 
-#ifdef OHOS_SCROLLBAR
-  base::TimeDelta GetPrevTrimmed() { return prev_trimmed_; }
-  void SetPrevTrimmed(base::TimeDelta trimmed) { prev_trimmed_ = trimmed; }
-#endif
-
  protected:
   KeyframeModel(std::unique_ptr<AnimationCurve> curve,
                 int keyframe_model_id,
@@ -223,9 +218,6 @@ class GFX_KEYFRAME_ANIMATION_EXPORT KeyframeModel {
   // about these values.
   base::TimeTicks pause_time_;
   base::TimeDelta total_paused_duration_;
-#ifdef OHOS_SCROLLBAR
-  base::TimeDelta prev_trimmed_;
-#endif
 };
 
 }  // namespace gfx

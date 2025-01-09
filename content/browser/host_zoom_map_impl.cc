@@ -45,6 +45,10 @@ const double kDefaultRequestDesktopSiteZoomScale =
     1.1;  // Equivalent to 110% zoom.
 #endif
 
+#if defined(OHOS_INPUT_EVENTS)
+const int64_t ZOOM_FREQUENCY_LIMIT = 30;
+#endif
+
 std::string GetHostFromProcessFrame(RenderFrameHostImpl* rfh) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   if (!rfh)
@@ -251,6 +255,17 @@ void HostZoomMapImpl::SetZoomLevelForHostInternal(const std::string& host,
                                                   double level,
                                                   base::Time last_modified) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
+
+#if defined(OHOS_INPUT_EVENTS)
+  base::TimeDelta elapsed = last_modified - last_modified_;
+  int64_t elapsed_ms = elapsed.InMilliseconds();
+  if (elapsed_ms < ZOOM_FREQUENCY_LIMIT) {
+    LOG(INFO) << "Throw zoom event because frequency limit";
+    return;
+  }
+  last_modified_ = last_modified;
+  TRACE_EVENT1("cc", "HostZoomMapImpl::SetZoomLevelForHostInternal", "zoom_level", level);
+#endif
 
   if (blink::PageZoomValuesEqual(level, default_zoom_level_)) {
     host_zoom_levels_.erase(host);

@@ -789,6 +789,8 @@ void OnTouchIconUrlWithSizesReceived(
 
   void OnRequestOpenDevTools();
 
+  void Discard();
+
 #if defined(OHOS_VIDEO_ASSISTANT)
   void EnableVideoAssistant(bool enable);
 #endif // OHOS_VIDEO_ASSISTANT

@@ -104,7 +104,6 @@ scoped_refptr<NativeImageTextureOwner> NativeImageTextureOwner::Create(
 #endif
       return new HwVideoNativeBufferGLOwner(
           std::move(texture), std::move(context_state), std::move(drdc_lock));
-
     default:
 #ifdef OHOS_NB_DEBUG
       LOG(INFO)<<__FUNCTION__<<" Mode: default";

@@ -23,8 +23,6 @@ class AbstractTextureOHOS;
 class ScopedNativeBufferFenceSync;
 class TextureBase;
 
-
-
 class GPU_GLES2_EXPORT SameLayerNativeBufferGLOwner
     : public NativeImageTextureOwner,
       public RefCountedLockHelperDrDc {

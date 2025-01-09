@@ -304,6 +304,7 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
     active_buffer_index_ = (active_buffer_index_ + 1) % kMaxNumOfBuffersInQueue;
     if (callback_) {
       DCHECK(!timer_.IsRunning());
+      FlushData();
       PumpSamples();
     }
   }
@@ -321,7 +322,7 @@ void OHOSAudioOutputStream::Stop() {
     LOG(DEBUG) << "OHOSAudioOutputStream::Stop cannot continue.";
     return;
   }
-  if (!audio_renderer_->Stop()) {
+  if (!audio_renderer_->Pause()) {
     ReportError();
   }
 }
@@ -619,5 +620,22 @@ void OHOSAudioOutputStream::ReleaseAudioBuffer() {
       audio_data_[i] = nullptr;
     }
   }
+}
+
+void OHOSAudioOutputStream::FlushData() {
+  base::TimeTicks now = base::TimeTicks::Now();
+  base::TimeDelta delay;
+  uint64_t latency = 0;
+  if (!audio_renderer_) {
+    LOG(INFO) << "OHOSAudioOutputStream::FlushData !audio_renderer_";
+    return;
+  }
+  audio_renderer_->GetLatency(latency);
+  delay = base::Microseconds(latency);
+  if (!callback_) {
+    LOG(INFO) << "OHOSAudioOutputStream::FlushData !callback_";
+    return;
+  }
+  callback_->OnMoreData(delay, now, {}, audio_bus_.get());
 }
 }  // namespace media

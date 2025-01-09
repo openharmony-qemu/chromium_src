@@ -187,7 +187,7 @@ bool GpuSharedImageVideoFactory::CreateImageInternal(
   }
   gl::ohos::TextureOwnerMode texture_owner_mode = base::ohos::IsEmulator() || base::SysInfo::IsLowEndDevice() ?
       gl::ohos::TextureOwnerMode::kNativeImageTexture :
-      gl::ohos::TextureOwnerMode::kSameLayerNativeBuffer;
+      gl::ohos::TextureOwnerMode::kHwVideoZeroCopyNativeBuffer;
   auto shared_image = gpu::OhosVideoImageBacking::Create(
       mailbox, coded_size, spec.color_space, kTopLeft_GrSurfaceOrigin,
       kPremul_SkAlphaType,

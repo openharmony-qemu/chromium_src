@@ -87,16 +87,28 @@ scoped_refptr<NativeImageTextureOwner> NativeImageTextureOwner::Create(
   auto texture = CreateTexture(context_state.get());
   switch (mode) {
     case gl::ohos::TextureOwnerMode::kSameLayerNativeBuffer:
+#ifdef OHOS_NB_DEBUG
+      LOG(INFO)<<__FUNCTION__<<" Mode: kSameLayerNativeBuffer";
+#endif
       return new SameLayerNativeBufferGLOwner(
           std::move(texture), std::move(context_state), std::move(drdc_lock));
     case gl::ohos::TextureOwnerMode::kNativeImageTexture:
+#ifdef OHOS_NB_DEBUG
+      LOG(INFO)<<__FUNCTION__<<" Mode: kNativeImageTexture";
+#endif
       return new NativeImageTextureGlOwner(std::move(texture),
                                            std::move(context_state));
     case gl::ohos::TextureOwnerMode::kHwVideoZeroCopyNativeBuffer:
+#ifdef OHOS_NB_DEBUG
+      LOG(INFO)<<__FUNCTION__<<" Mode: kHwVideoZeroCopyNativeBuffer";
+#endif
       return new HwVideoNativeBufferGLOwner(
           std::move(texture), std::move(context_state), std::move(drdc_lock));
 
     default:
+#ifdef OHOS_NB_DEBUG
+      LOG(INFO)<<__FUNCTION__<<" Mode: default";
+#endif
       return nullptr;
   }
 }

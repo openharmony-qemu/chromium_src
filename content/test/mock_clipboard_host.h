@@ -58,7 +58,12 @@ class MockClipboardHost : public blink::mojom::ClipboardHost {
   void WriteSvg(const std::u16string& markup) override;
   void WriteSmartPasteMarker(::blink::mojom::CopyOptionMode copy_option) override;
   void WriteCustomData(
-      const base::flat_map<std::u16string, std::u16string>& data) override;
+      const base::flat_map<std::u16string, std::u16string>& data
+#if defined(OHOS_CLIPBOARD)
+,
+                     const blink::mojom::CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+                     ) override;
   void WriteBookmark(const std::string& url,
                      const std::u16string& title,
                      ::blink::mojom::CopyOptionMode copy_option) override;
@@ -70,7 +75,12 @@ class MockClipboardHost : public blink::mojom::ClipboardHost {
       const std::u16string& format,
       ReadUnsanitizedCustomFormatCallback callback) override;
   void WriteUnsanitizedCustomFormat(const std::u16string& format,
-                                    mojo_base::BigBuffer data) override;
+                                    mojo_base::BigBuffer data
+#if defined(OHOS_CLIPBOARD)
+,
+                     const blink::mojom::CopyOptionMode copy_option
+#endif // defined(OHOS_CLIPBOARD)
+                     ) override;
 #if BUILDFLAG(IS_MAC)
   void WriteStringToFindPboard(const std::u16string& text) override;
 #endif

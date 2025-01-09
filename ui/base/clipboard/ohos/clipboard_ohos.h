@@ -140,6 +140,8 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ClipboardOHOS : public Clipboard {
                  const char* data_data,
                  size_t data_len) override;
   bool HasPasteData() const override;
+  void SetCopyOptionMode(CopyOptionMode copy_option) override;
+
   const std::unique_ptr<ClipboardOHOSInternal> clipboard_internal_;
   static std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> convert_html_callback_;
 };

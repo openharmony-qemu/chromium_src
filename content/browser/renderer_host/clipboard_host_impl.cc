@@ -553,7 +553,19 @@ void ClipboardHostImpl::WriteSmartPasteMarker(
 }
 
 void ClipboardHostImpl::WriteCustomData(
-    const base::flat_map<std::u16string, std::u16string>& data) {
+    const base::flat_map<std::u16string, std::u16string>& data
+#if defined(OHOS_CLIPBOARD)
+    ,
+    const blink::mojom::CopyOptionMode copy_option
+#endif  // defined(OHOS_CLIPBOARD)
+) {
+#if defined(OHOS_CLIPBOARD)
+  ui::Clipboard* clipboard = ui::Clipboard::GetForCurrentThread();
+  if (clipboard) {
+    clipboard->SetCopyOptionMode(
+        clipboard_writer_->TransitionCopyOption(copy_option));
+  }
+#endif  // defined(OHOS_CLIPBOARD)
   base::Pickle pickle;
   ui::WriteCustomDataToPickle(data, &pickle);
   clipboard_writer_->WritePickledData(
@@ -672,7 +684,12 @@ void ClipboardHostImpl::ReadUnsanitizedCustomFormat(
 
 void ClipboardHostImpl::WriteUnsanitizedCustomFormat(
     const std::u16string& format,
-    mojo_base::BigBuffer data) {
+    mojo_base::BigBuffer data
+#if defined(OHOS_CLIPBOARD)
+    ,
+    const blink::mojom::CopyOptionMode copy_option
+#endif  // defined(OHOS_CLIPBOARD)
+) {
   if (!IsUnsanitizedCustomFormatContentAllowed())
     return;
   // `kMaxFormatSize` & `kMaxDataSize` includes the null terminator.
@@ -681,6 +698,13 @@ void ClipboardHostImpl::WriteUnsanitizedCustomFormat(
   if (data.size() >= blink::mojom::ClipboardHost::kMaxDataSize)
     return;
 
+#if defined(OHOS_CLIPBOARD)
+  ui::Clipboard* clipboard = ui::Clipboard::GetForCurrentThread();
+  if (clipboard) {
+    clipboard->SetCopyOptionMode(
+        clipboard_writer_->TransitionCopyOption(copy_option));
+  }
+#endif  // defined(OHOS_CLIPBOARD)
   // The `format` is mapped to user agent defined web custom format before
   // writing to the clipboard. This happens in
   // `ScopedClipboardWriter::WriteData`.

@@ -179,6 +179,12 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ClipboardData {
   }
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
+#if defined(OHOS_CLIPBOARD)
+  std::unordered_map<std::string, std::string> GetCustomDataMap() const {
+    return custom_data_;
+  }
+#endif
+
  private:
   // Unique identifier for the clipboard state at the time of data creation.
   ClipboardSequenceNumberToken sequence_number_token_;
@@ -238,6 +244,10 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ClipboardData {
   // If present, the time at which this data was committed to the clipboard.
   absl::optional<base::Time> commit_time_;
 #endif  // BUILDFLAG(IS_CHROMEOS)
+
+#if defined(OHOS_CLIPBOARD)
+  std::unordered_map<std::string, std::string> custom_data_;
+#endif
 };
 
 }  // namespace ui

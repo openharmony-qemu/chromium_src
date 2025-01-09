@@ -181,6 +181,7 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) Clipboard
 
 #if defined(OHOS_CLIPBOARD)
   virtual void OnClipboardDataGuard(bool status) {}
+  virtual void SetCopyOptionMode(CopyOptionMode copy_option) {}
 #endif
 
   // TODO(huangdarwin): Rename to ReadAvailablePortableFormatNames().

@@ -200,6 +200,9 @@ void ClipboardData::SetCustomData(const std::string& data_format,
     custom_data_format_.clear();
     return;
   }
+#if defined(OHOS_CLIPBOARD)
+  custom_data_[data_format] = data_data;
+#endif
   custom_data_data_ = data_data;
   custom_data_format_ = data_format;
   format_ |= static_cast<int>(ClipboardInternalFormat::kCustom);

@@ -44,9 +44,12 @@ static void AllocateTextureOwnerOnGpuThread(
     return;
   }
 
+  gl::ohos::TextureOwnerMode texture_owner_mode = base::ohos::IsEmulator() || base::SysInfo::IsLowEndDevice() ?
+      gl::ohos::TextureOwnerMode::kNativeImageTexture :
+      gl::ohos::TextureOwnerMode::kHwVideoZeroCopyNativeBuffer;
   std::move(init_cb).Run(gpu::NativeImageTextureOwner::Create(
       shared_context_state,
-      gl::ohos::TextureOwnerMode::kNativeImageTexture,
+      TextureOwnerMode,
       std::move(drdc_lock)));
 }
 

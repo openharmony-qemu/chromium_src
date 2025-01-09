@@ -904,6 +904,7 @@ void VideoResourceUpdater::CopyHardwarePlane(
     const gfx::ColorSpace& resource_color_space,
     const gpu::MailboxHolder& mailbox_holder,
     VideoFrameExternalResources* external_resources) {
+  TRACE_EVENT0("cc", "VideoResourceUpdater::CopyHardwarePlane");
   const gfx::Size output_plane_resource_size = video_frame->coded_size();
   // The copy needs to be a direct transfer of pixel data, so we use an RGBA8
   // target to avoid loss of precision or dropping any alpha component.
@@ -976,6 +977,9 @@ VideoFrameExternalResources VideoResourceUpdater::CreateForHardwarePlanes(
   gfx::ColorSpace resource_color_space = video_frame->ColorSpace();
 
   const bool copy_required = video_frame->metadata().copy_required;
+#ifdef OHOS_NB_DEBUG
+  LOG(INFO)<< __FUNCTION__ << " copy_required:" << copy_required;
+#endif
 
   GLuint target = video_frame->mailbox_holder(0).texture_target;
   // If |copy_required| then we will copy into a GL_TEXTURE_2D target.

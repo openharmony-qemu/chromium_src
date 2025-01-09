@@ -23,16 +23,7 @@ class AbstractTextureOHOS;
 class ScopedNativeBufferFenceSync;
 class TextureBase;
 
-// OhosWindowBuffer --- AImage
-class OhosWindowBuffer {
-public:
-    void* rawbuffer = nullptr;
 
-    OhosWindowBuffer() = default;
-    OhosWindowBuffer(const OhosWindowBuffer* buffer) {
-        rawbuffer = buffer->rawbuffer;
-    }
-};
 
 class GPU_GLES2_EXPORT SameLayerNativeBufferGLOwner
     : public NativeImageTextureOwner,

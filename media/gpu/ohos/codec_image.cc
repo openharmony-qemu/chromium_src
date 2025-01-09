@@ -133,6 +133,17 @@ void CodecImage::ReleaseCodecBuffer() {
   output_buffer_renderer_.reset();
 }
 
+std::unique_ptr<gpu::ScopedNativeBufferFenceSync> CodecImage::GetNativeBuffer() {
+  AssertAcquiredDrDcLock();
+
+  if (!output_buffer_renderer_)
+    return nullptr;
+
+  RenderToTextureOwnerFrontBuffer(BindingsMode::kDontBindImage,
+                                  0 /* service_id */);
+  return output_buffer_renderer_->texture_owner()->GetNativeBuffer();
+}
+
 CodecImageHolder::CodecImageHolder(
     scoped_refptr<base::SequencedTaskRunner> task_runner,
     scoped_refptr<CodecImage> codec_image)

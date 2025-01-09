@@ -27,6 +27,17 @@ gl::ScopedEGLImage CreateEGLImage(EGLClientBuffer egl_client_buffer) {
                                 egl_client_buffer, attrs);
 }
 
+gl::ScopedEGLImage CreateEGLImageForVideo(EGLClientBuffer egl_client_buffer) {
+  EGLint attrs[] = {
+      EGL_IMAGE_PRESERVED,
+      EGL_FALSE,
+      EGL_NONE,
+  };
+
+  return gl::MakeScopedEGLImage(EGL_NO_CONTEXT, EGL_NATIVE_BUFFER_OHOS,
+                                egl_client_buffer, attrs);
+}
+
 int GetEGLClientBufferFromNativeBuffer(void* ohos_native_buffer,
                                        void** egl_client_buffer) {
   return OHOS::NWeb::OhosAdapterHelper::GetInstance()

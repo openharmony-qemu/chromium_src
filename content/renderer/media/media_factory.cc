@@ -653,12 +653,18 @@ MediaFactory::CreateRendererFactorySelector(
 #endif
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#ifdef OHOS_NB_DEBUG
+  LOG(INFO)<<__FUNCTION__<<" ohos_custom_media_player_factory NativeTextureWrapperImpl ";
+#endif
+  gl::ohos::TextureOwnerMode texture_owner_mode = base::ohos::IsEmulator() || base::SysInfo::IsLowEndDevice() ?
+      gl::ohos::TextureOwnerMode::kNativeImageTexture : gl::ohos::TextureOwnerMode::kHwVideoZeroCopyNativeBuffer;
   auto ohos_custom_media_player_factory =
       std::make_unique<OHOSCustomMediaPlayerRendererClientFactory>(
           render_thread->compositor_task_runner(), CreateMojoRendererFactory(),
           base::BindRepeating(
-              &NativeTextureWrapperImpl::Create, true,
-              gl::ohos::TextureOwnerMode::kNativeImageTexture,
+              &NativeTextureWrapperImpl::Create, 
+              base::ohos::IsEmulator() || base::SysInfo::IsLowEndDevice(),
+              texture_owner_mode,
               render_thread->GetNativeTexureFactory(),
               render_frame_->GetTaskRunner(blink::TaskType::kInternalMedia)));
   factory_selector->AddFactory(RendererType::kOHOSCustomMediaPlayer,

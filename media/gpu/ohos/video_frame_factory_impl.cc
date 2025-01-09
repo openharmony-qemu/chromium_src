@@ -49,7 +49,7 @@ static void AllocateTextureOwnerOnGpuThread(
       gl::ohos::TextureOwnerMode::kHwVideoZeroCopyNativeBuffer;
   std::move(init_cb).Run(gpu::NativeImageTextureOwner::Create(
       shared_context_state,
-      TextureOwnerMode,
+      texture_owner_mode,
       std::move(drdc_lock)));
 }
 

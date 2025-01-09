@@ -838,6 +838,7 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
 
 #if defined(OHOS_JSPROXY)
         InjectJsToWeb(JsRunTime::Start);
+        InjectJsToWeb(JsRunTime::HEAD_READY);
         InjectJsToWeb(JsRunTime::End);
 #endif
       }

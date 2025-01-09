@@ -90,4 +90,12 @@ interface JsCommunication {
 
   // Called from browser, to remove the script by the given script_id.
   RemoveDocumentEndScript(int32 script_id);
+
+  // Called from browser, to add a script for a frame to run at head element ready
+  // stage. The script will run only if the frame's origin matches any of the
+  // allowed_origin_rules.
+  AddHeadReadyScript(js_injection.mojom.JavaScriptItem script);
+
+  // Called from browser, to remove the script by the given script_id.
+  RemoveHeadReadyScript(int32 script_id);
 };

@@ -3932,6 +3932,18 @@ void RenderFrameImpl::RunScriptsAtDocumentElementAvailable() {
   // Do not use |this|! ContentClient might have deleted them by now!
 }
 
+#if defined(OHOS_JSPROXY)
+void RenderFrameImpl::RunScriptsAtHeadReady() {
+  if (!initialized_) {
+    return;
+  }
+
+  if (GetContentClient() && GetContentClient()->renderer()) {
+    GetContentClient()->renderer()->RunScriptsAtHeadReady(this);
+  }
+}
+#endif
+
 void RenderFrameImpl::DidReceiveTitle(const blink::WebString& title) {
   // Ignore all but top level navigations.
   if (!frame_->Parent() && !title.IsEmpty()) {

@@ -895,6 +895,24 @@ ScriptItems NWebPreferenceDelegate::GetJavaScriptOnDocumentEnd() {
 ScriptItemsByOrder NWebPreferenceDelegate::GetJavaScriptOnDocumentEndByOrder() {
   return script_items_end_by_order_;
 }
+
+void NWebPreferenceDelegate::PutJavaScriptOnHeadReady(const ScriptItems& scriptItems) {
+  script_items_head_ready_ = scriptItems;
+}
+
+void NWebPreferenceDelegate::PutJavaScriptOnHeadReadyByOrder(const ScriptItems& scriptItems,
+      const ScriptItemsByOrder& scriptItemsByOrder) {
+  script_items_head_ready_ = scriptItems;
+  script_items_head_ready_by_order_ = scriptItemsByOrder;
+}
+
+ScriptItems NWebPreferenceDelegate::GetJavaScriptOnHeadReady() {
+  return script_items_head_ready_;
+}
+
+ScriptItemsByOrder NWebPreferenceDelegate::GetJavaScriptOnHeadReadyByOrder() {
+  return script_items_head_ready_by_order_;
+}
 #endif
 
 #if defined(OHOS_SOFTWARE_COMPOSITOR)

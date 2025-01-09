@@ -798,15 +798,19 @@ void OnTouchIconUrlWithSizesReceived(
                           bool proceed) override;
 #endif // OHOS_DISPATCH_BEFORE_UNLOAD
  private:
+#if defined(OHOS_JSPROXY)
   enum class JsRunTime {
     Start = 0,
-    End = 1
+    End = 1,
+    HEAD_READY
   };
   void InjectJsToWeb(JsRunTime time);
   void InjectJsToWebInner(
       JsRunTime time,
       ScriptItems& scriptItems,
       ScriptItemsByOrder& scriptItemsByOrder);
+#endif
+
   void CopyImageToClipboard(CefRefPtr<CefImage> image);
   // List of existing browser windows. Only accessed on the CEF UI thread.
   typedef std::list<CefRefPtr<CefBrowser>> BrowserList;

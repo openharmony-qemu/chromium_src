@@ -362,7 +362,7 @@ class NWebDelegateInterface
       std::shared_ptr<NWebScreenCaptureDelegateCallback>
           screenCaptureDelegateListener) = 0;
 #endif  // defined(OHOS_EX_SCREEN_CAPTURE)
- 
+
 #ifdef OHOS_PAGE_UP_DOWN
   virtual void PageUp(bool top) = 0;
   virtual void PageDown(bool bottom) = 0;
@@ -598,10 +598,14 @@ class NWebDelegateInterface
   virtual void DispatchBeforeUnload() = 0;
 #endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
+#if defined(OHOS_JSPROXY)
   virtual void JavaScriptOnDocumentStartByOrder(const ScriptItems& ScriptItems,
       const ScriptItemsByOrder& ScriptItemsByOrder) = 0;
   virtual void JavaScriptOnDocumentEndByOrder(const ScriptItems& ScriptItems,
       const ScriptItemsByOrder& ScriptItemsByOrder) = 0;
+  virtual void JavaScriptOnHeadReadyByOrder(const ScriptItems& ScriptItems,
+      const ScriptItemsByOrder& ScriptItemsByOrder) = 0;
+#endif
 };
 }  // namespace OHOS::NWeb
 

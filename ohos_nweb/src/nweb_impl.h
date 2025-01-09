@@ -409,12 +409,18 @@ class NWebImpl : public NWeb {
 #endif  // defined(OHOS_NO_STATE_PREFETCH)
 
   int PostUrl(const std::string& url, const std::vector<char>& postData) override;
+
+#if defined(OHOS_JSPROXY)
   void JavaScriptOnDocumentStart(const ScriptItems& scriptItems) override;
   void JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) override;
   void JavaScriptOnDocumentStartByOrder(const ScriptItems& scriptItems,
       const ScriptItemsByOrder& scriptItemsByOrder) override;
   void JavaScriptOnDocumentEndByOrder(const ScriptItems& scriptItems,
       const ScriptItemsByOrder& scriptItemsByOrder) override;
+  void JavaScriptOnHeadReadyByOrder(const ScriptItems& scriptItems,
+      const ScriptItemsByOrder& scriptItemsByOrder) override;
+#endif
+
   // For NWebEx
   static NWebImpl* FromID(int32_t nweb_id);
   static std::shared_ptr<NWebImpl> GetNWebSharedPtr(int32_t nweb_id);

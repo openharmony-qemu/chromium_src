@@ -19,7 +19,7 @@ namespace ohos {
 gl::ScopedEGLImage CreateEGLImage(EGLClientBuffer egl_client_buffer) {
   EGLint attrs[] = {
       EGL_IMAGE_PRESERVED,
-      EGL_TRUE,
+      EGL_FALSE,
       EGL_NONE,
   };
 

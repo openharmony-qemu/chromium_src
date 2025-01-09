@@ -185,10 +185,13 @@ bool GpuSharedImageVideoFactory::CreateImageInternal(
     LOG(ERROR) << "GpuSharedImageVideoFactory: Unable to get a shared context.";
     return false;
   }
+  gl::ohos::TextureOwnerMode texture_owner_mode = base::ohos::IsEmulator() || base::SysInfo::IsLowEndDevice() ?
+      gl::ohos::TextureOwnerMode::kNativeImageTexture :
+      gl::ohos::TextureOwnerMode::kSameLayerNativeBuffer;
   auto shared_image = gpu::OhosVideoImageBacking::Create(
       mailbox, coded_size, spec.color_space, kTopLeft_GrSurfaceOrigin,
       kPremul_SkAlphaType,
-      gl::ohos::TextureOwnerMode::kNativeImageTexture,
+      texture_owner_mode,
       std::move(image), std::move(shared_context), std::move(drdc_lock));
   DCHECK(stub_->channel()->gpu_channel_manager()->shared_image_manager());
   stub_->channel()->shared_image_stub()->factory()->RegisterBacking(

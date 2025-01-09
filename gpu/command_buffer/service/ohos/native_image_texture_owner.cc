@@ -14,6 +14,7 @@
 #include "gpu/command_buffer/service/feature_info.h"
 #include "gpu/command_buffer/service/ohos/native_image_texture_gl_owner.h"
 #include "gpu/command_buffer/service/ohos/same_layer_native_buffer_gl_owner.h"
+#include "gpu/command_buffer/service/ohos/hw_video_native_buffer_gl_owner.h"
 #include "gpu/command_buffer/service/texture_base.h"
 #include "ui/gl/scoped_binders.h"
 #include "ui/gl/scoped_make_current.h"
@@ -91,6 +92,10 @@ scoped_refptr<NativeImageTextureOwner> NativeImageTextureOwner::Create(
     case gl::ohos::TextureOwnerMode::kNativeImageTexture:
       return new NativeImageTextureGlOwner(std::move(texture),
                                            std::move(context_state));
+    case gl::ohos::TextureOwnerMode::kHwVideoZeroCopyNativeBuffer:
+      return new HwVideoNativeBufferGLOwner(
+          std::move(texture), std::move(context_state), std::move(drdc_lock));
+
     default:
       return nullptr;
   }

@@ -92,7 +92,7 @@ class MEDIA_GPU_EXPORT VideoFrameFactoryImpl
 
   scoped_refptr<CodecBufferWaitCoordinator> codec_buffer_wait_coordinator_;
 
-  bool video_frame_copy_required_ = true;
+  bool video_frame_copy_required_ = base::ohos::IsEmulator() || base::SysInfo::IsLowEndDevice();
 
   std::unique_ptr<FrameInfoHelper> frame_info_helper_;
 

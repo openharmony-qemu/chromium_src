@@ -317,6 +317,10 @@ target(link_target_type, "gles2_sources") {
 
   if (is_ohos) {
     sources += [
+      "ohos/hw_video_native_buffer_gl_owner.cc",
+      "ohos/hw_video_native_buffer_gl_owner.h",
+      "ohos/hw_video_native_buffer_image_backing.cc",
+      "ohos/hw_video_native_buffer_image_backing.h",
       "ohos/native_image_image_backing.h",
       "ohos/native_image_image_backing.cc",
       "ohos/native_image_texture_gl_owner.h",

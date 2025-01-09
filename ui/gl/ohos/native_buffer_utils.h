@@ -19,6 +19,7 @@ enum class TextureOwnerMode {
   kNone = 0,
   kNativeImageTexture = 1,
   kSameLayerNativeBuffer = 2,
+  kHwVideoZeroCopyNativeBuffer = 3,
 };
 
 GL_EXPORT ScopedEGLImage CreateEGLImage(EGLClientBuffer egl_client_buffer);

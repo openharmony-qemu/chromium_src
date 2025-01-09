@@ -55,7 +55,7 @@ void CreateAndBindEglImageFromNativeBuffer(OHOSNativeBuffer buffer,
     TRACE_EVENT0("gpu",
                  "HwVideoNativeBufferImageBacking::"
                  "BeginAccess::CreateEGLImage");
-    auto egl_image = gl::ohos::CreateEGLImage(egl_client_buffer);
+    auto egl_image = gl::ohos::CreateEGLImageForVideo(egl_client_buffer);
 
     // Trace time taken for FreeEGLClientBuffer
     {

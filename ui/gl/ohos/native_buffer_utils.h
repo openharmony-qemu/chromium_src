@@ -24,6 +24,8 @@ enum class TextureOwnerMode {
 
 GL_EXPORT ScopedEGLImage CreateEGLImage(EGLClientBuffer egl_client_buffer);
 
+GL_EXPORT ScopedEGLImage CreateEGLImageForVideo(EGLClientBuffer egl_client_buffer);
+
 GL_EXPORT int GetEGLClientBufferFromNativeBuffer(void* ohos_native_buffer,
                                                  void** egl_client_buffer);
 

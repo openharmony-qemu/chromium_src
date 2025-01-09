@@ -19,6 +19,17 @@ namespace ohos {
 gl::ScopedEGLImage CreateEGLImage(EGLClientBuffer egl_client_buffer) {
   EGLint attrs[] = {
       EGL_IMAGE_PRESERVED,
+      EGL_TRUE,
+      EGL_NONE,
+  };
+
+  return gl::MakeScopedEGLImage(EGL_NO_CONTEXT, EGL_NATIVE_BUFFER_OHOS,
+                                egl_client_buffer, attrs);
+}
+
+gl::ScopedEGLImage CreateEGLImageForVideo(EGLClientBuffer egl_client_buffer) {
+  EGLint attrs[] = {
+      EGL_IMAGE_PRESERVED,
       EGL_FALSE,
       EGL_NONE,
   };

@@ -1118,6 +1118,14 @@ void GpuServiceImpl::SetTransformHint(uint32_t rotation, uint32_t window_id)
   void* window = NWebNativeWindowTracker::GetInstance()->GetNativeWindow(window_id);
   OHOS::NWeb::OhosAdapterHelper::GetInstance().GetWindowAdapterInstance().SetTransformHint(rotation, window);
 }
+
+void GpuServiceImpl::Discard(uint32_t native_window_id)
+{
+  void* window = NWebNativeWindowTracker::GetInstance()->GetNativeWindow(native_window_id);
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .GetWindowAdapterInstance()
+      .NativeWindowSurfaceCleanCacheWithPara(reinterpret_cast<void*>(window), true);
+}
 #endif
 
 void GpuServiceImpl::SetChannelDiskCacheHandle(

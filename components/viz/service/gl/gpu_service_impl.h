@@ -150,6 +150,7 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
                     GetSurfaceIdCallback callback) override;
   void DestroyNativeWindow(uint32_t native_window_id) override;
   void SetTransformHint(uint32_t rotation, uint32_t window_id) override;
+  void Discard(uint32_t native_window_id) override;
 #endif
   void SetChannelDiskCacheHandle(
       int32_t client_id,

@@ -2498,6 +2498,7 @@ void NWebImpl::PrefetchPage(
   if (nweb_delegate_ == nullptr) {
     return;
   }
+  TRACE_EVENT0("NWebImpl", "NWebImpl::PrefetchPage");
   nweb_delegate_->PrefetchPage(url, additionalHttpHeaders);
 }
 #endif  // defined(OHOS_NO_STATE_PREFETCH)

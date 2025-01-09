@@ -2604,10 +2604,6 @@ void RenderFrameImpl::CommitNavigation(
       std::move(navigation_client_impl_), request_id,
       was_initiated_in_this_frame);
 
-#ifdef OHOS_ARKWEB_ADBLOCK
-  bool site_adblock_enabled = commit_params->site_adblock_enabled;
-#endif  // OHOS_ARKWEB_ADBLOCK
-
   // Check if the navigation being committed originated as a client redirect.
   bool is_client_redirect =
       !!(common_params->transition & ui::PAGE_TRANSITION_CLIENT_REDIRECT);
@@ -2737,13 +2733,6 @@ void RenderFrameImpl::CommitNavigation(
     return;
   }
 
-#ifdef OHOS_ARKWEB_ADBLOCK
-  if (is_main_frame_) {
-    // All subframes share the main frame's adblock switch
-    OnUpdateAdBlockEnabledToRender(site_adblock_enabled);
-  }
-#endif  // OHOS_ARKWEB_ADBLOCK
-
   // Common case - fill navigation params from provided information and commit.
   std::move(commit_with_params).Run(std::move(navigation_params));
 }
@@ -2768,6 +2757,10 @@ void RenderFrameImpl::CommitNavigationWithParams(
     mojom::StorageInfoPtr storage_info,
     std::unique_ptr<DocumentState> document_state,
     std::unique_ptr<WebNavigationParams> navigation_params) {
+#ifdef OHOS_ARKWEB_ADBLOCK
+  bool site_adblock_enabled = commit_params->site_adblock_enabled;
+#endif  // OHOS_ARKWEB_ADBLOCK
+
   if (common_params->url.IsAboutSrcdoc()) {
     WebNavigationParams::FillStaticResponse(navigation_params.get(),
                                             "text/html", "UTF-8",
@@ -2865,6 +2858,13 @@ void RenderFrameImpl::CommitNavigationWithParams(
   // The commit can result in this frame being removed.
   if (!weak_self)
     return;
+
+#ifdef OHOS_ARKWEB_ADBLOCK
+  if (is_main_frame_) {
+    // All subframes share the main frame's adblock switch
+    OnUpdateAdBlockEnabledToRender(site_adblock_enabled);
+  }
+#endif  // OHOS_ARKWEB_ADBLOCK
 
   ResetMembersUsedForDurationOfCommit();
 }

@@ -239,6 +239,9 @@ static const MimeInfo kSecondaryMappings[] = {
     {"text/x-sh", "sh"},
     {"text/xml", "xsl,xbl,xslt"},
     {"video/mpeg", "mpeg,mpg"},
+#if defined(OHOS_EX_DOWNLOAD)
+    {"video/quicktime", "mov"},
+# endif // OHOS_EX_DOWNLOAD
 };
 
 // Finds mime type of |ext| from |mappings|.

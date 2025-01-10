@@ -130,6 +130,10 @@ class CONTENT_EXPORT HostZoomMapImpl : public HostZoomMap {
   TemporaryZoomLevels temporary_zoom_levels_;
 
   raw_ptr<base::Clock> clock_;
+
+#if defined(OHOS_INPUT_EVENTS)
+  base::Time last_modified_ = base::Time();
+#endif
 };
 
 }  // namespace content

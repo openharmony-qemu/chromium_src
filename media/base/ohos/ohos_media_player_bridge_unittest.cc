@@ -77,6 +77,7 @@ class MockPlayerAdapter : public PlayerAdapter {
   MOCK_METHOD(int32_t, GetCurrentTime, (int32_t & currentTime), (override));
   MOCK_METHOD(int32_t, GetDuration, (int32_t & duration), (override));
   MOCK_METHOD(int32_t, SetPlaybackSpeed, (PlaybackRateMode mode), (override));
+  MOCK_METHOD(int32_t, SetVideoSurfaceNew, (void* native_window), (override));
 };
 
 class MockSurfaceBufferAdapter : public SurfaceBufferAdapter {

@@ -481,9 +481,13 @@ void SetTransformHint(uint32_t rotation) override;
  double GetBrowserZoomLevel() override;
 #endif
   void SetAccessibilityState(cef_state_t accessibility_state) override;
-  void ExecuteAction(int64_t accessibilityId, uint32_t action) override;
-  void ExecuteAction(int64_t accessibilityId, uint32_t action,
+  bool ExecuteAction(int64_t accessibilityId, uint32_t action,
       const std::map<std::string, std::string>& actionArguments) override;
+  bool GetAccessibilityNodeRectById(int64_t accessibilityId,
+                                    int32_t* width,
+                                    int32_t* height,
+                                    int32_t* offsetX,
+                                    int32_t* offsetY) override;
   std::shared_ptr<NWebAccessibilityNodeInfo>
   GetFocusedAccessibilityNodeInfo(int64_t accessibilityId,
                                   bool isAccessibilityFocus) override;

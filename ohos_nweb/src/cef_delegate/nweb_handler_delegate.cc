@@ -864,9 +864,7 @@ void NWebHandlerDelegate::OnBeforeClose(CefRefPtr<CefBrowser> browser) {
     if (host !=nullptr && host->gpu_host() !=nullptr && main_browser_ != nullptr) {
         host->gpu_host()->DestroyNativeWindow(main_browser_->GetAcceleratedWidget());
     }
-    OHOS::NWeb::OhosAdapterHelper::GetInstance()
-        .GetWindowAdapterInstance()
-        .DestroyNativeWindow(window_);
+    // Window is controlled externally and cannot be released here.
     window_ = nullptr;
   }
 

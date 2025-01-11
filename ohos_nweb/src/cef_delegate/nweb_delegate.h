@@ -201,6 +201,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       const std::string& object_name,
       const std::vector<std::string>& method_list) const override;
 
+#if defined(OHOS_JSPROXY)
   void JavaScriptOnDocumentStart(const ScriptItems& scriptItems) override;
   void JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) override;
 
@@ -208,6 +209,10 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       const ScriptItemsByOrder& scriptItemsByOrder) override;
   void JavaScriptOnDocumentEndByOrder(const ScriptItems& scriptItems,
       const ScriptItemsByOrder& scriptItemsByOrder) override;
+
+  void JavaScriptOnHeadReadyByOrder(const ScriptItems& scriptItems,
+      const ScriptItemsByOrder& scriptItemsByOrder) override;
+#endif
 
   bool Discard() override;
   bool Restore() override;
@@ -482,9 +487,13 @@ void SetTransformHint(uint32_t rotation) override;
  double GetBrowserZoomLevel() override;
 #endif
   void SetAccessibilityState(cef_state_t accessibility_state) override;
-  void ExecuteAction(int64_t accessibilityId, uint32_t action) override;
-  void ExecuteAction(int64_t accessibilityId, uint32_t action,
+  bool ExecuteAction(int64_t accessibilityId, uint32_t action,
       const std::map<std::string, std::string>& actionArguments) override;
+  bool GetAccessibilityNodeRectById(int64_t accessibilityId,
+                                    int32_t* width,
+                                    int32_t* height,
+                                    int32_t* offsetX,
+                                    int32_t* offsetY) override;
   std::shared_ptr<NWebAccessibilityNodeInfo>
   GetFocusedAccessibilityNodeInfo(int64_t accessibilityId,
                                   bool isAccessibilityFocus) override;

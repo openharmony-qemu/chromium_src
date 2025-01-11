@@ -27,8 +27,13 @@ enum class AudioDecoderType : int {
   kMediaFoundation = 8,  // MediaFoundationAudioDecoder
   kPassthroughDTS = 9,   // Passthrough DTS audio
 
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_ENABLE_CDM)
+  kOhos = 10,
+  kMaxValue = kOhos,
+#else
   // Keep this at the end and equal to the last entry.
   kMaxValue = kPassthroughDTS,
+#endif
 };
 
 // List of known VideoDecoder implementations; recorded to UKM, always add new

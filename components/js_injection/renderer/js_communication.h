@@ -42,9 +42,12 @@ class JsCommunication
       mojom::JavaScriptItemPtr script_ptr) override;
   void AddDocumentEndScript(
       mojom::JavaScriptItemPtr script_ptr) override;
+  void AddHeadReadyScript(
+      mojom::JavaScriptItemPtr script_ptr) override;
 
   void RemoveDocumentStartScript(int32_t script_id) override;
   void RemoveDocumentEndScript(int32_t script_id) override;
+  void RemoveHeadReadyScript(int32_t script_id) override;
 
   // RenderFrameObserver implementation
   void DidClearWindowObject() override;
@@ -54,6 +57,7 @@ class JsCommunication
 
   void RunScriptsAtDocumentStart();
   void RunScriptsAtDocumentEnd();
+  void RunScriptsAtHeadReady();
 
   mojom::JsToBrowserMessaging* GetJsToJavaMessage(
       const std::u16string& js_object_name);
@@ -74,6 +78,7 @@ class JsCommunication
 
   std::vector<std::unique_ptr<DocumentInjectJavaScript>> document_start_scripts_;
   std::vector<std::unique_ptr<DocumentInjectJavaScript>> document_end_scripts_;
+  std::vector<std::unique_ptr<DocumentInjectJavaScript>> head_ready_scripts_;
   std::vector<base::WeakPtr<JsBinding>> js_bindings_;
 
   // Associated with legacy IPC channel.

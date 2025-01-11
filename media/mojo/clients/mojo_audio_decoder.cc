@@ -45,6 +45,8 @@ bool MojoAudioDecoder::SupportsDecryption() const {
   // Currently only the android backends support decryption
 #if BUILDFLAG(IS_ANDROID)
   return true;
+#elif BUILDFLAG(IS_OHOS) && defined(OHOS_ENABLE_CDM)
+  return true;
 #else
   return false;
 #endif

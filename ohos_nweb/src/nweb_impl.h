@@ -410,12 +410,18 @@ class NWebImpl : public NWeb {
 #endif  // defined(OHOS_NO_STATE_PREFETCH)
 
   int PostUrl(const std::string& url, const std::vector<char>& postData) override;
+
+#if defined(OHOS_JSPROXY)
   void JavaScriptOnDocumentStart(const ScriptItems& scriptItems) override;
   void JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) override;
   void JavaScriptOnDocumentStartByOrder(const ScriptItems& scriptItems,
       const ScriptItemsByOrder& scriptItemsByOrder) override;
   void JavaScriptOnDocumentEndByOrder(const ScriptItems& scriptItems,
       const ScriptItemsByOrder& scriptItemsByOrder) override;
+  void JavaScriptOnHeadReadyByOrder(const ScriptItems& scriptItems,
+      const ScriptItemsByOrder& scriptItemsByOrder) override;
+#endif
+
   // For NWebEx
   static NWebImpl* FromID(int32_t nweb_id);
   static std::shared_ptr<NWebImpl> GetNWebSharedPtr(int32_t nweb_id);
@@ -611,6 +617,15 @@ class NWebImpl : public NWeb {
 #endif
   void PerformAction(int64_t accessibilityId, uint32_t action,
       const std::map<std::string, std::string>& actionArguments) override;
+  bool PerformActionV2(
+      int64_t accessibilityId,
+      uint32_t action,
+      const std::map<std::string, std::string>& actionArguments) override;
+  bool GetAccessibilityNodeRectById(int64_t accessibilityId,
+                                    int32_t* width,
+                                    int32_t* height,
+                                    int32_t* offsetX,
+                                    int32_t* offsetY) override;
   void SendAccessibilityHoverEvent(int32_t x, int32_t y) override;
 
   static void TrimMemoryByPressureLevel(int32_t memoryLevel);

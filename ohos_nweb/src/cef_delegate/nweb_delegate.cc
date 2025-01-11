@@ -2295,6 +2295,7 @@ void NWebDelegate::RegisterNativeLoadEndCallback(
   }
 }
 
+#if defined(OHOS_JSPROXY)
 void NWebDelegate::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
   if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
     GetBrowser()->GetHost()->RemoveJavaScriptOnDocumentStart();
@@ -2362,6 +2363,32 @@ void NWebDelegate::JavaScriptOnDocumentEndByOrder(const ScriptItems& scriptItems
     LOG(ERROR) << "JavaScriptOnDocumentEndByOrder has failed";
   }
 }
+
+void NWebDelegate::JavaScriptOnHeadReadyByOrder(const ScriptItems& scriptItems,
+    const ScriptItemsByOrder& scriptItemsByOrder) {
+  if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
+    GetBrowser()->GetHost()->RemoveJavaScriptOnHeadReady();
+    for (const auto& item : scriptItemsByOrder) {
+      if (scriptItems.find(item) == scriptItems.end()) {
+        continue;
+      }
+
+      CefString script = item;
+      std::vector<CefString> scriptRules;
+      for (const std::string& rule : scriptItems.at(item)) {
+        CefString cefRule;
+        cefRule.FromString(rule);
+        scriptRules.push_back(cefRule);
+      }
+      GetBrowser()->GetHost()->JavaScriptOnHeadReady(script, scriptRules);
+    }
+  } else if (preference_delegate_) {
+    preference_delegate_->PutJavaScriptOnHeadReadyByOrder(scriptItems, scriptItemsByOrder);
+  } else {
+    LOG(ERROR) << "JavaScriptOnHeadReadyByOrder has failed";
+  }
+}
+#endif
 
 void NWebDelegate::CallH5Function(
     int32_t routing_id,
@@ -3630,72 +3657,16 @@ void NWebDelegate::SetAccessibilityState(cef_state_t accessibilityState) {
   }
 }
 
-void NWebDelegate::ExecuteAction(int64_t accessibilityId, uint32_t action) {
-  auto* accessibilityManager = GetAccessibilityManager();
-  if (accessibilityManager == nullptr) {
-    return;
-  }
-  auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
-  auto* node = content::BrowserAccessibilityOHOS::GetFromAccessibilityId(
-      accessibilityId);
-  if (node == nullptr || rootNode == nullptr) {
-    LOG(ERROR) << "ExecuteAction(Deprecated) node or rootNode is not found";
-    return;
-  }
-  AceAction aceAction = static_cast<AceAction>(action);
-  LOG(INFO) << "ExecuteAction(Deprecated) accessibilityId is "
-            << accessibilityId << ", action is " << action;
-  switch (aceAction) {
-    case AceAction::ACTION_CLICK:
-      accessibilityManager->DoDefaultAction(*node);
-      break;
-    case AceAction::ACTION_ACCESSIBILITY_FOCUS:
-      accessibilityManager->MoveAccessibilityFocusToId(accessibilityId);
-      break;
-    case AceAction::ACTION_CLEAR_ACCESSIBILITY_FOCUS:
-      accessibilityManager->SendAccessibilityEvent(
-          accessibilityId, AccessibilityEventType::ACCESSIBILITY_FOCUS_CLEARED);
-      if (accessibilityManager->GetAccessibilityFocusId() == accessibilityId) {
-        accessibilityManager->MoveAccessibilityFocus(
-            accessibilityManager->GetAccessibilityFocusId(), -1);
-        accessibilityManager->SetAccessibilityFocusId(-1);
-      }
-      if (accessibilityManager->GetLastHoverId() == accessibilityId) {
-        accessibilityManager->SendAccessibilityEvent(
-            accessibilityManager->GetLastHoverId(),
-            AccessibilityEventType::HOVER_EXIT_EVENT);
-        accessibilityManager->SetLastHoverId(0);
-      }
-      break;
-    case AceAction::ACTION_FOCUS:
-      accessibilityManager->SetFocus(*node);
-      break;
-    case AceAction::ACTION_CLEAR_FOCUS:
-      accessibilityManager->SetFocus(*accessibilityManager->GetBrowserAccessibilityRoot());
-      break;
-    case AceAction::ACTION_SCROLL_FORWARD:
-      node->Scroll(ax::mojom::Action::kScrollForward);
-      break;
-    case AceAction::ACTION_SCROLL_BACKWARD:
-      node->Scroll(ax::mojom::Action::kScrollBackward);
-      break;
-    default:
-      LOG(INFO) << "ExecuteAction(Deprecated) unsupported action";
-      break;
-  }
-}
-
-void NWebDelegate::ExecuteAction(int64_t accessibilityId, uint32_t action,
+bool NWebDelegate::ExecuteAction(int64_t accessibilityId, uint32_t action,
     const std::map<std::string, std::string>& actionArguments) {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
-    return;
+    return false;
   }
-  auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
   auto* node = content::BrowserAccessibilityOHOS::GetFromAccessibilityId(accessibilityId);
-  if (node == nullptr || rootNode == nullptr) {
-    LOG(ERROR) << "ExecuteAction node or rootNode is not found";
-    return;
+  if (node == nullptr) {
+    LOG(ERROR) << "ExecuteAction node is not found";
+    return false;
   }
   AceAction aceAction = static_cast<AceAction>(action);
   LOG(INFO) << "ExecuteAction accessibilityId is " << accessibilityId
@@ -3705,7 +3676,9 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId, uint32_t action,
       accessibilityManager->DoDefaultAction(*node);
       break;
     case AceAction::ACTION_ACCESSIBILITY_FOCUS:
-      accessibilityManager->MoveAccessibilityFocusToId(accessibilityId);
+      if (accessibilityManager->MoveAccessibilityFocusToId(accessibilityId)) {
+        accessibilityManager->ScrollToMakeNodeVisible(accessibilityId);
+      }
       break;
     case AceAction::ACTION_CLEAR_ACCESSIBILITY_FOCUS:
       accessibilityManager->SendAccessibilityEvent(
@@ -3714,12 +3687,6 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId, uint32_t action,
         accessibilityManager->MoveAccessibilityFocus(
             accessibilityManager->GetAccessibilityFocusId(), -1);
         accessibilityManager->SetAccessibilityFocusId(-1);
-      }
-      if (accessibilityManager->GetLastHoverId() == accessibilityId) {
-        accessibilityManager->SendAccessibilityEvent(
-            accessibilityManager->GetLastHoverId(),
-            AccessibilityEventType::HOVER_EXIT_EVENT);
-        accessibilityManager->SetLastHoverId(0);
       }
       break;
     case AceAction::ACTION_FOCUS:
@@ -3730,7 +3697,7 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId, uint32_t action,
       break;
     case AceAction::ACTION_SCROLL_FORWARD:
     case AceAction::ACTION_SCROLL_BACKWARD: {
-      int32_t argument = GetArgumentByKey(actionArguments,"scrolltype");
+      int32_t argument = GetArgumentByKey(actionArguments, "scrolltype");
       AccessibilityScrollType scrollType;
       switch (argument) {
         case 0:
@@ -3760,7 +3727,7 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId, uint32_t action,
       break;
     case AceAction::ACTION_SET_SELECTION: {
       if (!node->IsTextField() || actionArguments.empty()) {
-        break;
+        return false;
       }
 
       int start = 0;
@@ -3789,10 +3756,10 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId, uint32_t action,
     }
     case AceAction::ACTION_SET_TEXT: {
       if (!node->IsTextField()) {
-        break;
+        return false;
       }
       if (actionArguments.empty()) {
-        break;
+        return false;
       }
       std::string newText = "";
       auto iter = actionArguments.find("setText");
@@ -3800,7 +3767,7 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId, uint32_t action,
         newText = iter->second;
       }
       if (newText.empty()) {
-        break;
+        return false;
       }
       accessibilityManager->SetValue(*node, newText);
       accessibilityManager->SetSelection(
@@ -3811,7 +3778,7 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId, uint32_t action,
     }
     case AceAction::ACTION_SET_CURSOR_POSITION: {
       if (!node->IsTextField() || actionArguments.empty()) {
-        break;
+        return false;
       }
 
       int offset = 0;
@@ -3829,10 +3796,64 @@ void NWebDelegate::ExecuteAction(int64_t accessibilityId, uint32_t action,
               node->CreatePositionForSelectionAt(offset)));
       break;
     }
+    case AceAction::ACTION_NEXT_HTML_ITEM: {
+      std::string elementType = "";
+      auto iter = actionArguments.find("htmlItem");
+      if (iter != actionArguments.end()) {
+        elementType = iter->second;
+      }
+      return accessibilityManager->JumpToElementType(
+          accessibilityId, elementType, /*forwards*/ true, /*canWrap*/ false);
+    }
+    case AceAction::ACTION_PREVIOUS_HTML_ITEM: {
+      std::string elementType = "";
+      auto iter = actionArguments.find("htmlItem");
+      if (iter != actionArguments.end()) {
+        elementType = iter->second;
+      }
+      return accessibilityManager->JumpToElementType(
+          accessibilityId, elementType, /*forwards*/ false,
+          /*canWrap*/ accessibilityId ==
+              accessibilityManager->GetRootAccessibilityId());
+    }
     default:
       LOG(INFO) << "ExecuteAction unsupported action";
       break;
   }
+  return true;
+}
+
+bool NWebDelegate::GetAccessibilityNodeRectById(int64_t accessibilityId,
+                                                int32_t* width,
+                                                int32_t* height,
+                                                int32_t* offsetX,
+                                                int32_t* offsetY) {
+  if (width == nullptr || height == nullptr || offsetX == nullptr ||
+      offsetY == nullptr) {
+    return false;
+  }
+  auto* accessibilityManager = GetAccessibilityManager();
+  if (accessibilityManager == nullptr) {
+    return false;
+  }
+  auto node = content::BrowserAccessibilityOHOS::GetFromAccessibilityId(
+      accessibilityId);
+  if (node == nullptr) {
+    LOG(ERROR) << "GetAccessibilityNodeRectById node is not found";
+    return false;
+  }
+
+  ui::AXOffscreenResult offscreen_result = ui::AXOffscreenResult::kOnscreen;
+  gfx::Rect rect = node->GetClippedRootFrameBoundsRect(&offscreen_result);
+
+  if (offscreen_result == ui::AXOffscreenResult::kOnscreen) {
+    *width = rect.width();
+    *height = rect.height();
+    *offsetX = rect.x();
+    *offsetY = rect.y();
+    return true;
+  }
+  return false;
 }
 
 void NWebDelegate::SendAccessibilityHoverEvent(int x, int y) {
@@ -3879,8 +3900,11 @@ NWebDelegate::GetFocusedAccessibilityNodeInfo(int64_t accessibilityId,
   } else {
     resultNode = static_cast<content::BrowserAccessibilityOHOS*>(
         accessibilityManager->GetFocus());
+    if (resultNode == rootNode) {
+      return nullptr;
+    }
   }
-  if (resultNode == nullptr || resultNode == rootNode) {
+  if (resultNode == nullptr) {
     LOG(ERROR) << "GetFocusedAccessibilityNodeInfo resultNode is not found";
     return nullptr;
   }
@@ -4180,6 +4204,9 @@ void NWebDelegate::AddAccessibilityNodeInfoActions(
       }
     }
   }
+  actions.emplace_back(static_cast<uint32_t>(AceAction::ACTION_NEXT_HTML_ITEM));
+  actions.emplace_back(
+      static_cast<uint32_t>(AceAction::ACTION_PREVIOUS_HTML_ITEM));
   nodeInfo->SetActions(actions);
 }
 

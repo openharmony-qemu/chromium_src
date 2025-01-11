@@ -14,6 +14,31 @@
  */
 
 #include "nweb_url_resource_response_impl.h"
+#include "base/logging.h"
+
+namespace {
+constexpr int kNetFailed = -2;
+constexpr int kNetOk = 0;
+constexpr int kMinStatusCode = 100;
+constexpr int kMaxStatusCode = 599;
+
+bool IsSupportedStatusCode(int status_code) {
+  if (status_code == kNetOk ||
+      (status_code >= kMinStatusCode && status_code <= kMaxStatusCode)) {
+    return true;
+  }
+
+  switch (status_code) {
+#define NET_ERROR(label, value) \
+  case value:                   \
+    return true;
+#include "net/base/net_error_list.h"
+#undef NET_ERROR
+    default:
+      return false;
+  }
+}
+}  // namespace
 
 namespace OHOS::NWeb {
 
@@ -68,8 +93,15 @@ NWebUrlResourceResponseImpl::ResponseHeaders() {
 }
 
 void NWebUrlResourceResponseImpl::PutResponseStateAndStatuscode(
-    int status_code, const std::string &reason_phrase) {
-  status_code_ = status_code;
+    int status_code,
+    const std::string& reason_phrase) {
+  if (IsSupportedStatusCode(status_code)) {
+    status_code_ = status_code;
+  } else {
+    status_code_ = kNetFailed;
+    LOG(WARNING) << "Invalid status code provided: " << status_code
+                 << ", changed to: " << status_code_;
+  }
   reason_phrase_ = reason_phrase;
 }
 
@@ -147,4 +179,4 @@ size_t NWebUrlResourceResponseImpl::GetResponseDataBufferSize() {
   return bufferSize_;
 }
 
-} // namespace OHOS::NWeb
+}  // namespace OHOS::NWeb

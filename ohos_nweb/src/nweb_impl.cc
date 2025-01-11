@@ -1745,6 +1745,7 @@ void NWebImpl::UnregisterArkJSfunction(
   return nweb_delegate_->UnregisterArkJSfunction(object_name, method_list);
 }
 
+#if defined(OHOS_JSPROXY)
 void NWebImpl::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
   if (nweb_delegate_ == nullptr) {
     return;
@@ -1774,6 +1775,15 @@ void NWebImpl::JavaScriptOnDocumentEndByOrder(const ScriptItems& scriptItems,
   }
   return nweb_delegate_->JavaScriptOnDocumentEndByOrder(scriptItems, scriptItemsByOrder);
 }
+
+void NWebImpl::JavaScriptOnHeadReadyByOrder(const ScriptItems& scriptItems,
+    const ScriptItemsByOrder& scriptItemsByOrder) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  return nweb_delegate_->JavaScriptOnHeadReadyByOrder(scriptItems, scriptItemsByOrder);
+}
+#endif
 
 void NWebImpl::CallH5Function(
     int32_t routing_id,
@@ -2930,9 +2940,7 @@ void NWebImpl::PutAccessibilityIdGenerator(
 }
 
 void NWebImpl::ExecuteAction(int64_t accessibilityId, uint32_t action) {
-  if (nweb_delegate_ != nullptr) {
-    nweb_delegate_->ExecuteAction(accessibilityId, action);
-  }
+  // Deprecated due to new accessibility architecture
 }
 
 std::shared_ptr<NWebAccessibilityNodeInfo>
@@ -3775,9 +3783,27 @@ bool NWebImpl::IsMixedContentAutoUpgradesEnabled(){
 
 void NWebImpl::PerformAction(int64_t accessibilityId, uint32_t action,
   const std::map<std::string, std::string>& actionArguments) {
+  // Deprecated due to new accessibility architecture
+}
+
+bool NWebImpl::PerformActionV2(int64_t accessibilityId, uint32_t action,
+      const std::map<std::string, std::string>& actionArguments) {
   if (nweb_delegate_ != nullptr) {
-    nweb_delegate_->ExecuteAction(accessibilityId, action, actionArguments);
+    return nweb_delegate_->ExecuteAction(accessibilityId, action, actionArguments);
   }
+  return false;
+}
+
+bool NWebImpl::GetAccessibilityNodeRectById(int64_t accessibilityId,
+                                            int32_t* width,
+                                            int32_t* height,
+                                            int32_t* offsetX,
+                                            int32_t* offsetY) {
+  if (nweb_delegate_ != nullptr) {
+    return nweb_delegate_->GetAccessibilityNodeRectById(
+        accessibilityId, width, height, offsetX, offsetY);
+  }
+  return false;
 }
 
 void NWebImpl::SendAccessibilityHoverEvent(int32_t x, int32_t y) {

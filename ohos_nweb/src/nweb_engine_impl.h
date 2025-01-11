@@ -94,6 +94,8 @@ public:
 
   static bool CheckArkWebRomApiLevel(int apiLevel);
 
+  void RemoveAllCache(bool include_disk_files) override;
+
 private:
   int romApiLevel_ = 0;
   std::shared_ptr<NWebDataBase> nweb_data_base_ = nullptr;

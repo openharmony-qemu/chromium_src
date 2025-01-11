@@ -151,9 +151,27 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
   static BrowserAccessibilityOHOS* GetFromAccessibilityId(
       int64_t accessibility_id);
 
+  static void ResetLeafCache();
+
   bool IsAccessibilityGroup() const;
 
   bool Scroll(ScrollDirection direction, bool is_page_scroll) const;
+
+  bool IsInterestingOnOHOS() const;
+
+  const BrowserAccessibilityOHOS* GetSoleInterestingNodeFromSubtree() const;
+
+  typedef base::RepeatingCallback<bool(const std::u16string& partial)>
+      EarlyExitPredicate;
+  static EarlyExitPredicate NonEmptyPredicate();
+
+  bool CanFireEvents() const override;
+
+  bool IsChildOfLeaf() const override;
+
+  bool IsLeaf() const override;
+
+  void OnLocationChanged() override;
 
  protected:
   BrowserAccessibilityOHOS(BrowserAccessibilityManager* manager,
@@ -166,13 +184,13 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
 
   bool HasOnlyTextChildren() const;
 
-  bool HasOnlyTextAndContainerChildren() const;
-
   bool HasOnlyTextAndImageChildren() const;
 
   bool HasListMarkerChild() const;
 
   bool IsHeadingLink() const;
+
+  bool IsLeafConsideringChildren() const;
 
   void AddFocusableNode(
       std::list<BrowserAccessibilityOHOS*>& nodeList) const;
@@ -191,8 +209,6 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
   BrowserAccessibilityOHOS* GetPreviousFocusableNode(
       const std::list<BrowserAccessibilityOHOS*>& nodeList) const;
 
-  typedef base::RepeatingCallback<bool(const std::u16string& partial)>
-      EarlyExitPredicate;
   std::u16string GetSubstringTextContentUTF16(
       absl::optional<EarlyExitPredicate>) const;
 

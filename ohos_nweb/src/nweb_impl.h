@@ -617,6 +617,15 @@ class NWebImpl : public NWeb {
 #endif
   void PerformAction(int64_t accessibilityId, uint32_t action,
       const std::map<std::string, std::string>& actionArguments) override;
+  bool PerformActionV2(
+      int64_t accessibilityId,
+      uint32_t action,
+      const std::map<std::string, std::string>& actionArguments) override;
+  bool GetAccessibilityNodeRectById(int64_t accessibilityId,
+                                    int32_t* width,
+                                    int32_t* height,
+                                    int32_t* offsetX,
+                                    int32_t* offsetY) override;
   void SendAccessibilityHoverEvent(int32_t x, int32_t y) override;
 
   static void TrimMemoryByPressureLevel(int32_t memoryLevel);

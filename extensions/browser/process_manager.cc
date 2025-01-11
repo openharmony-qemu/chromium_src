@@ -376,11 +376,12 @@ bool ProcessManager::CreateBackgroundHost(const Extension* extension,
   if (GetBackgroundHostForExtension(extension->id()))
     return true;  // TODO(kalman): return false here? It might break things...
 
-  DVLOG(1) << "CreateBackgroundHost " << extension->id();
+  LOG(INFO) << "Create background host for " << extension->id();
   ExtensionHost* host = nullptr;
   if (ExtensionsBrowserClient::Get()->CreateBackgroundExtensionHost(
           extension, browser_context_, url, &host) && !host) {
     // Explicitly fail if the client can't create the host.
+    LOG(WARNING) << "the client can't create the host for " << extension->id();
     return false;
   }
   if (!host) {

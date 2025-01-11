@@ -25,6 +25,7 @@
 #include <EGL/eglplatform.h>
 #include "capi/nweb_app_client_extension_callback.h"
 #include "capi/nweb_download_delegate_callback.h"
+#include "capi/nweb_extension_api_callback.h"
 #include "nweb.h"
 #include "nweb_download_callback.h"
 #include "nweb_errors.h"
@@ -589,6 +590,21 @@ class NWebImpl : public NWeb {
   static void SetRenderProcessMode(RenderProcessMode mode);
   static RenderProcessMode GetRenderProcessMode();
 #endif
+
+#ifdef OHOS_NWEB_EX
+  static void PutWebExtensionApiCallback(
+      std::shared_ptr<NWebExtensionApiCallback> web_extension_api_callback);
+  static void RemoveWebExtensionApiCallback();
+#endif
+
+#ifdef OHOS_ARKWEB_EXTENSIONS
+  void WebExtensionTabCreated(int tab_id);
+  void WebExtensionTabRemoved(int tab_id);
+  void WebExtensionTabUpdated(
+      int tab_id,
+      const std::vector<std::string>& changed_property_names,
+      const std::string& url);
+#endif  // OHOS_ARKWEB_EXTENSIONS
 
 #ifdef OHOS_DISPLAY_CUTOUT
   void OnSafeInsetsChange(int left, int top, int right, int bottom) override;

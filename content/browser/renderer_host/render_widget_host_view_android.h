@@ -296,8 +296,14 @@ class CONTENT_EXPORT RenderWidgetHostViewAndroid
   bool OnTouchHandleEvent(const ui::MotionEvent& event);
   int GetTouchHandleHeight();
   void ResetGestureDetection();
+
+  #if defined(IS_OHOS)
+  void SetDoubleTapSupportEnabled(bool enabled) override;
+  void SetMultiTouchZoomSupportEnabled(bool enabled) override;
+  #else
   void SetDoubleTapSupportEnabled(bool enabled);
   void SetMultiTouchZoomSupportEnabled(bool enabled);
+  #endif
 
   bool SynchronizeVisualProperties(
       const cc::DeadlinePolicy& deadline_policy,

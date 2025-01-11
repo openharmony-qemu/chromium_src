@@ -31,14 +31,15 @@ class POLICY_EXPORT PolicyLoaderOhos : public AsyncPolicyLoader {
 
  private:
   void LoadOhosPolicy(const std::string& json, PolicyBundle* bundle);
+  std::string ReadTestPolices();
   
   std::shared_ptr<PolicyChangedEventCallback> event_callback_;
 };
 
 class PolicyChangedEventCallback : public OHOS::NWeb::EdmPolicyChangedEventCallbackAdapter {
- public: 
+ public:
   PolicyChangedEventCallback(PolicyLoaderOhos*);
- 
+
   void Changed() override;
 
  private:

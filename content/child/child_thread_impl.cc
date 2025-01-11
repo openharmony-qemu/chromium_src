@@ -927,12 +927,12 @@ void ChildThreadImpl::DisconnectChildProcessHost() {
 void ChildThreadImpl::RunServiceDeprecated(
     const std::string& service_name,
     mojo::ScopedMessagePipeHandle service_pipe) {
-  DLOG(ERROR) << "Ignoring unhandled request to run service: " << service_name;
+  LOG(ERROR) << "Ignoring unhandled request to run service: " << service_name;
 }
 
 void ChildThreadImpl::BindServiceInterface(
     mojo::GenericPendingReceiver receiver) {
-  DLOG(ERROR) << "Ignoring unhandled request to bind service interface: "
+  LOG(ERROR) << "Ignoring unhandled request to bind service interface: "
               << *receiver.interface_name();
 }
 

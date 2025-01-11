@@ -131,6 +131,9 @@ class CONTENT_EXPORT RenderWidgetHostView {
 #if BUILDFLAG(IS_OHOS)
   virtual void EvictFrameBackBuffers(bool invisible) = 0;
   virtual bool GetScrollable() = 0;
+
+  virtual void SetDoubleTapSupportEnabled(bool enabled) = 0;
+  virtual void SetMultiTouchZoomSupportEnabled(bool enabled) = 0;
 #endif
 
   // Whether the view is showing.

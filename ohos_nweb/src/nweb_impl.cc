@@ -42,6 +42,7 @@
 #include "nweb_delegate_adapter.h"
 #include "nweb_export.h"
 #include "nweb_handler.h"
+#include "nweb_handler_delegate.h"
 #include "nweb_hilog.h"
 #include "nweb_hit_test_result_impl.h"
 #include "ohos_adapter_helper.h"
@@ -593,6 +594,7 @@ static constexpr int32_t SOC_PERF_MOUSEWHEEL_CONFIG_ID = 10071;
 
 // For NWebEx
 typedef std::unordered_map<int32_t, std::weak_ptr<NWebImpl>> NWebMap;
+
 base::LazyInstance<NWebMap>::DestructorAtExit g_nweb_map =
     LAZY_INSTANCE_INITIALIZER;
 base::Lock OHOS::NWeb::NWebImpl::nweb_map_lock_;
@@ -2611,6 +2613,18 @@ void NWebImpl::CloseDevtools() {
   }
   nweb_delegate_->CloseDevtools();
 }
+
+void NWebImpl::PutWebExtensionApiCallback(
+    std::shared_ptr<NWebExtensionApiCallback> web_extension_api_listener) {
+  WVLOG_I("register web extension api listener");
+  NWebHandlerDelegate::RegisterWebExtensionApiListener(
+      web_extension_api_listener);
+}
+
+void NWebImpl::RemoveWebExtensionApiCallback() {
+  WVLOG_I("unreqister web extension api listener");
+  NWebHandlerDelegate::UnRegisterWebExtensionApiListener();
+}
 #endif  // defined(OHOS_NWEB_EX)
 
 #if defined(OHOS_VIDEO_ASSISTANT)
@@ -3809,6 +3823,32 @@ int NWebImpl::SetUrlTrustListWithErrMsg(
   return -1;
 #endif
 }
+
+#ifdef OHOS_ARKWEB_EXTENSIONS
+void NWebImpl::WebExtensionTabCreated(int tab_id) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->WebExtensionTabCreated(tab_id);
+}
+
+void NWebImpl::WebExtensionTabRemoved(int tab_id) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->WebExtensionTabRemoved(tab_id);
+}
+
+void NWebImpl::WebExtensionTabUpdated(
+    int tab_id,
+    const std::vector<std::string>& changed_property_names,
+    const std::string& url) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->WebExtensionTabUpdated(tab_id, changed_property_names, url);
+}
+#endif  // OHOS_ARKWEB_EXTENSIONS
 
 #ifdef OHOS_MIXED_CONTENT
 void NWebImpl::EnableMixedContentAutoUpgrades(bool enable){

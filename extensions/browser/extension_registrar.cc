@@ -457,6 +457,15 @@ void ExtensionRegistrar::DidCreateMainFrameForBackgroundPage(
 
 void ExtensionRegistrar::ActivateExtension(const Extension* extension,
                                            bool is_newly_added) {
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+    // It must be triggered before the observer notification to ensure that the
+    // background script environment can be successfully initialized.
+    // Reload or disable&re-enable extension on chrome://extensions should also
+    // reply this notification.
+    extensions::ExtensionSystem::Get(
+        browser_context_)->NotifyExtensionLoadedFromInternal(extension);
+#endif
+
   // Activate the extension before calling
   // RendererStartupHelper::OnExtensionLoaded() below, so that we have
   // activation information ready while we send ExtensionMsg_Load IPC.

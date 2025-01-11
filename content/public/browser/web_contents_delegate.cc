@@ -437,4 +437,13 @@ void WebContentsDelegate::OnUpdateVideoAttributes(
     media::mojom::VideoAttributesForVASTPtr video_attributes) {}
 #endif // OHOS_VIDEO_ASSISTANT
 
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+void WebContentsDelegate::WebExtensionUpdateTabUrl(
+    int32_t tab_id, const GURL& url) {}
+
+int32_t WebContentsDelegate::GetTabId() {
+  return -1;
+}
+#endif
+
 }  // namespace content

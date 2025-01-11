@@ -3630,7 +3630,9 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
     // should also be added to
     // chrome/browser/ash/login/chrome_restart_request.cc.
     cc::switches::kCCScrollAnimationDurationForTesting,
+#if !BUILDFLAG(IS_OHOS)    
     cc::switches::kCheckDamageEarly,
+#endif
     cc::switches::kDisableCheckerImaging,
     cc::switches::kDisableCompositedAntialiasing,
     cc::switches::kDisableThreadedAnimation,

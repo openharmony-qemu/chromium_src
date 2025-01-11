@@ -140,6 +140,7 @@
 #include "net/ssl/ssl_config_service.h"
 #include "ppapi/buildflags/buildflags.h"
 #include "services/audio/service.h"
+#include "services/data_decoder/data_decoder_service.h"
 #include "services/data_decoder/public/cpp/service_provider.h"
 #include "services/data_decoder/public/mojom/data_decoder_service.mojom.h"
 #include "services/network/public/cpp/network_switches.h"
@@ -427,6 +428,42 @@ class OopDataDecoder : public data_decoder::ServiceProvider {
             .WithDisplayName("Data Decoder Service")
             .Pass());
   }
+};
+
+// InProcessDataDecoder will work on IO thread.
+class InProcessDataDecoder : public data_decoder::ServiceProvider {
+ public:
+  InProcessDataDecoder()
+      : task_runner_(GetIOThreadTaskRunner({})) {
+    data_decoder::ServiceProvider::Set(this);
+  }
+ 
+  InProcessDataDecoder(const InProcessDataDecoder&) = delete;
+  InProcessDataDecoder& operator=(const InProcessDataDecoder&) = delete;
+ 
+  ~InProcessDataDecoder() {
+    data_decoder::ServiceProvider::Set(nullptr);
+  }
+ 
+  // ServiceProvider implementation:
+  void BindDataDecoderService(
+      mojo::PendingReceiver<data_decoder::mojom::DataDecoderService> receiver) {
+    if (!task_runner_->RunsTasksInCurrentSequence()) {
+      task_runner_->PostTask(
+          FROM_HERE,
+          base::BindOnce(&InProcessDataDecoder::BindDataDecoderService,
+                        weak_ptr_factory_.GetWeakPtr(), std::move(receiver)));
+      return;
+    }
+ 
+    receivers_.Add(&service_, std::move(receiver));
+  }
+ 
+ private:
+  const scoped_refptr<base::SequencedTaskRunner> task_runner_;
+  data_decoder::DataDecoderService service_;
+  mojo::ReceiverSet<data_decoder::mojom::DataDecoderService> receivers_;
+  base::WeakPtrFactory<InProcessDataDecoder> weak_ptr_factory_{this};
 };
 
 void BindHidManager(mojo::PendingReceiver<device::mojom::HidManager> receiver) {
@@ -1286,7 +1323,11 @@ void BrowserMainLoop::PostCreateThreadsImpl() {
   // so this cannot happen any earlier than now.
   InitializeMojo();
 
+#if BUILDFLAG(IS_OHOS)
+  data_decoder_service_provider_ = std::make_unique<InProcessDataDecoder>();
+#else
   data_decoder_service_provider_ = std::make_unique<OopDataDecoder>();
+#endif
 
   HistogramSynchronizer::GetInstance();
 

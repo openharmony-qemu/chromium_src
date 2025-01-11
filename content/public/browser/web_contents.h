@@ -1550,6 +1550,11 @@ class WebContents : public PageNavigator,
   virtual void BackNavigationLikely(PreloadingPredictor predictor,
                                     WindowOpenDisposition disposition) = 0;
 
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  virtual void WebExtensionUpdateTabUrl(int32_t tab_id, const GURL& url) = 0;
+  virtual int32_t GetTabId() = 0;
+#endif
+
   // Returns a scope object that needs to be owned by caller in order to
   // disallow custom cursors. Custom cursors whose width or height are larger
   // than `max_dimension_dips` are diallowed in this web contents for as long as

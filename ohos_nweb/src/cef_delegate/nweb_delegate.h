@@ -201,6 +201,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       const std::string& object_name,
       const std::vector<std::string>& method_list) const override;
 
+#if defined(OHOS_JSPROXY)
   void JavaScriptOnDocumentStart(const ScriptItems& scriptItems) override;
   void JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) override;
 
@@ -208,6 +209,10 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       const ScriptItemsByOrder& scriptItemsByOrder) override;
   void JavaScriptOnDocumentEndByOrder(const ScriptItems& scriptItems,
       const ScriptItemsByOrder& scriptItemsByOrder) override;
+
+  void JavaScriptOnHeadReadyByOrder(const ScriptItems& scriptItems,
+      const ScriptItemsByOrder& scriptItemsByOrder) override;
+#endif
 
   bool Discard() override;
   bool Restore() override;

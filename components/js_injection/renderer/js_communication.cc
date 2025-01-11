@@ -87,6 +87,24 @@ void JsCommunication::RemoveDocumentEndScript(int32_t script_id) {
   }
 }
 
+void JsCommunication::AddHeadReadyScript(
+    mojom::JavaScriptItemPtr script_ptr) {
+  DocumentInjectJavaScript* script = new DocumentInjectJavaScript{
+      script_ptr->origin_matcher,
+      blink::WebString::FromUTF16(script_ptr->script), script_ptr->script_id};
+
+  head_ready_scripts_.push_back(std::unique_ptr<DocumentInjectJavaScript>(script));
+}
+
+void JsCommunication::RemoveHeadReadyScript(int32_t script_id) {
+  for (auto it = head_ready_scripts_.begin(); it != head_ready_scripts_.end(); ++it) {
+    if ((*it)->script_id == script_id) {
+      head_ready_scripts_.erase(it);
+      break;
+    }
+  }
+}
+
 void JsCommunication::DidClearWindowObject() {
   if (inside_did_clear_window_object_)
     return;
@@ -148,6 +166,20 @@ void JsCommunication::RunScriptsAtDocumentEnd() {
   for (const auto& script : document_end_scripts_) {
     if (!script->origin_matcher.Matches(frame_origin))
       continue;
+    render_frame()->GetWebFrame()->ExecuteScript(
+        blink::WebScriptSource(script->script));
+  }
+}
+
+void JsCommunication::RunScriptsAtHeadReady() {
+  url::Origin frame_origin =
+      url::Origin(render_frame()->GetWebFrame()->GetSecurityOrigin());
+
+  for (const auto& script : head_ready_scripts_) {
+    if (!script->origin_matcher.Matches(frame_origin)) {
+      continue;
+    }
+
     render_frame()->GetWebFrame()->ExecuteScript(
         blink::WebScriptSource(script->script));
   }

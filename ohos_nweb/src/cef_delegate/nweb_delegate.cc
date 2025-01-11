@@ -2295,6 +2295,7 @@ void NWebDelegate::RegisterNativeLoadEndCallback(
   }
 }
 
+#if defined(OHOS_JSPROXY)
 void NWebDelegate::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
   if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
     GetBrowser()->GetHost()->RemoveJavaScriptOnDocumentStart();
@@ -2362,6 +2363,32 @@ void NWebDelegate::JavaScriptOnDocumentEndByOrder(const ScriptItems& scriptItems
     LOG(ERROR) << "JavaScriptOnDocumentEndByOrder has failed";
   }
 }
+
+void NWebDelegate::JavaScriptOnHeadReadyByOrder(const ScriptItems& scriptItems,
+    const ScriptItemsByOrder& scriptItemsByOrder) {
+  if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
+    GetBrowser()->GetHost()->RemoveJavaScriptOnHeadReady();
+    for (const auto& item : scriptItemsByOrder) {
+      if (scriptItems.find(item) == scriptItems.end()) {
+        continue;
+      }
+
+      CefString script = item;
+      std::vector<CefString> scriptRules;
+      for (const std::string& rule : scriptItems.at(item)) {
+        CefString cefRule;
+        cefRule.FromString(rule);
+        scriptRules.push_back(cefRule);
+      }
+      GetBrowser()->GetHost()->JavaScriptOnHeadReady(script, scriptRules);
+    }
+  } else if (preference_delegate_) {
+    preference_delegate_->PutJavaScriptOnHeadReadyByOrder(scriptItems, scriptItemsByOrder);
+  } else {
+    LOG(ERROR) << "JavaScriptOnHeadReadyByOrder has failed";
+  }
+}
+#endif
 
 void NWebDelegate::CallH5Function(
     int32_t routing_id,

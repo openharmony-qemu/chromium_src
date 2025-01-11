@@ -36,6 +36,7 @@
 #include <list>
 #include <map>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <unordered_set>
 #include "capi/nweb_app_client_extension_callback.h"

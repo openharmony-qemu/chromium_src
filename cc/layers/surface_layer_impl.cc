@@ -19,6 +19,8 @@
 #include "components/viz/common/quads/solid_color_draw_quad.h"
 #include "components/viz/common/quads/surface_draw_quad.h"
 
+#include "base/logging.h"
+
 namespace cc {
 
 // static
@@ -216,12 +218,7 @@ void SurfaceLayerImpl::AppendQuads(viz::CompositorRenderPass* render_pass,
   OnLayerBoundsUpdate(visible_quad_rect);
 #endif // OHOS_VIDEO_ASSISTANT
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-   visible_quad_rect.set_origin(
-        ScreenSpaceTransform().MapPoint(visible_quad_rect.origin()));
-  if (!visible_quad_rect_.ApproximatelyEqual(visible_quad_rect, 1)) {
-    visible_quad_rect_ = visible_quad_rect;
-    layer_tree_impl()->OnLayerRectUpdate(id(), visible_quad_rect);
-  }
+  OnLayerRectUpdate(visible_quad_rect);
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 }
 
@@ -347,4 +344,15 @@ void SurfaceLayerImpl::OnLayerBoundsUpdate(gfx::Rect visible_quad_rect) {
   }
 }
 #endif // OHOS_VIDEO_ASSISTANT
+
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void SurfaceLayerImpl::OnLayerRectUpdate(gfx::Rect visible_quad_rect) {
+   visible_quad_rect.set_origin(
+        ScreenSpaceTransform().MapPoint(visible_quad_rect.origin()));
+  if (!visible_quad_rect_.ApproximatelyEqual(visible_quad_rect, 1)) {
+    visible_quad_rect_ = visible_quad_rect;
+    layer_tree_impl()->OnLayerRectUpdate(id(), visible_quad_rect);
+  }
+}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 }  // namespace cc

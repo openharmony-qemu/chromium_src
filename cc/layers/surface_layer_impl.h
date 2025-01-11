@@ -84,6 +84,10 @@ class CC_EXPORT SurfaceLayerImpl : public LayerImpl {
   void OnLayerBoundsUpdate(gfx::Rect visible_quad_rect);
 #endif // OHOS_VIDEO_ASSISTANT
 
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  void OnLayerRectUpdate(gfx::Rect visible_quad_rect);
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
   UpdateSubmissionStateCB update_submission_state_callback_;
   viz::SurfaceRange surface_range_;
   absl::optional<uint32_t> deadline_in_frames_;

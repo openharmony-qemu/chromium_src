@@ -81,6 +81,10 @@ std::string GetDecoderName(AudioDecoderType type) {
       return "AudioToolboxAudioDecoder";
     case AudioDecoderType::kMediaFoundation:
       return "MediaFoundationAudioDecoder";
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_ENABLE_CDM)
+    case AudioDecoderType::kOhos:
+      return "OHOSAudioDecoder";
+#endif
   }
 }
 

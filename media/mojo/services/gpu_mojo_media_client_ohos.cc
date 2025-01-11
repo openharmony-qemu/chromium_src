@@ -18,6 +18,10 @@
 #include "media/gpu/ohos/direct_shared_image_video_provider.h"
 #include "media/gpu/ohos/ohos_video_decoder.h"
 #include "media/gpu/ohos/video_frame_factory_impl.h"
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_ENABLE_CDM)
+#include "media/filters/ohos/ohos_audio_decoder.h"
+#endif
+
 #include "media/mojo/mojom/media_drm_storage.mojom.h"
 #include "media/mojo/mojom/provision_fetcher.mojom.h"
 #include "media/mojo/services/mojo_media_drm_storage.h"
@@ -69,7 +73,11 @@ std::unique_ptr<AudioDecoder> CreatePlatformAudioDecoder(
 
 std::unique_ptr<AudioEncoder> CreatePlatformAudioEncoder(
     scoped_refptr<base::SequencedTaskRunner> task_runner) {
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_ENABLE_CDM)
+  return std::make_unique<OHOSAudioDecoder>(std::move(task_runner));
+#else
   return nullptr;
+#endif
 }
 
 VideoDecoderType GetPlatformDecoderImplementationType(

@@ -33,6 +33,27 @@ if (is_ohos) {
       "decoder_format_adapter_impl.cc",
       "decoder_format_adapter_impl.h",
     ]
+
+    if (defined(ohos_enable_cdm) && ohos_enable_cdm) {
+      sources += [
+        "ohos_cdm_factory.cc",
+        "ohos_cdm_factory.h",
+        "ohos_media_crypto_context_impl.cc",
+        "ohos_media_crypto_context_impl.h",
+        "ohos_media_crypto_context.h",
+        "ohos_media_drm_bridge_client.cc",
+        "ohos_media_drm_bridge_client.h",
+        "ohos_media_drm_bridge_delegate.cc",
+        "ohos_media_drm_bridge_delegate.h",
+        "ohos_media_drm_bridge_factory.cc",
+        "ohos_media_drm_bridge_factory.h",
+        "ohos_media_drm_bridge.cc",
+        "ohos_media_drm_bridge.h",
+        "ohos_media_drm_storage_bridge.cc",
+        "ohos_media_drm_storage_bridge.h",
+      ]
+    }
+
     configs += [ "//media:subcomponent_config" ]
 
     if (product_name == "rk3568") {

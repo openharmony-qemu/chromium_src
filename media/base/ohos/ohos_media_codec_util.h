@@ -8,6 +8,11 @@
 #include "media_codec_adapter.h"
 #include "ohos_adapter_helper.h"
 
+#include "base/compiler_specific.h"
+#include "media/base/audio_codecs.h"
+#include "media/base/sample_format.h"
+#include "media/base/video_codecs.h"
+
 namespace media {
 using namespace OHOS::NWeb;
 using namespace std;
@@ -22,6 +27,13 @@ class OHOSMediaCodecUtil {
  public:
   static CapabilityData GetCodecCapability(const std::string& mime,
                                            bool isCodec);
+  static std::string CodecToOHOSMimeType(AudioCodec codec);
+  static std::string CodecToOHOSMimeType(AudioCodec codec,
+                                            SampleFormat sample_format);
+  static std::string CodecToOHOSMimeType(VideoCodec codec);
+  static bool IsPassthroughAudioFormat(AudioCodec codec);
+  static bool CanDecode(VideoCodec codec, bool is_secure);
+  static bool CanDecode(AudioCodec codec);
 };
 
 }  // namespace media

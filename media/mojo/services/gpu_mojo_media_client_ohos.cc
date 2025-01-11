@@ -22,12 +22,21 @@
 #include "media/mojo/mojom/provision_fetcher.mojom.h"
 #include "media/mojo/services/mojo_media_drm_storage.h"
 #include "media/mojo/services/mojo_provision_fetcher.h"
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_ENABLE_CDM)
+#include "media/base/ohos/ohos_cdm_factory.h"
+#include "media/mojo/services/ohos_mojo_util.h"
+#endif
 
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_ENABLE_CDM)
+using media::ohos_mojo_util::CreateMediaDrmStorage;
+using media::ohos_mojo_util::CreateProvisionFetcher;
+#endif
 namespace media {
 
 std::unique_ptr<VideoDecoder> CreatePlatformVideoDecoder(
     VideoDecoderTraits& traits) {
   LOG(INFO) << "CreatePlatformVideoDecoder";
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
   scoped_refptr<gpu::RefCountedLock> ref_counted_lock;
   ref_counted_lock = base::MakeRefCounted<gpu::RefCountedLock>();
 
@@ -49,6 +58,9 @@ std::unique_ptr<VideoDecoder> CreatePlatformVideoDecoder(
           std::move(image_provider), std::move(frame_info_helper),
           ref_counted_lock),
       ref_counted_lock);
+#else
+  return nullptr;
+#endif
 }
 
 absl::optional<SupportedVideoDecoderConfigs> GetPlatformSupportedVideoDecoderConfigs(
@@ -57,7 +69,11 @@ absl::optional<SupportedVideoDecoderConfigs> GetPlatformSupportedVideoDecoderCon
     const gpu::GPUInfo& gpu_info,
     base::OnceCallback<SupportedVideoDecoderConfigs()> get_vda_configs) {
   LOG(INFO) << "GetPlatformSupportedVideoDecoderConfigs";
+#if BUILDFLAG(ENABLE_HEIF_DECODER)
   return OhosVideoDecoder::GetSupportedConfigs();
+#else
+  return std::vector<SupportedVideoDecoderConfig>();
+#endif
 }
 
 // Not support platform audio decoder in ohos now.
@@ -79,11 +95,21 @@ VideoDecoderType GetPlatformDecoderImplementationType(
   return VideoDecoderType::kOHOS;
 }
 
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_ENABLE_CDM)
+std::unique_ptr<CdmFactory> CreatePlatformCdmFactory(
+    mojom::FrameInterfaceFactory* frame_interfaces) {
+  LOG(INFO) << "[DRM]" << __func__;
+  return std::make_unique<OHOSCdmFactory>(
+    base::BindRepeating(&CreateProvisionFetcher, frame_interfaces),
+    base::BindRepeating(&CreateMediaDrmStorage, frame_interfaces));
+}
+#else
 // There is no CdmFactory on ohos now.
 class CdmFactory {};
 std::unique_ptr<CdmFactory> CreatePlatformCdmFactory(
     mojom::FrameInterfaceFactory* frame_interfaces) {
   return nullptr;
 }
+#endif
 
 }  // namespace media

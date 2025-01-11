@@ -20,6 +20,13 @@ static_library("common") {
     ]
   }
 
+  if (defined(ohos_enable_cdm) && ohos_enable_cdm) {
+    sources += [
+      "widevine_drm_delegate_ohos.cc",
+      "widevine_drm_delegate_ohos.h",
+    ]
+  }
+
   deps = [
     "//base",
     "//content/public/common",

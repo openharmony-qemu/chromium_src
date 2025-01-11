@@ -215,6 +215,16 @@ source_set("filters") {
       "mac/audio_toolbox_audio_encoder.h",
     ]
   }
+
+  if (defined(ohos_enable_cdm) && ohos_enable_cdm) {
+    sources += [
+      "ohos/ohos_audio_decoder.cc",
+      "ohos/ohos_audio_decoder.h",
+      "ohos/ohos_audio_decoder_loop.cc",
+      "ohos/ohos_audio_decoder_loop.h",
+    ]
+  }
+
   if (is_win && enable_platform_dts_audio) {
     sources += [
       "passthrough_dts_audio_decoder.cc",

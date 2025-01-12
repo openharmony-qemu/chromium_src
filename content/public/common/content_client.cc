@@ -147,6 +147,12 @@ media::MediaDrmBridgeClient* ContentClient::GetMediaDrmBridgeClient() {
 }
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_ENABLE_CDM)
+media::OHOSMediaDrmBridgeClient* ContentClient::GetMediaDrmBridgeClient() {
+  return nullptr;
+}
+#endif  // BUILDFLAG(IS_OHOS) && defined(OHOS_ENABLE_CDM)
+
 void ContentClient::ExposeInterfacesToBrowser(
     scoped_refptr<base::SequencedTaskRunner> io_task_runner,
     mojo::BinderMap* binders) {}

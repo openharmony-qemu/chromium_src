@@ -30,7 +30,9 @@
 #if BUILDFLAG(IS_ANDROID)
 #include "content/browser/media/key_system_support_android.h"
 #endif
-
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_ENABLE_CDM)
+#include "content/browser/media/key_system_support_ohos.h"
+#endif
 #if BUILDFLAG(IS_WIN)
 #include "content/browser/gpu/gpu_data_manager_impl.h"
 #include "content/browser/media/key_system_support_win.h"
@@ -514,6 +516,9 @@ void CdmRegistryImpl::LazyInitializeCapability(
   }
 #elif BUILDFLAG(IS_ANDROID)
   GetAndroidCdmCapability(key_system, robustness, std::move(cdm_capability_cb));
+#elif BUILDFLAG(IS_OHOS) && defined(OHOS_ENABLE_CDM)
+  LOG(INFO) << "[DRM]" << __func__;
+  GetOHOSCdmCapability(key_system, robustness, std::move(cdm_capability_cb));
 #else
   std::move(cdm_capability_cb).Run(absl::nullopt);
 #endif
@@ -523,6 +528,9 @@ void CdmRegistryImpl::OnCapabilityInitialized(
     const std::string& key_system,
     const CdmInfo::Robustness robustness,
     absl::optional<media::CdmCapability> cdm_capability) {
+  LOG(INFO) << "[DRM]" << __func__<< ": key_system=" << key_system
+           << ", robustness=" << robustness
+           << ", cdm_capability=" << (cdm_capability ? "yes" : "no");
   DVLOG(1) << __func__ << ": key_system=" << key_system
            << ", robustness=" << robustness
            << ", cdm_capability=" << (cdm_capability ? "yes" : "no");

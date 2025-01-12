@@ -178,6 +178,10 @@
 #include "ui/gl/gl_surface.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_ENABLE_CDM)
+#include "media/base/ohos/ohos_media_drm_bridge_client.h"
+#endif
+
 #if BUILDFLAG(IS_MAC)
 #include "base/mac/scoped_nsautorelease_pool.h"
 #include "content/browser/renderer_host/browser_compositor_view_mac.h"
@@ -800,6 +804,11 @@ int BrowserMainLoop::PreCreateThreads() {
   // CDM service as it is predominantly used from the IO thread. This must
   // be called on the main thread since it involves file path checks.
   CdmRegistry::GetInstance()->Init();
+#endif
+
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_ENABLE_CDM)
+  CdmRegistry::GetInstance()->Init();
+  LOG(INFO) << "[DRM]" << __func__;
 #endif
 
 #if BUILDFLAG(IS_MAC)
@@ -1444,6 +1453,10 @@ void BrowserMainLoop::PostCreateThreadsImpl() {
   if (base::FeatureList::IsEnabled(features::kFontSrcLocalMatching)) {
     FontUniqueNameLookup::GetInstance();
   }
+#endif
+
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_ENABLE_CDM)
+  media::SetMediaDrmBridgeClient(GetContentClient()->GetMediaDrmBridgeClient());
 #endif
 
 #if defined(OHOS_WPT)

@@ -117,7 +117,7 @@ component("services") {
     sources += [ "gpu_mojo_media_client_mac.cc" ]
   } else if (is_win) {
     sources += [ "gpu_mojo_media_client_win.cc" ]
-  } else if (enable_heif_decoder) {
+  } else if ((enable_heif_decoder) || ((defined(ohos_enable_cdm) && ohos_enable_cdm))) {
     sources += [ "gpu_mojo_media_client_ohos.cc" ]
   } else if (use_vaapi || use_v4l2_codec) {
     if (is_linux) {
@@ -147,6 +147,15 @@ component("services") {
       "android_mojo_media_client.h",
       "android_mojo_util.cc",
       "android_mojo_util.h",
+    ]
+  }
+
+  if ((is_ohos) && (defined(ohos_enable_cdm) && ohos_enable_cdm)) {
+    sources += [
+      "ohos_mojo_media_client.cc",
+      "ohos_mojo_media_client.h",
+      "ohos_mojo_util.cc",
+      "ohos_mojo_util.h",
     ]
   }
 

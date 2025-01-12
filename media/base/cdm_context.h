@@ -28,6 +28,9 @@ namespace media {
 class CallbackRegistration;
 class Decryptor;
 class MediaCryptoContext;
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_ENABLE_CDM)
+class OHOSMediaCryptoContext;
+#endif
 
 #if BUILDFLAG(IS_FUCHSIA)
 class FuchsiaCdmContext;
@@ -110,6 +113,10 @@ class MEDIA_EXPORT CdmContext {
 #if BUILDFLAG(IS_ANDROID)
   // Returns a MediaCryptoContext that can be used by MediaCodec based decoders.
   virtual MediaCryptoContext* GetMediaCryptoContext();
+#endif
+
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_ENABLE_CDM)
+  virtual OHOSMediaCryptoContext* GetOHOSMediaCryptoContext();
 #endif
 
 #if BUILDFLAG(IS_FUCHSIA)

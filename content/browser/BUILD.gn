@@ -3290,6 +3290,13 @@ source_set("browser") {
       "media/session/audio_interrupt_adapter_impl.h",
     ]
 
+    if (defined(ohos_enable_cdm) && ohos_enable_cdm) {
+      sources += [
+        "media/key_system_support_ohos.cc",
+        "media/key_system_support_ohos.h",
+      ]
+    }
+
     deps += [ "//ui/accessibility:ax_assistant" ]
 
     #if defined(OHOS_PRINT)

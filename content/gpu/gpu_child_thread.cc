@@ -52,6 +52,10 @@
 #include "media/mojo/clients/mojo_android_overlay.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_ENABLE_CDM)
+#include "media/base/ohos/ohos_media_drm_bridge_client.h"
+#endif
+
 #if BUILDFLAG(IS_CHROMEOS_ASH)
 #include "components/services/font/public/cpp/font_loader.h"  // nogncheck
 #include "components/services/font/public/mojom/font_service.mojom.h"  // nogncheck
@@ -142,6 +146,13 @@ void GpuChildThread::Init(const base::TimeTicks& process_start_time) {
   // When running in in-process mode, this has been set in the browser at
   // ChromeBrowserMainPartsAndroid::PreMainMessageLoopRun().
 #if BUILDFLAG(IS_ANDROID)
+  if (!in_process_gpu()) {
+    media::SetMediaDrmBridgeClient(
+        GetContentClient()->GetMediaDrmBridgeClient());
+  }
+#endif
+
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_ENABLE_CDM)
   if (!in_process_gpu()) {
     media::SetMediaDrmBridgeClient(
         GetContentClient()->GetMediaDrmBridgeClient());

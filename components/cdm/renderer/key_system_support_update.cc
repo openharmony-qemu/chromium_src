@@ -258,6 +258,9 @@ bool CanSupportPersistentLicense() {
   // persistence-based features are supported or not.
   return true;
 
+#elif BUILDFLAG(IS_OHOS) && defined(OHOS_ENABLE_CDM)
+  LOG(INFO) << "[DRM]" << __func__;
+  return true;
 #elif BUILDFLAG(ENABLE_CDM_HOST_VERIFICATION) && \
     BUILDFLAG(ENABLE_CDM_STORAGE_ID)
   // On other platforms, persistent licenses are only supported if CDM host
@@ -379,6 +382,9 @@ void AddWidevine(const media::mojom::KeySystemCapabilityPtr& capability,
   // On Android we support hardware secure if possible.
   max_audio_robustness = Robustness::HW_SECURE_CRYPTO;
   max_video_robustness = Robustness::HW_SECURE_ALL;
+#elif BUILDFLAG(IS_OHOS) && defined(OHOS_ENABLE_CDM)
+  max_audio_robustness = Robustness::SW_SECURE_DECODE;
+  max_video_robustness = Robustness::SW_SECURE_DECODE;
 #else
   // The hardware secure robustness for the two keys systems are guarded by
   // different flags. The audio and video robustness should be set differently
@@ -407,6 +413,9 @@ void AddWidevine(const media::mojom::KeySystemCapabilityPtr& capability,
   // persistence-based features are supported or not.
   persistent_state_support = EmeFeatureSupport::ALWAYS_ENABLED;
   distinctive_identifier_support = EmeFeatureSupport::ALWAYS_ENABLED;
+#elif BUILDFLAG(IS_OHOS) && defined(OHOS_ENABLE_CDM)
+  persistent_state_support = EmeFeatureSupport::REQUESTABLE;
+  distinctive_identifier_support = EmeFeatureSupport::NOT_SUPPORTED;
 #endif
 
   key_systems->emplace_back(std::make_unique<WidevineKeySystemInfo>(

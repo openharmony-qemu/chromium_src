@@ -7,7 +7,7 @@
 #include <utility>
 
 #include <memory>
-
+#include "base/logging.h"
 #include "base/functional/bind.h"
 #include "base/task/single_thread_task_runner.h"
 #include "media/base/audio_decoder.h"
@@ -17,7 +17,7 @@
 #include "media/mojo/mojom/media_drm_storage.mojom.h"
 #include "media/mojo/mojom/provision_fetcher.mojom.h"
 #include "media/mojo/services/ohos_mojo_util.h"
-
+#include "media/filters/ohos/ohos_audio_decoder.h"
 using media::ohos_mojo_util::CreateMediaDrmStorage;
 using media::ohos_mojo_util::CreateProvisionFetcher;
 
@@ -30,7 +30,8 @@ OHOSMojoMediaClient::~OHOSMojoMediaClient() {}
 std::unique_ptr<AudioDecoder> OHOSMojoMediaClient::CreateAudioDecoder(
     scoped_refptr<base::SequencedTaskRunner> task_runner,
     std::unique_ptr<MediaLog> media_log) {
-  return nullptr;
+  LOG(INFO) << "OHOSMojoMediaClient::CreateAudioDecoder";
+  return std::make_unique<OHOSAudioDecoder>(task_runner);
 }
 
 std::unique_ptr<CdmFactory> OHOSMojoMediaClient::CreateCdmFactory(

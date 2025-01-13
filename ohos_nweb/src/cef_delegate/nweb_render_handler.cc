@@ -1044,6 +1044,14 @@ void NWebRenderHandler::OnScrollState(CefRefPtr<CefBrowser> browser,
   }
 }
 
+void NWebRenderHandler::OnScrollStart(CefRefPtr<CefBrowser> browser,
+                                          const float x,
+                                          const float y) {
+  if (auto handler = handler_.lock()) {
+    handler->OnScrollStart(x, y);
+  }
+}
+
 bool NWebRenderHandler::FilterScrollEvent(CefRefPtr<CefBrowser> browser,
                                           const float x,
                                           const float y,

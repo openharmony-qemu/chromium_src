@@ -52,6 +52,13 @@ bool ArkWebNativeObject::FireValidCallback() {
       }
     };
     nwebSharedPtr->RegisterNativeLoadEndCallback(std::move(loadEndCallback));
+
+    auto scrollCallback = [weak = GetWeakPtr()](double x, double y) {
+      if (auto webObjectPtr = weak.lock()) {
+        webObjectPtr->FireScrollCallback(x, y);
+      }
+    };
+    nwebSharedPtr->RegisterNativeScrollCallback(std::move(scrollCallback));
   } else {
     LOG(ERROR) << "NativeArkWeb nweb shared pointer is nullptr";
   }
@@ -92,6 +99,14 @@ bool ArkWebNativeObject::FireDestroyCallback() {
   std::unique_lock<std::shared_mutex> lock(g_NativeWebMapSharedLock);
   g_NativeWebMap.erase(webTag_);
 
+  return true;
+}
+
+bool ArkWebNativeObject::FireScrollCallback(double x, double y) {
+  if (!scrollCallback_) {
+    return false;
+  }
+  scrollCallback_(x, y);
   return true;
 }
 

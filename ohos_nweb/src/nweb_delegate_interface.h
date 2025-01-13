@@ -258,6 +258,7 @@ class NWebDelegateInterface
       const std::vector<std::string>& method_list) const = 0;
   virtual void RegisterNativeLoadStartCallback(std::function<void(void)>&& callback) = 0;
   virtual void RegisterNativeLoadEndCallback(std::function<void(void)>&& callback) = 0;
+  virtual void RegisterNativeScrollCallback(std::function<void(double, double)>&& callback) = 0;
   virtual void JavaScriptOnDocumentStart(const ScriptItems& ScriptItems) = 0;
   virtual void JavaScriptOnDocumentEnd(const ScriptItems& ScriptItems) = 0;
   virtual void CallH5Function(

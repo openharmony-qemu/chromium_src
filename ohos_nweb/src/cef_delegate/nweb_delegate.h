@@ -185,6 +185,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       std::function<void(void)>&& callback) override;
   void RegisterNativeLoadEndCallback(
       std::function<void(void)>&& callback) override;
+  void RegisterNativeScrollCallback(
+    std::function<void(double, double)>&& callback) override;
 
 #ifdef OHOS_ARKWEB_ADBLOCK
   void UpdateAdblockEasyListRules(

@@ -82,6 +82,9 @@ void OH_ArkWeb_OnPageEnd(const char* webTag,
 void OH_ArkWeb_OnDestroy(const char* webTag,
                          ArkWeb_OnComponentCallback callback,
                          void* userData);
+bool OH_ArkWeb_OnScroll(const char* webTag,
+                        ArkWeb_OnScrollCallback callback,
+                        void* userData);
 void OH_ArkWeb_RegisterAsyncJavaScriptProxy(
     const char* webTag,
     const ArkWeb_ProxyObject* proxyObject);

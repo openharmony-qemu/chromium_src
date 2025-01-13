@@ -473,6 +473,7 @@ class CONTENT_EXPORT MediaStreamManager
   void StopScreenCapture(int32_t nweb_id, const std::string& session_id);
   void SendScreenCaptureState(const std::string& session_id,  int32_t state);
   void PopSessionIdState(int32_t nweb_id, const std::string& session_id);
+  void OnScreenCaptureOpened(const std::string& session_id) override;
 #endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 
  private:

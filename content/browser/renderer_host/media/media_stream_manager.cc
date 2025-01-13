@@ -3343,9 +3343,6 @@ void MediaStreamManager::Opened(
       }
     }
   }
-#if defined(OHOS_EX_SCREEN_CAPTURE)
-  SendScreenCaptureState(capture_session_id.ToString(), SCREEN_CAPTURE_OPENED);
-#endif // defined(OHOS_EX_SCREEN_CAPTURE)
 }
 
 void MediaStreamManager::HandleRequestDone(const std::string& label,
@@ -4693,6 +4690,11 @@ void MediaStreamManager::PopSessionIdState(int32_t nweb_id, const std::string& s
       state_it++;
     }
   }
+}
+
+void MediaStreamManager::OnScreenCaptureOpened(const std::string& session_id) {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+  SendScreenCaptureState(session_id, SCREEN_CAPTURE_OPENED);
 }
 #endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 }  // namespace content

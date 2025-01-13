@@ -927,6 +927,9 @@ VideoCaptureManager::GetOrCreateController(
           device_info.id, device_info.type, params,
           video_capture_provider_->CreateDeviceLauncher(),
           emit_log_message_cb_);
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  new_controller->SetScreenCaptureListener(this);
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
   controllers_.push_back(new_controller);
   return new_controller;
 }
@@ -1121,6 +1124,20 @@ void VideoCaptureManager::StopScreenCapture(const std::string& session_id) {
       LookupControllerBySessionId(unguessable_token.value());
   if (videoCaptureController != nullptr) {
     videoCaptureController->StopSession(unguessable_token.value());
+  }
+}
+
+void VideoCaptureManager::ScreenCaptureOpened(const std::string& session_id) {
+  // Notify listener asynchronously.
+  base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
+      FROM_HERE, base::BindOnce(&VideoCaptureManager::OnScreenCaptureOpened, this,
+                                session_id));
+}
+
+void VideoCaptureManager::OnScreenCaptureOpened(const std::string& session_id) {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+  for (auto& listener : listeners_) {
+    listener.OnScreenCaptureOpened(session_id);
   }
 }
 #endif  // defined(OHOS_EX_SCREEN_CAPTURE)

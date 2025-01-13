@@ -58,4 +58,9 @@ void DecelerationAnimator::resetAnimate() {
   task_runner_.reset();
 }
 
+void DecelerationAnimator::setRefreshListener(
+    std::unique_ptr<DecelerationAnimatorListener> listener) {
+  listener_ = std::move(listener);
+}
+
 }  // namespace ui

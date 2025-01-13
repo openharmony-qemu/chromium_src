@@ -62,6 +62,9 @@ class DecelerationAnimator {
   void startAnimate(float distance, base::TimeDelta duration);
   void resetAnimate();
 
+  void setRefreshListener(
+      std::unique_ptr<DecelerationAnimatorListener> listener);
+
  private:
   void animate(float distance, base::TimeDelta duration);
 

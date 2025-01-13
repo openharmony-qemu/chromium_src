@@ -295,6 +295,7 @@ CONTENT_EXPORT extern const char kEnableNwebExGetZoomLevel[];
 CONTENT_EXPORT extern const char kEnableNwebExNetworkLoad[];
 CONTENT_EXPORT extern const char kEnableNwebExBlankTargetPopup_intercept[];
 CONTENT_EXPORT extern const char kOhosEnableDrDc[];
+CONTENT_EXPORT extern const char kOhosEnableVulkan[];
 CONTENT_EXPORT extern const char kEnableNwebExDownload[];
 CONTENT_EXPORT extern const char kOhosHanceSurface[];
 CONTENT_EXPORT extern const char kOhosDisableTouchEvent[];

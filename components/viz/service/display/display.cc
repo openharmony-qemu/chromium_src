@@ -68,6 +68,7 @@
 
 #if defined(OHOS_DFX_DUMP)
 #include "components/viz/service/display/frame_dump_copy_output_request.h"
+#include "gpu/config/gpu_finch_features.h"
 #include "ohos_adapter_helper.h"
 #endif
 
@@ -961,6 +962,9 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
       LOG(INFO) << "output_rect = " <<  last_render_pass.output_rect.ToString();
     // Resize the |output_rect| to the |current_surface_size| so that we won't
     // skip the draw and so that the GL swap won't stretch the output.
+    if (features::IsUsingVulkan()) {
+      renderer_->disable_partial_swap();
+    }
     last_render_pass.output_rect.set_size(current_surface_size);
     last_render_pass.output_rect.set_y(draw_rect_.y());
     last_render_pass.output_rect.set_x(draw_rect_.x());

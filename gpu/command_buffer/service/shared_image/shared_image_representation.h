@@ -110,6 +110,7 @@ class GPU_GLES2_EXPORT SharedImageRepresentation {
   void SetClearedRect(const gfx::Rect& cleared_rect) {
     backing_->SetClearedRect(cleared_rect);
   }
+  const char* GetName() const { return backing_->GetName(); }
 
   // Indicates that the underlying graphics context has been lost, and the
   // backing should be treated as destroyed.

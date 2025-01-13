@@ -5,7 +5,7 @@
 #ifndef GPU_COMMAND_BUFFER_SERVICE_OHOS_SCOPED_NATIVE_BUFFER_FENCE_SYNC_H
 #define GPU_COMMAND_BUFFER_SERVICE_OHOS_SCOPED_NATIVE_BUFFER_FENCE_SYNC_H
 
-#include "gpu/command_buffer/service/ohos/scoped_native_buffer_handle.h"
+#include "base/ohos/scoped_native_buffer_handle.h"
 #include "base/base_export.h"
 #include "base/files/scoped_file.h"
 

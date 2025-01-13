@@ -12,6 +12,12 @@
 #include "ui/gl/gl_version_info.h"
 #include "ui/gl/scoped_binders.h"
 #include "ui/gl/scoped_egl_image.h"
+#include "base/trace_event/trace_event.h"
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <GLES/gl.h>
+#include <GLES/glext.h>
+#include <sys/poll.h>
 
 namespace gl {
 namespace ohos {
@@ -81,6 +87,46 @@ bool InsertEglFenceAndWait(base::ScopedFD acquire_fence_fd) {
 
   // Make the server wait and not the client.
   egl_fence->ServerWait();
+  return true;
+}
+
+bool SyncFenceWait(base::ScopedFD acquire_fence_fd) {
+  int fence_fd = acquire_fence_fd.get();
+  TRACE_EVENT1("base", "SyncFenceWait", "sync_fd", fence_fd);
+
+  // If fence_fd is -1, we do not need synchronization fence and image is ready
+  // to be used immediately. Also we dont need to close any fd. Else we need to
+  // create a sync fence which is used to signal when the buffer is ready to be
+  // consumed.
+  if (fence_fd == -1) {
+    return true;
+  }
+
+  struct pollfd poll_fds = {0};
+  poll_fds.fd = fence_fd;
+  poll_fds.events = POLLIN;
+
+  int ret = -1;
+  do {
+    ret = poll(&poll_fds, 1, -1);
+  } while (ret == -1 && (errno == EINTR || errno == EAGAIN));
+
+  if (ret == 0) {
+    ret = -1;
+    errno = ETIME;
+  } else if (ret > 0) {
+    ret = 0;
+    if (poll_fds.revents & (POLLERR | POLLNVAL)) {
+      ret = -1;
+      errno = EINVAL;
+    }
+  }
+
+  if (ret < 0) {
+    LOG(ERROR) << "Failed to do SyncFenceWait errno " << errno;
+    return false;
+  }
+
   return true;
 }
 

@@ -2558,6 +2558,8 @@ component("base") {
       "ohos/sys_info_utils.cc",
       "ohos/sys_info_utils.h",
       "system/sys_info_linux.cc",
+      "ohos/scoped_native_buffer_handle.cc",
+      "ohos/scoped_native_buffer_handle.h",
     ]
 
     if (ohos_i18n) {

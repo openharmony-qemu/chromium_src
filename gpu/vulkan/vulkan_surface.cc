@@ -16,6 +16,10 @@
 #include "gpu/vulkan/vulkan_function_pointers.h"
 #include "gpu/vulkan/vulkan_swap_chain.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/ohos/sys_info_utils.h"
+#endif
+
 namespace gpu {
 
 namespace {
@@ -97,6 +101,9 @@ VulkanSurface::VulkanSurface(VkInstance vk_instance,
     vsync_provider_ = std::make_unique<gfx::FixedVSyncProvider>(
         base::TimeTicks(), base::Seconds(1) / 60);
   }
+#if BUILDFLAG(IS_OHOS)
+  swap_chain_ = nullptr;
+#endif
 }
 
 bool VulkanSurface::Initialize(VulkanDeviceQueue* device_queue,
@@ -250,6 +257,14 @@ base::TimeDelta VulkanSurface::GetDisplayRefreshInterval() {
 
 bool VulkanSurface::CreateSwapChain(const gfx::Size& size,
                                     gfx::OverlayTransform transform) {
+#if BUILDFLAG(IS_OHOS)
+  Finish();
+  if (swap_chain_) {
+    swap_chain_->Destroy();
+    swap_chain_ = nullptr;
+  }
+#endif
+
   // Get Surface Information.
   VkSurfaceCapabilitiesKHR surface_caps;
   VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
@@ -302,8 +317,12 @@ bool VulkanSurface::CreateSwapChain(const gfx::Size& size,
   DCHECK_GT(static_cast<uint32_t>(image_size.width()), 0u);
   DCHECK_GT(static_cast<uint32_t>(image_size.height()), 0u);
 
+#if BUILDFLAG(IS_OHOS)
+  if (image_size_ == image_size && transform_ == transform) {
+#else
   if (image_size_ == image_size && transform_ == transform &&
       swap_chain_->state() == VK_SUCCESS) {
+#endif
     return true;
   }
 
@@ -328,6 +347,12 @@ bool VulkanSurface::CreateSwapChain(const gfx::Size& size,
       std::make_unique<VulkanSwapChain>(acquire_next_image_timeout_ns_);
   // Create swap chain.
   auto min_image_count = std::max(surface_caps.minImageCount, kMinImageCount);
+#if BUILDFLAG(IS_OHOS)
+  uint32_t imageCount = base::ohos::IsMobileDevice() ? 5u : 4u;
+  min_image_count = std::max(min_image_count, imageCount);
+  LOG(INFO) << "VulkanSurface::CreateSwapChain min_image_count = " << min_image_count;
+#endif
+
   if (!swap_chain->Initialize(device_queue_, surface_, surface_format_,
                               image_size_, min_image_count, image_usage_flags_,
                               vk_transform, composite_alpha_,

@@ -45,6 +45,9 @@
 #include "ui/gl/gl_switches.h"
 #include "ui/gl/gl_utils.h"
 #include "ui/gl/init/gl_factory.h"
+#if BUILDFLAG(IS_OHOS)
+#include "ohos_adapter_helper.h"
+#endif
 
 #if BUILDFLAG(IS_MAC)
 #include <GLES2/gl2.h>
@@ -303,7 +306,6 @@ bool GpuInit::InitializeAndStartSandbox(base::CommandLine* command_line,
 
   if (!CanAccessDeviceFile(gpu_info_))
     return false;
-
   // Compute blocklist and driver bug workaround decisions based on basic GPU
   // info.
   gpu_feature_info_ = ComputeGpuFeatureInfo(gpu_info_, gpu_preferences_,
@@ -977,8 +979,17 @@ void GpuInit::InitializeInProcess(base::CommandLine* command_line,
       std::move(supported_buffer_formats_for_texturing);
 #endif
 
-  DisableInProcessGpuVulkan(&gpu_feature_info_, &gpu_preferences_);
-
+#if BUILDFLAG(IS_OHOS)
+  if (features::IsUsingVulkan()) {
+    bool result = InitializeVulkan();
+    // There is no fallback for webview.
+    CHECK(result);
+  } else {
+#endif
+    DisableInProcessGpuVulkan(&gpu_feature_info_, &gpu_preferences_);
+#if BUILDFLAG(IS_OHOS)
+  }
+#endif
   UMA_HISTOGRAM_ENUMERATION("GPU.GLImplementation", gl::GetGLImplementation());
 }
 #endif  // BUILDFLAG(IS_ANDROID)
@@ -1002,6 +1013,12 @@ scoped_refptr<gl::GLSurface> GpuInit::TakeDefaultOffscreenSurface() {
 
 bool GpuInit::InitializeVulkan() {
 #if BUILDFLAG(ENABLE_VULKAN)
+#if BUILDFLAG(IS_OHOS)
+  if (!features::IsUsingVulkan()) {
+    return false;
+  }
+#endif
+
   DCHECK_EQ(gpu_feature_info_.status_values[GPU_FEATURE_TYPE_VULKAN],
             kGpuFeatureStatusEnabled);
   DCHECK_NE(gpu_preferences_.use_vulkan, VulkanImplementationName::kNone);

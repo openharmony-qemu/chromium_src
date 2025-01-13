@@ -174,7 +174,7 @@ bool CheckVulkanCompabilities(const VulkanInfo& vulkan_info,
                               std::string enable_by_device_name) {
 // Android uses AHB and SyncFD for interop. They are imported into GL with other
 // API.
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
 #if BUILDFLAG(IS_WIN)
   constexpr char kMemoryObjectExtension[] = "GL_EXT_memory_object_win32";
   constexpr char kSemaphoreExtension[] = "GL_EXT_semaphore_win32";
@@ -219,6 +219,7 @@ bool CheckVulkanCompabilities(const VulkanInfo& vulkan_info,
   }
 
   if (device_info.properties.vendorID == kVendorARM) {
+#if !BUILDFLAG(IS_OHOS)
     int emui_version = GetEMUIVersion();
     // TODO(crbug.com/1096222) Display problem with Huawei EMUI < 11 and Honor
     // devices with Mali GPU. The Mali driver version is < 19.0.0.
@@ -226,7 +227,7 @@ bool CheckVulkanCompabilities(const VulkanInfo& vulkan_info,
         emui_version < 11) {
       return false;
     }
-
+#endif
     // Remove "Mali-" prefix.
     base::StringPiece device_name(device_info.properties.deviceName);
     if (!base::StartsWith(device_name, "Mali-")) {

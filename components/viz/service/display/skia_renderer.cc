@@ -93,6 +93,10 @@
 #include "ui/gfx/geometry/transform_util.h"
 #include "ui/gfx/gpu_fence_handle.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "gpu/config/gpu_finch_features.h"
+#endif
+
 namespace viz {
 
 namespace {
@@ -951,7 +955,14 @@ void SkiaRenderer::SwapBuffers(SwapFrameData swap_frame_data) {
   output_frame.data.seq = swap_frame_data.seq;
   output_frame.data.swap_trace_id = swap_frame_data.swap_trace_id;
 #if BUILDFLAG(IS_OHOS)
-  swap_buffer_rect_.Intersect(gfx::Rect(surface_size_for_swap_buffers()));
+  if (features::IsUsingVulkan()) {
+    gfx::Rect rect = gfx::Rect(surface_size_for_swap_buffers());
+    rect.set_x(swap_buffer_rect_.x());
+    rect.set_y(swap_buffer_rect_.y());
+    swap_buffer_rect_.Intersect(rect);
+  } else {
+    swap_buffer_rect_.Intersect(gfx::Rect(surface_size_for_swap_buffers()));
+  }
   output_frame.sub_buffer_rect = swap_buffer_rect_;
 #else
   if (use_partial_swap_) {

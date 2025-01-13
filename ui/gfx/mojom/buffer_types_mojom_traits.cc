@@ -84,8 +84,12 @@ gfx::mojom::GpuMemoryBufferPlatformHandlePtr StructTraits<
       break;
 #endif
     }
+#if BUILDFLAG(IS_OHOS)
+    case gfx::OHOS_NATIVE_BUFFER: {
+      //TODO: Implement this
+    }
+#endif
   }
-
   return nullptr;
 }
 

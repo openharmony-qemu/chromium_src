@@ -43,6 +43,10 @@
 #include "ui/gfx/geometry/transform.h"
 #include "ui/gfx/geometry/transform_util.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "gpu/config/gpu_finch_features.h"
+#endif
+
 namespace {
 
 // Returns the bounding box that contains the specified rounded corner.
@@ -168,6 +172,10 @@ void DirectRenderer::SetVisible(bool visible) {
   if (visible_ == visible)
     return;
   visible_ = visible;
+#if BUILDFLAG(IS_OHOS)
+  LOG(INFO) << "DirectRenderer::SetVisible status change, visible_ = " << visible_;
+  next_frame_needs_full_frame_redraw_ = true;
+#endif
   DidChangeVisibility();
 }
 
@@ -250,7 +258,18 @@ void DirectRenderer::DrawFrame(
     delegated_ink_damage_rect.Intersect(gfx::Rect(device_viewport_size));
     current_frame()->root_damage_rect.Union(delegated_ink_damage_rect);
   }
+#if BUILDFLAG(IS_OHOS)
+  if (features::IsUsingVulkan()) {
+    gfx::Rect rect = gfx::Rect(device_viewport_size);
+    rect.set_x(current_frame()->root_damage_rect.x());
+    rect.set_y(current_frame()->root_damage_rect.y());
+    current_frame()->root_damage_rect.Intersect(rect);
+  } else {
+#endif
   current_frame()->root_damage_rect.Intersect(gfx::Rect(device_viewport_size));
+#if BUILDFLAG(IS_OHOS)
+  }
+#endif
   current_frame()->device_viewport_size = device_viewport_size;
   current_frame()->display_color_spaces = display_color_spaces;
 

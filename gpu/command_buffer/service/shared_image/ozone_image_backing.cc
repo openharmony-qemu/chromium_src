@@ -206,11 +206,18 @@ OzoneImageBacking::ProduceSkiaGanesh(
     gfx::GpuMemoryBufferHandle gmb_handle;
     gmb_handle.type = gfx::GpuMemoryBufferType::NATIVE_PIXMAP;
     gmb_handle.native_pixmap_handle = pixmap_->ExportHandle();
+#if BUILDFLAG(IS_OHOS)
+    auto vulkan_image = VulkanImage::CreateFromGpuMemoryBufferHandle(
+      pixmap_, device_queue, std::move(gmb_handle), size(), /*ToVkFormat(format())*/VK_FORMAT_R8G8B8A8_UNORM,
+      /*usage=*/0, /*flags=*/0, /*image_tiling=*/VK_IMAGE_TILING_OPTIMAL,
+      /*queue_family_index=*/VK_QUEUE_FAMILY_EXTERNAL);
+#else
     auto* vulkan_implementation =
         context_state->vk_context_provider()->GetVulkanImplementation();
     auto vulkan_image = vulkan_implementation->CreateImageFromGpuMemoryHandle(
         device_queue, std::move(gmb_handle), size(), ToVkFormat(format()),
         gfx::ColorSpace());
+#endif
 
     if (!vulkan_image)
       return nullptr;

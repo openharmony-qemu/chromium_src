@@ -42,7 +42,6 @@
 #include "ui/gfx/linux/native_pixmap_dmabuf.h"
 #include "ui/ozone/common/native_pixmap_egl_binding.h"
 #endif
-
 namespace ui {
 
 namespace {

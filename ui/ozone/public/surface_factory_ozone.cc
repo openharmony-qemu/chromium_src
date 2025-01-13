@@ -18,7 +18,6 @@
 #if BUILDFLAG(ENABLE_VULKAN)
 #include "gpu/vulkan/vulkan_instance.h"
 #endif
-
 namespace ui {
 
 SurfaceFactoryOzone::SurfaceFactoryOzone() {}

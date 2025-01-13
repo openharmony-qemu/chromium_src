@@ -86,6 +86,9 @@ enum class SharedImageBackingType {
   kIOSurface = 15,
   kDCompSurface = 16,
   kDXGISwapChain = 17,
+#if BUILDFLAG(IS_OHOS)
+  kOHOSNativeBuffer = 18,
+#endif
   kMaxValue = kDXGISwapChain
 };
 

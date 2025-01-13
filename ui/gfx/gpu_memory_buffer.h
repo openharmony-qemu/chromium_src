@@ -27,6 +27,9 @@
 #elif BUILDFLAG(IS_ANDROID)
 #include "base/android/scoped_hardware_buffer_handle.h"
 #endif
+#if BUILDFLAG(IS_OHOS)
+#include "base/ohos/scoped_native_buffer_handle.h"
+#endif
 
 namespace base {
 namespace trace_event {
@@ -34,7 +37,6 @@ class ProcessMemoryDump;
 class MemoryAllocatorDumpGuid;
 }  // namespace trace_event
 }  // namespace base
-
 namespace gfx {
 
 class ColorSpace;
@@ -46,7 +48,10 @@ enum GpuMemoryBufferType {
   NATIVE_PIXMAP,
   DXGI_SHARED_HANDLE,
   ANDROID_HARDWARE_BUFFER,
-  GPU_MEMORY_BUFFER_TYPE_LAST = ANDROID_HARDWARE_BUFFER
+#if BUILDFLAG(IS_OHOS)
+  OHOS_NATIVE_BUFFER,
+  GPU_MEMORY_BUFFER_TYPE_LAST = OHOS_NATIVE_BUFFER
+#endif
 };
 
 using GpuMemoryBufferId = GenericSharedMemoryId;
@@ -65,6 +70,10 @@ struct GFX_EXPORT GpuMemoryBufferHandle {
 #if BUILDFLAG(IS_ANDROID)
   explicit GpuMemoryBufferHandle(
       base::android::ScopedHardwareBufferHandle handle);
+#endif
+#if BUILDFLAG(IS_OHOS)
+  explicit GpuMemoryBufferHandle(
+   gpu::ScopedNativeBufferHandle  handle);
 #endif
   GpuMemoryBufferHandle(GpuMemoryBufferHandle&& other);
   GpuMemoryBufferHandle& operator=(GpuMemoryBufferHandle&& other);
@@ -86,6 +95,9 @@ struct GFX_EXPORT GpuMemoryBufferHandle {
   absl::optional<DXGIHandleToken> dxgi_token;
 #elif BUILDFLAG(IS_ANDROID)
   base::android::ScopedHardwareBufferHandle android_hardware_buffer;
+#endif
+#if BUILDFLAG(IS_OHOS)
+  gpu::ScopedNativeBufferHandle ohos_hardware_buffer;
 #endif
 };
 

@@ -77,6 +77,11 @@
 #include "ui/gl/gl_display.h"
 #endif  // defined(USE_EGL)
 
+
+#if BUILDFLAG(IS_OHOS)
+#include "gpu/command_buffer/service/shared_image/ohos_native_buffer_image_backing_factory.h"
+#endif
+
 namespace gpu {
 
 namespace {
@@ -98,6 +103,9 @@ const char* GmbTypeToString(gfx::GpuMemoryBufferType type) {
     case gfx::NATIVE_PIXMAP:
     case gfx::DXGI_SHARED_HANDLE:
     case gfx::ANDROID_HARDWARE_BUFFER:
+#if BUILDFLAG(IS_OHOS)
+    case gfx::OHOS_NATIVE_BUFFER:
+#endif
       return "platform";
   }
   NOTREACHED();
@@ -238,6 +246,12 @@ SharedImageFactory::SharedImageFactory(
     factories_.push_back(std::move(egl_backing_factory));
   }
 #endif  // defined(USE_EGL)
+
+#ifdef BUILDFLAG(IS_OHOS)
+  auto ohos_factory = std::make_unique<OHOSNativeBufferImageBackingFactory>
+                          (feature_info.get(), gpu_preferences);
+  factories_.push_back(std::move(ohos_factory));
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
   bool is_ahb_supported =
@@ -472,6 +486,14 @@ bool SharedImageFactory::CreateSharedImage(const Mailbox& mailbox,
                << " buffer_format=" << gfx::BufferFormatToString(format)
                << " gmb_type=" << GmbTypeToString(gmb_type);
     backing->OnWriteSucceeded();
+    LOG(DEBUG) << "[HeifSupport] CreateSharedImage[" << backing->GetName()
+             << "] from handle size=" << size.ToString()
+             << " usage=" << CreateLabelForSharedImageUsage(usage)
+             << " buffer_format=" << gfx::BufferFormatToString(format)
+             << " gmb_type=" << GmbTypeToString(gmb_type);
+  } else {
+    LOG(ERROR) << "[HeifSupport] backing is null.";
+    return false;
   }
 
   return RegisterBacking(std::move(backing));

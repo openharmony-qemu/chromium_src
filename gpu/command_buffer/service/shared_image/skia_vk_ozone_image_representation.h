@@ -23,7 +23,11 @@ class SkiaVkOzoneImageRepresentation : public SkiaGaneshImageRepresentation {
  public:
   SkiaVkOzoneImageRepresentation(
       SharedImageManager* manager,
+#if BUILDFLAG(IS_OHOS)
+      SharedImageBacking* backing,
+#else
       OzoneImageBacking* backing,
+#endif
       scoped_refptr<SharedContextState> context_state,
       std::unique_ptr<VulkanImage> vulkan_image,
       MemoryTypeTracker* tracker);

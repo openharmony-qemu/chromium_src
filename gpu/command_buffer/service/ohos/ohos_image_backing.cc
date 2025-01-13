@@ -7,6 +7,8 @@
 #include "base/logging.h"
 #include "base/posix/eintr_wrapper.h"
 #include "ui/gl/gl_utils.h"
+#include "ui/gl/ohos/native_buffer_utils.h"
+#include "gpu/config/gpu_finch_features.h"
 
 namespace gpu {
 
@@ -44,8 +46,12 @@ bool OhosImageBacking::BeginWrite(base::ScopedFD* fd_to_wait_on) {
   }
 
   is_writing_ = true;
-  (*fd_to_wait_on) =
+  if (features::IsUsingVulkan()) {
+    (*fd_to_wait_on) = base::ScopedFD{};
+  } else {
+    (*fd_to_wait_on) =
       gl::MergeFDs(std::move(read_sync_fd_), std::move(write_sync_fd_));
+  }
 
   return true;
 }
@@ -79,10 +85,15 @@ bool OhosImageBacking::BeginRead(const SharedImageRepresentation* reader,
   }
 
   active_readers_.insert(reader);
-  if (write_sync_fd_.is_valid()) {
-    (*fd_to_wait_on) = base::ScopedFD(HANDLE_EINTR(dup(write_sync_fd_.get())));
-  } else {
+  if (features::IsUsingVulkan()) {
+    gl::ohos::SyncFenceWait(std::move(write_sync_fd_));
     (*fd_to_wait_on) = base::ScopedFD{};
+  } else {
+    if (write_sync_fd_.is_valid()) {
+      (*fd_to_wait_on) = base::ScopedFD(HANDLE_EINTR(dup(write_sync_fd_.get())));
+    } else {
+      (*fd_to_wait_on) = base::ScopedFD{};
+    }
   }
 
   return true;

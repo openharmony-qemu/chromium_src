@@ -77,7 +77,9 @@ enum SharedImageUsage : uint32_t {
   // SHARED_IMAGE_USAGE_CPU_WRITE if they need to write pixels to the image.
   SHARED_IMAGE_USAGE_CPU_UPLOAD = 1 << 19,
 
-  LAST_SHARED_IMAGE_USAGE = SHARED_IMAGE_USAGE_CPU_UPLOAD
+  LAST_SHARED_IMAGE_USAGE = SHARED_IMAGE_USAGE_CPU_UPLOAD,
+
+  SHARED_IMAGE_USAGE_OHOS_NATIVE_BUFFER = 1 << 20
 };
 
 // Returns true if usage is a valid client usage.

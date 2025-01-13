@@ -153,12 +153,14 @@ OHOSAudioDecoder::~OHOSAudioDecoder() {
     ohos_crypto_context_->SetOHOSMediaCryptoReadyCB(base::NullCallback());
   }
 
-  ClearInputQueue(DecoderStatus::Codes::kAborted);
   LOG(INFO) << "OHOSAudioDecoder::~OHOSAudioDecoder ReleaseDecoder";
   if (audio_decoder_ != nullptr) {
+    audio_decoder_->StopDecoder();
     audio_decoder_->ReleaseDecoder();
     audio_decoder_ = nullptr;
   }
+
+  ClearInputQueue(DecoderStatus::Codes::kAborted);
 }
 
 AudioDecoderType OHOSAudioDecoder::GetDecoderType() const {

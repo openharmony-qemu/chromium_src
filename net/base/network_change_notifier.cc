@@ -1108,4 +1108,22 @@ NetworkChangeNotifier::ObserverList& NetworkChangeNotifier::GetObserverList() {
   return *observers;
 }
 
+#if BUILDFLAG(IS_OHOS)
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+// static
+const std::vector<std::string> NetworkChangeNotifier::GetDnsServers() {
+  std::vector<std::string> dns_servers;
+  if (!g_network_change_notifier) {
+    return dns_servers;
+  }
+  dns_servers = g_network_change_notifier->GetCurrentDnsServers();
+  return dns_servers;
+}
+
+const std::vector<std::string> NetworkChangeNotifier::GetCurrentDnsServers() {
+  return std::vector<std::string>();
+}
+#endif
+#endif
+
 }  // namespace net

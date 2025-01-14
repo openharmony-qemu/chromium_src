@@ -755,6 +755,16 @@ class HostResolverManager::RequestImpl
         parameters_.secure_dns_policy, is_ip, source_net_log_,
         &job_key_.query_types, &job_key_.flags, &job_key_.secure_dns_mode);
 
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+    if (parameters_.only_use_secure_fallback) {
+      next_state_ = STATE_START_JOB;
+      if (resolver_->CanUseSecureDnsFallback(resolve_context())) {
+        tasks_.push_back(TaskType::SECURE_DNS_FALLBACK);
+      }
+      return OK;
+    }
+#endif
+
     // A reachability probe to determine if the network is only reachable on
     // IPv6 will be scheduled if the parameters are met for using NAT64 in place
     // of an IPv4 address.
@@ -1002,6 +1012,10 @@ class HostResolverManager::RequestImpl
                    network_anonymization_key_.ToDebugString());
           dict.Set("secure_dns_policy",
                    base::strict_cast<int>(parameters_.secure_dns_policy));
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+          dict.Set("only_use_secure_fallback",
+                   parameters_.only_use_secure_fallback);
+#endif  // OHOS_EX_HTTP_DNS_FALLBACK
           return dict;
         });
   }
@@ -1327,6 +1341,11 @@ class HostResolverManager::DnsTask : public base::SupportsWeakPtr<DnsTask> {
     if (types.Has(DnsQueryType::HTTPS)) {
       if (!secure_ && !client_->CanQueryAdditionalTypesViaInsecureDns()) {
         types.Remove(DnsQueryType::HTTPS);
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+      } else if (resolve_context_->IsHttpsDnsFallbackEnabled() &&
+                 !client_->CanQueryAdditionalTypesViaInsecureDns()) {
+        types.Remove(DnsQueryType::HTTPS);
+#endif
       } else {
         DCHECK(!httpssvc_metrics_);
         httpssvc_metrics_.emplace(secure_);
@@ -2279,6 +2298,9 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
         StartDnsTask(false /* secure */);
         break;
       case TaskType::SECURE_DNS:
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+      case TaskType::SECURE_DNS_FALLBACK:
+#endif
         StartDnsTask(true /* secure */);
         break;
       case TaskType::MDNS:
@@ -2463,6 +2485,15 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
 
     auto aliases = std::set<std::string>(addr_list.dns_aliases().begin(),
                                          addr_list.dns_aliases().end());
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+    if (dns_task_error_ != OK && net_error != OK && !tasks_.empty() &&
+        tasks_.back() == TaskType::SECURE_DNS_FALLBACK) {
+      KillDnsTask();
+      RunNextTask();
+      return;
+    }
+#endif
 
     // Source unknown because the system resolver could have gotten it from a
     // hosts file, its own cache, a DNS lookup or somewhere else.
@@ -3207,6 +3238,9 @@ void HostResolverManager::SetDnsConfigOverrides(DnsConfigOverrides overrides) {
 void HostResolverManager::RegisterResolveContext(ResolveContext* context) {
   registered_contexts_.AddObserver(context);
   context->InvalidateCachesAndPerSessionData(
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  context->SetHttpsDnsFallbackEnabled(https_dns_fallback_enabled_);
+#endif
       dns_client_ ? dns_client_->GetCurrentSession() : nullptr,
       false /* network_change */);
 }
@@ -3751,6 +3785,12 @@ void HostResolverManager::PushDnsTasks(bool system_task_allowed,
   // failing DnsTask if allowed by the request parameters.
   if (system_task_allowed &&
       (no_dns_or_secure_tasks || allow_fallback_to_systemtask_))
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  if (dns_client_->CanUseSecureDnsFallbackTransactions(resolve_context)) {
+    out_tasks->push_back(TaskType::SECURE_DNS_FALLBACK);
+  }
+#endif
     out_tasks->push_back(TaskType::SYSTEM);
 }
 
@@ -3845,6 +3885,13 @@ void HostResolverManager::CreateTaskSequence(
       // If no external source allowed, a job should not be created or started
       break;
   }
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  if (secure_dns_policy == SecureDnsPolicy::kBootstrap &&
+      out_tasks->back() == TaskType::SECURE_DNS_FALLBACK) {
+    out_tasks->pop_back();
+  }
+#endif
 
   // `HOST_RESOLVER_CANONNAME` is only supported through system resolution.
   if (job_key.flags & HOST_RESOLVER_CANONNAME) {
@@ -4297,6 +4344,33 @@ std::unique_ptr<DnsProbeRunner> HostResolverManager::CreateDohProbeRunner(
   return dns_client_->GetTransactionFactory()->CreateDohProbeRunner(
       resolve_context);
 }
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+bool HostResolverManager::CanUseSecureDnsFallback(
+    ResolveContext* context) const {
+  if (!dns_client_.get()) {
+    return false;
+  }
+
+  return dns_client_->CanUseSecureDnsFallbackTransactions(context);
+}
+
+void HostResolverManager::SetHttpsDnsFallbackData(
+    bool enabled,
+    const std::string& server_template) {
+  https_dns_fallback_enabled_ = enabled;
+  doh_fallback_server_template_ = server_template;
+  for (auto& context : registered_contexts_) {
+    context.SetHttpsDnsFallbackEnabled(enabled);
+  }
+}
+
+void HostResolverManager::SetSuspectIpListAndSourceHostList(
+    const std::vector<std::string>& ip_list,
+    const std::vector<std::string>& host_list) {
+  // Todo(huawei)
+}
+#endif
 
 HostResolverManager::RequestImpl::~RequestImpl() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);

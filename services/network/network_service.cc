@@ -569,6 +569,10 @@ void NetworkService::RegisterNetworkContext(NetworkContext* network_context) {
     LOG(INFO) << "Register network context and set network timeout "
               << timeout_override_ << " second(s)";
     url_request_context->SetConnectTimeout(timeout_override_);
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+    url_request_context->SetConnectJobWithSecureDnsOnlyTimeout(
+        connect_job_with_secure_dns_only_timeout_);
+#endif
   }
 #endif
   network_contexts_.insert(network_context);
@@ -695,10 +699,18 @@ void NetworkService::ConfigureStubHostResolver(
       insecure_dns_client_enabled, additional_dns_types_enabled);
 
 #if defined(OHOS_HTTP_DNS)
+  net::DnsConfigOverrides overrides;
+#ifndef OHOS_EX_HTTP_DNS_FALLBACK
   // Since the system dnsconfig is not obtained and null in OHOS, so override
   // the full config with default.
-  net::DnsConfigOverrides overrides =
-      net::DnsConfigOverrides::CreateOverridingEverythingWithDefaults();
+  overrides = net::DnsConfigOverrides::CreateOverridingEverythingWithDefaults();
+#else
+  // 如果使能Doh，则不需要获取获取Dns name servers
+  if (secure_dns_mode != net::SecureDnsMode::kOff) {
+    overrides =
+        net::DnsConfigOverrides::CreateOverridingEverythingWithDefaults();
+  }
+#endif
   overrides.secure_dns_mode = secure_dns_mode;
   overrides.dns_over_https_config = dns_over_https_config;
 
@@ -1047,6 +1059,79 @@ void NetworkService::SetConnectTimeout(int seconds) {
       url_request_context->SetConnectTimeout(seconds);
     }
   }
+}
+#endif
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+void NetworkService::SetHttpsDnsFallbackData(
+    mojom::HttpsDnsFallbackConfigPtr config) {
+  bool https_dns_fallback_enabled = false;
+  std::string http_dns_server_template;
+  // int connect_job_with_dns_only_timeout = 15;
+  std::vector<std::string> host_list;
+  std::vector<std::string> ip_list;
+  if (config) {
+    LOG(INFO) << "SetHttpsDnsFallbackData, enabled " << config->enabled
+              << ", connect_job_with_dns_only_timeout "
+              << config->connect_job_with_dns_only_timeout
+              << ", https_dns_server_template "
+              << config->https_dns_server_template << ", source_host_list.size "
+              << config->source_host_list.size() << ", suspect_ip_list.size "
+              << config->suspect_ip_list.size();
+    https_dns_fallback_enabled = config->enabled;
+    http_dns_server_template = config->https_dns_server_template;
+    connect_job_with_secure_dns_only_timeout_ =
+        config->connect_job_with_dns_only_timeout;
+    host_list = std::move(config->source_host_list);
+    ip_list = std::move(config->suspect_ip_list);
+  }
+
+  SetHttpsDnsHostResolver(https_dns_fallback_enabled, http_dns_server_template);
+  for (auto* network_context : network_contexts_) {
+    net::URLRequestContext* url_request_context =
+        network_context->url_request_context();
+    if (url_request_context) {
+      url_request_context->SetConnectJobWithSecureDnsOnlyTimeout(
+          connect_job_with_secure_dns_only_timeout_);
+    }
+  }
+
+  host_resolver_manager_->SetSuspectIpListAndSourceHostList(ip_list, host_list);
+}
+
+void NetworkService::SetHttpsDnsHostResolver(
+    bool enabled,
+    const std::string& server_template) {
+  bool allow_enable_http_dns_fallback = false;
+  net::DnsOverHttpsConfig doh_fallback_config;
+  if (enabled) {
+    doh_fallback_config =
+        net::DnsOverHttpsConfig::FromStringLax(server_template);
+    if (doh_fallback_config.servers().size() > 0) {
+      allow_enable_http_dns_fallback = true;
+    }
+  }
+
+  host_resolver_manager_->SetHttpsDnsFallbackData(
+      allow_enable_http_dns_fallback, server_template);
+
+  // Enable or disable the insecure part of DnsClient. "DnsClient" is the class
+  // that implements the stub resolver.
+  host_resolver_manager_->SetInsecureDnsClientEnabled(
+      allow_enable_http_dns_fallback, false);
+
+   net::DnsConfigOverrides overrides;
+  // 如果HTTP DNS FALLBACK去使能，则不需要获取Dns name servers
+  if (!allow_enable_http_dns_fallback) {
+    overrides =
+        net::DnsConfigOverrides::CreateOverridingEverythingWithDefaults();
+  }
+
+  overrides.secure_dns_mode = net::SecureDnsMode::kOff;
+  overrides.dns_over_https_config = doh_fallback_config;
+  overrides.allow_dns_over_https_upgrade = false;
+
+  host_resolver_manager_->SetDnsConfigOverrides(overrides);
 }
 #endif
 

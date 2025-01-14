@@ -55,7 +55,12 @@ class NET_EXPORT_PRIVATE TransportSocketParams
                         NetworkAnonymizationKey network_anonymization_key,
                         SecureDnsPolicy secure_dns_policy,
                         OnHostResolutionCallback host_resolution_callback,
-                        base::flat_set<std::string> supported_alpns);
+                        base::flat_set<std::string> supported_alpns
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+                        ,
+                        bool secure_dns_only = false
+#endif
+  );
 
   TransportSocketParams(const TransportSocketParams&) = delete;
   TransportSocketParams& operator=(const TransportSocketParams&) = delete;
@@ -71,6 +76,9 @@ class NET_EXPORT_PRIVATE TransportSocketParams
   const base::flat_set<std::string>& supported_alpns() const {
     return supported_alpns_;
   }
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  bool secure_dns_only() const { return secure_dns_only_; }
+#endif
 
  private:
   friend class base::RefCounted<TransportSocketParams>;
@@ -81,6 +89,9 @@ class NET_EXPORT_PRIVATE TransportSocketParams
   const SecureDnsPolicy secure_dns_policy_;
   const OnHostResolutionCallback host_resolution_callback_;
   const base::flat_set<std::string> supported_alpns_;
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  const bool secure_dns_only_;
+#endif
 };
 
 // TransportConnectJob handles the host resolution necessary for socket creation

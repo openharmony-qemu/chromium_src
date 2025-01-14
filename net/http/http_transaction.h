@@ -99,6 +99,10 @@ class NET_EXPORT_PRIVATE HttpTransaction {
                     CompletionOnceCallback callback,
                     const NetLogWithSource& net_log) = 0;
 
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  virtual int RestartWithSecureDnsOnly(CompletionOnceCallback callback) = 0;
+#endif
+
   // Restarts the HTTP transaction, ignoring the last error.  This call can
   // only be made after a call to Start (or RestartIgnoringLastError) failed.
   // Once Read has been called, this method cannot be called.  This method is

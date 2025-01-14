@@ -61,6 +61,10 @@
 #include "services/network/public/mojom/ct_log_info.mojom.h"
 #endif
 
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+#include "services/network/public/mojom/network_config_ohos.mojom.h"
+#endif
+
 namespace net {
 class FileNetLogObserver;
 class HostResolverManager;
@@ -309,6 +313,11 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkService
   void SetConnectTimeout(int seconds) override;
 #endif
 
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  void SetHttpsDnsFallbackData(
+      mojom::HttpsDnsFallbackConfigPtr config) override;
+#endif
+
  private:
   class DelayedDohProbeActivator;
 
@@ -325,6 +334,11 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkService
 
   void SetSystemDnsResolver(
       mojo::PendingRemote<mojom::SystemDnsResolver> override_remote);
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  void SetHttpsDnsHostResolver(bool enabled,
+                               const std::string& server_template);
+#endif
 
   bool initialized_ = false;
 
@@ -444,6 +458,9 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkService
 
 #if defined(OHOS_EX_NETWORK_CONNECTION)
   int timeout_override_ = 0;
+#endif
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  int connect_job_with_secure_dns_only_timeout_{15};
 #endif
 };
 

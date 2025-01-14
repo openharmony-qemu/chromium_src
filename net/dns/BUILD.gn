@@ -129,6 +129,13 @@ source_set("dns") {
       "dns_config_service_linux.cc",
       "dns_config_service_linux.h",
     ]
+
+  } else if (is_ohos && defined(ohos_ex_http_dns_fallback) &&
+             ohos_ex_http_dns_fallback) {
+    sources += [
+      "dns_config_service_ohos.cc",
+      "dns_config_service_ohos.h",
+    ]
   } else if (is_posix) {
     sources += [
       "dns_config_service_posix.cc",

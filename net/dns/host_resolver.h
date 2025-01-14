@@ -78,6 +78,12 @@ class NET_EXPORT HostResolver {
 
    private:
     absl::variant<url::SchemeHostPort, HostPortPair> host_;
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+    // If /true/, the dns task type of the request is only secure dns fallback
+    // type.
+    bool only_use_secure_fallback = false;
+#endif  // OHOS_EX_HTTP_DNS_FALLBACK
   };
 
   // Handler for an individual host resolution request. Created by
@@ -449,6 +455,10 @@ class NET_EXPORT HostResolver {
   virtual HostResolverManager* GetManagerForTesting();
   virtual const URLRequestContext* GetContextForTesting() const;
   virtual handles::NetworkHandle GetTargetNetworkForTesting() const;
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  virtual bool CanUseSecureDnsFallback() const { return false; }
+#endif
 
   // Creates a new HostResolver. |manager| must outlive the returned resolver.
   //

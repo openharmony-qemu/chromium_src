@@ -1560,6 +1560,15 @@ std::shared_ptr<HitTestResult> NWebImpl::GetHitTestResult() {
   return nweb_delegate_->GetHitTestResult();
 }
 
+std::shared_ptr<HitTestResult> NWebImpl::GetLastHitTestResult() {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("get last hit test result failed, nweb delegate is nullptr, nweb_id = %{public}u", nweb_id_);
+    return std::make_shared<HitTestResultImpl>();
+  }
+
+  return nweb_delegate_->GetLastHitTestResult();
+}
+
 int NWebImpl::PageLoadProgress() {
   if (nweb_delegate_ == nullptr) {
     return 0;

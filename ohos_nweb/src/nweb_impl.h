@@ -109,6 +109,7 @@ class NWebImpl : public NWeb {
   std::string Title() override;
   uint32_t GetWebId() override;
   std::shared_ptr<HitTestResult> GetHitTestResult() override;
+  std::shared_ptr<HitTestResult> GetLastHitTestResult() override;
   int PageLoadProgress() override;
   int ContentHeight() override;
   float Scale() override;

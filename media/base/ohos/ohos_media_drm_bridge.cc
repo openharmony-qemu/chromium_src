@@ -180,8 +180,8 @@ class OHOSDrmAdapterUtil {
   ~OHOSDrmAdapterUtil() = default;
 
   UUID GetUUID(const std::string& key_system);
-  bool IsSupported(const std::string name);
-  bool IsSupported2(const std::string name, const std::string mimeType);
+  bool IsSupported(const std::string& name);
+  bool IsSupported2(const std::string& name, const std::string& mimeType);
 
  private:
   std::unique_ptr<OHOS::NWeb::DrmAdapter> drm_adapter_ = nullptr;
@@ -205,15 +205,15 @@ UUID OHOSDrmAdapterUtil::GetUUID(const std::string& key_system) {
   return UUID();
 }
 
-bool OHOSDrmAdapterUtil::IsSupported(const std::string name) {
+bool OHOSDrmAdapterUtil::IsSupported(const std::string& name) {
   if (drm_adapter_) {
     return drm_adapter_->IsSupported(name);
   }
   return false;
 }
 
-bool OHOSDrmAdapterUtil::IsSupported2(const std::string name,
-                                      const std::string mimeType) {
+bool OHOSDrmAdapterUtil::IsSupported2(const std::string& name,
+                                      const std::string& mimeType) {
   if (drm_adapter_) {
     return drm_adapter_->IsSupported2(name, mimeType);
   }

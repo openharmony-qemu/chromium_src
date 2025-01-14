@@ -63,6 +63,10 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
   virtual void ChangeVisibilityOfQuickMenu() {}
 #endif
 
+#ifdef OHOS_DRAG_DROP
+  virtual gfx::Rect GetVisibleRectToWeb();
+#endif
+
   // The user started dragging content of the specified type within the
   // `blink::WebView`. Contextual information about the dragged content is
   // supplied by DropData. If the delegate's view cannot start the drag for

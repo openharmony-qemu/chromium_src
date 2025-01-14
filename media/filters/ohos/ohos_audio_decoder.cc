@@ -176,9 +176,10 @@ void OHOSAudioDecoder::Initialize(const AudioDecoderConfig& config,
   TRACE_EVENT0("media", "OHOSAudioDecoder::Initialize");
   // Only the encrypted DRM audio stream goes through the openharmony system decoding path
   if (!config.is_encrypted()) {
-      LOG(ERROR) << "OHOSAudioDecoder::Initialize AudioDecoderConfig is not encrypted";
-      base::BindPostTaskToCurrentDefault(std::move(init_cb))
-        .Run(DecoderStatus::Codes::kUnsupportedCodec);
+    LOG(ERROR) << "OHOSAudioDecoder::Initialize AudioDecoderConfig is not encrypted";
+    base::BindPostTaskToCurrentDefault(std::move(init_cb))
+      .Run(DecoderStatus::Codes::kUnsupportedCodec);
+    return;
   }
 
   // Clear the input buffer and set the callback result to DecoderStatus::Codes::kAborted

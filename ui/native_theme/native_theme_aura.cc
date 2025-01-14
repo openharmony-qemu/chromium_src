@@ -52,12 +52,14 @@ constexpr int kOverlayScrollbarHotSizePc = 0;
 constexpr float kOverlayScrollbarCornerRatio = 1.2f;
 int scrollbar_hot_size_ = kOverlayScrollbarHotSize;
 // 1 vp = 1.5 * px
-constexpr int kForceScrollbarActiveWidth = 12;      // 8 * 1.5
-constexpr int kForceScrollbarInactiveWidth = 6;     // 4 * 1.5
-constexpr int kForceScrollbarActiveOffset = 6;      // 4 * 1.5
-constexpr int kForceScrollbarInactiveOffset = 12;   // 8 * 1.5
-constexpr int kForceScrollbarActiveRadius = 6;      // 4 * 1.5
-constexpr int kForceScrollbarInactiveRadius = 3;    // 2 * 1.5
+constexpr int kForceScrollbarActiveWidth = 12;
+constexpr int kForceScrollbarInactiveWidth = 12;
+constexpr int kForceScrollbarActiveOffset = 0;
+constexpr int kForceScrollbarInactiveOffset = 0;
+constexpr int kForceScrollbarActiveRadius = 6;
+constexpr int kForceScrollbarInactiveRadius = 3;
+constexpr int kForceScrollbarActiveHotSize = 4;
+constexpr int kForceScrollbarInactiveHotSize = 8;
 #else
 // Constants for painting overlay scrollbars. Other properties needed outside
 // this painting code are defined in overlay_scrollbar_constants_aura.h.
@@ -297,6 +299,11 @@ void NativeThemeAura::PaintScrollbarThumb(cc::PaintCanvas* canvas,
   gfx::Rect thumb_rect(rect);
   SkColor thumb_color;
 
+#ifdef OHOS_SCROLLBAR
+  bool isPcDevice = base::ohos::IsPcDevice();
+  float ratio = base::ohos::GetPixelRatio();
+#endif // OHOS_SCROLLBAR
+
   if (use_overlay_scrollbars_) {
     if (state == NativeTheme::kDisabled)
       return;
@@ -308,8 +315,6 @@ void NativeThemeAura::PaintScrollbarThumb(cc::PaintCanvas* canvas,
     flags.setColor(aroundColor);
     flags.setAntiAlias(true);
     gfx::Rect aroundRRect; // Draw rect on aroundRRect's position.
-    bool isPcDevice = base::ohos::IsPcDevice();
-    float ratio = base::ohos::GetPixelRatio();
     int drawThumbThickness = scrollbar_width_ * ratio - scrollbar_hot_size_* ratio;
     SkScalar radius = SkIntToScalar(drawThumbThickness / 2);
     SkScalar radiusX = 0.0;
@@ -389,36 +394,56 @@ void NativeThemeAura::PaintScrollbarThumb(cc::PaintCanvas* canvas,
 #endif // OHOS_SCROLLBAR
   } else {
 #if defined(OHOS_SCROLLBAR)
-      cc::PaintFlags overflags;
-      SkScalar radius;
-      thumb_color = SkColorSetA(scrollbar_color, 102);
-      overflags.setColor(thumb_color);
-      if (state == kHovered || state == kPressed) {
-        radius = SkIntToScalar(kForceScrollbarActiveRadius);
-        if (part == kScrollbarVerticalThumb) {
-          thumb_rect.set_x(thumb_rect.x() + thumb_rect.width()
-           - kForceScrollbarActiveWidth - kForceScrollbarActiveOffset);
-          thumb_rect.set_width(kForceScrollbarActiveWidth);
-        } else {
-          thumb_rect.set_y(thumb_rect.y() + thumb_rect.height()
-           - kForceScrollbarActiveWidth -kForceScrollbarActiveOffset);
-          thumb_rect.set_height(kForceScrollbarActiveWidth);
-        }
+    cc::PaintFlags overflags;
+    SkScalar radius;
+    gfx::Rect aroundRRect;  // Draw rect on aroundRRect's position.
+    thumb_color = SkColorSetA(scrollbar_color, 102);
+    overflags.setColor(thumb_color);
+    if (state == kHovered || state == kPressed) {
+      radius = SkIntToScalar(kForceScrollbarActiveRadius * ratio);
+      if (part == kScrollbarVerticalThumb) {
+        thumb_rect.set_x(thumb_rect.x() + thumb_rect.width() -
+                         kForceScrollbarActiveWidth * ratio -
+                         kForceScrollbarActiveOffset * ratio);
+        thumb_rect.set_width(kForceScrollbarActiveWidth * ratio);
+        aroundRRect = gfx::Rect(kForceScrollbarActiveHotSize * ratio, 0,
+                                kForceScrollbarActiveWidth * ratio -
+                                    kForceScrollbarActiveHotSize * ratio,
+                                thumb_rect.height());
       } else {
-        radius = SkIntToScalar(kForceScrollbarInactiveRadius);
-        if (part == kScrollbarVerticalThumb) {
-          thumb_rect.set_x(thumb_rect.x() + thumb_rect.width()
-           - kForceScrollbarInactiveOffset);
-          thumb_rect.set_width(kForceScrollbarInactiveWidth);
-        } else {
-          thumb_rect.set_y(thumb_rect.y() + thumb_rect.height()
-           - kForceScrollbarInactiveOffset);
-          thumb_rect.set_height(kForceScrollbarInactiveWidth);
-        }
+        thumb_rect.set_y(thumb_rect.y() + thumb_rect.height() -
+                         kForceScrollbarActiveWidth * ratio -
+                         kForceScrollbarActiveOffset * ratio);
+        thumb_rect.set_height(kForceScrollbarActiveWidth * ratio);
+        aroundRRect = gfx::Rect(0, kForceScrollbarActiveHotSize * ratio,
+                                thumb_rect.width(),
+                                kForceScrollbarActiveWidth * ratio -
+                                    kForceScrollbarActiveHotSize * ratio);
       }
-      SkRRect r_rect = SkRRect::MakeRectXY(gfx::RectToSkRect(thumb_rect), radius, radius);
-      canvas->drawRRect(r_rect, overflags);
-      return;
+    } else {
+      radius = SkIntToScalar(kForceScrollbarInactiveRadius * ratio);
+      if (part == kScrollbarVerticalThumb) {
+        thumb_rect.set_x(thumb_rect.x() + thumb_rect.width() -
+                         kForceScrollbarInactiveOffset * ratio);
+        thumb_rect.set_width(kForceScrollbarInactiveWidth * ratio);
+        aroundRRect = gfx::Rect(kForceScrollbarInactiveHotSize * ratio, 0,
+                                kForceScrollbarInactiveWidth * ratio -
+                                    kForceScrollbarInactiveHotSize * ratio,
+                                thumb_rect.height());
+      } else {
+        thumb_rect.set_y(thumb_rect.y() + thumb_rect.height() -
+                         kForceScrollbarInactiveOffset * ratio);
+        thumb_rect.set_height(kForceScrollbarInactiveWidth * ratio);
+        aroundRRect = gfx::Rect(0, kForceScrollbarInactiveHotSize * ratio,
+                                thumb_rect.width(),
+                                kForceScrollbarInactiveWidth * ratio -
+                                    kForceScrollbarInactiveHotSize * ratio);
+      }
+    }
+    gfx::RRectF rounded_rect(gfx::RectF(aroundRRect), radius, radius, radius,
+                             radius, radius, radius, radius, radius);
+    canvas->drawRRect(static_cast<SkRRect>(rounded_rect), overflags);
+    return;
 #else
     ControlColorId color_id = kScrollbarThumb;
     switch (state) {

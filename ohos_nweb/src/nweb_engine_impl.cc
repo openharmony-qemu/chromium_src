@@ -83,6 +83,10 @@ void NWebEngineImpl::PrepareForPageLoad(const std::string &url,
   return NWebImpl::PrepareForPageLoad(url, preconnectable, num_sockets);
 }
 
+void NWebEngineImpl::RemoveAllCache(bool include_disk_files) {
+  return NWebImpl::RemoveAllCache(include_disk_files);
+}
+
 void NWebEngineImpl::SetWebDebuggingAccess(bool isEnableDebug) {
   static bool isDebuggingEnabled = false;
   if (isEnableDebug && !isDebuggingEnabled) {

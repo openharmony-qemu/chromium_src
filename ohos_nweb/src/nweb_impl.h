@@ -501,6 +501,7 @@ class NWebImpl : public NWeb {
   static void SetWebTag(int32_t nweb_id, const char* web_tag);
   static void InitializeWebEngine(std::shared_ptr<NWebEngineInitArgs> init_args);
   static void PrepareForPageLoad(const std::string &url, bool preconnectable, int32_t num_sockets);
+  static void RemoveAllCache(bool include_disk_files);
   static void PauseAllTimers();
   static void ResumeAllTimers();
   static void PrefetchResource(const std::shared_ptr<NWebEnginePrefetchArgs>& pre_args,

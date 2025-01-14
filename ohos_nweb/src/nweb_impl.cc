@@ -56,6 +56,7 @@
 #endif
 #if BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_INC_FREQ)
 #include "soc_perf_client_adapter.h"
+#include "content/public/browser/browsing_data_remover.h"
 #endif
 
 #if defined(OHOS_API_INIT_WEB_ENGINE)
@@ -3230,6 +3231,38 @@ int NWebImpl::GetSecurityLevel() {
 #else
   return static_cast<int>(security_state::SecurityLevel::NONE);
 #endif
+}
+
+//static
+void NWebImpl::RemoveAllCache(bool include_disk_files) {
+  auto manager = web_cache::WebCacheManager::GetInstance();
+  manager->ClearCache();
+  if (!include_disk_files) {
+    WVLOG_I("no need remove all disk cache");
+    return;
+  }
+  std::vector<CefBrowserContext*> browser_context_all =
+      CefBrowserContext::GetAll();
+  if (browser_context_all.size() == 0) {
+    return;
+  }
+
+  for (const auto& cef_browser_context : browser_context_all) {
+    content::BrowserContext* browser_context = cef_browser_context->AsBrowserContext();
+    if (!browser_context) {
+      WVLOG_E("removeAllCache browser_context is null");
+      return;
+    }
+
+  content::BrowsingDataRemover* remover =
+        browser_context->GetBrowsingDataRemover();
+    remover->Remove(
+        base::Time(), base::Time::Max(),
+        content::BrowsingDataRemover::DATA_TYPE_CACHE,
+        content::BrowsingDataRemover::ORIGIN_TYPE_UNPROTECTED_WEB |
+            content::BrowsingDataRemover::ORIGIN_TYPE_PROTECTED_WEB);
+  }
+  WVLOG_I("remove all of cache is successful");
 }
 
 #if BUILDFLAG(IS_OHOS)

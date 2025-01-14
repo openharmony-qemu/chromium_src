@@ -174,10 +174,11 @@ void OHOSAudioDecoder::Initialize(const AudioDecoderConfig& config,
     const WaitingCB& waiting_cb) {
   LOG(INFO) << "OHOSAudioDecoder::Initialize";
   TRACE_EVENT0("media", "OHOSAudioDecoder::Initialize");
-  // Only the encrypted DRM audio stream goes through the oepnharmony system decoding path
+  // Only the encrypted DRM audio stream goes through the openharmony system decoding path
   if (!config.is_encrypted()) {
       LOG(ERROR) << "OHOSAudioDecoder::Initialize AudioDecoderConfig is not encrypted";
-      init_cb(DecoderStatus::Codes::kUnsupportedCodec);
+      base::BindPostTaskToCurrentDefault(std::move(init_cb))
+        .Run(DecoderStatus::Codes::kUnsupportedCodec);
   }
 
   // Clear the input buffer and set the callback result to DecoderStatus::Codes::kAborted

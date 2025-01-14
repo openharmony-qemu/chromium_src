@@ -256,6 +256,10 @@ class CONTENT_EXPORT MediaWebContentsObserver
     void OnVideoDestroyed() override;
 #endif // OHOS_VIDEO_ASSISTANT
 
+#if defined(OHOS_MEDIA_AVSESSION)
+    void OnGetMediaTitle(const std::string& data) override;
+    void OnGetVideoPoster(const std::string& data) override;  
+#endif // OHOS_MEDIA_AVSESSION
    private:
     PlayerInfo* GetPlayerInfo();
     void NotifyAudioStreamMonitorIfNeeded();

@@ -176,6 +176,14 @@ interface MediaPlayerObserver {
 
   [EnableIf=ohos_video_assistant]
   OnVideoDestroyed();
+ 
+  // Notifies that the title of playing content.
+  [EnableIf=ohos_media_avsession]
+  OnGetMediaTitle(string data);
+
+  // Notifies that the video poster of playing content.
+  [EnableIf=ohos_media_avsession]
+  OnGetVideoPoster(string data);
 };
 
 // Implemented by MediaWebContentsObserver::MediaPlayerHostImpl in the browser

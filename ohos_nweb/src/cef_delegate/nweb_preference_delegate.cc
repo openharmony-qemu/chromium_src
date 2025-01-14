@@ -987,4 +987,10 @@ int64_t NWebPreferenceDelegate::GetDelayDurationForBackgroundTabFreezing() {
   return delay_for_background_tab_freezing_;
 }
 #endif
+
+#if defined(OHOS_MEDIA_AVSESSION)
+void NWebPreferenceDelegate::PutWebMediaAVSessionEnabled(bool enable) {
+  browser_->GetHost()->PutWebMediaAVSessionEnabled(enable);
+}
+#endif // OHOS_MEDIA_AVSESSION
 }  // namespace OHOS::NWeb

@@ -239,6 +239,10 @@ class NWebPreferenceDelegate : public NWebPreference {
   int64_t GetDelayDurationForBackgroundTabFreezing();
 #endif
 
+#if defined(OHOS_MEDIA_AVSESSION)
+  void PutWebMediaAVSessionEnabled(bool enable) override;
+#endif // OHOS_MEDIA_AVSESSION
+
  private:
   CefRefPtr<CefBrowser> browser_ = nullptr;
 

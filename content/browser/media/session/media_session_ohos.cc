@@ -175,6 +175,20 @@ void MediaSessionOHOS::MediaSessionActionsChanged(
 void MediaSessionOHOS::MediaSessionImagesChanged(
     const base::flat_map<media_session::mojom::MediaSessionImageType,
                          std::vector<media_session::MediaImage>>& images) {
+  if (!avsession_adapter_ || images.empty()) {
+    LOG(ERROR) << __FUNCTION__ <<"media avsession avsession_adapter_ or metadata is null return";
+    return;
+  }
+  auto it = images.find(media_session::mojom::MediaSessionImageType::kArtwork);
+  if(it != images.end()){
+    for(auto& it_img : it->second){
+      av_metadata_->SetImageUrl(it_img.src.spec());
+    }
+  }
+  if(av_metadata_ && avsession_adapter_ && 
+      !av_metadata_->GetTitle().empty()) {
+    avsession_adapter_->SetMetadata(av_metadata_);
+  }
 }
 
 void MediaSessionOHOS::MediaSessionPositionChanged(
@@ -378,4 +392,13 @@ void OHOSMediaAVSessionPosition::SetUpdateTime(int64_t updateTime) {
 int64_t OHOSMediaAVSessionPosition::GetUpdateTime() {
   return update_time_;
 }
+
+void OHOSMediaAVSessionMetadata::SetImageUrl(const std::string& image_url) {
+  image_url_ = image_url;
+}
+
+std::string OHOSMediaAVSessionMetadata::GetImageUrl() {
+  return image_url_;
+}
+
 }  // namespace content

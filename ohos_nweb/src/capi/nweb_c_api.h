@@ -53,8 +53,6 @@ typedef void (*OnDownloadBeforeStart)(NWebDownloadItem *download_item, WebBefore
 typedef void (*OnDownloadDidUpdate)(NWebDownloadItem *download_item, WebDownloadItemCallbackWrapper *wrapper);
 typedef void (*OnSrceenCaptureOnStateChange)(int32_t nweb_id, const char* session_id, int32_t code);
 
-typedef struct NWebExtensionApiCallback WebExtensionApiCallback;
-typedef void (*OnUpdateTabUrlFun)(int tab_id, const char* url);
 
 
 // / WebDownloader functions.
@@ -162,28 +160,6 @@ NWEB_EXPORT void  WebScreenCapture_PutScreenCaptureCallback(WebScreenCaptureDele
 
 NWEB_EXPORT void  WebScreenCapture_StopScreenCapture(int32_t nweb_id, const char* session_id);
 
-/// ChromeExtension API functions.
-NWEB_EXPORT void WebExtensionTabController_SetOnUpdateTabUrl(
-    NWebExtensionApiCallback* callback, OnUpdateTabUrlFun fun);
-
-NWEB_EXPORT void WebExtensionTabController_CreateExtensionApiCallback(
-    NWebExtensionApiCallback** callback);
-
-NWEB_EXPORT void WebExtensionTabController_PutExtensionApiCallback(
-    NWebExtensionApiCallback* callback);
-
-NWEB_EXPORT void WebExtensionTabController_RemoveExtensionApiCallback();
-
-NWEB_EXPORT void WebExtensionTabController_TabCreated(
-    int32_t nweb_id, int32_t tab_id);
-
-NWEB_EXPORT void WebExtensionTabController_TabRemoved(
-    int32_t nweb_id, int32_t tab_id);
-
-NWEB_EXPORT void WebExtensionTabController_TabUpdated(
-    int32_t nweb_id, int32_t tab_id,
-    const std::vector<std::string>& changed_property_names,
-    const std::string& url);
 
 #ifdef __cplusplus
 }

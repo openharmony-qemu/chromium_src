@@ -729,7 +729,12 @@ void MostVisitedSites::SaveTilesAndNotify(
 // static
 bool MostVisitedSites::IsNtpTileFromPreinstalledApp(GURL url) {
 #if BUILDFLAG(ENABLE_EXTENSIONS)
-  return url.is_valid() && url.SchemeIs(extensions::kExtensionScheme) &&
+  return url.is_valid() &&
+         (url.SchemeIs(extensions::kExtensionScheme)
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+          || url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+              ) &&
          extension_misc::IsPreinstalledAppId(url.host());
 #else
   return false;

@@ -173,7 +173,10 @@ int ShellBrowserMainParts::PreCreateThreads() {
 
   content::ChildProcessSecurityPolicy::GetInstance()->RegisterWebSafeScheme(
       kExtensionScheme);
-
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  content::ChildProcessSecurityPolicy::GetInstance()->RegisterWebSafeScheme(
+      kArkwebExtensionScheme);
+#endif
   // Return no error.
   return 0;
 }

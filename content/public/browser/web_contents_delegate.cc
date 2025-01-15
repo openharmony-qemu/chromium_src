@@ -438,8 +438,9 @@ void WebContentsDelegate::OnUpdateVideoAttributes(
 #endif // OHOS_VIDEO_ASSISTANT
 
 #if defined(OHOS_ARKWEB_EXTENSIONS)
-void WebContentsDelegate::WebExtensionUpdateTabUrl(
-    int32_t tab_id, const GURL& url) {}
+void WebContentsDelegate::WebExtensionUpdateTab(
+    int32_t tab_id,
+    const NWebExtensionTabUpdateProperties* update_properties) {}
 
 int32_t WebContentsDelegate::GetTabId() {
   return -1;

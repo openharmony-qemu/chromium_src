@@ -69,6 +69,10 @@
 #include "services/device/wake_lock/power_save_blocker/nweb_screen_lock_tracker.h"
 #endif
 
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+#include "ohos_nweb/src/capi/web_extension_tab_items.h"
+#endif
+
 namespace base {
 class FilePath;
 }  // namespace base
@@ -1551,7 +1555,9 @@ class WebContents : public PageNavigator,
                                     WindowOpenDisposition disposition) = 0;
 
 #if defined(OHOS_ARKWEB_EXTENSIONS)
-  virtual void WebExtensionUpdateTabUrl(int32_t tab_id, const GURL& url) = 0;
+  virtual void WebExtensionUpdateTab(
+      int32_t tab_id,
+      const NWebExtensionTabUpdateProperties* update_properties) = 0;
   virtual int32_t GetTabId() = 0;
 #endif
 

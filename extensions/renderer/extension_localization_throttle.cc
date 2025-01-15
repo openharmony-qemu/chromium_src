@@ -205,7 +205,11 @@ class ExtensionLocalizationURLLoader : public network::mojom::URLLoaderClient,
 // static
 std::unique_ptr<ExtensionLocalizationThrottle>
 ExtensionLocalizationThrottle::MaybeCreate(const blink::WebURL& request_url) {
-  if (!request_url.ProtocolIs(extensions::kExtensionScheme)) {
+  if (!request_url.ProtocolIs(extensions::kExtensionScheme)
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+      && !request_url.ProtocolIs(extensions::kArkwebExtensionScheme)
+#endif
+  ) {
     return nullptr;
   }
   return base::WrapUnique(new ExtensionLocalizationThrottle());
@@ -223,7 +227,11 @@ void ExtensionLocalizationThrottle::WillProcessResponse(
     bool* defer) {
   // ExtensionURLLoader can only redirect requests within the
   // chrome-extension:// scheme.
-  DCHECK(response_url.SchemeIs(extensions::kExtensionScheme));
+  DCHECK(response_url.SchemeIs(extensions::kExtensionScheme)
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+         || response_url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+  );
   if (!base::StartsWith(response_head->mime_type, "text/css",
                         base::CompareCase::INSENSITIVE_ASCII)) {
     return;

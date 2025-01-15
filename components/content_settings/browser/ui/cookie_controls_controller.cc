@@ -67,7 +67,11 @@ CookieControlsController::GetStatus(content::WebContents* web_contents) {
   }
   const GURL& url = web_contents->GetLastCommittedURL();
   if (url.SchemeIs(content::kChromeUIScheme) ||
-      url.SchemeIs(kExtensionScheme)) {
+      url.SchemeIs(kExtensionScheme)
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+      || url.SchemeIs(kArkwebExtensionScheme)
+#endif
+      ) {
     return {CookieControlsStatus::kDisabled,
             CookieControlsEnforcement::kNoEnforcement};
   }

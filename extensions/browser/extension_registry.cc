@@ -14,15 +14,12 @@
 #include "cef/libcef/common/extensions/extensions_util.h"
 #endif
 
-#if defined(OHOS_ARKWEB_EXTENSIONS)
-#include "extensions/browser/extension_system.h"
-#endif
-
-
 namespace extensions {
 
 ExtensionRegistry::ExtensionRegistry(content::BrowserContext* browser_context)
-    : browser_context_(browser_context) {}
+    : browser_context_(browser_context) {
+}
+
 ExtensionRegistry::~ExtensionRegistry() = default;
 
 // static
@@ -92,12 +89,6 @@ void ExtensionRegistry::TriggerOnUnloaded(const Extension* extension,
   DCHECK(!enabled_extensions_.Contains(extension->id()));
   for (auto& observer : observers_)
     observer.OnExtensionUnloaded(browser_context_, extension, reason);
-
-#if defined(OHOS_ARKWEB_EXTENSIONS)
-  // It must be triggered after the observer notification.
-  extensions::ExtensionSystem::Get(
-      browser_context_)->NotifyExtensionUnLoadedFromInternal(extension);
-#endif
 }
 
 void ExtensionRegistry::TriggerOnWillBeInstalled(const Extension* extension,

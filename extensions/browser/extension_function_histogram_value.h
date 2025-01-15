@@ -1844,6 +1844,10 @@ enum HistogramValue {
   SIDEPANEL_SETPANELBEHAVIOR = 1781,
   SIDEPANEL_GETPANELBEHAVIOR = 1782,
   FILEMANAGERPRIVATE_GETBULKPINPROGRESS = 1783,
+#ifdef OHOS_ARKWEB_EXTENSIONS
+  DEVELOPERPRIVATE_OPENURL = 1784,
+  SIDEPANEL_OPEN = 1789,
+#endif // OHOS_ARKWEB_EXTENSIONS
   // Last entry: Add new entries above, then run:
   // tools/metrics/histograms/update_extension_histograms.py
   ENUM_BOUNDARY

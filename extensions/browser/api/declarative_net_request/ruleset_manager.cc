@@ -408,6 +408,11 @@ bool RulesetManager::ShouldEvaluateRequest(
   // scheme. Practically, this has the effect of not allowing an extension to
   // modify its own resources (The extension wouldn't have the permission to
   // other extension origins anyway).
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  if (request.url.SchemeIs(kArkwebExtensionScheme)) {
+    return false;
+  }
+#endif
   if (request.url.SchemeIs(kExtensionScheme))
     return false;
 

@@ -1274,6 +1274,8 @@ BASE_FEATURE(kCheckNoNewRefCountsWhenRphDeletingSoon,
 
 #ifdef OHOS_RENDER_PROCESS_MODE
 static constexpr char kExtensionScheme[] = "chrome-extension";
+static constexpr char kArkwebExtensionScheme[] = "arkweb-extension";
+
 constexpr int kSingleRenderProcessCount = 1;
 #endif
 }  // namespace
@@ -4502,7 +4504,11 @@ bool RenderProcessHostImpl::IsSuitableHost(
   if (site_info.is_pdf()) {
     return host->special_render_numbers_[RenderType::kPdf] > 0;
   }
-  if (site_info.site_url().SchemeIs(kExtensionScheme)) {
+  if (site_info.site_url().SchemeIs(kExtensionScheme)
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+      || site_info.site_url().SchemeIs(kArkwebExtensionScheme)
+#endif
+  ) {
     return host->special_render_numbers_[RenderType::kExtension] > 0;
   }
 #endif // OHOS_RENDER_PROCESS_MODE
@@ -4993,7 +4999,11 @@ RenderProcessHost* RenderProcessHostImpl::GetProcessHostForSiteInstance(
         SiteInstanceProcessAssignment::CREATED_NEW_PROCESS);
 
 #ifdef OHOS_RENDER_PROCESS_MODE
-    if (site_info.site_url().SchemeIs(kExtensionScheme)) {
+    if (site_info.site_url().SchemeIs(kExtensionScheme)
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+        || site_info.site_url().SchemeIs(kArkwebExtensionScheme)
+#endif
+    ) {
       render_process_host
           ->special_render_numbers_[RenderType::kExtension]++;
     }

@@ -291,7 +291,11 @@ Manifest::Type Extension::GetType() const {
 // static
 GURL Extension::GetResourceURL(const GURL& extension_url,
                                const std::string& relative_path) {
-  DCHECK(extension_url.SchemeIs(kExtensionScheme));
+  DCHECK(extension_url.SchemeIs(kExtensionScheme)
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+         || extension_url.SchemeIs(kArkwebExtensionScheme)
+#endif
+  );
   return extension_url.Resolve(relative_path);
 }
 
@@ -404,8 +408,13 @@ bool Extension::FormatPEMForFileOutput(const std::string& input,
 
 // static
 GURL Extension::GetBaseURLFromExtensionId(const std::string& extension_id) {
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  return GURL(base::StrCat({extensions::kArkwebExtensionScheme,
+                            url::kStandardSchemeSeparator, extension_id}));
+#else
   return GURL(base::StrCat({extensions::kExtensionScheme,
                             url::kStandardSchemeSeparator, extension_id}));
+#endif
 }
 
 // static

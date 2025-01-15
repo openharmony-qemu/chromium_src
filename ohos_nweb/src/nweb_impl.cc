@@ -168,6 +168,28 @@ extern bool g_siteIsolationMode;
 
 #include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
 
+#ifdef OHOS_ARKWEB_EXTENSIONS
+#include "cef_delegate/nweb_extension_context_menus_delegate_handler.h"
+#include "cef/libcef/browser/menu_manager.h"
+#include "cef_delegate/nweb_extension_window_delegate_handler.h"
+#include "cef/libcef/browser/windows_manager.h"
+#include "chrome/browser/profiles/profile.h"
+#include "cef/include/cef_request_context.h"
+#include "cef/libcef/browser/request_context_impl.h"
+#include "cef_delegate/nweb_extension_tab_delegate_hander.h"
+#include "cef/libcef/browser/web_extension_tab_manager.h"
+#include "cef/libcef/browser/extensions/tab_extensions_util.h"
+#include "chrome/browser/extensions/extension_service.h"
+#include "extensions/browser/extension_system.h"
+#include "extensions/common/extension.h"
+#include "extensions/browser/uninstall_reason.h"
+#include "extensions/browser/ui_util.h"
+#include "extensions/browser/extension_registry_info_manager.h"
+#include "extensions/browser/extension_system.h"
+#include "nweb_extension_action_cef_delegate.h"
+#include "nweb_extension_side_panel_cef_delegate.h"
+#endif // OHOS_ARKWEB_EXTENSIONS
+
 #if defined(OHOS_VIDEO_ASSISTANT)
 OnReportStatisticLogFunc
     OHOS::NWeb::NWebImpl::on_report_statistic_log_callback_ = nullptr;
@@ -2614,20 +2636,111 @@ void NWebImpl::CloseDevtools() {
   nweb_delegate_->CloseDevtools();
 }
 
+#ifdef OHOS_ARKWEB_EXTENSIONS
 void NWebImpl::PutWebExtensionApiCallback(
     std::shared_ptr<NWebExtensionApiCallback> web_extension_api_listener) {
   WVLOG_I("register web extension api listener");
   NWebHandlerDelegate::RegisterWebExtensionApiListener(
       web_extension_api_listener);
+
+  NwebExtensionTabDelegateHandler::RegisterWebExtensionTabApiListener(
+      web_extension_api_listener);
+  NwebExtensionTabDelegateHandler* handler =
+      NwebExtensionTabDelegateHandler::GetInstance();
+  CefWebExtensionTabManager::GetInstance()->SetTabApiHandle(handler);
 }
 
 void NWebImpl::RemoveWebExtensionApiCallback() {
   WVLOG_I("unreqister web extension api listener");
   NWebHandlerDelegate::UnRegisterWebExtensionApiListener();
+  NwebExtensionTabDelegateHandler::UnRegisterWebExtensionTabApiListener();
+  CefWebExtensionTabManager::GetInstance()->SetTabApiHandle(nullptr);
 }
 #endif  // defined(OHOS_NWEB_EX)
 
 #if defined(OHOS_VIDEO_ASSISTANT)
+void NWebImpl::PutExtensionContextMenusCallback(
+      std::shared_ptr<NWebExtensionContextMenusCallback> extension_context_menus_callback) {
+  WVLOG_I("register extension context menus listener");
+  NweExtensionContextMenusDelegateHandler::RegisterExtensionContextMenusListener(
+      extension_context_menus_callback);
+  NweExtensionContextMenusDelegateHandler* handler = NweExtensionContextMenusDelegateHandler::GetInstance();
+  CefMenuManager::SetContextMenusHandler(handler);
+}
+ 
+void NWebImpl::RemoveExtensionContextMenusCallback() {
+  WVLOG_I("unregister extension context menus listener");
+  NweExtensionContextMenusDelegateHandler::UnRegisterExtensionContextMenusListener();
+  CefMenuManager::SetContextMenusHandler(nullptr);
+}
+ 
+// static
+void NWebImpl::OnClickedExtensionContextMenus(const std::string& extension_id,
+                                             ContextMenusOnClickedData& data,
+                                             std::optional<NWebExtensionTab>& tab) {
+  LOG(DEBUG) << "OnClickedExtensionContextMenus";
+  CefMenuManager::OnClickedExtensionContextMenus(extension_id, data, tab);
+}
+ 
+// static
+void NWebImpl::GetAllExtensionContextMenus(const std::vector<std::string>& extension_ids,
+                                            std::vector<NWebContextMenusItem>& result) {
+  LOG(DEBUG) << "GetAllExtensionContextMenus";
+  std::vector<NWebContextMenusItem> menu_items = CefMenuManager::GetAllExtensionContextMenus(extension_ids);
+  result = menu_items;
+}
+#endif // OHOS_ARKWEB_EXTENSIONS
+
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+//static
+void NWebImpl::PutWebExtensionActionApiCallback(
+    std::shared_ptr<NWebExtensionActionApiCallback>
+        action_api_listener) {
+  WVLOG_I("register web extension action api listener");
+  NWebExtensionActionCefDelegate::RegisterWebExtensionApiListener(
+      action_api_listener);
+}
+
+//static
+void NWebImpl::RemoveWebExtensionActionApiCallback() {
+  WVLOG_I("unreqister web extension action api listener");
+  NWebExtensionActionCefDelegate::UnRegisterWebExtensionApiListener();
+}
+
+void NWebImpl::WebExtensionActionClicked(std::string extension_id,
+                                         const NWebExtensionTab* tab) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->WebExtensionActionClicked(extension_id, tab);
+}
+
+//  static
+void NWebImpl::WebExtensionErasePopupWindowId(int popupNwebId) {
+  extensions::CefExtensionWindowIdManager::ErasePopupWindowId(popupNwebId);
+}
+
+//  static
+void NWebImpl::WebExtensionSetPopupWindowId(int popupNwebId, int windowId) {
+  extensions::CefExtensionWindowIdManager::SetPopupWindowId(popupNwebId,
+                                                             windowId);
+}
+
+//  static
+void NWebImpl::WebExtensionEraseSidePanelWindowId(int sidePanelNwebId) {
+  extensions::CefExtensionWindowIdManager::EraseSidePanelWindowId(
+      sidePanelNwebId);
+}
+
+//  static
+void NWebImpl::WebExtensionSetSidePanelWindowId(int sidePanelNwebId,
+                                                int windowId) {
+  extensions::CefExtensionWindowIdManager::SetSidePanelWindowId(
+      sidePanelNwebId, windowId);
+}
+
+#endif  // OHOS_ARKWEB_EXTENSIONS
+
 void NWebImpl::EnableVideoAssistant(bool enable) {
   if (nweb_delegate_ == nullptr) {
     LOG(WARNING) << "nweb delegate is nullptr when enable video assistant";
@@ -2655,6 +2768,118 @@ void NWebImpl::SetOnReportStatisticLogCallback(OnReportStatisticLogFunc func) {
   on_report_statistic_log_callback_ = func;
 }
 #endif  // defined(OHOS_VIDEO_ASSISTANT)
+
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+void NWebImpl::PutWebExtensionApiSidePanelCallback(
+    std::shared_ptr<NWebExtensionSidePanelApiCallback> web_extension_api_listener) {
+  WVLOG_I("register web extension api side panel listener");
+  NWebExtensionSidePanelCefDelegate::RegisterWebExtensionApiListener(
+      web_extension_api_listener);
+}
+
+void NWebImpl::RemoveWebExtensionApiSidePanelCallback() {
+  WVLOG_I("unreqister web extension api side panel listener");
+  NWebExtensionSidePanelCefDelegate::UnRegisterWebExtensionApiListener();
+}
+
+void NWebImpl::PutWebExtensionWindowsApiCallback(
+      std::shared_ptr<NWebExtensionWindowsApiCallback> web_extension_windows_api_callback) {
+  LOG(INFO) << "NWebImpl::PutWebExtensionWindowsApiCallback";
+  WVLOG_I("register web extension windows api side panel listener");
+  NweExtensionWindowDelegateHandler::RegisterWebExtensionWindowsApiListener(
+      web_extension_windows_api_callback);
+  NweExtensionWindowDelegateHandler* handler = NweExtensionWindowDelegateHandler::GetInstance();
+  CefWindowsManager::GetInstance()->SetWindowHandler(handler);
+}
+
+void NWebImpl::RemoveWebExtensionWindowsApiCallback() {
+  WVLOG_I("unreqister web extension windows api side panel listener");
+  NweExtensionWindowDelegateHandler::UnRegisterWebExtensionWindowsApiListener();
+}
+
+content::BrowserContext* NWebImplGetGlobalBrowserContext() {
+  CefRequestContextImpl* request_context =
+      static_cast<CefRequestContextImpl*>(CefRequestContext::GetGlobalContext().get());
+  if (!request_context) {
+    LOG(ERROR) << "NWebImpl::GetGlobalBrowserContext request_context is null";
+    return nullptr;
+  }
+  CefBrowserContext* cef_browser_context = request_context->GetBrowserContext();
+  if (!cef_browser_context) {
+    LOG(ERROR) << "NWebImpl::GetGlobalBrowserContext cef_browser_context is null";
+    return nullptr;
+  }
+  return cef_browser_context->AsBrowserContext();
+}
+
+// static
+void NWebImpl::PutWebExtensionManagerCallback(
+    std::shared_ptr<NWebExtensionManagerCallBack> web_extension_manager_listener) {
+  WVLOG_I("register web extension manager listener");
+  extensions::ExtensionRegistryInfoManager::RegisterWebExtensionManagerListener(web_extension_manager_listener);
+}
+
+// static
+void NWebImpl::RemoveWebExtensionManagerCallback() {
+  WVLOG_I("unreqister web extension manager listener");
+  extensions::ExtensionRegistryInfoManager::UnRegisterWebExtensionManagerListener();
+}
+
+// static
+void NWebImpl::UnLoadWebExtension(const std::string& eid) {
+  WVLOG_I("NWebImpl::UnLoadWebExtension %{public}s", eid.c_str());
+  content::BrowserContext* browser_context = NWebImplGetGlobalBrowserContext();
+  if (!browser_context) {
+    LOG(ERROR) << "NWebImpl::UnLoadWebExtension browser_context is null";
+    return;
+  }
+  const extensions::Extension* current_extension =
+      extensions::ExtensionRegistry::Get(browser_context)
+      ->GetExtensionById(eid, extensions::ExtensionRegistry::EVERYTHING);
+  std::u16string* error = nullptr;
+  if (current_extension) {
+    if (current_extension->was_installed_by_default()) {
+      WVLOG_I("NWebImpl::UnLoadWebExtension RemovedDefaultInstalledExtension");
+    }
+
+    bool result = extensions::ExtensionSystem::Get(browser_context)
+        ->extension_service()
+        ->UninstallExtension(eid, extensions::UNINSTALL_REASON_COMPONENT_REMOVED, error);
+    WVLOG_I("NWebImpl::UnLoadWebExtension result:%{public}d, error:%{public}s", result, error);
+    return;
+  }
+  WVLOG_I("NWebImpl::UnLoadWebExtension extension not exist!");
+}
+
+// static
+void NWebImpl::GetExtensionInfoByTabId(int32_t tabId, std::vector<WebExtensionInfo>& extensionsInfo) {
+  WVLOG_I("NWebImpl::GetExtensionInfoByTabId, %{public}d", tabId);
+  content::BrowserContext* browser_context = NWebImplGetGlobalBrowserContext();
+  if (!browser_context) {
+    LOG(ERROR) << "NWebImpl::GetExtensionInfoByTabId browser_context is null";
+    return;
+  }
+
+  const extensions::ExtensionRegistry* extensionRegistry = extensions::ExtensionRegistry::Get(browser_context);
+  const extensions::ExtensionSet extensions = extensionRegistry->GenerateInstalledExtensionsSet();
+  for (const auto& extension : extensions) {
+    LOG(INFO) << "NWebImpl::GetExtensionInfoByTabId id=" << extension->id();
+    if (!extensions::ui_util::ShouldDisplayInExtensionSettings(*extension)) {
+      continue;
+    }
+    WebExtensionInfo itemInfo;
+    itemInfo.extensionId = extension->id();
+    extensions::ExtensionRegistryInfoManager* manager =
+                      extensions::ExtensionSystem::Get(browser_context)->GetExtensionRegistryInfoManager();
+    if (manager) {
+      itemInfo.action = manager->GetExtensionActionInfo(*extension, tabId);
+      itemInfo.sidePanel = manager->GetExtensionSidePanelInfo(*extension, tabId);
+      itemInfo.contextMenus = manager->GetAllExtensionContextMenus(extension->id());
+    }
+    extensionsInfo.push_back(itemInfo);
+  }
+}
+#endif // OHOS_ARKWEB_EXTENSIONS
 
 #ifdef OHOS_EX_NETWORK_CONNECTION
 // static
@@ -3825,6 +4050,12 @@ int NWebImpl::SetUrlTrustListWithErrMsg(
 }
 
 #ifdef OHOS_ARKWEB_EXTENSIONS
+void NWebImpl::WebExtensionTabCreateCallback(int request_id,
+                                             const NWebExtensionTab* tab) {
+  LOG(DEBUG) << "WebExtensionTabCreateCallback request_id= " << request_id;
+  NWebHandlerDelegate::WebExtensionTabCreateCallback(request_id, tab);
+}
+
 void NWebImpl::WebExtensionTabCreated(int tab_id) {
   if (nweb_delegate_ == nullptr) {
     return;
@@ -3847,6 +4078,72 @@ void NWebImpl::WebExtensionTabUpdated(
     return;
   }
   nweb_delegate_->WebExtensionTabUpdated(tab_id, changed_property_names, url);
+}
+
+void NWebImpl::WebExtensionTabUpdated(
+    int tab_id,
+    const std::vector<std::string>& changed_property_names,
+    std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->WebExtensionTabUpdated(tab_id, changed_property_names, std::move(changeInfo));
+}
+
+void NWebImpl::WebExtensionTabActivated(
+    std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->WebExtensionTabActivated(std::move(activeInfo));
+}
+
+void NWebImpl::WebExtensionTabAttached(
+    std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->WebExtensionTabAttached(std::move(attachInfo));
+}
+
+void NWebImpl::WebExtensionTabDetached(
+    std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->WebExtensionTabDetached(std::move(detachInfo));
+}
+
+void NWebImpl::WebExtensionTabHighlighted(int32_t tab_id, int32_t window_id) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->WebExtensionTabHighlighted(tab_id, window_id);
+}
+
+void NWebImpl::WebExtensionTabMoved(
+    int32_t tab_id,
+    std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->WebExtensionTabMoved(tab_id, std::move(moveInfo));
+}
+
+void NWebImpl::WebExtensionTabReplaced(int32_t addedTabId,
+                                       int32_t removedTabId) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->WebExtensionTabReplaced(addedTabId, removedTabId);
+}
+
+void NWebImpl::WebExtensionTabZoomChange(
+    std::unique_ptr<NWebExtensionTabZoomChangeInfo> tabZoomChangeInfo) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->WebExtensionTabZoomChange(std::move(tabZoomChangeInfo));
 }
 #endif  // OHOS_ARKWEB_EXTENSIONS
 

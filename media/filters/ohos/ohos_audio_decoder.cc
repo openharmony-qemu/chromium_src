@@ -153,12 +153,14 @@ OHOSAudioDecoder::~OHOSAudioDecoder() {
     ohos_crypto_context_->SetOHOSMediaCryptoReadyCB(base::NullCallback());
   }
 
-  ClearInputQueue(DecoderStatus::Codes::kAborted);
   LOG(INFO) << "OHOSAudioDecoder::~OHOSAudioDecoder ReleaseDecoder";
   if (audio_decoder_ != nullptr) {
+    audio_decoder_->StopDecoder();
     audio_decoder_->ReleaseDecoder();
     audio_decoder_ = nullptr;
   }
+
+  ClearInputQueue(DecoderStatus::Codes::kAborted);
 }
 
 AudioDecoderType OHOSAudioDecoder::GetDecoderType() const {
@@ -172,10 +174,12 @@ void OHOSAudioDecoder::Initialize(const AudioDecoderConfig& config,
     const WaitingCB& waiting_cb) {
   LOG(INFO) << "OHOSAudioDecoder::Initialize";
   TRACE_EVENT0("media", "OHOSAudioDecoder::Initialize");
-  // Only the encrypted DRM audio stream goes through the oepnharmony system decoding path
+  // Only the encrypted DRM audio stream goes through the openharmony system decoding path
   if (!config.is_encrypted()) {
-      LOG(ERROR) << "OHOSAudioDecoder::Initialize AudioDecoderConfig is not encrypted";
-      init_cb(DecoderStatus::Codes::kUnsupportedCodec);
+    LOG(ERROR) << "OHOSAudioDecoder::Initialize AudioDecoderConfig is not encrypted";
+    base::BindPostTaskToCurrentDefault(std::move(init_cb))
+      .Run(DecoderStatus::Codes::kUnsupportedCodec);
+    return;
   }
 
   // Clear the input buffer and set the callback result to DecoderStatus::Codes::kAborted

@@ -84,16 +84,16 @@ absl::optional<SupportedVideoDecoderConfigs> GetPlatformSupportedVideoDecoderCon
 std::unique_ptr<AudioDecoder> CreatePlatformAudioDecoder(
     scoped_refptr<base::SequencedTaskRunner> task_runner,
     std::unique_ptr<MediaLog> media_log) {
-  return nullptr;
-}
-
-std::unique_ptr<AudioEncoder> CreatePlatformAudioEncoder(
-    scoped_refptr<base::SequencedTaskRunner> task_runner) {
 #if BUILDFLAG(IS_OHOS) && defined(OHOS_ENABLE_CDM)
   return std::make_unique<OHOSAudioDecoder>(std::move(task_runner));
 #else
   return nullptr;
 #endif
+}
+
+std::unique_ptr<AudioEncoder> CreatePlatformAudioEncoder(
+    scoped_refptr<base::SequencedTaskRunner> task_runner) {
+  return nullptr;
 }
 
 VideoDecoderType GetPlatformDecoderImplementationType(

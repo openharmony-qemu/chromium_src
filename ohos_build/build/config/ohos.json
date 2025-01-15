@@ -314,6 +314,15 @@
     "default": "true"
 },
 {
+    "name": "OHOS_ENABLE_CDM",
+    "owner": "",
+    "desc": "",
+    "effect":"main gn blink_core other",
+    "genCommandline": "default",
+    "dependence": "",
+    "default": "true"
+},
+{
     "name": "OHOS_ENABLE_POINTER_HARDENED",
     "owner": "",
     "desc": "pointer hardened",

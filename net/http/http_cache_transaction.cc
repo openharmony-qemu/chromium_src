@@ -68,6 +68,10 @@
 #include "ohos_adapter_helper.h"
 #endif
 
+#ifdef OHOS_LOGGER_REPORT
+#include "url/ohos/log_utils.h"
+#endif
+
 using base::Time;
 using base::TimeTicks;
 

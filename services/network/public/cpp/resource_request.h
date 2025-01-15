@@ -213,6 +213,11 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE) ResourceRequest {
 #if defined(OHOS_EX_DOWNLOAD)
   bool is_download_request = false;
 #endif  //  OHOS_EX_DOWNLOAD
+
+#if defined(OHOS_LOGGER_REPORT)
+  int32_t usage_scenario_ = 99;
+#endif
+
 };
 
 // This does not accept |kDefault| referrer policy.

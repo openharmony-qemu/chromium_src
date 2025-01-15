@@ -1727,6 +1727,11 @@ RenderViewHostImpl* WebContentsImpl::GetRenderViewHost() {
   }
 
   LOG(WARNING) << "GetRenderViewHost is nullptr";
+
+#ifdef OHOS_LOGGER_REPORT
+  LOG_FEEDBACK(WARNING) << "GetRenderViewHost is nullptr";
+#endif
+
   return nullptr;
 #else
   return GetRenderManager()->current_frame_host()->render_view_host();
@@ -2985,7 +2990,11 @@ void WebContentsImpl::DidChangeVisibleSecurityState() {
       &WebContentsObserver::DidChangeVisibleSecurityState);
 }
 
+#ifdef OHOS_LOGGER_REPORT
+const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences(int32_t usage_scenario_type) {
+#else
 const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences() {
+#endif 
   OPTIONAL_TRACE_EVENT0("browser", "WebContentsImpl::ComputeWebPreferences");
 
   blink::web_pref::WebPreferences prefs;
@@ -3183,6 +3192,10 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences() {
       : false;
 #endif // OHOS_VIDEO_ASSISTANT
 
+#ifdef OHOS_LOGGER_REPORT
+  prefs.usage_scenario = usage_scenario_type;
+#endif
+
   return prefs;
 }
 
@@ -3256,7 +3269,11 @@ void WebContentsImpl::SetSlowWebPreferences(
   }
 }
 
+#ifdef OHOS_LOGGER_REPORT
+void WebContentsImpl::OnWebPreferencesChanged(int32_t usage_scenario_type) {
+#else
 void WebContentsImpl::OnWebPreferencesChanged() {
+#endif   {
   OPTIONAL_TRACE_EVENT0("content", "WebContentsImpl::OnWebPreferencesChanged");
 
   // This is defensive code to avoid infinite loops due to code run inside
@@ -3265,7 +3282,11 @@ void WebContentsImpl::OnWebPreferencesChanged() {
   if (updating_web_preferences_)
     return;
   updating_web_preferences_ = true;
+#ifdef OHOS_LOGGER_REPORT  
+  SetWebPreferences(ComputeWebPreferences(usage_scenario_type));
+#else
   SetWebPreferences(ComputeWebPreferences());
+#endif
 #if BUILDFLAG(IS_ANDROID) || defined(OHOS_EX_FORCE_ZOOM)
   for (FrameTreeNode* node : primary_frame_tree_.Nodes()) {
     RenderFrameHostImpl* rfh = node->current_frame_host();
@@ -4872,6 +4893,12 @@ void WebContentsImpl::OnNativeEmbedStatusUpdate(
               << " state is " << (int)state << ", "
               << native_embed_info
               << ", params: " << param_list;
+#ifdef OHOS_LOGGER_REPORT
+    LOG_FEEDBACK(INFO) << "[NativeEmbed] OnNativeEmbedStatusUpdate "
+             << " state is " << (int)state << ", "
+             << native_embed_info
+             << ", params: " << param_list;
+#endif
   }
 
   if (delegate_) {
@@ -10542,12 +10569,22 @@ void WebContentsImpl::StartCamera(int nWebID) {
       BrowserMainLoop::GetInstance()->media_stream_manager();
   if (!media_stream_manager) {
     LOG(ERROR) << "media_stream_manager null";
+
+#ifdef OHOS_LOGGER_REPORT
+    LOG_FEEDBACK(ERROR) << "media_stream_manager null";
+#endif
+
     return;
   }
 
   auto videoCaptureManager = media_stream_manager->video_capture_manager();
   if (!videoCaptureManager) {
     LOG(ERROR) << "videoCaptureManager null";
+
+#ifdef OHOS_LOGGER_REPORT
+    LOG_FEEDBACK(ERROR) << "videoCaptureManager null";
+#endif  
+
     return;
   }
   videoCaptureManager->StartCamera(nWebID);
@@ -10558,12 +10595,22 @@ void WebContentsImpl::StopCamera(int nWebID) {
       BrowserMainLoop::GetInstance()->media_stream_manager();
   if (!media_stream_manager) {
     LOG(ERROR) << "media_stream_manager null";
+
+#ifdef OHOS_LOGGER_REPORT
+    LOG_FEEDBACK(ERROR) << "media_stream_manager null";
+#endif  
+
     return;
   }
 
   auto videoCaptureManager = media_stream_manager->video_capture_manager();
   if (!videoCaptureManager) {
     LOG(ERROR) << "videoCaptureManager null";
+
+#ifdef OHOS_LOGGER_REPORT
+    LOG_FEEDBACK(ERROR) << "videoCaptureManager null";
+#endif  
+
     return;
   }
   videoCaptureManager->StopCamera(nWebID);
@@ -10574,12 +10621,22 @@ void WebContentsImpl::CloseCamera(int nWebID) {
       BrowserMainLoop::GetInstance()->media_stream_manager();
   if (!media_stream_manager) {
     LOG(ERROR) << "media_stream_manager null";
+
+#ifdef OHOS_LOGGER_REPORT
+    LOG_FEEDBACK(ERROR) << "media_stream_manager null";
+#endif  
+
     return;
   }
 
   auto videoCaptureManager = media_stream_manager->video_capture_manager();
   if (!videoCaptureManager) {
     LOG(ERROR) << "videoCaptureManager null";
+
+#ifdef OHOS_LOGGER_REPORT
+    LOG_FEEDBACK(ERROR) << "videoCaptureManager null";
+#endif  
+
     return;
   }
   videoCaptureManager->CloseCamera(nWebID);
@@ -10618,6 +10675,11 @@ std::unique_ptr<CustomMediaPlayer> WebContentsImpl::CreateCustomMediaPlayer(
     return delegate_->CreateCustomMediaPlayer(std::move(listener), media_info);
   } else {
     LOG(WARNING) << "CreateCustomMediaPlayer failed, no delegate_";
+
+#ifdef OHOS_LOGGER_REPORT
+    LOG_FEEDBACK(WARNING) << "CreateCustomMediaPlayer failed, no delegate_";
+#endif  
+
   }
   return nullptr;
 }
@@ -10632,6 +10694,11 @@ void WebContentsImpl::RemoveCustomMediaPlayer(const MediaPlayerId& player_id,
   auto iter = players_.find(player_id);
   if (iter == players_.end()) {
     LOG(WARNING) << "RemoveCustomMediaPlayer failed";
+
+#ifdef OHOS_LOGGER_REPORT
+    LOG_FEEDBACK(WARNING) << "RemoveCustomMediaPlayer failed";
+#endif  
+
     return;
   }
   DCHECK(iter->second == player);
@@ -10653,6 +10720,11 @@ void WebContentsImpl::FullScreenChanged(const MediaPlayerId& player_id,
   auto iter = players_.find(player_id);
   if (iter == players_.end()) {
     LOG(WARNING) << "FullScreenChanged failed, no player found";
+
+#ifdef OHOS_LOGGER_REPORT
+    LOG_FEEDBACK(WARNING) << "FullScreenChanged failed, no player found";
+#endif  
+
     return;
   }
   if (is_fullscreen) {

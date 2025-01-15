@@ -885,6 +885,12 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
   bool is_code_cache_valid() { return response_info_.code_cache_valid; }
 #endif
 
+#if defined(OHOS_LOGGER_REPORT)
+  int32_t usage_scenario_ = 99;
+  void set_usage_scenario(int32_t usage_scenario) { usage_scenario_ = usage_scenario; }
+  int32_t usage_scenario() { return usage_scenario_; }
+#endif
+
   static bool DefaultCanUseCookies();
 
   base::WeakPtr<URLRequest> GetWeakPtr();

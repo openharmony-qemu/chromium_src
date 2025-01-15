@@ -135,6 +135,10 @@
 #endif  // BUILDFLAG(IS_ANDROID)
 #endif  // BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 
+#ifdef OHOS_LOGGER_REPORT
+#include "url/ohos/log_utils.h"
+#endif
+
 namespace net {
 
 namespace {

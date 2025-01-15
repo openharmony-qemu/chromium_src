@@ -129,6 +129,10 @@ struct NET_EXPORT HttpRequestInfo {
 
   GURL main_url;
 #endif
+
+#if defined(OHOS_LOGGER_REPORT)
+  int32_t usage_scenario_ = 99;
+#endif
 };
 
 }  // namespace net

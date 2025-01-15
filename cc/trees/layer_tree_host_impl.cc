@@ -5442,6 +5442,9 @@ void LayerTreeHostImpl::SetupScrollBy() {
 
   gfx::Vector2dF scroll_delta(
       0.f, browser_controls_offset_manager_->ContentTopOffset());
+#ifdef OHOS_LOGGER_REPORT
+  LOG_FEEDBACK(INFO) << "AnimateBrowserControlsMock  delta.y" << scroll_delta.y();
+#endif
   if (scroll_delta.IsZero()) {
     return;
   }

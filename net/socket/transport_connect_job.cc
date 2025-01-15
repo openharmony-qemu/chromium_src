@@ -31,6 +31,10 @@
 #include "url/scheme_host_port.h"
 #include "url/url_constants.h"
 
+#ifdef OHOS_LOGGER_REPORT
+#include "url/ohos/log_utils.h"
+#endif
+
 namespace net {
 
 namespace {

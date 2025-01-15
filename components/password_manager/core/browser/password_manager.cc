@@ -793,6 +793,10 @@ PasswordFormManager* PasswordManager::ProvisionallySaveForm(
     LOG(WARNING) << "[PasswordSave] Provisionally save form failed because "
                     "saving and filling disable.";
 #endif
+#ifdef OHOS_LOGGER_REPORT
+    LOG_FEEDBACK(WARNING) << "[PasswordSave] Provisionally save form failed because "
+                    "saving and filling disable.";
+#endif
     return nullptr;
   }
 
@@ -964,6 +968,9 @@ bool PasswordManager::IsAutomaticSavePromptAvailable() {
     LOG(WARNING) << "[PasswordSave] AutomaticSave prompt is not available.";
 #endif
 
+#ifdef OHOS_LOGGER_REPORT
+    LOG_FEEDBACK(WARNING) << "[PasswordSave] AutomaticSave prompt is not available.";
+#endif
     return false;
   }
 
@@ -981,7 +988,10 @@ bool PasswordManager::IsAutomaticSavePromptAvailable() {
       submitted_manager->GetPendingCredentials().only_for_fallback;
   LOG(INFO) << "PasswordManager automatic save prompt only_for_fallback: "
             << only_for_fallback;
-
+#ifdef OHOS_LOGGER_REPORT
+  LOG_FEEDBACK(INFO) << "PasswordManager automati save prompt only_for_fallback: "
+                     << only_for_fallback;
+#endif
   return !only_for_fallback;
 #else
   return !submitted_manager->GetPendingCredentials().only_for_fallback;
@@ -1014,6 +1024,9 @@ void PasswordManager::OnPasswordFormsRendered(
 #ifdef OHOS_PASSWORD_AUTOFILL
     LOG(WARNING) << "[PasswordSave] Automatic save prompt is not availabel.";
 #endif
+#ifdef OHOS_LOGGER_REPORT
+    LOG_FEEDBACK(WARNING) << "[PasswordSave] Automatic save prompt is not availabel.";
+#endif
     return;
   }
 
@@ -1028,6 +1041,10 @@ void PasswordManager::OnPasswordFormsRendered(
     ResetSubmittedManager();
 #ifdef OHOS_PASSWORD_AUTOFILL
     LOG(WARNING)
+        << "[PasswordSave] Password not saved owing to server http error";
+#endif
+#ifdef OHOS_LOGGER_REPORT
+    LOG_FEEDBACK(WARNING)
         << "[PasswordSave] Password not saved owing to server http error";
 #endif
     return;
@@ -1114,6 +1131,10 @@ void PasswordManager::OnLoginSuccessful() {
 #ifdef OHOS_PASSWORD_AUTOFILL
     LOG(WARNING)
         << "[PasswordSave] Login failed because saving and filling disable.";
+#ifdef OHOS_LOGGER_REPORT
+    LOG_FEEDBACK(WARNING)
+        << "[PasswordSave] Login failed because saving and filling disable.";
+#endif
     return;
 #endif
   }

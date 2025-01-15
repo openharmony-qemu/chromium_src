@@ -208,6 +208,10 @@ void DemuxerManager::OnPipelineError(PipelineStatus error) {
   LOG(INFO) << "OhMedia::OnError PipelineStatus = "<< (int)error.code();
 #endif // OHOS_MEDIA
 
+#ifdef OHOS_LOGGER_REPORT
+  LOG_FEEDBACK(INFO) << "OhMedia::OnError PipelineStatus = " << (int)error.code();
+#endif
+
   if (!fallback_allowed_) {
     return client_->OnError(std::move(error));
   }

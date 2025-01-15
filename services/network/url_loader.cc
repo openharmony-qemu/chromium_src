@@ -104,6 +104,12 @@
 #include "services/network/prp_preload/include/page_res_parallel_preload_mgr.h"
 #endif
 
+#ifdef OHOS_LOGGER_REPORT
+#include "base/base_switches.h"
+#include "base/command_line.h"
+#include "url/ohos/log_utils.h"
+#endif
+
 namespace network {
 
 namespace {
@@ -639,6 +645,10 @@ URLLoader::URLLoader(
   url_request_->SetReferrer(request.referrer.GetAsReferrer().spec());
   url_request_->set_referrer_policy(request.referrer_policy);
   url_request_->set_upgrade_if_insecure(request.upgrade_if_insecure);
+
+#ifdef OHOS_LOGGER_REPORT
+  url_request_->set_usage_scenario(request.usage_scenario_);
+#endif
 
   auto isolation_info = GetIsolationInfo(
       factory_params_->isolation_info,

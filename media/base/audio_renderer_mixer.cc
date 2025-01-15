@@ -166,6 +166,7 @@ int AudioRendererMixer::Render(base::TimeDelta delay,
 #if defined(OHOS_MEDIA_POLICY)
     LOG(DEBUG) << "AudioRendererMixer::Render Time to pause the sink to avoid wasting resources";
 #endif // defined(OHOS_MEDIA_POLICY)
+
     audio_sink_->Pause();
     playing_ = false;
 #if BUILDFLAG(IS_OHOS)

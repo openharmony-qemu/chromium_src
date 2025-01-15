@@ -114,6 +114,10 @@
 extern "C" void __llvm_profile_set_file_object(FILE* File, int EnableMerge);
 #endif
 
+#ifdef OHOS_LOGGER_REPORT
+#include "third_party/blink/public/web/web_view.h"
+#endif
+
 namespace content {
 namespace {
 
@@ -353,6 +357,15 @@ class ChildThreadImpl::IOThreadState
   }
 #endif
 
+#ifdef OHOS_LOGGER_REPORT
+  void SetStrictLogMode(bool is_strict_log_mode) override {
+    main_thread_task_runner_->PostTask(
+        FROM_HERE,
+        base::BindOnce([](bool is_strict_log_mode){
+          blink::WebView::SetStrictLogMode(is_strict_log_mode);
+        }, is_strict_log_mode));
+  }
+#endif
   // Make sure this isn't inlined so it shows up in stack traces, and also make
   // the function body unique by adding a log line, so it doesn't get merged
   // with other functions by link time optimizations (ICF).

@@ -409,6 +409,12 @@ class CONTENT_EXPORT RenderThreadImpl
   void NotifyLocaleChanged(const std::string& update_locale) override;
 #endif
 #if BUILDFLAG(IS_ANDROID)
+
+#if defined(OHOS_LOGGER_REPORT)
+  void OnChannelConnected(int32_t peer_pid) override;
+  void OnChannelListenError() override;
+#endif
+
   // ChildThreadImpl
   void OnMemoryPressureFromBrowserReceived(
       base::MemoryPressureListener::MemoryPressureLevel level) override;

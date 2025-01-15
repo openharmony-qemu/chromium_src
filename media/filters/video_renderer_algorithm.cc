@@ -154,6 +154,17 @@ scoped_refptr<VideoFrame> VideoRendererAlgorithm::Render(
         << max_acceptable_drift_.InMillisecondsF() << "ms; ts="
         << frame_queue_[frame_to_render].frame->timestamp().InMillisecondsF()
         << "ms; this=" << (void*)this;
+
+#ifdef OHOS_LOGGER_REPORT
+    LOG_FEEDBACK(INFO) 
+        << "OhMedia::Render Frame drift is too far: "
+        << selected_frame_drift.InMillisecondsF()
+        << "ms; max_acceptable_drift_="
+        << max_acceptable_drift_.InMillisecondsF() << "ms; ts="
+        << frame_queue_[frame_to_render].frame->timestamp().InMillisecondsF()
+        << "ms; this=" << (void*)this;
+#endif
+
   }
 #endif // OHOS_MEDIA
 

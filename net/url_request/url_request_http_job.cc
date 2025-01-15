@@ -293,6 +293,13 @@ void URLRequestHttpJob::Start() {
   request_info_.reporting_upload_depth = request_->reporting_upload_depth();
 #endif
 
+#if defined(OHOS_LOGGER_REPORT)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      switches::kEnableLoggerReport)) {
+    request_info_.usage_scenario_ = request_->usage_scenario();
+  }
+#endif
+
   // Add/remove the Storage Access override enum based on whether the request's
   // url and initiator are same-site, to prevent cross-site sibling iframes
   // benefit from each other's storage access API grants.

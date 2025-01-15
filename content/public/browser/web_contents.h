@@ -1373,7 +1373,11 @@ class WebContents : public PageNavigator,
   //
   // This method must be called if any state that affects web preferences has
   // changed so that it can be recomputed and sent to the renderer.
+#ifdef OHOS_LOGGER_REPORT
+  virtual void OnWebPreferencesChanged(int32_t usage_scenario_type = 99) = 0;
+#else
   virtual void OnWebPreferencesChanged() = 0;
+#endif
 
   // Requests the renderer to exit fullscreen.
   // |will_cause_resize| indicates whether the fullscreen change causes a

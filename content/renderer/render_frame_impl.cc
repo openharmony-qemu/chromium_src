@@ -257,6 +257,12 @@
 #include "cef/libcef/renderer/javascript/oh_gin_javascript_bridge_dispatcher.h"
 #endif
 
+#ifdef OHOS_LOGGER_REPORT
+#include "base/base_switches.h"
+#include "base/command_line.h"
+#include "url/ohos/log_utils.h"
+#endif
+
 using base::Time;
 using blink::ContextMenuData;
 using blink::WebContentDecryptionModule;
@@ -5404,6 +5410,12 @@ void RenderFrameImpl::BeginNavigation(
     SynchronouslyCommitAboutBlankForBug778318(std::move(info));
     return;
   }
+
+#ifdef OHOS_LOGGER_REPORT
+    if (IsMainFrame()) {
+      LOG_FEEDBACK(INFO) << "Begin navigation routing_id: " << routing_id_;
+    }
+#endif
 
   // Everything else is handled asynchronously by the browser process through
   // BeginNavigation.

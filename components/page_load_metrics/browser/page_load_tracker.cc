@@ -378,6 +378,9 @@ void PageLoadTracker::PageHidden() {
 #ifdef OHOS_LOG_MESSAGE
   LOG(INFO) << "event_message: PageHidden source_id_ value: " << source_id_;
 #endif
+#ifdef OHOS_LOGGER_REPORT
+  LOG_FEEDBACK(INFO) << "event_message: PageHidden source_id_ value: " << source_id_;
+#endif
 }
 
 void PageLoadTracker::PageShown() {
@@ -407,6 +410,9 @@ void PageLoadTracker::PageShown() {
       /*permit_forwarding=*/false);
 #ifdef OHOS_LOG_MESSAGE
   LOG(INFO) << "event_message: PageShown source_id_ value: " << source_id_;
+#endif
+#ifdef OHOS_LOGGER_REPORT
+  LOG_FEEDBACK(INFO) << "event_message: PageShown source_id_ value: " << source_id_;
 #endif
 }
 
@@ -443,6 +449,10 @@ void PageLoadTracker::WillProcessNavigationResponse(
   navigation_request_id_ = navigation_handle->GetGlobalRequestID();
 #ifdef OHOS_LOG_MESSAGE
   LOG(INFO) << "event_message: WillProcessNavigationResponse source_id: " << source_id_
+            << " navigation_handle id: " << navigation_handle->GetNavigationId();
+#endif
+#ifdef OHOS_LOGGER_REPORT
+  LOG_FEEDBACK(INFO) << "event_message: WillProcessNavigationResponse source_id: " << source_id_
             << " navigation_handle id: " << navigation_handle->GetNavigationId();
 #endif
 }
@@ -497,6 +507,10 @@ void PageLoadTracker::Commit(content::NavigationHandle* navigation_handle) {
                           /*permit_forwarding=*/false);
 #ifdef OHOS_LOG_MESSAGE
   LOG(INFO) << "event_message: Commit source_id: " << source_id_
+            << " navigation_handle id: " << navigation_handle->GetNavigationId();
+#endif
+#ifdef OHOS_LOGGER_REPORT
+  LOG_FEEDBACK(INFO) << "event_message: Commit source_id: " << source_id_
             << " navigation_handle id: " << navigation_handle->GetNavigationId();
 #endif
 }
@@ -605,6 +619,10 @@ void PageLoadTracker::FailedProvisionalLoad(
       navigation_handle->GetNetErrorCode());
 #ifdef OHOS_LOG_MESSAGE
   LOG(INFO) << "event_message: FailedProvisionalLoad source_id: " << source_id_
+            << " navigation_handle id: " << navigation_handle->GetNavigationId();
+#endif
+#ifdef OHOS_LOGGER_REPORT
+  LOG_FEEDBACK(INFO) << "event_message: FailedProvisionalLoad source_id: " << source_id_
             << " navigation_handle id: " << navigation_handle->GetNavigationId();
 #endif
 }
@@ -1212,6 +1230,9 @@ void PageLoadTracker::OnEnterBackForwardCache() {
 #ifdef OHOS_LOG_MESSAGE
   LOG(INFO) << "event_message: OnEnterBackForwardCache source_id: " << source_id_;
 #endif
+#ifdef OHOS_LOGGER_REPORT
+  LOG_FEEDBACK(INFO) << "event_message: OnEnterBackForwardCache source_id: " << source_id_;
+#endif
 }
 
 void PageLoadTracker::OnRestoreFromBackForwardCache(
@@ -1240,6 +1261,10 @@ void PageLoadTracker::OnRestoreFromBackForwardCache(
 
 #ifdef OHOS_LOG_MESSAGE
   LOG(INFO) << "event_message: OnRestoreFromBackForwardCache source_id: " << source_id_
+            << " navigation_handle id: " << navigation_handle->GetNavigationId();
+#endif
+#ifdef OHOS_LOGGER_REPORT
+  LOG_FEEDBACK(INFO) << "event_message: OnRestoreFromBackForwardCache source_id: " << source_id_
             << " navigation_handle id: " << navigation_handle->GetNavigationId();
 #endif
 }

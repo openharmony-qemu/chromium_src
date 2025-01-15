@@ -144,7 +144,11 @@ class TestWebContents : public WebContentsImpl, public WebContentsTester {
       std::unique_ptr<WebContents> portal_web_contents) override;
   WebContents* GetPortalContents(const blink::PortalToken&) override;
 
+#ifdef OHOS_LOGGER_REPORT
+  void OnWebPreferencesChanged(int32_t usage_scenario_type = 99) override;
+#else
   void OnWebPreferencesChanged() override;
+#endif
 
   // If set, *web_preferences_changed_counter_ is incremented when
   // OnWebPreferencesChanged() is called.

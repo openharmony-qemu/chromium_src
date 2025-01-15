@@ -120,6 +120,11 @@
 #include "cef/libcef/browser/page_load_metrics/oh_page_load_metrics_observer.h"
 #endif
 
+#ifdef OHOS_LOGGER_REPORT
+#include "url/ohos/log_utils.h"
+#endif
+
+
 namespace content {
 namespace {
 

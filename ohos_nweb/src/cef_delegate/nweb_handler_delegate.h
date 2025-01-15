@@ -54,6 +54,11 @@
 #include "base/cancelable_callback.h"
 #endif
 
+#if defined(OHOS_LOGGER_REPORT)
+#include "capi/nweb_logger_callback.h"
+#include "cef/include/cef_logger_callback_api_handler.h"
+#endif
+
 struct NativeWindow;
 
 namespace OHOS::NWeb {
@@ -79,6 +84,9 @@ class NWebHandlerDelegate : public CefClient,
                             public CefFormHandler,
                             public CefFrameHandler,
                             public CefWebExtensionApiHandler,
+#if defined(OHOS_LOGGER_REPORT)
+                            public CefLoggerCallbackApiHandler,
+#endif  // defined(OHOS_LOGGER_REPORT)
 #if defined(OHOS_PRINT)
                             public CefCookieAccessFilter,
                             public CefPrintHandler {
@@ -814,6 +822,17 @@ void OnTouchIconUrlWithSizesReceived(
  void OnBeforeUnloadFired(CefRefPtr<CefBrowser> browser,
                           bool proceed) override;
 #endif // OHOS_DISPATCH_BEFORE_UNLOAD
+
+#ifdef OHOS_LOGGER_REPORT
+  static void RegisterLoggerCallback(
+      std::shared_ptr<NWebLoggerCallback> logger_callback);
+  static void UnRegisterLoggerCallback();
+
+  // CefLoggerCallbackApiHandler implements
+  void logFeedback(const CefString& tag, int level, const CefString& message) override;
+  void logUrl(const CefString& url) override;
+#endif
+
  private:
 #if defined(OHOS_JSPROXY)
   enum class JsRunTime {

@@ -82,7 +82,6 @@ void PRParallelPreloadMgrImpl::Init(const scoped_refptr<base::SingleThreadTaskRu
 
 void PRParallelPreloadMgrImpl::StartPage(const std::string& url,
     base::WeakPtr<net::URLRequestContext> url_request_context,
-	base::WeakPtr<network::NetworkContext> network_context,
 	uint64_t addr_web_handle, PageOriginCallback callback) {
   void* web_handle = reinterpret_cast<void*>(addr_web_handle);
   LOG(DEBUG) << "PRPPreload.PRParallelPreloadMgrImpl::StartPage, is_inited = " << is_inited_ <<
@@ -139,7 +138,7 @@ void PRParallelPreloadMgrImpl::StartPage(const std::string& url,
   if (PRParallelPreloadMgr::GetInstance().GetPRParallelPreloadMode() == PRPPreloadMode::PRELOAD) {
 	prp_preload_info_map_[main_url].callback_ = std::move(callback);
 	prp_preload_info_map_[main_url].prpp_req_loader_fac_ =
-	  PRPPRequestLoaderFactory::CreatePRPPRequestLoaderFactory(main_url, url_request_context, network_context);
+	  PRPPRequestLoaderFactory::CreatePRPPRequestLoaderFactory(main_url, url_request_context);
   } else {
 	SAFE_RUN_GET_ISOLATION_CB(callback, CANCEL_ORIGIN);
 	prp_preload_info_map_[main_url].prpp_req_loader_fac_ = nullptr;

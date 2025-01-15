@@ -12,10 +12,6 @@ namespace net {
 class URLRequestContext;
 }  // namespace net
 
-namespace network {
-class NetworkContext;
-} // namespace network
-
 namespace ohos_prp_preload {
 class PRRequestInfo;
 class PRPPRequestLoaderFactory;
@@ -42,7 +38,6 @@ class PRParallelPreloadMgr {
   // start preload page sub_request
   virtual void StartPage(const std::string& url,
                          base::WeakPtr<net::URLRequestContext> url_request_context,
-                         base::WeakPtr<network::NetworkContext> network_context,
                          uint64_t addr_web_handle,
                          PageOriginCallback callback) = 0;
 

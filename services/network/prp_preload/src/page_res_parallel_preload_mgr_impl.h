@@ -17,7 +17,6 @@ class PRParallelPreloadMgrImpl : public PRParallelPreloadMgr {
   void Init(const scoped_refptr<base::SingleThreadTaskRunner>& net_task_runner) override;
   void StartPage(const std::string& url,
                      base::WeakPtr<net::URLRequestContext> url_request_context,
-                     base::WeakPtr<network::NetworkContext> network_context,
                      uint64_t addr_web_handle,
                      PageOriginCallback callback) override;
   void StopPage(uint64_t addr_web_handle) override;

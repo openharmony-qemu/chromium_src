@@ -5,29 +5,26 @@
 #include "services/network/prp_preload/src/preload_runner/prpp_request_loader_factory_impl.h"
 
 #include "base/logging.h"
-#include "base/trace_event/trace_event.h"
-#include "services/network/network_context.h"
 #include "net/http/http_util.h"
+#include "services/network/public/cpp/resource_request.h"
 
 namespace ohos_prp_preload {
 std::shared_ptr<PRPPRequestLoaderFactory> PRPPRequestLoaderFactory::CreatePRPPRequestLoaderFactory(
 	const std::string& url,
-	base::WeakPtr<net::URLRequestContext> url_request_context,
-	base::WeakPtr<network::NetworkContext> network_context)
+	base::WeakPtr<net::URLRequestContext> url_request_context)
 {
   std::shared_ptr<PRPPRequestLoaderFactory> prpp_req_loader_fac = std::make_shared<PRPPRequestLoaderFactoryImpl>(
-	url, url_request_context, network_context);
+	url, url_request_context);
   return prpp_req_loader_fac;
 }
 PRPPRequestLoaderFactoryImpl::PRPPRequestLoaderFactoryImpl(const std::string& url,
-	base::WeakPtr<net::URLRequestContext> url_request_context,
-	base::WeakPtr<network::NetworkContext> network_context)
-	: main_url_(url), url_request_context_(url_request_context), network_context_(network_context) {}
+	base::WeakPtr<net::URLRequestContext> url_request_context)
+	: main_url_(url), url_request_context_(url_request_context) {}
 
 void PRPPRequestLoaderFactoryImpl::CreateReqLoaderAndStart(const std::shared_ptr<PRRequestInfo>& info,
 	bool only_send_reuse_request, const std::set<std::string>& need_record_header_urls)
 {
-  if (!url_request_context_ || !network_context_ || !info) {
+  if (!url_request_context_ || !info) {
 	LOG(WARNING) << "PRPPreload.PRPPRequestLoaderFactoryImpl::CreateReqLoaderAndStart failed, " <<
 	  "invalid context or info";
 	return;
@@ -246,7 +243,7 @@ void PRPPRequestLoaderFactoryImpl::DoPendingCreateTask(const std::string& key)
 
 void PRPPRequestLoaderFactoryImpl::CreatePendingReqLoaderAndStart(const std::shared_ptr<PRRequestInfo>& info)
 {
-  if (!url_request_context_ || !network_context_) {
+  if (!url_request_context_) {
 	LOG(WARNING) << "PRPPreload.PRPPRequestLoaderFactoryImpl::CreatePendingReqLoaderAndStart failed, " <<
 	  "invalid context or info";
 	return;

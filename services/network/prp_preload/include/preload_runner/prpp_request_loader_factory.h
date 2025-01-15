@@ -25,8 +25,7 @@ class PRPPRequestLoaderFactory {
   // create PRPPRequestLoaderFactory
   static std::shared_ptr<PRPPRequestLoaderFactory> CreatePRPPRequestLoaderFactory(
 	    const std::string& url,
-	    base::WeakPtr<net::URLRequestContext> url_request_context,
-	    base::WeakPtr<network::NetworkContext> network_context);
+	    base::WeakPtr<net::URLRequestContext> url_request_context);
 
   // destroy PRPPRequestLoaderFactory object
   virtual ~PRPPRequestLoaderFactory() = default;

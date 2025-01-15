@@ -13,18 +13,13 @@ namespace net {
 class URLRequestContext;
 } // namespace net
 
-namespace network {
-class NetworkContext;
-} // namespace network
-
 namespace ohos_prp_preload {
 
 // only run in network thread
 class PRPPRequestLoaderFactoryImpl : public PRPPRequestLoaderFactory {
 public:
   PRPPRequestLoaderFactoryImpl(const std::string& url,
-	base::WeakPtr<net::URLRequestContext> url_request_context,
-	base::WeakPtr<network::NetworkContext> network_context);
+	base::WeakPtr<net::URLRequestContext> url_request_context);
   ~PRPPRequestLoaderFactoryImpl() = default;
   void CreateReqLoaderAndStart(const std::shared_ptr<PRRequestInfo>& info,
 	bool only_send_reuse_request,
@@ -54,7 +49,6 @@ private:
   std::string main_url_;
   net::IsolationInfo isolation_info_;
   base::WeakPtr<net::URLRequestContext> url_request_context_;
-  base::WeakPtr<network::NetworkContext> network_context_;
   PRPPReqLoaderMap prpp_req_loaders_;
   std::set<std::string> requests_already_start_set_;
   base::WeakPtrFactory<PRPPRequestLoaderFactoryImpl> weak_factory_ { this };

@@ -29,6 +29,10 @@
 #include "base/logging.h"
 #endif
 
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+#include "net/dns/public/dns_protocol.h"
+#endif
+
 namespace {
 #if BUILDFLAG(IS_OHOS)
 net::NetworkChangeNotifier::ConnectionType ConvertOhosConnTypeToNetBaseConnType(
@@ -247,6 +251,19 @@ void NetworkChangeNotifierPassive::OnConnectionChanged(
     base::AutoLock scoped_lock(lock_);
     connection_type_ = connection_type;
   }
+
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_EX_HTTP_DNS_FALLBACK)
+  std::vector<std::string> dns_servers;
+  if (ohos_net_conn_adapter_) {
+    dns_servers = ohos_net_conn_adapter_->GetDnsServers();
+  }
+
+  {
+    base::AutoLock scoped_lock(dns_server_lock_);
+    dns_servers_ = std::move(dns_servers);
+  }
+#endif
+
   NetworkChangeNotifier::NotifyObserversOfConnectionTypeChange();
 }
 
@@ -305,5 +322,13 @@ NetworkChangeNotifierPassive::NetworkChangeCalculatorParamsPassive() {
 #endif
   return params;
 }
+
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_EX_HTTP_DNS_FALLBACK)
+const std::vector<std::string>
+NetworkChangeNotifierPassive::GetCurrentDnsServers() {
+  base::AutoLock scoped_lock(dns_server_lock_);
+  return dns_servers_;
+}
+#endif
 
 }  // namespace net

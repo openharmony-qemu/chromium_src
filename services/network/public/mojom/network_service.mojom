@@ -41,6 +41,11 @@ import "mojo/public/mojom/base/application_state.mojom";
 [EnableIf=is_ct_supported]
 import "services/network/public/mojom/ct_log_info.mojom";
 
+// #ifdef OHOS_EX_HTTP_DNS_FALLBACK
+[EnableIf=ohos_ex_http_dns_fallback]
+import "services/network/public/mojom/network_config_ohos.mojom";
+// #endif OHOS_EX_HTTP_DNS_FALLBACK
+
 // Values for configuring HTTP authentication that can only be set once.
 struct HttpAuthStaticParams {
   // File name the GSSAPI library to load. Only supported on platforms where an
@@ -377,5 +382,10 @@ interface NetworkService {
   // #ifdef OHOS_EX_NETWORK_CONNECTION
   [EnableIf=ohos_ex_network_connection]
   SetConnectTimeout(int32 seconds);
+  // #endif
+
+  // #ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  [EnableIf=ohos_ex_http_dns_fallback]
+  SetHttpsDnsFallbackData(network.mojom.HttpsDnsFallbackConfig config);
   // #endif
 };

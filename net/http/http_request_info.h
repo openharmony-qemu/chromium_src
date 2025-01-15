@@ -72,6 +72,10 @@ struct NET_EXPORT HttpRequestInfo {
   // Secure DNS Tag for the request.
   SecureDnsPolicy secure_dns_policy = SecureDnsPolicy::kAllow;
 
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  bool secure_dns_only = false;
+#endif
+
   // Tag applied to all sockets used to service request.
   SocketTag socket_tag;
 

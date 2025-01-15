@@ -246,10 +246,21 @@ class NET_EXPORT HostResolverManager
   size_t num_running_dispatcher_jobs_for_tests() const {
     return dispatcher_->num_running_jobs();
   }
-
+  
   size_t num_jobs_for_testing() const { return jobs_.size(); }
-
+  
   bool check_ipv6_on_wifi_for_testing() const { return check_ipv6_on_wifi_; }
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  // Return true if Doh fallback server(s) exist and it/they can resolve
+  // successfully
+  bool CanUseSecureDnsFallback(ResolveContext* context) const;
+  void SetHttpsDnsFallbackData(bool enabled,
+                               const std::string& server_template);
+  void SetSuspectIpListAndSourceHostList(
+      const std::vector<std::string>& ip_list,
+      const std::vector<std::string>& host_list);
+#endif
 
   handles::NetworkHandle target_network_for_testing() const {
     return target_network_;
@@ -295,8 +306,12 @@ class NET_EXPORT HostResolverManager
     CONFIG_PRESET = 7,
     NAT64 = 8,
     HOSTS = 9,
-
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+    SECURE_DNS_FALLBACK = 10,
+    kMaxValue = SECURE_DNS_FALLBACK,
+#else
     kMaxValue = HOSTS,
+#endif
   };
 
   // Returns true if the task is local, synchronous, and instantaneous.
@@ -522,6 +537,11 @@ class NET_EXPORT HostResolverManager
   // configuration or current connection state).
   std::unique_ptr<DnsProbeRunner> CreateDohProbeRunner(
       ResolveContext* resolve_context);
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  bool https_dns_fallback_enabled_{false};
+  std::string doh_fallback_server_template_;
+#endif
 
   // Used for multicast DNS tasks. Created on first use using
   // GetOrCreateMndsClient().

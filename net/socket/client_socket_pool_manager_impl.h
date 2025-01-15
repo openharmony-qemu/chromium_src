@@ -54,6 +54,10 @@ class NET_EXPORT_PRIVATE ClientSocketPoolManagerImpl
   void SetConnectTimeout(int seconds) override;
 #endif
 
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  void SetConnectJobWithSecureDnsOnlyTimeout(int seconds) override;
+#endif
+
  private:
   using SocketPoolMap =
       std::map<ProxyServer, std::unique_ptr<ClientSocketPool>>;
@@ -69,6 +73,9 @@ class NET_EXPORT_PRIVATE ClientSocketPoolManagerImpl
   SocketPoolMap socket_pools_;
 #ifdef OHOS_EX_NETWORK_CONNECTION
   int timeout_override_{0};
+#endif
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  int connect_job_with_secure_dns_timeout_{0};
 #endif
   THREAD_CHECKER(thread_checker_);
 };

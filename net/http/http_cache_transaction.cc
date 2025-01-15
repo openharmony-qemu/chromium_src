@@ -287,6 +287,41 @@ int HttpCache::Transaction::Start(const HttpRequestInfo* request,
   return rv;
 }
 
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+int HttpCache::Transaction::RestartWithSecureDnsOnly(
+    CompletionOnceCallback callback) {
+  // Ensure that we only have one asynchronous call at a time.
+  DCHECK(callback_.is_null());
+
+  if (!cache_.get()) {
+    return ERR_UNEXPECTED;
+  }
+
+  int rv = RestartNetworkRequestWithSecureDnsOnly();
+  if (rv == ERR_IO_PENDING) {
+    callback_ = std::move(callback);
+  }
+
+  return rv;
+}
+
+int HttpCache::Transaction::RestartNetworkRequestWithSecureDnsOnly() {
+  DCHECK(mode_ & WRITE || mode_ == NONE);
+  DCHECK(network_trans_.get());
+  DCHECK_EQ(STATE_NONE, next_state_);
+
+  next_state_ = STATE_SEND_REQUEST_COMPLETE;
+  if (request_ != initial_request_ && custom_request_) {
+    custom_request_->secure_dns_only = true;
+  }
+  int rv = network_trans_->RestartWithSecureDnsOnly(io_callback_);
+  if (rv != ERR_IO_PENDING) {
+    return DoLoop(rv);
+  }
+  return rv;
+}
+#endif
+
 int HttpCache::Transaction::RestartIgnoringLastError(
     CompletionOnceCallback callback) {
   DCHECK(!callback.is_null());

@@ -35,6 +35,9 @@ struct NET_EXPORT NetErrorDetails {
   bool quic_port_migration_detected = false;
   bool quic_connection_migration_attempted = false;
   bool quic_connection_migration_successful = false;
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  bool stream_created = false;
+#endif  // OHOS_EX_HTTP_DNS_FALLBACK
 };
 
 }  // namespace net

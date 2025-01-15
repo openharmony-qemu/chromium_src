@@ -103,6 +103,10 @@ int InitSocketPoolHelper(
     HttpNetworkSession::SocketPoolType socket_pool_type,
     CompletionOnceCallback callback,
     const ClientSocketPool::ProxyAuthCallback& proxy_auth_callback
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+    ,
+    bool secure_dns_only = false
+#endif
 #if BUILDFLAG(IS_OHOS)
     ,
     bool from_preload = false
@@ -121,7 +125,12 @@ int InitSocketPoolHelper(
 
   ClientSocketPool::GroupId connection_group(
       std::move(endpoint), privacy_mode, std::move(network_anonymization_key),
-      secure_dns_policy);
+      secure_dns_policy
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+      ,
+      secure_dns_only
+#endif
+  );
   scoped_refptr<ClientSocketPool::SocketParams> socket_params =
       CreateSocketParams(connection_group, proxy_info.proxy_server(),
                          ssl_config_for_origin, ssl_config_for_proxy);
@@ -256,6 +265,10 @@ int InitSocketHandleForHttpRequest(
       std::move(network_anonymization_key), secure_dns_policy, socket_tag,
       net_log, 0, socket_handle, HttpNetworkSession::NORMAL_SOCKET_POOL,
       std::move(callback), proxy_auth_callback
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+      ,
+      secure_dns_only
+#endif
 #if BUILDFLAG(IS_OHOS)
       ,
       from_preload

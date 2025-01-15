@@ -477,7 +477,7 @@ mojom("url_loader_base") {
   }
 
   if (defined(ohos_network_load) && ohos_network_load) {
-    enabled_features += ["is_ohos_network_load"]
+    enabled_features += [ "is_ohos_network_load" ]
   }
 
   if (enable_prp_preload) {
@@ -1326,6 +1326,13 @@ mojom("mojom") {
     "udp_socket.mojom",
     "url_loader_factory.mojom",
   ]
+
+  # ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  if (defined(ohos_ex_http_dns_fallback) && ohos_ex_http_dns_fallback) {
+    sources += [ "network_config_ohos.mojom" ]
+  }
+
+  # endif
 
   public_deps = [
     ":cookies_mojom",

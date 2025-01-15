@@ -253,6 +253,10 @@ class NET_EXPORT URLRequestContext final {
 #ifdef OHOS_EX_NETWORK_CONNECTION
   void SetConnectTimeout(int seconds);
 #endif
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  void SetConnectJobWithSecureDnsOnlyTimeout(int second);
+  bool CanUseSecureDnsFallback() const;
+#endif
 
 #if BUILDFLAG(IS_OHOS)
   base::WeakPtr<URLRequestContext> GetWeakPtr() {

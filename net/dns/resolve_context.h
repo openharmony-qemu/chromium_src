@@ -194,6 +194,14 @@ class NET_EXPORT_PRIVATE ResolveContext : public base::CheckedObserver {
     return weak_ptr_factory_.GetWeakPtr();
   }
 
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  void SetHttpsDnsFallbackEnabled(bool value) {
+    is_https_dns_fallback_enabled_ = value;
+  }
+
+  bool IsHttpsDnsFallbackEnabled() { return is_https_dns_fallback_enabled_; }
+#endif
+
  private:
   friend DohDnsServerIterator;
   friend ClassicDnsServerIterator;
@@ -296,6 +304,9 @@ class NET_EXPORT_PRIVATE ResolveContext : public base::CheckedObserver {
 
   const IsolationInfo isolation_info_;
 
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  bool is_https_dns_fallback_enabled_{false};
+#endif
   base::WeakPtrFactory<ResolveContext> weak_ptr_factory_{this};
 };
 

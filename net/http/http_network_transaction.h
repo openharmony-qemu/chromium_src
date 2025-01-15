@@ -63,6 +63,9 @@ class NET_EXPORT_PRIVATE HttpNetworkTransaction
   int Start(const HttpRequestInfo* request_info,
             CompletionOnceCallback callback,
             const NetLogWithSource& net_log) override;
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  int RestartWithSecureDnsOnly(CompletionOnceCallback callback) override;
+#endif
   int RestartIgnoringLastError(CompletionOnceCallback callback) override;
   int RestartWithCertificate(scoped_refptr<X509Certificate> client_cert,
                              scoped_refptr<SSLPrivateKey> client_private_key,
@@ -144,6 +147,10 @@ class NET_EXPORT_PRIVATE HttpNetworkTransaction
     STATE_NOTIFY_BEFORE_CREATE_STREAM,
     STATE_CREATE_STREAM,
     STATE_CREATE_STREAM_COMPLETE,
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+    STATE_CREATE_FALLBACK_STREAM_WITH_SECURE_DNS_ONLY,
+    STATE_CREATE_FALLBACK_STREAM_WITH_SECURE_DNS_ONLY_COMPLETE,
+#endif
     STATE_INIT_STREAM,
     STATE_INIT_STREAM_COMPLETE,
     STATE_CONNECTED_CALLBACK,
@@ -186,6 +193,10 @@ class NET_EXPORT_PRIVATE HttpNetworkTransaction
   int DoNotifyBeforeCreateStream();
   int DoCreateStream();
   int DoCreateStreamComplete(int result);
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  int DoCreateFallbackStreamWithSecureDnsOnly();
+  int DoCreateFallbackStreamWithSecureDnsOnlyComplete(int result);
+#endif
   int DoInitStream();
   int DoInitStreamComplete(int result);
   int DoConnectedCallback();
@@ -493,6 +504,10 @@ class NET_EXPORT_PRIVATE HttpNetworkTransaction
   size_t num_restarts_ = 0;
 
   bool close_connection_on_destruction_ = false;
+
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  bool stream_created_ = false;
+#endif
 
   absl::optional<base::TimeDelta> quic_protocol_error_retry_delay_;
 };

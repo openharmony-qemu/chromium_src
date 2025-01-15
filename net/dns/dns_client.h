@@ -45,6 +45,11 @@ class NET_EXPORT DnsClient {
   // probe runners should not be created.
   virtual bool CanUseSecureDnsTransactions() const = 0;
 
+#ifdef OHOS_EX_HTTP_DNS_FALLBACK
+  virtual bool CanUseSecureDnsFallbackTransactions(
+      ResolveContext* context) const = 0;
+#endif
+
   // Returns true if the DnsClient is able and allowed to make insecure DNS
   // transactions. If false, insecure transactions should not be created. Will
   // always be false unless SetInsecureEnabled(true) has been called.

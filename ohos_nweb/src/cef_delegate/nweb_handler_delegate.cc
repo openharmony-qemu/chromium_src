@@ -4018,4 +4018,10 @@ void NWebHandlerDelegate::OnBeforeUnloadFired(CefRefPtr<CefBrowser> browser,
 }
 #endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+void NWebHandlerDelegate::EnableVideoAssistant(bool enable) {
+  video_assistant_enabled_ = enable;
+}
+#endif // OHOS_VIDEO_ASSISTANT
+
 }  // namespace OHOS::NWeb

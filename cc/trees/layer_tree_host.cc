@@ -2087,4 +2087,13 @@ void LayerTreeHost::OnLayerRectVisibilityChange(int id, bool visibility) {
 }
 #endif
 
+#ifdef OHOS_VIDEO_ASSISTANT
+void LayerTreeHost::OnLayerBoundsUpdate(int id, const gfx::Rect& bounds) {
+  DCHECK(IsMainThread());
+  if (auto* layer = LayerById(id)) {
+    layer->OnLayerBoundsUpdate(bounds);
+  }
+}
+#endif // OHOS_VIDEO_ASSISTANT
+
 }  // namespace cc

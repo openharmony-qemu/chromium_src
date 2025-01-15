@@ -4353,7 +4353,11 @@ void NWebDelegate::RegisterOnCreateNativeMediaPlayerListener(
 #if defined(OHOS_VIDEO_ASSISTANT)
 void NWebDelegate::EnableVideoAssistant(bool enable) {
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "failed to get host when enable video assistant";
+    if (!handler_delegate_) {
+      LOG(ERROR) << "failed to enable video assistant, handler delegate is null";
+      return;
+    }
+    handler_delegate_->EnableVideoAssistant(enable);
     return;
   }
 

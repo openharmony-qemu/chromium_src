@@ -582,6 +582,14 @@ class NWebDelegateInterface
 
   virtual void SendAccessibilityHoverEvent(int x, int y) = 0;
   virtual void RefreshAccessibilityManagerClickEvent() = 0;
+#ifdef OHOS_ARKWEB_EXTENSIONS
+  virtual void WebExtensionTabCreated(int tab_id) = 0;
+  virtual void WebExtensionTabRemoved(int tab_id) = 0;
+  virtual void WebExtensionTabUpdated(
+      int tab_id,
+      const std::vector<std::string>& changed_property_names,
+      const std::string& url) = 0;
+#endif
 
 #ifdef OHOS_MIXED_CONTENT
   virtual void EnableMixedContentAutoUpgrades(bool enable) = 0;

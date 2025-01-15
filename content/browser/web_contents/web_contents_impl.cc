@@ -8418,6 +8418,22 @@ void WebContentsImpl::UpdateTargetURL(RenderFrameHostImpl* render_frame_host,
     delegate_->UpdateTargetURL(this, url);
 }
 
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+void WebContentsImpl::WebExtensionUpdateTabUrl(
+    int32_t tab_id, const GURL& url) {
+  OPTIONAL_TRACE_EVENT2("content", "WebContentsImpl::WebExtensionUpdateTabUrl",
+                        "tab_id", tab_id, "url", url);
+  if (delegate_)
+    delegate_->WebExtensionUpdateTabUrl(tab_id, url);
+}
+
+int32_t WebContentsImpl::GetTabId() {
+  if (delegate_)
+     return delegate_->GetTabId();
+  return -1;
+}
+#endif
+
 bool WebContentsImpl::ShouldRouteMessageEvent(
     RenderFrameHostImpl* target_rfh) const {
   OPTIONAL_TRACE_EVENT1("content", "WebContentsImpl::ShouldRouteMessageEvent",

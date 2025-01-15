@@ -121,6 +121,10 @@ const int WEB_CAN_SNAPSHOT_DELAY_TIME = 1500;
 
 const int VIEW_PORT_DIFF = 5;
 
+#ifdef OHOS_NWEB_EX
+std::shared_ptr<NWebExtensionApiCallback> g_extension_api_listener = nullptr;
+#endif  // if defined(OHOS_NWEB_EX)
+
 ImageColorType TransformColorType(cef_color_type_t color_type) {
   switch (color_type) {
     case CEF_COLOR_TYPE_RGBA_8888:
@@ -612,6 +616,13 @@ CefRefPtr<CefMediaHandler> NWebHandlerDelegate::GetMediaHandler() {
   return this;
 }
 #endif  // defined(OHOS_MEDIA_MUTE_AUDIO)
+
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+CefRefPtr<CefWebExtensionApiHandler>
+NWebHandlerDelegate::GetWebExtensionApiHandler() {
+  return this;
+}
+#endif
 
 CefRefPtr<CefCookieAccessFilter> NWebHandlerDelegate::GetCookieAccessFilter(
     CefRefPtr<CefBrowser> browser,
@@ -4023,5 +4034,32 @@ void NWebHandlerDelegate::EnableVideoAssistant(bool enable) {
   video_assistant_enabled_ = enable;
 }
 #endif // OHOS_VIDEO_ASSISTANT
+
+#ifdef OHOS_NWEB_EX
+// static
+void NWebHandlerDelegate::RegisterWebExtensionApiListener(
+    std::shared_ptr<NWebExtensionApiCallback> web_extension_api_listener) {\
+  LOG(INFO) << "RegisterWebExtensionApiListener";
+  // TODO: Expected to be an instance of a profile
+  g_extension_api_listener = web_extension_api_listener;
+}
+
+// static
+void NWebHandlerDelegate::UnRegisterWebExtensionApiListener() {
+  LOG(INFO) << "UnRegisterWebExtensionApiListener";
+  g_extension_api_listener = nullptr;
+}
+
+void NWebHandlerDelegate::OnUpdateTabUrl(int tab_id, const CefString& url) {
+  if (!g_extension_api_listener) {
+    LOG(ERROR) << "No web extension api listener";
+    return;
+  }
+
+  std::string urlStr = url.ToString();
+  LOG(INFO) << "OnUpdateTabUrl:" << tab_id;
+  g_extension_api_listener->OnUpdateTabUrl(tab_id, urlStr.c_str());
+}
+#endif
 
 }  // namespace OHOS::NWeb

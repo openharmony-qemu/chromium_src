@@ -107,6 +107,9 @@ class TestRenderWidgetHostView : public RenderWidgetHostViewBase,
   bool GetScrollable() override {
     return true;
   }
+
+  void SetDoubleTapSupportEnabled(bool enabled) override {}
+  void SetMultiTouchZoomSupportEnabled(bool enabled) override {}
 #endif
 
   // RenderWidgetHostViewBase:

@@ -122,6 +122,9 @@ class CONTENT_EXPORT RenderWidgetHostViewAura
   bool GetScrollable() override {
     return true;
   }
+
+  void SetDoubleTapSupportEnabled(bool enabled) override {}
+  void SetMultiTouchZoomSupportEnabled(bool enabled) override {}
 #endif
   gfx::Rect GetViewBounds() override;
   bool IsMouseLocked() override;

@@ -801,6 +801,12 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
                    base::i18n::TextDirection title_direction) override;
   void UpdateTargetURL(RenderFrameHostImpl* render_frame_host,
                        const GURL& url) override;
+
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  void WebExtensionUpdateTabUrl(int32_t tab_id, const GURL& url) override;
+  int32_t GetTabId() override;
+#endif
+
   bool IsNeverComposited() override;
   void SetCaptureHandleConfig(
       blink::mojom::CaptureHandleConfigPtr config) override;

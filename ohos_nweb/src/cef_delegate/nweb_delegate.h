@@ -574,6 +574,15 @@ void SetDelayDurationForBackgroundTabFreezing(int64_t delay) override;
       const std::vector<std::string>& pathList) override;
 #endif
 
+#ifdef OHOS_ARKWEB_EXTENSIONS
+  void WebExtensionTabCreated(int tab_id) override;
+  void WebExtensionTabRemoved(int tab_id) override;
+  void WebExtensionTabUpdated(
+      int tab_id,
+      const std::vector<std::string>& changed_property_names,
+      const std::string& url) override;
+#endif
+
 #ifdef OHOS_MIXED_CONTENT
   void EnableMixedContentAutoUpgrades(bool enable) override;
   bool IsMixedContentAutoUpgradesEnabled() override;

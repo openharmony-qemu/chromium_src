@@ -685,6 +685,12 @@ class CONTENT_EXPORT WebContentsDelegate {
                          const Referrer& referrer,
                          RenderFrameHost* rfh);
 
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  // Called when chrome.tabs.update({url: 'xxx'})
+  virtual void WebExtensionUpdateTabUrl(int32_t tab_id, const GURL& url);
+  virtual int32_t GetTabId();
+#endif
+
   // Called when a suspicious navigation of the main frame has been blocked.
   // Allows the delegate to provide some UI to let the user know about the
   // blocked navigation and give them the option to recover from it.

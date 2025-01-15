@@ -41,6 +41,7 @@
 #include <unordered_set>
 #include "capi/nweb_app_client_extension_callback.h"
 #include "capi/nweb_icon_size.h"
+#include "capi/nweb_extension_api_callback.h"
 #include "nweb_download_callback.h"
 #include "nweb_javascript_result_callback.h"
 #include "nweb_value.h"
@@ -77,6 +78,7 @@ class NWebHandlerDelegate : public CefClient,
                             public CefMediaHandler,
                             public CefFormHandler,
                             public CefFrameHandler,
+                            public CefWebExtensionApiHandler,
 #if defined(OHOS_PRINT)
                             public CefCookieAccessFilter,
                             public CefPrintHandler {
@@ -247,6 +249,9 @@ class NWebHandlerDelegate : public CefClient,
 #endif  // defined(OHOS_PRINT)
 
   CefRefPtr<CefFrameHandler> GetFrameHandler() override;
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  CefRefPtr<CefWebExtensionApiHandler> GetWebExtensionApiHandler() override;
+#endif // defined(OHOS_ARKWEB_EXTENSIONS)
   /* CefClient methods end */
 
   /* CefLifeSpanHandler methods begin */
@@ -766,6 +771,15 @@ void OnTouchIconUrlWithSizesReceived(
                                     int pid,
                                     int reason) override;
   void OnRenderProcessResponding(CefRefPtr<CefBrowser> browser) override;
+#endif
+
+#ifdef OHOS_NWEB_EX
+  static void RegisterWebExtensionApiListener(
+      std::shared_ptr<NWebExtensionApiCallback> web_extension_api_listener);
+  static void UnRegisterWebExtensionApiListener();
+
+  // CefWebExtensionApiHandler implements
+  void OnUpdateTabUrl(int tab_id, const CefString& url) override;
 #endif
 
 #ifdef OHOS_DISPLAY_CUTOUT

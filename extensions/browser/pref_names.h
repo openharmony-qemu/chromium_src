@@ -134,6 +134,16 @@ extern const char kPrefContentSettings[];
 // Extension-set incognito content settings.
 extern const char kPrefIncognitoContentSettings[];
 
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+// Path for settings specific to blocklist update.
+extern const char kExtensionsBlocklistUpdate[];
+// A list of installed ids and a signature.
+extern const char kInstallSignature[];
+// A list of IDs of external extensions that the user has chosen to uninstall;
+// saved as an indication to not re-install that extension.
+extern const char kExternalUninstalls[];
+#endif
+
 }  // namespace pref_names
 }  // namespace extensions
 

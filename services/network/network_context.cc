@@ -1822,7 +1822,7 @@ void NetworkContext::InitPRParallelPreloadMgr() {
 void NetworkContext::StartPage(const std::string& url, uint64_t addr_web_handle,
     StartPageCallback page_origin_cb) {
   ohos_prp_preload::PRParallelPreloadMgr::GetInstance().StartPage(url,
-    url_request_context()->GetWeakPtr(), weak_factory_.GetWeakPtr(), addr_web_handle, std::move(page_origin_cb));
+    url_request_context()->GetWeakPtr(), addr_web_handle, std::move(page_origin_cb));
 }
 
 void NetworkContext::StopPage(uint64_t addr_web_handle) {

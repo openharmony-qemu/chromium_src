@@ -1846,6 +1846,16 @@ void MediaSessionImpl::RebuildAndNotifyMetadataChanged() {
   if (metadata.title.empty())
     metadata.title = SanitizeMediaTitle(web_contents()->GetTitle());
 
+#if defined(OHOS_MEDIA_AVSESSION)
+  if (web_contents()) {
+    std::u16string u16title =
+        base::UTF8ToUTF16(web_contents()->GetMediaTitle());
+    if (!u16title.empty()) {
+      metadata.title = u16title;
+    }
+  }
+#endif // OHOS_MEDIA_AVSESSION
+
   ContentClient* content_client = content::GetContentClient();
   const GURL& url = web_contents()->GetLastCommittedURL();
 
@@ -1872,6 +1882,15 @@ void MediaSessionImpl::RebuildAndNotifyMetadataChanged() {
   }
 
   metadata.source_title = source_title;
+
+#if defined(OHOS_MEDIA_AVSESSION)
+  std::string attrib_image_url = web_contents()->GetVideoPoster();
+  if (!attrib_image_url.empty()) {
+    media_session::MediaImage mediaImage;
+    mediaImage.src = GURL(attrib_image_url);
+    artwork.push_back(mediaImage);
+  }
+#endif // OHOS_MEDIA_AVSESSION
 
   // If we have no artwork in |images_| or the arwork has changed then we should
   // update it with the latest artwork from the routed service.
@@ -2049,6 +2068,26 @@ void MediaSessionImpl::SetShouldThrottleDurationUpdateForTest(
 bool MediaSessionImpl::HasImageCacheForTest(const GURL& image_url) const {
   return GetPageData(web_contents()->GetPrimaryPage()).GetImageCache(image_url);
 }
+
+#if defined(OHOS_MEDIA_AVSESSION)
+void MediaSessionImpl::PutWebMediaAVSessionEnabled(bool enable) {
+  LOG(INFO) << "media avsession MediaSessionImpl::PutWebMediaAVSessionEnabled enable is: " << enable;
+  if (enable) {
+    if (!session_ohos_) {
+      session_ohos_ = std::make_unique<MediaSessionOHOS>(this);
+      if (web_contents() && web_contents()->GetPrimaryMainFrame() &&
+        web_contents()->GetPrimaryMainFrame()->GetView()) {
+        focused_ = web_contents()->GetPrimaryMainFrame()->GetView()->HasFocus();
+      }
+    }
+  } else {
+    if (session_ohos_) {
+      session_ohos_.reset();
+    }
+  }
+  RebuildAndNotifyMetadataChanged();
+}
+#endif // OHOS_MEDIA_AVSESSION
 
 MediaSessionImpl::PageData::PageData(content::Page& page)
     : PageUserData(page) {}

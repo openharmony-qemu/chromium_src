@@ -365,6 +365,10 @@ class MediaSessionImpl : public MediaSession,
   bool HasOnlyOneShotPlayersPublic() const;
 #endif //BUILDFLAG(IS_OHOS)
 
+#if defined(OHOS_MEDIA_AVSESSION)
+  void PutWebMediaAVSessionEnabled(bool enable);
+#endif // OHOS_MEDIA_AVSESSION
+
 #if defined(OHOS_MEDIA_POLICY)
  public:
   enum NWebPlaybackState { NONE, PLAYING, PAUSED, STOP };

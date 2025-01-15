@@ -1565,7 +1565,30 @@ class WebContents : public PageNavigator,
 #if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
   virtual void OnBeforeUnloadFired(bool proceed) = 0;
 #endif // OHOS_DISPATCH_BEFORE_UNLOAD
+
+#if defined(OHOS_MEDIA_AVSESSION)
+  void SetMediaTitle(const std::string& data) {
+     media_title_ = data;
+  }
+
+  std::string GetMediaTitle() {
+    return  media_title_;
+  }
+
+  void SetVideoPoster(const std::string& data) {
+     video_poster_ = data;
+  }
+
+  std::string GetVideoPoster() {
+    return  video_poster_;
+  }
+#endif // OHOS_MEDIA_AVSESSION
+
  private:
+#if defined(OHOS_MEDIA_AVSESSION)
+  std::string media_title_;
+  std::string video_poster_;
+#endif // OHOS_MEDIA_AVSESSION
   // This interface should only be implemented inside content.
   friend class WebContentsImpl;
   WebContents() = default;

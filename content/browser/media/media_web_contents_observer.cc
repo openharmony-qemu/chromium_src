@@ -868,4 +868,22 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
 }
 #endif // OHOS_VIDEO_ASSISTANT
 
+#if defined(OHOS_MEDIA_AVSESSION)
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnGetMediaTitle(
+    const std::string& data) {
+  if (media_web_contents_observer_ &&
+      media_web_contents_observer_->web_contents_impl()) {
+    media_web_contents_observer_->web_contents_impl()->SetMediaTitle(data);
+  }
+}
+
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnGetVideoPoster(
+    const std::string& data) {
+  if (media_web_contents_observer_ &&
+      media_web_contents_observer_->web_contents_impl()) {
+    media_web_contents_observer_->web_contents_impl()->SetVideoPoster(data);
+  }
+}
+#endif // OHOS_MEDIA_AVSESSION
+
 }  // namespace content

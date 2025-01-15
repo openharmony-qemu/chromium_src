@@ -115,11 +115,14 @@ class OHOSMediaAVSessionMetadata : public OHOS::NWeb::MediaAVSessionMetadataAdap
   std::string GetArtist() override;
   void SetAlbum(const std::string& album) override;
   std::string GetAlbum() override;
+  void SetImageUrl(const std::string& image_url) override;
+  std::string GetImageUrl() override;
 
  private:
   std::string title_;
   std::string artist_;
   std::string album_;
+  std::string image_url_;
 };
 
 class OHOSMediaAVSessionPosition : public OHOS::NWeb::MediaAVSessionPositionAdapter {

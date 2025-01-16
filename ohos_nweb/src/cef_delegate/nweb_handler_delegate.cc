@@ -2084,8 +2084,8 @@ void NWebHandlerDelegate::OnShowAutofillPopup(
     scale = GetBrowser()->GetHost()->Scale();
   }
   if (!is_password_popup_type) {
-    nweb_handler_->OnShowAutofillPopup(
-        bounds.x * ratio, bounds.y * ratio + bounds.height * ratio * scale, label_list);
+    nweb_handler_->OnShowAutofillPopupV2(
+        bounds.x * ratio, bounds.y * ratio + bounds.height * ratio, bounds.height * ratio, bounds.width, label_list);
     return;
   }
 #endif

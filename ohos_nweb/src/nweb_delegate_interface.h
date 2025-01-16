@@ -531,6 +531,7 @@ virtual int ScaleGestureChange(double scale, double centerX, double centerY) con
 #if defined(OHOS_VIDEO_ASSISTANT)
   virtual void EnableVideoAssistant(bool enable) = 0;
   virtual void ExecuteVideoAssistantFunction(const std::string& cmd_id) = 0;
+  virtual void CustomWebMediaPlayer(bool enable) = 0;
 #endif  // defined(OHOS_VIDEO_ASSISTANT)
 
 #if defined(OHOS_CLIPBOARD)

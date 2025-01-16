@@ -50,6 +50,9 @@ class CONTENT_EXPORT OHOSCustomMediaPlayerRendererClient
   // media::Renderer implementation
   void Initialize(media::MediaResource* media_resource,
                   media::RendererClient* client,
+#ifdef OHOS_VIDEO_ASSISTANT
+                  media::RequestSurfaceCB request_surface_cb,
+#endif // OHOS_VIDEO_ASSISTANT
                   media::PipelineStatusCallback init_cb) override;
 
   media::RendererType GetRendererType() override;

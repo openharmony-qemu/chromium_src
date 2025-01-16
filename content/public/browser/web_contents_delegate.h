@@ -89,7 +89,10 @@ struct MediaInfo;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
 #ifdef OHOS_VIDEO_ASSISTANT
+class MediaPlayerController;
+class MediaPlayerListener;
 class VideoAssistant;
+struct MediaPlayerId;
 #endif // OHOS_VIDEO_ASSISTANT
 }  // namespace content
 
@@ -859,6 +862,10 @@ class CONTENT_EXPORT WebContentsDelegate {
   virtual void OnShowToast(double duration, const std::string& toast);
   virtual void OnShowVideoAssistant(const std::string& videoAssistantItems);
   virtual void OnReportStatisticLog(const std::string& content);
+
+  virtual std::unique_ptr<MediaPlayerListener> OnFullScreenOverlayEnter(
+      media::mojom::MediaInfoForVASTPtr media_info,
+      const MediaPlayerId& media_player_id);
 #endif  // defined(OHOS_VIDEO_ASSISTANT)
 
 #if defined(OHOS_DISPATCH_BEFORE_UNLOAD)

@@ -55,6 +55,9 @@ class MEDIA_EXPORT RendererImpl final : public Renderer {
   // Renderer implementation.
   void Initialize(MediaResource* media_resource,
                   RendererClient* client,
+#ifdef OHOS_VIDEO_ASSISTANT
+                  RequestSurfaceCB request_surface_cb,
+#endif // OHOS_VIDEO_ASSISTANT
                   PipelineStatusCallback init_cb) final;
   void SetCdm(CdmContext* cdm_context, CdmAttachedCB cdm_attached_cb) final;
   void SetLatencyHint(absl::optional<base::TimeDelta> latency_hint) final;
@@ -273,6 +276,10 @@ class MEDIA_EXPORT RendererImpl final : public Renderer {
   base::TimeDelta restarting_audio_time_ = kNoTimestamp;
 
   bool pending_video_track_change_ = false;
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  RequestSurfaceCB request_surface_cb_;
+#endif // OHOS_VIDEO_ASSISTANT
 
   base::WeakPtr<RendererImpl> weak_this_;
   base::WeakPtrFactory<RendererImpl> weak_factory_{this};

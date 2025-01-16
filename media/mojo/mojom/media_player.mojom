@@ -36,6 +36,23 @@ struct VideoAttributesForVAST {
   bool visible;
 };
 
+[EnableIf=ohos_video_assistant]
+struct MediaInfoForVAST {
+  string id;
+  string title;
+  double duration;
+  double current_time;
+  double playback_rate;
+  int32 video_width;
+  int32 video_height;
+  bool isMuted;
+  bool isPlaying;
+  bool isShowPlaybackSpeed;
+
+  bool show_download_button;
+  bool supports_save;
+};
+
 // Implemented by HTMLMediaElement in the renderer process to allow the
 // browser to control media playback.
 interface MediaPlayer {
@@ -104,6 +121,9 @@ interface MediaPlayer {
 
   [EnableIf=ohos_video_assistant]
   RequestDownloadUrl();
+
+  [EnableIf=ohos_video_assistant]
+  SetVideoSurface(int32 widget_id);
 };
 
 // Implemented by the MediaWebContentsObserver. The remote lives in the renderer
@@ -178,6 +198,45 @@ interface MediaPlayerObserver {
 
   [EnableIf=ohos_video_assistant]
   OnVideoDestroyed();
+
+  [EnableIf=ohos_video_assistant]
+  OnFullScreenOverlayEnter(MediaInfoForVAST media_info);
+
+  [EnableIf=ohos_video_assistant]
+  UpdatePlayStateOverlay(bool playState);
+
+  [EnableIf=ohos_video_assistant]
+  MutedChangedOverlay(bool muted);
+
+  [EnableIf=ohos_video_assistant]
+  PlaybackRateChangedOverlay(double playback_rate);
+
+  [EnableIf=ohos_video_assistant]
+  DurationChangedOverlay(double duration);
+
+  [EnableIf=ohos_video_assistant]
+  TimeUpdateOverlay(double current_time);
+
+  [EnableIf=ohos_video_assistant]
+  BufferedEndTimeChangedOverlay(double buffered_end_time);
+
+  [EnableIf=ohos_video_assistant]
+  EndedOverlay();
+
+  [EnableIf=ohos_video_assistant]
+  FullscreenChangedOverlay(bool fullscreen);
+
+  [EnableIf=ohos_video_assistant]
+  SeekingOverlay();
+
+  [EnableIf=ohos_video_assistant]
+  SeekingFinishedOverlay();
+
+  [EnableIf=ohos_video_assistant]
+  ErrorOverlay(int32 error_code, string error_msg);
+
+  [EnableIf=ohos_video_assistant]
+  VideoSizeChangedOverlay(int32 width, int32 height);
 };
 
 // Implemented by MediaWebContentsObserver::MediaPlayerHostImpl in the browser

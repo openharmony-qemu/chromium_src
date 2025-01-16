@@ -78,6 +78,9 @@ Receiver::~Receiver() {
 // RPC_R_INITIALIZE, which means Receiver::OnRpcInitialize() is called.
 void Receiver::Initialize(MediaResource* media_resource,
                           RendererClient* client,
+#ifdef OHOS_VIDEO_ASSISTANT
+                          RequestSurfaceCB request_surface_cb,
+#endif // OHOS_VIDEO_ASSISTANT
                           PipelineStatusCallback init_cb) {
   demuxer_ = media_resource;
   init_cb_ = std::move(init_cb);
@@ -164,6 +167,9 @@ void Receiver::ShouldInitializeRenderer() {
   DCHECK(renderer_);
   DCHECK(demuxer_);
   renderer_->Initialize(demuxer_, this,
+#ifdef OHOS_VIDEO_ASSISTANT
+                        RequestSurfaceCB(),
+#endif // OHOS_VIDEO_ASSISTANT
                         base::BindOnce(&Receiver::OnRendererInitialized,
                                        weak_factory_.GetWeakPtr()));
 }

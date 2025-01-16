@@ -210,6 +210,12 @@ using CreateTextureCB = base::OnceCallback<void(RectChangedCB, int)>;
 using DestroyTextureCB = base::OnceCallback<void()>;
 #endif
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+using SurfaceCreatedCB = base::RepeatingCallback<void(int)>;
+using RequestSurfaceCB =
+    base::OnceCallback<void(SurfaceCreatedCB)>;
+#endif // OHOS_VIDEO_ASSISTANT
+
 }  // namespace media
 
 #endif  // MEDIA_BASE_PIPELINE_STATUS_H_

@@ -22,6 +22,9 @@
 #include "ohos_nweb/src/capi/nweb_icon_size.h"
 #include "ohos_nweb/src/capi/nweb_permission_request.h"
 
+class NWebMediaPlayerController;
+class NWebMediaPlayerListener;
+
 struct NWebAppClientExtensionCallback {
   size_t struct_size = sizeof(NWebAppClientExtensionCallback);
   int nweb_id{0};
@@ -84,6 +87,10 @@ struct NWebAppClientExtensionCallback {
 #if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
   void (*OnBeforeUnloadFired)(bool proceed, int nweb_id);
 #endif // OHOS_DISPATCH_BEFORE_UNLOAD
+
+  NWebMediaPlayerListener* (*OnFullScreenOverlayEnter)(int32_t nweb_id,
+      NWebMediaPlayerController* media_player_controller,
+      const char* media_info);
 };
 
 #endif  // OHOS_NWEB_SRC_NWEB_APP_CLIENT_EXTENSION_CALLBACK_H_

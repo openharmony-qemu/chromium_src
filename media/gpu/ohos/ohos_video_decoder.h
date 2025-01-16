@@ -86,6 +86,10 @@ class MEDIA_GPU_EXPORT OhosVideoDecoder final
   bool CanReadWithoutStalling() const override;
   int GetMaxDecodeRequests() const override;
 
+#ifdef OHOS_VIDEO_ASSISTANT
+  void SetVideoSurface(int32_t widget_id) override;
+#endif // OHOS_VIDEO_ASSISTANT
+
  private:
   OhosVideoDecoder(const gpu::GpuPreferences& gpu_preferences,
                    const gpu::GpuFeatureInfo& gpu_feature_info,
@@ -177,6 +181,10 @@ class MEDIA_GPU_EXPORT OhosVideoDecoder final
   bool deferred_reallocation_pending_ = false;
 
   int last_width_ = 0;
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  int32_t pending_surface_id_ = -1;
+#endif // OHOS_VIDEO_ASSISTANT
 
   base::WeakPtrFactory<OhosVideoDecoder> weak_factory_{this};
   base::WeakPtrFactory<OhosVideoDecoder> codec_allocator_weak_factory_{this};

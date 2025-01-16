@@ -78,6 +78,9 @@ OHOSMediaPlayerRenderer::~OHOSMediaPlayerRenderer() {
 void OHOSMediaPlayerRenderer::Initialize(
     media::MediaResource* media_resource,
     media::RendererClient* client,
+#ifdef OHOS_VIDEO_ASSISTANT
+    media::RequestSurfaceCB request_surface_cb,
+#endif // OHOS_VIDEO_ASSISTANT
     media::PipelineStatusCallback init_cb) {
   renderer_client_ = client;
   if (media_resource->GetType() != media::MediaResource::Type::URL) {
@@ -322,5 +325,13 @@ base::TimeDelta OHOSMediaPlayerRenderer::GetMediaTime() {
 media::RendererType OHOSMediaPlayerRenderer::GetRendererType() {
   return media::RendererType::kOHOSMediaPlayer;
 }
+
+#ifdef OHOS_VIDEO_ASSISTANT
+void OHOSMediaPlayerRenderer::SetVideoSurface(int32_t surface_id) {
+  if (media_player_) {
+    media_player_->SetVideoSurface(surface_id);
+  }
+}
+#endif // OHOS_VIDEO_ASSISTANT
 
 }  // namespace content

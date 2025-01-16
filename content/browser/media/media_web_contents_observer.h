@@ -57,6 +57,10 @@ namespace content {
 class AudibleMetrics;
 class WebContentsImpl;
 
+#ifdef OHOS_VIDEO_ASSISTANT
+class MediaPlayerListener;
+#endif // OHOS_VIDEO_ASSISTANT
+
 // This class manages all RenderFrame based media related managers at the
 // browser side. It receives IPC messages from media RenderFrameObservers and
 // forwards them to the corresponding managers. The managers are responsible
@@ -132,7 +136,7 @@ class CONTENT_EXPORT MediaWebContentsObserver
   // is an error to call this method if no MediaPlayer with |player_id| exists.
   mojo::AssociatedRemote<media::mojom::MediaPlayer>& GetMediaPlayerRemote(
       const MediaPlayerId& player_id);
-  
+
 #if defined(OHOS_MEDIA_POLICY)
   bool IsPlayerIdInMediaPlayerRemotesMap(const MediaPlayerId& player_id);
 #endif // defined(OHOS_MEDIA_POLICY)
@@ -260,6 +264,23 @@ class CONTENT_EXPORT MediaWebContentsObserver
     void OnUpdateVideoAttributes(
         media::mojom::VideoAttributesForVASTPtr video_attributes) override;
     void OnVideoDestroyed() override;
+    void OnFullScreenOverlayEnter(
+        media::mojom::MediaInfoForVASTPtr media_info) override;
+
+    void UpdatePlayStateOverlay(bool playState) override;
+    void MutedChangedOverlay(bool muted) override;
+    void PlaybackRateChangedOverlay(double playback_rate) override;
+
+    void DurationChangedOverlay(double duration) override;
+    void TimeUpdateOverlay(double current_time) override;
+    void BufferedEndTimeChangedOverlay(double buffered_end_time) override;
+    void EndedOverlay() override;
+
+    void FullscreenChangedOverlay(bool fullscreen) override;
+    void SeekingOverlay() override;
+    void SeekingFinishedOverlay() override;
+    void ErrorOverlay(int32_t error_code, const std::string& error_msg) override;
+    void VideoSizeChangedOverlay(int32_t width, int32_t height) override;
 #endif // OHOS_VIDEO_ASSISTANT
 
    private:
@@ -279,6 +300,10 @@ class CONTENT_EXPORT MediaWebContentsObserver
     bool uses_audio_service_ = true;
     std::unique_ptr<AudioStreamMonitor::AudibleClientRegistration>
         audio_client_registration_;
+
+#ifdef OHOS_VIDEO_ASSISTANT
+    std::unique_ptr<MediaPlayerListener> media_player_listener_;
+#endif // OHOS_VIDEO_ASSISTANT
 
     base::WeakPtrFactory<MediaPlayerObserverHostImpl> weak_factory_{this};
   };

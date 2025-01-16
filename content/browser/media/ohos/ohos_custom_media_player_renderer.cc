@@ -248,6 +248,9 @@ OHOSCustomMediaPlayerRenderer::~OHOSCustomMediaPlayerRenderer() {
 
 void OHOSCustomMediaPlayerRenderer::Initialize(media::MediaResource* media_resource,
                                      media::RendererClient* client,
+#ifdef OHOS_VIDEO_ASSISTANT
+                                     media::RequestSurfaceCB request_surface_cb,
+#endif // OHOS_VIDEO_ASSISTANT
                                      media::PipelineStatusCallback init_cb) {
   DVLOG(1) << __func__;
 

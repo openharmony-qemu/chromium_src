@@ -26,23 +26,6 @@ class NWebStringVectorValueCallback;
 
 class NWebDevtoolsMessageHandler;
 
-template <class T, typename MethodPointer>
-bool CheckValid(T* obj, MethodPointer* pointer) {
-  if (!obj || !pointer) {
-    return false;
-  }
-  typename T::Base* base = static_cast<typename T::Base*>(obj);
-  uintptr_t start_pos = reinterpret_cast<intptr_t>(base);
-  uintptr_t method_pos = reinterpret_cast<intptr_t>(pointer);
-  if (start_pos + obj->struct_size < method_pos + sizeof(MethodPointer)) {
-    return false;
-  }
-  if (!(*pointer)) {
-    return false;
-  }
-  return true;
-}
-
 struct NWebDevtoolsMessageHandlerBase {
   const size_t struct_size = sizeof(NWebDevtoolsMessageHandlerBase);
   bool (NWebDevtoolsMessageHandler::*show_file_chooser)(

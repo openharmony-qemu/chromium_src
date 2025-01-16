@@ -92,6 +92,10 @@ class MEDIA_GPU_EXPORT CodecWrapper {
 
   bool SetSurface(scoped_refptr<CodecSurfaceBundle> surface_bundle);
 
+#ifdef OHOS_VIDEO_ASSISTANT
+  void SetVideoSurface(int32_t widget_id);
+#endif // OHOS_VIDEO_ASSISTANT
+
   scoped_refptr<CodecSurfaceBundle> SurfaceBundle();
 
   enum class QueueStatus { kOk, kError, kTryAgainLater };

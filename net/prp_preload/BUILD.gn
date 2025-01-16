@@ -19,6 +19,7 @@ source_set("prp_preload") {
   deps = [
     "//base",
     "//net/third_party/quiche",
+    "//services/network/public/mojom",
   ]
 
   sources = [

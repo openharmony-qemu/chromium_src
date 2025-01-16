@@ -17,6 +17,7 @@
 
 #include "cef/include/base/cef_logging.h"
 #include "ohos_nweb/include/nweb_file_selector_params.h"
+#include "ohos_nweb/src/capi/common/common.h"
 #include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
 #include "ohos_nweb/src/cef_delegate/nweb_file_selector_params_impl.h"
 

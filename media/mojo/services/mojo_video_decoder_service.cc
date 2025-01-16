@@ -472,4 +472,10 @@ void MojoVideoDecoderService::OnDecoderRequestedOverlayInfo(
   client_->RequestOverlayInfo(restart_for_transitions);
 }
 
+void MojoVideoDecoderService::SetVideoSurface(int32_t widget_id) {
+  if (decoder_) {
+    decoder_->SetVideoSurface(widget_id);
+  }
+}
+
 }  // namespace media

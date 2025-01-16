@@ -3045,6 +3045,14 @@ void NWebImpl::OnReportStatisticLog(const std::string& content) {
 void NWebImpl::SetOnReportStatisticLogCallback(OnReportStatisticLogFunc func) {
   on_report_statistic_log_callback_ = func;
 }
+
+void NWebImpl::CustomWebMediaPlayer(bool enable) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(WARNING) << "nweb delegate is nullptr when enable custom web media player";
+    return;
+  }
+  nweb_delegate_->CustomWebMediaPlayer(enable);
+}
 #endif  // defined(OHOS_VIDEO_ASSISTANT)
 
 #ifdef OHOS_LOGGER_REPORT

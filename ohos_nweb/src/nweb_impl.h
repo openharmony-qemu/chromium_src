@@ -668,6 +668,7 @@ class NWebImpl : public NWeb {
 
 #ifdef OHOS_AI
   void OnTextSelected() override;
+  void OnDestroyImageAnalyzerOverlay() override;
 #endif
   static base::Lock nweb_map_lock_;
 

@@ -384,6 +384,9 @@ class CONTENT_EXPORT RenderFrameImpl
   void MouseSelectMenuShow(bool show) override;
   void ChangeVisibilityOfQuickMenu() override;
 #endif
+#ifdef OHOS_AI
+  bool CloseImageOverlaySelection() override;
+#endif
   void AddMessageToConsole(blink::mojom::ConsoleMessageLevel level,
                            const std::string& message) override;
   bool IsPasting() override;

@@ -552,6 +552,8 @@ class NWebDelegateInterface
 
 #ifdef OHOS_AI
   virtual void OnTextSelected() = 0;
+  virtual void OnDestroyImageAnalyzerOverlay() = 0;
+  virtual void OnFoldStatusChanged(FoldStatus foldstatus);
 #endif
 
 #if defined(OHOS_SOFTWARE_COMPOSITOR)

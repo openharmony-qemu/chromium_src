@@ -34,6 +34,16 @@ class DisplayScreenListener : public DisplayListenerAdapter {
   std::weak_ptr<NWebDelegateInterface> nweb_;
   std::unique_ptr<DisplayManagerAdapter> display_manager_adapter_;
 };
-}  // namespace OHOS::NWeb
 
+class FoldStatusScreenListener : public FoldStatusListenerAdapter {
+ public:
+  explicit FoldStatusScreenListener(std::shared_ptr<NWebDelegateInterface> nweb);
+  ~FoldStatusScreenListener() = default;
+  void OnFoldStatusChanged(FoldStatus foldStatus) override;
+
+ private:
+  std::weak_ptr<NWebDelegateInterface> nweb_;
+  std::unique_ptr<DisplayManagerAdapter> foldstatus_manager_adapter_;
+};
+}  // namespace OHOS::NWeb
 #endif

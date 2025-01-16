@@ -841,4 +841,7 @@ interface FrameHost {
   [EnableIf=ohos_clipboard]
   ChangeVisibilityOfQuickMenu();
   // #endif OHOS_CLIPBOARD
+
+  [EnableIf=ohos_ai, Sync]
+  CloseImageOverlaySelection() => (bool result);
 };

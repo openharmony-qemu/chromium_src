@@ -3937,6 +3937,13 @@ void NWebImpl::OnTextSelected() {
   }
   nweb_delegate_->OnTextSelected();
 }
+
+void NWebImpl::OnDestroyImageAnalyzerOverlay() {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->OnDestroyImageAnalyzerOverlay();
+}
 #endif
 
 

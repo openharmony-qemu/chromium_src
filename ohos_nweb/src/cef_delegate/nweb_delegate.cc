@@ -600,6 +600,18 @@ InitRichtextIdentifier();
     } else {
       SetVirtualPixelRatio(display->GetVirtualPixelRatio());
     }
+    if (display->IsFoldable()) {
+      foldstatus_listener_ =
+        std::make_shared<FoldStatusScreenListener>(shared_from_this());
+      if (foldstatus_listener_ == nullptr) {
+        LOG(ERROR) << "foldstatus_listener_ init error";
+      }
+      foldstatus_listener_id_ = display_manager_adapter_->RegisterFoldStatusListener(foldstatus_listener_);
+      if (foldstatus_listener_ == nullptr) {
+        LOG(ERROR) << "foldstatus_listener_id_ init error";
+      }
+      OnFoldStatusChanged(display->GetFoldStatus());
+    }
   }
 #if defined(OHOS_WEBRTC)
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
@@ -614,6 +626,9 @@ InitRichtextIdentifier();
 void NWebDelegate::OnDestroy(bool is_close_all) {
   if (display_listener_id_ >= 0 && display_listener_ != nullptr && display_manager_adapter_ != nullptr) {
     display_manager_adapter_->UnregisterDisplayListener(display_listener_id_);
+  }
+  if (foldstatus_listener_id_ >= 0 && foldstatus_listener_ != nullptr && display_manager_adapter_ != nullptr) {
+    display_manager_adapter_->UnregisterFoldStatusListener(foldstatus_listener_id_);
   }
   if (handler_delegate_ != nullptr) {
     handler_delegate_->OnDestroy();
@@ -4408,6 +4423,22 @@ void NWebDelegate::OnTextSelected() {
     return;
   }
   GetBrowser()->GetHost()->OnTextSelected(true);
+}
+
+void NWebDelegate::OnDestroyImageAnalyzerOverlay() {
+  LOG(INFO) << "NWebDelegate::OnDestroyImageAnalyzerOverlay";
+  if (!GetBrowser().get()) {
+    return;
+  }
+  GetBrowser()->GetHost()->OnDestroyImageAnalyzerOverlay();
+}
+
+void NWebDelegate::OnFoldStatusChanged(FoldStatus foldstatus) {
+  LOG(INFO) << "NWebDelegate::OnFoldStatusChanged" << static_cast<uint32_t>(foldstatus);
+  if (!GetBrowser().get()) {
+    return;
+  }
+  GetBrowser()->GetHost()->OnFoldStatusChanged(static_cast<uint32_t>(foldstatus));
 }
 #endif
 

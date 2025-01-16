@@ -15,7 +15,9 @@
 
 #include "base/ohos/sys_info_utils.h"
 
+#include "base/command_line.h"
 #include "base/threading/scoped_blocking_call.h"
+#include "content/public/common/content_switches.h"
 #include "ohos_adapter_helper.h"
 #include "ui/base/clipboard/clipboard.h"
 
@@ -151,6 +153,21 @@ BASE_EXPORT std::string OsVersion() {
 
 BASE_EXPORT std::string BaseOsName() {
   return SystemProperties::Instance()->base_os_name();
+}
+
+BASE_EXPORT int32_t ApplicationApiVersion() {
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kOhosAppApiVersion)) {
+    std::string apiVersion =
+        base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
+            switches::kOhosAppApiVersion);
+    if (!apiVersion.empty()) {
+      // Same as API_VERSION_MOD in js_ui_ability.cpp of ability_runtime
+      static int32_t kApiVersionMod = 100;
+      return (std::stoi(apiVersion) % kApiVersionMod);
+    }
+  }
+  return -1;
 }
 
 }  // namespace ohos

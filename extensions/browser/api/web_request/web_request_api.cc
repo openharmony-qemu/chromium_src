@@ -776,7 +776,11 @@ bool WebRequestAPI::MaybeProxyURLLoaderFactory(
     // expanded, it should live somewhere else so that we don't have to create
     // a full proxy just for telemetry.
     const std::string& request_scheme = request_initiator.scheme();
-    if (extensions::kExtensionScheme == request_scheme &&
+    if ((extensions::kExtensionScheme == request_scheme
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+         || extensions::kArkwebExtensionScheme == request_scheme
+#endif
+         ) &&
         ExtensionsBrowserClient::Get()->IsExtensionTelemetryServiceEnabled(
             browser_context) &&
         base::FeatureList::IsEnabled(
@@ -1040,6 +1044,9 @@ bool ExtensionWebRequestEventRouter::RequestFilter::InitFromValue(
         URLPattern pattern(URLPattern::SCHEME_HTTP | URLPattern::SCHEME_HTTPS |
                            URLPattern::SCHEME_FTP | URLPattern::SCHEME_FILE |
                            URLPattern::SCHEME_EXTENSION |
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+                           URLPattern::SCHEME_ARKWEB_EXTENSION |
+#endif
                            URLPattern::SCHEME_WS | URLPattern::SCHEME_WSS |
                            URLPattern::SCHEME_UUID_IN_PACKAGE);
         if (item.is_string())
@@ -1164,7 +1171,11 @@ int ExtensionWebRequestEventRouter::OnBeforeRequest(
     const std::string& scheme = request->initiator->scheme();
     const std::string& extension_id = request->initiator->host();
     const GURL& request_url = request->url;
-    if (scheme == extensions::kExtensionScheme) {
+    if (scheme == extensions::kExtensionScheme
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+        || scheme == extensions::kArkwebExtensionScheme
+#endif
+    ) {
       ExtensionsBrowserClient::Get()->NotifyExtensionRemoteHostContacted(
           browser_context, extension_id, request_url);
     }

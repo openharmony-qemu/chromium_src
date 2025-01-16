@@ -402,6 +402,9 @@ void OmniboxView::UpdateTextStyle(
 
   const bool is_extension_url =
 #if BUILDFLAG(ENABLE_EXTENSIONS)
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+      url_scheme == base::UTF8ToUTF16(extensions::kArkwebExtensionScheme) ||
+#endif
       url_scheme == base::UTF8ToUTF16(extensions::kExtensionScheme);
 #else
       false;

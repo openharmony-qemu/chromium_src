@@ -686,8 +686,9 @@ class CONTENT_EXPORT WebContentsDelegate {
                          RenderFrameHost* rfh);
 
 #if defined(OHOS_ARKWEB_EXTENSIONS)
-  // Called when chrome.tabs.update({url: 'xxx'})
-  virtual void WebExtensionUpdateTabUrl(int32_t tab_id, const GURL& url);
+  virtual void WebExtensionUpdateTab(
+      int32_t tab_id,
+      const NWebExtensionTabUpdateProperties* update_properties);
   virtual int32_t GetTabId();
 #endif
 

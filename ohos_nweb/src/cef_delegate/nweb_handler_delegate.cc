@@ -68,6 +68,11 @@
 
 #include "ohos_adapter_helper.h"
 
+#ifdef OHOS_ARKWEB_EXTENSIONS
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif // OHOS_ARKWEB_EXTENSIONS
+
 #if defined(REPORT_SYS_EVENT)
 #include "event_reporter.h"
 #endif
@@ -121,9 +126,10 @@ const int WEB_CAN_SNAPSHOT_DELAY_TIME = 1500;
 
 const int VIEW_PORT_DIFF = 5;
 
-#ifdef OHOS_NWEB_EX
+#if defined(OHOS_ARKWEB_EXTENSIONS)
 std::shared_ptr<NWebExtensionApiCallback> g_extension_api_listener = nullptr;
-#endif  // if defined(OHOS_NWEB_EX)
+static std::map<int, TabCreatedCallback> g_tab_created_map_;
+#endif // OHOS_ARKWEB_EXTENSIONS
 
 ImageColorType TransformColorType(cef_color_type_t color_type) {
   switch (color_type) {
@@ -2560,7 +2566,12 @@ void NWebHandlerDelegate::OnGeolocationHide() {
 
 void NWebHandlerDelegate::OnPermissionRequest(
     CefRefPtr<CefAccessRequest> request) {
-  if (nweb_handler_ != nullptr) {
+  if (nweb_handler_ != nullptr
+#ifdef OHOS_NOTIFICATION
+        || request->ResourceAcessId() ==
+            NWebAccessRequest::Resources::NOTIFICATION
+#endif // OHOS_NOTIFICATION
+        ) {
     std::shared_ptr<NWebAccessRequest> access_request =
         std::make_shared<NWebAccessRequestDelegate>(request);
     nweb_handler_->OnPermissionRequest(access_request);
@@ -4035,7 +4046,7 @@ void NWebHandlerDelegate::EnableVideoAssistant(bool enable) {
 }
 #endif // OHOS_VIDEO_ASSISTANT
 
-#ifdef OHOS_NWEB_EX
+#if defined(OHOS_ARKWEB_EXTENSIONS)
 // static
 void NWebHandlerDelegate::RegisterWebExtensionApiListener(
     std::shared_ptr<NWebExtensionApiCallback> web_extension_api_listener) {\
@@ -4050,16 +4061,68 @@ void NWebHandlerDelegate::UnRegisterWebExtensionApiListener() {
   g_extension_api_listener = nullptr;
 }
 
-void NWebHandlerDelegate::OnUpdateTabUrl(int tab_id, const CefString& url) {
+void NWebHandlerDelegate::OnUpdateTab(
+    int tab_id,
+    const NWebExtensionTabUpdateProperties* update_properties) {
   if (!g_extension_api_listener) {
     LOG(ERROR) << "No web extension api listener";
     return;
   }
 
-  std::string urlStr = url.ToString();
-  LOG(INFO) << "OnUpdateTabUrl:" << tab_id;
-  g_extension_api_listener->OnUpdateTabUrl(tab_id, urlStr.c_str());
+  if (g_extension_api_listener->OnUpdateTab) {
+    LOG(INFO) << "OnUpdateTab tabId: " << tab_id;
+    g_extension_api_listener->OnUpdateTab(tab_id, update_properties);
+    return;
+  }
+
+  // Compatible with older versions
+  if (g_extension_api_listener->OnUpdateTabUrl) {
+    LOG(INFO) << "OnUpdateTabUrl tabId: " << tab_id;
+    if (!update_properties->url) {
+      LOG(ERROR) << "OnUpdateTabUrl not has url";
+      return;
+    }
+    g_extension_api_listener->OnUpdateTabUrl(
+          tab_id,
+          update_properties->url.value().c_str());
+    return;
+  }
+
+  LOG(ERROR) << "g_extension_api_listener OnUpdateTab is nullptr";
 }
-#endif
+
+// static
+bool NWebHandlerDelegate::OnCreateTab(const NWebTabCreateInfo& create_info,
+                                      TabCreatedCallback callback) {
+  static int request_id = 0;
+  if (!g_extension_api_listener) {
+    LOG(ERROR) << "No web extension api listener";
+    return false;
+  }
+
+  if (!g_extension_api_listener->OnCreateTab) {
+    LOG(ERROR) << "g_extension_api_listener OnCreateTab is nullptr";
+    return false;
+  }
+
+  request_id++;
+  LOG(INFO) << "OnCreateTab";
+  g_tab_created_map_[request_id] = std::move(callback);
+  g_extension_api_listener->OnCreateTab(create_info, request_id);
+  return true;
+}
+
+void NWebHandlerDelegate::WebExtensionTabCreateCallback(int request_id,
+                                                        const NWebExtensionTab* tab) {
+  if (g_tab_created_map_.count(request_id)) {
+    std::move(g_tab_created_map_[request_id]).Run(tab);
+    g_tab_created_map_.erase(request_id);
+  }
+}
+
+bool NWebHandlerDelegate::HasExtensionListener() {
+  return !!g_extension_api_listener;
+}
+#endif // OHOS_ARKWEB_EXTENSIONS
 
 }  // namespace OHOS::NWeb

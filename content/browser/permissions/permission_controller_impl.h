@@ -125,6 +125,16 @@ class CONTENT_EXPORT PermissionControllerImpl : public PermissionController {
       blink::PermissionType permission,
       const url::Origin& requesting_origin,
       const url::Origin& embedding_origin) override;
+
+#ifdef OHOS_NOTIFICATION
+  void GetPermissionStatusAsync(
+      blink::PermissionType permission,
+      bool isFromDocument,
+      void* render_host,
+      const url::Origin& origin,
+      base::OnceCallback<void(blink::mojom::PermissionStatus)> callback) override;
+#endif // OHOS_NOTIFICATION
+
   // WARNING: Permission requests order is not guaranteed.
   // TODO(crbug.com/1363094): Migrate to `std::set`.
   void RequestPermissions(

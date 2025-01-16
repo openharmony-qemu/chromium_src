@@ -65,6 +65,7 @@ class URLPattern {
     SCHEME_UUID_IN_PACKAGE = 1 << 10,
 #if defined(OHOS_ARKWEB_EXTENSIONS)
     SCHEME_ARKWEBUI = 1 << 11,
+    SCHEME_ARKWEB_EXTENSION = 1 << 12,
 #endif
     // IMPORTANT!
     // SCHEME_ALL will match every scheme, including chrome://, chrome-

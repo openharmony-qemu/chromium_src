@@ -156,7 +156,11 @@ ScriptContext::~ScriptContext() {
 bool ScriptContext::IsSandboxedPage(const GURL& url) {
   // TODO(kalman): This is checking the wrong thing. See comment in
   // HasAccessOrThrowError.
-  if (url.SchemeIs(kExtensionScheme)) {
+  if (url.SchemeIs(kExtensionScheme)
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+      || url.SchemeIs(kArkwebExtensionScheme)
+#endif
+  ) {
     const Extension* extension =
         RendererExtensionRegistry::Get()->GetByID(url.host());
     if (extension) {

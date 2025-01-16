@@ -291,8 +291,13 @@ Dispatcher::Dispatcher(std::unique_ptr<DispatcherDelegate> delegate)
   // this enabled-ness is too late.
   WorkerThreadDispatcher::Get()->Init(RenderThread::Get());
 
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  // Register WebSecurityPolicy allowlists for the arkweb-extension:// scheme.
+  WebString extension_scheme(WebString::FromASCII(kArkwebExtensionScheme));
+#else
   // Register WebSecurityPolicy allowlists for the chrome-extension:// scheme.
   WebString extension_scheme(WebString::FromASCII(kExtensionScheme));
+#endif
 
   // Extension resources are HTTP-like and safe to expose to the fetch API. The
   // rules for the fetch API are consistent with XHR.
@@ -467,7 +472,11 @@ void Dispatcher::DidInitializeServiceWorkerContextOnWorkerThread(
     blink::WebServiceWorkerContextProxy* context_proxy,
     const GURL& service_worker_scope,
     const GURL& script_url) {
-  if (!script_url.SchemeIs(kExtensionScheme))
+  if (!script_url.SchemeIs(kExtensionScheme)
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+      && !script_url.SchemeIs(kArkwebExtensionScheme)
+#endif
+  )
     return;
 
   {
@@ -498,7 +507,11 @@ void Dispatcher::WillEvaluateServiceWorkerOnWorkerThread(
 
   // TODO(crbug/961821): We may want to give service workers not registered
   // by extensions minimal bindings, the same as other webpage-like contexts.
-  if (!script_url.SchemeIs(kExtensionScheme)) {
+  if (!script_url.SchemeIs(kExtensionScheme)
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+      && !script_url.SchemeIs(kArkwebExtensionScheme)
+#endif
+  ) {
     // Early-out if this isn't a chrome-extension:// scheme, because looking up
     // the extension registry is unnecessary if it's not. Checking this will
     // also skip over hosted apps, which is the desired behavior - hosted app

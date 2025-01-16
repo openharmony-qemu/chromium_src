@@ -216,7 +216,11 @@ void URLLoaderFactoryManager::OverrideURLLoaderFactoryParams(
       origin.GetTupleOrPrecursorTupleIfOpaque();
 
   // Don't change factory params for something that is not an extension.
-  if (precursor_origin.scheme() != kExtensionScheme)
+  if (precursor_origin.scheme() != kExtensionScheme
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+      && precursor_origin.scheme() != kArkwebExtensionScheme
+#endif
+  )
     return;
 
   // Find the |extension| associated with |initiator_origin|.

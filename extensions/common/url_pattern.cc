@@ -35,7 +35,7 @@ const char* const kValidSchemes[] = {
     url::kWssScheme,           url::kDataScheme,
     url::kUuidInPackageScheme,
 #if defined(OHOS_ARKWEB_EXTENSIONS)
-    content::kArkWebUIScheme,
+    content::kArkWebUIScheme,  extensions::kArkwebExtensionScheme,
 #endif
 };
 
@@ -53,6 +53,7 @@ const int kValidSchemeMasks[] = {
     URLPattern::SCHEME_UUID_IN_PACKAGE,
 #if defined(OHOS_ARKWEB_EXTENSIONS)
     URLPattern::SCHEME_ARKWEBUI,
+    URLPattern::SCHEME_ARKWEB_EXTENSION,
 #endif
 };
 

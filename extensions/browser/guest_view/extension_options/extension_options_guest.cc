@@ -174,7 +174,11 @@ WebContents* ExtensionOptionsGuest::OpenURLFromTab(
 
   // Don't allow external URLs with the CURRENT_TAB disposition be opened in
   // this guest view, change the disposition to NEW_FOREGROUND_TAB.
-  if ((!params.url.SchemeIs(extensions::kExtensionScheme) ||
+  if (((!params.url.SchemeIs(extensions::kExtensionScheme)
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+        && !params.url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+            ) ||
        params.url.host() != options_page_.host()) &&
       params.disposition == WindowOpenDisposition::CURRENT_TAB) {
     return extension_options_guest_delegate_->OpenURLInNewTab(

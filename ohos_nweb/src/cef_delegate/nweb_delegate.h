@@ -546,6 +546,10 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
                        const WebSnapshotCallback callback) override;
 #endif
 
+#ifdef OHOS_AI
+  void OnFoldStatusChanged(FoldStatus foldstatus) override;
+#endif
+
 #ifdef OHOS_URL_TRUST_LIST
   int SetUrlTrustListWithErrMsg(
     const std::string& urlTrustList, std::string& detailErrMsg) override;
@@ -717,6 +721,9 @@ void SetSurfaceDensity(const double& density) override;
   std::shared_ptr<OHOS::NWeb::DisplayScreenListener> display_listener_ =
       nullptr;
   int32_t display_listener_id_;
+  std::shared_ptr<OHOS::NWeb::FoldStatusScreenListener> foldstatus_listener_ =
+      nullptr;
+  int32_t foldstatus_listener_id_ = 0;
   // Members only accessed on the main thread.
   bool hidden_ = false;
   bool occluded_ = false;

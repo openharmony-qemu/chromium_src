@@ -540,6 +540,7 @@ virtual int ScaleGestureChange(double scale, double centerX, double centerY) con
 #ifdef OHOS_AI
   virtual void OnTextSelected() = 0;
   virtual void OnDestroyImageAnalyzerOverlay() = 0;
+  virtual void OnFoldStatusChanged(FoldStatus foldstatus);
 #endif
 
 #if OHOS_URL_TRUST_LIST

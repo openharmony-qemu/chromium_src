@@ -7514,6 +7514,15 @@ void WebContentsImpl::CollapseAllFramesSelection() {
 }
 #endif
 
+#ifdef OHOS_AI
+bool WebContentsImpl::CloseImageOverlaySelection() {
+  if (render_view_host_delegate_view_) {
+    return render_view_host_delegate_view_->CloseImageOverlaySelection();
+  }
+  return false;
+}
+#endif
+
 void WebContentsImpl::ShowContextMenu(
     RenderFrameHost& render_frame_host,
     mojo::PendingAssociatedRemote<blink::mojom::ContextMenuClient>

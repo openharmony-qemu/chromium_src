@@ -2385,6 +2385,9 @@ class CONTENT_EXPORT RenderFrameHostImpl
   void MouseSelectMenuShow(bool show) override;
   void ChangeVisibilityOfQuickMenu() override;
 #endif
+#ifdef OHOS_AI
+  void CloseImageOverlaySelection(CloseImageOverlaySelectionCallback callback) override;
+#endif
   void DidLoadResourceFromMemoryCache(
       const GURL& url,
       const std::string& http_method,

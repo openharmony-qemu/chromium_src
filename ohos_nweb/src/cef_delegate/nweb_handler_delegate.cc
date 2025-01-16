@@ -3098,6 +3098,13 @@ void NWebHandlerDelegate::ChangeVisibilityOfQuickMenu() {
     nweb_handler_->ChangeVisibilityOfQuickMenu();
   }
 }
+
+bool NWebHandlerDelegate::CloseImageOverlaySelection() {
+  if (nweb_handler_ != nullptr) {
+    return nweb_handler_->CloseImageOverlaySelection();
+  }
+  return false;
+}
 /* CefContextMenuHandler method end */
 
 /* CefFindandler method begin */

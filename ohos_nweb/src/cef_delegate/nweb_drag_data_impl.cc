@@ -53,6 +53,7 @@ namespace {
   constexpr int IMAGE_EXPAND_PADDING = 11;
   constexpr int IMAGE_SHADOW_COLOR = 0xA0000000;
   constexpr int IMAGE_SHADOW_DY = 3;
+  constexpr int DEFAULT_MIN_HEIGHT_THRESHOLD = 2;
 }
 
 namespace OHOS::NWeb {
@@ -168,7 +169,11 @@ SkPath NWebDragDataImpl::GetShadowPath(int width, int height) {
     return out_path;
   }
 
-  bool is_oneline = ((start_edge_top_.y == end_edge_top_.y) && (start_edge_bottom_.y == end_edge_bottom_.y));
+  auto ohMinHeightThreshold = ToOhCoordinate(DEFAULT_MIN_HEIGHT_THRESHOLD);
+  bool is_oneline = ((start_edge_top_.y == end_edge_top_.y) && (start_edge_bottom_.y == end_edge_bottom_.y)) ||
+    (std::abs(start_edge_bottom_.y - start_edge_top_.y - drag_clip_height_) < ohMinHeightThreshold &&
+    drag_clip_height_ > ohMinHeightThreshold);
+
   bool is_both_out_clip_region = (start_edge_top_.y < 0) &&
     (std::abs(end_edge_bottom_.y - (drag_image_origin_point_.y + drag_clip_height_)) > ToOhCoordinate(WEIRD_PADDING));
   bool is_start_line_compelete = (start_edge_top_.y >= 0) &&

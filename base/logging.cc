@@ -699,9 +699,9 @@ void SetLoggerCallbackToBase(LoggerCallbackFunction loggerCallback) {
   g_logger_callback = loggerCallback;
 }
 
-static bool is_enable = false;
 bool IsEnableLoggerReport() 
 {
+  static bool is_enable = false;
   if (is_enable) {
     return true;
   }

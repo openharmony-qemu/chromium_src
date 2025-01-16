@@ -35,6 +35,7 @@ buildflag_header("buildflags") {
 config("skia_config") {
   defines = [
     "SK_CODEC_DECODES_PNG",
+    "SK_HAS_HEIF_LIBRARY",
     "SK_CODEC_DECODES_WEBP",
     "SK_ENCODE_PNG",
     "SK_ENCODE_WEBP",

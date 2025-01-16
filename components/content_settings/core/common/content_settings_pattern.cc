@@ -35,6 +35,9 @@ size_t g_non_domain_wildcard_non_port_schemes_count = 0;
 const char* const kSchemeNames[] = {"wildcard",         "other",
                                     url::kHttpScheme,   url::kHttpsScheme,
                                     url::kFileScheme,   "chrome-extension",
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+      "arkweb-extension",
+#endif
                                     "chrome-search",    "chrome",
                                     "chrome-untrusted", "devtools"};
 

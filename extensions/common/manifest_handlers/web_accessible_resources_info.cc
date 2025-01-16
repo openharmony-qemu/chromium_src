@@ -41,7 +41,11 @@ const WebAccessibleResourcesInfo* GetResourcesInfo(const Extension* extension) {
 }
 
 URLPattern GetPattern(std::string relative_path, const Extension& extension) {
-  URLPattern pattern(URLPattern::SCHEME_EXTENSION);
+  URLPattern pattern(URLPattern::SCHEME_EXTENSION
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+                     | URLPattern::SCHEME_ARKWEB_EXTENSION
+#endif
+  );
   URLPattern::ParseResult result = pattern.Parse(extension.url().spec());
   DCHECK_EQ(URLPattern::ParseResult::kSuccess, result);
   while (relative_path[0] == '/')
@@ -194,7 +198,11 @@ bool WebAccessibleResourcesInfo::IsResourceWebAccessible(
       // Match patterns.
       if (entry.matches.MatchesURL(initiator_url))
         return true;
-      if (initiator_url.SchemeIs(extensions::kExtensionScheme) &&
+      if ((initiator_url.SchemeIs(extensions::kExtensionScheme)
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+           || initiator_url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+               ) &&
           (entry.allow_all_extensions ||
            extension->id() == initiator_url.host() ||
            base::Contains(entry.extension_ids, initiator_url.host()))) {

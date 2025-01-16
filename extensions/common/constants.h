@@ -18,6 +18,10 @@ namespace extensions {
 // Scheme we serve extension content from.
 EXTENSIONS_EXPORT extern const char kExtensionScheme[];
 
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+EXTENSIONS_EXPORT extern const char kArkwebExtensionScheme[];
+#endif
+
 // The name of the manifest inside an extension.
 EXTENSIONS_EXPORT extern const base::FilePath::CharType kManifestFilename[];
 

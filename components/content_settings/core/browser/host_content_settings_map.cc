@@ -107,6 +107,9 @@ static_assert(FirstUserModifiableProviderIsHighestPrecedence(),
 bool SchemeCanBeAllowlisted(const std::string& scheme) {
   return scheme == content_settings::kChromeDevToolsScheme ||
          scheme == content_settings::kExtensionScheme ||
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+         scheme == content_settings::kArkwebExtensionScheme ||
+#endif
          scheme == content_settings::kChromeUIScheme;
 }
 

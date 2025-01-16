@@ -471,7 +471,8 @@ declare global {
           Promise<MatchingExtensionInfo[]>;
       export function updateSiteAccess(
           site: string, updates: ExtensionSiteAccessUpdate[]): Promise<void>;
-
+      // ifdef OHOS_ARKWEB_EXTENSIONS
+      export function openUrl(url: string): void;
       export const onItemStateChanged: ChromeEvent<(data: EventData) => void>;
       export const onProfileStateChanged:
           ChromeEvent<(info: ProfileInfo) => void>;

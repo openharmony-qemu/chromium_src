@@ -109,6 +109,10 @@ class CONTENT_EXPORT BlinkNotificationServiceImpl
   // the checks fail.
   bool IsValidForNonPersistentNotification();
 
+#ifdef OHOS_NOTIFICATION
+  void CheckPermissionStatusAsync(GetPermissionStatusCallback callback);
+#endif // OHOS_NOTIFICATION
+
   // The notification context that owns this service instance.
   raw_ptr<PlatformNotificationContextImpl> notification_context_;
 

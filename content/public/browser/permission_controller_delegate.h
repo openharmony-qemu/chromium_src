@@ -148,6 +148,13 @@ class CONTENT_EXPORT PermissionControllerDelegate {
   virtual bool IsPermissionOverridable(
       blink::PermissionType permission,
       const absl::optional<url::Origin>& origin);
+
+#ifdef OHOS_NOTIFICATION
+  virtual void GetPermissionStatusAsync(
+      blink::PermissionType permission,
+      const GURL& requesting_origin,
+      base::OnceCallback<void(blink::mojom::PermissionStatus)> callback) {}
+#endif // OHOS_NOTIFICATION
 };
 
 }  // namespace content

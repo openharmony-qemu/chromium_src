@@ -46,7 +46,9 @@ class MapValueIterator {
 const char kChromeDevToolsScheme[] = "devtools";
 const char kChromeUIScheme[] = "chrome";
 const char kExtensionScheme[] = "chrome-extension";
-
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+const char kArkwebExtensionScheme[] = "arkweb-extension";
+#endif
 std::string ContentSettingToString(ContentSetting setting);
 
 // Converts a content setting string to the corresponding ContentSetting.

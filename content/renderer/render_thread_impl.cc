@@ -576,6 +576,9 @@ bool g_has_renderer_log_dropped[logging::LOGGING_MAX] = {false};
 // RenderThreadImpl::current() called from other threads due to it's a
 // pointer in tls.
 void ReportRendererLogOnMainThread(int policy, const std::string& msg) {
+  if (policy <= 0 || policy >= logging::LOGGING_MAX) {
+    return;
+  }
   const base::TimeTicks now = base::TimeTicks::Now();
   if ((now - g_last_renderer_log_sent_time[policy]) < kMaxIPCLoginInterval) {
     if (!g_has_renderer_log_dropped[policy]) {

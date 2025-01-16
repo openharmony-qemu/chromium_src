@@ -59,6 +59,10 @@
 #include "cef/include/cef_logger_callback_api_handler.h"
 #endif
 
+#ifdef OHOS_ARKWEB_EXTENSIONS
+using TabCreatedCallback = base::RepeatingCallback<void(const NWebExtensionTab*)>;
+#endif // OHOS_ARKWEB_EXTENSIONS
+
 struct NativeWindow;
 
 namespace OHOS::NWeb {
@@ -781,14 +785,21 @@ void OnTouchIconUrlWithSizesReceived(
   void OnRenderProcessResponding(CefRefPtr<CefBrowser> browser) override;
 #endif
 
-#ifdef OHOS_NWEB_EX
+#if defined(OHOS_ARKWEB_EXTENSIONS)
   static void RegisterWebExtensionApiListener(
       std::shared_ptr<NWebExtensionApiCallback> web_extension_api_listener);
   static void UnRegisterWebExtensionApiListener();
 
   // CefWebExtensionApiHandler implements
-  void OnUpdateTabUrl(int tab_id, const CefString& url) override;
-#endif
+  void OnUpdateTab(
+      int tab_id,
+      const NWebExtensionTabUpdateProperties* update_properties) override;
+  static bool OnCreateTab(const NWebTabCreateInfo& create_info,
+                          TabCreatedCallback callback);
+  static void WebExtensionTabCreateCallback(int request_id,
+                                            const NWebExtensionTab* tab);
+  static bool HasExtensionListener();
+#endif // OHOS_ARKWEB_EXTENSIONS
 
 #ifdef OHOS_DISPLAY_CUTOUT
   void OnViewportFitChange(CefRefPtr<CefBrowser> browser,

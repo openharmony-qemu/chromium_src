@@ -68,6 +68,8 @@
 #include "ui/gfx/geometry/skia_conversions.h"
 #include "ui/gl/trace_util.h"
 
+#define MAX_RENDER_TARGET_SIZE 8192
+
 namespace cc {
 
 // A feature that will start a task on a timer to purge old cache entries.
@@ -2998,7 +3000,10 @@ GpuImageDecodeCache::CreateImageData(const DrawImage& draw_image,
 
 #if BUILDFLAG(ENABLE_HEIF_DECODER)
     if ((image_metadata->image_type == ImageType::kHEIF)) {
-      do_hardware_accelerated_decode = true;
+      if (image_metadata->image_size.width() <= MAX_RENDER_TARGET_SIZE &&
+          image_metadata->image_size.height() <= MAX_RENDER_TARGET_SIZE) {
+        do_hardware_accelerated_decode = true;
+      }
       DCHECK(!is_bitmap_backed);
     }
 #endif

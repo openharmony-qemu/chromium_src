@@ -12,6 +12,10 @@
 #include "media/base/ohos/ohos_media_player_listener.h"
 #include "ohos_adapter_helper.h"
 
+#ifdef OHOS_VIDEO_ASSISTANT
+#include "gpu/ipc/common/nweb_native_window_tracker.h"
+#endif // OHOS_VIDEO_ASSISTANT
+
 namespace media {
 
 constexpr int QUEUE_SIZE = 3;
@@ -469,4 +473,40 @@ int32_t OHOSMediaPlayerBridge::SetFdSource(const std::string& path) {
 bool OHOSMediaPlayerBridge::IsAudible(float volume) {
   return volume > 0;
 }
+
+#ifdef OHOS_VIDEO_ASSISTANT
+void OHOSMediaPlayerBridge::SetVideoSurface(int32_t surface_id) {
+  if (surface_id > 0) {
+    SetVideoSurfaceNew(surface_id);
+  } else {
+    SetVideoSurfaceOld();
+  }
+}
+
+void OHOSMediaPlayerBridge::SetVideoSurfaceNew(int32_t surface_id) {
+  if (new_surface_id_ == surface_id) {
+    return;
+  }
+  if (new_surface_id_ > 0) {
+    NWebNativeWindowTracker::Get()->DestroyNativeWindow(new_surface_id_);
+    new_surface_id_ = -1;
+  }
+  void* native_window = nullptr;
+  if (player_) {
+    native_window = NWebNativeWindowTracker::Get()->GetNativeWindow(surface_id);
+  }
+  if (native_window) {
+    new_surface_id_ = surface_id;
+    player_->SetVideoSurfaceNew(native_window);
+  }
+}
+
+void OHOSMediaPlayerBridge::SetVideoSurfaceOld() {
+  if (new_surface_id_ > 0) {
+    NWebNativeWindowTracker::Get()->DestroyNativeWindow(new_surface_id_);
+    new_surface_id_ = -1;
+  }
+  player_->SetVideoSurface(consumer_surface_);
+}
+#endif // OHOS_VIDEO_ASSISTANT
 }  // namespace media

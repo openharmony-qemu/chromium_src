@@ -661,6 +661,7 @@ void SetDelayDurationForBackgroundTabFreezing(int64_t delay) override;
 #if defined(OHOS_VIDEO_ASSISTANT)
   void EnableVideoAssistant(bool enable) override;
   void ExecuteVideoAssistantFunction(const std::string& cmd_id) override;
+  void CustomWebMediaPlayer(bool enable) override;
 #endif  // defined(OHOS_VIDEO_ASSISTANT)
 
   std::shared_ptr<NWebCustomKeyboardHandlerImpl> GetCustomKeyboardHandler() const override {

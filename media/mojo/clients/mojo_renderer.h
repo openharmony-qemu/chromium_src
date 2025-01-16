@@ -55,6 +55,9 @@ class MojoRenderer : public Renderer, public mojom::RendererClient {
   // Renderer implementation.
   void Initialize(MediaResource* media_resource,
                   media::RendererClient* client,
+#ifdef OHOS_VIDEO_ASSISTANT
+                  RequestSurfaceCB request_surface_cb,
+#endif // OHOS_VIDEO_ASSISTANT
                   PipelineStatusCallback init_cb) override;
   void SetCdm(CdmContext* cdm_context, CdmAttachedCB cdm_attached_cb) override;
   void SetLatencyHint(absl::optional<base::TimeDelta> latency_hint) override;
@@ -126,6 +129,10 @@ class MojoRenderer : public Renderer, public mojom::RendererClient {
 
   void CancelPendingCallbacks();
 
+#ifdef OHOS_VIDEO_ASSISTANT
+  void OnRequestVideoSurfaceDone(int32_t surface_id);
+#endif // OHOS_VIDEO_ASSISTANT
+
   // |task_runner| on which all methods are invoked, except for GetMediaTime(),
   // which can be called on any thread.
   scoped_refptr<base::SequencedTaskRunner> task_runner_;
@@ -189,6 +196,11 @@ class MojoRenderer : public Renderer, public mojom::RendererClient {
   bool is_audio_ = false;
   bool muted_ = false;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  RequestSurfaceCB request_surface_cb_;
+  base::WeakPtrFactory<MojoRenderer> weak_factory_{this};
+#endif // OHOS_VIDEO_ASSISTANT
 };
 
 }  // namespace media

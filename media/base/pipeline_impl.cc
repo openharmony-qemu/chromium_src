@@ -73,11 +73,18 @@ class PipelineImpl::RendererWrapper final : public DemuxerHost,
   void Start(StartType start_type,
              Demuxer* demuxer,
              std::unique_ptr<Renderer> default_renderer,
+#ifdef OHOS_VIDEO_ASSISTANT
+             RequestSurfaceCB request_surface_cb,
+#endif // OHOS_VIDEO_ASSISTANT
              base::WeakPtr<PipelineImpl> weak_pipeline);
   void Stop();
   void Seek(base::TimeDelta time);
   void Suspend();
-  void Resume(std::unique_ptr<Renderer> default_renderer, base::TimeDelta time);
+  void Resume(
+#ifdef OHOS_VIDEO_ASSISTANT
+      RequestSurfaceCB request_surface_cb,
+#endif // OHOS_VIDEO_ASSISTANT
+      std::unique_ptr<Renderer> default_renderer, base::TimeDelta time);
   void SetPlaybackRate(double playback_rate);
   void SetVolume(float volume);
   void SetLatencyHint(absl::optional<base::TimeDelta> latency_hint);
@@ -249,6 +256,10 @@ class PipelineImpl::RendererWrapper final : public DemuxerHost,
   // Called from non-media threads when an error occurs.
   PipelineStatusCB error_cb_;
 
+#ifdef OHOS_VIDEO_ASSISTANT
+  RequestSurfaceCB request_surface_cb_;
+#endif // OHOS_VIDEO_ASSISTANT
+
   base::WeakPtrFactory<RendererWrapper> weak_factory_{this};
 };
 
@@ -283,6 +294,9 @@ void PipelineImpl::RendererWrapper::Start(
     StartType start_type,
     Demuxer* demuxer,
     std::unique_ptr<Renderer> default_renderer,
+#ifdef OHOS_VIDEO_ASSISTANT
+    RequestSurfaceCB request_surface_cb,
+#endif // OHOS_VIDEO_ASSISTANT
     base::WeakPtr<PipelineImpl> weak_pipeline) {
   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
   DCHECK(state_ == kCreated || state_ == kStopped)
@@ -295,6 +309,10 @@ void PipelineImpl::RendererWrapper::Start(
   demuxer_ = demuxer;
   default_renderer_ = std::move(default_renderer);
   weak_pipeline_ = weak_pipeline;
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  request_surface_cb_ = std::move(request_surface_cb);
+#endif // OHOS_VIDEO_ASSISTANT
 
   // Setup |error_cb_| on the media thread.
   error_cb_ = base::BindRepeating(&RendererWrapper::OnPipelineError,
@@ -435,6 +453,9 @@ void PipelineImpl::RendererWrapper::Suspend() {
 }
 
 void PipelineImpl::RendererWrapper::Resume(
+#ifdef OHOS_VIDEO_ASSISTANT
+    RequestSurfaceCB request_surface_cb,
+#endif // OHOS_VIDEO_ASSISTANT
     std::unique_ptr<Renderer> default_renderer,
     base::TimeDelta timestamp) {
   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
@@ -466,6 +487,9 @@ void PipelineImpl::RendererWrapper::Resume(
   text_renderer_ended_ = false;
   base::TimeDelta start_timestamp =
       std::max(timestamp, demuxer_->GetStartTime());
+#ifdef OHOS_VIDEO_ASSISTANT
+  request_surface_cb_ = std::move(request_surface_cb);
+#endif // OHOS_VIDEO_ASSISTANT
 
   // Queue the asynchronous actions required to start playback.
   SerialRunner::Queue fns;
@@ -1152,7 +1176,11 @@ void PipelineImpl::RendererWrapper::InitializeRenderer(
   shared_state_.renderer->SetWasPlayedWithUserActivation(
       was_played_with_user_activation_);
 
-  shared_state_.renderer->Initialize(demuxer_, this, std::move(done_cb));
+  shared_state_.renderer->Initialize(demuxer_, this,
+#ifdef OHOS_VIDEO_ASSISTANT
+      std::move(request_surface_cb_),
+#endif // OHOS_VIDEO_ASSISTANT
+      std::move(done_cb));
 }
 
 void PipelineImpl::RendererWrapper::DestroyRenderer() {
@@ -1278,6 +1306,9 @@ PipelineImpl::~PipelineImpl() {
 void PipelineImpl::Start(StartType start_type,
                          Demuxer* demuxer,
                          Client* client,
+#ifdef OHOS_VIDEO_ASSISTANT
+                         RequestSurfaceCB request_surface_cb,
+#endif // OHOS_VIDEO_ASSISTANT
                          PipelineStatusCallback seek_cb) {
   DVLOG(2) << __func__ << ": start_type=" << static_cast<int>(start_type);
   DCHECK(thread_checker_.CalledOnValidThread());
@@ -1306,6 +1337,9 @@ void PipelineImpl::Start(StartType start_type,
       base::BindOnce(&RendererWrapper::Start,
                      base::Unretained(renderer_wrapper_.get()), start_type,
                      demuxer, std::move(default_renderer),
+#ifdef OHOS_VIDEO_ASSISTANT
+                     std::move(request_surface_cb),
+#endif // OHOS_VIDEO_ASSISTANT
                      weak_factory_.GetWeakPtr()));
 }
 
@@ -1375,6 +1409,9 @@ void PipelineImpl::Suspend(PipelineStatusCallback suspend_cb) {
 }
 
 void PipelineImpl::Resume(base::TimeDelta time,
+#ifdef OHOS_VIDEO_ASSISTANT
+                          RequestSurfaceCB request_surface_cb,
+#endif // OHOS_VIDEO_ASSISTANT
                           PipelineStatusCallback seek_cb) {
   DVLOG(2) << __func__;
   DCHECK(thread_checker_.CalledOnValidThread());
@@ -1394,6 +1431,9 @@ void PipelineImpl::Resume(base::TimeDelta time,
   media_task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&RendererWrapper::Resume,
                                 base::Unretained(renderer_wrapper_.get()),
+#ifdef OHOS_VIDEO_ASSISTANT
+                                std::move(request_surface_cb),
+#endif // OHOS_VIDEO_ASSISTANT
                                 std::move(default_renderer), time));
 }
 

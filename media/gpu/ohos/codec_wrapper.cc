@@ -46,6 +46,9 @@ class CodecWrapperImpl : public base::RefCountedThreadSafe<CodecWrapperImpl> {
   bool IsDrained() const;
   bool Flush();
   bool SetSurface(scoped_refptr<CodecSurfaceBundle> surface_bundle);
+#ifdef OHOS_VIDEO_ASSISTANT
+  void SetVideoSurface(int32_t widget_id);
+#endif // OHOS_VIDEO_ASSISTANT
   scoped_refptr<CodecSurfaceBundle> SurfaceBundle();
   QueueStatus QueueInputBuffer(const DecoderBuffer& buffer);
   DequeueStatus DequeueOutputBuffer(
@@ -321,6 +324,14 @@ bool CodecWrapperImpl::SetSurface(
   return true;
 }
 
+#ifdef OHOS_VIDEO_ASSISTANT
+void CodecWrapperImpl::SetVideoSurface(int32_t widget_id) {
+  if (codec_) {
+    codec_->SetVideoSurface(widget_id);
+  }
+}
+#endif // OHOS_VIDEO_ASSISTANT
+
 scoped_refptr<CodecSurfaceBundle> CodecWrapperImpl::SurfaceBundle() {
   base::AutoLock l(lock_);
   return surface_bundle_;
@@ -412,6 +423,12 @@ bool CodecWrapper::SetSurface(
     scoped_refptr<CodecSurfaceBundle> surface_bundle) {
   return impl_->SetSurface(std::move(surface_bundle));
 }
+
+#ifdef OHOS_VIDEO_ASSISTANT
+void CodecWrapper::SetVideoSurface(int32_t widget_id) {
+  return impl_->SetVideoSurface(widget_id);
+}
+#endif // OHOS_VIDEO_ASSISTANT
 
 scoped_refptr<CodecSurfaceBundle> CodecWrapper::SurfaceBundle() {
   return impl_->SurfaceBundle();

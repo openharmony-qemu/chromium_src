@@ -79,6 +79,10 @@ class MEDIA_EXPORT DecoderStreamTraits<DemuxerStream::AUDIO> {
   void OnStreamReset(DemuxerStream* stream);
   void OnOutputReady(OutputType* output);
 
+#ifdef OHOS_VIDEO_ASSISTANT
+  void SetVideoSurface(DecoderType* decoder, int surface_id) {}
+#endif // OHOS_VIDEO_ASSISTANT
+
  private:
   void OnConfigChanged(const AudioDecoderConfig& config);
 
@@ -145,6 +149,10 @@ class MEDIA_EXPORT DecoderStreamTraits<DemuxerStream::VIDEO> {
   // Set whether or not software decoder implementations will be preferred.
   void SetPreferNonPlatformDecoders(bool);
   bool GetPreferNonPlatformDecoders() const;
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  void SetVideoSurface(DecoderType* decoder, int surface_id);
+#endif // OHOS_VIDEO_ASSISTANT
 
  private:
   base::TimeDelta last_keyframe_timestamp_;

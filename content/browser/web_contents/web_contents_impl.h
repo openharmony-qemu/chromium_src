@@ -109,6 +109,12 @@
 #include "content/public/browser/custom_media_info.h"
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+#ifdef OHOS_VIDEO_ASSISTANT
+#include "content/browser/media/video_assistant/video_assistant.h"
+#include "content/public/browser/media_player_controller.h"
+#include "content/public/browser/media_player_listener.h"
+#endif // OHOS_VIDEO_ASSISTANT
+
 namespace base {
 class FilePath;
 }  // namespace base
@@ -189,6 +195,8 @@ class CustomMediaPlayerListener;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
 #ifdef OHOS_VIDEO_ASSISTANT
+class MediaPlayerController;
+class MediaPlayerListener;
 class VideoAssistant;
 #endif // OHOS_VIDEO_ASSISTANT
 
@@ -1582,6 +1590,7 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   void OnShowToast(double duration, const std::string& toast);
   void OnShowVideoAssistant(const std::string& videoAssistantItems);
   void OnReportStatisticLog(const std::string& content);
+  void CustomWebMediaPlayer(bool enable) override;
 #endif  // defined(OHOS_VIDEO_ASSISTANT)
 
 #if defined(OHOS_RENDER_PROCESS_SHARE)
@@ -1602,6 +1611,11 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
       media::mojom::VideoAttributesForVASTPtr video_attributes,
       const MediaPlayerId& id);
   void OnVideoDestroyed(const MediaPlayerId& id);
+  std::unique_ptr<MediaPlayerListener> OnFullScreenOverlayEnter(
+      media::mojom::MediaInfoForVASTPtr media_info,
+      const MediaPlayerId& media_player_id);
+
+  void SetVideoSurface(const MediaPlayerId& id, int32_t surface_widget);
 #endif // OHOS_VIDEO_ASSISTANT
 
  private:
@@ -2695,6 +2709,8 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 
 #ifdef OHOS_VIDEO_ASSISTANT
   std::unique_ptr<VideoAssistant> video_assistant_;
+  bool custom_media_player_enabled_ = false;
+  std::map<MediaPlayerId, int32_t> surface_widget_map_;
 #endif // OHOS_VIDEO_ASSISTANT
 };
 

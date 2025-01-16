@@ -150,6 +150,9 @@ interface VideoDecoder {
 
   // Inform the decoder that new OverlayInfo is available.
   OnOverlayInfoChanged(OverlayInfo overlay_info);
+
+  [EnableIf=ohos_video_assistant]
+  SetVideoSurface(int32 widget_id);
 };
 
 interface VideoDecoderClient {

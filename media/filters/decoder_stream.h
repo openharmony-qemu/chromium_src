@@ -154,6 +154,10 @@ class MEDIA_EXPORT DecoderStream {
     return decoder_selector_;
   }
 
+#ifdef OHOS_VIDEO_ASSISTANT
+  void SetVideoSurface(int surface_id);
+#endif // OHOS_VIDEO_ASSISTANT
+
  private:
   enum State {
     STATE_UNINITIALIZED,

@@ -315,6 +315,11 @@ void OhosVideoDecoder::OnCodecConfigured(
   if (!codec_) {
     LOG(ERROR) << "codec_ is null.";
   }
+#ifdef OHOS_VIDEO_ASSISTANT
+  if (pending_surface_id_ > 0) {
+    codec_->SetVideoSurface(pending_surface_id_);
+  }
+#endif // OHOS_VIDEO_ASSISTANT
   PumpCodec();
 }
 
@@ -599,5 +604,17 @@ bool OhosVideoDecoder::CanReadWithoutStalling() const {
 int OhosVideoDecoder::GetMaxDecodeRequests() const {
   return 2;
 }
+
+#ifdef OHOS_VIDEO_ASSISTANT
+void OhosVideoDecoder::SetVideoSurface(int32_t widget_id) {
+  LOG(INFO) << "SetVideoSurface(" << widget_id << "), codec_[" << (!!codec_) << "]";
+  if (widget_id > 0) {
+    pending_surface_id_ = widget_id;
+  }
+  if (codec_) {
+    codec_->SetVideoSurface(widget_id);
+  }
+}
+#endif // OHOS_VIDEO_ASSISTANT
 
 }  // namespace media

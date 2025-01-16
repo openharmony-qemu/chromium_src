@@ -70,6 +70,9 @@ class MojoVideoDecoder final : public VideoDecoder,
   bool NeedsBitstreamConversion() const final;
   bool CanReadWithoutStalling() const final;
   int GetMaxDecodeRequests() const final;
+#ifdef OHOS_VIDEO_ASSISTANT
+  void SetVideoSurface(int32_t widget_id) final;
+#endif // OHOS_VIDEO_ASSISTANT
 
   // mojom::VideoDecoderClient implementation.
   void OnVideoFrameDecoded(

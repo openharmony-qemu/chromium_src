@@ -81,6 +81,10 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   void FinishPaint(int fd);
   void SetPlaybackSpeed(OHOS::NWeb::PlaybackRateMode mode);
 
+#ifdef OHOS_VIDEO_ASSISTANT
+  void SetVideoSurface(int32_t surface_id);
+#endif // OHOS_VIDEO_ASSISTANT
+
   void OnEnd();
   void OnError(int32_t errorCode);
   void OnBufferAvailable(
@@ -99,6 +103,11 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   void SeekInternal(base::TimeDelta time);
   void PropagateDuration(base::TimeDelta duration);
   bool IsAudible(float volume);
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  void SetVideoSurfaceNew(int32_t surface_id);
+  void SetVideoSurfaceOld();
+#endif // OHOS_VIDEO_ASSISTANT
 
   const std::string surfaceFormat = "SURFACE_FORMAT";
   std::unique_ptr<OHOS::NWeb::PlayerAdapter> player_ = nullptr;
@@ -131,6 +140,10 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
 #if defined(RK3568)
   bool is_hls_;
 #endif
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  int32_t new_surface_id_ = -1;
+#endif // OHOS_VIDEO_ASSISTANT
 
   base::WeakPtrFactory<OHOSMediaPlayerBridge> weak_factory_{this};
 };

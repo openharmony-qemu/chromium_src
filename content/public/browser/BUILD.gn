@@ -484,6 +484,15 @@ source_set("browser_sources") {
   }
   #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+  #ifdef OHOS_VIDEO_ASSISTANT
+  if (defined(ohos_video_assistant) && ohos_video_assistant) {
+    sources += [
+      "media_player_controller.h",
+      "media_player_listener.h",
+    ]
+  }
+  #endif // OHOS_VIDEO_ASSISTANT
+
   configs += [
     "//build/config:precompiled_headers",
     "//build/config/compiler:wexit_time_destructors",

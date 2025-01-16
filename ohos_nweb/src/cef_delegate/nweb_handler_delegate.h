@@ -755,6 +755,9 @@ void OnTouchIconUrlWithSizesReceived(
   void OnShowToast(double duration, const CefString& toast) override;
   void OnShowVideoAssistant(const CefString& videoAssistantItems) override;
   void OnReportStatisticLog(const CefString& content) override;
+  CefOwnPtr<CefMediaPlayerListenerForVAST> OnFullScreenOverlayEnter(
+      CefOwnPtr<CefMediaPlayerController> media_player_controller,
+      const std::string& extra_info) override;
 
 #if defined(OHOS_CLIPBOARD)
   void SetIsRichText(bool is_rich_text) { is_rich_text_ = is_rich_text; }
@@ -794,6 +797,7 @@ void OnTouchIconUrlWithSizesReceived(
 
 #if defined(OHOS_VIDEO_ASSISTANT)
   void EnableVideoAssistant(bool enable);
+  void CustomWebMediaPlayer(bool enable);
 #endif // OHOS_VIDEO_ASSISTANT
 
 #if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
@@ -935,6 +939,7 @@ void OnTouchIconUrlWithSizesReceived(
 #endif
 #if defined(OHOS_VIDEO_ASSISTANT)
   std::optional<bool> video_assistant_enabled_;
+  std::optional<bool> custom_web_media_player_enabled_;
 #endif // OHOS_VIDEO_ASSISTANT
 
   base::WeakPtrFactory<NWebHandlerDelegate> weak_factory_{this};

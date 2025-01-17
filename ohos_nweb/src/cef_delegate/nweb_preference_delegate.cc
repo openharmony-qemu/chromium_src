@@ -990,6 +990,11 @@ int64_t NWebPreferenceDelegate::GetDelayDurationForBackgroundTabFreezing() {
 
 #if defined(OHOS_MEDIA_AVSESSION)
 void NWebPreferenceDelegate::PutWebMediaAVSessionEnabled(bool enable) {
+  if (!browser_) {
+    LOG(ERROR) << "PutWebMediaAVSessionEnabled failed, browser is null";
+    return;
+  }
+  LOG(INFO) << "NWebPreferenceDelegate::PutWebMediaAVSessionEnabled enable:" << enable;
   browser_->GetHost()->PutWebMediaAVSessionEnabled(enable);
 }
 #endif // OHOS_MEDIA_AVSESSION

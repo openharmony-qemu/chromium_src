@@ -340,6 +340,9 @@ void Compositor::SetLayerTreeFrameSink(
     mojo::AssociatedRemote<viz::mojom::DisplayPrivate> display_private) {
   layer_tree_frame_sink_requested_ = false;
   display_private_ = std::move(display_private);
+#if defined(OHOS_COMPOSITE_RENDER)
+  SetDrawMode(drawMode_);
+#endif
   host_->SetLayerTreeFrameSink(std::move(layer_tree_frame_sink));
   // Display properties are reset when the output surface is lost, so update it
   // to match the Compositor's.
@@ -474,6 +477,7 @@ void Compositor::SetDrawRect(const gfx::Rect& new_rect) {
 }
 
 void Compositor::SetDrawMode(const int32_t& mode) {
+  drawMode_ = mode;
   if (display_private_) {
     TRACE_EVENT0("viz", "Compositor::SetDrawMode");
     mojo::SyncCallRestrictions::ScopedAllowSyncCall scoped_allow_sync_call;

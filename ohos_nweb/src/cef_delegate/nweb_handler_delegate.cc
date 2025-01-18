@@ -2574,12 +2574,7 @@ void NWebHandlerDelegate::OnGeolocationHide() {
 
 void NWebHandlerDelegate::OnPermissionRequest(
     CefRefPtr<CefAccessRequest> request) {
-  if (nweb_handler_ != nullptr
-#ifdef OHOS_NOTIFICATION
-        || request->ResourceAcessId() ==
-            NWebAccessRequest::Resources::NOTIFICATION
-#endif // OHOS_NOTIFICATION
-        ) {
+  if (nweb_handler_ != nullptr) {
     std::shared_ptr<NWebAccessRequest> access_request =
         std::make_shared<NWebAccessRequestDelegate>(request);
     nweb_handler_->OnPermissionRequest(access_request);

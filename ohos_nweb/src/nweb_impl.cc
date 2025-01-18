@@ -2625,28 +2625,6 @@ void NWebImpl::RemoveWebAppClientExtensionCallback() {
   nweb_delegate_->UnRegisterWebAppClientExtensionListener();
 }
 
-void NWebImpl::OpenDevtools(std::unique_ptr<OpenDevToolsParam> param) {
-  if (nweb_delegate_ == nullptr) {
-    LOG(WARNING) << "OpenDevtools failed, no nweb_delegate";
-    return;
-  }
-  int32_t devtools_nweb_id = param->nweb_id;
-  NWebImpl* nweb = NWebImpl::FromID(devtools_nweb_id);
-  if (!nweb) {
-    LOG(WARNING) << "OpenDevtools failed, no nweb";
-    return;
-  }
-  nweb_delegate_->OpenDevtoolsWith(nweb->nweb_delegate_, std::move(param));
-}
-
-void NWebImpl::CloseDevtools() {
-  if (nweb_delegate_ == nullptr) {
-    LOG(WARNING) << "CloseDevtools failed, no nweb_delegate";
-    return;
-  }
-  nweb_delegate_->CloseDevtools();
-}
-
 #ifdef OHOS_ARKWEB_EXTENSIONS
 void NWebImpl::PutWebExtensionApiCallback(
     std::shared_ptr<NWebExtensionApiCallback> web_extension_api_listener) {
@@ -2667,9 +2645,7 @@ void NWebImpl::RemoveWebExtensionApiCallback() {
   NwebExtensionTabDelegateHandler::UnRegisterWebExtensionTabApiListener();
   CefWebExtensionTabManager::GetInstance()->SetTabApiHandle(nullptr);
 }
-#endif  // defined(OHOS_NWEB_EX)
 
-#if defined(OHOS_VIDEO_ASSISTANT)
 void NWebImpl::PutExtensionContextMenusCallback(
       std::shared_ptr<NWebExtensionContextMenusCallback> extension_context_menus_callback) {
   WVLOG_I("register extension context menus listener");
@@ -2701,7 +2677,6 @@ void NWebImpl::GetAllExtensionContextMenus(const std::vector<std::string>& exten
   result = menu_items;
 }
 #endif // OHOS_ARKWEB_EXTENSIONS
-
 #if defined(OHOS_ARKWEB_EXTENSIONS)
 //static
 void NWebImpl::PutWebExtensionActionApiCallback(
@@ -2752,6 +2727,29 @@ void NWebImpl::WebExtensionSetSidePanelWindowId(int sidePanelNwebId,
 
 #endif  // OHOS_ARKWEB_EXTENSIONS
 
+void NWebImpl::OpenDevtools(std::unique_ptr<OpenDevToolsParam> param) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(WARNING) << "OpenDevtools failed, no nweb_delegate";
+    return;
+  }
+  int32_t devtools_nweb_id = param->nweb_id;
+  NWebImpl* nweb = NWebImpl::FromID(devtools_nweb_id);
+  if (!nweb) {
+    LOG(WARNING) << "OpenDevtools failed, no nweb";
+    return;
+  }
+  nweb_delegate_->OpenDevtoolsWith(nweb->nweb_delegate_, std::move(param));
+}
+
+void NWebImpl::CloseDevtools() {
+  if (nweb_delegate_ == nullptr) {
+    LOG(WARNING) << "CloseDevtools failed, no nweb_delegate";
+    return;
+  }
+  nweb_delegate_->CloseDevtools();
+}
+#endif  // defined(OHOS_NWEB_EX)
+#if defined(OHOS_VIDEO_ASSISTANT)
 void NWebImpl::EnableVideoAssistant(bool enable) {
   if (nweb_delegate_ == nullptr) {
     LOG(WARNING) << "nweb delegate is nullptr when enable video assistant";

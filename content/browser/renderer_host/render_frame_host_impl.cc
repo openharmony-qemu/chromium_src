@@ -301,6 +301,12 @@
 #include "content/browser/renderer_host/render_view_host_delegate_view.h"
 #endif
 
+#if defined(OHOS_LOGGER_REPORT)
+#include "url/ohos/log_utils.h"
+#include "content/public/browser/web_contents.h"
+#include "content/browser/web_contents/web_contents_impl.h"
+#endif
+
 namespace features {
 BASE_FEATURE(kDisableFrameNameUpdateOnNonCurrentRenderFrameHost,
              "DisableFrameNameUpdateOnNonCurrentRenderFrameHost",
@@ -4933,6 +4939,9 @@ NavigationRequest* RenderFrameHostImpl::GetSameDocumentNavigationRequest(
 
 void RenderFrameHostImpl::ResetOwnedNavigationRequests(
     NavigationDiscardReason reason) {
+#ifdef OHOS_LOGGER_REPORT
+  LOG_FEEDBACK(INFO) << "current lifecycle state: " << static_cast<int>(lifecycle_state_);
+#endif
   if (ShouldQueueNavigationsWhenPendingCommitRFHExists() &&
       lifecycle_state_ == LifecycleStateImpl::kPendingCommit) {
     // With navigation queueing, pending commit navigations shouldn't get
@@ -13092,6 +13101,9 @@ void RenderFrameHostImpl::TakeNewDocumentPropertiesFromNavigation(
 #ifdef OHOS_BUGFIX_CRASH
   if (fullscreen_document_on_document_element_ready_ && !IsOutermostMainFrame()) {
     LOG(INFO) << "fullscreen element is ready, while document is not main frame";
+#ifdef OHOS_LOGGER_REPORT
+    LOG_FEEDBACK(INFO) << "fullscreen element is ready, while document is not main frame";
+#endif
     return;
   }
 #else

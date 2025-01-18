@@ -202,6 +202,11 @@
 #include "mojo/public/cpp/bindings/callback_helpers.h"
 #endif
 
+#if defined(OHOS_LOGGER_REPORT)
+#include "url/ohos/log_utils.h"
+#include "content/public/browser/web_contents.h"
+#include "content/browser/web_contents/web_contents_impl.h"
+#endif
 namespace content {
 
 namespace {

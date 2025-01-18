@@ -669,6 +669,13 @@ class NWebImpl : public NWeb {
 #ifdef OHOS_AI
   void OnTextSelected() override;
 #endif
+
+#ifdef OHOS_LOGGER_REPORT
+  static void PutLoggerCallback(
+      std::shared_ptr<NWebLoggerCallback> logger_callback);
+  static void RemoveLoggerCallback();
+#endif
+
   static base::Lock nweb_map_lock_;
 
 #if defined(OHOS_SOFTWARE_COMPOSITOR)

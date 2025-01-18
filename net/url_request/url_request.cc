@@ -48,6 +48,10 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 
+#ifdef OHOS_LOGGER_REPORT
+#include "url/ohos/log_utils.h"
+#endif
+
 namespace net {
 
 namespace {
@@ -739,6 +743,10 @@ int URLRequest::DoCancel(int error, const SSLInfo& ssl_info) {
       // Don't log an error code on ERR_ABORTED, since that's redundant.
       net_log_.AddEventWithNetErrorCode(NetLogEventType::CANCELLED,
                                         error == ERR_ABORTED ? OK : error);
+#ifdef OHOS_LOGGER_REPORT
+      LOG_FEEDBACK(INFO) << "DoCancel the url_request, url: ***"
+                         << ", error " << error;
+#endif
     }
   }
 

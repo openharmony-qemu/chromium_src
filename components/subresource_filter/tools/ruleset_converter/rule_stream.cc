@@ -431,6 +431,7 @@ bool TransferRules(RuleInputStream* input,
             << total_url_rule_counts
             << ", totalcss_rule_counts:" << total_css_rule_counts << std::endl;
 #endif  // OHOS_ARKWEB_ADBLOCK
+
   return true;
 }
 

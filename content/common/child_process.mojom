@@ -144,4 +144,9 @@ interface ChildProcess {
   // #if defined(OHOS_RENDERER_ANR_DUMP)
   [EnableIf=ohos_renderer_anr_dump]
   dumpCurrentJavaScriptStackInMainThread() => (string js_stack);
+
+  // #ifdef OHOS_LOGGER_REPORT
+  [EnableIf=ohos_logger_report]
+  SetStrictLogMode(bool is_strict_log_mode);
+  // #endif
 };

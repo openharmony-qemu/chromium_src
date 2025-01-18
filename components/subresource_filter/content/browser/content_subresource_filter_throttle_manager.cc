@@ -595,6 +595,7 @@ void ContentSubresourceFilterThrottleManager::DidFinishLoad(
   }
 
   LOG(INFO) << "[AdBlock] subresource map.size():" << subresource_map.size();
+
   if (subresource_map.size() > 0) {
     content::WebContents::FromRenderFrameHost(render_frame_host)
         ->OnAdsBlocked(validated_url.spec(), subresource_map,

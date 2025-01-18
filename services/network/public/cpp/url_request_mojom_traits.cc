@@ -242,6 +242,9 @@ bool StructTraits<
 #if defined(OHOS_EX_DOWNLOAD)
   out->is_download_request = data.is_download_request();
 #endif  //  OHOS_EX_DOWNLOAD
+#if defined(OHOS_LOGGER_REPORT)
+  out->usage_scenario_ = data.usage_scenario_();
+#endif
   return true;
 }
 

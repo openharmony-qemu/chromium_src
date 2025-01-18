@@ -150,7 +150,11 @@ bool TestWebContents::HasPendingDownloadImage(const GURL& url) {
   return !pending_image_downloads_[url].empty();
 }
 
+#ifdef OHOS_LOGGER_REPORT
+void TestWebContents::OnWebPreferencesChanged(int32_t usage_scenario_type) {
+#else
 void TestWebContents::OnWebPreferencesChanged() {
+#endif
   WebContentsImpl::OnWebPreferencesChanged();
   if (web_preferences_changed_counter_)
     ++*web_preferences_changed_counter_;

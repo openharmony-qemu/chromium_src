@@ -518,6 +518,11 @@ struct URLRequest {
 
   [EnableIf=is_ohos]
   bool is_sync_mode;
+
+  // #ifdef OHOS_LOGGER_REPORT
+  [EnableIf=ohos_logger_report]
+  int32 usage_scenario_;
+  // #endif
 };
 
 // URLRequestBody represents body (i.e. upload data) of a HTTP request.

@@ -483,7 +483,11 @@ class DNRJsonRuleOutputStream : public subresource_filter::RuleOutputStream {
     if (json_rule_value.is_none()) {
       if (noisy_) {
         LOG(ERROR) << base::StringPrintf("Error for id %d: %s", rule_id_,
-                                         error.c_str());
+                                         error.c_str());        
+#ifdef OHOS_LOGGER_REPORT
+        LOG_FEEDBACK(ERROR) << base::StringPrintf("Error for id %d: %s", rule_id_,
+                                                  error.c_str());
+#endif
       }
       return false;
     }

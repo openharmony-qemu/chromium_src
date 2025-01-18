@@ -21,6 +21,10 @@
 #include <memory>
 #include <string>
 
+#ifdef OHOS_LOGGER_REPORT
+#include "nweb_logger_callback.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -54,6 +58,10 @@ typedef void (*OnDownloadDidUpdate)(NWebDownloadItem *download_item, WebDownload
 typedef void (*OnSrceenCaptureOnStateChange)(int32_t nweb_id, const char* session_id, int32_t code);
 
 
+#ifdef OHOS_LOGGER_REPORT
+typedef void (*LogFeedbackFun)(const char* tag, int level, const char* message);
+typedef void (*LogUrlFun)(const char* url);
+#endif
 
 // / WebDownloader functions.
 NWEB_EXPORT void WebDownloadManager_PutDownloadCallback(WebDownloadDelegateCallback *callback);
@@ -160,6 +168,17 @@ NWEB_EXPORT void  WebScreenCapture_PutScreenCaptureCallback(WebScreenCaptureDele
 
 NWEB_EXPORT void  WebScreenCapture_StopScreenCapture(int32_t nweb_id, const char* session_id);
 
+
+#ifdef OHOS_LOGGER_REPORT
+/// LoggerCallback API functions.
+NWEB_EXPORT void LoggerCallback_CreateLoggerCallback(NWebLoggerCallback** callback);
+
+NWEB_EXPORT void LoggerCallback_PutLoggerCallback(NWebLoggerCallback* callback);
+
+NWEB_EXPORT void LoggerCallback_SetLogFeedback(NWebLoggerCallback* callback, LogFeedbackFun fun);
+
+NWEB_EXPORT void LoggerCallback_SetLogUrl(NWebLoggerCallback* callback, LogUrlFun fun);
+#endif
 
 #ifdef __cplusplus
 }

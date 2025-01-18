@@ -107,6 +107,10 @@
 
 #include "third_party/bounds_checking_function/include/securec.h"
 
+#ifdef OHOS_LOGGER_REPORT
+#include "base/ohos/logger.h"
+#endif
+
 namespace OHOS::NWeb {
 namespace {
 
@@ -130,6 +134,10 @@ const int VIEW_PORT_DIFF = 5;
 std::shared_ptr<NWebExtensionApiCallback> g_extension_api_listener = nullptr;
 static std::map<int, TabCreatedCallback> g_tab_created_map_;
 #endif // OHOS_ARKWEB_EXTENSIONS
+
+#ifdef OHOS_LOGGER_REPORT
+std::shared_ptr<NWebLoggerCallback> g_logger_callback = nullptr;
+#endif
 
 ImageColorType TransformColorType(cef_color_type_t color_type) {
   switch (color_type) {
@@ -4039,6 +4047,40 @@ void NWebHandlerDelegate::OnBeforeUnloadFired(CefRefPtr<CefBrowser> browser,
   }
 }
 #endif // OHOS_DISPATCH_BEFORE_UNLOAD
+
+#ifdef OHOS_LOGGER_REPORT
+// static
+void NWebHandlerDelegate::RegisterLoggerCallback(
+    std::shared_ptr<NWebLoggerCallback> logger_callback) {
+  // TODO: Expected to be an instance of a profile
+  g_logger_callback = logger_callback;
+  ohos::logger::SetLoggerCallback(g_logger_callback);
+}
+
+// static
+void NWebHandlerDelegate::UnRegisterLoggerCallback() {
+  g_logger_callback = nullptr;
+}
+
+void NWebHandlerDelegate::logFeedback(const CefString& tag, int level, const CefString& message) {
+  if(!g_logger_callback) {
+    LOG(ERROR) << "No loggercallback logfeedback";
+    return;
+  }
+  std::string tagStr = tag.ToString();
+  std::string messageStr = message.ToString();
+  g_logger_callback->logFeedback(tagStr.c_str(), level, messageStr.c_str());
+}
+
+void NWebHandlerDelegate::logUrl(const CefString& url) {
+  if(!g_logger_callback) {
+    LOG(ERROR) << "No loggercallback logurl";
+    return;
+  }
+  std::string urlStr = url.ToString();
+  g_logger_callback->logUrl(urlStr.c_str());
+}
+#endif
 
 #if defined(OHOS_VIDEO_ASSISTANT)
 void NWebHandlerDelegate::EnableVideoAssistant(bool enable) {

@@ -33,6 +33,12 @@
 #include "services/network/websocket.h"
 #endif
 
+#ifdef OHOS_LOGGER_REPORT
+#include "url/ohos/log_utils.h"
+#include "base/base_switches.h"
+#include "base/command_line.h"
+#endif
+
 namespace network {
 
 namespace {

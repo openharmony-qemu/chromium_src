@@ -139,6 +139,10 @@ bool FFmpegGlue::OpenContext(bool is_local_file) {
   LOG(INFO) << "OhMedia::OpenContext format=" << format_context_->iformat->name;
 #endif // OHOS_MEDIA
 
+#ifdef OHOS_LOGGER_REPORT
+  LOG_FEEDBACK(INFO) << "OhMedia::OpenContext format=" << format_context_->iformat->name;
+#endif
+
   // Rely on ffmpeg's parsing if we're able to succesfully open the file.
   if (strcmp(format_context_->iformat->name, "mov,mp4,m4a,3gp,3g2,mj2") == 0)
     container_ = container_names::CONTAINER_MOV;

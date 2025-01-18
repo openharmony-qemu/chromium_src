@@ -896,6 +896,10 @@ class CONTENT_EXPORT RenderProcessHostImpl
       uint64_t private_memory_footprint_bytes) override;
 #endif
 
+#if defined(OHOS_LOGGER_REPORT)
+  void ReportRendererLog(int policy, const std::string& msg) override;
+#endif // OHOS_LOGGER_REPORT
+
   void CreateEmbeddedFrameSinkProvider(
       mojo::PendingReceiver<blink::mojom::EmbeddedFrameSinkProvider> receiver);
   void BindCompositingModeReporter(

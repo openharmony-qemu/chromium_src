@@ -39,4 +39,9 @@ interface RendererHost {
   // getProcessMemoryInfo.
   [EnableIf=is_android]
   SetPrivateMemoryFootprint(uint64 private_memory_footprint_bytes);
+  // #ifdef OHOS_LOGGER_REPORT
+  // Notify the browser that log in render process
+  [EnableIf=ohos_logger_report]
+  ReportRendererLog(int32 policy, string msg);
+  // #endif OHOS_LOGGER_REPORT
 };

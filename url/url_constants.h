@@ -80,6 +80,11 @@ COMPONENT_EXPORT(URL) extern const char kDatashareScheme[];
 COMPONENT_EXPORT(URL) extern const char kDataabilityScheme[];
 #endif // OHOS_FILE_UPLOAD
 
+#ifdef OHOS_LOGGER_REPORT
+COMPONENT_EXPORT(URL) extern const char kToAppParam[];
+COMPONENT_EXPORT(URL) extern const char kChannelParam[];
+COMPONENT_EXPORT(URL) extern const char kChannelidParam[];
+#endif
 }  // namespace url
 
 #endif  // URL_URL_CONSTANTS_H_

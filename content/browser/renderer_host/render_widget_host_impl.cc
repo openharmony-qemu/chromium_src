@@ -2540,6 +2540,10 @@ void RenderWidgetHostImpl::OnInputEventAckTimeout() {
       content::RenderProcessNotRespondingReason::kRendererAnrInputTimeout
 #endif
   );
+
+#ifdef OHOS_LOGGER_REPORT
+  LOG_FEEDBACK(INFO) << "InputEventAckTimeout[flight count]" << in_flight_event_count_;
+#endif
 }
 
 void RenderWidgetHostImpl::RendererIsUnresponsive(

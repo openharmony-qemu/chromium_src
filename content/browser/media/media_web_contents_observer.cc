@@ -778,6 +778,9 @@ void MediaWebContentsObserver::RequestEnterFullscreen(const MediaPlayerId& playe
   const auto iter = media_player_remotes_.find(player_id);
   if (iter == media_player_remotes_.end()) {
     LOG(WARNING) << "RequestEnterFullscreen failed";
+#ifdef OHOS_LOGGER_REPORT
+    LOG_FEEDBACK(WARNING) << "RequestEnterFullscreen failed";
+#endif
     return;
   }
   iter->second->RequestEnterFullscreen();
@@ -787,6 +790,9 @@ void MediaWebContentsObserver::RequestExitFullscreen(const MediaPlayerId& player
   const auto iter = media_player_remotes_.find(player_id);
   if (iter == media_player_remotes_.end()) {
     LOG(WARNING) << "RequestExitFullscreen failed";
+#ifdef OHOS_LOGGER_REPORT
+    LOG_FEEDBACK(WARNING) << "RequestEnterFullscreen failed";
+#endif
     return;
   }
   iter->second->RequestExitFullscreen();

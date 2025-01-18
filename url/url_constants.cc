@@ -67,4 +67,10 @@ const char kDatashareScheme[] = "datashare";
 #endif // OHOS_FILE_UPLOAD
 const size_t kMaxURLChars = 2 * 1024 * 1024;
 
+#ifdef OHOS_LOGGER_REPORT
+const char kToAppParam[] = "to_app";
+const char kChannelParam[] = "channel";
+const char kChannelidParam[] = "channelid";
+#endif
+
 }  // namespace url

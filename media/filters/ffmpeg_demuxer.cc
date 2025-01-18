@@ -226,6 +226,11 @@ std::unique_ptr<FFmpegDemuxerStream> FFmpegDemuxerStream::Create(
                    << (int)video_config->codec() << " config:"
                    << video_config->AsHumanReadableString();
 #endif // OHOS_MEDIA
+#ifdef OHOS_LOGGER_REPORT
+      LOG_FEEDBACK(WARNING) << "OhMedia::FFmpegDemuxer unsupported video decoder type with codec "
+                   << (int)video_config->codec() << " config:"
+                   << video_config->AsHumanReadableString();
+#endif
       return nullptr;
     }
 

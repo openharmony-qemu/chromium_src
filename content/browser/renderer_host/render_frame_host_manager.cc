@@ -86,6 +86,10 @@
 #include "ui/gfx/mac/scoped_cocoa_disable_screen_updates.h"
 #endif  // BUILDFLAG(IS_MAC)
 
+#ifdef OHOS_LOGGER_REPORT
+#include "url/ohos/log_utils.h"
+#endif
+
 namespace content {
 
 using LifecycleStateImpl = RenderFrameHostImpl::LifecycleStateImpl;
@@ -1012,6 +1016,11 @@ void RenderFrameHostManager::UnloadOldFrame(
     << can_store << "bfcache_eligibility.flattened_reasons:"
     << bfcache_eligibility.flattened_reasons.ToString();
 #endif
+#ifdef OHOS_LOGGER_REPORT
+    LOG_FEEDBACK(INFO) << "[BFCACHE]" << __func__ << " can_store: "
+              << can_store << "bfcache_eligibility.flattened_reasons:"
+              << bfcache_eligibility.flattened_reasons.ToString();
+#endif
     if (can_store) {
       auto stored_page = CollectPage(std::move(old_render_frame_host));
       auto entry =
@@ -1309,9 +1318,22 @@ RenderFrameHostManager::GetFrameHostForNavigation(
       render_frame_host_->IsNavigationSameSite(request->GetUrlInfo());
 
   IsSameSiteGetter is_same_site_getter(is_same_site);
+
+#ifdef OHOS_LOGGER_REPORT
+  std::string valid_reason;
+  scoped_refptr<SiteInstanceImpl> dest_site_instance =
+      GetSiteInstanceForNavigationRequest(request, is_same_site_getter,
+                                          browsing_context_group_swap,
+                                          &valid_reason);
+  if (!valid_reason.empty()) {
+    LOG_FEEDBACK(INFO) << "OHBFCACHE: GetSiteInstanceForNavigationRequest reason="
+              << valid_reason;
+  }
+#else
   scoped_refptr<SiteInstanceImpl> dest_site_instance =
       GetSiteInstanceForNavigationRequest(request, is_same_site_getter,
                                           browsing_context_group_swap, reason);
+#endif
 
 #if defined(OHOS_RENDER_PROCESS_SHARE)
   const std::string& shared_render_process_token =

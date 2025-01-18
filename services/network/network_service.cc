@@ -120,6 +120,10 @@
 #include "net/socket/client_socket_pool.h"
 #endif
 
+#ifdef OHOS_LOGGER_REPORT
+#include "url/ohos/log_utils.h"
+#endif
+
 namespace net {
 class FirstPartySetEntry;
 }
@@ -569,6 +573,10 @@ void NetworkService::RegisterNetworkContext(NetworkContext* network_context) {
     LOG(INFO) << "Register network context and set network timeout "
               << timeout_override_ << " second(s)";
     url_request_context->SetConnectTimeout(timeout_override_);
+#ifdef OHOS_LOGGER_REPORT
+    LOG_FEEDBACK(INFO) << "Register network context and set network timeout "
+              << timeout_override_ << " second(s)";
+#endif
 #ifdef OHOS_EX_HTTP_DNS_FALLBACK
     url_request_context->SetConnectJobWithSecureDnsOnlyTimeout(
         connect_job_with_secure_dns_only_timeout_);
@@ -656,6 +664,9 @@ void NetworkService::SetSystemDnsResolver(
 void NetworkService::StartNetLog(base::File file,
                                  net::NetLogCaptureMode capture_mode,
                                  base::Value::Dict client_constants) {
+#ifdef OHOS_LOGGER_REPORT
+  LOG_FEEDBACK(INFO) << "NetworkService::StartNetLog";
+#endif
   base::Value::Dict constants = net::GetNetConstants();
   constants.Merge(std::move(client_constants));
 
@@ -1051,6 +1062,10 @@ NetworkService* NetworkService::GetNetworkServiceForTesting() {
 void NetworkService::SetConnectTimeout(int seconds) {
   LOG(INFO) << "Network service set network timeout " << seconds
             << " second(s)";
+#ifdef OHOS_LOGGER_REPORT
+  LOG_FEEDBACK(INFO) << "Network service set network timeout " << seconds
+            << " second(s)"; 
+#endif
   timeout_override_ = seconds;
   for (auto* network_context : network_contexts_) {
     net::URLRequestContext* url_request_context =

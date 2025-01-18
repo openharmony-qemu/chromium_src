@@ -693,6 +693,30 @@ LogMessageHandlerFunction GetLogMessageHandler() {
   return g_log_message_handler;
 }
 
+#if defined(OHOS_LOGGER_REPORT)
+LoggerCallbackFunction g_logger_callback = nullptr;
+void SetLoggerCallbackToBase(LoggerCallbackFunction loggerCallback) {
+  g_logger_callback = loggerCallback;
+}
+
+bool IsEnableLoggerReport() 
+{
+  static bool is_enable = false;
+  if (is_enable) {
+    return true;
+  }
+  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  if (command_line == nullptr) {
+    return false;
+  }
+  if (command_line->HasSwitch(switches::kEnableLoggerReport)) {
+    is_enable = true;
+    return true;
+  }
+  return false;
+}
+#endif
+
 #if !defined(NDEBUG)
 // Displays a message box to the user with the error message in it.
 // Used for fatal messages, where we close the app simultaneously.
@@ -730,6 +754,16 @@ LogMessage::LogMessage(const char* file, int line, const char* condition)
   stream_ << "Check failed: " << condition << ". ";
 }
 
+#if defined(OHOS_LOGGER_REPORT)
+LogMessage::LogMessage(const char* file, int line, LogSeverity severity, LogPriority priority)
+    : severity_(severity), file_(file), line_(line), priority_(priority) {
+  Init(file, line);
+}
+#endif
+
+#if defined(OHOS_LOGGER_REPORT)
+NO_SANITIZE("cfi-icall")
+#endif
 LogMessage::~LogMessage() {
   size_t stack_start = stream_.str().length();
 #if !defined(OFFICIAL_BUILD) && !BUILDFLAG(IS_NACL) && !defined(__UCLIBC__) && \
@@ -761,7 +795,11 @@ LogMessage::~LogMessage() {
       file_, line_,
       std::string(base::StringPiece(str_newline).substr(message_start_)));
 
-  if (severity_ == LOGGING_FATAL)
+  if (severity_ == LOGGING_FATAL
+  #if defined(OHOS_LOGGER_REPORT)
+    || priority_ == PRIORITY_FATAL
+  #endif
+  )
     SetLogFatalCrashKey(this);
 
   // Give any log message handler first dibs on the message.
@@ -889,6 +927,23 @@ LogMessage::~LogMessage() {
     __android_log_write(priority, kAndroidLogTag, str_newline.c_str());
 #endif
 #elif BUILDFLAG(IS_OHOS)
+#if defined(OHOS_LOGGER_REPORT)
+  if ((severity_ == LOGGING_FEEDBACK || severity_ == LOGGING_URL) &&
+      IsEnableLoggerReport() && g_logger_callback != nullptr) {
+    LogSeverity policys = LOGGING_VERBOSE;
+    switch (severity_) {
+      case LOGGING_FEEDBACK:
+        policys = LOGGING_FEEDBACK;
+        break;
+      case LOGGING_URL:
+        policys = LOGGING_URL;
+        priority_ = PRIORITY_INFO;
+        break;
+    }
+    g_logger_callback(priority_, ohos_tag_, policys, str_newline);
+    return;
+  } 
+#endif
     auto priority = (severity_ < 0) ? OHOS::NWeb::LogLevelAdapter::DEBUG
                                     : OHOS::NWeb::LogLevelAdapter::LEVEL_MAX;
     switch (severity_) {
@@ -1014,8 +1069,14 @@ void LogMessage::Init(const char* file, int line) {
   if (tagStart == base::StringPiece::npos) {
     tag_ = std::string("chromium");
     filename = message;
+#ifdef OHOS_LOGGER_REPORT
+    ohos_tag_ = std::string("mainprocess");
+#endif
   } else {
     tag_ = std::string(message.substr(0, tagStart));
+#ifdef OHOS_LOGGER_REPORT
+    ohos_tag_ = std::string(message.substr(0, tagStart));
+#endif
     filename = message.substr(tagStart + 1, message.size() - tagStart);
   }
 #else

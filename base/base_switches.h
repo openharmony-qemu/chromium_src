@@ -80,6 +80,10 @@ extern const char kArkWebInstallPath[];
 extern const char kEnableVideoAssistant[];
 #endif // OHOS_VIDEO_ASSISTANT
 
+#ifdef OHOS_LOGGER_REPORT
+extern const char kEnableLoggerReport[];
+#endif
+
 }  // namespace switches
 
 #endif  // BASE_BASE_SWITCHES_H_

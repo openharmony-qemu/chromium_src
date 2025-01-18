@@ -111,6 +111,12 @@
 #include "content/public/browser/plugin_service.h"
 #endif
 
+#ifdef OHOS_LOGGER_REPORT
+#include "content/public/browser/web_contents.h"
+#include "content/browser/web_contents/web_contents_impl.h"
+#include "base/base_switches.h"
+#endif
+
 namespace content {
 
 namespace {
@@ -332,6 +338,16 @@ std::unique_ptr<network::ResourceRequest> CreateResourceRequest(
       request_info.begin_params->impression.has_value()
           ? network::mojom::AttributionReportingEligibility::kNavigationSource
           : network::mojom::AttributionReportingEligibility::kUnset;
+
+#ifdef OHOS_LOGGER_REPORT
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      switches::kEnableLoggerReport)) {
+    new_request->usage_scenario_ = WebContents::FromFrameTreeNodeId(
+        frame_tree_node->frame_tree_node_id())->GetOrCreateWebPreferences().usage_scenario;
+  } else {
+    new_request->usage_scenario_ = 1;
+  }
+#endif
 
   return new_request;
 }
@@ -1667,6 +1683,10 @@ void NavigationURLLoaderImpl::BindNonNetworkURLLoaderFactoryReceiver(
 #ifdef OHOS_HAP_DECOMPRESSED
     LOG(INFO) << "BindNonNetworkURLLoaderFactoryReceiver scheme: "
               << url.scheme();
+#endif
+#ifdef OHOS_LOGGER_REPORT
+    LOG_FEEDBACK(INFO) << "BindNonNetworkURLLoaderFactoryReceiver scheme: "
+                       << url.scheme();
 #endif
     mojo::Remote<network::mojom::URLLoaderFactory> remote(
         std::move(it->second));

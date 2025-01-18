@@ -743,7 +743,11 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   const blink::web_pref::WebPreferences& GetOrCreateWebPreferences() override;
   void NotifyPreferencesChanged() override;
   void SetWebPreferences(const blink::web_pref::WebPreferences& prefs) override;
+#ifdef OHOS_LOGGER_REPORT
+  void OnWebPreferencesChanged(int32_t usage_scenario_type = 99) override;
+#else
   void OnWebPreferencesChanged() override;
+#endif 
 
   void AboutToBeDiscarded(WebContents* new_contents) override;
 
@@ -1513,7 +1517,12 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   // Recomputes only the "fast" preferences (those not requiring slow
   // platform/device polling); the remaining "slow" ones are recomputed only if
   // the preference cache is empty.
+  
+#ifdef OHOS_LOGGER_REPORT
+  const blink::web_pref::WebPreferences ComputeWebPreferences(int32_t usage_scenario_type = 99);
+#else
   const blink::web_pref::WebPreferences ComputeWebPreferences();
+#endif
 
   // Certain WebXr modes integrate with Viz as a compositor directly, and thus
   // have their own FrameSinkId that typically renders fullscreen, obscuring

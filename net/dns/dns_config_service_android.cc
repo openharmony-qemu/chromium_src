@@ -113,6 +113,9 @@ class DnsConfigServiceAndroid::ConfigReader : public SerialWorker {
       return true;
     } else {
       LOG(WARNING) << "Failed to read DnsConfig.";
+#ifdef OHOS_LOGGER_REPORT
+      LOG_FEEDBACK(WARNING) << "Failed to read DnsConfig.";
+#endif
       return false;
     }
   }

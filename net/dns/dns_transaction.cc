@@ -975,7 +975,10 @@ class DnsOverHttpsProbeRunner : public DnsProbeRunner {
   void Start(bool network_change) override {
     DCHECK(session_);
     DCHECK(context_);
-
+#ifdef OHOS_LOGGER_REPORT
+    LOG_FEEDBACK(INFO) << "probe runner running server size: "
+                       << config.servers().size();
+#endif
     const auto& config = session_->config().doh_config;
     // Start probe sequences for any servers where it is not currently running.
     for (size_t i = 0; i < config.servers().size(); i++) {
@@ -1070,6 +1073,11 @@ class DnsOverHttpsProbeRunner : public DnsProbeRunner {
                      base::TimeTicks query_start_time,
                      int rv) {
     bool success = false;
+#ifdef OHOS_LOGGER_REPORT
+    LOG_FEEDBACK(INFO) << "probe complete, attempt number "
+                       << attempt_number << ", server index "
+                       << doh_server_index << ", rv" << rv;
+#endif
     if (rv == OK && probe_stats && session_ && context_) {
       // Check that the response parses properly before considering it a
       // success.

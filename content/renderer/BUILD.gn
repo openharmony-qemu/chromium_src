@@ -257,6 +257,15 @@ target(link_target_type, "renderer") {
   }
  #endif
 
+  #if definef(OHOS_LOGGER_REPORT)
+  if (defined(ohos_logger_report) && ohos_logger_report) {
+    sources += [
+      "logger_report.cc",
+      "logger_report.h"
+    ]
+  }
+  #endif
+
   if (is_mac) {
     sources += [
       "renderer_main_platform_delegate_mac.mm",

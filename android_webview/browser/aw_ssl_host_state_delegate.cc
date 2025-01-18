@@ -7,6 +7,10 @@
 #include "base/functional/callback.h"
 #include "net/base/hash_value.h"
 
+#ifdef OHOS_LOGGER_REPORT
+#include "url/ohos/log_utils.h"
+#endif
+
 using content::SSLHostStateDelegate;
 
 namespace android_webview {

@@ -190,6 +190,7 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost
 #if BUILDFLAG(IS_OHOS)
   std::string GetSurfaceId(int32_t native_embed_id);
   void DestroyNativeWindow(uint32_t native_window_id);
+  void Discard(uint32_t native_window_id);
 #endif
   void SetChannelDiskCacheHandle(int client_id,
                                  const gpu::GpuDiskCacheHandle& handle);

@@ -1112,6 +1112,14 @@ void GpuServiceImpl::DestroyNativeWindow(uint32_t native_window_id)
   LOG(DEBUG) << "DestroyNativeWindow native_window_id: " << native_window_id;
   NWebNativeWindowTracker::GetInstance()->DestroyNativeWindow(native_window_id);
 }
+
+void GpuServiceImpl::Discard(uint32_t native_window_id)
+{
+  void* window = NWebNativeWindowTracker::GetInstance()->GetNativeWindow(native_window_id);
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .GetWindowAdapterInstance()
+      .NativeWindowSurfaceCleanCacheWithPara(reinterpret_cast<void*>(window), true);
+}
 #endif
 
 void GpuServiceImpl::SetChannelDiskCacheHandle(

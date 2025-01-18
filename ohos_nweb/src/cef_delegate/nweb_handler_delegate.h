@@ -799,6 +799,8 @@ void OnTouchIconUrlWithSizesReceived(
 
   void OnRequestOpenDevTools();
 
+  void Discard();
+
  private:
   void CopyImageToClipboard(CefRefPtr<CefImage> image);
 

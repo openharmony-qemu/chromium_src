@@ -2985,9 +2985,6 @@ bool NWebImpl::Discard() {
   }
 
   WVLOG_D("Discard: Notify the bufferq to clean all caches");
-  OHOS::NWeb::OhosAdapterHelper::GetInstance()
-      .GetWindowAdapterInstance()
-      .NativeWindowSurfaceCleanCacheWithPara(reinterpret_cast<void*>(window_), true);
   return true;
 }
 

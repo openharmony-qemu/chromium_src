@@ -212,6 +212,8 @@ class NWebImpl : public NWeb {
   void SetAccessibilityState(bool state) override;
   void SuggestionSelected(int index) override;
   void PutSpanstringConvertHtmlCallback(std::shared_ptr<NWebSpanstringConvertHtmlCallback> callback) override;
+  void getTotalSize(float size);
+  float DumpGpuInfo() override;
 #ifdef OHOS_SCREEN_LOCK
   void RegisterScreenLockFunction(int32_t windowId,
                                   std::shared_ptr<NWebScreenLockCallback> callback) override;
@@ -669,6 +671,7 @@ class NWebImpl : public NWeb {
 
   bool incognito_mode_ = false;
   EGLNativeWindowType window_;
+  float totalSize_;
 #if defined(OHOS_SCHEME_HANDLER)
   std::string web_tag_{""};
 #endif

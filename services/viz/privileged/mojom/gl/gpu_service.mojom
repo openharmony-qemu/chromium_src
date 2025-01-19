@@ -230,6 +230,10 @@ interface GpuService {
   [EnableIf=is_ohos]
   StopMonitor();
 
+  // get gpu total size
+  [EnableIf=is_ohos]
+  DumpGpuInfo() => (float totalSize);
+
   // Write out the accumulated code profiling profile to the configured file.
   // The callback is invoked once the profile has been flushed to disk.
   [EnableIf=use_clang_profiling_inside_sandbox]

@@ -84,24 +84,25 @@ void OHOSAudioManager::GetAudioOutputDeviceNames(
                                  .GetAudioSystemManager()
                                  .GetDefaultOutputDevice();
   for (auto audioDevice : audioDeviceList) {
-    if (audioDevice) {
-      if (!defaultOutputDevice) {
-        LOG(ERROR) << "OHOSAudioManager::GetAudioOutputDeviceNames "
-                      "defaultOutputDevice is null";
-        device_names->emplace_back(
+    if (!audioDevice) {
+      return;
+    }
+    if (!defaultOutputDevice) {
+      LOG(ERROR) << "OHOSAudioManager::GetAudioOutputDeviceNames "
+                    "defaultOutputDevice is null";
+      device_names->emplace_back(
+          audioDevice->GetDeviceName(),
+          base::NumberToString(audioDevice->GetDeviceId()));
+    } else {
+      if (defaultOutputDevice->GetDeviceName() ==
+          audioDevice->GetDeviceName()) {
+        device_names->emplace_front(
             audioDevice->GetDeviceName(),
             base::NumberToString(audioDevice->GetDeviceId()));
       } else {
-        if (defaultOutputDevice->GetDeviceName() ==
-            audioDevice->GetDeviceName()) {
-          device_names->emplace_front(
-              audioDevice->GetDeviceName(),
-              base::NumberToString(audioDevice->GetDeviceId()));
-        } else {
-          device_names->emplace_back(
-              audioDevice->GetDeviceName(),
-              base::NumberToString(audioDevice->GetDeviceId()));
-        }
+        device_names->emplace_back(
+            audioDevice->GetDeviceName(),
+            base::NumberToString(audioDevice->GetDeviceId()));
       }
     }
   }

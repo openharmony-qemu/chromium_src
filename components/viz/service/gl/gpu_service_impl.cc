@@ -63,6 +63,7 @@
 #include "media/mojo/services/mojo_video_encode_accelerator_provider.h"
 #include "mojo/public/cpp/bindings/self_owned_receiver.h"
 #include "skia/buildflags.h"
+#include "skia/ext/skia_memory_tracer.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/gl/GrGLAssembleInterface.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
@@ -1428,6 +1429,17 @@ void GpuServiceImpl::StartMonitor() {
 
 void GpuServiceImpl::StopMonitor() {
   base::ohos::DynamicFrameLossMonitor::GetInstance().StopMonitor();
+}
+
+void GpuServiceImpl::DumpGpuInfo(DumpGpuInfoCallback callback) {
+    float totalSize = 0;
+    if (compositor_gpu_thread_) {
+        GrDirectContext* grContext = compositor_gpu_thread_->GetSharedContextState()->gr_context();
+        SkiaMemoryTracer* skiaMemoryTracer = std::make_shared<SkiaMemoryTracer>("category", true).get();
+        grContext->dumpMemoryStatistics(skiaMemoryTracer);
+        totalSize = skiaMemoryTracer->GetGpuMemorySizeInMB();
+    }
+    std::move(callback).Run(totalSize);
 }
 
 void GpuServiceImpl::SetVisible(int32_t nweb_id, bool visible) {

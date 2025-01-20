@@ -50,6 +50,8 @@
 #include "nweb_resize_helper.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #include "components/web_cache/browser/web_cache_manager.h"
+#include "services/viz/privileged/mojom/gl/gpu_service.mojom.h"
+#include "content/browser/gpu/gpu_process_host.h"
 #include "ui/base/clipboard/ohos/clipboard_ohos.h"
 
 #if defined(REPORT_SYS_EVENT)
@@ -4294,6 +4296,16 @@ void NWebImpl::SetPopupSurface(void* popupSurface) {
         ret);
   }
   nweb_delegate_->SetPopupSurface(popup_window);
+}
+
+void NWebImpl::getTotalSize(float size) {
+    totalSize_ = size;
+}
+
+float NWebImpl::DumpGpuInfo() {
+    content::GpuProcessHost *host = content::GpuProcessHost::Get();
+    host->gpu_service()->DumpGpuInfo(base::BindOnce(&NWebImpl::getTotalSize, base::Unretained(this)));
+    return totalSize_;
 }
 
 void NWebImpl::SetTransformHint(uint32_t rotation) {

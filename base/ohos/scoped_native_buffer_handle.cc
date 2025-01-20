@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "gpu/command_buffer/service/ohos/scoped_native_buffer_handle.h"
+#include "base/ohos/scoped_native_buffer_handle.h"
 
 #include "base/logging.h"
 #include "base/posix/unix_domain_socket.h"
@@ -72,6 +72,51 @@ ScopedNativeBufferHandle ScopedNativeBufferHandle::Clone() const {
   DCHECK(buffer_);
   OHOS::NWeb::OhosAdapterHelper::GetInstance().GetOhosNativeBufferAdapter().AcquireBuffer(buffer_);
   return ScopedNativeBufferHandle(buffer_);
+}
+
+base::ScopedFD ScopedNativeBufferHandle::SerializeAsFileDescriptor() const {
+  LOG(ERROR) << "NATIVE_BUFFER" << __PRETTY_FUNCTION__ << "::" << __LINE__ <<"\n";
+  DCHECK(is_valid());
+
+  base::ScopedFD reader;
+  base::ScopedFD writer;
+  if (!CreateSocketPair(&reader, &writer)) {
+    LOG(ERROR) << "create socketpair failed.";
+    return base::ScopedFD();
+  }
+
+  // NOTE: SendHandleToUnixSocket does NOT acquire or retain a reference to the
+  // buffer object. The caller is therefore responsible for ensuring that the
+  // buffer remains alive through the lifetime of this file descriptor.
+  int result =
+      OHOS::NWeb::OhosAdapterHelper::GetInstance().GetOhosNativeBufferAdapter().
+      SendHandleToUnixSocket(buffer_, writer.get());
+  if (result < 0) {
+    LOG(ERROR) << "send Handle To UnixSocket failed.";
+    return base::ScopedFD();
+  }
+
+  return reader;
+}
+
+// static
+ScopedNativeBufferHandle
+ScopedNativeBufferHandle::DeserializeFromFileDescriptor(base::ScopedFD fd) {
+  LOG(ERROR) << "NATIVE_BUFFER" << __PRETTY_FUNCTION__ << "::" << __LINE__ <<"\n";
+  DCHECK(fd.is_valid());
+  OHOSNativeBuffer buffer = nullptr;
+
+  // NOTE: Upon success, RecvHandleFromUnixSocket acquires a new reference to
+  // the OhosNativeBuffer.
+  int result =
+      OHOS::NWeb::OhosAdapterHelper::GetInstance().GetOhosNativeBufferAdapter().RecvHandleFromUnixSocket(
+          fd.get(), &buffer);
+  if (result < 0) {
+    LOG(ERROR) << "recv Handle from UnixSocket failed";
+    return ScopedNativeBufferHandle();
+  }
+
+  return ScopedNativeBufferHandle(buffer);
 }
 
 ScopedNativeBufferHandle::ScopedNativeBufferHandle(OHOSNativeBuffer buffer)

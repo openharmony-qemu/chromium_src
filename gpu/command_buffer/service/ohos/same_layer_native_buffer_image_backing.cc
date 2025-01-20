@@ -26,11 +26,56 @@
 #include "ui/gfx/gpu_fence_handle.h"
 #include "ui/gl/android/egl_fence_utils.h"
 #include "ui/gl/ohos/native_buffer_utils.h"
-
+#include "gpu/command_buffer/service/shared_image/skia_vk_ohos_native_buffer_image_representation.h"
+#include "components/viz/common/gpu/vulkan_context_provider.h"
+#include "gpu/vulkan/vulkan_image.h"
+#include "third_party/skia/include/core/SkPromiseImageTexture.h"
+#include "gpu/command_buffer/service/skia_utils.h"
 
 namespace gpu {
 
+// Vk backed Skia representation of AHardwareBufferImageBacking.
+class SkiaVkNBRepresentation : public SkiaVkNBImageRepresentation {
+ public:
+  SkiaVkNBRepresentation(SharedImageManager* manager,
+                        SameLayerNativeBufferImageBacking* backing,
+                        scoped_refptr<SharedContextState> context_state,
+                        std::unique_ptr<VulkanImage> vulkan_image,
+                        MemoryTypeTracker* tracker)
+      : SkiaVkNBImageRepresentation(manager,
+                                    backing,
+                                    std::move(context_state),
+                                    tracker) {
+    DCHECK(vulkan_image);
+    LOG(DEBUG) << "create vk native buffer image skia representation VulkanImage " << vulkan_image;
+
+    vulkan_image_ = std::move(vulkan_image);
+    // TODO(bsalomon): Determine whether it makes sense to attempt to reuse this
+    // if the vk_info stays the same on subsequent calls.
+    promise_texture_ = SkPromiseImageTexture::Make(
+        GrBackendTexture(size().width(), size().height(),
+                         CreateGrVkImageInfo(vulkan_image_.get())));
+    DCHECK(promise_texture_);
+  }
+};
+
 namespace {
+std::unique_ptr<VulkanImage> CreateVkImageFromNativeBufferHandle(
+    gpu::ScopedNativeBufferHandle nb_handle,
+    SharedContextState* context_state,
+    const gfx::Size& size,
+    const viz::SharedImageFormat& format,
+    uint32_t queue_family_index) {
+  TRACE_EVENT2("base", __FILE__, "func", __func__, "line", __LINE__);
+  DCHECK(context_state);
+  DCHECK(context_state->GrContextIsVulkan());
+  auto* device_queue = context_state->vk_context_provider()->GetDeviceQueue();
+  gfx::GpuMemoryBufferHandle gmb_handle(std::move(nb_handle));
+  return VulkanImage::CreateFromGpuMemoryBufferHandle(
+      nullptr, device_queue, std::move(gmb_handle), size, ToVkFormat(format),
+      /*usage=*/0, /*flags=*/0, /*image_tiling=*/VK_IMAGE_TILING_OPTIMAL,
+      /*queue_family_index=*/queue_family_index);
+}
 
 void CreateAndBindEglImageFromNativeBuffer(OHOSNativeBuffer buffer,
                                            GLuint service_id) {
@@ -53,47 +98,6 @@ void CreateAndBindEglImageFromNativeBuffer(OHOSNativeBuffer buffer,
   glBindTexture(GL_TEXTURE_EXTERNAL_OES, service_id);
   glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_image.get());
 }
-
-bool SyncFenceWait(base::ScopedFD acquire_fence_fd) {
-  int fence_fd = acquire_fence_fd.get();
-  TRACE_EVENT2("base", __FILE__, "func", __func__, "sync_fd", fence_fd);
-
-  // If fence_fd is -1, we do not need synchronization fence and image is ready
-  // to be used immediately. Also we dont need to close any fd. Else we need to
-  // create a sync fence which is used to signal when the buffer is ready to be
-  // consumed.
-  if (fence_fd == -1) {
-    return true;
-  }
-
-  struct pollfd poll_fds = {0};
-  poll_fds.fd = fence_fd;
-  poll_fds.events = POLLIN;
-
-  int ret = -1;
-  do {
-    ret = poll(&poll_fds, 1, -1);
-  } while (ret == -1 && (errno == EINTR || errno == EAGAIN));
-
-  if (ret == 0) {
-    ret = -1;
-    errno = ETIME;
-  } else if (ret > 0) {
-    ret = 0;
-    if (poll_fds.revents & (POLLERR | POLLNVAL)) {
-      ret = -1;
-      errno = EINVAL;
-    }
-  }
-
-  if (ret < 0) {
-    LOG(ERROR) << "Failed to do SyncFenceWait errno " << errno;
-    return false;
-  }
-
-  return true;
-}
-
 }  // namespace
 
 SameLayerNativeBufferImageBacking::SameLayerNativeBufferImageBacking(
@@ -199,7 +203,7 @@ class SameLayerNativeBufferImageBacking::GLTextureVideoImageRepresentation
       return false;
     }
 
-    SyncFenceWait(scoped_native_buffer_->TakeFence());
+    gl::ohos::SyncFenceWait(scoped_native_buffer_->TakeFence());
     CreateAndBindEglImageFromNativeBuffer(scoped_native_buffer_->buffer(),
                                           texture_->service_id());
     return true;
@@ -220,6 +224,115 @@ class SameLayerNativeBufferImageBacking::GLTextureVideoImageRepresentation
  private:
   std::unique_ptr<AbstractTextureOHOS> texture_;
   std::unique_ptr<ScopedNativeBufferFenceSync> scoped_native_buffer_;
+};
+
+class SameLayerNativeBufferImageBacking::SkiaVkSameLayerRepresentation
+    : public SkiaVkNBImageRepresentation,
+      public RefCountedLockHelperDrDc {
+ public:
+  SkiaVkSameLayerRepresentation(
+      SharedImageManager* manager,
+      OhosImageBacking* backing,
+      scoped_refptr<SharedContextState> context_state,
+      MemoryTypeTracker* tracker,
+      scoped_refptr<RefCountedLock> drdc_lock)
+      : SkiaVkNBImageRepresentation(manager,
+                                    backing,
+                                    std::move(context_state),
+                                    tracker),
+        RefCountedLockHelperDrDc(std::move(drdc_lock)) {
+    TRACE_EVENT2("base", __FILE__, "func", __func__, "line", __LINE__);
+  }
+
+  std::vector<sk_sp<SkSurface>> BeginWriteAccess(
+      int final_msaa_count,
+      const SkSurfaceProps& surface_props,
+      const gfx::Rect& update_rect,
+      std::vector<GrBackendSemaphore>* begin_semaphores,
+      std::vector<GrBackendSemaphore>* end_semaphores,
+      std::unique_ptr<GrBackendSurfaceMutableState>* end_state) override {
+    // Writes are not intended to used for video backed representations.
+    NOTIMPLEMENTED();
+    return {};
+  }
+
+  void EndWriteAccess() override { NOTIMPLEMENTED(); }
+
+  std::vector<sk_sp<SkPromiseImageTexture>> BeginReadAccess(
+      std::vector<GrBackendSemaphore>* begin_semaphores,
+      std::vector<GrBackendSemaphore>* end_semaphores,
+      std::unique_ptr<GrBackendSurfaceMutableState>* end_state) override {
+    base::AutoLockMaybe auto_lock(GetDrDcLockPtr());
+
+    TRACE_EVENT2("base", __FILE__, "func", __func__, "line", __LINE__);
+    DCHECK(!scoped_native_buffer_);
+    auto* samelayer_backing = static_cast<SameLayerNativeBufferImageBacking*>(backing());
+    DCHECK(samelayer_backing);
+    auto* stream_texture_sii = samelayer_backing->stream_texture_sii_.get();
+
+    // GetAHardwareBuffer() renders the latest image and gets AHardwareBuffer
+    // from it.
+    scoped_native_buffer_ = stream_texture_sii->GetNativeBuffer();
+    if (!scoped_native_buffer_) {
+      LOG(ERROR) << "Failed to get the hardware buffer.";
+      return {};
+    }
+    DCHECK(scoped_native_buffer_->buffer());
+
+    // Wait on the sync fd attached to the buffer to make sure buffer is
+    // ready before the read. This is done by inserting the sync fd semaphore
+    // into begin_semaphore vector which client will wait on.
+    init_read_fence_ = scoped_native_buffer_->TakeFence();
+
+    if (!vulkan_image_) {
+      DCHECK(!promise_texture_);
+
+      vulkan_image_ = CreateVkImageFromNativeBufferHandle(
+          scoped_native_buffer_->TakeBuffer(), context_state(), size(),
+          format(), VK_QUEUE_FAMILY_FOREIGN_EXT);
+      if (!vulkan_image_)
+        return {};
+
+      // We always use VK_IMAGE_TILING_OPTIMAL while creating the vk image in
+      // VulkanImplementationAndroid::CreateVkImageAndImportAHB. Hence pass
+      // the tiling parameter as VK_IMAGE_TILING_OPTIMAL to below call rather
+      // than passing |vk_image_info.tiling|. This is also to ensure that the
+      // promise image created here at [1] as well the fulfill image created
+      // via the current function call are consistent and both are using
+      // VK_IMAGE_TILING_OPTIMAL. [1] -
+      // https://cs.chromium.org/chromium/src/components/viz/service/display_embedder/skia_output_surface_impl.cc?rcl=db5ffd448ba5d66d9d3c5c099754e5067c752465&l=789.
+      DCHECK_EQ(static_cast<int32_t>(vulkan_image_->image_tiling()),
+                static_cast<int32_t>(VK_IMAGE_TILING_OPTIMAL));
+
+      // TODO(bsalomon): Determine whether it makes sense to attempt to reuse
+      // this if the vk_info stays the same on subsequent calls.
+      promise_texture_ = SkPromiseImageTexture::Make(
+          GrBackendTexture(size().width(), size().height(),
+                           CreateGrVkImageInfo(vulkan_image_.get())));
+      DCHECK(promise_texture_);
+    }
+
+    return SkiaVkNBImageRepresentation::BeginReadAccess(
+        begin_semaphores, end_semaphores, end_state);
+  }
+
+  void EndReadAccess() override {
+    base::AutoLockMaybe auto_lock(GetDrDcLockPtr());
+    DCHECK(scoped_native_buffer_);
+
+    TRACE_EVENT2("base", __FILE__, "func", __func__, "line", __LINE__);
+    SkiaVkNBImageRepresentation::EndReadAccess();
+
+    // Pass the end read access sync fd to the scoped hardware buffer. This
+    // will make sure that the AImage associated with the hardware buffer will
+    // be deleted only when the read access is ending.
+    scoped_native_buffer_->SetReadFence(ohos_backing()->TakeReadFence());
+    scoped_native_buffer_ = nullptr;
+  }
+
+ private:
+  std::unique_ptr<ScopedNativeBufferFenceSync>
+      scoped_native_buffer_;
 };
 
 std::unique_ptr<GLTextureImageRepresentation>
@@ -263,6 +376,10 @@ SameLayerNativeBufferImageBacking::ProduceSkiaGanesh(
     return nullptr;
   }
 
+  if (context_state->GrContextIsVulkan()) {
+    return std::make_unique<SkiaVkSameLayerRepresentation>(
+        manager, this, std::move(context_state), tracker, GetDrDcLock());
+  }
   DCHECK(context_state->GrContextIsGL());
 
   auto texture = GenAbstractTexture(false);

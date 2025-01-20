@@ -25,11 +25,18 @@
 #include "gpu/vulkan/mac/vulkan_implementation_mac.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "gpu/vulkan/ohos/vulkan_implementation_ohos.h"
+#endif
+
 namespace gpu {
 
 std::unique_ptr<VulkanImplementation> CreateVulkanImplementation(
     bool use_swiftshader,
     bool allow_protected_memory) {
+#if BUILDFLAG(IS_OHOS)
+  return std::make_unique<gpu::VulkanImplementationOhos>();
+#else
 #if BUILDFLAG(IS_OZONE)
   return ui::OzonePlatform::GetInstance()
       ->GetSurfaceFactoryOzone()
@@ -57,6 +64,7 @@ std::unique_ptr<VulkanImplementation> CreateVulkanImplementation(
 #else
   NOTREACHED();
   return {};
+#endif
 #endif
 #endif
 }

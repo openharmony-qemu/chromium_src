@@ -1045,6 +1045,7 @@ const char kEnableNwebExGetZoomLevel[] = "enable-nweb-ex-get-zoom-level";
 const char kEnableNwebExNetworkLoad[] = "enable-nweb-ex-network-load";
 const char kEnableNwebExBlankTargetPopup_intercept[] = "enable-nweb-ex-blank-target-popup-intercept";
 const char kOhosEnableDrDc[] = "ohos-enable-drdc";
+const char kOhosEnableVulkan[] = "ohos-enable-vulkan";
 const char kEnableNwebExDownload[] = "enable-nweb-ex-download";
 const char kOhosDisableTouchEvent[] = "disable-touch-event-register";
 const char kPasswordWaitUsername[] = "ohos-enable-wait-for-username";

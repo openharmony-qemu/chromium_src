@@ -33,6 +33,8 @@ GL_EXPORT void FreeEGLClientBuffer(EGLClientBuffer egl_client_buffer);
 
 GL_EXPORT bool InsertEglFenceAndWait(base::ScopedFD acquire_fence_fd);
 
+GL_EXPORT bool SyncFenceWait(base::ScopedFD acquire_fence_fd);
+
 }  // namespace ohos
 }  // namespace gl
 

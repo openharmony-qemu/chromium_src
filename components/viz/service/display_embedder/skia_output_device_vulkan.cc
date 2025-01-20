@@ -10,6 +10,7 @@
 #include "base/feature_list.h"
 #include "base/logging.h"
 #include "base/threading/scoped_blocking_call.h"
+#include "base/trace_event/trace_event.h"
 #include "build/build_config.h"
 #include "components/viz/common/gpu/vulkan_context_provider.h"
 #include "gpu/command_buffer/service/memory_tracking.h"
@@ -32,6 +33,7 @@
 #endif
 
 namespace viz {
+const int bufferSize = 2;
 
 // static
 std::unique_ptr<SkiaOutputDeviceVulkan> SkiaOutputDeviceVulkan::Create(
@@ -297,7 +299,7 @@ bool SkiaOutputDeviceVulkan::Initialize() {
   capabilities_.supports_post_sub_buffer = true;
   capabilities_.supports_target_damage = true;
   capabilities_.orientation_mode = OutputSurface::OrientationMode::kHardware;
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   // With vulkan, if the chrome is launched in landscape mode, the chrome is
   // always blank until chrome window is rotated once. Workaround this problem
   // by using logic rotation mode.
@@ -379,6 +381,13 @@ void SkiaOutputDeviceVulkan::OnPostSubBufferFinished(OutputSurfaceFrame frame,
                       gfx::Rect(vulkan_surface_->image_size()));
   }
 }
+
+#if BUILDFLAG(IS_OHOS)
+void SkiaOutputDeviceVulkan::DiscardBackbuffer() {
+  TRACE_EVENT0("base", "SkiaOutputDeviceVulkan::DiscardBackbuffer");
+  vulkan_surface_->Reshape(gfx::Size(bufferSize, bufferSize), gfx::OverlayTransform::OVERLAY_TRANSFORM_INVALID);
+}
+#endif
 
 SkiaOutputDeviceVulkan::SkSurfaceSizePair::SkSurfaceSizePair() = default;
 SkiaOutputDeviceVulkan::SkSurfaceSizePair::SkSurfaceSizePair(

@@ -69,6 +69,7 @@ class SameLayerNativeBufferImageBacking : public OhosVideoImageBacking,
   };
 
   class GLTextureVideoImageRepresentation;
+  class SkiaVkSameLayerRepresentation;
 
   std::unique_ptr<ContextLostObserverHelper> context_lost_helper_;
   scoped_refptr<StreamTextureSharedImageInterface> stream_texture_sii_;

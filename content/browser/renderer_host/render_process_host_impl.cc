@@ -3698,6 +3698,7 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
     switches::kOhSchemeHandlerCustomScheme,
     switches::kBundleName,
     switches::kArkWebInstallPath,
+    switches::kOhosEnableVulkan,
 #endif
 #if BUILDFLAG(IS_CHROMEOS_LACROS)
     switches::kLacrosEnablePlatformHevc,

@@ -299,6 +299,18 @@ target(link_target_type, "gles2_sources") {
     sources += [
       "abstract_texture_ohos.cc",
       "abstract_texture_ohos.h",
+      "ohos/native_buffer_config_impl.cc",
+      "ohos/native_buffer_config_impl.h",
+      "shared_image/gl_texture_ohos_image_representation.cc",
+      "shared_image/gl_texture_ohos_image_representation.h",
+      "shared_image/gl_texture_passthrough_ohos_image_representation.cc",
+      "shared_image/gl_texture_passthrough_ohos_image_representation.h",
+      "shared_image/ohos_native_buffer_image_backing.cc",
+      "shared_image/ohos_native_buffer_image_backing.h",
+      "shared_image/ohos_native_buffer_image_backing_factory.cc",
+      "shared_image/ohos_native_buffer_image_backing_factory.h",
+      "shared_image/skia_vk_ohos_native_buffer_image_representation.cc",
+      "shared_image/skia_vk_ohos_native_buffer_image_representation.h",
     ]
   } else if (is_android) {
     sources += [
@@ -337,8 +349,6 @@ target(link_target_type, "gles2_sources") {
       "ohos/same_layer_native_buffer_gl_owner.h",
       "ohos/scoped_native_buffer_fence_sync.cc",
       "ohos/scoped_native_buffer_fence_sync.h",
-      "ohos/scoped_native_buffer_handle.cc",
-      "ohos/scoped_native_buffer_handle.h",
       "ref_counted_lock.cc",
       "ref_counted_lock.h",
       "stream_texture_shared_image_interface.h",

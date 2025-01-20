@@ -59,6 +59,10 @@ const char* BackingTypeToString(SharedImageBackingType type) {
       return "DCompSurface";
     case SharedImageBackingType::kDXGISwapChain:
       return "DXGISwapChain";
+#if BUILDFLAG(IS_OHOS)
+    case SharedImageBackingType::kOHOSNativeBuffer:
+      return "OHOSNativeBuffer";
+#endif
   }
   NOTREACHED();
 }

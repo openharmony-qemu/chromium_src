@@ -18562,7 +18562,7 @@ void GLES2DecoderImpl::DoBeginSharedImageAccessDirectCHROMIUM(GLuint client_id,
                        "bound texture is not a shared image");
     return;
   }
-
+  TRACE_EVENT2("gpu", __func__, "mailbox", shared_image->mailbox().ToDebugString(), "name", shared_image->GetName());
   if (texture_ref->shared_image_scoped_access()) {
     LOCAL_SET_GL_ERROR(GL_INVALID_OPERATION, "DoBeginSharedImageAccessCHROMIUM",
                        "shared image is being accessed");

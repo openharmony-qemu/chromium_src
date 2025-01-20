@@ -62,6 +62,10 @@ class SkiaOutputDeviceVulkan final : public SkiaOutputDevice {
       std::vector<GrBackendSemaphore>* end_semaphores) override;
   void EndPaint() override;
 
+#if BUILDFLAG(IS_OHOS)
+  void DiscardBackbuffer() override;
+#endif
+
  private:
   struct SkSurfaceSizePair {
    public:

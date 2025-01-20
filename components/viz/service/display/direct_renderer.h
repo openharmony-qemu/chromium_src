@@ -79,6 +79,10 @@ class VIZ_SERVICE_EXPORT DirectRenderer {
 
   bool use_partial_swap() const { return use_partial_swap_; }
 
+#if BUILDFLAG(IS_OHOS)
+  void disable_partial_swap() { use_partial_swap_ = false; }
+#endif
+
   void SetVisible(bool visible);
   void ReallocatedFrameBuffers();
   void DecideRenderPassAllocationsForFrame(

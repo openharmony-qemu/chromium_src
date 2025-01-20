@@ -69,6 +69,25 @@ class BASE_EXPORT ScopedNativeBufferHandle {
   // underlying buffer object. |this| must be a valid handle.
   ScopedNativeBufferHandle Clone() const;
 
+  // Consumes a handle and returns a file descriptor which can be used to
+  // transmit the handle over IPC. A subsequent receiver may use
+  // |DeserializeFromFileDescriptor()| to recover the buffer handle.
+  //
+  // NOTE: The returned file descriptor DOES NOT own a reference to the
+  // underlying AHardwareBuffer. When using this for IPC, the caller is
+  // responsible for retaining at least one reference to the buffer object to
+  // keep it alive while the descriptor is in transit.
+  base::ScopedFD SerializeAsFileDescriptor() const;
+
+  // Consumes the supplied single-use file descriptor (which must have been
+  // returned by a previous call to |SerializeAsFileDescriptor()|, perhaps in
+  // a different process), and recovers an AHardwareBuffer object from it.
+  //
+  // This acquires a new reference to the AHardwareBuffer, with ownership passed
+  // to the caller via the returned ScopedHardwareBufferHandle.
+  [[nodiscard]] static ScopedNativeBufferHandle DeserializeFromFileDescriptor(
+      base::ScopedFD fd);
+
  private:
   // Assumes ownership of an existing reference to |buffer|. This does NOT
   // acquire a new reference.

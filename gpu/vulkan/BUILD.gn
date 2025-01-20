@@ -134,13 +134,17 @@ if (enable_vulkan) {
     if (is_posix) {
       sources += [ "vulkan_util_posix.cc" ]
 
-      if (is_linux || is_chromeos || is_ohos) {
+      if (is_linux || is_chromeos) {
         sources += [ "vulkan_image_linux.cc" ]
       }
     }
 
     if (is_android) {
       sources += [ "vulkan_image_android.cc" ]
+    }
+
+    if (is_ohos) {
+      sources += [ "vulkan_image_ohos.cc" ]
     }
 
     if (is_fuchsia) {

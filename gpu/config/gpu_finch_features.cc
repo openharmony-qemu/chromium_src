@@ -26,6 +26,7 @@
 
 #if defined(OHOS_DRDC)
 #include "content/public/common/content_switches.h"
+#include "ohos_adapter_helper.h"
 #endif // defined(OHOS_DRDC)
 
 namespace features {
@@ -236,7 +237,7 @@ BASE_FEATURE(kVaapiWebPImageDecodeAcceleration,
 // Note Android WebView uses kWebViewVulkan instead of this.
 BASE_FEATURE(kVulkan,
              "Vulkan",
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT
@@ -256,7 +257,7 @@ BASE_FEATURE(kForceGpuMainThreadToNormalPriorityDrDc,
              "ForceGpuMainThreadToNormalPriorityDrDc",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 BASE_FEATURE(kEnableDrDcVulkan,
              "EnableDrDcVulkan",
              base::FEATURE_ENABLED_BY_DEFAULT);
@@ -462,6 +463,23 @@ bool IsUsingVulkan() {
 
   return true;
 
+#elif BUILDFLAG(IS_OHOS)
+  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                                     .GetSystemPropertiesInstance();
+  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  bool cmd_value = false;
+  if (command_line) {
+    cmd_value = command_line->HasSwitch(switches::kOhosEnableVulkan);
+  }
+  std::string vulkan_enable = system_properties_adapter.GetVulkanStatus();
+  LOG(DEBUG) << "vulkan switch config is: " << cmd_value << ", cmd is: " << vulkan_enable;
+  if (vulkan_enable == "false") {
+    return false;
+  } else if (vulkan_enable == "None") {
+    return cmd_value;
+  } else {
+    return true;
+  }
 #else
   return base::FeatureList::IsEnabled(kVulkan);
 #endif
@@ -509,9 +527,15 @@ bool IsDrDcEnabled() {
   return IsUsingVulkan() ? base::FeatureList::IsEnabled(kEnableDrDcVulkan)
                          : true;
 #elif defined(OHOS_DRDC)
+  if (IsUsingVulkan()) {
+    LOG(DEBUG) << "vulkan drdc enabled " << base::FeatureList::IsEnabled(kEnableDrDcVulkan);
+    return base::FeatureList::IsEnabled(kEnableDrDcVulkan);
+  }
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
-  if (command_line)
-    return command_line->HasSwitch(::switches::kOhosEnableDrDc);
+  if (command_line) {
+      LOG(DEBUG) << "vulkan drdc enabled " <<  command_line->HasSwitch(::switches::kOhosEnableDrDc);
+      return command_line->HasSwitch(::switches::kOhosEnableDrDc);
+  }
   return false;
 #else
   return false;

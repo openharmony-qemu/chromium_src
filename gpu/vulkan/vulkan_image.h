@@ -65,6 +65,9 @@ class COMPONENT_EXPORT(VULKAN) VulkanImage {
       const void* extra_memory_allocation_info = nullptr);
 
   static std::unique_ptr<VulkanImage> CreateFromGpuMemoryBufferHandle(
+#if BUILDFLAG(IS_OHOS)
+      scoped_refptr<gfx::NativePixmap> pixmap,
+#endif
       VulkanDeviceQueue* device_queue,
       gfx::GpuMemoryBufferHandle gmb_handle,
       const gfx::Size& size,
@@ -190,6 +193,9 @@ class COMPONENT_EXPORT(VULKAN) VulkanImage {
                                     const void* extra_image_create_info,
                                     const void* extra_memory_allocation_info);
   bool InitializeFromGpuMemoryBufferHandle(
+#if BUILDFLAG(IS_OHOS)
+      scoped_refptr<gfx::NativePixmap> pixmap,
+#endif
       VulkanDeviceQueue* device_queue,
       gfx::GpuMemoryBufferHandle gmb_handle,
       const gfx::Size& size,

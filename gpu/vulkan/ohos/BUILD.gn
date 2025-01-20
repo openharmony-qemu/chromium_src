@@ -1,0 +1,42 @@
+# Copyright 2018 The Chromium Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/config/ui.gni")
+import("//gpu/vulkan/features.gni")
+import("//testing/test.gni")
+
+assert(enable_vulkan)
+
+config("vulkan_ohos") {
+  defines = [ "VK_USE_PLATFORM_OHOS_KHR" ]
+}
+
+component("ohos") {
+  output_name = "vulkan_ohos"
+
+  sources = [
+    "vulkan_implementation_ohos.cc",
+    "vulkan_implementation_ohos.h",
+  ]
+
+  defines = [ "IS_VULKAN_OHOS_IMPL" ]
+
+  deps = [
+    "//gpu/ipc/common",
+    "//gpu/ipc/common:vulkan_ycbcr_info",
+    "//ui/gfx",
+  ]
+
+  if (is_ohos) {
+    import("//build/config/ohos/config.gni")
+    lib_dirs = ohos_libs_dir
+    libs = [ "vulkan" ]
+  }
+  public_configs = [ ":vulkan_ohos" ]
+
+  public_deps = [
+    "//base",
+    "//gpu/vulkan",
+  ]
+}

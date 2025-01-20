@@ -20,6 +20,7 @@
 #include "ohos_nweb/src/ndk/scheme_handler/resource_handler.h"
 #include "ohos_nweb/src/ndk/scheme_handler/resource_request.h"
 #include "net/base/mime_sniffer.h"
+#include "base/trace_event/trace_event.h"
 
 namespace OHOS::NWeb {
 
@@ -195,11 +196,8 @@ void NWebPipeResourceHandler::DidReceiveResponse(
 
 void NWebPipeResourceHandler::DidReceiveData(const uint8_t* buffer,
                                              int64_t buf_len) {
+  TRACE_EVENT0("base", "DidReceiveResponse");
   base::AutoLock scoped_lock_(lock_);
-  LOG(DEBUG) << "scheme_handler did receive data buf_len: " << buf_len
-            << " finished: " << finished_
-            << " finished_with_error: " << finished_with_error_
-            << " reamain_read: " << remain_read_;
   if (finished_ || finished_with_error_ || canceled_) {
     LOG(ERROR) << "scheme_handler had finished should not append data.";
     return;

@@ -88,9 +88,11 @@ struct NWebAppClientExtensionCallback {
   void (*OnBeforeUnloadFired)(bool proceed, int nweb_id);
 #endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
+#if defined(OHOS_VIDEO_ASSISTANT)
   NWebMediaPlayerListener* (*OnFullScreenOverlayEnter)(int32_t nweb_id,
       NWebMediaPlayerController* media_player_controller,
       const char* media_info);
+#endif // OHOS_VIDEO_ASSISTANT
 };
 
 #endif  // OHOS_NWEB_SRC_NWEB_APP_CLIENT_EXTENSION_CALLBACK_H_

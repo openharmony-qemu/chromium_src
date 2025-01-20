@@ -3867,6 +3867,7 @@ void NWebHandlerDelegate::OnReportStatisticLog(const CefString& content) {
 #endif  // defined(OHOS_VIDEO_ASSISTANT)
 }
 
+#if defined(OHOS_VIDEO_ASSISTANT)
 CefOwnPtr<CefMediaPlayerListenerForVAST>
 NWebHandlerDelegate::OnFullScreenOverlayEnter(
     CefOwnPtr<CefMediaPlayerController> media_player_controller,
@@ -3892,6 +3893,7 @@ NWebHandlerDelegate::OnFullScreenOverlayEnter(
   return std::make_unique<NWebMediaPlayerListenerForVAST>(
       std::unique_ptr<NWebMediaPlayerListener>(listener));
 }
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
 
 #if defined(OHOS_RENDERER_ANR_DUMP)
 void NWebHandlerDelegate::OnRenderProcessNotResponding(

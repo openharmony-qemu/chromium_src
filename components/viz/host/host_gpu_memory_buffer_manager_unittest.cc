@@ -117,6 +117,7 @@ class TestGpuService : public mojom::GpuService {
   void SetHasTouchPoint(bool has_touch_point) override {}
   void ReportSlidingFrameRate(int32_t frame_rate) override {}
   void SetLTPOStrategy(int32_t strategy) override {}
+  void Discard(uint32_t native_window_id) override {}
   #endif
   void EstablishGpuChannel(int32_t client_id,
                            uint64_t client_tracing_id,

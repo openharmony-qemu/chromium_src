@@ -75,6 +75,7 @@ artifact_mode=0
 with_nweb_ex=0
 build_sysroot="use_ohos_sdk_sysroot=false"
 build_asan=0
+build_release=0
 use_thin_lto=0
 is_heif_support="heif_support=\"true\""
 
@@ -97,6 +98,7 @@ ${TEXT_BOLD}OPTIONS${TEXT_NORMAL}:
   -o <output_dir>   Output directory, for example: Default.
   -A, -artifact     Artifact mode, using pre-built NDK rather than building
                     them locally.
+  -r                release build.
   -asan             Enable AddressSanitizer (ASan).
 
 ${TEXT_BOLD}PRODUCT${TEXT_NORMAL}:
@@ -156,6 +158,9 @@ while [ "$1" != "" ]; do
       ;;
     "-asan")
       build_asan=1
+      ;;
+    "-r")
+      build_release=1
       ;;
     "-nolto")
       use_thin_lto=1
@@ -230,6 +235,12 @@ if [ $buildccache = 1 ]; then
   fi
   GN_ARGS="cc_wrapper=\"ccache\" clang_use_chrome_plugins=false"
   export CCACHE_CPP2=yes
+fi
+
+if [ ${build_release} -eq 1 ]; then
+  GN_ARGS="${GN_ARGS} is_release_build=true"
+else
+  GN_ARGS="${GN_ARGS} is_release_build=false"
 fi
 
 if [ ${artifact_mode} -eq 1 ]; then

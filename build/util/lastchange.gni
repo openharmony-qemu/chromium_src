@@ -5,6 +5,8 @@
 # This file is used to inject fixed dummy commit for commit independent
 # reproducible binaries.
 
+import ("//build/config/ohos/config.gni")
+
 declare_args() {
   use_dummy_lastchange = false
 }
@@ -15,7 +17,7 @@ if (use_dummy_lastchange) {
   lastchange_file = "//build/util/LASTCHANGE"
 }
 
-if (is_ohos) {
+if (is_ohos && is_release_build) {
   exec_script("lastchange.py",
         [
           "-o",

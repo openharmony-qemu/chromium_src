@@ -14,6 +14,8 @@ if (is_ohos) {
     enable_ohos_bytrace = true
     # Enable ohos_nweb_hap build target.
     enable_ohos_nweb_hap = false
+    # Is release build.
+    is_release_build = false
   }
 
   declare_args() {

@@ -421,10 +421,9 @@ bool OSCryptImpl::DecryptStringForMigrate(const std::string& ciphertext,
     return true;
   }
  
-  // the incoming ciphertext was encrypted and with V11 version.
-  crypto::SymmetricKey* encryption_key = nullptr;
+  // the incoming ciphertext was encrypted and with V10 version.
+  crypto::SymmetricKey* encryption_key = GetPasswordV10ForMigrate();
   std::string obfuscation_prefix;
-  encryption_key = GetPasswordV10ForMigrate();
   obfuscation_prefix = kObfuscationPrefixV10;
  
   if (!encryption_key) {

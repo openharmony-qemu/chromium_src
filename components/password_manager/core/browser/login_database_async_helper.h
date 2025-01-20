@@ -50,6 +50,9 @@ class LoginDatabaseAsyncHelper : private PasswordStoreSync {
 
   PasswordChangesOrError AddLogin(const PasswordForm& form);
   PasswordChangesOrError UpdateLogin(const PasswordForm& form);
+#if defined(OHOS_EX_PASSWORD)
+  void UpdateLoginDisplayName(const PasswordForm& form);
+#endif
   PasswordChangesOrError RemoveLogin(const PasswordForm& form);
   PasswordChangesOrError RemoveLoginsCreatedBetween(base::Time delete_begin,
                                                     base::Time delete_end);

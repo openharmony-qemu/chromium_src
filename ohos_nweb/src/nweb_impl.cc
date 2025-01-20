@@ -190,6 +190,16 @@ extern bool g_siteIsolationMode;
 #include "nweb_extension_side_panel_cef_delegate.h"
 #endif // OHOS_ARKWEB_EXTENSIONS
 
+#if defined(OHOS_EX_PASSWORD)
+#include "base/base_switches.h"
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#include "ohos_nweb/src/nweb_web_storage_impl.h"
+#include "chrome/browser/browser_process.h"
+#include "cef/libcef/browser/prefs/browser_prefs.h"
+#include "components/prefs/pref_service.h"
+#endif
+
 #if defined(OHOS_VIDEO_ASSISTANT)
 OnReportStatisticLogFunc
     OHOS::NWeb::NWebImpl::on_report_statistic_log_callback_ = nullptr;
@@ -483,6 +493,18 @@ void InitialWebEngineArgs(
 #endif  // OHOS_NWEB_EX
 }
 #endif  // defined(OHOS_API_INIT_WEB_ENGINE)
+
+#if defined(OHOS_EX_PASSWORD)
+void MigratePasswordsToPasswordVault() {
+  bool migrateReady = g_browser_process->local_state()->GetBoolean(browser_prefs::kMigratePasswordsReady);
+  bool migrateVault = g_browser_process->local_state()->GetBoolean(browser_prefs::kMigratePasswordsToPasswordVault);
+  if (migrateReady == true && migrateVault == false) {
+    OHOS::NWeb::NWebWebStorageImpl* nweb_web_storage = new OHOS::NWeb::NWebWebStorageImpl();
+    nweb_web_storage->MigratePasswords();
+  }
+}
+#endif // OHOS_EX_PASSWORD
+
 }  // namespace
 
 namespace OHOS::NWeb {
@@ -611,6 +633,12 @@ NWebImpl::InitializeWebEngine(std::shared_ptr<NWebEngineInitArgs> init_args) {
 #endif
   NWebApplication::GetDefault()->InitializeCef(mainargs, settings);
   content::GetNetworkService();
+
+#if defined(OHOS_EX_PASSWORD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(::switches::kEnableNwebExPassword)) {
+    MigratePasswordsToPasswordVault();
+  }
+#endif
 }
 #endif  // defined(OHOS_API_INIT_WEB_ENGINE)
 
@@ -3755,6 +3783,18 @@ void NWebImpl::EnableWholeWebPageDrawing() {
 }
 #endif
 
+// static
+void NWebImpl::SetMigrationPasswordReady(const bool migrationReady) {
+#if defined(OHOS_EX_PASSWORD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(::switches::kEnableNwebExPassword)) {
+    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsReady, migrationReady);
+    LOG(INFO) << "[Autofill] Migrate Passwords Ready:" << migrationReady;
+    if (migrationReady == true) {
+      MigratePasswordsToPasswordVault();
+    }
+  }
+#endif
+}
 }  // namespace OHOS::NWeb
 
 using namespace OHOS::NWeb;

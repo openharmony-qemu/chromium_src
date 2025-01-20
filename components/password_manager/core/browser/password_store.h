@@ -93,6 +93,9 @@ class PasswordStore : public PasswordStoreInterface {
       const PasswordForm& new_form,
       const PasswordForm& old_primary_key,
       base::OnceClosure completion = base::DoNothing()) override;
+#if defined(OHOS_EX_PASSWORD)
+  void UpdateLoginDisplayName(const PasswordForm& form) override;
+#endif
   void RemoveLogin(const PasswordForm& form) override;
   void RemoveLoginsByURLAndTime(
       const base::RepeatingCallback<bool(const GURL&)>& url_filter,

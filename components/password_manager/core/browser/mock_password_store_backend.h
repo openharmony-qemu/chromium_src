@@ -58,6 +58,12 @@ class MockPasswordStoreBackend : public PasswordStoreBackend {
               UpdateLoginAsync,
               (const PasswordForm& form, PasswordChangesOrErrorReply callback),
               (override));
+#if defined(OHOS_EX_PASSWORD)
+  MOCK_METHOD(void,
+              UpdateLoginDisplayNameAsync,
+              (const PasswordForm& form),
+              (override));
+#endif
   MOCK_METHOD(void,
               RemoveLoginAsync,
               (const PasswordForm& form, PasswordChangesOrErrorReply callback),

@@ -110,6 +110,9 @@ class PasswordStoreBackend {
                              PasswordChangesOrErrorReply callback) = 0;
   virtual void UpdateLoginAsync(const PasswordForm& form,
                                 PasswordChangesOrErrorReply callback) = 0;
+#if defined(OHOS_EX_PASSWORD)
+  virtual void UpdateLoginDisplayNameAsync(const PasswordForm& form) = 0;
+#endif
   virtual void RemoveLoginAsync(const PasswordForm& form,
                                 PasswordChangesOrErrorReply callback) = 0;
   virtual void RemoveLoginsByURLAndTimeAsync(

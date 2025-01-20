@@ -156,6 +156,14 @@ std::string get_symmetric_key_256(const std::string& key_name) {
   return key_value;
 }
 
+#if defined(OHOS_EX_PASSWORD)
+std::string get_asset_handle_file_256(const std::string& key_name)
+{
+  std::string digest = crypto::SHA256HashString(key_name);
+  return _hex_repr(digest);
+}
+#endif
+
 std::string get_iv(size_t sz) {
   return _get_random(sz);
 }

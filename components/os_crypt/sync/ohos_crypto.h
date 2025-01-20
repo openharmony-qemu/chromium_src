@@ -19,6 +19,10 @@ const size_t IV_SIZE = 16;
 // Get symmetric key
 std::string get_symmetric_key_256(const std::string& key_name);
 
+#if defined(OHOS_EX_PASSWORD)
+std::string get_asset_handle_file_256(const std::string& key_name);
+#endif
+
 // Get random IV for encryption
 std::string get_iv(size_t sz = IV_SIZE);
 

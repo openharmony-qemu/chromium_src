@@ -733,6 +733,8 @@ class NWebImpl : public NWeb {
  void DispatchBeforeUnload();
 #endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
+  static void SetMigrationPasswordReady(const bool migrationReady);
+
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

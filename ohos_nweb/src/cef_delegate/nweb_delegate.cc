@@ -2450,7 +2450,6 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
         LOG(DEBUG) << "DragDrop event DRAG_ENTER SendDragEvent enter, send dragdata to chromium webId:"
                   << GetBrowser()->GetNWebId();
         handler_delegate_->SetDragEnter(true);
-        ClearDragData();
         auto drag_data = render_handler_->GetDragData();
         GetBrowser()->GetHost()->DragTargetDragEnter(drag_data, event,
                                                      DRAG_OPERATION_EVERY);

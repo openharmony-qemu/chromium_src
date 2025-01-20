@@ -755,9 +755,12 @@ void OnTouchIconUrlWithSizesReceived(
   void OnShowToast(double duration, const CefString& toast) override;
   void OnShowVideoAssistant(const CefString& videoAssistantItems) override;
   void OnReportStatisticLog(const CefString& content) override;
+
+#if defined(OHOS_VIDEO_ASSISTANT)
   CefOwnPtr<CefMediaPlayerListenerForVAST> OnFullScreenOverlayEnter(
       CefOwnPtr<CefMediaPlayerController> media_player_controller,
       const std::string& extra_info) override;
+#endif // OHOS_VIDEO_ASSISTANT
 
 #if defined(OHOS_CLIPBOARD)
   void SetIsRichText(bool is_rich_text) { is_rich_text_ = is_rich_text; }

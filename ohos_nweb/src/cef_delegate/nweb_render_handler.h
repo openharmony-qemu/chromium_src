@@ -169,6 +169,9 @@ class NWebRenderHandler : public CefRenderHandler {
   void OnOverScrollFlingEnd(CefRefPtr<CefBrowser> browser) override;
   void OnScrollState(CefRefPtr<CefBrowser> browser,
                      bool scroll_state) override;
+  void OnScrollStart(CefRefPtr<CefBrowser> browser,
+                         const float x,
+                         const float y) override;
   void OnNativeEmbedGestureEvent(CefRefPtr<CefBrowser> browser,
                     const CefEmbedTouchEvent& event,
                     CefRefPtr<CefGestureEventCallback> callback) override;

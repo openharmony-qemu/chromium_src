@@ -507,6 +507,9 @@ struct URLRequest {
   [EnableIf=ohos_ex_download]
   bool is_download_request;
 
+  [EnableIf=ohos_ex_download]
+  bool is_triggered_by_download;
+
   [EnableIf=is_ohos_prpp]
   bool allow_preload_record;
 

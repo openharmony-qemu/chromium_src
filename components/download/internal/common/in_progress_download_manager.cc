@@ -313,6 +313,9 @@ void InProgressDownloadManager::BeginDownload(
     const GURL& tab_referrer_url) {
   std::unique_ptr<network::ResourceRequest> request =
       CreateResourceRequest(params.get());
+#ifdef OHOS_EX_DOWNLOAD
+  request->is_triggered_by_download = true;
+#endif
   mojo::PendingRemote<device::mojom::WakeLockProvider> wake_lock_provider;
   if (wake_lock_provider_binder_) {
     wake_lock_provider_binder_.Run(

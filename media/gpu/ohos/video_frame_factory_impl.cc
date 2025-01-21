@@ -23,7 +23,6 @@
 #include "base/trace_event/trace_event.h"
 #include "gpu/command_buffer/service/shared_context_state.h"
 #include "gpu/command_buffer/service/ohos/native_image_texture_owner.h"
-#include "gpu/config/gpu_finch_features.h"
 #include "media/base/media_switches.h"
 #include "media/base/video_frame.h"
 #include "media/gpu/command_buffer_helper.h"
@@ -44,9 +43,12 @@ static void AllocateTextureOwnerOnGpuThread(
     return;
   }
 
-  gl::ohos::TextureOwnerMode texture_owner_mode = base::ohos::IsEmulator() || base::SysInfo::IsLowEndDevice() ?
-      gl::ohos::TextureOwnerMode::kNativeImageTexture :
-      gl::ohos::TextureOwnerMode::kHwVideoZeroCopyNativeBuffer;
+  gl::ohos::TextureOwnerMode texture_owner_mode =
+      features::IsUsingVulkan() || base::ohos::IsEmulator() ||
+              base::SysInfo::IsLowEndDevice()
+            ? gl::ohos::TextureOwnerMode::kNativeImageTexture
+            : gl::ohos::TextureOwnerMode::kHwVideoZeroCopyNativeBuffer;
+
   std::move(init_cb).Run(gpu::NativeImageTextureOwner::Create(
       shared_context_state,
       texture_owner_mode,

@@ -17,6 +17,7 @@
 #include "base/system/sys_info.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/single_thread_task_runner.h"
+#include "gpu/config/gpu_finch_features.h"
 #include "gpu/config/gpu_preferences.h"
 #include "media/base/video_frame.h"
 #include "media/gpu/media_gpu_export.h"
@@ -94,7 +95,9 @@ class MEDIA_GPU_EXPORT VideoFrameFactoryImpl
 
   scoped_refptr<CodecBufferWaitCoordinator> codec_buffer_wait_coordinator_;
 
-  bool video_frame_copy_required_ = base::ohos::IsEmulator() || base::SysInfo::IsLowEndDevice();
+  bool video_frame_copy_required_ = features::IsUsingVulkan() ||
+                                    base::ohos::IsEmulator() ||
+                                    base::SysInfo::IsLowEndDevice();
 
   std::unique_ptr<FrameInfoHelper> frame_info_helper_;
 

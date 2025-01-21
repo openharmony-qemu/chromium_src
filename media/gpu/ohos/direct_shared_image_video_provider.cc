@@ -27,6 +27,7 @@
 #include "gpu/command_buffer/service/ohos/ohos_video_image_backing.h"
 #include "gpu/command_buffer/service/shared_image/shared_image_factory.h"
 #include "gpu/command_buffer/service/texture_manager.h"
+#include "gpu/config/gpu_finch_features.h"
 #include "gpu/ipc/service/command_buffer_stub.h"
 #include "gpu/ipc/service/gpu_channel.h"
 #include "gpu/ipc/service/gpu_channel_manager.h"
@@ -187,9 +188,12 @@ bool GpuSharedImageVideoFactory::CreateImageInternal(
     LOG(ERROR) << "GpuSharedImageVideoFactory: Unable to get a shared context.";
     return false;
   }
-  gl::ohos::TextureOwnerMode texture_owner_mode = base::ohos::IsEmulator() || base::SysInfo::IsLowEndDevice() ?
-      gl::ohos::TextureOwnerMode::kNativeImageTexture :
-      gl::ohos::TextureOwnerMode::kHwVideoZeroCopyNativeBuffer;
+
+  gl::ohos::TextureOwnerMode texture_owner_mode =
+      features::IsUsingVulkan() || base::ohos::IsEmulator() ||
+              base::SysInfo::IsLowEndDevice()
+              ? gl::ohos::TextureOwnerMode::kNativeImageTexture
+              : gl::ohos::TextureOwnerMode::kHwVideoZeroCopyNativeBuffer;
   auto shared_image = gpu::OhosVideoImageBacking::Create(
       mailbox, coded_size, spec.color_space, kTopLeft_GrSurfaceOrigin,
       kPremul_SkAlphaType,

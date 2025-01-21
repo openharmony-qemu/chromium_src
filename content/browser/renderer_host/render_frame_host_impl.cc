@@ -5622,7 +5622,15 @@ void RenderFrameHostImpl::DidBlockNavigation(
     const GURL& blocked_url,
     const GURL& initiator_url,
     blink::mojom::NavigationBlockedReason reason) {
-  delegate_->OnDidBlockNavigation(blocked_url, initiator_url, reason);
+  // Do not allow renderers to show off-limits URLs in the blocked dialog.
+  GURL validated_blocked_url = blocked_url;
+  GURL validated_initiator_url = initiator_url;
+  RenderProcessHost* process = GetProcess();
+  process->FilterURL(/*empty_allowed=*/false, &validated_blocked_url);
+  process->FilterURL(/*empty_allowed=*/false, &validated_initiator_url);
+
+  delegate_->OnDidBlockNavigation(validated_blocked_url,
+                                  validated_initiator_url, reason);
 }
 
 void RenderFrameHostImpl::DidChangeLoadProgress(double load_progress) {

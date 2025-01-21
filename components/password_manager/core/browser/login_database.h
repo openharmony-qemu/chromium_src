@@ -366,7 +366,9 @@ class LoginDatabase : public PasswordStoreSync::MetadataStore {
   std::string blocklisted_statement_;
   std::string encrypted_password_statement_by_id_;
   std::string id_and_password_statement_;
+#if defined(OHOS_EX_PASSWORD)
   std::string update_display_name_statement_;
+#endif
 
   // A callback to be invoked whenever all pending deletions have been processed
   // by Sync - see

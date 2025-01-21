@@ -2073,9 +2073,11 @@ void LoginDatabase::InitializeStatementStrings(const SQLTableBuilder& builder) {
   DCHECK(id_and_password_statement_.empty());
   id_and_password_statement_ = "SELECT id, password_value FROM logins WHERE " +
                                all_unique_key_column_names;
+#if defined(OHOS_EX_PASSWORD)
   DCHECK(update_display_name_statement_.empty());
   update_display_name_statement_ = "UPDATE logins SET display_name=? WHERE " +
                                    all_unique_key_column_names;
+#endif
 }
 
 void LoginDatabase::FillFormInStore(PasswordForm* form) const {

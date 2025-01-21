@@ -241,6 +241,7 @@ bool StructTraits<
 #endif  //  IS_OHOS_PRPP
 #if defined(OHOS_EX_DOWNLOAD)
   out->is_download_request = data.is_download_request();
+  out->is_triggered_by_download = data.is_triggered_by_download();
 #endif  //  OHOS_EX_DOWNLOAD
 #if defined(OHOS_LOGGER_REPORT)
   out->usage_scenario_ = data.usage_scenario_();

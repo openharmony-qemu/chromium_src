@@ -35,6 +35,16 @@
 
 namespace media {
 
+constexpr int32_t MEDIA_KEY_REQUEST_TYPE_UNKNOWN = 0;
+constexpr int32_t MEDIA_KEY_REQUEST_TYPE_INITIAL = 1;
+constexpr int32_t MEDIA_KEY_REQUEST_TYPE_RENEWAL = 2;
+constexpr int32_t MEDIA_KEY_REQUEST_TYPE_RELEASE = 3;
+constexpr int32_t MEDIA_KEY_REQUEST_TYPE_NONE = 4;
+constexpr int32_t MEDIA_KEY_REQUEST_TYPE_UPDATE = 5;
+constexpr size_t HEX_STRING_OFFSET = 2;
+constexpr int32_t SESSION_ID_LENGTH = 16;
+constexpr double  MS_IN_SECOND = 1000.0;
+
 namespace {
 
 using CreateMediaDrmBridgeCB =
@@ -119,15 +129,15 @@ OHOSMediaDrmBridge::OHOSMediaKeyType ConvertMediaDrmKeyType(
 
 CdmMessageType GetMessageType(int32_t request_type) {
   switch (request_type) {
-    case 1:  // MEDIA_KEY_REQUEST_TYPE_INITIAL
+    case MEDIA_KEY_REQUEST_TYPE_INITIAL:
       return CdmMessageType::LICENSE_REQUEST;
-    case 2:  // MEDIA_KEY_REQUEST_TYPE_RENEWAL
+    case MEDIA_KEY_REQUEST_TYPE_RENEWAL:
       return CdmMessageType::LICENSE_RENEWAL;
-    case 3:  // MEDIA_KEY_REQUEST_TYPE_RELEASE
+    case MEDIA_KEY_REQUEST_TYPE_RELEASE:
       return CdmMessageType::LICENSE_RELEASE;
-    case 0:  // MEDIA_KEY_REQUEST_TYPE_UNKNOWN
-    case 4:  // MEDIA_KEY_REQUEST_TYPE_NONE
-    case 5:  // MEDIA_KEY_REQUEST_TYPE_UPDATE
+    case MEDIA_KEY_REQUEST_TYPE_UNKNOWN:
+    case MEDIA_KEY_REQUEST_TYPE_NONE:
+    case MEDIA_KEY_REQUEST_TYPE_UPDATE:
     default:
       return CdmMessageType::LICENSE_REQUEST;
   }
@@ -160,8 +170,8 @@ CdmKeyInformation::KeyStatus ConvertKeyStatus(KeyStatus key_status,
 
 std::vector<uint8_t> fromHexString(const std::string& hexString) {
   std::vector<uint8_t> data;
-  for (size_t i = 0; i < hexString.length(); i += 2) {
-    std::string byteString = hexString.substr(i, 2);
+  for (size_t i = 0; i < hexString.length(); i += HEX_STRING_OFFSET) {
+    std::string byteString = hexString.substr(i, HEX_STRING_OFFSET);
     uint8_t byte =
         static_cast<uint8_t>(strtol(byteString.c_str(), nullptr, 16));
     data.push_back(byte);
@@ -484,9 +494,9 @@ void OHOSMediaDrmBridge::SetServerCertificate(
 }
 
 std::string GenerateSessionId() {
-  char random_bytes[16];
-  base::RandBytes(random_bytes, 16);
-  return base::HexEncode(random_bytes, 16);
+  char random_bytes[SESSION_ID_LENGTH];
+  base::RandBytes(random_bytes, SESSION_ID_LENGTH);
+  return base::HexEncode(random_bytes, SESSION_ID_LENGTH);
 }
 
 void OHOSMediaDrmBridge::CreateSessionAndGenerateRequest(
@@ -916,7 +926,7 @@ void OHOSMediaDrmBridge::OnSessionExpirationUpdate(
   task_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(session_expiration_update_cb_, session_id,
-                     base::Time::FromDoubleT(expiry_time_ms / 1000.0)));
+                     base::Time::FromDoubleT(expiry_time_ms / MS_IN_SECOND)));
 }
 
 OHOSMediaDrmBridge::OHOSMediaDrmBridge(

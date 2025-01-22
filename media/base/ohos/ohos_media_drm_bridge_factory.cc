@@ -76,8 +76,6 @@ void OHOSMediaDrmBridgeFactory::Create(
 
 void OHOSMediaDrmBridgeFactory::OnStorageInitialized(bool success) {
   DCHECK(storage_);
-  DVLOG(2) << __func__ << ": success = " << success
-           << ", origin_id = " << storage_->origin_id();
   if (!success) {
     std::move(cdm_created_cb_).Run(nullptr, "Cannot fetch origin ID");
     return;

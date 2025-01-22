@@ -63,15 +63,12 @@ const media::VideoCodec kMP4VideoCodecsToQuery[] = {
 void GetOHOSCdmCapability(const std::string& key_system,
                           CdmInfo::Robustness robustness,
                           media::CdmCapabilityCB cdm_capability_cb) {
-  LOG(INFO) << "[DRM]" << __func__;
   const bool is_secure = robustness == CdmInfo::Robustness::kHardwareSecure;
   if (!OHOSMediaDrmBridge::IsKeySystemSupported(key_system)) {
-    LOG(INFO) << "[DRM]" << __func__ << "Key system " << key_system
-              << " not supported.";
+    LOG(INFO) << "[DRM] Key system " << key_system << " not supported.";
     std::move(cdm_capability_cb).Run(absl::nullopt);
     return;
   }
-
   const std::vector<media::VideoCodecProfile> kAllProfiles = {};
   media::CdmCapability capability;
   if (OHOSMediaDrmBridge::IsKeySystemSupportedWithType(key_system,
@@ -87,42 +84,31 @@ void GetOHOSCdmCapability(const std::string& key_system,
       }
     }
   }
-
   if (OHOSMediaDrmBridge::IsKeySystemSupportedWithType(key_system,
                                                        "video/mp4")) {
     for (const auto& codec : kMP4AudioCodecsToQuery) {
-      if (!capability.audio_codecs.contains(codec)) {
-        if (OHOSMediaCodecUtil::CanDecode(codec)) {
-          capability.audio_codecs.insert(codec);
-        }
+      if ((!capability.audio_codecs.contains(codec)) &&
+          OHOSMediaCodecUtil::CanDecode(codec)) {
+        capability.audio_codecs.insert(codec);
       }
     }
     for (const auto& codec : kMP4VideoCodecsToQuery) {
-      if (!capability.video_codecs.contains(codec)) {
-        if (OHOSMediaCodecUtil::CanDecode(codec, is_secure)) {
-          capability.video_codecs.emplace(codec, kAllProfiles);
-        }
+      if ((!capability.video_codecs.contains(codec)) &&
+          OHOSMediaCodecUtil::CanDecode(codec, is_secure)) {
+        capability.video_codecs.emplace(codec, kAllProfiles);
       }
     }
   }
-
   if (is_secure && capability.video_codecs.empty()) {
-    LOG(INFO) << "Key system " << key_system
-              << " not supported as no hardware secure video codecs available.";
     std::move(cdm_capability_cb).Run(absl::nullopt);
     return;
   }
-
   capability.encryption_schemes.insert(media::EncryptionScheme::kCenc);
   capability.encryption_schemes.insert(media::EncryptionScheme::kCbcs);
-
   capability.session_types.insert(media::CdmSessionType::kTemporary);
   if (OHOSMediaDrmBridge::IsPersistentLicenseTypeSupported(key_system)) {
     capability.session_types.insert(media::CdmSessionType::kPersistentLicense);
   }
-
   std::move(cdm_capability_cb).Run(capability);
-  LOG(INFO) << "[DRM]" << __func__;
 }
-
 }  // namespace content

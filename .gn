@@ -168,4 +168,6 @@ exec_script_whitelist =
       "//tools/grit/grit_rule.gni",
       "//tools/gritsettings/BUILD.gn",
       "//v8/BUILD.gn",
+      # is_ohos
+      "//build/util/lastchange.gni"
     ]

@@ -192,6 +192,16 @@ void PasswordStore::UpdateLoginWithPrimaryKey(
                           barrier_callback);
 }
 
+#if defined(OHOS_EX_PASSWORD)
+void PasswordStore::UpdateLoginDisplayName(const PasswordForm& form) {
+  DCHECK(main_task_runner_->RunsTasksInCurrentSequence());
+  if (!backend_) {
+    return;  // Once the shutdown started, ignore new requests.
+  }
+  backend_->UpdateLoginDisplayNameAsync(form);
+  }
+#endif
+
 void PasswordStore::RemoveLogin(const PasswordForm& form) {
   DCHECK(main_task_runner_->RunsTasksInCurrentSequence());
   if (!backend_) {

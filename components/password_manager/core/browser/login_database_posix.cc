@@ -58,7 +58,11 @@ LoginDatabase::EncryptionResult LoginDatabase::DecryptedString(
   }
 #endif  // !BUILDFLAG(IS_FUCHSIA)
 
+#if defined(OHOS_EX_PASSWORD)
+  bool decryption_success = OSCrypt::DecryptString16ForMigrate(cipher_text, plain_text);
+#else
   bool decryption_success = OSCrypt::DecryptString16(cipher_text, plain_text);
+#endif
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS_ASH)
   // If decryption failed, we assume it was because the value was actually a
   // plain-text password which started with "v10".

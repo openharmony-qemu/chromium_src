@@ -94,6 +94,10 @@ class PasswordStoreInterface : public RefcountedKeyedService {
       const PasswordForm& old_primary_key,
       base::OnceClosure completion = base::DoNothing()) = 0;
 
+#if defined(OHOS_EX_PASSWORD)
+  virtual void UpdateLoginDisplayName(const PasswordForm& form) = 0;
+#endif
+
   // Removes the matching PasswordForm from the secure password store (async).
   virtual void RemoveLogin(const PasswordForm& form) = 0;
 

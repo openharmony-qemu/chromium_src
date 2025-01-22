@@ -228,6 +228,12 @@ void PasswordStoreBackendMigrationDecorator::UpdateLoginAsync(
   active_backend_->UpdateLoginAsync(form, std::move(callback));
 }
 
+#if defined(OHOS_EX_PASSWORD)
+void PasswordStoreBackendMigrationDecorator::UpdateLoginDisplayNameAsync(const PasswordForm& form) {
+  return;
+}
+#endif
+
 void PasswordStoreBackendMigrationDecorator::RemoveLoginAsync(
     const PasswordForm& form,
     PasswordChangesOrErrorReply callback) {

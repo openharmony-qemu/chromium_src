@@ -175,6 +175,24 @@ PasswordChangesOrError LoginDatabaseAsyncHelper::UpdateLogin(
                    PasswordStoreBackendErrorRecoveryType::kUnrecoverable));
 }
 
+#if defined(OHOS_EX_PASSWORD)
+void LoginDatabaseAsyncHelper::UpdateLoginDisplayName(
+    const PasswordForm& form) {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  BeginTransaction();
+  PasswordStoreChangeList changes;
+  if (login_db_ && login_db_->UpdateLoginDisplayName(form, &changes)) {
+    if (sync_bridge_ && !changes.empty())
+      sync_bridge_->ActOnPasswordStoreChanges(changes);
+  }
+  // Sync metadata get updated in ActOnPasswordStoreChanges(). Therefore,
+  // CommitTransaction() must be called after ActOnPasswordStoreChanges(),
+  // because sync codebase needs to update metadata atomically together with
+  // the login data.
+  CommitTransaction();
+}
+#endif
+
 PasswordChangesOrError LoginDatabaseAsyncHelper::RemoveLogin(
     const PasswordForm& form) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);

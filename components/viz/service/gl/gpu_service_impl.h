@@ -149,6 +149,8 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
   void GetSurfaceId(int32_t native_embed_id,
                     GetSurfaceIdCallback callback) override;
   void DestroyNativeWindow(uint32_t native_window_id) override;
+
+  void Discard(uint32_t native_window_id) override;
 #endif
   void SetChannelDiskCacheHandle(
       int32_t client_id,

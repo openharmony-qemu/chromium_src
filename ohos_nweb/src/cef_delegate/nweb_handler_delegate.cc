@@ -3876,4 +3876,11 @@ void NWebHandlerDelegate::OnRequestOpenDevTools() {
       web_app_client_extension_listener_->nweb_id);
 }
 
+void NWebHandlerDelegate::Discard() {
+  content::GpuProcessHost* host = content::GpuProcessHost::Get();
+  if (host != nullptr && host->gpu_host() != nullptr && main_browser_ != nullptr) {
+    host->gpu_host()->Discard(main_browser_->GetAcceleratedWidget());
+  }
+}
+
 }  // namespace OHOS::NWeb

@@ -364,6 +364,14 @@ void GpuHostImpl::CloseChannel(int client_id) {
   channel_requests_.erase(client_id);
 }
 
+void GpuHostImpl::Discard(uint32_t native_window_id) {
+  if (!gpu_service_remote_) {
+    return;
+  }
+  LOG(DEBUG) << "discard native window id = " << native_window_id;
+  gpu_service_remote_->Discard(native_window_id);
+}
+
 #if BUILDFLAG(USE_VIZ_DEBUGGER)
 void GpuHostImpl::FilterVisualDebugStream(base::Value json) {
   viz_main_->FilterDebugStream(std::move(json));

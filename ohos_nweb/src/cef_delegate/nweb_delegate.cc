@@ -3947,6 +3947,9 @@ bool NWebDelegate::Discard() {
 
   is_discarded_ = GetBrowser()->GetHost()->Discard();
   LOG(DEBUG) << "NWebDelegate::Discard is_discarded_: " << is_discarded_;
+  if (handler_delegate_) {
+    handler_delegate_->Discard();
+  }
   return is_discarded_;
 }
 

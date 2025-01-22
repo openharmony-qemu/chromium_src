@@ -226,6 +226,14 @@ void OHOSMediaPlayerBridge::SetPlayerSurface() {
   if (ret != 0) {
     LOG(ERROR) << "Prepare error::ret=" << ret << " url=" << url_.spec();
   }
+
+  if (new_surface_id_ > 0) {
+    void* native_window =
+        NWebNativeWindowTracker::Get()->GetNativeWindow(new_surface_id_);
+    if (native_window) {
+      ret = player_->SetVideoSurfaceNew(native_window);
+    }
+  }
 }
 
 void OHOSMediaPlayerBridge::StartInternal() {
@@ -583,6 +591,8 @@ void OHOSMediaPlayerBridge::SetVideoSurface(int32_t surface_id) {
 }
 
 void OHOSMediaPlayerBridge::SetVideoSurfaceNew(int32_t surface_id) {
+  LOG(INFO) << "SetVideoSurfaceNew(" << surface_id << "), new_surface_id_["
+            << new_surface_id_ << "], player_[" << player_.get() << "]";
   if (new_surface_id_ == surface_id) {
     return;
   }
@@ -590,12 +600,14 @@ void OHOSMediaPlayerBridge::SetVideoSurfaceNew(int32_t surface_id) {
     NWebNativeWindowTracker::Get()->DestroyNativeWindow(new_surface_id_);
     new_surface_id_ = -1;
   }
+  new_surface_id_ = surface_id;
   void* native_window = nullptr;
   if (player_) {
     native_window = NWebNativeWindowTracker::Get()->GetNativeWindow(surface_id);
+  } else {
+    Prepare();
   }
   if (native_window) {
-    new_surface_id_ = surface_id;
     player_->SetVideoSurfaceNew(native_window);
   }
 }

@@ -90,7 +90,11 @@ class AsyncDestroyVideoDecoder final : public VideoDecoder {
 #ifdef OHOS_VIDEO_ASSISTANT
   void SetVideoSurface(int32_t widget_id) override {
     DCHECK(wrapped_decoder_);
-    return wrapped_decoder_->SetVideoSurface(widget_id);
+    wrapped_decoder_->SetVideoSurface(widget_id);
+  }
+  void StartPlayingFrom(base::TimeDelta start_timestamp) override {
+    DCHECK(wrapped_decoder_);
+    wrapped_decoder_->StartPlayingFrom(start_timestamp);
   }
 #endif // OHOS_VIDEO_ASSISTANT
 

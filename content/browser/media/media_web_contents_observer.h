@@ -165,6 +165,7 @@ class CONTENT_EXPORT MediaWebContentsObserver
   void SetPlaybackRate(double playback_rate, const MediaPlayerId& player_id);
   void RequestFullScreen(bool enable, const MediaPlayerId& player_id);
   void RequestDownloadUrl(const MediaPlayerId& player_id);
+  void HidePlaybackSpeedList(const MediaPlayerId& player_id);
 #endif  // defined(OHOS_VIDEO_ASSISTANT)
 
 #ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT

@@ -820,6 +820,16 @@ void MediaWebContentsObserver::RequestDownloadUrl(
 
   iter->second->RequestDownloadUrl();
 }
+
+void MediaWebContentsObserver::HidePlaybackSpeedList(
+    const MediaPlayerId& player_id) {
+  const auto iter = media_player_remotes_.find(player_id);
+  if (iter == media_player_remotes_.end()) {
+    return;
+  }
+
+  iter->second->HidePlaybackSpeedList();
+}
 #endif  // defined(OHOS_VIDEO_ASSISTANT)
 
 #ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT

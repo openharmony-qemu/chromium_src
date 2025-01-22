@@ -330,6 +330,8 @@ media::RendererType OHOSMediaPlayerRenderer::GetRendererType() {
 void OHOSMediaPlayerRenderer::SetVideoSurface(int32_t surface_id) {
   if (media_player_) {
     media_player_->SetVideoSurface(surface_id);
+  } else {
+    LOG(INFO) << "SetVideoSurface, no media_player_";
   }
 }
 #endif // OHOS_VIDEO_ASSISTANT

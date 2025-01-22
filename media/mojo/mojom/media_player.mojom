@@ -45,7 +45,7 @@ struct MediaInfoForVAST {
   double playback_rate;
   int32 video_width;
   int32 video_height;
-  bool isMuted;
+  int32 isMuted;
   bool isPlaying;
   bool isShowPlaybackSpeed;
 
@@ -121,6 +121,9 @@ interface MediaPlayer {
 
   [EnableIf=ohos_video_assistant]
   RequestDownloadUrl();
+
+  [EnableIf=ohos_video_assistant]
+  HidePlaybackSpeedList();
 
   [EnableIf=ohos_video_assistant]
   SetVideoSurface(int32 widget_id);

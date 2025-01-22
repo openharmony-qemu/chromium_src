@@ -318,6 +318,7 @@ void OhosVideoDecoder::OnCodecConfigured(
 #ifdef OHOS_VIDEO_ASSISTANT
   if (pending_surface_id_ > 0) {
     codec_->SetVideoSurface(pending_surface_id_);
+    pending_surface_id_ = -1;
   }
 #endif // OHOS_VIDEO_ASSISTANT
   PumpCodec();
@@ -608,11 +609,10 @@ int OhosVideoDecoder::GetMaxDecodeRequests() const {
 #ifdef OHOS_VIDEO_ASSISTANT
 void OhosVideoDecoder::SetVideoSurface(int32_t widget_id) {
   LOG(INFO) << "SetVideoSurface(" << widget_id << "), codec_[" << (!!codec_) << "]";
-  if (widget_id > 0) {
-    pending_surface_id_ = widget_id;
-  }
   if (codec_) {
     codec_->SetVideoSurface(widget_id);
+  } else {
+    pending_surface_id_ = widget_id;
   }
 }
 #endif // OHOS_VIDEO_ASSISTANT

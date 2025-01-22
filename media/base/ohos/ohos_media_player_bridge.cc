@@ -135,6 +135,7 @@ void OHOSMediaPlayerBridge::Prepare() {
     LOG(ERROR) << "Prepare error::ret=" << ret << " url=" << url_.spec();
   }
 
+#ifdef OHOS_VIDEO_ASSISTANT
   if (new_surface_id_ > 0) {
     void* native_window =
         NWebNativeWindowTracker::Get()->GetNativeWindow(new_surface_id_);
@@ -142,6 +143,7 @@ void OHOSMediaPlayerBridge::Prepare() {
       ret = player_->SetVideoSurfaceNew(native_window);
     }
   }
+#endif // OHOS_VIDEO_ASSISTANT
 }
 
 void OHOSMediaPlayerBridge::StartInternal() {
@@ -276,7 +278,7 @@ void OHOSMediaPlayerBridge::OnSeekBack(base::TimeDelta extra_time) {
     return;
   }
 
-  //When processing seek requests, there may be a maximum error of 300ms between the nearest keyframe 
+  //When processing seek requests, there may be a maximum error of 300ms between the nearest keyframe
   //found by mediaplayer and the time point of seekTo
   if ((recording_seek_ - extra_time_) > base::Milliseconds(MAX_TOLERABLE_SEEK_ERROR)) {
     if (client_) {

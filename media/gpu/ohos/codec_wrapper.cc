@@ -94,15 +94,25 @@ class CodecWrapperImpl : public base::RefCountedThreadSafe<CodecWrapperImpl> {
   gfx::ColorSpace color_space_ = gfx::ColorSpace::CreateSRGB();
 
   scoped_refptr<base::SequencedTaskRunner> release_task_runner_;
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  bool render_video_view_ = false;
+#endif // OHOS_VIDEO_ASSISTANT
 };
 
 CodecOutputBuffer::CodecOutputBuffer(scoped_refptr<CodecWrapperImpl> codec,
                                      int64_t id,
                                      const gfx::Size& size,
+#ifdef OHOS_VIDEO_ASSISTANT
+                                     bool render_video_view,
+#endif // OHOS_VIDEO_ASSISTANT
                                      const gfx::ColorSpace& color_space)
     : codec_(std::move(codec)),
       id_(id),
       size_(size),
+#ifdef OHOS_VIDEO_ASSISTANT
+      render_video_view_(render_video_view),
+#endif // OHOS_VIDEO_ASSISTANT
       color_space_(color_space) {}
 
 CodecOutputBuffer::~CodecOutputBuffer() {
@@ -291,7 +301,11 @@ CodecWrapperImpl::DequeueStatus CodecWrapperImpl::DequeueOutputBuffer(
         }
 
         *codec_buffer = base::WrapUnique(
-            new CodecOutputBuffer(this, buffer_id, size_, color_space_));
+            new CodecOutputBuffer(this, buffer_id, size_,
+#ifdef OHOS_VIDEO_ASSISTANT
+                render_video_view_,
+#endif // OHOS_VIDEO_ASSISTANT
+                color_space_));
         return DequeueStatus::kOk;
       }
       case DecoderAdapterCode::DECODER_RETRY: {
@@ -321,6 +335,9 @@ bool CodecWrapperImpl::SetSurface(
     return false;
   }
   surface_bundle_ = std::move(surface_bundle);
+#ifdef OHOS_VIDEO_ASSISTANT
+  render_video_view_ = false;
+#endif // OHOS_VIDEO_ASSISTANT
   return true;
 }
 
@@ -328,6 +345,9 @@ bool CodecWrapperImpl::SetSurface(
 void CodecWrapperImpl::SetVideoSurface(int32_t widget_id) {
   if (codec_) {
     codec_->SetVideoSurface(widget_id);
+#ifdef OHOS_VIDEO_ASSISTANT
+    render_video_view_ = widget_id > 0;
+#endif // OHOS_VIDEO_ASSISTANT
   }
 }
 #endif // OHOS_VIDEO_ASSISTANT
@@ -426,7 +446,7 @@ bool CodecWrapper::SetSurface(
 
 #ifdef OHOS_VIDEO_ASSISTANT
 void CodecWrapper::SetVideoSurface(int32_t widget_id) {
-  return impl_->SetVideoSurface(widget_id);
+  impl_->SetVideoSurface(widget_id);
 }
 #endif // OHOS_VIDEO_ASSISTANT
 

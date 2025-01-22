@@ -165,6 +165,7 @@ class CONTENT_EXPORT MediaWebContentsObserver
   void SetPlaybackRate(double playback_rate, const MediaPlayerId& player_id);
   void RequestFullScreen(bool enable, const MediaPlayerId& player_id);
   void RequestDownloadUrl(const MediaPlayerId& player_id);
+  void HidePlaybackSpeedList(const MediaPlayerId& player_id);
 #endif  // defined(OHOS_VIDEO_ASSISTANT)
 
  protected:
@@ -279,7 +280,7 @@ class CONTENT_EXPORT MediaWebContentsObserver
 
 #if defined(OHOS_MEDIA_AVSESSION)
     void OnGetMediaTitle(const std::string& data) override;
-    void OnGetVideoPoster(const std::string& data) override;  
+    void OnGetVideoPoster(const std::string& data) override;
 #endif // OHOS_MEDIA_AVSESSION
    private:
     PlayerInfo* GetPlayerInfo();

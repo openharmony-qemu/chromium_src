@@ -138,6 +138,7 @@ class MEDIA_EXPORT VideoDecoder : public Decoder {
 
 #ifdef OHOS_VIDEO_ASSISTANT
   virtual void SetVideoSurface(int32_t widget_id) {}
+  virtual void StartPlayingFrom(base::TimeDelta start_timestamp) {}
 #endif // OHOS_VIDEO_ASSISTANT
 };
 

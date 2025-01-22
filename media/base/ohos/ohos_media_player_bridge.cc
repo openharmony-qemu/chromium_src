@@ -233,6 +233,11 @@ void OHOSMediaPlayerBridge::SetPlayerSurface() {
         NWebNativeWindowTracker::Get()->GetNativeWindow(new_surface_id_);
     if (native_window) {
       ret = player_->SetVideoSurfaceNew(native_window);
+      if (ret != 0) {
+        LOG(ERROR) << "SetVideoSurfaceNew error::ret = " << ret
+          << ", new_surface_id_ = " << new_surface_id_
+          << ", native_window = " << native_window;
+      }
     }
   }
 #endif // OHOS_VIDEO_ASSISTANT

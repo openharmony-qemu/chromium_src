@@ -186,7 +186,7 @@ class BASE_EXPORT PersistentHistogramAllocator {
   // See PersistentMemoryAllocator::Iterator for more information.
   class BASE_EXPORT Iterator {
    public:
-    // Constructs an iterator on a given |allocator|, starting at the beginning.
+    // Constructs an iterator on a given `allocator`, starting at the beginning.
     // The allocator must live beyond the lifetime of the iterator.
     explicit Iterator(PersistentHistogramAllocator* allocator);
 
@@ -199,7 +199,7 @@ class BASE_EXPORT PersistentHistogramAllocator {
     std::unique_ptr<HistogramBase> GetNext() { return GetNextWithIgnore(0); }
 
     // Gets the next histogram from persistent memory, ignoring one particular
-    // reference in the process. Pass |ignore| of zero (0) to ignore nothing.
+    // reference in the process. Pass `ignore` of zero (0) to ignore nothing.
     std::unique_ptr<HistogramBase> GetNextWithIgnore(Reference ignore);
 
    private:
@@ -240,7 +240,7 @@ class BASE_EXPORT PersistentHistogramAllocator {
 
   // Recreate a Histogram from data held in persistent memory. Though this
   // object will be local to the current process, the sample data will be
-  // shared with all other threads referencing it. This method takes a |ref|
+  // shared with all other threads referencing it. This method takes a `ref`
   // to where the top-level histogram data may be found in this allocator.
   // This method will return null if any problem is detected with the data.
   std::unique_ptr<HistogramBase> GetHistogram(Reference ref);
@@ -257,7 +257,7 @@ class BASE_EXPORT PersistentHistogramAllocator {
       Reference* ref_ptr);
 
   // Finalize the creation of the histogram, making it available to other
-  // processes if |registered| (as in: added to the StatisticsRecorder) is
+  // processes if `registered` (as in: added to the StatisticsRecorder) is
   // True, forgetting it otherwise.
   void FinalizeHistogram(Reference ref, bool registered);
 
@@ -324,7 +324,7 @@ class BASE_EXPORT PersistentHistogramAllocator {
       PersistentHistogramData* histogram_data_ptr);
 
   // Gets or creates an object in the global StatisticsRecorder matching
-  // the |histogram| passed. Null is returned if one was not found and
+  // the `histogram` passed. Null is returned if one was not found and
   // one could not be created.
   HistogramBase* GetOrCreateStatisticsRecorderHistogram(
       const HistogramBase* histogram);
@@ -360,7 +360,7 @@ class BASE_EXPORT GlobalHistogramAllocator
 
   ~GlobalHistogramAllocator() override;
 
-  // Create a global allocator using the passed-in memory |base|, |size|, and
+  // Create a global allocator using the passed-in memory `base`, `size`, and
   // other parameters. Ownership of the memory segment remains with the caller.
   static void CreateWithPersistentMemory(void* base,
                                          size_t size,
@@ -435,7 +435,7 @@ class BASE_EXPORT GlobalHistogramAllocator
 #endif
 
   // Create a global allocator using a block of shared memory accessed
-  // through the given |region|. The allocator maps the shared memory into
+  // through the given `region`. The allocator maps the shared memory into
   // current process's virtual address space and frees it upon destruction.
   // The memory will continue to live if other processes have access to it.
   static void CreateWithSharedMemoryRegion(
@@ -472,7 +472,7 @@ class BASE_EXPORT GlobalHistogramAllocator
   bool HasPersistentLocation() const;
 
   // Moves the file being used to persist this allocator's data to the directory
-  // specified by |dir|. Returns whether the operation was successful.
+  // specified by `dir`. Returns whether the operation was successful.
   bool MovePersistentFile(const FilePath& dir);
 
   // Writes the internal data to a previously set location. This is generally

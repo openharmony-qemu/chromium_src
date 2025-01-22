@@ -180,12 +180,12 @@ void MediaSessionOHOS::MediaSessionImagesChanged(
     return;
   }
   auto it = images.find(media_session::mojom::MediaSessionImageType::kArtwork);
-  if(it != images.end()){
-    for(auto& it_img : it->second){
+  if (it != images.end()) {
+    for (auto& it_img : it->second) {
       av_metadata_->SetImageUrl(it_img.src.spec());
     }
   }
-  if(av_metadata_ && avsession_adapter_ && 
+  if (av_metadata_ && avsession_adapter_ &&
       !av_metadata_->GetTitle().empty()) {
     avsession_adapter_->SetMetadata(av_metadata_);
   }

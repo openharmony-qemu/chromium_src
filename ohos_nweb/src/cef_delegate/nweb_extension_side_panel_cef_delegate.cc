@@ -42,6 +42,7 @@ void NWebExtensionSidePanelCefDelegate::UnRegisterWebExtensionApiListener() {
 }
 
 // static
+NO_SANITIZE("cfi-icall")
 void NWebExtensionSidePanelCefDelegate::OnSetOptions(
     std::string extension_id,
     std::optional<bool> enabled,
@@ -63,6 +64,7 @@ void NWebExtensionSidePanelCefDelegate::OnSetOptions(
 }
 
 // static
+NO_SANITIZE("cfi-icall")
 void NWebExtensionSidePanelCefDelegate::OnSetPanelBehavior(
     std::string extension_id,
     bool open_panel_on_action_click) {
@@ -81,6 +83,7 @@ void NWebExtensionSidePanelCefDelegate::OnSetPanelBehavior(
       extension_id.c_str(), open_panel_on_action_click);
 }
 
+NO_SANITIZE("cfi-icall")
 void NWebExtensionSidePanelCefDelegate::OnOpen(std::string extension_id,
                                                int tab_id, int window_id) {
   if (!g_extension_api_listener) {

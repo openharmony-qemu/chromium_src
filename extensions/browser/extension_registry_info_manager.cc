@@ -25,6 +25,7 @@
 #include "extensions/browser/ui_util.h"
 #include "ui/gfx/image/image_skia_operations.h"
 #include "management_policy.h"
+#include "base/logging.h"
 
 namespace extensions {
 
@@ -322,6 +323,7 @@ void ExtensionRegistryInfoManager::UnRegisterWebExtensionManagerListener() {
 }
 
 //static
+NO_SANITIZE("cfi-icall")
 void ExtensionRegistryInfoManager::OnExtensionLoadedCallBack(const WebExtensionInfo& loadedInfo) {
   LOG(INFO) << "ExtensionRegistryInfoManager::OnExtensionLoadedCallBack";
   if (!g_extension_manager_listener) {
@@ -338,6 +340,7 @@ void ExtensionRegistryInfoManager::OnExtensionLoadedCallBack(const WebExtensionI
 }
 
 //static
+NO_SANITIZE("cfi-icall")
 void ExtensionRegistryInfoManager::OnExtensionUnLoadedCallBack(const std::string& eid) {
   LOG(INFO) << "ExtensionRegistryInfoManager::OnExtensionUnLoadedCallBack";
   if (!g_extension_manager_listener) {
@@ -354,6 +357,7 @@ void ExtensionRegistryInfoManager::OnExtensionUnLoadedCallBack(const std::string
 }
 
 //static
+NO_SANITIZE("cfi-icall")
 void ExtensionRegistryInfoManager::OnExtensionOpenUrlCallBack(const std::string& url) {
   LOG(INFO) << "ExtensionRegistryInfoManager::OnExtensionOpenUrlCallBack";
   if (!g_extension_manager_listener) {

@@ -38,7 +38,7 @@ std::string GetTypeStr(extensions::MenuItem::Type type) {
   };
   return {};
 }
- 
+
 std::string GetContextStr(extensions::MenuItem::Context context) {
   switch (context) {
     case extensions::MenuItem::Context::ALL : return "all";
@@ -57,7 +57,7 @@ std::string GetContextStr(extensions::MenuItem::Context context) {
   };
   return {};
 }
- 
+
 std::vector<std::string> ContextListToStrVector(const extensions::MenuItem::ContextList& contextList) {
   std::vector<std::string> result;
   for (int contextInt = extensions::MenuItem::Context::ALL;
@@ -137,7 +137,7 @@ gfx::Image ExtensionRegistryGetIcon(
   if (!icon.IsEmpty()) {
     return icon;
   }
- 
+
   return extension_action->GetDefaultIconImageV2();
 }
 
@@ -167,9 +167,9 @@ WebExtensionActionInfo ExtensionRegistryInfoManager::GetExtensionActionInfo(
   if (extension_action->HasBadgeText(tabId)) {
     actionInfo.badgeText = extension_action->GetExplicitlySetBadgeText(tabId);
   }
-  
+
   GetBadgeTextColor(tabId, extension_action, actionInfo);
-  
+
   if (extension_action->HasPopupUrl(tabId)) {
     actionInfo.popup = extension_action->GetPopupUrl(tabId).spec();
   }
@@ -270,6 +270,10 @@ void ExtensionRegistryInfoManager::Loaded(const std::string& extension_id) {
   ExtensionRegistry* registry = ExtensionRegistry::Get(browser_context_);
   const Extension* extension =
       registry->enabled_extensions().GetByID(extension_id);
+  if (!extension) {
+    LOG(ERROR) << "Unable to find activated extensions extension_id: " << extension_id;
+    return;
+  }
   NotifyOnExtensionLoaded(*extension);
 }
 

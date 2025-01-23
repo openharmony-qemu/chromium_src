@@ -120,7 +120,7 @@ void CursorManager::UpdateCursor() {
 
   last_set_cursor_type_for_testing_ = cursor.type();
 
-  root_view_->DisplayCursor(cursor);
+  root_view_->UpdateCursor(cursor);
 }
 
 }  // namespace content

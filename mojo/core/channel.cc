@@ -1079,6 +1079,9 @@ Channel::DispatchResult Channel::TryDispatchMessage(
 }
 
 void Channel::OnError(Error error) {
+#if BUILDFLAG(IS_OHOS)
+  LOG(ERROR) << "Channel::OnError " << static_cast<int32_t>(error);
+#endif
   if (delegate_)
     delegate_->OnChannelError(error);
 }

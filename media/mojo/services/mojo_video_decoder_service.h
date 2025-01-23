@@ -69,6 +69,10 @@ class MEDIA_MOJO_EXPORT MojoVideoDecoderService final
   void Reset(ResetCallback callback) final;
   void OnOverlayInfoChanged(const OverlayInfo& overlay_info) final;
 
+#ifdef OHOS_VIDEO_ASSISTANT
+  void SetVideoSurface(int32_t widget_id) final;
+#endif // OHOS_VIDEO_ASSISTANT
+
  private:
   // Helper methods so that we can bind them with a weak pointer to avoid
   // running mojom::VideoDecoder callbacks after connection error happens and

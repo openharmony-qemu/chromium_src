@@ -25,6 +25,8 @@
 #include "ui/gfx/geometry/rect.h"
 #ifdef OHOS_VIDEO_ASSISTANT
 #include "content/browser/media/video_assistant/video_assistant.h"
+#include "content/public/browser/media_player_controller.h"
+#include "content/public/browser/media_player_listener.h"
 #include "media/mojo/mojom/media_player.mojom.h"
 #endif // OHOS_VIDEO_ASSISTANT
 
@@ -435,6 +437,13 @@ void WebContentsDelegate::OnVideoPlaying(
     media::mojom::VideoAttributesForVASTPtr video_attributes) {}
 void WebContentsDelegate::OnUpdateVideoAttributes(
     media::mojom::VideoAttributesForVASTPtr video_attributes) {}
+
+std::unique_ptr<MediaPlayerListener>
+WebContentsDelegate::OnFullScreenOverlayEnter(
+    media::mojom::MediaInfoForVASTPtr media_info,
+    const MediaPlayerId& media_player_id) {
+  return nullptr;
+}
 #endif // OHOS_VIDEO_ASSISTANT
 
 #if defined(OHOS_ARKWEB_EXTENSIONS)

@@ -1089,6 +1089,13 @@ void DecoderStream<StreamType>::ReportEncryptionType(
   traits_->ReportStatistics(statistics_cb_, 0);
 }
 
+#ifdef OHOS_VIDEO_ASSISTANT
+template <DemuxerStream::Type StreamType>
+void DecoderStream<StreamType>::SetVideoSurface(int surface_id) {
+  traits_->SetVideoSurface(decoder_.get(), surface_id);
+}
+#endif // OHOS_VIDEO_ASSISTANT
+
 template class DecoderStream<DemuxerStream::VIDEO>;
 template class DecoderStream<DemuxerStream::AUDIO>;
 

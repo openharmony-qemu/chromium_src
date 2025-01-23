@@ -16,8 +16,16 @@ MojoRendererWrapper::~MojoRendererWrapper() = default;
 
 void MojoRendererWrapper::Initialize(MediaResource* media_resource,
                                      RendererClient* client,
+#ifdef OHOS_VIDEO_ASSISTANT
+                                     RequestSurfaceCB request_surface_cb,
+#endif // OHOS_VIDEO_ASSISTANT
                                      PipelineStatusCallback init_cb) {
+#ifdef OHOS_VIDEO_ASSISTANT
+  mojo_renderer_->Initialize(media_resource, client,
+      std::move(request_surface_cb), std::move(init_cb));
+#else
   mojo_renderer_->Initialize(media_resource, client, std::move(init_cb));
+#endif // OHOS_VIDEO_ASSISTANT
 }
 
 void MojoRendererWrapper::Flush(base::OnceClosure flush_cb) {

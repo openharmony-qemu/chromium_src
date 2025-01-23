@@ -104,6 +104,9 @@ interface Renderer {
 
   [EnableIf=ohos_custom_video_player]
   SetPlaybackRateWithReason(double playback_rate, ActionReason reason);
+
+  [EnableIf=ohos_video_assistant]
+  SetVideoSurface(int32 surface_id);
 };
 
 // A Mojo equivalent of media::RendererClient. See media/mojo/README.md

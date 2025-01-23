@@ -329,4 +329,13 @@ bool DecoderStreamTraits<DemuxerStream::VIDEO>::GetPreferNonPlatformDecoders()
   return prefer_non_platform_decoders_;
 }
 
+#ifdef OHOS_VIDEO_ASSISTANT
+void DecoderStreamTraits<DemuxerStream::VIDEO>::SetVideoSurface(
+    DecoderType* decoder, int surface_id) {
+  if (decoder) {
+    decoder->SetVideoSurface(surface_id);
+  }
+}
+#endif // OHOS_VIDEO_ASSISTANT
+
 }  // namespace media

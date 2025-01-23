@@ -37,6 +37,9 @@ OHOSCustomMediaPlayerRendererClient::~OHOSCustomMediaPlayerRendererClient() {
 void OHOSCustomMediaPlayerRendererClient::Initialize(
     media::MediaResource* media_resource,
     media::RendererClient* client,
+#ifdef OHOS_VIDEO_ASSISTANT
+    media::RequestSurfaceCB request_surface_cb,
+#endif // OHOS_VIDEO_ASSISTANT
     media::PipelineStatusCallback init_cb) {
   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
   DCHECK(!init_cb_);
@@ -109,6 +112,9 @@ void OHOSCustomMediaPlayerRendererClient::OnStreamTextureWrapperInitialized(
 
   MojoRendererWrapper::Initialize(
       media_resource, client_,
+#ifdef OHOS_VIDEO_ASSISTANT
+      media::RequestSurfaceCB(),
+#endif // OHOS_VIDEO_ASSISTANT
       base::BindOnce(&OHOSCustomMediaPlayerRendererClient::OnRemoteRendererInitialized,
                      weak_factory_.GetWeakPtr()));
 }

@@ -135,6 +135,9 @@ RendererImpl::~RendererImpl() {
 
 void RendererImpl::Initialize(MediaResource* media_resource,
                               RendererClient* client,
+#ifdef OHOS_VIDEO_ASSISTANT
+                              RequestSurfaceCB request_surface_cb,
+#endif // OHOS_VIDEO_ASSISTANT
                               PipelineStatusCallback init_cb) {
   DVLOG(1) << __func__;
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
@@ -147,6 +150,9 @@ void RendererImpl::Initialize(MediaResource* media_resource,
   client_ = client;
   media_resource_ = media_resource;
   init_cb_ = std::move(init_cb);
+#ifdef OHOS_VIDEO_ASSISTANT
+  request_surface_cb_ = std::move(request_surface_cb);
+#endif // OHOS_VIDEO_ASSISTANT
 
   if (HasEncryptedStream() && !cdm_context_) {
     DVLOG(1) << __func__ << ": Has encrypted stream but CDM is not set.";
@@ -458,6 +464,9 @@ void RendererImpl::InitializeVideoRenderer() {
       DemuxerStream::VIDEO, this, media_resource_);
   video_renderer_->Initialize(
       video_stream, cdm_context_, video_renderer_client_.get(),
+#ifdef OHOS_VIDEO_ASSISTANT
+      std::move(request_surface_cb_),
+#endif // OHOS_VIDEO_ASSISTANT
       base::BindRepeating(&RendererImpl::GetWallClockTimes,
                           base::Unretained(this)),
       base::BindOnce(&RendererImpl::OnVideoRendererInitializeDone, weak_this_));
@@ -622,6 +631,9 @@ void RendererImpl::ReinitializeVideoRenderer(
   video_renderer_->OnTimeStopped();
   video_renderer_->Initialize(
       stream, cdm_context_, video_renderer_client_.get(),
+#ifdef OHOS_VIDEO_ASSISTANT
+      std::move(request_surface_cb_),
+#endif // OHOS_VIDEO_ASSISTANT
       base::BindRepeating(&RendererImpl::GetWallClockTimes,
                           base::Unretained(this)),
       base::BindOnce(&RendererImpl::OnVideoRendererReinitialized, weak_this_,

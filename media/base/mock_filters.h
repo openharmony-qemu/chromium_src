@@ -91,6 +91,9 @@ class MockPipeline : public Pipeline {
   void Start(StartType start_type,
              Demuxer* demuxer,
              Client* client,
+#ifdef OHOS_VIDEO_ASSISTANT
+             RequestSurfaceCB request_surface_cb,
+#endif // OHOS_VIDEO_ASSISTANT
              PipelineStatusCallback seek_cb) override {
     OnStart(start_type, demuxer, client, seek_cb);
   }
@@ -103,7 +106,11 @@ class MockPipeline : public Pipeline {
   MOCK_METHOD2(OnSeek, void(base::TimeDelta, PipelineStatusCallback&));
   void Suspend(PipelineStatusCallback cb) override { OnSuspend(cb); }
   MOCK_METHOD1(OnSuspend, void(PipelineStatusCallback&));
-  void Resume(base::TimeDelta time, PipelineStatusCallback seek_cb) override {
+  void Resume(base::TimeDelta time,
+#ifdef OHOS_VIDEO_ASSISTANT
+              RequestSurfaceCB request_surface_cb,
+#endif // OHOS_VIDEO_ASSISTANT
+              PipelineStatusCallback seek_cb) override {
     OnResume(time, seek_cb);
   }
   MOCK_METHOD2(OnResume, void(base::TimeDelta, PipelineStatusCallback&));
@@ -167,7 +174,8 @@ class MockDemuxer : public Demuxer {
   std::string GetDisplayName() const override;
   DemuxerType GetDemuxerType() const override;
 
-  void Initialize(DemuxerHost* host, PipelineStatusCallback cb) override {
+  void Initialize(DemuxerHost* host,
+                  PipelineStatusCallback cb) override {
     OnInitialize(host, cb);
   }
   MOCK_METHOD(void,
@@ -455,6 +463,9 @@ class MockVideoRenderer : public VideoRenderer {
   void Initialize(DemuxerStream* stream,
                   CdmContext* cdm_context,
                   RendererClient* client,
+#ifdef OHOS_VIDEO_ASSISTANT
+                  RequestSurfaceCB request_surface_cb,
+#endif // OHOS_VIDEO_ASSISTANT
                   const TimeSource::WallClockTimeCB& wall_clock_time_cb,
                   PipelineStatusCallback init_cb) override {
     OnInitialize(stream, cdm_context, client, wall_clock_time_cb, init_cb);
@@ -517,6 +528,9 @@ class MockRenderer : public Renderer,
   // Renderer implementation.
   void Initialize(MediaResource* media_resource,
                   RendererClient* client,
+#ifdef OHOS_VIDEO_ASSISTANT
+                  RequestSurfaceCB request_surface_cb,
+#endif // OHOS_VIDEO_ASSISTANT
                   PipelineStatusCallback init_cb) override {
     OnInitialize(media_resource, client, init_cb);
   }

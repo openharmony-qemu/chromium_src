@@ -248,7 +248,11 @@
 #endif
 
 #ifdef OHOS_VIDEO_ASSISTANT
+#include "base/base_switches.h"
 #include "content/browser/media/video_assistant/video_assistant.h"
+#include "content/public/browser/media_player_controller.h"
+#include "content/public/browser/media_player_listener.h"
+#include "gpu/ipc/common/nweb_native_window_tracker.h"
 #endif // OHOS_VIDEO_ASSISTANT
 
 namespace content {
@@ -3190,6 +3194,7 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences() {
   prefs.video_assistant_enabled = video_assistant_
       ? video_assistant_->Enabled()
       : false;
+  prefs.custom_media_player_enabled = custom_media_player_enabled_;
 #endif // OHOS_VIDEO_ASSISTANT
 
 #ifdef OHOS_LOGGER_REPORT
@@ -9692,6 +9697,19 @@ void WebContentsImpl::MediaDestroyed(const MediaPlayerId& id) {
   if (video_assistant_) {
     video_assistant_->OnVideoDestroyed(id);
   }
+
+  auto iter = surface_widget_map_.find(id);
+  if (iter != surface_widget_map_.end()) {
+    // destroy native window
+    void* native_window =
+      NWebNativeWindowTracker::Get()->GetNativeWindow(iter->second);
+    NWebNativeWindowTracker::Get()->DestroyNativeWindow(iter->second);
+    OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .GetWindowAdapterInstance()
+      .DestroyNativeWindow(native_window);
+
+    surface_widget_map_.erase(iter);
+  }
 #endif // OHOS_VIDEO_ASSISTANT
 }
 
@@ -10785,6 +10803,15 @@ void WebContentsImpl::OnReportStatisticLog(const std::string& content) {
 
   delegate_->OnReportStatisticLog(content);
 }
+
+void WebContentsImpl::CustomWebMediaPlayer(bool enable) {
+  LOG(INFO) << "WebContentsImpl::CustomWebMediaPlayer enter. enable = " << enable;
+  if (custom_media_player_enabled_ == enable) {
+    return;
+  }
+  custom_media_player_enabled_ = enable;
+  OnWebPreferencesChanged();
+}
 #endif  // defined(OHOS_VIDEO_ASSISTANT)
 
 #ifdef OHOS_I18N
@@ -10848,6 +10875,32 @@ void WebContentsImpl::OnUpdateVideoAttributes(
 }
 void WebContentsImpl::OnVideoDestroyed(const MediaPlayerId& id) {
   video_assistant_->OnVideoDestroyed(id);
+}
+std::unique_ptr<MediaPlayerListener> WebContentsImpl::OnFullScreenOverlayEnter(
+    media::mojom::MediaInfoForVASTPtr media_info,
+    const MediaPlayerId& media_player_id) {
+  if (!delegate_) {
+    return nullptr;
+  }
+  return delegate_->OnFullScreenOverlayEnter(
+      std::move(media_info), media_player_id);
+}
+
+void WebContentsImpl::SetVideoSurface(
+    const MediaPlayerId& id, int32_t surface_widget) {
+  auto [iter, success] = surface_widget_map_.insert({id, surface_widget});
+  if (success) {
+    return;
+  }
+  // destroy old native window
+  void* native_window =
+    NWebNativeWindowTracker::Get()->GetNativeWindow(iter->second);
+  NWebNativeWindowTracker::Get()->DestroyNativeWindow(iter->second);
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+    .GetWindowAdapterInstance()
+    .DestroyNativeWindow(native_window);
+
+  iter->second = surface_widget;
 }
 #endif // OHOS_VIDEO_ASSISTANT
 

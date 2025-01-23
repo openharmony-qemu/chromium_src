@@ -12,6 +12,10 @@
 #include "media/base/ohos/ohos_media_player_listener.h"
 #include "ohos_adapter_helper.h"
 
+#ifdef OHOS_VIDEO_ASSISTANT
+#include "gpu/ipc/common/nweb_native_window_tracker.h"
+#endif // OHOS_VIDEO_ASSISTANT
+
 namespace media {
 
 constexpr int QUEUE_SIZE = 3;
@@ -130,6 +134,21 @@ void OHOSMediaPlayerBridge::Prepare() {
   if (ret != 0) {
     LOG(ERROR) << "Prepare error::ret=" << ret << " url=" << url_.spec();
   }
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  if (new_surface_id_ > 0) {
+    void* native_window =
+        NWebNativeWindowTracker::Get()->GetNativeWindow(new_surface_id_);
+    if (native_window) {
+      ret = player_->SetVideoSurfaceNew(native_window);
+      if (ret != 0) {
+        LOG(ERROR) << "SetVideoSurfaceNew error::ret = " << ret
+          << ", new_surface_id_ = " << new_surface_id_
+          << ", native_window = " << native_window;
+      }
+    }
+  }
+#endif // OHOS_VIDEO_ASSISTANT
 }
 
 void OHOSMediaPlayerBridge::StartInternal() {
@@ -264,7 +283,7 @@ void OHOSMediaPlayerBridge::OnSeekBack(base::TimeDelta extra_time) {
     return;
   }
 
-  //When processing seek requests, there may be a maximum error of 300ms between the nearest keyframe 
+  //When processing seek requests, there may be a maximum error of 300ms between the nearest keyframe
   //found by mediaplayer and the time point of seekTo
   if ((recording_seek_ - extra_time_) > base::Milliseconds(MAX_TOLERABLE_SEEK_ERROR)) {
     if (client_) {
@@ -469,4 +488,44 @@ int32_t OHOSMediaPlayerBridge::SetFdSource(const std::string& path) {
 bool OHOSMediaPlayerBridge::IsAudible(float volume) {
   return volume > 0;
 }
+
+#ifdef OHOS_VIDEO_ASSISTANT
+void OHOSMediaPlayerBridge::SetVideoSurface(int32_t surface_id) {
+  if (surface_id > 0) {
+    SetVideoSurfaceNew(surface_id);
+  } else {
+    SetVideoSurfaceOld();
+  }
+}
+
+void OHOSMediaPlayerBridge::SetVideoSurfaceNew(int32_t surface_id) {
+  LOG(INFO) << "SetVideoSurfaceNew(" << surface_id << "), new_surface_id_["
+            << new_surface_id_ << "], player_[" << player_.get() << "]";
+  if (new_surface_id_ == surface_id) {
+    return;
+  }
+  if (new_surface_id_ > 0) {
+    NWebNativeWindowTracker::Get()->DestroyNativeWindow(new_surface_id_);
+    new_surface_id_ = -1;
+  }
+  new_surface_id_ = surface_id;
+  void* native_window = nullptr;
+  if (player_) {
+    native_window = NWebNativeWindowTracker::Get()->GetNativeWindow(surface_id);
+  } else {
+    Prepare();
+  }
+  if (native_window) {
+    player_->SetVideoSurfaceNew(native_window);
+  }
+}
+
+void OHOSMediaPlayerBridge::SetVideoSurfaceOld() {
+  if (new_surface_id_ > 0) {
+    NWebNativeWindowTracker::Get()->DestroyNativeWindow(new_surface_id_);
+    new_surface_id_ = -1;
+  }
+  player_->SetVideoSurface(consumer_surface_);
+}
+#endif // OHOS_VIDEO_ASSISTANT
 }  // namespace media

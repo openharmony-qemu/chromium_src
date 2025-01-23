@@ -119,4 +119,13 @@ bool CodecOutputBufferRenderer::RenderToFrontBuffer() {
                                          0 /* service_id */);
 }
 
+#ifdef OHOS_VIDEO_ASSISTANT
+bool CodecOutputBufferRenderer::RenderVideoView() {
+  if (output_buffer_) {
+    return output_buffer_->RenderVideoView();
+  }
+  return false;
+}
+#endif // OHOS_VIDEO_ASSISTANT
+
 }  // namespace media

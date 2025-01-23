@@ -106,6 +106,9 @@
 #endif
 
 #include "third_party/bounds_checking_function/include/securec.h"
+#include "ohos_nweb/src/capi/nweb_media_player_listener.h"
+#include "ohos_nweb/src/cef_delegate/nweb_media_player_for_vast.h"
+#include "ohos_nweb/src/video_assistant/nweb_media_player_controller_impl.h"
 
 #ifdef OHOS_LOGGER_REPORT
 #include "base/ohos/logger.h"
@@ -924,6 +927,12 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
             *video_assistant_enabled_);
       }
     }
+    if (custom_web_media_player_enabled_) {
+      if (main_browser_ && main_browser_->GetHost()) {
+        main_browser_->GetHost()->CustomWebMediaPlayer(
+            *custom_web_media_player_enabled_);
+      }
+    }
 #endif // OHOS_VIDEO_ASSISTANT
     return;
   }
@@ -949,6 +958,12 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
     if (main_browser_ && main_browser_->GetHost()) {
       main_browser_->GetHost()->EnableVideoAssistant(
           *video_assistant_enabled_);
+    }
+  }
+  if (custom_web_media_player_enabled_) {
+    if (main_browser_ && main_browser_->GetHost()) {
+      main_browser_->GetHost()->CustomWebMediaPlayer(
+          *custom_web_media_player_enabled_);
     }
   }
 #endif // OHOS_VIDEO_ASSISTANT
@@ -3942,6 +3957,34 @@ void NWebHandlerDelegate::OnReportStatisticLog(const CefString& content) {
 #endif  // defined(OHOS_VIDEO_ASSISTANT)
 }
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+CefOwnPtr<CefMediaPlayerListenerForVAST>
+NWebHandlerDelegate::OnFullScreenOverlayEnter(
+    CefOwnPtr<CefMediaPlayerController> media_player_controller,
+    const std::string& extra_info) {
+  if (!web_app_client_extension_listener_) {
+    LOG(WARNING) << "application extension listener is nullptr";
+    return nullptr;
+  }
+
+  if (!web_app_client_extension_listener_->OnFullScreenOverlayEnter) {
+    LOG(WARNING) << "OnFullScreenOverlayEnter is nullptr";
+    return nullptr;
+  }
+  auto controller = std::make_unique<NWebMediaPlayerControllerImpl>(
+      std::move(media_player_controller));
+
+  auto listener = web_app_client_extension_listener_->OnFullScreenOverlayEnter(
+      web_app_client_extension_listener_->nweb_id,
+      controller.release(), extra_info.c_str());
+  if (!listener) {
+    return nullptr;
+  }
+  return std::make_unique<NWebMediaPlayerListenerForVAST>(
+      std::unique_ptr<NWebMediaPlayerListener>(listener));
+}
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+
 #if defined(OHOS_RENDERER_ANR_DUMP)
 void NWebHandlerDelegate::OnRenderProcessNotResponding(
     CefRefPtr<CefBrowser> browser,
@@ -4029,6 +4072,11 @@ void NWebHandlerDelegate::OnActivateContent() {
 #if defined(OHOS_VIDEO_ASSISTANT)
 void NWebHandlerDelegate::EnableVideoAssistant(bool enable) {
   video_assistant_enabled_ = enable;
+}
+
+void NWebHandlerDelegate::CustomWebMediaPlayer(bool enable) {
+  LOG(INFO) << "NWebHandlerDelegate::CustomWebMediaPlayer enter. enable = " << enable;
+  custom_web_media_player_enabled_ = enable;
 }
 #endif // OHOS_VIDEO_ASSISTANT
 

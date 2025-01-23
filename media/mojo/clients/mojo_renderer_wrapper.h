@@ -29,6 +29,9 @@ class MojoRendererWrapper : public Renderer {
   // Renderer implementation.
   void Initialize(MediaResource* media_resource,
                   RendererClient* client,
+#ifdef OHOS_VIDEO_ASSISTANT
+                  RequestSurfaceCB request_surface_cb,
+#endif // OHOS_VIDEO_ASSISTANT
                   PipelineStatusCallback init_cb) override;
 #if BUILDFLAG(IS_OHOS)
   void Initialize(CreateTextureCB create_texture_cb,

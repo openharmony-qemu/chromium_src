@@ -465,6 +465,7 @@ class NWebImpl : public NWeb {
   void ExecuteVideoAssistantFunction(const std::string& cmd_id);
   static void OnReportStatisticLog(const std::string& content);
   static void SetOnReportStatisticLogCallback(OnReportStatisticLogFunc func);
+  void CustomWebMediaPlayer(bool enable);
 #endif  // defined(OHOS_VIDEO_ASSISTANT)
 
 #ifdef OHOS_EX_NETWORK_CONNECTION

@@ -107,6 +107,7 @@ void NWebExtensionActionCefDelegate::UnRegisterWebExtensionApiListener() {
 }
 
 // static
+NO_SANITIZE("cfi-icall")
 void NWebExtensionActionCefDelegate::OnSetIcon(std::string extension_id,
                                                const gfx::Image& icon_image,
                                                int32_t tab_id) {

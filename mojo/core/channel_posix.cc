@@ -316,6 +316,9 @@ void ChannelPosix::OnFileCanReadWithoutBlocking(int fd) {
            total_bytes_read < kMaxBatchReadCapacity && next_read_size > 0);
   if (read_error) {
     // Stop receiving read notifications.
+#if BUILDFLAG(IS_OHOS)
+    LOG(ERROR) << "ChannelPosix read error: " << static_cast<int32_t>(errno);
+#endif
     read_watcher_.reset();
     if (validation_error)
       OnError(Error::kReceivedMalformedData);
@@ -402,6 +405,9 @@ bool ChannelPosix::WriteNoLock(MessageView message_view) {
     }
 
     if (result < 0) {
+#if BUILDFLAG(IS_OHOS)
+    LOG(ERROR) << "ChannelPosix write error: " << static_cast<int32_t>(errno);
+#endif
       if (errno != EAGAIN &&
           errno != EWOULDBLOCK
 #if BUILDFLAG(IS_IOS)

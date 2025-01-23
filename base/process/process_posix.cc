@@ -273,6 +273,9 @@ void Process::TerminateCurrentProcessImmediately(int exit_code) {
 #if BUILDFLAG(CLANG_PROFILING)
   WriteClangProfilingProfile();
 #endif
+#if BUILDFLAG(IS_OHOS)
+  LOG(INFO) << "Process::TerminateCurrentProcessImmediately code:" << exit_code;
+#endif
   _exit(exit_code);
 }
 
@@ -321,7 +324,9 @@ bool Process::Terminate(int exit_code, bool wait) const {
   // exit_code isn't supportable.
   DCHECK(IsValid());
   CHECK_GT(process_, 0);
-
+#if BUILDFLAG(IS_OHOS)
+  LOG(INFO) << "Process::Terminate code:" << exit_code;
+#endif
   // RESULT_CODE_KILLED_BAD_MESSAGE == 3, but layering prevents its use.
   // |wait| is always false when terminating badly-behaved processes.
   const bool maybe_compromised = !wait && exit_code == 3;

@@ -47,38 +47,57 @@ void NweExtensionContextMenusDelegateHandler::UnRegisterExtensionContextMenusLis
   g_extension_context_menus_listener = nullptr;
 }
  
-void NweExtensionContextMenusDelegateHandler::OnContextMenusCreate(const std::string& extension_id,
-                                                                    const NWebContextMenusItem& menu_item) {
-  LOG(DEBUG) << "NweExtensionContextMenusDelegateHandler::OnContextMenusCreate, extension_id: "
+NO_SANITIZE("cfi-icall")
+void NweExtensionContextMenusDelegateHandler::OnContextMenusCreate(
+    const std::string& extension_id,
+    const NWebContextMenusItem& menu_item) {
+  LOG(DEBUG) << "NweExtensionContextMenusDelegateHandler::OnContextMenusCreate,"
+                " extension_id: "
              << extension_id << " menu_item_id: " << menu_item.id;
   if (!g_extension_context_menus_listener) {
     LOG(ERROR) << "extension context menus listener is null";
     return;
   }
-  g_extension_context_menus_listener->OnCreated(extension_id.c_str(), menu_item);
+  g_extension_context_menus_listener->OnCreated(extension_id.c_str(),
+                                                menu_item);
 }
-void NweExtensionContextMenusDelegateHandler::OnContextMenusUpdate(const std::string& extension_id,
-                                                                    const NWebContextMenusItem& menu_item) {
-  LOG(DEBUG) << "NweExtensionContextMenusDelegateHandler::OnContextMenusUpdate, extension_id: "
+
+NO_SANITIZE("cfi-icall")
+void NweExtensionContextMenusDelegateHandler::OnContextMenusUpdate(
+    const std::string& extension_id,
+    const NWebContextMenusItem& menu_item) {
+  LOG(DEBUG) << "NweExtensionContextMenusDelegateHandler::OnContextMenusUpdate,"
+                " extension_id: "
              << extension_id << " menu_item_id: " << menu_item.id;
   if (!g_extension_context_menus_listener) {
     LOG(ERROR) << "extension context menus listener is null";
     return;
   }
-  g_extension_context_menus_listener->OnUpdated(extension_id.c_str(), menu_item.id.c_str(), menu_item);
+  g_extension_context_menus_listener->OnUpdated(
+      extension_id.c_str(), menu_item.id.c_str(), menu_item);
 }
-void NweExtensionContextMenusDelegateHandler::OnContextMenusRemove(const std::string& extension_id,
-                                                                    const std::string& menu_item_id) {
-  LOG(DEBUG) << "NweExtensionContextMenusDelegateHandler::OnContextMenusRemove, extension_id: "
+
+NO_SANITIZE("cfi-icall")
+void NweExtensionContextMenusDelegateHandler::OnContextMenusRemove(
+    const std::string& extension_id,
+    const std::string& menu_item_id) {
+  LOG(DEBUG) << "NweExtensionContextMenusDelegateHandler::OnContextMenusRemove,"
+                " extension_id: "
              << extension_id << " menu_item_id: " << menu_item_id;
   if (!g_extension_context_menus_listener) {
     LOG(ERROR) << "extension context menus listener is null";
     return;
   }
-  g_extension_context_menus_listener->OnRemoved(extension_id.c_str(), menu_item_id.c_str());
+  g_extension_context_menus_listener->OnRemoved(extension_id.c_str(),
+                                                menu_item_id.c_str());
 }
-void NweExtensionContextMenusDelegateHandler::OnContextMenusRemoveAll(const std::string& extension_id) {
-  LOG(DEBUG) << "NweExtensionContextMenusDelegateHandler::OnContextMenusRemoveAll, extension_id: " << extension_id;
+
+NO_SANITIZE("cfi-icall")
+void NweExtensionContextMenusDelegateHandler::OnContextMenusRemoveAll(
+    const std::string& extension_id) {
+  LOG(DEBUG) << "NweExtensionContextMenusDelegateHandler::"
+                "OnContextMenusRemoveAll, extension_id: "
+             << extension_id;
   if (!g_extension_context_menus_listener) {
     LOG(ERROR) << "extension context menus listener is null";
     return;

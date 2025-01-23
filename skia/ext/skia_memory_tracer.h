@@ -66,6 +66,11 @@ private:
 
     const char* MapName(const char* resourceName);
     void ProcessElement();
+    bool ProcessSize();
+    void ProcessPurgeableSize();
+    std::string ProcessType();
+    const char* ProcessResourceName();
+    void ProcessResults(const char* resourceName, const std::string& key);
     float ConvertToMB(const TraceValue& value);
 
     const std::vector<ResourcePair> resourceMap_;

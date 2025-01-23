@@ -38,76 +38,94 @@ const char* SkiaMemoryTracer::MapName(const char* resourceName)
 
 void SkiaMemoryTracer::ProcessElement()
 {
-    if (!currentElement_.empty()) {
-        // Only count elements that contain "size", other values just provide metadata.
-        auto sizeResult = currentValues_.find("size");
-        if (sizeResult != currentValues_.end()) {
-            totalSize_.value += sizeResult->second.value;
-            totalSize_.count++;
-        } else {
-            currentElement_.clear();
-            currentValues_.clear();
-            return;
-        }
-
-        // find the purgeable size if one exists
-        auto purgeableResult = currentValues_.find("purgeable_size");
-        if (purgeableResult != currentValues_.end()) {
-            purgeableSize_.value += purgeableResult->second.value;
-            purgeableSize_.count++;
-        }
-
-        // find the type if one exists
-        std::string type;
-        auto typeResult = currentValues_.find("type");
-        if (typeResult != currentValues_.end()) {
-            type = typeResult->second.units.c_str();
-        } else if (itemizeType_) {
-            type = "Other";
-        } else {
-            type = "";
-        }
-
-        // compute the type if we are itemizing or use the default "size" if we are not
-        std::string key = (itemizeType_) ? type : sizeResult->first;
-
-        // compute the top level element name using either the map or category key
-        const char* resourceName = MapName(currentElement_.c_str());
-        if (categoryKey_ != nullptr) {
-            // find the category if one exists
-            auto categoryResult = currentValues_.find(categoryKey_);
-            if (categoryResult != currentValues_.end()) {
-                resourceName = categoryResult->second.units.c_str();
-            }
-        }
-
-        // if we don't have a resource name then we don't know how to label the
-        // data and should abort.
-        if (resourceName == nullptr) {
-            resourceName = currentElement_.c_str();
-        }
-
-        auto result = results_.find(resourceName);
-        if (result == results_.end()) {
-            std::string strResourceName = resourceName;
-            TraceValue sizeValue = sizeResult->second;
-            currentValues_.clear();
-            currentValues_.insert({ key, sizeValue });
-            results_.insert({ strResourceName, currentValues_ });
-        } else {
-            auto& resourceValues = result->second;
-            typeResult = resourceValues.find(key);
-            if (typeResult == resourceValues.end()) {
-                resourceValues.insert({ key, sizeResult->second });
-            } else {
-                typeResult->second.value += sizeResult->second.value;
-                typeResult->second.count++;
-            }
-        }
+    if (currentElement_.empty()) {
+        return;
     }
+
+    if (!ProcessSize()) {
+        currentElement_.clear();
+        currentValues_.clear();
+        return;
+    }
+
+    ProcessPurgeableSize();
+    std::string type = ProcessType();
+    std::string key = (itemizeType_) ? type : "size";
+
+    const char* resourceName = ProcessResourceName();
+    if (resourceName == nullptr) {
+        resourceName = currentElement_.c_str();
+    }
+
+    ProcessResults(resourceName, key);
 
     currentElement_.clear();
     currentValues_.clear();
+}
+
+bool SkiaMemoryTracer::ProcessSize()
+{
+    auto sizeResult = currentValues_.find("size");
+    if (sizeResult == currentValues_.end()) {
+        return false;
+    }
+
+    totalSize_.value += sizeResult->second.value;
+    totalSize_.count++;
+    return true;
+}
+
+void SkiaMemoryTracer::ProcessPurgeableSize()
+{
+    auto purgeableResult = currentValues_.find("purgeable_size");
+    if (purgeableResult != currentValues_.end()) {
+        purgeableSize_.value += purgeableResult->second.value;
+        purgeableSize_.count++;
+    }
+}
+
+std::string SkiaMemoryTracer::ProcessType()
+{
+    auto typeResult = currentValues_.find("type");
+    if (typeResult != currentValues_.end()) {
+        return typeResult->second.units.c_str();
+    } else if (itemizeType_) {
+        return "Other";
+    }
+    return "";
+}
+
+const char* SkiaMemoryTracer::ProcessResourceName()
+{
+    const char* resourceName = MapName(currentElement_.c_str());
+    if (categoryKey_ != nullptr) {
+        auto categoryResult = currentValues_.find(categoryKey_);
+        if (categoryResult != currentValues_.end()) {
+            resourceName = categoryResult->second.units.c_str();
+        }
+    }
+    return resourceName;
+}
+
+void SkiaMemoryTracer::ProcessResults(const char* resourceName, const std::string& key)
+{
+    auto result = results_.find(resourceName);
+    if (result == results_.end()) {
+        std::string strResourceName = resourceName;
+        TraceValue sizeValue = currentValues_.find("size")->second;
+        currentValues_.clear();
+        currentValues_.insert({ key, sizeValue });
+        results_.insert({ strResourceName, currentValues_ });
+    } else {
+        auto& resourceValues = result->second;
+        auto typeResult = resourceValues.find(key);
+        if (typeResult == resourceValues.end()) {
+            resourceValues.insert({ key, currentValues_.find("size")->second });
+        } else {
+            typeResult->second.value += currentValues_.find("size")->second.value;
+            typeResult->second.count++;
+        }
+    }
 }
 
 void SkiaMemoryTracer::dumpNumericValue(const char* dumpName, const char* valueName, const char* units, uint64_t value)

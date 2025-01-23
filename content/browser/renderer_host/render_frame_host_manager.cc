@@ -1347,7 +1347,7 @@ RenderFrameHostManager::GetFrameHostForNavigation(
       LOG(DEBUG) << "[ReuseExistingProcessIfPossible]"
                  << shared_render_process_token << "[isok]"
                  << (render_process == dest_site_instance->GetProcess())
-                 << request->GetURL();
+                 << url::LogUtils::ConvertUrl(request->GetURL().spec());
     } else {
       RenderProcessHostImpl::RegisteProcessForSharedToken(
           shared_render_process_token, dest_site_instance->GetProcess());

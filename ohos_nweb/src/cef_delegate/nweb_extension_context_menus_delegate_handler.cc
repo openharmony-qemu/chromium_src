@@ -46,7 +46,7 @@ void NweExtensionContextMenusDelegateHandler::UnRegisterExtensionContextMenusLis
   LOG(INFO) << "NweExtensionContextMenusDelegateHandler::UnRegisterExtensionContextMenusListener";
   g_extension_context_menus_listener = nullptr;
 }
- 
+
 NO_SANITIZE("cfi-icall")
 void NweExtensionContextMenusDelegateHandler::OnContextMenusCreate(
     const std::string& extension_id,

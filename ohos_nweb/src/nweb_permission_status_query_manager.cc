@@ -15,6 +15,7 @@
 
 #include "nweb_permission_status_query_manager.h"
 #include "nweb_hilog.h"
+#include "base/logging.h"
 
 namespace OHOS::NWeb {
 
@@ -25,6 +26,7 @@ void NWebPermissionStatusQueryManager::SetPermissionStatusQueryDelegate(
   g_permission_status_query_delegate_callback = callback;
 }
 
+NO_SANITIZE("cfi-icall")
 void NWebPermissionStatusQueryManager::QueryPermissionStatus(
     NWebPermissionStatusQuery* query) {
   if (!g_permission_status_query_delegate_callback) {
@@ -37,5 +39,4 @@ void NWebPermissionStatusQueryManager::QueryPermissionStatus(
 
   g_permission_status_query_delegate_callback->onPermissionStatusQuery(query);
 }
-
 }

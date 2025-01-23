@@ -74,6 +74,7 @@ void RenderRemoteProxy::NotifyBrowser(int32_t ipcFd,
                                       std::shared_ptr<OHOS::NWeb::AafwkBrowserClientAdapter> clientAdapter
 ) {
   base::GlobalDescriptors* g_fds = base::GlobalDescriptors::GetInstance();
+  LOG(INFO) << "NotifyBrowser ipcFd:" << ipcFd << " sharedFd:" << sharedFd << " crashFd:" << crashFd;
   if (g_fds != nullptr) {
     int new_ipc_fd;
     if ((new_ipc_fd = dup(ipcFd)) < 0) {

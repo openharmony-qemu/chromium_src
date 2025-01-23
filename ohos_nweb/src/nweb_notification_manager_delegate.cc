@@ -45,10 +45,12 @@ void NWebNotificationManagerDelegate::RegisterNotificationManagerDelegateListene
   }
 }
 
-void NWebNotificationManagerDelegate::OnShowNotification(std::shared_ptr<NWebNotificationOptionsItem> options_item) {
+NO_SANITIZE("cfi-icall")
+void NWebNotificationManagerDelegate::OnShowNotification(
+    std::shared_ptr<NWebNotificationOptionsItem> options_item) {
   if (!options_item) {
-    LOG(ERROR)
-        << "NWebNotificationManagerDelegate::OnShowNotification error, not invalid";
+    LOG(ERROR) << "NWebNotificationManagerDelegate::OnShowNotification error, "
+                  "not invalid";
     return;
   }
 
@@ -59,6 +61,7 @@ void NWebNotificationManagerDelegate::OnShowNotification(std::shared_ptr<NWebNot
   }
 }
 
+NO_SANITIZE("cfi-icall")
 void NWebNotificationManagerDelegate::OnCloseNotification(std::string id) {
   if (notification_delegate_listener_ != nullptr) {
     notification_delegate_listener_->closeNotification(id);

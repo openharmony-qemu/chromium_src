@@ -46,7 +46,9 @@ NwebExtensionTabDelegateHandler* NwebExtensionTabDelegateHandler::GetInstance() 
   return instance.get();
 }
 
-std::unique_ptr<NWebExtensionTab> NwebExtensionTabDelegateHandler::GetTab(int tab_id) {
+NO_SANITIZE("cfi-icall")
+std::unique_ptr<NWebExtensionTab> NwebExtensionTabDelegateHandler::GetTab(
+    int tab_id) {
   LOG(DEBUG) << "NwebExtensionTabDelegateHandler::GetTab";
   if (!g_extension_api_listener || !g_extension_api_listener->NotifyGet) {
     LOG(ERROR) << "extension api listener is null";
@@ -55,7 +57,9 @@ std::unique_ptr<NWebExtensionTab> NwebExtensionTabDelegateHandler::GetTab(int ta
   return g_extension_api_listener->NotifyGet(tab_id);
 }
 
-std::vector<NWebExtensionTab> NwebExtensionTabDelegateHandler::QueryTab(const NWebExtensionTabQueryInfo& queryInfo) {
+NO_SANITIZE("cfi-icall")
+std::vector<NWebExtensionTab> NwebExtensionTabDelegateHandler::QueryTab(
+    const NWebExtensionTabQueryInfo& queryInfo) {
   LOG(DEBUG) << "NwebExtensionTabDelegateHandler::QueryTab";
   std::vector<NWebExtensionTab> tabs;
   if (!g_extension_api_listener || !g_extension_api_listener->NotifyQuery) {

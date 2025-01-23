@@ -21,7 +21,7 @@
 #include "base/allocator/partition_allocator/partition_alloc_constants.h"
 #include "base/allocator/partition_allocator/partition_root.h"
 #include "build/build_config.h"
-
+#include "base/allocator/partition_allocator/internal_allocator.h"
 namespace partition_alloc {
 
 namespace {
@@ -457,19 +457,10 @@ ThreadCache* ThreadCache::Create(PartitionRoot<internal::ThreadSafe>* root) {
   //
   // This also means that deallocation must use RawFreeStatic(), hence the
   // operator delete() implementation below.
-  size_t raw_size = root->AdjustSizeForExtrasAdd(sizeof(ThreadCache));
-  size_t usable_size;
-  bool already_zeroed;
 
-  auto* bucket =
-      root->buckets + PartitionRoot<internal::ThreadSafe>::SizeToBucketIndex(
-                          raw_size, root->GetBucketDistribution());
-  uintptr_t buffer = root->RawAlloc(bucket, AllocFlags::kZeroFill, raw_size,
-                                    internal::PartitionPageSize(), &usable_size,
-                                    &already_zeroed);
-  ThreadCache* tcache =
-      new (internal::SlotStartAddr2Ptr(buffer)) ThreadCache(root);
-
+  // Operator new is overloaded to route to internal partition.
+  // The internal partition does not use `ThreadCache`, so safe to depend on.
+  ThreadCache* tcache = new ThreadCache(root);
   // This may allocate.
   internal::PartitionTlsSet(internal::g_thread_cache_key, tcache);
 #if PA_CONFIG(THREAD_CACHE_FAST_TLS)
@@ -534,12 +525,9 @@ void ThreadCache::Delete(void* tcache_ptr) {
   internal::PartitionTlsSet(internal::g_thread_cache_key, nullptr);
 #endif
 
-  auto* root = tcache->root_;
-  tcache->~ThreadCache();
-  // TreadCache was allocated using RawAlloc() and SlotStartAddr2Ptr(), so it
-  // shifted by extras, but is MTE-tagged.
-  root->RawFree(internal::SlotStartPtr2Addr(tcache_ptr));
 
+  // Operator new is overloaded to route to internal partition.
+  delete tcache;
 #if BUILDFLAG(IS_WIN)
   // On Windows, allocations do occur during thread/process teardown, make sure
   // they don't resurrect the thread cache.
@@ -692,6 +680,15 @@ void ThreadCache::ClearBucketHelper(Bucket& bucket, size_t limit) {
   cached_memory_ -= freed_memory;
 
   PA_DCHECK(cached_memory_ == CachedMemory());
+}
+
+// static
+void* ThreadCache::operator new(size_t count) {
+  return InternalAllocatorRoot().Alloc(count, "ThreadCachePA");
+}
+// static
+void ThreadCache::operator delete(void* ptr) {
+  InternalAllocatorRoot().Free(ptr);
 }
 
 template <bool crash_on_corruption>

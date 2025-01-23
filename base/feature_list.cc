@@ -520,7 +520,6 @@ void FeatureList::SetScrollbarEnable(bool enable) {
     }
     LOG(INFO) << "set Scrollbar:" << enable << " state:" << state;
     g_feature_list_instance->SetOverrideStateByFeatureName("OverlayScrollbar", state);
-    g_feature_list_instance->SetOverrideStateByFeatureName("ForceScrollbar", state);
   } else {
     LOG(ERROR) << "set Scrollbar error";
   }
@@ -709,16 +708,7 @@ void FeatureList::FinalizeInitialization() {
 
 bool FeatureList::IsFeatureEnabled(const Feature& feature) const {
   OverrideState overridden_state = GetOverrideState(feature);
-#if defined(OHOS_SCROLLBAR)
-  if (std::string(feature.name) == "OverlayScrollbar") {
-    LOG(DEBUG) << "Overlay Scrollbar:" << overridden_state << " : " << (overridden_state == OVERRIDE_ENABLE_FEATURE);
-    // OverlayScrollbar using native process.
-  }
-  if (std::string(feature.name) == "ForceScrollbar") {
-    LOG(DEBUG) << "Force Scrollbar:" << overridden_state << " : " << (overridden_state == OVERRIDE_DISABLE_FEATURE);
-    return overridden_state == OVERRIDE_DISABLE_FEATURE;
-  }
-#endif
+
   // If marked as OVERRIDE_USE_DEFAULT, simply return the default state below.
   if (overridden_state != OVERRIDE_USE_DEFAULT)
     return overridden_state == OVERRIDE_ENABLE_FEATURE;

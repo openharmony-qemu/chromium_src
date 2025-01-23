@@ -46,7 +46,7 @@ void NweExtensionWindowDelegateHandler::UnRegisterWebExtensionWindowsApiListener
   LOG(INFO) << "NweExtensionWindowDelegateHandler::UnRegisterWebExtensionWindowsApiListener";
   g_extension_windows_api_listener = nullptr;
 }
- 
+
 NO_SANITIZE("cfi-icall")
 std::vector<WebExtensionWindow>
 NweExtensionWindowDelegateHandler::OnGetAllWindows(

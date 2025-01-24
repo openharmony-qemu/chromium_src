@@ -31,6 +31,12 @@ class InProcessGpuThread : public base::Thread {
   void Init() override;
   void CleanUp() override;
 
+#if BUILDFLAG(IS_OHOS)
+  int32_t GetGpuThreadId(int32_t pid);
+  int32_t GetTidListByName(int32_t pid, const std::string& thread_name);
+  bool LoadStringFromFile(const std::string& file_path, std::string& content);
+#endif
+
  private:
   InProcessChildThreadParams params_;
 

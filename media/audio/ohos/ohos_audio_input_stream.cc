@@ -9,6 +9,10 @@
 #include "media/audio/ohos/ohos_audio_manager.h"
 
 namespace media {
+namespace {
+// ID of the virtual device used to share system audio
+constexpr std::string_view kScreenSystemAudioDeviceId = "screen:systemAudio:-2:0";
+}
 
 class OHOSAudioInputStream::CaptureCallbackAdapter
     : public AudioCapturerSource::CaptureCallback {
@@ -46,12 +50,25 @@ AudioInputStream::OpenOutcome OHOSAudioInputStream::Open() {
 }
 
 void OHOSAudioInputStream::Start(AudioInputCallback* callback) {
-  LOG(INFO) << "OHOSAudioInputStream::Start";
-  capturer_source_ =
-      base::MakeRefCounted<OHOSAudioCapturerSource>(manager_->GetTaskRunner());
-  callback_adapter_ = std::make_unique<CaptureCallbackAdapter>(callback);
-  capturer_source_->Initialize(parameters_, callback_adapter_.get());
-  capturer_source_->Start();
+  std::string device_id = manager_->GetSelectAudioDeviceId();
+  LOG(INFO) << "OHOSAudioInputStream::Start, format: " 
+            << (int32_t)parameters_.format()
+            << " , deviceid: "
+            << device_id;
+  
+  if (device_id == kScreenSystemAudioDeviceId) {
+    base_capturer_source_ =
+      base::MakeRefCounted<BaseAudioCapturerSource>(manager_->GetTaskRunner());
+    base_callback_adapter_ = std::make_unique<CaptureCallbackAdapter>(callback);
+    base_capturer_source_->Initialize(parameters_, base_callback_adapter_.get());
+    base_capturer_source_->Start();
+  } else {
+    capturer_source_ =
+       base::MakeRefCounted<OHOSAudioCapturerSource>(manager_->GetTaskRunner());
+    callback_adapter_ = std::make_unique<CaptureCallbackAdapter>(callback);
+    capturer_source_->Initialize(parameters_, callback_adapter_.get());
+    capturer_source_->Start();
+  }
 }
 
 void OHOSAudioInputStream::Stop() {
@@ -59,6 +76,10 @@ void OHOSAudioInputStream::Stop() {
   if (capturer_source_) {
     capturer_source_->Stop();
     capturer_source_ = nullptr;
+  }
+  if (base_capturer_source_) {
+    base_capturer_source_->Stop();
+    base_capturer_source_ = nullptr;
   }
 }
 
@@ -74,7 +95,12 @@ double OHOSAudioInputStream::GetMaxVolume() {
 
 void OHOSAudioInputStream::SetVolume(double volume) {
   LOG(INFO) << "OHOSAudioInputStream::SetVolume volume is:" << volume;
-  capturer_source_->SetVolume(volume);
+  if (capturer_source_) {
+    capturer_source_->SetVolume(volume);
+  }
+  if (base_capturer_source_) {
+    base_capturer_source_->SetVolume(volume);
+  }
   volume_ = volume;
 }
 
@@ -83,7 +109,12 @@ double OHOSAudioInputStream::GetVolume() {
 }
 
 bool OHOSAudioInputStream::SetAutomaticGainControl(bool enabled) {
-  capturer_source_->SetAutomaticGainControl(enabled);
+  if (capturer_source_) {
+    capturer_source_->SetAutomaticGainControl(enabled);
+  }
+  if (base_capturer_source_) {
+    base_capturer_source_->SetAutomaticGainControl(enabled);
+  }
   automatic_gain_control_ = enabled;
   return true;
 }
@@ -98,7 +129,12 @@ bool OHOSAudioInputStream::IsMuted() {
 
 void OHOSAudioInputStream::SetOutputDeviceForAec(
     const std::string& output_device_id) {
-  capturer_source_->SetOutputDeviceForAec(output_device_id);
+  if (capturer_source_) {
+    capturer_source_->SetOutputDeviceForAec(output_device_id);
+  }
+  if (base_capturer_source_) {
+    base_capturer_source_->SetOutputDeviceForAec(output_device_id);
+  }
 }
 
 }  // namespace media

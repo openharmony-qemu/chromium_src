@@ -22,12 +22,14 @@
 #include "ui/gfx/geometry/point_conversions.h"
 
 namespace content {
-const int64_t kInvalidAccessibilityId = -1;
-const int64_t kArkWebId = 0;
+constexpr int64_t kInvalidAccessibilityId = -1;
+constexpr int64_t kArkWebId = 0;
+constexpr int64_t kRootAccessibilityId = 1;
 constexpr int32_t kMaxContentChangedEventsToFire = 5;
 constexpr int32_t kAccessibilityEventDelayDefault = 100;
 constexpr int32_t kAccessibilityEventDelayHover = 200;
 constexpr int32_t kMaxLocationChangedEventsToFire = 3;
+constexpr int32_t kShiftedBitNumber = 32;
 
 using SearchKeyToPredicateMap =
     std::unordered_map<std::u16string, AccessibilityMatchPredicate>;
@@ -156,10 +158,16 @@ bool BrowserAccessibilityManagerOHOS::DispatchEvent(int64_t accessibilityId,
   LOG(INFO) << "DispatchEvent accessibilityId is " << accessibilityId
             << ", eventType is " << static_cast<uint32_t>(eventType);
 
-  if (accessibilityId != kInvalidAccessibilityId && delegate_ != nullptr) {
+  auto node = BrowserAccessibilityOHOS::GetFromAccessibilityId(accessibilityId);
+  if ((node != nullptr || accessibilityId == kArkWebId) &&
+      delegate_ != nullptr) {
     auto renderFrameHost = delegate_->AccessibilityRenderFrameHost();
     if (renderFrameHost != nullptr) {
-      renderFrameHost->SendAccessibilityEvent(accessibilityId, static_cast<int32_t>(eventType));
+      if (accessibilityId == GetRootAccessibilityId()) {
+        accessibilityId = kRootAccessibilityId;
+      }
+      renderFrameHost->SendAccessibilityEvent(accessibilityId,
+                                              static_cast<int32_t>(eventType));
       return true;
     }
   }
@@ -195,7 +203,7 @@ void BrowserAccessibilityManagerOHOS::HandleContentChanged(int64_t accessibility
 }
 
 void BrowserAccessibilityManagerOHOS::SendDelayedWindowContentChangedEvent() {
-  SendAccessibilityEvent(kArkWebId, OHOS::NWeb::AccessibilityEventType::CHANGE);
+  SendAccessibilityEvent(GetRootAccessibilityId(), OHOS::NWeb::AccessibilityEventType::CHANGE);
 }
 
 void BrowserAccessibilityManagerOHOS::
@@ -390,7 +398,7 @@ int64_t BrowserAccessibilityManagerOHOS::FindElementType(
   tree_search.SetResultLimit(1);
   tree_search.SetImmediateDescendantsOnly(false);
   tree_search.SetCanWrapToLastElement(can_wrap);
-  tree_search.SetOnscreenOnly(true);
+  tree_search.SetOnscreenOnly(false);
   tree_search.AddPredicate(predicate);
 
   if (tree_search.CountMatches() == 0) {
@@ -694,6 +702,6 @@ int64_t AccessibilityEventDispatcher::Uuid(int64_t accessibilityId,
   if (viewIndependentEvents_.find(eventType) != viewIndependentEvents_.end()) {
     return eventType;
   }
-  return (accessibilityId << 32) | eventType;
+  return (accessibilityId << kShiftedBitNumber) | eventType;
 }
 }  // namespace content

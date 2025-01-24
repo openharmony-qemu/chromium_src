@@ -401,7 +401,10 @@ BrowserAccessibilityOHOS::GetAccessibilityNodeByFocusMove(
   std::list<BrowserAccessibilityOHOS*> nodeList;
   BrowserAccessibilityOHOS* resultNode = nullptr;
 
-  auto manager = static_cast<BrowserAccessibilityManagerOHOS*>(manager_);
+  if (!manager_) {
+    return resultNode;
+  }
+  auto manager = static_cast<BrowserAccessibilityManagerOHOS*>(manager_->GetManagerForRootFrame());
   if (!manager) {
     return resultNode;
   }
@@ -1126,11 +1129,12 @@ bool BrowserAccessibilityOHOS::IsInterestingOnOHOS() const {
   }
 
   // Mark as uninteresting if it's hidden, even if it is focusable.
-  if (IsInvisibleOrIgnored()) {
+  if (IsInvisibleOrIgnored() || IsChildOfLeaf()) {
     return false;
   }
 
-  if (GetRole() == ax::mojom::Role::kButton) {
+  // If it's a control role, then it's interesting.
+  if (ui::IsControl(GetRole())) {
     return true;
   }
 
@@ -1161,11 +1165,6 @@ bool BrowserAccessibilityOHOS::IsInterestingOnOHOS() const {
   // already skips over things like iframes and child frames that are
   // technically focusable but shouldn't be exposed as focusable on OHOS.
   if (IsFocusable()) {
-    return true;
-  }
-
-  // If it's not focusable but has a control role, then it's interesting.
-  if (ui::IsControl(GetRole())) {
     return true;
   }
 

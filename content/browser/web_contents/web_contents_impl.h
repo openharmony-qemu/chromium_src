@@ -784,6 +784,10 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   void ChangeVisibilityOfQuickMenu() override;
 #endif
 
+#ifdef OHOS_AI
+  bool CloseImageOverlaySelection() override;
+#endif
+
   void RunJavaScriptDialog(RenderFrameHostImpl* render_frame_host,
                            const std::u16string& message,
                            const std::u16string& default_prompt,

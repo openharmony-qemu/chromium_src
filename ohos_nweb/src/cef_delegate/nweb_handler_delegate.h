@@ -623,6 +623,7 @@ void OnTouchIconUrlWithSizesReceived(
                             bool is_mouse_trigger) override;
   void HideHandleAndQuickMenuIfNecessary(bool hide) override;
   void ChangeVisibilityOfQuickMenu() override;
+  bool CloseImageOverlaySelection() override;
   /* CefContextMenuHandler method end */
 
   /* CefFindandler methods begin */

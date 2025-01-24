@@ -924,6 +924,8 @@ class CONTENT_EXPORT RenderWidgetHostImpl
                      const gfx::Point& touch_point) override;
   gfx::Rect GetImageRect();
   void OnTextSelected(bool flag);
+  void OnDestroyImageAnalyzerOverlay();
+  void OnFoldStatusChanged(uint32_t foldstatus);
 #endif
 
  protected:

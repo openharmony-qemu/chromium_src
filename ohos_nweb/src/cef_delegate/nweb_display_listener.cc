@@ -48,4 +48,25 @@ void DisplayScreenListener::OnChange(DisplayId id) {
     }
   }
 }
+
+FoldStatusScreenListener::FoldStatusScreenListener(
+    std::shared_ptr<NWebDelegateInterface> nweb)
+    : nweb_(std::weak_ptr<NWebDelegateInterface>(nweb)) {
+  foldstatus_manager_adapter_ =
+      OhosAdapterHelper::GetInstance().CreateDisplayMgrAdapter();
+}
+
+void FoldStatusScreenListener::OnFoldStatusChanged(FoldStatus foldStatus) {
+  if (foldstatus_manager_adapter_ == nullptr) {
+    LOG(ERROR) << "foldstatus_manager_adapter_ is nullptr";
+    return;
+  }
+
+  auto nweb = nweb_.lock();
+  if (nweb != nullptr) {
+    nweb->OnFoldStatusChanged(foldStatus);
+  } else {
+    LOG(ERROR) << "notify OnFoldStatusChanged info change failed";
+  }
+}
 }  // namespace OHOS::NWeb

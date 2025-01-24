@@ -2389,6 +2389,17 @@ void RenderFrameImpl::ChangeVisibilityOfQuickMenu() {
 }
 #endif
 
+#ifdef OHOS_AI
+bool RenderFrameImpl::CloseImageOverlaySelection() {
+  if (GetFrameHost()) {
+    bool result = false;
+    GetFrameHost()->CloseImageOverlaySelection(&result);
+    return result;
+  }
+  return false;
+}
+#endif
+
 void RenderFrameImpl::AddMessageToConsole(
     blink::mojom::ConsoleMessageLevel level,
     const std::string& message) {

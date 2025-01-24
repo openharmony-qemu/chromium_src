@@ -671,6 +671,7 @@ class NWebImpl : public NWeb {
 
 #ifdef OHOS_AI
   void OnTextSelected() override;
+  void OnDestroyImageAnalyzerOverlay() override;
 #endif
 
 #ifdef OHOS_LOGGER_REPORT

@@ -224,7 +224,7 @@ a {
   margin-inline-start: 24px;
 }
 
-button:hover {
+.using-mouse button:hover {
   background-color:rgba(0,0,0,0.1);
 }
 
@@ -237,6 +237,15 @@ button:active {
 }
 
 @media (prefers-color-scheme: dark) {
+
+  a {
+    color: #5291ff;
+  }
+ 
+  body {
+    background-color: #202224;
+  }
+
   .hw-istablet {
     background-color: #202224;
   }
@@ -276,15 +285,15 @@ button:active {
   }
 
   .hw-link {
-    color: #317AF7;
+    color: #5291ff;
   }
 
   .hw-istablet .hw-link {
-    color: #317AF7;
+    color: #5291ff;
   }
 
   .hw-ispc .hw-link {
-    color: #317AF7;
+    color: #5291ff;
   }
 
   #hw_block_img {
@@ -300,10 +309,10 @@ button:active {
   }
 
   button {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0);
   }
 
-  button:hover {
+  .using-mouse button:hover {
     background-color: rgba(255, 255, 255, 0.2);
   }
 

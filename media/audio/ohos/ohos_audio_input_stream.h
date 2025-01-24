@@ -13,9 +13,11 @@
 #include "media/audio/ohos/ohos_audio_capturer_source.h"
 #include "media/audio/ohos/ohos_audio_manager.h"
 #include "media/base/audio_parameters.h"
+#include "third_party/webrtc/modules/desktop_capture/ohos/base_audio_capturer_source.h"
 
 namespace media {
 using namespace OHOS::NWeb;
+using namespace webrtc;
 
 class OHOSAudioManager;
 
@@ -48,6 +50,9 @@ class OHOSAudioInputStream : public AudioInputStream {
   scoped_refptr<OHOSAudioCapturerSource> capturer_source_;
   double volume_ = 1.0;
   bool automatic_gain_control_ = false;
+
+  std::unique_ptr<CaptureCallbackAdapter> base_callback_adapter_;
+  scoped_refptr<BaseAudioCapturerSource> base_capturer_source_;
 };
 
 }  // namespace media

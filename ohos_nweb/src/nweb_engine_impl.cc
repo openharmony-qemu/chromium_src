@@ -197,4 +197,17 @@ bool NWebEngineImpl::CheckArkWebRomApiLevel(int apiLevel) {
   return g_nweb_engine_impl->GetArkWebRomApiLevel() >= apiLevel;
 }
 
+void NWebEngineImpl::SetProxyOverride(
+    const std::vector<std::string>& proxyUrls,
+    const std::vector<std::string>& proxySchemeFilters,
+    const std::vector<std::string>& bypassRules,
+    const bool& reverseBypass,
+    std::shared_ptr<NWebProxyChangedCallback> callback) {
+  NWebImpl::SetProxyOverride(proxyUrls, proxySchemeFilters, bypassRules, reverseBypass, callback);
+    }
+
+void NWebEngineImpl::RemoveProxyOverride(std::shared_ptr<NWebProxyChangedCallback> callback) {
+  NWebImpl::RemoveProxyOverride(callback);
+}
+
 } // namespace OHOS::NWeb

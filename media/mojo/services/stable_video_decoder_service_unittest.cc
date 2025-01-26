@@ -179,6 +179,9 @@ class MockVideoDecoder : public mojom::VideoDecoder {
                void(mojom::DecoderBufferPtr buffer, DecodeCallback callback));
   MOCK_METHOD1(Reset, void(ResetCallback callback));
   MOCK_METHOD1(OnOverlayInfoChanged, void(const OverlayInfo& overlay_info));
+#ifdef OHOS_VIDEO_ASSISTANT
+  MOCK_METHOD1(SetVideoSurface, void(int32 widget_id));
+#endif // OHOS_VIDEO_ASSISTANT
 
  private:
   mojo::AssociatedRemote<mojom::VideoDecoderClient> client_remote_;

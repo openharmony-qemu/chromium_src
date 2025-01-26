@@ -92,6 +92,9 @@ class VideoFrameFactoryImplTest : public testing::Test {
     scoped_refptr<CodecWrapperImpl> codec = nullptr;
     auto output_buffer = std::make_unique<CodecOutputBuffer>(
         std::move(codec), 0, video_frame_params_.coded_size,
+#ifdef OHOS_VIDEO_ASSISTANT
+        false,
+#endif // OHOS_VIDEO_ASSISTANT
         video_frame_params_.color_space);
     ASSERT_TRUE(VideoFrame::IsValidConfig(
         PIXEL_FORMAT_ARGB, VideoFrame::STORAGE_OPAQUE,
@@ -134,7 +137,11 @@ TEST_F(VideoFrameFactoryImplTest, CreateVideoFrame) {
   gfx::Size natural_size(0, 0);
   scoped_refptr<CodecWrapperImpl> codec = nullptr;
   auto output_buffer = std::make_unique<CodecOutputBuffer>(
-      std::move(codec), 0, coded_size, gfx::ColorSpace());
+      std::move(codec), 0, coded_size,
+#ifdef OHOS_VIDEO_ASSISTANT
+      false,
+#endif // OHOS_VIDEO_ASSISTANT
+      gfx::ColorSpace());
   ASSERT_FALSE(VideoFrame::IsValidConfig(PIXEL_FORMAT_ARGB,
                                          VideoFrame::STORAGE_OPAQUE, coded_size,
                                          visible_rect, natural_size));

@@ -185,10 +185,10 @@ class PipelineImplTest : public ::testing::Test {
       Pipeline::StartType start_type = Pipeline::StartType::kNormal) {
     EXPECT_CALL(callbacks_, OnWaiting(_)).Times(0);
     pipeline_->Start(start_type, demuxer_.get(), &callbacks_,
-                     base::BindOnce(&CallbackHelper::OnStart,
 #ifdef OHOS_VIDEO_ASSISTANT
-                                    RequestSurfaceCB(),
+                     RequestSurfaceCB(),
 #endif // OHOS_VIDEO_ASSISTANT
+                     base::BindOnce(&CallbackHelper::OnStart,
                                     base::Unretained(&callbacks_)));
   }
 

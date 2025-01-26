@@ -61,7 +61,12 @@ class PipelineControllerTest : public ::testing::Test, public Pipeline::Client {
     EXPECT_CALL(*pipeline_, OnStart(_, _, _, _))
         .WillOnce(MoveArg<3>(&start_cb));
     pipeline_controller_.Start(Pipeline::StartType::kNormal, &demuxer_, this,
-                               is_streaming, is_static);
+                               is_streaming,
+#ifdef OHOS_VIDEO_ASSISTANT
+                               RequestSurfaceCB(),
+#endif // OHOS_VIDEO_ASSISTANT
+                               is_static);
+
     Mock::VerifyAndClear(pipeline_);
     EXPECT_CALL(*pipeline_, IsSuspended())
         .Times(AnyNumber())
@@ -113,7 +118,11 @@ class PipelineControllerTest : public ::testing::Test, public Pipeline::Client {
             DoAll(SaveArg<0>(&last_resume_time_), MoveArg<1>(&resume_cb)));
     EXPECT_CALL(*pipeline_, GetMediaTime())
         .WillRepeatedly(Return(base::TimeDelta()));
+#ifdef OHOS_VIDEO_ASSISTANT
+    pipeline_controller_.Resume(RequestSurfaceCB());
+#else
     pipeline_controller_.Resume();
+#endif // OHOS_VIDEO_ASSISTANT
     Mock::VerifyAndClear(pipeline_);
     EXPECT_CALL(*pipeline_, IsSuspended())
         .Times(AnyNumber())
@@ -189,7 +198,11 @@ TEST_F(PipelineControllerTest, StartSuspendedSeekAndResume) {
   PipelineStatusCallback start_cb;
   EXPECT_CALL(*pipeline_, OnStart(_, _, _, _)).WillOnce(MoveArg<3>(&start_cb));
   pipeline_controller_.Start(Pipeline::StartType::kSuspendAfterMetadata,
-                             &demuxer_, this, false, true);
+                             &demuxer_, this, false,
+#ifdef OHOS_VIDEO_ASSISTANT
+                             RequestSurfaceCB(),
+#endif // OHOS_VIDEO_ASSISTANT
+                             true);
   Mock::VerifyAndClear(pipeline_);
 
   // Initiate a seek before the pipeline completes suspended startup.
@@ -230,7 +243,11 @@ TEST_F(PipelineControllerTest, StartSuspendedAndResume) {
   PipelineStatusCallback start_cb;
   EXPECT_CALL(*pipeline_, OnStart(_, _, _, _)).WillOnce(MoveArg<3>(&start_cb));
   pipeline_controller_.Start(Pipeline::StartType::kSuspendAfterMetadata,
-                             &demuxer_, this, false, true);
+                             &demuxer_, this, false,
+#ifdef OHOS_VIDEO_ASSISTANT
+                             RequestSurfaceCB(),
+#endif // OHOS_VIDEO_ASSISTANT
+                             true);
   Mock::VerifyAndClear(pipeline_);
   EXPECT_CALL(*pipeline_, IsSuspended()).WillRepeatedly(Return(true));
   EXPECT_FALSE(pipeline_controller_.IsStable());
@@ -545,7 +562,11 @@ TEST_F(PipelineControllerTest, ResumePlaybackDuringSwitchingTracksState) {
   EXPECT_CALL(*pipeline_, OnResume(_, _)).Times(1);
 
   pipeline_controller_.OnSelectedVideoTrackChanged({});
+#ifdef OHOS_VIDEO_ASSISTANT
+    pipeline_controller_.Resume(RequestSurfaceCB());
+#else
   pipeline_controller_.Resume();
+#endif // OHOS_VIDEO_ASSISTANT
   pipeline_controller_.FireOnTrackChangeCompleteForTesting(
       PipelineController::State::SUSPENDED);
 }

@@ -407,10 +407,11 @@ void NWebEventHandler::WebSendMouseEvent(const std::shared_ptr<OHOS::NWeb::NWebM
       last_mouse_y_ = mouseInfo.y;
       browser_->GetHost()->SendMouseMoveEvent(mouseInfo, false);
     } else if (NWebInputDelegate::IsMouseLeave(mouseEvent->GetAction())) {
-      if (NWebInputDelegate::IsMouseUp(previous_action_) || previous_button_ == MBT_RIGHT) {
+      if (previous_button_ == MBT_LEFT || previous_button_ == MBT_RIGHT) {
         browser_->GetHost()->SendMouseMoveEvent(mouseInfo, true);
       }
     } else {
+      previous_action_= mouseEvent->GetAction();
       LOG(INFO) << "mouse event action: " << mouseEvent->GetAction();
     }
   }

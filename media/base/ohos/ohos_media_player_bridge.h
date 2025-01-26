@@ -192,6 +192,9 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
 
 #ifdef OHOS_VIDEO_ASSISTANT
   int32_t new_surface_id_ = -1;
+  int32_t pending_new_surface_id_ = -1;
+  int32_t video_width_ = 0;
+  int32_t video_height_ = 0;
 #endif // OHOS_VIDEO_ASSISTANT
 
   base::WeakPtrFactory<OHOSMediaPlayerBridge> weak_factory_{this};

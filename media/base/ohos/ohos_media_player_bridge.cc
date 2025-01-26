@@ -226,21 +226,6 @@ void OHOSMediaPlayerBridge::SetPlayerSurface() {
   if (ret != 0) {
     LOG(ERROR) << "Prepare error::ret=" << ret << " url=" << url_.spec();
   }
-
-#ifdef OHOS_VIDEO_ASSISTANT
-  if (new_surface_id_ > 0) {
-    void* native_window =
-        NWebNativeWindowTracker::Get()->GetNativeWindow(new_surface_id_);
-    if (native_window) {
-      ret = player_->SetVideoSurfaceNew(native_window);
-      if (ret != 0) {
-        LOG(ERROR) << "SetVideoSurfaceNew error::ret = " << ret
-          << ", new_surface_id_ = " << new_surface_id_
-          << ", native_window = " << native_window;
-      }
-    }
-  }
-#endif // OHOS_VIDEO_ASSISTANT
 }
 
 void OHOSMediaPlayerBridge::StartInternal() {
@@ -555,6 +540,23 @@ void OHOSMediaPlayerBridge::OnBufferAvailable(
 }
 
 void OHOSMediaPlayerBridge::OnVideoSizeChanged(int32_t width, int32_t height) {
+#ifdef OHOS_VIDEO_ASSISTANT
+  video_width_ = width;
+  video_height_ = height;
+  if (pending_new_surface_id_ > 0 && video_width_ > 0 && video_height_ > 0) {
+    pending_new_surface_id_ = -1;
+    void* native_window =
+        NWebNativeWindowTracker::Get()->GetNativeWindow(new_surface_id_);
+    if (native_window) {
+      int32_t ret = player_->SetVideoSurfaceNew(native_window);
+      if (ret != 0) {
+        LOG(ERROR) << "SetVideoSurfaceNew error::ret = " << ret
+          << ", new_surface_id_ = " << new_surface_id_
+          << ", native_window = " << native_window;
+      }
+    }
+  }
+#endif // OHOS_VIDEO_ASSISTANT
   if (client_) {
     client_->OnVideoSizeChanged(width, height);
   }
@@ -609,13 +611,17 @@ void OHOSMediaPlayerBridge::SetVideoSurfaceNew(int32_t surface_id) {
   }
   new_surface_id_ = surface_id;
   void* native_window = nullptr;
-  if (player_) {
+  if (player_ && video_width_ > 0 && video_height_ > 0) {
     native_window = NWebNativeWindowTracker::Get()->GetNativeWindow(surface_id);
   } else {
-    Prepare();
+    if (!player_) {
+      Prepare();
+    }
   }
   if (native_window) {
     player_->SetVideoSurfaceNew(native_window);
+  } else {
+    pending_new_surface_id_ = new_surface_id_;
   }
 }
 

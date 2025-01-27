@@ -901,6 +901,16 @@ void NavigationURLLoaderImpl::OnReceiveResponse(
                                                     head_->mime_type);
   bool known_mime_type = blink::IsSupportedMimeType(head_->mime_type);
 
+#if defined(OHOS_PDF)
+  // Change navigation of PDF file to download temporary until extensions
+  // support in incognito mode.
+  if (browser_context_->IsOffTheRecord() &&
+      (head_->mime_type == "application/pdf" ||
+       head_->mime_type == "text/pdf")) {
+    must_download = true;
+  }
+#endif // defined(OHOS_PDF)
+
 #if BUILDFLAG(ENABLE_PLUGINS)
   if (!head_->intercepted_by_plugin && !must_download && !known_mime_type) {
     // No plugin throttles intercepted the response. Ask if the plugin

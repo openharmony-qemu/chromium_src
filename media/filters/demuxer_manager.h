@@ -128,6 +128,7 @@ class MEDIA_EXPORT DemuxerManager {
 
   void OnPipelineError(PipelineStatus error);
   void SetLoadedUrl(GURL url);
+  const GURL& LoadedUrl() const;
 #if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   void PopulateHlsHistograms(bool cryptographic_url);
   PipelineStatus SelectHlsFallbackMechanism(bool cryptographic_url);
@@ -150,7 +151,8 @@ class MEDIA_EXPORT DemuxerManager {
                                uint32_t initial_preload,
                                uint32_t media_source_type,
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
-                               DemuxerCreatedCB on_demuxer_created);
+                               DemuxerCreatedCB on_demuxer_created,
+                               base::flat_map<std::string, std::string> headers);
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   void SetAllowMediaPlayerRendererCredentials(bool allow);
@@ -188,7 +190,9 @@ class MEDIA_EXPORT DemuxerManager {
 #endif
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
-  std::unique_ptr<media::Demuxer> CreateMediaUrlDemuxer(bool hls_content);
+  std::unique_ptr<media::Demuxer> CreateMediaUrlDemuxer(
+    bool hls_content,
+    base::flat_map<std::string, std::string> headers);
 #endif  // BUILDFLAG(IS_ANDROID)
 
   void SetDemuxer(std::unique_ptr<Demuxer> demuxer);

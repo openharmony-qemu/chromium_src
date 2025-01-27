@@ -10,6 +10,7 @@
 #include "base/functional/callback_helpers.h"
 #include "content/browser/media/ohos/ohos_media_player_renderer_web_contents_observer.h"
 #include "content/browser/media/session/media_session_impl.h"
+#include "content/browser/media/ohos/ohos_media_resource_getter_impl.h"
 #include "content/browser/web_contents/web_contents_impl.h"
 #include "content/public/browser/browser_context.h"
 #include "content/public/browser/browser_task_traits.h"
@@ -48,6 +49,8 @@ OHOSMediaPlayerRenderer::OHOSMediaPlayerRenderer(
     mojo::PendingRemote<ClientExtension> client_extension_remote)
     : client_extension_(std::move(client_extension_remote)),
       has_error_(false),
+      render_process_id_(process_id),
+      routing_id_(routing_id),
       volume_(kDefaultVolume),
       web_contents_(web_contents->GetWeakPtr()),
       renderer_extension_receiver_(this,
@@ -96,8 +99,9 @@ void OHOSMediaPlayerRenderer::CreateMediaPlayer(
   media_player_.reset(new media::OHOSMediaPlayerBridge(
       url_params.media_url, url_params.site_for_cookies,
       url_params.top_frame_origin, user_agent,
+      url_params.has_storage_access,
       false,  // hide_url_log
-      this, url_params.allow_credentials, url_params.is_hls));
+      this, url_params.allow_credentials, url_params.is_hls, url_params.headers));
   init_cb_ = std::move(init_cb);
   int32_t ret = media_player_->Initialize();
   if (ret != 0) {
@@ -178,6 +182,24 @@ void OHOSMediaPlayerRenderer::OnFrameAvailable(int fd,
     ohos_buffer->buffer_fd = mojo::PlatformHandle(std::move(buffer_fd));
     client_extension_->OnFrameUpdate(std::move(ohos_buffer));
   }
+}
+
+media::OHOSMediaResourceGetter* OHOSMediaPlayerRenderer::GetMediaResourceGetter() {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  if (!media_resource_getter_.get()) {
+    RenderProcessHost* host = RenderProcessHost::FromID(render_process_id_);
+
+    // The RenderFrameHost/RenderProcessHost may have been destroyed already,
+    // as there might be a delay between the frame closing and
+    // MojoRendererService receiving a connection closing error.
+    if (!host)
+      return nullptr;
+
+    BrowserContext* context = host->GetBrowserContext();
+    media_resource_getter_ = std::make_unique<OHOSMediaResourceGetterImpl>(
+        context, render_process_id_, routing_id_);
+  }
+  return media_resource_getter_.get();
 }
 
 void OHOSMediaPlayerRenderer::OnMediaDurationChanged(base::TimeDelta duration) {

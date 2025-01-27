@@ -24,10 +24,12 @@ OHOSMediaPlayerBridge::OHOSMediaPlayerBridge(
     const net::SiteForCookies& site_for_cookies,
     const url::Origin& top_frame_origin,
     const std::string& user_agent,
+    bool has_storage_access,
     bool hide_url_log,
     Client* client,
     bool allow_credentials,
-    bool is_hls)
+    bool is_hls,
+    const base::flat_map<std::string, std::string> headers)
     : client_(client),
       url_(url),
       prepared_(false),
@@ -36,7 +38,15 @@ OHOSMediaPlayerBridge::OHOSMediaPlayerBridge(
       should_seek_on_prepare_(false),
       should_set_volume_on_prepare_(false),
       seeking_on_playback_complete_(false),
-      seeking_back_complete_(false) {
+      seeking_back_complete_(false),
+      headers_(std::move(headers)),
+      user_agent_(user_agent),
+      site_for_cookies_(site_for_cookies),
+      pending_retrieve_cookies_(false),
+      should_prepare_on_retrieved_cookies_(false),
+      has_storage_access_(has_storage_access),
+      top_frame_origin_(top_frame_origin),
+      allow_credentials_(allow_credentials) {
 #if defined(RK3568)
   is_hls_ = is_hls;
 #endif
@@ -51,7 +61,69 @@ int32_t OHOSMediaPlayerBridge::Initialize() {
     NOTREACHED();
     return PLAYER_INIT_ERROR;
   }
+   if (allow_credentials_ && client_ != nullptr) {
+    media::OHOSMediaResourceGetter* resource_getter_ = client_->GetMediaResourceGetter();
+    if (resource_getter_) {
+      pending_retrieve_cookies_ = true;
+      resource_getter_->GetCookies(
+          url_, site_for_cookies_, top_frame_origin_, has_storage_access_,
+          base::BindOnce(&OHOSMediaPlayerBridge::OnCookiesRetrieved,
+                        weak_factory_.GetWeakPtr()));
+    }
+  }
   return PLAYER_INIT_OK;
+}
+
+void OHOSMediaPlayerBridge::OnCookiesRetrieved(const std::string& cookies) {
+  cookies_ = cookies;
+  pending_retrieve_cookies_ = false;
+  if (client_ == nullptr || client_->GetMediaResourceGetter() == nullptr) {
+    return;
+  }
+  client_->GetMediaResourceGetter()->GetAuthCredentials(
+      url_, base::BindOnce(&OHOSMediaPlayerBridge::OnAuthCredentialsRetrieved,
+                           weak_factory_.GetWeakPtr()));
+
+  if (should_prepare_on_retrieved_cookies_) {
+    should_prepare_on_retrieved_cookies_ = false;
+    if (!player_) {
+      LOG(ERROR) << "player_ is null";
+      return;
+    }
+    auto player_headers = GetPlayerHeadersInternal();
+    int32_t ret = player_->SetMediaSourceHeader(url_.spec(), player_headers);
+    if (ret != 0) {
+      LOG(ERROR) << "SetPlayerSourceHeader error:ret= " << ret;
+      return;
+    }
+    SetPlayerSurface();
+  }
+}
+
+void OHOSMediaPlayerBridge::OnAuthCredentialsRetrieved(const std::u16string& username,
+    const std::u16string& password) {
+  GURL::ReplacementsW replacements;
+  if (!username.empty()) {
+    replacements.SetUsernameStr(username);
+    if (!password.empty()) {
+      replacements.SetPasswordStr(password);
+    }
+    url_ = url_.ReplaceComponents(replacements);
+  }
+}
+
+std::map<std::string, std::string> OHOSMediaPlayerBridge::GetPlayerHeadersInternal() {
+  std::map<std::string, std::string> player_headers;
+  if (!cookies_.empty()) {
+    player_headers.insert(std::pair<std::string, std::string>("Cookie", cookies_));
+  }
+  if (!user_agent_.empty()) {
+    player_headers.insert(std::pair<std::string, std::string>("User-Agent", user_agent_));
+  }
+  for (const auto& entry : headers_) {
+    player_headers[entry.first] = entry.second;
+  }
+  return player_headers;
 }
 
 void OHOSMediaPlayerBridge::Start() {
@@ -99,13 +171,26 @@ void OHOSMediaPlayerBridge::Prepare() {
   if (url_.SchemeIsFile()) {
     ret = SetFdSource(url_.GetContent());
   } else {
-    ret = player_->SetSource(url_.spec());
+    if (pending_retrieve_cookies_) {
+      should_prepare_on_retrieved_cookies_ = true;
+      return;
+    }
+    auto player_headers = GetPlayerHeadersInternal();
+    ret = player_->SetMediaSourceHeader(url_.spec(), player_headers);
   }
   if (ret != 0) {
     LOG(ERROR) << "SetSource error::ret=" << ret;
     return;
   }
+  SetPlayerSurface();
 
+}
+
+void OHOSMediaPlayerBridge::SetPlayerSurface() {
+  if (!player_) {
+    LOG(ERROR) << "OHOSMediaPlayerBridge SetPlayerSurface player is null";
+    return;
+  }
   consumer_surface_ = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                           .CreateConsumerSurfaceAdapter();
   if (consumer_surface_ == nullptr) {
@@ -119,7 +204,7 @@ void OHOSMediaPlayerBridge::Prepare() {
       surfaceFormat,
       std::to_string(OHOS::NWeb::PixelFormatAdapter::PIXEL_FMT_RGBA_8888));
   consumer_surface_->SetQueueSize(QUEUE_SIZE);
-  ret = player_->SetVideoSurface(consumer_surface_);
+  int32_t ret = player_->SetVideoSurface(consumer_surface_);
   if (ret != 0) {
     LOG(ERROR) << "SetVideoSurface error::ret=" << ret;
     consumer_surface_ = nullptr;

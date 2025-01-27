@@ -6,8 +6,10 @@
 #define MEDIA_BASE_OHOS_MEDIA_PLAYER_BRIDGE_H_
 
 #include <deque>
+#include <map>
 
 #include "base/memory/weak_ptr.h"
+#include "base/containers/flat_map.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/timer/timer.h"
 #include "graphic_adapter.h"
@@ -16,6 +18,7 @@
 #include "net/cookies/site_for_cookies.h"
 #include "url/gurl.h"
 #include "url/origin.h"
+#include "media/base/ohos/ohos_media_resource_getter.h"
 
 namespace media {
 class MEDIA_EXPORT OHOSMediaPlayerBridge {
@@ -48,6 +51,8 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
     virtual void OnAudioStateChanged(bool isAudible) = 0;
 
     virtual void OnPlayerSeekBack(base::TimeDelta back_time) = 0;
+
+    virtual OHOSMediaResourceGetter* GetMediaResourceGetter() = 0;
   };
 
   enum MediaErrorType {
@@ -62,10 +67,12 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
                         const net::SiteForCookies& site_for_cookies,
                         const url::Origin& top_frame_origin,
                         const std::string& user_agent,
+                        bool has_storage_access,
                         bool hide_url_log,
                         Client* client,
                         bool allow_credentials,
-                        bool is_hls);
+                        bool is_hls,
+                        const base::flat_map<std::string, std::string> headers);
   virtual ~OHOSMediaPlayerBridge();
 
   OHOSMediaPlayerBridge(const OHOSMediaPlayerBridge&) = delete;
@@ -99,6 +106,21 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   void SeekInternal(base::TimeDelta time);
   void PropagateDuration(base::TimeDelta duration);
   bool IsAudible(float volume);
+
+  // Callback function passed to `resource_getter_`. Called when the cookies
+  // are retrieved.
+  void OnCookiesRetrieved(const std::string& cookies);
+
+  // Callback function passed to `resource_getter_`. Called when the auth
+  // credentials are retrieved.
+  void OnAuthCredentialsRetrieved(const std::u16string& username,
+                                  const std::u16string& password);
+
+  // Get media player header
+  std::map<std::string, std::string> GetPlayerHeadersInternal();
+
+  // Set media player surface and register listener
+  void SetPlayerSurface();
 
   const std::string surfaceFormat = "SURFACE_FORMAT";
   std::unique_ptr<OHOS::NWeb::PlayerAdapter> player_ = nullptr;

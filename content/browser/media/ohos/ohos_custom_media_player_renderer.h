@@ -94,6 +94,7 @@ class CONTENT_EXPORT OHOSCustomMediaPlayerRenderer
   void InitiateScopedSurfaceRequest(
       InitiateScopedSurfaceRequestCallback callback) override {}
   void FinishPaint(int32_t fd) override {}
+  media::OHOSMediaResourceGetter* GetMediaResourceGetter() override;
 
   void OnTimeUpdate(base::TimeDelta media_time);
   void OnBufferingStateChange(media::BufferingState state);

@@ -65,6 +65,11 @@ class MEDIA_EXPORT MediaResource {
   // Demuxer* it is dealing with.
   virtual void ForwardDurationChangeToDemuxerHost(base::TimeDelta duration);
 
+  // This method is only used with the MediaUrlDemuxer, to set headers coming
+  // from media url params.
+  virtual void SetHeaders(
+      const base::flat_map<std::string, std::string>& headers);
+
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
   virtual void ForwardBufferedEndTimeChangeToDemuxerHost(
       base::TimeDelta buffered_time) {}

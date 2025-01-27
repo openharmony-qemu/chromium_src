@@ -22,6 +22,8 @@ if (is_ohos) {
       "ohos_media_codec_bridge_impl.cc",
       "ohos_media_codec_bridge_impl.h",
       "ohos_media_codec_bridge.h",
+      "ohos_media_resource_getter.cc",
+      "ohos_media_resource_getter.h",
       "ohos_media_codec_util.cc",
       "ohos_media_codec_util.h",
       "buffer_flush_config_adapter_impl.cc",

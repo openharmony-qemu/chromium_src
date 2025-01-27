@@ -85,6 +85,7 @@ void MojoRendererService::Initialize(
   media_resource_->SetMediaSourceType(
       media_url_params->custom_media_url_params->media_source_type);
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+  media_resource_->SetHeaders(media_url_params->headers);
   renderer_->Initialize(
       media_resource_.get(), this,
 #ifdef OHOS_VIDEO_ASSISTANT

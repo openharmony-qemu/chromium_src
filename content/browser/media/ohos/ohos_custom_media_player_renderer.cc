@@ -494,6 +494,10 @@ media::RendererType OHOSCustomMediaPlayerRenderer::GetRendererType() {
   return media::RendererType::kOHOSCustomMediaPlayer;
 }
 
+media::OHOSMediaResourceGetter* OHOSCustomMediaPlayerRenderer::GetMediaResourceGetter() {
+  return nullptr;
+}
+
 void OHOSCustomMediaPlayerRenderer::OnMediaDurationChanged(base::TimeDelta duration) {
   // For HLS streams, the reported duration may be zero for infinite streams.
   // See http://crbug.com/501213.

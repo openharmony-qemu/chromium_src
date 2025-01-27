@@ -293,12 +293,34 @@ Dispatcher::Dispatcher(std::unique_ptr<DispatcherDelegate> delegate)
 
 #if defined(OHOS_ARKWEB_EXTENSIONS)
   // Register WebSecurityPolicy allowlists for the arkweb-extension:// scheme.
-  WebString extension_scheme(WebString::FromASCII(kArkwebExtensionScheme));
-#else
+  WebString arkWebExtension_scheme(
+      WebString::FromASCII(kArkwebExtensionScheme));
+  WebSecurityPolicy::RegisterURLSchemeAsSupportingFetchAPI(
+      arkWebExtension_scheme);
+  // Extension resources, when loaded as the top-level document, should bypass
+  // Blink's strict first-party origin checks.
+  WebSecurityPolicy::RegisterURLSchemeAsFirstPartyWhenTopLevel(
+      arkWebExtension_scheme);
+ 
+  // Disallow running javascript URLs on the chrome-extension scheme.
+  WebSecurityPolicy::RegisterURLSchemeAsNotAllowingJavascriptURLs(
+      arkWebExtension_scheme);
+ 
+  if (base::FeatureList::IsEnabled(
+          extensions_features::kAllowSharedArrayBuffersUnconditionally)) {
+    WebSecurityPolicy::RegisterURLSchemeAsAllowingSharedArrayBuffers(
+        arkWebExtension_scheme);
+  }
+ 
+  // chrome-extension: resources should be allowed to register ServiceWorkers.
+  WebSecurityPolicy::RegisterURLSchemeAsAllowingServiceWorkers(
+      arkWebExtension_scheme);
+ 
+  WebSecurityPolicy::RegisterURLSchemeAsAllowingWasmEvalCSP(
+      arkWebExtension_scheme);
+#endif
   // Register WebSecurityPolicy allowlists for the chrome-extension:// scheme.
   WebString extension_scheme(WebString::FromASCII(kExtensionScheme));
-#endif
-
   // Extension resources are HTTP-like and safe to expose to the fetch API. The
   // rules for the fetch API are consistent with XHR.
   WebSecurityPolicy::RegisterURLSchemeAsSupportingFetchAPI(extension_scheme);

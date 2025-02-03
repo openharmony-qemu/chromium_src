@@ -227,8 +227,6 @@ bool OHOSAudioOutputStream::Open() {
     media::MediaContentType contentType = weakMediaSession_.get()->getMediaContentType();
     if (contentType == media::MediaContentType::Transient) {
       rendererOptions->concurrency_mode_ = AudioAdapterConcurrencyMode::DUCK_OTHERS;
-    } else if (contentType == media::MediaContentType::Snippet) {
-      rendererOptions->concurrency_mode_ = AudioAdapterConcurrencyMode::PAUSE_OTHERS;
     }
   }
 

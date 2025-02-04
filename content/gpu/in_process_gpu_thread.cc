@@ -32,6 +32,8 @@
 
 #if BUILDFLAG(IS_OHOS)
 const int MAX_FILE_LENGTH = 32* 1024 * 1024;
+static int retry_times = 0;
+const int retry_delay_ms = 100;
 #endif
 
 namespace content {
@@ -100,14 +102,8 @@ void InProcessGpuThread::Init() {
 
   gpu_process_->set_main_thread(child_thread);
 #if BUILDFLAG(IS_OHOS)
-  using namespace OHOS::NWeb;
-
-  auto tid = GetGpuThreadId(base::GetCurrentProcId());
-  if(tid > 0) {
-    ResSchedClientAdapter::ReportKeyThread(
-      ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(),
-      tid, ResSchedRoleAdapter::IMPORTANT_DISPLAY);
-  }
+  retry_times = 0;
+  TryForReportThread();
 #endif
 }
 
@@ -123,7 +119,23 @@ base::Thread* CreateInProcessGpuThread(
 }
 
 #if BUILDFLAG(IS_OHOS)
-int32_t InProcessGpuThread::GetGpuThreadId(int32_t pid)
+void TryForReportThread() {
+  using namespace OHOS::NWeb;
+  auto tid = GetGpuThreadId(base::GetCurrentProcId());
+  if (tid > 0) {
+    ResSchedClientAdapter::ReportKeyThread(
+      ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(),
+      tid, ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+    return;
+  }
+  if (retry_times < 4) {
+    retry_times = retry_times + 1;
+    base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(FROM_HERE, base::BindOnce(&TryForReportThread),
+      base::Milliseconds(retry_delay_ms));
+  }
+}
+
+int32_t GetGpuThreadId(int32_t pid)
 {
   int32_t tid = GetTidListByName(pid, "gpu-work-server");
   if (tid < 0) {
@@ -132,7 +144,7 @@ int32_t InProcessGpuThread::GetGpuThreadId(int32_t pid)
   return tid;
 }
 
-int32_t InProcessGpuThread::GetTidListByName(int32_t pid, const std::string& thread_name)
+int32_t GetTidListByName(int32_t pid, const std::string& thread_name)
 {
   int32_t tid = -1;
   if (pid <= 0) {
@@ -167,7 +179,7 @@ int32_t InProcessGpuThread::GetTidListByName(int32_t pid, const std::string& thr
   return tid;
 }
 
-bool InProcessGpuThread::LoadStringFromFile(const std::string& file_path, std::string& content)
+bool LoadStringFromFile(const std::string& file_path, std::string& content)
 {
   std::ifstream file(file_path.c_str());
   if (!file.is_open()) {

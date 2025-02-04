@@ -129,9 +129,13 @@ bool StartSandboxWindows(const sandbox::SandboxInterfaceInfo*);
 #endif
 
 #if BUILDFLAG(IS_OHOS)
+void TryForReportThread();
 int32_t GetTidListByName(int32_t pid, const std::string& thread_name);
 bool LoadStringFromFile(const std::string& file_path, std::string& content);
 const int MAX_FILE_LENGTH = 32* 1024 * 1024;
+static int retry_times = 0;
+const int retry_delay_ms = 100;
+const int retry_max_times = 4;
 #endif
 
 class ContentSandboxHelper : public gpu::GpuSandboxHelper {
@@ -426,26 +430,8 @@ int GpuMain(MainFunctionParams parameters) {
       switches::kGpuProcess);
 
 #if BUILDFLAG(IS_OHOS)
-  using namespace OHOS::NWeb;
-
-  auto pid = base::GetCurrentProcId();
-  int32_t tid = GetTidListByName(pid, "gpu-work-server");
-  if (tid < 0) {
-    tid = GetTidListByName(pid, "mali-cmar-backe");
-  }
-  if(tid > 0) {
-    auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
-      switches::kProcessType);
-    if (type == switches::kGpuProcess) {
-      NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
-        ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(),
-        tid, ResSchedRoleAdapter::IMPORTANT_DISPLAY);
-    } else {
-      ResSchedClientAdapter::ReportKeyThread(
-        ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(),
-        tid, ResSchedRoleAdapter::IMPORTANT_DISPLAY);
-    }
-  }
+  retry_times = 0;
+  TryForReportThread();
 #endif
   base::HighResolutionTimerManager hi_res_timer_manager;
 
@@ -544,6 +530,34 @@ bool StartSandboxWindows(const sandbox::SandboxInterfaceInfo* sandbox_info) {
 #endif  // BUILDFLAG(IS_WIN)
 
 #if BUILDFLAG(IS_OHOS)
+void TryForReportThread() {
+  using namespace OHOS::NWeb;
+  auto pid = base::GetCurrentProcId();
+  int32_t tid = GetTidListByName(pid, "gpu-work-server");
+  if (tid < 0) {
+    tid = GetTidListByName(pid, "mali-cmar-backe");
+  }
+  if(tid > 0) {
+    auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
+      switches::kProcessType);
+    if (type == switches::kGpuProcess) {
+      NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
+        ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(),
+        tid, ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+    } else {
+      ResSchedClientAdapter::ReportKeyThread(
+        ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(),
+        tid, ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+    }
+    return;
+  }
+  if (retry_times < retry_max_times) {
+    retry_times = retry_times + 1;
+    base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(FROM_HERE, base::BindOnce(&TryForReportThread),
+      base::Milliseconds(retry_delay_ms));
+  }
+}
+
 int32_t GetTidListByName(int32_t pid, const std::string& thread_name)
 {
   int32_t tid = -1;

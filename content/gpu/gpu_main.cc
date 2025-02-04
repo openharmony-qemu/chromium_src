@@ -553,7 +553,7 @@ void TryForReportThread() {
   if (retry_times < 4) {
     retry_times = retry_times + 1;
     base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(FROM_HERE, base::BindOnce(&TryForReportThread),
-      base::Milliseconds(retry_times));
+      base::Milliseconds(retry_delay_ms));
   }
 }
 

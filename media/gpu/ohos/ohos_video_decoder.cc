@@ -291,8 +291,12 @@ void OhosVideoDecoder::OnCodecConfigured(
   OHOS::NWeb::DecoderFormat decoderFormat;
   decoderFormat.width = decoder_config_.coded_size().width();
   decoderFormat.height = decoder_config_.coded_size().height();
-  codec->ConfigureBridgeDecoder(decoderFormat,
-                                base::SequencedTaskRunner::GetCurrentDefault());
+  if (codec->ConfigureBridgeDecoder(decoderFormat, base::SequencedTaskRunner::GetCurrentDefault()) ==
+      DecoderAdapterCode::DECODER_ERROR) {
+      LOG(ERROR) << "OhosVideoDecoder::ConfigureBridgeDecoder failed.";
+      EnterTerminalState(State::kError, "Unable to config codec");
+      return;
+  }
   if (codec->SetBridgeOutputSurface(surface_bundle->GetOHOSNativeWindow()) ==
       DecoderAdapterCode::DECODER_ERROR) {
     LOG(ERROR) << "OhosVideoDecoder::SetBridgeOutputSurface failed.";

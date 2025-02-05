@@ -117,7 +117,7 @@ MediaCodecDecoderBridgeImpl::MediaCodecDecoderBridgeImpl(
   }
   videoDecoder_ =
       OhosAdapterHelper::GetInstance().CreateMediaCodecDecoderAdapter();
-  DecoderAdapterCode ret = CreateVideoBridgeDecoderByMime(codec_type);
+  DecoderAdapterCode ret = CreateVideoBridgeDecoderByName(codec_type);
   if (ret == DecoderAdapterCode::DECODER_ERROR) {
     LOG(ERROR) << "create decoder failed.";
     return;

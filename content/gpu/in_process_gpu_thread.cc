@@ -34,6 +34,7 @@
 const int MAX_FILE_LENGTH = 32* 1024 * 1024;
 static int retry_times = 0;
 const int retry_delay_ms = 100;
+const int retry_max_times = 4;
 #endif
 
 namespace content {
@@ -128,7 +129,7 @@ void TryForReportThread() {
       tid, ResSchedRoleAdapter::IMPORTANT_DISPLAY);
     return;
   }
-  if (retry_times < 4) {
+  if (retry_times < retry_max_times) {
     retry_times = retry_times + 1;
     base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(FROM_HERE, base::BindOnce(&TryForReportThread),
       base::Milliseconds(retry_delay_ms));

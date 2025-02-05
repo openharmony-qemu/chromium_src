@@ -646,6 +646,7 @@ class WebContents : public PageNavigator,
 #ifdef OHOS_CLIPBOARD
   virtual void SetTouchInsertHandleMenuShow(bool show) = 0;
   virtual bool GetTouchInsertHandleMenuShow() = 0;
+  virtual void CollapseAllFramesSelection() = 0;
 #endif
 
 #ifdef OHOS_ARKWEB_ADBLOCK

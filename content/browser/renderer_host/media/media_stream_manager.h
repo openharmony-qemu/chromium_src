@@ -69,6 +69,19 @@ class PermissionControllerImpl;
 
 enum TransferState { KEPT_ALIVE, GOT_OPEN_DEVICE };
 
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+enum ScreenCaptureState {
+  SCREEN_CAPTURE_OPENED = 0,
+  SCREEN_CAPTURE_STOPED,
+  SCREEN_CAPTURE_ABORTED,
+};
+
+struct SessionIdState {
+  std::string session_id;
+  ScreenCaptureState state;
+};
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+
 struct TransferStatus {
   TransferState state;
   base::TimeTicks start_time;
@@ -127,6 +140,11 @@ class CONTENT_EXPORT MediaStreamManager
   // Callback for testing.
   using GenerateStreamTestCallback =
       base::OnceCallback<bool(const blink::StreamControls&)>;
+
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  using ScreenCaptureCallback =
+      base::RepeatingCallback<void(int32_t nweb_id, const char* session_id, int32_t code)>;
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 
   // Adds |message| to native logs for outstanding device requests, for use by
   // render processes hosts whose corresponding render processes are requesting
@@ -448,6 +466,16 @@ class CONTENT_EXPORT MediaStreamManager
       mojo::PendingReceiver<media::mojom::VideoCaptureHost> receiver);
   size_t num_video_capture_hosts() const { return video_capture_hosts_.size(); }
 
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  static void SetScreenCaptureDelegateCallback(ScreenCaptureCallback callback);
+  static void SendScreenCaptureStateToNative(int32_t nweb_id, const std::string& session_id, int32_t state);
+  static ScreenCaptureCallback screen_capture_callback_;
+  void StopScreenCapture(int32_t nweb_id, const std::string& session_id);
+  void SendScreenCaptureState(const std::string& session_id,  int32_t state);
+  void PopSessionIdState(int32_t nweb_id, const std::string& session_id);
+  void OnScreenCaptureOpened(const std::string& session_id) override;
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+
  private:
   friend class MediaStreamManagerTest;
   FRIEND_TEST_ALL_PREFIXES(MediaStreamManagerTest, DesktopCaptureDeviceStopped);
@@ -754,6 +782,11 @@ class CONTENT_EXPORT MediaStreamManager
       const MediaDeviceEnumeration& enumeration,
       DeviceRequest* request);
 
+#if BUILDFLAG(IS_OHOS)
+    void PostVideoCaptureSessionBind(blink::mojom::MediaStreamType stream_type, 
+      media::VideoCaptureSessionId session_id, int process_id, int frame_id);
+#endif
+
 #if !BUILDFLAG(IS_ANDROID)
   // Defines a window of opportunity for the Web-application to decide
   // whether a display-surface which it's capturing should be focused.
@@ -814,6 +847,12 @@ class CONTENT_EXPORT MediaStreamManager
   mojo::UniqueReceiverSet<media::mojom::VideoCaptureHost> video_capture_hosts_;
 
   GenerateStreamTestCallback generate_stream_test_callback_;
+
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  std::map<std::string, int> nweb_id_maps_;
+  mutable std::mutex nweb_id_mutex_;
+  std::list<SessionIdState> session_id_state_;
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 };
 
 }  // namespace content

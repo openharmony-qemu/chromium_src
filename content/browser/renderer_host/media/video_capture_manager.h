@@ -241,6 +241,12 @@ class CONTENT_EXPORT VideoCaptureManager
                              int nWebId);
 #endif  // defined(OHOS_WEBRTC)
 
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  void StopScreenCapture(const std::string& session_id);
+  void ScreenCaptureOpened(const std::string& session_id);
+  void OnScreenCaptureOpened(const std::string& session_id);
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+
  private:
   class CaptureDeviceStartRequest;
 

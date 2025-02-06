@@ -286,6 +286,26 @@ class StoreWebArchiveResultCallbackImpl
   IMPLEMENT_REFCOUNTING(StoreWebArchiveResultCallbackImpl);
 };
 
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+class ScreenCaptureCallbackImpl
+    : public CefScreenCaptureCallback {
+ public:
+  ScreenCaptureCallbackImpl(
+      std::shared_ptr<NWebScreenCaptureDelegateCallback> callback)
+      : callback_(callback) {}
+  NO_SANITIZE("cfi-icall") void OnStateChange(int32_t nweb_id, const CefString& session_id, int32_t code) override {
+    if (callback_ != nullptr) {
+      callback_->OnStateChange(nweb_id, session_id.ToString().c_str(), code);
+    }
+  }
+
+ private:
+  std::shared_ptr<NWebScreenCaptureDelegateCallback> callback_;
+
+  IMPLEMENT_REFCOUNTING(ScreenCaptureCallbackImpl);
+};
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+
 class GetImagesCallbackImpl : public CefGetImagesCallback {
  public:
   explicit GetImagesCallbackImpl(
@@ -2882,6 +2902,30 @@ void NWebDelegate::CloseCamera() {
   GetBrowser()->GetHost()->CloseCamera();
 }
 #endif  // defined(OHOS_WEBRTC)
+
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+void NWebDelegate::StopScreenCapture(int32_t nweb_id, const char* session_id) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "StopScreenCapture can not get browser";
+    return;
+  }
+
+  GetBrowser()->GetHost()->StopScreenCapture(nweb_id, CefString(session_id));
+}
+
+void NWebDelegate::RegisterScreenCaptureDelegateListener(
+    std::shared_ptr<NWebScreenCaptureDelegateCallback> listener) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "RegisterScreenCaptureDelegateListener can not get browser";
+    return;
+  }
+
+  CefRefPtr<ScreenCaptureCallbackImpl> screenCaptureCb =
+      new ScreenCaptureCallbackImpl(listener);
+  GetBrowser()->GetHost()->RegisterScreenCaptureDelegateListener(
+      screenCaptureCb);
+}
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 
 #if defined(OHOS_COMPOSITE_RENDER)
 void NWebDelegate::SetShouldFrameSubmissionBeforeDraw(bool should) {

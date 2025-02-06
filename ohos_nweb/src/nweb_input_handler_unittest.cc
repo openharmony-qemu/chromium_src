@@ -766,6 +766,10 @@ class MockNWebDelegate : public NWebDelegateInterface {
 
   MOCK_METHOD(void, SendAccessibilityHoverEvent, (int x, int y), (override));
   MOCK_METHOD(void, RefreshAccessibilityManagerClickEvent, (), (override));
+
+#ifdef OHOS_EX_SCREEN_CAPTURE
+  MOCK_METHOD(void, StopScreenCapture, (int32_t nweb_id, const char* session_id), (override));
+#endif
 };
 
 class MockNWebTouchPointInfo : public NWebTouchPointInfo {

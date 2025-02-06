@@ -7458,6 +7458,27 @@ void WebContentsImpl::ChangeVisibilityOfQuickMenu() {
     render_view_host_delegate_view_->ChangeVisibilityOfQuickMenu();
   }
 }
+
+void WebContentsImpl::CollapseAllFramesSelection() {
+  for (FrameTreeNode* node : primary_frame_tree_.Nodes()) {
+    RenderFrameHostImpl* rfh = node->current_frame_host();
+    if (!rfh) {
+      continue;
+    }
+    if (!rfh->IsRenderFrameLive()) {
+      continue;
+    }
+    RenderWidgetHostImpl* render_widget_host = rfh->GetRenderWidgetHost();
+    if (!render_widget_host) {
+      continue;
+    }
+    auto* input_handler = render_widget_host->GetFrameWidgetInputHandler();
+    if (!input_handler) {
+      continue;
+    }
+    input_handler->CollapseSelection();
+  }
+}
 #endif
 
 void WebContentsImpl::ShowContextMenu(

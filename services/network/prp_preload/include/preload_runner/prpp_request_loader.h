@@ -16,6 +16,8 @@ namespace ohos_prp_preload {
 class PRPPRequestLoader;
 class PRRequestInfo;
 using ResPreloadedCB = base::OnceCallback<void(PRPPRequestLoader* prpp_loader)>;
+using ResetUrlRequestCallback =
+  base::OnceCallback<void(const std::shared_ptr<net::URLRequest>& url_request)>;
 
 constexpr int32_t PRPP_ERROR = -3000; // considering range of NET_ERROR in "net/base/net_error_list.h"
 class PRPPRequestLoader {
@@ -60,6 +62,9 @@ class PRPPRequestLoader {
 
   // set the EarlyResponseHeadersCallback of formal request
   virtual void SetEarlyResponseHeadersCallback(net::ResponseHeadersCallback callback) = 0;
+
+  // set the ResetUrlRequestCallback. if reinit prpp request, reset it to formal URLLoader
+  virtual void SetResetUrlRequestCallback(ResetUrlRequestCallback callback) = 0;
 
   // read response body to the buffer of formal request
   virtual int Read(net::IOBuffer* buf, int max_bytes) = 0;

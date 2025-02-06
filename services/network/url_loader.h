@@ -735,6 +735,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
       const std::string& org_main_url,
       std::shared_ptr<ohos_prp_preload::PRRequestInfo>& preload_info);
   void RollbackFromPPRP();
+  void ResetUrlRequest(const std::shared_ptr<net::URLRequest>& url_request);
   std::shared_ptr<ohos_prp_preload::PRPPRequestLoader> prpp_loader_ { nullptr };
   bool redirect_updated_ { false };
   bool already_update_info_ { false };

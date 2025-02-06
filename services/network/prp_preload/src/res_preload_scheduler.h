@@ -31,10 +31,10 @@ class ResPreloadScheduler : public base::RefCounted<ResPreloadScheduler> {
     const std::shared_ptr<PRPPReqInfoTreeNode>& preload_info_tree,
     bool only_send_reuse_request,
     const std::set<std::string>& need_record_header_urls);
+  void UpdateIdlePrerequestCount();
  private:
   using InfoIter = std::list<std::shared_ptr<PRRequestInfo>>::iterator;
   using PreconnectInfoListIter = PRPPPreconnectInfoList::iterator;
-  void DoPendingPreRequest();
   void CreateReqLoaderAndStart(const std::shared_ptr<PRRequestInfo>& info);
   void SchedulePreconnects();
   void SchedulePrerequests(uint32_t limit, int32_t info_list_version);
@@ -48,6 +48,7 @@ class ResPreloadScheduler : public base::RefCounted<ResPreloadScheduler> {
   base::WeakPtr<net::URLRequestContext> url_request_context_;
   bool preload_triggered_ { false };
   int info_list_version_ { 0 };
+  int idle_prerequest_count_ { 0 };
   base::WeakPtr<PRPPRequestLoaderFactory> loader_fac_weak_ { nullptr };
   PRPPPreconnectInfoList prpp_preconnect_info_list_;
   std::shared_ptr<PRPPReqInfoTreeNode> preload_info_tree_;

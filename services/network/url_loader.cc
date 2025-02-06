@@ -613,6 +613,8 @@ URLLoader::URLLoader(
     }
     prpp_loader_->SetEarlyResponseHeadersCallback(base::BindRepeating(
         &URLLoader::NotifyEarlyResponse, base::Unretained(this)));
+    prpp_loader_->SetResetUrlRequestCallback(base::BindOnce(
+        &URLLoader::ResetUrlRequest, base::Unretained(this)));
     if (prpp_loader_->StartReplay()) {
       InitUrlRequestForRollback(
           context, request, traffic_annotation, third_party_cookies_enabled,
@@ -3323,10 +3325,17 @@ void URLLoader::SetUrlRequestForPRPP(
     }
   }
 }
+
 void URLLoader::RollbackFromPPRP() {
   url_request_ = url_request_rollback_;
   url_request_rollback_ = nullptr;
   BeginAttributionIfNecessaryAndThenScheduleStart();
+}
+
+void URLLoader::ResetUrlRequest(const std::shared_ptr<net::URLRequest>& url_request) {
+  if (prpp_loader_.get()) {
+    url_request_ = url_request;
+  }
 }
 #endif
 

@@ -15,6 +15,8 @@
 
 namespace {
 const int32_t CACHE_BLOCK_SIZE = 64 * 1024;
+const int MAX_PRPP_BODY_CACHE_SIZE = 32;
+const int MIN_PRPP_BODY_CACHE_SIZE = 4;
 }
 
 namespace ohos_prp_preload {
@@ -52,7 +54,7 @@ bool PRPPRequestLoaderImpl::Init(const net::IsolationInfo& isolation_info)
 }
 
 void PRPPRequestLoaderImpl::InitAndStartUrlRequest(const std::shared_ptr<PRRequestInfo>& info,
-  const net::IsolationInfo& isolation_info)
+  const net::IsolationInfo& isolation_info, bool need_reset_url_request)
 {
   if (info->type() == PRRequestInfoType::TYPE_PAGE_PREFLIGHT) {
     sub_url_ = info->url().spec().substr(strlen(PRPP_PREFLIGHT_PREFIX));
@@ -106,6 +108,10 @@ void PRPPRequestLoaderImpl::InitAndStartUrlRequest(const std::shared_ptr<PRReque
   url_request_->set_main_url(GURL(main_url_));
   url_request_->set_preload_info(prpp_req_info_);
 
+  if (need_reset_url_request && !reset_url_request_callback_.is_null() && delegate_) {
+    std::move(reset_url_request_callback_).Run(url_request_);
+  }
+
   BeginTrustTokenOperationIfNecessaryAndThenScheduleStart();
 }
 
@@ -113,7 +119,7 @@ void PRPPRequestLoaderImpl::ReInitAndStartUrlRequest()
 {
   preload_state_ = STATE_IDLE;
   ClearLoader();
-  InitAndStartUrlRequest(prpp_req_info_, url_request_->isolation_info());
+  InitAndStartUrlRequest(prpp_req_info_, url_request_->isolation_info(), true);
 }
 
 void PRPPRequestLoaderImpl::BeginTrustTokenOperationIfNecessaryAndThenScheduleStart()
@@ -326,6 +332,9 @@ void PRPPRequestLoaderImpl::DidRead(int num_bytes, bool completed_synchronously)
     body_cache_.push(cur_write_block_);
     cur_write_block_ = nullptr;
     preload_state_ = STATE_RESPONSED;
+    if (!res_loaded_cb_.is_null()) {
+      std::move(res_loaded_cb_).Run(this);
+    }
     if (out_buf_ && delegate_) {
         int len = Read(out_buf_.get(), out_max_bytes_);
         delegate_->OnReadCompleted(url_request_.get(), len);
@@ -341,8 +350,18 @@ void PRPPRequestLoaderImpl::DidRead(int num_bytes, bool completed_synchronously)
     if (out_buf_ && delegate_) {
         int len = Read(out_buf_.get(), out_max_bytes_);
         delegate_->OnReadCompleted(url_request_.get(), len);
+        // resource read complete, loader has been destroyed
+        if (len == 0) {
+          return;
+        }
     }
   }
+
+  if (body_cache_.size() >= MAX_PRPP_BODY_CACHE_SIZE) {
+    need_continue_read_ = true;
+    return;
+  }
+
   if (completed_synchronously) {
     base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(FROM_HERE,
       base::BindOnce(&PRPPRequestLoaderImpl::ReadMore, weak_ptr_factory_.GetWeakPtr()));
@@ -353,11 +372,8 @@ void PRPPRequestLoaderImpl::DidRead(int num_bytes, bool completed_synchronously)
 
 void PRPPRequestLoaderImpl::OnReadCompleted(net::URLRequest* request, int bytes_read)
 {
-  if (!res_loaded_cb_.is_null()) {
-    std::move(res_loaded_cb_).Run(this);
-  }
-
-  if ((preload_state_ == STATE_UNSUPPORT) || (preload_state_ == STATE_ERROR)) {
+  if (!request || request != url_request_.get() ||
+      (preload_state_ == STATE_UNSUPPORT) || (preload_state_ == STATE_ERROR)) {
     LOG(WARNING) << "PRPPreload.PRPPRequestLoaderImpl::OnReadCompleted, invalid state:" <<
       (int32_t)preload_state_;
     return;
@@ -383,6 +399,11 @@ void PRPPRequestLoaderImpl::SetResponseHeadersCallback(net::ResponseHeadersCallb
 void PRPPRequestLoaderImpl::SetEarlyResponseHeadersCallback(net::ResponseHeadersCallback callback)
 {
   early_response_headers_callback_ = std::move(callback);
+}
+
+void PRPPRequestLoaderImpl::SetResetUrlRequestCallback(ResetUrlRequestCallback callback)
+{
+  reset_url_request_callback_ = std::move(callback);
 }
 
 bool PRPPRequestLoaderImpl::StartReplay()
@@ -459,7 +480,9 @@ void PRPPRequestLoaderImpl::DoReplay()
 int PRPPRequestLoaderImpl::Read(net::IOBuffer* buf, int max_bytes)
 {
   int ret = net::OK;
+  bool need_continue = false;
   do {
+    need_continue = false;
     if (max_bytes <= 0) {
       break;
     }
@@ -472,12 +495,14 @@ int PRPPRequestLoaderImpl::Read(net::IOBuffer* buf, int max_bytes)
       break;
     }
     scoped_refptr<net::GrowableIOBuffer> cur_block = body_cache_.front();
-    if (!cur_block) {
+    if (!cur_block || (cur_block->offset() <= cur_read_offset_)) {
       LOG(WARNING) << "PRPPreload.PRPPRequestLoaderImpl::Read, cur block is null, cache block size:" <<
         (int)body_cache_.size() << ", max_bytes:" << max_bytes;
-      break;
+      body_cache_.pop();
+      need_continue = true;
+      continue;
     }
-    int block_offset = - cur_block->offset() + cur_read_offset_;
+    int block_offset = -cur_block->offset() + cur_read_offset_;
     if (cur_block->offset() <= max_bytes + cur_read_offset_) {
       int len = cur_block->offset() - cur_read_offset_;
       if (memcpy_s(buf->data(), len, cur_block->data() + block_offset, len) != EOK) {
@@ -493,7 +518,7 @@ int PRPPRequestLoaderImpl::Read(net::IOBuffer* buf, int max_bytes)
     }
     cur_read_offset_ += max_bytes;
     ret = max_bytes;
-  } while (false);
+  } while (need_continue);
 
   if (ret == net::ERR_IO_PENDING) {
     out_buf_ = buf;
@@ -501,6 +526,11 @@ int PRPPRequestLoaderImpl::Read(net::IOBuffer* buf, int max_bytes)
   } else {
     out_buf_ = nullptr;
     out_max_bytes_ = 0;
+    if (body_cache_.size() <= MIN_PRPP_BODY_CACHE_SIZE && need_continue_read_) {
+      need_continue_read_ = false;
+      base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(FROM_HERE,
+        base::BindOnce(&PRPPRequestLoaderImpl::ReadMore, weak_ptr_factory_.GetWeakPtr()));
+    }
   }
 
   return ret;
@@ -641,6 +671,9 @@ void PRPPRequestLoaderImpl::ClearLoaderCallback(bool has_devtools_request_id)
     SetResponseHeadersCallback(net::ResponseHeadersCallback());
   }
   SetEarlyResponseHeadersCallback(net::ResponseHeadersCallback());
+  SetResetUrlRequestCallback(ResetUrlRequestCallback());
+  completion_once_callback_ = net::CompletionOnceCallback();
+  res_loaded_cb_ = ResPreloadedCB();
 }
 
 }  // namespace ohos_prp_preload

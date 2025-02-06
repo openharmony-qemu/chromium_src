@@ -241,14 +241,12 @@ void PRParallelPreloadMgrImpl::StopPageInternal(const std::string& url) {
 	it->second.start_page_ = false;
 	  SAFE_RUN_GET_ISOLATION_CB(it->second.callback_, CANCEL_ORIGIN);
 	  auto ctrler = it->second.rp_preload_ctrler_;
-	  auto loader_fac = it->second.prpp_req_loader_fac_;
 	  it->second.prpp_req_loader_fac_ = nullptr;
 	  DoRmPageUrl(it->first);
 	  (void)prp_preload_info_map_.erase(it);
     if (sth_task_runner_ != nullptr) {
 	  sth_task_runner_->PostTask(FROM_HERE, base::BindOnce([]
-		(const scoped_refptr<ResParallelPreloadCtrler>& ctrler,
-		const std::shared_ptr<PRPPRequestLoaderFactory>& loader_fac) {}, ctrler, loader_fac));
+		(const scoped_refptr<ResParallelPreloadCtrler>& ctrler) {}, ctrler));
     }
   }
 }
@@ -309,6 +307,16 @@ base::WeakPtr<PRPPRequestLoaderFactory> PRParallelPreloadMgrImpl::GetRequestLoad
 	  }
 	});
   return factory;
+}
+
+void PRParallelPreloadMgrImpl::UpdateIdlePrerequestCount(const std::string& key)
+{
+  if (!is_inited_) {
+	return;
+  }
+  FindCurPreloadInfoAndRun(key, [&](PRParallelPreloadInfo& prp_preload_info) {
+	prp_preload_info.rp_preload_ctrler_->UpdateIdlePrerequestCount();
+  });
 }
 
 void PRParallelPreloadMgrImpl::FindCurPreloadInfoAndRun(const std::string& key,

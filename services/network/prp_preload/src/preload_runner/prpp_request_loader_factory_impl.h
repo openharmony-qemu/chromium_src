@@ -30,7 +30,6 @@ public:
 	std::shared_ptr<PRRequestInfo> req_info_binding) override;
   base::WeakPtr<PRPPRequestLoaderFactory> GetWeak() override { return weak_factory_.GetWeakPtr(); }
   const std::string& GetMainUrl() const override { return main_url_; }
-  uint32_t GetAndClearPreloadedCount() override;
 private:
   bool IsInfoMatched(std::shared_ptr<PRRequestInfo>& req_info, const network::URLLoaderContext& context,
 	const network::ResourceRequest& resource_request,
@@ -52,7 +51,6 @@ private:
   PRPPReqLoaderMap prpp_req_loaders_;
   std::set<std::string> requests_already_start_set_;
   base::WeakPtrFactory<PRPPRequestLoaderFactoryImpl> weak_factory_ { this };
-  std::atomic<uint32_t> preloaded_new_res_count_ { 0 };
   std::unordered_map<std::string, net::HttpRequestHeaders> can_reuse_headers_map_;
   std::unordered_map<std::string, std::list<std::shared_ptr<PRRequestInfo>>> pending_prpp_loader_list_;
   std::set<std::string> need_record_header_urls_; // key of can_reuse_headers_map_

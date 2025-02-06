@@ -1432,14 +1432,16 @@ void GpuServiceImpl::StopMonitor() {
 }
 
 void GpuServiceImpl::DumpGpuInfo(DumpGpuInfoCallback callback) {
-    float totalSize = 0;
-    if (compositor_gpu_thread_) {
-        GrDirectContext* grContext = compositor_gpu_thread_->GetSharedContextState()->gr_context();
-        SkiaMemoryTracer* skiaMemoryTracer = std::make_shared<SkiaMemoryTracer>("category", true).get();
-        grContext->dumpMemoryStatistics(skiaMemoryTracer);
-        totalSize = skiaMemoryTracer->GetGpuMemorySizeInMB();
+  float totalSize = 0;
+  if (compositor_gpu_thread_) {
+    GrDirectContext* grContext = compositor_gpu_thread_->GetSharedContextState()->gr_context();
+    SkiaMemoryTracer* skiaMemoryTracer = std::make_shared<SkiaMemoryTracer>("category", true).get();
+    if (grContext != nullptr && skiaMemoryTracer != nullptr) {
+      grContext->dumpMemoryStatistics(skiaMemoryTracer);
+      totalSize = skiaMemoryTracer->GetGpuMemorySizeInMB();
     }
-    std::move(callback).Run(totalSize);
+  }
+  std::move(callback).Run(totalSize);
 }
 
 void GpuServiceImpl::SetVisible(int32_t nweb_id, bool visible) {

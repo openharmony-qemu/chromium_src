@@ -11,6 +11,7 @@
 #include "media/base/ohos/ohos_media_player_callback.h"
 #include "media/base/ohos/ohos_media_player_listener.h"
 #include "ohos_adapter_helper.h"
+#include "ohos_glue/base/include/ark_web_errno.h"
 
 namespace media {
 
@@ -92,6 +93,9 @@ void OHOSMediaPlayerBridge::OnCookiesRetrieved(const std::string& cookies) {
     }
     auto player_headers = GetPlayerHeadersInternal();
     int32_t ret = player_->SetMediaSourceHeader(url_.spec(), player_headers);
+    if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+      ret = player_->SetSource(url_.spec());
+    }
     if (ret != 0) {
       LOG(ERROR) << "SetPlayerSourceHeader error:ret= " << ret;
       return;
@@ -177,6 +181,9 @@ void OHOSMediaPlayerBridge::Prepare() {
     }
     auto player_headers = GetPlayerHeadersInternal();
     ret = player_->SetMediaSourceHeader(url_.spec(), player_headers);
+    if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+      ret = player_->SetSource(url_.spec());
+    }
   }
   if (ret != 0) {
     LOG(ERROR) << "SetSource error::ret=" << ret;

@@ -126,6 +126,23 @@ void TouchSelectionController::OnSelectionBoundsChanged(
 
   start_ = start;
   end_ = end;
+
+#ifdef OHOS_CLIPBOARD
+  if (start_.edge_start().y() > start_.edge_end().y()) {
+    LOG(INFO) << "start's edge_start > edge_end";
+    const gfx::PointF new_edge_start = start_.edge_end();
+    const gfx::PointF new_edge_end = start_.edge_start();
+    start_.SetEdge(new_edge_start, new_edge_end);
+  }
+
+  if (end_.edge_start().y() > end_.edge_end().y()) {
+    LOG(INFO) << "end's edge_start > edge_end";
+    const gfx::PointF new_edge_start = end_.edge_end();
+    const gfx::PointF new_edge_end = end_.edge_start();
+    end_.SetEdge(new_edge_start, new_edge_end);
+  }
+#endif
+
   start_orientation_ = ToTouchHandleOrientation(start_.type());
   end_orientation_ = ToTouchHandleOrientation(end_.type());
 

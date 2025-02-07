@@ -87,8 +87,13 @@ void X11UIControlsTestHelper::SendKeyEvents(gfx::AcceleratedWidget widget,
       SetKeycodeAndSendThenMask(widget, &xevent, XK_Alt_L,
                                 x11::KeyButMask::Mod1);
     }
+#if defined(OHOS_INPUT_EVENTS)
+    xevent.detail = x11::Connection::Get()->KeysymToKeycode(
+        ui::XKeysymForWindowsKeyCode(key, shift, false));
+#else
     xevent.detail = x11::Connection::Get()->KeysymToKeycode(
         ui::XKeysymForWindowsKeyCode(key, shift));
+#endif
     PostEventToWindowTreeHost(widget, &xevent);
   }
 

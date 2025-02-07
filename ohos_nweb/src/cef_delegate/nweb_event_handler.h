@@ -58,6 +58,12 @@ class NWebEventHandler {
                               double deltaX,
                               double deltaY,
                               const std::vector<int32_t>& pressedCodes);
+  void WebSendMouseWheelEventV2(double x,
+                                double y,
+                                double deltaX,
+                                double deltaY,
+                                const std::vector<int32_t>& pressedCodes,
+                                int32_t source);
   void WebSendTouchpadFlingEvent(double x,
                                  double y,
                                  double vx,
@@ -82,7 +88,8 @@ class NWebEventHandler {
                               double y,
                               double deltaX,
                               double deltaY,
-                              int32_t modifiers);
+                              int32_t modifiers,
+                              int32_t source = CEF_EST_TOUCHPAD);
   void WebUpdateModifiers(CefMouseEvent& mouseInfo, const cef_mouse_button_type_t& buttonType);
 #endif  // defined(OHOS_INPUT_EVENTS)
 

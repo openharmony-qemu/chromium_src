@@ -152,6 +152,18 @@ void NWebInputHandler::WebSendMouseWheelEvent(double x,
   nweb_delegate_->WebSendMouseWheelEvent(x, y, deltaX, deltaY, pressedCodes);
 }
 
+void NWebInputHandler::WebSendMouseWheelEventV2(double x,
+                                                double y,
+                                                double deltaX,
+                                                double deltaY,
+                                                const std::vector<int32_t>& pressedCodes,
+                                                int32_t source) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->WebSendMouseWheelEventV2(x, y, deltaX, deltaY, pressedCodes, source);
+}
+
 void NWebInputHandler::WebSendTouchpadFlingEvent(double x,
                                                  double y,
                                                  double vx,

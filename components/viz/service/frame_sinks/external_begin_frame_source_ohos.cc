@@ -127,6 +127,9 @@ void ExternalBeginFrameSourceOHOS::OnVSync(int64_t timestamp, void* data) {
 void ExternalBeginFrameSourceOHOS::OnVSyncImpl(int64_t timestamp,
                                                VSyncUserData* user_data) {
   user_data_.reset(user_data);
+  if (!vsync_notification_enabled_ || user_data_ == nullptr) {
+    return;
+  }
   last_vsync_period_ = timestamp;
     vsync_period_ = vsync_adapter_.GetVSyncPeriod();
   if (vsync_period_ == 0) {
@@ -190,10 +193,6 @@ ReportLossFrame::GetInstance()->SetVsyncPeriod(vsync_period_);
     }
 #endif
     g_skip_vsync = true;
-  }
-
-  if (!vsync_notification_enabled_ || user_data_ == nullptr) {
-    return;
   }
 
   vsync_adapter_.RequestVsync(user_data_.release(),

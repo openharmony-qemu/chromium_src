@@ -54,6 +54,12 @@ class NWebInputHandler {
                               double deltaX,
                               double deltaY,
                               const std::vector<int32_t>& pressedCodes);
+  void WebSendMouseWheelEventV2(double x,
+                                double y,
+                                double deltaX,
+                                double deltaY,
+                                const std::vector<int32_t>& pressedCodes,
+                                int32_t source);
   void WebSendTouchpadFlingEvent(double x,
                                  double y,
                                  double vx,

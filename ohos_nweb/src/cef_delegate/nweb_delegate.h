@@ -713,7 +713,8 @@ void SetDelayDurationForBackgroundTabFreezing(int64_t delay) override;
   void SendAccessibilityHoverEvent(int x, int y) override;
 
  private:
-  content::BrowserAccessibilityManagerOHOS* GetAccessibilityManager();
+  content::BrowserAccessibilityManagerOHOS* GetAccessibilityManager() const;
+  int64_t GetRealAccessibilityId(int64_t accessibilityId) const;
   void AddAccessibilityNodeInfoAttributes(
       std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
       const content::BrowserAccessibilityOHOS* node) const;

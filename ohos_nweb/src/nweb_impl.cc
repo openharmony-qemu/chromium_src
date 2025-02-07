@@ -2052,6 +2052,28 @@ void NWebImpl::WebSendMouseWheelEvent(double x,
   input_handler_->WebSendMouseWheelEvent(x, y, deltaX, deltaY, pressedCodes);
 }
 
+void NWebImpl::WebSendMouseWheelEventV2(double x,
+                                        double y,
+                                        double deltaX,
+                                        double deltaY,
+                                        const std::vector<int32_t>& pressedCodes,
+                                        int32_t source) {
+  if (input_handler_ == nullptr) {
+    LOG(ERROR) << "WebSendMouseWheelEvent input_handler_ is nullptr";
+    return;
+  }
+
+  ResSchedClientAdapter::ReportScene(
+    ResSchedStatusAdapter::WEB_SCENE_ENTER, ResSchedSceneAdapter::SLIDE);
+
+#if defined(OHOS_PERFORMANCE_INC_FREQ)
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .CreateSocPerfClientAdapter()
+      ->ApplySocPerfConfigById(SOC_PERF_MOUSEWHEEL_CONFIG_ID);
+#endif
+  input_handler_->WebSendMouseWheelEventV2(x, y, deltaX, deltaY, pressedCodes, source);
+}
+
 void NWebImpl::WebSendTouchpadFlingEvent(double x,
                                          double y,
                                          double vx,

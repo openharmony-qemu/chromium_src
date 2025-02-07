@@ -298,6 +298,12 @@ class NWebImpl : public NWeb {
                               double deltaX,
                               double deltaY,
                               const std::vector<int32_t>& pressedCodes) override;
+  void WebSendMouseWheelEventV2(double x,
+                                double y,
+                                double deltaX,
+                                double deltaY,
+                                const std::vector<int32_t>& pressedCodes,
+                                int32_t source) override;
   void WebSendTouchpadFlingEvent(double x,
                                  double y,
                                  double vx,

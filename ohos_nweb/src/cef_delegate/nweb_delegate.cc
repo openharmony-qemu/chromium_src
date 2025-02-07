@@ -2724,6 +2724,24 @@ void NWebDelegate::WebSendMouseWheelEvent(double x,
   }
 }
 
+void NWebDelegate::WebSendMouseWheelEventV2(double x,
+                                            double y,
+                                            double deltaX,
+                                            double deltaY,
+                                            const std::vector<int32_t>& pressedCodes,
+                                            int32_t source) {
+  if (event_handler_ != nullptr) {
+    event_handler_->WebSendMouseWheelEventV2(x / default_virtual_pixel_ratio_,
+                                             y / default_virtual_pixel_ratio_,
+                                             deltaX / default_virtual_pixel_ratio_,
+                                             deltaY / default_virtual_pixel_ratio_,
+                                             pressedCodes,
+                                             source);
+  } else {
+    LOG(ERROR) << "WebSendMouseWheelEvent event_handler_ is nullptr";
+  }
+}
+
 void NWebDelegate::WebSendTouchpadFlingEvent(double x,
                                              double y,
                                              double vx,

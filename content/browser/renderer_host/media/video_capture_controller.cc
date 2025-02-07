@@ -169,7 +169,11 @@ struct VideoCaptureController::ControllerClient {
         session_id(session_id),
         parameters(params),
         session_closed(false),
-        paused(false) {}
+        paused(false) {
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+    opened = false;
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+  }
 
   ~ControllerClient() {}
 
@@ -199,6 +203,10 @@ struct VideoCaptureController::ControllerClient {
   // Indicates whether the client is paused, if true, VideoCaptureController
   // stops updating its buffer.
   bool paused;
+
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  bool opened;
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 };
 
 VideoCaptureController::BufferContext::BufferContext(
@@ -469,6 +477,7 @@ void VideoCaptureController::StopSession(
 
   if (client) {
     client->session_closed = true;
+    client->opened = false;
     client->event_handler->OnEnded(client->controller_id);
   }
 }
@@ -602,6 +611,22 @@ void VideoCaptureController::OnFrameReadyInBuffer(
     OnLog("First frame received at VideoCaptureController");
     has_received_frames_ = true;
   }
+
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  if (stream_type_ == blink::mojom::MediaStreamType::DISPLAY_VIDEO_CAPTURE ||
+      stream_type_ == blink::mojom::MediaStreamType::DISPLAY_VIDEO_CAPTURE_THIS_TAB ||
+      stream_type_ == blink::mojom::MediaStreamType::DISPLAY_VIDEO_CAPTURE_SET) {
+    for (const auto& client : controller_clients_) {
+      if (client->session_closed || client->opened) {
+        continue;
+      }
+      client->opened = true;
+      if (video_capture_manager_) {
+        video_capture_manager_->ScreenCaptureOpened(client->session_id.ToString());
+      }
+    }
+  }
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 }
 
 ReadyBuffer VideoCaptureController::MakeReadyBufferAndSetContextFeedbackId(
@@ -1058,4 +1083,11 @@ void VideoCaptureController::ResumeClientBySessionId(
 }
 #endif  // defined(OHOS_WEBRTC)
 
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+void VideoCaptureController::SetScreenCaptureListener(
+    VideoCaptureManager* video_capture_manager) {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+  video_capture_manager_ = video_capture_manager;
+}
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 }  // namespace content

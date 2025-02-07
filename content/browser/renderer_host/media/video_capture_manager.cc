@@ -927,6 +927,9 @@ VideoCaptureManager::GetOrCreateController(
           device_info.id, device_info.type, params,
           video_capture_provider_->CreateDeviceLauncher(),
           emit_log_message_cb_);
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  new_controller->SetScreenCaptureListener(this);
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
   controllers_.push_back(new_controller);
   return new_controller;
 }
@@ -1101,5 +1104,42 @@ void VideoCaptureManager::BindSessionIdToNWebId(
   nWebId_[sessionId] = nWebId;
 }
 #endif  // defined(OHOS_WEBRTC)
+
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+void VideoCaptureManager::StopScreenCapture(const std::string& session_id) {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+  absl::optional<base::Token> token = base::Token::FromString(session_id);
+  if (!token.has_value()) {
+    return;
+  }
+
+  absl::optional<base::UnguessableToken> unguessable_token =
+      base::UnguessableToken::Deserialize(token->high(), token->low());
+  auto session_it = sessions_.find(unguessable_token.value());
+  if (session_it == sessions_.end()) {
+    return;
+  }
+
+  auto videoCaptureController =
+      LookupControllerBySessionId(unguessable_token.value());
+  if (videoCaptureController != nullptr) {
+    videoCaptureController->StopSession(unguessable_token.value());
+  }
+}
+
+void VideoCaptureManager::ScreenCaptureOpened(const std::string& session_id) {
+  // Notify listener asynchronously.
+  base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
+      FROM_HERE, base::BindOnce(&VideoCaptureManager::OnScreenCaptureOpened, this,
+                                session_id));
+}
+
+void VideoCaptureManager::OnScreenCaptureOpened(const std::string& session_id) {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+  for (auto& listener : listeners_) {
+    listener.OnScreenCaptureOpened(session_id);
+  }
+}
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 
 }  // namespace content

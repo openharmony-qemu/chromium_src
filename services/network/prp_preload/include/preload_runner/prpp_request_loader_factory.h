@@ -49,9 +49,6 @@ class PRPPRequestLoaderFactory {
 
   // get main url of page
   virtual const std::string& GetMainUrl() const = 0;
-
-  // get the count of prerequest can be send
-  virtual uint32_t GetAndClearPreloadedCount() = 0;
 };
 
 } // namespace ohos_prp_preload

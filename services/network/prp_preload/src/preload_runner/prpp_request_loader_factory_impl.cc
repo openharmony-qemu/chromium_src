@@ -6,6 +6,7 @@
 
 #include "base/logging.h"
 #include "net/http/http_util.h"
+#include "services/network/prp_preload/include/page_res_parallel_preload_mgr.h"
 #include "services/network/public/cpp/resource_request.h"
 
 namespace ohos_prp_preload {
@@ -220,12 +221,7 @@ void PRPPRequestLoaderFactoryImpl::OnResPreloaded(PRPPRequestLoader* prpp_loader
   if (!prpp_loader) {
 	return;
   }
-  preloaded_new_res_count_++;
-}
-
-uint32_t PRPPRequestLoaderFactoryImpl::GetAndClearPreloadedCount()
-{
-  return preloaded_new_res_count_.exchange(0);
+  PRParallelPreloadMgr::GetInstance().UpdateIdlePrerequestCount(main_url_);
 }
 
 void PRPPRequestLoaderFactoryImpl::DoPendingCreateTask(const std::string& key)

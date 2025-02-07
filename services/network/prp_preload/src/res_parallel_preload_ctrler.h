@@ -26,12 +26,14 @@ class ResParallelPreloadCtrler : public base::RefCounted<ResParallelPreloadCtrle
   void UpdateResRequestInfo(const std::shared_ptr<PRRequestInfo>& info);
   void SetPageOrigin(const std::string& page_origin);
   void SetPRPPReqLoaderFac(base::WeakPtr<PRPPRequestLoaderFactory> loader_fac_weak);
+  void UpdateIdlePrerequestCount();
  private:
   void DoStart();
   void DoStop();
   void DoUpdateResRequestInfo(const std::shared_ptr<PRRequestInfo>& info);
   void DoSetPageOrigin(const std::string& page_origin);
   void DoSetPRPPReqLoaderFac(base::WeakPtr<PRPPRequestLoaderFactory> loader_fac_weak);
+  void DoUpdateIdlePrerequestCount();
   void OnResPreloadInfos(const PRPPPreconnectInfoList& preconnect_info_list,
     const std::shared_ptr<PRPPReqInfoTreeNode>& preload_info_tree, bool only_send_reuse_request,
     const std::set<std::string>& need_record_header_urls);

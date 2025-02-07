@@ -52,19 +52,6 @@ void ResPreloadScheduler::StopPreload()
   need_record_header_urls_.clear();
 }
 
-void ResPreloadScheduler::DoPendingPreRequest()
-{
-  if (net_task_runner_ == nullptr) {
-    return;
-  }
-  for (InfoIter it = prerequest_info_list_.begin(); it != prerequest_info_list_.end();) {
-    std::shared_ptr<PRRequestInfo> info = *it;
-    net_task_runner_->PostTask(FROM_HERE, base::BindOnce(&PRPPRequestLoaderFactory::CreateReqLoaderAndStart,
-      loader_fac_weak_, info, only_send_reuse_request_, need_record_header_urls_));
-    (void)prerequest_info_list_.erase(it++);
-  }
-}
-
 void ResPreloadScheduler::SetPRPPReqLoaderFac(base::WeakPtr<PRPPRequestLoaderFactory> loader_fac_weak)
 {
   loader_fac_weak_ = loader_fac_weak;
@@ -73,7 +60,6 @@ void ResPreloadScheduler::SetPRPPReqLoaderFac(base::WeakPtr<PRPPRequestLoaderFac
     LOG(WARNING) << "PRPPreload.ResPreloadScheduler::SetPRPPReqLoaderFac invalid loader_fac_weak";
     return;
   }
-  DoPendingPreRequest();
   if (preload_triggered_) {
     SchedulePrerequests(MAX_REQUEST_COUNT, info_list_version_);
   }
@@ -168,26 +154,25 @@ void ResPreloadScheduler::ContinueSchedulePreconnects(PreconnectInfoListIter pre
 
 void ResPreloadScheduler::SchedulePrerequests(uint32_t limit, int32_t info_list_version)
 {
+  PRPPRequestLoaderFactory* loader_fac = loader_fac_weak_.get();
   if ((info_list_version != info_list_version_) ||
       !preload_triggered_ || !cur_parent_ ||
-      net_task_runner_ == nullptr || sth_task_runner_ == nullptr) {
+      net_task_runner_ == nullptr || sth_task_runner_ == nullptr ||
+      !loader_fac) {
     return;
   }
 
   uint32_t prerequest_num = 0;
-  uint32_t continue_count = 0;
-  PRPPRequestLoaderFactory* loader_fac = loader_fac_weak_.get();
-  if (loader_fac != nullptr) {
-    continue_count = loader_fac->GetAndClearPreloadedCount();
-  }
-  if ((limit == 0) && (continue_count == 0)) {
+  if ((limit == 0) && (idle_prerequest_count_ == 0)) {
     sth_task_runner_->PostDelayedTask(FROM_HERE,
       base::BindOnce(&ResPreloadScheduler::SchedulePrerequests,
       weak_factory_.GetWeakPtr(), 0, info_list_version),
       base::Milliseconds(DELAYED_TIME));
     return;
   }
-  limit += continue_count;
+  limit += idle_prerequest_count_;
+  limit = limit > MAX_REQUEST_COUNT ? MAX_REQUEST_COUNT : limit;
+  idle_prerequest_count_ = 0;
   bool need_continue = false;
 
   while (cur_parent_->children_.size() > 0) {
@@ -214,6 +199,11 @@ void ResPreloadScheduler::SchedulePrerequests(uint32_t limit, int32_t info_list_
     cur_parent_ = *(cur_parent_->children_.begin());
     cur_node_iter_ = cur_parent_->children_.begin();
   }
+}
+
+void ResPreloadScheduler::UpdateIdlePrerequestCount()
+{
+  idle_prerequest_count_++;
 }
 
 }  // namespace ohos_prp_preload

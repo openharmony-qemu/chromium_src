@@ -66,6 +66,9 @@ class PRParallelPreloadMgr {
   // get PRPPRequestLoaderFactory for page 
   virtual base::WeakPtr<PRPPRequestLoaderFactory> GetRequestLoaderFactory(
     const std::string& main_url) = 0;
+
+  // update the count of prerequest can be send to scheduler
+  virtual void UpdateIdlePrerequestCount(const std::string& key) = 0;
 };
 
 }  // namespace ohos_prp_preload

@@ -27,6 +27,7 @@ class PRParallelPreloadMgrImpl : public PRParallelPreloadMgr {
   void OnPageOrigin(const std::string& url, const std::string& page_origin) override;
   void SetURLLoaderFactoryParam(network::mojom::URLLoaderFactoryParamsPtr params) override;
   base::WeakPtr<PRPPRequestLoaderFactory> GetRequestLoaderFactory(const std::string& main_url) override;
+  void UpdateIdlePrerequestCount(const std::string& key) override;
  private:
   struct PRParallelPreloadInfo {
     scoped_refptr<ResParallelPreloadCtrler> rp_preload_ctrler_;

@@ -94,6 +94,24 @@ void ResParallelPreloadCtrler::SetPRPPReqLoaderFac(base::WeakPtr<PRPPRequestLoad
     weak_factory_.GetWeakPtr(), loader_fac_weak));
 }
 
+void ResParallelPreloadCtrler::UpdateIdlePrerequestCount()
+{
+  if ((res_preload_scheduler_ == nullptr) ||
+      (sth_task_runner_ == nullptr)) {
+    return;
+  }
+  sth_task_runner_->PostTask(FROM_HERE, base::BindOnce(&ResParallelPreloadCtrler::DoUpdateIdlePrerequestCount,
+    weak_factory_.GetWeakPtr()));
+}
+
+void ResParallelPreloadCtrler::DoUpdateIdlePrerequestCount()
+{
+  if (res_preload_scheduler_ == nullptr) {
+    return;
+  }
+  res_preload_scheduler_->UpdateIdlePrerequestCount();
+}
+
 void ResParallelPreloadCtrler::DoSetPageOrigin(const std::string& page_origin)
 {
   if (res_req_info_updater_ == nullptr) {

@@ -44,6 +44,7 @@ class PRPPRequestLoaderImpl : public PRPPRequestLoader,
   void SetRequestHeadersCallback(net::RequestHeadersCallback callback) override;
   void SetResponseHeadersCallback(net::ResponseHeadersCallback callback) override;
   void SetEarlyResponseHeadersCallback(net::ResponseHeadersCallback callback) override;
+  void SetResetUrlRequestCallback(ResetUrlRequestCallback callback) override;
   int Read(net::IOBuffer* buf, int max_bytes) override;
   std::shared_ptr<net::URLRequest> GetURLRequest() override { return url_request_; }
   std::shared_ptr<PRRequestInfo> GetPRRequestInfo() override { return prpp_req_info_; }
@@ -65,7 +66,7 @@ class PRPPRequestLoaderImpl : public PRPPRequestLoader,
   void DoReplay();
   void UpdateResRequestInfo(const std::string& key, const std::shared_ptr<PRRequestInfo>& info);
   void InitAndStartUrlRequest(const std::shared_ptr<PRRequestInfo>& info,
-    const net::IsolationInfo& isolation_info);
+    const net::IsolationInfo& isolation_info, bool need_reset_url_request = false);
   void ReInitAndStartUrlRequest();
 
   // derived from net::URLRequest::Delegate
@@ -111,6 +112,7 @@ class PRPPRequestLoaderImpl : public PRPPRequestLoader,
   net::RequestHeadersCallback request_headers_callback_;
   net::ResponseHeadersCallback early_response_headers_callback_;
   net::ResponseHeadersCallback response_headers_callback_;
+  ResetUrlRequestCallback reset_url_request_callback_;
   scoped_refptr<net::IOBuffer> out_buf_ { nullptr };
   int out_max_bytes_ { 0 };
   bool need_do_replay_self_ { false };
@@ -118,6 +120,7 @@ class PRPPRequestLoaderImpl : public PRPPRequestLoader,
   bool need_update_req_info_ { false };
   net::LoadTimingInfo load_timing_info_;
   uint32_t real_load_flags_ { 0 };
+  bool need_continue_read_ { false };
 };
 
 }  // namespace ohos_prp_preload

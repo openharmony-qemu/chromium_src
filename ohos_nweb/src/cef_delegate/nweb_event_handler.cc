@@ -225,7 +225,7 @@ bool NWebEventHandler::CreateCefKeyEvent(CefKeyEvent& keyEvent,
   ui::KeyboardCode key_code =
       static_cast<ui::KeyboardCode>(keyEvent.windows_key_code);
   int keysym = ui::XKeysymForWindowsKeyCode(
-      key_code, keyEvent.modifiers & EVENTFLAG_SHIFT_DOWN);
+      key_code, keyEvent.modifiers & EVENTFLAG_SHIFT_DOWN, keyEvent.modifiers & EVENTFLAG_CAPS_LOCK_ON);
   char16_t character = ui::GetUnicodeCharacterFromXKeySym(keysym);
   keyEvent.character = keyEvent.unmodified_character = character;
   return true;

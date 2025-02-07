@@ -1048,7 +1048,6 @@ void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
   content::GetUIThreadTaskRunner({})->PostDelayedTask(
     FROM_HERE, base::BindOnce(&NWebImpl::DisableBoost, base::Unretained(this)),
     base::Milliseconds(WEB_RESIZE_CLOSE_DELAY_TIME));
-  )
   nweb_delegate_->Resize(width, height, isKeyboard);
   output_handler_->Resize(width, height);
 }

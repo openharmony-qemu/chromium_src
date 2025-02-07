@@ -1040,13 +1040,14 @@ void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
     return;
   }
 
+
   OHOS::NWeb::OhosAdapterHelper::GetInstance()
     .CreateSocPerfClientAdapter()
     ->ApplySocPerfConfigByIdEx(OHOS::NWeb::SocPerfClientAdapter::SOC_PERF_WEB_GESTURE_ID, true);
   ResizeTime_++;
   content::GetUIThreadTaskRunner({})->PostDelayedTask(
     FROM_HERE, base::BindOnce(&NWebImpl::DisableBoost, base::Unretained(this)),
-    base::Milliseconds(WEB_RESIZE_CLOSE_DELAY_TIME);
+    base::Milliseconds(WEB_RESIZE_CLOSE_DELAY_TIME));
   )
   nweb_delegate_->Resize(width, height, isKeyboard);
   output_handler_->Resize(width, height);

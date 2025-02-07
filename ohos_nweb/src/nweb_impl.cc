@@ -220,7 +220,7 @@ const int32_t kMaxResumeInterval = 60;
 #endif  // defined(OHOS_MEDIA_POLICY)
 const float richtextDisplayRatio = 1.0;
 
-WEB_RESIZE_CLOSE_DELAY_TIME = 500;
+const int32_t WEB_RESIZE_CLOSE_DELAY_TIME = 500;
 
 #if defined(OHOS_NWEB_EX)
 bool g_browser_service_api_enabled = false;
@@ -1045,7 +1045,7 @@ void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
     ->ApplySocPerfConfigByIdEx(OHOS::NWeb::SocPerfClientAdapter::SOC_PERF_WEB_GESTURE_ID, true);
   ResizeTime_++;
   content::GetUIThreadTaskRunner({})->PostDelayedTask(
-    FROM_HERE, base::BindOnce(&NWebImpl::DisableBoost, base::unretained(this)),
+    FROM_HERE, base::BindOnce(&NWebImpl::DisableBoost, base::Unretained(this)),
     base::Milliseconds(WEB_RESIZE_CLOSE_DELAY_TIME);
   )
   nweb_delegate_->Resize(width, height, isKeyboard);

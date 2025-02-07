@@ -561,6 +561,11 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void EnableMediaNetworkTrafficPrompt(bool enable) override;
 #endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
 
+#ifdef OHOS_EX_REFRESH_IFRAME
+  bool WebExtensionContextMenuIsIframe() override;
+  void WebExtensionContextMenuReloadFocusedFrame() override;
+#endif
+
 void SetSurfaceDensity(const double& density) override;
 
   void OpenDevtoolsWith(

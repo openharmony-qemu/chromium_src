@@ -575,6 +575,11 @@ virtual int ScaleGestureChange(double scale, double centerX, double centerY) con
   virtual void EnableMediaNetworkTrafficPrompt(bool enable) = 0;
 #endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
 
+#ifdef OHOS_EX_REFRESH_IFRAME
+  virtual bool WebExtensionContextMenuIsIframe() = 0;
+  virtual void WebExtensionContextMenuReloadFocusedFrame() = 0;
+#endif
+
   virtual void OpenDevtoolsWith(
       std::shared_ptr<NWebDelegateInterface> nweb_delegate,
       std::unique_ptr<OpenDevToolsParam> param) = 0;

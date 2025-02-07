@@ -26,6 +26,9 @@
 #include "media/capture/video_capture_types.h"
 #include "third_party/blink/public/common/media/video_capture.h"
 #include "third_party/blink/public/common/mediastream/media_stream_request.h"
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+#include "video_capture_manager.h"
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 
 namespace content {
 
@@ -173,6 +176,10 @@ class CONTENT_EXPORT VideoCaptureController
   void ResumeClientBySessionId(const base::UnguessableToken& session_id);
 #endif  // defined(OHOS_WEBRTC)
 
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  void SetScreenCaptureListener(VideoCaptureManager* video_capture_manager);
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+
  private:
   friend class base::RefCountedThreadSafe<VideoCaptureController>;
   struct ControllerClient;
@@ -317,6 +324,10 @@ class CONTENT_EXPORT VideoCaptureController
   bool was_crop_ever_called_ = false;
 
   base::WeakPtrFactory<VideoCaptureController> weak_ptr_factory_{this};
+
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  VideoCaptureManager* video_capture_manager_ = nullptr;
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 };
 
 }  // namespace content

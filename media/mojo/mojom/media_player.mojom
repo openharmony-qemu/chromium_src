@@ -51,6 +51,7 @@ struct MediaInfoForVAST {
 
   bool show_download_button;
   bool supports_save;
+  bool fullscreen_overlay;
 };
 
 // Implemented by HTMLMediaElement in the renderer process to allow the
@@ -240,6 +241,9 @@ interface MediaPlayerObserver {
 
   [EnableIf=ohos_video_assistant]
   VideoSizeChangedOverlay(int32 width, int32 height);
+
+  [EnableIf=ohos_video_assistant]
+  FullscreenOverlayChanged(bool fullscreen_overlay, string decoder_name);
 };
 
 // Implemented by MediaWebContentsObserver::MediaPlayerHostImpl in the browser

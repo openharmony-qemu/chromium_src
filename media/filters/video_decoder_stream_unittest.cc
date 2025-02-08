@@ -309,7 +309,11 @@ class VideoDecoderStreamTest
     num_decoded_bytes_unreported_ -= statistics.video_bytes_decoded;
   }
 
+#ifdef OHOS_VIDEO_ASSISTANT
+  void OnInitialized(bool success, bool, std::string) {
+#else
   void OnInitialized(bool success) {
+#endif // OHOS_VIDEO_ASSISTANT
     DCHECK(!pending_read_);
     DCHECK(!pending_reset_);
     DCHECK(pending_initialize_);

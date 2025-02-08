@@ -53,7 +53,11 @@ class MEDIA_EXPORT DecoderStream {
       base::RepeatingCallback<std::vector<std::unique_ptr<Decoder>>()>;
 
   // Indicates completion of a DecoderStream initialization.
+#ifdef OHOS_VIDEO_ASSISTANT
+  using InitCB = base::OnceCallback<void(bool success, bool, std::string)>;
+#else
   using InitCB = base::OnceCallback<void(bool success)>;
+#endif // OHOS_VIDEO_ASSISTANT
 
   // Indicates completion of a DecoderStream read.
   using ReadResult = DecoderStatus::Or<scoped_refptr<Output>>;

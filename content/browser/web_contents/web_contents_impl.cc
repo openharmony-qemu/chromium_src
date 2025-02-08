@@ -10775,6 +10775,10 @@ void WebContentsImpl::SetVideoSurface(
 
   iter->second = surface_widget;
 }
+
+void WebContentsImpl::ReportVideoDecoderName(const std::string& decoder_name) {
+  video_assistant_->ReportVideoDecoderName(decoder_name);
+}
 #endif // OHOS_VIDEO_ASSISTANT
 
 #if defined(OHOS_DISPATCH_BEFORE_UNLOAD)

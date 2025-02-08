@@ -213,7 +213,7 @@ using DestroyTextureCB = base::OnceCallback<void()>;
 #if defined(OHOS_VIDEO_ASSISTANT)
 using SurfaceCreatedCB = base::RepeatingCallback<void(int)>;
 using RequestSurfaceCB =
-    base::OnceCallback<void(SurfaceCreatedCB)>;
+    base::OnceCallback<void(SurfaceCreatedCB, bool, std::string)>;
 #endif // OHOS_VIDEO_ASSISTANT
 
 }  // namespace media

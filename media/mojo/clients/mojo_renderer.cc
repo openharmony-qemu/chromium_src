@@ -404,7 +404,8 @@ void MojoRenderer::OnInitialized(media::RendererClient* client, bool success) {
       SurfaceCreatedCB surface_create_CB = base::BindPostTaskToCurrentDefault(
           base::BindRepeating(&MojoRenderer::OnRequestVideoSurfaceDone,
                               weak_factory_.GetWeakPtr()));
-      std::move(request_surface_cb_).Run(std::move(surface_create_CB));
+      std::move(request_surface_cb_).Run(
+          std::move(surface_create_CB), true, "MojoRenderer");
     }
 #endif  // OHOS_VIDEO_ASSISTANT
   }

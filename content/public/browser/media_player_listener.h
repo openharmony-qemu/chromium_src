@@ -25,6 +25,7 @@ class MediaPlayerListener {
   virtual void OnSeekFinished() {}
   virtual void OnError(uint32_t error_code, const std::string& error_msg) {}
   virtual void OnVideoSizeChanged(int width, int height) {}
+  virtual void OnFullscreenOverlayChanged(bool fullscreen_overlay) {}
 };
 
 } // namepsace content

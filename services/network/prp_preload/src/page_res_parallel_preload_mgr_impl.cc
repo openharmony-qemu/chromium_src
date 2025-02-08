@@ -26,26 +26,31 @@ PRParallelPreloadMgr& PRParallelPreloadMgr::GetInstance() {
 }
 
 PRPPreloadMode GetPRParallelPreloadModeInner() {
+#if defined(WEBVIEW_ARM64)
   std::string prp_preload_mode =
 	OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetPRPPreloadMode();
   bool isMobile = base::ohos::IsMobileDevice();
   if (!isMobile) {
-	LOG(DEBUG) << "PRPPreload.GetPRParallelPreloadModeInner is not Mobile, NONE";
+	LOG(INFO) << "PRPPreload.GetPRParallelPreloadModeInner is not Mobile, NONE";
 	return PRPPreloadMode::NONE;
   }
 
   if (prp_preload_mode == PRP_PRELOAD_MODE_PRECONNECT) {
-	LOG(DEBUG) << "PRPPreload.GetPRParallelPreloadModeInner PRECONNECT";
+	LOG(INFO) << "PRPPreload.GetPRParallelPreloadModeInner PRECONNECT";
 	return PRPPreloadMode::PRECONNECT;
   }
 
   if (prp_preload_mode == PRP_PRELOAD_MODE_PRELOAD) {
-	LOG(DEBUG) << "PRPPreload.GetPRParallelPreloadModeInner PRELOAD";
+	LOG(INFO) << "PRPPreload.GetPRParallelPreloadModeInner PRELOAD";
 	return PRPPreloadMode::PRELOAD;
   }
 
-  LOG(DEBUG) << "PRPPreload.GetPRParallelPreloadModeInner NONE";
+  LOG(INFO) << "PRPPreload.GetPRParallelPreloadModeInner NONE";
   return PRPPreloadMode::NONE;
+#else
+  LOG(INFO) << "PRPPreload.GetPRParallelPreloadModeInner only support arm64, NONE";
+  return PRPPreloadMode::NONE;
+#endif
 }
 
 PRPPreloadMode PRParallelPreloadMgr::GetPRParallelPreloadMode() {

@@ -21,6 +21,10 @@ source_set("prp_preload") {
     "//services/network/public/mojom",
   ]
 
+  if (target_cpu == "arm64") {
+    defines = [ "WEBVIEW_ARM64" ]
+  }
+
   sources = [
     "src/disk_cache_backend_factory.cc",
     "src/disk_cache_file.cc",

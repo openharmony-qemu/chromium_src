@@ -48,7 +48,7 @@ if defined(WEBVIEW_ARM64)
   LOG(DEBUG) << "PRPPreload.GetPRParallelPreloadModeInner NONE";
   return PRPPreloadMode::NONE;
 #else
-  LOG(DEBUG) << "PRPPreload.GetPRParallelPreloadModeInner only support arm64, NONE";
+  LOG(INFO) << "PRPPreload.GetPRParallelPreloadModeInner only support arm64, NONE";
   return PRPPreloadMode::NONE;
 #endif
 }

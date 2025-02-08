@@ -38,8 +38,13 @@ MATCHER(IsEOSDecoderBuffer, "") {
   return arg->end_of_stream();
 }
 
+#ifdef OHOS_VIDEO_ASSISTANT
+static void OnAudioDecoderStreamInitialized(base::OnceClosure closure,
+                                            bool success, bool, std::string) {
+#else
 static void OnAudioDecoderStreamInitialized(base::OnceClosure closure,
                                             bool success) {
+#endif // OHOS_VIDEO_ASSISTANT
   ASSERT_TRUE(success);
   std::move(closure).Run();
 }

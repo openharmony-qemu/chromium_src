@@ -1638,6 +1638,7 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
       const MediaPlayerId& media_player_id);
 
   void SetVideoSurface(const MediaPlayerId& id, int32_t surface_widget);
+  void ReportVideoDecoderName(const std::string& decoder_name);
 #endif // OHOS_VIDEO_ASSISTANT
 
  private:

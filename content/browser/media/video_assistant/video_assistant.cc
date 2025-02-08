@@ -38,4 +38,6 @@ void VideoAssistant::OnUpdateVideoAttributes(
     const MediaPlayerId& id) {}
 void VideoAssistant::OnVideoDestroyed(const MediaPlayerId& id) {}
 
+void VideoAssistant::ReportVideoDecoderName(const std::string& decoder_name) {}
+
 } // namespace

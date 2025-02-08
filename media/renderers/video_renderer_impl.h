@@ -103,7 +103,13 @@ class MEDIA_EXPORT VideoRendererImpl
 
  private:
   // Callback for |video_decoder_stream_| initialization.
+#ifdef OHOS_VIDEO_ASSISTANT
+  void OnVideoDecoderStreamInitialized(bool success,
+                                       bool support_video_suface,
+                                       std::string decoder_name);
+#else
   void OnVideoDecoderStreamInitialized(bool success);
+#endif // OHOS_VIDEO_ASSISTANT
 
   void FinishInitialization(PipelineStatus status);
   void FinishFlush();

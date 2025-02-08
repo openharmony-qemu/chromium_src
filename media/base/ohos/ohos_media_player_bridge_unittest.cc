@@ -79,6 +79,11 @@ class MockPlayerAdapter : public PlayerAdapter {
   MOCK_METHOD(int32_t, GetDuration, (int32_t & duration), (override));
   MOCK_METHOD(int32_t, SetPlaybackSpeed, (PlaybackRateMode mode), (override));
   MOCK_METHOD(int32_t, SetVideoSurfaceNew, (void* native_window), (override));
+  using HeaderType = std::map<std::string, std::string>;
+  MOCK_METHOD(int32_t,
+              SetMediaSourceHeader,
+              (const std::string& url, const HeaderType& header),
+              (override));
 };
 
 class MockSurfaceBufferAdapter : public SurfaceBufferAdapter {

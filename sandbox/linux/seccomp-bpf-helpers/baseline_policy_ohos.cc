@@ -230,11 +230,6 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
     }
 
     if (sysno == __NR_ioctl) {
-struct dma_buf_sync {
-    __u64 flags;
-};
-#define DMA_BUF_BASE 'b'
-#define DMA_BUF_IOCTL_SYNC _IOW(DMA_BUF_BASE, 0, struct dma_buf_sync)
 
 struct QosCtrlData {
     int pid;
@@ -267,9 +262,10 @@ constexpr unsigned int QOS_CTRL_IPC_MAGIC = 0xCC;
                         ASHMEM_PIN, ASHMEM_UNPIN, ASHMEM_GET_PIN_STATUS,
                         kBinderWriteRead32, kBinderWriteRead64, BINDER_SET_MAX_THREADS,
                         BINDER_THREAD_EXIT, BINDER_VERSION, BINDER_ENABLE_ONEWAY_SPAM_DETECTION,
-                        BINDER_FEATURE_SET, BINDER_GET_SENDER_INFO,
-                        DMA_BUF_IOCTL_SYNC, QOS_CTRL_BASIC_OPERATION, TIOCGWINSZ},
+                        BINDER_FEATURE_SET, BINDER_GET_SENDER_INFO},
                     Allow())
+            .Cases({QOS_CTRL_BASIC_OPERATION, TIOCGWINSZ},
+                    Error(EPERM))
             .Default(RestrictIoctl());
     }
 
@@ -302,7 +298,7 @@ constexpr unsigned int QOS_CTRL_IPC_MAGIC = 0xCC;
             .Cases({HM_PR_SILK_BLOCKAWARE_OPS},
                 If(AnyOf(arg == BLOCKAWARE_SUBOPS_INIT, arg == BLOCKAWARE_SUBOPS_REG,
                     arg == BLOCKAWARE_SUBOPS_UNREG, arg == BLOCKAWARE_SUBOPS_MONITORFD),
-                    Allow()).Else(CrashSIGSYSClone()))
+                    Error(EPERM)).Else(CrashSIGSYSPrctl()))
             .Default(BaselinePolicy::EvaluateSyscall(sysno));
     }
 
@@ -313,7 +309,7 @@ constexpr unsigned int QOS_CTRL_IPC_MAGIC = 0xCC;
 
         return Switch(clockid)
             .Cases({CLOCK_MONOTONIC},
-                If(flags == (TFD_CLOEXEC | TFD_NONBLOCK), Allow()).Else(CrashSIGSYSPrctl()))
+                If(flags == (TFD_CLOEXEC | TFD_NONBLOCK), Allow()).Else(CrashSIGSYS()))
             .Default(BaselinePolicy::EvaluateSyscall(sysno));
     }
 
@@ -322,8 +318,8 @@ constexpr unsigned int QOS_CTRL_IPC_MAGIC = 0xCC;
         const Arg<int> option(1);
 
         return Switch(option)
-            .Cases({TFD_TIMER_ABSTIME},
-                Allow())
+            .Cases({TFD_TIMER_ABSTIME, 0},
+                Error(EPERM))
             .Default(BaselinePolicy::EvaluateSyscall(sysno));
     }
 
@@ -332,7 +328,7 @@ constexpr unsigned int QOS_CTRL_IPC_MAGIC = 0xCC;
 
         return Switch(level)
             .Cases({SOL_SOCKET},
-                If(optname == SO_SNDBUF, Allow()).Else(CrashSIGSYSPrctl()))
+                If(optname == SO_SNDBUF, Error(EPERM)).Else(CrashSIGSYSSockopt()))
             .Default(BaselinePolicy::EvaluateSyscall(sysno));
     }
 #endif

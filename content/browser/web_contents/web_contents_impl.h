@@ -754,6 +754,7 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 #if defined(OHOS_CLIPBOARD)
   void MouseSelectMenuShow(bool show) override;
   void ChangeVisibilityOfQuickMenu() override;
+  void CollapseAllFramesSelection() override;
 #endif
 
   void RunJavaScriptDialog(RenderFrameHostImpl* render_frame_host,

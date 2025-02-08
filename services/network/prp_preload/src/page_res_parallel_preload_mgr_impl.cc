@@ -26,7 +26,7 @@ PRParallelPreloadMgr& PRParallelPreloadMgr::GetInstance() {
 }
 
 PRPPreloadMode GetPRParallelPreloadModeInner() {
-if defined(WEBVIEW_ARM64)
+#if defined(WEBVIEW_ARM64)
   std::string prp_preload_mode =
 	OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetPRPPreloadMode();
   bool isMobile = base::ohos::IsMobileDevice();

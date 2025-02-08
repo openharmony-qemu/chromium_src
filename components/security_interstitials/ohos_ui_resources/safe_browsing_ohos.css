@@ -156,7 +156,7 @@ a {
   padding-left: 24px;
 }
 
-button:hover {
+.using-mouse button:hover {
   background-color: rgba(0,0,0,0.1);
 }
 
@@ -169,6 +169,15 @@ button:active {
 }
 
 @media (prefers-color-scheme: dark) {
+
+  a {
+    color: #5291ff;
+  }
+ 
+  body {
+    background-color: #202224;
+  }
+
   .hw-istablet {
     background-color: #202224;
   }
@@ -192,6 +201,14 @@ button:active {
     color: #5291ff;
   }
 
+  .hw-istablet .hw-link {
+    color: #5291ff;
+  }
+ 
+  .hw-ispc .hw-link {
+    color: #5291ff;
+  }
+
   #hw_blcok_img {
     content: url(ic_safe_browsing_error_dark.svg);
   }
@@ -201,10 +218,10 @@ button:active {
   }
 
   button {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0);
   }
 
-  button:hover {
+  .using-mouse button:hover {
     background-color: rgba(255, 255, 255, 0.2);
   }
   

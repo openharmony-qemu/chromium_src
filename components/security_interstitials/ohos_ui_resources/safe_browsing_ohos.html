@@ -32,6 +32,24 @@
           document.getElementById('hw_proceed').style.display = 'none';
         }
 
+        document.body.addEventListener('mousemove', function (event) {
+          if (event.sourceCapabilities && event.sourceCapabilities.firesTouchEvents) {
+            return;
+          }
+          document.body.classList.add('using-mouse');
+        });
+ 
+        document.body.addEventListener('touchstart', function () {
+          document.body.classList.remove('using-mouse');
+        });
+ 
+        document.addEventListener('touchend', function () {
+          const buttons = document.querySelectorAll('button');
+          buttons.forEach(button => {
+            button.blur();
+          });
+        });
+
         calcViewportSize();
       }
 

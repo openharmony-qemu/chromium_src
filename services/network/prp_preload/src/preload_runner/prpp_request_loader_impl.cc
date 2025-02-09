@@ -349,11 +349,15 @@ void PRPPRequestLoaderImpl::DidRead(int num_bytes, bool completed_synchronously)
     cur_write_block_ = nullptr;
     if (out_buf_ && delegate_) {
         int len = Read(out_buf_.get(), out_max_bytes_);
-        delegate_->OnReadCompleted(url_request_.get(), len);
-        // resource read complete, loader has been destroyed
-        if (len == 0) {
-          return;
+        if ((len > 0) && (body_cache_.size() >= MAX_PRPP_BODY_CACHE_SIZE)) {
+          need_continue_read_ = true;
+        } else if (len > 0) {
+          base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(FROM_HERE,
+            base::BindOnce(&PRPPRequestLoaderImpl::ReadMore, weak_ptr_factory_.GetWeakPtr()));
         }
+        delegate_->OnReadCompleted(url_request_.get(), len);
+        // the url_loader may destroy, so here we must return.
+        return;
     }
   }
 

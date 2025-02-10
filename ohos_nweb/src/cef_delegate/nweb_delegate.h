@@ -307,6 +307,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #ifdef OHOS_I18N
   void UpdateLocale(const std::string& language,
                     const std::string& region) override;
+  void UpdateNavigatorLanguage(const std::string& language,
+                               const std::string& region) override;
 #endif  // #ifdef OHOS_I18N
   CefRefPtr<CefClient> GetCefClient() const override {
     return handler_delegate_;

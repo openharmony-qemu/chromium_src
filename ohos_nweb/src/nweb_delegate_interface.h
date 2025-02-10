@@ -311,6 +311,8 @@ class NWebDelegateInterface
 #ifdef OHOS_I18N
   virtual void UpdateLocale(const std::string& language,
                             const std::string& region) = 0;
+  virtual void UpdateNavigatorLanguage(const std::string& language,
+                                       const std::string& region) = 0;
 #endif  // #ifdef OHOS_I18N
 
 #ifdef OHOS_DRAG_DROP

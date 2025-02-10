@@ -206,6 +206,10 @@ class NWebImpl : public NWeb {
   void SendDragEvent(std::shared_ptr<NWebDragEvent> dragEvent) override;
   void UpdateLocale(const std::string& language,
                     const std::string& region) override;
+  void UpdateLocaleForAllNWeb(const std::string& language,
+                              const std::string& region);
+  void UpdateNavigatorLanguage(const std::string& language,
+                               const std::string& region);
 
   void HasImages(std::shared_ptr<NWebBoolValueCallback> callback) override;
   void RemoveCache(bool include_disk_files) override;

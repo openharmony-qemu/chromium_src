@@ -2997,6 +2997,26 @@ bool NWebImpl::Restore() {
    return nweb_delegate_->Restore();
 }
 
+#ifdef OHOS_EX_REFRESH_IFRAME
+bool NWebImpl::WebExtensionContextMenuIsIframe()
+{
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "nullptr nweb_delegate_";
+    return false;
+  }
+  return nweb_delegate_->WebExtensionContextMenuIsIframe();
+}
+
+void NWebImpl::WebExtensionContextMenuReloadFocusedFrame()
+{
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "nullptr nweb_delegate_";
+    return;
+  }
+  return nweb_delegate_->WebExtensionContextMenuReloadFocusedFrame();
+}
+#endif
+
 // static
 void NWebImpl::ResumeDownloadStatic(
     std::shared_ptr<NWebDownloadItem> web_download) {

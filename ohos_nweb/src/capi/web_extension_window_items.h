@@ -44,32 +44,6 @@ enum class WebExtensionWindowCreateType {
   UNKNOWN_TYPE
 };
 
-struct WebExtensionWindowCreateData {
-  static const int32_t NUM_PROPERTIES = 11;
-  std::optional<bool> focused;
-  std::optional<int32_t> height;
-  std::optional<bool> incognito;
-  std::optional<int32_t> left;
-  std::optional<bool> setSelfAsOpener;
-  std::optional<WebExtensionWindowState> state;
-  std::optional<int32_t> tabId;
-  std::optional<int32_t> top;
-  std::optional<WebExtensionWindowCreateType> type;
-  std::optional<std::vector<std::string>> urls;
-  std::optional<int32_t> width;
-};
-
-struct WebExtensionWindowUpdateInfo {
-  static const int32_t NUM_PROPERTIES = 7;
-  std::optional<bool> drawAttention;
-  std::optional<bool> focused;
-  std::optional<int32_t> height;
-  std::optional<int32_t> left;
-  std::optional<WebExtensionWindowState> state;
-  std::optional<int32_t> top;
-  std::optional<int32_t> width;
-};
-
 struct WebExtensionWindowQueryOptions {
   static const int32_t NUM_PROPERTIES = 2;
   std::optional<bool> populate;

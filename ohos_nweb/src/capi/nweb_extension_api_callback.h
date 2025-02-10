@@ -40,8 +40,6 @@ struct NWebExtensionApiCallback {
   std::unique_ptr<NWebExtensionTab> (*NotifyGet)(int32_t tabId);
   void (*NotifyGetZoom)(int32_t tabId);
   void (*NotifyGetZoomSettings)(int32_t tabId);
-  void (*NotifyGoBack)(int32_t tabId);
-  void (*NotifyGoForward)(int32_t tabId);
   void (*NotifyGroup)(NWebExtensionTabGroupOptions& options);
   void (*NotifyHighlight)(NWebExtensionTabHighlightInfo& highlightInfo);
   void (*NotifyMove)(std::vector<int32_t>& tabIds,
@@ -59,13 +57,8 @@ struct NWebExtensionApiCallback {
 struct NWebExtensionWindowsApiCallback {
   size_t struct_size = sizeof(NWebExtensionWindowsApiCallback);
   int nweb_id{0};
-  void (*OnCreateWindow)(const WebExtensionWindowCreateData& create_data);
-  void (*OnRemoveWindow)(int windowId);
-  void (*OnUpdateWindow)(int windowId, const WebExtensionWindowUpdateInfo& update_info);
-  void (*OnGetWindow)(int windowId, const WebExtensionWindowQueryOptions& queryOptions);
   void (*OnGetAllWindows)(const WebExtensionWindowQueryOptions& queryOptions,
                            std::vector<WebExtensionWindow>& result);
-  void (*OnGetLastFocusedWindow)(const WebExtensionWindowQueryOptions& queryOptions);
 };
 
 struct NWebExtensionSidePanelApiCallback {

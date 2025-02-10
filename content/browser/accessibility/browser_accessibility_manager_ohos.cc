@@ -261,6 +261,8 @@ void BrowserAccessibilityManagerOHOS::FireGeneratedEvent(
 
   if (event_type != ui::AXEventGenerator::Event::SUBTREE_CREATED) {
     HandleContentChanged(accessibilityId);
+  } else {
+    DecideAccessibilityFocus(accessibilityId);
   }
   switch (event_type) {
     case ui::AXEventGenerator::Event::VALUE_IN_TEXT_FIELD_CHANGED:
@@ -597,7 +599,7 @@ void BrowserAccessibilityManagerOHOS::OnAtomicUpdateFinished(
 
 void BrowserAccessibilityManagerOHOS::HandleNavigate(int64_t newRootId) {
   if (newRootId != kInvalidAccessibilityId) {
-    accessibilityFocusId_ = kInvalidAccessibilityId;
+    ClearAccessibilityFocus();
   }
 }
 
@@ -620,6 +622,40 @@ void BrowserAccessibilityManagerOHOS::InitializeAccessibilityEventDispatcher() {
 
   eventDispatcher_ = std::make_unique<AccessibilityEventDispatcher>(
       eventThrottleDelays, viewIndependentEvents, this);
+}
+
+void BrowserAccessibilityManagerOHOS::ClearAccessibilityFocus() {
+  SendAccessibilityEvent(
+      GetRootAccessibilityId(),
+      OHOS::NWeb::AccessibilityEventType::ACCESSIBILITY_FOCUS_CLEARED);
+  accessibilityFocusId_ = kInvalidAccessibilityId;
+}
+
+void BrowserAccessibilityManagerOHOS::DecideAccessibilityFocus(
+    int64_t accessibilityId) {
+  if (accessibilityFocusId_ == kInvalidAccessibilityId) {
+    return;
+  }
+
+  BrowserAccessibilityOHOS* newNode =
+      BrowserAccessibilityOHOS::GetFromAccessibilityId(accessibilityId);
+  BrowserAccessibilityOHOS* focusedNode =
+      BrowserAccessibilityOHOS::GetFromAccessibilityId(accessibilityFocusId_);
+
+  if (newNode == nullptr || focusedNode == nullptr) {
+    return;
+  }
+
+  if (focusedNode->IsDescendantOf(newNode)) {
+    return;
+  }
+
+  gfx::Rect newRect = newNode->GetClippedRootFrameBoundsRect();
+  gfx::Rect focusedRect = focusedNode->GetClippedRootFrameBoundsRect();
+
+  if (newRect.Contains(focusedRect)) {
+    ClearAccessibilityFocus();
+  }
 }
 
 void AccessibilityEventDispatcher::EnqueueEvent(int64_t accessibilityId,

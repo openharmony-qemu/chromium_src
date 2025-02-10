@@ -12,6 +12,7 @@
 #if BUILDFLAG(IS_OHOS)
 #include "base/system/sys_info.h"
 #include "ohos_adapter_helper.h"
+#include "base/ohos/sys_info_utils.h"
 #endif  // BUILDFLAG(IS_OHOS)
 
 using blink::WebGestureEvent;
@@ -31,6 +32,29 @@ const double kMinBoostTouchScrollSpeedSquare = 150 * 150.;
 // are received. The default value on Android native views is 40ms, but we use a
 // slightly increased value to accomodate small IPC message delays.
 constexpr base::TimeDelta kFlingBoostTimeoutDelay = base::Seconds(0.05);
+
+#if BUILDFLAG(IS_OHOS)
+const float kMaxBoostFlingSpeed = 9000;
+
+void LimitVelocity(gfx::Vector2dF &velocity) {
+  if (base::ohos::IsPcDevice()) {
+    float vx = velocity.x();
+    float vy = velocity.y();
+    if (vx > kMaxBoostFlingSpeed)
+      vx = kMaxBoostFlingSpeed;
+    else if (vx < -kMaxBoostFlingSpeed)
+      vx = -kMaxBoostFlingSpeed;
+
+    if (vy > kMaxBoostFlingSpeed)
+      vy = kMaxBoostFlingSpeed;
+    else if (vy < -kMaxBoostFlingSpeed)
+      vy = -kMaxBoostFlingSpeed;
+    velocity.set_x(vx);
+    velocity.set_y(vy);
+    TRACE_EVENT2("input", "Fling Boosted", "vx", velocity.x(), "vy", velocity.y());
+  }
+}
+#endif // BUILDFLAG(IS_OHOS)
 
 constexpr double Epsilon = 0.001f;
 
@@ -76,6 +100,9 @@ gfx::Vector2dF FlingBooster::GetVelocityForFlingStart(
 
   if (ShouldBoostFling(fling_start)) {
     velocity += previous_fling_starting_velocity_;
+#if BUILDFLAG(IS_OHOS)
+    LimitVelocity(velocity);
+#endif
     TRACE_EVENT_INSTANT2("input", "Boosted", TRACE_EVENT_SCOPE_THREAD, "vx",
                          velocity.x(), "vy", velocity.y());
   }

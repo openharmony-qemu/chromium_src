@@ -110,9 +110,7 @@ void SetRuntimeFeatureDefaultsForPlatform(
     WebRuntimeFeatures::EnableDisplayCutoutAPI(true);
   }
 #elif defined(OHOS_DISPLAY_CUTOUT) && BUILDFLAG(IS_OHOS)
-  if (!base::ohos::IsPcDevice()) {
-    WebRuntimeFeatures::EnableDisplayCutoutAPI(true);
-  }
+  WebRuntimeFeatures::EnableDisplayCutoutAPI(true);
 #endif
 
 #if BUILDFLAG(IS_ANDROID)

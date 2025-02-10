@@ -2548,6 +2548,21 @@ void NWebDelegate::UpdateLocale(const std::string& language,
 
   GetBrowser()->GetHost()->UpdateLocale(CefString(locale));
 }
+
+void NWebDelegate::UpdateNavigatorLanguage(const std::string& language,
+                                           const std::string& region) {
+  if (!GetBrowser().get()) {
+    return;
+  }
+
+  std::string locale = base::ohos::ComputeLanguageByRegion(region);
+  if (locale == "") {
+    // Current system only support zh, bo, ug, en.
+    return;
+  }
+
+  GetBrowser()->GetHost()->UpdateNavigatorLanguage(CefString(locale));
+}
 #endif  // #ifdef OHOS_I18N
 
 void NWebDelegate::SetNWebId(uint32_t nwebId) {

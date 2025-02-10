@@ -2027,12 +2027,34 @@ std::string NWebImpl::GetUrl() {
 }
 
 #ifdef OHOS_I18N
+void NWebImpl::UpdateNavigatorLanguage(const std::string& language,
+                                       const std::string& region) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->UpdateNavigatorLanguage(language, region);
+}
+
 void NWebImpl::UpdateLocale(const std::string& language,
                             const std::string& region) {
   if (nweb_delegate_ == nullptr) {
     return;
   }
   nweb_delegate_->UpdateLocale(language, region);
+}
+
+void NWebImpl::UpdateLocaleForAllNWeb(const std::string& language,
+                                      const std::string& region) {
+  NWebMap* map = g_nweb_map.Pointer();
+  for(const auto& pair : *map) {
+    int nweb_id = pair.first;
+    auto nweb = pair.second.lock();
+    if(nweb) {
+      nweb->UpdateNavigatorLanguage(language, region);
+    } else {
+      LOG(WARNING) << "Failed to lock nweb for newb_id: " << nweb_id;
+    }
+  }
 }
 #endif  // ifdef OHOS_I18N
 
@@ -3010,6 +3032,7 @@ void NWebImpl::UpdateAcceptLanguageInternal() {
     std::string language = match.prefix();
     std::string region = match.suffix();
     UpdateLocale(language, region);
+    UpdateLocaleForAllNWeb(language, region);
   }
 }
 #endif

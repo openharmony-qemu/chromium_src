@@ -709,7 +709,7 @@ void NWebPreferenceDelegate::SetNativeEmbedMode(bool flag) {
   // Native Embed is not supported on pc device.
   CefRefPtr<CefCommandLine> command_line = CefCommandLine::GetGlobalCommandLine();
   auto isEnableEmbed = command_line->HasSwitch(::switches::kEnableEmbedMode);
-  enable_embed_mode_ = flag && !isEnableEmbed;
+  enable_embed_mode_ = flag && (!isEnableEmbed || base::ohos::IsCompatibleMode());
   if (enable_embed_mode_) {
     zooming_function_enabled_ = false;
   }

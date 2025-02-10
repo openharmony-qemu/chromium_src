@@ -381,7 +381,9 @@ void InitialWebEngineArgs(
   web_engine_args.emplace_back("--no-sandbox");
   web_engine_args.emplace_back("--use-mobile-user-agent");
   web_engine_args.emplace_back("--enable-gpu-rasterization");
-  web_engine_args.emplace_back("--enable-viewport");
+  if (!base::ohos::IsPcDevice() || base::ohos::IsCompatibleMode()) {
+    web_engine_args.emplace_back("--enable-viewport");
+  }
   web_engine_args.emplace_back(
       "--browser-subprocess-path=/system/bin/web_render");
   web_engine_args.emplace_back("--zygote-cmd-prefix=/system/bin/web_render");

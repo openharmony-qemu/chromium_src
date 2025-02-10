@@ -300,7 +300,14 @@ base::TimeDelta VideoRendererImpl::GetPreferredRenderInterval() {
   return algorithm_->average_frame_duration();
 }
 
+#ifdef OHOS_VIDEO_ASSISTANT
+void VideoRendererImpl::OnVideoDecoderStreamInitialized(
+    bool success,
+    bool support_video_suface,
+    std::string decoder_name) {
+#else
 void VideoRendererImpl::OnVideoDecoderStreamInitialized(bool success) {
+#endif // OHOS_VIDEO_ASSISTANT
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
   base::AutoLock auto_lock(lock_);
   DCHECK_EQ(state_, kInitializing);
@@ -317,7 +324,7 @@ void VideoRendererImpl::OnVideoDecoderStreamInitialized(bool success) {
         base::BindRepeating(&VideoRendererImpl::OnRequestVideoSurfaceDone,
                             weak_factory_.GetWeakPtr()));
     std::move(request_surface_cb_)
-        .Run(std::move(surface_create_CB));
+        .Run(std::move(surface_create_CB), support_video_suface, decoder_name);
   }
 #endif // OHOS_VIDEO_ASSISTANT
 

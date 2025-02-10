@@ -998,6 +998,21 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::VideoSizeChangedOver
   media_player_listener_->OnVideoSizeChanged(width, height);
 }
 
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
+    FullscreenOverlayChanged(
+        bool fullscreen_overlay, const std::string& decoder_name) {
+  if (media_web_contents_observer_ &&
+      media_web_contents_observer_->web_contents_impl()) {
+    media_web_contents_observer_->web_contents_impl()->ReportVideoDecoderName(
+        decoder_name);
+  }
+  if (!media_player_listener_) {
+    return;
+  }
+  LOG(INFO) << "MediaWebContentsObserver::FullscreenOverlayChanged("
+            << fullscreen_overlay << ", " << decoder_name << ")";
+  media_player_listener_->OnFullscreenOverlayChanged(fullscreen_overlay);
+}
 #endif // OHOS_VIDEO_ASSISTANT
 
 #if defined(OHOS_MEDIA_AVSESSION)

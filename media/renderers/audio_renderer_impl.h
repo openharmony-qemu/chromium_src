@@ -206,7 +206,11 @@ class MEDIA_EXPORT AudioRendererImpl
 
   // Called upon AudioDecoderStream initialization, or failure thereof
   // (indicated by the value of |success|).
+#ifdef OHOS_VIDEO_ASSISTANT
+  void OnAudioDecoderStreamInitialized(bool succes, bool, std::string);
+#else
   void OnAudioDecoderStreamInitialized(bool succes);
+#endif // OHOS_VIDEO_ASSISTANT
 
   void FinishInitialization(PipelineStatus status);
   void FinishFlush();

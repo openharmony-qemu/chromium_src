@@ -27,6 +27,20 @@
 
 namespace media {
 
+#ifdef OHOS_VIDEO_ASSISTANT
+namespace {
+template<typename T>
+bool SupportVideoSurface(const T& decoder_type) {
+  return false;
+}
+template<>
+bool SupportVideoSurface(const VideoDecoderType& decoder_type) {
+  return decoder_type == VideoDecoderType::kMediaCodec ||
+         decoder_type == VideoDecoderType::kOHOS;
+}
+}
+#endif // OHOS_VIDEO_ASSISTANT
+
 #define FUNCTION_DVLOG(level) \
   DVLOG(level) << __func__ << "<" << GetStreamTypeString() << ">"
 
@@ -123,8 +137,14 @@ DecoderStream<StreamType>::~DecoderStream() {
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
 
   if (init_cb_) {
+#ifdef OHOS_VIDEO_ASSISTANT
+    task_runner_->PostTask(FROM_HERE,
+                           base::BindOnce(std::move(init_cb_),
+                                          false, false, "No Decoder"));
+#else
     task_runner_->PostTask(FROM_HERE,
                            base::BindOnce(std::move(init_cb_), false));
+#endif // OHOS_VIDEO_ASSISTANT
   }
   if (read_cb_) {
     read_cb_ = base::BindPostTaskToCurrentDefault(std::move(read_cb_));
@@ -409,7 +429,11 @@ void DecoderStream<StreamType>::OnDecoderSelected(
       state_ = STATE_UNINITIALIZED;
       MEDIA_LOG(ERROR, media_log_)
           << GetStreamTypeString() << " decoder initialization failed";
+#ifdef OHOS_VIDEO_ASSISTANT
+      std::move(init_cb_).Run(false, false, "No Decoder");
+#else
       std::move(init_cb_).Run(false);
+#endif // OHOS_VIDEO_ASSISTANT
       // Node that |decoder_or_error| is not actually lost in this case, as
       // DecoderSelector is keeping track of it to use in case there are no
       // successfully initialized decoders.
@@ -455,7 +479,13 @@ void DecoderStream<StreamType>::OnDecoderSelected(
   state_ = STATE_NORMAL;
   if (StreamTraits::NeedsBitstreamConversion(decoder_.get()))
     stream_->EnableBitstreamConverter();
+#ifdef OHOS_VIDEO_ASSISTANT
+  std::move(init_cb_).Run(true,
+      SupportVideoSurface(decoder_->GetDecoderType()),
+      GetDecoderName(decoder_->GetDecoderType()));
+#else
   std::move(init_cb_).Run(true);
+#endif // OHOS_VIDEO_ASSISTANT
 }
 
 template <DemuxerStream::Type StreamType>

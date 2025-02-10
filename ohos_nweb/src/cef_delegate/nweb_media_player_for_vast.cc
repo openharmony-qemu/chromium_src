@@ -5,6 +5,7 @@
 #include "ohos_nweb/src/cef_delegate/nweb_media_player_for_vast.h"
 
 #include <utility>
+#include "base/logging.h"
 #include "ohos_nweb/src/capi/nweb_media_player_listener.h"
 
 namespace OHOS::NWeb {
@@ -146,4 +147,18 @@ void NWebMediaPlayerListenerForVAST::OnVideoSizeChanged(int width, int height) {
       width, height);
 }
 
+void NWebMediaPlayerListenerForVAST::OnFullscreenOverlayChanged(
+    bool fullscreen_overlay) {
+  if (!nweb_listener_) {
+    LOG(INFO) << "nweb_listener_ is null";
+    return;
+  }
+  if (!CheckValid(nweb_listener_.get(),
+      &nweb_listener_->on_fullscreen_overlay_changed)) {
+    LOG(INFO) << "on_fullscreen_overlay_changed is invalid";
+    return;
+  }
+  (nweb_listener_.get()->*(nweb_listener_->on_fullscreen_overlay_changed))(
+      fullscreen_overlay);
+}
 } // namespace OHOS::NWeb

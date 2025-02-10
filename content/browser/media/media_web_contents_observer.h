@@ -276,6 +276,8 @@ class CONTENT_EXPORT MediaWebContentsObserver
     void SeekingFinishedOverlay() override;
     void ErrorOverlay(int32_t error_code, const std::string& error_msg) override;
     void VideoSizeChangedOverlay(int32_t width, int32_t height) override;
+    void FullscreenOverlayChanged(
+        bool fullscreen_overlay, const std::string& decoder_name) override;
 #endif // OHOS_VIDEO_ASSISTANT
 
 #if defined(OHOS_MEDIA_AVSESSION)

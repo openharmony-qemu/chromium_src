@@ -732,11 +732,16 @@ void SetDelayDurationForBackgroundTabFreezing(int64_t delay) override;
   float GetViewPointHeight() const;
   int32_t GetArgumentByKey(const std::map<std::string, std::string>& actionArguments,
     const std::string& checkKey) const;
+  
+  void SetIsHovering(bool is_hovering) {
+    is_hovering_ = is_hovering;
+  }
 
   float zoom_in_factor_ = 1.25f;
   float zoom_out_factor_ = 0.8f;
   float default_virtual_pixel_ratio_ = 2.0;
   float intial_scale_ = 0;
+  bool is_hovering_ = false;
   bool has_requested_visited_history = false;
   CefRefPtr<NWebApplication> nweb_app_ = nullptr;
   CefRefPtr<NWebHandlerDelegate> handler_delegate_ = nullptr;

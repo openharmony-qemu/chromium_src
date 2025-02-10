@@ -1182,10 +1182,17 @@ bool BrowserAccessibilityOHOS::IsInterestingOnOHOS() const {
     return false;
   }
 
+  ui::AXOffscreenResult offscreen_result = ui::AXOffscreenResult::kOnscreen;
+  GetClippedRootFrameBoundsRect(&offscreen_result);
+  if (offscreen_result == ui::AXOffscreenResult::kOffscreen) {
+    return false;
+  }
+
   // Otherwise, the interesting nodes are leaf nodes with non-whitespace text.
-  return IsLeaf() && (!base::ContainsOnlyChars(GetTextContentUTF16(),
-                                               base::kWhitespaceUTF16) ||
-                      GetRole() == ax::mojom::Role::kParagraph);
+  return (IsLeaf() || IsClickable()) &&
+         (!base::ContainsOnlyChars(GetTextContentUTF16(),
+                                   base::kWhitespaceUTF16) ||
+          (GetRole() == ax::mojom::Role::kParagraph && PlatformChildCount()));
 }
 
 bool BrowserAccessibilityOHOS::IsChildOfLeaf() const {

@@ -157,6 +157,10 @@ class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
 
   void InitializeAccessibilityEventDispatcher();
 
+  void ClearAccessibilityFocus();
+
+  void DecideAccessibilityFocus(int64_t accessibilityId);
+
   int64_t lastHoverId_ = -1;
 
   int64_t accessibilityFocusId_ = -1;

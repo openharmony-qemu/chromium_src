@@ -799,7 +799,7 @@ void NWebInputMethodHandler::DeleteForwardHandlerOnUI(int32_t length) {
   keyEvent.modifiers = 0;
   keyEvent.is_system_key = false;
   keyEvent.character = keyEvent.unmodified_character = DEL_CHAR;
-  LOG(DEBUG) << "NWebInputMethodHandler::DeleteForwardHandlerOnUI";
+  LOG(INFO) << "NWebInputMethodHandler::DeleteForwardHandlerOnUI length=" << length;
 
   if (!browser_ || !browser_->GetHost()) {
     LOG(ERROR) << "delete backward browser get failed";
@@ -841,7 +841,7 @@ void NWebInputMethodHandler::DeleteBackwardHandlerOnUI(int32_t length) {
   keyEvent.modifiers = 0;
   keyEvent.is_system_key = false;
   keyEvent.character = keyEvent.unmodified_character = DEL_CHAR;
-  LOG(DEBUG) << "NWebInputMethodHandler::DeleteBackwardHandlerOnUI";
+  LOG(INFO) << "NWebInputMethodHandler::DeleteBackwardHandlerOnUI length=" << length;
 
   if (!browser_ || !browser_->GetHost()) {
     LOG(ERROR) << "delete forward browser get failed";

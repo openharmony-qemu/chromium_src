@@ -133,6 +133,7 @@ void ExternalBeginFrameSourceOHOS::OnVSyncImpl(int64_t timestamp,
     if (first_vsync_since_notify_enabled_) {
       first_vsync_since_notify_enabled_ = false;
       pre_vsync_period_ = last_vsync_period_;
+      vsync_period_ = VSYNC_PERIOD_120HZ;
     } else {
       int64_t period = last_vsync_period_ - pre_vsync_period_;
       pre_vsync_period_ = last_vsync_period_;

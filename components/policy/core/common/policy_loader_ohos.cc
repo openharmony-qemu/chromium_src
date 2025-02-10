@@ -5,6 +5,7 @@
 #include "components/policy/core/common/policy_loader_ohos.h"
 
 #include <string>
+#include <vector>
 
 #include "base/base_paths_ohos.h"
 #include "base/files/file.h"
@@ -20,46 +21,111 @@
 namespace policy {
 
 namespace {
-  constexpr bool kUseTestPolicies = false;
-}
+constexpr bool kUseTestPolicies = false;
+std::vector<PolicyLoaderOhos*> g_loaders;
+}  // namespace
 
 PolicyChangedEventCallback::PolicyChangedEventCallback(
     PolicyLoaderOhos* loader) : loader_(loader) {}
 
+void PolicyChangedEventCallback::OnPolicyChanged() {
+  OnPolicyChangedImpl();
+}
+
 void PolicyChangedEventCallback::Changed() {
+  OnPolicyChangedImpl();
+}
+
+void PolicyChangedEventCallback::OnPolicyChangedImpl() {
   LOG(INFO) << "Recv edm policy change event and reload policy.";
   if (loader_) {
     loader_->Reload(true);
   }
 }
 
+bool PolicyLoaderOhos::use_browser_policy_ = false;
+bool PolicyLoaderOhos::policy_source_choosed_ = false;
+
 PolicyLoaderOhos::PolicyLoaderOhos(
     scoped_refptr<base::SequencedTaskRunner> task_runner)
-    : AsyncPolicyLoader(task_runner, /*periodic_updates*/ false) {}
-
-PolicyLoaderOhos::~PolicyLoaderOhos() {
-    std::ignore = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-        .GetEnterpriseDeviceManagementInstance().StopObservePolicyChange();
+    : AsyncPolicyLoader(task_runner, /*periodic_updates*/ false) {
+  g_loaders.emplace_back(this);
+  TryChoosePolicySource();
 }
 
-void PolicyLoaderOhos::InitOnBackgroundThread() {
-    event_callback_ = std::make_shared<PolicyChangedEventCallback>(this);
-
-    OHOS::NWeb::OhosAdapterHelper::GetInstance()
-        .GetEnterpriseDeviceManagementInstance()
-        .RegistPolicyChangeEventCallback(event_callback_);
-
+PolicyLoaderOhos::~PolicyLoaderOhos() {
+  auto it = std::find(g_loaders.begin(), g_loaders.end(), this);
+  if (it != g_loaders.end()) {
+      g_loaders.erase(it);
+  }
+ 
+  if (!policy_source_choosed_) {
+    return;
+  }
+ 
+  if (use_browser_policy_) {
+    policy::BrowserPolicyHandler::GetInstance()->RemoveObserver(
+        event_callback_.get());
+  } else {
     std::ignore = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-        .GetEnterpriseDeviceManagementInstance().StartObservePolicyChange();
+                      .GetEnterpriseDeviceManagementInstance()
+                      .StopObservePolicyChange();
+  }
+}
+
+// static
+void PolicyLoaderOhos::TryChoosePolicySource() {
+  if (policy_source_choosed_) {
+    return;
+  }
+  policy_source_choosed_ = policy::ShouldUseBrowserPolicy(use_browser_policy_);
+  if (!policy_source_choosed_) {
+    LOG(INFO) << "PolicyLoaderOhos TryChoosePolicySource failed";
+    return;
+  }
+  LOG(INFO) << "PolicyLoaderOhos ShouldUseBrowserPolicy: "
+              << use_browser_policy_;
+  for (auto loader: g_loaders) {
+    if (use_browser_policy_) {
+      policy::BrowserPolicyHandler::GetInstance()->AddObserver(
+          loader->event_callback().get());
+    } else {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance()
+          .GetEnterpriseDeviceManagementInstance()
+          .RegistPolicyChangeEventCallback(loader->event_callback());
+ 
+      std::ignore = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                        .GetEnterpriseDeviceManagementInstance()
+                        .StartObservePolicyChange();
+    }
+  }
+}
+
+
+void PolicyLoaderOhos::InitOnBackgroundThread() {
+  event_callback_ = std::make_shared<PolicyChangedEventCallback>(this);
 }
 
 PolicyBundle PolicyLoaderOhos::Load() {
   std::string policies;
-  int32_t error_code = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                           .GetEnterpriseDeviceManagementInstance()
-                           .GetPolicies(policies);
-  LOG(INFO) << "GetPolicies error_code:" << error_code
-            << ", policies:" << policies;
+
+  TryChoosePolicySource();
+  if (!policy_source_choosed_) {
+    LOG(ERROR) << "Load with no policy source choosed";
+    return PolicyBundle();
+  }
+
+  if (use_browser_policy_) {
+    bool success =
+        policy::BrowserPolicyHandler::GetInstance()->GetPolicy(policies);
+    LOG(INFO) << "GetPolicies success:" << success << ", policies:" << policies;
+  } else {
+    int32_t error_code = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                             .GetEnterpriseDeviceManagementInstance()
+                             .GetPolicies(policies);
+    LOG(INFO) << "GetPolicies error_code:" << error_code
+              << ", policies:" << policies;
+  }
  
   if (kUseTestPolicies) {
     policies = ReadTestPolices();

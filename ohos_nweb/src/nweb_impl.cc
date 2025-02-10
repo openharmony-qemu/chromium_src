@@ -2846,6 +2846,7 @@ void NWebImpl::ExecuteVideoAssistantFunction(const std::string& cmd_id) {
   nweb_delegate_->ExecuteVideoAssistantFunction(cmd_id);
 }
 
+NO_SANITIZE("cfi")
 void NWebImpl::OnReportStatisticLog(const std::string& content) {
   if (on_report_statistic_log_callback_) {
     on_report_statistic_log_callback_(content.c_str());

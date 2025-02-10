@@ -750,6 +750,9 @@ class NWebImpl : public NWeb {
 #endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
   static void SetMigrationPasswordReady(const bool migrationReady);
+#if defined(OHOS_EDM_POLICY)
+  static void SetEnterprisePolicy(const std::string& policy, int version);
+#endif
 
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

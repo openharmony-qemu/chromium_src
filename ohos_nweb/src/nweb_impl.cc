@@ -202,6 +202,10 @@ extern bool g_siteIsolationMode;
 #include "components/prefs/pref_service.h"
 #endif
 
+#if defined(OHOS_EDM_POLICY)
+#include "components/policy/core/common/policy_loader_ohos.h"
+#endif
+
 #if defined(OHOS_VIDEO_ASSISTANT)
 OnReportStatisticLogFunc
     OHOS::NWeb::NWebImpl::on_report_statistic_log_callback_ = nullptr;
@@ -4446,3 +4450,11 @@ void NWebImpl::RemoveProxyOverride(std::shared_ptr<NWebProxyChangedCallback> cal
 }
 
 #endif // OHOS_DISPATCH_BEFORE_UNLOAD
+
+#if defined(OHOS_EDM_POLICY)
+// static
+void NWebImpl::SetEnterprisePolicy(const std::string& policy, int version) {
+  policy::BrowserPolicyHandler::GetInstance()->SetPolicyAndNotify(policy,
+                                                                  version);
+}
+#endif

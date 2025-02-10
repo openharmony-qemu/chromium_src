@@ -642,6 +642,7 @@ class WebContents : public PageNavigator,
 #ifdef OHOS_CLIPBOARD
   virtual void SetTouchInsertHandleMenuShow(bool show) = 0;
   virtual bool GetTouchInsertHandleMenuShow() = 0;
+  virtual void CollapseAllFramesSelection() = 0;
 #endif
 
 #ifdef OHOS_ARKWEB_ADBLOCK
@@ -696,6 +697,10 @@ class WebContents : public PageNavigator,
   virtual int GetNWebId() = 0;
   virtual void SetNWebId(int nWebID) = 0;
 #endif  // defined(OHOS_WEBRTC)
+
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  virtual void StopScreenCapture(int32_t nweb_id, const std::string& session_id) = 0;
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 
   // Saves the given title to the navigation entry and does associated work. It
   // will update history and the view with the new title, and also synthesize

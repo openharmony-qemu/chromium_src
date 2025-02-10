@@ -384,6 +384,10 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   void SetNWebId(int nWebID) override;
 #endif  // defined(OHOS_WEBRTC)
 
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  void StopScreenCapture(int32_t nweb_id, const std::string& session_id) override;
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+
   // WebContents ------------------------------------------------------
   WebContentsDelegate* GetDelegate() override;
   void SetDelegate(WebContentsDelegate* delegate) override;
@@ -754,6 +758,7 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 #if defined(OHOS_CLIPBOARD)
   void MouseSelectMenuShow(bool show) override;
   void ChangeVisibilityOfQuickMenu() override;
+  void CollapseAllFramesSelection() override;
 #endif
 
   void RunJavaScriptDialog(RenderFrameHostImpl* render_frame_host,

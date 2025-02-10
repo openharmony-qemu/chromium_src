@@ -7458,6 +7458,27 @@ void WebContentsImpl::ChangeVisibilityOfQuickMenu() {
     render_view_host_delegate_view_->ChangeVisibilityOfQuickMenu();
   }
 }
+
+void WebContentsImpl::CollapseAllFramesSelection() {
+  for (FrameTreeNode* node : primary_frame_tree_.Nodes()) {
+    RenderFrameHostImpl* rfh = node->current_frame_host();
+    if (!rfh) {
+      continue;
+    }
+    if (!rfh->IsRenderFrameLive()) {
+      continue;
+    }
+    RenderWidgetHostImpl* render_widget_host = rfh->GetRenderWidgetHost();
+    if (!render_widget_host) {
+      continue;
+    }
+    auto* input_handler = render_widget_host->GetFrameWidgetInputHandler();
+    if (!input_handler) {
+      continue;
+    }
+    input_handler->CollapseSelection();
+  }
+}
 #endif
 
 void WebContentsImpl::ShowContextMenu(
@@ -10452,6 +10473,22 @@ void WebContentsImpl::SetNWebId(int nWebID) {
   nWebID_ = nWebID;
 }
 #endif  // defined(OHOS_WEBRTC)
+
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+void WebContentsImpl::StopScreenCapture(int32_t nweb_id, const std::string& session_id) {
+  if(!BrowserMainLoop::GetInstance()){
+    LOG(ERROR) << "BrowserMainLoop null";
+    return;
+  }
+  auto media_stream_manager =
+      BrowserMainLoop::GetInstance()->media_stream_manager();
+  if (!media_stream_manager) {
+    LOG(ERROR) << "media_stream_manager null";
+    return;
+  }
+  media_stream_manager->StopScreenCapture(nweb_id, session_id);
+}
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
 std::unique_ptr<CustomMediaPlayer> WebContentsImpl::CreateCustomMediaPlayer(

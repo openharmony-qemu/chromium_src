@@ -497,6 +497,12 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   bool IsIntelligentTrackingPreventionEnabled() const override;
 #endif
 
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  void StopScreenCapture(int32_t nweb_id, const char* session_id) override;
+  void RegisterScreenCaptureDelegateListener(
+      std::shared_ptr<NWebScreenCaptureDelegateCallback> listener) override;
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+
 #if defined(OHOS_SCREEN_LOCK)
   void SetWakeLockCallback(int32_t windowId, const std::shared_ptr<NWebScreenLockCallback>& callback) override;
 #endif

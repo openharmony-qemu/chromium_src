@@ -119,6 +119,9 @@ namespace {
 
 void MaybeRunDeleteCallback(base::WeakPtr<net::CookieMonster> cookie_monster,
                             base::OnceClosure callback) {
+  if (!cookie_monster) {
+    LOG(FATAL) << "MaybeRunDeleteCallback cookie_monster is nullptr.";
+  }
   if (cookie_monster && callback)
     std::move(callback).Run();
 }

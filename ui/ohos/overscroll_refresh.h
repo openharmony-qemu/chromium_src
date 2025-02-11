@@ -156,7 +156,7 @@ class UI_OHOS_EXPORT OverscrollRefresh {
   bool did_stop_refresh_{false};
   gfx::Vector2dF pulltorefresh_scroll_;
   base::RetainingOneShotTimer reset_timer_;
-  std::unique_ptr<DecelerationAnimator> deceleration_animator_;
+scoped_refptr<DecelerationAnimator> deceleration_animator_;
   const scoped_refptr<base::SequencedTaskRunner> task_runner_;
 
   static const base::TimeDelta kResetDurationMs;

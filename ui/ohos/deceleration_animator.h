@@ -51,7 +51,7 @@ class DecelerationAnimatorListener {
   virtual ~DecelerationAnimatorListener() {}
 };
 
-class DecelerationAnimator {
+class DecelerationAnimator : public base::RefCountedThreadSafe<DecelerationAnimator> {
  public:
   DecelerationAnimator() : interpolator_(2.f), listener_(nullptr) {}
   DecelerationAnimator(float decelerate_factor,

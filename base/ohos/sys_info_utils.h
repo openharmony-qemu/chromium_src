@@ -51,6 +51,8 @@ BASE_EXPORT std::string BaseOsName();
 
 BASE_EXPORT int32_t ApplicationApiVersion();
 
+BASE_EXPORT bool IsCompatibleMode();
+
 }  // namespace ohos
 }  // namespace base
 

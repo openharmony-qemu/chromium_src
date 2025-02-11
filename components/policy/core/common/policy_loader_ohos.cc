@@ -49,6 +49,7 @@ bool PolicyLoaderOhos::policy_source_choosed_ = false;
 PolicyLoaderOhos::PolicyLoaderOhos(
     scoped_refptr<base::SequencedTaskRunner> task_runner)
     : AsyncPolicyLoader(task_runner, /*periodic_updates*/ false) {
+  event_callback_ = std::make_shared<PolicyChangedEventCallback>(this);
   g_loaders.emplace_back(this);
   TryChoosePolicySource();
 }
@@ -58,11 +59,11 @@ PolicyLoaderOhos::~PolicyLoaderOhos() {
   if (it != g_loaders.end()) {
       g_loaders.erase(it);
   }
- 
+
   if (!policy_source_choosed_) {
     return;
   }
- 
+
   if (use_browser_policy_) {
     policy::BrowserPolicyHandler::GetInstance()->RemoveObserver(
         event_callback_.get());
@@ -75,16 +76,17 @@ PolicyLoaderOhos::~PolicyLoaderOhos() {
 
 // static
 void PolicyLoaderOhos::TryChoosePolicySource() {
-  if (policy_source_choosed_) {
-    return;
-  }
-  policy_source_choosed_ = policy::ShouldUseBrowserPolicy(use_browser_policy_);
   if (!policy_source_choosed_) {
-    LOG(INFO) << "PolicyLoaderOhos TryChoosePolicySource failed";
-    return;
+    policy_source_choosed_ =
+        policy::ShouldUseBrowserPolicy(use_browser_policy_);
+    if (!policy_source_choosed_) {
+      LOG(INFO) << "PolicyLoaderOhos TryChoosePolicySource failed";
+      return;
+    }
+    LOG(INFO) << "PolicyLoaderOhos ShouldUseBrowserPolicy: "
+                << use_browser_policy_;
   }
-  LOG(INFO) << "PolicyLoaderOhos ShouldUseBrowserPolicy: "
-              << use_browser_policy_;
+
   for (auto loader: g_loaders) {
     if (use_browser_policy_) {
       policy::BrowserPolicyHandler::GetInstance()->AddObserver(
@@ -93,7 +95,7 @@ void PolicyLoaderOhos::TryChoosePolicySource() {
       OHOS::NWeb::OhosAdapterHelper::GetInstance()
           .GetEnterpriseDeviceManagementInstance()
           .RegistPolicyChangeEventCallback(loader->event_callback());
- 
+
       std::ignore = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                         .GetEnterpriseDeviceManagementInstance()
                         .StartObservePolicyChange();
@@ -101,10 +103,7 @@ void PolicyLoaderOhos::TryChoosePolicySource() {
   }
 }
 
-
-void PolicyLoaderOhos::InitOnBackgroundThread() {
-  event_callback_ = std::make_shared<PolicyChangedEventCallback>(this);
-}
+void PolicyLoaderOhos::InitOnBackgroundThread() {}
 
 PolicyBundle PolicyLoaderOhos::Load() {
   std::string policies;
@@ -126,12 +125,12 @@ PolicyBundle PolicyLoaderOhos::Load() {
     LOG(INFO) << "GetPolicies error_code:" << error_code
               << ", policies:" << policies;
   }
- 
+
   if (kUseTestPolicies) {
     policies = ReadTestPolices();
     LOG(INFO) << "ReadTestPolices policies:" << policies;
   }
- 
+
   PolicyBundle bundle;
   LoadOhosPolicy(policies, &bundle);
   return bundle;
@@ -142,20 +141,20 @@ std::string PolicyLoaderOhos::ReadTestPolices() {
   base::PathService::Get(base::DIR_CACHE, &data_path);
   data_path = data_path.Append("test_polices.json");
   LOG(INFO) << "Try to read test_polices.json from " << data_path.value();
- 
+
   base::File tfile(data_path, base::File::FLAG_OPEN | base::File::FLAG_READ);
   if (!tfile.IsValid()) {
     LOG(INFO) << "test_polices.json is invalid or not exist.";
     return "";
   }
- 
+
   std::vector<char> buffer(tfile.GetLength());
   int bytes_read = tfile.Read(0, buffer.data(), buffer.size());
   if (bytes_read == -1) {
     LOG(INFO) << "Read test_polices.json failed.";
     return "";
   }
- 
+
   auto buffer_str = std::string_view(buffer.data(), buffer.size());
   auto json = base::JSONReader::Read(
       buffer_str, base::JSON_ALLOW_TRAILING_COMMAS);
@@ -163,7 +162,7 @@ std::string PolicyLoaderOhos::ReadTestPolices() {
     LOG(INFO) << "Read test_polices.json failed as invalid json format.";
     return "";
   }
- 
+
   return std::string(buffer_str);
 }
 

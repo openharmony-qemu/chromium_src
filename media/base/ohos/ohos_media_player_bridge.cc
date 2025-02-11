@@ -243,8 +243,9 @@ void OHOSMediaPlayerBridge::Pause() {
   if ((player_ && player_state_ != OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_STARTED &&
                   player_state_ != OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_PAUSED &&
                   player_state_ != OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_STOPPED &&
+                  player_state_ != OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_PREPARED &&
                   player_state_ != OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_PLAYBACK_COMPLETE) || pending_play_) {
-    LOG(INFO) << "OHOSMediaPlayerBridge Pause when perpared!!";
+    LOG(INFO) << "OHOSMediaPlayerBridge Pause when perpared, player_state_ is:" << static_cast<int32_t>(player_state_);
     pause_when_prepared_ = true;
   }
   if (player_ && player_state_ == OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_STARTED) {
@@ -472,8 +473,12 @@ void OHOSMediaPlayerBridge::OnPlayerStateUpdate(
     }
 
     if (pending_play_) {
+      LOG(INFO) << "OnPlayerStateUpdate PLAYER_PREPARED, pending_play_";
       StartInternal();
       pending_play_ = false;
+    } else if (pause_when_prepared_) {
+      LOG(INFO) << "OnPlayerStateUpdate PLAYER_PREPARED, no pending_play then pause_when_prepared is false";
+      pause_when_prepared_ = false;
     }
   } else if (player_state ==
                  OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_STATE_ERROR ||

@@ -154,6 +154,33 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   bool is_hls_;
 #endif
 
+  // HTTP Request Headers
+  base::flat_map<std::string, std::string> headers_;
+
+  // User agent string to be used for media player.
+  const std::string user_agent_;
+
+  // Used to determine if cookies are accessed in a third-party context.
+  net::SiteForCookies site_for_cookies_;
+
+  // Waiting to retrieve cookies for `url_`.
+  bool pending_retrieve_cookies_;
+
+  // Whether to prepare after cookies retrieved.
+  bool should_prepare_on_retrieved_cookies_;
+
+  // Used when determining if first-party cookies may be accessible in a third-party context.
+  bool has_storage_access_;
+
+  // Cookies for `url_`.
+  std::string cookies_;
+
+  // Used to check for cookie content settings.
+  url::Origin top_frame_origin_;
+
+  // Whether user credentials are allowed to be passed.
+  bool allow_credentials_;
+
   base::WeakPtrFactory<OHOSMediaPlayerBridge> weak_factory_{this};
 };
 }  // namespace media

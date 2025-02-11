@@ -737,6 +737,38 @@ ARKWEB_NDK_EXPORT const char* OH_ArkWeb_GetLastJavascriptProxyCallingFrameUrl() 
 
   return NWEB::OhGinJavascriptBridgeDispatcherHost::GetLastCallingFrameUrlTLS();
 }
+
+ARKWEB_NDK_EXPORT ArkWeb_ErrorCode OH_NativeArkWeb_LoadData(const char* webTag,
+                                                            const char* data,
+                                                            const char* mimeType,
+                                                            const char* encoding,
+                                                            const char* baseUrl,
+                                                            const char* historyUrl) {
+  std::string base_url_str(baseUrl ? baseUrl : "");
+  std::string history_url_str(historyUrl ? historyUrl : "");
+
+  auto webObjectPtr =
+      OHOS::NWeb::ArkWebNativeObject::GetWebInstanceByWebTag(webTag);
+  if (!webObjectPtr) {
+    LOG(ERROR) << "OH_NativeArkWeb_LoadData: NativeArkWeb object pointer is nullptr";
+    return ArkWeb_ErrorCode::ARKWEB_INIT_ERROR;
+  }
+
+  auto nwebSharedPtr = webObjectPtr->GetWebSharedPtr();
+  if (!nwebSharedPtr) {
+    LOG(ERROR) << "OH_NativeArkWeb_LoadData: NativeArkWeb get nweb null for webTag: " << webTag;
+    return ArkWeb_ErrorCode::ARKWEB_INIT_ERROR;
+  }
+
+  if (base_url_str.empty() && history_url_str.empty()) {
+    nwebSharedPtr->LoadWithData(data, mimeType, encoding);
+  } else {
+    nwebSharedPtr->LoadWithDataAndBaseUrl(
+      baseUrl, data, mimeType, encoding, historyUrl);
+  }
+  return ArkWeb_ErrorCode::ARKWEB_SUCCESS;
+}
+
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

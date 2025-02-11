@@ -124,6 +124,13 @@ void OH_CookieManager_ClearAllCookiesSync(bool incognito);
 void OH_CookieManager_ClearSessionCookiesSync();
 
 const char* OH_ArkWeb_GetLastJavascriptProxyCallingFrameUrl();
+
+ArkWeb_ErrorCode OH_NativeArkWeb_LoadData(const char* webTag,
+                                          const char* data,
+                                          const char* mimeType,
+                                          const char* encoding,
+                                          const char* baseUrl,
+                                          const char* historyUrl);
 #ifdef __cplusplus
 }
 #endif

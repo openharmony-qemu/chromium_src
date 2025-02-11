@@ -24,7 +24,7 @@ void DecelerationAnimator::startAnimate(float distance,
   if (task_runner_) {
     task_runner_->PostTask(
         FROM_HERE, base::BindOnce(&DecelerationAnimator::animate,
-                                  base::Unretained(this), distance, duration));
+                                  base::RetainedRef(this), distance, duration));
   }
 }
 

@@ -57,8 +57,7 @@ OverscrollRefresh::OverscrollRefresh(ui::OverscrollRefreshHandler* handler,
       scroll_consumption_state_(DISABLED),
       edge_width_(edge_width),
       handler_(handler),
-      deceleration_animator_(
-          std::make_unique<DecelerationAnimator>(2.f, nullptr)) {
+      deceleration_animator_(new DecelerationAnimator(2.f, nullptr)) {
   DCHECK(handler);
   deceleration_animator_->setRefreshListener(
       std::make_unique<RefreshListener>(GetWeakPtr()));

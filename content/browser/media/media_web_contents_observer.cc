@@ -1031,6 +1031,20 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnGetVideoPoster(
     media_web_contents_observer_->web_contents_impl()->SetVideoPoster(data);
   }
 }
+
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnInitMediaTitle() {
+  if (media_web_contents_observer_ &&
+      media_web_contents_observer_->web_contents_impl()) {
+    media_web_contents_observer_->web_contents_impl()->SetMediaTitle("");
+  }
+}
+
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnInitVideoPoster() {
+  if (media_web_contents_observer_ &&
+      media_web_contents_observer_->web_contents_impl()) {
+    media_web_contents_observer_->web_contents_impl()->SetVideoPoster("");
+  }
+}
 #endif // OHOS_MEDIA_AVSESSION
 
 }  // namespace content

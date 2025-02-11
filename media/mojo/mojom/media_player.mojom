@@ -250,6 +250,14 @@ interface MediaPlayerObserver {
 
   [EnableIf=ohos_video_assistant]
   FullscreenOverlayChanged(bool fullscreen_overlay, string decoder_name);
+
+  // Notifies that the title of playing content initialized.
+  [EnableIf=ohos_media_avsession]
+  OnInitMediaTitle();
+
+  // Notifies that the video poster of playing content initialized.
+  [EnableIf=ohos_media_avsession]
+  OnInitVideoPoster();
 };
 
 // Implemented by MediaWebContentsObserver::MediaPlayerHostImpl in the browser

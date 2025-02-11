@@ -283,6 +283,8 @@ class CONTENT_EXPORT MediaWebContentsObserver
 #if defined(OHOS_MEDIA_AVSESSION)
     void OnGetMediaTitle(const std::string& data) override;
     void OnGetVideoPoster(const std::string& data) override;
+    void OnInitMediaTitle() override;
+    void OnInitVideoPoster() override;
 #endif // OHOS_MEDIA_AVSESSION
    private:
     PlayerInfo* GetPlayerInfo();

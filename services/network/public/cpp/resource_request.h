@@ -204,6 +204,7 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE) ResourceRequest {
 #endif
 #if defined(OHOS_EX_DOWNLOAD)
   bool is_download_request = false;
+  bool is_triggered_by_download = false;
 #endif  //  OHOS_EX_DOWNLOAD
 };
 

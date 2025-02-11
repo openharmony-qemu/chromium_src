@@ -238,6 +238,7 @@ bool StructTraits<
 #endif  //  IS_OHOS
 #if defined(OHOS_EX_DOWNLOAD)
   out->is_download_request = data.is_download_request();
+  out->is_triggered_by_download = data.is_triggered_by_download();
 #endif  //  OHOS_EX_DOWNLOAD
   return true;
 }

@@ -47,6 +47,10 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
               InputInfo inputInfo,
               bool is_need_reset_listener,
               int32_t enterKeyType) override;
+  void Attach(CefRefPtr<CefBrowser> browser,
+              InputInfo inputInfo,
+              bool is_need_reset_listener,
+              int32_t enterKeyType, int32_t requestKeyboardReason) override;
   void ShowTextInput() override;
   void HideTextInput(
       uint32_t nwebId = 0,
@@ -142,7 +146,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   bool IsTextInputStateChange(const CefString& text,
                               const CefRange& selected_range,
                               const CefRange& compositon_range);
-  bool AttachToSystemIME(bool is_need_reset_listener);
+  bool AttachToSystemIME(bool is_need_reset_listener, int32_t requestKeyboardReason = 0);
 
 #if defined(OHOS_PASSWORD_AUTOFILL)
   void AutoFillWithIMFEventOnUI(bool is_username,

@@ -1435,9 +1435,9 @@ void GpuServiceImpl::DumpGpuInfo(DumpGpuInfoCallback callback) {
   float totalSize = 0;
   if (compositor_gpu_thread_) {
     GrDirectContext* grContext = compositor_gpu_thread_->GetSharedContextState()->gr_context();
-    SkiaMemoryTracer* skiaMemoryTracer = std::make_shared<SkiaMemoryTracer>("category", true).get();
-    if (grContext != nullptr && skiaMemoryTracer != nullptr) {
-      grContext->dumpMemoryStatistics(skiaMemoryTracer);
+    auto skiaMemoryTracer = std::make_shared<SkiaMemoryTracer>("category", true);
+    if (grContext != nullptr && skiaMemoryTracer) {
+      grContext->dumpMemoryStatistics(skiaMemoryTracer.get());
       totalSize = skiaMemoryTracer->GetGpuMemorySizeInMB();
     }
   }

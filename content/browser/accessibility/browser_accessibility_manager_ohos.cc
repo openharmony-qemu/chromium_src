@@ -617,8 +617,6 @@ void BrowserAccessibilityManagerOHOS::InitializeAccessibilityEventDispatcher() {
                      kAccessibilityEventDelayHover));
 
   std::unordered_set<int32_t> viewIndependentEvents;
-  viewIndependentEvents.insert(static_cast<int32_t>(
-      OHOS::NWeb::AccessibilityEventType::HOVER_ENTER_EVENT));
 
   eventDispatcher_ = std::make_unique<AccessibilityEventDispatcher>(
       eventThrottleDelays, viewIndependentEvents, this);

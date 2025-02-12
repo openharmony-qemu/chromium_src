@@ -1343,6 +1343,9 @@ bool MediaSessionImpl::GetPlayingState()
 
 void MediaSessionImpl::SetPlayingState(bool playingState)
 {
+#if defined(OHOS_MEDIA_AVSESSION)
+  RebuildAndNotifyMetadataChanged();
+#endif // OHOS_MEDIA_AVSESSION
   isPlayingState_ = playingState;
 }
 
@@ -1885,11 +1888,9 @@ void MediaSessionImpl::RebuildAndNotifyMetadataChanged() {
 
 #if defined(OHOS_MEDIA_AVSESSION)
   std::string attrib_image_url = web_contents()->GetVideoPoster();
-  if (!attrib_image_url.empty()) {
-    media_session::MediaImage mediaImage;
-    mediaImage.src = GURL(attrib_image_url);
-    artwork.push_back(mediaImage);
-  }
+  media_session::MediaImage mediaImage;
+  mediaImage.src = GURL(attrib_image_url);
+  artwork.push_back(mediaImage);
 #endif // OHOS_MEDIA_AVSESSION
 
   // If we have no artwork in |images_| or the arwork has changed then we should
@@ -2072,8 +2073,13 @@ bool MediaSessionImpl::HasImageCacheForTest(const GURL& image_url) const {
 #if defined(OHOS_MEDIA_AVSESSION)
 void MediaSessionImpl::PutWebMediaAVSessionEnabled(bool enable) {
   LOG(INFO) << "media avsession MediaSessionImpl::PutWebMediaAVSessionEnabled enable is: " << enable;
+  bool isWebMediaAVSessionSwitch = false;
+  auto currentProcess = base::CommandLine::ForCurrentProcess();
+  if (currentProcess && !currentProcess->HasSwitch(switches::kEnableMediaAvsession)) {
+    isWebMediaAVSessionSwitch = true;
+  }
   if (enable) {
-    if (!session_ohos_) {
+    if (isWebMediaAVSessionSwitch && !session_ohos_) {
       session_ohos_ = std::make_unique<MediaSessionOHOS>(this);
       if (web_contents() && web_contents()->GetPrimaryMainFrame() &&
         web_contents()->GetPrimaryMainFrame()->GetView()) {

@@ -34,14 +34,16 @@ class POLICY_EXPORT PolicyLoaderOhos : public AsyncPolicyLoader {
     return event_callback_;
   }
   static void TryChoosePolicySource();
+  static bool ParsePolicy(const std::string& json, PolicyBundle* bundle);
+  bool load_succeeded() { return load_succeeded_; }
 
  private:
-  void LoadOhosPolicy(const std::string& json, PolicyBundle* bundle);
   std::string ReadTestPolices();
-  
+
   std::shared_ptr<PolicyChangedEventCallback> event_callback_;
   static bool use_browser_policy_;
   static bool policy_source_choosed_;
+  bool load_succeeded_ = false;
 };
 
 class PolicyChangedEventCallback
@@ -49,10 +51,10 @@ class PolicyChangedEventCallback
       public OHOS::NWeb::EdmPolicyChangedEventCallbackAdapter {
  public:
   PolicyChangedEventCallback(PolicyLoaderOhos* loader);
- 
+
   // policy::BrowserPolicyHandler::Observer overrides
   void OnPolicyChanged() override;
- 
+
   // OHOS::NWeb::EdmPolicyChangedEventCallbackAdapter overrides
   void Changed() override;
 

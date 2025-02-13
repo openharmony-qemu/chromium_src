@@ -69,6 +69,7 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
 
 #ifdef OHOS_AI
   virtual bool CloseImageOverlaySelection() { return false; }
+  virtual void OnOverlayZoomChanged() {}
 #endif
 
 #ifdef OHOS_DRAG_DROP

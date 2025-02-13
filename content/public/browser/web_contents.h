@@ -1564,7 +1564,9 @@ class WebContents : public PageNavigator,
 #ifdef OHOS_DRAG_DROP
   virtual void ClearContextMenu() = 0;
 #endif //OHOS_DRAG_DROP
-
+#ifdef OHOS_AI
+  virtual void OnOverlayZoomChanged() = 0;
+#endif
 #if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
   virtual void OnBeforeUnloadFired(bool proceed) = 0;
 #endif // OHOS_DISPATCH_BEFORE_UNLOAD

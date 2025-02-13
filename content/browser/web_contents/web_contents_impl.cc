@@ -7526,6 +7526,13 @@ bool WebContentsImpl::CloseImageOverlaySelection() {
   }
   return false;
 }
+
+void WebContentsImpl::OnOverlayZoomChanged() {
+  LOG(DEBUG) << "WebContentsImpl::OnOverlayZoomChanged";
+  if (render_view_host_delegate_view_) {
+    render_view_host_delegate_view_->OnOverlayZoomChanged();
+  }
+}
 #endif
 
 void WebContentsImpl::ShowContextMenu(

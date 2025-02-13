@@ -106,8 +106,6 @@ void PolicyLoaderOhos::TryChoosePolicySource() {
 void PolicyLoaderOhos::InitOnBackgroundThread() {}
 
 PolicyBundle PolicyLoaderOhos::Load() {
-  std::string policies;
-
   TryChoosePolicySource();
   if (!policy_source_choosed_) {
     LOG(ERROR) << "Load with no policy source choosed";
@@ -115,25 +113,24 @@ PolicyBundle PolicyLoaderOhos::Load() {
   }
 
   if (use_browser_policy_) {
-    bool success =
-        policy::BrowserPolicyHandler::GetInstance()->GetPolicy(policies);
-    LOG(INFO) << "GetPolicies success:" << success << ", policies:" << policies;
+    return policy::BrowserPolicyHandler::GetInstance()->GetPolicyBundle();
   } else {
+    std::string policies;
     int32_t error_code = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                              .GetEnterpriseDeviceManagementInstance()
                              .GetPolicies(policies);
     LOG(INFO) << "GetPolicies error_code:" << error_code
               << ", policies:" << policies;
-  }
 
-  if (kUseTestPolicies) {
-    policies = ReadTestPolices();
-    LOG(INFO) << "ReadTestPolices policies:" << policies;
-  }
+    if (kUseTestPolicies) {
+      policies = ReadTestPolices();
+      LOG(INFO) << "ReadTestPolices policies:" << policies;
+    }
 
-  PolicyBundle bundle;
-  LoadOhosPolicy(policies, &bundle);
-  return bundle;
+    PolicyBundle bundle;
+    std::ignore = ParsePolicy(policies, &bundle);
+    return bundle;
+  }
 }
 
 std::string PolicyLoaderOhos::ReadTestPolices() {
@@ -166,8 +163,9 @@ std::string PolicyLoaderOhos::ReadTestPolices() {
   return std::string(buffer_str);
 }
 
-void PolicyLoaderOhos::LoadOhosPolicy(const std::string& json,
-                                      PolicyBundle* bundle) {
+// static
+bool PolicyLoaderOhos::ParsePolicy(const std::string& json,
+                                   PolicyBundle* bundle) {
   /* policy json demo
   "InsecurePrivateNetworkRequestsAllowed": {
     "level": "mandatory",
@@ -176,7 +174,8 @@ void PolicyLoaderOhos::LoadOhosPolicy(const std::string& json,
     "value": true
   }*/
   if (bundle == nullptr) {
-    return;
+    LOG(WARNING) << "Null bundle given, parse failed";
+    return false;
   }
 
   base::Value::Dict dictionary_value;
@@ -186,7 +185,7 @@ void PolicyLoaderOhos::LoadOhosPolicy(const std::string& json,
       deserializer.Deserialize(/*error_code=*/nullptr, &error_msg);
   if (!json_value) {
     LOG(WARNING) << "Unable to deserialize json data. error_msg: " << error_msg;
-    return;
+    return false;
   }
 
   if (json_value->type() == base::Value::Type::DICT) {
@@ -233,9 +232,14 @@ void PolicyLoaderOhos::LoadOhosPolicy(const std::string& json,
   PolicyMap policy_map;
   policy_map.LoadFrom(dictionary_value, POLICY_LEVEL_MANDATORY,
                       POLICY_SCOPE_MACHINE, POLICY_SOURCE_PLATFORM);
+
+  if (policy_map.empty()) {
+    LOG(WARNING) << "Empty json object, parse failed";
+    return false;
+  }
   bundle->Get(PolicyNamespace(POLICY_DOMAIN_CHROME, std::string()))
       .MergeFrom(policy_map);
-  return;
+  return true;
 }
 
 }  // namespace policy

@@ -23,6 +23,10 @@
 #include "third_party/blink/public/common/security/protocol_handler_security_level.h"
 #include "third_party/blink/public/mojom/mediastream/media_stream.mojom.h"
 #include "ui/gfx/geometry/rect.h"
+#ifdef OHOS_VIDEO_ASSISTANT
+#include "content/browser/media/video_assistant/video_assistant.h"
+#include "media/mojo/mojom/media_player.mojom.h"
+#endif // OHOS_VIDEO_ASSISTANT
 
 namespace content {
 
@@ -410,6 +414,16 @@ std::unique_ptr<CustomMediaPlayer> WebContentsDelegate::CreateCustomMediaPlayer(
 }
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+void WebContentsDelegate::OnShowToast(double duration,
+                                      const std::string& toast) {}
+
+void WebContentsDelegate::OnShowVideoAssistant(
+    const std::string& videoAssistantItems) {}
+
+void WebContentsDelegate::OnReportStatisticLog(const std::string& content) {}
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+
 #if defined(OHOS_ARKWEB_EXTENSIONS)
 void WebContentsDelegate::WebExtensionUpdateTabUrl(
     int32_t tab_id, const GURL& url) {}
@@ -418,5 +432,18 @@ int32_t WebContentsDelegate::GetTabId() {
   return -1;
 }
 #endif
+
+#ifdef OHOS_VIDEO_ASSISTANT
+std::unique_ptr<VideoAssistant> WebContentsDelegate::CreateVideoAssistant() {
+  return std::make_unique<VideoAssistant>();
+}
+void WebContentsDelegate::PopluateVideoAssistantConfig(
+    const std::string& url,
+    media::mojom::VideoAssistantConfigPtr& config) {}
+void WebContentsDelegate::OnVideoPlaying(
+    media::mojom::VideoAttributesForVASTPtr video_attributes) {}
+void WebContentsDelegate::OnUpdateVideoAttributes(
+    media::mojom::VideoAttributesForVASTPtr video_attributes) {}
+#endif // OHOS_VIDEO_ASSISTANT
 
 }  // namespace content

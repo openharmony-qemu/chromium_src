@@ -181,6 +181,10 @@ class CC_EXPORT LayerTreeImpl {
   void OnLayerRectVisibilityChange(int id, bool visibility);
 #endif
 
+#ifdef OHOS_VIDEO_ASSISTANT
+  void OnLayerBoundsUpdate(int id, const gfx::Rect& bounds);
+#endif // OHOS_VIDEO_ASSISTANT
+
   // Tree specific methods exposed to layer-impl tree.
   // ---------------------------------------------------------------------------
   void SetNeedsRedraw();

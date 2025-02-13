@@ -75,6 +75,11 @@ struct NWebAppClientExtensionCallback {
 #endif
 
   void (*OnRequestOpenDevTools)(int32_t nweb_id);
+
+  void (*OnShowToast)(int32_t nweb_id, double duration, const char* toast);
+
+  void (*OnShowVideoAssistant)(int32_t nweb_id,
+                               const char* video_assistant_items);
 };
 
 #endif  // OHOS_NWEB_SRC_NWEB_APP_CLIENT_EXTENSION_CALLBACK_H_

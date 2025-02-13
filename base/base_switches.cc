@@ -194,4 +194,8 @@ const char kBundleInstallationDir[] = "bundle-installation-dir";
 const char kBundleName[] = "bundle-name";
 #endif
 
+#ifdef OHOS_VIDEO_ASSISTANT
+const char kEnableVideoAssistant[] = "enable-nweb-ex-video-assistant";
+#endif // OHOS_VIDEO_ASSISTANT
+
 }  // namespace switches

@@ -239,8 +239,7 @@ class NWebDelegateInterface
   virtual void UnRegisterNativeArkJSFunction(const char* objName) = 0;
 
 #ifdef OHOS_ARKWEB_ADBLOCK
-  virtual void UpdateAdblockEasyListRules(
-      long adBlockEasyListVersion) = 0;
+  virtual void UpdateAdblockEasyListRules(long adBlockEasyListVersion) = 0;
 #endif
 
   virtual void RegisterArkJSfunction(
@@ -464,6 +463,7 @@ class NWebDelegateInterface
 #if BUILDFLAG(IS_OHOS)
   virtual bool IsSafeBrowsingEnabled() = 0;
   virtual void EnableSafeBrowsing(bool enable) = 0;
+  virtual void EnableSafeBrowsingDetection(bool enable, bool strictMode) = 0;
   virtual void PrecompileJavaScript(const std::string& url,
                                     const std::string& script,
                                     std::shared_ptr<CacheOptions>& cacheOptions,
@@ -521,6 +521,11 @@ virtual int ScaleGestureChange(double scale, double centerX, double centerY) con
   virtual void RegisterOnCreateNativeMediaPlayerListener(
       std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) = 0;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+#if defined(OHOS_VIDEO_ASSISTANT)
+  virtual void EnableVideoAssistant(bool enable) = 0;
+  virtual void ExecuteVideoAssistantFunction(const std::string& cmd_id) = 0;
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
 
 #if defined(OHOS_CLIPBOARD)
   virtual void SetIsRichText(bool is_rich_text) = 0;

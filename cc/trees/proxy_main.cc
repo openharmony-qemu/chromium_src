@@ -883,4 +883,9 @@ void ProxyMain::OnLayerRectVisibilityChange(int id, bool visibility) {
 }
 #endif
 
+#ifdef OHOS_VIDEO_ASSISTANT
+void ProxyMain::OnLayerBoundsUpdate(int id, const gfx::Rect& bounds) {
+  layer_tree_host_->OnLayerBoundsUpdate(id, bounds);
+}
+#endif // OHOS_VIDEO_ASSISTANT
 }  // namespace cc

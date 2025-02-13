@@ -193,6 +193,10 @@ class PepperPlaybackObserver;
 class CustomMediaPlayerListener;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+#ifdef OHOS_VIDEO_ASSISTANT
+class VideoAssistant;
+#endif // OHOS_VIDEO_ASSISTANT
+
 // CreatedWindow holds the WebContentsImpl and target url between IPC calls to
 // CreateNewWindow and ShowCreatedWindow.
 struct CONTENT_EXPORT CreatedWindow {
@@ -467,6 +471,14 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   void OnAdsBlocked(const std::string& main_frame_url,
                     const std::map<std::string, int32_t>& subresource_blocked,
                     bool is_site_first_report) override;
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+  void EnableSafeBrowsingDetection(bool enable, bool strictMode) override;
+
+  bool IsSafeBrowsingDetectionEnabled() override {
+    return is_safe_browsing_enabled_;
+  }
 #endif
 
 #if defined(OHOS_EX_PASSWORD)
@@ -1564,6 +1576,15 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   void RequestEnterFullscreen(const MediaPlayerId& player_id);
   void RequestExitFullscreen(const MediaPlayerId& player_id);
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+#if defined(OHOS_VIDEO_ASSISTANT)
+  void EnableVideoAssistant(bool enable) override;
+  void ExecuteVideoAssistantFunction(const std::string& cmdId) override;
+  void OnShowToast(double duration, const std::string& toast);
+  void OnShowVideoAssistant(const std::string& videoAssistantItems);
+  void OnReportStatisticLog(const std::string& content);
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+
 #if defined(OHOS_RENDER_PROCESS_SHARE)
   const std::string& SharedRenderProcessToken() override;
 #endif
@@ -1571,6 +1592,18 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   void OnPlaybackWithMobileDataAllowed();
   void OnPlaybackWithMobileDataAllowedPolicyChanged() override;
 #endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  void PopluateVideoAssistantConfig(
+      media::mojom::VideoAssistantConfigPtr& config);
+  void OnVideoPlaying(
+      media::mojom::VideoAttributesForVASTPtr video_attributes,
+      const MediaPlayerId& id);
+  void OnUpdateVideoAttributes(
+      media::mojom::VideoAttributesForVASTPtr video_attributes,
+      const MediaPlayerId& id);
+  void OnVideoDestroyed(const MediaPlayerId& id);
+#endif // OHOS_VIDEO_ASSISTANT
 
  private:
   using FrameTreeIterationCallback = base::RepeatingCallback<void(FrameTree&)>;
@@ -2410,6 +2443,8 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 #if BUILDFLAG(IS_OHOS)
   std::unique_ptr<NativeWebContentsObserver> native_web_contents_observer_;
   std::map<std::string,gfx::Rect> native_embed_rect_info_map_;
+  bool is_safe_browsing_enabled_ = true;
+  bool safe_browsing_strict_mode_ = false;
 #endif
 
 #if BUILDFLAG(ENABLE_PPAPI)
@@ -2661,6 +2696,10 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
   std::map<MediaPlayerId, CustomMediaPlayer*> players_;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  std::unique_ptr<VideoAssistant> video_assistant_;
+#endif // OHOS_VIDEO_ASSISTANT
 
 #ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
   base::ScopedObservation<MediaPlaybackPolicy, MediaPlaybackPolicy::Observer>

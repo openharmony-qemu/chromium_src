@@ -36,6 +36,7 @@
 #include <list>
 #include <map>
 #include <mutex>
+#include <optional>
 #include <string>
 
 #include <unordered_set>
@@ -751,6 +752,10 @@ void OnTouchIconUrlWithSizesReceived(
       const CefCustomMediaInfo& media_info) override;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+  void OnShowToast(double duration, const CefString& toast) override;
+  void OnShowVideoAssistant(const CefString& videoAssistantItems) override;
+  void OnReportStatisticLog(const CefString& content) override;
+
 #if defined(OHOS_CLIPBOARD)
   void SetIsRichText(bool is_rich_text) { is_rich_text_ = is_rich_text; }
 #endif
@@ -798,6 +803,10 @@ void OnTouchIconUrlWithSizesReceived(
 #endif
 
   void OnRequestOpenDevTools();
+
+#if defined(OHOS_VIDEO_ASSISTANT)
+  void EnableVideoAssistant(bool enable);
+#endif // OHOS_VIDEO_ASSISTANT
 
   void Discard();
 
@@ -915,6 +924,9 @@ void OnTouchIconUrlWithSizesReceived(
   PermissionMap javascript_async_permission_map_;
   std::function<void(void)> onLoadStartCallback_ = nullptr;
   std::function<void(void)> onLoadEndCallback_ = nullptr;
+#if defined(OHOS_VIDEO_ASSISTANT)
+  std::optional<bool> video_assistant_enabled_;
+#endif // OHOS_VIDEO_ASSISTANT
 
   base::WeakPtrFactory<NWebHandlerDelegate> weak_factory_{this};
 };

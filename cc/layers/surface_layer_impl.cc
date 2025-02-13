@@ -19,6 +19,8 @@
 #include "components/viz/common/quads/solid_color_draw_quad.h"
 #include "components/viz/common/quads/surface_draw_quad.h"
 
+#include "base/logging.h"
+
 namespace cc {
 
 // static
@@ -212,13 +214,11 @@ void SurfaceLayerImpl::AppendQuads(viz::CompositorRenderPass* render_pass,
   // |surface_range_| more than once.
   deadline_in_frames_ = 0u;
 
+#ifdef OHOS_VIDEO_ASSISTANT
+  OnLayerBoundsUpdate(visible_quad_rect);
+#endif // OHOS_VIDEO_ASSISTANT
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-   visible_quad_rect.set_origin(
-        ScreenSpaceTransform().MapPoint(visible_quad_rect.origin()));
-  if (!visible_quad_rect_.ApproximatelyEqual(visible_quad_rect, 1)) {
-    visible_quad_rect_ = visible_quad_rect;
-    layer_tree_impl()->OnLayerRectUpdate(id(), visible_quad_rect);
-  }
+  OnLayerRectUpdate(visible_quad_rect);
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 }
 
@@ -334,4 +334,24 @@ const char* SurfaceLayerImpl::LayerTypeAsString() const {
   return "cc::SurfaceLayerImpl";
 }
 
+#ifdef OHOS_VIDEO_ASSISTANT
+void SurfaceLayerImpl::OnLayerBoundsUpdate(gfx::Rect visible_quad_rect) {
+  gfx::Rect layer_bounds =
+      ScreenSpaceTransform().MapRect(visible_quad_rect);
+  if (!layer_bounds_.ApproximatelyEqual(layer_bounds, 1)) {
+    layer_bounds_ = layer_bounds;
+    layer_tree_impl()->OnLayerBoundsUpdate(id(), layer_bounds);
+  }
+}
+#endif // OHOS_VIDEO_ASSISTANT
+#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void SurfaceLayerImpl::OnLayerRectUpdate(gfx::Rect visible_quad_rect) {
+   visible_quad_rect.set_origin(
+        ScreenSpaceTransform().MapPoint(visible_quad_rect.origin()));
+  if (!visible_quad_rect_.ApproximatelyEqual(visible_quad_rect, 1)) {
+    visible_quad_rect_ = visible_quad_rect;
+    layer_tree_impl()->OnLayerRectUpdate(id(), visible_quad_rect);
+  }
+}
+#endif // OHOS_CUSTOM_VIDEO_PLAYER
 }  // namespace cc

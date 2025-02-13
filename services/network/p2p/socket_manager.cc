@@ -233,6 +233,9 @@ void P2PSocketManager::AddAcceptedConnection(
 }
 
 void P2PSocketManager::DestroySocket(P2PSocket* socket) {
+  if (sockets_.size() > kMaxSimultaneousSockets/2) {
+    LOG(ERROR) << "DestroySocket, size is " << sockets_.size();
+  }
   auto iter = sockets_.find(socket);
   DCHECK(iter != sockets_.end());
   sockets_.erase(iter);

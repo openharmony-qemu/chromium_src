@@ -16,6 +16,11 @@
 #include "net/traffic_annotation/network_traffic_annotation.h"
 #include "net/url_request/referrer_policy.h"
 
+#ifdef OHOS_EX_DOWNLOAD
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif // OHOS_EX_DOWNLOAD
+
 namespace download {
 namespace {
 const int kDownloadJobVerboseLevel = 1;
@@ -280,8 +285,14 @@ void ParallelDownloadJob::CreateRequest(int64_t offset) {
   // TODO(xingliu): We should not support redirect at all for parallel requests.
   // Currently the network service code path still can redirect as long as it's
   // the same origin.
-  download_params->set_cross_origin_redirects(
-      network::mojom::RedirectMode::kError);
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      switches::kEnableNwebExDownload)) {
+      download_params->set_cross_origin_redirects(
+          network::mojom::RedirectMode::kFollow);
+  } else {
+      download_params->set_cross_origin_redirects(
+          network::mojom::RedirectMode::kError);
+  }
 
   // Send the request.
   mojo::PendingRemote<device::mojom::WakeLockProvider> wake_lock_provider;

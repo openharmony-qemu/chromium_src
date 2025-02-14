@@ -15,6 +15,11 @@
 #include "services/network/public/cpp/resource_request.h"
 #include "services/network/public/mojom/early_hints.mojom.h"
 
+#ifdef OHOS_EX_DOWNLOAD
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif // OHOS_EX_DOWNLOAD
+
 namespace download {
 
 namespace {
@@ -209,7 +214,8 @@ void DownloadResponseHandler::OnReceiveRedirect(
     }
   }
 
-  if (is_partial_request_) {
+  if (is_partial_request_ &&
+      !base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableNwebExDownload)) {
     // A redirect while attempting a partial resumption indicates a potential
     // middle box. Trigger another interruption so that the
     // DownloadItem can retry.

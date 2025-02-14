@@ -23,6 +23,7 @@ const char kScreenPrefix[] = "screen";
 const char kWindowPrefix[] = "window";
 #if BUILDFLAG(IS_OHOS)
 const char kSystemAudioPrefix[] = "systemAudio";
+constexpr int32_t kSystemAudioSourceId = -2;
 #endif
 
 #if defined(USE_AURA) || BUILDFLAG(IS_MAC)
@@ -121,7 +122,7 @@ std::string DesktopMediaID::ToString() const {
 
 #if BUILDFLAG(IS_OHOS)
   // Screen Audio types.
-  if (id == -2) {
+  if (id == kSystemAudioSourceId) {
     prefix.append(":");
     prefix.append(kSystemAudioPrefix);
   }

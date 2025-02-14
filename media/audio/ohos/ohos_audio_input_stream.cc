@@ -51,7 +51,7 @@ AudioInputStream::OpenOutcome OHOSAudioInputStream::Open() {
 
 void OHOSAudioInputStream::Start(AudioInputCallback* callback) {
   std::string device_id = manager_->GetSelectAudioDeviceId();
-  LOG(INFO) << "OHOSAudioInputStream::Start, format: " 
+  LOG(INFO) << "OHOSAudioInputStream::Start, format: "
             << (int32_t)parameters_.format()
             << " , deviceid: "
             << device_id;

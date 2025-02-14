@@ -41,6 +41,7 @@ class MEDIA_EXPORT OHOSAudioManager : public AudioManagerBase {
 #if defined(OHOS_WEBRTC)
   void GetAudioInputDeviceNames(AudioDeviceNames* device_names) override;
   void ReleaseInputStream(AudioInputStream* stream) override;
+  std::string GetSelectAudioDeviceId();
 #endif // defined(OHOS_WEBRTC)
   const char* GetName() override;
 
@@ -77,6 +78,9 @@ class MEDIA_EXPORT OHOSAudioManager : public AudioManagerBase {
   bool isCommunication_ = false;
   std::shared_ptr<AudioManagerDeviceChangeCallback>
       outputDeviceChangeCallback_ = nullptr;
+#if defined(OHOS_WEBRTC)
+  std::string device_id_ = "";
+#endif // defined(OHOS_WEBRTC)
 };
 
 }  // namespace media

@@ -50,6 +50,10 @@ const int kPublicPort = 53;  // DNS port.
 // Trouble has been seen on Linux at 3479 sockets in test, so leave a margin.
 const int kMaxSimultaneousSockets = 3000;
 
+// When more than half of the maximum sockets are running at the same time,
+// check whether these sockets are destroyed in time.
+const int kHalfOfMaxSimultaneousSockets = kMaxSimultaneousSockets / 2;
+
 const size_t kMinRtcpHeaderLength = 8;
 const size_t kDtlsRecordHeaderLength = 13;
 
@@ -233,7 +237,7 @@ void P2PSocketManager::AddAcceptedConnection(
 }
 
 void P2PSocketManager::DestroySocket(P2PSocket* socket) {
-  if (sockets_.size() > kMaxSimultaneousSockets / 2) {
+  if (sockets_.size() > kHalfOfMaxSimultaneousSockets) {
     LOG(ERROR) << "DestroySocket, size is " << sockets_.size();
   }
   auto iter = sockets_.find(socket);

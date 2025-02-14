@@ -213,9 +213,12 @@ void DownloadResponseHandler::OnReceiveRedirect(
         return;
     }
   }
-
+#ifdef OHOS_EX_DOWNLOAD
   if (is_partial_request_ &&
       !base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableNwebExDownload)) {
+#else
+  if (is_partial_request_) {
+#endif
     // A redirect while attempting a partial resumption indicates a potential
     // middle box. Trigger another interruption so that the
     // DownloadItem can retry.

@@ -2675,6 +2675,7 @@ void DownloadItemImpl::ResumeInterruptedDownload(
   // will only be sent to the URL returned by GetURL().
   download_params->set_referrer(GetReferrerUrl());
   download_params->set_referrer_policy(net::ReferrerPolicy::NEVER_CLEAR);
+#ifdef OHOS_EX_DOWNLOAD
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
       switches::kEnableNwebExDownload)) {
       download_params->set_cross_origin_redirects(
@@ -2683,6 +2684,10 @@ void DownloadItemImpl::ResumeInterruptedDownload(
       download_params->set_cross_origin_redirects(
           network::mojom::RedirectMode::kError);
   }
+#else
+  download_params->set_cross_origin_redirects(	
+      network::mojom::RedirectMode::kError);
+#endif
 
   TransitionTo(RESUMING_INTERNAL);
   RecordDownloadCountWithSource(source == ResumptionRequestSource::USER

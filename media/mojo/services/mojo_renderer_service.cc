@@ -90,6 +90,7 @@ void MojoRendererService::Initialize(
       media_resource_.get(), this,
 #ifdef OHOS_VIDEO_ASSISTANT
       media::RequestSurfaceCB(),
+      media::VideoDecoderChangedCB(),
 #endif // OHOS_VIDEO_ASSISTANT
       base::BindOnce(&MojoRendererService::OnRendererInitializeDone, weak_this_,
                      std::move(callback)));
@@ -236,6 +237,7 @@ void MojoRendererService::OnAllStreamsReady(
       media_resource_.get(), this,
 #ifdef OHOS_VIDEO_ASSISTANT
       media::RequestSurfaceCB(),
+      media::VideoDecoderChangedCB(),
 #endif // OHOS_VIDEO_ASSISTANT
       base::BindOnce(&MojoRendererService::OnRendererInitializeDone, weak_this_,
                      std::move(callback)));

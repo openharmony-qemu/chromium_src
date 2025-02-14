@@ -100,6 +100,7 @@ class MEDIA_EXPORT PipelineImpl : public Pipeline {
              Client* client,
 #ifdef OHOS_VIDEO_ASSISTANT
              RequestSurfaceCB request_surface_cb,
+             VideoDecoderChangedCB decoder_changed_cb,
 #endif // OHOS_VIDEO_ASSISTANT
              PipelineStatusCallback seek_cb) override;
   void Stop() override;
@@ -108,6 +109,7 @@ class MEDIA_EXPORT PipelineImpl : public Pipeline {
   void Resume(base::TimeDelta time,
 #ifdef OHOS_VIDEO_ASSISTANT
               RequestSurfaceCB request_surface_cb,
+              VideoDecoderChangedCB decoder_changed_cb,
 #endif // OHOS_VIDEO_ASSISTANT
               PipelineStatusCallback seek_cb) override;
   bool IsRunning() const override;

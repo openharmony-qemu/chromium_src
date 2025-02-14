@@ -57,6 +57,7 @@ class MojoRenderer : public Renderer, public mojom::RendererClient {
                   media::RendererClient* client,
 #ifdef OHOS_VIDEO_ASSISTANT
                   RequestSurfaceCB request_surface_cb,
+                  VideoDecoderChangedCB decoder_changed_cb,
 #endif // OHOS_VIDEO_ASSISTANT
                   PipelineStatusCallback init_cb) override;
   void SetCdm(CdmContext* cdm_context, CdmAttachedCB cdm_attached_cb) override;
@@ -199,6 +200,7 @@ class MojoRenderer : public Renderer, public mojom::RendererClient {
 
 #ifdef OHOS_VIDEO_ASSISTANT
   RequestSurfaceCB request_surface_cb_;
+  VideoDecoderChangedCB decoder_changed_cb_;
   base::WeakPtrFactory<MojoRenderer> weak_factory_{this};
 #endif // OHOS_VIDEO_ASSISTANT
 };

@@ -134,6 +134,7 @@ class MojoRendererTest : public ::testing::Test {
     mojo_renderer_->Initialize(&demuxer_, &renderer_client_,
 #ifdef OHOS_VIDEO_ASSISTANT
                                RequestSurfaceCB(),
+                               VideoDecoderChangedCB(),
 #endif // OHOS_VIDEO_ASSISTANT
                                base::BindOnce(&MojoRendererTest::OnInitialized,
                                               base::Unretained(this)));
@@ -459,6 +460,7 @@ TEST_F(MojoRendererTest, Destroy_PendingInitialize) {
       &demuxer_, &renderer_client_,
 #ifdef OHOS_VIDEO_ASSISTANT
       RequestSurfaceCB(),
+      VideoDecoderChangedCB(),
 #endif // OHOS_VIDEO_ASSISTANT
       base::BindOnce(&MojoRendererTest::OnInitialized, base::Unretained(this)));
   Destroy();

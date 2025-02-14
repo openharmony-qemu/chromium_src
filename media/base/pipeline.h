@@ -121,6 +121,7 @@ class MEDIA_EXPORT Pipeline {
                      Client* client,
 #ifdef OHOS_VIDEO_ASSISTANT
                      RequestSurfaceCB request_surface_cb,
+                     VideoDecoderChangedCB decoder_changed_cb,
 #endif // OHOS_VIDEO_ASSISTANT
                      PipelineStatusCallback seek_cb) = 0;
 
@@ -201,6 +202,7 @@ class MEDIA_EXPORT Pipeline {
   virtual void Resume(base::TimeDelta timestamp,
 #ifdef OHOS_VIDEO_ASSISTANT
                       RequestSurfaceCB request_surface_cb,
+                      VideoDecoderChangedCB decoder_changed_cb,
 #endif // OHOS_VIDEO_ASSISTANT
                       PipelineStatusCallback seek_cb) = 0;
 

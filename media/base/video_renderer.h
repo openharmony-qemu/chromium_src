@@ -45,6 +45,7 @@ class MEDIA_EXPORT VideoRenderer {
                           RendererClient* client,
 #ifdef OHOS_VIDEO_ASSISTANT
                           RequestSurfaceCB request_surface_cb,
+                          VideoDecoderChangedCB decoder_changed_cb,
 #endif // OHOS_VIDEO_ASSISTANT
                           const TimeSource::WallClockTimeCB& wall_clock_time_cb,
                           PipelineStatusCallback init_cb) = 0;

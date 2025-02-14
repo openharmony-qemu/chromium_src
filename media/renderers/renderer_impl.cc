@@ -137,6 +137,7 @@ void RendererImpl::Initialize(MediaResource* media_resource,
                               RendererClient* client,
 #ifdef OHOS_VIDEO_ASSISTANT
                               RequestSurfaceCB request_surface_cb,
+                              VideoDecoderChangedCB decoder_changed_cb,
 #endif // OHOS_VIDEO_ASSISTANT
                               PipelineStatusCallback init_cb) {
   DVLOG(1) << __func__;
@@ -152,6 +153,7 @@ void RendererImpl::Initialize(MediaResource* media_resource,
   init_cb_ = std::move(init_cb);
 #ifdef OHOS_VIDEO_ASSISTANT
   request_surface_cb_ = std::move(request_surface_cb);
+  decoder_changed_cb_ = std::move(decoder_changed_cb);
 #endif // OHOS_VIDEO_ASSISTANT
 
   if (HasEncryptedStream() && !cdm_context_) {
@@ -466,6 +468,7 @@ void RendererImpl::InitializeVideoRenderer() {
       video_stream, cdm_context_, video_renderer_client_.get(),
 #ifdef OHOS_VIDEO_ASSISTANT
       std::move(request_surface_cb_),
+      std::move(decoder_changed_cb_),
 #endif // OHOS_VIDEO_ASSISTANT
       base::BindRepeating(&RendererImpl::GetWallClockTimes,
                           base::Unretained(this)),
@@ -633,6 +636,7 @@ void RendererImpl::ReinitializeVideoRenderer(
       stream, cdm_context_, video_renderer_client_.get(),
 #ifdef OHOS_VIDEO_ASSISTANT
       std::move(request_surface_cb_),
+      std::move(decoder_changed_cb_),
 #endif // OHOS_VIDEO_ASSISTANT
       base::BindRepeating(&RendererImpl::GetWallClockTimes,
                           base::Unretained(this)),

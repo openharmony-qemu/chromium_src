@@ -75,6 +75,9 @@ class MEDIA_EXPORT DecoderStream {
   // stream is not encrypted.
   void Initialize(DemuxerStream* stream,
                   InitCB init_cb,
+#ifdef OHOS_VIDEO_ASSISTANT
+                  VideoDecoderChangedCB decoder_changed_cb,
+#endif // OHOS_VIDEO_ASSISTANT
                   CdmContext* cdm_context,
                   StatisticsCB statistics_cb,
                   WaitingCB waiting_cb);
@@ -319,6 +322,10 @@ class MEDIA_EXPORT DecoderStream {
   bool encryption_type_reported_ = false;
 
   int fallback_buffers_being_decoded_ = 0;
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  VideoDecoderChangedCB decoder_changed_cb_;
+#endif // OHOS_VIDEO_ASSISTANT
 
   // NOTE: Weak pointers must be invalidated before all other member variables.
   base::WeakPtrFactory<DecoderStream<StreamType>> weak_factory_{this};

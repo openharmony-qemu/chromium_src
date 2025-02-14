@@ -168,6 +168,9 @@ std::string DecoderStream<StreamType>::GetStreamTypeString() {
 template <DemuxerStream::Type StreamType>
 void DecoderStream<StreamType>::Initialize(DemuxerStream* stream,
                                            InitCB init_cb,
+#ifdef OHOS_VIDEO_ASSISTANT
+                                           VideoDecoderChangedCB decoder_changed_cb,
+#endif // OHOS_VIDEO_ASSISTANT
                                            CdmContext* cdm_context,
                                            StatisticsCB statistics_cb,
                                            WaitingCB waiting_cb) {
@@ -181,6 +184,9 @@ void DecoderStream<StreamType>::Initialize(DemuxerStream* stream,
   init_cb_ = std::move(init_cb);
   cdm_context_ = cdm_context;
   statistics_cb_ = std::move(statistics_cb);
+#ifdef OHOS_VIDEO_ASSISTANT
+  decoder_changed_cb_ = std::move(decoder_changed_cb);
+#endif // OHOS_VIDEO_ASSISTANT
 
   // Make a copy here since it's also passed to |decoder_selector_| below.
   waiting_cb_ = waiting_cb;
@@ -471,6 +477,13 @@ void DecoderStream<StreamType>::OnDecoderSelected(
       << traits_->GetDecoderConfig(stream_).AsHumanReadableString();
 
   if (state_ == STATE_REINITIALIZING_DECODER) {
+#ifdef OHOS_VIDEO_ASSISTANT
+    if (decoder_changed_cb_) {
+      decoder_changed_cb_.Run(
+        SupportVideoSurface(decoder_->GetDecoderType()),
+        GetDecoderName(decoder_->GetDecoderType()));
+    }
+#endif // OHOS_VIDEO_ASSISTANT
     CompleteDecoderReinitialization(OkStatus());
     return;
   }

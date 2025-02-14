@@ -76,6 +76,9 @@ class AudioDecoderStreamTest : public testing::Test {
         &demuxer_stream_,
         base::BindOnce(&OnAudioDecoderStreamInitialized,
                        run_loop.QuitClosure()),
+#ifdef OHOS_VIDEO_ASSISTANT
+        VideoDecoderChangedCB(),
+#endif // OHOS_VIDEO_ASSISTANT
         nullptr, base::DoNothing(), base::DoNothing());
     run_loop.Run();
   }

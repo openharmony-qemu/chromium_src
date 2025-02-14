@@ -181,6 +181,7 @@ class PipelineImplTest : public ::testing::Test {
     pipeline_->Start(start_type, demuxer_.get(), &callbacks_,
 #ifdef OHOS_VIDEO_ASSISTANT
                      RequestSurfaceCB(),
+                     VideoDecoderChangedCB(),
 #endif // OHOS_VIDEO_ASSISTANT
                      base::BindOnce(&CallbackHelper::OnStart,
                                     base::Unretained(&callbacks_)));
@@ -330,6 +331,7 @@ class PipelineImplTest : public ::testing::Test {
     pipeline_->Resume(seek_time,
 #ifdef OHOS_VIDEO_ASSISTANT
                       RequestSurfaceCB(),
+                      VideoDecoderChangedCB(),
 #endif // OHOS_VIDEO_ASSISTANT
                       base::BindOnce(&CallbackHelper::OnResume,
                                      base::Unretained(&callbacks_)));
@@ -560,6 +562,7 @@ TEST_F(PipelineImplTest, EncryptedStream_SetCdmAfterStart) {
       Pipeline::StartType::kNormal, demuxer_.get(), &callbacks_,
 #ifdef OHOS_VIDEO_ASSISTANT
       RequestSurfaceCB(),
+      VideoDecoderChangedCB(),
 #endif // OHOS_VIDEO_ASSISTANT
       base::BindOnce(&CallbackHelper::OnStart, base::Unretained(&callbacks_)));
   run_loop.Run();

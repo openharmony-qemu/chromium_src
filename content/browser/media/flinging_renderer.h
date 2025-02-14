@@ -52,6 +52,7 @@ class CONTENT_EXPORT FlingingRenderer : public media::Renderer,
                   media::RendererClient* client,
 #ifdef OHOS_VIDEO_ASSISTANT
                   media::RequestSurfaceCB request_surface_cb,
+                  media::VideoDecoderChangedCB decoder_changed_cb,
 #endif // OHOS_VIDEO_ASSISTANT
                   media::PipelineStatusCallback init_cb) override;
   void SetLatencyHint(absl::optional<base::TimeDelta> latency_hint) override;

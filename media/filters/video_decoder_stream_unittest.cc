@@ -335,6 +335,9 @@ class VideoDecoderStreamTest
         demuxer_stream_.get(),
         base::BindOnce(&VideoDecoderStreamTest::OnInitialized,
                        base::Unretained(this)),
+#ifdef OHOS_VIDEO_ASSISTANT
+        VideoDecoderChangedCB(),
+#endif // OHOS_VIDEO_ASSISTANT
         cdm_context_.get(),
         base::BindRepeating(&VideoDecoderStreamTest::OnStatistics,
                             base::Unretained(this)),

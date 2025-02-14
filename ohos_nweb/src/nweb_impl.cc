@@ -94,6 +94,10 @@
 #include "ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_browser_ua_config.h"
 #endif
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+#include "ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_browser_engine_cloud_config.h"
+#endif
+
 #ifdef OHOS_EX_GET_ZOOM_LEVEL
 #include "third_party/blink/public/common/page/page_zoom.h"
 #include "chrome/browser/ui/zoom/chrome_zoom_level_prefs.h"
@@ -181,6 +185,11 @@ extern bool g_siteIsolationMode;
 #endif
 
 #include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
+
+#if defined(OHOS_VIDEO_ASSISTANT)
+OnReportStatisticLogFunc
+    OHOS::NWeb::NWebImpl::on_report_statistic_log_callback_ = nullptr;
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
 
 namespace {
 uint32_t g_nweb_count = 0;
@@ -2594,6 +2603,13 @@ void NWebImpl::SetBrowserUA(const std::string& ua_name) {
 }
 #endif  // OHOS_EX_UA
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+// static
+void NWebImpl::UpdateBrowserEngineConfig(const std::string& file_path, const std::string& version) {
+  nweb_ex::AlloyBrowserEngineCloudConfig::GetInstance()->UpdateBrowserEngineCloudConfig(file_path, version);
+}
+#endif
+
 #if defined(OHOS_I18N)
 void NWebImpl::UpdateAcceptLanguageInternal() {
   const base::CommandLine& command_line = *base::CommandLine::ForCurrentProcess();
@@ -2907,6 +2923,35 @@ void NWebImpl::SetAccessibilityState(bool state) {
   }
 }
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+void NWebImpl::EnableVideoAssistant(bool enable) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(WARNING) << "nweb delegate is nullptr when enable video assistant";
+    return;
+  }
+  nweb_delegate_->EnableVideoAssistant(enable);
+}
+
+void NWebImpl::ExecuteVideoAssistantFunction(const std::string& cmd_id) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(WARNING)
+        << "nweb delegate is nullptr when execute video assistant function";
+    return;
+  }
+  nweb_delegate_->ExecuteVideoAssistantFunction(cmd_id);
+}
+
+void NWebImpl::OnReportStatisticLog(const std::string& content) {
+  if (on_report_statistic_log_callback_) {
+    on_report_statistic_log_callback_(content.c_str());
+  }
+}
+
+void NWebImpl::SetOnReportStatisticLogCallback(OnReportStatisticLogFunc func) {
+  on_report_statistic_log_callback_ = func;
+}
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+
 #ifdef OHOS_LOGGER_REPORT
 void NWebImpl::PutLoggerCallback(
     std::shared_ptr<NWebLoggerCallback> logger_callback) {
@@ -3212,6 +3257,13 @@ void NWebImpl::EnableSafeBrowsing(bool enable) {
   }
 
   return nweb_delegate_->EnableSafeBrowsing(enable);
+}
+
+void NWebImpl::EnableSafeBrowsingDetection(bool enable, bool strictMode) const {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->EnableSafeBrowsingDetection(enable, strictMode);
 }
 #endif
 

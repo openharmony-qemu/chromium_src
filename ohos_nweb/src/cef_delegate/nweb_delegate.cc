@@ -3355,6 +3355,17 @@ void NWebDelegate::EnableSafeBrowsing(bool enable) {
   GetBrowser()->EnableSafeBrowsing(enable);
 }
 
+void NWebDelegate::EnableSafeBrowsingDetection(bool enable, bool strictMode) {
+  LOG(DEBUG) << "NWebDelegate::EnableSafeBrowsingDetection. enable is "
+             << enable << ", strictMode is " << strictMode;
+  if (GetBrowser() == nullptr) {
+    LOG(ERROR) << "NWebDelegate::EnableSafeBrowsingDetection failed.";
+    return;
+  }
+
+  GetBrowser()->EnableSafeBrowsingDetection(enable, strictMode);
+}
+
 void NWebDelegate::PrecompileJavaScript(const std::string& url,
                                         const std::string& script,
                                         std::shared_ptr<CacheOptions>& cacheOptions,
@@ -4104,6 +4115,30 @@ void NWebDelegate::RegisterOnCreateNativeMediaPlayerListener(
   handler_delegate_->RegisterOnCreateNativeMediaPlayerListener(std::move(callback));
 }
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+#if defined(OHOS_VIDEO_ASSISTANT)
+void NWebDelegate::EnableVideoAssistant(bool enable) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    if (!handler_delegate_) {
+      LOG(ERROR) << "failed to enable video assistant, handler delegate is null";
+      return;
+    }
+    handler_delegate_->EnableVideoAssistant(enable);
+    return;
+  }
+
+  GetBrowser()->GetHost()->EnableVideoAssistant(enable);
+}
+
+void NWebDelegate::ExecuteVideoAssistantFunction(const std::string& cmd_id) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "failed to get host when execute video assistant function";
+    return;
+  }
+
+  GetBrowser()->GetHost()->ExecuteVideoAssistantFunction(cmd_id);
+}
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
 
 #if defined(OHOS_CLIPBOARD)
 void NWebDelegate::SetIsRichText(bool is_rich_text) {

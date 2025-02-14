@@ -9,6 +9,33 @@ import "mojo/public/mojom/base/time.mojom";
 import "services/media_session/public/mojom/media_session.mojom";
 import "ui/gfx/geometry/mojom/geometry.mojom";
 
+[EnableIf=ohos_video_assistant]
+enum VideoAssistantDownloadButton {
+  kDownloadPerPage,
+  kDownloadForceShow,
+  kDownloadForceHide,
+};
+
+[EnableIf=ohos_video_assistant]
+struct VideoAssistantConfig {
+  bool video_assistant;
+  bool playback_rate;
+  VideoAssistantDownloadButton download_button;
+};
+
+[EnableIf=ohos_video_assistant]
+struct VideoAttributesForVAST {
+  bool show_fullscreen_button;
+  bool show_download_button;
+  bool show_playback_rate_menu;
+  double current_playback_rate;
+  gfx.mojom.RectF rect;
+
+  bool supports_save;
+  double duration;
+  bool visible;
+};
+
 // Implemented by HTMLMediaElement in the renderer process to allow the
 // browser to control media playback.
 interface MediaPlayer {
@@ -71,6 +98,12 @@ interface MediaPlayer {
 
   [EnableIf=ohos_media_network_traffic_prompt]
   AllowPlaybackWithMobileData();
+
+  [EnableIf=ohos_video_assistant]
+  SetPlaybackRate(double playback_rate);
+
+  [EnableIf=ohos_video_assistant]
+  RequestDownloadUrl();
 };
 
 // Implemented by the MediaWebContentsObserver. The remote lives in the renderer
@@ -136,6 +169,15 @@ interface MediaPlayerObserver {
 
   [EnableIf=ohos_media_network_traffic_prompt]
   OnPlaybackWithMobileDataAllowed();
+
+  [EnableIf=ohos_video_assistant]
+  OnVideoPlaying(VideoAttributesForVAST video_attributes);
+
+  [EnableIf=ohos_video_assistant]
+  OnUpdateVideoAttributes(VideoAttributesForVAST video_attributes);
+
+  [EnableIf=ohos_video_assistant]
+  OnVideoDestroyed();
 };
 
 // Implemented by MediaWebContentsObserver::MediaPlayerHostImpl in the browser
@@ -150,4 +192,8 @@ interface MediaPlayerHost {
   OnMediaPlayerAdded(pending_associated_remote<MediaPlayer> player_remote,
                      pending_associated_receiver<MediaPlayerObserver> observer,
                      int32 player_id);
+
+  [EnableIf=ohos_video_assistant]
+  RequestVideoAssistantConfig() => (VideoAssistantConfig config);
+
 };

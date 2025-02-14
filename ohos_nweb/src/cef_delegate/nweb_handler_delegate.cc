@@ -873,6 +873,14 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
       }
     }
 #endif // OHOS_BFCACHE
+#if defined(OHOS_VIDEO_ASSISTANT)
+    if (video_assistant_enabled_) {
+      if (main_browser_ && main_browser_->GetHost()) {
+        main_browser_->GetHost()->EnableVideoAssistant(
+            *video_assistant_enabled_);
+      }
+    }
+#endif // OHOS_VIDEO_ASSISTANT
     return;
   }
 #endif  // defined(OHOS_MULTI_WINDOW)
@@ -893,6 +901,14 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
     LOG(ERROR) << "Failed to set browser to settings delegate";
   }
 }
+#if defined(OHOS_VIDEO_ASSISTANT)
+  if (video_assistant_enabled_) {
+    if (main_browser_ && main_browser_->GetHost()) {
+      main_browser_->GetHost()->EnableVideoAssistant(
+          *video_assistant_enabled_);
+    }
+  }
+#endif // OHOS_VIDEO_ASSISTANT
 
 bool NWebHandlerDelegate::DoClose(CefRefPtr<CefBrowser> browser) {
   LOG(INFO) << "NWebHandlerDelegate::DoClose";
@@ -3767,6 +3783,49 @@ NWebHandlerDelegate::OnCreateCustomMediaPlayer(
 }
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+void NWebHandlerDelegate::OnShowToast(double duration, const CefString& toast) {
+#if defined(OHOS_VIDEO_ASSISTANT)
+  if (!web_app_client_extension_listener_) {
+    LOG(WARNING) << "application extension listener is nullptr";
+    return;
+  }
+
+  if (!web_app_client_extension_listener_->OnShowToast) {
+    LOG(WARNING) << "show toast callback is nullptr";
+    return;
+  }
+
+  web_app_client_extension_listener_->OnShowToast(
+      web_app_client_extension_listener_->nweb_id, duration,
+      toast.ToString().c_str());
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+}
+
+void NWebHandlerDelegate::OnShowVideoAssistant(
+    const CefString& videoAssistantItems) {
+#if defined(OHOS_VIDEO_ASSISTANT)
+  if (!web_app_client_extension_listener_) {
+    LOG(WARNING) << "application extension listener is nullptr";
+    return;
+  }
+
+  if (!web_app_client_extension_listener_->OnShowVideoAssistant) {
+    LOG(WARNING) << "show video assistant callback is nullptr";
+    return;
+  }
+
+  web_app_client_extension_listener_->OnShowVideoAssistant(
+      web_app_client_extension_listener_->nweb_id,
+      videoAssistantItems.ToString().c_str());
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+}
+
+void NWebHandlerDelegate::OnReportStatisticLog(const CefString& content) {
+#if defined(OHOS_VIDEO_ASSISTANT)
+  NWebImpl::OnReportStatisticLog(content.ToString());
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+}
+
 #if defined(OHOS_RENDERER_ANR_DUMP)
 void NWebHandlerDelegate::OnRenderProcessNotResponding(
     CefRefPtr<CefBrowser> browser,
@@ -3875,6 +3934,12 @@ void NWebHandlerDelegate::OnRequestOpenDevTools() {
   web_app_client_extension_listener_->OnRequestOpenDevTools(
       web_app_client_extension_listener_->nweb_id);
 }
+
+#if defined(OHOS_VIDEO_ASSISTANT)
+void NWebHandlerDelegate::EnableVideoAssistant(bool enable) {
+  video_assistant_enabled_ = enable;
+}
+#endif // OHOS_VIDEO_ASSISTANT
 
 void NWebHandlerDelegate::Discard() {
   content::GpuProcessHost* host = content::GpuProcessHost::Get();

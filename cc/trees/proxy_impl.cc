@@ -1084,4 +1084,13 @@ void ProxyImpl::OnLayerRectVisibilityChange(int id, bool visibility) {
                                 proxy_main_weak_ptr_, id, visibility));
 }
 #endif
+
+#ifdef OHOS_VIDEO_ASSISTANT
+void ProxyImpl::OnLayerBoundsUpdate(int id, const gfx::Rect& bounds) {
+  DCHECK(IsImplThread());
+  MainThreadTaskRunner()->PostTask(
+      FROM_HERE, base::BindOnce(&ProxyMain::OnLayerBoundsUpdate,
+                                proxy_main_weak_ptr_, id, bounds));
+}
+#endif // OHOS_VIDEO_ASSISTANT
 }  // namespace cc

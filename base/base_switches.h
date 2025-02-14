@@ -75,6 +75,9 @@ extern const char kForTest[];
 extern const char kBundleInstallationDir[];
 extern const char kBundleName[];
 #endif
+#ifdef OHOS_VIDEO_ASSISTANT
+extern const char kEnableVideoAssistant[];
+#endif // OHOS_VIDEO_ASSISTANT
 
 }  // namespace switches
 

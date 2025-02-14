@@ -659,6 +659,11 @@ class WebContents : public PageNavigator,
       bool is_site_first_report) = 0;
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+  virtual void EnableSafeBrowsingDetection(bool enable, bool strictMode) = 0;
+  virtual bool IsSafeBrowsingDetectionEnabled() = 0;
+#endif
+
 #if defined(OHOS_EX_PASSWORD)
   virtual void SetSavePasswordAutomatically(bool enable) = 0;
   virtual bool GetSavePasswordAutomatically() = 0;
@@ -822,6 +827,11 @@ class WebContents : public PageNavigator,
   // This does not affect audio capture, just local/system output.
   virtual bool IsAudioMuted() = 0;
   virtual void SetAudioMuted(bool mute) = 0;
+
+#if defined(OHOS_VIDEO_ASSISTANT)
+  virtual void EnableVideoAssistant(bool enable) = 0;
+  virtual void ExecuteVideoAssistantFunction(const std::string& cmdId) = 0;
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
 
 #if defined(OHOS_MEDIA_POLICY)
   //Set whether to the HTML play can be used to control media

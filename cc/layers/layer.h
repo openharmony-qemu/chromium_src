@@ -867,6 +867,9 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
 
   virtual void OnLayerRectVisibilityChange(bool visibility) {}
 #endif
+#ifdef OHOS_VIDEO_ASSISTANT
+  virtual void OnLayerBoundsUpdate(const gfx::Rect& bounds) {}
+#endif // OHOS_VIDEO_ASSISTANT
 
   void SetShouldInterceptTouchEvent(bool intercept) {
     should_intercept_touch_event_.Write(*this) = intercept;

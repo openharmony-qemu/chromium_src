@@ -40,6 +40,10 @@
 #include "capi/nweb_permission_request.h"
 // #endif
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+#include "capi/nweb_statistic_callback.h"
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+
 struct OpenDevToolsParam;
 
 namespace OHOS::NWeb {
@@ -356,6 +360,7 @@ class NWebImpl : public NWeb {
   void SetNestedScrollMode(const NestedScrollMode& nestedScrollMode) override;
   bool IsSafeBrowsingEnabled() override;
   void EnableSafeBrowsing(bool enable) override;
+  void EnableSafeBrowsingDetection(bool enable, bool strictMode) const;
   int GetSecurityLevel() override;
   void SetPrintBackground(bool enable) override;
   bool GetPrintBackground() override;
@@ -418,6 +423,13 @@ class NWebImpl : public NWeb {
   void CloseDevtools();
 #endif  // defined(OHOS_NWEB_EX)
 
+#if defined(OHOS_VIDEO_ASSISTANT)
+  void EnableVideoAssistant(bool enable);
+  void ExecuteVideoAssistantFunction(const std::string& cmd_id);
+  static void OnReportStatisticLog(const std::string& content);
+  static void SetOnReportStatisticLogCallback(OnReportStatisticLogFunc func);
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
+
 #ifdef OHOS_EX_NETWORK_CONNECTION
   static void SetConnectTimeout(int32_t seconds);
   static void BindToNetwork(int network_id);
@@ -434,6 +446,10 @@ class NWebImpl : public NWeb {
   static std::string GetUANameConfig(const std::string& host);
   static void SetBrowserUA(const std::string& ua_name);
 #endif  // OHOS_EX_UA
+
+#if defined(OHOS_VIDEO_ASSISTANT)
+  static void UpdateBrowserEngineConfig(const std::string& file_path, const std::string& version);
+#endif
 
 #if defined(OHOS_EX_FORCE_ZOOM)
   void SetForceEnableZoom(bool forceEnableZoom) const;
@@ -677,6 +693,10 @@ void UpdateAcceptLanguageInternal();
     bool is_keyboard_ = false;
   };
   std::optional<ReSizeType> pending_size_ = std::nullopt;
+
+#if defined(OHOS_VIDEO_ASSISTANT)
+  static OnReportStatisticLogFunc on_report_statistic_log_callback_;
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
 };
 }  // namespace OHOS::NWeb
 

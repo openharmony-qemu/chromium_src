@@ -348,6 +348,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #if BUILDFLAG(IS_OHOS)
   bool IsSafeBrowsingEnabled() override;
   void EnableSafeBrowsing(bool enable) override;
+  void EnableSafeBrowsingDetection(bool enable, bool strictMode) override;
   void PrecompileJavaScript(const std::string& url,
                            const std::string& script,
                            std::shared_ptr<CacheOptions>& cacheOptions,
@@ -637,6 +638,11 @@ void SetSurfaceDensity(const double& density) override;
   void RegisterOnCreateNativeMediaPlayerListener(
       std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) override;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+#if defined(OHOS_VIDEO_ASSISTANT)
+  void EnableVideoAssistant(bool enable) override;
+  void ExecuteVideoAssistantFunction(const std::string& cmd_id) override;
+#endif  // defined(OHOS_VIDEO_ASSISTANT)
 
   void SendAccessibilityHoverEvent(int x, int y) override;
 

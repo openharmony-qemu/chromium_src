@@ -94,7 +94,6 @@ double OHOSAudioInputStream::GetMaxVolume() {
 }
 
 void OHOSAudioInputStream::SetVolume(double volume) {
-  capturer_source_->SetVolume(volume);
   if (capturer_source_) {
     capturer_source_->SetVolume(volume);
   }

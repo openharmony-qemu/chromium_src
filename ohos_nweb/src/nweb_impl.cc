@@ -1295,6 +1295,14 @@ void NWebImpl::InitialScale(float scale) {
   nweb_delegate_->InitialScale(scale);
 }
 
+void NWebImpl::PutOptimizeParserBudgetEnabled(bool enable)
+{
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->PutOptimizeParserBudgetEnabled(true);
+}
+
 void NWebImpl::OnPause() {
   if (!GetWebOptimizationValue()) {
     LOG(DEBUG) << "WebOptimization disabled.";

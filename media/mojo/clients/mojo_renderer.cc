@@ -49,6 +49,7 @@ void MojoRenderer::Initialize(MediaResource* media_resource,
                               media::RendererClient* client,
 #ifdef OHOS_VIDEO_ASSISTANT
                               RequestSurfaceCB request_surface_cb,
+                              VideoDecoderChangedCB decoder_changed_cb,
 #endif // OHOS_VIDEO_ASSISTANT
                               PipelineStatusCallback init_cb) {
   DVLOG(1) << __func__;
@@ -67,6 +68,7 @@ void MojoRenderer::Initialize(MediaResource* media_resource,
 
 #ifdef OHOS_VIDEO_ASSISTANT
   request_surface_cb_ = std::move(request_surface_cb);
+  decoder_changed_cb_ = std::move(decoder_changed_cb);
 #endif // OHOS_VIDEO_ASSISTANT
 
   switch (media_resource_->GetType()) {

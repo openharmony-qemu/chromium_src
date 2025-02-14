@@ -85,7 +85,8 @@ class MEDIA_EXPORT PipelineController {
              Pipeline::Client* client,
              bool is_streaming,
 #ifdef OHOS_VIDEO_ASSISTANT
-            RequestSurfaceCB request_surface_cb,
+             RequestSurfaceCB request_surface_cb,
+             VideoDecoderChangedCB decoder_changed_cb,
 #endif // OHOS_VIDEO_ASSISTANT
              bool is_static);
 
@@ -108,7 +109,8 @@ class MEDIA_EXPORT PipelineController {
   // been suspended.
   void Resume(
 #ifdef OHOS_VIDEO_ASSISTANT
-        RequestSurfaceCB request_surface_cb
+        RequestSurfaceCB request_surface_cb,
+        VideoDecoderChangedCB decoder_changed_cb
 #endif // OHOS_VIDEO_ASSISTANT
       );
 
@@ -251,6 +253,7 @@ class MEDIA_EXPORT PipelineController {
 
 #ifdef OHOS_VIDEO_ASSISTANT
   RequestSurfaceCB pending_surface_request_cb_;
+  VideoDecoderChangedCB pending_decoder_changed_cb_;
 #endif // OHOS_VIDEO_ASSISTANT
 
   base::ThreadChecker thread_checker_;

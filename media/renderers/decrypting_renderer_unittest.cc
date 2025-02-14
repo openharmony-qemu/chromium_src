@@ -111,6 +111,7 @@ TEST_F(DecryptingRendererTest, ClearStreams_NoCdm) {
   decrypting_renderer_->Initialize(&media_resource_, &renderer_client_,
 #ifdef OHOS_VIDEO_ASSISTANT
                                    RequestSurfaceCB(),
+                                   VideoDecoderChangedCB(),
 #endif // OHOS_VIDEO_ASSISTANT
                                    renderer_init_cb_.Get());
   task_environment_.RunUntilIdle();
@@ -132,6 +133,7 @@ TEST_F(DecryptingRendererTest, ClearStreams_AesDecryptor) {
   decrypting_renderer_->Initialize(&media_resource_, &renderer_client_,
 #ifdef OHOS_VIDEO_ASSISTANT
                                    RequestSurfaceCB(),
+                                   VideoDecoderChangedCB(),
 #endif // OHOS_VIDEO_ASSISTANT
                                    renderer_init_cb_.Get());
   task_environment_.RunUntilIdle();
@@ -152,6 +154,7 @@ TEST_F(DecryptingRendererTest, ClearStreams_OtherCdm) {
   decrypting_renderer_->Initialize(&media_resource_, &renderer_client_,
 #ifdef OHOS_VIDEO_ASSISTANT
                                    RequestSurfaceCB(),
+                                   VideoDecoderChangedCB(),
 #endif // OHOS_VIDEO_ASSISTANT
                                    renderer_init_cb_.Get());
   decrypting_renderer_->SetCdm(&cdm_context_, set_cdm_cb_.Get());
@@ -167,6 +170,7 @@ TEST_F(DecryptingRendererTest, EncryptedStreams_NoCdm) {
   decrypting_renderer_->Initialize(&media_resource_, &renderer_client_,
 #ifdef OHOS_VIDEO_ASSISTANT
                                    RequestSurfaceCB(),
+                                   VideoDecoderChangedCB(),
 #endif // OHOS_VIDEO_ASSISTANT
                                    renderer_init_cb_.Get());
   task_environment_.RunUntilIdle();
@@ -187,6 +191,7 @@ TEST_F(DecryptingRendererTest, EncryptedStreams_AesDecryptor) {
   decrypting_renderer_->Initialize(&media_resource_, &renderer_client_,
 #ifdef OHOS_VIDEO_ASSISTANT
                                    RequestSurfaceCB(),
+                                   VideoDecoderChangedCB(),
 #endif // OHOS_VIDEO_ASSISTANT
                                    renderer_init_cb_.Get());
   decrypting_renderer_->SetCdm(&cdm_context_, set_cdm_cb_.Get());
@@ -208,6 +213,7 @@ TEST_F(DecryptingRendererTest, EncryptedStreams_OtherCdm) {
   decrypting_renderer_->Initialize(&media_resource_, &renderer_client_,
 #ifdef OHOS_VIDEO_ASSISTANT
                                    RequestSurfaceCB(),
+                                   VideoDecoderChangedCB(),
 #endif // OHOS_VIDEO_ASSISTANT
                                    renderer_init_cb_.Get());
   decrypting_renderer_->SetCdm(&cdm_context_, set_cdm_cb_.Get());
@@ -230,6 +236,7 @@ TEST_F(DecryptingRendererTest, EncryptedStreams_AesDecryptor_CdmSetBeforeInit) {
   decrypting_renderer_->Initialize(&media_resource_, &renderer_client_,
 #ifdef OHOS_VIDEO_ASSISTANT
                                    RequestSurfaceCB(),
+                                   VideoDecoderChangedCB(),
 #endif // OHOS_VIDEO_ASSISTANT
                                    renderer_init_cb_.Get());
   task_environment_.RunUntilIdle();
@@ -251,6 +258,7 @@ TEST_F(DecryptingRendererTest, EncryptedStreams_OtherCdm_CdmSetBeforeInit) {
   decrypting_renderer_->Initialize(&media_resource_, &renderer_client_,
 #ifdef OHOS_VIDEO_ASSISTANT
                                    RequestSurfaceCB(),
+                                   VideoDecoderChangedCB(),
 #endif // OHOS_VIDEO_ASSISTANT
                                    renderer_init_cb_.Get());
   task_environment_.RunUntilIdle();
@@ -271,6 +279,7 @@ TEST_F(DecryptingRendererTest, EncryptedAndClearStream_OtherCdm) {
   decrypting_renderer_->Initialize(&media_resource_, &renderer_client_,
 #ifdef OHOS_VIDEO_ASSISTANT
                                    RequestSurfaceCB(),
+                                   VideoDecoderChangedCB(),
 #endif // OHOS_VIDEO_ASSISTANT
                                    renderer_init_cb_.Get());
   decrypting_renderer_->SetCdm(&cdm_context_, set_cdm_cb_.Get());
@@ -290,6 +299,7 @@ TEST_F(DecryptingRendererTest, DecryptingMediaResourceInitFails) {
   decrypting_renderer_->Initialize(&media_resource_, &renderer_client_,
 #ifdef OHOS_VIDEO_ASSISTANT
                                    RequestSurfaceCB(),
+                                   VideoDecoderChangedCB(),
 #endif // OHOS_VIDEO_ASSISTANT
                                    renderer_init_cb_.Get());
   task_environment_.RunUntilIdle();

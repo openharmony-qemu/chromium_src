@@ -93,6 +93,7 @@ class MockPipeline : public Pipeline {
              Client* client,
 #ifdef OHOS_VIDEO_ASSISTANT
              RequestSurfaceCB request_surface_cb,
+             VideoDecoderChangedCB decoder_changed_cb,
 #endif // OHOS_VIDEO_ASSISTANT
              PipelineStatusCallback seek_cb) override {
     OnStart(start_type, demuxer, client, seek_cb);
@@ -109,6 +110,7 @@ class MockPipeline : public Pipeline {
   void Resume(base::TimeDelta time,
 #ifdef OHOS_VIDEO_ASSISTANT
               RequestSurfaceCB request_surface_cb,
+              VideoDecoderChangedCB decoder_changed_cb,
 #endif // OHOS_VIDEO_ASSISTANT
               PipelineStatusCallback seek_cb) override {
     OnResume(time, seek_cb);
@@ -465,6 +467,7 @@ class MockVideoRenderer : public VideoRenderer {
                   RendererClient* client,
 #ifdef OHOS_VIDEO_ASSISTANT
                   RequestSurfaceCB request_surface_cb,
+                  VideoDecoderChangedCB decoder_changed_cb,
 #endif // OHOS_VIDEO_ASSISTANT
                   const TimeSource::WallClockTimeCB& wall_clock_time_cb,
                   PipelineStatusCallback init_cb) override {
@@ -530,6 +533,7 @@ class MockRenderer : public Renderer,
                   RendererClient* client,
 #ifdef OHOS_VIDEO_ASSISTANT
                   RequestSurfaceCB request_surface_cb,
+                  VideoDecoderChangedCB decoder_changed_cb,
 #endif // OHOS_VIDEO_ASSISTANT
                   PipelineStatusCallback init_cb) override {
     OnInitialize(media_resource, client, init_cb);

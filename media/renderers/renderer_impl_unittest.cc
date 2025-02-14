@@ -148,6 +148,7 @@ class RendererImplTest : public ::testing::Test {
     renderer_impl_->Initialize(demuxer_.get(), &callbacks_,
 #ifdef OHOS_VIDEO_ASSISTANT
                                RequestSurfaceCB(),
+                               VideoDecoderChangedCB(),
 #endif // OHOS_VIDEO_ASSISTANT
                                base::BindOnce(&CallbackHelper::OnInitialize,
                                               base::Unretained(&callbacks_)));

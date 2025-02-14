@@ -164,6 +164,7 @@ void VideoRendererImpl::Initialize(
     RendererClient* client,
 #ifdef OHOS_VIDEO_ASSISTANT
     RequestSurfaceCB request_surface_cb,
+    VideoDecoderChangedCB decoder_changed_cb,
 #endif // OHOS_VIDEO_ASSISTANT
     const TimeSource::WallClockTimeCB& wall_clock_time_cb,
     PipelineStatusCallback init_cb) {
@@ -224,6 +225,9 @@ void VideoRendererImpl::Initialize(
       demuxer_stream_,
       base::BindOnce(&VideoRendererImpl::OnVideoDecoderStreamInitialized,
                      weak_factory_.GetWeakPtr()),
+#ifdef OHOS_VIDEO_ASSISTANT
+      std::move(decoder_changed_cb),
+#endif // OHOS_VIDEO_ASSISTANT
       cdm_context,
       base::BindRepeating(&VideoRendererImpl::OnStatisticsUpdate,
                           weak_factory_.GetWeakPtr()),

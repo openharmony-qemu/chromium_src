@@ -64,6 +64,7 @@ class PipelineControllerTest : public ::testing::Test, public Pipeline::Client {
                                is_streaming,
 #ifdef OHOS_VIDEO_ASSISTANT
                                RequestSurfaceCB(),
+                               VideoDecoderChangedCB(),
 #endif // OHOS_VIDEO_ASSISTANT
                                is_static);
 
@@ -119,7 +120,9 @@ class PipelineControllerTest : public ::testing::Test, public Pipeline::Client {
     EXPECT_CALL(*pipeline_, GetMediaTime())
         .WillRepeatedly(Return(base::TimeDelta()));
 #ifdef OHOS_VIDEO_ASSISTANT
-    pipeline_controller_.Resume(RequestSurfaceCB());
+    pipeline_controller_.Resume(
+        RequestSurfaceCB(),
+        VideoDecoderChangedCB());
 #else
     pipeline_controller_.Resume();
 #endif // OHOS_VIDEO_ASSISTANT
@@ -201,6 +204,7 @@ TEST_F(PipelineControllerTest, StartSuspendedSeekAndResume) {
                              &demuxer_, this, false,
 #ifdef OHOS_VIDEO_ASSISTANT
                              RequestSurfaceCB(),
+                             VideoDecoderChangedCB(),
 #endif // OHOS_VIDEO_ASSISTANT
                              true);
   Mock::VerifyAndClear(pipeline_);
@@ -246,6 +250,7 @@ TEST_F(PipelineControllerTest, StartSuspendedAndResume) {
                              &demuxer_, this, false,
 #ifdef OHOS_VIDEO_ASSISTANT
                              RequestSurfaceCB(),
+                             VideoDecoderChangedCB(),
 #endif // OHOS_VIDEO_ASSISTANT
                              true);
   Mock::VerifyAndClear(pipeline_);
@@ -563,7 +568,9 @@ TEST_F(PipelineControllerTest, ResumePlaybackDuringSwitchingTracksState) {
 
   pipeline_controller_.OnSelectedVideoTrackChanged({});
 #ifdef OHOS_VIDEO_ASSISTANT
-    pipeline_controller_.Resume(RequestSurfaceCB());
+    pipeline_controller_.Resume(
+        RequestSurfaceCB(),
+        VideoDecoderChangedCB());
 #else
   pipeline_controller_.Resume();
 #endif // OHOS_VIDEO_ASSISTANT

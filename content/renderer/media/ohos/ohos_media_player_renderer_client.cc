@@ -44,6 +44,7 @@ void OHOSMediaPlayerRendererClient::Initialize(
     media::RendererClient* client,
 #ifdef OHOS_VIDEO_ASSISTANT
     media::RequestSurfaceCB request_surface_cb,
+    media::VideoDecoderChangedCB decoder_changed_cb,
 #endif // OHOS_VIDEO_ASSISTANT
     media::PipelineStatusCallback init_cb) {
   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
@@ -63,6 +64,7 @@ void OHOSMediaPlayerRendererClient::Initialize(
       media_resource, client_,
 #ifdef OHOS_VIDEO_ASSISTANT
       std::move(request_surface_cb),
+      std::move(decoder_changed_cb),
 #endif // OHOS_VIDEO_ASSISTANT
       base::BindOnce(
           &OHOSMediaPlayerRendererClient::OnRemoteRendererInitialized,

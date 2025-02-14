@@ -80,6 +80,7 @@ void Receiver::Initialize(MediaResource* media_resource,
                           RendererClient* client,
 #ifdef OHOS_VIDEO_ASSISTANT
                           RequestSurfaceCB request_surface_cb,
+                          VideoDecoderChangedCB decoder_changed_cb,
 #endif // OHOS_VIDEO_ASSISTANT
                           PipelineStatusCallback init_cb) {
   demuxer_ = media_resource;
@@ -169,6 +170,7 @@ void Receiver::ShouldInitializeRenderer() {
   renderer_->Initialize(demuxer_, this,
 #ifdef OHOS_VIDEO_ASSISTANT
                         RequestSurfaceCB(),
+                        VideoDecoderChangedCB(),
 #endif // OHOS_VIDEO_ASSISTANT
                         base::BindOnce(&Receiver::OnRendererInitialized,
                                        weak_factory_.GetWeakPtr()));

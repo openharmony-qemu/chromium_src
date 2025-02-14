@@ -75,6 +75,7 @@ class PipelineImpl::RendererWrapper final : public DemuxerHost,
              std::unique_ptr<Renderer> default_renderer,
 #ifdef OHOS_VIDEO_ASSISTANT
              RequestSurfaceCB request_surface_cb,
+             VideoDecoderChangedCB decoder_changed_cb,
 #endif // OHOS_VIDEO_ASSISTANT
              base::WeakPtr<PipelineImpl> weak_pipeline);
   void Stop();
@@ -83,6 +84,7 @@ class PipelineImpl::RendererWrapper final : public DemuxerHost,
   void Resume(
 #ifdef OHOS_VIDEO_ASSISTANT
       RequestSurfaceCB request_surface_cb,
+      VideoDecoderChangedCB decoder_changed_cb,
 #endif // OHOS_VIDEO_ASSISTANT
       std::unique_ptr<Renderer> default_renderer, base::TimeDelta time);
   void SetPlaybackRate(double playback_rate);
@@ -258,6 +260,7 @@ class PipelineImpl::RendererWrapper final : public DemuxerHost,
 
 #ifdef OHOS_VIDEO_ASSISTANT
   RequestSurfaceCB request_surface_cb_;
+  VideoDecoderChangedCB decoder_changed_cb_;
 #endif // OHOS_VIDEO_ASSISTANT
 
   base::WeakPtrFactory<RendererWrapper> weak_factory_{this};
@@ -296,6 +299,7 @@ void PipelineImpl::RendererWrapper::Start(
     std::unique_ptr<Renderer> default_renderer,
 #ifdef OHOS_VIDEO_ASSISTANT
     RequestSurfaceCB request_surface_cb,
+    VideoDecoderChangedCB decoder_changed_cb,
 #endif // OHOS_VIDEO_ASSISTANT
     base::WeakPtr<PipelineImpl> weak_pipeline) {
   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
@@ -312,6 +316,7 @@ void PipelineImpl::RendererWrapper::Start(
 
 #ifdef OHOS_VIDEO_ASSISTANT
   request_surface_cb_ = std::move(request_surface_cb);
+  decoder_changed_cb_ = std::move(decoder_changed_cb);
 #endif // OHOS_VIDEO_ASSISTANT
 
   // Setup |error_cb_| on the media thread.
@@ -455,6 +460,7 @@ void PipelineImpl::RendererWrapper::Suspend() {
 void PipelineImpl::RendererWrapper::Resume(
 #ifdef OHOS_VIDEO_ASSISTANT
     RequestSurfaceCB request_surface_cb,
+    VideoDecoderChangedCB decoder_changed_cb,
 #endif // OHOS_VIDEO_ASSISTANT
     std::unique_ptr<Renderer> default_renderer,
     base::TimeDelta timestamp) {
@@ -489,6 +495,7 @@ void PipelineImpl::RendererWrapper::Resume(
       std::max(timestamp, demuxer_->GetStartTime());
 #ifdef OHOS_VIDEO_ASSISTANT
   request_surface_cb_ = std::move(request_surface_cb);
+  decoder_changed_cb_ = std::move(decoder_changed_cb);
 #endif // OHOS_VIDEO_ASSISTANT
 
   // Queue the asynchronous actions required to start playback.
@@ -1179,6 +1186,7 @@ void PipelineImpl::RendererWrapper::InitializeRenderer(
   shared_state_.renderer->Initialize(demuxer_, this,
 #ifdef OHOS_VIDEO_ASSISTANT
       std::move(request_surface_cb_),
+      std::move(decoder_changed_cb_),
 #endif // OHOS_VIDEO_ASSISTANT
       std::move(done_cb));
 }
@@ -1308,6 +1316,7 @@ void PipelineImpl::Start(StartType start_type,
                          Client* client,
 #ifdef OHOS_VIDEO_ASSISTANT
                          RequestSurfaceCB request_surface_cb,
+                         VideoDecoderChangedCB decoder_changed_cb,
 #endif // OHOS_VIDEO_ASSISTANT
                          PipelineStatusCallback seek_cb) {
   DVLOG(2) << __func__ << ": start_type=" << static_cast<int>(start_type);
@@ -1339,6 +1348,7 @@ void PipelineImpl::Start(StartType start_type,
                      demuxer, std::move(default_renderer),
 #ifdef OHOS_VIDEO_ASSISTANT
                      std::move(request_surface_cb),
+                     std::move(decoder_changed_cb),
 #endif // OHOS_VIDEO_ASSISTANT
                      weak_factory_.GetWeakPtr()));
 }
@@ -1411,6 +1421,7 @@ void PipelineImpl::Suspend(PipelineStatusCallback suspend_cb) {
 void PipelineImpl::Resume(base::TimeDelta time,
 #ifdef OHOS_VIDEO_ASSISTANT
                           RequestSurfaceCB request_surface_cb,
+                          VideoDecoderChangedCB decoder_changed_cb,
 #endif // OHOS_VIDEO_ASSISTANT
                           PipelineStatusCallback seek_cb) {
   DVLOG(2) << __func__;
@@ -1433,6 +1444,7 @@ void PipelineImpl::Resume(base::TimeDelta time,
                                 base::Unretained(renderer_wrapper_.get()),
 #ifdef OHOS_VIDEO_ASSISTANT
                                 std::move(request_surface_cb),
+                                std::move(decoder_changed_cb),
 #endif // OHOS_VIDEO_ASSISTANT
                                 std::move(default_renderer), time));
 }

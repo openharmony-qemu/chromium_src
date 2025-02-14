@@ -631,6 +631,9 @@ void AudioRendererImpl::OnDeviceInfoReceived(
       stream,
       base::BindOnce(&AudioRendererImpl::OnAudioDecoderStreamInitialized,
                      weak_factory_.GetWeakPtr()),
+#ifdef OHOS_VIDEO_ASSISTANT
+      VideoDecoderChangedCB(),
+#endif // OHOS_VIDEO_ASSISTANT
       cdm_context,
       base::BindRepeating(&AudioRendererImpl::OnStatisticsUpdate,
                           weak_factory_.GetWeakPtr()),

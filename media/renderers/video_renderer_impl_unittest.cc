@@ -151,6 +151,7 @@ class VideoRendererImplTest : public testing::Test {
         demuxer_stream, nullptr, &mock_cb_,
 #ifdef OHOS_VIDEO_ASSISTANT
         RequestSurfaceCB(),
+        VideoDecoderChangedCB(),
 #endif // OHOS_VIDEO_ASSISTANT
         base::BindRepeating(&WallClockTimeSource::GetWallClockTimes,
                             base::Unretained(&time_source_)),

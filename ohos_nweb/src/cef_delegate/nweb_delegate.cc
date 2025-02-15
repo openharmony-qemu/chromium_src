@@ -2033,13 +2033,8 @@ int NWebDelegate::Load(
        iter != additionalHttpHeaders.end(); iter++) {
     const std::string& key = iter->first;
     const std::string& value = iter->second;
-    if (!key.empty()) {
-      // Delimit with "\r\n".
-      if (!value.empty()) {
-        extra += "\r\n";
-      }
-      extra += std::string(key) + ": " + std::string(value);
-    }
+    if (!key.empty())
+      extra += "\r\n" + std::string(key) + ": " + std::string(value);
   }
   auto browser = GetBrowser();
   if (browser == nullptr) {

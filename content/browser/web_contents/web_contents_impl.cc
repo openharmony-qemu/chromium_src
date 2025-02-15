@@ -2670,12 +2670,17 @@ bool WebContentsImpl::NeedToFireBeforeUnloadOrUnloadEvents() {
   if (!notify_disconnection_)
     return false;
 
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+  // The return value of NeedToFireBeforeUnloadOrUnloadEvents will not be saved
+  // after receiving a ClosePage ACK.
+#else
   // Don't fire if the main frame indicates that beforeunload and unload have
   // already executed (e.g., after receiving a ClosePage ACK) or should be
   // ignored.
   if (GetPrimaryMainFrame()->IsPageReadyToBeClosed()) {
     return false;
   }
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
   // Check whether any frame in the frame tree needs to run beforeunload or
   // unload-time event handlers.
@@ -8803,6 +8808,9 @@ void WebContentsImpl::BeforeUnloadFiredFromRenderManager(
   observers_.NotifyObservers(&WebContentsObserver::BeforeUnloadFired, proceed);
   if (delegate_)
     delegate_->BeforeUnloadFired(this, proceed, proceed_to_fire_unload);
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+  OnBeforeUnloadFired(*proceed_to_fire_unload);
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
   // Note: |this| might be deleted at this point.
 }
 
@@ -10715,4 +10723,12 @@ void WebContentsImpl::OnVideoDestroyed(const MediaPlayerId& id) {
   video_assistant_->OnVideoDestroyed(id);
 }
 #endif // OHOS_VIDEO_ASSISTANT
+
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+void WebContentsImpl::OnBeforeUnloadFired(bool proceed) {
+  if (delegate_) {
+    delegate_->OnBeforeUnloadFired(proceed);
+  }
+}
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
 }  // namespace content

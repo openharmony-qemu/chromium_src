@@ -4008,3 +4008,20 @@ void NWebImpl::TrimMemoryByPressureLevel(int32_t memoryLevel) {
   base::MemoryPressureListener::NotifyMemoryPressure(memory_pressure_level);
 #endif  // OHOS_PERFORMANCE_MEMORY_THRESHOLD
 }
+
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+bool NWebImpl::NeedToFireBeforeUnloadOrUnloadEvents() {
+  if (nweb_delegate_ == nullptr) {
+    return false;
+  }
+  return nweb_delegate_->NeedToFireBeforeUnloadOrUnloadEvents();
+}
+
+void NWebImpl::DispatchBeforeUnload() {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->DispatchBeforeUnload();
+}
+
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD

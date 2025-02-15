@@ -649,6 +649,11 @@ class NWebImpl : public NWeb {
   void SetSurfaceDensity(const double& density) override;
   static void TrimMemoryByPressureLevel(int32_t memoryLevel);
 
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+ bool NeedToFireBeforeUnloadOrUnloadEvents();
+ void DispatchBeforeUnload();
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
+
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

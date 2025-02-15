@@ -810,6 +810,11 @@ void OnTouchIconUrlWithSizesReceived(
 
   void Discard();
 
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+ void OnBeforeUnloadFired(CefRefPtr<CefBrowser> browser,
+                          bool proceed) override;
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
+
  private:
   void CopyImageToClipboard(CefRefPtr<CefImage> image);
 

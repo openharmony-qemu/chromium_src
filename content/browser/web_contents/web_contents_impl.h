@@ -1605,6 +1605,10 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   void OnVideoDestroyed(const MediaPlayerId& id);
 #endif // OHOS_VIDEO_ASSISTANT
 
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+  void OnBeforeUnloadFired(bool proceed) override;
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
+
  private:
   using FrameTreeIterationCallback = base::RepeatingCallback<void(FrameTree&)>;
   using RenderViewHostIterationCallback =

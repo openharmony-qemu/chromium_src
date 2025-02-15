@@ -600,6 +600,11 @@ virtual int ScaleGestureChange(double scale, double centerX, double centerY) con
       std::shared_ptr<NWebDelegateInterface> nweb_delegate,
       std::unique_ptr<OpenDevToolsParam> param) = 0;
   virtual void CloseDevtools() = 0;
+
+#if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
+  virtual bool NeedToFireBeforeUnloadOrUnloadEvents() = 0;
+  virtual void DispatchBeforeUnload() = 0;
+#endif // OHOS_DISPATCH_BEFORE_UNLOAD
 };
 }  // namespace OHOS::NWeb
 

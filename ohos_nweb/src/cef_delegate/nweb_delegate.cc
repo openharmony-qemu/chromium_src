@@ -56,6 +56,7 @@
 #include "base/strings/stringprintf.h"
 #endif  // defined(OHOS_NO_STATE_PREFETCH)
 
+#include "base/strings/escape.h"
 #include "cef/include/internal/cef_string_types.h"
 #include "content/public/common/content_switches.h"
 #include "nweb_download_handler_delegate.h"
@@ -1083,15 +1084,27 @@ bool NWebDelegate::IsUrlFileExist(const GURL& gurl, const std::string& url) {
   if (url == "file://") {
     return false;
   }
+
   base::FilePath filePath;
-  if (!net::FileURLToFilePath(gurl, &filePath)) {
-    return false;
+  std::string unscaped_url_str = base::UnescapeURLComponent(gurl.spec(),
+           base::UnescapeRule::URL_SPECIAL_CHARS_EXCEPT_PATH_SEPARATORS);
+  GURL::Replacements repl;
+  repl.ClearRef();
+  GURL gurl_no_ref = GURL(unscaped_url_str).ReplaceComponents(repl);
+  if (net::FileURLToFilePath(gurl_no_ref, &filePath) && base::PathExists(filePath)) {
+    return true;
   }
-  if (!base::PathExists(filePath)) {
-    LOG(ERROR) << "IsUrlFileExist failed, file does not exist";
-    return false;
+
+  // if url start with file:// and end whih *#*.html UnescapeURLComponent function will delete char after #
+  // PathExists will return false but file is actually exist. check again with no unscaped will solve.
+  base::FilePath originFilePath;
+  GURL origin_gurl_no_ref = GURL(url).ReplaceComponents(repl);
+  if (net::FileURLToFilePath(origin_gurl_no_ref, &originFilePath) && base::PathExists(originFilePath)) {
+    return true;
   }
-  return true;
+
+  LOG(ERROR) << "IsUrlFileExist failed, file does not exist";
+  return false;
 }
 
 int NWebDelegate::Load(const std::string& url) {

@@ -87,6 +87,7 @@ void PolicyLoaderOhos::TryChoosePolicySource() {
                 << use_browser_policy_;
   }
 
+  policy::BrowserPolicyHandler::GetInstance()->MaybeInitFromPersistentPrefs();
   for (auto loader: g_loaders) {
     if (use_browser_policy_) {
       policy::BrowserPolicyHandler::GetInstance()->AddObserver(
@@ -100,13 +101,13 @@ void PolicyLoaderOhos::TryChoosePolicySource() {
                         .GetEnterpriseDeviceManagementInstance()
                         .StartObservePolicyChange();
     }
+    loader->Reload(true);
   }
 }
 
 void PolicyLoaderOhos::InitOnBackgroundThread() {}
 
 PolicyBundle PolicyLoaderOhos::Load() {
-  TryChoosePolicySource();
   if (!policy_source_choosed_) {
     LOG(ERROR) << "Load with no policy source choosed";
     return PolicyBundle();

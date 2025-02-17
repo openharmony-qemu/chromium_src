@@ -396,6 +396,9 @@ void ZoomController::UpdateState(const std::string& host) {
         can_show_bubble_ && !host.empty() && changed_from_default;
     for (auto& observer : observers_)
       observer.OnZoomChanged(zoom_change_data);
+#ifdef OHOS_AI
+    web_contents()->OnOverlayZoomChanged();
+#endif
   } else {
     // TODO(wjmaclean) Should we consider having HostZoomMap send both old and
     // new zoom levels here?

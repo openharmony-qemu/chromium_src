@@ -80,28 +80,32 @@ void OHOSAudioManager::GetAudioOutputDeviceNames(
   auto audioDeviceList =
       OhosAdapterHelper::GetInstance().GetAudioSystemManager().GetDevices(
           AdapterDeviceFlag::OUTPUT_DEVICES_FLAG);
-  for (auto audioDevice : audioDeviceList) {
-    if (audioDevice) {
-      device_names->emplace_back(
-          audioDevice->GetDeviceName(),
-          base::NumberToString(audioDevice->GetDeviceId()));
-    }
-  }
   auto defaultOutputDevice = OhosAdapterHelper::GetInstance()
                                  .GetAudioSystemManager()
                                  .GetDefaultOutputDevice();
-  if (!defaultOutputDevice) {
-    LOG(ERROR) << "OHOSAudioManager::GetAudioOutputDeviceNames "
-                  "defaultOutputDevice is null";
-    return;
+  for (auto audioDevice : audioDeviceList) {
+    if (!audioDevice) {
+      return;
+    }
+    if (!defaultOutputDevice) {
+      LOG(ERROR) << "OHOSAudioManager::GetAudioOutputDeviceNames "
+                    "defaultOutputDevice is null";
+      device_names->emplace_back(
+          audioDevice->GetDeviceName(),
+          base::NumberToString(audioDevice->GetDeviceId()));
+    } else {
+      if (defaultOutputDevice->GetDeviceName() ==
+          audioDevice->GetDeviceName()) {
+        device_names->emplace_front(
+            audioDevice->GetDeviceName(),
+            base::NumberToString(audioDevice->GetDeviceId()));
+      } else {
+        device_names->emplace_back(
+            audioDevice->GetDeviceName(),
+            base::NumberToString(audioDevice->GetDeviceId()));
+      }
+    }
   }
-
-  std::string defaultOutputDeviceName =
-      AUDIO_DEFAULT_DEVICE_NAME + defaultOutputDevice->GetDeviceName();
-  AudioDeviceName device_name;
-  device_name.unique_id = base::NumberToString(AUDIO_DEFAULT_DEVICE_ID);
-  device_name.device_name = defaultOutputDeviceName;
-  device_names->push_front(device_name);
 }
 
 #if defined(OHOS_WEBRTC)

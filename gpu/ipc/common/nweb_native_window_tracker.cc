@@ -13,8 +13,37 @@
 
 NWebNativeWindowTracker* g_instance = nullptr;
 
+extern void* QueryRenderWindowFromBrowserProcess(int32_t window_id);
+extern void DestoryRenderWindowFromBrowserProcess(int32_t window_id);
+extern void PassWindow(int64_t window_id);
+
+class BrowserClientAdapterImpl : public OHOS::NWeb::AafwkBrowserClientAdapter {
+public:
+    BrowserClientAdapterImpl() = default;
+    ~BrowserClientAdapterImpl() = default;
+    void* QueryRenderSurface(int32_t surface_id) override {
+        LOG(INFO) << "BrowserClientAdapterImpl.QueryRenderSurface " << surface_id;
+        return QueryRenderWindowFromBrowserProcess(surface_id);
+    }
+
+    void ReportThread(OHOS::NWeb::ResSchedStatusAdapter status, int32_t process_id, int32_t thread_id, OHOS::NWeb::ResSchedRoleAdapter role) override {
+        LOG(INFO) << "[not used] ReportThread, process_id: " << process_id << ", thread_id: " << thread_id;
+    }
+
+    void PassSurface(int64_t surface_id) override {
+        LOG(INFO) << "PassSurface, surfaceid: " << surface_id;
+        PassWindow(surface_id);
+    }
+
+    void DestroyRenderSurface(int32_t surface_id) override {
+        LOG(INFO) << "BrowserClientAdapterImpl.DestroyRenderSurface " << surface_id;
+        DestoryRenderWindowFromBrowserProcess(surface_id);
+    }
+};
+
 NWebNativeWindowTracker::NWebNativeWindowTracker()
-    : next_native_window_id_(1) {}
+    : g_browser_client_(std::make_shared<BrowserClientAdapterImpl>()),
+      next_native_window_id_(1) {}
 
 NWebNativeWindowTracker::~NWebNativeWindowTracker() {}
 

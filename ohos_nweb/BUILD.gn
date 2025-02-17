@@ -365,6 +365,7 @@ component("nweb_sources") {
     "src/nweb_imf_text_config_adapter_impl.cc",
     "src/nweb_imf_text_config_adapter_impl.h",
     "src/nweb_render_main.cc",
+    "src/nweb_gpu_main.cc",
   ]
 
   #if defined(OHOS_NAVIGATION)
@@ -397,5 +398,11 @@ component("nweb_sources") {
   deps += [
     "//ohos_adapter:ohos_adapter_napi",
     "//ohos_adapter:nweb_ohos_adapter",
+  ]
+
+  libs = [
+    "child_process",
+    "ipc_capi",
+    "native_window",
   ]
 }

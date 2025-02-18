@@ -130,13 +130,6 @@ MediaCodecDecoderBridgeImpl::MediaCodecDecoderBridgeImpl(
 MediaCodecDecoderBridgeImpl::~MediaCodecDecoderBridgeImpl() {
   LOG(INFO) << "MediaCodecDecoderBridgeImpl::~MediaCodecDecoderBridgeImpl.";
   ReleaseBridgeDecoder();
-
-#ifdef OHOS_VIDEO_ASSISTANT
-  if (video_surface_id_ > 0) {
-    NWebNativeWindowTracker::Get()->DestroyNativeWindow(video_surface_id_);
-    video_surface_id_ = -1;
-  }
-#endif // OHOS_VIDEO_ASSISTANT
 }
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::ConfigureBridgeDecoder(
@@ -601,10 +594,6 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::SetVideoSurface(
   LOG(INFO) << "MediaCodecDecoderBridgeImpl::SetVideoSurface(" << widget_id << ")";
   if (video_surface_id_ == widget_id) {
     return DecoderAdapterCode::DECODER_OK;
-  }
-  if (video_surface_id_ > 0) {
-    NWebNativeWindowTracker::Get()->DestroyNativeWindow(video_surface_id_);
-    video_surface_id_ = -1;
   }
   if (videoDecoder_ == nullptr) {
     LOG(ERROR) << "MediaCodecDecoderBridgeImpl::SetVideoSurface decoder is NULL";

@@ -69,6 +69,7 @@
 #include "content/browser/fenced_frame/fenced_frame.h"
 #include "content/browser/find_request_manager.h"
 #include "content/browser/gpu/gpu_data_manager_impl.h"
+#include "content/browser/gpu/gpu_process_host.h"
 #include "content/browser/host_zoom_map_impl.h"
 #include "content/browser/media/audio_stream_monitor.h"
 #include "content/browser/media/media_web_contents_observer.h"
@@ -1237,6 +1238,10 @@ WebContentsImpl::~WebContentsImpl() {
   observers_.NotifyObservers(&WebContentsObserver::WebContentsDestroyed);
   observers_.NotifyObservers(&WebContentsObserver::ResetWebContents);
   SetDelegate(nullptr);
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  DelAllVideoSurfaces();
+#endif  // OHOS_VIDEO_ASSISTANT
 }
 
 std::unique_ptr<WebContentsImpl> WebContentsImpl::CreateWithOpener(
@@ -9738,13 +9743,7 @@ void WebContentsImpl::MediaDestroyed(const MediaPlayerId& id) {
   auto iter = surface_widget_map_.find(id);
   if (iter != surface_widget_map_.end()) {
     // destroy native window
-    void* native_window =
-      NWebNativeWindowTracker::Get()->GetNativeWindow(iter->second);
-    NWebNativeWindowTracker::Get()->DestroyNativeWindow(iter->second);
-    OHOS::NWeb::OhosAdapterHelper::GetInstance()
-      .GetWindowAdapterInstance()
-      .DestroyNativeWindow(native_window);
-
+    DelVideoSurface(iter->second);
     surface_widget_map_.erase(iter);
   }
 #endif // OHOS_VIDEO_ASSISTANT
@@ -10929,15 +10928,31 @@ void WebContentsImpl::SetVideoSurface(
   if (success) {
     return;
   }
+
   // destroy old native window
+  DelVideoSurface(iter->second);
+  iter->second = surface_widget;
+}
+
+void WebContentsImpl::DelVideoSurface(int32_t surface_id) {
   void* native_window =
-    NWebNativeWindowTracker::Get()->GetNativeWindow(iter->second);
-  NWebNativeWindowTracker::Get()->DestroyNativeWindow(iter->second);
+    NWebNativeWindowTracker::Get()->GetNativeWindow(surface_id);
+  NWebNativeWindowTracker::Get()->DestroyNativeWindow(surface_id);
   OHOS::NWeb::OhosAdapterHelper::GetInstance()
     .GetWindowAdapterInstance()
     .DestroyNativeWindow(native_window);
 
-  iter->second = surface_widget;
+  content::GpuProcessHost* host = content::GpuProcessHost::Get();
+  if ((host != nullptr) && (host->gpu_host() != nullptr)) {
+      host->gpu_host()->DestroyNativeWindow(surface_id);
+  }
+}
+
+void WebContentsImpl::DelAllVideoSurfaces() {
+  for (auto iter = surface_widget_map_.begin(); iter != surface_widget_map_.end(); ++iter) {
+    DelVideoSurface(iter->second);
+    surface_widget_map_.erase(iter);
+  }
 }
 
 void WebContentsImpl::ReportVideoDecoderName(const std::string& decoder_name) {

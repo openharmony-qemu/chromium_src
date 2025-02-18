@@ -50,9 +50,11 @@ const int kPublicPort = 53;  // DNS port.
 // Trouble has been seen on Linux at 3479 sockets in test, so leave a margin.
 const int kMaxSimultaneousSockets = 3000;
 
+#if defined(OHOS_WEBRTC)
 // When more than half of the maximum sockets are running at the same time,
 // check whether these sockets are destroyed in time.
 const int kHalfOfMaxSimultaneousSockets = kMaxSimultaneousSockets / 2;
+#endif
 
 const size_t kMinRtcpHeaderLength = 8;
 const size_t kDtlsRecordHeaderLength = 13;
@@ -237,9 +239,11 @@ void P2PSocketManager::AddAcceptedConnection(
 }
 
 void P2PSocketManager::DestroySocket(P2PSocket* socket) {
+#if defined(OHOS_WEBRTC)
   if (sockets_.size() > kHalfOfMaxSimultaneousSockets) {
     LOG(ERROR) << "DestroySocket, size is " << sockets_.size();
   }
+#endif
   auto iter = sockets_.find(socket);
   DCHECK(iter != sockets_.end());
   sockets_.erase(iter);

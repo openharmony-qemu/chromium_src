@@ -86,6 +86,15 @@ public:
 
   void TrimMemoryByPressureLevel(int32_t MemoryLevel) override;
 
+  void SetProxyOverride(
+      const std::vector<std::string>& proxyUrls,
+      const std::vector<std::string>& proxySchemeFilters,
+      const std::vector<std::string>& bypassRules,
+      const bool& reverseBypass,
+      std::shared_ptr<NWebProxyChangedCallback> callback) override;
+  
+  void RemoveProxyOverride(std::shared_ptr<NWebProxyChangedCallback> callback) override;
+
 private:
   std::shared_ptr<NWebDataBase> nweb_data_base_ = nullptr;
   std::shared_ptr<NWebWebStorage> nweb_web_storage_ = nullptr;

@@ -44,6 +44,8 @@
 #include "capi/nweb_statistic_callback.h"
 #endif  // defined(OHOS_VIDEO_ASSISTANT)
 
+#include "nweb_proxy_changed_callback.h"
+
 struct OpenDevToolsParam;
 
 namespace OHOS::NWeb {
@@ -482,6 +484,13 @@ class NWebImpl : public NWeb {
                                const std::string& cache_key,
                                const uint32_t& cache_valid_time);
   static void ClearPrefetchedResource(const std::vector<std::string>& cache_key_list);
+  static void SetProxyOverride(
+      const std::vector<std::string>& proxyUrls,
+      const std::vector<std::string>& proxySchemeFilters,
+      const std::vector<std::string>& bypassRules,
+      const bool& reverseBypass,
+      std::shared_ptr<NWebProxyChangedCallback> callback);
+  static void RemoveProxyOverride(std::shared_ptr<NWebProxyChangedCallback> callback);
 
 #if defined(OHOS_COOKIE)
   static bool InitializeICUStatic(std::shared_ptr<NWebEngineInitArgs> init_args);

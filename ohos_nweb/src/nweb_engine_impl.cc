@@ -173,4 +173,17 @@ std::shared_ptr<NWebAdsBlockManager> NWebEngineImpl::GetAdsBlockManager() {
 void NWebEngineImpl::TrimMemoryByPressureLevel(int32_t MemoryLevel) {
   NWebImpl::TrimMemoryByPressureLevel(MemoryLevel);
 }
+
+void NWebEngineImpl::SetProxyOverride(
+    const std::vector<std::string>& proxyUrls,
+    const std::vector<std::string>& proxySchemeFilters,
+    const std::vector<std::string>& bypassRules,
+    const bool& reverseBypass,
+    std::shared_ptr<NWebProxyChangedCallback> callback) {
+  NWebImpl::SetProxyOverride(proxyUrls, proxySchemeFilters, bypassRules, reverseBypass, callback);
+    }
+
+void NWebEngineImpl::RemoveProxyOverride(std::shared_ptr<NWebProxyChangedCallback> callback) {
+  NWebImpl::RemoveProxyOverride(callback);
+}
 } // namespace OHOS::NWeb

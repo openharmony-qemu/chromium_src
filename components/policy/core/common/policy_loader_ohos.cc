@@ -51,7 +51,6 @@ PolicyLoaderOhos::PolicyLoaderOhos(
     : AsyncPolicyLoader(task_runner, /*periodic_updates*/ false) {
   event_callback_ = std::make_shared<PolicyChangedEventCallback>(this);
   g_loaders.emplace_back(this);
-  TryChoosePolicySource();
 }
 
 PolicyLoaderOhos::~PolicyLoaderOhos() {
@@ -101,7 +100,7 @@ void PolicyLoaderOhos::TryChoosePolicySource() {
                         .GetEnterpriseDeviceManagementInstance()
                         .StartObservePolicyChange();
     }
-    loader->Reload(true);
+    loader->Reload(false);
   }
 }
 
@@ -132,6 +131,17 @@ PolicyBundle PolicyLoaderOhos::Load() {
     std::ignore = ParsePolicy(policies, &bundle);
     return bundle;
   }
+}
+
+base::Time PolicyLoaderOhos::LastModificationTime() {
+  static int get_times = 0;
+  static base::Time first_load_time = base::Time::Now();
+  base::Time last_modification_time =
+      first_load_time + get_times * base::Milliseconds(1);
+  if (get_times < 1) {
+    get_times++;
+  }
+  return last_modification_time;
 }
 
 std::string PolicyLoaderOhos::ReadTestPolices() {

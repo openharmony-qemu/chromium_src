@@ -65,6 +65,10 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkServiceNetworkDelegate
   void OnBeforeRedirect(net::URLRequest* request,
                         const GURL& new_location) override;
   void OnResponseStarted(net::URLRequest* request, int net_error) override;
+#ifdef OHOS_LOG_MESSAGE
+  void RecordErrorInfo(net::URLRequest* request, int net_error);
+  int32_t GetDownStreamThroughputKbps();
+#endif
   void OnCompleted(net::URLRequest* request,
                    bool started,
                    int net_error) override;

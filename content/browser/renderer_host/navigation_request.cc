@@ -2463,6 +2463,17 @@ void NavigationRequest::OnFencedFrameURLMappingComplete(
 void NavigationRequest::BeginNavigationImpl() {
   base::ElapsedTimer timer;
   SetState(WILL_START_NAVIGATION);
+
+#ifdef OHOS_LOG_MESSAGE
+  if (frame_tree_node_->IsMainFrame()) {
+    LOG(INFO) << "event_message: start a navigation url domain: "
+      << (common_params_ ? GetDomainAndRegistry(common_params_->url, 
+      net::registry_controlled_domains::INCLUDE_PRIVATE_REGISTRIES) : "")
+      << " is_browser_initiated_: " << commit_params_->is_browser_initiated
+      << " was_redirected_: " << was_redirected_ << " " << devtools_navigation_token_;
+  }
+#endif
+
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   base::WeakPtr<NavigationRequest> this_ptr(weak_factory_.GetWeakPtr());
   bool should_override_url_loading = false;

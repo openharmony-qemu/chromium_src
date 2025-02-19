@@ -29,13 +29,13 @@ class POLICY_EXPORT PolicyLoaderOhos : public AsyncPolicyLoader {
   // AsyncPolicyLoader implementation.
   void InitOnBackgroundThread() override;
   PolicyBundle Load() override;
+  base::Time LastModificationTime() override;
 
   std::shared_ptr<PolicyChangedEventCallback> event_callback() {
     return event_callback_;
   }
   static void TryChoosePolicySource();
   static bool ParsePolicy(const std::string& json, PolicyBundle* bundle);
-  bool load_succeeded() { return load_succeeded_; }
 
  private:
   std::string ReadTestPolices();
@@ -43,7 +43,6 @@ class POLICY_EXPORT PolicyLoaderOhos : public AsyncPolicyLoader {
   std::shared_ptr<PolicyChangedEventCallback> event_callback_;
   static bool use_browser_policy_;
   static bool policy_source_choosed_;
-  bool load_succeeded_ = false;
 };
 
 class PolicyChangedEventCallback

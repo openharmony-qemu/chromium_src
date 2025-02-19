@@ -51,7 +51,6 @@ PolicyLoaderOhos::PolicyLoaderOhos(
     : AsyncPolicyLoader(task_runner, /*periodic_updates*/ false) {
   event_callback_ = std::make_shared<PolicyChangedEventCallback>(this);
   g_loaders.emplace_back(this);
-  TryChoosePolicySource();
 }
 
 PolicyLoaderOhos::~PolicyLoaderOhos() {
@@ -87,6 +86,7 @@ void PolicyLoaderOhos::TryChoosePolicySource() {
                 << use_browser_policy_;
   }
 
+  policy::BrowserPolicyHandler::GetInstance()->MaybeInitFromPersistentPrefs();
   for (auto loader: g_loaders) {
     if (use_browser_policy_) {
       policy::BrowserPolicyHandler::GetInstance()->AddObserver(
@@ -100,13 +100,13 @@ void PolicyLoaderOhos::TryChoosePolicySource() {
                         .GetEnterpriseDeviceManagementInstance()
                         .StartObservePolicyChange();
     }
+    loader->Reload(false);
   }
 }
 
 void PolicyLoaderOhos::InitOnBackgroundThread() {}
 
 PolicyBundle PolicyLoaderOhos::Load() {
-  TryChoosePolicySource();
   if (!policy_source_choosed_) {
     LOG(ERROR) << "Load with no policy source choosed";
     return PolicyBundle();
@@ -131,6 +131,17 @@ PolicyBundle PolicyLoaderOhos::Load() {
     std::ignore = ParsePolicy(policies, &bundle);
     return bundle;
   }
+}
+
+base::Time PolicyLoaderOhos::LastModificationTime() {
+  static int get_times = 0;
+  static base::Time first_load_time = base::Time::Now();
+  base::Time last_modification_time =
+      first_load_time + get_times * base::Milliseconds(1);
+  if (get_times < 1) {
+    get_times++;
+  }
+  return last_modification_time;
 }
 
 std::string PolicyLoaderOhos::ReadTestPolices() {

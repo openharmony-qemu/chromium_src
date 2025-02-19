@@ -185,7 +185,7 @@ extern "C" OHOS_NWEB_EXPORT void NativeChildProcess_MainProc() {
 
   std::unique_lock<std::mutex> lock(mtx);
   if (!cv.wait_for(lock, std::chrono::seconds(START_TIMEOUT_SEC), [] {
-      return !g_param.empty() && (g_ipc_fd != 0) && (g_shared_fd != 0) && (g_crash_fd != 0) \
+      return !g_param.empty() && (g_ipc_fd != 0) && (g_shared_fd != 0) \
         && (g_ipc_remote_proxy != nullptr);
     })) {
     WVLOG_E("timeout for get start param");

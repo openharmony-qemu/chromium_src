@@ -39,6 +39,12 @@
 #include "base/command_line.h"
 #endif
 
+#ifdef OHOS_LOG_MESSAGE
+#include "net/base/ip_endpoint.h"
+#include "net/nqe/network_quality_estimator.h"
+#include "net/url_request/url_request_context.h"
+#endif
+
 namespace network {
 
 namespace {
@@ -167,6 +173,66 @@ void NetworkServiceNetworkDelegate::OnResponseStarted(net::URLRequest* request,
                                                       int net_error) {
   ForwardProxyErrors(net_error);
 }
+
+#ifdef OHOS_LOG_MESSAGE
+void NetworkServiceNetworkDelegate::RecordErrorInfo(net::URLRequest* request,
+                                                    int net_error) {
+  int downlink_kbps = GetDownStreamThroughputKbps();
+  int extended_error_code = 0;
+  if (net_error == net::ERR_QUIC_PROTOCOL_ERROR) {
+    net::NetErrorDetails details;
+    request->PopulateNetErrorDetails(&details);
+    extended_error_code = details.quic_connection_error;
+  }
+  std::string error_code_info = 
+      net::ExtendedErrorToString(net_error, extended_error_code);
+  base::TimeDelta duration_time = 
+      base::TimeTicks::Now() - request->creation_time();
+
+  URLLoader* url_loader = URLLoader::ForRequest(*request);
+  uint32_t resource_type = -1;
+  if (url_loader) {
+    resource_type = url_loader->GetResourceType();
+  }
+
+  std::ostringstream ostr;
+  ostr << ", error_code " << net_error << "(" << error_code_info
+       << ", resource_type: " << resource_type
+       << ", downstream throughput kbps: " << downlink_kbps
+       << ", duration_time(ms) " << duration_time.InMilliseconds();
+  LOG(INFO) << "final url: *** "
+            << ostr.str();
+#ifdef OHOS_LOGGER_REPORT
+  LOG_FEEDBACK(INFO) << "final url: "
+                     << url::LogUtils::ConvertUrlWithMask(request->url().spec())
+                     << ostr.str();
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(::switches::kEnableLoggerReport)) {
+    if (!network_context_->IsStrictLogMode()) {
+      std::string url_info = request->url().spec();
+      const size_t url_print_len = 1024;
+      if (url_info.length() > url_print_len) {
+        url_info = url_info.substr(0, url_print_len);
+        url_info.append("...");
+      }
+      LOG(URL) << "final url " 
+               << url::LogUtils::ConvertUrl(url_info, request->usage_scenario())
+               << ostr.str();
+    } 
+  }
+#endif
+}
+
+int32_t NetworkServiceNetworkDelegate::GetDownStreamThroughputKbps() {
+  if (network_context_->network_service() &&
+      network_context_->network_service()->network_quality_estimator()) {
+        return network_context_->network_service()
+            ->network_quality_estimator()
+            ->GetDownstreamThroughputKbps()
+            .value_or(0);
+      }
+      return 0;
+}
+#endif
 
 void NetworkServiceNetworkDelegate::OnCompleted(net::URLRequest* request,
                                                 bool started,

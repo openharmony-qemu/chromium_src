@@ -21,6 +21,10 @@ namespace content {
 
 const char kScreenPrefix[] = "screen";
 const char kWindowPrefix[] = "window";
+#if BUILDFLAG(IS_OHOS)
+const char kSystemAudioPrefix[] = "systemAudio";
+constexpr int32_t kSystemAudioSourceId = -2;
+#endif
 
 #if defined(USE_AURA) || BUILDFLAG(IS_MAC)
 // static
@@ -115,6 +119,14 @@ std::string DesktopMediaID::ToString() const {
       return web_contents_id.ToString();
   }
   DCHECK(!prefix.empty());
+
+#if BUILDFLAG(IS_OHOS)
+  // Screen Audio types.
+  if (id == kSystemAudioSourceId) {
+    prefix.append(":");
+    prefix.append(kSystemAudioPrefix);
+  }
+#endif
 
   // Screen and Window types.
   prefix.append(":");

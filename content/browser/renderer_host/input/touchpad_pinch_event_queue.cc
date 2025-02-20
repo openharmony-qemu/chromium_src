@@ -41,11 +41,7 @@ blink::WebMouseWheelEvent CreateSyntheticWheelFromTouchpadPinchEvent(
   if (pinch_event.GetType() ==
       blink::WebInputEvent::Type::kGesturePinchUpdate) {
     DCHECK_GT(pinch_event.data.pinch_update.scale, 0);
-#if defined(OHOS_INPUT_EVENTS)
-    delta_y = 150.0f * log(pinch_event.data.pinch_update.scale);
-#else
     delta_y = 100.0f * log(pinch_event.data.pinch_update.scale);
-#endif
     wheel_ticks_y = pinch_event.data.pinch_update.scale > 1 ? 1 : -1;
   }
 

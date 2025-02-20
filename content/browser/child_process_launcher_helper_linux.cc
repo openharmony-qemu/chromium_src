@@ -26,6 +26,7 @@
 #include "content/public/common/sandboxed_process_launcher_delegate.h"
 #include "content/public/common/zygote/sandbox_support_linux.h"
 #include "content/public/common/zygote/zygote_handle.h"
+#include "content/public/common/content_descriptors.h"
 #include "sandbox/policy/linux/sandbox_linux.h"
 
 #if BUILDFLAG(IS_OHOS)
@@ -131,13 +132,30 @@ ChildProcessLauncherHelper::LaunchProcessOnLauncherThread(
         argv_ss << item << separator;
       }
       argv_ss << argv_str[argv_str.size() - 1];
-      constexpr int SHARED_FD_INDEX = 0;
-      constexpr int IPC_FD_INDEX = 1;
-      constexpr int CRASH_SIGNAL_FD_INDEX = 2;
-      int32_t shared_fd = options->fds_to_remap[SHARED_FD_INDEX].first;
-      int32_t ipc_fd = options->fds_to_remap[IPC_FD_INDEX].first;
-      int32_t crash_signal_fd =
-          options->fds_to_remap[CRASH_SIGNAL_FD_INDEX].first;
+
+      int32_t shared_fd = -1;
+      int32_t ipc_fd = -1;
+      int32_t crash_signal_fd = -1;
+      int32_t sandbox_fd = -1;
+      for (const auto& fd_pair : options->fds_to_remap) {
+        switch (fd_pair.second - base::GlobalDescriptors::kBaseDescriptor) {
+          case kMojoIPCChannel:
+            ipc_fd = fd_pair.first;
+            break;
+          case kFieldTrialDescriptor:
+            shared_fd = fd_pair.first;
+            break;
+          case kCrashDumpSignal:
+            crash_signal_fd = fd_pair.first;
+            break;
+          case kSandboxIPCChannel:
+            sandbox_fd = fd_pair.first;
+            break;
+          default:
+            break;
+        }
+      }
+
       pid_t render_pid = 0;
       if (app_mgr_client_adapter_ == nullptr) {
         app_mgr_client_adapter_ =

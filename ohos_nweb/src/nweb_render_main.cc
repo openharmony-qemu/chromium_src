@@ -59,6 +59,10 @@ bool SetGlobalDescriptors(int ipcFd, int sharedFd, int crashFd) {
     close(sharedFd);
   }
 
+  // crashfd is invalid if crashpad closed. Skip set crashfd in this case.
+  if (crashFd <= 0) {
+    return true;
+  }
   int new_crash_fd;
   if ((new_crash_fd = dup(crashFd)) < 0) {
     WVLOG_E("crashFd duplicate error");
@@ -81,7 +85,7 @@ extern "C" OHOS_NWEB_EXPORT void NWebRenderMain(NativeChildProcess_Args args) {
   for (int i = 0; i < FD_COUNTS; ++i) {
     if (fdNode == nullptr) {
       WVLOG_E("get render fd failed");
-      return;
+      break;
     }
     
     if (std::string(fdNode->fdName) == IPC_FD_NAME) {

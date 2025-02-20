@@ -9,7 +9,7 @@
 ## 使用说明
 1. 下载代码：以主干(master)为例，要下载其他分支代码请替换-b 后带的manifest分支参数，参数列表详见8。下载114_trunk分支代码时需要将-m 后的参数由chromium.xml替换为developer.xml。
     ```
-    repo init -u https://gitee.com/openharmony-tpc/manifest -b chromium -m chromium.xml --no-repo-verify
+    repo init -u https://gitcode.com/openharmony-tpc/manifest -b chromium -m chromium.xml --no-repo-verify
     repo sync -c
     repo forall -c 'git lfs pull'
     ```
@@ -78,7 +78,7 @@
     ```
 6. 所有Chromium仓对应目录映射关系
 
-    https://gitee.com/openharmony-tpc/manifest/blob/master/chromium.xml
+    https://gitcode.com/openharmony-tpc/manifest/blob/chromium/chromium.xml
 
 7. 上库指导
 
@@ -104,7 +104,7 @@
 
     7.7 将代码提交到对应fork出来的私仓地址上
 
-    如：git push ***https://gitee.com/[giteeUserName]/chromium_src***
+    如：git push ***https://gitcode.com/[gitcodeUserName]/chromium_src***
 
     7.8 新建PR
 
@@ -127,7 +127,7 @@
     配套OpenHarmony 4.1 Beta1 分支：master114_20231218
 
 ## 相关仓
-[chromium_cef](https://gitee.com/openharmony-tpc/chromium_cef)
+[chromium_cef](https://gitcode.com/openharmony-tpc/chromium_cef)
 
-[chromium_third_party_ohos_nweb_hap](https://gitee.com/openharmony-tpc/chromium_third_party_ohos_nweb_hap)
+[chromium_third_party_ohos_nweb_hap](https://gitcode.com/openharmony-tpc/chromium_third_party_ohos_nweb_hap)
 

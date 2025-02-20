@@ -189,9 +189,20 @@ class NWebPreferenceDelegate : public NWebPreference {
 
 #if defined(OHOS_JSPROXY)
   void PutJavaScriptOnDocumentStart(const ScriptItems& scriptItems);
+  void PutJavaScriptOnDocumentStartByOrder(const ScriptItems& scriptItems,
+      const ScriptItemsByOrder& scriptItemsByOrder);
   ScriptItems GetJavaScriptOnDocumentStart();
+  ScriptItemsByOrder GetJavaScriptOnDocumentStartByOrder();
   void PutJavaScriptOnDocumentEnd(const ScriptItems& scriptItems);
+  void PutJavaScriptOnDocumentEndByOrder(const ScriptItems& scriptItems,
+      const ScriptItemsByOrder& scriptItemsByOrder);
   ScriptItems GetJavaScriptOnDocumentEnd();
+  ScriptItemsByOrder GetJavaScriptOnDocumentEndByOrder();
+  void PutJavaScriptOnHeadReady(const ScriptItems& scriptItems);
+  void PutJavaScriptOnHeadReadyByOrder(const ScriptItems& scriptItems,
+      const ScriptItemsByOrder& scriptItemsByOrder);
+  ScriptItems GetJavaScriptOnHeadReady();
+  ScriptItemsByOrder GetJavaScriptOnHeadReadyByOrder();
 #endif
 
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
@@ -311,6 +322,10 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if defined(OHOS_JSPROXY)
   ScriptItems script_items_start_{};
   ScriptItems script_items_end_{};
+  ScriptItems script_items_head_ready_{};
+  ScriptItemsByOrder script_items_start_by_order_;
+  ScriptItemsByOrder script_items_end_by_order_;
+  ScriptItemsByOrder script_items_head_ready_by_order_;
 #endif
   bool record_whole_document_{false};
 #ifdef OHOS_MIXED_CONTENT

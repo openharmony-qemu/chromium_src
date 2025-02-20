@@ -580,6 +580,9 @@ class CONTENT_EXPORT RenderFrameImpl
   void DidClearWindowObject() override;
   void DidCreateDocumentElement() override;
   void RunScriptsAtDocumentElementAvailable() override;
+#if defined(OHOS_JSPROXY)
+  void RunScriptsAtHeadReady() override;
+#endif
   void DidReceiveTitle(const blink::WebString& title) override;
   void DidDispatchDOMContentLoadedEvent() override;
   void RunScriptsAtDocumentReady() override;

@@ -180,6 +180,47 @@ bool JsCommunicationHost::RemoveDocumentEndJavaScript(int script_id) {
   return false;
 }
 
+JsCommunicationHost::AddScriptResult
+JsCommunicationHost::AddHeadReadyJavaScript(
+    const std::u16string& script,
+    const std::vector<std::string>& allowed_origin_rules) {
+  OriginMatcher origin_matcher;
+  std::string error_message = ConvertToNativeAllowedOriginRulesWithSanityCheck(
+      allowed_origin_rules, origin_matcher);
+  AddScriptResult result;
+  if (!error_message.empty()) {
+    result.error_message = std::move(error_message);
+    return result;
+  }
+
+  head_ready_scripts_.emplace_back(script, origin_matcher, next_script_id_++);
+
+  ForEachRenderFrameHostWithinSameWebContents(
+      web_contents()->GetPrimaryMainFrame(),
+      [this](content::RenderFrameHost* render_frame_host) {
+        NotifyFrameForAddHeadReadyJavaScript(&*head_ready_scripts_.rbegin(),
+                                               render_frame_host);
+      });
+  result.script_id = head_ready_scripts_.rbegin()->script_id_;
+  return result;
+}
+
+bool JsCommunicationHost::RemoveHeadReadyJavaScript(int script_id) {
+  for (auto it = head_ready_scripts_.begin(); it != head_ready_scripts_.end(); ++it) {
+    if (it->script_id_ == script_id) {
+      head_ready_scripts_.erase(it);
+      ForEachRenderFrameHostWithinSameWebContents(
+          web_contents()->GetPrimaryMainFrame(),
+          [this, script_id](content::RenderFrameHost* render_frame_host) {
+            NotifyFrameForRemoveHeadReadyJavaScript(script_id,
+                                                      render_frame_host);
+          });
+      return true;
+    }
+  }
+  return false;
+}
+
 std::u16string JsCommunicationHost::AddWebMessageHostFactory(
     std::unique_ptr<WebMessageHostFactory> factory,
     const std::u16string& js_object_name,
@@ -267,6 +308,9 @@ void JsCommunicationHost::NotifyFrameForAllDocumentInjectJavaScripts(
   for (const auto& script : document_start_scripts_) {
     NotifyFrameForAddDocumentStartJavaScript(&script, render_frame_host);
   }
+  for (const auto& script : head_ready_scripts_) {
+    NotifyFrameForAddHeadReadyJavaScript(&script, render_frame_host);
+  }
   for (const auto& script : document_end_scripts_) {
     NotifyFrameForAddDocumentEndJavaScript(&script, render_frame_host);
   }
@@ -340,6 +384,27 @@ void JsCommunicationHost::NotifyFrameForRemoveDocumentEndJavaScript(
   render_frame_host->GetRemoteAssociatedInterfaces()->GetInterface(
       &configurator_remote);
   configurator_remote->RemoveDocumentEndScript(script_id);
+}
+
+void JsCommunicationHost::NotifyFrameForAddHeadReadyJavaScript(
+    const DocumentInjectJavaScript* script,
+    content::RenderFrameHost* render_frame_host) {
+  DCHECK(script);
+  mojo::AssociatedRemote<mojom::JsCommunication> configurator_remote;
+  render_frame_host->GetRemoteAssociatedInterfaces()->GetInterface(
+      &configurator_remote);
+  configurator_remote->AddHeadReadyScript(
+      mojom::JavaScriptItem::New(script->script_id_, script->script_,
+                                          script->allowed_origin_rules_));
+}
+
+void JsCommunicationHost::NotifyFrameForRemoveHeadReadyJavaScript(
+    int32_t script_id,
+    content::RenderFrameHost* render_frame_host) {
+  mojo::AssociatedRemote<mojom::JsCommunication> configurator_remote;
+  render_frame_host->GetRemoteAssociatedInterfaces()->GetInterface(
+      &configurator_remote);
+  configurator_remote->RemoveHeadReadyScript(script_id);
 }
 
 }  // namespace js_injection

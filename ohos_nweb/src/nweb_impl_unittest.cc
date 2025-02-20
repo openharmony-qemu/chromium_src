@@ -781,6 +781,21 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void, WebExtensionContextMenuIsIframe, (), (override));
   MOCK_METHOD(bool, WebExtensionContextMenuReloadFocusedFrame, (), (override));
 #endif
+
+#if defined(OHOS_JSPROXY)
+  MOCK_METHOD(void,
+              JavaScriptOnDocumentStartByOrder,
+              (const ScriptItems& ScriptItems, const ScriptItemsByOrder& ScriptItemsByOrder),
+              (override));
+  MOCK_METHOD(void,
+              JavaScriptOnDocumentEndByOrder,
+              (const ScriptItems& ScriptItems, const ScriptItemsByOrder& ScriptItemsByOrder),
+              (override));
+  MOCK_METHOD(void,
+              JavaScriptOnHeadReadyByOrder,
+              (const ScriptItems& ScriptItems, const ScriptItemsByOrder& ScriptItemsByOrder),
+              (override));
+#endif
 };
 
 class MockNWebDragEvent : public NWebDragEvent {

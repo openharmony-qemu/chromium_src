@@ -186,6 +186,9 @@ extern bool g_siteIsolationMode;
 
 #include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
 
+#include "net/proxy_resolution/proxy_config_service_ohos.h"
+#include "cef/libcef/browser/net_service/proxy_config_monitor.h"
+
 #if defined(OHOS_VIDEO_ASSISTANT)
 OnReportStatisticLogFunc
     OHOS::NWeb::NWebImpl::on_report_statistic_log_callback_ = nullptr;
@@ -4069,3 +4072,27 @@ void NWebImpl::DispatchBeforeUnload() {
 }
 
 #endif // OHOS_DISPATCH_BEFORE_UNLOAD
+
+void NWebImpl::SetProxyOverride(
+    const std::vector<std::string>& proxyUrls,
+    const std::vector<std::string>& proxySchemeFilters,
+    const std::vector<std::string>& bypassRules,
+    const bool& reverseBypass,
+    std::shared_ptr<NWebProxyChangedCallback> callback) {
+  std::vector<net::ProxyConfigServiceOHOS::ProxyOverrideRule> proxyRules;
+  int size = proxySchemeFilters.size();
+  DCHECK(proxySchemeFilters.size() == proxyUrls.size());
+  proxyRules.reserve(size);
+  for (int i = 0; i < size; i++) {
+    proxyRules.emplace_back(proxySchemeFilters[i], proxyUrls[i]);
+  }
+  NWEB::ProxyConfigMonitor::GetInstance()->SetProxyOverride(proxyRules, bypassRules, reverseBypass,
+      base::BindOnce([](std::shared_ptr<NWebProxyChangedCallback> napiCallback) {napiCallback->OnChanged();},
+                     std::move(callback)));
+}
+
+void NWebImpl::RemoveProxyOverride(std::shared_ptr<NWebProxyChangedCallback> callback) {
+  NWEB::ProxyConfigMonitor::GetInstance()->ClearProxyOverride(base::BindOnce(
+        [](std::shared_ptr<NWebProxyChangedCallback> napiCallback) {napiCallback->OnChanged();},
+          std::move(callback)));
+}

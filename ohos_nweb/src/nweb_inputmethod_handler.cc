@@ -29,6 +29,7 @@
 #include "cef/include/cef_task.h"
 #include "content/public/browser/browser_thread.h"
 #include "libcef/browser/thread_util.h"
+#include "ohos_glue/base/include/ark_web_errno.h"
 #include "ohos_adapter_helper.h"
 #include "res_sched_client_adapter.h"
 #include "ui/events/keycodes/keyboard_codes_posix.h"
@@ -353,9 +354,14 @@ bool NWebInputMethodHandler::AttachToSystemIME(bool is_need_reset_listener, int3
   textConfig->SetHeight((focus_rect_.y + focus_rect_.height + AVOID_OFFSET) *
                         device_pixel_ratio_);
 
-  if (!inputmethod_adapter_->AttachWithRequestKeyboardReason(
-          inputmethod_listener_, show_keyboard_, textConfig,
-          is_need_reset_listener, requestKeyboardReason)) {
+  bool flag = inputmethod_adapter_->AttachWithRequestKeyboardReason(
+      inputmethod_listener_, show_keyboard_, textConfig, is_need_reset_listener,
+      requestKeyboardReason);
+  if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+    flag = inputmethod_adapter_->Attach(inputmethod_listener_, show_keyboard_, textConfig,
+                  is_need_reset_listener);
+  }
+  if (!flag) {
     LOG(ERROR) << "inputmethod_adapter_ attach failed";
     return false;
   }

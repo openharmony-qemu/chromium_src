@@ -271,11 +271,13 @@ void NWebEventHandler::SendCefMouseWheelEvent(double x,
                                               double y,
                                               double deltaX,
                                               double deltaY,
-                                              int32_t modifiers) {
+                                              int32_t modifiers,
+                                              int32_t source) {
   CefMouseEvent mouseEvent;
   mouseEvent.x = x;
   mouseEvent.y = y;
   mouseEvent.modifiers = modifiers;
+  mouseEvent.source = source;
   LOG(DEBUG) << "WebSendMouseWheelEvent modifiers = " << mouseEvent.modifiers;
   if (!browser_ || !browser_->GetHost()) {
     LOG(ERROR) << "SendCefMouseWheelEvent browser_ or Host is nullptr, browser_: " << !browser_;
@@ -305,6 +307,16 @@ void NWebEventHandler::WebSendMouseWheelEvent(double x,
                                               const std::vector<int32_t>& pressedCodes) {
   int32_t modifiers = NWebInputDelegate::GetWebModifiersByPressedCode(pressedCodes);
   SendCefMouseWheelEvent(x, y, deltaX, deltaY, modifiers);
+}
+
+void NWebEventHandler::WebSendMouseWheelEventV2(double x,
+                                              double y,
+                                              double deltaX,
+                                              double deltaY,
+                                              const std::vector<int32_t>& pressedCodes,
+                                              int32_t source) {
+  int32_t modifiers = NWebInputDelegate::GetWebModifiersByPressedCode(pressedCodes);
+  SendCefMouseWheelEvent(x, y, deltaX, deltaY, modifiers, source);
 }
 
 void NWebEventHandler::WebSendTouchpadFlingEvent(double x,

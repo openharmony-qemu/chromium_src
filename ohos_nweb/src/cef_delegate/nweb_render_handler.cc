@@ -374,6 +374,12 @@ void NWebRenderHandler::SetContentSize(int width, int height) {
 gfx::Size NWebRenderHandler::GetSize() {
   return gfx::Size(width_, height_);
 }
+
+void NWebRenderHandler::OnAccessibilityEvent(int64_t accessibilityId, int32_t eventType) {
+  if (auto handler = handler_.lock()) {
+    handler->OnAccessibilityEvent(accessibilityId, eventType);
+  }
+}
 #endif
 
 void NWebRenderHandler::GetViewRect(CefRefPtr<CefBrowser> browser,

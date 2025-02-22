@@ -549,6 +549,16 @@ class NWebImpl : public NWeb {
   void OnConfigurationUpdated(
       std::shared_ptr<NWebSystemConfiguration> configuration) override;
 #endif
+  bool GetAccessibilityVisible(int64_t accessibilityId) override;
+  bool PerformActionV2(
+      int64_t accessibilityId,
+      uint32_t action,
+      const std::map<std::string, std::string>& actionArguments) override;
+  bool GetAccessibilityNodeRectById(int64_t accessibilityId,
+                                    int32_t* width,
+                                    int32_t* height,
+                                    int32_t* offsetX,
+                                    int32_t* offsetY) override;
 
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

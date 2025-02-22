@@ -26,6 +26,15 @@ constexpr int kDefaultStepTicksForSliders = 20;
 
 class BrowserAccessibilityManager;
 
+enum class ScrollDirection {
+    FORWARD = 0,
+    BACKWARD,
+    UP,
+    DOWN,
+    LEFT,
+    RIGHT
+};
+
 // A `BrowserAccessibility` object represents one node in the accessibility tree
 // on the browser side. It wraps an `AXNode` and assists in exposing
 // web-specific information from the node. It's owned by a
@@ -98,11 +107,7 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
 
   bool IsLink() const;
 
-  static BrowserAccessibilityOHOS* GetFromAccessibilityId(
-      int64_t accessibility_id);
-
-  const BrowserAccessibilityOHOS* GetAccessibilityNodeByFocusMove(
-      int32_t direction) const;
+  BrowserAccessibilityOHOS* GetAccessibilityNodeByFocusMove(int32_t direction) const;
 
   float RangeMin() const;
 
@@ -128,7 +133,45 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
 
   bool IsScrollSupported() const;
 
+  bool CanScrollForward() const;
+  bool CanScrollBackward() const;
+  bool CanScrollUp() const;
+  bool CanScrollDown() const;
+  bool CanScrollLeft() const;
+  bool CanScrollRight() const;
+  int GetScrollX() const;
+  int GetScrollY() const;
+  int GetMinScrollX() const;
+  int GetMinScrollY() const;
+  int GetMaxScrollX() const;
+  int GetMaxScrollY() const;
+
   void Scroll(const ax::mojom::Action& action) const;
+
+  static BrowserAccessibilityOHOS* GetFromAccessibilityId(
+      int64_t accessibility_id);
+
+  static void ResetLeafCache();
+
+  bool IsAccessibilityGroup() const;
+
+  bool Scroll(ScrollDirection direction, bool is_page_scroll) const;
+
+  bool IsInterestingOnOHOS() const;
+
+  const BrowserAccessibilityOHOS* GetSoleInterestingNodeFromSubtree() const;
+
+  typedef base::RepeatingCallback<bool(const std::u16string& partial)>
+      EarlyExitPredicate;
+  static EarlyExitPredicate NonEmptyPredicate();
+
+  bool CanFireEvents() const override;
+
+  bool IsChildOfLeaf() const override;
+
+  bool IsLeaf() const override;
+
+  void OnLocationChanged() override;
 
  protected:
   BrowserAccessibilityOHOS(BrowserAccessibilityManager* manager,
@@ -147,25 +190,25 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
 
   bool IsHeadingLink() const;
 
+  bool IsLeafConsideringChildren() const;
+
   void AddFocusableNode(
-      std::list<const BrowserAccessibilityOHOS*>& nodeList) const;
+      std::list<BrowserAccessibilityOHOS*>& nodeList) const;
 
-  const BrowserAccessibilityOHOS* FindNodeInRelativeDirection(
-      const std::list<const BrowserAccessibilityOHOS*>& nodeList,
+  BrowserAccessibilityOHOS* FindNodeInRelativeDirection(
+      const std::list<BrowserAccessibilityOHOS*>& nodeList,
       int32_t direction) const;
 
-  const BrowserAccessibilityOHOS* FindNodeInAbsoluteDirection(
-      const std::list<const BrowserAccessibilityOHOS*>& nodeList,
+  BrowserAccessibilityOHOS* FindNodeInAbsoluteDirection(
+      const std::list<BrowserAccessibilityOHOS*>& nodeList,
       int32_t direction) const;
 
-  const BrowserAccessibilityOHOS* GetNextFocusableNode(
-      const std::list<const BrowserAccessibilityOHOS*>& nodeList) const;
+  BrowserAccessibilityOHOS* GetNextFocusableNode(
+      const std::list<BrowserAccessibilityOHOS*>& nodeList) const;
 
-  const BrowserAccessibilityOHOS* GetPreviousFocusableNode(
-      const std::list<const BrowserAccessibilityOHOS*>& nodeList) const;
+  BrowserAccessibilityOHOS* GetPreviousFocusableNode(
+      const std::list<BrowserAccessibilityOHOS*>& nodeList) const;
 
-  typedef base::RepeatingCallback<bool(const std::u16string& partial)>
-      EarlyExitPredicate;
   std::u16string GetSubstringTextContentUTF16(
       absl::optional<EarlyExitPredicate>) const;
 

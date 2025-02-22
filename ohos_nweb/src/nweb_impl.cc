@@ -2683,23 +2683,16 @@ NWebDownloadItemState NWebImpl::GetDownloadItemStateByGuid(const std::string& gu
 void NWebImpl::PutAccessibilityEventCallback(
     std::shared_ptr<NWebAccessibilityEventCallback>
         accessibilityEventListener) {
-  if (nweb_delegate_ != nullptr) {
-    nweb_delegate_->RegisterAccessibilityEventListener(
-        accessibilityEventListener);
-  }
+  // Deprecated due to new accessibility architecture
 }
 
 void NWebImpl::PutAccessibilityIdGenerator(
     const AccessibilityIdGenerateFunc accessibilityIdGenerator) {
-  if (nweb_delegate_ != nullptr) {
-    nweb_delegate_->RegisterAccessibilityIdGenerator(accessibilityIdGenerator);
-  }
+  // Deprecated due to new accessibility architecture
 }
 
 void NWebImpl::ExecuteAction(int64_t accessibilityId, uint32_t action) {
-  if (nweb_delegate_ != nullptr) {
-    nweb_delegate_->ExecuteAction(accessibilityId, action);
-  }
+  // Deprecated due to new accessibility architecture
 }
 
 std::shared_ptr<NWebAccessibilityNodeInfo>
@@ -2718,6 +2711,13 @@ NWebImpl::GetAccessibilityNodeInfoById(int64_t accessibilityId) {
     return nweb_delegate_->GetAccessibilityNodeInfoById(accessibilityId);
   }
   return nullptr;
+}
+
+bool NWebImpl::GetAccessibilityVisible(int64_t accessibilityId) {
+  if (nweb_delegate_ != nullptr) {
+    return nweb_delegate_->GetAccessibilityVisible(accessibilityId);
+  }
+  return true;
 }
 
 std::shared_ptr<NWebAccessibilityNodeInfo>
@@ -3409,9 +3409,27 @@ int NWebImpl::SetUrlTrustListWithErrMsg(
 
 void NWebImpl::PerformAction(int64_t accessibilityId, uint32_t action,
   const std::map<std::string, std::string>& actionArguments) {
+  // Deprecated due to new accessibility architecture
+}
+
+bool NWebImpl::PerformActionV2(int64_t accessibilityId, uint32_t action,
+      const std::map<std::string, std::string>& actionArguments) {
   if (nweb_delegate_ != nullptr) {
-    nweb_delegate_->ExecuteAction(accessibilityId, action, actionArguments);
+    return nweb_delegate_->ExecuteAction(accessibilityId, action, actionArguments);
   }
+  return false;
+}
+
+bool NWebImpl::GetAccessibilityNodeRectById(int64_t accessibilityId,
+                                            int32_t* width,
+                                            int32_t* height,
+                                            int32_t* offsetX,
+                                            int32_t* offsetY) {
+  if (nweb_delegate_ != nullptr) {
+    return nweb_delegate_->GetAccessibilityNodeRectById(
+        accessibilityId, width, height, offsetX, offsetY);
+  }
+  return false;
 }
 
 void NWebImpl::SendAccessibilityHoverEvent(int32_t x, int32_t y) {

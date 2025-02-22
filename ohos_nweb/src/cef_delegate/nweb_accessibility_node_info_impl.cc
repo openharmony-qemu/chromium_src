@@ -405,4 +405,12 @@ bool NWebAccessibilityNodeInfoImpl::GetIsPluralLineSupported() {
   return plural_line_supported_;
 }
 
+void NWebAccessibilityNodeInfoImpl::SetAccessibilityLevel(
+    const std::string& accessibility_level) {
+  accessibility_level_ = accessibility_level;
+}
+
+std::string NWebAccessibilityNodeInfoImpl::GetAccessibilityLevel() {
+  return accessibility_level_;
+}
 } // namespace OHOS::NWeb

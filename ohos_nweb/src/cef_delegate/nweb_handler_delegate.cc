@@ -2853,41 +2853,16 @@ void NWebHandlerDelegate::OnGetImageFromCache(CefRefPtr<CefImage> image,
           switches::kForBrowser)) {
     OnGetImageData(image);
   }
-  if (command_id == MENU_ID_FEED_SHARE) {
-    OnGetImageDataFromCache(image);
-  }
 #endif
 }
 
 #ifdef OHOS_NWEB_EX
-void NWebHandlerDelegate::OnGetImageDataFromCache(CefRefPtr<CefImage> image) {
-  if (image != nullptr && image->GetWidth() > 0 && image->GetHeight() > 0) {
-    int pixel_width = 0;
-    int pixel_height = 0;
-    CefRefPtr<CefBinaryValue> bitMap =
-        image->GetAsPNG(1, true, pixel_width, pixel_height);
-    size_t bitMapSize = bitMap->GetSize();
-    void* data = calloc((size_t)bitMapSize, sizeof(uint8_t));
-    if (data == nullptr) {
-      LOG(ERROR) << "calloc bitmap failed";
-      return;
-    }
-    bitMap->GetData(data, bitMapSize, 0);
-    if (web_extension_listener_ != nullptr &&
-        web_extension_listener_->OnGetImageFromCache != nullptr) {
-      web_extension_listener_->OnGetImageFromCache(
-          (uint8_t*)data, bitMapSize, web_extension_listener_->nweb_id);
-    }
-    free(data);
-  } else {
-    LOG(WARNING) << "OnGetImageData image is invalid";
-    if (web_extension_listener_ != nullptr &&
-        web_extension_listener_->OnGetImageFromCache != nullptr) {
-      web_extension_listener_->OnGetImageFromCache(
-          nullptr, 0, web_extension_listener_->nweb_id);
-    }
-  }
-}
+void NWebHandlerDelegate::OnGetImageFromCacheEx(uint8_t* data, int buffer_size) {
+  if (web_extension_listener_ != nullptr &&
+      web_extension_listener_->OnGetImageFromCache != nullptr) {
+    web_extension_listener_->OnGetImageFromCache(
+        data, buffer_size, web_extension_listener_->nweb_id);
+   }
 
 void NWebHandlerDelegate::OnGetImageData(CefRefPtr<CefImage> image) {
   if (image != nullptr && image->GetWidth() > 0 && image->GetHeight() > 0) {

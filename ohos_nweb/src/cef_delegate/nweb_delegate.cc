@@ -777,7 +777,7 @@ void NWebDelegate::GetImageFromContextNode() {
 void NWebDelegate::GetImageFromCache(const std::string& url) {
   auto browser = GetBrowser();
   if (browser != nullptr && browser->GetHost() != nullptr) {
-    browser->GetHost()->GetImageFromCache(CefString(url), MENU_ID_FEED_SHARE);
+    browser->GetHost()->GetImageFromCacheEx(CefString(url));
   }
 }
 void NWebDelegate::RegisterWebExtensionListener(

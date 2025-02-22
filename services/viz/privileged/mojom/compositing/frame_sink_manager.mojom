@@ -255,4 +255,8 @@ interface FrameSinkManagerClient {
   // Send vsync callback to host client
   [EnableIf=ohos_performance_jitter]
   OnVsyncReceived(uint32 client_id, uint32 sink_id);
+
+  // Send restore render fit callback to host client
+  [EnableIf=is_ohos]
+  RestoreRenderFit(uint32 client_id, uint32 sink_id);
 };

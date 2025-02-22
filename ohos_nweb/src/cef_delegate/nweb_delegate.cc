@@ -4857,4 +4857,11 @@ void NWebDelegate::WebExtensionActionClicked(std::string extensionId,
   GetBrowser()->GetHost()->WebExtensionActionClicked(extensionId, tab);
 }
 #endif
+
+void NWebDelegate::MaximizeResize()
+{
+  if (GetBrowser().get() && GetBrowser()->GetHost()) {
+    GetBrowser()->GetHost()->MaximizeResize();
+  }
+}
 }  // namespace OHOS::NWeb

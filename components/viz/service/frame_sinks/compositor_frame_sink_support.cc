@@ -579,6 +579,10 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
   CHECK(callback_received_begin_frame_);
   CHECK(callback_received_receive_ack_);
 
+#if BUILDFLAG(IS_OHOS)
+  auto frame_size = frame.size_in_pixels();
+#endif
+
 #if BUILDFLAG(IS_OHOS) && defined(OHOS_SLIDE)
   if (g_isScrolling == false && frame.metadata.is_scrolling == true) {
     g_firstScrollingFrame = frame.metadata.frame_token;
@@ -750,6 +754,11 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
       break;
   }
 
+#if BUILDFLAG(IS_OHOS)
+  if (surface_manager_ && current_surface && !is_root_) {
+    surface_manager_->ReenableSwapCheck(current_surface->surface_id(), frame_size.width(), frame_size.height());
+  }
+#endif
   if (begin_frame_source_) {
     begin_frame_source_->DidFinishFrame(this);
     frame_sink_manager_->DidFinishFrame(frame_sink_id_, last_begin_frame_args_);

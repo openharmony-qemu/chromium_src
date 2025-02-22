@@ -963,6 +963,12 @@ void FrameSinkManagerImpl::TriggerVsync(const FrameSinkId& frame_sink_id) {
     it->second->TriggerVsync();
   }
 }
+
+void FrameSinkManagerImpl::RestoreRenderFit(const FrameSinkId& frame_sink_id) {
+  if (client_) {
+    client_->RestoreRenderFit(frame_sink_id.client_id(), frame_sink_id.sink_id());
+  }
+}
 #endif
 
 }  // namespace viz

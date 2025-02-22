@@ -40,6 +40,9 @@ class VIZ_SERVICE_EXPORT DisplaySchedulerClient {
   virtual base::TimeDelta GetEstimatedDisplayDrawTime(
       const base::TimeDelta interval,
       double percentile) const = 0;
+#if BUILDFLAG(IS_OHOS)
+  virtual void ReenableSwapCheck(int width, int height) = 0;
+#endif
 };
 
 class VIZ_SERVICE_EXPORT DisplaySchedulerBase
@@ -63,6 +66,9 @@ class VIZ_SERVICE_EXPORT DisplaySchedulerBase
 #if defined(OHOS_COMPOSITE_RENDER)
   virtual void SetShouldFrameSubmissionBeforeDraw(bool should) = 0;
 #endif  // defined(OHOS_COMPOSITE_RENDER)
+#if BUILDFLAG(IS_OHOS)
+  void ReenableSwapCheck(int width, int height) override;
+#endif
 
  protected:
   raw_ptr<DisplaySchedulerClient> client_ = nullptr;

@@ -419,6 +419,7 @@ class NWebImpl : public NWeb {
 #endif
 
   std::string GetLastJavascriptProxyCallingFrameUrl() override;
+  void MaximizeResize() override;
   void DragResize(uint32_t width,
                   uint32_t height,
                   uint32_t pre_height,

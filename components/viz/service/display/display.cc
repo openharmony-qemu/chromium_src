@@ -377,6 +377,11 @@ void Display::PresentationGroupTiming::OnPresent(
   }
 }
 
+#if BUILDFLAG(IS_OHOS)
+constexpr base::TimeDelta reset_state_delay = base::Milliseconds(600);
+constexpr base::TimeDelta reenable_draw_delay = base::Milliseconds(6000);
+#endif
+
 Display::Display(
     SharedBitmapManager* bitmap_manager,
     const RendererSettings& settings,
@@ -410,6 +415,12 @@ Display::Display(
                                       .GetSystemPropertiesInstance();
   system_properties_adapter.AttachSysPropObserver(OHOS::NWeb::PropertiesKey::PROP_RENDER_DUMP,
       dump_frame_observer_.get());
+#endif
+#if BUILDFLAG(IS_OHOS)
+  reset_init_timer_ = std::make_unique<base::RetainingOneShotTimer>(FROM_HERE, reset_state_delay,
+    base::BindRepeating(&Display::RestoreRenderFitTimeElapsed, base::Unretained(this)));
+  reenable_swap_timer = std::make_unique<base::RetainingOneShotTimer>(FROM_HERE, reenable_draw_delay,
+    base::BindRepeating(&Display::RestoreRenderFitTimeElapsed, base::Unretained(this)));
 #endif
 }
 
@@ -553,6 +564,18 @@ void Display::Resize(const gfx::Size& size) {
     current_surface_size_ = newSize;
   }
 
+#if BUILDFLAG(IS_OHOS)
+  if (temp_idle_state_ == TempIdleState::INIT) {
+    LOG(INFO) << "Display::Resize, disable swap, frame_sink_id_: " << frame_sink_id_.ToString();
+    if (reset_init_timer_ && reset_init_timer_->IsRunning()) {
+      reset_init_timer_->Stop();
+    }
+    temp_idle_state_ = TempIdleState::DISABLE_SWAP;
+    if (reenable_swap_timer_) {
+      reenable_swap_timer_->Reset();
+    }
+  }
+#endif
   damage_tracker_->DisplayResized();
 }
 
@@ -586,6 +609,37 @@ void Display::DisableSwapUntilResize(
   if (no_pending_swaps_callback)
     std::move(no_pending_swaps_callback).Run();
 }
+
+#if BUILDFLAG(IS_OHOS)
+void Display::DisableSwapUntilMaximized() {
+  temp_idle_state_ = TempIdleState::INIT;
+  if (reset_init_timer_) {
+    reset_init_timer_->Reset();
+  }
+}
+
+void Display::ReenableSwapCheck(int width, int height) {
+  if (temp_idle_state_ != TempIdleState::DISABLE_SWAP) {
+    return;
+  }
+  if (width >= current_surface_size_.width() &&
+    height >= current_surface_size_.height()) {
+    LOG(INFO) << "Display::ReenableSwap, frame_sink_id_: " << frame_sink_id_.ToString();
+    if (reenable_swap_timer_ && reenable_swap_timer_->IsRunning()) {
+      reenable_swap_timer_->Stop();
+    }
+    temp_idle_state_ = TempIdleState::REENABLE_SWAP;
+  }
+}
+
+void Display::RestoreRenderFitTimeElapsed() {
+  LOG(INFO) << "Display::RestoreRenderFitTimeElapsed, frame_sink_id_: " << frame_sink_id_.ToString();
+  temp_idle_state_ = TempIdleState::RESTORE_RENDERFIT;
+  if (client_) {
+    client_->RestoreRenderFit(frame_sink_id_);
+  }
+}
+#endif
 
 #if defined(OHOS_COMPOSITE_RENDER)
 void Display::SetShouldFrameSubmissionBeforeDraw(bool should) {
@@ -992,6 +1046,9 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
     TRACE_EVENT_INSTANT0("viz", "Size mismatch.", TRACE_EVENT_SCOPE_THREAD);
 
   bool should_draw = have_copy_requests || (have_damage && size_matches);
+#if BUILDFLAG(IS_OHOS)
+  should_draw = should_draw && (temp_idle_state_ != TempIdleState::DISABLE_SWAP);
+#endif
   client_->DisplayWillDrawAndSwap(should_draw, &frame.render_pass_list);
 
   absl::optional<base::ElapsedTimer> draw_timer;
@@ -1047,6 +1104,9 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
   }
 
   bool should_swap = !disable_swap_until_resize_ && should_draw && size_matches;
+#if BUILDFLAG(IS_OHOS)
+  should_swap = should_swap && (temp_idle_state_ != TempIdleState::DISABLE_SWAP);
+#endif
   if (should_swap) {
     PresentationGroupTiming& presentation_group_timing =
         pending_presentation_group_timings_.emplace_back();
@@ -1288,6 +1348,14 @@ void Display::DidReceivePresentationFeedback(
     const gfx::PresentationFeedback& feedback) {
   if (renderer_)
     renderer_->BuffersPresented();
+
+#if BUILDFLAG(IS_OHOS)
+  if (temp_idle_state_ == TempIdleState::REENABLE_SWAP && client_) {
+    LOG(INFO) << "Display RestoreRenderFit, frame_sink_id_: " << frame_sink_id_.ToString();
+    temp_idle_state_ = TempIdleState::RESTORE_RENDERFIT;
+    client_->RestoreRenderFit(frame_sink_id_);
+  }
+#endif
 
   if (pending_presentation_group_timings_.empty()) {
     DLOG(ERROR) << "Received unexpected PresentationFeedback";

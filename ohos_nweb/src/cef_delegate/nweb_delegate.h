@@ -639,6 +639,8 @@ void SetDelayDurationForBackgroundTabFreezing(int64_t delay) override;
   void DispatchBeforeUnload() override;
 #endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
+  void MaximizeResize() override;
+
  public:
   int argc_;
   const char** argv_;

@@ -172,6 +172,8 @@ component("partition_alloc") {
     "spinning_mutex.h",
     "tagging.cc",
     "tagging.h",
+    "internal_allocator.cc",
+    "internal_allocator.h",
     "thread_cache.cc",
     "thread_cache.h",
     "yield_processor.h",

@@ -608,6 +608,11 @@ TEST_F(CompositorTestWithMessageLoop, SetDrawRect2) {
   compositor()->SetDrawRect(rect);
   EXPECT_FALSE(compositor()->display_private_);
 }
+
+TEST_F(CompositorTestWithMessageLoop, DisableSwapUntilMaximized1) {
+  compositor()->DisableSwapUntilMaximized();
+  EXPECT_FALSE(compositor()->display_private_);
+}
 #endif  // OHOS_UNITTESTS
 
 }  // namespace ui

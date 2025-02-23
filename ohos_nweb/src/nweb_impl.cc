@@ -2212,15 +2212,15 @@ void NWebImpl::WebSendMouseWheelEvent(double x,
   input_handler_->WebSendMouseWheelEvent(x, y, deltaX, deltaY, pressedCodes);
 }
 
-void NWebImpl::WebSendMouseWheelEventV2(double x,
+bool NWebImpl::WebSendMouseWheelEventV2(double x,
                                         double y,
                                         double deltaX,
                                         double deltaY,
                                         const std::vector<int32_t>& pressedCodes,
                                         int32_t source) {
   if (input_handler_ == nullptr) {
-    LOG(ERROR) << "WebSendMouseWheelEvent input_handler_ is nullptr";
-    return;
+    LOG(ERROR) << "WebSendMouseWheelEventV2 input_handler_ is nullptr";
+    return true;
   }
 
   ResSchedClientAdapter::ReportScene(
@@ -2232,6 +2232,7 @@ void NWebImpl::WebSendMouseWheelEventV2(double x,
       ->ApplySocPerfConfigById(SOC_PERF_MOUSEWHEEL_CONFIG_ID);
 #endif
   input_handler_->WebSendMouseWheelEventV2(x, y, deltaX, deltaY, pressedCodes, source);
+  return true;
 }
 
 void NWebImpl::WebSendTouchpadFlingEvent(double x,

@@ -309,7 +309,7 @@ class NWebImpl : public NWeb {
                               double deltaX,
                               double deltaY,
                               const std::vector<int32_t>& pressedCodes) override;
-  void WebSendMouseWheelEventV2(double x,
+  bool WebSendMouseWheelEventV2(double x,
                                 double y,
                                 double deltaX,
                                 double deltaY,

@@ -59,6 +59,11 @@ void MediaUrlDemuxer::ForwardDurationChangeToDemuxerHost(
   host_->SetDuration(duration);
 }
 
+void MediaUrlDemuxer::SetHeaders(
+    const base::flat_map<std::string, std::string>& headers) {
+  params_.headers = std::move(headers);
+}
+
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
 void MediaUrlDemuxer::ForwardBufferedEndTimeChangeToDemuxerHost(
     base::TimeDelta buffered_time) {

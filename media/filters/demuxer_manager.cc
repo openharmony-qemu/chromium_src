@@ -264,6 +264,10 @@ void DemuxerManager::SetLoadedUrl(GURL url) {
   loaded_url_ = std::move(url);
 }
 
+const GURL& DemuxerManager::LoadedUrl() const {
+  return loaded_url_;
+}
+
 #if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 
 void DemuxerManager::PopulateHlsHistograms(bool cryptographic_url) {
@@ -409,7 +413,8 @@ PipelineStatus DemuxerManager::CreateDemuxer(
     uint32_t initial_preload,
     uint32_t media_source_type,
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
-    DemuxerManager::DemuxerCreatedCB on_demuxer_created) {
+    DemuxerManager::DemuxerCreatedCB on_demuxer_created,
+    base::flat_map<std::string, std::string> headers) {
   // TODO(crbug/1377053) return a better error
   if (!client_) {
     return DEMUXER_ERROR_COULD_NOT_OPEN;
@@ -417,7 +422,7 @@ PipelineStatus DemuxerManager::CreateDemuxer(
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
   if (should_create_custom_renderer) {
-    SetDemuxer(CreateMediaUrlDemuxer(false));
+    SetDemuxer(CreateMediaUrlDemuxer(false, headers));
     demuxer_->SetPreloadType(initial_preload);
     demuxer_->SetMediaSourceType(media_source_type);
     return std::move(on_demuxer_created)
@@ -431,7 +436,7 @@ PipelineStatus DemuxerManager::CreateDemuxer(
   const bool media_player_hls =
       hls_fallback_ == HlsFallbackImplementation::kMediaPlayer;
   if (media_player_hls || client_->IsMediaPlayerRendererClient()) {
-    SetDemuxer(CreateMediaUrlDemuxer(media_player_hls));
+    SetDemuxer(CreateMediaUrlDemuxer(media_player_hls, headers));
     return std::move(on_demuxer_created)
         .Run(demuxer_.get(), Pipeline::StartType::kNormal,
              /*is_streaming = */ false,
@@ -638,11 +643,15 @@ std::unique_ptr<Demuxer> DemuxerManager::CreateHlsDemuxer() {
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 std::unique_ptr<Demuxer> DemuxerManager::CreateMediaUrlDemuxer(
-    bool expect_hls_content) {
-  return std::make_unique<MediaUrlDemuxer>(
-      media_task_runner_, loaded_url_, site_for_cookies_, top_frame_origin_,
-      has_storage_access_, allow_media_player_renderer_credentials_,
-      expect_hls_content);
+    bool expect_hls_content,
+    base::flat_map<std::string, std::string> headers) {
+  std::unique_ptr<MediaUrlDemuxer> media_url_demuxer =
+      std::make_unique<MediaUrlDemuxer>(
+          media_task_runner_, loaded_url_, site_for_cookies_, top_frame_origin_,
+          has_storage_access_, allow_media_player_renderer_credentials_,
+          expect_hls_content);
+  media_url_demuxer->SetHeaders(headers);
+  return media_url_demuxer;
 }
 #endif  // BUILDFLAG(IS_ANDROID)
 

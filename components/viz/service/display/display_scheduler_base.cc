@@ -25,7 +25,7 @@ void DisplaySchedulerBase::SetDamageTracker(
 }
 
 #if BUILDFLAG(IS_OHOS)
-void DisplaySchedulerBase::ReenableSwapCheck(int widht, int height) {
+void DisplaySchedulerBase::ReenableSwapCheck(int width, int height) {
   if (client_) {
     client_->ReenableSwapCheck(width, height);
   }

@@ -24,7 +24,7 @@ void DisplaySchedulerBase::SetDamageTracker(
   damage_tracker_->AddObserver(this);
 }
 
-#if BUILDFALG(IS_OHOS)
+#if BUILDFLAG(IS_OHOS)
 void DisplaySchedulerBase::ReenableSwapCheck(int widht, int height) {
   if (client_) {
     client_->ReenableSwapCheck(width, height);

@@ -419,7 +419,7 @@ Display::Display(
 #if BUILDFLAG(IS_OHOS)
   reset_init_timer_ = std::make_unique<base::RetainingOneShotTimer>(FROM_HERE, reset_state_delay,
     base::BindRepeating(&Display::RestoreRenderFitTimeElapsed, base::Unretained(this)));
-  reenable_swap_timer = std::make_unique<base::RetainingOneShotTimer>(FROM_HERE, reenable_draw_delay,
+  reenable_swap_timer_ = std::make_unique<base::RetainingOneShotTimer>(FROM_HERE, reenable_draw_delay,
     base::BindRepeating(&Display::RestoreRenderFitTimeElapsed, base::Unretained(this)));
 #endif
 }

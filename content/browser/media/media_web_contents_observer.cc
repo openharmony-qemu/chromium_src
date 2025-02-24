@@ -372,10 +372,6 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
   LOG(INFO) << "OhMedia::" << __func__ << ", muted=" << muted;
 #endif // OHOS_MEDIA
 
-  PlayerInfo* player_info = GetPlayerInfo();
-  if (!player_info)
-    return;
-
   player_info->set_muted(muted);
   NotifyAudioStreamMonitorIfNeeded();
 }

@@ -357,8 +357,20 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
   media_web_contents_observer_->web_contents_impl()->MediaMutedStatusChanged(
       media_player_id_, muted);
 
+#ifndef OHOS_MEDIA
   media_web_contents_observer_->session_controllers_manager()
       ->OnMediaMutedStatusChanged(media_player_id_, muted);
+#endif
+ 
+  PlayerInfo* player_info = GetPlayerInfo();
+  if (!player_info)
+    return;
+ 
+#ifdef OHOS_MEDIA
+  media_web_contents_observer_->session_controllers_manager()
+      ->OnMediaMutedStatusChanged(media_player_id_, muted);
+  LOG(INFO) << "OhMedia::" << __func__ << ", muted=" << muted;
+#endif // OHOS_MEDIA
 
   PlayerInfo* player_info = GetPlayerInfo();
   if (!player_info)

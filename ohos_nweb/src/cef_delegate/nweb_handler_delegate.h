@@ -857,7 +857,7 @@ void OnTouchIconUrlWithSizesReceived(
   CefRefPtr<NWebInputMethodClient> input_method_client_ = nullptr;
 #ifdef OHOS_NWEB_EX
   void OnGetImageData(CefRefPtr<CefImage> image);
-  void OnGetImageDataFromCache(CefRefPtr<CefImage> image);
+  void OnGetImageFromCacheEx(uint8_t* data, int buffer_size) override;
   std::shared_ptr<NWebExtensionCallback> web_extension_listener_ = nullptr;
 #endif  // if defined(OHOS_NWEB_EX)
   std::shared_ptr<NWebGeolocationCallback> callback_ = nullptr;

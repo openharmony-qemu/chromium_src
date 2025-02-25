@@ -75,7 +75,9 @@ class SkiaOutputDeviceGL final : public SkiaOutputDevice {
   const raw_ptr<gpu::SharedContextState> context_state_;
   scoped_refptr<gl::GLSurface> gl_surface_;
   const bool supports_async_swap_;
-
+#if BUILDFLAG(IS_OHOS)
+  bool supports_damage_region_;
+#endif
   uint64_t backbuffer_estimated_size_ = 0;
 
   sk_sp<SkSurface> sk_surface_;

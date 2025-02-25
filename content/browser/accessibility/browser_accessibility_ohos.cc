@@ -17,6 +17,9 @@ namespace content {
 using namespace OHOS::NWeb;
 
 using AccessibilityIdMap = std::unordered_map<int64_t, BrowserAccessibilityOHOS*>;
+namespace {
+constexpr int NUMBER_TWO = 2;
+}
 
 base::LazyInstance<AccessibilityIdMap>::Leaky g_accessibility_id_map =
     LAZY_INSTANCE_INITIALIZER;
@@ -1146,13 +1149,14 @@ bool BrowserAccessibilityOHOS::Scroll(ScrollDirection direction, bool is_page_sc
   gfx::Rect bounds = GetClippedRootFrameBoundsRect();
 
   // Scroll by 50% of one page, or 100% for page scrolls.
-  int page_x, page_y;
+  int page_x = 0;
+  int page_y = 0;
   if (is_page_scroll) {
     page_x = std::max(bounds.width(), 1);
     page_y = std::max(bounds.height(), 1);
   } else {
-    page_x = std::max(bounds.width() / 2, 1);
-    page_y = std::max(bounds.height() / 2, 1);
+    page_x = std::max(bounds.width() / NUMBER_TWO, 1);
+    page_y = std::max(bounds.height() / NUMBER_TWO, 1);
   }
 
   if (direction == ScrollDirection::FORWARD)

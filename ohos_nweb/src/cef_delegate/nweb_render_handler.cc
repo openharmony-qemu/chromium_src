@@ -500,23 +500,6 @@ void NWebRenderHandler::SetScreenInfo(const NWebScreenInfo& screen_info) {
     delegete->SetVirtualPixelRatio(screen_info_.display_ratio);
   }
 }
-
-NWebScreenInfo& NWebRenderHandler::GetLastScreenInfo() {
-  return last_screen_info_;
-}
-
-void NWebRenderHandler::SetLastScreenInfo(const NWebScreenInfo& screen_info) {
-  last_screen_info_ = screen_info;
-}
-
-bool NWebRenderHandler::IsNeedCefNotifyScreenInfoChanged() {
-  if (last_screen_info_.display_ratio <= 0 || screen_info_.display_ratio <= 0) {
-    return false;
-  }
-  return last_screen_info_.display_ratio != screen_info_.display_ratio ||
-         last_screen_info_.width != screen_info_.width ||
-         last_screen_info_.height != screen_info_.height;
-}
 // #endif  // #ifdef OHOS_SCREEN_ROTATION
 
 bool NWebRenderHandler::GetScreenInfo(CefRefPtr<CefBrowser> browser,

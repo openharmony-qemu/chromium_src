@@ -178,8 +178,7 @@ class NWebDelegateInterface
                               int action,
                               int count) = 0;
   virtual void NotifyScreenInfoChanged(RotationType rotation,
-                                       DisplayOrientation orientation,
-                                       bool isWebinitialization = false) = 0;
+                                       DisplayOrientation orientation) = 0;
 
   virtual int Load(const std::string& url) = 0;
   virtual bool IsNavigatebackwardAllowed() const = 0;

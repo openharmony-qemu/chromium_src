@@ -122,6 +122,10 @@ class FakeDisplaySchedulerClient : public DisplaySchedulerClient {
     estimated_display_draw_time_ = estimated_display_draw_time;
   }
 
+#if defined(OHOS_UNITTESTS)
+  void ReenableSwapCheck(int width, int height) override {}
+#endif
+
  protected:
   raw_ptr<TestDisplayDamageTracker> damage_tracker_ = nullptr;
   int draw_and_swap_count_;

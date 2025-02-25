@@ -70,6 +70,7 @@ class DirectLayerTreeFrameSink : public cc::LayerTreeFrameSink,
 #if defined(OHOS_UNITTESTS)
   void TriggerVsyncImplTask() override {}
   void SetHandledTouchEvent(bool handledTouchEvent) override {}
+  void RestoreRenderFit(const viz::FrameSinkId& frame_sink_id) override {}
 #endif
   void DisplayAddChildWindowToBrowser(
       gpu::SurfaceHandle child_window) override {}

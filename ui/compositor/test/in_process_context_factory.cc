@@ -84,6 +84,9 @@ class InProcessContextFactory::PerCompositorData
     display_->DisableSwapUntilResize(std::move(callback));
   }
 #endif
+#if defined(OHOS_UNITTESTS)
+  void DisableSwapUntilMaximized(DisableSwapUntilMaximizedCallback callback) override {}
+#endif
   void SetDisplayColorMatrix(const gfx::Transform& matrix) override {
     output_color_matrix_ = gfx::TransformToSkM44(matrix);
   }

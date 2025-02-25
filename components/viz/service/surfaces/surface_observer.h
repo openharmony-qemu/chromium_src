@@ -6,6 +6,7 @@
 #define COMPONENTS_VIZ_SERVICE_SURFACES_SURFACE_OBSERVER_H_
 
 #include "components/viz/service/viz_service_export.h"
+#include "build/build_config.h"
 
 namespace viz {
 
@@ -64,6 +65,10 @@ class VIZ_SERVICE_EXPORT SurfaceObserver {
   // to the surface that has |child_id| is removed.
   virtual void OnRemovedSurfaceReference(const SurfaceId& parent_id,
                                          const SurfaceId& child_id) {}
+
+#if BUILDFLAG(IS_OHOS)
+  virtual void ReenableSwapCheck(int width, int height) {}
+#endif
 };
 
 }  // namespace viz

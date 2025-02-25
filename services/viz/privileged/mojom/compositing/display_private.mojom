@@ -118,6 +118,9 @@ interface DisplayPrivate {
   // Set Current Display client Frame sink ID.
   [EnableIf=ohos_performance_jitter]
   SetCurrentFrameSinkId(FrameSinkId frame_sink_id);
+
+  [EnableIf=is_ohos, Sync]
+  DisableSwapUntilMaximized() => ();
 };
 
 // DisplayClient allows privileged clients to receive events from the Display.

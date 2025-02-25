@@ -154,6 +154,9 @@ class COMPOSITOR_EXPORT ContextFactory {
 class COMPOSITOR_EXPORT CompositorDelegate {
  public:
   virtual std::unique_ptr<viz::HostDisplayClient> CreateHostDisplayClient() = 0;
+#if BUILDFLAG(IS_OHOS)
+  virtual void RestoreRenderFit() = 0;
+#endif
 
  protected:
   virtual ~CompositorDelegate() {}
@@ -534,6 +537,8 @@ void SetEnableLowerFrameRate(bool enabled);
 void EvictFrameBackBuffers(bool invisible);
 void UpdateVSyncFrequency();
 void ResetVSyncFrequency();
+void DisableSwapUntilMaximized();
+void RestoreRenderFit() override;
 #endif
 
  private:

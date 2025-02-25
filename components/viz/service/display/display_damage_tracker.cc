@@ -205,6 +205,14 @@ bool DisplayDamageTracker::OnSurfaceDamageExpected(const SurfaceId& surface_id,
   return NotifyPendingSurfacesChanged();
 }
 
+#if BUILDFLAG(IS_OHOS)
+void DisplayDamageTracker::ReenableSwapCheck(int width, int height) {
+  for (auto& observer : observers_) {
+    observer.ReenableSwapCheck(width, height);
+  }
+}
+#endif
+
 void DisplayDamageTracker::UpdateRootFrameMissing() {
   Surface* surface = surface_manager_->GetSurfaceForId(root_surface_id_);
   SetRootFrameMissing(!surface || !surface->HasActiveFrame());

@@ -570,6 +570,17 @@ source_set("browser_sources") {
     "zipfile_installer.h",
   ]
 
+  #ifdef OHOS_ARKWEB_EXTENSIONS
+  if (defined(ohos_arkweb_extensions) && ohos_arkweb_extensions) {
+    sources += [
+      "extension_registry_info_manager.h",
+      "extension_registry_info_manager.cc",
+      "extension_icon_image_observer.cc",
+      "extension_icon_image_observer.h",
+    ]
+  }
+  #endif
+
   deps = [
     "//base",
     "//base:i18n",

@@ -179,6 +179,35 @@ component("cef_nweb") {
     "src/sysevent/oh_web_performance_timing.h",
   ]
 
+  #ifdef OHOS_ARKWEB_EXTENSIONS
+  if (defined(ohos_arkweb_extensions) && ohos_arkweb_extensions) {
+    sources += [
+      "src/cef_delegate/nweb_extension_context_menus_delegate_handler.h",
+      "src/cef_delegate/nweb_extension_context_menus_delegate_handler.cc",
+      "src/cef_delegate/nweb_extension_action_cef_delegate.cc",
+      "src/cef_delegate/nweb_extension_action_cef_delegate.h",
+      "src/cef_delegate/nweb_extension_side_panel_cef_delegate.cc",
+      "src/cef_delegate/nweb_extension_side_panel_cef_delegate.h",
+      "src/cef_delegate/nweb_extension_side_panel_cef_controller.cc",
+      "src/cef_delegate/nweb_extension_side_panel_cef_controller.h",
+      "src/cef_delegate/nweb_extension_window_delegate_handler.h",
+      "src/cef_delegate/nweb_extension_window_delegate_handler.cc",
+      "src/cef_delegate/nweb_extension_tab_delegate_handler.cc",
+      "src/cef_delegate/nweb_extension_tab_delegate_handler.h",
+    ]
+  }
+  #endif
+
+  #ifdef OHOS_NOTIFICATION
+  if (defined(ohos_notification) && ohos_notification) {
+    sources += [
+      "src/cef_delegate/nweb_access_query_delegate.cc",
+      "src/cef_delegate/nweb_access_query_delegate.h",
+      "src/cef_delegate/nweb_permission_query_impl.cc",
+    ]
+  }
+  #endif
+
   #ifdef OHOS_SCHEME_HANDLER
   if (defined(ohos_scheme_handler) && ohos_scheme_handler) {
     sources += [
@@ -375,6 +404,16 @@ component("nweb_sources") {
     "src/nweb_imf_text_config_adapter_impl.h",
   ]
 
+  #ifdef OHOS_ARKWEB_EXTENSIONS
+  if (defined(ohos_arkweb_extensions) && ohos_arkweb_extensions) {
+    sources += [
+      "src/ohos_nweb/src/capi/nweb_context_menus_item.h",
+      "src/ohos_nweb/src/capi/nweb_extension_context_menus_callback.h",
+      "src/ohos_nweb/src/capi/nweb_extension_action_icon.h",
+    ]
+  }
+  #endif
+  
   #if defined(OHOS_NAVIGATION)
   if (defined(ohos_navigation) && ohos_navigation) {
     sources += [
@@ -385,6 +424,22 @@ component("nweb_sources") {
 
   #endif  // defined(OHOS_NAVIGATION)
 
+  #ifdef OHOS_NOTIFICATION
+  if (defined(ohos_notification) && ohos_notification) {
+    sources += [
+      "src/nweb_access_query.h",
+      "src/nweb_permission_status_query_manager.cc",
+      "src/nweb_permission_status_query_manager.h",
+      "src/nweb_notification_manager_delegate.cc",
+      "src/nweb_notification_manager_delegate.h",
+      "src/capi/nweb_permission_status_query.h",
+      "src/capi/nweb_permission_status_query_delegate_callback.h",
+      "src/capi/nweb_notification_options_item.h",
+    ]
+  }
+
+  #endif // OHOS_NOTIFICATION
+
   if (!defined(ohos_nweb_ex) || !ohos_nweb_ex) {
     sources += [ "src/download/web_downloader.cc" ]
   }
@@ -392,6 +447,7 @@ component("nweb_sources") {
   deps = [
     ":cef_nweb",
     ":nweb_hilog",
+    "//third_party/icu",
     "//third_party/boringssl",
     "//ohos_glue:ohos_nweb_glue_source",
   ]

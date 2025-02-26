@@ -682,6 +682,15 @@
     "dependence": "",
     "default": "true"
 },
+{ 
+    "name": "OHOS_NOTIFICATION",
+    "owner": "lingfeng wangdacheng",
+    "desc": "web notification",
+    "effect":"main gn blink_core other",
+    "genCommandline": "default",
+    "dependence": "",
+    "default": "false"
+},
 {
     "name": "OHOS_NO_STATE_PREFETCH",
     "owner": "wanghui wangjing",

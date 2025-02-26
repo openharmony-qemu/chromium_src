@@ -35,6 +35,7 @@ void AddURLPatternSetToList(
   static const char* const kSchemes[] = {
 #if defined(OHOS_ARKWEB_EXTENSIONS)
     content::kArkWebUIScheme,
+    extensions::kArkwebExtensionScheme,
 #endif
     content::kChromeUIScheme,
 #if BUILDFLAG(IS_CHROMEOS_ASH)

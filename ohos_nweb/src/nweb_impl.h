@@ -43,6 +43,12 @@
 #if defined(OHOS_VIDEO_ASSISTANT)
 #include "capi/nweb_statistic_callback.h"
 #endif  // defined(OHOS_VIDEO_ASSISTANT)
+#ifdef OHOS_ARKWEB_EXTENSIONS
+#include "capi/nweb_extension_manager_callback.h"
+#include "capi/nweb_extension_context_menus_callback.h"
+#include "capi/web_extension_tab_items.h"
+#include "ohos_nweb/src/capi/nweb_context_menus_on_clicked_data.h"
+#endif // OHOS_ARKWEB_EXTENSIONS
 
 #include "nweb_proxy_changed_callback.h"
 
@@ -594,19 +600,68 @@ class NWebImpl : public NWeb {
   static RenderProcessMode GetRenderProcessMode();
 #endif
 
-#ifdef OHOS_NWEB_EX
+#ifdef OHOS_ARKWEB_EXTENSIONS
+  static void PutWebExtensionApiSidePanelCallback(
+      std::shared_ptr<NWebExtensionSidePanelApiCallback> web_extension_api_callback);
+  static void RemoveWebExtensionApiSidePanelCallback();
+  static void PutWebExtensionWindowsApiCallback(
+      std::shared_ptr<NWebExtensionWindowsApiCallback> web_extension_windows_api_callback);
+  static void RemoveWebExtensionWindowsApiCallback();
+
   static void PutWebExtensionApiCallback(
       std::shared_ptr<NWebExtensionApiCallback> web_extension_api_callback);
   static void RemoveWebExtensionApiCallback();
-#endif
+  static void PutWebExtensionManagerCallback(
+      std::shared_ptr<NWebExtensionManagerCallBack> web_extension_api_callback);
+  static void RemoveWebExtensionManagerCallback();
+  static void UnLoadWebExtension(const std::string& eid);
+  static void GetExtensionInfoByTabId(int32_t tabId, std::vector<WebExtensionInfo>& extensionInfo);
+  static void PutExtensionContextMenusCallback(
+    std::shared_ptr<NWebExtensionContextMenusCallback> extension_context_menus_callback);
+  static void RemoveExtensionContextMenusCallback();
+ 
+  static void OnClickedExtensionContextMenus(const std::string& extension_id,
+                                             ContextMenusOnClickedData& data,
+                                             std::optional<NWebExtensionTab>& tab);
+ 
+  static void GetAllExtensionContextMenus(const std::vector<std::string>& extension_ids,
+                                            std::vector<NWebContextMenusItem>& result);
+  static void PutWebExtensionActionApiCallback(
+      std::shared_ptr<NWebExtensionActionApiCallback>
+          web_extension_api_callback);
+  static void RemoveWebExtensionActionApiCallback();
 
-#ifdef OHOS_ARKWEB_EXTENSIONS
+  static void WebExtensionTabCreateCallback(int request_id, const NWebExtensionTab* tab);
+
   void WebExtensionTabCreated(int tab_id);
   void WebExtensionTabRemoved(int tab_id);
   void WebExtensionTabUpdated(
       int tab_id,
       const std::vector<std::string>& changed_property_names,
       const std::string& url);
+  void WebExtensionTabUpdated(
+      int tab_id,
+      const std::vector<std::string>& changed_property_names,
+      std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo);
+  void WebExtensionTabActivated(
+      std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo);
+  void WebExtensionTabAttached(
+      std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo);
+  void WebExtensionTabDetached(
+      std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo);
+  void WebExtensionTabHighlighted(int32_t tab_id, int32_t window_id);
+  void WebExtensionTabMoved(int32_t tab_id,
+                            std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo);
+  void WebExtensionTabReplaced(int32_t addedTabId, int32_t removedTabId);
+  void WebExtensionTabZoomChange(
+      std::unique_ptr<NWebExtensionTabZoomChangeInfo> tabZoomChangeInfo);
+  void WebExtensionActionClicked(std::string extension_id,
+                                 const NWebExtensionTab* tab);
+  static void WebExtensionErasePopupWindowId(int popupNwebId);
+  static void WebExtensionSetPopupWindowId(int windowId, int popupNwebId);
+  static void WebExtensionEraseSidePanelWindowId(int popupNwebId);
+  static void WebExtensionSetSidePanelWindowId(int windowId,
+                                               int sidePanelNwebId);
 #endif  // OHOS_ARKWEB_EXTENSIONS
 
 #ifdef OHOS_AI

@@ -71,7 +71,11 @@ bool RenderFrameMatches(const ExtensionFrameHelper* frame_helper,
   blink::WebSecurityOrigin origin =
       frame_helper->render_frame()->GetWebFrame()->GetSecurityOrigin();
   if (origin.IsOpaque() ||
-      !base::EqualsASCII(origin.Protocol().Utf16(), kExtensionScheme) ||
+      (!base::EqualsASCII(origin.Protocol().Utf16(), kExtensionScheme)
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+       && !base::EqualsASCII(origin.Protocol().Utf16(), kArkwebExtensionScheme)
+#endif
+           ) ||
       !base::EqualsASCII(origin.Host().Utf16(), match_extension_id.c_str()))
     return false;
 
@@ -332,7 +336,11 @@ void ExtensionFrameHelper::ReadyToCommitNavigation(
   if (view_type_ == mojom::ViewType::kAppWindow &&
       render_frame()->GetWebFrame()->IsOutermostMainFrame() &&
       !has_started_first_navigation_ &&
-      GURL(document_loader->GetUrl()).SchemeIs(kExtensionScheme) &&
+      (GURL(document_loader->GetUrl()).SchemeIs(kExtensionScheme)
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+       || GURL(document_loader->GetUrl()).SchemeIs(kArkwebExtensionScheme)
+#endif
+           ) &&
       !ScriptContext::IsSandboxedPage(document_loader->GetUrl())) {
     document_loader->BlockParser();
   }

@@ -61,7 +61,11 @@ PermissionsData::PageAccess ExtensionInjectionHost::CanExecuteOnFrame(
   }
 
   // Only allowlisted extensions may run scripts on another extension's page.
-  if (outermost_origin->scheme() == kExtensionScheme &&
+  if ((outermost_origin->scheme() == kExtensionScheme
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+       || outermost_origin->scheme() == kArkwebExtensionScheme
+#endif
+       ) &&
       outermost_origin->host() != extension_->id() &&
       !PermissionsData::CanExecuteScriptEverywhere(extension_->id(),
                                                    extension_->location())) {

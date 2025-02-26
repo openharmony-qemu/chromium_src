@@ -890,7 +890,11 @@ bool IsUrlExempt(re2::StringPiece url,
   }
 
   // Exempt URLs of the format chrome-extension://<first-party-id>/*.js
-  if (!url.starts_with("chrome-extension://")) {
+  if (!url.starts_with("chrome-extension://")
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+      && !url.starts_with("arkweb-extension://")
+#endif
+  ) {
     return false;
   }
 
@@ -901,8 +905,17 @@ bool IsUrlExempt(re2::StringPiece url,
 
   int i = 0;
   const char* test_id = first_party_extension_ids[i];
-  const re2::StringPiece url_sub =
+  re2::StringPiece url_sub;
+  if (url.starts_with("chrome-extension://")) {
+    url_sub =
       url.substr(sizeof("chrome-extension://") - 1);
+  }
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  else if (url.starts_with("arkweb-extension://")) {
+    url_sub =
+      url.substr(sizeof("arkweb-extension://") - 1);
+  }
+#endif
   while (test_id) {
     if (url_sub.starts_with(test_id)) {
       return true;

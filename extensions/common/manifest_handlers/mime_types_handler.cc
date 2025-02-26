@@ -116,8 +116,14 @@ base::FilePath MimeTypesHandler::GetPluginPath() const {
   // TODO(raymes): Storing the extension URL in a base::FilePath is really
   // nasty. We should probably just use the extension ID as the placeholder path
   // instead.
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  return base::FilePath::FromUTF8Unsafe(
+      std::string(extensions::kArkwebExtensionScheme) + "://" + extension_id_ +
+      "/");
+#else
   return base::FilePath::FromUTF8Unsafe(
       std::string(extensions::kExtensionScheme) + "://" + extension_id_ + "/");
+#endif
 }
 
 // static

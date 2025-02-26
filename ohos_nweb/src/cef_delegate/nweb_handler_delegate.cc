@@ -73,6 +73,11 @@
 #include "content/public/common/content_switches.h"
 #endif
 
+#ifdef OHOS_ARKWEB_EXTENSIONS
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif // OHOS_ARKWEB_EXTENSIONS
+
 #if defined(REPORT_SYS_EVENT)
 #include "event_reporter.h"
 #endif
@@ -140,9 +145,10 @@ const int WEB_CAN_SNAPSHOT_DELAY_TIME = 1500;
 
 const int VIEW_PORT_DIFF = 5;
 
-#ifdef OHOS_NWEB_EX
+#if defined(OHOS_ARKWEB_EXTENSIONS)
 std::shared_ptr<NWebExtensionApiCallback> g_extension_api_listener = nullptr;
-#endif  // if defined(OHOS_NWEB_EX)
+static std::map<int, TabCreatedCallback> g_tab_created_map_;
+#endif // OHOS_ARKWEB_EXTENSIONS
 
 #ifdef OHOS_LOGGER_REPORT
 std::shared_ptr<NWebLoggerCallback> g_logger_callback = nullptr;
@@ -2532,7 +2538,12 @@ void NWebHandlerDelegate::OnPermissionRequest(
         request->ResourceAcessId() ==
             NWebAccessRequest::Resources::CLIPBOARD_SANITIZED_WRITE ||
         request->ResourceAcessId() ==
-            NWebAccessRequest::Resources::PROTECTED_MEDIA_ID) {
+            NWebAccessRequest::Resources::PROTECTED_MEDIA_ID
+#ifdef OHOS_NOTIFICATION
+        || request->ResourceAcessId() ==
+            NWebAccessRequest::Resources::NOTIFICATION
+#endif // OHOS_NOTIFICATION
+        ) {
       std::shared_ptr<NWebAccessRequest> access_request =
         std::make_shared<NWebAccessRequestDelegate>(request);
       std::shared_ptr<NWebPermissionRequest> nweb_request =
@@ -3894,17 +3905,73 @@ void NWebHandlerDelegate::UnRegisterWebExtensionApiListener() {
   g_extension_api_listener = nullptr;
 }
 
-void NWebHandlerDelegate::OnUpdateTabUrl(int tab_id, const CefString& url) {
+NO_SANITIZE("cfi-icall")
+void NWebHandlerDelegate::OnUpdateTab(
+    int tab_id,
+    const NWebExtensionTabUpdateProperties* update_properties) {
   if (!g_extension_api_listener) {
     LOG(ERROR) << "No web extension api listener";
     return;
   }
 
-  std::string urlStr = url.ToString();
-  LOG(INFO) << "OnUpdateTabUrl:" << tab_id;
-  g_extension_api_listener->OnUpdateTabUrl(tab_id, urlStr.c_str());
+  if (g_extension_api_listener->OnUpdateTab) {
+    LOG(INFO) << "OnUpdateTab tabId: " << tab_id;
+    g_extension_api_listener->OnUpdateTab(tab_id, update_properties);
+    return;
+  }
+
+  // Compatible with older versions
+  if (g_extension_api_listener->OnUpdateTabUrl) {
+    LOG(INFO) << "OnUpdateTabUrl tabId: " << tab_id;
+    if (!update_properties->url) {
+      LOG(ERROR) << "OnUpdateTabUrl not has url";
+      return;
+    }
+    g_extension_api_listener->OnUpdateTabUrl(
+          tab_id,
+          update_properties->url.value().c_str());
+    return;
+  }
+
+  LOG(ERROR) << "g_extension_api_listener OnUpdateTab is nullptr";
 }
 
+// static
+NO_SANITIZE("cfi-icall")
+bool NWebHandlerDelegate::OnCreateTab(const NWebTabCreateInfo& create_info,
+                                      TabCreatedCallback callback) {
+  static int request_id = 0;
+  if (!g_extension_api_listener) {
+    LOG(ERROR) << "No web extension api listener";
+    return false;
+  }
+
+  if (!g_extension_api_listener->OnCreateTab) {
+    LOG(ERROR) << "g_extension_api_listener OnCreateTab is nullptr";
+    return false;
+  }
+
+  request_id++;
+  LOG(INFO) << "OnCreateTab";
+  g_tab_created_map_[request_id] = std::move(callback);
+  g_extension_api_listener->OnCreateTab(create_info, request_id);
+  return true;
+}
+
+void NWebHandlerDelegate::WebExtensionTabCreateCallback(int request_id,
+                                                        const NWebExtensionTab* tab) {
+  if (g_tab_created_map_.count(request_id)) {
+    std::move(g_tab_created_map_[request_id]).Run(tab);
+    g_tab_created_map_.erase(request_id);
+  }
+}
+
+bool NWebHandlerDelegate::HasExtensionListener() {
+  return !!g_extension_api_listener;
+}
+#endif // OHOS_ARKWEB_EXTENSIONS
+
+#if defined(OHOS_NWEB_EX)
 void NWebHandlerDelegate::OnUpdateTargetURL(CefRefPtr<CefBrowser> browser, const CefString& url) {
   if (web_app_client_extension_listener_ != nullptr &&
       web_app_client_extension_listener_->OnUpdateTargetURL != nullptr) {
@@ -3912,7 +3979,7 @@ void NWebHandlerDelegate::OnUpdateTargetURL(CefRefPtr<CefBrowser> browser, const
         url.ToString(), web_app_client_extension_listener_->nweb_id);
   }
 }
-#endif
+#endif // OHOS_NWEB_EX
 
 #ifdef OHOS_LOGGER_REPORT
 // static

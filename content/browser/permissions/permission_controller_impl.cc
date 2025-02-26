@@ -754,4 +754,45 @@ void PermissionControllerImpl::NotifyEventListener() {
   }
 }
 
+#ifdef OHOS_NOTIFICATION
+void PermissionControllerImpl::GetPermissionStatusAsync(
+    blink::PermissionType permission, bool isFromDocument,
+    void* render_host, const url::Origin& origin,
+    base::OnceCallback<void(blink::mojom::PermissionStatus)> callback) {
+  if (!render_host) {
+    LOG(ERROR) << "GetPermissionStatusAsync render_host is null";
+    std::move(callback).Run(blink::mojom::PermissionStatus::DENIED);
+    return;
+  }
+
+  absl::optional<blink::mojom::PermissionStatus> status =
+      permission_overrides_.Get(origin, permission);
+  if (status.has_value()) {
+    LOG(INFO) << "GetPermissionStatusAsync permission_overrides status="
+              << (int)(*status);
+    std::move(callback).Run(*status);
+    return;
+  }
+
+  PermissionControllerDelegate* delegate =
+      browser_context_->GetPermissionControllerDelegate();
+  if (!delegate) {
+    std::move(callback).Run(blink::mojom::PermissionStatus::DENIED);
+    return;
+  }
+
+  if (isFromDocument) {
+    RenderFrameHost* render_frame_host = (RenderFrameHost*)render_host;
+    if (VerifyContextOfCurrentDocument(permission, render_frame_host).status ==
+        blink::mojom::PermissionStatus::DENIED) {
+      LOG(INFO) << "GetPermissionStatusAsync VerifyContextOfCurrentDocument return";
+      std::move(callback).Run(blink::mojom::PermissionStatus::DENIED);
+      return;
+    }
+  }
+
+  delegate->GetPermissionStatusAsync(permission, origin.GetURL(), std::move(callback));
+}
+#endif // OHOS_NOTIFICATION
+
 }  // namespace content

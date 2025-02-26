@@ -693,7 +693,11 @@ void ServiceWorkerTaskQueue::OnRegistrationStored(int64_t registration_id,
 
   // The only registrations we track are the ones for root-scope extension
   // service workers.
-  DCHECK_EQ(kExtensionScheme, scope.scheme());
+  DCHECK(kExtensionScheme == scope.scheme()
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+         || kArkwebExtensionScheme == scope.scheme()
+#endif
+  );
   DCHECK_EQ("/", scope.path());
 
   base::UnguessableToken activation_token = iter->second;

@@ -250,6 +250,10 @@ std::string GetSecureDirectiveValues(
         isNonWildcardTLD(source_lower, "chrome://", false) ||
 #if defined(OHOS_ARKWEB_EXTENSIONS)
         isNonWildcardTLD(source_lower, "arkweb://", false) ||
+        isNonWildcardTLD(source_lower,
+                         std::string(extensions::kArkwebExtensionScheme) +
+                             url::kStandardSchemeSeparator,
+                         false) ||
 #endif
         isNonWildcardTLD(source_lower,
                          std::string(extensions::kExtensionScheme) +

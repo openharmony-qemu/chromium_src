@@ -118,6 +118,15 @@ class CONTENT_EXPORT PermissionController
   virtual bool IsSubscribedToPermissionChangeEvent(
       blink::PermissionType permission,
       RenderFrameHost* render_frame_host) = 0;
+
+#ifdef OHOS_NOTIFICATION
+  virtual void GetPermissionStatusAsync(
+      blink::PermissionType permission,
+      bool isFromDocument,
+      void* render_host,
+      const url::Origin& origin,
+      base::OnceCallback<void(blink::mojom::PermissionStatus)> callback) {}
+#endif // OHOS_NOTIFICATION
 };
 
 }  // namespace content

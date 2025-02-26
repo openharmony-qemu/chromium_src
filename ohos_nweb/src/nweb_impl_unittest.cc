@@ -394,6 +394,13 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void, ClosePort, (const std::string& portHandle), (override));
 
   MOCK_METHOD(void,
+              PostWebMessage,
+              (int tab_id,
+              const std::vector<std::string>& changed_property_names,
+              std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo),
+              (override));
+
+  MOCK_METHOD(void,
               PostPortMessage,
               (const std::string& portHandle,
                std::shared_ptr<NWebMessage> data),

@@ -108,6 +108,7 @@ class ClipboardOHOSInternal {
   enum class ClipboardState {
     kOutOfDate,
     kUpToDate,
+    kInvalidDate,
   };
 
   class PasteboardObserverOhos : public PasteboardObserverAdapter {
@@ -181,16 +182,44 @@ class ClipboardOHOSInternal {
     }
   }
 
+  void GetPasteDataFromOHOSAdapter(std::shared_ptr<PasteRecordVector> records,
+                                   std::shared_ptr<bool> ready) {
+    if (!records || !ready) {
+      return;
+    }
+    OhosAdapterHelper::GetInstance().GetPasteBoard().GetPasteData(*records);
+    *ready = true;
+    get_data_cv_.notify_all();
+  }
+
+  PasteRecordVector GetPasteDataFromSystem() {
+    static constexpr int MAX_WAIT_SECONDS = 5;
+    auto ready = std::make_shared<bool>(false);
+    auto records = std::make_shared<PasteRecordVector>();
+
+    base::ThreadPool::PostTask(
+        FROM_HERE,
+        base::BindOnce(&ClipboardOHOSInternal::GetPasteDataFromOHOSAdapter,
+                       weak_ptr_factory_.GetWeakPtr(), records, ready));
+    std::unique_lock<std::mutex> lock(get_data_mutex_);
+    bool ret =
+        get_data_cv_.wait_for(lock, std::chrono::seconds(MAX_WAIT_SECONDS),
+                              [ready]() { return ready ? *ready : false; });
+    if (!ret) {
+      LOG(ERROR) << "GetPasteDataFromOHOS timeout.";
+    }
+    return (records ? *records : PasteRecordVector());
+  }
+
   void UpdateClipboardData() {
-    if (state_ == ClipboardState::kUpToDate) {
+    if (state_ != ClipboardState::kOutOfDate) {
       LOG(ERROR) << "No need to update Clipboard";
       return;
     }
 
     read_data_ = nullptr;
-    PasteRecordVector record_vector;
-    if (OhosAdapterHelper::GetInstance().GetPasteBoard().GetPasteData(
-            record_vector)) {
+    PasteRecordVector record_vector = GetPasteDataFromSystem();
+    if (!record_vector.empty()) {
       // Notice: Because pasteboard observer dont notify cross device.
       // So now we always get data from system clipboard instead of cache data.
       state_ = ClipboardState::kUpToDate;
@@ -404,12 +433,17 @@ class ClipboardOHOSInternal {
     }
 
     result_vector.push_back(record);
-    OhosAdapterHelper::GetInstance().GetPasteBoard().SetPasteData(result_vector
+    base::ThreadPool::PostTask(
+        FROM_HERE,
+        base::BindOnce(
+            &PasteBoardClientAdapter::SetPasteData,
+            base::Unretained(&OhosAdapterHelper::GetInstance().GetPasteBoard()),
+            result_vector
 #if defined(OHOS_CLIPBOARD)
 ,
                                                                   ChangeCopyOptionMode(copy_option)
 #endif // defined(OHOS_CLIPBOARD)
-    );
+    ));
     sequence_number_ = ClipboardSequenceNumberToken();
     return previous_data;
   }
@@ -512,6 +546,10 @@ class ClipboardOHOSInternal {
   std::shared_ptr<ClipboardOhosReadData> read_data_ = nullptr;
   std::unique_ptr<OHOS::NWeb::OhosResourceAdapter> resource_adapter_ = nullptr;
   static std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> convert_html_callback_;
+
+  std::mutex get_data_mutex_;
+  std::condition_variable get_data_cv_;
+  base::WeakPtrFactory<ClipboardOHOSInternal> weak_ptr_factory_{this};
 };
 
 std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback>

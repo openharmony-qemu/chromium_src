@@ -40,6 +40,30 @@
 
 namespace OHOS::NWeb {
 
+namespace {
+const std::string GetContentDisposition(
+    CefRefPtr<CefDownloadItem> download_item, std::string default_charset) {
+    std::string origin_content_disposition =
+        download_item->GetOriginContentDisposition()->GetStdString();
+    if (origin_content_disposition.empty()) {
+      // The original content-disposition is empty.
+      // The content-disposition in UTF-8 format is used.
+      return download_item->GetContentDisposition().ToString();
+    }
+
+    net::HttpContentDisposition header(origin_content_disposition,
+                                       default_charset);
+    std::string filename = header.filename();
+    if (filename.empty()) {
+      // If the original content-disposition fails to be decoded,
+      // the content-disposition in UTF-8 format is used for decoding.
+      return download_item->GetContentDisposition().ToString();
+    }
+
+    return origin_content_disposition;
+}
+}
+
 NWebDownloadHandlerDelegate::NWebDownloadHandlerDelegate(
     std::shared_ptr<NWebPreferenceDelegate> preference_delegate)
     : preference_delegate_(preference_delegate) {}
@@ -132,16 +156,21 @@ std::string NWebDownloadHandlerDelegate::GenerateSuggestedFilename(
   // type under certain condition.
   std::string default_filename(
       l10n_util::GetStringUTF8(IDS_DEFAULT_DOWNLOAD_FILENAME));
+
   std::shared_ptr<NWeb> nweb = NWebImpl::GetNWeb(download_item->GetNWebId());
   std::string default_charset =
       preference_delegate_ ? preference_delegate_->DefaultTextEncodingFormat() :
       (nweb ? nweb->GetPreference()->DefaultTextEncodingFormat() : "utf-8");
-  LOG(INFO) << "GenerateSuggestedFilename mime_type: " << sniffed_mime_type
-            << ", default_charset: " << default_charset;
+  std::string content_disposition = GetContentDisposition(download_item,
+                                                          default_charset);
   GURL gurl(download_item->GetURL().ToString());
   base::FilePath generated_filename = net::GenerateFileName(
-      gurl, download_item->GetContentDisposition()->GetStdString(), default_charset,
+      gurl, content_disposition, default_charset,
       suggested_filename, sniffed_mime_type, default_filename);
+  LOG(INFO) << "GenerateSuggestedFilename mime_type: " << sniffed_mime_type
+            << ", default_charset: " << default_charset
+            << ", content-disposition: " << content_disposition
+            << ", generated_filename: " << generated_filename;
 
   // If no mime type or explicitly specified a name, don't replace file
   // extension.
@@ -150,7 +179,7 @@ std::string NWebDownloadHandlerDelegate::GenerateSuggestedFilename(
 
   // Trust content disposition header filename attribute.
   net::HttpContentDisposition content_disposition_header(
-      download_item->GetContentDisposition()->GetStdString(), default_charset);
+      download_item->GetContentDisposition(), default_charset);
   if (!content_disposition_header.filename().empty())
     return generated_filename.AsUTF8Unsafe();
 

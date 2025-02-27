@@ -36,6 +36,9 @@ class DisplayClient {
   virtual base::TimeDelta GetPreferredFrameIntervalForFrameSinkId(
       const FrameSinkId& id,
       mojom::CompositorFrameSinkType* type) = 0;
+#if BUILDFLAG(IS_OHOS)
+  virtual void RestoreRenderFit(const FrameSinkId& frame_sink_id) = 0;
+#endif
 };
 
 }  // namespace viz

@@ -152,6 +152,7 @@ void SetNeedWaitForInput(bool need_wait_for_input);
 void TriggerVsync();
 void TriggerVsyncImplTask() override {}
 void SetHandledTouchEvent(bool handledTouchEvent) override {}
+void DisableSwapUntilMaximized(DisableSwapUntilMaximizedCallback callback) override;
 #endif
 
   base::ScopedClosureRunner GetCacheBackBufferCb();
@@ -187,6 +188,9 @@ void SetHandledTouchEvent(bool handledTouchEvent) override {}
   base::TimeDelta GetPreferredFrameIntervalForFrameSinkId(
       const FrameSinkId& id,
       mojom::CompositorFrameSinkType* type) override;
+#if BUILDFLAG(IS_OHOS)
+  void RestoreRenderFit(const FrameSinkId& frame_sink_id) override;
+#endif
 
   void UpdateVSyncParameters();
   BeginFrameSource* begin_frame_source();

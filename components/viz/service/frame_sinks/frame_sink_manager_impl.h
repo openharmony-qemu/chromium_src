@@ -297,6 +297,7 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
   void ResetVSyncFrequency(const FrameSinkId& frame_sink_id) override;
   void SetNeedWaitForInput(const FrameSinkId& frame_sink_id, bool need_wait_for_input) override;
   void TriggerVsync(const FrameSinkId& frame_sink_id) override;
+  void RestoreRenderFit(const FrameSinkId& frame_sink_id);
 #endif
 
  private:

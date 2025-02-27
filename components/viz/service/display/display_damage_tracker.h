@@ -34,6 +34,9 @@ class VIZ_SERVICE_EXPORT DisplayDamageTracker : public SurfaceObserver {
     virtual void OnDisplayDamaged(SurfaceId surface_id) = 0;
     virtual void OnRootFrameMissing(bool missing) = 0;
     virtual bool OnPendingSurfacesChanged() = 0;
+#if BUILDFLAG(IS_OHOS)
+    virtual void ReenableSwapCheck(int width, int height) = 0;
+#endif
   };
 
   DisplayDamageTracker(SurfaceManager* surface_manager,
@@ -83,6 +86,9 @@ class VIZ_SERVICE_EXPORT DisplayDamageTracker : public SurfaceObserver {
                         const BeginFrameAck& ack) override;
   bool OnSurfaceDamageExpected(const SurfaceId& surface_id,
                                const BeginFrameArgs& args) override;
+#if BUILDFLAG(IS_OHOS)
+  void ReenableSwapCheck(int width, int height) override;
+#endif
 
  protected:
   struct SurfaceBeginFrameState {

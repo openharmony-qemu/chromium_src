@@ -320,6 +320,9 @@ class VIZ_HOST_EXPORT HostFrameSinkManager
   void OnVsync(uint32_t client_id, uint32_t sink_id) override;
   void OnVsyncReceived(uint32_t client_id, uint32_t sink_id) override;
 #endif
+#if BUILDFLAG(IS_OHOS)
+  void RestoreRenderFit(uint32_t client_id, uint32_t sink_id) override;
+#endif
 
   // Connections to/from FrameSinkManagerImpl.
   mojo::Remote<mojom::FrameSinkManager> frame_sink_manager_remote_;

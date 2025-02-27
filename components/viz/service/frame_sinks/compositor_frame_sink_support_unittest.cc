@@ -102,6 +102,7 @@ class MockFrameSinkManagerClient : public mojom::FrameSinkManagerClient {
 #if defined(OHOS_UNITTESTS)
   MOCK_METHOD2(OnVsyncReceived,void(uint32_t client_id, uint32_t sink_id));
   MOCK_METHOD1(GetLTPOConfig, std::vector<FrameRateSetting>(const std::string& settingName));
+  MOCK_METHOD2(RestoreRenderFit, void(uint32_t client_id, uint32_t sink_id));
 #endif
   MOCK_METHOD3(OnFrameTokenChanged,
                void(const FrameSinkId&, uint32_t, base::TimeTicks));

@@ -137,6 +137,9 @@ class StubDisplayClient : public DisplayClient {
       mojom::CompositorFrameSinkType* type) override {
     return BeginFrameArgs::MinInterval();
   }
+#if defined(OHOS_UNITTESTS)
+  void RestoreRenderFit(const FrameSinkId& frame_sink_id) override {}
+#endif
 };
 
 void CopyCallback(bool* called,

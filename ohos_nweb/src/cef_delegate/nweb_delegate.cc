@@ -4547,4 +4547,10 @@ void NWebDelegate::DispatchBeforeUnload() {
 }
 #endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
+void NWebDelegate::MaximizeResize()
+{
+  if (GetBrowser().get() && GetBrowser()->GetHost()) {
+    GetBrowser()->GetHost()->MaximizeResize();
+  }
+}
 }  // namespace OHOS::NWeb

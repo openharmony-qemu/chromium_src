@@ -1016,6 +1016,19 @@ void Compositor::UpdateVSyncFrequency() {
 void Compositor::ResetVSyncFrequency() {
   context_factory_->GetHostFrameSinkManager()->ResetVSyncFrequency(frame_sink_id());
 }
+
+void Compositor::DisableSwapUntilMaximized() {
+  if (display_private_) {
+    mojo::SyncCallRestrictions::ScopedAllowSyncCall scoped_allow_sync_call;
+    display_private_->DisableSwapUntilMaximized();
+  }
+}
+
+void Compositor::RestoreRenderFit() {
+  if (delegate_) {
+    delegate_->RestoreRenderFit();
+  }
+}
 #endif
 
 const cc::LayerTreeSettings& Compositor::GetLayerTreeSettings() const {

@@ -147,6 +147,11 @@ class VIZ_SERVICE_EXPORT Display : public DisplaySchedulerClient,
   // may be run immediately.
   void DisableSwapUntilResize(base::OnceClosure no_pending_swaps_callback);
 
+#if BUILDFLAG(IS_OHOS)
+  void DisableSwapUntilMaximized();
+  void RestoreRenderFitTimeElapsed();
+#endif
+
 #if defined(OHOS_COMPOSITE_RENDER)
   void SetShouldFrameSubmissionBeforeDraw(bool should);
   void SetDrawRect(const gfx::Rect& new_rect);
@@ -168,6 +173,10 @@ class VIZ_SERVICE_EXPORT Display : public DisplaySchedulerClient,
   void DidFinishFrame(const BeginFrameAck& ack) override;
   base::TimeDelta GetEstimatedDisplayDrawTime(const base::TimeDelta interval,
                                               double percentile) const override;
+
+#if BUILDFLAG(IS_OHOS)
+  void ReenableSwapCheck(int width, int height) override;
+#endif
 
   // OutputSurfaceClient implementation.
   void DidReceiveSwapBuffersAck(const gpu::SwapBuffersCompleteParams& params,
@@ -339,6 +348,17 @@ class VIZ_SERVICE_EXPORT Display : public DisplaySchedulerClient,
       pending_presentation_group_timings_;
 
   bool disable_swap_until_resize_ = true;
+#if BUILDFLAG(IS_OHOS)
+  enum class TempIdleState: uint32_t {
+    INIT,
+    DISABLE_SWAP,
+    REENABLE_SWAP,
+    RESTORE_RENDERFIT,
+  };
+  TempIdleState temp_idle_state_ = TempIdleState::RESTORE_RENDERFIT;
+  std::unique_ptr<base::RetainingOneShotTimer> reset_init_timer_;
+  std::unique_ptr<base::RetainingOneShotTimer> reenable_swap_timer_;
+#endif
 
   // Callback that will be run after all pending swaps have acked.
   base::OnceClosure no_pending_swaps_callback_;

@@ -30,6 +30,9 @@ class HostFrameSinkClient {
   virtual void OnVsync() {}
   virtual void OnVsyncReceived() {}
 #endif
+#if BUILDFLAG(IS_OHOS)
+  virtual void RestoreRenderFit() {}
+#endif
 
  protected:
   virtual ~HostFrameSinkClient() {}

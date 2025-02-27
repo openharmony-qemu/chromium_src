@@ -1440,6 +1440,12 @@ void NWebImpl::RestartCameraSession() const {
 }
 #endif // defined(OHOS_WEBRTC)
 
+void NWebImpl::MaximizeResize() {
+  if (nweb_delegate_) {
+    nweb_delegate_->MaximizeResize();
+  }
+}
+
 std::shared_ptr<NWebPreference> NWebImpl::GetPreference() {
   if (nweb_delegate_ == nullptr) {
     return nullptr;

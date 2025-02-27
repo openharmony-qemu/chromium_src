@@ -614,6 +614,7 @@ virtual int ScaleGestureChange(double scale, double centerX, double centerY) con
   virtual void JavaScriptOnHeadReadyByOrder(const ScriptItems& ScriptItems,
       const ScriptItemsByOrder& ScriptItemsByOrder) = 0;
 #endif
+  virtual void MaximizeResize() = 0;
 };
 }  // namespace OHOS::NWeb
 

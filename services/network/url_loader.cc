@@ -118,11 +118,6 @@ namespace {
 // mojo::core::Core::CreateDataPipe
 constexpr size_t kBlockedBodyAllocationSize = 1;
 
-#if BUILDFLAG(IS_OHOS_PRPP)
-const std::string SECURITY_URL =
-  "https://lfbrowsertestelbnew.hwcloudtest.cn/security/v1/oh/securityurls";
-#endif
-
 // A subclass of net::UploadBytesElementReader which owns
 // ResourceRequestBody.
 class BytesElementReader : public net::UploadBytesElementReader {
@@ -3295,8 +3290,7 @@ void URLLoader::SetUrlRequestForPRPP(
     return;
   }
   if (!request.main_url.spec().empty() &&
-      request.main_url.spec() != request.url.spec() &&
-      (request.url.spec() != SECURITY_URL)) {
+      request.main_url.spec() != request.url.spec()) {
     ohos_prp_preload::LoaderInfo loader_info {
         corb_detachable_,
         resource_type_,

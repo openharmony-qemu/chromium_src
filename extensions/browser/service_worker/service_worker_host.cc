@@ -109,7 +109,11 @@ void ServiceWorkerHost::DidStartServiceWorkerContext(
     // We can legitimately get here if the extension was already unloaded.
     return;
   }
-  CHECK(service_worker_scope.SchemeIs(kExtensionScheme) &&
+  CHECK((service_worker_scope.SchemeIs(kExtensionScheme)
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+         || service_worker_scope.SchemeIs(kArkwebExtensionScheme)
+#endif
+             ) &&
         extension_id == service_worker_scope.host_piece());
 
   ServiceWorkerTaskQueue::Get(browser_context)
@@ -137,7 +141,11 @@ void ServiceWorkerHost::DidStopServiceWorkerContext(
     // We can legitimately get here if the extension was already unloaded.
     return;
   }
-  CHECK(service_worker_scope.SchemeIs(kExtensionScheme) &&
+  CHECK((service_worker_scope.SchemeIs(kExtensionScheme)
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+         || service_worker_scope.SchemeIs(kArkwebExtensionScheme)
+#endif
+             ) &&
         extension_id == service_worker_scope.host_piece());
 
   ServiceWorkerTaskQueue::Get(browser_context)

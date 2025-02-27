@@ -225,6 +225,12 @@ void MimeHandlerViewGuest::CreateWebContents(
       ->SetZoomLevelForHostAndScheme(kExtensionScheme, stream_->extension_id(),
                                      0);
 
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  content::HostZoomMap::Get(guest_site_instance.get())
+      ->SetZoomLevelForHostAndScheme(kArkwebExtensionScheme,
+                                     stream_->extension_id(), 0);
+#endif
+
   WebContents::CreateParams params(browser_context(),
                                    guest_site_instance.get());
   params.guest_delegate = this;
@@ -242,7 +248,11 @@ void MimeHandlerViewGuest::DidAttachToEmbedder() {
   if (delegate_)
     delegate_->OnGuestAttached();
 
-  DCHECK(stream_->handler_url().SchemeIs(extensions::kExtensionScheme));
+  DCHECK(stream_->handler_url().SchemeIs(extensions::kExtensionScheme)
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+         || stream_->handler_url().SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+  );
   GetController().LoadURL(stream_->handler_url(), content::Referrer(),
                           ui::PAGE_TRANSITION_AUTO_TOPLEVEL, std::string());
   auto prefs = web_contents()->GetOrCreateWebPreferences();
@@ -471,7 +481,11 @@ void MimeHandlerViewGuest::ReadyToCommitNavigation(
     content::NavigationHandle* navigation_handle) {
 #if BUILDFLAG(ENABLE_PDF)
   const GURL& url = navigation_handle->GetURL();
-  if (url.SchemeIs(kExtensionScheme) &&
+  if ((url.SchemeIs(kExtensionScheme)
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+       || url.SchemeIs(kArkwebExtensionScheme)
+#endif
+           ) &&
       url.host_piece() == extension_misc::kPdfExtensionId) {
     // The unseasoned PDF viewer will navigate to the stream URL (using
     // PdfNavigtionThrottle), rather than using it as a subresource.

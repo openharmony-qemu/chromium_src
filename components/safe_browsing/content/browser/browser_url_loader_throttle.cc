@@ -394,7 +394,11 @@ void BrowserURLLoaderThrottle::WillRedirectRequest(
   safe_browsing::scheme_logger::LogScheme(
       original_url_,
       "SafeBrowsing.BrowserThrottle.RedirectedOriginalUrlScheme");
-  if (original_url_.SchemeIs("chrome-extension")) {
+  if (original_url_.SchemeIs("chrome-extension")
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+      || original_url_.SchemeIs("arkweb-extension")
+#endif
+  ) {
     safe_browsing::scheme_logger::LogScheme(
         redirect_info->new_url,
         "SafeBrowsing.BrowserThrottle.RedirectedExtensionUrlScheme");

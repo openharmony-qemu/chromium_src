@@ -310,7 +310,11 @@ bool AllowExtensionResourceLoad(const network::ResourceRequest& request,
 
 // Returns true if the given URL references an icon in the given extension.
 bool URLIsForExtensionIcon(const GURL& url, const Extension* extension) {
-  DCHECK(url.SchemeIs(extensions::kExtensionScheme));
+  DCHECK(url.SchemeIs(extensions::kExtensionScheme)
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+         || url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+  );
   if (!extension)
     return false;
 
@@ -743,8 +747,13 @@ class ExtensionURLLoader : public network::mojom::URLLoader {
     // resource from a sandboxed page.
     if (request_.request_initiator.has_value() &&
         request_.request_initiator->opaque() &&
-        request_.request_initiator->GetTupleOrPrecursorTupleIfOpaque()
-                .scheme() == kExtensionScheme) {
+        (request_.request_initiator->GetTupleOrPrecursorTupleIfOpaque()
+                 .scheme() == kExtensionScheme
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+         || request_.request_initiator->GetTupleOrPrecursorTupleIfOpaque()
+                    .scheme() == kArkwebExtensionScheme
+#endif
+         )) {
       // Surface opaque origin for web accessible resource verification.
       auto origin = url::Origin::Create(
           request_.request_initiator->GetTupleOrPrecursorTupleIfOpaque()
@@ -977,7 +986,11 @@ class ExtensionURLLoaderFactory : public network::SelfDeletingURLLoaderFactory {
       const net::MutableNetworkTrafficAnnotationTag& traffic_annotation)
       override {
     DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
-    DCHECK_EQ(kExtensionScheme, request.url.scheme());
+    DCHECK(kExtensionScheme == request.url.scheme()
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+           || kArkwebExtensionScheme == request.url.scheme()
+#endif
+    );
     ExtensionURLLoader::CreateAndStart(
         std::move(loader), std::move(client), request, is_web_view_request_,
         render_process_id_, browser_context_, ukm_source_id_);

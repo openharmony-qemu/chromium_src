@@ -128,7 +128,11 @@ ShellNaClBrowserDelegate::GetMapUrlToLocalFilePathCallback(
         // (GetFilePath()), so that this can be called on the IO thread. It only
         // handles a subset of the urls.
         if (!use_blocking_api) {
-          if (file_url.SchemeIs(kExtensionScheme)) {
+          if (file_url.SchemeIs(kExtensionScheme)
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+              || file_url.SchemeIs(kArkwebExtensionScheme)
+#endif
+          ) {
             std::string path = file_url.path();
             base::TrimString(path, "/", &path);  // Remove first slash
             *file_path = extension->path().AppendASCII(path);

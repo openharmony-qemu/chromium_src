@@ -43,7 +43,11 @@ ExtensionThrottleManager::MaybeCreateURLLoaderThrottle(
   // getting special handling via ShouldTreatURLSchemeAsFirstPartyWhenTopLevel,
   // which has problems. Once that's removed this should probably look at top
   // level directly instead.
-  if (request.SiteForCookies().scheme() != extensions::kExtensionScheme)
+  if (request.SiteForCookies().scheme() != extensions::kExtensionScheme
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+      && request.SiteForCookies().scheme() != extensions::kArkwebExtensionScheme
+#endif
+  )
     return nullptr;
   return std::make_unique<ExtensionURLLoaderThrottle>(this);
 }

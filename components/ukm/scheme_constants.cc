@@ -9,5 +9,7 @@ namespace ukm {
 const char kAppScheme[] = "app";
 const char kChromeUIScheme[] = "chrome";
 const char kExtensionScheme[] = "chrome-extension";
-
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+const char kArkwebExtensionScheme[] = "arkweb-extension";
+#endif
 }  // namespace ukm

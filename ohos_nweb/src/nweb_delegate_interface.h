@@ -559,6 +559,27 @@ virtual int ScaleGestureChange(double scale, double centerX, double centerY) con
       int tab_id,
       const std::vector<std::string>& changed_property_names,
       const std::string& url) = 0;
+  virtual void WebExtensionTabUpdated(
+      int tab_id,
+      const std::vector<std::string>& changed_property_names,
+      std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo) = 0;
+  virtual void WebExtensionTabActivated(
+      std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo) = 0;
+  virtual void WebExtensionTabAttached(
+      std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo) = 0;
+  virtual void WebExtensionTabDetached(
+      std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo) = 0;
+  virtual void WebExtensionTabHighlighted(int32_t tab_id,
+                                          int32_t window_id) = 0;
+  virtual void WebExtensionTabMoved(
+      int32_t tab_id,
+      std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo) = 0;
+  virtual void WebExtensionTabReplaced(int32_t addedTabId,
+                                       int32_t removedTabId) = 0;
+  virtual void WebExtensionTabZoomChange(
+      std::unique_ptr<NWebExtensionTabZoomChangeInfo> tabZoomChangeInfo) = 0;
+  virtual void WebExtensionActionClicked(std::string extension_id,
+                                         const NWebExtensionTab* tab) = 0;
 #endif
 
 #ifdef OHOS_BFCACHE

@@ -16,6 +16,10 @@
 #include "extensions/common/extension.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
 
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+#include "extensions/browser/extension_registry_info_manager.h"
+#endif // OHOS_ARKWEB_EXTENSIONS
+
 #if !BUILDFLAG(ENABLE_EXTENSIONS)
 #error "Extensions must be enabled"
 #endif
@@ -152,6 +156,8 @@ class ExtensionSystem : public KeyedService {
       const Extension* extension) = 0;
   virtual void NotifyExtensionUnLoadedFromInternal(
       const Extension* extension) = 0;
+
+  virtual ExtensionRegistryInfoManager* GetExtensionRegistryInfoManager() {return nullptr;}
 #endif
 
 };

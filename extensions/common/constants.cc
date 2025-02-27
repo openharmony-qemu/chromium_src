@@ -13,6 +13,10 @@ namespace extensions {
 
 const char kExtensionScheme[] = "chrome-extension";
 
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+const char kArkwebExtensionScheme[] = "arkweb-extension";
+#endif
+
 const base::FilePath::CharType kManifestFilename[] =
     FILE_PATH_LITERAL("manifest.json");
 const base::FilePath::CharType kDifferentialFingerprintFilename[] =

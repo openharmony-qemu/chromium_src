@@ -731,6 +731,17 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void, OnTextSelected, (), (override));
 #endif
 
+#ifdef OHOS_ARKWEB_EXTENSIONS
+  MOCK_METHOD(void, WebExtensionTabCreated, (int), (override));
+  MOCK_METHOD(void, WebExtensionTabRemoved, (int), (override));
+  MOCK_METHOD(void,
+              WebExtensionTabUpdated,
+              (int tab_id,
+              const std::vector<std::string>& changed_property_names,
+              std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo),
+              (override));
+#endif
+
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
   MOCK_METHOD(void, EnableWholeWebPageDrawing, (), (override));
   MOCK_METHOD(bool,

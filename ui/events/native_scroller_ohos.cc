@@ -12,6 +12,9 @@ constexpr float kDefaultMultiplier = 60.0f;
 constexpr float kThresholdForFlingEnd = 1.0f;
 constexpr double Epsilon = 0.001f;
 constexpr double kFriction = kDefaultFriction * kFrictionScale;
+constexpr int kStartVelocityThreshold = 1500;
+constexpr double kVelocityScale = 1.2;
+constexpr float kSlowFriction = 1.0f;
 
 inline bool NearEqual(const double left,
                       const double right) {
@@ -43,6 +46,12 @@ void NativeScrollerOhos::Fling(float start_x,
     // currently only vertical fling is supported
     init_velocity_y_ = std::abs(velocity_y);
     init_y_ = start_y;
+
+    if (init_velocity_y_ < kStartVelocityThreshold * kVelocityScale) {
+        friction_ = kSlowFriction * kFrictionScale;
+    }
+    LOG(INFO) << "DUMP_FLING_CURVE init_velocity_y_ after scale: " << init_velocity_y_
+              << ", friction_: " << friction_/kFrictionScale;
 
     float pixel_ratio = ui::GestureConfiguration::GetInstance()->virtual_pixel_ratio();
     value_threshold_ = kDefaultThreshold  * kDefaultMultiplier;

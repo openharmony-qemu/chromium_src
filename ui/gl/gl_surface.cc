@@ -93,6 +93,14 @@ gfx::SwapResult GLSurface::SwapBuffersWithBounds(
     gfx::FrameData data) {
   return gfx::SwapResult::SWAP_FAILED;
 }
+#if BUILDFLAG(IS_OHOS)
+gfx::SwapResult GLSurface::SwapBuffersWithDamage(
+    const std::vector<int>& rects,
+    PresentationCallback callback,
+    gfx::FrameData data) {
+  return gfx::SwapResult::SWAP_FAILED;
+}
+#endif
 
 gfx::SwapResult GLSurface::PostSubBuffer(int x,
                                          int y,
@@ -326,6 +334,15 @@ gfx::SwapResult GLSurfaceAdapter::SwapBuffersWithBounds(
     gfx::FrameData data) {
   return surface_->SwapBuffersWithBounds(rects, std::move(callback), data);
 }
+
+#if BUILDFLAG(IS_OHOS)
+gfx::SwapResult GLSurfaceAdapter::SwapBuffersWithDamage(
+    const std::vector<int>& rects,
+    PresentationCallback callback,
+    gfx::FrameData data) {
+  return surface_->SwapBuffersWithDamage(rects, std::move(callback), data);
+}
+#endif
 
 gfx::SwapResult GLSurfaceAdapter::PostSubBuffer(int x,
                                                 int y,

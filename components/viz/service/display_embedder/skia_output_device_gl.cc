@@ -27,6 +27,10 @@
 #include "ui/gl/gl_context.h"
 #include "ui/gl/gl_surface.h"
 #include "ui/gl/gl_version_info.h"
+#if BUILDFLAG(IS_OHOS)
+#include "base/ohos/sys_info_utils.h"
+#include "ohos_adapter_helper.h"
+#endif
 
 namespace viz {
 
@@ -147,6 +151,9 @@ SkiaOutputDeviceGL::SkiaOutputDeviceGL(
   // scRGB linear
   capabilities_.sk_color_types[static_cast<int>(gfx::BufferFormat::RGBA_F16)] =
       kRGBA_F16_SkColorType;
+#if BUILDFLAG(IS_OHOS)
+  supports_damage_region_ = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetBoolParameter("web.damageRegion.enable",0);
+#endif
 }
 
 SkiaOutputDeviceGL::~SkiaOutputDeviceGL() {
@@ -246,10 +253,36 @@ void SkiaOutputDeviceGL::Present(const absl::optional<gfx::Rect>& update_rect,
     }
   } else {
     gfx::SwapResult result;
-    if (update_rect) {
+    if (update_rect && !base::ohos::IsEmulator()) {
+#if BUILDFLAG(IS_OHOS)
+    if(supports_damage_region_){
+      result = gl_surface_->SwapBuffersWithDamage(
+        {
+         update_rect->x(),
+         gl_surface_->GetSize().height() - update_rect->y() - update_rect->height(),
+         update_rect->width(),
+         update_rect->height()
+        },
+        std::move(feedback),
+        std::move(data)
+      );
+      LOG(DEBUG)<< "Present calling SwapBuffersWithDamage [" 
+                << update_rect->x() 
+                << ", " 
+                << gl_surface_->GetSize().height() - update_rect->y() - update_rect->height()
+                << ", "  
+                << update_rect->width() 
+                << ", "
+                << update_rect->height()
+                << "]";
+    } else {
+      result = gl_surface_->SwapBuffers(std::move(feedback),std::move(data));
+    }
+#else
       result = gl_surface_->PostSubBuffer(
           update_rect->x(), update_rect->y(), update_rect->width(),
           update_rect->height(), std::move(feedback), std::move(data));
+#endif
     } else {
       result = gl_surface_->SwapBuffers(std::move(feedback), std::move(data));
     }

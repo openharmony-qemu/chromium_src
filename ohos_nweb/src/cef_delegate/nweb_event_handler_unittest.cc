@@ -542,6 +542,8 @@ class MockCefBrowserHost : public CefBrowserHost {
 
   void SetGrantFileAccessDirs(const std::vector<CefString>& dir_list) override {
   }
+
+#if defined(OHOS_ARKWEB_EXTENSIONS)
   void WebExtensionTabUpdated(
       int tab_id,
       const std::vector<CefString>& changed_property_names,

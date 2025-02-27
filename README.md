@@ -19,11 +19,11 @@ Below is the software architecture.
    
    > **NOTE**
    >
-   > There are many Chromium repositories, you can find the directory mappings in the [chromium.xml](https://gitee.com/openharmony-sig/manifest/blob/master/chromium.xml) file. The **chromium_src** repository here is an example.
+   > There are many Chromium repositories, you can find the directory mappings in the [chromium.xml](https://gitcode.com/openharmony-sig/manifest/blob/chromium/chromium.xml) file. The **chromium_src** repository here is an example.
    
 2. Download the full code.
 
-    repo init -u https://gitee.com/openharmony-tpc/manifest -b chromium -m chromium.xml --no-repo-verify
+    repo init -u https://gitcode.com/openharmony-tpc/manifest -b chromium -m chromium.xml --no-repo-verify
 
     repo sync -c
 
@@ -87,7 +87,7 @@ Below is the software architecture.
 
 9. Push the code to the remote repository.
 
-    Example: git push https://gitee.com/[giteeUserName]/chromium_src
+    Example: git push https://gitcode.com/[gitcodeUserName]/chromium_src
 
 10. Create a PR.
 

@@ -31,6 +31,8 @@ const double kMinBoostTouchScrollSpeedSquare = 150 * 150.;
 // slightly increased value to accomodate small IPC message delays.
 constexpr base::TimeDelta kFlingBoostTimeoutDelay = base::Seconds(0.05);
 
+constexpr int kStartVelocityThreshold = 1500;
+
 #if BUILDFLAG(IS_OHOS)
 const float kMaxBoostFlingSpeed = 9000;
 
@@ -76,7 +78,11 @@ gfx::Vector2dF FlingBooster::GetVelocityForFlingStart(
       "web.instructionOptimize.enable", 0)) {
     if (!base::SysInfo::IsLowEndDevice() &&
       (std::abs(fling_start.data.fling_start.velocity_y) > std::abs(fling_start.data.fling_start.velocity_x))) {
-        velocity.Scale(1.0f, 1.5f);
+        if (std::abs(fling_start.data.fling_start.velocity_y) < kStartVelocityThreshold) {
+          velocity.Scale(1.0f, 1.2f);
+        } else {
+          velocity.Scale(1.0f, 1.5f);
+        }
       }
     }
   #endif  // BUILDFLAG(IS_OHOS)

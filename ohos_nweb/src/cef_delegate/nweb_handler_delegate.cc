@@ -3890,7 +3890,7 @@ void NWebHandlerDelegate::OnRenderProcessResponding(
 }
 #endif
 
-#ifdef OHOS_NWEB_EX
+#if defined(OHOS_ARKWEB_EXTENSIONS)
 // static
 void NWebHandlerDelegate::RegisterWebExtensionApiListener(
     std::shared_ptr<NWebExtensionApiCallback> web_extension_api_listener) {\

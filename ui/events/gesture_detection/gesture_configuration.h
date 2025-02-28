@@ -261,7 +261,7 @@ class GESTURE_DETECTION_EXPORT GestureConfiguration {
   int max_touch_down_duration_for_click_in_ms_ = 800;
   float max_stylus_move_in_pixels_for_click_ = 20;
 #ifdef BUILDFLAG(IS_OHOS)
-  float max_touch_move_in_pixels_for_click_ = 3;
+  float max_touch_move_in_pixels_for_click_ = 12;
   // If this is too small, we currently can get single finger pinch zoom.  See
   // https://crbug.com/376618 for details.
   float min_scaling_span_in_pixels_ = 50;

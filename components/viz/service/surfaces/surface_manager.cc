@@ -466,6 +466,28 @@ bool SurfaceManager::SurfaceModified(const SurfaceId& surface_id,
   return false;
 }
 
+#if BUILDFLAG(IS_OHOS)
+void SurfaceManager::ReenableSwapCheck(const SurfaceId& surface_id, int width, int height) {
+  CHECK(thread_checker_.CalledOnValidThread());
+  auto it = surface_observer_map_.find(surface_id);
+  if (it == surface_observer_map_.end()) {
+    for (auto& parent : references_) {
+      if (parent.second.find(surface_id) != parent.second.end()) {
+        it = surface_observer_map_.find(parent.first);
+        break;
+      }
+    }
+  }
+  if (it != surface_observer_map_.end() && it->second) {
+    it->second->ReenableSwapCheck(width, height);
+  } else {
+    for (auto& observer : observer_list_) {
+      observer.ReenableSwapCheck(width, height);
+    }
+  }
+}
+#endif
+
 void SurfaceManager::FirstSurfaceActivation(const SurfaceInfo& surface_info) {
   CHECK(thread_checker_.CalledOnValidThread());
 

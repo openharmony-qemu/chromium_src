@@ -421,6 +421,20 @@ void HostFrameSinkManager::OnVsyncReceived(uint32_t client_id, uint32_t sink_id)
 }
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+void HostFrameSinkManager::RestoreRenderFit(uint32_t client_id, uint32_t sink_id) {
+  FrameSinkId id(client_id, sink_id);
+  auto iter = frame_sink_data_map_.find(id);
+  if (iter == frame_sink_data_map_.end()) {
+    return;
+  }
+  const FrameSinkData& data = iter->second;
+  if (data.client) {
+    data.client->RestoreRenderFit();
+  }
+}
+#endif // IS_OHOS
+
 uint32_t HostFrameSinkManager::CacheBackBufferForRootSink(
     const FrameSinkId& root_sink_id) {
   auto it = frame_sink_data_map_.find(root_sink_id);

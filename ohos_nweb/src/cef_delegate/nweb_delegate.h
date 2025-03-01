@@ -601,6 +601,8 @@ void SetSurfaceDensity(const double& density) override;
   void DispatchBeforeUnload() override;
 #endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
+void MaximizeResize() override;
+
  public:
   int argc_;
   const char** argv_;

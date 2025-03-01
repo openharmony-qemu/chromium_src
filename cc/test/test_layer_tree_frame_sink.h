@@ -136,6 +136,7 @@ class TestLayerTreeFrameSink : public LayerTreeFrameSink,
 #if BUILDFLAG(IS_OHOS)
   void TriggerVsyncImplTask() override {}
   void SetHandledTouchEvent(bool handledTouchEvent) override {}
+  void RestoreRenderFit(const viz::FrameSinkId& frame_sink_id) override {}
 #endif
 
  private:

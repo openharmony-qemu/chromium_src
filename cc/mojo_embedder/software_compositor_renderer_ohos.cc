@@ -60,6 +60,7 @@ class SoftwareDisplayClientOhos : public viz::DisplayClient {
       viz::mojom::CompositorFrameSinkType* type) override {
     return viz::BeginFrameArgs::MinInterval();
   }
+  void RestoreRenderFit(const viz::FrameSinkId& frame_sink_id) override {}
 };
 
 class SoftwareOutputDeviceOhos : public viz::SoftwareOutputDevice {

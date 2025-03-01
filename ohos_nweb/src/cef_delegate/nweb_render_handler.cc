@@ -881,6 +881,15 @@ void NWebRenderHandler::GetVisibleRectToWeb(
   handler->GetVisibleRectToWeb(visibleX, visibleY, visibleWidth, visibleHeight);
 }
 
+void NWebRenderHandler::RestoreRenderFit() {
+  auto handler = handler_.lock();
+  if (handler == nullptr) {
+    LOG(ERROR) << "can't get strong ptr with handler";
+    return;
+  }
+  handler->RestoreRenderFit();
+}
+
 // chromium内核上报的拖拽数据
 bool NWebRenderHandler::StartDragging(CefRefPtr<CefBrowser> browser,
                                       CefRefPtr<CefDragData> drag_data,

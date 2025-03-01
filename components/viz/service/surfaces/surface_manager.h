@@ -224,6 +224,10 @@ class VIZ_SERVICE_EXPORT SurfaceManager {
   void CommitFramesInRangeRecursively(const SurfaceRange& range,
                                       const CommitPredicate& predicate);
 
+#if BUILDFLAG(IS_OHOS)
+  void ReenableSwapCheck(const SurfaceId& surface_id, int width, int height);
+#endif
+
  private:
   friend class CompositorFrameSinkSupportTest;
   friend class FrameSinkManagerTest;

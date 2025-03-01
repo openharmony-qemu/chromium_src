@@ -386,6 +386,7 @@ class NWebImpl : public NWeb {
 #endif
 
   std::string GetLastJavascriptProxyCallingFrameUrl() override;
+  void MaximizeResize() override;
 
 #if defined(OHOS_INPUT_EVENTS)
   void SetVirtualKeyBoardArg(int32_t width, int32_t height, double keyboard) override;

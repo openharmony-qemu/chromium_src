@@ -24,4 +24,11 @@ void DisplaySchedulerBase::SetDamageTracker(
   damage_tracker_->AddObserver(this);
 }
 
+#if BUILDFLAG(IS_OHOS)
+void DisplaySchedulerBase::ReenableSwapCheck(int width, int height) {
+  if (client_) {
+    client_->ReenableSwapCheck(width, height);
+  }
+}
+#endif
 }  // namespace viz

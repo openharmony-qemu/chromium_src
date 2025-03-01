@@ -762,4 +762,21 @@ void RootCompositorFrameSinkImpl::TriggerVsync()
 {
   external_begin_frame_source_->TriggerVsync();
 }
+
+#if BUILDFLAG(IS_OHOS)
+void RootCompositorFrameSinkImpl::DisableSwapUntilMaximized(DisableSwapUntilMaximizedCallback callback) {
+  if (display_) {
+    display_->DisableSwapUntilMaximized();
+  }
+  if (callback) {
+    std::move(callback).Run();
+  }
+}
+
+void RootCompositorFrameSinkImpl::RestoreRenderFit(const FrameSinkId& frame_sink_id) {
+  if (support_ && support_->frame_sink_manager()) {
+    support_->frame_sink_manager()->RestoreRenderFit(frame_sink_id);
+  }
+}
+#endif
 }  // namespace viz

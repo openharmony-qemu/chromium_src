@@ -15,6 +15,13 @@ namespace content {
 
 class ChildProcess;
 
+#if BUILDFLAG(IS_OHOS)
+  void TryForReportThread();
+  int32_t GetGpuThreadId(int32_t pid);
+  int32_t GetTidListByName(int32_t pid, const std::string& thread_name);
+  bool LoadStringFromFile(const std::string& file_path, std::string& content);
+#endif
+
 // This class creates a GPU thread (instead of a GPU process), when running
 // with --in-process-gpu or --single-process.
 class InProcessGpuThread : public base::Thread {

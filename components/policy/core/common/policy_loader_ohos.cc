@@ -5,11 +5,13 @@
 #include "components/policy/core/common/policy_loader_ohos.h"
 
 #include <string>
+#include <vector>
 
 #include "base/base_paths_ohos.h"
 #include "base/files/file.h"
 #include "base/json/json_string_value_serializer.h"
 #include "base/logging.h"
+#include "base/ohos/sys_info_utils.h"
 #include "base/path_service.h"
 #include "components/policy/core/common/policy_bundle.h"
 #include "components/policy/core/common/policy_load_status.h"
@@ -20,13 +22,22 @@
 namespace policy {
 
 namespace {
-  constexpr bool kUseTestPolicies = false;
+constexpr int kApiMinApiVersion = 16;
+constexpr bool kUseTestPolicies = false;
+}  // namespace
+
+PolicyChangedEventCallback::PolicyChangedEventCallback(PolicyLoaderOhos* loader)
+    : loader_(loader) {}
+
+void PolicyChangedEventCallback::OnPolicyChanged() {
+  OnPolicyChangedImpl();
 }
 
-PolicyChangedEventCallback::PolicyChangedEventCallback(
-    PolicyLoaderOhos* loader) : loader_(loader) {}
-
 void PolicyChangedEventCallback::Changed() {
+  OnPolicyChangedImpl();
+}
+
+void PolicyChangedEventCallback::OnPolicyChangedImpl() {
   LOG(INFO) << "Recv edm policy change event and reload policy.";
   if (loader_) {
     loader_->Reload(true);
@@ -38,37 +49,75 @@ PolicyLoaderOhos::PolicyLoaderOhos(
     : AsyncPolicyLoader(task_runner, /*periodic_updates*/ false) {}
 
 PolicyLoaderOhos::~PolicyLoaderOhos() {
+  if (use_browser_policy_) {
+    policy::BrowserPolicyHandler::GetInstance()->RemoveObserver(
+        event_callback_.get());
+  } else {
     std::ignore = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-        .GetEnterpriseDeviceManagementInstance().StopObservePolicyChange();
+                      .GetEnterpriseDeviceManagementInstance()
+                      .StopObservePolicyChange();
+  }
+}
+
+void PolicyLoaderOhos::TryChoosePolicySource() {
+  if (policy_source_choosed_) {
+    return;
+  }
+
+  int api_version = base::ohos::ApplicationApiVersion();
+  LOG(INFO) << "PolicyLoaderOhos Init api version: " << api_version;
+  if (api_version < 0) {
+    LOG(ERROR) << "PolicyLoaderOhos choose source failed: invalid api_version";
+  }
+
+  policy_source_choosed_ = true;
+  if (api_version >= kApiMinApiVersion) {
+    use_browser_policy_ = true;
+  } else {
+    use_browser_policy_ = false;
+  }
 }
 
 void PolicyLoaderOhos::InitOnBackgroundThread() {
-    event_callback_ = std::make_shared<PolicyChangedEventCallback>(this);
+  event_callback_ = std::make_shared<PolicyChangedEventCallback>(this);
 
+  TryChoosePolicySource();
+
+  if (use_browser_policy_) {
+    BrowserPolicyHandler::GetInstance()->AddObserver(event_callback_.get());
+  } else {
     OHOS::NWeb::OhosAdapterHelper::GetInstance()
         .GetEnterpriseDeviceManagementInstance()
         .RegistPolicyChangeEventCallback(event_callback_);
 
     std::ignore = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-        .GetEnterpriseDeviceManagementInstance().StartObservePolicyChange();
+                      .GetEnterpriseDeviceManagementInstance()
+                      .StartObservePolicyChange();
+  }
 }
 
 PolicyBundle PolicyLoaderOhos::Load() {
-  std::string policies;
-  int32_t error_code = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                           .GetEnterpriseDeviceManagementInstance()
-                           .GetPolicies(policies);
-  LOG(INFO) << "GetPolicies error_code:" << error_code
-            << ", policies:" << policies;
+  TryChoosePolicySource();
 
-  if (kUseTestPolicies) {
-    policies = ReadTestPolices();
-    LOG(INFO) << "ReadTestPolices policies:" << policies;
+  if (use_browser_policy_) {
+    return policy::BrowserPolicyHandler::GetInstance()->GetPolicyBundle();
+  } else {
+    std::string policies;
+    int32_t error_code = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                             .GetEnterpriseDeviceManagementInstance()
+                             .GetPolicies(policies);
+    LOG(INFO) << "GetPolicies error_code:" << error_code
+              << ", policies:" << policies;
+
+    if (kUseTestPolicies) {
+      policies = ReadTestPolices();
+      LOG(INFO) << "ReadTestPolices policies:" << policies;
+    }
+
+    PolicyBundle bundle;
+    std::ignore = ParsePolicy(policies, &bundle);
+    return bundle;
   }
-
-  PolicyBundle bundle;
-  LoadOhosPolicy(policies, &bundle);
-  return bundle;
 }
 
 std::string PolicyLoaderOhos::ReadTestPolices() {
@@ -91,8 +140,8 @@ std::string PolicyLoaderOhos::ReadTestPolices() {
   }
 
   auto buffer_str = std::string_view(buffer.data(), buffer.size());
-  auto json = base::JSONReader::Read(
-      buffer_str, base::JSON_ALLOW_TRAILING_COMMAS);
+  auto json =
+      base::JSONReader::Read(buffer_str, base::JSON_ALLOW_TRAILING_COMMAS);
   if (!json.has_value()) {
     LOG(INFO) << "Read test_polices.json failed as invalid json format.";
     return "";
@@ -101,8 +150,9 @@ std::string PolicyLoaderOhos::ReadTestPolices() {
   return std::string(buffer_str);
 }
 
-void PolicyLoaderOhos::LoadOhosPolicy(const std::string& json,
-                                      PolicyBundle* bundle) {
+// static
+bool PolicyLoaderOhos::ParsePolicy(const std::string& json,
+                                   PolicyBundle* bundle) {
   /* policy json demo
   "InsecurePrivateNetworkRequestsAllowed": {
     "level": "mandatory",
@@ -111,7 +161,8 @@ void PolicyLoaderOhos::LoadOhosPolicy(const std::string& json,
     "value": true
   }*/
   if (bundle == nullptr) {
-    return;
+    LOG(WARNING) << "Null bundle given, parse failed";
+    return false;
   }
 
   base::Value::Dict dictionary_value;
@@ -121,7 +172,7 @@ void PolicyLoaderOhos::LoadOhosPolicy(const std::string& json,
       deserializer.Deserialize(/*error_code=*/nullptr, &error_msg);
   if (!json_value) {
     LOG(WARNING) << "Unable to deserialize json data. error_msg: " << error_msg;
-    return;
+    return false;
   }
 
   if (json_value->type() == base::Value::Type::DICT) {
@@ -170,7 +221,7 @@ void PolicyLoaderOhos::LoadOhosPolicy(const std::string& json,
                       POLICY_SCOPE_MACHINE, POLICY_SOURCE_PLATFORM);
   bundle->Get(PolicyNamespace(POLICY_DOMAIN_CHROME, std::string()))
       .MergeFrom(policy_map);
-  return;
+  return true;
 }
 
 }  // namespace policy

@@ -680,6 +680,9 @@ class NWebImpl : public NWeb {
  void DispatchBeforeUnload();
 #endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
+#if defined(OHOS_EDM_POLICY)
+  static void SetEnterprisePolicy(const std::string& policy, int version);
+#endif
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

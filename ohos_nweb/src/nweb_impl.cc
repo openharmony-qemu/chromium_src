@@ -184,6 +184,10 @@ extern bool g_siteIsolationMode;
 #include "components/embedder_support/user_agent_utils.h"
 #endif
 
+#if defined(OHOS_EDM_POLICY)
+#include "components/policy/core/common/policy_loader_ohos.h"
+#endif
+
 #include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
 
 #include "net/proxy_resolution/proxy_config_service_ohos.h"
@@ -4119,3 +4123,11 @@ void NWebImpl::RemoveProxyOverride(std::shared_ptr<NWebProxyChangedCallback> cal
         [](std::shared_ptr<NWebProxyChangedCallback> napiCallback) {napiCallback->OnChanged();},
           std::move(callback)));
 }
+
+#if defined(OHOS_EDM_POLICY)
+// static
+void NWebImpl::SetEnterprisePolicy(const std::string& policy, int version) {
+  policy::BrowserPolicyHandler::GetInstance()->SetPolicyAndNotify(policy,
+                                                                  version);
+}
+#endif

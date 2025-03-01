@@ -379,6 +379,7 @@ class NWebDelegateInterface
 #endif
   virtual void ScrollToWithAnime(float x, float y, int32_t duration) = 0;
   virtual void ScrollByWithAnime(float delta_x, float delta_y, int32_t duration) = 0;
+  virtual bool SendKeyboardEvent(const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent>& keyboardEvent) = 0;
 #endif  // defined(OHOS_INPUT_EVENTS)
 
 #if defined(OHOS_EX_FORCE_ZOOM)

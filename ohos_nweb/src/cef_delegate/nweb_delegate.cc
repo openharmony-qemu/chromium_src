@@ -2861,6 +2861,14 @@ void NWebDelegate::WebSendTouchpadFlingEvent(double x,
   }
 }
 
+bool NWebDelegate::SendKeyboardEvent(const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent>& keyboardEvent) {
+  bool retVal = false;
+  if (event_handler_ != nullptr) {
+    retVal = event_handler_->SendKeyboardEvent(keyboardEvent);
+  }
+  return retVal;
+}
+
 bool NWebDelegate::ScrollByWithResult(float delta_x, float delta_y) {
   if (handler_delegate_ == nullptr) {
     LOG(ERROR) << "handler_delegate_ is nullptr , ScrollByWithResult fail";

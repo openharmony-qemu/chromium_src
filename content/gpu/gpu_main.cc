@@ -531,14 +531,10 @@ bool StartSandboxWindows(const sandbox::SandboxInterfaceInfo* sandbox_info) {
 
 #if BUILDFLAG(IS_OHOS)
 void TryForReportThread() {
-
-  
-
-  
-
-  auto pid = base::GetCurrentProcId(); 吧
+  using namespace OHOS::NWeb;
+  auto pid = base::GetCurrentProcId();
   int32_t tid = GetTidListByName(pid, "gpu-work-server");
-  if (tid < 0) { 
+  if (tid < 0) {
     tid = GetTidListByName(pid, "mali-cmar-backe");
   }
   if(tid > 0) {

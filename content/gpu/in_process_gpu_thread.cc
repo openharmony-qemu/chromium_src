@@ -16,6 +16,12 @@
 #include "gpu/ipc/service/gpu_init.h"
 #include "media/gpu/buildflags.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include <fstream>
+#include <dirent.h>
+#include "res_sched_client_adapter.h"
+#endif
+
 #if BUILDFLAG(USE_VAAPI)
 #include "media/gpu/vaapi/vaapi_wrapper.h"
 #endif

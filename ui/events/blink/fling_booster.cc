@@ -4,7 +4,9 @@
 
 #include "ui/events/blink/fling_booster.h"
 
+#include <cmath>
 #include "base/trace_event/trace_event.h"
+#include "base/strings/string_number_conversions.h"
 #include "ui/events/blink/blink_features.h"
 
 #if BUILDFLAG(IS_OHOS)
@@ -30,6 +32,16 @@ const double kMinBoostTouchScrollSpeedSquare = 150 * 150.;
 // are received. The default value on Android native views is 40ms, but we use a
 // slightly increased value to accomodate small IPC message delays.
 constexpr base::TimeDelta kFlingBoostTimeoutDelay = base::Seconds(0.05);
+
+constexpr double Epsilon = 0.001f;
+
+inline bool NearEqual(const double left, const double right) {
+    return (std::abs(left - right) <= Epsilon);
+}
+
+inline bool NearZero(const double num) {
+    return NearEqual(num, 0.0);
+}
 
 constexpr int kStartVelocityThreshold = 1500;
 
@@ -78,11 +90,15 @@ gfx::Vector2dF FlingBooster::GetVelocityForFlingStart(
       "web.instructionOptimize.enable", 0)) {
     if (!base::SysInfo::IsLowEndDevice() &&
       (std::abs(fling_start.data.fling_start.velocity_y) > std::abs(fling_start.data.fling_start.velocity_x))) {
+        std::string ret =
+          OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetScrollVelocityScale();
+        double velocityScaleTmp = 0.0;
+        base::StringToDouble(ret, &velocityScaleTmp);
+        double velocityScale = 1.5f;
         if (std::abs(fling_start.data.fling_start.velocity_y) < kStartVelocityThreshold) {
-          velocity.Scale(1.0f, 1.2f);
-        } else {
-          velocity.Scale(1.0f, 1.5f);
+          velocityScale = 1.2f;
         }
+        velocity.Scale(1.0f, NearZero(velocityScaleTmp) ? velocityScale : velocityScaleTmp);
       }
     }
   #endif  // BUILDFLAG(IS_OHOS)

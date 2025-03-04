@@ -30,6 +30,11 @@
 #include "third_party/blink/public/common/permissions/permission_utils.h"
 #include "third_party/blink/public/common/service_worker/service_worker_status_code.h"
 
+#ifdef OHOS_NOTIFICATION
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif // OHOS_NOTIFICATION
+
 namespace content {
 
 namespace {
@@ -124,7 +129,16 @@ void BlinkNotificationServiceImpl::GetPermissionStatus(
     return;
   }
 
+#ifdef OHOS_NOTIFICATION
+  if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(
+      switches::kEnableNwebEx)) {
+    CheckPermissionStatusAsync(std::move(callback));
+  } else {
+    std::move(callback).Run(CheckPermissionStatus());
+  }
+#else
   std::move(callback).Run(CheckPermissionStatus());
+#endif // OHOS_NOTIFICATION
 }
 
 void BlinkNotificationServiceImpl::OnConnectionError() {
@@ -397,5 +411,38 @@ void BlinkNotificationServiceImpl::DidGetNotifications(
 
   std::move(callback).Run(std::move(ids), std::move(datas));
 }
+
+#ifdef OHOS_NOTIFICATION
+void BlinkNotificationServiceImpl::CheckPermissionStatusAsync(
+    GetPermissionStatusCallback callback) {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+
+  // TODO(crbug.com/987654): It is odd that a service instance can be created
+  // for cross-origin subframes, yet the instance is completely oblivious of
+  // whether it is serving a top-level browsing context or an embedded one.
+  if (creator_type_ ==
+      RenderProcessHost::NotificationServiceCreatorType::kDocument) {
+    RenderFrameHost* rfh = weak_document_ptr_.AsRenderFrameHostIfValid();
+    if (!rfh) {
+      std::move(callback).Run(blink::mojom::PermissionStatus::DENIED);
+      return;
+    }
+    browser_context_->GetPermissionController()
+        ->GetPermissionStatusAsync(
+            blink::PermissionType::NOTIFICATIONS, true, (void*)rfh,
+            rfh->GetLastCommittedOrigin(), std::move(callback));
+  } else {
+    RenderProcessHost* rph = RenderProcessHost::FromID(render_process_host_id_);
+    if (!rph) {
+      std::move(callback).Run(blink::mojom::PermissionStatus::DENIED);
+      return;
+    }
+    browser_context_->GetPermissionController()
+        ->GetPermissionStatusAsync(
+            blink::PermissionType::NOTIFICATIONS, false, (void*)rph,
+            storage_key_.origin(), std::move(callback));
+  }
+}
+#endif // OHOS_NOTIFICATION
 
 }  // namespace content

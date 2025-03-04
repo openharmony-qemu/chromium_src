@@ -53,6 +53,9 @@ bool DoesURLHaveValidScheme(const GURL& url) {
 #if BUILDFLAG(ENABLE_EXTENSIONS)
           url.SchemeIs(extensions::kExtensionScheme) ||
 #endif
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+          url.SchemeIs(extensions::kArkwebExtensionScheme) ||
+#endif
           url.SchemeIs(url::kDataScheme));
 }
 

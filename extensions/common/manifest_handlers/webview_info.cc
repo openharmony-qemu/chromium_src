@@ -185,7 +185,11 @@ bool WebviewHandler::Parse(Extension* extension, std::u16string* error) {
             InstallWarning(std::move(warning), keys::kWebview));
         continue;
       }
-      URLPattern pattern(URLPattern::SCHEME_EXTENSION);
+      URLPattern pattern(URLPattern::SCHEME_EXTENSION
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+                         | URLPattern::SCHEME_ARKWEB_EXTENSION
+#endif
+      );
       if (pattern.Parse(pattern_url.spec()) !=
           URLPattern::ParseResult::kSuccess) {
         // NOTE: Warning instead of error because there are existing apps that

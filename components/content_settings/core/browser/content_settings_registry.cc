@@ -89,26 +89,38 @@ void ContentSettingsRegistry::Init() {
       ContentSettingsInfo::INHERIT_IN_INCOGNITO,
       ContentSettingsInfo::EXCEPTIONS_ON_SECURE_AND_INSECURE_ORIGINS);
 
-  Register(ContentSettingsType::IMAGES, "images", CONTENT_SETTING_ALLOW,
-           WebsiteSettingsInfo::SYNCABLE,
-           /*allowlisted_schemes=*/
-           {kChromeUIScheme, kChromeDevToolsScheme, kExtensionScheme},
-           /*valid_settings=*/{CONTENT_SETTING_ALLOW, CONTENT_SETTING_BLOCK},
-           WebsiteSettingsInfo::TOP_ORIGIN_WITH_RESOURCE_EXCEPTIONS_SCOPE,
-           WebsiteSettingsRegistry::DESKTOP,
-           ContentSettingsInfo::INHERIT_IN_INCOGNITO,
-           ContentSettingsInfo::EXCEPTIONS_ON_SECURE_AND_INSECURE_ORIGINS);
+  Register(
+      ContentSettingsType::IMAGES, "images", CONTENT_SETTING_ALLOW,
+      WebsiteSettingsInfo::SYNCABLE,
+      /*allowlisted_schemes=*/
+      {
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+        kArkwebExtensionScheme,
+#endif
+            kChromeUIScheme, kChromeDevToolsScheme, kExtensionScheme
+      },
+      /*valid_settings=*/{CONTENT_SETTING_ALLOW, CONTENT_SETTING_BLOCK},
+      WebsiteSettingsInfo::TOP_ORIGIN_WITH_RESOURCE_EXCEPTIONS_SCOPE,
+      WebsiteSettingsRegistry::DESKTOP,
+      ContentSettingsInfo::INHERIT_IN_INCOGNITO,
+      ContentSettingsInfo::EXCEPTIONS_ON_SECURE_AND_INSECURE_ORIGINS);
 
-  Register(ContentSettingsType::JAVASCRIPT, "javascript", CONTENT_SETTING_ALLOW,
-           WebsiteSettingsInfo::SYNCABLE,
-           /*allowlisted_schemes=*/
-           {kChromeUIScheme, kChromeDevToolsScheme, kExtensionScheme},
-           /*valid_settings=*/{CONTENT_SETTING_ALLOW, CONTENT_SETTING_BLOCK},
-           WebsiteSettingsInfo::TOP_ORIGIN_WITH_RESOURCE_EXCEPTIONS_SCOPE,
-           WebsiteSettingsRegistry::DESKTOP |
-               WebsiteSettingsRegistry::PLATFORM_ANDROID,
-           ContentSettingsInfo::INHERIT_IN_INCOGNITO,
-           ContentSettingsInfo::EXCEPTIONS_ON_SECURE_AND_INSECURE_ORIGINS);
+  Register(
+      ContentSettingsType::JAVASCRIPT, "javascript", CONTENT_SETTING_ALLOW,
+      WebsiteSettingsInfo::SYNCABLE,
+      /*allowlisted_schemes=*/
+      {
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+        kArkwebExtensionScheme,
+#endif
+            kChromeUIScheme, kChromeDevToolsScheme, kExtensionScheme
+      },
+      /*valid_settings=*/{CONTENT_SETTING_ALLOW, CONTENT_SETTING_BLOCK},
+      WebsiteSettingsInfo::TOP_ORIGIN_WITH_RESOURCE_EXCEPTIONS_SCOPE,
+      WebsiteSettingsRegistry::DESKTOP |
+          WebsiteSettingsRegistry::PLATFORM_ANDROID,
+      ContentSettingsInfo::INHERIT_IN_INCOGNITO,
+      ContentSettingsInfo::EXCEPTIONS_ON_SECURE_AND_INSECURE_ORIGINS);
 
   Register(ContentSettingsType::GET_DISPLAY_MEDIA_SET_SELECT_ALL_SCREENS,
            "get-display-media-set-select-all-screens", CONTENT_SETTING_BLOCK,
@@ -119,15 +131,21 @@ void ContentSettingsRegistry::Init() {
            ContentSettingsInfo::INHERIT_IF_LESS_PERMISSIVE,
            ContentSettingsInfo::EXCEPTIONS_ON_SECURE_AND_INSECURE_ORIGINS);
 
-  Register(ContentSettingsType::POPUPS, "popups", CONTENT_SETTING_BLOCK,
-           WebsiteSettingsInfo::SYNCABLE,
-           /*allowlisted_schemes=*/
-           {kChromeUIScheme, kChromeDevToolsScheme, kExtensionScheme},
-           /*valid_settings=*/{CONTENT_SETTING_ALLOW, CONTENT_SETTING_BLOCK},
-           WebsiteSettingsInfo::TOP_ORIGIN_ONLY_SCOPE,
-           WebsiteSettingsRegistry::ALL_PLATFORMS,
-           ContentSettingsInfo::INHERIT_IN_INCOGNITO,
-           ContentSettingsInfo::EXCEPTIONS_ON_SECURE_AND_INSECURE_ORIGINS);
+  Register(
+      ContentSettingsType::POPUPS, "popups", CONTENT_SETTING_BLOCK,
+      WebsiteSettingsInfo::SYNCABLE,
+      /*allowlisted_schemes=*/
+      {
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+        kArkwebExtensionScheme,
+#endif
+            kChromeUIScheme, kChromeDevToolsScheme, kExtensionScheme
+      },
+      /*valid_settings=*/{CONTENT_SETTING_ALLOW, CONTENT_SETTING_BLOCK},
+      WebsiteSettingsInfo::TOP_ORIGIN_ONLY_SCOPE,
+      WebsiteSettingsRegistry::ALL_PLATFORMS,
+      ContentSettingsInfo::INHERIT_IN_INCOGNITO,
+      ContentSettingsInfo::EXCEPTIONS_ON_SECURE_AND_INSECURE_ORIGINS);
 
   Register(ContentSettingsType::GEOLOCATION, "geolocation", CONTENT_SETTING_ASK,
            WebsiteSettingsInfo::UNSYNCABLE, /*allowlisted_schemes=*/{},
@@ -174,17 +192,23 @@ void ContentSettingsRegistry::Init() {
            ContentSettingsInfo::INHERIT_IF_LESS_PERMISSIVE,
            ContentSettingsInfo::EXCEPTIONS_ON_SECURE_ORIGINS_ONLY);
 
-  Register(ContentSettingsType::AUTOMATIC_DOWNLOADS, "automatic-downloads",
-           CONTENT_SETTING_ASK, WebsiteSettingsInfo::SYNCABLE,
-           /*allowlisted_schemes=*/
-           {kChromeUIScheme, kChromeDevToolsScheme, kExtensionScheme},
-           /*valid_settings=*/
-           {CONTENT_SETTING_ALLOW, CONTENT_SETTING_BLOCK, CONTENT_SETTING_ASK},
-           WebsiteSettingsInfo::REQUESTING_ORIGIN_ONLY_SCOPE,
-           WebsiteSettingsRegistry::DESKTOP |
-               WebsiteSettingsRegistry::PLATFORM_ANDROID,
-           ContentSettingsInfo::INHERIT_IN_INCOGNITO,
-           ContentSettingsInfo::EXCEPTIONS_ON_SECURE_ORIGINS_ONLY);
+  Register(
+      ContentSettingsType::AUTOMATIC_DOWNLOADS, "automatic-downloads",
+      CONTENT_SETTING_ASK, WebsiteSettingsInfo::SYNCABLE,
+      /*allowlisted_schemes=*/
+      {
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+        kArkwebExtensionScheme,
+#endif
+            kChromeUIScheme, kChromeDevToolsScheme, kExtensionScheme
+      },
+      /*valid_settings=*/
+      {CONTENT_SETTING_ALLOW, CONTENT_SETTING_BLOCK, CONTENT_SETTING_ASK},
+      WebsiteSettingsInfo::REQUESTING_ORIGIN_ONLY_SCOPE,
+      WebsiteSettingsRegistry::DESKTOP |
+          WebsiteSettingsRegistry::PLATFORM_ANDROID,
+      ContentSettingsInfo::INHERIT_IN_INCOGNITO,
+      ContentSettingsInfo::EXCEPTIONS_ON_SECURE_ORIGINS_ONLY);
 
   // TODO(raymes): We're temporarily making midi sysex unsyncable while we roll
   // out the kPermissionDelegation feature. We may want to make it syncable

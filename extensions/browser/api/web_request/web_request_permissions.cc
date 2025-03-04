@@ -44,6 +44,9 @@ bool HasWebRequestScheme(const GURL& url) {
   return (url.SchemeIs(url::kAboutScheme) || url.SchemeIs(url::kFileScheme) ||
           url.SchemeIs(url::kFileSystemScheme) ||
           url.SchemeIs(url::kFtpScheme) || url.SchemeIsHTTPOrHTTPS() ||
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+          url.SchemeIs(extensions::kArkwebExtensionScheme) ||
+#endif
           url.SchemeIs(extensions::kExtensionScheme) || url.SchemeIsWSOrWSS() ||
           url.SchemeIs(url::kUuidInPackageScheme));
 }

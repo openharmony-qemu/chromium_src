@@ -72,7 +72,11 @@ bool SandboxedPageHandler::Parse(Extension* extension, std::u16string* error) {
       return false;
     }
     std::string relative_path = list[i].GetString();
-    URLPattern pattern(URLPattern::SCHEME_EXTENSION);
+    URLPattern pattern(URLPattern::SCHEME_EXTENSION
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+                       | URLPattern::SCHEME_ARKWEB_EXTENSION
+#endif
+    );
     if (pattern.Parse(extension->url().spec()) !=
         URLPattern::ParseResult::kSuccess) {
       *error = ErrorUtils::FormatErrorMessageUTF16(

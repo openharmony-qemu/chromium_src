@@ -24,6 +24,7 @@
 #include "nweb_value_convert.h"
 
 #include "base/command_line.h"
+#include "base/check.h"
 #include "base/ohos/sys_info_utils.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/task/thread_pool.h"
@@ -4381,6 +4382,7 @@ void NWebDelegate::SetPathAllowingUniversalAccess(
 #endif
 
 #ifdef OHOS_ARKWEB_EXTENSIONS
+
 void NWebDelegate::WebExtensionTabCreated(int tab_id){
   LOG(INFO) << "WebExtensionTabCreated:" << tab_id;
   if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
@@ -4419,6 +4421,113 @@ void NWebDelegate::WebExtensionTabUpdated(int tab_id,
   });
   return GetBrowser()->GetHost()->WebExtensionTabUpdated(
       tab_id, changed_properties, url);
+}
+
+void NWebDelegate::WebExtensionTabUpdated(int tab_id,
+    const std::vector<std::string>& changed_property_names,
+    std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo) {
+  LOG(INFO) << "WebExtensionTabUpdated:" << tab_id;
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "WebExtensionTabUpdated failed, get browser failed";
+    return;
+  }
+  GetBrowser()->SetTabId(tab_id);
+
+  std::vector<CefString> changed_properties;
+  std::for_each(changed_property_names.begin(), changed_property_names.end(),
+      [&changed_properties] (const std::string& name) {
+    changed_properties.emplace_back(CefString(name));
+  });
+  return GetBrowser()->GetHost()->WebExtensionTabUpdated(
+      tab_id, changed_properties, std::move(changeInfo));
+}
+
+void NWebDelegate::WebExtensionTabActivated(
+    std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo) {
+  LOG(INFO) << "WebExtensionTabActivated, tab_id: "
+            << activeInfo->tabId << " windowId: " << activeInfo->windowId;
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "WebExtensionTabActivated failed, get browser failed";
+    return;
+  }
+  return GetBrowser()->GetHost()->WebExtensionTabActivated(activeInfo->tabId, activeInfo->windowId);
+}
+
+void NWebDelegate::WebExtensionTabAttached(
+    std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo) {
+  LOG(INFO) << "WebExtensionTabAttached, newPosition: "
+            << attachInfo->newPosition
+            << " newWindowId: " << attachInfo->newWindowId;
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "WebExtensionTabAttached failed, get browser failed";
+    return;
+  }
+}
+
+void NWebDelegate::WebExtensionTabDetached(
+    std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo) {
+  LOG(INFO) << "WebExtensionTabDetached, oldPosition: "
+            << detachInfo->oldPosition
+            << " oldWindowId: " << detachInfo->oldWindowId;
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "WebExtensionTabDetached failed, get browser failed";
+    return;
+  }
+}
+
+void NWebDelegate::WebExtensionTabHighlighted(int32_t tab_id,
+                                              int32_t window_id) {
+  LOG(INFO) << "WebExtensionTabHighlighted, tab_id: " << tab_id
+            << " windowId: " << window_id;
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "WebExtensionTabHighlighted failed, get browser failed";
+    return;
+  }
+}
+
+void NWebDelegate::WebExtensionTabMoved(
+    int32_t tab_id,
+    std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo) {
+  LOG(INFO) << "WebExtensionTabMoved, tab_id: " << tab_id
+            << " from: " << moveInfo->fromIndex << " to: " << moveInfo->toIndex
+            << "window id: " << moveInfo->windowId;
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "WebExtensionTabMoved failed, get browser failed";
+    return;
+  }
+}
+
+void NWebDelegate::WebExtensionTabReplaced(int32_t addedTabId,
+                                           int32_t removedTabId) {
+  LOG(INFO) << "WebExtensionTabReplaced, addedTabId: " << addedTabId
+            << " removedTabId: " << removedTabId;
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "WebExtensionTabReplaced failed, get browser failed";
+    return;
+  }
+}
+
+void NWebDelegate::WebExtensionTabZoomChange(
+    std::unique_ptr<NWebExtensionTabZoomChangeInfo> tabZoomChangeInfo) {
+  LOG(INFO) << "WebExtensionTabZoomChange, tab_id: "
+            << tabZoomChangeInfo->tabId
+            << " newZoomFactor: " << tabZoomChangeInfo->newZoomFactor
+            << " oldZoomFactor: " << tabZoomChangeInfo->oldZoomFactor;
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "WebExtensionTabZoomChange failed, get browser failed";
+    return;
+  }
+}
+
+void NWebDelegate::WebExtensionActionClicked(std::string extensionId,
+                                             const NWebExtensionTab* tab) {
+  LOG(DEBUG) << "NWebDelegate WebExtensionActionClicked";
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "ActionClicked failed, get browser failed";
+    return;
+  }
+
+  GetBrowser()->GetHost()->WebExtensionActionClicked(extensionId, tab);
 }
 #endif
 

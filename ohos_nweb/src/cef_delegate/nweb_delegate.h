@@ -575,6 +575,27 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       int tab_id,
       const std::vector<std::string>& changed_property_names,
       const std::string& url) override;
+  void WebExtensionTabUpdated(
+      int tab_id,
+      const std::vector<std::string>& changed_property_names,
+      std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo) override;
+  void WebExtensionTabActivated(
+      std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo) override;
+  void WebExtensionTabAttached(
+      std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo) override;
+  void WebExtensionTabDetached(
+      std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo) override;
+  void WebExtensionTabHighlighted(int32_t tab_id, int32_t window_id) override;
+  void WebExtensionTabMoved(
+      int32_t tab_id,
+      std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo) override;
+  void WebExtensionTabReplaced(int32_t addedTabId,
+                               int32_t removedTabId) override;
+  void WebExtensionTabZoomChange(std::unique_ptr<NWebExtensionTabZoomChangeInfo>
+                                     tabZoomChangeInfo) override;
+
+  void WebExtensionActionClicked(std::string extensionId,
+                                 const NWebExtensionTab* tab) override;
 #endif
 
 #ifdef OHOS_BFCACHE

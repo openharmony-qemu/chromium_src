@@ -130,6 +130,9 @@ bool IsLocalFile(const GURL& url) {
   return url.SchemeIsFile() || url.SchemeIsFileSystem() ||
          url.SchemeIs(url::kContentScheme) ||
          url.SchemeIs(url::kContentIDScheme) ||
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+         url.SchemeIs("arkweb-extension") ||
+#endif
          url.SchemeIs("chrome-extension");
 }
 #endif

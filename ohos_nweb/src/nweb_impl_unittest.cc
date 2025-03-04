@@ -394,6 +394,13 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void, ClosePort, (const std::string& portHandle), (override));
 
   MOCK_METHOD(void,
+              PostWebMessage,
+              (int tab_id,
+              const std::vector<std::string>& changed_property_names,
+              std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo),
+              (override));
+
+  MOCK_METHOD(void,
               PostPortMessage,
               (const std::string& portHandle,
                std::shared_ptr<NWebMessage> data),
@@ -728,6 +735,17 @@ class MockNWebDelegate : public NWebDelegateInterface {
 
 #ifdef OHOS_AI
   MOCK_METHOD(void, OnTextSelected, (), (override));
+#endif
+
+#ifdef OHOS_ARKWEB_EXTENSIONS
+  MOCK_METHOD(void, WebExtensionTabCreated, (int), (override));
+  MOCK_METHOD(void, WebExtensionTabRemoved, (int), (override));
+  MOCK_METHOD(void,
+              WebExtensionTabUpdated,
+              (int tab_id,
+              const std::vector<std::string>& changed_property_names,
+              std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo),
+              (override));
 #endif
 
 #if defined(OHOS_SOFTWARE_COMPOSITOR)

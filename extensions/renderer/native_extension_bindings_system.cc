@@ -108,6 +108,29 @@ struct BindingsSystemPerContextData : public base::SupportsUserData::Data {
   base::WeakPtr<NativeExtensionBindingsSystem> bindings_system;
 };
 
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+void CreateChromeAlias(v8::Local<v8::Context> context,
+                       v8::Local<v8::Object> chrome_object,
+                       std::string alias_name) {
+  v8::Local<v8::String> alias_string =
+      gin::StringToSymbol(context->GetIsolate(), alias_name);
+  v8::Local<v8::Value> alias_value;
+
+  if (!context->Global()->Get(context, alias_string).ToLocal(&alias_value)) {
+    LOG(ERROR) << "extension chrome alias " << alias_name << " get failed";
+  }
+  if (alias_value->IsUndefined()) {
+    v8::Maybe<bool> success = context->Global()->CreateDataProperty(
+        context, alias_string, chrome_object);
+    if (!success.IsJust() || !success.FromJust()) {
+      LOG(ERROR) << "extension chrome alias '" << alias_name
+                 << "' create failed";
+    }
+    LOG(INFO) << "extension chrome alias " << alias_name << " create succeeded";
+  }
+}
+#endif
+
 // If a 'chrome' property exists on the context's global and is an object,
 // returns that.
 // If a 'chrome' property exists but isn't an object, returns an empty Local.
@@ -151,6 +174,9 @@ v8::Local<v8::Object> GetOrCreateChrome(v8::Local<v8::Context> context) {
     if (obj->GetCreationContextChecked() == context)
       chrome_object = obj;
   }
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  CreateChromeAlias(context, chrome_object, "browser");
+#endif
 
   return chrome_object;
 }

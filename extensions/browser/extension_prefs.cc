@@ -587,6 +587,9 @@ void ExtensionPrefs::DeleteExtensionPrefs(const std::string& extension_id) {
     observer.OnExtensionPrefsDeleted(extension_id);
   prefs::ScopedDictionaryPrefUpdate update(prefs_, pref_names::kExtensions);
   update->Remove(extension_id);
+#ifdef OHOS_ARKWEB_EXTENSIONS
+  prefs_->CommitPendingWrite();
+#endif // OHOS_ARKWEB_EXTENSIONS
 }
 
 void ExtensionPrefs::DeleteExtensionPrefsIfPrefEmpty(

@@ -526,7 +526,8 @@ class ChildProcessSecurityPolicyImpl::SecurityState {
       return HasPermissionsForContentUri(file, permissions);
 #endif
 #if defined(OHOS_FILE_UPLOAD)
-    if (file.IsDataShareUri()) {
+    auto bundleName = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetBundleName();
+    if (file.IsDataShareUri(bundleName)) {
       return HasPermissionsForDatashareUri(file, permissions);
     }
 #endif

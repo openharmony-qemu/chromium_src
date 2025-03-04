@@ -1411,7 +1411,10 @@ bool FilePath::IsContentUri() const {
 #endif
 
 #ifdef OHOS_FILE_UPLOAD
-bool FilePath::IsDataShareUri() const {
+bool FilePath::IsDataShareUri(std::string bundleName) const {
+  if (!bundleName.empty()) {
+    SetBundleName(bundleName);
+  }
   return StartsWith(path_, "datashare://",
                     base::CompareCase::INSENSITIVE_ASCII) ||
          StartsWith(path_, "dataability://",
@@ -1419,6 +1422,8 @@ bool FilePath::IsDataShareUri() const {
          StartsWith(path_, "file://media/",
                     base::CompareCase::INSENSITIVE_ASCII) ||
          StartsWith(path_, "file://docs/",
+                    base::CompareCase::INSENSITIVE_ASCII) ||
+         StartsWith(path_, "file://" + bundleName_ + "/",
                     base::CompareCase::INSENSITIVE_ASCII);
 }
 

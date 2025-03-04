@@ -74,6 +74,10 @@ class MEDIA_EXPORT Renderer {
   // be run only prior to returning.
   virtual void Initialize(MediaResource* media_resource,
                           RendererClient* client,
+#ifdef OHOS_VIDEO_ASSISTANT
+                          RequestSurfaceCB request_surface_cb,
+                          VideoDecoderChangedCB decoder_changed_cb,
+#endif // OHOS_VIDEO_ASSISTANT
                           PipelineStatusCallback init_cb) = 0;
 
 #if BUILDFLAG(IS_OHOS)
@@ -185,6 +189,9 @@ class MEDIA_EXPORT Renderer {
 
   virtual void SetPlaybackRateWithReason(double playback_rate, ActionReason reason) {}
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+#ifdef OHOS_VIDEO_ASSISTANT
+  virtual void SetVideoSurface(int32_t surface_id) {}
+#endif // OHOS_VIDEO_ASSISTANT
 };
 
 }  // namespace media

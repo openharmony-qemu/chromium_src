@@ -44,6 +44,10 @@ DecryptingRenderer::~DecryptingRenderer() {}
 // Encrypted  Other         InitializeRenderer()
 void DecryptingRenderer::Initialize(MediaResource* media_resource,
                                     RendererClient* client,
+#ifdef OHOS_VIDEO_ASSISTANT
+                                    RequestSurfaceCB request_surface_cb,
+                                    VideoDecoderChangedCB decoder_changed_cb,
+#endif // OHOS_VIDEO_ASSISTANT
                                     PipelineStatusCallback init_cb) {
   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
   DCHECK(media_resource);
@@ -55,6 +59,11 @@ void DecryptingRenderer::Initialize(MediaResource* media_resource,
   media_resource_ = media_resource;
   client_ = client;
   init_cb_ = std::move(init_cb);
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  request_surface_cb_ = std::move(request_surface_cb);
+  decoder_changed_cb_ = std::move(decoder_changed_cb);
+#endif // OHOS_VIDEO_ASSISTANT
 
   bool has_encrypted_stream = HasEncryptedStream();
 
@@ -187,6 +196,10 @@ void DecryptingRenderer::InitializeRenderer(bool success) {
       decrypting_media_resource_ ? decrypting_media_resource_.get()
                                  : media_resource_.get();
   renderer_->Initialize(maybe_decrypting_media_resource, client_,
+#ifdef OHOS_VIDEO_ASSISTANT
+                        std::move(request_surface_cb_),
+                        std::move(decoder_changed_cb_),
+#endif // OHOS_VIDEO_ASSISTANT
                         std::move(init_cb_));
 }
 

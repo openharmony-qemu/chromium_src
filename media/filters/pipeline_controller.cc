@@ -37,6 +37,10 @@ void PipelineController::Start(Pipeline::StartType start_type,
                                Demuxer* demuxer,
                                Pipeline::Client* client,
                                bool is_streaming,
+#ifdef OHOS_VIDEO_ASSISTANT
+                               RequestSurfaceCB request_surface_cb,
+                               VideoDecoderChangedCB decoder_changed_cb,
+#endif // OHOS_VIDEO_ASSISTANT
                                bool is_static) {
   DCHECK(thread_checker_.CalledOnValidThread());
   DCHECK_EQ(state_, State::STOPPED);
@@ -52,6 +56,10 @@ void PipelineController::Start(Pipeline::StartType start_type,
   is_streaming_ = is_streaming;
   is_static_ = is_static;
   pipeline_->Start(start_type, demuxer, client,
+#ifdef OHOS_VIDEO_ASSISTANT
+                   std::move(request_surface_cb),
+                   std::move(decoder_changed_cb),
+#endif // OHOS_VIDEO_ASSISTANT
                    base::BindOnce(&PipelineController::OnPipelineStatus,
                                   weak_factory_.GetWeakPtr(),
                                   start_type == Pipeline::StartType::kNormal
@@ -93,13 +101,22 @@ void PipelineController::Suspend() {
   }
 }
 
-void PipelineController::Resume() {
+void PipelineController::Resume(
+#ifdef OHOS_VIDEO_ASSISTANT
+        RequestSurfaceCB request_surface_cb,
+        VideoDecoderChangedCB decoder_changed_cb
+#endif // OHOS_VIDEO_ASSISTANT
+    ) {
   DCHECK(thread_checker_.CalledOnValidThread());
   pending_suspend_ = false;
   // TODO(sandersd) fix resume during suspended start.
   if (state_ == State::SUSPENDING || state_ == State::SUSPENDED ||
       (state_ == State::SWITCHING_TRACKS &&
        previous_track_change_state_ == State::SUSPENDED)) {
+#ifdef OHOS_VIDEO_ASSISTANT
+    pending_surface_request_cb_ = std::move(request_surface_cb);
+    pending_decoder_changed_cb_ = std::move(decoder_changed_cb);
+#endif // OHOS_VIDEO_ASSISTANT
     pending_resume_ = true;
     Dispatch();
     return;
@@ -258,8 +275,13 @@ void PipelineController::Dispatch() {
     state_ = State::RESUMING;
     before_resume_cb_.Run();
     pipeline_->Resume(
-        seek_time_, base::BindOnce(&PipelineController::OnPipelineStatus,
-                                   weak_factory_.GetWeakPtr(), State::PLAYING));
+        seek_time_,
+#ifdef OHOS_VIDEO_ASSISTANT
+        std::move(pending_surface_request_cb_),
+        std::move(pending_decoder_changed_cb_),
+#endif // OHOS_VIDEO_ASSISTANT
+        base::BindOnce(&PipelineController::OnPipelineStatus,
+                       weak_factory_.GetWeakPtr(), State::PLAYING));
     return;
   }
 

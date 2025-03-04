@@ -631,6 +631,9 @@ void AudioRendererImpl::OnDeviceInfoReceived(
       stream,
       base::BindOnce(&AudioRendererImpl::OnAudioDecoderStreamInitialized,
                      weak_factory_.GetWeakPtr()),
+#ifdef OHOS_VIDEO_ASSISTANT
+      VideoDecoderChangedCB(),
+#endif // OHOS_VIDEO_ASSISTANT
       cdm_context,
       base::BindRepeating(&AudioRendererImpl::OnStatisticsUpdate,
                           weak_factory_.GetWeakPtr()),
@@ -638,7 +641,12 @@ void AudioRendererImpl::OnDeviceInfoReceived(
                           weak_factory_.GetWeakPtr()));
 }
 
+#ifdef OHOS_VIDEO_ASSISTANT
+void AudioRendererImpl::OnAudioDecoderStreamInitialized(
+    bool success, bool, std::string) {
+#else
 void AudioRendererImpl::OnAudioDecoderStreamInitialized(bool success) {
+#endif // OHOS_VIDEO_ASSISTANT
   DVLOG(1) << __func__ << ": " << success;
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
   base::AutoLock auto_lock(lock_);

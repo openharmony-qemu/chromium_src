@@ -35,6 +35,10 @@
 #include "mojo/public/cpp/bindings/self_owned_receiver.h"
 #include "mojo/public/cpp/bindings/shared_remote.h"
 
+#ifdef OHOS_VIDEO_ASSISTANT
+#include "gpu/ipc/common/nweb_native_window_tracker.h"
+#endif // OHOS_VIDEO_ASSISTANT
+
 namespace media {
 
 // Provides a thread-safe channel for VideoFrame destruction events.
@@ -482,5 +486,14 @@ void MojoVideoDecoder::Stop() {
   if (reset_cb_)
     std::move(reset_cb_).Run();
 }
+
+#ifdef OHOS_VIDEO_ASSISTANT
+void MojoVideoDecoder::SetVideoSurface(int32_t widget_id) {
+  if (has_connection_error_) {
+    return;
+  }
+  remote_decoder_->SetVideoSurface(widget_id);
+}
+#endif // OHOS_VIDEO_ASSISTANT
 
 }  // namespace media

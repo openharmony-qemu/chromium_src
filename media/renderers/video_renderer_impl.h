@@ -73,6 +73,10 @@ class MEDIA_EXPORT VideoRendererImpl
   void Initialize(DemuxerStream* stream,
                   CdmContext* cdm_context,
                   RendererClient* client,
+#ifdef OHOS_VIDEO_ASSISTANT
+                  RequestSurfaceCB request_surface_cb,
+                  VideoDecoderChangedCB decoder_changed_cb,
+#endif // OHOS_VIDEO_ASSISTANT
                   const TimeSource::WallClockTimeCB& wall_clock_time_cb,
                   PipelineStatusCallback init_cb) override;
   void Flush(base::OnceClosure callback) override;
@@ -100,7 +104,13 @@ class MEDIA_EXPORT VideoRendererImpl
 
  private:
   // Callback for |video_decoder_stream_| initialization.
+#ifdef OHOS_VIDEO_ASSISTANT
+  void OnVideoDecoderStreamInitialized(bool success,
+                                       bool support_video_suface,
+                                       std::string decoder_name);
+#else
   void OnVideoDecoderStreamInitialized(bool success);
+#endif // OHOS_VIDEO_ASSISTANT
 
   void FinishInitialization(PipelineStatus status);
   void FinishFlush();
@@ -212,6 +222,10 @@ class MEDIA_EXPORT VideoRendererImpl
   // called on |task_runner_|.
   void AttemptReadAndCheckForMetadataChanges(VideoPixelFormat pixel_format,
                                              const gfx::Size& natural_size);
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  void OnRequestVideoSurfaceDone(int surface_id);
+#endif // OHOS_VIDEO_ASSISTANT
 
   scoped_refptr<base::SequencedTaskRunner> task_runner_;
 
@@ -364,6 +378,11 @@ class MEDIA_EXPORT VideoRendererImpl
   // |algorithm_->average_frame_duration()| fluctuates, but we only want to emit
   // one MEDIA_LOG.
   bool is_latency_hint_media_logged_ = false;
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  RequestSurfaceCB request_surface_cb_;
+  VideoDecoderChangedCB decoder_changed_cb_;
+#endif // OHOS_VIDEO_ASSISTANT
 
   // NOTE: Weak pointers must be invalidated before all other member variables.
   base::WeakPtrFactory<VideoRendererImpl> weak_factory_{this};

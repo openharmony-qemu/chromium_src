@@ -13,6 +13,10 @@
 #include "ohos_adapter_helper.h"
 #include "ohos_glue/base/include/ark_web_errno.h"
 
+#ifdef OHOS_VIDEO_ASSISTANT
+#include "gpu/ipc/common/nweb_native_window_tracker.h"
+#endif // OHOS_VIDEO_ASSISTANT
+
 namespace media {
 
 constexpr int QUEUE_SIZE = 3;
@@ -239,8 +243,9 @@ void OHOSMediaPlayerBridge::Pause() {
   if ((player_ && player_state_ != OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_STARTED &&
                   player_state_ != OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_PAUSED &&
                   player_state_ != OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_STOPPED &&
+                  player_state_ != OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_PREPARED &&
                   player_state_ != OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_PLAYBACK_COMPLETE) || pending_play_) {
-    LOG(INFO) << "OHOSMediaPlayerBridge Pause when perpared!!";
+    LOG(INFO) << "OHOSMediaPlayerBridge Pause when perpared, player_state_ is:" << static_cast<int32_t>(player_state_);
     pause_when_prepared_ = true;
   }
   if (player_ && player_state_ == OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_STARTED) {
@@ -468,8 +473,12 @@ void OHOSMediaPlayerBridge::OnPlayerStateUpdate(
     }
 
     if (pending_play_) {
+      LOG(INFO) << "OnPlayerStateUpdate PLAYER_PREPARED, pending_play_";
       StartInternal();
       pending_play_ = false;
+    } else if (pause_when_prepared_) {
+      LOG(INFO) << "OnPlayerStateUpdate PLAYER_PREPARED, no pending_play then pause_when_prepared is false";
+      pause_when_prepared_ = false;
     }
   } else if (player_state ==
                  OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_STATE_ERROR ||
@@ -536,6 +545,23 @@ void OHOSMediaPlayerBridge::OnBufferAvailable(
 }
 
 void OHOSMediaPlayerBridge::OnVideoSizeChanged(int32_t width, int32_t height) {
+#ifdef OHOS_VIDEO_ASSISTANT
+  video_width_ = width;
+  video_height_ = height;
+  if (pending_new_surface_id_ > 0 && video_width_ > 0 && video_height_ > 0) {
+    pending_new_surface_id_ = -1;
+    void* native_window =
+        NWebNativeWindowTracker::Get()->GetNativeWindow(new_surface_id_);
+    if (native_window) {
+      int32_t ret = player_->SetVideoSurfaceNew(native_window);
+      if (ret != 0) {
+        LOG(ERROR) << "SetVideoSurfaceNew error::ret = " << ret
+          << ", new_surface_id_ = " << new_surface_id_
+          << ", native_window = " << native_window;
+      }
+    }
+  }
+#endif // OHOS_VIDEO_ASSISTANT
   if (client_) {
     client_->OnVideoSizeChanged(width, height);
   }
@@ -568,4 +594,48 @@ int32_t OHOSMediaPlayerBridge::SetFdSource(const std::string& path) {
 bool OHOSMediaPlayerBridge::IsAudible(float volume) {
   return volume > 0;
 }
+
+#ifdef OHOS_VIDEO_ASSISTANT
+void OHOSMediaPlayerBridge::SetVideoSurface(int32_t surface_id) {
+  if (surface_id > 0) {
+    SetVideoSurfaceNew(surface_id);
+  } else {
+    SetVideoSurfaceOld();
+  }
+}
+
+void OHOSMediaPlayerBridge::SetVideoSurfaceNew(int32_t surface_id) {
+  LOG(INFO) << "SetVideoSurfaceNew(" << surface_id << "), new_surface_id_["
+            << new_surface_id_ << "], player_[" << player_.get() << "]";
+  if (new_surface_id_ == surface_id) {
+    return;
+  }
+  if (new_surface_id_ > 0) {
+    NWebNativeWindowTracker::Get()->DestroyNativeWindow(new_surface_id_);
+    new_surface_id_ = -1;
+  }
+  new_surface_id_ = surface_id;
+  void* native_window = nullptr;
+  if (player_ && video_width_ > 0 && video_height_ > 0) {
+    native_window = NWebNativeWindowTracker::Get()->GetNativeWindow(surface_id);
+  } else {
+    if (!player_) {
+      Prepare();
+    }
+  }
+  if (native_window) {
+    player_->SetVideoSurfaceNew(native_window);
+  } else {
+    pending_new_surface_id_ = new_surface_id_;
+  }
+}
+
+void OHOSMediaPlayerBridge::SetVideoSurfaceOld() {
+  if (new_surface_id_ > 0) {
+    NWebNativeWindowTracker::Get()->DestroyNativeWindow(new_surface_id_);
+    new_surface_id_ = -1;
+  }
+  player_->SetVideoSurface(consumer_surface_);
+}
+#endif // OHOS_VIDEO_ASSISTANT
 }  // namespace media

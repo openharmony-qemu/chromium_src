@@ -835,6 +835,7 @@ class WebContents : public PageNavigator,
 #if defined(OHOS_VIDEO_ASSISTANT)
   virtual void EnableVideoAssistant(bool enable) = 0;
   virtual void ExecuteVideoAssistantFunction(const std::string& cmdId) = 0;
+  virtual void CustomWebMediaPlayer(bool enable) = 0;
 #endif  // defined(OHOS_VIDEO_ASSISTANT)
 
 #if defined(OHOS_MEDIA_POLICY)

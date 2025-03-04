@@ -462,6 +462,20 @@ component("nweb_sources") {
   deps += [
     "//ohos_glue:ohos_adapter_glue_source",
   ]
+
+  #ifdef OHOS_VIDEO_ASSISTANT
+  if (defined(ohos_video_assistant) && ohos_video_assistant) {
+    sources += [
+      "src/capi/common/common.h",
+      "src/capi/nweb_media_player_controller.h",
+      "src/capi/nweb_media_player_listener.h",
+      "src/cef_delegate/nweb_media_player_for_vast.cc",
+      "src/cef_delegate/nweb_media_player_for_vast.h",
+      "src/video_assistant/nweb_media_player_controller_impl.cc",
+      "src/video_assistant/nweb_media_player_controller_impl.h",
+    ]
+  }
+  #endif OHOS_VIDEO_ASSISTANT
 }
 
 #################################################

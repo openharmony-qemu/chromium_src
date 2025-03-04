@@ -87,6 +87,9 @@ class MEDIA_MOJO_EXPORT MojoRendererService final : public mojom::Renderer,
   void SetPlaybackRateWithReason(double playback_rate,
       mojom::ActionReason reason) override;
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+#ifdef OHOS_VIDEO_ASSISTANT
+  void SetVideoSurface(int32_t surface_id) override;
+#endif // OHOS_VIDEO_ASSISTANT
 
  private:
   enum State {

@@ -123,6 +123,10 @@ class MediaCodecDecoderBridgeImpl {
   int32_t GetConfigWidth() const { return width_; }
   int32_t GetConfigHeight() const { return height_; }
 
+#ifdef OHOS_VIDEO_ASSISTANT
+  DecoderAdapterCode SetVideoSurface(int32_t widget_id);
+#endif // OHOS_VIDEO_ASSISTANT
+
  private:
   MediaCodecDecoderBridgeImpl(const std::string codec_type,
                               base::RepeatingClosure on_buffers_available_cb =
@@ -149,6 +153,11 @@ class MediaCodecDecoderBridgeImpl {
   scoped_refptr<base::SequencedTaskRunner> decoder_task_runner_ = nullptr;
   int32_t width_;
   int32_t height_;
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  void* window_from_surface_ = nullptr;
+  int32_t video_surface_id_ = -1;
+#endif // OHOS_VIDEO_ASSISTANT
 };
 
 }  // namespace media

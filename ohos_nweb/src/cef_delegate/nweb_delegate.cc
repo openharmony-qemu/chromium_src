@@ -4250,6 +4250,19 @@ void NWebDelegate::ExecuteVideoAssistantFunction(const std::string& cmd_id) {
 
   GetBrowser()->GetHost()->ExecuteVideoAssistantFunction(cmd_id);
 }
+
+void NWebDelegate::CustomWebMediaPlayer(bool enable) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    if (!handler_delegate_) {
+      LOG(ERROR) << "failed to enable custom web media player, handler delegate is null";
+      return;
+    }
+    handler_delegate_->CustomWebMediaPlayer(enable);
+    return;
+  }
+
+  GetBrowser()->GetHost()->CustomWebMediaPlayer(enable);
+}
 #endif  // defined(OHOS_VIDEO_ASSISTANT)
 
 #if defined(OHOS_CLIPBOARD)

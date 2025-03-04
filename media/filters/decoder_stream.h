@@ -53,7 +53,11 @@ class MEDIA_EXPORT DecoderStream {
       base::RepeatingCallback<std::vector<std::unique_ptr<Decoder>>()>;
 
   // Indicates completion of a DecoderStream initialization.
+#ifdef OHOS_VIDEO_ASSISTANT
+  using InitCB = base::OnceCallback<void(bool success, bool, std::string)>;
+#else
   using InitCB = base::OnceCallback<void(bool success)>;
+#endif // OHOS_VIDEO_ASSISTANT
 
   // Indicates completion of a DecoderStream read.
   using ReadResult = DecoderStatus::Or<scoped_refptr<Output>>;
@@ -71,6 +75,9 @@ class MEDIA_EXPORT DecoderStream {
   // stream is not encrypted.
   void Initialize(DemuxerStream* stream,
                   InitCB init_cb,
+#ifdef OHOS_VIDEO_ASSISTANT
+                  VideoDecoderChangedCB decoder_changed_cb,
+#endif // OHOS_VIDEO_ASSISTANT
                   CdmContext* cdm_context,
                   StatisticsCB statistics_cb,
                   WaitingCB waiting_cb);
@@ -153,6 +160,10 @@ class MEDIA_EXPORT DecoderStream {
       base::PassKey<class VideoDecoderStreamTest>) {
     return decoder_selector_;
   }
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  void SetVideoSurface(int surface_id);
+#endif // OHOS_VIDEO_ASSISTANT
 
  private:
   enum State {
@@ -311,6 +322,10 @@ class MEDIA_EXPORT DecoderStream {
   bool encryption_type_reported_ = false;
 
   int fallback_buffers_being_decoded_ = 0;
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  VideoDecoderChangedCB decoder_changed_cb_;
+#endif // OHOS_VIDEO_ASSISTANT
 
   // NOTE: Weak pointers must be invalidated before all other member variables.
   base::WeakPtrFactory<DecoderStream<StreamType>> weak_factory_{this};

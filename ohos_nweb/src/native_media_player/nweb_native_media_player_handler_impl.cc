@@ -14,11 +14,13 @@ void NWebNativeMediaPlayerHandlerImpl::HandleStatusChanged(PlaybackStatus status
     listener_->OnStatusChanged(static_cast<uint32_t>(status));
   }
 }
+
 void NWebNativeMediaPlayerHandlerImpl::HandleVolumeChanged(double volume) {
   if (listener_) {
     listener_->OnVolumeChanged(volume);
   }
 }
+
 void NWebNativeMediaPlayerHandlerImpl::HandleMutedChanged(bool muted) {
   if (listener_) {
     listener_->OnMutedChanged(muted);

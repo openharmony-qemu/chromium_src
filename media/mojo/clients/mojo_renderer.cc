@@ -19,6 +19,9 @@
 #include "media/mojo/clients/mojo_demuxer_stream_impl.h"
 #include "media/mojo/common/media_type_converters.h"
 #include "media/renderers/video_overlay_factory.h"
+#ifdef OHOS_VIDEO_ASSISTANT
+#include "base/task/bind_post_task.h"
+#endif // OHOS_VIDEO_ASSISTANT
 
 namespace media {
 
@@ -44,6 +47,10 @@ MojoRenderer::~MojoRenderer() {
 
 void MojoRenderer::Initialize(MediaResource* media_resource,
                               media::RendererClient* client,
+#ifdef OHOS_VIDEO_ASSISTANT
+                              RequestSurfaceCB request_surface_cb,
+                              VideoDecoderChangedCB decoder_changed_cb,
+#endif // OHOS_VIDEO_ASSISTANT
                               PipelineStatusCallback init_cb) {
   DVLOG(1) << __func__;
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
@@ -58,6 +65,11 @@ void MojoRenderer::Initialize(MediaResource* media_resource,
 
   media_resource_ = media_resource;
   init_cb_ = std::move(init_cb);
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  request_surface_cb_ = std::move(request_surface_cb);
+  decoder_changed_cb_ = std::move(decoder_changed_cb);
+#endif // OHOS_VIDEO_ASSISTANT
 
   switch (media_resource_->GetType()) {
     case MediaResource::Type::STREAM:
@@ -388,6 +400,16 @@ void MojoRenderer::OnInitialized(media::RendererClient* client, bool success) {
     // It'd be nice to provide this before Initialize(), but that causes some
     // MojoRenderer implementations to crash.
     SetVolume(volume_);
+
+#ifdef OHOS_VIDEO_ASSISTANT
+    if (!request_surface_cb_.is_null()) {
+      SurfaceCreatedCB surface_create_CB = base::BindPostTaskToCurrentDefault(
+          base::BindRepeating(&MojoRenderer::OnRequestVideoSurfaceDone,
+                              weak_factory_.GetWeakPtr()));
+      std::move(request_surface_cb_).Run(
+          std::move(surface_create_CB), true, "MojoRenderer");
+    }
+#endif  // OHOS_VIDEO_ASSISTANT
   }
 
   std::move(init_cb_).Run(success ? PIPELINE_OK
@@ -495,5 +517,12 @@ void MojoRenderer::SetPlaybackRateWithReason(double playback_rate,
   }
 }
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+#ifdef OHOS_VIDEO_ASSISTANT
+void MojoRenderer::OnRequestVideoSurfaceDone(int32_t surface_id) {
+  LOG(INFO) << "OnRequestVideoSurfaceDone(" << surface_id << ")";
+  remote_renderer_->SetVideoSurface(surface_id);
+}
+#endif // OHOS_VIDEO_ASSISTANT
 
 }  // namespace media

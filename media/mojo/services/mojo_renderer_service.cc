@@ -88,6 +88,10 @@ void MojoRendererService::Initialize(
   media_resource_->SetHeaders(media_url_params->headers);
   renderer_->Initialize(
       media_resource_.get(), this,
+#ifdef OHOS_VIDEO_ASSISTANT
+      media::RequestSurfaceCB(),
+      media::VideoDecoderChangedCB(),
+#endif // OHOS_VIDEO_ASSISTANT
       base::BindOnce(&MojoRendererService::OnRendererInitializeDone, weak_this_,
                      std::move(callback)));
 }
@@ -231,6 +235,10 @@ void MojoRendererService::OnAllStreamsReady(
 
   renderer_->Initialize(
       media_resource_.get(), this,
+#ifdef OHOS_VIDEO_ASSISTANT
+      media::RequestSurfaceCB(),
+      media::VideoDecoderChangedCB(),
+#endif // OHOS_VIDEO_ASSISTANT
       base::BindOnce(&MojoRendererService::OnRendererInitializeDone, weak_this_,
                      std::move(callback)));
 }
@@ -344,4 +352,10 @@ void MojoRendererService::SetPlaybackRateWithReason(double playback_rate,
     static_cast<ActionReason>(reason));
 }
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+#ifdef OHOS_VIDEO_ASSISTANT
+void MojoRendererService::SetVideoSurface(int32_t surface_id) {
+  renderer_->SetVideoSurface(surface_id);
+}
+#endif // OHOS_VIDEO_ASSISTANT
 }  // namespace media

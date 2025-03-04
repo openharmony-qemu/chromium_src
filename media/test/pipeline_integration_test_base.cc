@@ -294,6 +294,10 @@ PipelineStatus PipelineIntegrationTestBase::StartInternal(
   base::RunLoop run_loop;
   pipeline_->Start(
       Pipeline::StartType::kNormal, demuxer_.get(), this,
+#ifdef OHOS_VIDEO_ASSISTANT
+      RequestSurfaceCB(),
+      VideoDecoderChangedCB(),
+#endif // OHOS_VIDEO_ASSISTANT
       base::BindOnce(&PipelineIntegrationTestBase::OnStatusCallback,
                      base::Unretained(this), run_loop.QuitClosure()));
   RunUntilQuitOrEndedOrError(&run_loop);
@@ -385,6 +389,10 @@ bool PipelineIntegrationTestBase::Resume(base::TimeDelta seek_time) {
   EXPECT_CALL(*this, OnBufferingStateChange(BUFFERING_HAVE_ENOUGH, _))
       .WillOnce(InvokeWithoutArgs(&run_loop, &base::RunLoop::Quit));
   pipeline_->Resume(seek_time,
+#ifdef OHOS_VIDEO_ASSISTANT
+                    RequestSurfaceCB(),
+                    VideoDecoderChangedCB(),
+#endif // OHOS_VIDEO_ASSISTANT
                     base::BindOnce(&PipelineIntegrationTestBase::OnSeeked,
                                    base::Unretained(this), seek_time));
   RunUntilQuitOrError(&run_loop);
@@ -679,6 +687,10 @@ PipelineStatus PipelineIntegrationTestBase::StartPipelineWithMediaSource(
 
   pipeline_->Start(
       Pipeline::StartType::kNormal, demuxer_.get(), this,
+#ifdef OHOS_VIDEO_ASSISTANT
+      RequestSurfaceCB(),
+      VideoDecoderChangedCB(),
+#endif // OHOS_VIDEO_ASSISTANT
       base::BindOnce(&PipelineIntegrationTestBase::OnStatusCallback,
                      base::Unretained(this), run_loop.QuitClosure()));
 

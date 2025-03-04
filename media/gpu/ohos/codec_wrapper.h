@@ -49,11 +49,20 @@ class MEDIA_GPU_EXPORT CodecOutputBuffer {
 
   const gfx::ColorSpace& color_space() const { return color_space_; }
 
+#ifdef OHOS_VIDEO_ASSISTANT
+  bool RenderVideoView() {
+    return render_video_view_;
+  }
+#endif // OHOS_VIDEO_ASSISTANT
+
  private:
   friend class CodecWrapperImpl;
   CodecOutputBuffer(scoped_refptr<CodecWrapperImpl> codec,
                     int64_t id,
                     const gfx::Size& size,
+#ifdef OHOS_VIDEO_ASSISTANT
+                    bool render_video_view,
+#endif // OHOS_VIDEO_ASSISTANT
                     const gfx::ColorSpace& color_space);
 
   scoped_refptr<CodecWrapperImpl> codec_;
@@ -61,6 +70,9 @@ class MEDIA_GPU_EXPORT CodecOutputBuffer {
   bool was_rendered_ = false;
   gfx::Size size_;
   base::OnceClosure render_cb_;
+#ifdef OHOS_VIDEO_ASSISTANT
+  bool render_video_view_ = false;
+#endif // OHOS_VIDEO_ASSISTANT
   gfx::ColorSpace color_space_;
 };
 
@@ -91,6 +103,10 @@ class MEDIA_GPU_EXPORT CodecWrapper {
   bool Flush();
 
   bool SetSurface(scoped_refptr<CodecSurfaceBundle> surface_bundle);
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  void SetVideoSurface(int32_t widget_id);
+#endif // OHOS_VIDEO_ASSISTANT
 
   scoped_refptr<CodecSurfaceBundle> SurfaceBundle();
 

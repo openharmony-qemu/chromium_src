@@ -179,6 +179,10 @@ class PipelineImplTest : public ::testing::Test {
       Pipeline::StartType start_type = Pipeline::StartType::kNormal) {
     EXPECT_CALL(callbacks_, OnWaiting(_)).Times(0);
     pipeline_->Start(start_type, demuxer_.get(), &callbacks_,
+#ifdef OHOS_VIDEO_ASSISTANT
+                     RequestSurfaceCB(),
+                     VideoDecoderChangedCB(),
+#endif // OHOS_VIDEO_ASSISTANT
                      base::BindOnce(&CallbackHelper::OnStart,
                                     base::Unretained(&callbacks_)));
   }
@@ -324,8 +328,13 @@ class PipelineImplTest : public ::testing::Test {
   }
 
   void DoResume(const base::TimeDelta& seek_time) {
-    pipeline_->Resume(seek_time, base::BindOnce(&CallbackHelper::OnResume,
-                                                base::Unretained(&callbacks_)));
+    pipeline_->Resume(seek_time,
+#ifdef OHOS_VIDEO_ASSISTANT
+                      RequestSurfaceCB(),
+                      VideoDecoderChangedCB(),
+#endif // OHOS_VIDEO_ASSISTANT
+                      base::BindOnce(&CallbackHelper::OnResume,
+                                     base::Unretained(&callbacks_)));
     base::RunLoop().RunUntilIdle();
   }
 
@@ -551,6 +560,10 @@ TEST_F(PipelineImplTest, EncryptedStream_SetCdmAfterStart) {
       .WillOnce(RunClosure(run_loop.QuitClosure()));
   pipeline_->Start(
       Pipeline::StartType::kNormal, demuxer_.get(), &callbacks_,
+#ifdef OHOS_VIDEO_ASSISTANT
+      RequestSurfaceCB(),
+      VideoDecoderChangedCB(),
+#endif // OHOS_VIDEO_ASSISTANT
       base::BindOnce(&CallbackHelper::OnStart, base::Unretained(&callbacks_)));
   run_loop.Run();
 

@@ -202,7 +202,12 @@ class FrameInfoHelperImpl : public FrameInfoHelper,
       auto& request = requests_.front();
       if (!request.buffer_renderer) {
         std::move(request.callback).Run(nullptr, FrameInfo());
+#ifdef OHOS_VIDEO_ASSISTANT
+      } else if (!request.buffer_renderer->texture_owner() ||
+            request.buffer_renderer->RenderVideoView()) {
+#else
       } else if (!request.buffer_renderer->texture_owner()) {
+#endif // OHOS_VIDEO_ASSISTANT
         auto info =
             GetFrameInfoWithVisibleSize(request.buffer_renderer->size());
         std::move(request.callback)

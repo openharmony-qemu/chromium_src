@@ -27,6 +27,20 @@
 
 namespace media {
 
+#ifdef OHOS_VIDEO_ASSISTANT
+namespace {
+template<typename T>
+bool SupportVideoSurface(const T& decoder_type) {
+  return false;
+}
+template<>
+bool SupportVideoSurface(const VideoDecoderType& decoder_type) {
+  return decoder_type == VideoDecoderType::kMediaCodec ||
+         decoder_type == VideoDecoderType::kOHOS;
+}
+}
+#endif // OHOS_VIDEO_ASSISTANT
+
 #define FUNCTION_DVLOG(level) \
   DVLOG(level) << __func__ << "<" << GetStreamTypeString() << ">"
 
@@ -123,8 +137,14 @@ DecoderStream<StreamType>::~DecoderStream() {
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
 
   if (init_cb_) {
+#ifdef OHOS_VIDEO_ASSISTANT
+    task_runner_->PostTask(FROM_HERE,
+                           base::BindOnce(std::move(init_cb_),
+                                          false, false, "No Decoder"));
+#else
     task_runner_->PostTask(FROM_HERE,
                            base::BindOnce(std::move(init_cb_), false));
+#endif // OHOS_VIDEO_ASSISTANT
   }
   if (read_cb_) {
     read_cb_ = base::BindPostTaskToCurrentDefault(std::move(read_cb_));
@@ -148,6 +168,9 @@ std::string DecoderStream<StreamType>::GetStreamTypeString() {
 template <DemuxerStream::Type StreamType>
 void DecoderStream<StreamType>::Initialize(DemuxerStream* stream,
                                            InitCB init_cb,
+#ifdef OHOS_VIDEO_ASSISTANT
+                                           VideoDecoderChangedCB decoder_changed_cb,
+#endif // OHOS_VIDEO_ASSISTANT
                                            CdmContext* cdm_context,
                                            StatisticsCB statistics_cb,
                                            WaitingCB waiting_cb) {
@@ -161,6 +184,9 @@ void DecoderStream<StreamType>::Initialize(DemuxerStream* stream,
   init_cb_ = std::move(init_cb);
   cdm_context_ = cdm_context;
   statistics_cb_ = std::move(statistics_cb);
+#ifdef OHOS_VIDEO_ASSISTANT
+  decoder_changed_cb_ = std::move(decoder_changed_cb);
+#endif // OHOS_VIDEO_ASSISTANT
 
   // Make a copy here since it's also passed to |decoder_selector_| below.
   waiting_cb_ = waiting_cb;
@@ -409,7 +435,11 @@ void DecoderStream<StreamType>::OnDecoderSelected(
       state_ = STATE_UNINITIALIZED;
       MEDIA_LOG(ERROR, media_log_)
           << GetStreamTypeString() << " decoder initialization failed";
+#ifdef OHOS_VIDEO_ASSISTANT
+      std::move(init_cb_).Run(false, false, "No Decoder");
+#else
       std::move(init_cb_).Run(false);
+#endif // OHOS_VIDEO_ASSISTANT
       // Node that |decoder_or_error| is not actually lost in this case, as
       // DecoderSelector is keeping track of it to use in case there are no
       // successfully initialized decoders.
@@ -447,6 +477,13 @@ void DecoderStream<StreamType>::OnDecoderSelected(
       << traits_->GetDecoderConfig(stream_).AsHumanReadableString();
 
   if (state_ == STATE_REINITIALIZING_DECODER) {
+#ifdef OHOS_VIDEO_ASSISTANT
+    if (decoder_changed_cb_) {
+      decoder_changed_cb_.Run(
+        SupportVideoSurface(decoder_->GetDecoderType()),
+        GetDecoderName(decoder_->GetDecoderType()));
+    }
+#endif // OHOS_VIDEO_ASSISTANT
     CompleteDecoderReinitialization(OkStatus());
     return;
   }
@@ -455,7 +492,13 @@ void DecoderStream<StreamType>::OnDecoderSelected(
   state_ = STATE_NORMAL;
   if (StreamTraits::NeedsBitstreamConversion(decoder_.get()))
     stream_->EnableBitstreamConverter();
+#ifdef OHOS_VIDEO_ASSISTANT
+  std::move(init_cb_).Run(true,
+      SupportVideoSurface(decoder_->GetDecoderType()),
+      GetDecoderName(decoder_->GetDecoderType()));
+#else
   std::move(init_cb_).Run(true);
+#endif // OHOS_VIDEO_ASSISTANT
 }
 
 template <DemuxerStream::Type StreamType>
@@ -1088,6 +1131,13 @@ void DecoderStream<StreamType>::ReportEncryptionType(
   traits_->SetEncryptionType(encryption_type);
   traits_->ReportStatistics(statistics_cb_, 0);
 }
+
+#ifdef OHOS_VIDEO_ASSISTANT
+template <DemuxerStream::Type StreamType>
+void DecoderStream<StreamType>::SetVideoSurface(int surface_id) {
+  traits_->SetVideoSurface(decoder_.get(), surface_id);
+}
+#endif // OHOS_VIDEO_ASSISTANT
 
 template class DecoderStream<DemuxerStream::VIDEO>;
 template class DecoderStream<DemuxerStream::AUDIO>;

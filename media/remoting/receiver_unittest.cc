@@ -289,6 +289,10 @@ class ReceiverTest : public ::testing::Test {
 
   void InitializeReceiver() {
     receiver_->Initialize(&mock_media_resource_, nullptr,
+#ifdef OHOS_VIDEO_ASSISTANT
+                          RequestSurfaceCB(),
+                          VideoDecoderChangedCB(),
+#endif // OHOS_VIDEO_ASSISTANT
                           base::BindOnce(&ReceiverTest::OnRendererInitialized,
                                          weak_factory_.GetWeakPtr()));
   }

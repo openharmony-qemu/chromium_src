@@ -50,6 +50,10 @@ class CONTENT_EXPORT OHOSMediaPlayerRenderer
   // media::Renderer implementation
   void Initialize(media::MediaResource* media_resource,
                   media::RendererClient* client,
+#ifdef OHOS_VIDEO_ASSISTANT
+                  media::RequestSurfaceCB request_surface_cb,
+                  media::VideoDecoderChangedCB decoder_changed_cb,
+#endif // OHOS_VIDEO_ASSISTANT
                   media::PipelineStatusCallback init_cb) override;
   void SetLatencyHint(absl::optional<base::TimeDelta> latency_hint) override;
   void Flush(base::OnceClosure flush_cb) override;
@@ -58,6 +62,9 @@ class CONTENT_EXPORT OHOSMediaPlayerRenderer
   void SetPlaybackRate(double playback_rate) override;
   void SetVolume(float volume) override;
   base::TimeDelta GetMediaTime() override;
+#ifdef OHOS_VIDEO_ASSISTANT
+  void SetVideoSurface(int32_t surface_id) override;
+#endif // OHOS_VIDEO_ASSISTANT
 
   // media::OHOSMediaPlayerBridge::Client implementation
   void OnFrameAvailable(int fd,

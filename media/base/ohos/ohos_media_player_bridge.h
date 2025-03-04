@@ -88,6 +88,10 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   void FinishPaint(int fd);
   void SetPlaybackSpeed(OHOS::NWeb::PlaybackRateMode mode);
 
+#ifdef OHOS_VIDEO_ASSISTANT
+  void SetVideoSurface(int32_t surface_id);
+#endif // OHOS_VIDEO_ASSISTANT
+
   void OnEnd();
   void OnError(int32_t errorCode);
   void OnBufferAvailable(
@@ -122,6 +126,11 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   // Set media player surface and register listener
   void SetPlayerSurface();
 
+#ifdef OHOS_VIDEO_ASSISTANT
+  void SetVideoSurfaceNew(int32_t surface_id);
+  void SetVideoSurfaceOld();
+#endif // OHOS_VIDEO_ASSISTANT
+
   const std::string surfaceFormat = "SURFACE_FORMAT";
   std::unique_ptr<OHOS::NWeb::PlayerAdapter> player_ = nullptr;
   std::deque<std::shared_ptr<OHOS::NWeb::SurfaceBufferAdapter>> cached_buffers_;
@@ -142,7 +151,8 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   base::TimeDelta duration_;
   base::TimeDelta pending_seek_;
   base::TimeDelta recording_seek_;
-  OHOS::NWeb::PlayerAdapter::PlayerStates player_state_;
+  OHOS::NWeb::PlayerAdapter::PlayerStates player_state_ =
+      OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_IDLE;
 
   // MediaPlayer is unable to handle Seek request when playback end. We should
   // pending the SeekTo request until its playback state changed.
@@ -180,6 +190,13 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
 
   // Whether user credentials are allowed to be passed.
   bool allow_credentials_;
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  int32_t new_surface_id_ = -1;
+  int32_t pending_new_surface_id_ = -1;
+  int32_t video_width_ = 0;
+  int32_t video_height_ = 0;
+#endif // OHOS_VIDEO_ASSISTANT
 
   base::WeakPtrFactory<OHOSMediaPlayerBridge> weak_factory_{this};
 };

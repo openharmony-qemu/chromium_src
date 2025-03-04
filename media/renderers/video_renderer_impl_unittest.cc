@@ -149,6 +149,10 @@ class VideoRendererImplTest : public testing::Test {
     EXPECT_CALL(mock_cb_, OnStatisticsUpdate(_)).Times(AnyNumber());
     renderer_->Initialize(
         demuxer_stream, nullptr, &mock_cb_,
+#ifdef OHOS_VIDEO_ASSISTANT
+        RequestSurfaceCB(),
+        VideoDecoderChangedCB(),
+#endif // OHOS_VIDEO_ASSISTANT
         base::BindRepeating(&WallClockTimeSource::GetWallClockTimes,
                             base::Unretained(&time_source_)),
         std::move(status_cb));

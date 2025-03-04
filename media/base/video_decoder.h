@@ -135,6 +135,11 @@ class MEDIA_EXPORT VideoDecoder : public Decoder {
   // this should return the underlying type, if it is known, otherwise return
   // its own type.
   virtual VideoDecoderType GetDecoderType() const = 0;
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  virtual void SetVideoSurface(int32_t widget_id) {}
+  virtual void StartPlayingFrom(base::TimeDelta start_timestamp) {}
+#endif // OHOS_VIDEO_ASSISTANT
 };
 
 }  // namespace media
